@@ -36,25 +36,39 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         basis: 3,
         treasury: 2,
         served: vec![(0x03, 9), (0x39, 1)],
-        head: [40, 1, 0, 2, 0, 12],
-        rulings: [3, 0],
     };
+    // ACT1 — a court on the clock with a peer above and a peer below its
+    // head (the gap is signed), and a voice before and after a persist.
+    let court_clock = Clock::Court(CourtClock {
+        k: 13,
+        head: [40, 1, 0, 2, 0, 12],
+        genesis: Some(([9; 32], 2)),
+        peers: vec![(vk(1), 37, 3), (vk(2), 44, -4)],
+        persisted: Some((38, 11)),
+        folded: None,
+        unframed: 5,
+        unstamped: [1, 0, 2, 0, 3],
+        rulings: [3, 0],
+    });
+    let voice_clock = Clock::Voice(VoiceClock { k: 7, heard: 39, persisted: None });
     let all = vec![
         Reading::Planes(planes),
         Reading::Loss(loss),
         Reading::Memory(memory),
         Reading::Court(court),
+        Reading::Clock(court_clock),
+        Reading::Clock(voice_clock),
     ];
     let push = encode_push(&vk(7), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));
     let entries: Vec<(Vec<u8>, Reading)> =
         all.iter().map(|r| (Source::Voice(vk(7)).key(r.tag()), r.clone())).collect();
     let reply = encode_reply(&entries, usize::MAX);
-    assert_eq!(decode_reply(&reply), Some((4, entries.clone())));
+    assert_eq!(decode_reply(&reply), Some((6, entries.clone())));
     // A reply that cannot hold them all says how many were held.
     let (total, sent) = decode_reply(&encode_reply(&entries, 64)).expect("a short reply still decodes");
-    assert_eq!(total, 4);
-    assert!(sent.len() < 4, "the budget is honoured");
+    assert_eq!(total, 6);
+    assert!(sent.len() < 6, "the budget is honoured");
     // A trailing byte is no act.
     let mut long = encode_query(&[1, 2]);
     long.push(0);

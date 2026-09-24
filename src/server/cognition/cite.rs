@@ -44,6 +44,22 @@ impl Kernel {
         self.admitted_at.get(addr).copied()
     }
 
+    /// LD3-1 — HELD WITHOUT A STAMP, BY ROW (78.27 Q1): the words each row
+    /// holds that no act has admitted — basis, provisional, the listing
+    /// book, the cavity, the court's federation. Every holding path admits
+    /// by an act, so each count is a path that did not; a word no act
+    /// admitted has no coordinates and the snapshot refuses it.
+    pub fn unstamped(&self) -> [u64; 5] {
+        let count = |keys: Vec<Vec<u8>>| keys.iter().filter(|a| !self.admitted_at.contains(a)).count() as u64;
+        [
+            count(self.basis.scoped().map(|(a, _)| a).collect()),
+            count(self.provisional.scoped().map(|(a, _)| a).collect()),
+            count(self.pending.scoped().map(|(a, _)| a).collect()),
+            count(self.cavity_book.scoped().map(|(a, _)| a).collect()),
+            count(self.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect()),
+        ]
+    }
+
     /// The word an admitting stamp locates, where this court holds it.
     pub fn word_admitted_at(&self, at: &Stamp) -> Option<&Address> {
         self.held_at.get(&at.key())
@@ -66,6 +82,20 @@ impl Kernel {
         }
     }
 
+    /// THE FRAME AN ACT ON A WORD MEASURED: the word's magnitude where a row
+    /// this court measures holds it. Where none does, nothing measured it —
+    /// the act's μ⃗ is read as `[0; 4]` and the clock counts an act sealed
+    /// without a frame (ACT1, 78.27 Q1(a)).
+    pub(crate) fn frame_of(&mut self, addr: &[u8]) -> [u64; 4] {
+        match self.word_at(addr) {
+            Some(w) => w.magnitude(),
+            None => {
+                self.unframed += 1;
+                [0; 4]
+            }
+        }
+    }
+
     /// A K-STEP naming ONE WORD by its address, linked to the court: the
     /// operator digest folds the acting voice with the court head last
     /// ruled here. The word is cited by its fiber and admitting stamp; a
@@ -76,7 +106,7 @@ impl Kernel {
     /// this court no longer holds measured nothing, and says so.
     pub(super) fn append_step(&mut self, kind: ActKind, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
         let addr = addr.as_ref();
-        let mu = self.word_at(addr).map_or([0; 4], |w| w.magnitude());
+        let mu = self.frame_of(addr);
         let held = self.cite_of(addr);
         let admits = match &held {
             None => self.named_word(addr).cloned(),
@@ -97,7 +127,7 @@ impl Kernel {
     /// the address now, which is zero where nothing holds it. A word that
     /// no row holds any more leaves its admitting stamp with it.
     pub(super) fn append_after_removal(&mut self, kind: ActKind, addr: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
-        let mu = self.word_at(addr).map_or([0; 4], |w| w.magnitude());
+        let mu = self.frame_of(addr);
         self.append_cited(kind, cite.into_iter().collect(), mu, voice);
         self.forget_if_unheld(addr);
     }

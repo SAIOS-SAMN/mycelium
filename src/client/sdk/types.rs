@@ -531,6 +531,9 @@ pub struct Entity {
     pub(crate) axes_spoken: usize,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
+    /// ACT1 (78.21(3)) — the court's height this voice had heard, and its
+    /// own `K`, when its genome was last written whole; none before.
+    pub(crate) genome_persisted: Option<(u64, u64)>,
     /// THE SEALED SET (50.9): addresses a court refused, each with the K
     /// of this mind's own receipt of the refusal (45.1). Read before any
     /// frame is built; a sealed tape is refused by the mind itself.

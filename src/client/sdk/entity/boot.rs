@@ -50,6 +50,7 @@ impl Entity {
             axes_spoken: 0,
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
+            genome_persisted: None,
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
             contracted: Vec::new(),
@@ -124,15 +125,20 @@ impl Entity {
     /// Persist the genome atomically (write-then-rename): the words with
     /// their admitting stamps, then this voice's ledger on the ledger's own
     /// writer. Call from the syntropic phase when the genome has grown.
-    pub fn save_genome(&self, genome_path: &str) -> io::Result<()> {
+    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<()> {
         let voice = self.session.voice();
         let mut bytes = self.epigenome.crystallize(|a| voice.admitted_at(a));
         if voice.chain().write(&mut bytes).is_none() {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "genome refused: a node of this voice's ledger cannot be written"));
         }
+        // ACT1: where this voice stood when the genome was taken, noted only
+        // once the write lands (78.21(3)).
+        let at = (self.now_tu(), self.own_k());
         let tmp = format!("{genome_path}.tmp");
         std::fs::write(&tmp, bytes)?;
-        std::fs::rename(&tmp, genome_path)
+        std::fs::rename(&tmp, genome_path)?;
+        self.genome_persisted = Some(at);
+        Ok(())
     }
 
     /// Persist open thoughts atomically.

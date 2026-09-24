@@ -265,6 +265,17 @@ pub struct Kernel {
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
     pub(crate) deflations: crate::network::nerve::Keyed<[u64; 4]>,
+    /// ACT1 — OWN-LINE ACTS SEALED WITHOUT A FRAME (78.27 Q1(a)): acts that
+    /// named a word no row of this court measures, so their μ⃗ was read as
+    /// `[0; 4]` because nothing measured it. Counted at seal, since boot.
+    pub(crate) unframed: u64,
+    /// ACT1 (EC1) — Ruling receipts admitted whose citation names a word
+    /// this court holds, and rulings whose economy applied here: per node,
+    /// since boot.
+    pub(crate) rulings: [u64; 2],
+    /// ACT1 (78.21(2)) — the stamp's height and `K` at which this court's
+    /// snapshot was last written whole, noted after the write lands.
+    pub(crate) persisted: Option<(u64, u64)>,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     /// Last key the syntropic cursor yielded; the next stroke resumes after
@@ -567,7 +578,7 @@ impl Kernel {
                 if r.kind == crate::chronometry::ActKind::Ruling
                     && r.cites.iter().any(|c| self.word_admitted_at(&c.at()).is_some())
                 {
-                    crate::observe::note_ruling_admitted();
+                    self.rulings[0] += 1;
                 }
             }
             crate::court::admission::Admitted::Equivocation { k, .. } => {

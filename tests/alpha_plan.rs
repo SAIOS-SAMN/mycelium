@@ -41,7 +41,7 @@ fn normal_form_two_tapes_one_key() {
 }
 
 #[test]
-fn gen3_round_trip_and_size() {
+fn the_record_round_trip_and_size() {
     let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
     let b = w.to_bytes();
     assert_eq!(b[0], Element::RECORD_MAGIC);

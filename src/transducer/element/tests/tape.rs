@@ -82,7 +82,7 @@ fn a_connection_is_one_element_with_two_components() {
 }
 
 #[test]
-fn gen3_round_trips_and_gen2_is_refused() {
+fn the_record_round_trips_and_older_records_are_refused() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
     let bytes = w.to_bytes();
     assert_eq!(

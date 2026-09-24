@@ -13,6 +13,7 @@
 mod carriage;
 mod cells;
 mod circuit;
+mod clock;
 mod fleet;
 mod learning;
 mod reading;
@@ -23,6 +24,7 @@ mod tests;
 pub use carriage::*;
 pub use cells::*;
 pub use circuit::*;
+pub use clock::*;
 pub use fleet::*;
 pub use learning::*;
 pub use reading::*;

@@ -284,3 +284,63 @@ fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
         "and the book is not held open by a transport nobody measured"
     );
 }
+
+/// ACT1 — A COURT ON THE CLOCK (78.21, 78.27(1), EC1). The reading is its
+/// head's stamp and `K`, where its snapshot stands, per peer line the last
+/// height admitted and the gap to its head, and the three counts: an act
+/// sealed on a word nothing measures is counted as sealed without a frame,
+/// and a word held with no act is counted held without a stamp, by row.
+#[test]
+fn a_court_reads_itself_on_the_clock() {
+use crate::transducer::element::from_canonical;
+use crate::transducer::germinate::germinate;
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 2), (0, 1, 2)];
+speak_pair(&mut k, &a, &b, [1; 32]);
+let c = k.clock(Some(([9; 32], 2)));
+let head = k.chain().head().expect("the court has acted");
+let [s, g, t, h] = head.mu;
+assert_eq!(c.head, [head.stamp.h, s, g, t, h, head.stamp.k], "the head's stamp, h:S:G:T:H:k");
+assert_eq!(c.k, k.chain().next_step_index());
+assert_eq!(c.genesis, Some(([9; 32], 2)), "the origin it adopted, carried as given");
+assert_eq!((c.persisted, c.folded), (None, None), "never persisted, never folded");
+assert_eq!(c.unstamped, [0; 5], "every word the percept held, an act admitted");
+let unframed = c.unframed;
+
+// An act naming a word no row measures reads its frame as nothing.
+k.append_step(crate::chronometry::ActKind::Attest, [0xEE; 40], [1; 32]);
+assert_eq!(k.clock(None).unframed, unframed + 1, "sealed without a frame, counted at seal");
+
+// A word placed on the basis with no act is held without a stamp.
+k.basis_insert(from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap()), [7; 32]);
+assert_eq!(k.clock(None).unstamped, [1, 0, 0, 0, 0], "named by its row");
+
+// A snapshot noted where it was taken, once it landed.
+let at = k.snapshot_at();
+let _ = k.snapshot();
+k.note_persisted(at);
+assert_eq!(k.clock(None).persisted, Some(at));
+
+// A peer's line: the last height admitted from it, and the gap.
+let key = super::common::court_key("peer");
+let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
+let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
+let pre = crate::court::admission::SignedPrefix {
+    genesis: [7; 32],
+    epoch: 2,
+    prev_receipt_hash: pr.prev_hash(),
+    k: pr.stamp.k,
+    height: pr.stamp.h,
+    chart: vec![],
+    payload: pr.stamp.key(),
+};
+assert!(matches!(
+    k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
+    crate::court::admission::Admitted::Parent(_)
+));
+let c = k.clock(None);
+let own_h = i64::try_from(c.head[0]).expect("a height");
+assert_eq!(c.peers, vec![(key.vk_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
+assert_eq!(c.rulings, [0, 0], "a List is no ruling");
+}

@@ -58,14 +58,14 @@ impl Kernel {
         };
         match cite {
             Some(c) => {
-                let mu = self.word_at(addr).map_or([0; 4], |w| w.magnitude());
+                let mu = self.frame_of(addr);
                 self.append_cited(crate::chronometry::ActKind::Ruling, vec![c], mu, ruler);
             }
             None => self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler),
         }
         // EC1: past the removal every arm moves the economy — a release, a
         // demotion or a slash — and the reading counts it here.
-        crate::observe::note_ruling_applied();
+        self.rulings[1] += 1;
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
             // cover AND becomes this court's section on the chart (13.9).

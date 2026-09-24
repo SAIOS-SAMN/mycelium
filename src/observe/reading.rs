@@ -35,10 +35,12 @@ pub const TAG_SPEND: u8 = 11;
 pub const TAG_PROGRESS: u8 = 12;
 pub const TAG_PHASE: u8 = 13;
 pub const TAG_CARRIAGE: u8 = 14;
+pub const TAG_CLOCK: u8 = 15;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 14] = [
+pub const READING_NAMES: [(&str, u8); 15] = [
+    ("clock", TAG_CLOCK),
     ("planes", TAG_PLANES),
     ("loss", TAG_LOSS),
     ("memory", TAG_MEMORY),
@@ -389,12 +391,8 @@ pub struct Court {
     pub basis: u64,
     pub treasury: u64,
     pub served: Vec<(u8, u64)>,
-    /// CK1 — THE HEAD'S STAMP, `h:S:G:T:H:k` (78.21, 78.24): the tick, the
-    /// frame the head act measured, its `K`. The key, printed.
-    pub head: [u64; 6],
-    /// EC1 — Ruling receipts this court admitted whose citation names a
-    /// word it holds, against rulings whose economy applied here.
-    pub rulings: [u64; 2],
+    // The head's stamp and the rulings count are the clock's (ACT1,
+    // [`super::Clock`]), read there and never copied here (law 12).
 }
 
 impl Court {
@@ -406,9 +404,6 @@ impl Court {
         for &(kind, n) in &self.served {
             out.push(kind);
             put_u64(out, n);
-        }
-        for v in self.head.iter().chain(self.rulings.iter()) {
-            put_u64(out, *v);
         }
     }
 
@@ -422,12 +417,7 @@ impl Court {
         for _ in 0..m {
             served.push((take_u8(b, p)?, take_u64(b, p)?));
         }
-        let mut head = [0u64; 6];
-        for v in head.iter_mut() {
-            *v = take_u64(b, p)?;
-        }
-        let rulings = [take_u64(b, p)?, take_u64(b, p)?];
-        Some(Court { k, basis, treasury, served, head, rulings })
+        Some(Court { k, basis, treasury, served })
     }
 }
 
@@ -590,6 +580,9 @@ pub enum Reading {
     Phase(super::Phase),
     /// LD1 — the bytes per award, per receipt delta and per frame (78.22).
     Carriage(super::Carriage),
+    /// ACT1 — a node on the TUniversal clock, with its three counts
+    /// (78.21, 78.27(1), EC1).
+    Clock(super::Clock),
 }
 
 impl Reading {
@@ -609,6 +602,7 @@ impl Reading {
             Reading::Progress(_) => TAG_PROGRESS,
             Reading::Phase(_) => TAG_PHASE,
             Reading::Carriage(_) => TAG_CARRIAGE,
+            Reading::Clock(_) => TAG_CLOCK,
         }
     }
 
@@ -640,6 +634,8 @@ impl Reading {
             // The carriage is measured whole at the question; the later
             // stands.
             (Reading::Carriage(a), Reading::Carriage(b)) => *a = b.clone(),
+            // A node's clock is where it stands now; the later stands.
+            (Reading::Clock(a), Reading::Clock(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -663,6 +659,7 @@ impl Reading {
             Reading::Progress(r) => r.put(out),
             Reading::Phase(r) => r.put(out),
             Reading::Carriage(r) => r.put(out),
+            Reading::Clock(r) => r.put(out),
         }
     }
 
@@ -684,6 +681,7 @@ impl Reading {
             TAG_PROGRESS => Some(Reading::Progress(super::Progress::take(b, p)?)),
             TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
             TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
+            TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
             _ => None,
         }
     }

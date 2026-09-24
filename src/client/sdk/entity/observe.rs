@@ -25,6 +25,16 @@ impl Entity {
         if let Some(m) = Memory::now(self.own_k()) {
             observe::publish(me, Reading::Memory(m));
         }
+        // ACT1 — THIS VOICE ON THE CLOCK: its `K`, its court's height as last
+        // heard, where its genome was last written (78.21(3)).
+        observe::publish(
+            me,
+            Reading::Clock(observe::Clock::Voice(observe::VoiceClock {
+                k: self.own_k(),
+                heard: self.now_tu(),
+                persisted: self.genome_persisted,
+            })),
+        );
         // LC1 — THE CURVE, read off this mind's own genome at its own `K`.
         observe::publish(me, Reading::Learning(observe::Learning::of(&self.epigenome, self.own_k())));
         // PL1 — THE LAST PERCEPT'S CIRCUITS, step by step, where a percept

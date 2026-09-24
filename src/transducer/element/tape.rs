@@ -180,17 +180,12 @@ impl Element {
     }
 
     /// Deserialize the record this build writes. An older one is refused,
-    /// never migrated; the layout before 6(b) is refused by name.
+    /// never migrated; the layout before 6(b) is named by its constant,
+    /// [`Element::PRE_WHOLE_MAGIC`]. A codec prints nothing: the reader
+    /// that opens a genome reports its refusals, once, typed.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
         match b.get(*pos) {
             Some(&Self::RECORD_MAGIC) => Self::from_bytes_record(b, pos),
-            Some(&Self::PRE_WHOLE_MAGIC) => {
-                eprintln!(
-                    "  element record refused: magic 0xA3 is the layout before LD0 step 6(b), \
-                     whose words carry letters alone"
-                );
-                None
-            }
             _ => None,
         }
     }

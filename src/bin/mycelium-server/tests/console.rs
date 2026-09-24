@@ -72,3 +72,35 @@ fn every_axis_of_loss_is_read_by_name() {
     assert!(out.contains("tau_refused 3"), "{out}");
     assert!(out.contains("zero:") && out.contains("unheard"), "{out}");
 }
+
+/// ACT1, 78.21(4) — EVERY SOURCE ON TUNIVERSAL FIRST: a court by its head's
+/// height and a voice by its court's height as last heard, each with its
+/// own `K`, the spread in heights, all before any other reading; and the
+/// court's three counts named under it.
+#[test]
+fn every_source_stands_on_tuniversal_before_any_reading() {
+    use mycelium::observe::{Clock, CourtClock, VoiceClock};
+    let court = Clock::Court(CourtClock {
+        k: 13,
+        head: [40, 1, 0, 2, 0, 12],
+        unframed: 2,
+        unstamped: [1, 0, 0, 0, 0],
+        rulings: [3, 1],
+        ..CourtClock::default()
+    });
+    let voice = Clock::Voice(VoiceClock { k: 7, heard: 35, persisted: Some((30, 5)) });
+    let held = vec![
+        (Source::Court([1; 32]).key(Reading::Clock(court.clone()).tag()), Reading::Clock(court)),
+        (Source::Voice([2; 32]).key(Reading::Loss(Loss::default()).tag()), Reading::Loss(Loss::default())),
+        (Source::Voice([2; 32]).key(Reading::Clock(voice.clone()).tag()), Reading::Clock(voice)),
+    ];
+    let out = crate::console::render("test", held.len() as u32, &held).join("\n");
+    let header = out.find("TUNIVERSAL").expect("the header is there");
+    assert!(header < out.find("── COURT").expect("the court's block"), "TUniversal first: {out}");
+    assert!(out.contains("h 40") && out.contains("K 13") && out.contains("stamp 40:1:0:2:0:12"), "{out}");
+    assert!(out.contains("h 35") && out.contains("K 7"), "{out}");
+    assert!(out.contains("h 35..40  (5 heights)"), "the spread, in heights only: {out}");
+    assert!(out.contains("2 acts sealed on a word nothing measured"), "{out}");
+    assert!(out.contains("basis 1") && out.contains("rulings admitted 3  applied 1"), "{out}");
+    assert!(out.contains("at h 30 K 5  (5 heights, 2 K since)"), "the genome's persist, by height and K: {out}");
+}

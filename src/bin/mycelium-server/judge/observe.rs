@@ -24,31 +24,26 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             let own = Source::Court(door.id);
             // LD1 — and the bytes its awards, its receipt deltas and its
             // frames carry, measured whole at the question.
+            // ACT1: the origin this court adopted, read before the kernel's
+            // lock and never under it.
+            let genesis = door.mesh.origin.lock().ok().and_then(|o| *o);
             let standing = door.kernel.lock().ok().map(|k| {
                 let mut carriage = observe::Carriage::default();
                 k.treasury().carriage(&mut carriage);
                 carriage.of_chain(k.chain());
                 carriage.of_frames();
-                // CK1: the head's stamp, h:S:G:T:H:k — the key, printed.
-                let head = match k.chain().head() {
-                    Some(r) => {
-                        let [s, g, t, h] = r.mu;
-                        [r.stamp.h, s, g, t, h, r.stamp.k]
-                    }
-                    None => [k.chain().head_height(), 0, 0, 0, 0, k.chain().head_k()],
-                };
                 let court = Court {
                     k: k.chain().head_k(),
                     basis: k.basis_len() as u64,
                     treasury: k.treasury_entry_count() as u64,
                     served: observe::served(),
-                    head,
-                    rulings: observe::rulings(),
                 };
-                (court, carriage)
+                // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
+                (court, carriage, k.clock(genesis))
             });
-            let standing = standing.map(|(court, carriage)| {
+            let standing = standing.map(|(court, carriage, clock)| {
                 observe::replace(own, Reading::Carriage(carriage));
+                observe::replace(own, Reading::Clock(observe::Clock::Court(clock)));
                 court
             });
             // PH5 — and its phase, the last window it wrote.

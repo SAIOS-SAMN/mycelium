@@ -9,13 +9,18 @@ use std::sync::Mutex;
 /// changes the held language — germination, a verdict, an adoption — writes
 /// through here; a restart then resumes exactly what the node held.
 pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
-    let snap = match kernel.lock() {
-        Ok(k) => k.snapshot(),
+    // The stamp the snapshot is taken at, read in the same hold (ACT1).
+    let (snap, at) = match kernel.lock() {
+        Ok(k) => (k.snapshot(), k.snapshot_at()),
         Err(_) => return,
     };
     let tmp = format!("{state_path}.tmp");
-    if std::fs::write(&tmp, &snap).is_ok() {
-        let _ = std::fs::rename(&tmp, state_path);
+    let landed = std::fs::write(&tmp, &snap).is_ok() && std::fs::rename(&tmp, state_path).is_ok();
+    // Only a write that landed is a persist on the clock (78.21(2)).
+    if landed {
+        if let Ok(mut k) = kernel.lock() {
+            k.note_persisted(at);
+        }
     }
 }
 

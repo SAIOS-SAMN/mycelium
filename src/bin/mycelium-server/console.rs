@@ -19,6 +19,13 @@
 //! - MEMORY — the allocator's bytes at the source's first and latest `K`,
 //!   the growth per `K` between them, and the peak: a leak is growth over
 //!   the source's own clock.
+//! - TUNIVERSAL — FIRST, before any other reading (ACT1, 78.21(4)): every
+//!   source by its height with its own `K` beside it, and the spread.
+//! - CLOCK — per source: a court's genesis, per-peer heights and gaps,
+//!   where its snapshot and last fold stand, and the three counts (acts
+//!   sealed without a frame, words held without a stamp by row, rulings
+//!   admitted against applied); a voice's `K`, court height as last heard
+//!   and genome persist.
 //! - COURT — the court's `K`, basis, treasury and the acts it served.
 //! - PHASE — the court's last phase window and adjoined-by-closure (PH5).
 //! - LEARNING — a mind's curve at its `K` (LC1): dialect span, cover, what
@@ -177,6 +184,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
     if held.len() < total as usize {
         lines.push(format!("{YELLOW}the reply held {} of {total}: the frame budget cut it{RESET}", held.len()));
     }
+    lines.extend(tuniversal(&sources));
     for (source, readings) in &sources {
         lines.push(String::new());
         lines.push(match source {
@@ -199,25 +207,106 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Progress(p) => progress(p),
                 Reading::Phase(p) => phase(p),
                 Reading::Carriage(c) => carriage(c),
+                Reading::Clock(c) => clock(c),
             });
         }
     }
     lines
 }
 
+/// ACT1, 78.21(4) — EVERY SOURCE ON TUNIVERSAL FIRST: each by its height
+/// with its own `K` beside it, and the spread of heights over the sources
+/// read. Disparity is read in height only, and no threshold colours it
+/// (rule 5); a source that carried no clock says so.
+fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
+    let mut lines = vec![String::new(), format!("{CYAN}{BOLD}── TUNIVERSAL{RESET}")];
+    let mut heights: Vec<u64> = Vec::new();
+    for (source, readings) in sources {
+        let name = match source {
+            Source::Court(vk) => format!("court {}", short(vk)),
+            Source::Voice(vk) => format!("voice {}", short(vk)),
+        };
+        let clock = readings.iter().find_map(|r| match r {
+            Reading::Clock(c) => Some(c),
+            _ => None,
+        });
+        lines.push(match clock {
+            Some(observe::Clock::Court(c)) => {
+                heights.push(c.head[0]);
+                let [h, s, g, t, hh, k] = c.head;
+                format!("  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}", c.k)
+            }
+            Some(observe::Clock::Voice(v)) => {
+                heights.push(v.heard);
+                format!("  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}", v.heard, v.k)
+            }
+            None => format!("  {name}  {DIM}no clock carried{RESET}"),
+        });
+    }
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "78.21(1) — the fleet's spread IS the range of heads, max − min: a reading of the range, and nothing is chosen by it"
+    )]
+    let range = (heights.iter().min().copied(), heights.iter().max().copied());
+    match range {
+        (Some(min), Some(max)) => lines.push(format!("  {BOLD}spread{RESET}      h {min}..{max}  ({} heights)", max - min)),
+        _ => lines.push(format!("  {DIM}no source carried a clock{RESET}")),
+    }
+    lines
+}
+
+/// ACT1 — ONE NODE ON THE CLOCK, and its three counts.
+fn clock(c: &observe::Clock) -> Vec<String> {
+    // A persist above where the node now stands is a count that went
+    // backwards, named as such and never floored at zero (rule 11).
+    let since = |at: Option<(u64, u64)>, h: u64, k: u64| match at {
+        None => format!("{DIM}never{RESET}"),
+        Some((ph, pk)) => match (h.checked_sub(ph), k.checked_sub(pk)) {
+            (Some(dh), Some(dk)) => format!("at h {ph} K {pk}  ({dh} heights, {dk} K since)"),
+            _ => format!("{YELLOW}at h {ph} K {pk}, above where it stands now (h {h} K {k}){RESET}"),
+        },
+    };
+    match c {
+        observe::Clock::Court(c) => {
+            let [h, ..] = c.head;
+            let genesis = match c.genesis {
+                None => format!("{YELLOW}no origin adopted{RESET}"),
+                Some((id, epoch)) => format!("{} epoch {epoch}", short(&id)),
+            };
+            let peers: Vec<String> =
+                c.peers.iter().map(|(vk, ph, gap)| format!("{} h {ph} gap {gap}", short(vk))).collect();
+            let [ub, up, ul, uc, uf] = c.unstamped;
+            let unstamped = format!("basis {ub}  provisional {up}  listing {ul}  cavity {uc}  federation {uf}");
+            let [admitted, applied] = c.rulings;
+            let rulings = format!("rulings admitted {admitted}  applied {applied}");
+            let flag = |bad: bool, s: String| match bad {
+                true => format!("{YELLOW}{s}{RESET}"),
+                false => s,
+            };
+            vec![
+                format!("  {BOLD}genesis{RESET}     {genesis}"),
+                format!("  {BOLD}peers{RESET}       {}", match peers.is_empty() {
+                    true => format!("{DIM}none held{RESET}"),
+                    false => peers.join("  "),
+                }),
+                format!("  {BOLD}persisted{RESET}   {}", since(c.persisted, h, c.k)),
+                format!("  {BOLD}folded{RESET}      {}", since(c.folded, h, c.k)),
+                format!("  {BOLD}unframed{RESET}    {}", flag(c.unframed > 0, format!("{} acts sealed on a word nothing measured", c.unframed))),
+                format!("  {BOLD}unstamped{RESET}   {}", flag(ub + up + ul + uc + uf > 0, unstamped)),
+                format!("  {BOLD}economy{RESET}     {}", flag(admitted > applied, rulings)),
+            ]
+        }
+        observe::Clock::Voice(v) => vec![
+            format!("  {BOLD}clock{RESET}       K {}  court h {} as last heard", v.k, v.heard),
+            format!("  {BOLD}genome{RESET}      persisted {}", since(v.persisted, v.heard, v.k)),
+        ],
+    }
+}
+
 fn court(c: &Court) -> Vec<String> {
     let served: Vec<String> = c.served.iter().map(|(kind, n)| format!("{kind:02x}×{n}")).collect();
-    let [h, s, g, t, hh, k] = c.head;
-    let [admitted, applied] = c.rulings;
-    let applied_line = match admitted > applied {
-        true => format!("{YELLOW}rulings admitted {admitted}  applied {applied}{RESET}"),
-        false => format!("rulings admitted {admitted}  applied {applied}"),
-    };
     vec![
-        // CK1 — the head's stamp first, as the ledger keys it (78.24).
-        format!("  {BOLD}stamp{RESET}       {h}:{s}:{g}:{t}:{hh}:{k}"),
         format!("  {BOLD}standing{RESET}    K {}  basis {}  treasury {}", c.k, c.basis, c.treasury),
-        format!("  {BOLD}economy{RESET}     {applied_line}"),
         format!("  {BOLD}served{RESET}      {}", match served.is_empty() {
             true => format!("{DIM}nothing yet{RESET}"),
             false => served.join(" "),

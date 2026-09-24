@@ -16,6 +16,58 @@ impl Kernel {
         due
     }
 
+    /// THE STAMP A SNAPSHOT IS TAKEN AT: the head's height and `K`, read in
+    /// the same hold as the snapshot, so a later note names what the
+    /// written snapshot held (ACT1, 78.21(2)).
+    pub fn snapshot_at(&self) -> (u64, u64) {
+        (self.chain.head_height(), self.chain.head_k())
+    }
+
+    /// A snapshot taken at `at` was written whole. Called only after the
+    /// write lands, so a write that failed records nothing.
+    pub fn note_persisted(&mut self, at: (u64, u64)) {
+        self.persisted = Some(at);
+    }
+
+    /// ACT1 — THIS COURT ON THE CLOCK (78.21, 78.27(1), EC1): its `K`, its
+    /// head's stamp, the origin it adopted, per peer line the last height
+    /// admitted and the gap to this head, where its snapshot and its last
+    /// fold stand, and the three counts. Read at the question; nothing is
+    /// stored beside the carriers but the counts the acts themselves keep.
+    pub fn clock(&self, genesis: Option<([u8; 32], u32)>) -> crate::observe::CourtClock {
+        let head = match self.chain.head() {
+            Some(r) => {
+                let [s, g, t, h] = r.mu;
+                [r.stamp.h, s, g, t, h, r.stamp.k]
+            }
+            None => [self.chain.head_height(), 0, 0, 0, 0, self.chain.head_k()],
+        };
+        let own = self.chain.vk();
+        let at = i64::try_from(head[0]).ok();
+        let peers = self
+            .chain
+            .signers()
+            .into_iter()
+            .filter(|vk| *vk != own)
+            .filter_map(|vk| {
+                let h = self.chain.line_head(&vk)?.stamp.h;
+                let gap = at?.checked_sub(i64::try_from(h).ok()?)?;
+                Some((vk, h, gap))
+            })
+            .collect();
+        crate::observe::CourtClock {
+            k: self.chain.next_step_index(),
+            head,
+            genesis,
+            peers,
+            persisted: self.persisted,
+            folded: self.chain.root().map(|r| (r.height, r.k)),
+            unframed: self.unframed,
+            unstamped: self.unstamped(),
+            rulings: self.rulings,
+        }
+    }
+
     pub fn basis_len(&self) -> usize {
         self.basis.len()
     }
