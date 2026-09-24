@@ -11896,6 +11896,25 @@ removal path that drops a word from all rows without an act is swept in
 step 4 so no stamp entry outlives its word; EC1's producer follows the
 treasury rows and the composites, before GD1.
 
+**LD0 step 4 landed (662568b5; audited 2026-09-24, reproduced detached:
+1016 / 15 / 1 / 12 / 6, 0 failed, 1 ignored; gate exit 0; the census
+content identical to LD2's).** An award is a field of its word's row —
+provisional, listing, cavity or basis — written by the row writer; the
+treasury snapshot has no escrow section, and an award no row holds is
+named, never written; the award carriage is flat in the word's size (a
+3-byte and a 70 000-byte word weigh the same). `provisional_k` and
+`provisional_h` are deleted into `admitted_at` (law 12), the two
+differences named: a listing's `K` is the List act's own, one less than
+the old "K after", and the old height was the head's height after that
+same append, the stamp's `h`. The sweep runs at unlist, absorb, the
+attach sibling, the verdict and the append-after-removal, and a verdict
+reads its cite before the provisional removal (2c). `docket_letter`
+seals an Attest act. Ruled for step 5, with the seven composites: DEF2
+still writes an address beside each deflation, and FLD1 an address per
+coherence listing — the same copy shape — so a deflation and the
+coherence field are FIELDS OF THE WORD'S ROW, and one probed on an
+address no row holds is named and refused, never a copy.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
