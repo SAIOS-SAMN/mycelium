@@ -88,7 +88,11 @@ impl Voice {
     /// with another signer's orbit closed at the same tick is WITHHELD —
     /// the orbit stays open for the next stroke's work to separate it — and
     /// counted; a close with no act since the last seals nothing.
-    pub fn orbit(&mut self) -> crate::chronometry::Close {
+    ///
+    /// 78.37 — THE CLOSE CITES THE ORBIT'S DOCKET: the classes its rings held
+    /// and the demands its pivots left, by their coordinates, so a restart
+    /// keeps the plan.
+    pub fn orbit(&mut self, docket: Vec<crate::chronometry::Cite>) -> crate::chronometry::Close {
         use crate::chronometry::Close;
         let Some((_, frame)) = self.chain.open_orbit() else { return Close::Nothing };
         let Some(at) = self.chain.next_stamp(&[]) else { return Close::Nothing };
@@ -96,7 +100,7 @@ impl Voice {
             self.withheld += 1;
             return Close::Withheld;
         }
-        match self.chain.append(ActKind::Orbit, frame, Vec::new(), ActKind::Orbit.operator(), Vec::new()) {
+        match self.chain.append(ActKind::Orbit, frame, docket, ActKind::Orbit.operator(), Vec::new()) {
             Some(r) => Close::Sealed(r.stamp),
             None => Close::Nothing,
         }

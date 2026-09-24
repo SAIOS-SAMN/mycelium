@@ -84,14 +84,18 @@ impl Contemplation {
             from = Some(k.clone());
             self.expand_cursor = Some(k.clone());
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p, mut a) = b.expand_with(atlas, section_at, self.now_k, crystal, budget, &mut self.pivots);
-                spent += s;
-                for i in 0..4 {
-                    pivoted[i] = pivoted[i].saturating_add(p[i]);
+                let mut x = b.expand_with(atlas, section_at, self.now_k, crystal, budget, &mut self.pivots);
+                spent += x.spent;
+                for (lane, add) in pivoted.iter_mut().zip(x.pivoted) {
+                    *lane = lane.saturating_add(add);
                 }
-                adjoined.append(&mut a);
+                adjoined.append(&mut x.adjoined);
                 if !b.dirty {
                     self.dirty.remove(&k);
+                }
+                // 78.37 — the demands its pivots left, onto the docket.
+                for (class, charts) in &x.demanded {
+                    self.docket_demand(class, charts);
                 }
                 // The pivot may have left a vortex on the form: file it at
                 // its class so a ruled candidate can collapse it.
@@ -231,6 +235,10 @@ impl Contemplation {
                             if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
                                 form.stand_demand(kind, chart, Vec::new());
                             }
+                        }
+                        // 78.37 — the demand arm's demand, onto the docket.
+                        crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
+                            self.docket_demand(class, charts);
                         }
                         _ => {}
                     }

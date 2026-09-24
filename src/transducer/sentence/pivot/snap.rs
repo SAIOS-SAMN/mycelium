@@ -34,6 +34,15 @@ pub enum Snap {
         rotor: Box<crate::transducer::alphabet::Rotor>,
         chart: crate::transducer::stalk::Invariant,
     },
+    /// CS2's DEMAND ARM, 78.37 — an orbit no held word discharged and none
+    /// adjoins: its undischarged class vector (whose own plane section names
+    /// the mode, 3.9) and the charts it stands on, its cover. Carried to the
+    /// contemplation's docket and cited on the orbit's close.
+    Demanded {
+        chord: usize,
+        class: Box<crate::transducer::sentence::ClassVector>,
+        charts: Vec<crate::transducer::stalk::Invariant>,
+    },
     /// 37.7 FROM AN ORBIT'S OWN RESIDUE: the basis reached no coordinate this
     /// orbit occupies, the class was published and nothing answered, so the
     /// rotor the orbit measured is carried out to be ADJOINED as a generator.
@@ -73,6 +82,7 @@ impl Snap {
             | Snap::Closed { .. }
             | Snap::TorsionOpen { .. }
             | Snap::Demand { .. }
+            | Snap::Demanded { .. }
             | Snap::Adjoin { .. } => [0; 4],
         }
     }

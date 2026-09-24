@@ -159,7 +159,7 @@ fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
     let at = k.admitted_at(addr.as_bytes()).expect("the ruled word keeps its admitting stamp");
     assert_eq!(
         k.chain().head().map(|r| r.cites.iter().map(|c| c.at()).collect::<Vec<_>>()),
-        Some(vec![at]),
+        Some(vec![Some(at)]),
         "and the node cites the word it ruled on, by the stamp that admitted it"
     );
 }
@@ -211,7 +211,7 @@ fn an_install_seals_a_receipt_at_the_installed_address() {
     assert_eq!(k.chain().own_len(), before + 1, "an install is one step");
     let at = k.admitted_at(addr.as_bytes()).expect("the installed word keeps its admitting stamp");
     assert!(
-        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
+        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == Some(at))),
         "the node cites the installed word by its admitting stamp"
     );
 }
@@ -235,7 +235,7 @@ fn a_lapsed_citation_seals_a_receipt() {
     k.lapse_docket(super::common::one_stroke_transport);
     assert_eq!(k.chain().own_len(), before + 1, "a lapsed citation is one step");
     assert!(
-        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
+        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == Some(at))),
         "the node cites the listing whose draw was released, read before it left (78.24 (2c))"
     );
 }

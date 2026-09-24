@@ -156,11 +156,12 @@ fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
     let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     let atlas = crate::transducer::stalk::Stalks::default();
     let mut budget = crate::physics::Physics::default().stroke_n(4);
-    let (spent, _, _) = c
+    let spent = c
         .bubbles
         .get_mut(&k)
         .expect("held")
-        .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget, &mut Default::default());
+        .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget, &mut Default::default())
+        .spent;
     let b = c.bubbles.get(&k).expect("still held");
     assert_eq!(b.potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
     assert_eq!(

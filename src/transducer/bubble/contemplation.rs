@@ -174,6 +174,11 @@ pub struct Contemplation {
     pub(crate) fronts: Keyed<super::transport::Arrival>,
     pub(crate) ring_edges: Keyed<()>,
     pub(crate) transport: super::transport::TransportTally,
+    /// 78.37 — this orbit's docket by its entries' coordinates, the next
+    /// orbit's questions, and entries that could not be written (LD0).
+    pub(crate) docket: Keyed<crate::chronometry::Cite>,
+    pub(crate) docket_open: Keyed<crate::chronometry::Cite>,
+    pub(crate) docket_unwritten: u64,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the

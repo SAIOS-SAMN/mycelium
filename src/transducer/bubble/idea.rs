@@ -19,6 +19,21 @@ pub type SectionAt<'a> = &'a dyn Fn(&[u8]) -> Option<(Rotor, crate::transducer::
 /// for.
 pub type Held = (Invariant, Rotor, crate::transducer::element::Versor);
 
+/// 78.37 — ONE DEMAND OF CS2's ARM: the undischarged orbit's class and the
+/// charts it stands on.
+pub type Demand = (sentence::ClassVector, Vec<Invariant>);
+
+/// WHAT ONE EXPANSION OF AN IDEA DID: the charts spent, the lane measure of
+/// its snaps, 37.7's adjunction candidates (a rotor and its chart), and the
+/// demands its pivots left for the docket.
+#[derive(Default)]
+pub struct Expansion {
+    pub spent: usize,
+    pub pivoted: [u64; 4],
+    pub adjoined: Vec<(Rotor, Invariant)>,
+    pub demanded: Vec<Demand>,
+}
+
 /// KB1 — A SECTION'S COORDINATES, the vertex of an idea's nerve: the idea's
 /// address, the chart, and the carriage the section acts by, each framed. A
 /// Čech simplex is the overlap of two sections over one chart, so its
@@ -464,7 +479,7 @@ impl Bubble {
     /// a torsion axis, and one that stands a class writes the horizon and
     /// leaves the chart out of the cover.
     pub fn expand(&mut self, atlas: &dyn AtlasRead, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &|_| None, 0, crystal, budget, &mut sentence::PivotTally::default()).0
+        self.expand_with(atlas, &|_| None, 0, crystal, budget, &mut sentence::PivotTally::default()).spent
     }
 
     /// `atlas` is the language this thought expands over (the working
@@ -481,7 +496,9 @@ impl Bubble {
         crystal: &dyn Crystal,
         budget: &mut Budget,
         pivots: &mut sentence::PivotTally,
-    ) -> (usize, [u64; 4], Vec<(Rotor, crate::transducer::stalk::Invariant)>) {
+    ) -> Expansion {
+        // 78.37 — CS2's demand arm's demands, carried out to the docket.
+        let mut demanded: Vec<Demand> = Vec::new();
         // 37.7's candidates, carried out rather than dropped: the rotors this
         // stroke met that the seventeen cannot spell, each with the chart it
         // was met on. The bubble cannot mint — minting writes a word into the
@@ -498,11 +515,11 @@ impl Bubble {
         // A clock that went backwards measures no extent, and an idea whose
         // T cannot be read is not expanded against one.
         let Some(t) = held_since(now, self.moved_k) else {
-            return (0, [0; 4], Vec::new());
+            return Expansion::default();
         };
         self.potential[2] = t;
         if budget.remaining() == 0 {
-            return (0, [0; 4], Vec::new());
+            return Expansion::default();
         }
         let mut spent = 0usize;
         // THE CHARTS THIS IDEA MEETS ARE ITS OWN SECTIONS' CHARTS, and their
@@ -653,6 +670,11 @@ impl Bubble {
                                 form.stand_demand(kind, chart, Vec::new());
                             }
                         }
+                        // 78.37 — the demand arm's demand, carried out to the
+                        // contemplation's docket.
+                        crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
+                            demanded.push((class.as_ref().clone(), charts.clone()));
+                        }
                         _ => {}
                     }
                 }
@@ -661,7 +683,7 @@ impl Bubble {
         }
         self.dissolve_candidates();
         self.dirty = spent > 0 && budget.remaining() == 0;
-        (spent, pivoted, adjoined)
+        Expansion { spent, pivoted, adjoined, demanded }
     }
 
     /// P10(c), §25.12 — A CANDIDATE DIES ON AN INFINITE MONODROMY, AND ONLY

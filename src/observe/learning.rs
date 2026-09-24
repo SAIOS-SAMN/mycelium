@@ -147,6 +147,11 @@ impl Learning {
             t.classified,
             t.unsectioned,
             t.ungauged,
+            t.unclassed,
+            g.docket.pending,
+            g.docket.open,
+            g.docket.owed,
+            g.docket.unwritten,
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -226,6 +231,13 @@ impl Learning {
             classified: u64_at(b, p)?,
             unsectioned: u64_at(b, p)?,
             ungauged: u64_at(b, p)?,
+            unclassed: u64_at(b, p)?,
+        };
+        let docket = crate::transducer::bubble::DocketReading {
+            pending: u64_at(b, p)?,
+            open: u64_at(b, p)?,
+            owed: u64_at(b, p)?,
+            unwritten: u64_at(b, p)?,
         };
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
@@ -239,6 +251,7 @@ impl Learning {
             advanced,
             sources,
             transport,
+            docket,
         };
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }

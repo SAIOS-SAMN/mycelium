@@ -165,6 +165,47 @@ fn a_front_holds_a_ring_whose_arrivals_disagree_and_stops() {
     assert_eq!(c.complex.simplex_count(), 3 + 3 + 1, "sections, edges and the ring all stand: nothing deleted");
 }
 
+/// 78.37, TP1 — A HELD RING GOES ON THE DOCKET, AND THE DOCKET IS TAKEN
+/// OUTERMOST FIRST: the held ring's class is filed by its coordinates (its
+/// cover owed here, its thoughts holding no charts); sealed, it is the next
+/// orbit's question. Of three entries, one whose cover contains another's
+/// is taken before it; an entry whose cover is owed wraps nothing and is
+/// wrapped by nothing, taken in key order among the outermost.
+#[test]
+fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
+    use crate::chronometry::Cite;
+    use crate::transducer::alphabet::{LetterId, Rotor};
+    let p = letter(LetterId::pythagorean_5((0, 1)));
+    let (mut c, vs) =
+        ring_of_three([Rotor::identity(), p.clone(), Rotor::identity()], [p.clone(), Rotor::identity(), Rotor::identity()]);
+    c.fix(&vs[0], false);
+    c.transport(1);
+    c.transport(2);
+    let cites = c.docket_cites();
+    assert!(matches!(cites.as_slice(), [Cite::Class { cover: None, .. }]), "the held class, its cover owed: {cites:?}");
+    c.docket_sealed();
+    assert_eq!((c.docket_reading().pending, c.docket_reading().open), (0, 1), "sealed: the next orbit's question");
+    let kappa = || {
+        Box::new(
+            crate::transducer::sentence::ClassVector::of_rotor(
+                &p,
+                crate::transducer::element::identity_versor(),
+                crate::transducer::sentence::CycleType::of(&[]),
+            )
+            .expect("a class reads"),
+        )
+    };
+    let inner = Cite::Demand { class: kappa(), cover: Some(vec![vec![1]]) };
+    let outer = Cite::Class { class: kappa(), cover: Some(vec![vec![1], vec![2]]) };
+    let owed = Cite::Demand { class: kappa(), cover: None };
+    c.docket_reseed(&[inner.clone(), owed.clone(), outer.clone()]);
+    let order = c.docket_order();
+    assert_eq!(order.len(), 3);
+    let at = |x: &Cite| order.iter().position(|o| o == x).expect("taken");
+    assert!(at(&outer) < at(&inner), "the wrapping entry before the one it wraps: {order:?}");
+    assert!(at(&owed) < at(&inner), "an owed enclosure is outermost, never wrapped");
+}
+
 /// Two pivots on the same bubble with no new word leave fills unchanged.
 #[test]
 fn two_pivots_without_a_new_word_leave_fills() {

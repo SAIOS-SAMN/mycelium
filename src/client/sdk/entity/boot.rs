@@ -97,7 +97,12 @@ impl Entity {
     /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
     /// arms have run.
     pub fn close_orbit(&mut self) -> crate::chronometry::Close {
-        let close = self.session.voice_mut().orbit();
+        // 78.37 — the orbit's docket rides its close; sealed, it becomes the
+        // next orbit's questions. A withheld close keeps it for the next.
+        let close = self.session.voice_mut().orbit(self.contemplation.docket_cites());
+        if matches!(close, crate::chronometry::Close::Sealed(_)) {
+            self.contemplation.docket_sealed();
+        }
         // 78.37(1) — THE FRONTS STEP ON THE VOICE'S K, one edge per k-step:
         // stamped once the close has sealed, and stepped at that K (a close
         // that sealed nothing leaves K where it was, and the step does nothing).
@@ -159,6 +164,21 @@ impl Entity {
             return Err("this voice's ledger does not verify under its key".to_string());
         }
         self.epigenome = epigenome;
+        // 78.37 — A RESTART KEEPS THE PLAN: the last close's docket re-seeds
+        // the next orbit's questions, and the fronts step on the K restored.
+        let last_close = self
+            .session
+            .voice()
+            .chain()
+            .own()
+            .filter(|r| r.kind == crate::chronometry::ActKind::Orbit)
+            .last()
+            .map(|r| r.cites.clone());
+        if let Some(cites) = last_close {
+            self.contemplation.docket_reseed(&cites);
+        }
+        let k = self.own_k();
+        self.contemplation.set_k(k);
         Ok(())
     }
 

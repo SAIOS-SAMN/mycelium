@@ -120,6 +120,9 @@ pub struct MeetGraph {
     pub advanced: u64,
     pub sources: u64,
     pub transport: super::transport::TransportTally,
+    /// 78.37 — the docket: pending this orbit, open for the next, owed
+    /// enclosures, unwritten entries.
+    pub docket: super::docket::DocketReading,
 }
 
 impl MeetGraph {
@@ -156,7 +159,7 @@ impl MeetGraph {
         let owed = MEET_OWED.iter().map(|(f, _)| *f).collect::<Vec<_>>().join(", ");
         let t = &self.transport;
         format!(
-            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} | owed: {owed}",
+            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} | owed: {owed}",
             self.thoughts,
             self.vertices,
             self.components,
@@ -174,6 +177,11 @@ impl MeetGraph {
             t.classified,
             t.unsectioned,
             t.ungauged,
+            t.unclassed,
+            self.docket.pending,
+            self.docket.open,
+            self.docket.owed,
+            self.docket.unwritten,
         )
     }
 }
@@ -183,7 +191,14 @@ impl Contemplation {
     /// since the contemplation began.
     pub fn meet_graph(&self) -> MeetGraph {
         let (advanced, sources, transport) = self.transport_reading();
-        let mut m = MeetGraph { decoherence: self.decoherence, advanced, sources, transport, ..MeetGraph::default() };
+        let mut m = MeetGraph {
+            decoherence: self.decoherence,
+            advanced,
+            sources,
+            transport,
+            docket: self.docket_reading(),
+            ..MeetGraph::default()
+        };
         m.vertices = self.bubbles.len() as u64;
         m.thoughts = self.component_count() as u64;
         // The meet graph's own components: every edge, whatever its fill.

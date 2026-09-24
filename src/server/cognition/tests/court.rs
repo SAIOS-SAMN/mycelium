@@ -356,7 +356,7 @@ assert!(!refusing.ruled_contains(&addr), "never ruled");
 assert!(
     refusing.chain().own().any(|r| r.kind
         == crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed)
-        && r.cites.iter().any(|c| c.at() == at)),
+        && r.cites.iter().any(|c| c.at() == Some(at))),
     "the stroke's slash is a Ruling(Slashed) node citing the word"
 );
 

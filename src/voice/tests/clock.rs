@@ -33,9 +33,9 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_counts_its_orbits() {
     v.seal(ActKind::Uttered, [0, 2, 0, 0], Vec::new());
     v.seal(ActKind::Learned, [0, 0, 0, 3], vec![taught.clone()]);
     assert_eq!((v.chain().own_len(), v.k()), (3, 0), "one admitted act is one node; K stands in the open orbit");
-    assert!(matches!(v.orbit(), crate::chronometry::Close::Sealed(_)), "the stroke closes by name");
+    assert!(matches!(v.orbit(Vec::new()), crate::chronometry::Close::Sealed(_)), "the stroke closes by name");
     assert_eq!(v.k(), 1, "K counts the closed orbit");
-    assert_eq!(v.orbit(), crate::chronometry::Close::Nothing, "a close with no act seals nothing");
+    assert_eq!(v.orbit(Vec::new()), crate::chronometry::Close::Nothing, "a close with no act seals nothing");
 
     let rs: Vec<_> = v.chain().own().cloned().collect();
     assert_eq!(rs.len(), 4);
@@ -63,9 +63,9 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_counts_its_orbits() {
 fn a_voices_ledger_restores_under_its_own_key_and_no_other() {
     let mut v = Voice::named("worker-a");
     v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
-    v.orbit();
+    v.orbit(Vec::new());
     v.seal(ActKind::Uttered, [0, 1, 0, 0], Vec::new());
-    v.orbit();
+    v.orbit(Vec::new());
     let mut tape = Vec::new();
     v.chain().put_tries(&mut tape).expect("the ledger writes");
     let chain = ReceiptChain::take_tries(&tape, &mut 0).expect("and reads");
@@ -75,4 +75,40 @@ fn a_voices_ledger_restores_under_its_own_key_and_no_other() {
     let mut other = Voice::named("worker-b");
     assert!(!other.restore(chain, Vec::new()), "another voice's ledger is refused");
     assert_eq!(other.k(), 0, "and nothing moved");
+}
+
+/// 78.37, TP1 — THE ORBIT'S DOCKET RIDES ITS CLOSE BY COORDINATES AND
+/// SURVIVES A RESTART: a held class and a demand, one with its cover and one
+/// whose enclosure is owed, cited on the close, written through the ledger's
+/// tries and read back whole; neither locates by a stamp; and the restored
+/// close re-seeds the next orbit's questions.
+#[test]
+fn an_orbits_docket_rides_its_close_and_survives_a_restart() {
+    let p = {
+        let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("the sensor plane");
+        crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
+    };
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(
+        &p,
+        crate::transducer::element::identity_versor(),
+        crate::transducer::sentence::CycleType::of(&[]),
+    )
+    .expect("a class reads");
+    let docket = vec![
+        Cite::Class { class: Box::new(kappa.clone()), cover: Some(vec![vec![1, 2], vec![3]]) },
+        Cite::Demand { class: Box::new(kappa), cover: None },
+    ];
+    assert!(docket.iter().all(|c| c.at().is_none()), "a docket entry locates by its coordinates, never a stamp");
+    let mut v = Voice::named("worker-a");
+    v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
+    assert!(matches!(v.orbit(docket.clone()), crate::chronometry::Close::Sealed(_)), "the close seals with its docket");
+    let mut tape = Vec::new();
+    v.chain().put_tries(&mut tape).expect("the ledger writes");
+    let chain = ReceiptChain::take_tries(&tape, &mut 0).expect("and reads");
+    let close = chain.own().filter(|r| r.kind == ActKind::Orbit).last().expect("the close");
+    assert_eq!(close.cites, docket, "the docket read back whole, by coordinates");
+    let mut c = crate::transducer::bubble::Contemplation::new();
+    c.docket_reseed(&close.cites);
+    assert_eq!(c.docket_reading().open, 2, "the restart keeps the plan");
+    assert_eq!(c.docket_reading().owed, 1, "and the entry whose cover did not read says so");
 }

@@ -51,8 +51,11 @@ impl Kernel {
         // stamp that admitted it (78.24): depth is read off that stamp's
         // signers by prefix, never off a node's bytes.
         let key = attestor_key(&r.stamp.vk, r.kind);
-        for c in &r.cites {
-            let at = c.at().key();
+        // A docket's class or demand is located by its coordinates and names no
+        // admitting stamp: it commits its signer to no stamped word, and the
+        // depth index, read off stamps, holds nothing for it.
+        for at in r.cites.iter().filter_map(|c| c.at()) {
+            let at = at.key();
             match self.attestors.get_mut(&at) {
                 Some(bucket) => {
                     bucket.insert(&key, r.stamp.place());

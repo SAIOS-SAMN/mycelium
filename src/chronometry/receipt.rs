@@ -422,13 +422,33 @@ pub enum Cite {
     /// A fold's root (45.8): the stamp of the archived prefix's head and
     /// its chain hash.
     Root { at: Stamp, hash: [u8; 32] },
+    /// 78.37, TP1 — THE DOCKET'S HELD CLASS: a ring the orbit's transport
+    /// closed at holonomy ≠ 1, by its class vector inline, and its COVER —
+    /// the charts its thoughts stand on, by their keys, ascending — whose
+    /// containment orders the docket. `None` where the cover did not read:
+    /// the entry's enclosure is owed.
+    Class { class: Box<crate::transducer::sentence::ClassVector>, cover: Option<Vec<Vec<u8>>> },
+    /// THE DOCKET'S DEMAND: an orbit CS2's demand arm left, by its
+    /// undischarged class vector inline — its own plane section names the
+    /// mode (3.9) — and its cover, as a class's.
+    Demand { class: Box<crate::transducer::sentence::ClassVector>, cover: Option<Vec<Vec<u8>>> },
 }
 
 impl Cite {
-    /// The stamp the citation locates by.
-    pub fn at(&self) -> Stamp {
+    /// The stamp the citation locates by — a word's or a root's. A docket's
+    /// class or demand is located by its coordinates, never by a stamp.
+    pub fn at(&self) -> Option<Stamp> {
         match self {
-            Cite::Word { at, .. } | Cite::Root { at, .. } => *at,
+            Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
+            Cite::Class { .. } | Cite::Demand { .. } => None,
+        }
+    }
+
+    /// A docket entry's cover, where it is one and its cover read.
+    pub fn cover(&self) -> Option<&[Vec<u8>]> {
+        match self {
+            Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
+            Cite::Word { .. } | Cite::Root { .. } => None,
         }
     }
 
@@ -454,6 +474,23 @@ impl Cite {
                 rec.push(1);
                 at.put_canonical(&mut rec);
                 rec.extend_from_slice(hash);
+            }
+            Cite::Class { class, cover } | Cite::Demand { class, cover } => {
+                rec.push(match self {
+                    Cite::Class { .. } => 2,
+                    _ => 3,
+                });
+                class.put_canonical(&mut rec);
+                match cover {
+                    None => rec.push(0),
+                    Some(charts) => {
+                        rec.push(1);
+                        rec.extend_from_slice(&(charts.len() as u32).to_le_bytes());
+                        for c in charts {
+                            crate::transducer::address::put_bytes(&mut rec, c);
+                        }
+                    }
+                }
             }
         }
         out.append(&mut rec);
@@ -484,6 +521,35 @@ impl Cite {
                 let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
                 Some(Cite::Root { at, hash })
+            }
+            2 | 3 => {
+                let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);
+                let cover = match *b.get(*p)? {
+                    0 => {
+                        *p += 1;
+                        None
+                    }
+                    1 => {
+                        *p += 1;
+                        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+                        *p += 4;
+                        // Each chart is at least its length; a count the body
+                        // cannot hold refuses before anything is reserved.
+                        if n > b.len().checked_sub(*p)? / 4 {
+                            return None;
+                        }
+                        let mut charts = Vec::with_capacity(n);
+                        for _ in 0..n {
+                            charts.push(crate::transducer::address::take_bytes(b, p)?);
+                        }
+                        Some(charts)
+                    }
+                    _ => return None,
+                };
+                Some(match tag {
+                    2 => Cite::Class { class, cover },
+                    _ => Cite::Demand { class, cover },
+                })
             }
             _ => None,
         }

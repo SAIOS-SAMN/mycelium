@@ -447,7 +447,9 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 classified: 38,
                 unsectioned: 39,
                 ungauged: 40,
+                unclassed: 41,
             },
+            docket: crate::transducer::bubble::DocketReading { pending: 42, open: 43, owed: 44, unwritten: 45 },
         }),
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);

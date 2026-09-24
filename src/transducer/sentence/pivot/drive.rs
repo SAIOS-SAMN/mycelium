@@ -613,6 +613,18 @@ impl Form {
                 if let (Some(cells), Some(chord)) = (cells, self.orbits.get(idx).map(|lp| lp.chord)) {
                     super::cells::note_outcome(cells, chord, &outcome, adjoining, tally);
                 }
+                // 78.37 — THE DEMAND ARM'S DEMAND, carried to the docket: the
+                // orbit's undischarged class and its cover, where no held word
+                // discharged it and none adjoins — and, A19, where the court
+                // has not ruled the class: another mind can supply that word,
+                // so this one does not demand it.
+                if matches!(outcome, Discharge::NoneDischarged) && !adjoining && !held {
+                    snaps.push(Snap::Demanded {
+                        chord: idx,
+                        class: Box::new(kappa.clone()),
+                        charts: self.charts_of_orbit(idx),
+                    });
+                }
                 match outcome {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);

@@ -6,6 +6,7 @@
 
 
 pub mod contemplation;
+pub mod docket;
 pub mod hold;
 pub mod drive;
 pub mod horizon;
@@ -22,6 +23,7 @@ pub(crate) use idea::*;
 pub(crate) use merge::*;
 pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
 pub use transport::TransportTally;
+pub use docket::DocketReading;
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

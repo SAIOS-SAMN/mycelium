@@ -87,8 +87,11 @@ impl Kernel {
         // The first citation is the word ruled; a ruling that names none
         // rules nothing here.
         let [ruled, rest @ ..] = r.cites.as_slice() else { return Heard::Inert };
-        let Some(addr) = self.word_admitted_at(&ruled.at()).cloned() else {
-            return Heard::Waits(ruled.at());
+        // A ruling cites words by their stamps; a citation located by its
+        // coordinates alone (an orbit's docket) names no word to rule here.
+        let Some(ruled_at) = ruled.at() else { return Heard::Inert };
+        let Some(addr) = self.word_admitted_at(&ruled_at).cloned() else {
+            return Heard::Waits(ruled_at);
         };
         let author = r.stamp.vk;
         let verdict = match arm {
@@ -129,9 +132,12 @@ impl Kernel {
         };
         let mut cited = Vec::with_capacity(rest.len());
         for c in rest {
-            match self.word_admitted_at(&c.at()) {
+            // Every citation of a retirement is a word by its stamp; one that
+            // is not names nothing this court can replay the retirement on.
+            let Some(at) = c.at() else { return Heard::Inert };
+            match self.word_admitted_at(&at) {
                 Some(a) => cited.push(a.clone()),
-                None => return Heard::Waits(c.at()),
+                None => return Heard::Waits(at),
             }
         }
         // The rewrite is held, never ruled; every other citation speaks for

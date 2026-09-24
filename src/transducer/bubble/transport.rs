@@ -34,10 +34,16 @@ pub(crate) struct Arrival {
     pub(crate) rotor: Rotor,
     pub(crate) carriage: element::Versor,
     pub(crate) by: Vec<u8>,
+    /// The thought it came from (empty at the source): a ring's thoughts are
+    /// read back along it.
+    pub(crate) prev: Vec<u8>,
     pub(crate) k: u64,
     pub(crate) walked: bool,
     pub(crate) stopped: bool,
     pub(crate) departs: Option<Vec<Departure>>,
+    /// The source's charts, read at the fix before it may leave the meet
+    /// graph; `None` on every other arrival, whose thought is read live.
+    pub(crate) cover: Option<Vec<Vec<u8>>>,
 }
 
 /// An edge a fixed thought departs by: the far thought, the edge's gauge
@@ -59,6 +65,9 @@ pub struct TransportTally {
     pub classified: u64,
     pub unsectioned: u64,
     pub ungauged: u64,
+    /// A disagreement or a held ring whose class did not read (of_rotor
+    /// refused: no conjugacy invariants).
+    pub unclassed: u64,
 }
 
 /// The key of one arrival: the source, then the thought reached, each framed.
@@ -107,6 +116,7 @@ impl Contemplation {
             }
         }
         self.transport.fixed[usize::from(by_class)] += 1;
+        let cover = self.bubbles.get(thought).map(|b| b.cover.scoped().map(|(k, _)| k).collect());
         let key = arrival_key(thought, thought);
         self.fronts.insert(
             &key,
@@ -116,12 +126,42 @@ impl Contemplation {
                 rotor: sec.gamma,
                 carriage: sec.carriage,
                 by: Vec::new(),
+                prev: Vec::new(),
                 k: self.voice_k,
                 walked: false,
                 stopped: false,
                 departs: Some(departs),
+                cover,
             },
         );
+    }
+
+    /// A RING'S COVER: the charts its thoughts stand on, ascending, read back
+    /// from the two arrivals that met along each one's path to the source —
+    /// the source's as read at its fix. `None` where a thought's charts do
+    /// not read (it left the meet graph and was not the source): the
+    /// enclosure is owed on that entry.
+    fn ring_cover(&self, source: &[u8], ends: [&[u8]; 2]) -> Option<Vec<Vec<u8>>> {
+        let mut charts: Keyed<()> = Keyed::new();
+        for end in ends {
+            let mut at = end.to_vec();
+            loop {
+                let a = self.fronts.get(&arrival_key(source, &at))?;
+                let read: Vec<Vec<u8>> = match (&a.cover, self.bubbles.get(&at)) {
+                    (Some(c), _) => c.clone(),
+                    (None, Some(b)) => b.cover.scoped().map(|(k, _)| k).collect(),
+                    (None, None) => return None,
+                };
+                for c in read {
+                    charts.insert(&c, ());
+                }
+                if a.prev.is_empty() {
+                    break;
+                }
+                at = a.prev.clone();
+            }
+        }
+        Some(charts.scoped().map(|(k, _)| k).collect())
     }
 
     /// FIX BY CLASS: a court-ruled word arrived; every thought standing on its
@@ -193,10 +233,12 @@ impl Contemplation {
                                 rotor,
                                 carriage,
                                 by: ek,
+                                prev: from.at.clone(),
                                 k,
                                 walked: false,
                                 stopped: false,
                                 departs: None,
+                                cover: None,
                             },
                         );
                     }
@@ -218,16 +260,22 @@ impl Contemplation {
     /// A NEW ARRIVAL AGAINST THE THOUGHT'S OWN SECTION: a disagreement is a
     /// class, written into the thought's horizon and counted.
     fn classify_arrival(&mut self, at: &[u8], arrived: (&Rotor, &element::Versor)) {
-        let Some(own) = self.complex.sections.get(at).cloned() else { return };
+        let Some(own) = self.complex.sections.get(at).cloned() else {
+            self.transport.unsectioned += 1;
+            return;
+        };
         let agrees = own.gamma.projective_eq(arrived.0) && element::same_versor(&own.carriage, arrived.1);
         if agrees {
             return;
         }
-        if let Some((_, r)) = disagreement((&own.gamma, &own.carriage), arrived) {
-            self.transport.classified += 1;
-            if let Some(b) = self.bubbles.get_mut(at) {
-                horizon_put(&mut b.horizon, r, Standing::Held);
+        match disagreement((&own.gamma, &own.carriage), arrived) {
+            Some((_, r)) => {
+                self.transport.classified += 1;
+                if let Some(b) = self.bubbles.get_mut(at) {
+                    horizon_put(&mut b.horizon, r, Standing::Held);
+                }
             }
+            None => self.transport.unclassed += 1,
         }
     }
 
@@ -254,12 +302,18 @@ impl Contemplation {
             return;
         }
         self.transport.held += 1;
-        if let Some((_, r)) = disagreement(arrived, (&there.rotor, &there.carriage)) {
-            for v in [near, there.at.as_slice()] {
-                if let Some(b) = self.bubbles.get_mut(v) {
-                    horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+        match disagreement(arrived, (&there.rotor, &there.carriage)) {
+            Some((kappa, r)) => {
+                for v in [near, there.at.as_slice()] {
+                    if let Some(b) = self.bubbles.get_mut(v) {
+                        horizon_put(&mut b.horizon, r.clone(), Standing::Held);
+                    }
                 }
+                // 78.37 — THE DOCKET: the held class, its cover beside it.
+                let cover = self.ring_cover(&there.source, [near, there.at.as_slice()]);
+                self.docket_put(crate::chronometry::Cite::Class { class: Box::new(kappa), cover });
             }
+            None => self.transport.unclassed += 1,
         }
         if let Some(a) = self.fronts.get_mut(there_key) {
             a.stopped = true;
