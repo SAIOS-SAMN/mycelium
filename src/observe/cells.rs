@@ -199,6 +199,9 @@ pub struct CellEntry {
     pub enclosure: Option<CellEnclosure>,
     /// CV1b — what the cell's readers could not hold, by content (78.26(4)).
     pub refusals: CellRefusals,
+    /// CS2 — the cell's held constructors, its nuclei, one per body; `None`
+    /// where they did not read.
+    pub constructors: Option<u32>,
 }
 
 /// The refusals by content, written: each carrier's count and its entries,
@@ -396,6 +399,9 @@ pub struct Cells {
     /// 78.26(2), CB1 — the cross-cell bracket of a sentence spanning more
     /// than one cell; `None` where it spans one.
     pub bracket: Option<CellBracket>,
+    /// CS2, 78.32(e) — the cap of the algebra whose rank the capacity reads:
+    /// the unital associative rank, bounded by `(n+2)²` on the form's `n`.
+    pub cap: u32,
 }
 
 /// 78.26(2), CB1 — THE CROSS-CELL BRACKET, COUNTED: the pairs of read
@@ -548,6 +554,13 @@ impl Cells {
                 }
             }
             put_refusals(out, &c.refusals);
+            match c.constructors {
+                Some(k) => {
+                    out.push(1);
+                    out.extend_from_slice(&k.to_le_bytes());
+                }
+                None => out.push(NONE),
+            }
         }
         match self.bracket {
             None => out.push(NONE),
@@ -558,6 +571,7 @@ impl Cells {
                 }
             }
         }
+        out.extend_from_slice(&self.cap.to_le_bytes());
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Cells> {
@@ -658,7 +672,13 @@ impl Cells {
                 _ => return None,
             };
             let refusals = take_refusals(b, p)?;
+            let constructors = match take_u8(b, p)? {
+                1 => Some(take_u32(b, p)? as u32),
+                NONE => None,
+                _ => return None,
+            };
             cells.push(CellEntry {
+                constructors,
                 refusals,
                 enclosure,
                 grade,
@@ -686,6 +706,7 @@ impl Cells {
             }),
             _ => return None,
         };
-        Some(Cells { mirror_planes, mirror_group, cells, bracket })
+        let cap = take_u32(b, p)? as u32;
+        Some(Cells { mirror_planes, mirror_group, cells, bracket, cap })
     }
 }

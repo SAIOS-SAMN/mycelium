@@ -15,6 +15,10 @@ struct GradeRow {
     /// closes, held, open, unread.
     coherence: [u64; 4],
     capacity: Vec<usize>,
+    /// CS2 — each cell's held constructors (`None` unread), and the cells
+    /// whose rank stands above the associative cap `(n+2)²`.
+    held: Vec<Option<u32>>,
+    above_cap: u64,
     /// closed, open, unbounded, unread.
     constructors: [u64; 4],
     /// The span signatures `(p, q, z)` read, with the vector rank.
@@ -84,6 +88,8 @@ fn axis<T: PartialEq + Copy>(all: &[T], x: T) -> usize {
 #[derive(Default)]
 pub(super) struct CellTally {
     rows: Vec<GradeRow>,
+    /// CS2 — the associative cap `(n+2)²` the ranks are read against.
+    cap: u32,
     planes: usize,
     mirror_group: Option<CellClosure>,
     /// 78.26(2) — the cross-cell bracket, where the sentence spans cells.
@@ -99,6 +105,7 @@ impl CellTally {
                 planes: cells.mirror_planes as usize,
                 mirror_group: cells.mirror_group,
                 bracket: cells.bracket,
+                cap: cells.cap,
                 ..CellTally::default()
             };
         for c in &cells.cells {
@@ -116,7 +123,9 @@ impl CellTally {
             row.coherence[axis(&CellCoherence::ALL, c.coherence)] += 1;
             if let Some(k) = c.capacity {
                 row.capacity.push(k as usize);
+                row.above_cap += u64::from(k > cells.cap);
             }
+            row.held.push(c.constructors);
             row.constructors[axis(&CellOrbit::ALL, c.orbit)] += 1;
             row.coxeter[closure_axis(c.coxeter)] += 1;
             if c.polars.is_some() {
@@ -224,13 +233,14 @@ impl CellTally {
                 let cu = r.circuits_unread;
                 let (mu, ou) = (r.modes_unread, r.orbit_unread);
                 format!(
-                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {} | refused: circuits unread cone {} no-place {} not-rigid {} unrefracted {} no-face {} two-ways {} coset {} unnamed {} | modes unread not-versor {} irrational {} defective {} spent {} | capacity none-read {} not-versor {} spent at {:?} overflow (product, entry, bits) {:?} elimination at {:?} | zero meets {} | nuclei unread {} | modes of no admitted order {} | orbit no-reflection {} no-versor {} no-ray {} carry-refused {} carried-no-ray {}",
+                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {} | refused: circuits unread cone {} no-place {} not-rigid {} unrefracted {} no-face {} two-ways {} coset {} unnamed {} | modes unread not-versor {} irrational {} defective {} spent {} | capacity none-read {} not-versor {} spent at {:?} overflow (product, entry, bits) {:?} elimination at {:?} | zero meets {} | nuclei unread {} | modes of no admitted order {} | orbit no-reflection {} no-versor {} no-ray {} carry-refused {} carried-no-ray {} | CS2 held constructors {:?} rank of cap {} above {}",
                     en[0], en[1], en[2], en[3], en[4], en[5], en[6], en[7],
                     cu[0], cu[1], cu[2], cu[3], cu[4], cu[5], cu[6], cu[7],
                     mu[0], mu[1], mu[2], mu[3],
                     r.capacity_refused[0], r.capacity_refused[1], r.capacity_spent, r.capacity_overflow, r.capacity_elimination,
                     r.zero_meets, r.nuclei_unread, r.unordered,
-                    ou[0], ou[1], ou[2], ou[3], ou[4]
+                    ou[0], ou[1], ou[2], ou[3], ou[4],
+                    r.held, self.cap, r.above_cap
                 )
             })
             .collect();

@@ -39,6 +39,12 @@ pub(crate) struct Comprehension {
     pub(crate) enclosures: Vec<Option<CellEnclosure>>,
     /// 78.26(2), CB1 — the cross-cell bracket; `None` for one cell.
     pub(crate) bracket: Option<CellBracket>,
+    /// CS2 — each cell's held constructors, its nuclei, one per body; `None`
+    /// where they did not read.
+    pub(crate) constructors: Vec<Option<usize>>,
+    /// CS2, 78.32(e) — the `n` of the base the form was read on, whose
+    /// associative cap `(n+2)²` bounds the rank the capacity reads.
+    pub(crate) n: u8,
 }
 
 /// 78.26(2), CB1 — THE CROSS-CELL BRACKET OF A SENTENCE SPANNING MORE THAN ONE
@@ -52,10 +58,11 @@ pub(crate) struct Comprehension {
 /// does, UNREAD where a wrapping cell's algebra did not read — and UNREAD
 /// where a generator of the pair did not read, or the two actions differ in
 /// width: cross-cell content this reading cannot form is counted, never
-/// skipped. Each pair is counted once, at the first two cells it spans. A
-/// reading: it spends nothing of the stroke, two products per pair on
-/// actions the cells already read. `None` where the sentence spans one
-/// cell.
+/// skipped. Each pair of circuits is decided ONCE, against the UNION of the
+/// cells wrapping every pair of cells the two cross (R1): a pair held by an
+/// enclosure over any cells it spans is held. A reading: it spends nothing
+/// of the stroke, two products per pair on actions the cells already read.
+/// `None` where the sentence spans one cell.
 pub(crate) fn read_bracket(
     form: &Form,
     traversed: &[crate::transducer::sentence::TraversedCircuit],
@@ -73,84 +80,111 @@ pub(crate) fn read_bracket(
         .iter()
         .map(|xs| xs.iter().copied().filter(|at| traversed.get(*at).is_some_and(|t| t.composite.is_some())).collect())
         .collect();
+    let parents: Vec<Option<usize>> = (0..algebras.len())
+        .map(|i| match enclosures.get(i) {
+            Some(Some(CellEnclosure::Round { within: Some(p), .. })) => Some(*p as usize),
+            _ => None,
+        })
+        .collect();
+    Some(bracket_over(&crossed, &generators, algebras, &parents))
+}
+
+/// THE BRACKET'S CORE, over its inputs alone: each cell's crossing circuits,
+/// its read generators in the order of its actions, its algebra, and its
+/// parent in EN1's parse.
+pub(crate) fn bracket_over(
+    crossed: &[Vec<usize>],
+    generators: &[Vec<usize>],
+    algebras: &[CellAlgebra],
+    parents: &[Option<usize>],
+) -> CellBracket {
     // A pair some one cell is crossed by both of is that cell's own.
     let one_cell_holds = |i: usize, j: usize| crossed.iter().any(|xs| xs.contains(&i) && xs.contains(&j));
-    // Each pair once: at the first two cells it spans.
-    let mut seen: Keyed<()> = Keyed::new();
-    let parent = |i: usize| match enclosures.get(i) {
-        Some(Some(CellEnclosure::Round { within: Some(p), .. })) => Some(*p as usize),
-        _ => None,
-    };
     // The cells wrapping `i`, up EN1's parse; the parse is a forest, and the
     // walk is bounded by the cells' count whatever it holds.
     let ancestors = |i: usize| -> Vec<usize> {
         let mut out = Vec::new();
-        let mut at = parent(i);
+        let mut at = parents.get(i).copied().flatten();
         while let Some(p) = at {
             if out.contains(&p) || out.len() >= algebras.len() {
                 break;
             }
             out.push(p);
-            at = parent(p);
+            at = parents.get(p).copied().flatten();
         }
         out
     };
+    // The cells wrapping both `a` and `c`: their common ancestors, and either
+    // of the two where it wraps the other.
+    let wrapping_both = |a: usize, c: usize| -> Vec<usize> {
+        let (up_a, up_c) = (ancestors(a), ancestors(c));
+        let mut out: Vec<usize> = up_a.iter().copied().filter(|x| up_c.contains(x)).collect();
+        if up_c.contains(&a) {
+            out.push(a);
+        }
+        if up_a.contains(&c) {
+            out.push(c);
+        }
+        out
+    };
+    // A crossing circuit's action in one cell, where it read there.
+    let action = |cell: usize, at: usize| -> Option<&Vec<Vec<num_rational::BigRational>>> {
+        let k = generators.get(cell)?.iter().position(|x| *x == at)?;
+        algebras.get(cell)?.actions.as_ref()?.get(k)
+    };
+    let cells_of = |at: usize| -> Vec<usize> { (0..crossed.len()).filter(|&k| crossed[k].contains(&at)).collect() };
+    // Every crossing circuit once, in its place's order.
+    let mut circuits: Vec<usize> = crossed.iter().flatten().copied().collect();
+    circuits.sort_unstable();
+    circuits.dedup();
     let mut b = CellBracket::default();
-    for a in 0..algebras.len() {
-        for c in (a + 1)..algebras.len() {
-            let (up_a, up_c) = (ancestors(a), ancestors(c));
-            let mut wrapping: Vec<usize> = up_a.iter().copied().filter(|x| up_c.contains(x)).collect();
-            if up_c.contains(&a) {
-                wrapping.push(a);
+    for (x, &i) in circuits.iter().enumerate() {
+        for &j in circuits.iter().skip(x + 1) {
+            // No one cell holds both, so every cell `i` crosses differs from
+            // every cell `j` crosses: the pair spans each of those pairs.
+            if one_cell_holds(i, j) {
+                continue;
             }
-            if up_a.contains(&c) {
-                wrapping.push(c);
-            }
-            // Each crossing circuit's action, where it read, by its place.
-            let action = |cell: usize, at: usize| -> Option<&Vec<Vec<num_rational::BigRational>>> {
-                let k = generators[cell].iter().position(|x| *x == at)?;
-                algebras[cell].actions.as_ref()?.get(k)
-            };
-            for &i in &crossed[a] {
-                for &j in &crossed[c] {
-                    if one_cell_holds(i, j) {
-                        continue;
-                    }
-                    let mut pair = (i.min(j) as u64).to_be_bytes().to_vec();
-                    pair.extend_from_slice(&(i.max(j) as u64).to_be_bytes());
-                    if seen.contains(&pair) {
-                        continue;
-                    }
-                    seen.insert(&pair, ());
-                    // A pair whose generator did not read, or whose two
-                    // actions differ in width, has no bracket this reading
-                    // can form: unread, never skipped.
-                    let (Some(g), Some(h)) = (action(a, i), action(c, j)) else {
-                        b.unread += 1;
-                        continue;
-                    };
-                    if g.len() != h.len() {
-                        b.unread += 1;
-                        continue;
-                    }
-                    let (gh, hg) = (cga::matrix_mul(g, h), cga::matrix_mul(h, g));
-                    if gh == hg {
-                        continue;
-                    }
-                    let bracket: Vec<Vec<num_rational::BigRational>> =
-                        gh.iter().zip(&hg).map(|(r, s)| r.iter().zip(s).map(|(x, y)| x - y).collect()).collect();
-                    let reads: Vec<Option<bool>> =
-                        wrapping.iter().map(|&w| crate::transducer::cech::algebra_contains(&algebras[w], &bracket)).collect();
-                    match (reads.contains(&Some(true)), reads.contains(&None)) {
-                        (true, _) => b.held += 1,
-                        (false, true) => b.unread += 1,
-                        (false, false) => b.lost += 1,
+            let (at_i, at_j) = (cells_of(i), cells_of(j));
+            // R1 — THE WRAPPING SET IS THE UNION over every pair of cells the
+            // two circuits cross.
+            let mut wrapping: Vec<usize> = Vec::new();
+            for &a in &at_i {
+                for &c in &at_j {
+                    for w in wrapping_both(a, c) {
+                        if !wrapping.contains(&w) {
+                            wrapping.push(w);
+                        }
                     }
                 }
             }
+            // The two actions at one width, from any cells they read in.
+            let read_i: Vec<_> = at_i.iter().filter_map(|&a| action(a, i)).collect();
+            let read_j: Vec<_> = at_j.iter().filter_map(|&c| action(c, j)).collect();
+            let same_width = read_i.iter().find_map(|g| read_j.iter().find(|h| h.len() == g.len()).map(|h| (*g, *h)));
+            // A pair whose generator did not read, or whose two actions read
+            // at no one width, has no bracket this reading can form: unread,
+            // never skipped.
+            let Some((g, h)) = same_width else {
+                b.unread += 1;
+                continue;
+            };
+            let (gh, hg) = (cga::matrix_mul(g, h), cga::matrix_mul(h, g));
+            if gh == hg {
+                continue;
+            }
+            let bracket: Vec<Vec<num_rational::BigRational>> =
+                gh.iter().zip(&hg).map(|(r, s)| r.iter().zip(s).map(|(x, y)| x - y).collect()).collect();
+            let reads: Vec<Option<bool>> =
+                wrapping.iter().map(|&w| crate::transducer::cech::algebra_contains(&algebras[w], &bracket)).collect();
+            match (reads.contains(&Some(true)), reads.contains(&None)) {
+                (true, _) => b.held += 1,
+                (false, true) => b.unread += 1,
+                (false, false) => b.lost += 1,
+            }
         }
     }
-    Some(b)
+    b
 }
 
 /// EN1 — EVERY CELL'S ENCLOSURE READ AGAINST THE FORM'S OTHER BODIES: the
@@ -237,7 +271,8 @@ pub(crate) fn comprehend(
     };
     let enclosures = read_enclosures(form);
     let bracket = read_bracket(form, traversed, &algebras, &enclosures);
-    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures, bracket }
+    let constructors = form.cells.scoped().map(|(_, c)| c.nuclei.as_ref().map(Vec::len)).collect();
+    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures, bracket, constructors, n }
 }
 
 fn cell_closure(r: &CoxeterReading) -> CellClosure {
@@ -270,7 +305,9 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .iter()
         .zip(&c.mirrors)
         .zip(&c.enclosures)
-        .map(|((a, ms), enclosure)| CellEntry {
+        .zip(&c.constructors)
+        .map(|(((a, ms), enclosure), held)| CellEntry {
+            constructors: held.map(|k| k as u32),
             refusals: a.refusals.clone(),
             enclosure: enclosure.clone(),
             grade: a.grade as u8,
@@ -334,6 +371,9 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         mirror_group: c.mirror_group.as_ref().map(cell_closure),
         cells,
         bracket: c.bracket,
+        // 78.32(e): the unital associative algebra on the `n + 2` vectors of
+        // `Cl(n+1, 1)` is at most the full matrix algebra, `(n+2)²`.
+        cap: (u32::from(c.n) + 2).pow(2),
     }
 }
 

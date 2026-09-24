@@ -212,3 +212,34 @@ fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
     assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");
 }
+
+/// 78.26(2), R1 — A BRACKET IS HELD BY AN ENCLOSURE OVER ANY CELLS ITS PAIR
+/// SPANS. Circuit 0 (a quarter turn in `e₁₂`) crosses cells A and A′; circuit
+/// 1 (a quarter turn in `e₂₃`) crosses C; the enclosure W wraps A′ and C,
+/// never A, and W's algebra is the one circuits 2 and 3 (the same two turns)
+/// generate, which contains their bracket. Decided at the first cells the
+/// pair spans, (A, C), nothing wraps both and the pair would read LOST; over
+/// the union it is HELD. Circuits 2 and 3 cross W alone, so their pair is
+/// W's own; the pairs of circuit 0 with 3 and of 1 with 2 are held by W over
+/// (A′, W) and (C, W); 0 with 2 and 1 with 3 commute.
+#[test]
+fn a_bracket_is_held_by_an_enclosure_over_any_cells_its_pair_spans() {
+    use crate::transducer::cga::{self, E1, E2, E3};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let across = cga::rotator_on_blade(&q(1), &q(1), E2 | E3);
+    let turn = cga::rotator_on_blade(&q(1), &q(1), E1 | E2).widened(across.n());
+    let stroke = || crate::physics::Physics::default().stroke_n(1 << 16);
+    let cell = |hs: Vec<crate::transducer::cga::Mv>| {
+        crate::transducer::cech::read_cell(1, None, None, &hs.into_iter().map(Ok).collect::<Vec<_>>(), &[], &mut stroke())
+    };
+    // A, A′, C, W.
+    let algebras = vec![cell(vec![turn.clone()]), cell(vec![turn.clone()]), cell(vec![across.clone()]), cell(vec![turn, across])];
+    let crossed = vec![vec![0], vec![0], vec![1], vec![2, 3]];
+    let parents = vec![None, Some(3), Some(3), None];
+    let b = crate::transducer::family::comprehend::bracket_over(&crossed, &crossed, &algebras, &parents);
+    assert_eq!(
+        (b.held, b.lost, b.unread),
+        (3, 0, 0),
+        "held by W over the cells each pair spans, never lost at the first two"
+    );
+}

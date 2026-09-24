@@ -345,6 +345,7 @@ fn the_cells_read_back_whole() {
                     unordered: 2,
                     orbit: Some(OrbitUnread::NoRay { constructor: 1 }),
                 },
+                constructors: Some(2),
             },
             CellEntry {
                 grade: 2,
@@ -368,9 +369,11 @@ fn the_cells_read_back_whole() {
                     orbit: Some(OrbitUnread::CarriedNoRay),
                     ..CellRefusals::default()
                 },
+                constructors: None,
             },
         ],
         bracket: Some(CellBracket { held: 2, lost: 5, unread: 1 }),
+        cap: 25,
     };
     let push = encode_push(&vk(4), &[Reading::Cells(cells.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), vec![Reading::Cells(cells.clone())])));

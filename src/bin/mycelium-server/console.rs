@@ -671,8 +671,18 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             Some(observe::CellDual::Degenerate) => "degenerate",
             None => "unread",
         };
+        // CS2 — the held constructors and the rank against its own cap.
+        let held = match cell.constructors {
+            Some(k) => format!("{k}"),
+            None => "unread".into(),
+        };
+        let rank = match cell.capacity {
+            Some(r) if r > c.cap => format!("rank {r} ABOVE cap {}", c.cap),
+            Some(r) => format!("rank {r} of cap {}", c.cap),
+            None => format!("rank unread of cap {}", c.cap),
+        };
         out.push(format!(
-            "    #{i} grade {}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
+            "    #{i} grade {}  constructors {held}  {rank}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
             cell.grade,
             cell.pairs.iter().map(regime).collect::<Vec<_>>().join(", "),
             closure(cell.coxeter),
