@@ -95,7 +95,7 @@ pub fn relative_pose(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
     }
     let n = a.n();
     if b.n() != n {
-        return Err(NoPose::Incongruent);
+        return Err(NoPose::Incongruent(Incongruence::Base));
     }
     match on_tube(a, b) {
         false => relative_rotor(a, b, crate::transducer::base::GRID_PLANE),
@@ -115,8 +115,17 @@ struct Tower {
     tr: Q,
 }
 
-fn tower(b: &Blade, n: usize) -> Option<Tower> {
+/// THE POINT TOWER'S ONE PRODUCER (78.38): each site as the point it stands
+/// at, about the sites' mean, on `n` axes, beside the count every moment is
+/// normalised by. No lamina's own square enters, so every moment read off
+/// these is floor-free at every order and scales exactly under a similarity
+/// — the tower every RELATION between shapes reads. The nucleus and its
+/// radius, which carry A.12's floor, are the lamina tower's.
+pub(super) fn centred(b: &Blade, n: usize) -> Option<(Q, Vec<Vec<Q>>)> {
     let count = q(i64::try_from(b.support.len()).ok()?);
+    if count.is_zero() {
+        return None;
+    }
     let mut mean = vec![Q::zero(); n];
     for s in &b.support {
         for (i, x) in mean.iter_mut().enumerate() {
@@ -126,20 +135,29 @@ fn tower(b: &Blade, n: usize) -> Option<Tower> {
     for x in mean.iter_mut() {
         *x = &*x / &count;
     }
+    let points = b
+        .support
+        .iter()
+        .map(|s| mean.iter().enumerate().map(|(i, c)| s.axis(i).map(|v| q(v) - c)).collect::<Option<Vec<Q>>>())
+        .collect::<Option<Vec<Vec<Q>>>>()?;
+    Some((count, points))
+}
+
+fn tower(b: &Blade, n: usize) -> Option<Tower> {
+    let (count, points) = centred(b, n)?;
     let mut m = vec![vec![Q::zero(); n]; n];
     let mut t = vec![Q::zero(); n];
     let mut n4 = vec![vec![Q::zero(); n]; n];
-    for s in &b.support {
-        let d: Vec<Q> = mean.iter().enumerate().map(|(i, c)| s.axis(i).map(|v| q(v) - c)).collect::<Option<_>>()?;
+    for d in &points {
         let r2 = d.iter().fold(Q::zero(), |acc, x| acc + x * x);
-        for ((row, row4), di) in m.iter_mut().zip(n4.iter_mut()).zip(&d) {
-            for ((x, x4), dj) in row.iter_mut().zip(row4.iter_mut()).zip(&d) {
+        for ((row, row4), di) in m.iter_mut().zip(n4.iter_mut()).zip(d) {
+            for ((x, x4), dj) in row.iter_mut().zip(row4.iter_mut()).zip(d) {
                 let p = di * dj;
                 *x4 += &p * &r2;
                 *x += p;
             }
         }
-        for (x, di) in t.iter_mut().zip(&d) {
+        for (x, di) in t.iter_mut().zip(d) {
             *x += di * &r2;
         }
     }
@@ -359,10 +377,10 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
             }
             return Err(match solve(&wa, &wb, n).filter(|r| carries_tower(r, &ta, &tb, &rho2, n)) {
                 Some(_) => NoPose::Mirrored,
-                None => NoPose::Incongruent,
+                None => NoPose::Incongruent(Incongruence::Tube),
             });
         }
-        (None, false) => return Err(NoPose::Incongruent),
+        (None, false) => return Err(NoPose::Incongruent(Incongruence::Tube)),
     };
     match det(r.clone()) < Q::zero() {
         true => Err(NoPose::Mirrored),
@@ -421,7 +439,7 @@ fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: 
     let kernel: Vec<Vec<Vec<Q>>> =
         cga::nullspace(rows, n * n).into_iter().map(|v| v.chunks(n).map(<[Q]>::to_vec).collect()).collect();
     let lines: Vec<Vec<Vec<Q>>> = match kernel.as_slice() {
-        [] => return Err(NoPose::Incongruent),
+        [] => return Err(NoPose::Incongruent(Incongruence::Tube)),
         [x] => vec![x.clone()],
         [x1, x2] => match orthogonal_lines(x1, x2, n) {
             Lines::Found(l) => l,
@@ -457,7 +475,7 @@ fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: 
         ([r], _) => Ok(Pose::Turn(versor_of(r, n))),
         ([r, s], _) => Ok(Pose::HalfOpen(vec![versor_of(r, n), versor_of(s, n)])),
         ([], true) => Err(NoPose::Mirrored),
-        ([], false) => Err(NoPose::Incongruent),
+        ([], false) => Err(NoPose::Incongruent(Incongruence::Tube)),
         _ => Err(NoPose::Unoriented),
     }
 }

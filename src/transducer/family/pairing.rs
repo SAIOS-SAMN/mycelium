@@ -64,10 +64,13 @@ pub struct ContactTally {
     /// Proved improper: a reflection carries the pair. Permanent, and no
     /// generator will ever retire it.
     pub mirrored: u64,
-    /// Proved unlike: no element of `D₄` carries the pair at all. Also
-    /// permanent, and kept apart from `mirrored` because a corpus of
-    /// handed pairs and a corpus of unlike ones want different answers.
-    pub incongruent: u64,
+    /// Proved unlike: no motion carries the pair at all. Also permanent, and
+    /// kept apart from `mirrored` because a corpus of handed pairs and a
+    /// corpus of unlike ones want different answers — and split by content
+    /// (78.38(2), (C)): where neither similarity carries the pair, by the
+    /// order each tower refused at (`orders[region − 2][sites − 2]`); in
+    /// chirality alone; on bases of different `n`; on the tube.
+    pub incongruent: Incongruents,
     /// FR1 — a pair on the tube whose scale `ρ²` is not a rational square:
     /// no versor over ℚ relates them, and nothing is claimed about whether
     /// they are alike.
@@ -91,11 +94,42 @@ pub struct ContactTally {
     pub tube: u64,
 }
 
+/// THE INCONGRUENT POSES BY CONTENT (78.38(2), (C)).
+#[derive(Default, Clone, Copy, Debug)]
+pub struct Incongruents {
+    /// Neither similarity carries the pair: by the order the region tower
+    /// refused at (row, 2 to 4) and the site tower (column, 2 to 4).
+    pub orders: [[u64; 3]; 3],
+    pub chirality: u64,
+    pub base: u64,
+    pub tube: u64,
+}
+
+impl Incongruents {
+    pub fn total(&self) -> u64 {
+        self.orders.iter().flatten().sum::<u64>() + self.chirality + self.base + self.tube
+    }
+
+    fn note(&mut self, why: blade::Incongruence) {
+        match why {
+            blade::Incongruence::Order { region, sites } => {
+                let at = |m: u8| usize::from(m.clamp(2, 4) - 2);
+                self.orders[at(region)][at(sites)] += 1;
+            }
+            blade::Incongruence::Chirality => self.chirality += 1,
+            blade::Incongruence::Base => self.base += 1,
+            blade::Incongruence::Tube => self.tube += 1,
+        }
+    }
+}
+
 thread_local! {
     static CONTACTS: Cell<ContactTally> = const { Cell::new(ContactTally {
         offered: 0, unlifted: 0, apart: 0, tangent_external: 0, intersecting: 0,
         tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
-        oblique: 0, mirrored: 0, incongruent: 0, irrational: 0, half_open: 0,
+        oblique: 0, mirrored: 0,
+        incongruent: Incongruents { orders: [[0; 3]; 3], chirality: 0, base: 0, tube: 0 },
+        irrational: 0, half_open: 0,
         unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0,
     }) };
 }
@@ -128,9 +162,9 @@ impl ContactTally {
         format!(
             "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
-             unoriented {} oblique {} mirrored {} incongruent {} irrational {} \
-             half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} static {} \
-             | pose refusals by kind: P {} D {} I {}",
+             unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
+             tube {}) irrational {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
+             static {} | pose refusals by kind: P {} D {} I {}",
             self.offered,
             self.unlifted,
             self.apart,
@@ -144,7 +178,11 @@ impl ContactTally {
             self.unoriented,
             self.oblique,
             self.mirrored,
-            self.incongruent,
+            self.incongruent.total(),
+            self.incongruent.orders,
+            self.incongruent.chirality,
+            self.incongruent.base,
+            self.incongruent.tube,
             self.irrational,
             self.half_open,
             self.unspelled,
@@ -163,17 +201,32 @@ impl ContactTally {
     /// unclassified. An unoriented pair is a held stabilizer and counts in
     /// none.
     pub fn kinds(&self) -> [u64; 6] {
-        use crate::transducer::blade::NoPose;
+        use crate::transducer::blade::{Incongruence, NoPose};
         let mut out = [0u64; 6];
+        let i = &self.incongruent;
+        // Each incongruent arm by its own content, every cell of the orders.
+        let orders = (0u8..3).flat_map(|r| {
+            (0u8..3).map(move |s| {
+                (
+                    NoPose::Incongruent(Incongruence::Order { region: r + 2, sites: s + 2 }),
+                    i.orders[usize::from(r)][usize::from(s)],
+                )
+            })
+        });
         for (arm, n) in [
             (NoPose::Bodiless, self.bodiless),
             (NoPose::Isotropy, self.isotropy),
             (NoPose::Unoriented, self.unoriented),
             (NoPose::Oblique, self.oblique),
             (NoPose::Mirrored, self.mirrored),
-            (NoPose::Incongruent, self.incongruent),
+            (NoPose::Incongruent(Incongruence::Chirality), i.chirality),
+            (NoPose::Incongruent(Incongruence::Base), i.base),
+            (NoPose::Incongruent(Incongruence::Tube), i.tube),
             (NoPose::Irrational, self.irrational),
-        ] {
+        ]
+        .into_iter()
+        .chain(orders)
+        {
             if let Some(k) = arm.obstruction_kind() {
                 out[k.index()] += n;
             }
@@ -185,7 +238,7 @@ impl ContactTally {
     /// is the mutable half — a proper turn the alphabet is merely short of
     /// — and the two permanent arms are the geometry's own answer.
     pub fn mutable_over_permanent(&self) -> (u64, u64) {
-        (self.oblique, self.mirrored + self.incongruent)
+        (self.oblique, self.mirrored + self.incongruent.total())
     }
 }
 
@@ -360,7 +413,7 @@ pub(crate) fn contact_edge(
                 blade::NoPose::Unoriented => t.unoriented += 1,
                 blade::NoPose::Oblique => t.oblique += 1,
                 blade::NoPose::Mirrored => t.mirrored += 1,
-                blade::NoPose::Incongruent => t.incongruent += 1,
+                blade::NoPose::Incongruent(why) => t.incongruent.note(why),
                 blade::NoPose::Irrational => t.irrational += 1,
             });
             None

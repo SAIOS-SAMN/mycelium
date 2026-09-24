@@ -133,9 +133,9 @@ fn relative_phase(ha: &[BigRational; 2], hb: &[BigRational; 2]) -> (BigRational,
 /// there to read, and the caller keeps the `ℤ₂` freedom rather than
 /// choosing a sign it cannot see (which is what manufactures a phantom
 /// holonomy around a cycle).
-fn relative_turn_ray(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
-    let (ua, ub) = (deviatoric(a, plane)?, deviatoric(b, plane)?);
-    let (ta, tb) = (third_harmonic(a, plane)?, third_harmonic(b, plane)?);
+fn relative_turn_ray(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<(BigRational, BigRational)> {
+    let (ua, ub) = (harmonic(a, plane, tower, 2)?, harmonic(b, plane, tower, 2)?);
+    let (ta, tb) = (harmonic(a, plane, tower, 3)?, harmonic(b, plane, tower, 3)?);
     let z2 = relative_phase(&ua, &ub);
     let z3 = relative_phase(&ta, &tb);
     // `z₃ · conj(z₂)`.
@@ -179,8 +179,8 @@ enum Handedness {
     Unread,
 }
 
-fn handedness(a: &Blade, b: &Blade, plane: (usize, usize)) -> Handedness {
-    let (Some(za), Some(zb)) = (chirality(a, plane), chirality(b, plane)) else {
+fn handedness(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Handedness {
+    let (Some(za), Some(zb)) = (chirality_on(a, plane, tower), chirality_on(b, plane, tower)) else {
         return Handedness::Unread;
     };
     if same_ray(&za, &zb) {
@@ -298,14 +298,18 @@ pub enum NoPose {
     /// shape" — which is rule 11's defect at the producer: two facts of
     /// opposite permanence answering to one name.
     Mirrored,
-    /// NO ELEMENT OF `D₄` CARRIES IT, PROPER OR IMPROPER. The moments
-    /// agreed far enough to get here and the cells then disagreed: a
-    /// genuine difference of shape, which no turn and no mirror repairs.
+    /// NO MOTION CARRIES IT, PROPER OR IMPROPER: a genuine difference of
+    /// shape, which no turn and no mirror repairs — and WHERE, by content
+    /// (78.38(2)): the harmonic order at which the two point towers disagree
+    /// on the spread, the chirality where every order agrees and `Z` does
+    /// not, or the base and the tube the pose reads on. A pair that agrees
+    /// on the spread and not on the nucleus radius is one shape at two
+    /// scales and is not incongruent.
     ///
     /// Permanent, like [`NoPose::Mirrored`], but for a different reason,
     /// and the two are kept apart because a census that merges them cannot
     /// say whether a corpus is full of handed pairs or of unlike ones.
-    Incongruent,
+    Incongruent(Incongruence),
     /// FR1 — THE TUBES' SCALE IS NOT RATIONAL. On the tube the scale is
     /// read from the two bodies' second moments, `ρ² = tr M_b / tr M_a`,
     /// and where `ρ²` is not a rational square no versor over ℚ carries one
@@ -315,6 +319,19 @@ pub enum NoPose {
     /// nor `Oblique` (whose question is the square base's turns, one
     /// section's).
     Irrational,
+}
+
+/// WHERE TWO SHAPES DISAGREE (78.38(2), (C)): where neither similarity of the
+/// lattice carries them, at the harmonic order each tower refused at (the
+/// region's, the sites'); in chirality alone where one does; on bases of
+/// different `n`; or on the tube, where no orthogonal map carries the one
+/// tower onto the other.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Incongruence {
+    Order { region: u8, sites: u8 },
+    Chirality,
+    Base,
+    Tube,
 }
 
 impl NoPose {
@@ -327,7 +344,9 @@ impl NoPose {
     pub fn obstruction_kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
         use crate::transducer::sentence::ObstructionKind;
         match self {
-            NoPose::Mirrored | NoPose::Incongruent | NoPose::Isotropy | NoPose::Irrational => Some(ObstructionKind::P),
+            NoPose::Mirrored | NoPose::Incongruent(_) | NoPose::Isotropy | NoPose::Irrational => {
+                Some(ObstructionKind::P)
+            }
             NoPose::Oblique => Some(ObstructionKind::D),
             NoPose::Bodiless => Some(ObstructionKind::I),
             NoPose::Unoriented => None,
@@ -354,10 +373,11 @@ fn orientation_of(
     a: &Blade,
     b: &Blade,
     plane: (usize, usize),
+    tower: Tower,
 ) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoPose> {
-    match (deviatoric(a, plane), deviatoric(b, plane)) {
+    match (harmonic(a, plane, tower, 2), harmonic(b, plane, tower, 2)) {
         (Some(ua), Some(ub)) => Ok((2, ua, ub)),
-        (None, None) => match (quartic_harmonic(a, plane), quartic_harmonic(b, plane)) {
+        (None, None) => match (harmonic(a, plane, tower, 4), harmonic(b, plane, tower, 4)) {
             (Some(qa), Some(qb)) => Ok((4, qa, qb)),
             _ => Err(NoPose::Unoriented),
         },
@@ -399,7 +419,8 @@ fn orientation_of(
 /// by `s⁸ > 0`, and dividing out the content removes it.
 pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigInt, BigInt)> {
     use num_integer::Integer;
-    let (order, oa, ob) = orientation_of(a, b, plane).ok()?;
+    // Read on the tower whose similarity carries the pair (78.38 (C)).
+    let (order, oa, ob) = orientation_of(a, b, plane, reading_tower(a, b, plane).0).ok()?;
     // ORDER 2 ONLY, AND THAT IS A REFUSAL RATHER THAN A GAP. The quartic
     // orients a body the deviatoric cannot, but it turns at `4φ`, so its
     // arc answers `w⁸ ∝ z` and a witness minted from it would name a
@@ -442,7 +463,11 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
-    let (order, oa, ob) = orientation_of(a, b, plane)?;
+    // 78.38 (C) — BOTH TOWERS ARE READ, and the relation is read on the tower
+    // whose similarity carries the pair: the sites' where only a site map
+    // does, the region's otherwise.
+    let (tower, certified) = reading_tower(a, b, plane);
+    let (order, oa, ob) = orientation_of(a, b, plane, tower)?;
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
     // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
@@ -510,19 +535,15 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
         // relating them. Chirality answers the ODD question only.
         //
         // The EVEN question is A.12's, already built: a similarity must
-        // carry the whole normalised tower, `‖M̃_b^(m)‖²·(r_a²)^m =
-        // ‖M̃_a^(m)‖²·(r_b²)^m` at every order. A pair the certificate
-        // refuses is not similar at ANY angle — permanent, proved by an
-        // invariant, and nothing about a lattice is assumed.
+        // carry the whole normalised point tower, `‖h_b^(m)‖²·(s_a²)^m =
+        // ‖h_a^(m)‖²·(s_b²)^m` at every order, on the spread (78.38). A pair
+        // the certificate refuses is not similar at ANY angle — permanent,
+        // proved by an invariant, and nothing about a lattice is assumed.
         //
         // Both gates must pass for the question to stay open. `Unread` is
         // no chirality reading at all, so it proves nothing on its own and
         // leans entirely on the certificate.
-        return Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
-            (Handedness::Improper, _) => NoPose::Mirrored,
-            (Handedness::Unrelated, _) | (_, false) => NoPose::Incongruent,
-            _ => NoPose::Oblique,
-        });
+        return Err(unturned(a, b, plane, tower, certified));
     };
     // A BODY WITH NO CENTROID HAS NO MOMENTS, so the odd harmonic below
     // cannot be read and the pair is bodiless rather than unturned.
@@ -552,7 +573,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // reading — the `ℤ₂` gauge freedom the coboundary arbitrates, not a
     // measurement this reader failed to take.
     let turns = quarter_turns(plane);
-    let Some(phi) = relative_turn_ray(a, b, plane) else {
+    let Some(phi) = relative_turn_ray(a, b, plane, tower) else {
         return Ok(Pose::HalfOpen(turn_pair.iter().map(|&ix| turns[ix].2.clone()).collect()));
     };
     let q = |n: i64| BigRational::from_integer(BigInt::from(n));
@@ -567,9 +588,34 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // own invariants say — the same question asked on the oblique branch
     // above, asked here too, because a ruling applies to every site of its
     // shape and not only to the one that reported it.
-    Err(match (handedness(a, b, plane), dilation_certified(a, b, plane)) {
+    Err(unturned(a, b, plane, tower, certified))
+}
+
+/// 78.38 (C) — THE TOWER A PAIR'S RELATION IS READ ON, and the certificate
+/// that named it: the tower whose similarity carries the pair, the region's
+/// where none does (the relation is then refused on it, at the order each
+/// tower names).
+fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<Dilation, (u8, u8)>) {
+    let certified = dilation(a, b, plane);
+    let tower = match certified {
+        Ok(d) => d.tower(),
+        Err(_) => Tower::Region,
+    };
+    (tower, certified)
+}
+
+/// WHICH FACT A PAIR NO TURN OF THE BASE RELATES IS: mirrored where the odd
+/// invariants are conjugate on the tower read; incongruent where both towers
+/// refuse the pair as dilates — at the order each names — or where a
+/// similarity carries it and the chirality alone differs; oblique where a
+/// similarity carries it and a proper motion is consistent — the one arm a
+/// demand retires (D3). One statement for both of `relative_rotor`'s
+/// branches (law 12).
+fn unturned(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower, certified: Result<Dilation, (u8, u8)>) -> NoPose {
+    match (handedness(a, b, plane, tower), certified) {
         (Handedness::Improper, _) => NoPose::Mirrored,
-        (Handedness::Unrelated, _) | (_, false) => NoPose::Incongruent,
-        _ => NoPose::Oblique,
-    })
+        (_, Err((region, sites))) => NoPose::Incongruent(Incongruence::Order { region, sites }),
+        (Handedness::Unrelated, Ok(_)) => NoPose::Incongruent(Incongruence::Chirality),
+        (Handedness::Proper | Handedness::Unread, Ok(_)) => NoPose::Oblique,
+    }
 }

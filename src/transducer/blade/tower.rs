@@ -1,44 +1,60 @@
-// 55.3, 65.6, 68, A.12 — THE MOMENT TOWER: a body's harmonics at orders
-// two, three and four, normalised by its zeroth moment, the chirality they
-// compose, and the certificate that two bodies are dilates.
+// 55.3, 65.6, 68, A.12, 78.38 — THE TWO TOWERS OF A BODY ON A PLANE: its
+// harmonics at orders two, three and four and its scale, read on the REGION
+// (each lamina's unit square integrated) and on the SITES (each site the point
+// it stands at); the chirality they compose; and the certificate that two
+// bodies are dilates, naming which similarity of the lattice carries them.
+//
+//! 78.38 (C) — TWO SIMILARITIES OF THE LATTICE, ONE TOWER EACH. A body is
+//! read two ways, one producer each (law 12: two readings of one body, not
+//! two carriers of one reading):
+//!
+//! - the REGION tower (`moment2`, `quartic_on`, the lamina moments,
+//!   `radius2`): each site's unit square integrated. A filled blow-up — each
+//!   cell to a `k×k` block, ARC's scale tasks — is an EXACT similarity here,
+//!   because a block of unit squares is one square of side `k`.
+//! - the SITE tower ([`super::pose::centred`], the spread): each site the
+//!   point it stands at. A site map `z ↦ λz` — the demand's Gaussian case,
+//!   a body and its `(4 + i)` image — is an EXACT similarity here.
+//!
+//! Each tower has a floor the other lacks (the lamina's unit square, the
+//! point tower's sub-site offsets), and a similarity is read on the tower
+//! whose floor it scales. Both are always read and neither is chosen by a
+//! score: a pair is dilates where EITHER tower certifies it, and the reading
+//! names which.
 
 use super::*;
 
-/// THE DEVIATORIC VECTOR OF A BODY'S SECOND MOMENT — its ORIENTATION,
-/// exact in ℚ and taken with no root (55.3, ruled 2026-09-22).
-///
-/// `inertia` holds the whole tensor; `r2` already takes its TRACE and uses
-/// it where a radius belongs. The trace is an `SO(2)` invariant, so it
-/// says how big a body is and nothing about which way it faces — a body
-/// read through its trace alone is an ISOTROPIC POINT MASS, two of them
-/// have no relative angle, and the only relation left between them is the
-/// geodesic through their centres:
-///
-/// ```text
-///     R = 1 − v_b v_a,  ⟨R⟩₂ = v_a ∧ v_b,  (v_a∧v_b)∧(v_a∧v_b) = 0
-/// ```
-///
-/// a simple blade, `I₂ ≡ 0`, `ℓ = 1`. What orients the body is the
-/// ANISOTROPIC remainder, `M₂ − ½tr(M₂)I`, which in `Cl(2,0)` is a vector:
-///
-/// ```text
-///     u = ((I_xx − I_yy)/2) e₁ + I_xy e₂
-/// ```
-///
-/// A rank-2 symmetric tensor turns at TWICE the body's angle, so `u` turns
-/// at `2φ`. `None` where `u = 0`: a body whose inertia is isotropic — a
-/// single lamina, a square, a cross — has no principal axis, and refusing
-/// is the honest answer rather than an arbitrary axis (rule 11). Such a
-/// body is oriented by [`quartic_harmonic`] instead, which turns at `4φ`.
-/// A.12 — THE ZEROTH MOMENT, and the one place the tower is normalised.
-///
-/// `M₀ = ∫ 1 dA` is the body's own area, which on this base is its lamina
-/// count. Every central moment divides by it, so a moment of harmonic order
-/// `m` carries homogeneous degree `m` and nothing downstream needs a table
-/// of per-carrier weights.
-///
-/// `None` on an empty support: a body with no laminae has no moments to
-/// normalise, and dividing by zero is not a reading (rule 11).
+/// WHICH TOWER A HARMONIC IS READ ON (78.38).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Tower {
+    /// Each lamina's unit square integrated: exact for filled blow-ups.
+    Region,
+    /// Each site the point it stands at: exact for site maps `z ↦ λz`.
+    Sites,
+}
+
+/// WHICH SIMILARITY OF THE LATTICE CARRIES A PAIR (78.38 (C)), where one
+/// does: of the region, of the site set, or of both.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Dilation {
+    Region,
+    Sites,
+    Both,
+}
+
+impl Dilation {
+    /// The tower the pair's relation is read on: the one that certified it;
+    /// the region's where both did, by the one fixed rule, never a score.
+    pub fn tower(self) -> Tower {
+        match self {
+            Dilation::Sites => Tower::Sites,
+            Dilation::Region | Dilation::Both => Tower::Region,
+        }
+    }
+}
+
+/// A.12 — THE ZEROTH MOMENT, the one place either tower is normalised: the
+/// body's lamina count. `None` on an empty support (rule 11).
 fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
     match blade.support.len() {
         0 => None,
@@ -46,218 +62,194 @@ fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
     }
 }
 
-///
-/// ON A PLANE `(i, j)` GENERATED FROM `n` (BQ4): `u = ((I_ii − I_jj)/2,
-/// I_ij)/M₀`, read in that plane's own coordinates. The caller names the
-/// plane it reads; `None` also for a plane the body's base does not have.
-pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    let two = BigRational::from_integer(BigInt::from(2));
-    let (i, j) = plane;
-    // A.12 — NORMALISED BY `M₀`, so the tower speaks one dimension.
-    //
-    // MEASURED BEFORE THIS (65.6): `radius2()` is `Tr(I)/M₀`, a length²
-    // scaling as `ρ²`, while this returned RAW `inertia` combinations,
-    // which carry the area's own weight — `∫x² ~ ρ²·ρ² = ρ⁴` — so
-    // `‖D‖²` scaled as `ρ⁸` where the harmonic order `m = 2` predicts
-    // `ρ⁴`. One tower at two normalisations is law 12 inside a single
-    // carrier, and it forced every consumer to hold a private table of
-    // degrees: `{r² ↦ 2, D ↦ 4, Q ↦ 6}`, a lookup masquerading as
-    // geometry.
-    //
-    // Normalised, a moment of azimuthal order `m` carries degree `m`, and
-    // the scale certificate reads its exponent straight off the gauge
-    // order with no table at all:
-    //
-    // ```text
-    //     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
-    // ```
-    let m0 = zeroth_moment(blade)?;
-    let u1 = (blade.moment2(i, i)? - blade.moment2(j, j)?) / &two / &m0;
-    let u2 = blade.moment2(i, j)? / &m0;
-    match u1.is_zero() && u2.is_zero() {
+/// A harmonic that vanishes is no reading at that order (rule 11).
+fn nonzero(h: [BigRational; 2]) -> Option<[BigRational; 2]> {
+    match h[0].is_zero() && h[1].is_zero() {
         true => None,
-        false => Some([u1, u2]),
+        false => Some(h),
     }
 }
 
-/// THE FOURTH HARMONIC OF A BODY — the orientation of a shape whose
-/// inertia is isotropic, turning at FOUR times the body's angle.
-///
-/// `quartic` already holds `(∫(u⁴−6u²v²+v⁴), ∫(4u³v−4uv³))` beside the
-/// isotropic part. A square's second moment cannot tell it from a disc;
-/// its fourth moment can, and on the square base that is exactly the `D₄`
-/// discriminator. `None` where this vanishes too, which is a body with no
-/// orientation at either order. On the plane the caller names (BQ4).
-pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    // A.12 — normalised by `M₀`, as the deviatoric is. Raw, this carried
-    // `∫x⁴ ~ ρ⁶` and `‖Q‖²` scaled as `ρ¹²`; normalised it is degree 4,
-    // the harmonic order it is named for.
-    let m0 = zeroth_moment(blade)?;
-    let [_, qx, qy] = blade.quartic_on(plane)?;
-    let (h4x, h4y) = (qx / &m0, qy / &m0);
-    match h4x.is_zero() && h4y.is_zero() {
-        true => None,
-        false => Some([h4x, h4y]),
-    }
+/// THE SITE TOWER'S POINTS ON A PLANE: each site's two coordinates on `(i, j)`
+/// about the sites' mean, with the count.
+fn plane_points(blade: &Blade, plane: (usize, usize)) -> Option<(BigRational, Vec<(BigRational, BigRational)>)> {
+    let (count, points) = super::pose::centred(blade, blade.n())?;
+    let pts = points
+        .iter()
+        .map(|d| Some((d.get(plane.0)?.clone(), d.get(plane.1)?.clone())))
+        .collect::<Option<Vec<_>>>()?;
+    Some((count, pts))
 }
 
-/// A.12 — IS THIS PAIR RELATED BY A DILATION, OR BY A SHEAR?
-///
-/// A trace ratio cannot tell: a 2×2 square and a 1×4 bar of equal `Tr(I)`
-/// have the same `r²` and are not dilates of one another. The whole
-/// normalised tower must correspond, and with the tower at one
-/// normalisation a moment of azimuthal order `m` carries degree `m`, so
-/// the certificate reads its exponent STRAIGHT OFF THE GAUGE ORDER:
-///
-/// ```text
-///     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
-/// ```
-///
-/// checked at `m = 2` (deviatoric) and `m = 4` (quartic), by exact cross
-/// multiplication in ℚ with no root taken and no table of weights. Each
-/// `‖M̃^(m)‖²` is THE METRIC ON A VECTOR (78.28(4), VA2): a harmonic moment
-/// is a 2-vector and its square is its own content.
-///
-/// A VANISHING HARMONIC IS PART OF THE READING, not a gap in it. A `C₄`
-/// body has no deviatoric at all, so a pair where one vanishes and the
-/// other does not is REFUSED — they cannot be dilates, since a dilation
-/// preserves every harmonic's vanishing. Both vanishing is agreement.
-///
-/// ON THE PLANE ITS CALLER READS (BQ4). The norms of a plane's harmonics are
-/// invariant under turns IN that plane and not under turns out of it, so a
-/// certificate taken over every plane would refuse a pair a turn in one
-/// plane relates; the certificate belongs to the plane the relation is read
-/// on, as the turn does.
-pub fn dilation_certified(a: &Blade, b: &Blade, plane: (usize, usize)) -> bool {
-    let (ra2, rb2) = (a.radius2(), b.radius2());
-    let norm2 = |v: [BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
-    let zero = BigRational::from_integer(BigInt::from(0));
-    let order = |ma: Option<[BigRational; 2]>, mb: Option<[BigRational; 2]>, m: usize| {
-        match (ma, mb) {
-            // Both isotropic at this order: they agree, and nothing is
-            // asserted about a harmonic neither body carries.
-            (None, None) => true,
-            // One carries the harmonic and the other does not. A dilation
-            // preserves vanishing, so this is a shape difference (rule 11:
-            // the refusal is the reading).
-            (None, Some(_)) | (Some(_), None) => false,
-            (Some(x), Some(y)) => {
-                norm2(y) * ra2.pow(m as i32) == norm2(x) * rb2.pow(m as i32)
-            }
+/// A BODY'S SCALE ON ONE TOWER: the region's radius `radius2` (its unit squares
+/// integrated), or the sites' spread `Σ(u² + v²)/M₀` on the plane.
+pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
+    match tower {
+        Tower::Region => Some(blade.radius2()),
+        Tower::Sites => {
+            let (count, pts) = plane_points(blade, plane)?;
+            Some(pts.iter().fold(BigRational::zero(), |acc, (u, v)| acc + u * u + v * v) / count)
         }
-    };
-    let _ = zero;
-    order(deviatoric(a, plane), deviatoric(b, plane), 2)
-        && order(quartic_harmonic(a, plane), quartic_harmonic(b, plane), 4)
+    }
 }
 
-/// THE CHIRALITY OF A BODY — AN ODD INVARIANT OF ITS OWN HARMONIC TOWER
-/// (V1 recut, 68 — ruled 2026-09-22).
+/// THE HARMONIC OF AZIMUTHAL ORDER `m` (2, 3 or 4) ON ONE TOWER, normalised by
+/// `M₀` so it carries degree `m` (A.12); turning at `m·φ`. `None` where it
+/// vanishes, or for an order the towers do not carry.
 ///
-/// THE FIRST CUT OF V1 ANSWERED THIS WITH A LATTICE, AND THAT WAS THE
-/// DEFECT. It carried a table of the four improper elements of `D₄`,
-/// applied each to the CELLS about the centroid, and compared coordinate
-/// lists. Three separate flattenings in one helper: a hardcoded generator
-/// set, raw coordinate scraping in place of geometry, and a permanence
-/// argument resting on the crystallographic restriction of `ℤ²` — none of
-/// which mean anything in `Cl(4,1)`, where the base is conformal and a
-/// body is its moment tower, not a set of squares.
-///
-/// THE INTRINSIC READING. Under a rotation by `φ` the harmonic of
-/// azimuthal order `m` carries `h_m ↦ e^{imφ}·h_m`; under a reflection in
-/// the axis at `α` it carries `h_m ↦ e^{imα}·conj(h_m)`. So the
-/// combination
+/// - order 2, the DEVIATORIC `((Σu² − Σv²)/2, Σuv)/M₀` — the body's axis; the
+///   lamina's isotropic `1/12` cancels in it, so the two towers agree here.
+/// - order 3, `Σ(u + iv)³/M₀` — the odd moment that closes the half turn. On
+///   the region each square's odd corrections cancel on the grid plane, and
+///   a site off the grid is a point along that axis.
+/// - order 4, `Σ(u + iv)⁴/M₀` — the orientation of a shape isotropic at order
+///   two; on the region it carries each lamina's axis-aligned floor.
+pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Option<[BigRational; 2]> {
+    let (two, three, four, six) = (
+        BigRational::from_integer(BigInt::from(2)),
+        BigRational::from_integer(BigInt::from(3)),
+        BigRational::from_integer(BigInt::from(4)),
+        BigRational::from_integer(BigInt::from(6)),
+    );
+    let (i, j) = plane;
+    match (tower, m) {
+        (Tower::Region, 2) => {
+            let m0 = zeroth_moment(blade)?;
+            let u1 = (blade.moment2(i, i)? - blade.moment2(j, j)?) / &two / &m0;
+            let u2 = blade.moment2(i, j)? / &m0;
+            nonzero([u1, u2])
+        }
+        (Tower::Region, 3) => {
+            let centroid = blade.centroid()?;
+            let (ci, cj) = (centroid.get(i)?, centroid.get(j)?);
+            let m0 = zeroth_moment(blade)?;
+            let (mut re, mut im) = (BigRational::zero(), BigRational::zero());
+            for site in &blade.support {
+                let a = BigRational::from_integer(BigInt::from(site.axis(i)?)) - ci;
+                let b = BigRational::from_integer(BigInt::from(site.axis(j)?)) - cj;
+                let [u1, u2, u3, _] = super::body::lamina_moments(&a, crate::transducer::base::is_grid_axis(i));
+                let [v1, v2, v3, _] = super::body::lamina_moments(&b, crate::transducer::base::is_grid_axis(j));
+                re += &u3 - &three * &u1 * &v2;
+                im += &three * &u2 * &v1 - &v3;
+            }
+            nonzero([re / &m0, im / &m0])
+        }
+        (Tower::Region, 4) => {
+            let m0 = zeroth_moment(blade)?;
+            let [_, qx, qy] = blade.quartic_on(plane)?;
+            nonzero([qx / &m0, qy / &m0])
+        }
+        (Tower::Sites, 2..=4) => {
+            let (count, pts) = plane_points(blade, plane)?;
+            let (mut a, mut b) = (BigRational::zero(), BigRational::zero());
+            for (u, v) in &pts {
+                let (u2, v2) = (u * u, v * v);
+                match m {
+                    2 => {
+                        a += (&u2 - &v2) / &two;
+                        b += u * v;
+                    }
+                    3 => {
+                        a += u * (&u2 - &three * &v2);
+                        b += v * (&three * &u2 - &v2);
+                    }
+                    _ => {
+                        a += &u2 * &u2 - &six * &u2 * &v2 + &v2 * &v2;
+                        b += &four * u * v * (&u2 - &v2);
+                    }
+                }
+            }
+            nonzero([a / &count, b / &count])
+        }
+        _ => None,
+    }
+}
+
+/// THE DEVIATORIC VECTOR (55.3) on the region tower: `u = ((I_ii − I_jj)/2,
+/// I_ij)/M₀`, turning at `2φ`; `None` where the second moment is isotropic
+/// — a single lamina, a square, a cross — which [`quartic_harmonic`] orients.
+pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
+    harmonic(blade, plane, Tower::Region, 2)
+}
+
+/// THE FOURTH HARMONIC on the region tower, turning at `4φ`: the `D₄`
+/// discriminator a square's second moment cannot give.
+pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
+    harmonic(blade, plane, Tower::Region, 4)
+}
+
+/// THE THIRD HARMONIC on the region tower (68), turning at `3φ`: odd where
+/// `u` and `h₄` are even, so it tells `φ` from `φ + π`. `None` exactly on a
+/// body with 2-fold symmetry, whose `ℤ₂` gauge freedom is real.
+pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
+    harmonic(blade, plane, Tower::Region, 3)
+}
+
+/// 78.38 — THE SITES' SPREAD on a plane, the site tower's scale.
+pub fn spread2_on(blade: &Blade, plane: (usize, usize)) -> Option<BigRational> {
+    scale2(blade, plane, Tower::Sites)
+}
+
+/// AT WHICH ORDER ONE TOWER REFUSES THE PAIR AS DILATES, or `None` where it
+/// certifies them. A moment of order `m` carries degree `m`, so
 ///
 /// ```text
-///     Z = h₂² · conj(h₄)
+///     ‖h_b^(m)‖² · (s_a²)^m  =  ‖h_a^(m)‖² · (s_b²)^m
 /// ```
 ///
-/// is ROTATION-INVARIANT — `e^{4iφ}·e^{−4iφ} = 1` — and CONJUGATED by
-/// every reflection, whatever axis it is taken about. That is chirality
-/// itself, read off the body, with no group table to consult, no cells to
-/// compare, and no lattice to restrict.
-///
-/// IT IS ODD WHERE THE TOWER IS EVEN, which is why it can do what neither
-/// `u` nor `h₄` can alone. Both are even-rank and satisfy `M(−x) = M(x)`,
-/// so each is blind to a reflection taken on its own axis; their PRODUCT
-/// at mismatched orders is not, because the two phases cancel against
-/// each other rather than against themselves.
-///
-/// SCALE-FREE AS A RAY, not as a value. Normalised (A.12), `h₂` has
-/// degree 2 and `h₄` degree 4, so `Z` has degree 8 and a dilation by `ρ`
-/// sends `Z ↦ ρ⁸·Z` — a POSITIVE real factor, which is exactly what
-/// [`same_ray`] divides out. Nothing is normalised away and no root is
-/// taken.
-///
-/// `None` where the body is isotropic at either order — a square, a disc,
-/// a cross. That is not a gap: such a body IS achiral at these orders,
-/// its mirror image is one of its own turns, and a chirality read off it
-/// would be invented (rule 11).
-pub fn chirality(b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
-    let u = deviatoric(b, plane)?;
-    let q = quartic_harmonic(b, plane)?;
+/// with `s²` that tower's scale, by exact cross multiplication at `m = 2, 3,
+/// 4`; a harmonic vanishing on one and not the other is a difference of
+/// shape at that order, on both is agreement. Each `‖h‖²` is the metric on a
+/// vector (78.28(4)).
+fn refused_at(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<u8> {
+    let (Some(sa), Some(sb)) = (scale2(a, plane, tower), scale2(b, plane, tower)) else {
+        return Some(2);
+    };
+    let norm2 = |v: &[BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
+    for m in [2u8, 3, 4] {
+        let agrees = match (harmonic(a, plane, tower, m), harmonic(b, plane, tower, m)) {
+            (None, None) => true,
+            (None, Some(_)) | (Some(_), None) => false,
+            (Some(x), Some(y)) => norm2(&y) * sa.pow(i32::from(m)) == norm2(&x) * sb.pow(i32::from(m)),
+        };
+        if !agrees {
+            return Some(m);
+        }
+    }
+    None
+}
+
+/// A.12, 78.38 (C) — WHICH SIMILARITY CARRIES THE PAIR, or where each tower
+/// refuses it. Both towers are always read: the pair is dilates where EITHER
+/// certifies, and the answer names which; where both refuse, the order at
+/// which each did, `(region, sites)`.
+pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation, (u8, u8)> {
+    match (refused_at(a, b, plane, Tower::Region), refused_at(a, b, plane, Tower::Sites)) {
+        (None, None) => Ok(Dilation::Both),
+        (None, Some(_)) => Ok(Dilation::Region),
+        (Some(_), None) => Ok(Dilation::Sites),
+        (Some(r), Some(s)) => Err((r, s)),
+    }
+}
+
+/// Whether some similarity of the lattice carries the pair.
+pub fn dilation_certified(a: &Blade, b: &Blade, plane: (usize, usize)) -> bool {
+    dilation(a, b, plane).is_ok()
+}
+
+/// THE CHIRALITY OF A BODY ON ONE TOWER — AN ODD INVARIANT OF ITS OWN HARMONIC
+/// TOWER (V1 recut, 68): `Z = h₂² · conj(h₄)`, rotation-invariant and
+/// conjugated by every reflection, scale-free as a ray (degree 8). `None`
+/// where the body is isotropic at either order: achiral there.
+pub fn chirality_on(b: &Blade, plane: (usize, usize), tower: Tower) -> Option<(BigRational, BigRational)> {
+    let u = harmonic(b, plane, tower, 2)?;
+    let q = harmonic(b, plane, tower, 4)?;
     // `u²` then `· conj(q)`, written out over ℚ.
     let (s1, s2) = (&u[0] * &u[0] - &u[1] * &u[1], &u[0] * &u[1] * BigRational::from_integer(BigInt::from(2)));
     Some((&s1 * &q[0] + &s2 * &q[1], &s2 * &q[0] - &s1 * &q[1]))
 }
 
-/// THE THIRD HARMONIC OF A BODY — THE ODD MOMENT THAT CLOSES THE HALF
-/// TURN (68, ruled 2026-09-22).
-///
-/// `h₃ = Σ(x + iy)³ / M₀`, turning at THREE times the body's angle. It is
-/// the first ODD-order harmonic the tower carries, and odd is the whole
-/// point: `u` and `h₄` are even-rank, satisfy `M(−x) = M(x)`, and
-/// therefore CANNOT tell `φ` from `φ + π` — which is why the half turn was
-/// left open and answered with a cell test instead.
-///
-/// EXACT ON LAMINAE, WITH NO CORRECTION TERM. A body is unit squares, and
-/// a square centred at `(a,b)` has `∫x³ = a³ + a/4` and
-/// `∫xy² = a(b² + 1/12)`, so
-///
-/// ```text
-///     ∫(x³ − 3xy²) = Σ(a³ + a/4 − 3ab² − a/4) = Σ(a³ − 3ab²)
-///     ∫(3x²y − y³) = Σ(3a²b + b/4 − b³ − b/4) = Σ(3a²b − b³)
-/// ```
-///
-/// The square's own odd moments cancel identically, so the point-mass
-/// formula IS the integral — not an approximation of it.
-///
-/// `None` where it vanishes, and that is a reading rather than a gap: a
-/// body with 2-fold symmetry has `h₃ = 0` exactly, because the half turn
-/// maps it to itself and sends `h₃ ↦ −h₃`. Such a body's two candidate
-/// turns act IDENTICALLY on it, so there is nothing to choose — and the
-/// `ℤ₂` gauge freedom `HalfOpen` carries is real, not a missing
-/// measurement.
-///
-/// Normalised by `M₀` like the rest of the tower (A.12), so it carries
-/// degree 3 and the ray comparison divides any dilation out.
-///
-/// ON THE PLANE THE CALLER NAMES (BQ4), from each lamina's own moments
-/// along the plane's two axes ([`super::body::lamina_moments`], the lift's
-/// one producer): `∫(u³ − 3uv²)` and `∫(3u²v − v³)`. On the grid plane the
-/// square's corrections cancel as above; on a plane with an axis off the
-/// grid the lamina is a point along it and the same product formula holds.
-pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    let (i, j) = plane;
-    let centroid = blade.centroid()?;
-    let (ci, cj) = (centroid.get(i)?, centroid.get(j)?);
-    let m0 = zeroth_moment(blade)?;
-    let three = BigRational::from_integer(BigInt::from(3));
-    let (mut re, mut im) = (
-        BigRational::from_integer(BigInt::from(0)),
-        BigRational::from_integer(BigInt::from(0)),
-    );
-    for site in &blade.support {
-        let a = BigRational::from_integer(BigInt::from(site.axis(i)?)) - ci;
-        let b = BigRational::from_integer(BigInt::from(site.axis(j)?)) - cj;
-        let [u1, u2, u3, _] = super::body::lamina_moments(&a, crate::transducer::base::is_grid_axis(i));
-        let [v1, v2, v3, _] = super::body::lamina_moments(&b, crate::transducer::base::is_grid_axis(j));
-        re += &u3 - &three * &u1 * &v2;
-        im += &three * &u2 * &v1 - &v3;
-    }
-    let (re, im) = (re / &m0, im / &m0);
-    match re.is_zero() && im.is_zero() {
-        true => None,
-        false => Some([re, im]),
-    }
+/// The chirality on the region tower.
+pub fn chirality(b: &Blade, plane: (usize, usize)) -> Option<(BigRational, BigRational)> {
+    chirality_on(b, plane, Tower::Region)
 }

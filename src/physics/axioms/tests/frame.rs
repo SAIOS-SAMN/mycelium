@@ -96,10 +96,10 @@ fn a_quartic_oriented_body_reaches_every_quarter_turn() {
 fn v1_an_unlike_pair_is_permanently_unturned() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    assert_eq!(
-        blade::relative_rotor(&l.blade, &s.blade).err(),
-        Some(blade::NoPose::Incongruent),
-        "an invariant separates them, so no vocabulary reaches them"
+    let refused = blade::relative_rotor(&l.blade, &s.blade).err();
+    assert!(
+        matches!(refused, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. }))),
+        "an invariant separates them on both towers, so no vocabulary reaches them: {refused:?}"
     );
 }
 
@@ -220,10 +220,68 @@ fn v1_an_achiral_pair_is_still_refused_by_the_scale_certificate() {
     assert!(blade::chirality(&l3.blade).expect("read").1.is_zero(), "achiral");
     // The even tower does separate them, and that is what decides.
     assert!(!blade::dilation_certified(&d2.blade, &l3.blade), "not similar");
+    let refused = blade::relative_rotor(&d2.blade, &l3.blade).err();
+    assert!(
+        matches!(refused, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. }))),
+        "chirality permits it; both towers refuse it; the towers win: {refused:?}"
+    );
+}
+
+/// 78.38 (C) — A SITE MAP IS A DILATION ON THE POINT TOWER, AND THE
+/// REGION TOWER REFUSES IT FOR THE SUBSTRATE'S REASON.
+///
+/// `z ↦ (4 + i)·z` carries the L-tetromino's four sites onto four sites
+/// of the lattice: one shape at two scales and an angle the alphabet does
+/// not spell. The lamina tower integrates each lamina's own unit square —
+/// A.12's floor, which no similarity of the lattice scales — so it
+/// refuses; the point tower is exact under the map and certifies. The
+/// relation is read on the tower that certified: one ray for `Z`, the arc
+/// of `4 + i`, and the pose left open as `Oblique`.
+#[test]
+fn a_site_map_certifies_on_the_point_tower_and_reads_oblique() {
+    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let image = blade::shape_of(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
+    assert_eq!(blade::dilation(&l.blade, &image.blade), Ok(blade::Dilation::Sites), "the sites certify, the region does not");
+    // The other similarity of the lattice: a filled 2×2 blow-up is exact on
+    // the region and not on the sites, so the region tower certifies it.
+    let l2 = blade::shape_of(&[
+        (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+        (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+        (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+        (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+    ]);
+    assert_eq!(blade::dilation(&l.blade, &l2.blade), Ok(blade::Dilation::Region), "the blow-up certifies on the region");
+    let za = blade::chirality_on(&l.blade, blade::Tower::Sites).expect("a chiral body");
+    let zb = blade::chirality_on(&image.blade, blade::Tower::Sites).expect("its image is chiral too");
+    assert!((&za.0 * &zb.1 - &za.1 * &zb.0).is_zero(), "one ray for Z on the point tower");
+    assert!(&za.0 * &zb.0 + &za.1 * &zb.1 > num_rational::BigRational::zero(), "the same ray, not its opposite");
+    // The arc is the DOUBLE angle's (`z` turns at `2φ`), so a site turn by
+    // `4 + i` reads `(4 + i)² = 15 + 8i`: primitive, and its gcd with 17 in
+    // `ℤ[i]` is `4 + i` itself, of norm exactly 17.
+    let arc = blade::oblique_arc(&l.blade, &image.blade).expect("the arc of the turn");
+    assert_eq!(arc, (num_bigint::BigInt::from(15), num_bigint::BigInt::from(8)), "the arc of (4 + i)²");
     assert_eq!(
-        blade::relative_rotor(&d2.blade, &l3.blade).err(),
-        Some(blade::NoPose::Incongruent),
-        "chirality permits it; the tower refuses it; the tower wins"
+        blade::relative_rotor(&l.blade, &image.blade).err(),
+        Some(blade::NoPose::Oblique),
+        "a similarity at an angle the alphabet does not spell is left open"
+    );
+}
+
+/// 78.38 (C) — INCONGRUENT ONLY WHERE BOTH TOWERS REFUSE, NAMING THE ORDER
+/// AT WHICH EACH DISAGREES.
+///
+/// The S-tetromino is a genuinely different shape from the L's image: no
+/// similarity carries one onto the other, and each tower names the first
+/// harmonic order at which they part.
+#[test]
+fn a_different_shape_is_incongruent_at_its_order_on_both_towers() {
+    let image = blade::shape_of(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
+    let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+    assert_eq!(blade::dilation(&image.blade, &s.blade), Err((2, 2)), "both towers refuse at the deviatoric");
+    assert_eq!(
+        blade::relative_rotor(&image.blade, &s.blade).err(),
+        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: 2, sites: 2 })),
+        "the refusal names the order from each tower"
     );
 }
 
@@ -259,14 +317,11 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
         blade::relative_rotor(&l.blade, &big.blade).err(),
         blade::relative_rotor(&l.blade, &l2.blade).err(),
     ];
-    assert_eq!(
-        read,
-        [
-            Some(blade::NoPose::Mirrored),
-            Some(blade::NoPose::Incongruent),
-            Some(blade::NoPose::Incongruent),
-            None,
-        ],
-        "improper, unlike, unlike, and a turn across a dilation"
+    let unlike = |r: &Option<blade::NoPose>| {
+        matches!(r, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. })))
+    };
+    assert!(
+        matches!(read, [Some(blade::NoPose::Mirrored), ref s, ref b, None] if unlike(s) && unlike(b)),
+        "improper, unlike, unlike, and a turn across a dilation: {read:?}"
     );
 }
