@@ -59,12 +59,10 @@ impl Kernel {
                 return;
             }
             seen.insert(k.clone(), ());
-            let mut rotor = Vec::new();
-            r.to_bytes(&mut rotor);
             out.push(crate::anastome::dialogue::ClassPage {
                 key: k,
                 order,
-                rotor,
+                rotor: r.clone(),
             });
         };
         // THE ROOT STRATUM IS THE WHOLE COVER, and this is the one place in

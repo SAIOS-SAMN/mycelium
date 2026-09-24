@@ -169,12 +169,15 @@ impl PivotCertificate {
                     Side::Left => 0,
                     Side::Right => 1,
                 });
-                word.to_bytes(out);
+                // LD0 step 5: the word, the translator and the seed are
+                // written as their canonical rays (A4, 17.2), the formed
+                // word's action with them.
+                word.put_whole(out);
             }
             PivotBy::Placement { face, translator } => {
                 out.push(1);
                 out.extend_from_slice(&face.to_le_bytes());
-                translator.to_bytes(out);
+                translator.put_canonical(out);
             }
             PivotBy::Hue { face, gauge } => {
                 out.push(2);
@@ -188,7 +191,7 @@ impl PivotCertificate {
             PivotBy::OpenAxis { face, seed } => {
                 out.push(3);
                 out.extend_from_slice(&face.to_le_bytes());
-                seed.to_bytes(out);
+                seed.put_canonical(out);
             }
         }
     }
@@ -226,7 +229,7 @@ impl PivotCertificate {
                     _ => return None,
                 };
                 *pos += 1;
-                let word = Box::new(Word::from_bytes(b, pos)?);
+                let word = Box::new(Word::take_whole(b, pos)?);
                 PivotBy::Word { face, word, side }
             }
             1 => {

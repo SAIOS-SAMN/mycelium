@@ -84,3 +84,37 @@ fn a_certificate_key_is_one_under_every_scaling_of_its_versor() {
     };
     assert_eq!(seeded(t.clone()).key(), seeded(by(&t, -1, 1)).key(), "one opening: the seed is a ray");
 }
+
+/// LD0 step 5 — A CERTIFICATE IS WRITTEN AS ITS RAYS. The translator and
+/// the seed go on the tape as their canonical rays, so `T` and `λT` write
+/// the same bytes; and a FORMED word — an action no tape spells — keeps its
+/// action across the tape, where the letters alone wrote it as the
+/// identity.
+#[test]
+fn a_certificate_is_written_as_its_rays() {
+    let t = element::translator_versor(2, 3);
+    let bytes = |c: &PivotCertificate| {
+        let mut out = Vec::new();
+        c.to_bytes(&mut out);
+        out
+    };
+    let placed = |translator: element::Versor| PivotCertificate {
+        by: PivotBy::Placement { face: 0, translator },
+        ..cert(Axis::Placement, [0; 4])
+    };
+    assert_eq!(bytes(&placed(t.clone())), bytes(&placed(by(&t, -3, 4))), "one ray, one writing");
+
+    let formed = alphabet::Word::formed(order4().rotor());
+    assert!(formed.letters().is_empty() && !formed.is_identity(), "an action no tape spells");
+    let worded = PivotCertificate {
+        by: PivotBy::Word { face: 0, word: Box::new(formed.clone()), side: Side::Right },
+        ..cert(Axis::Placement, [0; 4])
+    };
+    let tape = bytes(&worded);
+    let mut p = 0usize;
+    let back = PivotCertificate::from_bytes(&tape, &mut p).expect("the certificate reads back");
+    assert_eq!(p, tape.len(), "whole");
+    let PivotBy::Word { word, .. } = &back.by else { panic!("a word move") };
+    assert_eq!(**word, formed, "the formed word's action crossed the tape");
+    assert_eq!(back.key(), worded.key(), "and the certificate is the one written");
+}

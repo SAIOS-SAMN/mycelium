@@ -110,7 +110,8 @@ assert!(whole.restore(&snap), "the tape as written restores");
 
 // Every section tag names a boundary the old reader would have stopped
 // at and called a restore.
-for tag in [b"LDG1", b"ARC1", b"RNK2", b"DEF2", b"FLD1", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"FLC1", b"CYC2", b"SET1"] {
+// DEF2, FLD1 and FLC1 are row fields now (LD0 step 5), not sections.
+for tag in [b"LDG1", b"ARC1", b"RNK2", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"CYC2", b"SET1"] {
     let Some(at) = snap.windows(4).position(|w| w == tag) else {
         panic!("the tape carries {}", String::from_utf8_lossy(tag))
     };
@@ -207,4 +208,41 @@ assert!(
     crate::snapshot::take_key(&clipped, &mut p).is_none(),
     "a key whose bytes are not there is a refusal, not a short key"
 );
+}
+
+/// LD0 step 5 — A COHERENCE FIELD IS A FIELD OF ITS WORD'S ROW. A
+/// listing's field, its twisted closure written as its canonical ray,
+/// survives a restart on the listing's row; a field on a word no row holds
+/// is named and not written, and the tape does not grow by its address.
+#[test]
+fn a_field_rides_its_words_row() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1)];
+let b = vec![(0, 0, 2), (0, 1, 2)];
+speak_pair(&mut k, &a, &b, [1; 32]);
+let listed = k.pending.scoped().next().expect("listed").1.address();
+let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
+let t = crate::transducer::element::translator_versor(2, 3);
+let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-7), num_bigint::BigInt::from(2)));
+let entry = FieldEntry {
+    chart: chart.clone(),
+    state: crate::transducer::stalk::Closure::Twisted(Box::new(scaled)),
+    remainder: vec![(1, 2, 3, 4)],
+    stagnant: [0, 1, 0, 2],
+};
+k.field.insert(&listed, ListingField { entries: vec![entry.clone()], nonflat: 1 });
+let bare = k.snapshot();
+let orphan = crate::transducer::address::Address::from_bytes(vec![9u8; 4096]);
+k.field_cold.insert(&orphan, ListingField { entries: vec![entry], nonflat: 1 });
+let snap = k.snapshot();
+assert_eq!(snap.len(), bare.len(), "a field on a word no row holds writes nothing");
+let mut booted = Kernel::new();
+assert!(booted.restore(&snap), "clean restore");
+assert!(booted.field_cold.get(&orphan).is_none(), "and restores as nothing");
+let got = booted.field.get(listed.as_bytes()).expect("the listing's field survived on its row");
+let [e] = got.entries.as_slice() else { panic!("one entry: {got:?}") };
+assert_eq!((&e.chart, &e.remainder, e.stagnant), (&chart, &vec![(1, 2, 3, 4)], [0, 1, 0, 2]));
+let crate::transducer::stalk::Closure::Twisted(v) = &e.state else { panic!("twisted: {:?}", e.state) };
+assert!(crate::transducer::element::same_versor(v, &t), "the closure is the ray it was");
+assert_eq!(got.nonflat, 1);
 }

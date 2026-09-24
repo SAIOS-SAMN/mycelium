@@ -57,28 +57,35 @@ pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Taught>> {
     Some(words)
 }
 
-/// One class record on a syllabus page: key, order (0 = infinite), rotor bytes.
+/// One class record on a syllabus page: key, order (0 = infinite), and the
+/// representative rotor the reader seeds its horizon with.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassPage {
     pub key: crate::transducer::address::Address,
     pub order: u32,
-    pub rotor: Vec<u8>,
+    pub rotor: crate::transducer::alphabet::Rotor,
 }
 
 /// The records framed whole, or `None` with nothing written: a count past
 /// its u16 or a class key that reaches its wall is refused, never cut.
+///
+/// LD0 step 5: the representative is written inline as its canonical ray
+/// (A1), its sixteen coordinates, never a length-prefixed blob of raw
+/// coefficients beside the class record.
 pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) -> Option<()> {
     let mut rec = Vec::new();
     crate::transducer::address::put_u16_count(&mut rec, records.len())?;
     for r in records {
         crate::transducer::address::put_class_record(&mut rec, &r.key, r.order)?;
-        rec.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
-        rec.extend_from_slice(&r.rotor);
+        r.rotor.put_canonical(&mut rec);
     }
     out.append(&mut rec);
     Some(())
 }
 
+/// The class records after the taught words, or none: a record that does
+/// not read refuses the page whole and says so, never a page cut short at
+/// the record that failed.
 pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     let Some(words) = decode_syllabus_reply(body) else {
         return Vec::new();
@@ -98,22 +105,22 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     };
     let n = u16::from_le_bytes(raw) as usize;
     p += 2;
+    // No cap on `n`: each record reads at least its class record's bytes,
+    // so a count past the body refuses at the first record it cannot read.
     let mut out = Vec::new();
-    for _ in 0..n.min(1024) {
-        let Some((key, order)) = crate::transducer::address::take_class_record(body, &mut p) else {
-            break;
+    for i in 0..n {
+        let read = |p: &mut usize| -> Option<ClassPage> {
+            let (key, order) = crate::transducer::address::take_class_record(body, p)?;
+            let rotor = crate::transducer::alphabet::Rotor::from_bytes(body, p)?;
+            Some(ClassPage { key, order, rotor })
         };
-        let Some(rlen) = body.get(p..p + 4).and_then(|s| s.try_into().ok()).map(u32::from_le_bytes) else {
-            break;
-        };
-        p += 4;
-        let rlen = rlen as usize;
-        if p + rlen > body.len() {
-            break;
+        match read(&mut p) {
+            Some(page) => out.push(page),
+            None => {
+                eprintln!("  syllabus class page refused: record {i} of {n} does not read at byte {p}");
+                return Vec::new();
+            }
         }
-        let rotor = body[p..p + rlen].to_vec();
-        p += rlen;
-        out.push(ClassPage { key, order, rotor });
     }
     out
 }

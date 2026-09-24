@@ -127,3 +127,20 @@ fn the_five_acts_round_trip() {
         "a truncated solver is refused, never a zero voice"
     );
 }
+
+/// LD0 step 5 — A CLASS PAGE CARRIES ITS REPRESENTATIVE AS A RAY: the rotor
+/// inline as its canonical coordinates, read back as the rotor it was; a
+/// page cut inside a record is refused whole, never shortened.
+#[test]
+fn a_class_page_carries_its_representative_as_a_ray() {
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let r = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+    let page = ClassPage { key: r.class_key().expect("a class"), order: 4, rotor: r.clone() };
+    let words = vec![Taught { at: crate::chronometry::Stamp::default(), word: vec![7u8] }];
+    let mut body = encode_syllabus_reply(&words).expect("it fits");
+    append_class_records(&mut body, &[page.clone(), page.clone()]).expect("the records fit");
+    let back = decode_class_records(&body);
+    assert_eq!(back, vec![page.clone(), page], "the rotor crossed as the rotor");
+    assert!(back[0].rotor.projective_eq(&r));
+    assert!(decode_class_records(&body[..body.len() - 1]).is_empty(), "a cut page names no classes");
+}

@@ -21,8 +21,59 @@ fn put_admitted(out: &mut Vec<u8>, at: Option<&crate::chronometry::Stamp>) {
     }
 }
 
-/// THE ROWS A WORD CAN STAND ON, in the order its award is written on the
-/// first that holds it (LD0 step 4): an award is a field of ONE row.
+/// A LISTING'S COHERENCE FIELD as a row field (LD0 step 5): `0`, or `1`
+/// and its entries — each chart as its own coordinates, each closure as
+/// its canonical ray, the remainder and the stagnation counts.
+pub(super) fn put_field(out: &mut Vec<u8>, field: Option<&ListingField>) {
+    let Some(listing) = field else {
+        out.push(0);
+        return;
+    };
+    out.push(1);
+    out.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
+    for e in &listing.entries {
+        e.chart.put_canonical(out);
+        match &e.state {
+            crate::transducer::stalk::Closure::Flat => out.push(0),
+            crate::transducer::stalk::Closure::Twisted(v) => {
+                out.push(1);
+                v.put_canonical(out);
+            }
+            crate::transducer::stalk::Closure::Cavity => out.push(2),
+            crate::transducer::stalk::Closure::Class(r, d) => {
+                out.push(3);
+                out.push(*d);
+                r.put_canonical(out);
+            }
+        }
+        out.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
+        for &(r, c, hb, ha) in &e.remainder {
+            out.extend_from_slice(&r.to_le_bytes());
+            out.extend_from_slice(&c.to_le_bytes());
+            out.push(hb);
+            out.push(ha);
+        }
+        for s in e.stagnant {
+            out.extend_from_slice(&s.to_le_bytes());
+        }
+    }
+}
+
+/// A WORD'S DEFLATION as a row field (LD0 step 5): `0`, or `1` and μ⃗.
+fn put_deflation(out: &mut Vec<u8>, mag: Option<&[u64; 4]>) {
+    let Some(mag) = mag else {
+        out.push(0);
+        return;
+    };
+    out.push(1);
+    for m in mag {
+        out.extend_from_slice(&m.to_le_bytes());
+    }
+}
+
+/// THE ROWS A WORD CAN STAND ON, in the order its per-word fields are
+/// written on the first that holds it (LD0 steps 4 and 5): an award, a
+/// deflation and a coherence field are each a field of ONE row.
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub(super) enum Row {
     Provisional,
@@ -32,9 +83,10 @@ pub(super) enum Row {
 }
 
 impl Kernel {
-    /// The row a word's award is a field of: the first of provisional, the
-    /// listing book, the cavity and the basis that holds the word.
-    pub(super) fn award_row(&self, addr: &[u8]) -> Option<Row> {
+    /// The row a word's per-word fields are written on: the first of
+    /// provisional, the listing book, the cavity and the basis that holds
+    /// the word.
+    pub(super) fn home_row(&self, addr: &[u8]) -> Option<Row> {
         if self.provisional.contains(addr) {
             Some(Row::Provisional)
         } else if self.pending.contains(addr) {
@@ -48,15 +100,33 @@ impl Kernel {
         }
     }
 
-    /// A row's own fields after its word: the admitting stamp, and the
-    /// award where this row is the one it is a field of.
+    /// A row's own fields after its word: the admitting stamp, then — where
+    /// this row is the word's home — its award, its deflation, and its
+    /// coherence field hot and cold.
     fn put_row_fields(&self, out: &mut Vec<u8>, addr: &[u8], row: Row) {
         put_admitted(out, self.admitted_at.get(addr));
-        let award = match self.award_row(addr) == Some(row) {
-            true => self.treasury.escrow_of(addr),
-            false => None,
-        };
-        crate::economy::persist::put_award(out, award);
+        let home = self.home_row(addr) == Some(row);
+        crate::economy::persist::put_award(out, self.treasury.escrow_of(addr).filter(|_| home));
+        put_deflation(out, self.deflations.get(addr).filter(|_| home));
+        put_field(out, self.field.get(addr).filter(|_| home));
+        put_field(out, self.field_cold.get(addr).filter(|_| home));
+    }
+
+    /// A PER-WORD FIELD NO ROW HOLDS is a quantity on a word this court no
+    /// longer has: named, per carrier, and not written — never a row of
+    /// its own that copies the address (R6).
+    fn name_orphans(&self) {
+        let award = self.treasury.award_addresses().iter().filter(|a| self.home_row(a).is_none()).count();
+        let orphans = |keys: Vec<Vec<u8>>| keys.iter().filter(|a| self.home_row(a).is_none()).count();
+        let deflation = orphans(self.deflations.scoped().map(|(a, _)| a).collect());
+        let hot = orphans(self.field.scoped().map(|(a, _)| a).collect());
+        let cold = orphans(self.field_cold.scoped().map(|(a, _)| a).collect());
+        if award + deflation + hot + cold > 0 {
+            eprintln!(
+                "  snapshot fields refused on words no row holds: awards {award} deflations {deflation} \
+                 fields {hot} cold fields {cold}"
+            );
+        }
     }
 }
 
@@ -97,12 +167,7 @@ impl Kernel {
             self.put_row_fields(body, addr, Row::Provisional);
             Some(())
         });
-        // AN AWARD NO ROW HOLDS is a claim on a word this court no longer
-        // has, which no ruling can reach: named here, and not written.
-        let orphans = self.treasury.award_addresses().iter().filter(|a| self.award_row(a).is_none()).count();
-        if orphans > 0 {
-            eprintln!("  snapshot awards refused: {orphans} on words no row holds");
-        }
+        self.name_orphans();
         // THE LEDGER (78.24): the court head, then the ledger as its trie —
         // the key it signs as, the fold root, and every node it holds, its
         // own line and its peers', each once at its stamp. Where each peer
@@ -157,60 +222,13 @@ impl Kernel {
                 Some(i) => i,
                 None => &root,
             };
-            let key = inv.key();
-            let bytes = key.as_bytes();
-            body.extend_from_slice(&(bytes.len() as u64).to_le_bytes());
-            body.extend_from_slice(bytes);
+            // The chart as its own coordinates, never its key nested.
+            inv.put_canonical(body);
             Some(())
         });
-        // DEFLATION section: each provisional's measured deflation, so a
-        // restart does not docket Δ⃗ = 0 and feed the court a slash list.
-        // DEF2 record: addr ‖ μ⃗[4]. Where a provisional stands is its
-        // row's admitting stamp (78.24), never a K and height written here.
-        out.extend_from_slice(b"DEF2");
-        counted(&mut out, &self.deflations, |body, addr, mag| {
-            put_key(body, addr);
-            for m in mag {
-                body.extend_from_slice(&m.to_le_bytes());
-            }
-            Some(())
-        });
-        // Coherence field beside DEF1: which angles each thought has been
-        // probed through. A restart must not forget the field.
-        out.extend_from_slice(b"FLD1");
-        counted(&mut out, &self.field, |body, addr, listing| {
-            put_key(body, addr);
-            body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
-            for e in &listing.entries {
-                let key = e.chart.key();
-                body.extend_from_slice(&(key.as_bytes().len() as u64).to_le_bytes());
-                body.extend_from_slice(key.as_bytes());
-                match &e.state {
-                    crate::transducer::stalk::Closure::Flat => body.push(0),
-                    crate::transducer::stalk::Closure::Twisted(v) => {
-                        body.push(1);
-                        v.to_bytes(body);
-                    }
-                    crate::transducer::stalk::Closure::Cavity => body.push(2),
-                    crate::transducer::stalk::Closure::Class(r, d) => {
-                        body.push(3);
-                        body.push(*d);
-                        r.to_bytes(body);
-                    }
-                }
-                body.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
-                for &(r, c, hb, ha) in &e.remainder {
-                    body.extend_from_slice(&r.to_le_bytes());
-                    body.extend_from_slice(&c.to_le_bytes());
-                    body.push(hb);
-                    body.push(ha);
-                }
-                for s in e.stagnant {
-                    body.extend_from_slice(&s.to_le_bytes());
-                }
-            }
-            Some(())
-        });
+        // DEF2, FLD1 AND FLC1 ARE GONE (LD0 step 5): a deflation and a
+        // coherence field are per-word quantities, fields of the word's
+        // row, each written where the word is and nowhere else.
         out.extend_from_slice(b"BOK1");
         counted(&mut out, &self.pending, |body, addr, elem| {
             let eb = elem.to_bytes();
@@ -246,40 +264,8 @@ impl Kernel {
             c.to_bytes(body);
             Some(())
         });
-        out.extend_from_slice(b"FLC1");
-        counted(&mut out, &self.field_cold, |body, addr, listing| {
-            put_key(body, addr);
-            body.extend_from_slice(&(listing.entries.len() as u64).to_le_bytes());
-            for e in &listing.entries {
-                let key = e.chart.key();
-                body.extend_from_slice(&(key.as_bytes().len() as u64).to_le_bytes());
-                body.extend_from_slice(key.as_bytes());
-                match &e.state {
-                    crate::transducer::stalk::Closure::Flat => body.push(0),
-                    crate::transducer::stalk::Closure::Twisted(v) => {
-                        body.push(1);
-                        v.to_bytes(body);
-                    }
-                    crate::transducer::stalk::Closure::Cavity => body.push(2),
-                    crate::transducer::stalk::Closure::Class(r, d) => {
-                        body.push(3);
-                        body.push(*d);
-                        r.to_bytes(body);
-                    }
-                }
-                body.extend_from_slice(&(e.remainder.len() as u64).to_le_bytes());
-                for &(r, c, hb, ha) in &e.remainder {
-                    body.extend_from_slice(&r.to_le_bytes());
-                    body.extend_from_slice(&c.to_le_bytes());
-                    body.push(hb);
-                    body.push(ha);
-                }
-                for s in e.stagnant {
-                    body.extend_from_slice(&s.to_le_bytes());
-                }
-            }
-            Some(())
-        });
+        // The cocycle row's gauge and the dialect chain's transitions as
+        // their canonical rays (LD0 step 5, A4).
         out.extend_from_slice(b"CYC2");
         counted(&mut out, &self.cocycle_at, |body, key, row| {
             put_key(body, key);
@@ -287,14 +273,14 @@ impl Kernel {
             body.extend_from_slice(&row.b);
             body.extend_from_slice(&row.t_universal.to_le_bytes());
             put_key(body, &row.class_key);
-            row.gauge.to_bytes(body);
+            row.gauge.put_canonical(body);
             Some(())
         });
         let mut body = Vec::new();
         for (key, v, tu) in &self.dialect_chain {
             put_key(&mut body, key);
             body.extend_from_slice(&tu.to_le_bytes());
-            v.to_bytes(&mut body);
+            v.put_canonical(&mut body);
         }
         framed(&mut out, self.dialect_chain.len() as u64, &mut body);
         out.extend_from_slice(b"SET1");

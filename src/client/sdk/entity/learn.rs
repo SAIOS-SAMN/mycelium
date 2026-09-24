@@ -209,14 +209,10 @@ impl Entity {
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
-            let mut pos = 0usize;
-            let Some(r) = crate::transducer::alphabet::Rotor::from_bytes(&p.rotor, &mut pos) else {
-                continue;
-            };
             recs.push(crate::transducer::bubble::ClassRecord {
                 key: p.key,
                 order: crate::transducer::alphabet::Order::from_u32(p.order),
-                representative: r,
+                representative: p.rotor,
             });
         }
         // A RULING COLLAPSES A SUPERPOSITION AND THE OTHER HYPOTHESIS IS A

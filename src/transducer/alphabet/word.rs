@@ -376,6 +376,34 @@ impl Word {
         }
         Some(Word::raw(tape))
     }
+
+    /// THE WHOLE WORD AS ITS COORDINATES (LD0 step 5): its letters, then
+    /// `0` for a spelled word, or `1` and the canonical ray of the action a
+    /// FORMED word carries. `to_bytes` writes the letters alone, which is
+    /// all of a spelled word and nothing of a formed one: a formed word
+    /// with no letters wrote as the identity.
+    pub fn put_whole(&self, out: &mut Vec<u8>) {
+        self.to_bytes(out);
+        match self.2 {
+            false => out.push(0),
+            true => {
+                out.push(1);
+                self.rotor().put_canonical(out);
+            }
+        }
+    }
+
+    /// The inverse of [`Word::put_whole`]; any other tag refuses.
+    pub fn take_whole(b: &[u8], pos: &mut usize) -> Option<Word> {
+        let spelled = Word::from_bytes(b, pos)?;
+        let tag = *b.get(*pos)?;
+        *pos += 1;
+        match tag {
+            0 => Some(spelled),
+            1 => Some(Word::formed_with(spelled.0, Rotor::from_bytes(b, pos)?)),
+            _ => None,
+        }
+    }
 }
 
 /// Reduce quarter-turn exponents mod 4; three quarters is one inverse.

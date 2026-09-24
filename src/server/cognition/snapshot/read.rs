@@ -71,30 +71,6 @@ impl Kernel {
             );
             None
         };
-        // A COUNT THAT CANNOT BE SATISFIED, refused against the tape's own
-        // remaining bytes and nothing else. Every record in every section
-        // below writes at least one byte, so a count larger than what is
-        // left cannot be honoured — which is EXACT and derived from the
-        // tape, not estimated from a record's size.
-        //
-        // A divisor typed per section — a guess at a minimum record — can
-        // be wrong in the direction that refuses valid content: a DEF1
-        // record is `addr ‖ μ⃗[4] ‖ tag u8`, 35 bytes plus the address, so a
-        // record whose address is short — a chart key, a simplex key — is
-        // smaller than any divisor assumed for it, and a ledger this build
-        // wrote would refuse to read on this build.
-        //
-        // The bound is the tape's bytes (rule 10) and the count decides
-        // nothing else (rule 2). This is not a weaker guard than a divisor:
-        // the loops below reserve nothing from `n`, and each refuses at the
-        // first field the tape cannot supply, so a count past the end costs
-        // one iteration and then refuses.
-        let fits = |b: &[u8], pos: &usize, n: usize| -> Option<()> {
-            match n > b.len().checked_sub(*pos)? {
-                true => None,
-                false => Some(()),
-            }
-        };
         // A WORD ROW'S ADMITTING STAMP (78.24 (2b)): `0`, or `1` and the
         // stamp; any other tag refuses the row.
         let take_admitted = |b: &[u8], p: &mut usize| -> Option<Option<crate::chronometry::Stamp>> {
@@ -106,8 +82,27 @@ impl Kernel {
                 _ => None,
             }
         };
-        // A ROW'S AWARD (LD0 step 4), read beside its admitting stamp.
-        let take_award = crate::economy::persist::take_award;
+        // A ROW'S PER-WORD FIELDS (LD0 steps 4 and 5), read after its
+        // admitting stamp: the award, the deflation, the coherence field hot
+        // and cold. The award is returned to its caller, which holds it
+        // until the treasury it belongs to is read; the rest are filed.
+        let take_fields = |kernel: &mut Kernel,
+                           b: &[u8],
+                           p: &mut usize,
+                           addr: &Address|
+         -> Option<Option<crate::economy::escrow::Escrowed>> {
+            let award = crate::economy::persist::take_award(b, p)?;
+            if let Some(mag) = take_deflation(b, p)? {
+                kernel.deflations.insert(addr, mag);
+            }
+            if let Some(hot) = take_field(b, p)? {
+                kernel.field.insert(addr, hot);
+            }
+            if let Some(cold) = take_field(b, p)? {
+                kernel.field_cold.insert(addr, cold);
+            }
+            Some(award)
+        };
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
             let (n, sec_end) = section(b, pos)?;
             let start = *pos;
@@ -125,7 +120,7 @@ impl Kernel {
                 if let Some(at) = take_admitted(b, pos)? {
                     kernel.file_admitted(&addr, at);
                 }
-                if let Some(award) = take_award(b, pos)? {
+                if let Some(award) = take_fields(kernel, b, pos, &addr)? {
                     awards.push((addr, award));
                 }
                 kernel.basis_insert(spoken, who);
@@ -158,7 +153,7 @@ impl Kernel {
                 if let Some(at) = take_admitted(b, pos)? {
                     kernel.file_admitted(&addr, at);
                 }
-                if let Some(award) = take_award(b, pos)? {
+                if let Some(award) = take_fields(kernel, b, pos, &addr)? {
                     kernel.treasury.restore_award(&addr, award);
                 }
                 kernel.provisional.insert(addr, spoken);
@@ -221,11 +216,7 @@ impl Kernel {
                 for _ in 0..n {
                     let addr = Address::from(crate::snapshot::take_key(b, pos)?);
                     let closed = crate::snapshot::take_key(b, pos)?;
-                    let m = read_u64(b, pos)?;
-                    fits(b, pos, m)?;
-                    let bytes = b.get(*pos..*pos + m)?;
-                    *pos += m;
-                    let inv = crate::transducer::stalk::Invariant::from_key(bytes)?;
+                    let inv = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
                     // An empty key is the absent closure; a non-empty one is
                     // the base point's own coordinate.
                     rank.put_closure(
@@ -236,91 +227,6 @@ impl Kernel {
                 }
                 closes("RNK2", pos, start, sec_end, n)?;
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
-            }
-            tag(b, pos, b"DEF2")?;
-            {
-                // addr ‖ μ⃗[4].
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for i in 0..n {
-                    let Some(addr) = crate::snapshot::take_key(b, pos).map(Address::from) else {
-                        eprintln!(
-                            "  DEF2 record {i} of {n}: the address does not read at byte {} \
-                             (body {start}..{sec_end})",
-                            *pos
-                        );
-                        return None;
-                    };
-                    let mut mag = [0u64; 4];
-                    for m in &mut mag {
-                        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                        *pos += 8;
-                    }
-                    kernel.deflations.insert(&addr, mag);
-                }
-                closes("DEF2", pos, start, sec_end, n)?;
-            }
-            tag(b, pos, b"FLD1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let ne = read_u64(b, pos)?;
-                    fits(b, pos, ne)?;
-                    let mut entries = Vec::new();
-                    for _ in 0..ne {
-                        let m = read_u64(b, pos)?;
-                        fits(b, pos, m)?;
-                        let chart = crate::transducer::stalk::Invariant::from_key(b.get(*pos..*pos + m)?)?;
-                        *pos += m;
-                        let tag = *b.get(*pos)?;
-                        *pos += 1;
-                        let state = match tag {
-                            0 => crate::transducer::stalk::Closure::Flat,
-                            1 => crate::transducer::stalk::Closure::Twisted(
-                                Box::new(element::Versor::from_bytes(b, pos)?),
-                            ),
-                            3 => {
-                                let d = *b.get(*pos)?;
-                                *pos += 1;
-                                crate::transducer::stalk::Closure::Class(
-                                    Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, pos)?),
-                                    d,
-                                )
-                            }
-                            _ => crate::transducer::stalk::Closure::Cavity,
-                        };
-                        let nc = read_u64(b, pos)?;
-                        fits(b, pos, nc)?;
-                        let mut remainder = Vec::new();
-                        for _ in 0..nc {
-                            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            let c = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            let hb = *b.get(*pos)?;
-                            *pos += 1;
-                            let ha = *b.get(*pos)?;
-                            *pos += 1;
-                            remainder.push((r, c, hb, ha));
-                        }
-                        let mut stagnant = [0u32; 4];
-                        for s in &mut stagnant {
-                            *s = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-                            *pos += 4;
-                        }
-                        entries.push(FieldEntry {
-                            chart,
-                            state,
-                            remainder,
-                            stagnant,
-                        });
-                    }
-                    let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
-                    kernel.field.insert(addr, ListingField { entries, nonflat });
-                }
-                closes("FLD1", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"BOK1")?;
             {
@@ -336,7 +242,7 @@ impl Kernel {
                     if let Some(at) = take_admitted(b, pos)? {
                         kernel.file_admitted(&addr, at);
                     }
-                    if let Some(award) = take_award(b, pos)? {
+                    if let Some(award) = take_fields(kernel, b, pos, &addr)? {
                         kernel.treasury.restore_award(&addr, award);
                     }
                     kernel.on_page.insert(&addr, ());
@@ -359,7 +265,7 @@ impl Kernel {
                     if let Some(at) = take_admitted(b, pos)? {
                         kernel.file_admitted(&addr, at);
                     }
-                    if let Some(award) = take_award(b, pos)? {
+                    if let Some(award) = take_fields(kernel, b, pos, &addr)? {
                         kernel.treasury.restore_award(&addr, award);
                     }
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
@@ -397,68 +303,6 @@ impl Kernel {
                     kernel.complexes.insert(key, c);
                 }
                 closes("COC1", pos, start, sec_end, n)?;
-            }
-            tag(b, pos, b"FLC1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let ne = read_u64(b, pos)?;
-                    fits(b, pos, ne)?;
-                    let mut entries = Vec::new();
-                    for _ in 0..ne {
-                        let m = read_u64(b, pos)?;
-                        fits(b, pos, m)?;
-                        let chart = crate::transducer::stalk::Invariant::from_key(b.get(*pos..*pos + m)?)?;
-                        *pos += m;
-                        let tag = *b.get(*pos)?;
-                        *pos += 1;
-                        let state = match tag {
-                            0 => crate::transducer::stalk::Closure::Flat,
-                            1 => crate::transducer::stalk::Closure::Twisted(
-                                Box::new(element::Versor::from_bytes(b, pos)?),
-                            ),
-                            3 => {
-                                let d = *b.get(*pos)?;
-                                *pos += 1;
-                                crate::transducer::stalk::Closure::Class(
-                                    Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, pos)?),
-                                    d,
-                                )
-                            }
-                            _ => crate::transducer::stalk::Closure::Cavity,
-                        };
-                        let nc = read_u64(b, pos)?;
-                        fits(b, pos, nc)?;
-                        let mut remainder = Vec::new();
-                        for _ in 0..nc {
-                            let r = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            let c = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            let hb = *b.get(*pos)?;
-                            *pos += 1;
-                            let ha = *b.get(*pos)?;
-                            *pos += 1;
-                            remainder.push((r, c, hb, ha));
-                        }
-                        let mut stagnant = [0u32; 4];
-                        for s in &mut stagnant {
-                            *s = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-                            *pos += 4;
-                        }
-                        entries.push(FieldEntry {
-                            chart,
-                            state,
-                            remainder,
-                            stagnant,
-                        });
-                    }
-                    let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
-                    kernel.field_cold.insert(addr, ListingField { entries, nonflat });
-                }
-                closes("FLC1", pos, start, sec_end, n)?;
             }
             // CYC1 was the same section without a stored class key, and its
             // reader re-derived one with `class_key_of_versor`, dropping the
@@ -677,4 +521,93 @@ impl Kernel {
         }
         true
     }
+}
+
+/// A COUNT THAT CANNOT BE SATISFIED, refused against the tape's own
+/// remaining bytes and nothing else. Every record writes at least one
+/// byte, so a count larger than what is left cannot be honoured — which is
+/// EXACT and derived from the tape, not estimated from a record's size.
+///
+/// A divisor typed per record — a guess at a minimum record — can be wrong
+/// in the direction that refuses valid content, and a ledger this build
+/// wrote would refuse to read on this build. The bound is the tape's bytes
+/// (rule 10) and the count decides nothing else (rule 2): the loops that
+/// read `n` records refuse at the first field the tape cannot supply, so a
+/// count past the end costs one iteration and then refuses.
+fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
+    let n = usize::try_from(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?)).ok()?;
+    *p += 8;
+    match n > b.len().checked_sub(*p)? {
+        true => None,
+        false => Some(n),
+    }
+}
+
+/// The inverse of `write::put_deflation`: none, μ⃗, or a refusal.
+fn take_deflation(b: &[u8], p: &mut usize) -> Option<Option<[u64; 4]>> {
+    let tag = *b.get(*p)?;
+    *p += 1;
+    match tag {
+        0 => Some(None),
+        1 => {
+            let mut mag = [0u64; 4];
+            for m in &mut mag {
+                *m = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                *p += 8;
+            }
+            Some(Some(mag))
+        }
+        _ => None,
+    }
+}
+
+/// The inverse of `write::put_field`: none, a listing's field, or a
+/// refusal. A closure tag that is none of the four refuses the row; it was
+/// read as a cavity.
+fn take_field(b: &[u8], p: &mut usize) -> Option<Option<ListingField>> {
+    use crate::transducer::stalk::Closure;
+    let tag = *b.get(*p)?;
+    *p += 1;
+    match tag {
+        0 => return Some(None),
+        1 => {}
+        _ => return None,
+    }
+    let ne = take_count(b, p)?;
+    let mut entries = Vec::new();
+    for _ in 0..ne {
+        let chart = crate::transducer::stalk::Invariant::take_canonical(b, p)?;
+        let tag = *b.get(*p)?;
+        *p += 1;
+        let state = match tag {
+            0 => Closure::Flat,
+            1 => Closure::Twisted(Box::new(element::Versor::from_bytes(b, p)?)),
+            2 => Closure::Cavity,
+            3 => {
+                let d = *b.get(*p)?;
+                *p += 1;
+                Closure::Class(Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?), d)
+            }
+            _ => return None,
+        };
+        // A remainder cell is its row, column and two hues.
+        let nc = take_count(b, p)?;
+        let mut remainder = Vec::new();
+        for _ in 0..nc {
+            let r = i64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
+            let hb = *b.get(*p + 16)?;
+            let ha = *b.get(*p + 17)?;
+            *p += 18;
+            remainder.push((r, c, hb, ha));
+        }
+        let mut stagnant = [0u32; 4];
+        for s in &mut stagnant {
+            *s = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
+            *p += 4;
+        }
+        entries.push(FieldEntry { chart, state, remainder, stagnant });
+    }
+    let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
+    Some(Some(ListingField { entries, nonflat }))
 }
