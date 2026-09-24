@@ -16347,11 +16347,22 @@ things: words minted where rings closed at holonomy 1; classes held
 where rings closed at holonomy ≠ 1; demands, modes no held word
 spells, flowing up toward the star; and room reclaimed from filaments
 that carried no flux. The second and third are the next orbit's
-questions, ordered by the plexus — the demand in the enclosure
-wrapping the most rings is the one whose answer transports furthest —
-never by a count. The docket rides the `Orbit` act's own carrier so a
-restart keeps the plan; until it does, the plan lives in the
-contemplation and is lost with it (owed to TP1's fix). Superposition
+questions, ordered by the plexus and never by a count — CORRECTED
+2026-09-25 on the implementor's reading ("wrapping the most rings" is a
+count): the docket is WRITTEN in its entries' own key order (rule 15,
+nothing chosen), and beside each entry stands the enclosure it lies in
+by EN1's parse (`within`); the next orbit TAKES by the parse's partial
+order, outermost first (an ancestor wraps its descendants, so its
+answer transports to every ring beneath it), and among incomparable
+entries in key order. A partial order read off the nesting is not a
+count. The docket rides the `Orbit` act's own carrier — as CITES of
+two new kinds, `Cite::Class` (κ inline by its own coordinates) and
+`Cite::Demand` (the demand's coordinates), since a cite is what an act
+refers to and a citation is coordinates, never a copy (78.22; one
+carrier, never a second field) — so a restart keeps the plan: the
+restored chain's last `Orbit` docket re-seeds the held classes and the
+demands. Until it lands, the plan lives in the contemplation and is
+lost with it (owed to TP1's fix). Superposition
 is not a search strategy: a single thread is a filament with no
 holonomy and therefore no content; rings need two paths held at once,
 so superposition is the precondition for content to exist; and a front
