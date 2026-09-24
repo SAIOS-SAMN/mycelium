@@ -15714,16 +15714,24 @@ operations for its dimensional capacity." Read and ruled: finite
 GENERATORS, which are elements, under ONE operation, the product; never
 a menu of procedures. The bound is Cartan–Dieudonné: in `Cl(n+1,1)`
 every versor is a product of at most `n + 2` reflections; at the cell it
-is 78.11, the orbit algebra's rank as the number of independent modes,
-bounded by `dim so(n+1,1) = (n+2)(n+1)/2`. Finite at each stage and
+is 78.11, the orbit algebra's rank: the Lie closure of the generators is
+bounded by `dim so(n+1,1) = (n+2)(n+1)/2`, and the unital associative
+algebra of the circuits' actions that 78.11 reads as capacity by
+`(n+2)²`; both bounds are the algebra's, derived, and neither is set
+(corrected 2026-09-24 on the analyst's review: the Lie dimension is not
+the cap on the associative capacity). Finite at each stage and
 never fixed (rule 5): read off the cell; extended only by adjunction
 (37.7, AL1); exceeded only by an enclosure of higher grade (78.26(2),
 NB1, EN1), never by widening a cell. In the tree `PivotBy`'s four kinds
 — word, placement, hue, open axis — with candidates built per kind are a
 hand-picked taxonomy, the `act/then/rev` shape one level up. RULED: one
 move on each factor of the bundle. On the BASE, a word in the cell's
-held constructors of at most dimension-many factors — placement and the
-opening of an axis are particular words, never procedures. On the
+held constructors of at most dimension-many factors — a placement is a
+particular word (two reflections in parallel mirrors), never a
+procedure; the OPENING OF AN AXIS is not a word in the held set at all,
+since no product of a basis reaches a direction outside it: it is the
+admission of a new constructor on a refusal, the demand arm below,
+corrected 2026-09-24 on the analyst's review. On the
 FIBRE, a word in the hue gauge's own generators, the transpositions
 (61, 70: hue is a coordinate of the fibre, and the geometric and gauge
 parts of a holonomy are read together and never summed, law 5). And the
@@ -15758,10 +15766,13 @@ admits by an act), the act's stamp the constructor's `admitted_at`. No
 threshold of occurrences (rule 5), no single pivot, voice or count
 forces it.
 (e) CAPACITY IS DERIVED AND HARD: a cell's rank is bounded by its orbit
-algebra and a word by `n + 2` reflections; a demand past a full cell is
-carried to an enclosure of higher grade whose algebra holds the
-cross-cell bracket (78.26(2), CB1). The plexus grows by chambers, never
-by stretching a cell (78.31).
+algebra (the associative capacity by `(n+2)²`, the Lie closure by
+`dim so(n+1,1)`) and a word by `n + 2` reflections; a demand a cell's
+algebra cannot hold is a demand on the ENCLOSURE that wraps the cells
+whose bracket it is — an enclosure that exists by its witnesses (NB1)
+and is sealed where a circuit closes on its face (AD1, 78.2), never
+"forced" by a capacity threshold (rule 5). The plexus grows by
+chambers, never by stretching a cell (78.31).
 (f) RETIREMENT keeps the store a basis: a constructor that becomes
 derivable from the others retires by an act, as retirement by citation
 retires a word (3.8, T10); the set grows by independence and shrinks by
@@ -15769,8 +15780,17 @@ derivability.
 (g) PRICE: each admission is priced on the lanes' reserve, measured,
 never a constant (PHY1, MU-ECONOMY).
 So growth is bounded by what the algebra derives: refusal-only trigger,
-rank increase, independent re-derivation, a dimensional cap with
-overflow to an enclosure, retirement, and a lane price. Instrument
+rank increase, independent re-derivation, a dimensional cap with the
+bracket carried by an enclosure, retirement, and a lane price. These
+are INVARIANTS every admission satisfies, read where each is asked —
+never a pipeline of stages: the price is drawn per stroke on the lanes
+continuously (PHY1, A.9), the refusal is read at the pivot, the rank at
+the court's re-derivation, and no stage waits on another in a fixed
+order. A "typed constructor" enum (sphere, plane, transversion, mode
+blade) is refused as a second carrier beside the element (law 12): a
+constructor is an odd vector of the algebra whose kind is read off its
+grade, parity and class, and a mode blade is a generator read off a
+motion, not a constructor. Instrument
 first (row CS2): per cell the held constructors, the orbit-algebra rank
 against the cap, and the pivots that reached, were refused as
 derivable, or demanded a mode, on the corpus and the fleet before any
