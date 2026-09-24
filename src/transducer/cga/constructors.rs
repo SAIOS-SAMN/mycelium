@@ -56,8 +56,11 @@ pub enum ConstructorOrbit {
     /// The stroke's budget was spent before the orbit closed: the rays held
     /// when it was (rule 10).
     Unbounded { rays: usize },
-    /// A generator is not a versor or a constructor is not a reflection.
-    Unread,
+    /// The orbit did not read, and why: a constructor no reflection, a
+    /// generator no versor, a ray that does not read, a carrying refused.
+    Unread(OrbitUnread),
+    /// There are no constructors to carry: the cell's nuclei did not read.
+    NoConstructors,
 }
 
 /// WHY THE CONSTRUCTORS' ORBIT DID NOT READ (CS1, 78.26(4)): a constructor
@@ -89,14 +92,14 @@ pub fn constructor_orbit(
     generators: &[Mv],
     budget: &mut crate::physics::Budget,
 ) -> ConstructorOrbit {
-    match constructor_orbit_or_why(constructors, generators, budget) {
+    match orbit_or_why(constructors, generators, budget) {
         Ok(orbit) => orbit,
-        Err(_) => ConstructorOrbit::Unread,
+        Err(why) => ConstructorOrbit::Unread(why),
     }
 }
 
-/// The same orbit, and where it does not read, why (CV1b's instrument).
-pub fn constructor_orbit_or_why(
+/// The orbit, or why it does not read.
+fn orbit_or_why(
     constructors: &[Mv],
     generators: &[Mv],
     budget: &mut crate::physics::Budget,

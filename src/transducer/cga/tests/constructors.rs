@@ -42,12 +42,20 @@ fn a_screws_orbit_is_open_by_its_parabolic_mode() {
     );
 }
 
-/// WHAT IS NOT A CONSTRUCTOR OR A GENERATOR IS NOT READ: a null vector, and
-/// an element with no inverse.
+/// WHAT IS NOT A CONSTRUCTOR OR A GENERATOR IS NOT READ, AND SAYS WHICH
+/// (78.26(4)): a null vector is no reflection, by its place; an element with
+/// no inverse is no versor, by its place.
 #[test]
 fn a_null_constructor_or_a_non_versor_is_unread() {
+    use crate::transducer::cga::OrbitUnread;
     let null = Mv::blade(EP, q(1, 1)).add(&Mv::blade(EM, q(1, 1)));
-    assert_eq!(constructor_orbit(&[null], &[Mv::scalar(q(1, 1))], &mut budget()), ConstructorOrbit::Unread);
+    assert_eq!(
+        constructor_orbit(&[null], &[Mv::scalar(q(1, 1))], &mut budget()),
+        ConstructorOrbit::Unread(OrbitUnread::NotConstructor { constructor: 0 })
+    );
     let cone = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
-    assert_eq!(constructor_orbit(&axes(), &[cone], &mut budget()), ConstructorOrbit::Unread);
+    assert_eq!(
+        constructor_orbit(&axes(), &[cone], &mut budget()),
+        ConstructorOrbit::Unread(OrbitUnread::NotVersor { generator: 0 })
+    );
 }

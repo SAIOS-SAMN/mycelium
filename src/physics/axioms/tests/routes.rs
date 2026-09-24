@@ -206,13 +206,13 @@ fn c1_one_reference_gives_every_pair() {
 #[test]
 fn c1_capacity_is_the_rank_of_the_actions_algebra() {
     let read = |hs: Vec<Mv>| crate::transducer::cech::read_cell(1, None, None, &hs.into_iter().map(Ok).collect::<Vec<_>>(), &[], &mut stroke());
-    assert_eq!(read(vec![one()]).capacity, Some(1), "the identity: the unit alone");
+    assert_eq!(read(vec![one()]).capacity, Ok(1), "the identity: the unit alone");
     let quarter = cga::rotator(&q(1, 1), &q(1, 1));
     let a = read(vec![quarter.clone()]);
-    assert_eq!((a.capacity, a.coupled), (Some(3), 0), "one quarter turn: rank three");
+    assert_eq!((a.capacity, a.coupled), (Ok(3), 0), "one quarter turn: rank three");
     let other = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     let b = read(vec![quarter, other]);
-    assert_eq!((b.capacity, b.coupled), (Some(10), 1), "two crossing quarter turns: rank ten, coupled");
+    assert_eq!((b.capacity, b.coupled), (Ok(10), 1), "two crossing quarter turns: rank ten, coupled");
 }
 
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are

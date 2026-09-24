@@ -92,8 +92,7 @@ fn a_zero_meet_is_no_round_and_the_gram_reads_in_its_place() {
     assert!(m.is_zero(), "dependent nuclei: the meet vanishes");
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let cell = read_cell(4, Some(&m), Some(&nuclei), &[Ok(turn)], &[], &mut stroke());
-    assert_eq!(cell.congruence, Congruence::NoRound, "never Congruent");
-    assert!(cell.refusals.zero_meet && !cell.refusals.nuclei, "ZM1: the zero meet is named, the nuclei read");
+    assert_eq!(cell.congruence, Congruence::NoRound(NoRound::ZeroMeet), "never Congruent: ZM1 names the zero meet");
     let g = cell.gram.expect("the Gram form reads");
     assert_eq!((g.rank, g.dependent()), (4, 1), "four directions, one dependence");
 }
@@ -105,8 +104,12 @@ fn a_rosette_is_held_and_a_screw_is_open() {
     let (m, nuclei) = round();
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
     let held = read_cell(1, Some(&m), Some(&nuclei), &[Ok(rosette)], &[], &mut stroke());
-    assert_eq!((held.congruence, held.coherence), (Congruence::Congruent, Coherence::Held));
-    assert!(held.refusals.unordered > 0, "the held coherence names the modes of no admitted order");
+    assert_eq!(held.congruence, Congruence::Congruent);
+    assert!(
+        matches!(held.coherence, Coherence::Held { unordered } if unordered > 0),
+        "held, naming the modes of no admitted order: {:?}",
+        held.coherence
+    );
     let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let open = read_cell(1, Some(&m), Some(&nuclei), &[Ok(screw)], &[], &mut stroke());
     assert_eq!(open.coherence, Coherence::Open(BivectorKind::Parabolic));
@@ -123,15 +126,18 @@ fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
     let (m, nuclei) = round();
     let unread = read_cell(1, Some(&m), Some(&nuclei), &[Err(CircuitUnread::NotRigid)], &[], &mut stroke());
     assert_eq!((unread.congruence, unread.coherence), (Congruence::Unread { unread: 1 }, Coherence::Unread));
-    assert_eq!(unread.refusals.circuits, vec![CircuitUnread::NotRigid], "the circuit is unread by OR3's reason");
-    assert_eq!(unread.refusals.capacity, Some(CapacityRefused::NoneRead), "and no circuit read for the capacity");
+    assert_eq!(unread.circuits_unread, vec![CircuitUnread::NotRigid], "the circuit is unread by OR3's reason");
+    assert_eq!(unread.capacity, Err(CapacityRefused::NoneRead), "and no circuit read for the capacity");
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let bare = read_cell(1, None, None, &[Ok(turn)], &[], &mut stroke());
-    assert_eq!(bare.congruence, Congruence::NoRound);
-    assert!(bare.refusals.nuclei && !bare.refusals.zero_meet, "no round because the nuclei did not read, not a zero meet");
+    assert_eq!(
+        bare.congruence,
+        Congruence::NoRound(NoRound::NucleiUnread),
+        "no round because the nuclei did not read, not a zero meet"
+    );
+    assert_eq!(bare.gram, Err(NucleiUnread), "and no Gram form, by the same content");
     let none = read_cell(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
-    assert_eq!((none.congruence, none.capacity), (Congruence::NoCircuit, None));
-    assert_eq!(none.refusals.capacity, Some(CapacityRefused::NoneRead));
+    assert_eq!((none.congruence, none.capacity), (Congruence::NoCircuit, Err(CapacityRefused::NoneRead)));
 }
 
 /// 78.26(2) — A CELL'S CLOSED ALGEBRA CONTAINS WHAT ITS CIRCUITS GENERATE AND
@@ -165,10 +171,5 @@ fn a_spent_capacity_names_the_product_it_ran_out_at() {
     let turn = cga::rotator(&q(1, 1), &q(1, 1));
     let mut starved = crate::physics::Physics::default().stroke_n(0);
     let cell = read_cell(1, Some(&m), Some(&nuclei), &[Ok(turn)], &[], &mut starved);
-    assert_eq!(cell.capacity, None);
-    assert!(
-        matches!(cell.refusals.capacity, Some(CapacityRefused::Spent { product: 1 })),
-        "spent at the first product: {:?}",
-        cell.refusals.capacity
-    );
+    assert_eq!(cell.capacity, Err(CapacityRefused::Spent { product: 1 }), "spent at the first product");
 }

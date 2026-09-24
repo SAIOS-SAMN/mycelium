@@ -128,7 +128,7 @@ fn a_pivot_reads_its_move_against_the_cells_its_orbit_crosses() {
     let at_origin = held_form_over_a_cell(&w, &Word::identity());
     let cells = crate::transducer::family::pivot_cells(&at_origin, &mut crate::physics::Physics::default().stroke_n(1 << 12));
     let [cell] = cells.algebras.as_slice() else { panic!("one certified cell") };
-    assert_eq!(cell.capacity, Some(3), "the chord's quarter turn: rank three");
+    assert_eq!(cell.capacity, Ok(3), "the chord's quarter turn: rank three");
     let derivable = pivot(at_origin.clone(), &w);
     assert_eq!(
         derivable,

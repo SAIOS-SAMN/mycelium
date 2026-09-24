@@ -308,7 +308,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.constructors)
         .map(|(((a, ms), enclosure), held)| CellEntry {
             constructors: held.map(|k| k as u32),
-            refusals: a.refusals.clone(),
+            refusals: a.refusals(),
             enclosure: enclosure.clone(),
             grade: a.grade as u8,
             round: match a.congruence {
@@ -316,7 +316,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                 Congruence::HeldZ2 { .. } => CellRound::HeldZ2,
                 Congruence::Incongruent { .. } => CellRound::Carried,
                 Congruence::Unread { .. } => CellRound::Unread,
-                Congruence::NoRound => CellRound::NoRound,
+                Congruence::NoRound(_) => CellRound::NoRound,
                 Congruence::NoCircuit => CellRound::NoCircuit,
             },
             permutes: match a.permutes {
@@ -328,18 +328,23 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
             },
             coherence: match a.coherence {
                 Coherence::Closes(_) => CellCoherence::Closes,
-                Coherence::Held => CellCoherence::Held,
+                Coherence::Held { .. } => CellCoherence::Held,
                 Coherence::Open(_) => CellCoherence::Open,
                 Coherence::Unread => CellCoherence::Unread,
             },
-            capacity: a.capacity.map(|k| k as u32),
+            // The observer's summary codes; the content rides `refusals`.
+            capacity: a.capacity.as_ref().ok().map(|&k| k as u32),
             orbit: match a.constructors {
                 ConstructorOrbit::Closed { .. } => CellOrbit::Closed,
                 ConstructorOrbit::Open { .. } => CellOrbit::Open,
                 ConstructorOrbit::Unbounded { .. } => CellOrbit::Unbounded,
-                ConstructorOrbit::Unread => CellOrbit::Unread,
+                ConstructorOrbit::Unread(_) | ConstructorOrbit::NoConstructors => CellOrbit::Unread,
             },
-            signature: a.gram.as_ref().map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2 as u8), g.rank as u8)),
+            signature: a
+                .gram
+                .as_ref()
+                .ok()
+                .map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2 as u8), g.rank as u8)),
             pairs: a.gram.iter().flat_map(|g| g.pairs.iter().map(|(_, _, _, r)| *r)).collect(),
             coxeter: a.coxeter.as_ref().map(cell_closure),
             polars: a.polars.as_ref().map(cell_closure),

@@ -84,11 +84,26 @@ pub enum Congruence {
     Incongruent { grade: usize, failures: Vec<ModeReading> },
     /// Circuits whose holonomy or modes did not read, and no read one failed.
     Unread { unread: usize },
-    /// The cell has no round: a nucleus did not read, or the meet is zero.
-    NoRound,
+    /// The cell has no round, and why (ZM1): its nuclei did not read, or
+    /// their meet is zero.
+    NoRound(NoRound),
     /// No circuit crosses the cell: nothing was asked.
     NoCircuit,
 }
+
+/// WHY A CELL HAS NO ROUND (78.14, ZM1, 78.26(4)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NoRound {
+    /// A body's nucleus did not read back: no constructors, no meet.
+    NucleiUnread,
+    /// The nuclei read and their meet is zero: dependent spheres, or `n + 2`
+    /// of them. Degeneration, never congruence.
+    ZeroMeet,
+}
+
+/// The cell's nuclei did not read back: the Gram form has nothing to read.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct NucleiUnread;
 
 /// WHETHER EVERY MODE OF EVERY CIRCUIT PERMUTES THE CELL'S CONSTRUCTORS.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -109,8 +124,9 @@ pub enum Permutes {
 pub enum Coherence {
     /// Every mode elliptic of finite order: the joint period, their lcm.
     Closes(u32),
-    /// Every mode elliptic, one of no admitted order: quasi-periodic, held.
-    Held,
+    /// Every mode elliptic, these many of no admitted order: quasi-periodic,
+    /// held.
+    Held { unordered: usize },
     /// A mode of this class never returns.
     Open(BivectorKind),
     /// A circuit or its modes did not read, or none crossed the cell.
@@ -183,10 +199,9 @@ pub enum CapacityRefused {
     Elimination { product: usize },
 }
 
-/// CV1b — WHAT ONE CELL'S READERS COULD NOT HOLD, BY CONTENT (78.26(4)): each
-/// silence the readers answer as `None` or `Unread`, with what it could not
-/// hold. The instrument: read beside the readers' answers, and carried by
-/// their own types at the fix.
+/// CV1b — WHAT ONE CELL'S READERS COULD NOT HOLD, BY CONTENT (78.26(4)): the
+/// observer's summary of the refusals the readers' own types carry, read off
+/// them by [`CellAlgebra::refusals`] and never stored beside them (law 12).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CellRefusals {
     /// Each crossing circuit whose holonomy did not read, by OR3's reason.
@@ -214,6 +229,27 @@ impl CellRefusals {
     }
 }
 
+impl CellAlgebra {
+    /// THE REFUSALS BY CONTENT, read off the readers' own typed answers.
+    pub fn refusals(&self) -> CellRefusals {
+        CellRefusals {
+            circuits: self.circuits_unread.clone(),
+            modes: self.modes_unread.clone(),
+            capacity: self.capacity.err(),
+            zero_meet: self.congruence == Congruence::NoRound(NoRound::ZeroMeet),
+            nuclei: self.gram.is_err(),
+            unordered: match self.coherence {
+                Coherence::Held { unordered } => unordered,
+                _ => 0,
+            },
+            orbit: match self.constructors {
+                ConstructorOrbit::Unread(why) => Some(why),
+                _ => None,
+            },
+        }
+    }
+}
+
 /// ONE CELL'S ORBIT ALGEBRA (CG1, CG1b, GR1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CellAlgebra {
@@ -221,9 +257,10 @@ pub struct CellAlgebra {
     /// Circuits crossing the cell, read or not.
     pub circuits: usize,
     /// The rank of the unital ℚ-algebra the read circuits' actions generate;
-    /// `None` where none read, the budget was spent, or a coefficient did
-    /// not fit the exact elimination (rule 11).
-    pub capacity: Option<usize>,
+    /// where it did not read, why — none read, a holonomy with no action,
+    /// the budget spent at the k-th product, an entry that did not fit the
+    /// exact elimination (78.26(4), rule 11).
+    pub capacity: Result<usize, CapacityRefused>,
     /// Pairs of read circuits whose actions do not commute.
     pub coupled: usize,
     /// Every read mode ray against the cell.
@@ -231,8 +268,8 @@ pub struct CellAlgebra {
     pub congruence: Congruence,
     pub permutes: Permutes,
     pub coherence: Coherence,
-    /// The constructors' Gram form (GR1); `None` where they did not read.
-    pub gram: Option<GramReading>,
+    /// The constructors' Gram form (GR1), or that the nuclei did not read.
+    pub gram: Result<GramReading, NucleiUnread>,
     /// The orbit of the cell's constructors under its read circuits (CS1).
     pub constructors: ConstructorOrbit,
     /// CX1 — the product of the cell's constructors in each crossing
@@ -248,8 +285,10 @@ pub struct CellAlgebra {
     pub polars: Option<super::CoxeterReading>,
     /// DF1 — the dual frame, `descend`'s reader, or why there is none.
     pub dual: Option<cga::DualFrame>,
-    /// CV1b — what the readers above could not hold, by content.
-    pub refusals: CellRefusals,
+    /// OR3 — each crossing circuit whose holonomy did not read, by its reason.
+    pub circuits_unread: Vec<CircuitUnread>,
+    /// MR1 — each read circuit whose modes did not read, by why.
+    pub modes_unread: Vec<ModesUnread>,
     /// 78.26(2) — the read circuits' actions, in the order of the cell's
     /// read circuits, and the closed algebra's basis rows where the capacity
     /// read: what the cross-cell bracket is read against. Volatile, the
@@ -432,21 +471,22 @@ pub fn read_cell_after(
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
 ) -> CellAlgebra {
-    let mut refusals = CellRefusals {
-        circuits: circuits.iter().filter_map(|h| h.as_ref().err().copied()).collect(),
-        nuclei: nuclei.is_none(),
-        ..CellRefusals::default()
+    let circuits_unread: Vec<CircuitUnread> = circuits.iter().filter_map(|h| h.as_ref().err().copied()).collect();
+    let mut modes_unread: Vec<ModesUnread> = Vec::new();
+    // WHY THERE IS NO ROUND, where there is none (ZM1, 78.26(4)): the nuclei
+    // did not read, or they read and their meet is zero — dependent spheres,
+    // or `n + 2` of them. A zero blade commutes with everything, which is
+    // degeneration and not congruence.
+    let no_round = match round {
+        None => Some(NoRound::NucleiUnread),
+        Some(m) if m.is_zero() => Some(NoRound::ZeroMeet),
+        Some(_) => None,
     };
-    // A zero meet is no round (78.14), and ZM1 counts it by name.
-    refusals.zero_meet = round.is_some_and(Mv::is_zero);
     let round = round.filter(|m| !m.is_zero());
     let read: Vec<&Mv> = circuits.iter().flatten().collect();
     let (capacity, basis) = match rank.rank {
-        Ok((k, rows)) => (Some(k), Some(rows)),
-        Err(why) => {
-            refusals.capacity = Some(why);
-            (None, None)
-        }
+        Ok((k, rows)) => (Ok(k), Some(rows)),
+        Err(why) => (Err(why), None),
     };
     let actions = rank.actions.ok();
     let modes: Vec<Option<Vec<MotionMode>>> = circuits
@@ -454,7 +494,7 @@ pub fn read_cell_after(
         .map(|h| match h.as_ref().map(|h| cga::motion_modes(h, budget)) {
             Ok(Some(Ok(ms))) => Some(ms),
             Ok(Some(Err(why))) => {
-                refusals.modes.push(match why {
+                modes_unread.push(match why {
                     cga::Undecomposed::Irrational(d) => ModesUnread::Irrational(d),
                     cga::Undecomposed::Defective => ModesUnread::Defective,
                     cga::Undecomposed::Unbounded(d) => ModesUnread::Unbounded(d),
@@ -462,7 +502,7 @@ pub fn read_cell_after(
                 None
             }
             Ok(None) => {
-                refusals.modes.push(ModesUnread::NotVersor);
+                modes_unread.push(ModesUnread::NotVersor);
                 None
             }
             Err(_) => None,
@@ -502,10 +542,11 @@ pub fn read_cell_after(
             ModeReading { circuit: c, mode: j, kind: mode.kind, plane: plane_of(mode), round, permutation }
         })
         .collect();
-    let congruence = match (round, circuits.is_empty()) {
-        (_, true) => Congruence::NoCircuit,
-        (None, false) => Congruence::NoRound,
-        (Some(_), false) => {
+    let congruence = match (round, circuits.is_empty(), no_round) {
+        (_, true, _) => Congruence::NoCircuit,
+        (None, false, Some(why)) => Congruence::NoRound(why),
+        (None, false, None) => Congruence::NoRound(NoRound::NucleiUnread),
+        (Some(_), false, _) => {
             let failures: Vec<ModeReading> =
                 readings.iter().filter(|r| matches!(r.round, RoundKept::Carried(_))).cloned().collect();
             let reversed = readings.iter().filter(|r| r.round == RoundKept::Reversed).count();
@@ -537,26 +578,17 @@ pub fn read_cell_after(
                 Some(m) => Coherence::Open(m.kind),
                 None => match all.iter().map(|m| m.order).collect::<Option<Vec<u32>>>() {
                     Some(orders) => Coherence::Closes(orders.into_iter().fold(1, lcm)),
-                    None => {
-                        refusals.unordered = all.iter().filter(|m| m.order.is_none()).count();
-                        Coherence::Held
-                    }
+                    None => Coherence::Held { unordered: all.iter().filter(|m| m.order.is_none()).count() },
                 },
             }
         }
         _ => Coherence::Unread,
     };
-    let gram = nuclei.map(cga::read_gram);
+    let gram = nuclei.map(cga::read_gram).ok_or(NucleiUnread);
     let generators: Vec<Mv> = read.into_iter().cloned().collect();
     let constructors = match nuclei {
-        Some(ns) => match cga::constructor_orbit_or_why(ns, &generators, budget) {
-            Ok(orbit) => orbit,
-            Err(why) => {
-                refusals.orbit = Some(why);
-                ConstructorOrbit::Unread
-            }
-        },
-        None => ConstructorOrbit::Unread,
+        Some(ns) => cga::constructor_orbit(ns, &generators, budget),
+        None => ConstructorOrbit::NoConstructors,
     };
     // CX1 — the product per circuit that orders every body; GR2 — the
     // group, with the products' certain refusals; DF1 — the dual frame, and
@@ -606,7 +638,8 @@ pub fn read_cell_after(
         coxeter,
         polars,
         dual,
-        refusals,
+        circuits_unread,
+        modes_unread,
         actions,
         basis,
     }
