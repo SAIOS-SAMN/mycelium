@@ -362,18 +362,10 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
     let composite = carried.composite();
     // OR3's REASON, kept for the cells the circuit crosses (78.26(4)): the
     // edge half refused by name, a held coset, or a refusal left unnamed.
-    let unread = composite.is_none().then(|| {
-        use crate::transducer::cech::CircuitUnread as Why;
-        match (carried.holds_coset(), carried.edge_refused) {
-            (true, _) => Why::Coset,
-            (false, Some(Unread::Cone)) => Why::Cone,
-            (false, Some(Unread::NoPlace)) => Why::NoPlace,
-            (false, Some(Unread::NotRigid)) => Why::NotRigid,
-            (false, Some(Unread::Unrefracted)) => Why::Unrefracted,
-            (false, Some(Unread::NoFace)) => Why::NoFace,
-            (false, Some(Unread::TwoWays)) => Why::TwoWays,
-            (false, None) => Why::Unnamed,
-        }
+    let unread = composite.is_none().then(|| match (carried.holds_coset(), carried.edge_refused) {
+        (true, _) => crate::transducer::cech::CircuitUnread::Coset,
+        (false, Some(why)) => circuit_unread(why),
+        (false, None) => crate::transducer::cech::CircuitUnread::Unnamed,
     });
     PendingCircuit {
         chord,
@@ -386,6 +378,57 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
         lost: carried.edge_lost_at,
         offers: Vec::new(),
     }
+}
+
+/// OR3's reason as the cell reads it.
+fn circuit_unread(why: Unread) -> crate::transducer::cech::CircuitUnread {
+    use crate::transducer::cech::CircuitUnread as Why;
+    match why {
+        Unread::Cone => Why::Cone,
+        Unread::NoPlace => Why::NoPlace,
+        Unread::NotRigid => Why::NotRigid,
+        Unread::Unrefracted => Why::Unrefracted,
+        Unread::NoFace => Why::NoFace,
+        Unread::TwoWays => Why::TwoWays,
+    }
+}
+
+/// CS2 — A HELD FORM'S CIRCUITS, read at the pivot off its own orbits: each
+/// member path's steps, composite and OR3's reason, by the orbit's chord,
+/// filing nothing on the percept's tallies. An orbit whose traversal refused
+/// stands as one unread circuit over its faces, by its reason.
+pub fn circuits_of(form: &Form) -> Vec<(u16, TraversedCircuit)> {
+    let mut out = Vec::new();
+    for lp in &form.orbits {
+        match paths_carried_quiet_why(&form.faces, &form.vertices, lp) {
+            Ok(carried) => {
+                for (_, c) in carried.scoped() {
+                    let p = read_circuit(lp.chord, c, &form.faces);
+                    out.push((
+                        lp.chord,
+                        TraversedCircuit {
+                            steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
+                            composite: p.composite,
+                            unread: p.unread,
+                            coset: None,
+                            gauge_static: p.gauge_static,
+                        },
+                    ));
+                }
+            }
+            Err(why) => out.push((
+                lp.chord,
+                TraversedCircuit {
+                    steps: lp.faces.iter().map(|&f| (f, true)).collect(),
+                    composite: None,
+                    unread: Some(circuit_unread(why)),
+                    coset: None,
+                    gauge_static: false,
+                },
+            )),
+        }
+    }
+    out
 }
 
 /// A versor's ray in its canonical coordinates, each non-zero blade and its

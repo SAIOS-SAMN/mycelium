@@ -8,6 +8,7 @@
 mod chord;
 mod comprehend;
 pub use comprehend::{take_cells, take_progress, take_spend, take_viscosity};
+pub(crate) use comprehend::pivot_cells;
 pub mod contact;
 pub mod correspondence;
 pub mod cover;

@@ -222,6 +222,7 @@ impl Contemplation {
             form: Some(held),
             bundle,
             remainders: rem_keyed,
+            cells_read: None,
         };
         // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
         //

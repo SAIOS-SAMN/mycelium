@@ -277,6 +277,24 @@ impl Form {
         bundle: Option<&crate::transducer::family::Family>,
         t_extent: u64,
     ) -> Vec<Snap> {
+        self.pivot_orbit_read(idea, horizon, crystal, budget, bundle, t_extent, None, &mut super::PivotTally::default())
+    }
+
+    /// The same pivot, each orbit's outcome noted against the cells its
+    /// circuit crosses where the caller read them (CS2, note only): the
+    /// pivot applies exactly as it does without them.
+    #[expect(clippy::too_many_arguments, reason = "the pivot's six inputs and CS2's reading beside them")]
+    pub fn pivot_orbit_read(
+        &mut self,
+        idea: impl AsRef<[u8]>,
+        horizon: &Keyed<(Rotor, Order, Standing)>,
+        crystal: &dyn Crystal,
+        budget: &mut Budget,
+        bundle: Option<&crate::transducer::family::Family>,
+        t_extent: u64,
+        cells: Option<&super::PivotCells>,
+        tally: &mut super::PivotTally,
+    ) -> Vec<Snap> {
         let idea = idea.as_ref();
         // The meet is re-derived, never asserted: `by_address` is how A6 and
         // Mayer–Vietoris find the vertex carrying an address (law 2).
@@ -552,11 +570,11 @@ impl Form {
                 // it. Minting is the entity's, since a form does not hold the
                 // language; it stands in the dialect, `Stood` not `Ruled`, so
                 // it suppresses no demand the mesh may still answer.
-                if held_gens == 0
+                let adjoining = held_gens == 0
                     && !held
                     && !hw.rotor().is_identity()
-                    && hw.rotor().holonomy_key().is_some_and(|k| published.at(&k).is_some())
-                {
+                    && hw.rotor().holonomy_key().is_some_and(|k| published.at(&k).is_some());
+                if adjoining {
                     // Every chart the orbit stands on (rule 15): an orbit through
                     // vertices on two charts is an obstruction on both.
                     let charts = self.charts_of_orbit(idx);
@@ -589,7 +607,13 @@ impl Form {
                         moves.len()
                     );
                 }
-                match outcome_of(&moves, starved) {
+                let outcome = outcome_of(&moves, starved);
+                // CS2 — the outcome read against the cells its circuit
+                // crosses, noted and never branched on.
+                if let (Some(cells), Some(chord)) = (cells, self.orbits.get(idx).map(|lp| lp.chord)) {
+                    super::cells::note_outcome(cells, chord, &outcome, adjoining, tally);
+                }
+                match outcome {
                     Discharge::One(cert) => {
                         self.apply_pivot(&cert);
                         // A18, T21 (iii): the applied pivot makes the move

@@ -4,6 +4,7 @@
 //! the trial that opens one axis, the discharge it certifies, and the orbits
 //! and axis index the move is read and written on.
 
+pub mod cells;
 pub mod census;
 pub mod drive;
 pub mod moves;
@@ -19,7 +20,10 @@ pub mod words;
 pub use census::*;
 pub use moves::*;
 pub use snap::*;
-pub use trajectory::{construct_routes, finish_circuits, take_circuits, traversed_circuits, TraversedCircuit};
+pub use cells::{PivotCells, PivotTally};
+pub use trajectory::{
+    circuits_of, construct_routes, finish_circuits, take_circuits, traversed_circuits, TraversedCircuit,
+};
 pub use viscosity::{
     bend_plane_name, read_viscosity, viscosity_line, viscosity_reading, Arm, BendLane, PairViscosity,
 };

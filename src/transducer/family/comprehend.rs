@@ -605,6 +605,31 @@ fn crossings(
     out
 }
 
+/// CS2 — THE CELLS A HELD FORM'S PIVOT READS AGAINST: each certified cell's
+/// orbit algebra over the form's own circuits (`circuits_of`), and by orbit
+/// chord the cells its circuits cross. A reader on the cognition path: it
+/// spends the pivot's stroke, once per form per change (memoised on the idea).
+pub(crate) fn pivot_cells(form: &Form, budget: &mut crate::physics::Budget) -> crate::transducer::sentence::PivotCells {
+    let noted = crate::transducer::sentence::circuits_of(form);
+    let traversed: Vec<crate::transducer::sentence::TraversedCircuit> = noted.iter().map(|(_, t)| t.clone()).collect();
+    let algebras = cell_algebras(form, &traversed, budget);
+    let mut by_chord: Keyed<Vec<usize>> = Keyed::new();
+    for (k, (_, cell)) in form.cells.scoped().enumerate() {
+        for (at, _) in crossings(form, cell, &traversed) {
+            let Some((chord, _)) = noted.get(at) else { continue };
+            let key = chord.to_be_bytes();
+            match by_chord.get_mut(&key) {
+                Some(cells) if !cells.contains(&k) => cells.push(k),
+                Some(_) => {}
+                None => {
+                    by_chord.insert(key, vec![k]);
+                }
+            }
+        }
+    }
+    crate::transducer::sentence::PivotCells { algebras, by_chord }
+}
+
 pub(crate) fn cell_algebras(
     form: &Form,
     traversed: &[crate::transducer::sentence::TraversedCircuit],

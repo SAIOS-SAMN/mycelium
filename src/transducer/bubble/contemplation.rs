@@ -155,6 +155,9 @@ pub struct Contemplation {
     /// rewrote a form (`refile_vortex`); not persisted, rebuilt as the
     /// other indices are.
     pub(crate) by_vortex: Keyed<Keyed<()>>,
+    /// CS2 — the pivots' outcomes against the cells their orbits cross,
+    /// counted since the contemplation began (78.32(c), note only).
+    pub(crate) pivots: sentence::PivotTally,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -207,6 +210,12 @@ pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
 impl Contemplation {
     pub fn new() -> Contemplation {
         Contemplation::default()
+    }
+
+    /// CS2 — the pivots' outcomes by content: reached, derivable, demanded
+    /// (the adjunction apart), starved, unread by fibre or by algebra.
+    pub fn pivot_reading(&self) -> sentence::PivotTally {
+        self.pivots
     }
 
     /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated: the span
@@ -830,6 +839,7 @@ impl Contemplation {
             form: None,
             bundle: None,
             remainders: Keyed::new(),
+            cells_read: None,
         };
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);

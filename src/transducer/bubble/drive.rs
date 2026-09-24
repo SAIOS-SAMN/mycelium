@@ -84,7 +84,7 @@ impl Contemplation {
             from = Some(k.clone());
             self.expand_cursor = Some(k.clone());
             if let Some(b) = self.bubbles.get_mut(&k) {
-                let (s, p, mut a) = b.expand_with(atlas, section_at, self.now_k, crystal, budget);
+                let (s, p, mut a) = b.expand_with(atlas, section_at, self.now_k, crystal, budget, &mut self.pivots);
                 spent += s;
                 for i in 0..4 {
                     pivoted[i] = pivoted[i].saturating_add(p[i]);
@@ -207,11 +207,21 @@ impl Contemplation {
                 continue;
             };
             if let Some(mut form) = b.form.clone() {
+                // CS2 — the cells this pivot reads against, from the idea's
+                // memo where the form stands, read afresh where it moved.
+                let mut memo = b.cells_read.clone();
+                let cells = super::idea::cells_for_pivot(&mut memo, &form, budget);
+                if let Some(b) = self.bubbles.get_mut(bk) {
+                    b.cells_read = memo;
+                }
                 // Every snap this pivot makes is read: the adjunction is
                 // carried out, and an orbit's standing demand is written on
                 // the form (16.16 step 6). Both pivot paths read the same
                 // snaps (law 12).
-                let snaps = form.pivot_orbit(bk, &horizon, crystal, budget, bundle.as_deref(), t);
+                let mut tally = sentence::PivotTally::default();
+                let snaps =
+                    form.pivot_orbit_read(bk, &horizon, crystal, budget, bundle.as_deref(), t, Some(&cells), &mut tally);
+                self.pivots.add(&tally);
                 for s in &snaps {
                     match s {
                         crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {

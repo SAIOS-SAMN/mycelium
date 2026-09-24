@@ -72,7 +72,14 @@ fn an_expanded_bubble_stands_its_orbits_demand_on_the_form_it_takes() {
     let atlas = Stalks::default();
     let section_at = |_: &[u8]| None;
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 8);
-    let _ = b.expand_with(&atlas, &section_at, 0, &crate::transducer::family::NoCrystal, &mut budget);
+    let _ = b.expand_with(
+        &atlas,
+        &section_at,
+        0,
+        &crate::transducer::family::NoCrystal,
+        &mut budget,
+        &mut Default::default(),
+    );
     let f = b.form.as_ref().expect("the bubble keeps its form");
     each_demand_carries(f, &eleven());
     assert!(!f.is_closed(), "a form carrying a demand is not closed");

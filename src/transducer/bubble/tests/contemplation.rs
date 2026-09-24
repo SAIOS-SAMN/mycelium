@@ -252,7 +252,7 @@ fn hold_form_keeps_a_glued_open_orbit() {
     let mut budget = crate::physics::Physics::default().stroke_n(16);
     if let Some(b) = c2.bubbles.get_mut(&k) {
         let atlas = crate::transducer::stalk::Stalks::default();
-        let _ = b.expand_with(&atlas, &|_| None, 0, &HoldQ(w.clone()), &mut budget);
+        let _ = b.expand_with(&atlas, &|_| None, 0, &HoldQ(w.clone()), &mut budget, &mut Default::default());
     }
     let b = c2.bubbles.get(&k).expect("still held");
     let form = b.form.as_ref().expect("form carrier");

@@ -160,7 +160,7 @@ fn a_held_idea_expands_at_zero_extent_and_its_potential_reads_zero_on_t() {
         .bubbles
         .get_mut(&k)
         .expect("held")
-        .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget);
+        .expand_with(&atlas, &|_| None, 7, &NoCrystal, &mut budget, &mut Default::default());
     let b = c.bubbles.get(&k).expect("still held");
     assert_eq!(b.potential[2], 0, "moved at K 7, read at K 7: zero receipts, zero on T");
     assert_eq!(
@@ -407,7 +407,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     };
 
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
-    let _ = b.expand_with(&atlas, &section_at, 0, &NoCrystal, &mut budget);
+    let _ = b.expand_with(&atlas, &section_at, 0, &NoCrystal, &mut budget, &mut Default::default());
     assert!(
         b.cover.contains(mine.key().as_bytes()),
         "the chart this idea's vertex stands on IS met, so the reading is not empty"

@@ -299,6 +299,7 @@ impl Contemplation {
             form,
             bundle,
             remainders,
+            cells_read: None,
         };
         self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert(&key, bubble);

@@ -333,6 +333,17 @@ pub(crate) fn paths_carried_why(
     traverse(faces, vertices, lp, true)
 }
 
+/// The same circuit and its reason, filing nothing on the census counters:
+/// a reader off the percept (CS2's, at the pivot) reads the held form's
+/// circuits without moving the percept's tallies.
+pub(crate) fn paths_carried_quiet_why(
+    faces: &[FormFace],
+    vertices: &[Vertex],
+    lp: &Orbit,
+) -> Result<Keyed<PathCarried>, Unread> {
+    traverse(faces, vertices, lp, false)
+}
+
 /// The traversal itself; `note` files each step's charge on the census counters.
 fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.

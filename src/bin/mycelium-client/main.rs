@@ -379,11 +379,12 @@ fn main() {
             let (axis_charts, axis_words) = entity.axis_index_counts();
             if moved == [false; 4] {
                 eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
+                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
+                    entity.pivot_reading().line(),
                     entity.cavity_len(),
                     entity.cavity_links(),
                     entity.idea_weight(),
@@ -407,11 +408,12 @@ fn main() {
                 );
             } else {
                 eprintln!(
-                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
+                    "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),
                     entity.epigenome.genome_len(),
                     entity.dialect_len(),
                     entity.ideas_len(),
+                    entity.pivot_reading().line(),
                     entity.cavity_len(),
                     entity.cavity_links(),
                     entity.idea_weight(),

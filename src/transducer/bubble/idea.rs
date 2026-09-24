@@ -204,6 +204,29 @@ pub struct Bubble {
     pub bundle: Option<Vec<crate::transducer::family::TrainPair>>,
     /// Per-pair remainder chains, keyed by pair index. `remainder` is their union.
     pub remainders: Keyed<Vec<Link>>,
+    /// CS2 — THE CELLS THIS IDEA'S PIVOT READS AGAINST, memoised by the form's
+    /// own address: read once per form per change, re-read where the form
+    /// moved, because the algebra depends on the form and not on the orbit.
+    /// Volatile, never persisted.
+    pub(crate) cells_read: Option<(crate::transducer::address::Address, std::sync::Arc<sentence::PivotCells>)>,
+}
+
+/// CS2 — the cells a held form's pivot reads against, from the idea's memo
+/// where the form's address stands, read afresh (and memoised) where it moved.
+pub(crate) fn cells_for_pivot(
+    memo: &mut Option<(crate::transducer::address::Address, std::sync::Arc<sentence::PivotCells>)>,
+    form: &Form,
+    budget: &mut Budget,
+) -> std::sync::Arc<sentence::PivotCells> {
+    let at = sentence::form_vertex_key(form);
+    if let Some((key, cells)) = memo.as_ref() {
+        if *key == at {
+            return cells.clone();
+        }
+    }
+    let cells = std::sync::Arc::new(crate::transducer::family::pivot_cells(form, budget));
+    *memo = Some((at, cells.clone()));
+    cells
 }
 
 /// ONE CHART'S AMBIENT CONNECTION: the chart, the transports between the
@@ -423,14 +446,15 @@ impl Bubble {
     /// a torsion axis, and one that stands a class writes the horizon and
     /// leaves the chart out of the cover.
     pub fn expand(&mut self, atlas: &dyn AtlasRead, crystal: &dyn Crystal, budget: &mut Budget) -> usize {
-        self.expand_with(atlas, &|_| None, 0, crystal, budget).0
+        self.expand_with(atlas, &|_| None, 0, crystal, budget, &mut sentence::PivotTally::default()).0
     }
 
     /// `atlas` is the language this thought expands over (the working
     /// atlas, 24.1); `section_at` is the keyed read of a held word's
     /// SECTION by address — its rotation and its carriage — so the Čech arm
     /// reads the word the chart names and never a table built for the
-    /// stroke, and the word's placement reaches `extend`.
+    /// stroke, and the word's placement reaches `extend`. `pivots` gathers
+    /// CS2's reading of the pivot against the cells its orbits cross.
     pub fn expand_with(
         &mut self,
         atlas: &dyn AtlasRead,
@@ -438,6 +462,7 @@ impl Bubble {
         now: u64,
         crystal: &dyn Crystal,
         budget: &mut Budget,
+        pivots: &mut sentence::PivotTally,
     ) -> (usize, [u64; 4], Vec<(Rotor, crate::transducer::stalk::Invariant)>) {
         // 37.7's candidates, carried out rather than dropped: the rotors this
         // stroke met that the seventeen cannot spell, each with the chart it
@@ -566,13 +591,17 @@ impl Bubble {
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
-                let snaps = form.pivot_orbit(
+                // CS2 — the cells this pivot reads against, memoised here.
+                let cells = cells_for_pivot(&mut self.cells_read, &form, budget);
+                let snaps = form.pivot_orbit_read(
                     key,
                     &self.horizon,
                     crystal,
                     budget,
                     self.bundle.as_deref(),
                     t,
+                    Some(&cells),
+                    pivots,
                 );
                 for s in &snaps {
                     let m = s.lanes();
