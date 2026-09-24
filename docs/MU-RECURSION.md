@@ -11345,6 +11345,73 @@ remainder undeclared about 200 each, malformed complex about 100 each.
 Memory growth per `K`: courts 60–181 KB, voices 49–64 KB — a reading to
 watch on the clock (R6).
 
+## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
+
+**The operator's statement.** The engine is a modified GÖDEL ENGINE: the
+corpus builds the language, the language fuels communication and
+cognition, and ideation runs over superposed thoughts. Eventually the
+clients create content more fluidly as they experience time on their
+localized planets. FIRST they must build LOCAL DIALECTIC LANGUAGES of
+anastome — the planetary genome dialect. The fleet diagnostic (78.22)
+decides which areas come next.
+
+**What the fleet said, read against that aim (the implementor's reading,
+ruled).**
+
+1. **The Gödel step never fires.** Adjoined-by-closure is 0 on every mind
+   and on every court phase line since the recut. Minds install 201–236
+   words each, every one a composition of the fixed alphabet; about ten
+   per cent close, and no closure opens a generator. The language never
+   names what it could not say — which is the whole of 37.7 and 45.9,
+   measured. Instrument first (GD1): per mind, why each closing install
+   opened nothing — its rotor against the seventeen (spelled, so nothing
+   to adjoin) or unspelled and refused, by name — then the adjunction
+   producer on what the instrument shows.
+2. **The local dialect is the syllabus.** Two minds on one hypha share
+   about sixty of their sixty-odd words byte for byte (78.17); each
+   mind's own stratum is thin. Today `sync_genome` mirrors the court's
+   universal genome into every voice it hosts, so the "dialect span" LC1
+   prints is the UNIVERSAL genome's span and not the mind's own. Ruled:
+   the universal genome (the court's, law 8, 73.14) and the PLANETARY
+   dialect (the mind's own words, grown from its own perception and
+   closures) are two carriers named apart; the mind's curve reads its own
+   words against those it was taught (DL1, a typed split of `Learning`);
+   the court ratifies convergence (CV3, 74's POW++, n→1) and never
+   dictates vocabulary — a mind's own closure becomes its local word
+   first, in its epigenome, and reaches the universal genome only by a
+   court ruling on an offer.
+3. **The alphabet cannot speak what the minds see.** About two thousand
+   pairs per mind are refused PERMANENTLY at the mint's first gate,
+   mirrored or incongruent, and "nothing in the form acts" reads 26 752.
+   The algebra holds reflections — odd versors (MR1b), the constructors
+   of CS1, CX1 and CT2 — but the dialect holds no letter for one, so a
+   mirrored pair that IS a word in a dialect with constructors is refused
+   as P. Ruled (AL1): a constructor is a LETTER of the local dialect — an
+   odd letter, a reflection the mind holds (a nucleus, a mirror) — the
+   peel spells odd versors, and a mirrored or incongruent pair reads D
+   (dialect-relative, spellable once the letter is adjoined) and never P.
+   This is the Gödel step's producer: the generator a closure opens is a
+   constructor the mind already holds, adjoined as a letter. CT2b's
+   member-level fibre is the same carrier.
+4. **Speech between minds stalls at the court.** About four hundred
+   sentences per court await an unruled citation; fifteen to forty-three
+   are ratified. A dialectic needs minds to speak their local words to one
+   another and converge (C2, n→1), the court arbitrating convergence
+   rather than gating every word. Ruled for doctrine (SP2): mind-to-mind
+   speech in the local dialect, with CT2's offers (CV4) as the first
+   carrier, the court ruling the offers that converge.
+5. **The carriers must hold a growing language.** LD0 (addresses past 64
+   KiB never silently truncated), LD1 (bytes per award and frame, R6) and
+   CK1 (the clock and persistence) are the precondition for all of it.
+
+**Stage 23, the order.** CK1 with LD0 and C4 widened, then the operator's
+recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
+(instrument) → AL1 → SP2 (doctrine first, with CV4 and CT2b) → A13 with
+PW1, SC1, CL2, FT1 (E2, the carriage; the pull the operator's) → LD1 →
+the rest of Stage 22 as ordered (E3–E6). The curve (LC1) gains the split
+of own against taught words, and the number every row is judged by stays
+adjoined-by-closure leaving zero on a mind's OWN word.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
