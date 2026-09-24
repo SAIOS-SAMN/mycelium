@@ -228,9 +228,11 @@ impl Vertex {
         let [first, rest @ ..] = members.as_slice() else {
             return Vec::new();
         };
-        let Some(inv) = first.carriage.versor_inverse() else {
+        // Each member against the first by `c c̃₁`, a ray (78.32(1)).
+        if !crate::transducer::cga::is_versor(&first.carriage) {
             return Vec::new();
-        };
+        }
+        let inv = first.carriage.reverse();
         rest.iter()
             .map(|m| super::FiberTransition {
                 from: first.chart.clone(),

@@ -160,9 +160,10 @@ pub fn cayley_inverse(h: &Mv) -> Option<Mv> {
 
 /// THE EXACT INVERSE OF AN EVEN ELEMENT `u = ⟨u⟩₀ + ⟨u⟩₂ + ⟨u⟩₄`.
 ///
-/// `versor_inverse` is `ũ / (u ũ)` and needs `u ũ` to be a pure SCALAR —
-/// which holds for a versor and fails for the very elements this exists
-/// for. With `B` non-simple,
+/// THE CAYLEY CHART'S ALONE (78.32(1)): nothing else in the tree inverts. A
+/// versor is read by its reverse, `ũ ∝ u⁻¹`, which needs `u ũ` a pure
+/// SCALAR — and that fails for the very elements this exists for, the
+/// chart's `1 + B` with `B` non-simple:
 ///
 /// ```text
 ///     (1 + B)(1 + B)~ = 1 − B² = (1 − ⟨B²⟩₀) − ⟨B²⟩₄
@@ -432,8 +433,9 @@ pub fn transvection_along(axes: &[(&BigRational, &BigRational)]) -> Option<Mv> {
 /// commutator is, and an elliptic answer on two hyperbolic generators is
 /// the curvature being non-zero, measured.
 pub fn transvection_commutator(a: &Mv, b: &Mv) -> Option<Mv> {
-    let ai = a.versor_inverse()?;
-    let bi = b.versor_inverse()?;
-    let c = a.geo(b).geo(&ai).geo(&bi);
+    // `a b ã b̃`: the commutator as a ray (78.32(1)) — its class is read by
+    // scale-free ratios, so the reverse is the inverse it needs.
+    (is_versor(a) && is_versor(b)).then_some(())?;
+    let c = a.geo(b).geo(&a.reverse()).geo(&b.reverse());
     is_versor(&c).then_some(c)
 }

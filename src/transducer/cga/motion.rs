@@ -82,10 +82,18 @@ fn action(a: &Mv, b: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
 /// THE ACTION OF A MOTION ON THE VECTORS, `x ↦ ±Ω x Ω⁻¹` (the sign `−` for an
 /// odd versor, MR1b), as the matrix of its columns over the algebra's
 /// generators — the `R_c` whose ℚ-algebra is a cell's capacity (CG1).
-/// `None` where the motion does not invert.
+/// `None` where the motion is no versor.
 pub fn action_of(motion: &Mv) -> Option<Vec<Vec<Q>>> {
-    let inverse = motion.versor_inverse()?;
-    Some(action(motion, &inverse, &generators(motion.n())))
+    let w = super::weight_of(motion)?;
+    Some(scaled(&action(motion, &motion.reverse(), &generators(motion.n())), &w))
+}
+
+/// THE ACTION MATRIX'S SCALE IS CONTENT (78.28(2)): the matrix is the motion
+/// on the vectors and its eigenvalues are the modes' `c`, so the sandwich
+/// `Ω x Ω̃ = w · Ω x Ω⁻¹` is divided by the weight here, once, named — the
+/// one place the action is read as a matrix rather than a ray.
+fn scaled(r: &[Vec<Q>], w: &Q) -> Vec<Vec<Q>> {
+    r.iter().map(|row| row.iter().map(|x| x / w).collect()).collect()
 }
 
 /// MR1b — THE DETERMINANT OF THE ACTION, named on the reading: `−1` for an
@@ -134,11 +142,13 @@ pub fn motion_modes(
     motion: &Mv,
     budget: &mut crate::physics::Budget,
 ) -> Option<Result<Vec<MotionMode>, Undecomposed>> {
-    let inverse = motion.versor_inverse()?;
-    super::is_versor(motion).then_some(())?;
+    // The reader before any product; the weight is the action matrix's
+    // scale, which is content ([`scaled`]).
+    let w = super::weight_of(motion)?;
     let masks = generators(motion.n());
-    let r = action(motion, &inverse, &masks);
-    let r_inv = action(&inverse, motion, &masks);
+    let reverse = motion.reverse();
+    let r = scaled(&action(motion, &reverse, &masks), &w);
+    let r_inv = scaled(&action(&reverse, motion, &masks), &w);
     let half = Q::new(1.into(), 2.into());
     let s: Vec<Vec<Q>> =
         r.iter().zip(&r_inv).map(|(x, y)| x.iter().zip(y).map(|(p, q)| (p + q) * &half).collect()).collect();

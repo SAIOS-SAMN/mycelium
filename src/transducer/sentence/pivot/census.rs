@@ -232,7 +232,11 @@ pub fn reset_orbit_class_ops() {
 pub fn form_operators(f: &Form) -> usize {
     let mut ops: Keyed<()> = Keyed::new();
     for lp in &f.orbits {
-        let Some(inv) = lp.based_at.versor_inverse() else { continue };
+        // `θ Ω θ̃`, filed by its canonical key — a ray (78.32(1)).
+        if !crate::transducer::cga::is_versor(&lp.based_at) {
+            continue;
+        }
+        let inv = lp.based_at.reverse();
         for (_, omega) in lp.carriages.scoped() {
             let based = lp.based_at.geo(omega).geo(&inv);
             let Some(canonical) = based.canonical() else { continue };

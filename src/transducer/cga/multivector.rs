@@ -502,28 +502,14 @@ impl Mv {
         self.geo(self).scalar_part()
     }
 
-    /// The inverse `M⁻¹ = M̃ / (M M̃)` when `M M̃` is a nonzero SCALAR (true for
-    /// versors and for non-null vectors — spheres). `None` when it is not a
-    /// scalar or is zero: a NULL point (`X·X = 0`) has no inverse — the demand
-    /// `B·A⁻¹` cannot form until the object has volume. Honest, never rounded.
-    pub fn versor_inverse(&self) -> Option<Self> {
-        let rev = self.reverse();
-        let prod = self.geo(&rev);
-        let s = prod.scalar_part();
-        if s.is_zero() {
-            return None; // null / volumeless: no inverse — the demand cannot form
-        }
-        if !prod.sub(&Mv::scalar(s.clone())).is_zero() {
-            return None; // M M̃ is not a pure scalar: not a simple versor/vector
-        }
-        Some(rev.scale(&(one() / s)))
-    }
-
-    /// The geometric quotient `Q = B · A⁻¹` — the demand between two states.
-    /// `None` when A is non-invertible (a null, volumeless body).
-    pub fn quotient(b: &Self, a: &Self) -> Option<Self> {
-        Some(b.geo(&a.versor_inverse()?))
-    }
+    // `versor_inverse` (`M̃ / (M M̃)`) and `quotient` (`B·A⁻¹`) stood here:
+    // inversion as an operation (78.32(1), VA1-inverse). A versor acts
+    // projectively and every reading of what it carries is by proportion,
+    // so a site that composed with an inverse composes with the held
+    // element and its free reverse, the quotient `B·A⁻¹` is the ray `B Ã`,
+    // a site that asked whether an element inverts asks whether it is a
+    // versor (`is_versor`), and a site whose quotient's SCALE is content
+    // divides by [`super::group::weight_of`] and says so in its comment.
 
     /// The versor SANDWICH `V x Ṽ` — the exact action of a rigid motion on a
     /// whole volume in one step.

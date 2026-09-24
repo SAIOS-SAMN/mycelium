@@ -284,8 +284,8 @@ fn offplane_word_refuses_to_act_on_a_translation() {
         gauge: Vec::new(),
     };
     assert!(
-        tr.inverse().is_some(),
-        "an off-plane holonomy is a rotor like any other: inverse is the carriage inverse"
+        element::same_versor(&tr.reverse().carriage, &tr.carriage.reverse()),
+        "an off-plane holonomy is a rotor like any other: its reverse is the carriage's reverse"
     );
     assert!(
         tr.refract(&Form::default()).is_none(),

@@ -308,8 +308,9 @@ pub enum Verified {
 /// when a negative exponent meets a rotor with no inverse — exact or
 /// refused, never an identity standing in for one (rule 11).
 pub fn rotor_power(g: &Rotor, e: i64) -> Option<Rotor> {
+    // A negative power is the reverse's power, a ray (78.32(1)).
     let base = match e < 0 {
-        true => g.inverse()?,
+        true => g.is_versor().then(|| g.reverse())?,
         false => g.clone(),
     };
     let n = e.unsigned_abs();

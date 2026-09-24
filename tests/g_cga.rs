@@ -96,17 +96,21 @@ fn a_sphere_carries_volume() {
 fn volume_is_what_makes_the_quotient_exist() {
     let p_a = point(&q(1), &q(1), &q(0));
     let p_b = point(&q(4), &q(1), &q(0));
-    assert!(p_a.versor_inverse().is_none(), "a null point is non-invertible — the collapse");
-    assert!(Mv::quotient(&p_b, &p_a).is_none(), "no demand forms between volumeless points");
+    // 78.32(1): no inverse is taken. A null point is no versor, so no
+    // demand forms on it; a sphere is one, and the quotient is the ray
+    // `S_B S̃_A`, read from either side.
+    use mycelium::transducer::cga::is_versor;
+    assert!(!is_versor(&p_a), "a null point is no versor — the collapse");
+    assert!(!is_versor(&p_b), "so no demand forms between volumeless points");
 
     let s_a = sphere(&q(1), &q(1), &q(0), &q(4));
     let s_b = sphere(&q(4), &q(1), &q(0), &q(4));
-    assert!(s_a.versor_inverse().is_some(), "a sphere has volume, hence an inverse");
-    let qd = Mv::quotient(&s_b, &s_a).expect("the demand forms once there is volume");
-    // S_A is invertible: S_A · S_A⁻¹ = 1 exactly.
-    let id = s_a.geo(&s_a.versor_inverse().unwrap());
-    assert!(id.scalar_part() == q(1), "S·S⁻¹ = 1 (scalar)");
-    assert!(id.sub(&Mv::scalar(q(1))).is_zero(), "S·S⁻¹ is a pure scalar 1");
+    assert!(is_versor(&s_a), "a sphere has volume, hence it acts");
+    let qd = s_b.geo(&s_a.reverse());
+    // `S_A S̃_A` is the identity ray: a non-zero scalar.
+    let id = s_a.geo(&s_a.reverse());
+    assert!(id.scalar_part() != q(0), "S S̃ is a non-zero scalar");
+    assert!(id.projective_eq(&Mv::scalar(q(1))), "the identity ray");
     assert!(!qd.is_zero(), "the demand between two distinct spheres is non-trivial");
 }
 

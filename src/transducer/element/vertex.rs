@@ -202,10 +202,11 @@ impl Element {
         let Some(sensor) = conformal_of(&word, &identity_versor()) else {
             return;
         };
-        let Some(inv) = sensor.versor_inverse() else {
+        // `V S̃`, the carriage as a ray (78.32(1)).
+        if !crate::transducer::cga::is_versor(&sensor) {
             return;
-        };
-        let carriage = v.geo(&inv);
+        }
+        let carriage = v.geo(&sensor.reverse());
         let spelling = crate::transducer::alphabet::Spelling { word };
         let gauge = self.action.gauge.clone();
         self.description = crate::transducer::element::residual::connection_description(
@@ -279,20 +280,28 @@ impl Element {
         out
     }
 
-    /// SOLUTION — the inverse deduction `g⁻¹`. Versor inverse on S and on
-    /// each germinated axis; inverse permutation on G. `None` when a versor
-    /// is not invertible.
-    pub fn solution(&self) -> Option<Element> {
+    /// THE REVERSE — the element read the other way (78.32(1)): the free
+    /// involution on every factor it acts by, never an inversion. The
+    /// spatial versor and each germinated axis by their reverse (a ray, read
+    /// by proportion wherever it is read); the gauge by its inverse
+    /// permutation; the spelling by its inverse word. `None` where an
+    /// action is no versor — a motion that does not act has no reverse
+    /// either way round. It was `solution`, the deduction `g⁻¹`, dividing
+    /// by each weight.
+    pub fn reverse(&self) -> Option<Element> {
         if !self.sub.is_empty() && self.versor().is_none() && self.action.germinated.is_empty() {
             return None;
         }
+        let is_versor = crate::transducer::cga::is_versor;
         let mut out = Element::identity();
         if let Some(v) = self.versor() {
-            out.action.spatial = Some(v.versor_inverse()?);
+            is_versor(&v).then_some(())?;
+            out.action.spatial = Some(v.reverse());
         }
         out.action.gauge = invert_perm(&self.action.gauge)?;
         for (i, w) in &self.action.germinated {
-            out.action.germinated.push((*i, w.versor_inverse()?));
+            is_versor(w).then_some(())?;
+            out.action.germinated.push((*i, w.reverse()));
         }
         // The inverse carries the inverse spelling, for the reason the
         // composition carries the composed one: a transition is
@@ -301,8 +310,8 @@ impl Element {
         match self.letters() {
             Some(l) => out.carry_tape(l.spelling.word.inverse().normal_form()),
             None => {
-                if let Some(r) = self.carried_rotor().as_ref().and_then(|r| r.inverse()) {
-                    out.action.rotor = Some(r);
+                if let Some(r) = self.carried_rotor().filter(|r| r.is_versor()) {
+                    out.action.rotor = Some(r.reverse());
                     out.address.take();
                 }
             }
@@ -324,7 +333,7 @@ impl Element {
             // canonical form, so this element has no inverse to name.
             return from_residual(&rev);
         }
-        self.solution()
+        self.reverse()
     }
 
     /// Canonical ANASTOME bytes: the BASE identity (word, dim, fibers) followed

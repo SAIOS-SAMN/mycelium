@@ -70,11 +70,12 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
                 agree = false;
                 break;
             };
-            let Some(inv) = a.carriage.versor_inverse() else {
+            // `b ã`, the relative placement as a ray (78.32(1)).
+            if !crate::transducer::cga::is_versor(&a.carriage) {
                 agree = false;
                 break;
-            };
-            let here = b.carriage.geo(&inv);
+            }
+            let here = b.carriage.geo(&a.carriage.reverse());
             match &relative {
                 None => relative = Some(here),
                 Some(held) if !element::same_versor(held, &here) => {

@@ -424,7 +424,7 @@ fn derivation_of(
                 Word::identity(),
             ));
         }
-        if gr.inverse().is_some_and(|inv| inv.projective_eq(&target_rotor)) {
+        if gr.is_versor() && gr.reverse().projective_eq(&target_rotor) {
             return Some(Derivation::compose(
                 &[((*form).clone(), (*vertex).clone(), -1, (*g).clone())],
                 Word::identity(),

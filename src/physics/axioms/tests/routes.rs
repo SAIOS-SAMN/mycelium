@@ -13,8 +13,10 @@ fn stroke() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
 
+/// A step read backward: its reverse, a ray (78.32(1)) — `==` on `Mv` is
+/// projective equality, so a route and its reversal compare as rays.
 fn inv(g: &Mv) -> Mv {
-    g.versor_inverse().expect("a rational versor inverts")
+    g.reverse()
 }
 
 /// A route's transport: its steps composed in order, `g_k ⋯ g₁`.

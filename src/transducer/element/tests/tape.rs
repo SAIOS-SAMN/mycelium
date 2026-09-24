@@ -52,7 +52,7 @@ fn a_connection_is_one_element_with_two_components() {
     let mut pos = 0;
     let back = Element::from_bytes(&w.to_bytes(), &mut pos).expect("round trip");
     assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
-    assert!(w.solution().is_some(), "the group component inverts");
+    assert!(w.reverse().is_some(), "the group component reads backward");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
     assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).address(), "the connection is not the bare residual");
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();

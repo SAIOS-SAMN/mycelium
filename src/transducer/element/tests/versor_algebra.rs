@@ -54,26 +54,26 @@ fn compose_is_the_geometric_product() {
 }
 
 #[test]
-fn description_composed_with_its_solution_is_identity() {
+fn description_composed_with_its_reverse_is_identity() {
     let g = elem_from_versor(translator_versor(3, -2));
-    let sol = g.solution().expect("an invertible description has a solution");
-    assert!(g.compose(&sol).is_identity(), "g ∘ g⁻¹ = e — the coboundary closes");
-    assert!(sol.compose(&g).is_identity(), "g⁻¹ ∘ g = e");
+    let rev = g.reverse().expect("a versor description reads backward");
+    assert!(g.compose(&rev).is_identity(), "g ∘ g̃ = e — the coboundary closes");
+    assert!(rev.compose(&g).is_identity(), "g̃ ∘ g = e");
 }
 
 #[test]
 fn inverse_refuses_a_non_versor() {
     let mut e = Element::identity();
     e.action.spatial = Some(Versor::zero());
-    assert!(e.solution().is_none(), "a non-versor has no inverse");
+    assert!(e.reverse().is_none(), "a non-versor has no reverse");
     assert!(e.inverse().is_none(), "a non-versor has no inverse");
 }
 
 #[test]
-fn the_solution_inverts_the_described_motion() {
+fn the_reverse_carries_the_described_motion_back() {
     let g = elem_from_versor(translator_versor(4, 4));
     let v = g.versor().expect("V");
-    let inv = g.solution().expect("inverse").versor().expect("V⁻¹");
+    let inv = g.reverse().expect("reverse").versor().expect("Ṽ");
     let qn = |n: i64| Q::from(BigInt::from(n));
     let p = crate::transducer::cga::at_three::point(&qn(1), &qn(2), &qn(0));
     let moved = v.sandwich(&p);
@@ -90,7 +90,7 @@ fn reverse_germ_is_the_inverse_chain() {
     let a = [(0, 0, 1u8), (0, 1, 2), (1, 0, 3)];
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = from_canonical(&germinate(&a, &b).unwrap());
-    assert!(g.solution().is_none(), "a residual has no versor inverse");
+    assert!(g.reverse().is_none(), "a residual has no versor reverse");
     let inv = g.inverse().expect("the reverse chain exists");
     let want: Vec<_> = g.sub().iter().map(|&(r, c, b, a)| (r, c, a, b)).collect();
     assert_eq!(inv.sub(), want.as_slice(), "inverse swaps before/after on the chain");

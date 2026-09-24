@@ -166,9 +166,7 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
                     admit_words(index, ci, std::slice::from_ref(e));
                 }
                 if let Some(ref cj) = cj {
-                    if let Some(inv_e) = e.inverse() {
-                        admit_words(index, cj, std::slice::from_ref(&inv_e));
-                    }
+                    admit_words(index, cj, std::slice::from_ref(&e.reverse()));
                 }
             }
             let t = Transport {
@@ -183,9 +181,7 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
                 admit_words(index, ci, std::slice::from_ref(&t));
             }
             if let Some(ref cj) = cj {
-                if let Some(inv_t) = t.inverse() {
-                    admit_words(index, cj, std::slice::from_ref(&inv_t));
-                }
+                admit_words(index, cj, std::slice::from_ref(&t.reverse()));
             }
         }
     }
@@ -226,9 +222,7 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
                     retract_words(index, ci, std::slice::from_ref(e));
                 }
                 if let Some(ref cj) = cj {
-                    if let Some(inv_e) = e.inverse() {
-                        retract_words(index, cj, std::slice::from_ref(&inv_e));
-                    }
+                    retract_words(index, cj, std::slice::from_ref(&e.reverse()));
                 }
             }
             let t = Transport {
@@ -240,9 +234,7 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
                 retract_words(index, ci, std::slice::from_ref(&t));
             }
             if let Some(ref cj) = cj {
-                if let Some(inv_t) = t.inverse() {
-                    retract_words(index, cj, std::slice::from_ref(&inv_t));
-                }
+                retract_words(index, cj, std::slice::from_ref(&t.reverse()));
             }
         }
     }

@@ -157,5 +157,9 @@ pub fn on_sphere(p: &Mv, s: &Mv) -> bool {
 /// in, and the pseudoscalar is that space's.
 pub fn boundary_dual(sigma: &Mv, n: u8) -> Option<Mv> {
     let i = Mv::blade(pseudo(n.max(sigma.n())), one());
-    Some(sigma.geo(&i.versor_inverse()?))
+    // THE DUAL'S ORIENTATION IS CONTENT (78.28(2)): `I Ĩ = ±1`, the sign
+    // the metric gives the pseudoscalar, so `σ Ĩ` is divided by that sign
+    // and by nothing else.
+    let sign = super::group::weight_of(&i)?;
+    Some(sigma.geo(&i.reverse()).scale(&(one() / sign)))
 }

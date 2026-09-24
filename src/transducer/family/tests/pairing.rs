@@ -43,7 +43,7 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let d2 = &v.scalar_part() * &v.scalar_part() / v.geo(&v.reverse()).scalar_part();
     assert!(d2 > crate::core::Q::from_integer(4.into()), "outside the retired band: δ² = {d2}");
     let (theta_a, theta_b) = (pose(&a, &a_after), pose(&b, &b));
-    let relative = theta_b.geo(&theta_a.versor_inverse().expect("a turn inverts"));
+    let relative = theta_b.geo(&theta_a.reverse());
     let ContactEdge::Formed(edge) =
         contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)))
     else {
@@ -108,7 +108,7 @@ fn a_held_half_turn_rides_the_contact_edge_as_a_coset() {
     };
     assert_eq!(coset.len(), 2, "both candidates of the held ℤ₂");
     for (edge, theta) in coset.iter().zip(&candidates) {
-        let relative = theta.versor_inverse().expect("a turn inverts");
+        let relative = theta.reverse();
         assert!(edge.carriage.projective_eq(&relative.geo(&v)), "each candidate is (θ_bθ_a⁻¹)·V");
     }
     assert!(!coset[0].carriage.projective_eq(&coset[1].carriage), "two candidates, two transports");

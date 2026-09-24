@@ -372,10 +372,12 @@ pub(crate) fn contact_edge(
     // Every candidate refraction, each ray once.
     let mut thetas: Vec<crate::transducer::cga::Mv> = Vec::new();
     for theta_a in &thetas_a {
-        let Some(inv) = theta_a.versor_inverse() else {
+        // `θ_b θ̃_a`, a ray (78.32(1)).
+        if !crate::transducer::cga::is_versor(theta_a) {
             note_contact(|t| t.unread += 1);
             return ContactEdge::Refused;
-        };
+        }
+        let inv = theta_a.reverse();
         for theta_b in &thetas_b {
             let theta = theta_b.geo(&inv);
             if !thetas.iter().any(|t| t.projective_eq(&theta)) {

@@ -151,7 +151,7 @@ impl Kernel {
             if !self.is_live(&addr) {
                 continue;
             }
-            if gen.substance().solution().is_none() {
+            if gen.substance().reverse().is_none() {
                 continue; // only group generators factor
             }
             let Some(f) = gen.letters().and_then(|l| l.spelling.word.form()) else {

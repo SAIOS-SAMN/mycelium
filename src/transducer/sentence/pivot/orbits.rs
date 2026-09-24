@@ -101,9 +101,9 @@ fn tree_transports(
 /// chart, which is a real sector of the complex. A named pair the face does
 /// not hold is `NoPlace`, as the circuit reads it (O1).
 ///
-/// `Cone` where the inverse does not exist: `versor_inverse` fails only at
-/// `MM̃ = 0`, a carriage on the light cone (57.4), and that transport was
-/// never read. `NoFace` where the forest names a face the form does not
+/// `Cone` where the carriage is no versor — a carriage on the light cone
+/// (57.4), whose action collapses — and that transport was never read;
+/// backward, the carriage is read by its reverse (78.32(1)). `NoFace` where the forest names a face the form does not
 /// hold.
 fn tree_step(
     faces: &[FormFace],
@@ -125,7 +125,11 @@ fn tree_step(
     let at = |pk: &[u8]| f.at.get(pk).ok_or(Unread::NoPlace);
     match crossing(f, (vp, cp), (vc, cc)) {
         Crossing::Forward(pk) => Ok(at(&pk)?.carriage.clone()),
-        Crossing::Backward(pk) => at(&pk)?.carriage.versor_inverse().ok_or(Unread::Cone),
+        // Backward by the carriage's reverse, a ray (78.32(1)).
+        Crossing::Backward(pk) => {
+            let c = &at(&pk)?.carriage;
+            crate::transducer::cga::is_versor(c).then(|| c.reverse()).ok_or(Unread::Cone)
+        }
         Crossing::TwoWays => Err(Unread::TwoWays),
         Crossing::Unplaced if cp.is_empty() && cc.is_empty() => Ok(element::identity_versor()),
         Crossing::Unplaced => Err(Unread::NoPlace),
@@ -488,8 +492,8 @@ impl Form {
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.
-                if let (Some(inv), Some(composite)) = (lp.based_at.versor_inverse(), &composite) {
-                    note_synonym(&lp.based_at.geo(composite).geo(&inv));
+                if let (true, Some(composite)) = (crate::transducer::cga::is_versor(&lp.based_at), &composite) {
+                    note_synonym(&lp.based_at.sandwich(composite));
                 }
                 // AND WHETHER ITS ORBIT CLOSES — asked of the CONNECTION,
                 // not of the alphabet (54.7).

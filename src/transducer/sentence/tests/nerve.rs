@@ -142,7 +142,7 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
     let charts = [leaf((0, 1)), leaf((2, 3)), leaf((1, 2))];
     let phi_ij = translator_versor(3, 0);
     let phi_jk = translator_versor(0, 5);
-    let phi_ki = phi_ij.geo(&phi_jk).versor_inverse().expect("a translator inverts");
+    let phi_ki = phi_ij.geo(&phi_jk).reverse();
 
     // ONE EDGE OF THE NERVE: chart `i` with its citation of chart `j` under
     // φ. The edge is its own object, because a content address cannot

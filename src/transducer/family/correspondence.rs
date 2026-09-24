@@ -174,10 +174,12 @@ pub(crate) fn relatives_by_class(
             let (Some(mi), Some(mj)) = (vi.acting_on(&cci), vj.acting_on(&ccj)) else {
                 continue;
             };
-            let (Some(inv_i), Some(inv_j)) = (mi.carriage.versor_inverse(), mj.carriage.versor_inverse())
-            else {
+            // Each carriage's reverse, the incidence read as rays (78.32(1)).
+            let is_versor = crate::transducer::cga::is_versor;
+            if !is_versor(&mi.carriage) || !is_versor(&mj.carriage) {
                 continue;
-            };
+            }
+            let (inv_i, inv_j) = (mi.carriage.reverse(), mj.carriage.reverse());
             // From `i`'s body to `j`'s under `(class_i, class_j)`, and back
             // under `(class_j, class_i)`: the one incidence, both directions.
             file(

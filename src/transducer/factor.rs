@@ -168,8 +168,9 @@ pub fn factor_off_plane(
         }
         for (i, b) in basis.iter().enumerate() {
             for e in [1i64, -1] {
-                let step = if e == 1 { b.clone() } else { 
-                    match b.inverse() { Some(x) => x, None => continue }
+                // The inverse letter is the reverse, a ray (78.32(1)).
+                let step = if e == 1 { b.clone() } else {
+                    match b.is_versor() { true => b.reverse(), false => continue }
                 };
                 let next = cur.geo(&step);
                 let k = next.key();
@@ -201,9 +202,9 @@ pub fn replays(tape: &[(usize, i64)], basis: &[Rotor], g: &Rotor) -> bool {
         let step = if *e >= 0 {
             b.clone()
         } else {
-            match b.inverse() {
-                Some(x) => x,
-                None => return false,
+            match b.is_versor() {
+                true => b.reverse(),
+                false => return false,
             }
         };
         for _ in 0..e.unsigned_abs() {

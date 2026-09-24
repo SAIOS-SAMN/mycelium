@@ -88,7 +88,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
                     progressed = true;
                 }
                 (false, true) => {
-                    let (gi, ci) = (g.inverse()?, c.versor_inverse()?);
+                    let (gi, ci) = (g.is_versor().then(|| g.reverse())?, c.reverse());
                     gamma[*i] = gi.geo(&gamma[*j]);
                     carriage[*i] = ci.geo(&carriage[*j]);
                     placed[*i] = true;
@@ -100,7 +100,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
     }
     let mut holonomy: Vec<(usize, usize, Rotor, Versor)> = Vec::new();
     for (i, j, g, c) in &chords {
-        let (gi, ci) = (gamma[*i].inverse()?, carriage[*i].versor_inverse()?);
+        let (gi, ci) = (gamma[*i].is_versor().then(|| gamma[*i].reverse())?, carriage[*i].reverse());
         let (path_r, path_c) = (gamma[*j].geo(&gi), carriage[*j].geo(&ci));
         // A chord must agree on BOTH halves. Agreeing on the rotor alone
         // would call a tree exact when its placements disagree, which is
@@ -111,7 +111,7 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
         // `Ω = (tree path) · (chord)⁻¹` on each half: what the orbit
         // through the tree and back along the chord carries. Both halves,
         // for the reason the test above is on both.
-        let (gc, cc) = (g.inverse()?, c.versor_inverse()?);
+        let (gc, cc) = (g.is_versor().then(|| g.reverse())?, c.reverse());
         holonomy.push((*i, *j, path_r.geo(&gc), path_c.geo(&cc)));
     }
     Some(Gauge { sections: gamma.into_iter().zip(carriage).collect(), holonomy })
@@ -140,9 +140,9 @@ impl Complex {
         // rotor-only match would call a simplex closed by a gauge whose
         // placement differs from the one it expects.
         let rotor_hit = simplex.coefficient == *gamma
-            || simplex.coefficient.inverse().as_ref() == Some(gamma);
+            || (simplex.coefficient.is_versor() && simplex.coefficient.reverse() == *gamma);
         let carriage_hit = same_versor(&simplex.carriage, carriage)
-            || simplex.carriage.versor_inverse().is_some_and(|i| same_versor(&i, carriage));
+            || same_versor(&simplex.carriage.reverse(), carriage);
         if rotor_hit && carriage_hit {
             if simplex.vertices.len() >= 2 {
                 if let Some(sec) = self.sections.get_mut(&simplex.vertices[1]) {
@@ -176,7 +176,7 @@ impl Complex {
     /// read from stored lower simplices that `faces_ready` already proved
     /// exist.
     pub(crate) fn coboundary_coeff(&self, verts: &[Vec<u8>]) -> Option<(Rotor, Versor)> {
-        use crate::transducer::element::{identity_versor, versor_conjugate};
+        use crate::transducer::element::identity_versor;
         let n = verts.len();
         if n < 4 {
             return self.stored_face_coeff(verts);
@@ -189,10 +189,12 @@ impl Complex {
             if i % 2 == 1 {
                 if let Some((gr, gc)) = self.edge(&verts[0], &verts[i]) {
                     r = r.conjugate(&gr);
-                    c = versor_conjugate(&c, &gc);
+                    // `gc c g̃c`, a ray (78.32(1)): the conjugation is the
+                    // held element's sandwich, never an inverse.
+                    c = gc.sandwich(&c);
                 }
-                r = r.inverse()?;
-                c = c.versor_inverse()?;
+                r = r.is_versor().then(|| r.reverse())?;
+                c = c.reverse();
             }
             acc_r = acc_r.geo(&r);
             acc_c = acc_c.geo(&c);

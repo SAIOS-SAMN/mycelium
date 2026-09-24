@@ -497,10 +497,11 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             ) else {
                 return Some(refused(none("no versor carries the union onto its image")));
             };
-            let Some(inv) = v_i.versor_inverse() else {
+            // `ṽᵢ vᵢⱼ`, compared as a ray (78.32(1)).
+            if !crate::transducer::cga::is_versor(&v_i) {
                 return Some(refused(none("the vertex's versor has no inverse")));
-            };
-            if !element::same_versor(&inv.geo(&v_ij), &expected) {
+            }
+            if !element::same_versor(&v_i.reverse().geo(&v_ij), &expected) {
                 return Some(refused(false_claim));
             }
         }

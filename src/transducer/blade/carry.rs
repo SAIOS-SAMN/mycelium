@@ -367,9 +367,14 @@ pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
             None => false,
         }
     };
-    let Some(inv) = v.versor_inverse() else { return false };
+    // Back by `ṽ`: a site is read off its point by proportion, so the reverse
+    // lands where the inverse does (78.32(1)).
+    if !cga::is_versor(v) {
+        return false;
+    }
+    let back = v.reverse();
     a.blade.support.iter().all(|site| lands(v, site, &b.blade.support))
-        && b.blade.support.iter().all(|site| lands(&inv, site, &a.blade.support))
+        && b.blade.support.iter().all(|site| lands(&back, site, &a.blade.support))
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled

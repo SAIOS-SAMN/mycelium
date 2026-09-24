@@ -687,7 +687,8 @@ impl Contemplation {
         let bb = self.bubbles.get(b)?;
         let ra = ba.rotor()?;
         let rb = bb.rotor()?;
-        Some(rb.geo(&ra.inverse()?))
+        // `r_b r̃_a`, a ray (78.32(1)).
+        Some(rb.geo(&ra.is_versor().then(|| ra.reverse())?))
     }
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart

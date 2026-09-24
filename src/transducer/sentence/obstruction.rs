@@ -116,7 +116,7 @@ pub fn read_obstruction(content: Content) -> ClosureObstruction {
     match content {
         Content::Residue(links) => ClosureObstruction::Cover { cocycle: links.to_vec() },
         Content::Holonomy { versor, chart, proof } => {
-            let Some(h) = versor.filter(|h| h.versor_inverse().is_some()) else {
+            let Some(h) = versor.filter(|h| crate::transducer::cga::is_versor(h)) else {
                 return ClosureObstruction::Permanent { proof };
             };
             match crate::transducer::family::derivation::peel_versor(h) {

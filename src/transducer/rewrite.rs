@@ -419,7 +419,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             if sections.is_empty() && rw.before.len() < 2 {
                 return Some("condense has no absorbed sections");
             }
-            if gauge.versor_inverse().is_none() {
+            if !crate::transducer::cga::is_versor(gauge) {
                 return Some("condense gauge is not invertible");
             }
         }
@@ -453,7 +453,7 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             if a == b {
                 return Some("translation sections coincide");
             }
-            if gauge.versor_inverse().is_none() {
+            if !crate::transducer::cga::is_versor(gauge) {
                 return Some("translation gauge is not invertible");
             }
         }

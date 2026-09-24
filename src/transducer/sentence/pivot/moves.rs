@@ -112,7 +112,12 @@ pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) -> bool {
             }
         }
         PivotBy::Placement { face, translator } => {
-            let Some(inv) = translator.versor_inverse() else { return false };
+            // A translator's reverse is its inverse (`T T̃ = 1`), so the
+            // unapply restores the carriage exactly (78.32(1)).
+            if !crate::transducer::cga::is_versor(translator) {
+                return false;
+            }
+            let inv = translator.reverse();
             if let Some(f) = faces.get_mut(*face as usize) {
                 let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
                 for k in pairs {

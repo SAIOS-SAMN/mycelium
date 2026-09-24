@@ -343,7 +343,12 @@ pub fn mode_order(motion: &Mv, mode: &Mode) -> Option<u32> {
 /// admitted order closes it, or the motion does not invert.
 pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
     let n = plane.iter().fold(motion.n(), |n, v| n.max(v.n()));
-    let inverse = motion.versor_inverse()?;
+    // `Ωᵏ x Ω̃ᵏ = wᵏ · Ωᵏ x Ω⁻ᵏ`: the reverse carries the action, and the
+    // weight's power is the eigenvalue a closing power holds each vector at
+    // (78.28(2)) — never a division.
+    let w = super::weight_of(motion)?;
+    let inverse = motion.reverse();
+    let mut wk = w.clone();
     let orders = super::cyclotomic_orders(n);
     let bound = orders.iter().copied().fold(1, u32::max);
     // MR1b — AN ODD VERSOR ACTS AS `x ↦ −Ω x Ω⁻¹`, so its `k`-th power
@@ -355,9 +360,10 @@ pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
         let flip = odd && k % 2 == 1;
         let closes = |v: &Mv| {
             let image = acc.geo(v).geo(&acc_inv);
+            let held = v.scale(&wk);
             match flip {
-                true => image.add(v).is_zero(),
-                false => image.sub(v).is_zero(),
+                true => image.add(&held).is_zero(),
+                false => image.sub(&held).is_zero(),
             }
         };
         if orders.contains(&k) && plane.iter().all(closes) {
@@ -365,6 +371,7 @@ pub(super) fn order_on(motion: &Mv, plane: &[Mv]) -> Option<u32> {
         }
         acc = acc.geo(motion);
         acc_inv = inverse.geo(&acc_inv);
+        wk = &wk * &w;
     }
     None
 }

@@ -209,7 +209,11 @@ where
     let Some(word) = word_at(addr) else { return unlocated(m) };
     let Some(held) = shape_at(addr) else { return unlocated(m) };
     let Some(to_word) = blade::versor_between(&shape, held) else { return unlocated(m) };
-    let Some(v) = to_word.versor_inverse() else { return unlocated(m) };
+    // Back to the word by the reverse; a site is read by proportion (78.32(1)).
+    if !crate::transducer::cga::is_versor(&to_word) {
+        return unlocated(m);
+    }
+    let v = to_word.reverse();
     let agreeing = gauge_of(word, &v, piece);
     // The gauges agreeing on THIS piece under this transport: the reading
     // is whether there is exactly one, so the read takes two and stops.
@@ -348,7 +352,9 @@ where
     out.connection = out
         .cites
         .windows(2)
-        .filter_map(|w| Some(w[0].transport.versor_inverse()?.geo(&w[1].transport)))
+        // `w̃₀ w₁`, the connection as a ray (78.32(1)).
+        .filter(|w| crate::transducer::cga::is_versor(&w[0].transport))
+        .map(|w| w[0].transport.reverse().geo(&w[1].transport))
         .collect();
     out
 }

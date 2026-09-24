@@ -59,9 +59,9 @@ fn a_residual_germinates_as_a_coboundary_germ() {
     assert!(mag[2] == 0 && mag[1] >= 1 && mag[0] == 0, "gauge only: no spatial, no temporal extent yet");
     assert_eq!(mag[3], 0, "holonomic volume is empty until sections or torsion");
     // A residual has no group inverse (its block is antisymmetric/singular);
-    // its solution is the reverse coboundary (from_residual of b→a), not a
-    // matrix inverse — the group solution() correctly declines.
-    assert!(germ.solution().is_none(), "no single-matrix inverse for a coboundary");
+    // its reverse is the reverse coboundary (from_residual of b→a), not a
+    // versor's — the group reverse() correctly declines.
+    assert!(germ.reverse().is_none(), "no versor reverse for a coboundary");
     let reverse = from_canonical(&germinate(&b, &a).unwrap());
     assert_ne!(germ.address(), reverse.address(), "the reverse description is a distinct germ");
 }

@@ -38,7 +38,7 @@ fn rotor_class_key_invariant() {
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
     let s = Word::from_letters(&[(LetterId::quarter((0, 2)).unwrap(), false)]).rotor();
-    let conj = s.geo(&r).geo(&s.inverse().unwrap());
+    let conj = s.geo(&r).geo(&s.reverse());
     assert_eq!(r.class_key(), conj.class_key());
     let scaled = r.scale(&qn(3, 2));
     assert_eq!(r.class_key(), scaled.class_key());
@@ -72,7 +72,7 @@ fn a_rotor_and_its_negative_are_one_class() {
     // And the composition that produces the other lift on its own: three
     // quarter turns are `−q⁻¹`, whose class is `q⁻¹`'s.
     let cubed = Word::from_letters(&[(q, false), (q, false), (q, false)]).rotor();
-    let inv = r.inverse().expect("a quarter turn inverts");
+    let inv = r.reverse();
     assert!(cubed.projective_eq(&inv), "q³ is the other lift of q⁻¹");
     assert_eq!(cubed.class_key(), inv.class_key(), "and carries its class");
 }

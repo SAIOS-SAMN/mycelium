@@ -204,7 +204,9 @@ pub fn pullback(
     sibling: &[(i64, i64, u8, u8)],
     v: &Versor,
 ) -> Option<Vec<(u8, u8)>> {
-    let inv = v.versor_inverse()?;
+    // Back by `ṽ`: a centre is read off its point by proportion (78.32(1)).
+    crate::transducer::cga::is_versor(v).then_some(())?;
+    let inv = v.reverse();
     let mut sorted: Vec<(i64, i64, u8, u8)> = sibling.to_vec();
     sorted.sort_unstable();
     base.iter()

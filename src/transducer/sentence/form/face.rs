@@ -52,9 +52,11 @@ impl Form {
         let ca = vertex_carriage_at(va, self, ci)?;
         let cb = vertex_carriage_at(vb, self, cj)?;
         let wv = element::versor_of_word(word)?;
-        let inv = wv.versor_inverse()?;
-        let conjugated = wv.geo(&ca).geo(&inv);
-        let carriage = cb.geo(&conjugated.versor_inverse()?);
+        // `c_b (w c_a w̃)~`: the face's carriage as a ray (78.32(1)).
+        let is_versor = crate::transducer::cga::is_versor;
+        (is_versor(&wv) && is_versor(&ca)).then_some(())?;
+        let conjugated = wv.sandwich(&ca);
+        let carriage = cb.geo(&conjugated.reverse());
         let gauge = relative_gauge(&vertex_gauge_at(va, ci), &vertex_gauge_at(vb, cj));
         Some(FacePlace { carriage, gauge, edge, refraction: None })
     }

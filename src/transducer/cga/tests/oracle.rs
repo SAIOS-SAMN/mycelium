@@ -158,13 +158,16 @@ pub(super) fn readings(inputs: &[(String, Mv)]) -> Vec<String> {
             out.push(format!("grade{g} {name}: {}", hex(&m.grade(g))));
         }
         out.push(format!("norm2 {name}: {}", m.norm2()));
-        out.push(format!("inverse {name}: {}", opt(m.versor_inverse())));
+        // The fixed carrier's inverse and quotient, read as the rays they
+        // are (78.32(1)): the reverse, and `m ñext`, written canonical —
+        // the same lines, with no inversion taken.
+        out.push(format!("inverse {name}: {}", opt(cga::is_versor(m).then(|| m.reverse()))));
         out.push(format!("geo {pair}: {}", hex(&m.geo(next))));
         out.push(format!("add {pair}: {}", hex(&m.add(next))));
         out.push(format!("sub {pair}: {}", hex(&m.sub(next))));
         out.push(format!("sandwich {pair}: {}", hex(&m.sandwich(next))));
         out.push(format!("wedge1 {pair}: {}", hex(&m.grade(1).wedge_vector(1, &next.grade(1)))));
-        out.push(format!("quotient {pair}: {}", opt(Mv::quotient(m, next))));
+        out.push(format!("quotient {pair}: {}", opt(cga::is_versor(next).then(|| m.geo(&next.reverse())))));
         out.push(format!(
             "ratio {pair}: {}",
             match cga::projective_ratio(m, next) {

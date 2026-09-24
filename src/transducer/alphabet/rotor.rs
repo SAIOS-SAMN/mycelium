@@ -222,22 +222,19 @@ impl Rotor {
         r
     }
 
-    /// Coefficient identity: the normal-form constructor's check, never
-    /// vertex equality.
-    fn coeffs_eq(&self, other: &Rotor) -> bool {
-        self.c == other.c
-    }
-
-    /// True when `self ∘ other⁻¹` is a nonzero scalar of either sign
-    /// (`λ ∈ ℚ×`). The action is `R X R̃ / (R R̃)`, on which −R and R agree.
+    /// ONE RAY (EQ1, 78.32(1)): `self = λ · other` for some `λ ∈ ℚ×` of
+    /// either sign, read as proportion of the two coefficient vectors by
+    /// cross-multiplication against one pivot slot — exact, no product
+    /// formed, no inverse taken, and the same reading for every element, a
+    /// versor or not, as [`crate::transducer::cga::projective_ratio`] reads
+    /// it one algebra up. The zero element is its own ray and no other's.
+    /// It read `self ∘ other⁻¹` a scalar, dividing by `other`'s weight.
     pub fn projective_eq(&self, other: &Rotor) -> bool {
-        match other.inverse() {
-            Some(inv) => {
-                let p = self.geo(&inv);
-                !p.c[0].is_zero() && (1..16).all(|i| p.c[i].is_zero())
-            }
-            None => self.normalised().coeffs_eq(&other.normalised()),
-        }
+        let Some(k) = (0..16).find(|&k| !other.c[k].is_zero()) else {
+            return (0..16).all(|i| self.c[i].is_zero());
+        };
+        let (sk, ok) = (&self.c[k], &other.c[k]);
+        !sk.is_zero() && (0..16).all(|i| &self.c[i] * ok == sk * &other.c[i])
     }
 
     /// Conjugation-and-scale invariants `(a²/w, p²/w, sign p)` — exact
@@ -392,15 +389,16 @@ impl Rotor {
         self.lift().holonomy_key()
     }
 
-    /// The exact inverse `Φ̃ / (Φ Φ̃)`.
-    pub fn inverse(&self) -> Option<Rotor> {
-        let w = self.weight()?;
-        Some(self.reverse().scale(&(Q::one() / w)))
-    }
+    // `inverse` (`Φ̃ / (Φ Φ̃)`) stood here: inversion as an operation
+    // (78.32(1)). A rotor is a ray — `==` is projective equality and every
+    // key is canonical — so a composition with an inverse composes with the
+    // held rotor's free reverse, [`Rotor::reverse`].
 
     /// The sandwich on a vector of the chart, scale divided out exactly:
-    /// `Φ v Φ̃ / (Φ Φ̃)`. `None` when the result is not a pure vector (the
-    /// element was not a versor).
+    /// `Φ v Φ̃ / (Φ Φ̃)`. THE SCALE IS CONTENT (78.28(2)): this is the image
+    /// of a vector read as a vector — the entries of the action's matrix,
+    /// the block a plane word is spelled against — not a ray. `None` when
+    /// the result is not a pure vector (the element was not a versor).
     pub fn carry(&self, v: &[Q; 4]) -> Option<[Q; 4]> {
         let w = self.weight()?;
         let mut x = Rotor::zero();
@@ -498,11 +496,12 @@ impl Rotor {
             .collect()
     }
 
-    /// `by Φ by⁻¹`. A non-invertible conjugator leaves Φ unmoved.
+    /// `by Φ b̃y`, a ray (78.32(1)). A conjugator that is no versor leaves Φ
+    /// unmoved: it is no change of frame and cannot move a class.
     pub fn conjugate(&self, by: &Rotor) -> Rotor {
-        match by.inverse() {
-            Some(inv) => by.geo(self).geo(&inv),
-            None => self.clone(),
+        match by.is_versor() {
+            true => by.geo(self).geo(&by.reverse()),
+            false => self.clone(),
         }
     }
 

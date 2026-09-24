@@ -62,7 +62,7 @@ fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
     // answered `None` for every input before this.
     let g = crate::transducer::cech::transition(&a, &b).expect("a transition");
     let got = crate::transducer::cech::rotor_of(&g).expect("a transition has a rotor");
-    let want = q13.rotor().geo(&q01.rotor().inverse().expect("a quarter inverts"));
+    let want = q13.rotor().geo(&q01.rotor().reverse());
     assert!(got.projective_eq(&want), "the transition's rotor is g_y ∘ g_x⁻¹");
     assert!(!got.is_identity(), "and it is not the identity the court was writing");
 }

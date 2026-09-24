@@ -66,7 +66,9 @@ pub(crate) fn meet_edge(
     sb: &Versor,
     supb: &crate::transducer::family::cover::Supports,
 ) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
-    let gamma = sb.geo(&sa.versor_inverse().ok_or(EdgeRefusal::NoReading)?);
+    // `s_b s̃_a`, the relation between the two frames as a ray (78.32(1)).
+    crate::transducer::cga::is_versor(sa).then_some(()).ok_or(EdgeRefusal::NoReading)?;
+    let gamma = sb.geo(&sa.reverse());
     // A.11 — THE FRAME RIDES THE INTERFACE (56.5, ruled 2026-09-22).
     //
     // `gamma = s_b s_a⁻¹` relates the two frames' VERSORS, and this took
@@ -111,7 +113,8 @@ pub(crate) fn meet_edge(
         crate::transducer::blade::relative_pose(&d, &c)
     };
     let framed = match (own_turn(supa), own_turn(supb)) {
-        (Ok(ta), Ok(tb)) => match ta.rotor().versor_inverse() {
+        // `θ_b θ̃_a γ`: the framed relation as a ray (78.32(1)).
+        (Ok(ta), Ok(tb)) => match crate::transducer::cga::is_versor(ta.rotor()).then(|| ta.rotor().reverse()) {
             Some(inv) => {
                 // A frame either side of which is only fixed mod `π` makes
                 // the composite open too, and it is counted apart: an

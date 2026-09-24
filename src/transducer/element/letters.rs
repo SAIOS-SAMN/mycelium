@@ -102,7 +102,9 @@ pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cga::E1;
     let carriage = dilator_of(v)?.geo(&translator_of(v)?);
-    let r = carriage.versor_inverse()?.geo(v);
+    // `(DT)~ V`: the rotor as a ray, which is how a rotor is read (78.32(1)).
+    crate::transducer::cga::is_versor(&carriage).then_some(())?;
+    let r = carriage.reverse().geo(v);
     let on_base = |m: &Versor| {
         (0..m.slot_count()).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero())
     };
@@ -472,16 +474,9 @@ fn solve_base_point(mut rows: [[Q; 4]; 4]) -> Option<[Q; 3]> {
 // on the base's three planes (51.2), and a projection of it is what
 // checklist (m) refuses.
 
-/// `by V by⁻¹` on versors — the same conjugation `Rotor::conjugate` does,
-/// one algebra up. A conjugator that does not invert leaves `v` unmoved,
-/// as the rotor's does: a non-invertible transport is not a change of
-/// frame and cannot move a class.
-pub fn versor_conjugate(v: &Versor, by: &Versor) -> Versor {
-    match by.versor_inverse() {
-        Some(inv) => by.geo(v).geo(&inv),
-        None => v.clone(),
-    }
-}
+// `versor_conjugate` (`by V by⁻¹`) stood here: an inverse under another
+// name (78.32(1)). A conjugation is the held element's sandwich
+// `by V b̃y`, a ray; its one caller reads it.
 
 /// The translator by an integer lattice offset within a frame — the lattice
 /// peel's transport as a rational versor.
@@ -575,8 +570,7 @@ impl Element {
             return false;
         }
         conformal_of(&letters.spelling.word, &letters.carriage)
-            .and_then(|v| v.versor_inverse())
-            .is_some()
+            .is_some_and(|v| crate::transducer::cga::is_versor(&v))
             && gauge_is_perm(&letters.sigma)
             && !(letters.spelling.word.is_identity()
                 && same_versor(&letters.carriage, &identity_versor())

@@ -126,11 +126,14 @@ fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Bud
             if piece == x || piece == y {
                 continue;
             }
-            let Some(inv) = s.versor_inverse() else { continue };
+            // `s V s̃` — a sphere is its own reverse (78.32(1)).
+            if !crate::transducer::cga::is_versor(s) {
+                continue;
+            }
             if !budget.spend() {
                 break 'fibres;
             }
-            let carried = s.geo(&v).geo(&inv);
+            let carried = s.sandwich(&v);
             offers.push(read(TestArm::ConstructedFibre, s, &carried, budget));
         }
     }
@@ -341,7 +344,7 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
             let oriented = match (&s.transport, s.forward) {
                 (None, _) => None,
                 (Some(t), true) => Some(Some(t.carriage.clone())),
-                (Some(t), false) => Some(t.carriage.versor_inverse()),
+                (Some(t), false) => Some(crate::transducer::cga::is_versor(&t.carriage).then(|| t.carriage.reverse())),
             };
             composite = match (&oriented, composite.take()) {
                 (Some(Some(g)), Some(m)) => Some(g.geo(&m)),

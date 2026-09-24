@@ -325,7 +325,8 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
 pub(crate) fn monodromy(v: &Rotor, gammas: &[Rotor]) -> Option<Rotor> {
     let mut m = Rotor::identity();
     for g in gammas {
-        let gi = g.inverse()?;
+        // `g̃ v g`, a ray (78.32(1)).
+        let gi = g.is_versor().then(|| g.reverse())?;
         m = m.geo(&gi.geo(v).geo(g));
     }
     Some(m)

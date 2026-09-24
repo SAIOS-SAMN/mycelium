@@ -321,11 +321,15 @@ pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
     }
 
     // 3. Closed-form Geometric Algebra rotor: γ = 1 + B₂ · B₁⁻¹
-    if let Some(b1_inv) = b1.inverse() {
+    // THE SCALE OF `B₁⁻¹` IS CONTENT HERE (78.28(2)): `γ = 1 + B₂ B₁⁻¹` adds
+    // the product to the identity, so its scale is not a ray's; it is
+    // divided by `B₁`'s weight, named, and nothing else is.
+    let one = crate::transducer::alphabet::Q::from_integer(1.into());
+    if let Some(b1_inv) = b1.weight().map(|w| b1.reverse().scale(&(one / w))) {
         let gamma_rotor = Rotor::identity().add(&b2.geo(&b1_inv));
         if gamma_rotor.is_versor() {
-            if let Some(gamma_inv) = gamma_rotor.inverse() {
-                let conj = gamma_rotor.geo(&r1).geo(&gamma_inv);
+            {
+                let conj = gamma_rotor.geo(&r1).geo(&gamma_rotor.reverse());
                 if conj.projective_eq(&r2) {
                     if let Some(Ok(w)) = crate::transducer::alphabet::factor_rotor(&gamma_rotor) {
                         return Some(w);

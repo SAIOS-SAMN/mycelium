@@ -54,7 +54,7 @@ fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
     match c.fill(&key) {
         CoboundaryOutcome::Attached(Fill::Class(kappa, r)) => {
             assert!(
-                r.projective_eq(&pythag5()) || r.inverse().is_some_and(|i| i.projective_eq(&pythag5())),
+                r.projective_eq(&pythag5()) || r.reverse().projective_eq(&pythag5()),
                 "the class names the rotor that caused it, not some other: {r:?}"
             );
             assert!(
@@ -111,7 +111,7 @@ fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
             assert_eq!(ell, 4, "the period is the rotor's order");
             assert_eq!(g.order(), Some(crate::transducer::alphabet::Order::Finite(4)));
             assert!(
-                g.projective_eq(&s) || g.inverse().is_some_and(|i| i.projective_eq(&s)),
+                g.projective_eq(&s) || g.reverse().projective_eq(&s),
                 "and the filed rotor is the one that caused it: {g:?}"
             );
         }

@@ -94,7 +94,7 @@ impl Blade {
 
     /// Every extracted body is invertible by construction (`r² ≥ 1/6 > 0`).
     pub fn is_invertible(&self) -> bool {
-        self.spatial.versor_inverse().is_some()
+        crate::transducer::cga::is_versor(&self.spatial)
     }
 
     // `sandwiched` STOOD HERE AND IS DELETED — TR1 (75, ruled 2026-09-23).

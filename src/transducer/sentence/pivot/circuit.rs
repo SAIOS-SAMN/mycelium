@@ -389,8 +389,11 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
         if let Some(place) = &place {
             let (carriage, gauge) = match forward {
                 true => (place.carriage.clone(), place.gauge.clone()),
+                // Backward by the carriage's reverse, a ray (78.32(1)).
                 false => (
-                    place.carriage.versor_inverse().ok_or(Unread::Cone)?,
+                    crate::transducer::cga::is_versor(&place.carriage)
+                        .then(|| place.carriage.reverse())
+                        .ok_or(Unread::Cone)?,
                     gauge_invert(&place.gauge),
                 ),
             };
@@ -468,7 +471,7 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
         };
         let inverted = |step: Transport| match forward {
             true => Some(step),
-            false => step.inverse(),
+            false => Some(step.reverse()),
         };
         match (acc.edge.take(), acc.refracted.take(), step, &refraction) {
             (Some(held), _, Some(step), _) => {

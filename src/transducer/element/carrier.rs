@@ -674,8 +674,10 @@ impl Element {
         if let Some(v) = out.versor() {
             if let Some(t) = translator_of(&v) {
                 if !same_versor(&t, &identity_versor()) {
-                    if let Some(inv) = t.versor_inverse() {
-                        let d = v.geo(&inv);
+                    // `v t̃`: a translator's reverse is its inverse (`T T̃ =
+                    // 1`), so nothing is divided (78.32(1)).
+                    if crate::transducer::cga::is_versor(&t) {
+                        let d = v.geo(&t.reverse());
                         out.action.spatial = if same_versor(&d, &identity_versor()) {
                             None
                         } else {

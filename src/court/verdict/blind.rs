@@ -107,7 +107,7 @@ pub(crate) fn blind_replay_on_inner(
             Some(false) => return Some("translation does not re-derive from its letters"),
             Some(true) => {}
         }
-        if spoken.solution().is_none() {
+        if spoken.reverse().is_none() {
             return Some("translation is not invertible");
         }
         let Some((a, b)) = spoken.translation_sections() else {
@@ -130,17 +130,17 @@ pub(crate) fn blind_replay_on_inner(
             if axes.is_empty() {
                 return Some("empty chain — nothing was derived");
             }
-            if spoken.solution().is_none() {
+            if spoken.reverse().is_none() {
                 return Some("opened axis is not invertible");
             }
             for (_, v) in spoken.germinated() {
-                if v.versor_inverse().is_none() {
+                if !crate::transducer::cga::is_versor(v) {
                     return Some("opened axis is not invertible");
                 }
             }
         }
         (true, true) => {
-            if spoken.solution().is_none() {
+            if spoken.reverse().is_none() {
                 return Some("connection is not invertible");
             }
         }
@@ -224,7 +224,7 @@ pub(crate) fn blind_replay_on_inner(
                         [2, ..] => return Some("magnitude below the remainder's own T"),
                         _ => return Some("magnitude below the remainder's own H"),
                     }
-                    if spoken.solution().is_none() {
+                    if spoken.reverse().is_none() {
                         return Some("connection is not invertible");
                     }
                 }

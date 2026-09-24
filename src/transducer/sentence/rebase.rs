@@ -80,7 +80,8 @@ impl Form {
             self,
             base_chart,
         )
-        .and_then(|c| c.versor_inverse());
+        .filter(crate::transducer::cga::is_versor)
+        .map(|c| c.reverse());
         let held = self.vertices.get(of as usize)?;
         let Vertex::Word { acts: held_acts, .. } = held else {
             return None;

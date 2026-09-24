@@ -83,7 +83,10 @@ pub fn enclosure(nuclei: &[Mv]) -> Option<Mv> {
     }
     let k = centres.len() as u32;
     let flat = round.wedge_vector(k, &e_inf());
-    let carrier = round.geo(&flat.versor_inverse()?).grade(1);
+    // `round · flat̃`: the carrier as a ray, which `weighted` sets at weight
+    // one (78.32(1)); a null flat carries nothing.
+    super::group::is_versor(&flat).then_some(())?;
+    let carrier = round.geo(&flat.reverse()).grade(1);
     weighted(&carrier)
 }
 

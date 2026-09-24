@@ -62,7 +62,7 @@ fn plane_form_is_the_coefficient_group() {
     assert_eq!(rot.key(), rot.to_word().form().unwrap().key());
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
-    assert!(r.geo(&r.inverse().unwrap()).is_identity());
+    assert!(r.geo(&r.reverse()).is_identity());
     let n = w.compose(&w.inverse()).normal_form();
     assert!(n.rotor().is_identity(), "normal form of a cancelling tape is 1");
 }

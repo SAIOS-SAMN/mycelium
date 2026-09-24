@@ -279,7 +279,7 @@ impl Contemplation {
                     match &word_rotor {
                         Some(g) => {
                             let coeff_hit = self.complex.simplex(&key).is_some_and(|c| {
-                                *g == c.coefficient || g.inverse().as_ref() == Some(&c.coefficient)
+                                *g == c.coefficient || (g.is_versor() && g.reverse() == c.coefficient)
                             });
                             if coeff_hit {
                                 self.complex.fill_by_gauge(

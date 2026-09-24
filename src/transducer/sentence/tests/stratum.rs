@@ -137,7 +137,7 @@ fn depth_zero_and_the_whole_path_are_not_fibers() {
 fn a_rotor_and_its_inverse_stand_at_one_stratum() {
     let w = quarter();
     let r = w.rotor();
-    let inv = r.inverse().expect("a quarter turn inverts");
+    let inv = r.reverse();
     assert!(!r.projective_eq(&inv), "q and q⁻¹ are two elements");
     assert_eq!(
         r.class_key(),

@@ -166,7 +166,9 @@ impl Form {
             let gj = gamma.get(f.j as usize)?;
             let word = gj.compose(&f.word.compose(&gi.inverse())).normal_form();
             let gv = element::versor_of_word(gj)?;
-            let inv = gv.versor_inverse()?;
+            // `g p g̃`: the carriage conjugated as a ray (78.32(1)).
+            crate::transducer::cga::is_versor(&gv).then_some(())?;
+            let inv = gv.reverse();
             let mut at = Keyed::new();
             for (k, p) in f.at.scoped() {
                 at.insert(

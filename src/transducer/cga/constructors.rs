@@ -30,13 +30,18 @@ pub fn is_constructor(v: &Mv) -> bool {
     v.sub(&v.grade(1)).is_zero() && !v.geo(v).scalar_part().is_zero()
 }
 
-/// `Ω v Ω⁻¹`: the constructor `v` carried by the generator `Ω` (R2). `None`
-/// where `Ω` does not invert or `v` is not a constructor.
+/// `Ω v Ω⁻¹`: the constructor `v` carried by the generator `Ω` (R2). THE
+/// SCALE IS CONTENT (78.28(2), (4)): a constructor's square is its own
+/// (`s² = r²` for a sphere), and the carried constructor keeps it, so the
+/// sandwich `Ω v Ω̃ = w · Ω v Ω⁻¹` is divided by the generator's weight
+/// here, named — never composed with an inverse. `None` where `Ω` is no
+/// versor or `v` is not a constructor.
 pub fn carry(generator: &Mv, v: &Mv) -> Option<Mv> {
     if !is_constructor(v) {
         return None;
     }
-    let carried = generator.geo(v).geo(&generator.versor_inverse()?);
+    let w = super::weight_of(generator)?;
+    let carried = generator.sandwich(v).scale(&(super::multivector::one() / w));
     is_constructor(&carried).then_some(carried)
 }
 

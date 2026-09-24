@@ -142,9 +142,8 @@ fn cayley_evolves_a_generator_to_a_finite_versor_and_keeps_the_coupling() {
     // AND A LOOP'S HOLONOMY IS THE ORDERED PRODUCT OF ITS EDGES. A
     // closed chain of transports that returns is flat; one that does
     // not is the obstruction the cell traps.
-    let inv = boost.versor_inverse().expect("a versor inverts");
-    let flat = boost.geo(&inv);
-    assert!(flat.projective_eq(&Mv::scalar(one())), "Ω Ω⁻¹ = 1 is a flat cell");
+    let flat = boost.geo(&boost.reverse());
+    assert!(flat.projective_eq(&Mv::scalar(one())), "Ω Ω̃ is the identity ray: a flat cell");
     let held = boost.geo(&screw);
     assert!(!held.projective_eq(&Mv::scalar(one())), "a cell that traps an obstruction");
     assert!(

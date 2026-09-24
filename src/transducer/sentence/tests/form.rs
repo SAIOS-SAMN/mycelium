@@ -512,7 +512,7 @@ fn seams_and_holonomy_are_located_exactly() {
     assert_eq!(verify_at(&word_at, &cites, &target), target);
     assert!(verify_at(&word_at, &cites[..1], &target).is_empty(), "one word, no seam");
     let t = element::translator_versor(3, 0);
-    assert!(is_flat(&[t.clone(), t.versor_inverse().unwrap()]));
+    assert!(is_flat(&[t.clone(), t.reverse()]));
     assert!(!is_flat(&[t.clone(), element::translator_versor(0, 2)]));
     assert!(is_flat(&[]), "the empty orbit is flat");
 }

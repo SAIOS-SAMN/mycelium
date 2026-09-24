@@ -93,11 +93,13 @@ impl Refracted {
     pub(crate) fn cross(self, r: &Refraction, forward: bool) -> Option<Refracted> {
         let step = match (r, forward) {
             (Refraction::Static { tether, .. }, true) => RefractedStep::Static(tether.clone()),
-            (Refraction::Static { tether, .. }, false) => RefractedStep::Static(tether.versor_inverse()?),
-            (Refraction::Coset(c), true) => RefractedStep::Coset(c.clone()),
-            (Refraction::Coset(c), false) => {
-                RefractedStep::Coset(c.iter().map(Transport::inverse).collect::<Option<Vec<_>>>()?)
+            // Backward by the reverse, a ray (78.32(1)).
+            (Refraction::Static { tether, .. }, false) => {
+                crate::transducer::cga::is_versor(tether).then_some(())?;
+                RefractedStep::Static(tether.reverse())
             }
+            (Refraction::Coset(c), true) => RefractedStep::Coset(c.clone()),
+            (Refraction::Coset(c), false) => RefractedStep::Coset(c.iter().map(Transport::reverse).collect()),
         };
         Some(self.then(step))
     }

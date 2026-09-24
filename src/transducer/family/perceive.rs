@@ -704,7 +704,9 @@ pub(crate) fn edge_transport(
         blade::shape_of(&sites_of(&laminae))
     };
     let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j));
-    let inv = v_i.versor_inverse().ok_or_else(|| vec![EdgeRefusal::NoReading])?;
+    // `ṽᵢ vᵢⱼ`, the edge as a ray (78.32(1)).
+    crate::transducer::cga::is_versor(v_i).then_some(()).ok_or_else(|| vec![EdgeRefusal::NoReading])?;
+    let inv = v_i.reverse();
     let mut refusals: Vec<EdgeRefusal> = Vec::new();
     for v_ij in &members {
         match edge_of(&inv.geo(v_ij)) {

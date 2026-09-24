@@ -13,7 +13,7 @@ use super::*;
 /// coboundary/residual chart has no group view-change; that overlap is handled by
 /// the additive coboundary, not this group transition).
 pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {
-    Some(g_y.compose(&g_x.solution()?))
+    Some(g_y.compose(&g_x.reverse()?))
 }
 
 /// The HOLONOMY around a triangle of charts — the composite transition
@@ -351,19 +351,18 @@ pub fn extend(section_a: &Section, section_b: &Section, simplex: &Simplex) -> Fi
     crate::network::nerve::work::count_extend();
     use crate::transducer::element::{identity_versor, same_versor};
     let hue = crate::transducer::sentence::CycleType::of(&[]);
-    let (Some(inv_r), Some(inv_c)) =
-        (section_a.gamma.inverse(), section_a.carriage.versor_inverse())
-    else {
+    // Each section's reverse: rays (78.32(1)).
+    let Some(inv_r) = section_a.gamma.is_versor().then(|| section_a.gamma.reverse()) else {
         return Fill::Open;
     };
+    let inv_c = section_a.carriage.reverse();
     let trans_r = section_b.gamma.geo(&inv_r);
     let trans_c = section_b.carriage.geo(&inv_c);
     if simplex.degree() <= 1 {
-        let (Some(cr), Some(cc)) =
-            (simplex.coefficient.inverse(), simplex.carriage.versor_inverse())
-        else {
+        let Some(cr) = simplex.coefficient.is_versor().then(|| simplex.coefficient.reverse()) else {
             return Fill::Open;
         };
+        let cc = simplex.carriage.reverse();
         let (g_r, g_c) = (trans_r.geo(&cr), trans_c.geo(&cc));
         // The sections agree with what the simplex expected: the simplex
         // is extended BY THE TRANSITION, which is the gauge it was waiting

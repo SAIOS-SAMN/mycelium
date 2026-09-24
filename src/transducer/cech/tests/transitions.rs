@@ -63,7 +63,7 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
 
     let g = transition(&a, &b).expect("a transition between two spoken sentences");
     let got = rotor_of(&g).expect("and it has a rotor");
-    let want = rb.geo(&ra.inverse().expect("a quarter inverts"));
+    let want = rb.geo(&ra.reverse());
     assert!(got.projective_eq(&want), "which is g_y ∘ g_x⁻¹ in Cl(4,0)");
     assert!(!got.is_identity(), "and not the identity");
     // AND THE ELEMENT CARRYING IT IS NOT THE IDENTITY ELEMENT: `is_identity`
@@ -220,8 +220,7 @@ fn fill_is_gauge_or_class() {
                 "the (3,4,5) rotor is a versor of infinite order"
             );
             assert!(
-                r.projective_eq(&pythag5())
-                    || r.inverse().is_some_and(|i| i.projective_eq(&pythag5())),
+                r.projective_eq(&pythag5()) || r.reverse().projective_eq(&pythag5()),
                 "the class names the rotor that caused it: {r:?}"
             );
             assert!(same_versor(&kappa.carriage, &ident()), "no placement residue here");

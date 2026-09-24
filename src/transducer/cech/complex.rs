@@ -169,10 +169,11 @@ impl Complex {
         let (stored_r, stored_c) = if vertices[0].as_slice() == a {
             (g, carriage)
         } else {
-            let (Some(gi), Some(ci)) = (g.inverse(), carriage.versor_inverse()) else {
+            // Both halves reversed: rays (78.32(1)).
+            if !g.is_versor() {
                 return;
-            };
-            (gi, ci)
+            }
+            (g.reverse(), carriage.reverse())
         };
         self.remember(Simplex {
             vertices,
@@ -244,7 +245,7 @@ impl Complex {
         if vertices[0] == *a {
             Some((s.coefficient.clone(), s.carriage.clone()))
         } else {
-            Some((s.coefficient.inverse()?, s.carriage.versor_inverse()?))
+            Some((s.coefficient.is_versor().then(|| s.coefficient.reverse())?, s.carriage.reverse()))
         }
     }
 

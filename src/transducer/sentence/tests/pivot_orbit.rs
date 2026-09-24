@@ -92,7 +92,7 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
         if on_the_cone {
             let one = num_rational::BigRational::from_integer(1.into());
             let null = Mv::scalar(one.clone()).add(&Mv::blade(E1 | EM, one));
-            assert!(null.versor_inverse().is_none(), "MM̃ = 0: the carriage has no inverse");
+            assert!(!crate::transducer::cga::is_versor(&null), "on the cone: the carriage is no versor");
             let [_, star_c, ..] = f.faces.as_mut_slice() else { panic!("five faces") };
             set_face_place(star_c, |p| p.carriage = null);
         }
@@ -145,7 +145,7 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
 
     // AND CONJUGATION BY IT MOVES NEITHER CASIMIR. Read on the orbit's own
     // carriages, which is what `paths_carried` composed.
-    let inv = theta.versor_inverse().expect("a versor inverts");
+    let inv = theta.reverse();
     for (_, omega) in lp.carriages.scoped() {
         let based = theta.geo(omega).geo(&inv);
         assert_eq!(
@@ -181,9 +181,8 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
         // EVERY cycle has a transport, and it composes: `θ · Ω · θ⁻¹` is a
         // versor of the same group, so the based operators multiply.
         let theta = &lp.based_at;
-        let inv = theta
-            .versor_inverse()
-            .expect("a tree transport inverts, or the cycle cannot be based");
+        assert!(crate::transducer::cga::is_versor(theta), "a tree transport is a versor, or the cycle cannot be based");
+        let inv = theta.reverse();
         for (_, omega) in lp.carriages.scoped() {
             let based = theta.geo(omega).geo(&inv);
             assert!(
@@ -200,7 +199,7 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
         .iter()
         .filter_map(|lp| {
             let theta = &lp.based_at;
-            let inv = theta.versor_inverse()?;
+            let inv = theta.reverse();
             let (_, omega) = lp.carriages.scoped().next()?;
             Some(theta.geo(omega).geo(&inv))
         })

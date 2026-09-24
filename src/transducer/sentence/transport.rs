@@ -101,14 +101,18 @@ impl Transport {
         }
     }
 
-    pub fn inverse(&self) -> Option<Transport> {
-        let word = self.word.inverse();
-        let carriage = self.carriage.versor_inverse()?;
-        Some(Transport {
-            word,
-            carriage,
+    /// THE TRANSPORT READ BACKWARD (78.32(1)): the free involution on each
+    /// of its factors — the word's inverse on its letters, the carriage's
+    /// reverse (a ray, read by proportion wherever it is read), the gauge's
+    /// inverse permutation. Never an inversion: nothing is divided. It was
+    /// `inverse`, dividing the carriage by its weight; a transport's
+    /// carriage was admitted as a versor when the transport was made.
+    pub fn reverse(&self) -> Transport {
+        Transport {
+            word: self.word.inverse(),
+            carriage: self.carriage.reverse(),
             gauge: gauge_invert(&self.gauge),
-        })
+        }
     }
 
     /// Move `form` into this transport's frame (3.10): rebase by word (3.2),

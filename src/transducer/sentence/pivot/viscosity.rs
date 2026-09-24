@@ -142,7 +142,10 @@ const ROTOR_PLANES: [(u8, u8); 6] = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2,
 fn flat_loop_class(lane: BendLane, a: &PivotBy, b: &PivotBy) -> Option<Class> {
     match (lane, a, b) {
         (BendLane::Spatial, PivotBy::Placement { translator: ga, .. }, PivotBy::Placement { translator: gb, .. }) => {
-            let k = gb.versor_inverse()?.geo(&ga.versor_inverse()?).geo(gb).geo(ga);
+            // `g̃_b g̃_a g_b g_a`, read by its class key — a ray (78.32(1)).
+            let is_versor = crate::transducer::cga::is_versor;
+            (is_versor(ga) && is_versor(gb)).then_some(())?;
+            let k = gb.reverse().geo(&ga.reverse()).geo(gb).geo(ga);
             Some(Class::Spatial(k.class_key()))
         }
         (BendLane::Holonomic, PivotBy::Word { word: wa, .. }, PivotBy::Word { word: wb, .. }) => {
