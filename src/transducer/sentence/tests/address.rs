@@ -1,5 +1,6 @@
-// 19 — THE TAPE: a form round-trips its v4 tape exactly, and a short or
-// partial tape is refused rather than partly read.
+// 19 — THE FORM'S ADDRESS CODEC (TN1; was `tests/tape.rs`): a form
+// round-trips its v4 tape exactly, and a short or partial tape is refused
+// rather than partly read.
 
 use super::common::*;
 use crate::transducer::sentence::ToralPeriod;

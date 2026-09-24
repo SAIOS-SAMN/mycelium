@@ -2,7 +2,7 @@
 // chart, admitted and retracted as coordinates.
 
 use super::*;
-use crate::transducer::sentence::tape::from_element_form;
+use crate::transducer::sentence::address::from_element_form;
 
 /// The axis index of a crystal (12.6, A16 step 3): chart → axis slot → M1
 /// word. Nested keyed reads, never a hash of the pair.

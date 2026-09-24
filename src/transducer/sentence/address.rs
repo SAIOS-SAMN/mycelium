@@ -1,6 +1,8 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
-//! 19 — THE FORM TAPE: `SENTENCE_TAG` at `FORM_TAPE_VERSION` in both
+//! 19 — THE FORM'S ADDRESS CODEC AND THE GENERATOR MINT (TN1, 78.34:
+//! "tape" names a word's letter tape and nothing else; this module was
+//! `sentence/tape.rs`). `SENTENCE_TAG` at `FORM_TAPE_VERSION` in both
 //! directions, with addresses as len16 + bytes, the torsion a sentence
 //! tape files, the demand vertices (50.5) and the edge transport on every
 //! face (50.3). A word vertex carries its DERIVATION (50.2 step 2): the

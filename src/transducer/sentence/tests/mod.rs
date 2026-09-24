@@ -18,7 +18,7 @@ mod refraction;
 mod rotor_class;
 mod stratum;
 mod symmetry;
-mod tape;
+mod address;
 mod trajectory;
 mod viscosity;
 mod nerve;

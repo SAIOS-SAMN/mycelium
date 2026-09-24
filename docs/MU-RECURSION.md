@@ -3829,7 +3829,7 @@ exact integer rank of A18 stays in `core::zlinalg`. Landing item 0.14.
 ## 19. Tape: `SENTENCE_TAG` version 4
 
 Carried from chapter 18: the `Form`. Written by `sentence::as_element_form`
-(`encode_form` in `sentence/tape.rs`), read by `from_element_form`
+(`encode_form` in `sentence/address.rs`), read by `from_element_form`
 (`decode_form`); every section is mandatory and a short or partial tape
 is refused, never repaired. Version 4 replaces version 3's 32-byte digests
 by A21 keys and its rational pairs by carriage versors; version 5 (Stage

@@ -5,7 +5,7 @@
 //! A21 vertex key, and the `SentenceRule` a form is spoken as.
 
 use super::form::*;
-use super::tape::from_element_form;
+use super::address::from_element_form;
 use super::transport::*;
 use crate::network::nerve::{Coordinate, Keyed};
 use crate::transducer::alphabet::Word;
