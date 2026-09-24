@@ -15938,6 +15938,76 @@ LD3-c rewrite them as tries. From here "tape" names a word's letters and
 nothing else; a carrier is named for what it is — an address, a record,
 a trie.
 
+### 78.35 The bands of a star: distance is depth, closer is hotter, and the division of labour is priced by pressure (ruled 2026-09-24, the operator's word)
+
+The operator: as with Mercury, Venus, Earth and Mars, the closer a
+planet orbits its star the hotter and denser it is; the economics align
+to this — a client chooses its relative distance, closer orbits do the
+harder work, and the payouts differ by orbital position, a division of
+labour; a star that runs out of placements is formed again with the same
+core; a star with custom axioms is a later product. Ruled in the
+doctrine's own quantities, no constant set:
+
+1. **Distance is depth, and the core is the hottest.** A star's classes
+   lie in strata; its CORE is its deepest, most refined strata, where its
+   open refinements stand (the hard questions), and its outer bands are
+   its broad, shallow classes. A planet's radius is its own element
+   (78.1): the depth its charts reach as A21 prefixes, LC1's span. A
+   planet orbits as close as its charts reach — it works the band whose
+   strata it can re-derive — so a deep dialect is a close orbit and a
+   shallow one a far orbit.
+2. **Heat is pressure, density is mass per height.** The pressure of a
+   band is the book's own pressure on its lanes: the open listings'
+   magnitude and the temporal accrual of what stands unclosed (76,
+   MU-ECONOMY §5). The inner band carries the largest μ⃗ per listing and
+   the highest viscosity (78.7), so an orbit there draws more reserve per
+   stroke (denser) and closes deeper deflations. Nothing here is a
+   temperature written down: heat is read as pressure and density as the
+   mass vector per height on the observer (MS1's line of CV5).
+3. **Payout is the price at the band's pressure, never a multiplier.**
+   `economy::price(μ⃗, pressure, pool)` already prices a listing against
+   the pressure on each lane where it is homed, and a closure mints the
+   deflation it measured. An inner-band closure is paid more because its
+   deflation is larger and its pressure higher — read, per lane — and an
+   outer-band closure less for the same reason. The division of labour
+   is that reading; no rate per band exists (rule 5), and no lane
+   converts to another (law 5).
+4. **A client chooses its distance by its bond and its depth, and the
+   physics admits or ejects it.** The choice is a stake: bond buys room
+   on the lanes of the band the client wants to home in (MU-ECONOMY §4),
+   and the inner band needs more room since its escrows are larger. The
+   admission is physical: an orbit closer than the planet's charts reach
+   cannot re-derive the band's classes, its closures refuse (P, D), its
+   escrows lapse, and the pressure carries it outward (76: a transport
+   toward separation, CR1's move) — an orbit too close is unstable and
+   the planet burns off, never by a rule that forbids it, by the
+   readings that refuse it. Deepening its dialect (the hardening path,
+   80.2: minerals to crystals) is how a planet moves inward.
+5. **A star is formed again when its bands run out.** Where a band has
+   no placement for a new planet — the docket offers it no question it
+   can take, room on the band's lanes is exhausted — and the star's mass
+   concentrates, a NEW FORMATION of the same star is minted: the same
+   core register (G1, the same axioms), a second field of orbits. That
+   is 76.4's star formation as already ruled, and its trigger is the
+   two readings 73.9(4) names — room run out, mass concentrated — never
+   a count. The re-organization protocol (CR1) moves planets between
+   formations on their mass profile.
+6. **Multi-star orbits.** A planet within reach of several stars is
+   pulled by each in proportion to the convergence it can re-derive
+   under it (73.11); it homes at the star where its mass profile weighs
+   more, a move receipted with its escrow re-keyed (CR1), and a word
+   valid under two stars' registers crosses while one valid under one
+   stands as a demand on the other (73.10, CL3). A star with CUSTOM
+   AXIOMS is a register layer that extends the core and never
+   contradicts it (72.1f, LR1) — a product for later; for now every
+   formation carries the one core.
+
+Rows: OA1 (placement as transport) carries the band as the planet's
+depth against the star's strata and the ejection outward; CR1 the move
+between formations and stars; CL3 the formation of the same star and,
+later, the layered star; PHY1 the pricing at pressure per lane; MS1's
+line of CV5 the mass vector per band. Nothing lands before the recut.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
