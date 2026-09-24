@@ -16022,6 +16022,30 @@ doctrine's own quantities, no constant set:
    and the separating transport). Eccentricity and precession per plane
    are the readings LC1 carries (73.13(5)), priced per lane.
 
+8. **The k-step's length is the orbit's own, work flows up toward the
+   star, and an axiom is granted only inside it (ruled 2026-09-24, the
+   operator's word).** A k-step is one orbit (78.23), so its LENGTH — the
+   acts one circuit takes, `i` at the close, and the height it spans —
+   is read off the orbit and differs by distance: a far orbit sweeps a
+   broad, shallow field and its k-step is long in acts and heights; a
+   close orbit sweeps the dense core and its k-step is short in acts and
+   heavy in frame (Kepler's direction, measured per orbit, no exponent
+   written). WORK FLOWS UPWARD: a planet's closure is provisional in its
+   epigenome, submitted as a solution and adjudicated by the court
+   (80.2), taught back as a mineral and hardened by re-derivation into
+   a crystal, and it enters the star — the universal genome — only by
+   convergence, `n → 1` (C2, 74): from the planet's ellipse inward along
+   the strata to the core, while the payment flows the other way, to the
+   closer and the cited refuser (78.33). AN AXIOM IS GRANTED ONLY INSIDE
+   THE STAR, where the axioms live: the register (56, 72.1, `physics/
+   axioms/`) is the star's core; a planet proposes — a demand, an offer,
+   a constructor adjoined first in its own epigenome (AL1) — and never
+   grants; a constructor is admitted into the universal genome only at
+   the court by a second independent vantage's re-derivation, sealed as
+   an act (78.32(3)(d)), and an AXIOM only by a ruling written into the
+   register (REG1, LR1: a layer extends the core and never contradicts
+   it). No planet's word becomes law on the planet.
+
 Rows: OA1 (placement as transport) carries the band as the planet's
 depth against the star's strata and the ejection outward; CR1 the move
 between formations and stars; CL3 the formation of the same star and,
