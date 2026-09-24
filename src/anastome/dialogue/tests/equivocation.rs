@@ -60,6 +60,6 @@ fn a_truncated_padded_or_misversioned_frame_refuses_whole() {
     other[1] = EQUIVOCATION_VERSION + 1;
     assert!(decode_equivocation(&other).is_none(), "another layout version is not read");
     let mut act = body;
-    act[0] = ACT_VERDICT;
+    act[0] = ACT_OFFER;
     assert!(decode_equivocation(&act).is_none(), "another act is not read as this one");
 }

@@ -16,7 +16,6 @@ pub(crate) mod receipts;
 pub(crate) mod rows;
 pub(crate) mod speech;
 pub(crate) mod syllabus;
-pub(crate) mod verdict;
 
 use crate::door::{serve_control, Door};
 use crate::transport::answer;

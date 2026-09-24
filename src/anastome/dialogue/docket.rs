@@ -1,6 +1,6 @@
-// ACT_DOCKET, ACT_EVIDENCE, ACT_VERDICT, ACT_TEACH, ACT_SETTLE — the
-// court's own acts: what is open, what was deposited against it, how it was
-// ruled, what is taught from it, and the consilience receipt.
+// ACT_DOCKET, ACT_EVIDENCE, ACT_TEACH, ACT_SETTLE — the court's own acts:
+// what is open, what was deposited against it, what is taught from it, and
+// the consilience receipt.
 
 use super::*;
 
@@ -328,125 +328,6 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
         out.push(EvidenceOf { addr, footprint: fp, scene });
     }
     Some(out)
-}
-
-/// verdict: `[ACT_VERDICT][court voice 32][addr][ruling u8][receipt 32]
-/// [payload tag …][47.1 receipt section]`.
-///
-/// The `receipt` field is the head of the court's own chronometric chain,
-/// which the ruling binds to; the trailing section is 47.1 whole — the
-/// signed prefix with the ruled ADDRESS as its payload, the signature over
-/// `prefix.bytes()` and nothing else, and the receipt the prefix names, so
-/// the receiver can run all four steps of 47.2 before touching a carrier.
-pub fn encode_verdict(
-    voice: &[u8; 32],
-    addr: impl AsRef<[u8]>,
-    ruling: u8,
-    receipt: &[u8; 32],
-    section: &ReceiptSection,
-) -> Option<Vec<u8>> {
-    encode_verdict_payload(voice, addr, ruling, receipt, None, section)
-}
-
-/// With the optional π* payload (RULING_REBIND): `…[receipt 32][1][sel]` /
-/// `…[receipt 32][0]`, then the receipt section. `None` when the section
-/// cannot be framed (`encode_receipt_section`): a ruling without its
-/// signed position is not spoken.
-pub fn encode_verdict_payload(
-    voice: &[u8; 32],
-    addr: impl AsRef<[u8]>,
-    ruling: u8,
-    receipt: &[u8; 32],
-    pi: Option<&crate::transducer::anchor::Sel>,
-    section: &ReceiptSection,
-) -> Option<Vec<u8>> {
-    let mut out = vec![ACT_VERDICT];
-    out.extend_from_slice(voice);
-    put_addr(&mut out, addr)?;
-    out.push(ruling);
-    out.extend_from_slice(receipt);
-    match pi {
-        Some(t) => {
-            out.push(1);
-            t.to_bytes(&mut out);
-        }
-        None => out.push(0),
-    }
-    out.extend_from_slice(&super::encode_receipt_section(
-        &section.prefix,
-        &section.sig,
-        &section.receipt,
-    )?);
-    Some(out)
-}
-
-/// The attach payload (RULING_ATTACHED): `…[receipt 32][2][base][g 17]` —
-/// the base the word connects to and the transport g into its frame.
-pub fn encode_verdict_attach(
-    voice: &[u8; 32],
-    addr: impl AsRef<[u8]>,
-    receipt: &[u8; 32],
-    base: impl AsRef<[u8]>,
-    g: &crate::transducer::element::Versor,
-    section: &ReceiptSection,
-) -> Option<Vec<u8>> {
-    let mut out = vec![ACT_VERDICT];
-    out.extend_from_slice(voice);
-    put_addr(&mut out, addr)?;
-    out.push(RULING_ATTACHED);
-    out.extend_from_slice(receipt);
-    out.push(2);
-    put_addr(&mut out, base)?;
-    g.to_bytes(&mut out);
-    out.extend_from_slice(&super::encode_receipt_section(
-        &section.prefix,
-        &section.sig,
-        &section.receipt,
-    )?);
-    Some(out)
-}
-
-
-pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
-    if !act_is(body, ACT_VERDICT) {
-        return None;
-    }
-    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let mut p = 33usize;
-    let addr = take_addr(body, &mut p)?;
-    let ruling = *body.get(p)?;
-    p += 1;
-    let receipt: [u8; 32] = body.get(p..p + 32)?.try_into().ok()?;
-    p += 32;
-    // THE PAYLOAD TAG IS ONE BYTE ON EVERY ARM, and every arm consumes it.
-    // The no-payload arm did not: `encode_verdict_payload` writes `push(0)`
-    // for it, so `p` was left pointing AT that zero and the receipt section
-    // was then read from one byte early — its `plen` came out of
-    // `[0x00, first-byte-of-plen]`. RULING_UPHELD and RULING_SLASHED carry
-    // no payload, so the two ordinary rulings never decoded at all: the
-    // door returned before answering and the ruling court blocked on a
-    // reply that never came. REBIND and ATTACH parsed, which is why nothing
-    // in the tree noticed. A tag that is written on three arms and read on
-    // two is not a layout, and `0` is refused rather than ignored.
-    let (pi, attach) = match body.get(p) {
-        Some(0) => {
-            p += 1;
-            (None, None)
-        }
-        Some(1) => {
-            p += 1;
-            (Some(crate::transducer::anchor::Sel::from_bytes(body, &mut p)?), None)
-        }
-        Some(2) => {
-            p += 1;
-            let base = take_addr(body, &mut p)?;
-            let g = crate::transducer::element::Versor::from_bytes(body, &mut p)?;
-            (None, Some((base, g)))
-        }
-        _ => return None,
-    };
-    let section = super::decode_receipt_section(body, p)?;
-    Some(Verdict { voice, addr, ruling, receipt, pi, attach, section })
 }
 
 /// The receiver's answer to a ruling: `[arm u8][payload]` — `0` applied,

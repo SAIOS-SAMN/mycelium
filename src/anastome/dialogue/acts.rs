@@ -18,11 +18,11 @@ pub const ACT_DEMAND: u8 = 0x02;
 pub const ACT_QUOTE: u8 = 0x03;
 pub const ACT_TEACH: u8 = 0x04;
 pub const ACT_SETTLE: u8 = 0x05;
-/// Step 5 court acts: the docket pull ("what awaits finality?") and the signed
-/// verdict. The court speaks the same wire as everyone — its authority is the
-/// replay, not the socket.
+/// Step 5 court act: the docket pull ("what awaits finality?"). The court
+/// speaks the same wire as everyone — its authority is the replay, not the
+/// socket. 0x07 is unassigned: a ruling reaches a node as a receipt through
+/// the exchange and its back-fill (45.2, 47.2), never as a message.
 pub const ACT_DOCKET: u8 = 0x06;
-pub const ACT_VERDICT: u8 = 0x07;
 /// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
 pub const ACT_EVIDENCE: u8 = 0x08;
 /// PoUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
@@ -590,32 +590,3 @@ pub const RULING_ATTACHED: u8 = 4;
 /// Two independent voices verified the same task: a proven root.
 pub const RULING_ROOT: u8 = 5;
 
-/// A DECODED VERDICT.
-pub struct Verdict {
-    /// The COURT's voice — the ruling's author, not the word's.
-    pub voice: [u8; 32],
-    /// The word ruled on.
-    pub addr: Address,
-    /// The ruling itself, from the closed vocabulary above.
-    pub ruling: u8,
-    /// The head of the court's own receipt chain, binding the ruling to a
-    /// tamper-evident history.
-    pub receipt: [u8; 32],
-    /// π* — present only on RULING_REBIND, the selection the court rebinds
-    /// the word to.
-    pub pi: Option<crate::transducer::anchor::Sel>,
-    /// The base and the transport — present only on RULING_ATTACHED.
-    pub attach: Option<(Address, crate::transducer::element::Versor)>,
-    /// THE COURT'S CAUSAL POSITION, whole: 47.1's signed prefix with the
-    /// ruled address as its payload, the signature over exactly those
-    /// bytes, and the receipt the prefix names.
-    ///
-    /// The receipt travels because 47.2 is four steps and the first cut
-    /// carried only the prefix and the signature, which decide steps 1 and
-    /// 2. Steps 3 and 4 — K against the signer's known head, and a height
-    /// that re-derives from the parents the receipt names — need the
-    /// receipt, so without it a verdict was admitted at any K and any
-    /// height, and a frame replayed from a spent position moved a court
-    /// head as readily as a fresh one.
-    pub section: ReceiptSection,
-}

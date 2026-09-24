@@ -481,10 +481,6 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         answer(s, reply);
         return true;
     }
-    if kind == dialogue::ACT_VERDICT {
-        crate::judge::verdict::judge(s, frame, door);
-        return true;
-    }
     false
 }
 
