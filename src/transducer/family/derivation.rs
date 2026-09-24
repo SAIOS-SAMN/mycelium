@@ -284,7 +284,7 @@ pub(crate) fn peel_versor_with_target(
     adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
     use crate::transducer::alphabet::{
-        factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_with, standing,
+        factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_rotor_with, standing,
         tait_bryan, BLOCK_ORDER,
     };
     use crate::transducer::peel::PeelNest;
@@ -335,7 +335,7 @@ pub(crate) fn peel_versor_with_target(
             if is_identity_block(&block) {
                 continue;
             }
-            match spell_peel_with(plane, &block, adjoined.clone()) {
+            match spell_peel_rotor_with(plane, &block, adjoined.clone()) {
                 Some((PeelNest::Closed { cores }, _rho)) => {
                     let (cited, w) = crate::transducer::alphabet::cited_of_cores(&cores)?;
                     cited_all.extend(cited);

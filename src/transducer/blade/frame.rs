@@ -54,6 +54,10 @@ use super::*;
 /// the residual half turn is a question about the SUPPORT, answered by
 /// carrying a candidate through [`versor_coset_ordered`], which tests it
 /// against the sites rather than guessing.
+///
+/// `u·u` and `u·v` are THE METRIC ON VECTORS (78.28(4), VA2): each `u` is a
+/// body's deviatoric harmonic, a 2-vector, and its square is its own
+/// content, not a sum of squares deciding what an element is.
 pub fn relative_double_angle(
     ua: &[BigRational; 2],
     ub: &[BigRational; 2],

@@ -282,7 +282,7 @@ impl Word {
             }
             // UNMEASURED: the plane turns and the alphabet does not spell
             // what stands on it.
-            let sp = spell_on(plane, &b)?;
+            let sp = spell_rotor_on(plane, &b)?;
             for &(id, inv) in sp.word.letters() {
                 rot[id.raw() as usize] += if inv { -1 } else { 1 };
             }
@@ -459,7 +459,7 @@ pub(crate) fn plane_nf(w: &Word) -> Word {
     let Some(block) = w.block_on(plane) else {
         return w.clone();
     };
-    match spell_peel_on(plane, &block) {
+    match spell_peel_rotor_on(plane, &block) {
         Some((crate::transducer::peel::PeelNest::Closed { cores }, rho)) if rho.is_one() => {
             let Some(tape) = crate::transducer::alphabet::word_of_cores(&cores) else {
                 return w.clone();

@@ -587,8 +587,10 @@ impl Rotor {
         if !a[2].is_zero() || !a[3].is_zero() || !b[2].is_zero() || !b[3].is_zero() {
             return None;
         }
+        // The action's own block on the sensor plane, at unit weight: the
+        // rotor path of the spelling (VA2).
         let block = [[a[0].clone(), b[0].clone()], [a[1].clone(), b[1].clone()]];
-        Some(spell(&block)?.word)
+        Some(spell_rotor_on(crate::transducer::alphabet::sensor_plane(), &block)?.word)
     }
 
     /// THE TWO PERIODS OF A DOUBLE ROTATION, UNCOLLAPSED (54.5, as ruled

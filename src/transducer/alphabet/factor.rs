@@ -11,7 +11,7 @@
 //! peel. What a step cannot read exactly — an irrational half-angle, a
 //! prime outside a plane's letters — is a demand, never a chain.
 
-use crate::transducer::alphabet::{rational_sqrt, rotor_block_on, spell_peel_on, LetterId, Rotor, Word, Q};
+use crate::transducer::alphabet::{rational_sqrt, rotor_block_on, spell_peel_rotor_on, LetterId, Rotor, Word, Q};
 use crate::transducer::peel::PeelNest;
 use crate::transducer::sentence::Demand;
 use num_bigint::BigInt;
@@ -98,6 +98,11 @@ pub(crate) fn factors(r: &Rotor) -> (Quat, Quat) {
 /// half-angle. The third step needs one rational square root — the
 /// half-angle of a rational rotation is rational or it is not — and the
 /// others none; `None` when the root is irrational or the factor is zero.
+///
+/// AL1'S RESIDUE (VA2, 78.29(A)): the quaternion squares here and in
+/// [`pair_rotors`] decide a factor's half-angle by a sum of squares. They
+/// are not rewritten in place; AL1's mode-first peel — MR1's split first,
+/// each mode peeled on its invariant plane — deletes them.
 pub(crate) fn tait_bryan(q: &Quat) -> Option<[HalfAngle; 3]> {
     let two = Q::from_integer(BigInt::from(2));
     let [w, x, y, z] = q.clone();
@@ -183,7 +188,7 @@ fn spell_plane(plane: (u8, u8), rotor: &Rotor, target: &Rotor) -> Option<Result<
     if is_identity_block(&block) {
         return Some(Ok(None));
     }
-    Some(match spell_peel_on(plane, &block) {
+    Some(match spell_peel_rotor_on(plane, &block) {
         Some((PeelNest::Closed { cores }, rho)) if rho.is_one() => {
             let w = crate::transducer::alphabet::word_of_cores(&cores)?;
             if w.block_on(plane).as_ref() != Some(&block) {

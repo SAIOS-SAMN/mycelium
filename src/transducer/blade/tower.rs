@@ -114,7 +114,9 @@ pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRati
 /// ```
 ///
 /// checked at `m = 2` (deviatoric) and `m = 4` (quartic), by exact cross
-/// multiplication in ℚ with no root taken and no table of weights.
+/// multiplication in ℚ with no root taken and no table of weights. Each
+/// `‖M̃^(m)‖²` is THE METRIC ON A VECTOR (78.28(4), VA2): a harmonic moment
+/// is a 2-vector and its square is its own content.
 ///
 /// A VANISHING HARMONIC IS PART OF THE READING, not a gap in it. A `C₄`
 /// body has no deviatoric at all, so a pair where one vanishes and the

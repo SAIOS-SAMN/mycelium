@@ -462,7 +462,31 @@ pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
 /// would have been checked against its sensor block — the identity — and
 /// refused for not matching a rotation it never claimed.
 pub fn spell_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<Spelling> {
-    match spell_peel_on(plane, block)? {
+    closed_spelling(plane, block, spell_peel_on(plane, block)?)
+}
+
+/// The same spelling for a block read off a rotor's action (VA2): unit
+/// weight by construction, so no similarity is read.
+pub fn spell_rotor_on(plane: (u8, u8), block: &[[Q; 2]; 2]) -> Option<Spelling> {
+    closed_spelling(plane, block, spell_peel_rotor_with(plane, block, Vec::new())?)
+}
+
+/// The rotor-block peel on a pair plane with no adjoined basis.
+pub fn spell_peel_rotor_on(
+    plane: (u8, u8),
+    block: &[[Q; 2]; 2],
+) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+    spell_peel_rotor_with(plane, block, Vec::new())
+}
+
+/// A peel that closed, verified: the spelled word's block on the plane,
+/// times `ρ`, is the block it was spelled from.
+fn closed_spelling(
+    plane: (u8, u8),
+    block: &[[Q; 2]; 2],
+    peeled: (PeelNest<SpellResidualView, SpellCore>, Q),
+) -> Option<Spelling> {
+    match peeled {
         (PeelNest::Closed { cores }, rho) => {
             // Cores come out outer to inner (the sheet first); the tape's
             // last letter acts first, so the tape is the cores reversed.
@@ -508,6 +532,14 @@ pub fn spell_peel_on(
 /// peel had already stood — so a mind holding a generator had its target
 /// peeled once with the seventeen, refused, and then divided again by the
 /// generator from the top. One loop, one basis, one pass.
+///
+/// THE LATTICE-IMAGE PATH (VA2): the block is the images of the row and
+/// column steps, read at the sensor boundary (§1.4) — a similarity with a
+/// real dilation and no versor behind it. Its two columns are VECTORS, so
+/// `ρ² = v·v`, `u·u = v·v` and `u·v = 0` are the metric on vectors
+/// (78.28(4)), and `ρ` is their rational root, refused otherwise. A block
+/// read off a rotor's action is already at unit weight and takes
+/// [`spell_peel_rotor_with`], which reads none of this.
 pub fn spell_peel_with(
     plane: (u8, u8),
     block: &[[Q; 2]; 2],
@@ -519,8 +551,31 @@ pub fn spell_peel_with(
         return None;
     }
     let rho = rational_sqrt(&rho2)?;
-    let (r00, r10) = (a / &rho, c / &rho);
-    let (r01, r11) = (b / &rho, d / &rho);
+    let unit = [[a / &rho, b / &rho], [c / &rho, d / &rho]];
+    Some((peel_orthonormal(plane, &unit, adjoined)?, rho))
+}
+
+/// THE ROTOR-BLOCK PATH (VA2): a block read off a rotor's action on an
+/// invariant plane (`rotor_block_on`, `Rotor::carry`) is at unit weight and
+/// orthogonal by construction, so no similarity is read — `ρ` is one and
+/// the parity is the block's determinant.
+pub fn spell_peel_rotor_with(
+    plane: (u8, u8),
+    block: &[[Q; 2]; 2],
+    adjoined: Vec<AdjoinedPrime>,
+) -> Option<(PeelNest<SpellResidualView, SpellCore>, Q)> {
+    Some((peel_orthonormal(plane, block, adjoined)?, Q::one()))
+}
+
+/// The peel of an orthonormal block: its parity by the determinant, the
+/// sheet factored, the rotation as a Gaussian ray over its common
+/// denominator (whose norm is the prime's own), peeled over the basis.
+fn peel_orthonormal(
+    plane: (u8, u8),
+    unit: &[[Q; 2]; 2],
+    adjoined: Vec<AdjoinedPrime>,
+) -> Option<PeelNest<SpellResidualView, SpellCore>> {
+    let (r00, r01, r10, r11) = (unit[0][0].clone(), unit[0][1].clone(), unit[1][0].clone(), unit[1][1].clone());
     let det = &r00 * &r11 - &r01 * &r10;
     let flipped = if det.is_one() {
         false
@@ -542,14 +597,13 @@ pub fn spell_peel_with(
     let step = SpellStep::on_with(plane, adjoined)?;
     let mut governor = SpellGovernor { step: &step, last: None };
     let nest = peel_nest(SpellResidual { z, n, flipped }, &step, &mut governor);
-    let view = match nest {
+    Some(match nest {
         PeelNest::Closed { cores } => PeelNest::Closed { cores },
         PeelNest::Standing { cores, arc } => PeelNest::Standing {
             cores,
             arc: SpellResidualView { p: arc.z.a, q: arc.z.b, weight: arc.n, flipped: arc.flipped },
         },
-    };
-    Some((view, rho))
+    })
 }
 
 /// The standing arc of a spelling that did not close: the rotation the
