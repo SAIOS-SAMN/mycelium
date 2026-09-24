@@ -264,25 +264,30 @@ impl Complex {
     }
 
     /// Reopen a stored simplex only when its coboundary coefficient moved.
-    /// Absence of a rotor is remainder: the fill stands.
-    pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) {
+    /// Absence of a rotor is remainder: the fill stands. Answers whether a
+    /// FILLED simplex was reopened — a ring that closed at holonomy 1 cut
+    /// open, 78.26(6)'s decoherence at its site.
+    pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) -> bool {
         let Some((coefficient, carriage)) = self.coboundary_coeff(verts) else {
-            return;
+            return false;
         };
         let coefficient = Self::store_coeff(coefficient);
         let Some(c) = self.stored_mut(key) else {
-            return;
+            return false;
         };
         // EITHER half moving reopens the simplex. One whose rotor is
         // unchanged and whose placement moved is a different transition,
         // and leaving it filled would keep a gauge that no longer closes it.
         let same = c.coefficient.projective_eq(&coefficient)
             && crate::transducer::element::same_versor(&c.carriage, &carriage);
-        if !same {
-            c.coefficient = coefficient;
-            c.carriage = carriage;
-            c.fill = Fill::Open;
+        if same {
+            return false;
         }
+        let was_filled = matches!(c.fill, Fill::Filled(..));
+        c.coefficient = coefficient;
+        c.carriage = carriage;
+        c.fill = Fill::Open;
+        was_filled
     }
 
     /// The link of `vertex`: every incident simplex, all degrees. A peel

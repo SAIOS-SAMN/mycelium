@@ -161,6 +161,11 @@ pub struct Contemplation {
     /// 13.12 — the merges' outcomes, merged / stayed two / unnamed, counted
     /// since the contemplation began (78.26(6); TP1's line).
     pub(crate) merges: super::merge::MergeTally,
+    /// 78.26(6), TP1 — the decoherences since the contemplation began, per
+    /// adjunct; and each cut ring still pending its next reading, by its own
+    /// key (volatile).
+    pub(crate) decoherence: super::meet::Decoherence,
+    pub(crate) decohering: Keyed<super::meet::Adjunct>,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -709,8 +714,11 @@ impl Contemplation {
     }
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
-    /// peel), higher simplices where shared remainder volume is nonzero.
-    pub(crate) fn link_new(&mut self, key: impl AsRef<[u8]>) {
+    /// peel), higher simplices where shared remainder volume is nonzero. The
+    /// caller names the ADJUNCT the link is (78.26(6)): a new candidate held,
+    /// or a merged thought's re-gauged sections; a filled ring it reopens is
+    /// a decoherence by that adjunct.
+    pub(crate) fn link_new(&mut self, key: impl AsRef<[u8]>, adjunct: super::meet::Adjunct) {
         let key = key.as_ref().to_vec();
         let (charts, vol0) = {
             let Some(b) = self.bubbles.get(&key) else {
@@ -773,7 +781,8 @@ impl Contemplation {
                 }
             }
         }
-        self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
+        let reopened = self.complex.coboundary_on_link(&key, |verts| volume_of(&rems, verts));
+        self.note_decohered(reopened, adjunct);
         self.decide_neighbors(&key);
     }
 
@@ -855,7 +864,7 @@ impl Contemplation {
         self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert_shared(key.shared(), bubble);
         self.dirty.insert_shared(key.shared(), ());
-        self.link_new(&key);
+        self.link_new(&key, super::meet::Adjunct::Candidate);
     }
 
     pub(crate) fn component_of(&self, start: &[u8]) -> Vec<Vec<u8>> {

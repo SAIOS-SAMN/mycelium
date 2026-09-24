@@ -421,6 +421,21 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
         },
         // 13.12 — every arm of the merges travels.
         merges: crate::transducer::bubble::merge::MergeTally { merged: 8, stayed: 9, unnamed: 10 },
+        // TP1 — every field of the meet graph travels, the cycle rank signed.
+        meet: crate::transducer::bubble::MeetGraph {
+            vertices: 11,
+            thoughts: 12,
+            components: 13,
+            edges: [1, 2, 3, 4, 5, 6],
+            cycle_rank: -7,
+            rings: [7, 8, 9, 10, 11, 12],
+            orbits: [13, 14, 15, 16, 17, 18],
+            decoherence: crate::transducer::bubble::Decoherence {
+                decohered: [19, 20],
+                classed: [21, 22],
+                rejoined: [23, 24],
+            },
+        },
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
@@ -428,7 +443,13 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
     assert_eq!(earlier, Reading::Learning(curve), "the curve at the later K stands");
 
-    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0, Default::default(), Default::default());
+    let fresh = Learning::of(
+        &crate::client::sdk::Epigenome::default(),
+        0,
+        Default::default(),
+        Default::default(),
+        Default::default(),
+    );
     assert_eq!(
         (fresh.strata.len(), fresh.adjoined_by_closure, fresh.installed, fresh.closing),
         (0, 0, 0, 0),

@@ -645,6 +645,12 @@ impl Entity {
         self.contemplation.merge_reading()
     }
 
+    /// 78.37(1), TP1 — the contemplation's meet graph as it stands, with its
+    /// decoherences since the contemplation began.
+    pub fn meet_graph(&self) -> crate::transducer::bubble::MeetGraph {
+        self.contemplation.meet_graph()
+    }
+
     /// THE CAVITY'S SIZE, on the wire (§8.1). `retire_on_t` writes one entry
     /// per retirement, every stroke, and the only drain is `pivot_on`'s —
     /// which fires when an incoming word's chart prefix happens to match a

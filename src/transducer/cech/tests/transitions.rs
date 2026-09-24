@@ -160,6 +160,31 @@ fn the_link_is_the_star_and_volume_gates_simplices() {
     );
 }
 
+/// 78.26(6), TP1 — A FILLED RING WHOSE COEFFICIENT MOVES IS CUT OPEN, AND THE
+/// LINK SAYS WHICH: the triangle filled at holonomy 1 comes back reopened when
+/// a chord's gauge moves; a ring that never filled is reopened silently, not
+/// counted as a cut, since there was no coherence to lose.
+#[test]
+fn a_filled_ring_reopened_by_a_moved_gauge_is_named_by_the_link() {
+    let mut c = Complex::new();
+    let (a, b, cc) = (v(1), v(2), v(3));
+    for x in [&a, &b, &cc] {
+        c.set_section(x, Section::at((*x).clone(), Rotor::identity()), vol());
+    }
+    let q = quarter();
+    c.set_edge(&a, &b, q.clone(), ident(), vol());
+    c.set_edge(&b, &cc, q.clone(), ident(), vol());
+    c.set_edge(&a, &cc, q.geo(&q), ident(), vol());
+    assert!(c.coboundary_on_link(&a, |_| vol()).is_empty(), "a new ring cuts nothing");
+    let key = c.link(&a, 2)[0].clone();
+    assert!(matches!(c.fill(&key), CoboundaryOutcome::Attached(Fill::Filled(..))), "the ring closes");
+    c.set_edge(&a, &cc, Rotor::identity(), ident(), vol());
+    assert_eq!(c.coboundary_on_link(&a, |_| vol()), vec![key.clone()], "the filled ring, cut open by the moved gauge");
+    // Now open and unasked: moving the gauge again cuts no coherence.
+    c.set_edge(&a, &cc, q.geo(&q), ident(), vol());
+    assert!(c.coboundary_on_link(&a, |_| vol()).is_empty(), "an open ring reopened is no decoherence");
+}
+
 /// A coboundary 1-cochain fills; a finite leftover is Congruent; an
 /// infinite-order leftover (prime 5) is a Class.
 #[test]

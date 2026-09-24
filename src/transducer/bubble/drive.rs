@@ -306,6 +306,8 @@ impl Contemplation {
                 } else {
                     self.complex.fill(&key)
                 };
+                // 78.26(6) — a ring cut open and read again settles here.
+                self.settle_decoherence(&key, &outcome);
                     match outcome {
                         CoboundaryOutcome::Attached(Fill::Filled(gamma, _carriage)) => {
                             fills += 1;

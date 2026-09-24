@@ -556,6 +556,9 @@ fn learning(l: &observe::Learning) -> Vec<String> {
         format!("    {}", l.pivots.line()),
         // 13.12 — the contemplation's merges (TP1's line).
         format!("    {}", l.merges.line()),
+        // 78.37(1), TP1 — the meet graph, its rings, its decoherences, and
+        // what TP1's fix owes, by name.
+        format!("    {}", l.meet.line()),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }

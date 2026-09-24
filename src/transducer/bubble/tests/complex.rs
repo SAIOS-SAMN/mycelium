@@ -35,6 +35,47 @@ fn overlapping_remainders_merge_by_fill() {
     // 13.12 — the merge's answer is counted by name, never discarded.
     let m = c.merge_reading();
     assert_eq!((m.merged, m.stayed, m.unnamed), (1, 0, 0), "one merge, merged: {}", m.line());
+    // TP1 — the meet graph as it stands: one thought, one component, no ring.
+    let g = c.meet_graph();
+    assert_eq!((g.vertices, g.thoughts, g.components, g.cycle_rank), (1, 1, 1, 0), "{}", g.line());
+}
+
+/// 78.26(6), TP1 — A CUT RING IS SETTLED BY ITS NEXT READING: a ring cut by
+/// a moved gauge that reads a class left that class between the thoughts;
+/// one cut by a candidate that re-fills rejoined. Each counted by its
+/// adjunct, cumulative, never reset.
+#[test]
+fn a_decoherence_is_settled_as_a_class_left_or_a_rejoining() {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::cech::Section;
+    use crate::transducer::element::identity_versor;
+    let mut c = Contemplation::new();
+    let vs: Vec<Vec<u8>> = (1u8..=3).map(|i| vec![i; 4]).collect();
+    for x in &vs {
+        c.complex.set_section(x, Section::at(x.clone().into(), Rotor::identity()), [1, 0, 0, 0]);
+    }
+    // The (3, 4, 5) letter: a rotor of infinite order, so its ring is a class.
+    let pythag = {
+        let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("the sensor plane");
+        crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
+    };
+    let id = Rotor::identity();
+    c.complex.set_edge(&vs[0], &vs[1], pythag, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[1], &vs[2], id.clone(), identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[0], &vs[2], id.clone(), identity_versor(), [1, 0, 0, 0]);
+    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
+    let ring = c.complex.link(&vs[0], 2)[0].clone();
+    c.note_decohered(vec![ring.clone()], Adjunct::Gauge);
+    let _ = c.fill_meet(&ring);
+    let d = c.meet_graph().decoherence;
+    assert_eq!((d.decohered[0], d.classed[0], d.rejoined[0]), (1, 1, 0), "the cut left a class");
+    // A second cut, by a candidate, on a ring that closes: rejoined.
+    c.complex.set_edge(&vs[0], &vs[1], id, identity_versor(), [1, 0, 0, 0]);
+    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
+    c.note_decohered(vec![ring.clone()], Adjunct::Candidate);
+    let _ = c.fill_meet(&ring);
+    let d = c.meet_graph().decoherence;
+    assert_eq!((d.decohered, d.classed, d.rejoined), ([1, 1], [1, 0], [0, 1]), "cumulative, per adjunct");
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

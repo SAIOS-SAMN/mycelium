@@ -27,7 +27,13 @@ impl Entity {
         }
         // LC1 — THE CURVE, read off this mind's own genome at its own `K`,
         // once: the clock's radius is its span's depth.
-        let learning = observe::Learning::of(&self.epigenome, self.own_k(), self.pivot_reading(), self.merge_reading());
+        let learning = observe::Learning::of(
+            &self.epigenome,
+            self.own_k(),
+            self.pivot_reading(),
+            self.merge_reading(),
+            self.meet_graph(),
+        );
         // ACT1 — THIS VOICE ON THE CLOCK: its `K`, its court's height as last
         // heard, where its genome was last written (78.21(3)), its radius
         // and its orbits against the others' (78.23 as amended, OK1).

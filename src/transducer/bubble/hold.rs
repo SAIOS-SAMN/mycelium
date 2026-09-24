@@ -273,7 +273,8 @@ impl Contemplation {
         self.bubbles.insert(&key, bubble);
         mark("bubbles.insert");
         self.dirty.insert(&key, ());
-        self.link_new(&key);
+        // A held form is a new candidate (78.26(6)).
+        self.link_new(&key, super::meet::Adjunct::Candidate);
         mark("link_new");
         eprintln!(
             "  form held {:02x}{:02x}…",

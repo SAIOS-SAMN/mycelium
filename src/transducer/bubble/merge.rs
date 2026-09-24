@@ -113,7 +113,7 @@ impl Contemplation {
                 continue;
             }
             let vol_nz = volume.iter().any(|&x| x > 0);
-            let outcome = self.complex.fill(&ck);
+            let outcome = self.fill_meet(&ck);
             match outcome {
                 CoboundaryOutcome::Attached(Fill::Filled(gamma, carriage)) if vol_nz => {
                     self.fills += 1;
@@ -303,7 +303,9 @@ impl Contemplation {
         self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert(&key, bubble);
         self.dirty.insert(&key, ());
-        self.link_new(&key);
+        // The merged thought re-links with its re-gauged sections: the GAUGE
+        // moved (78.26(6)).
+        self.link_new(&key, super::meet::Adjunct::Gauge);
         if verts.len() >= 2 {
             for v in verts {
                 if v.as_slice() != key.as_bytes() {

@@ -226,7 +226,15 @@ impl Complex {
     /// one more neighbour, never a subset of the fiber. Stops when the next
     /// degree produces no volume. Simplices are read by key; rotors are
     /// not cloned.
-    pub fn coboundary_on_link(&mut self, vertex: &[u8], mut volume_of: impl FnMut(&[Vec<u8>]) -> [u64; 4]) {
+    ///
+    /// Answers the keys of the FILLED simplices it reopened because their
+    /// coefficient moved (78.26(6)): the caller names the adjunct.
+    pub fn coboundary_on_link(
+        &mut self,
+        vertex: &[u8],
+        mut volume_of: impl FnMut(&[Vec<u8>]) -> [u64; 4],
+    ) -> Vec<Vec<u8>> {
+        let mut reopened: Vec<Vec<u8>> = Vec::new();
         let mut degree = 1usize;
         loop {
             let layer = self.link(vertex, degree);
@@ -269,7 +277,9 @@ impl Complex {
                             }
                             seen.insert(&nkey, ());
                             if self.by_key.get(nkey.as_bytes()).is_some() {
-                                self.reopen_on_coeff_change(&nkey, &verts);
+                                if self.reopen_on_coeff_change(&nkey, &verts) {
+                                    reopened.push(nkey.as_bytes().to_vec());
+                                }
                                 continue;
                             }
                             let mut blocked = false;
@@ -311,6 +321,7 @@ impl Complex {
             }
             degree += 1;
         }
+        reopened
     }
 
     /// Fill a simplex by extend: coboundary is Extended, finite order is
