@@ -4,6 +4,7 @@
 //! treasury and door (cognition); the record of useful work (registry);
 //! and the deliberation the judge runs off the lock (synthesis).
 
+pub mod backfill;
 pub mod cognition;
 pub mod registry;
 pub mod synthesis;

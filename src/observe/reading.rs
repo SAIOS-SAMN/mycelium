@@ -424,7 +424,7 @@ impl Court {
 /// THE AXES OF [`Replication`], in its writing's order (CV5): what a court
 /// did with the receipts of one signer. The ONE statement of the order
 /// (law 12), read by the counters, the codec and every renderer.
-pub const REPLICATION_AXES: [(&str, &str); 13] = [
+pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("parent", "receipts admitted from a digest, cited as a parent"),
     ("backfill", "receipts admitted by back-fill, page by page"),
     ("gap", "frames that reported a hole in a chain (the back-fill chases it)"),
@@ -438,7 +438,16 @@ pub const REPLICATION_AXES: [(&str, &str); 13] = [
     ("no_origin", "frames heard before this court adopted an origin"),
     ("digest_unreadable", "digests that were not one cover digest"),
     ("digest_signature", "digests whose cover signature did not verify"),
+    // ACT1-hold-b (45.2, LD0's defect 3b): what the chase of a gap did.
+    ("backfill_reached", "back-fill passes whose chain reached the reported K − 1"),
+    ("backfill_budget", "back-fill passes that ended on their budget or closed nothing, short of it"),
+    ("parent_after_backfill", "reported heads admitted as a parent once a back-fill closed their gap"),
+    ("lag", "the K lag at the last report: the reported K against the head held (a level, not a count)"),
 ];
+
+/// How many axes [`REPLICATION_AXES`] holds: the one statement of the
+/// reading's width, read by the codec, the store and every renderer.
+pub const REP_AXES: usize = 17;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -455,6 +464,11 @@ pub mod rep {
     pub const NO_ORIGIN: usize = 10;
     pub const DIGEST_UNREADABLE: usize = 11;
     pub const DIGEST_SIGNATURE: usize = 12;
+    pub const BACKFILL_REACHED: usize = 13;
+    pub const BACKFILL_BUDGET: usize = 14;
+    pub const PARENT_AFTER_BACKFILL: usize = 15;
+    /// A LEVEL: set at each report, never summed.
+    pub const LAG: usize = 16;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
@@ -463,8 +477,8 @@ pub mod rep {
 /// apart, never attributed to one.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Replication {
-    pub signers: Vec<([u8; 32], [u64; 13])>,
-    pub unattributed: [u64; 13],
+    pub signers: Vec<([u8; 32], [u64; REP_AXES])>,
+    pub unattributed: [u64; REP_AXES],
 }
 
 impl Replication {
@@ -487,11 +501,11 @@ impl Replication {
             return None;
         }
         let m = take_u32(b, p)? as usize;
-        if !holds(b, *p, m, 32 + 8 * 13) {
+        if !holds(b, *p, m, 32 + 8 * REP_AXES) {
             return None;
         }
-        let axes = |b: &[u8], p: &mut usize| -> Option<[u64; 13]> {
-            let mut a = [0u64; 13];
+        let axes = |b: &[u8], p: &mut usize| -> Option<[u64; REP_AXES]> {
+            let mut a = [0u64; REP_AXES];
             for v in a.iter_mut() {
                 *v = take_u64(b, p)?;
             }

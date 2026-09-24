@@ -79,13 +79,15 @@ fn every_reading_reads_back_as_itself_through_the_act() {
 /// CV5 — replication per signer and adjudication by kind travel whole.
 #[test]
 fn replication_and_adjudication_read_back_as_themselves() {
-    let mut axes = [0u64; 13];
+    let mut axes = [0u64; REP_AXES];
     axes[rep::BACKFILL] = 7;
     axes[rep::STALE] = 2;
-    let mut unattributed = [0u64; 13];
+    axes[rep::BACKFILL_BUDGET] = 3;
+    axes[rep::LAG] = 540;
+    let mut unattributed = [0u64; REP_AXES];
     unattributed[rep::DIGEST_UNREADABLE] = 1;
     let all = vec![
-        Reading::Replication(Replication { signers: vec![(vk(3), axes), (vk(4), [0; 13])], unattributed }),
+        Reading::Replication(Replication { signers: vec![(vk(3), axes), (vk(4), [0; REP_AXES])], unattributed }),
         Reading::Adjudication(Adjudication {
             ratified: 5,
             stood: 9,
@@ -97,7 +99,8 @@ fn replication_and_adjudication_read_back_as_themselves() {
     ];
     let push = encode_push(&vk(8), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
-    assert_eq!(REPLICATION_AXES.len(), 13, "the axes and the counters agree");
+    assert_eq!(REPLICATION_AXES.len(), REP_AXES, "the axes and the counters agree");
+    assert_eq!(REPLICATION_AXES[rep::LAG].0, "lag", "the last axis is the lag, a level");
 }
 
 /// The replication counters keep each signer apart, and a frame that named

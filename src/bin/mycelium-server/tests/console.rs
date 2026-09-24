@@ -43,11 +43,11 @@ fn a_census_turning_only_on_the_grid_plane_is_named_flattened() {
 /// its kind's own name.
 #[test]
 fn replication_and_adjudication_are_read_by_signer_and_by_kind() {
-    use mycelium::observe::{rep, Adjudication, Replication};
-    let mut axes = [0u64; 13];
+    use mycelium::observe::{rep, Adjudication, Replication, REP_AXES};
+    let mut axes = [0u64; REP_AXES];
     axes[rep::BACKFILL] = 12;
     let out = rendered(vec![
-        Reading::Replication(Replication { signers: vec![([9; 32], axes)], unattributed: [0; 13] }),
+        Reading::Replication(Replication { signers: vec![([9; 32], axes)], unattributed: [0; REP_AXES] }),
         Reading::Adjudication(Adjudication {
             ratified: 4,
             stood: 7,

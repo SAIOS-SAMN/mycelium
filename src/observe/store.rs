@@ -152,8 +152,8 @@ pub fn last_phase() -> Option<super::Phase> {
 /// REPLICATION, counted where the exchange and the back-fill classify each
 /// frame (CV5): per signer by its key, and apart for a frame no signer
 /// could be read off.
-static REPLICATION: LazyLock<Mutex<Keyed<[u64; 13]>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
-static UNATTRIBUTED: [AtomicU64; 13] = [const { AtomicU64::new(0) }; 13];
+static REPLICATION: LazyLock<Mutex<Keyed<[u64; super::REP_AXES]>>> = LazyLock::new(|| Mutex::new(Keyed::new()));
+static UNATTRIBUTED: [AtomicU64; super::REP_AXES] = [const { AtomicU64::new(0) }; super::REP_AXES];
 
 /// Count `n` on one axis of [`super::REPLICATION_AXES`] for `signer`, or
 /// unattributed where the frame named none. An axis past the list is no
@@ -168,12 +168,25 @@ pub fn note_replication(signer: Option<[u8; 32]>, axis: usize, n: u64) {
         Some(vk) => {
             let Ok(mut r) = REPLICATION.lock() else { return };
             if r.get(&vk).is_none() {
-                r.insert(vk, [0; 13]);
+                r.insert(vk, [0; super::REP_AXES]);
             }
             if let Some(slot) = r.get_mut(&vk).and_then(|a| a.get_mut(axis)) {
                 *slot += n;
             }
         }
+    }
+}
+
+/// SET a LEVEL on one axis for `signer` — the lag at the last report
+/// ([`super::rep::LAG`]) — which is where the signer stands now, not a
+/// count to be summed.
+pub fn set_replication(signer: [u8; 32], axis: usize, v: u64) {
+    let Ok(mut r) = REPLICATION.lock() else { return };
+    if r.get(&signer).is_none() {
+        r.insert(signer, [0; super::REP_AXES]);
+    }
+    if let Some(slot) = r.get_mut(&signer).and_then(|a| a.get_mut(axis)) {
+        *slot = v;
     }
 }
 

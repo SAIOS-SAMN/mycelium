@@ -420,17 +420,22 @@ impl Exchange {
                         if digest.is_err() {
                             continue;
                         }
-                        let mut admitted = admit_peer_receipt(&kernel, &mesh, &reply);
-                        // 47.2 step 3, S13.10a, R4: a gap fetches pages of the
-                        // missing receipts from the peer that reported it
-                        // until the chain reaches the reported K, within this
-                        // exchange's stroke budget, and the reporting frame
-                        // is then admitted again — the one citation.
-                        if let Ok(mycelium::court::admission::Admitted::Gap { vk, to, .. }) = &admitted {
-                            if crate::backfill::pages(&kernel, &mesh, &d, *vk, *to) {
-                                admitted = admit_peer_receipt(&kernel, &mesh, &reply);
-                            }
-                        }
+                        // 47.2 step 3, S13.10a, R4, 45.2: a gap fetches pages
+                        // of the missing receipts from the signer that owns
+                        // them until the chain reaches the reported K, within
+                        // this exchange's stroke budget, and the reporting
+                        // frame is then admitted again — the one citation.
+                        // The chase and its readings (ACT1-hold-b) are the
+                        // lib's; the wire is `backfill::fetch`.
+                        let Some(mut budget) = kernel.lock().ok().map(|mut k| k.stroke()) else {
+                            continue;
+                        };
+                        let admitted = mycelium::server::backfill::hear(
+                            &kernel,
+                            || admit_peer_receipt(&kernel, &mesh, &reply),
+                            &mut budget,
+                            crate::backfill::fetch(&mesh, &d),
+                        );
                         // The signer is the key the digest names; a digest
                         // that admitted but does not decode names none.
                         let signer = dialogue::decode_cover_digest(&reply).map(|c| c.vk);
