@@ -15513,7 +15513,14 @@ and RESONANT or not — never a bare hole; tallied by content on the
 Cells line beside the incongruence breakdown (`pairing::Incongruents`);
 the refusal reader maps incongruence to P and incoherence to D where a
 mode no held word spells would close it or to C where another vantage
-refines it, never to P.
+refines it, never to P. CORRECTED on the first reading (the same day):
+a RESONANT ring — every mode elliptic of finite order — is spelled by
+the alphabet's own turns (the finite orders are the seventeen's) and
+closes at its period; it is `Fill::Congruent` at `ℓ`, a remainder
+(78.37(4)), and it demands nothing, so it counts neither D nor C. D is
+the ROSETTE: an elliptic mode of no order, a rotor at an angle no held
+word spells, exactly `RotorPrime`'s case. C is parabolic, boost, or
+luminal.
 
 **(6) Decoherence is an act, and incoherence is its state.** A coherent
 thought — every ring closed — receives an ADJUNCT: a new candidate with
