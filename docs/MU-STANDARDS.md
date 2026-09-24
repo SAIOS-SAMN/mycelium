@@ -354,15 +354,38 @@ and then `cargo clippy --release --all-targets -- -D warnings` and exits
 non-zero on either. Both lines go in the message, the suite's `test
 result` lines and the gate's exit. "Lint clean" alone is not green.
 
-6.2 The auditor reproduces all three on the same commit, in a detached
-worktree if the implementor's tree is dirty, and reads every changed file
-whole. A landing is called verified only after that read; a report is
-never the object of an audit, the code is.
+6.2 The auditor reads every changed file whole and verifies, on the code:
+(a) the wiring — every new reader has a production caller and a producer
+feeding it, and the path from the wire or the percept to the reading
+runs, so nothing landed is a type, a line or a fixture standing in for a
+mechanism; (b) the coding standards — checklist (a) through (t) and the
+laws, returned by rule number; (c) the trajectory — the change against
+its ruling AND against the carrier it writes into and every ruling that
+retired a carrier (§6.6). A landing is called verified only after that
+read; a report is never the object of an audit, the code is. THE AUDITOR
+DOES NOT RE-RUN THE SUITE, THE GATE AND THE CENSUS ON THE SAME MACHINE,
+TOOLCHAIN AND COMMIT the implementor quoted them from (ruled 2026-09-24,
+the operator's word): that reproduction confirms only that the report was
+not misquoted, which reading the quoted lines already does, and it is
+reserved for a commit whose report there is reason to doubt or that lands
+from a dirty tree.
 
 6.3 The cold-boot trace of chapter 40 for the item is reproduced before the
 next item lands (chapter 41's consolidation discipline). A landing that
 changes admission, the wire, or the market is followed by a whole-fleet
 recut before its readings are used.
+
+6.6 **A landing is checked against the carrier it writes into** (ruled
+2026-09-24, the operator's word; the coordinator's fault at LD0 steps 4
+and 5). A change that moves a field onto "a row" is audited against what
+the row lives in: LD0's per-word fields were landed onto rows of the
+MYC7 snapshot — a linear byte tape read by position in write order —
+after the tape had been retired (MU-RECURSION 1.9, K6, 54.5) and after
+LD2 had persisted the ledger as the trie, because each step was read
+against its own ruling and not against the carrier. From here the audit
+names, for every change, the carrier it writes to and reads from, and
+returns any write onto a retired carrier or any positional read of a
+keyed one; a ruling applies at every site of its shape.
 
 6.5 **A fleet reading is quoted against TUniversal height and `K`, never
 a wall clock** (ruled 2026-09-24, MU-RECURSION 78.21). "Up seven hours"

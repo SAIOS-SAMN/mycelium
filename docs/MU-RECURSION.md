@@ -11915,6 +11915,26 @@ coherence listing — the same copy shape — so a deflation and the
 coherence field are FIELDS OF THE WORD'S ROW, and one probed on an
 address no row holds is named and refused, never a copy.
 
+### 78.25 The MYC7 tape is retired; the mind persists as keyed tries by coordinates (ruled 2026-09-24, the operator's word)
+
+The implementor's own reading, ratified: LD0's steps moved the award, the
+deflation, the fields and the rank onto "the word's row" of the MYC7
+snapshot — a linear byte tape whose sections are read by position and
+whose rows stand in write order — when the kernel's carriers are keyed
+tries and the tape was retired (1.9, K6, 54.5) before LD2 persisted the
+ledger as the trie (LDG1). The coordinator let it happen by auditing
+each step against its ruling and not against the carrier it wrote into
+(§6.6). Ruled: MYC7 is RETIRED; the mind — the basis, the provisional
+book, the cavity, the pending listings, the treasury, the field and the
+rank — persists as keyed tries by coordinates exactly as LDG1 writes the
+ledger, each word a node at its coordinates (its chart and its admitting
+stamp), its per-word fields (award, deflation, field hot and cold, rank)
+the node's leaves, written each key once as a path and read back by key
+and by prefix, never by position in a stream; a section read by
+position is refused at the audit. LD0's step 6 lands on that carrier, not
+before it (LD3, before EC1's producer and the recut). The backtrack
+ledger records the coordinator's audit fault at LD0 steps 4 and 5.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
