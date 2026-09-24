@@ -376,8 +376,17 @@ pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>)
 pub struct DemandTally {
     /// Pairs reaching the mint: no versor carried them.
     pub offered: u64,
-    /// Refused at gate 1 — `Mirrored` or `Incongruent`, proved permanent.
+    /// Refused at gate 1, by the refusal's kind (F5): P — `Mirrored`,
+    /// `Incongruent`, `Isotropy`, `Irrational`, proved permanent.
     pub permanent: u64,
+    /// Gate 1, I: a bodiless pair, nothing to pose.
+    pub bodiless: u64,
+    /// Gate 1, no refusal: an unoriented pair, a held stabilizer (FR1c).
+    pub held: u64,
+    /// Gate 1, no refusal: the pair reads a turn of the base.
+    pub turned: u64,
+    /// Gate 1, a kind no pose refusal carries: the defect count.
+    pub unclassified: u64,
     /// Refused at gate 2 — no arc: the pair orients only at the quartic,
     /// whose reading is `4φ` and whose witness would name a different
     /// rotation.
@@ -400,8 +409,8 @@ pub struct DemandTally {
 thread_local! {
     static DEMANDS: std::cell::Cell<DemandTally> =
         const { std::cell::Cell::new(DemandTally {
-            offered: 0, permanent: 0, arcless: 0, primeless: 0, minted: 0,
-            unkeyed: 0, untyped: 0, merged: 0,
+            offered: 0, permanent: 0, bodiless: 0, held: 0, turned: 0, unclassified: 0,
+            arcless: 0, primeless: 0, minted: 0, unkeyed: 0, untyped: 0, merged: 0,
         }) };
 }
 
@@ -427,8 +436,10 @@ pub fn demand_tally() -> DemandTally {
 impl DemandTally {
     pub fn line(&self) -> String {
         format!(
-            "offered {} | permanent {} arcless {} primeless {} | MINTED {} | stood: unkeyed {} untyped {} merged {}",
-            self.offered, self.permanent, self.arcless, self.primeless, self.minted,
+            "offered {} | permanent {} arcless {} primeless {} | gate 1 by kind: bodiless {} held {} turned {} \
+             unclassified {} | MINTED {} | stood: unkeyed {} untyped {} merged {}",
+            self.offered, self.permanent, self.arcless, self.primeless,
+            self.bodiless, self.held, self.turned, self.unclassified, self.minted,
             self.unkeyed, self.untyped, self.merged,
         )
     }
@@ -501,9 +512,26 @@ pub(crate) fn oblique_rotor_prime(
     // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
     // the demand (BQ4).
     let sensor = crate::transducer::base::GRID_PLANE;
-    if blade::relative_rotor(blade_a, blade_b, sensor).err() != Some(blade::NoPose::Oblique) {
-        note_demand(|t| t.permanent += 1);
-        return None;
+    // GATE 1, LABELLED BY THE ANSWER'S KIND, never by the branch (F5): only
+    // the oblique arm passes. A turn is no refusal; a held stabilizer is no
+    // refusal; a refusal is counted as the kind it reads — P permanent, I
+    // bodiless — and any other kind is the defect count, unclassified.
+    use crate::transducer::sentence::ObstructionKind as Kind;
+    match blade::relative_rotor(blade_a, blade_b, sensor) {
+        Err(blade::NoPose::Oblique) => {}
+        Ok(_) => {
+            note_demand(|t| t.turned += 1);
+            return None;
+        }
+        Err(why) => {
+            match why.obstruction_kind() {
+                Some(Kind::P) => note_demand(|t| t.permanent += 1),
+                Some(Kind::I) => note_demand(|t| t.bodiless += 1),
+                None => note_demand(|t| t.held += 1),
+                Some(Kind::D | Kind::C | Kind::N | Kind::Unclassified) => note_demand(|t| t.unclassified += 1),
+            }
+            return None;
+        }
     }
     let Some((s, t)) = blade::oblique_arc(blade_a, blade_b, sensor) else {
         note_demand(|t| t.arcless += 1);

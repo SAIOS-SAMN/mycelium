@@ -86,6 +86,7 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
         unframed: 2,
         unstamped: [1, 0, 0, 0, 0],
         rulings: [[3, 1, 2, 0], [0; 4], [0; 4], [1, 0, 0, 1]],
+        ruling_refusals: [[0; 3], [0; 3], [0; 3], [0, 0, 1]],
         ..CourtClock::default()
     }));
     let voice = Clock::Voice(VoiceClock { k: 7, heard: 35, persisted: Some((30, 5)), ..VoiceClock::default() });
@@ -102,7 +103,10 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
     assert!(out.contains("h 35..40  (5 heights)"), "the spread, in heights only: {out}");
     assert!(out.contains("2 acts sealed on a word nothing measured"), "{out}");
     assert!(out.contains("basis 1") && out.contains("upheld admitted 3 applied 1 awaiting 2 refused 0"), "{out}");
-    assert!(out.contains("retired admitted 1 applied 0 awaiting 0 refused 1"), "a refused retirement is named: {out}");
+    assert!(
+        out.contains("retired admitted 1 applied 0 awaiting 0 refused 1 (does not decompose 1)"),
+        "a refused retirement is named, by its reason: {out}"
+    );
     assert!(!out.contains("demoted admitted"), "an arm with none admitted says nothing: {out}");
     assert!(out.contains("at h 30 K 5  (5 heights, 2 K since)"), "the genome's persist, by height and K: {out}");
 }

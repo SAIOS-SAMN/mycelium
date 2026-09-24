@@ -306,6 +306,9 @@ pub struct Kernel {
     /// the rulings held on an unheld citation; refused counts rulings whose
     /// replay did not re-derive (78.9). Per node, since boot.
     pub(crate) rulings: [[u64; 4]; 4],
+    /// F5 — THE REFUSED RULINGS BY REASON, per arm (`Ruled::index`) and per
+    /// reason (`RulingRefused::index`); each arm's row sums to its refused.
+    pub(crate) ruling_refusals: [[u64; 3]; 4],
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

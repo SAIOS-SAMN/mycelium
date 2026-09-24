@@ -14,7 +14,7 @@
 //! never dropped. Each is counted on the clock by arm:
 //! admitted = applied + awaiting + refused.
 
-use crate::chronometry::{KStepReceipt, Ruled, Stamp};
+use crate::chronometry::{KStepReceipt, Ruled, RulingRefused, Stamp};
 use crate::cognition::*;
 
 /// What a peer's ruling came to here.
@@ -25,8 +25,8 @@ enum Heard {
     /// A citation this court does not hold, by its stamp.
     Waits(Stamp),
     Applied,
-    /// The replay did not re-derive, named.
-    Refused(&'static str),
+    /// The replay did not re-derive, by its typed reason (F5).
+    Refused(RulingRefused),
 }
 
 impl Kernel {
@@ -51,17 +51,13 @@ impl Kernel {
                 counts[0] += 1;
                 counts[1] += 1;
             }
+            // F5 — the refusal by its reason, per arm, on the clock: the
+            // reading carries what the print said.
             Heard::Refused(why) => {
                 let counts = &mut self.rulings[arm.index()];
                 counts[0] += 1;
                 counts[3] += 1;
-                eprintln!(
-                    "  court ruling refused {:02x}{:02x}… {} at {}: {why}",
-                    r.stamp.vk[0],
-                    r.stamp.vk[1],
-                    arm.name(),
-                    r.stamp.place().print()
-                );
+                self.ruling_refusals[arm.index()][why.index()] += 1;
             }
         }
     }
@@ -106,7 +102,7 @@ impl Kernel {
         }
         match self.apply_verdict_by(addr.as_bytes(), verdict, author) {
             true => Heard::Applied,
-            false => Heard::Refused("the verdict found no party to release to"),
+            false => Heard::Refused(RulingRefused::NoParty),
         }
     }
 
@@ -146,11 +142,11 @@ impl Kernel {
                 None => self.provisional.get(a.as_bytes()).is_some_and(|w| w.is_rewrite()),
             };
             if !is_rewrite && !self.ruled_contains(a.as_bytes()) {
-                return Heard::Refused("a word that speaks for the retired one is not ruled here");
+                return Heard::Refused(RulingRefused::SpeakerNotRuled);
             }
         }
         if !matches!(self.reduce_excluding(&word, Some(addr.as_bytes())), NormalForm::Decomposed(_)) {
-            return Heard::Refused("the retired word does not decompose over this court's basis without it");
+            return Heard::Refused(RulingRefused::DoesNotDecompose);
         }
         let freed = word.magnitude();
         let retired = self.cite_of(addr.as_bytes());

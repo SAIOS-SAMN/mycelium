@@ -494,6 +494,11 @@ fn a_peers_retirement_is_replayed_here_and_applied_refused_or_waiting() {
     let e_at = e.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
     super::common::admit_line(&mut e, &lone, &retirement_line(&lone, vec![Cite::word(&relator, e_at)]));
     assert_eq!(e.clock(None).rulings[retired], [1, 0, 0, 1], "it does not re-derive here: refused, counted");
+    assert_eq!(
+        e.clock(None).ruling_refusals[retired],
+        [0, 0, 1],
+        "by its reason: the retired word does not decompose here without it (F5)"
+    );
     assert!(e.basis.contains(r_addr.as_bytes()), "and the word stays");
 
     let early = super::common::court_key("early retirer");

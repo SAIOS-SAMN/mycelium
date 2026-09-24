@@ -234,6 +234,40 @@ impl Ruled {
     }
 }
 
+/// WHY A PEER'S RULING DID NOT APPLY HERE (EC1, F5): the verdict found no
+/// party to release to; a word that speaks for the retired one is not ruled
+/// here; the retired word does not decompose over this court's basis without
+/// it. Each an I (78.9), counted by arm and by reason on the clock.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RulingRefused {
+    NoParty,
+    SpeakerNotRuled,
+    DoesNotDecompose,
+}
+
+impl RulingRefused {
+    /// Every reason, in the order the rulings reading carries them.
+    pub const ALL: [RulingRefused; 3] =
+        [RulingRefused::NoParty, RulingRefused::SpeakerNotRuled, RulingRefused::DoesNotDecompose];
+
+    /// Where the reason is carried in the rulings reading.
+    pub fn index(self) -> usize {
+        match self {
+            RulingRefused::NoParty => 0,
+            RulingRefused::SpeakerNotRuled => 1,
+            RulingRefused::DoesNotDecompose => 2,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            RulingRefused::NoParty => "no party",
+            RulingRefused::SpeakerNotRuled => "speaker not ruled",
+            RulingRefused::DoesNotDecompose => "does not decompose",
+        }
+    }
+}
+
 /// THE KIND OF ACT A RECEIPT ADMITS (45.1): one coordinate byte of the
 /// node, in its chain hash, so a phase (45.9) and a fold (45.8) read the
 /// ledger by kind. A byte that names no kind refuses the read.

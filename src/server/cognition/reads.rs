@@ -70,6 +70,7 @@ impl Kernel {
             orbits: crate::observe::Orbits { withheld: self.withheld, distance: self.chain.separation() },
             unstamped: self.unstamped(),
             rulings: self.rulings,
+            ruling_refusals: self.ruling_refusals,
         }
     }
 

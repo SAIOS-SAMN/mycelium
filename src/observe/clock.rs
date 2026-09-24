@@ -51,6 +51,9 @@ pub struct CourtClock {
     /// slashed, retired): `[admitted, applied, awaiting, refused]`, where
     /// admitted = applied + awaiting + refused.
     pub rulings: [[u64; 4]; 4],
+    /// F5 — the refused rulings per arm by reason (`RulingRefused::ALL`):
+    /// no party, a speaker not ruled, does not decompose.
+    pub ruling_refusals: [[u64; 3]; 4],
     /// Its orbits against the peers' (OK1).
     pub orbits: Orbits,
 }
@@ -188,6 +191,9 @@ impl Clock {
                 for arm in &c.rulings {
                     u64s(out, arm);
                 }
+                for arm in &c.ruling_refusals {
+                    u64s(out, arm);
+                }
                 c.orbits.put(out);
             }
             Clock::Voice(v) => {
@@ -264,6 +270,12 @@ impl Clock {
                         *v = u64_at(b, p)?;
                     }
                 }
+                let mut ruling_refusals = [[0u64; 3]; 4];
+                for arm in ruling_refusals.iter_mut() {
+                    for v in arm.iter_mut() {
+                        *v = u64_at(b, p)?;
+                    }
+                }
                 let orbits = Orbits::take(b, p)?;
                 Some(Clock::Court(Box::new(CourtClock {
                     k,
@@ -275,6 +287,7 @@ impl Clock {
                     unframed,
                     unstamped,
                     rulings,
+                    ruling_refusals,
                     orbits,
                 })))
             }

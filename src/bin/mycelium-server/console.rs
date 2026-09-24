@@ -326,11 +326,22 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 .iter()
                 .filter_map(|arm| {
                     let [admitted, applied, awaiting, refused] = c.rulings[arm.index()];
+                    // F5 — each refusal by its reason, where any counted.
+                    let why: Vec<String> = mycelium::chronometry::RulingRefused::ALL
+                        .iter()
+                        .map(|r| (r.name(), c.ruling_refusals[arm.index()][r.index()]))
+                        .filter(|(_, n)| *n > 0)
+                        .map(|(name, n)| format!("{name} {n}"))
+                        .collect();
+                    let why = match why.is_empty() {
+                        true => String::new(),
+                        false => format!(" ({})", why.join(", ")),
+                    };
                     (admitted > 0).then(|| {
                         flag(
                             refused > 0,
                             format!(
-                                "{} admitted {admitted} applied {applied} awaiting {awaiting} refused {refused}",
+                                "{} admitted {admitted} applied {applied} awaiting {awaiting} refused {refused}{why}",
                                 arm.name()
                             ),
                         )

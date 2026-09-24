@@ -49,6 +49,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         unframed: 5,
         unstamped: [1, 0, 2, 0, 3],
         rulings: [[3, 1, 1, 1], [0; 4], [2, 2, 0, 0], [1, 0, 1, 0]],
+        // F5 — each reason in its own slot travels.
+        ruling_refusals: [[1, 0, 0], [0; 3], [0; 3], [0, 2, 3]],
         orbits: Orbits { withheld: 2, distance: vec![(vk(1), [-3, 0, 5, -1])] },
     }));
     let voice_clock = Clock::Voice(VoiceClock {

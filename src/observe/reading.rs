@@ -206,7 +206,7 @@ impl Planes {
 /// THE AXES OF [`Loss`], in its writing's order: each counter's name and
 /// what it means when it is not zero. The ONE statement of the order, read
 /// by the codec and by every renderer (law 12).
-pub const LOSS_AXES: [(&str, &str); 21] = [
+pub const LOSS_AXES: [(&str, &str); 26] = [
     ("unheard", "components whose moduli are not read at their n (body_of refused)"),
     ("sectionless", "laminae with no grid plane, left out of a chain (on_grid refused)"),
     ("coarse", "sections filed at their n alone, their topology refused"),
@@ -217,11 +217,16 @@ pub const LOSS_AXES: [(&str, &str); 21] = [
     ("unframed", "meets no proper turn relates"),
     ("half_open", "frames whose half turn nothing closes (a projective class)"),
     ("unspellable", "orbits whose holonomy the seventeen do not spell"),
+    ("orbit_unread", "orbits evaluated and not measured: a rotation no versor"),
     ("refused", "pieces carried whose rotor the seventeen do not spell"),
     ("unclassed", "meets whose piece carries no transport class"),
     ("undecodable", "keys this reader wrote and could not read back"),
     ("offered", "pairs no versor carried, reaching the mint"),
-    ("permanent", "mint gate 1: mirrored or incongruent, proved permanent"),
+    ("permanent", "mint gate 1, P: mirrored, incongruent, isotropic or irrational, proved permanent"),
+    ("bodiless", "mint gate 1, I: a bodiless pair, nothing to pose"),
+    ("held", "mint gate 1, no refusal: an unoriented pair, a held stabilizer"),
+    ("turned", "mint gate 1, no refusal: the pair reads a turn of the base"),
+    ("unclassified", "mint gate 1: a kind no pose refusal carries, a defect"),
     ("arcless", "mint gate 2: orients only at the quartic, no arc"),
     ("primeless", "mint gate 3: the arc names no prime the alphabet lacks"),
     ("minted", "RotorPrime demands minted"),
@@ -258,11 +263,16 @@ impl Loss {
                 cover.unframed,
                 cover.frame_half_open,
                 cover.unspellable,
+                cover.orbit_unread,
                 cover.refused,
                 cover.unclassed,
                 cover.undecodable,
                 mint.offered,
                 mint.permanent,
+                mint.bodiless,
+                mint.held,
+                mint.turned,
+                mint.unclassified,
                 mint.arcless,
                 mint.primeless,
                 mint.minted,

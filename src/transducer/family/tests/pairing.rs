@@ -127,6 +127,31 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
     assert_eq!((d.offered, d.minted, d.permanent), (2, 1, 1), "one minted, one refused permanent");
 }
 
+/// F5 — GATE 1 IS LABELLED BY THE ANSWER'S KIND, NEVER BY THE BRANCH: a pair
+/// reading a turn of the base is no refusal and counts `turned`; an unlike
+/// pair is P, `permanent`; an empty body is I, `bodiless`. None of them is
+/// counted where another's label belongs.
+#[test]
+fn the_mints_first_gate_counts_each_answer_by_its_kind() {
+    use crate::transducer::family::{oblique_rotor_prime, take_demand_tally};
+    let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let quarter = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
+    let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+    let empty = blade::shape_of::<(i64, i64, i64)>(&[]).blade;
+    let _ = take_demand_tally();
+    assert!(blade::relative_pose(&l, &quarter).is_ok(), "the fixture: a quarter turn apart");
+    for (a, b) in [(&l, &quarter), (&l, &s), (&empty, &l)] {
+        assert!(oblique_rotor_prime(a, b).is_none(), "none of them is oblique");
+    }
+    let d = take_demand_tally();
+    assert_eq!(
+        (d.offered, d.turned, d.permanent, d.bodiless, d.held, d.unclassified, d.minted),
+        (3, 1, 1, 1, 0, 0, 0),
+        "each answer under its own kind: {}",
+        d.line()
+    );
+}
+
 /// CV1b F3 (R2), A.17 — THE POLE'S DEMANDS STAND ONCE, AND NONE LEAVES
 /// UNNAMED: the rotor prime stands; the same demand reached again merges into
 /// it; a kind with no coordinates to key it is `unkeyed`; a rotor prime whose
