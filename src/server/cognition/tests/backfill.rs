@@ -23,10 +23,13 @@ fn head_of(
     (r, pre)
 }
 
-/// b's line extended by `n` acts of its own.
+/// b's line extended by `n` strokes of its own, each one act and the close
+/// of its orbit (OK1), so b's `K` moves once per stroke.
 fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
     for _ in 0..n {
         b.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
+        let (_, frame) = b.open_orbit().expect("open");
+        b.append(crate::chronometry::ActKind::Orbit, frame, Vec::new(), [0; 32], Vec::new()).expect("closes");
     }
 }
 

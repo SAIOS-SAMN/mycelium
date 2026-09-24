@@ -144,17 +144,18 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     (k, crate::transducer::address::Address::from(addr))
 }
 
-/// 45.1: A RULING IS AN ADMITTED ACT, so it is a step of this court's own
-/// clock and a receipt in its chain. It sealed none: the book admitted the
+/// 45.1: A RULING IS AN ADMITTED ACT, so it is a node on this court's own
+/// line — an act of its open orbit, `K` moving only where the orbit closes
+/// (OK1) — and a receipt in its chain. It sealed none: the book admitted the
 /// word to the ruled cover, or evaporated its award, or excised it as a
 /// cavity, at no position in the chain that is supposed to record it.
 #[test]
 fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the ruling lands");
-    assert_eq!(k.k_step(), before + 1, "a ruling is one step of the court's clock");
+    assert_eq!(k.chain().own_len(), before + 1, "a ruling is one act on the court's line");
     let at = k.admitted_at(addr.as_bytes()).expect("the ruled word keeps its admitting stamp");
     assert_eq!(
         k.chain().head().map(|r| r.cites.iter().map(|c| c.at()).collect::<Vec<_>>()),
@@ -171,10 +172,10 @@ fn a_ruling_that_rules_nothing_seals_nothing() {
     use crate::anastome::dialogue::RULING_UPHELD;
     let (mut k, addr) = docketed([0x5a; 32]);
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the first lands");
-    let held = k.k_step();
+    let held = k.chain().own_len();
     assert!(!k.apply_verdict(&addr, RULING_UPHELD), "a verdict lands once");
     assert!(!k.apply_verdict(&addr, 0xfe), "an unknown ruling rules nothing");
-    assert_eq!(k.k_step(), held, "neither moved the clock");
+    assert_eq!(k.chain().own_len(), held, "neither sealed an act");
 }
 
 /// 45.1: a slash is a ruling on the other arm, and seals its own receipt.
@@ -182,9 +183,9 @@ fn a_ruling_that_rules_nothing_seals_nothing() {
 fn a_slash_seals_a_receipt() {
     use crate::anastome::dialogue::RULING_SLASHED;
     let (mut k, addr) = docketed([0x5b; 32]);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     k.apply_verdict(&addr, RULING_SLASHED);
-    assert_eq!(k.k_step(), before + 1, "a slash is one step too");
+    assert_eq!(k.chain().own_len(), before + 1, "a slash is one step too");
 }
 
 /// 45.1: "a syllabus page served" is one of the acts the chapter names.
@@ -194,9 +195,9 @@ fn a_slash_seals_a_receipt() {
 #[test]
 fn a_syllabus_page_served_seals_a_receipt() {
     let (mut k, addr) = docketed([0x5a; 32]);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     k.note_served(&addr, [3; 32]);
-    assert_eq!(k.k_step(), before + 1, "a page served is one step");
+    assert_eq!(k.chain().own_len(), before + 1, "a page served is one step");
 }
 
 /// 45.1, 47.3: an install on a second vantage seals a receipt, at the
@@ -205,9 +206,9 @@ fn a_syllabus_page_served_seals_a_receipt() {
 #[test]
 fn an_install_seals_a_receipt_at_the_installed_address() {
     let (mut k, addr) = docketed([0x5c; 32]);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     k.home_install(&addr, [0xbb; 32]);
-    assert_eq!(k.k_step(), before + 1, "an install is one step");
+    assert_eq!(k.chain().own_len(), before + 1, "an install is one step");
     let at = k.admitted_at(addr.as_bytes()).expect("the installed word keeps its admitting stamp");
     assert!(
         k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
@@ -230,9 +231,9 @@ fn a_lapsed_citation_seals_a_receipt() {
     let at = k.admitted_at(&laddr).expect("the listing was admitted by its List act");
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     k.lapse_docket(super::common::one_stroke_transport);
-    assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
+    assert_eq!(k.chain().own_len(), before + 1, "a lapsed citation is one step");
     assert!(
         k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
         "the node cites the listing whose draw was released, read before it left (78.24 (2c))"
@@ -271,14 +272,14 @@ fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
     // WITHIN the court's own aperture, an unmeasured transport holds it:
     // the horizon is a horizon, not an eviction on sight.
     k.set_height(1);
-    let before = k.k_step();
+    let before = k.chain().own_len();
     k.lapse_docket(super::common::unmeasured_transport);
-    assert_eq!(k.k_step(), before, "inside the horizon, no lapse and no receipt");
+    assert_eq!(k.chain().own_len(), before, "inside the horizon, no lapse and no receipt");
     assert!(k.pending.get(&laddr).is_some(), "and the listing stands");
     // PAST it, the listing leaves whatever the network is doing.
     k.set_height(crate::physics::aperture_cycle() as u64 * 4);
     k.lapse_docket(super::common::unmeasured_transport);
-    assert_eq!(k.k_step(), before + 1, "past the horizon it lapses, and that is one step");
+    assert_eq!(k.chain().own_len(), before + 1, "past the horizon it lapses, and that is one step");
     assert!(
         k.pending.get(&laddr).is_none(),
         "and the book is not held open by a transport nobody measured"

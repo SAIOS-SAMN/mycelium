@@ -25,18 +25,24 @@ impl Entity {
         if let Some(m) = Memory::now(self.own_k()) {
             observe::publish(me, Reading::Memory(m));
         }
+        // LC1 — THE CURVE, read off this mind's own genome at its own `K`,
+        // once: the clock's radius is its span's depth.
+        let learning = observe::Learning::of(&self.epigenome, self.own_k());
         // ACT1 — THIS VOICE ON THE CLOCK: its `K`, its court's height as last
-        // heard, where its genome was last written (78.21(3)).
+        // heard, where its genome was last written (78.21(3)), its radius
+        // and its orbits against the others' (78.23 as amended, OK1).
+        let voice_seat = self.session.voice();
         observe::publish(
             me,
             Reading::Clock(observe::Clock::Voice(observe::VoiceClock {
                 k: self.own_k(),
                 heard: self.now_tu(),
                 persisted: self.genome_persisted,
+                radius: learning.radius,
+                orbits: observe::Orbits { withheld: voice_seat.withheld(), distance: voice_seat.chain().separation() },
             })),
         );
-        // LC1 — THE CURVE, read off this mind's own genome at its own `K`.
-        observe::publish(me, Reading::Learning(observe::Learning::of(&self.epigenome, self.own_k())));
+        observe::publish(me, Reading::Learning(learning));
         // PL1 — THE LAST PERCEPT'S CIRCUITS, step by step, where a percept
         // read any since the last push; otherwise the circuits held stand.
         if let Some(c) = crate::transducer::sentence::take_circuits() {

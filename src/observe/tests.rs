@@ -49,8 +49,15 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         unframed: 5,
         unstamped: [1, 0, 2, 0, 3],
         rulings: [3, 0],
+        orbits: Orbits { withheld: 2, distance: vec![(vk(1), [-3, 0, 5, -1])] },
     });
-    let voice_clock = Clock::Voice(VoiceClock { k: 7, heard: 39, persisted: None });
+    let voice_clock = Clock::Voice(VoiceClock {
+        k: 7,
+        heard: 39,
+        persisted: None,
+        radius: 4,
+        orbits: Orbits { withheld: 0, distance: vec![(vk(2), [1, -2, 0, 7])] },
+    });
     let all = vec![
         Reading::Planes(planes),
         Reading::Loss(loss),
@@ -354,6 +361,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     let curve = Learning {
         k: 41,
         strata: vec![(vec![1, 2], 3), (vec![1, 2, 5], 1)],
+        radius: 3,
         adjoined_by_closure: 1,
         installed: 4,
         closing: 2,

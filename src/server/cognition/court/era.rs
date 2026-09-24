@@ -49,7 +49,18 @@ impl Kernel {
             }
             floor = floor.min(at);
         }
-        (floor >= first).then_some(floor)
+        // A FOLD CUTS ONLY AT AN ORBIT'S CLOSE (OK1): the prefix head is the
+        // last close at or below the floor, so every orbit is held whole on
+        // one side of the cut and its close re-derives on the hot line.
+        let vk = self.chain.vk();
+        let closes = self.chain.line_between(&vk, self.chain.root().map(|r| r.at), floor, usize::MAX);
+        let mut head = None;
+        for r in closes {
+            if r.kind == crate::chronometry::ActKind::Orbit {
+                head = Some(r.stamp.place());
+            }
+        }
+        head.filter(|h| *h >= first)
     }
 
     /// The eras this court holds, in the order it filed them (`ARC1`): its

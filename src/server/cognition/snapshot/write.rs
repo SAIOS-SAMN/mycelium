@@ -204,7 +204,7 @@ impl Kernel {
         // own line and its peers', each once at its stamp. Where each peer
         // node stands against our line is re-derived at restore, never
         // persisted.
-        out.extend_from_slice(b"LDG1");
+        out.extend_from_slice(super::LEDGER_TAG);
         out.extend_from_slice(&self.court_head);
         let mut body = Vec::new();
         if self.chain.write(&mut body).is_none() {
@@ -317,7 +317,7 @@ impl Kernel {
             v.put_canonical(&mut body);
         }
         framed(&mut out, self.dialect_chain.len() as u64, &mut body);
-        out.extend_from_slice(b"SET1");
+        out.extend_from_slice(super::SETTLEMENTS_TAG);
         let mut all = self.settlements_cold.clone();
         all.extend(self.settlements.iter().cloned());
         let mut body = Vec::new();

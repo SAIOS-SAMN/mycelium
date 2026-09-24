@@ -432,9 +432,11 @@ hb.set_height(10);
 let first_a = list(&mut ha, 4);
 let first_b = list(&mut hb, 4);
 assert_eq!(first_a, first_b);
-// Advance K on ha only — TUniversal stays the clock we set.
+// Advance K on ha only — eight orbits, each an act and its close (OK1);
+// TUniversal stays the clock we set.
 for _ in 0..8 {
     ha.append_step(crate::chronometry::ActKind::List, [1; 32], [2; 32]);
+    ha.orbit();
 }
 assert!(ha.k_step() > hb.k_step());
 ha.set_height(40);

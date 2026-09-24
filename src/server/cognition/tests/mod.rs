@@ -19,6 +19,7 @@ mod letter;
 mod ledger_clock;
 mod market;
 mod mint;
+mod orbit;
 mod persistence;
 mod phase;
 mod receiver;

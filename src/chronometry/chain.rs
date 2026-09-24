@@ -79,23 +79,112 @@ impl ReceiptChain {
         self.vk
     }
 
-    /// The place the hot line opens at: genesis, or the one after the root.
+    /// The place the hot line opens at: genesis, or the first of the orbit
+    /// after the root's — a fold cuts only at an orbit's close.
     fn first_place(&self) -> Place {
-        self.root.map_or(Place::GENESIS, |r| self.after(r.at))
+        self.root.map_or(Place::GENESIS, |r| r.at.beyond())
     }
 
-    /// THE PLACE AN ACT TAKES AFTER ONE AT `at`: the first act of the next
-    /// orbit — every act closes its orbit until the cycles close by name.
-    fn after(&self, at: Place) -> Place {
-        at.beyond()
-    }
-
-    /// The place the next act of this chain's own line takes.
+    /// The place the next act of this chain's own line takes: after its
+    /// head as the head's kind says (a close opens the next orbit).
     pub fn next_place(&self) -> Place {
-        match self.head {
-            Some(s) => self.after(s.place()),
+        match self.head() {
+            Some(r) => r.stamp.place().after(r.kind),
             None => self.first_place(),
         }
+    }
+
+    /// THE ACTS OF ONE ORBIT of a signer's line, in line order: the line
+    /// relation read by the prefix `vk‖K`, never by counting places.
+    fn orbit_acts(&self, vk: &[u8; 32], k: u64) -> Vec<&KStepReceipt> {
+        let mut prefix = vk.to_vec();
+        prefix.extend_from_slice(&k.to_be_bytes());
+        let Some(orbit) = self.lines.fiber_at(&prefix) else { return Vec::new() };
+        orbit
+            .filter_map(|(key, &h)| {
+                let mut p = 32usize;
+                let at = Place::take_canonical(&key, &mut p)?;
+                self.node(&Stamp::new(h, *vk, at))
+            })
+            .collect()
+    }
+
+    /// THE FRAME OF AN ORBIT (78.23 as amended): the per-lane sum of the
+    /// frames its acts measured before `before` — lanes never mixed (law
+    /// 5), a close's own frame never counted in. `None` where a lane passes
+    /// its u64: an unmeasured frame, never a saturated one (rule 11).
+    pub fn orbit_frame(&self, vk: &[u8; 32], k: u64, before: Place) -> Option<[u64; 4]> {
+        let mut frame = [0u64; 4];
+        for r in self.orbit_acts(vk, k) {
+            if r.stamp.place() >= before || r.kind == ActKind::Orbit {
+                continue;
+            }
+            for (f, m) in frame.iter_mut().zip(r.mu) {
+                *f = f.checked_add(m)?;
+            }
+        }
+        Some(frame)
+    }
+
+    /// THIS CHAIN'S OPEN ORBIT: the place its close would take and the
+    /// frame it would carry, or `None` where no act stands since the last
+    /// close — a close with no act seals nothing (OK1).
+    pub fn open_orbit(&self) -> Option<(Place, [u64; 4])> {
+        let head = self.head()?;
+        if head.kind == ActKind::Orbit {
+            return None;
+        }
+        let at = self.next_place();
+        Some((at, self.orbit_frame(&self.vk, at.k, at)?))
+    }
+
+    /// EVERY ORBIT CLOSED AT ONE TICK, read off the close nodes in
+    /// `fiber(h)`: the signer, its `K` and the orbit's frame as the close
+    /// carries it. An orbit whose close this ledger does not hold is not
+    /// here: unmeasured, never compared (rule 11).
+    pub fn orbits_closed_at(&self, h: u64) -> Vec<([u8; 32], u64, [u64; 4])> {
+        self.at_tick(h).into_iter().filter(|r| r.kind == ActKind::Orbit).map(|r| (r.stamp.vk, r.stamp.k, r.mu)).collect()
+    }
+
+    /// THIS CHAIN'S LAST CLOSE: the head where the head is a close, or the
+    /// node the open orbit's first act names as its predecessor. `None`
+    /// before the first close.
+    pub fn last_close(&self) -> Option<&KStepReceipt> {
+        let head = self.head()?;
+        if head.kind == ActKind::Orbit {
+            return Some(head);
+        }
+        let orbit = self.orbit_acts(&self.vk, head.stamp.k);
+        let prev = orbit.into_iter().next()?.prev?;
+        self.node(&prev.at).filter(|r| r.kind == ActKind::Orbit)
+    }
+
+    /// WOULD A CLOSE AT `tick` CARRYING `frame` COLLIDE (78.23 as amended):
+    /// another signer's orbit closed at that tick with a frame equal on
+    /// every lane, compared exactly — no constant, no threshold.
+    pub fn collides(&self, tick: u64, frame: [u64; 4]) -> bool {
+        self.orbits_closed_at(tick).into_iter().any(|(vk, _, f)| vk != self.vk && f == frame)
+    }
+
+    /// THE SEPARATION AT THIS CHAIN'S LAST CLOSE: per peer orbit closed at
+    /// the same tick, the per-lane signed distance from our frame to its —
+    /// sign first, exact, never a root and never summed (law 5).
+    pub fn separation(&self) -> Vec<([u8; 32], [i128; 4])> {
+        let Some(ours) = self.last_close() else { return Vec::new() };
+        self.orbits_closed_at(ours.stamp.h)
+            .into_iter()
+            .filter(|(vk, _, _)| *vk != self.vk)
+            .map(|(vk, _, f)| (vk, std::array::from_fn(|l| i128::from(ours.mu[l]) - i128::from(f[l]))))
+            .collect()
+    }
+
+    /// DOES A CLOSE RE-DERIVE (OK1): a node of kind `Orbit` stands after at
+    /// least one act of its orbit and carries the per-lane sum of their
+    /// frames, re-derived here from the acts this ledger holds, exactly as
+    /// a height is. Any other kind is not a close and passes.
+    pub fn close_rederives(&self, r: &KStepReceipt) -> bool {
+        r.kind != ActKind::Orbit
+            || (r.stamp.i > 0 && self.orbit_frame(&r.stamp.vk, r.stamp.k, r.stamp.place()) == Some(r.mu))
     }
 
     /// The orbit the next act stands in — the current `K`.
@@ -239,10 +328,15 @@ impl ReceiptChain {
 
     /// FOLD (45.8): this chain's own receipts at or below `upto` leave the
     /// ledger and are returned, cold, in line order, with the root they
-    /// leave the line standing on. `None` when no hot receipt sits at or
-    /// below `upto`.
+    /// leave the line standing on. A fold cuts only at an orbit's close, so
+    /// every orbit is held whole on one side of it and a close re-derives
+    /// its frame from what the hot line holds: `None` where the node at
+    /// `upto` is not a close, or no hot receipt sits at or below it.
     pub fn fold_before(&mut self, upto: Place) -> Option<(Vec<KStepReceipt>, Root)> {
         self.head?;
+        if self.at_place(upto)?.kind != ActKind::Orbit {
+            return None;
+        }
         let vk = self.vk;
         let places: Vec<Place> = self.line_between(&vk, None, upto, usize::MAX).iter().map(|r| r.stamp.place()).collect();
         let mut cold = Vec::new();
@@ -434,7 +528,9 @@ impl ReceiptChain {
     /// the next place and the height `1 + max` over its predecessor and the
     /// parents it cites, each of which this chain must hold (an unheld
     /// parent is unmeasured height, and the append refuses). `None` where
-    /// a parent is not held or a citation cannot be written (LD0).
+    /// a parent is not held or a citation cannot be written (LD0), and
+    /// where a close is asked with no act since the last close or with a
+    /// frame other than its orbit's (OK1).
     pub fn append(
         &mut self,
         kind: ActKind,
@@ -443,6 +539,9 @@ impl ReceiptChain {
         operator_hash: [u8; 32],
         parents: Vec<Parent>,
     ) -> Option<&KStepReceipt> {
+        if kind == ActKind::Orbit && self.open_orbit().map(|(_, frame)| frame) != Some(mu) {
+            return None;
+        }
         let stamp = self.next_stamp(&parents)?;
         let k = stamp.place();
         let prev = self.line_prev();
@@ -455,20 +554,24 @@ impl ReceiptChain {
     }
 
     /// Verify the hot line: contiguous from its opening — every node's
-    /// predecessor the one before it (or the root), and its place one that
-    /// follows the predecessor's — every height re-derived from its
-    /// predecessor and parents, every hash re-derived from its coordinates.
+    /// predecessor the one before it (or the root), and its place the one
+    /// the predecessor's kind says follows it — every height re-derived
+    /// from its predecessor and parents, every close's frame re-derived
+    /// from its orbit's acts, every hash re-derived from its coordinates.
     pub fn verify_chain_integrity(&self) -> bool {
         let mut prev = self.root.map(|r| Parent { at: Stamp::new(r.height, self.vk, r.at), hash: r.hash });
+        // The root is a close: a fold cuts nowhere else.
+        let mut prev_kind = ActKind::Orbit;
         let mut last = None;
         for r in self.own() {
             let follows = match prev {
-                Some(p) => p.at.place().is_followed_by(r.stamp.place()),
+                Some(p) => p.at.place().after(prev_kind) == r.stamp.place(),
                 None => r.stamp.place() == Place::GENESIS,
             };
-            if !follows || r.prev != prev {
+            if !follows || r.prev != prev || !self.close_rederives(r) {
                 return false;
             }
+            prev_kind = r.kind;
             let mut heights: Vec<u64> = prev.iter().map(|p| p.at.h).collect();
             for q in &r.parents {
                 let Some(ph) = self.height_of(q) else { return false };
@@ -583,6 +686,16 @@ impl ReceiptChain {
         }
         Self::from_nodes(root, vk, nodes)
     }
+}
+
+/// WHAT A CYCLE'S CLOSE BY NAME DID (OK1): the orbit closed at its stamp;
+/// it was WITHHELD, its frame coinciding with a peer's at its tick, and
+/// stays open for the separating transport; or nothing stood to close.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Close {
+    Sealed(Stamp),
+    Withheld,
+    Nothing,
 }
 
 /// 45.2 — THE HEIGHT A RECEIPT TAKES over the heights it cites, its

@@ -15,7 +15,8 @@ pub struct Voice {
     /// THIS VOICE'S OWN RECEIPT CHAIN (45.1): one receipt per act it has
     /// had admitted — a form stood, an utterance spoken, a page learned —
     /// each naming what was admitted and linked to the one before. Its K
-    /// is the chain's length. Every duration a kernel reads is a count of
+    /// counts its closed orbits (OK1): one per stroke that acted and closed
+    /// by name at [`Voice::orbit`]. Every duration a kernel reads is a count of
     /// its own K (45.4), so this is never a number read off another
     /// kernel's reply: a quote carries the BOOK's k-step, which is a
     /// coordinate on the hypha's chain and not this voice's clock. It was a
@@ -26,6 +27,9 @@ pub struct Voice {
     /// and epigenome alike: the stamp of the act that admitted each word,
     /// keyed by the word and sharing its address's bytes.
     admitted_at: Keyed<Stamp>,
+    /// OK1 — closes withheld for separation since the seat came up (see
+    /// [`Voice::orbit`]).
+    withheld: u64,
 }
 
 impl Voice {
@@ -37,7 +41,13 @@ impl Voice {
     #[cfg(test)]
     pub fn named(name: &str) -> Voice {
         let identity = crate::court::identity::HyphaKey::vk_from_name(name);
-        Voice { name: name.to_string(), identity, chain: ReceiptChain::with_vk(identity), admitted_at: Keyed::new() }
+        Voice {
+            name: name.to_string(),
+            identity,
+            chain: ReceiptChain::with_vk(identity),
+            admitted_at: Keyed::new(),
+            withheld: 0,
+        }
     }
 
     /// Seat a voice on verifying-key bytes (home/voice.key).
@@ -47,6 +57,7 @@ impl Voice {
             identity,
             chain: ReceiptChain::with_vk(identity),
             admitted_at: Keyed::new(),
+            withheld: 0,
         }
     }
 
@@ -64,9 +75,36 @@ impl Voice {
         self.identity
     }
 
-    /// The k-step this voice speaks at: the receipts on its own chain.
+    /// The k-step this voice speaks at: the orbit its next act stands in,
+    /// which is the count of orbits it has closed (OK1).
     pub fn k(&self) -> u64 {
         self.chain.next_step_index()
+    }
+
+    /// OK1 — THE VOICE'S CYCLE CLOSES BY NAME (78.23 as amended): one
+    /// stroke of quote, utter, learn and syntropy is one orbit, and its
+    /// close is a node of kind `Orbit` carrying the orbit's frame. `K` moves
+    /// here and nowhere else. A close whose frame coincides on every lane
+    /// with another signer's orbit closed at the same tick is WITHHELD —
+    /// the orbit stays open for the next stroke's work to separate it — and
+    /// counted; a close with no act since the last seals nothing.
+    pub fn orbit(&mut self) -> crate::chronometry::Close {
+        use crate::chronometry::Close;
+        let Some((_, frame)) = self.chain.open_orbit() else { return Close::Nothing };
+        let Some(at) = self.chain.next_stamp(&[]) else { return Close::Nothing };
+        if self.chain.collides(at.h, frame) {
+            self.withheld += 1;
+            return Close::Withheld;
+        }
+        match self.chain.append(ActKind::Orbit, frame, Vec::new(), ActKind::Orbit.operator(), Vec::new()) {
+            Some(r) => Close::Sealed(r.stamp),
+            None => Close::Nothing,
+        }
+    }
+
+    /// Closes withheld for separation since the seat came up.
+    pub fn withheld(&self) -> u64 {
+        self.withheld
     }
 
     /// The voice's own receipt chain, read whole: what it stood, uttered

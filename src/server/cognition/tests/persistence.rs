@@ -111,7 +111,7 @@ assert!(whole.restore(&snap), "the tape as written restores");
 // Every section tag names a boundary the old reader would have stopped
 // at and called a restore.
 // DEF2, FLD1 and FLC1 are row fields now (LD0 step 5), not sections.
-for tag in [b"LDG1", b"ARC1", b"RNK2", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"CYC2", b"SET1"] {
+for tag in [b"LDG2", b"ARC1", b"RNK2", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"CYC2", b"SET2"] {
     let Some(at) = snap.windows(4).position(|w| w == tag) else {
         panic!("the tape carries {}", String::from_utf8_lossy(tag))
     };
@@ -121,6 +121,21 @@ for tag in [b"LDG1", b"ARC1", b"RNK2", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"CYC
         "a tape ending at {} is refused",
         String::from_utf8_lossy(tag)
     );
+    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
+}
+
+// THE SECTIONS BEFORE THE ORBIT COORDINATES ARE REFUSED BY NAME (ACT1-orbit,
+// §10): the same tape with either section under its pre-orbit tag
+// restores nothing.
+use crate::cognition::snapshot::{
+    LEDGER_TAG, PRE_ORBIT_LEDGER_TAG, PRE_ORBIT_SETTLEMENTS_TAG, SETTLEMENTS_TAG,
+};
+for (now, old) in [(LEDGER_TAG, PRE_ORBIT_LEDGER_TAG), (SETTLEMENTS_TAG, PRE_ORBIT_SETTLEMENTS_TAG)] {
+    let at = snap.windows(4).position(|w| w == now.as_slice()).expect("the tape carries the section");
+    let mut older = snap.clone();
+    older[at..at + 4].copy_from_slice(old);
+    let mut booted = Kernel::new();
+    assert!(!booted.restore(&older), "{} is refused", String::from_utf8_lossy(old));
     assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
 }

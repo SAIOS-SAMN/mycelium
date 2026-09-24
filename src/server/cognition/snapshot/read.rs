@@ -169,6 +169,18 @@ impl Kernel {
                     Ok(s) => s,
                     Err(_) => "a section whose tag is not text",
                 });
+                // A section written before the orbit coordinates is named as
+                // such, never read as a tape that merely does not parse.
+                let older = [
+                    (super::PRE_ORBIT_LEDGER_TAG, "LDG1, the ledger before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road"),
+                    (super::PRE_ORBIT_SETTLEMENTS_TAG, "SET1, the settlements before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road"),
+                ];
+                for (old, named) in older {
+                    if b.get(*p..*p + 4) == Some(old.as_slice()) {
+                        at.set(named);
+                        return None;
+                    }
+                }
                 match b.get(*p..*p + 4) == Some(want.as_slice()) {
                     true => {
                         *p += 4;
@@ -181,13 +193,13 @@ impl Kernel {
             // the trie it was written as — its own line and its peers',
             // every node re-deriving its hash, the line verified whole,
             // the peer placements re-derived.
-            tag(b, pos, b"LDG1")?;
+            tag(b, pos, super::LEDGER_TAG)?;
             let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
             let (n, sec_end) = section(b, pos)?;
             let start = *pos;
             let chain = crate::chronometry::ReceiptChain::read(b, pos)?;
-            closes("LDG1", pos, start, sec_end, n)?;
+            closes("LDG2", pos, start, sec_end, n)?;
             kernel.court_head = head;
             kernel.chain = chain;
             // ARC1: the eras, in K order. Each era's receipts re-verify as
@@ -346,7 +358,7 @@ impl Kernel {
                 }
                 closes("CYC2/dialect", pos, chain_start, chain_end, nc)?;
             }
-            tag(b, pos, b"SET1")?;
+            tag(b, pos, super::SETTLEMENTS_TAG)?;
             {
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
@@ -380,7 +392,7 @@ impl Kernel {
                         t_universal: tu,
                     });
                 }
-                closes("SET1", pos, start, sec_end, n)?;
+                closes("SET2", pos, start, sec_end, n)?;
             }
             // index: keyed field at restore (persistence snapshot, once)
             let field_keys: Vec<Vec<u8>> = kernel.field.scoped().map(|(k, _)| k).collect();

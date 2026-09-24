@@ -234,11 +234,21 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             Some(observe::Clock::Court(c)) => {
                 heights.push(c.head[0]);
                 let [h, s, g, t, hh, k, i] = c.head;
-                format!("  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}.{i}", c.k)
+                format!(
+                    "  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}.{i}{}",
+                    c.k,
+                    orbits(&c.orbits)
+                )
             }
             Some(observe::Clock::Voice(v)) => {
                 heights.push(v.heard);
-                format!("  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}", v.heard, v.k)
+                format!(
+                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}{}",
+                    v.heard,
+                    v.k,
+                    v.radius,
+                    orbits(&v.orbits)
+                )
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),
         });
@@ -253,6 +263,22 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
         _ => lines.push(format!("  {DIM}no source carried a clock{RESET}")),
     }
     lines
+}
+
+/// OK1, 78.23 as amended — A NODE'S ORBITS AGAINST THE OTHERS' on its
+/// TUniversal line: the closes withheld for separation, and at its last
+/// close the per-lane signed distance to each other orbit closed at that
+/// tick. A zero lane is a lane the two share; the boundary withholds a
+/// close whose four lanes would all be zero.
+fn orbits(o: &observe::Orbits) -> String {
+    let mut out = String::new();
+    if o.withheld > 0 {
+        out.push_str(&format!("  {YELLOW}withheld {}{RESET}", o.withheld));
+    }
+    for (vk, [s, g, t, h]) in &o.distance {
+        out.push_str(&format!("  Δ{} {s:+}:{g:+}:{t:+}:{h:+}", short(vk)));
+    }
+    out
 }
 
 /// ACT1 — ONE NODE ON THE CLOCK, and its three counts.

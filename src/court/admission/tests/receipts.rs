@@ -8,9 +8,9 @@ use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
 const G: [u8; 32] = [7; 32];
 const E: u32 = 2;
 
-/// Act `k` of a line, while every act closes its orbit.
-fn at(k: u64) -> Place {
-    Place { k, i: 0 }
+/// Act `n` of a line whose first orbit is still open: `K = 0`, `i = n`.
+fn at(n: u64) -> Place {
+    Place { k: 0, i: n }
 }
 
 /// A signer's line of `frames.len()` steps, each measuring its lane and

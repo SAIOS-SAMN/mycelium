@@ -43,6 +43,11 @@ pub struct Learning {
     /// The dialect span: each stratum of the genome atlas, by its chart key,
     /// and its words, in the key's own order.
     pub strata: Vec<(Vec<u8>, u64)>,
+    /// THE RADIUS (78.23 as amended): the deepest A21 prefix the span
+    /// reaches — the most axes any stratum's chart carries, chart-space
+    /// distance being prefix depth. Read with the span, once; the clock
+    /// carries it from here.
+    pub radius: u64,
     /// Generators a closure opened in this genome (I1's reading, per mind).
     pub adjoined_by_closure: u64,
     /// Words the genome holds: the court-ruled words taught to this mind.
@@ -55,11 +60,15 @@ impl Learning {
     /// THE CURVE OF THIS MIND, read off its own genome at its own `k`, at the
     /// read; nothing is stored beside the carriers (law 12).
     pub fn of(epigenome: &Epigenome, k: u64) -> Learning {
+        let mut radius = 0u64;
         let strata = epigenome
             .atlas
             .strata()
             .into_iter()
-            .map(|(inv, members)| (inv.key().as_bytes().to_vec(), members.len() as u64))
+            .map(|(inv, members)| {
+                radius = radius.max(inv.0.len() as u64);
+                (inv.key().as_bytes().to_vec(), members.len() as u64)
+            })
             .collect();
         let (mut installed, mut closing, mut adjoined_by_closure) = (0u64, 0u64, 0u64);
         for held in epigenome.genome_words() {
@@ -69,11 +78,12 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, adjoined_by_closure, installed, closing }
+        Learning { k, strata, radius, adjoined_by_closure, installed, closing }
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.k.to_le_bytes());
+        out.extend_from_slice(&self.radius.to_le_bytes());
         out.extend_from_slice(&(self.strata.len() as u32).to_le_bytes());
         for (key, n) in &self.strata {
             out.extend_from_slice(&(key.len() as u32).to_le_bytes());
@@ -113,8 +123,9 @@ impl Learning {
             Some(out)
         };
         let k = u64_at(b, p)?;
+        let radius = u64_at(b, p)?;
         let strata = keyed(b, p)?;
         let (adjoined_by_closure, installed, closing) = (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
-        Some(Learning { k, strata, adjoined_by_closure, installed, closing })
+        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing })
     }
 }

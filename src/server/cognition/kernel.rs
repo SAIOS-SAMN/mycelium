@@ -219,7 +219,7 @@ pub struct Kernel {
     pub(crate) dialect_chain: Vec<(Vec<u8>, element::Versor, u64)>,
     /// Field entries of listings that settled Flat or relocated — FLD1 cold.
     pub(crate) field_cold: crate::network::nerve::Keyed<ListingField>,
-    /// Settlements the court has read; the SET1 section holds them.
+    /// Settlements the court has read; the SET2 section holds them.
     pub(crate) settlements_cold: Vec<crate::anastome::dialogue::Settlement>,
     /// Test height: when set, height() returns this instead of the chain head.
     /// C6: a TEST knob, `None` on any live fleet. A kernel that can be told
@@ -271,6 +271,11 @@ pub struct Kernel {
     /// named a word no row of this court measures, so their μ⃗ was read as
     /// `[0; 4]` because nothing measured it. Counted at seal, since boot.
     pub(crate) unframed: u64,
+    /// OK1 — CLOSES WITHHELD FOR SEPARATION: strokes at whose boundary this
+    /// court's orbit frame coincided on every lane with a peer's closed at
+    /// the same tick, so the close was withheld (78.23 as amended). Since
+    /// boot.
+    pub(crate) withheld: u64,
     /// ACT1 (EC1) — Ruling receipts admitted whose citation names a word
     /// this court holds, and rulings whose economy applied here: per node,
     /// since boot.

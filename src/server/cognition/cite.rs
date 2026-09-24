@@ -142,6 +142,36 @@ impl Kernel {
         self.seal_step(kind, mu, voice, |_| cites.clone());
     }
 
+    /// OK1 — THE COURT'S CYCLE CLOSES BY NAME (78.23 as amended): one
+    /// circuit of exchange, deliberation, lapse and persist is one orbit,
+    /// and its close is an act — a node of kind `Orbit` at the orbit's last
+    /// place, carrying the orbit's frame, the per-lane sum over its acts.
+    /// `K` moves here and nowhere else.
+    ///
+    /// A COLLISION IS PREVENTED, NEVER NAMED AFTER: the close takes its tick
+    /// from the parents it would cite, and where a peer's orbit closed at
+    /// that tick with a frame equal on every lane, this close is WITHHELD —
+    /// the orbit stays open, the next stroke's work (the docket's next
+    /// question) is the separating transport, and the count goes on the
+    /// clock. A close with no act since the last seals nothing.
+    pub fn orbit(&mut self) -> crate::chronometry::Close {
+        use crate::chronometry::Close;
+        let Some((_, frame)) = self.chain.open_orbit() else { return Close::Nothing };
+        let parents = self.antichain_of(&self.pending_parents);
+        let Some(at) = self.chain.next_stamp(&parents).or_else(|| self.chain.next_stamp(&[])) else {
+            return Close::Nothing;
+        };
+        if self.chain.collides(at.h, frame) {
+            self.withheld += 1;
+            return Close::Withheld;
+        }
+        let me = self.identity;
+        match self.seal_step(ActKind::Orbit, frame, me, |_| Vec::new()) {
+            Some(r) => Close::Sealed(r.stamp),
+            None => Close::Nothing,
+        }
+    }
+
     /// SEAL ONE STEP, citing the peer receipts admitted since the last
     /// (47.2 step 3). The parents are taken only when the append succeeds:
     /// a refused parent is held for the step that can cite it. `cites`

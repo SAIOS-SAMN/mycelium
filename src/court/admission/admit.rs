@@ -244,6 +244,18 @@ fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
         }
         _ => {}
     }
+    // The receipt names the head this node holds: its place is the one the
+    // head's kind says follows it — the next orbit after a close, the next
+    // act of the orbit otherwise — and a close carries its orbit's frame,
+    // re-derived from the acts held, as the height is (OK1).
+    if let Some(held) = r.prev.and_then(|p| ledger.node(&p.at)) {
+        if held.stamp.place().after(held.kind) != at {
+            return Admitted::Refused(REFUSE_RECEIPT);
+        }
+    }
+    if !ledger.close_rederives(r) {
+        return Admitted::Refused(REFUSE_RECEIPT);
+    }
     // 4. The height on the frame is a CLAIM: it re-derives from the
     // predecessor and the parents the receipt names, each of which this
     // node must hold at its stamp with its hash. An unheld one is a HOLE,

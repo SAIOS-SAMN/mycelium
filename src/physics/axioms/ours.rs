@@ -1,5 +1,5 @@
-// 56.3, 66 — the axioms this engine states of itself: A.11, A.12, and
-// A.13 docketed.
+// 56.3, 66, 78.23 — the axioms this engine states of itself: A.11, A.12,
+// A.13 docketed, and OK1.
 
 /// A.11 — HARMONIC MULTIPOLE COMPLETENESS (ours, 56.3).
 ///
@@ -106,3 +106,38 @@ pub const A12_IRREDUCIBLE_INVERSIVE_EXTENT: &str =
 pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
     "docketed: K_i = I·T_i·I⁻¹ is unvoiced, so every motion fixes infinity; \
      momentum is inertia paired with the inter-frame carriage";
+
+/// OK1 — A K-STEP IS ONE ORBIT (ours, 78.23 as amended, ruled 2026-09-24).
+///
+/// A node's `K` counts its ORBITS: one circuit of its cycle — the court's
+/// exchange, deliberation, lapse and persist; the voice's quote, utter,
+/// learn and syntropy — closed BY NAME. The close is an act, a node of
+/// kind `Orbit` at the orbit's last place, and `K` advances by one there
+/// and by nothing else:
+///
+/// ```text
+///   stamp      h : vk : K : i          i the act's place in orbit K
+///   after      an act       (K, i) → (K, i + 1)
+///              a close      (K, i) → (K + 1, 0)
+///   frame      the close's μ⃗ = Σ over the orbit's acts, per lane,
+///              stored and RE-DERIVED as h is (law 5: lanes never mixed)
+///   tick       the close's h — the orbit's tick
+/// ```
+///
+/// A stroke that acted on nothing closes nothing: a close with no act
+/// since the last seals nothing, so a stroke that completes no orbit
+/// advances no `K`. Every node's orbit is its own by construction — the
+/// fibre over its key — and a COLLISION, two frames equal on every lane at
+/// one tick, is PREVENTED at the boundary: the close is withheld for a
+/// stroke and the next stroke's work separates it, never a slot, a table
+/// or a timer.
+///
+/// THE READING THAT DECIDES IT: `tests/orbit.rs` — acts move `i` and never
+/// `K`; a close moves `K` and resets `i`; a close with no act seals
+/// nothing; a close whose frame is not its orbit's sum is refused at the
+/// writer, at the integrity check and at admission; a collision is exact
+/// equality at one tick. `server::cognition::tests::orbit` — the court's
+/// close withheld on a collision, `K` standing, and sealed a stroke on.
+pub const OK1_K_STEP_IS_ONE_ORBIT: &str =
+    "a K-step is one orbit: K advances by one where a cycle closes by name, \
+     at a close carrying its orbit's per-lane frame, and by nothing else";

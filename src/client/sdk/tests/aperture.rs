@@ -140,18 +140,24 @@ let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
 assert_eq!(entity.session.voice().k(), 0, "a mind that has acted seats at zero");
 
-// Standing is the act, and it is complete before anything is uttered.
+// Standing is the act, and it is complete before anything is uttered. It
+// is one node of the open orbit; the stroke's close moves K (OK1).
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
-assert_eq!(entity.session.voice().k(), 1, "standing it stepped the clock once");
+assert_eq!(entity.session.voice().chain().own_len(), 1, "standing it is one act");
+assert_eq!(entity.session.voice().k(), 0, "K stands while the orbit is open");
+entity.close_orbit();
+assert_eq!(entity.session.voice().k(), 1, "the stroke's close stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
 // Standing the same form again is a second act of this mind: it is
 // already taught, so nothing would go on the wire at all, and the clock
-// still steps. Nothing here read a k-step from anyone else.
+// still steps at the stroke's close. Nothing here read a k-step from
+// anyone else.
 entity.file_taught(&e1);
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
-assert_eq!(entity.session.voice().k(), 2, "a second act, a second step");
+entity.close_orbit();
+assert_eq!(entity.session.voice().k(), 2, "a second act in a second stroke, a second step");
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],

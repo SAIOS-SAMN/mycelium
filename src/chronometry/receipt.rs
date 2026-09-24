@@ -51,6 +51,17 @@ impl Place {
         next == self.within() || next == self.beyond()
     }
 
+    /// THE PLACE AFTER AN ACT OF THIS KIND AT THIS PLACE: the first of the
+    /// next orbit after a close, the next act of the same orbit otherwise
+    /// (78.23 as amended). The predecessor's kind says which — the one
+    /// statement the writer, the integrity check and admission read.
+    pub fn after(self, kind: ActKind) -> Place {
+        match kind {
+            ActKind::Orbit => self.beyond(),
+            _ => self.within(),
+        }
+    }
+
     /// A place as it prints, `K.i`.
     pub fn print(self) -> String {
         format!("{}.{}", self.k, self.i)
@@ -194,6 +205,12 @@ pub enum ActKind {
     /// 50.9 (L8): a court refused this mind's sentence, and the mind
     /// contracted it.
     Refused,
+    /// 78.23 as amended, OK1 — THE CLOSE OF AN ORBIT: sealed at the orbit's
+    /// last place when the node's cycle closes by name. Its frame is the
+    /// per-lane sum over the orbit's acts, stored and re-derived as the
+    /// height is; its tick is the orbit's tick. The next act opens the next
+    /// orbit, `K + 1`, `i = 0`.
+    Orbit,
 }
 
 impl ActKind {
@@ -214,6 +231,7 @@ impl ActKind {
             ActKind::Learned => 12,
             ActKind::Settled => 13,
             ActKind::Refused => 14,
+            ActKind::Orbit => 15,
         }
     }
 
@@ -234,6 +252,7 @@ impl ActKind {
             12 => ActKind::Learned,
             13 => ActKind::Settled,
             14 => ActKind::Refused,
+            15 => ActKind::Orbit,
             _ => return None,
         })
     }
@@ -255,6 +274,7 @@ impl ActKind {
             ActKind::Learned => b"learned",
             ActKind::Settled => b"settled",
             ActKind::Refused => b"refused",
+            ActKind::Orbit => b"orbit",
         }
     }
 

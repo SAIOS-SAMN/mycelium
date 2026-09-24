@@ -347,6 +347,11 @@ fn main() {
         // the stroke takes the measure once, here, so a stroke that learned
         // spends the lanes it learned on and does not read idle.
         StrokeOutcome::add(&mut outcome.learned, &entity.take_learned_mu());
+        // OK1: the stroke's arms have run — quote, utter, learn, syntropy —
+        // and the voice's cycle closes its orbit by name. `K` moves here
+        // and nowhere else; a stroke that acted on nothing closes nothing. A
+        // withheld close is counted on the clock, never printed beside it.
+        entity.close_orbit();
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke
         // that moved no lane spends the tick on all four — the tick, not work.
         // 24.3: a working stroke spends the lanes its outcome moved; a stroke

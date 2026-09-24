@@ -113,11 +113,15 @@ fn a_fold_leaves_the_peer_placements_where_they_stood() {
     step(&mut c, Vec::new());
     c.admit(peer.clone());
     step(&mut c, vec![cite(&peer)]);
+    // A fold cuts only at an orbit's close (OK1): the two acts close their
+    // orbit, and the survivor opens the next.
+    assert!(c.fold_before(crate::chronometry::Place { k: 0, i: 1 }).is_none(), "an act that closes nothing is no cut");
+    let (_, frame) = c.open_orbit().expect("open");
+    let shut = c.append(ActKind::Orbit, frame, Vec::new(), [9; 32], Vec::new()).expect("the close").clone();
     let survivor = step(&mut c, Vec::new());
-    let second = crate::chronometry::Place { k: 1, i: 0 };
-    let (cold, root) = c.fold_before(second).expect("the first two fold");
-    assert_eq!(cold.len(), 2, "two nodes left the hot line");
-    assert_eq!(root.at, second, "the line stands on the second");
+    let (cold, root) = c.fold_before(shut.stamp.place()).expect("the first orbit folds");
+    assert_eq!(cold.len(), 3, "its two acts and its close left the hot line");
+    assert_eq!(root.at, shut.stamp.place(), "the line stands on the close");
     assert!(c.verify_chain_integrity(), "the hot line verifies on its root");
     let mut b = budget(4);
     assert_eq!(c.precedes(&peer.stamp, &survivor.stamp, &mut b), Some(true), "reached before the fold is reached by everything after it");

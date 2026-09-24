@@ -88,7 +88,7 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
         rulings: [3, 1],
         ..CourtClock::default()
     });
-    let voice = Clock::Voice(VoiceClock { k: 7, heard: 35, persisted: Some((30, 5)) });
+    let voice = Clock::Voice(VoiceClock { k: 7, heard: 35, persisted: Some((30, 5)), ..VoiceClock::default() });
     let held = vec![
         (Source::Court([1; 32]).key(Reading::Clock(court.clone()).tag()), Reading::Clock(court)),
         (Source::Voice([2; 32]).key(Reading::Loss(Loss::default()).tag()), Reading::Loss(Loss::default())),

@@ -6,13 +6,14 @@ use crate::anastome::dialogue;
 use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
 use crate::voice::Voice;
 
-/// 45.1, 45.4 — A VOICE'S CLOCK IS ITS OWN LEDGER. It seats with an empty
-/// line and seals one node per admitted act — a form stood, an utterance, a
-/// page learned — each under this voice's key and linked to the one before;
-/// its K is the line's length. Nothing sets it, so a reply carrying another
-/// kernel's k-step cannot move it, and a request seals nothing.
+/// 45.1, 45.4, OK1 — A VOICE'S CLOCK IS ITS OWN LEDGER. It seats with an
+/// empty line and seals one node per admitted act — a form stood, an
+/// utterance, a page learned — each under this voice's key and linked to
+/// the one before; its K counts the orbits it closed, one per stroke's
+/// close. Nothing sets it, so a reply carrying another kernel's k-step
+/// cannot move it, and a request seals nothing.
 #[test]
-fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
+fn a_voice_seals_one_node_per_admitted_act_and_its_k_counts_its_orbits() {
     let mut v = Voice::named("worker-a");
     assert_eq!(v.identity(), Voice::named("worker-a").identity());
     assert_ne!(v.identity(), Voice::named("worker-b").identity());
@@ -26,13 +27,19 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
     };
     // Three acts of distinct measure, so the nodes can be told apart by
     // what they carried and not only by what kind they were.
-    assert_eq!(v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new()), 1, "one admitted act is one node");
-    assert_eq!(v.seal(ActKind::Uttered, [0, 2, 0, 0], Vec::new()), 2);
-    assert_eq!(v.seal(ActKind::Learned, [0, 0, 0, 3], vec![taught.clone()]), 3);
-    assert_eq!(v.k(), 3, "K is the line's length");
+    // Three acts in one stroke are three nodes of one orbit; its close is a
+    // fourth node, carrying the orbit's frame, and moves K.
+    v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
+    v.seal(ActKind::Uttered, [0, 2, 0, 0], Vec::new());
+    v.seal(ActKind::Learned, [0, 0, 0, 3], vec![taught.clone()]);
+    assert_eq!((v.chain().own_len(), v.k()), (3, 0), "one admitted act is one node; K stands in the open orbit");
+    assert!(matches!(v.orbit(), crate::chronometry::Close::Sealed(_)), "the stroke closes by name");
+    assert_eq!(v.k(), 1, "K counts the closed orbit");
+    assert_eq!(v.orbit(), crate::chronometry::Close::Nothing, "a close with no act seals nothing");
 
     let rs: Vec<_> = v.chain().own().cloned().collect();
-    assert_eq!(rs.len(), 3);
+    assert_eq!(rs.len(), 4);
+    assert_eq!((rs[3].kind, rs[3].mu), (ActKind::Orbit, [1, 2, 0, 3]), "the close carries the orbit's frame");
     assert_eq!(rs[2].cites, vec![taught], "the node names what it learned by its coordinates");
     // 45.1: and what it measured, per lane, on the node itself.
     assert_eq!(rs[0].mu, [1, 0, 0, 0], "the act's own measure rides the node");
@@ -46,7 +53,7 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
 
     let ask = v.quote().expect("the ask fits its lengths");
     assert_eq!(dialogue::act_tag(&ask), Some(dialogue::ACT_QUOTE));
-    assert_eq!(v.k(), 3, "a request is not an admitted act and seals nothing");
+    assert_eq!((v.chain().own_len(), v.k()), (4, 1), "a request is not an admitted act and seals nothing");
 }
 
 /// 78.24 (d1) — A VOICE'S LEDGER RESTORES UNDER ITS OWN KEY AND NO OTHER:
@@ -56,7 +63,9 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
 fn a_voices_ledger_restores_under_its_own_key_and_no_other() {
     let mut v = Voice::named("worker-a");
     v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
+    v.orbit();
     v.seal(ActKind::Uttered, [0, 1, 0, 0], Vec::new());
+    v.orbit();
     let mut tape = Vec::new();
     v.chain().write(&mut tape).expect("the ledger writes");
     let chain = ReceiptChain::read(&tape, &mut 0).expect("and reads");

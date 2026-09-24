@@ -668,6 +668,13 @@ impl Exchange {
             // 47.3, S13.10: a fold proposed on the docket circuit is carried
             // to a witness here and sealed on its co-signature.
             crate::fold::fold_round(&kernel, &mesh);
+            // OK1: the court's cycle — exchange, deliberation, lapse,
+            // persist — closes its orbit by name. `K` moves here and nowhere
+            // else; a cycle that sealed no act closes nothing. A withheld
+            // close is counted on the clock, never printed beside it.
+            if let Ok(mut k) = kernel.lock() {
+                k.orbit();
+            }
             // 45.7, S13.1: a circuit that asked no peer spends the tick, as
             // the circuit with no destination does, so the loop paces on the
             // court's own stroke; `idle` counts those circuits on the cycle

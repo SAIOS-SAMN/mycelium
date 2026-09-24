@@ -93,6 +93,13 @@ impl Entity {
         self.session.voice().k()
     }
 
+    /// OK1 — THIS MIND'S STROKE CLOSES ITS ORBIT BY NAME (see
+    /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
+    /// arms have run.
+    pub fn close_orbit(&mut self) -> crate::chronometry::Close {
+        self.session.voice_mut().orbit()
+    }
+
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
     /// if present (GEN4) — its words with their admitting stamps, and this
     /// voice's own ledger behind them, so its K continues across a boot

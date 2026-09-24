@@ -67,6 +67,7 @@ impl Kernel {
             persisted: self.persisted,
             folded: self.chain.root().map(|r| (r.height, r.at.k)),
             unframed: self.unframed,
+            orbits: crate::observe::Orbits { withheld: self.withheld, distance: self.chain.separation() },
             unstamped: self.unstamped(),
             rulings: self.rulings,
         }

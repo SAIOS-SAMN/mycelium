@@ -49,6 +49,56 @@ pub struct CourtClock {
     pub unstamped: [u64; 5],
     /// Ruling receipts admitted, and rulings whose economy applied.
     pub rulings: [u64; 2],
+    /// Its orbits against the peers' (OK1).
+    pub orbits: Orbits,
+}
+
+/// OK1, 78.23 as amended — A NODE'S ORBITS AGAINST THE OTHERS': the closes
+/// withheld because the orbit's frame met another's on every lane at one
+/// tick, and at the node's last close the DISTANCE to each other orbit
+/// closed at that tick — per lane, signed, exact, never a root and never
+/// summed (law 5). A collision is prevented at the boundary; what the
+/// console names is what the boundary prevented.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Orbits {
+    pub withheld: u64,
+    pub distance: Vec<([u8; 32], [i128; 4])>,
+}
+
+impl Orbits {
+    fn put(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&self.withheld.to_le_bytes());
+        out.extend_from_slice(&(self.distance.len() as u32).to_le_bytes());
+        for (vk, d) in &self.distance {
+            out.extend_from_slice(vk);
+            for lane in d {
+                out.extend_from_slice(&lane.to_le_bytes());
+            }
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Orbits> {
+        let withheld = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        *p += 8;
+        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+        *p += 4;
+        // An entry is its signer and four signed lanes: 96 bytes.
+        if b.len().checked_sub(*p)? < n.checked_mul(96)? {
+            return None;
+        }
+        let mut distance = Vec::with_capacity(n);
+        for _ in 0..n {
+            let vk: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            *p += 32;
+            let mut d = [0i128; 4];
+            for lane in d.iter_mut() {
+                *lane = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
+                *p += 16;
+            }
+            distance.push((vk, d));
+        }
+        Some(Orbits { withheld, distance })
+    }
 }
 
 /// ONE VOICE ON THE CLOCK (78.21(3)).
@@ -61,6 +111,12 @@ pub struct VoiceClock {
     /// The court's height it had heard, and its own `K`, when its genome
     /// was last written whole.
     pub persisted: Option<(u64, u64)>,
+    /// ITS RADIUS (78.23 as amended): LC1's dialect span read as the
+    /// deepest A21 prefix its genome's charts reach — the most axes any
+    /// stratum's chart carries. Read with the curve, once.
+    pub radius: u64,
+    /// Its orbits against the others' (OK1).
+    pub orbits: Orbits,
 }
 
 /// ACT1'S READING: a node on the clock, a court or a voice.
@@ -126,11 +182,14 @@ impl Clock {
                 u64s(out, &[c.unframed]);
                 u64s(out, &c.unstamped);
                 u64s(out, &c.rulings);
+                c.orbits.put(out);
             }
             Clock::Voice(v) => {
                 out.push(1);
                 u64s(out, &[v.k, v.heard]);
                 pair(out, v.persisted);
+                u64s(out, &[v.radius]);
+                v.orbits.put(out);
             }
         }
     }
@@ -194,12 +253,26 @@ impl Clock {
                     *v = u64_at(b, p)?;
                 }
                 let rulings = [u64_at(b, p)?, u64_at(b, p)?];
-                Some(Clock::Court(CourtClock { k, head, genesis, peers, persisted, folded, unframed, unstamped, rulings }))
+                let orbits = Orbits::take(b, p)?;
+                Some(Clock::Court(CourtClock {
+                    k,
+                    head,
+                    genesis,
+                    peers,
+                    persisted,
+                    folded,
+                    unframed,
+                    unstamped,
+                    rulings,
+                    orbits,
+                }))
             }
             1 => {
                 let (k, heard) = (u64_at(b, p)?, u64_at(b, p)?);
                 let persisted = pair(b, p)?;
-                Some(Clock::Voice(VoiceClock { k, heard, persisted }))
+                let radius = u64_at(b, p)?;
+                let orbits = Orbits::take(b, p)?;
+                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius, orbits }))
             }
             _ => None,
         }
