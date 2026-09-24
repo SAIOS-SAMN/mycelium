@@ -11267,6 +11267,39 @@ clock. Ruled, on 72.1e's three clocks and law 9:
 Row CK1 lands before the recut, an instrument before the readings it
 anchors; the recut after it carries the clock to the wire.
 
+**Amended 2026-09-24 on the operator's word: THE LEDGER IS
+FOUR-DIMENSIONAL, AND A TICK IS A FRAME.** `S, G, T, H` are the four
+dimensions of a single tick of the TUniversal clock, which builds a
+manifold of time: each tick on TUniversal is a FRAME of the `{S, G, T,
+H}` manifold, so the ledger has four dimensions and not solely a height.
+"Height" is the chain's order — the tick count along the causal order of
+45.3 — and it is broken into the physics' axioms: what is height on one
+dimension is weight on another, the same tick's extent read on `T` as a
+duration in receipts, on `S` as a scale, on `G` as a gauge count, on `H`
+as a fibre span (65.4). This is chapter 25's sentence made the clock's
+own form — "what a receipt stamps on TUniversal is a four-dimensional
+coordinate" (the operator's word of 2026-09-19) — and every settlement
+receipt already carries its frame: the lane vector before and after,
+`K` and the height (`market.rs`). Ruled: (i) THE STAMP IS SIX FIELDS,
+`h : S : G : T : H : k` — the tick, the frame's four lane extents at that
+tick, and the `k`-step of the mind that stamped it — and C6's refusal
+of `XX:XX:XX:XX:XX:XX` stands only for a bare height dressed as a clock:
+with these fields the stamp is the coordinate the engine produces, and
+`Height::stamp` prints it so; (ii) each combination of `S, G, T, H` at a
+tick is a manifold tied to a `k`-step, held for reconstruction in
+superposition — the operator's QUANTUM MANIFOLD, the doctrine's hold
+and vortex (25, 59.5): a thought's escrow per lane at the height it is
+paid to, reconstructed at the mind's `k`; (iii) 73.19's refusal of the
+event coordinate `(TUniversal, S, G, T, k)` is RETRACTED — the frame is
+adopted, `H` included — and its refusal of a probability stands (law 1:
+the superposition has no weight); (iv) `Reading::Clock` carries, per
+source, the six-field stamp and, per tick window, the frame — the lane
+vector the receipts at that height carried — and the console header
+prints every source as `h:S:G:T:H:k`; (v) disparity between nodes is
+read on the tick AND per lane: two nodes at one height whose frames
+differ hold different manifolds of the same moment, and that difference
+is content, never a fault (13.7, rule 5).
+
 ### 78.22 The second window, on the clock: two defects ruled before the recut (2026-09-24)
 
 The running-fleet diagnostic on ff5821fe (epoch 98), anchored on height
