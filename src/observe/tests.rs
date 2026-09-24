@@ -457,6 +457,21 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 answered: 46,
                 taken: 47,
             },
+            // TC1 — the nerve's shape and every door, a rank lost negative.
+            core: crate::transducer::bubble::CoreReading {
+                free_vertices: 48,
+                isolated: 49,
+                free_faces: [50, 51],
+                core: 52,
+                h1: Some(-3),
+                unfaced: 53,
+            },
+            shed: crate::transducer::bubble::ShedTally {
+                removed: [54, 55, 56],
+                in_core: [57, 58, 59],
+                rank_lost: [60, -61, 62],
+                rank_unread: [63, 64, 65],
+            },
         }),
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);

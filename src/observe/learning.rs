@@ -157,6 +157,26 @@ impl Learning {
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
+        // TC1 — the nerve's shape, its Ȟ¹ flagged where it did not read, and
+        // the shedding doors.
+        let c = &g.core;
+        for v in [c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.core, c.unfaced] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        match c.h1 {
+            Some(r) => {
+                out.push(1);
+                out.extend_from_slice(&r.to_le_bytes());
+            }
+            None => out.push(0),
+        }
+        let s = &g.shed;
+        for v in s.removed.iter().chain(&s.in_core).chain(&s.rank_unread) {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in s.rank_lost {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {
@@ -243,6 +263,36 @@ impl Learning {
             answered: u64_at(b, p)?,
             taken: u64_at(b, p)?,
         };
+        let (free_vertices, isolated, faces_1, faces_2, core_size, unfaced) =
+            (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
+        let h1 = match b.get(*p)? {
+            0 => {
+                *p += 1;
+                None
+            }
+            1 => {
+                *p += 1;
+                Some(u64_at(b, p)? as i64)
+            }
+            _ => return None,
+        };
+        let core = crate::transducer::bubble::CoreReading {
+            free_vertices,
+            isolated,
+            free_faces: [faces_1, faces_2],
+            core: core_size,
+            h1,
+            unfaced,
+        };
+        let three = |b: &[u8], p: &mut usize| -> Option<[u64; 3]> { Some([u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?]) };
+        let (removed, in_core, rank_unread) = (three(b, p)?, three(b, p)?, three(b, p)?);
+        let lost = three(b, p)?;
+        let shed = crate::transducer::bubble::ShedTally {
+            removed,
+            in_core,
+            rank_lost: [lost[0] as i64, lost[1] as i64, lost[2] as i64],
+            rank_unread,
+        };
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
             thoughts,
@@ -256,6 +306,8 @@ impl Learning {
             sources,
             transport,
             docket,
+            core,
+            shed,
         };
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }

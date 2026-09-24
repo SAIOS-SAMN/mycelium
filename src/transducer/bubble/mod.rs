@@ -6,6 +6,7 @@
 
 
 pub mod contemplation;
+pub mod core;
 pub mod docket;
 pub mod hold;
 pub mod drive;
@@ -24,6 +25,7 @@ pub(crate) use merge::*;
 pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
 pub use transport::TransportTally;
 pub use docket::DocketReading;
+pub use self::core::{CoreReading, Door, ShedTally};
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

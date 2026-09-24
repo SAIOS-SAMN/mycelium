@@ -97,6 +97,8 @@ impl Contemplation {
         }
         let keys: Vec<Vec<u8>> = doomed.scoped().map(|(k, _)| k).collect();
         let n = keys.len();
+        // TC1 — what this door takes that carries a loop, read around it.
+        let before = self.shed_before(&keys);
         for k in &keys {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
@@ -107,6 +109,7 @@ impl Contemplation {
                 self.cavity.insert(cavity_key(&b.remainder, k), b.remainder.to_vec());
             }
         }
+        self.shed_after(super::core::Door::Citation, n, before);
         n
     }
 
@@ -137,6 +140,8 @@ impl Contemplation {
             .collect();
         let mut returned = [0u64; 4];
         let n = doomed.len();
+        // TC1 — what the price takes that carries a loop, read around it.
+        let before = self.shed_before(&doomed);
         for k in &doomed {
             if let Some(b) = self.bubbles.remove(k) {
                 for (acc, e) in returned.iter_mut().zip(&b.escrow) {
@@ -147,6 +152,7 @@ impl Contemplation {
                 self.cavity.insert(cavity_key(&b.remainder, k), b.remainder.to_vec());
             }
         }
+        self.shed_after(super::core::Door::Price, n, before);
         (returned, n)
     }
 
@@ -227,12 +233,15 @@ impl Contemplation {
             .map(|(k, _)| k)
             .collect();
         let n = drop.len();
+        // TC1 — what this door takes that carries a loop, read around it.
+        let before = self.shed_before(&drop);
         for k in &drop {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);
             }
         }
+        self.shed_after(super::core::Door::Unglued, n, before);
         n
     }
 

@@ -188,6 +188,8 @@ pub struct Contemplation {
     /// stroke; and the thoughts it has marked.
     pub(crate) docket_to_take: bool,
     pub(crate) docket_taken: u64,
+    /// TC1 — what each shedding door removed, and of it what carried a loop.
+    pub(crate) shed: super::core::ShedTally,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the

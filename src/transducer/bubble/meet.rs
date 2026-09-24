@@ -125,6 +125,10 @@ pub struct MeetGraph {
     /// 78.37 — the docket: pending this orbit, open for the next, owed
     /// enclosures, unwritten entries.
     pub docket: super::docket::DocketReading,
+    /// TC1 — the nerve's shape (free vertices and faces, the 2-core, its
+    /// `Ȟ¹`), and what each shedding door removed that carried a loop.
+    pub core: super::core::CoreReading,
+    pub shed: super::core::ShedTally,
 }
 
 impl MeetGraph {
@@ -160,8 +164,32 @@ impl MeetGraph {
             .join("; ");
         let owed = MEET_OWED.iter().map(|(f, _)| *f).collect::<Vec<_>>().join(", ");
         let t = &self.transport;
+        let c = &self.core;
+        let h1 = match c.h1 {
+            Some(r) => r.to_string(),
+            None => "unread".to_string(),
+        };
+        let doors = super::core::Door::ALL
+            .iter()
+            .map(|d| {
+                let i = d.index();
+                format!(
+                    "{} removed {} in-core {} rank lost {} (unread {})",
+                    d.name(),
+                    self.shed.removed[i],
+                    self.shed.in_core[i],
+                    self.shed.rank_lost[i],
+                    self.shed.rank_unread[i]
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("; ");
+        let core = format!(
+            "nerve: Ȟ¹ {h1}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} | shed: {doors}",
+            c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced
+        );
         format!(
-            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | owed: {owed}",
+            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
             self.thoughts,
             self.vertices,
             self.components,
@@ -201,6 +229,8 @@ impl Contemplation {
             sources,
             transport,
             docket: self.docket_reading(),
+            core: self.core_reading(),
+            shed: self.shed,
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;
