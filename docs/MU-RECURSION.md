@@ -11618,6 +11618,52 @@ the rest of Stage 22 as ordered (E3–E6). The curve (LC1) gains the split
 of own against taught words, and the number every row is judged by stays
 adjoined-by-closure leaving zero on a mind's OWN word.
 
+### 78.23 A k-step is one orbit of a planet around its star (ruled 2026-09-24, the operator's word)
+
+**The operator's statement.** A `k`-step is the completion of one
+planetary body's orbit around its star. That motion is what fires what
+used to be called a loop: it runs the cognition pipeline on all the
+actions of that orbit, and it aligns with a single TUniversal step. All
+clients run their own orbits under the same TUniversal tick, and each
+coordinate on `S, G, T, H` makes each of them unique. The orbits of
+planets — the client kernels — need their own distance from the star so
+that there are no collisions.
+
+**Ruled, on 72.1d, 72.1e, 74, 76 and 78.21, which already held the
+parts.**
+
+1. **The `k`-step is one orbit.** A planet's `K` counts completed orbits
+   of its own carriers around its star — one circuit under its reserve
+   (72.1d: continuous motion is `k`-steps that ARE orbits, never frames
+   per second) — and the completion of an orbit is the motion that fires
+   the stroke: perceive, think, express, learn, on everything the orbit
+   crossed. The "pivot loop" is that orbit's firing and is named so.
+2. **One orbit, one tick.** The receipts an orbit's actions admit stamp
+   ONE frame `{S, G, T, H}` at one TUniversal tick (78.21): the orbit's
+   `k` is the sixth field of the stamp, the tick its first, the frame
+   its four lanes. Every client runs its own orbits under the same tick,
+   and the frame's coordinates make each client's orbit unique at that
+   tick — 78.21(v)'s per-lane disparity is the planets' separation read
+   on the clock.
+3. **Distance from the star is a planet's own, and equal distance is a
+   collision.** A planet's radius is its orbital element (74's table: how
+   close to the core it works, the stratum depth of its charts); two
+   planets at one radius with equal elements do the same mathematics
+   and return the same opinion — 74's PERSPECTIVE COLLISION, which 78.17
+   measured as the twin counts of two voices on one hypha. Ruled: two
+   planets whose frames coincide at a tick are a COLLISION, named on the
+   console by CK1's per-voice clock (its radius, its frame, its `k`),
+   never silent; separation is a TRANSPORT toward separation under
+   measured pressure (76.3, CR1), never a slot, a table or a timer
+   (checklist (q)).
+4. **What this changes in the tree.** A stroke IS an orbit and the
+   register states it (OK1): one stroke completes one circuit of the
+   planet's carriers and stamps one frame; `K` advances by one per
+   completed orbit and by nothing else; CK1's per-voice clock carries the
+   planet's radius beside its frame and names collisions; the learning
+   curve (LC1) reads a planet's motion as its elements changing per
+   orbit — which is what 78.1 already called the curve.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
