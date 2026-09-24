@@ -393,6 +393,16 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
         adjoined_by_closure: 1,
         installed: 4,
         closing: 2,
+        // CS2 — every arm of the pivot reading travels.
+        pivots: crate::transducer::sentence::PivotTally {
+            reached: 1,
+            derivable: 2,
+            demanded: 3,
+            adjoin: 4,
+            starved: 5,
+            unread_fibre: 6,
+            unread_algebra: 7,
+        },
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
@@ -400,7 +410,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
     assert_eq!(earlier, Reading::Learning(curve), "the curve at the later K stands");
 
-    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0);
+    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0, Default::default());
     assert_eq!(
         (fresh.strata.len(), fresh.adjoined_by_closure, fresh.installed, fresh.closing),
         (0, 0, 0, 0),

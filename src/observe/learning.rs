@@ -54,12 +54,16 @@ pub struct Learning {
     pub installed: u64,
     /// Of them, those whose form closes.
     pub closing: u64,
+    /// CS2, 78.32(c) — this mind's pivots against the cells their orbits
+    /// cross, by content: the count the admission gate waits on.
+    pub pivots: crate::transducer::sentence::PivotTally,
 }
 
 impl Learning {
     /// THE CURVE OF THIS MIND, read off its own genome at its own `k`, at the
-    /// read; nothing is stored beside the carriers (law 12).
-    pub fn of(epigenome: &Epigenome, k: u64) -> Learning {
+    /// read, with its contemplation's pivot reading beside it; nothing is
+    /// stored beside the carriers (law 12).
+    pub fn of(epigenome: &Epigenome, k: u64, pivots: crate::transducer::sentence::PivotTally) -> Learning {
         let mut radius = 0u64;
         let strata = epigenome
             .atlas
@@ -78,7 +82,7 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, radius, adjoined_by_closure, installed, closing }
+        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots }
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -91,6 +95,10 @@ impl Learning {
             out.extend_from_slice(&n.to_le_bytes());
         }
         for v in [self.adjoined_by_closure, self.installed, self.closing] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        let t = &self.pivots;
+        for v in [t.reached, t.derivable, t.demanded, t.adjoin, t.starved, t.unread_fibre, t.unread_algebra] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -126,6 +134,15 @@ impl Learning {
         let radius = u64_at(b, p)?;
         let strata = keyed(b, p)?;
         let (adjoined_by_closure, installed, closing) = (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
-        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing })
+        let pivots = crate::transducer::sentence::PivotTally {
+            reached: u64_at(b, p)?,
+            derivable: u64_at(b, p)?,
+            demanded: u64_at(b, p)?,
+            adjoin: u64_at(b, p)?,
+            starved: u64_at(b, p)?,
+            unread_fibre: u64_at(b, p)?,
+            unread_algebra: u64_at(b, p)?,
+        };
+        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots })
     }
 }

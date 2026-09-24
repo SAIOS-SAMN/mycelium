@@ -541,6 +541,8 @@ fn learning(l: &observe::Learning) -> Vec<String> {
             "    closures      adjoined-by-closure {}  installed {}  closing {}",
             l.adjoined_by_closure, l.installed, l.closing
         ),
+        // CS2 — the pivots against the cells their orbits cross (78.32(c)).
+        format!("    {}", l.pivots.line()),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }
