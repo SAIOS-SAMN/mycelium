@@ -16248,6 +16248,60 @@ so superposition is the precondition for content to exist; and a front
 held as a connected complex lets one perception decide a whole
 component, which is the only honest sense of foresight here.
 
+### 78.38 Two scales of a body: the spread is the shape's, the floor is the substrate's (ruled 2026-09-24, the operator's word)
+
+**The finding.** F3 wired the family pole's oblique pair to the demand
+and found no case on the corpus: of some 66 000 small bodies none reads
+`Oblique` against the L-tetromino, and the `(4+i)` image of a body,
+which turns it by the arc of a Gaussian prime at scale 17, reads
+`Incongruent` — its deviatoric scales by `17²` and its radius does not.
+The reason is not the corpus. It is a scale read from the wrong
+carrier.
+
+**Two scales.** A sensor body has two extents. Its SPREAD is the second
+moment of its sites about their mean, `tr M` of the tower (FR1) — the
+shape's own scale, and a similarity `z ↦ λz` of the lattice scales it
+exactly by `|λ|²`. Its RADIUS, `radius2 = S·S` of the lifted nucleus,
+integrates each lamina's own unit square (A.12: the irreducible extent
+`n/12` is the substrate's floor), so it is the spread PLUS the floor, and
+the floor does not scale under any similarity because the sensor's unit
+cell is the sensor's. The nucleus radius is the right carrier for
+contact and the horizon (64.2 needs `r² ≥ 1/6`, bounded away from the
+cone). It is the wrong carrier for a relation between two SHAPES: a
+dilation certificate that reads `norm(h_b)·r_a^{2m} = norm(h_a)·r_b^{2m}`
+on the nucleus radius fails for every genuine similarity of the
+lattice, because the floor rides both radii unscaled, and it fails for
+the substrate's reason, not the shape's. That is 78.26(4) at the pose:
+`Incongruent` answered two facts — a genuine difference of shape, and
+the same shape at another scale with the floor unscaled — under one
+name, and the second is exactly the case the demand exists for.
+
+**Ruled.** (1) A body carries two named scales, `spread2` (the tower's
+`tr M`) and `radius2` (the nucleus), one producer each (law 12), and
+every reading of a RELATION between shapes — the dilation certificate,
+the harmonics' agreement at each order, the oblique arc's scale — is
+taken on the spread; the nucleus radius stays where contact, the
+horizon and the enclosure need the floor. §6.4: every site that scales
+a shape's harmonics by `radius2` moves to `spread2`. (2) `Incongruent`
+splits by content: the harmonic order at which the shapes disagree,
+read on the spread; a pair that agrees on the spread and not on the
+nucleus is not incongruent, and the arm that said so is gone. (3) The
+witness is unchanged: `arc_block(s, t)` of the primitive Gaussian arc,
+and the three gates stand. (4) The test is real, not aspirational: an
+L-tetromino and its `(4+i)` image certify as a dilation on the spread,
+read `Oblique`, and raise `Demand::RotorPrime` with the arc of `4+i` as
+witness; a body of a genuinely different shape reads `Incongruent` at
+its order; and the corpus is read before and after — pairs certified as
+a dilation on the spread against those certified on the radius, and
+the oblique count on the contact line. (5) No remainder here: a pair
+that agrees on the spread and not on the floor is one shape at two
+scales, correctly read, and nothing is left over to file.
+
+**The principle.** A.12's floor is data of the substrate and never a
+property of a shape. Any invariant that carries the floor into a
+comparison between bodies compares the sensor with itself, and refuses
+the very relation the language is there to spell.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
