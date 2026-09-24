@@ -7,7 +7,7 @@ pub mod common;
 
 mod gauge_fibre;
 mod lanes_and_axes;
+mod record;
 mod sensor;
-mod tape;
 mod versor_algebra;
 mod vertex_and_address;

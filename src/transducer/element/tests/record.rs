@@ -1,5 +1,6 @@
-// 19 — the tape: every carrier of the element survives the wire, and a
-// tape of an older generation is refused rather than guessed at.
+// 19 — THE ELEMENT'S RECORD (TN1; was `tests/tape.rs`): every carrier of
+// the element survives the wire, and a record of an older generation is
+// refused rather than guessed at.
 
 use crate::core::Q;
 use crate::transducer::element::*;

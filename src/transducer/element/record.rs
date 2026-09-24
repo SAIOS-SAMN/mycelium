@@ -1,5 +1,6 @@
-// 19, 28 — THE TAPE: the element as bytes, and the tags that name what a
-// tape spells.
+// 19, 28 — THE ELEMENT'S RECORD (TN1, 78.34: "tape" names a word's letter
+// tape and nothing else; this module was `element/tape.rs`): the element
+// as bytes under `RECORD_MAGIC`, and the tags that name what it spells.
 //
 //! The tape is the coordinate-exact ANASTOME description: the generation
 //! magic, the four tags (connection, sentence, translation, rewrite), the

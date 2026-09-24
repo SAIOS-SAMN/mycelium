@@ -10,8 +10,8 @@ pub mod held;
 pub mod letters;
 pub mod receipts;
 pub mod residual;
+pub mod record;
 pub mod sensor;
-pub mod tape;
 pub mod vertex;
 
 pub use carrier::*;
@@ -20,8 +20,8 @@ pub use held::*;
 pub use letters::*;
 pub use receipts::*;
 pub use residual::*;
+pub use record::*;
 pub use sensor::*;
-pub use tape::*;
 
 #[cfg(test)]
 mod tests;
