@@ -36,10 +36,6 @@ impl Kernel {
         self.court_demands_listed
     }
 
-    pub fn crt_imported(&self) -> bool {
-        self.crt_imported
-    }
-
     pub fn offered(&self, addr: &[u8]) -> bool {
         self.offered.get(addr).is_some()
     }

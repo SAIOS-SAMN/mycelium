@@ -683,27 +683,6 @@ impl Kernel {
         }
     }
 
-    /// Import a court.federation once as the initial ruled cover.
-    /// Letterless words are history and are never taught (not on the basis).
-    pub fn import_crt(&mut self, state: crate::court::ledger::CourtState) {
-        if self.crt_imported {
-            return;
-        }
-        self.crt_imported = true;
-        for (addr, elem) in state.federation {
-            let letterless = elem.is_connection() && elem.letters().is_none();
-            if !letterless {
-                if self.basis.get(&addr).is_none() {
-                    self.basis_insert(elem.clone(), [0; 32]);
-                }
-                self.ruled_admit(&addr);
-            }
-            self.fed_admit(&addr, elem);
-        }
-        if !state.chain.receipts().is_empty() && self.chain.receipts().is_empty() {
-            self.chain = state.chain;
-        }
-    }
 
     /// The germs this court has Offered and still holds provisionally, with
     /// their tapes — what a second organ needs in order to replay them.

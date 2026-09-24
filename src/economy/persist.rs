@@ -121,28 +121,6 @@ impl Treasury {
         });
         out.extend_from_slice(&kept.to_le_bytes());
         out.append(&mut body);
-        // FUNDED ESCROW, written out. It stood as "rebuilt from the journal
-        // by `recompute_balances`, not persisted twice" -- but an entry
-        // carries a party and a lane vector and NOT the listing it is
-        // against, so no rebuild can key it, and `recompute_balances` never
-        // touched it. A restored treasury therefore held zero funded escrow
-        // against balances that had already paid for it, and §6's second
-        // equation failed by exactly the funded total at every restart.
-        let mut body = Vec::new();
-        let mut kept = 0u32;
-        crate::snapshot::persist(&self.funded, |addr, (payer, mu)| {
-            if crate::transducer::address::put_addr(&mut body, addr).is_none() {
-                eprintln!("  treasury funded row refused: its address cannot be framed");
-                return;
-            }
-            body.extend_from_slice(payer);
-            for m in mu {
-                body.extend_from_slice(&m.to_le_bytes());
-            }
-            kept += 1;
-        });
-        out.extend_from_slice(&kept.to_le_bytes());
-        out.append(&mut body);
         // BALANCES, written out. They were "recomputed from the entries" at
         // load, and `recompute_balances` applied two of §2's ten kinds --
         // `mint` and paired `transfer` -- ignoring genesis, burn, stake,
@@ -202,11 +180,11 @@ impl Treasury {
         for _ in 0..n {
             entries.push(Entry::read(b, pos)?);
         }
-        // THE THREE SECTIONS BELOW ARE REQUIRED. Each read as "a snapshot
+        // THE TWO SECTIONS BELOW ARE REQUIRED. Each read as "a snapshot
         // that ends here is an older one and restores with none", and
-        // `snapshot` writes all three unconditionally, so no writer emits
-        // a tape without them: what that admitted was a TRUNCATED ledger,
-        // restored with no escrow, no funded escrow and no balances, which
+        // `snapshot` writes both unconditionally, so no writer emits a tape
+        // without them: what that admitted was a TRUNCATED ledger,
+        // restored with no escrow and no balances, which
         // then failed its own audit or passed one it should not have.
         // §10 makes a layout change a recut and deletes the reader for the
         // old layout.
@@ -241,26 +219,6 @@ impl Treasury {
                 escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (k, r) });
             }
         }
-        // FUNDED ESCROW, read back.
-        let mut funded = crate::network::nerve::Keyed::new();
-        {
-            let nf = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-            *pos += 4;
-            if nf > b.len().checked_sub(*pos)? / 66 {
-                return None; // untrusted count: ≥66 bytes per funded row
-            }
-            for _ in 0..nf {
-                let addr = crate::transducer::address::take_addr(b, pos)?;
-                let payer: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
-                let mut mu = [0u64; 4];
-                for m in &mut mu {
-                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                }
-                funded.insert(addr, (payer, mu));
-            }
-        }
         // BALANCES, read back. Not recomputed: see `snapshot`.
         let mut balances = crate::network::nerve::Keyed::new();
         {
@@ -286,7 +244,6 @@ impl Treasury {
             stakes,
             escrowed,
             balances,
-            funded,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
             issued: None,

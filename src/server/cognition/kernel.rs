@@ -178,7 +178,6 @@ pub struct Kernel {
     pub(crate) answered: crate::network::nerve::Keyed<
         crate::network::nerve::Keyed<(crate::transducer::address::Address, element::Versor)>,
     >,
-    pub(crate) crt_imported: bool,
     /// Čech complex per chart: vertices are covering hyphas, coefficients
     /// are Rotor. One Keyed entry per simplex; never Elements.
     pub(crate) complexes: crate::network::nerve::Keyed<crate::transducer::cech::Complex>,

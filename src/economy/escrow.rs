@@ -1,8 +1,8 @@
 // E1, E2 — ESCROW: value set aside against a listing, and what releases it.
 //
-//! A FUNDED escrow is a liability and is counted in the supply; a CLAIM
-//! escrow is pending issuance and is not. Nothing here mints on the way in;
-//! a mint happens on closure and a burn on retirement.
+//! An escrow is a CLAIM pending issuance and is not counted in the supply.
+//! Nothing here mints on the way in; a mint happens on closure and a burn
+//! on retirement.
 
 use super::*;
 
@@ -44,43 +44,6 @@ pub struct EscrowedAward {
 }
 
 impl Treasury {
-    /// FUND an escrow from a payer's balance — the xSEPTUM Note (§5), where
-    /// a requester backs a claim with μ⃗ that already exists. The balance is
-    /// DEBITED, not merely checked, and the funded part is recorded so R9's
-    /// `Σ escrow` counts it. Returns what was actually funded; a payer short
-    /// on a lane funds what it holds there and no more.
-    pub fn escrow_from_balance(
-        &mut self,
-        addr: impl AsRef<[u8]>,
-        payer: [u8; 32],
-        mu: [u64; 4],
-        anchor: Anchor,
-    ) -> [u64; 4] {
-        let held = self.balance_mu(&payer);
-        let paid: [u64; 4] = std::array::from_fn(|l| mu[l].min(held[l]));
-        if paid.iter().all(|&x| x == 0) {
-            return paid;
-        }
-        let addr = addr.as_ref();
-        // `paid` is clamped to the balance above, so this holds; a debit
-        // that does not escrows nothing rather than funding an award the
-        // payer did not pay for (§6).
-        if !crate::economy::lanes_short(&self.debit(payer, paid)).is_empty() {
-            return [0; 4];
-        }
-        self.escrow_award(addr, vec![payer], paid, anchor);
-        // An address nothing has funded yet is funded by nothing: the
-        // reading of absence on a keyed carrier (0.11c).
-        let prev = match self.funded.get(addr) {
-            Some((_, m)) => *m,
-            None => [0; 4],
-        };
-        let next: [u64; 4] = std::array::from_fn(|l| prev[l] + paid[l]);
-        self.funded.insert(addr, (payer, next));
-        self.write(Entry { kind: Kind::Escrow, who: payer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        paid
-    }
-
     /// HOLD a consilience award in escrow pending the court's finality verdict
     /// (Step 5: two-voice consilience is provisional, not final). Nothing books
     /// to the ledger yet — unfinalized speech earns nothing.
@@ -131,38 +94,7 @@ impl Treasury {
     /// Clear the listing claim. Payment is a mint of the same vector, done
     /// by the caller after this returns (release then mint).
     pub fn release_award(&mut self, addr: &[u8]) -> Option<Escrowed> {
-        self.discharge_funded(addr, Kind::Release);
         self.escrowed.remove(addr)
-    }
-
-    /// Return the funded part of an escrow to the balance it came from. A
-    /// funded escrow holds μ⃗ that already existed, so discharging it MOVES
-    /// value and never mints or destroys any; a claim-escrow has no funded
-    /// part and this does nothing. Dropping the record instead would leave
-    /// the carriers short of supply and R9 would fail on the next burn.
-    ///
-    /// The payee of a funded release is xSEPTUM §5's business, not the
-    /// treasury's: until the Note names one, the μ⃗ goes back where it came
-    /// from rather than to a party chosen here.
-    pub(crate) fn discharge_funded(&mut self, addr: &[u8], kind: Kind) {
-        let Some((payer, mu)) = self.funded.remove(addr) else {
-            return;
-        };
-        // A funded escrow carrying nothing on any lane returns nothing.
-        // `mu.iter().all(|&x| x == 0)` folds four lanes into one bool to
-        // decide the branch (rule 2, §2.3); `lanes_short` is the tree's own
-        // reading and names which lanes carry value.
-        if super::lanes_short(&mu).is_empty() {
-            return;
-        }
-        // An address with no escrow row was anchored at no step and no
-        // receipt, which is the empty anchor read out.
-        let anchor = match self.escrowed.get(addr) {
-            Some(row) => row.anchor,
-            None => (0, [0; 32]),
-        };
-        self.credit(payer, mu);
-        self.write(Entry { kind, who: payer, mu, k_step: anchor.0, receipt: anchor.1 });
     }
 
     /// Mint a released claim: a consilience split when two or more voices
@@ -212,7 +144,6 @@ impl Treasury {
     /// a slash reaches the same set, or a word two voices stood costs one
     /// of them nothing at all.
     pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> Option<Revoked> {
-        self.discharge_funded(addr, Kind::Revoke);
         let Escrowed { voices, mu, anchor } = self.escrowed.remove(addr)?;
         let mut out = Revoked { released: mu, slashed: Vec::new(), short: Vec::new() };
         if !slash {

@@ -108,16 +108,11 @@ fn a_stake_outside_the_live_genesis_is_burned_and_the_audit_holds() {
     );
 }
 
-/// R9, and the distinction the audit turns on. A FUNDED escrow holds
-/// μ⃗ that left a balance and is still in the mesh, so it is counted;
-/// discharging it MOVES value and mints nothing. A CLAIM escrow holds
-/// μ⃗ that does not exist yet (§3.1), so it is not counted, and a ruling
-/// MINTS it. Removing escrow from the equation outright would make the
-/// audit hold by not looking; counting all of it asserts value that was
-/// never created. Both readings conserve here, and they conserve
-/// differently — which is the whole point.
+/// R9 on a claim. A CLAIM escrow holds μ⃗ that does not exist yet
+/// (§3.1), so it is not counted and moves no carrier, and a ruling MINTS
+/// it.
 #[test]
-fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
+fn a_claim_escrow_is_not_supply_until_a_ruling_mints_it() {
     let mut t = Treasury::new();
     let a = (1u64, [1u8; 32]);
     t.genesis([1; 32], [10, 0, 0, 0], a);
@@ -128,23 +123,6 @@ fn a_funded_escrow_is_counted_and_a_claim_escrow_is_not() {
     t.escrow_award([7u8; 32], vec![[2; 32]], [4, 0, 0, 0], a);
     assert_eq!(t.audit().expect("a claim is not supply"), seeded);
     assert_eq!(t.balance_mu(&[2; 32]), [0; 4], "no one was debited for it");
-
-    // A FUND: the payer is debited, so the μ⃗ moved out of a balance and
-    // must still be found — in the escrow.
-    let paid = t.escrow_from_balance([8u8; 32], [1; 32], [6, 0, 0, 0], a);
-    assert_eq!(paid, [6, 0, 0, 0]);
-    assert_eq!(t.balance_mu(&[1; 32]), [4, 0, 0, 0], "the payer paid");
-    assert_eq!(
-        t.audit().expect("a funded escrow is counted, not ignored"),
-        seeded,
-        "supply unmoved: value moved between carriers"
-    );
-
-    // Discharging it moves value back and mints nothing.
-    assert!(t.revoke_award(&[8u8; 32], false).is_some(), "the award was there");
-    assert_eq!(t.balance_mu(&[1; 32]), [10, 0, 0, 0], "returned whence it came");
-    assert_eq!(t.audit().expect("a discharge conserves"), seeded);
-    assert_eq!(t.minted().expect("minted"), [0; 4], "and nothing was earned");
 
     // The claim, released, MINTS — supply rises by what the ruling
     // measured, which is E1's whole mechanism.
@@ -190,7 +168,7 @@ fn a_stake_moves_value_and_never_creates_it() {
 
 /// §6 ON THE PATHS THAT SPEND. A recall fee, a door fee and a slash each
 /// take μ⃗ out of a carrier, and each did it without taking the same μ⃗ out
-/// of the supply: `Σ balance + Σ bond + Σ funded` fell while
+/// of the supply: `Σ balance + Σ bond` fell while
 /// `genesis + mint − burn` held, and the audit failed on every lane anyone
 /// had ever read, queued or been slashed on. §2's carriers are balance,
 /// bond and escrow — there is no pool among them — so what these take

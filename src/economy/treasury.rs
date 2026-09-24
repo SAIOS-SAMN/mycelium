@@ -106,19 +106,6 @@ pub struct Treasury {
     pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
     pub(crate) balances: crate::network::nerve::Keyed<[u64; 4]>,
-    /// FUNDED escrow, per listing: the part of an award that was debited
-    /// from a balance to create it, as against the part that is a claim on
-    /// issuance which does not exist yet (`MU-ECONOMY.md` §3.1).
-    ///
-    /// The two are different facts and the invariant needs them apart.
-    /// R9's `Σ escrow` is the funded part: μ⃗ that left a balance is still
-    /// in the mesh and must be counted, or a burn would not conserve. A
-    /// claim-escrow contributes nothing, because nobody gave anything up
-    /// for it and a ruling MINTS it rather than moving it. Removing escrow
-    /// from the equation outright, as this briefly did, makes the audit
-    /// hold by not looking; counting all of it says value exists that does
-    /// not. Both are wrong and the difference is exactly what R9 turns on.
-    pub(crate) funded: crate::network::nerve::Keyed<([u8; 32], [u64; 4])>,
 }
 
 /// Written out rather than derived: `#[derive(Default)]` gives the folded
@@ -136,7 +123,6 @@ impl Default for Treasury {
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
             balances: crate::network::nerve::Keyed::new(),
-            funded: crate::network::nerve::Keyed::new(),
         }
     }
 }
@@ -437,22 +423,18 @@ impl Treasury {
             }
             Ok(())
         };
-        // R9's equation, with `Σ escrow` meaning the FUNDED escrow. An
-        // escrow that was paid for holds μ⃗ that left a balance and is still
-        // in the mesh; an escrow that is a claim on issuance holds μ⃗ that
-        // does not exist yet (§3.1), and a ruling mints it rather than
-        // moving it. Counting all escrow says value exists that does not,
-        // and counting none makes the audit hold by not looking.
+        // R9's equation. Every escrow is a claim on issuance (§3.1): it
+        // holds μ⃗ that does not exist yet, and a ruling mints it rather
+        // than moving it, so no escrow is a carrier of supply.
         let mut sums: Vec<[u64; 4]> = Vec::new();
         crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
         crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
-        crate::snapshot::persist(&self.funded, |_, (_, mu)| sums.push(*mu));
         for v in &sums {
             add(v, &mut held)?;
         }
         if held != issued {
             return Err(format!(
-                "supply {issued:?} is not the carriers {held:?}: balances + bond + funded escrow must be what was issued"
+                "supply {issued:?} is not the carriers {held:?}: balances + bond must be what was issued"
             ));
         }
         Ok(issued)

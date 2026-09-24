@@ -365,8 +365,6 @@ impl Kernel {
             }
             tag(b, pos, b"CRT1")?;
             {
-                kernel.crt_imported = *b.get(*pos)? != 0;
-                *pos += 1;
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for _ in 0..n {

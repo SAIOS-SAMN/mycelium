@@ -185,7 +185,6 @@ impl Kernel {
             Some(())
         });
         out.extend_from_slice(b"CRT1");
-        out.push(self.crt_imported as u8);
         let mut body = Vec::new();
         for (addr, elem) in &self.court_federation {
             put_key(&mut body, addr);
