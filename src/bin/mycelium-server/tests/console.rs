@@ -82,7 +82,7 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
     use mycelium::observe::{Clock, CourtClock, VoiceClock};
     let court = Clock::Court(CourtClock {
         k: 13,
-        head: [40, 1, 0, 2, 0, 12],
+        head: [40, 1, 0, 2, 0, 12, 0],
         unframed: 2,
         unstamped: [1, 0, 0, 0, 0],
         rulings: [3, 1],

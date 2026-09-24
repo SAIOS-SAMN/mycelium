@@ -2,7 +2,7 @@
 // rows act round-trip; a short frame refuses.
 
 use crate::anastome::dialogue::*;
-use crate::chronometry::{ActKind, ReceiptChain, Root};
+use crate::chronometry::{ActKind, Place, ReceiptChain, Root};
 use crate::court::admission::SignedPrefix;
 use crate::economy::{Entry, Kind};
 
@@ -10,13 +10,13 @@ use crate::economy::{Entry, Kind};
 fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
     let mut c = ReceiptChain::with_vk([6; 32]);
     let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
-    let root = Root { k: 4, hash: [5; 32], height: 9 };
+    let root = Root { at: Place { k: 4, i: 2 }, hash: [5; 32], height: 9 };
     let section = ReceiptSection {
         prefix: SignedPrefix {
             genesis: [8; 32],
             epoch: 2,
             prev_receipt_hash: head.prev_hash(),
-            k: head.stamp.k,
+            at: head.stamp.place(),
             height: head.stamp.h,
             chart: vec![],
             payload: root.hash.to_vec(),
@@ -24,15 +24,18 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
         sig: [9u8; 64],
         receipt: head.clone(),
     };
+    let after = Some(Place { k: 1, i: 0 });
     let p = FoldProposal {
-        k0: 1,
+        after,
         root,
         epochs: vec![([1; 32], [1, 2, 3, 4]), ([2; 32], [0, 0, 7, 0])],
         section: section.clone(),
     };
     let body = encode_fold(&p).expect("frames");
     let back = decode_fold(&body).expect("reads");
-    assert_eq!((back.k0, back.root, back.epochs), (1, root, p.epochs.clone()));
+    assert_eq!((back.after, back.root, back.epochs), (after, root, p.epochs.clone()));
+    let first = FoldProposal { after: None, ..p.clone() };
+    assert_eq!(decode_fold(&encode_fold(&first).expect("frames")).map(|b| b.after), Some(None), "a prefix from genesis");
     assert_eq!(
         (back.section.prefix, back.section.sig, back.section.receipt),
         (section.prefix.clone(), section.sig, head.clone())
@@ -58,17 +61,16 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
     }
     assert!(decode_fold_reply(&[7]).is_none(), "an arm the layout does not define refuses");
 
-    let req = encode_rows_request(&[1; 32], &[2; 32], 3, 9, 5);
-    assert_eq!(
-        decode_rows_request(&req),
-        Some(RowsRequest { voice: [1; 32], signer: [2; 32], from: 3, to: 9, cursor: 5 })
-    );
+    let (from, upto) = (Some(Place { k: 3, i: 0 }), Place { k: 9, i: 1 });
+    let req = encode_rows_request(&[1; 32], &[2; 32], from, upto, 5);
+    assert_eq!(decode_rows_request(&req), Some(RowsRequest { voice: [1; 32], signer: [2; 32], from, upto, cursor: 5 }));
+    assert!(decode_rows_request(&req[..req.len() - 1]).is_none(), "a short request refuses");
     let rows: Vec<Entry> = (0..3u8)
         .map(|i| Entry {
             kind: Kind::Mint,
             who: [i; 32],
             mu: [i as u64, 0, 0, 0],
-            at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3 },
+            at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 },
             receipt: [0; 32],
         })
         .collect();

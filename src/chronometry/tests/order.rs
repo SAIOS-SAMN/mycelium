@@ -103,7 +103,7 @@ fn a_peer_node_is_placed_by_where_it_cuts_our_own_line() {
 }
 
 /// A FOLD RENUMBERS NOTHING (45.8, 78.24): a peer node's place against our
-/// line is our `K`, which a fold does not move, so a peer node reached
+/// line is our place, which a fold does not move, so a peer node reached
 /// before the fold is reached by every node that survives it.
 #[test]
 fn a_fold_leaves_the_peer_placements_where_they_stood() {
@@ -114,9 +114,10 @@ fn a_fold_leaves_the_peer_placements_where_they_stood() {
     c.admit(peer.clone());
     step(&mut c, vec![cite(&peer)]);
     let survivor = step(&mut c, Vec::new());
-    let (cold, root) = c.fold_before(1).expect("the first two fold");
+    let second = crate::chronometry::Place { k: 1, i: 0 };
+    let (cold, root) = c.fold_before(second).expect("the first two fold");
     assert_eq!(cold.len(), 2, "two nodes left the hot line");
-    assert_eq!(root.k, 1, "the line stands on the second");
+    assert_eq!(root.at, second, "the line stands on the second");
     assert!(c.verify_chain_integrity(), "the hot line verifies on its root");
     let mut b = budget(4);
     assert_eq!(c.precedes(&peer.stamp, &survivor.stamp, &mut b), Some(true), "reached before the fold is reached by everything after it");

@@ -15,7 +15,7 @@ fn section(lane: u64, sig: u8) -> ReceiptSection {
             genesis: [7; 32],
             epoch: 2,
             prev_receipt_hash: r.prev_hash(),
-            k: r.stamp.k,
+            at: r.stamp.place(),
             height: r.stamp.h,
             chart: vec![1, 2],
             payload: r.stamp.key(),

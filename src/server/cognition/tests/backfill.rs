@@ -15,7 +15,7 @@ fn head_of(
         genesis: [7; 32],
         epoch: 2,
         prev_receipt_hash: r.prev_hash(),
-        k: r.stamp.k,
+        at: r.stamp.place(),
         height: r.stamp.h,
         chart: vec![],
         payload: r.stamp.key(),
@@ -62,8 +62,11 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
     for _ in 0..4 {
         act(&mut b, rate);
         let (head, pre) = head_of(&b);
-        let fetch = |who: &[u8; 32], lo: u64, hi: u64| -> Option<Vec<crate::chronometry::KStepReceipt>> {
-            (*who == vk).then(|| (lo..=hi.min(lo + PAGE - 1)).filter_map(|k| b.at(who, k).cloned()).collect())
+        let fetch = |who: &[u8; 32],
+                     after: Option<crate::chronometry::Place>,
+                     upto: crate::chronometry::Place|
+         -> Option<Vec<crate::chronometry::KStepReceipt>> {
+            (*who == vk).then(|| b.line_between(who, after, upto, PAGE as usize).into_iter().cloned().collect())
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,

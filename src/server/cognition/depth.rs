@@ -55,11 +55,11 @@ impl Kernel {
             let at = c.at().key();
             match self.attestors.get_mut(&at) {
                 Some(bucket) => {
-                    bucket.insert(&key, r.stamp.k);
+                    bucket.insert(&key, r.stamp.place());
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
-                    bucket.insert(&key, r.stamp.k);
+                    bucket.insert(&key, r.stamp.place());
                     self.attestors.insert(at, bucket);
                 }
             }

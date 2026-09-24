@@ -70,7 +70,7 @@ let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
     epoch: 2,
     prev_receipt_hash: pr.prev_hash(),
-    k: pr.stamp.k,
+    at: pr.stamp.place(),
     height: pr.stamp.h,
     chart: vec![],
     payload: pr.stamp.key(),
@@ -301,7 +301,7 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 let c = k.clock(Some(([9; 32], 2)));
 let head = k.chain().head().expect("the court has acted");
 let [s, g, t, h] = head.mu;
-assert_eq!(c.head, [head.stamp.h, s, g, t, h, head.stamp.k], "the head's stamp, h:S:G:T:H:k");
+assert_eq!(c.head, [head.stamp.h, s, g, t, h, head.stamp.k, head.stamp.i], "the head's stamp, h:S:G:T:H:K.i");
 assert_eq!(c.k, k.chain().next_step_index());
 assert_eq!(c.genesis, Some(([9; 32], 2)), "the origin it adopted, carried as given");
 assert_eq!((c.persisted, c.folded), (None, None), "never persisted, never folded");
@@ -332,7 +332,7 @@ let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
     epoch: 2,
     prev_receipt_hash: pr.prev_hash(),
-    k: pr.stamp.k,
+    at: pr.stamp.place(),
     height: pr.stamp.h,
     chart: vec![],
     payload: pr.stamp.key(),

@@ -90,7 +90,7 @@ fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
 #[test]
 fn one_signer_acting_twice_is_still_one_vantage() {
     let mut k = Kernel::new();
-    let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2 };
+    let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling] {
         let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
@@ -105,7 +105,7 @@ fn one_signer_acting_twice_is_still_one_vantage() {
 #[test]
 fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let mut k = Kernel::new();
-    let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4 };
+    let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
     for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
         let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");

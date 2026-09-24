@@ -187,9 +187,9 @@ impl Kernel {
     /// carries beside the word (78.24 (2b)) — or `None` where it could not
     /// be sealed, and the word is not served.
     pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) -> Option<crate::chronometry::Stamp> {
-        let before = self.chain.next_step_index();
+        let before = self.chain.next_place();
         self.append_step(crate::chronometry::ActKind::Syllabus, addr, to);
-        self.chain.at_k(before).map(|r| r.stamp)
+        self.chain.at_place(before).map(|r| r.stamp)
     }
 
     /// A HELD WORD AS A PAGE CARRIES IT: its tape and the stamp that

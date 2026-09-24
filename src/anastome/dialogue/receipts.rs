@@ -5,6 +5,7 @@
 //! that precedes it rather than guessed at.
 
 use super::*;
+use crate::chronometry::Place;
 
 /// 47.1's RECEIPT SECTION, appended after a digest's signature: the
 /// sender's head receipt, the 47.1 prefix it was signed over, and the
@@ -150,33 +151,59 @@ pub fn decode_fetch(body: &[u8]) -> Option<([u8; 32], Vec<Chart>)> {
     Some((voice, charts))
 }
 
-/// 47.2's K-RANGE REQUEST (S13.10): which signer, and which span of its K.
+/// A SPAN OF A SIGNER'S LINE ON THE WIRE: the place it opens after — a tag
+/// byte, `0` from the line's start or `1` and the place — then the place it
+/// closes at, each place `K‖i`.
+pub(crate) fn put_span(out: &mut Vec<u8>, after: Option<Place>, upto: Place) {
+    match after {
+        None => out.push(0),
+        Some(a) => {
+            out.push(1);
+            a.put_canonical(out);
+        }
+    }
+    upto.put_canonical(out);
+}
+
+/// The inverse of [`put_span`], whole or refused.
+pub(crate) fn take_span(b: &[u8], p: &mut usize) -> Option<(Option<Place>, Place)> {
+    let tag = *b.get(*p)?;
+    *p += 1;
+    let after = match tag {
+        0 => None,
+        1 => Some(Place::take_canonical(b, p)?),
+        _ => return None,
+    };
+    Some((after, Place::take_canonical(b, p)?))
+}
+
+/// 47.2's PLACE-RANGE REQUEST (S13.10): which signer, and which span of
+/// its line — strictly after `after` up to `upto`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiptsRequest {
     pub voice: [u8; 32],
     pub signer: [u8; 32],
-    pub from: u64,
-    pub to: u64,
+    pub after: Option<Place>,
+    pub upto: Place,
 }
 
-pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], from: u64, to: u64) -> Vec<u8> {
+pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
     let mut out = vec![ACT_RECEIPTS];
     out.extend_from_slice(voice);
     out.extend_from_slice(signer);
-    out.extend_from_slice(&from.to_le_bytes());
-    out.extend_from_slice(&to.to_le_bytes());
+    put_span(&mut out, after, upto);
     out
 }
 
 pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
-    if !act_is(body, ACT_RECEIPTS) || body.len() != 81 {
+    if !act_is(body, ACT_RECEIPTS) {
         return None;
     }
     let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
     let signer: [u8; 32] = body.get(33..65)?.try_into().ok()?;
-    let from = u64::from_le_bytes(body.get(65..73)?.try_into().ok()?);
-    let to = u64::from_le_bytes(body.get(73..81)?.try_into().ok()?);
-    Some(ReceiptsRequest { voice, signer, from, to })
+    let mut p = 65usize;
+    let (after, upto) = take_span(body, &mut p)?;
+    (p == body.len()).then_some(ReceiptsRequest { voice, signer, after, upto })
 }
 
 /// The K-range reply: as many of `receipts`, in order, as fit `budget`

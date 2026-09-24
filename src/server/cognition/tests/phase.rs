@@ -99,7 +99,7 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     k.read_phase();
     let (k0, at_h0) = k.phase_mark.clone().expect("the window's start is kept");
-    assert_eq!(k0, k.chain().next_step_index(), "the next window starts at the line's next K");
+    assert_eq!(k0, k.chain().head_place(), "the next window opens after the line's head");
     assert_eq!(at_h0.strata.len(), k.cover_reading().strata.len());
     let c = vec![(0, 0, 3u8), (0, 1, 3)];
     let d = vec![(0, 0, 4u8), (0, 1, 4)];
@@ -111,7 +111,7 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
 
     // A READING OVER AN EMPTY WINDOW IS NOT A READING, and `read_phase` says
     // so. Nothing has been admitted since the call above, so the window is
-    // `k1..k1` and `phase_over` would report zero out of zero over `h N..N` —
+    // empty and `phase_over` would report zero out of zero over `h N..N` —
     // the vacuous assertion at the instrument. Hypha a wrote 25 598 of those
     // in nine minutes at e98e8a2 because its caller paces on docket circuits
     // and a docket that fits one budget completes one every stroke.

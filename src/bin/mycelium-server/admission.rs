@@ -79,7 +79,7 @@ pub(crate) fn sign_position(
         genesis,
         epoch,
         prev_receipt_hash: head.prev_hash(),
-        k: head.stamp.k,
+        at: head.stamp.place(),
         height: head.stamp.h,
         chart: chart.key().as_bytes().to_vec(),
         payload: payload.to_vec(),

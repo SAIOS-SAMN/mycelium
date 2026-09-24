@@ -7,6 +7,7 @@
 //! before and after or nothing is written (`REFUSE_FOLD_INEXACT`).
 
 use super::*;
+use crate::chronometry::Place;
 use crate::network::nerve::Keyed;
 
 /// What a fold did: the rows it replaced, the epoch rows it wrote, and
@@ -95,27 +96,29 @@ pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
 }
 
 impl Treasury {
-    /// The rows anchored at or below `k_head`, in journal order: the
-    /// prefix a fold re-expresses and a witness fetches (`ACT_ROWS`).
-    pub fn rows_below(&self, k_head: u64) -> Vec<Entry> {
-        self.entries.iter().filter(|e| e.k_after() <= k_head).cloned().collect()
+    /// The rows written before the act at `head`, in journal order: the
+    /// prefix a fold at `head` re-expresses and a witness fetches
+    /// (`ACT_ROWS`).
+    pub fn rows_below(&self, head: Place) -> Vec<Entry> {
+        self.entries.iter().filter(|e| e.stands_at() < Some(head)).cloned().collect()
     }
 
-    /// The rows anchored in `from..=to`, in journal order: what `ACT_ROWS`
-    /// serves a witness.
-    /// THE JOURNAL IS IN K ORDER, so the span is a run of it and not a
+    /// The rows standing at `from` or later and written before the act at
+    /// `upto`, in journal order: what `ACT_ROWS` serves a witness. `from`
+    /// is the root the prefix stands on, `None` from the journal's start.
+    /// THE JOURNAL IS IN LINE ORDER, so the span is a run of it and not a
     /// filter over the whole of it. This cloned every matching row out of
     /// an append-only ledger on every `ACT_ROWS` page — O(journal) for a
     /// page of a few rows, per witness, per fold (law 3: the anchor's stamp
     /// is the coordinate that orders them).
-    pub fn rows_span(&self, from: u64, to: u64) -> Vec<Entry> {
-        let at = self.entries.partition_point(|e| e.k_after() < from);
+    pub fn rows_span(&self, from: Option<Place>, upto: Place) -> Vec<Entry> {
+        let at = self.entries.partition_point(|e| e.stands_at() < from);
         let Some(run) = self.entries.get(at..) else {
             return Vec::new();
         };
         let mut out = Vec::new();
         for e in run {
-            if e.k_after() > to {
+            if e.stands_at() >= Some(upto) {
                 break;
             }
             out.push(e.clone());
@@ -123,29 +126,29 @@ impl Treasury {
         out
     }
 
-    /// `nets_of` over the rows anchored at or below `k_head`, with the
+    /// `nets_of` over the rows written before the act at `head`, with the
     /// count of rows the fold replaces.
-    fn nets(&self, k_head: u64) -> Result<(usize, Nets), &'static str> {
-        let prefix = self.rows_below(k_head);
+    fn nets(&self, head: Place) -> Result<(usize, Nets), &'static str> {
+        let prefix = self.rows_below(head);
         Ok((prefix.len(), nets_of(&prefix)?))
     }
 
-    /// What a fold at `k_head` would do, without writing it: the audit
+    /// What a fold at `head` would do, without writing it: the audit
     /// must hold now and the nets must read exact.
-    pub fn fold_reading(&self, k_head: u64) -> Result<Folded, &'static str> {
+    pub fn fold_reading(&self, head: Place) -> Result<Folded, &'static str> {
         self.audit().map_err(|_| crate::verdict::REFUSE_FOLD_INEXACT)?;
-        let (replaced, nets) = self.nets(k_head)?;
+        let (replaced, nets) = self.nets(head)?;
         Ok(Folded { replaced, rows: nets.rows.len(), net: nets.total })
     }
 
-    /// FOLD the rows anchored at or below `k_head` into `epoch` rows
+    /// FOLD the rows written before the act at `head` into `epoch` rows
     /// anchored to the fold receipt. The audit failing before or after, a
     /// net below zero on a lane, or an unpaired transfer half is
     /// `REFUSE_FOLD_INEXACT` and the journal is exactly as it was.
-    pub fn fold(&mut self, k_head: u64, anchor: Anchor) -> Result<Folded, &'static str> {
+    pub fn fold(&mut self, head: Place, anchor: Anchor) -> Result<Folded, &'static str> {
         let inexact = crate::verdict::REFUSE_FOLD_INEXACT;
         self.audit().map_err(|_| inexact)?;
-        let (replaced, nets) = self.nets(k_head)?;
+        let (replaced, nets) = self.nets(head)?;
         let epochs: Vec<Entry> = nets
             .rows
             .iter()
@@ -153,7 +156,7 @@ impl Treasury {
             .collect();
         let before = std::mem::take(&mut self.entries);
         let (issued, burned) = (self.issued, self.burned);
-        let rest = before.iter().filter(|e| e.k_after() > k_head).cloned();
+        let rest = before.iter().filter(|e| e.stands_at() >= Some(head)).cloned();
         self.entries = epochs;
         self.entries.extend(rest);
         self.refold_supply();

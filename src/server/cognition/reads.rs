@@ -38,9 +38,13 @@ impl Kernel {
         let head = match self.chain.head() {
             Some(r) => {
                 let [s, g, t, h] = r.mu;
-                [r.stamp.h, s, g, t, h, r.stamp.k]
+                [r.stamp.h, s, g, t, h, r.stamp.k, r.stamp.i]
             }
-            None => [self.chain.head_height(), 0, 0, 0, 0, self.chain.head_k()],
+            // Before genesis, or on a folded line whose head is the root.
+            None => match self.chain.head_place() {
+                Some(at) => [self.chain.head_height(), 0, 0, 0, 0, at.k, at.i],
+                None => [0; 7],
+            },
         };
         let own = self.chain.vk();
         let at = i64::try_from(head[0]).ok();
@@ -61,7 +65,7 @@ impl Kernel {
             genesis,
             peers,
             persisted: self.persisted,
-            folded: self.chain.root().map(|r| (r.height, r.k)),
+            folded: self.chain.root().map(|r| (r.height, r.at.k)),
             unframed: self.unframed,
             unstamped: self.unstamped(),
             rulings: self.rulings,

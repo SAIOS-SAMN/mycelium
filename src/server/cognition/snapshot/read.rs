@@ -366,8 +366,7 @@ impl Kernel {
                         *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                         *pos += 8;
                     }
-                    let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
+                    let at = crate::chronometry::Place::take_canonical(b, pos)?;
                     let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                     kernel.settlements_cold.push(crate::anastome::dialogue::Settlement {
@@ -377,7 +376,7 @@ impl Kernel {
                         cites,
                         before,
                         after,
-                        k,
+                        at,
                         t_universal: tu,
                     });
                 }

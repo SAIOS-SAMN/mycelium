@@ -16,7 +16,7 @@ use std::sync::Mutex;
 pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
     let Some(p) = kernel.lock().ok().and_then(|k| k.fold_proposal().cloned()) else { return };
     let Some(section) = crate::admission::sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
-    let proposal = dialogue::FoldProposal { k0: p.k0, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
+    let proposal = dialogue::FoldProposal { after: p.after, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
     let Some(body) = dialogue::encode_fold(&proposal) else { return };
     // 47.3: a witness holds bond — room on some lane — and is not this
     // court. The rooms fiber is the peers this court has heard from, in key

@@ -233,8 +233,8 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
         lines.push(match clock {
             Some(observe::Clock::Court(c)) => {
                 heights.push(c.head[0]);
-                let [h, s, g, t, hh, k] = c.head;
-                format!("  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}", c.k)
+                let [h, s, g, t, hh, k, i] = c.head;
+                format!("  {name}  {BOLD}h {h}{RESET}  K {}  stamp {h}:{s}:{g}:{t}:{hh}:{k}.{i}", c.k)
             }
             Some(observe::Clock::Voice(v)) => {
                 heights.push(v.heard);

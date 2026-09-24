@@ -1,17 +1,21 @@
-// 47.2 step 3, S13.10 — the K-range act: the request and the reply round
-// trip, a reply is a page within its budget, and a short one refuses.
+// 47.2 step 3, S13.10 — the place-range act: the request and the reply
+// round trip, a reply is a page within its budget, and a short one refuses.
 
 use crate::anastome::dialogue::*;
-use crate::chronometry::{ActKind, ReceiptChain};
+use crate::chronometry::{ActKind, Place, ReceiptChain};
 
 #[test]
 fn the_receipts_request_and_reply_round_trip_within_the_budget() {
-    let req = encode_receipts_request(&[1; 32], &[2; 32], 3, 9);
+    let (after, upto) = (Some(Place { k: 3, i: 1 }), Place { k: 9, i: 0 });
+    let req = encode_receipts_request(&[1; 32], &[2; 32], after, upto);
+    assert_eq!(decode_receipts_request(&req), Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], after, upto }));
+    assert!(decode_receipts_request(&req[..req.len() - 1]).is_none(), "a short request refuses");
+    let from_start = encode_receipts_request(&[1; 32], &[2; 32], None, upto);
     assert_eq!(
-        decode_receipts_request(&req),
-        Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], from: 3, to: 9 })
+        decode_receipts_request(&from_start).map(|r| (r.after, r.upto)),
+        Some((None, upto)),
+        "a span from the line's start"
     );
-    assert!(decode_receipts_request(&req[..80]).is_none(), "a short request refuses");
 
     let mut c = ReceiptChain::with_vk([2; 32]);
     for lane in 1..=3u64 {

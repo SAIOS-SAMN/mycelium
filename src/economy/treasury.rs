@@ -13,14 +13,12 @@
 /// empty hash: the reading of absence.
 pub type Anchor = (crate::chronometry::Stamp, [u8; 32]);
 
-/// THE K AFTER THE ACT AN ANCHOR STANDS AT: the step the court's next act
-/// takes, which is what orders rows against a fold's prefix. Zero before
-/// genesis, where the anchor stands at no act (the empty hash).
-pub fn k_after(anchor: &Anchor) -> u64 {
-    match anchor.1 == [0u8; 32] {
-        true => 0,
-        false => anchor.0.k + 1,
-    }
+/// THE PLACE OF THE ACT AN ANCHOR STANDS AT on the court's own line: the
+/// row was written after that act and before the next, which is what
+/// orders rows against a fold's prefix. `None` before genesis, where the
+/// anchor stands at no act (the empty hash) — below every place.
+pub fn stands_at(anchor: &Anchor) -> Option<crate::chronometry::Place> {
+    (anchor.1 != [0u8; 32]).then(|| anchor.0.place())
 }
 
 /// Economic tiers for a decentralized mesh running cryptographic semantic
@@ -93,9 +91,9 @@ pub struct Entry {
 }
 
 impl Entry {
-    /// The K after the act this row stands at (see [`k_after`]).
-    pub fn k_after(&self) -> u64 {
-        k_after(&(self.at, self.receipt))
+    /// The place of the act this row stands at (see [`stands_at`]).
+    pub fn stands_at(&self) -> Option<crate::chronometry::Place> {
+        stands_at(&(self.at, self.receipt))
     }
 }
 

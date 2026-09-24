@@ -90,7 +90,7 @@ fn the_five_acts_round_trip() {
         voices: vec![voice],
         escrowed: [1, 2, 3, 4],
         deflation: [0, 0, 7, 0],
-        k: 41,
+        at: crate::chronometry::Place { k: 41, i: 1 },
     };
     let settlement = Settlement {
         listing: listing.clone(),
@@ -99,7 +99,7 @@ fn the_five_acts_round_trip() {
         cites: cites.clone(),
         before: [2, 0, 2, 0],
         after: [0, 0, 1, 0],
-        k: 42,
+        at: crate::chronometry::Place { k: 42, i: 0 },
         t_universal: 7,
     };
     let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));

@@ -5,30 +5,94 @@
 use crate::transducer::address::Address;
 use crate::transducer::stalk::Invariant;
 
-/// THE STAMP (78.21, 78.24): where one act stands in the ledger — the tick
-/// `h` (TUniversal, 45.2), the signer's key, and the signer's own `K`.
+/// WHERE AN ACT STANDS ON ITS SIGNER'S LINE (78.23 as amended): the orbit
+/// `K` and the act's place `i` within it, the finest coordinate. Ordered
+/// orbit first, so the line reads in the order its acts were sealed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
+pub struct Place {
+    pub k: u64,
+    pub i: u64,
+}
+
+impl Place {
+    /// A place's coordinates: the orbit, the act's place in it.
+    pub const LEN: usize = 8 + 8;
+
+    /// A line's first place: the first act of its first orbit.
+    pub const GENESIS: Place = Place { k: 0, i: 0 };
+
+    /// The place written big-endian, `K‖i`, so byte order is line order.
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&self.k.to_be_bytes());
+        out.extend_from_slice(&self.i.to_be_bytes());
+    }
+
+    pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<Place> {
+        let k = u64::from_be_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        let i = u64::from_be_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
+        *p += Self::LEN;
+        Some(Place { k, i })
+    }
+
+    /// The next act in this place's orbit.
+    pub fn within(self) -> Place {
+        Place { k: self.k, i: self.i + 1 }
+    }
+
+    /// The first act of the orbit after this place's.
+    pub fn beyond(self) -> Place {
+        Place { k: self.k + 1, i: 0 }
+    }
+
+    /// Does `next` follow this place on one line: the next act of its
+    /// orbit, or the first of the next orbit. Which of the two the line
+    /// took is the predecessor's to say; the place alone cannot.
+    pub fn is_followed_by(self, next: Place) -> bool {
+        next == self.within() || next == self.beyond()
+    }
+
+    /// A place as it prints, `K.i`.
+    pub fn print(self) -> String {
+        format!("{}.{}", self.k, self.i)
+    }
+}
+
+/// THE STAMP (78.21, 78.24, 78.23 as amended): where one act stands in the
+/// ledger — the tick `h` (TUniversal, 45.2), the signer's key, the
+/// signer's orbit `K` and the act's place `i` in it.
 ///
 /// It is the ledger's KEY. Written coarsest first — `h`, then `vk`, then
-/// `K` — so a prefix is a stratum: `h` alone is everything the mesh did at
-/// one tick, `h‖vk` one signer at that tick. The two integers are written
-/// BIG-endian, the one place the tree does so, because in a key the byte
-/// order IS the order the trie is read in, and big-endian is the order in
-/// which a smaller number reads first.
+/// `K`, then `i` — so a prefix is a stratum: `h` alone is everything the
+/// mesh did at one tick, `h‖vk` one signer at that tick. The integers are
+/// written BIG-endian, the one place the tree does so, because in a key the
+/// byte order IS the order the trie is read in, and big-endian is the
+/// order in which a smaller number reads first.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct Stamp {
     pub h: u64,
     pub vk: [u8; 32],
     pub k: u64,
+    pub i: u64,
 }
 
 impl Stamp {
-    /// A stamp's coordinates: the tick, the key, the step.
-    pub const LEN: usize = 8 + 32 + 8;
+    /// A stamp's coordinates: the tick, the key, the orbit, the place.
+    pub const LEN: usize = 8 + 32 + Place::LEN;
+
+    /// The stamp of one act: its tick, its signer, its place on the line.
+    pub fn new(h: u64, vk: [u8; 32], at: Place) -> Stamp {
+        Stamp { h, vk, k: at.k, i: at.i }
+    }
+
+    /// Where the act stands on its signer's line.
+    pub fn place(&self) -> Place {
+        Place { k: self.k, i: self.i }
+    }
 
     pub fn put_canonical(&self, out: &mut Vec<u8>) {
         out.extend_from_slice(&self.h.to_be_bytes());
         out.extend_from_slice(&self.vk);
-        out.extend_from_slice(&self.k.to_be_bytes());
+        self.place().put_canonical(out);
     }
 
     /// The stamp as the key it is filed under.
@@ -41,9 +105,10 @@ impl Stamp {
     pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<Stamp> {
         let h = u64::from_be_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
         let vk: [u8; 32] = b.get(*p + 8..*p + 40)?.try_into().ok()?;
-        let k = u64::from_be_bytes(b.get(*p + 40..*p + 48)?.try_into().ok()?);
-        *p += Self::LEN;
-        Some(Stamp { h, vk, k })
+        let mut q = *p + 40;
+        let at = Place::take_canonical(b, &mut q)?;
+        *p = q;
+        Some(Stamp::new(h, vk, at))
     }
 
     /// The stamp a key names, exactly or not at all.
@@ -53,12 +118,12 @@ impl Stamp {
         (p == b.len()).then_some(s)
     }
 
-    /// The signer's own line, keyed by `vk‖K`: the relation the range
+    /// The signer's own line, keyed by `vk‖K‖i`: the relation the range
     /// readers ask by (78.24 P1). A coordinate, never the act.
-    pub fn line_key(vk: &[u8; 32], k: u64) -> Vec<u8> {
-        let mut out = Vec::with_capacity(40);
+    pub fn line_key(vk: &[u8; 32], at: Place) -> Vec<u8> {
+        let mut out = Vec::with_capacity(32 + Place::LEN);
         out.extend_from_slice(vk);
-        out.extend_from_slice(&k.to_be_bytes());
+        at.put_canonical(&mut out);
         out
     }
 }
@@ -480,10 +545,10 @@ impl KStepReceipt {
         Some(KStepReceipt { stamp, kind, mu, prev, parents, cites, operator_hash, chain_hash })
     }
 
-    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:k`: the tick, the frame
-    /// the act measured, the signer's `K`.
+    /// CK1 — THE STAMP AS IT PRINTS, `h:S:G:T:H:K.i`: the tick, the frame
+    /// the act measured, the signer's orbit and the act's place in it.
     pub fn print(&self) -> String {
         let [s, g, t, h] = self.mu;
-        format!("{}:{s}:{g}:{t}:{h}:{}", self.stamp.h, self.stamp.k)
+        format!("{}:{s}:{g}:{t}:{h}:{}", self.stamp.h, self.stamp.place().print())
     }
 }

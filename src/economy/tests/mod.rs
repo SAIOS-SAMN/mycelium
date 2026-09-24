@@ -16,5 +16,10 @@ pub(super) fn word(b: impl AsRef<[u8]>) -> crate::transducer::address::Address {
 /// no act — before genesis — and its next act takes `K = 0`.
 pub(super) fn at(n: u64, hash: [u8; 32]) -> crate::economy::Anchor {
     let k = n.checked_sub(1).map_or(0, |k| k);
-    (crate::chronometry::Stamp { h: k, vk: [0; 32], k }, hash)
+    (crate::chronometry::Stamp { h: k, vk: [0; 32], k, i: 0 }, hash)
+}
+
+/// THE PLACE OF ACT `k` while every act closes its orbit: a fold's head.
+pub(super) fn place(k: u64) -> crate::chronometry::Place {
+    crate::chronometry::Place { k, i: 0 }
 }

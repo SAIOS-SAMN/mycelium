@@ -11,10 +11,10 @@
 use crate::exchange::Mesh;
 use crate::transport::tell_peer;
 use mycelium::anastome::dialogue;
-use mycelium::chronometry::KStepReceipt;
+use mycelium::chronometry::{KStepReceipt, Place};
 
-/// THE PAGE SOURCE OVER THE WIRE: a page of `who`'s receipts in `lo..=hi`,
-/// asked of the signer that owns the chain.
+/// THE PAGE SOURCE OVER THE WIRE: a page of `who`'s receipts strictly
+/// after `after` up to `upto`, asked of the signer that owns the chain.
 ///
 /// ASK THE SIGNER THAT OWNS THE CHAIN, not the one that mentioned it. Every
 /// frontier entry went to `dest` — the peer whose digest reported the gap —
@@ -29,8 +29,11 @@ use mycelium::chronometry::KStepReceipt;
 /// fallback for a signer this node has no address for — a proxy hop is
 /// worse than the direct ask and better than none. `None` where the peer
 /// did not answer, deferred, or sent no page.
-pub(crate) fn fetch<'a>(mesh: &'a Mesh, dest: &'a str) -> impl FnMut(&[u8; 32], u64, u64) -> Option<Vec<KStepReceipt>> + 'a {
-    move |who: &[u8; 32], lo: u64, hi: u64| {
+pub(crate) fn fetch<'a>(
+    mesh: &'a Mesh,
+    dest: &'a str,
+) -> impl FnMut(&[u8; 32], Option<Place>, Place) -> Option<Vec<KStepReceipt>> + 'a {
+    move |who: &[u8; 32], after: Option<Place>, upto: Place| {
         let at = match mesh.addrs.lock() {
             Ok(a) => a.get(who).cloned(),
             Err(_) => None,
@@ -39,7 +42,7 @@ pub(crate) fn fetch<'a>(mesh: &'a Mesh, dest: &'a str) -> impl FnMut(&[u8; 32], 
             Some(a) => a.as_str(),
             None => dest,
         };
-        let req = dialogue::encode_receipts_request(&mesh.vk, who, lo, hi);
+        let req = dialogue::encode_receipts_request(&mesh.vk, who, after, upto);
         let (reply, _) = tell_peer(to_ask, req)?;
         if crate::transport::is_deferred(&reply) {
             return None;

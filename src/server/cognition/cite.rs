@@ -180,7 +180,7 @@ impl Kernel {
     /// THE MAXIMAL ANTICHAIN of what this step has admitted: the
     /// un-dominated heads of the peer DAG, which is what 47.2 step 3 means
     /// by citing a parent. Two prunes, both bounded by the mesh's width:
-    /// per signer, only its highest `K` (a line is reached through its
+    /// per signer, only its highest place (a line is reached through its
     /// head); and a head another head cites directly, read off that head's
     /// own node. What is left is a superset of the antichain, never a
     /// subset, so no parent a height re-derives through is dropped.
@@ -188,7 +188,7 @@ impl Kernel {
         let mut heads: crate::network::nerve::Keyed<Parent> = crate::network::nerve::Keyed::new();
         for (_, p) in queued.scoped() {
             match heads.get(&p.at.vk) {
-                Some(h) if h.at.k >= p.at.k => {}
+                Some(h) if h.at.place() >= p.at.place() => {}
                 _ => {
                     heads.insert(p.at.vk, *p);
                 }

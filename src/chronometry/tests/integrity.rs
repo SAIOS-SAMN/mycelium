@@ -11,7 +11,8 @@ fn the_ledger_is_temporal_authority_and_tamper_evident() {
     c.append(ActKind::List, [2, 0, 0, 0], Vec::new(), [9; 32], Vec::new()).expect("second");
     let r = c.append(ActKind::List, [3, 0, 0, 0], Vec::new(), [8; 32], Vec::new()).expect("third").clone();
     assert_eq!(r.stamp.k, 2, "K is the algebraic clock");
-    assert_eq!(r.print(), "2:3:0:0:0:2", "the stamp prints h:S:G:T:H:k");
+    assert_eq!(r.stamp.i, 0, "every act closes its orbit until the cycles close by name");
+    assert_eq!(r.print(), "2:3:0:0:0:2.0", "the stamp prints h:S:G:T:H:K.i");
     assert_eq!(c.head_k(), 2, "head_k is the last receipt");
     assert_eq!(c.next_step_index(), 3, "next is one past the head");
     assert!(c.verify_chain_integrity());
@@ -21,7 +22,7 @@ fn the_ledger_is_temporal_authority_and_tamper_evident() {
     // tag, the count, then the genesis node whole, then the second's
     // stamp and kind.
     let mut first = Vec::new();
-    c.at_k(0).expect("genesis").write(&mut first).expect("writes");
+    c.at_place(crate::chronometry::Place::GENESIS).expect("genesis").write(&mut first).expect("writes");
     let lane = 32 + 1 + 8 + first.len() + Stamp::LEN + 1;
     let mut bad = tape.clone();
     bad[lane] ^= 1;
@@ -64,7 +65,7 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
 /// admitting stamp, a fold's root; each rides the tape and the hash.
 #[test]
 fn a_nodes_citations_ride_the_tape_and_the_hash() {
-    let at = Stamp { h: 4, vk: [3; 32], k: 9 };
+    let at = Stamp { h: 4, vk: [3; 32], k: 9, i: 2 };
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
     let root = Cite::Root { at, hash: [5; 32] };
     let mut c = ReceiptChain::with_vk([1; 32]);

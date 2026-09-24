@@ -208,7 +208,7 @@ impl Kernel {
                     addr[1],
                     voice[0],
                     voice[1],
-                    self.chain.head_k()
+                    self.chain.head_label()
                 );
                 Ok(Adjudication::Ratified { receipt })
             }
@@ -220,7 +220,7 @@ impl Kernel {
                     addr[1],
                     voice[0],
                     voice[1],
-                    self.chain.head_k()
+                    self.chain.head_label()
                 );
                 Ok(Adjudication::Stood { receipt })
             }
@@ -246,7 +246,7 @@ impl Kernel {
             voice[1],
             kind.label(),
             refusal.at.label(),
-            self.chain.head_k()
+            self.chain.head_label()
         );
         self.refusals.insert(
             addr,

@@ -33,16 +33,20 @@ fn a_ruling_is_answered_with_the_arm_it_reached() {
         _ => panic!("the arm it was encoded as"),
     }
 
-    let back = decode_ruled(&encode_ruled(&Ruled::Gap { from: 7, to: 19 }).expect("frames"))
-        .expect("a gap parses whole");
+    let (from, to) = (Some(crate::chronometry::Place { k: 7, i: 2 }), crate::chronometry::Place { k: 19, i: 0 });
+    let back = decode_ruled(&encode_ruled(&Ruled::Gap { from, to }).expect("frames")).expect("a gap parses whole");
     match back {
-        Ruled::Gap { from, to } => assert_eq!(
-            (from, to),
-            (7, 19),
-            "a gap names the span to back-fill, which a zero byte could not"
-        ),
+        Ruled::Gap { from: f, to: t } => {
+            assert_eq!((f, t), (from, to), "a gap names the span to back-fill, which a zero byte could not")
+        }
         _ => panic!("the arm it was encoded as"),
     }
+    let open = encode_ruled(&Ruled::Gap { from: None, to }).expect("frames");
+    assert!(
+        matches!(decode_ruled(&open), Some(Ruled::Gap { from: None, to: t }) if t == to),
+        "and one from the line's start"
+    );
+    assert!(decode_ruled(&open[..open.len() - 1]).is_none(), "a short gap refuses");
 
     assert!(decode_ruled(&[9u8]).is_none(), "an undefined arm refuses the frame");
     assert!(decode_ruled(&[]).is_none());

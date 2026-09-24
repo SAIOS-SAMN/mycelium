@@ -339,7 +339,7 @@ impl Kernel {
             for m in &s.after {
                 row.extend_from_slice(&m.to_le_bytes());
             }
-            row.extend_from_slice(&s.k.to_le_bytes());
+            s.at.put_canonical(&mut row);
             row.extend_from_slice(&s.t_universal.to_le_bytes());
             body.append(&mut row);
             kept += 1;

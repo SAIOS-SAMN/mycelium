@@ -2,15 +2,15 @@
 // hot chain standing on, the two organs that signed it, and the cold
 // prefix it archived.
 
-use super::receipt::KStepReceipt;
+use super::receipt::{KStepReceipt, Place};
 
-/// THE FOLD ROOT: the archived prefix's head — its K, chain hash and
-/// height. The hot chain continues from it: the next receipt's K is one
-/// past it and its `prev_receipt_hash` is this hash, so the chain never
+/// THE FOLD ROOT: the archived prefix's head — its place, chain hash and
+/// height. The hot chain continues from it: the next receipt's place
+/// follows it and its `prev_receipt_hash` is this hash, so the chain never
 /// breaks and heights continue.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Root {
-    pub k: u64,
+    pub at: Place,
     pub hash: [u8; 32],
     pub height: u64,
 }
@@ -42,10 +42,10 @@ pub struct Era {
     pub sig_home: [u8; 64],
     pub sig_witness: [u8; 64],
     pub identities: u32,
-    /// The first K this era holds; `root.k` is its last. Written out
-    /// rather than read off `receipts`, so a descriptor whose payload is
-    /// on disk still names its own range.
-    pub first: u64,
+    /// The first place this era holds; `root.at` is its last. Written
+    /// out rather than read off `receipts`, so a descriptor whose payload
+    /// is on disk still names its own range.
+    pub first: Place,
     /// How many receipts the payload holds.
     pub count: u32,
     /// Where the payload begins in the cold segment. `None` on an era
@@ -56,9 +56,9 @@ pub struct Era {
 }
 
 impl Era {
-    /// The first K the era holds; the root is its last.
-    pub fn first_k(&self) -> Option<u64> {
-        Some(self.first)
+    /// The first place the era holds; the root is its last.
+    pub fn first_place(&self) -> Place {
+        self.first
     }
 
     /// The era with its payload shed: what the court keeps once the
@@ -80,7 +80,7 @@ impl Era {
         rec.extend_from_slice(&self.sig_home);
         rec.extend_from_slice(&self.sig_witness);
         rec.extend_from_slice(&self.identities.to_le_bytes());
-        rec.extend_from_slice(&self.first.to_le_bytes());
+        self.first.put_canonical(&mut rec);
         rec.extend_from_slice(&self.count.to_le_bytes());
         // `at` is the payload's place in the cold segment; a descriptor
         // that has one carries no receipts on this tape, and one that does
@@ -137,7 +137,7 @@ impl Era {
         let sig_home: [u8; 64] = take(pos, 64)?.try_into().ok()?;
         let sig_witness: [u8; 64] = take(pos, 64)?.try_into().ok()?;
         let identities = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
-        let first = u64::from_le_bytes(take(pos, 8)?.try_into().ok()?);
+        let first = Place::take_canonical(b, pos)?;
         let count = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
         #[expect(
             clippy::disallowed_methods,
@@ -154,23 +154,22 @@ impl Era {
 }
 
 impl Root {
-    /// The root's tape: K, hash, height.
-    pub const TAPE: usize = 8 + 32 + 8;
+    /// The root's tape: place, hash, height.
+    pub const TAPE: usize = Place::LEN + 32 + 8;
 
     pub fn write(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&self.k.to_le_bytes());
+        self.at.put_canonical(out);
         out.extend_from_slice(&self.hash);
         out.extend_from_slice(&self.height.to_le_bytes());
     }
 
     pub fn read(b: &[u8], pos: &mut usize) -> Option<Root> {
-        let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
+        let at = Place::take_canonical(b, pos)?;
         let hash: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
         let height = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
         *pos += 8;
-        Some(Root { k, hash, height })
+        Some(Root { at, hash, height })
     }
 
     /// A root or none, as one tag byte then the root: `0` none, `1` root.

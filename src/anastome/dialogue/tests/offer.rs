@@ -11,7 +11,7 @@ fn section_at(payload: &[u8], vk: [u8; 32]) -> ReceiptSection {
             genesis: [7; 32],
             epoch: 2,
             prev_receipt_hash: r.prev_hash(),
-            k: r.stamp.k,
+            at: r.stamp.place(),
             height: r.stamp.h,
             chart: vec![1, 2, 3],
             payload: payload.to_vec(),

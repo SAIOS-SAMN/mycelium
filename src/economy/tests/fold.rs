@@ -1,7 +1,7 @@
 // 45.8, §2, §6 across a fold — the prefix re-expressed as epoch rows, and
 // what a fold refuses.
 
-use super::at;
+use super::{at, place};
 use crate::economy::*;
 use crate::verdict::REFUSE_FOLD_INEXACT;
 
@@ -25,7 +25,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     let rows = t.entries().len();
     assert_eq!(rows, 7, "genesis, stake, mint, two transfer halves, burn, and a mint above the fold");
 
-    let folded = t.fold(5, a(7)).expect("a conserving prefix folds");
+    let folded = t.fold(place(5), a(7)).expect("a conserving prefix folds");
     assert_eq!(t.audit().expect("conserves after the fold"), before, "the supply is unchanged");
     assert_eq!(folded, Folded { replaced: 6, rows: 2, net: [13, 10, 12, 10] });
     let epochs: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Epoch).collect();
@@ -46,13 +46,13 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     assert_eq!(back.entries(), t.entries());
     assert_eq!(back.audit().expect("a restored fold conserves"), before);
 
-    let again = t.fold(7, a(8)).expect("a fold over epoch rows folds");
+    let again = t.fold(place(7), a(8)).expect("a fold over epoch rows folds");
     assert_eq!(again.rows, 3, "one epoch row per identity, the mint above joining");
     assert_eq!(t.audit().expect("still conserves"), before);
 
     let mut broken = Treasury::new();
     broken.genesis([1; 32], [10, 0, 0, 0], a(1));
     broken.credit([1; 32], [1, 0, 0, 0]);
-    assert_eq!(broken.fold(1, a(2)), Err(REFUSE_FOLD_INEXACT));
+    assert_eq!(broken.fold(place(1), a(2)), Err(REFUSE_FOLD_INEXACT));
     assert_eq!(broken.entries().len(), 1, "a ledger that does not conserve writes nothing");
 }

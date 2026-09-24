@@ -2,14 +2,14 @@
 // the stamp, and the order two receipts stand in.
 //
 //! Every node this court holds — its own line and the peer receipts it
-//! admitted — sits ONCE at its stamp `h‖vk‖K`. `fiber(h)` is the mesh at
+//! admitted — sits ONCE at its stamp `h‖vk‖K‖i`. `fiber(h)` is the mesh at
 //! one tick, `fiber(h‖vk)` one signer at it. A signer's line is read by
-//! `vk‖K`, the one relation the range readers ask by (78.24 P1), and the
+//! `vk‖K‖i`, the one relation the range readers ask by (78.24 P1), and the
 //! append order is one reader's trajectory through the carrier, never the
 //! carrier.
 
 use super::era::Root;
-use super::receipt::{ActKind, Cite, KStepReceipt, Parent, Stamp};
+use super::receipt::{ActKind, Cite, KStepReceipt, Parent, Place, Stamp};
 use crate::network::nerve::Keyed;
 use crate::physics::Budget;
 
@@ -18,12 +18,12 @@ use crate::physics::Budget;
 pub struct ReceiptChain {
     /// Every node held, keyed by its stamp.
     nodes: Keyed<KStepReceipt>,
-    /// `vk‖K → h`: each signer's line, coordinates only.
+    /// `vk‖K‖i → h`: each signer's line, coordinates only.
     lines: Keyed<u64>,
-    /// `vk → K`: the greatest `K` held on each signer's line — where 47.2
-    /// step 3 reads a signer's head. Kept where a node is held, rebuilt
-    /// at restore from the nodes.
-    tops: Keyed<u64>,
+    /// `vk → (K, i)`: the greatest place held on each signer's line —
+    /// where 47.2 step 3 reads a signer's head. Kept where a node is held,
+    /// rebuilt at restore from the nodes.
+    tops: Keyed<Place>,
     /// THE FOLD ROOT (45.8): the archived prefix's head this chain's own
     /// line stands on, or none before the first fold.
     root: Option<Root>,
@@ -31,37 +31,37 @@ pub struct ReceiptChain {
     /// The stamp of this chain's own last receipt.
     head: Option<Stamp>,
     /// WHERE A PEER NODE STANDS AGAINST THIS CHAIN'S OWN LINE, by our
-    /// `K`, keyed by the peer's stamp (see [`Placed`]).
+    /// place, keyed by the peer's stamp (see [`Placed`]).
     placed: Keyed<Placed>,
 }
 
 /// A PEER NODE'S TWO COORDINATES against this chain's own line, as our
-/// `K`. Our receipts are a line — `K` orders them exactly — so a peer
-/// node needs only say where it cuts it. `None` while unmeasured, which is
-/// not zero (rule 11). A fold removes receipts from the line and renumbers
-/// nothing: a `K` stays the coordinate it was.
+/// place `(K, i)`. Our receipts are a line — the place orders them exactly
+/// — so a peer node needs only say where it cuts it. `None` while
+/// unmeasured, which is not zero (rule 11). A fold removes receipts from
+/// the line and renumbers nothing: a place stays the coordinate it was.
 #[derive(Clone, Copy, Debug, Default)]
 struct Placed {
-    /// The GREATEST of our `K` the peer node reaches: `ours(K) ≺ p` iff
-    /// `K ≤ ours_in`.
-    ours_in: Option<u64>,
-    /// The LEAST of our `K` that reaches the peer node: `p ≺ ours(K)` iff
-    /// `reach ≤ K`.
-    reach: Option<u64>,
+    /// The GREATEST of our places the peer node reaches: `ours(a) ≺ p` iff
+    /// `a ≤ ours_in`.
+    ours_in: Option<Place>,
+    /// The LEAST of our places that reaches the peer node: `p ≺ ours(a)`
+    /// iff `reach ≤ a`.
+    reach: Option<Place>,
 }
 
 /// Where a stamp stands: on this chain's own line, or beside it.
 enum Stands {
-    Own(u64),
+    Own(Place),
     Peer(Placed),
 }
 
 /// The larger of a held reading and a new one; an unmeasured reading
 /// takes the new.
-fn raise(held: Option<u64>, k: u64) -> Option<u64> {
+fn raise(held: Option<Place>, at: Place) -> Option<Place> {
     Some(match held {
-        Some(m) if m >= k => m,
-        _ => k,
+        Some(m) if m >= at => m,
+        _ => at,
     })
 }
 
@@ -79,17 +79,28 @@ impl ReceiptChain {
         self.vk
     }
 
-    /// The first `K` the hot line holds: genesis, or one past the root.
-    fn first_k(&self) -> u64 {
-        self.root.map_or(0, |r| r.k + 1)
+    /// The place the hot line opens at: genesis, or the one after the root.
+    fn first_place(&self) -> Place {
+        self.root.map_or(Place::GENESIS, |r| self.after(r.at))
     }
 
-    /// The next step index — the current `K`.
-    pub fn next_step_index(&self) -> u64 {
+    /// THE PLACE AN ACT TAKES AFTER ONE AT `at`: the first act of the next
+    /// orbit — every act closes its orbit until the cycles close by name.
+    fn after(&self, at: Place) -> Place {
+        at.beyond()
+    }
+
+    /// The place the next act of this chain's own line takes.
+    pub fn next_place(&self) -> Place {
         match self.head {
-            Some(s) => s.k + 1,
-            None => self.first_k(),
+            Some(s) => self.after(s.place()),
+            None => self.first_place(),
         }
+    }
+
+    /// The orbit the next act stands in — the current `K`.
+    pub fn next_step_index(&self) -> u64 {
+        self.next_place().k
     }
 
     /// The node at one stamp.
@@ -97,19 +108,35 @@ impl ReceiptChain {
         self.nodes.get(&at.key())
     }
 
-    /// The node a signer holds at one `K`, through the line relation.
-    pub fn at(&self, vk: &[u8; 32], k: u64) -> Option<&KStepReceipt> {
-        let h = *self.lines.get(&Stamp::line_key(vk, k))?;
-        self.node(&Stamp { h, vk: *vk, k })
+    /// The node a signer holds at one place, through the line relation.
+    pub fn at(&self, vk: &[u8; 32], at: Place) -> Option<&KStepReceipt> {
+        let h = *self.lines.get(&Stamp::line_key(vk, at))?;
+        self.node(&Stamp::new(h, *vk, at))
     }
 
-    /// This chain's own receipt at one `K`.
-    pub fn at_k(&self, k: u64) -> Option<&KStepReceipt> {
-        self.at(&self.vk, k)
+    /// This chain's own receipt at one place.
+    pub fn at_place(&self, at: Place) -> Option<&KStepReceipt> {
+        self.at(&self.vk, at)
+    }
+
+    /// A SIGNER'S LINE BETWEEN TWO PLACES: the nodes strictly after
+    /// `after` (from the line's start where `None`) up to and including
+    /// `upto`, in line order, at most `n` — read off the line relation by
+    /// the signer's prefix, never by counting places.
+    pub fn line_between(&self, vk: &[u8; 32], after: Option<Place>, upto: Place, n: usize) -> Vec<&KStepReceipt> {
+        let Some(line) = self.lines.fiber_at(vk) else { return Vec::new() };
+        line.filter_map(|(key, &h)| {
+            let mut p = 32usize;
+            let at = Place::take_canonical(&key, &mut p)?;
+            (after.is_none_or(|a| a < at) && at <= upto).then_some((at, h))
+        })
+        .take(n)
+        .filter_map(|(at, h)| self.node(&Stamp::new(h, *vk, at)))
+        .collect()
     }
 
     /// A SIGNER'S HEAD as this ledger holds it: the node at the greatest
-    /// `K` on its line.
+    /// place on its line.
     pub fn line_head(&self, vk: &[u8; 32]) -> Option<&KStepReceipt> {
         self.at(vk, *self.tops.get(vk)?)
     }
@@ -122,8 +149,8 @@ impl ReceiptChain {
 
     /// File one node's stamp on its signer's line, raising the line's top.
     fn file_on_line(&mut self, at: &Stamp) {
-        self.lines.insert(Stamp::line_key(&at.vk, at.k), at.h);
-        let top = raise(self.tops.get(&at.vk).copied(), at.k);
+        self.lines.insert(Stamp::line_key(&at.vk, at.place()), at.h);
+        let top = raise(self.tops.get(&at.vk).copied(), at.place());
         if let Some(top) = top {
             self.tops.insert(at.vk, top);
         }
@@ -137,7 +164,7 @@ impl ReceiptChain {
     /// THE RECEIPT THIS HOT LINE OPENS AT — genesis, or the first after a
     /// fold.
     pub fn opening(&self) -> Option<&KStepReceipt> {
-        self.at_k(self.first_k())
+        self.at_place(self.first_place())
     }
 
     /// The head's chain hash (the root's before the first hot receipt; the
@@ -151,10 +178,21 @@ impl ReceiptChain {
 
     /// The head's stamp, or the root's before the first hot receipt.
     pub fn head_stamp(&self) -> Option<Stamp> {
-        self.head.or_else(|| self.root.map(|r| Stamp { h: r.height, vk: self.vk, k: r.k }))
+        self.head.or_else(|| self.root.map(|r| Stamp::new(r.height, self.vk, r.at)))
     }
 
-    /// The head receipt's `K`. Zero before genesis.
+    /// The head receipt's place, or none before genesis.
+    pub fn head_place(&self) -> Option<Place> {
+        self.head_stamp().map(|s| s.place())
+    }
+
+    /// The head receipt's place as a line prints it, `K.i`, or `none`
+    /// before genesis.
+    pub fn head_label(&self) -> String {
+        self.head_place().map_or_else(|| "none".to_string(), Place::print)
+    }
+
+    /// The head receipt's orbit `K`. Zero before genesis.
     pub fn head_k(&self) -> u64 {
         self.head_stamp().map_or(0, |s| s.k)
     }
@@ -169,19 +207,21 @@ impl ReceiptChain {
         self.root
     }
 
-    /// THIS CHAIN'S OWN LINE, in `K` order: the line relation read by the
+    /// THIS CHAIN'S OWN LINE, in line order: the line relation read by the
     /// signer's prefix.
     pub fn own(&self) -> impl Iterator<Item = &KStepReceipt> + '_ {
         let vk = self.vk;
         self.lines.fiber_at(&vk).into_iter().flatten().filter_map(move |(key, &h)| {
-            let k = u64::from_be_bytes(key.get(32..40)?.try_into().ok()?);
-            self.node(&Stamp { h, vk, k })
+            let mut p = 32usize;
+            let at = Place::take_canonical(&key, &mut p)?;
+            self.node(&Stamp::new(h, vk, at))
         })
     }
 
-    /// How many receipts the hot line holds.
+    /// How many receipts the hot line holds: its nodes counted, never a
+    /// difference of places.
     pub fn own_len(&self) -> u64 {
-        self.next_step_index() - self.first_k()
+        self.own().count() as u64
     }
 
     /// EVERY NODE AT ONE TICK — the mesh's width at `h`.
@@ -197,31 +237,25 @@ impl ReceiptChain {
         self.nodes.scoped().map(|(_, r)| r)
     }
 
-    /// FOLD (45.8): this chain's own receipts at or below `k` leave the
-    /// ledger and are returned, cold, in `K` order, with the root they
+    /// FOLD (45.8): this chain's own receipts at or below `upto` leave the
+    /// ledger and are returned, cold, in line order, with the root they
     /// leave the line standing on. `None` when no hot receipt sits at or
-    /// below `k`.
-    pub fn fold_before(&mut self, k: u64) -> Option<(Vec<KStepReceipt>, Root)> {
-        let last = match self.head {
-            Some(h) if h.k <= k => h.k,
-            Some(_) => k,
-            None => return None,
-        };
-        let first = self.first_k();
-        if last < first {
-            return None;
-        }
+    /// below `upto`.
+    pub fn fold_before(&mut self, upto: Place) -> Option<(Vec<KStepReceipt>, Root)> {
+        self.head?;
+        let vk = self.vk;
+        let places: Vec<Place> = self.line_between(&vk, None, upto, usize::MAX).iter().map(|r| r.stamp.place()).collect();
         let mut cold = Vec::new();
         let mut top = None;
-        for at in first..=last {
-            let Some(h) = self.lines.remove(&Stamp::line_key(&self.vk, at)) else { continue };
-            if let Some(r) = self.nodes.remove(&Stamp { h, vk: self.vk, k: at }.key()) {
-                top = Some(Root { k: r.stamp.k, hash: r.chain_hash, height: r.stamp.h });
+        for at in places {
+            let Some(h) = self.lines.remove(&Stamp::line_key(&vk, at)) else { continue };
+            if let Some(r) = self.nodes.remove(&Stamp::new(h, vk, at).key()) {
+                top = Some(Root { at: r.stamp.place(), hash: r.chain_hash, height: r.stamp.h });
                 cold.push(r);
             }
         }
         let root = top?;
-        if self.head.is_some_and(|h| h.k <= last) {
+        if self.head.is_some_and(|h| h.place() <= root.at) {
             self.head = None;
         }
         self.root = Some(root);
@@ -240,7 +274,7 @@ impl ReceiptChain {
     fn line_prev(&self) -> Option<Parent> {
         match self.head() {
             Some(r) => Some(Parent { at: r.stamp, hash: r.chain_hash }),
-            None => self.root.map(|r| Parent { at: Stamp { h: r.height, vk: self.vk, k: r.k }, hash: r.hash }),
+            None => self.root.map(|r| Parent { at: Stamp::new(r.height, self.vk, r.at), hash: r.hash }),
         }
     }
 
@@ -277,10 +311,10 @@ impl ReceiptChain {
         r.prev.iter().chain(r.parents.iter()).map(|p| p.at)
     }
 
-    /// THE GREATEST OF OUR OWN `K` A PEER NODE REACHES. The descent runs
+    /// THE GREATEST OF OUR OWN PLACES A PEER NODE REACHES. The descent runs
     /// over the held nodes and stops at one of ours (the line settles it)
     /// or at a peer node already placed; the held set bounds it (rule 10).
-    fn ours_in_of(&self, r: &KStepReceipt) -> Option<u64> {
+    fn ours_in_of(&self, r: &KStepReceipt) -> Option<Place> {
         let mut ours_in = None;
         let mut seen: Keyed<()> = Keyed::new();
         let mut stack: Vec<Stamp> = Self::edges(r).collect();
@@ -296,7 +330,7 @@ impl ReceiptChain {
             }
             seen.insert(&key, ());
             if at.vk == self.vk {
-                ours_in = raise(ours_in, at.k);
+                ours_in = raise(ours_in, at.place());
                 continue;
             }
             if let Some(p) = self.placed.get(&key) {
@@ -313,7 +347,7 @@ impl ReceiptChain {
 
     /// OUR RECEIPT AT `k` REACHES EVERYTHING ITS PARENTS REACH: each peer
     /// node in that ancestry is first reached at `k` unless it was before.
-    fn mark_reached(&mut self, k: u64, parents: &[Parent]) {
+    fn mark_reached(&mut self, k: Place, parents: &[Parent]) {
         let mut stack: Vec<Stamp> = parents.iter().map(|p| p.at).collect();
         let mut left = self.nodes.len() + 1;
         while let Some(at) = stack.pop() {
@@ -340,7 +374,7 @@ impl ReceiptChain {
 
     fn stands(&self, at: &Stamp) -> Option<Stands> {
         if at.vk == self.vk {
-            return self.node(at).map(|_| Stands::Own(at.k));
+            return self.node(at).map(|_| Stands::Own(at.place()));
         }
         let key = at.key();
         match (self.placed.get(&key).copied(), self.nodes.contains(&key)) {
@@ -382,7 +416,7 @@ impl ReceiptChain {
     }
 
     /// THE STAMP THE NEXT RECEIPT CITING `parents` WILL TAKE: this chain's
-    /// key, the next `K`, and the height `1 + max` over the predecessor and
+    /// key, the next place, and the height `1 + max` over the predecessor and
     /// the parents. An act that admits what it names cites itself by it.
     /// `None` where a parent is not held.
     pub fn next_stamp(&self, parents: &[Parent]) -> Option<Stamp> {
@@ -393,11 +427,11 @@ impl ReceiptChain {
         for q in parents {
             heights.push(self.height_of(q)?);
         }
-        Some(Stamp { h: height_over(&heights), vk: self.vk, k: self.next_step_index() })
+        Some(Stamp::new(height_over(&heights), self.vk, self.next_place()))
     }
 
     /// Append the next receipt (45.1): its stamp is this chain's key at
-    /// the next `K` and the height `1 + max` over its predecessor and the
+    /// the next place and the height `1 + max` over its predecessor and the
     /// parents it cites, each of which this chain must hold (an unheld
     /// parent is unmeasured height, and the append refuses). `None` where
     /// a parent is not held or a citation cannot be written (LD0).
@@ -410,7 +444,7 @@ impl ReceiptChain {
         parents: Vec<Parent>,
     ) -> Option<&KStepReceipt> {
         let stamp = self.next_stamp(&parents)?;
-        let k = stamp.k;
+        let k = stamp.place();
         let prev = self.line_prev();
         let r = KStepReceipt::seal(stamp, kind, mu, prev, parents, cites, operator_hash)?;
         self.mark_reached(k, &r.parents);
@@ -420,15 +454,19 @@ impl ReceiptChain {
         self.head()
     }
 
-    /// Verify the hot line: `K` contiguous from its opening, every node's
-    /// predecessor the one before it (or the root), every height
-    /// re-derived from its predecessor and parents, every hash re-derived
-    /// from its coordinates.
+    /// Verify the hot line: contiguous from its opening — every node's
+    /// predecessor the one before it (or the root), and its place one that
+    /// follows the predecessor's — every height re-derived from its
+    /// predecessor and parents, every hash re-derived from its coordinates.
     pub fn verify_chain_integrity(&self) -> bool {
-        let mut prev = self.root.map(|r| Parent { at: Stamp { h: r.height, vk: self.vk, k: r.k }, hash: r.hash });
-        let mut want_k = self.first_k();
+        let mut prev = self.root.map(|r| Parent { at: Stamp::new(r.height, self.vk, r.at), hash: r.hash });
+        let mut last = None;
         for r in self.own() {
-            if r.stamp.k != want_k || r.prev != prev {
+            let follows = match prev {
+                Some(p) => p.at.place().is_followed_by(r.stamp.place()),
+                None => r.stamp.place() == Place::GENESIS,
+            };
+            if !follows || r.prev != prev {
                 return false;
             }
             let mut heights: Vec<u64> = prev.iter().map(|p| p.at.h).collect();
@@ -441,9 +479,9 @@ impl ReceiptChain {
                 return false;
             }
             prev = Some(Parent { at: r.stamp, hash: r.chain_hash });
-            want_k += 1;
+            last = Some(r.stamp);
         }
-        self.head.map_or(want_k == self.first_k(), |h| h.k + 1 == want_k)
+        self.head == last
     }
 
     /// `a ≺ b` (45.3): is `a` a proper ancestor of `b` in what this chain
@@ -480,7 +518,7 @@ impl ReceiptChain {
             c.file_on_line(&r.stamp);
             if r.stamp.vk == vk {
                 c.head = Some(match c.head {
-                    Some(h) if h.k >= r.stamp.k => h,
+                    Some(h) if h.place() >= r.stamp.place() => h,
                     _ => r.stamp,
                 });
             } else {
@@ -499,7 +537,7 @@ impl ReceiptChain {
             let ours_in = c.ours_in_of(&r);
             c.placed.insert(at.key(), Placed { ours_in, reach: None });
         }
-        let own: Vec<(u64, Vec<Parent>)> = c.own().map(|r| (r.stamp.k, r.parents.clone())).collect();
+        let own: Vec<(Place, Vec<Parent>)> = c.own().map(|r| (r.stamp.place(), r.parents.clone())).collect();
         for (k, parents) in own {
             c.mark_reached(k, &parents);
         }

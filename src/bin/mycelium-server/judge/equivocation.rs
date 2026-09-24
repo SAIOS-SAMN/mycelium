@@ -25,7 +25,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let refuse = |s: &mut TcpStream, why: &str| {
         eprintln!(
             "  court equivocation refused {:02x}{:02x}… K {}: {why}",
-            a.receipt.stamp.vk[0], a.receipt.stamp.vk[1], a.receipt.stamp.k
+            a.receipt.stamp.vk[0], a.receipt.stamp.vk[1], a.receipt.stamp.place().print()
         );
         say(s, dialogue::Ruled::Refused(why.as_bytes().to_vec()));
     };
@@ -64,7 +64,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let Ok(mut k) = door.kernel.lock() else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
-            proof.vk[0], proof.vk[1], proof.k
+            proof.vk[0], proof.vk[1], proof.at.print()
         );
         return;
     };

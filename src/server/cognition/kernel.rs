@@ -48,8 +48,10 @@ pub struct Kernel {
     /// Held words keyed by (chart, axis). Filled at `ruled.admit`, emptied
     /// at cavity relocation and basis remove.
     pub(crate) axis_index: crate::transducer::sentence::AxisIndex,
-    /// Court replay of A20 certificates: citer → (certificate key → (ok, K)).
-    pub(crate) replay_memo: crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, u64)>>,
+    /// Court replay of A20 certificates: citer → (certificate key → (ok,
+    /// the head's place when it was replayed, none before genesis)).
+    pub(crate) replay_memo:
+        crate::network::nerve::Keyed<crate::network::nerve::Keyed<(bool, Option<crate::chronometry::Place>)>>,
     /// Cited form → citers. Slash of a cited form redockets each citer.
     pub(crate) cited_by: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// THE BOOK SNAPSHOT — the open listings as an immutable shared value
@@ -340,7 +342,7 @@ pub struct Kernel {
     ///
     /// Derived, never persisted: rebuilt from the chain's own receipts at
     /// restore, like the axis and moduli indices.
-    pub(crate) attestors: crate::network::nerve::Keyed<crate::network::nerve::Keyed<u64>>,
+    pub(crate) attestors: crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::chronometry::Place>>,
     /// Per-voice occupancy of open draws, keyed by vk.
     pub(crate) drawn: crate::network::nerve::Keyed<[u64; 4]>,
     /// Per-voice recall fee it could not cover, per lane (MU-ECONOMY §3.1
@@ -366,9 +368,11 @@ pub struct Kernel {
     /// beside K.
     pub(crate) docket_circuits: crate::physics::Circuits,
     /// Where the phase's next window starts (45.9, S13.7): this court's
-    /// next `K` and the cover reading at the last docket circuit. A reading
-    /// of the carriers, never a phase — the phase is computed and written.
-    pub(crate) phase_mark: Option<(u64, crate::cognition::court::phase::CoverReading)>,
+    /// head place (none before genesis) — the window is the line strictly
+    /// after it — and the cover reading at the last docket circuit. A
+    /// reading of the carriers, never a phase — the phase is computed and
+    /// written.
+    pub(crate) phase_mark: Option<(Option<crate::chronometry::Place>, crate::cognition::court::phase::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.
@@ -491,10 +495,10 @@ impl Kernel {
         // bisection `eras_over` makes over it was unsound. Inserting at the
         // position the coordinate names keeps the one invariant both reads
         // depend on.
-        let seat = self.archive.partition_point(|e| e.root.k < era.root.k);
+        let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
         if let Some(run) = self.archive.get(seat..) {
             for held in run {
-                if held.root.k != era.root.k {
+                if held.root.at != era.root.at {
                     break;
                 }
                 if held.root.hash == era.root.hash && held.signer == era.signer {
@@ -581,21 +585,21 @@ impl Kernel {
                     self.rulings[0] += 1;
                 }
             }
-            crate::court::admission::Admitted::Equivocation { k, .. } => {
-                self.burn_equivocation(r.stamp.vk, *k);
+            crate::court::admission::Admitted::Equivocation { at, .. } => {
+                self.burn_equivocation(r.stamp.vk, *at);
             }
             _ => {}
         }
         verdict
     }
 
-    /// 47.2 STEP 3'S BACK-FILL (S13.10): receipts fetched by K range from
-    /// the signer or a holder, admitted in order by their chain and held
-    /// as known so later heights re-derive through them; one already held
-    /// at its K is passed over. Nothing here is cited as a parent: the
-    /// signed frame that closes the gap is, when it is admitted again.
+    /// 47.2 STEP 3'S BACK-FILL (S13.10): receipts fetched by place range
+    /// from the signer or a holder, admitted in order by their chain and
+    /// held as known so later heights re-derive through them; one already
+    /// held at its place is passed over. Nothing here is cited as a parent:
+    /// the signed frame that closes the gap is, when it is admitted again.
     /// Answers how many the page advanced by AND THE CITATION THAT STOPPED
-    /// IT, when one did: the `(signer, K)` of a receipt this node does not
+    /// IT, when one did: the stamp of a receipt this node does not
     /// hold and cannot re-derive a height without.
     ///
     /// THE MESH IS A DIRECTED ACYCLIC GRAPH, NOT ONE SIGNER'S LOG. This
@@ -637,10 +641,10 @@ impl Kernel {
         &mut self,
         proof: crate::court::admission::Equivocated,
     ) -> Option<[u64; 4]> {
-        self.burn_equivocation(proof.vk, proof.k)
+        self.burn_equivocation(proof.vk, proof.at)
     }
 
-    /// 47.4: TWO SIGNED RECEIPTS UNDER ONE KEY AT ONE K WITH DIFFERENT
+    /// 47.4: TWO SIGNED RECEIPTS UNDER ONE KEY AT ONE PLACE WITH DIFFERENT
     /// CHAIN HASHES IS AN EQUIVOCATION PROOF, and the court burns the
     /// signer's bond on all four lanes — one `burn` entry, supply reduced
     /// by the same vector, so §6's equation holds through the forfeiture
@@ -664,7 +668,7 @@ impl Kernel {
     /// both hold the two verified signatures 47.4 asks for. `Some` is the
     /// vector that left circulation, `None` a signer with nothing left to
     /// burn, for which nothing is written.
-    fn burn_equivocation(&mut self, vk: [u8; 32], k: u64) -> Option<[u64; 4]> {
+    fn burn_equivocation(&mut self, vk: [u8; 32], at: crate::chronometry::Place) -> Option<[u64; 4]> {
         let bond = self.treasury.bond_of(&vk)?;
         let anchor = self.anchor();
         let burned = self.treasury.burn(vk, bond, anchor);
@@ -672,8 +676,10 @@ impl Kernel {
             return None;
         }
         eprintln!(
-            "  court equivocation {:02x}{:02x}… K {k} burned {burned:?}",
-            vk[0], vk[1]
+            "  court equivocation {:02x}{:02x}… K {} burned {burned:?}",
+            vk[0],
+            vk[1],
+            at.print()
         );
         Some(burned)
     }
@@ -685,8 +691,8 @@ impl Kernel {
 
     /// What this mind knows of a hypha's chain head, if it has admitted one:
     /// the node at the top of that signer's line in the ledger.
-    pub fn known_head(&self, vk: &[u8; 32]) -> Option<(u64, [u8; 32])> {
-        self.chain.line_head(vk).map(|r| (r.stamp.k, r.chain_hash))
+    pub fn known_head(&self, vk: &[u8; 32]) -> Option<(crate::chronometry::Place, [u8; 32])> {
+        self.chain.line_head(vk).map(|r| (r.stamp.place(), r.chain_hash))
     }
 
     pub fn height(&self) -> u64 {

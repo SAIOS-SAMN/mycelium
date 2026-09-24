@@ -16,9 +16,12 @@ pub use crate::court::verdict::{
 /// in this order and no other:
 ///
 /// ```text
-/// H_genesis 32 ‖ E_origin u32 ‖ prev_receipt_hash 32 ‖ K u64 ‖ height u64
-///   ‖ chart len16 + axes u64… ‖ payload address len16 + bytes
+/// H_genesis 32 ‖ E_origin u32 ‖ prev_receipt_hash 32 ‖ K u64 ‖ i u64
+///   ‖ height u64 ‖ chart len16 + axes u64… ‖ payload address len16 + bytes
 /// ```
+///
+/// `K ‖ i` is the signer's place on its line: the orbit and the act's
+/// place in it (78.23 as amended).
 ///
 /// The payload is an ADDRESS -- the M2 composite (A21) for a word or form,
 /// a root for a transmission digest, a listing key for a settlement act --
@@ -31,7 +34,7 @@ pub struct SignedPrefix {
     pub genesis: [u8; 32],
     pub epoch: u32,
     pub prev_receipt_hash: [u8; 32],
-    pub k: u64,
+    pub at: crate::chronometry::Place,
     pub height: u64,
     /// THE CHART'S AXES, WRITTEN OUT — its own key (law 2): each coordinate
     /// kind-tagged and length-prefixed, so the chart is recovered from the
@@ -59,15 +62,19 @@ impl SignedPrefix {
         let max = u16::MAX as usize;
         self.chart.len() <= max
             && self.payload.len() <= max
-            && 84 + 2 + self.chart.len() + 2 + self.payload.len() <= max
+            && Self::FIXED + 2 + self.chart.len() + 2 + self.payload.len() <= max
     }
 
+    /// The fixed fields' bytes: origin, epoch, predecessor, place, height.
+    const FIXED: usize = 32 + 4 + 32 + 8 + 8 + 8;
+
     pub fn bytes(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(84 + self.chart.len() + self.payload.len());
+        let mut out = Vec::with_capacity(Self::FIXED + 4 + self.chart.len() + self.payload.len());
         out.extend_from_slice(&self.genesis);
         out.extend_from_slice(&self.epoch.to_le_bytes());
         out.extend_from_slice(&self.prev_receipt_hash);
-        out.extend_from_slice(&self.k.to_le_bytes());
+        out.extend_from_slice(&self.at.k.to_le_bytes());
+        out.extend_from_slice(&self.at.i.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
         out.extend_from_slice(&(self.chart.len() as u16).to_le_bytes());
         out.extend_from_slice(&self.chart);
@@ -89,6 +96,8 @@ impl SignedPrefix {
         let epoch = u32::from_le_bytes(take(4)?.try_into().ok()?);
         let prev_receipt_hash: [u8; 32] = take(32)?.try_into().ok()?;
         let k = u64::from_le_bytes(take(8)?.try_into().ok()?);
+        let i = u64::from_le_bytes(take(8)?.try_into().ok()?);
+        let at = crate::chronometry::Place { k, i };
         let height = u64::from_le_bytes(take(8)?.try_into().ok()?);
         let n = u16::from_le_bytes(take(2)?.try_into().ok()?) as usize;
         let chart = take(n)?.to_vec();
@@ -97,7 +106,7 @@ impl SignedPrefix {
         if p != b.len() {
             return None;
         }
-        Some(SignedPrefix { genesis, epoch, prev_receipt_hash, k, height, chart, payload })
+        Some(SignedPrefix { genesis, epoch, prev_receipt_hash, at, height, chart, payload })
     }
 }
 

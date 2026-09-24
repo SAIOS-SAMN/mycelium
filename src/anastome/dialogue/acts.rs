@@ -413,10 +413,11 @@ pub enum Ruled {
     Inert,
     /// 47.2 refused the frame, naming the 34.1 constant it refused with.
     Refused(Vec<u8>),
-    /// 47.2 step 3: this receiver's knowledge of the signer's chain has a
-    /// gap, and it is asking for the receipts between `from` and `to`. Not
-    /// a refusal — "the back-fill fetches what makes it re-derive".
-    Gap { from: u64, to: u64 },
+    /// 47.2 step 3: this receiver's knowledge of the signer's line has a
+    /// gap, and it is asking for the receipts strictly after `from` (from
+    /// the line's start where `None`) up to `to`. Not a refusal — "the
+    /// back-fill fetches what makes it re-derive".
+    Gap { from: Option<crate::chronometry::Place>, to: crate::chronometry::Place },
 }
 
 /// AN INSTALLED word, carrying both hyphae's signatures.
@@ -541,17 +542,17 @@ pub struct Docket {
     /// the germ settled nothing. The proof of convergence rides with the
     /// word, and this is not the escrow.
     pub deflation: [u64; 4],
-    /// The hypha's k-step at install: the coordinate a court's "since" is
-    /// read against.
-    pub k: u64,
+    /// The hypha's place on its line at install — the orbit and the act's
+    /// place in it: the coordinate a court's "since" is read against.
+    pub at: crate::chronometry::Place,
 }
 
 /// A SETTLEMENT on the docket: the listing, its chain, the voice, the
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court replays the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
-/// The last two fields are the hypha's k-step (order inside one kernel)
-/// and the TUniversal stamp (ledger, cross-node).
+/// The last two fields are the hypha's place on its line (order inside
+/// one kernel) and the TUniversal stamp (ledger, cross-node).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Settlement {
     /// The listing settled.
@@ -568,8 +569,9 @@ pub struct Settlement {
     pub before: [u64; 4],
     /// The magnitude AFTER. `before − after` is the deflation claimed.
     pub after: [u64; 4],
-    /// The hypha's k-step: order inside one kernel.
-    pub k: u64,
+    /// The hypha's place on its line — the orbit and the act's place in
+    /// it: order inside one kernel.
+    pub at: crate::chronometry::Place,
     /// The TUniversal stamp: the ledger coordinate, across nodes.
     pub t_universal: u64,
 }

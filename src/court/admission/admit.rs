@@ -7,22 +7,27 @@ use super::{
     SignedPrefix, REFUSE_EQUIVOCATION, REFUSE_NOT_EQUIVOCATION, REFUSE_ORIGIN, REFUSE_RECEIPT,
     REFUSE_RECEIPT_STALE, REFUSE_SIGNATURE,
 };
-use crate::chronometry::{KStepReceipt, Parent, ReceiptChain};
+use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
 
 /// What 47.2 answers for one signed frame. Every arm is an instruction to
 /// the caller, and only `Parent` permits a carrier to be touched.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Admitted {
-    /// `K = K_h + 1` and `prev = H_h`: admit, and cite this receipt as a
-    /// parent of the node's next receipt.
+    /// The receipt names the signer's head this node holds as its
+    /// predecessor: admit, and cite this receipt as a parent of the node's
+    /// next receipt.
     Parent(Parent),
-    /// `K > K_h + 1`: the signer's chain has a hole. The frame dockets as a
-    /// pending citation does and NOTHING is acted on until it closes.
-    Gap { vk: [u8; 32], from: u64, to: u64 },
-    /// A duplicate frame at a K already held with the same hash.
+    /// The receipt's predecessor stands past the signer's head this node
+    /// holds (or it holds none and the receipt is not the line's first):
+    /// the signer's line has a hole from the place after `from` up to
+    /// `to`, the predecessor's place — what a back-fill must reach. The
+    /// frame dockets as a pending citation does and NOTHING is acted on
+    /// until it closes.
+    Gap { vk: [u8; 32], from: Option<Place>, to: Place },
+    /// A duplicate frame at a place already held with the same hash.
     Stale,
-    /// Two hashes at one K on one chain (47.4).
-    Equivocation { k: u64, held: [u8; 32], claimed: [u8; 32] },
+    /// Two hashes at one place on one line (47.4).
+    Equivocation { at: Place, held: [u8; 32], claimed: [u8; 32] },
     /// A CAUSAL HOLE ACROSS SIGNERS: the receipt re-derives its height
     /// from the predecessor and every parent it cites, and one of those
     /// citations names a receipt of ANOTHER signer this node does not
@@ -125,27 +130,27 @@ pub fn verify_signature<'a>(
     Ok(Verified { prefix, signer: *signer })
 }
 
-/// The prefix and the receipt are ONE claim: the prefix's `K`, height and
-/// predecessor are the receipt's stamp and predecessor.
+/// The prefix and the receipt are ONE claim: the prefix's place, height
+/// and predecessor are the receipt's stamp and predecessor.
 fn one_claim(p: &SignedPrefix, r: &KStepReceipt) -> bool {
-    p.k == r.stamp.k && p.height == r.stamp.h && p.prev_receipt_hash == r.prev_hash()
+    p.at == r.stamp.place() && p.height == r.stamp.h && p.prev_receipt_hash == r.prev_hash()
 }
 
-/// 47.4's PROOF, DECIDED: one signer, one K, two chain hashes, both
+/// 47.4's PROOF, DECIDED: one signer, one place, two chain hashes, both
 /// signatures verified. What the court burns against, and all it needs.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Equivocated {
     pub vk: [u8; 32],
-    pub k: u64,
+    pub at: Place,
 }
 
 /// 47.4 ON A THIRD PARTY'S PRESENTATION (`ACT_EQUIVOCATION`, I21): two
 /// receipt sections it holds are an equivocation proof iff both signatures
 /// verified (the two `Verified`, 47.2 step 2, the caller's), each receipt
 /// is one claim with its prefix and its signer — the key that verified is
-/// the key the receipt names, the prefix's K, height and predecessor are the
-/// receipt's, and the receipt re-derives its own chain hash — and the two
-/// share key and K and differ in hash. Two keys, two K, or one hash (a
+/// the key the receipt names, the prefix's place, height and predecessor are
+/// the receipt's, and the receipt re-derives its own chain hash — and the
+/// two share key and place and differ in hash. Two keys, two places, or one hash (a
 /// duplicate frame) are not a proof and are `REFUSE_NOT_EQUIVOCATION`; a
 /// half that disagrees with itself is `REFUSE_RECEIPT`, as `admit` refuses
 /// the same disagreement on a single frame. The court replays nothing: the
@@ -161,15 +166,15 @@ pub fn admit_equivocation(
             return Err(REFUSE_RECEIPT);
         }
     }
-    if ra.stamp.vk != rb.stamp.vk || ra.stamp.k != rb.stamp.k || ra.chain_hash == rb.chain_hash {
+    if ra.stamp.vk != rb.stamp.vk || ra.stamp.place() != rb.stamp.place() || ra.chain_hash == rb.chain_hash {
         return Err(REFUSE_NOT_EQUIVOCATION);
     }
-    Ok(Equivocated { vk: ra.stamp.vk, k: ra.stamp.k })
+    Ok(Equivocated { vk: ra.stamp.vk, at: ra.stamp.place() })
 }
 
 /// 47.2, in order, before any carrier is touched, read against the ledger
-/// this node holds (78.24): a signer's head is its line's greatest `K`, and
-/// what is held at a `K` is the node on its line — so what admission knows
+/// this node holds (78.24): a signer's head is its line's greatest place,
+/// and what is held at a place is the node on its line — so what admission knows
 /// is what the ledger holds, persisted with it and never beside it. `origin`
 /// is this node's own `(H_genesis, E_origin)`.
 ///
@@ -190,7 +195,7 @@ pub fn admit(origin: ([u8; 32], u32), prefix: &SignedPrefix, r: &KStepReceipt, l
     admit_chain(r, ledger)
 }
 
-/// 47.2 STEPS 3 AND 4 for a receipt fetched by `K` range (S13.10): it
+/// 47.2 STEPS 3 AND 4 for a receipt fetched by place range (S13.10): it
 /// carries no signature of its own and is admitted by its chain — it
 /// re-derives its own hash, links to the head this node holds for the
 /// signer, and its height re-derives. Nothing admitted here is cited as a
@@ -203,26 +208,37 @@ pub fn admit_backfilled(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
 }
 
 fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
-    let (vk, k) = (r.stamp.vk, r.stamp.k);
-    // 3. `K` against the signer's head. This runs BEFORE the height check,
-    // in 47.2's own order: a gapped frame's height cannot re-derive here
-    // yet — what would make it re-derive is exactly what the back-fill
+    let (vk, at) = (r.stamp.vk, r.stamp.place());
+    // The line's continuity is the predecessor the receipt NAMES: its own
+    // signer's, at a place this one follows — the next act of its orbit or
+    // the first of the next. Only the line's first receipt names none.
+    match &r.prev {
+        None if at != Place::GENESIS => return Admitted::Refused(REFUSE_RECEIPT),
+        Some(prev) if prev.at.vk != vk || !prev.at.place().is_followed_by(at) => {
+            return Admitted::Refused(REFUSE_RECEIPT);
+        }
+        _ => {}
+    }
+    // 3. The place against the signer's head. This runs BEFORE the height
+    // check, in 47.2's own order: a gapped frame's height cannot re-derive
+    // here yet — what would make it re-derive is exactly what the back-fill
     // fetches.
-    match ledger.line_head(&vk) {
-        None if k != 0 => {
-            // First sighting of a signer, mid-chain: back-fill from its
-            // genesis.
-            return Admitted::Gap { vk, from: 0, to: k };
+    match (ledger.line_head(&vk), &r.prev) {
+        (None, Some(prev)) => {
+            // First sighting of a signer, mid-line: back-fill from its
+            // genesis up to the predecessor.
+            return Admitted::Gap { vk, from: None, to: prev.at.place() };
         }
-        Some(head) if k > head.stamp.k + 1 => {
-            return Admitted::Gap { vk, from: head.stamp.k, to: k };
+        (Some(head), Some(prev)) if prev.at.place() > head.stamp.place() => {
+            return Admitted::Gap { vk, from: Some(head.stamp.place()), to: prev.at.place() };
         }
-        Some(head) if !(k == head.stamp.k + 1 && r.prev_hash() == head.chain_hash) => {
-            // `K ≤ K_h`. The node held at that `K` tells a duplicate from
-            // an equivocation; nothing held there is stale TO US.
-            return match ledger.at(&vk, k) {
+        (Some(head), _) if r.prev != Some(Parent { at: head.stamp, hash: head.chain_hash }) => {
+            // At or below the head. The node held at that place tells a
+            // duplicate from an equivocation; nothing held there is stale
+            // TO US.
+            return match ledger.at(&vk, at) {
                 Some(held) if held.chain_hash == r.chain_hash => Admitted::Stale,
-                Some(held) => Admitted::Equivocation { k, held: held.chain_hash, claimed: r.chain_hash },
+                Some(held) => Admitted::Equivocation { at, held: held.chain_hash, claimed: r.chain_hash },
                 None => Admitted::Stale,
             };
         }
@@ -236,12 +252,8 @@ fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
     // with neither — a line's first receipt citing parents stands above them.
     let mut cited: Vec<u64> = Vec::with_capacity(r.parents.len() + 1);
     match &r.prev {
-        None if k == 0 => {}
-        None => return Admitted::Refused(REFUSE_RECEIPT),
+        None => {}
         Some(prev) => {
-            if prev.at.vk != vk || Some(prev.at.k) != k.checked_sub(1) {
-                return Admitted::Refused(REFUSE_RECEIPT);
-            }
             let Some(h) = ledger.height_of(prev) else {
                 return Admitted::MissingParent(*prev);
             };

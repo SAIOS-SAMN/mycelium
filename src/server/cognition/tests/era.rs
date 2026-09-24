@@ -3,7 +3,7 @@
 // over its root, and the K-range read across the archive.
 
 use crate::anastome::dialogue::ReceiptSection;
-use crate::chronometry::{ActKind, ReceiptChain};
+use crate::chronometry::{ActKind, Place, ReceiptChain};
 use crate::cognition::*;
 use crate::court::admission::SignedPrefix;
 use crate::verdict::{
@@ -22,7 +22,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
         genesis: [7; 32],
         epoch: 2,
         prev_receipt_hash: head.prev_hash(),
-        k: head.stamp.k,
+        at: head.stamp.place(),
         height: head.stamp.h,
         chart: vec![],
         payload: root_hash.to_vec(),
@@ -43,6 +43,9 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
 /// nothing.
 #[test]
 fn a_fold_is_proposed_witnessed_and_committed_on_two_signatures() {
+// Every act closes its orbit until the cycles close by name: act `n` is
+// at orbit `n`, place 0.
+let at = |k: u64| Place { k, i: 0 };
 let home = [0x5c; 32];
 let mut k = Kernel::new();
 k.bind_identity(home);
@@ -54,13 +57,13 @@ let head_hash = k.chain().head_hash();
 let head_height = k.chain().head_height();
 let before = k.treasury().audit().expect("conserves before");
 let p = k.propose_fold().expect("a final prefix proposes");
-assert_eq!((p.k0, p.root.k, p.root.hash, p.root.height), (0, 2, head_hash, head_height));
+assert_eq!((p.after, p.root.at, p.root.hash, p.root.height), (None, at(2), head_hash, head_height));
 assert!(p.epochs.iter().any(|(who, _)| *who == [0x11; 32]), "the fixture hypha's genesis nets");
 assert_eq!(k.fold_proposal(), Some(&p), "held for the exchange to carry");
 
 // THE WITNESS re-derives the prefix it fetched.
-let receipts = k.receipts_range(&home, p.k0, p.root.k, 10);
-let rows = k.treasury().rows_below(p.root.k);
+let receipts = k.receipts_range(&home, p.after, p.root.at, 10);
+let rows = k.treasury().rows_below(p.root.at);
 let witness = Kernel::new();
 assert_eq!(witness.verify_fold(home, &p, &receipts, &rows), Ok(()), "the prefix re-derives");
 let mut wrong = p.clone();
@@ -81,7 +84,7 @@ assert_eq!(k.commit_fold(home_sig, &co_sign("w", [9; 32])), Err(REFUSE_RECEIPT),
 assert!(k.fold_proposal().is_some(), "the proposal stands through a witness's refusals");
 let w = co_sign("w", p.root.hash);
 let done = k.commit_fold(home_sig, &w).expect("two signatures seal the fold");
-assert_eq!((done.k0, done.k1, done.k, done.witness), (0, 2, 3, w.receipt.stamp.vk));
+assert_eq!((done.first, done.last, done.at, done.witness), (at(0), at(2), Some(at(3)), w.receipt.stamp.vk));
 assert_eq!(done.h, head_height + 1, "height continues over the fold");
 assert!(k.fold_proposal().is_none(), "sealed, nothing pends");
 let root = k.chain().root().expect("the chain stands on its root");
@@ -91,7 +94,7 @@ assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash()), (ActKind::Fold, 3, head_
 assert_eq!(
     fold.cites,
     vec![crate::chronometry::Cite::Root {
-        at: crate::chronometry::Stamp { h: root.height, vk: home, k: root.k },
+        at: crate::chronometry::Stamp::new(root.height, home, root.at),
         hash: head_hash
     }],
     "the fold node cites the archived head by its stamp and hash"
@@ -104,13 +107,13 @@ assert_eq!(
     (root, home, w.receipt.stamp.vk, home_sig, w.sig),
     "the era carries the witness and both signatures"
 );
-assert_eq!((era.receipts.len(), era.first_k()), (3, Some(0)));
+assert_eq!((era.receipts.len(), era.first_place()), (3, at(0)));
 assert!(ReceiptChain::from_receipts(era.receipts.clone()).is_some(), "the archived prefix re-verifies as a chain of its own");
 assert_eq!(k.treasury().audit().expect("conserves after"), before);
 assert_eq!(
-    k.receipts_range(&home, 0, 3, 10).iter().map(|r| r.stamp.k).collect::<Vec<_>>(),
+    k.receipts_range(&home, None, at(3), 10).iter().map(|r| r.stamp.k).collect::<Vec<_>>(),
     vec![0, 1, 2, 3],
-    "the K-range read spans ARC1 and the hot chain"
+    "the place-range read spans ARC1 and the hot chain"
 );
 
 let snap = k.snapshot();
@@ -123,14 +126,14 @@ assert!(back.chain().verify_chain_integrity());
 // THE WITNESS holds the same era under the home's key and serves it.
 let mut held = Kernel::new();
 held.hold_era(era.clone());
-assert_eq!(held.receipts_range(&home, 0, 2, 10), era.receipts, "a witnessed era is read under its signer's key");
-assert_eq!(held.rows_range(&home, 0, 9, 0, 10).0, 0, "another signer's rows are not this court's to serve");
+assert_eq!(held.receipts_range(&home, None, at(2), 10), era.receipts, "a witnessed era is read under its signer's key");
+assert_eq!(held.rows_range(&home, None, at(9), 0, 10).0, 0, "another signer's rows are not this court's to serve");
 
 let p2 = k.propose_fold().expect("the fold receipt is itself final");
-assert_eq!((p2.k0, p2.root.k), (3, 3));
+assert_eq!((p2.after, p2.root.at), (Some(at(2)), at(3)));
 assert!(k.commit_fold(home_sig, &co_sign("w", p2.root.hash)).is_ok());
 assert_eq!(k.archive().len(), 2);
-assert_eq!(k.chain().root().map(|r| r.k), Some(3));
+assert_eq!(k.chain().root().map(|r| r.at), Some(at(3)));
 
 let mut open = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];

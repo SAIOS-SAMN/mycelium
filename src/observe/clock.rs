@@ -25,11 +25,12 @@
 /// ONE COURT ON THE CLOCK.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct CourtClock {
-    /// Its own `K`: the stroke count, the next index on its own line.
+    /// Its own `K`: the orbit its next act stands in (78.23 as amended).
     pub k: u64,
-    /// THE HEAD'S STAMP, `h:S:G:T:H:k` (78.21, 78.24): the tick, the frame
-    /// the head act measured, its `K`.
-    pub head: [u64; 6],
+    /// THE HEAD'S STAMP, `h:S:G:T:H:K.i` (78.21, 78.24, 78.23 as amended):
+    /// the tick, the frame the head act measured, its orbit and its place
+    /// in the orbit.
+    pub head: [u64; 7],
     /// The mesh origin this court adopted — `H_genesis` and its epoch —
     /// or none where it has adopted no origin.
     pub genesis: Option<([u8; 32], u32)>,
@@ -155,7 +156,7 @@ impl Clock {
         match byte(b, p)? {
             0 => {
                 let k = u64_at(b, p)?;
-                let mut head = [0u64; 6];
+                let mut head = [0u64; 7];
                 for v in head.iter_mut() {
                     *v = u64_at(b, p)?;
                 }

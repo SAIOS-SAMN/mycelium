@@ -323,7 +323,7 @@ assert!(served.is_empty(), "a provisional word is not language and is not taught
 k.basis_insert(w, [1; 32]);
 assert!(k.installed_word(&addr).is_some());
 assert!(k.serve_ruled(&inv, &[], 1 << 20).is_empty(), "a word no act admitted has no locator and is not taught");
-k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1 });
+k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 });
 assert_eq!(
     k.serve_ruled(&inv, &[], 1 << 20).len(),
     1,

@@ -9,17 +9,19 @@
 //! nets as the epochs proposed, co-signs, and holds the same era under the
 //! home's key, so every archived prefix has two holders.
 
-use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Root, Stamp};
+use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Place, Root, Stamp};
 use crate::cognition::Kernel;
 use crate::economy::{nets_of, Entry};
 use crate::verdict::{REFUSE_FOLD_INEXACT, REFUSE_FOLD_OPEN, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT, REFUSE_WITNESS_ROOM};
 
-/// What a fold needs a witness for: the prefix's first K, its root, and
-/// the epoch rows the home will write. Held as `fold_pending` until a
-/// witness co-signs the root or the reading changes.
+/// What a fold needs a witness for: the place the prefix stands on (the
+/// previous fold's root, `None` from genesis), its root, and the epoch
+/// rows the home will write. The prefix is the line strictly after the
+/// one up to the other. Held as `fold_pending` until a witness co-signs
+/// the root or the reading changes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Proposal {
-    pub k0: u64,
+    pub after: Option<Place>,
     pub root: Root,
     pub epochs: Vec<([u8; 32], [u64; 4])>,
 }
@@ -27,12 +29,13 @@ pub struct Proposal {
 /// What a fold did, read for the line 34.2 writes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FoldDone {
-    /// The fold receipt's K and height.
-    pub k: u64,
+    /// The fold receipt's place (none where it could not be sealed) and
+    /// height.
+    pub at: Option<Place>,
     pub h: u64,
-    /// The archived prefix, first K to last.
-    pub k0: u64,
-    pub k1: u64,
+    /// The archived prefix, first place to last.
+    pub first: Place,
+    pub last: Place,
     /// Identities the epoch rows named.
     pub identities: u32,
     pub witness: [u8; 32],
@@ -45,14 +48,14 @@ impl Kernel {
     /// (`REFUSE_FOLD_OPEN`); a ledger that does not conserve over it
     /// proposes nothing (`REFUSE_FOLD_INEXACT`).
     pub fn propose_fold(&mut self) -> Result<Proposal, &'static str> {
-        let head_k = self.final_prefix_head().ok_or(REFUSE_FOLD_OPEN)?;
-        self.treasury.fold_reading(head_k)?;
-        let epochs = nets_of(&self.treasury.rows_below(head_k))?.rows;
-        let k0 = self.chain.opening().ok_or(REFUSE_FOLD_OPEN)?.stamp.k;
-        // The line relation names the receipt at a K (78.24 P1).
-        let at = self.chain.at_k(head_k).ok_or(REFUSE_FOLD_OPEN)?;
-        let root = Root { k: at.stamp.k, hash: at.chain_hash, height: at.stamp.h };
-        let p = Proposal { k0, root, epochs };
+        let head = self.final_prefix_head().ok_or(REFUSE_FOLD_OPEN)?;
+        self.treasury.fold_reading(head)?;
+        let epochs = nets_of(&self.treasury.rows_below(head))?.rows;
+        let after = self.chain.root().map(|r| r.at);
+        // The line relation names the receipt at a place (78.24 P1).
+        let at = self.chain.at_place(head).ok_or(REFUSE_FOLD_OPEN)?;
+        let root = Root { at: at.stamp.place(), hash: at.chain_hash, height: at.stamp.h };
+        let p = Proposal { after, root, epochs };
         self.fold_pending = Some(p.clone());
         Ok(p)
     }
@@ -85,27 +88,27 @@ impl Kernel {
         if witness.prefix.payload != p.root.hash {
             return Err(REFUSE_RECEIPT);
         }
-        let epochs = nets_of(&self.treasury.rows_below(p.root.k))?.rows;
+        let epochs = nets_of(&self.treasury.rows_below(p.root.at))?.rows;
         if epochs != p.epochs {
             self.fold_pending = None;
             return Err(REFUSE_FOLD_INEXACT);
         }
-        if self.final_prefix_head().is_none_or(|h| h < p.root.k) {
+        if self.final_prefix_head().is_none_or(|h| h < p.root.at) {
             self.fold_pending = None;
             return Err(REFUSE_FOLD_OPEN);
         }
-        let (cold, root) = self.chain.fold_before(p.root.k).ok_or(REFUSE_FOLD_OPEN)?;
+        let (cold, root) = self.chain.fold_before(p.root.at).ok_or(REFUSE_FOLD_OPEN)?;
         #[expect(
             clippy::disallowed_methods,
             reason = "rule 15 — FIFO drain head: the drained prefix is in chain order, so its head is the oldest receipt folded"
         )]
-        let k0 = cold.first().map_or(root.k, |r| r.stamp.k);
+        let first = cold.first().map_or(root.at, |r| r.stamp.place());
         // The Fold node cites the root it leaves the line on, by stamp and
         // hash (78.24): a fold names no word and measured nothing.
-        let at = Stamp { h: root.height, vk: me, k: root.k };
+        let at = Stamp::new(root.height, me, root.at);
         self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], me);
         let anchor = self.anchor();
-        let folded = match self.treasury.fold(p.root.k, anchor) {
+        let folded = match self.treasury.fold(p.root.at, anchor) {
             Ok(f) => f,
             Err(reason) => {
                 eprintln!("  court fold refused {:02x}{:02x}…: {reason}", me[0], me[1]);
@@ -118,8 +121,8 @@ impl Kernel {
         // heap and the snapshot then wrote all of them on every persist;
         // `file_era` appends the payload to the cold segment once and
         // keeps the descriptor.
-        // `k0` above is this era's own first K, read once where the fold
-        // cut the chain; it is not read a second time here (law 12).
+        // `first` above is this era's own first place, read once where the
+        // fold cut the chain; it is not read a second time here (law 12).
         let count = cold.len() as u32;
         self.file_era(Era {
             root,
@@ -128,22 +131,28 @@ impl Kernel {
             sig_home,
             sig_witness: witness.sig,
             identities,
-            first: k0,
+            first,
             count,
             at: None,
             receipts: cold,
         });
         let done = FoldDone {
-            k: self.chain.head_k(),
+            at: self.chain.head_place(),
             h: self.chain.head_height(),
-            k0,
-            k1: root.k,
+            first,
+            last: root.at,
             identities,
             witness: wk,
         };
         eprintln!(
             "  court fold {:02x}{:02x}… K {} h {} prefix {}..{} identities {}",
-            me[0], me[1], done.k, done.h, done.k0, done.k1, done.identities
+            me[0],
+            me[1],
+            done.at.map_or_else(|| "unsealed".to_string(), Place::print),
+            done.h,
+            done.first.print(),
+            done.last.print(),
+            done.identities
         );
         eprintln!(
             "  court fold witnessed {:02x}{:02x}… co-signed {:02x}{:02x}…",
@@ -156,8 +165,9 @@ impl Kernel {
 
     /// THE WITNESS'S RE-DERIVATION (47.3): this court holds bond
     /// (`REFUSE_WITNESS_ROOM` otherwise); the receipts fetched are the
-    /// home's chain from `k0`, each re-deriving and linking to the one
-    /// before, ending at the root; the rows' nets are the epochs proposed.
+    /// home's chain from the place after `after`, each re-deriving and
+    /// linking to the one before, ending at the root; the rows' nets are
+    /// the epochs proposed.
     pub fn verify_fold(
         &self,
         home: [u8; 32],
@@ -169,17 +179,23 @@ impl Kernel {
             return Err(REFUSE_WITNESS_ROOM);
         }
         let mut prev: Option<&KStepReceipt> = None;
-        for (k, r) in (p.k0..).zip(receipts.iter()) {
-            if r.stamp.k != k || r.stamp.vk != home || !r.rederives() {
+        for r in receipts {
+            if r.stamp.vk != home || !r.rederives() {
                 return Err(REFUSE_RECEIPT);
             }
-            if prev.is_some_and(|q| r.prev != Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash })) {
+            // The first names the place the prefix stands on as its
+            // predecessor; each after it names the one before.
+            let links = match prev {
+                None => r.prev.map(|q| q.at.place()) == p.after,
+                Some(q) => r.prev == Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash }),
+            };
+            if !links {
                 return Err(REFUSE_RECEIPT);
             }
             prev = Some(r);
         }
         let last = prev.ok_or(REFUSE_FOLD_OPEN)?;
-        if (last.stamp.k, last.chain_hash, last.stamp.h) != (p.root.k, p.root.hash, p.root.height) {
+        if (last.stamp.place(), last.chain_hash, last.stamp.h) != (p.root.at, p.root.hash, p.root.height) {
             return Err(REFUSE_RECEIPT);
         }
         if nets_of(rows)?.rows != p.epochs {
@@ -199,15 +215,23 @@ impl Kernel {
         self.mark_persist();
     }
 
-    /// THE ROWS READ (`ACT_ROWS`): this court's own ledger rows anchored in
-    /// `from..=to`, in journal order, a page of at most `budget` from
-    /// `cursor`, with the total the span holds. Another signer's rows are
-    /// not this court's to serve.
-    pub fn rows_range(&self, signer: &[u8; 32], from: u64, to: u64, cursor: u32, budget: usize) -> (u32, Vec<Entry>) {
-        if *signer != self.identity || to < from {
+    /// THE ROWS READ (`ACT_ROWS`): this court's own ledger rows standing at
+    /// `from` or later and written before the act at `upto` (see
+    /// `Treasury::rows_span`), in journal order, a page of at most
+    /// `budget` from `cursor`, with the total the span holds. Another
+    /// signer's rows are not this court's to serve.
+    pub fn rows_range(
+        &self,
+        signer: &[u8; 32],
+        from: Option<Place>,
+        upto: Place,
+        cursor: u32,
+        budget: usize,
+    ) -> (u32, Vec<Entry>) {
+        if *signer != self.identity || from.is_some_and(|f| f >= upto) {
             return (0, Vec::new());
         }
-        let all = self.treasury.rows_span(from, to);
+        let all = self.treasury.rows_span(from, upto);
         let total = all.len() as u32;
         let page = all.into_iter().skip(cursor as usize).take(budget).collect();
         (total, page)

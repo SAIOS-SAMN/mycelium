@@ -10,6 +10,7 @@
 use crate::door::Door;
 use crate::transport::{answer, tell_peer_within};
 use mycelium::anastome::dialogue;
+use mycelium::chronometry::Place;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
@@ -59,24 +60,24 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         refuse(s, mycelium::verdict::REFUSE_RECEIPT);
         return;
     }
-    // The prefix, fetched from the home by K range and by rows cursor;
+    // The prefix, fetched from the home by place range and by rows cursor;
     // a home that cannot be reached leaves the fold unmeasured.
     let Some(dest) = door.mesh.addrs.lock().ok().and_then(|a| a.get(&home).cloned()) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: home address unknown", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
-    let Some(receipts) = fetch_receipts(&dest, &me, &home, p.k0, p.root.k) else {
+    let Some(receipts) = fetch_receipts(&dest, &me, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch receipts failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
-    let Some(rows) = fetch_rows(&dest, &me, &home, p.k0, p.root.k) else {
+    let Some(rows) = fetch_rows(&dest, &me, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch rows failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
-    let proposal = mycelium::cognition::Proposal { k0: p.k0, root: p.root, epochs: p.epochs.clone() };
+    let proposal = mycelium::cognition::Proposal { after: p.after, root: p.root, epochs: p.epochs.clone() };
     let verdict = match door.kernel.lock() {
         Ok(k) => k.verify_fold(home, &proposal, &receipts, &rows),
         Err(_) => {
@@ -93,6 +94,16 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
+    // The era's first place is the first receipt the witness fetched and
+    // verified: `verify_fold` refused an empty prefix.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 15 — FIFO drain head: the prefix is fetched in line order, so its head is the era's first place"
+    )]
+    let Some(first) = receipts.first().map(|r| r.stamp.place()) else {
+        say(s, dialogue::FoldWitness::Unmeasured { vk: me });
+        return;
+    };
     if let Ok(mut k) = door.kernel.lock() {
         k.hold_era(mycelium::chronometry::Era {
             root: p.root,
@@ -101,9 +112,9 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             sig_home: p.section.sig,
             sig_witness: section.sig,
             identities: p.epochs.len() as u32,
-            // The K range the witness fetched, named on the descriptor so
-            // it stands without the payload it is about to shed (45.8).
-            first: p.k0,
+            // The place range the witness fetched, named on the descriptor
+            // so it stands without the payload it is about to shed (45.8).
+            first,
             count: receipts.len() as u32,
             at: None,
             receipts,
@@ -116,36 +127,51 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     say(s, dialogue::FoldWitness::CoSigned { section: Box::new(section) });
 }
 
-/// The home's receipts `from..=to`, page by page; `None` when a page
-/// comes back empty or malformed before the span is whole.
-fn fetch_receipts(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64) -> Option<Vec<mycelium::chronometry::KStepReceipt>> {
+/// The home's receipts strictly after `after` up to `upto`, page by page;
+/// `None` when a page comes back empty or malformed before the span is
+/// whole.
+fn fetch_receipts(
+    dest: &str,
+    me: &[u8; 32],
+    home: &[u8; 32],
+    after: Option<Place>,
+    upto: Place,
+) -> Option<Vec<mycelium::chronometry::KStepReceipt>> {
     let mut out = Vec::new();
-    let mut next = from;
-    while next <= to {
-        let (reply, _) = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, to), 16)?;
+    let mut next = after;
+    while next.is_none_or(|n| n < upto) {
+        let (reply, _) = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, upto), 16)?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }
         let page = dialogue::decode_receipts_reply(&reply)?;
-        // The page arrives in K order, so its tail names the K the next
-        // page opens after — the chain's order, not the order of arrival.
+        // The page arrives in line order, so its tail names the place the
+        // next page opens after — the chain's order, not the order of
+        // arrival.
         #[expect(
             clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: a receipts page is served in K order, so its tail is the K already served"
+            reason = "rule 15 — FIFO drain head: a receipts page is served in line order, so its tail is the place already served"
         )]
-        let last = page.last()?.stamp.k;
+        let last = page.last()?.stamp.place();
         out.extend(page);
-        next = last.checked_add(1)?;
+        next = Some(last);
     }
     Some(out)
 }
 
-/// The home's rows anchored in `from..=to`, page by page from the cursor.
-fn fetch_rows(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64) -> Option<Vec<mycelium::economy::Entry>> {
+/// The home's rows standing at `from` or later and written before the act
+/// at `upto`, page by page from the cursor.
+fn fetch_rows(
+    dest: &str,
+    me: &[u8; 32],
+    home: &[u8; 32],
+    from: Option<Place>,
+    upto: Place,
+) -> Option<Vec<mycelium::economy::Entry>> {
     let mut out = Vec::new();
     let mut cursor = 0u32;
     loop {
-        let (reply, _) = tell_peer_within(dest, dialogue::encode_rows_request(me, home, from, to, cursor), 16)?;
+        let (reply, _) = tell_peer_within(dest, dialogue::encode_rows_request(me, home, from, upto, cursor), 16)?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }

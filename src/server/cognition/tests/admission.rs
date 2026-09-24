@@ -7,13 +7,13 @@ use crate::court::admission::SignedPrefix;
 
 const ORIGIN: ([u8; 32], u32) = ([7u8; 32], 2u32);
 
-/// The prefix a receipt is signed over: its K, height and predecessor.
+/// The prefix a receipt is signed over: its place, height and predecessor.
 fn pre(r: &crate::chronometry::KStepReceipt) -> SignedPrefix {
     SignedPrefix {
         genesis: ORIGIN.0,
         epoch: ORIGIN.1,
         prev_receipt_hash: r.prev_hash(),
-        k: r.stamp.k,
+        at: r.stamp.place(),
         height: r.stamp.h,
         chart: vec![],
         payload: r.stamp.key(),
@@ -64,7 +64,7 @@ fn an_admitted_receipt_is_cited_and_carries_height_above_the_peers() {
         );
     }
     assert_eq!(k.pending_parents(), 3, "three admitted, none cited yet");
-    assert_eq!(k.known_head(&key.vk_bytes()), Some((2, head.chain_hash)));
+    assert_eq!(k.known_head(&key.vk_bytes()), Some((head.stamp.place(), head.chain_hash)));
     let c = vec![(0, 0, 5), (0, 1, 5)];
     super::common::speak_pair(&mut k, &a, &c, [2; 32]);
     assert_eq!(k.pending_parents(), 0, "the step consumed them");
@@ -95,7 +95,7 @@ fn a_bound_mind_seals_under_its_key_and_a_sealed_ledger_keeps_its_own() {
         k.admit_receipt(ORIGIN, super::common::verified(&pre(&r), &key), &r),
         crate::court::admission::Admitted::Parent(_)
     ));
-    assert_eq!(k.known_head(&key.vk_bytes()).map(|h| h.0), Some(0), "the peer's author stands");
+    assert_eq!(k.known_head(&key.vk_bytes()).map(|h| h.0), Some(crate::chronometry::Place::GENESIS), "the peer's author stands");
 }
 
 /// A receipt whose origin is not this node's touches nothing.
@@ -202,8 +202,9 @@ fn a_third_party_proof_burns_the_bond_once() {
 }
 
 /// 47.2 step 3, S13.10 — A GAP CLOSES WHEN THE MISSING RECEIPTS ARRIVE,
-/// and the K-range read of what this node holds of the peer never runs
-/// past a hole.
+/// and the place-range read of what this node holds of the peer never runs
+/// past a hole. The gap names the head held and the reported frame's
+/// predecessor: what the back-fill must reach.
 #[test]
 fn a_gap_closes_when_the_missing_receipts_arrive() {
     use crate::court::admission::Admitted;
@@ -211,14 +212,17 @@ fn a_gap_closes_when_the_missing_receipts_arrive() {
     let vk = key.vk_bytes();
     let peer = peer_line(vk, 4);
     let head = peer[3].clone();
+    let place = |n: usize| peer[n].stamp.place();
     let mut k = Kernel::new();
-    assert!(matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Gap { from: 0, to: 3, .. }));
+    let first = k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head);
+    assert_eq!(first, Admitted::Gap { vk, from: None, to: place(2) }, "from the line's start to the predecessor");
     assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
     assert!(k.known_head(&vk).is_none());
     assert_eq!(k.admit_backfill(&peer[..2]), (2, None), "a page of two admits by its chain, citing nothing unheld");
-    assert_eq!(k.known_head(&vk).map(|h| h.0), Some(1), "the head this node holds moved to K 1");
-    assert!(
-        matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Gap { from: 1, to: 3, .. }),
+    assert_eq!(k.known_head(&vk).map(|h| h.0), Some(place(1)), "the head this node holds moved to the second");
+    assert_eq!(
+        k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head),
+        Admitted::Gap { vk, from: Some(place(1)), to: place(2) },
         "the page stopped short: still a gap"
     );
     assert_eq!(k.pending_parents(), 0, "and still nothing cited");
@@ -232,6 +236,12 @@ fn a_gap_closes_when_the_missing_receipts_arrive() {
     let mut forged = peer[3].clone();
     forged.mu = [0, 0, 0, 9];
     assert_eq!(k.admit_backfill(&[forged]), (0, None), "a receipt that does not re-derive admits nothing, and names no hole");
-    assert_eq!(k.receipts_range(&vk, 0, 9, 100), peer, "the K-range read: every admitted node in K order, never past a hole");
-    assert_eq!(k.receipts_range(&vk, 2, 3, 1).len(), 1, "a page is bounded by its budget");
+    let far = crate::chronometry::Place { k: 9, i: 0 };
+    assert_eq!(k.receipts_range(&vk, None, far, 100), peer, "the place-range read: every admitted node in line order, never past a hole");
+    assert_eq!(k.receipts_range(&vk, Some(place(1)), place(3), 1).len(), 1, "a page is bounded by its budget");
+    assert_eq!(
+        k.receipts_range(&vk, Some(place(1)), place(3), 100),
+        peer[2..].to_vec(),
+        "strictly after one place, up to and including the other"
+    );
 }

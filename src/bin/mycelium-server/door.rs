@@ -394,7 +394,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 };
                 eprintln!(
                     "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {} h {}",
-                    addr[0], addr[1], svoice[0], svoice[1], at.k, at.h
+                    addr[0], addr[1], svoice[0], svoice[1], at.place().print(), at.h
                 );
                 out.push(dialogue::Taught { at, word: w });
             }

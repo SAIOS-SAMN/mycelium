@@ -103,7 +103,7 @@ impl Voice {
             None => {
                 let Some(at) = self.chain.next_stamp(&[]) else { return self.k() };
                 let k = self.seal(kind, mu, vec![Cite::word(word, at)]);
-                if self.chain.at_k(at.k).is_some() {
+                if self.chain.at_place(at.place()).is_some() {
                     self.file_admitted(addr, at);
                 }
                 k

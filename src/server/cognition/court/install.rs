@@ -226,11 +226,11 @@ impl Kernel {
             let k = cert.key();
             match self.replay_memo.get_mut(addr) {
                 Some(bucket) => {
-                    bucket.insert(k, (true, self.chain.head_k()));
+                    bucket.insert(k, (true, self.chain.head_place()));
                 }
                 None => {
                     let mut bucket = crate::network::nerve::Keyed::new();
-                    bucket.insert(k, (true, self.chain.head_k()));
+                    bucket.insert(k, (true, self.chain.head_place()));
                     self.replay_memo.insert(addr, bucket);
                 }
             }

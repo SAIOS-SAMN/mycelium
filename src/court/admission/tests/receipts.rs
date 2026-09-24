@@ -3,10 +3,15 @@
 // answered with when it does not.
 
 use super::super::*;
-use crate::chronometry::{KStepReceipt, Parent, ReceiptChain};
+use crate::chronometry::{KStepReceipt, Parent, Place, ReceiptChain};
 
 const G: [u8; 32] = [7; 32];
 const E: u32 = 2;
+
+/// Act `k` of a line, while every act closes its orbit.
+fn at(k: u64) -> Place {
+    Place { k, i: 0 }
+}
 
 /// A signer's line of `frames.len()` steps, each measuring its lane and
 /// naming the parents given for it: real nodes, heights that re-derive,
@@ -28,7 +33,7 @@ fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
         genesis: G,
         epoch: E,
         prev_receipt_hash: r.prev_hash(),
-        k: r.stamp.k,
+        at: r.stamp.place(),
         height: r.stamp.h,
         chart: vec![1, 2, 3],
         payload: r.stamp.key(),
@@ -51,7 +56,7 @@ fn the_signed_prefix_is_written_out_and_decodes() {
         genesis: G,
         epoch: E,
         prev_receipt_hash: [9; 32],
-        k: 41,
+        at: Place { k: 41, i: 3 },
         height: 77,
         chart: vec![5, 0, 12],
         payload: b"an address, written".to_vec(),
@@ -61,7 +66,8 @@ fn the_signed_prefix_is_written_out_and_decodes() {
     assert_eq!(&b[32..36], &E.to_le_bytes(), "then E_origin");
     assert_eq!(&b[36..68], &[9u8; 32], "then prev_receipt_hash");
     assert_eq!(&b[68..76], &41u64.to_le_bytes(), "then K");
-    assert_eq!(&b[76..84], &77u64.to_le_bytes(), "then height");
+    assert_eq!(&b[76..84], &3u64.to_le_bytes(), "then the act's place in its orbit");
+    assert_eq!(&b[84..92], &77u64.to_le_bytes(), "then height");
     assert_eq!(SignedPrefix::read(&b).as_ref(), Some(&p), "and it reads back");
     assert!(SignedPrefix::read(&b[..b.len() - 1]).is_none(), "a short prefix refuses whole");
 }
@@ -83,8 +89,9 @@ fn prefix_refuses_foreign_genesis_or_epoch_before_carriers() {
     assert!(matches!(take(&mut ledger, &r), Admitted::Parent(_)), "the same receipt on this node's own origin admits");
 }
 
-/// 47.2 step 3: K = K_h + 1 with the matching prev is a parent; K beyond
-/// that is a GAP, and nothing is acted on until the missing receipts are
+/// 47.2 step 3: a receipt naming the head held as its predecessor is a
+/// parent; one whose predecessor stands past the head is a GAP up to that
+/// predecessor, and nothing is acted on until the missing receipts are
 /// fetched. The back-fill closes it and the next step admits normally.
 #[test]
 fn receipt_gap_backfills_before_acting() {
@@ -93,20 +100,47 @@ fn receipt_gap_backfills_before_acting() {
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     assert_eq!(
         take(&mut ledger, &rs[2]),
-        Admitted::Gap { vk: [1; 32], from: 0, to: 2 },
-        "K jumps the head: docket and back-fill, act on nothing"
+        Admitted::Gap { vk: [1; 32], from: Some(at(0)), to: at(1) },
+        "the predecessor stands past the head: docket and back-fill, act on nothing"
     );
     assert_eq!(ledger.line_head(&[1; 32]).map(|r| r.stamp), Some(rs[0].stamp), "the gapped frame moved no head");
     assert!(matches!(take(&mut ledger, &rs[1]), Admitted::Parent(_)), "back-fill");
     assert!(matches!(take(&mut ledger, &rs[2]), Admitted::Parent(_)), "the line closed, so the frame admits");
 }
 
-/// A first sighting of a signer at K > 0 is a gap back to its genesis.
+/// A first sighting of a signer past its genesis is a gap back to its
+/// genesis.
 #[test]
 fn a_signer_first_seen_mid_chain_is_a_gap_to_its_genesis() {
     let rs = line([2; 32], &[(1, vec![]), (2, vec![])]);
     let ledger = ReceiptChain::with_vk([9; 32]);
-    assert_eq!(admit((G, E), &prefix_for(&rs[1]), &rs[1], &ledger), Admitted::Gap { vk: [2; 32], from: 0, to: 1 });
+    assert_eq!(admit((G, E), &prefix_for(&rs[1]), &rs[1], &ledger), Admitted::Gap { vk: [2; 32], from: None, to: at(0) });
+}
+
+/// THE LINE'S CONTINUITY IS THE PREDECESSOR A RECEIPT NAMES (78.23 as
+/// amended): its own signer's, at a place it follows — the next act of the
+/// orbit or the first of the next. A receipt naming a predecessor it does
+/// not follow, or another signer's, or none past genesis, is refused
+/// before the ledger's head is read.
+#[test]
+fn a_receipt_names_a_predecessor_it_follows() {
+    let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
+    let ledger = ReceiptChain::with_vk([9; 32]);
+    let refused = |r: &KStepReceipt| admit((G, E), &prefix_for(r), r, &ledger);
+    let mut leap = rs[1].clone();
+    leap.stamp.k += 1;
+    assert_eq!(refused(&leap), Admitted::Refused(REFUSE_RECEIPT), "two orbits past its predecessor");
+    let mut inner = rs[1].clone();
+    inner.stamp.i = 2;
+    assert_eq!(refused(&inner), Admitted::Refused(REFUSE_RECEIPT), "two acts past it in the orbit");
+    let mut orphan = rs[1].clone();
+    orphan.prev = None;
+    assert_eq!(refused(&orphan), Admitted::Refused(REFUSE_RECEIPT), "no predecessor past genesis");
+    let mut borrowed = rs[1].clone();
+    if let Some(p) = borrowed.prev.as_mut() {
+        p.at.vk = [2; 32];
+    }
+    assert_eq!(refused(&borrowed), Admitted::Refused(REFUSE_RECEIPT), "another signer's predecessor");
 }
 
 /// 47.2 step 4. The height on the frame is a CLAIM, re-derived from the
@@ -142,8 +176,8 @@ fn claimed_height_that_does_not_rederive_is_refused() {
 }
 
 /// 47.2 step 3's last two arms, read off the ledger. The same node twice is
-/// STALE. A different chain hash at a K already held is an equivocation
-/// proof (47.4).
+/// STALE. A different chain hash at a place already held is an
+/// equivocation proof (47.4).
 #[test]
 fn a_duplicate_is_stale_and_a_second_hash_at_one_k_is_equivocation() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![])]);
@@ -154,16 +188,16 @@ fn a_duplicate_is_stale_and_a_second_hash_at_one_k_is_equivocation() {
     let stale = take(&mut ledger, &rs[0]);
     assert_eq!(stale, Admitted::Stale);
     assert_eq!(stale.reason(), Some(REFUSE_RECEIPT_STALE), "the reply names 34.1's constant for a duplicate frame");
-    assert_ne!(fork.chain_hash, rs[0].chain_hash, "one K, two hashes");
+    assert_ne!(fork.chain_hash, rs[0].chain_hash, "one place, two hashes");
     let proof = take(&mut ledger, &fork);
-    assert_eq!(proof, Admitted::Equivocation { k: 0, held: rs[0].chain_hash, claimed: fork.chain_hash });
+    assert_eq!(proof, Admitted::Equivocation { at: at(0), held: rs[0].chain_hash, claimed: fork.chain_hash });
     assert_eq!(proof.reason(), Some(REFUSE_EQUIVOCATION), "and for the proof of 47.4");
     assert!(take(&mut ledger, &rs[1]).reason().is_some(), "a second hearing of the head is stale too");
 }
 
 /// 78.24 (d2) — WHAT ADMISSION KNOWS IS WHAT THE LEDGER HOLDS: a ledger
 /// written and read back admits the next node of a signer as a parent and
-/// its K-past-the-head as a gap, with nothing persisted beside it.
+/// one past the head as a gap, with nothing persisted beside it.
 #[test]
 fn admission_after_a_restore_reads_the_restored_ledger() {
     let rs = line([1; 32], &[(1, vec![]), (2, vec![]), (3, vec![])]);
@@ -173,7 +207,11 @@ fn admission_after_a_restore_reads_the_restored_ledger() {
     let mut tape = Vec::new();
     ledger.write(&mut tape).expect("writes");
     let mut back = ReceiptChain::read(&tape, &mut 0).expect("reads");
-    assert_eq!(take(&mut back, &rs[2]), Admitted::Gap { vk: [1; 32], from: 0, to: 2 }, "the signer's head came back with the ledger");
+    assert_eq!(
+        take(&mut back, &rs[2]),
+        Admitted::Gap { vk: [1; 32], from: Some(at(0)), to: at(1) },
+        "the signer's head came back with the ledger"
+    );
     assert!(matches!(take(&mut back, &rs[1]), Admitted::Parent(_)), "and its next node admits, not a gap from zero");
 }
 

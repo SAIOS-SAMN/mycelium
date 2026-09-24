@@ -28,7 +28,7 @@ fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
         genesis: G,
         epoch: E,
         prev_receipt_hash: r.prev_hash(),
-        k: r.stamp.k,
+        at: r.stamp.place(),
         height: r.stamp.h,
         chart: vec![1, 2, 3],
         payload: r.stamp.key(),
@@ -50,11 +50,11 @@ fn one_signer_one_k_two_hashes_both_verified_is_the_proof() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
     let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
-    assert_eq!(ra.stamp.k, rb.stamp.k, "one K");
+    assert_eq!(ra.stamp.place(), rb.stamp.place(), "one place");
     assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let proof = admit_equivocation(signed(&pa, &key), &ra, signed(&pb, &key), &rb).expect("a proof");
-    assert_eq!(proof, Equivocated { vk, k: 0 }, "the signer and the K it lied at");
+    assert_eq!(proof, Equivocated { vk, at: crate::chronometry::Place::GENESIS }, "the signer and the place it lied at");
 }
 
 /// One hash twice is a duplicate frame; two signers are two chains; two K
@@ -110,11 +110,18 @@ fn a_half_that_disagrees_with_itself_is_refused_as_a_receipt() {
         "a hash nobody wrote"
     );
     let mut at_another_k = pb.clone();
-    at_another_k.k += 1;
+    at_another_k.at.k += 1;
     assert_eq!(
         admit_equivocation(signed(&pa, &key), &ra, signed(&at_another_k, &key), &rb).err(),
         Some(REFUSE_RECEIPT),
         "a prefix at another K than its receipt"
+    );
+    let mut at_another_i = pb.clone();
+    at_another_i.at.i += 1;
+    assert_eq!(
+        admit_equivocation(signed(&pa, &key), &ra, signed(&at_another_i, &key), &rb).err(),
+        Some(REFUSE_RECEIPT),
+        "a prefix at another place in the orbit than its receipt"
     );
     let forger = court_key("forger");
     assert_eq!(

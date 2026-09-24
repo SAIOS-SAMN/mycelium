@@ -22,7 +22,7 @@ fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
     let taught = Cite::Word {
         chart: crate::transducer::stalk::Invariant::counts(&[1]),
         class: None,
-        at: Stamp { h: 7, vk: [9; 32], k: 3 },
+        at: Stamp { h: 7, vk: [9; 32], k: 3, i: 0 },
     };
     // Three acts of distinct measure, so the nodes can be told apart by
     // what they carried and not only by what kind they were.

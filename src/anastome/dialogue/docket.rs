@@ -70,7 +70,7 @@ pub fn encode_docket_reply_paged(
         }
         push_mu(&mut item, &s.before);
         push_mu(&mut item, &s.after);
-        item.extend_from_slice(&s.k.to_le_bytes());
+        s.at.put_canonical(&mut item);
         item.extend_from_slice(&s.t_universal.to_le_bytes());
         if settled_len + item.len() > budget {
             break;
@@ -95,7 +95,7 @@ pub fn encode_docket_reply_paged(
         }
         push_mu(&mut item, &d.escrowed);
         push_mu(&mut item, &d.deflation);
-        item.extend_from_slice(&d.k.to_le_bytes());
+        d.at.put_canonical(&mut item);
         if out.len() + item.len() + settled_len > budget {
             break;
         }
@@ -139,11 +139,10 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(cites) = read_cites(body, &mut p) else { break };
         let Some(before) = read_mu(body, &mut p) else { break };
         let Some(after) = read_mu(body, &mut p) else { break };
-        let Some(k) = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes) else { break };
-        p += 8;
+        let Some(at) = crate::chronometry::Place::take_canonical(body, &mut p) else { break };
         let Some(tu) = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes) else { break };
         p += 8;
-        out.push(Settlement { listing, chain, voice, cites, before, after, k, t_universal: tu });
+        out.push(Settlement { listing, chain, voice, cites, before, after, at, t_universal: tu });
     }
     out
 }
@@ -165,7 +164,10 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
         let Some(_) = read_cites(body, &mut p) else { return Vec::new() };
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
-        p += 8;
+        // The settlement's place on its line, then its tick.
+        if crate::chronometry::Place::take_canonical(body, &mut p).is_none() {
+            return Vec::new();
+        }
         if p + 8 <= body.len() {
             p += 8;
         }
@@ -195,8 +197,8 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
     let mut p = 0usize;
     let n = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
     p += 4;
-    if n > body.len().checked_sub(p)? / 74 {
-        return None; // untrusted count: address + element + voices + μ⃗ pair + k
+    if n > body.len().checked_sub(p)? / 82 {
+        return None; // untrusted count: address + element + voices + μ⃗ pair + place
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
@@ -220,9 +222,8 @@ pub(crate) fn decode_dockets_at(body: &[u8]) -> Option<(Vec<Docket>, usize)> {
         }
         let mu = read_mu(body, &mut p)?;
         let deflation = read_mu(body, &mut p)?;
-        let k = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
-        p += 8;
-        out.push(Docket { addr, elem, voices, escrowed: mu, deflation, k });
+        let at = crate::chronometry::Place::take_canonical(body, &mut p)?;
+        out.push(Docket { addr, elem, voices, escrowed: mu, deflation, at });
     }
     Some((out, p))
 }
@@ -331,7 +332,8 @@ pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
 }
 
 /// The receiver's answer to a ruling: `[arm u8][payload]` — `0` applied,
-/// `1` inert, `2` refused with `len16 + reason`, `3` gap with two `u64`.
+/// `1` inert, `2` refused with `len16 + reason`, `3` gap with `from` (a
+/// tag byte, then its place where `1`) and `to`, each place `K‖i`.
 /// `None` where the reason passes its u16: the answer is refused, never
 /// wrapped (LD0).
 pub fn encode_ruled(r: &Ruled) -> Option<Vec<u8>> {
@@ -346,8 +348,14 @@ pub fn encode_ruled(r: &Ruled) -> Option<Vec<u8>> {
         }
         Ruled::Gap { from, to } => {
             out.push(3);
-            out.extend_from_slice(&from.to_le_bytes());
-            out.extend_from_slice(&to.to_le_bytes());
+            match from {
+                None => out.push(0),
+                Some(f) => {
+                    out.push(1);
+                    f.put_canonical(&mut out);
+                }
+            }
+            to.put_canonical(&mut out);
         }
     }
     Some(out)
@@ -361,10 +369,16 @@ pub fn decode_ruled(body: &[u8]) -> Option<Ruled> {
             let n = u16::from_le_bytes(body.get(1..3)?.try_into().ok()?) as usize;
             Some(Ruled::Refused(body.get(3..3 + n)?.to_vec()))
         }
-        3 => Some(Ruled::Gap {
-            from: u64::from_le_bytes(body.get(1..9)?.try_into().ok()?),
-            to: u64::from_le_bytes(body.get(9..17)?.try_into().ok()?),
-        }),
+        3 => {
+            let mut p = 2usize;
+            let from = match body.get(1)? {
+                0 => None,
+                1 => Some(crate::chronometry::Place::take_canonical(body, &mut p)?),
+                _ => return None,
+            };
+            let to = crate::chronometry::Place::take_canonical(body, &mut p)?;
+            (p == body.len()).then_some(Ruled::Gap { from, to })
+        }
         // An arm the layout does not define is refused, never guessed at.
         _ => None,
     }

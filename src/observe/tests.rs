@@ -41,7 +41,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
     // head (the gap is signed), and a voice before and after a persist.
     let court_clock = Clock::Court(CourtClock {
         k: 13,
-        head: [40, 1, 0, 2, 0, 12],
+        head: [40, 1, 0, 2, 0, 12, 3],
         genesis: Some(([9; 32], 2)),
         peers: vec![(vk(1), 37, 3), (vk(2), 44, -4)],
         persisted: Some((38, 11)),
@@ -461,7 +461,7 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
 fn an_award_is_measured_flat_in_its_word() {
     use crate::transducer::address::Address;
     let mut t = crate::economy::Treasury::new();
-    let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1 }, [1u8; 32]);
+    let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1, i: 0 }, [1u8; 32]);
     t.escrow_award(&Address::from_bytes([7u8; 3]), vec![[2; 32]], [4, 0, 0, 0], a);
     t.escrow_award(&Address::from_bytes(vec![9u8; 70_000]), vec![[2; 32]], [4, 0, 0, 0], a);
     let mut c = Carriage::default();
@@ -492,7 +492,7 @@ fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
         &crate::transducer::germinate::germinate(&pairs, &after).expect("a larger word"),
     );
     assert!(large.address().len() > small.address().len(), "two words of different sizes");
-    let at = Stamp { h: 2, vk: [5; 32], k: 2 };
+    let at = Stamp { h: 2, vk: [5; 32], k: 2, i: 0 };
     let chart = crate::transducer::stalk::Invariant::counts(&[1, 0, 0, 1]);
     let cite = |_: &crate::transducer::element::Element| Cite::Word { chart: chart.clone(), class: None, at };
     // Genesis first: it names no predecessor, so the two learned nodes after

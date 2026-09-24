@@ -1,5 +1,5 @@
-// 47.2 step 3, 45.8 — ACT_RECEIPTS: the K-range read a gap's back-fill and
-// an era's replay fetch by.
+// 47.2 step 3, 45.8 — ACT_RECEIPTS: the place-range read a gap's back-fill
+// and an era's replay fetch by.
 //
 //! A page of one signer's receipts, from the hot chain, `ARC1`, or what
 //! this court admitted of the signer, as many as fit the frame budget and
@@ -20,7 +20,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let at_most = budget / mycelium::chronometry::KStepReceipt::MIN_TAPE;
     let receipts = match door.kernel.lock() {
-        Ok(k) => k.receipts_range(&req.signer, req.from, req.to, at_most),
+        Ok(k) => k.receipts_range(&req.signer, req.after, req.upto, at_most),
         Err(_) => return,
     };
     let body = dialogue::encode_receipts_reply(&receipts, budget);

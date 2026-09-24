@@ -93,7 +93,7 @@ impl Kernel {
     pub(crate) fn anchor(&self) -> crate::economy::Anchor {
         let at = match self.chain.head_stamp() {
             Some(s) => s,
-            None => crate::chronometry::Stamp { h: 0, vk: self.chain.vk(), k: 0 },
+            None => crate::chronometry::Stamp::new(0, self.chain.vk(), crate::chronometry::Place::GENESIS),
         };
         (at, self.chain.head_hash())
     }
