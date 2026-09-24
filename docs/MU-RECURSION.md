@@ -11860,6 +11860,42 @@ audited commit, with the carriage reading before and after on the
 copied ledgers, the tape check restoring the copied ledgers under the
 new layout, and the equivocation and fold tests re-derived on stamps.
 
+**LD2 landed (91cd88ca; audited 2026-09-24, reproduced detached at
+91cd88ca: 1016 / 15 / 1 / 12 / 6, 0 failed, 1 ignored; gate exit 0; the
+census identical).** The ledger is a `Keyed` over the stamp holding own
+and peer nodes once, with the two coordinate relations beside it (`vk‖K
+→ h` for the range readers, `vk → K` for a signer's head); a node's hash
+is over its canonical body with `vk`; the citation is a sum, a form's
+fiber its chart alone; `admitted_at` stands on every word row of the
+court (basis, provisional, cavity, pending) and of the voice (genome,
+epigenome), set by the act that first names the word, by the home
+receipt's stamp at an offer, by the syllabus stamp at teach — the
+syllabus page carries a stamp per word — and by the peer's admitting
+stamp at a fetch; an act after a removal reads the cite before it; a
+Learned act is N word cites; the treasury's anchor is the head stamp
+with its hash; the listing book's `K` is the List act's `admitted_at`;
+a cocycle row stands at an optional stamp, held before genesis. The
+ledger persists as the trie in one section (LDG1) replacing the two
+chain sections; (d1) the voice's ledger persists in its genome file with
+per-word stamps and restores under its own key only, (d2) admission
+reads the ledger itself and the admissions struct is gone, (d3) depth is
+rebuilt from every node at cite-at → signers. The console prints the
+stamp first and `rulings admitted N applied M` (EC1's reading). THE
+CARRIAGE, projected on the copied fleet ledgers: hypha a's receipts 73.5
+MB → 5.7 MB (syllabus 15.2 → 0.39 MB, peers 50.8 → 5.0 MB), 300–350
+bytes per node with a maximum of 591, flat in the word's size; hypha c
+51.5 → 5.1 MB; a lower bound, since 15 647 of a's peer cites name words
+a does not hold and count at the empty chart. Five points ruled: the
+binding of a ledger to its key, refused by name under another; the tape
+check under a layout without migration is the build's own round-trip,
+a restored ledger admitting a signer's next node and the voice's ledger
+restoring under its key — C4 reads "every carrier the build under check
+wrote", the old tapes named unread, never migrated; `provisional_k` and
+`provisional_h` fold into `admitted_at` in step 4 (law 12); every
+removal path that drops a word from all rows without an act is swept in
+step 4 so no stamp entry outlives its word; EC1's producer follows the
+treasury rows and the composites, before GD1.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
