@@ -277,7 +277,10 @@ fn main() {
 
     loop {
         if stop.load(Ordering::SeqCst) {
-            let _ = entity.save_genome(&genome_path);
+            // LD0: a genome that was not saved is said, never discarded.
+            if let Err(why) = entity.save_genome(&genome_path) {
+                eprintln!("[{tag}] genome not saved: {why}");
+            }
             break;
         }
         stroke_n = stroke_n.saturating_add(1);

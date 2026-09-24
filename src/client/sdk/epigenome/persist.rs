@@ -1,13 +1,20 @@
-// 28 — THE EPIGENOME ON DISK: crystallized whole, and a tape that does not
-// parse refused rather than partly restored.
+// 28, 78.27 — THE GENOME ON DISK: the voice's words in T1's shape, keyed by
+// their citations, and a tape that does not read whole refused rather than
+// partly restored.
 
 use crate::client::sdk::*;
+use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
 use crate::transducer::element::Element;
 
-/// THE GENOME FILE'S MAGIC: its words with their admitting stamps
-/// `h‖vk‖K‖i`, then the voice's ledger with its orbit closes (78.23 as
-/// amended).
-pub const GENOME_MAGIC: &[u8; 4] = b"GEN5";
+/// THE GENOME FILE'S MAGIC (78.27, LD3-c): the voice's words as a trie keyed
+/// by `Cite::Word{chart, class, at}`, then the voice's ledger as its tries —
+/// the signer and its nodes by stamp.
+pub const GENOME_MAGIC: &[u8; 4] = b"GEN6";
+
+/// THE POSITIONAL GENOME, refused BY NAME and never migrated: its words
+/// stood in a counted list with a `0` tag for a word held with no admitting
+/// stamp, and its ledger was read by position.
+pub const PRE_TRIE_GENOME_MAGIC: &[u8; 4] = b"GEN5";
 
 /// THE GENOME BEFORE THE ORBIT COORDINATES (ACT1-orbit), refused BY NAME
 /// and never migrated, as `Element::PRE_WHOLE_MAGIC` and the snapshot's
@@ -16,78 +23,134 @@ pub const GENOME_MAGIC: &[u8; 4] = b"GEN5";
 /// orbit. One equality refuses it; there is no reader for it.
 pub const PRE_ORBIT_GENOME_MAGIC: &[u8; 4] = b"GEN4";
 
+/// The words trie and its one leaf: the element held once.
+const WORDS: &str = "words";
+const LEAF_HELD: u8 = 1;
+
 /// What a genome file's magic names where this reader refuses it: the
-/// pre-orbit genome by its own name, anything else as not a genome of
-/// this build. `None` for this build's magic.
+/// positional and the pre-orbit genomes by their own names, anything else
+/// as not a genome of this build. `None` for this build's magic.
 pub fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
     match bytes.get(..4) {
         Some(m) if m == GENOME_MAGIC => None,
+        Some(m) if m == PRE_TRIE_GENOME_MAGIC => {
+            Some("GEN5, the positional genome (78.27): refused by name, the recut is the road")
+        }
         Some(m) if m == PRE_ORBIT_GENOME_MAGIC => {
             Some("GEN4, the genome before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road")
         }
-        _ => Some("not a GEN5 tape"),
+        _ => Some("not a GEN6 tape"),
+    }
+}
+
+/// WHAT THE GENOME WRITER REFUSED (LD0, T1's rule at the genome): each word
+/// named once by its reason and counted, never written with a `0` tag.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub struct GenomeRefused {
+    /// Words held with no admitting stamp: no act admitted them, so they
+    /// have no coordinates to be filed at.
+    pub unstamped: u64,
+    /// Words whose citation cannot be written (a class key at its wall).
+    pub unciteable: u64,
+    /// Two words at one citation — one fiber, one admitting act.
+    pub coincident: u64,
+}
+
+impl GenomeRefused {
+    pub fn total(&self) -> u64 {
+        self.unstamped + self.unciteable + self.coincident
+    }
+
+    /// Named once, with each count, where any is not zero.
+    pub fn name(&self) {
+        for (what, n) in [
+            ("words held with no admitting stamp", self.unstamped),
+            ("words whose citation cannot be written", self.unciteable),
+            ("words coinciding at one citation", self.coincident),
+        ] {
+            if n > 0 {
+                eprintln!("  genome refused {n} {what}");
+            }
+        }
     }
 }
 
 /// What a restored genome hands back beside its words: each word's
-/// admitting stamp (78.24 (2b)), and where the words end on the tape.
+/// admitting stamp (78.24 (2b)), read off its own key, and where the words
+/// end on the tape.
 pub struct Uncrystallized {
     pub admitted: Vec<(crate::transducer::address::Address, crate::chronometry::Stamp)>,
     pub end: usize,
 }
 
 impl Epigenome {
-    /// CRYSTALLIZE the genome for persistence — the permanent language only.
-    /// The epigenome is memory-only. Format: `GEN5 | n u32 | (len u32 |
-    /// element | admitted)…`, where `admitted` is `0`, or `1` and the stamp
-    /// of the act that admitted the word (78.24 (2b)).
-    pub fn crystallize(&self, admitted: impl Fn(&[u8]) -> Option<crate::chronometry::Stamp>) -> Vec<u8> {
-        let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
-        out.extend_from_slice(GENOME_MAGIC);
-        out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
-        for (_, g) in self.resident.scoped() {
-            let b = g.held.to_bytes();
-            out.extend_from_slice(&(b.len() as u32).to_le_bytes());
-            out.extend_from_slice(&b);
-            match admitted(g.held.address().as_bytes()) {
-                None => out.push(0),
-                Some(at) => {
-                    out.push(1);
-                    at.put_canonical(&mut out);
-                }
+    /// CRYSTALLIZE the genome for persistence — the permanent language only;
+    /// the epigenome is memory-only (78.27). The magic, then the words trie:
+    /// each word at its citation `Cite::word(element, admitted)`, its one
+    /// leaf the element. A word with no admitting stamp has no coordinates
+    /// and is refused by name and counted, never written.
+    pub fn crystallize(
+        &self,
+        admitted: impl Fn(&[u8]) -> Option<crate::chronometry::Stamp>,
+    ) -> (Vec<u8>, GenomeRefused) {
+        let mut out = GENOME_MAGIC.to_vec();
+        let mut refused = GenomeRefused::default();
+        let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
+        crate::snapshot::persist(&self.resident, |_, g| {
+            let elem = g.held.element();
+            let Some(at) = admitted(g.held.address().as_bytes()) else {
+                refused.unstamped += 1;
+                return;
+            };
+            let mut key = Vec::new();
+            if crate::chronometry::Cite::word(elem, at).put_canonical(&mut key).is_none() {
+                refused.unciteable += 1;
+                return;
             }
-        }
-        out
+            if nodes.contains(&key) {
+                refused.coincident += 1;
+                return;
+            }
+            nodes.insert(key, vec![(LEAF_HELD, g.held.to_bytes())]);
+        });
+        put_trie(&mut out, WORDS, &nodes);
+        (out, refused)
     }
 
-    /// Restore GEN5 only, whole or refused: an older file (named by
-    /// [`genome_refused`]), or a word that does not parse, refuses the tape
-    /// (rule 11), and nothing is restored.
+    /// Restore GEN6 only, whole or refused: an older file (named by
+    /// [`genome_refused`]), a word that does not parse, or a word filed at a
+    /// citation that is not its own refuses the tape (rule 11), and nothing
+    /// is restored. Each word's admitting stamp is read off its key.
     pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<Uncrystallized> {
         if genome_refused(bytes).is_some() {
             return None;
         }
-        let n = u32::from_le_bytes(bytes.get(4..8)?.try_into().ok()?) as usize;
-        if n > bytes.len().checked_sub(8)? / 5 {
-            return None; // untrusted count vs remaining bytes
-        }
-        let mut genome = Vec::with_capacity(n);
-        let mut admitted = Vec::new();
-        let mut pos = 8usize;
-        for _ in 0..n {
-            let len = u32::from_le_bytes(bytes.get(pos..pos + 4)?.try_into().ok()?) as usize;
-            pos += 4;
-            let slice = bytes.get(pos..pos.checked_add(len)?)?;
-            pos += len;
-            let mut ep = 0usize;
-            let e = Element::from_bytes(slice, &mut ep)?;
-            let tag = *bytes.get(pos)?;
-            pos += 1;
-            match tag {
-                0 => {}
-                1 => admitted.push((e.address(), crate::chronometry::Stamp::take_canonical(bytes, &mut pos)?)),
-                _ => return None,
+        let mut pos = 4usize;
+        let words = take_trie(bytes, &mut pos, WORDS, &[LEAF_HELD])?;
+        let mut genome = Vec::with_capacity(words.len());
+        let mut admitted = Vec::with_capacity(words.len());
+        for (key, leaves) in words.scoped() {
+            let mut p = 0usize;
+            let crate::chronometry::Cite::Word { at, .. } = crate::chronometry::Cite::take_canonical(&key, &mut p)?
+            else {
+                return None;
+            };
+            if p != key.len() {
+                return None;
             }
+            let record = leaf(leaves, LEAF_HELD)?;
+            let mut ep = 0usize;
+            let e = Element::from_bytes(record, &mut ep)?;
+            if ep != record.len() {
+                return None;
+            }
+            // The key is the word's own citation, re-derived.
+            let mut again = Vec::new();
+            crate::chronometry::Cite::word(&e, at).put_canonical(&mut again)?;
+            if again != key {
+                return None;
+            }
+            admitted.push((e.address(), at));
             // The tape is decoded to a form HERE, once, as the word is
             // taken in — not on the first read of its form (L16).
             genome.push(crate::transducer::element::Held::of(e));

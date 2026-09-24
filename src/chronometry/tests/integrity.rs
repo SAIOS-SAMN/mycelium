@@ -18,17 +18,19 @@ fn the_ledger_is_temporal_authority_and_tamper_evident() {
     assert_eq!(c.next_step_index(), 1, "K is the algebraic clock: it moved at the close");
     assert!(c.verify_chain_integrity());
     let mut tape = Vec::new();
-    c.write(&mut tape).expect("the ledger writes");
-    // The frame of the middle node, one lane of it changed: 32 vk, a root
-    // tag, the count, then the genesis node whole, then the second's
-    // stamp and kind.
-    let mut first = Vec::new();
-    c.at_place(crate::chronometry::Place::GENESIS).expect("genesis").write(&mut first).expect("writes");
-    let lane = 32 + 1 + 8 + first.len() + Stamp::LEN + 1;
+    c.put_tries(&mut tape).expect("the ledger writes");
+    // One lane of the middle node changed, in its own leaf: the first byte
+    // after its stamp and its kind.
+    let middle = c.at_place(crate::chronometry::Place::GENESIS.within()).expect("the second act");
+    let mut rec = Vec::new();
+    middle.write(&mut rec).expect("writes");
+    let Some(at) = tape.windows(rec.len()).position(|w| w == rec.as_slice()) else {
+        panic!("the middle node's receipt stands in its leaf")
+    };
     let mut bad = tape.clone();
-    bad[lane] ^= 1;
-    assert!(ReceiptChain::read(&bad, &mut 0).is_none(), "a single byte of one node refuses the ledger whole");
-    assert!(ReceiptChain::read(&tape, &mut 0).is_some(), "and the ledger as written reads");
+    bad[at + Stamp::LEN + 1] ^= 1;
+    assert!(ReceiptChain::take_tries(&bad, &mut 0).is_none(), "a single byte of one node refuses the ledger whole");
+    assert!(ReceiptChain::take_tries(&tape, &mut 0).is_some(), "and the ledger as written reads");
 }
 
 /// 45.1, S13.6, 78.24 — THE NODE CARRIES ITS ACT'S KIND: on the tape after

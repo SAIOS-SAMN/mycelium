@@ -112,9 +112,9 @@ fn the_ledger_written_as_its_trie_reads_back_whole() {
     c.admit(p0.clone());
     step(&mut c, vec![cite(&p0)]);
     let mut tape = Vec::new();
-    c.write(&mut tape).expect("the ledger writes");
+    c.put_tries(&mut tape).expect("the ledger writes");
     let mut pos = 0usize;
-    let back = ReceiptChain::read(&tape, &mut pos).expect("and reads back");
+    let back = ReceiptChain::take_tries(&tape, &mut pos).expect("and reads back");
     assert_eq!(pos, tape.len(), "whole");
     assert_eq!(back.nodes().cloned().collect::<Vec<_>>(), c.nodes().cloned().collect::<Vec<_>>());
     assert_eq!((back.head_k(), back.head_height(), back.head_hash()), (c.head_k(), c.head_height(), c.head_hash()));

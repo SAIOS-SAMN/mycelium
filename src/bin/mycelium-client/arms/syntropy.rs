@@ -173,7 +173,10 @@ else if let Some((word, cites)) = entity.seek_refinement() {
     }
 }
 if entity.epigenome.genome_len() != m.last_genome {
-    let _ = entity.save_genome(genome_path);
+    // LD0: a genome that was not saved is said, never discarded.
+    if let Err(why) = entity.save_genome(genome_path) {
+        eprintln!("[{tag}] genome not saved: {why}");
+    }
     m.last_genome = entity.epigenome.genome_len();
 }
 physics.regenerate();

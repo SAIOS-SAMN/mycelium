@@ -35,7 +35,13 @@ assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
 // not persist (expression resets — dialect is ephemeral by ruling).
-let frozen = epi.crystallize(|_| None);
+// The word stands at the act that admitted it; one with no admitting stamp
+// has no coordinates on the genome and is refused by name (78.27).
+let admitting = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
+let (frozen, refused) = epi.crystallize(|_| Some(admitting));
+assert_eq!(refused.total(), 0, "nothing refused");
+let (_, unstamped) = epi.crystallize(|_| None);
+assert_eq!(unstamped.unstamped, 1, "a word with no admitting stamp is refused and counted, never written");
 let mut back = Epigenome::new();
 assert!(back.uncrystallize(&frozen).is_some(), "crystallized genome restores");
 assert_eq!(back.genome_len(), epi.genome_len());
@@ -55,8 +61,20 @@ assert_eq!(
     None,
     "a dialect with no word expresses nothing, and nothing has no peak"
 );
-assert!(Epigenome::new().uncrystallize(b"GEN5\xff\xff\xff\xff").is_none(), "hostile count refused");
+assert!(Epigenome::new().uncrystallize(b"GEN6\xff\xff\xff\xff\xff\xff\xff\xff").is_none(), "hostile length refused");
 assert!(Epigenome::new().uncrystallize(b"GEN3\x00\x00\x00\x00").is_none(), "an older layout refused");
+// THE POSITIONAL GENOME IS REFUSED BY NAME (78.27).
+let mut positional = frozen.clone();
+positional[..4].copy_from_slice(crate::client::sdk::epigenome::PRE_TRIE_GENOME_MAGIC);
+assert!(Epigenome::new().uncrystallize(&positional).is_none(), "a positional genome restores nothing");
+assert!(
+    crate::client::sdk::epigenome::genome_refused(&positional).is_some_and(|n| n.starts_with("GEN5")),
+    "and is refused by its own name"
+);
+// A tape cut short at any byte restores nothing.
+for cut in 4..frozen.len() {
+    assert!(Epigenome::new().uncrystallize(&frozen[..cut]).is_none(), "a genome cut at byte {cut} is refused");
+}
 // THE GENOME BEFORE THE ORBIT COORDINATES IS REFUSED BY NAME (ACT1-orbit):
 // the same tape under GEN4 restores nothing, and the refusal names it.
 let mut older = frozen.clone();

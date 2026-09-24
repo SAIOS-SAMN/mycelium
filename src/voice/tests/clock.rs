@@ -67,8 +67,8 @@ fn a_voices_ledger_restores_under_its_own_key_and_no_other() {
     v.seal(ActKind::Uttered, [0, 1, 0, 0], Vec::new());
     v.orbit();
     let mut tape = Vec::new();
-    v.chain().write(&mut tape).expect("the ledger writes");
-    let chain = ReceiptChain::read(&tape, &mut 0).expect("and reads");
+    v.chain().put_tries(&mut tape).expect("the ledger writes");
+    let chain = ReceiptChain::take_tries(&tape, &mut 0).expect("and reads");
     let mut booted = Voice::named("worker-a");
     assert!(booted.restore(chain.clone(), Vec::new()), "its own ledger restores");
     assert_eq!(booted.k(), 2, "and its K continues from where it stood");

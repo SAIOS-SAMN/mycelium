@@ -101,11 +101,12 @@ impl Entity {
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present (GEN5) — its words with their admitting stamps, and this
-    /// voice's own ledger behind them, so its K continues across a boot
-    /// rather than restarting at zero. The epigenome starts empty: it is
-    /// volatile, in memory and never persisted (78.27). An older file, or
-    /// one whose ledger does not verify, is refused whole.
+    /// if present (GEN6) — its words at their citations, and this voice's
+    /// own ledger behind them, so its K continues across a boot rather than
+    /// restarting at zero. The epigenome starts empty: it is volatile, in
+    /// memory and never persisted (78.27). An older file, one whose ledger
+    /// does not verify, or one with a word admitted on this voice's line at
+    /// a stamp its ledger does not hold, is refused whole.
     pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         let Ok(bytes) = std::fs::read(genome_path) else {
@@ -117,30 +118,43 @@ impl Entity {
             return e;
         }
         let Some(read) = e.epigenome.uncrystallize(&bytes) else {
-            eprintln!("genome refused: the file is not a whole GEN5 tape");
-            return e;
+            eprintln!("genome refused: the file is not a whole GEN6 tape");
+            return Entity::open(addr, e.session.kernel().clone());
         };
         let mut pos = read.end;
-        let restored = crate::chronometry::ReceiptChain::read(&bytes, &mut pos)
-            .filter(|_| pos == bytes.len())
-            .is_some_and(|chain| e.session.voice_mut().restore(chain, read.admitted));
-        if !restored {
+        let Some(chain) = crate::chronometry::ReceiptChain::take_tries(&bytes, &mut pos).filter(|_| pos == bytes.len())
+        else {
+            eprintln!("genome refused: this voice's ledger does not read whole");
+            return Entity::open(addr, e.session.kernel().clone());
+        };
+        // THE GENOME'S admitted_at FROM ITS OWN LEDGER (78.27): a word
+        // admitted on this voice's line stands at a node of the ledger just
+        // read; a stamp on a peer's line — the court's syllabus stamp — is a
+        // citation and stands as one.
+        let orphaned = read.admitted.iter().filter(|(_, at)| at.vk == chain.vk() && chain.node(at).is_none()).count();
+        if orphaned > 0 {
+            eprintln!("genome refused: {orphaned} words admitted at stamps on this voice's line its ledger does not hold");
+            return Entity::open(addr, e.session.kernel().clone());
+        }
+        if !e.session.voice_mut().restore(chain, read.admitted) {
             eprintln!("genome refused: this voice's ledger does not verify under its key");
             return Entity::open(addr, e.session.kernel().clone());
         }
         let n = e.epigenome.genome_len();
         let kb = bytes.len() / 1024;
-        eprintln!("genome {n} words (GEN5, {kb} KB), K {}, epigenome empty", e.own_k());
+        eprintln!("genome {n} words (GEN6, {kb} KB), K {}, epigenome empty", e.own_k());
         e
     }
 
-    /// Persist the genome atomically (write-then-rename): the words with
-    /// their admitting stamps, then this voice's ledger on the ledger's own
-    /// writer. Call from the syntropic phase when the genome has grown.
-    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<()> {
+    /// Persist the genome atomically (write-then-rename): the words at their
+    /// citations, then this voice's ledger as its tries. Call from the
+    /// syntropic phase when the genome has grown. A word the writer refused
+    /// is named once with its count (LD0), and the counts are answered.
+    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
         let voice = self.session.voice();
-        let mut bytes = self.epigenome.crystallize(|a| voice.admitted_at(a));
-        if voice.chain().write(&mut bytes).is_none() {
+        let (mut bytes, refused) = self.epigenome.crystallize(|a| voice.admitted_at(a));
+        refused.name();
+        if voice.chain().put_tries(&mut bytes).is_none() {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "genome refused: a node of this voice's ledger cannot be written"));
         }
         // ACT1: where this voice stood when the genome was taken, noted only
@@ -150,7 +164,7 @@ impl Entity {
         std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, genome_path)?;
         self.genome_persisted = Some(at);
-        Ok(())
+        Ok(refused)
     }
 
     pub fn kernel(&self) -> &Kernel {

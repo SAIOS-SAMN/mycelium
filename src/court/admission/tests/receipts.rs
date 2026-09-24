@@ -205,8 +205,8 @@ fn admission_after_a_restore_reads_the_restored_ledger() {
     ledger.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("its own genesis");
     assert!(matches!(take(&mut ledger, &rs[0]), Admitted::Parent(_)));
     let mut tape = Vec::new();
-    ledger.write(&mut tape).expect("writes");
-    let mut back = ReceiptChain::read(&tape, &mut 0).expect("reads");
+    ledger.put_tries(&mut tape).expect("writes");
+    let mut back = ReceiptChain::take_tries(&tape, &mut 0).expect("reads");
     assert_eq!(
         take(&mut back, &rs[2]),
         Admitted::Gap { vk: [1; 32], from: Some(at(0)), to: at(1) },

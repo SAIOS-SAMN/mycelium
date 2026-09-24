@@ -114,25 +114,4 @@ impl Root {
         *pos += 8;
         Some(Root { at, hash, height })
     }
-
-    /// A root or none, as one tag byte then the root: `0` none, `1` root.
-    pub fn write_opt(root: Option<&Root>, out: &mut Vec<u8>) {
-        match root {
-            None => out.push(0),
-            Some(r) => {
-                out.push(1);
-                r.write(out);
-            }
-        }
-    }
-
-    pub fn read_opt(b: &[u8], pos: &mut usize) -> Option<Option<Root>> {
-        let tag = *b.get(*pos)?;
-        *pos += 1;
-        match tag {
-            0 => Some(None),
-            1 => Some(Some(Root::read(b, pos)?)),
-            _ => None,
-        }
-    }
 }

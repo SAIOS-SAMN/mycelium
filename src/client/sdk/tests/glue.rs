@@ -6,6 +6,12 @@ use crate::client::sdk::*;
 use crate::transducer::family::{cipher_form, sentence_measure, Crystal, NoCrystal};
 use crate::transducer::sentence::as_element_form;
 
+/// The act that admitted the one word these genomes hold: a word with no
+/// admitting stamp has no coordinates on the genome (78.27).
+fn admitting() -> crate::chronometry::Stamp {
+    crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS)
+}
+
 fn digits(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
@@ -110,7 +116,8 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
         !Crystal::on_body(&epi, &chart).is_empty(),
         "the mind that learned it answers at the body's chart"
     );
-    let tape = epi.crystallize(|_| None);
+    let (tape, refused) = epi.crystallize(|_| Some(admitting()));
+    assert_eq!(refused.total(), 0, "the word stands at its admitting stamp");
     let mut booted = Epigenome::new();
     assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
     assert!(
@@ -160,7 +167,8 @@ fn a_restored_genome_factors_through_the_generators_it_was_taught() {
         Crystal::generators_under(epi, chart, &mut budget)
     };
 
-    let tape = epi.crystallize(|_| None);
+    let (tape, refused) = epi.crystallize(|_| Some(admitting()));
+    assert_eq!(refused.total(), 0, "the word stands at its admitting stamp");
     let mut booted = Epigenome::new();
     assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
 

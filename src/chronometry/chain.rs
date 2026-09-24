@@ -654,38 +654,75 @@ impl ReceiptChain {
         Self::from_nodes(None, vk, receipts)
     }
 
-    /// THE LEDGER WRITTEN AS THE TRIE (78.24 (c)): the key this chain signs
-    /// as, the root, then every node in stamp order, each once. `None`
-    /// where a node cannot be written (LD0).
+    /// THE LEDGER AS ITS TRIES (78.24 (c), 78.27, LD3-c): the signer, one
+    /// node keyed by the key this chain signs as, carrying the root it
+    /// stands on where it was ever folded; then every node keyed by its own
+    /// stamp. `None` where a node cannot be written, and nothing is written
+    /// then (LD0).
     #[must_use = "a ledger that cannot be written is refused by name, never dropped (LD0)"]
-    pub fn write(&self, out: &mut Vec<u8>) -> Option<()> {
-        let mut rec = Vec::new();
-        rec.extend_from_slice(&self.vk);
-        super::era::Root::write_opt(self.root.as_ref(), &mut rec);
-        rec.extend_from_slice(&(self.nodes.len() as u64).to_le_bytes());
-        for r in self.nodes() {
-            r.write(&mut rec)?;
+    pub fn put_tries(&self, out: &mut Vec<u8>) -> Option<()> {
+        use crate::snapshot::{put_trie, Leaves};
+        let mut signer: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
+        let mut leaves: Leaves = Vec::new();
+        if let Some(root) = &self.root {
+            let mut v = Vec::new();
+            root.write(&mut v);
+            leaves.push((Self::LEAF_ROOT, v));
         }
-        out.append(&mut rec);
+        signer.insert(self.vk, leaves);
+        let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
+        for r in self.nodes() {
+            let mut v = Vec::new();
+            r.write(&mut v)?;
+            nodes.insert(r.stamp.key(), vec![(Self::LEAF_RECEIPT, v)]);
+        }
+        put_trie(out, Self::SIGNER_TRIE, &signer);
+        put_trie(out, Self::LEDGER_TRIE, &nodes);
         Some(())
     }
 
-    /// The inverse of [`ReceiptChain::write`], whole or refused.
-    pub fn read(b: &[u8], pos: &mut usize) -> Option<ReceiptChain> {
-        let vk: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-        *pos += 32;
-        let root = super::era::Root::read_opt(b, pos)?;
-        let n = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
-        *pos += 8;
-        if n > b.len().checked_sub(*pos)? / KStepReceipt::MIN_TAPE {
-            return None;
+    /// The inverse of [`ReceiptChain::put_tries`], whole or refused: one
+    /// signer, and each node's receipt standing at the stamp it is keyed by.
+    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<ReceiptChain> {
+        use crate::snapshot::{leaf, take_trie};
+        let whole = |v: &[u8], read: fn(&[u8], &mut usize) -> Option<_>| {
+            let mut p = 0usize;
+            let t = read(v, &mut p)?;
+            (p == v.len()).then_some(t)
+        };
+        let signer = take_trie(b, pos, Self::SIGNER_TRIE, &[Self::LEAF_ROOT])?;
+        let signers: Vec<(Vec<u8>, crate::snapshot::Leaves)> = signer.scoped().map(|(k, l)| (k, l.clone())).collect();
+        let [(vk, leaves)] = signers.as_slice() else { return None };
+        let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
+        let root = match leaf(leaves, Self::LEAF_ROOT) {
+            Some(v) => {
+                let mut p = 0usize;
+                let r = super::era::Root::read(v, &mut p)?;
+                (p == v.len()).then_some(r)?;
+                Some(r)
+            }
+            None => None,
+        };
+        let ledger = take_trie(b, pos, Self::LEDGER_TRIE, &[Self::LEAF_RECEIPT])?;
+        let mut receipts = Vec::with_capacity(ledger.len());
+        for (key, leaves) in ledger.scoped() {
+            let r: KStepReceipt = whole(leaf(leaves, Self::LEAF_RECEIPT)?, KStepReceipt::read)?;
+            if r.stamp.key() != key {
+                return None;
+            }
+            receipts.push(r);
         }
-        let mut nodes = Vec::with_capacity(n);
-        for _ in 0..n {
-            nodes.push(KStepReceipt::read(b, pos)?);
-        }
-        Self::from_nodes(root, vk, nodes)
+        // The stamps were read in key order, which is height first, so
+        // every ancestor is placed before its descendant.
+        Self::from_nodes(root, vk, receipts)
     }
+
+    /// The signer's trie and its one leaf: the root the line stands on.
+    pub const SIGNER_TRIE: &'static str = "signer";
+    pub const LEAF_ROOT: u8 = 1;
+    /// The ledger's trie, by stamp, and its one leaf: the receipt.
+    pub const LEDGER_TRIE: &'static str = "ledger";
+    pub const LEAF_RECEIPT: u8 = 1;
 }
 
 /// WHAT A CYCLE'S CLOSE BY NAME DID (OK1): the orbit closed at its stamp;
