@@ -136,11 +136,13 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
         match v {
             Vertex::Word { address, derivation, acts, .. } => {
                 p.addr_word += 2 + address.len();
-                p.rotor += bytes_of(|b| derivation.residue.to_bytes(b));
+                // The residue whole and the rotor as its ray, as the tape
+                // writes them (LD0 step 6(b)).
+                p.rotor += bytes_of(|b| derivation.residue.put_whole(b));
                 // The composed rotor travels only where the residue does
                 // not determine it (A1, 37.7); its absence is one byte,
                 // which the `rest` bucket accounts for.
-                p.rotor += bytes_of(|b| derivation.rotor().to_bytes(b));
+                p.rotor += bytes_of(|b| derivation.rotor().put_canonical(b));
                 for (form, vertex, _) in &derivation.generators {
                     p.cite_n += 1;
                     p.cites += bytes_of(|b| {
@@ -166,7 +168,7 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
             Vertex::Glued { chart, placement, .. } => {
                 p.charts += 2 + chart.key().as_bytes().len();
                 // magnitude (four u64) and depth, then the placement word.
-                p.glue_body += 32 + 2 + bytes_of(|b| placement.to_bytes(b));
+                p.glue_body += 32 + 2 + bytes_of(|b| placement.put_whole(b));
             }
             Vertex::Demand { chart, kind, bodies } => {
                 p.charts += 2 + chart.key().as_bytes().len();
@@ -176,13 +178,13 @@ pub fn tape_parts(e: &Element) -> Option<TapeParts> {
         }
     }
     for face in &f.faces {
-        p.faces += bytes_of(|b| face.word.to_bytes(b));
+        p.faces += bytes_of(|b| face.word.put_whole(b));
         for (pk, place) in face.at.scoped() {
             p.charts += 2 + pk.len();
             p.carriage += bytes_of(|b| place.carriage.to_bytes(b));
             p.gauge += place.gauge.len() * 2;
             if let Some(t) = &place.edge {
-                p.faces += bytes_of(|b| t.word.to_bytes(b));
+                p.faces += bytes_of(|b| t.word.put_whole(b));
                 p.faces += bytes_of(|b| t.carriage.to_bytes(b));
                 p.gauge += t.gauge.len() * 2;
             }
