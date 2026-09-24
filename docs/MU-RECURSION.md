@@ -479,9 +479,9 @@ same sense: the complete operation, with its invariant and its refusal.
 
 | master | ruled | as stated | site | stands |
 |---|---|---|---|---|
-| **The spelling peel** A22 | 50.4, 37.7 | a rational block is peeled into letters of the seventeen and the adjoined generators, outer shell first, under a shrinking governor; what does not close is a demand, never a rounding | `alphabet/spelling.rs`, `peel.rs`, `alphabet/factor.rs` | landed; governs |
+| **The spelling peel** A22 | 50.4, 37.7, 78.29(A) | a rational block is peeled into letters of the seventeen and the adjoined generators, outer shell first, under a shrinking governor; what does not close is a demand, never a rounding; as amended the peel takes MR1's commuting modes first and peels each against the letters acting on its plane, an uncovered mode the demand of 37.7 | `alphabet/spelling.rs`, `peel.rs`, `alphabet/factor.rs`, `cga/modes.rs` | landed per plane; the mode-first peel is AL1's amendment, open |
 | **Derivation and re-derivation** | 50.2, 1.9, 54 | a word vertex is the generators it factored through and a residue; the composed rotor is the coordinate; the court replays the derivation; the ladder of re-derivation is depth | `alphabet/derivation.rs`, `element/receipts.rs`, `court/verdict/replay.rs` | landed; governs. Step 6(b) landed 29fcc77f |
-| **Constructors and the Gram form** | 78.12, 78.14, 78.15 | nuclei are sphere vectors and mirrors are odd vectors; a cell's constructors' Gram form gives signature, pair regimes and a Coxeter system where the signs balance; the cell's content is the product of its constructors per circuit | `cga/{constructors,gram,mirrors,dual}.rs`, `cech/coxeter.rs`, `physics/axioms/coxeter.rs` | landed (GR1, GR2, CX1, MG1, MG1b, DF1, SY1) |
+| **Constructors and the Gram form** | 78.12, 78.14, 78.15 | nuclei are sphere vectors and mirrors are odd vectors; a cell's constructors' Gram form gives signature, pair regimes and a Coxeter system where the signs balance; the cell's content is the product of its constructors per circuit | `cga/{constructors,gram,mirrors,dual}.rs`, `cech/coxeter.rs`, `physics/axioms/coxeter.rs` | landed (GR1, GR2, CX1, MG1, MG1b, DF1, SY1); HX1 open: hyperbolic systems under Vinberg's criterion (78.29(B)) |
 | **Cells and enclosures** | 78.2, 78.10, EN1 | one cell per witness element, its shape the meet of its nuclei, faces read off it; an enclosure is the join of centres and containment is the inversive sign; nesting is the parse | `cech/{complex,coboundary,simplex}.rs`, `cga/enclosure.rs` | landed (NB1, AD1, EN1). CB1 open: the cross-cell bracket read |
 | **The orbit algebra** | 78.11 | a cell's comprehension is the bracket closure of its circuits' generators; rank is capacity; congruence by commutator; keeps-the-round and keeps-the-constructors read per mode | `cech/orbit_algebra.rs` | landed (CG1, CG1b, CS1). CV1b open: its refusals carry content |
 | **Modes off the action** | 78.12, 75, 52 as amended | a motion's modes are read off its action, never a chart; the Cayley chart is a reading of a ray that has a chart point; closures per mode | `cga/{modes,motion,spin}.rs` | landed (MR1, MR1b, MD1, MD1b, HC1) |
@@ -15428,6 +15428,58 @@ above grade one. Instrument first (row VA1): the census of every site
 that forms `m m̃`, a weight or a norm, and what each does with the
 scalar — test, divide, compare or classify — in SQ1's shape, then the
 sweep, one reader, the readings unchanged on the corpus and the fleet.
+
+### 78.29 Beyond the planar era: the peel on the modes, hyperbolic reflection systems, the kernel over the stabilizer; five refusals (ruled 2026-09-24, the operator's word)
+
+An external audit of the doctrine found six "flat or lattice-bound"
+mechanisms. Read against chapters 71–80 it caught two residues of the
+planar era — the seventeen letters' per-plane Gaussian arithmetic and
+the isotropic nucleus — and misread four mechanisms as absent that are
+distributed here: the modes (78.12), the orbit algebra (78.11), cells at
+every grade (78.2, 78.10) and the non-abelian coboundary (10–15). The
+operator approved the coordinator's dissection and ruled the three
+rows and the five refusals below.
+
+**A. AL1 amended — the peel runs on the modes.** A22 does not peel a
+motion's raw pair-plane projections. It takes MR1's split first,
+`⟨M⟩₂ = Σⱼ Bⱼ` with `[Bᵢ, Bⱼ] = 0`, each mode a ray `(1 + cⱼ) + Kⱼ`,
+and peels each mode against the letters and the constructors that act
+on its invariant plane; a mode on a plane the current basis cannot
+spell is emitted whole as 37.7's demand, `Demand::Standing`, which
+drives the adjunction of the odd constructor letter (AL1). The
+arithmetic order is thereby the one the mind's own constructors
+generate from the corpus, never an order imported.
+
+**B. HX1, new, beside GR2 — hyperbolic reflection systems over ℚ.**
+Constructors `s₁ … sₖ` form a discrete hyperbolic reflection chamber in
+ℍⁿ when their rational Gram form `Gᵢⱼ = sᵢ·sⱼ` has Lorentzian signature
+`(k − 1, 1, 0)` and every pair is either a finite dihedral angle
+(`δᵢⱼ² ∈ {0, ¼, ½, ¾}`) or ultraparallel (`δᵢⱼ² ≥ 1`) — Vinberg's
+criterion, read entirely in the field. The chamber's transport is the
+constructors' product per circuit as CX1 reads it. An ultraparallel
+pair carries `δ² = cosh²(λ/2) ∈ ℚ` as its exact invariant; the
+translation length itself is never formed. A single pair whose angle is
+neither finite nor ultraparallel stays what 78.14 reads it as: an
+infinite-order elliptic mode, held.
+
+**C. T5 amended — the kernel over the stabilizer.** The residual finite
+freedom the kernel collapses is the body's exact stabilizer group
+`Stab(B)`, held as the superposition of its elements (FR1c): `ℤ₂` for a
+half-open edge, `ℤ₂ × ℤ₂` for a rectangle, `ℤ₄` for a square, and so
+on. The coboundary condition is solved over `Stab(B)`, not assumed
+binary; a trivial kernel is a real obstruction and the 2-cell refuses.
+The non-abelian Čech `H¹` in `Spin(n+1,1)` is the coboundary that runs
+before this kernel (chapters 10–15), never replaced by it.
+
+**Refused, with the ground of each:**
+
+| proposal | ground | the invariant it would break |
+|---|---|---|
+| fixed root lattices and arithmetic orders (`E₈`, `Dₙ`, Hurwitz quaternions) | rule 5 | the order is generated by the mind's constructors from the corpus; an imported lattice is a free constant |
+| Gröbner–Shirshov or confluent rewriting on the letter group | A2 | rational letters generate dense rotations on planes sharing an axis; `(gᵢgⱼ)^m = 1` fails there, so no finite complete rewriting system exists and shortening is a budgeted retirement |
+| transcendental translation lengths (`arcosh`) | law 1 | `δ² = cosh²(λ/2) ∈ ℚ` is the exact invariant; a transcendental value cannot enter the field |
+| a quadric carrier beside the harmonics | law 12 | an anisotropic shape is carried by A.11's harmonic pencil (HL1), never by a second carrier beside the physics |
+| 78.26(3) read as truncation | misreading | 78.26(3) is a write refusal against flattening; a cell of the right grade is minted (NB1) and nothing is truncated |
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
