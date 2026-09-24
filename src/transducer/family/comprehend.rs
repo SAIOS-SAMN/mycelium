@@ -458,6 +458,17 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     let mut spend = Spend { percepts: 1, ..Spend::default() };
     spend.reads[0] = perceived;
     spend.unbounded[0] = unreached;
+    // THE CELLS BEFORE THE ORBITS' MODES (78.11 items 4 and 5 at the
+    // percept's site, §6.4, F1b): comprehension's first act is each cell's
+    // capacity, the cell's dimension, so a stroke that runs out leaves the
+    // cells their rank and the orbit lines' modes unread by name, never the
+    // reverse. The two readers share nothing: comprehension reads the
+    // traversal's circuits, the orbit lines their own notes.
+    let at = budget.remaining();
+    let traversed = crate::transducer::sentence::traversed_circuits(budget);
+    let cells = cells_reading(&comprehend(form, &traversed, budget));
+    spend.reads[2] = (at - budget.remaining()) as u64;
+    spend.unbounded[2] = cells_unbounded(&cells);
     let at = budget.remaining();
     for orbit in crate::transducer::sentence::take_orbits(budget) {
         if let OrbitLine::Read(r) | OrbitLine::Static(r) = &orbit {
@@ -468,11 +479,6 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
         eprintln!("  {}", orbit.line());
     }
     spend.reads[1] = (at - budget.remaining()) as u64;
-    let at = budget.remaining();
-    let traversed = crate::transducer::sentence::traversed_circuits(budget);
-    let cells = cells_reading(&comprehend(form, &traversed, budget));
-    spend.reads[2] = (at - budget.remaining()) as u64;
-    spend.unbounded[2] = cells_unbounded(&cells);
     let at = budget.remaining();
     // CT2 — where every reuse arm was empty, the constructed routes (79.3).
     crate::transducer::sentence::construct_routes(form, budget);
@@ -635,7 +641,10 @@ pub(crate) fn cell_algebras(
     traversed: &[crate::transducer::sentence::TraversedCircuit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<CellAlgebra> {
-    form.cells
+    // Each cell's crossing circuits and their orders of its bodies.
+    type Crossing = (Vec<Result<Mv, crate::transducer::cech::CircuitUnread>>, Vec<Option<Vec<usize>>>);
+    let per_cell: Vec<Crossing> = form
+        .cells
         .scoped()
         .map(|(_, cell)| {
             let mut circuits: Vec<Result<Mv, crate::transducer::cech::CircuitUnread>> = Vec::new();
@@ -656,7 +665,21 @@ pub(crate) fn cell_algebras(
                 });
                 orders.push((order.len() == cell.bodies.len()).then_some(order));
             }
-            crate::transducer::cech::read_cell(
+            (circuits, orders)
+        })
+        .collect();
+    // EVERY CELL'S RANK BEFORE ANY CELL'S MODES (78.11 items 4 and 5 across
+    // the cells, §6.4, F1b): a stroke that runs out leaves every cell its
+    // dimension, never the first cell its modes and the rest nothing.
+    let ranks: Vec<crate::transducer::cech::CellRank> =
+        per_cell.iter().map(|(circuits, _)| crate::transducer::cech::read_rank(circuits, budget)).collect();
+    form.cells
+        .scoped()
+        .zip(per_cell)
+        .zip(ranks)
+        .map(|(((_, cell), (circuits, orders)), rank)| {
+            crate::transducer::cech::read_cell_after(
+                rank,
                 cell.grade(),
                 cell.meet().as_ref(),
                 cell.nuclei.as_deref(),

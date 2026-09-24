@@ -376,12 +376,55 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
     Some(pi)
 }
 
+/// A CELL'S ALGEBRA, READ FIRST (78.11 items 4 and 5, CV1b F1 and F1b):
+/// the read circuits' actions in the one algebra they span, and the rank of
+/// the unital algebra they generate with its closed basis — or why not.
+#[derive(Clone, Debug)]
+pub struct CellRank {
+    actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused>,
+    rank: Result<(usize, Vec<crate::core::lattice::SparseRow>), CapacityRefused>,
+}
+
+/// READ A CELL'S RANK — the cell's dimension — off its crossing circuits,
+/// under the stroke's budget. Read before any mode of any cell, so a
+/// budget that runs out leaves every cell its dimension with the modes
+/// unread by name, never the reverse.
+pub fn read_rank(circuits: &[Result<Mv, CircuitUnread>], budget: &mut crate::physics::Budget) -> CellRank {
+    let read: Vec<&Mv> = circuits.iter().flatten().collect();
+    // Every action in the one algebra the cell's circuits span — the join of
+    // their algebras, a value never narrowed — so the matrices compose.
+    let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
+    let actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused> = read
+        .iter()
+        .enumerate()
+        .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
+        .collect();
+    let rank = actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget));
+    CellRank { actions, rank }
+}
+
 /// READ ONE CELL'S ORBIT ALGEBRA: its grade, its round, its constructors,
 /// the holonomy of every circuit crossing it (`Err` with OR3's reason where
 /// a circuit did not read), and each circuit's order of the cell's
 /// constructors (`None` where it does not visit every body), under the
-/// stroke's budget.
+/// stroke's budget — its rank first, then the rest.
 pub fn read_cell(
+    grade: usize,
+    round: Option<&Mv>,
+    nuclei: Option<&[Mv]>,
+    circuits: &[Result<Mv, CircuitUnread>],
+    orders: &[Option<Vec<usize>>],
+    budget: &mut crate::physics::Budget,
+) -> CellAlgebra {
+    let rank = read_rank(circuits, budget);
+    read_cell_after(rank, grade, round, nuclei, circuits, orders, budget)
+}
+
+/// THE REST OF ONE CELL'S ORBIT ALGEBRA, its rank already read: the modes,
+/// congruence, permutation, coherence, the Gram form, the constructors'
+/// orbit and the Coxeter reading.
+pub fn read_cell_after(
+    rank: CellRank,
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
@@ -398,27 +441,14 @@ pub fn read_cell(
     refusals.zero_meet = round.is_some_and(Mv::is_zero);
     let round = round.filter(|m| !m.is_zero());
     let read: Vec<&Mv> = circuits.iter().flatten().collect();
-    // THE ALGEBRA BEFORE THE MODES (78.11 items 4 and 5, ruled on CV1b's
-    // reading): the rank — the cell's dimension — is read first under the
-    // stroke's budget, so a budget that runs out leaves the cell its
-    // dimension with the modes unread by name, never the reverse.
-    //
-    // Every action in the one algebra the cell's circuits span — the join of
-    // their algebras, a value never narrowed — so the matrices compose.
-    let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
-    let actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused> = read
-        .iter()
-        .enumerate()
-        .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
-        .collect();
-    let (capacity, basis) = match actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget)) {
+    let (capacity, basis) = match rank.rank {
         Ok((k, rows)) => (Some(k), Some(rows)),
         Err(why) => {
             refusals.capacity = Some(why);
             (None, None)
         }
     };
-    let actions = actions.ok();
+    let actions = rank.actions.ok();
     let modes: Vec<Option<Vec<MotionMode>>> = circuits
         .iter()
         .map(|h| match h.as_ref().map(|h| cga::motion_modes(h, budget)) {
