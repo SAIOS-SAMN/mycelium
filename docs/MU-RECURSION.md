@@ -16324,10 +16324,43 @@ the oblique count on the contact line. (5) No remainder here: a pair
 that agrees on the spread and not on the floor is one shape at two
 scales, correctly read, and nothing is left over to file.
 
-**The principle.** A.12's floor is data of the substrate and never a
-property of a shape. Any invariant that carries the floor into a
-comparison between bodies compares the sensor with itself, and refuses
-the very relation the language is there to spell.
+**Amended on the implementor's counterexample (the same day): two
+kinds of similarity, and each tower is exact for one.** With the point
+tower built (`pose::centred`, one producer, the tube's `tower` sharing
+it) three axiom tests failed, all on FILLED dilations — `L4x2`, each
+cell of an L blown to a 2×2 block: a J against `L4x2` read
+`Incongruent` where it is `Mirrored`, `Z(L4x2) ≠ 256·Z(L4)`, and
+`‖h₄‖² ≠ ρ⁸`. A `k×k` block of unit squares is ONE square of side `k`,
+so a filled blow-up is an exact similarity of the LAMINA tower: the
+floor scales with the region because the block's floor is the scaled
+square's own moment. On the point tower the block's `k²` sub-sites sit
+at offsets about each old site, and those offsets are a floor of their
+own (`(±½, ±½)` for `k = 2`: `Σδ⁴` enters `h₄`, `½` enters the spread),
+so the point-set image is not a similarity there. The `(4+i)` image is
+the reverse: a SITE map `z ↦ λz`, exact on points and not on laminae.
+ARC's scale tasks are filled blow-ups; the demand's Gaussian case is a
+site map. Two genuinely different similarities of the lattice — of the
+REGION and of the SITE SET — and refusing either answers a real
+relation as incongruent, 78.26(4)'s shape again. RULED (C): BOTH
+towers, one producer each (law 12 holds: two readings of one body, not
+two carriers of one reading). A relation is certified as a dilation
+where EITHER tower certifies it, both always read, neither chosen by
+any score; the reading NAMES which — `Dilation::Region` (the lamina
+tower) or `Dilation::Sites` (the point tower), both where both — so a
+census says which kind of similarity the corpus carries; the relation
+readers (orientation, the turn ray, chirality, the arc) read on the
+tower that certified; `Incongruent(Order m)` holds only where both
+refuse, naming the order from each. The principle as corrected: each
+tower has a floor the other lacks — the lamina's unit square, the
+point tower's sub-site offsets — and a similarity is read on the tower
+whose floor it scales. The three axiom fixtures stand as they are, on
+region similarities, and the site-map fixtures are added beside them.
+
+**The principle.** A floor is data of the carrier it belongs to and
+never a property of a shape. Any invariant that carries a floor into a
+comparison between bodies related by the OTHER kind of similarity
+compares the sensor with itself, and refuses the very relation the
+language is there to spell.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
