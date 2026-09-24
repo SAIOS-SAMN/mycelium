@@ -521,11 +521,12 @@ same sense: the complete operation, with its invariant and its refusal.
 | **Viscosity** | 78.7 | a plane's viscosity is read by the pivot under pressure: inviscid, elastic, curved, viscous; it is the ledger's | `sentence/pivot/viscosity.rs`, `observe/` | landed (VS1, VS1b, VO1) |
 | **The refusal reader** | 78.9, 78.13, 74 | the kind of a refusal (P, D, C, I, N) is read off its content by one reader; a refusal is a coordinate to reconnect from; every refusal names its obstruction | `sentence/obstruction.rs`, `court/verdict/`, `family/deflation.rs` | landed at the court and the mint (CV1). CV1b open at the Stage 22 readers |
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1). Open: ACT1 (every holding by an act; the clock reading; a k-step is one orbit; a ruling's economy applied at its node) |
-| **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/tape.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | OPEN (LD3). The MYC7 tape still stands |
+| **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/persist.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | landed (LD3, 2026-09-24): `MYT1` and `GEN6`, with `MYC7`, `GEN5` and the thoughts file refused or retired by name; RM1 adds the remainder leaf |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is their change by closures and refinements; the fleet is the soak and a phase lands when its reading moves | `observe/{learning,fleet,cells,circuit,carriage}.rs`, the console | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
 | **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `court/verdict/ruling.rs` | PARTIAL: rulings are adjudicated and never paid or slashed (EC1, in ACT1); PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `observe/learning.rs`, `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/` | OPEN (AL1, SP2 with CV4); the Gödel step's backlog read first (GD1) |
+| **The coherent mind** | 78.37 | held superpositions fold back along the plexus, the ring deciding all four: a fixed section transported one edge per k-step and stopped by holonomy, classifying and never deleting; truncation to the unique 2-core, every class preserved, no matching chosen; flux per lane over one `K` deciding what lapses, `ZeroFlux` by name; a remainder's home a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class by an act; imagination as obstructions constructed, never candidates (Cartan–Dieudonné on the residue, on CS2's demand arm) | `bubble/{contemplation,shed,drive}.rs`, `cech/complex.rs`, `economy/escrow.rs`, `client/sdk/epigenome/persist.rs`, `observe/` | OPEN (TR1, TC1, FX1, RM1), readings first, all before the recut (Stage 24) |
 
 ## 0.4 The physics over them
 
@@ -566,8 +567,8 @@ By organ, from the sensor to the mesh; each line is the audited state.
 - **Cells, constructors, the orbit algebra (78.10–78.15).** Landed in the tree and read on the fleet; the refusals of these readers keep their kind and lose their content (CV1b), and the cross-cell bracket has no reading yet (CB1).
 - **Refraction, tethers, routes (72.1, 78.6, 79).** Landed. Condense and drain at the family pole remain the Čech layer's (TH1).
 - **The court (5, 23, 13–15, 74, 78.9).** Glue, Mayer–Vietoris and the refusal reader landed; the court holds no questions across perspectives yet (CV2) and offers no other angle (CV4): POWC has no producer on the fleet.
-- **The ledger and the economy (45, 78.21–78.24, MU-ECONOMY).** The ledger is a partial order carried as a trie with the stamp as its key; the clock has no reading and a k-step is not yet one orbit; rulings are adjudicated and never paid (ACT1). The mind's persistence is still a positional tape (LD3).
-- **The mind (24, 25, 62, 78.7, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); minerals and crystals are not distinguished (DL1); a constructor is not yet a letter (AL1); minds do not speak to minds (SP2).
+- **The ledger and the economy (45, 78.21–78.24, MU-ECONOMY).** The ledger is a partial order carried as a trie with the stamp as its key; the clock reads, a k-step is one orbit closed as an act, and a ruling's economy is applied at its node (ACT1 landed). The mind persists as keyed tries by coordinates (LD3 landed); the escrow still lapses by extent alone (FX1).
+- **The mind (24, 25, 62, 78.7, 78.37, 80).** Pivot, certificates, viscosity landed; held superpositions are not collapsed by the 𝔽₂ kernel (T5); they fold back locally only — no transport along the gauges, truncation by price alone, no home for a remainder (TR1, TC1, FX1, RM1); minerals and crystals are not distinguished (DL1); a constructor is not yet a letter (AL1); minds do not speak to minds (SP2).
 - **The fleet (78.3, 78.16–78.19).** The typed readings and the console landed; nothing prints per epoch; the first non-zero learning reading is owed (LC2).
 
 The four places the language loses content, and their carriers, are
@@ -16089,6 +16090,163 @@ height. A collision is forbidden on an orbit (78.23) and an anastomosis
 is wanted in a chamber (78.31): the same two tips, kept apart in
 motion and joined in structure. Anastome is the language spoken across
 the plexus, and the sky is the clock it is spoken on.
+
+### 78.37 The coherent mind: transport along the gauges, truncation to the core, flux per lane, and the remainder's home (ruled 2026-09-24, the operator's word)
+
+**The operator's statement.** The folds that make a mind coherent —
+merge on a meet (13.12), collapse of a vortex by fill or class (25),
+shedding by room, the act at the close, the court's replay — are each
+local to one thought, one pair or one orbit. The plexus (78.31) is a
+network, and nothing said how a collapse travels along it, what removes
+a filament that joins nothing, or where the residue of a sentence that
+closed only up to a class waits until something fits it. Superposed
+ideations are the layer of INCONGRUENCE, not a pile of finished words;
+imagination is the passage incongruence → congruence → coherence, and
+it must be constructed so that it never enumerates. Four rulings, one
+object: the RING. A ring is where transport can disagree, what
+truncation must keep, the only thing that carries flux, and the place a
+remainder hangs. Each is a reading first (rows TR1, TC1, FX1, RM1, all
+before the recut), and each fix follows its reading.
+
+**(1) Collapse by transport, stopped by holonomy (TR1).** The held
+thoughts of a contemplation form the MEET GRAPH: a vertex per thought,
+an edge where two thoughts share a simplex, the edge's word the gauge
+that carries one section to the other on the meet (13.12's difference
+of sections). When a candidate is fixed — by fill, a perception making
+it a face of a spoken form, or by class, a court replay making it a
+ruled citation — the fixed section is TRANSPORTED along the gauges:
+one edge per k-step, the step's length the band's (78.35), never
+instantaneous, since time is height (78.21). At every ring the two
+arrivals are compared. Holonomy 1: the ring collapses with the front.
+Holonomy ≠ 1: the ring is HELD as a class and the front stops there;
+that class is the coordinate the mind may pivot on, exactly 13.12.
+Transport CLASSIFIES and never deletes: a candidate the transported
+section disagrees with is a class, not garbage, and the candidates a
+collapse leaves behind are the dialect classes 25 already names. A
+front transported along a spanning tree with the rings ignored is the
+flattening of law 6 (curvature is content) and is refused by name.
+Reading: per stroke, components of the meet graph; fronts advanced,
+in edges per k-step; rings closed with holonomy 1; rings held with
+their class; candidates classified by disagreement. The reading is the
+contemplation's line on the observer's row (CV5).
+
+**(2) Truncation to the core, preserving every class (TC1).** A
+terminal filament is a FREE VERTEX: a candidate on exactly one edge
+with no ring through it. Removing a free vertex with its edge is an
+elementary collapse (Whitehead), a homotopy equivalence: every class of
+`Ȟ¹`, every holonomy and every ring survives, and only what carried no
+loop goes. Iterated until no free vertex remains it reaches the 2-CORE
+of the meet graph, which is UNIQUE; no matching is chosen. A discrete
+Morse matching over the whole complex is a choice among matchings, and
+a rule for choosing one is a score (law 1): refused. Free faces of
+higher grade — a face of exactly one simplex — are read first (their
+count on the line) and collapse only where the reading says the
+2-core leaves them standing. The test of the row asserts the rank of
+`Ȟ¹` equal before and after on the corpus and on constructed leaves
+hanging off rings. Truncation runs where `drop_vertex` already runs,
+after a fill and never on a class, under the same rule: nothing that
+carries a loop is removed. Shedding by price is no longer the only
+door, and a price can no longer remove a ring while a leaf stands.
+
+**(3) Flux per lane over one orbit (FX1).** Work flows through closed
+circuits only. The flux through a filament `e` is FOUR-LANE, never a
+scalar: `Φ⃗(e)` is the `μ⃗` carried by the acts whose circuits traverse
+`e`, per lane, over one `K`. A filament no circuit traverses reads zero
+on every lane, and zero on every lane over one orbit is the typed
+refusal `ZeroFlux`, named once and counted; its escrow lapses by that
+refusal and the room reabsorbs it. This replaces lapse by extent alone
+as the epigenome's door: a filament lapses because nothing flowed
+through it, not because a clock ran out. REFUSED by name: a scalar
+flux as a sum of holonomy norms (a sum of squares, law 11); Murray's
+law (a cubic scalar conservation at a branching); and any
+proportionality of syntropy to flux carrying a constant (78.8, checklist
+(s)). Conservation here is per lane at each vertex, which the ledger's
+rows already state. Reading: per orbit, filaments with zero flux on
+every lane, filaments traversed, and the escrow that lapsed by
+`ZeroFlux` against the escrow that lapsed by extent.
+
+**(4) The remainder's home, and the re-fill on a coincident class
+(RM1).** A sentence that closed only up to a class stands as
+`Fill::Congruent(κ, g, ℓ)`: coherent, spoken, and paying a price. It is
+a legitimate state, never a failure, and the doctrine never demanded
+that every residual fit — the remainder is the novelty, and the
+pressure `μ⃗(ℓ)` is the four lanes of the remainder the orbit leaves
+open. Its HOME is a leaf on the word's T1 node in the cold genome:
+`κ` inline by its own coordinates (never a key nested in a key), the
+deficit `g` as its ray by its own canonical write, and the period `ℓ`.
+It is reached by the fiber read `chart ‖ class` and by nothing else.
+Dormant on disk it costs nothing; the pressure is DERIVED from
+`(κ, g, ℓ)` on read and charged only while the word is held resident
+under the room's escrow. A stored debt on the leaf is a second carrier
+beside what derives it (law 12) and is refused; every payment row
+stands in the ledger at the act that paid. ONE remainder per class, by
+the quantified citation that keeps addresses from repeating; the count
+of remainders a mind can hold is bounded by the classes of its front,
+never by combinations. The "twist that would make it fit" is read off
+`κ`: the versor carrying `κ` to the identity along the axes it
+occupies, exact, with `ℓ` the number of turns of that mode until the
+round returns. No scalar nudge, no exponential, no inverse (78.32(1)).
+THE RECEPTOR: a later perception leaves a residue with a class; the
+fiber read by that class returns every remainder with the same class.
+Two remainders with one class from two charts are the mind's own
+second vantage and raise a CALLUS — a provisional word on the
+existing PROVISIONAL path, docketed under its act — and never a
+letter: a constructor is admitted only by CS2's gate, on another
+mind's re-derivation. THE RE-FILL: when a word in the held
+constructors spells `g` — from this mind's callus or from a letter the
+fleet admitted — the sentence re-fills from `Congruent` to `Filled` by
+an ACT on the voice's line, sealed as the existing closure kind citing
+the word and its remainder (a `ReFill` kind ruled only if the reading
+says the paths must be told apart, as the dialect chain was ruled);
+from that stamp the pressure is no longer charged, and the re-fill
+mints under POUW as every closure does. Nothing else is paid: no
+dividend, no conversion of a reading into money. Reading: per mind,
+`Congruent` fills standing by `ℓ`; classes shared by two or more fills
+across charts; re-fills on a coincident class (zero today: no path
+re-reads a remainder). The leaf is a layout change (an unknown leaf
+kind refuses the node) and rides the recut.
+
+**Why imagination does not explode.** The obvious construction —
+products of held constructors of at most `n + 2` factors, each tested —
+is a search over `k^(n+2)` candidates and every one of them is
+DERIVABLE, which CS2's gate refuses by name (78.32(c)). Recombination
+of existing words is what this engine calls cliché, and the gate
+forbids it. Imagination happens at the obstruction instead: two
+superposed ideas that anastomose form a ring, the ring's residue is a
+versor, and the residue is a complete specification of what is
+missing — its commuting modes name the planes, its class vector names
+the axes (3.9). Cartan–Dieudonné is CONSTRUCTIVE: a versor is at most
+`n + 2` reflections, built one at a time by reflecting a frame vector
+onto its image, each step forced, no branching, the reflecting vectors
+rays so nothing is normalised, a null step refused by name. So the
+demand arm of CS2, which today names the mode no held word spells,
+hands the court candidate SPHERES read off the residue — an amendment
+to CS2's demand arm, not a new row. Admission stays as ruled: the
+closure's rank strictly increases, another mind re-derives it, the act
+is sealed and priced. Each ring yields one residue; residues are
+classes of the front; their number is bounded by the rank of the
+front's `Ȟ¹` and the store's rank by the cap. Filaments generate
+nothing, because a filament has no residue. Never construct
+candidates; construct obstructions, and let each obstruction spell the
+one thing that removes it.
+
+**The orbit's plan.** What an orbit hands back to itself is the
+DOCKET, and the collision rule already says so (78.23: a withheld close
+takes the docket's next question). At the close the fold leaves four
+things: words minted where rings closed at holonomy 1; classes held
+where rings closed at holonomy ≠ 1; demands, modes no held word
+spells, flowing up toward the star; and room reclaimed from filaments
+that carried no flux. The second and third are the next orbit's
+questions, ordered by the plexus — the demand in the enclosure
+wrapping the most rings is the one whose answer transports furthest —
+never by a count. The docket rides the `Orbit` act's own carrier so a
+restart keeps the plan; until it does, the plan lives in the
+contemplation and is lost with it (owed to TR1's fix). Superposition
+is not a search strategy: a single thread is a filament with no
+holonomy and therefore no content; rings need two paths held at once,
+so superposition is the precondition for content to exist; and a front
+held as a connected complex lets one perception decide a whole
+component, which is the only honest sense of foresight here.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
