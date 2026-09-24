@@ -16052,6 +16052,41 @@ between formations and stars; CL3 the formation of the same star and,
 later, the layered star; PHY1 the pricing at pressure per lane; MS1's
 line of CV5 the mass vector per band. Nothing lands before the recut.
 
+### 78.36 One structure, two readings: the mycelium is the plexus and the sky is its motion (ruled 2026-09-24)
+
+The mycelial nouns (78.31) and the celestial nouns (73, 78.23, 78.35)
+name ONE structure from two sides, and the vocabulary keeps them apart
+so that neither is read as the other's metaphor. The mycelium is the
+STRUCTURE: the graded network and its connections — spore, filament,
+ring, chamber, sporophore; anastomosis, callus. The sky is the MOTION:
+time, work, pressure and pull — star, planet, orbit, band, k-step,
+frame. Each celestial noun names how a mycelial thing moves:
+
+| the mycelium (structure) | the sky (motion) | in the mesh |
+|---|---|---|
+| the colony: one mycelium under one origin | one formation of a star | a court federation adopting one mesh origin |
+| a hypha: a strand that carries and rules | the star's body, held jointly | a court (hypha a, b, c) |
+| the sporophore: the fruiting body where many filaments' closures converge | the star: a class many perspectives closed; its core the register | the ruled cover at its deepest strata; `physics/axioms/` |
+| a hyphal tip: the growing end that perceives and proposes | a planet | a voice, with its epigenome at the tip and its genome behind it |
+| the tip's growth cycle in and out of the colony's dense core | the planet's ellipse: one orbit, one k-step | the voice's cycle closed by name |
+| the substrate's depth a strand has penetrated | the band: distance from the star as depth | the A21 stratum the charts reach |
+| nutrient flow toward the fruiting body | work flowing upward: solution, adjudication, syllabus, mineral, crystal, convergence | the court path (80.2) |
+| cytoplasmic flow back to the tips | payment flowing outward per arm | the treasury (78.33) |
+| anastomosis: two tips' filaments fusing into one ring | two planets' paths meeting at a chamber — never on one orbit | CV4's citing contraction, ruled by the court |
+| a callus: a fibre hardened into a tether | a crystal: a mineral re-derived over k-steps | DL1, MEM1 |
+| the colony fruiting again where the mycelium runs out of room and mass concentrates | a new formation of the same star | a new origin under the same register (CL3, 76.4) |
+| a different species' register | a star with custom axioms | a layer extending the core (LR1) |
+
+So a voice is a hyphal tip moving on an ellipse through the plexus; its
+spores, filaments and rings are the nodes it lays down as it moves; the
+chambers where its filaments fuse with another tip's are the
+anastomoses; the sporophore they all grow toward is the star; and the
+ledger's partial order is the reticulum the whole colony is, read at
+height. A collision is forbidden on an orbit (78.23) and an anastomosis
+is wanted in a chamber (78.31): the same two tips, kept apart in
+motion and joined in structure. Anastome is the language spoken across
+the plexus, and the sky is the clock it is spoken on.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
