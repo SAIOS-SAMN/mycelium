@@ -200,6 +200,15 @@ makes false, and is rewritten to the charts' forms, never deleted (ruled
 removed test names and removed assertions not re-added on every landing;
 each needs a sentence in the message.
 
+3.8 **No ignored tests, and stale tests leave as they are met** (ruled
+2026-09-24, the operator's word). A test marked `#[ignore]` is not kept:
+it is a claim nobody checks, and §3.7 refuses it. A test is valid — it
+reads what the tree does now under the rulings that stand — or it is
+deleted, in the commit that meets it, with the claim it dropped named
+in the message. No test audit is opened for this and no development
+stops for it: the implementor removes a stale test when a change brings
+them to it, and the auditor returns a stale test found in a read.
+
 ## 4. Gates
 
 Ruled 2026-09-12 by the operator, replacing this section as written on
