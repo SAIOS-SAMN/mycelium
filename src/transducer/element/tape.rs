@@ -7,17 +7,6 @@
 
 use super::*;
 
-fn tape_of_versor(_g: &Versor) -> crate::transducer::alphabet::Word {
-    crate::transducer::alphabet::Word::identity()
-}
-
-fn versor_of_tape(w: &crate::transducer::alphabet::Word) -> Versor {
-    match versor_of_word(w) {
-        Some(v) => v,
-        None => identity_versor(),
-    }
-}
-
 pub const CONNECTION_TAG: u8 = 0x11;
 /// A sentence: a nerve of germs. The tape after this tag is the base
 /// connection, then the germ addresses, faces and cycles. Distinct from
@@ -31,14 +20,23 @@ pub const TRANSLATION_TAG: u8 = 0x13;
 pub const REWRITE_TAG: u8 = 0x14;
 
 impl Element {
-    /// GEN3: tapes only. Magic `0xA3`, then description, mag, chain, sections,
-    /// torsion, anchor, transitions as letter tapes. Addresses on the tape
-    /// are `len16 + bytes`. An older file is refused.
-    pub const GEN3_MAGIC: u8 = 0xA3;
+    /// THE ELEMENT RECORD (LD0 step 6(b)): magic `0xA4`, then the address,
+    /// the description, the filing, the receipts envelope, μ⃗, the chain,
+    /// sections, torsion, anchor, transitions — each gauge as its canonical
+    /// ray — and the action. Every word inside the record is written whole
+    /// (`Word::put_whole`), a formed word's action with it.
+    pub const RECORD_MAGIC: u8 = 0xA4;
+    /// THE RECORD BEFORE 6(b), refused BY NAME and never migrated: its words
+    /// carry letters alone, so under this reader a contact byte or a
+    /// carriage's first byte would be read as the whole-word tag — a 0 or 1
+    /// continuing into a misparse. One equality refuses it; there is no
+    /// reader for it.
+    pub const PRE_WHOLE_MAGIC: u8 = 0xA3;
+    /// GEN2, older still, and refused the same way.
     pub const GEN2_MAGIC: u8 = 0xA2;
 
     pub fn to_bytes(&self) -> Vec<u8> {
-        let mut out = vec![Self::GEN3_MAGIC];
+        let mut out = vec![Self::RECORD_MAGIC];
         // THE ADDRESS LEADS THE RECORD, AND THE KIND DECIDES THE REST
         // (54.7 B6 Site 4, as ruled 2026-09-21).
         //
@@ -147,15 +145,11 @@ impl Element {
                 out.push(*b);
                 out.push(*f);
             }
-            let tape = tape_of_versor(g);
-            let back = versor_of_tape(&tape);
-            if back == *g {
-                out.push(0);
-                tape.to_bytes(&mut out);
-            } else {
-                out.push(1);
-                g.to_bytes(&mut out);
-            }
+            // The gauge as its canonical ray (A4). A tag-0 arm stood here
+            // that wrote a letter tape when the versor round-tripped
+            // through `tape_of_versor` — which answered the identity for
+            // every versor, so it only ever wrote the identity word.
+            g.put_canonical(&mut out);
             out.extend_from_slice(&fibre.to_le_bytes());
         }
         out.extend_from_slice(&(self.action.germinated.len() as u32).to_le_bytes());
@@ -185,16 +179,24 @@ impl Element {
         out
     }
 
-    /// Deserialize GEN3 only. An older file is refused, never migrated.
+    /// Deserialize the record this build writes. An older one is refused,
+    /// never migrated; the layout before 6(b) is refused by name.
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Element> {
-        if b.get(*pos) == Some(&Self::GEN3_MAGIC) {
-            return Self::from_bytes_gen3(b, pos);
+        match b.get(*pos) {
+            Some(&Self::RECORD_MAGIC) => Self::from_bytes_record(b, pos),
+            Some(&Self::PRE_WHOLE_MAGIC) => {
+                eprintln!(
+                    "  element record refused: magic 0xA3 is the layout before LD0 step 6(b), \
+                     whose words carry letters alone"
+                );
+                None
+            }
+            _ => None,
         }
-        None
     }
 
-    fn from_bytes_gen3(b: &[u8], pos: &mut usize) -> Option<Element> {
-        if b.get(*pos) != Some(&Self::GEN3_MAGIC) {
+    fn from_bytes_record(b: &[u8], pos: &mut usize) -> Option<Element> {
+        if b.get(*pos) != Some(&Self::RECORD_MAGIC) {
             return None;
         }
         *pos += 1;
@@ -357,14 +359,7 @@ impl Element {
                 *pos += 2;
                 a.push((bb, f));
             }
-            let tag = *b.get(*pos)?;
-            *pos += 1;
-            let g = if tag == 0 {
-                let w = crate::transducer::alphabet::Word::from_bytes(b, pos)?;
-                versor_of_tape(&w)
-            } else {
-                Versor::from_bytes(b, pos)?
-            };
+            let g = Versor::from_bytes(b, pos)?;
             let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
             *pos += 2;
             transitions.push(Transition { asg: a, gauge: g, fibre });

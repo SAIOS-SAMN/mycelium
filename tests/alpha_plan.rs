@@ -44,7 +44,7 @@ fn normal_form_two_tapes_one_key() {
 fn gen3_round_trip_and_size() {
     let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
     let b = w.to_bytes();
-    assert_eq!(b[0], Element::GEN3_MAGIC);
+    assert_eq!(b[0], Element::RECORD_MAGIC);
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
     assert_eq!(back.address(), w.address());
@@ -62,10 +62,12 @@ fn gen3_round_trip_and_size() {
     // catches the failure it exists for, a word that starts carrying a
     // form's coordinates.
     assert!(b.len() < 2048, "a word is a short tape, got {}", b.len());
-    let mut old = b.clone();
-    old[0] = Element::GEN2_MAGIC;
-    let mut p = 0;
-    assert!(Element::from_bytes(&old, &mut p).is_none(), "an old file is refused");
+    for magic in [Element::GEN2_MAGIC, Element::PRE_WHOLE_MAGIC] {
+        let mut old = b.clone();
+        old[0] = magic;
+        let mut p = 0;
+        assert!(Element::from_bytes(&old, &mut p).is_none(), "an old file is refused");
+    }
 }
 
 #[test]

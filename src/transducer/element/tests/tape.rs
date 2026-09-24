@@ -87,18 +87,42 @@ fn gen3_round_trips_and_gen2_is_refused() {
     let bytes = w.to_bytes();
     assert_eq!(
         crate::transducer::address::tag_of(&bytes),
-        Some(Element::GEN3_MAGIC),
+        Some(Element::RECORD_MAGIC),
         "the tape opens at its magic"
     );
     let mut pos = 0;
-    let back = Element::from_bytes(&bytes, &mut pos).expect("GEN3");
+    let back = Element::from_bytes(&bytes, &mut pos).expect("the record reads back");
     assert_eq!(back.address(), w.address());
     assert_eq!(back.letters().map(|l| l.sigma), w.letters().map(|l| l.sigma));
     assert!(back.letters_rederive() == Some(true));
-    let mut old = bytes.clone();
-    old[0] = Element::GEN2_MAGIC;
-    let mut p = 0;
-    assert!(Element::from_bytes(&old, &mut p).is_none(), "GEN2 is refused");
+    // GEN2, and the record before LD0 step 6(b), are refused: the second's
+    // words carry letters alone and would misparse under this reader.
+    for magic in [Element::GEN2_MAGIC, Element::PRE_WHOLE_MAGIC] {
+        let mut old = bytes.clone();
+        old[0] = magic;
+        let mut p = 0;
+        assert!(Element::from_bytes(&old, &mut p).is_none(), "an older record is refused");
+    }
+}
+
+/// R3 — A TRANSITION'S GAUGE IS WRITTEN AS ITS RAY and read back as the
+/// same ray, whatever it is: the arm that wrote a letter tape wrote only
+/// the identity, because `tape_of_versor` answered the identity for all.
+#[test]
+fn a_transition_gauge_crosses_as_its_ray() {
+    let mut w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
+    let t = translator_versor(2, 3);
+    let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-5), num_bigint::BigInt::from(3)));
+    w.transitions.push(Transition { asg: vec![(1, 2)], gauge: scaled, fibre: 7 });
+    w.transitions.push(Transition { asg: vec![], gauge: identity_versor(), fibre: 0 });
+    let bytes = w.to_bytes();
+    let mut pos = 0;
+    let back = Element::from_bytes(&bytes, &mut pos).expect("the record reads back");
+    assert_eq!(pos, bytes.len(), "whole");
+    assert_eq!(back.transitions.len(), 2);
+    assert!(same_versor(&back.transitions[0].gauge, &t), "the gauge is the ray it was");
+    assert_eq!(back.transitions[0].fibre, 7);
+    assert!(same_versor(&back.transitions[1].gauge, &identity_versor()), "and the identity is one ray among them");
 }
 
 /// P7: a germ round-trips through bytes losslessly — chain, address, magnitude,

@@ -629,7 +629,7 @@ pub(crate) fn nerve(path: &str) {
         };
         // THE MAGIC BY SLICE PATTERN, not by position (rule 15): the tag
         // leads the record by the layout's own shape.
-        let [0xA3, ..] = rec else {
+        let [Element::RECORD_MAGIC, ..] = rec else {
             return None;
         };
         let dlen = u32_at(1)?;
