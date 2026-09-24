@@ -46,16 +46,15 @@ fn slash_debits_the_bond_and_mints_nothing() {
     assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
 }
 
-/// Pool + stakes survive the v3 snapshot exactly.
+/// Pool + stakes survive the persisted form exactly (78.27: the stakes and
+/// balances as their own tries, the rows through the row codec).
 #[test]
 fn escrow_snapshot_round_trips() {
     let mut t = Treasury::new();
     t.enroll([3; 32], UNIT_BOND, at(0, [4; 32]));
     t.settle_subsidy([3; 32], [0, 0, 5, 0], at(1, [4; 32]));
     t.settle_recall([3; 32], &[0, 0, 3, 0], &[0; 4], at(2, [4; 32]));
-    let snap = t.snapshot();
-    let mut pos = 0;
-    let back = Treasury::restore(&snap, &mut pos).expect("restore v3");
+    let back = super::round_trip(&t).expect("the treasury round-trips");
     assert_eq!(back.bond_total(), t.bond_total(), "live bonds survive, per lane");
     assert_eq!(back.stakes(), t.stakes(), "stakes survive");
     assert_eq!(back.entries(), t.entries());
@@ -274,9 +273,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
 
     // It comes back from disk. `restore` reads rows straight off the tape,
     // so the fold is rebuilt there in the one O(journal) pass.
-    let snap = t.snapshot();
-    let mut pos = 0;
-    let back = Treasury::restore(&snap, &mut pos).expect("restores");
+    let back = super::round_trip(&t).expect("restores");
     assert_eq!(back.supply(), t.supply(), "the fold survives a restore");
 
     // AND SO DO THE CARRIERS. `recompute_balances` applied `mint` and
@@ -301,18 +298,19 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
 fn an_undefined_entry_tag_refuses_the_tape() {
     let mut t = Treasury::new();
     t.genesis([0x33; 32], [1, 0, 0, 0], at(0, [0; 32]));
-    let mut snap = t.snapshot();
-    // Where the one entry's tag byte sits: `bond_total` (four lanes of
-    // u64), the stake count (u32) with no stakes behind it, and the entry
-    // count (u32).
-    let tag = 4 * 8 + 4 + 4;
-    assert_eq!(snap[tag], 16, "the row written is a genesis");
-    snap[tag] = snap[tag].wrapping_add(0x80); // a tag the layout defines no kind for
+    let [row] = t.entries() else { panic!("one row") };
+    let mut tape = Vec::new();
+    row.write(&mut tape);
+    // The row's tag is its first byte.
+    assert_eq!(tape[0], 16, "the row written is a genesis");
+    tape[0] = tape[0].wrapping_add(0x80); // a tag the layout defines no kind for
     let mut pos = 0;
-    assert!(
-        Treasury::restore(&snap, &mut pos).is_none(),
-        "the tape is refused whole, not read past the row it cannot name"
-    );
+    assert!(Entry::read(&tape, &mut pos).is_none(), "the row is refused, not read past the tag it cannot name");
+    // And an arm byte the layout does not define refuses the same way.
+    let mut tape = Vec::new();
+    row.write(&mut tape);
+    tape[1] = 9;
+    assert!(Entry::read(&tape, &mut 0).is_none(), "an arm byte that names no proof of work refuses");
 }
 
 /// §4: "a word that fails replay debits the voice that spoke it" — every

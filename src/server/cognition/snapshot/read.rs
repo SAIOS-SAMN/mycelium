@@ -1,20 +1,63 @@
-// 28 — THE RESTORE: a mind read back from its sections, with everything
-// derived re-derived rather than restored.
+// 28, 78.25, 78.27 — THE RESTORE: a mind read back from its keyed tries,
+// by key, with everything derived re-derived rather than restored.
 //
-//! Balances, the ruled stalks, the axis index and the deflations are
-//! recomputed from the carriers that were written. A tape that does not
-//! parse whole is refused: nothing is partly restored.
+//! Each trie is read whole or refused, and a trie is read by its name,
+//! never by where it stands. Balances, the ruled stalks, the axis index,
+//! the federation's order and the rank's ordinal are recomputed from what
+//! was written. A tape that does not parse whole is refused: nothing is
+//! partly restored.
 
+use super::*;
+use crate::chronometry::{Cite, KStepReceipt, Stamp};
 use crate::cognition::*;
+use crate::network::nerve::Keyed;
+use crate::snapshot::{leaf, take_trie};
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
+/// μ⃗ read back off a leaf: four lanes, exactly.
+fn take_mu(v: &[u8]) -> Option<[u64; 4]> {
+    if v.len() != 32 {
+        return None;
+    }
+    let mut mu = [0u64; 4];
+    for (l, m) in mu.iter_mut().enumerate() {
+        *m = u64::from_le_bytes(v.get(l * 8..l * 8 + 8)?.try_into().ok()?);
+    }
+    Some(mu)
+}
+
+/// A leaf read whole by `read`, or refused: the reader must end where the
+/// leaf does.
+fn whole<T>(v: &[u8], read: impl FnOnce(&[u8], &mut usize) -> Option<T>) -> Option<T> {
+    let mut p = 0usize;
+    let t = read(v, &mut p)?;
+    (p == v.len()).then_some(t)
+}
+
+/// A per-act leaf of the ledger: its count, then that many records, each
+/// read by `read`, the leaf read whole.
+fn records<T>(v: &[u8], mut read: impl FnMut(&[u8], &mut usize) -> Option<T>) -> Option<Vec<T>> {
+    whole(v, |b, p| {
+        let n = usize::try_from(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?)).ok()?;
+        *p += 8;
+        if n > b.len().checked_sub(*p)? {
+            return None;
+        }
+        let mut out = Vec::with_capacity(n);
+        for _ in 0..n {
+            out.push(read(b, p)?);
+        }
+        Some(out)
+    })
+}
+
 impl Kernel {
     /// P7 — RESTORE a snapshot into a fresh kernel. Returns `false` on a
-    /// bad magic or a section that does not parse, leaving the kernel
+    /// bad magic or a trie that does not read whole, leaving the kernel
     /// empty: nothing is partly restored.
     ///
-    /// AND IT SAYS SO, naming the section it stopped in and the byte it
+    /// AND IT SAYS SO, naming the trie it stopped in and the byte it
     /// stopped at. The refusal is the caller's to act on and the server's
     /// boot REFUSES on it (X8): a `false` here is a whole court's memory —
     /// its basis, its chain, its treasury — and continuing without it
@@ -25,375 +68,298 @@ impl Kernel {
     /// when it SUCCEEDED and the only branch taken was the one that
     /// ignored the failure.
     pub fn restore(&mut self, b: &[u8]) -> bool {
-        if b.get(0..4) != Some(b"MYC7") {
-            // A REFUSAL NAMES WHAT IT READ, not only what it wanted. "The
-            // magic is not MYC7" leaves the operator to go and look at the
-            // bytes this reader already had in its hand, and a tape that
-            // is not a ledger at all reads the same as one written by an
-            // older build -- which is the difference that decides whether
-            // a recut is the road or the file is corrupt.
-            let found = match b.get(0..4) {
-                Some(m) => match std::str::from_utf8(m) {
-                    Ok(s) => format!("`{s}`"),
-                    Err(_) => format!("{m:02x?}, which is not text"),
-                },
-                None => format!("{} bytes, too short to carry one", b.len()),
-            };
-            eprintln!("  ledger refused: the magic is {found}, not MYC7");
-            return false;
+        match b.get(0..4) {
+            Some(m) if m == MAGIC => {}
+            // The positional tape (78.25), refused BY NAME: a recut is the
+            // road, and the file is not corrupt.
+            Some(m) if m == PRE_TRIE_MAGIC => {
+                eprintln!("  ledger refused: MYC7, the positional tape (78.25) — refused by name, the recut is the road");
+                return false;
+            }
+            // A REFUSAL NAMES WHAT IT READ, not only what it wanted: a tape
+            // that is not a ledger at all must not read the same as one an
+            // older build wrote.
+            found => {
+                let found = match found {
+                    Some(m) => match std::str::from_utf8(m) {
+                        Ok(s) => format!("`{s}`"),
+                        Err(_) => format!("{m:02x?}, which is not text"),
+                    },
+                    None => format!("{} bytes, too short to carry one", b.len()),
+                };
+                eprintln!("  ledger refused: the magic is {found}, not MYT1");
+                return false;
+            }
         }
-        // WHERE THE READ IS. Set as each section opens, so a refusal names
-        // one of the tape's own sections and not a byte offset alone.
-        let at = std::cell::Cell::new("basis");
+        // WHERE THE READ IS. Set as each trie opens, so a refusal names one
+        // of the tape's own tries and not a byte offset alone.
+        let at = std::cell::Cell::new(COURT_TRIE);
         let mut pos = 4usize;
-        let read_u64 = |b: &[u8], p: &mut usize| -> Option<usize> {
-            let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-            *p += 8;
-            usize::try_from(v).ok()
-        };
-        // A SECTION'S FRAME: its record count, and the byte its body ends
-        // at. The end is read, not inferred from parsing the records, which
-        // is what makes a lost frame detectable at all — see
-        // `snapshot::framed` for the ledgers that were refused because it
-        // was not.
-        let section = crate::snapshot::take_frame;
-        // A SECTION CLOSES WHERE IT SAID IT WOULD, or it is refused here
-        // and says by how much it was out. The old reader could only refuse
-        // at whatever field first failed to parse after the frame drifted,
-        // which attributed the fault to a section that was intact.
-        let closes = |name: &'static str, pos: &usize, start: usize, end: usize, n: usize| -> Option<()> {
-            if *pos == end {
-                return Some(());
-            }
-            eprintln!(
-                "  section {name}: its {n} records declare the body {start}..{end} and the \
-                 reader stopped at {pos} — the frame was lost inside this section"
-            );
-            None
-        };
-        // A WORD ROW'S ADMITTING STAMP (78.24 (2b)): `0`, or `1` and the
-        // stamp; any other tag refuses the row.
-        let take_admitted = |b: &[u8], p: &mut usize| -> Option<Option<crate::chronometry::Stamp>> {
-            let tag = *b.get(*p)?;
-            *p += 1;
-            match tag {
-                0 => Some(None),
-                1 => Some(Some(crate::chronometry::Stamp::take_canonical(b, p)?)),
-                _ => None,
-            }
-        };
-        // A ROW'S PER-WORD FIELDS (LD0 steps 4 and 5), read after its
-        // admitting stamp: the award, the deflation, the coherence field hot
-        // and cold. The award is returned to its caller, which holds it
-        // until the treasury it belongs to is read; the rest are filed.
-        let take_fields = |kernel: &mut Kernel,
-                           b: &[u8],
-                           p: &mut usize,
-                           addr: &Address|
-         -> Option<Option<crate::economy::escrow::Escrowed>> {
-            let award = crate::economy::persist::take_award(b, p)?;
-            if let Some(mag) = take_deflation(b, p)? {
-                kernel.deflations.insert(addr, mag);
-            }
-            if let Some(hot) = take_field(b, p)? {
-                kernel.field.insert(addr, hot);
-            }
-            if let Some(cold) = take_field(b, p)? {
-                kernel.field_cold.insert(addr, cold);
-            }
-            Some(award)
-        };
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
-            let (n, sec_end) = section(b, pos)?;
-            let start = *pos;
-            // The basis is read before the treasury it returns awards to.
-            let mut awards: Vec<(Address, crate::economy::escrow::Escrowed)> = Vec::new();
-            for _ in 0..n {
-                let elen = read_u64(b, pos)?;
-                let mut ep = *pos;
-                let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                let spoken = Element::from_bytes(&b[..end], &mut ep)?;
-                *pos += elen;
-                let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
-                let addr = spoken.address();
-                if let Some(at) = take_admitted(b, pos)? {
-                    kernel.file_admitted(&addr, at);
+            // THE COURT: one node, the key this court signs as.
+            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT])?;
+            let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
+                court.scoped().map(|(k, l)| (k, l.clone())).collect();
+            let [(vk, leaves)] = nodes.as_slice() else { return None };
+            let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
+            let head: [u8; 32] = leaf(leaves, LEAF_HEAD)?.try_into().ok()?;
+            let root = match leaf(leaves, LEAF_ROOT) {
+                Some(v) => Some(whole(v, crate::chronometry::Root::read)?),
+                None => None,
+            };
+            // T2 — THE LEDGER, by stamp: each node's receipt, and the rows,
+            // the settlements and the transitions standing at it.
+            at.set(LEDGER_TRIE);
+            let ledger = take_trie(b, pos, LEDGER_TRIE, &[LEAF_RECEIPT, LEAF_ENTRIES, LEAF_SETTLEMENTS, LEAF_DIALECT])?;
+            let origin = Stamp::new(0, vk, crate::chronometry::Place::GENESIS);
+            let mut receipts: Vec<KStepReceipt> = Vec::new();
+            let mut entries: Vec<crate::economy::Entry> = Vec::new();
+            let mut settled: Vec<crate::anastome::dialogue::Settlement> = Vec::new();
+            let mut dialect: Vec<(Vec<u8>, element::Versor, Option<Stamp>)> = Vec::new();
+            for (key, leaves) in ledger.scoped() {
+                let stamp = Stamp::from_key(&key)?;
+                let receipt = match leaf(leaves, LEAF_RECEIPT) {
+                    Some(v) => {
+                        let r = whole(v, KStepReceipt::read)?;
+                        if r.stamp != stamp {
+                            return None;
+                        }
+                        Some(r)
+                    }
+                    None => None,
+                };
+                // THE HASH A ROW AT THIS STAMP MAY CARRY: the receipt's
+                // where the node holds one; the root's at the fold root; the
+                // empty hash at the pre-genesis origin. A bare node at a
+                // folded act is read against its stamp alone: its receipt
+                // is cold, in the era that archived it.
+                let bare = receipt.is_none();
+                if bare && stamp.vk != vk {
+                    return None;
                 }
-                if let Some(award) = take_fields(kernel, b, pos, &addr)? {
-                    awards.push((addr, award));
+                let hash = receipt.as_ref().map(|r| r.chain_hash);
+                let at_root = root.is_some_and(|r| Stamp::new(r.height, vk, r.at) == stamp);
+                let row_stands = |e: &crate::economy::Entry| -> bool {
+                    e.at == stamp
+                        && match (hash, at_root) {
+                            (Some(h), _) => e.receipt == h || (stamp == origin && e.receipt == [0; 32]),
+                            (None, true) => root.is_some_and(|r| r.hash == e.receipt),
+                            (None, false) => stamp != origin || e.receipt == [0; 32],
+                        }
+                };
+                if let Some(v) = leaf(leaves, LEAF_ENTRIES) {
+                    for e in records(v, crate::economy::Entry::read)? {
+                        if !row_stands(&e) {
+                            return None;
+                        }
+                        entries.push(e);
+                    }
                 }
-                kernel.basis_insert(spoken, who);
+                if let Some(v) = leaf(leaves, LEAF_SETTLEMENTS) {
+                    settled.extend(records(v, |b, p| {
+                        let listing = Address::from(crate::snapshot::take_key(b, p)?);
+                        let chain = crate::anastome::dialogue::read_chain(b, p)?;
+                        let voice: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                        *p += 32;
+                        let cites = crate::anastome::dialogue::read_cites(b, p)?;
+                        let before = take_mu(b.get(*p..*p + 32)?)?;
+                        let after = take_mu(b.get(*p + 32..*p + 64)?)?;
+                        *p += 64;
+                        Some(crate::anastome::dialogue::Settlement { listing, chain, voice, cites, before, after, at: stamp })
+                    })?);
+                }
+                if let Some(v) = leaf(leaves, LEAF_DIALECT) {
+                    dialect.extend(records(v, |b, p| {
+                        let key = crate::snapshot::take_key(b, p)?;
+                        let g = element::Versor::from_bytes(b, p)?;
+                        Some((key, g, Some(stamp)))
+                    })?);
+                }
+                if let Some(r) = receipt {
+                    receipts.push(r);
+                }
             }
-            closes("basis", pos, start, sec_end, n)?;
-            at.set("treasury");
-            kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
+            // The stamps were read in key order, which is height first, so
+            // every ancestor is placed before its descendant.
+            let chain = crate::chronometry::ReceiptChain::from_nodes(root, vk, receipts)?;
+            // T1 — THE WORDS, by citation.
+            at.set(WORDS_TRIE);
+            let words = take_trie(
+                b,
+                pos,
+                WORDS_TRIE,
+                &[
+                    LEAF_HELD,
+                    LEAF_DISCOVERER,
+                    LEAF_PROVISIONAL,
+                    LEAF_AWARD,
+                    LEAF_DEFLATION,
+                    LEAF_FIELD_HOT,
+                    LEAF_FIELD_COLD,
+                    LEAF_RANK,
+                    LEAF_RULED,
+                ],
+            )?;
+            at.set(crate::economy::persist::STAKES_TRIE);
+            let (stakes, balances) = crate::economy::Treasury::take_tries(b, pos)?;
+            at.set(ERAS_TRIE);
+            let eras = take_trie(b, pos, ERAS_TRIE, &[LEAF_BODY])?;
+            at.set(COMPLEXES_TRIE);
+            let complexes = take_trie(b, pos, COMPLEXES_TRIE, &[LEAF_BODY])?;
+            at.set(COCYCLES_TRIE);
+            let cocycles = take_trie(b, pos, COCYCLES_TRIE, &[LEAF_BODY])?;
+            if *pos != b.len() {
+                return None;
+            }
+
+            kernel.court_head = head;
+            kernel.chain = chain;
+            kernel.treasury = crate::economy::Treasury::from_parts(stakes, balances, entries);
+            kernel.settlements_cold = settled;
+            kernel.dialect_chain = dialect;
+
+            // THE WORDS, applied. Each node's element is read once and its
+            // citation re-derived from it: a key that is not its element's
+            // citation refuses.
+            at.set(WORDS_TRIE);
+            let mut by_key: Keyed<(Address, Element)> = Keyed::new();
+            let mut provisional: Vec<(Address, Vec<u8>)> = Vec::new();
+            let mut ranks: Vec<(Address, crate::transducer::stalk::Invariant, Option<Vec<u8>>)> = Vec::new();
+            let mut awards: Vec<(Address, crate::economy::escrow::Escrowed)> = Vec::new();
+            let mut federation: Keyed<(Address, Element)> = Keyed::new();
+            for (key, leaves) in words.scoped() {
+                let Cite::Word { at: admitted, .. } = whole(&key, Cite::take_canonical)? else { return None };
+                let held = leaf(leaves, LEAF_HELD)?;
+                let [members, record @ ..] = held else { return None };
+                let elem = whole(record, Element::from_bytes)?;
+                let mut again = Vec::new();
+                Cite::word(&elem, admitted).put_canonical(&mut again)?;
+                if again != key {
+                    return None;
+                }
+                let addr = elem.address();
+                by_key.insert(&key, (addr.clone(), elem.clone()));
+                if members & MEMBER_SPOKEN != 0 {
+                    // A sentence docketed under another address: its stamp is
+                    // that address's, filed where the address's node is read.
+                    continue;
+                }
+                kernel.file_admitted(&addr, admitted);
+                if members & MEMBER_BASIS != 0 {
+                    let who: [u8; 32] = leaf(leaves, LEAF_DISCOVERER)?.try_into().ok()?;
+                    kernel.basis_insert(elem.clone(), who);
+                }
+                if members & MEMBER_LISTING != 0 {
+                    kernel.on_page.insert(&addr, ());
+                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    kernel.pending.insert(&addr, elem.clone());
+                }
+                if members & MEMBER_CAVITY != 0 {
+                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
+                    kernel.cavity_book.insert(&addr, elem.clone());
+                }
+                if members & MEMBER_FEDERATION != 0 {
+                    // THE FEDERATION'S ORDER IS RE-DERIVED from the stamps
+                    // that ruled each word in (78.27 (3)).
+                    let ruled = whole(leaf(leaves, LEAF_RULED)?, Stamp::take_canonical)?;
+                    let mut order = ruled.key();
+                    order.extend_from_slice(addr.as_bytes());
+                    federation.insert(order, (addr.clone(), elem.clone()));
+                    kernel.fed_at.insert(&addr, ruled);
+                }
+                if let Some(v) = leaf(leaves, LEAF_PROVISIONAL) {
+                    provisional.push((addr.clone(), v.to_vec()));
+                }
+                if let Some(v) = leaf(leaves, LEAF_AWARD) {
+                    if let Some(award) = whole(v, crate::economy::persist::take_award)? {
+                        awards.push((addr.clone(), award));
+                    }
+                }
+                if let Some(v) = leaf(leaves, LEAF_DEFLATION) {
+                    kernel.deflations.insert(&addr, take_mu(v)?);
+                }
+                if let Some(v) = leaf(leaves, LEAF_FIELD_HOT) {
+                    kernel.field.insert(&addr, whole(v, take_field)?);
+                }
+                if let Some(v) = leaf(leaves, LEAF_FIELD_COLD) {
+                    kernel.field_cold.insert(&addr, whole(v, take_field)?);
+                }
+                if let Some(v) = leaf(leaves, LEAF_RANK) {
+                    let (inv, closure) = whole(v, |b, p| {
+                        let inv = crate::transducer::stalk::Invariant::take_canonical(b, p)?;
+                        let tag = *b.get(*p)?;
+                        *p += 1;
+                        let closure = match tag {
+                            0 => None,
+                            1 => Some(crate::snapshot::take_key(b, p)?),
+                            _ => return None,
+                        };
+                        Some((inv, closure))
+                    })?;
+                    ranks.push((addr.clone(), inv, closure));
+                }
+            }
+            for (addr, key) in provisional {
+                let (_, spoken) = by_key.get(&key)?.clone();
+                kernel.provisional.insert(&addr, spoken);
+            }
+            crate::snapshot::persist(&federation, |_, (addr, elem)| {
+                kernel.court_fed_index.insert(addr, kernel.court_federation.len());
+                kernel.court_federation.push((addr.clone(), elem.clone()));
+            });
             for (addr, award) in awards {
                 kernel.treasury.restore_award(&addr, award);
             }
-            at.set("provisional");
-            // EVERY SECTION BELOW IS REQUIRED. Each read as "absent in an
-            // earlier snapshot → carry on with nothing", and `snapshot`
-            // writes every one of them unconditionally, so no writer in
-            // the tree emits a tape that omits one. What those arms
-            // actually admitted was a TRUNCATED tape: a mind restored with
-            // an empty docket, a clock at zero, an unmeasured book, and
-            // said nothing. §10 rules a persisted-layout change a recut
-            // and deletes the reader for the old layout; a tag that is not
-            // the tag refuses the tape whole, as the header already does.
-            let (np, sec_end) = section(b, pos)?;
-            let start = *pos;
-            for _ in 0..np {
-                let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                let elen = read_u64(b, pos)?;
-                let mut ep = *pos;
-                let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                let spoken = Element::from_bytes(&b[..end], &mut ep)?;
-                *pos += elen;
-                if let Some(at) = take_admitted(b, pos)? {
-                    kernel.file_admitted(&addr, at);
-                }
-                if let Some(award) = take_fields(kernel, b, pos, &addr)? {
-                    kernel.treasury.restore_award(&addr, award);
-                }
-                kernel.provisional.insert(addr, spoken);
+            // THE RANK, its closures resolved by one T1 read each (78.27):
+            // the prior measurement, continued incrementally and never read
+            // as current. Its ordinal is a reading of the basis just
+            // restored, re-derived, never persisted.
+            let mut rank = Rank::default();
+            rank.basis_gen = u64::MAX;
+            rank.basis_seq = kernel.language().next_seq;
+            rank.retire_gen = kernel.retire_gen;
+            for (addr, inv, closure) in ranks {
+                let closed = match closure {
+                    Some(key) => Some(by_key.get(&key)?.0.clone()),
+                    None => None,
+                };
+                rank.put_closure(&addr, closed);
+                rank.invariants.insert(&addr, inv);
             }
-            closes("provisional", pos, start, sec_end, np)?;
-            // The chain: the court head and every k-step receipt, so the
-            // hypha's clock continues across a boot.
-            let tag = |b: &[u8], p: &mut usize, want: &'static [u8; 4]| -> Option<()> {
-                // The section being opened, named by its own tag: a tape
-                // whose tags are not text is a tape this reader cannot
-                // name, and it says that rather than a default.
-                at.set(match std::str::from_utf8(want) {
-                    Ok(s) => s,
-                    Err(_) => "a section whose tag is not text",
-                });
-                // A section written before the orbit coordinates is named as
-                // such, never read as a tape that merely does not parse.
-                let older = [
-                    (super::PRE_ORBIT_LEDGER_TAG, "LDG1, the ledger before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road"),
-                    (super::PRE_ORBIT_SETTLEMENTS_TAG, "SET1, the settlements before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road"),
-                ];
-                for (old, named) in older {
-                    if b.get(*p..*p + 4) == Some(old.as_slice()) {
-                        at.set(named);
-                        return None;
-                    }
-                }
-                match b.get(*p..*p + 4) == Some(want.as_slice()) {
-                    true => {
-                        *p += 4;
-                        Some(())
-                    }
-                    false => None,
-                }
-            };
-            // THE LEDGER (78.24): the court head, then the ledger read as
-            // the trie it was written as — its own line and its peers',
-            // every node re-deriving its hash, the line verified whole,
-            // the peer placements re-derived.
-            tag(b, pos, super::LEDGER_TAG)?;
-            let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            let (n, sec_end) = section(b, pos)?;
-            let start = *pos;
-            let chain = crate::chronometry::ReceiptChain::read(b, pos)?;
-            closes("LDG2", pos, start, sec_end, n)?;
-            kernel.court_head = head;
-            kernel.chain = chain;
-            // ARC1: the eras, in K order. Each era's receipts re-verify as
-            // a chain of their own below their root.
-            tag(b, pos, b"ARC1")?;
-            let (ne, sec_end) = section(b, pos)?;
-            let start = *pos;
-            let mut archive = Vec::new();
-            for _ in 0..ne {
-                archive.push(crate::chronometry::Era::read(b, pos)?);
+            kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
+
+            // THE CARRIERS LD3-b MAKES T3, by their current keys.
+            at.set(ERAS_TRIE);
+            let mut archive: Keyed<crate::chronometry::Era> = Keyed::new();
+            for (_, leaves) in eras.scoped() {
+                let era = whole(leaf(leaves, LEAF_BODY)?, crate::chronometry::Era::read)?;
+                // The archive is in line order by root, across signers.
+                let mut order = Vec::new();
+                era.root.at.put_canonical(&mut order);
+                order.extend_from_slice(&era.signer);
+                archive.insert(order, era);
             }
-            closes("ARC1", pos, start, sec_end, ne)?;
-            kernel.archive = archive;
-            // The prior measurement, continued incrementally (never read as
-            // current: its generations are unknowable here).
-            tag(b, pos, b"RNK2")?;
-            {
-                let basis_seq = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                *pos += 8;
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                let mut rank = Rank::default();
-                rank.basis_gen = u64::MAX;
-                rank.basis_seq = basis_seq;
-                rank.retire_gen = kernel.retire_gen;
-                for _ in 0..n {
-                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let closed = crate::snapshot::take_key(b, pos)?;
-                    let inv = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
-                    // An empty key is the absent closure; a non-empty one is
-                    // the base point's own coordinate.
-                    rank.put_closure(
-                        &addr,
-                        (!closed.is_empty()).then(|| Address::from(closed.clone())),
-                    );
-                    rank.invariants.insert(&addr, inv);
-                }
-                closes("RNK2", pos, start, sec_end, n)?;
-                kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
+            crate::snapshot::persist(&archive, |_, era| kernel.archive.push(era.clone()));
+            at.set(COMPLEXES_TRIE);
+            for (key, leaves) in complexes.scoped() {
+                let c = whole(leaf(leaves, LEAF_BODY)?, crate::transducer::cech::Complex::from_bytes)?;
+                kernel.complexes.insert(Address::from(key), c);
             }
-            tag(b, pos, b"BOK1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let elen = read_u64(b, pos)?;
-                    let mut ep = *pos;
-                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
-                    *pos += elen;
-                    let addr = elem.address();
-                    if let Some(at) = take_admitted(b, pos)? {
-                        kernel.file_admitted(&addr, at);
-                    }
-                    if let Some(award) = take_fields(kernel, b, pos, &addr)? {
-                        kernel.treasury.restore_award(&addr, award);
-                    }
-                    kernel.on_page.insert(&addr, ());
-                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.pending.insert(&addr, elem);
-                }
-                closes("BOK1", pos, start, sec_end, n)?;
+            at.set(COCYCLES_TRIE);
+            for (key, leaves) in cocycles.scoped() {
+                let row = whole(leaf(leaves, LEAF_BODY)?, |b, p| {
+                    let a: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                    let bp: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
+                    let tu = u64::from_le_bytes(b.get(*p + 64..*p + 72)?.try_into().ok()?);
+                    *p += 72;
+                    let class_key = Address::from(crate::snapshot::take_key(b, p)?);
+                    let gauge = element::Versor::from_bytes(b, p)?;
+                    Some(crate::cognition::CocycleRow { gauge, t_universal: tu, a, b: bp, class_key })
+                })?;
+                // Chart index is rebuilt on next glue; hot row is enough.
+                kernel.cocycle_at.insert(Address::from(key), row);
             }
-            tag(b, pos, b"CAV1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let elen = read_u64(b, pos)?;
-                    let mut ep = *pos;
-                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
-                    *pos += elen;
-                    if let Some(at) = take_admitted(b, pos)? {
-                        kernel.file_admitted(&addr, at);
-                    }
-                    if let Some(award) = take_fields(kernel, b, pos, &addr)? {
-                        kernel.treasury.restore_award(&addr, award);
-                    }
-                    kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.cavity_book.insert(&addr, elem);
-                }
-                closes("CAV1", pos, start, sec_end, n)?;
-            }
-            tag(b, pos, b"CRT1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let addr = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let elen = read_u64(b, pos)?;
-                    let mut ep = *pos;
-                    let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
-                    let elem = Element::from_bytes(&b[..end], &mut ep)?;
-                    *pos += elen;
-                    kernel.court_fed_index.insert(&addr, kernel.court_federation.len());
-                    kernel.court_federation.push((addr, elem));
-                }
-                closes("CRT1", pos, start, sec_end, n)?;
-                // A trailing count of a sub-section no longer written, read
-                // by peeking at whether the next four bytes were the NEXT
-                // section's tag. `snapshot` emitted a constant zero there
-                // and nothing else ever will, so both halves are gone.
-            }
-            tag(b, pos, b"COC1")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let c = crate::transducer::cech::Complex::from_bytes(b, pos)?;
-                    kernel.complexes.insert(key, c);
-                }
-                closes("COC1", pos, start, sec_end, n)?;
-            }
-            // CYC1 was the same section without a stored class key, and its
-            // reader re-derived one with `class_key_of_versor`, dropping the
-            // row with a log line where the derivation failed. No writer has
-            // emitted CYC1 since the key was stored; the key is read (§10).
-            tag(b, pos, b"CYC2")?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let a: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
-                    let bp: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
-                    let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    let class_key = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let v = element::Versor::from_bytes(b, pos)?;
-                    kernel.cocycle_at.insert(
-                        key,
-                        crate::cognition::CocycleRow {
-                            gauge: v,
-                            t_universal: tu,
-                            a,
-                            b: bp,
-                            class_key,
-                        },
-                    );
-                    // Chart index is rebuilt on next glue; hot row is enough.
-                }
-                closes("CYC2", pos, start, sec_end, n)?;
-                let (nc, chain_end) = section(b, pos)?;
-                let chain_start = *pos;
-                for _ in 0..nc {
-                    let key = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    let v = element::Versor::from_bytes(b, pos)?;
-                    kernel.dialect_chain.push((key.into_vec(), v, tu));
-                }
-                closes("CYC2/dialect", pos, chain_start, chain_end, nc)?;
-            }
-            tag(b, pos, super::SETTLEMENTS_TAG)?;
-            {
-                let (n, sec_end) = section(b, pos)?;
-                let start = *pos;
-                for _ in 0..n {
-                    let listing = Address::from(crate::snapshot::take_key(b, pos)?);
-                    let chain = crate::anastome::dialogue::read_chain(b, pos)?;
-                    let voice: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                    *pos += 32;
-                    let cites = crate::anastome::dialogue::read_cites(b, pos)?;
-                    let mut before = [0u64; 4];
-                    for m in &mut before {
-                        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                        *pos += 8;
-                    }
-                    let mut after = [0u64; 4];
-                    for m in &mut after {
-                        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                        *pos += 8;
-                    }
-                    let at = crate::chronometry::Place::take_canonical(b, pos)?;
-                    let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                    kernel.settlements_cold.push(crate::anastome::dialogue::Settlement {
-                        listing,
-                        chain,
-                        voice,
-                        cites,
-                        before,
-                        after,
-                        at,
-                        t_universal: tu,
-                    });
-                }
-                closes("SET2", pos, start, sec_end, n)?;
-            }
+
             // index: keyed field at restore (persistence snapshot, once)
             let field_keys: Vec<Vec<u8>> = kernel.field.scoped().map(|(k, _)| k).collect();
             for addr in field_keys {
@@ -432,7 +398,7 @@ impl Kernel {
         };
         if load(self, b, &mut pos).is_none() {
             eprintln!(
-                "  ledger refused in section {} at byte {pos} of {}: the court starts clean",
+                "  ledger refused in trie {} at byte {pos} of {}: the court starts clean",
                 at.get(),
                 b.len()
             );
@@ -538,13 +504,6 @@ impl Kernel {
 /// remaining bytes and nothing else. Every record writes at least one
 /// byte, so a count larger than what is left cannot be honoured — which is
 /// EXACT and derived from the tape, not estimated from a record's size.
-///
-/// A divisor typed per record — a guess at a minimum record — can be wrong
-/// in the direction that refuses valid content, and a ledger this build
-/// wrote would refuse to read on this build. The bound is the tape's bytes
-/// (rule 10) and the count decides nothing else (rule 2): the loops that
-/// read `n` records refuse at the first field the tape cannot supply, so a
-/// count past the end costs one iteration and then refuses.
 fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
     let n = usize::try_from(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?)).ok()?;
     *p += 8;
@@ -554,36 +513,11 @@ fn take_count(b: &[u8], p: &mut usize) -> Option<usize> {
     }
 }
 
-/// The inverse of `write::put_deflation`: none, μ⃗, or a refusal.
-fn take_deflation(b: &[u8], p: &mut usize) -> Option<Option<[u64; 4]>> {
-    let tag = *b.get(*p)?;
-    *p += 1;
-    match tag {
-        0 => Some(None),
-        1 => {
-            let mut mag = [0u64; 4];
-            for m in &mut mag {
-                *m = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-                *p += 8;
-            }
-            Some(Some(mag))
-        }
-        _ => None,
-    }
-}
-
-/// The inverse of `write::put_field`: none, a listing's field, or a
-/// refusal. A closure tag that is none of the four refuses the row; it was
-/// read as a cavity.
-fn take_field(b: &[u8], p: &mut usize) -> Option<Option<ListingField>> {
+/// The inverse of `write::put_field`: a listing's field, or a refusal. A
+/// closure tag that is none of the four refuses the leaf; it was read as a
+/// cavity.
+fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
     use crate::transducer::stalk::Closure;
-    let tag = *b.get(*p)?;
-    *p += 1;
-    match tag {
-        0 => return Some(None),
-        1 => {}
-        _ => return None,
-    }
     let ne = take_count(b, p)?;
     let mut entries = Vec::new();
     for _ in 0..ne {
@@ -620,5 +554,5 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<Option<ListingField>> {
         entries.push(FieldEntry { chart, state, remainder, stagnant });
     }
     let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
-    Some(Some(ListingField { entries, nonflat }))
+    Some(ListingField { entries, nonflat })
 }

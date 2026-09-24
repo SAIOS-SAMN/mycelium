@@ -71,7 +71,6 @@ pub fn encode_docket_reply_paged(
         push_mu(&mut item, &s.before);
         push_mu(&mut item, &s.after);
         s.at.put_canonical(&mut item);
-        item.extend_from_slice(&s.t_universal.to_le_bytes());
         if settled_len + item.len() > budget {
             break;
         }
@@ -139,10 +138,8 @@ pub fn decode_settlements(body: &[u8]) -> Vec<Settlement> {
         let Some(cites) = read_cites(body, &mut p) else { break };
         let Some(before) = read_mu(body, &mut p) else { break };
         let Some(after) = read_mu(body, &mut p) else { break };
-        let Some(at) = crate::chronometry::Place::take_canonical(body, &mut p) else { break };
-        let Some(tu) = body.get(p..p + 8).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes) else { break };
-        p += 8;
-        out.push(Settlement { listing, chain, voice, cites, before, after, at, t_universal: tu });
+        let Some(at) = crate::chronometry::Stamp::take_canonical(body, &mut p) else { break };
+        out.push(Settlement { listing, chain, voice, cites, before, after, at });
     }
     out
 }
@@ -164,12 +161,9 @@ pub fn decode_cavities(body: &[u8]) -> Vec<Vec<u8>> {
         let Some(_) = read_cites(body, &mut p) else { return Vec::new() };
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
         let Some(_) = read_mu(body, &mut p) else { return Vec::new() };
-        // The settlement's place on its line, then its tick.
-        if crate::chronometry::Place::take_canonical(body, &mut p).is_none() {
+        // The stamp of the act the settlement follows.
+        if crate::chronometry::Stamp::take_canonical(body, &mut p).is_none() {
             return Vec::new();
-        }
-        if p + 8 <= body.len() {
-            p += 8;
         }
     }
     let Some(n) = body.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {

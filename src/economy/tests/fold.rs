@@ -41,8 +41,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     assert_eq!(t.bond_of(&[1; 32]), Some([2, 2, 2, 2]));
     assert_eq!(t.minted(), Some([0, 0, 0, 5]), "the folded mints now stand in the epoch rows");
 
-    let snap = t.snapshot();
-    let back = Treasury::restore(&snap, &mut 0).expect("the epoch rows read back");
+    let back = super::round_trip(&t).expect("the epoch rows read back");
     assert_eq!(back.entries(), t.entries());
     assert_eq!(back.audit().expect("a restored fold conserves"), before);
 

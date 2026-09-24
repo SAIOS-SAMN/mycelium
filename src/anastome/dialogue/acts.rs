@@ -551,8 +551,9 @@ pub struct Docket {
 /// utterance that settled it, and the magnitudes before and after as the
 /// hypha measured them. The court replays the utterance and measures for
 /// itself: two measurements of one deflation are the proof of convergence.
-/// The last two fields are the hypha's place on its line (order inside
-/// one kernel) and the TUniversal stamp (ledger, cross-node).
+/// The last field is the stamp of the act the settlement follows on the
+/// hypha's own line (78.27 (6)): its place orders it inside one kernel and
+/// its tick is TUniversal, one coordinate for both.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Settlement {
     /// The listing settled.
@@ -569,11 +570,10 @@ pub struct Settlement {
     pub before: [u64; 4],
     /// The magnitude AFTER. `before − after` is the deflation claimed.
     pub after: [u64; 4],
-    /// The hypha's place on its line — the orbit and the act's place in
-    /// it: order inside one kernel.
-    pub at: crate::chronometry::Place,
-    /// The TUniversal stamp: the ledger coordinate, across nodes.
-    pub t_universal: u64,
+    /// The stamp of the act on the hypha's own line this settlement
+    /// follows — the head when it was recorded (78.27 (6)). The `k` and the
+    /// `t_universal` it replaced are its place and its tick.
+    pub at: crate::chronometry::Stamp,
 }
 
 /// Verdict rulings — the court's closed vocabulary.

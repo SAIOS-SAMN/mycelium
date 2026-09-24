@@ -50,9 +50,7 @@ fn consilience_and_torse_settle_as_vectors() {
         "the torse coin mints the measured vector"
     );
     // The vector ledger round-trips with anchors intact.
-    let snap = t.snapshot();
-    let mut pos = 0;
-    let back = Treasury::restore(&snap, &mut pos).expect("restore");
+    let back = super::round_trip(&t).expect("restore");
     assert_eq!(back.entries(), t.entries(), "μ⃗ entries + anchors survive, exactly");
 }
 

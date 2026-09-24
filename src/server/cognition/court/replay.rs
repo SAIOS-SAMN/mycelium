@@ -335,6 +335,11 @@ impl Kernel {
             return;
         }
         if self.provisional.contains(&addr) {
+            // 78.27 (3): the second replay RULES the translation, and a
+            // ruling is an act — sealed first, so the federation files the
+            // word at it.
+            let me = self.identity;
+            self.append_step(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Upheld), &addr, me);
             self.ruled_admit(&addr);
             self.fed_admit(&addr, t);
             self.provisional.remove(&addr);

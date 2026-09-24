@@ -215,8 +215,10 @@ pub struct Kernel {
     pub(crate) cocycle_receipt: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
     /// Chart key → dialect row keys, so a fill or a refinement removes the row.
     pub(crate) cocycle_by_chart: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// Every transition that ever stood between two hyphas on a chart.
-    pub(crate) dialect_chain: Vec<(Vec<u8>, element::Versor, u64)>,
+    /// Every transition that ever stood between two hyphas on a chart, with
+    /// the stamp of the receipt it stood at (78.27 (5)) — none where it stood
+    /// at no act, which the snapshot refuses by name and counts.
+    pub(crate) dialect_chain: Vec<(Vec<u8>, element::Versor, Option<crate::chronometry::Stamp>)>,
     /// Field entries of listings that settled Flat or relocated — FLD1 cold.
     pub(crate) field_cold: crate::network::nerve::Keyed<ListingField>,
     /// Settlements the court has read; the SET2 section holds them.
@@ -276,6 +278,15 @@ pub struct Kernel {
     /// the same tick, so the close was withheld (78.23 as amended). Since
     /// boot.
     pub(crate) withheld: u64,
+    /// 78.27 (6) — SETTLEMENTS REFUSED FOR WANT OF AN ACT to stand at: a
+    /// settlement recorded before this court sealed its first act. Since
+    /// boot.
+    pub(crate) settlements_unplaced: u64,
+    /// 78.27 (3) — THE STAMP OF THE ACT THAT RULED EACH WORD INTO THE
+    /// FEDERATION, by the word's address: distinct from `admitted_at` where
+    /// the word was admitted earlier (a List, then a Ruling). The
+    /// federation's order is re-derived from these at restore.
+    pub(crate) fed_at: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
     /// ACT1 (EC1) — PEERS' RULINGS ON THIS COURT'S BOOK, per ruling arm
     /// (`Ruled::index`): `[admitted, applied, awaiting, refused]`, where
     /// admitted = applied + awaiting + refused. Admitted counts a peer's

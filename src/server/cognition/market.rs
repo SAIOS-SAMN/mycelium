@@ -315,9 +315,19 @@ impl Kernel {
         before: [u64; 4],
         after: [u64; 4],
     ) {
-        // Settlements are receipts: they stay until the court hears them, never drop.
-        let at = self.chain.next_place();
-        let tu = self.height();
+        // Settlements are receipts: they stay until the court hears them,
+        // never drop. Each stands at the act it follows on this court's own
+        // line (78.27 (6)); a settlement before this court's first act has
+        // no act to stand at and is refused by name, and counted.
+        let Some(at) = self.chain.head_stamp() else {
+            self.settlements_unplaced += 1;
+            let named = match listing.as_bytes() {
+                [a, b, ..] => format!("{a:02x}{b:02x}…"),
+                _ => "an address too short to name".to_string(),
+            };
+            eprintln!("  court settlement refused on {named}: this court has sealed no act to stand it at");
+            return;
+        };
         self.settlements.push(crate::anastome::dialogue::Settlement {
             listing,
             chain,
@@ -326,7 +336,6 @@ impl Kernel {
             before,
             after,
             at,
-            t_universal: tu,
         });
         // A court whose clock has not yet reached a full reserve of steps
         // has nothing behind the floor to cool.
@@ -351,7 +360,7 @@ impl Kernel {
     /// order, so the walk is over the delta only, from the newest back.
     pub fn settlements_since(&self, since: crate::chronometry::Place) -> &[crate::anastome::dialogue::Settlement] {
         let mut start = self.settlements.len();
-        while start > 0 && self.settlements[start - 1].at > since {
+        while start > 0 && self.settlements[start - 1].at.place() > since {
             start -= 1;
         }
         &self.settlements[start..]
@@ -361,7 +370,7 @@ impl Kernel {
     /// and leaves the docket.
     pub fn settlements_heard_to(&mut self, since: crate::chronometry::Place) {
         let mut n = 0usize;
-        while n < self.settlements.len() && self.settlements[n].at <= since {
+        while n < self.settlements.len() && self.settlements[n].at.place() <= since {
             n += 1;
         }
         self.settlements_cold.extend(self.settlements.drain(..n));

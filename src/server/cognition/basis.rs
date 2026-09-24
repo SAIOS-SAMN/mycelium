@@ -630,9 +630,18 @@ impl Kernel {
         }
     }
 
+    /// A WORD RULED INTO THE FEDERATION, standing at the act that ruled it
+    /// (78.27 (3)). Every caller seals that act FIRST — an Install, a
+    /// Ruling — so the head is it, and its stamp is filed as the word's
+    /// RULED coordinate. A word ruled before this court sealed any act has
+    /// no act to stand at and is filed without one; the snapshot refuses it
+    /// by name and counts it.
     pub(crate) fn fed_admit(&mut self, addr: &[u8], spoken: Element) {
         if self.court_fed_index.get(addr).is_some() {
             return;
+        }
+        if let Some(at) = self.chain.head_stamp() {
+            self.fed_at.insert(addr, at);
         }
         self.court_fed_index.insert(addr, self.court_federation.len());
         self.court_federation.push((Address::from(addr), spoken));

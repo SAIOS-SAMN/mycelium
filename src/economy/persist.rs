@@ -153,115 +153,74 @@ impl Treasury {
         self.escrowed.insert_shared(addr.shared(), award);
     }
 
-    /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
-    /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
-    pub fn snapshot(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        for p in &self.bond_total {
-            out.extend_from_slice(&p.to_le_bytes());
+    /// THE TREASURY'S OWN TRIES (78.27, LD3): the stakes and the balances,
+    /// each a trie keyed by the identity's `vk` with its μ⃗ as the one leaf.
+    /// Its journal rows are not here — each is a leaf of the ledger node it
+    /// stands at (T2, the kernel's snapshot) — and its escrowed awards are
+    /// not here — each is a leaf of its word's node (T1). The bond total is
+    /// re-derived from the stakes at restore.
+    ///
+    /// BALANCES, written out. They were "recomputed from the entries" at
+    /// load, and `recompute_balances` applied two of §2's ten kinds — `mint`
+    /// and paired `transfer` — ignoring the rest, so every restored ledger
+    /// that had used one of those failed its own audit. And a carrier
+    /// derived from the journal agrees with it by construction, which
+    /// destroys the cross-check §6's audit exists for: the carrier is
+    /// persisted and the supply re-derived, so their disagreement is what
+    /// the audit catches.
+    pub fn put_tries(&self, out: &mut Vec<u8>) {
+        for (name, carrier) in [(STAKES_TRIE, &self.stakes), (BALANCES_TRIE, &self.balances)] {
+            let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
+            crate::snapshot::persist(carrier, |who, mu| {
+                let mut v = Vec::with_capacity(32);
+                for m in mu {
+                    v.extend_from_slice(&m.to_le_bytes());
+                }
+                nodes.insert(who, vec![(LEAF_MU, v)]);
+            });
+            crate::snapshot::put_trie(out, name, &nodes);
         }
-        out.extend_from_slice(&(self.stakes.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.stakes, |who, mu| {
-            out.extend_from_slice(who);
-            out.push(0); // former tier discriminant; unused
-            for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
-            }
-        });
-        out.extend_from_slice(&(self.entries.len() as u32).to_le_bytes());
-        for e in &self.entries {
-            e.write(&mut out);
-        }
-        // THE ESCROWED AWARDS ARE NOT HERE (78.22, LD0 step 4): each is a
-        // field of its word's row, written where the word is (the kernel's
-        // snapshot), so no address is written twice.
-        // BALANCES, written out. They were "recomputed from the entries" at
-        // load, and `recompute_balances` applied two of §2's ten kinds --
-        // `mint` and paired `transfer` -- ignoring genesis, burn, stake,
-        // unstake, escrow, release, revoke and slash. Every restored ledger
-        // that had used one of those failed its own audit, which §6
-        // requires before every snapshot: the mesh could not persist.
-        //
-        // A better walk was not the fix. A `burn` writes ONE row for what
-        // it took from the bond and the balance together, so the balance
-        // half cannot be recovered from the journal at all. And recomputing
-        // balances FROM the journal makes them agree with it by
-        // construction, which destroys the cross-check the audit exists for
-        // -- §6 compares `genesis + mint − burn` against the carriers, and
-        // a carrier derived from the first can never disagree with it. The
-        // carrier is persisted and the supply re-derived, so the two are
-        // independent and their disagreement is what the audit catches.
-        out.extend_from_slice(&(self.balances.len() as u32).to_le_bytes());
-        crate::snapshot::persist(&self.balances, |who, mu| {
-            out.extend_from_slice(who);
-            for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
-            }
-        });
-        out
     }
 
-    /// Reload a ledger written by [`Treasury::snapshot`]. `None` on corruption.
-    pub fn restore(b: &[u8], pos: &mut usize) -> Option<Treasury> {
-        let mut bond_total = [0u64; 4];
-        for p in &mut bond_total {
-            *p = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-            *pos += 8;
-        }
-        let ns = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
-        if ns > b.len().checked_sub(*pos)? / 65 {
-            return None; // untrusted count: 65 bytes per stake
-        }
-        let mut stakes = crate::network::nerve::Keyed::new();
-        for _ in 0..ns {
-            let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-            *pos += 32;
-            *pos += 1; // former tier discriminant
-            let mut mu = [0u64; 4];
-            for m in &mut mu {
-                *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                *pos += 8;
-            }
-            stakes.insert(who, mu);
-        }
-        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
-        if n > b.len().checked_sub(*pos)? / Entry::TAPE {
-            return None; // untrusted count: one tape per entry, refuse before allocating
-        }
-        let mut entries = Vec::with_capacity(n);
-        for _ in 0..n {
-            entries.push(Entry::read(b, pos)?);
-        }
-        // THE SECTION BELOW IS REQUIRED: a tape without it is a TRUNCATED
-        // ledger, and §10 makes a layout change a recut. The awards are not
-        // read here: each comes back off its word's row (`restore_award`).
-        let escrowed = crate::network::nerve::Keyed::new();
-        // BALANCES, read back. Not recomputed: see `snapshot`.
-        let mut balances = crate::network::nerve::Keyed::new();
-        {
-            let nb = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-            *pos += 4;
-            if nb > b.len().checked_sub(*pos)? / 64 {
-                return None; // untrusted count: 64 bytes per balance row
-            }
-            for _ in 0..nb {
-                let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
+    /// The inverse of [`Treasury::put_tries`]: the stakes and the balances,
+    /// each keyed by a `vk` of 32 bytes carrying one μ⃗, or refused whole.
+    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk)> {
+        let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<[u64; 4]>> {
+            let nodes = crate::snapshot::take_trie(b, pos, name, &[LEAF_MU])?;
+            let mut out = crate::network::nerve::Keyed::new();
+            for (who, leaves) in nodes.scoped() {
+                let who: [u8; 32] = who.as_slice().try_into().ok()?;
+                let v = crate::snapshot::leaf(leaves, LEAF_MU)?;
                 let mut mu = [0u64; 4];
-                for m in &mut mu {
-                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
+                for (l, m) in mu.iter_mut().enumerate() {
+                    *m = u64::from_le_bytes(v.get(l * 8..l * 8 + 8)?.try_into().ok()?);
                 }
-                balances.insert(who, mu);
+                if v.len() != 32 {
+                    return None;
+                }
+                out.insert(who, mu);
             }
-        }
+            Some(out)
+        };
+        let stakes = read(STAKES_TRIE)?;
+        let balances = read(BALANCES_TRIE)?;
+        Some((stakes, balances))
+    }
+
+    /// A TREASURY REBUILT FROM ITS PARTS at restore: the stakes and
+    /// balances off their tries, the journal off the ledger's nodes in the
+    /// order they stand. The bond total and the supply are re-derived; the
+    /// awards come back off their words' nodes (`restore_award`).
+    pub fn from_parts(
+        stakes: crate::network::nerve::Keyed<[u64; 4]>,
+        balances: crate::network::nerve::Keyed<[u64; 4]>,
+        entries: Vec<Entry>,
+    ) -> Treasury {
         let mut t = Treasury {
             entries,
-            bond_total,
+            bond_total: [0; 4],
             stakes,
-            escrowed,
+            escrowed: crate::network::nerve::Keyed::new(),
             balances,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
@@ -270,7 +229,17 @@ impl Treasury {
         };
         t.refresh_bond();
         t.refold_supply();
-        Some(t)
+        t
     }
-
 }
+
+/// A carrier keyed by an identity's `vk`, one μ⃗ per identity: the stakes,
+/// the balances.
+pub type ByVk = crate::network::nerve::Keyed<[u64; 4]>;
+
+/// The stakes trie's name.
+pub const STAKES_TRIE: &str = "stakes";
+/// The balances trie's name.
+pub const BALANCES_TRIE: &str = "balances";
+/// The one leaf of a stake or balance node: its μ⃗, four lanes.
+pub const LEAF_MU: u8 = 1;

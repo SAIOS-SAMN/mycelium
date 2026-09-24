@@ -183,6 +183,114 @@ pub fn take_key(b: &[u8], pos: &mut usize) -> Option<Vec<u8>> {
     Some(out)
 }
 
+/// 78.27 — A TRIE ON THE TAPE: the carrier written as its own name, its
+/// byte length and its count, then its nodes in the trie's own key order,
+/// each node its KEY INLINE and its LEAVES — `(kind, value)` pairs in kind
+/// order, each kind at most once:
+///
+/// ```text
+/// trie  = name len u64 ‖ name ‖ byte_len u64 ‖ count u64 ‖ node…
+/// node  = key len u64 ‖ key ‖ leaves u64 ‖ (kind u8 ‖ value len u64 ‖ value)…
+/// ```
+///
+/// A record's position carries nothing: the reader inserts by key, and a
+/// key the trie already holds refuses the trie. Nothing is read by where it
+/// stands in a stream.
+pub type Leaves = Vec<(u8, Vec<u8>)>;
+
+/// Write `nodes` as the trie `name`. The nodes come off the Keyed in key
+/// order, which is the order the trie is read in.
+pub fn put_trie(out: &mut Vec<u8>, name: &str, nodes: &Keyed<Leaves>) {
+    let mut body = Vec::new();
+    let mut n = 0u64;
+    persist(nodes, |key, leaves| {
+        put_key(&mut body, key);
+        body.extend_from_slice(&(leaves.len() as u64).to_le_bytes());
+        for (kind, value) in leaves {
+            body.push(*kind);
+            put_key(&mut body, value);
+        }
+        n += 1;
+    });
+    put_key(out, name.as_bytes());
+    out.extend_from_slice(&(body.len() as u64).to_le_bytes());
+    out.extend_from_slice(&n.to_le_bytes());
+    out.append(&mut body);
+}
+
+/// File one leaf on a node of a trie being written. A leaf kind already on
+/// the node is not written twice: the one write of each kind is the
+/// caller's (law 12), and a second answers `None`.
+pub fn put_leaf(nodes: &mut Keyed<Leaves>, key: &[u8], kind: u8, value: Vec<u8>) -> Option<()> {
+    match nodes.get_mut(key) {
+        Some(leaves) => {
+            if leaves.iter().any(|(k, _)| *k == kind) {
+                return None;
+            }
+            // Filed at its kind's own place, so the leaves stand in kind
+            // order as they are written.
+            let at = leaves.partition_point(|(k, _)| *k < kind);
+            leaves.insert(at, (kind, value));
+        }
+        None => {
+            nodes.insert(key, vec![(kind, value)]);
+        }
+    }
+    Some(())
+}
+
+/// Read the trie `name`, whole or refused: its name must be `name`, its
+/// body must end at the byte it declares, every node's leaves must stand in
+/// strictly rising kind order and every kind must be one of `kinds`, and no
+/// key may come twice. The nodes come back keyed, never as a sequence.
+pub fn take_trie(b: &[u8], pos: &mut usize, name: &str, kinds: &[u8]) -> Option<Keyed<Leaves>> {
+    if take_key(b, pos)? != name.as_bytes() {
+        return None;
+    }
+    let len = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
+    *pos += 8;
+    let n = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
+    *pos += 8;
+    let end = pos.checked_add(len).filter(|e| *e <= b.len())?;
+    // Every node writes at least its key's length and its leaf count.
+    if n > len / 16 {
+        return None;
+    }
+    let mut nodes: Keyed<Leaves> = Keyed::new();
+    for _ in 0..n {
+        let key = take_key(b, pos)?;
+        let nl = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
+        *pos += 8;
+        if nl > end.checked_sub(*pos)? / 9 {
+            return None;
+        }
+        let mut leaves: Leaves = Vec::with_capacity(nl);
+        for _ in 0..nl {
+            let kind = *b.get(*pos)?;
+            *pos += 1;
+            let rising = match leaves.as_slice() {
+                [.., (last, _)] => *last < kind,
+                [] => true,
+            };
+            if !rising || !kinds.contains(&kind) {
+                return None;
+            }
+            leaves.push((kind, take_key(b, pos)?));
+        }
+        if nodes.contains(&key) {
+            return None;
+        }
+        nodes.insert(key, leaves);
+    }
+    (*pos == end).then_some(nodes)
+}
+
+/// The value of one leaf kind on a node read back, or none where the node
+/// carries no leaf of that kind.
+pub fn leaf(leaves: &Leaves, kind: u8) -> Option<&[u8]> {
+    leaves.iter().find(|(k, _)| *k == kind).map(|(_, v)| v.as_slice())
+}
+
 pub fn take_frame(b: &[u8], pos: &mut usize) -> Option<(usize, usize)> {
     let take = |b: &[u8], p: &mut usize| -> Option<usize> {
         let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);

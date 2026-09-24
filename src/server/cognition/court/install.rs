@@ -27,6 +27,7 @@ impl Kernel {
             .get(addr)
             .copied()
             .or_else(|| self.discoverer_of(addr));
+        let mut federated = None;
         if self.basis.get(addr).is_none() {
             if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
@@ -38,7 +39,7 @@ impl Kernel {
                         // (rule 11).
                         None => self.basis_push(w.clone(), [0; 32]),
                     }
-                    self.fed_admit(addr, w.clone());
+                    federated = Some(w.clone());
                 }
             }
         }
@@ -50,8 +51,12 @@ impl Kernel {
         // grew a ruled word at no position: nothing cited the peer receipts
         // admitted since the last step, and a reader replaying the chain
         // found the install nowhere in it. EC1: sealed BEFORE it pays, so
-        // every row the install pays stands at it.
+        // every row the install pays stands at it; 78.27 (3): and before
+        // the federation files the word, so the word stands at it.
         self.append_step(crate::chronometry::ActKind::Install, addr, witness);
+        if let Some(w) = federated {
+            self.fed_admit(addr, w);
+        }
         let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {

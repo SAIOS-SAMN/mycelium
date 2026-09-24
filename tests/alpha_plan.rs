@@ -225,11 +225,11 @@ fn dialect_enters_on_stood_and_sheds() {
     assert_eq!(epi.dialect_len(), 0);
 }
 
-/// 28: the snapshot names its layout; MYC5 carries the peer receipts this
-/// court admitted as parents (`PRC1`), without which its own heights do
-/// not re-derive, and a MYC4 file does not re-read.
+/// 28, 78.27: the snapshot names its layout — the mind as keyed tries,
+/// MYT1 — and the positional tapes before it do not re-read: MYC7 is
+/// refused by name, an older one as what it is.
 #[test]
-fn hypha_snapshot_is_myc7() {
+fn hypha_snapshot_is_myt1() {
     let mut k = Kernel::new();
     // A voice's sentence for a recolour, spoken through the one door an
     // utterance has (law 8): a listing on the book to snapshot.
@@ -242,13 +242,15 @@ fn hypha_snapshot_is_myc7() {
     let codes = k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "the sentence is listed");
     let snap = k.snapshot();
-    assert_eq!(&snap[..4], b"MYC7");
+    assert_eq!(&snap[..4], b"MYT1");
     let mut k2 = Kernel::new();
     assert!(k2.restore(&snap));
     assert_eq!(k2.occupancy(), [0, 0, 0, 0], "cold listings exert zero occupancy");
-    let mut old = snap.clone();
-    old[..4].copy_from_slice(b"MYC6");
-    assert!(!Kernel::new().restore(&old), "an old file is refused");
+    for magic in [b"MYC7", b"MYC6"] {
+        let mut old = snap.clone();
+        old[..4].copy_from_slice(magic);
+        assert!(!Kernel::new().restore(&old), "an old file is refused");
+    }
 }
 
 #[test]

@@ -84,7 +84,7 @@ impl Kernel {
         let key = Self::cocycle_key(chart, &a, &b);
         let tu = self.height();
         if let Some(prev) = self.cocycle_at.get(&key).cloned() {
-            let (old, old_tu) = (prev.gauge, prev.t_universal);
+            let old = prev.gauge;
             if element::same_versor(&old, &g) {
                 return;
             }
@@ -93,15 +93,18 @@ impl Kernel {
                 let mut budget = self.physics.stroke();
                 self.chain.precedes(&h, &at, &mut budget)
             });
+            // 78.27 (5): each transition on the chain stands at the receipt
+            // it stood at — the incumbent at its own, the newcomer at the
+            // one it arrived under — never at a tick.
             match order {
                 // The incumbent precedes: the newcomer supersedes it, and
                 // the incumbent goes onto the chain that keeps what stood.
-                Some(true) => self.dialect_chain.push((key.clone(), old, old_tu)),
+                Some(true) => self.dialect_chain.push((key.clone(), old, held)),
                 // Ordered the other way, unordered, or unmeasured: the
                 // newcomer is kept on the chain and the incumbent stands.
                 // Nothing is discarded and nothing is chosen.
                 _ => {
-                    self.dialect_chain.push((key.clone(), g, tu));
+                    self.dialect_chain.push((key.clone(), g, at));
                     return;
                 }
             }
@@ -144,7 +147,8 @@ impl Kernel {
         let mut saved: Vec<CocycleRow> = Vec::new();
         for (key, _) in rows.scoped() {
             if let Some(row) = self.cocycle_at.remove(&key) {
-                self.dialect_chain.push((key, row.gauge.clone(), row.t_universal));
+                let stood = self.cocycle_receipt.get(&key).copied();
+                self.dialect_chain.push((key, row.gauge.clone(), stood));
                 saved.push(row);
             }
         }

@@ -47,10 +47,10 @@ assert!(
 assert_eq!(booted.basis_len(), 2, "no re-germination");
 }
 
-/// CYC2 writes the transport class key beside the versor; a restore
-/// reads the same key, never a hash of the row.
+/// The cocycle rows write the transport class key beside the versor; a
+/// restore reads the same key, never a hash of the row.
 #[test]
-fn myc2_round_trips_cocycle_class_key() {
+fn a_cocycle_row_round_trips_its_class_key() {
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
@@ -60,7 +60,7 @@ let v = rotor_versor(&r).expect("versor");
 let ck = r.class_key().expect("class key");
 k.push_cocycle(&inv, [1; 32], [2; 32], v, ck.clone());
 let snap = k.snapshot();
-assert!(snap.windows(4).any(|w| w == b"CYC2"), "ledger speaks CYC2");
+assert!(snap.windows(8).any(|w| w == b"cocycles"), "the tape carries the cocycles trie by its name");
 let mut booted = Kernel::new();
 assert!(booted.restore(&snap), "clean restore");
 let got = booted
@@ -92,57 +92,89 @@ assert_eq!(after.len(), 1, "the provisional survived");
 assert_eq!(after[0].deflation, before[0].deflation, "deflation survived; the court will not slash Δ⃗ = 0");
 }
 
-/// A TAPE THAT ENDS EARLY IS REFUSED WHOLE, at every section boundary.
-/// Each section read as "absent in an earlier snapshot → carry on with
-/// nothing", and `snapshot` writes every one of them, so what those arms
-/// admitted was a truncated tape: a mind restored with an empty docket,
-/// a clock at zero and an unmeasured book, silently. §10 makes a layout
-/// change a recut and deletes the reader for the old layout.
+/// A TAPE THAT ENDS EARLY IS REFUSED WHOLE, at every trie. §10 makes a
+/// layout change a recut and deletes the reader for the old layout: the
+/// positional tape (78.25) is refused by its name, MYC7, and a tape that
+/// is neither refuses as what it is.
 #[test]
-fn a_snapshot_cut_short_at_any_section_is_refused() {
+fn a_snapshot_cut_short_at_any_trie_is_refused() {
+use crate::cognition::snapshot::{
+    COCYCLES_TRIE, COMPLEXES_TRIE, COURT_TRIE, ERAS_TRIE, LEDGER_TRIE, MAGIC, PRE_TRIE_MAGIC, WORDS_TRIE,
+};
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let snap = k.snapshot();
+assert_eq!(&snap[..4], MAGIC, "one magic names the layout");
 let mut whole = Kernel::new();
 assert!(whole.restore(&snap), "the tape as written restores");
 
-// Every section tag names a boundary the old reader would have stopped
-// at and called a restore.
-// DEF2, FLD1 and FLC1 are row fields now (LD0 step 5), not sections.
-for tag in [b"LDG2", b"ARC1", b"RNK2", b"BOK1", b"CAV1", b"CRT1", b"COC1", b"CYC2", b"SET2"] {
-    let Some(at) = snap.windows(4).position(|w| w == tag) else {
-        panic!("the tape carries {}", String::from_utf8_lossy(tag))
+// Every trie opens with its own name; a tape ending before it is refused.
+let tries = [
+    COURT_TRIE,
+    LEDGER_TRIE,
+    WORDS_TRIE,
+    crate::economy::persist::STAKES_TRIE,
+    crate::economy::persist::BALANCES_TRIE,
+    ERAS_TRIE,
+    COMPLEXES_TRIE,
+    COCYCLES_TRIE,
+];
+for name in tries {
+    let Some(at) = snap.windows(name.len()).position(|w| w == name.as_bytes()) else {
+        panic!("the tape carries the {name} trie by its name")
     };
     let mut booted = Kernel::new();
-    assert!(
-        !booted.restore(&snap[..at]),
-        "a tape ending at {} is refused",
-        String::from_utf8_lossy(tag)
-    );
+    assert!(!booted.restore(&snap[..at]), "a tape ending at the {name} trie is refused");
     assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
 
-// THE SECTIONS BEFORE THE ORBIT COORDINATES ARE REFUSED BY NAME (ACT1-orbit,
-// §10): the same tape with either section under its pre-orbit tag
-// restores nothing.
-use crate::cognition::snapshot::{
-    LEDGER_TAG, PRE_ORBIT_LEDGER_TAG, PRE_ORBIT_SETTLEMENTS_TAG, SETTLEMENTS_TAG,
-};
-for (now, old) in [(LEDGER_TAG, PRE_ORBIT_LEDGER_TAG), (SETTLEMENTS_TAG, PRE_ORBIT_SETTLEMENTS_TAG)] {
-    let at = snap.windows(4).position(|w| w == now.as_slice()).expect("the tape carries the section");
-    let mut older = snap.clone();
-    older[at..at + 4].copy_from_slice(old);
-    let mut booted = Kernel::new();
-    assert!(!booted.restore(&older), "{} is refused", String::from_utf8_lossy(old));
-    assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
-}
+// THE POSITIONAL TAPE IS REFUSED BY NAME (78.25, §10).
+let mut older = snap.clone();
+older[..4].copy_from_slice(PRE_TRIE_MAGIC);
+let mut booted = Kernel::new();
+assert!(!booted.restore(&older), "MYC7 is refused");
+assert_eq!(booted.basis_len(), 0, "and nothing is partly restored");
 }
 
-/// A SECTION CLOSES WHERE IT SAID IT WOULD. Each section writes its record
-/// count AND the byte length of its body; a reader that does not arrive at
-/// that byte has lost the frame inside that section and refuses there.
+/// 78.27 — A TRIE IS READ BY KEY, NEVER BY POSITION: a key written twice
+/// refuses the trie, a leaf kind the trie does not define refuses its node,
+/// leaves out of kind order refuse, and a trie read under another name
+/// refuses. What reads back is keyed, whatever order the nodes were given.
+#[test]
+fn a_trie_reads_back_by_key_and_refuses_what_it_cannot_place() {
+use crate::network::nerve::Keyed;
+use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
+let mut nodes: Keyed<Leaves> = Keyed::new();
+nodes.insert(b"b", vec![(1, b"two".to_vec()), (3, b"four".to_vec())]);
+nodes.insert(b"a", vec![(1, b"one".to_vec())]);
+let mut tape = Vec::new();
+put_trie(&mut tape, "t", &nodes);
+let back = take_trie(&tape, &mut 0, "t", &[1, 3]).expect("it reads back whole");
+assert_eq!(back.get(b"a").and_then(|l| leaf(l, 1)), Some(b"one".as_slice()), "by key");
+assert_eq!(back.get(b"b").and_then(|l| leaf(l, 3)), Some(b"four".as_slice()));
+assert!(take_trie(&tape, &mut 0, "u", &[1, 3]).is_none(), "under another name it refuses");
+assert!(take_trie(&tape, &mut 0, "t", &[1]).is_none(), "a kind the trie does not define refuses");
+// Two nodes under one key: written by hand, since a Keyed cannot hold them.
+let mut dup = Vec::new();
+let mut body = Vec::new();
+for _ in 0..2 {
+    crate::snapshot::put_key(&mut body, b"k");
+    body.extend_from_slice(&1u64.to_le_bytes());
+    body.push(1);
+    crate::snapshot::put_key(&mut body, b"v");
+}
+crate::snapshot::put_key(&mut dup, b"t");
+dup.extend_from_slice(&(body.len() as u64).to_le_bytes());
+dup.extend_from_slice(&2u64.to_le_bytes());
+dup.extend_from_slice(&body);
+assert!(take_trie(&dup, &mut 0, "t", &[1]).is_none(), "a key the trie already holds refuses");
+}
+
+/// A TRIE CLOSES WHERE IT SAID IT WOULD. Each trie writes its byte length
+/// beside its count; a reader that does not arrive at that byte has lost
+/// the frame inside that trie and refuses there.
 ///
 /// The count alone could not support this. A reader recovered a section's
 /// end by parsing every record and trusting the result, so a record whose
@@ -167,12 +199,12 @@ speak_pair(&mut k, &a, &b, [1; 32]);
 let snap = k.snapshot();
 assert!(Kernel::new().restore(&snap), "the tape as written restores");
 
-// The first section's frame: `MYC7` then its count, then the byte length
-// of its body. Byte 12 opens that length.
-let declared = u64::from_le_bytes(snap[12..20].try_into().expect("the frame is there"));
+// The first trie's frame: the magic, its name (`court`, a u64 length and
+// five bytes), then the byte length of its body. Byte 17 opens that length.
+let declared = u64::from_le_bytes(snap[17..25].try_into().expect("the frame is there"));
 for wrong in [declared.wrapping_sub(1), declared.wrapping_add(1)] {
     let mut bent = snap.clone();
-    bent[12..20].copy_from_slice(&wrong.to_le_bytes());
+    bent[17..25].copy_from_slice(&wrong.to_le_bytes());
     let mut booted = Kernel::new();
     assert!(
         !booted.restore(&bent),
@@ -223,6 +255,70 @@ assert!(
     crate::snapshot::take_key(&clipped, &mut p).is_none(),
     "a key whose bytes are not there is a refusal, not a short key"
 );
+}
+
+/// 78.27 T2 — PER-ACT DATA STANDS AT ITS LEDGER NODE. Every treasury row
+/// comes back at the stamp it stands at — the boot's genesis and stake rows
+/// at the line's pre-genesis origin, a bare node until the first act is
+/// sealed there — a settlement at the act it follows, and a dialect
+/// transition at the receipt it stood at; a transition that stood at no act
+/// is refused by name and does not come back.
+#[test]
+fn the_ledgers_per_act_data_stands_at_its_nodes() {
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
+assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+let listing = k.pending.scoped().next().expect("listed").1.address();
+k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
+let head = k.chain().head_stamp().expect("the court has acted");
+let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("a quarter turn");
+let g = rotor_versor(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()).expect("a versor");
+k.dialect_chain.push((b"stood".to_vec(), g.clone(), Some(head)));
+k.dialect_chain.push((b"unstamped".to_vec(), g, None));
+let origin = crate::chronometry::Stamp::new(0, k.chain().vk(), crate::chronometry::Place::GENESIS);
+assert!(k.treasury().entries().iter().any(|e| e.at == origin && e.receipt == [0; 32]), "the boot's rows stand at the origin");
+let snap = k.snapshot();
+let mut back = Kernel::new();
+assert!(back.restore(&snap), "clean restore");
+assert_eq!(back.treasury().entries(), k.treasury().entries(), "every row back, at its stamp, in its order");
+assert!(back.treasury().audit().is_ok(), "and the ledger conserves");
+let [settled] = back.settlements_cold.as_slice() else { panic!("the settlement came back") };
+assert_eq!(settled.at, head, "at the act it follows");
+let [(key, _, at)] = back.dialect_chain.as_slice() else { panic!("one transition came back: {:?}", back.dialect_chain.len()) };
+assert_eq!((key.as_slice(), *at), (b"stood".as_slice(), Some(head)), "the stamped transition, at its receipt; the unstamped one refused");
+}
+
+/// 78.27 (3) — THE FEDERATION'S ORDER IS RE-DERIVED from the stamps that
+/// ruled each word into it: a word is federated at the act that ruled it,
+/// that stamp is its RULED leaf, and the order comes back from the stamps.
+#[test]
+fn the_federation_comes_back_in_the_order_its_rulings_stood() {
+use crate::anastome::dialogue::RULING_UPHELD;
+let mut k = Kernel::new();
+let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+// Two words, each spoken by its own two voices.
+for (hue, voices) in [(4u8, [[1; 32], [2; 32]]), (5, [[3; 32], [4; 32]])] {
+    let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
+    for v in voices {
+        assert_eq!(speak_pair(&mut k, &a, &b, v), Outcome::GermPending);
+    }
+}
+k.court_stroke(super::common::one_stroke_transport);
+let docketed: Vec<Vec<u8>> = k.provisional.scoped().map(|(a, _)| a).collect();
+for addr in &docketed {
+    assert!(k.apply_verdict(addr, RULING_UPHELD), "upheld");
+    let ruled = k.chain().head_stamp().expect("the ruling is an act");
+    if k.court_fed_index.get(addr).is_some() {
+        assert_eq!(k.fed_at.get(addr), Some(&ruled), "federated at the act that ruled it");
+    }
+}
+let order: Vec<Vec<u8>> = k.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
+assert_eq!(order.len(), 2, "both words ruled into the federation");
+let mut back = Kernel::new();
+assert!(back.restore(&k.snapshot()), "clean restore");
+let again: Vec<Vec<u8>> = back.court_federation.iter().map(|(a, _)| a.as_bytes().to_vec()).collect();
+assert_eq!(again, order, "the order re-derived from the ruling stamps");
 }
 
 /// LD0 step 5 — A COHERENCE FIELD IS A FIELD OF ITS WORD'S ROW. A

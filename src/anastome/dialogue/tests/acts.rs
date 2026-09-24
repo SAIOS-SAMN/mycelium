@@ -99,8 +99,7 @@ fn the_five_acts_round_trip() {
         cites: cites.clone(),
         before: [2, 0, 2, 0],
         after: [0, 0, 1, 0],
-        at: crate::chronometry::Place { k: 42, i: 0 },
-        t_universal: 7,
+        at: crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 42, i: 0 }),
     };
     let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
     assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);

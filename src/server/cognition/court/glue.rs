@@ -330,14 +330,16 @@ impl Kernel {
                     });
                     self.touch_at(&addr);
                 }
-                self.ruled_admit(&addr);
-                self.fed_admit(&addr, spoken.clone());
                 // ACT1-hold (78.27 Q1): EVERY HOLDING PATH ADMITS BY AN ACT.
                 // The glue installs a peer-ruled word on this court's rows, so
                 // it is an Install on this court's own line, the peer its
                 // witness; the act admits the word, and its stamp is the
                 // word's `admitted_at`. It held the word at no act before.
+                // 78.27 (3): sealed before the federation files the word, so
+                // the word stands at the act that ruled it in.
                 self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
+                self.ruled_admit(&addr);
+                self.fed_admit(&addr, spoken.clone());
                 // EC1: the released claim is minted AT the Install that
                 // carries it (POUW), never at the act that escrowed it.
                 let installed = self.anchor();

@@ -55,13 +55,19 @@ impl Kernel {
                         sim_key[0], sim_key[1]
                     );
                     self.record_gamma(&addrs, &gamma, &carriage);
+                    let before = self.chain.head_stamp();
                     self.pay_simplex_volume(&inv, &addrs);
+                    // 78.27 (5): the Settled act this fill sealed, where it
+                    // sealed one — the act a transition it retires stood at
+                    // when the transition carries no receipt of its own.
+                    let settled = self.chain.head_stamp().filter(|h| Some(*h) != before);
                     if !gamma.is_identity() {
                         if let Some((a, b)) = edge_pair(&addrs) {
                             self.mint_or_admit_translation(&gamma, a.clone(), b.clone(), [0; 32]);
                             let key = Self::cocycle_key(&inv, &a, &b);
                             if let Some(row) = self.cocycle_at.remove(&key) {
-                                self.dialect_chain.push((key.clone(), row.gauge, row.t_universal));
+                                let stood = self.cocycle_receipt.get(&key).copied().or(settled);
+                                self.dialect_chain.push((key.clone(), row.gauge, stood));
                             }
                             if let Some(m) = self.cocycle_by_chart.get_mut(&inv.key()) {
                                 m.remove(&key);

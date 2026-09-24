@@ -481,10 +481,11 @@ fn an_award_is_measured_flat_in_its_word() {
     let field = 1 + 4 + 32 + 32 + crate::chronometry::Stamp::LEN as u64 + 32;
     let [award] = c.rows.as_slice() else { panic!("one carrier, one kind: {:?}", c.rows) };
     assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
-    let snap = t.snapshot();
-    let mut p = 0usize;
-    let back = crate::economy::Treasury::restore(&snap, &mut p).expect("the ledger restores");
-    assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's row, not the treasury");
+    let mut tries = Vec::new();
+    t.put_tries(&mut tries);
+    let (stakes, balances) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
+    let back = crate::economy::Treasury::from_parts(stakes, balances, t.entries().to_vec());
+    assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's node, not the treasury's tries");
 }
 
 /// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED
