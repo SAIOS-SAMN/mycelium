@@ -6,6 +6,22 @@ voices, transfer, genesis, and the audit invariant are specified here and
 not yet landed. Companion documents: `MU-PRODUCT.md`, `MU-ENGINEERING.md`,
 `XSEPTUM.md`.
 
+## 0. The proofs of work, named apart (ruled 2026-09-24, the operator's word)
+
+POW++ is a FAMILY of proofs, each a distinct act with its own payment on
+the ledger, and no two share a name (MU-RECURSION 78.33):
+
+| proof | acronym | the act | what the ledger does |
+|---|---|---|---|
+| proof of useful work | **POUW** | a closure ruled: a listed demand closed, its deflation measured on closure (§3.2, 12.6, 23.9) | mints the measured deflation and pays the closer |
+| proof of work convergence | **POWC** | a refusal closed at another perspective: the question one mind refused, closed by another citing the refusing mind's receipt (74, CV4) | pays the refuser as a cited generator and the closer the closure |
+| proof of work retirement | **POWR** | a re-expression over fewer letters: retirement by geodesic or by citation, a refinement bid replayed with the word excluded (3.8, T10, 27, `try_refine`) | burns the freed description and pays the retirer the compression yield |
+
+"PoWC" in this document formerly named the third arm; it is POWR from
+here, and POWC names convergence only. A reading, a row or a receipt
+kind names the arm it counts; a line that says "POW++" names the family
+and never one payment.
+
 ## 1. The unit
 
 μ is a vector on four lanes: spatial (S), gauge (G), temporal (T),
@@ -146,7 +162,7 @@ supply → the description length of the language as it currently stands
 and not the integral of everything it has ever held. Supply cannot grow
 without new observation, and it falls when the engine expresses what it
 already knows more compactly. PoUW mints when structure is understood;
-PoWC burns when the same meaning is re-expressed over fewer letters. The
+POWR — proof of work retirement, named apart from proof of work convergence on 2026-09-24 (MU-RECURSION 78.33) — burns when the same meaning is re-expressed over fewer letters. The
 seventeen letters are the floor: a language reduced to its axioms and their
 combinations carries the least supply that can express it.
 

@@ -424,6 +424,13 @@ tree that still carries it reads by this table until its module is swept.
 
 ---
 
+**The proofs of work (ruled 2026-09-24, 78.33).** POW++ is a family:
+**POUW** proof of useful work (a closure ruled, mint on closure);
+**POWC** proof of work convergence (a refusal closed at another
+perspective, the citation paid); **POWR** proof of work retirement (a
+re-expression over fewer letters, the freed description burned and the
+compression yield paid). No two share a name; "POW++" is the family.
+
 **The plexus (ruled 2026-09-24, 78.31).** The graded network the five
 nouns form — a **spore** (a ray, the null point of perception), a
 **filament** (a route, a word), a **ring** or **throat** (a circuit), a
@@ -511,7 +518,7 @@ same sense: the complete operation, with its invariant and its refusal.
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1). Open: ACT1 (every holding by an act; the clock reading; a k-step is one orbit; a ruling's economy applied at its node) |
 | **The mind's persistence** | 78.25, 78.27 | the mind persists as keyed tries by coordinates: a word a node at its citation, its fields the node's leaves; read by key and prefix, never by position | `server/cognition/snapshot/`, `cech/tape.rs`, `economy/persist.rs`, `client/sdk/epigenome/persist.rs` | OPEN (LD3). The MYC7 tape still stands |
 | **The learning curve** | 78.1, 78.3, 78.16–78.19 | a mind's perspective is its orbital elements; learning is their change by closures and refinements; the fleet is the soak and a phase lands when its reading moves | `observe/{learning,fleet,cells,circuit,carriage}.rs`, the console | landed (LC1, CO1, PG1, SP1, CQ1, PH5). LC2 open: the first non-zero reading |
-| **POW++** | 74, 78.22, MU-ECONOMY | proof of useful work (a closure ruled) with proof of work convergence (a refusal closed at another perspective, cited); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `court/verdict/ruling.rs` | PARTIAL: rulings are adjudicated and never paid or slashed (EC1, in ACT1); PHY1 open: one reserve, contacts priced per lane |
+| **POW++** | 74, 78.22, 78.33, MU-ECONOMY | three proofs named apart: POUW (a closure ruled, mint on closure), POWC (a refusal closed at another perspective, the citation paid), POWR (retirement, the freed description burned, the compression yield paid); priced per lane, layer and grade, never summed | `economy/{treasury,escrow,settle,fold}.rs`, `court/verdict/ruling.rs` | PARTIAL: rulings are adjudicated and never paid or slashed (EC1, in ACT1); PHY1 open: one reserve, contacts priced per lane |
 | **The hardening path** | 80.2 | a submitted solution is adjudicated by the court; the server provides the syllabus; minerals harden into crystals by re-derivation over k-steps | `observe/learning.rs`, `client/sdk/entity/learn.rs`, `server/cognition/court/syllabus.rs` | OPEN (DL1, GD1) |
 | **The planetary dialect** | 80 | a constructor is a letter of the local dialect; minds speak to minds by offers; the court rules what converges (n → 1) | `transducer/alphabet/`, `family/derivation`, `anastome/` | OPEN (AL1, SP2 with CV4); the Gödel step's backlog read first (GD1) |
 
@@ -15795,6 +15802,24 @@ first (row CS2): per cell the held constructors, the orbit-algebra rank
 against the cap, and the pivots that reached, were refused as
 derivable, or demanded a mode, on the corpus and the fleet before any
 change to the pivot's drive.
+
+### 78.33 The proofs of work, named apart (ruled 2026-09-24, the operator's word)
+
+POW++ is a family of proofs and the documentation keeps them separated
+so that no two collide. MU-ECONOMY used "PoWC" for the burn on
+retirement while 74 and 78 use "POWC" for convergence across minds; the
+operator ruled the collision closed. From here: **POUW**, proof of
+useful work — a closure ruled, the deflation minted on closure and paid
+to the closer (MU-ECONOMY 3.2, 12.6, 23.9); **POWC**, proof of work
+convergence — a refusal closed at another perspective, the refuser paid
+as a cited generator and the closer the closure (74, CV4); **POWR**,
+proof of work retirement — a re-expression over fewer letters, retirement
+by geodesic or by citation and the refinement bid, the freed description
+burned and the retirer paid the compression yield (3.8, T10, 27). A
+fourth arm is named only by a ruling that adds it here with its own act
+and payment; a reading or a receipt kind names the arm it counts, and
+"POW++" names the family, never one payment. MU-ECONOMY carries the
+table as its §0; the vocabulary carries the three names.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
