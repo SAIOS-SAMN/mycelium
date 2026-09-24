@@ -222,6 +222,82 @@ pub struct CellRefusals {
     pub orbit: Option<cga::OrbitUnread>,
 }
 
+/// 78.26(5) — THE RINGS THROUGH A CELL, READ BY THEIR RESIDUE: each circuit
+/// crossing the cell is a ring, and its holonomy's modes say whether the ring
+/// is coherent and, where it is not, how. Three axes, each counted per ring
+/// and never collapsed into one another:
+///
+/// - RESONANCE: coherent (the holonomy has no mode — nothing held); resonant
+///   (every mode elliptic of finite order — the ring closes at the joint
+///   period, a delay and not a loss); or not, by each kind of mode that never
+///   returns — a rosette (elliptic of no finite order), parabolic, boost.
+/// - LEVEL: harmonic (a mode does not resonate), luminal (the gauge refused at
+///   the cone, OR3's `Cone`), holonomic (a mode carries the round off: around
+///   the ring and back does not return what was perceived).
+/// - KIND, per mode (A.17, 78.32, 74): D where a mode is elliptic, resonant or
+///   rosette alike — a rotor at an angle a word may spell; C where a mode is
+///   parabolic or a boost, or the ring is luminal — another chart or vantage
+///   may carry it. Never P: an incoherence is a state.
+///
+/// A ring whose holonomy or modes did not read is not here: it is counted by
+/// its reason on the refusals (`circuits`, `modes`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Rings {
+    pub coherent: usize,
+    pub resonant: usize,
+    pub rosette: usize,
+    pub parabolic: usize,
+    pub boost: usize,
+    pub harmonic: usize,
+    pub luminal: usize,
+    pub holonomic: usize,
+    pub d: usize,
+    pub c: usize,
+}
+
+/// 78.26(5) — THE RINGS BY THEIR RESIDUE, read off each crossing circuit's
+/// holonomy and modes and the mode readings against the round.
+fn read_rings(
+    circuits: &[Result<Mv, CircuitUnread>],
+    modes: &[Option<Vec<MotionMode>>],
+    readings: &[ModeReading],
+) -> Rings {
+    let mut r = Rings::default();
+    for (c, (h, ms)) in circuits.iter().zip(modes).enumerate() {
+        let ms = match (h, ms) {
+            (Err(CircuitUnread::Cone), _) => {
+                r.luminal += 1;
+                r.c += 1;
+                continue;
+            }
+            // Unread by its reason, counted on the refusals.
+            (Err(_), _) | (Ok(_), None) => continue,
+            (Ok(_), Some(ms)) => ms,
+        };
+        let live: Vec<&MotionMode> = ms.iter().filter(|m| m.kind != BivectorKind::Trivial).collect();
+        if live.is_empty() {
+            r.coherent += 1;
+            continue;
+        }
+        let has = |k: BivectorKind| live.iter().any(|m| m.kind == k);
+        let rosette = live.iter().any(|m| m.kind == BivectorKind::Elliptic && m.order.is_none());
+        let (parabolic, boost) = (has(BivectorKind::Parabolic), has(BivectorKind::Hyperbolic));
+        match rosette || parabolic || boost {
+            false => r.resonant += 1,
+            true => {
+                r.harmonic += 1;
+                r.rosette += usize::from(rosette);
+                r.parabolic += usize::from(parabolic);
+                r.boost += usize::from(boost);
+            }
+        }
+        r.holonomic += usize::from(readings.iter().any(|x| x.circuit == c && matches!(x.round, RoundKept::Carried(_))));
+        r.d += usize::from(has(BivectorKind::Elliptic));
+        r.c += usize::from(parabolic || boost);
+    }
+    r
+}
+
 impl CellRefusals {
     /// Whether any reader of the cell refused.
     pub fn any(&self) -> bool {
@@ -295,6 +371,8 @@ pub struct CellAlgebra {
     /// percept's own, never persisted. `None` where an action did not read.
     pub actions: Option<Vec<Vec<Vec<Q>>>>,
     pub basis: Option<Vec<crate::core::lattice::SparseRow>>,
+    /// 78.26(5) — the rings through the cell, by their residue.
+    pub rings: Rings,
 }
 
 /// A matrix as one sparse integer row: its denominators cleared, reduced by
@@ -544,6 +622,7 @@ pub fn read_cell_after(
             ModeReading { circuit: c, mode: j, kind: mode.kind, plane: plane_of(mode), round, permutation }
         })
         .collect();
+    let rings = read_rings(circuits, &modes, &readings);
     let congruence = match (round_read, circuits.is_empty()) {
         (_, true) => Congruence::NoCircuit,
         (Err(why), false) => Congruence::NoRound(why),
@@ -643,5 +722,6 @@ pub fn read_cell_after(
         modes_unread,
         actions,
         basis,
+        rings,
     }
 }

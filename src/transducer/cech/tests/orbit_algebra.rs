@@ -115,6 +115,48 @@ fn a_rosette_is_held_and_a_screw_is_open() {
     assert_eq!(open.coherence, Coherence::Open(BivectorKind::Parabolic));
 }
 
+/// 78.26(5) — THE RINGS THROUGH A CELL, BY THEIR RESIDUE: the identity is
+/// coherent; a quarter turn resonant (D); a turn by `(3, 4, 5)` a rosette,
+/// harmonic (D); a screw parabolic, harmonic, with its turn (D and C); a
+/// quarter turn across the round resonant and holonomic (D); a circuit
+/// refused at the cone luminal (C); one unread for another reason is on the
+/// refusals and not here.
+#[test]
+fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
+    let (m, nuclei) = round();
+    let identity = Mv::scalar(q(1, 1));
+    let quarter = cga::rotator(&q(1, 1), &q(1, 1));
+    let rosette = cga::rotator(&q(3, 1), &q(4, 1));
+    let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
+    let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
+    let circuits = [
+        Ok(identity),
+        Ok(quarter),
+        Ok(rosette),
+        Ok(screw),
+        Ok(across),
+        Err(CircuitUnread::Cone),
+        Err(CircuitUnread::NotRigid),
+    ];
+    let cell = read_cell(1, Some(&m), Some(&nuclei), &circuits, &[], &mut stroke());
+    assert_eq!(
+        cell.rings,
+        Rings {
+            coherent: 1,
+            resonant: 2,
+            rosette: 1,
+            parabolic: 1,
+            boost: 0,
+            harmonic: 2,
+            luminal: 1,
+            holonomic: 1,
+            d: 4,
+            c: 2,
+        },
+        "each ring on each axis, none collapsed"
+    );
+}
+
 /// NOTHING IS CLASSED OFF WHAT DID NOT READ: an unread circuit leaves the
 /// cell unread by count; a missing round is named; a cell no circuit
 /// crosses was asked nothing. CV1b — AND EACH SILENCE CARRIES ITS CONTENT:

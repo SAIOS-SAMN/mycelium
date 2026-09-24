@@ -307,6 +307,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.enclosures)
         .zip(&c.constructors)
         .map(|(((a, ms), enclosure), held)| CellEntry {
+            rings: a.rings,
             constructors: held.map(|k| k as u32),
             refusals: a.refusals(),
             enclosure: enclosure.clone(),

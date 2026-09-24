@@ -58,6 +58,9 @@ struct GradeRow {
     nuclei_unread: u64,
     unordered: u64,
     orbit_unread: [u64; 5],
+    /// 78.26(5) — the rings through the grade's cells, by resonance, level
+    /// and kind, summed axis by axis.
+    rings: crate::observe::Rings,
 }
 
 /// The tally's axis for a group's closure; an unread reading on the last
@@ -138,6 +141,18 @@ impl CellTally {
                 None => {}
             }
             row.products.push((c.products.len(), usize::from(c.classes)));
+            // 78.26(5) — the rings, axis by axis.
+            let (s, x) = (&mut row.rings, &c.rings);
+            s.coherent += x.coherent;
+            s.resonant += x.resonant;
+            s.rosette += x.rosette;
+            s.parabolic += x.parabolic;
+            s.boost += x.boost;
+            s.harmonic += x.harmonic;
+            s.luminal += x.luminal;
+            s.holonomic += x.holonomic;
+            s.d += x.d;
+            s.c += x.c;
             // CV1b — the refusals by content.
             use crate::observe::{CapacityRefused, CircuitUnread, ModesUnread, OrbitUnread};
             let r = &c.refusals;
@@ -241,6 +256,10 @@ impl CellTally {
                     r.zero_meets, r.nuclei_unread, r.unordered,
                     ou[0], ou[1], ou[2], ou[3], ou[4],
                     r.held, self.cap, r.above_cap
+                ) + &format!(
+                    " | rings coherent {} resonant {} rosette {} parabolic {} boost {} | harmonic {} luminal {} holonomic {} | D {} C {}",
+                    r.rings.coherent, r.rings.resonant, r.rings.rosette, r.rings.parabolic, r.rings.boost,
+                    r.rings.harmonic, r.rings.luminal, r.rings.holonomic, r.rings.d, r.rings.c
                 )
             })
             .collect();

@@ -57,13 +57,21 @@ pub struct Learning {
     /// CS2, 78.32(c) — this mind's pivots against the cells their orbits
     /// cross, by content: the count the admission gate waits on.
     pub pivots: crate::transducer::sentence::PivotTally,
+    /// 13.12, 78.26(6) — the contemplation's merges: merged, stayed two,
+    /// unnamed (TP1's line, which adds decohered and collapsed).
+    pub merges: crate::transducer::bubble::merge::MergeTally,
 }
 
 impl Learning {
     /// THE CURVE OF THIS MIND, read off its own genome at its own `k`, at the
     /// read, with its contemplation's pivot reading beside it; nothing is
     /// stored beside the carriers (law 12).
-    pub fn of(epigenome: &Epigenome, k: u64, pivots: crate::transducer::sentence::PivotTally) -> Learning {
+    pub fn of(
+        epigenome: &Epigenome,
+        k: u64,
+        pivots: crate::transducer::sentence::PivotTally,
+        merges: crate::transducer::bubble::merge::MergeTally,
+    ) -> Learning {
         let mut radius = 0u64;
         let strata = epigenome
             .atlas
@@ -82,7 +90,7 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots }
+        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges }
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -99,6 +107,10 @@ impl Learning {
         }
         let t = &self.pivots;
         for v in [t.reached, t.derivable, t.demanded, t.adjoin, t.starved, t.unread_fibre, t.unread_algebra] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        let m = &self.merges;
+        for v in [m.merged, m.stayed, m.unnamed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -143,6 +155,11 @@ impl Learning {
             unread_fibre: u64_at(b, p)?,
             unread_algebra: u64_at(b, p)?,
         };
-        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots })
+        let merges = crate::transducer::bubble::merge::MergeTally {
+            merged: u64_at(b, p)?,
+            stayed: u64_at(b, p)?,
+            unnamed: u64_at(b, p)?,
+        };
+        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges })
     }
 }

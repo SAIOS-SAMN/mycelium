@@ -213,6 +213,7 @@ impl Contemplation {
                         "  thought merge refused {:02x}{:02x}… not one section",
                         verts[0][0], verts[0][1]
                     );
+                    self.merges.stayed += 1;
                     #[expect(
                         clippy::disallowed_methods,
                         reason = "rule 15 — canonical key order: the simplex's vertices are sorted, so the least key stands where the merge is refused"
@@ -257,6 +258,7 @@ impl Contemplation {
         }
         self.paint_seeded(&mut horizon);
         if remainder.is_empty() && form.is_none() {
+            self.merges.unnamed += 1;
             return None;
         }
         let volume = match &form {
@@ -266,7 +268,10 @@ impl Contemplation {
         // A union of two remainders can say two things at one site, and
         // such a remainder has no A5 chain. The merge yields no bubble
         // rather than one that cannot be named (U14).
-        let remainder = element::place_chain(&remainder)?;
+        let Some(remainder) = element::place_chain(&remainder) else {
+            self.merges.unnamed += 1;
+            return None;
+        };
         let key = match &form {
             Some(f) => idea_key(f),
             None => remainder_addr(&remainder),
@@ -334,7 +339,26 @@ impl Contemplation {
                 self.pending_rewrites.push(rw);
             }
         }
+        self.merges.merged += 1;
         Some(key)
     }
 
+}
+
+/// 13.12, 78.26(6) — WHAT THE CONTEMPLATION'S MERGES CAME TO, counted where
+/// each is decided: MERGED into one thought; STAYED two, the forms refusing
+/// to be one section (the class the coordinate between them); UNNAMED, the
+/// union naming no bubble (no remainder and no form, or a remainder with no
+/// A5 chain). TP1 extends the same line with decohered and collapsed.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct MergeTally {
+    pub merged: u64,
+    pub stayed: u64,
+    pub unnamed: u64,
+}
+
+impl MergeTally {
+    pub fn line(&self) -> String {
+        format!("thoughts merged {} stayed {} unnamed {}", self.merged, self.stayed, self.unnamed)
+    }
 }

@@ -158,6 +158,9 @@ pub struct Contemplation {
     /// CS2 — the pivots' outcomes against the cells their orbits cross,
     /// counted since the contemplation began (78.32(c), note only).
     pub(crate) pivots: sentence::PivotTally,
+    /// 13.12 — the merges' outcomes, merged / stayed two / unnamed, counted
+    /// since the contemplation began (78.26(6); TP1's line).
+    pub(crate) merges: super::merge::MergeTally,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -216,6 +219,11 @@ impl Contemplation {
     /// (the adjunction apart), starved, unread by fibre or by algebra.
     pub fn pivot_reading(&self) -> sentence::PivotTally {
         self.pivots
+    }
+
+    /// 13.12 — the merges' outcomes by name: merged, stayed two, unnamed.
+    pub fn merge_reading(&self) -> super::merge::MergeTally {
+        self.merges
     }
 
     /// WHERE A SPEAKING FORM CAME FROM, and how long it deliberated: the span

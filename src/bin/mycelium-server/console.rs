@@ -543,6 +543,8 @@ fn learning(l: &observe::Learning) -> Vec<String> {
         ),
         // CS2 — the pivots against the cells their orbits cross (78.32(c)).
         format!("    {}", l.pivots.line()),
+        // 13.12 — the contemplation's merges (TP1's line).
+        format!("    {}", l.merges.line()),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }
@@ -728,6 +730,11 @@ fn cells(c: &observe::Cells) -> Vec<String> {
         // CV1b — what the cell's readers could not hold, by content.
         if cell.refusals.any() {
             out.push(format!("      {YELLOW}refused{RESET}  {}", observe::refusals_line(&cell.refusals)));
+        }
+        // 78.26(5) — the rings through the cell, by their residue.
+        let rings = observe::rings_line(&cell.rings);
+        if !rings.is_empty() {
+            out.push(format!("      {DIM}{rings}{RESET}"));
         }
     }
     out

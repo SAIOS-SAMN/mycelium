@@ -85,7 +85,9 @@ fn cells_are_keyed_by_their_members_coordinates() {
     let [c] = read.certified.as_slice() else { panic!("two sections, one cell: {:?}", read.certified) };
     assert_eq!(c.coords, vec![vec![1u8], vec![2u8]], "keyed by the sections, in their own order");
     let one_section_twice = vec![(vec![1u8], region.clone()), (vec![1u8], region.clone())];
-    assert!(read_nerve(&one_section_twice).certified.is_empty(), "one section is one member, not a cell");
+    let once = read_nerve(&one_section_twice);
+    assert!(once.certified.is_empty(), "one section is one member, not a cell");
+    assert_eq!(once.singular, 2, "each witness whose members are one, counted (R1)");
     let at = cell(0, 0, 0);
     let standing = [(at, vec![0usize, 1])];
     let over = cells_over(standing.iter().map(|(l, m)| (l.clone(), m.as_slice())), |m| (m == 0).then(|| vec![0u8]), |_| None);

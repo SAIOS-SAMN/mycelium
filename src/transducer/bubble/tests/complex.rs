@@ -32,6 +32,9 @@ fn overlapping_remainders_merge_by_fill() {
     let keys: Vec<Vec<u8>> = c.bubbles.scoped().map(|(k, _)| k).collect();
     assert_eq!(keys.len(), 1);
     assert!(c.bubbles.get(&keys[0]).unwrap().potential.iter().any(|&x| x > 0));
+    // 13.12 — the merge's answer is counted by name, never discarded.
+    let m = c.merge_reading();
+    assert_eq!((m.merged, m.stayed, m.unnamed), (1, 0, 0), "one merge, merged: {}", m.line());
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

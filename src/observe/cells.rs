@@ -6,7 +6,7 @@
 // to the console on demand, never printed per epoch.
 
 use super::circuit::{holds, put_int, take_int, take_u16, take_u32, take_u8};
-pub use crate::transducer::cech::{CapacityRefused, CellRefusals, CircuitUnread, ModesUnread};
+pub use crate::transducer::cech::{CapacityRefused, CellRefusals, CircuitUnread, ModesUnread, Rings};
 pub use crate::transducer::cga::OrbitUnread;
 use crate::transducer::cga::PairRegime;
 use num_rational::BigRational;
@@ -202,6 +202,26 @@ pub struct CellEntry {
     /// CS2 — the cell's held constructors, its nuclei, one per body; `None`
     /// where they did not read.
     pub constructors: Option<u32>,
+    /// 78.26(5) — the rings through the cell by their residue: resonance,
+    /// level and kind.
+    pub rings: Rings,
+}
+
+/// The rings' counts in their written order.
+fn rings_counts(r: &Rings) -> [usize; 10] {
+    [r.coherent, r.resonant, r.rosette, r.parabolic, r.boost, r.harmonic, r.luminal, r.holonomic, r.d, r.c]
+}
+
+/// ONE CELL'S RINGS AS A LINE (78.26(5)): by resonance, by level, by kind.
+/// Empty where no ring read.
+pub fn rings_line(r: &Rings) -> String {
+    match *r == Rings::default() {
+        true => String::new(),
+        false => format!(
+            "rings coherent {} resonant {} rosette {} parabolic {} boost {} | harmonic {} luminal {} holonomic {} | D {} C {}",
+            r.coherent, r.resonant, r.rosette, r.parabolic, r.boost, r.harmonic, r.luminal, r.holonomic, r.d, r.c
+        ),
+    }
 }
 
 /// The refusals by content, written: each carrier's count and its entries,
@@ -561,6 +581,11 @@ impl Cells {
                 }
                 None => out.push(NONE),
             }
+            let counts = rings_counts(&c.rings);
+            out.push(counts.len() as u8);
+            for n in counts {
+                out.extend_from_slice(&(n as u32).to_le_bytes());
+            }
         }
         match self.bracket {
             None => out.push(NONE),
@@ -677,7 +702,19 @@ impl Cells {
                 NONE => None,
                 _ => return None,
             };
+            // The count of ring axes is written, so another build's layout
+            // refuses rather than reading one axis as another.
+            if usize::from(take_u8(b, p)?) != rings_counts(&Rings::default()).len() {
+                return None;
+            }
+            let mut n = [0usize; 10];
+            for v in n.iter_mut() {
+                *v = take_u32(b, p)?;
+            }
+            let [coherent, resonant, rosette, parabolic, boost, harmonic, luminal, holonomic, d, c] = n;
+            let rings = Rings { coherent, resonant, rosette, parabolic, boost, harmonic, luminal, holonomic, d, c };
             cells.push(CellEntry {
+                rings,
                 constructors,
                 refusals,
                 enclosure,

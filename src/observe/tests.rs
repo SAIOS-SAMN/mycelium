@@ -346,6 +346,19 @@ fn the_cells_read_back_whole() {
                     orbit: Some(OrbitUnread::NoRay { constructor: 1 }),
                 },
                 constructors: Some(2),
+                // 78.26(5) — every ring axis travels, each its own value.
+                rings: crate::observe::Rings {
+                    coherent: 1,
+                    resonant: 2,
+                    rosette: 3,
+                    parabolic: 4,
+                    boost: 5,
+                    harmonic: 6,
+                    luminal: 7,
+                    holonomic: 8,
+                    d: 9,
+                    c: 10,
+                },
             },
             CellEntry {
                 grade: 2,
@@ -370,6 +383,7 @@ fn the_cells_read_back_whole() {
                     ..CellRefusals::default()
                 },
                 constructors: None,
+                rings: crate::observe::Rings::default(),
             },
         ],
         bracket: Some(CellBracket { held: 2, lost: 5, unread: 1 }),
@@ -403,6 +417,8 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             unread_fibre: 6,
             unread_algebra: 7,
         },
+        // 13.12 — every arm of the merges travels.
+        merges: crate::transducer::bubble::merge::MergeTally { merged: 8, stayed: 9, unnamed: 10 },
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
@@ -410,7 +426,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
     assert_eq!(earlier, Reading::Learning(curve), "the curve at the later K stands");
 
-    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0, Default::default());
+    let fresh = Learning::of(&crate::client::sdk::Epigenome::default(), 0, Default::default(), Default::default());
     assert_eq!(
         (fresh.strata.len(), fresh.adjoined_by_closure, fresh.installed, fresh.closing),
         (0, 0, 0, 0),

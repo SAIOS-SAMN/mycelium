@@ -95,6 +95,8 @@ pub struct ContactTally {
     /// KB1 — bodies standing at a contact complex's witness whose piece did
     /// not read: their standing set mints no cell, counted by name.
     pub cells_unkeyed: u64,
+    /// KB1 R1 — witnesses whose bodies are one by their pieces: no cell.
+    pub cells_singular: u64,
 }
 
 /// THE INCONGRUENT POSES BY CONTENT (78.38(2), (C)).
@@ -144,7 +146,7 @@ thread_local! {
         oblique: 0, mirrored: 0,
         incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
         irrational: 0, half_open: 0,
-        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0,
+        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0, cells_singular: 0,
     }) };
 }
 
@@ -178,7 +180,7 @@ impl ContactTally {
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
              unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
              tube {}) irrational {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
-             static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {}",
+             static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {} singular {}",
             self.offered,
             self.unlifted,
             self.apart,
@@ -208,6 +210,7 @@ impl ContactTally {
             self.kinds()[1],
             self.kinds()[3],
             self.cells_unkeyed,
+            self.cells_singular,
         )
     }
 
@@ -863,7 +866,10 @@ pub(crate) fn named_incidence(
     // a projection that two bodies can share. A piece is small (C3); the
     // cell holds its bodies' pieces, and `cells_over` has already keyed and
     // ordered it by them (KB1), the constructors riding in the same order.
-    note_contact(|t| t.cells_unkeyed += over.unkeyed);
+    note_contact(|t| {
+        t.cells_unkeyed += over.unkeyed;
+        t.cells_singular += over.singular;
+    });
     let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
         crate::network::nerve::Keyed::new();
     for c in over.cells {
