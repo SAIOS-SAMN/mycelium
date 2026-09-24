@@ -25,7 +25,7 @@ pub(crate) use merge::*;
 pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
 pub use transport::TransportTally;
 pub use docket::DocketReading;
-pub use self::core::{CoreReading, Door, ShedTally};
+pub use self::core::{CoreReading, Door, ShedTally, Truncation};
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

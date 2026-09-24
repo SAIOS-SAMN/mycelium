@@ -8,3 +8,4 @@ mod demand;
 mod horizon;
 mod persistence;
 mod pivot_cells;
+mod truncate;

@@ -338,12 +338,18 @@ impl Contemplation {
                                     }
                                 }
                             }
+                            // TC1 — the merge, and a spoken component's
+                            // leaving, move degrees: the changed components
+                            // truncate to their 2-core.
+                            let mut touched = self.touched_by(&vertices);
                             if let Some(merged) = self.merge(&vertices) {
+                                touched.push(merged.as_bytes().to_vec());
                                 let comp = self.component_of(&merged);
                                 if self.component_closed(&comp) {
                                     if let Some(e) = self.form_thought(&comp) {
                                         self.formed += 1;
                                         spoken.push(e);
+                                        touched.extend(self.touched_by(&comp));
                                         // 78.37(1) — FIXED BY FILL: each thought of
                                         // the spoken component starts a front,
                                         // read before it leaves the meet graph.
@@ -359,6 +365,7 @@ impl Contemplation {
                                     }
                                 }
                             }
+                            self.truncate(&touched);
                         }
                         CoboundaryOutcome::Attached(Fill::Congruent(..)) => {
                             self.torsion_merges += 1;

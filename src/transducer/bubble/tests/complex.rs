@@ -297,7 +297,7 @@ fn a_leaf_off_a_ring_shed_by_price_carries_no_loop_and_a_corner_does() {
 
     let (t, _) = ring_of_three([Rotor::identity(), Rotor::identity(), Rotor::identity()], [id.clone(), id.clone(), id]);
     let r = t.core_reading();
-    assert_eq!((r.free_faces[0], r.h1, r.unfaced), (3, Some(0), 0), "each edge a face of the one triangle: {r:?}");
+    assert_eq!((r.free_faces[0], r.h1, r.unfaced, r.malformed), (3, Some(0), 0, 0), "each edge a face of the one triangle: {r:?}");
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

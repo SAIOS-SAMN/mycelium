@@ -129,6 +129,8 @@ pub struct MeetGraph {
     /// `Ȟ¹`), and what each shedding door removed that carried a loop.
     pub core: super::core::CoreReading,
     pub shed: super::core::ShedTally,
+    /// TC1's fix — what the truncation removed, refused and deferred.
+    pub truncation: super::core::Truncation,
 }
 
 impl MeetGraph {
@@ -184,9 +186,11 @@ impl MeetGraph {
             })
             .collect::<Vec<_>>()
             .join("; ");
+        let tr = &self.truncation;
         let core = format!(
-            "nerve: Ȟ¹ {h1}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} | shed: {doors}",
-            c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced
+            "nerve: Ȟ¹ {h1}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} malformed {} | shed: {doors} | truncated {} (refused: held by class {} glued {}; price deferred {}; Ȟ¹ moved {} unread {} malformed {})",
+            c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced, c.malformed,
+            tr.truncated, tr.held_by_class, tr.glued, tr.deferred, tr.rank_moved, tr.rank_unread, tr.malformed
         );
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
@@ -231,6 +235,7 @@ impl Contemplation {
             docket: self.docket_reading(),
             core: self.core_reading(),
             shed: self.shed,
+            truncation: self.truncation,
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

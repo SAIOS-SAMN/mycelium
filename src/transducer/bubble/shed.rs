@@ -99,6 +99,7 @@ impl Contemplation {
         let n = keys.len();
         // TC1 — what this door takes that carries a loop, read around it.
         let before = self.shed_before(&keys);
+        let touched = self.touched_by(&keys);
         for k in &keys {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
@@ -110,6 +111,10 @@ impl Contemplation {
             }
         }
         self.shed_after(super::core::Door::Citation, n, before);
+        // The removal moved degrees: the touched components truncate.
+        if n > 0 {
+            self.truncate(&touched);
+        }
         n
     }
 
@@ -138,10 +143,13 @@ impl Contemplation {
             .filter(|(_, b)| b.until.is_some_and(|u| u <= now))
             .map(|(k, _)| k)
             .collect();
+        // TC1 — a ring whose component holds a leaf waits for the leaf.
+        let doomed = self.defer_price(doomed);
         let mut returned = [0u64; 4];
         let n = doomed.len();
         // TC1 — what the price takes that carries a loop, read around it.
         let before = self.shed_before(&doomed);
+        let touched = self.touched_by(&doomed);
         for k in &doomed {
             if let Some(b) = self.bubbles.remove(k) {
                 for (acc, e) in returned.iter_mut().zip(&b.escrow) {
@@ -153,6 +161,9 @@ impl Contemplation {
             }
         }
         self.shed_after(super::core::Door::Price, n, before);
+        if n > 0 {
+            self.truncate(&touched);
+        }
         (returned, n)
     }
 
@@ -235,6 +246,7 @@ impl Contemplation {
         let n = drop.len();
         // TC1 — what this door takes that carries a loop, read around it.
         let before = self.shed_before(&drop);
+        let touched = self.touched_by(&drop);
         for k in &drop {
             if let Some(b) = self.bubbles.remove(k) {
                 self.retract_incidence(k, &b);
@@ -242,6 +254,9 @@ impl Contemplation {
             }
         }
         self.shed_after(super::core::Door::Unglued, n, before);
+        if n > 0 {
+            self.truncate(&touched);
+        }
         n
     }
 

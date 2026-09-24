@@ -465,12 +465,23 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 core: 52,
                 h1: Some(-3),
                 unfaced: 53,
+                malformed: 66,
             },
             shed: crate::transducer::bubble::ShedTally {
                 removed: [54, 55, 56],
                 in_core: [57, 58, 59],
                 rank_lost: [60, -61, 62],
                 rank_unread: [63, 64, 65],
+            },
+            // TC1's fix — the truncation, a Ȟ¹ movement negative.
+            truncation: crate::transducer::bubble::Truncation {
+                truncated: 67,
+                held_by_class: 68,
+                glued: 69,
+                deferred: 70,
+                rank_moved: -71,
+                rank_unread: 72,
+                malformed: 73,
             },
         }),
     };

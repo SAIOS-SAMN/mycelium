@@ -129,7 +129,13 @@ impl Contemplation {
                             }
                         }
                     }
-                    let _ = self.merge(&vertices);
+                    // TC1 — the merge moves degrees: the changed components
+                    // truncate to their 2-core.
+                    let mut touched = self.touched_by(&vertices);
+                    if let Some(m) = self.merge(&vertices) {
+                        touched.push(m.as_bytes().to_vec());
+                    }
+                    self.truncate(&touched);
                     return;
                 }
                 CoboundaryOutcome::Attached(Fill::Congruent(_, _, ell)) if vol_nz => {

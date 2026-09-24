@@ -93,6 +93,11 @@ impl Entity {
         for (r, back) in self.physics.reserve.iter_mut().zip(&returned) {
             *r = r.saturating_add(*back);
         }
+        // TC1 — and what the truncation removed since, returned alike.
+        let truncated = self.contemplation.take_truncated_escrow();
+        for (r, back) in self.physics.reserve.iter_mut().zip(&truncated) {
+            *r = r.saturating_add(*back);
+        }
         if n > 0 {
             eprintln!("  held lapsed {n}, escrow returned {returned:?}");
         }

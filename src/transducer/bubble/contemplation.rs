@@ -190,6 +190,10 @@ pub struct Contemplation {
     pub(crate) docket_taken: u64,
     /// TC1 — what each shedding door removed, and of it what carried a loop.
     pub(crate) shed: super::core::ShedTally,
+    /// TC1's fix — what the truncation did, and the escrow it returned not
+    /// yet credited to the room.
+    pub(crate) truncation: super::core::Truncation,
+    pub(crate) truncated_escrow: [u64; 4],
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the

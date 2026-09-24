@@ -160,7 +160,7 @@ impl Learning {
         // TC1 — the nerve's shape, its Ȟ¹ flagged where it did not read, and
         // the shedding doors.
         let c = &g.core;
-        for v in [c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.core, c.unfaced] {
+        for v in [c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.core, c.unfaced, c.malformed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
         match c.h1 {
@@ -175,6 +175,14 @@ impl Learning {
             out.extend_from_slice(&v.to_le_bytes());
         }
         for v in s.rank_lost {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        let t = &g.truncation;
+        for v in [t.truncated, t.held_by_class, t.glued, t.deferred] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(&t.rank_moved.to_le_bytes());
+        for v in [t.rank_unread, t.malformed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -263,8 +271,9 @@ impl Learning {
             answered: u64_at(b, p)?,
             taken: u64_at(b, p)?,
         };
-        let (free_vertices, isolated, faces_1, faces_2, core_size, unfaced) =
-            (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
+        let (free_vertices, isolated, faces_1, faces_2, core_size) =
+            (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
+        let (unfaced, malformed) = (u64_at(b, p)?, u64_at(b, p)?);
         let h1 = match b.get(*p)? {
             0 => {
                 *p += 1;
@@ -283,6 +292,7 @@ impl Learning {
             core: core_size,
             h1,
             unfaced,
+            malformed,
         };
         let three = |b: &[u8], p: &mut usize| -> Option<[u64; 3]> { Some([u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?]) };
         let (removed, in_core, rank_unread) = (three(b, p)?, three(b, p)?, three(b, p)?);
@@ -292,6 +302,16 @@ impl Learning {
             in_core,
             rank_lost: [lost[0] as i64, lost[1] as i64, lost[2] as i64],
             rank_unread,
+        };
+        // TC1's fix — the truncation, its Ȟ¹ movement signed.
+        let truncation = crate::transducer::bubble::Truncation {
+            truncated: u64_at(b, p)?,
+            held_by_class: u64_at(b, p)?,
+            glued: u64_at(b, p)?,
+            deferred: u64_at(b, p)?,
+            rank_moved: u64_at(b, p)? as i64,
+            rank_unread: u64_at(b, p)?,
+            malformed: u64_at(b, p)?,
         };
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
@@ -308,6 +328,7 @@ impl Learning {
             docket,
             core,
             shed,
+            truncation,
         };
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }
