@@ -246,3 +246,28 @@ let crate::transducer::stalk::Closure::Twisted(v) = &e.state else { panic!("twis
 assert!(crate::transducer::element::same_versor(v, &t), "the closure is the ray it was");
 assert_eq!(got.nonflat, 1);
 }
+
+/// ACT1-hold (78.27 Q1) — EVERY HOLDING PATH ADMITS BY AN ACT, AND A WORD
+/// NO ACT ADMITTED IS NOT WRITTEN. An adopted word is held by an Adopted
+/// act and carries its stamp; a word placed on the basis with no act — the
+/// primitive a fixture uses — reads as held without a stamp, and the
+/// snapshot refuses it: it does not come back.
+#[test]
+fn a_word_no_act_admitted_is_not_written() {
+use crate::transducer::element::from_canonical;
+use crate::transducer::germinate::germinate;
+let mut k = Kernel::new();
+let adopted = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
+assert!(matches!(k.install_adopted(&adopted, [1; 32]), Adoption::Installed));
+let at = k.admitted_at(adopted.address().as_bytes()).expect("the adoption is an act, and it admits");
+assert_eq!(k.chain().node(&at).map(|r| r.kind), Some(crate::chronometry::ActKind::Adopted));
+let bare = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
+k.basis_insert(bare.clone(), [7; 32]);
+assert_eq!(k.unstamped(), [1, 0, 0, 0, 0], "held on the basis with no act: the reading names it by row");
+let mut booted = Kernel::new();
+assert!(booted.restore(&k.snapshot()), "clean restore");
+assert!(booted.word_at(adopted.address().as_bytes()).is_some(), "the admitted word comes back");
+assert_eq!(booted.admitted_at(adopted.address().as_bytes()), Some(at), "at the stamp that admitted it");
+assert!(booted.word_at(bare.address().as_bytes()).is_none(), "the word no act admitted was refused");
+assert_eq!(booted.unstamped(), [0; 5]);
+}

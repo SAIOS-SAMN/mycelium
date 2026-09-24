@@ -332,6 +332,12 @@ impl Kernel {
                 }
                 self.ruled_admit(&addr);
                 self.fed_admit(&addr, spoken.clone());
+                // ACT1-hold (78.27 Q1): EVERY HOLDING PATH ADMITS BY AN ACT.
+                // The glue installs a peer-ruled word on this court's rows, so
+                // it is an Install on this court's own line, the peer its
+                // witness; the act admits the word, and its stamp is the
+                // word's `admitted_at`. It held the word at no act before.
+                self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
                 if let Some(crate::economy::escrow::Escrowed { voices, mu, anchor }) =
                     self.treasury.release_award(&addr)
                 {

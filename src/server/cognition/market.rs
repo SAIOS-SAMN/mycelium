@@ -243,6 +243,9 @@ impl Kernel {
             self.docket_connection(word, ratifier);
         }
         self.basis_push(word.clone(), ratifier);
+        // ACT1-hold (78.27 Q1): the adoption is an act on this court's own
+        // line by the ratifier, and it admits the word it holds.
+        self.append_step(crate::chronometry::ActKind::Adopted, &addr, ratifier);
         // A word the court itself teaches is finalized language: it joins
         // the ruled cover on arrival.
         if self.court_voice == Some(ratifier) {

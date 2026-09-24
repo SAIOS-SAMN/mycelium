@@ -112,6 +112,26 @@ impl Kernel {
         put_field(out, self.field_cold.get(addr).filter(|_| home));
     }
 
+    /// A WORD ROW'S SECTION, WRITTEN FOR THE WORDS AN ACT ADMITTED (ACT1-hold,
+    /// 78.27 Q1): a word no act admitted has no coordinates and is not
+    /// written; `snapshot` names how many each row refused, once.
+    fn stamped_rows<V>(
+        &self,
+        out: &mut Vec<u8>,
+        carrier: &crate::network::nerve::Keyed<V>,
+        mut write: impl FnMut(&mut Vec<u8>, &[u8], &V),
+    ) {
+        let mut body = Vec::new();
+        let mut n = 0u64;
+        crate::snapshot::persist(carrier, |key, v| {
+            if self.admitted_at.contains(key) {
+                write(&mut body, key, v);
+                n += 1;
+            }
+        });
+        framed(out, n, &mut body);
+    }
+
     /// A PER-WORD FIELD NO ROW HOLDS is a quantity on a word this court no
     /// longer has: named, per carrier, and not written — never a row of
     /// its own that copies the address (R6).
@@ -143,9 +163,21 @@ impl Kernel {
         // fleet. A layout change is a recut (§10), and this one is the
         // recut's reason.
         out.extend_from_slice(b"MYC7");
+        // ACT1-hold (78.27 Q1): A WORD NO ACT ADMITTED IS NOT WRITTEN. It has
+        // no coordinates — no stamp to locate it — so each row below writes
+        // only the words an act admitted, and what each refused is named
+        // here, per row, from the reading the clock carries.
+        let [b, p, l, c, f] = self.unstamped();
+        if b + p + l + c + f > 0 {
+            eprintln!(
+                "  snapshot refused words held without a stamp: basis {b} provisional {p} \
+                 listing {l} cavity {c} federation {f}"
+            );
+        }
         let items: Vec<_> = self
             .basis
             .scoped()
+            .filter(|(a, _)| self.admitted_at.contains(a))
             .filter_map(|(_, g)| self.discoverer_of(&g.address()).map(|who| (std::sync::Arc::clone(g), who)))
             .collect();
         let mut body = Vec::new();
@@ -159,13 +191,12 @@ impl Kernel {
         framed(&mut out, items.len() as u64, &mut body);
         out.extend_from_slice(&self.treasury.snapshot());
         // PROVISIONAL section (Step 5): each row with its admitting stamp.
-        counted(&mut out, &self.provisional, |body, addr, spoken| {
+        self.stamped_rows(&mut out, &self.provisional, |body, addr, spoken| {
             put_key(body, addr);
             let eb = spoken.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             self.put_row_fields(body, addr, Row::Provisional);
-            Some(())
         });
         self.name_orphans();
         // THE LEDGER (78.24): the court head, then the ledger as its trie —
@@ -230,31 +261,34 @@ impl Kernel {
         // coherence field are per-word quantities, fields of the word's
         // row, each written where the word is and nowhere else.
         out.extend_from_slice(b"BOK1");
-        counted(&mut out, &self.pending, |body, addr, elem| {
+        self.stamped_rows(&mut out, &self.pending, |body, addr, elem| {
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             self.put_row_fields(body, addr, Row::Listing);
-            Some(())
         });
         out.extend_from_slice(b"CAV1");
-        counted(&mut out, &self.cavity_book, |body, addr, elem| {
+        self.stamped_rows(&mut out, &self.cavity_book, |body, addr, elem| {
             put_key(body, addr);
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             self.put_row_fields(body, addr, Row::Cavity);
-            Some(())
         });
         out.extend_from_slice(b"CRT1");
         let mut body = Vec::new();
+        let mut ruled = 0u64;
         for (addr, elem) in &self.court_federation {
+            if !self.admitted_at.contains(addr) {
+                continue;
+            }
             put_key(&mut body, addr);
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
+            ruled += 1;
         }
-        framed(&mut out, self.court_federation.len() as u64, &mut body);
+        framed(&mut out, ruled, &mut body);
         // A constant zero stood here: the count of a sub-section this
         // writer stopped emitting, which the reader skipped by peeking at
         // whether the next four bytes were COC1's tag. Both are gone (§10).
