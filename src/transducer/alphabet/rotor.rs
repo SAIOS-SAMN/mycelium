@@ -405,7 +405,16 @@ impl Rotor {
         for (k, e) in v.iter().enumerate() {
             x.c[1 << k] = e.clone();
         }
-        let out = self.geo(&x).geo(&self.reverse());
+        // THE TWISTED ADJOINT `Φ̂ v Φ̃` (78.28(1), VA2): an odd rotor's image
+        // is the reflection of `v`, not its negative, which the plain
+        // sandwich gave (d1's shape one algebra down).
+        let involute = Rotor {
+            c: std::array::from_fn(|i| match (i as u32).count_ones() & 1 {
+                0 => self.c[i].clone(),
+                _ => -&self.c[i],
+            }),
+        };
+        let out = involute.geo(&x).geo(&self.reverse());
         if (0..16).any(|i| (i as u32).count_ones() != 1 && !out.c[i].is_zero()) {
             return None;
         }

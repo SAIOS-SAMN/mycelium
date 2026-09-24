@@ -251,13 +251,13 @@ impl Word {
     pub fn form(&self) -> Option<PlaneForm> {
         let mut rotor = self.rotor();
         let mut orientation = false;
+        // THE ORIENTATION IS THE ACTION'S PARITY ON THE PLANE (VA2): the
+        // block is the action restricted to an invariant plane, already
+        // divided by the weight (`Rotor::carry`), so it is orthogonal and
+        // its determinant is `+1` for a turn and `−1` for a reflection — no
+        // column's square is formed to read it.
         if let Some(b) = crate::transducer::alphabet::rotor_block_on(&rotor, sensor_plane()) {
-            let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
-            let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
-            if rho2.is_zero() {
-                return None;
-            }
-            let ori = det / &rho2;
+            let ori = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
             if (-&ori).is_one() {
                 orientation = true;
                 rotor = rotor.geo(&PlaneForm::sheet_word().rotor());
@@ -272,15 +272,12 @@ impl Word {
             let Some(b) = crate::transducer::alphabet::rotor_block_on(&rotor, plane) else {
                 continue;
             };
-            let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
-            let rho2 = &b[0][0] * &b[0][0] + &b[1][0] * &b[1][0];
-            if rho2.is_zero() {
-                return None;
-            }
             // NOT A ROTATION HERE: the restriction reflects this plane,
             // which a rotation of another plane induces. It carries no
-            // exponent of its own.
-            if !(det / &rho2).is_one() {
+            // exponent of its own. Read as the action's parity on the plane:
+            // the orthogonal block's determinant (VA2).
+            let det = &b[0][0] * &b[1][1] - &b[0][1] * &b[1][0];
+            if !det.is_one() {
                 continue;
             }
             // UNMEASURED: the plane turns and the alphabet does not spell

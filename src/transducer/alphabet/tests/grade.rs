@@ -143,6 +143,26 @@ fn the_zero_multivector_occupies_no_grade() {
     assert_eq!(one.weight(), Some(q(1)));
 }
 
+/// VA2 — AN ODD ROTOR CARRIES A VECTOR BY ITS TWISTED ADJOINT: the
+/// reflection in `e₀` holds `e₁` and sends `e₀` to `−e₀`. The plain
+/// sandwich negated both — every image of an odd rotor came back as its
+/// own negative (d1's shape one algebra down).
+#[test]
+fn a_reflection_carries_a_vector_to_its_mirror_image() {
+    let reflection = Rotor::blade(1, q(1));
+    let z = q(0);
+    assert_eq!(
+        reflection.carry(&[z.clone(), q(1), z.clone(), z.clone()]),
+        Some([z.clone(), q(1), z.clone(), z.clone()]),
+        "e₁ lies in the mirror"
+    );
+    assert_eq!(
+        reflection.carry(&[q(1), z.clone(), z.clone(), z.clone()]),
+        Some([q(-1), z.clone(), z.clone(), z]),
+        "e₀ is the mirror's normal"
+    );
+}
+
 /// VA1 (78.28(1) as amended) — THE ROTOR'S ACTION READER AND THE THEOREM
 /// IT IMPLIES AGREE: `Φ Φ̃` a non-zero scalar exactly where the twisted
 /// adjoint carries the four generators to independent vectors and

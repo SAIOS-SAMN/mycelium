@@ -18,7 +18,7 @@
 use crate::transducer::alphabet::{Rotor, SLOT_PLANES_SIX};
 use crate::transducer::blade::body::Shape;
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::One;
 
 /// An exact continuous support representation of a body in ℚ³ with polynomial moment invariants.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -101,9 +101,11 @@ impl ContinuousSupport {
             let Some(block) = crate::transducer::alphabet::rotor_block_on(rotor, plane) else {
                 continue;
             };
+            // The action's parity on the plane (VA2): the block is the
+            // action restricted to an invariant plane at unit weight, so it
+            // is orthogonal and a turn is `det = +1`.
             let det = &block[0][0] * &block[1][1] - &block[0][1] * &block[1][0];
-            let rho2 = &block[0][0] * &block[0][0] + &block[1][0] * &block[1][0];
-            if rho2.is_zero() || !(det / rho2).is_one() {
+            if !det.is_one() {
                 return false;
             }
         }
