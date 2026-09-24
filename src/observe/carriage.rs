@@ -1,0 +1,137 @@
+// 78.22, LD1, R6 — THE BYTES A CARRIER CARRIES: per award on the ledger,
+// per receipt delta on the chain, per frame on the wire.
+//
+//! A citation that is coordinates is flat in the size of the form it
+//! cites; one that copies the form grows with it. This reading is the
+//! measurement that tells the two apart: for each carrier, by the kind it
+//! is filed under, how many records, their bytes, and the largest one.
+//! Awards and deltas are measured at the question from what the court or
+//! the voice holds now; frames are counted where the wire writes them.
+
+use super::circuit::{holds, take_u32, take_u8};
+use std::sync::atomic::{AtomicU64, Ordering};
+
+/// THE CARRIERS, in the reading's order, each with what one record of it
+/// is. The ONE statement of the order (law 12).
+pub const CARRIERS: [(&str, &str); 3] = [
+    ("award", "one escrowed award as the treasury persists its row"),
+    ("delta", "one receipt delta as the chain seals it, by act kind"),
+    ("frame", "one frame as the wire writes it, by act tag"),
+];
+
+pub const CARRIER_AWARD: u8 = 0;
+pub const CARRIER_DELTA: u8 = 1;
+pub const CARRIER_FRAME: u8 = 2;
+
+/// ONE CARRIER UNDER ONE KIND: the act kind for a delta, the act tag for a
+/// frame, zero for an award.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CarrierRow {
+    pub carrier: u8,
+    pub kind: u8,
+    pub records: u64,
+    pub bytes: u64,
+    pub largest: u64,
+}
+
+impl CarrierRow {
+    /// Fold one record of `len` bytes.
+    pub fn add(&mut self, len: u64) {
+        self.records += 1;
+        self.bytes += len;
+        self.largest = self.largest.max(len);
+    }
+}
+
+/// LD1 — THE CARRIAGE: every (carrier, kind) that carried anything, in
+/// (carrier, kind) order. Read whole at the question; the later stands.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Carriage {
+    pub rows: Vec<CarrierRow>,
+}
+
+impl Carriage {
+    /// Fold one record into the row it is filed under, filing a new row in
+    /// order.
+    pub fn add(&mut self, carrier: u8, kind: u8, len: u64) {
+        let at = self.row_at(carrier, kind);
+        self.rows[at].add(len);
+    }
+
+    /// The row a (carrier, kind) is filed at, filed empty where it was not.
+    fn row_at(&mut self, carrier: u8, kind: u8) -> usize {
+        match self.rows.binary_search_by_key(&(carrier, kind), |r| (r.carrier, r.kind)) {
+            Ok(at) => at,
+            Err(at) => {
+                self.rows.insert(at, CarrierRow { carrier, kind, ..CarrierRow::default() });
+                at
+            }
+        }
+    }
+
+    /// The deltas a chain holds, by act kind.
+    pub fn of_chain(&mut self, chain: &crate::chronometry::ReceiptChain) {
+        for r in chain.receipts() {
+            self.add(CARRIER_DELTA, r.kind.to_byte(), r.delta.len() as u64);
+        }
+    }
+
+    /// The frames this process wrote, by act tag.
+    pub fn of_frames(&mut self) {
+        for (tag, row) in FRAMES.iter().enumerate() {
+            let records = row[0].load(Ordering::Relaxed);
+            if records == 0 {
+                continue;
+            }
+            let at = self.row_at(CARRIER_FRAME, tag as u8);
+            self.rows[at] = CarrierRow {
+                carrier: CARRIER_FRAME,
+                kind: tag as u8,
+                records,
+                bytes: row[1].load(Ordering::Relaxed),
+                largest: row[2].load(Ordering::Relaxed),
+            };
+        }
+    }
+
+    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&(self.rows.len() as u32).to_le_bytes());
+        for r in &self.rows {
+            out.push(r.carrier);
+            out.push(r.kind);
+            for v in [r.records, r.bytes, r.largest] {
+                out.extend_from_slice(&v.to_le_bytes());
+            }
+        }
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Carriage> {
+        let m = take_u32(b, p)?;
+        if !holds(b, *p, m, 2 + 3 * 8) {
+            return None;
+        }
+        let mut rows = Vec::with_capacity(m);
+        for _ in 0..m {
+            let (carrier, kind) = (take_u8(b, p)?, take_u8(b, p)?);
+            let mut v = [0u64; 3];
+            for x in v.iter_mut() {
+                *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                *p += 8;
+            }
+            let [records, bytes, largest] = v;
+            rows.push(CarrierRow { carrier, kind, records, bytes, largest });
+        }
+        Some(Carriage { rows })
+    }
+}
+
+/// Per act tag: frames written, their bytes, the largest.
+static FRAMES: [[AtomicU64; 3]; 256] = [const { [const { AtomicU64::new(0) }; 3] }; 256];
+
+/// Count one frame the wire wrote, by the act tag its body opens with.
+pub fn note_frame(tag: u8, len: u64) {
+    let row = &FRAMES[usize::from(tag)];
+    row[0].fetch_add(1, Ordering::Relaxed);
+    row[1].fetch_add(len, Ordering::Relaxed);
+    row[2].fetch_max(len, Ordering::Relaxed);
+}

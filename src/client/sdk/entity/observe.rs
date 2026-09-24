@@ -47,6 +47,12 @@ impl Entity {
         if let Some(p) = crate::transducer::family::take_progress() {
             observe::publish(me, Reading::Progress(p));
         }
+        // LD1 — THE BYTES THIS VOICE'S RECEIPT DELTAS AND FRAMES CARRY,
+        // measured whole at its own `K`.
+        let mut carriage = observe::Carriage::default();
+        carriage.of_chain(self.session.voice.chain());
+        carriage.of_frames();
+        observe::publish(me, Reading::Carriage(carriage));
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
         match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
             Ok(body) => body.as_slice() == [1],

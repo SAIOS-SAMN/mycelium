@@ -22,11 +22,24 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // THE COURT'S OWN STANDING, read at the question: what it holds
             // now, and the allocator at its own K.
             let own = Source::Court(door.id);
-            let standing = door.kernel.lock().ok().map(|k| Court {
-                k: k.chain().head_k(),
-                basis: k.basis_len() as u64,
-                treasury: k.treasury_entry_count() as u64,
-                served: observe::served(),
+            // LD1 — and the bytes its awards, its receipt deltas and its
+            // frames carry, measured whole at the question.
+            let standing = door.kernel.lock().ok().map(|k| {
+                let mut carriage = observe::Carriage::default();
+                k.treasury().carriage(&mut carriage);
+                carriage.of_chain(k.chain());
+                carriage.of_frames();
+                let court = Court {
+                    k: k.chain().head_k(),
+                    basis: k.basis_len() as u64,
+                    treasury: k.treasury_entry_count() as u64,
+                    served: observe::served(),
+                };
+                (court, carriage)
+            });
+            let standing = standing.map(|(court, carriage)| {
+                observe::replace(own, Reading::Carriage(carriage));
+                court
             });
             // PH5 — and its phase, the last window it wrote.
             if let Some(p) = observe::last_phase() {

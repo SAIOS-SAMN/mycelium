@@ -98,6 +98,10 @@ impl Frame {
         out.push(self.lane.as_u8());
         out.extend_from_slice(&(self.body.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.body);
+        // LD1: the frame's bytes, by the act its body opens with.
+        if let Some(tag) = crate::anastome::dialogue::act_tag(&self.body) {
+            crate::observe::note_frame(tag, out.len() as u64);
+        }
         Some(out)
     }
 

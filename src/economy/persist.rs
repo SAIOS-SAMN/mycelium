@@ -76,7 +76,34 @@ impl Entry {
     }
 }
 
+/// An escrow row after its address: `[nv u32][voice 32·nv][μ⃗ 4×u64][k u64]
+/// [receipt 32]`. The one writing of it, for the snapshot and for LD1's
+/// measure of what a row carries.
+fn put_escrow_tail(out: &mut Vec<u8>, row: &super::escrow::Escrowed) {
+    out.extend_from_slice(&(row.voices.len() as u32).to_le_bytes());
+    for v in &row.voices {
+        out.extend_from_slice(v);
+    }
+    for m in &row.mu {
+        out.extend_from_slice(&m.to_le_bytes());
+    }
+    out.extend_from_slice(&row.anchor.0.to_le_bytes());
+    out.extend_from_slice(&row.anchor.1);
+}
+
 impl Treasury {
+    /// LD1 — THE BYTES EACH ESCROWED AWARD CARRIES as its row is persisted:
+    /// the address behind its two-byte length, then the tail. A row whose
+    /// address passes the wall is measured at the length it would need,
+    /// because that length is what LD1 is asked for.
+    pub fn carriage(&self, c: &mut crate::observe::Carriage) {
+        crate::snapshot::persist(&self.escrowed, |addr, row| {
+            let mut tail = Vec::new();
+            put_escrow_tail(&mut tail, row);
+            c.add(crate::observe::CARRIER_AWARD, 0, (2 + addr.len() + tail.len()) as u64);
+        });
+    }
+
     /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
     /// [receipt 32]…` — vector amounts and chronometric anchors survive restart.
     pub fn snapshot(&self) -> Vec<u8> {
@@ -103,20 +130,11 @@ impl Treasury {
         let mut body = Vec::new();
         let mut kept = 0u32;
         crate::snapshot::persist(&self.escrowed, |addr, row| {
-            let (voices, mu, anchor) = (&row.voices, &row.mu, &row.anchor);
             if crate::transducer::address::put_addr(&mut body, addr).is_none() {
                 eprintln!("  treasury escrow row refused: its address cannot be framed");
                 return;
             }
-            body.extend_from_slice(&(voices.len() as u32).to_le_bytes());
-            for v in voices {
-                body.extend_from_slice(v);
-            }
-            for m in mu {
-                body.extend_from_slice(&m.to_le_bytes());
-            }
-            body.extend_from_slice(&anchor.0.to_le_bytes());
-            body.extend_from_slice(&anchor.1);
+            put_escrow_tail(&mut body, row);
             kept += 1;
         });
         out.extend_from_slice(&kept.to_le_bytes());

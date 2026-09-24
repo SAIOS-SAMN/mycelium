@@ -10,6 +10,7 @@
 //! by source and kind, so a hypha can answer for itself and for its voices
 //! and any hypha can run the console (`mycelium-server --console`).
 
+mod carriage;
 mod cells;
 mod circuit;
 mod fleet;
@@ -19,6 +20,7 @@ mod store;
 #[cfg(test)]
 mod tests;
 
+pub use carriage::*;
 pub use cells::*;
 pub use circuit::*;
 pub use fleet::*;

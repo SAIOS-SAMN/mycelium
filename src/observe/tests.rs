@@ -410,3 +410,61 @@ fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
     assert_eq!((progressed.percepts, progressed.contact_cycles), (2, 5));
     assert_eq!(progressed.grades.iter().map(|g| (g.grade, g.cells, g.round_kept)).collect::<Vec<_>>(), [(1, 1, 0), (2, 6, 2)]);
 }
+
+/// LD1 — THE CARRIAGE TRAVELS WHOLE, each record filed under its carrier and
+/// kind in order, its largest kept.
+#[test]
+fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
+    let mut c = Carriage::default();
+    c.add(CARRIER_FRAME, 0x0d, 40);
+    c.add(CARRIER_DELTA, 12, 900);
+    c.add(CARRIER_DELTA, 12, 100);
+    c.add(CARRIER_AWARD, 0, 120);
+    assert_eq!(
+        c.rows.iter().map(|r| (r.carrier, r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
+        [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_FRAME, 0x0d, 1, 40, 40)]
+    );
+    let all = [Reading::Carriage(c)];
+    let push = encode_push(&vk(4), &all);
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), all.to_vec())));
+}
+
+/// LD1 — AN AWARD IS MEASURED AT WHAT ITS ROW CARRIES, the address it copies
+/// included: a row keyed by a 70 000-byte address is measured past the u16
+/// wall, and the snapshot refuses that row by name while it keeps the other.
+#[test]
+fn an_award_is_measured_at_the_address_it_copies() {
+    let mut t = crate::economy::Treasury::new();
+    let a = (1u64, [1u8; 32]);
+    t.escrow_award([7u8; 3], vec![[2; 32]], [4, 0, 0, 0], a);
+    t.escrow_award(vec![9u8; 70_000], vec![[2; 32]], [4, 0, 0, 0], a);
+    let mut c = Carriage::default();
+    t.carriage(&mut c);
+    // A row after its address: the voice count, one voice, μ⃗, K, receipt.
+    let tail = 4 + 32 + 32 + 8 + 32;
+    let [award] = c.rows.as_slice() else { panic!("one carrier, one kind: {:?}", c.rows) };
+    assert_eq!((award.records, award.largest), (2, 2 + 70_000 + tail));
+    assert_eq!(award.bytes, (2 + 3 + tail) + (2 + 70_000 + tail), "each row by what it carries");
+    assert!(award.largest > u64::from(u16::MAX), "the copied address passes the wall");
+    let snap = t.snapshot();
+    let mut p = 0usize;
+    let back = crate::economy::Treasury::restore(&snap, &mut p).expect("the ledger restores");
+    assert!(back.escrow_of(&[7u8; 3]).is_some(), "the citable row is kept");
+    assert!(back.escrow_of(&[9u8; 70_000]).is_none(), "the row past the wall is refused, not misframed");
+}
+
+/// LD1 — A CHAIN'S DELTAS ARE MEASURED BY THE ACT KIND THAT SEALED THEM.
+#[test]
+fn a_chains_deltas_are_measured_by_act_kind() {
+    use crate::chronometry::{ActKind, ReceiptChain};
+    let mut chain = ReceiptChain::with_vk([3; 32]);
+    chain.append(ActKind::Learned, [0; 4], [1u8; 10], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Stood, [0; 4], [1u8; 20], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Learned, [0; 4], [1u8; 30], [0; 32], Vec::new()).expect("appends");
+    let mut c = Carriage::default();
+    c.of_chain(&chain);
+    assert_eq!(
+        c.rows.iter().map(|r| (r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
+        [(ActKind::Stood.to_byte(), 1, 20, 20), (ActKind::Learned.to_byte(), 2, 40, 30)]
+    );
+}

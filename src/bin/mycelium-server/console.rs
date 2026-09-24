@@ -28,6 +28,8 @@
 //! - CELLS, VISCOSITY, SPEND, PROGRESS — the last percept's cells (CO1),
 //!   and summed over the voice's percepts its bends' arms (VO1), the stroke
 //!   by reader (SP1) and E1's done-when (PG1).
+//! - CARRIAGE — the bytes per award, per receipt delta by act kind and per
+//!   frame by act tag, and the largest of each (LD1).
 //!
 //! CQ1 — `--voice HEX` or `--court HEX` (a key or a hex prefix of it) asks
 //! one source's fiber, and `--reading NAME` one kind of reading: the hypha
@@ -196,6 +198,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Spend(s) => spend(s),
                 Reading::Progress(p) => progress(p),
                 Reading::Phase(p) => phase(p),
+                Reading::Carriage(c) => carriage(c),
             });
         }
     }
@@ -658,6 +661,46 @@ fn phase(p: &observe::Phase) -> Vec<String> {
         ),
         format!("    {adjoined}"),
     ]
+}
+
+/// LD1 — THE BYTES A CARRIER CARRIES (78.22): per carrier and kind, the
+/// records, their bytes, the bytes per record, and the largest. A largest
+/// past the u16 wall is a form copied where a citation belongs, in red; the
+/// largest of each carrier is named.
+fn carriage(c: &observe::Carriage) -> Vec<String> {
+    let kind_name = |carrier: u8, kind: u8| -> String {
+        match carrier {
+            observe::CARRIER_DELTA => match mycelium::chronometry::ActKind::from_byte(kind) {
+                Some(k) => String::from_utf8_lossy(k.name()).into_owned(),
+                None => format!("kind {kind}"),
+            },
+            observe::CARRIER_FRAME => format!("act {kind:#04x}"),
+            _ => String::new(),
+        }
+    };
+    let mut out = vec![format!("  {BOLD}carriage{RESET}    {} rows", c.rows.len())];
+    for (carrier, (name, meaning)) in observe::CARRIERS.iter().enumerate() {
+        let rows: Vec<&observe::CarrierRow> =c.rows.iter().filter(|r| usize::from(r.carrier) == carrier).collect();
+        if rows.is_empty() {
+            out.push(format!("    {name:<6} {DIM}nothing carried — {meaning}{RESET}"));
+            continue;
+        }
+        for r in &rows {
+            let colour = match r.largest > u64::from(u16::MAX) {
+                true => RED,
+                false => DIM,
+            };
+            out.push(format!(
+                "    {name:<6} {:<10} records {:>8}  bytes {:>12}  per record {:>8}  {colour}largest {}{RESET}",
+                kind_name(r.carrier, r.kind),
+                r.records,
+                r.bytes,
+                r.bytes / r.records.max(1),
+                r.largest
+            ));
+        }
+    }
+    out
 }
 
 /// THE ALLOCATOR OVER THE SOURCE'S OWN CLOCK, and the growth per `K`.
