@@ -49,6 +49,24 @@ excluded from the reasoning path.
    cyclotomic element (law 4); no finite field enters cognition, and a prime
    that splits in the Hurwitz order — `3 + e₀₁ + e₀₂` of weight 11 — enters
    as a rotor over ℚ through 37.7, on no coordinate plane and by no modulus.
+9. **Cells are conformal, never planar (MU-RECURSION 78.30).** A cell is
+   the meet of its witnesses' sphere vectors at its own grade; a centroid
+   is A4's null point and never a constructor; a body's shape is A.11's
+   harmonic pencil (HL1), a toroid the orbit of a round under two
+   commuting modes read off MR1, and continuous support the harmonics'
+   moments; no pixel grid, planar slice or second shape carrier enters
+   cognition. A zero meet is `NoRound`, never `Congruent`.
+10. **The Coxeter reading is analytic over ℚ (78.14, 78.29(B), 78.30(6)).**
+   The Gram form is read by exact elimination with no iteration; the
+   pair invariant is `δ²` carried as numerator and denominator, never a
+   root; positive definite is finite, semidefinite affine, indefinite a
+   hyperbolic chamber under Vinberg's criterion; a non-crystallographic
+   pair is an infinite-order mode, refused as a system and held as a
+   mode.
+11. **Cells are keyed by their bodies' coordinates (A21, 78.10(a)),
+   never by a member key that names two bodies at once; and a held
+   stabilizer is never collapsed by choosing a representative (FR1c,
+   78.29(C)).**
 
 ## Rationale
 

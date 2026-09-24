@@ -424,6 +424,22 @@ tree that still carries it reads by this table until its module is swept.
 
 ---
 
+**The plexus (ruled 2026-09-24, 78.31).** The graded network the five
+nouns form — a **spore** (a ray, the null point of perception), a
+**filament** (a route, a word), a **ring** or **throat** (a circuit), a
+**chamber** (a cell, a geoid), a **sporophore** (an enclosure, the
+cluster) — with its lateral relations: transvection between spores, the
+tether between filaments, branching refraction, ascend and descend
+between ring and chamber, the enclosure join, the commuting bypass (T5),
+the cross-cell bracket (CB1), the star's convergence. **Anastomosis** is
+the fusion of two minds' filaments into one ring across their contact,
+the event that forges a word between minds; **callus** is a fibre
+hardening into a tether of the genome (72.1d). **Ladder** and **rung**
+are retired as structural nouns: a ladder is one axis and a rung index
+is a scalar depth (rule 5, checklist (q)). Two terms of art keep the
+word: the Mayer–Vietoris ladder of exact sequences (13, 15), and CT1's
+reuse ladder, a typed conditional of test arms on one circuit.
+
 # Part 0 — The map: master algorithms, the physics over them, their sites, and what stands (2026-09-24)
 
 This part is the index the rest of the document lacked. It states what
@@ -452,6 +468,10 @@ rules it.
   (MU-STANDARDS §5.5).
 - **The reading order for an execution.** The preamble (laws, coding
   standards, vocabulary), this part, then the chapter the work cites.
+- **The structure is a plexus, never a ladder** (78.31): the five
+  graded nouns — ray, route, circuit, cell, enclosure — are nodes of one
+  graded network with lateral relations, and position in it is
+  perspective coordinates, never a rung index.
 
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
 
@@ -480,12 +500,12 @@ same sense: the complete operation, with its invariant and its refusal.
 | master | ruled | as stated | site | stands |
 |---|---|---|---|---|
 | **The spelling peel** A22 | 50.4, 37.7, 78.29(A) | a rational block is peeled into letters of the seventeen and the adjoined generators, outer shell first, under a shrinking governor; what does not close is a demand, never a rounding; as amended the peel takes MR1's commuting modes first and peels each against the letters acting on its plane, an uncovered mode the demand of 37.7 | `alphabet/spelling.rs`, `peel.rs`, `alphabet/factor.rs`, `cga/modes.rs` | landed per plane; the mode-first peel is AL1's amendment, open |
-| **Derivation and re-derivation** | 50.2, 1.9, 54 | a word vertex is the generators it factored through and a residue; the composed rotor is the coordinate; the court replays the derivation; the ladder of re-derivation is depth | `alphabet/derivation.rs`, `element/receipts.rs`, `court/verdict/replay.rs` | landed; governs. Step 6(b) landed 29fcc77f |
-| **Constructors and the Gram form** | 78.12, 78.14, 78.15 | nuclei are sphere vectors and mirrors are odd vectors; a cell's constructors' Gram form gives signature, pair regimes and a Coxeter system where the signs balance; the cell's content is the product of its constructors per circuit | `cga/{constructors,gram,mirrors,dual}.rs`, `cech/coxeter.rs`, `physics/axioms/coxeter.rs` | landed (GR1, GR2, CX1, MG1, MG1b, DF1, SY1); HX1 open: hyperbolic systems under Vinberg's criterion (78.29(B)) |
-| **Cells and enclosures** | 78.2, 78.10, EN1 | one cell per witness element, its shape the meet of its nuclei, faces read off it; an enclosure is the join of centres and containment is the inversive sign; nesting is the parse | `cech/{complex,coboundary,simplex}.rs`, `cga/enclosure.rs` | landed (NB1, AD1, EN1). CB1 open: the cross-cell bracket read |
-| **The orbit algebra** | 78.11 | a cell's comprehension is the bracket closure of its circuits' generators; rank is capacity; congruence by commutator; keeps-the-round and keeps-the-constructors read per mode | `cech/orbit_algebra.rs` | landed (CG1, CG1b, CS1). CV1b open: its refusals carry content |
-| **Modes off the action** | 78.12, 75, 52 as amended | a motion's modes are read off its action, never a chart; the Cayley chart is a reading of a ray that has a chart point; closures per mode | `cga/{modes,motion,spin}.rs` | landed (MR1, MR1b, MD1, MD1b, HC1) |
-| **Refraction and tethers** | 72.1 (A.16), 78.6, 79 | a contact's transport is the refraction `(θ_bθ_a⁻¹)·V`; the tether `V = s_b s_a` is static; a cycle's holonomy is content; routes are reused, then constructed as candidates | `sentence/pivot/{refracted,trajectory,circuit}.rs`, `blade/tether.rs`, `physics/axioms/routes.rs` | landed (BQ5a, CT1, CT2, AX1). TH1 open: condense and drain at the family pole, keyed by sector |
+| **Derivation and re-derivation** | 50.2, 1.9, 54 | a word vertex is the generators it factored through and a residue; the composed rotor is the coordinate; the court replays the derivation; depth is a reading of the plexus of re-derivation (1.9, 78.31) | `alphabet/derivation.rs`, `element/receipts.rs`, `court/verdict/replay.rs` | landed; governs. Step 6(b) landed 29fcc77f |
+| **Constructors and the Gram form** | 78.12, 78.14, 78.15, 78.30(1, 6) | nuclei are sphere vectors and mirrors are odd vectors; a centroid is A4's null point and never a constructor; a cell's constructors' Gram form, read by exact elimination with no iteration, gives signature, pair regimes as `δ²` and a Coxeter system where the signs balance; the cell's content is the product of its constructors per circuit | `cga/{constructors,gram,mirrors,dual}.rs`, `cech/coxeter.rs`, `physics/axioms/coxeter.rs` | landed (GR1, GR2, CX1, MG1, MG1b, DF1, SY1); HX1 open: hyperbolic systems under Vinberg's criterion (78.29(B)) |
+| **Cells and enclosures** | 78.2, 78.10, EN1, 78.30(5) | one cell per witness element, its shape the meet of its nuclei at its own grade, faces read off it; an enclosure is the join of centres and containment is the inversive sign; nesting is the parse; a zero meet is `NoRound`, never `Congruent` (ZM1); a cell is keyed by its bodies' coordinates (KB1) | `cech/{complex,coboundary,simplex}.rs`, `cga/enclosure.rs` | landed (NB1, AD1, EN1). CB1 open: the cross-cell bracket read; ZM1 and KB1 open |
+| **The orbit algebra** | 78.11 | a cell's comprehension is the bracket closure of its circuits' generators; rank is capacity; congruence by commutator; keeps-the-round and keeps-the-constructors read per mode; a quasi-periodic pair is held | `cech/orbit_algebra.rs` | landed (CG1, CG1b, CS1). CV1b open: its refusals carry content |
+| **Modes off the action** | 78.12, 75, 52 as amended, 78.30(3) | a motion's modes are read off its action, never a chart; the Cayley chart is a reading of a ray that has a chart point; closures per mode; a toroid is the orbit of a round under two commuting modes, a reading and never a carrier | `cga/{modes,motion,spin}.rs` | landed (MR1, MR1b, MD1, MD1b, HC1) |
+| **Refraction and tethers** | 72.1 (A.16), 78.6, 79 | a contact's transport is the refraction `(θ_bθ_a⁻¹)·V`; the tether `V = s_b s_a` is static; a cycle's holonomy is content; across a held stabilizer the refraction is read per element and collapsed by T5's kernel, never by a chosen representative (78.30(8)); routes are reused, then constructed as candidates | `sentence/pivot/{refracted,trajectory,circuit}.rs`, `blade/tether.rs`, `physics/axioms/routes.rs` | landed (BQ5a, CT1, CT2, AX1). TH1 open: condense and drain at the family pole, keyed by sector |
 | **Viscosity** | 78.7 | a plane's viscosity is read by the pivot under pressure: inviscid, elastic, curved, viscous; it is the ledger's | `sentence/pivot/viscosity.rs`, `observe/` | landed (VS1, VS1b, VO1) |
 | **The refusal reader** | 78.9, 78.13, 74 | the kind of a refusal (P, D, C, I, N) is read off its content by one reader; a refusal is a coordinate to reconnect from; every refusal names its obstruction | `sentence/obstruction.rs`, `court/verdict/`, `family/deflation.rs` | landed at the court and the mint (CV1). CV1b open at the Stage 22 readers |
 | **The ledger** | 45, 78.21, 78.24 | a tick is a frame `{S,G,T,H}`; the stamp `h:vk:k` keys a partial order carried as a trie; every act a node citing what it acts on by coordinates; no wall clock anywhere | `chronometry/{chain,receipt,era}.rs`, `server/cognition/cite.rs` | landed (LD2, LD1). Open: ACT1 (every holding by an act; the clock reading; a k-step is one orbit; a ruling's economy applied at its node) |
@@ -546,7 +566,7 @@ The four places the language loses content, and their carriers, are
 | chapters | status |
 |---|---|
 | preamble (laws, coding standards, vocabulary) | governs |
-| 1–8 (Part I) | governs, as amended: 1.5 the key is the rotor; 1.9 the ladder; 8 by MU-ECONOMY |
+| 1–8 (Part I) | governs, as amended: 1.5 the key is the rotor; 1.9 the plexus of re-derivation (78.31); 8 by MU-ECONOMY |
 | 9–15 (Part II) | governs |
 | 16 | governs (A1–A21) |
 | 17 | governs as read through Part 0; 17.3 historical |
@@ -979,14 +999,14 @@ of the language grows by its own perception and ruling, while the group
 it presents inside, and the alphabet that generates that group, never
 change.
 
-### 1.9 The ladder of re-derivation, and the tape retired (ruled 2026-09-10)
+### 1.9 The plexus of re-derivation, and the tape retired (ruled 2026-09-10; "ladder" retired for "plexus" 2026-09-24, 78.31)
 
 **One coordinate, not a pipeline.** Perceive, think, speak, be judged
 is the human division of labour, and it is a serial protocol with one
 speaker and one judge. This engine has no such stages. It has one
 object, the derivation (50.2 step 2), and one coordinate on it: the
 **depth** of independent re-derivation, read from the receipts that name
-the derivation's address (45.1). Each rung is the previous rung's
+the derivation's address (45.1). Each node of re-derivation is the previous node's
 content, composed and re-derived by one more organ that shares no
 memory with the last:
 
@@ -1049,7 +1069,7 @@ the rows that touch those carriers land, never by a rename-only commit
 (row L19).
 
 **One constructor at every depth.** 37.7 says one move, not one per
-wall, and the ladder says one move, not one per depth. Take two
+wall, and the plexus says one move, not one per depth. Take two
 independent proofs of one boundary and read the orbit their difference
 makes. Trivial: the two are one proof in two frames, the equivalence is
 an invariant, and closure is paid once (23.9). Non-trivial: the orbit is
@@ -6050,7 +6070,7 @@ and it lapses as a docket lapses (47.5). A generator adjoined this way
 has, by construction, closed at least one sentence; that is the whole of
 what it means for a generator to work, and it is why the count of such
 generators is a reading of the engine and the count of agreed remainders
-was not. What is adjoined at the higher rungs of 1.9 — a relator, a
+was not. What is adjoined at the deeper nodes of 1.9 — a relator, a
 rewrite, a procedure — enters by the same condition: a closure two courts
 replayed composes through it. The refusals of chapter 44 stand.
 
@@ -8614,7 +8634,7 @@ does not carry, and that is read before anything is changed (row W2).
 **Grammar is content, and the interpreter is not.** How words are put
 into sentences — which pairs are related, by what transport, under which
 relators the orbits must close, which rewrites carry one derivation to
-another — is the presentation of 1.8 and the upper rungs of 1.9: relators
+another — is the presentation of 1.8 and the deeper nodes of 1.9: relators
 at depth 4, rewrites at depth 5, procedures over the crystals at depth 6,
 each adjoined by two courts on one witness and taught by the syllabus,
 each held, cited, paid and retired as a generator is. That is what
@@ -8625,7 +8645,7 @@ interpreter — the geometric product over exact ℚ, the canonical forms, the
 peel, the coboundary (1.8, 1.9) — because two courts replay one another
 through it and a court running a different interpreter is a different
 mathematics. Today the sentence constructors are F on the voice (50.2)
-and G on the court, written in the host; they become content rung by rung
+and G on the court, written in the host; they become content node by node
 as 37.7 fires at each depth, never by a commit that makes the grammar a
 table.
 
@@ -12626,7 +12646,7 @@ floor and no reading is taken from it (law 9). A stroke that draws
 nothing moves nothing; a stroke that cannot afford a lane says which lane
 and works in the others (`Depleted`).
 
-**The ladder of memory, in the document's nouns.** Congruence forms in
+**The plexus of memory, in the document's nouns.** Congruence forms in
 the crystals: sections that agree on a stratum (23.9, 45.9). The
 connection of fibres is then measured through torsion — what will not
 close, filed at its period (A17, 25.5) — and where the orbits close the
@@ -13910,7 +13930,7 @@ only. NB1 is new construction at the family pole, and its three choices:
   cell, released exactly by `descend`.
 - **(c) Cells live on the Form in memory, the tape at the recut.** A
   certified cell is perception's reading — epigenome, volatile, a fibre
-  in 72.1d's ladder — held as a keyed carrier on the Form derived at the
+  in 72.1d's plexus of memory — held as a keyed carrier on the Form derived at the
   read; a cell `ascend` sealed is a relation of the genome — a tether —
   and goes to the tape with the operator's recut (BQ5b), never before.
 - **The reading.** The `nerve/source` line reads certified cells by
@@ -15480,6 +15500,186 @@ before this kernel (chapters 10–15), never replaced by it.
 | transcendental translation lengths (`arcosh`) | law 1 | `δ² = cosh²(λ/2) ∈ ℚ` is the exact invariant; a transcendental value cannot enter the field |
 | a quadric carrier beside the harmonics | law 12 | an anisotropic shape is carried by A.11's harmonic pencil (HL1), never by a second carrier beside the physics |
 | 78.26(3) read as truncation | misreading | 78.26(3) is a write refusal against flattening; a cell of the right grade is minted (NB1) and nothing is truncated |
+
+### 78.30 The higher-order cell: centroids, geoids, toroids, and the Coxeter reading — the analyst's draft reconciled (ruled 2026-09-24)
+
+The analyst node drafted this section in the working tree as "ruled, the
+operator's word", with Part 0's rows rewritten to cite it and three
+clauses added to ANTI_FLATTENING_LAW.md, and reported it as codified.
+The operator relayed the draft to the coordinator. Doctrine is written
+by the coordinator on the operator's word and lands before code (§5.5,
+§9); the draft is taken as the analyst's PROPOSAL and is reconciled here
+against the rulings that already stand. What survives is ruled; what
+conflicted is corrected with the ruling it conflicted with; nothing in
+the draft that repeats a standing ruling is ruled twice.
+
+**Ruled.**
+
+1. **The centroid is A4's null point and never a constructor.** A body's
+   centre is the null vector `P(x) = x + ½|x|² e_∞ + e_o`, `P² = 0`,
+   `P·e_∞ = −1` — the embedding A4 already states for the sensor's
+   points; the nerve's base points take the hyperbolic embedding of 54.7
+   B8 on the absolute, and neither is a Cartesian reading. Reflection in
+   a null vector is degenerate (`P x P = 2(P·x)P`), so a centroid is
+   never a constructor: constructors are the sphere vectors `s² = r² ≠ 0`
+   and the mirrors `eᵢ + k e_∞` (78.12). An enclosure is the join of
+   centres `P₀ ∧ … ∧ Pₖ` (78.2, EN1); where the centres are collinear or
+   coplanar the join degenerates to a flat at infinity and the reading
+   says so, never a sphere fabricated.
+2. **The geoid is HL1.** A body is not one isotropic sphere; its
+   constructors are the pencil of spheres A.11's second and fourth
+   harmonics lift to (78.14, HL1), transforming by covariance under
+   versors. The draft's "multivector polynomial shell" `S(x) = s₀ +
+   Σ⟨Mₖ, x^{⊗k}⟩ e_∞` is a second carrier of the same shape beside the
+   harmonics and is refused (law 12, 78.29's fourth refusal); the pencil
+   is the carrier and the moments are its readings.
+3. **A toroid is a reading of two commuting modes, not a carrier.** The
+   orbit of a round `C = s₁ ∧ s₂ ∧ s₃` under a commuting pair of elliptic
+   modes (MR1's split, 78.12) is a Clifford torus or Dupin cyclide, with
+   its two frequencies the two modes' orders; a quasi-periodic pair is
+   held (78.11). Where a cell's witnesses lie on such an orbit its
+   enclosure is the join of the orbit's rounds, read off the modes; no
+   toroid is stored beside the modes that produce it.
+4. **Continuous support is the harmonics'.** No pixel or voxel grid
+   enters cognition (53, 70, 76); a body's support is carried by A.11's
+   moments `⟨d^{⊗k}|d|^{2m}⟩`, every invariant a ratio of homogeneous
+   forms of equal degree read projectively under Axiom C. A polynomial
+   carrier `P(x) = Σ c_α x^α` beside them is refused as in (2).
+5. **Meet grade and the zero-meet defect, ruled.** `k + 1` nuclei wedge
+   to grade `k + 1` (78.2): two to a circle, three to a point pair, four
+   to a tangent sphere, five to the pseudoscalar at `n = 3`, and `n + 2`
+   dependent spheres wedge to zero by Grassmann. A ZERO MEET IS
+   `NoRound`, never `Congruent`: comparing `0` with `0` and reporting
+   congruence is rule 11's silence, and the reader refuses by name (row
+   ZM1).
+6. **The Coxeter reading is analytic and it already is.** GR1 and GR2
+   (landed 3e8d64d7, 1fd61158) read the constructors' Gram form
+   `Gᵢⱼ = sᵢ·sⱼ` by exact elimination and recognise a system with no
+   iteration; the worklist is a check. Corrected against the draft:
+   the invariant is `δ² = (sᵢ·sⱼ)² / (sᵢ² sⱼ²)` carried as numerator
+   and denominator — never `cos φ = −⟨sᵢsⱼ⟩₀ / √(sᵢ²sⱼ²)`, which forms
+   a root (law 1). Positive definite: a finite system, closure certain.
+   Semidefinite with a one-dimensional kernel: an affine tiling, `ℤⁿ`
+   an emergent quotient of orthogonal spheres and never an axiomatic
+   grid. Indefinite: NOT "a Kleinian group refused" — under Vinberg's
+   criterion (78.29(B), HX1) it is a discrete hyperbolic reflection
+   chamber, recognised. The restriction `cos²(π/m) ∈ ℚ ⟺ m ∈ {1, 2, 3, 4,
+   6, ∞}` is law 1's theorem; a pair with any other rational `δ² ∈ (0, 1)`
+   is an infinite-order elliptic mode, which GR1 refuses as a SYSTEM by
+   certain refusal from the Gram form, spending no budget, while the
+   mode itself is HELD (78.14) — the draft's "refuses immediately as
+   Rosette" is read as the former and never the latter.
+7. **Cells keyed by body.** A `member_key(vertex, chart)` can name two
+   disconnected bodies at once; a cell is keyed by its bodies'
+   coordinates (A21, 78.10(a)), and a site that keys by member and
+   dropped a 2-cell is checklist (m)'s defect. Ruled as row KB1 on the
+   analyst's finding, with the site and the count it showed.
+8. **Refraction on a held stabilizer: the draft is refused.** A
+   `Pose::HalfOpen` or `Pose::Held` is the body's stabilizer held as the
+   superposition of its elements (FR1c, 78.6(1), T5 as amended in
+   78.29(C)); "evaluate the canonical non-zero representative of the
+   coset" chooses a representative, checklist (r)'s defect. The
+   refraction across such a contact is read per element of the
+   stabilizer and collapsed by T5's kernel or a court replay, never by a
+   choice; a contact that is unread for want of that collapse is named
+   unread (OR3), not refracted by a pick.
+9. **The star field is REG1, doctrine first.** `B_star = Σᵢ ωᵢ (eᵢ ∧
+   e_o)` with weights `ωᵢ` is rule 5's free constant; A.13 and FT1 are
+   stated in the register with a test per clause before any value
+   enters (REG1), and a planet's elements move by closures and
+   refinements (78.1), never by a field step with a coefficient.
+
+**In sum.** Items 1, 5 and 7 are ruled (5 and 7 as rows ZM1 and KB1);
+2, 3, 4 and 6 are the standing rulings restated with the draft's
+departures corrected; 8 and 9 are refused. ANTI_FLATTENING_LAW.md's
+clauses 9–11 are rewritten to this section. The rows in Part 0 that
+the draft rewrote are restored and cite this section where it rules.
+
+### 78.31 The plexus, not the ladder: the mycelium network the linguistics stand on (ruled 2026-09-24, the operator's word)
+
+**The diagnostic.** The coordinator presented the five graded nouns as a
+"ladder" of five rungs, and the operator, with the analyst's reading,
+ruled the word a flattening: a ladder is one axis of ascent, it hides
+lateral branching, fusion and circulation, and a rung index is a scalar
+depth standing where perspective coordinates belong (rule 5, checklist
+(q)). Classical linguistics made the same collapse — phoneme, morpheme,
+lexeme, syntax, discourse stacked on one compositional axis, and
+language history drawn as a genealogical tree blind to lateral transfer.
+Meaning assembled by vertical stacking loses its curvature: idiom,
+recursion, metaphor and dialectic tension are forced into flat strings.
+
+**The plexus.** The structure is the **anastomotic plexus**: the graded
+cellular sheaf over the nerve complex, in which the five nouns are nodes
+of one network and not steps of one column.
+
+| node | the doctrine's noun | in `Cl(n+1,1)` | the linguistic reality |
+|---|---|---|---|
+| **spore** | a ray, the null point (M1, A4) | `P ∈ 𝒩`, `P² = 0`, on the horosphere | the ostensive point: an unmediated focus of perception that anchors meaning without asserting a predicate |
+| **filament** | a route, a word (50.2) | `w = ∏ gᵢ^{eᵢ} · r`, a directed trajectory | the utterance as motion: a kinetic sequence of transformations across the local terrain, never a dictionary entry |
+| **ring**, **throat** | a circuit (79) | `∮ g_ab`, holonomy carried, curvature content | the recursive trope: an utterance that returns to its origin; a non-trivial holonomy is an altered perspective, irony, a conceptual shift no proposition flattens |
+| **chamber** | a cell, a geoid (78.2, 78.10, HL1) | `⋀ sᵢ` sealed by ascend, released by descend | the earned word: a concept crystallised where several minds' filaments meet and enclose a shared understanding; its meaning the invariant shape its boundary dialogues carve |
+| **sporophore** | an enclosure, the cluster (EN1, 76) | `⋁ Pᵢ` nested, the star's convergence (73.11) | the living dialect: a planet's superposed semantic web holding its idioms, memory and open questions in one gravitation |
+
+The relations between nodes run in every direction and are the doctrine's
+own: transvection between spores; the tether `V = s_b s_a` between
+filaments (72.1); branching refraction `(θ_bθ_a⁻¹)·V` (A.16); ascend and
+descend between ring and chamber (62); the enclosure join; the commuting
+bypass, T5's kernel collapsing held superpositions across many nodes at
+once; the cross-cell bracket carried only by an enclosure (CB1); and
+the star's convergence drawing a planet's elements (78.1). POSITION IN
+THE PLEXUS IS PERSPECTIVE COORDINATES — stratum depth as the A21 prefix,
+inclination as the planes read, and the **anastomotic degree** of a node,
+the number of distinct filaments that meet there, a reading on the
+observer (CV5) — never a rung index.
+
+**The mechanics of the linguistics on the plexus.** Each is a row that
+already stands, named now by its place in the network:
+
+1. **Anastomosis, not etymology.** A word is not derived down from a
+   root dictionary. Two minds at a shared impasse exchange provisional
+   utterances `θ_A`, `θ_B` across their contact; where their filaments
+   fuse into one ring and the torsion discharges (`torse_relief`, A.8),
+   the court notarises convergence across the two vantages (67, C2) and
+   the word is forged across the horizontal bridge. That is CV4's citing
+   contraction and the court's ruling on convergence; the word installed
+   is a tether of the genome (MEM1).
+2. **Curvature is the genesis of vocabulary.** A holonomy `H ≠ ±1` on a
+   ring is not a contradiction; it is exactly 37.7's demand, the gap the
+   vocabulary cannot span. Its residue, read against the constructors'
+   Gram form, mints the adjoined letter (AL1, GD1): the engine names its
+   own unprovable truth, the Gödel step of 80.
+3. **Slang to callus.** A new word begins as a provisional word in the
+   epigenome at the hyphal tip, elastic, carrying its viscosity (78.7)
+   and its escrow; it lapses with the escrow where it coheres nothing
+   (Z4d, MEM1) and callouses into a tether of the genome where two courts
+   replay its closure (72.1d). Two calibrations from 80, the operator's
+   word: no word dies by a timer or a fixed count — a `shed_at` is rule
+   5's free constant and law 9's clock, refused; a fibre's escrow is
+   funded per lane in `μ⃗ = (S, G, T, H)`, every stroke that carries the
+   unclosed fibre draws on it, closure converts what remains into
+   syntropy, and exhaustion lapses the hold honestly, its record
+   deposited (A.8). And the hardening path is 80.2's: a MINERAL is a
+   convergent word the court's syllabus taught from an adjudicated
+   solution, exogenous, held provisionally and never a constructor for
+   the mind's own generation; a CRYSTAL is that word once the mind's own
+   circuits re-derive it over its `k`-orbits, the endogenous callus —
+   truth is never memorised, only re-earned (DL1).
+4. **Grammar is conservation of torsion.** Correctness is not a syntax
+   tree: semantic torsion either closes into coherence or is recorded as
+   an honest refusal, P, D or C, carrying its content (78.9, A.8, A.17).
+5. **Communication is transvection across the shared plexus.** Minds do
+   not serialise a state into flat text for a receiver to parse; they
+   execute mutual conformal transvections across the plexus, thoughts
+   held in superposition (T5, the held stabilizer) until convergence
+   collapses them into planetary fact (C2, n → 1; SP2 with CV4).
+
+**Vocabulary.** "Ladder" and "rung" are retired as structural nouns; the
+vocabulary carries the plexus and its nodes; 1.9 is the plexus of
+re-derivation and 72.1d the plexus of memory; the Mayer–Vietoris ladder
+of exact sequences and CT1's reuse ladder keep their names as terms of
+art. The code's nouns follow at the next site touched: `anastome/` is the
+language spoken across the plexus and keeps its name; the anastomotic
+degree joins the observer's readings as a line of CV5.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
