@@ -113,32 +113,9 @@ impl Entity {
             eprintln!("genome 0 words, epigenome empty");
             return e;
         };
-        if let Some(named) = crate::client::sdk::epigenome::genome_refused(&bytes) {
-            eprintln!("genome refused: {named}");
+        if let Err(why) = e.restore_genome(&bytes) {
+            eprintln!("genome refused: {why}");
             return e;
-        }
-        let Some(read) = e.epigenome.uncrystallize(&bytes) else {
-            eprintln!("genome refused: the file is not a whole GEN6 tape");
-            return Entity::open(addr, e.session.kernel().clone());
-        };
-        let mut pos = read.end;
-        let Some(chain) = crate::chronometry::ReceiptChain::take_tries(&bytes, &mut pos).filter(|_| pos == bytes.len())
-        else {
-            eprintln!("genome refused: this voice's ledger does not read whole");
-            return Entity::open(addr, e.session.kernel().clone());
-        };
-        // THE GENOME'S admitted_at FROM ITS OWN LEDGER (78.27): a word
-        // admitted on this voice's line stands at a node of the ledger just
-        // read; a stamp on a peer's line — the court's syllabus stamp — is a
-        // citation and stands as one.
-        let orphaned = read.admitted.iter().filter(|(_, at)| at.vk == chain.vk() && chain.node(at).is_none()).count();
-        if orphaned > 0 {
-            eprintln!("genome refused: {orphaned} words admitted at stamps on this voice's line its ledger does not hold");
-            return Entity::open(addr, e.session.kernel().clone());
-        }
-        if !e.session.voice_mut().restore(chain, read.admitted) {
-            eprintln!("genome refused: this voice's ledger does not verify under its key");
-            return Entity::open(addr, e.session.kernel().clone());
         }
         let n = e.epigenome.genome_len();
         let kb = bytes.len() / 1024;
@@ -146,17 +123,56 @@ impl Entity {
         e
     }
 
-    /// Persist the genome atomically (write-then-rename): the words at their
-    /// citations, then this voice's ledger as its tries. Call from the
-    /// syntropic phase when the genome has grown. A word the writer refused
-    /// is named once with its count (LD0), and the counts are answered.
-    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
+    /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words at
+    /// their citations, then this voice's ledger. Whole or not at all: the
+    /// words are read into an epigenome of their own and taken in only once
+    /// the ledger has restored, so a refusal leaves this mind as it was.
+    /// `Err` names why the file was refused.
+    pub fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
+        if let Some(named) = crate::client::sdk::epigenome::genome_refused(bytes) {
+            return Err(named.to_string());
+        }
+        let mut epigenome = Epigenome::new();
+        let read = epigenome
+            .uncrystallize(bytes)
+            .ok_or_else(|| "the file is not a whole GEN6 tape".to_string())?;
+        let mut pos = read.end;
+        let chain = crate::chronometry::ReceiptChain::take_tries(bytes, &mut pos)
+            .filter(|_| pos == bytes.len())
+            .ok_or_else(|| "this voice's ledger does not read whole".to_string())?;
+        // THE GENOME'S admitted_at FROM ITS OWN LEDGER (78.27): a word
+        // admitted on this voice's line stands at a node of the ledger just
+        // read; a stamp on a peer's line — the court's syllabus stamp — is a
+        // citation and stands as one.
+        let orphaned = read.admitted.iter().filter(|(_, at)| at.vk == chain.vk() && chain.node(at).is_none()).count();
+        if orphaned > 0 {
+            return Err(format!("{orphaned} words admitted at stamps on this voice's line its ledger does not hold"));
+        }
+        if !self.session.voice_mut().restore(chain, read.admitted) {
+            return Err("this voice's ledger does not verify under its key".to_string());
+        }
+        self.epigenome = epigenome;
+        Ok(())
+    }
+
+    /// THE GENOME'S BYTES: the words at their citations, then this voice's
+    /// ledger as its tries. A word the writer refused is named once with its
+    /// count (LD0), and the counts are answered; `None` where a node of the
+    /// ledger cannot be written, and nothing is written then.
+    pub fn genome_bytes(&self) -> Option<(Vec<u8>, crate::client::sdk::epigenome::GenomeRefused)> {
         let voice = self.session.voice();
         let (mut bytes, refused) = self.epigenome.crystallize(|a| voice.admitted_at(a));
         refused.name();
-        if voice.chain().put_tries(&mut bytes).is_none() {
+        voice.chain().put_tries(&mut bytes)?;
+        Some((bytes, refused))
+    }
+
+    /// Persist the genome atomically (write-then-rename). Call from the
+    /// syntropic phase when the genome has grown.
+    pub fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
+        let Some((bytes, refused)) = self.genome_bytes() else {
             return Err(io::Error::new(io::ErrorKind::InvalidData, "genome refused: a node of this voice's ledger cannot be written"));
-        }
+        };
         // ACT1: where this voice stood when the genome was taken, noted only
         // once the write lands (78.21(3)).
         let at = (self.now_tu(), self.own_k());

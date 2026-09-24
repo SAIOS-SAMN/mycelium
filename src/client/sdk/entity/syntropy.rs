@@ -263,8 +263,17 @@ impl Entity {
                 for b in retires {
                     let _ = self.epigenome.retire(b.as_bytes());
                 }
+                // THE UPDATED SECTION IS ADMITTED BY AN ACT ON THIS VOICE'S
+                // LINE (78.27, LD3-c): learned on the court's standing of
+                // the rewrite, it is sealed as Learned, which admits it; a
+                // section the genome refuses is said, never discarded.
                 if let Some(after_elem) = after {
-                    let _ = self.epigenome.learn(&after_elem.to_bytes());
+                    match self.epigenome.learn(&after_elem.to_bytes()) {
+                        Some(_) => {
+                            self.session.seal_word(crate::chronometry::ActKind::Learned, after_elem);
+                        }
+                        None => eprintln!("  bundle rewrite: the updated section was not learned"),
+                    }
                 }
                 let mu = rw.magnitude();
                 self.physics.syntropy(&mu);

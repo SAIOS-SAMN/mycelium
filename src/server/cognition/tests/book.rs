@@ -170,10 +170,13 @@ let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
-let n = k.cochain_bytes();
+// The simplices the complexes hold, each by its own key: a row that is not
+// re-filed moves none of them.
+let simplices = |k: &Kernel| k.complexes.scoped().map(|(_, c)| c.by_key.len()).sum::<usize>();
+let n = simplices(&k);
 assert!(k.heard.contains(&forged.address()));
 assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32], &mut cover), Glue::Dialect));
-assert_eq!(k.cochain_bytes(), n, "a heard slash is not re-rowed");
+assert_eq!(simplices(&k), n, "a heard slash is not re-rowed");
 }
 
 /// Quotes are incidence on charts. Permuting the pending list does not

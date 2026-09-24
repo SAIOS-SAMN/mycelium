@@ -57,19 +57,23 @@ impl Epigenome {
     /// parallel vectors the word stayed at its slot and `index` silently
     /// went stale; law 2 does not allow a key that no longer names its
     /// value.
-    pub fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> bool {
-        let Some(entry) = self.genome.remove(addr) else { return false };
+    ///
+    /// AND A WORD AT A NEW ADDRESS IS A NEW WORD: no act admitted it. The
+    /// punctured word's address is answered so the caller admits it by an
+    /// act on its own line (LD3-c) — `None` where nothing was punctured.
+    pub fn puncture(&mut self, addr: &[u8], asg: Vec<(u8, u8)>) -> Option<crate::transducer::address::Address> {
+        let entry = self.genome.remove(addr)?;
         let Some(mut w) = self.resident.remove(addr) else {
             // The index holds it and the payload does not: under Z11 that
             // is a word on disk and not decoded, and a puncture of a word
             // this mind has not read is refused rather than guessed.
             self.genome.insert(addr, entry);
-            return false;
+            return None;
         };
         if !w.held.update(|e| e.puncture(asg)) {
             self.genome.insert(addr, entry);
             self.resident.insert(addr, w);
-            return false;
+            return None;
         }
         // The shape was measured on the old chain and is not the new
         // word's; it is dropped rather than carried across (law 12).
@@ -77,7 +81,7 @@ impl Epigenome {
         let at = w.held.address();
         self.genome.insert(&at, entry);
         self.resident.insert(&at, w);
-        true
+        Some(at)
     }
 
     pub fn new() -> Self {
@@ -245,37 +249,6 @@ impl Epigenome {
     /// How many coordinates the pivot has not reached.
     pub fn unpivoted_len(&self) -> usize {
         self.unpivoted.len()
-    }
-
-    /// THE NEXT WORD AFTER A COORDINATE, wrapping to the first — the
-    /// trie's own circuit, which is how a cursor traverses a carrier whose size
-    /// changes under it (45.7, X3). `None` from a genome that holds
-    /// nothing; from `None` it starts at the first coordinate.
-    /// Z12's reading, SPREAD ALONG THE TRIE and not along arrival. Three
-    /// words at the first, middle and last COORDINATE the genome holds.
-    ///
-    /// It used to spread along the admission ordinal, because the question
-    /// was "what does a word's tape cost against the genome's size when it
-    /// was absorbed". That question has an append-only timeline inside it.
-    /// The tape's cost is a property of the word — how much it glues and
-    /// what it cites — and three words from across the address space read
-    /// that without asking when any of them arrived.
-    pub fn genome_spread(&self) -> Vec<(Vec<u8>, &crate::transducer::element::Held)> {
-        let at: Vec<Vec<u8>> = self.genome.scoped().map(|(k, _)| k).collect();
-        let n = at.len();
-        let picks = match n {
-            0 => Vec::new(),
-            1 | 2 => (0..n).collect::<Vec<_>>(),
-            _ => vec![0, n / 2, n - 1],
-        };
-        picks
-            .into_iter()
-            .filter_map(|i| {
-                let k = at.get(i)?;
-                let w = self.resident.get(k)?;
-                Some((k.clone(), &w.held))
-            })
-            .collect()
     }
 
     /// THE CIRCUIT FROM A COORDINATE: every genome address once, starting

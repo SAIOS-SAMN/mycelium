@@ -155,9 +155,9 @@ impl Epigenome {
             // taken in — not on the first read of its form (L16).
             genome.push(crate::transducer::element::Held::of(e));
         }
-        if genome.is_empty() {
-            return None;
-        }
+        // AN EMPTY WORDS TRIE IS A GENOME WITH NO WORDS, not a refusal: the
+        // voice's ledger behind it restores regardless, so a voice that has
+        // admitted no word keeps its K across a boot (R1).
         self.genome = crate::network::nerve::Keyed::new();
         self.resident = crate::network::nerve::Keyed::new();
         self.unpivoted = crate::network::nerve::Keyed::new();

@@ -8,58 +8,14 @@
 //! tape's codec — `encode_form_v2` / `decode_form_v2` and their primitives
 //! in `sentence/codec.rs` — was read at runtime only by the contemplation's
 //! thoughts file, and retired with it (78.27, LD3-c): nothing in the tree
-//! holds a codec that nothing reads.
+//! holds a codec that nothing reads. `FORM_TAPE_VERSION`, the tape's version
+//! byte, and `tape_parts`, its component reading, retired with the soak's
+//! GEN3 walker that last read them.
 
 use super::form::*;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::element::Element;
-
-/// THE TAPE'S LAST VERSION (54.5). 14, and the byte is never bumped for the
-/// form again.
-///
-/// 13 → 14 REMOVES the orbit block, and is the only bump this file will take
-/// that makes the tape SMALLER. §1.5 has always said "loops and holonomies
-/// are derived and never keyed"; the tape carried them anyway, and measured
-/// they were the whole of `Tape ∖ Key` — 2 parts in 10 000, with every
-/// other component either in the key or empty. A v13 tape read by this
-/// build would take those bytes for the remainder that follows them, so the
-/// byte refuses it, which is the byte's entire job.
-///
-/// The tape is no longer a living schema. Under 54.5 the genome on disk is
-/// the trie of addresses and `from_address` is the only decoder, so the
-/// tape survives solely as the wire's frame for an address and its
-/// receipts. A format that defines nothing has no versions to take.
-///
-/// THE BUMPS THAT GOT HERE WERE A MISTAKE AND ARE NAMED. 10 → 11 added a
-/// per-tape address table (Z12b part 2); 11 → 12 returned it when the same
-/// shape was about to be carried onto the genome file, where a number
-/// naming a place in a carrier is rule 15's defect. Both treated the tape
-/// as the carrier of cognition, which 54.5 says it is not — and the second
-/// bump is what made the previous soak's genomes unreadable to this build,
-/// so `--genome` reported an `Element::address` FALLBACK as if it were the
-/// form's key.
-///
-/// 12 → 13 is the last, and it is a correction rather than a change of
-/// intent: a citation gained its morphism φ at `01760af` and the tape
-/// began carrying it WITHOUT a bump, so the constant named a layout the
-/// encoder had already left. A version that does not match its bytes
-/// refuses nothing.
-///
-/// THE MIGRATION BASELINE IS CUT HERE: nothing written before 13 is read
-/// by this tree, and §10's rule holds — a layout change is a recut, and
-/// this is the last one the form's tape takes.
-/// Version 10 is the three-coordinate base (51.7): supports as sites of
-/// three coordinates, versors of thirty-two components, the sections
-/// placed, and an orbit's period filed as `0` for infinite order (52.3).
-///
-/// 14 → 15 IS BQ1'S, AND IT BREAKS "NEVER AGAIN" BY NAME. 71.2(1) puts `n`
-/// on every site and on the address: the form's `n` opens the tape, every
-/// versor carries its own `n` ahead of its coefficients, and an interface
-/// element is a site with its count. The bytes changed, and a byte that did
-/// not would refuse nothing — which is the defect 12 → 13 names. It lands
-/// with the address's own layout change, at the one recut Phase N rides.
-pub const FORM_TAPE_VERSION: u8 = 15;
 
 /// 37.7 — MINT A GENERATOR FROM A ROTOR, the one construction that turns a
 /// measured action the alphabet cannot spell into a word the language holds.
@@ -300,8 +256,8 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // landed on the third, 2026-09-20).
     //
     // `from_address` is a faithful retract of the GEOMETRY:
-    // `the_address_and_the_tape_agree_on_every_reading_the_court_makes`
-    // runs both decoders over 36 corpus forms and finds no divergence on
+    // `the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes`
+    // ran both decoders over 36 corpus forms and found no divergence on
     // face words, the rank audit, closure, citation depth or the orbits'
     // member paths. Four real defects were fixed getting there — a
     // defaulted citation chart, a byte-exact carriage comparison, a face

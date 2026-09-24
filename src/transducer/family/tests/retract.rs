@@ -214,15 +214,15 @@ fn from_address_retracts_every_corpus_form() {
 /// rational scale, whose face word came off a presentation rather than an
 /// action. The key round-tripped through all four.
 ///
-/// So this compares the two decoders — the tape's `decode_form_v2` and the
-/// address's `from_address` — through the readings the court actually
-/// makes. While both exist the tape is an oracle, and this is the
-/// deliberate form of the accidental one it has been all session.
-///
-/// It is the precondition for deleting `Element.description`: what the
-/// tape has been doing by redundancy, this does by assertion.
+/// So this compares the form the extractor made with the form its ADDRESS
+/// decodes to — `from_address(form_vertex_key(f))` — through the readings
+/// the court actually makes: every face re-derived, the rank audit,
+/// closure, the citation depth and the orbits' member paths. It compared
+/// the tape's decoder with the address's while the tape stood; the tape
+/// and its codec are retired (54.7 B6, LD3-c), and the address is the one
+/// decoder the court holds.
 #[test]
-fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
+fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes() {
     let Ok(dir) = std::fs::read_dir(CORPUS) else {
         eprintln!("  predicate guard: {CORPUS} does not read");
         return;
@@ -302,14 +302,15 @@ fn the_address_and_the_tape_agree_on_every_reading_the_court_makes() {
         eprintln!("    {n:>4}  {}", String::from_utf8_lossy(&k));
     }
     assert!(seen > 0, "the guard ran over nothing");
-    assert_eq!(diverged, 0, "the address and the tape must agree on every reading");
+    assert_eq!(diverged, 0, "the decoded form and the extracted must agree on every reading");
 }
 
 /// 54.7 B6 — THE ORACLE IS SPENT, AND THESE ARE THE INVARIANTS THAT STAND
 /// WITHOUT IT (as ruled 2026-09-21).
 ///
 /// `every_court_reader_agrees_on_both_decoders` stood here. It fed the
-/// legacy tape's `decode_form_v2` and the address's `from_address` +
+/// legacy tape's decoder (retired with its codec at LD3-c) and the
+/// address's `from_address` +
 /// `ReceiptsEnvelope` into the four readers the purge was about and
 /// asserted one verdict, over corpus and fixtures. It passed at `bceeb56`:
 /// 39 words on both decoders, 3 citing, 3 cover sites — 2 of arity 1

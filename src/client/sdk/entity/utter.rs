@@ -232,8 +232,16 @@ impl Entity {
             if c.gauge != u32::MAX {
                 continue;
             }
-            if self.epigenome.puncture(&c.addr, crate::transducer::element::assignment(&c.body)) {
-                deepened += 1;
+            let Some(at) = self.epigenome.puncture(&c.addr, crate::transducer::element::assignment(&c.body)) else {
+                continue;
+            };
+            deepened += 1;
+            // THE PUNCTURED WORD IS ADMITTED BY AN ACT ON THIS VOICE'S LINE
+            // (78.27, LD3-c): a new address no act admitted, learned from a
+            // proof the hypha verified, so this voice's Learned act on it
+            // admits it and its stamp is the word's locator.
+            if let Some(word) = self.epigenome.word_at(at.as_bytes()).map(|h| h.element().clone()) {
+                self.session.seal_word(crate::chronometry::ActKind::Learned, &word);
             }
         }
         deepened

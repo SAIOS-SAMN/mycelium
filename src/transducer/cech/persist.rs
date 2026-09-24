@@ -48,18 +48,6 @@ fn ray_versor(g: &Versor) -> Vec<u8> {
 }
 
 impl Complex {
-    pub fn byte_len(&self) -> usize {
-        let mut n = 0usize;
-        // The simplices of THIS complex — one chart's nerve — and the size
-        // on the tape is the size of all of them.
-        for (k, d) in self.by_key.scoped() {
-            if let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(&k)) {
-                n += 32 * c.vertices.len() + 32 + 32;
-            }
-        }
-        n
-    }
-
     /// THE COMPLEX AS ITS TRIES (78.27, LD3-b): sections, simplices and
     /// remainder, each by its own keys.
     pub fn put_tries(&self, out: &mut Vec<u8>) {

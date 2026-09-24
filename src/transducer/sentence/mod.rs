@@ -16,7 +16,6 @@ pub mod glue;
 pub mod rebase;
 pub mod inverse;
 mod obstruction;
-mod parts;
 mod reading;
 pub mod demand;
 
@@ -31,7 +30,6 @@ pub use chart::*;
 pub use reading::*;
 pub use inverse::*;
 pub use obstruction::*;
-pub use parts::*;
 
 #[cfg(test)]
 pub(crate) mod tests;

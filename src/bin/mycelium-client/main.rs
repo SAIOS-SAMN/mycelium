@@ -137,19 +137,6 @@ fn heap() -> String {
 /// cannot account for the process is not reading the process, and the
 /// residue is printed rather than hidden — what the carriers do NOT reach
 /// is as much a reading as what they do.
-/// Z12 — WHAT A WORD'S TAPE IS MADE OF, on three words spread across the
-/// address space: the first, middle and last coordinate the genome holds.
-/// One line each, bounded whatever the genome's size.
-fn z12_lines(entity: &mycelium::client::sdk::Entity, tag: &str) {
-    for (at, held) in entity.epigenome.genome_spread() {
-        let Some(parts) = mycelium::transducer::sentence::tape_parts(held.element()) else {
-            continue;
-        };
-        let verts = held.form().map_or(0, |f| f.vertices.len());
-        eprintln!("[{tag}] {}", parts.line(&at, verts));
-    }
-}
-
 fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
     let mut out = String::new();
     let mut total = 0usize;
@@ -418,7 +405,6 @@ fn main() {
                     carrier_line(&entity),
                     if feed.exhausted() { "clear" } else { "held" },
                 );
-                z12_lines(&entity, &tag);
             } else {
                 eprintln!(
                     "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",

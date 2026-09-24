@@ -344,7 +344,8 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     //
     // The tape hid it for as long as the tape was the decoder. `star_form`
     // builds its vertices from one fixture, so two of them are one
-    // coordinate, and every reading taken through `decode_form_v2` was
+    // coordinate, and every reading taken through the tape's decoder (its
+    // codec retired at LD3-c) was
     // fine while the same form's ADDRESS was unreadable. Two writers of one
     // fact, and the one that was never read is the one that was wrong
     // (law 12).

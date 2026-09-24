@@ -71,7 +71,10 @@ fn a_complex_survives_its_own_tries() {
     assert_eq!(fills(&back), before, "every stored fill returns as itself");
     assert_eq!(back.degrees.len(), cx.degrees.len(), "the grading survives");
     assert_eq!(back.sections.len(), cx.sections.len(), "the sections survive");
-    assert_eq!(back.byte_len(), cx.byte_len(), "every simplex is filed back under its own key");
+    let (mut again, mut before) = (Vec::new(), Vec::new());
+    back.put_tries(&mut again);
+    cx.put_tries(&mut before);
+    assert_eq!(again, before, "every simplex is filed back under its own key: the tries re-write byte for byte");
 }
 
 /// AN UNKNOWN FILL TAG IS A REFUSAL, NOT AN OPEN CELL.

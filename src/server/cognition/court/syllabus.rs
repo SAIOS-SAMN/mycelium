@@ -33,14 +33,6 @@ impl Kernel {
         out
     }
 
-    pub fn cochain_bytes(&self) -> usize {
-        let mut n = 0usize;
-        for (_, c) in self.complexes.scoped() {
-            n += c.byte_len();
-        }
-        n
-    }
-
     /// Class records on `inv` (and prefixes), or on every chart when `inv` is empty.
     pub fn class_records(
         &self,

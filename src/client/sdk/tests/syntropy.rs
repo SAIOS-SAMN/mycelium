@@ -96,8 +96,8 @@ fn probe_conjugate_reanchor_on_word_pair() {
     let e1 = from_connection(&w1, &id_v, &[], &Vec::new(), [1, 0, 0, 0]).expect("e1 connection");
     let e2 = from_connection(&w2, &id_v, &[], &Vec::new(), [1, 0, 0, 0]).expect("e2 connection");
 
-    entity.epigenome.learn(&e1.to_bytes());
-    entity.epigenome.learn(&e2.to_bytes());
+    assert!(entity.absorb_taught(&e1.to_bytes()).is_some(), "the first word is learned by an act of the voice");
+    assert!(entity.absorb_taught(&e2.to_bytes()).is_some(), "the second word is learned by an act of the voice");
     assert_eq!(entity.epigenome.genome_len(), 2, "two conjugate words in genome");
 
     // Under a STATED stroke: the machine's own stroke is calibrated from
@@ -128,8 +128,8 @@ fn probe_bundle_condensation_folds_sibling_sections() {
     let e1 = chain_word(&[(0, 0, 1u8, 2u8), (0, 1, 1, 2)]);
     let e2 = chain_word(&[(0, 0, 3u8, 4u8), (1, 0, 3, 4)]);
 
-    entity.epigenome.learn(&e1.to_bytes());
-    entity.epigenome.learn(&e2.to_bytes());
+    assert!(entity.absorb_taught(&e1.to_bytes()).is_some(), "the first word is learned by an act of the voice");
+    assert!(entity.absorb_taught(&e2.to_bytes()).is_some(), "the second word is learned by an act of the voice");
     assert_eq!(entity.epigenome.genome_len(), 2, "two sibling words learned");
 
     let budget = entity.physics.stroke_n(1 << 8);
@@ -160,8 +160,8 @@ fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
     let e1 = from_connection(&w1, &id_v, &[], &Vec::new(), [1, 0, 0, 0]).expect("e1 connection");
     let e2 = from_connection(&w2, &id_v, &[], &Vec::new(), [1, 0, 0, 0]).expect("e2 connection");
 
-    entity.epigenome.learn(&e1.to_bytes());
-    entity.epigenome.learn(&e2.to_bytes());
+    assert!(entity.absorb_taught(&e1.to_bytes()).is_some(), "the first word is learned by an act of the voice");
+    assert!(entity.absorb_taught(&e2.to_bytes()).is_some(), "the second word is learned by an act of the voice");
     assert_eq!(entity.epigenome.genome_len(), 2, "two words learned");
 
     let budget = entity.physics.stroke_n(1 << 8);
@@ -220,7 +220,7 @@ fn the_conjugacy_fibre_answers_every_sibling_the_whole_genome_read_would_have_fo
     for w in [&w1, &w2, &other] {
         let e = from_connection(w, &id_v, &[], &Vec::new(), [1, 0, 0, 0])
             .expect("connection");
-        entity.epigenome.learn(&e.to_bytes());
+        assert!(entity.absorb_taught(&e.to_bytes()).is_some(), "each word is learned by an act of the voice");
     }
 
     let ck1 = w1.class_key().expect("class");

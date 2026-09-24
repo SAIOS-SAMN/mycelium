@@ -36,7 +36,6 @@ fn an_exact_cochain_on_k4_fills_at_every_degree() {
     for k in c.link_of(&vs()[0]) {
         assert!(c.class(&k).is_none(), "no simplex of an exact link carries a class");
     }
-    assert!(c.byte_len() < 4096, "four covering vertices stay in kilobytes");
 }
 
 /// An INFINITE-order edge is a class at degree 2, and the class names the

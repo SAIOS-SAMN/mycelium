@@ -310,7 +310,8 @@ impl Entity {
     }
 
     /// Hear a taught word with no stamp to locate it by: a word handed in
-    /// whole rather than served, which the Learned node cannot cite.
+    /// whole rather than served, admitted by the Learned node that hears it
+    /// (78.27, LD3-c).
     pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
         self.absorb_taught_at(taught, None)
     }
@@ -347,14 +348,30 @@ impl Entity {
         // THE WORDS THE PAGE TAUGHT, cited by their fibers and the stamp
         // that taught them (78.24): one citation per word, never the
         // page's bytes.
+        //
+        // A WORD THE PAGE CARRIED NO STAMP FOR, and this voice holds none
+        // for, is ADMITTED by this page's own Learned node (78.27, LD3-c):
+        // the node cites it at the node's own stamp, as `seal_word` admits a
+        // word no act has, and the stamp is filed as its locator once the
+        // node stands.
+        let admitting = match at {
+            Some(_) => None,
+            None => self.session.voice().chain().next_stamp(&[]),
+        };
         let mut cites = Vec::with_capacity(heard_words.len());
+        let mut admitted_here = Vec::new();
         for e in &heard_words {
             let addr = e.address();
             if let Some(at) = at {
                 self.session.voice_mut().file_admitted(&addr, at);
             }
-            if let Some(c) = self.session.voice().cite_of(&addr, e) {
-                cites.push(c);
+            match (self.session.voice().cite_of(&addr, e), admitting) {
+                (Some(c), _) => cites.push(c),
+                (None, Some(here)) => {
+                    cites.push(crate::chronometry::Cite::word(e, here));
+                    admitted_here.push(addr);
+                }
+                (None, None) => {}
             }
             let _ = self.pivot_on(e);
         }
@@ -362,6 +379,13 @@ impl Entity {
         // node citing the words is sealed on its own chain and the page is
         // learned at the K it took.
         let k = self.session.seal(crate::chronometry::ActKind::Learned, mu, cites);
+        if let Some(here) = admitting {
+            if self.session.voice().chain().at_place(here.place()).is_some() {
+                for addr in &admitted_here {
+                    self.session.voice_mut().file_admitted(addr, here);
+                }
+            }
+        }
         let heard = self.epigenome.learn_at(taught, k, self.now_tu());
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
