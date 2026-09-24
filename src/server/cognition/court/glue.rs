@@ -167,7 +167,14 @@ impl Kernel {
                 },
             }
         }
-        cx.coboundary_on_link(&peer, |_| self.volume_of_simplex(&inv));
+        // 78.26(6) — the closed rings a moved gauge reopened, counted by what
+        // each cut; the court has no candidates, only the cover's gauges.
+        for (_, cut) in cx.coboundary_on_link(&peer, |_| self.volume_of_simplex(&inv)) {
+            match cut {
+                crate::transducer::cech::Cut::Filled => self.reopened[0] += 1,
+                crate::transducer::cech::Cut::Congruent => self.reopened[1] += 1,
+            }
+        }
         let mut filled = false;
         let mut class_simplex: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
         let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<Address>)> = None;

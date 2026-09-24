@@ -62,7 +62,9 @@ pub struct Learning {
     pub merges: crate::transducer::bubble::merge::MergeTally,
     /// 78.37(1), TP1 — the meet graph as it stands at `k`, and its
     /// decoherences since the contemplation began.
-    pub meet: crate::transducer::bubble::MeetGraph,
+    /// Boxed: its counts are the reading's bulk, and the Reading enum holds
+    /// every kind at the size of its largest.
+    pub meet: Box<crate::transducer::bubble::MeetGraph>,
 }
 
 impl Learning {
@@ -94,7 +96,7 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet }
+        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) }
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -130,7 +132,22 @@ impl Learning {
             out.extend_from_slice(&v.to_le_bytes());
         }
         let d = &g.decoherence;
-        for v in d.decohered.iter().chain(&d.classed).chain(&d.rejoined) {
+        for v in d.decohered.iter().chain(&d.classed).chain(&d.rejoined).flatten() {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        let t = &g.transport;
+        for v in [
+            g.advanced,
+            g.sources,
+            t.fixed[0],
+            t.fixed[1],
+            t.collapsed,
+            t.collapsed_filled,
+            t.held,
+            t.classified,
+            t.unsectioned,
+            t.ungauged,
+        ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -187,7 +204,10 @@ impl Learning {
             }
             Some(xs)
         };
-        let two = |b: &[u8], p: &mut usize| -> Option<[u64; 2]> { Some([u64_at(b, p)?, u64_at(b, p)?]) };
+        // A decoherence count: by cut (filled, congruent), then by adjunct.
+        let two = |b: &[u8], p: &mut usize| -> Option<[[u64; 2]; 2]> {
+            Some([[u64_at(b, p)?, u64_at(b, p)?], [u64_at(b, p)?, u64_at(b, p)?]])
+        };
         let (vertices, thoughts, components) = (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
         let edges = six(b, p)?;
         let cycle_rank = u64_at(b, p)? as i64;
@@ -196,6 +216,16 @@ impl Learning {
             decohered: two(b, p)?,
             classed: two(b, p)?,
             rejoined: two(b, p)?,
+        };
+        let (advanced, sources) = (u64_at(b, p)?, u64_at(b, p)?);
+        let transport = crate::transducer::bubble::TransportTally {
+            fixed: [u64_at(b, p)?, u64_at(b, p)?],
+            collapsed: u64_at(b, p)?,
+            collapsed_filled: u64_at(b, p)?,
+            held: u64_at(b, p)?,
+            classified: u64_at(b, p)?,
+            unsectioned: u64_at(b, p)?,
+            ungauged: u64_at(b, p)?,
         };
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
@@ -206,7 +236,10 @@ impl Learning {
             rings,
             orbits,
             decoherence,
+            advanced,
+            sources,
+            transport,
         };
-        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet })
+        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }
 }

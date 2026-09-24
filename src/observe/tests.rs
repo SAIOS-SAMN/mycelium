@@ -36,6 +36,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         basis: 3,
         treasury: 2,
         served: vec![(0x03, 9), (0x39, 1)],
+        // TP1 — the glue's reopened rings, by what each cut, travel.
+        reopened: [4, 5],
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.
@@ -422,7 +424,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
         // 13.12 — every arm of the merges travels.
         merges: crate::transducer::bubble::merge::MergeTally { merged: 8, stayed: 9, unnamed: 10 },
         // TP1 — every field of the meet graph travels, the cycle rank signed.
-        meet: crate::transducer::bubble::MeetGraph {
+        meet: Box::new(crate::transducer::bubble::MeetGraph {
             vertices: 11,
             thoughts: 12,
             components: 13,
@@ -431,11 +433,22 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             rings: [7, 8, 9, 10, 11, 12],
             orbits: [13, 14, 15, 16, 17, 18],
             decoherence: crate::transducer::bubble::Decoherence {
-                decohered: [19, 20],
-                classed: [21, 22],
-                rejoined: [23, 24],
+                decohered: [[19, 20], [25, 26]],
+                classed: [[21, 22], [27, 28]],
+                rejoined: [[23, 24], [29, 30]],
             },
-        },
+            advanced: 31,
+            sources: 32,
+            transport: crate::transducer::bubble::TransportTally {
+                fixed: [33, 34],
+                collapsed: 35,
+                collapsed_filled: 36,
+                held: 37,
+                classified: 38,
+                unsectioned: 39,
+                ungauged: 40,
+            },
+        }),
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));

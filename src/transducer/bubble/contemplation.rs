@@ -165,7 +165,15 @@ pub struct Contemplation {
     /// adjunct; and each cut ring still pending its next reading, by its own
     /// key (volatile).
     pub(crate) decoherence: super::meet::Decoherence,
-    pub(crate) decohering: Keyed<super::meet::Adjunct>,
+    pub(crate) decohering: Keyed<(super::meet::Adjunct, crate::transducer::cech::Cut)>,
+    /// 78.37(1), TP1 — the voice's `K` (45.4), the last `K` the fronts
+    /// stepped at, each front's arrivals by source ‖ reached, the ring edges
+    /// each front has closed, and what the transport did.
+    pub(crate) voice_k: u64,
+    pub(crate) stepped_k: Option<u64>,
+    pub(crate) fronts: Keyed<super::transport::Arrival>,
+    pub(crate) ring_edges: Keyed<()>,
+    pub(crate) transport: super::transport::TransportTally,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -979,8 +987,11 @@ impl Contemplation {
         let (orbits, torsion, certificates, axes) =
             (f.orbits.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
         let retire = b.glued_by.is_empty();
-        if retire {
-            let old = b.clone();
+        let old = retire.then(|| b.clone());
+        // 78.37(1) — FIXED BY FILL: the crystallized thought starts a front,
+        // read before it leaves the meet graph.
+        self.fix(key, false);
+        if let Some(old) = old {
             self.retract_incidence(key, &old);
             self.bubbles.remove(key);
             self.dirty.remove(key);

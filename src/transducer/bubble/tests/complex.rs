@@ -65,17 +65,104 @@ fn a_decoherence_is_settled_as_a_class_left_or_a_rejoining() {
     c.complex.set_edge(&vs[0], &vs[2], id.clone(), identity_versor(), [1, 0, 0, 0]);
     let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
     let ring = c.complex.link(&vs[0], 2)[0].clone();
-    c.note_decohered(vec![ring.clone()], Adjunct::Gauge);
+    use crate::transducer::cech::Cut;
+    c.note_decohered(vec![(ring.clone(), Cut::Filled)], Adjunct::Gauge);
     let _ = c.fill_meet(&ring);
     let d = c.meet_graph().decoherence;
-    assert_eq!((d.decohered[0], d.classed[0], d.rejoined[0]), (1, 1, 0), "the cut left a class");
+    assert_eq!((d.decohered[0][0], d.classed[0][0], d.rejoined[0][0]), (1, 1, 0), "the cut left a class");
     // A second cut, by a candidate, on a ring that closes: rejoined.
-    c.complex.set_edge(&vs[0], &vs[1], id, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[0], &vs[1], id.clone(), identity_versor(), [1, 0, 0, 0]);
     let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
-    c.note_decohered(vec![ring.clone()], Adjunct::Candidate);
+    c.note_decohered(vec![(ring.clone(), Cut::Filled)], Adjunct::Candidate);
     let _ = c.fill_meet(&ring);
+    // A third, by a candidate, on a ring cut from its congruence that closes
+    // at its period again: rejoined, counted apart under the congruent cut.
+    let quarter = {
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+        crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
+    };
+    c.complex.set_edge(&vs[0], &vs[1], quarter.clone(), identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[1], &vs[2], quarter, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[0], &vs[2], id, identity_versor(), [1, 0, 0, 0]);
+    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
+    c.note_decohered(vec![(ring.clone(), Cut::Congruent)], Adjunct::Candidate);
+    assert!(
+        matches!(c.fill_meet(&ring), CoboundaryOutcome::Attached(Fill::Congruent(..))),
+        "the fixture closes at its period"
+    );
     let d = c.meet_graph().decoherence;
-    assert_eq!((d.decohered, d.classed, d.rejoined), ([1, 1], [1, 0], [0, 1]), "cumulative, per adjunct");
+    assert_eq!(
+        (d.decohered, d.classed, d.rejoined),
+        ([[1, 1], [0, 1]], [[1, 0], [0, 0]], [[0, 1], [0, 1]]),
+        "cumulative, by cut and by adjunct"
+    );
+}
+
+/// Three thoughts on one ring, their sections and edges as given, the ring's
+/// 2-simplex formed.
+fn ring_of_three(
+    sections: [crate::transducer::alphabet::Rotor; 3],
+    edges: [crate::transducer::alphabet::Rotor; 3],
+) -> (Contemplation, Vec<Vec<u8>>) {
+    use crate::transducer::cech::Section;
+    use crate::transducer::element::identity_versor;
+    let mut c = Contemplation::new();
+    let vs: Vec<Vec<u8>> = (1u8..=3).map(|i| vec![i; 4]).collect();
+    for (x, g) in vs.iter().zip(sections) {
+        c.complex.set_section(x, Section::at(x.clone().into(), g), [1, 0, 0, 0]);
+    }
+    let [ab, bc, ac] = edges;
+    c.complex.set_edge(&vs[0], &vs[1], ab, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[1], &vs[2], bc, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[0], &vs[2], ac, identity_versor(), [1, 0, 0, 0]);
+    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
+    (c, vs)
+}
+
+fn letter(id: Option<crate::transducer::alphabet::LetterId>) -> crate::transducer::alphabet::Rotor {
+    crate::transducer::alphabet::Word::from_letters(&[(id.expect("the sensor plane"), false)]).rotor()
+}
+
+/// 78.37(1), TP1 — A FRONT COLLAPSES A RING AT HOLONOMY 1: a thought fixed at
+/// K 0 steps one edge per K — its two neighbours at K 1, nothing more; at K 2
+/// the two paths meet at the far thought and agree, so the ring collapses
+/// through the one fill path. Sections that agree with the gauges classify
+/// nothing; a step at a K already stepped does nothing.
+#[test]
+fn a_front_collapses_a_ring_whose_arrivals_agree() {
+    use crate::transducer::alphabet::{LetterId, Rotor};
+    let q = letter(LetterId::quarter((0, 1)));
+    let (mut c, vs) = ring_of_three([Rotor::identity(), q.clone(), q.geo(&q)], [q.clone(), q.clone(), q.geo(&q)]);
+    c.fix(&vs[0], false);
+    c.transport(1);
+    let g = c.meet_graph();
+    assert_eq!((g.sources, g.advanced, g.transport.collapsed), (1, 2, 0), "one edge: the two neighbours, no ring yet");
+    c.transport(1);
+    assert_eq!(c.meet_graph().advanced, 2, "a K already stepped steps nothing");
+    c.transport(2);
+    let t = c.meet_graph().transport;
+    assert_eq!((t.collapsed, t.held, t.classified), (1, 0, 0), "the ring collapses once, nothing held: {}", c.meet_graph().line());
+    assert_eq!(t.collapsed_filled, 1, "its 2-simplex filled through the one fill path");
+}
+
+/// 78.37(1), TP1 — A FRONT HOLDS A RING AT HOLONOMY ≠ 1 AND STOPS: the (3, 4, 5)
+/// turn on one edge of the ring makes the two arrivals disagree, so the ring
+/// is held — its class written into both thoughts' horizons — and the front
+/// stops at the far thought; nothing is deleted.
+#[test]
+fn a_front_holds_a_ring_whose_arrivals_disagree_and_stops() {
+    use crate::transducer::alphabet::{LetterId, Rotor};
+    let p = letter(LetterId::pythagorean_5((0, 1)));
+    let (mut c, vs) =
+        ring_of_three([Rotor::identity(), p.clone(), Rotor::identity()], [p, Rotor::identity(), Rotor::identity()]);
+    c.fix(&vs[0], false);
+    c.transport(1);
+    c.transport(2);
+    let t = c.meet_graph().transport;
+    assert_eq!((t.collapsed, t.held), (0, 1), "the ring is held: {}", c.meet_graph().line());
+    let stopped = c.fronts.scoped().filter(|(_, a)| a.stopped).count();
+    assert_eq!(stopped, 1, "and the front stops there");
+    assert_eq!(c.complex.simplex_count(), 3 + 3 + 1, "sections, edges and the ring all stand: nothing deleted");
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

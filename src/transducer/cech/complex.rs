@@ -35,6 +35,14 @@ pub struct Complex {
     pub(crate) orbits: Keyed<Fill>,
 }
 
+/// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
+/// its period — a remainder, coherent up to `ℓ` (78.37(4)). Counted apart.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Cut {
+    Filled,
+    Congruent,
+}
+
 /// The coordinate of ONE orbit: the simplex it closes on, then the two
 /// vertices its chord runs between, each written out (A21). A prefix of it
 /// is the simplex, which is what makes `orbits_of` a fiber read.
@@ -264,30 +272,32 @@ impl Complex {
     }
 
     /// Reopen a stored simplex only when its coboundary coefficient moved.
-    /// Absence of a rotor is remainder: the fill stands. Answers whether a
-    /// FILLED simplex was reopened — a ring that closed at holonomy 1 cut
-    /// open, 78.26(6)'s decoherence at its site.
-    pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) -> bool {
-        let Some((coefficient, carriage)) = self.coboundary_coeff(verts) else {
-            return false;
-        };
+    /// Absence of a rotor is remainder: the fill stands. Answers what a
+    /// reopen CUT, where it cut a closed ring — 78.26(6)'s decoherence at its
+    /// site: a ring filled at holonomy 1, or one closed at its period
+    /// (Congruent, a remainder coherent up to ℓ). Anything else reopened cut
+    /// no coherence.
+    pub(crate) fn reopen_on_coeff_change(&mut self, key: &[u8], verts: &[Vec<u8>]) -> Option<Cut> {
+        let (coefficient, carriage) = self.coboundary_coeff(verts)?;
         let coefficient = Self::store_coeff(coefficient);
-        let Some(c) = self.stored_mut(key) else {
-            return false;
-        };
+        let c = self.stored_mut(key)?;
         // EITHER half moving reopens the simplex. One whose rotor is
         // unchanged and whose placement moved is a different transition,
         // and leaving it filled would keep a gauge that no longer closes it.
         let same = c.coefficient.projective_eq(&coefficient)
             && crate::transducer::element::same_versor(&c.carriage, &carriage);
         if same {
-            return false;
+            return None;
         }
-        let was_filled = matches!(c.fill, Fill::Filled(..));
+        let cut = match c.fill {
+            Fill::Filled(..) => Some(Cut::Filled),
+            Fill::Congruent(..) => Some(Cut::Congruent),
+            Fill::Class(..) | Fill::Unspellable(_) | Fill::Unread(_) | Fill::Open => None,
+        };
         c.coefficient = coefficient;
         c.carriage = carriage;
         c.fill = Fill::Open;
-        was_filled
+        cut
     }
 
     /// The link of `vertex`: every incident simplex, all degrees. A peel

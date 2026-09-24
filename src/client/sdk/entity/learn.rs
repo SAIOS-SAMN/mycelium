@@ -374,6 +374,11 @@ impl Entity {
                 (None, None) => {}
             }
             let _ = self.pivot_on(e);
+            // 78.37(1) — FIXED BY CLASS: a word arriving with its admitting
+            // stamp is court-ruled, and every thought on its chart is fixed.
+            if at.is_some() {
+                self.contemplation.fix_by_class(e);
+            }
         }
         // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
         // node citing the words is sealed on its own chain and the page is

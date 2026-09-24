@@ -13,6 +13,7 @@ pub mod idea;
 pub mod meet;
 pub mod merge;
 pub mod shed;
+pub mod transport;
 
 pub use contemplation::Contemplation;
 pub use idea::{Bubble, ClassRecord};
@@ -20,6 +21,7 @@ pub(crate) use horizon::horizon_put;
 pub(crate) use idea::*;
 pub(crate) use merge::*;
 pub use meet::{Adjunct, Decoherence, MeetGraph, FILL_ARMS, MEET_OWED};
+pub use transport::TransportTally;
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

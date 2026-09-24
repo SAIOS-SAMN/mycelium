@@ -309,6 +309,9 @@ pub struct Kernel {
     /// F5 — THE REFUSED RULINGS BY REASON, per arm (`Ruled::index`) and per
     /// reason (`RulingRefused::index`); each arm's row sums to its refused.
     pub(crate) ruling_refusals: [[u64; 3]; 4],
+    /// 78.26(6), TP1 — closed rings of the cover's nerve the glue reopened
+    /// because a gauge moved: `[filled, congruent]`, since boot.
+    pub(crate) reopened: [u64; 2],
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

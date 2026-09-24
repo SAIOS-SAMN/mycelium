@@ -375,7 +375,10 @@ fn clock(c: &observe::Clock) -> Vec<String> {
 fn court(c: &Court) -> Vec<String> {
     let served: Vec<String> = c.served.iter().map(|(kind, n)| format!("{kind:02x}×{n}")).collect();
     vec![
-        format!("  {BOLD}standing{RESET}    K {}  basis {}  treasury {}", c.k, c.basis, c.treasury),
+        format!(
+            "  {BOLD}standing{RESET}    K {}  basis {}  treasury {}  reopened filled {} congruent {}",
+            c.k, c.basis, c.treasury, c.reopened[0], c.reopened[1]
+        ),
         format!("  {BOLD}served{RESET}      {}", match served.is_empty() {
             true => format!("{DIM}nothing yet{RESET}"),
             false => served.join(" "),

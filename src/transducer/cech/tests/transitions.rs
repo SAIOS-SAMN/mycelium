@@ -179,7 +179,11 @@ fn a_filled_ring_reopened_by_a_moved_gauge_is_named_by_the_link() {
     let key = c.link(&a, 2)[0].clone();
     assert!(matches!(c.fill(&key), CoboundaryOutcome::Attached(Fill::Filled(..))), "the ring closes");
     c.set_edge(&a, &cc, Rotor::identity(), ident(), vol());
-    assert_eq!(c.coboundary_on_link(&a, |_| vol()), vec![key.clone()], "the filled ring, cut open by the moved gauge");
+    assert_eq!(
+        c.coboundary_on_link(&a, |_| vol()),
+        vec![(key.clone(), Cut::Filled)],
+        "the filled ring, cut open by the moved gauge"
+    );
     // Now open and unasked: moving the gauge again cuts no coherence.
     c.set_edge(&a, &cc, q.geo(&q), ident(), vol());
     assert!(c.coboundary_on_link(&a, |_| vol()).is_empty(), "an open ring reopened is no decoherence");

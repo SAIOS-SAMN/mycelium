@@ -74,6 +74,12 @@ impl Kernel {
         }
     }
 
+    /// 78.26(6), TP1 — the closed rings the glue reopened because a cover's
+    /// gauge moved, `[filled, congruent]`.
+    pub fn reopened(&self) -> [u64; 2] {
+        self.reopened
+    }
+
     pub fn basis_len(&self) -> usize {
         self.basis.len()
     }

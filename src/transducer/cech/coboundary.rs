@@ -227,14 +227,14 @@ impl Complex {
     /// degree produces no volume. Simplices are read by key; rotors are
     /// not cloned.
     ///
-    /// Answers the keys of the FILLED simplices it reopened because their
-    /// coefficient moved (78.26(6)): the caller names the adjunct.
+    /// Answers the closed rings it cut because their coefficient moved, each
+    /// by its key and what it cut (78.26(6)): the caller names the adjunct.
     pub fn coboundary_on_link(
         &mut self,
         vertex: &[u8],
         mut volume_of: impl FnMut(&[Vec<u8>]) -> [u64; 4],
-    ) -> Vec<Vec<u8>> {
-        let mut reopened: Vec<Vec<u8>> = Vec::new();
+    ) -> Vec<(Vec<u8>, super::complex::Cut)> {
+        let mut reopened: Vec<(Vec<u8>, super::complex::Cut)> = Vec::new();
         let mut degree = 1usize;
         loop {
             let layer = self.link(vertex, degree);
@@ -277,8 +277,8 @@ impl Complex {
                             }
                             seen.insert(&nkey, ());
                             if self.by_key.get(nkey.as_bytes()).is_some() {
-                                if self.reopen_on_coeff_change(&nkey, &verts) {
-                                    reopened.push(nkey.as_bytes().to_vec());
+                                if let Some(cut) = self.reopen_on_coeff_change(&nkey, &verts) {
+                                    reopened.push((nkey.as_bytes().to_vec(), cut));
                                 }
                                 continue;
                             }

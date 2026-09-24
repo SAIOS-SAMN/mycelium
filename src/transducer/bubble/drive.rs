@@ -325,6 +325,12 @@ impl Contemplation {
                                     if let Some(e) = self.form_thought(&comp) {
                                         self.formed += 1;
                                         spoken.push(e);
+                                        // 78.37(1) — FIXED BY FILL: each thought of
+                                        // the spoken component starts a front,
+                                        // read before it leaves the meet graph.
+                                        for v in &comp {
+                                            self.fix(v, false);
+                                        }
                                         for v in &comp {
                                             if let Some(b) = self.bubbles.get(v).cloned() {
                                                 self.retract_incidence(v, &b);

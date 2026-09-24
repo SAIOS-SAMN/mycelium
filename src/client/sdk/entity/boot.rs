@@ -97,7 +97,14 @@ impl Entity {
     /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
     /// arms have run.
     pub fn close_orbit(&mut self) -> crate::chronometry::Close {
-        self.session.voice_mut().orbit()
+        let close = self.session.voice_mut().orbit();
+        // 78.37(1) — THE FRONTS STEP ON THE VOICE'S K, one edge per k-step:
+        // stamped once the close has sealed, and stepped at that K (a close
+        // that sealed nothing leaves K where it was, and the step does nothing).
+        let k = self.own_k();
+        self.contemplation.set_k(k);
+        self.contemplation.transport(k);
+        close
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`

@@ -411,6 +411,9 @@ pub struct Court {
     pub served: Vec<(u8, u64)>,
     // The head's stamp and the rulings count are the clock's (ACT1,
     // [`super::Clock`]), read there and never copied here (law 12).
+    /// 78.26(6), TP1 — the closed rings of the cover's nerve a moved gauge
+    /// reopened at the glue, by what each cut: `[filled, congruent]`.
+    pub reopened: [u64; 2],
 }
 
 impl Court {
@@ -421,6 +424,9 @@ impl Court {
         out.extend_from_slice(&(self.served.len() as u32).to_le_bytes());
         for &(kind, n) in &self.served {
             out.push(kind);
+            put_u64(out, n);
+        }
+        for n in self.reopened {
             put_u64(out, n);
         }
     }
@@ -435,7 +441,8 @@ impl Court {
         for _ in 0..m {
             served.push((take_u8(b, p)?, take_u64(b, p)?));
         }
-        Some(Court { k, basis, treasury, served })
+        let reopened = [take_u64(b, p)?, take_u64(b, p)?];
+        Some(Court { k, basis, treasury, served, reopened })
     }
 }
 

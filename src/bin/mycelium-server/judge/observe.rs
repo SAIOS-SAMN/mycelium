@@ -37,6 +37,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                     basis: k.basis_len() as u64,
                     treasury: k.treasury_entry_count() as u64,
                     served: observe::served(),
+                    reopened: k.reopened(),
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.
