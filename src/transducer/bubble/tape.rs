@@ -75,7 +75,7 @@ impl Contemplation {
                 }
             }
         });
-        self.complex.to_bytes(out);
+        self.complex.put_tries(out);
         out.extend_from_slice(&self.fills.to_le_bytes());
         out.extend_from_slice(&self.torsion_merges.to_le_bytes());
         out.extend_from_slice(&self.classes.to_le_bytes());
@@ -275,7 +275,7 @@ impl Contemplation {
             c.admit_incidence(&key.shared(), &bubble);
             c.bubbles.insert(&key, bubble);
         }
-        c.complex = Complex::from_bytes(b, pos)?;
+        c.complex = Complex::take_tries(b, pos)?;
         if *pos + 24 <= b.len() {
             c.fills = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;

@@ -339,7 +339,14 @@ impl ClassVector {
         if crate::transducer::address::tag_of(k) != Some(crate::transducer::address::TAG_CLASS) {
             return None;
         }
-        let mut p = 1usize;
+        Self::take_canonical(k, &mut 1)
+    }
+
+    /// THE VECTOR READ BACK INLINE (78.27 (7), LD3-b): the inverse of
+    /// [`ClassVector::put_canonical`], its coordinates read where they stand
+    /// inside a record, never nested as a key.
+    pub fn take_canonical(k: &[u8], pos: &mut usize) -> Option<ClassVector> {
+        let mut p = *pos;
         let x = alphabet::take_q(k, &mut p)?;
         let y = alphabet::take_q(k, &mut p)?;
         // 54.7 — THE BYTE NAMES A BIVECTOR READING OR THE VECTOR DOES NOT
@@ -376,6 +383,7 @@ impl ClassVector {
         for q in &mut placement {
             *q = alphabet::take_q(k, &mut p)?;
         }
+        *pos = p;
         Some(ClassVector { plane, carriage, hue, offplane: (x, y, sp), placement })
     }
 

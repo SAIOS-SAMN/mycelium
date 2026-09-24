@@ -203,11 +203,27 @@ impl Kernel {
             at.set(crate::economy::persist::STAKES_TRIE);
             let (stakes, balances) = crate::economy::Treasury::take_tries(b, pos)?;
             at.set(ERAS_TRIE);
-            let eras = take_trie(b, pos, ERAS_TRIE, &[LEAF_BODY])?;
+            let eras = take_trie(
+                b,
+                pos,
+                ERAS_TRIE,
+                &[
+                    LEAF_ROOT_HASH,
+                    LEAF_WITNESS,
+                    LEAF_SIG_HOME,
+                    LEAF_SIG_WITNESS,
+                    LEAF_IDENTITIES,
+                    LEAF_FIRST,
+                    LEAF_COUNT,
+                    LEAF_FILED_AT,
+                    LEAF_PAYLOAD,
+                ],
+            )?;
             at.set(COMPLEXES_TRIE);
-            let complexes = take_trie(b, pos, COMPLEXES_TRIE, &[LEAF_BODY])?;
+            let complexes = take_trie(b, pos, COMPLEXES_TRIE, &[LEAF_TRIES])?;
             at.set(COCYCLES_TRIE);
-            let cocycles = take_trie(b, pos, COCYCLES_TRIE, &[LEAF_BODY])?;
+            let cocycles =
+                take_trie(b, pos, COCYCLES_TRIE, &[LEAF_FROM, LEAF_TO, LEAF_CLASS, LEAF_GAUGE, LEAF_STOOD])?;
             if *pos != b.len() {
                 return None;
             }
@@ -336,11 +352,35 @@ impl Kernel {
             }
             kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
 
-            // THE CARRIERS LD3-b MAKES T3, by their current keys.
+            // T3 — THE ERAS, each by its root's stamp: the root's height,
+            // signer and place read off the key, the rest off its leaves.
             at.set(ERAS_TRIE);
             let mut archive: Keyed<crate::chronometry::Era> = Keyed::new();
-            for (_, leaves) in eras.scoped() {
-                let era = whole(leaf(leaves, LEAF_BODY)?, crate::chronometry::Era::read)?;
+            for (key, leaves) in eras.scoped() {
+                let root_at = Stamp::from_key(&key)?;
+                let root = crate::chronometry::Root {
+                    at: root_at.place(),
+                    hash: leaf(leaves, LEAF_ROOT_HASH)?.try_into().ok()?,
+                    height: root_at.h,
+                };
+                let (at, receipts) = match (leaf(leaves, LEAF_FILED_AT), leaf(leaves, LEAF_PAYLOAD)) {
+                    (Some(v), None) => (Some(u64::from_le_bytes(v.try_into().ok()?)), Vec::new()),
+                    (None, Some(v)) => (None, whole(v, crate::chronometry::Era::read_payload)?),
+                    // Filed and carried, or neither: not an era.
+                    _ => return None,
+                };
+                let era = crate::chronometry::Era {
+                    root,
+                    signer: root_at.vk,
+                    witness: leaf(leaves, LEAF_WITNESS)?.try_into().ok()?,
+                    sig_home: leaf(leaves, LEAF_SIG_HOME)?.try_into().ok()?,
+                    sig_witness: leaf(leaves, LEAF_SIG_WITNESS)?.try_into().ok()?,
+                    identities: u32::from_le_bytes(leaf(leaves, LEAF_IDENTITIES)?.try_into().ok()?),
+                    first: whole(leaf(leaves, LEAF_FIRST)?, crate::chronometry::Place::take_canonical)?,
+                    count: u32::from_le_bytes(leaf(leaves, LEAF_COUNT)?.try_into().ok()?),
+                    at,
+                    receipts,
+                };
                 // The archive is in line order by root, across signers.
                 let mut order = Vec::new();
                 era.root.at.put_canonical(&mut order);
@@ -348,22 +388,31 @@ impl Kernel {
                 archive.insert(order, era);
             }
             crate::snapshot::persist(&archive, |_, era| kernel.archive.push(era.clone()));
+            // T3 — THE COMPLEXES, each its own tries. A complex that does not
+            // read is named by its key, so the refusal locates the object and
+            // not only the trie it stood in.
             at.set(COMPLEXES_TRIE);
             for (key, leaves) in complexes.scoped() {
-                let c = whole(leaf(leaves, LEAF_BODY)?, crate::transducer::cech::Complex::from_bytes)?;
+                let Some(c) = leaf(leaves, LEAF_TRIES).and_then(|v| whole(v, crate::transducer::cech::Complex::take_tries))
+                else {
+                    eprintln!("  ledger refused: the complex at {:02x?} does not read whole", key);
+                    return None;
+                };
                 kernel.complexes.insert(Address::from(key), c);
             }
+            // T3 — THE COCYCLE ROWS: the class read back from its inline
+            // coordinates, and the receipt each row stood at.
             at.set(COCYCLES_TRIE);
             for (key, leaves) in cocycles.scoped() {
-                let row = whole(leaf(leaves, LEAF_BODY)?, |b, p| {
-                    let a: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
-                    let bp: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
-                    let tu = u64::from_le_bytes(b.get(*p + 64..*p + 72)?.try_into().ok()?);
-                    *p += 72;
-                    let class_key = Address::from(crate::snapshot::take_key(b, p)?);
-                    let gauge = element::Versor::from_bytes(b, p)?;
-                    Some(crate::cognition::CocycleRow { gauge, t_universal: tu, a, b: bp, class_key })
-                })?;
+                let row = crate::cognition::CocycleRow {
+                    gauge: whole(leaf(leaves, LEAF_GAUGE)?, element::Versor::from_bytes)?,
+                    a: leaf(leaves, LEAF_FROM)?.try_into().ok()?,
+                    b: leaf(leaves, LEAF_TO)?.try_into().ok()?,
+                    class_key: whole(leaf(leaves, LEAF_CLASS)?, crate::transducer::alphabet::Rotor::take_class_key)?,
+                };
+                if let Some(v) = leaf(leaves, LEAF_STOOD) {
+                    kernel.cocycle_receipt.insert(&key, whole(v, Stamp::take_canonical)?);
+                }
                 // Chart index is rebuilt on next glue; hot row is enough.
                 kernel.cocycle_at.insert(Address::from(key), row);
             }

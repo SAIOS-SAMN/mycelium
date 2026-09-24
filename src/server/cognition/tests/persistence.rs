@@ -47,10 +47,12 @@ assert!(
 assert_eq!(booted.basis_len(), 2, "no re-germination");
 }
 
-/// The cocycle rows write the transport class key beside the versor; a
-/// restore reads the same key, never a hash of the row.
+/// The cocycle rows write the transport class by its own coordinates
+/// beside the versor, and the receipt each row stood at in place of a
+/// tick (LD3-b); a restore reads the same class and the same stamp, never a
+/// hash of the row.
 #[test]
-fn a_cocycle_row_round_trips_its_class_key() {
+fn a_cocycle_row_round_trips_its_class_and_its_stamp() {
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
@@ -58,17 +60,17 @@ let w = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
 let r = w.rotor();
 let v = rotor_versor(&r).expect("versor");
 let ck = r.class_key().expect("class key");
-k.push_cocycle(&inv, [1; 32], [2; 32], v, ck.clone());
+let stood = crate::chronometry::Stamp::new(3, [7; 32], crate::chronometry::Place { k: 1, i: 2 });
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v, ck.clone(), Some(stood));
 let snap = k.snapshot();
 assert!(snap.windows(8).any(|w| w == b"cocycles"), "the tape carries the cocycles trie by its name");
 let mut booted = Kernel::new();
 assert!(booted.restore(&snap), "clean restore");
-let got = booted
-    .cocycle_at
-    .scoped()
-    .next()
-    .map(|(_, row)| row.class_key.clone());
-assert_eq!(got, Some(ck), "class key survives the ledger");
+let rows: Vec<(Vec<u8>, crate::cognition::CocycleRow)> = booted.cocycle_at.scoped().map(|(key, row)| (key, row.clone())).collect();
+let [(key, row)] = rows.as_slice() else { panic!("one row written, {} read", rows.len()) };
+assert_eq!(row.class_key, ck, "the class survives the ledger as its coordinates");
+assert_eq!((row.a, row.b), ([1; 32], [2; 32]), "the two voices survive");
+assert_eq!(booted.cocycle_receipt.get(key).copied(), Some(stood), "the stamp the row stood at survives");
 }
 
 /// A restart must not docket Δ⃗ = 0: deflation records survive the

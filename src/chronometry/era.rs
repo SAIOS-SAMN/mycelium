@@ -69,36 +69,6 @@ impl Era {
         self
     }
 
-    /// `None` where a receipt of the payload cannot be written; nothing is
-    /// written then (LD0).
-    #[must_use = "an era that cannot be written is refused by name, never dropped (LD0)"]
-    pub fn write(&self, out: &mut Vec<u8>) -> Option<()> {
-        let mut rec = Vec::new();
-        self.root.write(&mut rec);
-        rec.extend_from_slice(&self.signer);
-        rec.extend_from_slice(&self.witness);
-        rec.extend_from_slice(&self.sig_home);
-        rec.extend_from_slice(&self.sig_witness);
-        rec.extend_from_slice(&self.identities.to_le_bytes());
-        self.first.put_canonical(&mut rec);
-        rec.extend_from_slice(&self.count.to_le_bytes());
-        // `at` is the payload's place in the cold segment; a descriptor
-        // that has one carries no receipts on this tape, and one that does
-        // not carries them all (it is being sealed, or it is on a wire).
-        match self.at {
-            Some(at) => {
-                rec.push(1);
-                rec.extend_from_slice(&at.to_le_bytes());
-            }
-            None => {
-                rec.push(0);
-                rec.extend_from_slice(&self.payload()?);
-            }
-        }
-        out.append(&mut rec);
-        Some(())
-    }
-
     /// The payload alone, as it is appended to the cold segment: the count
     /// and each node by the ledger's own writer.
     #[must_use = "a payload that cannot be written is refused by name, never dropped (LD0)"]
@@ -123,33 +93,6 @@ impl Era {
             out.push(KStepReceipt::read(b, pos)?);
         }
         Some(out)
-    }
-
-    pub fn read(b: &[u8], pos: &mut usize) -> Option<Era> {
-        let root = Root::read(b, pos)?;
-        let take = |p: &mut usize, n: usize| -> Option<&[u8]> {
-            let s = b.get(*p..*p + n)?;
-            *p += n;
-            Some(s)
-        };
-        let signer: [u8; 32] = take(pos, 32)?.try_into().ok()?;
-        let witness: [u8; 32] = take(pos, 32)?.try_into().ok()?;
-        let sig_home: [u8; 64] = take(pos, 64)?.try_into().ok()?;
-        let sig_witness: [u8; 64] = take(pos, 64)?.try_into().ok()?;
-        let identities = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
-        let first = Place::take_canonical(b, pos)?;
-        let count = u32::from_le_bytes(take(pos, 4)?.try_into().ok()?);
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — wire tag offset: the one byte the cursor just took, read at the field the tape writes it in"
-        )]
-        let filed = *take(pos, 1)?.first()?;
-        let (at, receipts) = match filed {
-            1 => (Some(u64::from_le_bytes(take(pos, 8)?.try_into().ok()?)), Vec::new()),
-            0 => (None, Era::read_payload(b, pos)?),
-            _ => return None,
-        };
-        Some(Era { root, signer, witness, sig_home, sig_witness, identities, first, count, at, receipts })
     }
 }
 

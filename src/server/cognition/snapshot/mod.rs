@@ -55,10 +55,36 @@ pub const MEMBER_CAVITY: u8 = 4;
 pub const MEMBER_FEDERATION: u8 = 8;
 pub const MEMBER_SPOKEN: u8 = 16;
 
-/// THE CARRIERS WITH THEIR OWN COORDINATES that LD3-b makes T3, riding the
-/// layout meanwhile as named tries keyed by their current keys, each node
-/// its current record as one leaf.
+/// T3 (LD3-b) — THE CARRIERS WITH THEIR OWN COORDINATES.
+///
+/// The eras, each keyed by its root's stamp `h‖signer‖K‖i` — the root's
+/// height and place and the signer are the key; its hash, its witness, the
+/// two signatures, the identities it named, its first place and count, and
+/// where its payload is (filed at an offset of the cold segment, or carried
+/// whole while it is being sealed) are the leaves.
 pub const ERAS_TRIE: &str = "eras";
+pub const LEAF_ROOT_HASH: u8 = 1;
+pub const LEAF_WITNESS: u8 = 2;
+pub const LEAF_SIG_HOME: u8 = 3;
+pub const LEAF_SIG_WITNESS: u8 = 4;
+pub const LEAF_IDENTITIES: u8 = 5;
+pub const LEAF_FIRST: u8 = 6;
+pub const LEAF_COUNT: u8 = 7;
+pub const LEAF_FILED_AT: u8 = 8;
+pub const LEAF_PAYLOAD: u8 = 9;
+
+/// The complexes, each keyed by its own key; its node's one leaf is the
+/// complex's own tries (`Complex::put_tries`): sections, simplices and
+/// remainder, each by its own keys.
 pub const COMPLEXES_TRIE: &str = "complexes";
+pub const LEAF_TRIES: u8 = 1;
+
+/// The cocycle rows, each keyed by its own key: the two voices, the class
+/// INLINE by its own coordinates (78.27 (7)), the gauge as its ray, and the
+/// stamp of the receipt the row stood at — the tick it replaced.
 pub const COCYCLES_TRIE: &str = "cocycles";
-pub const LEAF_BODY: u8 = 1;
+pub const LEAF_FROM: u8 = 1;
+pub const LEAF_TO: u8 = 2;
+pub const LEAF_CLASS: u8 = 3;
+pub const LEAF_GAUGE: u8 = 4;
+pub const LEAF_STOOD: u8 = 5;

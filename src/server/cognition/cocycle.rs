@@ -14,9 +14,6 @@ use super::*;
 pub struct CocycleRow {
     /// The gauge versor taking `a`'s section to `b`'s.
     pub gauge: element::Versor,
-    /// The height it was written at — a reading, never the order itself:
-    /// supersession is decided by the receipt chain, not by this number.
-    pub t_universal: u64,
     /// The voice the transition is FROM.
     pub a: [u8; 32],
     /// The voice the transition is TO.
@@ -82,7 +79,6 @@ impl Kernel {
             return;
         }
         let key = Self::cocycle_key(chart, &a, &b);
-        let tu = self.height();
         if let Some(prev) = self.cocycle_at.get(&key).cloned() {
             let old = prev.gauge;
             if element::same_versor(&old, &g) {
@@ -117,10 +113,9 @@ impl Kernel {
                 self.cocycle_receipt.remove(&key);
             }
         }
-        self.cocycle_at.insert(
-            key.clone(),
-            CocycleRow { gauge: g, t_universal: tu, a, b, class_key },
-        );
+        // The row carries no tick: the receipt it stood at is its place
+        // (`cocycle_receipt`), and supersession reads the chain (45.3).
+        self.cocycle_at.insert(key.clone(), CocycleRow { gauge: g, a, b, class_key });
         let ck = chart.key();
         match self.cocycle_by_chart.get_mut(&ck) {
             Some(m) => {

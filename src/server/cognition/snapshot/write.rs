@@ -87,8 +87,10 @@ struct Refused {
     receipts: u64,
     settlements: u64,
     transitions: u64,
-    /// Eras whose payload could not be written.
+    /// Eras whose payload could not be written, or two at one root stamp.
     eras: u64,
+    /// Cocycle rows whose class key is not a class's coordinates.
+    cocycles: u64,
 }
 
 impl Refused {
@@ -105,7 +107,8 @@ impl Refused {
             ("receipts that cannot be written", self.receipts),
             ("settlements that cannot stand", self.settlements),
             ("dialect transitions that stood at no act", self.transitions),
-            ("eras whose payload cannot be written", self.eras),
+            ("eras whose payload cannot be written or whose root stamp is another's", self.eras),
+            ("cocycle rows whose class is not a class's coordinates", self.cocycles),
         ];
         if b + p + l + c + f > 0 {
             eprintln!(
@@ -133,7 +136,7 @@ impl Kernel {
         self.treasury.put_tries(&mut out);
         self.put_eras(&mut out, &mut refused);
         self.put_complexes(&mut out);
-        self.put_cocycles(&mut out);
+        self.put_cocycles(&mut out, &mut refused);
         refused.name();
         out
     }
@@ -403,47 +406,99 @@ impl Kernel {
         put_trie(out, WORDS_TRIE, &nodes);
     }
 
-    /// The eras by their root's stamp, each its current record.
+    /// T3 — THE ERAS by their root's stamp: the root's height, signer and
+    /// place are the key, and each other coordinate of the era is its own
+    /// leaf. A filed era names its payload's offset in the cold segment; an
+    /// era still being sealed carries its payload, the cold segment's own
+    /// record.
     fn put_eras(&self, out: &mut Vec<u8>, refused: &mut Refused) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         for era in &self.archive {
-            let mut v = Vec::new();
-            if era.write(&mut v).is_none() {
+            let key = Stamp::new(era.root.height, era.signer, era.root.at).key();
+            if nodes.contains(&key) {
                 refused.eras += 1;
                 continue;
             }
-            let key = Stamp::new(era.root.height, era.signer, era.root.at).key();
-            if put_leaf(&mut nodes, &key, LEAF_BODY, v).is_none() {
-                refused.eras += 1;
-            }
+            let mut first = Vec::new();
+            era.first.put_canonical(&mut first);
+            let whereabouts = match era.at {
+                Some(at) => (LEAF_FILED_AT, at.to_le_bytes().to_vec()),
+                None => match era.payload() {
+                    Some(p) => (LEAF_PAYLOAD, p),
+                    None => {
+                        refused.eras += 1;
+                        continue;
+                    }
+                },
+            };
+            nodes.insert(
+                key,
+                vec![
+                    (LEAF_ROOT_HASH, era.root.hash.to_vec()),
+                    (LEAF_WITNESS, era.witness.to_vec()),
+                    (LEAF_SIG_HOME, era.sig_home.to_vec()),
+                    (LEAF_SIG_WITNESS, era.sig_witness.to_vec()),
+                    (LEAF_IDENTITIES, era.identities.to_le_bytes().to_vec()),
+                    (LEAF_FIRST, first),
+                    (LEAF_COUNT, era.count.to_le_bytes().to_vec()),
+                    whereabouts,
+                ],
+            );
         }
         put_trie(out, ERAS_TRIE, &nodes);
     }
 
-    /// The complexes by their keys, each its current record.
+    /// T3 — THE COMPLEXES by their keys, each node the complex's own tries.
     fn put_complexes(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         crate::snapshot::persist(&self.complexes, |key, c| {
             let mut v = Vec::new();
-            c.to_bytes(&mut v);
-            nodes.insert(key, vec![(LEAF_BODY, v)]);
+            c.put_tries(&mut v);
+            nodes.insert(key, vec![(LEAF_TRIES, v)]);
         });
         put_trie(out, COMPLEXES_TRIE, &nodes);
     }
 
-    /// The cocycle rows by their keys, each its current record: the two
-    /// voices, the height, the class key and the gauge as its ray.
-    fn put_cocycles(&self, out: &mut Vec<u8>) {
+    /// T3 — THE COCYCLE ROWS by their keys: the two voices, the class as its
+    /// own coordinates INLINE (78.27 (7)) — never its key nested as a key —
+    /// the gauge as its ray, and the stamp of the receipt the row stood at.
+    /// A class key that is not a class's coordinates is refused by name.
+    fn put_cocycles(&self, out: &mut Vec<u8>, refused: &mut Refused) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         crate::snapshot::persist(&self.cocycle_at, |key, row| {
-            let mut v = Vec::new();
-            v.extend_from_slice(&row.a);
-            v.extend_from_slice(&row.b);
-            v.extend_from_slice(&row.t_universal.to_le_bytes());
-            crate::snapshot::put_key(&mut v, &row.class_key);
-            row.gauge.put_canonical(&mut v);
-            nodes.insert(key, vec![(LEAF_BODY, v)]);
+            let Some(class) = class_coordinates(&row.class_key) else {
+                refused.cocycles += 1;
+                return;
+            };
+            let mut gauge = Vec::new();
+            row.gauge.put_canonical(&mut gauge);
+            let mut leaves: Leaves = vec![
+                (LEAF_FROM, row.a.to_vec()),
+                (LEAF_TO, row.b.to_vec()),
+                (LEAF_CLASS, class),
+                (LEAF_GAUGE, gauge),
+            ];
+            if let Some(at) = self.cocycle_receipt.get(key) {
+                let mut v = Vec::new();
+                at.put_canonical(&mut v);
+                leaves.push((LEAF_STOOD, v));
+            }
+            nodes.insert(key, leaves);
         });
         put_trie(out, COCYCLES_TRIE, &nodes);
     }
+}
+
+/// A CLASS KEY'S OWN COORDINATES: the two invariants and the bivector kind
+/// the key is `TAG_CLASS` followed by, checked to read whole as a class by
+/// [`crate::transducer::alphabet::Rotor::take_class_key`]. `None` for a key
+/// that is not a class's.
+fn class_coordinates(key: &crate::transducer::address::Address) -> Option<Vec<u8>> {
+    let [tag, coords @ ..] = key.as_bytes() else { return None };
+    if *tag != crate::transducer::address::TAG_CLASS {
+        return None;
+    }
+    let mut p = 0usize;
+    let again = crate::transducer::alphabet::Rotor::take_class_key(coords, &mut p)?;
+    (p == coords.len() && again == *key).then(|| coords.to_vec())
 }

@@ -1,4 +1,5 @@
-// 13 — THE COMPLEX'S CODEC IS A BIJECTION, and a bad byte is a refusal.
+// 13, 78.27 — THE COMPLEX'S TRIES ARE A BIJECTION, and a bad byte is a
+// refusal.
 
 use super::common::{quarter, v, vol};
 use crate::transducer::cech::{Complex, Fill};
@@ -6,13 +7,13 @@ use crate::transducer::element::identity_versor;
 
 fn round_trip(cx: &Complex) -> Complex {
     let mut bytes = Vec::new();
-    cx.to_bytes(&mut bytes);
+    cx.put_tries(&mut bytes);
     let mut pos = 0usize;
-    // `from_bytes` leaves `pos` where it stopped, so a refusal names the
+    // `take_tries` leaves `pos` where it stopped, so a refusal names the
     // byte it refused at rather than only that it refused.
-    match Complex::from_bytes(&bytes, &mut pos) {
+    match Complex::take_tries(&bytes, &mut pos) {
         Some(back) => {
-            assert_eq!(pos, bytes.len(), "the codec consumes exactly what it wrote");
+            assert_eq!(pos, bytes.len(), "the tries are read exactly as they were written");
             back
         }
         None => panic!("a written complex must read: refused at byte {pos} of {}", bytes.len()),
@@ -37,18 +38,17 @@ fn fills(cx: &Complex) -> Vec<String> {
 }
 
 /// The empty complex first, so a failure above it is localised to the
-/// frame rather than to a simplex's payload.
+/// tries' frames rather than to a simplex's leaves.
 #[test]
-fn an_empty_complex_survives_its_own_codec() {
+fn an_empty_complex_survives_its_own_tries() {
     let cx = Complex::new();
     let back = round_trip(&cx);
     assert_eq!(back.degrees.len(), cx.degrees.len(), "the grading survives");
 }
 
-/// ONE edge next, so a failure is localised to a single simplex's payload
-/// rather than to how two of them are framed against each other.
+/// ONE edge next, so a failure is localised to a single simplex's leaves.
 #[test]
-fn one_edge_survives_its_own_codec() {
+fn one_edge_survives_its_own_tries() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
     let before = fills(&cx);
@@ -56,10 +56,11 @@ fn one_edge_survives_its_own_codec() {
     assert_eq!(fills(&back), before, "the stored fill returns as itself");
 }
 
-/// `x ≡ decode(encode(x))` on a complex carrying real simplices — the
-/// stored states and their payloads both survive.
+/// `x ≡ take(put(x))` on a complex carrying real simplices — the stored
+/// states and their payloads both survive, and each simplex is filed under
+/// its own key.
 #[test]
-fn a_complex_survives_its_own_codec() {
+fn a_complex_survives_its_own_tries() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
     cx.set_edge(v(2), v(3), quarter(), identity_versor(), vol());
@@ -70,24 +71,24 @@ fn a_complex_survives_its_own_codec() {
     assert_eq!(fills(&back), before, "every stored fill returns as itself");
     assert_eq!(back.degrees.len(), cx.degrees.len(), "the grading survives");
     assert_eq!(back.sections.len(), cx.sections.len(), "the sections survive");
+    assert_eq!(back.byte_len(), cx.byte_len(), "every simplex is filed back under its own key");
 }
 
 /// AN UNKNOWN FILL TAG IS A REFUSAL, NOT AN OPEN CELL.
 ///
-/// This decoder ended `_ => Fill::Open`, so a truncated or bit-flipped
-/// byte FABRICATED an unfilled simplex — and an open 2-cell is a 1-hole,
-/// so a bad read invented homology the corpus does not have. Every byte of
-/// a valid stream is flipped to an out-of-range tag in turn; not one of
-/// them may yield a complex that claims more open cells than the original
-/// wrote.
+/// A decoder that ended `_ => Fill::Open` let a truncated or bit-flipped
+/// byte FABRICATE an unfilled simplex — and an open 2-cell is a 1-hole, so a
+/// bad read invented homology the corpus does not have. Every byte of a
+/// valid stream is flipped to an out-of-range tag in turn; not one of them
+/// may yield a complex that claims more open cells than the original wrote.
 #[test]
 fn a_corrupt_byte_never_fabricates_an_open_cell() {
     let mut cx = Complex::new();
     cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
     let mut bytes = Vec::new();
-    cx.to_bytes(&mut bytes);
+    cx.put_tries(&mut bytes);
     let honest = fills(&cx).iter().filter(|f| *f == "open").count();
-    // THE BASELINE, or this test is vacuous: if the decoder refused every
+    // THE BASELINE, or this test is vacuous: if the reader refused every
     // stream it would report zero fabrications while measuring nothing.
     assert!(honest > 0, "the fixture writes an open cell to be fabricated");
     round_trip(&cx);
@@ -100,7 +101,7 @@ fn a_corrupt_byte_never_fabricates_an_open_cell() {
         // stands, and nonsense wherever one does not.
         corrupt[i] = 9;
         let mut pos = 0usize;
-        if let Some(back) = Complex::from_bytes(&corrupt, &mut pos) {
+        if let Some(back) = Complex::take_tries(&corrupt, &mut pos) {
             read += 1;
             if fills(&back).iter().filter(|f| *f == "open").count() > honest {
                 fabricated += 1;
@@ -112,9 +113,10 @@ fn a_corrupt_byte_never_fabricates_an_open_cell() {
         "a corrupt byte must refuse, never synthesise an open boundary \
          the writer did not write"
     );
-    // Some corruptions land on bytes the reader does not constrain, so a
-    // few streams legitimately still read. Reporting that count keeps the
-    // assertion above from passing merely because everything refused.
+    // Some corruptions land on bytes the reader does not constrain — a
+    // coordinate inside a ray, a volume lane — so a few streams legitimately
+    // still read. Reporting that count keeps the assertion above from
+    // passing merely because everything refused.
     assert!(
         read > 0,
         "not one corrupted stream read at all, so the assertion above \

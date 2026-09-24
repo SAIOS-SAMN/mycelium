@@ -322,6 +322,24 @@ impl Rotor {
         Some(())
     }
 
+    /// A CLASS KEY'S COORDINATES READ BACK INLINE (78.27 (7), LD3-b): the
+    /// two invariants and the bivector kind [`Rotor::put_class_coordinates`]
+    /// writes, read where they stand inside a record, and answered as the
+    /// class key they are the coordinates of — never a key nested in a key.
+    pub fn take_class_key(b: &[u8], pos: &mut usize) -> Option<crate::transducer::address::Address> {
+        let mut p = *pos;
+        let mut key = vec![crate::transducer::address::TAG_CLASS];
+        let x = take_q(b, &mut p)?;
+        let y = take_q(b, &mut p)?;
+        let kind = crate::network::nerve::coord::BivectorKind::from_u8(*b.get(p)?)?;
+        p += 1;
+        put_q(&mut key, &x);
+        put_q(&mut key, &y);
+        key.push(kind.as_u8());
+        *pos = p;
+        Some(crate::transducer::address::Address::new(key))
+    }
+
     /// Conjugacy invariants written out (A21). Identity of class is
     /// [`class_eq`]. None when the element is not a versor.
     pub fn class_key(&self) -> Option<crate::transducer::address::Address> {
