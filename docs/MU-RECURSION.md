@@ -11998,6 +11998,63 @@ was spent, the entry and its size that did not fit — and the Cells
 reading counts refusals by content, never as one `unread`. Instrument
 before fix: the count by content first, on the fleet, at height and K.
 
+### 78.27 LD3's node layout ruled on the implementor's eight questions (2026-09-24)
+
+The physical shape is ratified as proposed: each trie written as its
+name, its byte length and its count, then its nodes in the trie's own
+key order, each node carrying its key inline; the reader inserts by key,
+so a record's position carries nothing and a key the trie already holds
+refuses; a node's leaves are (kind, value) pairs in kind order, each kind
+at most once, an unknown kind refusing the node. The file opens with one
+magic naming this layout, one equality, no reader for MYC7. T1 the word
+trie keyed by `Cite::Word{chart, class, at}` written by its own
+`put_canonical`; T2 the ledger as LDG1 stands, per-act data as leaves of
+the node at its stamp; T3 the carriers with their own coordinates.
+
+1. **A word no act admitted has no coordinates and is not held.** Every
+   path that holds a word admits it by an act — genesis and the syllabus
+   included, each an act of this court's own line with its frame — and
+   the act's stamp is the word's `admitted_at` (78.24, cite.rs: "the act
+   that first names a word no act has admitted is the act that admits
+   it"). The snapshot never writes a word without a stamp: it refuses by
+   name and counts, per row, what it refused. Instrument first: a
+   reading of held-without-stamp by row on the fleet, then the sweep of
+   the holding paths, then the refusal. LD3's first phase.
+2. **The spoken sentence is its own T1 node**, admitted by the install
+   act; the listing's PROVISIONAL leaf cites it by `Cite`. Never two M2s
+   at one node.
+3. **Federation as a RULED leaf** carrying the Ruling act's stamp; the
+   order is the ledger's partial order re-derived from the stamps; the
+   Vec and its index are rebuilt at restore, derived carriers.
+4. **A cavity element is a word**: a T1 node with membership `cavity`.
+   The coordinator's (3) is corrected on this point; what has its own
+   coordinates is the listing atlas, which is re-derived.
+5. **The dialect chain is leaves under the ledger node of the act that
+   stood each transition**, keyed within the node by the (chart, pair)
+   key; the `u64` tick retires, the node carries the frame. A transition
+   with no stamp (an unmeasured order) is refused by name with a count,
+   and its producer — the fill or refinement that stands a cocycle —
+   cites the act. Never a trie by a tick scalar (78.24).
+6. **A settlement is a leaf under the own-line node at its `k`**: on one
+   line `k` names one node exactly, so the stamp is `(h(k), vk, k)`, no
+   scalar compared; where the court's reading of a settlement seals an
+   act, that act's stamp. The `k` and `t_universal` fields retire from
+   the row.
+7. **The class inline as its own coordinates**: `class_key` already
+   writes 12.6's axes out, so the row writes the class vector by its own
+   `put_canonical`, never nested as a key (LD0's nested-key shape). No
+   class trie until a quantity is measured per class.
+8. **The voice's genome takes T1's shape in its own phase**, after the
+   court's, its `admitted_at` from its own ledger (GEN4). The treasury's
+   per-word awards are T1 leaves, its per-act entries T2 leaves, its
+   stakes T3 by `vk`, all in the court's phase.
+
+Also ruled: `basis_seq` is a reading of the basis, re-derived at
+restore, not persisted; a transducer codec prints nothing (R2's
+`eprintln!` in `Element::from_bytes` is removed — the refusal is by name
+in the constant and the test, and the reader that opens a genome reports
+once, typed).
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
