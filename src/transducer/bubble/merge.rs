@@ -132,21 +132,14 @@ impl Contemplation {
                     let _ = self.merge(&vertices);
                     return;
                 }
-                CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) if vol_nz => {
+                CoboundaryOutcome::Attached(Fill::Congruent(_, _, ell)) if vol_nz => {
                     self.torsion_merges += 1;
-                    // A simplex of one vertex is a loop at that vertex: both
-                    // ends are it, which is what the simplex says and not a
-                    // second end invented for it. The vertices are the
-                    // simplex's own sorted keys, read as a slice pattern.
-                    let ends = match vertices.as_slice() {
-                        [a, b, ..] => [a.clone(), b.clone()],
-                        [a] => [a.clone(), a.clone()],
-                        [] => continue,
-                    };
+                    // KB1 (C) — THE CLASS BETWEEN TWO THOUGHTS LIVES ON THIS
+                    // COMPLEX AND ON THE TORSE REWRITE IT MINTS. It was filed a
+                    // second time onto the merged idea's nerve between two
+                    // bubble addresses that are no vertices after the merge,
+                    // with no section to key by and read by nothing (law 12).
                     if let Some(nk) = self.merge(&vertices) {
-                        if let Some(b) = self.bubbles.get_mut(nk.as_bytes()) {
-                            b.nerve.file_congruent(&ends[0], &ends[1], *g, ell);
-                        }
                         let before: Vec<crate::transducer::address::Address> = vertices
                             .iter()
                             .map(|v| crate::transducer::address::Address::from(v.clone()))

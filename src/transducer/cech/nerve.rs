@@ -27,12 +27,16 @@
 use crate::network::nerve::keyed::coord;
 use crate::transducer::cga::Mv;
 
-/// ONE CERTIFIED CELL: its members, every element of the base that stands
-/// under exactly them, and the meet of their nuclei.
+/// ONE CERTIFIED CELL: its members, each by its coordinates, every element of
+/// the base that stands under exactly them, and the meet of their nuclei.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Cell {
-    /// The members, ascending, in the cover's own ordinals.
+    /// The members, in their coordinates' order (KB1): the caller's ordinals,
+    /// by which it reads each member back, never the cell's identity.
     pub members: Vec<usize>,
+    /// Each member's coordinates, in the same order — what the cell is keyed
+    /// by (78.30(7), A21).
+    pub coords: Vec<Vec<u8>>,
     /// The witnesses, in the base's own coordinate order.
     pub witnesses: Vec<coord::Lamina>,
     /// `s₀ ∧ s₁ ∧ … ∧ s_k`; `None` where a member's nucleus did not read
@@ -83,54 +87,98 @@ pub struct NerveReading {
     /// The certified cells, one per standing set.
     pub certified: Vec<Cell>,
     pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+    /// Members standing at a witness whose coordinates did not read (KB1).
+    pub unkeyed: u64,
 }
+
+/// ONE CHART OF A COVER: its section's coordinates — the carriage and the
+/// footprint, as `section_key` writes them — and the elements it stands on.
+pub type Chart = (Vec<u8>, Vec<coord::Lamina>);
 
 /// READ THE NERVE OF ONE COVER. The support, the pairwise reading, the
 /// certified cells and their meets come off ONE read of the base, so the
-/// numbers cannot drift apart (law 12).
-pub fn read_nerve(charts: &[Vec<coord::Lamina>]) -> NerveReading {
-    let support = support_of_cover(charts);
+/// numbers cannot drift apart (law 12). Each chart comes with its section's
+/// coordinates, which key its cells (KB1): two carriages over one region are
+/// two sections because their carriages differ, and nothing merges them.
+pub fn read_nerve(charts: &[Chart]) -> NerveReading {
+    let footprints: Vec<Vec<coord::Lamina>> = charts.iter().map(|(_, f)| f.clone()).collect();
+    let support = support_of_cover(&footprints);
     let (cells, refused) = support.decoded();
     let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
     // Each chart's nucleus, read once from its own sites.
-    let nuclei: Vec<Option<Mv>> = charts
+    let nuclei: Vec<Option<Mv>> = footprints
         .iter()
         .map(|c| {
             let sites: Vec<crate::transducer::base::Site> = c.iter().map(|l| l.site.clone()).collect();
             crate::transducer::blade::shape_of(&sites).blade.nucleus()
         })
         .collect();
-    let certified = cells_over(cells.iter().map(|(cell, standing)| (cell.clone(), standing.as_slice())), |members| {
-        members.iter().map(|&m| nuclei.get(m).cloned().flatten()).collect::<Option<Vec<Mv>>>().and_then(|n| meet_of(&n))
-    });
-    NerveReading { charts: charts.len(), cells: cells.len(), shared, certified, refused }
+    let over = cells_over(
+        cells.iter().map(|(cell, standing)| (cell.clone(), standing.as_slice())),
+        |m| charts.get(m).map(|(k, _)| k.clone()),
+        |members| {
+            members.iter().map(|&m| nuclei.get(m).cloned().flatten()).collect::<Option<Vec<Mv>>>().and_then(|n| meet_of(&n))
+        },
+    );
+    NerveReading { charts: charts.len(), cells: cells.len(), shared, certified: over.cells, refused, unkeyed: over.unkeyed }
+}
+
+/// THE CELLS [`cells_over`] READ, and the members it could not key.
+pub struct CellsOver {
+    pub cells: Vec<Cell>,
+    /// Members standing at a witness whose coordinates did not read: counted
+    /// by name, and their standing set mints no cell (KB1, A.17).
+    pub unkeyed: u64,
 }
 
 /// THE CERTIFIED CELLS OVER AN ALREADY-READ SUPPORT: one per standing set of
-/// two or more members, each element standing under it a witness, the
-/// meet read by `meet`. Keyed by the members' own coordinates, so a set read
-/// at many elements is one cell and the elements are its fibre.
+/// two or more members, each element standing under it a witness, the meet
+/// read by `meet`. KEYED BY THE MEMBERS' COORDINATES (KB1, 78.30(7), A21) —
+/// `coords` reads each member's, the cell's key is them framed in their own
+/// order, and the members and the meet follow that order — never by the
+/// caller's ordinals, which name a position and not an object (rule 15). A
+/// set read at many elements is one cell and the elements are its fibre; two
+/// ordinals with one coordinate are one member. A single member standing
+/// alone is a point of the nerve, not a cell.
 pub fn cells_over<'a>(
     standing: impl Iterator<Item = (coord::Lamina, &'a [usize])>,
+    coords: impl Fn(usize) -> Option<Vec<u8>>,
     meet: impl Fn(&[usize]) -> Option<Mv>,
-) -> Vec<Cell> {
-    let mut by_members: crate::network::nerve::Keyed<Cell> = crate::network::nerve::Keyed::new();
+) -> CellsOver {
+    let mut by_coords: crate::network::nerve::Keyed<Cell> = crate::network::nerve::Keyed::new();
+    let mut unkeyed = 0u64;
     for (witness, members) in standing {
-        if members.len() < 2 {
+        let mut keyed: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+        let mut unread = 0u64;
+        for &m in members {
+            match coords(m) {
+                Some(c) => {
+                    let mut framed = Vec::new();
+                    crate::transducer::address::put_bytes(&mut framed, &c);
+                    keyed.insert(&framed, m);
+                }
+                None => unread += 1,
+            }
+        }
+        if unread > 0 {
+            unkeyed += unread;
             continue;
         }
-        let mut members = members.to_vec();
-        members.sort_unstable();
-        let key: Vec<u8> = members.iter().flat_map(|&m| (m as u64).to_be_bytes()).collect();
-        match by_members.get_mut(&key) {
+        if keyed.len() < 2 {
+            continue;
+        }
+        let key: Vec<u8> = keyed.scoped().flat_map(|(k, _)| k).collect();
+        match by_coords.get_mut(&key) {
             Some(cell) => cell.witnesses.push(witness),
             None => {
+                let members: Vec<usize> = keyed.scoped().map(|(_, &m)| m).collect();
+                let coords: Vec<Vec<u8>> = members.iter().filter_map(|&m| coords(m)).collect();
                 let meet = meet(&members);
-                by_members.insert(&key, Cell { members, witnesses: vec![witness], meet });
+                by_coords.insert(&key, Cell { members, coords, witnesses: vec![witness], meet });
             }
         }
     }
-    by_members.scoped().map(|(_, c)| c.clone()).collect()
+    CellsOver { cells: by_coords.scoped().map(|(_, c)| c.clone()).collect(), unkeyed }
 }
 
 /// THE NERVE READINGS OF MANY COVERS, SUMMED — and each cell kept beside the
@@ -147,6 +195,7 @@ pub struct NerveTotals {
     /// `(cover ordinal, cell)`.
     pub certified: Vec<(usize, Cell)>,
     pub refused: Vec<crate::network::nerve::keyed::CoordinateError>,
+    pub unkeyed: u64,
 }
 
 impl NerveTotals {
@@ -155,6 +204,7 @@ impl NerveTotals {
         self.cells += other.cells;
         self.shared += other.shared;
         self.refused.extend(other.refused);
+        self.unkeyed += other.unkeyed;
         self.certified.extend(other.certified.into_iter().map(|c| (ix, c)));
     }
 
@@ -162,6 +212,17 @@ impl NerveTotals {
     /// reader [`cells_by_grade`].
     pub fn by_grade(&self) -> Vec<(usize, u64, u64)> {
         cells_by_grade(self.certified.iter().map(|(_, c)| (c.grade(), c.meet.clone())))
+    }
+
+    /// The nerve line's cells segment: the certified cells by grade, then
+    /// what did not key — lamina keys refused and members unkeyed (KB1).
+    pub fn cells_line(&self) -> String {
+        format!(
+            "certified cells (grade cells meet≠0) {:?}, {} refused, {} unkeyed",
+            self.by_grade(),
+            self.refused.len(),
+            self.unkeyed
+        )
     }
 }
 

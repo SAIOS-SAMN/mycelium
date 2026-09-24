@@ -137,3 +137,25 @@ fn vortex_collapses_by_glue_or_ruling() {
         "the matching certificate was applied"
     );
 }
+
+/// KB1 (2) — AN IDEA'S NERVE IS OVER ITS SECTIONS: a vertex is the address,
+/// the chart and the carriage, so one pair of ideas meeting on two charts,
+/// or by two carriages on one, is that many simplices — never one key for the
+/// pair, which the last filing overwrote.
+#[test]
+fn an_ideas_nerve_vertices_are_its_sections() {
+    use crate::transducer::element::{identity_versor, translator_versor};
+    use crate::transducer::stalk::Invariant;
+    let (a, b) = (Invariant::counts(&[1]), Invariant::counts(&[2]));
+    let (still, moved) = (identity_versor(), translator_versor(1, 0));
+    let at = |chart: &Invariant, car| section_vertex(b"idea", chart, car);
+    assert_ne!(at(&a, &still), at(&b, &still), "two charts, two sections");
+    assert_ne!(at(&a, &still), at(&a, &moved), "two carriages on one chart, two sections");
+    assert_eq!(at(&a, &still), at(&a, &still), "one section, one vertex");
+    let mut nerve = crate::transducer::cech::Complex::new();
+    let other = |chart: &Invariant| section_vertex(b"other", chart, &still);
+    let turn = crate::transducer::alphabet::Rotor::identity();
+    nerve.file_congruent(at(&a, &still), other(&a), turn.clone(), 1);
+    nerve.file_congruent(at(&b, &still), other(&b), turn, 1);
+    assert_eq!(nerve.simplex_count(), 2, "the pair met on two charts is two simplices");
+}

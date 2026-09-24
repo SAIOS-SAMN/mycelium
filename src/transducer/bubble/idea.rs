@@ -19,6 +19,24 @@ pub type SectionAt<'a> = &'a dyn Fn(&[u8]) -> Option<(Rotor, crate::transducer::
 /// for.
 pub type Held = (Invariant, Rotor, crate::transducer::element::Versor);
 
+/// KB1 — A SECTION'S COORDINATES, the vertex of an idea's nerve: the idea's
+/// address, the chart, and the carriage the section acts by, each framed. A
+/// Čech simplex is the overlap of two sections over one chart, so its
+/// vertices are sections and never bare addresses.
+pub(crate) fn section_vertex(
+    address: &[u8],
+    chart: &Invariant,
+    carriage: &crate::transducer::element::Versor,
+) -> Vec<u8> {
+    let mut k = Vec::new();
+    crate::transducer::address::put_bytes(&mut k, address);
+    crate::transducer::address::put_bytes(&mut k, chart.key().as_bytes());
+    let mut c = Vec::new();
+    carriage.put_canonical(&mut c);
+    crate::transducer::address::put_bytes(&mut k, &c);
+    k
+}
+
 /// One class the mesh or a mind holds on a chart: key, order, representative.
 #[derive(Clone, Debug)]
 pub struct ClassRecord {
@@ -532,9 +550,15 @@ impl Bubble {
                     continue;
                 };
                 met = true;
+                // KB1 — THE SIMPLEX IS THE OVERLAP OF TWO SECTIONS OVER THIS
+                // CHART, its vertices the sections' coordinates: an idea
+                // meeting another on two charts, or by two sections of one,
+                // is that many simplices and never one key.
+                let (mine_at, theirs_at) =
+                    (section_vertex(me.as_bytes(), chart, car_a), section_vertex(head, chart, &car_b));
                 let simplex = Simplex {
                     vertices: {
-                        let mut v = vec![me.clone().into_vec(), head.clone()];
+                        let mut v = vec![mine_at.clone(), theirs_at.clone()];
                         v.sort_unstable();
                         v
                     },
@@ -558,7 +582,7 @@ impl Bubble {
                 match cech::extend(&a, &b, &simplex) {
                     Fill::Filled(..) => {}
                     Fill::Congruent(_, g, ell) => {
-                        self.nerve.file_congruent(me.clone(), head, *g, ell);
+                        self.nerve.file_congruent(&mine_at, &theirs_at, *g, ell);
                     }
                     Fill::Class(_, r) => {
                         closed = false;

@@ -92,6 +92,9 @@ pub struct ContactTally {
     /// FR1 — THE CONTACTS WHOSE POSE WAS READ ON THE TUBE. The regime, not
     /// an outcome: each also lands in one arm above or in `condensed`.
     pub tube: u64,
+    /// KB1 — bodies standing at a contact complex's witness whose piece did
+    /// not read: their standing set mints no cell, counted by name.
+    pub cells_unkeyed: u64,
 }
 
 /// THE INCONGRUENT POSES BY CONTENT (78.38(2), (C)).
@@ -141,7 +144,7 @@ thread_local! {
         oblique: 0, mirrored: 0,
         incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
         irrational: 0, half_open: 0,
-        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0,
+        unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0,
     }) };
 }
 
@@ -175,7 +178,7 @@ impl ContactTally {
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
              unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
              tube {}) irrational {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
-             static {} | pose refusals by kind: P {} D {} I {}",
+             static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {}",
             self.offered,
             self.unlifted,
             self.apart,
@@ -204,6 +207,7 @@ impl ContactTally {
             self.kinds()[0],
             self.kinds()[1],
             self.kinds()[3],
+            self.cells_unkeyed,
         )
     }
 
@@ -836,10 +840,13 @@ pub(crate) fn named_incidence(
             (element, bodies)
         })
         .collect();
-    let certified = crate::transducer::cech::cells_over(
+    // KB1 — each body by its piece, the coordinate a body has: the cells are
+    // keyed by their bodies' pieces, framed, in their own order.
+    let over = crate::transducer::cech::cells_over(
         standing.iter().map(|(element, bodies)| {
             (crate::network::nerve::coord::Lamina { site: element.clone() }, bodies.as_slice())
         }),
+        |m| address_of.get(m).cloned(),
         |members| {
             members
                 .iter()
@@ -854,30 +861,20 @@ pub(crate) fn named_incidence(
     // member keys alone, a 2-cell and two 1-cells of one form collided and
     // were lost), and a nucleus is the body's order-0 and order-1 reading,
     // a projection that two bodies can share. A piece is small (C3); the
-    // cell holds its bodies' pieces and its key writes them inline, framed.
+    // cell holds its bodies' pieces, and `cells_over` has already keyed and
+    // ordered it by them (KB1), the constructors riding in the same order.
+    note_contact(|t| t.cells_unkeyed += over.unkeyed);
     let mut cells: crate::network::nerve::Keyed<crate::transducer::sentence::FormCell> =
         crate::network::nerve::Keyed::new();
-    for c in certified {
-        // Each body with its nucleus, filed by its framed piece, so the bodies
-        // — and the constructors riding them — stand in their own coordinate
-        // order, the order the cell's key writes.
-        let mut by_body: crate::network::nerve::Keyed<(Vec<u8>, Option<crate::transducer::cga::Mv>)> =
-            crate::network::nerve::Keyed::new();
-        for &m in &c.members {
-            let Some(piece) = address_of.get(m) else { continue };
-            let mut body_key: Vec<u8> = Vec::new();
-            crate::transducer::address::put_bytes(&mut body_key, piece);
-            by_body.insert(&body_key, (piece.clone(), nucleus_of.get(m).cloned().flatten()));
+    for c in over.cells {
+        let mut key: Vec<u8> = Vec::new();
+        for piece in &c.coords {
+            crate::transducer::address::put_bytes(&mut key, piece);
         }
-        if by_body.len() != c.members.len() {
-            continue;
-        }
-        let key: Vec<u8> = by_body.scoped().flat_map(|(k, _)| k.to_vec()).collect();
-        let (bodies, nuclei): (Vec<Vec<u8>>, Vec<Option<crate::transducer::cga::Mv>>) =
-            by_body.scoped().map(|(_, (b, s))| (b.clone(), s.clone())).unzip();
-        let nuclei: Option<Vec<crate::transducer::cga::Mv>> = nuclei.into_iter().collect();
+        let nuclei: Option<Vec<crate::transducer::cga::Mv>> =
+            c.members.iter().map(|&m| nucleus_of.get(m).cloned().flatten()).collect();
         let witnesses = c.witnesses.into_iter().map(|l| l.site).collect();
-        cells.insert(&key, crate::transducer::sentence::FormCell { bodies, witnesses, nuclei });
+        cells.insert(&key, crate::transducer::sentence::FormCell { bodies: c.coords, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
     let mut contact_bodies: ContactBodies = crate::network::nerve::Keyed::new();

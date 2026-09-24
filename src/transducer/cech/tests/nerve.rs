@@ -2,10 +2,15 @@
 // one certified cell per standing set, at the grade its members give.
 
 use crate::network::nerve::keyed::coord;
-use crate::transducer::cech::{read_nerve, support_of_cover};
+use crate::transducer::cech::{cells_over, read_nerve, support_of_cover, Chart};
 
 fn cell(row: i64, col: i64, frame: i64) -> coord::Lamina {
     coord::Lamina { site: crate::transducer::base::Site::from((row, col, frame)) }
+}
+
+/// Each chart with its own section coordinates: here, one carriage each.
+fn sections(footprints: &[Vec<coord::Lamina>]) -> Vec<Chart> {
+    footprints.iter().enumerate().map(|(i, f)| (vec![b's', i as u8], f.clone())).collect()
 }
 
 /// THE PORE CASE — the whole reason the read is over the base.
@@ -26,7 +31,7 @@ fn three_charts_ringing_a_pore_certify_no_two_cell() {
     let (cells, refused) = support.decoded();
     assert!(refused.is_empty(), "every lamina key decodes: {refused:?}");
     assert_eq!(cells.iter().filter(|(_, s)| s.len() == 2).count(), 3, "three pairwise overlaps stand");
-    let read = read_nerve(&charts);
+    let read = read_nerve(&sections(&charts));
     assert!(read.refused.is_empty(), "no refusals: {:?}", read.refused);
     let grades: Vec<usize> = read.certified.iter().map(|c| c.grade()).collect();
     assert_eq!(grades, vec![1, 1, 1], "three 1-cells and no 2-cell: a ring around a pore is a HOLE");
@@ -43,7 +48,7 @@ fn an_element_standing_in_three_charts_certifies_one_two_cell() {
         vec![cell(9, 9, 1), shared.clone()],
         vec![shared.clone(), cell(7, 7, 2)],
     ];
-    let read = read_nerve(&charts);
+    let read = read_nerve(&sections(&charts));
     assert!(read.refused.is_empty(), "no refusals: {:?}", read.refused);
     let [c] = read.certified.as_slice() else { panic!("one standing set, one cell: {:?}", read.certified) };
     assert_eq!(c.members, vec![0, 1, 2], "the three charts that meet");
@@ -62,9 +67,29 @@ fn many_witnesses_certify_one_cell() {
         vec![cell(0, 0, 0), cell(0, 1, 0), cell(0, 2, 0)],
         vec![cell(0, 0, 0), cell(0, 1, 0), cell(0, 2, 0)],
     ];
-    let read = read_nerve(&charts);
+    let read = read_nerve(&sections(&charts));
     let [c] = read.certified.as_slice() else { panic!("one cell: {:?}", read.certified) };
     assert_eq!(c.witnesses.len(), 3, "three elements witness it");
+}
+
+/// KB1 — A CELL IS KEYED BY ITS MEMBERS' COORDINATES, NEVER THEIR ORDINALS.
+/// Two sections over one region with two carriages are two members; one
+/// section offered at two ordinals is one member, so its overlap with itself
+/// is no cell; a member whose coordinates do not read is counted by name and
+/// its standing set mints nothing.
+#[test]
+fn cells_are_keyed_by_their_members_coordinates() {
+    let region = vec![cell(0, 0, 0), cell(0, 1, 0)];
+    let two_carriages = vec![(vec![1u8], region.clone()), (vec![2u8], region.clone())];
+    let read = read_nerve(&two_carriages);
+    let [c] = read.certified.as_slice() else { panic!("two sections, one cell: {:?}", read.certified) };
+    assert_eq!(c.coords, vec![vec![1u8], vec![2u8]], "keyed by the sections, in their own order");
+    let one_section_twice = vec![(vec![1u8], region.clone()), (vec![1u8], region.clone())];
+    assert!(read_nerve(&one_section_twice).certified.is_empty(), "one section is one member, not a cell");
+    let at = cell(0, 0, 0);
+    let standing = [(at, vec![0usize, 1])];
+    let over = cells_over(standing.iter().map(|(l, m)| (l.clone(), m.as_slice())), |m| (m == 0).then(|| vec![0u8]), |_| None);
+    assert_eq!((over.cells.len(), over.unkeyed), (0, 1), "unkeyed by name, no cell minted");
 }
 
 /// THE COORDINATE IS INVERTIBLE — `x ≡ decode(encode(x))`, including on

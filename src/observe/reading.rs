@@ -206,7 +206,7 @@ impl Planes {
 /// THE AXES OF [`Loss`], in its writing's order: each counter's name and
 /// what it means when it is not zero. The ONE statement of the order, read
 /// by the codec and by every renderer (law 12).
-pub const LOSS_AXES: [(&str, &str); 18] = [
+pub const LOSS_AXES: [(&str, &str); 21] = [
     ("unheard", "components whose moduli are not read at their n (body_of refused)"),
     ("sectionless", "laminae with no grid plane, left out of a chain (on_grid refused)"),
     ("coarse", "sections filed at their n alone, their topology refused"),
@@ -225,6 +225,9 @@ pub const LOSS_AXES: [(&str, &str); 18] = [
     ("arcless", "mint gate 2: orients only at the quartic, no arc"),
     ("primeless", "mint gate 3: the arc names no prime the alphabet lacks"),
     ("minted", "RotorPrime demands minted"),
+    ("unkeyed", "pole demands of a kind with no coordinates to stand by"),
+    ("untyped", "pole demands their own type refuses"),
+    ("merged", "pole demands already standing, stood once"),
 ];
 
 /// WHAT PERCEPTION, THE COVER AND THE MINT PASSED OVER, each on its own
@@ -232,7 +235,7 @@ pub const LOSS_AXES: [(&str, &str); 18] = [
 /// axes (law 5).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Loss {
-    pub axes: [u64; 18],
+    pub axes: [u64; LOSS_AXES.len()],
 }
 
 impl Loss {
@@ -263,6 +266,9 @@ impl Loss {
                 mint.arcless,
                 mint.primeless,
                 mint.minted,
+                mint.unkeyed,
+                mint.untyped,
+                mint.merged,
             ],
         }
     }
@@ -286,7 +292,7 @@ impl Loss {
         if usize::from(take_u8(b, p)?) != LOSS_AXES.len() {
             return None;
         }
-        let mut axes = [0u64; 18];
+        let mut axes = [0u64; LOSS_AXES.len()];
         for a in axes.iter_mut() {
             *a = take_u64(b, p)?;
         }

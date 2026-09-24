@@ -333,22 +333,13 @@ impl Contemplation {
                                 }
                             }
                         }
-                        CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) => {
+                        CoboundaryOutcome::Attached(Fill::Congruent(..)) => {
                             self.torsion_merges += 1;
-                            if let Some(merged) = self.merge(&vertices) {
-                                if let Some(b) = self.bubbles.get_mut(merged.as_bytes()) {
-                                    // A simplex of one vertex is a loop at
-                                    // that vertex: both ends are it, which
-                                    // the slice pattern says on the
-                                    // simplex's own sorted vertices.
-                                    let (a, c) = match vertices.as_slice() {
-                                        [a, b, ..] => (a.clone(), b.clone()),
-                                        [a] => (a.clone(), a.clone()),
-                                        [] => continue,
-                                    };
-                                    b.nerve.file_congruent(&a, &c, *g, ell);
-                                }
-                            }
+                            // KB1 (C) — the class between the two thoughts
+                            // stays on this complex's simplex; it is never
+                            // filed again onto the merged idea's nerve, whose
+                            // vertices are its own sections (law 12).
+                            let _ = self.merge(&vertices);
                         }
                         CoboundaryOutcome::Attached(Fill::Class(_, r)) => {
                             new_classes += 1;

@@ -87,7 +87,12 @@ fn r3_a_cell_is_the_members_standing_at_its_witness() {
     use crate::transducer::base::Site;
     let at = |x: i64| Lamina { site: Site::new(vec![x, 0, 0]) };
     let standing: Vec<(Lamina, Vec<usize>)> = vec![(at(0), vec![0, 1]), (at(2), vec![1, 2]), (at(4), vec![0, 1])];
-    let cells = crate::transducer::cech::cells_over(standing.iter().map(|(l, m)| (l.clone(), m.as_slice())), |_| None);
+    let cells = crate::transducer::cech::cells_over(
+        standing.iter().map(|(l, m)| (l.clone(), m.as_slice())),
+        |m| Some(vec![m as u8]),
+        |_| None,
+    )
+    .cells;
     let members: Vec<Vec<usize>> = cells.iter().map(|c| c.members.clone()).collect();
     assert_eq!(members, vec![vec![0, 1], vec![1, 2]], "two cells, each its own standing set");
     assert_eq!(cells[0].witnesses.len(), 2, "one cell standing at two elements has two witnesses");

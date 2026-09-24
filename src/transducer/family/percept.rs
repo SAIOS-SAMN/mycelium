@@ -1076,9 +1076,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
          | mint: {} \
          | metabolism: {} syntropy {} \
          | nerve/source: {} charts over {} cells, {} shared by two or more, \
-         certified cells (grade cells meet≠0) {:?}, {} refused \
+         {} \
          | contact complex: certified cells (grade cells meet≠0) {:?} \
-         | nerve/image: {} charts over {} cells, {} shared, certified cells {:?} \
+         | nerve/image: {} charts over {} cells, {} shared, {} \
          | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} \
          | contact faces offered {} built {} | contact circuits: curved {} (gauge static {}) \
@@ -1157,13 +1157,12 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         source.charts,
         source.cells,
         source.shared,
-        source.by_grade(),
-        source.refused.len(),
+        source.cells_line(),
         contact_cells_by_grade,
         image.charts,
         image.cells,
         image.shared,
-        image.by_grade(),
+        image.cells_line(),
         spectrum.0,
         spectrum.1,
         spectrum.2,

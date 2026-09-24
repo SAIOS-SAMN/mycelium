@@ -73,11 +73,23 @@ pub(super) fn cover_nerves(covers: &[Covered]) -> (NerveTotals, NerveTotals) {
         // summed. Pooling them would read a coincidence of two
         // recentrings as an overlap — the same defect the cover's meet
         // index already avoids by keying its two sides apart.
-        let mut dom: Vec<Vec<coord::Lamina>> = Vec::new();
-        let mut cod: Vec<Vec<coord::Lamina>> = Vec::new();
-        for (_, (_, _, sup)) in c.cover.carried.scoped() {
-            dom.push(cells_of(&sup.domain));
-            cod.push(cells_of(&sup.codomain));
+        // KB1 — EACH CHART BY ITS SECTION'S COORDINATES, the carriage and the
+        // footprint as `section_key` writes them, never by its ordinal in the
+        // cover: two carriages over one region are two sections because the
+        // carriages differ.
+        let section = |versor: &crate::transducer::element::Versor, sup: &[crate::transducer::base::Site]| {
+            let mut k = Vec::new();
+            versor.put_canonical(&mut k);
+            for s in sup {
+                s.put(&mut k);
+            }
+            k
+        };
+        let mut dom: Vec<crate::transducer::cech::Chart> = Vec::new();
+        let mut cod: Vec<crate::transducer::cech::Chart> = Vec::new();
+        for (_, (_, versor, sup)) in c.cover.carried.scoped() {
+            dom.push((section(versor, &sup.domain), cells_of(&sup.domain)));
+            cod.push((section(versor, &sup.codomain), cells_of(&sup.codomain)));
         }
         src.absorb(ci, read_nerve(&dom));
         img.absorb(ci, read_nerve(&cod));
