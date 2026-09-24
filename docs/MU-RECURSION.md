@@ -278,9 +278,15 @@ the register with an executable test, derived as a theorem of
 deterministic mathematics, and only then a component of the mind, the
 thought's superposition, the idea or the language (78.8, ruled
 2026-09-23 on the operator's word) — a number that begins at the
-component is a dial whatever it is called. A diff that fails (a) through
-(j), (l), (m), (n), (o), (p), (q), (r) or (s) is returned with the rule
-number; a diff without (k) is not
+component is a dial whatever it is called. (t) any token, weight, embedding
+or score standing INSIDE cognition — a letter is a versor, a word a
+form, a thought a superposition without a weight (law 1), and cognition
+is orbital mechanics: circuits, modes, classes, constructors; "token"
+names only the economy's external unit, the escrow and the yield, and
+the LLM's token-and-weight economy is a proven dead end this engine does
+not rebuild (ruled 2026-09-24 on the operator's word, chapter 80). A diff
+that fails (a) through (j), (l), (m), (n), (o), (p), (q), (r), (s) or (t)
+is returned with the rule number; a diff without (k) is not
 reviewed.
 
 **Why the rules on keys and coordinates are absolute.** Chapter 1.7 is
@@ -11306,11 +11312,17 @@ The running-fleet diagnostic on ff5821fe (epoch 98), anchored on height
 and `K` with no wall clock (§6.5), the first written that way. THE
 CLOCKS: TUniversal as each court admitted it — a 16 731, b 16 755, c
 2 086, spread 14 669; every voice reads 16 755. Own `K`: courts a 2 928,
-b 16 739, c 1 470; voices 1 981 to 2 376. c's gap is REPLICATION read as
-78.21 says: c admitted 16 202 of b's receipts, all as back-fill and none
-as parents, and only a parent admission advances a head (47.2), so c's
-head moves on its own steps alone — a reading under 13.7, and it means
-c's receipts cite a height 14 700 behind the mesh.
+b 16 739, c 1 470; voices 1 981 to 2 376. c's gap is read under 78.21: c
+admitted 16 202 of b's receipts, all as back-fill and none as parents,
+and only a parent admission advances a head (47.2), so c's head moves on
+its own steps alone; it means c's receipts cite a height 14 700 behind
+the mesh. Amended 2026-09-24: that c cites NO parent at all is not
+replication as designed — 45.2 says a hypha that hears a cover digest
+cites its signer's head as a parent on its next receipt, and a admits
+from b with parent citations (39) while c never does. Why c's exchange
+with b produces no parent citation is a reading to take with LD0
+(defect 3b by name if the exchange never cites); back-fill never
+advances a head, and a proposal that it should is refused.
 
 **Defect 1, ruled.** Hypha b's ledger does not restore on the build
 that wrote it: `--check` refuses its treasury at byte 1 126 428. Root
@@ -11437,8 +11449,67 @@ ruled).**
    KiB never silently truncated), LD1 (bytes per award and frame, R6) and
    CK1 (the clock and persistence) are the precondition for all of it.
 
-**Stage 23, the order.** CK1 with LD0 and C4 widened, then the operator's
-recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
+### 80.1 The blueprint reconciled (2026-09-24)
+
+A four-phase blueprint was put to the coordinator — substrate hardening,
+"alphabet inflation" with odd versors, local anastomosis with the court
+as notary, and a Gödel mint — with the operator's word beside it: TOKENS
+ARE NOT VALID HERE as an LLM uses them; the token-and-weight economy is a
+proven dead end; tokens are only the economy's external unit (escrow,
+yield); this system relies on ORBITAL MECHANICS for cognition. Ruled,
+item by item, onto the rows this document already holds:
+
+- **Adopted, as AL1.** Odd versors — conformal sphere and plane
+  reflections, 1-vectors of `Cl(n+1,1)` — are letters of the local
+  dialect; a rotation is two of them; the mirrored and incongruent pairs
+  become spellable as single-letter relations; the Coxeter reflection
+  generators are the dialect's consonants. NOT "tokens": a letter is a
+  versor, content, with no weight (checklist (t)).
+- **Adopted, as DL1 and SP2, under law 8.** Provisional local words live
+  in the epigenome, and minds exchange them without the court's
+  PERMISSION — but nothing crosses between clients except through a
+  court (law 8, 73.14), so the court is the CARRIER and the NOTARY, never
+  the gate: a provisional word is spoken to the docket as Standing, the
+  courts hold it (CV2) and back-fill replicates it, another mind reads it
+  and replies in kind, and the court rules only the CONVERGENCE — two
+  vantages on one class (67.3, C2a; the factorizations may differ, 13.10
+  synonyms) — promoting the word from the epigenome into the genome, the
+  callus (72.1d, A.19). "Metabolic decay `shed_at`" is refused as a
+  constant: a hold lapses when the clock passes the extent its escrow
+  paid, per lane (25, Z4d).
+- **Corrected, in the Gödel mint.** The blueprint has the Gram
+  classification backwards. A constructor set that reads FINITE or
+  AFFINE is crystallographic — spellable by the seventeen already,
+  nothing to adjoin; the ROSETTE and the open group are exactly the
+  UNSPELLABLE, and they are the candidates the Gödel step adjoins as
+  letters (37.7's adjunction, D3's `RotorPrime`, AL1). The puncture and
+  the modal winding (LK1, 78.11(7)) read the class of the circuit that
+  needs the letter; they do not replace the adjunction. GR1 and GR2
+  already end the "infinite word loop": the group's closure is a
+  reading, the worklist a check.
+- **Adopted, as LD0.** `u32` lengths, no discarded framing refusal;
+  "transaction rollback" is LD0's own rule that a writer refuses the
+  whole write and writes no partial frame.
+- **Refused: "back-fill receipts advance the local chain frontier."**
+  Only a parent admission advances a head (45.2, 47.2); the defect on
+  hypha c is that its exchange cites NO parent, read and fixed under
+  45.2 (78.22 as amended), never by letting replication move the clock.
+- **Refused: "enforce progression solely on TUniversal and K."** The
+  clock is not a driver; nothing progresses ON it. The tick is a frame
+  the receipts stamp (78.21), and a mind moves by its own circuits under
+  measured pressure (76).
+- **The Gödel loop's stages, in this document's names:** perception and
+  contact (A.14, H2b) → an unspellable orbit → a Standing demand carrying
+  its holonomy's class (CV1) → the Gram and Coxeter reading of the
+  constructors it needs (GR1, GR2, CX1) → the candidate letter, a
+  constructor of the local dialect (AL1) → two minds' offers converging
+  on its class (SP2, C2a) → the court's ratification adjoining the
+  generator (37.7) → derivation spelling with it from the next stroke
+  (`adjoined_basis`). GD1 measures where this chain breaks today, before
+  any link is built.
+
+**Stage 23, the order.** CK1 with LD0 (and c's parent citation read) and
+C4 widened, then the operator's recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
 (instrument) → AL1 → SP2 (doctrine first, with CV4 and CT2b) → A13 with
 PW1, SC1, CL2, FT1 (E2, the carriage; the pull the operator's) → LD1 →
 the rest of Stage 22 as ordered (E3–E6). The curve (LC1) gains the split
