@@ -434,6 +434,26 @@ impl Treasury {
         Some(m)
     }
 
+    /// LD3-a — A LINE REBOUND BEFORE ITS FIRST ACT MOVES ITS ORIGIN: the
+    /// rows and the escrow anchors standing at the old pre-genesis origin
+    /// (the empty hash) stand at the new one. Nothing else moves: a row at
+    /// an act stands at that act.
+    pub fn rebind_origin(&mut self, from: crate::chronometry::Stamp, to: crate::chronometry::Stamp) {
+        for e in self.entries.iter_mut() {
+            if e.at == from && e.receipt == [0; 32] {
+                e.at = to;
+            }
+        }
+        let held: Vec<Vec<u8>> = self.escrowed.scoped().map(|(a, _)| a).collect();
+        for addr in held {
+            if let Some(row) = self.escrowed.get_mut(&addr) {
+                if row.anchor == (from, [0; 32]) {
+                    row.anchor.0 = to;
+                }
+            }
+        }
+    }
+
     /// EC1, 78.33 — WHAT EACH PROOF OF WORK PAID AND BURNED, per lane, read
     /// off the journal at the question and never stored beside it (law 12).
     /// A mint of an arm is paid; a burn of an arm is burned. A POWC use is

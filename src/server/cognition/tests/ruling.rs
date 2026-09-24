@@ -71,6 +71,69 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
     assert_eq!(d.clock(None).rulings[upheld], [0; 4], "a word d holds only ruled: the arm is inert, uncounted");
 }
 
+/// LD3-a — THE STAMP ALIAS CLOSES EC1'S GAP. Courts a and c each docketed
+/// the same word on their own stroke, so each holds it at its OWN admitting
+/// stamp, and a's ruling cites a's. When c admits a's line, a's admitting
+/// act names the word by a stamp c never filed; c's fiber read yields
+/// exactly one word there, so a's stamp is filed as an alias — one word,
+/// two admissions, both stamps held — and a's ruling, located by it,
+/// applies at c. The alias is not persisted and comes back at restore,
+/// re-derived from the ledger's peer nodes.
+#[test]
+fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
+    use crate::anastome::dialogue::RULING_UPHELD;
+    let key = super::common::court_key("aliased ruler");
+    let (mut a, addr) = docketed(key.vk_bytes());
+    let theirs = a.admitted_at(addr.as_bytes()).expect("a admitted it");
+    let (mut c, same) = docketed([0xc1; 32]);
+    assert_eq!(addr, same, "one word, spoken alike at both courts");
+    let ours = c.admitted_at(addr.as_bytes()).expect("c admitted it");
+    assert_ne!(ours, theirs, "at two stamps: each court's own act");
+    let before_ruling: Vec<_> = a.chain().own().cloned().collect();
+    super::common::admit_line(&mut c, &key, &before_ruling);
+    assert_eq!(c.word_admitted_at(&theirs), Some(&addr), "a's stamp is an alias of the word here");
+    assert_eq!(c.admitted_at(addr.as_bytes()), Some(ours), "and c's own stamp still holds it");
+    let mut restored = Kernel::new();
+    assert!(restored.restore(&c.snapshot()), "clean restore");
+    assert_eq!(restored.word_admitted_at(&theirs), Some(&addr), "the alias is re-derived at restore");
+
+    assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
+    let line: Vec<_> = a.chain().own().cloned().collect();
+    let [.., ruling] = line.as_slice() else { panic!("a ruled") };
+    super::common::admit_line(&mut c, &key, std::slice::from_ref(ruling));
+    assert_eq!(c.clock(None).rulings[Ruled::Upheld.index()], [1, 1, 0, 0], "a's ruling, located by the alias, applies at c");
+    assert!(!c.provisional.contains(addr.as_bytes()), "the word left c's docket");
+}
+
+/// LD3-a — SEVERAL WORDS ON ONE FIBER ARE NEVER CHOSEN BETWEEN. A peer's
+/// admitting act naming a fiber this court holds two words on files no
+/// alias: the word waits for the syllabus to teach it with its home stamp
+/// (78.24 (2b)), and nothing is picked by arrival or order (rule 15).
+#[test]
+fn several_words_on_one_fiber_file_no_alias() {
+    use crate::chronometry::{Cite, ReceiptChain, Stamp};
+    let mut c = Kernel::new();
+    c.bind_identity([0xc2; 32]);
+    let chart = crate::transducer::stalk::Invariant::counts(&[2, 1]);
+    // Two words on the chart, each at its own stamp.
+    for (n, word) in [(1u8, [0x71u8; 3]), (2, [0x72; 3])] {
+        let addr = crate::transducer::address::Address::from_bytes(word);
+        let at = Stamp::new(u64::from(n), [0xc2; 32], crate::chronometry::Place { k: 0, i: u64::from(n) });
+        let mut key = Vec::new();
+        Cite::Word { chart: chart.clone(), class: None, at }.put_canonical(&mut key).expect("a citation");
+        c.file_fiber(&addr, at, key);
+    }
+    assert_eq!(c.fiber_read(&chart, &None).len(), 2, "two words on the fiber");
+    let key = super::common::court_key("ambiguous peer");
+    let mut peer = ReceiptChain::with_vk(key.vk_bytes());
+    let at = peer.next_stamp(&[]).expect("its first stamp");
+    let cite = Cite::Word { chart: chart.clone(), class: None, at };
+    peer.append(ActKind::List, [0; 4], vec![cite], [0; 32], Vec::new()).expect("it admits by its own act");
+    let line: Vec<_> = peer.own().cloned().collect();
+    super::common::admit_line(&mut c, &key, &line);
+    assert_eq!(c.word_admitted_at(&at), None, "no alias: two candidates, and none is chosen");
+}
+
 /// EC1 — EVERY PAYMENT ROW STANDS AT THE ACT THAT PAID IT. A word upheld
 /// on its own book mints its released claim at the Ruling node, never at
 /// the act that escrowed it, and the row carries the arm it pays (POUW).

@@ -278,6 +278,18 @@ pub struct Kernel {
     /// the same tick, so the close was withheld (78.23 as amended). Since
     /// boot.
     pub(crate) withheld: u64,
+    /// LD3-a — THE WORDS BY FIBER, AT RUNTIME: T1's own key — a word's
+    /// `Cite::Word{chart, class, at}` written by its `put_canonical` — to
+    /// the word's address, filed where `admitted_at` is filed and rebuilt
+    /// from T1 at restore. A prefix read by `chart‖class` is the fiber read.
+    pub(crate) word_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    /// Each admitting stamp's fiber key, so a word that leaves its last row
+    /// takes its fiber entry with it once its element is gone.
+    pub(crate) fiber_key_at: crate::network::nerve::Keyed<Vec<u8>>,
+    /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fiber
+    /// read located at this word (`held_at` entries beside its own), dropped
+    /// with the word. Re-derived at restore from the ledger's peer nodes.
+    pub(crate) aliases: crate::network::nerve::Keyed<Vec<crate::chronometry::Stamp>>,
     /// 78.27 (6) — SETTLEMENTS REFUSED FOR WANT OF AN ACT to stand at: a
     /// settlement recorded before this court sealed its first act. Since
     /// boot.
@@ -599,6 +611,9 @@ impl Kernel {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
+                // LD3-a: a word the peer's act admitted, located here by its
+                // fiber where exactly one word stands on it.
+                self.alias_admitting(r);
                 // EC1: a peer's ruling applies at the node that admits its
                 // receipt, through the receipt path — the arm its kind
                 // carries, on the word its citation locates here.
@@ -638,6 +653,7 @@ impl Kernel {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);
+                    self.alias_admitting(r);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

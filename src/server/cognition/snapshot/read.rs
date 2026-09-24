@@ -245,6 +245,8 @@ impl Kernel {
                     continue;
                 }
                 kernel.file_admitted(&addr, admitted);
+                // The words by fiber, rebuilt from T1's own key.
+                kernel.file_fiber(&addr, admitted, key.clone());
                 if members & MEMBER_BASIS != 0 {
                     let who: [u8; 32] = leaf(leaves, LEAF_DISCOVERER)?.try_into().ok()?;
                     kernel.basis_insert(elem.clone(), who);
@@ -309,6 +311,12 @@ impl Kernel {
             });
             for (addr, award) in awards {
                 kernel.treasury.restore_award(&addr, award);
+            }
+            // THE STAMP ALIASES, re-derived from the ledger's peer nodes
+            // against the words just restored — never persisted.
+            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().cloned().collect();
+            for r in &peers {
+                kernel.alias_admitting(r);
             }
             // THE RANK, its closures resolved by one T1 read each (78.27):
             // the prior measurement, continued incrementally and never read

@@ -19,7 +19,18 @@ impl Kernel {
     /// binding comes before a court's first act.
     pub fn bind_identity(&mut self, vk: [u8; 32]) {
         self.identity = vk;
-        if !self.chain.bind_vk(vk) {
+        let was = self.chain.vk();
+        if self.chain.bind_vk(vk) {
+            // LD3-a: rows written before the first act stand at the line's
+            // pre-genesis origin, which is keyed by the line's key; a line
+            // rebound before it sealed anything moves its origin, and the
+            // rows standing there move with it — so every row stands on
+            // this court's own line.
+            if was != vk {
+                let origin = |key| crate::chronometry::Stamp::new(0, key, crate::chronometry::Place::GENESIS);
+                self.treasury.rebind_origin(origin(was), origin(vk));
+            }
+        } else {
             eprintln!(
                 "  court ledger keeps its key: it sealed under {:02x}{:02x}… before {:02x}{:02x}… was bound",
                 self.chain.vk()[0],

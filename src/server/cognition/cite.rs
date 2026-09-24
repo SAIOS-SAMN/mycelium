@@ -73,14 +73,93 @@ impl Kernel {
         }
         self.admitted_at.insert_shared(addr.shared(), at);
         self.held_at.insert(at.key(), addr.clone());
+        // LD3-a: the word by its fiber, where a row holds it to read the
+        // fiber off; a restore files it from T1's key instead.
+        let fiber = self.named_word(addr).and_then(|w| {
+            let mut key = Vec::new();
+            Cite::word(w, at).put_canonical(&mut key)?;
+            Some(key)
+        });
+        if let Some(key) = fiber {
+            self.file_fiber(addr, at, key);
+        }
         // EC1: a peer's ruling that waited on this stamp is heard now.
         self.rehear_rulings(&at);
+    }
+
+    /// FILE A WORD AT ITS FIBER KEY — T1's own key — beside its admitting
+    /// stamp.
+    pub(crate) fn file_fiber(&mut self, addr: &Address, at: Stamp, key: Vec<u8>) {
+        self.fiber_key_at.insert(at.key(), key.clone());
+        self.word_fibers.insert(key, addr.clone());
+    }
+
+    /// LD3-a — THE FIBER READ: every word this court holds on the fiber
+    /// `chart‖class`, whatever act admitted it — a prefix read on the words
+    /// by fiber, never a scan. Each word once.
+    pub fn fiber_read(
+        &self,
+        chart: &crate::transducer::stalk::Invariant,
+        class: &Option<crate::chronometry::ClassRecord>,
+    ) -> Vec<Address> {
+        let mut key = Vec::new();
+        let probe = Cite::Word { chart: chart.clone(), class: class.clone(), at: Stamp::default() };
+        if probe.put_canonical(&mut key).is_none() {
+            return Vec::new();
+        }
+        // The fiber is the citation without its stamp, which is written
+        // last and fixed in length.
+        key.truncate(key.len() - Stamp::LEN);
+        let mut out: crate::network::nerve::Keyed<Address> = crate::network::nerve::Keyed::new();
+        if let Some(hits) = self.word_fibers.fiber_at(&key) {
+            for (_, addr) in hits {
+                out.insert(addr.as_bytes(), addr.clone());
+            }
+        }
+        out.scoped().map(|(_, a)| a.clone()).collect()
+    }
+
+    /// LD3-a — THE STAMP ALIAS (EC1's gap, as ruled): a peer node admitted
+    /// here whose own act admits a word — a `Cite::Word` at the node's own
+    /// stamp — names that word by a stamp this court did not admit it at.
+    /// Where the fiber read here yields EXACTLY ONE word, the peer's stamp
+    /// is filed as an alias of it: one word, two admissions, both stamps
+    /// held (rule 15: never a choice). Where it yields several, nothing is
+    /// filed — the word waits for the syllabus to teach it with its home
+    /// stamp (78.24 (2b)). A ruling waiting on the aliased stamp is heard.
+    pub(crate) fn alias_admitting(&mut self, r: &KStepReceipt) {
+        for c in &r.cites {
+            let Cite::Word { chart, class, at } = c else { continue };
+            if *at != r.stamp || self.word_admitted_at(at).is_some() {
+                continue;
+            }
+            let hits = self.fiber_read(chart, class);
+            let [one] = hits.as_slice() else { continue };
+            let one = one.clone();
+            self.held_at.insert(at.key(), one.clone());
+            match self.aliases.get_mut(one.as_bytes()) {
+                Some(v) => v.push(*at),
+                None => {
+                    self.aliases.insert(one.as_bytes(), vec![*at]);
+                }
+            }
+            self.rehear_rulings(at);
+        }
     }
 
     /// A word left every row: its admitting stamp leaves with it.
     pub fn drop_admitted(&mut self, addr: &[u8]) {
         if let Some(at) = self.admitted_at.remove(addr) {
             self.held_at.remove(&at.key());
+            if let Some(key) = self.fiber_key_at.remove(&at.key()) {
+                self.word_fibers.remove(&key);
+            }
+        }
+        // Its aliases leave with it.
+        if let Some(stamps) = self.aliases.remove(addr) {
+            for at in stamps {
+                self.held_at.remove(&at.key());
+            }
         }
     }
 
