@@ -82,12 +82,15 @@ impl Kernel {
         }
     }
 
-    /// THE FRAME AN ACT ON A WORD MEASURED: the word's magnitude where a row
-    /// this court measures holds it. Where none does, nothing measured it —
-    /// the act's μ⃗ is read as `[0; 4]` and the clock counts an act sealed
-    /// without a frame (ACT1, 78.27 Q1(a)).
+    /// THE FRAME AN ACT ON A WORD MEASURED: the word's magnitude on whichever
+    /// row holds it — the basis, the cavity, provisional, the listing book
+    /// or the court's federation. Where no row holds it, nothing measured
+    /// it: the act's μ⃗ is read as `[0; 4]` and the clock counts an act
+    /// sealed without a frame (ACT1, 78.27 Q1(a)). It read `word_at`, which
+    /// does not read the listing book or the federation, so every List act
+    /// on a held listing read no frame (ACT1-reading's return R1).
     pub(crate) fn frame_of(&mut self, addr: &[u8]) -> [u64; 4] {
-        match self.word_at(addr) {
+        match self.named_word(addr) {
             Some(w) => w.magnitude(),
             None => {
                 self.unframed += 1;
