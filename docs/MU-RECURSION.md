@@ -16276,13 +16276,40 @@ the substrate's reason, not the shape's. That is 78.26(4) at the pose:
 the same shape at another scale with the floor unscaled — under one
 name, and the second is exactly the case the demand exists for.
 
-**Ruled.** (1) A body carries two named scales, `spread2` (the tower's
-`tr M`) and `radius2` (the nucleus), one producer each (law 12), and
-every reading of a RELATION between shapes — the dilation certificate,
-the harmonics' agreement at each order, the oblique arc's scale — is
-taken on the spread; the nucleus radius stays where contact, the
-horizon and the enclosure need the floor. §6.4: every site that scales
-a shape's harmonics by `radius2` moves to `spread2`. (2) `Incongruent`
+**Verified on the operator's question (the same day): the floor is in
+three of the four readers, not one.** The lamina tower integrates each
+site's unit square at EVERY order — `∫u = d`, `∫u² = d² + 1/12`, `∫u³ =
+d³ + d/4`, and the quartic likewise — so the floor enters the odd
+harmonic `h₃` (a term scaling by `|λ|`, not `|λ|³`), the quartic `h₄`
+(a constant `−1/60` per lamina, axis-aligned, and mixed terms scaling by
+`|λ|²`), and `radius2`. Only the deviatoric is clean, because the
+isotropic `1/12` cancels in `I_ii − I_jj` and never enters `I_ij`. So
+in `relative_rotor` the signs of `dot` and `wedge` at order 2 are
+scale-free and collapse nothing; but `handedness` (`Z = h₂²·conj(h₄)`
+as a ray), `relative_turn_ray` (`z₃·conj(z₂)` as a ray) and
+`dilation_certified` all carry the floor, and a body's `(4+i)` image
+would still read `Unrelated` or `Incongruent` after the certificate
+alone was moved: the rotated body's point harmonics turn with it while
+each lamina's own axis-aligned square does not, so the sum points
+elsewhere. The point tower (`tower` in `blade/pose.rs`, FR1: `M`, `t`,
+`N` about the sites' mean, normalised by the count) is floor-free at
+every order and scales exactly under a similarity.
+
+**Ruled.** (1) A body carries TWO TOWERS, one producer each (law 12):
+the LAMINA tower (unit squares integrated: `radius2`, the nucleus,
+`moment2`, `quartic_on`), which carries A.12's floor and serves
+contact, the horizon and the enclosure (64.2's `r² ≥ 1/6`); and the
+POINT tower (the sites about their mean: `spread2 = tr M`, `h₂`, `h₃`,
+`h₄`), floor-free, which serves every RELATION between shapes —
+orientation at orders 2 and 4, the odd turn `z₃·conj(z₂)`, chirality
+`Z`, the dilation certificate at every order, the oblique arc. §6.4:
+every reader of a relation between bodies that today reads the lamina
+tower's harmonics or `radius2` moves to the point tower, with a test per
+reader that a body and its `(4+i)` image agree there. No scalar in
+`relative_rotor` collapses context once its inputs are the point
+tower's: the signs, the rays and the cross-multiplied norms are each
+scale-free of a similarity, and the floor was the only thing they were
+masking. (2) `Incongruent`
 splits by content: the harmonic order at which the shapes disagree,
 read on the spread; a pair that agrees on the spread and not on the
 nucleus is not incongruent, and the arm that said so is gone. (3) The
