@@ -15681,6 +15681,101 @@ art. The code's nouns follow at the next site touched: `anastome/` is the
 language spoken across the plexus and keeps its name; the anastomotic
 degree joins the observer's readings as a line of CV5.
 
+### 78.32 The held element, the one primitive, and the constructor store that grows by refusal (ruled 2026-09-24, the operator's word, relayed by the implementor)
+
+**1. No inversion as an operation.** The implementor proposed to carry
+VA1's sweep on a typed versor with three procedures, `act`, `then`,
+`rev`. The operator: "this is specifically descent where each operation
+requires the inversion for reconstruction." The split cuts the two-sided
+product `m x m̃` into one-way procedures, treats the element and its
+reverse as two objects, and adds to composition an arrow the
+associative product does not have — the ledger's serialized-tape fault
+(78.24) repeated inside the algebra. RULED: the carrier is the ELEMENT,
+held once as its ray and keyed by its canonical coordinates (A1, A4;
+never by its class — a class is a reading many rays share, and a store
+keyed by class would collapse distinct mirrors of one kind). The
+reverse is a free involution on the element's coordinates, never an
+operation. A relation between two states is ONE held element read from
+either side — the quotient `B·A⁻¹` is the ray `B Ã`, and `A B̃` is the
+same relation read from the other side — never a map plus a stored
+inverse. The ONE primitive is the geometric product of held elements,
+evaluated where a reading asks; membership, kind and fixed set are read
+off the element's action on the generators (78.28). VA1-inverse is
+restated accordingly: inversion is DELETED as an operation, not
+substituted site by site — a site that composed with an inverse
+composes with the held element, whose reverse coordinates are free, and
+the wrappers that named an inverse (`Rotor::inverse`, `Transport::inverse`,
+`versor_conjugate` and their kin) go, their callers reading the product;
+`inverse_even` remains the Cayley chart's alone (52, 78.28(3)).
+
+**2. A pivot machinery has a finite generating set for its dimensional
+capacity.** The operator: "every 'pivot machinery' needs a finite set of
+operations for its dimensional capacity." Read and ruled: finite
+GENERATORS, which are elements, under ONE operation, the product; never
+a menu of procedures. The bound is Cartan–Dieudonné: in `Cl(n+1,1)`
+every versor is a product of at most `n + 2` reflections; at the cell it
+is 78.11, the orbit algebra's rank as the number of independent modes,
+bounded by `dim so(n+1,1) = (n+2)(n+1)/2`. Finite at each stage and
+never fixed (rule 5): read off the cell; extended only by adjunction
+(37.7, AL1); exceeded only by an enclosure of higher grade (78.26(2),
+NB1, EN1), never by widening a cell. In the tree `PivotBy`'s four kinds
+— word, placement, hue, open axis — with candidates built per kind are a
+hand-picked taxonomy, the `act/then/rev` shape one level up. RULED: one
+move on each factor of the bundle. On the BASE, a word in the cell's
+held constructors of at most dimension-many factors — placement and the
+opening of an axis are particular words, never procedures. On the
+FIBRE, a word in the hue gauge's own generators, the transpositions
+(61, 70: hue is a coordinate of the fibre, and the geometric and gauge
+parts of a holonomy are read together and never summed, law 5). And the
+DEMAND, which is not a move but the refusal that names the mode no word
+spells (37.7, CV1b). Three arms typed by the bundle's content, no
+taxonomy.
+
+**3. Generators become constructors; the store grows orthogonally at
+runtime, bounded, without intervention.** The operator: "how do we set
+this up so that the generators become constructors and that the pivot
+machinery can grow orthogonally post-compile during runtime without
+external intervention but not grow uncontrollably on every pivot."
+RULED, each part on a ruling that stands:
+(a) A generator IS a constructor: a held element — a sphere, a mirror,
+an odd letter — in the cell's store, keyed by its canonical ray (A1,
+A4); the code is fixed and the generating set is runtime data; after
+LD3 it is a T1 node admitted at a stamp and persists without recompile.
+(b) Growth has ONE trigger, a refusal: a pivot that reaches its mode
+grows nothing; a mode no word in the held constructors spells refuses
+as the typed demand carrying that mode (AL1 as amended by 78.29(A),
+CV1b). Nothing grows on a pivot that closes.
+(c) Admission requires ORTHOGONALITY: the rank of the bracket closure of
+the held generators with the candidate strictly exceeds the rank without
+it — exact over ℚ, read by action (78.11, VA1's reader). A candidate the
+held set derives is refused AS DERIVABLE (CT1's reuse before CT2's
+construction, 79.3); a duplicate collapses because the key is the
+canonical ray. Every admission is a new direction, never a copy.
+(d) Admission is RULED, never taken: the demand goes to the court and is
+admitted where a second independent vantage re-derives it (47.3, C2),
+sealed as an act on this court's own line (ACT1: every holding path
+admits by an act), the act's stamp the constructor's `admitted_at`. No
+threshold of occurrences (rule 5), no single pivot, voice or count
+forces it.
+(e) CAPACITY IS DERIVED AND HARD: a cell's rank is bounded by its orbit
+algebra and a word by `n + 2` reflections; a demand past a full cell is
+carried to an enclosure of higher grade whose algebra holds the
+cross-cell bracket (78.26(2), CB1). The plexus grows by chambers, never
+by stretching a cell (78.31).
+(f) RETIREMENT keeps the store a basis: a constructor that becomes
+derivable from the others retires by an act, as retirement by citation
+retires a word (3.8, T10); the set grows by independence and shrinks by
+derivability.
+(g) PRICE: each admission is priced on the lanes' reserve, measured,
+never a constant (PHY1, MU-ECONOMY).
+So growth is bounded by what the algebra derives: refusal-only trigger,
+rank increase, independent re-derivation, a dimensional cap with
+overflow to an enclosure, retirement, and a lane price. Instrument
+first (row CS2): per cell the held constructors, the orbit-algebra rank
+against the cap, and the pivots that reached, were refused as
+derivable, or demanded a mode, on the corpus and the fleet before any
+change to the pivot's drive.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
