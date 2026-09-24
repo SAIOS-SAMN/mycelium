@@ -97,8 +97,9 @@ impl Voice {
         dialogue::encode_quote_request(&self.identity)
     }
 
-    /// A PROBE: the concluded sentence on a listing.
-    pub fn probe(&self, target: &[u8; 32], cites: &[CiteWire]) -> Vec<u8> {
+    /// A PROBE: the concluded sentence on a listing. `None` where a cited
+    /// address cannot be framed (LD0).
+    pub fn probe(&self, target: &[u8; 32], cites: &[CiteWire]) -> Option<Vec<u8>> {
         dialogue::encode_probe(&self.identity, target, cites)
     }
 

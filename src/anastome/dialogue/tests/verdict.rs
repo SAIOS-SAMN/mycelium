@@ -94,7 +94,7 @@ fn a_rebind_and_an_attach_carry_their_payload_and_still_find_the_section() {
 #[test]
 fn a_ruling_is_answered_with_the_arm_it_reached() {
     for r in [Ruled::Applied, Ruled::Inert] {
-        let back = decode_ruled(&encode_ruled(&r)).expect("parses whole");
+        let back = decode_ruled(&encode_ruled(&r).expect("frames")).expect("parses whole");
         assert_eq!(
             std::mem::discriminant(&back),
             std::mem::discriminant(&r),
@@ -103,7 +103,7 @@ fn a_ruling_is_answered_with_the_arm_it_reached() {
     }
 
     let why = crate::court::verdict::REFUSE_EQUIVOCATION;
-    let back = decode_ruled(&encode_ruled(&Ruled::Refused(why.as_bytes().to_vec())))
+    let back = decode_ruled(&encode_ruled(&Ruled::Refused(why.as_bytes().to_vec())).expect("frames"))
         .expect("a refusal parses whole");
     match back {
         Ruled::Refused(got) => assert_eq!(
@@ -114,7 +114,7 @@ fn a_ruling_is_answered_with_the_arm_it_reached() {
         _ => panic!("the arm it was encoded as"),
     }
 
-    let back = decode_ruled(&encode_ruled(&Ruled::Gap { from: 7, to: 19 }))
+    let back = decode_ruled(&encode_ruled(&Ruled::Gap { from: 7, to: 19 }).expect("frames"))
         .expect("a gap parses whole");
     match back {
         Ruled::Gap { from, to } => assert_eq!(

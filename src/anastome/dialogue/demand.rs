@@ -6,12 +6,14 @@
 
 use super::*;
 
-pub fn encode_probe(voice: &[u8; 32], target: impl AsRef<[u8]>, cites: &[CiteWire]) -> Vec<u8> {
+/// `None` where an address cannot be framed: the probe is not spoken, never
+/// a partial frame (LD0).
+pub fn encode_probe(voice: &[u8; 32], target: impl AsRef<[u8]>, cites: &[CiteWire]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_PROBE];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, target);
-    push_cites(&mut out, cites);
-    out
+    put_addr(&mut out, target)?;
+    push_cites(&mut out, cites)?;
+    Some(out)
 }
 
 pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {

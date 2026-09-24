@@ -42,16 +42,10 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             home[0],
             home[1]
         );
-        answer(
-            s,
-            Frame {
-                lane: frame.lane,
-                body: dialogue::encode_offer_reply(&dialogue::Witnessed::Refused {
-                    vk: me,
-                    why: why.as_bytes().to_vec(),
-                }),
-            },
-        );
+        match dialogue::encode_offer_reply(&dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() }) {
+            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            None => eprintln!("  court offer answer refused: the reason passes its u16"),
+        }
     };
     let origin = match door.mesh.origin.lock() {
         Ok(o) => *o,
@@ -168,18 +162,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // the first cut of this ended `.unwrap_or_else(|| vec![lane, 0,0,0,0])`,
     // a hand-built frame for the case where a five-byte frame fails to
     // encode, which is the shape rule 11 refuses.
-    let full = Frame { lane: frame.lane, body: dialogue::encode_offer_reply(&answered) };
-    match full.encode() {
+    let full = dialogue::encode_offer_reply(&answered).and_then(|body| Frame { lane: frame.lane, body }.encode());
+    match full {
         Some(bytes) => {
             let _ = s.write_all(&bytes);
         }
-        None => answer(
-            s,
-            Frame {
-                lane: frame.lane,
-                body: dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: me }),
-            },
-        ),
+        None => match dialogue::encode_offer_reply(&dialogue::Witnessed::Unmeasured { vk: me }) {
+            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            None => eprintln!("  court offer answer refused: the unmeasured reply does not frame"),
+        },
     }
 }
 

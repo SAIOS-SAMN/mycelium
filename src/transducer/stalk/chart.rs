@@ -271,6 +271,39 @@ impl Invariant {
         crate::transducer::address::Address::new(buf)
     }
 
+    /// THE CHART'S COORDINATES INLINE, inside a record or a key that carries
+    /// more after it (rule 6, LD0 as re-ruled): the number of axes, then
+    /// each axis as its own kind, length and exact value. No tag and no
+    /// byte-length frame around the whole, so no chart key's bytes are
+    /// nested inside another key; each coordinate is as long as the
+    /// precision its value needs.
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&(self.0.len() as u32).to_le_bytes());
+        for a in &self.0 {
+            out.extend_from_slice(&a.key_bytes());
+        }
+    }
+
+    /// The inverse of [`Invariant::put_canonical`]: the axes read back
+    /// exactly, or refused.
+    pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<Invariant> {
+        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+        *p += 4;
+        // Each axis is at least its kind and its length: three bytes.
+        if n > b.len().checked_sub(*p)? / 3 {
+            return None;
+        }
+        let mut axes = Vec::with_capacity(n);
+        for _ in 0..n {
+            let kind = *b.get(*p)?;
+            let len = u16::from_le_bytes(b.get(*p + 1..*p + 3)?.try_into().ok()?) as usize;
+            let payload = b.get(*p + 3..*p + 3 + len)?;
+            axes.push(ChartAxis::from_parts(kind, payload)?);
+            *p += 3 + len;
+        }
+        Some(Invariant(axes))
+    }
+
     /// Decode canonical axes from a chart key. Total or refused: a key that
     /// ends mid-coordinate decodes to nothing rather than to the
     /// coordinates before it, which would be a different chart read as this

@@ -14,7 +14,7 @@ fn the_algebraic_bid_round_trips_both_witnesses() {
     let held = Address::from_bytes([4u8, 9, 8]);
     let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), true)]);
     for witness in [AlgebraicWitness::SameOperator, AlgebraicWitness::Section(Box::new(gamma.clone()))] {
-        let body = encode_refine_algebraic(&voice, &word, &held, &witness);
+        let body = encode_refine_algebraic(&voice, &word, &held, &witness).expect("the addresses frame");
         let (v, w, h, back) = decode_refine_algebraic(&body).expect("the bid decodes");
         assert_eq!(v, voice);
         assert_eq!(w, word);
@@ -36,7 +36,8 @@ fn a_bid_cut_short_of_its_witness_is_malformed() {
     let word = Address::from_bytes([4u8, 1]);
     let held = Address::from_bytes([4u8, 2]);
     let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
-    let body = encode_refine_algebraic(&voice, &word, &held, &AlgebraicWitness::Section(Box::new(gamma)));
+    let body = encode_refine_algebraic(&voice, &word, &held, &AlgebraicWitness::Section(Box::new(gamma)))
+        .expect("the addresses frame");
     let short = &body[..body.len() - 1];
     assert!(decode_refine_algebraic(short).is_none());
     let mut wrong_kind = body.clone();

@@ -25,7 +25,10 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 String::from_utf8_lossy(why)
             );
         }
-        answer(s, Frame { lane: frame.lane, body: dialogue::encode_ruled(&r) });
+        match dialogue::encode_ruled(&r) {
+            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            None => eprintln!("  court verdict answer refused: the reason passes its u16"),
+        }
     };
     let refuse = |s: &mut TcpStream, why: &str| {
         say(s, dialogue::Ruled::Refused(why.as_bytes().to_vec()))

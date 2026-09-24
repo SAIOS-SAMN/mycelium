@@ -324,6 +324,7 @@ impl Entity {
         // carried, lane by lane and never across lanes (law 5). A page is
         // one act and its measure is what it brought.
         let mut mu = [0u64; 4];
+        let mut heard_words = Vec::new();
         while pos < taught.len() {
             let before = pos;
             let Some(e) = Element::from_bytes(taught, &mut pos) else {
@@ -336,8 +337,17 @@ impl Entity {
             for (lane, add) in mu.iter_mut().zip(m) {
                 *lane = lane.saturating_add(add);
             }
-            let _ = crate::transducer::address::put_addr(&mut page, e.address());
-            let _ = self.pivot_on(&e);
+            // A page whose receipt cannot name every word it carries is not
+            // learned: the receipt would seal fewer words than the page
+            // brought (LD0).
+            if crate::transducer::address::put_addr(&mut page, e.address()).is_none() {
+                eprintln!("  taught page refused: a word's address cannot be framed on its receipt");
+                return None;
+            }
+            heard_words.push(e);
+        }
+        for e in &heard_words {
+            let _ = self.pivot_on(e);
         }
         // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
         // receipt naming the words is sealed on its own chain and the page

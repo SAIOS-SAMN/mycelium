@@ -146,7 +146,12 @@ pub(crate) fn speak_root(
     if let Some((_, addr)) = hop {
         // Never dialed from the door: queued for the nerve thread, dropped
         // when the nerve is full — the mesh's own impedance.
-        let _ = nerve.try_send((addr, dialogue::encode_root(self_id, task, solver, ticks)));
+        match dialogue::encode_root(self_id, task, solver, ticks) {
+            Some(body) => {
+                let _ = nerve.try_send((addr, body));
+            }
+            None => eprintln!("  root refused: the task's address cannot be framed"),
+        }
     }
 }
 

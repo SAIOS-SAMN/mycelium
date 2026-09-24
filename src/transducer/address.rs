@@ -373,9 +373,11 @@ pub fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
     Some(s)
 }
 
-/// Wire and tape embedding of an address: `len16 + bytes`. Refuses when
-/// the address does not fit in u16 (never truncates). A field of a key
-/// uses [`put_bytes`] (u32).
+/// Wire and tape embedding of an address: `len16 + bytes`. The u16 is the
+/// wall (LD0 as re-ruled, 78.22): an address that reaches it is a blob
+/// written where a coordinate or a citation belongs, and it refuses,
+/// writing nothing; every caller refuses its whole write by name. A field
+/// of a key uses [`put_bytes`] (u32).
 pub fn put_addr(out: &mut Vec<u8>, addr: impl AsRef<[u8]>) -> Option<()> {
     let addr = addr.as_ref();
     let n = u16::try_from(addr.len()).ok()?;

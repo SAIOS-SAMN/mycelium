@@ -104,11 +104,18 @@ pub fn encode_fetch<A: AsRef<[u8]>>(
         if out.len() + width > budget {
             break;
         }
-        push_invariant(&mut out, inv);
-        out.extend_from_slice(&(have.len() as u32).to_le_bytes());
-        for a in have {
-            let _ = put_addr(&mut out, a);
+        // One chart framed whole or not at all: a chart or an address that
+        // reaches its u16 is refused by name and left out of the count.
+        let mut rec = Vec::new();
+        let framed = push_invariant(&mut rec, inv).and_then(|()| {
+            rec.extend_from_slice(&(have.len() as u32).to_le_bytes());
+            have.iter().try_for_each(|a| put_addr(&mut rec, a))
+        });
+        if framed.is_none() {
+            eprintln!("  fetch chart refused: a chart or an address it holds cannot be framed");
+            continue;
         }
+        out.append(&mut rec);
         k += 1;
     }
     out[count_at..count_at + 4].copy_from_slice(&k.to_le_bytes());

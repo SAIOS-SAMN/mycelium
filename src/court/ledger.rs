@@ -30,7 +30,10 @@ fn read_u32(b: &[u8], p: &mut usize) -> Option<usize> {
     Some(v)
 }
 impl CourtState {
-    pub fn to_bytes(&self) -> Vec<u8> {
+    /// `None` where an address cannot be framed (LD0): the state is not
+    /// written, never written with the address dropped and the file
+    /// misaligned from there on.
+    pub fn to_bytes(&self) -> Option<Vec<u8>> {
         let mut out = Vec::new();
         push_u32(&mut out, self.chain.receipts().len());
         for r in self.chain.receipts() {
@@ -38,18 +41,18 @@ impl CourtState {
         }
         push_u32(&mut out, self.federation.len());
         for (addr, elem) in &self.federation {
-            let _ = crate::transducer::address::put_addr(&mut out, addr);
+            crate::transducer::address::put_addr(&mut out, addr)?;
             let bytes = elem.to_bytes();
             push_u32(&mut out, bytes.len());
             out.extend_from_slice(&bytes);
         }
         push_u32(&mut out, self.ruled.len());
         for addr in &self.ruled {
-            let _ = crate::transducer::address::put_addr(&mut out, addr);
+            crate::transducer::address::put_addr(&mut out, addr)?;
         }
         push_u32(&mut out, self.rebound.len());
         for (addr, fam) in &self.rebound {
-            let _ = crate::transducer::address::put_addr(&mut out, addr);
+            crate::transducer::address::put_addr(&mut out, addr)?;
             push_u32(&mut out, *fam);
         }
         for c in [self.upheld, self.demoted, self.slashed, self.rebinds] {
@@ -61,7 +64,7 @@ impl CourtState {
             push_u32(&mut out, bytes.len());
             out.extend_from_slice(&bytes);
         }
-        out
+        Some(out)
     }
 
     /// Rehydrate from persisted bytes. The receipt chain re-verifies before
@@ -132,8 +135,14 @@ impl CourtState {
     /// Atomic persistence: write-then-rename, the registry pattern — a
     /// crash between rename boundaries leaves the previous sealed state.
     pub fn save(&self, path: &str) -> std::io::Result<()> {
+        let Some(bytes) = self.to_bytes() else {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "court state refused: an address cannot be framed",
+            ));
+        };
         let tmp = format!("{path}.tmp");
-        std::fs::write(&tmp, self.to_bytes())?;
+        std::fs::write(&tmp, bytes)?;
         std::fs::rename(&tmp, path)
     }
 
@@ -178,7 +187,7 @@ mod tests {
             rebinds: 1,
             dialect: Vec::new(),
         };
-        let bytes = state.to_bytes();
+        let bytes = state.to_bytes().expect("the addresses frame");
         let back = CourtState::from_bytes(&bytes).expect("clean state rehydrates");
         assert_eq!(back.chain.next_step_index(), 1, "K continues, never resets");
         assert_eq!(back.chain.head_hash(), state.chain.head_hash(), "lineage head matches");

@@ -96,21 +96,31 @@ impl Treasury {
         for e in &self.entries {
             e.write(&mut out);
         }
-        // ESCROWED AWARDS section (Step 5).
-        out.extend_from_slice(&(self.escrowed.len() as u32).to_le_bytes());
+        // ESCROWED AWARDS section (Step 5). LD0: a row whose address cannot
+        // be framed is named and left out of the count, never written with
+        // the address dropped — that misaligned hypha b's ledger at award
+        // 35 and refused the whole tape from there.
+        let mut body = Vec::new();
+        let mut kept = 0u32;
         crate::snapshot::persist(&self.escrowed, |addr, row| {
             let (voices, mu, anchor) = (&row.voices, &row.mu, &row.anchor);
-            let _ = crate::transducer::address::put_addr(&mut out, addr);
-            out.extend_from_slice(&(voices.len() as u32).to_le_bytes());
+            if crate::transducer::address::put_addr(&mut body, addr).is_none() {
+                eprintln!("  treasury escrow row refused: its address cannot be framed");
+                return;
+            }
+            body.extend_from_slice(&(voices.len() as u32).to_le_bytes());
             for v in voices {
-                out.extend_from_slice(v);
+                body.extend_from_slice(v);
             }
             for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
+                body.extend_from_slice(&m.to_le_bytes());
             }
-            out.extend_from_slice(&anchor.0.to_le_bytes());
-            out.extend_from_slice(&anchor.1);
+            body.extend_from_slice(&anchor.0.to_le_bytes());
+            body.extend_from_slice(&anchor.1);
+            kept += 1;
         });
+        out.extend_from_slice(&kept.to_le_bytes());
+        out.append(&mut body);
         // FUNDED ESCROW, written out. It stood as "rebuilt from the journal
         // by `recompute_balances`, not persisted twice" -- but an entry
         // carries a party and a lane vector and NOT the listing it is
@@ -118,14 +128,21 @@ impl Treasury {
         // touched it. A restored treasury therefore held zero funded escrow
         // against balances that had already paid for it, and §6's second
         // equation failed by exactly the funded total at every restart.
-        out.extend_from_slice(&(self.funded.len() as u32).to_le_bytes());
+        let mut body = Vec::new();
+        let mut kept = 0u32;
         crate::snapshot::persist(&self.funded, |addr, (payer, mu)| {
-            let _ = crate::transducer::address::put_addr(&mut out, addr);
-            out.extend_from_slice(payer);
-            for m in mu {
-                out.extend_from_slice(&m.to_le_bytes());
+            if crate::transducer::address::put_addr(&mut body, addr).is_none() {
+                eprintln!("  treasury funded row refused: its address cannot be framed");
+                return;
             }
+            body.extend_from_slice(payer);
+            for m in mu {
+                body.extend_from_slice(&m.to_le_bytes());
+            }
+            kept += 1;
         });
+        out.extend_from_slice(&kept.to_le_bytes());
+        out.append(&mut body);
         // BALANCES, written out. They were "recomputed from the entries" at
         // load, and `recompute_balances` applied two of §2's ten kinds --
         // `mint` and paired `transfer` -- ignoring genesis, burn, stake,

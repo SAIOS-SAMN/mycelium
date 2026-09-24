@@ -17,7 +17,10 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let say = |s: &mut TcpStream, r: dialogue::Ruled| {
-        answer(s, Frame { lane: frame.lane, body: dialogue::encode_ruled(&r) });
+        match dialogue::encode_ruled(&r) {
+            Some(body) => answer(s, Frame { lane: frame.lane, body }),
+            None => eprintln!("  court equivocation answer refused: the reason passes its u16"),
+        }
     };
     let refuse = |s: &mut TcpStream, why: &str| {
         eprintln!(

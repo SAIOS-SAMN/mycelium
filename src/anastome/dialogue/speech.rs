@@ -10,12 +10,14 @@ use crate::transducer::sentence::Contraction;
 
 /// `[ACT_REFINE][voice 32][word address][cites]` — the bidder's sentence for the
 /// word (spoken by other words) rides as citations; the hypha replays.
-pub fn encode_refine(voice: &[u8; 32], word: impl AsRef<[u8]>, cites: &[CiteWire]) -> Vec<u8> {
+/// `None` where an address cannot be framed: not spoken, never a partial
+/// frame (LD0).
+pub fn encode_refine(voice: &[u8; 32], word: impl AsRef<[u8]>, cites: &[CiteWire]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_REFINE];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, word);
-    push_cites(&mut out, cites);
-    out
+    put_addr(&mut out, word)?;
+    push_cites(&mut out, cites)?;
+    Some(out)
 }
 
 pub fn decode_refine(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
@@ -51,11 +53,11 @@ pub fn encode_refine_algebraic(
     word: impl AsRef<[u8]>,
     held: impl AsRef<[u8]>,
     witness: &AlgebraicWitness,
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_REFINE_ALGEBRAIC];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, word);
-    let _ = put_addr(&mut out, held);
+    put_addr(&mut out, word)?;
+    put_addr(&mut out, held)?;
     match witness {
         AlgebraicWitness::SameOperator => out.push(0),
         AlgebraicWitness::Section(gamma) => {
@@ -63,7 +65,7 @@ pub fn encode_refine_algebraic(
             gamma.to_bytes(&mut out);
         }
     }
-    out
+    Some(out)
 }
 
 /// A frame whose witness does not parse is MALFORMED, not a bid with no
@@ -99,7 +101,8 @@ pub struct Spoken {
     // about which utterance this is (50.9).
 }
 
-pub fn encode_speech(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Vec<u8>]) -> Vec<u8> {
+/// `None` where the task's address cannot be framed (LD0): not spoken.
+pub fn encode_speech(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Vec<u8>]) -> Option<Vec<u8>> {
     encode_speech_standing(voice, task, tu, sentences, &[])
 }
 
@@ -111,7 +114,7 @@ pub fn encode_speech_standing(
     tu: u64,
     sentences: &[Vec<u8>],
     standing: &[u8],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let spoken: Vec<Spoken> = sentences
         .iter()
         .enumerate()
@@ -131,11 +134,18 @@ pub fn encode_speech_standing(
 
 /// `[ACT_SPEECH][voice 32][task address][K u64][n u32]` then per sentence
 /// `[standing u8][cert u8][contraction?][len u32][tape]`; the derivation
-/// of every word vertex is inside the tape at v7 (50.2 step 2).
-pub fn encode_speech_spoken(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, sentences: &[Spoken]) -> Vec<u8> {
+/// of every word vertex is inside the tape at v7 (50.2 step 2). `None`
+/// where the task's address cannot be framed (LD0): the speech is not
+/// spoken, never sent with the task dropped.
+pub fn encode_speech_spoken(
+    voice: &[u8; 32],
+    task: impl AsRef<[u8]>,
+    tu: u64,
+    sentences: &[Spoken],
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_SPEECH];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, task);
+    put_addr(&mut out, task)?;
     out.extend_from_slice(&tu.to_le_bytes());
     out.extend_from_slice(&(sentences.len() as u32).to_le_bytes());
     for s in sentences {
@@ -143,14 +153,14 @@ pub fn encode_speech_spoken(voice: &[u8; 32], task: impl AsRef<[u8]>, tu: u64, s
         match &s.contraction {
             Some(c) => {
                 out.push(1);
-                c.to_bytes(&mut out);
+                c.to_bytes(&mut out)?;
             }
             None => out.push(0),
         }
         out.extend_from_slice(&(s.tape.len() as u32).to_le_bytes());
         out.extend_from_slice(&s.tape);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
@@ -214,7 +224,7 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Option<Vec<u8>> {
                 }
                 if let Adjudication::Refused { kind, at, .. } = a {
                     out.push(kind.to_byte());
-                    at.to_bytes(&mut out);
+                    at.to_bytes(&mut out)?;
                 }
             }
         }

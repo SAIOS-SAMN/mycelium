@@ -55,10 +55,19 @@ pub fn encode_docket_reply_paged(
     let mut settled_len = 8usize;
     for s in settlements {
         let mut item = Vec::new();
-        let _ = put_addr(&mut item, &s.listing);
+        // LD0 — an item whose address cannot be framed is not served, and
+        // the page ends there as it ends at the budget: the drain takes the
+        // items served in order, so none is skipped past (rule 11).
+        if put_addr(&mut item, &s.listing).is_none() {
+            eprintln!("  docket settlement refused: its listing's address cannot be framed");
+            break;
+        }
         push_chain(&mut item, &s.chain);
         item.extend_from_slice(&s.voice);
-        push_cites(&mut item, &s.cites);
+        if push_cites(&mut item, &s.cites).is_none() {
+            eprintln!("  docket settlement refused: a citation's address cannot be framed");
+            break;
+        }
         push_mu(&mut item, &s.before);
         push_mu(&mut item, &s.after);
         item.extend_from_slice(&s.k.to_le_bytes());
@@ -74,7 +83,10 @@ pub fn encode_docket_reply_paged(
     let mut words = 0usize;
     for d in dockets {
         let mut item = Vec::with_capacity(112 + d.elem.len() + 32 * d.voices.len());
-        let _ = put_addr(&mut item, &d.addr);
+        if put_addr(&mut item, &d.addr).is_none() {
+            eprintln!("  docket word refused: its address cannot be framed");
+            break;
+        }
         item.extend_from_slice(&(d.elem.len() as u32).to_le_bytes());
         item.extend_from_slice(&d.elem);
         item.extend_from_slice(&(d.voices.len() as u32).to_le_bytes());
@@ -235,11 +247,11 @@ pub fn decode_evidence_request(body: &[u8]) -> Option<[u8; 32]> {
 pub fn encode_evidence_deposit<A: AsRef<[u8]>>(
     voice: &[u8; 32],
     items: &[EvidenceOf<A>],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_EVIDENCE];
     out.extend_from_slice(voice);
-    out.extend_from_slice(&encode_evidence_reply(items));
-    out
+    out.extend_from_slice(&encode_evidence_reply(items)?);
+    Some(out)
 }
 
 pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
@@ -254,13 +266,15 @@ pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
 /// evidence reply: `[n u32] ( [addr][nf u32][fp (r i64,c i64)·nf]
 /// [ns u32][scene (r i64,c i64,h u8)·ns] )…` — the selection fiber's birth
 /// evidence, count-guarded at every level.
+/// `None` where an address cannot be framed: the whole reply is refused,
+/// never a partial one (LD0, rule 11).
 pub fn encode_evidence_reply<A: AsRef<[u8]>>(
     items: &[EvidenceOf<A>],
-) -> Vec<u8> {
+) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     out.extend_from_slice(&(items.len() as u32).to_le_bytes());
     for EvidenceOf { addr, footprint, scene } in items {
-        let _ = put_addr(&mut out, addr);
+        put_addr(&mut out, addr)?;
         out.extend_from_slice(&(footprint.len() as u32).to_le_bytes());
         for (r, c) in footprint {
             out.extend_from_slice(&r.to_le_bytes());
@@ -273,7 +287,7 @@ pub fn encode_evidence_reply<A: AsRef<[u8]>>(
             out.push(*h);
         }
     }
-    out
+    Some(out)
 }
 
 pub fn decode_evidence_reply(body: &[u8]) -> Option<Vec<EvidenceItem>> {
@@ -348,7 +362,7 @@ pub fn encode_verdict_payload(
 ) -> Option<Vec<u8>> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, addr);
+    put_addr(&mut out, addr)?;
     out.push(ruling);
     out.extend_from_slice(receipt);
     match pi {
@@ -378,11 +392,11 @@ pub fn encode_verdict_attach(
 ) -> Option<Vec<u8>> {
     let mut out = vec![ACT_VERDICT];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, addr);
+    put_addr(&mut out, addr)?;
     out.push(RULING_ATTACHED);
     out.extend_from_slice(receipt);
     out.push(2);
-    let _ = put_addr(&mut out, base);
+    put_addr(&mut out, base)?;
     g.to_bytes(&mut out);
     out.extend_from_slice(&super::encode_receipt_section(
         &section.prefix,
@@ -437,15 +451,16 @@ pub fn decode_verdict(body: &[u8]) -> Option<Verdict> {
 
 /// The receiver's answer to a ruling: `[arm u8][payload]` — `0` applied,
 /// `1` inert, `2` refused with `len16 + reason`, `3` gap with two `u64`.
-/// It was one byte carrying a bool.
-pub fn encode_ruled(r: &Ruled) -> Vec<u8> {
+/// `None` where the reason passes its u16: the answer is refused, never
+/// wrapped (LD0).
+pub fn encode_ruled(r: &Ruled) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     match r {
         Ruled::Applied => out.push(0),
         Ruled::Inert => out.push(1),
         Ruled::Refused(why) => {
             out.push(2);
-            out.extend_from_slice(&(why.len() as u16).to_le_bytes());
+            crate::transducer::address::put_u16_count(&mut out, why.len())?;
             out.extend_from_slice(why);
         }
         Ruled::Gap { from, to } => {
@@ -454,7 +469,7 @@ pub fn encode_ruled(r: &Ruled) -> Vec<u8> {
             out.extend_from_slice(&to.to_le_bytes());
         }
     }
-    out
+    Some(out)
 }
 
 pub fn decode_ruled(body: &[u8]) -> Option<Ruled> {

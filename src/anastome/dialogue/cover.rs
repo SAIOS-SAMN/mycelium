@@ -45,13 +45,15 @@ pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {
     Some(out)
 }
 
-pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], ticks: u64) -> Vec<u8> {
+/// `None` where the task's address reaches its u16: the root is not
+/// spoken (LD0).
+pub fn encode_root(voice: &[u8; 32], task: impl AsRef<[u8]>, solver: &[u8; 32], ticks: u64) -> Option<Vec<u8>> {
     let mut out = vec![ACT_ROOT];
     out.extend_from_slice(voice);
-    let _ = put_addr(&mut out, task);
+    put_addr(&mut out, task)?;
     out.extend_from_slice(solver);
     out.extend_from_slice(&ticks.to_le_bytes());
-    out
+    Some(out)
 }
 
 pub fn decode_root(body: &[u8]) -> Option<([u8; 32], Address, [u8; 32], u64)> {

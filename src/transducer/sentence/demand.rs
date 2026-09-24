@@ -157,7 +157,7 @@ impl Demand {
             Demand::Source { multiplicity } => out.extend_from_slice(&multiplicity.to_le_bytes()),
             Demand::Creation => {}
             Demand::TopologicalDeformation { image, axes } => {
-                let _ = crate::transducer::sentence::codec::put_inv(image, out);
+                image.put_canonical(out);
                 out.extend_from_slice(&(axes.len() as u16).to_le_bytes());
                 for a in axes {
                     out.extend_from_slice(&a.to_le_bytes());
@@ -167,7 +167,7 @@ impl Demand {
             // shear stands; τ says how far, exactly over ℚ, so a reader
             // knows the translation `T(−τ)` that would close it.
             Demand::Dislocation { chart, tau } => {
-                let _ = crate::transducer::sentence::codec::put_inv(chart, out);
+                chart.put_canonical(out);
                 for q in tau.iter() {
                     put_q(out, q);
                 }
@@ -210,7 +210,7 @@ impl Demand {
             }
             3 => Demand::Creation,
             4 => {
-                let image = crate::transducer::sentence::codec::take_inv(b, pos)?;
+                let image = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
                 let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
                 *pos += 2;
                 if n > b.len().checked_sub(*pos)? / 2 {
@@ -224,7 +224,7 @@ impl Demand {
                 Demand::TopologicalDeformation { image, axes }
             }
             5 => {
-                let chart = crate::transducer::sentence::codec::take_inv(b, pos)?;
+                let chart = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
                 let t0 = take_q(b, pos)?;
                 let t1 = take_q(b, pos)?;
                 let t2 = take_q(b, pos)?;

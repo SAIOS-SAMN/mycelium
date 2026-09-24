@@ -14,7 +14,7 @@ use super::*;
 /// be framed: an offer without its signed position is not spoken.
 pub fn encode_offer(o: &Offer) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OFFER];
-    let _ = put_addr(&mut out, &o.addr);
+    put_addr(&mut out, &o.addr)?;
     out.extend_from_slice(&o.home);
     out.extend_from_slice(&(o.elem.len() as u32).to_le_bytes());
     out.extend_from_slice(&o.elem);
@@ -57,9 +57,9 @@ pub fn decode_offer(body: &[u8]) -> Option<Offer> {
 
 /// The witness's answer: `[arm u8][vk 32][payload]` — `0` unmeasured with
 /// no payload, `1` reached with `len32 + form`, `2` refused with
-/// `len16 + reason`. The arm is a tag the home matches on; it was two byte
-/// vectors whose LENGTHS the home tested to tell the arms apart.
-pub fn encode_offer_reply(w: &Witnessed) -> Vec<u8> {
+/// `len16 + reason`. The arm is a tag the home matches on. `None` where
+/// the reason passes its u16: the reply is refused, never wrapped (LD0).
+pub fn encode_offer_reply(w: &Witnessed) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     match w {
         Witnessed::Unmeasured { vk } => {
@@ -75,11 +75,11 @@ pub fn encode_offer_reply(w: &Witnessed) -> Vec<u8> {
         Witnessed::Refused { vk, why } => {
             out.push(2);
             out.extend_from_slice(vk);
-            out.extend_from_slice(&(why.len() as u16).to_le_bytes());
+            crate::transducer::address::put_u16_count(&mut out, why.len())?;
             out.extend_from_slice(why);
         }
     }
-    out
+    Some(out)
 }
 
 pub fn decode_offer_reply(body: &[u8]) -> Option<Witnessed> {
@@ -104,14 +104,20 @@ pub fn decode_offer_reply(body: &[u8]) -> Option<Witnessed> {
 }
 
 /// Installed: `[ACT_INSTALLED][addr][elen u32][elem][sig_home 64][sig_peer 64]`
-pub fn encode_installed(addr: impl AsRef<[u8]>, elem: &[u8], sig_home: &[u8; 64], sig_peer: &[u8; 64]) -> Vec<u8> {
+/// `None` where the address cannot be framed: refused whole (LD0).
+pub fn encode_installed(
+    addr: impl AsRef<[u8]>,
+    elem: &[u8],
+    sig_home: &[u8; 64],
+    sig_peer: &[u8; 64],
+) -> Option<Vec<u8>> {
     let mut out = vec![ACT_INSTALLED];
-    let _ = put_addr(&mut out, addr);
+    put_addr(&mut out, addr)?;
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
     out.extend_from_slice(sig_home);
     out.extend_from_slice(sig_peer);
-    out
+    Some(out)
 }
 
 pub fn decode_installed(body: &[u8]) -> Option<Installed> {
@@ -138,10 +144,11 @@ pub fn decode_installed(body: &[u8]) -> Option<Installed> {
 // payload is the offered address (A21), which binds the form by its
 // content and not by the bytes it happened to be spelled with (law 2).
 
-pub fn installed_signed_prefix(addr: impl AsRef<[u8]>, elem: &[u8]) -> Vec<u8> {
+/// `None` where the address cannot be framed: refused whole (LD0).
+pub fn installed_signed_prefix(addr: impl AsRef<[u8]>, elem: &[u8]) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    let _ = put_addr(&mut out, addr);
+    put_addr(&mut out, addr)?;
     out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
     out.extend_from_slice(elem);
-    out
+    Some(out)
 }

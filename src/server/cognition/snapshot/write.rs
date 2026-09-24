@@ -258,21 +258,30 @@ impl Kernel {
         let mut all = self.settlements_cold.clone();
         all.extend(self.settlements.iter().cloned());
         let mut body = Vec::new();
+        let mut kept = 0u64;
         for s in &all {
-            put_key(&mut body, &s.listing);
-            crate::anastome::dialogue::push_chain(&mut body, &s.chain);
-            body.extend_from_slice(&s.voice);
-            crate::anastome::dialogue::push_cites(&mut body, &s.cites);
+            // LD0 — a settlement whose citations cannot be framed is not
+            // written, named and left out of the count, never a partial row.
+            let mut row = Vec::new();
+            put_key(&mut row, &s.listing);
+            crate::anastome::dialogue::push_chain(&mut row, &s.chain);
+            row.extend_from_slice(&s.voice);
+            if crate::anastome::dialogue::push_cites(&mut row, &s.cites).is_none() {
+                eprintln!("  snapshot settlement refused: a citation's address cannot be framed");
+                continue;
+            }
             for m in &s.before {
-                body.extend_from_slice(&m.to_le_bytes());
+                row.extend_from_slice(&m.to_le_bytes());
             }
             for m in &s.after {
-                body.extend_from_slice(&m.to_le_bytes());
+                row.extend_from_slice(&m.to_le_bytes());
             }
-            body.extend_from_slice(&s.k.to_le_bytes());
-            body.extend_from_slice(&s.t_universal.to_le_bytes());
+            row.extend_from_slice(&s.k.to_le_bytes());
+            row.extend_from_slice(&s.t_universal.to_le_bytes());
+            body.append(&mut row);
+            kept += 1;
         }
-        framed(&mut out, all.len() as u64, &mut body);
+        framed(&mut out, kept, &mut body);
         out
     }
 

@@ -80,11 +80,8 @@ fn a_witness_answers_with_one_of_three_arms_and_names_the_key() {
 
     // REACHED: the second vantage, as a tape, never the offered form.
     let form = vec![1u8, 2, 3, 4, 5];
-    let w = decode_offer_reply(&encode_offer_reply(&Witnessed::Reached {
-        vk,
-        form: form.clone(),
-    }))
-    .expect("an answer parses whole");
+    let w = decode_offer_reply(&encode_offer_reply(&Witnessed::Reached { vk, form: form.clone() }).expect("frames"))
+        .expect("an answer parses whole");
     assert_eq!(w.vk(), vk, "the vantage is the key the witness names");
     match w {
         Witnessed::Reached { form: got, .. } => assert_eq!(got, form),
@@ -92,7 +89,7 @@ fn a_witness_answers_with_one_of_three_arms_and_names_the_key() {
     }
 
     // UNMEASURED: it replayed and has re-derived nothing of its own.
-    let none = decode_offer_reply(&encode_offer_reply(&Witnessed::Unmeasured { vk }))
+    let none = decode_offer_reply(&encode_offer_reply(&Witnessed::Unmeasured { vk }).expect("frames"))
         .expect("an answer with no form still parses");
     assert!(
         matches!(none, Witnessed::Unmeasured { .. }),
@@ -102,11 +99,9 @@ fn a_witness_answers_with_one_of_three_arms_and_names_the_key() {
 
     // REFUSED: the 34.1 constant travels, not the fact that there was one.
     let why = crate::court::verdict::REFUSE_NOT_CLOSED;
-    let slashed = decode_offer_reply(&encode_offer_reply(&Witnessed::Refused {
-        vk,
-        why: why.as_bytes().to_vec(),
-    }))
-    .expect("a refusal parses whole");
+    let slashed =
+        decode_offer_reply(&encode_offer_reply(&Witnessed::Refused { vk, why: why.as_bytes().to_vec() }).expect("frames"))
+            .expect("a refusal parses whole");
     match slashed {
         Witnessed::Refused { why: got, .. } => assert_eq!(
             String::from_utf8(got).expect("a 34.1 constant is text"),

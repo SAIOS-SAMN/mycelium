@@ -109,8 +109,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(k) = door.kernel.lock() else { return true };
             k.anchor_evidence().iter().take(32).cloned().collect()
         };
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_evidence_reply(&items) };
-        answer(s, reply);
+        // LD0 — a reply whose address cannot be framed is refused whole,
+        // by name, and nothing partial is answered.
+        let Some(body) = dialogue::encode_evidence_reply(&items) else {
+            eprintln!("  evidence reply refused: an address cannot be framed");
+            return true;
+        };
+        answer(s, Frame { lane: frame.lane, body });
         return true;
     }
     if kind == dialogue::ACT_TASK {
@@ -423,7 +428,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             eprintln!("  syllabus refused: the page does not fit its count");
             return true;
         };
-        dialogue::append_class_records(&mut body, &classes);
+        if dialogue::append_class_records(&mut body, &classes).is_none() {
+            eprintln!("  syllabus refused: the class records cannot be framed");
+            return true;
+        }
         let reply = Frame { lane: frame.lane, body };
         answer(s, reply);
         return true;

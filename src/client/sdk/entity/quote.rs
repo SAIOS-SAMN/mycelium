@@ -90,7 +90,11 @@ impl Entity {
     /// of the retired meaning re-derives the sentence form.
     pub fn bid_refinement(&mut self, word: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self.session.speak_keyed(word, dialogue::encode_refine(&voice, word, cites))?;
+        // LD0: a bid whose address cannot be framed is not spoken.
+        let Some(frame) = dialogue::encode_refine(&voice, word, cites) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "refine bid refused: an address cannot be framed"));
+        };
+        let body = self.session.speak_keyed(word, frame)?;
         // A receipt that does not decode is not a receipt saying the bid
         // earned nothing: REFINE_NOTHING is an answer the hypha gives, and
         // this mind did not get one.
@@ -474,9 +478,10 @@ impl Entity {
         witness: &crate::anastome::dialogue::AlgebraicWitness,
     ) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let body = self
-            .session
-            .speak_keyed(word, dialogue::encode_refine_algebraic(&voice, word, held, witness))?;
+        let Some(frame) = dialogue::encode_refine_algebraic(&voice, word, held, witness) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "refine bid refused: an address cannot be framed"));
+        };
+        let body = self.session.speak_keyed(word, frame)?;
         let Some((code, mu)) = dialogue::decode_solve_receipt(&body) else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,

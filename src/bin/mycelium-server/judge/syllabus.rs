@@ -95,7 +95,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         eprintln!("  fetch refused: the page does not fit its count");
         return;
     };
-    dialogue::append_class_records(&mut body, &classes);
+    if dialogue::append_class_records(&mut body, &classes).is_none() {
+        eprintln!("  fetch refused: the class records cannot be framed");
+        return;
+    }
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
 }

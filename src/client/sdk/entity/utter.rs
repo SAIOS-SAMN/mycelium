@@ -359,7 +359,10 @@ impl Entity {
                 contraction: self.certificate_for(&sentences[i]),
             })
             .collect();
-        let body = dialogue::encode_speech_spoken(&voice, task, tu, &spoken);
+        // LD0: a speech whose task address cannot be framed is not spoken.
+        let Some(body) = dialogue::encode_speech_spoken(&voice, task, tu, &spoken) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "speech refused: the task's address cannot be framed"));
+        };
         let reply = self.session.speak_nerve(body)?;
         // B7: A REPLY THAT DOES NOT DECODE IS NOT AN OUTCOME. Reading it as
         // zero adjudications says the court answered and adjudicated

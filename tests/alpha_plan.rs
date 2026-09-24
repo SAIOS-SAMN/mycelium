@@ -137,7 +137,7 @@ fn speak_rule_recolours_or_conflicts() {
 #[test]
 fn speech_act_one_frame() {
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
-    let body = dialogue::encode_speech(&[1u8; 32], [2u8; 32], 7, &[w.to_bytes()]);
+    let body = dialogue::encode_speech(&[1u8; 32], [2u8; 32], 7, &[w.to_bytes()]).expect("the task frames");
     let act = dialogue::decode_speech(&body).expect("decode");
     assert_eq!(act.voice[0], 1);
     assert_eq!(act.task[0], 2);

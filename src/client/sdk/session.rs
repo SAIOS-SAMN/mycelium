@@ -439,7 +439,11 @@ impl Session {
     /// PROBE an open listing with a tentative sentence; the hypha replays and
     /// settles a graded trajectory or closure. Returns (code, paid, remaining).
     pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
-        let body = self.speak_keyed(target, dialogue::encode_probe(&self.kernel.voice, target, cites))?;
+        // LD0: a probe whose address cannot be framed is not spoken.
+        let Some(frame) = dialogue::encode_probe(&self.kernel.voice, target, cites) else {
+            return Err(io::Error::new(io::ErrorKind::InvalidInput, "probe refused: an address cannot be framed"));
+        };
+        let body = self.speak_keyed(target, frame)?;
         dialogue::decode_probe_reply(&body)
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "probe decode"))
     }

@@ -29,15 +29,20 @@ pub fn act_is(body: &[u8], tag: u8) -> bool {
     act_tag(body) == Some(tag)
 }
 
-pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) {
-    out.extend_from_slice(&(cites.len() as u32).to_le_bytes());
+/// The citations framed whole, or refused whole where an address cannot be
+/// framed: nothing is written then, never a partial frame (LD0, rule 11).
+pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) -> Option<()> {
+    let mut framed = Vec::new();
+    framed.extend_from_slice(&(cites.len() as u32).to_le_bytes());
     for c in cites {
-        let _ = crate::transducer::address::put_addr(out, &c.addr);
-        out.push(c.standing);
-        c.transport.to_bytes(out);
-        out.extend_from_slice(&c.gauge.to_le_bytes());
-        push_chain(out, &c.body);
+        crate::transducer::address::put_addr(&mut framed, &c.addr)?;
+        framed.push(c.standing);
+        c.transport.to_bytes(&mut framed);
+        framed.extend_from_slice(&c.gauge.to_le_bytes());
+        push_chain(&mut framed, &c.body);
     }
+    out.append(&mut framed);
+    Some(())
 }
 
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {

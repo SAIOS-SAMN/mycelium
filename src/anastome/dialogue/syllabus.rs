@@ -53,13 +53,18 @@ pub struct ClassPage {
     pub rotor: Vec<u8>,
 }
 
-pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) {
-    out.extend_from_slice(&(records.len().min(u16::MAX as usize) as u16).to_le_bytes());
+/// The records framed whole, or `None` with nothing written: a count past
+/// its u16 or a class key that reaches its wall is refused, never cut.
+pub fn append_class_records(out: &mut Vec<u8>, records: &[ClassPage]) -> Option<()> {
+    let mut rec = Vec::new();
+    crate::transducer::address::put_u16_count(&mut rec, records.len())?;
     for r in records {
-        let _ = crate::transducer::address::put_class_record(out, &r.key, r.order);
-        out.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
-        out.extend_from_slice(&r.rotor);
+        crate::transducer::address::put_class_record(&mut rec, &r.key, r.order)?;
+        rec.extend_from_slice(&(r.rotor.len() as u32).to_le_bytes());
+        rec.extend_from_slice(&r.rotor);
     }
+    out.append(&mut rec);
+    Some(())
 }
 
 pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {

@@ -144,7 +144,8 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
             &task,
             0,
             &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
-        );
+        )
+        .expect("the task frames");
         let reply = hear(&mut court1, &frame);
         let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");
         let [first] = adjudicated.as_slice() else {
@@ -182,7 +183,8 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
         &task,
         0,
         &[Spoken { tape: utter.to_bytes(), standing: 0, contraction: cited.clone() }],
-    );
+    )
+    .expect("the task frames");
     let reply = hear(&mut court2, &frame);
     let adjudicated = dialogue::decode_speech_reply(&reply).expect("one adjudication per sentence");
     assert_eq!(adjudicated.iter().map(|a| a.code()).collect::<Vec<_>>(), vec![code], "the same standing on the second court");

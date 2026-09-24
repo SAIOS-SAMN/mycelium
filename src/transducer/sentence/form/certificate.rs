@@ -52,10 +52,9 @@ impl PivotBy {
         match self {
             PivotBy::Word { word, .. } => word.rotor().key().into_vec(),
             PivotBy::Placement { translator, .. } => {
+                // The translator's own canonical coefficients, inline.
                 let mut buf = vec![1u8];
-                if let Some(k) = translator.key() {
-                    let _ = crate::transducer::address::put_addr(&mut buf, k);
-                }
+                translator.put_canonical(&mut buf);
                 buf
             }
             PivotBy::Hue { gauge, .. } => {
@@ -69,9 +68,7 @@ impl PivotBy {
             }
             PivotBy::OpenAxis { seed, .. } => {
                 let mut buf = vec![3u8];
-                if let Some(k) = seed.key() {
-                    let _ = crate::transducer::address::put_addr(&mut buf, k);
-                }
+                seed.put_canonical(&mut buf);
                 buf
             }
         }
@@ -373,34 +370,42 @@ impl At {
         }
     }
 
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+    /// The coordinate written out: a chart as its own axes inline
+    /// (`put_canonical`), a cited address behind its u16. `None` where an
+    /// address reaches the u16 wall — a blob where a citation belongs — and
+    /// nothing is written then (LD0).
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
+        use crate::transducer::address::put_addr;
+        let mut rec = Vec::new();
         match self {
             At::Vertex { address, chart } => {
-                out.push(0);
-                let _ = crate::transducer::address::put_addr(out, address);
-                let _ = crate::transducer::sentence::codec::put_inv(chart, out);
+                rec.push(0);
+                put_addr(&mut rec, address)?;
+                chart.put_canonical(&mut rec);
             }
             At::Face(a, b) => {
-                out.push(1);
-                let _ = crate::transducer::address::put_addr(out, a);
-                let _ = crate::transducer::address::put_addr(out, b);
+                rec.push(1);
+                put_addr(&mut rec, a)?;
+                put_addr(&mut rec, b)?;
             }
             At::Chart(inv, links) => {
-                out.push(2);
-                let _ = crate::transducer::sentence::codec::put_inv(inv, out);
-                out.extend_from_slice(&(links.len() as u32).to_le_bytes());
+                rec.push(2);
+                inv.put_canonical(&mut rec);
+                rec.extend_from_slice(&(links.len() as u32).to_le_bytes());
                 for (r, c, before, after) in links {
-                    out.extend_from_slice(&r.to_le_bytes());
-                    out.extend_from_slice(&c.to_le_bytes());
-                    out.push(*before);
-                    out.push(*after);
+                    rec.extend_from_slice(&r.to_le_bytes());
+                    rec.extend_from_slice(&c.to_le_bytes());
+                    rec.push(*before);
+                    rec.push(*after);
                 }
             }
             At::Tape(a) => {
-                out.push(3);
-                let _ = crate::transducer::address::put_addr(out, a);
+                rec.push(3);
+                put_addr(&mut rec, a)?;
             }
         }
+        out.append(&mut rec);
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<At> {
@@ -409,7 +414,7 @@ impl At {
         Some(match tag {
             0 => {
                 let address = crate::transducer::address::take_addr(b, pos)?;
-                let chart = crate::transducer::sentence::codec::take_inv(b, pos)?;
+                let chart = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
                 At::Vertex { address, chart }
             }
             1 => {
@@ -418,7 +423,7 @@ impl At {
                 At::Face(a, c)
             }
             2 => {
-                let inv = crate::transducer::sentence::codec::take_inv(b, pos)?;
+                let inv = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
                 let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
                 *pos += 4;
                 let n = take_count(b, *pos, n, 18)?;
@@ -457,12 +462,16 @@ pub struct Contraction {
 }
 
 impl Contraction {
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.push(self.kind.to_byte());
-        self.at.to_bytes(out);
-        let _ = crate::transducer::address::put_addr(out, &self.before);
-        let _ = crate::transducer::address::put_addr(out, &self.after);
-        out.extend_from_slice(&self.receipt);
+    /// `None` where a cited address reaches the u16 wall; nothing is
+    /// written then (LD0).
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
+        let mut rec = vec![self.kind.to_byte()];
+        self.at.to_bytes(&mut rec)?;
+        crate::transducer::address::put_addr(&mut rec, &self.before)?;
+        crate::transducer::address::put_addr(&mut rec, &self.after)?;
+        rec.extend_from_slice(&self.receipt);
+        out.append(&mut rec);
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Contraction> {
