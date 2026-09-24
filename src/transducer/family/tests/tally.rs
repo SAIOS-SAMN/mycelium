@@ -86,6 +86,8 @@ pub(super) struct CellTally {
     rows: Vec<GradeRow>,
     planes: usize,
     mirror_group: Option<CellClosure>,
+    /// 78.26(2) — the cross-cell bracket, where the sentence spans cells.
+    bracket: Option<crate::observe::CellBracket>,
 }
 
 impl CellTally {
@@ -93,7 +95,12 @@ impl CellTally {
     /// is read off the observer's own reading, never a second one.
     pub(super) fn of(cells: &Cells) -> CellTally {
         let mut t =
-            CellTally { planes: cells.mirror_planes as usize, mirror_group: cells.mirror_group, ..CellTally::default() };
+            CellTally {
+                planes: cells.mirror_planes as usize,
+                mirror_group: cells.mirror_group,
+                bracket: cells.bracket,
+                ..CellTally::default()
+            };
         for c in &cells.cells {
             let grade = usize::from(c.grade);
             let at = match t.rows.binary_search_by_key(&grade, |r| r.grade) {
@@ -231,9 +238,13 @@ impl CellTally {
             Some(g) => format!("mirrors: {} planes, group {}", self.planes, g.label()),
             None => "mirrors: none".into(),
         };
+        let bracket = match self.bracket {
+            Some(b) => format!(" | bracket held {} lost {} unread {}", b.held, b.lost, b.unread),
+            None => String::new(),
+        };
         match rows.is_empty() {
             true => "cells: none certified".into(),
-            false => format!("cells: {} | {mirrors}", rows.join(" ; ")),
+            false => format!("cells: {} | {mirrors}{bracket}", rows.join(" ; ")),
         }
     }
 }

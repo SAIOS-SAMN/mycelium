@@ -19,7 +19,8 @@
 
 use crate::network::nerve::Keyed;
 use crate::observe::{
-    CellClosure, CellCoherence, CellDual, CellEnclosure, CellEntry, CellOrbit, CellPermutes, CellProduct, CellRound, Cells,
+    CellBracket, CellClosure, CellCoherence, CellDual, CellEnclosure, CellEntry, CellOrbit, CellPermutes, CellProduct,
+    CellRound, Cells,
     GradeProgress, Progress, Spend, Viscosity,
 };
 use crate::transducer::cech::{CellAlgebra, Closure, Coherence, Congruence, CoxeterReading, Permutes, Refusal};
@@ -36,6 +37,120 @@ pub(crate) struct Comprehension {
     pub(crate) mirror_group: Option<CoxeterReading>,
     /// EN1 — each cell's enclosure, in the cells' key order.
     pub(crate) enclosures: Vec<Option<CellEnclosure>>,
+    /// 78.26(2), CB1 — the cross-cell bracket; `None` for one cell.
+    pub(crate) bracket: Option<CellBracket>,
+}
+
+/// 78.26(2), CB1 — THE CROSS-CELL BRACKET OF A SENTENCE SPANNING MORE THAN ONE
+/// CELL: for every pair of crossing circuits — circuit `i` crossing cell `A`,
+/// circuit `j` crossing cell `B ≠ A`, and NO ONE CELL crossed by both (a
+/// pair one cell holds is that cell's own, its bracket in its closed algebra
+/// by closure, and not cross-cell content) — whose actions do not commute,
+/// the bracket `R_i R_j − R_j R_i` is HELD where a cell wrapping both (an
+/// ancestor of both in EN1's nesting parse, or one of the two wrapping the
+/// other) has a closed algebra containing it, LOST where no wrapping cell
+/// does, UNREAD where a wrapping cell's algebra did not read — and UNREAD
+/// where a generator of the pair did not read, or the two actions differ in
+/// width: cross-cell content this reading cannot form is counted, never
+/// skipped. Each pair is counted once, at the first two cells it spans. A
+/// reading: it spends nothing of the stroke, two products per pair on
+/// actions the cells already read. `None` where the sentence spans one
+/// cell.
+pub(crate) fn read_bracket(
+    form: &Form,
+    traversed: &[crate::transducer::sentence::TraversedCircuit],
+    algebras: &[CellAlgebra],
+    enclosures: &[Option<CellEnclosure>],
+) -> Option<CellBracket> {
+    if algebras.len() < 2 {
+        return None;
+    }
+    // Each cell's crossing circuits by their place in the traversal, and its
+    // read generators among them in the order its actions were read.
+    let crossed: Vec<Vec<usize>> =
+        form.cells.scoped().map(|(_, cell)| crossings(form, cell, traversed).into_iter().map(|(at, _)| at).collect()).collect();
+    let generators: Vec<Vec<usize>> = crossed
+        .iter()
+        .map(|xs| xs.iter().copied().filter(|at| traversed.get(*at).is_some_and(|t| t.composite.is_some())).collect())
+        .collect();
+    // A pair some one cell is crossed by both of is that cell's own.
+    let one_cell_holds = |i: usize, j: usize| crossed.iter().any(|xs| xs.contains(&i) && xs.contains(&j));
+    // Each pair once: at the first two cells it spans.
+    let mut seen: Keyed<()> = Keyed::new();
+    let parent = |i: usize| match enclosures.get(i) {
+        Some(Some(CellEnclosure::Round { within: Some(p), .. })) => Some(*p as usize),
+        _ => None,
+    };
+    // The cells wrapping `i`, up EN1's parse; the parse is a forest, and the
+    // walk is bounded by the cells' count whatever it holds.
+    let ancestors = |i: usize| -> Vec<usize> {
+        let mut out = Vec::new();
+        let mut at = parent(i);
+        while let Some(p) = at {
+            if out.contains(&p) || out.len() >= algebras.len() {
+                break;
+            }
+            out.push(p);
+            at = parent(p);
+        }
+        out
+    };
+    let mut b = CellBracket::default();
+    for a in 0..algebras.len() {
+        for c in (a + 1)..algebras.len() {
+            let (up_a, up_c) = (ancestors(a), ancestors(c));
+            let mut wrapping: Vec<usize> = up_a.iter().copied().filter(|x| up_c.contains(x)).collect();
+            if up_c.contains(&a) {
+                wrapping.push(a);
+            }
+            if up_a.contains(&c) {
+                wrapping.push(c);
+            }
+            // Each crossing circuit's action, where it read, by its place.
+            let action = |cell: usize, at: usize| -> Option<&Vec<Vec<num_rational::BigRational>>> {
+                let k = generators[cell].iter().position(|x| *x == at)?;
+                algebras[cell].actions.as_ref()?.get(k)
+            };
+            for &i in &crossed[a] {
+                for &j in &crossed[c] {
+                    if one_cell_holds(i, j) {
+                        continue;
+                    }
+                    let mut pair = (i.min(j) as u64).to_be_bytes().to_vec();
+                    pair.extend_from_slice(&(i.max(j) as u64).to_be_bytes());
+                    if seen.contains(&pair) {
+                        continue;
+                    }
+                    seen.insert(&pair, ());
+                    // A pair whose generator did not read, or whose two
+                    // actions differ in width, has no bracket this reading
+                    // can form: unread, never skipped.
+                    let (Some(g), Some(h)) = (action(a, i), action(c, j)) else {
+                        b.unread += 1;
+                        continue;
+                    };
+                    if g.len() != h.len() {
+                        b.unread += 1;
+                        continue;
+                    }
+                    let (gh, hg) = (cga::matrix_mul(g, h), cga::matrix_mul(h, g));
+                    if gh == hg {
+                        continue;
+                    }
+                    let bracket: Vec<Vec<num_rational::BigRational>> =
+                        gh.iter().zip(&hg).map(|(r, s)| r.iter().zip(s).map(|(x, y)| x - y).collect()).collect();
+                    let reads: Vec<Option<bool>> =
+                        wrapping.iter().map(|&w| crate::transducer::cech::algebra_contains(&algebras[w], &bracket)).collect();
+                    match (reads.contains(&Some(true)), reads.contains(&None)) {
+                        (true, _) => b.held += 1,
+                        (false, true) => b.unread += 1,
+                        (false, false) => b.lost += 1,
+                    }
+                }
+            }
+        }
+    }
+    Some(b)
 }
 
 /// EN1 — EVERY CELL'S ENCLOSURE READ AGAINST THE FORM'S OTHER BODIES: the
@@ -120,7 +235,9 @@ pub(crate) fn comprehend(
         true => None,
         false => Some(crate::transducer::cech::read_coxeter(&plane_list, &[], budget)),
     };
-    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures: read_enclosures(form) }
+    let enclosures = read_enclosures(form);
+    let bracket = read_bracket(form, traversed, &algebras, &enclosures);
+    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures, bracket }
 }
 
 fn cell_closure(r: &CoxeterReading) -> CellClosure {
@@ -212,7 +329,12 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                 .collect(),
         })
         .collect();
-    Cells { mirror_planes: c.planes as u32, mirror_group: c.mirror_group.as_ref().map(cell_closure), cells }
+    Cells {
+        mirror_planes: c.planes as u32,
+        mirror_group: c.mirror_group.as_ref().map(cell_closure),
+        cells,
+        bracket: c.bracket,
+    }
 }
 
 /// PG1 — THE PERCEPT'S PROGRESS toward E1's done-when: the circuits that
@@ -401,6 +523,48 @@ pub fn take_progress() -> Option<Progress> {
 /// stroke's budget, in the cells' own key order. The circuits are the ones
 /// the percept's own traversal kept — `(faces crossed, composite)` — never
 /// traversed again.
+/// THE CIRCUITS CROSSING ONE CELL, by their place in the traversal, each with
+/// its order of the cell's bodies (CX1): each body as the circuit's crossings
+/// first reach it. A step crosses where the face it crosses joins two
+/// different bodies of the cell, read off the face's oriented pair and the
+/// step's way (BD2).
+fn crossings(
+    form: &Form,
+    cell: &crate::transducer::sentence::FormCell,
+    traversed: &[crate::transducer::sentence::TraversedCircuit],
+) -> Vec<(usize, Vec<usize>)> {
+    let mut body_of: Keyed<usize> = Keyed::new();
+    for (b, piece) in cell.bodies.iter().enumerate() {
+        body_of.insert(piece, b);
+    }
+    let crossing = |face: u16, forward: bool| -> Option<(usize, usize)> {
+        let (x, y) = form.face_bodies.get(&u32::from(face).to_be_bytes())?;
+        let (a, b) = (*body_of.get(x)?, *body_of.get(y)?);
+        match (a == b, forward) {
+            (true, _) => None,
+            (false, true) => Some((a, b)),
+            (false, false) => Some((b, a)),
+        }
+    };
+    let mut out = Vec::new();
+    for (at, t) in traversed.iter().enumerate() {
+        let mut order: Vec<usize> = Vec::new();
+        for &(face, forward) in &t.steps {
+            if let Some((from, to)) = crossing(face, forward) {
+                for b in [from, to] {
+                    if !order.contains(&b) {
+                        order.push(b);
+                    }
+                }
+            }
+        }
+        if !order.is_empty() {
+            out.push((at, order));
+        }
+    }
+    out
+}
+
 pub(crate) fn cell_algebras(
     form: &Form,
     traversed: &[crate::transducer::sentence::TraversedCircuit],
@@ -409,40 +573,13 @@ pub(crate) fn cell_algebras(
     form.cells
         .scoped()
         .map(|(_, cell)| {
-            let mut body_of: Keyed<usize> = Keyed::new();
-            for (b, piece) in cell.bodies.iter().enumerate() {
-                body_of.insert(piece, b);
-            }
-            // A step's crossing of the cell: the body it leaves and the body
-            // it enters, off the face's oriented pair and the step's way.
-            let crossing = |face: u16, forward: bool| -> Option<(usize, usize)> {
-                let (x, y) = form.face_bodies.get(&u32::from(face).to_be_bytes())?;
-                let (a, b) = (*body_of.get(x)?, *body_of.get(y)?);
-                match (a == b, forward) {
-                    (true, _) => None,
-                    (false, true) => Some((a, b)),
-                    (false, false) => Some((b, a)),
-                }
-            };
             let mut circuits: Vec<Result<Mv, crate::transducer::cech::CircuitUnread>> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
-            for crate::transducer::sentence::TraversedCircuit { steps, composite, unread, .. } in traversed {
-                // CX1 — the circuit's order of the cell's bodies: each body
-                // as the circuit's crossings first reach it; `None` where the
-                // circuit does not reach every body of the cell.
-                let mut order: Vec<usize> = Vec::new();
-                for &(face, forward) in steps {
-                    if let Some((from, to)) = crossing(face, forward) {
-                        for b in [from, to] {
-                            if !order.contains(&b) {
-                                order.push(b);
-                            }
-                        }
-                    }
-                }
-                if order.is_empty() {
+            for (at, order) in crossings(form, cell, traversed) {
+                let Some(crate::transducer::sentence::TraversedCircuit { composite, unread, .. }) = traversed.get(at)
+                else {
                     continue;
-                }
+                };
                 // OR3's reason rides the circuit into the cell; a composite
                 // missing with no reason recorded is the unnamed refusal, by
                 // its own name.

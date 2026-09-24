@@ -393,6 +393,21 @@ pub struct Cells {
     pub mirror_planes: u32,
     pub mirror_group: Option<CellClosure>,
     pub cells: Vec<CellEntry>,
+    /// 78.26(2), CB1 — the cross-cell bracket of a sentence spanning more
+    /// than one cell; `None` where it spans one.
+    pub bracket: Option<CellBracket>,
+}
+
+/// 78.26(2), CB1 — THE CROSS-CELL BRACKET, COUNTED: the pairs of read
+/// generators across a cell boundary whose bracket is non-zero, HELD where
+/// an enclosure wrapping both cells has an algebra that contains the
+/// bracket, LOST where none does, UNREAD where a wrapping cell's algebra did
+/// not read.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CellBracket {
+    pub held: u32,
+    pub lost: u32,
+    pub unread: u32,
 }
 
 const NONE: u8 = 0xff;
@@ -534,6 +549,15 @@ impl Cells {
             }
             put_refusals(out, &c.refusals);
         }
+        match self.bracket {
+            None => out.push(NONE),
+            Some(b) => {
+                out.push(1);
+                for n in [b.held, b.lost, b.unread] {
+                    out.extend_from_slice(&n.to_le_bytes());
+                }
+            }
+        }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Cells> {
@@ -653,6 +677,15 @@ impl Cells {
                 mirrors,
             });
         }
-        Some(Cells { mirror_planes, mirror_group, cells })
+        let bracket = match take_u8(b, p)? {
+            NONE => None,
+            1 => Some(CellBracket {
+                held: take_u32(b, p)? as u32,
+                lost: take_u32(b, p)? as u32,
+                unread: take_u32(b, p)? as u32,
+            }),
+            _ => return None,
+        };
+        Some(Cells { mirror_planes, mirror_group, cells, bracket })
     }
 }

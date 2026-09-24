@@ -250,6 +250,12 @@ pub struct CellAlgebra {
     pub dual: Option<cga::DualFrame>,
     /// CV1b — what the readers above could not hold, by content.
     pub refusals: CellRefusals,
+    /// 78.26(2) — the read circuits' actions, in the order of the cell's
+    /// read circuits, and the closed algebra's basis rows where the capacity
+    /// read: what the cross-cell bracket is read against. Volatile, the
+    /// percept's own, never persisted. `None` where an action did not read.
+    pub actions: Option<Vec<Vec<Vec<Q>>>>,
+    pub basis: Option<Vec<crate::core::lattice::SparseRow>>,
 }
 
 /// A matrix as one sparse integer row: its denominators cleared, reduced by
@@ -278,7 +284,10 @@ fn row_of(m: &[Vec<Q>]) -> Result<crate::core::lattice::SparseRow, (usize, u64)>
 /// products closed on a keyed worklist, one read of the budget per product.
 /// A refusal carries what it could not hold: the product the budget ran out
 /// at, the entry that did not fit, the elimination that overflowed.
-fn capacity(actions: &[Vec<Vec<Q>>], budget: &mut crate::physics::Budget) -> Result<usize, CapacityRefused> {
+fn capacity(
+    actions: &[Vec<Vec<Q>>],
+    budget: &mut crate::physics::Budget,
+) -> Result<(usize, Vec<crate::core::lattice::SparseRow>), CapacityRefused> {
     let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
     let d = first.len();
     let width = d * d;
@@ -307,7 +316,28 @@ fn capacity(actions: &[Vec<Vec<Q>>], budget: &mut crate::physics::Budget) -> Res
             }
         }
     }
-    Ok(rank)
+    // The rows kept are the closed algebra's basis: each raised the rank.
+    Ok((rank, rows))
+}
+
+/// A matrix's row as the capacity writes it, for the bracket reading.
+pub(crate) fn algebra_row(m: &[Vec<Q>]) -> Option<crate::core::lattice::SparseRow> {
+    row_of(m).ok()
+}
+
+/// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS MATRIX: its basis
+/// rows and the matrix's row do not raise the rank. `None` where the cell's
+/// algebra did not read, the widths differ, or the row does not fit.
+pub(crate) fn algebra_contains(cell: &CellAlgebra, m: &[Vec<Q>]) -> Option<bool> {
+    let basis = cell.basis.as_ref()?;
+    let [first, ..] = cell.actions.as_deref()? else { return None };
+    let width = first.len() * first.len();
+    if m.len() * m.len() != width {
+        return None;
+    }
+    let mut rows = basis.clone();
+    rows.push(algebra_row(m)?);
+    Some(crate::core::lattice::sparse_rank(&rows, width)? == basis.len())
 }
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.
@@ -396,11 +426,11 @@ pub fn read_cell(
         .enumerate()
         .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
         .collect();
-    let capacity = match actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget)) {
-        Ok(k) => Some(k),
+    let (capacity, basis) = match actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget)) {
+        Ok((k, rows)) => (Some(k), Some(rows)),
         Err(why) => {
             refusals.capacity = Some(why);
-            None
+            (None, None)
         }
     };
     let actions = actions.ok();
@@ -542,5 +572,7 @@ pub fn read_cell(
         polars,
         dual,
         refusals,
+        actions,
+        basis,
     }
 }

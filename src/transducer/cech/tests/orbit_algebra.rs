@@ -134,6 +134,28 @@ fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
     assert_eq!(none.refusals.capacity, Some(CapacityRefused::NoneRead));
 }
 
+/// 78.26(2) — A CELL'S CLOSED ALGEBRA CONTAINS WHAT ITS CIRCUITS GENERATE AND
+/// NOT WHAT THEY DO NOT: a quarter turn's cell holds the square of its own
+/// action, and not the action of a turn in another plane; a cell whose
+/// capacity did not read contains nothing it can say.
+#[test]
+fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
+    let (m, nuclei) = round();
+    // Both turns in the one algebra the wider of them stands in.
+    let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
+    let turn = cga::rotator(&q(1, 1), &q(1, 1)).widened(across.n());
+    let cell = read_cell(1, Some(&m), Some(&nuclei), &[Ok(turn.clone())], &[], &mut stroke());
+    let r = cga::action_of(&turn).expect("a versor acts");
+    assert_eq!(algebra_contains(&cell, &cga::matrix_mul(&r, &r)), Some(true), "the half turn is in the algebra");
+    let other = cga::action_of(&across).expect("a versor acts");
+    assert_eq!(algebra_contains(&cell, &other), Some(false), "a turn in another plane is not");
+    // An action of another algebra's width is not compared: unread, never false.
+    let narrow = cga::action_of(&cga::rotator(&q(1, 1), &q(1, 1))).expect("a versor acts");
+    assert_eq!(algebra_contains(&cell, &narrow), None, "another width is not read against this algebra");
+    let none = read_cell(1, Some(&m), Some(&nuclei), &[], &[], &mut stroke());
+    assert_eq!(algebra_contains(&none, &r), None, "no algebra read, nothing contained");
+}
+
 /// CV1b — THE BUDGET SPENT IS NAMED AT ITS PRODUCT: a stroke of one read
 /// spends it on the first product of the capacity's closure, and the
 /// refusal says which product it was.

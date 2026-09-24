@@ -649,8 +649,13 @@ fn cells(c: &observe::Cells) -> Vec<String> {
         cga::PairRegime::Rosette => "rosette".into(),
         cga::PairRegime::Null => "null".into(),
     };
+    // 78.26(2) — the cross-cell bracket, where the sentence spans cells.
+    let bracket = match c.bracket {
+        Some(b) => format!(" | bracket held {} lost {} unread {}", b.held, b.lost, b.unread),
+        None => String::new(),
+    };
     let mut out = vec![format!(
-        "  {BOLD}cells{RESET}       {} certified | mirrors {} planes, group {}",
+        "  {BOLD}cells{RESET}       {} certified | mirrors {} planes, group {}{bracket}",
         c.cells.len(),
         c.mirror_planes,
         closure(c.mirror_group)
