@@ -11935,6 +11935,69 @@ position is refused at the audit. LD0's step 6 lands on that carrier, not
 before it (LD3, before EC1's producer and the recut). The backtrack
 ledger records the coordinator's audit fault at LD0 steps 4 and 5.
 
+### 78.26 Where the language loses content, and what carries the loss (ruled 2026-09-24, the operator's question)
+
+The operator asked how the bivector and a cell's capacity lose data in
+the anastome language. Four losses, each a fact of the algebra, each
+with its ruling; two were already ruled and two were not.
+
+**(1) The bivector is a chart of the motion, not the motion.** A rotor of
+`Cl(n+1,1)` is even — scalar, bivector and 4-vector — and the Cayley
+chart `Ω = (1 − B)(1 + B)⁻¹` reaches only the rotors whose `1 + Ω` is
+invertible, whose weight has a rational root, and whose generator is a
+pure bivector; the chart's boundary is the light cone (56). Carrying a
+step as its bivector would keep the nearest chart point and drop the
+rest, and the recorded route would close where the traversed one did
+not. ALREADY RULED: the motion is carried as its rotor as a ray (EQ1),
+the modes are read off the action (MR1), `cayley_inverse` is a reading
+of a ray that has a chart point and never the modes' reader, `⟨Ω⟩₂`
+alone refused, the boundary named where crossed. No carrier holds a
+bivector as a step; the audit returns any that does.
+
+**(2) A cell's capacity caps the modes a sentence carries, and the
+cross-cell bracket has no home outside an enclosure.** The orbit algebra
+of a cell is the bracket closure of its circuits' generators and its
+rank is the modes the cell holds (78.11). A sentence needing more
+generators than the rank is split across cells, and the commutator of a
+generator in one cell with a generator in the other — the
+non-commutative content, the reason word order means anything — lives
+in neither cell. Without an enclosure of higher grade wrapping both, the
+language flattens the sentence to a product of independent words.
+THIS IS WHY NB1 and EN1 exist, and it was never written as the reason:
+the enclosure is the carrier of the cross-cell bracket. Ruled as a
+reading first (row CB1): for each sentence spanning more than one cell,
+the pairs of generators across a cell boundary whose bracket is non-zero,
+counted HELD where an enclosure's algebra contains the bracket and LOST
+where none does; the fleet's Cells reading carries the two counts; no
+fix until the reading says how much is lost.
+
+**(3) Grade above the cell's dimension is flattened on write.** A 2-cell
+holds one plane of holonomy; torsion is a 3-form and needs a 3-cell.
+Writing a torsioned route into a face keeps the component in the face's
+plane and drops the rest. ALREADY RULED: checklist (m), the wedge is the
+shape (78.10(b)), a write that would project refuses.
+
+**(4) A refusal that keeps its kind and loses its content is the silence
+rule 11 forbids, and it stands at the Stage 22 readers.** CV1 landed
+"every refusal names its obstruction" at the court and the mint. The
+readers built since — `capacity: Option<usize>` in the orbit algebra,
+`Congruence::NoRound`, `Permutes::NoConstructors`, `Coherence::Held` on
+an unread order, `ConstructorOrbit::Unread`, the Gram form's `None` —
+return `None` alike for a circuit that did not read, a budget spent at
+the k-th product, and a coefficient that did not fit the exact
+elimination: three facts under one silence, exactly the shape 56 named
+on the light cone and LD0 named on the framing refusal. The kind
+survives on the ledger; the content — which generator was beyond the
+capacity, which entry overflowed, at which product the budget ran out —
+does not, and that content is what another perspective would refine
+(74, CV4). RULED: a ruling applies at every site of its shape (§6.6):
+CV1 applies at every Stage 22 reader (row CV1b). Each `None` of those
+readers becomes a typed refusal carrying what it could not hold — the
+circuit unread and OR3's reason, the product index at which the budget
+was spent, the entry and its size that did not fit — and the Cells
+reading counts refusals by content, never as one `unread`. Instrument
+before fix: the count by content first, on the fleet, at height and K.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
