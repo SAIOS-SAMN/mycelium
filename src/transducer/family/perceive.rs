@@ -318,6 +318,41 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
     Vertex::Demand { kind, chart: chart.clone(), bodies }
 }
 
+/// CV1b F3 — THE POLE'S DEMANDS STAND AS THE SENTENCE'S OWN VERTICES, one
+/// per demand's own coordinates (its prime and its witness, the plane with
+/// them): a gap reached on the word path and at the pole stands once. A
+/// demand vertex carries no support and no face, so standing it after the
+/// faces is the vertex it would have been before them; the form's key is its
+/// vertices' coordinates, never their order.
+pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>) {
+    use crate::transducer::sentence::Demand;
+    let coords = |kind: &Demand| -> Option<Vec<u8>> {
+        let Demand::RotorPrime { .. } = kind else { return None };
+        let mut key = Vec::new();
+        kind.to_bytes(&mut key);
+        Some(key)
+    };
+    let mut standing: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    for v in vertices.iter() {
+        if let Some(k) = match v {
+            Vertex::Demand { kind, .. } => coords(kind),
+            _ => None,
+        } {
+            standing.insert(&k, ());
+        }
+    }
+    for (kind, chart, mut links) in demanded {
+        let Some(k) = coords(&kind) else { continue };
+        if standing.contains(&k) || kind.typed().is_err() {
+            continue;
+        }
+        standing.insert(&k, ());
+        links.sort_unstable();
+        links.dedup();
+        vertices.push(demand_vertex(kind, &chart, links));
+    }
+}
+
 /// D3, DIRECTIVE 4 — THE MINT'S OWN VALVE LINE (68).
 ///
 /// Every gate of [`oblique_demand`] at its own name, so a recut reads
@@ -407,17 +442,49 @@ impl DemandTally {
 /// witness a Gaussian arc in that plane, so the pose over the tube
 /// ([`blade::relative_pose`]) does not replace it here.
 fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
+    oblique_demanded(a, b, (&a.shape.blade, &b.shape.blade), chart)
+}
+
+/// D3's DEMAND ON ONE PAIR OF BODIES, their blades given: the three gates
+/// (`oblique_rotor_prime`), then the pair's own laminae as the demand's
+/// links. The word path and the contact's pole (CV1b F3) read it alike.
+pub(crate) fn oblique_demanded(
+    a: &Body,
+    b: &Body,
+    (blade_a, blade_b): (&crate::transducer::blade::Blade, &crate::transducer::blade::Blade),
+    chart: &Invariant,
+) -> Option<Demanded> {
+    let demand = oblique_rotor_prime(blade_a, blade_b)?;
+    // THE LINKS STAND UNMOVED, because nothing moved them. A chain is
+    // each lamina carried by the versor and read on the image; there IS
+    // no versor here, so the source's laminae keep their own hues and the
+    // target's are read as they stand. Passing an identity versor instead
+    // would write a carry the geometry just refused (checklist (m)).
+    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
+    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor()));
+    bodies.sort_unstable();
+    Some((demand, chart.clone(), bodies))
+}
+
+/// D3's THREE GATES, ONE STATEMENT (law 12): the pair reads exactly
+/// `NoPose::Oblique` on the sensor's plane, its Gaussian arc is primitive,
+/// and its prime lies outside the alphabet — or the mint's valve line says
+/// which gate stopped it. The `RotorPrime` with its witness, `arc_block`.
+pub(crate) fn oblique_rotor_prime(
+    blade_a: &crate::transducer::blade::Blade,
+    blade_b: &crate::transducer::blade::Blade,
+) -> Option<crate::transducer::sentence::Demand> {
     use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
     note_demand(|t| t.offered += 1);
     // THE PLANE IS THE SENSOR'S OWN, named once for the frame, the arc and
     // the demand (BQ4).
     let sensor = crate::transducer::base::GRID_PLANE;
-    if blade::relative_rotor(&a.shape.blade, &b.shape.blade, sensor).err() != Some(blade::NoPose::Oblique) {
+    if blade::relative_rotor(blade_a, blade_b, sensor).err() != Some(blade::NoPose::Oblique) {
         note_demand(|t| t.permanent += 1);
         return None;
     }
-    let Some((s, t)) = blade::oblique_arc(&a.shape.blade, &b.shape.blade, sensor) else {
+    let Some((s, t)) = blade::oblique_arc(blade_a, blade_b, sensor) else {
         note_demand(|t| t.arcless += 1);
         return None;
     };
@@ -428,23 +495,11 @@ fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
         return None;
     };
     note_demand(|t| t.minted += 1);
-    // THE LINKS STAND UNMOVED, because nothing moved them. A chain is
-    // each lamina carried by the versor and read on the image; there IS
-    // no versor here, so the source's laminae keep their own hues and the
-    // target's are read as they stand. Passing an identity versor instead
-    // would write a carry the geometry just refused (checklist (m)).
-    let mut bodies = chain_of(Some(a), None, &crate::transducer::element::identity_versor());
-    bodies.extend(chain_of(None, Some(b), &crate::transducer::element::identity_versor()));
-    bodies.sort_unstable();
-    Some((
-        crate::transducer::sentence::Demand::RotorPrime {
-            plane,
-            prime,
-            witness: Box::new(crate::transducer::alphabet::arc_block(&s, &t)),
-        },
-        chart.clone(),
-        bodies,
-    ))
+    Some(crate::transducer::sentence::Demand::RotorPrime {
+        plane,
+        prime,
+        witness: Box::new(crate::transducer::alphabet::arc_block(&s, &t)),
+    })
 }
 
 /// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the

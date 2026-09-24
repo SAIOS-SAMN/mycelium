@@ -78,12 +78,53 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     assert!(
         matches!(
             contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar))),
-            ContactEdge::Refused
+            ContactEdge::Refused { poses: [Some(blade::NoPose::Mirrored), None] }
         ),
-        "a mirrored transition carries no refraction"
+        "a mirrored transition carries no refraction, and the refusal names the member's arm"
     );
     let t = take_contact_tally();
     assert_eq!((t.offered, t.mirrored, t.condensed), (1, 1, 0), "refused by its arm, never dropped");
+}
+
+/// CV1b F3, 78.38 — AN OBLIQUE MEMBER REFUSES THE EDGE AND RAISES THE DEMAND.
+///
+/// The L-tetromino's own transition is `z ↦ (4 + i)·z`: one shape at two
+/// scales, certified as a dilation on the point tower, at an angle the
+/// alphabet does not spell. The contact carries no edge and names the arm
+/// (`Oblique`, D); the pole reads the member through D3's three gates and
+/// raises `RotorPrime` over 17 with the arc of `(4 + i)²` as witness. Beside
+/// it, an S-tetromino against the image is a different shape, refused at
+/// its order, and raises nothing.
+#[test]
+fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
+    use crate::transducer::family::{oblique_rotor_prime, take_demand_tally};
+    use crate::transducer::sentence::Demand;
+    let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
+    let bar = body(&[(10, 0, 0), (11, 0, 0), (10, 1, 0)]);
+    let _ = take_contact_tally();
+    assert!(
+        matches!(
+            contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar))),
+            ContactEdge::Refused { poses: [Some(blade::NoPose::Oblique), None] }
+        ),
+        "a similarity at an unspelled angle carries no edge, and the refusal names the arm"
+    );
+    let t = take_contact_tally();
+    assert_eq!((t.offered, t.oblique, t.condensed), (1, 1, 0), "refused oblique, never dropped");
+
+    let _ = take_demand_tally();
+    let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image) else {
+        panic!("the oblique member raises the rotor-prime demand");
+    };
+    assert_eq!(prime, 17, "the prime 4 + i lies over");
+    let arc = crate::transducer::alphabet::arc_block(&15.into(), &8.into());
+    assert_eq!(*witness, arc, "the witness is the arc of (4 + i)²");
+
+    let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+    assert!(oblique_rotor_prime(&s, &image).is_none(), "a different shape raises nothing");
+    let d = take_demand_tally();
+    assert_eq!((d.offered, d.minted, d.permanent), (2, 1, 1), "one minted, one refused permanent");
 }
 
 /// 78.6(1) — A HELD `ℤ₂` RIDES THE EDGE AS A COSET: an S-tetromino against
@@ -140,3 +181,4 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     let t = take_contact_tally();
     assert_eq!((t.statics, t.half_open, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }
+

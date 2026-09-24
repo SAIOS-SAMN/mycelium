@@ -477,12 +477,14 @@ pub fn read_cell_after(
     // did not read, or they read and their meet is zero — dependent spheres,
     // or `n + 2` of them. A zero blade commutes with everything, which is
     // degeneration and not congruence.
-    let no_round = match round {
-        None => Some(NoRound::NucleiUnread),
-        Some(m) if m.is_zero() => Some(NoRound::ZeroMeet),
-        Some(_) => None,
+    // The round's reading is ONE value, the round or why there is none, read
+    // once here and matched exhaustively below: no arm invents a reason.
+    let round_read: Result<&Mv, NoRound> = match round {
+        None => Err(NoRound::NucleiUnread),
+        Some(m) if m.is_zero() => Err(NoRound::ZeroMeet),
+        Some(m) => Ok(m),
     };
-    let round = round.filter(|m| !m.is_zero());
+    let round = round_read.ok();
     let read: Vec<&Mv> = circuits.iter().flatten().collect();
     let (capacity, basis) = match rank.rank {
         Ok((k, rows)) => (Ok(k), Some(rows)),
@@ -542,11 +544,10 @@ pub fn read_cell_after(
             ModeReading { circuit: c, mode: j, kind: mode.kind, plane: plane_of(mode), round, permutation }
         })
         .collect();
-    let congruence = match (round, circuits.is_empty(), no_round) {
-        (_, true, _) => Congruence::NoCircuit,
-        (None, false, Some(why)) => Congruence::NoRound(why),
-        (None, false, None) => Congruence::NoRound(NoRound::NucleiUnread),
-        (Some(_), false, _) => {
+    let congruence = match (round_read, circuits.is_empty()) {
+        (_, true) => Congruence::NoCircuit,
+        (Err(why), false) => Congruence::NoRound(why),
+        (Ok(_), false) => {
             let failures: Vec<ModeReading> =
                 readings.iter().filter(|r| matches!(r.round, RoundKept::Carried(_))).cloned().collect();
             let reversed = readings.iter().filter(|r| r.round == RoundKept::Reversed).count();

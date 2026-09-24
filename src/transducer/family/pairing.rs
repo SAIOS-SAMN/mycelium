@@ -382,7 +382,7 @@ pub(crate) fn contact_edge(
         Some(blade::Contact::Contained) => note_contact(|t| t.contained += 1),
         None => {
             note_contact(|t| t.unlifted += 1);
-            return ContactEdge::Refused;
+            return ContactEdge::Refused { poses: [None, None] };
         }
     }
     let (Some((a, a_after)), Some((b, b_after))) = (a, b) else {
@@ -401,10 +401,10 @@ pub(crate) fn contact_edge(
         note_contact(|t| t.tube += 1);
     }
     let pose = |before: &blade::Blade, after: &blade::Blade| match blade::relative_pose(before, after) {
-        Ok(blade::Pose::Turn(r)) => Some(vec![r]),
+        Ok(blade::Pose::Turn(r)) => Ok(vec![r]),
         Ok(blade::Pose::HalfOpen(candidates)) => {
             note_contact(|t| t.half_open += 1);
-            Some(candidates)
+            Ok(candidates)
         }
         Err(why) => {
             note_contact(|t| match why {
@@ -416,11 +416,14 @@ pub(crate) fn contact_edge(
                 blade::NoPose::Incongruent(why) => t.incongruent.note(why),
                 blade::NoPose::Irrational => t.irrational += 1,
             });
-            None
+            Err(why)
         }
     };
-    let (Some(thetas_a), Some(thetas_b)) = (pose(a, a_after), pose(b, b_after)) else {
-        return ContactEdge::Refused;
+    // Each member's pose, or its refusal by name: the refusal rides the
+    // edge to the caller, which reads the one arm a demand retires.
+    let (thetas_a, thetas_b) = match (pose(a, a_after), pose(b, b_after)) {
+        (Ok(x), Ok(y)) => (x, y),
+        (x, y) => return ContactEdge::Refused { poses: [x.err(), y.err()] },
     };
     // Every candidate refraction, each ray once.
     let mut thetas: Vec<crate::transducer::cga::Mv> = Vec::new();
@@ -428,7 +431,7 @@ pub(crate) fn contact_edge(
         // `θ_b θ̃_a`, a ray (78.32(1)).
         if !crate::transducer::cga::is_versor(theta_a) {
             note_contact(|t| t.unread += 1);
-            return ContactEdge::Refused;
+            return ContactEdge::Refused { poses: [None, None] };
         }
         let inv = theta_a.reverse();
         for theta_b in &thetas_b {
@@ -444,11 +447,11 @@ pub(crate) fn contact_edge(
             Some(Ok(w)) => w,
             Some(Err(_)) => {
                 note_contact(|t| t.unspelled += 1);
-                return ContactEdge::Refused;
+                return ContactEdge::Refused { poses: [None, None] };
             }
             None => {
                 note_contact(|t| t.unread += 1);
-                return ContactEdge::Refused;
+                return ContactEdge::Refused { poses: [None, None] };
             }
         };
         edges.push(Transport { word, carriage: theta.geo(&v), gauge: Vec::new() });
@@ -470,12 +473,24 @@ pub(crate) fn contact_edge(
 /// has none, and is read where it stands — its edge is the static tether
 /// (78.6(2)). The edge where one formed, or the refraction the face's place
 /// carries instead; neither where it was refused by name.
+///
+/// CV1b F3 — AND THE DEMAND AN OBLIQUE POSE LEAVES. Where a member's own
+/// transition reads `NoPose::Oblique`, the relation is a rational block the
+/// court can supply: the member's before and after are read through D3's
+/// three gates (`oblique_demanded`, one statement with the word path's) and
+/// the `RotorPrime` with its witness is answered beside the edge. The
+/// refusal itself is never written onto the face: it is re-derived from the
+/// two transitions at every percept.
 pub(crate) fn members_contact_edge(
     unions: &crate::network::nerve::Keyed<(super::perceive::Body, super::perceive::Body, crate::transducer::element::Versor)>,
     nuclei: Option<(&crate::transducer::cga::Mv, &crate::transducer::cga::Mv)>,
     a: Vec<u8>,
     b: Vec<u8>,
-) -> (Option<crate::transducer::sentence::Transport>, Option<crate::transducer::sentence::Refraction>) {
+) -> (
+    Option<crate::transducer::sentence::Transport>,
+    Option<crate::transducer::sentence::Refraction>,
+    Vec<super::perceive::Demanded>,
+) {
     // Each member's own transition, where it has one: its union before and
     // after. A member at one frame has none.
     let transit = |key: &[u8]| -> Option<(blade::Blade, blade::Blade)> {
@@ -489,13 +504,28 @@ pub(crate) fn members_contact_edge(
     let Some(nuclei) = nuclei else {
         // The face's body pair carries no nucleus to tether: nothing lifts.
         note_contact(|t| t.unlifted += 1);
-        return (None, None);
+        return (None, None, Vec::new());
     };
     let (ta, tb) = (transit(&a), transit(&b));
     match contact_edge(nuclei, ta.as_ref().map(|(x, y)| (x, y)), tb.as_ref().map(|(x, y)| (x, y))) {
-        ContactEdge::Formed(t) => (Some(*t), None),
-        ContactEdge::Held(r) => (None, Some(r)),
-        ContactEdge::Refused => (None, None),
+        ContactEdge::Formed(t) => (Some(*t), None, Vec::new()),
+        ContactEdge::Held(r) => (None, Some(r), Vec::new()),
+        ContactEdge::Refused { poses } => {
+            // Each member whose own transition read oblique, through D3's
+            // gates; its demand stands on the chart its union reaches.
+            let mut demands = Vec::new();
+            for (key, (pose, blades)) in [(&a, (poses[0], &ta)), (&b, (poses[1], &tb))] {
+                let (Some(blade::NoPose::Oblique), Some((before_blade, after_blade)), Some((before, after, _))) =
+                    (pose, blades, unions.get(key))
+                else {
+                    continue;
+                };
+                if let Some(d) = super::perceive::oblique_demanded(before, after, (before_blade, after_blade), &after.moduli) {
+                    demands.push(d);
+                }
+            }
+            (None, None, demands)
+        }
     }
 }
 
@@ -545,11 +575,13 @@ pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget:
 }
 
 /// WHAT A CONTACT'S EDGE IS (78.6): one transport, the held coset or the
-/// static tether, or refused by the name its tally counted.
+/// static tether, or refused by the name its tally counted — with each
+/// member's pose refusal where that was the refusal (CV1b F3), so the arm a
+/// demand retires reaches the caller.
 pub(crate) enum ContactEdge {
     Formed(Box<crate::transducer::sentence::Transport>),
     Held(crate::transducer::sentence::Refraction),
-    Refused,
+    Refused { poses: [Option<blade::NoPose>; 2] },
 }
 
 /// The two bodies a pair key names, read back as their addresses (A21).

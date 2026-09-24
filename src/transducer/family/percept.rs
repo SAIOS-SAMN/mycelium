@@ -884,6 +884,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         hows: Vec::new(),
         interface: Vec::new(),
     }));
+    // CV1b F3 — the demands the contacts' oblique poses leave, stood below.
+    let mut pole_demanded: Vec<Demanded> = Vec::new();
     for Offer { a: ak, b: bk, edge: chord_edge, hows: how, interface } in offers {
         drops.offered += 1;
         let contact = how.contains(&Incidence::Contact);
@@ -915,12 +917,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         });
         let (edge, refraction) = match (contact, chord_edge) {
             (true, Some(e)) => (Some(e), None),
-            (true, None) => super::pairing::members_contact_edge(
-                &unions,
-                body_pair.as_ref().and_then(|(_, (x, y))| Some((x.as_ref()?, y.as_ref()?))),
-                member_key(i, &cik),
-                member_key(j, &cjk),
-            ),
+            (true, None) => {
+                let (edge, refraction, demands) = super::pairing::members_contact_edge(
+                    &unions,
+                    body_pair.as_ref().and_then(|(_, (x, y))| Some((x.as_ref()?, y.as_ref()?))),
+                    member_key(i, &cik),
+                    member_key(j, &cjk),
+                );
+                pole_demanded.extend(demands);
+                (edge, refraction)
+            }
             (false, chord_edge) => (chord_edge.or(measured), None),
         };
         let (Some(vi), Some(vj)) = (form.vertices.get(i as usize), form.vertices.get(j as usize))
@@ -961,6 +967,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         face.pairs = Some(section_of_frames(fr));
         form.faces.push(face);
     }
+    // CV1b F3 — the pole's demands stand once each, by their coordinates.
+    super::perceive::stand_demands(&mut form.vertices, pole_demanded);
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     form.hue_maps = hue_maps;
     form.reindex();
