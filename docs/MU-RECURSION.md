@@ -4820,13 +4820,16 @@ else. A bubble that cites a form (`glues` non-empty) is not shed by the
 filter and is not meant to be: its door is promotion or lapse, since what
 it cites stands on the atlas or on a docket.
 
-**The files.** The contemplation is eight files, one organ each (Stage 8b
+**The files.** The contemplation is seven files, one organ each (Stage 8b
 S5): `idea.rs` one bubble and what it measures; `contemplation.rs` the
 complex of held thoughts and their incidence; `merge.rs` when two held
 thoughts are one (13.12); `drive.rs` what makes a thought move (25.1);
 `horizon.rs` the classes seeded from the syllabus (A19); `shed.rs` what a
-mind stops holding when the room is spent (24.1); `tape.rs` the THT codec
-(28); `mod.rs` declarations and re-exports.
+mind stops holding when the room is spent (24.1); `mod.rs` declarations
+and re-exports. There is no codec: the contemplation is the epigenome,
+volatile by the paragraph above, and the THT tape that once wrote it to a
+file no reader opened is retired (LD3-c, 2026-09-24) — a file of the
+epigenome is the epigenome persisted, which this chapter refuses.
 
 
 **25.1 The pivot loop in the contemplation.** Each stroke, for each dirty
