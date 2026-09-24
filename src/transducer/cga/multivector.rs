@@ -21,7 +21,7 @@
 //! THE METRIC IS THE SIGNATURE'S, NOT A LIST: `e₋` squares to −1 and every
 //! other generator to +1, which is `Cl(n+1, 1)` for every `n`.
 
-use super::group::{is_versor, projective_ratio};
+use super::group::{projective_ratio, weight_of};
 use num_bigint::BigInt;
 use num_rational::BigRational;
 use num_traits::{One, Signed, Zero};
@@ -313,6 +313,50 @@ impl Mv {
         }
     }
 
+    /// The grade involution `M̂`: blade of grade g gets sign `(−1)^g`. On a
+    /// vector it is the negation; on an even element the identity.
+    pub fn involute(&self) -> Self {
+        Self {
+            n: self.n,
+            c: self
+                .c
+                .iter()
+                .enumerate()
+                .map(|(i, v)| match (i as u32).count_ones() & 1 {
+                    0 => v.clone(),
+                    _ => -v.clone(),
+                })
+                .collect(),
+        }
+    }
+
+    /// THE TWISTED ADJOINT `M̂ x M̃` (78.28(1)): the action of an even or odd
+    /// versor on `x`, up to its weight. For an even `M` it is the sandwich;
+    /// for an odd `M` the sandwich negated, which is what a reflection does
+    /// to the vector it acts on — so a fixed vector of an odd motion is read
+    /// at the same weight as an even one's, never at its negative.
+    pub fn twisted(&self, x: &Self) -> Self {
+        self.involute().geo(x).geo(&self.reverse())
+    }
+
+    /// Occupied grades all even, or all odd: the parity a versor has. The
+    /// zero element occupies none and has no parity.
+    pub fn parity(&self) -> Option<bool> {
+        let mut odd = None;
+        for (i, v) in self.c.iter().enumerate() {
+            if v.is_zero() {
+                continue;
+            }
+            let o = (i as u32).count_ones() & 1 == 1;
+            match odd {
+                None => odd = Some(o),
+                Some(p) if p != o => return None,
+                Some(_) => {}
+            }
+        }
+        odd
+    }
+
     /// THE OUTER PRODUCT `A ∧ v` FOR A BLADE `A` AND A VECTOR `v` (54.7 B8).
     ///
     /// `⟨A v⟩_{g+1}` — the geometric product's top grade. It is the whole of
@@ -384,7 +428,8 @@ impl Mv {
     pub fn class_invariants(
         &self,
     ) -> Option<(BigRational, BigRational, crate::network::nerve::coord::BivectorKind)> {
-        let w = is_versor(self)?;
+        // `I₁/w`, `I₂/w²`: scale-free ratios read as the class (Axiom C).
+        let w = weight_of(self)?;
         if w.is_zero() {
             return None;
         }

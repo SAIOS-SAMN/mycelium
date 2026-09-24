@@ -78,8 +78,7 @@ pub fn versor_of_reflections(vs: &[Mv]) -> Option<Mv> {
         }
         out = out.geo(v);
     }
-    is_versor(&out)?;
-    Some(out)
+    is_versor(&out).then_some(out)
 }
 
 /// FINITE EVOLUTION OF A GENERATOR, EXACTLY OVER ℚ — the rational Cayley
@@ -125,8 +124,7 @@ pub fn cayley(b: &Mv) -> Option<Mv> {
     let plus = one_mv.add(&bivector);
     let minus = one_mv.sub(&bivector);
     let omega = minus.geo(&inverse_even(&plus)?);
-    is_versor(&omega)?;
-    Some(omega)
+    is_versor(&omega).then_some(omega)
 }
 
 /// THE INVERSE CHART: a motion's generator, `B = (1 − Ω)(1 + Ω)⁻¹` (78.11
@@ -398,8 +396,7 @@ pub fn transvection(a: &BigRational, b: &BigRational, plane: usize) -> Option<Mv
         return None;
     }
     let omega = Mv::scalar(a.clone()).add(&Mv::blade(plane, b.clone()));
-    is_versor(&omega)?;
-    Some(omega)
+    is_versor(&omega).then_some(omega)
 }
 
 /// THE COMPOSITE GEODESIC MOTION ALONG EVERY AXIS OF ℍⁿ⁺¹ — one
@@ -421,8 +418,7 @@ pub fn transvection_along(axes: &[(&BigRational, &BigRational)]) -> Option<Mv> {
     for ((a, b), plane) in axes.iter().zip(transvection_planes(n)) {
         out = out.geo(&transvection(a, b, plane)?);
     }
-    is_versor(&out)?;
-    Some(out)
+    is_versor(&out).then_some(out)
 }
 
 /// THE HOLONOMY OF A GEODESIC BIGON: `Ω₁ Ω₂ Ω₁⁻¹ Ω₂⁻¹`, the group
@@ -439,6 +435,5 @@ pub fn transvection_commutator(a: &Mv, b: &Mv) -> Option<Mv> {
     let ai = a.versor_inverse()?;
     let bi = b.versor_inverse()?;
     let c = a.geo(b).geo(&ai).geo(&bi);
-    is_versor(&c)?;
-    Some(c)
+    is_versor(&c).then_some(c)
 }

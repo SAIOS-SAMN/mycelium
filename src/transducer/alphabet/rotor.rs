@@ -128,15 +128,65 @@ impl Rotor {
         }
     }
 
-    /// `Φ Φ̃` when it is a nonzero scalar — the rotor's own weight; `None`
-    /// for anything that is not a versor.
-    pub fn weight(&self) -> Option<Q> {
-        let p = self.geo(&self.reverse());
-        let s = p.c[0].clone();
-        if s.is_zero() || (1..16).any(|i| !p.c[i].is_zero()) {
-            return None;
+    /// IS `Φ` A VERSOR — READ BY ITS ACTION (78.28(1) as amended), as
+    /// [`crate::transducer::cga::is_versor`] reads it on `Cl(n+1, 1)`: even
+    /// or odd throughout, the twisted adjoint `Φ̂ eᵢ Φ̃` carries each of the
+    /// four generators to a vector, the four images independent, and the
+    /// pseudoscalar `e₀₁₂₃` to its own line. `1 + e₀₁ + e₂₃` passes the
+    /// first two and fails the third: `Φ Φ̃ = 3 − 2e₀₁₂₃`. Study's `ad = bc`
+    /// and `Φ Φ̃` a non-zero scalar are its theorems, read by the tests as a
+    /// test of this reader and never as the reader.
+    pub fn is_versor(&self) -> bool {
+        // Even or odd throughout: the one parity every occupied blade has,
+        // and none for zero.
+        let parity = |i: usize| (i as u32).count_ones() & 1;
+        let mut held: Option<u32> = None;
+        for i in (0..16).filter(|&i| !self.c[i].is_zero()) {
+            match held {
+                None => held = Some(parity(i)),
+                Some(p) if p != parity(i) => return false,
+                Some(_) => {}
+            }
         }
-        Some(s)
+        if held.is_none() {
+            return false;
+        }
+        let involute = Rotor {
+            c: std::array::from_fn(|i| match parity(i) {
+                0 => self.c[i].clone(),
+                _ => -&self.c[i],
+            }),
+        };
+        let rev = self.reverse();
+        let gens = [1usize, 2, 4, 8];
+        let mut rows = Vec::with_capacity(4);
+        for &g in &gens {
+            let mut e = Rotor::zero();
+            e.c[g] = Q::one();
+            let img = involute.geo(&e).geo(&rev);
+            if (0..16).any(|i| (i as u32).count_ones() != 1 && !img.c[i].is_zero()) {
+                return false;
+            }
+            rows.push(gens.iter().map(|&h| img.c[h].clone()).collect::<Vec<Q>>());
+        }
+        if !crate::transducer::cga::nullspace(rows, 4).is_empty() {
+            return false;
+        }
+        // The pseudoscalar to its own line: every coefficient but `e₀₁₂₃`'s
+        // zero, and that one not.
+        let mut pseudoscalar = Rotor::zero();
+        pseudoscalar.c[15] = Q::one();
+        let img = involute.geo(&pseudoscalar).geo(&rev);
+        !img.c[15].is_zero() && (0..15).all(|i| img.c[i].is_zero())
+    }
+
+    /// THE WEIGHT `Φ Φ̃` OF A VERSOR, READ — never the test, never carried
+    /// (78.28(2), (3)). `None` where the action says `Φ` is no versor. Its
+    /// readers are named at their sites: a scale-free class ratio read as a
+    /// class (the half angle, the order, the class invariants), and the
+    /// division VA1-inverse removes.
+    pub fn weight(&self) -> Option<Q> {
+        self.is_versor().then(|| self.geo(&self.reverse()).c[0].clone())
     }
 
     /// Even-grade: only scalar, bivectors and pseudoscalar. An odd blade

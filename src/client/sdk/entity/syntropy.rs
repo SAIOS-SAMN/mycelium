@@ -323,7 +323,7 @@ pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
     // 3. Closed-form Geometric Algebra rotor: γ = 1 + B₂ · B₁⁻¹
     if let Some(b1_inv) = b1.inverse() {
         let gamma_rotor = Rotor::identity().add(&b2.geo(&b1_inv));
-        if gamma_rotor.weight().is_some() {
+        if gamma_rotor.is_versor() {
             if let Some(gamma_inv) = gamma_rotor.inverse() {
                 let conj = gamma_rotor.geo(&r1).geo(&gamma_inv);
                 if conj.projective_eq(&r2) {

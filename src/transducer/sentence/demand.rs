@@ -112,7 +112,7 @@ impl Demand {
             // not the identity. The block is that rotor's reading on one
             // plane and may be zero — a rotor carrying the plane wholly off
             // itself has a zero shadow there and is a demand for all of it.
-            Demand::Standing { rotor, .. } => rotor.weight().is_some() && !rotor.is_identity(),
+            Demand::Standing { rotor, .. } => rotor.is_versor() && !rotor.is_identity(),
             Demand::Source { multiplicity } => *multiplicity > 0,
             Demand::Creation => true,
             Demand::TopologicalDeformation { axes, .. } => !axes.is_empty(),

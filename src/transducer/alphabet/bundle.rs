@@ -251,7 +251,7 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
             // adjoined as a letter it would be a generator `factor_rotor`
             // reads through the even factors and misreads. The grade is
             // the reading that separates the two, and it is taken here.
-            if r.is_even() && r.weight().is_some() && r.conjugate_holds(&a, &b) {
+            if r.is_even() && r.is_versor() && r.conjugate_holds(&a, &b) {
                 // THE COSET IS REACHED FROM ANY MEMBER OF IT. `K = g·C(a)`,
                 // and `a` commutes with itself, so `a^k ∈ C(a)` and every
                 // `g·a^k` conjugates exactly as `g` does:
@@ -268,7 +268,7 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
                 out.push(r);
                 for _ in 0..3 {
                     acc = acc.geo(&a);
-                    if acc.weight().is_some() && acc.conjugate_holds(&a, &b) {
+                    if acc.is_versor() && acc.conjugate_holds(&a, &b) {
                         out.push(acc.clone());
                     }
                 }

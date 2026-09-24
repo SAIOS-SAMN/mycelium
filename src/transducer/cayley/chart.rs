@@ -34,7 +34,7 @@ pub fn bivector_of(v: &Versor) -> Option<Versor> {
     if a.is_zero() || !is_even(v) {
         return None;
     }
-    cga::is_versor(v)?;
+    cga::is_versor(v).then_some(())?;
     let b = v.grade(2).scale(&(BigRational::one() / &a));
     let quad = outer_square(&b).scale(&(half() * &a));
     if !v.grade(4).sub(&quad).is_zero() {
@@ -52,6 +52,5 @@ pub fn versor_of_bivector(b: &Versor) -> Option<Versor> {
         return None;
     }
     let v = Mv::scalar(BigRational::one()).add(b).add(&outer_square(b).scale(&half()));
-    cga::is_versor(&v)?;
-    Some(v)
+    cga::is_versor(&v).then_some(v)
 }

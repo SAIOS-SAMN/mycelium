@@ -663,7 +663,7 @@ pub fn generator_form(
     bodies: &[crate::transducer::sentence::Link],
 ) -> Option<Element> {
     use crate::transducer::alphabet::Derivation;
-    rotor.weight()?;
+    rotor.is_versor().then_some(())?;
     let mut f = Form::default();
     f.vertices.push(Vertex::word_on(
         Derivation::adjoined(rotor.clone()),

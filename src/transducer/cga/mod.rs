@@ -30,7 +30,7 @@ pub use embedding::{
 pub use enclosure::{centre_point, containment, enclosure, nesting, Containment};
 pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
-pub use group::{dilator, is_versor, projective_ratio, reflector};
+pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_lamina, hyperboloid_pole};
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
 pub use modes::{mode_order, modes, Mode, Undecomposed};

@@ -309,9 +309,8 @@ pub struct CoxeterProduct {
     /// The grades the product holds: the top is the meet, the lower the Gram
     /// entries placed on constructors.
     pub grades: Vec<u32>,
-    /// `P P̃`, and whether it is `Π s_a²` — each sphere's own scalar.
-    pub weight: Q,
-    pub weight_is_the_spheres: bool,
+    // `P P̃` stood here, and whether it was `Π s_a²`: a weight carried on
+    // the product (78.28(3)). It had no reader; the theorem is a test's.
     /// The action's determinant (MR1b).
     pub det: Option<i8>,
     /// Its modes by the action reader; `None` where not a versor.
@@ -361,8 +360,6 @@ pub fn coxeter_product(
     }
     let top = u32::from(p.n()) + 2;
     let grades: Vec<u32> = (0..=top).filter(|&g| !p.grade(g).is_zero()).collect();
-    let weight = p.geo(&p.reverse()).scalar_part();
-    let spheres = order.iter().fold(Q::from_integer(1.into()), |acc, &a| acc * constructors[a].geo(&constructors[a]).scalar_part());
     let modes = match read_modes {
         true => cga::motion_modes(&p, budget),
         false => None,
@@ -374,10 +371,8 @@ pub fn coxeter_product(
     Some(CoxeterProduct {
         order: order.to_vec(),
         det: cga::action_det(&p),
-        weight_is_the_spheres: weight == spheres,
         product: p,
         grades,
-        weight,
         modes,
         infinite,
         seal,

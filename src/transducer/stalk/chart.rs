@@ -85,15 +85,14 @@ pub enum ChartAxis {
 /// coordinate is not the scalar selection rule 4 refuses; that was
 /// `coset_representative` choosing by it, and it no longer does.
 ///
-/// `None` when the rotor carries no class (15.3: not a versor).
+/// `None` when the rotor carries no class (15.3: not a versor), read by its
+/// action. It gave an element that is no versor "unit weight" and wrote
+/// its ratios as a class (VA1's d2): a class for what has none (rule 11).
+/// `w` enters only as the denominator of the two scale-free class ratios,
+/// never as a coordinate of its own.
 pub fn rotor_axes(r: &crate::transducer::alphabet::Rotor) -> Option<Vec<ChartAxis>> {
     let n = r.normalised();
-    // A rotor with no weight of its own is at unit weight, which is what a
-    // normalised rotor without one carries.
-    let w = match n.weight() {
-        Some(w) => w,
-        None => num_traits::One::one(),
-    };
+    let w = n.weight()?;
     let (a, p) = (n.coeff(0).clone(), n.pseudoscalar().clone());
     let neg = |q: &num_rational::BigRational| -> u64 {
         u64::from(num_traits::Signed::is_negative(q))

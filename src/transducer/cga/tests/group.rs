@@ -12,7 +12,7 @@ use num_traits::Zero;
 #[test]
 fn rational_versors_act_exactly_and_are_verified_in_closed_form() {
     let d = dilator(&q(3, 2));
-    assert!(is_versor(&d).is_some(), "the dilator is a versor");
+    assert!(is_versor(&d), "the dilator is a versor");
     let moved = d.sandwich(&point(&q(2, 1), &q(-4, 1), &q(6, 1)));
     assert_eq!(base(&moved), Some((q(3, 1), q(-6, 1), q(9, 1))), "X(2,−4,6) → X(3,−6,9) at ρ = 3/2");
     let r = reflector();
@@ -59,4 +59,55 @@ fn the_frame_axis_is_a_base_coordinate() {
     let plane = rotator(&o, &o).geo(&translator(&q(3, 1), &q(-1, 1), &z));
     let carried = base(&plane.sandwich(&point(&q(4, 1), &q(4, 1), &z))).expect("finite");
     assert!(carried.2.is_zero(), "a plane motion keeps k = 0: {carried:?}");
+}
+
+/// VA1 (78.28(1) as amended) — A VERSOR IS KNOWN BY ITS ACTION, and the old
+/// condition is a test OF the reader: `m m̃` a non-zero scalar agrees with
+/// the action reader on every element here — even and odd versors, a mixed
+/// parity, `1 + e₁₂ + e₃₊` (every generator to an independent vector, yet
+/// `m m̃` not a scalar: the pseudoscalar clause refuses it), `1 + I` (every
+/// generator to zero), a null vector, and zero.
+#[test]
+fn the_action_reader_agrees_with_the_theorem_it_implies() {
+    use crate::transducer::cga::multivector::pseudo;
+    let old = |m: &Mv| {
+        let p = m.geo(&m.reverse());
+        let s = p.scalar_part();
+        !s.is_zero() && p.sub(&Mv::scalar(s)).is_zero()
+    };
+    let one = Mv::scalar(q(1, 1));
+    let blade = |mask: usize| Mv::blade(mask, q(1, 1));
+    let z = q(0, 1);
+    let cases: Vec<(&str, Mv, bool)> = vec![
+        ("the scalar", one.clone(), true),
+        ("a dilator", dilator(&q(2, 1)), true),
+        ("a translator", translator(&q(3, 1), &z, &z), true),
+        ("a reflection, odd", reflector(), true),
+        ("three reflections, odd", reflector().geo(&blade(E2)).geo(&blade(E3)), true),
+        ("mixed parity", one.add(&blade(E1)), false),
+        ("1 + e12 + e3+", one.add(&blade(E1 | E2)).add(&blade(E3 | EP)), false),
+        ("1 + I", one.add(&blade(pseudo(3))), false),
+        ("a null vector", e_inf(), false),
+        ("zero", Mv::zero(), false),
+    ];
+    for (name, m, want) in &cases {
+        assert_eq!(is_versor(m), *want, "{name}");
+        assert_eq!(is_versor(m), old(m), "{name}: the theorem agrees with the reader");
+        assert_eq!(weight_of(m).is_some(), *want, "{name}: a weight is read only for a versor");
+    }
+}
+
+/// VA1's d1 — AN ODD MOTION'S FIXED SET IS READ ON ITS TWISTED ADJOINT. The
+/// reflection across `e₁ = 0` holds its whole mirror — four vectors, the
+/// origin among them — at its own weight. Read with the plain sandwich, the
+/// mirror sat at `−w` and the reading held only the normal.
+#[test]
+fn a_reflection_holds_its_mirror() {
+    match centre_of(&reflector(), 3) {
+        Centre::Fixed { dim, point } => {
+            assert_eq!(dim, 4, "e₂, e₃, e₊, e₋: the mirror and the point at infinity");
+            assert!(point[0].is_zero(), "the point read is on the mirror: {point:?}");
+        }
+        other => panic!("a reflection fixes its mirror, got {other:?}"),
+    }
 }

@@ -63,29 +63,37 @@ impl Contact {
         matches!(self, Contact::TangentExternal | Contact::TangentInternal)
     }
 
-    /// THE REGIME OF A TETHER, exactly and with no root.
+    /// THE REGIME OF A TETHER, read off its ONE MODE (MR1, 78.28), exactly
+    /// and with no root.
     ///
-    /// `⟨V⟩₀ = s_a · s_b = (r_a² + r_b² − d²)/2` and `⟨VṼ⟩₀ = r_a² r_b²`, so
-    /// `δ = −⟨V⟩₀ / √⟨VṼ⟩₀` — the projective reading of `V`'s class (Study's
-    /// condition on a ray, 72.1). It is compared against `±1` by sign first
-    /// and only then by the equal-degree comparison `⟨V⟩₀²` against
-    /// `⟨VṼ⟩₀`, so no sign is lost and no root is taken. Scale-free: `λV`
-    /// reads the same regime. `None` where `V` has no weight.
+    /// `V = s_b s_a` is a product of two vectors, so its plane `B = ⟨V⟩₂ =
+    /// s_a ∧ s_b` is simple and MR1's split of it is `B` itself: one mode,
+    /// whose class is the sign of `B²` — elliptic below zero, parabolic at
+    /// it, hyperbolic above. That is the regime: the spheres cross, touch,
+    /// or stand apart, and on the hyperbolic side `⟨V⟩₀ = s_a · s_b`'s sign
+    /// says whether one holds the other. It read `⟨V⟩₀²` against `V Ṽ`,
+    /// which is `⟨V⟩₀² − B²` — the same regime by a weight formed to decide
+    /// it (VA1). Scale-free: `λV` reads the same regime. `None` where `V`
+    /// does not act as a motion, and where one sphere is imaginary
+    /// (`⟨V⟩₀² ≤ B²`), which has no real regime.
     pub fn of(v: &Mv) -> Option<Contact> {
-        let zero = BigRational::zero();
-        let s = v.scalar_part();
-        let w = v.geo(&v.reverse()).scalar_part();
-        if w <= zero {
+        if !crate::transducer::cga::is_versor(v) {
             return None;
         }
-        let s2 = &s * &s;
-        Some(match (s2.cmp(&w), s < zero) {
-            // `|δ| = 1`: parabolic. `δ = 1` where `⟨V⟩₀ < 0`.
+        let zero = BigRational::zero();
+        let s = v.scalar_part();
+        let b = v.grade(2);
+        let mode = b.geo(&b).scalar_part();
+        if &s * &s <= mode {
+            return None;
+        }
+        Some(match (mode.cmp(&zero), s < zero) {
+            // Parabolic: the spheres touch, from outside where `⟨V⟩₀ < 0`.
             (std::cmp::Ordering::Equal, true) => Contact::TangentExternal,
             (std::cmp::Ordering::Equal, false) => Contact::TangentInternal,
-            // `|δ| < 1`: elliptic.
+            // Elliptic: they cross.
             (std::cmp::Ordering::Less, _) => Contact::Intersecting,
-            // `|δ| > 1`: hyperbolic, the side by `δ`'s sign, opposite `⟨V⟩₀`'s.
+            // Hyperbolic: apart, or one holding the other, by `⟨V⟩₀`'s sign.
             (std::cmp::Ordering::Greater, true) => Contact::Apart,
             (std::cmp::Ordering::Greater, false) => Contact::Contained,
         })

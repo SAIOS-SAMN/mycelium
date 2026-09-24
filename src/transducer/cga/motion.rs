@@ -92,7 +92,7 @@ pub fn action_of(motion: &Mv) -> Option<Vec<Vec<Q>>> {
 /// odd versor (orientation-reversing), `+1` for an even one. `None` where
 /// the element is not a versor (a versor is of one parity).
 pub fn action_det(motion: &Mv) -> Option<i8> {
-    super::is_versor(motion)?;
+    super::is_versor(motion).then_some(())?;
     match is_odd(motion) {
         true => Some(-1),
         false => Some(1),
@@ -135,7 +135,7 @@ pub fn motion_modes(
     budget: &mut crate::physics::Budget,
 ) -> Option<Result<Vec<MotionMode>, Undecomposed>> {
     let inverse = motion.versor_inverse()?;
-    super::is_versor(motion)?;
+    super::is_versor(motion).then_some(())?;
     let masks = generators(motion.n());
     let r = action(motion, &inverse, &masks);
     let r_inv = action(&inverse, motion, &masks);

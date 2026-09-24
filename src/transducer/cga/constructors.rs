@@ -71,7 +71,7 @@ pub fn constructor_orbit(
     generators: &[Mv],
     budget: &mut crate::physics::Budget,
 ) -> ConstructorOrbit {
-    if !constructors.iter().all(is_constructor) || generators.iter().any(|g| super::is_versor(g).is_none()) {
+    if !constructors.iter().all(is_constructor) || generators.iter().any(|g| !super::is_versor(g)) {
         return ConstructorOrbit::Unread;
     }
     for (gi, g) in generators.iter().enumerate() {

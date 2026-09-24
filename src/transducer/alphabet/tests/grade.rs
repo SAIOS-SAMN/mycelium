@@ -142,3 +142,36 @@ fn the_zero_multivector_occupies_no_grade() {
     assert_eq!(one.grades(), vec![0]);
     assert_eq!(one.weight(), Some(q(1)));
 }
+
+/// VA1 (78.28(1) as amended) — THE ROTOR'S ACTION READER AND THE THEOREM
+/// IT IMPLIES AGREE: `Φ Φ̃` a non-zero scalar exactly where the twisted
+/// adjoint carries the four generators to independent vectors and
+/// `e₀₁₂₃` to its own line — on every letter, a reflection (odd), three
+/// reflections, the pseudoscalar, `1 + e₀₁ + e₂₃`, `1 + e₀₁₂₃`, a mixed
+/// parity and zero.
+#[test]
+fn the_rotor_reader_agrees_with_the_theorem_it_implies() {
+    let old = |r: &Rotor| {
+        let p = r.geo(&r.reverse());
+        !p.coeff(0).is_zero() && (1..16).all(|i| p.coeff(i).is_zero())
+    };
+    let b = |mask: usize| Rotor::blade(mask, q(1));
+    let mut cases: Vec<(String, Rotor, bool)> = vec![
+        ("a reflection".into(), b(1), true),
+        ("three reflections".into(), b(1).geo(&b(2)).geo(&b(4)), true),
+        ("the pseudoscalar".into(), b(15), true),
+        ("1 + e01 + e23".into(), Rotor::identity().add(&b(3)).add(&b(12)), false),
+        ("1 + e0123".into(), Rotor::identity().add(&b(15)), false),
+        ("mixed parity".into(), Rotor::identity().add(&b(1)), false),
+        ("zero".into(), Rotor::zero(), false),
+    ];
+    for raw in 0..17u8 {
+        if let Some(id) = LetterId::try_new(raw) {
+            cases.push((format!("letter {raw}"), Word::from_letters(&[(id, false)]).rotor(), true));
+        }
+    }
+    for (name, r, want) in &cases {
+        assert_eq!(r.is_versor(), *want, "{name}");
+        assert_eq!(r.is_versor(), old(r), "{name}: the theorem agrees with the reader");
+    }
+}

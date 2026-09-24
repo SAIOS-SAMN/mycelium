@@ -139,7 +139,7 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
     // the tree is exactly the failure mode this guards.
     let theta = &lp.based_at;
     assert!(
-        crate::transducer::cga::is_versor(theta).is_some(),
+        crate::transducer::cga::is_versor(theta),
         "θ is a versor of Spin⁺(3,1)(ℚ), or the conjugation is not an isometry"
     );
 
@@ -187,7 +187,7 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
         for (_, omega) in lp.carriages.scoped() {
             let based = theta.geo(omega).geo(&inv);
             assert!(
-                crate::transducer::cga::is_versor(&based).is_some(),
+                crate::transducer::cga::is_versor(&based),
                 "a based cycle is an operator of Spin⁺(3,1)(ℚ)"
             );
         }
@@ -208,7 +208,7 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
     if let [g1, g2, ..] = based.as_slice() {
         let word = g1.geo(g2);
         assert!(
-            crate::transducer::cga::is_versor(&word).is_some(),
+            crate::transducer::cga::is_versor(&word),
             "γ₁γ₂ is an operator of the group: words compose at the basepoint"
         );
         // THE HOMOMORPHISM, exactly: ρ(γ₁γ₂) = ρ(γ₁)·ρ(γ₂) is the geometric

@@ -111,13 +111,13 @@ pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
     };
     if on_base(&r) {
         let rotor = read(&r);
-        return rotor.weight().map(|_| rotor);
+        return rotor.is_versor().then_some(rotor);
     }
     // `r = r₃ · e1` ⇒ `r₃ = r · e1`, and the chart reads `r₃ · e₀₂`.
     let r3 = r.geo(&Versor::blade(E1, Q::one()));
     if on_base(&r3) {
         let rotor = read(&r3).geo(&Rotor::blade(ORIENTATION, Q::one()));
-        return rotor.weight().map(|_| rotor);
+        return rotor.is_versor().then_some(rotor);
     }
     None
 }
@@ -158,7 +158,9 @@ fn origin_image(v: &Versor) -> Option<Vec<Q>> {
 /// when `V` is not a versor or sends `e_∞` off itself (no conformal action
 /// of this form).
 pub fn rho_of(v: &Versor) -> Option<Q> {
-    let n = crate::transducer::cga::is_versor(v)?;
+    // THE SCALE IS THE CONTENT (78.28(2)): the dilator's ρ is `κ / (V Ṽ)`,
+    // the one quotient whose scale is what is read.
+    let n = crate::transducer::cga::weight_of(v)?;
     let inf = crate::transducer::cga::e_inf();
     let kappa = crate::transducer::cga::projective_ratio(&v.sandwich(&inf), &inf)?;
     let rho = kappa / n;

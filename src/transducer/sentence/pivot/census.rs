@@ -42,7 +42,8 @@ thread_local! {
 /// projective — give one charge. `None` where the argument is not a
 /// versor, which is a refusal and not a zero charge (rule 11).
 pub fn step_charge(omega: &element::Versor) -> Option<num_rational::BigRational> {
-    let w = crate::transducer::cga::is_versor(omega)?;
+    // A scale-free ratio read as a class (Axiom C), never carried.
+    let w = crate::transducer::cga::weight_of(omega)?;
     let s = omega.scalar_part();
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     Some(&s * &s / &w - one)

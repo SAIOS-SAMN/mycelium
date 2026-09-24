@@ -2,7 +2,7 @@
 //! and the closed-form tests of versorhood and projective equality.
 
 use super::embedding::{e_inf, e_o, point_at};
-use super::multivector::{one, Mv, E1};
+use super::multivector::{one, Mv, E1, EM, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -38,14 +38,53 @@ pub fn reflector() -> Mv {
     Mv::blade(E1, one())
 }
 
-/// Is `m` a versor: `m m̃` a nonzero scalar? Returns that scalar.
-pub fn is_versor(m: &Mv) -> Option<BigRational> {
-    let prod = m.geo(&m.reverse());
-    let s = prod.scalar_part();
-    if s.is_zero() || !prod.sub(&Mv::scalar(s.clone())).is_zero() {
-        return None;
+/// IS `m` A VERSOR — READ BY ITS ACTION (78.28(1) as amended), never by a
+/// sum of squares. `m` is even or odd throughout; its twisted adjoint
+/// `m̂ eᵢ m̃` carries every generator `eᵢ` of `Cl(n+1, 1)` to a vector, the
+/// images independent (exact elimination over ℚ,
+/// [`super::fixed::nullspace`]); AND it carries the pseudoscalar `I` to its
+/// own line, `m̂ I m̃` a multiple of `I` read as a ray equality. `n + 3`
+/// actions, no norm formed as a value.
+///
+/// The two clauses together are the Lipschitz condition exactly. The first
+/// alone is not: it takes `m̃` where Lipschitz takes `m⁻¹`, and `1 + e₀₁ +
+/// e₂₃` carries every generator to an independent vector while `m m̃ = 3 −
+/// 2I` (VA1-reader's finding). Since `m̂ I m̃ = ±I (m m̃)`, and `I (m m̃)` is
+/// pure top grade exactly when `m m̃` is a scalar, the second clause closes
+/// it. `m m̃` a non-zero scalar and Study's `ad = bc` are theorems of this
+/// reader, and the tests read them as a test OF it, never as it.
+///
+/// Independence refuses what a grade test alone would let through: a null
+/// vector sends every generator onto one line, and `1 + I` sends every
+/// generator to zero.
+pub fn is_versor(m: &Mv) -> bool {
+    if m.parity().is_none() {
+        return false;
     }
-    Some(s)
+    let n = m.n();
+    let gens: Vec<usize> = (1..=usize::from(n)).map(super::multivector::base_axis).chain([EP, EM]).collect();
+    let images: Vec<Mv> = gens.iter().map(|&g| m.twisted(&Mv::blade(g, one()))).collect();
+    if images.iter().any(|x| !x.sub(&x.grade(1)).is_zero()) {
+        return false;
+    }
+    let rows: Vec<Vec<BigRational>> =
+        images.iter().map(|x| gens.iter().map(|&g| x.coeff(g).clone()).collect()).collect();
+    if !super::fixed::nullspace(rows, gens.len()).is_empty() {
+        return false;
+    }
+    let pseudoscalar = Mv::blade(super::multivector::pseudo(n), one());
+    projective_ratio(&m.twisted(&pseudoscalar), &pseudoscalar).is_some()
+}
+
+/// THE WEIGHT `⟨m m̃⟩₀` OF A VERSOR, READ — never the test, never carried
+/// (78.28(2), (3)). `None` where the action says `m` is no versor. Its
+/// readers are named: a scale-free class ratio read as a class (Axiom C —
+/// `I₁/w`, a step's charge, a coset's order), the eigenvalue a motion's
+/// fixed set is read at, and a scale that is itself content (the dilator's
+/// ρ, the sheet's base point). A site that divides by it to compose,
+/// compare or transport takes the reverse instead (VA1-inverse).
+pub fn weight_of(m: &Mv) -> Option<BigRational> {
+    is_versor(m).then(|| m.geo(&m.reverse()).scalar_part())
 }
 
 /// PROJECTIVE EQUALITY — TWO RAYS ARE EQUAL BY PROPORTION (EQ1, 78.12):

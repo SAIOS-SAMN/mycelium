@@ -26,7 +26,7 @@ pub const BLOCK_ORDER: [((u8, u8), (u8, u8)); 3] = [((0, 1), (2, 3)), ((0, 2), (
 /// pair block or a plane does not spell in this order; `Ok` with the word
 /// whose rotor is projectively `r`.
 pub fn factor_rotor(r: &Rotor) -> Option<Result<Word, Demand>> {
-    r.weight()?;
+    r.is_versor().then_some(())?;
     // EVEN, OR NOT A ROTOR (Expansion 3, 16.1). The quaternion factors
     // below read the even grades and nothing else; an element with an odd
     // grade — a reflection has weight too — would be factored by what it

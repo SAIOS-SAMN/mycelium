@@ -1,12 +1,18 @@
 //! 73.2(5), OR1 — THE CENTRE OF A MOTION: the flat or round its holonomy
 //! fixes, from the fixed-point equation over ℚ, or refused by name.
 //!
-//! A versor `M` acts on the vectors of `Cl(n+1, 1)` by `x ↦ M x M̃`, and a
-//! vector it holds still AT ITS OWN WEIGHT `w = M M̃` satisfies
+//! A versor `M` acts on the vectors of `Cl(n+1, 1)` by its twisted adjoint
+//! `x ↦ M̂ x M̃` (78.28(1)) — the sandwich for an even `M`, the sandwich
+//! negated for an odd one, which is what a reflection does — and a vector
+//! it holds still AT ITS OWN WEIGHT `w = M M̃` satisfies
 //!
 //! ```text
-//!     (L − w) x = 0 ,     L x = M x M̃
+//!     (L − w) x = 0 ,     L x = M̂ x M̃
 //! ```
+//!
+//! Read with the plain sandwich, an odd motion's fixed set sat at `−w` and
+//! this read the wrong kernel (VA1's d1): a reflection holds its mirror, and
+//! the plain sandwich negates every vector of it.
 //!
 //! a linear system over ℚ in `n + 2` unknowns. Its kernel is the flat the
 //! motion fixes: a rotation about a point holds that point and `e_∞`, a
@@ -28,7 +34,7 @@
 //! the origin. OR1 read the centre of any such vector as a fixed point.
 
 use super::embedding::{base_at, e_inf};
-use super::group::is_versor;
+use super::group::weight_of;
 use super::multivector::{base_axis, one, Mv, EM, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
@@ -100,12 +106,13 @@ impl Centre {
 /// THE CENTRE OF `m` in the algebra of `n` base axes (at least the motion's
 /// own): the kernel of `L − w` over ℚ, read as 73.2(5) asks.
 pub fn centre_of(m: &Mv, n: u8) -> Centre {
-    let Some(w) = is_versor(m) else { return Centre::Unread };
+    // The weight is the eigenvalue the fixed set is read at, never a test.
+    let Some(w) = weight_of(m) else { return Centre::Unread };
     let n = n.max(m.n());
     let gens: Vec<usize> = (1..=usize::from(n)).map(base_axis).chain([EP, EM]).collect();
-    // THE ACTION, column by column: the image of each generator, read on
-    // every generator.
-    let images: Vec<Mv> = gens.iter().map(|&g| m.sandwich(&Mv::blade(g, one()))).collect();
+    // THE ACTION, column by column: the twisted image of each generator,
+    // read on every generator.
+    let images: Vec<Mv> = gens.iter().map(|&g| m.twisted(&Mv::blade(g, one()))).collect();
     // The vectors held at eigenvalue `eigen`: the kernel of `L − eigen`.
     let held_at = |eigen: &BigRational| -> Vec<Mv> {
         let rows: Vec<Vec<BigRational>> = gens
@@ -129,7 +136,7 @@ pub fn centre_of(m: &Mv, n: u8) -> Centre {
     };
     let has_origin_weight = |x: &Mv| !(-x.geo(&e_inf()).scalar_part()).is_zero();
     let basis = held_at(&w);
-    let holds_infinity = m.sandwich(&e_inf()).sub(&e_inf().scale(&w)).is_zero();
+    let holds_infinity = m.twisted(&e_inf()).sub(&e_inf().scale(&w)).is_zero();
     // A FINITE FIXED POINT. Where `e_∞` is held, any held vector with
     // weight on `e_o` is a round whose whole pencil `S + t e_∞` is held, so
     // its null member — the centre `base_at` reads — is a fixed point.
@@ -169,7 +176,7 @@ pub fn centre_of(m: &Mv, n: u8) -> Centre {
     let pole_at = |lambda: &BigRational| -> Option<PoleAt> {
         let eigen = &w * lambda;
         let held = held_at(&eigen);
-        if m.sandwich(&e_inf()).sub(&e_inf().scale(&eigen)).is_zero() {
+        if m.twisted(&e_inf()).sub(&e_inf().scale(&eigen)).is_zero() {
             return Some(PoleAt::Infinity);
         }
         held.iter().find_map(|x| match has_origin_weight(x) && x.norm2().is_zero() {

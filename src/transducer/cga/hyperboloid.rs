@@ -101,20 +101,21 @@ pub fn geodesic_transvection(va: &Mv, vb: &Mv) -> Option<Mv> {
         return None;
     }
     let r = Mv::scalar(one()).sub(&vb.geo(va));
-    // `R R̃ = 2(1 − v_a·v_b)` must be a non-zero pure scalar, which is what
-    // `is_versor` reads — and it is ≥ 4 on the sheet, so the only way this
+    // `R` must act as a motion — `is_versor` reads its action on every
+    // generator (78.28(1)) — and on the sheet it does, so the only way this
     // refuses is a vector that is not where it claimed to be.
-    is_versor(&r)?;
-    Some(r)
+    is_versor(&r).then_some(r)
 }
 
 /// THE BASE POINT A FRAME STANDS AT: its own versor applied to the pole,
 /// renormalised onto the sheet.
 ///
 /// `v = V v₀ Ṽ` has `v² = −(V Ṽ)²`, so dividing by the weight puts it back
-/// on `v² = −1` — one exact rational division, no root.
+/// on `v² = −1` — one exact rational division, no root. THE SCALE IS THE
+/// POINT'S OWN COORDINATE (78.28(2), VA1 Q3): a point of the sheet is the
+/// vector with `v² = −1`, not its ray, so this division is content.
 pub fn frame_base_point(v: &Mv) -> Option<Mv> {
-    let w = is_versor(v)?;
+    let w = super::group::weight_of(v)?;
     if w.is_zero() {
         return None;
     }

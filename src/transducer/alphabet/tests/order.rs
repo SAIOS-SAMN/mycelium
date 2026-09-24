@@ -66,7 +66,8 @@ fn two_quarter_turns_on_planes_sharing_an_axis_close_in_three() {
     let unequal = Rotor::identity()
         .add(&Rotor::blade(0b0011, Q::one()))
         .add(&Rotor::blade(0b1100, Q::one()));
-    assert!(unequal.weight().is_none(), "1 + e01 + e23 is no versor: its two factors have different weights");
+    assert!(!unequal.is_versor(), "1 + e01 + e23 is no versor: the action leaves the pseudoscalar's line");
+    assert!(unequal.weight().is_none(), "and a weight is read only for a versor");
     assert_eq!(unequal.order(), None, "so it has no class and no order");
     assert_eq!(
         Word::formed(unequal).order(),

@@ -27,7 +27,7 @@ fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
 
     // THE TRANSITION TRANSPORTS, and is not an involution.
     let r = geodesic_transvection(&a, &b).expect("a geodesic joins them");
-    let w = is_versor(&r).expect("R R̃ is a positive rational scalar");
+    let w = weight_of(&r).expect("R R̃ is a positive rational scalar");
     assert!(w.is_positive(), "R R̃ = 2(1 − v_a·v_b) ≥ 4, got {w}");
     assert_eq!(r.sandwich(&a).scale(&(one() / &w)), b, "R v_a R̃ / R R̃ = v_b exactly");
 
@@ -51,7 +51,7 @@ fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
                 // return to the start — which a real transvection does
                 // not do.
                 let twice = r.geo(&r);
-                let wt = is_versor(&twice).expect("a versor squared is a versor");
+                let wt = weight_of(&twice).expect("a versor squared is a versor");
                 twice.sandwich(&a).scale(&(one() / wt)) != a
             },
         "a transvection propagates; an involution returns"

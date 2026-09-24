@@ -123,7 +123,12 @@ fn the_corner_products_are_of_order_two_and_the_whole_is_odd() {
     let whole = coxeter_product(&corner, &[0, 1, 2], true, &mut stroke()).expect("a product");
     assert_eq!(whole.det, Some(-1), "an odd product reverses orientation");
     assert_eq!(whole.grades, vec![3], "orthogonal mirrors: the meet alone, no Gram entry to place");
-    assert!(whole.weight_is_the_spheres, "P P̃ = Π s_a²");
+    // A theorem of the product, read here as a test of it and never carried
+    // on it (78.28(3)): `P P̃ = Π s_a²`.
+    let spheres = corner
+        .iter()
+        .fold(Mv::scalar(BigRational::from_integer(1.into())), |acc, s| acc.geo(&Mv::scalar(s.geo(s).scalar_part())));
+    assert_eq!(whole.product.geo(&whole.product.reverse()), spheres, "P P̃ = Π s_a²");
     assert!(whole.infinite.is_none(), "every mode closes");
 }
 

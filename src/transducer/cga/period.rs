@@ -130,7 +130,7 @@ fn gcd(mut a: u32, mut b: u32) -> u32 {
 /// never `±1` for `β > 0` — so even a dispiration whose rotation closes at
 /// a fifth root of unity drifts along its screw axis forever.
 pub fn finite_order(m: &Mv) -> Option<std::num::NonZeroU32> {
-    is_versor(m)?;
+    is_versor(m).then_some(())?;
     let unit = Mv::scalar(one());
     let orders = cyclotomic_orders(m.n());
     let mut acc = m.clone();

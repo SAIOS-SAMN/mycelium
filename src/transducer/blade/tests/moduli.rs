@@ -19,7 +19,7 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     let bar_rot = shape_of(&rect(5, 7, 3, 2));
     assert_eq!(moduli(&bar.blade), moduli(&bar_rot.blade));
     let v = versor_between(&bar, &bar_rot).expect("a rotation+translation");
-    assert!(cga::is_versor(&v).is_some());
+    assert!(cga::is_versor(&v));
     // Dilated bar (2×): same moduli, a versor with ρ = 2 carrying the
     // body's vertex (0,0) to (0,0) and (2,3) to (4,6).
     let bar2 = shape_of(&rect(0, 0, 4, 6));

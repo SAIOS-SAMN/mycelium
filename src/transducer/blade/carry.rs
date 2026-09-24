@@ -275,7 +275,7 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
             _ => continue, // one body isotropic, the other not: not similar
         };
         for rotor in candidates {
-            if cga::is_versor(&rotor).is_none() {
+            if !cga::is_versor(&rotor) {
                 continue;
             }
             let rotation = if reflect { rotor.geo(&sheet) } else { rotor };
@@ -301,7 +301,8 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
 /// dilation and the bar's own half turn.
 pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
     let nearness = |rotation: &Mv| -> Option<BigRational> {
-        let w = cga::is_versor(rotation)?;
+        // `a²/w`, scale-free, read as the class's order (Axiom C).
+        let w = cga::weight_of(rotation)?;
         let a = rotation.scalar_part();
         Some(&a * &a / w)
     };

@@ -104,7 +104,7 @@ fn an_even_element_that_is_not_a_versor_is_refused_by_the_chart() {
     let versor = Mv::scalar(o.clone()).add(&b).add(&quad.scale(&q(1, 2)));
     assert!(bivector_of(&versor).is_some(), "with half the outer square it is a versor");
     let not_versor = Mv::scalar(o.clone()).add(&b).add(&quad.scale(&q(2, 1)));
-    assert_eq!(cga::is_versor(&not_versor), None, "with twice it, V Ṽ is not a scalar");
+    assert!(!cga::is_versor(&not_versor), "with twice it, the action leaves the vectors");
     assert_eq!(bivector_of(&not_versor), None, "and the chart refuses it");
     let cone = dilation_plane();
     assert_eq!(versor_of_bivector(&cone), None, "β = 1 is the light cone: no weight, no versor");

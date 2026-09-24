@@ -315,7 +315,7 @@ pub(crate) fn peel_versor_with_target(
     // before the gates so an orbit that never closes — infinite order — is
     // counted as the reading it is rather than lost as a refusal.
     crate::physics::metabolism::note_orbit(target.order());
-    target.weight()?;
+    target.is_versor().then_some(())?;
     if !target.is_even() {
         return None;
     }
