@@ -11481,6 +11481,26 @@ a second carrier of one fact (law 12), and a carrier that waits for a
 caller is deleted (TR1). Keeping it unfired or its arms untested was
 refused (rule 13).
 
+**The verdict act deleted and LD1 landed (e68d57c2, f58cabe1; audited
+2026-09-24, reproduced detached at f58cabe1: 1013 / 15 / 1 / 12 / 6, 0
+failed, 1 ignored; gate exit 0).** The verdict act is gone whole, its
+code byte unassigned; `Ruled` stays for the equivocation judge. LD1's
+`Reading::Carriage` measures, per carrier and kind, the records, bytes
+and largest: awards as the treasury persists them, deltas by act kind on
+the court's and the voice's chains, frames by act tag where the wire
+writes them. THE FIRST FIGURES, from read-only copies of the fleet's
+ledgers at ff5821fe: hypha a's ledger is 88.6 MB at K 2 414, h 16 061 —
+own deltas 15 MB dominated by 1 136 syllabus receipts at 13.2 KB each,
+PEER deltas admitted 47.7 MB (17 109 at 2.8 KB), awards 0.45 MB (26 at
+17.3 KB), the largest delta 104 905 bytes equal to the largest
+provisional address exactly; hypha c 62.4 MB with the same shape.
+Receipt deltas are about eighty per cent of a ledger and awards under
+one per cent; every delta row tracks the address it copies; syllabus
+receipts are the largest own carrier and peer receipts held as parents
+the largest of all. So the citation cut begins at the receipt delta —
+and 78.24 rules the carrier it lands on. One finding named: no node
+applies a ruling's release, demotion or slash — EC1.
+
 **C4 widened.** The tape check before a recut reads EVERY carrier the
 running fleet wrote — genomes, ledgers, registries, eras — not the
 genomes alone; the check that passed at 7886dd2b read genomes only, and
