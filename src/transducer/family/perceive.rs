@@ -341,9 +341,20 @@ pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>)
             standing.insert(&k, ());
         }
     }
+    // A.17 (R2) — nothing leaves this loop unnamed: a kind with no
+    // coordinates here, a demand its own type refuses, and one already
+    // standing are each counted on the mint's tally.
     for (kind, chart, mut links) in demanded {
-        let Some(k) = coords(&kind) else { continue };
-        if standing.contains(&k) || kind.typed().is_err() {
+        let Some(k) = coords(&kind) else {
+            note_demand(|t| t.unkeyed += 1);
+            continue;
+        };
+        if kind.typed().is_err() {
+            note_demand(|t| t.untyped += 1);
+            continue;
+        }
+        if standing.contains(&k) {
+            note_demand(|t| t.merged += 1);
             continue;
         }
         standing.insert(&k, ());
@@ -376,12 +387,21 @@ pub struct DemandTally {
     pub primeless: u64,
     /// `RotorPrime` demands minted, each with a primitive witness.
     pub minted: u64,
+    /// CV1b F3 (R2) — THE POLE'S DEMANDS NOT STOOD, by name. A demand of a
+    /// kind with no coordinates for [`stand_demands`] to key it by.
+    pub unkeyed: u64,
+    /// A demand its own type refuses (`Demand::typed`).
+    pub untyped: u64,
+    /// A demand already standing on the sentence — on the word path or at
+    /// the pole — which stands once.
+    pub merged: u64,
 }
 
 thread_local! {
     static DEMANDS: std::cell::Cell<DemandTally> =
         const { std::cell::Cell::new(DemandTally {
             offered: 0, permanent: 0, arcless: 0, primeless: 0, minted: 0,
+            unkeyed: 0, untyped: 0, merged: 0,
         }) };
 }
 
@@ -407,8 +427,9 @@ pub fn demand_tally() -> DemandTally {
 impl DemandTally {
     pub fn line(&self) -> String {
         format!(
-            "offered {} | permanent {} arcless {} primeless {} | MINTED {}",
+            "offered {} | permanent {} arcless {} primeless {} | MINTED {} | stood: unkeyed {} untyped {} merged {}",
             self.offered, self.permanent, self.arcless, self.primeless, self.minted,
+            self.unkeyed, self.untyped, self.merged,
         )
     }
 }

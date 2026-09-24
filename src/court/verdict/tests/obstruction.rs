@@ -73,12 +73,13 @@ fn the_mint_and_the_pose_arms_carry_their_kind() {
     assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::C);
     assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::N);
     assert_eq!(Withheld::NoTrajectory.obstruction_kind(), ObstructionKind::N);
-    use crate::transducer::blade::Incongruence;
+    use crate::transducer::blade::{Harmonic, Incongruence, TowerRefusal};
+    let at = TowerRefusal::At;
     for p in [
         NoPose::Mirrored,
-        NoPose::Incongruent(Incongruence::Order { region: 2, sites: 2 }),
-        NoPose::Incongruent(Incongruence::Order { region: 3, sites: 4 }),
-        NoPose::Incongruent(Incongruence::Order { region: 4, sites: 2 }),
+        NoPose::Incongruent(Incongruence::Order { region: at(Harmonic::Two), sites: at(Harmonic::Two) }),
+        NoPose::Incongruent(Incongruence::Order { region: at(Harmonic::Three), sites: at(Harmonic::Four) }),
+        NoPose::Incongruent(Incongruence::Order { region: at(Harmonic::Four), sites: TowerRefusal::Unplaced }),
         NoPose::Incongruent(Incongruence::Chirality),
         NoPose::Incongruent(Incongruence::Base),
         NoPose::Incongruent(Incongruence::Tube),

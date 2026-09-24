@@ -277,11 +277,29 @@ fn a_site_map_certifies_on_the_point_tower_and_reads_oblique() {
 fn a_different_shape_is_incongruent_at_its_order_on_both_towers() {
     let image = blade::shape_of(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    assert_eq!(blade::dilation(&image.blade, &s.blade), Err((2, 2)), "both towers refuse at the deviatoric");
+    let two = blade::TowerRefusal::At(blade::Harmonic::Two);
+    assert_eq!(blade::dilation(&image.blade, &s.blade), Err((two, two)), "both towers refuse at the deviatoric");
     assert_eq!(
         blade::relative_rotor(&image.blade, &s.blade).err(),
-        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: 2, sites: 2 })),
+        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: two, sites: two })),
         "the refusal names the order from each tower"
+    );
+}
+
+/// 78.38 (C), R1 — A BODY WITH NO POINTS ON THE PLANE IS REFUSED BY THAT NAME.
+///
+/// Asked on a plane off the bodies' base, neither tower carries a scale for
+/// them, so each refuses as `Unplaced` before any order is read — never as a
+/// difference of shape at the deviatoric.
+#[test]
+fn a_plane_off_the_base_is_unplaced_on_both_towers() {
+    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let off = (0, l.blade.n() + 1);
+    let unplaced = blade::TowerRefusal::Unplaced;
+    assert_eq!(
+        crate::transducer::blade::dilation(&l.blade, &l.blade, off),
+        Err((unplaced, unplaced)),
+        "no scale on either tower, refused by its own name"
     );
 }
 
@@ -339,10 +357,11 @@ fn an_aligned_unlike_pair_is_refused_before_the_turn_branch() {
     let dom = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
     let bar = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
     assert!(blade::third_harmonic(&dom.blade).is_none() && blade::third_harmonic(&bar.blade).is_none(), "2-fold, h3 = 0");
-    assert_eq!(blade::dilation(&dom.blade, &bar.blade), Err((2, 4)), "the region parts at 2, the sites at 4");
+    let (two, four) = (blade::TowerRefusal::At(blade::Harmonic::Two), blade::TowerRefusal::At(blade::Harmonic::Four));
+    assert_eq!(blade::dilation(&dom.blade, &bar.blade), Err((two, four)), "the region parts at 2, the sites at 4");
     assert_eq!(
         blade::relative_rotor(&dom.blade, &bar.blade).err(),
-        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: 2, sites: 4 })),
+        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: two, sites: four })),
         "unlike, not a held half turn"
     );
 }

@@ -134,8 +134,8 @@ fn relative_phase(ha: &[BigRational; 2], hb: &[BigRational; 2]) -> (BigRational,
 /// choosing a sign it cannot see (which is what manufactures a phantom
 /// holonomy around a cycle).
 fn relative_turn_ray(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<(BigRational, BigRational)> {
-    let (ua, ub) = (harmonic(a, plane, tower, 2)?, harmonic(b, plane, tower, 2)?);
-    let (ta, tb) = (harmonic(a, plane, tower, 3)?, harmonic(b, plane, tower, 3)?);
+    let (ua, ub) = (harmonic(a, plane, tower, Harmonic::Two)?, harmonic(b, plane, tower, Harmonic::Two)?);
+    let (ta, tb) = (harmonic(a, plane, tower, Harmonic::Three)?, harmonic(b, plane, tower, Harmonic::Three)?);
     let z2 = relative_phase(&ua, &ub);
     let z3 = relative_phase(&ta, &tb);
     // `z₃ · conj(z₂)`.
@@ -322,13 +322,13 @@ pub enum NoPose {
 }
 
 /// WHERE TWO SHAPES DISAGREE (78.38(2), (C)): where neither similarity of the
-/// lattice carries them, at the harmonic order each tower refused at (the
-/// region's, the sites'); in chirality alone where one does; on bases of
-/// different `n`; or on the tube, where no orthogonal map carries the one
-/// tower onto the other.
+/// lattice carries them, by each tower's refusal (the region's, the sites') —
+/// the harmonic order it parted them at, or a body with no points on the
+/// plane; in chirality alone where one does; on bases of different `n`; or on
+/// the tube, where no orthogonal map carries the one tower onto the other.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Incongruence {
-    Order { region: u8, sites: u8 },
+    Order { region: TowerRefusal, sites: TowerRefusal },
     Chirality,
     Base,
     Tube,
@@ -354,6 +354,15 @@ impl NoPose {
     }
 }
 
+/// WHICH HARMONIC ORIENTS A PAIR (R1): the deviatoric, turning at `2φ`, where
+/// both bodies have a principal axis; the quartic, at `4φ`, where neither does.
+/// The odd order never orients — it only settles the half turn.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum Orienting {
+    Deviatoric,
+    Quartic,
+}
+
 /// THE ORIENTATION VECTORS OF A PAIR. The second harmonic where the body
 /// has a principal axis; the fourth where it does not — a square or a
 /// cross is isotropic at second order and the quartic still orients it.
@@ -374,11 +383,11 @@ fn orientation_of(
     b: &Blade,
     plane: (usize, usize),
     tower: Tower,
-) -> Result<(u8, [BigRational; 2], [BigRational; 2]), NoPose> {
-    match (harmonic(a, plane, tower, 2), harmonic(b, plane, tower, 2)) {
-        (Some(ua), Some(ub)) => Ok((2, ua, ub)),
-        (None, None) => match (harmonic(a, plane, tower, 4), harmonic(b, plane, tower, 4)) {
-            (Some(qa), Some(qb)) => Ok((4, qa, qb)),
+) -> Result<(Orienting, [BigRational; 2], [BigRational; 2]), NoPose> {
+    match (harmonic(a, plane, tower, Harmonic::Two), harmonic(b, plane, tower, Harmonic::Two)) {
+        (Some(ua), Some(ub)) => Ok((Orienting::Deviatoric, ua, ub)),
+        (None, None) => match (harmonic(a, plane, tower, Harmonic::Four), harmonic(b, plane, tower, Harmonic::Four)) {
+            (Some(qa), Some(qb)) => Ok((Orienting::Quartic, qa, qb)),
             _ => Err(NoPose::Unoriented),
         },
         // One has a principal axis and the other does not: no turn of one
@@ -431,9 +440,9 @@ pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigIn
     //
     // Refused here rather than corrected, because `w⁸` is a DIFFERENT
     // spellability question from `w⁴` and answering it is its own ruling.
-    if order != 2 {
+    let Orienting::Deviatoric = order else {
         return None;
-    }
+    };
     let dot = &oa[0] * &ob[0] + &oa[1] * &ob[1];
     let wedge = &oa[0] * &ob[1] - &oa[1] * &ob[0];
     // `z = 0` is no direction at all: an orientation vector vanished, and
@@ -504,10 +513,10 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // isotropic at second order.
     let turn_pair: &[usize] = if wedge == zero && dot > zero {
         match order {
-            4 => &[0usize, 1, 2, 3],
-            _ => &[0usize, 2],
+            Orienting::Quartic => &[0usize, 1, 2, 3],
+            Orienting::Deviatoric => &[0usize, 2],
         }
-    } else if wedge == zero && dot < zero && order == 2 {
+    } else if wedge == zero && dot < zero && order == Orienting::Deviatoric {
         // 2φ = π — the axes are at a right angle, so φ is π/2 or 3π/2.
         &[1usize, 3]
     } else {
@@ -603,7 +612,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
 /// that named it: the tower whose similarity carries the pair, the region's
 /// where none does (the relation is then refused on it, at the order each
 /// tower names).
-fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<Dilation, (u8, u8)>) {
+fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<Dilation, (TowerRefusal, TowerRefusal)>) {
     let certified = dilation(a, b, plane);
     let tower = match certified {
         Ok(d) => d.tower(),
@@ -619,7 +628,13 @@ fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<
 /// similarity carries it and a proper motion is consistent — the one arm a
 /// demand retires (D3). One statement for both of `relative_rotor`'s
 /// branches (law 12).
-fn unturned(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower, certified: Result<Dilation, (u8, u8)>) -> NoPose {
+fn unturned(
+    a: &Blade,
+    b: &Blade,
+    plane: (usize, usize),
+    tower: Tower,
+    certified: Result<Dilation, (TowerRefusal, TowerRefusal)>,
+) -> NoPose {
     match (handedness(a, b, plane, tower), certified) {
         (Handedness::Improper, _) => NoPose::Mirrored,
         (_, Err((region, sites))) => NoPose::Incongruent(Incongruence::Order { region, sites }),

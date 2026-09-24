@@ -127,6 +127,37 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
     assert_eq!((d.offered, d.minted, d.permanent), (2, 1, 1), "one minted, one refused permanent");
 }
 
+/// CV1b F3 (R2), A.17 — THE POLE'S DEMANDS STAND ONCE, AND NONE LEAVES
+/// UNNAMED: the rotor prime stands; the same demand reached again merges into
+/// it; a kind with no coordinates to key it is `unkeyed`; a rotor prime whose
+/// witness carries nothing is `untyped`. Each counted on the mint's tally.
+#[test]
+fn the_poles_demands_stand_once_and_every_other_is_named() {
+    use crate::transducer::family::{oblique_rotor_prime, stand_demands, take_demand_tally};
+    use crate::transducer::sentence::{Demand, Vertex};
+    use crate::transducer::stalk::Invariant;
+    let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
+    let rotor_prime = oblique_rotor_prime(&l, &image).expect("the oblique pair's demand");
+    let Demand::RotorPrime { plane, prime, .. } = rotor_prime.clone() else { panic!("a rotor prime") };
+    let empty = Demand::RotorPrime { plane, prime, witness: Box::default() };
+    let chart = Invariant::default();
+    let _ = take_demand_tally();
+    let mut vertices: Vec<Vertex> = Vec::new();
+    stand_demands(
+        &mut vertices,
+        vec![
+            (rotor_prime.clone(), chart.clone(), Vec::new()),
+            (rotor_prime, chart.clone(), Vec::new()),
+            (Demand::Creation, chart.clone(), Vec::new()),
+            (empty, chart, Vec::new()),
+        ],
+    );
+    assert_eq!(vertices.len(), 1, "the rotor prime stands, once");
+    let t = take_demand_tally();
+    assert_eq!((t.merged, t.unkeyed, t.untyped), (1, 1, 1), "every demand not stood, by its name");
+}
+
 /// 78.6(1) — A HELD `ℤ₂` RIDES THE EDGE AS A COSET: an S-tetromino against
 /// its own quarter turn holds its pose open (its odd moment vanishes), so
 /// its contact carries BOTH candidates `θ·V` — two distinct transports,

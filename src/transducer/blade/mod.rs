@@ -65,7 +65,7 @@ pub mod sensor_plane {
     pub fn dilation_certified(a: &Blade, b: &Blade) -> bool {
         super::dilation_certified(a, b, P)
     }
-    pub fn dilation(a: &Blade, b: &Blade) -> Result<Dilation, (u8, u8)> {
+    pub fn dilation(a: &Blade, b: &Blade) -> Result<Dilation, (TowerRefusal, TowerRefusal)> {
         super::dilation(a, b, P)
     }
     pub fn chirality_on(b: &Blade, tower: Tower) -> Option<(BigRational, BigRational)> {

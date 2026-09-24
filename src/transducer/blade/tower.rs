@@ -53,6 +53,50 @@ impl Dilation {
     }
 }
 
+/// THE HARMONIC ORDERS THE TOWERS CARRY (A.12, 68): the deviatoric, the odd
+/// moment and the quartic, turning at `2φ`, `3φ` and `4φ`. An order is one of
+/// these by type, so no reader folds a number into range.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Harmonic {
+    Two,
+    Three,
+    Four,
+}
+
+impl Harmonic {
+    /// The orders in the order the certificate reads them.
+    pub const ALL: [Harmonic; 3] = [Harmonic::Two, Harmonic::Three, Harmonic::Four];
+
+    /// `m`: the multiple of `φ` the harmonic turns at, and its degree under a
+    /// dilation.
+    pub fn m(self) -> i32 {
+        match self {
+            Harmonic::Two => 2,
+            Harmonic::Three => 3,
+            Harmonic::Four => 4,
+        }
+    }
+}
+
+/// WHERE ONE TOWER REFUSES A PAIR AS DILATES (78.38 (C), R1): at the harmonic
+/// order the two shapes part, or — before any order is read — because a body
+/// has no points on the plane, so the tower carries no scale for it.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TowerRefusal {
+    At(Harmonic),
+    Unplaced,
+}
+
+impl TowerRefusal {
+    /// Every refusal a tower can give, for a tally that names each.
+    pub const ALL: [TowerRefusal; 4] = [
+        TowerRefusal::At(Harmonic::Two),
+        TowerRefusal::At(Harmonic::Three),
+        TowerRefusal::At(Harmonic::Four),
+        TowerRefusal::Unplaced,
+    ];
+}
+
 /// A.12 — THE ZEROTH MOMENT, the one place either tower is normalised: the
 /// body's lamina count. `None` on an empty support (rule 11).
 fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
@@ -82,10 +126,12 @@ fn plane_points(blade: &Blade, plane: (usize, usize)) -> Option<(BigRational, Ve
 }
 
 /// A BODY'S SCALE ON ONE TOWER: the region's radius `radius2` (its unit squares
-/// integrated), or the sites' spread `Σ(u² + v²)/M₀` on the plane.
+/// integrated), or the sites' spread `Σ(u² + v²)/M₀` on the plane. `None` where
+/// the body has no points on the plane — the plane off its base, or no support —
+/// on either tower alike.
 pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
     match tower {
-        Tower::Region => Some(blade.radius2()),
+        Tower::Region => plane_points(blade, plane).map(|_| blade.radius2()),
         Tower::Sites => {
             let (count, pts) = plane_points(blade, plane)?;
             Some(pts.iter().fold(BigRational::zero(), |acc, (u, v)| acc + u * u + v * v) / count)
@@ -93,9 +139,8 @@ pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
     }
 }
 
-/// THE HARMONIC OF AZIMUTHAL ORDER `m` (2, 3 or 4) ON ONE TOWER, normalised by
-/// `M₀` so it carries degree `m` (A.12); turning at `m·φ`. `None` where it
-/// vanishes, or for an order the towers do not carry.
+/// THE HARMONIC OF AZIMUTHAL ORDER `m` ON ONE TOWER, normalised by `M₀` so it
+/// carries degree `m` (A.12); turning at `m·φ`. `None` where it vanishes.
 ///
 /// - order 2, the DEVIATORIC `((Σu² − Σv²)/2, Σuv)/M₀` — the body's axis; the
 ///   lamina's isotropic `1/12` cancels in it, so the two towers agree here.
@@ -104,7 +149,7 @@ pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
 ///   a site off the grid is a point along that axis.
 /// - order 4, `Σ(u + iv)⁴/M₀` — the orientation of a shape isotropic at order
 ///   two; on the region it carries each lamina's axis-aligned floor.
-pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Option<[BigRational; 2]> {
+pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic) -> Option<[BigRational; 2]> {
     let (two, three, four, six) = (
         BigRational::from_integer(BigInt::from(2)),
         BigRational::from_integer(BigInt::from(3)),
@@ -113,13 +158,13 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Op
     );
     let (i, j) = plane;
     match (tower, m) {
-        (Tower::Region, 2) => {
+        (Tower::Region, Harmonic::Two) => {
             let m0 = zeroth_moment(blade)?;
             let u1 = (blade.moment2(i, i)? - blade.moment2(j, j)?) / &two / &m0;
             let u2 = blade.moment2(i, j)? / &m0;
             nonzero([u1, u2])
         }
-        (Tower::Region, 3) => {
+        (Tower::Region, Harmonic::Three) => {
             let centroid = blade.centroid()?;
             let (ci, cj) = (centroid.get(i)?, centroid.get(j)?);
             let m0 = zeroth_moment(blade)?;
@@ -134,26 +179,26 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Op
             }
             nonzero([re / &m0, im / &m0])
         }
-        (Tower::Region, 4) => {
+        (Tower::Region, Harmonic::Four) => {
             let m0 = zeroth_moment(blade)?;
             let [_, qx, qy] = blade.quartic_on(plane)?;
             nonzero([qx / &m0, qy / &m0])
         }
-        (Tower::Sites, 2..=4) => {
+        (Tower::Sites, m) => {
             let (count, pts) = plane_points(blade, plane)?;
             let (mut a, mut b) = (BigRational::zero(), BigRational::zero());
             for (u, v) in &pts {
                 let (u2, v2) = (u * u, v * v);
                 match m {
-                    2 => {
+                    Harmonic::Two => {
                         a += (&u2 - &v2) / &two;
                         b += u * v;
                     }
-                    3 => {
+                    Harmonic::Three => {
                         a += u * (&u2 - &three * &v2);
                         b += v * (&three * &u2 - &v2);
                     }
-                    _ => {
+                    Harmonic::Four => {
                         a += &u2 * &u2 - &six * &u2 * &v2 + &v2 * &v2;
                         b += &four * u * v * (&u2 - &v2);
                     }
@@ -161,7 +206,6 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Op
             }
             nonzero([a / &count, b / &count])
         }
-        _ => None,
     }
 }
 
@@ -169,20 +213,20 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: u8) -> Op
 /// I_ij)/M₀`, turning at `2φ`; `None` where the second moment is isotropic
 /// — a single lamina, a square, a cross — which [`quartic_harmonic`] orients.
 pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    harmonic(blade, plane, Tower::Region, 2)
+    harmonic(blade, plane, Tower::Region, Harmonic::Two)
 }
 
 /// THE FOURTH HARMONIC on the region tower, turning at `4φ`: the `D₄`
 /// discriminator a square's second moment cannot give.
 pub fn quartic_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    harmonic(blade, plane, Tower::Region, 4)
+    harmonic(blade, plane, Tower::Region, Harmonic::Four)
 }
 
 /// THE THIRD HARMONIC on the region tower (68), turning at `3φ`: odd where
 /// `u` and `h₄` are even, so it tells `φ` from `φ + π`. `None` exactly on a
 /// body with 2-fold symmetry, whose `ℤ₂` gauge freedom is real.
 pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
-    harmonic(blade, plane, Tower::Region, 3)
+    harmonic(blade, plane, Tower::Region, Harmonic::Three)
 }
 
 /// 78.38 — THE SITES' SPREAD on a plane, the site tower's scale.
@@ -200,30 +244,28 @@ pub fn spread2_on(blade: &Blade, plane: (usize, usize)) -> Option<BigRational> {
 /// with `s²` that tower's scale, by exact cross multiplication at `m = 2, 3,
 /// 4`; a harmonic vanishing on one and not the other is a difference of
 /// shape at that order, on both is agreement. Each `‖h‖²` is the metric on a
-/// vector (78.28(4)).
-fn refused_at(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<u8> {
+/// vector (78.28(4)). A body with no points on the plane carries no scale on
+/// either tower and is refused by that name, before any order is read.
+fn refused_at(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<TowerRefusal> {
     let (Some(sa), Some(sb)) = (scale2(a, plane, tower), scale2(b, plane, tower)) else {
-        return Some(2);
+        return Some(TowerRefusal::Unplaced);
     };
     let norm2 = |v: &[BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
-    for m in [2u8, 3, 4] {
+    Harmonic::ALL.into_iter().find_map(|m| {
         let agrees = match (harmonic(a, plane, tower, m), harmonic(b, plane, tower, m)) {
             (None, None) => true,
             (None, Some(_)) | (Some(_), None) => false,
-            (Some(x), Some(y)) => norm2(&y) * sa.pow(i32::from(m)) == norm2(&x) * sb.pow(i32::from(m)),
+            (Some(x), Some(y)) => norm2(&y) * sa.pow(m.m()) == norm2(&x) * sb.pow(m.m()),
         };
-        if !agrees {
-            return Some(m);
-        }
-    }
-    None
+        (!agrees).then_some(TowerRefusal::At(m))
+    })
 }
 
 /// A.12, 78.38 (C) — WHICH SIMILARITY CARRIES THE PAIR, or where each tower
 /// refuses it. Both towers are always read: the pair is dilates where EITHER
-/// certifies, and the answer names which; where both refuse, the order at
-/// which each did, `(region, sites)`.
-pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation, (u8, u8)> {
+/// certifies, and the answer names which; where both refuse, each tower's
+/// refusal, `(region, sites)`.
+pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation, (TowerRefusal, TowerRefusal)> {
     match (refused_at(a, b, plane, Tower::Region), refused_at(a, b, plane, Tower::Sites)) {
         (None, None) => Ok(Dilation::Both),
         (None, Some(_)) => Ok(Dilation::Region),
@@ -242,8 +284,8 @@ pub fn dilation_certified(a: &Blade, b: &Blade, plane: (usize, usize)) -> bool {
 /// conjugated by every reflection, scale-free as a ray (degree 8). `None`
 /// where the body is isotropic at either order: achiral there.
 pub fn chirality_on(b: &Blade, plane: (usize, usize), tower: Tower) -> Option<(BigRational, BigRational)> {
-    let u = harmonic(b, plane, tower, 2)?;
-    let q = harmonic(b, plane, tower, 4)?;
+    let u = harmonic(b, plane, tower, Harmonic::Two)?;
+    let q = harmonic(b, plane, tower, Harmonic::Four)?;
     // `u²` then `· conj(q)`, written out over ℚ.
     let (s1, s2) = (&u[0] * &u[0] - &u[1] * &u[1], &u[0] * &u[1] * BigRational::from_integer(BigInt::from(2)));
     Some((&s1 * &q[0] + &s2 * &q[1], &s2 * &q[0] - &s1 * &q[1]))

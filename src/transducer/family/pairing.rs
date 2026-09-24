@@ -67,9 +67,9 @@ pub struct ContactTally {
     /// Proved unlike: no motion carries the pair at all. Also permanent, and
     /// kept apart from `mirrored` because a corpus of handed pairs and a
     /// corpus of unlike ones want different answers — and split by content
-    /// (78.38(2), (C)): where neither similarity carries the pair, by the
-    /// order each tower refused at (`orders[region − 2][sites − 2]`); in
-    /// chirality alone; on bases of different `n`; on the tube.
+    /// (78.38(2), (C)): where neither similarity carries the pair, by each
+    /// tower's refusal (`orders[region][sites]`); in chirality alone; on bases
+    /// of different `n`; on the tube.
     pub incongruent: Incongruents,
     /// FR1 — a pair on the tube whose scale `ρ²` is not a rational square:
     /// no versor over ℚ relates them, and nothing is claimed about whether
@@ -97,12 +97,24 @@ pub struct ContactTally {
 /// THE INCONGRUENT POSES BY CONTENT (78.38(2), (C)).
 #[derive(Default, Clone, Copy, Debug)]
 pub struct Incongruents {
-    /// Neither similarity carries the pair: by the order the region tower
-    /// refused at (row, 2 to 4) and the site tower (column, 2 to 4).
-    pub orders: [[u64; 3]; 3],
+    /// Neither similarity carries the pair: by the region tower's refusal
+    /// (row) and the site tower's (column), each at order 2, 3, 4 or
+    /// unplaced — the rows and columns of `TowerRefusal::ALL`.
+    pub orders: [[u64; 4]; 4],
     pub chirality: u64,
     pub base: u64,
     pub tube: u64,
+}
+
+/// A tower's refusal as its row or column of the tally, read off its content.
+fn refusal_ix(r: blade::TowerRefusal) -> usize {
+    use blade::{Harmonic, TowerRefusal};
+    match r {
+        TowerRefusal::At(Harmonic::Two) => 0,
+        TowerRefusal::At(Harmonic::Three) => 1,
+        TowerRefusal::At(Harmonic::Four) => 2,
+        TowerRefusal::Unplaced => 3,
+    }
 }
 
 impl Incongruents {
@@ -113,8 +125,7 @@ impl Incongruents {
     fn note(&mut self, why: blade::Incongruence) {
         match why {
             blade::Incongruence::Order { region, sites } => {
-                let at = |m: u8| usize::from(m.clamp(2, 4) - 2);
-                self.orders[at(region)][at(sites)] += 1;
+                self.orders[refusal_ix(region)][refusal_ix(sites)] += 1;
             }
             blade::Incongruence::Chirality => self.chirality += 1,
             blade::Incongruence::Base => self.base += 1,
@@ -128,7 +139,7 @@ thread_local! {
         offered: 0, unlifted: 0, apart: 0, tangent_external: 0, intersecting: 0,
         tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
         oblique: 0, mirrored: 0,
-        incongruent: Incongruents { orders: [[0; 3]; 3], chirality: 0, base: 0, tube: 0 },
+        incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
         irrational: 0, half_open: 0,
         unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0,
     }) };
@@ -205,11 +216,11 @@ impl ContactTally {
         let mut out = [0u64; 6];
         let i = &self.incongruent;
         // Each incongruent arm by its own content, every cell of the orders.
-        let orders = (0u8..3).flat_map(|r| {
-            (0u8..3).map(move |s| {
+        let orders = blade::TowerRefusal::ALL.into_iter().flat_map(|region| {
+            blade::TowerRefusal::ALL.into_iter().map(move |sites| {
                 (
-                    NoPose::Incongruent(Incongruence::Order { region: r + 2, sites: s + 2 }),
-                    i.orders[usize::from(r)][usize::from(s)],
+                    NoPose::Incongruent(Incongruence::Order { region, sites }),
+                    i.orders[refusal_ix(region)][refusal_ix(sites)],
                 )
             })
         });
