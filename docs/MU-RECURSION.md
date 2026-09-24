@@ -15142,9 +15142,38 @@ utter, learn, syntropy) each seal the orbit boundary, `K + 1`, `i`
 reset — and by nothing else; the register carries the statement with a
 test that `K` moves there alone. The per-voice RADIUS on the clock is
 LC1's dialect span, the deepest A21 prefix its genome's charts reach,
-read once and not a second reading. A COLLISION is two planets whose
-frames are equal on every lane at one tick, named on the TUniversal
-block; separation is CR1's transport, never a slot.
+read once and not a second reading.
+
+**Delegated orbits, and no orbit collides (ruled 2026-09-24, the
+operator's word: "each client as an independent kernel should get its
+own delegated orbit and there should be physics + mathematics that
+ensure no orbits collide").** (1) EVERY KERNEL HAS ITS OWN ORBIT BY
+CONSTRUCTION. An orbit is the fibre over the kernel's key in its star's
+field — the cover trie homes the key (73.15, UV1), `K` counts that
+kernel's orbits and no other's, and two kernels' orbits are distinct
+objects because their keys are: the mathematics is the trie's, a keyed
+fibre, and needs no assignment, no slot and no table (checklist (q)).
+(2) A COLLISION IS PREVENTED, NEVER NAMED AFTER THE FACT. A collision
+is two planets whose frames `{S, G, T, H}` are equal on every lane at
+one tick (78.23). At the orbit boundary, BEFORE the closing act is
+stamped, the frame the orbit read is compared, lane by lane, exact,
+against the frames of the peers admitted at that tick — the receipts
+this kernel already holds (47.2). Where the frame would coincide, the
+planet does not close at that frame: it takes the separating TRANSPORT
+— the docket's next question offered to it (76.3), CR1's move carried
+as a transport toward separation (76) — and closes its orbit one stroke
+on, at a frame that differs. The closing act is WITHHELD for that
+stroke, never evicted and never re-slotted (73.15). So no two planets
+ever stamp one frame at one tick: the physics (pressure toward
+separation, 76) acts before the stamp and the mathematics (a keyed
+fibre per kernel, distinct offers in the canonical key order of the
+docket, rule 4) makes the separated frame distinct. (3) THE READING.
+The TUniversal block names the DISTANCE between two planets' frames at
+a tick as the per-lane difference, sign-first and exact, never a root
+and never summed; the count of orbits withheld for separation is a line
+of the clock. "Collision" on the console names what the boundary
+prevented, and its count is the reading that a separation transport
+fired — read, priced on the lanes it moved (PHY1), never a threshold.
 
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape (ruled 2026-09-24, the operator's word)
 
