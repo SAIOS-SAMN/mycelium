@@ -15430,6 +15430,109 @@ was spent, the entry and its size that did not fit — and the Cells
 reading counts refusals by content, never as one `unread`. Instrument
 before fix: the count by content first, on the fleet, at height and K.
 
+**(5) Incongruence, incoherence and decoherence are three grades of one
+complex, and the second carries no content yet (ruled 2026-09-24, the
+operator's word).** Three invalidities, one per grade of the nerve:
+
+| grade | object | valid | invalid | kind |
+|---|---|---|---|---|
+| 0 | a body | it has a shape | bodiless, unoriented | I |
+| 1 | a pair | a similarity of one kind (78.38) | INCONGRUENT: an invariant separates them on both towers | P |
+| 2+ | a ring of pairs | the pairwise fits compose | INCOHERENT: each edge congruent, the ring's gauges do not close | D or C, never P |
+
+INCONGRUENCE is the invalidity of shape and is PERMANENT unless the
+shape changes — a plane or a dimension added (A.15: `n` is data; A.6:
+a dimension is paid for; the tube pose reads across sections), a new
+form, a new density (78.35's, priced by band) — and such a change is a
+NEW percept, never a repair of the old refusal. Weight is refused
+outright (law 1) and never enters a shape. INCOHERENCE is the
+invalidity of congruence IN COMPOSITION: every edge of a ring fits and
+the ring does not — the Čech coboundary not vanishing, `Fill::Open` on
+a simplex whose edges are filled, `Coherence::Open` on a cell whose
+circuits' algebra does not close. It is a STATE, held as a class, and
+it is never permanent, because holonomy is content (law 6) and torsion
+persists (A.8): it is moved or recorded, never relaxed away, and it is
+discharged only by an enclosure of higher grade carrying the bracket
+(78.26(2)), by a constructor admitted through the gate (78.32(c)), or
+by another vantage's cover (74, CV4). The identity that makes it a
+quantity: the coboundary of a coboundary vanishes, so incoherences at
+one grade are coherent at the next, which is why they file as classes,
+transport (78.37(1)) and count, and why a reader that forces a ring
+closed flattens something conserved.
+
+THREE LEVELS OF INCOHERENCE, one per carrier, each a reason of its own:
+HARMONIC — the residue's modes have orders that do not resonate (below);
+LUMINAL — a gauge does not carry one section to the other along its
+ray, refused at the cone or across infinite rapidity (56, 52; the null
+generators are A.13's, docketed under REG1); HOLONOMIC — the ring's
+composition does not reconstruct the object: around the ring and back
+does not return the round, so what was perceived cannot be re-derived
+as one thing and congrued (54.7 B6's retraction, failing on a cycle).
+
+RESONANCE. An incoherence's residue is a versor, and a versor has
+commuting modes, each in a plane, each of a regime by `δ²` (65.1) and,
+where elliptic, of an ORDER `ℓ`: it returns after `ℓ` turns, and `ℓ` is
+its frequency in the only clock there is, the k-step. Over ℚ the finite
+orders are exactly 1, 2, 3, 4 and 6 (Niven; the crystallographic
+restriction); every other rational rotor — the `(4+i)` turn among
+them — is a ROSETTE, an angle that never returns, an orbit dense on its
+torus. Two commuting modes close jointly at the least common multiple
+of their orders (the toroid, 78.30), and a quasi-periodic pair (78.11)
+is exactly a LACK OF RESONANCE. RULED: the residue is classified by its
+modes' regimes and orders. Every mode of finite order: the incoherence
+is RESONANT — the ring closes at the joint period, a delay and not a
+loss, `Fill::Congruent` at that `ℓ`. A rosette, parabolic or boost mode:
+NON-RESONANT — the ring never returns, the class is genuinely held.
+Non-commuting modes across two rings — the bracket 78.26(2) counts HELD
+or LOST — are the COUPLING, the beat between two frequencies no single
+cell carries. The modes are the roots of the action's factors,
+polynomials of degree `d` over ℚ across several planes at once (MR1:
+"irrational of degree `d`" is a refusal by name), which is where the
+harmonic level is literally polynomial and literally multidimensional.
+
+THE RING IS NEVER PLANAR. A ring is a closed circuit of the nerve at
+any grade — a 1-cycle whose holonomy is one versor whose modes occupy
+several planes at once, a 2-cycle (a chamber) and a 3-cycle (a
+sporophore) carrying classes of their own grade (`Ȟ¹`, `Ȟ²`, `Ȟ³`).
+Nothing about a ring is a loop drawn in a plane: the holonomy of a
+1-cycle in `Cl(n+1,1)` turns in up to `⌊(n+2)/2⌋` planes
+simultaneously, and reading it in one plane is the flattening of law
+11's kind. The polynomials overlaid on a ring are the action's
+characteristic factors across all its planes, and a ring of higher
+grade is where the lower rings' incoherences become coherent — the
+coboundary identity above, at the grade it holds. The engine operates
+above three dimensions here by construction: `n` is data, the planes
+are generated from it (BQ4), and no reader names a plane it did not
+derive.
+
+THE CARRIER (row CV1b, F4, beside ZM1 — a zero meet is the grade-1
+edge of the same rule): `Coherence::Open(Incoherence { ring, class,
+modes })` and `Fill::Open` carrying the same residue by content — the
+ring's coordinates, its class vector, each mode with regime and order,
+and RESONANT or not — never a bare hole; tallied by content on the
+Cells line beside the incongruence breakdown (`pairing::Incongruents`);
+the refusal reader maps incongruence to P and incoherence to D where a
+mode no held word spells would close it or to C where another vantage
+refines it, never to P.
+
+**(6) Decoherence is an act, and incoherence is its state.** A coherent
+thought — every ring closed — receives an ADJUNCT: a new candidate with
+its relative word, a perception that changes a gauge, or a ruling that
+demotes a citation to a dialect class; a ring now carries a residue.
+13.12 read forward says what happens: the thought does not close, so
+it stays two, and the class is the coordinate between them. One
+coherent thought becomes TWO coherent thoughts with an incoherence
+between them; nothing is deleted and nothing is forced closed; the
+incoherence is the pivot the mind may take. Merge (13.12) is the same
+act in reverse, and collapse by transport (78.37(1)) is re-coherence
+when the class collapses. RULED: a decoherence changes the state of the
+mind's line and is READ before it is sealed — TP1's meet-graph line
+carries, per stroke, thoughts MERGED, thoughts DECOHERED (with the
+adjunct that cut each and the class it left) and components COLLAPSED
+by transport, so the fleet can say whether a mind converges or
+fragments under the syllabus; whether the split seals as its own act
+is ruled on that count.
+
 ### 78.27 LD3's node layout ruled on the implementor's eight questions (2026-09-24)
 
 The physical shape is ratified as proposed: each trie written as its
@@ -15697,7 +15800,7 @@ of one network and not steps of one column.
 |---|---|---|---|
 | **spore** | a ray, the null point (M1, A4) | `P ∈ 𝒩`, `P² = 0`, on the horosphere | the ostensive point: an unmediated focus of perception that anchors meaning without asserting a predicate |
 | **filament** | a route, a word (50.2) | `w = ∏ gᵢ^{eᵢ} · r`, a directed trajectory | the utterance as motion: a kinetic sequence of transformations across the local terrain, never a dictionary entry |
-| **ring**, **throat** | a circuit (79) | `∮ g_ab`, holonomy carried, curvature content | the recursive trope: an utterance that returns to its origin; a non-trivial holonomy is an altered perspective, irony, a conceptual shift no proposition flattens |
+| **ring**, **throat** | a closed circuit of the nerve at any grade (79; 78.26(5)): a 1-cycle whose holonomy is one versor turning in several planes at once, a 2-cycle a chamber, a 3-cycle a sporophore — never a loop in a plane | `∮ g_ab`, holonomy carried, curvature content; its modes' orders its frequencies, resonant where every order is finite | the recursive trope: an utterance that returns to its origin; a non-trivial holonomy is an altered perspective, irony, a conceptual shift no proposition flattens |
 | **chamber** | a cell, a geoid (78.2, 78.10, HL1) | `⋀ sᵢ` sealed by ascend, released by descend | the earned word: a concept crystallised where several minds' filaments meet and enclose a shared understanding; its meaning the invariant shape its boundary dialogues carve |
 | **sporophore** | an enclosure, the cluster (EN1, 76) | `⋁ Pᵢ` nested, the star's convergence (73.11) | the living dialect: a planet's superposed semantic web holding its idioms, memory and open questions in one gravitation |
 
