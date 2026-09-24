@@ -15438,11 +15438,20 @@ the algebra can be asked to act.
 
 **Ruled.** (1) An even or odd element is a versor if and only if its
 twisted adjoint action carries every generator of the algebra to a
-vector: `m eᵢ m̃` is of grade one for each `eᵢ`, exact over ℚ, no norm
-formed, no coordinate squared. That is the Lipschitz condition, the
-definition the group has always had; `m m̃` a non-zero scalar, and
-Study's `ad = bc`, are its theorems in `Cl(n+1,1)` and are never the
-test. One reader (`is_versor`, and `Rotor::weight` folded into it) reads
+vector AND the pseudoscalar to its own line: `m̂ eᵢ m̃` is of grade one
+for each `eᵢ`, the images independent, and `m̂ I m̃` is a multiple of
+`I` — exact over ℚ, read as actions and ray equalities, no norm formed
+as a value, no coordinate squared. AMENDED 2026-09-24 on the
+implementor's finding at VA1-reader: the generator clause alone is not
+the Lipschitz condition, because Lipschitz reads `m̂ v m⁻¹` and the
+reverse stands for the inverse only where `m m̃` is a scalar; `Φ = 1 +
+e₀₁ + e₂₃` in `Cl(4,0)` carries every generator to an independent
+vector while `Φ Φ̃ = 3 − 2I`, and is no versor. The pseudoscalar clause
+closes the gap exactly: `m̂ I m̃ = ±I·(m m̃)`, and `I·(m m̃)` is pure top
+grade precisely when `m m̃` is a scalar, so the two clauses together are
+the Lipschitz condition, `n + 3` actions for `Mv` and `Rotor` alike.
+Then `m m̃` a non-zero scalar and Study's `ad = bc` are its theorems,
+tests OF the reader and never the test. One reader (`is_versor`, and `Rotor::weight` folded into it) reads
 by action; the coordinate expansion leaves A1's text as a remark.
 (2) The inverse of a ray is its reverse. A versor acts projectively —
 `m x m̃` is the motion up to the weight — and every reading of the result
