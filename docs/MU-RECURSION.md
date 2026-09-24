@@ -461,7 +461,7 @@ it (0.4); "stands" is the audited state on `impl/soak` at 1afa4416.
 
 | master | as stated | site in the tree | physics over it | stands |
 |---|---|---|---|---|
-| **M1 Vertex identity** (17.1) | a word, rotor or versor reduces to one canonical form and one key; equality is key equality or projective equality of rays, never a digest | `transducer/alphabet/{word,rotor,plane,factor}.rs` (A1–A3), `cga/multivector.rs` (A4, `projective_eq`), `element/vertex.rs` (`same_vertex`) | law 1 (ℚ only), law 2 (a key is coordinates), EQ1 (rays equal by proportion, 78.12), A21 | landed; governs. EQ1 landed 2560455 |
+| **M1 Vertex identity** (17.1) | a word, rotor or versor reduces to one canonical form and one key; equality is key equality or projective equality of rays `a_i b_k = a_k b_i`, never a digest; a versor is known by its action `m eᵢ m̃ ∈ grade 1`, never by `Φ Φ̃` as a sum of squares (78.28); the ray's inverse is its reverse | `transducer/alphabet/{word,rotor,plane,factor}.rs` (A1–A3), `cga/multivector.rs` (A4, `projective_eq`), `cga/group.rs` (`is_versor`), `element/vertex.rs` (`same_vertex`) | law 1 (ℚ only), law 2 (a key is coordinates), law 11 (no squaring), EQ1 (rays equal by proportion, 78.12), A21 | landed; governs. EQ1 landed 2560455. VA1 open: the versor test by action, the weight and the division by it swept |
 | **M2 Address derivation** (17.2) | the address IS the form written out, field by field, length-prefixed; the form is read back from its address; a citation is coordinates, never a copy | `transducer/address.rs`, `sentence/chart.rs` (`form_vertex_key`), `element/{vertex,receipts,residual}.rs` | law 2, law 12, K6 (54: the complete key and its inverse; the tape retired), LD0 (78.22: coordinate / address held once / citation) | landed; governs as amended by 54 and 78.22. The snapshot's positional tape is the last carrier off it (78.25, LD3 open) |
 | **M3 Cold-boot migration** (17.3) | bring old stores onto M2 addresses once | `element/tape.rs` (`RECORD_MAGIC`; an older record refused by name) | §10: a layout change is a recut, never a migration | HISTORICAL: RMP1 retired; the tree migrates nothing and refuses the old by one equality |
 | **M4 Chart coordinates** (17.4) | the invariant that places a body, connection, sentence or class on the atlas, exact and identical on every node; refinement appends an axis | `transducer/stalk/` (`Invariant`, `Stalks::refine`), `blade/` (harmonics, A.11), `sentence/chart.rs` (`chart_of`) | A.11 harmonic completeness, A6 exact axis packing, 71 (n is data) | landed; governs. HL1 open: the harmonic lift as a pencil (78.14) |
@@ -2582,7 +2582,12 @@ Input: `R: Rotor`, coefficients `c[0..16]` by blade mask.
    `3, 5, 6, 9, 10, 12`) and the pseudoscalar (mask `15`) may be nonzero,
    eight rational coordinates. A nonzero coefficient on an odd mask, or all
    coefficients zero, is refused: not a rotor, never a vertex.
-   **The weight is the versor norm** (named 2026-09-19): `Φ Φ̃` is a
+   **RE-RULED 2026-09-24 (78.28): a versor is known by its ACTION** —
+   `Φ eᵢ Φ̃` of grade one for every generator — and never by a sum of
+   squares; the weight is not a quantity of a rotor and no site divides
+   by it; the ray's inverse is its reverse. What follows in this step is
+   kept as the remark it now is. The weight was the versor norm (named
+   2026-09-19): `Φ Φ̃` is a
    nonzero scalar iff the even element is a product of vectors, which is
    Study's condition and bites in four dimensions and not below — for
    `Φ = a + b·e₁₂ + c·e₃₄ + d·e₁₂₃₄`, `Φ Φ̃ = (a² + b² + c² + d²) +
@@ -15389,6 +15394,40 @@ restore, not persisted; a transducer codec prints nothing (R2's
 `eprintln!` in `Element::from_bytes` is removed — the refusal is by name
 in the constant and the test, and the reader that opens a genome reports
 once, typed).
+
+### 78.28 A versor is known by its action, never by a sum of squares (ruled 2026-09-24, the operator's word)
+
+The operator, on A1's statement of Study's condition — "`Φ Φ̃ = (a² +
+b² + c² + d²) + 2(ad − bc)·e₁₂₃₄`, a versor iff `ad = bc`": these are
+flat two-dimensional squares, and the development evolves beyond them.
+The reading is right and it is law 11's own shape at the foundation: a
+sum of squares of coordinates formed to decide what an element IS, when
+the algebra can be asked to act.
+
+**Ruled.** (1) An even or odd element is a versor if and only if its
+twisted adjoint action carries every generator of the algebra to a
+vector: `m eᵢ m̃` is of grade one for each `eᵢ`, exact over ℚ, no norm
+formed, no coordinate squared. That is the Lipschitz condition, the
+definition the group has always had; `m m̃` a non-zero scalar, and
+Study's `ad = bc`, are its theorems in `Cl(n+1,1)` and are never the
+test. One reader (`is_versor`, and `Rotor::weight` folded into it) reads
+by action; the coordinate expansion leaves A1's text as a remark.
+(2) The inverse of a ray is its reverse. A versor acts projectively —
+`m x m̃` is the motion up to the weight — and every reading of the result
+is by proportion (EQ1), so no site divides by `⟨m m̃⟩₀` to compose,
+compare or classify; `versor_inverse` survives only where a quotient's
+SCALE is itself the content (the dilator's ρ), and each such site says
+so. (3) A weight is never carried as a quantity of a word, a rotor or a
+face. The one place a scalar of `m m̃` is read is the Cayley chart's
+rational root (`cayley_inverse`, 52 as amended by MR1), which is a
+reading of a ray at a chart point and refuses by name where the root is
+not rational. (4) `v·v` on a VECTOR is the metric and stays: a nucleus is
+a sphere vector with `s² = r²` and that square is the sphere's own
+content (78.2, Axiom C), not a flattening; `norm2` refuses any element
+above grade one. Instrument first (row VA1): the census of every site
+that forms `m m̃`, a weight or a norm, and what each does with the
+scalar — test, divide, compare or classify — in SQ1's shape, then the
+sweep, one reader, the readings unchanged on the corpus and the fleet.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
