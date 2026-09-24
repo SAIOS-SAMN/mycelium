@@ -152,6 +152,8 @@ impl Learning {
             g.docket.open,
             g.docket.owed,
             g.docket.unwritten,
+            g.docket.answered,
+            g.docket.taken,
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -238,6 +240,8 @@ impl Learning {
             open: u64_at(b, p)?,
             owed: u64_at(b, p)?,
             unwritten: u64_at(b, p)?,
+            answered: u64_at(b, p)?,
+            taken: u64_at(b, p)?,
         };
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,

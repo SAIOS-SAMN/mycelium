@@ -32,6 +32,8 @@ pub struct Expansion {
     pub pivoted: [u64; 4],
     pub adjoined: Vec<(Rotor, Invariant)>,
     pub demanded: Vec<Demand>,
+    /// R1 — the class keys of the orbits its pivots discharged.
+    pub discharged: Vec<crate::transducer::address::Address>,
 }
 
 /// KB1 — A SECTION'S COORDINATES, the vertex of an idea's nerve: the idea's
@@ -497,8 +499,10 @@ impl Bubble {
         budget: &mut Budget,
         pivots: &mut sentence::PivotTally,
     ) -> Expansion {
-        // 78.37 — CS2's demand arm's demands, carried out to the docket.
+        // 78.37 — CS2's demand arm's demands, carried out to the docket, and
+        // the class keys its discharges answer (R1).
         let mut demanded: Vec<Demand> = Vec::new();
+        let mut discharged: Vec<crate::transducer::address::Address> = Vec::new();
         // 37.7's candidates, carried out rather than dropped: the rotors this
         // stroke met that the seventeen cannot spell, each with the chart it
         // was met on. The bubble cannot mint — minting writes a word into the
@@ -675,6 +679,9 @@ impl Bubble {
                         crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
                             demanded.push((class.as_ref().clone(), charts.clone()));
                         }
+                        crate::transducer::sentence::Snap::Discharged { certificate, .. } => {
+                            discharged.push(certificate.before.clone());
+                        }
                         _ => {}
                     }
                 }
@@ -683,7 +690,7 @@ impl Bubble {
         }
         self.dissolve_candidates();
         self.dirty = spent > 0 && budget.remaining() == 0;
-        Expansion { spent, pivoted, adjoined, demanded }
+        Expansion { spent, pivoted, adjoined, demanded, discharged }
     }
 
     /// P10(c), §25.12 — A CANDIDATE DIES ON AN INFINITE MONODROMY, AND ONLY

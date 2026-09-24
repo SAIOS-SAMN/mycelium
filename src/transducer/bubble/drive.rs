@@ -43,6 +43,8 @@ impl Contemplation {
         crystal: &dyn Crystal,
         budget: &mut Budget,
     ) -> Expanded {
+        // 78.37 — the first stroke after a seal takes the docket's classes.
+        self.take_docket();
         let mut spent = 0usize;
         let mut pivoted = [0u64; 4];
         let mut crystallized = Vec::new();
@@ -93,9 +95,13 @@ impl Contemplation {
                 if !b.dirty {
                     self.dirty.remove(&k);
                 }
-                // 78.37 — the demands its pivots left, onto the docket.
+                // 78.37 — the demands its pivots left, onto the docket, and the
+                // entries its discharges answered (R1).
                 for (class, charts) in &x.demanded {
                     self.docket_demand(class, charts);
+                }
+                for key in &x.discharged {
+                    self.docket_discharged(key.as_bytes());
                 }
                 // The pivot may have left a vortex on the form: file it at
                 // its class so a ruled candidate can collapse it.
@@ -239,6 +245,11 @@ impl Contemplation {
                         // 78.37 — the demand arm's demand, onto the docket.
                         crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
                             self.docket_demand(class, charts);
+                        }
+                        // R1 — an orbit a held word discharged answers every
+                        // docket entry of its class.
+                        crate::transducer::sentence::Snap::Discharged { certificate, .. } => {
+                            self.docket_discharged(certificate.before.as_bytes());
                         }
                         _ => {}
                     }

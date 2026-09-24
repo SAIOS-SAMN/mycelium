@@ -427,7 +427,14 @@ pub enum Cite {
     /// the charts its thoughts stand on, by their keys, ascending — whose
     /// containment orders the docket. `None` where the cover did not read:
     /// the entry's enclosure is owed.
-    Class { class: Box<crate::transducer::sentence::ClassVector>, cover: Option<Vec<Vec<u8>>> },
+    /// Its ROTOR rides beside κ as its ray (78.27(7): the class is the
+    /// coordinate, the rotor the residue) — κ does not determine it, and the
+    /// taker writes it into the ring's thoughts' horizons.
+    Class {
+        class: Box<crate::transducer::sentence::ClassVector>,
+        rotor: Box<crate::transducer::alphabet::Rotor>,
+        cover: Option<Vec<Vec<u8>>>,
+    },
     /// THE DOCKET'S DEMAND: an orbit CS2's demand arm left, by its
     /// undischarged class vector inline — its own plane section names the
     /// mode (3.9) — and its cover, as a class's.
@@ -475,12 +482,15 @@ impl Cite {
                 at.put_canonical(&mut rec);
                 rec.extend_from_slice(hash);
             }
-            Cite::Class { class, cover } | Cite::Demand { class, cover } => {
+            Cite::Class { class, cover, .. } | Cite::Demand { class, cover } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
                     _ => 3,
                 });
                 class.put_canonical(&mut rec);
+                if let Cite::Class { rotor, .. } = self {
+                    rotor.put_canonical(&mut rec);
+                }
                 match cover {
                     None => rec.push(0),
                     Some(charts) => {
@@ -524,6 +534,10 @@ impl Cite {
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);
+                let rotor = match tag {
+                    2 => Some(Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?)),
+                    _ => None,
+                };
                 let cover = match *b.get(*p)? {
                     0 => {
                         *p += 1;
@@ -546,9 +560,9 @@ impl Cite {
                     }
                     _ => return None,
                 };
-                Some(match tag {
-                    2 => Cite::Class { class, cover },
-                    _ => Cite::Demand { class, cover },
+                Some(match rotor {
+                    Some(rotor) => Cite::Class { class, rotor, cover },
+                    None => Cite::Demand { class, cover },
                 })
             }
             _ => None,

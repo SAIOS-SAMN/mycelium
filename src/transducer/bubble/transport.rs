@@ -250,7 +250,7 @@ impl Contemplation {
                             continue;
                         }
                         self.ring_edges.insert(&ring, ());
-                        self.close_ring(&from.at, &fkey, &there, (&rotor, &carriage));
+                        self.close_ring(&from.at, &ek, &fkey, &there, (&rotor, &carriage));
                     }
                 }
             }
@@ -283,16 +283,25 @@ impl Contemplation {
     /// each 2-simplex on the closing edge fills through the one fill path,
     /// and the merge runs where the component closes. Holonomy ≠ 1 holds its
     /// class in both thoughts' horizons and stops the front there.
-    fn close_ring(&mut self, near: &[u8], there_key: &[u8], there: &Arrival, arrived: (&Rotor, &element::Versor)) {
+    fn close_ring(
+        &mut self,
+        near: &[u8],
+        edge: &[u8],
+        there_key: &[u8],
+        there: &Arrival,
+        arrived: (&Rotor, &element::Versor),
+    ) {
         let flat = there.rotor.projective_eq(arrived.0) && element::same_versor(&there.carriage, arrived.1);
+        let rings: Vec<Vec<u8>> = self
+            .complex
+            .link(&there.at, 2)
+            .into_iter()
+            .filter(|rk| self.complex.simplex(rk).is_some_and(|s| s.vertices.iter().any(|v| v.as_slice() == near)))
+            .collect();
         if flat {
             self.transport.collapsed += 1;
-            let rings: Vec<Vec<u8>> = self
-                .complex
-                .link(&there.at, 2)
-                .into_iter()
-                .filter(|rk| self.complex.simplex(rk).is_some_and(|s| s.vertices.iter().any(|v| v.as_slice() == near)))
-                .collect();
+            // R1 — a ring held before that collapses now answers its entry.
+            self.docket_ring_closed(edge);
             for rk in rings {
                 if matches!(self.fill_meet(&rk), CoboundaryOutcome::Attached(Fill::Filled(..))) {
                     self.transport.collapsed_filled += 1;
@@ -309,9 +318,14 @@ impl Contemplation {
                         horizon_put(&mut b.horizon, r.clone(), Standing::Held);
                     }
                 }
-                // 78.37 — THE DOCKET: the held class, its cover beside it.
+                // 78.37 — THE DOCKET: the held class, its cover beside it, and
+                // the ring's handles so a collapse or re-fill answers it (R1).
                 let cover = self.ring_cover(&there.source, [near, there.at.as_slice()]);
-                self.docket_put(crate::chronometry::Cite::Class { class: Box::new(kappa), cover });
+                let entry = crate::chronometry::Cite::Class { class: Box::new(kappa), rotor: Box::new(r), cover };
+                let mut handles = rings;
+                handles.push(edge.to_vec());
+                self.docket_ring(&handles, &entry);
+                self.docket_put(entry);
             }
             None => self.transport.unclassed += 1,
         }

@@ -196,7 +196,7 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
         )
     };
     let inner = Cite::Demand { class: kappa(), cover: Some(vec![vec![1]]) };
-    let outer = Cite::Class { class: kappa(), cover: Some(vec![vec![1], vec![2]]) };
+    let outer = Cite::Class { class: kappa(), rotor: Box::new(p.clone()), cover: Some(vec![vec![1], vec![2]]) };
     let owed = Cite::Demand { class: kappa(), cover: None };
     c.docket_reseed(&[inner.clone(), owed.clone(), outer.clone()]);
     let order = c.docket_order();
@@ -204,6 +204,62 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
     let at = |x: &Cite| order.iter().position(|o| o == x).expect("taken");
     assert!(at(&outer) < at(&inner), "the wrapping entry before the one it wraps: {order:?}");
     assert!(at(&owed) < at(&inner), "an owed enclosure is outermost, never wrapped");
+}
+
+/// 78.37, R1 — A RESTORED CLASS IS A REAL ENTRY, END TO END: re-seeded with
+/// its rotor, the taker marks the thoughts standing on its cover dirty with
+/// that rotor in their horizon, and a discharge of its class key answers it
+/// by name — it leaves the open docket, counted.
+#[test]
+fn a_restored_class_is_taken_and_answered_by_its_class_key() {
+    use crate::chronometry::Cite;
+    use crate::transducer::alphabet::LetterId;
+    let p = letter(LetterId::pythagorean_5((0, 1)));
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(
+        &p,
+        crate::transducer::element::identity_versor(),
+        crate::transducer::sentence::CycleType::of(&[]),
+    )
+    .expect("a class reads");
+    let mut c = Contemplation::new();
+    c.hold(vec![(0, 0, 1, 2), (0, 1, 1, 2)]);
+    let (thought, cover): (Vec<u8>, Vec<Vec<u8>>) = {
+        let (k, b) = c.bubbles.scoped().next().expect("one thought held");
+        (k, b.cover.scoped().map(|(ck, _)| ck).collect())
+    };
+    let entry = Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(p.clone()), cover: Some(cover) };
+    c.docket_reseed(std::slice::from_ref(&entry));
+    c.dirty.remove(&thought);
+    c.take_docket();
+    let b = c.bubbles.get(&thought).expect("still held");
+    assert!(b.horizon.get(p.class_key().expect("a class key").as_bytes()).is_some(), "the rotor in its horizon");
+    assert!(c.dirty.contains(&thought), "marked dirty, so the expand ring reaches it first");
+    assert_eq!(c.docket_reading().taken, 1);
+    c.docket_discharged(kappa.class_key().as_bytes());
+    let d = c.docket_reading();
+    assert_eq!((d.open, d.answered), (0, 1), "answered by its class key, by name");
+}
+
+/// 78.37, R1 — IN-PROCESS, A HELD RING'S ENTRY IS ANSWERED WHERE ITS SIMPLEX
+/// RE-FILLS: the ring held with a (3, 4, 5) edge is docketed; the edge made
+/// consistent, the ring's 2-simplex fills, and the entry leaves by name.
+#[test]
+fn a_held_rings_entry_is_answered_where_its_simplex_refills() {
+    use crate::transducer::alphabet::{LetterId, Rotor};
+    use crate::transducer::element::identity_versor;
+    let p = letter(LetterId::pythagorean_5((0, 1)));
+    let (mut c, vs) =
+        ring_of_three([Rotor::identity(), p.clone(), Rotor::identity()], [p, Rotor::identity(), Rotor::identity()]);
+    c.fix(&vs[0], false);
+    c.transport(1);
+    c.transport(2);
+    assert_eq!(c.docket_reading().pending, 1, "the held class on the docket");
+    c.complex.set_edge(&vs[0], &vs[1], Rotor::identity(), identity_versor(), [1, 0, 0, 0]);
+    let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
+    let ring = c.complex.link(&vs[0], 2)[0].clone();
+    assert!(matches!(c.fill_meet(&ring), CoboundaryOutcome::Attached(Fill::Filled(..))), "the ring fills");
+    let d = c.docket_reading();
+    assert_eq!((d.pending, d.answered), (0, 1), "answered where its simplex re-filled");
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

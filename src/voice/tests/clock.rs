@@ -95,7 +95,7 @@ fn an_orbits_docket_rides_its_close_and_survives_a_restart() {
     )
     .expect("a class reads");
     let docket = vec![
-        Cite::Class { class: Box::new(kappa.clone()), cover: Some(vec![vec![1, 2], vec![3]]) },
+        Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(p.clone()), cover: Some(vec![vec![1, 2], vec![3]]) },
         Cite::Demand { class: Box::new(kappa), cover: None },
     ];
     assert!(docket.iter().all(|c| c.at().is_none()), "a docket entry locates by its coordinates, never a stamp");
@@ -111,4 +111,39 @@ fn an_orbits_docket_rides_its_close_and_survives_a_restart() {
     c.docket_reseed(&close.cites);
     assert_eq!(c.docket_reading().open, 2, "the restart keeps the plan");
     assert_eq!(c.docket_reading().owed, 1, "and the entry whose cover did not read says so");
+}
+
+/// 78.37, R1 — THE PLAN CARRIES FORWARD: an entry not answered within one
+/// orbit stays open, is cited by the next close as well — the last Orbit act
+/// is the whole plan — and re-seeds from either close.
+#[test]
+fn an_open_entry_is_cited_by_every_close_until_answered() {
+    let p = {
+        let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("the sensor plane");
+        crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
+    };
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(
+        &p,
+        crate::transducer::element::identity_versor(),
+        crate::transducer::sentence::CycleType::of(&[]),
+    )
+    .expect("a class reads");
+    let entry = Cite::Demand { class: Box::new(kappa), cover: Some(vec![vec![7]]) };
+    let mut c = crate::transducer::bubble::Contemplation::new();
+    c.docket_reseed(std::slice::from_ref(&entry));
+    let mut v = Voice::named("worker-a");
+    let mut closes = Vec::new();
+    for _ in 0..2 {
+        v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
+        assert!(matches!(v.orbit(c.docket_cites()), crate::chronometry::Close::Sealed(_)), "the close seals");
+        c.docket_sealed();
+        closes.push(v.chain().own().filter(|r| r.kind == ActKind::Orbit).last().expect("the close").cites.clone());
+    }
+    assert!(closes.iter().all(|cites| cites.contains(&entry)), "cited by both closes: {closes:?}");
+    for cites in &closes {
+        let mut again = crate::transducer::bubble::Contemplation::new();
+        again.docket_reseed(cites);
+        assert_eq!(again.docket_reading().open, 1, "and re-seeds from either");
+    }
+    assert_eq!(c.docket_reading().open, 1, "never left by replacement");
 }

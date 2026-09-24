@@ -24,6 +24,10 @@ pub struct DocketReading {
     pub open: u64,
     pub owed: u64,
     pub unwritten: u64,
+    /// R1 — entries answered by name since the contemplation began.
+    pub answered: u64,
+    /// Thoughts the class taker marked, since the contemplation began.
+    pub taken: u64,
 }
 
 /// An entry's own coordinates, its key in the docket.
@@ -67,16 +71,101 @@ impl Contemplation {
         self.docket_put(Cite::Demand { class: Box::new(class.clone()), cover });
     }
 
-    /// THIS ORBIT'S DOCKET, in its entries' own key order: what the close
-    /// cites.
+    /// THE WHOLE PLAN, in its entries' own key order: the open questions
+    /// carried forward and this orbit's new entries — what the close cites,
+    /// so the last Orbit act is the plan (R1).
     pub fn docket_cites(&self) -> Vec<Cite> {
-        self.docket.scoped().map(|(_, c)| c.clone()).collect()
+        let mut all: Keyed<Cite> = Keyed::new();
+        for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
+            all.insert(&k, c.clone());
+        }
+        all.scoped().map(|(_, c)| c.clone()).collect()
     }
 
-    /// THE CLOSE SEALED WITH THE DOCKET CITED: it becomes the next orbit's
-    /// questions, and this orbit's docket starts empty.
+    /// THE CLOSE SEALED WITH THE PLAN CITED: this orbit's entries MERGE into
+    /// the open questions, by their coordinates, and nothing leaves by
+    /// replacement (R1).
     pub fn docket_sealed(&mut self) {
-        self.docket_open = std::mem::take(&mut self.docket);
+        for (k, c) in std::mem::take(&mut self.docket).scoped() {
+            self.docket_open.insert(&k, c.clone());
+        }
+        self.docket_to_take = true;
+    }
+
+    /// THE CLASS TAKER, at the first stroke after a seal or a re-seed: in
+    /// `docket_order()`, each held class's thoughts — those standing on its
+    /// cover's charts — are marked dirty with its rotor in their horizon, so
+    /// the expand ring reaches them first. The horizon's own order is
+    /// untouched and nothing reorders the pivot's reading. An entry whose
+    /// cover did not read has no thoughts to mark (its enclosure owed). The
+    /// DEMAND taker is owed to CV4/SP2.
+    pub(crate) fn take_docket(&mut self) {
+        if !std::mem::take(&mut self.docket_to_take) {
+            return;
+        }
+        for entry in self.docket_order() {
+            let Cite::Class { rotor, cover: Some(charts), .. } = entry else { continue };
+            let mut thoughts: Keyed<()> = Keyed::new();
+            for chart in &charts {
+                for (id, _) in self.by_chart.link(chart) {
+                    if let Some(addr) = Contemplation::ordinal_of_key(&id).and_then(|o| self.address_at(o)) {
+                        thoughts.insert(addr, ());
+                    }
+                }
+            }
+            let keys: Vec<Vec<u8>> = thoughts.scoped().map(|(k, _)| k).collect();
+            for k in keys {
+                let Some(b) = self.bubbles.get_mut(&k) else { continue };
+                horizon_put(&mut b.horizon, rotor.as_ref().clone(), Standing::Held);
+                b.dirty = true;
+                self.dirty.insert(&k, ());
+                self.docket_taken += 1;
+            }
+        }
+    }
+
+    /// AN ENTRY ANSWERED, BY NAME: it leaves the docket, open or pending, and
+    /// is counted. The only way an entry leaves (R1).
+    fn docket_answer(&mut self, key: &[u8]) {
+        let left = self.docket_open.remove(key).is_some() | self.docket.remove(key).is_some();
+        if left {
+            self.docket_answered += 1;
+        }
+    }
+
+    /// A HELD RING'S ENTRY, indexed by the ring's closing edge and its
+    /// 2-simplices (volatile), so a collapse or a re-fill there answers it.
+    pub(crate) fn docket_ring(&mut self, handles: &[Vec<u8>], entry: &Cite) {
+        let Some(k) = entry_key(entry) else { return };
+        for h in handles {
+            self.docket_rings.insert(h, k.clone());
+        }
+    }
+
+    /// A RING COLLAPSED OR A SIMPLEX RE-FILLED at `handle`: the class entry
+    /// held there, where there is one, is answered.
+    pub(crate) fn docket_ring_closed(&mut self, handle: &[u8]) {
+        if let Some(k) = self.docket_rings.remove(handle) {
+            self.docket_answer(&k);
+        }
+    }
+
+    /// AN ORBIT DISCHARGED whose class key is `class_key`: a held word now
+    /// spells it, and every entry of that class — held or demanded, carried
+    /// in-process or re-seeded — is answered. One rule for both kinds.
+    pub(crate) fn docket_discharged(&mut self, class_key: &[u8]) {
+        let answered: Vec<Vec<u8>> = self
+            .docket_open
+            .scoped()
+            .chain(self.docket.scoped())
+            .filter(|(_, c)| {
+                matches!(c, Cite::Class { class, .. } | Cite::Demand { class, .. } if class.class_key().as_bytes() == class_key)
+            })
+            .map(|(k, _)| k)
+            .collect();
+        for k in answered {
+            self.docket_answer(&k);
+        }
     }
 
     /// A RESTART KEEPS THE PLAN: the restored chain's last close's docket
@@ -88,6 +177,7 @@ impl Contemplation {
                 self.docket_open.insert(&k, c.clone());
             }
         }
+        self.docket_to_take = true;
     }
 
     /// THE ORDER THE NEXT ORBIT TAKES ITS QUESTIONS IN: outermost first by
@@ -112,6 +202,8 @@ impl Contemplation {
             open: self.docket_open.len() as u64,
             owed: self.docket_open.scoped().filter(|(_, c)| c.cover().is_none()).count() as u64,
             unwritten: self.docket_unwritten,
+            answered: self.docket_answered,
+            taken: self.docket_taken,
         }
     }
 }

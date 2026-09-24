@@ -22,8 +22,10 @@ use super::*;
 
 /// The fields TP1's reading names that no producer reads yet, each with what
 /// owes it (law 12: one statement, read by every renderer).
-pub const MEET_OWED: [(&str, &str); 1] =
-    [("decohered by a ruling", "no contemplation site cuts on the dialect chain")];
+pub const MEET_OWED: [(&str, &str); 2] = [
+    ("decohered by a ruling", "no contemplation site cuts on the dialect chain"),
+    ("docket demands taken", "CV4/SP2: a demand flows upward when minds speak to minds and the court hears an offer"),
+];
 
 /// WHAT CUT A COHERENT THOUGHT (78.26(6)): the gauge moved — a merged
 /// thought re-linked with its re-gauged sections — or a new candidate was
@@ -159,7 +161,7 @@ impl MeetGraph {
         let owed = MEET_OWED.iter().map(|(f, _)| *f).collect::<Vec<_>>().join(", ");
         let t = &self.transport;
         format!(
-            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} | owed: {owed}",
+            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | owed: {owed}",
             self.thoughts,
             self.vertices,
             self.components,
@@ -182,6 +184,8 @@ impl MeetGraph {
             self.docket.open,
             self.docket.owed,
             self.docket.unwritten,
+            self.docket.answered,
+            self.docket.taken,
         )
     }
 }
@@ -264,6 +268,10 @@ impl Contemplation {
     /// again: a class is the class the cut left; a re-fill is the thought
     /// rejoined; every other answer leaves it pending.
     pub(crate) fn settle_decoherence(&mut self, key: &[u8], outcome: &CoboundaryOutcome) {
+        // R1 — a simplex of a held ring re-filled: its docket entry answered.
+        if matches!(outcome, CoboundaryOutcome::Attached(Fill::Filled(..))) {
+            self.docket_ring_closed(key);
+        }
         let Some(&(adjunct, cut)) = self.decohering.get(key) else { return };
         let (c, a) = (cut_index(cut), adjunct.index());
         // A class read is the class the cut left. The ring REJOINED where it

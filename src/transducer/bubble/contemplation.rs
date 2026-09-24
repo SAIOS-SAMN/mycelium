@@ -179,6 +179,15 @@ pub struct Contemplation {
     pub(crate) docket: Keyed<crate::chronometry::Cite>,
     pub(crate) docket_open: Keyed<crate::chronometry::Cite>,
     pub(crate) docket_unwritten: u64,
+    /// R1 — entries answered by name (the only way one leaves), and each held
+    /// ring's handles — its closing edge, its 2-simplices — to its entry
+    /// (volatile).
+    pub(crate) docket_answered: u64,
+    pub(crate) docket_rings: Keyed<Vec<u8>>,
+    /// The class taker: armed by a seal or a re-seed, run once at the next
+    /// stroke; and the thoughts it has marked.
+    pub(crate) docket_to_take: bool,
+    pub(crate) docket_taken: u64,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
