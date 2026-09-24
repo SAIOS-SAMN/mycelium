@@ -15119,6 +15119,33 @@ parts.**
    curve (LC1) reads a planet's motion as its elements changing per
    orbit — which is what 78.1 already called the curve.
 
+**The orbit on the stamp (ruled 2026-09-24 on the implementor's shape for
+ACT1-orbit).** The tree's `K` is the index of an act on its signer's
+line, and every act is a node (78.24). A k-step is one orbit, so `K`
+counts ORBITS and an act's place within its orbit is a further
+coordinate: the stamp is `h : vk : K : i` — the tick, the signer, the
+orbit, the act's place in it — coarsest first, `i` the finest, the
+stamp's length moving from 48 to 56 bytes at the recut. Every act keeps
+its node, its Parent reference and its `admitted_at`; T1's citation key
+stays unique. The one-node-per-orbit reading (an orbit's acts folded
+into one receipt) is refused: it breaks "every act a node at its stamp"
+and makes two words of one chart and class admitted in one orbit
+collide. The height `h` stays per act, `1 + max(h(prev), parents)`
+(45.2, HT1): it is the causal order, exact within an orbit, and the
+orbit's TICK is the `h` of its closing act. Each act keeps the `μ⃗` it
+measured; the orbit's FRAME `{S, G, T, H}` is READ as the per-lane sum
+over its acts (lanes never mixed, law 5) and reported at the closing
+act's tick — derived, never carried on a closing node (law 12). `K`
+advances by one where a cycle closes by name — the court's cycle
+(exchange, deliberation, lapse, persist) and the voice's cycle (quote,
+utter, learn, syntropy) each seal the orbit boundary, `K + 1`, `i`
+reset — and by nothing else; the register carries the statement with a
+test that `K` moves there alone. The per-voice RADIUS on the clock is
+LC1's dialect span, the deepest A21 prefix its genome's charts reach,
+read once and not a second reading. A COLLISION is two planets whose
+frames are equal on every lane at one tick, named on the TUniversal
+block; separation is CR1's transport, never a slot.
+
 ### 78.24 The ledger is a partial order carried as one, never a serialized tape (ruled 2026-09-24, the operator's word)
 
 The operator's word to the implementor, verbatim: "do you see how in
