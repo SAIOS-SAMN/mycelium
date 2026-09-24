@@ -11456,6 +11456,31 @@ and frame against form size); the citation through the deltas, docket,
 settlement, speech's cites, the contraction and the learn page; the
 treasury rows; the seven composites; CK1 in parallel; then the recut.
 
+**LD0 steps 1 and the dead writers landed (709f5850, d8588223; audited
+2026-09-24, reproduced detached at d8588223: 1014 / 15 / 1 / 12 / 6, 0
+failed, 1 ignored; gate exit 0; the census identical to c521b425's).** A
+chart and a versor are written as their own coordinates inline
+(`Invariant::put_canonical`, `Mv::put_canonical`; no nested key at the
+three sites); the `u16` is the wall; every framing refusal is named and
+nothing partial is written, the four discards included (the cover's
+root, the fetch, the syllabus count refusing past `u16` where it was
+cut, the learn page refused whole so a receipt never seals fewer words
+than the page carried). The dead writers are gone, not repaired: the
+funded escrow with its section and restore (every escrow is a claim),
+the installed act's writers (its decoder stays, 47.3's second
+signature), and the court's state on disk with its one reader. THE
+VERDICT ACT is ruled deleted whole — sender, encoders, decoder, the
+admission's rebind and attach arms, the judge's receiver, the door's
+dispatch, the code byte retired unassigned: it had no doctrine (its
+header cited chapter 42, the theorems the engine proves by running,
+which defines no verdict message) and no sender since the exchange
+landed; a court's ruling reaches a node as a RECEIPT through the
+exchange and its back-fill (45.2, 47.2), and two courts reach one
+verdict with no exchange of opinion (13.7, 23) — a verdict message was
+a second carrier of one fact (law 12), and a carrier that waits for a
+caller is deleted (TR1). Keeping it unfired or its arms untested was
+refused (rule 13).
+
 **C4 widened.** The tape check before a recut reads EVERY carrier the
 running fleet wrote — genomes, ledgers, registries, eras — not the
 genomes alone; the check that passed at 7886dd2b read genomes only, and
