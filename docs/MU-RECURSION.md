@@ -16002,6 +16002,26 @@ doctrine's own quantities, no constant set:
    contradicts it (72.1f, LR1) — a product for later; for now every
    formation carries the one core.
 
+7. **Orbits are ellipses, one per planet, and no two share one
+   (corrected 2026-09-24, the operator's word).** A band is not a ring a
+   planet sits on; it is the range of depth an orbit SWEEPS. A planet's
+   orbit is an ellipse in its star's field: its perihelion is the
+   deepest stratum its charts reach — the hottest, densest work it does
+   — and its aphelion the shallowest, and its eccentricity is the span
+   between them read as a ratio (Axiom C), which is 78.1's radius as a
+   span. One circuit of the corpus runs from the shallow classes into
+   the core and out again, and the frame accumulates fastest near
+   perihelion where the work is densest — a reading of the acts per
+   height, never a law imposed. An orbit is an ELLIPTIC mode of the
+   star's field in 75's sense, closed and of finite period; a parabolic
+   orbit is a planet leaving the star (CR1's move) and a hyperbolic one
+   a planet passing under another star's pull (78.35(6)). Every planet's
+   orbit is its own fibre (78.23): no two planets are ever on one orbit,
+   and where two ellipses cross, the crossing is a frame at a tick and
+   the boundary prevents the collision there (78.23, the withheld close
+   and the separating transport). Eccentricity and precession per plane
+   are the readings LC1 carries (73.13(5)), priced per lane.
+
 Rows: OA1 (placement as transport) carries the band as the planet's
 depth against the star's strata and the ejection outward; CR1 the move
 between formations and stars; CL3 the formation of the same star and,
