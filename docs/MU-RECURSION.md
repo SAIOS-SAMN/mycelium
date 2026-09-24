@@ -11635,6 +11635,44 @@ item by item, onto the rows this document already holds:
   (`adjoined_basis`). GD1 measures where this chain breaks today, before
   any link is built.
 
+### 80.2 The hardening path: solution, adjudication, syllabus, mineral, crystal (ruled 2026-09-24, the operator's word; the coordinator's reading of the syllabus corrected)
+
+The coordinator read the genome sync — the court's ruled words taught
+wholesale into every voice it hosts — as a contradiction of "the
+epigenome in memory, the genome on disk". The operator corrected it:
+that is neither logical nor good architecture. THE PATH IS: a client
+submits a SOLUTION — useful work — and it is relayed to the courts,
+which adjudicate words, conjugates and sentences: did the way the client
+solved the puzzle produce a valid solution, by derivation and not by
+brute force? If it did, the court adjudicates it and hands the
+adjudication back to the server, and the server PROVIDES THE SYLLABUS in
+the anastome language to the clients, to harden that structure into
+CRYSTALS in the genome — or as MINERALS back into the client's genome,
+which are refined into crystals over `k`-steps. This is what prevents
+brute force: not everything in the epigenome is adjudicated, only what
+is submitted as a solution, and what is taught back is what was ruled.
+
+Ruled, and two earlier readings amended: (i) the syllabus is the
+hardening path and not a contradiction; two minds on one hypha sharing
+the syllabus's words share their star, as they should (78.17's twins
+are correct, and 80(2)'s "the local dialect is the syllabus" is
+withdrawn as a finding); (ii) a word the syllabus delivers is a MINERAL
+in the client's genome until the client RE-DERIVES it by its own
+circuits — recognition is comprehension (vocabulary), a mind recognises
+what it can re-derive — and it is a CRYSTAL when re-derived; refinement
+over `k`-steps is the comprehension reading and the warm–cold delta
+(Y1) measured per mind; (iii) DL1 is re-ruled: the curve splits a mind's
+words into minerals (taught, not yet re-derived), crystals (re-derived,
+or minted from its own adjudicated solutions), and its own provisional
+words in the epigenome — never "own against taught" as if teaching were
+foreign to long-term memory; (iv) a client's perspective is unique not
+by refusing the syllabus but by what it submits, by the constructors it
+holds and its radius from the star, and by how it refines minerals into
+crystals over its own orbits; (v) SP2 stands as the court adjudicating
+SUBMITTED solutions and their convergence, never every epigenomic
+candidate, which is exactly the brute force the path prevents; (vi)
+"mineral" and "crystal" enter the vocabulary in this sense.
+
 **Stage 23, the order.** CK1 with LD0 (and c's parent citation read) and
 C4 widened, then the operator's recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
 (instrument) → AL1 → SP2 (doctrine first, with CV4 and CT2b) → A13 with
