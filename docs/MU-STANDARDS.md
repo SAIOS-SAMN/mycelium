@@ -364,6 +364,13 @@ next item lands (chapter 41's consolidation discipline). A landing that
 changes admission, the wire, or the market is followed by a whole-fleet
 recut before its readings are used.
 
+6.5 **A fleet reading is quoted against TUniversal height and `K`, never
+a wall clock** (ruled 2026-09-24, MU-RECURSION 78.21). "Up seven hours"
+and "written six hours ago" are not anchored; "head 16 739, K 2 928,
+ledger persisted at 16 700" is. The console's header places every source
+on TUniversal first, and a diagnostic, an audit or a relay that names a
+time names a height and a `K`.
+
 6.4 **Verification never writes.** A check reads: `git diff`, `git show`,
 `git log`, a build, a test run. `git checkout <rev> -- <path>` is a write
 that reverts the file it names, and it reverted a landed fix once

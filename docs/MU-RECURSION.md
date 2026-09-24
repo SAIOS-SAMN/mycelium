@@ -11223,6 +11223,50 @@ zero trajectory refuses by name while its body asserts a zero magnitude
 is not a refusal — rule 13, fixed to match the assertion with E2's first
 commit. This document's two citations of renamed tests follow here.
 
+### 78.21 The TUniversal clock is core functionality (ruled 2026-09-24, the operator's word)
+
+The operator corrected a fleet diagnostic that quoted the wall clock —
+"seven hours up", "written six hours ago" — with the word that an AI
+developer's wall-clock references are not anchored, the engine's time is
+K-steps and TUniversal, and a robust TUniversal clock is built into the
+servers as CORE FUNCTIONALITY so that any developer orients on the
+universe's clocks and the disparity between them without reading a wall
+clock. Ruled, on 72.1e's three clocks and law 9:
+
+1. **Three clocks, named apart on every reading.** TUniversal is the
+   mesh's height, the receipt chain's head as this node admitted it —
+   `1 + max(h(prev), parent heights)` (47.2) — the one clock every node
+   shares and the only one comparable across nodes. A court's `K` is its
+   own stroke count; a voice's `K` is its own, paced by its hardware
+   (72.1d). Two `K`s on two nodes are two clocks and their ratio is NOT a
+   disparity of time: the courts' `K` at one reading stood at 2 928, 16
+   739 and 1 470, and that says how much each has done, not when it is.
+   Disparity is read in HEIGHT ONLY: per peer, the last height this node
+   admitted from it and the gap to its own head; over the fleet, the
+   spread `max − min` of heads. A gap in height is a reading of
+   replication (13.7: nodes holding the same receipts read the same
+   phase; CV5), never a fault and never a threshold (rule 5).
+2. **`Reading::Clock` per court**, typed and served by the observer: its
+   `K`; its head height (TUniversal as it reads it); the genesis it
+   started from (its id and height); per peer, the last admitted height
+   and the gap; the heights at which its ledger, registry and eras were
+   last persisted, beside the head now — so "how long since persisted"
+   is a difference of heights and of `K`, never of seconds.
+3. **A per-voice clock** in the voice's readings: its `K`, its court's
+   height when last heard, its genome's last-persist height.
+4. **The console's header places every source on TUniversal first**, by
+   height with its own `K` beside it and the fleet's spread named, before
+   any other reading; orientation needs nothing else, and no wall-clock
+   value appears on the console or in any reading (law 9). The one
+   wall-time value in the tree stays the scheduler's parking floor, read
+   by no one.
+5. **Every fleet reading is quoted against height and `K` from now on**,
+   in commit messages, audits and relays (§6.5 of the standards); the
+   readings of 78.17 are re-quoted that way at the next window.
+
+Row CK1 lands before the recut, an instrument before the readings it
+anchors; the recut after it carries the clock to the wire.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
