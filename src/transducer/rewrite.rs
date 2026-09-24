@@ -102,7 +102,8 @@ impl Rewrite {
                         out.push(t);
                     }
                 }
-                gauge.to_bytes(&mut out);
+                // Every versor and rotor on this tape as its ray (A4).
+                gauge.put_canonical(&mut out);
             }
             RewritePayload::Torse { sigma, period } => {
                 out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
@@ -122,17 +123,17 @@ impl Rewrite {
             RewritePayload::Reanchor { gamma } => {
                 out.extend_from_slice(&(gamma.len() as u16).to_le_bytes());
                 for w in gamma {
-                    w.to_bytes(&mut out);
+                    w.put_whole(&mut out);
                 }
             }
             RewritePayload::AxisOpen { class, degree } => {
                 out.push(*degree);
-                class.to_bytes(&mut out);
+                class.put_canonical(&mut out);
             }
             RewritePayload::Translation { a, b, gauge } => {
                 crate::transducer::address::put_addr(&mut out, a)?;
                 crate::transducer::address::put_addr(&mut out, b)?;
-                gauge.to_bytes(&mut out);
+                gauge.put_canonical(&mut out);
             }
             RewritePayload::Retire { cites, freed } => {
                 out.extend_from_slice(&(cites.len() as u16).to_le_bytes());
@@ -216,7 +217,7 @@ impl Rewrite {
                 pos += 2;
                 let mut gamma = Vec::with_capacity(n);
                 for _ in 0..n {
-                    gamma.push(Word::from_bytes(b, &mut pos)?);
+                    gamma.push(Word::take_whole(b, &mut pos)?);
                 }
                 RewritePayload::Reanchor { gamma }
             }

@@ -62,7 +62,7 @@ pub fn encode_refine_algebraic(
         AlgebraicWitness::SameOperator => out.push(0),
         AlgebraicWitness::Section(gamma) => {
             out.push(1);
-            gamma.to_bytes(&mut out);
+            gamma.put_whole(&mut out);
         }
     }
     Some(out)
@@ -82,7 +82,7 @@ pub fn decode_refine_algebraic(body: &[u8]) -> Option<([u8; 32], Address, Addres
     p += 1;
     let witness = match kind {
         0 => AlgebraicWitness::SameOperator,
-        1 => AlgebraicWitness::Section(Box::new(crate::transducer::alphabet::Word::from_bytes(body, &mut p)?)),
+        1 => AlgebraicWitness::Section(Box::new(crate::transducer::alphabet::Word::take_whole(body, &mut p)?)),
         _ => return None,
     };
     Some((voice, word, held, witness))

@@ -224,8 +224,9 @@ impl NerveEdge {
             out.extend_from_slice(&m.to_le_bytes());
         }
         out.extend_from_slice(&self.depth.to_le_bytes());
-        self.placement.to_bytes(out);
-        self.carriage.to_bytes(out);
+        // LD0 step 6: the placement whole, the carriage as its ray (17.2).
+        self.placement.put_whole(out);
+        self.carriage.put_canonical(out);
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveEdge> {
@@ -238,7 +239,7 @@ impl NerveEdge {
         }
         let depth = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
         *pos += 2;
-        let placement = Word::from_bytes(b, pos)?;
+        let placement = Word::take_whole(b, pos)?;
         let carriage = Box::new(Versor::from_bytes(b, pos)?);
         Some(NerveEdge { target, chart, magnitude, depth, placement, carriage })
     }
@@ -521,7 +522,7 @@ impl DerivationCite {
             crate::transducer::address::put_bytes(out, vertex.as_bytes());
             out.extend_from_slice(&e.to_le_bytes());
         }
-        self.residue.to_bytes(out);
+        self.residue.put_whole(out);
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<DerivationCite> {
@@ -541,7 +542,7 @@ impl DerivationCite {
             *pos += 8;
             generators.push((form, vx, e));
         }
-        let residue = Word::from_bytes(b, pos)?;
+        let residue = Word::take_whole(b, pos)?;
         Some(DerivationCite { vertex, generators, residue })
     }
 }

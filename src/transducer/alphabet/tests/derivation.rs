@@ -27,7 +27,9 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
     d.to_bytes(&mut b).expect("the derivation writes");
     let mut only_residue = Vec::new();
     (0u16).to_le_bytes().iter().for_each(|x| only_residue.push(*x));
-    quarter(2).to_bytes(&mut only_residue);
+    // The residue whole (LD0 step 6(b)): its letters and the byte that
+    // says it is spelled.
+    quarter(2).put_whole(&mut only_residue);
     // No rotor follows: the residue determines the action, so the
     // presence byte is zero and nothing is written twice (1.9).
     only_residue.push(0);
@@ -150,12 +152,12 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
     crate::transducer::address::put_addr(&mut expect, addr(1)).expect("form");
     crate::transducer::address::put_addr(&mut expect, addr(2)).expect("vertex");
     expect.extend_from_slice(&2i64.to_le_bytes());
-    Word::identity().to_bytes(&mut expect);
+    Word::identity().put_whole(&mut expect);
     // A rotor follows, and one byte says so: "no citations" no longer
     // implies "the residue is the action", because an adjoined generator
-    // cites nothing and spells nothing (37.7).
+    // cites nothing and spells nothing (37.7). Its canonical ray (A1).
     expect.push(1);
-    quarter(2).rotor().to_bytes(&mut expect);
+    quarter(2).rotor().put_canonical(&mut expect);
     assert_eq!(b, expect, "citations, residue, rotor — and no spelling of the composite");
 
     // 1.5: the key is the canonical rotor coordinates, so a vertex that

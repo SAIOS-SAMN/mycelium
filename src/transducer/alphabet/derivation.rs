@@ -230,15 +230,16 @@ impl Derivation {
             crate::transducer::address::put_addr(out, vertex)?;
             out.extend_from_slice(&e.to_le_bytes());
         }
-        self.residue.to_bytes(out);
+        // The residue whole, a formed residue's action with it (LD0 step 6).
+        self.residue.put_whole(out);
         // The rotor travels when the residue does not determine it: a
         // factored vertex's product, and an adjoined generator's own
         // action. One byte says which, because "no citations" no longer
-        // implies "the residue is the word" (37.7).
+        // implies "the residue is the word" (37.7). Its canonical ray.
         match &self.composed {
             Some(r) => {
                 out.push(1);
-                r.to_bytes(out);
+                r.put_canonical(out);
             }
             None => out.push(0),
         }
@@ -261,7 +262,7 @@ impl Derivation {
             *pos += 8;
             generators.push((form, vertex, e));
         }
-        let residue = Word::from_bytes(b, pos)?;
+        let residue = Word::take_whole(b, pos)?;
         let carried = *b.get(*pos)?;
         *pos += 1;
         let composed = match carried {

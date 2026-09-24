@@ -45,3 +45,22 @@ fn a_bid_cut_short_of_its_witness_is_malformed() {
     wrong_kind[kind_at] = 9;
     assert!(decode_refine_algebraic(&wrong_kind).is_none(), "an unknown witness kind is no witness");
 }
+
+/// LD0 step 6(b) — A FORMED GAUGE CROSSES AS ITSELF. A section witness the
+/// alphabet does not spell is an action with no letters; written as its
+/// letters alone it crossed as the identity, a different witness.
+#[test]
+fn a_formed_witness_crosses_the_wire_as_its_action() {
+    let voice = [7u8; 32];
+    let word = Address::from_bytes([4u8, 1]);
+    let held = Address::from_bytes([4u8, 2]);
+    let spelled = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
+    let formed = Word::formed(spelled.rotor());
+    assert!(formed.letters().is_empty() && !formed.is_identity(), "an action no tape spells");
+    let body = encode_refine_algebraic(&voice, &word, &held, &AlgebraicWitness::Section(Box::new(formed.clone())))
+        .expect("the addresses frame");
+    let (_, _, _, back) = decode_refine_algebraic(&body).expect("the bid decodes");
+    let AlgebraicWitness::Section(gamma) = back else { panic!("a section witness") };
+    assert_eq!(*gamma, formed, "the action crossed, not the identity");
+    assert!(!gamma.is_identity());
+}

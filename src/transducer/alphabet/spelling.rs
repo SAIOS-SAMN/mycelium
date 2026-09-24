@@ -27,12 +27,14 @@ impl Spelling {
         self.word.plane_block()
     }
 
+    /// The word whole (LD0 step 6): a spelling's word is spelled, and the
+    /// writing says so rather than assuming it.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        self.word.to_bytes(out);
+        self.word.put_whole(out);
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Spelling> {
-        let word = Word::from_bytes(b, pos)?;
+        let word = Word::take_whole(b, pos)?;
         Some(Spelling { word })
     }
 }

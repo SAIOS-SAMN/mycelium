@@ -8,7 +8,8 @@ use crate::transducer::alphabet::{self, Word};
 use crate::transducer::stalk;
 
 pub(crate) fn word_to_form_bytes(w: &Word, contact: Option<alphabet::Contact>, out: &mut Vec<u8>) {
-    w.to_bytes(out);
+    // The word whole, a formed word's action with it (LD0 step 6).
+    w.put_whole(out);
     put_contact(contact, out);
 }
 
@@ -65,7 +66,7 @@ pub(crate) fn word_from_form_bytes(
     b: &[u8],
     pos: &mut usize,
 ) -> Option<(Word, Option<alphabet::Contact>)> {
-    let w = Word::from_bytes(b, pos)?;
+    let w = Word::take_whole(b, pos)?;
     let c = take_contact(b, pos)?;
     Some((w, c))
 }
