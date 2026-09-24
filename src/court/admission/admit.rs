@@ -232,25 +232,29 @@ fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
     // predecessor and the parents the receipt names, each of which this
     // node must hold at its stamp with its hash. An unheld one is a HOLE,
     // not a fault — the answer names it so it can be fetched (47.2 step 3).
-    let want = match &r.prev {
-        None if k == 0 => 0,
+    // 45.2 (HT1): `1 + max` over the predecessor and the parents, `0` only
+    // with neither — a line's first receipt citing parents stands above them.
+    let mut cited: Vec<u64> = Vec::with_capacity(r.parents.len() + 1);
+    match &r.prev {
+        None if k == 0 => {}
         None => return Admitted::Refused(REFUSE_RECEIPT),
         Some(prev) => {
             if prev.at.vk != vk || Some(prev.at.k) != k.checked_sub(1) {
                 return Admitted::Refused(REFUSE_RECEIPT);
             }
-            let Some(mut m) = ledger.height_of(prev) else {
+            let Some(h) = ledger.height_of(prev) else {
                 return Admitted::MissingParent(*prev);
             };
-            for p in &r.parents {
-                match ledger.height_of(p) {
-                    Some(h) => m = m.max(h),
-                    None => return Admitted::MissingParent(*p),
-                }
-            }
-            1 + m
+            cited.push(h);
         }
-    };
+    }
+    for p in &r.parents {
+        match ledger.height_of(p) {
+            Some(h) => cited.push(h),
+            None => return Admitted::MissingParent(*p),
+        }
+    }
+    let want = crate::chronometry::height_over(&cited);
     if r.stamp.h != want {
         return Admitted::Refused(REFUSE_RECEIPT);
     }

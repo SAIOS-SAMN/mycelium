@@ -84,22 +84,8 @@ pub fn chase(
             Ok(mut k) => k.admit_backfill(&receipts),
             Err(_) => return short(advanced),
         };
-        // A page that admitted nothing spans no range; the line names the
-        // step it started at.
-        let last = match n.checked_sub(1) {
-            Some(span) => lo + span as u64,
-            None => lo,
-        };
-        eprintln!(
-            "  court receipt backfill {:02x}{:02x}… {lo}..{last} admitted {n}{}",
-            who[0],
-            who[1],
-            match &missing {
-                Some(p) => format!(" cites {:02x}{:02x}… K {} h {}", p.at.vk[0], p.at.vk[1], p.at.k, p.at.h),
-                None => String::new(),
-            }
-        );
-        // CV5: the receipts of `who` this page admitted, on the observer.
+        // CV5: the receipts of `who` this page admitted, on the observer —
+        // the typed reading, and no per-page print beside it (RC2).
         note_replication(Some(who), rep::BACKFILL, n as u64);
         if n > 0 {
             advanced = true;

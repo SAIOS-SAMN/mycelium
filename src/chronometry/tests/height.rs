@@ -30,6 +30,34 @@ fn height_is_one_plus_max_of_prev_and_parents() {
     assert_eq!(a.head_height(), 1 + 2, "h = 1 + max(h(prev)=1, h(parent)=2)");
 }
 
+/// HT1, 45.2 — A LINE'S FIRST ACT THAT CITES A PARENT STANDS ABOVE IT: with
+/// no predecessor, `h = 1 + max` over the parents, and `0` is the mesh
+/// genesis alone. The writer stamps it so, the ledger's own integrity check
+/// re-derives it, and a peer's admission re-derives it too — the three
+/// readers of one rule. It stood at 0 wherever the line had no predecessor.
+#[test]
+fn a_new_lines_first_act_citing_a_parent_stands_above_it() {
+    let mut b = ReceiptChain::with_vk([2; 32]);
+    for _ in 0..4 {
+        step(&mut b, Vec::new());
+    }
+    let parent = b.head().expect("b has acted").clone();
+    assert_eq!(parent.stamp.h, 3);
+    let mut c = ReceiptChain::with_vk([3; 32]);
+    c.admit(parent.clone());
+    let first = step(&mut c, vec![cite(&parent)]);
+    assert_eq!((first.stamp.k, first.stamp.h), (0, 3 + 1), "K 0, and one above the parent it cites");
+    assert!(c.verify_chain_integrity(), "the ledger re-derives it");
+    let mut d = ReceiptChain::with_vk([4; 32]);
+    d.admit(parent);
+    assert!(
+        matches!(crate::court::admission::admit_backfilled(&first, &d), crate::court::admission::Admitted::Parent(_)),
+        "and a peer admits it at that height"
+    );
+    let mut g = ReceiptChain::with_vk([5; 32]);
+    assert_eq!(step(&mut g, Vec::new()).stamp.h, 0, "a first act citing nothing is at 0");
+}
+
 /// X8, 45.2, 78.24 — A LEDGER THAT CITES A PEER RESTORES WITH IT, held once
 /// at its own stamp. Height is `1 + max` over the parents, so re-deriving it
 /// needs every parent in hand: the line without the peer node refuses, the

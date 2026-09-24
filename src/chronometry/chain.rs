@@ -386,17 +386,14 @@ impl ReceiptChain {
     /// the parents. An act that admits what it names cites itself by it.
     /// `None` where a parent is not held.
     pub fn next_stamp(&self, parents: &[Parent]) -> Option<Stamp> {
-        let h = match self.line_prev() {
-            None => 0,
-            Some(p) => {
-                let mut m = p.at.h;
-                for q in parents {
-                    m = m.max(self.height_of(q)?);
-                }
-                1 + m
-            }
-        };
-        Some(Stamp { h, vk: self.vk, k: self.next_step_index() })
+        let mut heights = Vec::with_capacity(parents.len() + 1);
+        if let Some(p) = self.line_prev() {
+            heights.push(p.at.h);
+        }
+        for q in parents {
+            heights.push(self.height_of(q)?);
+        }
+        Some(Stamp { h: height_over(&heights), vk: self.vk, k: self.next_step_index() })
     }
 
     /// Append the next receipt (45.1): its stamp is this chain's key at
@@ -434,17 +431,12 @@ impl ReceiptChain {
             if r.stamp.k != want_k || r.prev != prev {
                 return false;
             }
-            let want_h = match &prev {
-                None => 0,
-                Some(p) => {
-                    let mut m = p.at.h;
-                    for q in &r.parents {
-                        let Some(ph) = self.height_of(q) else { return false };
-                        m = m.max(ph);
-                    }
-                    1 + m
-                }
-            };
+            let mut heights: Vec<u64> = prev.iter().map(|p| p.at.h).collect();
+            for q in &r.parents {
+                let Some(ph) = self.height_of(q) else { return false };
+                heights.push(ph);
+            }
+            let want_h = height_over(&heights);
             if r.stamp.h != want_h || !r.rederives() {
                 return false;
             }
@@ -552,5 +544,18 @@ impl ReceiptChain {
             nodes.push(KStepReceipt::read(b, pos)?);
         }
         Self::from_nodes(root, vk, nodes)
+    }
+}
+
+/// 45.2 — THE HEIGHT A RECEIPT TAKES over the heights it cites, its
+/// predecessor's and its parents': `1 + max`, and `0` only where it cites
+/// neither — the mesh genesis alone. A line's FIRST receipt that cites
+/// parents stands above them; it was 0 wherever the line had no
+/// predecessor (HT1). One statement for the writer (`next_stamp`), the
+/// admission's re-derivation and the ledger's integrity check (law 12).
+pub fn height_over(cited: &[u64]) -> u64 {
+    match cited.iter().fold(None, |m: Option<u64>, &h| Some(m.map_or(h, |m| m.max(h)))) {
+        None => 0,
+        Some(m) => 1 + m,
     }
 }
