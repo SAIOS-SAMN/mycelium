@@ -580,15 +580,12 @@ pub struct Settlement {
 pub const RULING_UPHELD: u8 = 1;
 pub const RULING_DEMOTED: u8 = 2;
 pub const RULING_SLASHED: u8 = 0;
-/// Step 7c: rebind a word's anchor fiber — the verdict carries π* (a Sel term)
-/// derived from family-wide evidence; the kernel upgrades γ = (⊤, Δ) → (π*, Δ)
-/// in place (canonical substance identity untouched).
-pub const RULING_REBIND: u8 = 3;
-/// The bundle connects: the ruled word is a placement of a federated base
-/// geometry — the verdict carries the base address and the group element g
-/// that transports the word into the base frame. A hypha holding both
-/// attaches the word as a section of the base and retires its card.
-pub const RULING_ATTACHED: u8 = 4;
+// 3 and 4 are RETIRED (EC1, 2026-09-24): REBIND carried π* (a Sel term) and
+// ATTACHED carried a base and a transport g — a Sel term or a versor on a
+// node is a blob where a coordinate belongs, and neither had a producer.
+// Attachment returns with its producer (an inter-form 2-cell attached along
+// a round) as a cite of the base by its stamp and g as a class record. The
+// bytes are not reused.
 /// Two independent voices verified the same task: a proven root.
 pub const RULING_ROOT: u8 = 5;
 

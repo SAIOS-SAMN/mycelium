@@ -27,15 +27,14 @@ impl Kernel {
         after: &Element,
         payload: crate::transducer::rewrite::RewritePayload,
         voice: [u8; 32],
-    ) -> bool {
-        let Some(mu) = self.treasury.settle_rewrite(kind, before, after) else {
-            return false;
-        };
+    ) -> Option<Address> {
+        let mu = self.treasury.settle_rewrite(kind, before, after)?;
         let before_addr: Vec<Address> = before.iter().map(|e| e.address()).collect();
-        let Some(rw) = crate::transducer::rewrite::mint(kind, &before_addr, after.address(), payload, mu) else {
-            return false;
-        };
-        self.offer_rewrite(rw, voice)
+        let rw = crate::transducer::rewrite::mint(kind, &before_addr, after.address(), payload, mu)?;
+        let addr = rw.address();
+        // The rewrite's address, where it was offered: a retirement cites
+        // the rewrite it rests on (EC1).
+        self.offer_rewrite(rw, voice).then_some(addr)
     }
 
     pub(crate) fn retire_rewrite_inputs(&mut self, rw: &Element) {

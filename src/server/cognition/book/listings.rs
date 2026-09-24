@@ -477,20 +477,26 @@ impl Kernel {
                 cites: cites.clone(),
                 freed,
             };
-            let _ = self.mint_rewrite(
+            let rewrite = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Retire,
                 std::slice::from_ref(&candidate),
                 &candidate,
                 payload,
                 bidder,
             );
+            // 78.24 (2c): the word is cited as it stood, read before it
+            // moves.
+            let retired = self.cite_of(&addr);
             // A RETIREMENT KEEPS THE ADDRESS (27): the word leaves the
             // language and stays resolvable for replay, so a citation of it
             // still reads. `basis_remove` alone is not retirement in any
             // reading — it is forgetting.
             self.relocate_cavity(&addr);
             self.physics.syntropy(&candidate.magnitude());
-            self.append_step(crate::chronometry::ActKind::Ruling, &addr, bidder);
+            // EC1, as ruled: this retirement is the court's own ruling, and
+            // the court authors it.
+            let court = self.identity;
+            self.seal_retirement(&addr, retired, rewrite, &cites, court);
         }
     }
 

@@ -184,6 +184,56 @@ impl Height {
 /// TUniversal is the height of the mesh receipt ledger.
 pub type TUniversal = Height;
 
+/// WHAT A RULING RULED (EC1, 78.33): the arm a court's ruling takes on a
+/// word, carried on the Ruling node as its kind byte so a court admitting
+/// the receipt applies the same arm — nothing else travels. Upheld,
+/// demoted and slashed rule a provisional word; retired rules a word of the
+/// ruled language away, re-expressed over fewer letters.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Ruled {
+    Upheld,
+    Demoted,
+    Slashed,
+    Retired,
+}
+
+impl Ruled {
+    /// Every arm, in the order the rulings reading carries them.
+    pub const ALL: [Ruled; 4] = [Ruled::Upheld, Ruled::Demoted, Ruled::Slashed, Ruled::Retired];
+
+    /// Where the arm is carried in the rulings reading.
+    pub fn index(self) -> usize {
+        match self {
+            Ruled::Upheld => 0,
+            Ruled::Demoted => 1,
+            Ruled::Slashed => 2,
+            Ruled::Retired => 3,
+        }
+    }
+
+    /// The arm the wire's verdict vocabulary names, or none for a byte
+    /// that names no arm. Retirement has no verdict byte: it is ruled by a
+    /// bid, never by a verdict.
+    pub fn of_verdict(ruling: u8) -> Option<Ruled> {
+        use crate::anastome::dialogue::{RULING_DEMOTED, RULING_SLASHED, RULING_UPHELD};
+        match ruling {
+            RULING_UPHELD => Some(Ruled::Upheld),
+            RULING_DEMOTED => Some(Ruled::Demoted),
+            RULING_SLASHED => Some(Ruled::Slashed),
+            _ => None,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Ruled::Upheld => "upheld",
+            Ruled::Demoted => "demoted",
+            Ruled::Slashed => "slashed",
+            Ruled::Retired => "retired",
+        }
+    }
+}
+
 /// THE KIND OF ACT A RECEIPT ADMITS (45.1): one coordinate byte of the
 /// node, in its chain hash, so a phase (45.9) and a fold (45.8) read the
 /// ledger by kind. A byte that names no kind refuses the read.
@@ -193,7 +243,9 @@ pub enum ActKind {
     List,
     Section,
     Install,
-    Ruling,
+    /// A court's ruling on a word, the arm it ruled carried in the kind
+    /// byte (EC1).
+    Ruling(Ruled),
     Syllabus,
     Lapse,
     Fold,
@@ -221,7 +273,10 @@ impl ActKind {
             ActKind::List => 2,
             ActKind::Section => 3,
             ActKind::Install => 4,
-            ActKind::Ruling => 5,
+            ActKind::Ruling(Ruled::Upheld) => 5,
+            ActKind::Ruling(Ruled::Demoted) => 16,
+            ActKind::Ruling(Ruled::Slashed) => 17,
+            ActKind::Ruling(Ruled::Retired) => 18,
             ActKind::Syllabus => 6,
             ActKind::Lapse => 7,
             ActKind::Fold => 8,
@@ -242,7 +297,10 @@ impl ActKind {
             2 => ActKind::List,
             3 => ActKind::Section,
             4 => ActKind::Install,
-            5 => ActKind::Ruling,
+            5 => ActKind::Ruling(Ruled::Upheld),
+            16 => ActKind::Ruling(Ruled::Demoted),
+            17 => ActKind::Ruling(Ruled::Slashed),
+            18 => ActKind::Ruling(Ruled::Retired),
             6 => ActKind::Syllabus,
             7 => ActKind::Lapse,
             8 => ActKind::Fold,
@@ -264,7 +322,7 @@ impl ActKind {
             ActKind::List => b"list",
             ActKind::Section => b"section",
             ActKind::Install => b"install",
-            ActKind::Ruling => b"ruling",
+            ActKind::Ruling(_) => b"ruling",
             ActKind::Syllabus => b"syllabus",
             ActKind::Lapse => b"lapse",
             ActKind::Fold => b"fold",

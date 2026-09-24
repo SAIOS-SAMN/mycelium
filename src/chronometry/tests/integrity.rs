@@ -47,8 +47,28 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
     assert_eq!(back, r, "the kind rides the tape");
     assert_eq!(p, tape.len(), "and the read ends where the tape does");
     let mut other = r.clone();
-    other.kind = ActKind::Ruling;
+    other.kind = ActKind::Ruling(Ruled::Upheld);
     assert!(!other.rederives(), "the kind is in the chain hash");
+    // EC1: the ruling's arm is its kind byte, so a ruling re-armed is
+    // another node, and every arm reads back as itself.
+    for arm in Ruled::ALL {
+        let byte = ActKind::Ruling(arm).to_byte();
+        assert_eq!(ActKind::from_byte(byte), Some(ActKind::Ruling(arm)), "{} rides its own byte", arm.name());
+    }
+    let upheld = KStepReceipt::seal(
+        r.stamp,
+        ActKind::Ruling(Ruled::Upheld),
+        r.mu,
+        r.prev,
+        r.parents.clone(),
+        r.cites.clone(),
+        r.operator_hash,
+    )
+    .expect("seals");
+    assert!(upheld.rederives(), "an upheld ruling sealed whole");
+    let mut slashed = upheld.clone();
+    slashed.kind = ActKind::Ruling(Ruled::Slashed);
+    assert!(!slashed.rederives(), "the arm is in the chain hash: a ruling cannot be re-armed in flight");
     let mut moved = r.clone();
     moved.stamp.vk = [2; 32];
     assert!(!moved.rederives(), "and so is the signer: the stamp is the node's key");
@@ -70,7 +90,10 @@ fn a_nodes_citations_ride_the_tape_and_the_hash() {
     let word = Cite::Word { chart: crate::transducer::stalk::Invariant::counts(&[1, 2]), class: None, at };
     let root = Cite::Root { at, hash: [5; 32] };
     let mut c = ReceiptChain::with_vk([1; 32]);
-    let r = c.append(ActKind::Ruling, [0; 4], vec![word.clone(), root.clone()], [9; 32], Vec::new()).expect("seals").clone();
+    let r = c
+        .append(ActKind::Ruling(Ruled::Retired), [0; 4], vec![word.clone(), root.clone()], [9; 32], Vec::new())
+        .expect("seals")
+        .clone();
     let mut tape = Vec::new();
     r.write(&mut tape).expect("writes");
     let back = KStepReceipt::read(&tape, &mut 0).expect("reads");

@@ -45,9 +45,17 @@ impl Kernel {
         // 13.9: the home's install is its OWN word, ruled on a witness's
         // re-derivation, so it becomes this court's section on the chart.
         self.rule_own(addr);
+        // 45.1: an install is an ADMITTED ACT, so it is a step of this
+        // kernel's clock and a receipt in its chain. Without one the book
+        // grew a ruled word at no position: nothing cited the peer receipts
+        // admitted since the last step, and a reader replaying the chain
+        // found the install nowhere in it. EC1: sealed BEFORE it pays, so
+        // every row the install pays stands at it.
+        self.append_step(crate::chronometry::ActKind::Install, addr, witness);
+        let installed = self.anchor();
         if let Some(w) = held {
             if w.is_rewrite() {
-                if self.treasury.release_rewrite(addr).is_none() {
+                if self.treasury.release_rewrite(addr, installed).is_none() {
                     return;
                 }
                 self.retire_rewrite_inputs(&w);
@@ -68,8 +76,7 @@ impl Kernel {
                     // balance, which paid zero whenever its own draw
                     // already occupied the lane (L8t).
                     let shares = self.cited_shares(addr, &w, pay);
-                    let anchor = self.anchor_pub();
-                    self.treasury.settle_recursive(addr, &shares, pay, anchor);
+                    self.treasury.settle_recursive(addr, &shares, pay, installed);
                     for (who, share) in &shares {
                         eprintln!(
                             "  court generator paid {:02x}{:02x}… to {:02x}{:02x}… {share:?}",
@@ -92,12 +99,6 @@ impl Kernel {
         if let Some(w) = self.word_at(addr).cloned() {
             self.note_form_citations(addr, &w);
         }
-        // 45.1: an install is an ADMITTED ACT, so it is a step of this
-        // kernel's clock and a receipt in its chain. Without one the book
-        // grew a ruled word at no position: nothing cited the peer receipts
-        // admitted since the last step, and a reader replaying the chain
-        // found the install nowhere in it.
-        self.append_step(crate::chronometry::ActKind::Install, addr, witness);
         eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 

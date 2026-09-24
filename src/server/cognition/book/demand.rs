@@ -144,14 +144,8 @@ impl Kernel {
             .collect();
         let after = element::measure_lanes(&residual);
         if residual.is_empty() {
-            let anchor = self.anchor();
-            if let Some(word) = self.basis.get(cited.as_bytes()) {
-                let mag = word.magnitude();
-                if let Some(disc) = self.discoverer_of(cited.as_bytes()) {
-                    self.treasury.settle_use(voice, disc, mag, anchor);
-                }
-            }
             let by = short(cited.as_bytes());
+            let used = cited.clone();
             self.answered.nested_insert(
                 at,
                 crate::network::nerve::Coordinate::encode(&demand).as_bytes(),
@@ -161,6 +155,15 @@ impl Kernel {
             self.physics.relieve(&before);
             self.physics.syntropy(&before);
             self.append_step(crate::chronometry::ActKind::Settled, at, voice);
+            // EC1: the use is paid AT the Settled act that carries it (POWC),
+            // sealed first.
+            let anchor = self.anchor();
+            if let Some(word) = self.basis.get(used.as_bytes()) {
+                let mag = word.magnitude();
+                if let Some(disc) = self.discoverer_of(used.as_bytes()) {
+                    self.treasury.settle_use(voice, disc, mag, anchor);
+                }
+            }
             eprintln!("  court demand answered on {}… by {by}…", short(at));
             return (PROBE_CLOSED, [0; 4], [0; 4]);
         }

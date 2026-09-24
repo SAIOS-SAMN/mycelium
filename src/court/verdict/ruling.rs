@@ -50,11 +50,14 @@ impl PartialEq for Ruling {
 impl Eq for Ruling {}
 
 impl Ruling {
-    /// The wire ruling byte this outcome seals and speaks.
+    /// The wire ruling byte this outcome seals and speaks. An attachment
+    /// has no verdict of its own while its producer is not built (EC1,
+    /// RULING_ATTACHED retired): the word is not a base entry, so it rules
+    /// as demoted — it stays dialect and its award evaporates.
     pub fn code(&self) -> u8 {
         match self {
             Ruling::Slashed(_) => dialogue::RULING_SLASHED,
-            Ruling::Attached { .. } => dialogue::RULING_ATTACHED,
+            Ruling::Attached { .. } => dialogue::RULING_DEMOTED,
             Ruling::Consilient(_) | Ruling::Dialect(_) | Ruling::Admitted(_) => dialogue::RULING_UPHELD,
         }
     }

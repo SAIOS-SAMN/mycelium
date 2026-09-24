@@ -41,16 +41,20 @@ impl Treasury {
         if !crate::economy::lanes_short(&self.debit(demander, paid)).is_empty() {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1 });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, at: anchor.0, receipt: anchor.1 });
+        // POWC (78.33): a cited generator paid by the use that cited it.
+        let arm = Some(Arm::Powc);
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, at: anchor.0, receipt: anchor.1, arm });
         self.credit(discoverer, paid);
         paid
     }
 
     /// A SUBSIDY from the pool (system-initiated yields with no payer: the
     /// redundancy probe, bootstrap awards). Bounded by the pool, like all pay.
+    /// No proof of work (78.33 as ruled): a subsidy is a policy ratio
+    /// (MU-ECONOMY §8), and its row carries no arm.
     pub fn settle_subsidy(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(who, mu, anchor)
+        self.mint_to(who, mu, anchor, None)
     }
 
     /// Yield of an optimisation, read on the carriers as a lane vector.
@@ -80,13 +84,14 @@ impl Treasury {
     ///
     /// `None` when the address holds no escrow, or holds one with no voice:
     /// a mint with no party is a mint to nobody, and the escrow stands
-    /// rather than being spent into the void.
-    pub fn release_rewrite(&mut self, addr: &[u8]) -> Option<[u64; 4]> {
+    /// rather than being spent into the void. The mint stands at `at`, the
+    /// act that released it (EC1), never at the escrow's.
+    pub fn release_rewrite(&mut self, addr: &[u8], at: Anchor) -> Option<[u64; 4]> {
         let row = self.escrowed.get(addr)?;
         if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu, anchor) = (row.voices.clone(), row.mu, row.anchor);
+        let (voices, mu) = (row.voices.clone(), row.mu);
         self.escrowed.remove(addr);
         let n = voices.len() as u64;
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
@@ -107,22 +112,24 @@ impl Treasury {
             // spent; minting zero is not a payment and is not written.
             return Some(share);
         }
+        // POWR (78.33): the compression yield, standing at the act that
+        // released it.
         for v in &voices {
-            self.mint_to(*v, share, anchor);
+            self.mint_to(*v, share, at, Some(Arm::Powr));
         }
         Some(share)
     }
 
     pub fn settle_refine(&mut self, bidder: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(bidder, mu, anchor)
+        self.mint_to(bidder, mu, anchor, Some(Arm::Powr))
     }
 
     pub fn settle_condense(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(discoverer, mu, anchor)
+        self.mint_to(discoverer, mu, anchor, Some(Arm::Powr))
     }
 
     pub fn settle_solve(&mut self, voice: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(voice, mu, anchor)
+        self.mint_to(voice, mu, anchor, Some(Arm::Pouw))
     }
 
     /// 26 AS RULED 2026-09-10 — THE USE OF A CITED GENERATOR IS A SHARE
@@ -172,7 +179,7 @@ impl Treasury {
             for l in 0..4 {
                 left[l] -= paid[l];
             }
-            self.mint_to(*discoverer, paid, anchor);
+            self.mint_to(*discoverer, paid, anchor, Some(Arm::Pouw));
         }
         self.mint_claim(&voices, left, anchor);
         left
@@ -196,7 +203,7 @@ impl Treasury {
             let Ok(who) = <[u8; 32]>::try_from(v.as_ref()) else {
                 continue;
             };
-            self.mint_to(who, share, anchor);
+            self.mint_to(who, share, anchor, Some(Arm::Pouw));
         }
     }
 
@@ -213,12 +220,12 @@ impl Treasury {
             return;
         }
         for v in voices {
-            self.mint_to(*v, share, anchor);
+            self.mint_to(*v, share, anchor, Some(Arm::Pouw));
         }
     }
 
     pub fn settle_torse(&mut self, discoverer: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
-        self.mint_to(discoverer, mu, anchor)
+        self.mint_to(discoverer, mu, anchor, Some(Arm::Pouw))
     }
 
     /// A reading (decomposition) charges the READER what the reading
@@ -276,7 +283,7 @@ impl Treasury {
             let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
             return ([0; 4], short);
         }
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
         (paid, short)
     }
 
@@ -313,7 +320,7 @@ impl Treasury {
             let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
             return ([0; 4], short);
         }
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
         (paid, short)
     }
 

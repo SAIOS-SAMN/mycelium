@@ -27,7 +27,7 @@ fn commits(kind: crate::chronometry::ActKind) -> bool {
     matches!(
         kind,
         crate::chronometry::ActKind::Install
-            | crate::chronometry::ActKind::Ruling
+            | crate::chronometry::ActKind::Ruling(_)
             | crate::chronometry::ActKind::Adopted
     )
 }

@@ -73,6 +73,8 @@ impl Kernel {
         }
         self.admitted_at.insert_shared(addr.shared(), at);
         self.held_at.insert(at.key(), addr.clone());
+        // EC1: a peer's ruling that waited on this stamp is heard now.
+        self.rehear_rulings(&at);
     }
 
     /// A word left every row: its admitting stamp leaves with it.

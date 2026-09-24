@@ -276,10 +276,17 @@ pub struct Kernel {
     /// the same tick, so the close was withheld (78.23 as amended). Since
     /// boot.
     pub(crate) withheld: u64,
-    /// ACT1 (EC1) — Ruling receipts admitted whose citation names a word
-    /// this court holds, and rulings whose economy applied here: per node,
-    /// since boot.
-    pub(crate) rulings: [u64; 2],
+    /// ACT1 (EC1) — PEERS' RULINGS ON THIS COURT'S BOOK, per ruling arm
+    /// (`Ruled::index`): `[admitted, applied, awaiting, refused]`, where
+    /// admitted = applied + awaiting + refused. Admitted counts a peer's
+    /// Ruling receipt on a word this court can rule; awaiting is a level,
+    /// the rulings held on an unheld citation; refused counts rulings whose
+    /// replay did not re-derive (78.9). Per node, since boot.
+    pub(crate) rulings: [[u64; 4]; 4],
+    /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
+    /// keyed by the unheld cite's STAMP — the node gives no address — and
+    /// heard again when a word is filed at that stamp (`file_admitted`).
+    pub(crate) awaiting_rulings: crate::network::nerve::Keyed<Vec<crate::chronometry::KStepReceipt>>,
     /// ACT1 (78.21(2)) — the stamp's height and `K` at which this court's
     /// snapshot was last written whole, noted after the write lands.
     pub(crate) persisted: Option<(u64, u64)>,
@@ -403,9 +410,8 @@ pub struct Kernel {
     pub(crate) pressure_sum: [u64; 4],
     /// Listings standing on each lane, for eviction candidates.
     pub(crate) lane_listings: [crate::network::nerve::Keyed<()>; 4],
-    /// Anchor evidence/mismatch membership keyed by address+footprint.
+    /// Anchor evidence membership keyed by address+footprint.
     pub(crate) evidence_at: crate::network::nerve::Keyed<()>,
-    pub(crate) mismatch_at: crate::network::nerve::Keyed<()>,
     /// SELECTION-FIBER CRITICAL PAIRS (Step 7): Q_anchor residuals — a word's
     /// substance matched a defect but its π refused the support. (word address,
     /// the symmetric difference, the scene it arose in). The court's admission
@@ -582,12 +588,11 @@ impl Kernel {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
-                // EC1: a peer's ruling on a word this court holds, located
-                // by the stamp its citation names.
-                if r.kind == crate::chronometry::ActKind::Ruling
-                    && r.cites.iter().any(|c| self.word_admitted_at(&c.at()).is_some())
-                {
-                    self.rulings[0] += 1;
+                // EC1: a peer's ruling applies at the node that admits its
+                // receipt, through the receipt path — the arm its kind
+                // carries, on the word its citation locates here.
+                if let crate::chronometry::ActKind::Ruling(arm) = r.kind {
+                    self.hear_ruling(r, arm);
                 }
             }
             crate::court::admission::Admitted::Equivocation { at, .. } => {

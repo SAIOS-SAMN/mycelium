@@ -410,65 +410,6 @@ impl Kernel {
         self.court_voice = Some(voice);
     }
 
-    /// APPLY an attach ruling: the court connected `sibling` to `base` by
-    /// the transport g. A provisional listing of the sibling clears with its
-    /// award evaporating (it is not a base word). When both words are held
-    /// here and g carries the sibling onto the base, the sibling transports
-    /// into the bundle as a section and its card retires — its discoverer
-    /// earns the section subsidy when the fibre gained volume. Returns the
-    /// cards retired (0 or 1).
-    pub fn apply_attach(
-        &mut self,
-        sibling: &[u8],
-        base: &[u8],
-        g: &element::Versor,
-    ) -> usize {
-        if self.provisional.remove(sibling).is_some() {
-            let _ = self.treasury.revoke_award(sibling, false);
-        }
-        let Some(base_pos) = self.basis.get(base).map(|w| element::positions(w.sub())) else {
-            return 0;
-        };
-        let Some(sib) = self.basis.get(sibling).map(|w| (**w).clone()) else {
-            return 0;
-        };
-        if element::pullback(&base_pos, sib.sub(), g).is_none() {
-            return 0;
-        };
-        let Some(disc) = self.discoverer_of(sibling) else {
-            return 0;
-        };
-        // A base the basis does not hold gains nothing: nothing was
-        // attached to it.
-        let gained = match self.word_mut(base) {
-            Some(w) => w.update(|e| e.attach(&sib, g)),
-            None => 0,
-        };
-        self.touch_at(base);
-        self.basis_remove(sibling);
-        if gained > 0 {
-            if let Some(after) = self.basis.get(base).map(|w| (**w).clone()) {
-                let payload = crate::transducer::rewrite::RewritePayload::Condense {
-                    sections: after.sections().to_vec(),
-                    gauge: g.clone(),
-                };
-                let _ = self.mint_rewrite(
-                    crate::transducer::rewrite::RewriteKind::Condense,
-                    std::slice::from_ref(&sib),
-                    &after,
-                    payload,
-                    disc,
-                );
-                self.torse_at(base);
-            }
-        }
-        // The attached sibling lives on as the base's section, not on a row
-        // of its own: its admitting stamp leaves with it (78.24).
-        self.forget_if_unheld(sibling);
-        self.physics.syntropy(&[0, 0, 1, 0]);
-        1
-    }
-
     /// SETTLE A PROBE: the replayed residual of an open listing against the
     /// speaker's sentence. Closure (empty residual) of a fibre section or a
     /// connection listing pays morphism deflation; a tape covering pays
@@ -536,15 +477,6 @@ impl Kernel {
             } else {
                 [0; 4]
             };
-            for cite in cites {
-                let addr = &cite.addr;
-                if let Some(w) = self.basis.get(addr) {
-                    let mag = w.magnitude();
-                    if let Some(disc) = self.discoverer_of(addr) {
-                        self.treasury.settle_use(voice, disc, mag, anchor);
-                    }
-                }
-            }
             for chart in charts {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &[0; 4]);
                 if let Some(g) = cite_g.clone() {
@@ -558,6 +490,18 @@ impl Kernel {
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
             self.append_after_removal(crate::chronometry::ActKind::Settled, target, cite, voice);
+            // EC1: every cited generator's use is paid AT the Settled act
+            // that carries it (POWC), sealed first.
+            let settled = self.anchor();
+            for cite in cites {
+                let addr = &cite.addr;
+                if let Some(w) = self.basis.get(addr) {
+                    let mag = w.magnitude();
+                    if let Some(disc) = self.discoverer_of(addr) {
+                        self.treasury.settle_use(voice, disc, mag, settled);
+                    }
+                }
+            }
             return (PROBE_CLOSED, paid, [0; 4]);
         }
         let mut listed = listing.sub().to_vec();

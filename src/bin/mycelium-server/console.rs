@@ -208,6 +208,7 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
                 Reading::Phase(p) => phase(p),
                 Reading::Carriage(c) => carriage(c),
                 Reading::Clock(c) => clock(c),
+                Reading::Economy(e) => economy(e),
             });
         }
     }
@@ -281,6 +282,18 @@ fn orbits(o: &observe::Orbits) -> String {
     out
 }
 
+/// EC1, 78.33 — A COURT'S PAYMENTS BY PROOF OF WORK: each arm on its own
+/// four lanes, paid and burned, never summed across arms.
+fn economy(e: &observe::Economy) -> Vec<String> {
+    mycelium::economy::Arm::ALL
+        .iter()
+        .map(|arm| {
+            let i = arm.index();
+            format!("  {BOLD}{:<12}{RESET}paid {:?}  burned {:?}", arm.name(), e.paid[i], e.burned[i])
+        })
+        .collect()
+}
+
 /// ACT1 — ONE NODE ON THE CLOCK, and its three counts.
 fn clock(c: &observe::Clock) -> Vec<String> {
     // A persist above where the node now stands is a count that went
@@ -303,11 +316,30 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 c.peers.iter().map(|(vk, ph, gap)| format!("{} h {ph} gap {gap}", short(vk))).collect();
             let [ub, up, ul, uc, uf] = c.unstamped;
             let unstamped = format!("basis {ub}  provisional {up}  listing {ul}  cavity {uc}  federation {uf}");
-            let [admitted, applied] = c.rulings;
-            let rulings = format!("rulings admitted {admitted}  applied {applied}");
             let flag = |bad: bool, s: String| match bad {
                 true => format!("{YELLOW}{s}{RESET}"),
                 false => s,
+            };
+            // EC1: per ruling arm, admitted = applied + awaiting + refused;
+            // an arm with none admitted says nothing. A refusal is flagged.
+            let arms: Vec<String> = mycelium::chronometry::Ruled::ALL
+                .iter()
+                .filter_map(|arm| {
+                    let [admitted, applied, awaiting, refused] = c.rulings[arm.index()];
+                    (admitted > 0).then(|| {
+                        flag(
+                            refused > 0,
+                            format!(
+                                "{} admitted {admitted} applied {applied} awaiting {awaiting} refused {refused}",
+                                arm.name()
+                            ),
+                        )
+                    })
+                })
+                .collect();
+            let rulings = match arms.is_empty() {
+                true => format!("{DIM}no peer ruling admitted{RESET}"),
+                false => format!("rulings {}", arms.join("  ")),
             };
             vec![
                 format!("  {BOLD}genesis{RESET}     {genesis}"),
@@ -319,7 +351,7 @@ fn clock(c: &observe::Clock) -> Vec<String> {
                 format!("  {BOLD}folded{RESET}      {}", since(c.folded, h, c.k)),
                 format!("  {BOLD}unframed{RESET}    {}", flag(c.unframed > 0, format!("{} acts sealed on a word nothing measured", c.unframed))),
                 format!("  {BOLD}unstamped{RESET}   {}", flag(ub + up + ul + uc + uf > 0, unstamped)),
-                format!("  {BOLD}economy{RESET}     {}", flag(admitted > applied, rulings)),
+                format!("  {BOLD}economy{RESET}     {rulings}"),
             ]
         }
         observe::Clock::Voice(v) => vec![

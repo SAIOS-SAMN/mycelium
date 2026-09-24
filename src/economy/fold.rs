@@ -152,7 +152,7 @@ impl Treasury {
         let epochs: Vec<Entry> = nets
             .rows
             .iter()
-            .map(|&(who, mu)| Entry { kind: Kind::Epoch, who, mu, at: anchor.0, receipt: anchor.1 })
+            .map(|&(who, mu)| Entry { kind: Kind::Epoch, who, mu, at: anchor.0, receipt: anchor.1, arm: None })
             .collect();
         let before = std::mem::take(&mut self.entries);
         let (issued, burned) = (self.issued, self.burned);

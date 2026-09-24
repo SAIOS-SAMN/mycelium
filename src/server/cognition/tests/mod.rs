@@ -25,3 +25,4 @@ mod phase;
 mod receiver;
 mod relator;
 mod room;
+mod ruling;

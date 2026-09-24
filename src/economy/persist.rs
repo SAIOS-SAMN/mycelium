@@ -8,10 +8,11 @@
 use super::*;
 
 impl Entry {
-    /// One row's tape: `[tag u8][who 32][μ⃗ 4×u64][stamp 48][receipt 32]`,
-    /// 145 bytes — the one layout the ledger, the snapshot and the wire
-    /// (`ACT_ROWS`) share. The stamp is the act the row stands at (78.24).
-    pub const TAPE: usize = 1 + 32 + 32 + crate::chronometry::Stamp::LEN + 32;
+    /// One row's tape: `[tag u8][arm u8][who 32][μ⃗ 4×u64][stamp 56][receipt
+    /// 32]`, 154 bytes — the one layout the ledger, the snapshot and the
+    /// wire (`ACT_ROWS`) share. The stamp is the act the row stands at
+    /// (78.24); the arm the proof of work it pays (78.33).
+    pub const TAPE: usize = 1 + 1 + 32 + 32 + crate::chronometry::Stamp::LEN + 32;
 
     /// One tag per kind, and the match is exhaustive: a kind that could not
     /// be written would not compile, where a string match once fell
@@ -31,6 +32,7 @@ impl Entry {
             Kind::Epoch => 22,
         };
         out.push(tag);
+        out.push(Arm::to_byte(self.arm));
         out.extend_from_slice(&self.who);
         for m in &self.mu {
             out.extend_from_slice(&m.to_le_bytes());
@@ -61,6 +63,8 @@ impl Entry {
             22 => Kind::Epoch,
             _ => return None,
         };
+        let arm = Arm::from_byte(*b.get(*pos)?)?;
+        *pos += 1;
         let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
         let mut mu = [0u64; 4];
@@ -71,7 +75,7 @@ impl Entry {
         let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
         let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        Some(Entry { kind, who, mu, at, receipt })
+        Some(Entry { kind, who, mu, at, receipt, arm })
     }
 }
 

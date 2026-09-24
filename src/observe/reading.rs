@@ -36,11 +36,13 @@ pub const TAG_PROGRESS: u8 = 12;
 pub const TAG_PHASE: u8 = 13;
 pub const TAG_CARRIAGE: u8 = 14;
 pub const TAG_CLOCK: u8 = 15;
+pub const TAG_ECONOMY: u8 = 16;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 15] = [
+pub const READING_NAMES: [(&str, u8); 16] = [
     ("clock", TAG_CLOCK),
+    ("economy", TAG_ECONOMY),
     ("planes", TAG_PLANES),
     ("loss", TAG_LOSS),
     ("memory", TAG_MEMORY),
@@ -597,6 +599,8 @@ pub enum Reading {
     /// ACT1 — a node on the TUniversal clock, with its three counts
     /// (78.21, 78.27(1), EC1).
     Clock(super::Clock),
+    /// EC1, 78.33 — a court's payments by proof of work, per lane.
+    Economy(super::Economy),
 }
 
 impl Reading {
@@ -617,6 +621,7 @@ impl Reading {
             Reading::Phase(_) => TAG_PHASE,
             Reading::Carriage(_) => TAG_CARRIAGE,
             Reading::Clock(_) => TAG_CLOCK,
+            Reading::Economy(_) => TAG_ECONOMY,
         }
     }
 
@@ -650,6 +655,9 @@ impl Reading {
             (Reading::Carriage(a), Reading::Carriage(b)) => *a = b.clone(),
             // A node's clock is where it stands now; the later stands.
             (Reading::Clock(a), Reading::Clock(b)) => *a = b.clone(),
+            // A court's economy is read off its journal whole; the later
+            // stands.
+            (Reading::Economy(a), Reading::Economy(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -674,6 +682,7 @@ impl Reading {
             Reading::Phase(r) => r.put(out),
             Reading::Carriage(r) => r.put(out),
             Reading::Clock(r) => r.put(out),
+            Reading::Economy(r) => r.put(out),
         }
     }
 
@@ -696,6 +705,7 @@ impl Reading {
             TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
             TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
             TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
+            TAG_ECONOMY => Some(Reading::Economy(super::Economy::take(b, p)?)),
             _ => None,
         }
     }

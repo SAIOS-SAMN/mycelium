@@ -80,14 +80,14 @@ fn every_axis_of_loss_is_read_by_name() {
 #[test]
 fn every_source_stands_on_tuniversal_before_any_reading() {
     use mycelium::observe::{Clock, CourtClock, VoiceClock};
-    let court = Clock::Court(CourtClock {
+    let court = Clock::Court(Box::new(CourtClock {
         k: 13,
         head: [40, 1, 0, 2, 0, 12, 0],
         unframed: 2,
         unstamped: [1, 0, 0, 0, 0],
-        rulings: [3, 1],
+        rulings: [[3, 1, 2, 0], [0; 4], [0; 4], [1, 0, 0, 1]],
         ..CourtClock::default()
-    });
+    }));
     let voice = Clock::Voice(VoiceClock { k: 7, heard: 35, persisted: Some((30, 5)), ..VoiceClock::default() });
     let held = vec![
         (Source::Court([1; 32]).key(Reading::Clock(court.clone()).tag()), Reading::Clock(court)),
@@ -101,6 +101,8 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
     assert!(out.contains("h 35") && out.contains("K 7"), "{out}");
     assert!(out.contains("h 35..40  (5 heights)"), "the spread, in heights only: {out}");
     assert!(out.contains("2 acts sealed on a word nothing measured"), "{out}");
-    assert!(out.contains("basis 1") && out.contains("rulings admitted 3  applied 1"), "{out}");
+    assert!(out.contains("basis 1") && out.contains("upheld admitted 3 applied 1 awaiting 2 refused 0"), "{out}");
+    assert!(out.contains("retired admitted 1 applied 0 awaiting 0 refused 1"), "a refused retirement is named: {out}");
+    assert!(!out.contains("demoted admitted"), "an arm with none admitted says nothing: {out}");
     assert!(out.contains("at h 30 K 5  (5 heights, 2 K since)"), "the genome's persist, by height and K: {out}");
 }

@@ -179,8 +179,8 @@ impl Kernel {
     /// court's clock authored by the bidder.
     fn retire_by_bid(&mut self, addr: &[u8], candidate: &Element, bidder: [u8; 32], cites: Vec<Address>) -> [u64; 4] {
         let saved = candidate.magnitude();
-        let payload = crate::transducer::rewrite::RewritePayload::Retire { cites, freed: saved };
-        let _ = self.mint_rewrite(
+        let payload = crate::transducer::rewrite::RewritePayload::Retire { cites: cites.clone(), freed: saved };
+        let rewrite = self.mint_rewrite(
             crate::transducer::rewrite::RewriteKind::Retire,
             std::slice::from_ref(candidate),
             candidate,
@@ -188,11 +188,32 @@ impl Kernel {
             bidder,
         );
         // 78.24 (2c): the word is cited as it stood, read before it leaves.
-        let cite = self.cite_of(addr);
+        let retired = self.cite_of(addr);
         self.basis_remove(addr);
         self.physics.syntropy(&saved);
-        self.append_after_removal(crate::chronometry::ActKind::Ruling, addr, cite, bidder);
+        self.seal_retirement(addr, retired, rewrite, &cites, bidder);
         saved
+    }
+
+    /// EC1 — A RETIREMENT IS A RULING, sealed as `Ruling(Retired)` citing
+    /// what a court admitting its receipt needs to replay it (78.33, as
+    /// ruled): the retired word as it stood, then the rewrite it rests on
+    /// and every word that speaks for it, each by its fiber and admitting
+    /// stamp. A cite this court cannot write — a word no act admitted — is
+    /// not invented. A word left on no row takes its stamp with it.
+    pub(crate) fn seal_retirement(
+        &mut self,
+        addr: &[u8],
+        retired: Option<crate::chronometry::Cite>,
+        rewrite: Option<Address>,
+        speakers: &[Address],
+        author: [u8; 32],
+    ) {
+        let mut cites: Vec<crate::chronometry::Cite> = retired.into_iter().collect();
+        cites.extend(rewrite.iter().chain(speakers).filter_map(|a| self.cite_of(a.as_bytes())));
+        let mu = self.frame_of(addr);
+        self.append_cited(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Retired), cites, mu, author);
+        self.forget_if_unheld(addr);
     }
 
     /// GENOME SYNCHRONIZATION, commit step (operator-ruled: servers hold no
@@ -469,37 +490,6 @@ impl Kernel {
         true
     }
 
-    /// REBIND (Step 7c): the court's family-derived π* upgrades γ = (⊤, Δ) →
-    /// (π*, Δ) in place — canonical substance identity untouched (the address
-    /// is BASE-only), the dual condition activates for this word, and the
-    /// word's spent evidence/mismatch queues clear. Returns false for an
-    /// unknown address.
-    pub fn apply_rebind(&mut self, addr: &[u8], pi: crate::transducer::anchor::Sel) -> bool {
-        let mut bound = false;
-        if let Some(held) = self.basis.get(addr).map(|w| w.element().clone()) {
-            let rebound = crate::transducer::element::Held::of(held.with_anchor(pi.clone()));
-            self.basis.insert(addr, std::sync::Arc::new(rebound));
-            self.touch_at(addr);
-            bound = true;
-        }
-        // A germ still awaiting its witness accepts the bind too — it
-        // installs already anchored (evidence often reaches family size
-        // before the witness re-derivation lands).
-        if let Some(elem) = self.pending.get(addr).cloned() {
-            self.pending.insert(addr, elem.with_anchor(pi));
-            self.book_gen += 1;
-            bound = true;
-        }
-        if bound {
-            // Spent critical pairs clear (they argued against the OLD π);
-            // EVIDENCE PERSISTS — the family keeps growing so the court can
-            // re-refine iteratively: loose early carriers tighten as more
-            // witnessed placements accumulate (rebinding is never one-shot).
-            self.mismatch_at.remove(addr);
-            self.anchor_mismatches.retain(|e| e.addr.as_bytes() != addr);
-        }
-        bound
-    }
 
     /// ENROLL an identity with a per-lane bond. The hypha enrolls itself
     /// from genesis or from a restored stake; arriving voices stay unbonded

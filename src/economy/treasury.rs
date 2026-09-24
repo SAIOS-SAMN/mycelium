@@ -88,12 +88,70 @@ pub struct Entry {
     pub at: crate::chronometry::Stamp,
     /// That act's chain hash (the unforgeable temporal binding).
     pub receipt: [u8; 32],
+    /// The proof of work this row pays (78.33), or none.
+    pub arm: Option<Arm>,
 }
 
 impl Entry {
     /// The place of the act this row stands at (see [`stands_at`]).
     pub fn stands_at(&self) -> Option<crate::chronometry::Place> {
         stands_at(&(self.at, self.receipt))
+    }
+}
+
+/// 78.33 — THE PROOF OF WORK A PAYMENT ROW CARRIES, named apart and never
+/// summed across: POUW, a closure ruled and its deflation minted to the
+/// closer; POWC, a cited generator paid by the use that cited it; POWR, a
+/// retirement's compression yield paid to the retirer. A row that moves
+/// no proof of work — genesis, a stake, an escrow, a revoke or slash, a
+/// burn, a fee, a subsidy — carries none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Arm {
+    Pouw,
+    Powc,
+    Powr,
+}
+
+impl Arm {
+    /// Every arm, in the order the readings are carried.
+    pub const ALL: [Arm; 3] = [Arm::Pouw, Arm::Powc, Arm::Powr];
+
+    /// The arm as its coordinate on the row: `1..=3`, `0` for none.
+    pub fn to_byte(arm: Option<Arm>) -> u8 {
+        match arm {
+            None => 0,
+            Some(Arm::Pouw) => 1,
+            Some(Arm::Powc) => 2,
+            Some(Arm::Powr) => 3,
+        }
+    }
+
+    /// The arm a byte names; a byte naming none refuses the row.
+    pub fn from_byte(b: u8) -> Option<Option<Arm>> {
+        Some(match b {
+            0 => None,
+            1 => Some(Arm::Pouw),
+            2 => Some(Arm::Powc),
+            3 => Some(Arm::Powr),
+            _ => return None,
+        })
+    }
+
+    /// Where the arm is carried in a per-arm reading.
+    pub fn index(self) -> usize {
+        match self {
+            Arm::Pouw => 0,
+            Arm::Powc => 1,
+            Arm::Powr => 2,
+        }
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Arm::Pouw => "POUW",
+            Arm::Powc => "POWC",
+            Arm::Powr => "POWR",
+        }
     }
 }
 
@@ -204,7 +262,7 @@ impl Treasury {
         {
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Stake, who, mu: add, at: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Stake, who, mu: add, at: anchor.0, receipt: anchor.1, arm: None });
         } else if self.stakes.get(&who).is_none() {
             self.stakes.insert(who, held);
         }
@@ -227,7 +285,7 @@ impl Treasury {
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
         self.stakes.insert(who, next);
         self.credit(who, back);
-        self.write(Entry { kind: Kind::Unstake, who, mu: back, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Unstake, who, mu: back, at: anchor.0, receipt: anchor.1, arm: None });
         self.refresh_bond();
         back
     }
@@ -376,6 +434,36 @@ impl Treasury {
         Some(m)
     }
 
+    /// EC1, 78.33 — WHAT EACH PROOF OF WORK PAID AND BURNED, per lane, read
+    /// off the journal at the question and never stored beside it (law 12).
+    /// A mint of an arm is paid; a burn of an arm is burned. A POWC use is
+    /// ONE transfer written as TWO equal rows, its debit and its credit, so
+    /// the arm's transfer rows read in pairs and the paid is one of each pair
+    /// — exact, since every pair is two equal vectors. `None` where a lane
+    /// passes its u64: unmeasured, never saturated (rule 11).
+    pub fn economy(&self) -> Option<crate::observe::Economy> {
+        let mut e = crate::observe::Economy::default();
+        let mut moved = [[0u64; 4]; 3];
+        for row in &self.entries {
+            let Some(arm) = row.arm else { continue };
+            let into = match row.kind {
+                Kind::Mint => &mut e.paid[arm.index()],
+                Kind::Burn => &mut e.burned[arm.index()],
+                Kind::Transfer => &mut moved[arm.index()],
+                _ => continue,
+            };
+            for (t, m) in into.iter_mut().zip(&row.mu) {
+                *t = t.checked_add(*m)?;
+            }
+        }
+        for (paid, pairs) in e.paid.iter_mut().zip(&moved) {
+            for (t, m) in paid.iter_mut().zip(pairs) {
+                *t = t.checked_add(m / 2)?;
+            }
+        }
+        Some(e)
+    }
+
     /// A finite, signed allocation at genesis. Its own kind, never a mint:
     /// §6 requires seeded value and earned value to stay separable, and a
     /// testnet differs from the beta only in this term.
@@ -383,7 +471,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Genesis, who, mu, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Genesis, who, mu, at: anchor.0, receipt: anchor.1, arm: None });
         self.credit(who, mu);
         mu
     }
@@ -414,7 +502,7 @@ impl Treasury {
         {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Burn, who, mu: took, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
         took
     }
 
@@ -459,11 +547,13 @@ impl Treasury {
         Ok(issued)
     }
 
-    pub(crate) fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor) -> [u64; 4] {
+    /// A MINT to `who`, standing at the act that minted it and carrying the
+    /// proof of work it pays (78.33) — none for a subsidy.
+    pub(crate) fn mint_to(&mut self, who: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1, arm });
         self.credit(who, mu);
         eprintln!(
             "  mint {:02x}{:02x}… μ⃗ {mu:?} at K {} h {}",

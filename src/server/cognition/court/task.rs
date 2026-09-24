@@ -70,20 +70,28 @@ impl Kernel {
             Some(l) => l.clone(),
             None => Vec::new(),
         };
+        // EC1: each bound listing's release is a Settled act citing that
+        // listing, authored by the solving voice and sealed first; its POUW
+        // rows stand at it, never at the act that escrowed the listing.
         let mut paid = [0u64; 4];
-        let anchor = self.anchor();
         for addr in &listings {
-            if let Some(crate::economy::escrow::Escrowed { mu: held, anchor: a, .. }) =
-                self.treasury.release_award(addr)
-            {
-                let take = self.treasury.settle_solve(voice, held, a);
+            if self.treasury.escrow_of(addr.as_bytes()).is_none() {
+                continue;
+            }
+            self.append_step(crate::chronometry::ActKind::Settled, addr, voice);
+            let settled = self.anchor();
+            if let Some(crate::economy::escrow::Escrowed { mu: held, .. }) = self.treasury.release_award(addr) {
+                let take = self.treasury.settle_solve(voice, held, settled);
                 for l in 0..4 {
                     paid[l] = paid[l].saturating_add(take[l]);
                 }
             }
         }
         if paid.iter().all(|&x| x == 0) {
-            return self.treasury.settle_solve(voice, mu, anchor);
+            // No listing binds: the solve settles the task itself.
+            self.append_step(crate::chronometry::ActKind::Settled, task, voice);
+            let settled = self.anchor();
+            return self.treasury.settle_solve(voice, mu, settled);
         }
         paid
     }

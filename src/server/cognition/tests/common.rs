@@ -114,6 +114,30 @@ pub fn verified<'a>(
         .expect("a key verifies its own signature over its own prefix")
 }
 
+/// A PEER'S LINE ADMITTED on `k` as its receipts would arrive: each one's
+/// 47.1 prefix signed by `key` and admitted under origin `([7; 32], 2)`,
+/// in line order. Answers what each admission came to.
+pub fn admit_line(
+    k: &mut Kernel,
+    key: &crate::court::identity::HyphaKey,
+    line: &[crate::chronometry::KStepReceipt],
+) -> Vec<crate::court::admission::Admitted> {
+    line.iter()
+        .map(|r| {
+            let pre = crate::court::admission::SignedPrefix {
+                genesis: [7; 32],
+                epoch: 2,
+                prev_receipt_hash: r.prev_hash(),
+                at: r.stamp.place(),
+                height: r.stamp.h,
+                chart: vec![],
+                payload: r.stamp.key(),
+            };
+            k.admit_receipt(([7; 32], 2), verified(&pre, key), r)
+        })
+        .collect()
+}
+
 pub fn digits(rows: &[&str]) -> Vec<Vec<u8>> {
 rows.iter()
     .map(|r| r.bytes().map(|b| b - b'0').collect())

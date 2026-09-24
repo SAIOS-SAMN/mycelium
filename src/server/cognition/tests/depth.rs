@@ -92,7 +92,7 @@ fn one_signer_acting_twice_is_still_one_vantage() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
-    for kind in [ActKind::Install, ActKind::Ruling] {
+    for kind in [ActKind::Install, ActKind::Ruling(crate::chronometry::Ruled::Upheld)] {
         let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
         k.note_attestor(&r);
     }

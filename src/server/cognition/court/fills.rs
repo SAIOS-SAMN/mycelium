@@ -205,8 +205,15 @@ impl Kernel {
             return;
         }
         let vol = share;
-        let anchor = self.anchor();
+        let me = self.identity;
         for (a, _) in held.scoped() {
+            // EC1: each drawn escrow is a Settled act of this court citing
+            // the escrow's listing, sealed first; its POUW rows stand at it.
+            if self.treasury.escrow_of(&a).is_none() {
+                continue;
+            }
+            self.append_step(crate::chronometry::ActKind::Settled, &a, me);
+            let anchor = self.anchor();
             for v in &parties {
                 let _ = self.treasury.draw_escrow(&a, *v, vol, anchor);
             }
@@ -220,7 +227,11 @@ impl Kernel {
     /// is unmeasured and is paid nothing, never paid another member's
     /// reading (rule 11, 15).
     pub(crate) fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A]) {
-        let anchor = self.anchor();
+        // EC1: the torsion paid is a Settled act of this court citing the
+        // simplex's filed word — its least address by key, the head the
+        // callers hand over (see `file_torsion`) — sealed first; its POUW
+        // rows stand at it.
+        let [filed, ..] = addrs else { return };
         let parties: Vec<([u8; 32], [u64; 4])> = addrs
             .iter()
             .filter_map(|a| {
@@ -229,6 +240,14 @@ impl Kernel {
                 Some((who, mag))
             })
             .collect();
+        // A simplex no member of which measured a tension pays nothing and
+        // seals nothing.
+        if parties.is_empty() {
+            return;
+        }
+        let me = self.identity;
+        self.append_step(crate::chronometry::ActKind::Settled, filed.as_ref(), me);
+        let anchor = self.anchor();
         for (who, mag) in parties {
             let _ = self.treasury.settle_torse(who, mag, anchor);
         }

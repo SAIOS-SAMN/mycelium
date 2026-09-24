@@ -338,10 +338,13 @@ impl Kernel {
                 // witness; the act admits the word, and its stamp is the
                 // word's `admitted_at`. It held the word at no act before.
                 self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
-                if let Some(crate::economy::escrow::Escrowed { voices, mu, anchor }) =
+                // EC1: the released claim is minted AT the Install that
+                // carries it (POUW), never at the act that escrowed it.
+                let installed = self.anchor();
+                if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) =
                     self.treasury.release_award(&addr)
                 {
-                    self.treasury.mint_claim(&voices, mu, anchor);
+                    self.treasury.mint_claim(&voices, mu, installed);
                 }
                 self.unlist(&addr, false);
                 self.provisional.remove(&addr);

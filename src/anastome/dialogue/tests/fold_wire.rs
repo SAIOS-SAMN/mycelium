@@ -72,6 +72,7 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
             mu: [i as u64, 0, 0, 0],
             at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3, i: 0 },
             receipt: [0; 32],
+            arm: [None, Some(crate::economy::Arm::Pouw), Some(crate::economy::Arm::Powr)][i as usize],
         })
         .collect();
     let all = encode_rows_reply(7, &rows, 1 << 16);

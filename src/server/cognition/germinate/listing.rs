@@ -276,11 +276,17 @@ impl Kernel {
                 voice[0], voice[1], short[l]
             );
         }
-        if let Some(w) = self.language.word_at(at.as_bytes()) {
-            let held = w.magnitude();
-            if let Some(disc) = self.discoverer_of(&w.address()) {
-                self.treasury.settle_use(voice, disc, held, anchor);
-            }
+        let used = self
+            .language
+            .word_at(at.as_bytes())
+            .map(|w| (w.magnitude(), w.address()))
+            .and_then(|(held, addr)| Some((held, self.discoverer_of(&addr)?)));
+        if let Some((held, disc)) = used {
+            // EC1: the use of a cited word is a Settled act of this court,
+            // sealed first, and its POWC rows stand at it.
+            self.append_step(crate::chronometry::ActKind::Settled, at, voice);
+            let settled = self.anchor();
+            self.treasury.settle_use(voice, disc, held, settled);
         }
         self.physics.syntropy(mag);
         Outcome::Decomposed(vec![at.clone()])

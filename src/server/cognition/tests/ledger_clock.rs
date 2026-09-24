@@ -345,5 +345,5 @@ assert!(matches!(
 let c = k.clock(None);
 let own_h = i64::try_from(c.head[0]).expect("a height");
 assert_eq!(c.peers, vec![(key.vk_bytes(), pr.stamp.h, own_h - i64::try_from(pr.stamp.h).expect("a height"))]);
-assert_eq!(c.rulings, [0, 0], "a List is no ruling");
+assert_eq!(c.rulings, [[0; 4]; 4], "a List is no ruling");
 }

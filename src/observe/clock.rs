@@ -47,8 +47,10 @@ pub struct CourtClock {
     /// Words held without an admitting stamp: basis, provisional, listing,
     /// cavity, federation.
     pub unstamped: [u64; 5],
-    /// Ruling receipts admitted, and rulings whose economy applied.
-    pub rulings: [u64; 2],
+    /// EC1 — PEERS' RULINGS ON THIS BOOK, per ruling arm (upheld, demoted,
+    /// slashed, retired): `[admitted, applied, awaiting, refused]`, where
+    /// admitted = applied + awaiting + refused.
+    pub rulings: [[u64; 4]; 4],
     /// Its orbits against the peers' (OK1).
     pub orbits: Orbits,
 }
@@ -119,10 +121,12 @@ pub struct VoiceClock {
     pub orbits: Orbits,
 }
 
-/// ACT1'S READING: a node on the clock, a court or a voice.
+/// ACT1'S READING: a node on the clock, a court or a voice. The court's is
+/// held behind a box: it carries its peers and its rulings per arm, and a
+/// voice's reading does not pay for their room.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Clock {
-    Court(CourtClock),
+    Court(Box<CourtClock>),
     Voice(VoiceClock),
 }
 
@@ -181,7 +185,9 @@ impl Clock {
                 pair(out, c.folded);
                 u64s(out, &[c.unframed]);
                 u64s(out, &c.unstamped);
-                u64s(out, &c.rulings);
+                for arm in &c.rulings {
+                    u64s(out, arm);
+                }
                 c.orbits.put(out);
             }
             Clock::Voice(v) => {
@@ -252,9 +258,14 @@ impl Clock {
                 for v in unstamped.iter_mut() {
                     *v = u64_at(b, p)?;
                 }
-                let rulings = [u64_at(b, p)?, u64_at(b, p)?];
+                let mut rulings = [[0u64; 4]; 4];
+                for arm in rulings.iter_mut() {
+                    for v in arm.iter_mut() {
+                        *v = u64_at(b, p)?;
+                    }
+                }
                 let orbits = Orbits::take(b, p)?;
-                Some(Clock::Court(CourtClock {
+                Some(Clock::Court(Box::new(CourtClock {
                     k,
                     head,
                     genesis,
@@ -265,7 +276,7 @@ impl Clock {
                     unstamped,
                     rulings,
                     orbits,
-                }))
+                })))
             }
             1 => {
                 let (k, heard) = (u64_at(b, p)?, u64_at(b, p)?);

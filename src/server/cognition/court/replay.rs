@@ -21,16 +21,26 @@ impl Kernel {
     /// A word the ruling leaves on no row takes its admitting stamp with it
     /// (78.24), after the Ruling node has cited it.
     pub fn apply_verdict(&mut self, addr: &[u8], ruling: u8) -> bool {
-        let landed = self.rule_on(addr, ruling);
+        let ruler = match self.court_voice {
+            Some(v) => v,
+            None => self.identity,
+        };
+        self.apply_verdict_by(addr, ruling, ruler)
+    }
+
+    /// The verdict applied as authored by `ruler`: the court whose ruling
+    /// this is — a peer's, where its Ruling receipt was admitted here (EC1).
+    pub(crate) fn apply_verdict_by(&mut self, addr: &[u8], ruling: u8, ruler: [u8; 32]) -> bool {
+        let landed = self.rule_on(addr, ruling, ruler);
         self.forget_if_unheld(addr);
         landed
     }
 
-    fn rule_on(&mut self, addr: &[u8], ruling: u8) -> bool {
-        use crate::anastome::dialogue::{RULING_DEMOTED, RULING_SLASHED, RULING_UPHELD};
-        if !matches!(ruling, RULING_UPHELD | RULING_DEMOTED | RULING_SLASHED) {
+    fn rule_on(&mut self, addr: &[u8], ruling: u8, ruler: [u8; 32]) -> bool {
+        use crate::anastome::dialogue::{RULING_SLASHED, RULING_UPHELD};
+        let Some(arm) = crate::chronometry::Ruled::of_verdict(ruling) else {
             return false;
-        }
+        };
         let spoken = self.provisional.get(addr).cloned();
         // 78.24 (2c): the word is cited as it stood, read before it leaves
         // the provisional row.
@@ -49,23 +59,18 @@ impl Kernel {
         // is removed and rule nothing, so they seal nothing; past the
         // removal every arm has already changed what this court holds, the
         // rewrite arm's `return false` included. The author is the court
-        // whose verdict this is (`set_court_voice`, 47.2), and this court
-        // itself when it is ruling on its own stroke.
-        // This court when no other voice authored the verdict.
-        let ruler = match self.court_voice {
-            Some(v) => v,
-            None => self.identity,
-        };
+        // whose verdict this is (`set_court_voice`, 47.2; a peer's, where
+        // its Ruling receipt was admitted here), and this court itself when
+        // it is ruling on its own stroke. The arm rides the node's kind, so
+        // a court admitting this receipt applies the same arm (EC1).
+        let kind = crate::chronometry::ActKind::Ruling(arm);
         match cite {
             Some(c) => {
                 let mu = self.frame_of(addr);
-                self.append_cited(crate::chronometry::ActKind::Ruling, vec![c], mu, ruler);
+                self.append_cited(kind, vec![c], mu, ruler);
             }
-            None => self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler),
+            None => self.append_step(kind, addr, ruler),
         }
-        // EC1: past the removal every arm moves the economy — a release, a
-        // demotion or a slash — and the reading counts it here.
-        self.rulings[1] += 1;
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
             // cover AND becomes this court's section on the chart (13.9).
@@ -75,7 +80,9 @@ impl Kernel {
                 if w.is_rewrite() {
                     // Every voice the escrow names is paid; an escrow with
                     // no party is not released and the ruling does not land.
-                    if self.treasury.release_rewrite(addr).is_none() {
+                    // EC1: POWR stands at the Ruling act sealed above.
+                    let ruled = self.anchor();
+                    if self.treasury.release_rewrite(addr, ruled).is_none() {
                         return false;
                     }
                     self.retire_rewrite_inputs(&w);
@@ -86,10 +93,11 @@ impl Kernel {
                 }
                 self.fed_admit(addr, w);
             }
-            if let Some(crate::economy::escrow::Escrowed { voices, mu, anchor }) =
-                self.treasury.release_award(addr)
-            {
-                self.treasury.mint_claim(&voices, mu, anchor);
+            // EC1: the claim is minted AT the Ruling act sealed above
+            // (POUW), never at the act that escrowed it.
+            let ruled = self.anchor();
+            if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.treasury.release_award(addr) {
+                self.treasury.mint_claim(&voices, mu, ruled);
             }
             self.unlist(addr, false);
             self.mark_persist();
@@ -270,10 +278,24 @@ impl Kernel {
             };
             if let Some(reason) = self.court_replay(&spoken) {
                 eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
-                let _ = self.treasury.revoke_award(&addr, true);
-                self.redocket_citers_of(&addr);
+                // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
+                // through the verdict, which seals `Ruling(Slashed)`, revokes
+                // and re-dockets its citers; a listing of the book is ruled
+                // by the same act sealed here before its escrow is revoked.
+                let me = self.identity;
+                if self.provisional.contains(&addr) {
+                    self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me);
+                } else {
+                    let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
+                    self.append_step(kind, &addr, me);
+                    let _ = self.treasury.revoke_award(&addr, true);
+                    self.redocket_citers_of(&addr);
+                }
+                // The word keeps its address as a cavity (27); a word left
+                // on no row after that takes its stamp with it.
                 self.relocate_cavity(&addr);
                 self.provisional.remove(&addr);
+                self.forget_if_unheld(&addr);
                 self.court_slashed += 1;
                 continue;
             }

@@ -346,10 +346,19 @@ refusing.bind_task_family(task, wider);
 refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
+let at = refusing.admitted_at(&addr).expect("the docket admitted it at an act");
 refusing.court_stroke(one_stroke_transport);
 assert_eq!(refusing.court_slashed, 1, "the stroke refuses the form on the family it does not close");
 assert!(!refusing.provisional.contains(&addr), "and it leaves the docket");
 assert!(!refusing.ruled_contains(&addr), "never ruled");
+// EC1: A SLASH IS ALWAYS AN ACT — the stroke's own ruling seals
+// `Ruling(Slashed)` citing the word by the stamp that admitted it.
+assert!(
+    refusing.chain().own().any(|r| r.kind
+        == crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed)
+        && r.cites.iter().any(|c| c.at() == at)),
+    "the stroke's slash is a Ruling(Slashed) node citing the word"
+);
 
 let mut ruling = Kernel::new();
 ruling.bind_task_family(task, one_pair);

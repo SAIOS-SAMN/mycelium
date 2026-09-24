@@ -87,12 +87,14 @@ impl Treasury {
             .collect()
     }
 
-    /// A filled triangle releases the escrow of the listings its dialects settled.
-    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A]) -> [u64; 4] {
+    /// A filled triangle releases the escrow of the listings its dialects
+    /// settled, minted AT `at`, the act that released them (EC1), never at
+    /// the acts that escrowed them.
+    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A], at: Anchor) -> [u64; 4] {
         let mut released = [0u64; 4];
         for addr in listings {
-            if let Some(Escrowed { voices, mu, anchor }) = self.release_award(addr.as_ref()) {
-                self.mint_claim(&voices, mu, anchor);
+            if let Some(Escrowed { voices, mu, .. }) = self.release_award(addr.as_ref()) {
+                self.mint_claim(&voices, mu, at);
                 for (r, m) in released.iter_mut().zip(&mu) {
                     *r = r.saturating_add(*m);
                 }
@@ -120,7 +122,7 @@ impl Treasury {
         match voices {
             [] => {}
             [one] => {
-                self.mint_to(*one, mu, anchor);
+                self.mint_to(*one, mu, anchor, Some(Arm::Pouw));
             }
             _ => self.settle_consilience(voices, mu, anchor),
         }
@@ -174,7 +176,7 @@ impl Treasury {
             }
             let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Slash, who, mu: took, at: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Slash, who, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
             out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {
@@ -214,7 +216,7 @@ impl Treasury {
                 *h -= t;
             }
         }
-        self.mint_to(voice, take, anchor)
+        self.mint_to(voice, take, anchor, Some(Arm::Pouw))
     }
 
     #[cfg(test)]

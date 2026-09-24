@@ -108,11 +108,17 @@ fn a_released_rewrite_pays_every_voice_the_escrow_names() {
     let addr = [3u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     t.escrow_award(&super::word(addr), vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
-    let share = t.release_rewrite(&addr).expect("two parties stood it");
+    let released = at(5, [5; 32]);
+    let share = t.release_rewrite(&addr, released).expect("two parties stood it");
     assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
     assert_eq!(t.balance_mu(&[2; 32]), share, "and the one that stood it after");
-    assert!(t.release_rewrite(&addr).is_none(), "the escrow is spent once");
+    let mints: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Mint).collect();
+    assert!(
+        mints.iter().all(|e| (e.at, e.receipt, e.arm) == (released.0, released.1, Some(Arm::Powr))),
+        "each mint stands at the act that released it and pays POWR (78.33, EC1)"
+    );
+    assert!(t.release_rewrite(&addr, released).is_none(), "the escrow is spent once");
 }
 
 /// A mint with no payee is a mint to nobody: an escrow naming no voice
@@ -122,7 +128,7 @@ fn an_escrow_with_no_voice_is_not_released() {
     let mut t = Treasury::new();
     let addr = [4u8; 32];
     t.escrow_award(&super::word(addr), Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
-    assert!(t.release_rewrite(&addr).is_none(), "no party, no release");
+    assert!(t.release_rewrite(&addr, at(5, [5; 32])).is_none(), "no party, no release");
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }
 

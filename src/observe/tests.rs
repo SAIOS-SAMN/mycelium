@@ -39,7 +39,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.
-    let court_clock = Clock::Court(CourtClock {
+    let court_clock = Clock::Court(Box::new(CourtClock {
         k: 13,
         head: [40, 1, 0, 2, 0, 12, 3],
         genesis: Some(([9; 32], 2)),
@@ -48,9 +48,9 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         folded: None,
         unframed: 5,
         unstamped: [1, 0, 2, 0, 3],
-        rulings: [3, 0],
+        rulings: [[3, 1, 1, 1], [0; 4], [2, 2, 0, 0], [1, 0, 1, 0]],
         orbits: Orbits { withheld: 2, distance: vec![(vk(1), [-3, 0, 5, -1])] },
-    });
+    }));
     let voice_clock = Clock::Voice(VoiceClock {
         k: 7,
         heard: 39,
@@ -65,17 +65,20 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         Reading::Court(court),
         Reading::Clock(court_clock),
         Reading::Clock(voice_clock),
+        // EC1 — a court's payments by proof of work, each arm on its own
+        // lanes.
+        Reading::Economy(Economy { paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]], burned: [[0; 4], [0; 4], [0, 0, 0, 3]] }),
     ];
     let push = encode_push(&vk(7), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));
     let entries: Vec<(Vec<u8>, Reading)> =
         all.iter().map(|r| (Source::Voice(vk(7)).key(r.tag()), r.clone())).collect();
     let reply = encode_reply(&entries, usize::MAX);
-    assert_eq!(decode_reply(&reply), Some((6, entries.clone())));
+    assert_eq!(decode_reply(&reply), Some((7, entries.clone())));
     // A reply that cannot hold them all says how many were held.
     let (total, sent) = decode_reply(&encode_reply(&entries, 64)).expect("a short reply still decodes");
-    assert_eq!(total, 6);
-    assert!(sent.len() < 6, "the budget is honoured");
+    assert_eq!(total, 7);
+    assert!(sent.len() < 7, "the budget is honoured");
     // A trailing byte is no act.
     let mut long = encode_query(&[1, 2]);
     long.push(0);

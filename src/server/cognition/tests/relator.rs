@@ -385,7 +385,8 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
                 &relator,
                 payload,
                 voice,
-            ),
+            )
+            .is_some(),
             "the rewrite mints and is docketed"
         );
 
@@ -430,4 +431,78 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
         minted[1].as_bytes(),
         "two courts, one rewrite"
     );
+}
+
+/// A peer's line of one act and its `Ruling(Retired)` citing `cites`.
+fn retirement_line(
+    key: &crate::court::identity::HyphaKey,
+    cites: Vec<crate::chronometry::Cite>,
+) -> Vec<crate::chronometry::KStepReceipt> {
+    use crate::chronometry::{ActKind, ReceiptChain, Ruled};
+    let mut line = ReceiptChain::with_vk(key.vk_bytes());
+    line.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("an act");
+    line.append(ActKind::Ruling(Ruled::Retired), [0; 4], cites, [0; 32], Vec::new()).expect("the retirement");
+    line.own().cloned().collect()
+}
+
+/// EC1 AS RULED — A PEER'S RETIREMENT IS REPLAYED HERE, never trusted and
+/// never dropped. The ruled cover is federated, so a word one court
+/// retires and another keeps would leave two supplies. A court holding the
+/// relator RULED, and the transport that speaks for it, admits a peer's
+/// `Ruling(Retired)` citing both at the stamps it holds them by: its own
+/// replay — the relator decomposes over its basis without itself — re-
+/// derives, the relator retires here onto the cavity book, and the court
+/// seals its own `Ruling(Retired)` with the peer's receipt among its
+/// parents. A court holding the relator alone cannot re-derive it and the
+/// ruling is REFUSED, named and counted; a court that does not hold a cited
+/// speaker WAITS on its stamp. Per arm, admitted = applied + awaiting +
+/// refused.
+#[test]
+fn a_peers_retirement_is_replayed_here_and_applied_refused_or_waiting() {
+    use crate::chronometry::{ActKind, Cite, Ruled};
+    let t = transport(&quarter(1));
+    let relator = transport(&quarter(2));
+    let retired = Ruled::Retired.index();
+    let (r_addr, t_addr) = (relator.address(), t.address());
+
+    let key = super::common::court_key("retirer");
+    // Each court signs under its own key, so no two courts' stamps
+    // coincide: a stamp names one act of one line.
+    let mut b = Kernel::new();
+    b.bind_identity([0xb3; 32]);
+    b.set_court_voice([33; 32]);
+    install(&mut b, [43; 32], &t);
+    install(&mut b, [43; 32], &relator);
+    let r_at = b.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
+    let t_at = b.admitted_at(t_addr.as_bytes()).expect("the transport's stamp");
+    let line = retirement_line(&key, vec![Cite::word(&relator, r_at), Cite::word(&t, t_at)]);
+    super::common::admit_line(&mut b, &key, &line);
+    assert_eq!(b.clock(None).rulings[retired], [1, 1, 0, 0], "replayed and applied");
+    assert!(!b.basis.contains(r_addr.as_bytes()), "the relator retired here");
+    assert!(b.cavity_book.contains(r_addr.as_bytes()), "onto the cavity book, keeping its address");
+    let mine = b.chain().head().expect("b sealed").clone();
+    assert_eq!(mine.kind, ActKind::Ruling(Ruled::Retired), "b seals its own retirement");
+    let [.., last] = line.as_slice() else { panic!("the peer's line") };
+    let theirs = last.stamp;
+    assert!(mine.parents.iter().any(|p| p.at == theirs), "with the peer's receipt among its parents");
+
+    let lone = super::common::court_key("lone retirer");
+    let mut e = Kernel::new();
+    e.bind_identity([0xe4; 32]);
+    e.set_court_voice([34; 32]);
+    install(&mut e, [44; 32], &relator);
+    let e_at = e.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
+    super::common::admit_line(&mut e, &lone, &retirement_line(&lone, vec![Cite::word(&relator, e_at)]));
+    assert_eq!(e.clock(None).rulings[retired], [1, 0, 0, 1], "it does not re-derive here: refused, counted");
+    assert!(e.basis.contains(r_addr.as_bytes()), "and the word stays");
+
+    let early = super::common::court_key("early retirer");
+    let mut w = Kernel::new();
+    w.bind_identity([0x75; 32]);
+    w.set_court_voice([35; 32]);
+    install(&mut w, [45; 32], &relator);
+    let w_at = w.admitted_at(r_addr.as_bytes()).expect("the relator's stamp");
+    let line = retirement_line(&early, vec![Cite::word(&relator, w_at), Cite::word(&t, t_at)]);
+    super::common::admit_line(&mut w, &early, &line);
+    assert_eq!(w.clock(None).rulings[retired], [1, 0, 1, 0], "a speaker w does not hold: the ruling waits on its stamp");
 }

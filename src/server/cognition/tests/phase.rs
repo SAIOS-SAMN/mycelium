@@ -36,7 +36,7 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         ActKind::List,
         ActKind::Install,
         ActKind::Settled,
-        ActKind::Ruling,
+        ActKind::Ruling(crate::chronometry::Ruled::Upheld),
     ] {
         c.append(kind, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends");
     }
