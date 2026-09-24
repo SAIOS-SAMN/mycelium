@@ -28,8 +28,10 @@ impl Kernel {
             }
             floor = floor.min(k - 1);
         }
-        for (_, k) in self.provisional_k.scoped() {
-            if *k <= first {
+        // A provisional word stands at the act that admitted it (78.24).
+        for (addr, _) in self.provisional.scoped() {
+            let k = self.admitted_at(&addr)?.k;
+            if k <= first {
                 return None;
             }
             floor = floor.min(k - 1);

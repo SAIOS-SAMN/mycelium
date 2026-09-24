@@ -6,6 +6,11 @@ mod ledger;
 mod settlement;
 mod surface;
 
+/// A word's address, as an award is filed under it.
+pub(super) fn word(b: impl AsRef<[u8]>) -> crate::transducer::address::Address {
+    crate::transducer::address::Address::from_bytes(b)
+}
+
 /// AN ANCHOR WHOSE NEXT ACT TAKES `K = n` (78.24): the stamp of the head
 /// act it stands at, `n − 1`, and that act's hash. The empty hash stands at
 /// no act — before genesis — and its next act takes `K = 0`.

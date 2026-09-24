@@ -21,6 +21,45 @@ fn put_admitted(out: &mut Vec<u8>, at: Option<&crate::chronometry::Stamp>) {
     }
 }
 
+/// THE ROWS A WORD CAN STAND ON, in the order its award is written on the
+/// first that holds it (LD0 step 4): an award is a field of ONE row.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub(super) enum Row {
+    Provisional,
+    Listing,
+    Cavity,
+    Basis,
+}
+
+impl Kernel {
+    /// The row a word's award is a field of: the first of provisional, the
+    /// listing book, the cavity and the basis that holds the word.
+    pub(super) fn award_row(&self, addr: &[u8]) -> Option<Row> {
+        if self.provisional.contains(addr) {
+            Some(Row::Provisional)
+        } else if self.pending.contains(addr) {
+            Some(Row::Listing)
+        } else if self.cavity_book.contains(addr) {
+            Some(Row::Cavity)
+        } else if self.basis.contains(addr) {
+            Some(Row::Basis)
+        } else {
+            None
+        }
+    }
+
+    /// A row's own fields after its word: the admitting stamp, and the
+    /// award where this row is the one it is a field of.
+    fn put_row_fields(&self, out: &mut Vec<u8>, addr: &[u8], row: Row) {
+        put_admitted(out, self.admitted_at.get(addr));
+        let award = match self.award_row(addr) == Some(row) {
+            true => self.treasury.escrow_of(addr),
+            false => None,
+        };
+        crate::economy::persist::put_award(out, award);
+    }
+}
+
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
@@ -45,7 +84,7 @@ impl Kernel {
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             body.extend_from_slice(who);
-            put_admitted(&mut body, self.admitted_at.get(&g.address()));
+            self.put_row_fields(&mut body, g.address().as_bytes(), Row::Basis);
         }
         framed(&mut out, items.len() as u64, &mut body);
         out.extend_from_slice(&self.treasury.snapshot());
@@ -55,9 +94,15 @@ impl Kernel {
             let eb = spoken.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
-            put_admitted(body, self.admitted_at.get(addr));
+            self.put_row_fields(body, addr, Row::Provisional);
             Some(())
         });
+        // AN AWARD NO ROW HOLDS is a claim on a word this court no longer
+        // has, which no ruling can reach: named here, and not written.
+        let orphans = self.treasury.award_addresses().iter().filter(|a| self.award_row(a).is_none()).count();
+        if orphans > 0 {
+            eprintln!("  snapshot awards refused: {orphans} on words no row holds");
+        }
         // THE LEDGER (78.24): the court head, then the ledger as its trie —
         // the key it signs as, the fold root, and every node it holds, its
         // own line and its peers', each once at its stamp. Where each peer
@@ -120,26 +165,13 @@ impl Kernel {
         });
         // DEFLATION section: each provisional's measured deflation, so a
         // restart does not docket Δ⃗ = 0 and feed the court a slash list.
-        out.extend_from_slice(b"DEF1");
-        // DEF1 record: addr ‖ μ⃗[4] ‖ tag u8
-        //   tag 0 = K and height absent (never written as 0)
-        //   tag 1 = K u64 ‖ tu u64
-        // Restore refuses any other tag (a missing K is not clock-zero).
+        // DEF2 record: addr ‖ μ⃗[4]. Where a provisional stands is its
+        // row's admitting stamp (78.24), never a K and height written here.
+        out.extend_from_slice(b"DEF2");
         counted(&mut out, &self.deflations, |body, addr, mag| {
             put_key(body, addr);
             for m in mag {
                 body.extend_from_slice(&m.to_le_bytes());
-            }
-            match (
-                self.provisional_k.get(addr).copied(),
-                self.provisional_h.get(addr).copied(),
-            ) {
-                (Some(k), Some(tu)) => {
-                    body.push(1);
-                    body.extend_from_slice(&k.to_le_bytes());
-                    body.extend_from_slice(&tu.to_le_bytes());
-                }
-                _ => body.push(0),
             }
             Some(())
         });
@@ -184,7 +216,7 @@ impl Kernel {
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
-            put_admitted(body, self.admitted_at.get(addr));
+            self.put_row_fields(body, addr, Row::Listing);
             Some(())
         });
         out.extend_from_slice(b"CAV1");
@@ -193,7 +225,7 @@ impl Kernel {
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
-            put_admitted(body, self.admitted_at.get(addr));
+            self.put_row_fields(body, addr, Row::Cavity);
             Some(())
         });
         out.extend_from_slice(b"CRT1");

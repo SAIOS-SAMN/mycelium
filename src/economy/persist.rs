@@ -75,10 +75,16 @@ impl Entry {
     }
 }
 
-/// An escrow row after its address: `[nv u32][voice 32·nv][μ⃗ 4×u64]
-/// [stamp 48][receipt 32]`. The one writing of it, for the snapshot and for
-/// LD1's measure of what a row carries.
-fn put_escrow_tail(out: &mut Vec<u8>, row: &super::escrow::Escrowed) {
+/// AN AWARD AS A FIELD OF ITS WORD'S ROW (78.22, LD0 step 4): `0`, or `1`
+/// then `[nv u32][voice 32·nv][μ⃗ 4×u64][stamp 48][receipt 32]`. The word's
+/// row already carries its address, once; the award carries none. The one
+/// writing of it, for the snapshot and for LD1's measure.
+pub fn put_award(out: &mut Vec<u8>, award: Option<&super::escrow::Escrowed>) {
+    let Some(row) = award else {
+        out.push(0);
+        return;
+    };
+    out.push(1);
     out.extend_from_slice(&(row.voices.len() as u32).to_le_bytes());
     for v in &row.voices {
         out.extend_from_slice(v);
@@ -90,17 +96,57 @@ fn put_escrow_tail(out: &mut Vec<u8>, row: &super::escrow::Escrowed) {
     out.extend_from_slice(&row.anchor.1);
 }
 
+/// The inverse of [`put_award`]: none, one award, or a refusal.
+pub fn take_award(b: &[u8], pos: &mut usize) -> Option<Option<super::escrow::Escrowed>> {
+    let tag = *b.get(*pos)?;
+    *pos += 1;
+    if tag == 0 {
+        return Some(None);
+    }
+    if tag != 1 {
+        return None;
+    }
+    let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
+    *pos += 4;
+    if nv > b.len().checked_sub(*pos)? / 32 {
+        return None;
+    }
+    let mut voices = Vec::with_capacity(nv);
+    for _ in 0..nv {
+        voices.push(b.get(*pos..*pos + 32)?.try_into().ok()?);
+        *pos += 32;
+    }
+    let mut mu = [0u64; 4];
+    for m in &mut mu {
+        *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+        *pos += 8;
+    }
+    let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
+    let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
+    *pos += 32;
+    Some(Some(super::escrow::Escrowed { voices, mu, anchor: (at, r) }))
+}
+
 impl Treasury {
-    /// LD1 — THE BYTES EACH ESCROWED AWARD CARRIES as its row is persisted:
-    /// the address behind its two-byte length, then the tail. A row whose
-    /// address passes the wall is measured at the length it would need,
-    /// because that length is what LD1 is asked for.
+    /// LD1 — THE BYTES EACH ESCROWED AWARD CARRIES as a field of its word's
+    /// row: the award alone, flat in the size of the word it is on.
     pub fn carriage(&self, c: &mut crate::observe::Carriage) {
-        crate::snapshot::persist(&self.escrowed, |addr, row| {
-            let mut tail = Vec::new();
-            put_escrow_tail(&mut tail, row);
-            c.add(crate::observe::CARRIER_AWARD, 0, (2 + addr.len() + tail.len()) as u64);
+        crate::snapshot::persist(&self.escrowed, |_, row| {
+            let mut field = Vec::new();
+            put_award(&mut field, Some(row));
+            c.add(crate::observe::CARRIER_AWARD, 0, field.len() as u64);
         });
+    }
+
+    /// Every award this treasury holds and the address of the word it is
+    /// on, for the rows that carry them to name those no row holds.
+    pub fn award_addresses(&self) -> Vec<Vec<u8>> {
+        self.escrowed.scoped().map(|(a, _)| a).collect()
+    }
+
+    /// An award read back off its word's row at restore.
+    pub fn restore_award(&mut self, addr: &crate::transducer::address::Address, award: super::escrow::Escrowed) {
+        self.escrowed.insert_shared(addr.shared(), award);
     }
 
     /// Serialize the dimensional ledger: `[n][tag u8][who 32][μ⃗ 4×u64][k u64]
@@ -122,22 +168,9 @@ impl Treasury {
         for e in &self.entries {
             e.write(&mut out);
         }
-        // ESCROWED AWARDS section (Step 5). LD0: a row whose address cannot
-        // be framed is named and left out of the count, never written with
-        // the address dropped — that misaligned hypha b's ledger at award
-        // 35 and refused the whole tape from there.
-        let mut body = Vec::new();
-        let mut kept = 0u32;
-        crate::snapshot::persist(&self.escrowed, |addr, row| {
-            if crate::transducer::address::put_addr(&mut body, addr).is_none() {
-                eprintln!("  treasury escrow row refused: its address cannot be framed");
-                return;
-            }
-            put_escrow_tail(&mut body, row);
-            kept += 1;
-        });
-        out.extend_from_slice(&kept.to_le_bytes());
-        out.append(&mut body);
+        // THE ESCROWED AWARDS ARE NOT HERE (78.22, LD0 step 4): each is a
+        // field of its word's row, written where the word is (the kernel's
+        // snapshot), so no address is written twice.
         // BALANCES, written out. They were "recomputed from the entries" at
         // load, and `recompute_balances` applied two of §2's ten kinds --
         // `mint` and paired `transfer` -- ignoring genesis, burn, stake,
@@ -197,44 +230,10 @@ impl Treasury {
         for _ in 0..n {
             entries.push(Entry::read(b, pos)?);
         }
-        // THE TWO SECTIONS BELOW ARE REQUIRED. Each read as "a snapshot
-        // that ends here is an older one and restores with none", and
-        // `snapshot` writes both unconditionally, so no writer emits a tape
-        // without them: what that admitted was a TRUNCATED ledger,
-        // restored with no escrow and no balances, which
-        // then failed its own audit or passed one it should not have.
-        // §10 makes a layout change a recut and deletes the reader for the
-        // old layout.
-        let mut escrowed = crate::network::nerve::Keyed::new();
-        {
-            let ne = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-            *pos += 4;
-            if ne > b.len().checked_sub(*pos)? / 108 {
-                return None; // untrusted count: ≥108 bytes per award
-            }
-            for _ in 0..ne {
-                let addr = crate::transducer::address::take_addr(b, pos)?;
-                let nv = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-                *pos += 4;
-                if nv > b.len().checked_sub(*pos)? / 32 {
-                    return None;
-                }
-                let mut voices = Vec::with_capacity(nv);
-                for _ in 0..nv {
-                    voices.push(b.get(*pos..*pos + 32)?.try_into().ok()?);
-                    *pos += 32;
-                }
-                let mut mu = [0u64; 4];
-                for m in &mut mu {
-                    *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
-                }
-                let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
-                let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
-                *pos += 32;
-                escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (at, r) });
-            }
-        }
+        // THE SECTION BELOW IS REQUIRED: a tape without it is a TRUNCATED
+        // ledger, and §10 makes a layout change a recut. The awards are not
+        // read here: each comes back off its word's row (`restore_award`).
+        let escrowed = crate::network::nerve::Keyed::new();
         // BALANCES, read back. Not recomputed: see `snapshot`.
         let mut balances = crate::network::nerve::Keyed::new();
         {

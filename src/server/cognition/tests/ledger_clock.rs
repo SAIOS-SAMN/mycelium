@@ -103,26 +103,25 @@ assert_eq!(
 #[test]
 fn extent_replays_from_the_home_chain() {
 let mut k = Kernel::new();
-k.set_height(4);
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
 let addr = k.pending.scoped().next().expect("listed").1.address();
-assert_eq!(k.t_extent(addr.as_bytes(), 4), Some(0), "extent is zero at first vantage");
-k.set_height(11);
+// The install height is the admitting act's, read off its stamp (78.24).
+let h0 = k.admitted_at(addr.as_bytes()).expect("the List act admitted it").h;
+assert_eq!(k.t_extent(addr.as_bytes(), h0), Some(0), "extent is zero at first vantage");
 assert_eq!(
-    k.t_extent(addr.as_bytes(), 11),
+    k.t_extent(addr.as_bytes(), h0 + 7),
     Some(7),
     "extent is h_now − h_install on the home chain"
 );
+let mut k2 = Kernel::new();
+k2.standing_h.insert(&addr, 4);
 assert_eq!(
-    k.t_extent(addr.as_bytes(), 3),
+    k2.t_extent(addr.as_bytes(), 3),
     None,
     "a height below the stamp is a count that went backwards, not an extent of zero"
 );
-let mut k2 = Kernel::new();
-k2.set_height(11);
-k2.standing_h.insert(&addr, 4);
 assert_eq!(
     k2.t_extent(addr.as_bytes(), 11),
     Some(7),

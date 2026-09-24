@@ -156,6 +156,9 @@ impl Kernel {
         self.on_page.remove(addr);
         self.flat_orbits.remove(addr);
         self.book_gen += 1;
+        // An unlisted word no other row holds leaves its admitting stamp
+        // (78.24); an act that cites it after reads the citation first.
+        self.forget_if_unheld(addr);
     }
 
     /// Relocate a listing off the quote page onto the cavity atlas. The
@@ -351,6 +354,9 @@ impl Kernel {
             self.physics.syntropy(&[0, 1, 0, 0]);
             self.torse_at(&base);
         }
+        // The absorbed card lives on as the base's fibre, not on a row of
+        // its own: its admitting stamp leaves with it (78.24).
+        self.forget_if_unheld(&absorbed);
         base
     }
 
@@ -710,8 +716,11 @@ impl Kernel {
         self.provisional
             .scoped()
             .filter_map(|(addr, spoken)| {
-                let k = self.provisional_k.get(&addr).copied()?;
-                if k <= since_k && since_k > 0 {
+                // Where the provisional stands is the act that admitted it
+                // (78.24); one admitted AT the court's "since" is served, as
+                // the act it names is the one the court heard last.
+                let k = self.admitted_at(&addr)?.k;
+                if k < since_k && since_k > 0 {
                     return None;
                 }
                 let held = self.treasury.escrow_of(&addr)?;

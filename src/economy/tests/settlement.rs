@@ -61,7 +61,7 @@ fn consilience_and_torse_settle_as_vectors() {
 fn release_mints_when_the_bond_is_empty() {
     let mut t = Treasury::new();
     let addr = [7u8; 32];
-    t.escrow_award(addr, vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
+    t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
     assert_eq!(t.bond_total(), [0; 4]);
     let held = t.release_award(&addr).expect("claim");
     t.mint_claim(&held.voices, held.mu, held.anchor);
@@ -106,8 +106,8 @@ fn a_lane_move_is_read_per_lane() {
 fn a_released_rewrite_pays_every_voice_the_escrow_names() {
     let mut t = Treasury::new();
     let addr = [3u8; 32];
-    t.escrow_award(addr, vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
-    t.escrow_award(addr, vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
+    t.escrow_award(&super::word(addr), vec![[1; 32]], [8, 0, 4, 0], at(1, [1; 32]));
+    t.escrow_award(&super::word(addr), vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     let share = t.release_rewrite(&addr).expect("two parties stood it");
     assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
@@ -121,7 +121,7 @@ fn a_released_rewrite_pays_every_voice_the_escrow_names() {
 fn an_escrow_with_no_voice_is_not_released() {
     let mut t = Treasury::new();
     let addr = [4u8; 32];
-    t.escrow_award(addr, Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
+    t.escrow_award(&super::word(addr), Vec::new(), [8, 0, 0, 0], at(1, [1; 32]));
     assert!(t.release_rewrite(&addr).is_none(), "no party, no release");
     assert_eq!(t.escrowed_remaining(&addr), [8, 0, 0, 0], "the escrow stands");
 }

@@ -106,9 +106,13 @@ impl Kernel {
                 _ => None,
             }
         };
+        // A ROW'S AWARD (LD0 step 4), read beside its admitting stamp.
+        let take_award = crate::economy::persist::take_award;
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
             let (n, sec_end) = section(b, pos)?;
             let start = *pos;
+            // The basis is read before the treasury it returns awards to.
+            let mut awards: Vec<(Address, crate::economy::escrow::Escrowed)> = Vec::new();
             for _ in 0..n {
                 let elen = read_u64(b, pos)?;
                 let mut ep = *pos;
@@ -117,14 +121,21 @@ impl Kernel {
                 *pos += elen;
                 let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
+                let addr = spoken.address();
                 if let Some(at) = take_admitted(b, pos)? {
-                    kernel.file_admitted(&spoken.address(), at);
+                    kernel.file_admitted(&addr, at);
+                }
+                if let Some(award) = take_award(b, pos)? {
+                    awards.push((addr, award));
                 }
                 kernel.basis_insert(spoken, who);
             }
             closes("basis", pos, start, sec_end, n)?;
             at.set("treasury");
             kernel.treasury = crate::economy::Treasury::restore(b, pos)?;
+            for (addr, award) in awards {
+                kernel.treasury.restore_award(&addr, award);
+            }
             at.set("provisional");
             // EVERY SECTION BELOW IS REQUIRED. Each read as "absent in an
             // earlier snapshot → carry on with nothing", and `snapshot`
@@ -146,6 +157,9 @@ impl Kernel {
                 *pos += elen;
                 if let Some(at) = take_admitted(b, pos)? {
                     kernel.file_admitted(&addr, at);
+                }
+                if let Some(award) = take_award(b, pos)? {
+                    kernel.treasury.restore_award(&addr, award);
                 }
                 kernel.provisional.insert(addr, spoken);
             }
@@ -223,15 +237,15 @@ impl Kernel {
                 closes("RNK2", pos, start, sec_end, n)?;
                 kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
             }
-            tag(b, pos, b"DEF1")?;
+            tag(b, pos, b"DEF2")?;
             {
-                // addr ‖ μ⃗[4] ‖ tag u8 [‖ K u64 ‖ tu u64].
+                // addr ‖ μ⃗[4].
                 let (n, sec_end) = section(b, pos)?;
                 let start = *pos;
                 for i in 0..n {
                     let Some(addr) = crate::snapshot::take_key(b, pos).map(Address::from) else {
                         eprintln!(
-                            "  DEF1 record {i} of {n}: the address does not read at byte {} \
+                            "  DEF2 record {i} of {n}: the address does not read at byte {} \
                              (body {start}..{sec_end})",
                             *pos
                         );
@@ -242,34 +256,9 @@ impl Kernel {
                         *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                         *pos += 8;
                     }
-                    let row = *b.get(*pos)?;
-                    *pos += 1;
-                    match row {
-                        0 => {
-                            kernel.deflations.insert(&addr, mag);
-                        }
-                        1 => {
-                            let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            let tu = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                            *pos += 8;
-                            kernel.deflations.insert(&addr, mag);
-                            kernel.provisional_k.insert(&addr, k);
-                            kernel.provisional_h.insert(&addr, tu);
-                            kernel.standing_h.insert(&addr, tu);
-                        }
-                        _ => {
-                            eprintln!(
-                                "  DEF1 record {i} of {n}: tag byte is {row}, neither 0 nor 1, at \
-                                 byte {} — address {} bytes, μ⃗ {mag:?} (body {start}..{sec_end})",
-                                *pos - 1,
-                                addr.len()
-                            );
-                            return None;
-                        }
-                    }
+                    kernel.deflations.insert(&addr, mag);
                 }
-                closes("DEF1", pos, start, sec_end, n)?;
+                closes("DEF2", pos, start, sec_end, n)?;
             }
             tag(b, pos, b"FLD1")?;
             {
@@ -347,6 +336,9 @@ impl Kernel {
                     if let Some(at) = take_admitted(b, pos)? {
                         kernel.file_admitted(&addr, at);
                     }
+                    if let Some(award) = take_award(b, pos)? {
+                        kernel.treasury.restore_award(&addr, award);
+                    }
                     kernel.on_page.insert(&addr, ());
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
                     kernel.pending.insert(&addr, elem);
@@ -366,6 +358,9 @@ impl Kernel {
                     *pos += elen;
                     if let Some(at) = take_admitted(b, pos)? {
                         kernel.file_admitted(&addr, at);
+                    }
+                    if let Some(award) = take_award(b, pos)? {
+                        kernel.treasury.restore_award(&addr, award);
                     }
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
                     kernel.cavity_book.insert(&addr, elem);
@@ -606,9 +601,6 @@ impl Kernel {
         }
         let prov: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
         for addr in prov {
-            if self.provisional_h.get(&addr).is_none() {
-                self.provisional_h.insert(&addr, self.height());
-            }
             self.stamp_standing(&addr);
         }
         // Ruled cover is the lettered federation, not the leaked basis.

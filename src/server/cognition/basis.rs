@@ -15,13 +15,15 @@ impl Kernel {
     /// `None` where the stamp is ABOVE the current height: a court whose
     /// height went backwards is a broken count, and zero read off one is a
     /// measurement this court cannot make, not a listing stamped just now.
+    ///
+    /// A provisional word stands from the tick of the act that admitted it
+    /// (78.24); any other word from its standing stamp.
     pub(crate) fn t_extent(&self, addr: &[u8], now: u64) -> Option<u64> {
-        let Some(then) = self
-            .provisional_h
-            .get(addr)
-            .copied()
-            .or_else(|| self.standing_h.get(addr).copied())
-        else {
+        let admitted = match self.provisional.contains(addr) {
+            true => self.admitted_at(addr).map(|s| s.h),
+            false => None,
+        };
+        let Some(then) = admitted.or_else(|| self.standing_h.get(addr).copied()) else {
             return Some(0);
         };
         now.checked_sub(then)
@@ -32,9 +34,6 @@ impl Kernel {
         let h = self.height();
         if self.standing_h.get(addr).is_none() {
             self.standing_h.insert(addr, h);
-        }
-        if self.provisional.contains(addr) && self.provisional_h.get(addr).is_none() {
-            self.provisional_h.insert(addr, h);
         }
     }
 
@@ -199,8 +198,6 @@ impl Kernel {
             self.chill_field(addr);
         }
         self.provisional.remove(addr);
-        self.provisional_k.remove(addr);
-        self.provisional_h.remove(addr);
         self.offered.remove(addr);
         self.offered_to.remove(addr);
         if self.lane_listings[2].contains(addr) {

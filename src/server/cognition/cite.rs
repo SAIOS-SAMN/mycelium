@@ -21,9 +21,22 @@ impl Kernel {
     }
 
     /// THE WORD AN ACT NAMES, on whichever row holds it: the basis, the
-    /// cavity, provisional, or the listing book.
+    /// cavity, provisional, the listing book, or the court's federation.
     fn named_word(&self, addr: &[u8]) -> Option<&Element> {
-        self.word_at(addr).or_else(|| self.pending.get(addr))
+        self.word_at(addr).or_else(|| self.pending.get(addr)).or_else(|| {
+            let i = *self.court_fed_index.get(addr)?;
+            self.court_federation.get(i).map(|(_, w)| w)
+        })
+    }
+
+    /// A WORD THAT HAS LEFT ITS LAST ROW takes its admitting stamp with it
+    /// (78.24, R6): an entry nothing holds a word for is a copy of nothing.
+    /// Called where a removal may have been the word's last row, after any
+    /// act that cites it.
+    pub(crate) fn forget_if_unheld(&mut self, addr: &[u8]) {
+        if self.named_word(addr).is_none() {
+            self.drop_admitted(addr);
+        }
     }
 
     /// The stamp a held word was admitted at.
@@ -86,9 +99,7 @@ impl Kernel {
     pub(super) fn append_after_removal(&mut self, kind: ActKind, addr: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
         let mu = self.word_at(addr).map_or([0; 4], |w| w.magnitude());
         self.append_cited(kind, cite.into_iter().collect(), mu, voice);
-        if self.named_word(addr).is_none() {
-            self.drop_admitted(addr);
-        }
+        self.forget_if_unheld(addr);
     }
 
     /// A K-STEP naming what it names by citations already read: the fiber

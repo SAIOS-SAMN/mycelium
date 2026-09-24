@@ -265,11 +265,6 @@ pub struct Kernel {
     /// demand its install settled — zero when the germ settled nothing on
     /// the book. The court's proof of convergence rides with the word.
     pub(crate) deflations: crate::network::nerve::Keyed<[u64; 4]>,
-    /// The k-step at which each provisional word was installed — the
-    /// coordinate a court's "since" is read against (order inside one kernel).
-    pub(crate) provisional_k: crate::network::nerve::Keyed<u64>,
-    /// Height at first vantage of each provisional — standing extent.
-    pub(crate) provisional_h: crate::network::nerve::Keyed<u64>,
     /// Round-robin cursor for syntropic optimization — which generator to test for
     /// redundancy next (bounds consolidation to one reduce per depleted step).
     /// Last key the syntropic cursor yielded; the next stroke resumes after

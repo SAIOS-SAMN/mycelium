@@ -2,7 +2,7 @@
 // a stake moves value and never creates it, and the audit survives genesis,
 // mint and burn.
 
-use super::at;
+use super::{at, word};
 use crate::economy::*;
 
 /// Supply after N installs equals the sum of their deflations per lane.
@@ -12,8 +12,8 @@ fn supply_is_the_sum_of_minted_deflations() {
     t.enroll([1; 32], UNIT_BOND, at(0, [0; 32]));
     let d1 = [4u64, 2, 0, 2];
     let d2 = [0u64, 4, 6, 2];
-    t.escrow_award([8; 32], vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
-    t.escrow_award([9; 32], vec![[1; 32], [2; 32]], d2, at(2, [2; 32]));
+    t.escrow_award(&word([8; 32]), vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
+    t.escrow_award(&word([9; 32]), vec![[1; 32], [2; 32]], d2, at(2, [2; 32]));
     let h1 = t.release_award(&[8; 32]).expect("d1");
     t.mint_claim(&h1.voices, h1.mu, h1.anchor);
     let h2 = t.release_award(&[9; 32]).expect("d2");
@@ -36,7 +36,7 @@ fn slash_debits_the_bond_and_mints_nothing() {
     let bond = t.enroll([1; 32], [8, 0, 0, 0], at(0, [0; 32]));
     assert_eq!(bond, [8, 0, 0, 0], "the balance covered the bond asked for");
     let addr = [3u8; 32];
-    t.escrow_award(addr, vec![[1; 32]], [8, 0, 0, 0], at(1, [1; 32]));
+    t.escrow_award(&word(addr), vec![[1; 32]], [8, 0, 0, 0], at(1, [1; 32]));
     assert!(t.revoke_award(&addr, true).is_some());
     assert_eq!(
         t.bond_of(&[1; 32]).expect("an enrolled identity holds a bond")[0],
@@ -121,7 +121,7 @@ fn a_claim_escrow_is_not_supply_until_a_ruling_mints_it() {
 
     // A CLAIM: nobody paid for it, so the carriers do not move and
     // supply does not move.
-    t.escrow_award([7u8; 32], vec![[2; 32]], [4, 0, 0, 0], a);
+    t.escrow_award(&word([7u8; 32]), vec![[2; 32]], [4, 0, 0, 0], a);
     assert_eq!(t.audit().expect("a claim is not supply"), seeded);
     assert_eq!(t.balance_mu(&[2; 32]), [0; 4], "no one was debited for it");
 
@@ -210,7 +210,7 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
 
     // A SLASH takes bond, and the entry names what LEFT the bond rather
     // than what the escrow asked for: a bond of 6 slashed for 9 loses 6.
-    t.escrow_award([7u8; 32], vec![[1; 32]], [9, 0, 0, 0], at(4, [1; 32]));
+    t.escrow_award(&word([7u8; 32]), vec![[1; 32]], [9, 0, 0, 0], at(4, [1; 32]));
     // The slash reads what left each named voice's bond, and the lanes on
     // which the bond did not cover the ask, rather than clamping to it.
     let r = t.revoke_award(&[7u8; 32], true).expect("the escrow was there");
@@ -252,7 +252,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     t.settle_subsidy(b, [0, 3, 0, 0], at(2, [0; 32])); // mint
     t.settle_use(a, b, [1, 0, 0, 0], at(3, [0; 32])); // two transfers
     t.settle_recall(a, &[2, 0, 0, 0], &[0; 4], at(4, [0; 32])); // burn
-    t.escrow_award([7u8; 32], vec![a], [9, 0, 0, 0], at(5, [0; 32]));
+    t.escrow_award(&word([7u8; 32]), vec![a], [9, 0, 0, 0], at(5, [0; 32]));
     t.revoke_award(&[7u8; 32], true); // slash
 
     // The whole read this replaced, recomputed here from the rows themselves.
@@ -330,7 +330,7 @@ fn a_slash_debits_every_voice_the_escrow_names() {
     t.enroll(b, [2, 2, 2, 2], at(1, [0; 32]));
     let before = t.audit().expect("two bonded voices conserve");
 
-    t.escrow_award([9u8; 32], vec![a, b], [4, 0, 0, 0], at(2, [1; 32]));
+    t.escrow_award(&word([9u8; 32]), vec![a, b], [4, 0, 0, 0], at(2, [1; 32]));
     let r = t.revoke_award(&[9u8; 32], true).expect("the escrow was there");
 
     assert_eq!(
@@ -351,7 +351,7 @@ fn a_slash_debits_every_voice_the_escrow_names() {
     assert_eq!(after[0], before[0] - 6, "supply fell by what left the bonds");
 
     // A plain revoke drops the claim and slashes nobody.
-    t.escrow_award([8u8; 32], vec![a], [1, 0, 0, 0], at(3, [1; 32]));
+    t.escrow_award(&word([8u8; 32]), vec![a], [1, 0, 0, 0], at(3, [1; 32]));
     let r = t.revoke_award(&[8u8; 32], false).expect("the escrow was there");
     assert!(r.slashed.is_empty() && r.short.is_empty(), "a revoke is not a slash");
     assert_eq!(r.released, [1, 0, 0, 0], "and it says what claim it dropped");

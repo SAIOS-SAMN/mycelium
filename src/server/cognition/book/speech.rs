@@ -381,8 +381,6 @@ impl Kernel {
         self.converge_here(word, ratifier);
         self.treasury.escrow_award(&addr, vec![ratifier], mu, anchor);
         self.deflations.insert(&addr, mag);
-        let k_now = self.k_step();
-        self.provisional_k.insert(&addr, k_now);
         self.provisional.insert(&addr, word.clone());
         // L8y: the voice that spoke it, recorded where the court knows it.
         // `drawers` is cleared by `pending_take` before the install, so the
@@ -390,7 +388,6 @@ impl Kernel {
         // of the word was then paid to nobody (26).
         self.note_discovered(&addr, ratifier);
         self.stamp_standing(&addr);
-        self.provisional_h.insert(&addr, self.height());
         self.mark_persist();
         let inv = crate::transducer::stalk::invariant_of(word);
         if self.field.get(&addr).is_none() {
@@ -465,6 +462,9 @@ impl Kernel {
                 self.torse_at(base);
             }
         }
+        // The attached sibling lives on as the base's section, not on a row
+        // of its own: its admitting stamp leaves with it (78.24).
+        self.forget_if_unheld(sibling);
         self.physics.syntropy(&[0, 0, 1, 0]);
         1
     }

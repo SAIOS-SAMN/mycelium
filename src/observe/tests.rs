@@ -436,29 +436,27 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), all.to_vec())));
 }
 
-/// LD1 — AN AWARD IS MEASURED AT WHAT ITS ROW CARRIES, the address it copies
-/// included: a row keyed by a 70 000-byte address is measured past the u16
-/// wall, and the snapshot refuses that row by name while it keeps the other.
+/// LD0 step 4 — AN AWARD IS A FIELD OF ITS WORD'S ROW, measured at what the
+/// field carries: the voices, μ⃗, the stamp and the receipt, never the
+/// address. An award on a 70 000-byte word weighs what one on a 3-byte word
+/// does, and the treasury's own snapshot carries no award at all.
 #[test]
-fn an_award_is_measured_at_the_address_it_copies() {
+fn an_award_is_measured_flat_in_its_word() {
+    use crate::transducer::address::Address;
     let mut t = crate::economy::Treasury::new();
     let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1 }, [1u8; 32]);
-    t.escrow_award([7u8; 3], vec![[2; 32]], [4, 0, 0, 0], a);
-    t.escrow_award(vec![9u8; 70_000], vec![[2; 32]], [4, 0, 0, 0], a);
+    t.escrow_award(&Address::from_bytes([7u8; 3]), vec![[2; 32]], [4, 0, 0, 0], a);
+    t.escrow_award(&Address::from_bytes(vec![9u8; 70_000]), vec![[2; 32]], [4, 0, 0, 0], a);
     let mut c = Carriage::default();
     t.carriage(&mut c);
-    // A row after its address: the voice count, one voice, μ⃗, the stamp,
-    // the receipt.
-    let tail = 4 + 32 + 32 + crate::chronometry::Stamp::LEN as u64 + 32;
+    // The field: its tag, the voice count, one voice, μ⃗, the stamp, the receipt.
+    let field = 1 + 4 + 32 + 32 + crate::chronometry::Stamp::LEN as u64 + 32;
     let [award] = c.rows.as_slice() else { panic!("one carrier, one kind: {:?}", c.rows) };
-    assert_eq!((award.records, award.largest), (2, 2 + 70_000 + tail));
-    assert_eq!(award.bytes, (2 + 3 + tail) + (2 + 70_000 + tail), "each row by what it carries");
-    assert!(award.largest > u64::from(u16::MAX), "the copied address passes the wall");
+    assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
     let snap = t.snapshot();
     let mut p = 0usize;
     let back = crate::economy::Treasury::restore(&snap, &mut p).expect("the ledger restores");
-    assert!(back.escrow_of(&[7u8; 3]).is_some(), "the citable row is kept");
-    assert!(back.escrow_of(&[9u8; 70_000]).is_none(), "the row past the wall is refused, not misframed");
+    assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's row, not the treasury");
 }
 
 /// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED

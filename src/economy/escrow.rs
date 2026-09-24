@@ -47,8 +47,18 @@ impl Treasury {
     /// HOLD a consilience award in escrow pending the court's finality verdict
     /// (Step 5: two-voice consilience is provisional, not final). Nothing books
     /// to the ledger yet — unfinalized speech earns nothing.
-    pub fn escrow_award(&mut self, addr: impl AsRef<[u8]>, voices: Vec<[u8; 32]>, mu: [u64; 4], anchor: Anchor) {
-        let addr = addr.as_ref();
+    ///
+    /// The award is filed under the word's own address bytes, SHARED with
+    /// the row that holds the word (78.22): it is a field of that row, and
+    /// never a second copy of the address.
+    pub fn escrow_award(
+        &mut self,
+        word: &crate::transducer::address::Address,
+        voices: Vec<[u8; 32]>,
+        mu: [u64; 4],
+        anchor: Anchor,
+    ) {
+        let addr = word.as_bytes();
         match self.escrowed.get_mut(addr) {
             Some(row) => {
                 for v in voices {
@@ -59,7 +69,7 @@ impl Treasury {
                 }
             }
             None => {
-                self.escrowed.insert(addr, Escrowed { voices, mu, anchor });
+                self.escrowed.insert_shared(word.shared(), Escrowed { voices, mu, anchor });
             }
         }
     }

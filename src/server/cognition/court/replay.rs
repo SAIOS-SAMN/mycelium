@@ -17,12 +17,24 @@ impl Kernel {
     /// RULING_DEMOTED → stays local dialect, the award evaporates.
     /// RULING_SLASHED → false speech: word excised, shares debited to the pool.
     /// Any other byte is refused — an unknown ruling rules nothing.
+    ///
+    /// A word the ruling leaves on no row takes its admitting stamp with it
+    /// (78.24), after the Ruling node has cited it.
     pub fn apply_verdict(&mut self, addr: &[u8], ruling: u8) -> bool {
+        let landed = self.rule_on(addr, ruling);
+        self.forget_if_unheld(addr);
+        landed
+    }
+
+    fn rule_on(&mut self, addr: &[u8], ruling: u8) -> bool {
         use crate::anastome::dialogue::{RULING_DEMOTED, RULING_SLASHED, RULING_UPHELD};
         if !matches!(ruling, RULING_UPHELD | RULING_DEMOTED | RULING_SLASHED) {
             return false;
         }
         let spoken = self.provisional.get(addr).cloned();
+        // 78.24 (2c): the word is cited as it stood, read before it leaves
+        // the provisional row.
+        let cite = self.cite_of(addr);
         if self.provisional.remove(addr).is_none() {
             return false;
         }
@@ -44,7 +56,13 @@ impl Kernel {
             Some(v) => v,
             None => self.identity,
         };
-        self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler);
+        match cite {
+            Some(c) => {
+                let mu = self.word_at(addr).map_or([0; 4], |w| w.magnitude());
+                self.append_cited(crate::chronometry::ActKind::Ruling, vec![c], mu, ruler);
+            }
+            None => self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler),
+        }
         // EC1: past the removal every arm moves the economy — a release, a
         // demotion or a slash — and the reading counts it here.
         crate::observe::note_ruling_applied();

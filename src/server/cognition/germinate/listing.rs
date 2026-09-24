@@ -193,13 +193,14 @@ impl Kernel {
         self.converge_here(&e, *voice);
         self.treasury.escrow_award(&addr_owned, vec![*voice], mu, anchor);
         self.deflations.insert(&addr_owned, e.magnitude());
-        let k_now = self.k_step();
-        self.provisional_k.insert(&addr_owned, k_now);
         self.provisional.insert(&addr_owned, e.clone());
         self.note_discovered(&addr_owned, *voice);
         self.stamp_standing(&addr_owned);
-        self.provisional_h.insert(&addr_owned, self.height());
         self.mark_persist();
+        // 45.1, 78.24: A DOCKETED LETTER IS AN ADMITTED ACT, as a docketed
+        // connection is: the Attest node admits it, and its stamp is where
+        // the provisional stands on this court's ledger.
+        self.append_step(crate::chronometry::ActKind::Attest, &addr_owned, *voice);
     }
 
     /// LIST A SENTENCE THE REPLAY STOOD (23.8, 26). A sentence the language
@@ -303,10 +304,9 @@ impl Kernel {
         let anchor = self.anchor();
         self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
         self.record_deflation(addr.clone(), addr.clone(), mag);
-        let k_now = self.k_step();
-        self.provisional_k.insert(&addr, k_now);
+        // Where the provisional stands is the List act that admitted it
+        // (78.24): one coordinate for one act.
         self.provisional.insert(&addr, word.clone());
-        self.provisional_h.insert(&addr, self.height());
         self.stamp_standing(&addr);
         self.physics.relieve(&mag);
         self.physics.syntropy(&mag); // a completed rule is order built
