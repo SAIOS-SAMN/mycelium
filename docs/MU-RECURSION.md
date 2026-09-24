@@ -424,6 +424,11 @@ tree that still carries it reads by this table until its module is swept.
 
 ---
 
+**Tape (ruled 2026-09-24, 78.34).** A word's letter tape, and nothing
+else: the letters whose meaning is a vertex of the Cayley graph. A
+carrier read by position is retired (K6, 78.25) and is never called a
+tape; a form has an address, an element a record, the mind its tries.
+
 **The proofs of work (ruled 2026-09-24, 78.33).** POW++ is a family:
 **POUW** proof of useful work (a closure ruled, mint on closure);
 **POWC** proof of work convergence (a refusal closed at another
@@ -15820,6 +15825,53 @@ fourth arm is named only by a ruling that adds it here with its own act
 and payment; a reading or a receipt kind names the arm it counts, and
 "POW++" names the family, never one payment. MU-ECONOMY carries the
 table as its §0; the vocabulary carries the three names.
+
+### 78.34 The fleet of epoch 98 stopped; its last readings; the tape's two senses (ruled 2026-09-24, the operator's word)
+
+**The fleet stopped.** The eight units that ran the recut of ff5821fe
+(epoch 98) were stopped on the operator's word after their readings
+were taken through the console, the typed observer, and nothing further
+was being learned from them: the binary was eleven commits behind the
+tree, every open row's next reading waits on the recut, and the readings
+were stable. The last readings, at the sources' own heights and `K`:
+
+| source | `K` | reading |
+|---|---|---|
+| court a | 2932 | basis 44, treasury 53; two signers, back-fill 16480 and 1416, gaps 67 and 15; adjudication ratified 70, stood 410, awaiting 580; refused: remainder undeclared 201, malformed complex 121, vertex body 9, edge holonomy 5; memory +115 KB per `K` over 2546 `K` |
+| court b | 16748 | basis 42, treasury 139; back-fill 1427 and 2663, gaps 20 and 52; ratified 20, stood 390, awaiting 557; refused: remainder undeclared 211, malformed complex 92; +62 KB per `K` |
+| court c | 1480 | basis 44, treasury 30; back-fill 16202 and 2387, gaps 68 and 50; ratified 20, stood 389, awaiting 533, deferred 16; refused: remainder undeclared 250, malformed complex 103; +184 KB per `K` |
+| every voice | 2211–2783 | adjoined-by-closure 0, installed 202–237 words on 2–3 strata, closing 22–25; cells certified 0, group unread on every cell, every cell's group read infinite at every grade; the mint gate proving every offered pair (3408–3789) permanent; half-open 715–917; viscosity elastic on the spatial lane, inviscid only on the luminal pairs, no bend on the gauge and temporal lanes; memory +44 to +59 KB per `K` |
+
+Three facts these readings fix for the recut: (1) no cell's group reads
+finite or affine, and every cell is "infinite" — GR2's recognition
+never fires on the corpus as the fleet's binary read it, which the
+Cells reading after the recut must move or explain; (2) the court's
+refusals are dominated by "remainder undeclared" and "malformed
+complex", the two integrity kinds, not by any closure kind; (3) memory
+grows per `K` on every unit, the courts fastest, with the ledger's tape
+carriage (LD1, LD2) already landed in the tree and not on the fleet.
+The fleet stays stopped until the RECUT row, which carries every layout
+change landed since epoch 98 and is gated on STD1.
+
+**The tape's two senses, and the names that follow the rulings.** The
+word "tape" has one legitimate sense, fixed in the vocabulary: a word's
+LETTER TAPE, the letters whose meaning is a vertex of the Cayley graph,
+and the element's description for a connection, a rewrite or a residual
+is that content. The other sense, a carrier read by position, is
+retired: the form tape by K6 (54), the snapshot tape by 78.25. Five
+modules still wear the retired sense's name after its retirement:
+`sentence/tape.rs` is the form's ADDRESS codec and the generator mint;
+`element/tape.rs` is the element's RECORD; `cech/tape.rs` is the complex
+on disk; `bubble/tape.rs` the contemplation's persistence; `anchor/tape.rs`
+the selection term's bytes. Ruled: the names follow the rulings, one
+move-only commit per module (§1.6), placed AFTER VA1 lands so no rename
+crosses the implementor's open edits (row TN1): `sentence/tape.rs` →
+`sentence/address.rs`, `element/tape.rs` → `element/record.rs`,
+`anchor/tape.rs` → `anchor/codec.rs`, their tests with them;
+`cech/tape.rs` and `bubble/tape.rs` take their names when LD3-b and
+LD3-c rewrite them as tries. From here "tape" names a word's letters and
+nothing else; a carrier is named for what it is — an address, a record,
+a trie.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
