@@ -11800,6 +11800,66 @@ receipts by one key at one `K` with two hashes) is unchanged. Persisted,
 the ledger is written as the trie, each key once as a path, exactly as
 the treasury's rows (LD0(ii)); restored, it is read as the trie.
 
+**LD2 as designed, ruled (2026-09-24).** The implementor mapped every
+consumer of the chain — fifteen append sites, four readers that depend
+on append order, the wire's whole-receipt frames — and found three
+defects on the way: (d1) THE VOICE'S CHAIN IS NEVER PERSISTED, built
+empty at every boot, so a voice's `K` restarts at zero, which
+contradicts OK1 and CK1's per-voice clock; (d2) the ADMISSIONS, the
+per-signer heads, are not persisted, so after a restart every peer
+reads as a gap from zero; (d3) the attestors are rebuilt from the
+node's own receipts only, so depth from peers is lost at every restore.
+All three ride in LD2, named as defects fixed. The design, ruled point
+by point: (P1) `Stamp { h, vk, k }` written by its own `put_canonical`,
+`h` big-endian first so key order is numeric order; the carrier
+`Keyed<Node>` over it, `fiber(h)` and `fiber(h‖vk)` strata. The readers
+that ask by (signer, `K`) — a `K`-range fetch, back-fill, the
+equivocation sections, the era pages — read through ONE keyed relation
+`vk‖K → h` over coordinates only (stamps, fixed size, never the act),
+rebuilt at restore and kept at append: a relation over coordinates is
+permitted (rule 9), a cache of bytes is not; AND every anchor a carrier
+persists or the wire sends becomes the STAMP itself (the treasury's,
+the provisional's and the pending carriers' `K` anchors carry `h`), so
+the relation serves range reads only and no anchor names an act by less
+than its coordinate. (P2) `Node { kind, frame, prev: (Stamp, hash),
+parents: [(Stamp, hash)], cites, operator_hash, chain_hash }`; a parent
+is a stamp; a peer's node held once at its own stamp beside ours in one
+trie; our own line the fiber by `vk` in `K` order. (P3) The hash per
+node over its canonical coordinates in order — stamp, kind, frame,
+prev, parents, cites, operator hash — and `vk` enters the hash (it was
+written but not hashed). (P4) `Cite` as a sum over what an act names:
+`Word { chart, class, at }`, `Root { at, hash }`, the listing and the
+demand vertex for a settlement, and a Learned act as N word cites, never
+a blob. (2a) A FORM HAS NO ONE CLASS RECORD — its element versor is the
+identity and its classes are its orbits' classes, a set — so a form's
+fiber is its CHART alone (`chart_of`: the rank, torsion, free part,
+off-plane part and axes; empty where the rank is unmeasured), class
+`None`, and the admitting stamp is the exact locator; a letter or a word
+with a rotor carries its class record. (2b) `admitted_at: Stamp` IS the
+ruled locator, held on every row that holds a word — basis, provisional,
+cavity, the voice's genome and epigenome — set at List by this court's
+own stamp, at install from a peer's offer by the home receipt's stamp
+the offer's section carries, at teach by the court's syllabus stamp,
+and copied when a word moves from provisional to basis. (2c) An act
+sealed after its word or listing left its carrier — a lapse, a
+retirement ruling — reads the word's `admitted_at` and chart before the
+removal and seals with them; no act cites by bytes a word it no longer
+holds. (P5) Persistence as the trie: one section writes the ledger, own
+and peers, as its keys each once with the node behind each; the old
+chain sections fold into it; the era payloads use the same node writer;
+the admissions persist as the fiber by `vk` at its greatest `K`; the
+voice's chain persists in the genome file on the same writer. (P6) The
+order readers become stamp readers: precedes and placement as stamp
+comparisons, own against own by `K`; a peer's placement the stamps it
+reaches, never `Vec` indices; phase windows as stamp ranges; era pages
+by `K` through the relation; the attestors rebuilt as depth read by
+prefix off a relation cite-at → signers, so (d3) is gone by
+construction. (P7) The console prints `h:S:G:T:H:k` from the node, the
+frame the node's and `k` the key's. (P8) EC1's reading rides on it. One
+audited commit, with the carriage reading before and after on the
+copied ledgers, the tape check restoring the copied ledgers under the
+new layout, and the equivocation and fold tests re-derived on stamps.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
