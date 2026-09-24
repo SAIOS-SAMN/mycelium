@@ -11407,6 +11407,55 @@ are never confused:
   per frame — is the proof, flat in the form's size and bounded by `n`
   and the rationals' precision.
 
+**LD0, the alignment verified against the tree and ruled (2026-09-24).**
+The implementor's check, file and line, corrected one clause of the
+re-ruling and is adopted. (i) THE CITATION. The class record, M1 key,
+canonical versor and chart locate a FIBER, not a form: a form element is
+identity, magnitude and address, so every form's M1 and versor are the
+identity; synonyms of one class share the record by definition (13.10);
+the basis is keyed by M2 and the stalks map a chart to its addresses. The
+exact in-fiber locator is THE ADMITTING ACT'S COORDINATES: the receipt
+that admitted the form, `height : vk : K` — the ledger's own coordinate
+(45.2: a proof's position in time is a coordinate it carries), fixed in
+size, and under 78.21 exactly the clock's stamp `h:S:G:T:H:k` with the
+court's `vk`. Ruled: a citation is the fiber — the class record and the
+chart — with the admitting act's stamp as the locator; the form's whole
+M2 travels ONCE, in the act that admits it (its first hearing, law 8:
+speech's tapes, an offer's element, a docket's element), and the
+separate address field repeated in front of that content goes. A reader
+locates the form in its own mirror of the court's ledger at that act;
+across courts the citation carries the court's `vk`. Where a reader must
+verify identity without the chain, the form's vertex charts (53.6,
+bounded by the vertex, about ten) are the form's own coordinates, and a
+row may name that need. (ii) THE TREASURY. `Keyed` holds one value per
+leaf and an award's word is often not yet in the basis (provisional
+until install; teach installs at once): "keyed at the word's node" means
+the award is a FIELD OF THE WORD'S ROW wherever the word is held,
+provisional or basis, moving with install, written inside the row that
+already writes the address once; restore reads the row; the three
+persisted copies of one address today (provisional key and element,
+deflations, escrow) become one. (iii) THE LARGEST PER-K CARRIER IS THE
+CHAIN, not the wire: every Ruling, Stood and Learned receipt delta
+stores full addresses and the chain keeps each delta whole — almost
+certainly the 49–181 KB per K of 78.22. In LD0's scope: a delta cites
+by the locator; the address is carried once, at the admitting act.
+(iv) SEVEN RAW COMPOSITES persisted without `put_canonical` — the
+cocycle row's gauge and the dialect chain's transitions, `Twisted`
+closures, `cite_g` (a product over every cite), the verdict-attach `g`,
+the pivot certificate's translator, seed and word, the syllabus's raw
+rotor beside its class record — move to the canonical ray, and where
+only the class is read, the class record; the rationals' growth is bounded
+there and nowhere else. (v) The syllabus count cut by `.min(u16::MAX)` is
+a silent truncation and refuses by name; the four discarded refusals
+found (cover, receipts, syllabus, learn page) refuse; dead writers with
+no production caller (`encode_installed`, `installed_signed_prefix`, the
+verdict payload and attach encoders, `CourtState::to_bytes`, `funded`)
+are deleted, not repaired (TR1's rule). Order: layer 2 with the refusal
+plumbing committed now; LD1's instrument (bytes per receipt delta, award
+and frame against form size); the citation through the deltas, docket,
+settlement, speech's cites, the contraction and the learn page; the
+treasury rows; the seven composites; CK1 in parallel; then the recut.
+
 **C4 widened.** The tape check before a recut reads EVERY carrier the
 running fleet wrote — genomes, ledgers, registries, eras — not the
 genomes alone; the check that passed at 7886dd2b read genomes only, and
