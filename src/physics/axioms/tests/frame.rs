@@ -325,3 +325,24 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
         "improper, unlike, unlike, and a turn across a dilation: {read:?}"
     );
 }
+
+/// 78.38 (C), clarified — THE CERTIFICATE IS ASKED BEFORE THE TURN BRANCH.
+///
+/// A domino and a three-cell bar lie along one axis and are both 2-fold
+/// symmetric, so the aligned branch reads only their angle — `wedge = 0`,
+/// `h₃ = 0` — and held them `HalfOpen`, a turn between two shapes no
+/// similarity relates. Neither tower certifies them, and no reader past the
+/// angle would refuse them, so the refusal comes first, naming the order
+/// from each tower.
+#[test]
+fn an_aligned_unlike_pair_is_refused_before_the_turn_branch() {
+    let dom = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
+    let bar = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
+    assert!(blade::third_harmonic(&dom.blade).is_none() && blade::third_harmonic(&bar.blade).is_none(), "2-fold, h3 = 0");
+    assert_eq!(blade::dilation(&dom.blade, &bar.blade), Err((2, 4)), "the region parts at 2, the sites at 4");
+    assert_eq!(
+        blade::relative_rotor(&dom.blade, &bar.blade).err(),
+        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: 2, sites: 4 })),
+        "unlike, not a held half turn"
+    );
+}

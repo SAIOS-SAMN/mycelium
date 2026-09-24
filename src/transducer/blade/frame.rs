@@ -468,6 +468,14 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // does, the region's otherwise.
     let (tower, certified) = reading_tower(a, b, plane);
     let (order, oa, ob) = orientation_of(a, b, plane, tower)?;
+    // WHERE NEITHER TOWER CERTIFIES, the pair is no similarity of either
+    // kind, and no reader past this point would refuse it: the aligned
+    // branch reads only the angle, and a matching angle between unlike
+    // shapes is not a turn of one onto the other. Refused before the turn
+    // branch with the order from each tower, the mirror named first.
+    if certified.is_err() {
+        return Err(unturned(a, b, plane, tower, certified));
+    }
     // SIGNS ONLY, WHICH IS WHAT MAKES IT SCALE-FREE. Under a dilation by
     // `s > 0` the moments scale as `s⁴`, so `u ↦ s⁴ · R(2φ) u` and every
     // sign survives. Taking `cos 2φ = (u_a·u_b)/(‖u_a‖‖u_b‖)` would need
