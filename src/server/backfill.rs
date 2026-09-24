@@ -121,21 +121,33 @@ pub fn chase(
 }
 
 /// ONE HEARD HEAD (45.2, 47.2 step 3): the reporting frame admitted; on a
-/// gap, the chase over `fetch` within `budget`, and the frame admitted
-/// again where the chase advanced. `admit` admits the one frame — the
-/// server's verified digest section, a test's verified receipt — so the
-/// same frame is what is admitted both times.
+/// gap, the chase over `fetch`, and the frame admitted again where the
+/// chase advanced. `admit` admits the one frame — the server's verified
+/// digest section, a test's verified receipt — so the same frame is what is
+/// admitted both times.
+///
+/// THE CHASE'S APERTURE IS MEASURED AGAINST THE LAG IT IS CLOSING, never a
+/// constant (ACT1-hold-b's fix, rule 5). A pass spends one `stroke` per
+/// page; where a stroke ends short and the lag it was closing SHRANK, the
+/// pass takes the next stroke and continues; it stops where the chain
+/// reaches `to − 1`, or where a stroke closes nothing. So the pages one
+/// exchange spends are the lag's own — no more than the gap, and no fewer
+/// while the gap is closing — and a signer who outruns one stroke per
+/// exchange is still caught: its head re-admitted once `to − 1` is held is
+/// the parent 45.2 asks for. Back-fill still never cites and never
+/// advances a head. It is not a scheduler (L27): nothing waits and
+/// nothing is timed; the pass ends on what the chain reads.
 ///
 /// ACT1-hold-b — THE CHASE ON THE OBSERVER, per signer (CV5): the K lag at
 /// the report (a level: the reported K against the head held), whether the
-/// pass REACHED `to − 1` or ended on its budget short of it, and whether
-/// the head was then admitted as a PARENT — the one admission that
-/// advances this court's height (45.2).
+/// pass REACHED `to − 1` or ended short of it, and whether the head was
+/// then admitted as a PARENT — the one admission that advances this
+/// court's height (45.2).
 pub fn hear<E>(
     kernel: &Mutex<Kernel>,
     mut admit: impl FnMut() -> Result<Admitted, E>,
-    budget: &mut crate::physics::Budget,
-    fetch: impl FnMut(&[u8; 32], u64, u64) -> Option<Vec<KStepReceipt>>,
+    mut stroke: impl FnMut() -> Option<crate::physics::Budget>,
+    mut fetch: impl FnMut(&[u8; 32], u64, u64) -> Option<Vec<KStepReceipt>>,
 ) -> Result<Admitted, E> {
     let admitted = admit();
     let Ok(Admitted::Gap { vk, to, .. }) = &admitted else { return admitted };
@@ -143,11 +155,25 @@ pub fn hear<E>(
     // The lag at the report: the reported K against the next K this court
     // would hold. A head held past the report is no lag, and none is set
     // (rule 11: never floored to zero).
-    let held = kernel.lock().ok().and_then(|k| k.known_head(&vk)).map_or(0, |(k, _)| k + 1);
-    if let Some(lag) = to.checked_sub(held) {
-        set_replication(vk, rep::LAG, lag);
+    let lag_now = || to.checked_sub(kernel.lock().ok().and_then(|k| k.known_head(&vk)).map_or(0, |(k, _)| k + 1));
+    let mut lag = lag_now();
+    if let Some(l) = lag {
+        set_replication(vk, rep::LAG, l);
     }
-    let pass = chase(kernel, vk, to, budget, fetch);
+    let mut pass = Pass { advanced: false, reached: false };
+    while let Some(mut budget) = stroke() {
+        let step = chase(kernel, vk, to, &mut budget, &mut fetch);
+        pass = Pass { advanced: pass.advanced || step.advanced, reached: step.reached };
+        if step.reached || !step.advanced {
+            break;
+        }
+        // Continue only while the lag this pass is closing shrinks.
+        let after = lag_now();
+        match (after, lag) {
+            (Some(a), Some(b)) if a < b => lag = after,
+            _ => break,
+        }
+    }
     note_replication(
         Some(vk),
         match pass.reached {

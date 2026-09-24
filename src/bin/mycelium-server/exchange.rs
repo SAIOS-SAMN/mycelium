@@ -427,13 +427,12 @@ impl Exchange {
                         // frame is then admitted again — the one citation.
                         // The chase and its readings (ACT1-hold-b) are the
                         // lib's; the wire is `backfill::fetch`.
-                        let Some(mut budget) = kernel.lock().ok().map(|mut k| k.stroke()) else {
-                            continue;
-                        };
+                        // Each page spends one stroke; a stroke is taken
+                        // again only while the lag the chase closes shrinks.
                         let admitted = mycelium::server::backfill::hear(
                             &kernel,
                             || admit_peer_receipt(&kernel, &mesh, &reply),
-                            &mut budget,
+                            || kernel.lock().ok().map(|mut k| k.stroke()),
                             crate::backfill::fetch(&mesh, &d),
                         );
                         // The signer is the key the digest names; a digest

@@ -38,17 +38,22 @@ fn act(b: &mut crate::chronometry::ReceiptChain, n: u64) {
 /// is admitted as a PARENT (the one admission that advances c's height),
 /// and the K lag at report does not grow.
 ///
-/// RED ON MECHANISM (A) until the fix: a pass paced by one stroke's budget
-/// ends short every time, the head re-admits into another gap, no parent
-/// is ever cited, and the lag climbs exchange on exchange — hypha c's
-/// 16 202 back-filled receipts and no parent, read in two kernels.
+/// Mechanism (A), which this read red before the fix: a pass paced by one
+/// stroke's budget ended short every time, the head re-admitted into
+/// another gap, no parent was ever cited, and the lag climbed 143, 215,
+/// 287, 359 — hypha c's 16 202 back-filled receipts and no parent, read in
+/// two kernels. With the aperture measured against the lag, every pass
+/// reaches `K − 1` and cites the head.
 #[test]
-#[ignore = "ACT1-hold-b: red on mechanism (A) until the chase's aperture is measured against the lag"]
 fn a_heard_head_is_cited_once_its_gap_closes() {
     let key = super::common::court_key("backfill-b");
     let vk = key.vk_bytes();
     let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
-    let c = std::sync::Mutex::new(Kernel::new());
+    // c has acted on its own line, as a running court has: its height is
+    // then `1 + max(prev, parents)` (45.2).
+    let mut c0 = Kernel::new();
+    c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
+    let c = std::sync::Mutex::new(c0);
     const PAGE: u64 = 8;
     let pages_per_pass = c.lock().expect("c").stroke().remaining() as u64;
     // Faster than one pass can page: twice what a pass can fetch.
@@ -57,14 +62,13 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
     for _ in 0..4 {
         act(&mut b, rate);
         let (head, pre) = head_of(&b);
-        let mut budget = c.lock().expect("c").stroke();
         let fetch = |who: &[u8; 32], lo: u64, hi: u64| -> Option<Vec<crate::chronometry::KStepReceipt>> {
             (*who == vk).then(|| (lo..=hi.min(lo + PAGE - 1)).filter_map(|k| b.at(who, k).cloned()).collect())
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
             || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
-            &mut budget,
+            || c.lock().ok().map(|mut k| k.stroke()),
             fetch,
         );
         let _ = heard;
@@ -84,4 +88,10 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
     assert!(axes[rep::BACKFILL_REACHED] > 0, "a pass reaches the reported K − 1");
     assert!(axes[rep::PARENT_AFTER_BACKFILL] > 0, "and the head is cited as a parent (45.2)");
     assert!(lags.windows(2).all(|w| w[1] <= w[0]), "and the lag does not grow: {lags:?}");
+    // 45.2: the parent is what advances c's height. c's next act cites b's
+    // head and stands above it.
+    let mut c = c.into_inner().expect("c");
+    c.append_step(crate::chronometry::ActKind::Attest, [0xAB; 40], [1; 32]);
+    let b_h = b.head().expect("b").stamp.h;
+    assert!(c.chain().head_height() > b_h, "c's act cites b's head: height {} over b's {b_h}", c.chain().head_height());
 }
