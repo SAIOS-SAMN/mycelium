@@ -28,7 +28,7 @@ fn horizon_seeded_class_is_not_rederived() {
 }
 
 #[test]
-fn horizon_is_keyed_by_class_key_and_round_trips() {
+fn horizon_is_keyed_by_class_key() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);
@@ -42,13 +42,7 @@ fn horizon_is_keyed_by_class_key_and_round_trips() {
     if let Some(b) = c.bubbles.get_mut(&key) {
         horizon_put(&mut b.horizon, r.clone(), Standing::Held);
     }
-    assert!(c.bubbles.get(&key).unwrap().horizon.contains(ck.as_bytes()));
-    let mut bytes = Vec::new();
-    c.to_bytes(&mut bytes);
-    assert_eq!(&bytes[..4], Contemplation::THT3);
-    let mut pos = 0usize;
-    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("THT3");
-    let hb = back.bubbles.get(&key).expect("restored");
+    let hb = c.bubbles.get(&key).expect("held");
     let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
     assert_eq!(got.class_key(), Some(ck.clone()));
     assert_eq!(*order, r.order().expect("quarter has an order"));

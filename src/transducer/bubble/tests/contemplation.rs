@@ -165,11 +165,6 @@ fn hold_form_keeps_a_glued_open_orbit() {
         }),
         "the bubble carries the Form"
     );
-    let mut bytes = Vec::new();
-    c.to_bytes(&mut bytes);
-    let mut pos = 0usize;
-    let back = Contemplation::from_bytes(&bytes, &mut pos).expect("FRM1");
-    assert_eq!(back.bubbles.len(), 1, "the glued form survives the tape");
 
     let mut open = Form::default();
     // Two vertices, two charts: with one chart they would be one vertex,

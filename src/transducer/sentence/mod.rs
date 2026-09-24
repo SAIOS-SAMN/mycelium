@@ -6,7 +6,6 @@
 
 pub mod axis;
 pub mod chain;
-pub mod codec;
 pub mod form;
 pub mod transport;
 pub mod class;

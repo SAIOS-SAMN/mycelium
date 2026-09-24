@@ -103,9 +103,10 @@ impl Entity {
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
     /// if present (GEN5) — its words with their admitting stamps, and this
     /// voice's own ledger behind them, so its K continues across a boot
-    /// rather than restarting at zero. The epigenome starts empty. An older
-    /// file, or one whose ledger does not verify, is refused whole.
-    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str, _thoughts_path: &str) -> Self {
+    /// rather than restarting at zero. The epigenome starts empty: it is
+    /// volatile, in memory and never persisted (78.27). An older file, or
+    /// one whose ledger does not verify, is refused whole.
+    pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         let Ok(bytes) = std::fs::read(genome_path) else {
             eprintln!("genome 0 words, epigenome empty");
@@ -150,15 +151,6 @@ impl Entity {
         std::fs::rename(&tmp, genome_path)?;
         self.genome_persisted = Some(at);
         Ok(())
-    }
-
-    /// Persist open thoughts atomically.
-    pub fn save_thoughts(&self, thoughts_path: &str) -> io::Result<()> {
-        let tmp = format!("{thoughts_path}.tmp");
-        let mut bytes = Vec::new();
-        self.contemplation.to_bytes(&mut bytes);
-        std::fs::write(&tmp, bytes)?;
-        std::fs::rename(&tmp, thoughts_path)
     }
 
     pub fn kernel(&self) -> &Kernel {

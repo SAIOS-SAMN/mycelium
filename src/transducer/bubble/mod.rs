@@ -12,7 +12,6 @@ pub mod horizon;
 pub mod idea;
 pub mod merge;
 pub mod shed;
-pub mod tape;
 
 pub use contemplation::Contemplation;
 pub use idea::{Bubble, ClassRecord};

@@ -230,7 +230,6 @@ fn main() {
         }
     };
     let genome_path = home.join("genome").to_string_lossy().into_owned();
-    let thoughts_path = home.join("thoughts").to_string_lossy().into_owned();
     let bootstrap = if mesh_rec.bootstrap.is_empty() {
         "127.0.0.1:7500".to_string()
     } else {
@@ -244,7 +243,6 @@ fn main() {
         &bootstrap,
         Kernel::from_voice(voice.identity()),
         &genome_path,
-        &thoughts_path,
     );
     entity.set_height(height);
     entity.discover();
@@ -280,7 +278,6 @@ fn main() {
     loop {
         if stop.load(Ordering::SeqCst) {
             let _ = entity.save_genome(&genome_path);
-            let _ = entity.save_thoughts(&thoughts_path);
             break;
         }
         stroke_n = stroke_n.saturating_add(1);
