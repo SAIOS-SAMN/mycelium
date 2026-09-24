@@ -154,6 +154,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.mirrors)
         .zip(&c.enclosures)
         .map(|((a, ms), enclosure)| CellEntry {
+            refusals: a.refusals.clone(),
             enclosure: enclosure.clone(),
             grade: a.grade as u8,
             round: match a.congruence {
@@ -423,9 +424,9 @@ pub(crate) fn cell_algebras(
                     (false, false) => Some((b, a)),
                 }
             };
-            let mut circuits: Vec<Option<Mv>> = Vec::new();
+            let mut circuits: Vec<Result<Mv, crate::transducer::cech::CircuitUnread>> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
-            for crate::transducer::sentence::TraversedCircuit { steps, composite, .. } in traversed {
+            for crate::transducer::sentence::TraversedCircuit { steps, composite, unread, .. } in traversed {
                 // CX1 — the circuit's order of the cell's bodies: each body
                 // as the circuit's crossings first reach it; `None` where the
                 // circuit does not reach every body of the cell.
@@ -442,7 +443,15 @@ pub(crate) fn cell_algebras(
                 if order.is_empty() {
                     continue;
                 }
-                circuits.push(composite.clone());
+                // OR3's reason rides the circuit into the cell; a composite
+                // missing with no reason recorded is the unnamed refusal, by
+                // its own name.
+                use crate::transducer::cech::CircuitUnread;
+                circuits.push(match (composite, unread) {
+                    (Some(h), _) => Ok(h.clone()),
+                    (None, Some(why)) => Err(*why),
+                    (None, None) => Err(CircuitUnread::Unnamed),
+                });
                 orders.push((order.len() == cell.bodies.len()).then_some(order));
             }
             crate::transducer::cech::read_cell(

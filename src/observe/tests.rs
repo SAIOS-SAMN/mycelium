@@ -330,6 +330,21 @@ fn the_cells_read_back_whole() {
                 classes: 0,
                 mirrors: vec![vec![(1, q(0, 1), q(1, 4), PairRegime::Finite(3))], vec![]],
                 enclosure: Some(CellEnclosure::Round { bodies: [1, 2, 0, 1, 0], within: Some(1) }),
+                // CV1b — every arm of the refusals by content travels.
+                refusals: CellRefusals {
+                    circuits: CircuitUnread::ALL.to_vec(),
+                    modes: vec![
+                        ModesUnread::NotVersor,
+                        ModesUnread::Irrational(3),
+                        ModesUnread::Defective,
+                        ModesUnread::Unbounded(2),
+                    ],
+                    capacity: Some(CapacityRefused::Overflow { product: 12, entry: 40, bits: 71 }),
+                    zero_meet: true,
+                    nuclei: false,
+                    unordered: 2,
+                    orbit: Some(OrbitUnread::NoRay { constructor: 1 }),
+                },
             },
             CellEntry {
                 grade: 2,
@@ -347,6 +362,12 @@ fn the_cells_read_back_whole() {
                 classes: 1,
                 mirrors: vec![],
                 enclosure: Some(CellEnclosure::Flat),
+                refusals: CellRefusals {
+                    capacity: Some(CapacityRefused::Spent { product: 7 }),
+                    nuclei: true,
+                    orbit: Some(OrbitUnread::CarriedNoRay),
+                    ..CellRefusals::default()
+                },
             },
         ],
     };

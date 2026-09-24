@@ -117,6 +117,103 @@ pub enum Coherence {
     Unread,
 }
 
+/// WHY A CIRCUIT CROSSING A CELL DID NOT READ (OR3's reason, 78.26(4)): the
+/// edge half refused by name, the circuit riding a held coset, or a refusal
+/// the traversal did not name — itself a reading.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CircuitUnread {
+    Cone,
+    NoPlace,
+    NotRigid,
+    Unrefracted,
+    NoFace,
+    TwoWays,
+    Coset,
+    Unnamed,
+}
+
+impl CircuitUnread {
+    pub const ALL: [CircuitUnread; 8] = [
+        CircuitUnread::Cone,
+        CircuitUnread::NoPlace,
+        CircuitUnread::NotRigid,
+        CircuitUnread::Unrefracted,
+        CircuitUnread::NoFace,
+        CircuitUnread::TwoWays,
+        CircuitUnread::Coset,
+        CircuitUnread::Unnamed,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            CircuitUnread::Cone => "cone",
+            CircuitUnread::NoPlace => "no-place",
+            CircuitUnread::NotRigid => "not-rigid",
+            CircuitUnread::Unrefracted => "unrefracted",
+            CircuitUnread::NoFace => "no-face",
+            CircuitUnread::TwoWays => "two-ways",
+            CircuitUnread::Coset => "coset",
+            CircuitUnread::Unnamed => "unnamed",
+        }
+    }
+}
+
+/// WHY A READ CIRCUIT'S MODES DID NOT READ (MR1): the holonomy is no versor,
+/// or its action did not split — a factor with no rational root, a defective
+/// part, or the budget spent reading a factor of this degree.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ModesUnread {
+    NotVersor,
+    Irrational(usize),
+    Defective,
+    Unbounded(usize),
+}
+
+/// WHY A CELL'S CAPACITY DID NOT READ (78.26(4)): no crossing circuit read; a
+/// read holonomy with no action (not a versor); the budget spent at the k-th
+/// product; an entry of the k-th product that does not fit the exact
+/// elimination, by its place and its size in bits; or the elimination itself
+/// overflowing at the k-th product.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CapacityRefused {
+    NoneRead,
+    NotVersor { circuit: usize },
+    Spent { product: usize },
+    Overflow { product: usize, entry: usize, bits: u64 },
+    Elimination { product: usize },
+}
+
+/// CV1b — WHAT ONE CELL'S READERS COULD NOT HOLD, BY CONTENT (78.26(4)): each
+/// silence the readers answer as `None` or `Unread`, with what it could not
+/// hold. The instrument: read beside the readers' answers, and carried by
+/// their own types at the fix.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct CellRefusals {
+    /// Each crossing circuit whose holonomy did not read, by OR3's reason.
+    pub circuits: Vec<CircuitUnread>,
+    /// Each read circuit whose modes did not read, by why.
+    pub modes: Vec<ModesUnread>,
+    /// Why the capacity did not read, where it did not.
+    pub capacity: Option<CapacityRefused>,
+    /// ZM1 — the cell's nuclei read and their meet is zero: dependent
+    /// spheres, or `n + 2` of them. No round, and not congruence.
+    pub zero_meet: bool,
+    /// The cell's nuclei did not read back: no round, no constructors, no
+    /// Gram form.
+    pub nuclei: bool,
+    /// Elliptic modes of no admitted order: what `Coherence::Held` holds.
+    pub unordered: usize,
+    /// Why the constructors' orbit did not read, where it did not.
+    pub orbit: Option<cga::OrbitUnread>,
+}
+
+impl CellRefusals {
+    /// Whether any reader of the cell refused.
+    pub fn any(&self) -> bool {
+        *self != CellRefusals::default()
+    }
+}
+
 /// ONE CELL'S ORBIT ALGEBRA (CG1, CG1b, GR1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CellAlgebra {
@@ -151,11 +248,14 @@ pub struct CellAlgebra {
     pub polars: Option<super::CoxeterReading>,
     /// DF1 — the dual frame, `descend`'s reader, or why there is none.
     pub dual: Option<cga::DualFrame>,
+    /// CV1b — what the readers above could not hold, by content.
+    pub refusals: CellRefusals,
 }
 
 /// A matrix as one sparse integer row: its denominators cleared, reduced by
-/// the gcd of what is left. `None` where an entry does not fit.
-fn row_of(m: &[Vec<Q>]) -> Option<crate::core::lattice::SparseRow> {
+/// the gcd of what is left. `Err` names the entry that does not fit, by its
+/// place and its size in bits.
+fn row_of(m: &[Vec<Q>]) -> Result<crate::core::lattice::SparseRow, (usize, u64)> {
     use num_bigint::BigInt;
     let lcm = m.iter().flatten().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
     let ints: Vec<BigInt> = m.iter().flatten().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
@@ -167,29 +267,35 @@ fn row_of(m: &[Vec<Q>]) -> Option<crate::core::lattice::SparseRow> {
     let mut row = Vec::new();
     for (at, x) in ints.iter().enumerate() {
         if !x.is_zero() {
-            row.push((at, i64::try_from(&(x / &g)).ok()?));
+            let q = x / &g;
+            row.push((at, i64::try_from(&q).map_err(|_| (at, q.bits()))?));
         }
     }
-    Some(row)
+    Ok(row)
 }
 
 /// THE CAPACITY: the rank of the unital algebra the actions generate, the
 /// products closed on a keyed worklist, one read of the budget per product.
-fn capacity(actions: &[Vec<Vec<Q>>], budget: &mut crate::physics::Budget) -> Option<usize> {
-    let [first, ..] = actions else { return None };
+/// A refusal carries what it could not hold: the product the budget ran out
+/// at, the entry that did not fit, the elimination that overflowed.
+fn capacity(actions: &[Vec<Vec<Q>>], budget: &mut crate::physics::Budget) -> Result<usize, CapacityRefused> {
+    let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
     let d = first.len();
     let width = d * d;
-    let mut rows = vec![row_of(&cga::identity_matrix(d))?];
+    let overflow = |product: usize| move |(entry, bits)| CapacityRefused::Overflow { product, entry, bits };
+    let mut rows = vec![row_of(&cga::identity_matrix(d)).map_err(overflow(0))?];
     let mut rank = 1usize;
+    let mut product = 0usize;
     let mut work: Vec<Vec<Vec<Q>>> = vec![cga::identity_matrix(d)];
     while let Some(b) = work.pop() {
         for a in actions {
+            product += 1;
             if !budget.spend() {
-                return None;
+                return Err(CapacityRefused::Spent { product });
             }
             let p = cga::matrix_mul(&b, a);
-            rows.push(row_of(&p)?);
-            let r = crate::core::lattice::sparse_rank(&rows, width)?;
+            rows.push(row_of(&p).map_err(overflow(product))?);
+            let r = crate::core::lattice::sparse_rank(&rows, width).ok_or(CapacityRefused::Elimination { product })?;
             match r > rank {
                 true => {
                     rank = r;
@@ -201,7 +307,7 @@ fn capacity(actions: &[Vec<Vec<Q>>], budget: &mut crate::physics::Budget) -> Opt
             }
         }
     }
-    Some(rank)
+    Ok(rank)
 }
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.
@@ -241,33 +347,63 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 }
 
 /// READ ONE CELL'S ORBIT ALGEBRA: its grade, its round, its constructors,
-/// the holonomy of every circuit crossing it (`None` where a circuit did not
-/// read, OR3), and each circuit's order of the cell's constructors (`None`
-/// where it does not visit every body), under the stroke's budget.
+/// the holonomy of every circuit crossing it (`Err` with OR3's reason where
+/// a circuit did not read), and each circuit's order of the cell's
+/// constructors (`None` where it does not visit every body), under the
+/// stroke's budget.
 pub fn read_cell(
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
-    circuits: &[Option<Mv>],
+    circuits: &[Result<Mv, CircuitUnread>],
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
 ) -> CellAlgebra {
-    // A zero meet is no round (78.14).
+    let mut refusals = CellRefusals {
+        circuits: circuits.iter().filter_map(|h| h.as_ref().err().copied()).collect(),
+        nuclei: nuclei.is_none(),
+        ..CellRefusals::default()
+    };
+    // A zero meet is no round (78.14), and ZM1 counts it by name.
+    refusals.zero_meet = round.is_some_and(Mv::is_zero);
     let round = round.filter(|m| !m.is_zero());
     let read: Vec<&Mv> = circuits.iter().flatten().collect();
     let modes: Vec<Option<Vec<MotionMode>>> = circuits
         .iter()
         .map(|h| match h.as_ref().map(|h| cga::motion_modes(h, budget)) {
-            Some(Some(Ok(ms))) => Some(ms),
-            _ => None,
+            Ok(Some(Ok(ms))) => Some(ms),
+            Ok(Some(Err(why))) => {
+                refusals.modes.push(match why {
+                    cga::Undecomposed::Irrational(d) => ModesUnread::Irrational(d),
+                    cga::Undecomposed::Defective => ModesUnread::Defective,
+                    cga::Undecomposed::Unbounded(d) => ModesUnread::Unbounded(d),
+                });
+                None
+            }
+            Ok(None) => {
+                refusals.modes.push(ModesUnread::NotVersor);
+                None
+            }
+            Err(_) => None,
         })
         .collect();
     let unread = modes.iter().filter(|m| m.is_none()).count();
     // Every action in the one algebra the cell's circuits span — the join of
     // their algebras, a value never narrowed — so the matrices compose.
     let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
-    let actions: Option<Vec<Vec<Vec<Q>>>> = read.iter().map(|h| cga::action_of(&h.widened(n))).collect();
-    let capacity = actions.as_deref().and_then(|a| capacity(a, budget));
+    let actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused> = read
+        .iter()
+        .enumerate()
+        .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
+        .collect();
+    let capacity = match actions.as_deref().map_err(|why| *why).and_then(|a| capacity(a, budget)) {
+        Ok(k) => Some(k),
+        Err(why) => {
+            refusals.capacity = Some(why);
+            None
+        }
+    };
+    let actions = actions.ok();
     let coupled = match &actions {
         Some(a) => (0..a.len())
             .flat_map(|i| ((i + 1)..a.len()).map(move |j| (i, j)))
@@ -336,7 +472,10 @@ pub fn read_cell(
                 Some(m) => Coherence::Open(m.kind),
                 None => match all.iter().map(|m| m.order).collect::<Option<Vec<u32>>>() {
                     Some(orders) => Coherence::Closes(orders.into_iter().fold(1, lcm)),
-                    None => Coherence::Held,
+                    None => {
+                        refusals.unordered = all.iter().filter(|m| m.order.is_none()).count();
+                        Coherence::Held
+                    }
                 },
             }
         }
@@ -345,7 +484,13 @@ pub fn read_cell(
     let gram = nuclei.map(cga::read_gram);
     let generators: Vec<Mv> = read.into_iter().cloned().collect();
     let constructors = match nuclei {
-        Some(ns) => cga::constructor_orbit(ns, &generators, budget),
+        Some(ns) => match cga::constructor_orbit_or_why(ns, &generators, budget) {
+            Ok(orbit) => orbit,
+            Err(why) => {
+                refusals.orbit = Some(why);
+                ConstructorOrbit::Unread
+            }
+        },
         None => ConstructorOrbit::Unread,
     };
     // CX1 — the product per circuit that orders every body; GR2 — the
@@ -396,5 +541,6 @@ pub fn read_cell(
         coxeter,
         polars,
         dual,
+        refusals,
     }
 }

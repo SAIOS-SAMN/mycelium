@@ -10,9 +10,10 @@ fn member(i: u16) -> Vec<u8> {
 }
 
 /// A traversed circuit by its steps and composite, through no held coset and
-/// no static contact.
+/// no static contact; a composite that did not read is unread as not rigid.
 fn traversed(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::TraversedCircuit {
-    crate::transducer::sentence::TraversedCircuit { steps, composite, coset: None, gauge_static: false }
+    let unread = composite.is_none().then_some(crate::transducer::cech::CircuitUnread::NotRigid);
+    crate::transducer::sentence::TraversedCircuit { steps, composite, unread, coset: None, gauge_static: false }
 }
 
 /// One body per member, each a single cube at `site`.

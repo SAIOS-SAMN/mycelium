@@ -37,6 +37,23 @@ struct GradeRow {
     /// rounds — inside, on, apart, wrapping, unread; rounds nested in
     /// another cell's.
     enclosure: [u64; 8],
+    /// CV1b — what the readers could not hold, by content: circuits unread
+    /// by OR3's reason; modes unread (not a versor, irrational, defective,
+    /// spent); the capacity's refusals (none read, not a versor, spent at
+    /// these products, these entries overflowing, the elimination at these
+    /// products); ZM1's zero meets; nuclei unread; modes of no admitted
+    /// order; the orbit's refusals (no reflection, no versor, no ray, carry
+    /// refused, carried with no ray).
+    circuits_unread: [u64; 8],
+    modes_unread: [u64; 4],
+    capacity_refused: [u64; 2],
+    capacity_spent: Vec<usize>,
+    capacity_overflow: Vec<(usize, usize, u64)>,
+    capacity_elimination: Vec<usize>,
+    zero_meets: u64,
+    nuclei_unread: u64,
+    unordered: u64,
+    orbit_unread: [u64; 5],
 }
 
 /// The tally's axis for a group's closure; an unread reading on the last
@@ -105,6 +122,42 @@ impl CellTally {
                 None => {}
             }
             row.products.push((c.products.len(), usize::from(c.classes)));
+            // CV1b — the refusals by content.
+            use crate::observe::{CapacityRefused, CircuitUnread, ModesUnread, OrbitUnread};
+            let r = &c.refusals;
+            for w in &r.circuits {
+                row.circuits_unread[axis(&CircuitUnread::ALL, *w)] += 1;
+            }
+            for m in &r.modes {
+                row.modes_unread[match m {
+                    ModesUnread::NotVersor => 0,
+                    ModesUnread::Irrational(_) => 1,
+                    ModesUnread::Defective => 2,
+                    ModesUnread::Unbounded(_) => 3,
+                }] += 1;
+            }
+            match r.capacity {
+                Some(CapacityRefused::NoneRead) => row.capacity_refused[0] += 1,
+                Some(CapacityRefused::NotVersor { .. }) => row.capacity_refused[1] += 1,
+                Some(CapacityRefused::Spent { product }) => row.capacity_spent.push(product),
+                Some(CapacityRefused::Overflow { product, entry, bits }) => {
+                    row.capacity_overflow.push((product, entry, bits))
+                }
+                Some(CapacityRefused::Elimination { product }) => row.capacity_elimination.push(product),
+                None => {}
+            }
+            row.zero_meets += u64::from(r.zero_meet);
+            row.nuclei_unread += u64::from(r.nuclei);
+            row.unordered += r.unordered as u64;
+            if let Some(o) = r.orbit {
+                row.orbit_unread[match o {
+                    OrbitUnread::NotConstructor { .. } => 0,
+                    OrbitUnread::NotVersor { .. } => 1,
+                    OrbitUnread::NoRay { .. } => 2,
+                    OrbitUnread::CarryRefused => 3,
+                    OrbitUnread::CarriedNoRay => 4,
+                }] += 1;
+            }
             match &c.enclosure {
                 Some(CellEnclosure::Flat) => row.enclosure[0] += 1,
                 Some(CellEnclosure::Round { bodies, within }) => {
@@ -161,9 +214,16 @@ impl CellTally {
                     axes(&r.coxeter), axes(&r.polars), r.dual[0], r.dual[1], r.dual[2], r.products,
                     r.mirrors[0], r.mirrors[1], r.mirrors[2], r.mirrors[3]
                 );
+                let cu = r.circuits_unread;
+                let (mu, ou) = (r.modes_unread, r.orbit_unread);
                 format!(
-                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {}",
-                    en[0], en[1], en[2], en[3], en[4], en[5], en[6], en[7]
+                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {} | refused: circuits unread cone {} no-place {} not-rigid {} unrefracted {} no-face {} two-ways {} coset {} unnamed {} | modes unread not-versor {} irrational {} defective {} spent {} | capacity none-read {} not-versor {} spent at {:?} overflow (product, entry, bits) {:?} elimination at {:?} | zero meets {} | nuclei unread {} | modes of no admitted order {} | orbit no-reflection {} no-versor {} no-ray {} carry-refused {} carried-no-ray {}",
+                    en[0], en[1], en[2], en[3], en[4], en[5], en[6], en[7],
+                    cu[0], cu[1], cu[2], cu[3], cu[4], cu[5], cu[6], cu[7],
+                    mu[0], mu[1], mu[2], mu[3],
+                    r.capacity_refused[0], r.capacity_refused[1], r.capacity_spent, r.capacity_overflow, r.capacity_elimination,
+                    r.zero_meets, r.nuclei_unread, r.unordered,
+                    ou[0], ou[1], ou[2], ou[3], ou[4]
                 )
             })
             .collect();

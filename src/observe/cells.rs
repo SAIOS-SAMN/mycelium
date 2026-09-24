@@ -6,6 +6,8 @@
 // to the console on demand, never printed per epoch.
 
 use super::circuit::{holds, put_int, take_int, take_u16, take_u32, take_u8};
+pub use crate::transducer::cech::{CapacityRefused, CellRefusals, CircuitUnread, ModesUnread};
+pub use crate::transducer::cga::OrbitUnread;
 use crate::transducer::cga::PairRegime;
 use num_rational::BigRational;
 
@@ -195,6 +197,193 @@ pub struct CellEntry {
     pub mirrors: Vec<Vec<(u8, BigRational, BigRational, PairRegime)>>,
     /// EN1 — its enclosure; `None` where its nuclei did not read.
     pub enclosure: Option<CellEnclosure>,
+    /// CV1b — what the cell's readers could not hold, by content (78.26(4)).
+    pub refusals: CellRefusals,
+}
+
+/// The refusals by content, written: each carrier's count and its entries,
+/// every arm by its own tag.
+fn put_refusals(out: &mut Vec<u8>, r: &CellRefusals) {
+    out.extend_from_slice(&(r.circuits.len() as u32).to_le_bytes());
+    for c in &r.circuits {
+        out.push(code_in(&CircuitUnread::ALL, *c));
+    }
+    out.extend_from_slice(&(r.modes.len() as u32).to_le_bytes());
+    for m in &r.modes {
+        let (tag, d) = match m {
+            ModesUnread::NotVersor => (0u8, 0usize),
+            ModesUnread::Irrational(d) => (1, *d),
+            ModesUnread::Defective => (2, 0),
+            ModesUnread::Unbounded(d) => (3, *d),
+        };
+        out.push(tag);
+        out.extend_from_slice(&(d as u32).to_le_bytes());
+    }
+    let u32s = |out: &mut Vec<u8>, xs: &[usize]| {
+        for x in xs {
+            out.extend_from_slice(&(*x as u32).to_le_bytes());
+        }
+    };
+    match r.capacity {
+        None => out.push(NONE),
+        Some(CapacityRefused::NoneRead) => out.push(0),
+        Some(CapacityRefused::NotVersor { circuit }) => {
+            out.push(1);
+            u32s(out, &[circuit]);
+        }
+        Some(CapacityRefused::Spent { product }) => {
+            out.push(2);
+            u32s(out, &[product]);
+        }
+        Some(CapacityRefused::Overflow { product, entry, bits }) => {
+            out.push(3);
+            u32s(out, &[product, entry]);
+            out.extend_from_slice(&bits.to_le_bytes());
+        }
+        Some(CapacityRefused::Elimination { product }) => {
+            out.push(4);
+            u32s(out, &[product]);
+        }
+    }
+    out.push(u8::from(r.zero_meet));
+    out.push(u8::from(r.nuclei));
+    u32s(out, &[r.unordered]);
+    match r.orbit {
+        None => out.push(NONE),
+        Some(OrbitUnread::NotConstructor { constructor }) => {
+            out.push(0);
+            u32s(out, &[constructor]);
+        }
+        Some(OrbitUnread::NotVersor { generator }) => {
+            out.push(1);
+            u32s(out, &[generator]);
+        }
+        Some(OrbitUnread::NoRay { constructor }) => {
+            out.push(2);
+            u32s(out, &[constructor]);
+        }
+        Some(OrbitUnread::CarryRefused) => out.push(3),
+        Some(OrbitUnread::CarriedNoRay) => out.push(4),
+    }
+}
+
+/// ONE CELL'S REFUSALS AS A LINE, by content: each circuit unread by OR3's
+/// reason, each unread mode by why, why the capacity refused, the zero meet,
+/// the nuclei, the modes of no admitted order, why the orbit refused.
+/// Empty where every reader of the cell read.
+pub fn refusals_line(r: &CellRefusals) -> String {
+    let mut parts: Vec<String> = Vec::new();
+    if !r.circuits.is_empty() {
+        let by: Vec<String> = CircuitUnread::ALL
+            .iter()
+            .map(|w| (w, r.circuits.iter().filter(|c| *c == w).count()))
+            .filter(|(_, n)| *n > 0)
+            .map(|(w, n)| format!("{} {n}", w.label()))
+            .collect();
+        parts.push(format!("circuits unread {}", by.join(" ")));
+    }
+    if !r.modes.is_empty() {
+        let by: Vec<String> = r
+            .modes
+            .iter()
+            .map(|m| match m {
+                ModesUnread::NotVersor => "not-versor".to_string(),
+                ModesUnread::Irrational(d) => format!("irrational(deg {d})"),
+                ModesUnread::Defective => "defective".to_string(),
+                ModesUnread::Unbounded(d) => format!("spent(deg {d})"),
+            })
+            .collect();
+        parts.push(format!("modes unread {}", by.join(" ")));
+    }
+    if let Some(c) = r.capacity {
+        parts.push(match c {
+            CapacityRefused::NoneRead => "capacity: no circuit read".to_string(),
+            CapacityRefused::NotVersor { circuit } => format!("capacity: circuit {circuit} no versor"),
+            CapacityRefused::Spent { product } => format!("capacity: spent at product {product}"),
+            CapacityRefused::Overflow { product, entry, bits } => {
+                format!("capacity: product {product} entry {entry} of {bits} bits does not fit")
+            }
+            CapacityRefused::Elimination { product } => format!("capacity: elimination overflows at product {product}"),
+        });
+    }
+    if r.zero_meet {
+        parts.push("zero meet".to_string());
+    }
+    if r.nuclei {
+        parts.push("nuclei unread".to_string());
+    }
+    if r.unordered > 0 {
+        parts.push(format!("modes of no admitted order {}", r.unordered));
+    }
+    if let Some(o) = r.orbit {
+        parts.push(match o {
+            OrbitUnread::NotConstructor { constructor } => format!("orbit: constructor {constructor} no reflection"),
+            OrbitUnread::NotVersor { generator } => format!("orbit: generator {generator} no versor"),
+            OrbitUnread::NoRay { constructor } => format!("orbit: constructor {constructor} no ray"),
+            OrbitUnread::CarryRefused => "orbit: a carrying refused".to_string(),
+            OrbitUnread::CarriedNoRay => "orbit: a carried image has no ray".to_string(),
+        });
+    }
+    parts.join(" · ")
+}
+
+fn take_flag(b: &[u8], p: &mut usize) -> Option<bool> {
+    match take_u8(b, p)? {
+        0 => Some(false),
+        1 => Some(true),
+        _ => None,
+    }
+}
+
+fn take_refusals(b: &[u8], p: &mut usize) -> Option<CellRefusals> {
+    let n = take_u32(b, p)?;
+    if !holds(b, *p, n, 1) {
+        return None;
+    }
+    let circuits = (0..n).map(|_| take_coded(&CircuitUnread::ALL, b, p)).collect::<Option<Vec<_>>>()?;
+    let n = take_u32(b, p)?;
+    if !holds(b, *p, n, 5) {
+        return None;
+    }
+    let mut modes = Vec::with_capacity(n);
+    for _ in 0..n {
+        let tag = take_u8(b, p)?;
+        let d = take_u32(b, p)?;
+        modes.push(match tag {
+            0 => ModesUnread::NotVersor,
+            1 => ModesUnread::Irrational(d),
+            2 => ModesUnread::Defective,
+            3 => ModesUnread::Unbounded(d),
+            _ => return None,
+        });
+    }
+    let capacity = match take_u8(b, p)? {
+        NONE => None,
+        0 => Some(CapacityRefused::NoneRead),
+        1 => Some(CapacityRefused::NotVersor { circuit: take_u32(b, p)? }),
+        2 => Some(CapacityRefused::Spent { product: take_u32(b, p)? }),
+        3 => {
+            let (product, entry) = (take_u32(b, p)?, take_u32(b, p)?);
+            let bits = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            Some(CapacityRefused::Overflow { product, entry, bits })
+        }
+        4 => Some(CapacityRefused::Elimination { product: take_u32(b, p)? }),
+        _ => return None,
+    };
+    let zero_meet = take_flag(b, p)?;
+    let nuclei = take_flag(b, p)?;
+    let unordered = take_u32(b, p)?;
+    let orbit = match take_u8(b, p)? {
+        NONE => None,
+        0 => Some(OrbitUnread::NotConstructor { constructor: take_u32(b, p)? }),
+        1 => Some(OrbitUnread::NotVersor { generator: take_u32(b, p)? }),
+        2 => Some(OrbitUnread::NoRay { constructor: take_u32(b, p)? }),
+        3 => Some(OrbitUnread::CarryRefused),
+        4 => Some(OrbitUnread::CarriedNoRay),
+        _ => return None,
+    };
+    Some(CellRefusals { circuits, modes, capacity, zero_meet, nuclei, unordered, orbit })
 }
 
 /// THE CELLS OF THE LAST PERCEPT, and the form's own mirror group (MG1): how
@@ -343,6 +532,7 @@ impl Cells {
                     }
                 }
             }
+            put_refusals(out, &c.refusals);
         }
     }
 
@@ -443,7 +633,9 @@ impl Cells {
                 }
                 _ => return None,
             };
+            let refusals = take_refusals(b, p)?;
             cells.push(CellEntry {
+                refusals,
                 enclosure,
                 grade,
                 round,

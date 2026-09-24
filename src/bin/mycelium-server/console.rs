@@ -708,6 +708,10 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: δ² {d2} {}", regime(r))).collect();
             out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
         }
+        // CV1b — what the cell's readers could not hold, by content.
+        if cell.refusals.any() {
+            out.push(format!("      {YELLOW}refused{RESET}  {}", observe::refusals_line(&cell.refusals)));
+        }
     }
     out
 }

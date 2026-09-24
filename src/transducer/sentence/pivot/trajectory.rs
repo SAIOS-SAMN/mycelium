@@ -21,6 +21,8 @@ pub(super) struct PendingCircuit {
     /// Its whole transport by the one composite reader, `None` where the
     /// edge half was refused (OR3) or rides a held coset.
     composite: Option<element::Versor>,
+    /// Where the composite did not read, why: OR3's reason (78.26(4)).
+    unread: Option<crate::transducer::cech::CircuitUnread>,
     /// 78.6 — its path through a held coset, whose candidates the reader
     /// holding the stroke forms (rule 10), and whether its gauge is static.
     coset: Option<PathCarried>,
@@ -221,6 +223,8 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
 pub struct TraversedCircuit {
     pub steps: Vec<(u16, bool)>,
     pub composite: Option<element::Versor>,
+    /// Where the composite did not read, why: OR3's reason (78.26(4)).
+    pub unread: Option<crate::transducer::cech::CircuitUnread>,
     pub coset: Option<super::circuit::CosetClosure>,
     pub gauge_static: bool,
 }
@@ -238,6 +242,7 @@ pub fn traversed_circuits(budget: &mut crate::physics::Budget) -> Vec<TraversedC
             .map(|p| TraversedCircuit {
                 steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
                 composite: p.composite.clone(),
+                unread: p.unread,
                 coset: p.coset.as_ref().and_then(|path| path.coset_closure(budget)),
                 gauge_static: p.gauge_static,
             })
@@ -354,9 +359,26 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
             PendingStep { face: s.face, forward: s.forward, refracted, oriented, after }
         })
         .collect();
+    let composite = carried.composite();
+    // OR3's REASON, kept for the cells the circuit crosses (78.26(4)): the
+    // edge half refused by name, a held coset, or a refusal left unnamed.
+    let unread = composite.is_none().then(|| {
+        use crate::transducer::cech::CircuitUnread as Why;
+        match (carried.holds_coset(), carried.edge_refused) {
+            (true, _) => Why::Coset,
+            (false, Some(Unread::Cone)) => Why::Cone,
+            (false, Some(Unread::NoPlace)) => Why::NoPlace,
+            (false, Some(Unread::NotRigid)) => Why::NotRigid,
+            (false, Some(Unread::Unrefracted)) => Why::Unrefracted,
+            (false, Some(Unread::NoFace)) => Why::NoFace,
+            (false, Some(Unread::TwoWays)) => Why::TwoWays,
+            (false, None) => Why::Unnamed,
+        }
+    });
     PendingCircuit {
         chord,
-        composite: carried.composite(),
+        composite,
+        unread,
         coset: carried.holds_coset().then(|| carried.clone()),
         gauge_static: carried.gauge_static(),
         steps,
