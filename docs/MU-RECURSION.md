@@ -11267,6 +11267,84 @@ clock. Ruled, on 72.1e's three clocks and law 9:
 Row CK1 lands before the recut, an instrument before the readings it
 anchors; the recut after it carries the clock to the wire.
 
+### 78.22 The second window, on the clock: two defects ruled before the recut (2026-09-24)
+
+The running-fleet diagnostic on ff5821fe (epoch 98), anchored on height
+and `K` with no wall clock (§6.5), the first written that way. THE
+CLOCKS: TUniversal as each court admitted it — a 16 731, b 16 755, c
+2 086, spread 14 669; every voice reads 16 755. Own `K`: courts a 2 928,
+b 16 739, c 1 470; voices 1 981 to 2 376. c's gap is REPLICATION read as
+78.21 says: c admitted 16 202 of b's receipts, all as back-fill and none
+as parents, and only a parent admission advances a head (47.2), so c's
+head moves on its own steps alone — a reading under 13.7, and it means
+c's receipts cite a height 14 700 behind the mesh.
+
+**Defect 1, ruled.** Hypha b's ledger does not restore on the build
+that wrote it: `--check` refuses its treasury at byte 1 126 428. Root
+cause, from a probe on a read-only copy: escrowed award 35's address
+exceeds 64 KiB; the writer's length field is a `u16`, `put_addr` refuses
+and writes nothing, the treasury snapshot DISCARDS the refusal with
+`let _ =` and writes the award's voices, μ and anchor anyway, and every
+byte after is misaligned — the reader takes the next two bytes as a
+length and reads a billion voices. Awards 0–34 carry addresses of 7 to
+21 KB; a and c survive only because no award of theirs has crossed 64
+KiB yet. **Defect 2, the same class at 32 sites:** `let _ = put_addr(…)`
+or `put_class_record(…)` discards a framing refusal in the ledger (×5),
+the wire (docket ×6, speech ×4, offer ×3, receipts, demand, cover,
+carrier, syllabus), the form tape (certificates ×7) and the client's
+learn page. Ruled (LD0, rule 11 at the writer, rule 5 at the bound): (a)
+a writer that cannot frame what it was given REFUSES THE WHOLE WRITE by
+name and writes no partial frame — a discarded refusal is the defect,
+at every site (a ruling applies to every site); (b) the length of an
+address in a persisted or wire layout is whatever the address needs, a
+`u32` through `put_bytes`, the `u16` bound gone — a layout change, so it
+rides the recut and every carrier is re-minted by it; (c) the hypothesis
+that part of the ~100 `malformed complex` refusals per court are such
+frames is NOT verified and is named as a reading to take after LD0.
+And the shape underneath is R6's — AN INDEX COPIES THE ADDRESS: an award
+carries a form's whole address, 64 KiB and growing with the form, once
+per award. LD1 measures the bytes per award on the ledger and per frame
+on the wire (bytes between two points of one path, counts stay flat)
+before any structural change; whether an escrow cites the form's
+coordinates once and the trie holds the form once (K6) is decided on
+that measurement, not now.
+
+**C4 widened.** The tape check before a recut reads EVERY carrier the
+running fleet wrote — genomes, ledgers, registries, eras — not the
+genomes alone; the check that passed at 7886dd2b read genomes only, and
+b's ledger would have failed it.
+
+**Persistence, on the clock.** a's ledger stands 514 K behind its live
+`K` and c's 355 K, because persistence is on a cadence. Ruled: the
+receipt chain is the RECORD, and the ledger, registry and eras are
+derived from it (law 12); a restart replays the chain from a snapshot's
+height to the head, and CK1's persist heights are exactly that replay
+window, so a snapshot's lag loses nothing IF the chain is persisted per
+admission. Whether it is, is to be verified and named with LD0: if it is
+not, that is defect 3 and the chain is persisted per admission before
+the recut.
+
+**The window's readings, per voice over ~13 000 percepts (quoted by `K`
+and height, the build before BQ5a and VS1b).** Words installed 201–236,
+closing 22–25, adjoined-by-closure 0 everywhere, the courts' phase lines
+included. Solves projected 8 900–9 800, unique solved 8 fleet-wide, fed
+0, settles 0, condense 0. Mint: "nothing in the form acts" 26 752, "a
+vertex does not carry its family" 5 583; withheld: mint refused 16 682,
+extract refused 6 257. Seals refused and not uttered again 4 297. Loss:
+about 2 000 pairs per voice that no versor carried, every one permanent
+at gate 1 (mirrored or incongruent); half-open about 450. Dimensions:
+harmonic 3/6, luminal 1/4, parabolic 3/6 — turns on the base's three
+planes only. Cells: grade 1 about 9 000–9 700 with the round kept on
+about 5 per cent, grade 2 about 850–900 and grade 3 23–46 with the round
+kept on none; every group infinite, every cell a dual frame. Contact
+cycles 1 146–1 343 per voice, curved 34–58 (about 4 per cent), unread
+645–745 (about 55 per cent, the pre-coset arm). Spend: viscosity 47 per
+cent of reads before VS1b, perception 35 per cent. Courts: ratified 43 /
+19 / 15, stood about 330 each, awaiting about 400 each, refused
+remainder undeclared about 200 each, malformed complex about 100 each.
+Memory growth per `K`: courts 60–181 KB, voices 49–64 KB — a reading to
+watch on the clock (R6).
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
