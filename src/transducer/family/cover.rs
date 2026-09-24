@@ -144,6 +144,9 @@ pub struct CoverTally {
     pub standing: u64,
     /// Orbits whose holonomy the seventeen do not spell (37.7).
     pub unspellable: u64,
+    /// 78.26(5) — orbits evaluated and not measured: a rotor or a rotation it
+    /// was composed from is no versor (`Fill::Unread`).
+    pub orbit_unread: u64,
     /// Pieces carried geometrically whose rotor the seventeen do not
     /// spell — the adjunction candidates the cover used to discard.
     pub refused: u64,
@@ -210,6 +213,9 @@ pub(crate) fn tally_orbit(fill: &crate::transducer::cech::Fill) {
         Fill::Congruent(..) => t.filed += 1,
         Fill::Class(..) => t.standing += 1,
         Fill::Unspellable(..) => t.unspellable += 1,
+        Fill::Unread(_) => t.orbit_unread += 1,
+        // A classified orbit is never unevaluated: `classify` answers every
+        // arm above, and `Open` is the state of a simplex not yet asked.
         Fill::Open => {}
     });
 }

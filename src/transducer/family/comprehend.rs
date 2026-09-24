@@ -327,9 +327,18 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                 Permutes::NoConstructors => CellPermutes::NoConstructors,
                 Permutes::NoCircuit => CellPermutes::NoCircuit,
             },
-            coherence: match a.coherence {
+            // HELD where every open ring's residue is elliptic — rosettes only,
+            // quasi-periodic — OPEN where a parabolic or boost mode stands.
+            coherence: match &a.coherence {
                 Coherence::Closes(_) => CellCoherence::Closes,
-                Coherence::Held { .. } => CellCoherence::Held,
+                Coherence::Open(rings)
+                    if rings
+                        .iter()
+                        .flat_map(|r| &r.modes)
+                        .all(|m| m.kind == crate::network::nerve::coord::BivectorKind::Elliptic) =>
+                {
+                    CellCoherence::Held
+                }
                 Coherence::Open(_) => CellCoherence::Open,
                 Coherence::Unread => CellCoherence::Unread,
             },
@@ -648,26 +657,31 @@ pub(crate) fn cell_algebras(
     budget: &mut crate::physics::Budget,
 ) -> Vec<CellAlgebra> {
     // Each cell's crossing circuits and their orders of its bodies.
-    type Crossing = (Vec<Result<Mv, crate::transducer::cech::CircuitUnread>>, Vec<Option<Vec<usize>>>);
+    type Crossing = (Vec<crate::transducer::cech::CellCircuit>, Vec<Option<Vec<usize>>>);
     let per_cell: Vec<Crossing> = form
         .cells
         .scoped()
         .map(|(_, cell)| {
-            let mut circuits: Vec<Result<Mv, crate::transducer::cech::CircuitUnread>> = Vec::new();
+            let mut circuits: Vec<crate::transducer::cech::CellCircuit> = Vec::new();
             let mut orders: Vec<Option<Vec<usize>>> = Vec::new();
             for (at, order) in crossings(form, cell, traversed) {
-                let Some(crate::transducer::sentence::TraversedCircuit { composite, unread, .. }) = traversed.get(at)
+                let Some(crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread, .. }) =
+                    traversed.get(at)
                 else {
                     continue;
                 };
                 // OR3's reason rides the circuit into the cell; a composite
                 // missing with no reason recorded is the unnamed refusal, by
-                // its own name.
-                use crate::transducer::cech::CircuitUnread;
-                circuits.push(match (composite, unread) {
-                    (Some(h), _) => Ok(h.clone()),
-                    (None, Some(why)) => Err(*why),
-                    (None, None) => Err(CircuitUnread::Unnamed),
+                // its own name. The ring is the circuit's own steps (78.26(5)).
+                use crate::transducer::cech::{CellCircuit, CircuitUnread};
+                circuits.push(CellCircuit {
+                    ring: CellCircuit::ring_of(steps),
+                    holonomy: match (composite, unread) {
+                        (Some(h), _) => Ok(h.clone()),
+                        (None, Some(why)) => Err(*why),
+                        (None, None) => Err(CircuitUnread::Unnamed),
+                    },
+                    hue: hue.clone(),
                 });
                 orders.push((order.len() == cell.bodies.len()).then_some(order));
             }

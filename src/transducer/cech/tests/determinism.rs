@@ -83,6 +83,7 @@ fn reading(cx: &mut Complex) -> (String, Vec<String>) {
             Fill::Class(_, r) => format!("class {r:?}"),
             Fill::Congruent(_, g, ell) => format!("congruent {g:?} {ell}"),
             Fill::Unspellable(r) => format!("unspellable {r:?}"),
+            Fill::Unread(why) => format!("unread {why:?}"),
         }
     };
     let outcome = match &filled {

@@ -210,7 +210,15 @@ fn c1_one_reference_gives_every_pair() {
 /// are coupled.
 #[test]
 fn c1_capacity_is_the_rank_of_the_actions_algebra() {
-    let read = |hs: Vec<Mv>| crate::transducer::cech::read_cell(1, None, None, &hs.into_iter().map(Ok).collect::<Vec<_>>(), &[], &mut stroke());
+    let read = |hs: Vec<Mv>| {
+        use crate::transducer::cech::CellCircuit;
+        let circuits: Vec<CellCircuit> = hs
+            .into_iter()
+            .enumerate()
+            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(i as u16, true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .collect();
+        crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
+    };
     assert_eq!(read(vec![one()]).capacity, Ok(1), "the identity: the unit alone");
     let quarter = cga::rotator(&q(1, 1), &q(1, 1));
     let a = read(vec![quarter.clone()]);

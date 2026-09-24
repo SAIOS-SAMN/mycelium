@@ -448,7 +448,7 @@ fn main() {
             // while the counter held the number.
             let cover = mycelium::transducer::family::cover::take_cover_tally();
             eprintln!(
-                "[{tag}] stroke covers meets {} edges {} carried {} | orbits flat {} filed {} standing {} unspellable {} | refused {} propagated {} spend {} pending {}",
+                "[{tag}] stroke covers meets {} edges {} carried {} | orbits flat {} filed {} standing {} unspellable {} unread {} | refused {} propagated {} spend {} pending {}",
                 cover.meets,
                 cover.edges,
                 cover.carried,
@@ -456,6 +456,7 @@ fn main() {
                 cover.filed,
                 cover.standing,
                 cover.unspellable,
+                cover.orbit_unread,
                 cover.refused,
                 cover.propagated,
                 cover.spend,

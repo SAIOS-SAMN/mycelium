@@ -133,7 +133,7 @@ impl Complex {
         let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return CoboundaryOutcome::Absent;
         };
-        if !matches!(simplex.fill, Fill::Open) {
+        if !simplex.fill.unsettled() {
             return CoboundaryOutcome::AlreadyFilled;
         }
         // The gauge must match on BOTH halves, forward or reversed: a
@@ -376,7 +376,7 @@ impl Complex {
                     .degree_of(&k)
                     .and_then(|d| self.degrees.get(d))
                     .and_then(|layer| layer.get(&k))
-                    .is_some_and(|s| !matches!(s.fill, Fill::Open));
+                    .is_some_and(|s| !s.fill.unsettled());
                 if read {
                     return Drained::Pinned;
                 }
@@ -468,7 +468,7 @@ impl Complex {
                     .degree_of(&k)
                     .and_then(|d| self.degrees.get(d))
                     .and_then(|layer| layer.get(&k))
-                    .is_some_and(|s| !matches!(s.fill, Fill::Open));
+                    .is_some_and(|s| !s.fill.unsettled());
                 if read {
                     return Descended::Pinned;
                 }
@@ -580,7 +580,7 @@ impl Complex {
         let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return CoboundaryOutcome::Absent;
         };
-        if !matches!(simplex.fill, Fill::Open) {
+        if !simplex.fill.unsettled() {
             return CoboundaryOutcome::AlreadyFilled;
         }
         let flat = crate::transducer::element::same_versor(
@@ -646,11 +646,10 @@ impl Complex {
                     let (Some(vi), Some(vj)) = (verts.get(*i), verts.get(*j)) else {
                         continue;
                     };
+                    // Every orbit's reading stands at its coordinate, an
+                    // unmeasured one by its reason (78.26(5)): none dropped.
                     let outcome =
                         classify(gr, gc, crate::transducer::sentence::CycleType::of(&[]));
-                    if matches!(outcome, Fill::Open) {
-                        continue;
-                    }
                     self.index_congruent(&outcome);
                     let lk = crate::transducer::cech::complex::orbit_key(key, vi, vj);
                     self.orbits.insert(lk, outcome);
@@ -739,7 +738,7 @@ impl Complex {
             let d = *d as usize;
             if d >= 1 {
                 if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
-                    if matches!(c.fill, Fill::Open) {
+                    if c.fill.unsettled() {
                         out.push((d, k));
                     }
                 }

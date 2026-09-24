@@ -100,6 +100,12 @@ impl Complex {
                     fill.push(4);
                     r.put_canonical(&mut fill);
                 }
+                // 78.26(5) — unmeasured by its reason, the reason's place in
+                // its own list of arms.
+                Fill::Unread(why) => {
+                    fill.push(5);
+                    fill.push(FillUnread::ALL.iter().position(|w| w == why).map_or(u8::MAX, |i| i as u8));
+                }
             }
             simplices.insert(
                 k,
@@ -190,6 +196,11 @@ impl Complex {
                         Fill::Congruent(Box::new(kappa), Box::new(g), ell)
                     }
                     4 => Fill::Unspellable(Box::new(Rotor::from_bytes(b, p)?)),
+                    5 => {
+                        let why = *FillUnread::ALL.get(usize::from(*b.get(*p)?))?;
+                        *p += 1;
+                        Fill::Unread(why)
+                    }
                     _ => return None,
                 })
             })?;

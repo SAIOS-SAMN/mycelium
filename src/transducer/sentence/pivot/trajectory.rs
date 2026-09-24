@@ -21,6 +21,8 @@ pub(super) struct PendingCircuit {
     /// Its whole transport by the one composite reader, `None` where the
     /// edge half was refused (OR3) or rides a held coset.
     composite: Option<element::Versor>,
+    /// Its hue, the fibre's holonomy (`PathCarried::hue`); `None` unread.
+    hue: Option<Vec<(u8, u8)>>,
     /// Where the composite did not read, why: OR3's reason (78.26(4)).
     unread: Option<crate::transducer::cech::CircuitUnread>,
     /// 78.6 — its path through a held coset, whose candidates the reader
@@ -223,6 +225,9 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
 pub struct TraversedCircuit {
     pub steps: Vec<(u16, bool)>,
     pub composite: Option<element::Versor>,
+    /// 78.26(5) — the circuit's hue, its steps' hue maps composed as the
+    /// composite composes their carriages; `None` where it did not read.
+    pub hue: Option<Vec<(u8, u8)>>,
     /// Where the composite did not read, why: OR3's reason (78.26(4)).
     pub unread: Option<crate::transducer::cech::CircuitUnread>,
     pub coset: Option<super::circuit::CosetClosure>,
@@ -242,6 +247,7 @@ pub fn traversed_circuits(budget: &mut crate::physics::Budget) -> Vec<TraversedC
             .map(|p| TraversedCircuit {
                 steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
                 composite: p.composite.clone(),
+                hue: p.hue.clone(),
                 unread: p.unread,
                 coset: p.coset.as_ref().and_then(|path| path.coset_closure(budget)),
                 gauge_static: p.gauge_static,
@@ -370,6 +376,7 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
     PendingCircuit {
         chord,
         composite,
+        hue: carried.hue(),
         unread,
         coset: carried.holds_coset().then(|| carried.clone()),
         gauge_static: carried.gauge_static(),
@@ -409,6 +416,7 @@ pub fn circuits_of(form: &Form) -> Vec<(u16, TraversedCircuit)> {
                         TraversedCircuit {
                             steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
                             composite: p.composite,
+                            hue: p.hue,
                             unread: p.unread,
                             coset: None,
                             gauge_static: p.gauge_static,
@@ -421,6 +429,7 @@ pub fn circuits_of(form: &Form) -> Vec<(u16, TraversedCircuit)> {
                 TraversedCircuit {
                     steps: lp.faces.iter().map(|&f| (f, true)).collect(),
                     composite: None,
+                    hue: None,
                     unread: Some(circuit_unread(why)),
                     coset: None,
                     gauge_static: false,

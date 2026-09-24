@@ -119,18 +119,84 @@ pub enum Permutes {
     NoCircuit,
 }
 
-/// WHETHER THE MODES CLOSE TOGETHER.
+/// WHETHER THE MODES CLOSE TOGETHER (78.26(5)).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Coherence {
-    /// Every mode elliptic of finite order: the joint period, their lcm.
+    /// Every ring resonant — every mode elliptic of finite order: the joint
+    /// period, their lcm. A delay, not a loss.
     Closes(u32),
-    /// Every mode elliptic, these many of no admitted order: quasi-periodic,
-    /// held.
-    Held { unordered: usize },
-    /// A mode of this class never returns.
-    Open(BivectorKind),
+    /// The NON-RESONANT rings, each with its residue by content, in the
+    /// circuits' order, none chosen (checklist (r)): a rosette, parabolic or
+    /// boost mode never returns. The resonant rings stay on `Rings`.
+    Open(Vec<Incoherence>),
     /// A circuit or its modes did not read, or none crossed the cell.
     Unread,
+}
+
+/// ONE CIRCUIT CROSSING A CELL (78.26(5)): the ring's own coordinates — its
+/// steps, each face and its way, framed — its holonomy or OR3's reason, and
+/// its hue, the steps' hue maps composed (`None` where it did not read).
+#[derive(Clone, Debug)]
+pub struct CellCircuit {
+    pub ring: Vec<u8>,
+    pub holonomy: Result<Mv, CircuitUnread>,
+    pub hue: Option<Vec<(u8, u8)>>,
+}
+
+impl CellCircuit {
+    /// A ring's coordinates from its steps: each face and its way, framed.
+    pub fn ring_of(steps: &[(u16, bool)]) -> Vec<u8> {
+        let mut k = Vec::new();
+        for &(face, forward) in steps {
+            crate::transducer::address::put_bytes(&mut k, &[&face.to_be_bytes()[..], &[u8::from(forward)]].concat());
+        }
+        k
+    }
+}
+
+/// ONE MODE OF A RING'S RESIDUE: its regime, the planes its ray turns in,
+/// and its order where elliptic of finite order.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ResidueMode {
+    pub kind: BivectorKind,
+    pub plane: Vec<usize>,
+    pub order: Option<u32>,
+}
+
+/// WHY A RING'S CLASS DID NOT READ: its holonomy does not split as
+/// `D(ρ)·T(t)·R` on the base; its rotor has no conjugacy invariants; or its
+/// hue did not read (a static contact's gauge half, a held coset).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ClassUnread {
+    NoSplit,
+    NoInvariants,
+    HueUnread,
+}
+
+/// 78.26(5) — A NON-RESONANT RING, BY CONTENT: its coordinates, its class
+/// (ClassVector::of_rotor on its holonomy split as the fill splits it, with
+/// its hue), and every mode of its residue. Never a bare hole.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Incoherence {
+    pub ring: Vec<u8>,
+    pub class: Result<Box<crate::transducer::sentence::ClassVector>, ClassUnread>,
+    pub modes: Vec<ResidueMode>,
+}
+
+/// A RING'S CLASS: its holonomy split as the fill splits a transition — the
+/// carriage `D·T`, the rotor `(D·T)⁻¹ V` on the base — read by the one class
+/// producer with the ring's own hue (78.26(5), ruled).
+fn class_of_ring(
+    holonomy: &Mv,
+    hue: Option<&[(u8, u8)]>,
+) -> Result<Box<crate::transducer::sentence::ClassVector>, ClassUnread> {
+    use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
+    let hue = hue.ok_or(ClassUnread::HueUnread)?;
+    let carriage = dilator_of(holonomy).zip(translator_of(holonomy)).map(|(d, t)| d.geo(&t)).ok_or(ClassUnread::NoSplit)?;
+    let rotor = base_rotor_of(holonomy).ok_or(ClassUnread::NoSplit)?;
+    crate::transducer::sentence::ClassVector::of_rotor(&rotor, carriage, crate::transducer::sentence::CycleType::of(hue))
+        .map(Box::new)
+        .ok_or(ClassUnread::NoInvariants)
 }
 
 /// WHY A CIRCUIT CROSSING A CELL DID NOT READ (OR3's reason, 78.26(4)): the
@@ -234,10 +300,11 @@ pub struct CellRefusals {
 /// - LEVEL: harmonic (a mode does not resonate), luminal (the gauge refused at
 ///   the cone, OR3's `Cone`), holonomic (a mode carries the round off: around
 ///   the ring and back does not return what was perceived).
-/// - KIND, per mode (A.17, 78.32, 74): D where a mode is elliptic, resonant or
-///   rosette alike — a rotor at an angle a word may spell; C where a mode is
+/// - KIND, per mode (A.17, 78.32, 74): D where a mode is a rosette — a rotor
+///   at an angle no held word spells, RotorPrime's case; C where a mode is
 ///   parabolic or a boost, or the ring is luminal — another chart or vantage
-///   may carry it. Never P: an incoherence is a state.
+///   may carry it. A resonant ring is neither: the alphabet's own turns spell
+///   it and it closes at its period. Never P: an incoherence is a state.
 ///
 /// A ring whose holonomy or modes did not read is not here: it is counted by
 /// its reason on the refusals (`circuits`, `modes`).
@@ -292,7 +359,9 @@ fn read_rings(
             }
         }
         r.holonomic += usize::from(readings.iter().any(|x| x.circuit == c && matches!(x.round, RoundKept::Carried(_))));
-        r.d += usize::from(has(BivectorKind::Elliptic));
+        // A resonant ring is spelled by the alphabet's own turns and closes at
+        // its period: it demands nothing and counts in neither kind.
+        r.d += usize::from(rosette);
         r.c += usize::from(parabolic || boost);
     }
     r
@@ -314,9 +383,14 @@ impl CellAlgebra {
             capacity: self.capacity.err(),
             zero_meet: self.congruence == Congruence::NoRound(NoRound::ZeroMeet),
             nuclei: self.gram.is_err(),
-            unordered: match self.coherence {
-                Coherence::Held { unordered } => unordered,
-                _ => 0,
+            // The rosettes the open rings carry: elliptic modes of no order.
+            unordered: match &self.coherence {
+                Coherence::Open(rings) => rings
+                    .iter()
+                    .flat_map(|r| &r.modes)
+                    .filter(|m| m.kind == BivectorKind::Elliptic && m.order.is_none())
+                    .count(),
+                Coherence::Closes(_) | Coherence::Unread => 0,
             },
             orbit: match self.constructors {
                 ConstructorOrbit::Unread(why) => Some(why),
@@ -506,8 +580,8 @@ pub struct CellRank {
 /// under the stroke's budget. Read before any mode of any cell, so a
 /// budget that runs out leaves every cell its dimension with the modes
 /// unread by name, never the reverse.
-pub fn read_rank(circuits: &[Result<Mv, CircuitUnread>], budget: &mut crate::physics::Budget) -> CellRank {
-    let read: Vec<&Mv> = circuits.iter().flatten().collect();
+pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> CellRank {
+    let read: Vec<&Mv> = circuits.iter().filter_map(|c| c.holonomy.as_ref().ok()).collect();
     // Every action in the one algebra the cell's circuits span — the join of
     // their algebras, a value never narrowed — so the matrices compose.
     let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
@@ -521,15 +595,15 @@ pub fn read_rank(circuits: &[Result<Mv, CircuitUnread>], budget: &mut crate::phy
 }
 
 /// READ ONE CELL'S ORBIT ALGEBRA: its grade, its round, its constructors,
-/// the holonomy of every circuit crossing it (`Err` with OR3's reason where
-/// a circuit did not read), and each circuit's order of the cell's
-/// constructors (`None` where it does not visit every body), under the
-/// stroke's budget — its rank first, then the rest.
+/// every circuit crossing it — its ring, its holonomy (`Err` with OR3's
+/// reason where it did not read) and its hue — and each circuit's order of
+/// the cell's constructors (`None` where it does not visit every body), under
+/// the stroke's budget — its rank first, then the rest.
 pub fn read_cell(
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
-    circuits: &[Result<Mv, CircuitUnread>],
+    circuits: &[CellCircuit],
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
 ) -> CellAlgebra {
@@ -545,10 +619,13 @@ pub fn read_cell_after(
     grade: usize,
     round: Option<&Mv>,
     nuclei: Option<&[Mv]>,
-    circuits: &[Result<Mv, CircuitUnread>],
+    crossing: &[CellCircuit],
     orders: &[Option<Vec<usize>>],
     budget: &mut crate::physics::Budget,
 ) -> CellAlgebra {
+    // Each circuit's holonomy, or OR3's reason, in the crossing order.
+    let holonomies: Vec<Result<Mv, CircuitUnread>> = crossing.iter().map(|c| c.holonomy.clone()).collect();
+    let circuits = holonomies.as_slice();
     let circuits_unread: Vec<CircuitUnread> = circuits.iter().filter_map(|h| h.as_ref().err().copied()).collect();
     let mut modes_unread: Vec<ModesUnread> = Vec::new();
     // WHY THERE IS NO ROUND, where there is none (ZM1, 78.26(4)): the nuclei
@@ -651,15 +728,34 @@ pub fn read_cell_after(
             }
         }
     };
+    // 78.26(5) — COHERENCE RING BY RING: a resonant ring contributes its
+    // orders to the joint period; a non-resonant one is an incoherence held
+    // by content. Every circuit and its modes read here (`unread` is zero),
+    // so each ring is paired with its own modes.
     let coherence = match (circuits.is_empty(), unread) {
         (false, 0) => {
-            let all: Vec<&MotionMode> = modes.iter().flatten().flatten().collect();
-            match all.iter().find(|m| m.kind != BivectorKind::Elliptic) {
-                Some(m) => Coherence::Open(m.kind),
-                None => match all.iter().map(|m| m.order).collect::<Option<Vec<u32>>>() {
-                    Some(orders) => Coherence::Closes(orders.into_iter().fold(1, lcm)),
-                    None => Coherence::Held { unordered: all.iter().filter(|m| m.order.is_none()).count() },
-                },
+            let mut orders: Vec<u32> = Vec::new();
+            let mut open: Vec<Incoherence> = Vec::new();
+            for (ring, ms) in crossing.iter().zip(&modes).filter_map(|(r, m)| Some((r, m.as_ref()?))) {
+                let live: Vec<&MotionMode> = ms.iter().filter(|m| m.kind != BivectorKind::Trivial).collect();
+                let resonant = live.iter().all(|m| m.kind == BivectorKind::Elliptic && m.order.is_some());
+                match (resonant, &ring.holonomy) {
+                    (true, _) => orders.extend(live.iter().filter_map(|m| m.order)),
+                    (false, Ok(h)) => open.push(Incoherence {
+                        ring: ring.ring.clone(),
+                        class: class_of_ring(h, ring.hue.as_deref()),
+                        modes: live
+                            .iter()
+                            .map(|m| ResidueMode { kind: m.kind, plane: plane_of(m), order: m.order })
+                            .collect(),
+                    }),
+                    // Modes read only off a read holonomy (above).
+                    (false, Err(_)) => {}
+                }
+            }
+            match open.is_empty() {
+                true => Coherence::Closes(orders.into_iter().fold(1, lcm)),
+                false => Coherence::Open(open),
             }
         }
         _ => Coherence::Unread,

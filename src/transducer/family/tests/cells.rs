@@ -11,9 +11,12 @@ fn member(i: u16) -> Vec<u8> {
 
 /// A traversed circuit by its steps and composite, through no held coset and
 /// no static contact; a composite that did not read is unread as not rigid.
+/// Its steps carry no hue maps, so a read composite's hue is the composed
+/// empty map — measured, the fibre's holonomy the identity.
 fn traversed(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::TraversedCircuit {
     let unread = composite.is_none().then_some(crate::transducer::cech::CircuitUnread::NotRigid);
-    crate::transducer::sentence::TraversedCircuit { steps, composite, unread, coset: None, gauge_static: false }
+    let hue = composite.is_some().then(Vec::new);
+    crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread, coset: None, gauge_static: false }
 }
 
 /// One body per member, each a single cube at `site`.
@@ -230,7 +233,13 @@ fn a_bracket_is_held_by_an_enclosure_over_any_cells_its_pair_spans() {
     let turn = cga::rotator_on_blade(&q(1), &q(1), E1 | E2).widened(across.n());
     let stroke = || crate::physics::Physics::default().stroke_n(1 << 16);
     let cell = |hs: Vec<crate::transducer::cga::Mv>| {
-        crate::transducer::cech::read_cell(1, None, None, &hs.into_iter().map(Ok).collect::<Vec<_>>(), &[], &mut stroke())
+        use crate::transducer::cech::CellCircuit;
+        let circuits: Vec<CellCircuit> = hs
+            .into_iter()
+            .enumerate()
+            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(i as u16, true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .collect();
+        crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
     };
     // A, A′, C, W.
     let algebras = vec![cell(vec![turn.clone()]), cell(vec![turn.clone()]), cell(vec![across.clone()]), cell(vec![turn, across])];

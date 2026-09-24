@@ -109,7 +109,7 @@ impl Contemplation {
             let Some((fill, volume, vertices)) = self.complex.simplex(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
                 continue;
             };
-            if !matches!(fill, Fill::Open) {
+            if !fill.unsettled() {
                 continue;
             }
             let vol_nz = volume.iter().any(|&x| x > 0);
@@ -164,10 +164,11 @@ impl Contemplation {
                     }
                     return;
                 }
-                // Evaluated and still open, already settled, or not there
-                // to evaluate — three different facts, none of which
-                // merges anything here.
+                // Evaluated and still open, evaluated and not measured (by
+                // its reason, on the simplex), already settled, or not there
+                // to evaluate — four facts, none of which merges anything.
                 CoboundaryOutcome::Attached(Fill::Open)
+                | CoboundaryOutcome::Attached(Fill::Unread(_))
                 | CoboundaryOutcome::AlreadyFilled
                 | CoboundaryOutcome::Absent => {}
                 // 37.7 at a simplex: a rotation the seventeen do not spell,

@@ -276,6 +276,16 @@ impl Kernel {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                 }
+                // EVALUATED AND NOT MEASURED, by its reason (78.26(5)): work
+                // still owed, filed as unfilled as it was when it answered
+                // `Open`, and the reason said.
+                crate::transducer::cech::CoboundaryOutcome::Attached(
+                    crate::transducer::cech::Fill::Unread(why),
+                ) => {
+                    eprintln!("  court simplex unread degree {d} {:02x}{:02x}… {why:?}", key[0], key[1]);
+                    let dkey = chart_simplex_key(&inv, &key);
+                    self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
+                }
                 // ALREADY SETTLED: nothing was attempted, so nothing is
                 // owed and nothing is filed.
                 crate::transducer::cech::CoboundaryOutcome::AlreadyFilled => {}

@@ -273,7 +273,7 @@ impl Contemplation {
                     };
                     (
                         c.degree(),
-                        matches!(c.fill, Fill::Open),
+                        c.fill.unsettled(),
                         c.coefficient.is_identity(),
                         v0,
                         v1,
@@ -358,10 +358,12 @@ impl Contemplation {
                         // candidate, and it is left standing rather than
                         // folded into a catch-all that would lose it.
                         CoboundaryOutcome::Attached(Fill::Unspellable(_)) => {}
-                        // Evaluated and still open, already settled, or
-                        // not there to evaluate — three different facts,
+                        // Evaluated and still open, evaluated and not
+                        // measured (by its reason, on the simplex), already
+                        // settled, or not there to evaluate — four facts,
                         // none of which drives a merge here.
                         CoboundaryOutcome::Attached(Fill::Open)
+                        | CoboundaryOutcome::Attached(Fill::Unread(_))
                         | CoboundaryOutcome::AlreadyFilled
                         | CoboundaryOutcome::Absent => {}
                     }

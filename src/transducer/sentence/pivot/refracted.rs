@@ -185,6 +185,19 @@ impl PathCarried {
         }
     }
 
+    /// 78.26(5), 78.32 — THE CIRCUIT'S HUE, the fibre's holonomy: the steps'
+    /// hue maps composed along the circuit the way [`PathCarried::composite`]
+    /// composes their carriages, `h_edge ∘ h_face`. `None` where the edge half
+    /// did not read, rides a held coset, or crossed a static contact, whose
+    /// gauge half is not read — unread, never the identity by assumption.
+    pub(crate) fn hue(&self) -> Option<Vec<(u8, u8)>> {
+        match (&self.edge, &self.refracted) {
+            (Some(e), _) => Some(compose_gauge(&e.gauge, &self.face.gauge)),
+            (None, Some(r)) => r.single()?.gauge.map(|(_, h)| compose_gauge(&h, &self.face.gauge)),
+            _ => None,
+        }
+    }
+
     /// Whether the edge half crosses a held coset.
     pub(crate) fn holds_coset(&self) -> bool {
         self.refracted.as_ref().is_some_and(|r| r.held_steps() > 0)

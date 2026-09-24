@@ -113,6 +113,37 @@ pub enum Fill {
     /// A rotor that acts on ANOTHER plane is not this: it is spelled by a
     /// letter of the seventeen and carries a class with no sensor section.
     Unspellable(Box<Rotor>),
+    /// 78.26(5) — EVALUATED AND NOT MEASURED, by why: the transition's rotor
+    /// is no versor (no conjugacy invariants, so no class), or a rotation it
+    /// was composed from is none — a section's, or the simplex's own
+    /// coefficient. Never `Open`, which is the state of a simplex not yet
+    /// evaluated (rule 11).
+    Unread(FillUnread),
+}
+
+/// WHY A TRANSITION WAS NOT MEASURED (78.26(5)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum FillUnread {
+    /// The transition's rotor has no conjugacy invariants: no versor.
+    RotorNotVersor,
+    /// A section's rotation is no versor, so it has no reverse.
+    SectionNotVersor,
+    /// The simplex's own coefficient is no versor, so it has no reverse.
+    CoefficientNotVersor,
+}
+
+impl FillUnread {
+    pub const ALL: [FillUnread; 3] =
+        [FillUnread::RotorNotVersor, FillUnread::SectionNotVersor, FillUnread::CoefficientNotVersor];
+}
+
+impl Fill {
+    /// NOT SETTLED: not yet asked, or asked and not measured. Either way the
+    /// simplex recorded no reading — it pins no coface, is owed as unfilled,
+    /// and is asked again.
+    pub fn unsettled(&self) -> bool {
+        matches!(self, Fill::Open | Fill::Unread(_))
+    }
 }
 
 /// THE OUTCOME OF ATTEMPTING TO FILL A SIMPLEX — a transition result, and
@@ -327,8 +358,8 @@ pub fn classify(
     match crate::transducer::sentence::ClassVector::of_rotor(rotor, carriage.clone(), hue) {
         Some(kappa) => Fill::Class(Box::new(kappa), Box::new(rotor.clone())),
         // A rotor with no conjugacy invariants is not a versor (15.3): no
-        // class, and unmeasured rather than flat (rule 11).
-        None => Fill::Open,
+        // class, and unmeasured by name rather than flat (rule 11).
+        None => Fill::Unread(FillUnread::RotorNotVersor),
     }
 }
 
@@ -353,14 +384,14 @@ pub fn extend(section_a: &Section, section_b: &Section, simplex: &Simplex) -> Fi
     let hue = crate::transducer::sentence::CycleType::of(&[]);
     // Each section's reverse: rays (78.32(1)).
     let Some(inv_r) = section_a.gamma.is_versor().then(|| section_a.gamma.reverse()) else {
-        return Fill::Open;
+        return Fill::Unread(FillUnread::SectionNotVersor);
     };
     let inv_c = section_a.carriage.reverse();
     let trans_r = section_b.gamma.geo(&inv_r);
     let trans_c = section_b.carriage.geo(&inv_c);
     if simplex.degree() <= 1 {
         let Some(cr) = simplex.coefficient.is_versor().then(|| simplex.coefficient.reverse()) else {
-            return Fill::Open;
+            return Fill::Unread(FillUnread::CoefficientNotVersor);
         };
         let cc = simplex.carriage.reverse();
         let (g_r, g_c) = (trans_r.geo(&cr), trans_c.geo(&cc));

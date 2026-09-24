@@ -136,6 +136,15 @@ impl Kernel {
                         sim_key[0], sim_key[1]
                     );
                 }
+                // Evaluated and not measured, by its reason (78.26(5)).
+                (
+                    crate::transducer::cech::CoboundaryOutcome::Attached(
+                        crate::transducer::cech::Fill::Unread(why),
+                    ),
+                    _,
+                ) => {
+                    eprintln!("  court simplex unread {:02x}{:02x}… {why:?}", sim_key[0], sim_key[1]);
+                }
                 // Evaluated and still open, already settled, or not there
                 // to evaluate — three different facts, none of which this
                 // sweep acts on.

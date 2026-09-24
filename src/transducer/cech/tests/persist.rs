@@ -30,6 +30,7 @@ fn fills(cx: &Complex) -> Vec<String> {
                 Fill::Class(..) => "class".to_string(),
                 Fill::Congruent(_, _, ell) => format!("congruent:{ell}"),
                 Fill::Unspellable(..) => "unspellable".to_string(),
+                Fill::Unread(why) => format!("unread:{why:?}"),
             });
         }
     }
@@ -77,6 +78,25 @@ fn a_complex_survives_its_own_tries() {
     assert_eq!(again, before, "every simplex is filed back under its own key: the tries re-write byte for byte");
 }
 
+/// 78.26(5) — AN UNMEASURED FILL RETURNS BY ITS REASON: never as an open
+/// cell, never as another reason.
+#[test]
+fn an_unread_fill_survives_its_own_tries_by_its_reason() {
+    for why in crate::transducer::cech::FillUnread::ALL {
+        let mut cx = Complex::new();
+        cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
+        let keys: Vec<Vec<u8>> = cx.degrees[1].scoped().map(|(k, _)| k).collect();
+        for k in &keys {
+            if let Some(s) = cx.degrees[1].get_mut(k) {
+                s.fill = Fill::Unread(why);
+            }
+        }
+        let before = fills(&cx);
+        assert!(before.contains(&format!("unread:{why:?}")), "the fixture carries the reason");
+        assert_eq!(fills(&round_trip(&cx)), before, "returned by its reason");
+    }
+}
+
 /// AN UNKNOWN FILL TAG IS A REFUSAL, NOT AN OPEN CELL.
 ///
 /// A decoder that ended `_ => Fill::Open` let a truncated or bit-flipped
@@ -100,7 +120,7 @@ fn a_corrupt_byte_never_fabricates_an_open_cell() {
     let mut read = 0usize;
     for i in 0..bytes.len() {
         let mut corrupt = bytes.clone();
-        // 9 is outside the allocated tag range 0..=4 wherever a fill tag
+        // 9 is outside the allocated tag range 0..=5 wherever a fill tag
         // stands, and nonsense wherever one does not.
         corrupt[i] = 9;
         let mut pos = 0usize;
