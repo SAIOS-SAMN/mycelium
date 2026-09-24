@@ -11354,6 +11354,59 @@ before any structural change; whether an escrow cites the form's
 coordinates once and the trie holds the form once (K6) is decided on
 that measurement, not now.
 
+**LD0 RE-RULED 2026-09-24 on the operator's word; the coordinator's
+first ruling retracted.** "An address's length is what it needs, a
+`u32`" treated the symptom and widened the container: "you have two
+layers of errors there, and need to be extremely precise rather than
+widening blobs to send more bytes, instead of doing the calculations on
+the underlying mathematics via direct coordinate calls with extreme
+precision — you're sending slop around between memory addresses instead
+of calling precision strikes on exact coordinates you already have in
+the engine; under this logic in a week we'll be widening the byte
+addresses again, an invalid software development ideology." Both layers
+named: (1) a 64 KiB address is itself the defect — R6 again, a form's
+coordinates nested and copied as bytes into every carrier that names the
+form; widening the prefix makes the pipe bigger for the copy and the
+next wall stands at the next order of growth; (2) the implementor's
+own first cut wrote `put_bytes(chart.key().as_bytes())` and
+`put_bytes(versor.key())` where the type's own `put_canonical` belongs —
+rule 6's nested-key shape. The ruling now, in three kinds of bytes that
+are never confused:
+
+- **A COORDINATE** is written inline by its type's own `put_canonical`,
+  in A21's order: a rational as `put_q` with its own exact length, a
+  versor as its canonical ray (a count fixed by the algebra's `n`), an
+  invariant as its coordinates, a chart as its axes. Its length is
+  intrinsic — the precision the number needs — and it is never a blob.
+- **AN ADDRESS** is a form's M2 composite (17.2), the form's coordinates
+  written out, and it is held ONCE, where the form is held: the basis
+  trie and the genome tape (K6: the address is the form and the trie
+  holds it once). Nothing else copies it.
+- **A CITATION** locates a held form by exact coordinates and never
+  ships the form's bytes: on the wire and in every carrier that names a
+  ruled word — a docket, an offer, a settlement, an award — the citation
+  is the coordinates the reader already holds the form under: the class
+  record (A21 §4: the class key and the order), the word's M1 key, its
+  canonical versor and its chart, fixed in size by `n`; a form's whole
+  M2 travels only where the form itself is spoken (speech), once. An
+  escrowed AWARD is keyed AT the word's node in the basis trie — a
+  keyed relation hung on the coordinates the trie already holds — and
+  the persisted treasury is written as that trie, each key once as a
+  path, never one address copy per award. Award 35's 64 KiB was thirty
+  five copies of forms the basis already held.
+- **The `u16` stays, as the wall, and refuses loudly.** No widening. A
+  write that reaches it is a blob written where a coordinate or a
+  citation belongs, and the fix is at that site. The refusal is never
+  discarded (rule 11): the `Option` plumbing of the first cut stays;
+  the `u32` widening of `put_addr` and `put_inv` is reverted.
+- **Order of sites.** `Invariant` and `Versor` to `put_canonical` inline
+  first (the three sites of layer 2: `Demand::to_bytes`, `At::to_bytes`,
+  `PivotBy::move_key`, then every site that wrote a key's bytes as a
+  nested key); the treasury's awards keyed at the basis node; the wire's
+  citations as class records; LD1's measurement — bytes per award and
+  per frame — is the proof, flat in the form's size and bounded by `n`
+  and the rationals' precision.
+
 **C4 widened.** The tape check before a recut reads EVERY carrier the
 running fleet wrote — genomes, ledgers, registries, eras — not the
 genomes alone; the check that passed at 7886dd2b read genomes only, and
