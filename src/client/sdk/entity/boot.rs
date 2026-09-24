@@ -93,6 +93,23 @@ impl Entity {
         self.session.voice().k()
     }
 
+    /// AN ACT NAMING ONE WORD, sealed on the voice's line (78.24); and FX1 —
+    /// where the word was spoken out of the meet graph, the frame the act's
+    /// receipt carries is credited to the filaments its circuits traversed,
+    /// and the dialect words they ran through are noted at the new `K`. A
+    /// seal that wrote no receipt credits nothing.
+    pub(crate) fn seal_word(&mut self, kind: crate::chronometry::ActKind, word: &crate::transducer::element::Element) -> u64 {
+        let before = self.session.voice().chain().head_stamp();
+        let k = self.session.seal_word(kind, word);
+        let sealed =
+            self.session.voice().chain().head().filter(|r| Some(r.stamp) != before && r.kind == kind).map(|r| r.mu);
+        if let Some(mu) = sealed {
+            let words = self.contemplation.credit_flux(word.address().as_bytes(), mu);
+            self.epigenome.note_traversed(&words, k);
+        }
+        k
+    }
+
     /// OK1 — THIS MIND'S STROKE CLOSES ITS ORBIT BY NAME (see
     /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
     /// arms have run.
@@ -102,6 +119,11 @@ impl Entity {
         let close = self.session.voice_mut().orbit(self.contemplation.docket_cites());
         if matches!(close, crate::chronometry::Close::Sealed(_)) {
             self.contemplation.docket_sealed();
+            // FX1 — the orbit's flux read at its close, and the dialect's
+            // words traversed beside it (alternative B).
+            let d = self.epigenome.dialect_flux(self.own_k());
+            self.contemplation.note_dialect_flux(d);
+            self.contemplation.flux_close();
         }
         // 78.37(1) — THE FRONTS STEP ON THE VOICE'S K, one edge per k-step:
         // stamped once the close has sealed, and stepped at that K (a close

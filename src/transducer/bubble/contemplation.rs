@@ -194,6 +194,13 @@ pub struct Contemplation {
     /// yet credited to the room.
     pub(crate) truncation: super::core::Truncation,
     pub(crate) truncated_escrow: [u64; 4],
+    /// FX1 — forms spoken out of the meet graph awaiting their act, keyed by
+    /// the element's address; the orbit's `Φ⃗` by edge; the height each edge
+    /// last carried flux at; and the reading (volatile).
+    pub(crate) spoken: Keyed<super::flux::Spoken>,
+    pub(crate) flux: Keyed<[u64; 4]>,
+    pub(crate) flux_at: Keyed<u64>,
+    pub(crate) flux_tally: super::flux::FluxTally,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -1007,7 +1014,10 @@ impl Contemplation {
         let (orbits, torsion, certificates, axes) =
             (f.orbits.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
         let retire = b.glued_by.is_empty();
+        let circuits = super::flux::circuits_of(f);
         let old = retire.then(|| b.clone());
+        // FX1 — the edges its circuits traverse, filed for its act.
+        self.file_spoken(e.address().as_bytes(), circuits);
         // 78.37(1) — FIXED BY FILL: the crystallized thought starts a front,
         // read before it leaves the meet graph.
         self.fix(key, false);

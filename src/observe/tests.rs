@@ -483,6 +483,22 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 rank_unread: 72,
                 malformed: 73,
             },
+            // FX1 — the flux, every window and count, one optional unread.
+            flux: crate::transducer::bubble::FluxTally {
+                closes: 74,
+                orbit: crate::transducer::bubble::FluxWindow { traversed: 75, zero: 76, held: 77 },
+                aperture: Some(crate::transducer::bubble::FluxWindow { traversed: 78, zero: 79, held: 80 }),
+                gone: 81,
+                unfilamented: 82,
+                credited: 83,
+                acyclic: 84,
+                unfiled: 85,
+                unsealed: 86,
+                unnamed: 87,
+                extent: [[88, 89, 90, 91], [92, 93, 94, 95], [96, 97, 98, 99], [100, 101, 102, 103], [104, 105, 106, 107]],
+                extent_n: [108, 109, 110, 111, 112],
+                dialect: (113, Some(114), None),
+            },
         }),
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);

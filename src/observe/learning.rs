@@ -185,6 +185,38 @@ impl Learning {
         for v in [t.rank_unread, t.malformed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
+        // FX1 — the flux: a window or a count that did not read flagged.
+        let f = &g.flux;
+        let opt = |out: &mut Vec<u8>, x: Option<u64>| match x {
+            Some(n) => {
+                out.push(1);
+                out.extend_from_slice(&n.to_le_bytes());
+            }
+            None => out.push(0),
+        };
+        for v in [f.closes, f.orbit.traversed, f.orbit.zero, f.orbit.held] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        match &f.aperture {
+            Some(w) => {
+                out.push(1);
+                for v in [w.traversed, w.zero, w.held] {
+                    out.extend_from_slice(&v.to_le_bytes());
+                }
+            }
+            None => out.push(0),
+        }
+        for v in [f.gone, f.unfilamented, f.credited, f.acyclic, f.unfiled, f.unsealed, f.unnamed] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        for (lanes, n) in f.extent.iter().zip(&f.extent_n) {
+            for v in lanes.iter().chain(std::iter::once(n)) {
+                out.extend_from_slice(&v.to_le_bytes());
+            }
+        }
+        out.extend_from_slice(&f.dialect.0.to_le_bytes());
+        opt(out, f.dialect.1);
+        opt(out, f.dialect.2);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {
@@ -313,6 +345,38 @@ impl Learning {
             rank_unread: u64_at(b, p)?,
             malformed: u64_at(b, p)?,
         };
+        // FX1 — the flux, as written.
+        let flag = |b: &[u8], p: &mut usize| -> Option<bool> {
+            let f = match b.get(*p)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            *p += 1;
+            Some(f)
+        };
+        let window = |b: &[u8], p: &mut usize| -> Option<crate::transducer::bubble::FluxWindow> {
+            Some(crate::transducer::bubble::FluxWindow { traversed: u64_at(b, p)?, zero: u64_at(b, p)?, held: u64_at(b, p)? })
+        };
+        let mut flux = crate::transducer::bubble::FluxTally { closes: u64_at(b, p)?, orbit: window(b, p)?, ..Default::default() };
+        if flag(b, p)? {
+            flux.aperture = Some(window(b, p)?);
+        }
+        [flux.gone, flux.unfilamented, flux.credited, flux.acyclic, flux.unfiled, flux.unsealed, flux.unnamed] =
+            [u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?];
+        for (lanes, n) in flux.extent.iter_mut().zip(flux.extent_n.iter_mut()) {
+            for l in lanes.iter_mut() {
+                *l = u64_at(b, p)?;
+            }
+            *n = u64_at(b, p)?;
+        }
+        flux.dialect.0 = u64_at(b, p)?;
+        if flag(b, p)? {
+            flux.dialect.1 = Some(u64_at(b, p)?);
+        }
+        if flag(b, p)? {
+            flux.dialect.2 = Some(u64_at(b, p)?);
+        }
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
             thoughts,
@@ -329,6 +393,7 @@ impl Learning {
             core,
             shed,
             truncation,
+            flux,
         };
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }

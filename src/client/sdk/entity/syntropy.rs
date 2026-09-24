@@ -270,7 +270,7 @@ impl Entity {
                 if let Some(after_elem) = after {
                     match self.epigenome.learn(&after_elem.to_bytes()) {
                         Some(_) => {
-                            self.session.seal_word(crate::chronometry::ActKind::Learned, after_elem);
+                            self.seal_word(crate::chronometry::ActKind::Learned, after_elem);
                         }
                         None => eprintln!("  bundle rewrite: the updated section was not learned"),
                     }

@@ -48,7 +48,7 @@ impl Entity {
         // own chain; the address is sealed in the utterance index.
         // μ⃗ is the REFUSED SENTENCE'S OWN measure: what the mind staked and
         // did not get through. It is the sentence in hand, not a number.
-        let k = self.session.seal_word(crate::chronometry::ActKind::Refused, spoken);
+        let k = self.seal_word(crate::chronometry::ActKind::Refused, spoken);
         self.sealed.insert(&addr, k);
         // 24.2: the dialect is what this mind spoke THAT STOOD. The refused
         // sentence stood there before it was uttered and did not stand at

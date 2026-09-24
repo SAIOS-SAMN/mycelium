@@ -241,7 +241,7 @@ impl Entity {
             // proof the hypha verified, so this voice's Learned act on it
             // admits it and its stamp is the word's locator.
             if let Some(word) = self.epigenome.word_at(at.as_bytes()).map(|h| h.element().clone()) {
-                self.session.seal_word(crate::chronometry::ActKind::Learned, &word);
+                self.seal_word(crate::chronometry::ActKind::Learned, &word);
             }
         }
         deepened
@@ -295,7 +295,7 @@ impl Entity {
             // so a receipt naming the form is sealed on the mind's own chain
             // and the form stands at the K it took. The stamp is the act's
             // own K, not a number the hypha last replied with.
-            let k = self.session.seal_word(crate::chronometry::ActKind::Stood, e);
+            let k = self.seal_word(crate::chronometry::ActKind::Stood, e);
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
@@ -384,7 +384,7 @@ impl Entity {
             // receipt on this mind's chain (45.1, 45.4). A refused utterance
             // is not an act and seals nothing.
             let e = sentences[i].clone();
-            self.session.seal_word(crate::chronometry::ActKind::Uttered, &e);
+            self.seal_word(crate::chronometry::ActKind::Uttered, &e);
             self.file_taught(&e);
             self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)

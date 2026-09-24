@@ -136,6 +136,11 @@ impl Contemplation {
         deg
     }
 
+    /// Every vertex of the nerve and its edge degree.
+    pub(crate) fn degrees_among_nerve(&self) -> Keyed<u64> {
+        self.degrees_among(&self.nerve_vertices())
+    }
+
     /// The nerve's vertices: the complex's sections.
     fn nerve_vertices(&self) -> Keyed<()> {
         let mut all: Keyed<()> = Keyed::new();

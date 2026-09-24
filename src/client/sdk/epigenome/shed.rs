@@ -94,4 +94,34 @@ impl Epigenome {
         drop
     }
 
+    /// FX1, alternative B — A SEALED FORM'S CIRCUIT RAN THROUGH THESE WORD
+    /// VERTICES at the voice's `k`: the dialect words among them are
+    /// traversed.
+    pub fn note_traversed(&mut self, words: &[Vec<u8>], k: u64) {
+        for w in words {
+            if self.dialect.contains(w) {
+                self.traversed_k.insert(w, k);
+                self.traversed_orbit.insert(w, ());
+            }
+        }
+    }
+
+    /// FX1, alternative B — AT THE ORBIT'S CLOSE: the dialect words traversed
+    /// this orbit, those traversed over the aperture (`aperture_k`, the
+    /// idle-K door's own window; `None` where it has not been measured), and
+    /// the idle ones — dialect words no circuit ran through over the window.
+    /// The orbit's set is emptied.
+    pub fn dialect_flux(&mut self, now_k: u64) -> (u64, Option<u64>, Option<u64>) {
+        let orbit = std::mem::take(&mut self.traversed_orbit).len() as u64;
+        let Some(aperture) = self.aperture_k(now_k) else {
+            return (orbit, None, None);
+        };
+        let within = self
+            .dialect
+            .scoped()
+            .filter(|(a, _)| self.traversed_k.get(a).is_some_and(|&k| now_k.checked_sub(k).is_some_and(|d| d <= aperture)))
+            .count() as u64;
+        (orbit, Some(within), Some(self.dialect.len() as u64 - within))
+    }
+
 }

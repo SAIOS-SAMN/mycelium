@@ -348,8 +348,17 @@ impl Contemplation {
                                 if self.component_closed(&comp) {
                                     if let Some(e) = self.form_thought(&comp) {
                                         self.formed += 1;
-                                        spoken.push(e);
                                         touched.extend(self.touched_by(&comp));
+                                        // FX1 — the edges the head form's
+                                        // circuits traverse, filed for its act
+                                        // (the head: `form_thought`'s form).
+                                        if let [head, ..] = comp.as_slice() {
+                                            if let Some(f) = self.bubbles.get(head).and_then(|b| b.form.as_ref()) {
+                                                let circuits = super::flux::circuits_of(f);
+                                                self.file_spoken(e.address().as_bytes(), circuits);
+                                            }
+                                        }
+                                        spoken.push(e);
                                         // 78.37(1) — FIXED BY FILL: each thought of
                                         // the spoken component starts a front,
                                         // read before it leaves the meet graph.

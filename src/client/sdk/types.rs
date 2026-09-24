@@ -443,6 +443,11 @@ pub struct Epigenome {
     /// and is kept as the reader every existing caller takes; this is the
     /// four, and `lanes[3]` holds the same members under the same chart.
     pub(crate) lanes: crate::transducer::sentence::LaneIndex,
+    /// FX1's reading, alternative B (78.37(3)) — the dialect words a sealed
+    /// form's circuit ran through their vertex: the voice's K it last did,
+    /// and the ones this orbit (volatile, never persisted).
+    pub(crate) traversed_k: crate::network::nerve::Keyed<u64>,
+    pub(crate) traversed_orbit: crate::network::nerve::Keyed<()>,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
