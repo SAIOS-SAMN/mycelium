@@ -345,6 +345,21 @@ otherwise the item's rows wait for their own commit and the other agent's
 pending edits are left alone. Four bundles on 2026-09-07 had this one
 cause.
 
+5.7 **The ledger is kept, not appended** (ruled 2026-09-24, the
+operator's word: "it has grown like a weed"). `MU-RECURSION-TASKS.md`
+carries ONE live order. A row is an object the engine can be audited
+on; a reading is a line of the observer's row (CV5) and never a row of
+its own. A ruling that changes an object's statement amends that
+object's row; a new row is opened only for a new object. A row a later
+ruling supersedes is marked once in the superseded table with its
+successor and is not re-sequenced; a row that lands moves to the landed
+ledger with its commit and its audit. In `MU-RECURSION.md`, chapters run
+in numeric order within their parts, a ruling amends the chapter that
+governs its object (a new subsection only for a new object), and Part 0
+carries every master's statement, site and state, changed in the same
+commit as the ruling that moves it. A relay to the implementor names
+rows by the live ledger only.
+
 ## 6. Verification of a landing
 
 6.1 The implementor runs, in the foreground and in this order, on the
