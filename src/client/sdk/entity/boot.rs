@@ -101,7 +101,7 @@ impl Entity {
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present (GEN4) — its words with their admitting stamps, and this
+    /// if present (GEN5) — its words with their admitting stamps, and this
     /// voice's own ledger behind them, so its K continues across a boot
     /// rather than restarting at zero. The epigenome starts empty. An older
     /// file, or one whose ledger does not verify, is refused whole.
@@ -111,8 +111,12 @@ impl Entity {
             eprintln!("genome 0 words, epigenome empty");
             return e;
         };
+        if let Some(named) = crate::client::sdk::epigenome::genome_refused(&bytes) {
+            eprintln!("genome refused: {named}");
+            return e;
+        }
         let Some(read) = e.epigenome.uncrystallize(&bytes) else {
-            eprintln!("genome refused: the file is not a whole GEN4 tape");
+            eprintln!("genome refused: the file is not a whole GEN5 tape");
             return e;
         };
         let mut pos = read.end;
@@ -125,7 +129,7 @@ impl Entity {
         }
         let n = e.epigenome.genome_len();
         let kb = bytes.len() / 1024;
-        eprintln!("genome {n} words (GEN4, {kb} KB), K {}, epigenome empty", e.own_k());
+        eprintln!("genome {n} words (GEN5, {kb} KB), K {}, epigenome empty", e.own_k());
         e
     }
 

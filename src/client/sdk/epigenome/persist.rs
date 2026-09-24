@@ -4,6 +4,31 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
+/// THE GENOME FILE'S MAGIC: its words with their admitting stamps
+/// `h‖vk‖K‖i`, then the voice's ledger with its orbit closes (78.23 as
+/// amended).
+pub const GENOME_MAGIC: &[u8; 4] = b"GEN5";
+
+/// THE GENOME BEFORE THE ORBIT COORDINATES (ACT1-orbit), refused BY NAME
+/// and never migrated, as `Element::PRE_WHOLE_MAGIC` and the snapshot's
+/// `PRE_ORBIT_LEDGER_TAG` are: its stamps carry no place in the orbit, so
+/// under this reader a stamp's height would be read into the next stamp's
+/// orbit. One equality refuses it; there is no reader for it.
+pub const PRE_ORBIT_GENOME_MAGIC: &[u8; 4] = b"GEN4";
+
+/// What a genome file's magic names where this reader refuses it: the
+/// pre-orbit genome by its own name, anything else as not a genome of
+/// this build. `None` for this build's magic.
+pub fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
+    match bytes.get(..4) {
+        Some(m) if m == GENOME_MAGIC => None,
+        Some(m) if m == PRE_ORBIT_GENOME_MAGIC => {
+            Some("GEN4, the genome before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road")
+        }
+        _ => Some("not a GEN5 tape"),
+    }
+}
+
 /// What a restored genome hands back beside its words: each word's
 /// admitting stamp (78.24 (2b)), and where the words end on the tape.
 pub struct Uncrystallized {
@@ -13,12 +38,12 @@ pub struct Uncrystallized {
 
 impl Epigenome {
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
-    /// The epigenome is memory-only. Format: `GEN4 | n u32 | (len u32 |
+    /// The epigenome is memory-only. Format: `GEN5 | n u32 | (len u32 |
     /// element | admitted)…`, where `admitted` is `0`, or `1` and the stamp
     /// of the act that admitted the word (78.24 (2b)).
     pub fn crystallize(&self, admitted: impl Fn(&[u8]) -> Option<crate::chronometry::Stamp>) -> Vec<u8> {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
-        out.extend_from_slice(b"GEN4");
+        out.extend_from_slice(GENOME_MAGIC);
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
         for (_, g) in self.resident.scoped() {
             let b = g.held.to_bytes();
@@ -35,10 +60,11 @@ impl Epigenome {
         out
     }
 
-    /// Restore GEN4 only, whole or refused: an older file, or a word that
-    /// does not parse, refuses the tape (rule 11), and nothing is restored.
+    /// Restore GEN5 only, whole or refused: an older file (named by
+    /// [`genome_refused`]), or a word that does not parse, refuses the tape
+    /// (rule 11), and nothing is restored.
     pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<Uncrystallized> {
-        if bytes.get(..4)? != b"GEN4" {
+        if genome_refused(bytes).is_some() {
             return None;
         }
         let n = u32::from_le_bytes(bytes.get(4..8)?.try_into().ok()?) as usize;

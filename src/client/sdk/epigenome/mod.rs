@@ -9,3 +9,7 @@ pub mod crystal;
 pub mod dialect;
 mod persist;
 pub mod shed;
+
+pub use persist::genome_refused;
+#[cfg(test)]
+pub use persist::PRE_ORBIT_GENOME_MAGIC;

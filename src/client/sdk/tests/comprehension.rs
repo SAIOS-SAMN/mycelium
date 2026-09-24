@@ -55,8 +55,18 @@ assert_eq!(
     None,
     "a dialect with no word expresses nothing, and nothing has no peak"
 );
-assert!(Epigenome::new().uncrystallize(b"GEN4\xff\xff\xff\xff").is_none(), "hostile count refused");
+assert!(Epigenome::new().uncrystallize(b"GEN5\xff\xff\xff\xff").is_none(), "hostile count refused");
 assert!(Epigenome::new().uncrystallize(b"GEN3\x00\x00\x00\x00").is_none(), "an older layout refused");
+// THE GENOME BEFORE THE ORBIT COORDINATES IS REFUSED BY NAME (ACT1-orbit):
+// the same tape under GEN4 restores nothing, and the refusal names it.
+let mut older = frozen.clone();
+older[..4].copy_from_slice(crate::client::sdk::epigenome::PRE_ORBIT_GENOME_MAGIC);
+assert!(Epigenome::new().uncrystallize(&older).is_none(), "a pre-orbit genome restores nothing");
+assert!(
+    crate::client::sdk::epigenome::genome_refused(&older).is_some_and(|n| n.starts_with("GEN4")),
+    "and is refused by its own name"
+);
+assert_eq!(crate::client::sdk::epigenome::genome_refused(&frozen), None, "this build's genome is not refused");
 }
 
 /// Chapter 24.2: a sentence that cites a form this mind does not hold
