@@ -4,9 +4,9 @@
 //! γ_substance ∘ π_anchor, where π is a term composed from the sites and
 //! the edge adjacency the sensor measures, evaluated exactly on a scene.
 
+pub mod codec;
 pub mod derive;
 pub mod sel;
-pub mod tape;
 
 pub use derive::*;
 

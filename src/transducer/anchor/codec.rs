@@ -1,4 +1,6 @@
-// 19, A9 — the selection term as bytes, and back.
+// 19, A9 — THE SELECTION TERM'S CODEC (TN1, 78.34: "tape" names a word's
+// letter tape and nothing else; this module was `anchor/tape.rs`): the
+// selection term as bytes, and back.
 
 use super::*;
 
