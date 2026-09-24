@@ -11727,6 +11727,59 @@ parts.**
    curve (LC1) reads a planet's motion as its elements changing per
    orbit — which is what 78.1 already called the curve.
 
+### 78.24 The ledger is a partial order carried as one, never a serialized tape (ruled 2026-09-24, the operator's word)
+
+The operator's word to the implementor, verbatim: "do you see how in
+this conversation you have mentioned multiple angles: depth, height,
+width — this becomes a multi-dimensional non-unidirectional component
+that we are treating as a serialized tape." The receipts are
+uni-directional and mundane — a receipt records that one act happened
+at its stamp after the parents it cites, and never carries or binds the
+form — and their point is the clock and the causal order: TUniversal,
+the tick, the frame the act measured, the kernel's `k`. The ledger's
+stamp is already several dimensions — the tick `h`, the four lanes
+`S:G:T:H`, `K`, depth across signers, width across peers — a partial
+order of frames (45.3: causal, partial, never totalised, T15), and the
+tree writes and reads it as a one-dimensional byte tape: a `Vec` of
+receipts in append order, one byte run in the snapshot's chain sections,
+depth an index keyed by a delta's bytes, the parents a list inside each
+receipt. That flattening is the blob defect one level down, and it is
+ruled out.
+
+**(a) The carrier.** The ledger is a `Keyed` structure over its own
+coordinates (A21, rule 9): the key is the STAMP — the tick `h` first,
+the coarsest stratum, then the signer `vk`, then `K` — and the node
+holds the act's kind, the frame `S:G:T:H` it measured, its parents as
+COORDINATES (their own `h:vk:K` stamps, a keyed relation, the DAG's
+edges) and its citation (the fiber and the admitting act's stamp, LD0).
+Reading is by prefix as a stratum: `fiber(h)` is everything the mesh did
+at one tick — its frame, its WIDTH across signers; `fiber(h:vk)` is one
+signer at that tick; the frontier of 45.3 is read off the carrier by
+signer, and DEPTH (L15) off the signers by prefix, never an index keyed
+by bytes. The append order is one reader's trajectory through the
+carrier and is never the carrier. A peer's receipt held as a parent is
+held ONCE, at the peer's coordinates — width — and every receipt citing
+it cites its stamp; the 47 MB of parents on hypha a were copies.
+
+**(b) The citation lands on that carrier.** A receipt IS the node at
+its stamp; LD0's delta citation is the node's content, CK1's stamp is
+the KEY and not a printed field, and the console prints the key.
+Step 3, CK1's stamp and the snapshot's chain sections are cut TOGETHER
+against this carrier, once, as LD2 — never three times against a tape.
+EC1 (a ruling's economy applied on admitting the Ruling receipt) sits
+on the same carrier.
+
+**(c) The hash.** Part IX permits a digest over a receipt's bytes (A21
+§6), and the tree's `chain_hash` is already PER RECEIPT, citing `prev`
+and the parents — a Merkle DAG over the partial order, not a hash over
+the tape, so it stays: each receipt's hash is taken over its own
+CANONICAL coordinates — its key, its kind, its frame, its parents'
+stamps and hashes, its citation's canonical bytes — never over a
+concatenation of the chain in append order; the equivocation proof (two
+receipts by one key at one `K` with two hashes) is unchanged. Persisted,
+the ledger is written as the trie, each key once as a path, exactly as
+the treasury's rows (LD0(ii)); restored, it is read as the trie.
+
 # Part XI — The frame axis
 
 Written 2026-09-11 against c27ea76 as the L22 draft; **ruled 2026-09-17**
