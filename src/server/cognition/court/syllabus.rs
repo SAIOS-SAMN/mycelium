@@ -116,7 +116,7 @@ impl Kernel {
         inv: &crate::transducer::stalk::Invariant,
         have: &[crate::transducer::address::Address],
         budget: usize,
-    ) -> Vec<Vec<u8>> {
+    ) -> Vec<crate::anastome::dialogue::Taught> {
         let mut out = Vec::new();
         let mut used = 0usize;
         let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -146,12 +146,16 @@ impl Kernel {
             if w.is_connection() && w.letters().is_none() {
                 continue; // letterless history is never taught
             }
+            // The word with the stamp that admitted it (78.24 (2b)): a word
+            // no act admitted has no locator and is not taught.
+            let Some(at) = self.admitted_at(&addr) else { continue };
             let bytes = w.to_bytes();
-            if used + bytes.len() + 4 > budget {
+            let width = crate::chronometry::Stamp::LEN + 4 + bytes.len();
+            if used + width > budget {
                 break;
             }
-            used += bytes.len() + 4;
-            out.push(bytes);
+            used += width;
+            out.push(crate::anastome::dialogue::Taught { at, word: bytes });
         }
         out
     }
@@ -180,8 +184,23 @@ impl Kernel {
     /// The door already wrote `receipt K … h …` beside every page it served
     /// — a receipt nothing sealed, so the K it named was whatever the last
     /// unrelated act had left there.
-    pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) {
+    ///
+    /// Answers the stamp the Syllabus node took — the stamp the page
+    /// carries beside the word (78.24 (2b)) — or `None` where it could not
+    /// be sealed, and the word is not served.
+    pub fn note_served(&mut self, addr: &[u8], to: [u8; 32]) -> Option<crate::chronometry::Stamp> {
+        let before = self.chain.next_step_index();
         self.append_step(crate::chronometry::ActKind::Syllabus, addr, to);
+        self.chain.at_k(before).map(|r| r.stamp)
+    }
+
+    /// A HELD WORD AS A PAGE CARRIES IT: its tape and the stamp that
+    /// admitted it, for a page that seals no act of its own (a genesis
+    /// page, a chart fetch). `None` where the word is not held or no act
+    /// has admitted it.
+    pub fn taught(&self, addr: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
+        let at = self.admitted_at(addr)?;
+        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(addr)?.to_bytes() })
     }
 
     /// What this court already holds in the stratum over `inv`, sent with a

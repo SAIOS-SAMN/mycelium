@@ -1,6 +1,7 @@
 // 45.8, §2, §6 across a fold — the prefix re-expressed as epoch rows, and
 // what a fold refuses.
 
+use super::at;
 use crate::economy::*;
 use crate::verdict::REFUSE_FOLD_INEXACT;
 
@@ -12,7 +13,7 @@ use crate::verdict::REFUSE_FOLD_INEXACT;
 /// carries the epoch rows; a ledger that does not conserve folds nothing.
 #[test]
 fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
-    let a = |k: u64| (k, [k as u8; 32]);
+    let a = |k: u64| at(k, [k as u8; 32]);
     let mut t = Treasury::new();
     t.genesis([1; 32], [10, 10, 10, 10], a(1));
     t.enroll([1; 32], [2, 2, 2, 2], a(1));
@@ -24,7 +25,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     let rows = t.entries().len();
     assert_eq!(rows, 7, "genesis, stake, mint, two transfer halves, burn, and a mint above the fold");
 
-    let folded = t.fold(5, (7, [7; 32])).expect("a conserving prefix folds");
+    let folded = t.fold(5, a(7)).expect("a conserving prefix folds");
     assert_eq!(t.audit().expect("conserves after the fold"), before, "the supply is unchanged");
     assert_eq!(folded, Folded { replaced: 6, rows: 2, net: [13, 10, 12, 10] });
     let epochs: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Epoch).collect();
@@ -33,7 +34,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
         vec![([1; 32], [7, 10, 10, 10]), ([2; 32], [6, 0, 2, 0])],
         "identity 1: genesis less the transfer out, its stake netting nothing; identity 2: mint plus the transfer in less the burn"
     );
-    assert!(epochs.iter().all(|e| (e.k_step, e.receipt) == (7, [7; 32])), "anchored to the fold receipt");
+    assert!(epochs.iter().all(|e| (e.at, e.receipt) == a(7)), "anchored to the fold receipt");
     assert_eq!(t.entries().len(), 3, "two epoch rows and the mint above the fold");
     assert_eq!((t.entries()[2].kind, t.entries()[2].who), (Kind::Mint, [3; 32]), "the row above the fold stands");
     assert_eq!(t.balance_mu(&[1; 32]), [5, 8, 8, 8], "the carriers did not move");
@@ -45,13 +46,13 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
     assert_eq!(back.entries(), t.entries());
     assert_eq!(back.audit().expect("a restored fold conserves"), before);
 
-    let again = t.fold(7, (8, [8; 32])).expect("a fold over epoch rows folds");
+    let again = t.fold(7, a(8)).expect("a fold over epoch rows folds");
     assert_eq!(again.rows, 3, "one epoch row per identity, the mint above joining");
     assert_eq!(t.audit().expect("still conserves"), before);
 
     let mut broken = Treasury::new();
     broken.genesis([1; 32], [10, 0, 0, 0], a(1));
     broken.credit([1; 32], [1, 0, 0, 0]);
-    assert_eq!(broken.fold(1, (2, [2; 32])), Err(REFUSE_FOLD_INEXACT));
+    assert_eq!(broken.fold(1, a(2)), Err(REFUSE_FOLD_INEXACT));
     assert_eq!(broken.entries().len(), 1, "a ledger that does not conserve writes nothing");
 }

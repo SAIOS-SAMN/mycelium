@@ -389,6 +389,12 @@ pub struct Court {
     pub basis: u64,
     pub treasury: u64,
     pub served: Vec<(u8, u64)>,
+    /// CK1 — THE HEAD'S STAMP, `h:S:G:T:H:k` (78.21, 78.24): the tick, the
+    /// frame the head act measured, its `K`. The key, printed.
+    pub head: [u64; 6],
+    /// EC1 — Ruling receipts this court admitted whose citation names a
+    /// word it holds, against rulings whose economy applied here.
+    pub rulings: [u64; 2],
 }
 
 impl Court {
@@ -400,6 +406,9 @@ impl Court {
         for &(kind, n) in &self.served {
             out.push(kind);
             put_u64(out, n);
+        }
+        for v in self.head.iter().chain(self.rulings.iter()) {
+            put_u64(out, *v);
         }
     }
 
@@ -413,7 +422,12 @@ impl Court {
         for _ in 0..m {
             served.push((take_u8(b, p)?, take_u64(b, p)?));
         }
-        Some(Court { k, basis, treasury, served })
+        let mut head = [0u64; 6];
+        for v in head.iter_mut() {
+            *v = take_u64(b, p)?;
+        }
+        let rulings = [take_u64(b, p)?, take_u64(b, p)?];
+        Some(Court { k, basis, treasury, served, head, rulings })
     }
 }
 

@@ -110,9 +110,9 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
         !Crystal::on_body(&epi, &chart).is_empty(),
         "the mind that learned it answers at the body's chart"
     );
-    let tape = epi.crystallize();
+    let tape = epi.crystallize(|_| None);
     let mut booted = Epigenome::new();
-    assert!(booted.uncrystallize(&tape), "the genome restores");
+    assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
     assert!(
         booted.genome_words().any(|w| w.same_vertex(&e)),
         "the restored genome holds the same vertex"
@@ -160,9 +160,9 @@ fn a_restored_genome_factors_through_the_generators_it_was_taught() {
         Crystal::generators_under(epi, chart, &mut budget)
     };
 
-    let tape = epi.crystallize();
+    let tape = epi.crystallize(|_| None);
     let mut booted = Epigenome::new();
-    assert!(booted.uncrystallize(&tape), "the genome restores");
+    assert!(booted.uncrystallize(&tape).is_some(), "the genome restores");
 
     let mut offered = 0usize;
     for chart in &charts {

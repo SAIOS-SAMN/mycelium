@@ -47,32 +47,44 @@ impl Kernel {
     /// joins this court's chain — its own acts and every peer receipt it
     /// admits — so the index and the chain cannot disagree.
     pub(crate) fn note_attestor(&mut self, r: &crate::chronometry::KStepReceipt) {
-        if r.delta.is_empty() {
-            return;
-        }
-        let key = attestor_key(&r.vk, r.kind);
-        match self.attestors.get_mut(&r.delta) {
-            Some(bucket) => {
-                bucket.insert(key, r.step_index);
-            }
-            None => {
-                let mut bucket = crate::network::nerve::Keyed::new();
-                bucket.insert(key, r.step_index);
-                self.attestors.insert(&r.delta, bucket);
+        // A node commits its signer to what it CITES, located by the
+        // stamp that admitted it (78.24): depth is read off that stamp's
+        // signers by prefix, never off a node's bytes.
+        let key = attestor_key(&r.stamp.vk, r.kind);
+        for c in &r.cites {
+            let at = c.at().key();
+            match self.attestors.get_mut(&at) {
+                Some(bucket) => {
+                    bucket.insert(&key, r.stamp.k);
+                }
+                None => {
+                    let mut bucket = crate::network::nerve::Keyed::new();
+                    bucket.insert(&key, r.stamp.k);
+                    self.attestors.insert(at, bucket);
+                }
             }
         }
     }
 
-    /// L15 — THE DEPTH OF AN ADDRESS: how many distinct organs have
-    /// committed to it. The read is over that address's OWN entries — its
-    /// boundary, which rule 1 allows — and the distinct signers are read
-    /// from a keyed set built for the read and dropped after it, so
-    /// nothing about depth is stored (law 12).
-    ///
-    /// Zero is a true reading: an address no organ has committed to has
-    /// depth zero, and that is a fact rather than an absence.
+    /// L15 — THE DEPTH OF A WORD THIS COURT HOLDS, read at the stamp that
+    /// admitted it. Zero where it holds none.
     pub fn depth_of(&self, addr: &[u8]) -> usize {
-        let Some(bucket) = self.attestors.get(addr) else {
+        match self.admitted_at(addr) {
+            Some(at) => self.depth_at(&at),
+            None => 0,
+        }
+    }
+
+    /// L15 — THE DEPTH AT AN ADMITTING STAMP: how many distinct organs have
+    /// committed to what it admitted. The read is over that stamp's OWN
+    /// entries — its boundary, which rule 1 allows — and the distinct
+    /// signers are read from a keyed set built for the read and dropped
+    /// after it, so nothing about depth is stored (law 12).
+    ///
+    /// Zero is a true reading: what no organ has committed to has depth
+    /// zero, and that is a fact rather than an absence.
+    pub fn depth_at(&self, at: &crate::chronometry::Stamp) -> usize {
+        let Some(bucket) = self.attestors.get(&at.key()) else {
             return 0;
         };
         let mut signers: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
@@ -93,14 +105,14 @@ impl Kernel {
         signers.scoped().count()
     }
 
-    /// Rebuild the depth index from the chain this court holds. Derived,
-    /// never persisted: a restored court reads its own receipts and the
-    /// peer receipts it admitted, exactly as it read them when they
-    /// arrived.
+    /// Rebuild the depth index from the ledger this court holds: EVERY
+    /// node, its own and the peers' it admitted, exactly as it read them
+    /// when they arrived. Derived, never persisted. (It read the court's
+    /// own line alone, so depth from peers was lost at every restore.)
     pub(crate) fn rebuild_attestors(&mut self) {
         self.attestors = crate::network::nerve::Keyed::new();
-        let receipts: Vec<crate::chronometry::KStepReceipt> = self.chain.receipts().to_vec();
-        for r in &receipts {
+        let nodes: Vec<crate::chronometry::KStepReceipt> = self.chain.nodes().cloned().collect();
+        for r in &nodes {
             self.note_attestor(r);
         }
     }

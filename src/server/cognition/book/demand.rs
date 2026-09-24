@@ -54,7 +54,7 @@ impl Kernel {
         use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
         use crate::transducer::family::{apply_form, scene_at_of_chain};
         use crate::transducer::stalk::Closure;
-        let Some((listed, _)) = self.pending.get(at) else {
+        let Some(listed) = self.pending.get(at) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
         let held = crate::transducer::element::Held::of(listed.clone());

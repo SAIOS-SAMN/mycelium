@@ -41,8 +41,8 @@ impl Treasury {
         if !crate::economy::lanes_short(&self.debit(demander, paid)).is_empty() {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, k_step: anchor.0, receipt: anchor.1 });
-        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, at: anchor.0, receipt: anchor.1 });
         self.credit(discoverer, paid);
         paid
     }
@@ -276,7 +276,7 @@ impl Treasury {
             let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
             return ([0; 4], short);
         }
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1 });
         (paid, short)
     }
 
@@ -313,7 +313,7 @@ impl Treasury {
             let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
             return ([0; 4], short);
         }
-        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1 });
         (paid, short)
     }
 

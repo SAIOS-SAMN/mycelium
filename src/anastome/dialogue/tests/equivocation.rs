@@ -3,19 +3,22 @@
 
 use crate::anastome::dialogue::*;
 
-fn section(delta: &[u8], sig: u8) -> ReceiptSection {
+/// A root under one key, measuring `lane`: two lanes, two roots at K 0.
+fn section(lane: u64, sig: u8) -> ReceiptSection {
     let mut c = crate::chronometry::ReceiptChain::with_vk([0x5c; 32]);
-    c.append(crate::chronometry::ActKind::List, [0; 4], delta, [0; 32], Vec::new()).expect("appends");
-    let r = c.receipts()[0].clone();
+    let r = c
+        .append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new())
+        .expect("appends")
+        .clone();
     ReceiptSection {
         prefix: crate::court::admission::SignedPrefix {
             genesis: [7; 32],
             epoch: 2,
-            prev_receipt_hash: r.prev_receipt_hash,
-            k: r.step_index,
-            height: r.height,
+            prev_receipt_hash: r.prev_hash(),
+            k: r.stamp.k,
+            height: r.stamp.h,
             chart: vec![1, 2],
-            payload: r.delta.clone(),
+            payload: r.stamp.key(),
         },
         sig: [sig; 64],
         receipt: r,
@@ -27,7 +30,7 @@ fn section(delta: &[u8], sig: u8) -> ReceiptSection {
 /// signature and receipt, in the order the presenter put them.
 #[test]
 fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
-    let (a, b) = (section(b"one", 0x11), section(b"two", 0x22));
+    let (a, b) = (section(1, 0x11), section(2, 0x22));
     let body = encode_equivocation(&a, &b).expect("two prefixes that fit frame");
     assert_eq!(body[0], ACT_EQUIVOCATION, "the act byte");
     assert_eq!(body[1], EQUIVOCATION_VERSION, "then the layout version");
@@ -47,7 +50,7 @@ fn two_receipt_sections_parse_back_whole_in_the_order_presented() {
 /// (rule 11).
 #[test]
 fn a_truncated_padded_or_misversioned_frame_refuses_whole() {
-    let (a, b) = (section(b"one", 0x11), section(b"two", 0x22));
+    let (a, b) = (section(1, 0x11), section(2, 0x22));
     let body = encode_equivocation(&a, &b).expect("frames");
     assert!(
         decode_equivocation(&body[..body.len() - 1]).is_none(),

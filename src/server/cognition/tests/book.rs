@@ -191,7 +191,7 @@ let e3 = one(&[(2, 0, 1, 4)]);
 let keyed = |es: &[Element]| {
     let mut k = crate::network::nerve::Keyed::new();
     for e in es {
-        k.insert(e.address(), (e.clone(), 0u64));
+        k.insert(e.address(), e.clone());
     }
     k
 };
@@ -205,7 +205,7 @@ for e in [&e1, &e2, &e3] {
 }
 let spoken = crate::network::nerve::Keyed::new();
 let standing = crate::network::nerve::Keyed::new();
-let quote = |p: &crate::network::nerve::Keyed<(Element, u64)>| {
+let quote = |p: &crate::network::nerve::Keyed<Element>| {
     quote_incidence(
         &BookView {
             pending: p,
@@ -318,9 +318,12 @@ assert!(k.installed_word(&addr).is_none(), "but nothing installed it");
 let served = k.serve_ruled(&inv, &[], 1 << 20);
 assert!(served.is_empty(), "a provisional word is not language and is not taught");
 
-// Installed, the same address teaches.
+// Installed, the same address teaches — at the stamp of the act that
+// admitted it (78.24 (2b)), the locator the page carries beside it.
 k.basis_insert(w, [1; 32]);
 assert!(k.installed_word(&addr).is_some());
+assert!(k.serve_ruled(&inv, &[], 1 << 20).is_empty(), "a word no act admitted has no locator and is not taught");
+k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1 });
 assert_eq!(
     k.serve_ruled(&inv, &[], 1 << 20).len(),
     1,

@@ -7,6 +7,7 @@
 
 mod basis;
 mod book;
+mod cite;
 mod cocycle;
 mod court;
 mod depth;

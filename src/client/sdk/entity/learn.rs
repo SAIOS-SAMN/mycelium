@@ -108,10 +108,10 @@ impl Entity {
         let mut learned = 0usize;
         let body = self.session.speak_keyed(&voice, request)?;
         // A reply that does not decode teaches nothing.
-        for w in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
+        for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
             let mut pos = 0usize;
-            let fetched = Element::from_bytes(&w, &mut pos);
-            if self.absorb_taught(&w).is_some() {
+            let fetched = Element::from_bytes(&t.word, &mut pos);
+            if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
                 learned += 1;
             }
             // ČECH AFTER FETCH: the word is glued on the elements, not on
@@ -263,8 +263,8 @@ impl Entity {
                     continue;
                 };
                 // A reply that does not decode teaches nothing.
-        for w in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
-                    if self.absorb_taught(&w).is_some() {
+                for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
+                    if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
                         learned += 1;
                     }
                 }
@@ -291,9 +291,9 @@ impl Entity {
             clippy::disallowed_methods,
             reason = "rule 4 — canonical key order: depth order is chapter 6's own (24.2), the order a syllabus is served in, and a tape that does not parse has no depth and is learned last"
         )]
-        words.sort_by_key(|w| {
+        words.sort_by_key(|t| {
             let mut pos = 0usize;
-            match crate::transducer::element::Element::from_bytes(w, &mut pos) {
+            match crate::transducer::element::Element::from_bytes(&t.word, &mut pos) {
                 // An ARRIVING syllabus tape: nothing holds it yet, so the
                 // decode is named here (L16).
                 Some(e) => match crate::transducer::sentence::from_element_form(&e) {
@@ -304,8 +304,8 @@ impl Entity {
             }
         });
         let mut learned = 0usize;
-        for w in &words {
-            if self.absorb_taught(w).is_some() {
+        for t in &words {
+            if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
                 learned += 1;
             }
         }
@@ -313,13 +313,22 @@ impl Entity {
         Ok(learned)
     }
 
+    /// Hear a taught word with no stamp to locate it by: a word handed in
+    /// whole rather than served, which the Learned node cannot cite.
+    pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
+        self.absorb_taught_at(taught, None)
+    }
+
     /// Hear a taught word by pivoting the contemplation before banking it.
     /// k is the voice's K (law 9), tu is TUniversal; they are not one clock.
-    pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
+    /// `at` is the stamp the page carried beside the word (78.24 (2b)):
+    /// filed as the word's locator, it is what the Learned node cites.
+    pub fn absorb_taught_at(
+        &mut self,
+        taught: &[u8],
+        at: Option<crate::chronometry::Stamp>,
+    ) -> Option<Comprehension> {
         let mut pos = 0usize;
-        // The page's addresses, written out (A21), are what the receipt
-        // names: the words this mind learned, never the page's bytes.
-        let mut page: Vec<u8> = Vec::new();
         // WHAT THE PAGE MEASURED, per lane: the sum over the words it
         // carried, lane by lane and never across lanes (law 5). A page is
         // one act and its measure is what it brought.
@@ -337,22 +346,26 @@ impl Entity {
             for (lane, add) in mu.iter_mut().zip(m) {
                 *lane = lane.saturating_add(add);
             }
-            // A page whose receipt cannot name every word it carries is not
-            // learned: the receipt would seal fewer words than the page
-            // brought (LD0).
-            if crate::transducer::address::put_addr(&mut page, e.address()).is_none() {
-                eprintln!("  taught page refused: a word's address cannot be framed on its receipt");
-                return None;
-            }
             heard_words.push(e);
         }
+        // THE WORDS THE PAGE TAUGHT, cited by their fibers and the stamp
+        // that taught them (78.24): one citation per word, never the
+        // page's bytes.
+        let mut cites = Vec::with_capacity(heard_words.len());
         for e in &heard_words {
+            let addr = e.address();
+            if let Some(at) = at {
+                self.session.voice_mut().file_admitted(&addr, at);
+            }
+            if let Some(c) = self.session.voice().cite_of(&addr, e) {
+                cites.push(c);
+            }
             let _ = self.pivot_on(e);
         }
         // 45.1, 45.4: a page LEARNED is an admitted act of this mind, so a
-        // receipt naming the words is sealed on its own chain and the page
-        // is learned at the K it took.
-        let k = self.session.seal(crate::chronometry::ActKind::Learned, mu, &page);
+        // node citing the words is sealed on its own chain and the page is
+        // learned at the K it took.
+        let k = self.session.seal(crate::chronometry::ActKind::Learned, mu, cites);
         let heard = self.epigenome.learn_at(taught, k, self.now_tu());
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures

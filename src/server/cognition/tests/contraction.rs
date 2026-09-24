@@ -193,8 +193,7 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
     assert!(court2.provisional.contains(&addr), "court 2 dockets the same address");
     assert_ne!(court1.identity, court2.identity, "two courts, two identities");
     assert!(
-        court1.chain().receipts().iter().all(|r| r.vk == [1; 32])
-            && court2.chain().receipts().iter().all(|r| r.vk == [2; 32]),
+        court1.chain().own().all(|r| r.stamp.vk == [1; 32]) && court2.chain().own().all(|r| r.stamp.vk == [2; 32]),
         "each court's receipts are sealed under its own key"
     );
 }

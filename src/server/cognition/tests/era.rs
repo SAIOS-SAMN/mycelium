@@ -17,14 +17,13 @@ use crate::verdict::{
 fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
     let key = super::common::court_key(name);
     let mut c = ReceiptChain::with_vk(key.vk_bytes());
-    c.append(ActKind::List, [0; 4], b"w", [0; 32], Vec::new()).expect("appends");
-    let head = c.receipts()[0].clone();
+    let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let prefix = SignedPrefix {
         genesis: [7; 32],
         epoch: 2,
-        prev_receipt_hash: head.prev_receipt_hash,
-        k: head.step_index,
-        height: head.height,
+        prev_receipt_hash: head.prev_hash(),
+        k: head.stamp.k,
+        height: head.stamp.h,
         chart: vec![],
         payload: root_hash.to_vec(),
     };
@@ -73,7 +72,7 @@ assert_eq!(Kernel::boot().verify_fold(home, &p, &receipts, &rows), Err(REFUSE_WI
 // THE HOME seals only on a signature that verifies, from another key, over this root.
 let home_sig = [3u8; 64];
 let mut dependent = co_sign("w", p.root.hash);
-dependent.receipt.vk = home;
+dependent.receipt.stamp.vk = home;
 assert_eq!(k.commit_fold(home_sig, &dependent), Err(REFUSE_WITNESS_DEPENDENT), "a court is not its own witness");
 let mut forged = co_sign("w", p.root.hash);
 forged.sig[0] ^= 1;
@@ -82,27 +81,34 @@ assert_eq!(k.commit_fold(home_sig, &co_sign("w", [9; 32])), Err(REFUSE_RECEIPT),
 assert!(k.fold_proposal().is_some(), "the proposal stands through a witness's refusals");
 let w = co_sign("w", p.root.hash);
 let done = k.commit_fold(home_sig, &w).expect("two signatures seal the fold");
-assert_eq!((done.k0, done.k1, done.k, done.witness), (0, 2, 3, w.receipt.vk));
+assert_eq!((done.k0, done.k1, done.k, done.witness), (0, 2, 3, w.receipt.stamp.vk));
 assert_eq!(done.h, head_height + 1, "height continues over the fold");
 assert!(k.fold_proposal().is_none(), "sealed, nothing pends");
 let root = k.chain().root().expect("the chain stands on its root");
 assert_eq!(root, p.root);
-let fold = &k.chain().receipts()[0];
-assert_eq!((fold.kind, fold.step_index, fold.prev_receipt_hash), (ActKind::Fold, 3, head_hash));
-assert_eq!(fold.delta, head_hash.to_vec(), "the fold receipt cites the archived head");
+let fold = k.chain().opening().expect("the hot line opens at the fold").clone();
+assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash()), (ActKind::Fold, 3, head_hash));
+assert_eq!(
+    fold.cites,
+    vec![crate::chronometry::Cite::Root {
+        at: crate::chronometry::Stamp { h: root.height, vk: home, k: root.k },
+        hash: head_hash
+    }],
+    "the fold node cites the archived head by its stamp and hash"
+);
 assert!(k.chain().verify_chain_integrity(), "the hot chain re-verifies from its root");
 assert_eq!(k.k_step(), 4, "K continues past the fold");
 let era = &k.archive()[0];
 assert_eq!(
     (era.root, era.signer, era.witness, era.sig_home, era.sig_witness),
-    (root, home, w.receipt.vk, home_sig, w.sig),
+    (root, home, w.receipt.stamp.vk, home_sig, w.sig),
     "the era carries the witness and both signatures"
 );
 assert_eq!((era.receipts.len(), era.first_k()), (3, Some(0)));
 assert!(ReceiptChain::from_receipts(era.receipts.clone()).is_some(), "the archived prefix re-verifies as a chain of its own");
 assert_eq!(k.treasury().audit().expect("conserves after"), before);
 assert_eq!(
-    k.receipts_range(&home, 0, 3, 10).iter().map(|r| r.step_index).collect::<Vec<_>>(),
+    k.receipts_range(&home, 0, 3, 10).iter().map(|r| r.stamp.k).collect::<Vec<_>>(),
     vec![0, 1, 2, 3],
     "the K-range read spans ARC1 and the hot chain"
 );

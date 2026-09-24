@@ -244,6 +244,25 @@ pub fn adjudication() -> super::Adjudication {
     }
 }
 
+/// EC1 — Ruling receipts admitted whose citation names a word this court
+/// holds, and rulings whose economy applied here, counted where each is.
+static RULINGS: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+
+/// A peer's Ruling receipt was admitted, citing a word this court holds.
+pub fn note_ruling_admitted() {
+    RULINGS[0].fetch_add(1, Ordering::Relaxed);
+}
+
+/// A ruling's economy — its release, demotion or slash — applied here.
+pub fn note_ruling_applied() {
+    RULINGS[1].fetch_add(1, Ordering::Relaxed);
+}
+
+/// The two counts, admitted and applied.
+pub fn rulings() -> [u64; 2] {
+    std::array::from_fn(|i| RULINGS[i].load(Ordering::Relaxed))
+}
+
 /// THE ACT, decoded.
 #[derive(Debug, PartialEq, Eq)]
 pub enum ObserveAct {

@@ -226,7 +226,7 @@ impl Kernel {
     }
 
     pub(crate) fn book_elem(&self, addr: &[u8]) -> Option<&Element> {
-        self.pending.get(addr).map(|(p, _)| p)
+        self.pending.get(addr)
     }
 
     /// WHETHER THE LIVE SNAPSHOT HOLDS A WORD AT THIS ADDRESS. It was
@@ -675,8 +675,8 @@ impl Kernel {
         let keys: Vec<Address> = self
             .pending
             .scoped()
-            .filter(|(_, (p, _))| !home(p))
-            .map(|(_, (p, _))| p.address())
+            .filter(|(_, p)| !home(p))
+            .map(|(_, p)| p.address())
             .collect();
         for k in keys {
             self.relocate_cavity(&k);

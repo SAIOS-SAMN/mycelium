@@ -39,7 +39,7 @@ pub fn encode_receipt_section(
     let pb = prefix.bytes();
     let plen = u16::try_from(pb.len()).ok()?;
     let mut rb = Vec::new();
-    receipt.write(&mut rb);
+    receipt.write(&mut rb)?;
     let rlen = u32::try_from(rb.len()).ok()?;
     let mut out = Vec::with_capacity(pb.len() + rb.len() + 70);
     out.extend_from_slice(&plen.to_le_bytes());
@@ -212,16 +212,26 @@ pub fn encode_receipts_reply(receipts: &[crate::chronometry::KStepReceipt], budg
     // THE SHAPE SAYS WHICH RECEIPT IS THE FIRST, not a tally of how many
     // have been written (rule 2): the head of the slice always rides, and
     // the tail rides only while it fits.
+    // A node that cannot be written ends the page there, named: the pages
+    // are a signer's line in K order, and none is skipped past (LD0).
     if let Some((head, rest)) = receipts.split_first() {
         let mut rb = Vec::new();
-        head.write(&mut rb);
-        let size = out.len() + rb.len();
+        let size = match head.write(&mut rb) {
+            Some(()) => out.len() + rb.len(),
+            None => {
+                eprintln!("  receipts page refused: its first node cannot be written");
+                usize::MAX
+            }
+        };
         if size <= crate::network::wire::BODY_BUDGET {
             out.extend_from_slice(&rb);
             n += 1;
             for r in rest.iter().take(cap) {
                 let mut rb = Vec::new();
-                r.write(&mut rb);
+                if r.write(&mut rb).is_none() {
+                    eprintln!("  receipts page ends: a node cannot be written");
+                    break;
+                }
                 let size = out.len() + rb.len();
                 if size > budget {
                     break;

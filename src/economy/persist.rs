@@ -8,10 +8,10 @@
 use super::*;
 
 impl Entry {
-    /// One row's tape: `[tag u8][who 32][μ⃗ 4×u64][k u64][receipt 32]`,
-    /// 105 bytes — the one layout the ledger, the snapshot and the wire
-    /// (`ACT_ROWS`) share.
-    pub const TAPE: usize = 1 + 32 + 32 + 8 + 32;
+    /// One row's tape: `[tag u8][who 32][μ⃗ 4×u64][stamp 48][receipt 32]`,
+    /// 145 bytes — the one layout the ledger, the snapshot and the wire
+    /// (`ACT_ROWS`) share. The stamp is the act the row stands at (78.24).
+    pub const TAPE: usize = 1 + 32 + 32 + crate::chronometry::Stamp::LEN + 32;
 
     /// One tag per kind, and the match is exhaustive: a kind that could not
     /// be written would not compile, where a string match once fell
@@ -35,7 +35,7 @@ impl Entry {
         for m in &self.mu {
             out.extend_from_slice(&m.to_le_bytes());
         }
-        out.extend_from_slice(&self.k_step.to_le_bytes());
+        self.at.put_canonical(out);
         out.extend_from_slice(&self.receipt);
     }
 
@@ -68,17 +68,16 @@ impl Entry {
             *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
             *pos += 8;
         }
-        let k_step = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
+        let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
         let receipt: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
         *pos += 32;
-        Some(Entry { kind, who, mu, k_step, receipt })
+        Some(Entry { kind, who, mu, at, receipt })
     }
 }
 
-/// An escrow row after its address: `[nv u32][voice 32·nv][μ⃗ 4×u64][k u64]
-/// [receipt 32]`. The one writing of it, for the snapshot and for LD1's
-/// measure of what a row carries.
+/// An escrow row after its address: `[nv u32][voice 32·nv][μ⃗ 4×u64]
+/// [stamp 48][receipt 32]`. The one writing of it, for the snapshot and for
+/// LD1's measure of what a row carries.
 fn put_escrow_tail(out: &mut Vec<u8>, row: &super::escrow::Escrowed) {
     out.extend_from_slice(&(row.voices.len() as u32).to_le_bytes());
     for v in &row.voices {
@@ -87,7 +86,7 @@ fn put_escrow_tail(out: &mut Vec<u8>, row: &super::escrow::Escrowed) {
     for m in &row.mu {
         out.extend_from_slice(&m.to_le_bytes());
     }
-    out.extend_from_slice(&row.anchor.0.to_le_bytes());
+    row.anchor.0.put_canonical(out);
     out.extend_from_slice(&row.anchor.1);
 }
 
@@ -191,8 +190,8 @@ impl Treasury {
         }
         let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
         *pos += 4;
-        if n > b.len().checked_sub(*pos)? / 105 {
-            return None; // untrusted count: 105 bytes per entry, refuse before allocating
+        if n > b.len().checked_sub(*pos)? / Entry::TAPE {
+            return None; // untrusted count: one tape per entry, refuse before allocating
         }
         let mut entries = Vec::with_capacity(n);
         for _ in 0..n {
@@ -230,11 +229,10 @@ impl Treasury {
                     *m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
                     *pos += 8;
                 }
-                let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                *pos += 8;
+                let at = crate::chronometry::Stamp::take_canonical(b, pos)?;
                 let r: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
-                escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (k, r) });
+                escrowed.insert(addr, crate::economy::escrow::Escrowed { voices, mu, anchor: (at, r) });
             }
         }
         // BALANCES, read back. Not recomputed: see `snapshot`.

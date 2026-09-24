@@ -16,23 +16,22 @@ fn court_key(name: &str) -> crate::court::identity::HyphaKey {
     crate::court::identity::HyphaKey { vk: sk.verifying_key(), sk }
 }
 
-/// The first receipt of a fresh chain under `vk`, committing `delta`: two
-/// such chains under one key are two roots at K 0.
-fn first_receipt(vk: [u8; 32], delta: &[u8]) -> KStepReceipt {
+/// The first receipt of a fresh chain under `vk`, measuring `lane` on its
+/// frame: two such chains under one key are two roots at K 0.
+fn first_receipt(vk: [u8; 32], lane: u64) -> KStepReceipt {
     let mut c = ReceiptChain::with_vk(vk);
-    c.append(crate::chronometry::ActKind::List, [0; 4],delta, [0; 32], Vec::new()).expect("appends");
-    c.receipts()[0].clone()
+    c.append(crate::chronometry::ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone()
 }
 
 fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
     SignedPrefix {
         genesis: G,
         epoch: E,
-        prev_receipt_hash: r.prev_receipt_hash,
-        k: r.step_index,
-        height: r.height,
+        prev_receipt_hash: r.prev_hash(),
+        k: r.stamp.k,
+        height: r.stamp.h,
         chart: vec![1, 2, 3],
-        payload: r.delta.clone(),
+        payload: r.stamp.key(),
     }
 }
 
@@ -50,8 +49,8 @@ fn signed<'a>(prefix: &'a SignedPrefix, key: &crate::court::identity::HyphaKey) 
 fn one_signer_one_k_two_hashes_both_verified_is_the_proof() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
-    let (ra, rb) = (first_receipt(vk, b"one"), first_receipt(vk, b"two"));
-    assert_eq!(ra.step_index, rb.step_index, "one K");
+    let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
+    assert_eq!(ra.stamp.k, rb.stamp.k, "one K");
     assert_ne!(ra.chain_hash, rb.chain_hash, "two roots");
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let proof = admit_equivocation(signed(&pa, &key), &ra, signed(&pb, &key), &rb).expect("a proof");
@@ -65,7 +64,7 @@ fn one_signer_one_k_two_hashes_both_verified_is_the_proof() {
 fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
-    let ra = first_receipt(vk, b"one");
+    let ra = first_receipt(vk, 1);
     let pa = prefix_for(&ra);
     assert_eq!(
         admit_equivocation(signed(&pa, &key), &ra, signed(&pa, &key), &ra).err(),
@@ -73,7 +72,7 @@ fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
         "one receipt twice is a duplicate, not a proof"
     );
     let honest = court_key("honest");
-    let rc = first_receipt(honest.vk_bytes(), b"two");
+    let rc = first_receipt(honest.vk_bytes(), 2);
     let pc = prefix_for(&rc);
     assert_eq!(
         admit_equivocation(signed(&pa, &key), &ra, signed(&pc, &honest), &rc).err(),
@@ -81,9 +80,8 @@ fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
         "two signers are two chains"
     );
     let mut c = ReceiptChain::with_vk(vk);
-    c.append(crate::chronometry::ActKind::List, [0; 4],b"one", [0; 32], Vec::new()).expect("appends");
-    c.append(crate::chronometry::ActKind::List, [0; 4],b"two", [0; 32], Vec::new()).expect("appends");
-    let (r0, r1) = (c.receipts()[0].clone(), c.receipts()[1].clone());
+    let r0 = c.append(crate::chronometry::ActKind::List, [1, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
+    let r1 = c.append(crate::chronometry::ActKind::List, [2, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let (p0, p1) = (prefix_for(&r0), prefix_for(&r1));
     assert_eq!(
         admit_equivocation(signed(&p0, &key), &r0, signed(&p1, &key), &r1).err(),
@@ -100,7 +98,7 @@ fn a_duplicate_two_signers_or_two_k_are_not_a_proof() {
 fn a_half_that_disagrees_with_itself_is_refused_as_a_receipt() {
     let key = court_key("liar");
     let vk = key.vk_bytes();
-    let (ra, rb) = (first_receipt(vk, b"one"), first_receipt(vk, b"two"));
+    let (ra, rb) = (first_receipt(vk, 1), first_receipt(vk, 2));
     let (pa, pb) = (prefix_for(&ra), prefix_for(&rb));
     let mut forged = rb.clone();
     forged.chain_hash[0] ^= 1;

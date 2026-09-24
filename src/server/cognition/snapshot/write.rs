@@ -9,6 +9,18 @@ use crate::cognition::*;
 
 use crate::snapshot::{counted, framed, put_key};
 
+/// A WORD ROW'S ADMITTING STAMP (78.24 (2b)): `0`, or `1` and the stamp. A
+/// row no act has admitted says so rather than carrying a stamp of zeros.
+fn put_admitted(out: &mut Vec<u8>, at: Option<&crate::chronometry::Stamp>) {
+    match at {
+        None => out.push(0),
+        Some(s) => {
+            out.push(1);
+            s.put_canonical(out);
+        }
+    }
+}
+
 impl Kernel {
     pub fn snapshot(&self) -> Vec<u8> {
         let mut out = Vec::new();
@@ -33,51 +45,50 @@ impl Kernel {
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
             body.extend_from_slice(who);
+            put_admitted(&mut body, self.admitted_at.get(&g.address()));
         }
         framed(&mut out, items.len() as u64, &mut body);
         out.extend_from_slice(&self.treasury.snapshot());
-        // PROVISIONAL section (Step 5).
+        // PROVISIONAL section (Step 5): each row with its admitting stamp.
         counted(&mut out, &self.provisional, |body, addr, spoken| {
             put_key(body, addr);
             let eb = spoken.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
+            put_admitted(body, self.admitted_at.get(addr));
             Some(())
         });
-        // THE CHAIN section: the court head and every k-step receipt, so
-        // the hypha's clock continues across boots instead of restarting.
-        out.extend_from_slice(b"KCH1");
+        // THE LEDGER (78.24): the court head, then the ledger as its trie —
+        // the key it signs as, the fold root, and every node it holds, its
+        // own line and its peers', each once at its stamp. Where each peer
+        // node stands against our line is re-derived at restore, never
+        // persisted.
+        out.extend_from_slice(b"LDG1");
         out.extend_from_slice(&self.court_head);
-        // The fold root before the hot receipts (45.8, S13.9), so a chain
-        // that begins at a fold re-verifies from it.
-        crate::chronometry::Root::write_opt(self.chain.root().as_ref(), &mut out);
-        let receipts = self.chain.receipts();
         let mut body = Vec::new();
-        for r in receipts {
-            r.write(&mut body);
+        if self.chain.write(&mut body).is_none() {
+            eprintln!("  snapshot ledger refused: a node cannot be written");
+            body.clear();
+            // The empty ledger under this court's key: a restore reads a
+            // court with no history, which it names, rather than a tape
+            // cut in the middle of a node.
+            if crate::chronometry::ReceiptChain::with_vk(self.identity).write(&mut body).is_none() {
+                body.clear();
+            }
         }
-        framed(&mut out, receipts.len() as u64, &mut body);
-        // PRC1: THE PEER RECEIPTS THIS COURT ADMITTED AS PARENTS. Our own
-        // receipts cite them, and a height over an unheld parent is
-        // unmeasurable, so a ledger without them is a ledger this reader
-        // refuses — which is what it did to hypha b's 16 MB of history.
-        // They are written whole and read back verified by content; the
-        // two coordinates of where each stands against our line are
-        // re-derived at restore and never persisted.
-        out.extend_from_slice(b"PRC1");
-        let admitted = self.chain.admitted();
-        let mut body = Vec::new();
-        for r in &admitted {
-            r.write(&mut body);
-        }
-        framed(&mut out, admitted.len() as u64, &mut body);
+        framed(&mut out, 1, &mut body);
         // ARC1: the eras this court folded, in K order, cold.
         out.extend_from_slice(b"ARC1");
         let mut body = Vec::new();
+        let mut kept = 0u64;
         for era in &self.archive {
-            era.write(&mut body);
+            if era.write(&mut body).is_none() {
+                eprintln!("  snapshot era refused: a receipt of its payload cannot be written");
+                continue;
+            }
+            kept += 1;
         }
-        framed(&mut out, self.archive.len() as u64, &mut body);
+        framed(&mut out, kept, &mut body);
         // THE RANK section: each listing's closure and moduli as last
         // measured, so a boot continues the measurement instead of reading
         // the whole book from nothing.
@@ -169,11 +180,11 @@ impl Kernel {
             Some(())
         });
         out.extend_from_slice(b"BOK1");
-        counted(&mut out, &self.pending, |body, _addr, (elem, k)| {
+        counted(&mut out, &self.pending, |body, addr, elem| {
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
-            body.extend_from_slice(&k.to_le_bytes());
+            put_admitted(body, self.admitted_at.get(addr));
             Some(())
         });
         out.extend_from_slice(b"CAV1");
@@ -182,6 +193,7 @@ impl Kernel {
             let eb = elem.to_bytes();
             body.extend_from_slice(&(eb.len() as u64).to_le_bytes());
             body.extend_from_slice(&eb);
+            put_admitted(body, self.admitted_at.get(addr));
             Some(())
         });
         out.extend_from_slice(b"CRT1");

@@ -207,8 +207,17 @@ pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<Stri
 
 fn court(c: &Court) -> Vec<String> {
     let served: Vec<String> = c.served.iter().map(|(kind, n)| format!("{kind:02x}×{n}")).collect();
+    let [h, s, g, t, hh, k] = c.head;
+    let [admitted, applied] = c.rulings;
+    let applied_line = match admitted > applied {
+        true => format!("{YELLOW}rulings admitted {admitted}  applied {applied}{RESET}"),
+        false => format!("rulings admitted {admitted}  applied {applied}"),
+    };
     vec![
+        // CK1 — the head's stamp first, as the ledger keys it (78.24).
+        format!("  {BOLD}stamp{RESET}       {h}:{s}:{g}:{t}:{hh}:{k}"),
         format!("  {BOLD}standing{RESET}    K {}  basis {}  treasury {}", c.k, c.basis, c.treasury),
+        format!("  {BOLD}economy{RESET}     {applied_line}"),
         format!("  {BOLD}served{RESET}      {}", match served.is_empty() {
             true => format!("{DIM}nothing yet{RESET}"),
             false => served.join(" "),

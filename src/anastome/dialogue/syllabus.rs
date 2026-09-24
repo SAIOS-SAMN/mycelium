@@ -16,30 +16,42 @@ pub fn decode_syllabus_request(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-/// `None` where the page holds more words than the count can name: a
-/// reply that carries 255 of them under a count of 255 is a shorter page
-/// than the one served, and the fetch that asked cannot tell.
-pub fn encode_syllabus_reply(words: &[Vec<u8>]) -> Option<Vec<u8>> {
+/// ONE TAUGHT WORD: the stamp that locates it (78.24 (2b)) — the serving
+/// court's Syllabus act on the stream, the word's admitting stamp on a
+/// fetch — and the word's tape.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Taught {
+    pub at: crate::chronometry::Stamp,
+    pub word: Vec<u8>,
+}
+
+/// `[n u8]` then per word `[stamp 48][len u32][tape]`. `None` where the
+/// page holds more words than the count can name: a reply that carries 255
+/// of them under a count of 255 is a shorter page than the one served, and
+/// the fetch that asked cannot tell.
+pub fn encode_syllabus_reply(words: &[Taught]) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     crate::transducer::address::put_u8_count(&mut out, words.len())?;
-    for w in words {
-        out.extend_from_slice(&(w.len() as u32).to_le_bytes());
-        out.extend_from_slice(w);
+    for t in words {
+        t.at.put_canonical(&mut out);
+        out.extend_from_slice(&(t.word.len() as u32).to_le_bytes());
+        out.extend_from_slice(&t.word);
     }
     Some(out)
 }
 
-pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Vec<u8>>> {
+pub fn decode_syllabus_reply(body: &[u8]) -> Option<Vec<Taught>> {
     let n = act_tag(body)? as usize;
     let mut p = 1usize;
     let mut words = Vec::with_capacity(n.min(64));
     for _ in 0..n {
+        let at = crate::chronometry::Stamp::take_canonical(body, &mut p)?;
         let len = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?) as usize;
         p += 4;
         if len > body.len().checked_sub(p)? {
             return None; // untrusted length
         }
-        words.push(body.get(p..p + len)?.to_vec());
+        words.push(Taught { at, word: body.get(p..p + len)?.to_vec() });
         p += len;
     }
     Some(words)
@@ -72,8 +84,8 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
         return Vec::new();
     };
     let mut p = 1usize;
-    for w in &words {
-        p = p.saturating_add(4).saturating_add(w.len());
+    for t in &words {
+        p = p.saturating_add(crate::chronometry::Stamp::LEN).saturating_add(4).saturating_add(t.word.len());
     }
     if p + 2 > body.len() {
         return Vec::new();

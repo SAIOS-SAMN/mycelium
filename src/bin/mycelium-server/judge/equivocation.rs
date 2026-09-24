@@ -25,7 +25,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let refuse = |s: &mut TcpStream, why: &str| {
         eprintln!(
             "  court equivocation refused {:02x}{:02x}… K {}: {why}",
-            a.receipt.vk[0], a.receipt.vk[1], a.receipt.step_index
+            a.receipt.stamp.vk[0], a.receipt.stamp.vk[1], a.receipt.stamp.k
         );
         say(s, dialogue::Ruled::Refused(why.as_bytes().to_vec()));
     };
@@ -39,14 +39,14 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         refuse(s, mycelium::verdict::REFUSE_ORIGIN);
         return;
     };
-    let va = match mycelium::court::admission::admit_signature(origin, &a.prefix, &a.receipt.vk, &a.sig) {
+    let va = match mycelium::court::admission::admit_signature(origin, &a.prefix, &a.receipt.stamp.vk, &a.sig) {
         Ok(v) => v,
         Err(why) => {
             refuse(s, why);
             return;
         }
     };
-    let vb = match mycelium::court::admission::admit_signature(origin, &b.prefix, &b.receipt.vk, &b.sig) {
+    let vb = match mycelium::court::admission::admit_signature(origin, &b.prefix, &b.receipt.stamp.vk, &b.sig) {
         Ok(v) => v,
         Err(why) => {
             refuse(s, why);

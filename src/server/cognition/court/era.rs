@@ -16,11 +16,14 @@ impl Kernel {
     /// at or below every hot receipt, or no hot receipt is there to fold.
     pub fn final_prefix_head(&self) -> Option<u64> {
         let head = self.chain.head_k();
-        let first = self.chain.opening()?.step_index;
+        let first = self.chain.opening()?.stamp.k;
         let mut floor = head;
         // index: the open carriers, each a keyed fiber
-        for (_, (_, k)) in self.pending.scoped() {
-            if *k <= first {
+        // A listing stands at the List act that admitted it (78.24); one
+        // this court cannot place on its ledger is open at every prefix.
+        for (addr, _) in self.pending.scoped() {
+            let k = self.admitted_at(&addr)?.k;
+            if k <= first {
                 return None;
             }
             floor = floor.min(k - 1);
@@ -32,7 +35,7 @@ impl Kernel {
             floor = floor.min(k - 1);
         }
         for award in self.treasury.escrowed_awards() {
-            let k = award.held.anchor.0;
+            let k = crate::economy::k_after(&award.held.anchor);
             if k <= first {
                 return None;
             }
@@ -110,7 +113,7 @@ impl Kernel {
             cold.extend((from..=to).filter_map(|k| {
                 let i = usize::try_from(k.checked_sub(first)?).ok()?;
                 let r = page.get(i)?;
-                (r.step_index == k).then(|| r.clone())
+                (r.stamp.k == k).then(|| r.clone())
             }));
         }
         cold.truncate(budget);
@@ -127,10 +130,10 @@ impl Kernel {
         let eras = cold.iter();
         let mut next = from;
         for r in eras {
-            if out.len() >= budget || r.step_index > to {
+            if out.len() >= budget || r.stamp.k > to {
                 break;
             }
-            if r.step_index == next {
+            if r.stamp.k == next {
                 out.push(r.clone());
                 next += 1;
             }
@@ -139,7 +142,7 @@ impl Kernel {
             if out.len() >= budget {
                 break;
             }
-            let Some(r) = self.admissions.hash_at(signer, k).and_then(|h| self.chain.known(&h)) else {
+            let Some(r) = self.chain.at(signer, k) else {
                 break;
             };
             out.push(r.clone());

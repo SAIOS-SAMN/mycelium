@@ -493,7 +493,7 @@ impl Kernel {
         if let Some((at, demand)) = crate::transducer::sentence::read_demand_at(target) {
             return self.settle_demand(voice, &at, &demand, cites);
         }
-        let Some((listing, _)) = self.pending.get(target) else {
+        let Some(listing) = self.pending.get(target) else {
             return (PROBE_NOTHING, [0; 4], [0; 4]);
         };
         let listing = listing.clone();
@@ -551,10 +551,13 @@ impl Kernel {
                     self.record_flat(target, chart, voice, g);
                 }
             }
+            // 78.24 (2c): the listing is cited as it stood, read before it
+            // is unlisted.
+            let cite = self.cite_of(target);
             self.unlist(target, false);
             self.physics.relieve(&mag);
             self.physics.syntropy(&mag);
-            self.append_step(crate::chronometry::ActKind::Settled, target, voice);
+            self.append_after_removal(crate::chronometry::ActKind::Settled, target, cite, voice);
             return (PROBE_CLOSED, paid, [0; 4]);
         }
         let mut listed = listing.sub().to_vec();
@@ -619,7 +622,7 @@ impl Kernel {
         // The dislocation stays: a versor relating the base shape to the
         // residual's is a fibre fact and belongs on the word.
         if let (Some(held), Some(v)) = (self.pending.get_mut(target), v_disloc) {
-            held.0.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
+            held.record_dislocation(element::assignment(&residual), v, element::FIBER_SPATIAL);
         }
         // What the speech SETTLED: the tension it removed, per lane, and
         // nothing on a lane where the residual stands as high as before.

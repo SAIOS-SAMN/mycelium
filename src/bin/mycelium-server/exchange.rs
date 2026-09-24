@@ -544,16 +544,25 @@ impl Exchange {
                                 }
                                 let mut named: Vec<mycelium::transducer::address::Address> = Vec::new();
                                 // A page that does not decode names nothing.
-                                for w in dialogue::decode_syllabus_reply(&page).into_iter().flatten() {
+                                for t in dialogue::decode_syllabus_reply(&page).into_iter().flatten() {
                                     let mut p = 0usize;
-                                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&w, &mut p)
+                                    if let Some(spoken) = mycelium::transducer::element::Element::from_bytes(&t.word, &mut p)
                                     {
-                                        named.push(spoken.address());
+                                        let addr = spoken.address();
+                                        named.push(addr.clone());
                                         if let Ok(mut k) = kernel.lock() {
+                                            // 78.24 (2b): a word learned from a peer is
+                                            // located by the stamp that admitted it there,
+                                            // the peer's key its coordinate; every act
+                                            // here cites that stamp.
+                                            k.file_admitted(&addr, t.at);
                                             let g = match mesh.cover.lock() {
                                                 Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
                                                 Err(_) => continue,
                                             };
+                                            if matches!(g, mycelium::cognition::Glue::Slashed(_)) {
+                                                k.drop_admitted(&addr);
+                                            }
                                             match g {
                                                 mycelium::cognition::Glue::Admitted => {
                                                     eprintln!("  court glued admitted from {d}");

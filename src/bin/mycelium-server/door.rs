@@ -312,18 +312,25 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // as a slice and not walked to it. The size was a sum of the four
         // reserve lanes clamped at eight (law 5, rule 5); `skip(cursor)`
         // walked every word before the cursor to reach it.
-        let words: Vec<Vec<u8>> = {
+        let words: Vec<dialogue::Taught> = {
             let Ok(mut k) = door.kernel.lock() else { return true };
             // The page is what THIS court's stroke affords, read off its own
             // physics, never a default's (rule 5).
             let mut budget = k.stroke();
             let mut out = Vec::new();
-            if let Some(rest) = k.basis().get(cursor as usize..) {
-                for w in rest {
-                    if !budget.spend() {
-                        break;
-                    }
-                    out.push(w.to_bytes());
+            let rest: Vec<mycelium::transducer::address::Address> = match k.basis().get(cursor as usize..) {
+                Some(rest) => rest.iter().map(|w| w.address()).collect(),
+                None => Vec::new(),
+            };
+            for addr in rest {
+                if !budget.spend() {
+                    break;
+                }
+                // Each word with the stamp that admitted it (78.24 (2b)); a
+                // word no act admitted is named and not taught.
+                match k.taught(&addr) {
+                    Some(t) => out.push(t),
+                    None => eprintln!("  genesis page: a basis word has no admitting stamp and is not taught"),
                 }
             }
             out
@@ -365,18 +372,31 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             syllabus_admit(&mut sy, seed);
             syllabus_page(&mut sy, &svoice, &mut budget)
         };
-        let (words, classes, served_addrs) = {
-            let Ok(k) = door.kernel.lock() else { return true };
+        // 45.1, 78.24 (2b): A WORD SERVED IS TAUGHT AT THE STAMP OF THE ACT
+        // THAT SERVED IT. The Syllabus node is sealed first, and the page
+        // carries its stamp beside the word, so the voice files the word's
+        // locator from the act that taught it.
+        let (words, classes) = {
+            let Ok(mut k) = door.kernel.lock() else { return true };
             let mut out = Vec::new();
-            let mut served_addrs = Vec::new();
             for addr in page {
-                match k.word_at(&addr) {
-                    Some(w) => {
-                        served_addrs.push(addr);
-                        out.push(w.to_bytes());
-                    }
-                    None => missed.push(addr),
-                }
+                let Some(w) = k.word_at(&addr).map(|w| w.to_bytes()) else {
+                    missed.push(addr);
+                    continue;
+                };
+                let Some(at) = k.note_served(&addr, svoice) else {
+                    eprintln!(
+                        "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… refused: the act could not be sealed",
+                        addr[0], addr[1], svoice[0], svoice[1]
+                    );
+                    missed.push(addr);
+                    continue;
+                };
+                eprintln!(
+                    "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {} h {}",
+                    addr[0], addr[1], svoice[0], svoice[1], at.k, at.h
+                );
+                out.push(dialogue::Taught { at, word: w });
             }
             let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
             let next = cursor + out.len() + missed.len();
@@ -384,21 +404,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, next);
             }
-            (out, classes, served_addrs)
+            (out, classes)
         };
-        for addr in &served_addrs {
-            let (k_at, h_at) = match door.kernel.lock() {
-                Ok(mut k) => {
-                    k.note_served(addr, svoice);
-                    (k.k_step(), k.book_height())
-                }
-                Err(_) => continue,
-            };
-            eprintln!(
-                "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {k_at} h {h_at}",
-                addr[0], addr[1], svoice[0], svoice[1]
-            );
-        }
         // An address whose word this court no longer holds is re-queued
         // behind the cursor, once. This rebuilt the whole tail index INSIDE
         // the loop, one full walk of the order per missed address —

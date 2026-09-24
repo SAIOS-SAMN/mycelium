@@ -16,7 +16,7 @@ use std::net::TcpStream;
 pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(p) = dialogue::decode_fold(&frame.body) else { return };
     let me = door.mesh.vk;
-    let home = p.section.receipt.vk;
+    let home = p.section.receipt.stamp.vk;
     let say = |s: &mut TcpStream, w: dialogue::FoldWitness| {
         if let Some(body) = dialogue::encode_fold_reply(&w) {
             answer(s, Frame { lane: frame.lane, body });
@@ -133,7 +133,7 @@ fn fetch_receipts(dest: &str, me: &[u8; 32], home: &[u8; 32], from: u64, to: u64
             clippy::disallowed_methods,
             reason = "rule 15 — FIFO drain head: a receipts page is served in K order, so its tail is the K already served"
         )]
-        let last = page.last()?.step_index;
+        let last = page.last()?.stamp.k;
         out.extend(page);
         next = last.checked_add(1)?;
     }

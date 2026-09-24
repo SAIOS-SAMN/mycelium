@@ -131,7 +131,7 @@ let listed = k
     .pending
     .scoped()
     .next()
-    .map(|(_, (e, _))| e.clone())
+    .map(|(_, e)| e.clone())
     .expect("listed");
 let want_chart = crate::transducer::stalk::invariant_of(&listed);
 let want_mag = listed.magnitude();
@@ -201,7 +201,7 @@ assert!(
     "the broke speaker paid nothing at the door"
 );
 // A FUNDED speaker pays the congestion fee and passes the door.
-k.treasury_mut().settle_subsidy([7; 32], [8, 8, 8, 8], (0, [0; 32]));
+k.treasury_mut().settle_subsidy([7; 32], [8, 8, 8, 8], (crate::chronometry::Stamp::default(), [0; 32]));
 for _ in 0..16 {
     k.physics_mut().spend([true; 4]); // re-exhaust (the deferral relaxed some)
 }
@@ -238,8 +238,7 @@ let mut k = Kernel::new();
 let c = vec![(0, 0, 1u8), (0, 1, 1), (0, 2, 1), (0, 3, 3)];
 let d = vec![(0, 0, 2u8), (0, 1, 2), (0, 2, 1), (0, 3, 4)];
 let chain = germinate(&c, &d).unwrap();
-let k_now = k.k_step();
-k.book_list(element::from_canonical(&chain), k_now, [1; 32]);
+k.book_list(element::from_canonical(&chain), [1; 32]);
 let target = k.quote().1[0].0.address();
 let chain = k.quote().1[0].0.sub().to_vec();
 assert_eq!(chain.len(), 3);
@@ -422,7 +421,7 @@ let list = |k: &mut Kernel, hue: u8| -> Address {
     let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
     let b = vec![(0, 0, hue), (0, 1, hue), (1, 0, hue)];
     let _ = speak_pair(k, &a, &b, [1; 32]);
-    k.pending.scoped().next().expect("listed").1.0.address()
+    k.pending.scoped().next().expect("listed").1.address()
 };
 let mut ha = Kernel::new();
 let mut hb = Kernel::new();

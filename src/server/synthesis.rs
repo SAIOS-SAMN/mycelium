@@ -43,7 +43,7 @@ pub fn probe(
         Some((at, _)) => at,
         None => target.to_vec(),
     };
-    let Some((listing, _)) = view.pending.get(&at) else {
+    let Some(listing) = view.pending.get(&at) else {
         return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
     };
     // The utterance is verified as spoken — its operators against the

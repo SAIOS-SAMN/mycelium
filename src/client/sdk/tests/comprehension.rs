@@ -35,9 +35,9 @@ assert!(matches!(epi.comprehend(&other), Comprehension::Novel { .. }));
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
 // not persist (expression resets — dialect is ephemeral by ruling).
-let frozen = epi.crystallize();
+let frozen = epi.crystallize(|_| None);
 let mut back = Epigenome::new();
-assert!(back.uncrystallize(&frozen), "crystallized genome restores");
+assert!(back.uncrystallize(&frozen).is_some(), "crystallized genome restores");
 assert_eq!(back.genome_len(), epi.genome_len());
 assert_eq!(
     back.genome_words().next().map(|w| w.address()),
@@ -55,7 +55,8 @@ assert_eq!(
     None,
     "a dialect with no word expresses nothing, and nothing has no peak"
 );
-assert!(!Epigenome::new().uncrystallize(b"GEN1\xff\xff\xff\xff"), "hostile count refused");
+assert!(Epigenome::new().uncrystallize(b"GEN4\xff\xff\xff\xff").is_none(), "hostile count refused");
+assert!(Epigenome::new().uncrystallize(b"GEN3\x00\x00\x00\x00").is_none(), "an older layout refused");
 }
 
 /// Chapter 24.2: a sentence that cites a form this mind does not hold

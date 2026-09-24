@@ -4,76 +4,70 @@
 use crate::client::sdk::*;
 use crate::transducer::element::Element;
 
+/// What a restored genome hands back beside its words: each word's
+/// admitting stamp (78.24 (2b)), and where the words end on the tape.
+pub struct Uncrystallized {
+    pub admitted: Vec<(crate::transducer::address::Address, crate::chronometry::Stamp)>,
+    pub end: usize,
+}
+
 impl Epigenome {
     /// CRYSTALLIZE the genome for persistence — the permanent language only.
-    /// The epigenome is memory-only. Format: `GEN3 | n u32 | (len u32 | element)…`.
-    pub fn crystallize(&self) -> Vec<u8> {
+    /// The epigenome is memory-only. Format: `GEN4 | n u32 | (len u32 |
+    /// element | admitted)…`, where `admitted` is `0`, or `1` and the stamp
+    /// of the act that admitted the word (78.24 (2b)).
+    pub fn crystallize(&self, admitted: impl Fn(&[u8]) -> Option<crate::chronometry::Stamp>) -> Vec<u8> {
         let mut out = Vec::with_capacity(4 + self.genome.len() * 64);
-        out.extend_from_slice(b"GEN3");
+        out.extend_from_slice(b"GEN4");
         out.extend_from_slice(&(self.genome.len() as u32).to_le_bytes());
         for (_, g) in self.resident.scoped() {
             let b = g.held.to_bytes();
             out.extend_from_slice(&(b.len() as u32).to_le_bytes());
             out.extend_from_slice(&b);
+            match admitted(g.held.address().as_bytes()) {
+                None => out.push(0),
+                Some(at) => {
+                    out.push(1);
+                    at.put_canonical(&mut out);
+                }
+            }
         }
         out
     }
 
-    /// Restore GEN3 only. An older file is refused.
-    pub fn uncrystallize(&mut self, bytes: &[u8]) -> bool {
-        if bytes.len() < 8 {
-            return false;
+    /// Restore GEN4 only, whole or refused: an older file, or a word that
+    /// does not parse, refuses the tape (rule 11), and nothing is restored.
+    pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<Uncrystallized> {
+        if bytes.get(..4)? != b"GEN4" {
+            return None;
         }
-        let tag = &bytes[..4];
-        if tag != b"GEN3" {
-            return false;
-        }
-        let Some(n) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) else {
-            return false;
-        };
-        let Some(left) = bytes.len().checked_sub(8) else {
-            return false;
-        };
-        if n > left / 5 {
-            return false; // untrusted count vs remaining bytes
+        let n = u32::from_le_bytes(bytes.get(4..8)?.try_into().ok()?) as usize;
+        if n > bytes.len().checked_sub(8)? / 5 {
+            return None; // untrusted count vs remaining bytes
         }
         let mut genome = Vec::with_capacity(n);
+        let mut admitted = Vec::new();
         let mut pos = 8usize;
-        let mut skipped = 0usize;
         for _ in 0..n {
-            let Some(len) = bytes.get(pos..pos + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize)
-            else {
-                break;
-            };
+            let len = u32::from_le_bytes(bytes.get(pos..pos + 4)?.try_into().ok()?) as usize;
             pos += 4;
-            // A position past the end is a malformed tape; the read stops
-            // there rather than reading a length against nothing.
-            let Some(left) = bytes.len().checked_sub(pos) else {
-                break;
-            };
-            if len > left {
-                break;
-            }
-            let slice = &bytes[pos..pos + len];
+            let slice = bytes.get(pos..pos.checked_add(len)?)?;
             pos += len;
             let mut ep = 0usize;
-            match Element::from_bytes(slice, &mut ep) {
-                // The tape is decoded to a form HERE, once, as the word is
-                // taken in — not on the first read of its form (L16).
-                Some(e) => genome.push(crate::transducer::element::Held::of(e)),
-                None => {
-                    // Previous GEN1 layouts (pre-fibre-index tails, a
-                    // word that will not uncrystallize) must not sink the
-                    // rest: residuals are never lost.
-                    skipped += 1;
-                }
+            let e = Element::from_bytes(slice, &mut ep)?;
+            let tag = *bytes.get(pos)?;
+            pos += 1;
+            match tag {
+                0 => {}
+                1 => admitted.push((e.address(), crate::chronometry::Stamp::take_canonical(bytes, &mut pos)?)),
+                _ => return None,
             }
+            // The tape is decoded to a form HERE, once, as the word is
+            // taken in — not on the first read of its form (L16).
+            genome.push(crate::transducer::element::Held::of(e));
         }
         if genome.is_empty() {
-            return false;
-        }
-        if skipped > 0 {
-            eprintln!("genome restored: {} words, {skipped} skipped", genome.len());
+            return None;
         }
         self.genome = crate::network::nerve::Keyed::new();
         self.resident = crate::network::nerve::Keyed::new();
@@ -104,7 +98,7 @@ impl Epigenome {
             self.admit_word(w, 0);
         }
         self.atlas_len = self.genome.len();
-        true
+        Some(Uncrystallized { admitted, end: pos })
     }
 
 }

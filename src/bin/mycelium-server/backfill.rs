@@ -119,7 +119,7 @@ pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32
             who[0],
             who[1],
             match &missing {
-                Some(p) => format!(" cites {:02x}{:02x}… K {}", p.vk[0], p.vk[1], p.k),
+                Some(p) => format!(" cites {:02x}{:02x}… K {} h {}", p.at.vk[0], p.at.vk[1], p.at.k, p.at.h),
                 None => String::new(),
             }
         );
@@ -136,7 +136,7 @@ pub(crate) fn pages(kernel: &Mutex<Kernel>, mesh: &Mesh, dest: &str, vk: [u8; 32
             // receipts are ingested parents before children.
             Some(p) => {
                 frontier.push((who, hi));
-                frontier.push((p.vk, p.k));
+                frontier.push((p.at.vk, p.at.k));
             }
             // Nothing missing and nothing admitted: this peer cannot serve
             // the range, and the gap does not close here.

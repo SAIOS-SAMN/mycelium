@@ -86,10 +86,16 @@ impl Kernel {
         self.chain.next_step_index()
     }
 
-    /// The current chronometric anchor for ledger entries: (K, head hash) — the
-    /// unforgeable temporal binding every settlement carries.
+    /// The current chronometric anchor for ledger entries (78.24): the
+    /// stamp of this court's head receipt and its hash — the act a row
+    /// stands at, named by its whole coordinate. Before genesis, the empty
+    /// stamp under this court's key and the empty hash.
     pub(crate) fn anchor(&self) -> crate::economy::Anchor {
-        (self.chain.next_step_index(), self.chain.head_hash())
+        let at = match self.chain.head_stamp() {
+            Some(s) => s,
+            None => crate::chronometry::Stamp { h: 0, vk: self.chain.vk(), k: 0 },
+        };
+        (at, self.chain.head_hash())
     }
 
     /// The chronometric receipt chain (verifiable, parent-linked).

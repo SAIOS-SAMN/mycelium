@@ -13,12 +13,21 @@ impl Kernel {
     }
 
     /// Bind this mind to the key that signs for it -- both the identity it
-    /// draws room against and the chain that seals its receipts. Binding
-    /// only the first left every receipt claiming `[0u8; 32]` as its
-    /// author, so no peer could verify one under the key it claimed.
+    /// draws room against and the ledger that seals its receipts. The key
+    /// is a coordinate of every stamp and in every hash (78.24), so a
+    /// ledger that has sealed under another key keeps it, and says so:
+    /// binding comes before a court's first act.
     pub fn bind_identity(&mut self, vk: [u8; 32]) {
         self.identity = vk;
-        self.chain.bind_vk(vk);
+        if !self.chain.bind_vk(vk) {
+            eprintln!(
+                "  court ledger keeps its key: it sealed under {:02x}{:02x}… before {:02x}{:02x}… was bound",
+                self.chain.vk()[0],
+                self.chain.vk()[1],
+                vk[0],
+                vk[1]
+            );
+        }
     }
 
     /// The SELECTION-FIBER critical pairs awaiting the court's anchor
@@ -178,9 +187,11 @@ impl Kernel {
             payload,
             bidder,
         );
+        // 78.24 (2c): the word is cited as it stood, read before it leaves.
+        let cite = self.cite_of(addr);
         self.basis_remove(addr);
         self.physics.syntropy(&saved);
-        self.append_step(crate::chronometry::ActKind::Ruling, addr, bidder);
+        self.append_after_removal(crate::chronometry::ActKind::Ruling, addr, cite, bidder);
         saved
     }
 
@@ -239,117 +250,6 @@ impl Kernel {
         }
         self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed
-    }
-
-    /// A K-STEP on this hypha's chain, linked to the court: the operator
-    /// digest folds the acting voice with the court head last ruled here,
-    /// so the receipt is causally ordered against the mesh's chain of
-    /// record and verifiable end to end.
-    /// Seal one K-step, CITING every peer receipt admitted since the last
-    /// one (47.2 step 3). The parents are taken only when the append
-    /// succeeds: `append` refuses a parent whose height this chain cannot
-    /// re-derive, and dropping the queue on a refusal would lose the
-    /// admission rather than hold it for the step that can cite it.
-    pub(super) fn append_step(
-        &mut self,
-        kind: crate::chronometry::ActKind,
-        addr: impl AsRef<[u8]>,
-        voice: [u8; 32],
-    ) {
-        let op = crate::chronometry::operator_hash(&voice, &self.court_head);
-        // WHAT THE ACT MEASURED, read HERE from this court's own carriers
-        // at the address the receipt stamps (45.1, law 12) — never handed
-        // in by the caller, so no site can invent one and no two sites can
-        // disagree about the same word.
-        //
-        // THE ZERO VECTOR IS A READING. An act whose delta names no word
-        // this court holds measured nothing on the lanes: `Fold` stamps a
-        // root hash and not an address, and `Lapse` stamps a listing this
-        // court has already unlisted. Both say so rather than reaching for
-        // a number (rule 11).
-        let mu = match self.word_at(addr.as_ref()) {
-            Some(w) => w.magnitude(),
-            None => [0; 4],
-        };
-        let queued = std::mem::take(&mut self.pending_parents);
-        let parents = self.antichain_of(&queued);
-        // L15: this court's own act joins the depth index where it joins
-        // the chain, so the two cannot disagree. `append` hands back the
-        // receipt it wrote, which is the one to record — not a member
-        // read back by position (rule 15).
-        let written = match self.chain.append(kind, mu, addr.as_ref(), op, parents) {
-            Some(r) => Some(r.clone()),
-            None => {
-                self.pending_parents = queued;
-                self.chain.append(kind, mu, addr.as_ref(), op, Vec::new()).cloned()
-            }
-        };
-        if let Some(r) = written {
-            self.note_attestor(&r);
-        }
-    }
-
-    /// THE MAXIMAL ANTICHAIN of what this step has admitted: the
-    /// un-dominated heads of the peer DAG, which is what 47.2 step 3 means
-    /// by citing a parent.
-    ///
-    /// `append_step` cited `take(&mut pending_parents)` — EVERY peer
-    /// receipt admitted since the last step, the ingestion log rather than
-    /// the frontier. If a peer emitted K₁, K₂, K₃ and each cites the one
-    /// before, citing K₃ already subsumes K₁ and K₂; dumping all three in
-    /// is `O(admitted history)` bytes of pure redundancy, at 72 bytes a
-    /// citation, on every receipt this court ever writes.
-    ///
-    /// WHAT THAT COST, measured on the fleet at epoch 11: receipts of
-    /// 5.5 KiB beside neighbours of 1.9 KiB, and — against a wire frame
-    /// that was then 4 KiB — two receipts of hypha a that no node of the
-    /// mesh could ever fetch, so the back-fill stopped at K 1111 and no
-    /// peer receipt was admitted as a parent at all. The arity explosion
-    /// is what made the chain unservable.
-    ///
-    /// TWO PRUNES, BOTH BOUNDED BY THE MESH'S WIDTH.
-    ///
-    /// The first is per signer: a chain is a line, so only its highest K
-    /// is un-dominated and every earlier one it names is reached through
-    /// it. That alone is the whole of `O(peer count)`.
-    ///
-    /// The second drops a head another head CITES DIRECTLY — one level,
-    /// read off the citing receipt's own parents, which the carrier
-    /// already names (law 3). Full transitive domination across signers is
-    /// deliberately NOT computed: it is a product over peers with an
-    /// ancestry traversal in every entry, which at a thousand peers is a
-    /// million traversals to save a few bytes. What the one-level prune leaves
-    /// is a superset of the antichain, never a subset, so no citation this
-    /// court can re-derive a height through is dropped (rule 11).
-    fn antichain_of(
-        &self,
-        queued: &crate::network::nerve::Keyed<crate::chronometry::Parent>,
-    ) -> Vec<crate::chronometry::Parent> {
-        let mut heads: crate::network::nerve::Keyed<crate::chronometry::Parent> =
-            crate::network::nerve::Keyed::new();
-        for (_, p) in queued.scoped() {
-            match heads.get(&p.vk) {
-                Some(h) if h.k >= p.k => {}
-                _ => {
-                    heads.insert(p.vk, p.clone());
-                }
-            }
-        }
-        // What the surviving heads name among themselves, read off each
-        // one's own receipt: a head some other head cites is reached
-        // through it and is not a head.
-        let mut cited: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-        for (_, p) in heads.scoped() {
-            let Some(r) = self.chain.known(&p.hash) else { continue };
-            for q in &r.parents {
-                cited.insert(q.hash, ());
-            }
-        }
-        heads
-            .scoped()
-            .map(|(_, p)| p.clone())
-            .filter(|p| !cited.contains(&p.hash))
-            .collect()
     }
 
     /// A voice spoke on a listing in its current state.
@@ -534,9 +434,8 @@ impl Kernel {
             if self.basis.contains(&addr) || self.pending.contains(&addr) {
                 continue; // already speakable or already listed
             }
-            let k_now = self.k_step();
             self.stamp_standing(addr);
-            self.book_list_undrawn(residual, k_now);
+            self.book_list_undrawn(residual);
             listed = true;
         }
         listed
@@ -583,8 +482,8 @@ impl Kernel {
         // A germ still awaiting its witness accepts the bind too — it
         // installs already anchored (evidence often reaches family size
         // before the witness re-derivation lands).
-        if let Some((elem, listed)) = self.pending.get(addr).cloned() {
-            self.pending.insert(addr, (elem.with_anchor(pi), listed));
+        if let Some(elem) = self.pending.get(addr).cloned() {
+            self.pending.insert(addr, elem.with_anchor(pi));
             self.book_gen += 1;
             bound = true;
         }

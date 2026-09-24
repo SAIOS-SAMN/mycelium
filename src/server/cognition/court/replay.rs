@@ -45,6 +45,9 @@ impl Kernel {
             None => self.identity,
         };
         self.append_step(crate::chronometry::ActKind::Ruling, addr, ruler);
+        // EC1: past the removal every arm moves the economy — a release, a
+        // demotion or a slash — and the reading counts it here.
+        crate::observe::note_ruling_applied();
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
             // cover AND becomes this court's section on the chart (13.9).

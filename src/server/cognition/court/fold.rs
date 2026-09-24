@@ -9,7 +9,7 @@
 //! nets as the epochs proposed, co-signs, and holds the same era under the
 //! home's key, so every archived prefix has two holders.
 
-use crate::chronometry::{ActKind, Era, KStepReceipt, Root};
+use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Root, Stamp};
 use crate::cognition::Kernel;
 use crate::economy::{nets_of, Entry};
 use crate::verdict::{REFUSE_FOLD_INEXACT, REFUSE_FOLD_OPEN, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT, REFUSE_WITNESS_ROOM};
@@ -48,12 +48,10 @@ impl Kernel {
         let head_k = self.final_prefix_head().ok_or(REFUSE_FOLD_OPEN)?;
         self.treasury.fold_reading(head_k)?;
         let epochs = nets_of(&self.treasury.rows_below(head_k))?.rows;
-        let k0 = self.chain.opening().ok_or(REFUSE_FOLD_OPEN)?.step_index;
-        // `at_k` is arithmetic on a contiguous chain; this scanned it for a
-        // K the index already names (law 3). The scan `at_k` was written
-        // to replace was in `receipts_range`; this site was missed.
+        let k0 = self.chain.opening().ok_or(REFUSE_FOLD_OPEN)?.stamp.k;
+        // The line relation names the receipt at a K (78.24 P1).
         let at = self.chain.at_k(head_k).ok_or(REFUSE_FOLD_OPEN)?;
-        let root = Root { k: at.step_index, hash: at.chain_hash, height: at.height };
+        let root = Root { k: at.stamp.k, hash: at.chain_hash, height: at.stamp.h };
         let p = Proposal { k0, root, epochs };
         self.fold_pending = Some(p.clone());
         Ok(p)
@@ -79,7 +77,7 @@ impl Kernel {
     ) -> Result<FoldDone, &'static str> {
         let p = self.fold_pending.clone().ok_or(REFUSE_FOLD_OPEN)?;
         let me = self.identity;
-        let wk = witness.receipt.vk;
+        let wk = witness.receipt.stamp.vk;
         if wk == me {
             return Err(REFUSE_WITNESS_DEPENDENT);
         }
@@ -101,8 +99,11 @@ impl Kernel {
             clippy::disallowed_methods,
             reason = "rule 15 — FIFO drain head: the drained prefix is in chain order, so its head is the oldest receipt folded"
         )]
-        let k0 = cold.first().map_or(root.k, |r| r.step_index);
-        self.append_step(ActKind::Fold, root.hash, me);
+        let k0 = cold.first().map_or(root.k, |r| r.stamp.k);
+        // The Fold node cites the root it leaves the line on, by stamp and
+        // hash (78.24): a fold names no word and measured nothing.
+        let at = Stamp { h: root.height, vk: me, k: root.k };
+        self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], me);
         let anchor = self.anchor();
         let folded = match self.treasury.fold(p.root.k, anchor) {
             Ok(f) => f,
@@ -169,16 +170,16 @@ impl Kernel {
         }
         let mut prev: Option<&KStepReceipt> = None;
         for (k, r) in (p.k0..).zip(receipts.iter()) {
-            if r.step_index != k || r.vk != home || !r.rederives() {
+            if r.stamp.k != k || r.stamp.vk != home || !r.rederives() {
                 return Err(REFUSE_RECEIPT);
             }
-            if prev.is_some_and(|q| r.prev_receipt_hash != q.chain_hash) {
+            if prev.is_some_and(|q| r.prev != Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash })) {
                 return Err(REFUSE_RECEIPT);
             }
             prev = Some(r);
         }
         let last = prev.ok_or(REFUSE_FOLD_OPEN)?;
-        if (last.step_index, last.chain_hash, last.height) != (p.root.k, p.root.hash, p.root.height) {
+        if (last.stamp.k, last.chain_hash, last.stamp.h) != (p.root.k, p.root.hash, p.root.height) {
             return Err(REFUSE_RECEIPT);
         }
         if nets_of(rows)?.rows != p.epochs {

@@ -6,8 +6,22 @@
 //! from the ledger and refuses if the two disagree.
 
 
-/// The chronometric anchor of a ledger entry: (K-step, chain head hash).
-pub type Anchor = (u64, [u8; 32]);
+/// THE ACT A LEDGER ROW STANDS AT (78.24): the stamp of the court's head
+/// receipt when the row was written, and that receipt's chain hash — the
+/// row named by its act's whole coordinate, never by a `K` alone. Before a
+/// court's genesis its head is the empty stamp under its own key and the
+/// empty hash: the reading of absence.
+pub type Anchor = (crate::chronometry::Stamp, [u8; 32]);
+
+/// THE K AFTER THE ACT AN ANCHOR STANDS AT: the step the court's next act
+/// takes, which is what orders rows against a fold's prefix. Zero before
+/// genesis, where the anchor stands at no act (the empty hash).
+pub fn k_after(anchor: &Anchor) -> u64 {
+    match anchor.1 == [0u8; 32] {
+        true => 0,
+        false => anchor.0.k + 1,
+    }
+}
 
 /// Economic tiers for a decentralized mesh running cryptographic semantic
 /// operations: yields scale by the participant's tier. A hypha/client's standing
@@ -72,10 +86,17 @@ pub struct Entry {
     pub who: [u8; 32],
     /// The per-lane vector amount — never a scalar.
     pub mu: [u64; 4],
-    /// K-step at booking.
-    pub k_step: u64,
-    /// The chain head hash at booking (the unforgeable temporal binding).
+    /// The stamp of the act the row stands at (78.24).
+    pub at: crate::chronometry::Stamp,
+    /// That act's chain hash (the unforgeable temporal binding).
     pub receipt: [u8; 32],
+}
+
+impl Entry {
+    /// The K after the act this row stands at (see [`k_after`]).
+    pub fn k_after(&self) -> u64 {
+        k_after(&(self.at, self.receipt))
+    }
 }
 
 /// Default operator bond when none is chosen — one unit on every lane.
@@ -185,7 +206,7 @@ impl Treasury {
         {
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Stake, who, mu: add, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Stake, who, mu: add, at: anchor.0, receipt: anchor.1 });
         } else if self.stakes.get(&who).is_none() {
             self.stakes.insert(who, held);
         }
@@ -208,7 +229,7 @@ impl Treasury {
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
         self.stakes.insert(who, next);
         self.credit(who, back);
-        self.write(Entry { kind: Kind::Unstake, who, mu: back, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Unstake, who, mu: back, at: anchor.0, receipt: anchor.1 });
         self.refresh_bond();
         back
     }
@@ -364,7 +385,7 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Genesis, who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Genesis, who, mu, at: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         mu
     }
@@ -395,7 +416,7 @@ impl Treasury {
         {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Burn, who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Burn, who, mu: took, at: anchor.0, receipt: anchor.1 });
         took
     }
 
@@ -444,11 +465,11 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
-        self.write(Entry { kind: Kind::Mint, who, mu, k_step: anchor.0, receipt: anchor.1 });
+        self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1 });
         self.credit(who, mu);
         eprintln!(
-            "  mint {:02x}{:02x}… μ⃗ {mu:?} k {}",
-            who[0], who[1], anchor.0
+            "  mint {:02x}{:02x}… μ⃗ {mu:?} at K {} h {}",
+            who[0], who[1], anchor.0.k, anchor.0.h
         );
         mu
     }

@@ -1,49 +1,69 @@
-// 45.1, 45.4 — the voice's clock is its own receipt chain: one receipt per
-// admitted act, naming it, and no reply moves it.
+// 45.1, 45.4, 78.24 — the voice's clock is its own ledger: one node per
+// admitted act, naming what it acts on by coordinates, and no reply moves
+// it.
 
 use crate::anastome::dialogue;
-use crate::chronometry::ActKind;
+use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
 use crate::voice::Voice;
 
-/// 45.1, 45.4 — A VOICE'S CLOCK IS ITS OWN RECEIPT CHAIN. It seats with an
-/// empty chain and seals one receipt per admitted act — a form stood, an
-/// utterance, a page learned — each naming what was admitted under this
-/// voice's key and linked to the one before; its K is the chain's length.
-/// Nothing sets it, so a reply carrying another kernel's k-step cannot
-/// move it, and a request seals nothing. It was a bare count (I25).
+/// 45.1, 45.4 — A VOICE'S CLOCK IS ITS OWN LEDGER. It seats with an empty
+/// line and seals one node per admitted act — a form stood, an utterance, a
+/// page learned — each under this voice's key and linked to the one before;
+/// its K is the line's length. Nothing sets it, so a reply carrying another
+/// kernel's k-step cannot move it, and a request seals nothing.
 #[test]
-fn a_voice_seals_one_receipt_per_admitted_act_and_its_k_is_the_chain() {
+fn a_voice_seals_one_node_per_admitted_act_and_its_k_is_the_line() {
     let mut v = Voice::named("worker-a");
     assert_eq!(v.identity(), Voice::named("worker-a").identity());
     assert_ne!(v.identity(), Voice::named("worker-b").identity());
     assert_eq!(v.k(), 0, "a voice that has spoken nothing accrues nothing");
-    assert!(v.chain().receipts().is_empty(), "and holds no receipt");
+    assert_eq!(v.chain().own().count(), 0, "and holds no node");
 
-    // Three acts of distinct measure, so the receipts can be told apart by
+    let taught = Cite::Word {
+        chart: crate::transducer::stalk::Invariant::counts(&[1]),
+        class: None,
+        at: Stamp { h: 7, vk: [9; 32], k: 3 },
+    };
+    // Three acts of distinct measure, so the nodes can be told apart by
     // what they carried and not only by what kind they were.
-    assert_eq!(
-        v.seal(ActKind::Stood, [1, 0, 0, 0], b"a stood form"),
-        1,
-        "one admitted act is one receipt"
-    );
-    assert_eq!(v.seal(ActKind::Uttered, [0, 2, 0, 0], b"an utterance"), 2);
-    assert_eq!(v.seal(ActKind::Learned, [0, 0, 0, 3], b"a learned page"), 3);
-    assert_eq!(v.k(), 3, "K is the chain's length");
+    assert_eq!(v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new()), 1, "one admitted act is one node");
+    assert_eq!(v.seal(ActKind::Uttered, [0, 2, 0, 0], Vec::new()), 2);
+    assert_eq!(v.seal(ActKind::Learned, [0, 0, 0, 3], vec![taught.clone()]), 3);
+    assert_eq!(v.k(), 3, "K is the line's length");
 
-    let rs = v.chain().receipts();
+    let rs: Vec<_> = v.chain().own().cloned().collect();
     assert_eq!(rs.len(), 3);
-    assert_eq!(rs[0].delta, b"a stood form".to_vec(), "the receipt names what was admitted");
-    // 45.1: and what it measured, per lane, on the receipt itself.
-    assert_eq!(rs[0].mu, [1, 0, 0, 0], "the act's own measure rides the receipt");
+    assert_eq!(rs[2].cites, vec![taught], "the node names what it learned by its coordinates");
+    // 45.1: and what it measured, per lane, on the node itself.
+    assert_eq!(rs[0].mu, [1, 0, 0, 0], "the act's own measure rides the node");
     assert_eq!(rs[1].mu, [0, 2, 0, 0]);
     assert_eq!(rs[2].mu, [0, 0, 0, 3]);
-    assert_eq!(rs[0].vk, v.identity(), "under this voice's key");
-    assert_eq!(rs[0].step_index, 0);
-    assert_eq!(rs[1].prev_receipt_hash, rs[0].chain_hash, "and links to its predecessor");
-    assert_ne!(rs[0].operator_hash, rs[1].operator_hash, "the act is on the receipt");
-    assert!(v.chain().verify_chain_integrity(), "the chain re-derives end to end");
+    assert_eq!(rs[0].stamp.vk, v.identity(), "under this voice's key");
+    assert_eq!(rs[0].stamp.k, 0);
+    assert_eq!(rs[1].prev, Some(Parent { at: rs[0].stamp, hash: rs[0].chain_hash }), "and links to its predecessor");
+    assert_ne!(rs[0].operator_hash, rs[1].operator_hash, "the act is on the node");
+    assert!(v.chain().verify_chain_integrity(), "the line re-derives end to end");
 
     let ask = v.quote().expect("the ask fits its lengths");
     assert_eq!(dialogue::act_tag(&ask), Some(dialogue::ACT_QUOTE));
     assert_eq!(v.k(), 3, "a request is not an admitted act and seals nothing");
+}
+
+/// 78.24 (d1) — A VOICE'S LEDGER RESTORES UNDER ITS OWN KEY AND NO OTHER:
+/// its K continues across a boot, and a ledger signed by another key is
+/// refused whole.
+#[test]
+fn a_voices_ledger_restores_under_its_own_key_and_no_other() {
+    let mut v = Voice::named("worker-a");
+    v.seal(ActKind::Stood, [1, 0, 0, 0], Vec::new());
+    v.seal(ActKind::Uttered, [0, 1, 0, 0], Vec::new());
+    let mut tape = Vec::new();
+    v.chain().write(&mut tape).expect("the ledger writes");
+    let chain = ReceiptChain::read(&tape, &mut 0).expect("and reads");
+    let mut booted = Voice::named("worker-a");
+    assert!(booted.restore(chain.clone(), Vec::new()), "its own ledger restores");
+    assert_eq!(booted.k(), 2, "and its K continues from where it stood");
+    let mut other = Voice::named("worker-b");
+    assert!(!other.restore(chain, Vec::new()), "another voice's ledger is refused");
+    assert_eq!(other.k(), 0, "and nothing moved");
 }

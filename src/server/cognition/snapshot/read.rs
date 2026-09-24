@@ -95,6 +95,17 @@ impl Kernel {
                 false => Some(()),
             }
         };
+        // A WORD ROW'S ADMITTING STAMP (78.24 (2b)): `0`, or `1` and the
+        // stamp; any other tag refuses the row.
+        let take_admitted = |b: &[u8], p: &mut usize| -> Option<Option<crate::chronometry::Stamp>> {
+            let tag = *b.get(*p)?;
+            *p += 1;
+            match tag {
+                0 => Some(None),
+                1 => Some(Some(crate::chronometry::Stamp::take_canonical(b, p)?)),
+                _ => None,
+            }
+        };
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
             let (n, sec_end) = section(b, pos)?;
             let start = *pos;
@@ -106,6 +117,9 @@ impl Kernel {
                 *pos += elen;
                 let who: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
                 *pos += 32;
+                if let Some(at) = take_admitted(b, pos)? {
+                    kernel.file_admitted(&spoken.address(), at);
+                }
                 kernel.basis_insert(spoken, who);
             }
             closes("basis", pos, start, sec_end, n)?;
@@ -130,6 +144,9 @@ impl Kernel {
                 let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                 let spoken = Element::from_bytes(&b[..end], &mut ep)?;
                 *pos += elen;
+                if let Some(at) = take_admitted(b, pos)? {
+                    kernel.file_admitted(&addr, at);
+                }
                 kernel.provisional.insert(addr, spoken);
             }
             closes("provisional", pos, start, sec_end, np)?;
@@ -151,31 +168,19 @@ impl Kernel {
                     false => None,
                 }
             };
-            tag(b, pos, b"KCH1")?;
+            // THE LEDGER (78.24): the court head, then the ledger read as
+            // the trie it was written as — its own line and its peers',
+            // every node re-deriving its hash, the line verified whole,
+            // the peer placements re-derived.
+            tag(b, pos, b"LDG1")?;
             let head: [u8; 32] = b.get(*pos..*pos + 32)?.try_into().ok()?;
             *pos += 32;
-            let root = crate::chronometry::Root::read_opt(b, pos)?;
             let (n, sec_end) = section(b, pos)?;
             let start = *pos;
-            let mut receipts = Vec::new();
-            for _ in 0..n {
-                receipts.push(crate::chronometry::KStepReceipt::read(b, pos)?);
-            }
-            closes("KCH1", pos, start, sec_end, n)?;
-            // PRC1: the peer receipts this court admitted as parents. The
-            // chain is built from BOTH lists at once, because verifying
-            // the line re-derives a height through every parent and forty
-            // of hypha b's named a peer.
-            tag(b, pos, b"PRC1")?;
-            let (np, sec_end) = section(b, pos)?;
-            let start = *pos;
-            let mut peers = Vec::new();
-            for _ in 0..np {
-                peers.push(crate::chronometry::KStepReceipt::read(b, pos)?);
-            }
-            closes("PRC1", pos, start, sec_end, np)?;
+            let chain = crate::chronometry::ReceiptChain::read(b, pos)?;
+            closes("LDG1", pos, start, sec_end, n)?;
             kernel.court_head = head;
-            kernel.chain = crate::chronometry::ReceiptChain::from_parts(root, receipts, peers)?;
+            kernel.chain = chain;
             // ARC1: the eras, in K order. Each era's receipts re-verify as
             // a chain of their own below their root.
             tag(b, pos, b"ARC1")?;
@@ -338,12 +343,13 @@ impl Kernel {
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let elem = Element::from_bytes(&b[..end], &mut ep)?;
                     *pos += elen;
-                    let k = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                    *pos += 8;
                     let addr = elem.address();
+                    if let Some(at) = take_admitted(b, pos)? {
+                        kernel.file_admitted(&addr, at);
+                    }
                     kernel.on_page.insert(&addr, ());
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.pending.insert(&addr, (elem, k));
+                    kernel.pending.insert(&addr, elem);
                 }
                 closes("BOK1", pos, start, sec_end, n)?;
             }
@@ -358,6 +364,9 @@ impl Kernel {
                     let end = pos.checked_add(elen).filter(|e| *e <= b.len())?;
                     let elem = Element::from_bytes(&b[..end], &mut ep)?;
                     *pos += elen;
+                    if let Some(at) = take_admitted(b, pos)? {
+                        kernel.file_admitted(&addr, at);
+                    }
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
                     kernel.cavity_book.insert(&addr, elem);
                 }
@@ -588,7 +597,7 @@ impl Kernel {
         let pending_addrs: Vec<Address> = self
             .pending
             .scoped()
-            .map(|(_, (e, _))| e.address())
+            .map(|(_, e)| e.address())
             .collect();
         for addr in pending_addrs {
             if self.standing_h.get(&addr).is_none() {

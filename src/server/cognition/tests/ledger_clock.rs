@@ -35,15 +35,15 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
-let r0 = k.chain().head_hash();
-k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), r0);
+let r0 = k.chain().head_stamp().expect("the mind has acted");
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(r0));
 // A second voice: the first has its one claim in flight on this lane
 // (§3.1 as ruled, S13.15), and the act here only needs the mind to move.
 speak_pair(&mut k, &a, &[(0, 0, 5), (0, 1, 5)], [2; 32]);
-let r1 = k.chain().head_hash();
+let r1 = k.chain().head_stamp().expect("the mind has acted");
 assert_ne!(r0, r1, "the mind moved");
 let chain_before = k.dialect_chain_len();
-k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2.clone(), r1);
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2.clone(), Some(r1));
 let standing = k
     .cocycle_at
     .scoped()
@@ -60,28 +60,27 @@ assert_eq!(k.dialect_chain_len(), chain_before + 1, "the superseded one is kept"
 // cited, so neither frontier is below the other. Nothing supersedes.
 let mut k = Kernel::new();
 speak_pair(&mut k, &a, &b, [1; 32]);
-let mine = k.chain().head_hash();
-k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), mine);
+let mine = k.chain().head_stamp().expect("the mind has acted");
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v1.clone(), ck1.clone(), Some(mine));
 
 let key = super::common::court_key("peer");
 let mut peer = crate::chronometry::ReceiptChain::with_vk(key.vk_bytes());
-peer.append(crate::chronometry::ActKind::List, [0; 4], b"p0", [0; 32], Vec::new()).expect("appends");
-let pr = peer.receipts()[0].clone();
+let pr = peer.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
 let pre = crate::court::admission::SignedPrefix {
     genesis: [7; 32],
     epoch: 2,
-    prev_receipt_hash: pr.prev_receipt_hash,
-    k: pr.step_index,
-    height: pr.height,
+    prev_receipt_hash: pr.prev_hash(),
+    k: pr.stamp.k,
+    height: pr.stamp.h,
     chart: vec![],
-    payload: pr.delta.clone(),
+    payload: pr.stamp.key(),
 };
 assert!(matches!(
     k.admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &pr),
     crate::court::admission::Admitted::Parent(_)
 ));
 let chain_before = k.dialect_chain_len();
-k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2, pr.chain_hash);
+k.push_cocycle_at(&inv, [1; 32], [2; 32], v2.clone(), ck2, Some(pr.stamp));
 let standing = k
     .cocycle_at
     .scoped()
@@ -108,7 +107,7 @@ k.set_height(4);
 let a = vec![(0, 0, 1), (0, 1, 1)];
 let b = vec![(0, 0, 2), (0, 1, 2)];
 speak_pair(&mut k, &a, &b, [1; 32]);
-let addr = k.pending.scoped().next().expect("listed").1.0.address();
+let addr = k.pending.scoped().next().expect("listed").1.address();
 assert_eq!(k.t_extent(addr.as_bytes(), 4), Some(0), "extent is zero at first vantage");
 k.set_height(11);
 assert_eq!(
@@ -157,10 +156,11 @@ fn a_ruling_seals_a_receipt_at_the_word_it_ruled() {
     let before = k.k_step();
     assert!(k.apply_verdict(&addr, RULING_UPHELD), "the ruling lands");
     assert_eq!(k.k_step(), before + 1, "a ruling is one step of the court's clock");
+    let at = k.admitted_at(addr.as_bytes()).expect("the ruled word keeps its admitting stamp");
     assert_eq!(
-        k.chain().head().map(|r| r.delta.clone()),
-        Some(addr.clone().into_vec()),
-        "and the receipt names the word it ruled on"
+        k.chain().head().map(|r| r.cites.iter().map(|c| c.at()).collect::<Vec<_>>()),
+        Some(vec![at]),
+        "and the node cites the word it ruled on, by the stamp that admitted it"
     );
 }
 
@@ -209,9 +209,10 @@ fn an_install_seals_a_receipt_at_the_installed_address() {
     let before = k.k_step();
     k.home_install(&addr, [0xbb; 32]);
     assert_eq!(k.k_step(), before + 1, "an install is one step");
+    let at = k.admitted_at(addr.as_bytes()).expect("the installed word keeps its admitting stamp");
     assert!(
-        k.chain().head().is_some_and(|r| r.delta == addr.as_bytes()),
-        "sealed at the installed address"
+        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
+        "the node cites the installed word by its admitting stamp"
     );
 }
 
@@ -227,14 +228,15 @@ fn a_lapsed_citation_seals_a_receipt() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.scoped().next().unwrap().0;
+    let at = k.admitted_at(&laddr).expect("the listing was admitted by its List act");
     k.standing_h.insert(&laddr, 0);
     k.set_height(crate::physics::aperture_cycle() as u64 + 1);
     let before = k.k_step();
     k.lapse_docket(super::common::one_stroke_transport);
     assert_eq!(k.k_step(), before + 1, "a lapsed citation is one step");
     assert!(
-        k.chain().head().is_some_and(|r| r.delta == laddr),
-        "sealed at the address whose draw was released"
+        k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == at)),
+        "the node cites the listing whose draw was released, read before it left (78.24 (2c))"
     );
 }
 

@@ -45,7 +45,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(mut budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
         return;
     };
-    let mut words: Vec<Vec<u8>> = Vec::new();
+    let mut words: Vec<dialogue::Taught> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     let mut overran = false;
     if let Ok(k) = kernel.lock() {
@@ -65,7 +65,8 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // left is exact. A page WIDER than the budget is a broken page,
             // and the frame it would go in cannot carry it: the fetch is
             // answered with nothing rather than a reply the wire truncates.
-            let Some(left) = budget.checked_sub(page.iter().map(|w| w.len() + 4).sum::<usize>())
+            let width = |t: &dialogue::Taught| mycelium::chronometry::Stamp::LEN + 4 + t.word.len();
+            let Some(left) = budget.checked_sub(page.iter().map(width).sum::<usize>())
             else {
                 overran = true;
                 break;

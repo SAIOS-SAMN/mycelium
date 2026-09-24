@@ -69,10 +69,16 @@ impl Carriage {
         }
     }
 
-    /// The deltas a chain holds, by act kind.
+    /// Every node a ledger holds, its own and its peers', by act kind: the
+    /// bytes each node carries as it is written.
     pub fn of_chain(&mut self, chain: &crate::chronometry::ReceiptChain) {
-        for r in chain.receipts() {
-            self.add(CARRIER_DELTA, r.kind.to_byte(), r.delta.len() as u64);
+        for r in chain.nodes() {
+            let mut b = Vec::new();
+            let len = match r.write(&mut b) {
+                Some(()) => b.len() as u64,
+                None => 0,
+            };
+            self.add(CARRIER_DELTA, r.kind.to_byte(), len);
         }
     }
 

@@ -60,7 +60,9 @@ impl Kernel {
         g: element::Versor,
         class_key: Address,
     ) {
-        let at = self.chain.head_hash();
+        // A mind before its genesis stands at no receipt: the transition
+        // stands with UNMEASURED order against every other.
+        let at = self.chain.head_stamp();
         self.push_cocycle_at(chart, a, b, g, class_key, at);
     }
 
@@ -74,7 +76,7 @@ impl Kernel {
         b: [u8; 32],
         g: element::Versor,
         class_key: Address,
-        at: [u8; 32],
+        at: Option<crate::chronometry::Stamp>,
     ) {
         if a == b {
             return;
@@ -87,9 +89,9 @@ impl Kernel {
                 return;
             }
             let held = self.cocycle_receipt.get(&key).copied();
-            let order = held.and_then(|h| {
+            let order = held.zip(at).and_then(|(h, at)| {
                 let mut budget = self.physics.stroke();
-                self.chain.precedes_hashes(&h, &at, &mut budget)
+                self.chain.precedes(&h, &at, &mut budget)
             });
             match order {
                 // The incumbent precedes: the newcomer supersedes it, and
@@ -104,7 +106,14 @@ impl Kernel {
                 }
             }
         }
-        self.cocycle_receipt.insert(&key, at);
+        match at {
+            Some(at) => {
+                self.cocycle_receipt.insert(&key, at);
+            }
+            None => {
+                self.cocycle_receipt.remove(&key);
+            }
+        }
         self.cocycle_at.insert(
             key.clone(),
             CocycleRow { gauge: g, t_universal: tu, a, b, class_key },

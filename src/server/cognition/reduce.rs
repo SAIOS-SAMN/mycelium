@@ -67,7 +67,7 @@ pub(crate) fn open_charts_of(
 /// Measure the rank of the book — pure.
 pub fn rank_over(
     language: &Language,
-    pending: &crate::network::nerve::Keyed<(Element, u64)>,
+    pending: &crate::network::nerve::Keyed<Element>,
     prior: &Rank,
     basis_gen: u64,
     chart_listings: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
@@ -111,13 +111,13 @@ pub fn rank_over(
     let mut invariants = crate::network::nerve::Keyed::new();
     match reuse {
         false => {
-            for (addr, (p, _)) in pending.scoped() {
+            for (addr, p) in pending.scoped() {
                 invariants.insert(&addr, crate::transducer::stalk::invariant_of(p));
                 out.put_closure(&addr, locate(p));
             }
         }
         true => {
-            for (addr, (p, _)) in pending.scoped() {
+            for (addr, p) in pending.scoped() {
                 // The prior reading where it holds this listing; the
                 // listing's own invariant where it does not. Both are
                 // measured on the word.
@@ -137,7 +137,7 @@ pub fn rank_over(
                 // coordinate read and not a second pass over the book.
                 for (ck, _) in moved.scoped() {
                     for (addr, _) in chart_listings.link(&ck) {
-                        if let Some((p, _)) = pending.get(&addr) {
+                        if let Some(p) = pending.get(&addr) {
                             out.put_closure(&addr, locate(p));
                         }
                     }
@@ -156,7 +156,7 @@ pub fn rank_over(
 /// same lock, so they are one argument and not six.
 pub struct BookView<'a> {
     /// The listings themselves, with the k-step each was listed at.
-    pub pending: &'a crate::network::nerve::Keyed<(Element, u64)>,
+    pub pending: &'a crate::network::nerve::Keyed<Element>,
     /// The atlas the listings are filed under: incidence reads this.
     pub listing_atlas: &'a crate::transducer::stalk::Stalks,
     /// The field each listing stands in — what its open charts are read from.
@@ -214,7 +214,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 if spoken.get(&addr).is_some_and(|voices| voices.contains(voice)) {
                     continue;
                 }
-                let Some((p, _)) = pending.get(&addr) else { continue };
+                let Some(p) = pending.get(&addr) else { continue };
                 let open = open_charts_of(&addr, p, field);
                 let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                 for c in &open {

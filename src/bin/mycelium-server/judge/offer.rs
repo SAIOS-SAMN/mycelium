@@ -57,7 +57,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // The signer is the key the receipt names, and the act's `home` is that
     // same key or the frame is two claims (A2's rule, one signer).
-    let signer = section.receipt.vk;
+    let signer = section.receipt.stamp.vk;
     if let Err(why) =
         mycelium::court::admission::admit_signature(origin, &section.prefix, &signer, &section.sig)
     {
@@ -69,7 +69,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // through the address, which the witness re-derives from it below: two
     // spellings of one word have one address (law 2), so signing the
     // address signs the form and never the spelling.
-    if section.prefix.payload != addr.as_bytes() || section.receipt.vk != home {
+    if section.prefix.payload != addr.as_bytes() || section.receipt.stamp.vk != home {
         refuse_offer(s, mycelium::verdict::REFUSE_RECEIPT);
         return;
     }
@@ -143,7 +143,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // A glue this court could not place — a citation it
                         // does not hold, a word it heard before — has
                         // re-derived nothing and is unmeasured.
-                        witness_vantage(&mut k, &mut cover, word, home, me)
+                        // 78.24 (2b): an offered word is located by the
+                        // home receipt's stamp the offer's section carries;
+                        // an offer this court refuses leaves nothing filed.
+                        k.file_admitted(&addr, section.receipt.stamp);
+                        let w = witness_vantage(&mut k, &mut cover, word, home, me);
+                        if matches!(w, dialogue::Witnessed::Refused { .. }) {
+                            k.drop_admitted(&addr);
+                        }
+                        w
                     }
                     // A court that cannot be read has judged nothing and
                     // says so: unmeasured is not a refusal of the offer.

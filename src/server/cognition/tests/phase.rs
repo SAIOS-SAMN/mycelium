@@ -38,21 +38,20 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         ActKind::Settled,
         ActKind::Ruling,
     ] {
-        c.append(kind, [0; 4], [1u8], [9; 32], Vec::new()).expect("appends");
+        c.append(kind, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends");
     }
     let mut peer = ReceiptChain::with_vk([2; 32]);
-    peer.append(ActKind::List, [0; 4], [7u8], [9; 32], Vec::new()).expect("appends");
-    let cited = peer.receipts()[0].clone();
+    let cited = peer.append(ActKind::List, [0; 4], Vec::new(), [9; 32], Vec::new()).expect("appends").clone();
     c.admit(cited.clone());
     c.append(
         ActKind::Install,
         [0; 4],
-        [2u8],
+        Vec::new(),
         [9; 32],
-        vec![crate::chronometry::Parent { vk: [2; 32], k: 0, hash: cited.chain_hash }],
+        vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }],
     )
     .expect("an install reached through a lineage");
-    let window = c.receipts();
+    let window: Vec<_> = c.own().cloned().collect();
     let h0 = 0;
     let h1 = c.head_height();
 
@@ -61,7 +60,7 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         &[(&[1], 3), (&[2, 0], 1), (&[2, 1], 1), (&[3], 1)],
         &[(&[1], 2), (&[3], 1)],
     );
-    let p = phase_over(window, &at_h0, &at_h1, h0, h1);
+    let p = phase_over(&window, &at_h0, &at_h1, h0, h1);
     assert_eq!((p.h0, p.h1), (0, h1));
     assert_eq!((p.deflated, p.held), (2, 3), "comprehension: settlements against listings");
     assert_eq!((p.sections, p.strata), (1, 4), "congruence: charts with two sections, against strata");
@@ -70,7 +69,7 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
     assert_eq!(p.adjoined_by_closure, 0, "the window reads installs; adjunction is the court's, read at the court");
     assert_eq!((p.axes, p.splits), (1, 1), "expansion: [3] opened, [2] split into [2,0] and [2,1]");
     assert_eq!(
-        phase_over(window, &at_h0, &at_h1, h0, h1),
+        phase_over(&window, &at_h0, &at_h1, h0, h1),
         p,
         "the same receipts and covers read the same phase"
     );
@@ -100,7 +99,7 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     k.read_phase();
     let (k0, at_h0) = k.phase_mark.clone().expect("the window's start is kept");
-    assert_eq!(k0, k.chain().receipts().len(), "the next window starts at the chain's head");
+    assert_eq!(k0, k.chain().next_step_index(), "the next window starts at the line's next K");
     assert_eq!(at_h0.strata.len(), k.cover_reading().strata.len());
     let c = vec![(0, 0, 3u8), (0, 1, 3)];
     let d = vec![(0, 0, 4u8), (0, 1, 4)];

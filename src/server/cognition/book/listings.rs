@@ -77,8 +77,10 @@ impl Kernel {
 
     /// List a residual on the book and admit its base chart. The draw occupies
     /// the uttering voice's bond; a receipt is sealed so lapse can fire.
-    pub(crate) fn book_list(&mut self, residual: Element, k_now: u64, voice: [u8; 32]) {
-        self.list(residual, k_now, voice, Some(voice));
+    /// Where the listing stands is the stamp of the List act that admits
+    /// it (78.24), sealed here.
+    pub(crate) fn book_list(&mut self, residual: Element, voice: [u8; 32]) {
+        self.list(residual, voice, Some(voice));
     }
 
     /// THE CORPUS INTAKE'S LISTING (23.8; I31, S12.5b): the hypha lists its
@@ -89,12 +91,12 @@ impl Kernel {
     /// of the 2026-09-08 recut) and nothing homed here could lapse it back.
     /// The listing still tensions the book and admits its chart, and its
     /// receipt names the hypha as the actor.
-    pub(crate) fn book_list_undrawn(&mut self, residual: Element, k_now: u64) {
+    pub(crate) fn book_list_undrawn(&mut self, residual: Element) {
         let actor = self.identity;
-        self.list(residual, k_now, actor, None);
+        self.list(residual, actor, None);
     }
 
-    fn list(&mut self, residual: Element, k_now: u64, actor: [u8; 32], drawer: Option<[u8; 32]>) {
+    fn list(&mut self, residual: Element, actor: [u8; 32], drawer: Option<[u8; 32]>) {
         let addr = residual.address();
         self.stamp_standing(&addr);
         let mag = residual.magnitude();
@@ -115,13 +117,13 @@ impl Kernel {
         if !already {
             self.occupy(&addr, &mag, true);
         }
-        self.pending.insert(&addr, (residual, k_now));
+        self.pending.insert(&addr, residual);
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::List, &addr, actor);
     }
 
     pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {
-        let (elem, _) = self.pending.remove(addr)?;
+        let elem = self.pending.remove(addr)?;
         let mag = elem.magnitude();
         self.occupy(addr, &mag, false);
         self.drawers.remove(addr);
@@ -193,7 +195,7 @@ impl Kernel {
         &self.on_page
     }
 
-    pub fn pending(&self) -> &crate::network::nerve::Keyed<(Element, u64)> {
+    pub fn pending(&self) -> &crate::network::nerve::Keyed<Element> {
         &self.pending
     }
 
@@ -211,7 +213,6 @@ impl Kernel {
         let listing = self
             .pending
             .get(addr)
-            .map(|(p, _)| p)
             .or_else(|| self.cavity_book.get(addr));
         match listing {
             Some(p) => open_charts_of(addr, p, &self.field),

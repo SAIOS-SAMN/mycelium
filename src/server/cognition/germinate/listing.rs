@@ -296,8 +296,7 @@ impl Kernel {
         let addr = word.address();
         let mag = word.magnitude();
         self.converge_here(word, voice);
-        let k_now = self.k_step();
-        self.book_list(word.clone(), k_now, voice);
+        self.book_list(word.clone(), voice);
         self.list_demands(word, &voice);
         let _ = self.treasury.settle_install(word, voice); // POW++ gate only
         let mu = crate::economy::price(&mag, &self.physics.pressure);
@@ -337,8 +336,7 @@ impl Kernel {
         self.charge_orbits(word, &mag);
         self.convergence.used_by(addr.as_bytes(), voice);
         if !self.pending.contains(&addr) {
-            let k_now = self.k_step();
-            self.book_list(word.clone(), k_now, voice);
+            self.book_list(word.clone(), voice);
             self.list_demands(word, &voice);
             self.docket_connection(word, voice);
             self.offered.insert(&addr, ());

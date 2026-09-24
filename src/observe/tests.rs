@@ -31,7 +31,14 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         peak_resident: 44,
         samples: 3,
     };
-    let court = Court { k: 12, basis: 3, treasury: 2, served: vec![(0x03, 9), (0x39, 1)] };
+    let court = Court {
+        k: 12,
+        basis: 3,
+        treasury: 2,
+        served: vec![(0x03, 9), (0x39, 1)],
+        head: [40, 1, 0, 2, 0, 12],
+        rulings: [3, 0],
+    };
     let all = vec![
         Reading::Planes(planes),
         Reading::Loss(loss),
@@ -435,13 +442,14 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
 #[test]
 fn an_award_is_measured_at_the_address_it_copies() {
     let mut t = crate::economy::Treasury::new();
-    let a = (1u64, [1u8; 32]);
+    let a = (crate::chronometry::Stamp { h: 1, vk: [0; 32], k: 1 }, [1u8; 32]);
     t.escrow_award([7u8; 3], vec![[2; 32]], [4, 0, 0, 0], a);
     t.escrow_award(vec![9u8; 70_000], vec![[2; 32]], [4, 0, 0, 0], a);
     let mut c = Carriage::default();
     t.carriage(&mut c);
-    // A row after its address: the voice count, one voice, μ⃗, K, receipt.
-    let tail = 4 + 32 + 32 + 8 + 32;
+    // A row after its address: the voice count, one voice, μ⃗, the stamp,
+    // the receipt.
+    let tail = 4 + 32 + 32 + crate::chronometry::Stamp::LEN as u64 + 32;
     let [award] = c.rows.as_slice() else { panic!("one carrier, one kind: {:?}", c.rows) };
     assert_eq!((award.records, award.largest), (2, 2 + 70_000 + tail));
     assert_eq!(award.bytes, (2 + 3 + tail) + (2 + 70_000 + tail), "each row by what it carries");
@@ -453,18 +461,35 @@ fn an_award_is_measured_at_the_address_it_copies() {
     assert!(back.escrow_of(&[9u8; 70_000]).is_none(), "the row past the wall is refused, not misframed");
 }
 
-/// LD1 — A CHAIN'S DELTAS ARE MEASURED BY THE ACT KIND THAT SEALED THEM.
+/// LD1, 78.24 — A LEDGER'S NODES ARE MEASURED BY THE ACT KIND THAT SEALED
+/// THEM, and a node citing a word carries the same bytes whatever the size
+/// of the word: the citation is the word's fiber and admitting stamp, never
+/// a copy of it.
 #[test]
-fn a_chains_deltas_are_measured_by_act_kind() {
-    use crate::chronometry::{ActKind, ReceiptChain};
+fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
+    use crate::chronometry::{ActKind, Cite, ReceiptChain, Stamp};
+    let small = crate::transducer::element::from_canonical(
+        &crate::transducer::germinate::germinate(&[(0, 0, 1u8)], &[(0, 0, 2u8)]).expect("a small word"),
+    );
+    let pairs: Vec<(i64, i64, u8)> = (0..40).map(|i| (i, i % 7, 1u8)).collect();
+    let after: Vec<(i64, i64, u8)> = (0..40).map(|i| (i, i % 7, 2u8)).collect();
+    let large = crate::transducer::element::from_canonical(
+        &crate::transducer::germinate::germinate(&pairs, &after).expect("a larger word"),
+    );
+    assert!(large.address().len() > small.address().len(), "two words of different sizes");
+    let at = Stamp { h: 2, vk: [5; 32], k: 2 };
+    let chart = crate::transducer::stalk::Invariant::counts(&[1, 0, 0, 1]);
+    let cite = |_: &crate::transducer::element::Element| Cite::Word { chart: chart.clone(), class: None, at };
+    // Genesis first: it names no predecessor, so the two learned nodes after
+    // it are the same shape apart from the word each cites.
     let mut chain = ReceiptChain::with_vk([3; 32]);
-    chain.append(ActKind::Learned, [0; 4], [1u8; 10], [0; 32], Vec::new()).expect("appends");
-    chain.append(ActKind::Stood, [0; 4], [1u8; 20], [0; 32], Vec::new()).expect("appends");
-    chain.append(ActKind::Learned, [0; 4], [1u8; 30], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Stood, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Learned, [0; 4], vec![cite(&small)], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Learned, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
     let mut c = Carriage::default();
     c.of_chain(&chain);
-    assert_eq!(
-        c.rows.iter().map(|r| (r.kind, r.records, r.bytes, r.largest)).collect::<Vec<_>>(),
-        [(ActKind::Stood.to_byte(), 1, 20, 20), (ActKind::Learned.to_byte(), 2, 40, 30)]
-    );
+    let learned = c.rows.iter().find(|r| r.kind == ActKind::Learned.to_byte()).expect("the learned nodes");
+    assert_eq!(learned.records, 2);
+    assert_eq!(learned.largest * 2, learned.bytes, "both carry the same bytes, whatever the word they cite");
+    assert!(c.rows.iter().any(|r| r.kind == ActKind::Stood.to_byte() && r.records == 1), "and the stood node by its own kind");
 }

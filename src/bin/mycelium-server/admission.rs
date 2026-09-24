@@ -78,9 +78,9 @@ pub(crate) fn sign_position(
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,
         epoch,
-        prev_receipt_hash: head.prev_receipt_hash,
-        k: head.step_index,
-        height: head.height,
+        prev_receipt_hash: head.prev_hash(),
+        k: head.stamp.k,
+        height: head.stamp.h,
         chart: chart.key().as_bytes().to_vec(),
         payload: payload.to_vec(),
     };
@@ -196,7 +196,7 @@ pub(crate) fn admit_peer_receipt(
     // Step 2, as a VALUE the mind is handed (I17): `admit_receipt` takes
     // the verified prefix and not the bare one, so the chain checks and
     // 47.4's burn cannot be reached with bytes nobody verified.
-    let verified = match mycelium::court::admission::verify_signature(&prefix, &receipt.vk, &sig) {
+    let verified = match mycelium::court::admission::verify_signature(&prefix, &receipt.stamp.vk, &sig) {
         Ok(v) => v,
         Err(why) => return Ok(Admitted::Refused(why)),
     };
@@ -212,7 +212,7 @@ pub(crate) fn admit_peer_receipt(
             *o = Some((prefix.genesis, prefix.epoch));
             eprintln!(
                 "  court genesis {:02x}{:02x}… epoch {} adopted from {:02x}{:02x}…",
-                prefix.genesis[0], prefix.genesis[1], prefix.epoch, receipt.vk[0], receipt.vk[1]
+                prefix.genesis[0], prefix.genesis[1], prefix.epoch, receipt.stamp.vk[0], receipt.stamp.vk[1]
             );
         }
     }

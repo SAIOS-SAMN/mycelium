@@ -14,14 +14,18 @@ fn the_receipts_request_and_reply_round_trip_within_the_budget() {
     assert!(decode_receipts_request(&req[..80]).is_none(), "a short request refuses");
 
     let mut c = ReceiptChain::with_vk([2; 32]);
-    for d in [b"a".as_slice(), b"b", b"c"] {
-        c.append(ActKind::List, [0; 4], d, [0; 32], Vec::new()).expect("appends");
+    for lane in 1..=3u64 {
+        c.append(ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends");
     }
-    let all = encode_receipts_reply(c.receipts(), 1 << 16);
-    assert_eq!(decode_receipts_reply(&all).as_deref(), Some(c.receipts()), "the page reads back whole");
-    let mut one = Vec::new();
-    c.receipts()[0].write(&mut one);
-    let page = encode_receipts_reply(c.receipts(), 4 + 2 * one.len() + 1);
+    let line: Vec<_> = c.own().cloned().collect();
+    let all = encode_receipts_reply(&line, 1 << 16);
+    assert_eq!(decode_receipts_reply(&all), Some(line.clone()), "the page reads back whole");
+    // The first two nodes' own widths: genesis names no predecessor, so it
+    // is the narrower of the two.
+    let (mut one, mut two) = (Vec::new(), Vec::new());
+    line[0].write(&mut one).expect("writes");
+    line[1].write(&mut two).expect("writes");
+    let page = encode_receipts_reply(&line, 4 + one.len() + two.len() + 1);
     assert_eq!(
         decode_receipts_reply(&page).map(|v| v.len()),
         Some(2),

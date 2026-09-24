@@ -58,10 +58,11 @@ fn a_word_committed_by_two_organs_reads_depth_two() {
     let standing = k.ruled_contains(addr.as_bytes());
 
     // A SECOND ORGAN, with its own verifying key, committing to the same
-    // address. Admitted onto the chain as a peer receipt is admitted.
+    // word — cited by the stamp that admitted it (78.24).
+    let at = k.admitted_at(addr.as_bytes()).expect("the word was admitted here");
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     let r = peer
-        .append(ActKind::Install, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
+        .append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new())
         .cloned()
         .expect("the peer's receipt");
     k.note_attestor(&r);
@@ -78,22 +79,24 @@ fn a_word_committed_by_two_organs_reads_depth_two() {
     );
 }
 
-/// One signer committing TWICE to one address is one vantage. Depth is
-/// the distinct signers, not the receipts — an organ cannot deepen an
-/// address by acting on it again (47.3).
+/// A citation of a word admitted at `at`, its fiber the root chart.
+fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
+    crate::chronometry::Cite::Word { chart: crate::transducer::stalk::Invariant::default(), class: None, at }
+}
+
+/// One signer committing TWICE to one word is one vantage. Depth is the
+/// distinct signers, not the receipts — an organ cannot deepen a word by
+/// acting on it again (47.3). Depth is read at the admitting stamp.
 #[test]
 fn one_signer_acting_twice_is_still_one_vantage() {
     let mut k = Kernel::new();
-    let addr = sentence_with(quarter(2), 5).address();
+    let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling] {
-        let r = peer
-            .append(kind, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
-            .cloned()
-            .expect("a receipt");
+        let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
         k.note_attestor(&r);
     }
-    assert_eq!(k.depth_of(addr.as_bytes()), 1, "two acts, one organ, one vantage");
+    assert_eq!(k.depth_at(&at), 1, "two acts, one organ, one vantage");
 }
 
 /// The three kinds that COMMIT are `Install`, `Ruling` and `Adopted`. An
@@ -102,23 +105,16 @@ fn one_signer_acting_twice_is_still_one_vantage() {
 #[test]
 fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let mut k = Kernel::new();
-    let addr = sentence_with(quarter(3), 6).address();
+    let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4 };
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
     for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
-        let r = mind
-            .append(kind, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
-            .cloned()
-            .expect("a receipt");
+        let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
         k.note_attestor(&r);
     }
-    assert_eq!(k.depth_of(addr.as_bytes()), 0, "acts about it commit nobody to it");
-    // The same signer, now committing: one vantage, read from the kind.
-    let r = mind
-        .append(ActKind::Adopted, [0; 4], addr.as_bytes(), [0; 32], Vec::new())
-        .cloned()
-        .expect("a receipt");
+    assert_eq!(k.depth_at(&at), 0, "acts about it commit nobody to it");
+    let r = mind.append(ActKind::Adopted, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
     k.note_attestor(&r);
-    assert_eq!(k.depth_of(addr.as_bytes()), 1, "and adopting it is one");
+    assert_eq!(k.depth_at(&at), 1, "and adopting it is one");
 }
 
 /// DERIVED, NEVER PERSISTED. The index is rebuilt from the chain the

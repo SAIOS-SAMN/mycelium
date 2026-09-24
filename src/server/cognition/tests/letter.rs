@@ -324,8 +324,8 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
     let mut epi = Epigenome::new();
-    for bytes in &page {
-        let _ = epi.learn(bytes);
+    for t in &page {
+        let _ = epi.learn(&t.word);
     }
 
     // 3. THE MIND DERIVES THROUGH IT. (4 + i)² = 15 + 8i, so the target's
@@ -444,8 +444,8 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
     let mut epi = Epigenome::new();
-    for bytes in &page {
-        let _ = epi.learn(bytes);
+    for t in &page {
+        let _ = epi.learn(&t.word);
     }
 
     // The mind now holds the letter as a GENERATOR, at the chart a versor
@@ -470,9 +470,9 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     // letter itself and not a re-derivation of it.
     let taught: Vec<Vec<u8>> = page
         .iter()
-        .filter_map(|b| {
+        .filter_map(|t| {
             let mut p = 0usize;
-            El::from_bytes(b, &mut p).map(|e| e.address().into_vec())
+            El::from_bytes(&t.word, &mut p).map(|e| e.address().into_vec())
         })
         .collect();
     assert!(

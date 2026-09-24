@@ -55,7 +55,7 @@ pub struct Kernel {
     /// THE BOOK SNAPSHOT — the open listings as an immutable shared value
     /// sealed at a book generation; a market view shares them by pointer
     /// and the book is copied only when it moved.
-    pub(crate) book: (u64, std::sync::Arc<crate::network::nerve::Keyed<(Element, u64)>>),
+    pub(crate) book: (u64, std::sync::Arc<crate::network::nerve::Keyed<Element>>),
     /// THE LANGUAGE SNAPSHOT — the basis as an immutable shared value the
     /// reflex path reduces over with no lock held. `basis_gen` counts every
     /// mutation of the basis (cards or fibres); the snapshot is rebuilt only
@@ -77,12 +77,14 @@ pub struct Kernel {
     /// THE OPEN-DEMAND MARKET: irreducible residuals still awaiting consilience —
     /// the un-factored chains the mesh QUOTES as work (Vec-of-relations, capped;
     /// ephemeral — the market is runtime tension, not persisted language).
-    /// THE OPEN-DEMAND MARKET — (listing, the K-step it listed at). Dwell is
-    /// measured in ALGEBRAIC time (K-steps, court-replayable), never a wall
-    /// clock. Capacity is thermodynamic (dynamic_lane_capacity — live memory
-    /// headroom × per-lane metabolic tension); eviction is by ACTION
-    /// POTENTIAL, never FIFO. No static cap exists.
-    pub(crate) pending: crate::network::nerve::Keyed<(Element, u64)>,
+    /// THE OPEN-DEMAND MARKET — the listings. Where each stands on the
+    /// ledger is its row's admitting stamp (`admitted_at`, the List act,
+    /// 78.24), never a `K` carried beside it. Dwell is measured in ALGEBRAIC
+    /// time (K-steps, court-replayable), never a wall clock. Capacity is
+    /// thermodynamic (dynamic_lane_capacity — live memory headroom ×
+    /// per-lane metabolic tension); eviction is by ACTION POTENTIAL, never
+    /// FIFO. No static cap exists.
+    pub(crate) pending: crate::network::nerve::Keyed<Element>,
     /// THE CHRONOMETRIC RECEIPT CHAIN — the K-step index is the mesh's temporal
     /// authority (algebraic time, no wall clocks); every install seals a
     /// parent-linked receipt (LAW-5 continuity). The Step-4 ledger's spine.
@@ -103,10 +105,6 @@ pub struct Kernel {
     /// Retirements of basis words, counted: while it stands still, every
     /// index into the basis names the same word it did.
     pub(crate) retire_gen: u64,
-    /// 47.2's admission state: what this mind knows of each hypha's chain
-    /// head. Empty until a receipt is admitted, and nothing admits one
-    /// except `admit_receipt`.
-    pub(crate) admissions: crate::court::admission::Admissions,
     /// Peer receipts admitted since this mind's last step, waiting to be
     /// CITED as parents of it (47.2 step 3). This is the only thing that
     /// makes height more than a rename of K: `append` takes
@@ -114,13 +112,16 @@ pub struct Kernel {
     /// the max was always this chain's own head, so TUniversal advanced on
     /// this mind's strokes rather than on the mesh's receipts (45.2).
     ///
-    /// KEYED BY CHAIN HASH. It was a `Vec` and every admission scanned the
-    /// whole queue for a duplicate (rule 10). Between two of this mind's
-    /// steps a mesh admits one receipt per speaking peer, so the queue is
-    /// as long as the mesh is wide and the scan ran once per arrival: the
-    /// cost of admitting a peer grew with the number of peers. A chain
-    /// hash names one receipt, and the carrier says so.
+    /// KEYED BY THE PARENT'S STAMP (78.24): a stamp names one receipt, and
+    /// the carrier says so, so a duplicate is one keyed read.
     pub(crate) pending_parents: crate::network::nerve::Keyed<crate::chronometry::Parent>,
+    /// THE RULED LOCATOR ON EVERY WORD ROW (78.24 (2b)): the stamp of the
+    /// act that admitted each word this court holds — basis, provisional or
+    /// cavity, one carrier keyed by the word so it moves with the word
+    /// between rows and shares its address's bytes.
+    pub(crate) admitted_at: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
+    /// The reverse: an admitting stamp to the word it admitted.
+    pub(crate) held_at: crate::network::nerve::Keyed<Address>,
     /// THE RECEIPTS OF SPEECH: listing → voices that have spoken on it.
     pub(crate) spoken: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Transpose: voice → listings that voice holds. Written with `spoken`.
@@ -205,11 +206,11 @@ pub struct Kernel {
     /// TUniversal stamp it stood at, the two hyphae, and the transport
     /// class key. A newer stamp supersedes; the chain keeps the old.
     pub(crate) cocycle_at: crate::network::nerve::Keyed<CocycleRow>,
-    /// The receipt each standing cocycle stands at, so supersession is a
+    /// The stamp each standing cocycle stands at, so supersession is a
     /// question of causal order (45.3) and not of a height scalar. A row
-    /// with no receipt here — one restored from a snapshot written before
-    /// this — is UNMEASURED order and is therefore held, never overwritten.
-    pub(crate) cocycle_receipt: crate::network::nerve::Keyed<[u8; 32]>,
+    /// with no stamp here is UNMEASURED order and is therefore held, never
+    /// overwritten.
+    pub(crate) cocycle_receipt: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
     /// Chart key → dialect row keys, so a fill or a refinement removes the row.
     pub(crate) cocycle_by_chart: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
     /// Every transition that ever stood between two hyphas on a chart.
@@ -358,10 +359,10 @@ pub struct Kernel {
     /// per circuit as `court circuit docket` — the court's local time
     /// beside K.
     pub(crate) docket_circuits: crate::physics::Circuits,
-    /// Where the phase's next window starts (45.9, S13.7): the chain
-    /// length and the cover reading at the last docket circuit. A reading
+    /// Where the phase's next window starts (45.9, S13.7): this court's
+    /// next `K` and the cover reading at the last docket circuit. A reading
     /// of the carriers, never a phase — the phase is computed and written.
-    pub(crate) phase_mark: Option<(usize, crate::cognition::court::phase::CoverReading)>,
+    pub(crate) phase_mark: Option<(u64, crate::cognition::court::phase::CoverReading)>,
     /// Keyed cursors into `unfilled` and `pending_refine` for `stroke_fills`
     /// (rule 10): each stroke resumes where the last left off, so a tail
     /// beyond one budget is reached rather than starved by the head.
@@ -499,7 +500,10 @@ impl Kernel {
             self.archive.insert(seat, era);
             return;
         };
-        let payload = era.payload();
+        let Some(payload) = era.payload() else {
+            eprintln!("  era refused: a receipt of its payload cannot be written");
+            return;
+        };
         let at = match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
             Ok(mut f) => {
                 use std::io::{Seek, Write};
@@ -552,23 +556,27 @@ impl Kernel {
         verified: crate::court::admission::Verified<'_>,
         r: &crate::chronometry::KStepReceipt,
     ) -> crate::court::admission::Admitted {
-        if verified.signer() != r.vk {
+        if verified.signer() != r.stamp.vk {
             return crate::court::admission::Admitted::Refused(
                 crate::court::admission::REFUSE_RECEIPT,
             );
         }
-        let chain = &self.chain;
-        let verdict = self
-            .admissions
-            .admit(origin, verified.prefix(), r, |p| chain.height_of(&p.hash));
+        let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
-                self.pending_parents.insert(p.hash, p.clone());
+                self.pending_parents.insert(p.at.key(), *p);
+                // EC1: a peer's ruling on a word this court holds, located
+                // by the stamp its citation names.
+                if r.kind == crate::chronometry::ActKind::Ruling
+                    && r.cites.iter().any(|c| self.word_admitted_at(&c.at()).is_some())
+                {
+                    crate::observe::note_ruling_admitted();
+                }
             }
             crate::court::admission::Admitted::Equivocation { k, .. } => {
-                self.burn_equivocation(r.vk, *k);
+                self.burn_equivocation(r.stamp.vk, *k);
             }
             _ => {}
         }
@@ -595,8 +603,7 @@ impl Kernel {
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
-            let chain = &self.chain;
-            match self.admissions.admit_backfilled(r, |p| chain.height_of(&p.hash)) {
+            match crate::court::admission::admit_backfilled(r, &self.chain) {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);
@@ -670,9 +677,10 @@ impl Kernel {
         self.pending_parents.len()
     }
 
-    /// What this mind knows of a hypha's chain head, if it has admitted one.
+    /// What this mind knows of a hypha's chain head, if it has admitted one:
+    /// the node at the top of that signer's line in the ledger.
     pub fn known_head(&self, vk: &[u8; 32]) -> Option<(u64, [u8; 32])> {
-        self.admissions.head(vk)
+        self.chain.line_head(vk).map(|r| (r.stamp.k, r.chain_hash))
     }
 
     pub fn height(&self) -> u64 {

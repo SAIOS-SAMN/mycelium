@@ -191,15 +191,18 @@ impl Kernel {
     /// from here, not from the last one that happened to be non-empty.
     pub(crate) fn read_phase(&mut self) -> bool {
         let now = self.cover_reading();
-        let receipts = self.chain.receipts();
-        let k1 = receipts.len();
+        // THE WINDOW IS A K RANGE ON THIS COURT'S LINE (78.24): the marks
+        // are `K`, which a fold does not renumber, and each node is read
+        // at its own coordinate through the line relation.
+        let k1 = self.chain.next_step_index();
         let mut read = false;
         if let Some((k0, at_h0)) = self.phase_mark.take() {
             let k0 = k0.min(k1);
             if k0 != k1 {
-                let h0 = k0.checked_sub(1).and_then(|i| receipts.get(i)).map_or(0, |r| r.height);
+                let window: Vec<KStepReceipt> = (k0..k1).filter_map(|k| self.chain.at_k(k).cloned()).collect();
+                let h0 = k0.checked_sub(1).and_then(|k| self.chain.at_k(k)).map_or(0, |r| r.stamp.h);
                 let h1 = self.chain.head_height();
-                let mut phase = phase_over(&receipts[k0..k1], &at_h0, &now, h0, h1);
+                let mut phase = phase_over(&window, &at_h0, &now, h0, h1);
                 phase.adjoined_by_closure = self.adjoined();
                 eprintln!("{}", phase.line());
                 // PH5 — and the same window handed to the observer, the

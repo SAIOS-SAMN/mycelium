@@ -176,7 +176,7 @@ pub enum OfferStanding {
 /// The market as seen at one instant (see [`Kernel::market_open`]).
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
-    pub pending: std::sync::Arc<crate::network::nerve::Keyed<(Element, u64)>>,
+    pub pending: std::sync::Arc<crate::network::nerve::Keyed<Element>>,
     pub surface: [u64; 4],
     /// The open book's tension per lane — the denominator every price is a
     /// share of.

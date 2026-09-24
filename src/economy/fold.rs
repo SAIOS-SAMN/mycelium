@@ -49,7 +49,7 @@ pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
                     -1
                 }
                 Some(debit) => {
-                    if (debit.k_step, debit.receipt, debit.mu) != (e.k_step, e.receipt, e.mu) {
+                    if (debit.at, debit.receipt, debit.mu) != (e.at, e.receipt, e.mu) {
                         return Err(inexact);
                     }
                     1
@@ -98,7 +98,7 @@ impl Treasury {
     /// The rows anchored at or below `k_head`, in journal order: the
     /// prefix a fold re-expresses and a witness fetches (`ACT_ROWS`).
     pub fn rows_below(&self, k_head: u64) -> Vec<Entry> {
-        self.entries.iter().filter(|e| e.k_step <= k_head).cloned().collect()
+        self.entries.iter().filter(|e| e.k_after() <= k_head).cloned().collect()
     }
 
     /// The rows anchored in `from..=to`, in journal order: what `ACT_ROWS`
@@ -106,16 +106,16 @@ impl Treasury {
     /// THE JOURNAL IS IN K ORDER, so the span is a run of it and not a
     /// filter over the whole of it. This cloned every matching row out of
     /// an append-only ledger on every `ACT_ROWS` page — O(journal) for a
-    /// page of a few rows, per witness, per fold (law 3: `k_step` is the
-    /// coordinate that orders them).
+    /// page of a few rows, per witness, per fold (law 3: the anchor's stamp
+    /// is the coordinate that orders them).
     pub fn rows_span(&self, from: u64, to: u64) -> Vec<Entry> {
-        let at = self.entries.partition_point(|e| e.k_step < from);
+        let at = self.entries.partition_point(|e| e.k_after() < from);
         let Some(run) = self.entries.get(at..) else {
             return Vec::new();
         };
         let mut out = Vec::new();
         for e in run {
-            if e.k_step > to {
+            if e.k_after() > to {
                 break;
             }
             out.push(e.clone());
@@ -149,11 +149,11 @@ impl Treasury {
         let epochs: Vec<Entry> = nets
             .rows
             .iter()
-            .map(|&(who, mu)| Entry { kind: Kind::Epoch, who, mu, k_step: anchor.0, receipt: anchor.1 })
+            .map(|&(who, mu)| Entry { kind: Kind::Epoch, who, mu, at: anchor.0, receipt: anchor.1 })
             .collect();
         let before = std::mem::take(&mut self.entries);
         let (issued, burned) = (self.issued, self.burned);
-        let rest = before.iter().filter(|e| e.k_step > k_head).cloned();
+        let rest = before.iter().filter(|e| e.k_after() > k_head).cloned();
         self.entries = epochs;
         self.entries.extend(rest);
         self.refold_supply();

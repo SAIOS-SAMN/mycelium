@@ -164,7 +164,7 @@ impl Treasury {
             }
             let next: [u64; 4] = std::array::from_fn(|l| held[l] - took[l]);
             self.stakes.insert(who, next);
-            self.write(Entry { kind: Kind::Slash, who, mu: took, k_step: anchor.0, receipt: anchor.1 });
+            self.write(Entry { kind: Kind::Slash, who, mu: took, at: anchor.0, receipt: anchor.1 });
             out.slashed.push((who, took));
         }
         if !out.slashed.is_empty() {

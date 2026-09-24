@@ -29,11 +29,21 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 k.treasury().carriage(&mut carriage);
                 carriage.of_chain(k.chain());
                 carriage.of_frames();
+                // CK1: the head's stamp, h:S:G:T:H:k — the key, printed.
+                let head = match k.chain().head() {
+                    Some(r) => {
+                        let [s, g, t, h] = r.mu;
+                        [r.stamp.h, s, g, t, h, r.stamp.k]
+                    }
+                    None => [k.chain().head_height(), 0, 0, 0, 0, k.chain().head_k()],
+                };
                 let court = Court {
                     k: k.chain().head_k(),
                     basis: k.basis_len() as u64,
                     treasury: k.treasury_entry_count() as u64,
                     served: observe::served(),
+                    head,
+                    rulings: observe::rulings(),
                 };
                 (court, carriage)
             });

@@ -106,7 +106,7 @@ impl Kernel {
         let budget = &mut sweep;
         {
             let from = self.lapse_cursor.clone();
-            for (addr, (listed, _)) in self.pending.cursor(from.as_deref(), budget) {
+            for (addr, listed) in self.pending.cursor(from.as_deref(), budget) {
                 last = Some(addr.clone());
                 let Some(&h0) = self.standing_h.get(&addr) else {
                     continue;
@@ -191,6 +191,9 @@ impl Kernel {
             eprintln!("  court lambda beyond the ledger listings {beyond} cycle {}", now);
         }
         for (addr, _) in lapse {
+            // 78.24 (2c): the listing is cited as it stood, read before it
+            // is unlisted.
+            let cite = self.cite_of(&addr);
             let _ = self.treasury.revoke_award(&addr, false);
             self.unlist(&addr, false);
             // 45.1: the release is this court's own act -- it returns an
@@ -200,7 +203,7 @@ impl Kernel {
             // measures its aperture against is a count of receipts (47.5):
             // a court whose lapses are not receipted stops advancing the
             // very quantity it lapses on.
-            self.append_step(crate::chronometry::ActKind::Lapse, &addr, me);
+            self.append_after_removal(crate::chronometry::ActKind::Lapse, &addr, cite, me);
         }
     }
 

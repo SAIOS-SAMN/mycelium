@@ -5,15 +5,14 @@ use crate::anastome::dialogue::*;
 
 fn section_at(payload: &[u8], vk: [u8; 32]) -> ReceiptSection {
     let mut c = crate::chronometry::ReceiptChain::with_vk(vk);
-    c.append(crate::chronometry::ActKind::List, [0; 4], payload, [0; 32], Vec::new()).expect("appends");
-    let r = c.receipts()[0].clone();
+    let r = c.append(crate::chronometry::ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     ReceiptSection {
         prefix: crate::court::admission::SignedPrefix {
             genesis: [7; 32],
             epoch: 2,
-            prev_receipt_hash: r.prev_receipt_hash,
-            k: r.step_index,
-            height: r.height,
+            prev_receipt_hash: r.prev_hash(),
+            k: r.stamp.k,
+            height: r.stamp.h,
             chart: vec![1, 2, 3],
             payload: payload.to_vec(),
         },
@@ -57,7 +56,7 @@ fn an_offer_names_the_home_that_made_it_and_signs_its_own_position() {
         addr.as_bytes(),
         "the prefix's payload is the address the offer is for"
     );
-    assert_eq!(o.section.receipt.vk, home, "and the receipt names the home");
+    assert_eq!(o.section.receipt.stamp.vk, home, "and the receipt names the home");
     assert_eq!(o.section.sig, section.sig, "the signature survives whole");
     assert_eq!(o.section.prefix, section.prefix);
 

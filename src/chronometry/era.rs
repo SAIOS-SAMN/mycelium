@@ -69,41 +69,46 @@ impl Era {
         self
     }
 
-    pub fn write(&self, out: &mut Vec<u8>) {
-        self.root.write(out);
-        out.extend_from_slice(&self.signer);
-        out.extend_from_slice(&self.witness);
-        out.extend_from_slice(&self.sig_home);
-        out.extend_from_slice(&self.sig_witness);
-        out.extend_from_slice(&self.identities.to_le_bytes());
-        out.extend_from_slice(&self.first.to_le_bytes());
-        out.extend_from_slice(&self.count.to_le_bytes());
+    /// `None` where a receipt of the payload cannot be written; nothing is
+    /// written then (LD0).
+    #[must_use = "an era that cannot be written is refused by name, never dropped (LD0)"]
+    pub fn write(&self, out: &mut Vec<u8>) -> Option<()> {
+        let mut rec = Vec::new();
+        self.root.write(&mut rec);
+        rec.extend_from_slice(&self.signer);
+        rec.extend_from_slice(&self.witness);
+        rec.extend_from_slice(&self.sig_home);
+        rec.extend_from_slice(&self.sig_witness);
+        rec.extend_from_slice(&self.identities.to_le_bytes());
+        rec.extend_from_slice(&self.first.to_le_bytes());
+        rec.extend_from_slice(&self.count.to_le_bytes());
         // `at` is the payload's place in the cold segment; a descriptor
         // that has one carries no receipts on this tape, and one that does
         // not carries them all (it is being sealed, or it is on a wire).
         match self.at {
             Some(at) => {
-                out.push(1);
-                out.extend_from_slice(&at.to_le_bytes());
+                rec.push(1);
+                rec.extend_from_slice(&at.to_le_bytes());
             }
             None => {
-                out.push(0);
-                out.extend_from_slice(&(self.receipts.len() as u32).to_le_bytes());
-                for r in &self.receipts {
-                    r.write(out);
-                }
+                rec.push(0);
+                rec.extend_from_slice(&self.payload()?);
             }
         }
+        out.append(&mut rec);
+        Some(())
     }
 
-    /// The payload alone, as it is appended to the cold segment.
-    pub fn payload(&self) -> Vec<u8> {
+    /// The payload alone, as it is appended to the cold segment: the count
+    /// and each node by the ledger's own writer.
+    #[must_use = "a payload that cannot be written is refused by name, never dropped (LD0)"]
+    pub fn payload(&self) -> Option<Vec<u8>> {
         let mut out = Vec::new();
         out.extend_from_slice(&(self.receipts.len() as u32).to_le_bytes());
         for r in &self.receipts {
-            r.write(&mut out);
+            r.write(&mut out)?;
         }
-        out
+        Some(out)
     }
 
     /// Read a payload back: the count and the receipts behind it.

@@ -9,16 +9,15 @@ use crate::economy::{Entry, Kind};
 #[test]
 fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
     let mut c = ReceiptChain::with_vk([6; 32]);
-    c.append(ActKind::List, [0; 4], b"x", [0; 32], Vec::new()).expect("appends");
-    let head = c.receipts()[0].clone();
+    let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
     let root = Root { k: 4, hash: [5; 32], height: 9 };
     let section = ReceiptSection {
         prefix: SignedPrefix {
             genesis: [8; 32],
             epoch: 2,
-            prev_receipt_hash: head.prev_receipt_hash,
-            k: head.step_index,
-            height: head.height,
+            prev_receipt_hash: head.prev_hash(),
+            k: head.stamp.k,
+            height: head.stamp.h,
             chart: vec![],
             payload: root.hash.to_vec(),
         },
@@ -65,7 +64,13 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
         Some(RowsRequest { voice: [1; 32], signer: [2; 32], from: 3, to: 9, cursor: 5 })
     );
     let rows: Vec<Entry> = (0..3u8)
-        .map(|i| Entry { kind: Kind::Mint, who: [i; 32], mu: [i as u64, 0, 0, 0], k_step: 3, receipt: [0; 32] })
+        .map(|i| Entry {
+            kind: Kind::Mint,
+            who: [i; 32],
+            mu: [i as u64, 0, 0, 0],
+            at: crate::chronometry::Stamp { h: 3, vk: [2; 32], k: 3 },
+            receipt: [0; 32],
+        })
         .collect();
     let all = encode_rows_reply(7, &rows, 1 << 16);
     assert_eq!(decode_rows_reply(&all), Some((7, rows.clone())));

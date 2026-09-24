@@ -261,8 +261,8 @@ fn dialect_is_a_word_in_the_epigenome() {
 fn genome_unchanged_by_dialect() {
     let mut epi = Epigenome::new();
     let n0 = epi.genome_len();
-    let frozen = epi.crystallize();
-    assert_eq!(&frozen[..4], b"GEN3");
+    let frozen = epi.crystallize(|_| None);
+    assert_eq!(&frozen[..4], b"GEN4");
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
     epi.stand_dialect_at(w, 3, 3);
     assert_eq!(epi.genome_len(), n0, "dialect is not the genome");

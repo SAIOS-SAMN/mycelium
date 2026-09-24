@@ -26,7 +26,7 @@ impl Kernel {
         let from = self.quote_cursor.clone();
         let mut cur = self.on_page.cursor(from.as_deref(), &mut budget);
         for (addr, _) in &mut cur {
-            let Some((p, _)) = self.pending.get(&addr) else { continue };
+            let Some(p) = self.pending.get(&addr) else { continue };
             let mut mag = p.magnitude();
             // A listing whose T cannot be measured is not priced against a
             // zero put there for it; it is not quoted on this page.

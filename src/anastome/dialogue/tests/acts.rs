@@ -31,7 +31,7 @@ fn a_count_past_its_field_refuses_the_frame() {
     assert!(encode_settle(&listing, &voices[..255], &[0; 4]).is_some());
     assert!(encode_settle(&listing, &voices, &[0; 4]).is_none());
 
-    let words: Vec<Vec<u8>> = (0..256).map(|_| vec![0u8]).collect();
+    let words: Vec<Taught> = (0..256).map(|_| Taught { at: crate::chronometry::Stamp::default(), word: vec![0u8] }).collect();
     assert!(encode_syllabus_reply(&words[..255]).is_some());
     assert!(encode_syllabus_reply(&words).is_none());
 }

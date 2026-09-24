@@ -94,7 +94,7 @@ let family = vec![(
 let crate::arc::Refined { delta: chain, frame, .. } =
     crate::arc::refine_delta(&family[0].0, &family[0].1).expect("coboundary");
 assert!(k.intake(&chain, &frame), "the listing stands");
-let listing = k.pending.scoped().next().expect("listed").1.0.address();
+let listing = k.pending.scoped().next().expect("listed").1.address();
 let task = [7u8; 32];
 k.bind_listing_task(&listing, task);
 k.bind_task_family(task, family);
