@@ -176,17 +176,23 @@ impl Form {
     /// component root to where the cycle is based, composed along its stem.
     /// `None` where a step is unread.
     pub fn orbit_based_at(&self, lp: &Orbit) -> Option<element::Versor> {
-        let mut theta = element::identity_versor();
-        for s in &lp.stem {
-            let c = &self.faces.at(&s.overlap)?.place.carriage;
-            let step = match s.forward {
-                true => c.clone(),
-                false => crate::transducer::cga::is_versor(c).then(|| c.reverse())?,
-            };
-            theta = theta.geo(&step);
-        }
-        Some(theta)
+        orbit_based_on(&self.faces, lp)
     }
+}
+
+/// [`Form::orbit_based_at`] on faces a reader holds — a trial's own, after
+/// its move (78.46(4′)).
+pub(crate) fn orbit_based_on(faces: &Faces, lp: &Orbit) -> Option<element::Versor> {
+    let mut theta = element::identity_versor();
+    for s in &lp.stem {
+        let c = &faces.at(&s.overlap)?.place.carriage;
+        let step = match s.forward {
+            true => c.clone(),
+            false => crate::transducer::cga::is_versor(c).then(|| c.reverse())?,
+        };
+        theta = theta.geo(&step);
+    }
+    Some(theta)
 }
 
 fn gate(which: usize) {
@@ -235,6 +241,14 @@ impl Form {
     }
 
     pub fn orbits_of(faces: &Faces, vertices: &Vertices) -> Vec<Orbit> {
+        Self::cycles_of(faces, vertices).kept
+    }
+
+    /// THE CYCLE BASIS WHOLE (78.46(4′), 79.3): the orbits, and beside them
+    /// the cycles that read trivial alone — the `vacuum` of the cycles line —
+    /// KEPT, never cauterized: a trivial circuit is a route, and read against
+    /// another route of its anastomosis it can be curved (T1).
+    pub fn cycles_of(faces: &Faces, vertices: &Vertices) -> Cycles {
         // THE CYCLE BASIS IS BUILT ON THE MEMBER COMPLEX, NOT ON THE VERTEX
         // INDICES (54.4, as ruled 2026-09-20).
         //
@@ -295,7 +309,7 @@ impl Form {
         // a face that places none, which is the truth about that face and
         // not a refusal invented here.
         if vertices.is_empty() {
-            return Vec::new();
+            return Cycles::default();
         }
         // THE NODES ARE THE CHARTS AND THE EDGES THE OVERLAPS (AT1): each
         // overlap names its two charts, so the node pair is read off the key
@@ -332,7 +346,7 @@ impl Form {
         }
         let n = charts.len();
         if n == 0 {
-            return Vec::new();
+            return Cycles::default();
         }
         let mut parent: Vec<usize> = (0..n).collect();
         let find = |parent: &mut [usize], mut x: usize| -> usize {
@@ -344,6 +358,7 @@ impl Form {
         };
         let mut adj: Vec<Vec<(usize, usize)>> = vec![Vec::new(); n];
         let mut orbits = Vec::new();
+        let mut vacua = Vec::new();
         // AXIOM A — THE FOREST IS BUILT WHOLE BEFORE ANY CHORD IS CLOSED.
         //
         // This ran one pass: a tree edge extended `adj`, a chord closed a
@@ -468,6 +483,9 @@ impl Form {
                 // uncharged subgraph is vacuum, and `gate(3)` alone cannot
                 // tell them apart.
                 note_closure(&carried);
+                // KEPT BESIDE THE ORBITS (78.46(4′)): trivial alone, and
+                // read against its anastomosis's other circuits.
+                vacua.push(lp);
                 continue;
             }
             for (_, c) in carried.scoped() {
@@ -531,8 +549,16 @@ impl Form {
             }
             orbits.push(lp);
         }
-        orbits
+        Cycles { kept: orbits, vacua }
     }
+}
+
+/// THE CYCLE BASIS, SPLIT BY ITS OWN READING: the orbits that carry a
+/// holonomy alone, and the cycles that read trivial alone (78.46(4′)).
+#[derive(Debug, Clone, Default)]
+pub struct Cycles {
+    pub kept: Vec<Orbit>,
+    pub vacua: Vec<Orbit>,
 }
 
 // `path_carriages(faces, path, walked)` stood here: a traversal of the orbit's

@@ -177,6 +177,47 @@ fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
     );
 }
 
+/// 78.46(4′) — THE PIVOT'S TRIAL ON EACH PERCEPT'S FORM, against its cells'
+/// agreements: the cells read flat, curved or unperturbed by their circuits'
+/// pair composites (perception's reading), and the moves the unperturbed
+/// trial admits that split two circuits of a cell that agreed (the trial's).
+/// No crystal: the candidates are the orbits' own moves. Its own test, so
+/// the trials' traversals never reach another reading's counters.
+#[test]
+fn the_pivot_trial_against_the_cells_agreements() {
+    let Ok(dir) = std::fs::read_dir(CORPUS) else {
+        eprintln!("  perturbed: {CORPUS} does not read — no corpus, no reading");
+        return;
+    };
+    let mut names: Vec<String> = dir
+        .filter_map(|e| e.ok().map(|e| e.file_name().to_string_lossy().into_owned()))
+        .filter(|n| n.ends_with(".json"))
+        .collect();
+    names.sort_unstable();
+    names.truncate(TASKS);
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut physics = crate::physics::Physics::default();
+    let _ = crate::transducer::sentence::take_perturb_tally();
+    for name in &names {
+        let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
+        let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget) else { continue };
+        let mut stroke = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let _ = rule.form.clone().pivot_orbit(
+            name.as_bytes(),
+            &crate::network::nerve::Keyed::new(),
+            &crate::transducer::family::NoCrystal,
+            &mut stroke,
+            None,
+            0,
+        );
+    }
+    let perturbed = crate::transducer::sentence::take_perturb_tally();
+    eprintln!("  {}", perturbed.line());
+    assert!(perturbed.unclosed <= perturbed.admitted, "an unclosed move is one the unperturbed trial admitted");
+}
+
 /// THE CORPUS'S SPECTRUM — what the engine actually sounds like, note by
 /// note, with nothing summed (54.5).
 ///

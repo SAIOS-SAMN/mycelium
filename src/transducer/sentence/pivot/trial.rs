@@ -40,7 +40,7 @@ impl Form {
         kappa: &ClassVector,
         before: &Prior<'_>,
     ) -> Option<PivotCertificate> {
-        let &Prior { rank_before, crystal, bundle, t_extent, ref mu_before } = before;
+        let &Prior { rank_before, crystal, bundle, t_extent, ref mu_before, ref agreements } = before;
         // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
         // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
         // nothing else, so the trial owns the faces and reads the orbits
@@ -57,7 +57,8 @@ impl Form {
         let mut faces = self.faces.clone();
         let mut axes = self.axes.clone();
         apply_by(&mut faces, &cand.by);
-        let orbits = Form::orbits_of(&faces, &self.vertices);
+        let cycles = Form::cycles_of(&faces, &self.vertices);
+        let orbits = cycles.kept.clone();
         // OPENING AN AXIS files the orbit's class against the chord it closes
         // on (I6). A move that does not apply — no orbit on that chord, no
         // class, no seed to re-derive it from — is not a candidate that
@@ -279,6 +280,26 @@ impl Form {
                 Mu::Measured { before, after }
             }
         };
+        // 78.46(4′), LAW 10 — NO OTHER COORDINATE ROSE, read on the cells:
+        // a move that splits two circuits of one anastomosis that agreed —
+        // their pair composite the identity before and non-trivial after —
+        // raised a coordinate it did not act on, and has not closed the
+        // cell. A pair already non-trivial before does not refuse it. The
+        // after reading is the trial's own and is not tallied as the form's.
+        let after_agreements = super::Agreements::read(self, &faces, &cycles, &mut super::PerturbTally::default());
+        let split = agreements.split_by(&after_agreements);
+        super::perturb::note_perturb(&super::PerturbTally {
+            admitted: 1,
+            unclosed: u64::from(split),
+            ..super::PerturbTally::default()
+        });
+        if split {
+            eprintln!(
+                "  pivot orbit {idx} axis {:?} refused: unclosed, the move splits two circuits of a cell that agreed",
+                cand.axis
+            );
+            return None;
+        }
         Some(PivotCertificate {
             chord,
             axis: cand.axis,

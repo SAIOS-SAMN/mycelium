@@ -33,6 +33,10 @@ pub(crate) struct Prior<'a> {
     pub(crate) bundle: Option<&'a crate::transducer::family::Family>,
     pub(crate) t_extent: u64,
     pub(crate) mu_before: Option<(Vec<[u64; 4]>, [u64; 4])>,
+    /// 78.46(4′) — the certified cells' circuits by their based rays before
+    /// any candidate: which routes agree, so a trial can say whether its
+    /// move split two of them.
+    pub(crate) agreements: super::Agreements,
 }
 
 /// THE CLASS VECTORS OF ONE ORBIT, ONE PER MEMBER PATH, read off the faces it
@@ -111,29 +115,38 @@ pub(crate) fn class_vectors_on(
 /// edges compose to the identity. Both carriers are real; the path decides
 /// which it has.
 pub(crate) fn holonomy_words_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> crate::network::nerve::Keyed<Word> {
-    let edges = edge_holonomies_on(faces, vertices, lp);
     let mut out = crate::network::nerve::Keyed::new();
-    for (k, t) in orbit_transport_on(faces, vertices, lp).scoped() {
-        // THE FALLBACK IS THE PATH'S OWN WORD, NOT THE ORBIT'S (54.5, as
-        // ruled 2026-09-20). It read `None => lp.holonomy.clone()`, and
-        // `lp.holonomy` is `form_named_holonomy` over the orbit's PROJECTED
-        // vertex path — a base-space object composed without the members
-        // the transport lives on. `t.word` is the composite this path
-        // actually crossed, member by member.
-        //
-        // The fallback itself stays, and stripping it was wrong: a section
-        // face (21 step 2, S12.2) carries a word that is DELIBERATELY not
-        // the coboundary `w_j ∘ w_i⁻¹`, so an orbit over one is curved on the
-        // word while its edges compose to the identity. Both carriers are
-        // real and the path decides which it has — removing either deletes
-        // an obstruction the engine measured.
-        let w = match edges.as_ref().and_then(|e| e.get(&k)) {
-            Some(e) => e.word.clone(),
-            None => t.word.clone(),
-        };
-        out.insert(&k, w);
+    // One traversal, the choice read per path by `path_word`.
+    let Some(carried) = paths_carried(faces, vertices, lp) else {
+        return out;
+    };
+    for (k, c) in carried.scoped() {
+        out.insert(&k, path_word(c));
     }
     out
+}
+
+/// THE HOLONOMY WORD ONE MEMBER PATH CARRIES: its edge composite's word where
+/// the path has one, its own word where it does not — the choice
+/// [`holonomy_words_on`] makes, stated once (law 12).
+pub(crate) fn path_word(c: &PathCarried) -> Word {
+    // THE FALLBACK IS THE PATH'S OWN WORD, NOT THE ORBIT'S (54.5, as ruled
+    // 2026-09-20). It read `None => lp.holonomy.clone()`, and `lp.holonomy`
+    // is `form_named_holonomy` over the orbit's PROJECTED vertex path — a
+    // base-space object composed without the members the transport lives
+    // on. The face word is the composite this path actually crossed, member
+    // by member.
+    //
+    // The fallback itself stays, and stripping it was wrong: a section face
+    // (21 step 2, S12.2) carries a word that is DELIBERATELY not the
+    // coboundary `w_j ∘ w_i⁻¹`, so an orbit over one is curved on the word
+    // while its edges compose to the identity. Both carriers are real and
+    // the path decides which it has — removing either deletes an
+    // obstruction the engine measured.
+    match &c.edge {
+        Some(e) => e.word.clone(),
+        None => c.face.word.clone(),
+    }
 }
 
 /// THE ONE HOLONOMY AN ORBIT HAS, where every member path agrees on it: the
@@ -304,7 +317,8 @@ impl Form {
             if budget.remaining() == 0 {
                 break;
             }
-            self.orbits = Self::orbits_of(&self.faces, &self.vertices);
+            let cycles = Self::cycles_of(&self.faces, &self.vertices);
+            self.orbits = cycles.kept.clone();
             if self.rank().is_none() {
                 eprintln!("  pivot {:02x}{:02x}… held, rank overflow", idea[0], idea[1]);
                 break;
@@ -352,6 +366,7 @@ impl Form {
                 bundle,
                 t_extent,
                 mu_before,
+                agreements: self.read_agreements(&cycles, false),
             };
             let mut applied = false;
             for idx in open {

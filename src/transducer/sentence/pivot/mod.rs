@@ -9,6 +9,7 @@ pub mod census;
 pub mod drive;
 pub mod moves;
 pub mod orbits;
+pub mod perturb;
 pub mod refracted;
 pub mod snap;
 pub mod trajectory;
@@ -21,6 +22,9 @@ pub use census::*;
 pub use moves::*;
 pub use snap::*;
 pub use cells::{PivotCells, PivotTally};
+pub use orbits::Cycles;
+pub(crate) use perturb::Agreements;
+pub use perturb::{take_perturb_tally, PerturbTally};
 pub use trajectory::{
     circuits_of, construct_routes, finish_circuits, take_circuits, traversed_circuits, TraversedCircuit,
 };

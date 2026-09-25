@@ -1245,9 +1245,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     }
     // CV1b F3 — the pole's demands stand once each, by their coordinates.
     super::perceive::stand_demands(&mut form.vertices, pole_demanded);
-    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
+    let cycles = Form::cycles_of(&form.faces, &form.vertices);
+    form.orbits = cycles.kept.clone();
     form.hue_maps = hue_maps;
     form.reindex();
+    // 78.46(4′) — the certified cells read by their circuits' pair
+    // composites, the vacuum circuits among them (79.3).
+    let _ = form.read_agreements(&cycles, true);
     // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.
     // Each was classified inside the cover; its chord there indexed the
     // pieces' own form. Here it takes the face between the two CLASS

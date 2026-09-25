@@ -635,6 +635,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         bundle: None,
         t_extent: 0,
         mu_before: None,
+        agreements: Default::default(),
     };
     // ONE AXIS OVER A CLASS TWO ORBITS SHARE IS ONE STEP. The axis carrier is
     // keyed by class, so this write opens both orbits; counted by class, as
@@ -684,6 +685,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
         bundle: None,
         t_extent: 0,
         mu_before: None,
+        agreements: Default::default(),
     };
     let cert = one
         .trial(0, &cand, &one.class_vector(0).expect("class"), &prior)
@@ -838,6 +840,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
         bundle: None,
         t_extent: 0,
         mu_before: None,
+        agreements: Default::default(),
     };
     let unpublished: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
     let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
@@ -865,6 +868,94 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
         certified > 0,
         "at least one candidate certifies, or this asserts nothing: chord {chord:?}"
     );
+}
+
+/// 78.46(4′), LAW 10 — A MOVE THAT SPLITS TWO CIRCUITS OF ONE ANASTOMOSIS
+/// THAT AGREED HAS NOT CLOSED THE CELL.
+///
+/// Two chords carrying one quarter turn close two orbits, and both chords
+/// step between the same two bodies of one certified cell (BD2), so the cell
+/// holds two circuits. Based at the basepoint they are one ray: their pair
+/// composite is the identity and the cell reads FLAT. A move that discharges
+/// one of them leaves the other turning, so the pair composite is
+/// non-trivial after it — a coordinate the move did not act on rose — and
+/// the trial refuses what the unperturbed trial certifies. A form with no
+/// cells reads no agreement and the same move certifies.
+#[test]
+fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
+    let q = order4();
+    let mut f = chord_form(&[q.clone(), q.clone()]);
+    let [lp0, lp1] = f.orbits.as_slice() else { panic!("two chords close two orbits") };
+    let (c0, c1) = (lp0.chord.clone(), lp1.chord.clone());
+    let (p, r) = (vec![1u8], vec![2u8]);
+    f.face_bodies.put(&c0, (p.clone(), r.clone()));
+    f.face_bodies.put(&c1, (p.clone(), r.clone()));
+    f.cells.insert([0u8], FormCell { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
+
+    let cycles = Form::cycles_of(&f.faces, &f.vertices);
+    let mut read = PerturbTally::default();
+    let agreements = Agreements::read(&f, &f.faces, &cycles, &mut read);
+    assert_eq!((read.flat, read.curved, read.unperturbed), (1, 0, 0), "one cell, two circuits, one ray: {read:?}");
+
+    let rank_before = rank_of_rows(&f.orbit_rows().expect("rows")).expect("rank");
+    let kappa = f.class_vector(0).expect("class");
+    let unpublished: Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy> = Keyed::new();
+    let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
+    let prior = |agreements| crate::transducer::sentence::pivot::drive::Prior {
+        rank_before,
+        crystal: &crate::transducer::family::NoCrystal,
+        bundle: None,
+        t_extent: 0,
+        mu_before: None,
+        agreements,
+    };
+    let unperturbed = prior(Agreements::default());
+    let perturbed = prior(agreements);
+    let _ = take_perturb_tally();
+    let (mut admitted, mut refused) = (0usize, 0usize);
+    for cand in &cands {
+        if f.trial(0, cand, &kappa, &unperturbed).is_none() {
+            continue;
+        }
+        admitted += 1;
+        if f.trial(0, cand, &kappa, &perturbed).is_none() {
+            refused += 1;
+        }
+    }
+    assert!(admitted > 0, "the unperturbed trial certifies a discharge, or this asserts nothing");
+    assert_eq!(refused, admitted, "every discharge of one circuit splits it from the other");
+    let t = take_perturb_tally();
+    assert_eq!(t.unclosed, u64::try_from(refused).expect("a handful"), "each refusal counted unclosed: {t:?}");
+
+    // A CELL ALREADY CURVED REFUSES NOTHING: a quarter beside a 180° turn
+    // disagree before any move, so no move splits an agreement.
+    let half = q.compose(&q);
+    let mut g = chord_form(&[q.clone(), half]);
+    let [g0, g1] = g.orbits.as_slice() else { panic!("two orbits") };
+    let (d0, d1) = (g0.chord.clone(), g1.chord.clone());
+    let (p, r) = (vec![1u8], vec![2u8]);
+    g.face_bodies.put(&d0, (p.clone(), r.clone()));
+    g.face_bodies.put(&d1, (p.clone(), r.clone()));
+    g.cells.insert([0u8], FormCell { bodies: vec![p, r], witnesses: Vec::new(), nuclei: None });
+    let cycles = Form::cycles_of(&g.faces, &g.vertices);
+    let mut read = PerturbTally::default();
+    let agreements = Agreements::read(&g, &g.faces, &cycles, &mut read);
+    assert_eq!((read.flat, read.curved), (0, 1), "two turns of two orders disagree: {read:?}");
+    let rank_before = rank_of_rows(&g.orbit_rows().expect("rows")).expect("rank");
+    let kappa = g.class_vector(0).expect("class");
+    let cands = g.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
+    let prior = |agreements| crate::transducer::sentence::pivot::drive::Prior {
+        rank_before,
+        crystal: &crate::transducer::family::NoCrystal,
+        bundle: None,
+        t_extent: 0,
+        mu_before: None,
+        agreements,
+    };
+    let (unperturbed, perturbed) = (prior(Agreements::default()), prior(agreements));
+    let certified = |p| cands.iter().filter(|c| g.trial(0, c, &kappa, p).is_some()).count();
+    assert!(certified(&unperturbed) > 0, "the quarter discharges, or this asserts nothing");
+    assert_eq!(certified(&perturbed), certified(&unperturbed), "a curved cell's pairs were never agreeing");
 }
 
 /// R79: FACE WORDS AND EDGE TRANSPORTS ADMIT BIDIRECTIONALLY ON MEMBER CHARTS.

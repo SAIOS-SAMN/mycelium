@@ -19,6 +19,7 @@ mod motion;
 mod motor;
 mod multivector;
 mod period;
+mod perturbation;
 mod planes;
 mod spin;
 
@@ -43,6 +44,7 @@ pub use motor::{
 pub(crate) use modes::{identity as identity_matrix, mul as matrix_mul};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
+pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use planes::{
     bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, occupancy,
     parabolic_name, plane_is_harmonic, plane_name, plane_tally, take_plane_tally, transvection_planes,
