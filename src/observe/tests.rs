@@ -361,7 +361,7 @@ fn the_cells_read_back_whole() {
                         ModesUnread::Defective,
                         ModesUnread::Unbounded(2),
                     ],
-                    capacity: Some(CapacityRefused::Overflow { product: 12, entry: 40, bits: 71 }),
+                    capacity: Some(CapacityRefused::Spent { product: 12 }),
                     zero_meet: true,
                     nuclei: false,
                     unordered: 2,

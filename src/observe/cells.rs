@@ -258,15 +258,8 @@ fn put_refusals(out: &mut Vec<u8>, r: &CellRefusals) {
             out.push(2);
             u32s(out, &[product]);
         }
-        Some(CapacityRefused::Overflow { product, entry, bits }) => {
-            out.push(3);
-            u32s(out, &[product, entry]);
-            out.extend_from_slice(&bits.to_le_bytes());
-        }
-        Some(CapacityRefused::Elimination { product }) => {
-            out.push(4);
-            u32s(out, &[product]);
-        }
+        // Tags 3 and 4 (an entry that did not fit, an elimination that
+        // overflowed) retired with the exact elimination at any size (STD1).
     }
     out.push(u8::from(r.zero_meet));
     out.push(u8::from(r.nuclei));
@@ -323,10 +316,6 @@ pub fn refusals_line(r: &CellRefusals) -> String {
             CapacityRefused::NoneRead => "capacity: no circuit read".to_string(),
             CapacityRefused::NotVersor { circuit } => format!("capacity: circuit {circuit} no versor"),
             CapacityRefused::Spent { product } => format!("capacity: spent at product {product}"),
-            CapacityRefused::Overflow { product, entry, bits } => {
-                format!("capacity: product {product} entry {entry} of {bits} bits does not fit")
-            }
-            CapacityRefused::Elimination { product } => format!("capacity: elimination overflows at product {product}"),
         });
     }
     if r.zero_meet {
@@ -385,13 +374,6 @@ fn take_refusals(b: &[u8], p: &mut usize) -> Option<CellRefusals> {
         0 => Some(CapacityRefused::NoneRead),
         1 => Some(CapacityRefused::NotVersor { circuit: take_u32(b, p)? }),
         2 => Some(CapacityRefused::Spent { product: take_u32(b, p)? }),
-        3 => {
-            let (product, entry) = (take_u32(b, p)?, take_u32(b, p)?);
-            let bits = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
-            *p += 8;
-            Some(CapacityRefused::Overflow { product, entry, bits })
-        }
-        4 => Some(CapacityRefused::Elimination { product: take_u32(b, p)? }),
         _ => return None,
     };
     let zero_meet = take_flag(b, p)?;

@@ -50,8 +50,10 @@ pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
 }
 
 /// A SPARSE INTEGER ROW: its non-zero entries as `(column, value)`, columns
-/// strictly ascending.
-pub type SparseRow = Vec<(usize, i64)>;
+/// strictly ascending. The values are exact integers of any size (STD1, the
+/// PH1 clause): a bound on the size of an exact number is a free constant,
+/// and a dimension is paid for, never declared (A.6).
+pub type SparseRow = Vec<(usize, num_bigint::BigInt)>;
 
 /// THE RANK OF A SPARSE INTEGER MATRIX OF ANY WIDTH (BQ4, 71.2(6)): the rank
 /// over ℚ of the rows, by exact fraction-free elimination over ℤ.
@@ -62,71 +64,78 @@ pub type SparseRow = Vec<(usize, i64)>;
 /// already standing at its leading column, `r ← p₀·r − r₀·p`, and divided by
 /// the gcd of what is left, so the entries stay the integers they are; a
 /// row that reduces to nothing is dependent, and one that reaches a column
-/// with no pivot becomes its pivot. The rank is the number of pivots. Exact
-/// over `i128`; `None` when a multiply or subtract overflows, so a matrix
-/// too large to reduce is refused rather than wrapped (rule 11).
-pub fn sparse_rank(rows: &[SparseRow], width: usize) -> Option<usize> {
-    fn gcd(mut a: i128, mut b: i128) -> i128 {
-        while b != 0 {
-            (a, b) = (b, a % b);
-        }
-        a.abs()
-    }
-    let mut pivots: Vec<Option<Vec<(usize, i128)>>> = vec![None; width];
+/// with no pivot becomes its pivot. The rank is the number of pivots.
+///
+/// EXACT AT ANY WIDTH AND ANY SIZE: the entries are `BigInt`, so nothing
+/// overflows and nothing is refused for its size; the pivots stand at the
+/// columns the rows reach. The cost is the caller's to pay from its budget,
+/// as it always was.
+pub fn sparse_rank(rows: &[SparseRow]) -> usize {
+    use num_bigint::BigInt;
+    use num_integer::Integer;
+    use num_traits::{One, Zero};
+    let mut pivots: Vec<Option<Vec<(usize, BigInt)>>> = Vec::new();
     let mut rank = 0usize;
     for row in rows {
-        let mut r: Vec<(usize, i128)> = row.iter().map(|&(c, v)| (c, i128::from(v))).filter(|&(_, v)| v != 0).collect();
-        while let &[(lead, a), ..] = r.as_slice() {
-            let slot = pivots.get_mut(lead)?;
-            let Some(p) = slot.as_ref() else {
-                *slot = Some(r);
+        let mut r: Vec<(usize, BigInt)> = row.iter().filter(|(_, v)| !v.is_zero()).cloned().collect();
+        while let [(lead, a), ..] = r.as_slice() {
+            let (lead, a) = (*lead, a.clone());
+            if lead >= pivots.len() {
+                pivots.resize(lead + 1, None);
+            }
+            let Some(p) = pivots[lead].as_ref() else {
+                pivots[lead] = Some(r);
                 rank += 1;
                 break;
             };
-            let &[(_, b), ..] = p.as_slice() else { return None };
+            let b = match p.as_slice() {
+                [(_, b), ..] => b.clone(),
+                // A pivot is a non-empty row by construction.
+                [] => break,
+            };
             // r ← b·r − a·p, merged by column; the lead cancels.
-            let mut next: Vec<(usize, i128)> = Vec::with_capacity(r.len() + p.len());
+            let mut next: Vec<(usize, BigInt)> = Vec::with_capacity(r.len() + p.len());
             let (mut i, mut j) = (0usize, 0usize);
             while i < r.len() || j < p.len() {
                 let (ci, cj) = (r.get(i).map(|e| e.0), p.get(j).map(|e| e.0));
                 let (col, v) = match (ci, cj) {
                     (Some(x), Some(y)) if x == y => {
-                        let v = r[i].1.checked_mul(b)?.checked_sub(p[j].1.checked_mul(a)?)?;
+                        let v = &r[i].1 * &b - &p[j].1 * &a;
                         i += 1;
                         j += 1;
                         (x, v)
                     }
                     (Some(x), Some(y)) if x < y => {
-                        let v = r[i].1.checked_mul(b)?;
+                        let v = &r[i].1 * &b;
                         i += 1;
                         (x, v)
                     }
                     (Some(x), None) => {
-                        let v = r[i].1.checked_mul(b)?;
+                        let v = &r[i].1 * &b;
                         i += 1;
                         (x, v)
                     }
                     (_, Some(y)) => {
-                        let v = p[j].1.checked_mul(a)?.checked_neg()?;
+                        let v = -(&p[j].1 * &a);
                         j += 1;
                         (y, v)
                     }
                     (None, None) => break,
                 };
-                if v != 0 {
+                if !v.is_zero() {
                     next.push((col, v));
                 }
             }
-            let g = next.iter().fold(0i128, |g, &(_, v)| gcd(g, v));
-            if g > 1 {
+            let g = next.iter().fold(BigInt::zero(), |g, (_, v)| g.gcd(v));
+            if g > BigInt::one() {
                 for e in next.iter_mut() {
-                    e.1 /= g;
+                    e.1 = &e.1 / &g;
                 }
             }
             r = next;
         }
     }
-    Some(rank)
+    rank
 }
 
 /// Row-style Hermite normal form over ℤ with the transform that produced

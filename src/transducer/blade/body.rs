@@ -615,7 +615,7 @@ pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
                     upper[i] += 1;
                     for (corner, s) in [(anchor.clone(), -sign), (upper, sign)] {
                         if let Ok(at) = faces.binary_search(&(face_dirs, corner)) {
-                            row.push((at, s));
+                            row.push((at, num_bigint::BigInt::from(s)));
                         }
                     }
                 }
@@ -623,7 +623,7 @@ pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
                 row
             })
             .collect();
-        rank[k] = crate::core::lattice::sparse_rank(&rows, faces.len())?;
+        rank[k] = crate::core::lattice::sparse_rank(&rows);
     }
     rank[n] = by_dim[n].len();
     // `βₖ ≥ 0` is a theorem; a negative difference is a broken count and

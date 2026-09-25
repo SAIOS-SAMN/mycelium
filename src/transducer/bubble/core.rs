@@ -29,8 +29,9 @@ pub struct CoreReading {
     pub free_faces: [u64; 2],
     /// The 2-core's vertices.
     pub core: u64,
-    /// The nerve's `Ȟ¹` rank over ℚ; `None` where the elimination did not
-    /// read (an entry past its width).
+    /// The nerve's `Ȟ¹` rank over ℚ. The elimination is exact at any size
+    /// since STD1, so it always reads; the `None` arm stands only for the
+    /// codec's sake until the TC1 readings are re-shaped.
     pub h1: Option<i64>,
     /// 2-simplices one of whose faces is no edge of the nerve (a remainder
     /// edge beside it): no boundary row, counted apart.
@@ -220,7 +221,7 @@ impl Contemplation {
                 // ∂[a b c] = [b c] − [a c] + [a b].
                 let faces = [(key_of(&[b.clone(), cc.clone()]), 1i64), (key_of(&[a.clone(), cc.clone()]), -1), (key_of(&[a.clone(), b.clone()]), 1)];
                 let row: Option<crate::core::lattice::SparseRow> =
-                    faces.iter().map(|(k, sign)| index.get(k).map(|&i| (i, *sign))).collect();
+                    faces.iter().map(|(k, sign)| index.get(k).map(|&i| (i, num_bigint::BigInt::from(*sign)))).collect();
                 match row {
                     Some(mut r) => {
                         r.sort_unstable();
@@ -230,11 +231,9 @@ impl Contemplation {
                 }
             }
         }
-        let rank = match rows.is_empty() {
-            true => Some(0),
-            false => crate::core::lattice::sparse_rank(&rows, edges.len()),
-        };
-        (rank.map(|r| edges.len() as i64 - v + c - r as i64), unfaced, malformed)
+        // Exact at any size (STD1): the rank always reads.
+        let rank = crate::core::lattice::sparse_rank(&rows);
+        (Some(edges.len() as i64 - v + c - rank as i64), unfaced, malformed)
     }
 
     /// TC1 — the nerve's shape as it stands.

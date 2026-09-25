@@ -252,17 +252,14 @@ pub enum ModesUnread {
 }
 
 /// WHY A CELL'S CAPACITY DID NOT READ (78.26(4)): no crossing circuit read; a
-/// read holonomy with no action (not a versor); the budget spent at the k-th
-/// product; an entry of the k-th product that does not fit the exact
-/// elimination, by its place and its size in bits; or the elimination itself
-/// overflowing at the k-th product.
+/// read holonomy with no action (not a versor); or the budget spent at the
+/// k-th product. The `Overflow` and `Elimination` arms retired with the
+/// exact elimination at any size (STD1): nothing can raise them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum CapacityRefused {
     NoneRead,
     NotVersor { circuit: usize },
     Spent { product: usize },
-    Overflow { product: usize, entry: usize, bits: u64 },
-    Elimination { product: usize },
 }
 
 /// CV1b — WHAT ONE CELL'S READERS COULD NOT HOLD, BY CONTENT (78.26(4)): the
@@ -450,9 +447,8 @@ pub struct CellAlgebra {
 }
 
 /// A matrix as one sparse integer row: its denominators cleared, reduced by
-/// the gcd of what is left. `Err` names the entry that does not fit, by its
-/// place and its size in bits.
-fn row_of(m: &[Vec<Q>]) -> Result<crate::core::lattice::SparseRow, (usize, u64)> {
+/// the gcd of what is left — exact integers of any size (STD1).
+fn row_of(m: &[Vec<Q>]) -> crate::core::lattice::SparseRow {
     use num_bigint::BigInt;
     let lcm = m.iter().flatten().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
     let ints: Vec<BigInt> = m.iter().flatten().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
@@ -461,29 +457,21 @@ fn row_of(m: &[Vec<Q>]) -> Result<crate::core::lattice::SparseRow, (usize, u64)>
         true => BigInt::from(1),
         false => g,
     };
-    let mut row = Vec::new();
-    for (at, x) in ints.iter().enumerate() {
-        if !x.is_zero() {
-            let q = x / &g;
-            row.push((at, i64::try_from(&q).map_err(|_| (at, q.bits()))?));
-        }
-    }
-    Ok(row)
+    ints.iter().enumerate().filter(|(_, x)| !x.is_zero()).map(|(at, x)| (at, x / &g)).collect()
 }
 
 /// THE CAPACITY: the rank of the unital algebra the actions generate, the
 /// products closed on a keyed worklist, one read of the budget per product.
 /// A refusal carries what it could not hold: the product the budget ran out
-/// at, the entry that did not fit, the elimination that overflowed.
+/// at. The elimination is exact at any size (STD1), so no entry and no
+/// elimination is refused for its size.
 fn capacity(
     actions: &[Vec<Vec<Q>>],
     budget: &mut crate::physics::Budget,
 ) -> Result<(usize, Vec<crate::core::lattice::SparseRow>), CapacityRefused> {
     let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
     let d = first.len();
-    let width = d * d;
-    let overflow = |product: usize| move |(entry, bits)| CapacityRefused::Overflow { product, entry, bits };
-    let mut rows = vec![row_of(&cga::identity_matrix(d)).map_err(overflow(0))?];
+    let mut rows = vec![row_of(&cga::identity_matrix(d))];
     let mut rank = 1usize;
     let mut product = 0usize;
     let mut work: Vec<Vec<Vec<Q>>> = vec![cga::identity_matrix(d)];
@@ -494,8 +482,8 @@ fn capacity(
                 return Err(CapacityRefused::Spent { product });
             }
             let p = cga::matrix_mul(&b, a);
-            rows.push(row_of(&p).map_err(overflow(product))?);
-            let r = crate::core::lattice::sparse_rank(&rows, width).ok_or(CapacityRefused::Elimination { product })?;
+            rows.push(row_of(&p));
+            let r = crate::core::lattice::sparse_rank(&rows);
             match r > rank {
                 true => {
                     rank = r;
@@ -512,13 +500,13 @@ fn capacity(
 }
 
 /// A matrix's row as the capacity writes it, for the bracket reading.
-pub(crate) fn algebra_row(m: &[Vec<Q>]) -> Option<crate::core::lattice::SparseRow> {
-    row_of(m).ok()
+pub(crate) fn algebra_row(m: &[Vec<Q>]) -> crate::core::lattice::SparseRow {
+    row_of(m)
 }
 
 /// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS MATRIX: its basis
 /// rows and the matrix's row do not raise the rank. `None` where the cell's
-/// algebra did not read, the widths differ, or the row does not fit.
+/// algebra did not read or the widths differ.
 pub(crate) fn algebra_contains(cell: &CellAlgebra, m: &[Vec<Q>]) -> Option<bool> {
     let basis = cell.basis.as_ref()?;
     let [first, ..] = cell.actions.as_deref()? else { return None };
@@ -527,8 +515,8 @@ pub(crate) fn algebra_contains(cell: &CellAlgebra, m: &[Vec<Q>]) -> Option<bool>
         return None;
     }
     let mut rows = basis.clone();
-    rows.push(algebra_row(m)?);
-    Some(crate::core::lattice::sparse_rank(&rows, width)? == basis.len())
+    rows.push(algebra_row(m));
+    Some(crate::core::lattice::sparse_rank(&rows) == basis.len())
 }
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.

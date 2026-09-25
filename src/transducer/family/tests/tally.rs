@@ -52,8 +52,6 @@ struct GradeRow {
     modes_unread: [u64; 4],
     capacity_refused: [u64; 2],
     capacity_spent: Vec<usize>,
-    capacity_overflow: Vec<(usize, usize, u64)>,
-    capacity_elimination: Vec<usize>,
     zero_meets: u64,
     nuclei_unread: u64,
     unordered: u64,
@@ -171,10 +169,6 @@ impl CellTally {
                 Some(CapacityRefused::NoneRead) => row.capacity_refused[0] += 1,
                 Some(CapacityRefused::NotVersor { .. }) => row.capacity_refused[1] += 1,
                 Some(CapacityRefused::Spent { product }) => row.capacity_spent.push(product),
-                Some(CapacityRefused::Overflow { product, entry, bits }) => {
-                    row.capacity_overflow.push((product, entry, bits))
-                }
-                Some(CapacityRefused::Elimination { product }) => row.capacity_elimination.push(product),
                 None => {}
             }
             row.zero_meets += u64::from(r.zero_meet);
@@ -248,11 +242,11 @@ impl CellTally {
                 let cu = r.circuits_unread;
                 let (mu, ou) = (r.modes_unread, r.orbit_unread);
                 format!(
-                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {} | refused: circuits unread cone {} no-place {} not-rigid {} unrefracted {} no-face {} two-ways {} coset {} unnamed {} | modes unread not-versor {} irrational {} defective {} spent {} | capacity none-read {} not-versor {} spent at {:?} overflow (product, entry, bits) {:?} elimination at {:?} | zero meets {} | nuclei unread {} | modes of no admitted order {} | orbit no-reflection {} no-versor {} no-ray {} carry-refused {} carried-no-ray {} | CS2 held constructors {:?} rank of cap {} above {}",
+                    "{head} | enclosures flat {} round {}: bodies inside {} on {} apart {} wraps {} unread {}, nested {} | refused: circuits unread cone {} no-place {} not-rigid {} unrefracted {} no-face {} two-ways {} coset {} unnamed {} | modes unread not-versor {} irrational {} defective {} spent {} | capacity none-read {} not-versor {} spent at {:?} | zero meets {} | nuclei unread {} | modes of no admitted order {} | orbit no-reflection {} no-versor {} no-ray {} carry-refused {} carried-no-ray {} | CS2 held constructors {:?} rank of cap {} above {}",
                     en[0], en[1], en[2], en[3], en[4], en[5], en[6], en[7],
                     cu[0], cu[1], cu[2], cu[3], cu[4], cu[5], cu[6], cu[7],
                     mu[0], mu[1], mu[2], mu[3],
-                    r.capacity_refused[0], r.capacity_refused[1], r.capacity_spent, r.capacity_overflow, r.capacity_elimination,
+                    r.capacity_refused[0], r.capacity_refused[1], r.capacity_spent,
                     r.zero_meets, r.nuclei_unread, r.unordered,
                     ou[0], ou[1], ou[2], ou[3], ou[4],
                     r.held, self.cap, r.above_cap

@@ -243,3 +243,17 @@ fn a_spent_capacity_names_the_product_it_ran_out_at() {
     let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn)]), &[], &mut starved);
     assert_eq!(cell.capacity, Err(CapacityRefused::Spent { product: 1 }), "spent at the first product");
 }
+
+/// STD1 (PH1) — THE EXACT ELIMINATION AT ANY SIZE: entries of 200 bits, far
+/// past `i128`, reduce exactly. Two rows that are multiples of each other are
+/// rank 1; a third independent one makes 2. Nothing is refused for its size.
+#[test]
+fn the_exact_elimination_reads_entries_of_any_size() {
+    use num_bigint::BigInt;
+    let big = BigInt::from(1) << 200usize;
+    let a = vec![(0usize, big.clone()), (3, big.clone() + 1)];
+    let twice = vec![(0usize, &big * 2), (3, (&big + 1) * 2)];
+    let other = vec![(1usize, big.clone() * 3), (3, BigInt::from(7))];
+    assert_eq!(crate::core::lattice::sparse_rank(&[a.clone(), twice.clone()]), 1, "one row and its double");
+    assert_eq!(crate::core::lattice::sparse_rank(&[a, twice, other]), 2, "and an independent third");
+}
