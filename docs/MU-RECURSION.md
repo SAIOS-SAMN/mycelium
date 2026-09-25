@@ -17451,6 +17451,49 @@ own. POSED TO THE OPERATOR (b): whether lift's two axioms are A.16 with
 the commutator law and drag's A.16 with A.8, as (2) pairs them, or two
 others of the register.
 
+**(4′) How the perturbed holonomy is composed (ruled 2026-09-25 on the
+implementor's shape question; "times the drag terms, times the lift
+terms" in (4) was loose and is replaced).** The terms `B_∥`, `B_⊥` are
+bivectors and are READINGS; nothing turns them into versors. The
+neighbour already has its versor — its holonomy — so the composite is
+made of motors the engine holds, by the register's own theorems:
+
+- **Per pair, T1 and C1(a).** For a circuit `o` and a neighbour `n` in
+  one anastomosis, both based at one basepoint by their lassos (R5, T2),
+  the PAIR COMPOSITE is `H(o, n) = H_n⁻¹ · H_o`, a versor product, exact.
+  It is identity (one ray) exactly when the two routes agree; where they
+  enclose 2-cells of the anastomosis T2 gives it as the ordered product of
+  the lasso-conjugated curvatures. That is the perturbed holonomy of `o`
+  against `n`, and LIFT and DRAG are its readings: the split of `n`'s mode
+  blades against `B_o` (2), the drag read as the change of `o`'s turn in
+  its own plane (`Turn` of the composite against `Turn` of `H_o`), the
+  lift as the commutator `[B_o, B_n] ≠ 0`, the plane tilted.
+- **The summation over all neighbours is the algebra, never one product.**
+  A product over several neighbours needs an order, and no order is
+  given: the orbit algebra held by its generators, its rank the capacity,
+  IS the combination (78.11, 78.44(3)); the `n` pair composites give every
+  pair by C1(a) (`H(i, j) = H_j⁻¹ H_i`) with no pairwise walk.
+- **Refused:** a Cayley transform of each term (a versor invented from a
+  reading, and the grouping a choice — 77(1)); factoring a neighbour's
+  ray as `Ω_∥ · Ω_⊥` (no such factorisation exists in general, and where
+  it does it re-derives what the pair composite already holds); lift and
+  drag printed with no reader in the mind (77.1: costume).
+- **Where the mind consumes it.** 79.3's classification of a circuit by
+  how its routes disagree already names the reader: a circuit whose own
+  holonomy reads trivial (the `vacuum` of the cycles line) and whose pair
+  composite with a neighbour does not is CURVED — certified content, found
+  by comparison — and is filed as torsion under the composite's class,
+  never cauterized as vacuum; a pair composite that is the identity is
+  FLAT, the corollary holding there. The pivot's trial under pressure
+  (78.7, law 10) reads the pair composites of the orbit it discharges: a
+  discharge that leaves a neighbour's pair composite non-trivial has not
+  closed the cell. Every composite is checked against the register's laws
+  (conservation per lane, A.8, A.16, the commutator law) and a violation
+  is a counted refusal with its content. THE READING that accepts (iii):
+  on the corpus, circuits read `vacuum` before and filed CURVED after, by
+  pair, and pivots decided otherwise because a pair composite did not
+  close.
+
 **(5) AT1 (i)+(ii)'s acceptance, re-stated; "lift" named apart.** The
 coordinator's acceptance clause read "every circuit of the old basis
 present as its per-frame lifts", using LIFT in the sheaf's sense — a
