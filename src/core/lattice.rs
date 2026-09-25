@@ -13,40 +13,37 @@
 /// THE HERMITE FORM AND ITS TRANSFORM: the reduced rows `H`, and `U` giving
 /// each of them as an integer combination of the input rows. `U` is the
 /// factorisation — an HNF without it decides membership and cannot say what
-/// the word was made of.
-pub type Hnf<const N: usize> = (Vec<[i128; N]>, Vec<Vec<i128>>);
+/// the word was made of. Exact integers of any size (STD1).
+pub type Hnf<const N: usize> = (Vec<[num_bigint::BigInt; N]>, Vec<Vec<num_bigint::BigInt>>);
 
 /// Rank of the lattice spanned by integer rows: fraction-free Gaussian
-/// elimination (Bareiss) over i128, exact. `None` when a multiply, subtract
-/// or divide overflows; the caller refuses.
-pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> Option<u32> {
-    let mut m: Vec<[i128; N]> = rows
-        .iter()
-        .map(|r| std::array::from_fn(|i| r[i] as i128))
-        .collect();
+/// elimination (Bareiss) over exact integers of any size — the division by
+/// the previous pivot is exact by Bareiss's theorem, so nothing overflows
+/// and nothing is refused for its size (STD1).
+pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> u32 {
+    use num_bigint::BigInt;
+    use num_traits::{One, Zero};
+    let mut m: Vec<[BigInt; N]> = rows.iter().map(|r| std::array::from_fn(|i| BigInt::from(r[i]))).collect();
     let mut rank = 0usize;
-    let mut prev = 1i128;
+    let mut prev = BigInt::one();
     for col in 0..N {
-        let Some(piv) = (rank..m.len()).find(|&r| m[r][col] != 0) else {
+        let Some(piv) = (rank..m.len()).find(|&r| !m[r][col].is_zero()) else {
             continue;
         };
         m.swap(rank, piv);
-        let p = m[rank][col];
+        let p = m[rank][col].clone();
         let (head, tail) = m.split_at_mut(rank + 1);
         let pivot = &head[rank];
         for row in tail.iter_mut() {
-            let f = row[col];
-            for (x, &pv) in row.iter_mut().zip(pivot.iter()) {
-                let left = x.checked_mul(p)?;
-                let right = pv.checked_mul(f)?;
-                let diff = left.checked_sub(right)?;
-                *x = diff.checked_div(prev)?;
+            let f = row[col].clone();
+            for (x, pv) in row.iter_mut().zip(pivot.iter()) {
+                *x = (&*x * &p - pv * &f) / &prev;
             }
         }
         prev = p;
         rank += 1;
     }
-    Some(rank as u32)
+    rank as u32
 }
 
 /// A SPARSE INTEGER ROW: its non-zero entries as `(column, value)`, columns
@@ -140,8 +137,8 @@ pub fn sparse_rank(rows: &[SparseRow]) -> usize {
 
 /// Row-style Hermite normal form over ℤ with the transform that produced
 /// it: `U · G = H`, `U` unimodular, `H` in row echelon with positive
-/// pivots. Exact over `i128` throughout; `None` on any overflow, so a
-/// lattice too large to reduce is refused rather than wrapped (rule 11).
+/// pivots. Exact integers of any size throughout (STD1): nothing overflows
+/// and nothing is refused for its size.
 ///
 /// A12 needs the transform, not only the form: membership of `r` in the
 /// lattice is decided by reducing against `H`, and the coefficients of that
@@ -149,56 +146,64 @@ pub fn sparse_rank(rows: &[SparseRow]) -> usize {
 /// generators — which is the factorisation, the thing comprehension is
 /// looking for. An HNF without `U` decides membership and cannot say what
 /// the word was made of.
-pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Option<Hnf<N>> {
-    let mut h: Vec<[i128; N]> = rows
-        .iter()
-        .map(|r| std::array::from_fn(|i| r[i] as i128))
-        .collect();
+pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Hnf<N> {
+    use num_bigint::BigInt;
+    use num_traits::{Signed, Zero};
+    let mut h: Vec<[BigInt; N]> = rows.iter().map(|r| std::array::from_fn(|i| BigInt::from(r[i]))).collect();
     // u[i] expresses h[i] as an integer combination of the input rows.
-    let mut u: Vec<Vec<i128>> = (0..h.len())
-        .map(|i| (0..h.len()).map(|j| i128::from(i == j)).collect())
-        .collect();
+    let mut u: Vec<Vec<BigInt>> =
+        (0..h.len()).map(|i| (0..h.len()).map(|j| BigInt::from(u8::from(i == j))).collect()).collect();
     let mut rank = 0usize;
     for col in 0..N {
         // Euclid on the column: repeatedly reduce the lower rows against
         // the pivot until one entry is left. No division that is not exact,
         // and no choice of pivot by size — the loop terminates because
         // every step strictly reduces a non-negative remainder.
-        while let Some(piv) = (rank..h.len()).find(|&r| h[r][col] != 0) {
+        while let Some(piv) = (rank..h.len()).find(|&r| !h[r][col].is_zero()) {
             h.swap(rank, piv);
             u.swap(rank, piv);
             let mut done = true;
-            let pivot = h[rank];
+            let pivot = h[rank].clone();
+            let upivot = u[rank].clone();
             for r in (rank + 1)..h.len() {
-                if h[r][col] == 0 {
+                if h[r][col].is_zero() {
                     continue;
                 }
-                let q = h[r][col].checked_div(h[rank][col])?;
-                if q != 0 {
-                    for (x, &pv) in h[r].iter_mut().zip(pivot.iter()) {
-                        let d = pv.checked_mul(q)?;
-                        *x = x.checked_sub(d)?;
+                // Truncating toward zero, as the i128 form did: each step
+                // strictly shrinks the lower entry's magnitude.
+                let q = &h[r][col] / &pivot[col];
+                if !q.is_zero() {
+                    for (x, pv) in h[r].iter_mut().zip(pivot.iter()) {
+                        *x -= pv * &q;
                     }
-                    for c in 0..u[rank].len() {
-                        let d = u[rank][c].checked_mul(q)?;
-                        u[r][c] = u[r][c].checked_sub(d)?;
+                    for (x, pv) in u[r].iter_mut().zip(upivot.iter()) {
+                        *x -= pv * &q;
                     }
                 }
-                if h[r][col] != 0 {
+                if !h[r][col].is_zero() {
                     done = false;
                 }
             }
             if done {
                 break;
             }
+            // A remainder stands below: the FIRST such row by position
+            // becomes the pivot. Its entry is a remainder of the old pivot,
+            // strictly smaller in magnitude, so Euclid terminates — and no
+            // pivot is chosen by its size. Re-picking the old pivot here
+            // divided by it again for a zero quotient and never stopped.
+            if let Some(next) = ((rank + 1)..h.len()).find(|&r| !h[r][col].is_zero()) {
+                h.swap(rank, next);
+                u.swap(rank, next);
+            }
         }
-        if rank < h.len() && h[rank][col] != 0 {
-            if h[rank][col] < 0 {
+        if rank < h.len() && !h[rank][col].is_zero() {
+            if h[rank][col].is_negative() {
                 for x in h[rank].iter_mut() {
-                    *x = x.checked_neg()?;
+                    *x = -&*x;
                 }
-                for c in 0..u[rank].len() {
-                    u[rank][c] = u[rank][c].checked_neg()?;
+                for x in u[rank].iter_mut() {
+                    *x = -&*x;
                 }
             }
             rank += 1;
@@ -206,7 +211,7 @@ pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Option<Hnf<N>> {
     }
     h.truncate(rank);
     u.truncate(rank);
-    Some((h, u))
+    (h, u)
 }
 
 /// Reduce `r` against an HNF basis. Returns the integer coefficients over
@@ -214,35 +219,34 @@ pub fn hnf_with_transform<const N: usize>(rows: &[[i64; N]]) -> Option<Hnf<N>> {
 /// lattice iff the residue is the zero vector, and the residue is unique
 /// for a given `H` — which is what makes a remainder a coordinate and not a
 /// choice (A12 step 5: "the HNF residue is unique … the exact boundary
-/// demand, with no choice in it").
+/// demand, with no choice in it"). Exact at any size (STD1).
 pub fn reduce_against<const N: usize>(
-    h: &[[i128; N]],
+    h: &[[num_bigint::BigInt; N]],
     r: &[i64; N],
-) -> Option<(Vec<i128>, [i128; N])> {
-    let mut res: [i128; N] = std::array::from_fn(|i| r[i] as i128);
-    let mut coeffs = vec![0i128; h.len()];
+) -> (Vec<num_bigint::BigInt>, [num_bigint::BigInt; N]) {
+    use num_bigint::BigInt;
+    use num_integer::Integer;
+    use num_traits::Zero;
+    let mut res: [BigInt; N] = std::array::from_fn(|i| BigInt::from(r[i]));
+    let mut coeffs = vec![BigInt::zero(); h.len()];
     for (i, row) in h.iter().enumerate() {
-        let Some(p) = (0..N).find(|&c| row[c] != 0) else {
+        let Some(p) = (0..N).find(|&c| !row[c].is_zero()) else {
             continue;
         };
-        if res[p] == 0 {
+        if res[p].is_zero() {
             continue;
         }
-        // EUCLIDEAN, NOT TRUNCATING. `checked_div` rounds toward zero, so it
-        // leaves a residue in `(−|d|, |d|)`: two points of ONE coset reduce
-        // to two representatives, and the uniqueness the doc above claims —
-        // A12 step 5's "the exact boundary demand, with no choice in it" —
-        // is false below the axis. `div_euclid` leaves `rem_euclid`, which
-        // is in `[0, |d|)` by construction and is the coset representative.
-        let q = res[p].checked_div_euclid(row[p])?;
-        if q == 0 {
+        // EUCLIDEAN, NOT TRUNCATING: the HNF's pivots are positive, so the
+        // floor quotient leaves a remainder in `[0, d)` — the coset
+        // representative, unique below the axis as above it.
+        let q = res[p].div_floor(&row[p]);
+        if q.is_zero() {
             continue;
+        }
+        for c in 0..N {
+            res[c] -= &row[c] * &q;
         }
         coeffs[i] = q;
-        for c in 0..N {
-            let d = row[c].checked_mul(q)?;
-            res[c] = res[c].checked_sub(d)?;
-        }
     }
-    Some((coeffs, res))
+    (coeffs, res)
 }

@@ -257,3 +257,21 @@ fn the_exact_elimination_reads_entries_of_any_size() {
     assert_eq!(crate::core::lattice::sparse_rank(&[a.clone(), twice.clone()]), 1, "one row and its double");
     assert_eq!(crate::core::lattice::sparse_rank(&[a, twice, other]), 2, "and an independent third");
 }
+
+/// STD1 — THE DENSE RANK AND THE HERMITE FORM AT ANY SIZE: a 4×4 of
+/// `i64::MAX` entries on the diagonal carries Bareiss's intermediates to
+/// ~2²⁵², past `i128`, where the old form refused; exact now, full rank, and
+/// a repeated row drops it. The Hermite form reduces a lattice point to a zero
+/// residue through its transform.
+#[test]
+fn the_dense_rank_and_the_hermite_form_read_any_size() {
+    use num_traits::Zero;
+    let m = i64::MAX;
+    let rows = [[m, 1, 0, 0], [1, m, 1, 0], [0, 1, m, 1], [0, 0, 1, m]];
+    assert_eq!(crate::core::lattice::z_rank(&rows), 4, "full rank, read exactly");
+    let dependent = [rows[0], rows[1], rows[0], rows[3]];
+    assert_eq!(crate::core::lattice::z_rank(&dependent), 3, "a repeated row drops it");
+    let (h, _) = crate::core::lattice::hnf_with_transform(&rows);
+    let (_, residue) = crate::core::lattice::reduce_against(&h, &rows[2]);
+    assert!(residue.iter().all(|x| x.is_zero()), "a generator is in its own lattice");
+}

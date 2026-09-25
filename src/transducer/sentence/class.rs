@@ -946,7 +946,7 @@ pub fn rank_of_rows(rows: &[OrbitRow]) -> Option<Rank> {
     }
     Some(Rank {
         torsion: torsion.len() as u32,
-        free: z_rank(&free)?,
+        free: z_rank(&free),
         offplane: offplane.len() as u32,
         axes: axes.len() as u32,
     })

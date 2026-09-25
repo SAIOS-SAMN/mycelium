@@ -72,24 +72,27 @@ fn generators(basis: &[PlaneForm]) -> (Vec<[i64; CAYLEY_ALPHABET_LEN]>, Vec<Gen>
 
 /// The tape a set of generator exponents names, in basis indices. A
 /// relator contributes nothing to spend: it is a fact about the alphabet,
-/// not a word anyone holds.
-fn tape_of(coeffs: &[i128], from: &[Gen]) -> Vec<(usize, i64)> {
+/// not a word anyone holds. The lattice is exact at any size (STD1); the
+/// tape writes an exponent as `i64`, and one past it is refused (`None`) —
+/// never truncated, as the `as` cast that stood here silently did.
+fn tape_of(coeffs: &[num_bigint::BigInt], from: &[Gen]) -> Option<Vec<(usize, i64)>> {
+    use num_traits::Zero;
     let mut out = Vec::new();
     for (c, g) in coeffs.iter().zip(from) {
-        if *c == 0 {
+        if c.is_zero() {
             continue;
         }
-        let e = *c as i64;
+        let e = i64::try_from(c).ok()?;
         match g {
             Gen::One(i) => out.push((*i, e)),
             Gen::Diff(i, j) => {
                 out.push((*i, e));
-                out.push((*j, -e));
+                out.push((*j, e.checked_neg()?));
             }
             Gen::Relator => {}
         }
     }
-    out
+    Some(out)
 }
 
 /// A12 on the sensor plane. `g` and every basis word have plane forms
@@ -97,9 +100,7 @@ fn tape_of(coeffs: &[i128], from: &[Gen]) -> Vec<(usize, i64)> {
 /// residue of a failure is canonical.
 pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     let (rows, from) = generators(basis);
-    let Some((h, u)) = crate::core::lattice::hnf_with_transform(&rows) else {
-        return Factored::Unmeasured;
-    };
+    let (h, u) = crate::core::lattice::hnf_with_transform(&rows);
     // s = 1: the target is odd, so one odd basis word is divided out first
     // and the rest is an even membership question. The least such index is
     // taken — an ordering over the basis, canonical on every node, never a
@@ -114,30 +115,37 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     } else {
         (g.rot, None)
     };
-    let Some((coeffs, residue)) = crate::core::lattice::reduce_against(&h, &target) else {
-        return Factored::Unmeasured;
-    };
+    let (coeffs, residue) = crate::core::lattice::reduce_against(&h, &target);
     // Pull the reduction back through U to exponents over the ORIGINAL
     // generators: H's rows are combinations of them, and that is what the
     // mind actually holds.
-    let mut over_gens = vec![0i128; rows.len()];
+    use num_traits::Zero;
+    let mut over_gens = vec![num_bigint::BigInt::zero(); rows.len()];
     for (i, c) in coeffs.iter().enumerate() {
-        if *c == 0 {
+        if c.is_zero() {
             continue;
         }
         for (j, x) in u[i].iter().enumerate() {
             over_gens[j] += c * x;
         }
     }
-    let mut tape = tape_of(&over_gens, &from);
+    // An exponent or a residue coordinate past the tape's `i64` is not a
+    // tape this mind can write: unmeasured, by name, never truncated.
+    let Some(mut tape) = tape_of(&over_gens, &from) else {
+        return Factored::Unmeasured;
+    };
     if let Some(i) = odd_word {
         tape.insert(0, (i, 1));
     }
-    if residue.iter().all(|&x| x == 0) {
+    if residue.iter().all(|x| x.is_zero()) {
         return Factored::Understood(tape);
     }
     // The residue is even by construction: the odd part was divided out.
-    let rem = PlaneForm { rot: std::array::from_fn(|k| residue[k] as i64), ..Default::default() };
+    let rot: Option<Vec<i64>> = residue.iter().map(|x| i64::try_from(x).ok()).collect();
+    let Some(Ok(rot)) = rot.map(<[i64; CAYLEY_ALPHABET_LEN]>::try_from) else {
+        return Factored::Unmeasured;
+    };
+    let rem = PlaneForm { rot, ..Default::default() };
     Factored::Novel { remainder: rem, understood: tape }
 }
 
