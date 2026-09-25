@@ -97,16 +97,17 @@ impl CycleType {
     fn to_bytes(&self, buf: &mut Vec<u8>) {
         match self {
             CycleType::Identity => buf.push(0),
+            // The count by its own coordinate (STD1 3c-2, ruled (d)); a
+            // `Type` is never empty, so its count never spells Identity's 0.
             CycleType::Type(lens) => {
-                buf.push(lens.len() as u8);
+                crate::transducer::address::put_key_count(buf, lens.len());
                 buf.extend_from_slice(lens);
             }
         }
     }
 
     fn from_bytes(b: &[u8], pos: &mut usize) -> Option<CycleType> {
-        let n = *b.get(*pos)? as usize;
-        *pos += 1;
+        let n = crate::transducer::address::take_key_count(b, pos)?;
         if n == 0 {
             return Some(CycleType::Identity);
         }

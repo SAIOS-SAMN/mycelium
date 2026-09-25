@@ -565,10 +565,8 @@ pub fn generator_key(
 ) -> Vec<u8> {
     let (f, v) = (form.as_bytes(), vertex.as_bytes());
     let mut k = Vec::with_capacity(f.len() + v.len() + 8);
-    k.extend_from_slice(&(f.len() as u32).to_le_bytes());
-    k.extend_from_slice(f);
-    k.extend_from_slice(&(v.len() as u32).to_le_bytes());
-    k.extend_from_slice(v);
+    crate::transducer::address::put_key_bytes(&mut k, f);
+    crate::transducer::address::put_key_bytes(&mut k, v);
     k
 }
 

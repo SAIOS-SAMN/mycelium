@@ -54,7 +54,7 @@ pub(crate) fn hue_section_key_of(
     // Built ON the prefix, so the stratum a reader reads and the key a writer
     // files under cannot drift apart (law 12: one fact, one construction).
     let mut buf = hue_class_prefix_of(rotor)?;
-    buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, gauge.len());
     for &(a, b) in gauge {
         buf.push(a);
         buf.push(b);
@@ -68,7 +68,7 @@ pub(crate) fn vertex_transport_key_of(
 ) -> Option<crate::transducer::address::Address> {
     let mut buf = vec![crate::transducer::address::TAG_WORD, ShellKind::Whole.as_u8()];
     rotor.put_class_coordinates(&mut buf)?;
-    buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, gauge.len());
     for &(b, a) in gauge {
         buf.push(b);
         buf.push(a);

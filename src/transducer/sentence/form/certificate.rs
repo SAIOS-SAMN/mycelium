@@ -59,7 +59,7 @@ impl PivotBy {
             }
             PivotBy::Hue { gauge, .. } => {
                 let mut buf = vec![2u8];
-                buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                crate::transducer::address::put_key_count(&mut buf, gauge.len());
                 for &(a, b) in gauge {
                     buf.push(a);
                     buf.push(b);
@@ -130,7 +130,7 @@ impl PivotCertificate {
             PivotBy::Hue { face, gauge } => {
                 buf.push(2);
                 buf.extend_from_slice(&face.to_le_bytes());
-                buf.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                crate::transducer::address::put_key_count(&mut buf, gauge.len());
                 for &(a, b) in gauge {
                     buf.push(a);
                     buf.push(b);

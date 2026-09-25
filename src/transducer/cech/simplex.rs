@@ -63,7 +63,7 @@ pub(crate) fn nonzero(v: &[u64; 4]) -> bool {
 /// The key of a simplex: its sorted vertices, written out (A21).
 pub(crate) fn simplex_key(verts: &[Vec<u8>]) -> crate::transducer::address::Address {
     let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
-    buf.extend_from_slice(&(verts.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, verts.len());
     for v in verts {
         crate::transducer::address::put_key_bytes(&mut buf, v);
     }

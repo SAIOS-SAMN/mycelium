@@ -609,17 +609,13 @@ pub(crate) enum ContactEdge {
 /// the gathered contact itself.
 #[cfg(test)]
 pub(crate) fn read_body_pair_key(k: &[u8]) -> Option<(coord::Piece, coord::Piece)> {
-    // The first address's extent is read off its own layout — its tag, its
-    // kind, its count of sites, and each site's own `n` — never searched
-    // for: the second address starts where the first ends.
-    let mut pos = 2usize;
-    let count = u32::from_le_bytes(k.get(pos..pos + 4)?.try_into().ok()?);
-    pos += 4;
-    for _ in 0..count {
-        crate::transducer::base::Site::take(k, &mut pos)?;
-    }
-    let (a, b) = k.split_at(pos);
-    Some((coord::Piece::decode(a).ok()?, coord::Piece::decode(b).ok()?))
+    // The first address's extent is read off its own layout by the piece's
+    // one reader, never searched for and never restated here: the second
+    // address starts where the first ends, and nothing follows it.
+    let mut pos = 0usize;
+    let a = coord::Piece::take(k, &mut pos)?;
+    let b = coord::Piece::take(k, &mut pos)?;
+    (pos == k.len()).then_some((a, b))
 }
 
 /// A CONTACT BETWEEN TWO BODIES, AS THE CORNER PASS GATHERS IT: the shared

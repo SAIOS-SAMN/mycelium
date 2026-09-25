@@ -80,7 +80,7 @@ pub(crate) fn deformation_key(
     let mut k = Vec::with_capacity((input.len() + image.len()) * 29 + 40);
     for (tag, laminae) in [(0u8, input), (1u8, image)] {
         k.push(tag);
-        k.extend_from_slice(&(laminae.len() as u32).to_le_bytes());
+        crate::transducer::address::put_key_count(&mut k, laminae.len());
         for l in laminae {
             l.site.put(&mut k);
             k.push(l.hue);

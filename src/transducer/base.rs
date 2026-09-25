@@ -109,7 +109,9 @@ impl Site {
     /// fixed-width site key was written before `n` became data: within one
     /// `n`, sites keep the order they had.
     pub fn put(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.axes.len() as u32).to_le_bytes());
+        // `n` by its own coordinate (STD1 3c-2, ruled (d)): a prefix still,
+        // and total at every `n`.
+        crate::transducer::address::put_key_count(out, self.axes.len());
         for a in &self.axes {
             out.extend_from_slice(&a.to_le_bytes());
         }
@@ -125,8 +127,7 @@ impl Site {
     /// The inverse of [`Site::put`]. `None` where the bytes do not hold a
     /// count and that many coordinates.
     pub fn take(b: &[u8], p: &mut usize) -> Option<Site> {
-        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
-        *p += 4;
+        let n = crate::transducer::address::take_key_count(b, p)?;
         let end = p.checked_add(n.checked_mul(8)?)?;
         let body = b.get(*p..end)?;
         let axes = body

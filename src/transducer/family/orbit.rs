@@ -144,7 +144,7 @@ pub fn orbit_at(
             None => 4,
         };
         let mut buf = Vec::with_capacity(reserve);
-        buf.extend_from_slice(&(painted.len() as u32).to_le_bytes());
+        crate::transducer::address::put_key_count(&mut buf, painted.len());
         for &(r, c, h) in &painted {
             buf.extend_from_slice(&r.to_le_bytes());
             buf.extend_from_slice(&c.to_le_bytes());

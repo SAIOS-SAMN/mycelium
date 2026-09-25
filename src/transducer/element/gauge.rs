@@ -202,7 +202,7 @@ pub fn hue_pair_of(key: &[u8]) -> Option<(u8, u8)> {
 /// Canonical key of a whole assignment (the exact list of pairs).
 pub fn assignment_key(asg: &[(u8, u8)]) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_ASSIGN];
-    buf.extend_from_slice(&(asg.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, asg.len());
     for &(b, a) in asg {
         buf.push(b);
         buf.push(a);

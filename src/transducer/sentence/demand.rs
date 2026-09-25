@@ -158,7 +158,7 @@ impl Demand {
             Demand::Creation => {}
             Demand::TopologicalDeformation { image, axes } => {
                 image.put_canonical(out);
-                out.extend_from_slice(&(axes.len() as u16).to_le_bytes());
+                crate::transducer::address::put_key_count(out, axes.len());
                 for a in axes {
                     out.extend_from_slice(&a.to_le_bytes());
                 }
@@ -211,8 +211,7 @@ impl Demand {
             3 => Demand::Creation,
             4 => {
                 let image = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
-                let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
-                *pos += 2;
+                let n = crate::transducer::address::take_key_count(b, pos)?;
                 if n > b.len().checked_sub(*pos)? / 2 {
                     return None;
                 }

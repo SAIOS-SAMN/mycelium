@@ -825,15 +825,14 @@ pub mod coord {
     /// producer and cannot drift between the coordinates that share it (law
     /// 12): the count, then each site with its `n` (71.2(1)).
     fn put_support(buf: &mut Vec<u8>, support: &[crate::transducer::base::Site]) {
-        buf.extend_from_slice(&(support.len() as u32).to_le_bytes());
+        crate::transducer::address::put_key_count(buf, support.len());
         for s in support {
             s.put(buf);
         }
     }
 
     fn take_support(bytes: &[u8], pos: &mut usize) -> Option<Vec<crate::transducer::base::Site>> {
-        let n = u32::from_le_bytes(bytes.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
+        let n = crate::transducer::address::take_key_count(bytes, pos)?;
         let mut out = Vec::with_capacity(n.min(bytes.len()));
         for _ in 0..n {
             out.push(crate::transducer::base::Site::take(bytes, pos)?);
@@ -848,7 +847,9 @@ pub mod coord {
             put_support(buf, &self.support);
         }
 
-        fn take(bytes: &[u8], pos: &mut usize) -> Option<Piece> {
+        /// The one reader of a piece's layout; a key holding several reads
+        /// each through this, the next starting where the last ended.
+        pub(crate) fn take(bytes: &[u8], pos: &mut usize) -> Option<Piece> {
             match bytes.get(*pos) {
                 Some(&t) if t == a::TAG_PIECE => *pos += 1,
                 _ => return None,
@@ -909,7 +910,7 @@ pub mod coord {
         fn put(&self, buf: &mut Vec<u8>) {
             buf.push(a::TAG_CARRIAGE);
             for side in [&self.domain, &self.codomain] {
-                buf.extend_from_slice(&(side.len() as u32).to_le_bytes());
+                crate::transducer::address::put_key_count(buf, side.len());
                 for p in side {
                     p.put(buf);
                 }
@@ -922,10 +923,8 @@ pub mod coord {
                 _ => return None,
             }
             let mut side = || -> Option<Vec<Piece>> {
-                let n =
-                    u32::from_le_bytes(bytes.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-                *pos += 4;
-                let mut out = Vec::with_capacity(n);
+                let n = crate::transducer::address::take_key_count(bytes, pos)?;
+                let mut out = Vec::with_capacity(n.min(bytes.len()));
                 for _ in 0..n {
                     out.push(Piece::take(bytes, pos)?);
                 }
