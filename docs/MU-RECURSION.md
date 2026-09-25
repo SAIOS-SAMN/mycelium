@@ -16813,6 +16813,43 @@ the circuits by composition, the receipts and certificates that named
 slots naming coordinates, the searches and the forest retired with the
 slots.
 
+**(2′) The atlas as the operator defines it (2026-09-25, the operator's
+word, verbatim): "an atlas should be a composite sketch of algorithms
+on how to compact a finite set of addresses that expands on pivot
+machinery from a set coordinate list."** Three consequences bind AT1
+and every audit of it. (a) THE ATLAS IS NOT A DATA STRUCTURE. What is
+HELD is the coordinate list — the address: the vertices' class keys,
+their charts and frames, the overlaps' motors as rays — and the charts,
+the overlaps, the circuits, the holonomies, the fusions are DERIVED
+from that list by algorithms. The algorithms are the pivot machinery:
+every transition is the versor a pivot builds from the coordinates
+(78.39: a dimension is opened by an algorithm that is the versor on the
+pivot machinery), every circuit is their composition, every fusion is
+an identification of coordinates. A carrier that STORES what the list
+derives — faces as records beside the coordinates that determine them,
+circuits as lists, a holonomy beside the transitions it composes — is
+the table of (1) re-keyed, and a re-keyed table is the spreadsheet the
+operator named (law 12: one carrier, the derivable re-derived). (b) ITS
+PURPOSE IS COMPACTION of a finite set of addresses. Two forms whose
+charts overlap by coordinates are one atlas (fusion, AT1 (iv), CV4's
+anastomosis); a word the atlas derives retires (3.8, the geodesic
+language); the MEASURE of the atlas is the address set before and after
+— addresses held over the corpus, distinct charts after fusion, forms
+fusible by overlap, words derivable within the atlas — and a commit
+that re-keys the carrier and leaves the address set where it was has
+built no atlas. (c) "FROM A SET COORDINATE LIST": the list is fixed —
+the A21 schema, 12.6's axes, the class vector's coordinates — and the
+atlas EXPANDS from it by the pivot machinery opening axes (A.6: a
+dimension is paid for, never declared), never by a carrier declaring
+new fields. THE AUDIT GUARD: every AT1 commit is read on three
+questions — what is held against what is derived (nothing held that
+the coordinate list derives); which algorithm composes each thing (a
+transition names the pivot or motor that produced it, a circuit the
+transitions it composes, a fusion the coordinates it identified); and
+whether the address set compacted (the reading of (b) before and after,
+on AT1's line). A commit that answers the first two and not the third
+is a carrier, not the atlas, and is not accepted as AT1.
+
 **(3) The motor: a transition is kinetic.** A transition was a
 conformal versor `D(ρ)·T(t)·R` (72.1c), and every letter of the alphabet
 fixes infinity (78.38) — the similarity restriction. From this ruling a
