@@ -152,26 +152,9 @@ impl Kernel {
         let addr = s.address();
         if let Some(c) = cited {
             if !self.verify_contraction(c, s) {
-                eprintln!(
-                    "  court contraction refused {:02x}{:02x}…: not the contraction of {:02x}{:02x}… at {}",
-                    addr[0],
-                    addr[1],
-                    c.before[0],
-                    c.before[1],
-                    c.at.label()
-                );
                 let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_NOT_CONTRACTION, s);
                 return Ok(self.refuse_sentence(voice, &addr, refusal));
             }
-            eprintln!(
-                "  court contraction verified {:02x}{:02x}… from {:02x}{:02x}… by {} at {}",
-                addr[0],
-                addr[1],
-                c.before[0],
-                c.before[1],
-                c.kind.label(),
-                c.at.label()
-            );
             self.refusals.remove(&c.before);
         }
         let out = match self.hear_sentence(voice, task, s) {
@@ -200,30 +183,8 @@ impl Kernel {
                 &addr,
                 crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, s),
             )),
-            Outcome::Decomposed(_) => {
-                let receipt = self.chain.head_hash();
-                eprintln!(
-                    "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: ratified receipt {}",
-                    addr[0],
-                    addr[1],
-                    voice[0],
-                    voice[1],
-                    self.chain.head_label()
-                );
-                Ok(Adjudication::Ratified { receipt })
-            }
-            _ => {
-                let receipt = self.chain.head_hash();
-                eprintln!(
-                    "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: stood receipt {}",
-                    addr[0],
-                    addr[1],
-                    voice[0],
-                    voice[1],
-                    self.chain.head_label()
-                );
-                Ok(Adjudication::Stood { receipt })
-            }
+            Outcome::Decomposed(_) => Ok(Adjudication::Ratified { receipt: self.chain.head_hash() }),
+            _ => Ok(Adjudication::Stood { receipt: self.chain.head_hash() }),
         }
     }
 
@@ -232,22 +193,12 @@ impl Kernel {
     /// address with the receipt.
     fn refuse_sentence(
         &mut self,
-        voice: [u8; 32],
+        _voice: [u8; 32],
         addr: &Address,
         refusal: crate::court::verdict::Refusal,
     ) -> crate::anastome::dialogue::Adjudication {
         let kind = refusal.kind();
         let receipt = self.chain.head_hash();
-        eprintln!(
-            "  court adjudication {:02x}{:02x}… for {:02x}{:02x}…: refused {} at {} receipt {}",
-            addr[0],
-            addr[1],
-            voice[0],
-            voice[1],
-            kind.label(),
-            refusal.at.label(),
-            self.chain.head_label()
-        );
         self.refusals.insert(
             addr,
             crate::court::verdict::Refused { kind, at: refusal.at.clone(), receipt },
@@ -300,10 +251,6 @@ impl Kernel {
         s: &Element,
     ) -> Result<Outcome, crate::court::verdict::Refusal> {
         if let Err(deficit) = self.reflex_open(voice) {
-            eprintln!(
-                "  court speech deferred voice {:02x}{:02x}… lanes {deficit:?}",
-                voice[0], voice[1]
-            );
             return Ok(Outcome::Deferred(deficit));
         }
         // 21 step 3, 50.2 step 2 — A CITATION THIS COURT HAS NOT RULED IS
@@ -315,11 +262,6 @@ impl Kernel {
         // being early. The sentence is docketed under the address it
         // waits on and heard again when that address is ruled.
         if let Some(form) = self.unruled_citation(s) {
-            let a = s.address();
-            eprintln!(
-                "  court speech awaiting {:02x}{:02x}…: cited {:02x}{:02x}… is not ruled here",
-                a[0], a[1], form[0], form[1]
-            );
             self.await_citation(voice, task, s, &form);
             return Ok(Outcome::Awaiting(form));
         }
@@ -327,19 +269,9 @@ impl Kernel {
         if let Some(refusal) =
             crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self)
         {
-            let a = s.address();
-            // CV1 — EVERY REFUSAL ON THE FLEET LINE CARRIES ITS KIND (78.9),
-            // and the observer counts it by kind.
-            let kind = refusal.obstruction.kind();
-            eprintln!(
-                "  court refuse speech {:02x}{:02x}…: {} at {} [{}]",
-                a[0],
-                a[1],
-                refusal.reason,
-                refusal.at.label(),
-                kind.label()
-            );
-            crate::observe::note_obstruction(kind);
+            // CV1 — every refusal carries its kind (78.9), and the observer
+            // counts it by kind.
+            crate::observe::note_obstruction(refusal.obstruction.kind());
             return Err(refusal);
         }
         let out = self.list_sentence(s, voice);

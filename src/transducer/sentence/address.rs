@@ -161,68 +161,9 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // They are taken from the form and not from its tape, so this is the
     // reading that does not need the tape to exist.
     e.set_receipts(crate::transducer::element::ReceiptsEnvelope::of_form(f));
-    // THE DESYNC IS NAMED AT THE MINT, NOT ONLY AT THE COURT (54.7 B5a,
-    // §8.1 — instruments before fixes).
-    //
-    // A `Vertex::Glued` is a port and a `NerveEdge` is a bond, and the two
-    // are in bijection by site. The court refuses a form where they are
-    // not — `REFUSE_ORPHAN_PORT`, `REFUSE_PHANTOM_EDGE` — and on the recut
-    // at epoch 93 it refused 10 speeches for it, at 94 fifteen. That names
-    // the READER; it does not name the producer, and two rounds of reading
-    // the mutators found one of them (`rebase_by_word`) and missed the
-    // rest.
-    //
-    // So the mint says it. Every form that leaves here as a word is
-    // checked against its own cover, and a mismatch prints the counts at
-    // the one place that has the form in hand and knows which pass built
-    // it. A reading, never a refusal: the mint does not decide what the
-    // court decides (law 8).
-    {
-        let env = e.receipts();
-        // AGAINST THE FORM THE COURT WILL HOLD, not the one in hand.
-        //
-        // The mint has `f`; the court has `from_address(address)`. The
-        // bonds are the envelope's and are never round-tripped, while the
-        // ports the court sees come back through `put_vertex` and
-        // `from_address`. If a placement or a carriage is not a fixed point
-        // of that round trip, the two sites differ and every citation is
-        // both an orphan port and a phantom edge — at the COURT, while the
-        // mint's own form is perfectly in bijection.
-        //
-        // Checked here on the decoded form, so the reading names which of
-        // the two it is: a desync the mint's form already has, or one the
-        // decode introduces.
-        //
-        // A minted form's own address always decodes — that is the retract
-        // `from_address_retracts_every_corpus_form` asserts — so an address
-        // that does not is its own reading and is said as one, never
-        // replaced by the form in hand.
-        match crate::transducer::sentence::from_address(&e.address()) {
-            None => eprintln!(
-                "  mint cover desync: the address does not decode, so the court holds no form"
-            ),
-            Some(f) => {
-                // THE PORTS ARE THE GLUED KIND'S STRATUM of the vertex
-                // carrier (AT1); a port and its bond meet at the site, which
-                // is the Glued vertex's coordinate.
-                let ports: Vec<Vec<u8>> = f
-                    .vertices
-                    .scoped()
-                    .filter(|(_, v)| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
-                    .map(|(_, v)| crate::transducer::sentence::vertex_bytes(v))
-                    .collect();
-                let orphan = ports.iter().filter(|site| !env.nerve.iter().any(|x| x.host().as_bytes() == site.as_slice())).count();
-                let phantom = env.nerve.iter().filter(|x| !ports.iter().any(|site| x.host().as_bytes() == site.as_slice())).count();
-                if orphan > 0 || phantom > 0 {
-                    let ports = ports.len();
-                    eprintln!(
-                        "  mint cover desync: {ports} ports, {} bonds, {orphan} orphan, {phantom} phantom",
-                        env.nerve.len()
-                    );
-                }
-            }
-        }
-    }
+    // A port and its bond out of bijection by site is refused at the court
+    // by name (`REFUSE_ORPHAN_PORT`, `REFUSE_PHANTOM_EDGE`); the mint does
+    // not decide what the court decides (law 8) and prints nothing (C3).
     // The coordinate the mint wrote is the word's ADDRESS (law 2), and the
     // bytes it moved are the tape it laid down — which is also what the
     // wire will carry. Two columns, never one (law 5).

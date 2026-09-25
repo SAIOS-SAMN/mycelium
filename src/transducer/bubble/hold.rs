@@ -283,9 +283,5 @@ impl Contemplation {
         // A held form is a new candidate (78.26(6)).
         self.link_new(&key, super::meet::Adjunct::Candidate);
         mark("link_new");
-        eprintln!(
-            "  form held {:02x}{:02x}…",
-            key[0], key[1]
-        );
     }
 }

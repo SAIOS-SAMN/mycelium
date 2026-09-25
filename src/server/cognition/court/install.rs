@@ -67,11 +67,8 @@ impl Kernel {
             } else {
                 let pay = self.verified_install_deflation(addr, &w);
                 if pay.iter().all(|&x| x == 0) {
+                    // Closes nothing: installed, and mints none.
                     let _ = self.treasury.revoke_award(addr, false);
-                    eprintln!(
-                        "  court form installed {:02x}{:02x}… mint none (closes nothing)",
-                        addr[0], addr[1]
-                    );
                 } else {
                     // 26 as ruled 2026-09-10: what this form closed is
                     // partly what the forms it CITED close inside it, and
@@ -82,20 +79,10 @@ impl Kernel {
                     // already occupied the lane (L8t).
                     let shares = self.cited_shares(addr, &w, pay);
                     self.treasury.settle_recursive(addr, &shares, pay, installed);
-                    for (who, share) in &shares {
-                        eprintln!(
-                            "  court generator paid {:02x}{:02x}… to {:02x}{:02x}… {share:?}",
-                            addr[0], addr[1], who[0], who[1]
-                        );
-                    }
                 }
             }
         } else {
             let _ = self.treasury.revoke_award(addr, false);
-            eprintln!(
-                "  court form installed {:02x}{:02x}… mint none (closes nothing)",
-                addr[0], addr[1]
-            );
         }
         self.unlist(addr, false);
         self.provisional.remove(addr);
@@ -104,7 +91,6 @@ impl Kernel {
         if let Some(w) = self.word_at(addr).cloned() {
             self.note_form_citations(addr, &w);
         }
-        eprintln!("  court home installed {:02x}{:02x}… peer holds the stratum", addr[0], addr[1]);
     }
 
     /// 26 AS RULED 2026-09-10 — THE SHARE EACH CITED FORM TAKES OF THIS
@@ -240,18 +226,6 @@ impl Kernel {
                     self.replay_memo.insert(addr, bucket);
                 }
             }
-            eprintln!(
-                "  court pivot certified {:02x}{:02x}… orbit at {} axis {} {:02x}{:02x}→{:02x}{:02x}",
-                addr[0],
-                addr[1],
-                // The chord by its two vertices' coordinates (AT1).
-                crate::transducer::sentence::At::face(cert.chord.from_vertex(), cert.chord.to_vertex()).label(),
-                cert.axis.label(),
-                cert.before[0],
-                cert.before[1],
-                cert.after[0],
-                cert.after[1]
-            );
         }
     }
 

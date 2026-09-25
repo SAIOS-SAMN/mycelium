@@ -827,23 +827,9 @@ impl Bubble {
             let Some(here) = self.candidates.get_mut(&ck) else {
                 continue;
             };
-            for (rk, at) in dying {
+            // A candidate whose monodromy ruptured dissolves.
+            for (rk, _) in dying {
                 here.remove(&rk);
-                // The bivector the rupture stands at, by its class: the
-                // coordinate of what did not close, never a count of it.
-                // A rotor with no class stands at no stratum and names
-                // none; "unclassed" is that reading, never a zero key
-                // invented to fill the line (rule 11).
-                let at = match at.class_key() {
-                    Some(k) => format!("{:02x}{:02x}…", k[0], k[1]),
-                    None => "unclassed".to_string(),
-                };
-                // THE TAG IS THE VOICE'S AND IS NOT IN SCOPE HERE (approved
-                // 2026-09-18): `bubble` is an internal geometric organ and
-                // every line in it and in `client/sdk` writes two spaces
-                // and no tag; `[{tag}]` is the client binary's own framing.
-                let [a, b, ..] = rk.as_slice() else { continue };
-                eprintln!("  candidate dissolved {a:02x}{b:02x}… monodromy {at}");
             }
         }
     }
@@ -884,7 +870,7 @@ impl Bubble {
         &mut self,
         stratum: &[u8],
         word: &[u8],
-        by: &'static str,
+        _by: &'static str,
     ) -> Option<Vec<crate::transducer::alphabet::Rotor>> {
         let class = self.vortex_at_stratum(stratum, word)?;
         let mut inner = self.vortex.remove(&class)?;
@@ -916,13 +902,6 @@ impl Bubble {
             self.certificates.insert(win.key(), win.clone());
             self.vortex = Keyed::new();
         }
-        let axis = win.axis;
-        eprintln!(
-            "  vortex {:02x}{:02x}… collapsed by {by} to axis {axis:?}, {} symmetries kept",
-            self.key()[0],
-            self.key()[1],
-            symmetries.len()
-        );
         Some(symmetries)
     }
 

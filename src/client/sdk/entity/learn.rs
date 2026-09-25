@@ -215,7 +215,7 @@ impl Entity {
         Ok(learned + taught)
     }
 
-    pub(crate) fn absorb_class_page(&mut self, body: &[u8], from: [u8; 32]) {
+    pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32]) {
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
@@ -231,13 +231,7 @@ impl Entity {
         // discharge the mesh holds, and the difference remains a rotor this
         // mind measured. It is adjoined rather than cleared — the language
         // keeps what the collapse resolved.
-        let (n, symmetries) = self.contemplation.seed_horizon_with(&recs);
-        if n > 0 {
-            eprintln!(
-                "  horizon {n} seeded from {:02x}{:02x}",
-                from[0], from[1]
-            );
-        }
+        let (_, symmetries) = self.contemplation.seed_horizon_with(&recs);
         if !symmetries.is_empty() {
             let chart = crate::transducer::stalk::Invariant::default();
             let adjoined: crate::transducer::bubble::drive::Adjoined =

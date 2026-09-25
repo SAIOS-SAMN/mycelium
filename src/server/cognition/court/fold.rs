@@ -111,7 +111,6 @@ impl Kernel {
         let folded = match self.treasury.fold(p.root.at, anchor) {
             Ok(f) => f,
             Err(reason) => {
-                eprintln!("  court fold refused {:02x}{:02x}…: {reason}", me[0], me[1]);
                 self.fold_pending = None;
                 return Err(reason);
             }
@@ -144,20 +143,6 @@ impl Kernel {
             identities,
             witness: wk,
         };
-        eprintln!(
-            "  court fold {:02x}{:02x}… K {} h {} prefix {}..{} identities {}",
-            me[0],
-            me[1],
-            done.at.map_or_else(|| "unsealed".to_string(), Place::print),
-            done.h,
-            done.first.print(),
-            done.last.print(),
-            done.identities
-        );
-        eprintln!(
-            "  court fold witnessed {:02x}{:02x}… co-signed {:02x}{:02x}…",
-            wk[0], wk[1], root.hash[0], root.hash[1]
-        );
         self.fold_pending = None;
         self.mark_persist();
         Ok(done)

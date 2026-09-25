@@ -441,14 +441,9 @@ impl Entity {
             self.epigenome.word_at(&at)?.address()
         };
         match self.algebraic_redundancy()? {
-            Redundancy::UnspellableGauge { held, gamma, chart } => {
-                eprintln!(
-                    "  gauge unspellable {:02x}{:02x}… against {:02x}{:02x}… — adjoining (37.7)",
-                    gamma.key().as_bytes()[0],
-                    gamma.key().as_bytes()[1],
-                    held.as_bytes()[0],
-                    held.as_bytes()[1]
-                );
+            // 37.7: a gauge the alphabet cannot spell against a held word,
+            // adjoined.
+            Redundancy::UnspellableGauge { gamma, chart, .. } => {
                 let adjoined: crate::transducer::bubble::drive::Adjoined = vec![(*gamma, chart)];
                 self.adjoin_letters(&adjoined);
                 Some(AlgebraicStep::Adjoined)

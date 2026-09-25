@@ -268,18 +268,11 @@ impl Entity {
         Concluded { cites, residual, familiar }
     }
 
-    /// PR1 — A PROBE, AND ITS READING: folded into this voice's typed tally,
-    /// and printed with the lanes it moved and the versor its residual stands
-    /// off the listing by.
+    /// PR1 — A PROBE, AND ITS READING: folded into this voice's typed tally
+    /// (served on `Learning`), and returned.
     pub fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
         let r = self.session.probe(target, cites)?;
         self.probes.note(&r);
-        let off = match &r.closure {
-            dialogue::ProbeClosure::Residual(Some(v)) => format!("residual off by {v:?}"),
-            dialogue::ProbeClosure::Residual(None) => "residual, its versor unread".to_string(),
-            other => format!("{other:?}"),
-        };
-        eprintln!("  probe {:02x}{:02x}… settled {:?} remaining {:?} {off}", target[0], target[1], r.settled, r.remaining);
         Ok(r)
     }
 
@@ -342,14 +335,9 @@ impl Entity {
         let mut open: Vec<usize> = Vec::new();
         for (i, e) in sentences.iter().enumerate() {
             let addr = e.address();
-            match self.sealed.get(&addr).copied() {
-                Some(k) => {
-                    eprintln!(
-                        "  sealed {:02x}{:02x}…: refused at K {k}, not uttered again",
-                        addr[0], addr[1]
-                    );
-                    codes[i] = dialogue::SPEECH_REFUSED;
-                }
+            // Refused at a K this mind sealed: never uttered again.
+            match self.sealed.get(&addr) {
+                Some(_) => codes[i] = dialogue::SPEECH_REFUSED,
                 None => open.push(i),
             }
         }
@@ -412,7 +400,6 @@ impl Entity {
             }
         }
         for (j, &i) in fresh.iter().enumerate() {
-            let addr = sentences[i].address();
             match adjudicated.get(j) {
                 Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
                     self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task);
@@ -425,19 +412,8 @@ impl Entity {
                 Some(dialogue::Adjudication::Awaiting { form }) => {
                     self.owe_citation(&sentences[i], form, train, task);
                 }
-                Some(a) => {
-                    let (r0, r1) = match a.receipt() {
-                        Some(r) => (r[0], r[1]),
-                        None => (0, 0),
-                    };
-                    eprintln!(
-                        "  adjudicated {:02x}{:02x}…: {} receipt {r0:02x}{r1:02x}…",
-                        addr[0],
-                        addr[1],
-                        if a.code() == dialogue::SPEECH_RATIFIED { "ratified" } else { "stood" },
-                    )
-                }
-                None => {}
+                // Stood or ratified: sealed and filed above.
+                Some(_) | None => {}
             }
         }
         Ok(codes)

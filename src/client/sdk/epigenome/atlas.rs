@@ -137,26 +137,6 @@ impl Epigenome {
         if let Some(f) = e.form().cloned() {
             crate::transducer::sentence::admit_generators(&mut self.generators, &addr, &f);
             crate::transducer::sentence::admit_generators_by_lane(&mut self.lanes, &addr, &f);
-            // 37.7: a generator the alphabet cannot spell, learned. Read
-            // from the vertex — cites nothing and A22 cannot spell its
-            // action — never from a flag on the tape.
-            let env = e.element().receipts();
-            for (_, v) in f.vertices.scoped() {
-                let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
-                    continue;
-                };
-                // "CITES NOTHING" IS READ OFF THE ENVELOPE (54.5 Road (d),
-                // B3), not off the tape's derivation — a vertex the key
-                // rebuilds is always spelled.
-                if env.cite_for(address.as_bytes()).is_some() {
-                    continue;
-                }
-                let spelled =
-                    crate::transducer::alphabet::factor_rotor(&derivation.rotor());
-                if !matches!(spelled, Some(Ok(_))) {
-                    eprintln!("  letter learned {:02x}{:02x}…", addr[0], addr[1]);
-                }
-            }
         }
     }
 

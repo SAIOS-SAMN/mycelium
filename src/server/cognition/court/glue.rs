@@ -27,7 +27,6 @@ impl Kernel {
             return Glue::Dialect;
         }
         if let Some(reason) = self.court_replay(&spoken) {
-            eprintln!("  court glue slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
             let inv = crate::transducer::stalk::invariant_of(&spoken);
             self.heard_mark(addr, &inv);
             return Glue::Slashed(reason);
@@ -227,10 +226,6 @@ impl Kernel {
                             .iter()
                             .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
                             .collect();
-                        eprintln!(
-                            "  court simplex filled degree {d} {:02x}{:02x}… volume {:?}",
-                            key[0], key[1], volume
-                        );
                     }
                 }
                 crate::transducer::cech::CoboundaryOutcome::Attached(
@@ -241,10 +236,6 @@ impl Kernel {
                         .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
                         .collect();
                     congruent = Some(((kappa, g, ell), addrs, key.clone()));
-                    eprintln!(
-                        "  court simplex congruent degree {d} {:02x}{:02x}…",
-                        key[0], key[1]
-                    );
                 }
                 crate::transducer::cech::CoboundaryOutcome::Attached(
                     crate::transducer::cech::Fill::Class(_, class),
@@ -256,10 +247,6 @@ impl Kernel {
                     if d >= 3 {
                         self.pending_refine.insert(inv.key(), (inv.clone(), class, d));
                     }
-                    eprintln!(
-                        "  court simplex class degree {d} {:02x}{:02x}…",
-                        key[0], key[1]
-                    );
                 }
                 // 37.7 at the court's glue: a rotation the seventeen do
                 // not spell. It fills nothing and files no class — the
@@ -274,10 +261,6 @@ impl Kernel {
                 ) => {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
-                    eprintln!(
-                        "  court simplex unspellable degree {d} {:02x}{:02x}… 37.7",
-                        key[0], key[1]
-                    );
                     self.open_unspellable(r.as_ref(), &inv, &[], &peer);
                 }
                 // THE BOUNDARY WAS EVALUATED AND DID NOT CLOSE. The
@@ -289,13 +272,11 @@ impl Kernel {
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                 }
-                // EVALUATED AND NOT MEASURED, by its reason (78.26(5)): work
-                // still owed, filed as unfilled as it was when it answered
-                // `Open`, and the reason said.
+                // EVALUATED AND NOT MEASURED (78.26(5)): work still owed,
+                // filed as unfilled as it was when it answered `Open`.
                 crate::transducer::cech::CoboundaryOutcome::Attached(
-                    crate::transducer::cech::Fill::Unread(why),
+                    crate::transducer::cech::Fill::Unread(_),
                 ) => {
-                    eprintln!("  court simplex unread degree {d} {:02x}{:02x}… {why:?}", key[0], key[1]);
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                 }
@@ -421,10 +402,6 @@ impl Kernel {
             if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 for addr in members {
                     if self.provisional.contains(&addr) {
-                        eprintln!(
-                            "  court peer holds {:02x}{:02x}… from {:02x}{:02x}…",
-                            addr[0], addr[1], peer[0], peer[1]
-                        );
                         self.home_install(&addr, peer);
                     }
                 }
@@ -571,23 +548,11 @@ impl Kernel {
         let (k, ht) = (self.k_step(), self.height());
         match self.converge_witness(object, witness, reached, k, ht) {
             crate::court::convergence::Converged::Witnessed { witness, .. } => {
-                eprintln!(
-                    "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}… (replayed)",
-                    witness[0], witness[1], object[0], object[1]
-                );
                 self.home_install(object, witness);
             }
-            crate::court::convergence::Converged::Inexact { a, b } => {
-                eprintln!(
-                    "  court form refused {:02x}{:02x}…: {} ({:02x}… vs {:02x}…)",
-                    object[0],
-                    object[1],
-                    crate::court::verdict::REFUSE_MV_INEXACT,
-                    a[0],
-                    b[0]
-                );
-            }
-            crate::court::convergence::Converged::AwaitingWitness => {}
+            // `REFUSE_MV_INEXACT`: the two re-derivations differ, and the
+            // offer stands answered and uninstalled.
+            crate::court::convergence::Converged::Inexact { .. } | crate::court::convergence::Converged::AwaitingWitness => {}
         }
     }
 
@@ -614,25 +579,10 @@ impl Kernel {
                 let (k, ht) = (self.k_step(), self.height());
                 match self.converge_witness(h, peer, mine, k, ht) {
                     crate::court::convergence::Converged::Witnessed { witness, .. } => {
-                        eprintln!(
-                            "  court witness {:02x}{:02x}… co-signed {:02x}{:02x}…",
-                            witness[0], witness[1], h[0], h[1]
-                        );
                         self.home_install(h, witness);
                     }
-                    crate::court::convergence::Converged::Inexact { .. } => {
-                        eprintln!(
-                            "  court form refused {:02x}{:02x}…: {}",
-                            h[0], h[1],
-                            crate::court::verdict::REFUSE_MV_INEXACT
-                        );
-                    }
-                    crate::court::convergence::Converged::AwaitingWitness => {
-                        eprintln!(
-                            "  court docketed {:02x}{:02x}…, awaiting witness",
-                            h[0], h[1]
-                        );
-                    }
+                    crate::court::convergence::Converged::Inexact { .. }
+                    | crate::court::convergence::Converged::AwaitingWitness => {}
                 }
             }
         }

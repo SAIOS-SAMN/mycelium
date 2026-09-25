@@ -100,9 +100,6 @@ impl Entity {
         for (r, back) in self.physics.reserve.iter_mut().zip(&truncated) {
             crate::physics::metabolism::step_or_refuse(r, *back);
         }
-        if n > 0 {
-            eprintln!("  held lapsed {n}, escrow returned {returned:?}");
-        }
         n
     }
 
@@ -164,9 +161,9 @@ impl Entity {
         if let Some(word) = crate::transducer::sentence::as_element_form(&f, mag) {
             self.epigenome.stand_dialect_withheld(word, k, tu);
         }
-        if !self.hold_form(f, train, remainders) {
-            eprintln!("  thought withheld: no room on a lane, the demand stands on the docket");
-        }
+        // No room on a lane withholds the thought; the demand stands on the
+        // docket either way.
+        let _ = self.hold_form(f, train, remainders);
     }
 
     /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
@@ -391,39 +388,19 @@ impl Entity {
     /// the demand — `pivot_orbit` defers on `Standing::Ruled` alone since R11.
     pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
         for (rotor, chart) in adjoined {
-            // WHY A CANDIDATE MINTS NOTHING (§8.1, measurement only). Measured
-            // over one recut: `adjoin from residue` 68, `letter adjoined` 0.
-            // The pivot carries the candidate out sixty-eight times and the
-            // language gains nothing, and the two silent `continue`s below
-            // are the only places it can go. They are different facts — a
-            // rotor that cannot be minted at all, and one the mind already
-            // stands — and neither said so.
+            // Two different facts end a candidate: a rotor that mints no
+            // generator, and one the mind already stands — the same class is
+            // adjoined every stroke it is measured, and after the first the
+            // letter is held with nothing to add. Whether it ever became a
+            // word is the epigenome's standing and Learning's
+            // adjoined-by-closure, never a line.
             let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
-                eprintln!("  letter refused: the rotor mints no generator");
                 continue;
             };
-            let addr = e.address();
-            if let Some(st) = self.epigenome.standing_of(addr.as_bytes()) {
-                // Not a defect on its own: the same class is adjoined every
-                // stroke it is measured, so after the first the letter is
-                // held and there is nothing to add. It IS the reading that
-                // says whether the one letter ever became a word — a class
-                // stood once and re-offered forever is a vocabulary of one
-                // that never ruled.
-                eprintln!(
-                    "  letter held {:02x}{:02x}… already {st:?}",
-                    addr.as_bytes()[0],
-                    addr.as_bytes()[1]
-                );
+            if self.epigenome.standing_of(e.address().as_bytes()).is_some() {
                 continue;
             }
             self.stand_crystallized(&e);
-            eprintln!(
-                "  letter adjoined {:02x}{:02x}… on chart {:?}",
-                addr.as_bytes()[0],
-                addr.as_bytes()[1],
-                chart.0
-            );
         }
     }
 
@@ -431,43 +408,13 @@ impl Entity {
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
     /// a second utterance.
     fn stand_crystallized(&mut self, e: &Element) {
-        let addr = e.address();
         if self.already_taught(e) {
             self.remember_spoken(e);
             return;
         }
-        let (depth, vertices, glued, faces, torsion) =
-            match crate::transducer::sentence::from_element_form(e) {
-                Some(f) => (
-                    f.depth,
-                    f.vertices.len(),
-                    f.glued_vertices().count(),
-                    f.faces.len(),
-                    f.torsion.len(),
-                ),
-                None => (0, 0, 0, 0, 0),
-            };
-        match self.speak(std::slice::from_ref(e)) {
-            // One sentence was sent, so the reply is one code.
-            Ok(codes) if matches!(codes.as_slice(), [dialogue::SPEECH_REFUSED]) => {
-                eprintln!(
-                    "  form withheld: {:02x}{:02x}… refused on the wire",
-                    addr[0], addr[1]
-                );
-            }
-            Ok(_) => {
-                eprintln!(
-                    "  form spoken: {:02x}{:02x}… depth {depth} vertices {vertices} glued {glued} faces {faces} torsion {torsion}",
-                    addr[0], addr[1]
-                );
-            }
-            Err(err) => {
-                eprintln!(
-                    "  form withheld: {:02x}{:02x}… {err}",
-                    addr[0], addr[1]
-                );
-            }
-        }
+        // Spoken, refused on the wire, or withheld on a transport error: the
+        // court's reply is the record (its refusal code, its docket).
+        let _ = self.speak(std::slice::from_ref(e));
     }
 
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill
@@ -628,10 +575,7 @@ impl Entity {
     pub fn take_promoted(&mut self) -> Vec<Vec<u8>> {
         let promoted = self.epigenome.take_promoted();
         if !promoted.is_empty() {
-            let n = self.contemplation.lapse_with(&promoted);
-            if n > 0 {
-                eprintln!("  promotion retired {n} held thoughts");
-            }
+            let _ = self.contemplation.lapse_with(&promoted);
         }
         promoted
     }

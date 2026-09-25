@@ -105,15 +105,8 @@ pub(crate) fn take(key: &[u8]) -> Option<Pending> {
     PENDING.with(|p| p.borrow_mut().remove(key))
 }
 
-/// Park a cover that ran out of budget, and say so on the line.
+/// Park a cover that ran out of budget; the count parked is read below.
 pub(crate) fn park(key: &[u8], pending: Pending) {
-    // The line names WHAT IS SETTLED, which is the state: no stage and no
-    // position, because there is neither.
-    eprintln!(
-        "  cover pending placed {} meets {}",
-        pending.placed.scoped().count(),
-        pending.cover.meets.scoped().count()
-    );
     PENDING.with(|p| p.borrow_mut().insert(key, pending));
 }
 

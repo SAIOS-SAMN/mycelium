@@ -133,10 +133,6 @@ impl Epigenome {
                 missing: Vec::new(),
             },
         );
-        eprintln!(
-            "  dialect stood {:02x}{:02x}… k {k} tu {now_tu}",
-            addr[0], addr[1]
-        );
         Some(addr.into_vec())
     }
 

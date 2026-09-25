@@ -66,9 +66,6 @@ impl Kernel {
             return;
         };
         let mut lapse: Vec<(Address, u64)> = Vec::new();
-        // Listings whose horizon is wider than the ledger counts. Reported
-        // once per sweep, never per listing.
-        let mut beyond = 0usize;
         let mut last: Option<Vec<u8>> = None;
         // HOW DEEP IS THE BACKLOG? Read once for the pass, against the
         // high watermark, and answered as the DEPTH — what the book holds
@@ -148,10 +145,7 @@ impl Kernel {
                     (false, crate::physics::Lambda::Unmeasured) => {
                         crate::physics::aperture_cycle() as u64
                     }
-                    (false, crate::physics::Lambda::BeyondTheLedger) => {
-                        beyond += 1;
-                        continue;
-                    }
+                    (false, crate::physics::Lambda::BeyondTheLedger) => continue,
                 };
                 // The stamp is a height this court has passed, so the
                 // extent is exact; a stamp in the future measures no
@@ -168,27 +162,8 @@ impl Kernel {
             self.lapse_cursor = Some(k);
         }
         let me = self.identity;
-        // ONE LINE PER SWEEP, NOT PER LISTING. A lapse was exceptional when
-        // it was written — a citation nobody answered inside Λ — and it is
-        // routine now that the book has a horizon: 105,389 of these in
-        // forty minutes, 58% of everything the fleet said, and the journal
-        // they fill is 18 GiB of the disk. What a reader needs from a
-        // sweep is that it ran and how far it reached, which is one line;
-        // WHICH listings left is the field's to say, and it says it.
-        if let [(addr, extent), ..] = lapse.as_slice() {
-            eprintln!(
-                "  court citations lapsed {} from {:02x}{:02x}… after {extent} receipts",
-                lapse.len(),
-                addr[0],
-                addr[1]
-            );
-        }
-        // 34.2: a horizon the ledger cannot count is a reading, and it is
-        // said once per sweep so the two refusing arms are told apart on
-        // the line as well as in the type.
-        if beyond > 0 {
-            eprintln!("  court lambda beyond the ledger listings {beyond} cycle {}", now);
-        }
+        // WHICH listings left is the field's to say, and it says it; the
+        // sweep prints nothing (C3).
         for (addr, _) in lapse {
             // 78.24 (2c): the listing is cited as it stood, read before it
             // is unlisted.

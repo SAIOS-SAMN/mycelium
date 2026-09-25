@@ -93,11 +93,6 @@ impl Kernel {
             return;
         };
         for (voice, task, s) in waiting {
-            let a = s.address();
-            eprintln!(
-                "  court speech reheard {:02x}{:02x}…: cited {:02x}{:02x}… is ruled now",
-                a[0], a[1], form[0], form[1]
-            );
             // Through `adjudicate_one`, not `hear_sentence`. A re-hearing
             // is an adjudication like any other: a refusal on it must be
             // RECORDED in `refusals` with its receipt, or the voice's next

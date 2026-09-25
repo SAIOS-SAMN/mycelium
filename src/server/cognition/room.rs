@@ -392,21 +392,6 @@ impl Kernel {
         }
     }
 
-    /// One line per short lane (34.2), read off the shortfall the caller
-    /// holds: room is the named voice's, never the hypha's, and it is not
-    /// measured again here.
-    pub(super) fn log_room_refused(&self, voice: &[u8; 32], draw: &[u64; 4], short: &[u64; 4]) {
-        for l in crate::economy::lanes_short(short) {
-            eprintln!(
-                "  court room refused voice {:02x}{:02x}… lane {l} draw {} room {}",
-                voice[0],
-                voice[1],
-                draw[l],
-                draw[l] - short[l]
-            );
-        }
-    }
-
     /// THE CONGESTION DOOR (26, 48; S9.6b): the fee on a lane is the
     /// reserve deficit on that lane itself — no divisor, since none is
     /// measured — and the speaker pays what its balance holds. The reading

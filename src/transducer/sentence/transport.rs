@@ -122,18 +122,6 @@ impl Form {
         f.compose_carriages(&gamma.carriage);
         f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f.reindex();
-        let mut addr = crate::transducer::address::Address::new(Vec::new());
-        for (_, v) in self.vertices.scoped() {
-            if let Vertex::Word { address, .. } = v {
-                addr = address.clone();
-                break;
-            }
-        }
-        let frame = gamma.word.key();
-        let hx = |a: &crate::transducer::address::Address| {
-            a.as_bytes().iter().map(|b| format!("{b:02x}")).collect::<String>()
-        };
-        eprintln!("refracted {} into {} by Γ", hx(&addr), hx(&frame));
         Some(f)
     }
 

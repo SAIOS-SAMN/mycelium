@@ -229,11 +229,9 @@ pub fn mint_sentence(
     // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
     // `Form::acts()` the court reads.
     if !rule.form.acts() {
-        eprintln!("  mint refused: nothing in the form acts");
         return None;
     }
-    if let Some(why) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
-        eprintln!("  mint refused: a vertex does not carry its family ({why:?})");
+    if crate::court::verdict::body::vertices_carry_frames(&rule.form, family).is_some() {
         return None;
     }
     // 50.5 — what the form leaves unspoken on this family is its demand.
@@ -242,27 +240,15 @@ pub fn mint_sentence(
     // speaks exactly what the undeclared one spoke and leaves the same
     // remainder, which is what `undeclared_remainder` reads at the court.
     let (pay, remainders) = form_deflation(&rule.form, family, crystal);
-    let words = rule.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
-    let demands = rule.form.demand_vertices().count();
-    let unspoken: Vec<usize> = remainders.iter().map(|r| r.len()).collect();
-    eprintln!(
-        "  mint measured words {words} demands {demands} pairs {} pay {pay:?} remainders {unspoken:?}",
-        family.len()
-    );
     let declared = declare_unspoken(&rule.form, family, &remainders);
     let form = match declared.as_ref() {
         Some(f) => f,
         None => &rule.form,
     };
-    let Some(mag) = sentence_measure_from(form, family, t_extent, pay, &remainders) else {
-        eprintln!("  mint refused: the form speaks a lamina its family refuses");
-        return None;
-    };
-    let out = crate::transducer::sentence::as_element_form(form, mag);
-    if out.is_none() {
-        eprintln!("  mint refused: the form has no tape at {mag:?}");
-    }
-    out
+    // Refused where the form speaks a lamina its family refuses, or has no
+    // tape at its measure.
+    let mag = sentence_measure_from(form, family, t_extent, pay, &remainders)?;
+    crate::transducer::sentence::as_element_form(form, mag)
 }
 
 /// 50.5 — THE UNSPOKEN REMAINDER, DECLARED. A sentence is "the form saying
@@ -384,7 +370,6 @@ pub fn sentence_measure_from(
     if form.demand_vertices().next().is_none() {
         let left: usize = remainders.iter().map(|r| r.len()).sum();
         if left != 0 {
-            eprintln!("  mint refused: {left} links remain and the form declares no demand");
             return None;
         }
         let mut mag = pay;
@@ -393,7 +378,6 @@ pub fn sentence_measure_from(
     }
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if !undeclared.is_empty() {
-        eprintln!("  mint refused: {} links undeclared by the form's demands", undeclared.len());
         return None;
     }
     let mut mag = [0u64; 4];

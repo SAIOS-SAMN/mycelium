@@ -1040,8 +1040,6 @@ impl Contemplation {
             None => form_mag(f)?,
         };
         let e = sentence::as_element_form(f, mag)?;
-        let (orbits, torsion, certificates, axes) =
-            (f.orbits.len(), f.torsion.len(), f.certificates.len(), f.axes.len());
         let retire = b.glued_by.is_empty();
         let circuits = super::flux::circuits_of(f);
         let old = retire.then(|| b.clone());
@@ -1056,11 +1054,6 @@ impl Contemplation {
             self.dirty.remove(key);
         }
         self.formed += 1;
-        eprintln!(
-            "  form crystallized {:02x}{:02x}… orbits {orbits} torsion {torsion} certificates {certificates} axes {axes} carried {mag:?}",
-            e.address()[0],
-            e.address()[1]
-        );
         Some(e)
     }
 

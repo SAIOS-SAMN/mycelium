@@ -7,16 +7,6 @@
 
 use super::*;
 
-/// The period as the filing line writes it: `ℓ`, or `∞` for the `0` that
-/// spells infinite order (A19, 52.3) — the two arms of `Order::from_u32`,
-/// read on the filer's own `u64` so nothing narrows it on the way.
-fn period_written(ell: u64) -> String {
-    match ell {
-        0 => "∞".to_string(),
-        p => p.to_string(),
-    }
-}
-
 /// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
 /// candidate is applied — the orbit rows and the rank they carry, the
 /// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
@@ -320,7 +310,6 @@ impl Form {
             let cycles = Self::cycles_of(&self.faces, &self.vertices);
             self.orbits = cycles.kept.clone();
             if self.rank().is_none() {
-                eprintln!("  pivot {:02x}{:02x}… held, rank overflow", idea[0], idea[1]);
                 break;
             }
             // THE TREE GAUGE RETIRED (AT1, ruled (a)), AND WITH IT THE ORBITS
@@ -343,17 +332,9 @@ impl Form {
             // audit is unmeasured and the form is held, never counted
             // under a key of the rotor's bytes.
             let Some(rows) = self.orbit_rows() else {
-                eprintln!(
-                    "  pivot {:02x}{:02x}… held, rank unmeasured",
-                    idea[0], idea[1]
-                );
                 break;
             };
             let Some(rank_before) = rank_of_rows(&rows) else {
-                eprintln!(
-                    "  pivot {:02x}{:02x}… held, rank overflow",
-                    idea[0], idea[1]
-                );
                 break;
             };
             let mu_before: Option<(Vec<[u64; 4]>, [u64; 4])> = match bundle {
@@ -403,32 +384,15 @@ impl Form {
                     .is_some_and(|(_, _, st)| matches!(st, Standing::Ruled));
                 let order = hw.order();
                 let cands = self.candidates_for(idx, &kappa, crystal, held, &published);
-                // The span reading, measured and never branched on: `held`
-                // counts the words `crystal.on_axis` answered — the basis's
-                // reach on the orbit's occupied axes; `opens` the puncture,
-                // offered on a free part; `self` the orbit's own inverses,
-                // which say nothing about what the mind holds. `unreached`
-                // and `starved` say whether the fixed axis order of 12.6 let
-                // the budget reach every candidate.
-                let kind = |c: &&Candidate| match c.axis {
-                    Axis::Unit(_) | Axis::Prime5(_) | Axis::Prime13(_) | Axis::OffPlane => 0,
-                    Axis::Open => 1,
-                    _ => 2,
-                };
-                let held_gens = cands.iter().filter(|c| kind(c) == 0).count();
-                let opens = cands.iter().filter(|c| kind(c) == 1).count();
-                let self_moves = cands.iter().filter(|c| kind(c) == 2).count();
-                // `ruled` says whether the mesh holds the class (A19) — a
-                // orbit on the horizon neither demands nor widens, it waits
-                // for the held form — and `occupies` names the coordinates
-                // the orbit stands on, so an empty candidate list is read by
-                // its cause: `Hue` with no member path, or an axis the
-                // crystal holds no word on.
-                let occupied = kappa.coordinates();
-                let mut tried = 0usize;
+                // THE BASIS'S REACH on the orbit's occupied axes: the words
+                // `crystal.on_axis` answered. Where none did, the residue is
+                // outside the span and 37.7 adjoins from it below.
+                let held_gens = cands
+                    .iter()
+                    .filter(|c| matches!(c.axis, Axis::Unit(_) | Axis::Prime5(_) | Axis::Prime13(_) | Axis::OffPlane))
+                    .count();
                 let mut starved = false;
                 let mut discharging: Vec<PivotCertificate> = Vec::new();
-                let mut eliminated = 0usize;
                 for cand in &cands {
                     // The zero-spend eliminator: whether a held word can
                     // cancel this orbit's rotor is exact arithmetic in the
@@ -448,7 +412,6 @@ impl Form {
                             (hw.rotor().class_key(), word.rotor().class_key())
                         {
                             if want != got {
-                                eliminated += 1;
                                 continue;
                             }
                         }
@@ -457,42 +420,10 @@ impl Form {
                         starved = true;
                         break;
                     }
-                    tried += 1;
                     if let Some(cert) = self.trial(idx, cand, &kappa, &prior) {
                         discharging.push(cert);
-                    } else {
-                        eprintln!(
-                            "  pivot {:02x}{:02x}… orbit {idx} axis {:?} no discharge",
-                            idea[0], idea[1], cand.axis
-                        );
                     }
                 }
-                // `tried` counts one per element of `cands` and nothing else,
-                // so this is a difference of two counts of the same set and
-                // not a floor at zero (rule 11).
-                let unreached = cands.len() - tried;
-                eprintln!(
-                    "  pivot candidates {:02x}{:02x}… orbit {idx} total {} held {held_gens} \
-                     self {self_moves} opens {opens} tried {tried} unreached {unreached} \
-                     discharged {} starved {starved} eliminated {eliminated} span {} \
-                     ruled {held} order {order:?} occupies {occupied:?}",
-                    idea[0],
-                    idea[1],
-                    cands.len(),
-                    discharging.len(),
-                    // The span reading in one word. `understood`: a held
-                    // generator reaches an occupied axis, so the obstruction
-                    // factors through the basis. `novel`: none does and the
-                    // puncture is offered, so the residue is outside the span
-                    // and opening a dimension is the only algebraic move
-                    // left. `closed`: neither — the orbit's coordinates are
-                    // all self-derived and no pivot reaches it by any route.
-                    match (held_gens, opens) {
-                        (0, 0) => "closed",
-                        (0, _) => "novel",
-                        _ => "understood",
-                    }
-                );
                 // 37.7 from the orbit's own residue: the basis reached no
                 // coordinate this orbit occupies, the class was published and
                 // nothing answered, so the rotor the orbit measured is carried
@@ -507,36 +438,18 @@ impl Form {
                 if adjoining {
                     // Every chart the orbit stands on (rule 15): an orbit through
                     // vertices on two charts is an obstruction on both.
-                    let charts = self.charts_of_orbit(idx);
-                    for chart in &charts {
+                    for chart in self.charts_of_orbit(idx) {
                         snaps.push(Snap::Adjoin {
                             chord: idx,
                             rotor: Box::new(hw.rotor()),
-                            chart: chart.clone(),
+                            chart,
                         });
-                    }
-                    if !charts.is_empty() {
-                        eprintln!(
-                            "  adjoin from residue {:02x}{:02x}… orbit {idx} charts {}",
-                            idea[0],
-                            idea[1],
-                            charts.len()
-                        );
                     }
                 }
                 // One certificate per move (`one_per_move`): a word
                 // discharging on both sides of the chord is one move spelled
                 // twice, never a vortex of itself.
                 let moves = one_per_move(&discharging);
-                if moves.len() != discharging.len() {
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… orbit {idx} {} certificates spell {} moves",
-                        idea[0],
-                        idea[1],
-                        discharging.len(),
-                        moves.len()
-                    );
-                }
                 let outcome = outcome_of(&moves, starved);
                 // CS2 — the outcome read against the cells its circuit
                 // crosses, noted and never branched on.
@@ -570,10 +483,6 @@ impl Form {
                             );
                             break;
                         }
-                        eprintln!(
-                            "  pivot {:02x}{:02x}… orbit {idx} axis {:?} discharged {:02x}{:02x}…→{:02x}{:02x}…",
-                            idea[0], idea[1], cert.axis, cert.before[0], cert.before[1], cert.after[0], cert.after[1]
-                        );
                         let ck = cert.key();
                         self.certificates.insert(ck, (*cert).clone());
                         snaps.push(Snap::Discharged {
@@ -590,25 +499,12 @@ impl Form {
                         }
                         if prior.mu_before.is_some() {
                             let between = obstructions(&held_certs);
-                            eprintln!(
-                                "  vortex {:02x}{:02x}… orbit {idx} {} candidates held, axes {:?}",
-                                idea[0],
-                                idea[1],
-                                held_certs.len(),
-                                between.iter().map(|o| o.axes).collect::<Vec<_>>()
-                            );
                             snaps.push(Snap::Vortex {
                                 chord: idx,
                                 held: held_certs,
                                 between,
                             });
                         } else {
-                            eprintln!(
-                                "  vortex {:02x}{:02x}… orbit {idx} {} candidates unmeasured",
-                                idea[0],
-                                idea[1],
-                                held_certs.len()
-                            );
                             snaps.push(Snap::Unmeasured {
                                 chord: idx,
                                 held: held_certs,
@@ -621,12 +517,6 @@ impl Form {
                     // happen: the orbit is held and the next stroke reaches
                     // the candidates this one could not.
                     Discharge::Starved => {
-                        eprintln!(
-                            "  pivot {:02x}{:02x}… orbit {idx} held, the candidate search was cut short at {tried} of {}",
-                            idea[0],
-                            idea[1],
-                            cands.len()
-                        );
                         handled.put(&orbit_k, ());
                     }
                     Discharge::NoneDischarged => {
@@ -637,21 +527,14 @@ impl Form {
                             // its witness (16.16 step 6): the language's
                             // want of a generator, spoken beside the
                             // filing below and never instead of it (52.3).
-                            let charts = self.charts_of_orbit(idx);
-                            for chart in &charts {
+                            for chart in self.charts_of_orbit(idx) {
                                 snaps.push(Snap::Demand {
                                     chord: idx,
                                     key: rotor_key.clone(),
                                     rotor: Box::new(hw.rotor()),
-                                    chart: chart.clone(),
+                                    chart,
                                 });
                             }
-                            eprintln!(
-                                "  demand spoken {:02x}{:02x}… order ∞ charts {}",
-                                idea[0],
-                                idea[1],
-                                charts.len()
-                            );
                         }
                         // 54.5, DIRECTIVE 4 — A CIRCUIT THAT NEVER CLOSES MOUNTS
                         // ITS SHEAR AS A BOUNDARY CELL.
@@ -689,10 +572,6 @@ impl Form {
                                 &chart,
                                 Vec::new(),
                             );
-                            eprintln!(
-                                "  dislocation stood {:02x}{:02x}… chord {idx} τ ≠ 0",
-                                idea[0], idea[1]
-                            );
                         }
                         // An orbit of any order files under its class at its
                         // period, `0` for infinite order (52.3, A19).
@@ -710,20 +589,10 @@ impl Form {
                             if !held {
                                 for ell in &periods {
                                     snaps.push(Snap::TorsionFiled { chord: idx, ell: *ell });
-                                    eprintln!(
-                                        "  torsion filed {:02x}{:02x}… (σ,{}) rotor order {order:?}",
-                                        idea[0],
-                                        idea[1],
-                                        period_written(*ell)
-                                    );
                                 }
                             }
                         } else {
                             snaps.push(Snap::TorsionOpen { chord: idx });
-                            eprintln!(
-                                "  torsion open {:02x}{:02x}… chord {idx}",
-                                idea[0], idea[1]
-                            );
                         }
                         handled.put(&orbit_k, ());
                     }
@@ -936,22 +805,9 @@ impl Form {
                     // expansion below is offered on exactly its negation.
                     // Set where the crystal ANSWERS, not where it is asked: a
                     // chart with no word on this axis has not reached it.
-                    // THE CHART THE ASK IS MADE AT (§8.1, measurement only).
-                    // `on_axis_of` is an EXACT keyed read — it does not peel
-                    // the way `generators_under` does — so a word filed under
-                    // one chart and looked up under another is invisible, and
-                    // an empty answer cannot tell the two apart. `axis_admit`
-                    // files under `stalk::invariant_of(element)`, the
-                    // SENTENCE's own chart; this asks under the vertices'
-                    // `acts` charts. Whether those coincide is not something
-                    // to reason about — it is a pair of keys, and both are
-                    // now on the wire.
+                    // `on_axis_of` is an EXACT keyed read, asked under the
+                    // vertices' `acts` charts.
                     for (_, chart) in charts.scoped() {
-                        eprintln!(
-                            "  axis ask chart {:?} axis {axis:?} answered {}",
-                            chart.0,
-                            crystal.on_axis(chart, axis).len()
-                        );
                         for w in crystal.on_axis(chart, axis) {
                             reached = true;
                             for side in [Side::Right, Side::Left] {
@@ -997,21 +853,10 @@ impl Form {
         };
         if let Some(h) = orbit_holonomy_on(&self.faces, &self.vertices, lp) {
             if !held && !h.is_identity() && (kappa.free_part() || (!reached && asked(&h))) {
+                // The seed is the holonomy's sensor action, one plane by
+                // construction (51.2), while the axis is keyed by the whole
+                // rotor's class.
                 if let Some(seed) = element::versor_of_word(&h) {
-                    // §8.1, measurement only: the seed is the holonomy's
-                    // sensor action, one plane by construction (51.2), while
-                    // the axis is keyed by the whole rotor's class. Said
-                    // where the rotor turns beyond that plane.
-                    let off = h
-                        .rotor()
-                        .off_plane_blades((
-                            crate::transducer::alphabet::PLANE_ROW,
-                            crate::transducer::alphabet::PLANE_COL,
-                        ))
-                        .len();
-                    if off > 0 {
-                        eprintln!("  pivot open seed orbit {idx} off-plane blades {off}");
-                    }
                     out.push(Candidate {
                         axis: Axis::Open,
                         by: PivotBy::OpenAxis {

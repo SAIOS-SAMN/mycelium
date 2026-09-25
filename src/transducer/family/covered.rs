@@ -446,12 +446,8 @@ pub(crate) fn classify_cover(
             let fill = crate::transducer::cech::classify(&e.word.rotor(), &e.carriage, hue);
             crate::transducer::family::cover::tally_orbit(&fill);
             match fill {
-                crate::transducer::cech::Fill::Congruent(_, g, ell) => {
+                crate::transducer::cech::Fill::Congruent(_, g, _) => {
                     let Some(class) = g.holonomy_key() else { continue };
-                    // THE CLASS SAYS WHAT IT IS, not what its first two
-                    // bytes are: the line carried a digest of a key and now
-                    // carries the bivector reading the class IS (rule 2).
-                    eprintln!("  simplex filled {:?} class {ell}", class.kind);
                     // 53.6 item 4: the orbit is classified HERE, inside the
                     // cover, and filed by class where the form files
                     // torsion — but its chord indexes the PIECES' form,

@@ -253,10 +253,6 @@ impl Contemplation {
         if forms.len() >= 2 {
             for w in forms.windows(2) {
                 if !form_one_section(&w[0], &w[1]) {
-                    eprintln!(
-                        "  thought merge refused {:02x}{:02x}… not one section",
-                        verts[0][0], verts[0][1]
-                    );
                     self.merges.stayed += 1;
                     #[expect(
                         clippy::disallowed_methods,

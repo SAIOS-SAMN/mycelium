@@ -44,8 +44,10 @@ pub struct Phase {
     pub adjoined_by_closure: u64,
 }
 
+#[cfg(test)]
 impl Phase {
-    /// The line 34.2 writes, once per window of docket circuits.
+    /// The line 34.2 wrote per window; the window now reaches the observer
+    /// only (78.16 C3), and the test reads it here.
     pub fn line(&self) -> String {
         format!(
             "  court phase h {}..{} comprehension {}/{} congruence {}/{} lineages {} installed +{} -{} \
@@ -205,9 +207,8 @@ impl Kernel {
                 let h1 = self.chain.head_height();
                 let mut phase = phase_over(&window, &at_h0, &now, h0, h1);
                 phase.adjoined_by_closure = self.adjoined();
-                eprintln!("{}", phase.line());
-                // PH5 — and the same window handed to the observer, the
-                // instrument's copy; the court keeps no phase (78.17).
+                // PH5 — the window handed to the observer, its one carrier;
+                // the court keeps no phase (78.17) and prints none (C3).
                 crate::observe::note_phase(crate::observe::Phase {
                     windows: 0,
                     h0: phase.h0,

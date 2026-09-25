@@ -84,10 +84,8 @@ pub fn factor_versor_target(
                 true => Ok(crate::transducer::alphabet::Derivation::factored(
                     cited, residue.geodesic(), composed,
                 )),
-                false => {
-                    eprintln!("  derivation refused: the citations do not compose to the target");
-                    return None;
-                }
+                // The citations do not compose to the target: refused.
+                false => return None,
             }
         }
         Err(demand) => Err(demand),

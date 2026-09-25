@@ -104,21 +104,7 @@ impl Kernel {
             true
         } else {
             let slash = ruling == RULING_SLASHED;
-            let revoked = self.treasury.revoke_award(addr, slash);
-            // The reading names the lanes on which a slashed voice's bond
-            // did not cover the ask; the court writes it rather than
-            // discarding it into the ruling's own return.
-            if let Some(r) = &revoked {
-                for (who, short) in &r.short {
-                    for l in crate::economy::lanes_short(short) {
-                        eprintln!(
-                            "  court slash short voice {:02x}{:02x}… lane {l} by {}",
-                            who[0], who[1], short[l]
-                        );
-                    }
-                }
-            }
-            let ok = revoked.is_some();
+            let ok = self.treasury.revoke_award(addr, slash).is_some();
             if slash {
                 self.redocket_citers_of(addr);
                 // A slashed word leaves the language and is admitted as a
@@ -226,16 +212,10 @@ impl Kernel {
                 return;
             };
             let window = n / aperture != before / aperture;
-            // AND THE CIRCUIT LINE RIDES THE PHASE'S OWN WINDOW. The aperture
-            // above paces on CIRCUITS, and a docket that fits one budget
-            // completes a circuit every stroke, so circuits count strokes and
-            // the aperture only divides that by a constant. `read_phase`
-            // answers whether it measured anything — whether any receipt was
-            // admitted in the window — and that is the fact both lines are
-            // about, so both are written when it is true and neither when it
-            // is not.
-            if window && self.read_phase() {
-                eprintln!("  court circuit docket {n} period {period}");
+            // THE PHASE RIDES ITS OWN WINDOW, read and held for the observer
+            // (PH5); the circuit count is on `docket_circuits`.
+            if window {
+                let _ = self.read_phase();
             }
             // 45.8, S13.9, S13.10: a circuit that completes while a lane is
             // short is the syntropic phase, and the fold is the ledger's
@@ -276,8 +256,7 @@ impl Kernel {
             let Some(spoken) = spoken else {
                 continue;
             };
-            if let Some(reason) = self.court_replay(&spoken) {
-                eprintln!("  court slash {:02x}{:02x}… {reason}", addr[0], addr[1]);
+            if self.court_replay(&spoken).is_some() {
                 // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
                 // through the verdict, which seals `Ruling(Slashed)`, revokes
                 // and re-dockets its citers; a listing of the book is ruled
@@ -304,7 +283,6 @@ impl Kernel {
             // (13.9, 13.10) -- a vantage a peer's section can be compared
             // against, which is what makes a glue a Mayer-Vietoris step.
             self.rule_own(&addr);
-            eprintln!("  court section {:02x}{:02x}… ruled cover, escrow held", addr[0], addr[1]);
         }
         self.lapse_docket(&lambda);
         self.relocate_t_exhausted();
@@ -344,10 +322,6 @@ impl Kernel {
             self.fed_admit(&addr, t);
             self.provisional.remove(&addr);
             self.court_upheld += 1;
-            eprintln!(
-                "  court translation admitted {:02x}{:02x}… second replay",
-                addr[0], addr[1]
-            );
             return;
         }
         self.docket_connection(&t, ratifier);
@@ -362,10 +336,6 @@ impl Kernel {
             &t,
             payload,
             ratifier,
-        );
-        eprintln!(
-            "  court translation docked {:02x}{:02x}…",
-            addr[0], addr[1]
         );
     }
 
@@ -413,29 +383,14 @@ impl Kernel {
                     }
                     None => Vec::new(),
                 };
-            let show = |p: &crate::transducer::sentence::ToralPeriod| {
-                let of = |n: Option<std::num::NonZeroU32>| {
-                    n.map_or("∞".to_string(), |v| v.get().to_string())
-                };
-                format!("[{}, {}]", of(p.plane_1), of(p.plane_2))
-            };
-            let ell = show(&ell_periods);
             match (held.iter().find(|p2| **p2 != ell_periods), held.is_empty()) {
                 (Some(_), _) => {
-                    eprintln!(
-                        "  court torsion refused {:?}/{} ℓ {ell}",
-                        class.kind, class.i1
-                    );
                     // CV1, 78.9 — a spoken period that does not re-derive
                     // against the class held is a claim, I, its own code.
                     return Some(crate::verdict::REFUSE_PERIOD_UNDERIVED);
                 }
-                (None, false) => {
-                    eprintln!(
-                        "  court torsion consilient {:?}/{} ℓ {ell}",
-                        class.kind, class.i1
-                    );
-                }
+                // Consilient: the class is held at the spoken period.
+                (None, false) => {}
                 (None, true) => {
                     if let Some(rep) = rep {
                         if let Some(cx) = self.complexes.get_mut(&inv.key()) {
@@ -453,10 +408,6 @@ impl Kernel {
                             cx.file_congruent(self_id, peer, rep, ell);
                         }
                     }
-                    eprintln!(
-                        "  court torsion filed {:?}/{} ℓ {ell}",
-                        class.kind, class.i1
-                    );
                 }
             }
         }

@@ -12,12 +12,6 @@
 use crate::client::sdk::*;
 use crate::transducer::sentence::{At, Contracted, Contraction, RefusalKind};
 
-fn hx(a: &[u8]) -> String {
-    let mut s: String = a.iter().take(2).map(|b| format!("{b:02x}")).collect();
-    s.push('…');
-    s
-}
-
 impl Entity {
     /// RECEIVE A REFUSAL (50.9). Seals the receipt and the address, executes
     /// the move on the spoken form, holds the contracted form as an idea
@@ -37,13 +31,6 @@ impl Entity {
         use crate::transducer::family::{form_deflation, mint_sentence};
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
         let addr = spoken.address();
-        eprintln!(
-            "  adjudicated {}: refused {} at {} receipt {}",
-            hx(addr.as_bytes()),
-            kind.label(),
-            at.label(),
-            hx(&receipt)
-        );
         // 45.1: the refusal is an admitted act of this mind, sealed on its
         // own chain; the address is sealed in the utterance index.
         // μ⃗ is the REFUSED SENTENCE'S OWN measure: what the mind staked and
@@ -78,13 +65,6 @@ impl Entity {
         }
         let after = form_vertex_key(&form);
         let certificate = Contraction { kind, at: at.clone(), before: addr.clone(), after: after.clone(), receipt };
-        eprintln!(
-            "  contracted {} → {} by {} at {}",
-            hx(addr.as_bytes()),
-            hx(after.as_bytes()),
-            kind.label(),
-            at.label()
-        );
         let rems = form_deflation(&form, train, &self.epigenome).1;
         // The form is handed over (Z4 item 1) and what this arm needs of it
         // afterwards is read from the value it still has here, before the
@@ -93,12 +73,6 @@ impl Entity {
         self.hold_form(form.clone(), train, &rems);
         self.contractions.insert(&after, certificate.clone());
         if !form.acts() {
-            let chart = crate::transducer::stalk::invariant(&remainder);
-            eprintln!(
-                "  quiescent {}: held inert on chart {}",
-                hx(after.as_bytes()),
-                hx(chart.key().as_bytes())
-            );
             self.contemplation.dirty.remove(&after);
             return Contracted::Quiescent;
         }
@@ -108,16 +82,12 @@ impl Entity {
             .contemplation
             .span_of(&form)
             .and_then(|d| mint_sentence(&rule_of_form(form), train, &self.epigenome, d.span()));
-        match minted {
-            Some(sentence) => {
-                let minted_addr = sentence.address();
-                self.contractions.insert(&minted_addr, certificate.clone());
-                self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
-            }
-            None => eprintln!(
-                "  contracted {} withheld: no measured trajectory and no demand",
-                hx(after.as_bytes())
-            ),
+        // No measured trajectory and no demand: the contraction is held with
+        // its certificate and nothing is uttered.
+        if let Some(sentence) = minted {
+            let minted_addr = sentence.address();
+            self.contractions.insert(&minted_addr, certificate.clone());
+            self.contracted.push(Pending { sentence, train: train.to_vec(), task: task.to_vec(), certificate });
         }
         Contracted::Moved
     }
@@ -126,13 +96,6 @@ impl Entity {
     /// idea, not dirty, and nothing is re-spoken until the language moves.
     fn quiescent(&mut self, spoken: &Element, train: &crate::transducer::family::Family) -> Contracted {
         use crate::transducer::sentence::form_vertex_key;
-        let addr = spoken.address();
-        let chart = crate::transducer::stalk::invariant_of(spoken);
-        eprintln!(
-            "  quiescent {}: held inert on chart {}",
-            hx(addr.as_bytes()),
-            hx(chart.key().as_bytes())
-        );
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
             // The key is the form's own coordinate and is taken BEFORE the
             // form is handed over, so nothing is cloned to read it back.
@@ -190,13 +153,7 @@ impl Entity {
             let citer = o.citer.address();
             // A cited form this mind sealed cannot be taught to any court:
             // the frame would refuse it here and carry the citer alone.
-            let cited = o.form.address();
-            if let Some(k) = self.sealed.get(cited.as_bytes()).copied() {
-                eprintln!(
-                    "  owed {}: cited {} was refused at K {k}; owed to no court",
-                    hx(citer.as_bytes()),
-                    hx(cited.as_bytes())
-                );
+            if self.sealed.get(o.form.address().as_bytes()).is_some() {
                 continue;
             }
             let both = [o.form.clone(), o.citer.clone()];
@@ -234,20 +191,10 @@ impl Entity {
         task: &[u8],
     ) -> bool {
         let addr = citer.address();
-        if let Some(k) = self.sealed.get(form.as_bytes()).copied() {
-            eprintln!(
-                "  awaiting {}: cited {} was refused at K {k}; owed to no court",
-                hx(addr.as_bytes()),
-                hx(form.as_bytes())
-            );
+        if self.sealed.get(form.as_bytes()).is_some() {
             return false;
         }
         let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
-            eprintln!(
-                "  awaiting {}: cited {} is not held here either",
-                hx(addr.as_bytes()),
-                hx(form.as_bytes())
-            );
             return false;
         };
         let courts = self.session.peers().len();
@@ -256,20 +203,10 @@ impl Entity {
             None => 0,
         };
         if tried >= courts {
-            eprintln!(
-                "  awaiting {}: owed to {tried} courts and none rules {}; waits for its family",
-                hx(addr.as_bytes()),
-                hx(form.as_bytes())
-            );
             self.owed_tries.remove(addr.as_bytes());
             return false;
         }
         self.owed_tries.insert(addr.as_bytes(), tried + 1);
-        eprintln!(
-            "  awaiting {}: the court has not ruled {}, teaching it first",
-            hx(addr.as_bytes()),
-            hx(form.as_bytes())
-        );
         self.owed.push(crate::client::sdk::Owed {
             form: cited,
             citer: citer.clone(),

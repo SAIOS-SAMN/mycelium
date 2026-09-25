@@ -49,41 +49,6 @@ pub fn probe(
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
     let residual = crate::transducer::sentence::verify_utterance(cites, listing.sub());
-    // The reading of a sentence that covered nothing: how many carried
-    // links landed on the listing at all, and how many landed outside it.
-    let mut listed = listing.sub().to_vec();
-    listed.sort_unstable();
-    if residual == listed {
-        let (mut on, mut off) = (0usize, 0usize);
-        for crate::anastome::dialogue::CiteWire { transport: v, body, .. } in cites {
-            for &(r, c, _, _) in body {
-                match crate::transducer::element::carry_center(v, r, c, 0) {
-                    Some(p) => match crate::transducer::element::site_of(&p) {
-                        // A centre off the lattice, or off the listing's own
-                        // frame, is off the listing.
-                        None => off += 1,
-                        Some((tr, tc, 0)) => {
-                            match listed.binary_search_by(|x| (x.0, x.1).cmp(&(tr, tc))) {
-                                Ok(_) => on += 1,
-                                Err(_) => off += 1,
-                            }
-                        }
-                        Some(_) => off += 1,
-                    },
-                    None => off += 1,
-                }
-            }
-        }
-        // The cited bodies are measured WHOLE. "first body" reported the
-        // length of whichever cite came first (rule 15) — a number that
-        // named no cite in particular and said nothing about the others.
-        eprintln!(
-            "  nothing: listing {} links, {} cites, carried links on {on} off {off}, cited links {}",
-            listed.len(),
-            cites.len(),
-            cites.iter().map(|c| c.body.len()).sum::<usize>(),
-        );
-    }
     let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
     // A SECTION is the hypha's reading, never the speaker's flag: a cite
     // whose body carries an assignment the cited word does not hold. The
@@ -132,7 +97,6 @@ pub fn quote(
     charts: &[crate::transducer::stalk::Invariant],
 ) -> Option<Quoted> {
     let view = k.lock().ok()?.market_open();
-    let sealed = view.closure.is_some();
     let rank = match view.closure {
         Some(c) => c,
         None => {
@@ -146,15 +110,6 @@ pub fn quote(
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
     };
-    eprintln!(
-        "  rank: book {} listings, closed {}, sealed {sealed}, gens {:?}",
-        view.pending.len(),
-        // The cohesion reading's own closed count (law 12): this filtered
-        // the closure map itself, a second read of the book for a number
-        // `cohesion_over` already names and `Rank` now carries.
-        crate::cognition::cohesion_over(&rank).0,
-        view.gens,
-    );
     let budget = crate::network::wire::frame_budget() - 34;
     // NO ESCROW POOL, NO QUOTE. The pool gates whether the book is quotable
     // at all; it does not bound the scale of what is served, which is the

@@ -702,7 +702,13 @@ pub(crate) fn differing_axes(a: &Invariant, b: &Invariant) -> Vec<u16> {
 pub(crate) enum EdgeRefusal {
     NotRigid,
     NoReading,
-    Unspelled(crate::transducer::sentence::Demand),
+    Unspelled(
+        #[expect(
+            dead_code,
+            reason = "78.16 C3 — the typed demand at an unspelled edge reached only a printed line; no mind or court consumes it yet (reported, law 7: kept, never discarded)"
+        )]
+        crate::transducer::sentence::Demand,
+    ),
 }
 
 /// THE EDGES A PAIR FORM ASKED FOR, BY WHAT CAME BACK (§8.1, measurement
@@ -741,13 +747,9 @@ impl EdgeTally {
             Some(Err(refusals)) => {
                 for refusal in refusals {
                     match refusal {
-                        // 37.7's candidate at an edge, said with the kind
-                        // the peel typed: the one line on this path that
-                        // names a generator the language lacks.
-                        EdgeRefusal::Unspelled(d) => {
-                            self.unspelled += 1;
-                            eprintln!("  edge unspelled: {}", d.label());
-                        }
+                        // 37.7's candidate at an edge: a generator the
+                        // language lacks, counted.
+                        EdgeRefusal::Unspelled(_) => self.unspelled += 1,
                         EdgeRefusal::NoReading => self.unread += 1,
                         EdgeRefusal::NotRigid => self.not_rigid += 1,
                     }

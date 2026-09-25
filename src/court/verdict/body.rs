@@ -289,7 +289,7 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     let frames = frames_of(family);
     for (vertex, v) in f.vertices.entries() {
-        let Vertex::Word { address, .. } = v else {
+        let Vertex::Word { .. } = v else {
             continue;
         };
         // A VERTEX IS ASKED FOR THE FRAMES ITS RULE CLAIMS. A class whose
@@ -301,7 +301,6 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         //
         // A class the rule declares no section for is claimed whole and is
         // checked whole, which is what it says of itself.
-        let class_sec = v.acts().is_some_and(|a| a.scoped().any(|(_, m)| !m.frames.is_empty()));
         for (frame, at) in frames.iter().enumerate() {
             let Ok(frame) = u64::try_from(frame) else { continue };
             if !v.claims_frame(frame) {
@@ -320,18 +319,8 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                         continue;
                     }
                 }
-                // WHICH FRAME AND WHICH FAULT. The refusal's coordinate is
-                // the vertex (50.9 contracts there), so the frame and the
-                // fault ride the journal instead: a voice whose rotor is
-                // wrong and a voice reading a different frame than this
-                // court replays against would otherwise produce one line.
-                let at: String =
-                    address.iter().take(2).map(|b| format!("{b:02x}")).collect();
-                let member_sec = v.acting_all_on(&chart).iter().any(|m| !m.frames.is_empty());
-                eprintln!(
-                    "  court vertex body {at}… frame {frame} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
-                    family.len()
-                );
+                // The refusal's coordinate is the vertex (50.9 contracts
+                // there), and the fault rides it as the proof.
                 // CV1 — THE VERTEX'S OWN VERSOR ON THE CHART, read by the one
                 // reader (78.9): none lifted is P with the fault's name.
                 let versor = match (v, v.acting_on(&chart)) {

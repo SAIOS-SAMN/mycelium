@@ -67,10 +67,6 @@ impl Kernel {
                     ),
                     addrs,
                 ) => {
-                    eprintln!(
-                        "  court simplex filled {:02x}{:02x}… γ recorded",
-                        sim_key[0], sim_key[1]
-                    );
                     self.record_gamma(&addrs, &gamma, &carriage);
                     let before = self.chain.head_stamp();
                     self.pay_simplex_volume(&inv, &addrs);
@@ -98,10 +94,6 @@ impl Kernel {
                     ),
                     addrs,
                 ) => {
-                    eprintln!(
-                        "  court simplex congruent {:02x}{:02x}… torsion filed",
-                        sim_key[0], sim_key[1]
-                    );
                     self.pay_simplex_volume(&inv, &addrs);
                     // RM1 — the Torse rewrite minted with its remainder; the
                     // torsion paid cites it.
@@ -116,10 +108,6 @@ impl Kernel {
                     _,
                 ) => {
                     let class = *class;
-                    eprintln!(
-                        "  court simplex class {:02x}{:02x}…",
-                        sim_key[0], sim_key[1]
-                    );
                     let degree = self
                         .complexes
                         .get(&inv.key())
@@ -134,9 +122,7 @@ impl Kernel {
                 }
                 // 37.7 AT THE COURT: a simplex whose transition is a
                 // rotation the seventeen do not spell. It fills nothing and
-                // files no class, and it is the court's own adjunction
-                // candidate — named on its own line so the day one appears
-                // is a measurement and not an anecdote.
+                // files no class, and it stays on `unfilled`.
                 //
                 // IT IS NOT MINTED HERE, and that is not an omission. This is
                 // a sweep over `self.unfilled` with no speaking voice in it,
@@ -145,30 +131,16 @@ impl Kernel {
                 // put in `unfilled` by `glue_fetched`, which has the peer
                 // whose speech produced them and adjoins there. Minting here
                 // would have to name a party that does not exist.
+                // Unspellable, evaluated and not measured (78.26(5)),
+                // evaluated and still open, already settled, or not there
+                // to evaluate — facts none of which this sweep acts on.
                 (
                     crate::transducer::cech::CoboundaryOutcome::Attached(
-                        crate::transducer::cech::Fill::Unspellable(_),
+                        crate::transducer::cech::Fill::Unspellable(_) | crate::transducer::cech::Fill::Unread(_),
                     ),
                     _,
-                ) => {
-                    eprintln!(
-                        "  court simplex unspellable {:02x}{:02x}… 37.7",
-                        sim_key[0], sim_key[1]
-                    );
-                }
-                // Evaluated and not measured, by its reason (78.26(5)).
-                (
-                    crate::transducer::cech::CoboundaryOutcome::Attached(
-                        crate::transducer::cech::Fill::Unread(why),
-                    ),
-                    _,
-                ) => {
-                    eprintln!("  court simplex unread {:02x}{:02x}… {why:?}", sim_key[0], sim_key[1]);
-                }
-                // Evaluated and still open, already settled, or not there
-                // to evaluate — three different facts, none of which this
-                // sweep acts on.
-                (
+                )
+                | (
                     crate::transducer::cech::CoboundaryOutcome::Attached(
                         crate::transducer::cech::Fill::Open,
                     ),
@@ -196,10 +168,6 @@ impl Kernel {
         for (inv, class, degree) in refine {
             let key = inv.key();
             self.pending_refine.remove(&key);
-            eprintln!(
-                "  court class degree {degree} {:02x}{:02x}… chart refined",
-                key[0], key[1]
-            );
             self.refine_chart(&inv, class, degree, None);
         }
     }

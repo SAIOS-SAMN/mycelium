@@ -615,10 +615,6 @@ impl Treasury {
             return [0; 4];
         }
         self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1, arm });
-        eprintln!(
-            "  mint {:02x}{:02x}… μ⃗ {mu:?} at K {} h {}",
-            who[0], who[1], anchor.0.k, anchor.0.h
-        );
         mu
     }
 

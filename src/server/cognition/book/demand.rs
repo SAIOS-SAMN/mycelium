@@ -11,11 +11,6 @@
 use crate::cognition::*;
 use crate::transducer::address::Address;
 
-/// The first two coordinate bytes of a key, for a journal line.
-fn short(k: &[u8]) -> String {
-    k.iter().take(2).map(|b| format!("{b:02x}")).collect()
-}
-
 impl Kernel {
     /// SETTLE A PROBE AGAINST ONE DEMAND VERTEX.
     ///
@@ -143,7 +138,6 @@ impl Kernel {
             .collect();
         let after = element::measure_lanes(&residual);
         if residual.is_empty() {
-            let by = short(cited.as_bytes());
             let used = cited.clone();
             self.answered.nested_insert(
                 at,
@@ -163,7 +157,6 @@ impl Kernel {
                     self.treasury.settle_use(voice, disc, mag, anchor);
                 }
             }
-            eprintln!("  court demand answered on {}… by {by}…", short(at));
             return ProbeReading { settled: before, closure: ProbeClosure::Closed, remaining: [0; 4] };
         }
         // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the links the

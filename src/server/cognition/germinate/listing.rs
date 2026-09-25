@@ -81,15 +81,7 @@ impl Kernel {
         for (rotor, chart, bodies) in stood {
             self.open_unspellable(&rotor, &chart, &bodies, voice);
         }
-        for (_, kind, chart, _) in f.demand_vertices() {
-            let chart_key = chart.key();
-            let prefix: String = chart_key.as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
-            eprintln!(
-                "  court demand listed {} chart {prefix}… from {:02x}{:02x}…",
-                kind.label(),
-                voice[0],
-                voice[1]
-            );
+        for _ in f.demand_vertices() {
             #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
             let n = self.court_demands_listed.saturating_add(1);
             self.court_demands_listed = n;
@@ -127,12 +119,7 @@ impl Kernel {
         let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, bodies) else {
             return;
         };
-        let addr = e.address();
         self.docket_letter(e, voice);
-        eprintln!(
-            "  court letter opened {:02x}{:02x}… rotor from {:02x}{:02x}…",
-            addr[0], addr[1], voice[0], voice[1]
-        );
     }
 
     fn open_letter(
@@ -159,12 +146,7 @@ impl Kernel {
         let Some(e) = letter_form(&pi, *plane, chart, bodies) else {
             return;
         };
-        let addr = e.address();
         self.docket_letter(e, voice);
-        eprintln!(
-            "  court letter opened {:02x}{:02x}… prime {prime} plane ({}, {}) from {:02x}{:02x}…",
-            addr[0], addr[1], plane.0, plane.1, voice[0], voice[1]
-        );
     }
 
     /// THE DOCKET A MINTED LETTER TAKES, written once because both mints take
@@ -246,7 +228,6 @@ impl Kernel {
                 return Outcome::Refused(crate::verdict::REFUSE_ROOM);
             };
             if !crate::economy::lanes_short(&short).is_empty() {
-                self.log_room_refused(&voice, &mag, &short);
                 return Outcome::Refused(crate::verdict::REFUSE_ROOM);
             }
         }
@@ -272,12 +253,6 @@ impl Kernel {
         let pressure = self.physics.pressure;
         let (_paid, short) = self.treasury.settle_recall(voice, mag, &pressure, anchor);
         self.record_recall_short(voice, &short);
-        for l in crate::economy::lanes_short(&short) {
-            eprintln!(
-                "  court recall short voice {:02x}{:02x}… lane {l} by {}",
-                voice[0], voice[1], short[l]
-            );
-        }
         let used = self
             .language
             .word_at(at.as_bytes())

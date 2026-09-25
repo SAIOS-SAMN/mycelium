@@ -193,13 +193,11 @@ impl Kernel {
         if tot < cap {
             return;
         }
-        let Some((addr, t)) = best else {
+        // The T-room is exhausted: the standing word of greatest T moves to
+        // the cavity.
+        let Some((addr, _)) = best else {
             return;
         };
-        eprintln!(
-            "  cavity relocate {:02x}{:02x}… T={t} (T-room exhausted)",
-            addr[0], addr[1]
-        );
         self.relocate_standing(&addr);
     }
 
@@ -530,14 +528,11 @@ impl Kernel {
             None => return,
         };
         // STD1 — a word with no axis seat left germinates nothing, counted.
-        let Some(axis) = axis else {
+        if axis.is_none() {
             self.overflowed += 1;
             return;
-        };
+        }
         self.touch_at(addr);
-        eprintln!(
-            "  germinated fibre axis {axis} from a failed orbit on a Twisted chart"
-        );
     }
 
     pub fn prune_basis_to_ruled(&mut self) -> usize {

@@ -165,73 +165,9 @@ impl Form {
         // or off-plane and into axes. Anything else is not this pivot's move
         // and the trial refuses it here, naming what the audit did.
         let rank_move = Rank::moved(rank_before, rank_after);
-        if let RankMove::Inadmissible { delta } = rank_move {
-            // WHICH ROWS MOVED, and to what (§8.1, measurement only). The
-            // delta says a coordinate changed and never which orbit did it,
-            // so `[1, 0, 0, 0]` — a torsion class appearing with none
-            // leaving — reads the same whether the trialled orbit acquired a
-            // class the form did not carry or a SIBLING on the shared face
-            // was carried to one.
-            //
-            // R26 removed the single-row substitution on exactly this
-            // suspicion and the refusal survived it: 50 occurrences before,
-            // 5 in the first window after, against a genome a third the
-            // size. So the audit is now reading every row and still sees a
-            // class appear, which makes it a real move and not bookkeeping.
-            // These two lines name the rows so the next reading does not
-            // have to guess again.
-            //
-            // The count of DISTINCT torsion classes is what `rank_of_rows`
-            // counts since R14, so the rows are printed as their classes and
-            // not as their indices — an index says which orbit, and the
-            // question is which class.
-            // THE LABEL MUST SEPARATE WHAT THE AUDIT SEPARATES. Two bytes of
-            // a class key stood here and two DIFFERENT torsion classes
-            // printed identically: `rows before ["t0601","t0601"] after
-            // ["t0601","t0601"]` against a delta of `[1, 0, 0, 0]`, 87 times
-            // — rows that looked unchanged beside an audit that said a class
-            // had appeared. The audit was right and the label was blind.
-            //
-            // `rank_of_rows` counts DISTINCT classes, so a label that cannot
-            // tell two apart cannot say what the audit did.
-            //
-            // 54.7 — IT SAYS THE CLASS, NOT A DIGEST OF ITS KEY. It took
-            // the first two and last two bytes of the key and hoped they
-            // differed, which is a hash of a coordinate standing in for the
-            // coordinate. The class IS `(I₁, I₂, kind)`; two classes differ
-            // exactly when those differ, and the line now shows them.
-            let tag = |k: &crate::network::nerve::coord::Holonomy| -> String {
-                format!("{:?}/{}/{}", k.kind, k.i1, k.i2)
-            };
-            let cls = |rs: &[OrbitRow]| -> Vec<String> {
-                rs.iter()
-                    .map(|r| match r {
-                        OrbitRow::Closed => "closed".to_string(),
-                        OrbitRow::Torsion(k) => format!("t{}", tag(k)),
-                        OrbitRow::Free(_) => "free".to_string(),
-                        OrbitRow::OffPlane(k) => format!("o{}", tag(k)),
-                        OrbitRow::Opened(k) => format!("x{}", tag(k)),
-                    })
-                    .collect()
-            };
-            // A form whose rows do not read has no "before" to print, and an
-            // empty list is not that reading — it is the reading of a form
-            // with no orbits (rule 11).
-            match self.orbit_rows() {
-                Some(before) => eprintln!(
-                    "  pivot orbit {idx} rows before {:?} after {:?}",
-                    cls(&before),
-                    cls(&after_rows)
-                ),
-                None => eprintln!(
-                    "  pivot orbit {idx} rows before unmeasured after {:?}",
-                    cls(&after_rows)
-                ),
-            }
-            eprintln!(
-                "  pivot orbit {idx} axis {:?} refused: rank moved {delta:?}",
-                cand.axis
-            );
+        // The audit reads every row, so a sibling on the shared face carried
+        // to a new class is a move of this pivot too (R26).
+        if let RankMove::Inadmissible { .. } = rank_move {
             return None;
         }
         let mu = match mu_before {
@@ -271,10 +207,6 @@ impl Form {
                 let reading = crate::economy::lane_moves(&after, &before);
                 let risen = crate::economy::lanes_risen(&reading);
                 if !risen.is_empty() {
-                    eprintln!(
-                        "  pivot orbit {idx} axis {:?} refused: lanes {risen:?} rose",
-                        cand.axis
-                    );
                     return None;
                 }
                 Mu::Measured { before, after }
@@ -294,10 +226,6 @@ impl Form {
             ..super::PerturbTally::default()
         });
         if split {
-            eprintln!(
-                "  pivot orbit {idx} axis {:?} refused: unclosed, the move splits two circuits of a cell that agreed",
-                cand.axis
-            );
             return None;
         }
         Some(PivotCertificate {

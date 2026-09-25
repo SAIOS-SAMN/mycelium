@@ -297,10 +297,6 @@ impl Epigenome {
                 }
                 understood.push((e.address().into_vec(), st));
                 through += 1;
-                eprintln!(
-                    "  form understood through {:02x}{:02x}… for {:02x}{:02x}…",
-                    e.address()[0], e.address()[1], address[0], address[1]
-                );
             }
             if through == 0 {
                 missing.push(address.into_vec());
@@ -312,8 +308,6 @@ impl Epigenome {
         if !understood.is_empty() {
             return Comprehension::Understood(understood);
         }
-        let vk = crate::transducer::sentence::form_vertex_key(f);
-        eprintln!("  form admitted {:02x}{:02x}…", vk[0], vk[1]);
         Comprehension::Admitted
     }
 
@@ -362,23 +356,14 @@ impl Epigenome {
         match crate::verdict::blind_replay_with(&e, &resolve) {
             Some(crate::verdict::REFUSE_GLUED_UNRULED)
             | Some(crate::verdict::REFUSE_GLUED_DEPTH) => {}
-            Some(reason) => {
-                eprintln!(
-                    "  syllabus refused {:02x}{:02x}…: {reason}",
-                    addr[0], addr[1]
-                );
+            Some(_) => {
                 self.refused += 1;
                 return None;
             }
             None => {
+                // `REFUSE_RANK_LOST`: a form whose rank does not read.
                 if let Some(f) = crate::transducer::sentence::from_element_form(&e) {
                     if f.rank().is_none() {
-                        eprintln!(
-                            "  syllabus refused {:02x}{:02x}…: {}",
-                            addr[0],
-                            addr[1],
-                            crate::verdict::REFUSE_RANK_LOST
-                        );
                         self.refused += 1;
                         return None;
                     }
@@ -410,10 +395,6 @@ impl Epigenome {
                 for m in &missing {
                     self.wait_on(m, da.clone());
                 }
-                eprintln!(
-                    "  form withheld waiting {:02x}{:02x}…",
-                    da[0], da[1]
-                );
             }
             return Some(heard);
         }
@@ -533,10 +514,6 @@ impl Epigenome {
                         d.withheld = false;
                         d.missing.clear();
                     }
-                    eprintln!(
-                        "  form withheld resolved {:02x}{:02x}…",
-                        sa[0], sa[1]
-                    );
                 }
                 _ => {}
             }

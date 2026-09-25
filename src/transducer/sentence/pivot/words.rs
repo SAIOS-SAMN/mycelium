@@ -95,27 +95,13 @@ pub fn acting_of_element(e: &Element) -> Vec<Transport> {
 /// is admitted at both, because it speaks to bodies on both and one left out
 /// is a word the pivot can never be offered.
 pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
-    // WHAT THE ADMISSION ACTUALLY CARRIES (§8.1, measurement only — nothing
-    // below branches on these). Filing where a word acts did not move
-    // `crystal.on_axis` off zero: measured at a3b78c8, `answered 0` on 113
-    // of 113 and `held 0` on 50 of 50. So the chart was not the binding
-    // constraint and the question moves upstream of the index — whether the
-    // words admitted occupy any coordinate at all. `admit_words` files a
-    // word under `ClassVector::of_word(w).coordinates()`, which is empty for
-    // an identity rotor, so a genome of identity-carrying vertices files
-    // nowhere however it is keyed. These four counts separate "the mind
-    // holds no turning word" from "the words are there and something drops
-    // them": the vertices seen, the ones carrying a word at all, the ones
-    // whose rotor is not the identity, and the coordinates filed.
-    let mut seen = 0usize;
-    let mut carried = 0usize;
-    let mut turning = 0usize;
-    let mut filed: Vec<Axis> = Vec::new();
+    // `admit_words` files a word under `ClassVector::of_word(w)
+    // .coordinates()`, which is empty for an identity rotor, so a genome of
+    // identity-carrying vertices files nowhere however it is keyed.
     for (_, v) in f.vertices.scoped() {
         let Vertex::Word { derivation, acts, .. } = v else {
             continue;
         };
-        seen += 1;
         // What the vertex CARRIES: its letters when it spells, its action
         // when it is an adjoined generator (37.7) — the same reader
         // `word_at_vertex` uses, so a generator offered by one is offered by
@@ -123,10 +109,6 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
         let Some(w) = derivation.word_carried() else {
             continue;
         };
-        carried += 1;
-        if !w.rotor().is_identity() {
-            turning += 1;
-        }
         for (_, a) in acts.scoped() {
             // THE WORD AS IT ACTS HERE: this chart's carriage and this
             // chart's gauge, which are the two coordinates the class vector
@@ -136,28 +118,16 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
                 carriage: a.carriage.as_ref().clone(),
                 gauge: a.gauge.clone(),
             };
-            if let Some(cv) = acted_class(&t) {
-                filed.extend(cv.coordinates());
-            }
             admit_words(index, &a.chart, std::slice::from_ref(&t));
         }
     }
     // WHERE THE TURNING ACTUALLY IS: curvature resides on each overlap's edge
     // and on its word (derived, AT1). They are threaded into the axis index
     // under the member charts so the crystal ingests the curvature.
-    let mut members = 0usize;
-    let mut turning_edges = 0usize;
     for (o, face) in f.faces.entries() {
-        members += 1;
         let p = &face.place;
         let (ci, cj) = (o.from.invariant(), o.to.invariant());
         if let Some(ref e) = p.edge {
-            if !e.word.rotor().is_identity() {
-                turning_edges += 1;
-            }
-            if let Some(cv) = acted_class(e) {
-                filed.extend(cv.coordinates());
-            }
             if let Some(ci) = ci {
                 admit_words(index, ci, std::slice::from_ref(e));
             }
@@ -167,9 +137,6 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
         }
         let Some(word) = face_word_on(&f.vertices, &o, face) else { continue };
         let t = Transport { word, carriage: p.carriage.clone(), gauge: p.gauge.clone() };
-        if let Some(cv) = acted_class(&t) {
-            filed.extend(cv.coordinates());
-        }
         if let Some(ci) = ci {
             admit_words(index, ci, std::slice::from_ref(&t));
         }
@@ -177,10 +144,6 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
             admit_words(index, cj, std::slice::from_ref(&t.reverse()));
         }
     }
-    eprintln!(
-        "  axis admit vertices {seen} carried {carried} turning {turning} \
-         members {members} turning_edges {turning_edges} axes {filed:?}"
-    );
 }
 
 /// The mirror of [`admit_words_acting`], member for member — or one chart's

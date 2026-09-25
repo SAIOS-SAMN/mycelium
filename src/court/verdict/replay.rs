@@ -106,12 +106,7 @@ fn same_place(
 /// between two frames — measured content its producer names, which the
 /// vertices do not derive — so only its ends are asked here.
 fn face_rederives(f: &Form, o: &crate::network::nerve::coord::Overlap, face: &crate::transducer::sentence::FormFace) -> bool {
-    // §8.1 — WHICH BRANCH REFUSED. `REFUSE_FACE` names the face and not the
-    // reading inside it, and the ways a face can fail to re-derive are
-    // different defects.
-    let label = crate::transducer::sentence::At::face(o.from_vertex(), o.to_vertex()).label();
     let (Some(_), Some(_)) = (f.vertices.at(&o.from_vertex()), f.vertices.at(&o.to_vertex())) else {
-        eprintln!("  {label} refused: an end is not a vertex of the form");
         return false;
     };
     if face.producer == crate::transducer::sentence::Producer::Motor {
@@ -120,16 +115,11 @@ fn face_rederives(f: &Form, o: &crate::network::nerve::coord::Overlap, face: &cr
     // The edge is evidence the court re-measures against the FAMILY
     // (`edges_rederive_frames`), not something the vertices re-derive, so it
     // is carried in and compared by its presence alone here.
+    // A place that does not re-derive and one that does not derive at all
+    // are both refused at the face (`REFUSE_FACE`).
     match f.face_place(&o.from, &o.to, face.place.edge.clone()) {
-        Some(p) if same_place(&p, &face.place) => true,
-        Some(_) => {
-            eprintln!("  {label} refused: the place does not re-derive");
-            false
-        }
-        None => {
-            eprintln!("  {label} refused: the place does not derive at all");
-            false
-        }
+        Some(p) => same_place(&p, &face.place),
+        None => false,
     }
 }
 
@@ -601,18 +591,8 @@ pub fn replay_form_on(
             // They arrived merged under one kind, so a speaker could not
             // tell which it had and contracted over the union. Partitioned,
             // each carries its own verdict and its own links.
-            let total: usize = rems.iter().map(Vec::len).sum();
             let (silent, wrong): (Vec<_>, Vec<_>) =
                 undeclared.iter().copied().partition(|&(_, _, spoken, _)| spoken == 0);
-            let chart = stalk::invariant(&undeclared);
-            let prefix: String =
-                chart.key().as_bytes().iter().take(2).map(|b| format!("{b:02x}")).collect();
-            eprintln!(
-                "  court remainder chart {prefix}… {} of {total} links: {} silent, {} wrong",
-                undeclared.len(),
-                silent.len(),
-                wrong.len()
-            );
             // THE WRONG ONES FIRST. A form carrying both said something
             // false, and that is the refusal it owes; contracting its
             // silence while leaving the falsehood would mint an address
