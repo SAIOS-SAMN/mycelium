@@ -170,3 +170,26 @@ fn a_fee_past_the_balance_pays_what_is_held_and_the_debit_shorts_nothing() {
     assert_eq!(t.audit().expect("the ledger still conserves"), [0; 4]);
 }
 
+/// STD1 — THE SAME CLAMP AT THREE MORE DOORS, AND ITS DEBIT GOES THROUGH. A
+/// use, an enrolment and a burn each asking past the balance move exactly
+/// what was held — the use's transfer, the stake, the burn — and the ledger
+/// conserves after each. Each had an arm reading a short debit that could not
+/// fire; this is what stands in its place.
+#[test]
+fn a_use_an_enrolment_and_a_burn_past_the_balance_move_what_is_held() {
+    let mut t = Treasury::new();
+    let a = at(1, [1; 32]);
+    t.genesis([1; 32], [3, 1, 0, 0], a);
+    t.genesis([2; 32], [0, 0, 0, 0], a);
+    assert_eq!(t.settle_use([1; 32], [2; 32], [5, 1, 0, 0], a), [3, 1, 0, 0], "the use moves what the demander held");
+    assert_eq!((t.balance_mu(&[1; 32]), t.balance_mu(&[2; 32])), ([0; 4], [3, 1, 0, 0]));
+    assert_eq!(t.audit().expect("a transfer conserves"), [3, 1, 0, 0]);
+    assert_eq!(t.enroll([2; 32], [9, 9, 0, 0], a), [3, 1, 0, 0], "the enrolment stakes what the balance held");
+    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])), ([0; 4], Some([3, 1, 0, 0])));
+    assert_eq!(t.audit().expect("a stake conserves"), [3, 1, 0, 0]);
+    t.genesis([2; 32], [0, 2, 0, 0], a);
+    assert_eq!(t.burn([2; 32], [0, 5, 0, 0], a), [0, 3, 0, 0], "the burn takes the bond, then the balance, no more");
+    assert_eq!((t.balance_mu(&[2; 32]), t.bond_of(&[2; 32])), ([0; 4], Some([3, 0, 0, 0])));
+    assert_eq!(t.audit().expect("a burn conserves"), [3, 0, 0, 0]);
+}
+

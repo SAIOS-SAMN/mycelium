@@ -32,6 +32,8 @@ impl Treasury {
             return [0; 4];
         }
         let held = self.balance_mu(&demander);
+        // paid ≤ held on every lane: it is clamped to the balance just read,
+        // and it is debited against that same balance below.
         let paid: [u64; 4] = std::array::from_fn(|l| mag[l].min(held[l]));
         if paid.iter().all(|&m| m == 0) {
             return paid;
@@ -42,11 +44,11 @@ impl Treasury {
             self.overflowed += 1;
             return [0; 4];
         };
-        // The row is written for μ⃗ that MOVED: the debit is taken first,
-        // and a debit that does not go through transfers nothing (§6).
-        if !crate::economy::lanes_short(&self.debit(demander, paid)).is_empty() {
-            return [0; 4];
-        }
+        // The rows are written for μ⃗ that MOVED, after the debit — which
+        // cannot be short, by `paid ≤ held` (STD1: the arm that read a short
+        // debit could not fire, and it is gone).
+        let unmoved = self.debit(demander, paid);
+        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
         // POWC (78.33): a cited generator paid by the use that cited it.
         let arm = Some(Arm::Powc);
         self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1, arm });

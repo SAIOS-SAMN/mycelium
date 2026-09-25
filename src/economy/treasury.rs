@@ -280,12 +280,13 @@ impl Treasury {
         // one identity; it never creates any. What the balance cannot cover
         // is not staked, so an identity stakes what it holds and no more.
         let bal = self.balance_mu(&who);
+        // add ≤ bal on every lane: it is clamped to the balance just read,
+        // and it is debited against that same balance — which cannot be
+        // short (STD1: the arm that read a short debit could not fire).
         let add: [u64; 4] = std::array::from_fn(|l| asked[l].min(bal[l]));
-        // `add` is clamped to the balance above; a debit that does not go
-        // through stakes nothing rather than creating bond nothing issued.
-        if add.iter().any(|&x| x > 0)
-            && crate::economy::lanes_short(&self.debit(who, add)).is_empty()
-        {
+        if add.iter().any(|&x| x > 0) {
+            let unmoved = self.debit(who, add);
+            debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "add ≤ bal, debited against it");
             let next: [u64; 4] = std::array::from_fn(|l| held[l] + add[l]);
             self.stakes.insert(who, next);
             self.write(Entry { kind: Kind::Stake, who, mu: add, at: anchor.0, receipt: anchor.1, arm: None });
@@ -539,6 +540,8 @@ impl Treasury {
         let bond = self.staked(&who);
         let bal = self.balance_mu(&who);
         let from_bond: [u64; 4] = std::array::from_fn(|l| mu[l].min(bond[l]));
+        // from_bal ≤ bal on every lane: it is clamped to the balance just
+        // read, and it is debited against that same balance below.
         let from_bal: [u64; 4] =
             std::array::from_fn(|l| (mu[l] - from_bond[l]).min(bal[l]));
         let took: [u64; 4] = std::array::from_fn(|l| from_bond[l] + from_bal[l]);
@@ -550,12 +553,11 @@ impl Treasury {
             self.stakes.insert(who, next);
             self.refresh_bond();
         }
-        // `from_bal` is clamped to the balance above; a debit that does not
-        // go through takes nothing from it.
-        if from_bal.iter().any(|&x| x > 0)
-            && !crate::economy::lanes_short(&self.debit(who, from_bal)).is_empty()
-        {
-            return [0; 4];
+        // The debit cannot be short, by `from_bal ≤ bal` (STD1: the arm that
+        // read a short debit could not fire, and it is gone).
+        if from_bal.iter().any(|&x| x > 0) {
+            let unmoved = self.debit(who, from_bal);
+            debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "from_bal ≤ bal, debited against it");
         }
         self.write(Entry { kind: Kind::Burn, who, mu: took, at: anchor.0, receipt: anchor.1, arm: None });
         took
