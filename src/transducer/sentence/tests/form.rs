@@ -248,7 +248,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
     assert_eq!(wrote, Some((0, gi)), "glue writes the Frame→Glued placement face");
     let mut drop: Keyed<(), coord::VertexIx> = Keyed::new();
     drop.put(&vertex_ix_key(1), ());
-    host.retract_vertices(&drop);
+    assert!(host.retract_vertices(&drop), "the retracted form's depth reads");
     assert_eq!(host.vertices.len(), 3, "Frame, remaining Word, Glued");
     for face in &host.faces {
         assert_eq!(
@@ -370,15 +370,15 @@ fn depth_is_one_plus_max_glued() {
     let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
-    assert_eq!(inner.depth_of(), 0);
+    assert_eq!(inner.depth_of(), Some(0));
     let mut outer = Form::default();
     let a0 = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
     outer.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).expect("glue into empty host");
-    assert_eq!(outer.depth_of(), 1);
+    assert_eq!(outer.depth_of(), Some(1));
     assert_eq!(outer.depth, 1);
     let mut wrap = Form::default();
     wrap.glue(&outer, form_addr(2), Word::identity(), [0, 0, 0, 1]).expect("glue depth 1 into depth 0");
-    assert_eq!(wrap.depth_of(), 2);
+    assert_eq!(wrap.depth_of(), Some(2));
     // A CITATION AT EQUAL DEPTH, AND ONE DEEPER, both stand: the nerve has
     // no stratification and the depth that comes back is the deepest of
     // them, read off the citations themselves.
@@ -386,15 +386,15 @@ fn depth_is_one_plus_max_glued() {
     outer
         .glue(&outer_copy, form_addr(3), Word::identity(), [0, 0, 0, 1])
         .expect("a citation at equal depth is a citation");
-    assert_eq!(outer.depth_of(), 2, "the equal-depth citation is one deep, so the host is two");
+    assert_eq!(outer.depth_of(), Some(2), "the equal-depth citation is one deep, so the host is two");
     outer
         .glue(&wrap, form_addr(4), Word::identity(), [0, 0, 0, 1])
         .expect("a citation of a deeper form is a citation");
-    assert_eq!(outer.depth_of(), 3, "and the deepest citation is what depth reads");
+    assert_eq!(outer.depth_of(), Some(3), "and the deepest citation is what depth reads");
     let mut again = Form::default();
     again.glue(&inner, a0.clone(), Word::identity(), [0, 0, 0, 1]).unwrap();
     again.glue(&inner, form_addr(5), Word::identity(), [0, 0, 0, 1]).expect("another depth-0 glue");
-    assert_eq!(again.depth_of(), 1, "max glued depth, not a count");
+    assert_eq!(again.depth_of(), Some(1), "max glued depth, not a count");
 }
 
 /// A language of a bar and a dot deconstructs a rotated, translated,

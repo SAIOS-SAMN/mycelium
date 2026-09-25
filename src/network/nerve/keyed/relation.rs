@@ -277,7 +277,9 @@ impl<V, C: Coordinate> Keyed<V, C> {
             None => self.root.as_deref_mut()?.get_mut(&key).map(|v| std::mem::replace(v, value)),
             Some(d) => {
                 insert_at(&mut self.root, key, value, d);
-                self.n = self.n.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident entry: a count of what this trie holds cannot pass a 64-bit usize")]
+                let n = self.n.saturating_add(1);
+                self.n = n;
                 None
             }
         }

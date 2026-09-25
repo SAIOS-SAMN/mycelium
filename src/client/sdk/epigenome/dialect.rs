@@ -87,7 +87,9 @@ impl Epigenome {
     pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<Vec<u8>> {
         if let Some(at) = self.same_vertex_in_genome(&sentence) {
             if let Some(w) = self.genome.get_mut(&at) {
-                w.expression = w.expression.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
+                let n = w.expression.saturating_add(1);
+                w.expression = n;
             }
             return None;
         }
@@ -95,14 +97,18 @@ impl Epigenome {
         if let Some(d) = self.dialect.get_mut(addr.as_bytes()) {
             d.last_used_k = k;
             d.last_used_tu = now_tu;
-            d.uses = d.uses.saturating_add(1);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
+            let n = d.uses.saturating_add(1);
+            d.uses = n;
             return Some(addr.into_vec());
         }
         if let Some(existing) = self.same_vertex_in_dialect(&sentence) {
             if let Some(d) = self.dialect.get_mut(&existing) {
                 d.last_used_k = k;
                 d.last_used_tu = now_tu;
-                d.uses = d.uses.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
+                let n = d.uses.saturating_add(1);
+                d.uses = n;
             }
             return Some(existing);
         }

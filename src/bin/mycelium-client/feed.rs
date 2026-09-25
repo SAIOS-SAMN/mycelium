@@ -80,7 +80,9 @@ pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> 
         if let Some(chain) = refine_delta(x, y) {
             let m = measure_lanes(&chain);
             for l in 0..4 {
-                mag[l] = mag[l].saturating_add(m[l]);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
+                let next = mag[l].saturating_add(m[l]);
+                mag[l] = next;
             }
         }
     }

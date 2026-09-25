@@ -242,7 +242,9 @@ impl Entity {
         self.opened.insert(listing, ());
         match self.speak_word(&germ) {
             Ok(Utterance::Spoken) => {
-                self.axes_spoken = self.axes_spoken.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a 64-bit count cannot pass 2⁶⁴ events before the process ends")]
+                let n = self.axes_spoken.saturating_add(1);
+                self.axes_spoken = n;
                 Ok(germ.address())
             }
             Ok(Utterance::Already) => Err(AXIS_ALREADY),
@@ -265,9 +267,11 @@ impl Entity {
         let v = crate::transducer::blade::versor_between(&sa, &sb).ok_or(AXIS_NO_VERSOR)?;
         let mut germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
             .ok_or(AXIS_NO_VERSOR)?;
-        germ.open_axis(v);
+        germ.open_axis(v).ok_or(AXIS_PAST_CARRIER)?;
         let mut mag = measure_lanes(chain);
-        mag[3] = mag[3].saturating_add(bodies.len() as u64);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident chain's measure plus a count of resident bodies cannot pass u64")]
+        let h = mag[3].saturating_add(bodies.len() as u64);
+        mag[3] = h;
         if !germ.set_magnitude(mag) {
             return Err(AXIS_PAST_CARRIER);
         }
@@ -525,6 +529,10 @@ impl Entity {
         self.shed_at(self.session.voice().k())
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 11 — one per resident item shed: four counts of what this process held cannot pass a 64-bit usize"
+    )]
     pub fn shed_at(&mut self, now_k: u64) -> usize {
         self.epigenome.note_stroke(now_k);
         let glued = |a: &[u8]| self.contemplation.glues_word(a);
@@ -548,11 +556,8 @@ impl Entity {
         // this answers for what it was PAID, and a thought that cites
         // nothing standing still has a horizon.
         let expired = self.lapse_held();
-        dropped
-            .len()
-            .saturating_add(lapsed)
-            .saturating_add(expired)
-            .saturating_add(self.contemplation.shed_unglued())
+        let unglued = self.contemplation.shed_unglued();
+        dropped.len().saturating_add(lapsed).saturating_add(expired).saturating_add(unglued)
     }
 
     /// Z4b's instrument: why the shed declined each held thought, by the

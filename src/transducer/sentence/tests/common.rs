@@ -39,7 +39,7 @@ pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form 
     ));
     f.faces.push(f.face_of(0, 1).expect("star"));
     f.remainder = crate::transducer::element::PlacedChain::default();
-    f.depth = f.depth_of();
+    f.depth = f.depth_of().expect("a fixture's depth reads");
     let k = form_vertex_key(&f);
     if let Some(Vertex::Word { address, .. }) = f.vertices.get_mut(1) {
         *address = k;

@@ -104,7 +104,9 @@ assert_eq!(k.pending.len(), 1, "listed");
 let occ = k.occupancy();
 assert!(occ.iter().any(|&x| x > 0), "the draw occupies");
 let lambda = crate::physics::aperture_cycle() as u64;
-k.set_height(k.height().saturating_add(lambda));
+#[expect(clippy::disallowed_methods, reason = "rule 11 — the fixture's height is a few acts and lambda one aperture cycle: far inside u64")]
+let past = k.height().saturating_add(lambda);
+k.set_height(past);
 k.court_stroke(one_stroke_transport);
 assert!(k.pending.is_empty(), "the listing lapsed");
 assert_eq!(k.occupancy(), [0; 4], "the draw released");
@@ -372,7 +374,7 @@ for _ in 0..kappa {
 let s = k.stagnant_of(&target);
 let t = k.tension.get(&target).copied().unwrap();
 assert!(
-    (0..4).all(|l| t[l] == 0 || s[l] >= kappa),
+    (0..4).all(|l| t[l] == 0 || s[l] >= u64::from(kappa)),
     "every occupied lane sat a full cycle: tension {t:?} stagnant {s:?} kappa {kappa}"
 );
 k.drain_now();

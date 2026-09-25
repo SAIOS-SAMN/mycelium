@@ -71,6 +71,12 @@ pub struct ClassVector {
 /// The hue cycle type of an orbit: sorted cycle lengths of the composed
 /// permutation around its vertices. The listing itself lives on
 /// `PivotBy::Hue`.
+///
+/// EACH LENGTH IS WRITTEN BY ITS COORDINATE OVER THE CARRIER (STD1): a cycle
+/// recorded here has length `ℓ ≥ 2` and at most 256 — every `u8` hue — so
+/// `ℓ − 1 ∈ 1..=255` is what `Type` holds, exactly, the way `fibre_volume`
+/// reads `ℓ − 1`. The length was a `u8` pinned at 255 for a cycle of every
+/// hue. Shifting by one keeps every order the readers compare by.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum CycleType {
     Identity,
@@ -110,8 +116,9 @@ impl CycleType {
     }
 }
 
-/// Cycle lengths greater than 1 of a hue listing. Absence is identity, so
-/// a cycle is the orbit under the listed map until it returns.
+/// Cycle lengths greater than 1 of a hue listing, each written as `ℓ − 1`
+/// (see [`CycleType`]). Absence is identity, so a cycle is the orbit under
+/// the listed map until it returns.
 fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
     let keyed = gauge_keyed(listing);
     let mut seen: Keyed<()> = Keyed::new();
@@ -120,22 +127,28 @@ fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
         if seen.contains(&hue_key(start)) {
             continue;
         }
-        let mut len = 0u8;
+        // The members past the first: `None` before the first is met. A
+        // cycle holds at most 256 distinct hues (`seen` admits each once),
+        // so the count past the first is at most 255 and fits exactly.
+        let mut past_first: Option<u8> = None;
         let mut h = start;
         loop {
             if seen.contains(&hue_key(h)) {
                 break;
             }
             seen.insert(hue_key(h), ());
-            len = len.saturating_add(1);
+            past_first = Some(match past_first {
+                None => 0,
+                Some(n) => n + 1,
+            });
             let next = gauge_image(&keyed, h);
             if next == h {
                 break;
             }
             h = next;
             if h == start {
-                if len > 1 {
-                    lengths.push(len);
+                if let Some(excess @ 1..) = past_first {
+                    lengths.push(excess);
                 }
                 break;
             }

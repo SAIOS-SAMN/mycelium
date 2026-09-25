@@ -684,7 +684,7 @@ impl Complex {
                     // Every orbit's reading stands at its coordinate, an
                     // unmeasured one by its reason (78.26(5)): none dropped.
                     let outcome =
-                        classify(gr, gc, crate::transducer::sentence::CycleType::of(&[]));
+                        classify(gr, gc, crate::transducer::sentence::CycleType::Identity);
                     self.index_congruent(&outcome);
                     let lk = crate::transducer::cech::complex::orbit_key(key, vi, vj);
                     self.orbits.insert(lk, outcome);
@@ -724,7 +724,7 @@ impl Complex {
                 match classify(
                     &c.coefficient,
                     &c.carriage,
-                    crate::transducer::sentence::CycleType::of(&[]),
+                    crate::transducer::sentence::CycleType::Identity,
                 ) {
                     Fill::Class(k, r) => Some((*k, *r, d)),
                     _ => None,

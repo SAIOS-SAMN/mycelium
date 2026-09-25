@@ -86,7 +86,9 @@ impl Contemplation {
             }
             let m = element::measure_lanes(r);
             for l in 0..4 {
-                volume[l] = volume[l].saturating_add(m[l]);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
+                let v = volume[l].saturating_add(m[l]);
+                volume[l] = v;
             }
             for (ck, _) in cover_of(&stalk::invariant(r)).scoped() {
                 cover.insert(&ck, ());

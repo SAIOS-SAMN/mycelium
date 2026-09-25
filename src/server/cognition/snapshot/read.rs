@@ -605,13 +605,15 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
             *p += 18;
             remainder.push((r, c, hb, ha));
         }
-        let mut stagnant = [0u32; 4];
+        let mut stagnant = [0u64; 4];
         for s in &mut stagnant {
-            *s = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
-            *p += 4;
+            *s = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
         }
         entries.push(FieldEntry { chart, state, remainder, stagnant });
     }
-    let nonflat = entries.iter().filter(|e| !e.state.is_flat()).count() as u32;
+    // A count that does not fit its carrier refuses the leaf (STD1): the
+    // `as u32` this was truncated it — the same defect at a second site.
+    let nonflat = u64::try_from(entries.iter().filter(|e| !e.state.is_flat()).count()).ok()?;
     Some(ListingField { entries, nonflat })
 }

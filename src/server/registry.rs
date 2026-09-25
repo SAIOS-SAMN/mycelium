@@ -13,7 +13,9 @@ use crate::transducer::address::{put_addr, take_addr, Address};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TaskState {
     Unsolved,
-    Settled(u32),
+    /// A count's carrier is its event domain (STD1): `u64`, once per verified
+    /// solve. It was a `u32`, never measured against that domain.
+    Settled(u64),
 }
 
 /// What a submission earned — the decay made explicit.
@@ -92,7 +94,9 @@ pub fn task_tension(task: &Task) -> [u64; 4] {
         if let Some(crate::arc::Refined { delta: chain, .. }) = refine_delta(a, b) {
             let lanes = crate::transducer::element::measure_lanes(&chain);
             for l in 0..4 {
-                mu[l] = mu[l].saturating_add(lanes[l]);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
+                let m = mu[l].saturating_add(lanes[l]);
+                mu[l] = m;
             }
         }
     }
@@ -236,16 +240,18 @@ impl TaskRegistry {
         None
     }
 
-    /// SNAPSHOT the settlement states — `[n u32][(id 32)(settled u8)(count
-    /// u32)]·n`. The TASKS re-register from corpus at boot (content is
+    /// SNAPSHOT the settlement states — `CUR2 [cursor u32][n u32][(id 32)
+    /// (settled u8)(count u64)]·n`. The count is a `u64` since STD1, and the
+    /// header says so: a snapshot without it is an older layout and is
+    /// refused whole, never read at the wrong width. The TASKS re-register from corpus at boot (content is
     /// identity, so ids are stable across restarts); only the STATES need
     /// disk. Without this, a hypha restart resets Settled → Unsolved and a
     /// crash-loop becomes a replay-bounty mint.
     pub fn snapshot(&self) -> Vec<u8> {
-        let mut out = Vec::with_capacity(8 + self.tasks.len() * 37);
+        let mut out = Vec::with_capacity(8 + self.tasks.len() * 41);
         // The dispatch cursor leads: a restart continues the corpus from
         // where it stood instead of re-dispatching its head.
-        out.extend_from_slice(b"CUR1");
+        out.extend_from_slice(b"CUR2");
         out.extend_from_slice(&(self.cursor as u32).to_le_bytes());
         out.extend_from_slice(&(self.tasks.len() as u32).to_le_bytes());
         for (id, _, state) in &self.tasks {
@@ -253,7 +259,7 @@ impl TaskRegistry {
             match state {
                 TaskState::Unsolved => {
                     out.push(0);
-                    out.extend_from_slice(&0u32.to_le_bytes());
+                    out.extend_from_slice(&0u64.to_le_bytes());
                 }
                 TaskState::Settled(n) => {
                     out.push(1);
@@ -272,13 +278,15 @@ impl TaskRegistry {
     /// the corpus is the authority on WHAT exists; the snapshot only on what
     /// was already settled. Returns how many states were restored.
     pub fn overlay(&mut self, bytes: &[u8]) -> usize {
-        let mut p = 0usize;
-        if bytes.get(0..4) == Some(b"CUR1") {
-            if let Some(c) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) {
-                self.cursor = c % self.tasks.len().max(1);
-            }
-            p = 8;
+        // An older layout (no header, or `CUR1` with its `u32` counts) is
+        // refused whole: read at this width it would restore wrong states.
+        if bytes.get(0..4) != Some(b"CUR2") {
+            return 0;
         }
+        if let Some(c) = bytes.get(4..8).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize) {
+            self.cursor = c % self.tasks.len().max(1);
+        }
+        let mut p = 8usize;
         let Some(n) = bytes.get(p..p + 4).and_then(|b| b.try_into().ok()).map(|b| u32::from_le_bytes(b) as usize)
         else {
             return 0;
@@ -289,11 +297,11 @@ impl TaskRegistry {
             let Some(id) = take_addr(bytes, &mut p) else { break };
             let (Some(&settled), Some(count)) = (
                 bytes.get(p),
-                bytes.get(p + 1..p + 5).and_then(|b| b.try_into().ok()).map(u32::from_le_bytes),
+                bytes.get(p + 1..p + 9).and_then(|b| b.try_into().ok()).map(u64::from_le_bytes),
             ) else {
                 break;
             };
-            p += 5;
+            p += 9;
             if settled == 1 {
                 if let Some(&i) = self.by_id.get(id.as_bytes()) {
                     if let Some(entry) = self.tasks.get_mut(i) {
@@ -340,7 +348,9 @@ impl TaskRegistry {
                 SolveYield::Bounty(mu)
             }
             TaskState::Settled(n) => {
-                *n = n.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per verified solve: a u64 cannot pass 2⁶⁴ events")]
+                let next = n.saturating_add(1);
+                *n = next;
                 SolveYield::VerifyFloor
             }
         }
@@ -407,6 +417,12 @@ mod tests {
             "the restart must not re-mint the bounty"
         );
         assert_eq!(reborn.overlay(&[]), 0, "garbage snapshot restores nothing");
+        // STD1 — an older layout, with `u32` counts, is refused whole.
+        let mut older = snap.clone();
+        older[3] = b'1';
+        let mut again = TaskRegistry::new();
+        again.register(toy_task());
+        assert_eq!(again.overlay(&older), 0, "a CUR1 snapshot is not read at the u64 width");
     }
 
     /// Dispatch rotates over the unsolved book and dries up when settled.

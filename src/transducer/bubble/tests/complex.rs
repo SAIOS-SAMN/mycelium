@@ -190,7 +190,7 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
             crate::transducer::sentence::ClassVector::of_rotor(
                 &p,
                 crate::transducer::element::identity_versor(),
-                crate::transducer::sentence::CycleType::of(&[]),
+                crate::transducer::sentence::CycleType::Identity,
             )
             .expect("a class reads"),
         )
@@ -218,7 +218,7 @@ fn a_restored_class_is_taken_and_answered_by_its_class_key() {
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &p,
         crate::transducer::element::identity_versor(),
-        crate::transducer::sentence::CycleType::of(&[]),
+        crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class reads");
     let mut c = Contemplation::new();

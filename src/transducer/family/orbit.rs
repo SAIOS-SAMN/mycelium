@@ -121,6 +121,7 @@ pub fn orbit_at(
         Vertex::Word { contact: Some(c), .. } => c.ring,
         _ => 0,
     };
+    #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
     let bound = (frame.0.saturating_add(frame.1)).max(1) as u32;
     let start = ring_dist_peel(&positions_of(x_painted), anchor, bound);
     let Some(next) = carry_painted(&versor, x_painted) else {

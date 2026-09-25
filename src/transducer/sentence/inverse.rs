@@ -294,7 +294,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // left at `Form::default()`'s zero, and the court checks `f.depth ==
     // f.depth_of()` — so every citing form decoded from its address was
     // refused `REFUSE_GLUED_DEPTH` the moment this became the only decoder.
-    f.depth = f.depth_of();
+    f.depth = f.depth_of()?;
     // THE FILED TORSION IS NOT DERIVED HERE, AND THE REASON IS A READING
     // AND NOT A PREFERENCE (54.3, measured 2026-09-20).
     //

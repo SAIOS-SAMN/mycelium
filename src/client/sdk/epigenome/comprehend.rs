@@ -435,7 +435,9 @@ impl Epigenome {
                         let _ = w.held.update(|x| x.merge_fibre(&e));
                     }
                     if let Some(x) = self.genome.get_mut(&at) {
-                        x.expression = x.expression.saturating_add(uses);
+                        #[expect(clippy::disallowed_methods, reason = "rule 11 — two counts of one word's uses, one per use: a u64 of events cannot pass 2⁶⁴")]
+                        let n = x.expression.saturating_add(uses);
+                        x.expression = n;
                     }
                 }
                 None => self.admit_word(crate::transducer::element::Held::of(e), uses),
@@ -469,7 +471,9 @@ impl Epigenome {
         self.atlas.admit(&crate::transducer::stalk::invariant_of(&held), at.clone());
         self.axis_admit(&held);
         self.moduli_admit(&held);
-        self.atlas_len = self.atlas_len.saturating_add(1);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident word admitted: a count of what this process holds cannot pass a 64-bit usize")]
+        let n = self.atlas_len.saturating_add(1);
+        self.atlas_len = n;
         // A NEWLY ADMITTED WORD IS WORK THE PIVOT HAS NOT REACHED. Its
         // coordinate enters the pending set; no ordinal is handed out and
         // nothing records when it arrived.

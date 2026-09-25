@@ -324,7 +324,8 @@ pub fn replay_form_on(
     // of the sentence against itself — no cited form is resolved for it —
     // so it holds whatever the citation relation's shape is, and it is
     // what catches a tape whose `depth` was moved under its vertices.
-    if f.depth != f.depth_of() {
+    // A depth that cannot be written (STD1) agrees with no tape's.
+    if Some(f.depth) != f.depth_of() {
         return Some(tape(REFUSE_GLUED_DEPTH));
     }
     // EVERY BOUNDARY IS BONDED (54.7 B5a). A `Vertex::Glued` is a PORT —

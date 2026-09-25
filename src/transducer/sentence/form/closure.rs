@@ -181,14 +181,18 @@ impl Form {
     /// READS `glued`, WHICH `reindex` BUILT: the same whole-carrier read with a filter, and
     /// the index is keyed by the cited address, so a glued vertex reachable by
     /// the address it cites is reachable here.
-    pub fn depth_of(&self) -> u16 {
+    ///
+    /// `None` where a glued vertex stands at the carrier's last depth, so one
+    /// more is no `u16` (STD1): a depth that cannot be written is refused,
+    /// never pinned at the last.
+    pub fn depth_of(&self) -> Option<u16> {
         let mut d = 0u16;
         for (_, &i) in self.glued.scoped() {
             if let Some(Vertex::Glued { depth, .. }) = self.vertices.get(i as usize) {
-                d = d.max(depth.saturating_add(1));
+                d = d.max(depth.checked_add(1)?);
             }
         }
-        d
+        Some(d)
     }
 
     /// S9.13'S REACH — the span this form's fibre spans ABOVE ITS BASE, which

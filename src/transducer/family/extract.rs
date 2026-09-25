@@ -154,8 +154,9 @@ pub fn extract_rule_with(
     if retract.is_empty() {
         form.orbits = Form::orbits_of(&form.faces, &form.vertices);
         form.reindex();
-    } else {
-        form.retract_vertices(&retract);
+    } else if !form.retract_vertices(&retract) {
+        trace::trace("extract/3 retract: depth unwritable", trace::Wrote::Nothing, Some(budget));
+        return None;
     }
     trace::trace("extract/3 glue traversed", trace::Wrote::Nothing, Some(budget));
     trace::trace_carriage("extract/3 glue", &measured, &form);

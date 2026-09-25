@@ -114,7 +114,11 @@ impl Form {
         //
         // `depth` stays a COORDINATE OF THE CITATION — the cited form's depth
         // when it was cited — and is no longer a contract about the relation.
-        let d = s.depth_of();
+        let d = s.depth_of()?;
+        // STD1 — the depth this form will stand at once the citation is
+        // held, read before anything is written: one past the cited depth
+        // with no `u16` for it refuses the citation, never a pinned depth.
+        let after = self.depth_of()?.max(d.checked_add(1)?);
         let chart = chart_of_form(s)?;
         if chart.0.is_empty() {
             return None;
@@ -182,7 +186,7 @@ impl Form {
             Some(face) => self.faces.push(face),
             None => self.faces.push(FormFace::new(0, idx, placement)),
         }
-        self.depth = self.depth_of();
+        self.depth = after;
         Some(idx)
     }
 

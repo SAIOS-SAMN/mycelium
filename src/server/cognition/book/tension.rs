@@ -56,13 +56,15 @@ impl Kernel {
             }
             for l in 0..4 {
                 if before[l] > 0 && after[l] == before[l] {
-                    e.stagnant[l] = e.stagnant[l].saturating_add(1);
+                    #[expect(clippy::disallowed_methods, reason = "rule 11 — one per re-measure event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
+                    let n = e.stagnant[l].saturating_add(1);
+                    e.stagnant[l] = n;
                 } else {
                     e.stagnant[l] = 0;
                 }
             }
         }
-        let mut stag = [0u32; 4];
+        let mut stag = [0u64; 4];
         // index: the four lanes
         for l in 0..4 {
             if before[l] > 0 && after[l] == before[l] {
@@ -100,7 +102,9 @@ impl Kernel {
             e.remainder = remainder.clone();
             e.stagnant = stag;
             if was_flat && !now_flat {
-                listing.nonflat = listing.nonflat.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident entry: a count of what this listing holds cannot pass a u64")]
+                let n = listing.nonflat.saturating_add(1);
+                listing.nonflat = n;
             } else if !was_flat && now_flat {
                 // The entry was counted as non-flat, so the count carries
                 // it; a count at zero holding one is broken and stays.
@@ -111,7 +115,9 @@ impl Kernel {
             }
         } else {
             if !state.is_flat() {
-                listing.nonflat = listing.nonflat.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident entry: a count of what this listing holds cannot pass a u64")]
+                let n = listing.nonflat.saturating_add(1);
+                listing.nonflat = n;
             }
             listing.entries.push(FieldEntry {
                 chart: chart.clone(),

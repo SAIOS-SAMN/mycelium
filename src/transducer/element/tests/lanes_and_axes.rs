@@ -20,21 +20,21 @@ use super::common::*;
 fn opening_one_axis_twice_is_one_axis() {
     let mut e = Element::identity();
     let v = translator_versor(3, 4);
-    let first = e.open_axis(v.clone());
+    let first = e.open_axis(v.clone()).expect("a seat");
     assert_eq!(e.germinated().len(), 1, "the axis is opened");
-    let again = e.open_axis(v.clone());
+    let again = e.open_axis(v.clone()).expect("the seat it has");
     assert_eq!(again, first, "and opening it again answers the seat it has");
     assert_eq!(e.germinated().len(), 1, "with no second seat for one transport");
 
     // The negation is the same transport, so it takes no seat of its own.
     let neg = v.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
-    assert_eq!(e.open_axis(neg), first, "a versor and its negation are one axis");
+    assert_eq!(e.open_axis(neg), Some(first), "a versor and its negation are one axis");
     assert_eq!(e.germinated().len(), 1);
 
     // A DIFFERENT transport is a different axis, or the dedup would be
     // erasing coordinates rather than bounding a carrier.
     let other = translator_versor(1, 0);
-    let second = e.open_axis(other);
+    let second = e.open_axis(other).expect("a second seat");
     assert_ne!(second, first, "another transport opens another axis");
     assert_eq!(e.germinated().len(), 2);
     assert_eq!(e.opened_axes(), vec![first, second]);
@@ -94,7 +94,7 @@ fn a_bidirectional_swap_does_not_collapse_to_zero() {
 fn axes_are_independent_and_extensible() {
     let mut spatial = elem_from_versor(translator_versor(1, 0));
     let mut germ = Element::identity();
-    germ.open_axis(translator_versor(0, 1));
+    germ.open_axis(translator_versor(0, 1)).expect("a seat");
     let both = spatial.compose(&germ).expect("the composite forms");
     assert_eq!(both.axes(), vec![FIBER_SPATIAL, FIBER_GERMINATED], "both axes present");
     assert!(same_versor(
@@ -103,8 +103,21 @@ fn axes_are_independent_and_extensible() {
     ));
     assert_eq!(both.max_axis(), Some(FIBER_GERMINATED));
     assert!(!both.same_action(&spatial), "a germinated axis is a new generator, not a new digest");
-    spatial.open_axis(translator_versor(2, 0));
+    spatial.open_axis(translator_versor(2, 0)).expect("a seat");
     assert_eq!(spatial.opened_axes(), vec![FIBER_GERMINATED]);
+}
+
+/// STD1 — A WORD WHOSE LARGEST AXIS SEAT IS THE CARRIER'S LAST HAS NO SEAT
+/// LEFT: a new transport is refused, never pinned onto the last seat, and
+/// the word is as it was. A transport it already seats still answers.
+#[test]
+fn an_axis_past_the_last_seat_is_refused() {
+    let mut e = Element::identity();
+    let last = translator_versor(1, 1);
+    e.action.germinated.push((u16::MAX, last.clone()));
+    assert_eq!(e.open_axis(translator_versor(2, 3)), None, "no seat past the last");
+    assert_eq!(e.germinated().len(), 1, "the word is as it was");
+    assert_eq!(e.open_axis(last), Some(u16::MAX), "the seat it has still answers");
 }
 
 /// A CHAIN MEASURES THREE LANES AND NEVER CLAIMS THE FOURTH.

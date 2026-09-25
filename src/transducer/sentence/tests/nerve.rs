@@ -44,8 +44,8 @@ fn a_citation_set_is_not_an_arrival_order() {
     let mut b = Form::default();
     b.glue(&a, a_at.clone(), Word::identity(), [0, 0, 0, 1]).expect("b cites a");
     let b_at = addr_of(&b);
-    assert_eq!(a.depth_of(), 0, "a cites nothing");
-    assert_eq!(b.depth_of(), 1, "b cites a depth-0 form");
+    assert_eq!(a.depth_of(), Some(0), "a cites nothing");
+    assert_eq!(b.depth_of(), Some(1), "b cites a depth-0 form");
 
     // ONE SET OF CITATIONS, TWO ARRIVAL ORDERS.
     let mut deep_first = Form::default();

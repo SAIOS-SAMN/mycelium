@@ -299,7 +299,7 @@ pub struct FieldEntry {
     pub chart: crate::transducer::stalk::Invariant,
     pub state: crate::transducer::stalk::Closure,
     pub remainder: Vec<(i64, i64, u8, u8)>,
-    pub stagnant: [u32; 4],
+    pub stagnant: [u64; 4],
 }
 
 /// One listing's coherence field: the charts and the non-Flat count, updated
@@ -307,7 +307,7 @@ pub struct FieldEntry {
 #[derive(Debug, Clone, Default)]
 pub struct ListingField {
     pub entries: Vec<FieldEntry>,
-    pub nonflat: u32,
+    pub nonflat: u64,
 }
 
 /// ONE PRICED ITEM ON A QUOTE.

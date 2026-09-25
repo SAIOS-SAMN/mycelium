@@ -11,6 +11,7 @@ thread_local! {
     static FACE_WORK: Cell<u64> = const { Cell::new(0) };
 }
 
+#[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
 pub(crate) fn note_face_work() {
     FACE_WORK.with(|c| c.set(c.get().saturating_add(1)));
 }

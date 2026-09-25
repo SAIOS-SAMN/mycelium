@@ -83,7 +83,12 @@ impl Kernel {
             if let Some(crate::economy::escrow::Escrowed { mu: held, .. }) = self.treasury.release_award(addr) {
                 let take = self.treasury.settle_solve(voice, held, settled);
                 for l in 0..4 {
-                    paid[l] = paid[l].saturating_add(take[l]);
+                    #[expect(
+                        clippy::disallowed_methods,
+                        reason = "rule 11 — each take is minted to the one solving voice, whose credit is checked, and nothing in this loop debits it: Σ take ≤ that voice's balance ≤ u64::MAX"
+                    )]
+                    let p = paid[l].saturating_add(take[l]);
+                    paid[l] = p;
                 }
             }
         }

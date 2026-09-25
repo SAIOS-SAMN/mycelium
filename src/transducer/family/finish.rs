@@ -39,7 +39,9 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
     for (a, b) in family {
         for g in [a, b] {
             let (h, w) = frame_of(g);
-            n = n.saturating_add(h * w);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the cell counts of resident grids cannot sum past a 64-bit usize")]
+            let next = n.saturating_add(h * w);
+            n = next;
         }
     }
     n
@@ -64,7 +66,7 @@ pub(crate) fn finish(
         }
         form.stand_demand(kind, &chart, germ.to_vec());
     }
-    form.depth = form.depth_of();
+    form.depth = form.depth_of()?;
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     form.ratio = scale;
     form.sections = sections;

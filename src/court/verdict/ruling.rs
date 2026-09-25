@@ -178,11 +178,18 @@ pub fn rule(
                 },
             };
             if let Some(h) = group_view {
+                // STD1 — an obstruction with no axis seat left for a
+                // component is refused by name, never read without it.
+                const NO_SEAT: &str = "the obstruction has no axis seat left for a component";
                 if let Some(v) = h.versor() {
-                    obstruction.open_axis(v);
+                    if obstruction.open_axis(v).is_none() {
+                        return Ruling::Slashed(NO_SEAT);
+                    }
                 }
                 for (_, v) in h.germinated() {
-                    obstruction.open_axis(v.clone());
+                    if obstruction.open_axis(v.clone()).is_none() {
+                        return Ruling::Slashed(NO_SEAT);
+                    }
                 }
             }
             // δg = 0 read on the element itself: no axis and no chain is

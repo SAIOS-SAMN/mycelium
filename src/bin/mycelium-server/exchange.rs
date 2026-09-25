@@ -195,6 +195,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
                             Some(n) => *n,
                             None => 0,
                         };
+                        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per deferral event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
                         let n = seen.saturating_add(1);
                         deferred.insert(addr.as_bytes(), n);
                         if n % aperture == 0 {

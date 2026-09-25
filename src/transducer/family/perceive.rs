@@ -178,6 +178,7 @@ pub(crate) fn reset_sensor_reads() {
     SENSOR_READS.with(|c| c.set(0));
 }
 
+#[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
 pub(crate) fn note_sensor_read() {
     SENSOR_READS.with(|c| c.set(c.get().saturating_add(1)));
 }

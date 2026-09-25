@@ -77,7 +77,7 @@ fn a_leaf_on_a_class_edge_or_glued_stands() {
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &p,
         crate::transducer::element::identity_versor(),
-        crate::transducer::sentence::CycleType::of(&[]),
+        crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class reads");
     let ek = c.complex.link(&vs[4], 1)[0].clone();

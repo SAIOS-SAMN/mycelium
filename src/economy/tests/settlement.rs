@@ -148,3 +148,25 @@ fn settlement_split_never_invents_units_below_voice_count() {
     assert_eq!(t.balance_mu(&[1; 32]), [0; 4]);
 }
 
+/// STD1 — paid ≤ held, AND THE DEBIT SHORTS NOTHING. A recall and a door
+/// fee asking more than the balance holds pay what it holds and read the
+/// rest as the shortfall; the debit of the paid amount against that same
+/// balance goes through whole, its burn row is written, and the ledger
+/// still conserves. The arm that read a short debit here could not fire,
+/// and this is the reading it was standing in for.
+#[test]
+fn a_fee_past_the_balance_pays_what_is_held_and_the_debit_shorts_nothing() {
+    let mut t = Treasury::new();
+    let a = at(1, [1; 32]);
+    t.genesis([7; 32], [5, 2, 0, 0], a);
+    let rows = t.entry_count();
+    let (paid, short) = t.settle_recall([7; 32], &[8, 1, 0, 0], &[0; 4], a);
+    assert_eq!((paid, short), ([5, 1, 0, 0], [3, 0, 0, 0]), "paid is what was held, the rest is short");
+    assert_eq!(t.balance_mu(&[7; 32]), [0, 1, 0, 0], "the whole of paid left the balance");
+    assert_eq!(t.entry_count(), rows + 1, "one burn row, for what left");
+    let (paid, short) = t.settle_door([7; 32], [0, 4, 0, 0], a);
+    assert_eq!((paid, short), ([0, 1, 0, 0], [0, 3, 0, 0]), "the door fee reads the same way");
+    assert_eq!(t.balance_mu(&[7; 32]), [0; 4]);
+    assert_eq!(t.audit().expect("the ledger still conserves"), [0; 4]);
+}
+

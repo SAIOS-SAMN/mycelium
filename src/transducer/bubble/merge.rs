@@ -27,8 +27,13 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         let Some(shift) = off.checked_sub(1) else {
             return false;
         };
-        let i = if face.i == 0 { 0 } else { face.i.saturating_add(shift) };
-        let j = if face.j == 0 { 0 } else { face.j.saturating_add(shift) };
+        // STD1 — a shifted index past its carrier names no vertex of the
+        // join: the join is not read as coherent, exactly as a shift that
+        // did not read is not.
+        let shifted = |x: u16| if x == 0 { Some(0) } else { x.checked_add(shift) };
+        let (Some(i), Some(j)) = (shifted(face.i), shifted(face.j)) else {
+            return false;
+        };
         f.faces.push(sentence::FormFace {
             i,
             j,

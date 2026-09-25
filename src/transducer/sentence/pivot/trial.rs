@@ -418,7 +418,7 @@ impl Form {
             let periods = match crate::transducer::cech::classify(
                 &w.rotor(),
                 &transport.carriage,
-                crate::transducer::sentence::CycleType::of(&[]),
+                crate::transducer::sentence::CycleType::Identity,
             ) {
                 crate::transducer::cech::Fill::Congruent(..) => w.rotor().toral_period(),
                 _ => crate::transducer::sentence::ToralPeriod { plane_1: None, plane_2: None },

@@ -46,6 +46,7 @@ fn one_ring(family: &[(Grid, Grid)]) -> Option<u8> {
             .chain((0..fy.0 as i64).map(|r| (r, 0)))
             .chain((0..fy.0 as i64).map(|r| (r, last_col as i64)))
             .collect();
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
         let bound = (fy.0.saturating_add(fy.1)) as u32;
         let r = ring_dist_peel(&positions_of(&outs), &frame_anchor, bound)?;
         match rings {

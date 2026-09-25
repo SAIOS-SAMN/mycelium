@@ -397,7 +397,7 @@ impl Element {
         clippy::disallowed_methods,
         reason = "rule 4 — the largest index a word carries is a reading of its own axis set, content"
     )]
-    pub fn open_axis(&mut self, v: Versor) -> u16 {
+    pub fn open_axis(&mut self, v: Versor) -> Option<u16> {
         if let Some((held, _)) = self
             .action
             .germinated
@@ -405,15 +405,18 @@ impl Element {
             .find(|(_, w)| same_versor(w, &v))
             .map(|(i, w)| (*i, w))
         {
-            return held;
+            return Some(held);
         }
+        // STD1 — the next seat is one past the largest, and a word whose
+        // largest seat is the carrier's last has no seat left: refused,
+        // never a second axis pinned onto the last one.
         let i = match self.action.germinated.iter().map(|(i, _)| *i).max() {
-            Some(m) => m.saturating_add(1).max(FIBER_GERMINATED),
+            Some(m) => m.checked_add(1)?.max(FIBER_GERMINATED),
             None => FIBER_GERMINATED,
         };
         self.action.germinated.push((i, v));
         self.address.take();
-        i
+        Some(i)
     }
 
     pub fn germinated(&self) -> &[(u16, Versor)] {
@@ -810,6 +813,22 @@ impl Element {
 
 }
 
+/// STD1 (rule 11) — MEASURE_BOUND, the one statement every pure-count sum
+/// cites under its `#[expect]`.
+///
+/// Each lane of a chain's measure is a support count: 𝒮 and 𝒢 count links;
+/// 𝒽 is a difference of component counts plus a difference of boundary
+/// counts of supports of at most that many sites, at most one plus four per
+/// site; 𝒯 is 0. So every lane is at most five times the chain's links. A
+/// link is 18 bytes and an address space is below 2⁴⁸, so a sum of measures
+/// over RESIDENT chains stays below 2⁵⁰ — as do a resident grid's frame
+/// dimensions, their sum and its cell count — and none can pass a `u64`, or
+/// a 64-bit `usize`. A sum whose summands can arrive from outside a resident
+/// carrier (a wire magnitude, an escrow, a price) is not covered: it is
+/// checked and refused.
+pub const MEASURE_BOUND: &str =
+    "each lane of a chain's measure is at most five times its links; a sum over resident chains cannot pass u64";
+
 /// The perceptual lane projection of a centered coboundary chain — the
 /// per-lane magnitude MEASURED from the chain's geometry, never funneled
 /// onto one axis:
@@ -829,6 +848,9 @@ impl Element {
 /// A recolour word is gauge-lane work; a move is spatial; a hole closing is
 /// shell. Without these projections the four-lane manifold degenerates to a
 /// scalar on 𝒯 and every gradient downstream flatlines.
+///
+/// STD1 — the lanes are support counts, and [`MEASURE_BOUND`] is what that
+/// buys every sum of them.
 pub fn measure_lanes(chain: &[(i64, i64, u8, u8)]) -> [u64; 4] {
     let mut spatial = 0u64;
     let mut gauge = 0u64;
@@ -881,7 +903,12 @@ impl Element {
     /// Total under [`holonomic_fits`], which every writer holds.
     pub fn magnitude(&self) -> [u64; 4] {
         let mut m = self.mag;
-        m[3] = m[3].saturating_add((self.sections.len() + self.torsion.len()) as u64);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 11 — holonomic_fits: mag[3] + sections + torsion stays inside u64, held by set_magnitude, from_connection, the record decode, puncture (attach, merge_fibre) and record_cycle; torse only condenses"
+        )]
+        let h = m[3].saturating_add((self.sections.len() + self.torsion.len()) as u64);
+        m[3] = h;
         m
     }
 

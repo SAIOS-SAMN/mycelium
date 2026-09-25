@@ -53,7 +53,7 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
         ));
         f.faces.push(f.face_of(0, 1).expect("star"));
         f.remainder = crate::transducer::element::PlacedChain::default();
-        f.depth = f.depth_of();
+        f.depth = f.depth_of().expect("a fixture's depth reads");
         f.reindex();
         f
     };

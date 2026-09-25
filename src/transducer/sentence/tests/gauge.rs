@@ -92,7 +92,7 @@ fn conjugate_hue_permutations_are_one_cycle_type() {
     let a = CycleType::of(&[(1, 2), (2, 1)]);
     let b = CycleType::of(&[(3, 4), (4, 3)]);
     assert_eq!(a, b, "cycle type is sorted lengths, not the listing");
-    assert_eq!(a, CycleType::Type(vec![2]));
+    assert_eq!(a, CycleType::Type(vec![1]), "one 2-cycle, written ℓ − 1");
     let z = element::identity_versor();
     let ka = ClassVector::read(&Word::identity(), z.clone(), a).expect("identity");
     let kb = ClassVector::read(&Word::identity(), z, b).expect("identity");
@@ -103,6 +103,19 @@ fn conjugate_hue_permutations_are_one_cycle_type() {
         "(1 2) and (3 4) are one Hue coordinate"
     );
     assert!(!ka.is_zero(), "a hue cycle is not closed");
+}
+
+/// STD1 — A CYCLE OF EVERY HUE IS READ, NEVER PINNED. Hue 0 is a listed hue,
+/// so one cycle can run all 256; its length is no `u8`, and written by its
+/// coordinate over the carrier, `ℓ − 1 = 255`, it is exact — where the
+/// length it replaced stood pinned at 255, one short, the type of a
+/// 255-cycle.
+#[test]
+fn a_cycle_of_every_hue_is_read_exactly() {
+    let every: Vec<(u8, u8)> = (0..=255u8).map(|h| (h, h.wrapping_add(1))).collect();
+    assert_eq!(CycleType::of(&every), CycleType::Type(vec![255]), "one 256-cycle");
+    let short: Vec<(u8, u8)> = (0..=254u8).map(|h| (h, if h == 254 { 0 } else { h + 1 })).collect();
+    assert_eq!(CycleType::of(&short), CycleType::Type(vec![254]), "one 255-cycle, apart from it");
 }
 
 #[test]

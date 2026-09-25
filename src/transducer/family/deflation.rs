@@ -199,7 +199,9 @@ pub fn form_deflation_at(
             crate::economy::deflation_of(&crate::economy::lane_moves(&after_mu, &before_mu));
         if after_chain.is_empty() || form.demand_vertices().next().is_some() {
             for (p, d) in pay.iter_mut().zip(&closed) {
-                *p = p.saturating_add(*d);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
+                let next = p.saturating_add(*d);
+                *p = next;
             }
         }
         remainders.push(after_chain);
@@ -407,7 +409,9 @@ pub fn sentence_measure_from(
             &element::measure_lanes(&before_chain),
         ));
         for (m, d) in mag.iter_mut().zip(&closed) {
-            *m = m.saturating_add(*d);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a deflation is at most its pair's resident measure, and their sum cannot pass u64")]
+            let next = m.saturating_add(*d);
+            *m = next;
         }
     }
     let mut demanded: Vec<Link> = Vec::new();
@@ -416,7 +420,9 @@ pub fn sentence_measure_from(
     }
     let asked = element::measure_lanes(&demanded);
     for (m, a) in mag.iter_mut().zip(&asked) {
-        *m = m.saturating_add(*a);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): resident deflations plus a resident demand's measure cannot pass u64")]
+        let next = m.saturating_add(*a);
+        *m = next;
     }
     // The span is the bundle's, not a sum over its pairs: a family standing
     // three frames does not age three times (51.9). It is written, not added.
@@ -448,7 +454,9 @@ pub fn bundle_pressure(
         let residual = residual_of(grid.as_ref(), y);
         let m = element::measure_lanes(&residual);
         for l in 0..4 {
-            sum[l] = sum[l].saturating_add(m[l]);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
+            let next = sum[l].saturating_add(m[l]);
+            sum[l] = next;
         }
         pairs.push(m);
     }

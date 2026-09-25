@@ -479,7 +479,7 @@ pub const AXIS_NO_VERSOR: &str = "no rational versor carries one body onto the o
 pub const AXIS_TRIED: &str = "the listing was tried in this language";
 pub const AXIS_ALREADY: &str = "the axis germ was already spoken";
 pub const AXIS_REFUSED_SPEECH: &str = "the axis germ was refused on the wire";
-pub const AXIS_PAST_CARRIER: &str = "the axis germ's measure would pass its carrier";
+pub const AXIS_PAST_CARRIER: &str = "the axis germ's measure or axis seat would pass its carrier";
 
 pub struct Entity {
     pub(crate) session: Session,

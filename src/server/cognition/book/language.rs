@@ -80,7 +80,9 @@ impl Kernel {
                     seq,
                 },
             );
-            seq = seq.saturating_add(1);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident word: a count of what the basis holds cannot pass a u64")]
+            let n = seq.saturating_add(1);
+            seq = n;
         }
         self.language = std::sync::Arc::new(Language {
             words,
@@ -135,7 +137,9 @@ impl Kernel {
             Some(w) => w.seq,
             None => {
                 let s = lang.next_seq;
-                lang.next_seq = lang.next_seq.saturating_add(1);
+                #[expect(clippy::disallowed_methods, reason = "rule 11 — one per word admitted in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
+                let n = lang.next_seq.saturating_add(1);
+                lang.next_seq = n;
                 s
             }
         };

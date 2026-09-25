@@ -138,7 +138,9 @@ for (x, y) in &family {
     let chain = crate::arc::refine_delta(x, y).expect("coboundary").delta;
     let lanes = crate::transducer::element::measure_lanes(&chain);
     for i in 0..4 {
-        expect[i] = expect[i].saturating_add(lanes[i]);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the fixture family's chain measures cannot pass u64")]
+        let e = expect[i].saturating_add(lanes[i]);
+        expect[i] = e;
     }
 }
 assert!(expect.iter().any(|&x| x > 0), "the family has a coboundary to close");

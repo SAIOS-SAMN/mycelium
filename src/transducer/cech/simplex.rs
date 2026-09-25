@@ -384,7 +384,7 @@ pub fn extend(section_a: &Section, section_b: &Section, simplex: &Simplex) -> Fi
     #[cfg(test)]
     crate::network::nerve::work::count_extend();
     use crate::transducer::element::{identity_versor, same_versor};
-    let hue = crate::transducer::sentence::CycleType::of(&[]);
+    let hue = crate::transducer::sentence::CycleType::Identity;
     // Each section's reverse: rays (78.32(1)).
     let Some(inv_r) = section_a.gamma.is_versor().then(|| section_a.gamma.reverse()) else {
         return Fill::Unread(FillUnread::SectionNotVersor);

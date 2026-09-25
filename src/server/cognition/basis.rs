@@ -523,11 +523,16 @@ impl Kernel {
             // between them would file the dislocation against a form that
             // does not yet have the axis.
             Some(w) => w.update(|e| {
-                let axis = e.open_axis(seed);
+                let axis = e.open_axis(seed)?;
                 e.record_dislocation(asg, fail.clone(), axis);
-                axis
+                Some(axis)
             }),
             None => return,
+        };
+        // STD1 — a word with no axis seat left germinates nothing, counted.
+        let Some(axis) = axis else {
+            self.overflowed += 1;
+            return;
         };
         self.touch_at(addr);
         eprintln!(

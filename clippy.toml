@@ -62,6 +62,15 @@ disallowed-methods = [
     { path = "slice::last", reason = "rule 15: a member by position is a choice" },
     { path = "core::iter::Iterator::nth", reason = "rule 15: a member by position is a choice" },
 
+    # STD1 (rule 11). A SUM PINNED AT ITS CARRIER IS A CEILING: checked and
+    # refused by name, or proved by a stated invariant — one per event in one
+    # process, MEASURE_BOUND, holonomic_fits — under `#[expect]`.
+    { path = "u8::saturating_add", reason = "rule 11: a ceiling is an invented value; check and refuse, or prove the bound" },
+    { path = "u16::saturating_add", reason = "rule 11: a ceiling is an invented value" },
+    { path = "u32::saturating_add", reason = "rule 11: a ceiling is an invented value" },
+    { path = "u64::saturating_add", reason = "rule 11: a ceiling is an invented value" },
+    { path = "usize::saturating_add", reason = "rule 11: a ceiling is an invented value" },
+
     { path = "u8::saturating_mul", reason = "rule 11: a ceiling is an invented value" },
     { path = "u16::saturating_mul", reason = "rule 11: a ceiling is an invented value" },
     { path = "u32::saturating_mul", reason = "rule 11: a ceiling is an invented value" },

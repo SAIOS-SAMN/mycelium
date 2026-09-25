@@ -319,7 +319,12 @@ pub(crate) fn key_in_fiber(key: &[u8], prefix: &[u8]) -> bool {
 }
 
 pub(crate) fn clear_after_bit(key: &[u8], bit: usize) -> Vec<u8> {
-    let start = bit.saturating_add(1);
+    // A bit with no successor is past every byte of the key, and clearing
+    // after it clears nothing — the same reading as a start past the key
+    // below, never a start pinned at the carrier (STD1).
+    let Some(start) = bit.checked_add(1) else {
+        return key.to_vec();
+    };
     let byte = start / 8;
     let off = start % 8;
     if byte >= key.len() {

@@ -92,7 +92,16 @@ pub fn decode_class_records(body: &[u8]) -> Vec<ClassPage> {
     };
     let mut p = 1usize;
     for t in &words {
-        p = p.saturating_add(crate::chronometry::Stamp::LEN).saturating_add(4).saturating_add(t.word.len());
+        // STD1 — an offset past its carrier is past the body, and a page
+        // whose words run past its body names no classes, as below.
+        let Some(next) = p
+            .checked_add(crate::chronometry::Stamp::LEN)
+            .and_then(|q| q.checked_add(4))
+            .and_then(|q| q.checked_add(t.word.len()))
+        else {
+            return Vec::new();
+        };
+        p = next;
     }
     if p + 2 > body.len() {
         return Vec::new();

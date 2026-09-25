@@ -62,7 +62,7 @@ impl Kernel {
                 let nonflat: Vec<_> = listing.entries.iter().filter(|e| !e.state.is_flat()).collect();
                 if occupied
                     && !nonflat.is_empty()
-                    && (0..4).all(|l| t[l] == 0 || nonflat.iter().all(|e| e.stagnant[l] >= kappa))
+                    && (0..4).all(|l| t[l] == 0 || nonflat.iter().all(|e| e.stagnant[l] >= u64::from(kappa)))
                 {
                     Some(k)
                 } else {
@@ -252,11 +252,11 @@ impl Kernel {
     }
 
     #[cfg(test)]
-    pub(crate) fn stagnant_of(&self, addr: &[u8]) -> [u32; 4] {
+    pub(crate) fn stagnant_of(&self, addr: &[u8]) -> [u64; 4] {
         let Some(listing) = self.field.get(addr) else {
             return [0; 4];
         };
-        let mut s = [0u32; 4];
+        let mut s = [0u64; 4];
         for e in &listing.entries {
             if e.state.is_flat() {
                 continue;

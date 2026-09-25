@@ -91,6 +91,10 @@ pub struct ProbeTally {
 
 impl ProbeTally {
     /// One probe's reading, folded in.
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "rule 11 — an instrument's total (PR1, §8.1), read by no cognition and no price: the μ⃗ a voice's own probes settled and left, each a shortfall of a resident listing's measure (MEASURE_BOUND)"
+    )]
     pub fn note(&mut self, r: &crate::anastome::dialogue::ProbeReading) {
         use crate::anastome::dialogue::ProbeClosure;
         match &r.closure {

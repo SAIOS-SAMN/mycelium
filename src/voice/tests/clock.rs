@@ -91,7 +91,7 @@ fn an_orbits_docket_rides_its_close_and_survives_a_restart() {
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &p,
         crate::transducer::element::identity_versor(),
-        crate::transducer::sentence::CycleType::of(&[]),
+        crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class reads");
     let docket = vec![
@@ -125,7 +125,7 @@ fn an_open_entry_is_cited_by_every_close_until_answered() {
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &p,
         crate::transducer::element::identity_versor(),
-        crate::transducer::sentence::CycleType::of(&[]),
+        crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class reads");
     let entry = Cite::Demand { class: Box::new(kappa), cover: Some(vec![vec![7]]) };

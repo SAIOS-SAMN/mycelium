@@ -90,7 +90,9 @@ impl Kernel {
                 voice[0],
                 voice[1]
             );
-            self.court_demands_listed = self.court_demands_listed.saturating_add(1);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
+            let n = self.court_demands_listed.saturating_add(1);
+            self.court_demands_listed = n;
         }
     }
 

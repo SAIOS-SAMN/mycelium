@@ -141,7 +141,9 @@ fn carrier_line(entity: &mycelium::client::sdk::Entity) -> String {
     let mut out = String::new();
     let mut total = 0usize;
     for (name, keys, values, n) in entity.carrier_bytes() {
-        total = total.saturating_add(keys).saturating_add(values);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — a byte total of resident carriers: bytes this process holds cannot pass a 64-bit usize")]
+        let next = total.saturating_add(keys).saturating_add(values);
+        total = next;
         if keys == 0 && values == 0 && n == 0 {
             continue;
         }
@@ -270,7 +272,9 @@ fn main() {
             }
             break;
         }
-        stroke_n = stroke_n.saturating_add(1);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per stroke in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
+        let next = stroke_n.saturating_add(1);
+        stroke_n = next;
         for l in 0..4 {
             // A lane with no dwell left has none to spend: the reading of
             // absence, not a floor.

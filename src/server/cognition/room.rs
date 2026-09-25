@@ -279,8 +279,15 @@ impl Kernel {
         if self.t_leases.contains(&voice) {
             return;
         }
+        // STD1 — the T lane also carries listings' measures, so a lease is a
+        // step of a sum and not only of a count: one past the lane's carrier
+        // grants nothing, counted.
+        let Some(next) = self.occupancy[2].checked_add(1) else {
+            self.overflowed += 1;
+            return;
+        };
         self.t_leases.insert(voice, ());
-        self.occupancy[2] = self.occupancy[2].saturating_add(1);
+        self.occupancy[2] = next;
     }
 
     /// Return a T-lease when the voice's quoted work settles or expires.

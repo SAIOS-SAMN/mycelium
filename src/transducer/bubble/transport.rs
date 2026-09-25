@@ -87,7 +87,7 @@ fn disagreement(
 ) -> Option<(crate::transducer::sentence::ClassVector, Rotor)> {
     let r = b.0.geo(&a.0.reverse());
     let c = b.1.geo(&a.1.reverse());
-    let kappa = crate::transducer::sentence::ClassVector::of_rotor(&r, c, crate::transducer::sentence::CycleType::of(&[]))?;
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(&r, c, crate::transducer::sentence::CycleType::Identity)?;
     Some((kappa, r))
 }
 

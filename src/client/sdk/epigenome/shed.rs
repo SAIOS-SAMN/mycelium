@@ -15,7 +15,9 @@ impl Epigenome {
     pub fn touch(&mut self, addr: &[u8], now_k: u64) {
         if let Some(d) = self.dialect.get_mut(addr) {
             d.last_used_k = now_k;
-            d.uses = d.uses.saturating_add(1);
+            #[expect(clippy::disallowed_methods, reason = "rule 11 — one per use: a u64 of events cannot pass 2⁶⁴")]
+            let n = d.uses.saturating_add(1);
+            d.uses = n;
         }
     }
 
@@ -90,7 +92,9 @@ impl Epigenome {
         for a in &drop {
             self.drop_dialect(a);
         }
-        self.shed_n = self.shed_n.saturating_add(drop.len() as u64);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per resident entry shed: a u64 of events cannot pass 2⁶⁴")]
+        let n = self.shed_n.saturating_add(drop.len() as u64);
+        self.shed_n = n;
         drop
     }
 

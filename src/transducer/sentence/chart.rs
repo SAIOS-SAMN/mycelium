@@ -37,11 +37,17 @@ pub fn reset_retractions() {
 impl Form {
     /// Drop the named vertices (keyed by old index), drop faces that touched
     /// them, remap surviving faces through the old-to-new map, rebuild orbits.
-    pub fn retract_vertices(&mut self, drop: &Keyed<(), crate::network::nerve::coord::VertexIx>) {
+    ///
+    /// `false` where the retracted form's depth does not read (STD1,
+    /// `depth_of`): the form is no form this build can write, and the caller
+    /// refuses it rather than hold it at a stale depth.
+    #[must_use]
+    pub fn retract_vertices(&mut self, drop: &Keyed<(), crate::network::nerve::coord::VertexIx>) -> bool {
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
         RETRACTIONS.with(|c| c.set(c.get().saturating_add(1)));
         let n = self.vertices.len();
         if n == 0 {
-            return;
+            return true;
         }
         let mut old_to_new: Vec<Option<u16>> = vec![None; n];
         let mut new_verts = Vec::new();
@@ -144,8 +150,12 @@ impl Form {
         self.torsion = torsion;
         self.axes = axes;
         self.orbits = Self::orbits_of(&self.faces, &self.vertices);
-        self.depth = self.depth_of();
+        let Some(depth) = self.depth_of() else {
+            return false;
+        };
+        self.depth = depth;
         self.reindex();
+        true
     }
 
     /// Replace every face `g_ij` by `γ_j · g_ij · γ_i⁻¹`. Holonomies of

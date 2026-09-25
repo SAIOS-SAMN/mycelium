@@ -373,7 +373,7 @@ let crystal = Held {
     f: held_form,
 };
 let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("glues");
-assert_eq!(rule.form.depth_of(), 1, "gluing a depth-0 form is depth 1");
+assert_eq!(rule.form.depth_of(), Some(1), "gluing a depth-0 form is depth 1");
 let glued = rule
     .form
     .vertices

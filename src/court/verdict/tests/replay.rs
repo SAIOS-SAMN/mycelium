@@ -182,7 +182,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     );
     let rebuilt = crate::transducer::sentence::from_element_form(&deeper_e).expect("decodes");
     assert_eq!(
-        rebuilt.depth,
+        Some(rebuilt.depth),
         rebuilt.depth_of(),
         "a derived depth agrees with its own citations by construction"
     );
