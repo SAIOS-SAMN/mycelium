@@ -880,6 +880,7 @@ impl Contemplation {
             moved_k: self.now_k,
             escrow: volume,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),
+            paid_from: self.aperture_tu().map(|_| self.now_k),
             glues: Keyed::new(),
             glued_by: Keyed::new(),
             torsion: Keyed::new(),

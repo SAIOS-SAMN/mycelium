@@ -75,23 +75,28 @@ fn a_filament_a_sealed_circuit_traverses_is_credited_once_per_act() {
     assert_eq!(c.meet_graph().flux.orbit.zero, 2, "the next orbit reads both zero");
 }
 
-/// THE EXTENT'S LAPSES, READ UNDER FLUX: a thought whose edge carried flux
-/// over its paid extent would be renewed; one whose every edge read zero
-/// would lapse by ZeroFlux; an isolated thought is unfilamented, its flux
-/// undefined; before an aperture is measured the extent does not read.
+/// THE EXTENT'S LAPSES, READ UNDER FLUX over each thought's OWN paid extent:
+/// a thought whose edge carried flux since it was paid would be renewed;
+/// one whose every edge read zero since — flux before its payment does not
+/// count — would lapse by ZeroFlux; an isolated thought is unfilamented, its
+/// flux undefined; a thought never paid to a height does not read.
 #[test]
 fn the_extent_lapsed_is_read_under_flux() {
     let (mut c, vs) = thoughts(&[(1, b"c"), (2, b"c"), (3, b"d"), (4, b"d"), (5, b"e")], [1, 0, 0, 0]);
-    assert_eq!(c.under_flux(&vs[0], &Keyed::new()), UnderFlux::Unread, "no aperture measured");
-    let mut k = 0u64;
-    while c.aperture_tu().is_none() {
-        k += 10;
-        c.set_now(k);
-    }
-    c.file_spoken(b"spoken", flux::Circuits { charts: vec![vec![b"c".to_vec()]], words: Vec::new(), unnamed: 0 });
-    let _ = c.credit_flux(b"spoken", [0, 0, 1, 0]);
+    assert_eq!(c.under_flux(&vs[0], &Keyed::new()), UnderFlux::Unread, "never paid to a height");
+    let flow = |c: &mut Contemplation, chart: &[u8]| {
+        c.file_spoken(b"spoken", flux::Circuits { charts: vec![vec![chart.to_vec()]], words: Vec::new(), unnamed: 0 });
+        let _ = c.credit_flux(b"spoken", [0, 0, 1, 0]);
+    };
+    c.set_now(10);
+    flow(&mut c, b"d");
+    c.flux_close();
+    c.set_now(20);
+    flow(&mut c, b"c");
+    c.set_now(30);
     for v in [&vs[0], &vs[2], &vs[4]] {
-        c.bubbles.get_mut(v).expect("held").until = Some(1);
+        let b = c.bubbles.get_mut(v).expect("held");
+        (b.paid_from, b.until) = (Some(15), Some(25));
     }
     let _ = c.lapse_on_clock();
     let f = c.meet_graph().flux;

@@ -183,9 +183,11 @@ impl Contemplation {
         let unpaid: Vec<Vec<u8>> =
             self.bubbles.scoped().filter(|(_, b)| b.until.is_none()).map(|(k, _)| k).collect();
         let n = unpaid.len();
+        let from = self.now_k;
         for k in unpaid {
             if let Some(b) = self.bubbles.get_mut(&k) {
                 b.until = Some(until);
+                b.paid_from = Some(from);
             }
         }
         n
@@ -203,9 +205,11 @@ impl Contemplation {
         let Some(until) = self.now_k.checked_add(span) else {
             return false;
         };
+        let from = self.now_k;
         match self.bubbles.get_mut(key) {
             Some(b) => {
                 b.until = Some(until);
+                b.paid_from = Some(from);
                 true
             }
             None => false,

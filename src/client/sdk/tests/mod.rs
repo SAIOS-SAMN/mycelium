@@ -10,6 +10,7 @@ mod comprehension;
 mod contact;
 mod contract;
 mod demand;
+mod flux;
 mod glue;
 mod height;
 mod refinement;

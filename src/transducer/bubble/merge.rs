@@ -300,6 +300,7 @@ impl Contemplation {
             candidates: Keyed::new(),
             escrow: volume,
             until: None,
+            paid_from: None,
             rotor: form.as_ref().and_then(Bubble::rotor_of_form),
             form,
             bundle,

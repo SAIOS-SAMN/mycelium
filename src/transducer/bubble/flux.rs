@@ -34,7 +34,7 @@ pub struct FluxWindow {
 /// zero over the thought's paid extent — it lapses), flux on some lane (it
 /// is renewed), unfilamented (no edge — the extent stays its door), held by
 /// a ring (the door refuses while the ring stands), unread (the paid extent
-/// did not read — no aperture measured).
+/// did not read — the thought was never paid to a height).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum UnderFlux {
     ZeroFlux,
@@ -303,7 +303,8 @@ impl Contemplation {
         if edges.iter().any(|e| held.contains(e)) {
             return UnderFlux::HeldByRing;
         }
-        let Some(from) = self.aperture_tu().and_then(|span| self.now_k.checked_sub(span)) else {
+        // Its OWN paid extent, `[paid_from, until]` — the door's window.
+        let Some(from) = self.bubbles.get(key).and_then(|b| b.paid_from) else {
             return UnderFlux::Unread;
         };
         let this_orbit = |e: &Vec<u8>| self.flux.get(e).is_some_and(|phi| phi.iter().any(|&p| p > 0));

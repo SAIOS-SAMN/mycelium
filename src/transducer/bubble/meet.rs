@@ -211,7 +211,7 @@ impl MeetGraph {
             None => "unread".to_string(),
         };
         let flux = format!(
-            "flux: orbit {} ({}), aperture {aperture}, gone {}, unfilamented {} | acts credited {} acyclic {} unfiled {} unsealed {} unnamed nodes {} | extent lapsed: {extent} | dialect traversed orbit {} aperture {} idle {}",
+            "flux: orbits closed {} | orbit (K) {} | aperture (tu) {aperture} | gone {}, unfilamented {} | acts credited {} acyclic {} unfiled {} unsealed {} unnamed nodes {} | extent lapsed: {extent} | dialect traversed orbit {} aperture {} idle {}",
             f.closes,
             window(&f.orbit),
             f.gone,

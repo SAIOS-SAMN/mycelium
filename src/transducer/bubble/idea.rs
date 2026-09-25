@@ -193,6 +193,10 @@ pub struct Bubble {
     /// (rule 15). Such a thought lapses when the aperture is first measured
     /// and it is paid to a height, never against a default.
     pub until: Option<u64>,
+    /// FX1 — THE HEIGHT ITS PAID EXTENT BEGAN AT, on TUniversal: written
+    /// wherever `until` is, so the extent `[paid_from, until]` is one object
+    /// for the flux reading and the door after it. `None` with `until`.
+    pub paid_from: Option<u64>,
     /// Addresses this idea glued (crystallized forms it rests on).
     pub glues: Keyed<()>,
     /// Ideas that glued this bubble; a non-empty set is not shed.

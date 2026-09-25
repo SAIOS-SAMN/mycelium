@@ -211,6 +211,7 @@ impl Contemplation {
             // records, the same number (law 12).
             escrow,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),
+            paid_from: self.aperture_tu().map(|_| self.now_k),
             glues,
             glued_by: Keyed::new(),
             torsion,
