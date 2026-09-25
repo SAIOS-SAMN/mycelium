@@ -29,7 +29,10 @@ pub enum Demand {
     /// Boxed: four rationals and sixteen beside variants of a few bytes.
     Standing { block: Box<[[Q; 2]; 2]>, rotor: Box<Rotor> },
     /// An output body some input charts carry onto: every one of them stands.
-    Source { multiplicity: u32 },
+    /// The multiplicity is the count of those bodies, the percept's own, so
+    /// it is held as the count and written by its own coordinate (STD1 3c-4,
+    /// ruling (a)) — no width stands between a percept and its bodies.
+    Source { multiplicity: usize },
     /// An output body no input body carries onto.
     Creation,
     /// A body whose image has different harmonics: no versor exists.
@@ -154,7 +157,7 @@ impl Demand {
                 // one vertex and never one per scale.
                 rotor.put_canonical(out);
             }
-            Demand::Source { multiplicity } => out.extend_from_slice(&multiplicity.to_le_bytes()),
+            Demand::Source { multiplicity } => crate::transducer::address::put_key_count(out, *multiplicity),
             Demand::Creation => {}
             Demand::TopologicalDeformation { image, axes } => {
                 image.put_canonical(out);
@@ -204,8 +207,7 @@ impl Demand {
                 Demand::Standing { block: Box::new([[a, bq], [c, d]]), rotor: Box::new(rotor) }
             }
             2 => {
-                let m = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?);
-                *pos += 4;
+                let m = crate::transducer::address::take_key_count(b, pos)?;
                 Demand::Source { multiplicity: m }
             }
             3 => Demand::Creation,

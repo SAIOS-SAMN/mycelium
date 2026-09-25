@@ -187,7 +187,7 @@ impl Form {
                 if links.is_empty() {
                     return None;
                 }
-                let multiplicity = crate::transducer::sentence::pieces(links).len() as u32;
+                let multiplicity = crate::transducer::sentence::pieces(links).len();
                 let kind = crate::transducer::sentence::Demand::Source { multiplicity };
                 match self.demand_index(&kind, inv) {
                     Some(d) => {

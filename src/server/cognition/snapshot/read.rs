@@ -377,9 +377,9 @@ impl Kernel {
                     witness: leaf(leaves, LEAF_WITNESS)?.try_into().ok()?,
                     sig_home: leaf(leaves, LEAF_SIG_HOME)?.try_into().ok()?,
                     sig_witness: leaf(leaves, LEAF_SIG_WITNESS)?.try_into().ok()?,
-                    identities: u32::from_le_bytes(leaf(leaves, LEAF_IDENTITIES)?.try_into().ok()?),
+                    identities: u64::from_le_bytes(leaf(leaves, LEAF_IDENTITIES)?.try_into().ok()?),
                     first: whole(leaf(leaves, LEAF_FIRST)?, crate::chronometry::Place::take_canonical)?,
-                    count: u32::from_le_bytes(leaf(leaves, LEAF_COUNT)?.try_into().ok()?),
+                    count: u64::from_le_bytes(leaf(leaves, LEAF_COUNT)?.try_into().ok()?),
                     at,
                     receipts,
                 };

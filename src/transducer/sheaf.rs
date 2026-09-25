@@ -12,7 +12,8 @@ use super::stalk::{invariant_of, Invariant, Stalks};
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct StratumDigest {
     pub inv: Invariant,
-    pub count: u32,
+    /// The stratum's members: the mesh's count, `u64` (3b's rule).
+    pub count: u64,
     pub root: Vec<u8>,
 }
 
@@ -50,7 +51,7 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
         .strata()
         .into_iter()
         .map(|(inv, members)| StratumDigest {
-            count: members.len() as u32,
+            count: members.len() as u64,
             root: stratum_root(&members),
             inv,
         })
@@ -61,7 +62,7 @@ pub fn digests(stalks: &Stalks) -> Vec<StratumDigest> {
 /// different root. Everything else is glued.
 pub fn discordant<'a>(remote: &'a [StratumDigest], local: &[StratumDigest]) -> Vec<&'a StratumDigest> {
     use crate::network::nerve::Keyed;
-    let mut here: Keyed<(Vec<u8>, u32)> = Keyed::new();
+    let mut here: Keyed<(Vec<u8>, u64)> = Keyed::new();
     for l in local {
         here.insert(l.inv.key(), (l.root.clone(), l.count));
     }

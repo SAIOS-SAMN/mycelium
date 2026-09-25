@@ -36,8 +36,8 @@ pub struct FoldDone {
     /// The archived prefix, first place to last.
     pub first: Place,
     pub last: Place,
-    /// Identities the epoch rows named.
-    pub identities: u32,
+    /// Identities the epoch rows named: a count of the mesh's, `u64`.
+    pub identities: u64,
     pub witness: [u8; 32],
 }
 
@@ -116,14 +116,14 @@ impl Kernel {
                 return Err(reason);
             }
         };
-        let identities = folded.rows as u32;
+        let identities = folded.rows as u64;
         // THE FOLD SHEDS. `archive.push` kept every folded receipt on the
         // heap and the snapshot then wrote all of them on every persist;
         // `file_era` appends the payload to the cold segment once and
         // keeps the descriptor.
         // `first` above is this era's own first place, read once where the
         // fold cut the chain; it is not read a second time here (law 12).
-        let count = cold.len() as u32;
+        let count = cold.len() as u64;
         self.file_era(Era {
             root,
             signer: me,
@@ -225,15 +225,21 @@ impl Kernel {
         signer: &[u8; 32],
         from: Option<Place>,
         upto: Place,
-        cursor: u32,
+        cursor: u64,
         budget: usize,
-    ) -> (u32, Vec<Entry>) {
+    ) -> (u64, Vec<Entry>) {
         if *signer != self.identity || from.is_some_and(|f| f >= upto) {
             return (0, Vec::new());
         }
         let all = self.treasury.rows_span(from, upto);
-        let total = all.len() as u32;
-        let page = all.into_iter().skip(cursor as usize).take(budget).collect();
+        // The span's rows are the mesh's count, `u64` on the wire.
+        let total = all.len() as u64;
+        // A cursor past every `usize` is past every row this node holds:
+        // the page is empty, and the total says so.
+        let Ok(skip) = usize::try_from(cursor) else {
+            return (total, Vec::new());
+        };
+        let page = all.into_iter().skip(skip).take(budget).collect();
         (total, page)
     }
 }

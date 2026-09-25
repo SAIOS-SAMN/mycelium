@@ -106,12 +106,15 @@ impl Axis {
 /// `torsion` counts the open finite-order orbits; `free` is the ℤ-rank of
 /// the plane free parts alone; `offplane` is the number of distinct open
 /// off-plane rotor classes; `axes` the chart axes opened by discharge.
+///
+/// Counts of distinct classes, so `u64` (STD1 3b's rule, the provenance
+/// ruling: classes are the mesh's, never a width's).
 #[derive(Clone, Copy, Debug, Default)]
 pub struct Rank {
-    pub torsion: u32,
-    pub free: u32,
-    pub offplane: u32,
-    pub axes: u32,
+    pub torsion: u64,
+    pub free: u64,
+    pub offplane: u64,
+    pub axes: u64,
 }
 
 /// ONE COORDINATE of the rank audit, by name. A refusal says which

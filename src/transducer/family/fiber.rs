@@ -71,7 +71,7 @@ pub(super) fn unreached_demands(
     b0: &Body,
     reached: &Keyed<()>,
     chart: &Invariant,
-    n_in: u32,
+    n_in: usize,
 ) -> Vec<Demanded> {
     let mut out_links: Vec<Link> = Vec::new();
     for l in &b0.laminae {

@@ -59,7 +59,7 @@ pub(crate) fn finish(
     for (a, b) in unreached {
         let Some(germ) = germ_of_pair(a, b) else { continue };
         let chart = crate::transducer::stalk::invariant(&germ);
-        let multiplicity = crate::transducer::sentence::pieces(&germ).len() as u32;
+        let multiplicity = crate::transducer::sentence::pieces(&germ).len();
         let kind = crate::transducer::sentence::Demand::Source { multiplicity };
         if kind.typed().is_err() {
             continue;

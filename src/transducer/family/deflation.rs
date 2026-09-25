@@ -331,7 +331,7 @@ pub fn declare_unspoken(
             continue;
         }
         let chart = crate::transducer::stalk::invariant(&links);
-        let kind = Demand::Source { multiplicity: pieces(&links).len() as u32 };
+        let kind = Demand::Source { multiplicity: pieces(&links).len() };
         if kind.typed().is_err() {
             continue;
         }

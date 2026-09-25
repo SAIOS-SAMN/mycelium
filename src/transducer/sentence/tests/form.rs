@@ -562,10 +562,10 @@ fn a_sentence_chart_leads_with_axis_two_then_its_rank() {
         Some(
             [
                 2,
-                u64::from(rank.torsion),
-                u64::from(rank.free),
-                u64::from(rank.offplane),
-                u64::from(rank.axes)
+                rank.torsion,
+                rank.free,
+                rank.offplane,
+                rank.axes
             ]
             .map(crate::transducer::stalk::ChartAxis::Count)
             .as_slice()

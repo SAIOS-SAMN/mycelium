@@ -7,7 +7,7 @@ use mycelium::transducer::cga;
 fn rendered(readings: Vec<Reading>) -> String {
     let src = Source::Voice([7; 32]);
     let held: Vec<(Vec<u8>, Reading)> = readings.into_iter().map(|r| (src.key(r.tag()), r)).collect();
-    crate::console::render("test", held.len() as u32, &held).join("\n")
+    crate::console::render("test", held.len() as u64, &held).join("\n")
 }
 
 /// A census whose every turn stands on the grid plane is named FLATTENED,
@@ -95,7 +95,7 @@ fn every_source_stands_on_tuniversal_before_any_reading() {
         (Source::Voice([2; 32]).key(Reading::Loss(Loss::default()).tag()), Reading::Loss(Loss::default())),
         (Source::Voice([2; 32]).key(Reading::Clock(voice.clone()).tag()), Reading::Clock(voice)),
     ];
-    let out = crate::console::render("test", held.len() as u32, &held).join("\n");
+    let out = crate::console::render("test", held.len() as u64, &held).join("\n");
     let header = out.find("TUNIVERSAL").expect("the header is there");
     assert!(header < out.find("── COURT").expect("the court's block"), "TUniversal first: {out}");
     assert!(out.contains("h 40") && out.contains("K 13") && out.contains("stamp 40:1:0:2:0:12"), "{out}");

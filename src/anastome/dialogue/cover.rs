@@ -130,20 +130,28 @@ pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest])
 }
 
 pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
+    take_digests_reply(body).map(|(d, _)| d)
+}
+
+/// THE ONE READER of a digests reply: the digests and the offset one past
+/// the last, so a frame that carries one ahead of a cover digest finds the
+/// digest where this reading ended — never at a width computed a second
+/// time beside the writer's.
+fn take_digests_reply(body: &[u8]) -> Option<(Vec<crate::transducer::sheaf::StratumDigest>, usize)> {
     let n = u32::from_le_bytes(body.get(0..4)?.try_into().ok()?) as usize;
-    if n > body.len().checked_sub(4)? / 9 {
-        return None; // untrusted count: at least invariant + count + root per stratum
+    if n > body.len().checked_sub(4)? / 14 {
+        return None; // untrusted count: at least the chart's u16 length, the count (u64) and the root's u32 length per stratum
     }
     let mut p = 4usize;
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
         let inv = read_invariant(body, &mut p)?;
-        let count = u32::from_le_bytes(body.get(p..p + 4)?.try_into().ok()?);
-        p += 4;
+        let count = u64::from_le_bytes(body.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
         let root = crate::transducer::address::take_bytes(body, &mut p)?;
         out.push(crate::transducer::sheaf::StratumDigest { inv, count, root });
     }
-    Some(out)
+    Some((out, p))
 }
 
 /// Bytes the cover/ruled-root signature covers: per-lane cover roots, the
@@ -234,19 +242,13 @@ pub(crate) fn cover_digest_at(body: &[u8], at: usize) -> Option<(CoverDigest, us
 /// read as a digests reply, and the reply that carries both is the shape
 /// `judge` sends, so the two cannot be told apart by looking at the head.
 pub(crate) fn digests_reply_end(body: &[u8]) -> Option<usize> {
-    let digests = decode_digests_reply(body)?;
-    // THE WIDTH IS THE WRITER'S, not a literal restated here. `1 +` was
-    // the chart key's one length byte; the field is two (A21), and a width
-    // computed a second time is a width that can disagree with the one the
-    // writer used — which it did: the end moved, `whole_cover_digest` found
-    // a second parse that consumed the buffer, and the frame decoded as
-    // ambiguous and refused (law 12).
-    let mut p = 4usize;
-    for d in &digests {
-        let mut one = Vec::new();
-        push_invariant(&mut one, &d.inv)?;
-        p += one.len() + 4 + 4 + d.root.len();
-    }
+    // THE END IS THE READER'S, never a width restated here. This summed
+    // `one.len() + 4 + 4 + root` beside the writer, and a width computed a
+    // second time disagrees with the writer's the moment either moves —
+    // twice now: the chart's length byte (A21), and the stratum count's
+    // widening to `u64` (STD1 3c-4), after which the digest was sought four
+    // bytes short and no reading consumed the frame (law 12).
+    let (_, p) = take_digests_reply(body)?;
     (p < body.len()).then_some(p)
 }
 

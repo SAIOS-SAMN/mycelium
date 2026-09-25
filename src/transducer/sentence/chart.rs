@@ -674,7 +674,7 @@ fn corner_of(chain: &[crate::transducer::sentence::Link]) -> (i64, i64) {
 pub(crate) fn chart_of_form(f: &Form) -> Option<crate::transducer::stalk::Invariant> {
     let r = f.rank()?;
     Some(crate::transducer::stalk::Invariant(
-        [2u64, u64::from(r.torsion), u64::from(r.free), u64::from(r.offplane), u64::from(r.axes)]
+        [2u64, r.torsion, r.free, r.offplane, r.axes]
             .into_iter()
             .map(crate::transducer::stalk::ChartAxis::Count)
             .collect(),

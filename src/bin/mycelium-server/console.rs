@@ -149,11 +149,16 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         std::process::exit(2)
     };
     // What the frame budget cut stays said after the kind is kept.
-    let cut = total.abs_diff(held.len() as u32);
+    // In the count's own carrier: `held` is the reply's entries, and the
+    // arithmetic is exact or the line says it could not count.
+    let cut = u64::from(total).abs_diff(held.len() as u64);
     if let Some(t) = keep {
         held.retain(|(k, _)| Source::of_key(k).is_some_and(|(_, tag)| tag == t));
     }
-    let total = held.len() as u32 + cut;
+    let Some(total) = (held.len() as u64).checked_add(cut) else {
+        println!("{RED}{addr} answered a total past any count{RESET}");
+        std::process::exit(2)
+    };
     for line in render(&addr, total, &held) {
         println!("{line}");
     }
@@ -178,7 +183,7 @@ fn by_source(held: &[observe::Held]) -> Vec<(Source, Vec<Reading>)> {
     out
 }
 
-pub(crate) fn render(addr: &str, total: u32, held: &[observe::Held]) -> Vec<String> {
+pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<String> {
     let sources = by_source(held);
     let mut lines = vec![format!(
         "{CYAN}{BOLD}═══ MYCELIUM OBSERVER ═══{RESET}  {addr}  {DIM}{} readings of {total} held, {} sources{RESET}",

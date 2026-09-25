@@ -77,7 +77,8 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
         .collect();
     let all = encode_rows_reply(7, &rows, 1 << 16);
     assert_eq!(decode_rows_reply(&all), Some((7, rows.clone())));
-    let page = encode_rows_reply(7, &rows, 8 + 2 * Entry::TAPE);
+    // The header is the total (u64) and the page's count (u32).
+    let page = encode_rows_reply(7, &rows, 12 + 2 * Entry::TAPE);
     assert_eq!(decode_rows_reply(&page).map(|(t, r)| (t, r.len())), Some((7, 2)), "a budget for two carries two");
     assert!(decode_rows_reply(&all[..all.len() - 1]).is_none(), "a short page refuses");
 }

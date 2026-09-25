@@ -111,11 +111,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             witness: me,
             sig_home: p.section.sig,
             sig_witness: section.sig,
-            identities: p.epochs.len() as u32,
+            identities: p.epochs.len() as u64,
             // The place range the witness fetched, named on the descriptor
             // so it stands without the payload it is about to shed (45.8).
             first,
-            count: receipts.len() as u32,
+            count: receipts.len() as u64,
             at: None,
             receipts,
         });
@@ -169,7 +169,7 @@ fn fetch_rows(
     upto: Place,
 ) -> Option<Vec<mycelium::economy::Entry>> {
     let mut out = Vec::new();
-    let mut cursor = 0u32;
+    let mut cursor = 0u64;
     loop {
         let (reply, _) = tell_peer_within(dest, dialogue::encode_rows_request(me, home, from, upto, cursor), 16)?;
         if crate::transport::is_deferred(&reply) {
@@ -179,7 +179,7 @@ fn fetch_rows(
         if page.is_empty() {
             return (cursor >= total).then_some(out);
         }
-        cursor = cursor.checked_add(page.len() as u32)?;
+        cursor = cursor.checked_add(page.len() as u64)?;
         out.extend(page);
         if cursor >= total {
             return Some(out);

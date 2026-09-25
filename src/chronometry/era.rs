@@ -41,13 +41,17 @@ pub struct Era {
     pub witness: [u8; 32],
     pub sig_home: [u8; 64],
     pub sig_witness: [u8; 64],
-    pub identities: u32,
+    /// Counts of the mesh's events, so `u64` (STD1 3b's rule, the
+    /// provenance ruling): a fold names as many identities and holds as
+    /// many receipts as the mesh brought it, and no width is a ceiling on
+    /// that.
+    pub identities: u64,
     /// The first place this era holds; `root.at` is its last. Written
     /// out rather than read off `receipts`, so a descriptor whose payload
     /// is on disk still names its own range.
     pub first: Place,
     /// How many receipts the payload holds.
-    pub count: u32,
+    pub count: u64,
     /// Where the payload begins in the cold segment. `None` on an era
     /// that has not been filed — one being sealed, or one read off a wire.
     pub at: Option<u64>,
@@ -74,7 +78,9 @@ impl Era {
     #[must_use = "a payload that cannot be written is refused by name, never dropped (LD0)"]
     pub fn payload(&self) -> Option<Vec<u8>> {
         let mut out = Vec::new();
-        crate::transducer::address::put_u32_count(&mut out, self.receipts.len())?;
+        // The receipt count is `count`'s, the mesh's, so `u64` as the
+        // descriptor carries it: no width refuses a fold the mesh made.
+        out.extend_from_slice(&(self.receipts.len() as u64).to_le_bytes());
         for r in &self.receipts {
             r.write(&mut out)?;
         }
@@ -83,8 +89,8 @@ impl Era {
 
     /// Read a payload back: the count and the receipts behind it.
     pub fn read_payload(b: &[u8], pos: &mut usize) -> Option<Vec<KStepReceipt>> {
-        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
+        let n = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
+        *pos += 8;
         if n > b.len().checked_sub(*pos)? / KStepReceipt::MIN_TAPE {
             return None;
         }

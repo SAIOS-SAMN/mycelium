@@ -201,14 +201,14 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                         for (_, d) in cover.refused.scoped() {
                             demanded.push(d.clone());
                         }
-                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len() as u32);
+                        let mut demands = unreached_demands(ai, &a0, &b0, &cover.reached, c, ai.len());
                         let first = demands.split_off(1);
                         demanded.extend(first);
                         let [demand] = demands.as_slice() else { continue };
                         covers.push(Covered { demand: demand.clone(), cover, frame: k });
                     }
                     Err(_) => {
-                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len() as u32));
+                        demanded.extend(unreached_demands(ai, &a0, &b0, &Keyed::new(), c, ai.len()));
                     }
                 },
             }
