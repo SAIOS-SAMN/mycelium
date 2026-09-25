@@ -281,6 +281,7 @@ impl Contemplation {
         crate::transducer::cech::RemainderReading {
             refused: r.refused,
             past_carrier: r.past_carrier,
+            misspoken: r.misspoken,
             unsited: r.unsited,
             unrecorded: r.unrecorded,
             unminted: r.unminted,

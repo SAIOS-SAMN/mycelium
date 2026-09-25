@@ -42,9 +42,11 @@ pub struct RemainderReading {
     /// wall); the book did not take the rewrite (the court); the merge named
     /// no thought to be the rewrite's `after` (the mind). `past_carrier`: the
     /// record had no room for the cycle under the holonomic lane's
-    /// invariant (STD1, `holonomic_fits`).
+    /// invariant (STD1, `holonomic_fits`). `misspoken`: the cycle's stored
+    /// period was not the one read off its generator (PD1, 78.43(2)).
     pub refused: u64,
     pub past_carrier: u64,
+    pub misspoken: u64,
     pub unsited: u64,
     pub unrecorded: u64,
     pub unpriced: u64,
@@ -151,13 +153,14 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} past carrier {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {} unfilled {}",
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} past carrier {} misspoken {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {} unfilled {}",
             self.classes,
             self.across,
             self.unplaced,
             self.refilled,
             self.refused,
             self.past_carrier,
+            self.misspoken,
             self.unsited,
             self.unrecorded,
             self.unpriced,
@@ -201,6 +204,7 @@ impl RemainderReading {
             self.refilled,
             self.refused,
             self.past_carrier,
+            self.misspoken,
             self.unsited,
             self.unrecorded,
             self.unpriced,
@@ -259,6 +263,7 @@ impl RemainderReading {
             refilled: u64_at(b, p)?,
             refused: u64_at(b, p)?,
             past_carrier: u64_at(b, p)?,
+            misspoken: u64_at(b, p)?,
             unsited: u64_at(b, p)?,
             unrecorded: u64_at(b, p)?,
             unpriced: u64_at(b, p)?,

@@ -2,7 +2,7 @@
 // a restart whole, the address untouched, and the index rebuilt from it.
 
 use crate::client::sdk::*;
-use crate::transducer::element::{Element, Filed, Remainder, TorsionCycle, FIBER_SPATIAL};
+use crate::transducer::element::{Element, Filed, Generator, Remainder, TorsionCycle, FIBER_SPATIAL};
 
 fn quarter() -> crate::transducer::alphabet::Rotor {
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
@@ -17,7 +17,15 @@ fn remainder(at: &[&[u8]]) -> Remainder {
         crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a quarter turn has a class");
-    Remainder { class: Box::new(class), ray: Box::new(g), at: at.iter().map(|c| c.to_vec()).collect(), answered: None }
+    Remainder { class: Box::new(class), at: at.iter().map(|c| c.to_vec()).collect(), answered: None }
+}
+
+/// A HOLONOMY cycle turning by `ray` at the period READ off it (PD1): the
+/// remainder's ray is its cycle's generator, never a copy on the remainder.
+fn cycle_by(ray: crate::transducer::alphabet::Rotor, r: Option<Remainder>) -> TorsionCycle {
+    let generator = Generator::Holonomy(Box::new(ray));
+    let period = generator.order().expect("a remainder's ray is a finite-order rotor, as a Congruent fill files it");
+    TorsionCycle { generator, period, fibre: FIBER_SPATIAL, remainder: r }
 }
 
 /// Two incomparable chart chains, and a chain nested in the first: each the
@@ -41,9 +49,8 @@ fn chains() -> (Chain, Chain, Chain) {
 fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
     let mut r = remainder(&[]);
     r.at = at.to_vec();
-    r.ray = Box::new(ray);
     let mut w = super::common::two_body_sentence(gauges);
-    w.record_cycle(cycle(Some(r)));
+    w.record_cycle(cycle_by(ray, Some(r)));
     let k = entity.seal_word(crate::chronometry::ActKind::Stood, &w);
     let _ = entity.epigenome.stand_dialect_at(w.clone(), k, 0);
     w
@@ -129,22 +136,26 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
     assert_eq!((r.calluses, r.discordant), (0, 1), "one class, two twists, none chosen: {}", r.line());
 
     // π₁₇: its arc 15 + 8i has norm 17², which no product of the held
-    // primes reaches.
+    // primes reaches — and it turns FOREVER: a ray of infinite order has no
+    // period, so it is no holonomy cycle and no remainder can ride one (PD1:
+    // the period is read off the generator). The record refuses it by name;
+    // no Congruent fill files such a ray (classify files finite orders only).
     let pi17 = || {
         let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
         crate::transducer::alphabet::Rotor::scalar(q(4)).add(&crate::transducer::alphabet::Rotor::blade(0b0011, q(1)))
     };
-    let mut e = Entity::open("127.0.0.1:1", Kernel::named("unspelled"));
-    stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, pi17());
-    stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, pi17());
-    e.stand_calluses();
-    let r = e.meet_graph().remainders;
-    assert_eq!((r.calluses, r.unspelled), (0, 1), "{}", r.line());
-    let docket = e.contemplation.docket_cites();
-    assert!(
-        docket.iter().any(|c| matches!(c, crate::chronometry::Cite::Demand { cover: Some(cv), .. } if a.iter().chain(&b).all(|k| cv.contains(k)))),
-        "the class docketed as a Demand over both chains: {docket:?}"
-    );
+    assert_eq!(Generator::Holonomy(Box::new(pi17())).order(), None, "an infinite order is no period");
+    let mut w = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
+    let mut r = remainder(&[]);
+    r.at = a.clone();
+    let claimed = TorsionCycle {
+        generator: Generator::Holonomy(Box::new(pi17())),
+        period: 4,
+        fibre: FIBER_SPATIAL,
+        remainder: Some(r),
+    };
+    assert_eq!(w.record_cycle(claimed), Filed::Misspoken, "a period the ray does not have, refused by name");
+    assert_eq!(w.remainders().count(), 0, "and no remainder rides it");
 }
 
 /// RM1 (c), door (b) — A DEMAND ANSWERED BY CLASS KEY RE-FILLS: a word's
@@ -172,7 +183,7 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
 }
 
 fn cycle(r: Option<Remainder>) -> TorsionCycle {
-    TorsionCycle { sigma: Vec::new(), period: 4, fibre: FIBER_SPATIAL, remainder: r }
+    cycle_by(quarter(), r)
 }
 
 /// A word's torsion record carries its remainder (κ, g, the residue's chart):

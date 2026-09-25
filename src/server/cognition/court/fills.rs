@@ -331,8 +331,10 @@ impl Kernel {
             return;
         }
         let open = rewrite
-            .remainders()
-            .any(|o| *o.class == **class && o.at == *at && o.answered.is_none() && o.ray.projective_eq(rotor));
+            .remainder_rays()
+            .any(|(o, ray)| {
+                *o.class == **class && o.at == *at && o.answered.is_none() && ray.is_some_and(|g| g.projective_eq(rotor))
+            });
         let Some(mu) = rewrite.open_pressure(class, at).filter(|_| open) else {
             self.refills.unopen += 1;
             return;
@@ -403,17 +405,21 @@ impl Kernel {
         addrs: &[crate::transducer::address::Address],
     ) -> Option<crate::transducer::address::Address> {
         let (kappa, g, ell) = remainder;
+        // A HOLONOMY cycle: its generator is the deficit ray `g`, whose order
+        // the fill read as ℓ; the period is re-read off `g` wherever the cycle
+        // is filed or replayed (PD1).
         let cycle = element::TorsionCycle {
-            sigma: Vec::new(),
+            generator: element::Generator::Holonomy(g.clone()),
             period: u64::from(ell),
             fibre: element::FIBER_SPATIAL,
-            remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()], answered: None }),
+            remainder: Some(element::Remainder { class: kappa, at: vec![inv.key().into_vec()], answered: None }),
         };
         let Some(mu) = self.treasury.price_torse(std::slice::from_ref(&cycle)) else {
             self.remainders_unpriced += 1;
             return None;
         };
-        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma: Vec::new(), period: u64::from(ell) };
+        let payload =
+            crate::transducer::rewrite::RewritePayload::Torse { generator: element::Generator::Holonomy(g), period: u64::from(ell) };
         let after = crate::transducer::address::Address::from(simplex.to_vec());
         let Some(mut rw) = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Torse, addrs, after, payload, mu)
         else {
@@ -423,6 +429,7 @@ impl Kernel {
         match rw.record_cycle(cycle) {
             element::Filed::Refused => self.remainders_refused += 1,
             element::Filed::PastCarrier => self.remainders_past_carrier += 1,
+            element::Filed::Misspoken => self.remainders_misspoken += 1,
             _ => {}
         }
         let addr = rw.address();

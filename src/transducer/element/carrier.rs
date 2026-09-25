@@ -17,16 +17,149 @@ pub const FIBER_GERMINATED: u16 = 4;
 /// Hue states on the gauge (ARC palette 0..9; 0 = absent).
 pub const PALETTE: usize = 10;
 
+/// WHAT A TORSION CYCLE TURNS BY — its generator, which the period is READ
+/// from at every writer, reader and replay (PD1, 78.43(2)): a stored period
+/// is a claim, never a bound, and a derivable quantity re-derives at every
+/// reader (law 12).
+#[derive(Debug, Clone)]
+pub enum Generator {
+    /// A hue permutation σ, one step round the cycle: its period on a base
+    /// is [`orbit_period`], the lcm of its cycle lengths through the base's
+    /// hues.
+    Hue(Vec<(u8, u8)>),
+    /// A holonomy: the rotor's ray, whose finite order is the period — the
+    /// Congruent fill's reading (`Rotor::order`, algebra-bounded). For a
+    /// cycle carrying RM1's remainder this IS the deficit ray `g`.
+    Holonomy(Box<crate::transducer::alphabet::Rotor>),
+}
+
+/// One generator and another are one where they turn alike: the same σ, or
+/// one ray — a ray and its scalar multiples are one rotor (A1).
+impl PartialEq for Generator {
+    fn eq(&self, other: &Generator) -> bool {
+        match (self, other) {
+            (Generator::Hue(a), Generator::Hue(b)) => a == b,
+            (Generator::Holonomy(a), Generator::Holonomy(b)) => a.projective_eq(b),
+            _ => false,
+        }
+    }
+}
+
+impl Eq for Generator {}
+
+impl Generator {
+    /// THE GENERATOR'S OWN ORDER, read with no base: σ's (the lcm of its
+    /// cycle lengths, where σ permutes its hues within the palette), or the
+    /// ray's finite order. `None` where it has none.
+    pub fn order(&self) -> Option<u64> {
+        match self {
+            Generator::Hue(sigma) => {
+                if !gauge_is_perm(sigma) {
+                    return None;
+                }
+                let mut order = 1u64;
+                for c in crate::transducer::sentence::hue_cycles(sigma) {
+                    let len = u64::try_from(c.len()).ok()?;
+                    let g = num_integer::Integer::gcd(&order, &len);
+                    order = (order / g).checked_mul(len)?;
+                }
+                Some(order)
+            }
+            Generator::Holonomy(ray) => match ray.order()? {
+                crate::transducer::alphabet::Order::Finite(l @ 1..) => Some(u64::from(l)),
+                _ => None,
+            },
+        }
+    }
+
+    /// THE PERIOD READ OFF THE GENERATOR ON A BASE: a hue cycle's is the
+    /// base's orbit under σ ([`orbit_period`]); a holonomy's is the ray's
+    /// order, which no base moves.
+    pub fn period_on(&self, base: &[(u8, u8)]) -> Option<u64> {
+        match self {
+            Generator::Hue(sigma) => orbit_period(sigma, base).ok(),
+            Generator::Holonomy(_) => self.order(),
+        }
+    }
+
+    /// σ, where the generator is a hue permutation.
+    pub fn hue(&self) -> Option<&[(u8, u8)]> {
+        match self {
+            Generator::Hue(sigma) => Some(sigma),
+            Generator::Holonomy(_) => None,
+        }
+    }
+
+    /// The ray, where the generator is a holonomy.
+    pub fn ray(&self) -> Option<&crate::transducer::alphabet::Rotor> {
+        match self {
+            Generator::Hue(_) => None,
+            Generator::Holonomy(ray) => Some(ray),
+        }
+    }
+
+    /// The generator written out, its kind first: `0` and σ's pairs behind
+    /// their count (by its own coordinate), or `1` and the ray's canonical
+    /// coordinates. One writer for the record, the Torse tape and the
+    /// canonical order two cycles are compared in.
+    pub fn put(&self, out: &mut Vec<u8>) {
+        match self {
+            Generator::Hue(sigma) => {
+                out.push(0);
+                crate::transducer::address::put_key_count(out, sigma.len());
+                for &(f, t) in sigma {
+                    out.push(f);
+                    out.push(t);
+                }
+            }
+            Generator::Holonomy(ray) => {
+                out.push(1);
+                ray.put_canonical(out);
+            }
+        }
+    }
+
+    /// The inverse of [`Generator::put`]; any other kind refuses.
+    pub fn take(b: &[u8], p: &mut usize) -> Option<Generator> {
+        let kind = *b.get(*p)?;
+        *p += 1;
+        match kind {
+            0 => {
+                let n = crate::transducer::address::take_key_count(b, p)?;
+                if n > b.len().checked_sub(*p)? / 2 {
+                    return None;
+                }
+                let mut sigma = Vec::with_capacity(n);
+                for _ in 0..n {
+                    sigma.push((*b.get(*p)?, *b.get(*p + 1)?));
+                    *p += 2;
+                }
+                Some(Generator::Hue(sigma))
+            }
+            1 => Some(Generator::Holonomy(Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?))),
+            _ => None,
+        }
+    }
+
+    /// The generator's own coordinates as one key, for a canonical order.
+    pub fn key(&self) -> Vec<u8> {
+        let mut k = Vec::new();
+        self.put(&mut k);
+        k
+    }
+}
+
 /// ONE TORSION CYCLE of a punctured axis (18.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TorsionCycle {
-    /// The hue-map generator: the permutation one step around the cycle.
-    pub sigma: Vec<(u8, u8)>,
-    /// The PERIOD it closes at — the order of that generator, READ off its
-    /// cycles (78.43(2)), and the extent the word owes on the T lane. `u64`
-    /// by the type's domain: a permutation of the u8 hues has order up to
-    /// Landau's g(256) ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's
-    /// constant, not this width's provenance).
+    /// What the cycle turns by: a hue permutation, or a holonomy's ray.
+    pub generator: Generator,
+    /// The PERIOD it closes at — the order of that generator, READ off it
+    /// (78.43(2)) and verified against it at every writer into `torsion`,
+    /// and the extent the word owes on the T lane. `u64` by the type's
+    /// domain: a permutation of the u8 hues has order up to Landau's g(256)
+    /// ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's constant, not
+    /// this width's provenance).
     pub period: u64,
     /// The fibre it lives on: `FIBER_SPATIAL`, or a germinated axis.
     pub fibre: u16,
@@ -37,14 +170,17 @@ pub struct TorsionCycle {
 }
 
 /// RM1, 78.37(4) — A SENTENCE'S REMAINDER, the torsion record completed: the
-/// class `κ` it closed up to, inline by its own coordinates; the deficit `g`
-/// as its ray; and `at`, the chart chain the residue was perceived on (the
-/// thoughts' shared chain on a mind, the complex's chart on a court), by its
-/// keys. Evidence on the record: the address never carries it.
+/// class `κ` it closed up to, inline by its own coordinates; and `at`, the
+/// chart chain the residue was perceived on (the thoughts' shared chain on a
+/// mind, the complex's chart on a court), by its keys. Evidence on the
+/// record: the address never carries it.
+///
+/// THE DEFICIT RAY `g` IS THE CYCLE'S GENERATOR (PD1, law 12): a holonomy
+/// cycle turns by `g`, so the remainder reads its ray off its cycle
+/// ([`Element::remainder_rays`]) and carries no second copy of it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Remainder {
     pub class: Box<crate::transducer::sentence::ClassVector>,
-    pub ray: Box<crate::transducer::alphabet::Rotor>,
     pub at: Vec<Vec<u8>>,
     /// RM1 (c) — ANSWERED: the stamp of the re-fill act that closed it, a
     /// citation of that act by its coordinates; `None` is open. The
@@ -69,10 +205,12 @@ impl TorsionCycle {
 }
 
 impl Remainder {
-    /// One remainder and another are the same perception where class, ray
-    /// and chain agree; whether it has been answered is its history.
+    /// One remainder and another are the same perception where class and
+    /// chain agree — the ray is the generator of the cycle each rides, and
+    /// `record_cycle` compares only remainders of cycles whose generators
+    /// are one; whether it has been answered is its history.
     pub fn same(&self, other: &Remainder) -> bool {
-        self.class == other.class && self.ray == other.ray && self.at == other.at
+        self.class == other.class && self.at == other.at
     }
     /// The index key the receptor reads by, CLASS FIRST (a reading depends
     /// on fewer coordinates first): the class key, then the residue's chart
@@ -116,7 +254,6 @@ impl Remainder {
     #[must_use]
     pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         self.class.put_canonical(out);
-        self.ray.put_canonical(out);
         crate::transducer::address::put_u32_count(out, self.at.len())?;
         for c in &self.at {
             crate::transducer::address::put_bytes(out, c)?;
@@ -133,7 +270,6 @@ impl Remainder {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Remainder> {
         let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);
-        let ray = Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?);
         let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
         *p += 4;
         // Each chart is at least its length; a count the body cannot hold
@@ -156,7 +292,7 @@ impl Remainder {
             }
             _ => return None,
         };
-        Some(Remainder { class, ray, at, answered })
+        Some(Remainder { class, at, answered })
     }
 }
 
@@ -173,6 +309,17 @@ pub enum Filed {
     /// STD1 — a new cycle the holonomic lane has no room for
     /// ([`holonomic_fits`]).
     PastCarrier,
+    /// PD1, 78.43(2) — A STORED PERIOD IS A CLAIM, NEVER A BOUND: a cycle
+    /// whose period is not the one read off its generator and the base is
+    /// refused by name, so every later walk is bounded by a READ period.
+    Misspoken,
+}
+
+/// DOES A CYCLE'S PERIOD STAND ON THIS BASE — the one test both writers into
+/// `torsion` make (`record_cycle` and the record decoder): the period the
+/// cycle claims is the one read off its generator ([`orbit_period`]).
+pub(crate) fn period_stands(cycle: &TorsionCycle, base: &[(u8, u8)]) -> bool {
+    cycle.generator.period_on(base) == Some(cycle.period)
 }
 
 /// STD1 (rule 11) — THE HOLONOMIC LANE'S INVARIANT: a word's `mag[3]` plus
@@ -600,7 +747,7 @@ impl Element {
     /// File a torsion cycle `(σ, ℓ)` on fibre `fibre`. Duplicate generators
     /// on the same fibre are not stored twice.
     pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u64, fibre: u16) {
-        let _ = self.record_cycle(TorsionCycle { sigma, period, fibre, remainder: None });
+        let _ = self.record_cycle(TorsionCycle { generator: Generator::Hue(sigma), period, fibre, remainder: None });
     }
 
     /// RM1 — FILE A CYCLE WITH WHAT IT CLOSED UP TO. One cycle per
@@ -613,8 +760,11 @@ impl Element {
         if cycle.period == 0 {
             return Filed::NoPeriod;
         }
+        if !period_stands(&cycle, &assignment(&self.sub)) {
+            return Filed::Misspoken;
+        }
         let room = self.has_room(0, 1);
-        match self.torsion.iter_mut().find(|t| t.sigma == cycle.sigma && t.fibre == cycle.fibre) {
+        match self.torsion.iter_mut().find(|t| t.generator == cycle.generator && t.fibre == cycle.fibre) {
             None if !room => Filed::PastCarrier,
             None => {
                 self.torsion.push(cycle);
@@ -636,6 +786,13 @@ impl Element {
     /// RM1 — the remainders this word's torsion record carries.
     pub fn remainders(&self) -> impl Iterator<Item = &Remainder> {
         self.torsion.iter().filter_map(|t| t.remainder.as_ref())
+    }
+
+    /// RM1 — each remainder with its RAY, read off the generator of the cycle
+    /// it rides (law 12): a holonomy cycle's ray is the deficit `g`; a hue
+    /// cycle's remainder has no ray (`None`).
+    pub fn remainder_rays(&self) -> impl Iterator<Item = (&Remainder, Option<&crate::transducer::alphabet::Rotor>)> {
+        self.torsion.iter().filter_map(|t| Some((t.remainder.as_ref()?, t.generator.ray())))
     }
 
     /// RM1 (c) — THE OPEN REMAINDER of `class` perceived at `at`, answered by
@@ -731,7 +888,7 @@ impl Element {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push(TorsionCycle { sigma, period, fibre: FIBER_SPATIAL, remainder: None });
+                self.torsion.push(TorsionCycle { generator: Generator::Hue(sigma), period, fibre: FIBER_SPATIAL, remainder: None });
                 self.profiles.take();
                 return spanned.len();
             }

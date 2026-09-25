@@ -92,13 +92,18 @@ fn torsion_filed_only_when_witnessed_at_period() {
             && matches!(w, crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed { period: 3, .. })),
         "period 3 is witnessed closed: {ws:?}"
     );
-    t.record_torsion(vec![(1, 9)], 8, crate::transducer::element::FIBER_SPATIAL);
-    let ws = crate::transducer::torsion_witness::witness_stored(&t);
-    assert!(
-        ws.iter().any(|(ell, w)| *ell == 8
-            && matches!(w, crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { .. })),
-        "an unclosed circuit is not believed: {ws:?}"
-    );
+    // AN UNCLOSED CIRCUIT IS NOT BELIEVED — and no longer by the witness
+    // after the fact: a period the generator does not have is a claim, and
+    // the record refuses it by name where it is filed (PD1).
+    let before = t.torsion().len();
+    let claimed = crate::transducer::element::TorsionCycle {
+        generator: crate::transducer::element::Generator::Hue(vec![(1, 9)]),
+        period: 8,
+        fibre: crate::transducer::element::FIBER_SPATIAL,
+        remainder: None,
+    };
+    assert_eq!(t.record_cycle(claimed), crate::transducer::element::Filed::Misspoken, "refused by name");
+    assert_eq!(t.torsion().len(), before, "and nothing was filed to walk");
 }
 
 #[test]

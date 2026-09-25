@@ -125,12 +125,10 @@ impl Element {
             }
         }
         put_u32_count(&mut out, self.torsion.len())?;
-        for TorsionCycle { sigma, period: l, fibre, remainder } in &self.torsion {
-            put_u32_count(&mut out, sigma.len())?;
-            for (f, t) in sigma {
-                out.push(*f);
-                out.push(*t);
-            }
+        for TorsionCycle { generator, period: l, fibre, remainder } in &self.torsion {
+            // The cycle's generator by its one writer (PD1): a hue σ or a
+            // holonomy's ray, the period re-derived from it on read.
+            generator.put(&mut out);
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&fibre.to_le_bytes());
             // RM1 — the remainder the cycle closed up to, flagged where it
@@ -313,17 +311,7 @@ impl Element {
         }
         let mut torsion = Vec::with_capacity(ntor);
         for _ in 0..ntor {
-            let slen = u32_at(b, pos)? as usize;
-            if slen > remaining(b, pos)? / 2 {
-                return None;
-            }
-            let mut sigma = Vec::with_capacity(slen);
-            for _ in 0..slen {
-                let f = *b.get(*pos)?;
-                let t = *b.get(*pos + 1)?;
-                *pos += 2;
-                sigma.push((f, t));
-            }
+            let generator = super::Generator::take(b, pos)?;
             // The period in its own carrier, u64 (78.43(2)); the record
             // layout moves with it at the recut.
             let l = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
@@ -348,7 +336,14 @@ impl Element {
                 }
                 _ => return None,
             };
-            torsion.push(TorsionCycle { sigma, period: l, fibre, remainder });
+            let cycle = TorsionCycle { generator, period: l, fibre, remainder };
+            // A STORED PERIOD IS A CLAIM (PD1): the record is refused where
+            // its period is not the one read off the cycle's generator, so
+            // nothing later walks to a period the tape merely asserted.
+            if !super::carrier::period_stands(&cycle, &crate::transducer::element::assignment(&sub)) {
+                return None;
+            }
+            torsion.push(cycle);
         }
         // STD1 — a holonomic lane with no room for the sections and cycles
         // the record carries is refused where it arrives (LD0): the word

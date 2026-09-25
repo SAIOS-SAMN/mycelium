@@ -47,8 +47,10 @@ impl RewriteKind {
 #[derive(Debug, Clone)]
 pub enum RewritePayload {
     Condense { sections: Vec<Vec<(u8, u8)>>, gauge: Versor },
-    /// The period in its own carrier, `u64` (78.43(2)).
-    Torse { sigma: Vec<(u8, u8)>, period: u64 },
+    /// The cycle's GENERATOR — a hue σ or a holonomy's ray — and the period
+    /// it claims, in its own carrier, `u64`; replay re-reads the period off
+    /// the generator (PD1, 78.43(2)).
+    Torse { generator: crate::transducer::element::Generator, period: u64 },
     Refine { chart: Invariant, axis: u64 },
     Reanchor { gamma: Vec<Word> },
     /// Boxed: a rotor is half a kilobyte inline, the one large variant here
@@ -109,12 +111,8 @@ impl Rewrite {
                 // Every versor and rotor on this tape as its ray (A4).
                 gauge.put_canonical(&mut out);
             }
-            RewritePayload::Torse { sigma, period } => {
-                put_key_count(&mut out, sigma.len());
-                for &(f, t) in sigma {
-                    out.push(f);
-                    out.push(t);
-                }
+            RewritePayload::Torse { generator, period } => {
+                generator.put(&mut out);
                 out.extend_from_slice(&period.to_le_bytes());
             }
             RewritePayload::Refine { chart, axis } => {
@@ -191,19 +189,14 @@ impl Rewrite {
                 RewritePayload::Condense { sections, gauge }
             }
             RewriteKind::Torse => {
-                let ns = take_key_count(b, &mut pos)?;
-                let mut sigma = Vec::with_capacity(ns.min(b.len()));
-                for _ in 0..ns {
-                    sigma.push((*b.get(pos)?, *b.get(pos + 1)?));
-                    pos += 2;
-                }
+                let generator = crate::transducer::element::Generator::take(b, &mut pos)?;
                 let period = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
                 // A17, as at every other tape: a torsion is believed only
                 // where the orbit closes at ℓ, so a filed zero is malformed.
                 if period == 0 {
                     return None;
                 }
-                RewritePayload::Torse { sigma, period }
+                RewritePayload::Torse { generator, period }
             }
             RewriteKind::Refine => {
                 let chart = Invariant::from_key(&take_key_bytes(b, &mut pos)?)?;
@@ -435,9 +428,15 @@ pub fn replay(e: &Element) -> Option<&'static str> {
                 return Some("condense gauge is not invertible");
             }
         }
-        RewritePayload::Torse { sigma, period } => {
-            if *period == 0 || !hue_closed(sigma, *period) {
+        RewritePayload::Torse { generator, period } => {
+            if *period == 0 {
                 return Some("torse does not close under its period");
+            }
+            // A Torse closes at ITS period (A17): the generator's order
+            // exactly, read off it — never a multiple, which the tape would
+            // be paid for (PD1). `closes_at` of either kind.
+            if generator.order() != Some(*period) {
+                return Some("torse period is not its generator's order");
             }
         }
         RewritePayload::Refine { chart, axis } => {
@@ -490,21 +489,6 @@ pub fn replay(e: &Element) -> Option<&'static str> {
     None
 }
 
-/// DOES σ CLOSE UNDER `period` — decided ON THE CYCLES (78.43(2)), never
-/// by walking every hue `period` times: `σ^period` is the identity exactly
-/// when every listed hue is fixed or stands on a cycle, and every cycle's
-/// length divides the period. A hue the permutation does not move maps to
-/// itself (rule 11). A chain that never returns is on no cycle: open.
-fn hue_closed(sigma: &[(u8, u8)], period: u64) -> bool {
-    if period == 0 {
-        return false;
-    }
-    let cycles = crate::transducer::sentence::hue_cycles(sigma);
-    let on_a_cycle = |h: u8| cycles.iter().any(|c| c.contains(&h));
-    sigma.iter().all(|&(f, t)| f == t || on_a_cycle(f))
-        && cycles.iter().all(|c| u64::try_from(c.len()).is_ok_and(|len| period % len == 0))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -537,6 +521,34 @@ mod tests {
                 .is_none(),
             "nor one that cannot name what it reached"
         );
+    }
+
+    /// PD1's return — A TORSE CLOSES AT ITS PERIOD, its generator's order
+    /// exactly: a Torse at twice the order would be paid twice over, and is
+    /// refused on replay by name; at the order, for either kind, it mints and
+    /// replays green (the court's Congruent fill mints the holonomy kind).
+    #[test]
+    fn a_torse_at_twice_its_generators_order_is_refused() {
+        use crate::transducer::address::Address;
+        use crate::transducer::element::Generator;
+        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+        let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+        let swap = Generator::Hue(vec![(1, 2), (2, 1)]);
+        let turn = Generator::Holonomy(Box::new(quarter));
+        for (generator, order) in [(swap, 2u64), (turn, 4)] {
+            let torse = |period: u64| {
+                let payload = RewritePayload::Torse { generator: generator.clone(), period };
+                let mu = [0, 0, 0, period - 1];
+                mint(RewriteKind::Torse, &[Address::from_bytes([1u8])], Address::from_bytes([2u8]), payload, mu)
+                    .expect("a Torse that yields is minted")
+            };
+            assert!(replay(&torse(order)).is_none(), "{generator:?} at its order replays green");
+            assert_eq!(
+                replay(&torse(2 * order)),
+                Some("torse period is not its generator's order"),
+                "{generator:?} at twice its order is refused by name"
+            );
+        }
     }
 
     #[test]

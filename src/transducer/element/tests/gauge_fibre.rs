@@ -157,6 +157,53 @@ fn a_hue_past_the_palette_is_refused_by_name() {
     assert_eq!(orbit_period(&[(1, 2), (2, 1)], &[(1, 3)]), Err(PeriodRefused::OffDomain));
 }
 
+/// PD1's return — A STORED PERIOD IS A CLAIM, NEVER A BOUND. A hue cycle
+/// whose period is twice the one read off σ and the base is refused by name
+/// where it is filed, and a record carrying one is refused where it is
+/// read: nothing is walked to the claimed period, since neither writer
+/// walks and the cycle never stands for a reader that would.
+#[test]
+fn a_hue_record_at_twice_its_read_period_is_refused_by_name() {
+    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let mut t = from_canonical(&germinate(&a, &b).unwrap());
+    let sigma = vec![(1, 2), (2, 3), (3, 1)];
+    assert_eq!(orbit_period(&sigma, &assignment(t.sub())), Ok(3), "the period read");
+    let twice = TorsionCycle { generator: Generator::Hue(sigma.clone()), period: 6, fibre: FIBER_SPATIAL, remainder: None };
+    assert_eq!(t.record_cycle(twice.clone()), Filed::Misspoken, "filed at twice its period: refused by name");
+    assert!(t.torsion().is_empty(), "and nothing stands");
+    // The same claim on a record: written, then refused where it is read.
+    t.torsion.push(twice);
+    let bytes = t.to_bytes().expect("the record writes");
+    assert!(Element::from_bytes(&bytes, &mut 0).is_none(), "the record refuses a period it cannot read off σ");
+    // At its read period the cycle stands, and the record carries it.
+    let mut s = from_canonical(&germinate(&a, &b).unwrap());
+    let read = TorsionCycle { generator: Generator::Hue(sigma), period: 3, fibre: FIBER_SPATIAL, remainder: None };
+    assert_eq!(s.record_cycle(read), Filed::New);
+    let back = Element::from_bytes(&s.to_bytes().expect("writes"), &mut 0).expect("reads back");
+    assert_eq!(back.torsion()[0].period, 3);
+}
+
+/// The same for a HOLONOMY cycle: its period is the ray's order, read by
+/// the algebra; at twice that order the cycle is refused by name, filed or
+/// read, and at the order itself it stands.
+#[test]
+fn a_holonomy_record_at_twice_its_rays_order_is_refused_by_name() {
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+    let generator = Generator::Holonomy(Box::new(quarter));
+    assert_eq!(generator.order(), Some(4), "a quarter turn's order");
+    let mut w = Element::identity();
+    let twice = TorsionCycle { generator: generator.clone(), period: 8, fibre: FIBER_SPATIAL, remainder: None };
+    assert_eq!(w.record_cycle(twice.clone()), Filed::Misspoken, "at twice its order: refused by name");
+    w.torsion.push(twice);
+    let bytes = w.to_bytes().expect("the record writes");
+    assert!(Element::from_bytes(&bytes, &mut 0).is_none(), "and a record carrying it is refused");
+    let mut v = Element::identity();
+    let read = TorsionCycle { generator, period: 4, fibre: FIBER_SPATIAL, remainder: None };
+    assert_eq!(v.record_cycle(read), Filed::New, "at its order it stands");
+}
+
 /// (4) THE PROFILE TABLE ANSWERS ASSIGNMENTS BY THEIR CHARGE, with no
 /// position in the element (78.43(1)): every assignment the word speaks is
 /// held under its charge, and `holds_assignment` reads it there.

@@ -145,13 +145,8 @@ fn a_courts_torse_carries_its_remainder_through_a_restart() {
     let rw = k
         .mint_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words)
         .expect("the Torse rewrite is minted and offered");
-    let key = crate::transducer::element::Remainder {
-        class: Box::new(kappa),
-        ray: Box::new(g),
-        at: vec![inv.key().into_vec()],
-        answered: None,
-    }
-    .index_key();
+    let key = crate::transducer::element::Remainder { class: Box::new(kappa), at: vec![inv.key().into_vec()], answered: None }
+        .index_key();
     assert_eq!(k.remainder_at(&key), Some(&rw), "indexed at the complex's chart ‖ κ");
     let (r, _) = k.remainders();
     assert_eq!((r.refused, r.unpriced, r.unminted, r.unoffered), (0, 0, 0, 0), "{}", r.line());

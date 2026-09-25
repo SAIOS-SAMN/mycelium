@@ -49,13 +49,20 @@ impl Epigenome {
     /// class at any chart.
     pub(crate) fn file_remainders(&mut self, addr: &Address, e: &Element) {
         let mut keys = Vec::new();
-        for r in e.remainders() {
+        // Each remainder with the ray of the cycle it rides (PD1, law 12):
+        // the ray is the holonomy cycle's generator, not a copy on the
+        // remainder. Only holonomy cycles carry remainders (the court's
+        // Congruent fill and the vortex collapse file them; `torse` files
+        // none), so a remainder with no ray has no producer.
+        for (r, ray) in e.remainder_rays() {
             let k = r.index_key();
             match self.remainder_fibers.get(&k) {
                 Some(a) if a == addr => keys.push(k),
                 Some(_) => self.remainders_coincident += 1,
                 None => {
-                    self.receive(addr, r);
+                    if let Some(ray) = ray {
+                        self.receive(addr, r, ray);
+                    }
                     self.remainder_fibers.insert(&k, addr.clone());
                     keys.push(k);
                 }
@@ -81,7 +88,7 @@ impl Epigenome {
     /// ray (projectively) raises a callus, once per κ per pair of chains;
     /// differing rays are DISCORDANT, counted, and no ray is chosen
     /// (checklist (r)).
-    fn receive(&mut self, addr: &Address, r: &Remainder) {
+    fn receive(&mut self, addr: &Address, r: &Remainder, r_ray: &crate::transducer::alphabet::Rotor) {
         // RM1 (c): an answered remainder is evidence, not a question.
         if r.answered.is_some() {
             self.calluses.answered += 1;
@@ -105,9 +112,11 @@ impl Epigenome {
                 self.remainders_nested += 1;
                 continue;
             }
-            let found = self
-                .element_of(other.as_bytes())
-                .and_then(|e| e.remainders().find(|o| o.class == r.class && o.at == chain).map(|o| ((*o.ray).clone(), o.answered)));
+            let found = self.element_of(other.as_bytes()).and_then(|e| {
+                e.remainder_rays()
+                    .find(|(o, _)| o.class == r.class && o.at == chain)
+                    .and_then(|(o, ray)| Some((ray?.clone(), o.answered)))
+            });
             let Some((ray, answered)) = found else {
                 // The index names a word whose record carries no remainder of
                 // this class at this chain: the index and the record disagree.
@@ -118,7 +127,7 @@ impl Epigenome {
                 self.calluses.answered += 1;
                 continue;
             }
-            if !ray.projective_eq(&r.ray) {
+            if !ray.projective_eq(r_ray) {
                 self.remainders_discordant += 1;
                 continue;
             }
@@ -135,7 +144,7 @@ impl Epigenome {
             self.calloused.insert(&ck, ());
             self.calluses_pending.push(Callus {
                 class: r.class.clone(),
-                ray: r.ray.clone(),
+                ray: Box::new(r_ray.clone()),
                 chains: [r.at.clone(), chain],
                 words: [addr.clone(), other],
             });
@@ -176,12 +185,7 @@ impl Epigenome {
     /// THE RECEPTOR'S READ: the words whose remainder of class `class` was
     /// perceived on the chart chain `at` — a keyed read, never a scan.
     pub fn remainders_at(&self, at: &[Vec<u8>], class: &crate::transducer::sentence::ClassVector) -> Vec<Address> {
-        let probe = Remainder {
-            class: Box::new(class.clone()),
-            ray: Box::new(crate::transducer::alphabet::Rotor::identity()),
-            at: at.to_vec(),
-            answered: None,
-        };
+        let probe = Remainder { class: Box::new(class.clone()), at: at.to_vec(), answered: None };
         match self.remainder_fibers.get(&probe.index_key()) {
             Some(a) => vec![a.clone()],
             None => Vec::new(),
@@ -206,7 +210,9 @@ impl Epigenome {
         for (key, addr) in hits {
             let Some(chain) = Remainder::chain_of_key(&key) else { continue };
             let open = self.element_of(addr.as_bytes()).and_then(|e| {
-                e.remainders().find(|o| *o.class == *class && o.at == chain && o.answered.is_none()).map(|o| (*o.ray).clone())
+                e.remainder_rays()
+                    .find(|(o, _)| *o.class == *class && o.at == chain && o.answered.is_none())
+                    .and_then(|(_, ray)| ray.cloned())
             });
             if let Some(ray) = open {
                 out.push((addr, chain, ray));

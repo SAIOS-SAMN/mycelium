@@ -159,8 +159,10 @@ impl Contemplation {
                             .iter()
                             .map(|v| crate::transducer::address::Address::from(v.clone()))
                             .collect();
+                        // A HOLONOMY Torse: its generator is the deficit ray
+                        // `g`, whose order the fill read as ℓ (PD1).
                         let payload = crate::transducer::rewrite::RewritePayload::Torse {
-                            sigma: Vec::new(),
+                            generator: crate::transducer::element::Generator::Holonomy(g.clone()),
                             period: u64::from(ell),
                         };
                         // RM1 — THE REMAINDER ON THE REWRITE'S RECORD: the
@@ -170,10 +172,10 @@ impl Contemplation {
                         // chart place no residue: counted.
                         let unsited = at.is_none();
                         let cycle = crate::transducer::element::TorsionCycle {
-                            sigma: Vec::new(),
+                            generator: crate::transducer::element::Generator::Holonomy(g),
                             period: u64::from(ell),
                             fibre: crate::transducer::element::FIBER_SPATIAL,
-                            remainder: at.map(|at| crate::transducer::element::Remainder { class: kappa, ray: g, at, answered: None }),
+                            remainder: at.map(|at| crate::transducer::element::Remainder { class: kappa, at, answered: None }),
                         };
                         // STD1 (PH1) — the claim is the Torse's one yield,
                         // derived from the cycle it carries (`torse_yield`): one
@@ -193,6 +195,9 @@ impl Contemplation {
                                         crate::transducer::element::Filed::Refused => self.remainders.refused += 1,
                                         crate::transducer::element::Filed::PastCarrier => {
                                             self.remainders.past_carrier += 1
+                                        }
+                                        crate::transducer::element::Filed::Misspoken => {
+                                            self.remainders.misspoken += 1
                                         }
                                         _ => {}
                                     }

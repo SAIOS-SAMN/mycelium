@@ -404,15 +404,15 @@ impl Kernel {
         // the torse span standing in for a period that was never witnessed
         // (A17: a period is believed only when the orbit closes at it, T5).
         // A word carrying no filed cycle has no torse to speak (rule 8).
-        let Some((sigma, period)) = after
+        let Some((generator, period)) = after
             .torsion()
             .iter()
-            .min_by(|a, b| a.sigma.cmp(&b.sigma).then(a.period.cmp(&b.period)))
-            .map(|c| (c.sigma.clone(), c.period))
+            .min_by(|a, b| a.generator.key().cmp(&b.generator.key()).then(a.period.cmp(&b.period)))
+            .map(|c| (c.generator.clone(), c.period))
         else {
             return;
         };
-        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma, period };
+        let payload = crate::transducer::rewrite::RewritePayload::Torse { generator, period };
         if let Some(disc) = self.discoverer_of(addr) {
             let _ = self.mint_rewrite(
                 crate::transducer::rewrite::RewriteKind::Torse,

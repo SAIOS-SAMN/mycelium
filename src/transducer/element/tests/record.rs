@@ -258,7 +258,12 @@ fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
     assert!(full.set_magnitude([0, 0, 0, u64::MAX]), "a fresh word holds any lane");
     assert!(!full.puncture(vec![(2, 3), (3, 1), (1, 2)]), "a section past the carrier is refused");
     assert!(full.sections().is_empty());
-    let cycle = TorsionCycle { sigma: vec![(1, 2), (2, 3), (3, 1)], period: 3, fibre: FIBER_SPATIAL, remainder: None };
+    let cycle = TorsionCycle {
+        generator: Generator::Hue(vec![(1, 2), (2, 3), (3, 1)]),
+        period: 3,
+        fibre: FIBER_SPATIAL,
+        remainder: None,
+    };
     assert_eq!(full.record_cycle(cycle), Filed::PastCarrier, "a cycle past the carrier is refused by name");
     assert!(full.torsion().is_empty());
 }

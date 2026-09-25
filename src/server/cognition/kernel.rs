@@ -297,6 +297,9 @@ pub struct Kernel {
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_refused: u64,
     pub(crate) remainders_past_carrier: u64,
+    /// PD1 — cycles whose stored period was not the one read off their
+    /// generator, refused by `record_cycle` (`Filed::Misspoken`).
+    pub(crate) remainders_misspoken: u64,
     pub(crate) remainders_unpriced: u64,
     pub(crate) remainders_unminted: u64,
     pub(crate) remainders_unoffered: u64,

@@ -432,7 +432,11 @@ impl Element {
         let base = assignment(&self.sub);
         let mut out = vec![base.clone()];
         out.extend(self.sections.iter().cloned());
-        for TorsionCycle { sigma, period: l, .. } in &self.torsion {
+        // A HUE cycle's members, to its period — READ and verified at every
+        // writer into `torsion` (PD1), so the enumeration is bounded by a
+        // reading, never a stored claim. A holonomy moves no hue: no members.
+        for TorsionCycle { generator, period: l, .. } in &self.torsion {
+            let Some(sigma) = generator.hue() else { continue };
             let mut cur = base.clone();
             for _ in 1..*l {
                 match apply_hue_map(sigma, &cur) {
@@ -464,7 +468,7 @@ impl Element {
         if asg == base || self.sections.contains(&asg) {
             return true;
         }
-        self.torsion.iter().any(|t| on_orbit(&t.sigma, &base, &asg))
+        self.torsion.iter().any(|t| t.generator.hue().is_some_and(|sigma| on_orbit(sigma, &base, &asg)))
     }
 
 }

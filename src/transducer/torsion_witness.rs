@@ -74,12 +74,27 @@ fn run_of(period: u64) -> u64 {
     }
 }
 
+/// ONE CYCLE WITNESSED BY ITS GENERATOR (PD1): a HUE cycle's orbit is walked
+/// to twice its READ period — never the stored one, which is a claim — and a
+/// HOLONOMY cycle is checked by the algebra, `ray^ℓ = 1` exactly, the ray's
+/// own order, with no walk. A generator with no period read is not walked
+/// at all: an open orbit of run zero.
+fn witness_generator(thought: &Element, c: &crate::transducer::element::TorsionCycle) -> HolonomicOrbitWitness {
+    use crate::transducer::element::Generator;
+    match &c.generator {
+        Generator::Hue(sigma) => match crate::transducer::element::orbit_period(sigma, &assignment(thought.sub())) {
+            Ok(read) => witness_cycle(thought, sigma, run_of(read)),
+            Err(_) => HolonomicOrbitWitness::Open { run: 0 },
+        },
+        Generator::Holonomy(_) => match c.generator.order().map(|l| (l, i64::try_from(l))) {
+            Some((l, Ok(den))) => HolonomicOrbitWitness::Closed { period: l, valency: HolonomicValency::new(1, den) },
+            _ => HolonomicOrbitWitness::Open { run: 0 },
+        },
+    }
+}
+
 pub fn witness_thought(thought: &Element) -> Vec<HolonomicOrbitWitness> {
-    thought
-        .torsion()
-        .iter()
-        .map(|c| witness_cycle(thought, &c.sigma, run_of(c.period)))
-        .collect()
+    thought.torsion().iter().map(|c| witness_generator(thought, c)).collect()
 }
 
 /// Every stored cycle held against its witness: (the period ℓ the word
@@ -91,7 +106,7 @@ pub fn witness_stored(thought: &Element) -> Vec<(u64, HolonomicOrbitWitness)> {
     thought
         .torsion()
         .iter()
-        .map(|c| (c.period, witness_cycle(thought, &c.sigma, run_of(c.period))))
+        .map(|c| (c.period, witness_generator(thought, c)))
         .collect()
 }
 

@@ -112,12 +112,28 @@ fn a_candidate_and_its_negation_are_one_candidate() {
 
 #[test]
 fn wrap_glues_crystallized_form() {
-    use crate::transducer::element::{Element, FIBER_SPATIAL};
+    use crate::transducer::element::FIBER_SPATIAL;
     let mut c = Contemplation::new();
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     c.hold(rem);
-    let mut word = Element::identity();
-    word.record_torsion(vec![(1, 2)], 2, FIBER_SPATIAL);
+    // A chain-free word carrying an honest torsion cycle: a HOLONOMY, the
+    // quarter turn, at its READ period 4 (PD1). The fixture filed σ = {1↦2}
+    // at period 2, which permutes nothing and has no period — a claim the
+    // record now refuses by name; a chain-free word's torsion is a
+    // holonomy's, as the court's Congruent fill files it.
+    let mut word = crate::transducer::element::Element::identity();
+    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+    assert_eq!(
+        word.record_cycle(crate::transducer::element::TorsionCycle {
+            generator: crate::transducer::element::Generator::Holonomy(Box::new(quarter)),
+            period: 4,
+            fibre: FIBER_SPATIAL,
+            remainder: None,
+        }),
+        crate::transducer::element::Filed::New,
+        "the quarter turn stands at its read period"
+    );
     let mut budget = crate::physics::Physics::default().stroke_n(32);
     let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
     assert!(

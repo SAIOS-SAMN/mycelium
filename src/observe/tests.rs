@@ -533,6 +533,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 refilled: 119,
                 refused: 120,
                 past_carrier: 159,
+                misspoken: 160,
                 unsited: 123,
                 unrecorded: 121,
                 unpriced: 0,
