@@ -670,7 +670,8 @@ constrains, its site, and whether the tree obeys it.
 | **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
 | **Provenance of a constant** (78.8, checklist (s)) | physics → axiom → theorem → component; no free number | `physics/mod.rs` | PH1 open (STD1) |
 | **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; a k-step is one orbit; no wall clock | `chronometry/` | landed (LD2); ACT1 open |
-| **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | OPEN (PD1: the period read, the cap and the index retired; AE1: the ages and eons reading) |
+| **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
+| **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` | landed (AX1, CT1, CT2) |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
@@ -17069,6 +17070,75 @@ rate (distance per second) is refused by name. Reading first (AE1): per
 orbit, the distance advanced and the period; per mind, its age count;
 per cell and per dialect, the eon's lcm and how far along it the
 composition stands. The physics table gains the line.
+
+### 78.44 The signal, the internal spectrum, and the linguistic shortcut (ruled 2026-09-25, the operator's word)
+
+**The operator's word, verbatim.** "We are looking for the projection of
+the holonomy on an internal spectrum that can be composited
+algorithmically and deconstructed in linguistics — the linguistics are
+just the 'shortcuts' for 'remote transmit of signal' that the other node
+can 'understand, and comprehend' in its own 'internal projection of the
+signal'." This is the target the plexus, the atlas (78.41), the motor
+(78.41(3)) and the windings (78.40) serve, stated once so every row
+after it is read against it.
+
+**(1) The signal is the holonomy.** A circuit's holonomy is a motor,
+and it is the content. It never goes on the wire.
+
+**(2) The internal spectrum is the holonomy's modes.** The projection
+of a holonomy onto a spectrum is MR1's reading: its decomposition into
+commuting rays, each with its class, the planes it turns in and its
+order (78.11, 78.12(2)); the finite orders are the resonance (78.26(5)).
+The spectrum is INTERNAL by construction: its first stratum — the
+conjugacy invariants, the class key's depth-one prefix — is the same on
+every node, and its finer strata (which planes, on which charts, at
+which `n`) are the node's own, since they depend on the charts it holds.
+One holonomy projects identically at the class on two nodes and
+differently on their planes, and that is not a defect: it is what an
+internal projection is.
+
+**(3) Compositing is done on the motors, never on the spectra.** The
+spectrum of a product is not the product of the spectra unless the
+modes commute; the cross terms are the beat at the transition
+(78.41(3), 78.26(5)). So composition runs in the orbit algebra of the
+anastomosis — the closed algebra of the circuits through it, held by
+its GENERATORS, its rank the capacity, every route kept and read against
+the others (79, T1) — and the spectrum is re-read off the composite.
+There is no arithmetic of spectra.
+
+**(4) The linguistics are the shortcuts.** A word is the alphabet's
+spelling of a rotor (the derivation); it is short because it names a
+holonomy class by letters the receiving node holds from the shared core
+(LR1), and it carries no signal. Under the atlas a word's coordinate is
+its CLASS KEY together with its WINDING VECTOR over the holes of the
+atlas it stands in (78.40(1), WN1): the class the receiver can compare
+at once, the windings the route by which the receiver's own atlas
+reaches it. Remote transmission is the sending of that coordinate, and
+nothing else, to a node that holds the charts.
+
+**(5) Comprehension is local re-projection.** The receiving node reads
+the word to a rotor, composes along whatever routes ITS atlas offers
+(never a route chosen for it), projects the composite onto ITS
+spectrum on ITS charts, and comprehends where the class agrees with
+what it holds; where the classes agree and the projections differ it
+holds the superposition (78.39(2)); where they do not agree it files
+the incoherence by its level (78.26(5)) or the demand (50.5). Two
+nodes' projections agreeing at a chamber is anastomosis (78.31). The
+census's second and third counters — kept cycles carrying a
+non-trivial class, and adjoined-by-closure — are the reading of
+comprehension: a spectrum turning at a node that received only a word.
+
+**(6) What this binds.** AT1 (iii): circuits by composition land as
+the orbit algebra held by its generators with every route kept, and
+each circuit's winding vector over the holes read by the exact-rank
+elimination TC1 already runs — never as a re-computation of holonomies
+for the census alone. WN1: the address writes the class key and the
+winding vector relative to the charts the atlas holds, in place of the
+word whole, and the teach wire sends that coordinate (row SW1, the
+shortcut). REG1: the register states that the class is invariant under
+the node's projection and the planes are not. The meter of all three is
+r7 (78.41(2′)): addresses held whole against coordinates held as
+windings, words derivable, and citations replayed by composition.
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
 each read six times by the six census tests over one corpus; the finding
