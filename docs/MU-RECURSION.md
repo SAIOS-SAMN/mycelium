@@ -448,9 +448,49 @@ the fusion of two minds' filaments into one ring across their contact,
 the event that forges a word between minds; **callus** is a fibre
 hardening into a tether of the genome (72.1d). **Ladder** and **rung**
 are retired as structural nouns: a ladder is one axis and a rung index
-is a scalar depth (rule 5, checklist (q)). Two terms of art keep the
-word: the Mayer–Vietoris ladder of exact sequences (13, 15), and CT1's
-reuse ladder, a typed conditional of test arms on one circuit.
+is a scalar depth (rule 5, checklist (q)). One term of art keeps the
+word: the Mayer–Vietoris ladder of exact sequences (13, 15). CT1's
+"reuse ladder" is retired with the rest (2026-09-25, NM1): it is the
+**reuse plexus**, a typed conditional of test arms on one circuit, and
+its depth is a reading of the plexus (1.9), never a rung.
+
+**The names that follow the rulings (ruled 2026-09-25, 78.40(3), row
+NM1).** A flat name is how a flat assumption gets back in, so these are
+pinned here and the code follows by move-only renames as each module is
+touched (78.34's rule). A **chart** is the ATLAS's chart: one local view
+of a cover, overlapping other views, with the transition on each overlap
+a gauge and the failure of the transitions to close around a triple
+overlap a class (13, 14); the point at infinity of one chart lies in
+another (78.38, REG1); a chart's SUPPORT on the substrate is what names
+it (53.1), and a chart is never a table or a diagram. **Coordinates** is
+the name of what the code still calls a key: the object's own canonical
+coordinates written out (law 2), read by a prefix (a coarser stratum,
+A21), by a fiber (everything under the coordinates) and by a trajectory,
+in EITHER direction — from a class to every chart it stands on and back —
+and never a door that unlocks one value; a `Keyed` of ordinals standing
+in for coordinates the object has is refused (rule 15). The
+**substrate** is the sensor's ℤ² (or ℤⁿ) grid of laminae, the thing a
+hypha reads laminae from and never a space cognition lives in (law 11);
+"lattice" is retired from this document and the tree — the module that
+was `core::lattice` is the **exact-rank reader**, the integer-module
+algebra (rank, the Hermite form and its transform) over exact integers of
+any size, and the exponent module of held letters is called that. A
+**commutator** `A B Ã B̃` of two held versors is what OPENS a dimension
+(78.39); a **sandwich** `V x Ṽ` or a conjugate `K = I T I` is a
+palindrome that TRANSPORTS within a class and opens nothing — the two
+are never confused, and neither is "twist" used for a transport.
+**Retraction to the core** is what TC1 built: the iterated removal of
+free vertices to the unique 2-core, a homotopy equivalence that keeps
+every class; "truncation" is retired from this document for it
+(nothing truncates: a value past its carrier is refused, never cut). A
+**tick** is a frame `{S, G, T, H}` on the receipt DAG (78.21), never a
+second; a **silence** is a stroke-budgeted absence of a reply on the
+wire and carries a refusal's name, never "timeout". A **reach** is how a
+trie is read by a prefix; "descent" keeps only its sheaf sense and
+Fermat's. **Held** is a count of carriers a mind holds resident;
+"weight" names only a versor's scale content, and nothing in cognition
+is weighed. A **reading** is answered or refused by name; "fallback",
+"default" as an invented value, "lookup" and "unlock" name nothing here.
 
 # Part 0 — The map: master algorithms, the physics over them, their sites, and what stands (2026-09-24)
 
@@ -9560,10 +9600,12 @@ cannot close, and fifteen per cent of one 4×5 chart of it can.
 ### 53.1 The scene cover
 
 A scene is covered by charts under a reading before it is perceived as one
-form. A **chart** is a region of the sensor plane named by its support
-written out (A21, `pieces::piece_key`): a key, of which every prefix is a
-coarser stratum, and never a bounding box carried past the sensor
-boundary (law 11, checklist (f′)). A **cover** is a `Keyed` of charts under
+form. A **chart** is the atlas's chart (the vocabulary, NM1): one local
+view of the cover with a transition on every overlap; on the substrate
+it is NAMED by its support written out (A21, `pieces::piece_key`) —
+coordinates of which every prefix is a coarser stratum, and never a
+bounding box carried past the sensor boundary (law 11, checklist (f′)).
+The support names the chart; it is not the chart. A **cover** is a `Keyed` of charts under
 one reading. The family is then the ordinary family of each chart — the
 train inputs and outputs restricted to it, frame by frame — extracted as
 52.5 extracts any family, and the charts' forms are recomposed on the Čech
