@@ -16564,6 +16564,82 @@ with its cover and its RAYS, plural, none chosen (`Cite::Class { κ,
 rays, cover }`, `Cite::Demand { κ, spheres, cover }`), a layout change
 riding the recut.
 
+### 78.40 Windings, the opposing operation, and vents (ruled 2026-09-25, the operator's word)
+
+**(1) Containment is per puncture, and the punctures are orthogonal.**
+The enclosure reading (EN1) answers a body against one round with one
+sign — inside, on, apart, wraps — and the nesting parse arranges the
+cells into a tree by who wraps whom. That is exact where there are no
+holes: the complement of a sphere with no punctures is two regions and
+a sign separates them. It is flat the moment there is a puncture.
+Around a puncture a loop cannot be contracted; a body's relation to
+that hole is not a sign but a WINDING; and winding around one hole is
+independent of winding around another. A form with `k` holes has first
+cohomology of rank `k` — `k` orthogonal inside-outside axes — and a
+body's enclosure is its WINDING VECTOR over them, one coordinate per
+hole. Inside and outside are not neighbours across a wall: they are the
+two orientations of one generator, and each generator is its own
+dimension. This is 78.39 read from the topology instead of the algebra:
+a puncture OPENS a dimension, as a commutator does — a new generator of
+`Ȟ¹`, a new independent loop, its two orientations the new inside and
+outside. The epigenome's puncture (a verified proof re-filing a word),
+the transport's held rings, the remainder's class and a cell's
+non-resonant rings are one event at different grades: a hole added, an
+axis opened, a winding to read. The SCREW is why: a screw is the mode
+that winds — a turn and an advance that never return the round — and
+the engine holds screws as modes (parabolic, the rings' reading)
+precisely so that winding is a reading and not a picture. RULED: the
+nesting parse is the special case `Ȟ¹ = 0`, superseded wherever the
+rank is not zero; the enclosure line reads windings per hole beside the
+tree, reading first (row WN1, shape before code); the docket's cover
+and the callus's two chains carry windings where a form has holes; the
+docket is TAKEN by the entry whose windings are non-zero on the most
+INDEPENDENT holes — a rank, never a count; the register's inversion,
+when it lands, is the map exchanging the two orientations of every axis
+at once.
+
+**(2) Containment is acceptable because growth without a boundary
+needs an equal force from the opposing operation.** A tree is flat
+because it is uni-directional: one growing operation, bounded only by
+a ceiling someone declared. The engine builds a syntropic mycelium, not
+roots and leaves: EVERY operation that grows something is paired with
+the operation that takes it back, of equal force, and BOTH are read.
+The pairs that stand: merge against decoherence (TP1); hold against
+shed, the escrow drawn and returned (FX1, TC1); the pivot's reach
+against the gate's refusal (CS2); anastomosis forming rings against
+truncation removing leaves (TC1); work flowing up the court path against
+teaching flowing down as syllabus and minerals (80.2). Where only one
+direction stands, the missing opposite is the optimisation, and it is
+never a constant: the enclosure's tree against windings (1); the
+docket's answer by class key, which scans the open entries, against
+its INVERSE index class key → entries (TP1's small row); citations
+running one way, an act citing its words, against the inverse WORD →
+CITING STAMPS that proof-of-work by citation and retirement by citation
+(78.33) both need and today would scan for; and the SYNTROPIC BALANCE,
+up-flux against down-flux per lane per orbit, the one line that says
+whether a colony grows by closure or is carried by its syllabus (FX1's
+reading). RULED FOR STD1 SITE 4: each free constant is first asked
+whether it is a CEILING standing in for an opposing operation — the
+book's occupancy is bounded by recall and lapse, not a high-water
+number; the reserve by return, not a floor; growth by the flux that
+fails to renew it — and where the opposite operation exists the
+constant is REDUNDANT and goes; where it does not, the constant names a
+MISSING OPERATION, which is the finding to record, never a number to
+tune.
+
+**(3) Vents.** A vent is a place where force accumulates with no
+outlet: a thing counted and never read, held with no door, drawn with
+no return, demanded with no taker, derived and never charged, refused
+and never heard. Each is one direction of a pair whose other direction
+is missing, and a mind whose vents are shut does not fail — it
+pressurises, and the pressure comes out as the next constant someone
+declares. The vents are read (row VN1) before the recut and each is
+opened by its missing opposite or named as owed; the syntax is aligned
+on the semantics in the same pass (row NM1: names follow rulings, the
+tape ruling's own rule), because a flat name is how a flat assumption
+gets back in the next time someone codes against the word instead of
+the ruling.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
