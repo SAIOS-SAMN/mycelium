@@ -257,7 +257,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     if r[1] == 0 || r[3] == 0 {
         return None;
     }
-    f.ratio = ((r[0] as usize, r[1] as usize), (r[2] as usize, r[3] as usize));
+    // Each part read in `usize` or the key refused: a ratio this node's
+    // carrier cannot hold is not truncated into another ratio.
+    let at = |x: u64| usize::try_from(x).ok();
+    f.ratio = ((at(r[0])?, at(r[1])?), (at(r[2])?, at(r[3])?));
     let ns = take_key_count(k, &mut p)?;
     for _ in 0..ns {
         let class = crate::transducer::address::take_key_bytes(k, &mut p)?;

@@ -190,7 +190,7 @@ pub struct Kernel {
     pub(crate) pending_refine: crate::network::nerve::Keyed<(
         crate::transducer::stalk::Invariant,
         crate::transducer::alphabet::Rotor,
-        u8,
+        usize,
     )>,
     /// Addresses fetched as Dialect or Slashed — (chart key, stratum root at
     /// fetch). Dropped when confirm_peer_holds sees that root move.
@@ -240,7 +240,7 @@ pub struct Kernel {
     /// C6: a TEST knob, `None` on any live fleet. Production reads
     /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
-    pub(crate) lane_cap: Option<[usize; 4]>,
+    pub(crate) lane_cap: Option<[u64; 4]>,
     /// Height at first vantage of a standing carrier (listing or docket).
     pub(crate) standing_h: crate::network::nerve::Keyed<u64>,
     /// Listing address → corpus task id, so a verified solve pays the same escrow.
@@ -789,7 +789,7 @@ impl Kernel {
 
     /// C6: test only. Capacity is measured, never set (rule 5).
     #[cfg(test)]
-    pub fn set_lane_cap(&mut self, cap: [usize; 4]) {
+    pub fn set_lane_cap(&mut self, cap: [u64; 4]) {
         self.lane_cap = Some(cap);
     }
 

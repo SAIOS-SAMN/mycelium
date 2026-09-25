@@ -21,7 +21,7 @@ pub enum RoomRefused {
 
 impl Kernel {
     /// A room read's answer, its refusal counted by name.
-    fn room_answer(&self, r: Result<[usize; 4], RoomRefused>) -> Option<[usize; 4]> {
+    fn room_answer(&self, r: Result<[u64; 4], RoomRefused>) -> Option<[u64; 4]> {
         use std::sync::atomic::Ordering::Relaxed;
         match r {
             Ok(v) => Some(v),
@@ -38,7 +38,10 @@ impl Kernel {
 
     /// `None` where this court's own room cannot be read: a lane occupied
     /// beyond its cover is a broken count, not a court with no room.
-    pub fn lane_room(&self) -> Option<[usize; 4]> {
+    /// Room, cover and occupancy are the mesh's stake per lane, `u64` end to
+    /// end (STD1 3c-5): they were narrowed to `usize` at the read and widened
+    /// back at the draw, a round trip that truncates on a narrower target.
+    pub fn lane_room(&self) -> Option<[u64; 4]> {
         self.lane_room_of(&self.identity)
     }
 
@@ -48,11 +51,11 @@ impl Kernel {
     /// must not reconstruct it by adding the two back together — that is
     /// two readers of one fact (law 12), and it is how a saturation test
     /// came to compare a quantity with itself.
-    pub fn lane_cover_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+    pub fn lane_cover_of(&self, voice: &[u8; 32]) -> Option<[u64; 4]> {
         self.room_answer(self.cover_of(voice))
     }
 
-    fn cover_of(&self, voice: &[u8; 32]) -> Result<[usize; 4], RoomRefused> {
+    fn cover_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefused> {
         if let Some(cap) = self.lane_cap {
             return Ok(cap);
         }
@@ -62,19 +65,18 @@ impl Kernel {
             None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
-        let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)?;
-        Ok(cover.map(|c| c as usize))
+        crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)
     }
 
     /// `None` on a lane occupied beyond its cover: that is a broken count,
     /// as a lane releasing more than it holds is, and zero room would be
     /// the invariant's failure read as a measurement (rule 11). `None` too
     /// where the cover passes its carrier, counted apart (STD1).
-    pub fn lane_room_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+    pub fn lane_room_of(&self, voice: &[u8; 32]) -> Option<[u64; 4]> {
         self.room_answer(self.room_of(voice))
     }
 
-    fn room_of(&self, voice: &[u8; 32]) -> Result<[usize; 4], RoomRefused> {
+    fn room_of(&self, voice: &[u8; 32]) -> Result<[u64; 4], RoomRefused> {
         // A voice that has drawn nothing occupies nothing: the reading of
         // absence on a keyed carrier, exactly zero per lane by definition.
         let occ = match self.drawn.get(voice) {
@@ -84,9 +86,9 @@ impl Kernel {
         if let Some(cap) = self.lane_cap {
             // A lane drawn PAST its cap is a broken count: the draw was
             // admitted against room that was not there.
-            let mut free = [0usize; 4];
+            let mut free = [0u64; 4];
             for (l, f) in free.iter_mut().enumerate() {
-                *f = cap[l].checked_sub(occ[l] as usize).ok_or(RoomRefused::Broken)?;
+                *f = cap[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)?;
             }
             return Ok(free);
         }
@@ -108,9 +110,9 @@ impl Kernel {
         };
         let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)?;
         // A voice drawn BEYOND its cover is a broken count, as above.
-        let mut free = [0usize; 4];
+        let mut free = [0u64; 4];
         for (l, f) in free.iter_mut().enumerate() {
-            *f = cover[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)? as usize;
+            *f = cover[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)?;
         }
         Ok(free)
     }
@@ -309,11 +311,11 @@ impl Kernel {
     /// Test helper: remaining listing room, from each lane's own bond.
     /// `None` where a lane's room plus its occupancy passes its carrier,
     /// counted as a room read past its carrier (STD1).
-    pub fn dynamic_lane_capacity(&self) -> Option<[usize; 4]> {
+    pub fn dynamic_lane_capacity(&self) -> Option<[u64; 4]> {
         let room = self.lane_room()?;
-        let mut cap = [0usize; 4];
+        let mut cap = [0u64; 4];
         for (l, c) in cap.iter_mut().enumerate() {
-            match room[l].checked_add(self.occupancy[l] as usize) {
+            match room[l].checked_add(self.occupancy[l]) {
                 Some(v) => *c = v,
                 None => return self.room_answer(Err(RoomRefused::PastCarrier)),
             }
@@ -352,7 +354,6 @@ impl Kernel {
         };
         let bonded = self.lane_cap.is_some() || self.treasury.bond_of(voice).is_some();
         let room = self.lane_room_of(voice)?;
-        let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         // A bonded voice is short by `shortfall(draw, room)` — the reading
         // that already exists. The other arms are not shortfalls of a room
         // at all: an unpaid recall or an unbonded claim in flight closes

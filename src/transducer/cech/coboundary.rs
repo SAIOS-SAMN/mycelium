@@ -743,7 +743,7 @@ impl Complex {
         // EVERY standing class, as the name says: the simplices of this
         // complex, which is one chart's nerve and a fiber already.
         for (k, d) in self.by_key.scoped() {
-            let d = *d as usize;
+            let d = *d;
             if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                 if let Fill::Class(kappa, r) = &c.fill {
                     out.push((kappa.as_ref().clone(), r.as_ref().clone(), d));
@@ -768,7 +768,7 @@ impl Complex {
         // As above: this complex's own simplices, all of them, since an
         // unfilled simplex anywhere in the nerve is a demand.
         for (k, d) in self.by_key.scoped() {
-            let d = *d as usize;
+            let d = *d;
             if d >= 1 {
                 if let Some(c) = self.degrees.get(d).and_then(|l| l.get(&k)) {
                     if c.fill.unsettled() {

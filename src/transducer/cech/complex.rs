@@ -13,7 +13,7 @@ pub struct Complex {
     pub degrees: Vec<Keyed<Simplex>>,
     /// simplex key → degree, written in remember. Fill and class are keyed
     /// reads, never a traversal of degrees.
-    pub(crate) by_key: Keyed<u8>,
+    pub(crate) by_key: Keyed<usize>,
     pub sections: Keyed<Section>,
     pub(crate) star: Keyed<Keyed<()>>,
     pub(crate) remainder: Keyed<()>,
@@ -79,7 +79,10 @@ impl Complex {
         let degree = simplex.degree();
         let key = simplex.key();
         self.ensure(degree);
-        self.by_key.insert(&key, degree as u8);
+        // The degree in its own count: a simplex's arity is the charts
+        // standing together, and `as u8` read a 257-vertex simplex back at
+        // another degree (STD1 3c-5).
+        self.by_key.insert(&key, degree);
         // index: vertices of this simplex (bounded by degree)
         for v in &simplex.vertices {
             match self.star.get_mut(v) {
@@ -264,14 +267,14 @@ impl Complex {
     /// Simplex at `key`, read in place. Never a clone of the rotor.
     pub fn simplex(&self, key: &[u8]) -> Option<&Simplex> {
         let d = *self.by_key.get(key)?;
-        self.degrees.get(d as usize)?.get(key)
+        self.degrees.get(d)?.get(key)
     }
 
     /// A key in `by_key` names a stored simplex in the layer of its
     /// degree. `None` when it names none: a key with no simplex is not
     /// reopened (§2.4).
     pub(crate) fn stored_mut(&mut self, key: &[u8]) -> Option<&mut Simplex> {
-        let d = *self.by_key.get(key)? as usize;
+        let d = *self.by_key.get(key)?;
         self.degrees.get_mut(d)?.get_mut(key)
     }
 
@@ -324,7 +327,7 @@ impl Complex {
     }
 
     pub(crate) fn degree_of(&self, key: &[u8]) -> Option<usize> {
-        self.by_key.get(key).map(|&d| d as usize)
+        self.by_key.get(key).copied()
     }
 
     /// Keys of one degree that contain `vertex` — a peel of the star.
@@ -366,7 +369,7 @@ impl Complex {
         }
         for k in drop {
             if let Some(d) = self.by_key.remove(&k) {
-                if let Some(layer) = self.degrees.get_mut(d as usize) {
+                if let Some(layer) = self.degrees.get_mut(d) {
                     layer.remove(&k);
                 }
             }

@@ -242,10 +242,19 @@ pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
     // The chart's sites on the grid axes: a chart is a region of the
     // sensor plane (16.5).
     let plane: Vec<(i64, i64)> = chart.support.iter().map(on_grid).collect::<Option<_>>()?;
-    let [(r0, c0), ..] = plane.as_slice() else { return None };
-    let (r0, c0) = (*r0, *c0);
-    let (mut r1, mut c1) = (r0, c0);
+    // THE CHART'S EXTENT, both corners read off every site. The low corner
+    // was the FIRST site's (rule 15's first-found), so a site above or left
+    // of it gave a negative offset that wrapped to a huge index and dropped
+    // the whole restriction silently, and the extent came out short.
+    let [(first_r, first_c), ..] = plane.as_slice() else { return None };
+    let (mut r0, mut c0, mut r1, mut c1) = (*first_r, *first_c, *first_r, *first_c);
     for &(r, c) in &plane {
+        if r < r0 {
+            r0 = r;
+        }
+        if c < c0 {
+            c0 = c;
+        }
         if r > r1 {
             r1 = r;
         }
@@ -253,11 +262,14 @@ pub fn restrict(g: &Grid, chart: &Chart) -> Option<Grid> {
             c1 = c;
         }
     }
-    let (h, w) = ((r1 - r0 + 1) as usize, (c1 - c0 + 1) as usize);
+    // Every offset below is from the true low corner, so it is exact in
+    // `usize` or the restriction is refused (rule 11), never wrapped.
+    let span = |lo: i64, hi: i64| usize::try_from(hi.checked_sub(lo)?.checked_add(1)?).ok();
+    let (h, w) = (span(r0, r1)?, span(c0, c1)?);
     let mut out = vec![vec![0u8; w]; h];
     for &(r, c) in &plane {
-        let hue = *g.get(r as usize).and_then(|row| row.get(c as usize))?;
-        let (dr, dc) = ((r - r0) as usize, (c - c0) as usize);
+        let hue = *g.get(usize::try_from(r).ok()?).and_then(|row| row.get(usize::try_from(c).ok()?))?;
+        let (dr, dc) = (usize::try_from(r - r0).ok()?, usize::try_from(c - c0).ok()?);
         *out.get_mut(dr).and_then(|row| row.get_mut(dc))? = hue;
     }
     Some(out)

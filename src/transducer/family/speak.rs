@@ -261,7 +261,7 @@ fn speak_on_scene(
                         let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
                             continue;
                         };
-                        let i = u64::from_le_bytes(raw) as usize;
+                        let Ok(i) = usize::try_from(u64::from_le_bytes(raw)) else { continue };
                         if let Some(body) = bodies.get(i) {
                             emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
                         }
@@ -363,7 +363,7 @@ fn speak_on_scene(
                         let Ok(raw) = <[u8; 8]>::try_from(addr.as_slice()) else {
                             continue;
                         };
-                        let i = u64::from_le_bytes(raw) as usize;
+                        let Ok(i) = usize::try_from(u64::from_le_bytes(raw)) else { continue };
                         if let Some(body) = bodies.get(i) {
                             emit_carried(body, &versor, &member.gauge, fy, &mut painted, &mut remainder);
                         }

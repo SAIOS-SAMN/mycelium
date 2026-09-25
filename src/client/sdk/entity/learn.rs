@@ -256,7 +256,7 @@ impl Entity {
             }
             let mut budget = self.physics.stroke();
             let n = peers.len();
-            let start = self.session.peer_cursor() % n;
+            let Some(start) = self.session.peer_start(n) else { return Ok(0) };
             self.session.bump_cursor();
             let mut learned = 0usize;
             let req = dialogue::encode_syllabus_request(&voice);

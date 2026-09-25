@@ -11,16 +11,12 @@ use mycelium::cognition::Kernel;
 use mycelium::network::nerve::Router;
 use std::sync::Mutex;
 
-pub(crate) fn room64(r: [usize; 4]) -> [u64; 4] {
-    std::array::from_fn(|i| r[i] as u64)
-}
-
 pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8, mycelium::transducer::stalk::Invariant)>, [u64; 4]) {
     // A room that cannot be read is a broken count, and this hypha admits
     // no cover against one — as a poisoned lock admits none.
     let (charts, room) = match kernel.lock() {
         Ok(k) => match k.lane_room() {
-            Some(r) => (k.own_cover_charts(), room64(r)),
+            Some(r) => (k.own_cover_charts(), r),
             None => return (Vec::new(), [0; 4]),
         },
         Err(_) => return (Vec::new(), [0; 4]),

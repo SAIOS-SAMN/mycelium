@@ -139,7 +139,7 @@ impl Kernel {
         rows.scoped()
             .filter_map(|(k, n)| {
                 let raw: [u8; 8] = k.as_slice().try_into().ok()?;
-                Some((u64::from_be_bytes(raw) as usize, *n))
+                Some((usize::try_from(u64::from_be_bytes(raw)).ok()?, *n))
             })
             .collect()
     }

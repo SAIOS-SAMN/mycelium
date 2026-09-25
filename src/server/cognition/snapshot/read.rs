@@ -588,8 +588,7 @@ fn take_field(b: &[u8], p: &mut usize) -> Option<ListingField> {
             1 => Closure::Twisted(Box::new(element::Versor::from_bytes(b, p)?)),
             2 => Closure::Cavity,
             3 => {
-                let d = *b.get(*p)?;
-                *p += 1;
+                let d = crate::transducer::address::take_key_count(b, p)?;
                 Closure::Class(Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?), d)
             }
             _ => return None,

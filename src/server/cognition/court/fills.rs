@@ -123,7 +123,7 @@ impl Kernel {
                     let degree = self
                         .complexes
                         .get(&inv.key())
-                        .and_then(|c| c.class(&sim_key).map(|(_, _, d)| d as u8))
+                        .and_then(|c| c.class(&sim_key).map(|(_, _, d)| d))
                         // A class the complex does not hold stands at the
                         // edge degree, which is where a fill first names one.
                         .map_or(2, |d| d);
@@ -181,7 +181,7 @@ impl Kernel {
         let mut refine: Vec<(
             crate::transducer::stalk::Invariant,
             crate::transducer::alphabet::Rotor,
-            u8,
+            usize,
         )> = Vec::new();
         {
             let from = self.refine_cursor.clone();

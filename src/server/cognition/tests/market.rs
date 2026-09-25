@@ -138,7 +138,7 @@ let listed = k
 let want_chart = crate::transducer::stalk::invariant_of(&listed);
 let want_mag = listed.magnitude();
 let room = k.lane_room().expect("this court's room reads");
-let want_room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
+let want_room: [u64; 4] = room;
 // INSIDE this court's own horizon, so what the pass proves is WHAT Λ IS
 // ASKED WITH and not what an unmeasured answer does with it: past the
 // horizon the listing now leaves on the court's own aperture (the
@@ -313,7 +313,7 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
 let chain = germinate(&a, &b).unwrap();
-assert!(k.intake(&chain, &frame_of(&a, &b)), "the corpus intake lists the body");
+assert!(k.intake(&chain, &frame_of(&a, &b).expect("the extent fits")), "the corpus intake lists the body");
 let target = k.quote().1[0].0.address();
 let listed = k.quote().1[0].0.sub().to_vec();
 let rem = vec![(0, 1, 1u8, 0u8)];

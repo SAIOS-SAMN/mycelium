@@ -119,7 +119,7 @@ impl Entity {
         }
         let mut budget = self.physics.stroke();
         let n = peers.len();
-        let start = self.session.peer_cursor() % n;
+        let Some(start) = self.session.peer_start(n) else { return self.session.quote(asked) };
         self.session.bump_cursor();
         let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let mut out: Option<YieldQuote> = None;

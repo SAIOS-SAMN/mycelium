@@ -173,7 +173,7 @@ impl Kernel {
             // relocated against one.
             return;
         };
-        let cap = cover[2] as u64;
+        let cap = cover[2];
         // A LANE WITH NO COVER IS UNMEASURED, NOT FULL. `measure_lanes`
         // writes lane 2 as zero — a chain carries no clock — so every
         // family's 𝒯 cover is zero at registration, and the provisional

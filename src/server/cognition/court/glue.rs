@@ -180,7 +180,7 @@ impl Kernel {
             }
         }
         let mut filled = false;
-        let mut class_simplex: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
+        let mut class_simplex: Option<(crate::transducer::alphabet::Rotor, usize)> = None;
         // RM1 — the congruent fill's remainder (κ, g, ℓ), its words, and the
         // simplex's own key: the Torse rewrite's inputs.
         let mut congruent: Option<(Torsed, Vec<Address>, Vec<u8>)> = None;
@@ -250,11 +250,11 @@ impl Kernel {
                     crate::transducer::cech::Fill::Class(_, class),
                 ) => {
                     let class = class.as_ref().clone();
-                    class_simplex = Some((class.clone(), d as u8));
+                    class_simplex = Some((class.clone(), d));
                     let dkey = chart_simplex_key(&inv, &key);
                     self.unfilled.insert(dkey, (inv.clone(), Address::from(key.as_slice())));
                     if d >= 3 {
-                        self.pending_refine.insert(inv.key(), (inv.clone(), class, d as u8));
+                        self.pending_refine.insert(inv.key(), (inv.clone(), class, d));
                     }
                     eprintln!(
                         "  court simplex class degree {d} {:02x}{:02x}…",

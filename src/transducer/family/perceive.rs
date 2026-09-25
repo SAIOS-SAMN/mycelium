@@ -855,9 +855,12 @@ pub(crate) fn frame_of(g: &Grid) -> (usize, usize) {
 /// The test extraction's step 3 decides a glue by, and the same test a
 /// voice answers a demand by (L8q), so the two organs read one thing.
 pub fn painted_within_grid(painted: &[Painted], g: &Grid) -> bool {
+    // A negative site is off the grid by `try_from`, never by an index a
+    // wrap happened to put out of range.
     painted.iter().all(|&(r, c, h)| {
-        g.get(r as usize)
-            .and_then(|row| row.get(c as usize))
+        let at = |x: i64| usize::try_from(x).ok();
+        at(r).and_then(|r| g.get(r))
+            .and_then(|row| row.get(at(c)?))
             .copied()
             == Some(h)
     })

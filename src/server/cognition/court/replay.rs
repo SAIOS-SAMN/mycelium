@@ -538,7 +538,7 @@ impl Kernel {
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         class: crate::transducer::alphabet::Rotor,
-        degree: u8,
+        degree: usize,
     ) {
         let members: Vec<Vec<u8>> = self.listing_atlas.fiber(inv);
         for addr in members {
@@ -560,7 +560,7 @@ impl Kernel {
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         class: crate::transducer::alphabet::Rotor,
-        _degree: u8,
+        _degree: usize,
         mut cover: Option<&mut crate::network::nerve::Cover>,
     ) {
         // A class with no axes of its own refines on the leading axis,

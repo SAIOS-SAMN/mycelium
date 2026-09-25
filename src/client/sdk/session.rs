@@ -92,7 +92,7 @@ impl Session {
         if known.is_empty() {
             return;
         }
-        let i = self.peer_cursor() % known.len();
+        let Some(i) = self.peer_start(known.len()) else { return };
         self.bump_cursor();
         if budget.spend() {
             self.ask_peers(&known[i]);
@@ -180,8 +180,14 @@ impl Session {
         }
     }
 
-    pub(crate) fn peer_cursor(&self) -> usize {
-        self.strokes.get() as usize
+    /// WHERE A ROUND OF `n` PEERS STARTS: the session's strokes modulo
+    /// `n`, reduced in the count's own `u64` and only then narrowed — a
+    /// value below `n` fits `usize` by construction. It narrowed the count
+    /// first, which on a narrower target wrapped before it rotated. `None`
+    /// where there is no peer to start at.
+    pub(crate) fn peer_start(&self, n: usize) -> Option<usize> {
+        let at = self.strokes.get().checked_rem(u64::try_from(n).ok()?)?;
+        usize::try_from(at).ok()
     }
 
     pub(crate) fn bump_cursor(&self) {
@@ -518,12 +524,13 @@ impl Session {
     /// Speak an unkeyed act on the nerve: every learned hypha, starting at
     /// the stroke. A full reflex pool is impedance, not a failed quote.
     pub fn speak_nerve(&self, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
-        let n = self.strokes.get();
-        self.strokes.set(n.wrapping_add(1));
-        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let peer_list = self.peers();
-        let start = (n as usize) % peer_list.len().max(1);
         let npeers = peer_list.len().max(1);
+        let Some(start) = self.peer_start(npeers) else {
+            return Err(io::Error::new(io::ErrorKind::NotConnected, "no hypha"));
+        };
+        self.bump_cursor();
+        let mut last_err = io::Error::new(io::ErrorKind::NotConnected, "no hypha");
         let any_open = (0..npeers).any(|i| !self.occluded_at(&peer_list[(start + i) % npeers]));
         let mut pass = 0u8;
         while pass < 2 {

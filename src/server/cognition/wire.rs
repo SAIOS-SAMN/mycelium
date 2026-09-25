@@ -21,23 +21,24 @@ pub fn germ_address(g: &Element) -> crate::transducer::address::Address {
     clippy::disallowed_methods,
     reason = "rule 4 — a scene's extent is the largest coordinate its painted sites occupy, content"
 )]
-pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> crate::arc::Frame {
+pub fn frame_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<crate::arc::Frame> {
     // A scene's extent is its largest occupied coordinate plus one, which
     // the painted set determines (rule 4). An empty scene occupies no sites
-    // and its extent is zero by measurement, not by default.
-    let extent = |s: &[(i64, i64, u8)]| {
+    // and its extent is zero by measurement, not by default. An extent no
+    // `usize` holds is refused, never truncated (STD1 3c-5).
+    let extent = |s: &[(i64, i64, u8)]| -> Option<(usize, usize)> {
         let axis = |m: Option<i64>| match m {
-            Some(x) if x > 0 => x as usize,
-            _ => 0,
+            Some(x) if x > 0 => usize::try_from(x).ok(),
+            _ => Some(0),
         };
-        (
-            axis(s.iter().map(|(r, _, _)| *r + 1).max()),
-            axis(s.iter().map(|(_, c, _)| *c + 1).max()),
-        )
+        Some((
+            axis(s.iter().map(|(r, _, _)| *r + 1).max())?,
+            axis(s.iter().map(|(_, c, _)| *c + 1).max())?,
+        ))
     };
-    let (hi, wi) = extent(a);
-    let (ho, wo) = extent(b);
-    crate::arc::Frame::new(hi, wi, ho, wo)
+    let (hi, wi) = extent(a)?;
+    let (ho, wo) = extent(b)?;
+    Some(crate::arc::Frame::new(hi, wi, ho, wo))
 }
 
 /// One byte on the wire summarising an outcome (server → client reply). A

@@ -5,7 +5,6 @@
 //! `serve_control` answers the acts that are about the mesh rather than
 //! about the language: peers, roots, the syllabus, task listing and intake.
 
-use crate::admission::room64;
 use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};
 use crate::syllabus::{syllabus_admit, syllabus_page, Syllabus};
 use crate::transport::answer;
@@ -518,7 +517,7 @@ fn rewind_syllabus(door: &Door) {
 pub(crate) fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
     let room = match kernel.lock() {
         Ok(k) => match k.lane_room() {
-            Some(r) => room64(r),
+            Some(r) => r,
             None => return false,
         },
         Err(_) => return false,

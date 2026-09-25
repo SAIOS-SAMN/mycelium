@@ -122,9 +122,13 @@ impl Kernel {
             // so the spoken link goes back where the chain had it and
             // nothing re-derives that corner here (law 12).
             for &(r, c, _, a) in &bodies {
-                let said = spoken
-                    .get((r - r0) as usize)
-                    .and_then(|row| row.get((c - c0) as usize))
+                // An offset below the corner is off the spoken grid, read
+                // by `try_from` — never a wrap into a huge index that
+                // happened to miss.
+                let at = |x: i64| usize::try_from(x).ok();
+                let said = at(r - r0)
+                    .and_then(|dr| spoken.get(dr))
+                    .and_then(|row| row.get(at(c - c0)?))
                     .copied();
                 if said == Some(a) {
                     open.remove(&crate::transducer::family::site_key(r, c));

@@ -100,7 +100,7 @@ let listed = k.quote().1[0].0.sub().to_vec();
 // and the relocation read is the drain's alone.
 let drawn = k.occupancy();
 let t_lane = 2usize;
-k.set_lane_cap(std::array::from_fn(|l| if l == t_lane { 8 } else { drawn[l] as usize }));
+k.set_lane_cap(std::array::from_fn(|l| if l == t_lane { 8 } else { drawn[l] }));
 let c = vec![(0, 0, 3u8)];
 let d = vec![(0, 0, 4u8)];
 assert_eq!(
@@ -148,11 +148,11 @@ let b = vec![(0, 0, 2u8)];
 let c = vec![(1, 0, 3u8)];
 let d = vec![(1, 0, 4u8)];
 assert!(
-    k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b)),
+    k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")),
     "the first corpus task lists"
 );
 assert!(
-    k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d)),
+    k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d).expect("the extent fits")),
     "a second task of the same μ⃗ lists too: the corpus drew no room"
 );
 assert_eq!(k.pending.len(), 2, "both are on the book");
@@ -172,14 +172,14 @@ fn the_corpus_intake_lists_each_body_as_its_own_demand() {
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (5, 5, 3u8)];
 let b = vec![(0, 0, 2u8), (5, 5, 4u8)];
-assert!(k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b)), "the first task lists");
+assert!(k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")), "the first task lists");
 assert_eq!(k.pending.len(), 2, "two bodies, two demands");
 let c = vec![(0, 0, 1u8), (5, 5, 6u8)];
 let d = vec![(0, 0, 2u8), (5, 5, 8u8)];
-assert!(k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d)), "the second task adds a body");
+assert!(k.intake(&germinate(&c, &d).unwrap(), &frame_of(&c, &d).expect("the extent fits")), "the second task adds a body");
 assert_eq!(k.pending.len(), 3, "the shared body is one listing; the new body lists");
 assert!(
-    !k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b)),
+    !k.intake(&germinate(&a, &b).unwrap(), &frame_of(&a, &b).expect("the extent fits")),
     "a task whose bodies are all listed adds nothing"
 );
 }

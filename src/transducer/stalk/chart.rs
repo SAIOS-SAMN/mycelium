@@ -332,8 +332,10 @@ impl Invariant {
 pub enum Closure {
     Flat,
     Twisted(Box<Versor>),
-    /// A Čech class at a degree, a Rotor of the alphabet.
-    Class(Box<Rotor>, u8),
+    /// A Čech class at a degree, a Rotor of the alphabet. The degree is the
+    /// simplex's — the charts standing together, the mesh's count — so it
+    /// is held as the count (STD1 3c-5), never a byte.
+    Class(Box<Rotor>, usize),
     Cavity,
 }
 

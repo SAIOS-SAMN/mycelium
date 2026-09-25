@@ -5,9 +5,11 @@ use super::*;
 /// End of an orbit (chapter 22). `steps` is instance, not the form.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OrbitEnd {
-    Contact { painted: Vec<Painted>, steps: u32 },
-    Torsion { steps: u32 },
-    LeftFrame { steps: u32 },
+    // Steps are the distance advanced along the orbit (78.43(3)), bounded by
+    // the grid's own extent, so the grid's count carries them.
+    Contact { painted: Vec<Painted>, steps: usize },
+    Torsion { steps: usize },
+    LeftFrame { steps: usize },
     NoOrbit,
 }
 
@@ -28,7 +30,11 @@ pub(crate) fn occupy_keys(painted: &[(i64, i64, u8)]) -> crate::network::nerve::
 
 /// Smallest peel-shell index at which every image site sits in the
 /// `adjacent_ring` expansion of the anchor. Not a metric.
-pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound: u32) -> Option<u8> {
+///
+/// In the grid's own count: the shell reaches the grid's height plus width,
+/// and `k as u8` wrapped a far shell onto a near one, which could read a
+/// contact at a ring the body never stood on.
+pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound: usize) -> Option<usize> {
     if image.is_empty() || anchor.is_empty() {
         return None;
     }
@@ -36,7 +42,7 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
     for k in 0..=bound {
         let occ = occupy_keys(&have);
         if image.iter().all(|&(r, c)| occ.contains(&site_key(r, c))) {
-            return Some(k as u8);
+            return Some(k);
         }
         let ring = crate::transducer::blade::adjacent_ring(&have);
         if ring.is_empty() {
@@ -118,11 +124,11 @@ pub fn orbit_at(
         return OrbitEnd::NoOrbit;
     };
     let want = match v {
-        Vertex::Word { contact: Some(c), .. } => c.ring,
+        Vertex::Word { contact: Some(c), .. } => usize::from(c.ring),
         _ => 0,
     };
     #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a resident grid's frame dimensions cannot sum past a 64-bit usize")]
-    let bound = (frame.0.saturating_add(frame.1)).max(1) as u32;
+    let bound = (frame.0.saturating_add(frame.1)).max(1);
     let start = ring_dist_peel(&positions_of(x_painted), anchor, bound);
     let Some(next) = carry_painted(&versor, x_painted) else {
         return OrbitEnd::LeftFrame { steps: 1 };

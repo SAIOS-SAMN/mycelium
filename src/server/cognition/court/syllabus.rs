@@ -21,12 +21,12 @@ impl Kernel {
     pub fn classes_on(
         &self,
         inv: &crate::transducer::stalk::Invariant,
-    ) -> Vec<(crate::transducer::alphabet::Rotor, u8)> {
+    ) -> Vec<(crate::transducer::alphabet::Rotor, usize)> {
         let mut out = Vec::new();
         for p in inv.prefixes() {
             if let Some(cx) = self.complexes.get(&p.key()) {
                 for (_kappa, r, d) in cx.classes() {
-                    out.push((r, d as u8));
+                    out.push((r, d));
                 }
             }
         }

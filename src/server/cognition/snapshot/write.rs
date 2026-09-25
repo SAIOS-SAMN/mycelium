@@ -30,7 +30,7 @@ pub(super) fn put_field(out: &mut Vec<u8>, listing: &ListingField) {
             crate::transducer::stalk::Closure::Cavity => out.push(2),
             crate::transducer::stalk::Closure::Class(r, d) => {
                 out.push(3);
-                out.push(*d);
+                crate::transducer::address::put_key_count(out, *d);
                 r.put_canonical(out);
             }
         }

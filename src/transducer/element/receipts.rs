@@ -454,13 +454,13 @@ impl NerveRound {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveRound> {
-        let n = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+        let n = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
         *pos += 8;
         let mut charts = Vec::new();
         for _ in 0..n {
             charts.push(Address::new(crate::transducer::address::take_bytes(b, pos)?));
         }
-        let m = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?) as usize;
+        let m = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
         *pos += 8;
         let mut points = Vec::new();
         for _ in 0..m {

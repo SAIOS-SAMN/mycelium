@@ -65,7 +65,7 @@ impl Complex {
         put_trie(out, SECTIONS, &sections);
         let mut simplices: Keyed<Leaves> = Keyed::new();
         crate::snapshot::persist(&self.by_key, |k, d| {
-            let Some(c) = self.degrees.get(*d as usize).and_then(|l| l.get(k)) else { return };
+            let Some(c) = self.degrees.get(*d).and_then(|l| l.get(k)) else { return };
             let mut verts = (c.vertices.len() as u64).to_le_bytes().to_vec();
             for v in &c.vertices {
                 crate::snapshot::put_key(&mut verts, v);
@@ -110,7 +110,13 @@ impl Complex {
             simplices.insert(
                 k,
                 vec![
-                    (LEAF_DEGREE, vec![*d]),
+                    // The degree by its own coordinate (LEB128): a
+                    // simplex's arity is the mesh's count, never a byte.
+                    (LEAF_DEGREE, {
+                        let mut dl = Vec::new();
+                        crate::transducer::address::put_key_count(&mut dl, *d);
+                        dl
+                    }),
                     (LEAF_VERTICES, verts),
                     (LEAF_COEFFICIENT, ray_rotor(&c.coefficient)),
                     (LEAF_SIMPLEX_CARRIAGE, ray_versor(&c.carriage)),
@@ -148,7 +154,7 @@ impl Complex {
             &[LEAF_DEGREE, LEAF_VERTICES, LEAF_COEFFICIENT, LEAF_SIMPLEX_CARRIAGE, LEAF_VOLUME, LEAF_FILL],
         )?;
         for (k, leaves) in simplices.scoped() {
-            let [degree] = leaf(leaves, LEAF_DEGREE)? else { return None };
+            let degree = whole(leaf(leaves, LEAF_DEGREE)?, crate::transducer::address::take_key_count)?;
             let verts = whole(leaf(leaves, LEAF_VERTICES)?, |b, p| {
                 let n = usize::try_from(u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?)).ok()?;
                 *p += 8;
@@ -206,7 +212,7 @@ impl Complex {
             })?;
             let simplex = Simplex { vertices: sorted_verts(verts), coefficient, carriage, volume, fill };
             // The key and the degree are the simplex's own, re-derived.
-            if simplex.key().as_bytes() != k.as_slice() || simplex.degree() != usize::from(*degree) {
+            if simplex.key().as_bytes() != k.as_slice() || simplex.degree() != degree {
                 return None;
             }
             c.remember(simplex);

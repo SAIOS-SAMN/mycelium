@@ -65,7 +65,6 @@ impl Kernel {
         let Some(room) = self.lane_room() else {
             return;
         };
-        let room: [u64; 4] = std::array::from_fn(|l| room[l] as u64);
         let mut lapse: Vec<(Address, u64)> = Vec::new();
         // Listings whose horizon is wider than the ledger counts. Reported
         // once per sweep, never per listing.
