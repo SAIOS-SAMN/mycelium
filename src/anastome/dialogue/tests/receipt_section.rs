@@ -164,7 +164,9 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
         .expect("a page");
     assert_eq!(both.charts.len(), 2, "a 256-coordinate chart is served, not dropped");
     assert!(!more, "and the page is complete");
-    let over = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 6000]))];
+    // A Count axis is ten bytes (kind, a one-byte length, eight): 7 000 of
+    // them are past two bytes of length.
+    let over = vec![(0u8, Invariant::counts(&[1])), (1u8, Invariant::counts(&[4u64; 7000]))];
     let (only, more) = encode_cover_page(&vk, "a", &over, b"", 1 << 20)
         .as_deref()
         .and_then(decode_cover_page)
@@ -211,19 +213,19 @@ fn a_prefix_that_does_not_fit_the_wire_is_refused_not_wrapped() {
 /// it. The row's length field was ONE byte, so a chart key past 255 was
 /// passed over with no refusal anywhere: `encode_cover_page` skipped it and
 /// the asker resumed past it, so the body simply never appeared on any
-/// peer's cover. Measured under `ChartAxis`: a `Count` is 11 bytes and a
-/// single-limb `Ratio` 28, so a body's chart — four counts, five conformal
-/// ratios, one ratio per hue — passes 255 at four hues.
+/// peer's cover. Measured under `ChartAxis` since each length is its own
+/// coordinate (STD1 3c-2): a `Count` is 10 bytes and a single-limb `Ratio`
+/// 21, so a body's chart passes 255 at eleven ratios.
 #[test]
 fn a_chart_wider_than_one_length_byte_is_served_not_dropped() {
     use crate::transducer::stalk::{ChartAxis, Invariant};
     use num_bigint::BigInt;
     use num_rational::BigRational;
     let vk = [4u8; 32];
-    // Four counts and nine ratios: past 255 bytes, which one length byte
+    // Four counts and eleven ratios: past 255 bytes, which one length byte
     // cannot name.
     let mut axes: Vec<ChartAxis> = [1u64, 0, 0, 4].into_iter().map(ChartAxis::Count).collect();
-    for n in 1..=9i64 {
+    for n in 1..=11i64 {
         axes.push(ChartAxis::Ratio(BigRational::new(BigInt::from(n), BigInt::from(7))));
     }
     let wide = Invariant(axes);

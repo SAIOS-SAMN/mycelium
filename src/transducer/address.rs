@@ -379,7 +379,14 @@ pub fn put_u32_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
 /// construction; and a component under 128 bytes takes one length byte, not
 /// four.
 pub fn put_key_bytes(out: &mut Vec<u8>, b: &[u8]) {
-    let mut n = b.len();
+    put_key_count(out, b.len());
+    out.extend_from_slice(b);
+}
+
+/// A COUNT IN A KEY, written by its own coordinate (STD1 3c-2, ruled (d)):
+/// LEB128, seven bits a byte, minimal. A count in a key is a coordinate of
+/// the key exactly as a component's length is, so it has no width wall.
+pub fn put_key_count(out: &mut Vec<u8>, mut n: usize) {
     loop {
         let low = n.to_le_bytes()[0] & 0x7f;
         n >>= 7;
@@ -389,13 +396,11 @@ pub fn put_key_bytes(out: &mut Vec<u8>, b: &[u8]) {
         }
         out.push(low | 0x80);
     }
-    out.extend_from_slice(b);
 }
 
-/// A key component read back: its LEB128 length, then that many bytes.
-/// `None` where the length is not minimal (a key has one spelling), does not
-/// fit a `usize`, or runs past the key.
-pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
+/// A key count read back. `None` where the spelling is not minimal (a key
+/// has one spelling) or the count does not fit a `usize`.
+pub fn take_key_count(b: &[u8], p: &mut usize) -> Option<usize> {
     let mut n = 0usize;
     let mut shift = 0u32;
     loop {
@@ -403,7 +408,7 @@ pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
         *p += 1;
         let v = usize::from(byte & 0x7f);
         let placed = v.checked_shl(shift)?;
-        // Bits shifted past the carrier are a length no usize holds.
+        // Bits shifted past the carrier are a count no usize holds.
         if placed >> shift != v {
             return None;
         }
@@ -413,10 +418,17 @@ pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
             if byte == 0 && shift > 0 {
                 return None;
             }
-            break;
+            return Some(n);
         }
         shift += 7;
     }
+}
+
+/// A key component read back: its LEB128 length, then that many bytes.
+/// `None` where the length is not minimal, does not fit a `usize`, or runs
+/// past the key.
+pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
+    let n = take_key_count(b, p)?;
     if n > b.len().checked_sub(*p)? {
         return None;
     }

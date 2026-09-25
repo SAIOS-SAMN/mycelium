@@ -123,16 +123,19 @@ impl ChartAxis {
             // and then the denominator: the rational's exact coordinates,
             // written out (law 2). Inside ONE axis, so `peel` cannot cut
             // between them.
+            // Each limb count is a count in a key, written by its own
+            // coordinate (STD1 3c-2, ruled (d)): a rational is unbounded.
             ChartAxis::Ratio(q) => {
+                use crate::transducer::address::put_key_count;
                 let mut out = Vec::new();
                 let (sign, digits) = q.numer().to_u64_digits();
                 out.push(u8::from(matches!(sign, num_bigint::Sign::Minus)));
-                out.extend_from_slice(&(digits.len() as u32).to_le_bytes());
+                put_key_count(&mut out, digits.len());
                 for d in &digits {
                     out.extend_from_slice(&d.to_le_bytes());
                 }
                 let (_, digits) = q.denom().to_u64_digits();
-                out.extend_from_slice(&(digits.len() as u32).to_le_bytes());
+                put_key_count(&mut out, digits.len());
                 for d in &digits {
                     out.extend_from_slice(&d.to_le_bytes());
                 }
@@ -145,30 +148,32 @@ impl ChartAxis {
     /// is the unit the chart key is built from AND the unit the stratum
     /// trie branches on, so the coordinate a chart writes and the
     /// coordinate a fiber reads are one construction (law 12).
+    ///
+    /// The payload's length is written by its own coordinate (STD1 3c-2,
+    /// ruled (d)): a ratio's payload grows with its limbs, and the two bytes
+    /// this was cut a large one short.
     pub fn key_bytes(&self) -> Vec<u8> {
         let payload = self.payload();
         let mut out = Vec::with_capacity(payload.len() + 3);
         out.push(self.kind());
-        out.extend_from_slice(&(payload.len() as u16).to_le_bytes());
-        out.extend_from_slice(&payload);
+        crate::transducer::address::put_key_bytes(&mut out, &payload);
         out
     }
 
     /// Read one coordinate back from those bytes, exactly or not at all.
     pub fn from_key_bytes(b: &[u8]) -> Option<ChartAxis> {
-        // The layout destructured, not indexed: here the ORDER IS CONTENT —
-        // a kind byte, a length, then that many bytes — so the pattern says
-        // what the bytes are rather than choosing a member by position
-        // (rule 15).
-        let [kind, lo, hi, payload @ ..] = b else {
-            return None;
-        };
-        let len = u16::from_le_bytes([*lo, *hi]) as usize;
-        if len != payload.len() {
-            return None;
-        }
-        let kind = *kind;
-        ChartAxis::from_parts(kind, payload)
+        let mut p = 0usize;
+        let axis = Self::take_axis(b, &mut p)?;
+        (p == b.len()).then_some(axis)
+    }
+
+    /// One coordinate read from `b` at `p` — its kind, its length, its
+    /// payload — the one reader of [`ChartAxis::key_bytes`]' layout.
+    pub fn take_axis(b: &[u8], p: &mut usize) -> Option<ChartAxis> {
+        let kind = *b.get(*p)?;
+        *p += 1;
+        let payload = crate::transducer::address::take_key_bytes(b, p)?;
+        ChartAxis::from_parts(kind, &payload)
     }
 
     /// Read a coordinate back from its kind and payload. `None` for a kind
@@ -181,8 +186,12 @@ impl ChartAxis {
             1 => {
                 let mut p = 0usize;
                 let take_mag = |p: &mut usize| -> Option<num_bigint::BigUint> {
-                    let n = u32::from_le_bytes(payload.get(*p..*p + 4)?.try_into().ok()?) as usize;
-                    *p += 4;
+                    let n = crate::transducer::address::take_key_count(payload, p)?;
+                    // Each limb is eight bytes; a count the payload cannot
+                    // hold reserves nothing.
+                    if n > payload.len().checked_sub(*p)? / 8 {
+                        return None;
+                    }
                     let mut digits = Vec::with_capacity(n);
                     for _ in 0..n {
                         digits.push(u64_at(payload.get(*p..*p + 8)?)?);
@@ -277,7 +286,7 @@ impl Invariant {
     /// nested inside another key; each coordinate is as long as the
     /// precision its value needs.
     pub fn put_canonical(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.0.len() as u32).to_le_bytes());
+        crate::transducer::address::put_key_count(out, self.0.len());
         for a in &self.0 {
             out.extend_from_slice(&a.key_bytes());
         }
@@ -286,19 +295,14 @@ impl Invariant {
     /// The inverse of [`Invariant::put_canonical`]: the axes read back
     /// exactly, or refused.
     pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<Invariant> {
-        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
-        *p += 4;
-        // Each axis is at least its kind and its length: three bytes.
-        if n > b.len().checked_sub(*p)? / 3 {
+        let n = crate::transducer::address::take_key_count(b, p)?;
+        // Each axis is at least its kind and its length: two bytes.
+        if n > b.len().checked_sub(*p)? / 2 {
             return None;
         }
         let mut axes = Vec::with_capacity(n);
         for _ in 0..n {
-            let kind = *b.get(*p)?;
-            let len = u16::from_le_bytes(b.get(*p + 1..*p + 3)?.try_into().ok()?) as usize;
-            let payload = b.get(*p + 3..*p + 3 + len)?;
-            axes.push(ChartAxis::from_parts(kind, payload)?);
-            *p += 3 + len;
+            axes.push(ChartAxis::take_axis(b, p)?);
         }
         Some(Invariant(axes))
     }
@@ -314,11 +318,7 @@ impl Invariant {
         let mut axes = Vec::new();
         let mut p = 1usize;
         while p < k.len() {
-            let kind = *k.get(p)?;
-            let len = u16::from_le_bytes(k.get(p + 1..p + 3)?.try_into().ok()?) as usize;
-            let payload = k.get(p + 3..p + 3 + len)?;
-            axes.push(ChartAxis::from_parts(kind, payload)?);
-            p += 3 + len;
+            axes.push(ChartAxis::take_axis(k, &mut p)?);
         }
         Some(Invariant(axes))
     }
