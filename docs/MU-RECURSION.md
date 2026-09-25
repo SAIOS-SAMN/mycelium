@@ -465,7 +465,11 @@ cone, the algebra's, at most `n + 2`, and the **chamber** is that meet,
 what the fusion encloses. The three are related, and the relation is a
 reading (MT1): in general position the meet's grade is the degree plus
 one, and the difference `k + 1 − g` is the anastomosis's DEGENERACY —
-78.41(3)'s contraction by rank, read at the place the motor loses it;
+78.41(3)'s contraction by rank, read at the place the motor loses it
+(precisely, on the implementor's read 2026-09-25: `g` is the RANK of the
+nuclei, the grade of the blade their span carves — the wedge itself is
+either that blade or zero, so the degeneracy is `bodies − rank(nuclei)`,
+unread where the nuclei did not read);
 the contact bounds the degree from the other side, an element of
 codimension `m` holding at most `2ᵐ` bodies. A "junction", a "synapse"
 and a "simplex" are not used for it: the first two are the human
