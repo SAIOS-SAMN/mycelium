@@ -517,7 +517,29 @@ every class; "truncation" is retired from this document for it
 second; a **silence** is a stroke-budgeted absence of a reply on the
 wire and carries a refusal's name, never "timeout". A **reach** is how a
 trie is read by a prefix; "descent" keeps only its sheaf sense and
-Fermat's. **Held** is a count of carriers a mind holds resident;
+Fermat's. A **turn** (ruled 2026-09-25, the operator's word: "we need
+to stop with the half turn / quarter turn ideologies … operate in
+degrees where a circle is 360 degrees … precision on 360-degree turns
+overlaid with the offset on the elliptical orbit to feed the physics")
+is measured against the full circle, exactly: a rotor of finite order
+ℓ turns `t/ℓ` of a circle, a RATIONAL FRACTION OF A TURN, served as
+`360·t/ℓ` degrees, exact — 180° where the English said "half turn",
+90° for "quarter", 120° and 60° for the orders 3 and 6, the
+crystallographic set being the degrees that are exact over ℚ; a rotor
+of infinite order has no fraction and turns by its RATIONAL POINT on
+its plane's circle, `(cos θ, sin θ) ∈ ℚ²` with `cos² + sin² = 1` (the
+(3,4,5) rotor at (3/5, 4/5)), served in degrees as a READING marked
+irrational (36.87° for (3,4,5)), the exact point the carrier. The
+PHASE of a body along its orbit is the same measure: at distance `t`
+into an age of period ℓ it stands at `360·t/ℓ` degrees, overlaid on
+the orbit's elements (LC1: the orbital elements per epoch; 78.23: the
+orbits on TUniversal) — the eccentric offset the operator names, read
+where the orbit is, never assumed circular. "Half turn", "quarter
+turn", "cw"/"ccw" retire from this document and from names in the
+tree (NM1): the letter that turns 90° is named by its degrees, and a
+test asserts `180°`, never "a half turn". English turn-words were an
+INVERSION the operator named — the word "half" carries no precision
+and the mathematics does; the gauge is the full circle. **Held** is a count of carriers a mind holds resident;
 "weight" names only a versor's scale content, and nothing in cognition
 is weighed. A **reading** is answered or refused by name; "fallback",
 "default" as an invented value, "lookup" and "unlock" name nothing here.
