@@ -47,7 +47,7 @@ fn one(cells: Vec<crate::transducer::sentence::FormCell>, what: &str) -> crate::
 #[test]
 fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     let three = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1]]);
-    let (_, cells, _) = named_incidence(None, &three);
+    let (_, cells) = named_incidence(None, &three);
     let c = one(by_grade(&cells, 2), "one 2-cell");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2])], "the corner all three stand in");
     let meet = c.meet().expect("each nucleus reads");
@@ -55,7 +55,7 @@ fn three_bodies_meeting_at_a_corner_mint_one_two_cell_carrying_their_meet() {
     assert_eq!(by_grade(&cells, 1).len(), 3, "and its three faces stand as the pairs' own cells");
 
     let four = bodies(&[vec![0, 0, 0], vec![1, 1, 0], vec![1, 0, 1], vec![0, 1, 1]]);
-    let (_, cells, _) = named_incidence(None, &four);
+    let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell");
     assert_eq!(c.bodies.len(), 4, "four bodies at one corner are ONE cell, not four triples");
     assert!(by_grade(&cells, 2).is_empty(), "its 2-faces are read off it, never minted as subsets");
@@ -71,7 +71,7 @@ fn two_bodies_of_one_member_stand_in_one_cell_apart() {
     let mut k = crate::network::nerve::Keyed::new();
     k.insert(member(1), vec![Site::new(vec![0, 0, 0]), Site::new(vec![1, 1, 0])]);
     k.insert(member(2), vec![Site::new(vec![1, 0, 1])]);
-    let (_, cells, _) = named_incidence(None, &k);
+    let (_, cells) = named_incidence(None, &k);
     let c = one(by_grade(&cells, 2), "one 2-cell over three bodies");
     assert_eq!(c.bodies.len(), 3, "three bodies, two of them one member's");
     let mut pieces = c.bodies.clone();
@@ -210,7 +210,7 @@ fn a_pairwise_loop_of_the_same_three_reads_no_grade_three_content() {
 #[test]
 fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
     let four = bodies(&[vec![0, 0, 0, 0], vec![1, 1, 0, 0], vec![1, 0, 1, 0], vec![1, 0, 0, 1]]);
-    let (_, cells, _) = named_incidence(None, &four);
+    let (_, cells) = named_incidence(None, &four);
     let c = one(by_grade(&cells, 3), "one 3-cell at n = 4");
     assert_eq!(c.witnesses, vec![Site::new(vec![2, 2, 2, 2])], "the corner of ℤ⁴ the four share");
     assert!(!c.meet().expect("each nucleus reads").grade(4).is_zero(), "their meet is a grade-4 blade");

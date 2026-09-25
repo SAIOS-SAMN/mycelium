@@ -104,7 +104,7 @@ fn held_coset() -> Form {
     f.faces.push(f.face_of(0, 1).expect("star a"));
     f.faces.push(f.face_of(0, 2).expect("star b"));
     let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
-    chord.interface = vec![crate::transducer::base::Site::new(vec![1, 1, 0])];
+    chord.interface = Some(super::common::contact(0, 3, 0));
     let candidate = |carriage| Transport { word: Word::identity(), carriage, gauge: Vec::new() };
     set_face_place(&mut chord, |p| {
         p.refraction = Some(Refraction::Coset(vec![

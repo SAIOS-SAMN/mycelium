@@ -281,14 +281,14 @@ struct Occupied {
 }
 
 /// WHAT THE INCIDENCE NAMED BETWEEN TWO MEMBERS: every incidence that named
-/// the pair (N1), and each interface a contact between them runs along
-/// (C2, 70.6). The interfaces are sets of shared boundary elements. Two
-/// different ones between one pair are two contacts, so they are held
-/// apart and never merged into one set.
+/// the pair (N1), and each contact between them (C2, 70.6) — its body pair
+/// with their nuclei, its grade, and its WITNESS, the shared boundary
+/// elements. Two different contacts between one pair are two, held apart,
+/// in their witnesses' order, and never merged.
 #[derive(Clone, Debug, Default)]
 pub(crate) struct Named {
     pub(crate) hows: Vec<Incidence>,
-    pub(crate) interfaces: Vec<Vec<Site>>,
+    pub(crate) interfaces: Vec<ContactPair>,
 }
 
 /// ONE PAIR THE INCIDENCE NAMES: its two members and what named them.
@@ -309,7 +309,7 @@ fn relate(
     related: &mut crate::network::nerve::Keyed<Named>,
     key: Vec<u8>,
     how: Incidence,
-    interface: Option<Vec<Site>>,
+    interface: Option<ContactPair>,
 ) {
     if related.get(&key).is_none() {
         related.insert(key.clone(), Named::default());
@@ -318,9 +318,9 @@ fn relate(
     if let Err(at) = named.hows.binary_search(&how) {
         named.hows.insert(at, how);
     }
-    if let Some(i) = interface {
-        if let Err(at) = named.interfaces.binary_search(&i) {
-            named.interfaces.insert(at, i);
+    if let Some(c) = interface {
+        if let Err(at) = named.interfaces.binary_search_by(|x| x.witness.cmp(&c.witness)) {
+            named.interfaces.insert(at, c);
         }
     }
 }
@@ -560,7 +560,7 @@ pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget:
     let identity = crate::transducer::element::identity_versor();
     let mut t = [0usize; 6];
     for o in &form.orbits {
-        if !o.faces.iter().any(|&fi| form.faces.get(usize::from(fi)).is_some_and(|f| !f.interface.is_empty())) {
+        if !o.faces.iter().any(|&fi| form.faces.get(usize::from(fi)).is_some_and(|f| f.interface.is_some())) {
             continue;
         }
         let Some(carried) = paths_carried(&form.faces, &form.vertices, o) else {
@@ -631,32 +631,26 @@ struct Gathered {
     right: Vec<Vec<u8>>,
     bodies: (Vec<u8>, Vec<u8>),
     nuclei: (Option<crate::transducer::cga::Mv>, Option<crate::transducer::cga::Mv>),
+    /// The grade of the largest shared cell met so far.
+    grade: Option<u8>,
 }
 
-/// BD2 — THE BODY PAIR ONE CONTACT RUNS BETWEEN: the two bodies' pieces, the
-/// lesser first, their nuclei in the same order — the tether is theirs,
-/// two BODIES' (78.18(c)), never a member's union — and the members
-/// standing on the lesser's side, so a face built between two members reads
-/// which body stands at each of its ends (CX1: a circuit's order of a cell's
-/// bodies runs with its steps).
+/// ONE CONTACT, AS THE FACE BUILT ALONG IT READS IT: the two bodies' pieces,
+/// the lesser first, their nuclei in the same order — the tether is theirs,
+/// two BODIES' (78.18(c)), never a member's union — the members standing on
+/// the lesser's side, so a face built between two members reads which body
+/// stands at each of its ends (CX1); the grade of the contact's largest
+/// shared cell; and the WITNESS, the shared boundary elements at their
+/// doubled centres — WHETHER the bodies touch, read by the topology and
+/// entering no address (BQ5b, A.14). The face carries the pair in hand; no
+/// key of the witness stands for it.
 #[derive(Clone, Debug)]
 pub(crate) struct ContactPair {
     pub(crate) bodies: (Vec<u8>, Vec<u8>),
     pub(crate) left: Vec<Vec<u8>>,
     pub(crate) nuclei: (Option<crate::transducer::cga::Mv>, Option<crate::transducer::cga::Mv>),
-}
-
-/// Every contact's body pair, keyed by its interface ([`interface_key`]).
-pub(crate) type ContactBodies = crate::network::nerve::Keyed<ContactPair>;
-
-/// An interface's key: its elements' own coordinates, each framed, in the
-/// interface's order.
-pub(crate) fn interface_key(interface: &[Site]) -> Vec<u8> {
-    let mut k = Vec::new();
-    for s in interface {
-        crate::transducer::address::put_bytes(&mut k, &s.key());
-    }
-    k
+    pub(crate) grade: u8,
+    pub(crate) witness: Vec<Site>,
 }
 
 /// Faces the bundle names: star from the Frame (when the form carries one),
@@ -695,14 +689,32 @@ pub(crate) fn named_faces(
     named_incidence(frame, supports).0
 }
 
-/// WHAT ONE READ OF THE OCCUPANCY NAMES: the faces, the contact complex's
-/// certified cells, and each contact's body pair.
-pub(crate) type SceneIncidence =
-    (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>, ContactBodies);
+/// BQ5b — THE INTERFACE A CONTACT FACE CARRIES, WHOLE: `V = s_b s_a` between
+/// the two bodies' nuclei, in the face's orientation, and the contact's
+/// grade (`Interface::between`, the one producer). A contact whose nuclei —
+/// or their tether's ray — did not read is a face still built on WHETHER
+/// (A.14) with its WHAT unread: `(None, true)`, counted `unnucleated`. A face
+/// that is no contact carries none: `(None, false)`.
+pub(crate) fn interface_of(
+    contact: Option<&ContactPair>,
+    nuclei: Option<&(Option<crate::transducer::cga::Mv>, Option<crate::transducer::cga::Mv>)>,
+) -> (Option<crate::transducer::sentence::Interface>, bool) {
+    let Some(c) = contact else { return (None, false) };
+    let interface = match nuclei {
+        Some((Some(sa), Some(sb))) => crate::transducer::sentence::Interface::between(sa, sb, c.grade),
+        _ => None,
+    };
+    let unread = interface.is_none();
+    (interface, unread)
+}
 
-/// THE FACES THE BUNDLE NAMES, the CONTACT COMPLEX'S CERTIFIED CELLS, and
-/// each contact's body pair, read on the same pass (NB1, BD2): one reading
-/// of the occupancy, never two.
+/// WHAT ONE READ OF THE OCCUPANCY NAMES: the faces, each contact on its
+/// pair, and the contact complex's certified cells.
+pub(crate) type SceneIncidence = (Vec<NamedFace>, crate::network::nerve::Keyed<crate::transducer::sentence::FormCell>);
+
+/// THE FACES THE BUNDLE NAMES, each carrying its contacts, and the CONTACT
+/// COMPLEX'S CERTIFIED CELLS, read on the same pass (NB1): one reading of the
+/// occupancy, never two.
 pub(crate) fn named_incidence(
     frame: Option<&[u8]>,
     supports: &crate::network::nerve::Keyed<Vec<Site>>,
@@ -883,8 +895,7 @@ pub(crate) fn named_incidence(
         cells.insert(&key, crate::transducer::sentence::FormCell { bodies: c.coords, witnesses, nuclei });
     }
     let mut contacts: crate::network::nerve::Keyed<Gathered> = crate::network::nerve::Keyed::new();
-    let mut contact_bodies: ContactBodies = crate::network::nerve::Keyed::new();
-    for crate::transducer::sentence::SharedCell { i, j, .. } in
+    for crate::transducer::sentence::SharedCell { i, j, grade, .. } in
         crate::transducer::sentence::contact_cells(&positions)
     {
         let (Some(&bi), Some(&bj)) = (body.get(i), body.get(j)) else { continue };
@@ -918,6 +929,15 @@ pub(crate) fn named_incidence(
         g.elements.push(element);
         g.left.extend(px.members.iter().cloned());
         g.right.extend(py.members.iter().cloned());
+        // The contact's grade is its largest shared cell's: a cell of a
+        // higher grade met here raises it.
+        let grade = u8::try_from(grade).ok();
+        if let Some(gr) = grade {
+            match g.grade {
+                Some(have) if have >= gr => {}
+                _ => g.grade = Some(gr),
+            }
+        }
     }
     for (_k, g) in contacts.scoped() {
         let mut elements = g.elements.clone();
@@ -936,14 +956,12 @@ pub(crate) fn named_incidence(
             ([a, ..], [_, b, ..]) | ([_, b, ..], [a, ..]) => Some((a, b)),
             _ => None,
         };
-        let Some((a, b)) = ends else { continue };
-        // BD2 — the contact's body pair, by its interface: the face built
-        // along this interface runs between these two bodies.
-        contact_bodies.insert(
-            interface_key(&elements),
-            ContactPair { bodies: g.bodies.clone(), left: left.clone(), nuclei: g.nuclei.clone() },
-        );
-        relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(elements));
+        let (Some((a, b)), Some(grade)) = (ends, g.grade) else { continue };
+        // The contact rides the pair it names: the face built along it has
+        // its body pair in hand (BQ5b — BD2's key of the witness is gone).
+        let contact =
+            ContactPair { bodies: g.bodies.clone(), left: left.clone(), nuclei: g.nuclei.clone(), grade, witness: elements };
+        relate(&mut related, member_pair_key(a, b), Incidence::Contact, Some(contact));
     }
     // THE CONDENSATION FIELD IS GONE — BQ5a, SQ1 item 2 (72.2, 75). A pair
     // loop over every two members stood here, the tether's scalar split
@@ -985,7 +1003,7 @@ pub(crate) fn named_incidence(
             read_member_pair_key(&k).map(|(a, b)| NamedFace { a, b, named: named.clone() })
         })
         .collect();
-    (faces, cells, contact_bodies)
+    (faces, cells)
 }
 
 /// Physical size of the hue carrier. Index by hue, never search.

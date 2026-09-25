@@ -22,7 +22,13 @@ use super::*;
 ///
 /// `None` where a centroid does not read back (rule 11).
 pub fn tether(a: &Blade, b: &Blade) -> Option<Mv> {
-    Some(b.nucleus()?.geo(&a.nucleus()?))
+    Some(tether_of(&a.nucleus()?, &b.nucleus()?))
+}
+
+/// THE TETHER BETWEEN TWO NUCLEI, `V = s_b s_a` — the one product
+/// [`tether`] and the face's interface both read (BQ5b, law 12).
+pub fn tether_of(sa: &Mv, sb: &Mv) -> Mv {
+    sb.geo(sa)
 }
 
 /// WHERE TWO BODIES STAND RELATIVE TO CONTACT — the regime of their tether,

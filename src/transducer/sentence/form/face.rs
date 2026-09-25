@@ -100,7 +100,7 @@ impl Form {
             }
         }
         note_unplaced(i, j, word, pairs.len(), at.len());
-        Some(FormFace { i, j, word: word.clone(), at, pairs: None, interface: Vec::new() })
+        Some(FormFace { i, j, word: word.clone(), at, pairs: None, interface: None })
     }
 
     /// THE MEMBER PAIRS A FACE BETWEEN TWO VERTICES HAS where one endpoint
@@ -144,7 +144,7 @@ impl Form {
                     }
                 }
                 note_unplaced(i, j, &word, pairs.len(), at.len());
-                Some(FormFace { i, j, word, at, pairs: None, interface: Vec::new() })
+                Some(FormFace { i, j, word, at, pairs: None, interface: None })
             }
             None => {
                 let mut f = FormFace::new(i, j, word);

@@ -433,18 +433,62 @@ pub struct FormFace {
     /// through `retract_vertices` with the face it describes, and the court
     /// reads it where it stands.
     pub pairs: Option<Keyed<()>>,
-    /// C2, 70.6 — THE INTERFACE A CONTACT FACE RUNS ALONG: the set of
-    /// boundary elements the two bodies' cube complexes share, each written
-    /// as its centre doubled, `p + q`, so it is exact and integer. Sorted,
-    /// and empty on every face that is not a contact.
-    ///
-    /// It is the face's own coordinates, never a tally (69.3). A flat
-    /// interface and a ridged one between the same two members are two
-    /// faces, and the address says so. [`FormFace::interface_tower`] lifts
-    /// it as a support, so A.11's tower reads the interface's shape. Each
-    /// element is a site of the base's own `n` (71).
-    pub interface: Vec<crate::transducer::base::Site>,
+    /// BQ5b, 72.2, A.10 — THE INTERFACE A CONTACT FACE CARRIES, WHOLE: the
+    /// versor `V = s_b s_a` between its two bodies' nuclei and the grade of
+    /// the contact's largest shared cell. WHAT two bodies are to each other
+    /// (conformal), read where the face is built; WHETHER they touch is the
+    /// lattice's shared cells (A.14, topological), the witness perception
+    /// reads and drops. `None` on a face that is not a contact, and on a
+    /// contact whose body pair's nuclei did not read (`unnucleated`). The
+    /// face's CONTENT, never its identity: two pairs may share one `V`.
+    pub interface: Option<Interface>,
 }
+
+/// BQ5b — A CONTACT'S INTERFACE: `V = s_b s_a`, held as its RAY (the
+/// versor's canonical form, VA1: `λV` is one interface), and the grade of
+/// the contact's largest shared cell. Its kind is `Contact::of(V)`, read
+/// where asked and never stored.
+#[derive(Debug, Clone)]
+pub struct Interface {
+    pub v: crate::transducer::cga::Mv,
+    pub grade: u8,
+}
+
+impl Interface {
+    /// THE ONE PRODUCER: the tether between two bodies' nuclei — the body
+    /// at the face's `i` end first — as its ray, with the contact's grade.
+    /// `None` where the tether has no ray (zero).
+    pub fn between(a: &crate::transducer::cga::Mv, b: &crate::transducer::cga::Mv, grade: u8) -> Option<Interface> {
+        let v = crate::transducer::blade::tether_of(a, b).canonical()?;
+        Some(Interface { v, grade })
+    }
+
+    /// The interface as the address writes it: `V`'s ray, then the grade.
+    pub fn put(&self, out: &mut Vec<u8>) {
+        self.v.put_canonical(out);
+        out.push(self.grade);
+    }
+
+    pub fn take(b: &[u8], p: &mut usize) -> Option<Interface> {
+        let v = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let grade = *b.get(*p)?;
+        *p += 1;
+        Some(Interface { v, grade })
+    }
+}
+
+/// One interface and another are one where their rays write the same
+/// coordinates and their grades agree.
+impl PartialEq for Interface {
+    fn eq(&self, other: &Interface) -> bool {
+        let (mut a, mut b) = (Vec::new(), Vec::new());
+        self.put(&mut a);
+        other.put(&mut b);
+        a == b
+    }
+}
+
+impl Eq for Interface {}
 
 /// A FRAME AS A COORDINATE (51.1, 51.8): the frame index along `e₃`,
 /// written big-endian so the trie's order is the coordinate's order.
@@ -487,27 +531,12 @@ impl FormFace {
     /// no section is the unrestricted claim, which is what every face made
     /// before sections existed.
     pub fn new(i: u16, j: u16, word: Word) -> FormFace {
-        FormFace { i, j, word, at: Keyed::new(), pairs: None, interface: Vec::new() }
+        FormFace { i, j, word, at: Keyed::new(), pairs: None, interface: None }
     }
 
-    /// THE INTERFACE'S SHAPE (70.6, A.11): the interface lifted as a
-    /// support. Each element stands at its doubled centre, so the tower is
-    /// that of the elements' own arrangement, read at twice the scale. That
-    /// is a similarity, and the tower is covariant under it: a straight seam
-    /// reads its deviatoric along one axis, and a bent or ridged one reads
-    /// it in the higher harmonics. Exact over ℚ, with no root and no fit.
-    /// `None` on a face that is not a contact.
-    pub fn interface_tower(&self) -> Option<crate::transducer::blade::Blade> {
-        if self.interface.is_empty() {
-            return None;
-        }
-        let laminae: Vec<crate::transducer::blade::Lamina> = self
-            .interface
-            .iter()
-            .map(|s| crate::transducer::blade::Lamina { site: s.clone(), hue: 0 })
-            .collect();
-        Some(crate::transducer::blade::lift(&laminae))
-    }
+    // `interface_tower` STOOD HERE AND IS DELETED (BQ5b): it lifted the
+    // shared-cell set as a support, a tower of the witness of WHETHER, and
+    // nothing read it. The interface is `V` whole.
 
     /// Is this face's word measured at `frame` of the family's one body
     /// (51.8)? A face that was never sectioned claims every frame, so it

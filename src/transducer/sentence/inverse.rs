@@ -225,13 +225,19 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             }
             _ => return None,
         };
-        // C2, 70.6 — the interface, as `put_face` writes it: a count, then
-        // each element's doubled centre, a site with its `n`.
-        let ni = take_u32(k, &mut p)? as usize;
-        let mut interface = Vec::with_capacity(ni.min(k.len()));
-        for _ in 0..ni {
-            interface.push(crate::transducer::base::Site::take(k, &mut p)?);
-        }
+        // BQ5b — the interface, as `put_face` writes it: a flag, then `V`'s
+        // ray and the contact's grade.
+        let interface = match *k.get(p)? {
+            0 => {
+                p += 1;
+                None
+            }
+            1 => {
+                p += 1;
+                Some(super::Interface::take(k, &mut p)?)
+            }
+            _ => return None,
+        };
         f.faces.push(FormFace { i, j, word, at, pairs, interface });
     }
     let mut r = [0u64; 4];

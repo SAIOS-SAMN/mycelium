@@ -351,7 +351,7 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
         .steps
         .iter()
         .map(|s| {
-            let refracted = faces.get(usize::from(s.face)).is_some_and(|f| !f.interface.is_empty());
+            let refracted = faces.get(usize::from(s.face)).is_some_and(|f| f.interface.is_some());
             let oriented = match (&s.transport, s.forward) {
                 (None, _) => None,
                 (Some(t), true) => Some(Some(t.carriage.clone())),

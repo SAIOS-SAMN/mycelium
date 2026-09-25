@@ -40,7 +40,7 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
         face_pair_key(&a, &b),
         FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None, refraction: None },
     );
-    f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: Vec::new() });
+    f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: None });
     Form::reset_orbit_gates();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     let (_, _, unread, _) = Form::orbit_gates();

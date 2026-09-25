@@ -472,10 +472,10 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
         // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
         // coset or the static tether its place carries, where no edge formed.
         let refraction = match (&step, place.as_ref()) {
-            (None, Some(p)) if !f.interface.is_empty() => p.refraction.clone(),
+            (None, Some(p)) if f.interface.is_some() => p.refraction.clone(),
             _ => None,
         };
-        let lost = match (&step, place.is_some(), f.interface.is_empty(), &refraction) {
+        let lost = match (&step, place.is_some(), f.interface.is_none(), &refraction) {
             (None, true, true, _) => Some(Unread::NotRigid),
             (None, true, false, None) => Some(Unread::Unrefracted),
             _ => None,

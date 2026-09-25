@@ -857,23 +857,23 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         b: Vec<u8>,
         edge: Option<crate::transducer::sentence::Transport>,
         hows: Vec<Incidence>,
-        interface: Vec<Site>,
+        contact: Option<super::pairing::ContactPair>,
     }
     let mut offers: Vec<Offer> = Vec::new();
     // NB1 — the faces and the contact complex's certified cells, one read of
     // the occupancy; the cells ride the form in memory (78.6, choice (c)).
-    let (named, cells, contact_bodies) = named_incidence(frame_member.as_deref(), &scenery.supports);
+    let (named, cells) = named_incidence(frame_member.as_deref(), &scenery.supports);
     form.cells = cells;
     for nf in named {
         let (a, b, hows) = (nf.a, nf.b, nf.named.hows);
         match nf.named.interfaces.as_slice() {
-            [] => offers.push(Offer { a, b, edge: None, hows, interface: Vec::new() }),
-            each => offers.extend(each.iter().map(|i| Offer {
+            [] => offers.push(Offer { a, b, edge: None, hows, contact: None }),
+            each => offers.extend(each.iter().map(|c| Offer {
                 a: a.clone(),
                 b: b.clone(),
                 edge: None,
                 hows: hows.clone(),
-                interface: i.clone(),
+                contact: Some(c.clone()),
             })),
         }
     }
@@ -882,11 +882,11 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         b,
         edge,
         hows: Vec::new(),
-        interface: Vec::new(),
+        contact: None,
     }));
     // CV1b F3 — the demands the contacts' oblique poses leave, stood below.
     let mut pole_demanded: Vec<Demanded> = Vec::new();
-    for Offer { a: ak, b: bk, edge: chord_edge, hows: how, interface } in offers {
+    for Offer { a: ak, b: bk, edge: chord_edge, hows: how, contact: contacted } in offers {
         drops.offered += 1;
         let contact = how.contains(&Incidence::Contact);
         if contact {
@@ -906,15 +906,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         // contact is (BQ5a), so where the refraction was refused the face
         // stands with no edge and the contact line names why. Every other
         // face reads its edge off the bodies.
-        // BD2 — a contact face's body pair, in the face's own orientation —
-        // the body at its `i` end first — with the two bodies' nuclei, whose
-        // tether the contact carries (78.18(c)).
-        let body_pair = contact_bodies.get(&super::pairing::interface_key(&interface)).map(|p| {
-            match p.left.contains(&ak) {
-                true => (p.bodies.clone(), p.nuclei.clone()),
-                false => ((p.bodies.1.clone(), p.bodies.0.clone()), (p.nuclei.1.clone(), p.nuclei.0.clone())),
-            }
+        // A contact face's body pair, in hand, the body at its `i` end first,
+        // with the two nuclei whose tether the contact carries (78.18(c)).
+        let body_pair = contacted.as_ref().map(|p| match p.left.contains(&ak) {
+            true => (p.bodies.clone(), p.nuclei.clone()),
+            false => ((p.bodies.1.clone(), p.bodies.0.clone()), (p.nuclei.1.clone(), p.nuclei.0.clone())),
         });
+        // BQ5b — the interface, whole; an unread WHAT still a face, counted.
+        let (interface, unnucleated) =
+            super::pairing::interface_of(contacted.as_ref(), body_pair.as_ref().map(|(_, n)| n));
+        drops.unnucleated += usize::from(unnucleated);
         let (edge, refraction) = match (contact, chord_edge) {
             (true, Some(e)) => (Some(e), None),
             (true, None) => {
@@ -1081,7 +1082,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
          | nerve/image: {} charts over {} cells, {} shared, {} \
          | phase: {} finite {} infinite {} unread, periods {:?} \
          | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} \
-         | contact faces offered {} built {} | contact circuits: curved {} (gauge static {}) \
+         | contact faces offered {} built {} unnucleated {} | contact circuits: curved {} (gauge static {}) \
          coset closed {} modulo-held {} open {} unread {}",
         form.faces.len(),
         // The site+ring faces COUNTED as they were built, not the total
@@ -1176,6 +1177,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         drops.place,
         drops.contact_offered,
         drops.contact_built,
+        drops.unnucleated,
         contact_circuits[0],
         contact_circuits[1],
         contact_circuits[2],

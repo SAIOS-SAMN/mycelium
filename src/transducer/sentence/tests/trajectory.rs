@@ -6,7 +6,6 @@ use super::common::*;
 use crate::network::nerve::coord::BivectorKind;
 use crate::observe::{Carried, Circuit};
 use crate::transducer::alphabet::Word;
-use crate::transducer::base::Site;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
 
@@ -25,7 +24,7 @@ fn circuits(contact: bool) -> Vec<Circuit> {
     let turn = Transport { word: order4(), carriage: crate::transducer::cga::rotator(&q(3), &q(4)), gauge: Vec::new() };
     let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), Some(turn)).expect("a chord between two bodies");
     if contact {
-        chord.interface = [(1i64, 1i64, 0i64), (3, 3, 0)].map(Site::from).to_vec();
+        chord.interface = Some(super::common::contact(0, 3, 1));
     }
     f.faces.push(chord);
     arm_orbits();
@@ -206,7 +205,7 @@ fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_s
     f.faces.push(f.face_of(0, 1).expect("star a"));
     f.faces.push(f.face_of(0, 2).expect("star b"));
     let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
-    chord.interface = [(1i64, 1i64, 0i64)].map(Site::from).to_vec();
+    chord.interface = Some(super::common::contact(0, 3, 0));
     let a = crate::transducer::cga::sphere_at(&[q(0), q(0), q(0)], &q(1));
     let b = crate::transducer::cga::sphere_at(&[q(3), q(0), q(0)], &q(1));
     set_face_place(&mut chord, |p| {
@@ -237,7 +236,7 @@ fn single_route_cell(nuclei: [crate::transducer::cga::Mv; 3]) -> Vec<Circuit> {
     f.faces.push(f.face_of(0, 1).expect("star a"));
     f.faces.push(f.face_of(0, 2).expect("star b"));
     let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
-    chord.interface = [(1i64, 1i64, 0i64)].map(Site::from).to_vec();
+    chord.interface = Some(super::common::contact(0, 3, 0));
     let chord_ix = f.faces.len() as u32;
     f.faces.push(chord);
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);

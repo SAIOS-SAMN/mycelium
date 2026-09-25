@@ -103,6 +103,10 @@ pub(crate) struct FaceDrops {
     /// says whether its bodies relate, not only that faces stood.
     pub(crate) contact_offered: usize,
     pub(crate) contact_built: usize,
+    /// BQ5b — contact faces built on WHETHER whose WHAT did not read: the
+    /// body pair's nuclei (or their tether's ray) absent, the interface
+    /// `None` (A.14).
+    pub(crate) unnucleated: usize,
     pub(crate) member_key: usize,
     pub(crate) vertex: usize,
     pub(crate) chart: usize,

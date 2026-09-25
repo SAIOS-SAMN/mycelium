@@ -14,6 +14,16 @@ pub fn q1() -> num_rational::BigRational {
     num_rational::BigRational::from_integer(num_bigint::BigInt::from(1))
 }
 
+/// BQ5b — A CONTACT'S INTERFACE between two unit spheres centred on the
+/// first axis at `a` and `b`, at the contact's `grade`: the one producer,
+/// `Interface::between`, over two real nuclei.
+pub fn contact(a: i64, b: i64, grade: u8) -> Interface {
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let sa = crate::transducer::cga::sphere_at(&[q(a), q(0), q(0)], &q(1));
+    let sb = crate::transducer::cga::sphere_at(&[q(b), q(0), q(0)], &q(1));
+    Interface::between(&sa, &sb, grade).expect("two spheres tether")
+}
+
 pub fn form_addr(n: u8) -> crate::transducer::address::Address {
     crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, n])
 }

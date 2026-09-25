@@ -579,24 +579,53 @@ fn the_filer_reaches_the_fixed_point_gate() {
     );
 }
 
-/// C2, 70.6 — THE INTERFACE IS IN THE ADDRESS. A contact face's
-/// coordinates are the set of boundary elements it runs along, so the key
-/// writes them and the inverse returns them. Two faces that differ only in
-/// their interface are two forms: a flat interface and a ridged one between
-/// one pair are two contacts.
+/// A.10 RESTATED ON `V` (72.1, BQ5b), TESTED BY APPLYING IT: two bodies
+/// co-occupy through `V = s_b s_a`, and the witness of their contact — the
+/// points they share — lies on both spheres, so each reflection fixes it and
+/// `V p Ṽ ∝ p` for every witness point: WHAT read against WHETHER, exact
+/// over ℚ. Two unit spheres tangent at `(1,0,0)`; two of radius 5 crossing
+/// in the circle `x = 3, y² + z² = 16`. A point off the witness moves.
+#[test]
+fn the_interface_fixes_the_witness_of_its_contact() {
+    use crate::transducer::cga::{point_at, sphere_at};
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let applied = |i: &Interface, p: &crate::transducer::cga::Mv| i.v.geo(p).geo(&i.v.reverse());
+    let tangent = Interface::between(&sphere_at(&[q(0), q(0), q(0)], &q(1)), &sphere_at(&[q(2), q(0), q(0)], &q(1)), 0)
+        .expect("a tether");
+    let at = point_at(&[q(1), q(0), q(0)]);
+    assert!(applied(&tangent, &at).projective_eq(&at), "the point of tangency is fixed");
+    let crossing = Interface::between(&sphere_at(&[q(0), q(0), q(0)], &q(25)), &sphere_at(&[q(6), q(0), q(0)], &q(25)), 1)
+        .expect("a tether");
+    for w in [[3, 4, 0], [3, 0, 4], [3, -4, 0], [3, 0, -4]] {
+        let p = point_at(&w.map(q));
+        assert!(applied(&crossing, &p).projective_eq(&p), "every point of the common circle is fixed: {w:?}");
+    }
+    let off = point_at(&[q(0), q(0), q(5)]);
+    assert!(!applied(&crossing, &off).projective_eq(&off), "a point on one sphere only is moved");
+}
+
+/// BQ5b, 72.2 — THE INTERFACE IS IN THE ADDRESS, WHOLE. A contact face
+/// carries `V = s_b s_a` as its ray and the contact's grade; the key writes
+/// them and the inverse returns them (the A21 property on the interface).
+/// Another `V`, or another grade, is another form; `λV` is the same one.
 #[test]
 fn a_face_carries_its_interface_through_its_address() {
     let mut f = star_form(2, vec![(1, 2, Word::identity())]);
     let chord = f.faces.len() - 1;
-    use crate::transducer::base::Site;
-    let flat = [(1i64, 1i64, 0i64), (3, 3, 0), (5, 5, 1)].map(Site::from).to_vec();
-    f.faces[chord].interface = flat.clone();
+    let apart = contact(0, 3, 1);
+    f.faces[chord].interface = Some(apart.clone());
     let back = from_address(&form_vertex_key(&f)).expect("the address parses");
     assert!(same_form(&f, &back), "the form comes back");
-    let interfaces: Vec<&Vec<Site>> =
-        back.faces.iter().map(|x| &x.interface).filter(|i| !i.is_empty()).collect();
-    assert_eq!(interfaces, vec![&flat], "with its interface, element by element");
-    let mut ridged = f.clone();
-    ridged.faces[chord].interface = [(1i64, 1i64, 0i64), (3, 5, 0), (5, 5, 1)].map(Site::from).to_vec();
-    assert_ne!(form_vertex_key(&f), form_vertex_key(&ridged), "another interface is another form");
+    let interfaces: Vec<&Interface> = back.faces.iter().filter_map(|x| x.interface.as_ref()).collect();
+    assert_eq!(interfaces, vec![&apart], "with its interface, V's ray and the grade");
+    let mut other = f.clone();
+    other.faces[chord].interface = Some(contact(0, 1, 1));
+    assert_ne!(form_vertex_key(&f), form_vertex_key(&other), "another V is another form");
+    let mut regraded = f.clone();
+    regraded.faces[chord].interface = Some(contact(0, 3, 0));
+    assert_ne!(form_vertex_key(&f), form_vertex_key(&regraded), "another grade is another form");
+    let mut scaled = f.clone();
+    let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
+    scaled.faces[chord].interface = Some(Interface { v: apart.v.scale(&two), grade: 1 });
+    assert_eq!(form_vertex_key(&f), form_vertex_key(&scaled), "λV is one interface: the ray is written");
 }

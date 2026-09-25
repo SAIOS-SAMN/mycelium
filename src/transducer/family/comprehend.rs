@@ -401,7 +401,7 @@ pub(crate) fn progress(form: &Form, traversed: &[crate::transducer::sentence::Tr
     let mut p = Progress { percepts: 1, ..Progress::default() };
     for w in traversed {
         let contact =
-            w.steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| !x.interface.is_empty()));
+            w.steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| x.interface.is_some()));
         if !contact {
             continue;
         }

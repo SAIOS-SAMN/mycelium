@@ -404,9 +404,13 @@ let ends = (
 );
 assert_eq!(ends, (Some(1), Some(2)), "between the two L's");
 assert_eq!(nf.named.hows, vec![Incidence::Contact], "the corner alone names the pair");
-// AND THE INTERFACE IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
-// `(3,2)+(2,3)`, each element at its doubled centre.
-assert_eq!(nf.named.interfaces, vec![sites(&[(1i64, 1i64, 0i64), (5, 5, 0)])], "the two corners the L's share");
+// AND ITS WITNESS IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
+// `(3,2)+(2,3)`, each element at its doubled centre — WHETHER, read by the
+// topology. A corner of the plane is an EDGE of the cubes of ℤ³, running
+// along the frame axis, so the contact's largest shared cell has grade 1.
+let [c] = nf.named.interfaces.as_slice() else { panic!("one contact: {nf:?}") };
+assert_eq!(c.witness, sites(&[(1i64, 1i64, 0i64), (5, 5, 0)]), "the two corners the L's share");
+assert_eq!(c.grade, 1, "in-plane corners, edges along the frame axis");
 }
 
 /// C1, 70.6 — A CORNER BETWEEN TWO BODIES OF SEVERAL MEMBERS OFFERS ONE
@@ -456,8 +460,10 @@ supports.insert(root_member(2), sites(&[(0i64, 2i64, 0i64), (0, 2, 1), (0, 1, 1)
 let named = named_faces(None, &supports);
 let [nf] = named.as_slice() else { panic!("one pair, the contact across frames: {named:?}") };
 assert_eq!(nf.named.hows, vec![Incidence::Contact], "the frame axis enters contact");
-let [interface] = nf.named.interfaces.as_slice() else { panic!("one interface: {nf:?}") };
+let [contact] = nf.named.interfaces.as_slice() else { panic!("one interface: {nf:?}") };
+let interface = &contact.witness;
 assert_eq!(interface, &sites(&[(0i64, 1i64, 1i64)]), "one shared edge, between frames 0 and 1");
+assert_eq!(contact.grade, 1, "an edge");
 assert!(
     interface.iter().all(|s| s.axis(2).is_some_and(|k| k % 2 != 0)),
     "an odd doubled frame coordinate is an element across two frames"
@@ -508,8 +514,46 @@ let tower = |i: &Vec<Site>| {
         i.iter().map(|s| crate::transducer::blade::Lamina { site: s.clone(), hue: 0 }).collect();
     crate::transducer::blade::lift(&laminae)
 };
-let (a, b) = (tower(&nf.named.interfaces[0]), tower(&nf.named.interfaces[1]));
+let (a, b) = (tower(&nf.named.interfaces[0].witness), tower(&nf.named.interfaces[1].witness));
 assert_ne!(a.inertia, b.inertia, "a straight seam and a bent one lift to two towers");
+}
+
+/// BQ5b, A.14 — A CONTACT FAMILY IS CONSTANT ON WHETHER AND CARRIES THE
+/// INTERFACE AS WHAT. One contact — two single cubes on the diagonal —
+/// placed at four offsets of the plane. WHETHER is the topology's and does
+/// not move: one contact on the pair, its largest shared cell of one grade,
+/// its witness of one size. WHAT is the interface `V = s_b s_a` between the
+/// two bodies' nuclei, carried by every member of the family and moving with
+/// the placement as a versor does: `V_k = T_k V₀ T̃_k`, the translator of the
+/// offset applied, exact (or its reverse, where the bodies' key order turns
+/// with the placement).
+#[test]
+fn a_contact_family_is_constant_on_whether_and_carries_the_interface_as_what() {
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let read = |dx: i64, dy: i64| {
+        let mut supports = crate::network::nerve::Keyed::new();
+        supports.insert(root_member(1), sites(&[(dx, dy, 0i64)]));
+        supports.insert(root_member(2), sites(&[(dx + 1, dy + 1, 0i64)]));
+        let named = named_faces(None, &supports);
+        let [nf] = named.as_slice() else { panic!("one pair: {named:?}") };
+        assert_eq!(nf.named.hows, vec![Incidence::Contact]);
+        let [c] = nf.named.interfaces.as_slice() else { panic!("one contact: {nf:?}") };
+        let (Some(sa), Some(sb)) = (&c.nuclei.0, &c.nuclei.1) else { panic!("both nuclei read: {c:?}") };
+        let i = crate::transducer::sentence::Interface::between(sa, sb, c.grade).expect("the interface reads");
+        (c.grade, c.witness.len(), i)
+    };
+    let (g0, w0, i0) = read(0, 0);
+    for (dx, dy) in [(5, 0), (0, 7), (3, 4)] {
+        let (g, w, i) = read(dx, dy);
+        assert_eq!((g, w), (g0, w0), "WHETHER is constant over the family at ({dx}, {dy})");
+        let t = crate::transducer::cga::at_three::translator(&q(dx), &q(dy), &q(0));
+        let moved = t.geo(&i0.v).geo(&t.reverse());
+        assert!(
+            i.v.projective_eq(&moved) || i.v.projective_eq(&moved.reverse()),
+            "WHAT moves with the placement as a versor at ({dx}, {dy})"
+        );
+        assert_eq!(i.grade, i0.grade);
+    }
 }
 
 /// C3, 70.7 — A BODY PAIR IS KEYED BY TWO ADDRESSES, NEVER TWO SITES. The

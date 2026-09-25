@@ -512,15 +512,16 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
                 }
             }
         }
-        // C2, 70.6 — THE INTERFACE IS THE CONTACT FACE'S OWN COORDINATES.
-        // A flat interface and a ridged one between the same two members
-        // are two contacts, and the address is what says so. Written as its
-        // count and then each element's doubled centre, in the sorted order
-        // the face holds, each a site with its `n` (71). A face that is not
-        // a contact writes a zero count.
-        buf.extend_from_slice(&(face.interface.len() as u32).to_le_bytes());
-        for s in &face.interface {
-            s.put(buf);
+        // BQ5b, 72.2 — THE INTERFACE, WHOLE: `V`'s ray by its canonical
+        // coordinates (VA1), then the contact's grade, behind a flag. The
+        // shared-cell set is the witness of whether and enters no address.
+        // A face that is not a contact, or whose WHAT did not read, writes 0.
+        match &face.interface {
+            Some(i) => {
+                buf.push(1);
+                i.put(buf);
+            }
+            None => buf.push(0),
         }
     }
 }
