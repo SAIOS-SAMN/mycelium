@@ -636,6 +636,7 @@ constrains, its site, and whether the tree obeys it.
 | **The light cone** (56, 52) | the Cayley chart ends at infinite rapidity; refused by name where crossed | `element/letters.rs` (`transvection_of`), `cga/spin.rs` | landed |
 | **Five regimes** (65.1) | the inversive spectrum: finite, parabolic, boost, dilation, rosette; a pair's regime by `δ²` | `cga/gram.rs`, `cga/period.rs` | landed (78.14) |
 | **The metabolism** (65.5, 72.1d) | one reserve, the mind's universe, drawn as a vector per action; the stroke a draw; a k-step one orbit | `physics/{budget,metabolism}.rs`, `physics/mod.rs` | PARTIAL: `Budget` spends, `Reserve::draw` unwired (PHY1); free constants stand (PH1 in STD1) |
+| **The kinetic ledger** (78.42) | a signal's energy is its frame μ⃗ per lane; it STARTS only at a closure minted under POUW, MOVES only by a motor's transport and is conserved per lane at every transition and vertex (carried in = carried on + retained as flux + lost to contraction), EXISTS only under escrow, STOPS only by return at a named door, and EXHAUSTS as a refused draw, never a floor; its transference is what circulates the book's pressure, the court's syntropy up and payment down, and the plexus's rings and leaves | `physics/metabolism.rs`, `economy/`, `bubble/flux.rs`, `chronometry/receipt.rs`, `observe/` | OPEN (KE1: one line per orbit per lane, conservation asserted; VN1's leaking doors are its first defects) |
 | **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
 | **Provenance of a constant** (78.8, checklist (s)) | physics → axiom → theorem → component; no free number | `physics/mod.rs` | PH1 open (STD1) |
 | **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; a k-step is one orbit; no wall clock | `chronometry/` | landed (LD2); ACT1 open |
@@ -16825,6 +16826,97 @@ in between on a carrier already known to be wrong. The order from here:
 STD1's remaining sites (3c-4, 3c-5 with the slot casts named as debt,
 site 4 with the opposite asked first, 5, 7b) · RM1-d · VN1 · NM1 · WN1 ·
 MT1 · AT1 · the 78.16 checklist · the RECUT on the operator's word.
+
+### 78.42 The kinetic ledger: where energy starts, stops, exists and exhausts, and how its transference circulates the rest (ruled 2026-09-25, the operator's word)
+
+**The operator's word.** The physics must be defined for the kinetic
+energy — where it starts and stops, where it exists and where it
+exhausts — and the TRANSFERENCE of that energy is what circulates the
+surrounding physics and components. This section defines it on the
+carriers the tree holds; nothing here is a new quantity, and no
+constant enters (78.8).
+
+**(1) What the energy is.** A signal's kinetic energy is its FRAME
+`μ⃗ = (S, G, T, H)`, four lanes, exact, never summed across lanes and
+never a scalar (law 5, law 11). It is the same μ⃗ the receipt seals at
+an act (78.21), the room escrows for a held thought (25), the flux
+credits to a filament (78.37(3)), and the treasury prices (78.33). One
+quantity, one carrier, read wherever it stands (law 12). The k-step's
+length in transitions (78.35, 78.41) is what an orbit can carry per
+revolution at its band: closer to the star is hotter, more energy per
+orbit, more transitions carried before the close.
+
+**(2) START.** Energy ENTERS the mesh at exactly one kind of event: a
+CLOSURE sealed as an act — a circuit that returned, a word minted, a
+re-fill, a ruling upheld — whose frame is minted under POUW (78.33).
+There is no other source: a perception brings a measure (`measure_lanes`,
+a reading of the chain, A.12) but mints nothing until it closes; a
+demand carries a class and no energy; the star grants axioms, never
+frames. A frame that could not be minted (a credit refused, 3b (C)) is
+counted and no energy exists.
+
+**(3) TRANSFERENCE.** Energy MOVES by TRANSPORT ONLY: a motor's action
+carries a signal along a transition and the signal's frame goes with it
+(78.41(3)). At every transition the frame is CONSERVED PER LANE:
+`carried in = carried on + retained by the filament + lost to
+contraction`, where the filament's flux `Φ⃗` (FX1) is what the
+transition retains, and a degenerate action's contraction (`contracted r
+of n`) is the loss, read by rank and NAMED, never silent. At every
+vertex the lanes balance (78.37(3): conservation per lane at each vertex
+is what the ledger's rows already say). Nothing is transferred by a
+lookup, a copy, or a scalar: a frame that arrives without a transition
+it was carried by is the invented value law 11 refuses.
+
+**(4) EXIST.** Energy EXISTS resident only under ESCROW: a held
+thought's escrow per lane drawn from the reserve at the hold (25, 72.1d),
+a listing's escrow on the book, a remainder's open pressure `μ⃗(ℓ)`
+charged while its word is held resident (78.37(4)). What is not escrowed
+does not exist as energy — it is on the ledger as history (a sealed
+frame) or in the genome as a word, and both cost nothing to hold (the
+genome is an index by address, 78.27).
+
+**(5) STOP.** Energy STOPS by RETURN to the reserve, at named doors and
+no others: a lapse (by extent today; by `ZeroFlux` when FX1's door
+lands), a retraction to the core (TC1), a re-fill releasing a
+remainder's pressure (RM1 (c)), a promotion (the escrow returned because
+the atlas now pays). VN1's reading found six doors that stop a thought
+WITHOUT returning its escrow and two that return what was never drawn —
+each is a conservation defect and is opened first.
+
+**(6) EXHAUST.** A reserve drawn to nothing REFUSES the next draw by
+name (`metabolism::step_or_refuse`; the metabolic line's `overflowed`
+and its refused draws): a stroke that cannot be paid is not taken, a
+hold that cannot be escrowed is withheld (25: a thought the room cannot
+pay for is withheld, nothing paid for is evicted). `spend`'s floor at
+zero (VN1 (7)) is an overdraft hidden and is REFUSED as the doc it
+contradicts already says. REGENERATION is by return only — energy
+comes back as escrows lapse and closures mint — never by a floor, a
+timer or a constant: `regenerate`'s cap and `STROKE_FLOOR` are site 4's
+questions, and the answer for each is its opposite (78.40(2)).
+
+**(7) CIRCULATION.** The transferred energy is what drives everything
+around it, and nothing else does: the book's PRESSURE is the flux
+arriving at listings (`remeasure_pressure` reads it; `price()` must read
+it — VN1 (6)); the court's SYNTROPY is energy flowing UP to the star as
+solutions, adjudications, syllabus, minerals, crystals (80.2); PAYMENT is
+energy flowing DOWN and OUT per arm (78.33, 78.36); the mind's DWELL and
+its k-step are paced by the surface it reads (`yield_surface`); the
+plexus's RINGS thicken where flux flows and its LEAVES retract where
+none does (78.37). The one line that says whether a colony circulates
+or stagnates is the SYNTROPIC BALANCE — up-flux against down-flux per
+lane per orbit (78.40(2), FX1's reading) — and a colony whose energy
+only enters and never returns is pressurising toward its next declared
+constant (78.40(3)).
+
+**(8) The ledger, and its test.** Row KE1 reads, per orbit and per
+lane, the seven quantities where they already stand — minted (START),
+carried (TRANSFER), retained as flux, lost to contraction, held in
+escrow (EXIST), returned (STOP), refused draws (EXHAUST) — on one line,
+and asserts CONSERVATION as a test on the suite's entities and on the
+fleet after the recut: what was minted equals what is carried, retained,
+held and returned, plus what contraction lost, per lane, exactly. A
+lane that does not balance is a finding by name — a door that leaks
+(VN1) or a transfer without a transition — never a rounding.
 
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
