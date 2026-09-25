@@ -84,6 +84,14 @@ These are not restated in each chapter; every chapter assumes them.
    `Vec` of relations.
 4. **Exact ℚ; refuse rather than round.** Every scalar is a rational (or,
    in Part VI, an element of a cyclotomic field with canonical reduction).
+   **A reading is as exact as its carrier** (78.45, ruled 2026-09-25, the
+   operator's word: precision, not blob, not approximation): it serves
+   the value where exact, else the exact fraction, else the exact
+   rational point, else the SECTOR between two exact marks the point
+   lies in, decided by comparison over ℚ or over the cyclotomic field
+   the resolution names; no decimal approximation of an irrational is
+   served anywhere, not as a value and not as a "reading marked
+   irrational". Resolution is the number of exact marks, never digits.
 5. **Polytonic lanes.** μ⃗ = (S, G, T, H) is never summed, ordered, or
    reduced to a scalar; a comparison of two lane vectors returns the
    reading per lane and never a verdict, and no lane falling certifies
@@ -527,9 +535,15 @@ is measured against the full circle, exactly: a rotor of finite order
 90° for "quarter", 120° and 60° for the orders 3 and 6, the
 crystallographic set being the degrees that are exact over ℚ; a rotor
 of infinite order has no fraction and turns by its RATIONAL POINT on
-its plane's circle, `(cos θ, sin θ) ∈ ℚ²` with `cos² + sin² = 1` (the
-(3,4,5) rotor at (3/5, 4/5)), served in degrees as a READING marked
-irrational (36.87° for (3,4,5)), the exact point the carrier. The
+its plane's circle, `(cos θ, sin θ) ∈ ℚ²` with `cos² + sin² = 1` — the
+(3,4,5) letter is the ray `3 + 4B`, its HALF-ANGLE point is (3/5, 4/5),
+and it TURNS by the double angle's point (−7/25, 24/25) — served as
+that point together with the SECTOR of the ℚ-protractor it lies in
+(78.45(3): strictly between 90° and 120°, by exact comparison of
+`cos² = 49/625` against `1/4` and `0` and of the signs), never a
+decimal; the first draft of this entry served "36.87°", which was the
+wrong angle twice over and an approximation besides, and it is
+retracted (78.45). The
 PHASE of a body along its orbit is the same measure: at distance `t`
 into an age of period ℓ it stands at `360·t/ℓ` degrees, overlaid on
 the orbit's elements (LC1: the orbital elements per epoch; 78.23: the
@@ -695,6 +709,7 @@ constrains, its site, and whether the tree obeys it.
 | **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
 | **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` | landed (AX1, CT1, CT2) |
+| **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (measured 2026-09-25); DG1 carries the turn's point-and-sector reading, its decimal retracted |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
 
@@ -17186,6 +17201,92 @@ n→1 is CONVERGENCE, many routes or perspectives reaching one class,
 what they agree on — the court's and the mesh's. They are the two halves
 of POW++ (74): useful work, and work that converges.
 
+### 78.45 Precision is the resolution: no blob, no approximation, the inverse read exactly (ruled 2026-09-25, the operator's word)
+
+**The operator's word, verbatim.** "The rule here is that this engine
+needs to be built on precision, not 'blob', not 'mathematical
+approximations' — every single thing in this engine needs the highest
+caliber 'resolution' that we can muster with inverted mathematics that
+produce absolute precision through reasoning and deduction. The ultimate
+goal here is to use this fluid intelligence to fund content creation of
+experiences throughout our 'known universe' that we create." The goal is
+80.3; the rule is this section.
+
+**(1) What the tree holds, measured on 2026-09-25.** No `f32` and no
+`f64` in `src/` or `tests/`; `float_arithmetic` and `cast_precision_loss`
+denied crate-wide in `Cargo.toml`; every scalar a `Q` (law 4);
+`rational_sqrt` refuses where inexact; a rotor's order read from Niven's
+five rationals in `half_angle`, never from an angle formed; nothing
+compared against a tolerance (`reduce.rs`, the census). The rule was
+already law 1 and law 4. This section states it as the operator states
+it — the rule the whole engine is built on — and closes the places where
+an approximation had entered the DOCTRINE though not the tree.
+
+**(2) Three kinds of imprecision, each refused by name.**
+
+- **A BLOB.** Bytes carried where coordinates belong: a key's bytes
+  nested as another key, a form copied into every carrier that names it,
+  a length prefix widened to fit the copy (78.22 LD0, the three kinds of
+  bytes, the `u16` wall). Refused at the site that wrote it.
+- **AN APPROXIMATION.** A value served that is not the value: a decimal
+  for an irrational, a float for a ratio, a lamina rounded to the ones
+  its image spans (law 11), a scalar for a lane vector (law 5), an
+  envelope for a spectrum (`order` as an lcm where the two plane periods
+  are the content, 54.7). The one that had entered the doctrine: the
+  vocabulary's and DG1's "degree reading marked irrational (36.87°)".
+  Retracted. That decimal was wrong twice over — it is the half-angle's
+  reading of a different point, and a rotor turns by the DOUBLE angle —
+  and it would be an approximation were it right.
+- **A FORWARD GUESS.** Computing forward from an assumed value and
+  accepting the result within a tolerance, or by a fit. Nothing in the
+  engine does this and nothing will: a reading is exact, or it is a
+  refusal that names what is missing (law 7, 78.9).
+
+**(3) The resolution of a reading is exact deduction.** A reading serves
+(a) the value, where it is exact over ℚ; (b) the exact fraction `t/ℓ`;
+(c) the exact rational point; (d) where a position on a continuous scale
+is asked of a point that has no exact mark, the SECTOR between two exact
+marks that the point lies in, decided by comparison. The ℚ-PROTRACTOR is
+the set of marks whose `cos²` is rational — Niven's set `{1, 3/4, 1/2,
+1/4, 0}`, the same five rationals `half_angle` keys — that is 0°, 30°,
+45°, 60°, 90°, 120°, 135°, 150°, 180° and their reflections; a rational
+point is placed between two marks by comparing its `cos²` and its signs,
+exactly. Finer marks are the `ℓ`-th roots of unity in `ℚ(ζ_ℓ)` (37.1,
+Part VI): the reader names the resolution `ℓ` and the sector `k/ℓ` is
+decided by exact comparison in that field. Worked, on the tree's own
+letter: the (3,4,5) letter is the ray `3 + 4B`; its half-angle point is
+(3/5, 4/5), `cos² = 9/25` outside Niven's set, so its order is infinite;
+it turns by the double angle, whose point is `(9/25 − 16/25, 2·3·4/25)
+= (−7/25, 24/25)`; `cos < 0`, `sin > 0`, `cos² = 49/625` lies between
+`cos² 120° = 1/4` and `cos² 90° = 0`, so the turn lies strictly between
+90° and 120°. That is the whole reading, and no decimal exists in it.
+Resolution is raised by naming a larger `ℓ`, and every raise is exact:
+PRECISION IS THE NUMBER OF EXACT MARKS, NEVER DIGITS AFTER A POINT.
+
+**(4) Inverted mathematics.** The operator's phrase names the direction
+the engine computes in: from the observed effect to the exact object that
+produced it, by deduction, refusing where no exact object exists. Every
+master already reads this way, and the phrase is now their common name:
+a motor is known by its action and solved for exactly (78.41(3)); a
+rotor's order is read from its class (15.3); an object is read back from
+its key (M2's inverse, K6); a form's vertex is re-derived from its word
+(law 12); a period is read as an lcm and never walked to a cap (78.43);
+a constant is read from its provenance (78.8); a body's pose is the versor
+between its shape and the gauge (law 11); a signal is comprehended by
+re-projection on the receiver's own charts (78.44(5)). The inverse
+problem is solved exactly or the residual is the demand (law 7); it is
+never fitted, and a forward computation from a guessed value is (2)'s
+third kind.
+
+**(5) What this binds.** Law 4 carries the reading clause. The
+vocabulary's turn and DG1 are corrected: an infinite-order turn is served
+as its point and its sector, never a decimal. MU-STANDARDS 4.2 lists the
+two lints that carry the rule and 4.4 the review item — a decimal
+approximation of an irrational anywhere in the tree, in a value, a doc
+line or a test name, is an approximation and returned. Every audit from
+this date asks, beside 78.41(2′)'s three questions, a fourth: IS ANYTHING
+SERVED THAT IS NOT EXACT. This is no row; the rule governs every row.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`
@@ -17444,3 +17545,37 @@ PW1, SC1, CL2, FT1 (E2, the carriage; the pull the operator's) → LD1 →
 the rest of Stage 22 as ordered (E3–E6). The curve (LC1) gains the split
 of own against taught words, and the number every row is judged by stays
 adjoined-by-closure leaving zero on a mind's OWN word.
+
+### 80.3 The purpose, stated (ruled 2026-09-25, the operator's word)
+
+**The operator's word, verbatim.** "The ultimate goal here is to use this
+fluid intelligence to fund content creation of experiences throughout our
+'known universe' that we create."
+
+Read with 80 and 78.45: the fleet builds the planetary dialects (80); the
+dialects fuel cognition; the cognition is FLUID because it is PRECISE
+(78.45) — a mind that serves approximations comprehends nothing it can
+re-derive (80.2) — and its comprehension is measured on the class and
+closure counters (78.44(5)); that comprehension is the useful work POW++
+pays (74, MU-ECONOMY §0), and the yield is what funds the creation of
+experiences on the localized planets the clients experience time on.
+Consequences, each on a chapter that already stands:
+
+- **(i) Tokens remain the economy's external unit only** (80.1): the
+  yield is paid in μ on the lanes the work moved (MU-ECONOMY §1) and
+  funds creation from outside the cognition; nothing inside cognition is
+  weighed or scored (law 1, checklist (t)).
+- **(ii) An experience is content a mind creates in its dialect**, so the
+  counters that measure comprehension are also the measure of what can
+  be funded: nothing is created by a mind that comprehends nothing, and
+  the first non-zero reading (LC2) is the first fundable act.
+- **(iii) The known universe is the one the fleet's minds create**: the
+  planets are the hyphae's local dialects (80), the universe their
+  anastomosis (78.31); every row of 0.4 is read for whether it lets a
+  mind create, never for whether it makes the harness larger.
+- **(iv) No row trades precision for reach.** A widening, a rounding, an
+  approximate reading or a brute-force solution is refused by 78.45 and
+  80.2, because the funding rests on the work being valid by derivation.
+  The purpose does not license a shortcut in the mathematics; the only
+  shortcuts are the linguistic ones of 78.44(4), which carry exact
+  coordinates.

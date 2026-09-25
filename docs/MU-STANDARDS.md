@@ -255,6 +255,7 @@ compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
 | rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
 | rule 15: no member by position | `disallowed_methods` for `slice::first`, `slice::last`, `core::iter::Iterator::nth` — the slice spellings are the ones clippy 1.95 resolves; `core::slice::<impl [T]>::first` does not, and the build says so in a warning |
 | rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
+| laws 1 and 4, 78.45: no approximation | `float_arithmetic`, `cast_precision_loss` (denied crate-wide in `Cargo.toml`; listed here 2026-09-25 on the operator's rule that the engine is built on precision — the tree measured float-free that day); a decimal served as a reading is the review item of 4.4 |
 
 A lint fires on the item, in scope, with `#[cfg(test)]` handled by the
 compiler and not by a brace counter. Each entry is proved once, at the
@@ -289,9 +290,12 @@ reason = "§2.4 binds cognition; this crate is a test")]`. `allow`, not
 loop over one carrier (rule 1), a count deciding a branch (rule 2), a loop
 without a budget or a boundary (rule 10), a coordinate pair above the
 sensor (law 11, §1.4), a carrier cloned into two places (rule 12), a
-matrix carrying an action (rule 16), and a chain composed into a word on
-the utterance path (law 8, 50.9) are read at review by the preamble's
-checklist on every diff. Where a type can hold the rule, it does, and
+matrix carrying an action (rule 16), a decimal approximation of an
+irrational served anywhere — in a value, a printed reading, a doc line
+or a test name; a turn is degrees where exact, else its rational point
+and its ℚ-protractor sector (law 4 as amended, 78.45) — and a chain
+composed into a word on the utterance path (law 8, 50.9) are read at
+review by the preamble's checklist on every diff. Where a type can hold the rule, it does, and
 the type is the gate: `Keyed::fiber` takes a prefix that cannot be
 empty, so a whole carrier is read in cognition only through
 `Keyed::cursor` under a `Budget`, and `ROOT` does not exist; μ⃗ is a type
