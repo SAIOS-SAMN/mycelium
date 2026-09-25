@@ -329,8 +329,9 @@ pub fn decode_act(b: &[u8]) -> Option<ObserveAct> {
 /// not hold them all says so by its total, never by silence.
 ///
 /// STD1 3c: an entry whose key or reading passes the field that carries it
-/// is not sent — the total says it is held and the count sent does not —
-/// and a total past its four bytes refuses the reply.
+/// refuses the reply WHOLE — a total written beside a skipped entry would
+/// be a count the entries do not bear out — and so does a total past its
+/// four bytes. Only the budget leaves entries unsent, and the total says so.
 pub fn encode_reply(entries: &[Held], budget: usize) -> Option<Vec<u8>> {
     // The total first: `m` counts at most one per entry, so it fits too.
     let total = u32::try_from(entries.len()).ok()?;
@@ -338,9 +339,8 @@ pub fn encode_reply(entries: &[Held], budget: usize) -> Option<Vec<u8>> {
     let mut m = 0u32;
     for (k, r) in entries {
         let mut one = Vec::new();
-        if crate::transducer::address::put_bytes(&mut one, k).and_then(|()| r.put(&mut one)).is_none() {
-            continue;
-        }
+        crate::transducer::address::put_bytes(&mut one, k)?;
+        r.put(&mut one)?;
         if 8 + body.len() + one.len() > budget {
             break;
         }

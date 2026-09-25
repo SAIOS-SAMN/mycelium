@@ -226,12 +226,14 @@ pub fn rings_line(r: &Rings) -> String {
 
 /// The refusals by content, written: each carrier's count and its entries,
 /// every arm by its own tag.
-fn put_refusals(out: &mut Vec<u8>, r: &CellRefusals) {
-    out.extend_from_slice(&(r.circuits.len() as u32).to_le_bytes());
+/// `None` where a count or an index passes its four bytes (STD1 3c).
+fn put_refusals(out: &mut Vec<u8>, r: &CellRefusals) -> Option<()> {
+    use crate::transducer::address::put_u32_count;
+    put_u32_count(out, r.circuits.len())?;
     for c in &r.circuits {
         out.push(code_in(&CircuitUnread::ALL, *c));
     }
-    out.extend_from_slice(&(r.modes.len() as u32).to_le_bytes());
+    put_u32_count(out, r.modes.len())?;
     for m in &r.modes {
         let (tag, d) = match m {
             ModesUnread::NotVersor => (0u8, 0usize),
@@ -240,47 +242,49 @@ fn put_refusals(out: &mut Vec<u8>, r: &CellRefusals) {
             ModesUnread::Unbounded(d) => (3, *d),
         };
         out.push(tag);
-        out.extend_from_slice(&(d as u32).to_le_bytes());
+        put_u32_count(out, d)?;
     }
-    let u32s = |out: &mut Vec<u8>, xs: &[usize]| {
+    let u32s = |out: &mut Vec<u8>, xs: &[usize]| -> Option<()> {
         for x in xs {
-            out.extend_from_slice(&(*x as u32).to_le_bytes());
+            put_u32_count(out, *x)?;
         }
+        Some(())
     };
     match r.capacity {
         None => out.push(NONE),
         Some(CapacityRefused::NoneRead) => out.push(0),
         Some(CapacityRefused::NotVersor { circuit }) => {
             out.push(1);
-            u32s(out, &[circuit]);
+            u32s(out, &[circuit])?;
         }
         Some(CapacityRefused::Spent { product }) => {
             out.push(2);
-            u32s(out, &[product]);
+            u32s(out, &[product])?;
         }
         // Tags 3 and 4 (an entry that did not fit, an elimination that
         // overflowed) retired with the exact elimination at any size (STD1).
     }
     out.push(u8::from(r.zero_meet));
     out.push(u8::from(r.nuclei));
-    u32s(out, &[r.unordered]);
+    u32s(out, &[r.unordered])?;
     match r.orbit {
         None => out.push(NONE),
         Some(OrbitUnread::NotConstructor { constructor }) => {
             out.push(0);
-            u32s(out, &[constructor]);
+            u32s(out, &[constructor])?;
         }
         Some(OrbitUnread::NotVersor { generator }) => {
             out.push(1);
-            u32s(out, &[generator]);
+            u32s(out, &[generator])?;
         }
         Some(OrbitUnread::NoRay { constructor }) => {
             out.push(2);
-            u32s(out, &[constructor]);
+            u32s(out, &[constructor])?;
         }
         Some(OrbitUnread::CarryRefused) => out.push(3),
         Some(OrbitUnread::CarriedNoRay) => out.push(4),
     }
+    Some(())
 }
 
 /// ONE CELL'S REFUSALS AS A LINE, by content: each circuit unread by OR3's
@@ -420,9 +424,10 @@ pub struct CellBracket {
 
 const NONE: u8 = 0xff;
 
-fn put_q(out: &mut Vec<u8>, q: &BigRational) {
-    put_int(out, q.numer());
-    put_int(out, q.denom());
+#[must_use]
+fn put_q(out: &mut Vec<u8>, q: &BigRational) -> Option<()> {
+    put_int(out, q.numer())?;
+    put_int(out, q.denom())
 }
 
 fn take_q(b: &[u8], p: &mut usize) -> Option<BigRational> {
@@ -465,11 +470,6 @@ fn take_closure(b: &[u8], p: &mut usize) -> Option<Option<CellClosure>> {
     }
 }
 
-fn put_bytes(out: &mut Vec<u8>, v: &[u8]) {
-    out.extend_from_slice(&(v.len() as u32).to_le_bytes());
-    out.extend_from_slice(v);
-}
-
 fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
     let len = take_len(b, p)?;
     let v = b.get(*p..p.checked_add(len)?)?.to_vec();
@@ -478,10 +478,14 @@ fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
 }
 
 impl Cells {
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+    /// `None` where a count, a byte run or a ring count passes its field
+    /// (STD1 3c): the reading is refused whole, never written short.
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        use crate::transducer::address::{put_bytes, put_u32_count};
         out.extend_from_slice(&self.mirror_planes.to_le_bytes());
         put_closure(out, self.mirror_group);
-        out.extend_from_slice(&(self.cells.len() as u32).to_le_bytes());
+        put_u32_count(out, self.cells.len())?;
         for c in &self.cells {
             out.push(c.grade);
             out.push(code_in(&CellRound::ALL, c.round));
@@ -499,7 +503,7 @@ impl Cells {
                 Some(((p, q, z), r)) => out.extend_from_slice(&[1, p, q, z, r]),
                 None => out.push(0),
             }
-            out.extend_from_slice(&(c.pairs.len() as u32).to_le_bytes());
+            put_u32_count(out, c.pairs.len())?;
             for r in &c.pairs {
                 put_regime(out, *r);
             }
@@ -511,30 +515,30 @@ impl Cells {
                 Some(CellDual::Degenerate) => 2,
                 None => NONE,
             });
-            out.extend_from_slice(&(c.products.len() as u32).to_le_bytes());
+            put_u32_count(out, c.products.len())?;
             for pr in &c.products {
-                put_bytes(out, &pr.order);
-                put_bytes(out, &pr.grades);
+                put_bytes(out, &pr.order)?;
+                put_bytes(out, &pr.grades)?;
                 out.push(match pr.det {
                     Some(1) => 1,
                     Some(_) => 2,
                     None => 0,
                 });
                 out.push(u8::from(pr.classed));
-                out.extend_from_slice(&(pr.seal.len() as u32).to_le_bytes());
+                put_u32_count(out, pr.seal.len())?;
                 for (blade, q) in &pr.seal {
                     out.extend_from_slice(&blade.to_le_bytes());
-                    put_q(out, q);
+                    put_q(out, q)?;
                 }
             }
             out.push(c.classes);
-            out.extend_from_slice(&(c.mirrors.len() as u32).to_le_bytes());
+            put_u32_count(out, c.mirrors.len())?;
             for ms in &c.mirrors {
-                out.extend_from_slice(&(ms.len() as u32).to_le_bytes());
+                put_u32_count(out, ms.len())?;
                 for (axis, k, d2, r) in ms {
                     out.push(*axis);
-                    put_q(out, k);
-                    put_q(out, d2);
+                    put_q(out, k)?;
+                    put_q(out, d2)?;
                     put_regime(out, *r);
                 }
             }
@@ -555,7 +559,7 @@ impl Cells {
                     }
                 }
             }
-            put_refusals(out, &c.refusals);
+            put_refusals(out, &c.refusals)?;
             match c.constructors {
                 Some(k) => {
                     out.push(1);
@@ -566,7 +570,7 @@ impl Cells {
             let counts = rings_counts(&c.rings);
             out.push(counts.len() as u8);
             for n in counts {
-                out.extend_from_slice(&(n as u32).to_le_bytes());
+                put_u32_count(out, n)?;
             }
         }
         match self.bracket {
@@ -579,6 +583,7 @@ impl Cells {
             }
         }
         out.extend_from_slice(&self.cap.to_le_bytes());
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Cells> {

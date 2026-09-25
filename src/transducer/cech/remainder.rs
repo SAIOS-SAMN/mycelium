@@ -186,8 +186,10 @@ impl RemainderReading {
         )
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.by_ell.len() as u32).to_le_bytes());
+    /// `None` where the ℓ count passes its four bytes (STD1 3c).
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        crate::transducer::address::put_u32_count(out, self.by_ell.len())?;
         for (l, n) in &self.by_ell {
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&n.to_le_bytes());
@@ -227,6 +229,7 @@ impl RemainderReading {
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<RemainderReading> {

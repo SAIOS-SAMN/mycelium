@@ -203,9 +203,10 @@ impl CircuitTest {
         CircuitTest { arms, class, offers }
     }
 
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.push(CircuitClass::ALL.iter().position(|&c| c == self.class).map_or(0xff, |i| i as u8));
-        out.extend_from_slice(&(self.arms.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.arms.len())?;
         for (arm, read) in &self.arms {
             out.push(TestArm::ALL.iter().position(|a| a == arm).map_or(0xff, |i| i as u8));
             match read {
@@ -222,15 +223,16 @@ impl CircuitTest {
                 ArmRead::Permanent => out.push(3),
             }
         }
-        out.extend_from_slice(&(self.offers.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.offers.len())?;
         for o in &self.offers {
             out.push(TestArm::ALL.iter().position(|a| *a == o.arm).map_or(0xff, |i| i as u8));
             out.extend_from_slice(&o.face.to_le_bytes());
-            put_ray(out, &o.constructor);
+            put_ray(out, &o.constructor)?;
             out.push(u8::from(o.flat));
-            put_ray(out, &o.holonomy);
-            put_modes(out, &o.modes);
+            put_ray(out, &o.holonomy)?;
+            put_modes(out, &o.modes)?;
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<CircuitTest> {
@@ -274,13 +276,15 @@ impl CircuitTest {
 }
 
 /// A ray in its canonical coordinates, each blade and its exact coefficient.
-fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) {
-    out.extend_from_slice(&(ray.len() as u32).to_le_bytes());
+#[must_use]
+fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) -> Option<()> {
+    crate::transducer::address::put_u32_count(out, ray.len())?;
     for (blade, c) in ray {
         out.extend_from_slice(&blade.to_le_bytes());
-        put_int(out, c.numer());
-        put_int(out, c.denom());
+        put_int(out, c.numer())?;
+        put_int(out, c.denom())?;
     }
+    Some(())
 }
 
 fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u16, BigRational)>> {
@@ -392,10 +396,11 @@ pub(super) fn holds(b: &[u8], p: usize, m: usize, least: usize) -> bool {
     }
 }
 
-pub(super) fn put_int(out: &mut Vec<u8>, v: &BigInt) {
-    let bytes = v.to_signed_bytes_le();
-    out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
-    out.extend_from_slice(&bytes);
+/// An exact integer behind its byte length; `None` where the length passes
+/// four bytes (STD1 3c) — an integer is unbounded by construction.
+#[must_use]
+pub(super) fn put_int(out: &mut Vec<u8>, v: &BigInt) -> Option<()> {
+    crate::transducer::address::put_bytes(out, &v.to_signed_bytes_le())
 }
 
 pub(super) fn take_int(b: &[u8], p: &mut usize) -> Option<BigInt> {
@@ -405,14 +410,16 @@ pub(super) fn take_int(b: &[u8], p: &mut usize) -> Option<BigInt> {
     Some(v)
 }
 
-fn put_modes(out: &mut Vec<u8>, m: &ModesRead) {
+#[must_use]
+fn put_modes(out: &mut Vec<u8>, m: &ModesRead) -> Option<()> {
+    use crate::transducer::address::put_u32_count;
     match m {
         ModesRead::Split(ms) => {
             out.push(0);
-            out.extend_from_slice(&(ms.len() as u32).to_le_bytes());
+            put_u32_count(out, ms.len())?;
             for &(kind, planes, order) in ms {
                 out.push(kind.as_u8());
-                out.extend_from_slice(&(planes as u32).to_le_bytes());
+                put_u32_count(out, planes)?;
                 match order {
                     Some(l) => {
                         out.push(1);
@@ -424,15 +431,16 @@ fn put_modes(out: &mut Vec<u8>, m: &ModesRead) {
         }
         ModesRead::Undecomposed(Undecomposed::Irrational(d)) => {
             out.push(1);
-            out.extend_from_slice(&(*d as u32).to_le_bytes());
+            put_u32_count(out, *d)?;
         }
         ModesRead::Undecomposed(Undecomposed::Defective) => out.push(2),
         ModesRead::Unread => out.push(3),
         ModesRead::Undecomposed(Undecomposed::Unbounded(d)) => {
             out.push(4);
-            out.extend_from_slice(&(*d as u32).to_le_bytes());
+            put_u32_count(out, *d)?;
         }
     }
+    Some(())
 }
 
 fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
@@ -464,7 +472,8 @@ fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
 }
 
 impl CircuitStep {
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&self.face.to_le_bytes());
         out.push(u8::from(self.forward) | (u8::from(self.refracted) << 1));
         match &self.carried {
@@ -472,17 +481,14 @@ impl CircuitStep {
             Carried::Cone => out.push(1),
             Carried::Read { ray, kind, modes, after } => {
                 out.push(2);
-                out.extend_from_slice(&(ray.len() as u32).to_le_bytes());
-                for (blade, c) in ray {
-                    out.extend_from_slice(&blade.to_le_bytes());
-                    put_int(out, c.numer());
-                    put_int(out, c.denom());
-                }
+                // The ray's one writer (law 12): this restated it.
+                put_ray(out, ray)?;
                 put_kind(out, *kind);
-                put_modes(out, modes);
+                put_modes(out, modes)?;
                 put_kind(out, *after);
             }
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<CircuitStep> {
@@ -520,22 +526,26 @@ impl CircuitStep {
 }
 
 impl Circuits {
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.circuits.len() as u32).to_le_bytes());
+    /// `None` where a count or a length passes its field (STD1 3c).
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        use crate::transducer::address::put_u32_count;
+        put_u32_count(out, self.circuits.len())?;
         for c in &self.circuits {
             out.extend_from_slice(&c.chord.to_le_bytes());
-            out.extend_from_slice(&(c.steps.len() as u32).to_le_bytes());
+            put_u32_count(out, c.steps.len())?;
             for s in &c.steps {
-                s.put(out);
+                s.put(out)?;
             }
             match &c.test {
                 Some(t) => {
                     out.push(1);
-                    t.put(out);
+                    t.put(out)?;
                 }
                 None => out.push(0),
             }
         }
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Circuits> {

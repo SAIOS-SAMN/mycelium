@@ -161,21 +161,23 @@ impl Planes {
         }
     }
 
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.push(self.n);
         put_u64(out, self.read);
         put_u64(out, self.coupled);
-        out.extend_from_slice(&(self.counts.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.counts.len())?;
         for &(blade, c) in &self.counts {
             put_u64(out, blade);
             put_u64(out, c);
         }
-        out.extend_from_slice(&(self.parabolic.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.parabolic.len())?;
         for &(axis, pole, c) in &self.parabolic {
             out.push(axis);
             out.push(pole);
             put_u64(out, c);
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Planes> {
@@ -432,11 +434,12 @@ pub struct Court {
 }
 
 impl Court {
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         put_u64(out, self.k);
         put_u64(out, self.basis);
         put_u64(out, self.treasury);
-        out.extend_from_slice(&(self.served.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.served.len())?;
         for &(kind, n) in &self.served {
             out.push(kind);
             put_u64(out, n);
@@ -444,11 +447,12 @@ impl Court {
         for n in self.reopened {
             put_u64(out, n);
         }
-        self.remainders.put(out);
+        self.remainders.put(out)?;
         put_u64(out, self.torsion_words);
         put_u64(out, self.room_broken);
         put_u64(out, self.room_overflowed);
         put_u64(out, self.overflowed);
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Court> {
@@ -541,9 +545,10 @@ pub struct Replication {
 }
 
 impl Replication {
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.push(REPLICATION_AXES.len() as u8);
-        out.extend_from_slice(&(self.signers.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.signers.len())?;
         for (vk, axes) in &self.signers {
             out.extend_from_slice(vk);
             for v in axes {
@@ -553,6 +558,7 @@ impl Replication {
         for v in &self.unattributed {
             put_u64(out, *v);
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Replication> {
@@ -596,11 +602,12 @@ pub struct Adjudication {
 }
 
 impl Adjudication {
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         for v in [self.ratified, self.stood, self.awaiting, self.deferred] {
             put_u64(out, v);
         }
-        out.extend_from_slice(&(self.refused.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.refused.len())?;
         for &(kind, n) in &self.refused {
             out.push(kind);
             put_u64(out, n);
@@ -608,6 +615,7 @@ impl Adjudication {
         for v in self.obstructed {
             put_u64(out, v);
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Adjudication> {
@@ -725,25 +733,44 @@ impl Reading {
     #[must_use]
     pub fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.push(self.tag());
+        // The fixed-width readings are total; the rest refuse by the counts
+        // and lengths they write.
         match self {
             Reading::Planes(r) => r.put(out),
-            Reading::Loss(r) => r.put(out),
-            Reading::Memory(r) => r.put(out),
             Reading::Court(r) => r.put(out),
             Reading::Replication(r) => r.put(out),
             Reading::Adjudication(r) => r.put(out),
-            Reading::Learning(r) => r.put(out)?,
+            Reading::Learning(r) => r.put(out),
             Reading::Circuit(r) => r.put(out),
             Reading::Cells(r) => r.put(out),
             Reading::Viscosity(r) => r.put(out),
-            Reading::Spend(r) => r.put(out),
-            Reading::Progress(r) => r.put(out),
-            Reading::Phase(r) => r.put(out),
             Reading::Carriage(r) => r.put(out),
             Reading::Clock(r) => r.put(out),
-            Reading::Economy(r) => r.put(out),
+            Reading::Loss(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Memory(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Spend(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Progress(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Phase(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Economy(r) => {
+                r.put(out);
+                Some(())
+            }
         }
-        Some(())
     }
 
     /// The inverse of [`Reading::put`]; `None` for a tag this build does not

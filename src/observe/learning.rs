@@ -328,7 +328,7 @@ impl Learning {
         opt(out, f.dialect.1);
         opt(out, f.dialect.2);
         // RM1 — the mind's remainders.
-        g.remainders.put(out);
+        g.remainders.put(out)?;
         // STD1 — the sums the contemplation refused.
         out.extend_from_slice(&g.overflowed.to_le_bytes());
         // PR1 — the voice's probes.

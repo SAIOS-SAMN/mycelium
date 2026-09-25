@@ -71,15 +71,17 @@ pub struct Orbits {
 }
 
 impl Orbits {
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&self.withheld.to_le_bytes());
-        out.extend_from_slice(&(self.distance.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.distance.len())?;
         for (vk, d) in &self.distance {
             out.extend_from_slice(vk);
             for lane in d {
                 out.extend_from_slice(&lane.to_le_bytes());
             }
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Orbits> {
@@ -151,7 +153,9 @@ impl Clock {
         }
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+    /// `None` where the peers' count passes its four bytes (STD1 3c).
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         let u64s = |out: &mut Vec<u8>, vs: &[u64]| {
             for v in vs {
                 out.extend_from_slice(&v.to_le_bytes());
@@ -178,7 +182,7 @@ impl Clock {
                         out.extend_from_slice(&epoch.to_le_bytes());
                     }
                 }
-                out.extend_from_slice(&(c.peers.len() as u32).to_le_bytes());
+                crate::transducer::address::put_u32_count(out, c.peers.len())?;
                 for (vk, h, gap) in &c.peers {
                     out.extend_from_slice(vk);
                     out.extend_from_slice(&h.to_le_bytes());
@@ -194,14 +198,14 @@ impl Clock {
                 for arm in &c.ruling_refusals {
                     u64s(out, arm);
                 }
-                c.orbits.put(out);
+                c.orbits.put(out)
             }
             Clock::Voice(v) => {
                 out.push(1);
                 u64s(out, &[v.k, v.heard]);
                 pair(out, v.persisted);
                 u64s(out, &[v.radius]);
-                v.orbits.put(out);
+                v.orbits.put(out)
             }
         }
     }

@@ -100,8 +100,9 @@ impl Carriage {
         }
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.rows.len() as u32).to_le_bytes());
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        crate::transducer::address::put_u32_count(out, self.rows.len())?;
         for r in &self.rows {
             out.push(r.carrier);
             out.push(r.kind);
@@ -109,6 +110,7 @@ impl Carriage {
                 out.extend_from_slice(&v.to_le_bytes());
             }
         }
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Carriage> {

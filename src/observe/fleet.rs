@@ -81,8 +81,9 @@ impl Viscosity {
         self.entropy = o.entropy;
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.pairs.len() as u32).to_le_bytes());
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        crate::transducer::address::put_u32_count(out, self.pairs.len())?;
         for p in &self.pairs {
             out.push(p.lane);
             out.extend_from_slice(&p.planes.0.to_le_bytes());
@@ -91,6 +92,7 @@ impl Viscosity {
             put_u64s(out, &[p.refused, p.unread, p.no_class]);
         }
         put_u64s(out, &self.entropy);
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Viscosity> {
