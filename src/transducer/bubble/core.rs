@@ -29,10 +29,9 @@ pub struct CoreReading {
     pub free_faces: [u64; 2],
     /// The 2-core's vertices.
     pub core: u64,
-    /// The nerve's `Ȟ¹` rank over ℚ. The elimination is exact at any size
-    /// since STD1, so it always reads; the `None` arm stands only for the
-    /// codec's sake until the TC1 readings are re-shaped.
-    pub h1: Option<i64>,
+    /// The nerve's `Ȟ¹` rank over ℚ — the elimination exact at any size
+    /// (STD1), so it always reads.
+    pub h1: i64,
     /// 2-simplices one of whose faces is no edge of the nerve (a remainder
     /// edge beside it): no boundary row, counted apart.
     pub unfaced: u64,
@@ -46,14 +45,12 @@ pub struct CoreReading {
 /// (the escrow's paid height passed), citation (a cited address lapsed),
 /// unglued — each: thoughts removed, of those the ones standing in the
 /// 2-core, and the nerve's `Ȟ¹` rank lost (before minus after, signed: a
-/// removal can open a loop as well as close one), with the removals whose
-/// rank did not read.
+/// removal can open a loop as well as close one).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ShedTally {
     pub removed: [u64; 3],
     pub in_core: [u64; 3],
     pub rank_lost: [i64; 3],
-    pub rank_unread: [u64; 3],
 }
 
 /// TC1's fix — WHAT THE TRUNCATION DID, cumulative at the producer: the
@@ -62,8 +59,8 @@ pub struct ShedTally {
 /// ring; a thought something glued, whose door is promotion or lapse), each
 /// counted once per truncation that met it; the price lapses deferred while
 /// a leaf stood in the ring's component; and the nerve's `Ȟ¹` after minus
-/// before, summed — zero by the theorem, a finding otherwise — with the runs
-/// whose rank did not read and the incidences no simplex answered.
+/// before, summed — zero by the theorem, a finding otherwise — and the
+/// incidences no simplex answered.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Truncation {
     pub truncated: u64,
@@ -71,7 +68,6 @@ pub struct Truncation {
     pub glued: u64,
     pub deferred: u64,
     pub rank_moved: i64,
-    pub rank_unread: u64,
     pub malformed: u64,
 }
 
@@ -175,7 +171,7 @@ impl Contemplation {
 
     /// THE NERVE'S Ȟ¹ RANK over ℚ, the 2-simplices with no boundary row, and
     /// what was malformed.
-    fn h1_rank(&self) -> (Option<i64>, u64, u64) {
+    fn h1_rank(&self) -> (i64, u64, u64) {
         let mut malformed = 0u64;
         let v = self.complex.sections.len() as i64;
         let edges: Vec<Vec<u8>> = match self.complex.degrees.get(1) {
@@ -233,7 +229,7 @@ impl Contemplation {
         }
         // Exact at any size (STD1): the rank always reads.
         let rank = crate::core::lattice::sparse_rank(&rows);
-        (Some(edges.len() as i64 - v + c - rank as i64), unfaced, malformed)
+        (edges.len() as i64 - v + c - rank as i64, unfaced, malformed)
     }
 
     /// TC1 — the nerve's shape as it stands.
@@ -274,27 +270,23 @@ impl Contemplation {
     }
 
     /// A SHEDDING DOOR ABOUT TO REMOVE `doomed`: what stands in the 2-core and
-    /// the nerve's rank, read before.
-    pub(crate) fn shed_before(&self, doomed: &[Vec<u8>]) -> (u64, Option<i64>) {
+    /// the nerve's rank, read before. `None` where nothing is doomed — there
+    /// is no removal to read around.
+    pub(crate) fn shed_before(&self, doomed: &[Vec<u8>]) -> Option<(u64, i64)> {
         if doomed.is_empty() {
-            return (0, None);
+            return None;
         }
         let core = self.two_core();
-        (doomed.iter().filter(|k| core.contains(k)).count() as u64, self.h1_rank().0)
+        Some((doomed.iter().filter(|k| core.contains(k)).count() as u64, self.h1_rank().0))
     }
 
     /// AND AFTER: counted on the door's own row.
-    pub(crate) fn shed_after(&mut self, door: Door, removed: usize, (in_core, before): (u64, Option<i64>)) {
-        if removed == 0 {
-            return;
-        }
+    pub(crate) fn shed_after(&mut self, door: Door, removed: usize, before: Option<(u64, i64)>) {
+        let Some((in_core, before)) = before else { return };
         let d = door.index();
         self.shed.removed[d] += removed as u64;
         self.shed.in_core[d] += in_core;
-        match (before, self.h1_rank().0) {
-            (Some(b), Some(a)) => self.shed.rank_lost[d] += b - a,
-            _ => self.shed.rank_unread[d] += 1,
-        }
+        self.shed.rank_lost[d] += before - self.h1_rank().0;
     }
 
     /// The vertices `verts` and every vertex one edge from them: what a
@@ -374,7 +366,7 @@ impl Contemplation {
             return;
         }
         let mut refused: Keyed<()> = Keyed::new();
-        let mut before: Option<Option<i64>> = None;
+        let mut before: Option<i64> = None;
         loop {
             let deg = self.degrees_among(&alive);
             let free: Vec<Vec<u8>> =
@@ -415,11 +407,9 @@ impl Contemplation {
                 }
             }
         }
+        // `before` is read at the first removal; `None` is no removal made.
         if let Some(b) = before {
-            match (b, self.h1_rank().0) {
-                (Some(b), Some(a)) => self.truncation.rank_moved += a - b,
-                _ => self.truncation.rank_unread += 1,
-            }
+            self.truncation.rank_moved += self.h1_rank().0 - b;
         }
     }
 

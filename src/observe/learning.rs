@@ -273,15 +273,9 @@ impl Learning {
         for v in [c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.core, c.unfaced, c.malformed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
-        match c.h1 {
-            Some(r) => {
-                out.push(1);
-                out.extend_from_slice(&r.to_le_bytes());
-            }
-            None => out.push(0),
-        }
+        out.extend_from_slice(&c.h1.to_le_bytes());
         let s = &g.shed;
-        for v in s.removed.iter().chain(&s.in_core).chain(&s.rank_unread) {
+        for v in s.removed.iter().chain(&s.in_core) {
             out.extend_from_slice(&v.to_le_bytes());
         }
         for v in s.rank_lost {
@@ -292,9 +286,7 @@ impl Learning {
             out.extend_from_slice(&v.to_le_bytes());
         }
         out.extend_from_slice(&t.rank_moved.to_le_bytes());
-        for v in [t.rank_unread, t.malformed] {
-            out.extend_from_slice(&v.to_le_bytes());
-        }
+        out.extend_from_slice(&t.malformed.to_le_bytes());
         // FX1 — the flux: a window or a count that did not read flagged.
         let f = &g.flux;
         let opt = |out: &mut Vec<u8>, x: Option<u64>| match x {
@@ -420,17 +412,7 @@ impl Learning {
         let (free_vertices, isolated, faces_1, faces_2, core_size) =
             (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);
         let (unfaced, malformed) = (u64_at(b, p)?, u64_at(b, p)?);
-        let h1 = match b.get(*p)? {
-            0 => {
-                *p += 1;
-                None
-            }
-            1 => {
-                *p += 1;
-                Some(u64_at(b, p)? as i64)
-            }
-            _ => return None,
-        };
+        let h1 = u64_at(b, p)? as i64;
         let core = crate::transducer::bubble::CoreReading {
             free_vertices,
             isolated,
@@ -441,13 +423,12 @@ impl Learning {
             malformed,
         };
         let three = |b: &[u8], p: &mut usize| -> Option<[u64; 3]> { Some([u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?]) };
-        let (removed, in_core, rank_unread) = (three(b, p)?, three(b, p)?, three(b, p)?);
+        let (removed, in_core) = (three(b, p)?, three(b, p)?);
         let lost = three(b, p)?;
         let shed = crate::transducer::bubble::ShedTally {
             removed,
             in_core,
             rank_lost: [lost[0] as i64, lost[1] as i64, lost[2] as i64],
-            rank_unread,
         };
         // TC1's fix — the truncation, its Ȟ¹ movement signed.
         let truncation = crate::transducer::bubble::Truncation {
@@ -456,7 +437,6 @@ impl Learning {
             glued: u64_at(b, p)?,
             deferred: u64_at(b, p)?,
             rank_moved: u64_at(b, p)? as i64,
-            rank_unread: u64_at(b, p)?,
             malformed: u64_at(b, p)?,
         };
         // FX1 — the flux, as written.

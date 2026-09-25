@@ -173,30 +173,25 @@ impl MeetGraph {
         let owed = MEET_OWED.iter().map(|(f, _)| *f).collect::<Vec<_>>().join(", ");
         let t = &self.transport;
         let c = &self.core;
-        let h1 = match c.h1 {
-            Some(r) => r.to_string(),
-            None => "unread".to_string(),
-        };
         let doors = super::core::Door::ALL
             .iter()
             .map(|d| {
                 let i = d.index();
                 format!(
-                    "{} removed {} in-core {} rank lost {} (unread {})",
+                    "{} removed {} in-core {} rank lost {}",
                     d.name(),
                     self.shed.removed[i],
                     self.shed.in_core[i],
-                    self.shed.rank_lost[i],
-                    self.shed.rank_unread[i]
+                    self.shed.rank_lost[i]
                 )
             })
             .collect::<Vec<_>>()
             .join("; ");
         let tr = &self.truncation;
         let core = format!(
-            "nerve: Ȟ¹ {h1}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} malformed {} | shed: {doors} | truncated {} (refused: held by class {} glued {}; price deferred {}; Ȟ¹ moved {} unread {} malformed {})",
-            c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced, c.malformed,
-            tr.truncated, tr.held_by_class, tr.glued, tr.deferred, tr.rank_moved, tr.rank_unread, tr.malformed
+            "nerve: Ȟ¹ {}, 2-core {}, free vertices {} isolated {}, free faces edges {} triangles {}, unfaced {} malformed {} | shed: {doors} | truncated {} (refused: held by class {} glued {}; price deferred {}; Ȟ¹ moved {} malformed {})",
+            c.h1, c.core, c.free_vertices, c.isolated, c.free_faces[0], c.free_faces[1], c.unfaced, c.malformed,
+            tr.truncated, tr.held_by_class, tr.glued, tr.deferred, tr.rank_moved, tr.malformed
         );
         let f = &self.flux;
         let window = |w: &super::flux::FluxWindow| format!("traversed {} zero {} held {}", w.traversed, w.zero, w.held);

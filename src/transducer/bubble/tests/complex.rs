@@ -284,7 +284,7 @@ fn a_leaf_off_a_ring_shed_by_price_carries_no_loop_and_a_corner_does() {
         c.complex.set_edge(&vs[a], &vs[b], id.clone(), identity_versor(), [1, 0, 0, 0]);
     }
     let r = c.core_reading();
-    assert_eq!((r.free_vertices, r.isolated, r.core, r.h1), (1, 0, 4, Some(1)), "{r:?}");
+    assert_eq!((r.free_vertices, r.isolated, r.core, r.h1), (1, 0, 4, 1), "{r:?}");
     c.set_now(10);
     c.bubbles.insert(&vs[4], Bubble { until: Some(1), ..Bubble::default() });
     let _ = c.lapse_on_clock();
@@ -297,7 +297,7 @@ fn a_leaf_off_a_ring_shed_by_price_carries_no_loop_and_a_corner_does() {
 
     let (t, _) = ring_of_three([Rotor::identity(), Rotor::identity(), Rotor::identity()], [id.clone(), id.clone(), id]);
     let r = t.core_reading();
-    assert_eq!((r.free_faces[0], r.h1, r.unfaced, r.malformed), (3, Some(0), 0, 0), "each edge a face of the one triangle: {r:?}");
+    assert_eq!((r.free_faces[0], r.h1, r.unfaced, r.malformed), (3, 0, 0, 0), "each edge a face of the one triangle: {r:?}");
 }
 
 /// Two pivots on the same bubble with no new word leave fills unchanged.

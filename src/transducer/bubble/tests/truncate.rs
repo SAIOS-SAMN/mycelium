@@ -29,12 +29,12 @@ const RING: [(usize, usize); 4] = [(0, 1), (1, 2), (2, 3), (3, 0)];
 #[test]
 fn a_leaf_off_a_ring_is_truncated_and_the_ring_stands() {
     let (mut c, vs) = nerve(5, &[RING.as_slice(), &[(0, 4)]].concat(), [1, 2, 3, 4]);
-    assert_eq!(c.core_reading().h1, Some(1));
+    assert_eq!(c.core_reading().h1, 1);
     c.truncate(std::slice::from_ref(&vs[4]));
     let r = c.core_reading();
-    assert_eq!((r.free_vertices, r.core, r.h1), (0, 4, Some(1)), "{r:?}");
+    assert_eq!((r.free_vertices, r.core, r.h1), (0, 4, 1), "{r:?}");
     let t = c.meet_graph().truncation;
-    assert_eq!((t.truncated, t.rank_moved, t.rank_unread, t.malformed), (1, 0, 0, 0), "{t:?}");
+    assert_eq!((t.truncated, t.rank_moved, t.malformed), (1, 0, 0), "{t:?}");
     assert!(!c.bubbles.contains(&vs[4]), "the leaf left");
     assert_eq!(c.take_truncated_escrow(), [1, 2, 3, 4], "its escrow returns");
     assert_eq!(c.take_truncated_escrow(), [0; 4], "once");
@@ -48,7 +48,7 @@ fn a_chain_of_leaves_is_truncated_round_by_round() {
     let (mut c, vs) = nerve(6, &[RING.as_slice(), &[(0, 4), (4, 5)]].concat(), [0; 4]);
     c.truncate(std::slice::from_ref(&vs[0]));
     let r = c.core_reading();
-    assert_eq!((r.free_vertices, r.core, r.h1), (0, 4, Some(1)), "{r:?}");
+    assert_eq!((r.free_vertices, r.core, r.h1), (0, 4, 1), "{r:?}");
     assert_eq!(c.meet_graph().truncation.truncated, 2);
     assert_eq!(c.len(), 4, "the ring's four thoughts stand");
 }
@@ -59,10 +59,10 @@ fn a_chain_of_leaves_is_truncated_round_by_round() {
 fn a_path_joining_two_rings_stays() {
     let rings: Vec<(usize, usize)> = RING.iter().chain(&RING.map(|(a, b)| (a + 4, b + 4))).copied().collect();
     let (mut c, vs) = nerve(10, &[rings.as_slice(), &[(0, 8), (8, 4), (8, 9)]].concat(), [0; 4]);
-    assert_eq!(c.core_reading().h1, Some(2));
+    assert_eq!(c.core_reading().h1, 2);
     c.truncate(std::slice::from_ref(&vs[8]));
     let r = c.core_reading();
-    assert_eq!((r.free_vertices, r.core, r.h1), (0, 9, Some(2)), "{r:?}");
+    assert_eq!((r.free_vertices, r.core, r.h1), (0, 9, 2), "{r:?}");
     assert_eq!(c.meet_graph().truncation.truncated, 1, "the leaf on the path, only");
 }
 
@@ -111,7 +111,7 @@ fn per_component_truncation_agrees_with_the_whole_nerve() {
     assert_eq!(c.core_reading().free_vertices, 1);
     c.truncate(std::slice::from_ref(&vs[5]));
     let r = c.core_reading();
-    assert_eq!((r.free_vertices, r.core, r.h1), (0, 8, Some(2)), "{r:?}");
+    assert_eq!((r.free_vertices, r.core, r.h1), (0, 8, 2), "{r:?}");
     let core = c.two_core();
     assert!(vs.iter().filter(|v| c.bubbles.contains(v)).all(|v| core.contains(v)), "what stands is the whole 2-core");
 }

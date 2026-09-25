@@ -71,7 +71,11 @@ pub fn sparse_rank(rows: &[SparseRow]) -> usize {
     use num_bigint::BigInt;
     use num_integer::Integer;
     use num_traits::{One, Zero};
-    let mut pivots: Vec<Option<Vec<(usize, BigInt)>>> = Vec::new();
+    // Each pivot is held with its lead coefficient beside its row: a row
+    // becomes a pivot only through its own lead, so the pair is the pivot's
+    // shape and no pivot can be an empty row.
+    type Pivot = (BigInt, SparseRow);
+    let mut pivots: Vec<Option<Pivot>> = Vec::new();
     let mut rank = 0usize;
     for row in rows {
         let mut r: Vec<(usize, BigInt)> = row.iter().filter(|(_, v)| !v.is_zero()).cloned().collect();
@@ -80,16 +84,12 @@ pub fn sparse_rank(rows: &[SparseRow]) -> usize {
             if lead >= pivots.len() {
                 pivots.resize(lead + 1, None);
             }
-            let Some(p) = pivots[lead].as_ref() else {
-                pivots[lead] = Some(r);
+            let Some((b, p)) = pivots[lead].as_ref() else {
+                pivots[lead] = Some((a, r));
                 rank += 1;
                 break;
             };
-            let b = match p.as_slice() {
-                [(_, b), ..] => b.clone(),
-                // A pivot is a non-empty row by construction.
-                [] => break,
-            };
+            let b = b.clone();
             // r ← b·r − a·p, merged by column; the lead cancels.
             let mut next: Vec<(usize, BigInt)> = Vec::with_capacity(r.len() + p.len());
             let (mut i, mut j) = (0usize, 0usize);

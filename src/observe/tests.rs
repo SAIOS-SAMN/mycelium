@@ -481,7 +481,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 isolated: 49,
                 free_faces: [50, 51],
                 core: 52,
-                h1: Some(-3),
+                h1: -3,
                 unfaced: 53,
                 malformed: 66,
             },
@@ -489,7 +489,6 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 removed: [54, 55, 56],
                 in_core: [57, 58, 59],
                 rank_lost: [60, -61, 62],
-                rank_unread: [63, 64, 65],
             },
             // TC1's fix — the truncation, a Ȟ¹ movement negative.
             truncation: crate::transducer::bubble::Truncation {
@@ -498,7 +497,6 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 glued: 69,
                 deferred: 70,
                 rank_moved: -71,
-                rank_unread: 72,
                 malformed: 73,
             },
             // FX1 — the flux, every window and count, one optional unread.
