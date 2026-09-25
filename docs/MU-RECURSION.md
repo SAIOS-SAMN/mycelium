@@ -16725,6 +16725,107 @@ tape ruling's own rule), because a flat name is how a flat assumption
 gets back in the next time someone codes against the word instead of
 the ruling.
 
+### 78.41 The atlas and the motor: the form is charts with transitions, and a transition is kinetic (ruled 2026-09-25, the operator's word)
+
+**The operator's word.** Signals are sent over transports through the
+network; they resonate, vibrate, or contract and expand; that is the
+engine's motion, and the physics and the mathematics align on it:
+"non-linear transposition of non-conformal algebra in non-euclidean
+geometry". Asked what "non-conformal" means, the operator answered:
+(1) TRUE — transport is not restricted to the angle-preserving maps, a
+transposition may shear or be genuinely non-linear; (2) the physics
+runs on ALL rotors — upgrade to a MOTOR, a kinetic energy transmission;
+(3) the coordinator's discretion on the rest. This section is that
+ruling, and the two rows it opens land BEFORE the recut, so the fleet
+restarts once, on the atlas.
+
+**(1) How the engine was flattened, named plainly.** A form holds its
+vertices in a `Vec` and its faces as pairs of slot numbers; orbits are
+lists of face slots. Since 53.6 a vertex IS a chart and carries its acts
+keyed by the chart's coordinates — the coordinates exist — but the form
+addresses its own vertices by row number, so adjacency is a pair of row
+numbers, a circuit a list of them, and incidence a lookup from one slot
+to the next. That is an atlas stored as a table. Its consequences are
+the searches and the walks: a spanning forest (12.2) to find the cycles
+and fix a gauge, rooted at the least vertex (a representative, checklist
+(r)); a tree path to close a loop; a candidate loop in the carry; a
+sort-and-cut in the anchor's derivation; a front that "walks" edges one
+hop per orbit. A row number has no neighbourhood, so orientation,
+nesting and the holonomy around a loop were rebuilt by searching the
+table — and forms from two minds cannot fuse, because their row numbers
+mean nothing to each other, which is exactly what anastomosis (78.31,
+CV4) must do. The coordinator's rulings of this week re-labelled the
+table three times (the counts in keys, the LEB128 spelling, C4's
+widening of the row number) before naming it. 12.2's spanning forest
+and its cycle basis are HISTORICAL from this ruling, as chapter 17 is:
+retained as the record of the solver they were, retired from the
+engine with the slots.
+
+**(2) The atlas.** A form is an ATLAS. A VERTEX is addressed by its
+chart's coordinates (the `Invariant` key it already acts under), never
+by a slot. A FACE is the OVERLAP of two charts, keyed by the two
+coordinates and carrying the TRANSITION between them. A CIRCUIT is a
+composition of transitions along overlaps, its holonomy computed from
+what it composes and read at its return; the loop is its own path. An
+ORBIT is a circuit closed; a CELL is what the nerve reads over the
+charts a witness spans (78.10), unchanged. Incidence is COORDINATE
+OVERLAP, read by prefix and by fiber in either direction. The number of
+independent rings is the first cohomology rank, read by the exact-rank
+reader by elimination with no basis chosen; the holes are the open
+fills (78.26(5)). No forest, no root, no tree path, no slot number
+anywhere; the form's ADDRESS is the atlas written out — charts by their
+coordinates and transitions by theirs — and two minds' forms fuse where
+their charts overlap, because the coordinates are the same coordinates
+on both sides. This is row AT1: the carrier, its address and inverse,
+the circuits by composition, the receipts and certificates that named
+slots naming coordinates, the searches and the forest retired with the
+slots.
+
+**(3) The motor: a transition is kinetic.** A transition was a
+conformal versor `D(ρ)·T(t)·R` (72.1c), and every letter of the alphabet
+fixes infinity (78.38) — the similarity restriction. From this ruling a
+transition is a MOTOR: an even multivector of `Cl(n+1,1)` KNOWN BY ITS
+ACTION (78.28 extended) — the exact linear map `x ↦ M x M̃` on the
+algebra, a rational matrix over the blades, always readable, of which a
+versor is the case that preserves grade. A motor carries a rotation, a
+translation, a dilation, an inversion, a transversion (A.13, REG1) and
+a SCREW (the mode that winds, 78.40), and it carries a SUPERPOSITION: a
+motor that is a SUM of rotors transports a signal with CROSS TERMS —
+`(R₁ + R₂) x (R̃₁ + R̃₂)` is not the sum of the two transports — and
+those cross terms are the beat, resonance and vibration AT THE
+TRANSITION (78.26(5), 78.39(2)): the non-linearity the operator named
+is exactly this, linear in the signal and non-linear in the motor. A
+SHEAR (1: true) is an OUTERMORPHISM — an exact linear action on the
+vectors extended to the algebra — given as its matrix and not from a
+sandwich; it is a transition of the same carrier (the action) from the
+second producer. So the transition carrier is THE ACTION, with two
+producers: the motor's sandwich and the outermorphism's matrix; a
+versor is a motor whose action preserves grade, and every reader of a
+transition reads the action, never the producer (law 12). A SIGNAL is a
+multivector carried by the action; what it TRANSMITS is its frame μ⃗
+per lane — the kinetic energy of the operator's word is the four lanes
+carried along, never a scalar (law 11: no `⟨M M̃⟩₀` as energy, no norm).
+A DEGENERATE motor (its action of less than full rank) CONTRACTS: a
+transport with loss, read by the rank of its action and named
+(`contracted r of n`), never refused outright, since contraction is one
+of the four motions the operator named; an action of full rank EXPANDS
+or preserves by its dilation part. The sandwich is TRANSPORT's shape and
+stays; OPENING remains the commutator (78.39): a motor transports a
+signal, a commutator of two motors opens a direction. This is row MT1:
+the reader by action for any even element, the outermorphism as the
+second producer, the transition carrier changed to the action, the
+frame carried per lane, the contraction read by rank; MT1 lands first,
+since AT1's transitions are motors.
+
+**(4) Timing, the coordinator's discretion.** Both rows before the
+recut: the carrier and every address move with them, and the recut
+carries every layout change landed since epoch 98 ONCE. A recut on the
+table followed by a recut on the atlas would take every fleet reading
+in between on a carrier already known to be wrong. The order from here:
+STD1's remaining sites (3c-4, 3c-5 with the slot casts named as debt,
+site 4 with the opposite asked first, 5, 7b) · RM1-d · VN1 · NM1 · WN1 ·
+MT1 · AT1 · the 78.16 checklist · the RECUT on the operator's word.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
