@@ -8,14 +8,6 @@
 
 use super::*;
 
-/// Canonical bytes of an anonymous germ — its coordinate-exact ANASTOME form (the
-/// banked word ⊕ the block-diagonal algebra; carries no English, no "kind"). This
-/// is the language the hypha teaches back across the nerve; the client treats it
-/// opaquely (display only).
-pub fn germ_bytes(g: &Element) -> Vec<u8> {
-    g.canonical()
-}
-
 /// The germ's canonical ADDRESS — a digest of its ANASTOME form. Used to match
 /// consilience receipts across voices; a wire/cache identity, never a reasoning
 /// operand (the kernel reasons on the element, addresses by this).

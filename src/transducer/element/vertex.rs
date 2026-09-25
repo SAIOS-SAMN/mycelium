@@ -339,63 +339,6 @@ impl Element {
         self.reverse()
     }
 
-    /// Canonical ANASTOME bytes: the BASE identity (word, dim, fibers) followed
-    /// by the punctured axis's sections — the FULL bundle, so a taught thought
-    /// carries its interior volume across the nerve.
-    pub fn canonical(&self) -> Vec<u8> {
-        let mut out = self.base_canonical();
-        out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
-        for s in &self.sections {
-            out.extend_from_slice(&(s.len() as u32).to_le_bytes());
-            for (b, a) in s {
-                out.push(*b);
-                out.push(*a);
-            }
-        }
-        // The torsion cycles: (generator relations, period).
-        out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for TorsionCycle { sigma, period: l, fibre, .. } in &self.torsion {
-            out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
-            for (f, t) in sigma {
-                out.push(*f);
-                out.push(*t);
-            }
-            out.extend_from_slice(&l.to_le_bytes());
-            out.extend_from_slice(&fibre.to_le_bytes());
-        }
-        // The connection: (assignment, g, fibre) relations.
-        out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
-        for Transition { asg: a, gauge: g, fibre } in &self.transitions {
-            out.extend_from_slice(&(a.len() as u32).to_le_bytes());
-            for (b, f) in a {
-                out.push(*b);
-                out.push(*f);
-            }
-            g.to_bytes(&mut out);
-            out.extend_from_slice(&fibre.to_le_bytes());
-        }
-        out
-    }
-
-    /// The BASE canonical form: tape and chain. The action is on the tape
-    /// or composed from it; germinated axes are listed by index.
-    fn base_canonical(&self) -> Vec<u8> {
-        let mut out = Vec::new();
-        out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
-        out.extend_from_slice(&self.description);
-        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
-        for (r, c, before, after) in self.sub.as_slice() {
-            out.extend_from_slice(&r.to_le_bytes());
-            out.extend_from_slice(&c.to_le_bytes());
-            out.push(*before);
-            out.push(*after);
-        }
-        for (i, _) in &self.action.germinated {
-            out.extend_from_slice(&i.to_le_bytes());
-        }
-        out
-    }
-
     /// Vertex key of the word form: geodesic normal form plus frame
     /// coordinates as exact rationals. A sentence is keyed by its form
     /// (M1, ρ, agreed shift relative to the Frame, contact, gauge, faces).

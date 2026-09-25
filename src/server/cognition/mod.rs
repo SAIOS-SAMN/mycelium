@@ -34,7 +34,7 @@ pub use language::{
     Outcome, Priced, Rank,
 };
 pub use reduce::{cohesion_over, normal_form, quote_incidence, rank_over, Ask, BookView};
-pub use wire::{frame_of, germ_address, germ_bytes, outcome_code};
+pub use wire::{frame_of, germ_address, outcome_code};
 
 use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
