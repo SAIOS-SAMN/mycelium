@@ -491,6 +491,23 @@ Fermat's. **Held** is a count of carriers a mind holds resident;
 "weight" names only a versor's scale content, and nothing in cognition
 is weighed. A **reading** is answered or refused by name; "fallback",
 "default" as an invented value, "lookup" and "unlock" name nothing here.
+**MOTION (ruled 2026-09-25, the operator's word).** Nothing in this
+engine walks or steps. The motions are celestial and mycelial and the
+words are theirs: a section is CARRIED (transported) along a transition;
+an orbit CLOSES and RETURNS; a front ADVANCES by the orbit's own
+transitions and is HELD at a class; flux FLOWS through a filament; a mode
+WINDS; a mind REACHES a coordinate by its prefix. "Walk", "walked",
+"visit", "traverse" and "step" (outside the **k-step**, which is one
+ORBIT — a revolution, never a footstep) are retired as VT2 retired
+"walk": a walker's bookkeeping (a `walked` flag, a "first frontier", a
+"step along an edge") is the flat picture of a graph with hop distances,
+and hop distance is a metric of a table, not of the geometry. In
+particular TP1's front does not advance "one edge per K": it advances
+by the k-step's LENGTH in transitions, which is the band's (78.35, the
+k-step length by distance from the star) — one transition per orbit
+only until the band's length is read (PHY1), named as owed, never as
+the rule. A circuit's "steps" are its TRANSITIONS, the overlaps it
+composes; "traversed" is "carried through" or "flowed through".
 
 # Part 0 — The map: master algorithms, the physics over them, their sites, and what stands (2026-09-24)
 
