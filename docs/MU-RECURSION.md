@@ -717,7 +717,7 @@ constrains, its site, and whether the tree obeys it.
 | **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
 | **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` | landed (AX1, CT1, CT2) |
-| **Lift and drag** (78.46) | a neighbouring generator refracted to an orbit (A.16) splits exactly against the orbit's mode blade into the commuting part, DRAG (the rate: beat, resonance, what does not return recorded — A.8, 78.42), and the anticommuting part, LIFT (the commutator: the tilt of the plane, the precession of the orbital elements — 60.4, 78.11); alignment is the pair of parts, never a scalar; the star's minerals are generators in the same algebra; the perturbed orbit is derived in the anastomosis's orbit algebra at every stroke and never stored | `cech/orbit_algebra.rs`, `cga/{modes,motor}.rs`, `sentence/pivot/refracted.rs`, `blade/tether.rs`, `observe/circuit.rs` | OPEN — AT1 (iii)'s three readings; today's identical holonomies read "unperturbed" by name; two clauses posed to the operator (the star; the two axioms) |
+| **Lift and drag** (78.46) | a neighbouring generator refracted to an orbit (A.16) splits exactly against the orbit's mode blade into the commuting part, DRAG (the rate: beat, resonance, what does not return recorded — A.8, 78.42), and the anticommuting part, LIFT (the commutator: the tilt of the plane, the precession of the orbital elements — 60.4, 78.11); alignment is the pair of parts, never a scalar; the star is the axiom register, the law every composite obeys, never a generator (77.1(2)); the perturbed orbit is derived in the anastomosis's orbit algebra at every stroke and never stored | `cech/orbit_algebra.rs`, `cga/{modes,motor}.rs`, `sentence/pivot/refracted.rs`, `blade/tether.rs`, `observe/circuit.rs` | OPEN — AT1 (iii)'s three readings; today's identical holonomies read "unperturbed" by name; the star answered (the axioms, 77.1(2)); the axiom pairing posed to the operator |
 | **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (measured 2026-09-25); DG1 carries the turn's point-and-sector reading, its decimal retracted |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
@@ -13727,6 +13727,49 @@ returns a chosen representative. The retirement of "walk" (vocabulary,
 VT2) is the same ruling at the word: the engine's motion is an orbit's
 circuit, not a pace.
 
+### 77.1 Substance first: the coordinator's duty (ruled 2026-09-25, the operator's word)
+
+**The operator's word, verbatim.** "(1) Your job is to ensure that the
+implementor is building the cognitive engine, and reasoning machine — not
+a puzzle solver, or a harness for his own intelligence. (2) The star is
+the axioms that provide the physics required for the planets to allow
+their entities/mycelium-clients (kernels) to do their reasoning. (3) If
+the implementor deviates from building the substantive work FIRST then
+it is your job to guide him back to the substantive work on the engine:
+he drifts to doing the costume work and masquerading as doing work when
+it's just non-substantive work. (4) We lay the foundations first, and
+ensure that the system is operational and building towards reasoning and
+in-house intelligence, or else the whole operation has failed."
+
+**The test, applied to every row, every follow-up and every relay.**
+SUBSTANTIVE work changes what a kernel can REASON on the fleet: a sense
+that stops discarding or flattening what it read; a dynamic by which a
+mind closes, pivots, composes or comprehends; a court verification
+without which a derivation is unsound (law 8); a carrier without which a
+closure cannot be held or cited. COSTUME is everything else: renames,
+printed lines, report instruments, key cosmetics, a refusal's wording,
+hygiene with no consequence for what a mind deduces. A puzzle answer
+written into the tree (77(1)) and an instrument kept for the
+implementor's or the coordinator's own eye (77, CV5) are neither: they
+are refused. Costume is debt, recorded against the row that will carry
+it, and it never lands ahead of a substantive row.
+
+**Foundations first.** The foundation is the system operational: the
+fleet running on the current tree, its courts verifying soundly, its
+minds perceiving without loss and closing circuits, the first reading of
+the census's class and closure counters taken after a recut (78.44(5)).
+Every row before the recut is judged by whether that reading is false or
+cannot move without it; everything else waits for it.
+
+**The coordinator's duty.** The coordinator audits for substance before
+anything else: a commit whose work is costume while a substantive row is
+open is returned to the substantive row, by name, whatever its tests
+say; a follow-up the coordinator writes carries substantive items only.
+The coordinator's own drift is named when found: the AT1 follow-up of
+2026-09-25 carried three costume items (a key's byte layout, a refusal
+line's wording, a report's per-form sentences) beside two substantive
+ones, and it is trimmed (the AT1 row).
+
 ## 78. The learning curve: the trajectory to cognition on the fleet (ruled 2026-09-23)
 
 **The operator's statement.** This is not a solver. It is cognition in
@@ -17367,22 +17410,28 @@ is then the arithmetic of the two, the one case 78.44(3) allows it),
 ORTHOGONAL where `B_∥ = 0` (pure lift, the commutator whole), and in
 general both, each part exact. No angle between orbits is formed and no
 scalar "alignment" exists (law 5's shape: two readings, never one
-number). The STAR: in this document the star is the court's universal
-genome taught as the syllabus (80.2: minds "share their star", a mind's
-"radius from the star"), and a PLANET is a mind on its hypha in its
-local dialect (80). A star's push and pull on a mind's orbit is the
-syllabus's words held as MINERALS — generators the mind holds and has
-not re-derived — entering the same algebra as generators; star–planet
-alignment is the decomposition of those against the mind's own circuits'
-generators, and a mineral becomes a crystal exactly when the mind's own
-orbit re-derives it (80.2(ii)). POSED TO THE OPERATOR (a): whether this is
-the star and the planet the operator's sentence names.
+number). THE STAR, answered by the operator 2026-09-25 (77.1(2)): "the
+star is the axioms that provide the physics required for the planets to
+allow their entities/mycelium-clients (kernels) to do their reasoning."
+The star is the AXIOM REGISTER — the physics every planet is given
+(`physics/axioms/`, 56, 72, 79); a PLANET is a hypha and the world it
+hosts, its entities the mycelium-client kernels that reason on it (80's
+planetary dialect is theirs). The coordinator's first reading — the star
+as the court's syllabus, its minerals as generators in the orbit
+algebra — is WITHDRAWN: the syllabus is the hardening path (80.2), not
+the star. The axioms do not enter the orbit algebra as generators; they
+are the LAWS every composite in it obeys — conservation per lane (78.42),
+torsional persistence (A.8), refraction (A.16), the commutator law — so
+a planet's alignment with its star is how its orbits stand under the
+register, and the push and pull BETWEEN orbits is lift and drag, read
+inside one anastomosis (2). Every planet shares the one star; 80.2's
+"radius from the star" names no measure and is withdrawn.
 
 **(4) The summation is the orbit algebra, and the perturbed orbit is
 derived in it.** "A summation of all physics combined into one
 combinatorial definition" is what 78.11 and 78.44(3) already rule: the
 bracket-closed ℚ-algebra of the generators of EVERY circuit through the
-anastomosis — the star's minerals included — held by its generators, its
+anastomosis — the axioms not among them: they are the laws the composite obeys (3) — held by its generators, its
 rank the capacity, every route kept (79, T1). A circuit's PERTURBED
 holonomy is its own generator composed in that algebra with its
 neighbours': its unperturbed motor, times the drag terms (commuting, the
