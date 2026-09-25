@@ -675,6 +675,16 @@ impl Rotor {
         Some([period(a + p), period(a - p)])
     }
 
+    /// THE TURN OF EACH PLANE (DG1, 78.45): the two quaternion factors'
+    /// turns, in the order [`Rotor::plane_periods`] reads them — degrees
+    /// where the factor's order is finite, the point and its sector where
+    /// not ([`super::Turn`]). `None` for a non-versor.
+    pub fn turns(&self) -> Option<[super::Turn; 2]> {
+        let w = self.weight()?;
+        let (a, p) = (&self.c[0], &self.c[15]);
+        Some([super::Turn::of_factor(&(a + p), &w)?, super::Turn::of_factor(&(a - p), &w)?])
+    }
+
     /// THE ORDER OF A ROTOR, read from its class (15.3, ruled 2026-09-09).
     /// The even subalgebra splits by the central idempotents `(1 ± I)/2`
     /// into two commuting quaternion factors of one weight `w`, with

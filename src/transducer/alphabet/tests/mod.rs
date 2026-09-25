@@ -11,4 +11,5 @@ mod order;
 mod plane_form;
 mod rewrite;
 mod rotor_key;
+mod turn;
 mod word;

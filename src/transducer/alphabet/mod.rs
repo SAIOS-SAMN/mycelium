@@ -13,6 +13,7 @@ pub mod plane;
 pub mod rewrite;
 pub mod rotor;
 pub mod spelling;
+pub mod turn;
 pub mod word;
 
 pub(crate) use block::*;
@@ -22,6 +23,7 @@ pub use letters::*;
 pub use plane::*;
 pub use rotor::*;
 pub use spelling::*;
+pub use turn::*;
 pub use word::*;
 
 use num_rational::BigRational;
