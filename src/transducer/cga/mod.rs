@@ -50,6 +50,9 @@ pub use spin::{
 
 #[cfg(test)]
 mod tests;
+/// BQ3 — the algebra's oracle at `n = 3`: its readings, and the golden file's
+/// writer the soak runs by flag (STD1).
+pub mod oracle;
 /// The corpus's `n = 3` named for the tests' fixtures (PH2, BQ4).
 #[cfg(test)]
 pub mod at_three;

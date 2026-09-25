@@ -185,6 +185,18 @@ fn main() {
         }
         return;
     }
+    // BQ3, STD1 — THE ORACLE'S GOLDEN FILE, written on the carrier it
+    // stands for: a flag here, never an ignored test (§6.4).
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--write-oracle-golden") {
+        match mycelium::transducer::cga::oracle::write_golden() {
+            Ok(n) => eprintln!("  oracle: {n} readings written to {}", mycelium::transducer::cga::oracle::GOLDEN),
+            Err(e) => {
+                eprintln!("  oracle refused: the golden file did not write: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--calibrate") {
         let (Some(dir), Some(name)) = (argv.get(1), argv.get(2)) else {
             eprintln!("  calibrate refused: name the corpus directory and the task");
