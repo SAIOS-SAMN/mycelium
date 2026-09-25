@@ -553,7 +553,15 @@ turn", "cw"/"ccw" retire from this document and from names in the
 tree (NM1): the letter that turns 90° is named by its degrees, and a
 test asserts `180°`, never "a half turn". English turn-words were an
 INVERSION the operator named — the word "half" carries no precision
-and the mathematics does; the gauge is the full circle. **Held** is a count of carriers a mind holds resident;
+and the mathematics does; the gauge is the full circle. **LIFT** and
+**DRAG** (ruled 2026-09-25, the operator's word, 78.46) are the two
+exact parts of a neighbouring generator against an orbit's own mode
+blade: DRAG the part that commutes with it (the rate — phase, period,
+beat, what does not return recorded), LIFT the part that anticommutes
+(the commutator — the tilt of the plane, the precession of the orbital
+elements); "lift" names nothing else in this document — A.11's producer
+is "the harmonic lift, `blade::lift`" until NM1 renames it, and a
+section carried to a frame is "the section at the frame". **Held** is a count of carriers a mind holds resident;
 "weight" names only a versor's scale content, and nothing in cognition
 is weighed. A **reading** is answered or refused by name; "fallback",
 "default" as an invented value, "lookup" and "unlock" name nothing here.
@@ -709,6 +717,7 @@ constrains, its site, and whether the tree obeys it.
 | **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | PD1 landed (a590eefb, f1535c76); AE1 open (the ages and eons reading) |
 | **The signal, the spectrum, the shortcut** (78.44) | the signal is a circuit's holonomy and never travels; its projection on a node's INTERNAL spectrum is its modes (the class node-independent, the planes the node's own); composition runs on the motors in the anastomosis's orbit algebra, held by generators, every route kept, the spectrum re-read off the composite; a word is a shortcut — its class key and its winding vector over the atlas's holes — that a receiver comprehends by re-projecting on its own charts; comprehension read on the census's class and closure counters | `cga/{motion,motor}.rs`, `cech/orbit_algebra.rs`, `sentence/pivot/`, `bubble/`, `anastome/dialogue/` | OPEN (AT1 (iii) the algebra by generators and the winding vectors; WN1 the address as class key + windings; SW1 the shortcut wire; REG1 the invariance statement) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` | landed (AX1, CT1, CT2) |
+| **Lift and drag** (78.46) | a neighbouring generator refracted to an orbit (A.16) splits exactly against the orbit's mode blade into the commuting part, DRAG (the rate: beat, resonance, what does not return recorded — A.8, 78.42), and the anticommuting part, LIFT (the commutator: the tilt of the plane, the precession of the orbital elements — 60.4, 78.11); alignment is the pair of parts, never a scalar; the star's minerals are generators in the same algebra; the perturbed orbit is derived in the anastomosis's orbit algebra at every stroke and never stored | `cech/orbit_algebra.rs`, `cga/{modes,motor}.rs`, `sentence/pivot/refracted.rs`, `blade/tether.rs`, `observe/circuit.rs` | OPEN — AT1 (iii)'s three readings; today's identical holonomies read "unperturbed" by name; two clauses posed to the operator (the star; the two axioms) |
 | **Precision is the resolution** (78.45, law 4 as amended) | no blob, no approximation, no forward guess: a reading serves the value, the fraction, the rational point, or the sector between two exact marks (the ℚ-protractor, Niven's set; finer marks in `ℚ(ζ_ℓ)`), never a decimal; every master reads the inverse exactly — from the effect to the object — or refuses; the fourth audit question | the whole tree: `Cargo.toml` (`float_arithmetic`, `cast_precision_loss` denied), `core/gaussian.rs` (`rational_sqrt`), `alphabet/rotor.rs` (`half_angle`), Part VI `cyclo` | governs; the tree is float-free (measured 2026-09-25); DG1 carries the turn's point-and-sector reading, its decimal retracted |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
@@ -17286,6 +17295,148 @@ approximation of an irrational anywhere in the tree, in a value, a doc
 line or a test name, is an approximation and returned. Every audit from
 this date asks, beside 78.41(2′)'s three questions, a fourth: IS ANYTHING
 SERVED THAT IS NOT EXACT. This is no row; the rule governs every row.
+
+### 78.46 Lift and drag: the perturbed orbit as the summation of the physics (ruled 2026-09-25, the operator's word through the implementor; two clauses posed back to the operator)
+
+**The operator's word.** "In orbit you have lift and drag … every orbit
+should be slightly different based on the push/pull of the star/planet
+alignment … the orbital mechanics are a summation of all physics we have
+combined into one combinatorial definition." And, on the implementor's
+matching of census strings to report AT1's acceptance: lift is a PHYSICS
+COMPONENT — a combination of two axioms, constructed by the engine at
+runtime, never asserted from outside by matching strings.
+
+**(1) What the tree reads today is the unperturbed orbit.** A circuit's
+holonomy is the closed product of its own overlaps' motors, one route at
+a time (78.41(3), R4). Every neighbour's push and pull is switched off:
+the two-body orbit. Two circuits reading identical holonomies is
+therefore evidence that PERTURBATION IS ABSENT, not that anything about
+them is equal, and no acceptance can be read on it — least of all by
+matching printed lines (78.45(2), MU-STANDARDS 4.6). The identical
+readings are the expected reading BEFORE (4)'s producer lands, and they
+are served by name: "unperturbed".
+
+**(2) The push and pull is a neighbour's generator, refracted to the
+orbit.** Inside one anastomosis (R3: routes are compared inside one cell
+and never across the form) the bodies act on one another through their
+tethers `V = s_b s_a` (A.10) and a contact's transport is the refraction
+`(θ_bθ_a⁻¹)·V` (A.16). A neighbouring circuit's holonomy, based at the
+orbit's basepoint by its lasso (R5, T2), is a motor whose MODES (MR1) are
+commuting rays, each turning in one plane by a turn (DG1); each mode's
+plane is a bivector blade `B_n` with `B_n² ∈ ℚ*`. The orbit's own mode
+is the blade `B_o`. Conjugation by `B_o` is an involution on bivectors
+(`B_o²` is a central scalar), so every neighbouring generator splits
+EXACTLY over ℚ into a part that commutes with the orbit and a part that
+anticommutes with it:
+
+```
+B_∥ = ½ (B_n + B_o B_n B_o⁻¹)      B_o B_∥ = B_∥ B_o
+B_⊥ = ½ (B_n − B_o B_n B_o⁻¹)      B_o B_⊥ = −B_⊥ B_o
+```
+
+- **DRAG is `B_∥`.** It acts in the orbit's own mode: it changes the
+  RATE along the orbit — the phase and the period — and never the plane.
+  Its readings the document already holds: the beat at the transition
+  (78.26(5), 78.41(3)), resonance where the periods are commensurate
+  (78.43: the eon), and what does not return in a period, which is
+  recorded and never relaxed away — the dislocation on the word, the
+  flux retained or lost to contraction on the kinetic ledger, per lane
+  (A.8, 78.42). The two axioms drag combines: A.16 (the neighbour's
+  action reaches the orbit through the contact's transport) with A.8
+  (torsional persistence: the strain it leaves is moved or recorded).
+- **LIFT is `B_⊥`.** Its content is the commutator `[B_o, B_n] = 2 B_o
+  B_⊥`: a rotation in a plane that neither generator is (60.4, `[p, p]
+  ⊂ k`, Thomas precession; 62's conjugate pair, which is well-formed
+  exactly when its halves fail to commute). It TILTS the orbit's plane —
+  the precession of the orbital elements (LC1), the eccentric offset the
+  vocabulary's turn overlays on the orbit — and never its rate. The two
+  axioms lift combines: A.16 (the same refraction) with the algebra's
+  commutator law (60.4, 78.11's congruence by commutator, 78.39's
+  openings as commutators). Lift is orthogonal to the motion and drag
+  is along it, exactly as in a fluid, and the decomposition is the
+  algebra's, not an analogy.
+
+Neither is a scalar. Each is an exact bivector with an exact weight, and
+a turn asked of either is read as DG1 reads a turn — the point and its
+sector — off the ray `B_o B_n`, never a formed angle.
+
+**(3) Alignment is the same decomposition read as a pair.** Two orbits
+are ALIGNED where `B_⊥ = 0` (commuting modes: pure drag; where their
+periods are commensurate they resonate, 78.43; their composite's spectrum
+is then the arithmetic of the two, the one case 78.44(3) allows it),
+ORTHOGONAL where `B_∥ = 0` (pure lift, the commutator whole), and in
+general both, each part exact. No angle between orbits is formed and no
+scalar "alignment" exists (law 5's shape: two readings, never one
+number). The STAR: in this document the star is the court's universal
+genome taught as the syllabus (80.2: minds "share their star", a mind's
+"radius from the star"), and a PLANET is a mind on its hypha in its
+local dialect (80). A star's push and pull on a mind's orbit is the
+syllabus's words held as MINERALS — generators the mind holds and has
+not re-derived — entering the same algebra as generators; star–planet
+alignment is the decomposition of those against the mind's own circuits'
+generators, and a mineral becomes a crystal exactly when the mind's own
+orbit re-derives it (80.2(ii)). POSED TO THE OPERATOR (a): whether this is
+the star and the planet the operator's sentence names.
+
+**(4) The summation is the orbit algebra, and the perturbed orbit is
+derived in it.** "A summation of all physics combined into one
+combinatorial definition" is what 78.11 and 78.44(3) already rule: the
+bracket-closed ℚ-algebra of the generators of EVERY circuit through the
+anastomosis — the star's minerals included — held by its generators, its
+rank the capacity, every route kept (79, T1). A circuit's PERTURBED
+holonomy is its own generator composed in that algebra with its
+neighbours': its unperturbed motor, times the drag terms (commuting, the
+rate), times the lift terms (the commutators, the tilt), the spectrum
+re-read off the composite and never an arithmetic of spectra. It is
+DERIVED at every stroke where the circuit is read — the census, the
+observer's circuit line, the pivot's trial under pressure (78.7) — and
+never stored (78.41(2′): the atlas holds the coordinate list, the
+algorithms derive). Because every neighbour differs, every orbit reads
+slightly differently — the operator's expectation — and where the algebra
+holds one generator the reading is "unperturbed" by name. THE PRODUCER IS
+AT1 (iii), the algebra by generators, which gains three readings: lift
+and drag per (circuit, neighbour) pair inside one anastomosis, the
+perturbed holonomy per circuit, and the sum as readings — never as a
+scalar — into the mind's orbital elements per epoch (LC1). No row of its
+own. POSED TO THE OPERATOR (b): whether lift's two axioms are A.16 with
+the commutator law and drag's A.16 with A.8, as (2) pairs them, or two
+others of the register.
+
+**(5) AT1 (i)+(ii)'s acceptance, re-stated; "lift" named apart.** The
+coordinator's acceptance clause read "every circuit of the old basis
+present as its per-frame lifts", using LIFT in the sheaf's sense — a
+section carried to a frame — where the tree already has A.11's harmonic
+lift (`blade::lift`, the single producer of the multipoles) and the
+operator now names the physics component. That use is withdrawn: in this
+document LIFT is the physics component of (2); A.11's producer is "the
+harmonic lift, `blade::lift`" until NM1 renames it by what it computes;
+a section carried to a frame is "the section at the frame". The
+acceptance for (i)+(ii) is:
+
+- **(a) The raw readings, typed, with no lift claim:** r7 (address bytes
+  before and after; word addresses, derived), orbits against rank,
+  circuits by kind (within a frame, across frames; turned, flat),
+  overlaps against the faces costed before. Reported as numbers, as the
+  implementor proposed.
+- **(b) Every circuit of the old basis PRESENT AS THE SAME CIRCUIT:** the
+  same class key — its holonomy's class, 78.44(2)'s first stratum — found
+  among the new atlas's circuits, read BY THE ENGINE as a typed census
+  line over cognition's own carrier (`Keyed` by class key; the old
+  basis's keys each found or not), never by a script matching printed
+  strings, which is deleted.
+- **(c) An old circuit NOT present is read by kind, deduced (78.45(4)):**
+  it crossed a face with no member pair — r2's slot artefact, whose
+  disappearance IS the compaction and is counted as such — or a pair with
+  no frame (`frameless`), or neither, which is lost content: the port
+  does not land. Form 1's hyperbolic orbit (its two pairs dropped as
+  frameless) and form 32's elliptic rosette are read by this line before
+  the squash.
+- **(d) A `frameless` pair is a refusal that carries its content and is
+  COUNTED, never dropped** (A.17, law 7): the pair, its members, and why
+  no frame places it, on the census.
+- **(e) Lift and drag are (iii)'s readings, not (i)+(ii)'s.** Identical
+  holonomies across circuits today read "unperturbed", and that is the
+  correct reading before the producer of (4) lands.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
