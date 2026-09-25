@@ -182,12 +182,11 @@ impl Entity {
                 // L6: A CITE IS THE BODY IT RECONSTRUCTS. One whose gauge
                 // reconstructs none is not a cite carrying nothing — it is
                 // no cite, and it does not go on the wire.
-                let body = crate::transducer::sentence::cited_pattern(w, c.gauge)?;
+                let body = crate::transducer::sentence::cited_pattern(w, &c.assignment)?;
                 Some(dialogue::CiteWire {
                     addr: w.address(),
                     standing: standing_of(c.word.as_bytes())?.as_u8(),
                     transport: c.transport,
-                    gauge: c.gauge as u32,
                     body,
                 })
             })
@@ -199,7 +198,6 @@ impl Entity {
                 addr: w.address(),
                 standing: st.as_u8(),
                 transport: p.transport.clone(),
-                gauge: u32::MAX,
                 body: p.links.clone(),
             });
         }
@@ -211,7 +209,6 @@ impl Entity {
                 addr: h.address,
                 standing: Standing::Held.as_u8(),
                 transport: crate::transducer::element::identity_versor(),
-                gauge: 0,
                 body: h.body,
             });
         }
@@ -228,11 +225,11 @@ impl Entity {
     /// the proof; each address is a keyed read.
     pub fn puncture_verified(&mut self, cites: &[dialogue::CiteWire]) -> usize {
         let mut deepened = 0usize;
+        // EVERY CITE'S BODY IS OFFERED: `Epigenome::puncture` answers `None`
+        // for an assignment the word already speaks, so the hypha's own
+        // reading decides what is a section — never a flag the speaker set.
         for c in cites {
-            if c.gauge != u32::MAX {
-                continue;
-            }
-            let Some(at) = self.epigenome.puncture(&c.addr, crate::transducer::element::assignment(&c.body)) else {
+            let Some(at) = self.epigenome.puncture(&c.addr, crate::transducer::sentence::body_assignment(&c.body)) else {
                 continue;
             };
             deepened += 1;

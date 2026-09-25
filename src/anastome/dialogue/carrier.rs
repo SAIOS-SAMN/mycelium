@@ -38,7 +38,6 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) -> Option<()> {
         crate::transducer::address::put_addr(&mut framed, &c.addr)?;
         framed.push(c.standing);
         c.transport.to_bytes(&mut framed);
-        framed.extend_from_slice(&c.gauge.to_le_bytes());
         push_chain(&mut framed, &c.body)?;
     }
     out.append(&mut framed);
@@ -48,8 +47,8 @@ pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) -> Option<()> {
 pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
     let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
     *p += 4;
-    if n > b.len().checked_sub(*p)? / 41 {
-        return None; // untrusted count: address, standing, versor, coordinate, body
+    if n > b.len().checked_sub(*p)? / 37 {
+        return None; // untrusted count: address, standing, versor, body — the floor follows the writer
     }
     let mut out = Vec::with_capacity(n);
     for _ in 0..n {
@@ -57,10 +56,8 @@ pub fn read_cites(b: &[u8], p: &mut usize) -> Option<Vec<CiteWire>> {
         let standing = *b.get(*p)?;
         *p += 1;
         let g = crate::transducer::element::Versor::from_bytes(b, p)?;
-        let asg = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
-        *p += 4;
         let body = read_chain(b, p)?;
-        out.push(CiteWire { addr, standing, transport: g, gauge: asg, body });
+        out.push(CiteWire { addr, standing, transport: g, body });
     }
     Some(out)
 }

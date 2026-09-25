@@ -196,12 +196,11 @@ k.basis_insert(element::from_canonical_framed(&germinate(&a, &rot).unwrap(), &cr
 k.basis_insert(from_canonical(&germinate(&a_far, &rot_far).unwrap()), [7; 32]);
 let derivable = k.basis()[0].address(); // its duplicate speaks it
 // The bidder's sentence: the duplicate, cited at the identity.
-let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, 0).unwrap();
+let body = |w: &Element| crate::transducer::sentence::cited_pattern(w, &element::assignment(w.sub())).unwrap();
 let sentence = vec![crate::anastome::dialogue::CiteWire {
     addr: k.basis()[1].address(),
     standing: 0,
     transport: element::identity_versor(),
-    gauge: 0,
     body: body(&k.basis()[1]),
 }];
 let paid = k.try_refine(&derivable, [5; 32], &sentence);
@@ -212,7 +211,6 @@ let self_cite = vec![crate::anastome::dialogue::CiteWire {
     addr: essential.clone(),
     standing: 0,
     transport: element::identity_versor(),
-    gauge: 0,
     body: body(&k.basis()[0]),
 }];
 assert!(k.try_refine(&essential, [5; 32], &self_cite).is_none(), "an essential word is refused");
@@ -231,7 +229,6 @@ let sentence = vec![crate::anastome::dialogue::CiteWire {
     addr: k.basis()[0].address(),
     standing: 0,
     transport: element::identity_versor(),
-    gauge: 0,
     body: body(&k.basis()[0]),
 }];
 assert!(k.try_refine(&addr, [5; 32], &sentence).is_none(), "provisional words are refused");

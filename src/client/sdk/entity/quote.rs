@@ -67,12 +67,11 @@ impl Entity {
                         // gauge reconstructs none is no cite, and a bid
                         // that cannot spell one of its cites is no bid.
                         let body =
-                            crate::transducer::sentence::cited_pattern(cited, c.gauge)?;
+                            crate::transducer::sentence::cited_pattern(cited, &c.assignment)?;
                         Some(dialogue::CiteWire {
                             addr: cited.address(),
                             standing: Standing::Ruled.as_u8(),
                             transport: c.transport,
-                            gauge: c.gauge as u32,
                             body,
                         })
                     })

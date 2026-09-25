@@ -220,10 +220,15 @@ where
     let mut asgs = agreeing.scoped();
     if let Some((_, &asg)) = asgs.next() {
         if asgs.next().is_none() {
+            // The cite carries the ASSIGNMENT the agreeing gauge names, read
+            // here once off the word it names; nothing downstream indexes.
+            let Some(assignment) = word.assignments().get(asg).cloned() else {
+                return unlocated(m);
+            };
             let cite = Cite {
                 word: crate::transducer::address::Address::new(addr.clone()),
                 transport: v.clone(),
-                gauge: asg,
+                assignment,
             };
             if replay_at(word_at, std::slice::from_ref(&cite), piece).is_empty() {
                 return Located { cite: Some(cite), puncture: None, held: None, multiplicity: m };

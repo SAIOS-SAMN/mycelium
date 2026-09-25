@@ -182,7 +182,6 @@ match entity.quote() {
                         addr: cited.clone(),
                         standing: st.as_u8(),
                         transport: mycelium::transducer::element::identity_versor(),
-                        gauge: 0,
                         body: links.clone(),
                     };
                     let mag = measure_lanes(links);

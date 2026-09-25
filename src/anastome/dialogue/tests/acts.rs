@@ -51,7 +51,6 @@ fn the_five_acts_round_trip() {
         addr: listing.clone(),
         standing: 0,
         transport: crate::transducer::element::translator_versor(1, -1),
-        gauge: 1,
         body: chain.clone(),
     }];
     let ask = encode_quote_request(&voice).expect("the ask fits its lengths");

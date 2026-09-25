@@ -289,9 +289,11 @@ pub struct CiteWire {
     pub standing: u8,
     /// The transport carrying the word's chain into the utterance's frame.
     pub transport: crate::transducer::element::Versor,
-    /// The gauge coordinate. `u32::MAX` is the SECTION marker: this cite is
-    /// a puncture, not an assignment index.
-    pub gauge: u32,
+    // THE GAUGE IS NOT ON THE WIRE. It was a `u32` index into the word's
+    // assignments beside a body that already carries the assignment (law
+    // 12), with `u32::MAX` a sentinel for "a section" — the speaker's claim,
+    // which the hypha verifies anyway by asking the word (rule 11). The
+    // body says the assignment; the hypha reads whether it is a section.
     /// The word's links as the speaker says them, under the body's own
     /// transitions.
     pub body: Vec<Link>,

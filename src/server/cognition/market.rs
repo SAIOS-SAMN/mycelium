@@ -109,7 +109,9 @@ impl Kernel {
             resolved.push(Cite {
                 word: c.addr.clone(),
                 transport: c.transport.clone(),
-                gauge: c.gauge as usize,
+                // The assignment the body carries, read off it: the body
+                // is the one carrier of that fact (law 12).
+                assignment: crate::transducer::sentence::body_assignment(&c.body),
             });
         }
         if resolved.is_empty() {

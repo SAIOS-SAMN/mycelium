@@ -504,8 +504,8 @@ fn seams_and_holonomy_are_located_exactly() {
     let target = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     let id = element::identity_versor();
     let cites: Vec<Cite> = vec![
-        Cite { word: words[0].address(), transport: id.clone(), gauge: 0 },
-        Cite { word: words[1].address(), transport: id.clone(), gauge: 0 },
+        Cite { word: words[0].address(), transport: id.clone(), assignment: element::assignment(words[0].sub()) },
+        Cite { word: words[1].address(), transport: id.clone(), assignment: element::assignment(words[1].sub()) },
     ];
     assert!(replay_at(&word_at, &cites[..1], &target).is_empty());
     assert_eq!(seam_defect_at(&word_at, &cites, &target), target, "both links spoken twice, differently");

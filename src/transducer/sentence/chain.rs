@@ -18,11 +18,11 @@ fn index_key(i: usize) -> [u8; 32] {
 /// section (16.5).
 pub type Link = (i64, i64, u8, u8);
 
-/// A CITATION: the coordinates a sentence speaks for one word — its index
-/// in the language, the transport carrying the word's chain into the
-/// utterance's frame, and the gauge coordinate (which assignment along the
-/// punctured axis). A proof is a sequence of citations; a replay applies
-/// them and measures what remains.
+/// A CITATION: the coordinates a sentence speaks for one word — its
+/// address, the transport carrying the word's chain into the utterance's
+/// frame, and the assignment along the punctured axis the body carries. A
+/// proof is a sequence of citations; a replay applies them and measures
+/// what remains.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Cite {
     /// WHICH WORD IS CITED, BY ITS OWN COORDINATE (law 2). It was `usize` —
@@ -36,9 +36,13 @@ pub struct Cite {
     pub word: crate::transducer::address::Address,
     /// The transport carrying that word's chain into the utterance's frame.
     pub transport: Versor,
-    /// The gauge coordinate: which assignment along the punctured axis. Read
-    /// off the target, never trusted as an index into a copy of the word.
-    pub gauge: usize,
+    /// THE ASSIGNMENT ITSELF along the punctured axis — the hue pairs the
+    /// cited body carries, the algebra's domain. It was `gauge: usize`, an
+    /// index into the word's assignment list, carried on the wire beside a
+    /// body that already says it (law 12), with `u32::MAX` a sentinel for
+    /// "a section". The word is asked whether it holds this assignment
+    /// ([`cited_pattern`]), never indexed.
+    pub assignment: Vec<(u8, u8)>,
 }
 
 /// A PUNCTURE: a body a held word carries by SHAPE under a gauge the word
@@ -107,7 +111,7 @@ impl Sentence {
         let mut ops: Vec<(Versor, Vec<Link>)> = self
             .cites
             .iter()
-            .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
+            .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
             .collect();
         ops.extend(self.held.iter().map(|h| (element::identity_versor(), h.body.clone())));
         ops
@@ -144,18 +148,10 @@ pub fn puncture_from(
         if element::positions(&carried) != pos {
             continue; // not this word's support: a citation, not a puncture
         }
-        let asg = element::assignment(&carried);
-        // Keyed membership on the gauge axis: only the assignments with
-        // this charge are compared, never the whole list.
-        let same_charge = word.assignments_by_profile(&element::gauge_key(&asg));
-        let held = word.assignments();
-        let mut held_asg: Keyed<()> = Keyed::new();
-        for &k in &same_charge {
-            if let Some(a) = held.get(k) {
-                held_asg.insert(element::assignment_key(a), ());
-            }
-        }
-        if held_asg.contains(&element::assignment_key(&asg)) {
+        let asg = body_assignment(body);
+        // An assignment the word already holds is a citation, not a
+        // puncture: the one reading, [`holds_assignment`].
+        if holds_assignment(word, &asg) {
             continue;
         }
         // Through `Held::update`: the fibre deepens and the form is
@@ -261,19 +257,37 @@ pub fn same_profile(a: &[((u8, u8), u32)], b: &[((u8, u8), u32)]) -> bool {
     a == b
 }
 
-/// The chain a citation names in the word's own frame: the word's
-/// assignment along its axis over its support.
-pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
+/// THE ASSIGNMENT A CITED BODY CARRIES, read off it in its support's
+/// order — the order a word's canonical chain stands in, so it compares
+/// with the word's own assignments.
+pub fn body_assignment(body: &[Link]) -> Vec<(u8, u8)> {
+    let mut carried = body.to_vec();
+    carried.sort_unstable();
+    element::assignment(&carried)
+}
+
+/// DOES THE WORD HOLD THIS ASSIGNMENT — the one reading of it. The charge's
+/// keyed read (`assignments_by_profile`), then exact equality among the
+/// assignments of that charge; never the whole axis, never an index.
+pub fn holds_assignment(word: &Element, asg: &[(u8, u8)]) -> bool {
+    let held = word.assignments();
+    word.assignments_by_profile(&element::gauge_key(asg))
+        .iter()
+        .any(|&i| held.get(i).is_some_and(|a| a.as_slice() == asg))
+}
+
+/// The chain a citation names in the word's own frame: the word's support
+/// under the assignment the cite names. `None` where the word does not hold
+/// that assignment (rule 11): the word is ASKED — the charge's keyed read,
+/// then exact equality among the assignments of that charge — never
+/// indexed, so no position along the axis stands for an assignment.
+pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
+    holds_assignment(word, asg).then_some(())?;
     let pos = element::positions(word.sub());
-    // The citation NAMES the assignment by its index along the word's axis
-    // — a coordinate the cite carries on the wire, not a member taken
-    // because it came first (rule 15).
-    #[expect(
-        clippy::disallowed_methods,
-        reason = "rule 15 — wire tag offset: the gauge index is the cite's own coordinate along the word's axis"
-    )]
-    let assignment = word.assignments().into_iter().nth(asg)?;
-    let mut pat: Vec<Link> = pos.iter().zip(&assignment).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
+    // One transition per site: an assignment of another length is not this
+    // word's, whatever its charge.
+    (pos.len() == asg.len()).then_some(())?;
+    let mut pat: Vec<Link> = pos.iter().zip(asg).map(|((r, c), (b, a))| (*r, *c, *b, *a)).collect();
     pat.sort_unstable();
     Some(pat)
 }
@@ -291,7 +305,7 @@ pub fn cited_pattern(word: &Element, asg: usize) -> Option<Vec<Link>> {
 pub fn replay_at<'a>(word_at: &impl Fn(&[u8]) -> Option<&'a Element>, cites: &[Cite], target: &[Link]) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
-        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
         .collect();
     replay_operators(&ops, target)
 }
@@ -408,7 +422,7 @@ pub fn seam_defect_at<'a>(
 ) -> Vec<Link> {
     let ops: Vec<(Versor, Vec<Link>)> = cites
         .iter()
-        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, c.gauge)?)))
+        .filter_map(|c| Some((c.transport.clone(), cited_pattern(word_at(c.word.as_bytes())?, &c.assignment)?)))
         .collect();
     seam_defect_operators(&ops, target)
 }

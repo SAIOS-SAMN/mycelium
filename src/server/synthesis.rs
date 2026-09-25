@@ -84,8 +84,16 @@ pub fn probe(
             cites.iter().map(|c| c.body.len()).sum::<usize>(),
         );
     }
-    let section = cites.iter().any(|c| c.gauge == u32::MAX);
     let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
+    // A SECTION is the hypha's reading, never the speaker's flag: a cite
+    // whose body carries an assignment the cited word does not hold. The
+    // wire's `u32::MAX` sentinel said so on the speaker's word and is gone
+    // with the gauge field (law 12, rule 11).
+    let section = cites.iter().any(|c| {
+        g.basis.get(&c.addr).is_some_and(|w| {
+            !crate::transducer::sentence::holds_assignment(w, &crate::transducer::sentence::body_assignment(&c.body))
+        })
+    });
     // The court replays the settlement on the chains it is handed, so the
     // measure spoken here is the chain's own, not the listing's fibre.
     let before = crate::transducer::element::measure_lanes(listing.sub());
