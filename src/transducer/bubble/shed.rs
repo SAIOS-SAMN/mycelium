@@ -154,8 +154,8 @@ impl Contemplation {
         let touched = self.touched_by(&doomed);
         for k in &doomed {
             if let Some(b) = self.bubbles.remove(k) {
-                for (acc, e) in returned.iter_mut().zip(&b.escrow) {
-                    *acc = acc.saturating_add(*e);
+                if !crate::core::lanes::lanes_step(&mut returned, &b.escrow) {
+                    self.overflowed += 1;
                 }
                 self.retract_incidence(k, &b);
                 self.dirty.remove(k);

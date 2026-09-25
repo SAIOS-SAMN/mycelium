@@ -47,7 +47,7 @@ fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
     assert_eq!(b.axes(), vec![FIBER_SPATIAL], "the turn occupies S");
     assert!(!b.is_identity(), "a quarter turn is not the identity word");
 
-    let c = a.compose(&b);
+    let c = a.compose(&b).expect("the composite forms");
     let r = c.carried_rotor().expect("the composite carries its rotor");
     assert!(
         r.projective_eq(&q01.rotor().geo(&q13.rotor())),

@@ -204,8 +204,8 @@ impl Contemplation {
         for e in &s.edges {
             match self.flux.get_mut(e) {
                 Some(phi) => {
-                    for (p, m) in phi.iter_mut().zip(&mu) {
-                        *p = p.saturating_add(*m);
+                    if !crate::core::lanes::lanes_step(phi, &mu) {
+                        self.overflowed += 1;
                     }
                 }
                 None => {
@@ -325,8 +325,8 @@ impl Contemplation {
             let Some(escrow) = self.bubbles.get(k).map(|b| b.escrow) else { continue };
             let i = self.under_flux(k, &held).index();
             self.flux_tally.extent_n[i] += 1;
-            for (acc, e) in self.flux_tally.extent[i].iter_mut().zip(&escrow) {
-                *acc = acc.saturating_add(*e);
+            if !crate::core::lanes::lanes_step(&mut self.flux_tally.extent[i], &escrow) {
+                self.overflowed += 1;
             }
         }
     }

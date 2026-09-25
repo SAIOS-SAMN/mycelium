@@ -90,9 +90,9 @@ fn transports_read_from_three_germs_of_one_object_always_glue() {
     let t_bc = transition(&g_b, &g_c).expect("invertible");
     let t_ca = transition(&g_c, &g_a).expect("invertible");
     assert!(
-        glues(&t_ab, &t_bc, &t_ca),
+        glues(&t_ab, &t_bc, &t_ca) == Some(true),
         "a triangle of transitions read from three germs is a coboundary: {:?}",
-        crate::transducer::cech::rotor_of(&holonomy(&t_ab, &t_bc, &t_ca))
+        holonomy(&t_ab, &t_bc, &t_ca).as_ref().and_then(crate::transducer::cech::rotor_of)
     );
 }
 
@@ -109,8 +109,8 @@ fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
         transport(&quarter(1)),
         transport(&quarter_inv(2)),
     );
-    let h = holonomy(&t_ab, &t_bc, &t_ca);
-    assert!(glues(&t_ab, &t_bc, &t_ca), "q · q · q⁻² closes");
+    let h = holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms");
+    assert_eq!(glues(&t_ab, &t_bc, &t_ca), Some(true), "q · q · q⁻² closes");
     let r = relator_of(&h).rotor();
     assert!(r.is_identity(), "and the relator it leaves is the identity: {r:?}");
     assert_eq!(r.order(), Some(Order::Finite(1)), "order 1 is no relation at all");
@@ -143,8 +143,8 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
         transport(&quarter(1)),
         transport(&Word::identity()),
     );
-    assert!(!glues(&t_ab, &t_bc, &t_ca), "q · q · 1 does not close");
-    let h = holonomy(&t_ab, &t_bc, &t_ca);
+    assert_eq!(glues(&t_ab, &t_bc, &t_ca), Some(false), "q · q · 1 does not close");
+    let h = holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms");
     let r = relator_of(&h).rotor();
     assert!(!r.is_identity(), "the relator is the half turn, not the identity");
     assert_eq!(
@@ -162,7 +162,7 @@ fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
     // never introduced.
     let class = r.class_key().expect("the relator has a conjugacy class");
     for k in three_courts() {
-        let mine = relator_of(&holonomy(&t_ab, &t_bc, &t_ca))
+        let mine = relator_of(&holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms"))
             .rotor()
             .class_key()
             .expect("each court reads the same triangle");
@@ -195,7 +195,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         transport(&quarter(1)),
         transport(&Word::identity()),
     );
-    let relator = relator_of(&holonomy(&t_ab, &t_bc, &t_ca)).rotor();
+    let relator = relator_of(&holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms")).rotor();
     let class = relator.class_key().expect("its class");
 
     // THE FORM THAT CARRIES THE ORBIT: two chart vertices and a chord whose

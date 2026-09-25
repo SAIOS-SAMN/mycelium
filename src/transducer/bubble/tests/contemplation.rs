@@ -264,7 +264,7 @@ fn hold_form_keeps_a_glued_open_orbit() {
         form.certificates.len(),
         form.torsion.len()
     );
-    let mag = crate::transducer::bubble::idea::form_mag(form);
+    let mag = crate::transducer::bubble::idea::form_mag(form).expect("the form's measure reads");
     if mag.iter().any(|&x| x > 0) && form.is_cauterized() {
         let e = sentence::as_element_form(form, mag).expect("spoken tape");
         assert!(

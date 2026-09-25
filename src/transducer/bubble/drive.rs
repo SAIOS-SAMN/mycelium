@@ -88,8 +88,9 @@ impl Contemplation {
             if let Some(b) = self.bubbles.get_mut(&k) {
                 let mut x = b.expand_with(atlas, section_at, self.now_k, crystal, budget, &mut self.pivots);
                 spent += x.spent;
-                for (lane, add) in pivoted.iter_mut().zip(x.pivoted) {
-                    *lane = lane.saturating_add(add);
+                self.overflowed += x.overflowed;
+                if !crate::core::lanes::lanes_step(&mut pivoted, &x.pivoted) {
+                    self.overflowed += 1;
                 }
                 adjoined.append(&mut x.adjoined);
                 if !b.dirty {

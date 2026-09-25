@@ -345,6 +345,12 @@ impl Element {
             };
             torsion.push(TorsionCycle { sigma, period: l, fibre, remainder });
         }
+        // STD1 — a holonomic lane with no room for the sections and cycles
+        // the record carries is refused where it arrives (LD0): the word
+        // this build would hold reads its magnitude total or not at all.
+        if !super::carrier::holonomic_fits(mag[3], sections.len(), torsion.len()) {
+            return None;
+        }
         let anchor = match b.get(*pos) {
             Some(1) => {
                 *pos += 1;

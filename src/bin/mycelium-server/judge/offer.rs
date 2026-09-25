@@ -241,7 +241,7 @@ mod tests {
     /// refuses it by name, every time it is asked.
     fn false_word() -> mycelium::transducer::element::Element {
         let mut w = word();
-        w.set_magnitude([9, 9, 9, 9]);
+        assert!(w.set_magnitude([9, 9, 9, 9]), "a residual holds no section, so any lane fits");
         w
     }
 

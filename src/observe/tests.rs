@@ -523,6 +523,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 unplaced: 118,
                 refilled: 119,
                 refused: 120,
+                past_carrier: 159,
                 unsited: 123,
                 unrecorded: 121,
                 unpriced: 0,
@@ -550,6 +551,8 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 refill_unsited: 142,
                 refill_unfilled: 143,
             },
+            // STD1 — the sums the contemplation refused.
+            overflowed: 158,
         }),
         // PR1 — the voice's probes, a residual class counted twice.
         probes: crate::observe::ProbeTally {

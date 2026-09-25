@@ -163,6 +163,26 @@ pub enum Filed {
     Standing,
     Refused,
     NoPeriod,
+    /// STD1 — a new cycle the holonomic lane has no room for
+    /// ([`holonomic_fits`]).
+    PastCarrier,
+}
+
+/// STD1 (rule 11) — THE HOLONOMIC LANE'S INVARIANT: a word's `mag[3]` plus
+/// its free sections plus its torsion cycles stays inside `u64`, so
+/// `Element::magnitude` reads total.
+///
+/// Held by every writer of the three: `set_magnitude`, `from_connection`
+/// and the record decode refuse a lane that would break it; `puncture` —
+/// and `attach` and `merge_fibre`, which join through it — and
+/// `record_cycle` refuse a section or a cycle past it; `torse` only
+/// condenses sections into one cycle. A word built fresh holds no section
+/// and no cycle, so the lane it is given always fits.
+pub(crate) fn holonomic_fits(mag3: u64, sections: usize, torsion: usize) -> bool {
+    match (u64::try_from(sections), u64::try_from(torsion)) {
+        (Ok(s), Ok(t)) => s.checked_add(t).and_then(|n| mag3.checked_add(n)).is_some(),
+        _ => false,
+    }
 }
 
 /// ONE TRANSITION of the connection: how a sibling section was seen.
@@ -452,9 +472,25 @@ impl Element {
     }
 
     /// Set the per-lane support this word carries (an opened axis carries
-    /// the listing's measure and the charts it joined).
-    pub fn set_magnitude(&mut self, mag: [u64; 4]) {
+    /// the listing's measure and the charts it joined). Refused — the word
+    /// unchanged, `false` — where the holonomic lane would break
+    /// [`holonomic_fits`] with the sections and cycles it holds (STD1).
+    #[must_use]
+    pub fn set_magnitude(&mut self, mag: [u64; 4]) -> bool {
+        if !holonomic_fits(mag[3], self.sections.len(), self.torsion.len()) {
+            return false;
+        }
         self.mag = mag;
+        true
+    }
+
+    /// Room for `sections` more free sections and `torsion` more cycles
+    /// under [`holonomic_fits`].
+    fn has_room(&self, sections: usize, torsion: usize) -> bool {
+        match (self.sections.len().checked_add(sections), self.torsion.len().checked_add(torsion)) {
+            (Some(s), Some(t)) => holonomic_fits(self.mag[3], s, t),
+            _ => false,
+        }
     }
 
     pub fn is_identity(&self) -> bool {
@@ -560,12 +596,15 @@ impl Element {
     /// `(σ, fibre)`: a cycle filed without a remainder GAINS the arriving
     /// one; one filed with a different remainder refuses it, and the caller
     /// counts the refusal. A period of zero is no cycle and is refused by
-    /// name (A17).
+    /// name (A17). A new cycle past [`holonomic_fits`] is refused by name
+    /// (STD1).
     pub fn record_cycle(&mut self, cycle: TorsionCycle) -> Filed {
         if cycle.period == 0 {
             return Filed::NoPeriod;
         }
+        let room = self.has_room(0, 1);
         match self.torsion.iter_mut().find(|t| t.sigma == cycle.sigma && t.fibre == cycle.fibre) {
+            None if !room => Filed::PastCarrier,
             None => {
                 self.torsion.push(cycle);
                 self.profiles.take();
@@ -700,8 +739,12 @@ impl Element {
     /// fresh transition assignment over the same base positions. The Z through
     /// the paper: the thought gains VOLUME; the family member becomes a section,
     /// not a card. Returns false if the assignment is already spoken (or does
-    /// not fit the base geometry).
+    /// not fit the base geometry), or if one more section would break
+    /// [`holonomic_fits`] (STD1).
     pub fn puncture(&mut self, asg: Vec<(u8, u8)>) -> bool {
+        if !self.has_room(1, 0) {
+            return false;
+        }
         if asg.len() != self.sub.len()
             || asg == assignment(&self.sub)
             || self.sections.contains(&asg)
@@ -719,8 +762,12 @@ impl Element {
     /// transported assignment becomes a section (or is recognised as one the
     /// fibre already speaks), and (assignment, g) joins the connection.
     /// Returns the sections the fibre gained (0 or 1); a g that does not
-    /// carry the sibling onto this base changes nothing.
+    /// carry the sibling onto this base changes nothing, and neither does a
+    /// join with no room for its section under [`holonomic_fits`] (STD1).
     pub fn attach(&mut self, sibling: &Element, g: &Versor) -> usize {
+        if !self.has_room(1, 0) {
+            return 0;
+        }
         let Some(asg) = pullback(&positions(&self.sub), &sibling.sub, g) else { return 0 };
         let gained = self.puncture(asg.clone()) as usize;
         if !self.transitions.iter().any(|t| t.asg == asg && same_versor(&t.gauge, g)) {
@@ -731,8 +778,14 @@ impl Element {
 
     /// Merge another placement's fibre into this bundle (adoption of a word
     /// already held at this address): its sections puncture here and its
-    /// connection joins. Returns the count of sections newly spoken.
+    /// connection joins. Returns the count of sections newly spoken. The
+    /// join is refused whole — nothing punctures, no transition joins —
+    /// where the other's sections, every one of them new, would break
+    /// [`holonomic_fits`] (STD1).
     pub fn merge_fibre(&mut self, other: &Element) -> usize {
+        if !self.has_room(other.sections.len(), 0) {
+            return 0;
+        }
         let mut added = 0usize;
         for s in &other.sections {
             if self.puncture(s.clone()) {
@@ -825,6 +878,7 @@ impl Element {
     /// Spatial, gauge, and shell from the chain (and what a connection
     /// carries). Lane 2 is temporal extent at mint (scene-state span).
     /// Lane 3 gains the holonomic volume — sections and torsion cycles.
+    /// Total under [`holonomic_fits`], which every writer holds.
     pub fn magnitude(&self) -> [u64; 4] {
         let mut m = self.mag;
         m[3] = m[3].saturating_add((self.sections.len() + self.torsion.len()) as u64);

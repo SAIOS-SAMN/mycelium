@@ -396,8 +396,8 @@ impl Contemplation {
                 self.truncation.truncated += 1;
                 match self.bubbles.remove(v) {
                     Some(b) => {
-                        for (acc, e) in self.truncated_escrow.iter_mut().zip(&b.escrow) {
-                            *acc = acc.saturating_add(*e);
+                        if !crate::core::lanes::lanes_step(&mut self.truncated_escrow, &b.escrow) {
+                            self.overflowed += 1;
                         }
                         self.retract_incidence(v, &b);
                         self.dirty.remove(v);

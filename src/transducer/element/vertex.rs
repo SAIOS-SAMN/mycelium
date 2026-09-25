@@ -235,7 +235,10 @@ impl Element {
     /// construction — its rotations are its orbit holonomies, plural — so a
     /// transition between two sentences still answers no single rotor, and
     /// that is the court's path-holonomy question, not this one.
-    pub fn compose(&self, other: &Element) -> Element {
+    ///
+    /// COMPOSITION FORMS THE TEMPORAL AND SHELL COUNTS, so it is where they
+    /// are refused: `None` where either sum would pass its carrier (STD1).
+    pub fn compose(&self, other: &Element) -> Option<Element> {
         let mut out = Element::identity();
         out.action.spatial = match (self.versor(), other.versor()) {
             (Some(a), Some(b)) => Some(a.geo(&b)),
@@ -244,8 +247,8 @@ impl Element {
             (None, None) => None,
         };
         out.action.gauge = compose_perm(&self.action.gauge, &other.action.gauge);
-        out.action.temporal = self.action.temporal.saturating_add(other.action.temporal);
-        out.action.shell = self.action.shell.saturating_add(other.action.shell);
+        out.action.temporal = self.action.temporal.checked_add(other.action.temporal)?;
+        out.action.shell = self.action.shell.checked_add(other.action.shell)?;
         let mut germ = self.action.germinated.clone();
         for (j, w) in &other.action.germinated {
             match germ.iter_mut().find(|(i, _)| i == j) {
@@ -277,7 +280,7 @@ impl Element {
                 }
             }
         }
-        out
+        Some(out)
     }
 
     /// THE REVERSE — the element read the other way (78.32(1)): the free

@@ -95,7 +95,7 @@ fn axes_are_independent_and_extensible() {
     let mut spatial = elem_from_versor(translator_versor(1, 0));
     let mut germ = Element::identity();
     germ.open_axis(translator_versor(0, 1));
-    let both = spatial.compose(&germ);
+    let both = spatial.compose(&germ).expect("the composite forms");
     assert_eq!(both.axes(), vec![FIBER_SPATIAL, FIBER_GERMINATED], "both axes present");
     assert!(same_versor(
         &both.versor().expect("S"),

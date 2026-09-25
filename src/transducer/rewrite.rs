@@ -351,9 +351,10 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
         }
         RewriteKind::AxisOpen => {
             mu[LANE_SHELL] = 1;
-            let cv = after.magnitude();
-            for l in 0..4 {
-                mu[l] = mu[l].saturating_add(cv[l]);
+            // Past its carrier, the zero vector — refused as Retire's is.
+            match crate::core::lanes::lanes_add(mu, after.magnitude()) {
+                Some(v) => mu = v,
+                None => return [0; 4],
             }
         }
         RewriteKind::Translation => {
@@ -367,12 +368,9 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
             // `replay` both refuse -- a compression too large to measure is
             // not paid, it is refused (rule 11).
             for e in before {
-                let m = e.magnitude();
-                for l in 0..4 {
-                    match mu[l].checked_add(m[l]) {
-                        Some(v) => mu[l] = v,
-                        None => return [0; 4],
-                    }
+                match crate::core::lanes::lanes_add(mu, e.magnitude()) {
+                    Some(v) => mu = v,
+                    None => return [0; 4],
                 }
             }
         }

@@ -137,6 +137,8 @@ pub struct MeetGraph {
     /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, their classes
     /// and those standing across charts, the re-fills.
     pub remainders: crate::transducer::cech::RemainderReading,
+    /// STD1 — lane sums the contemplation refused past their carrier.
+    pub overflowed: u64,
 }
 
 impl MeetGraph {
@@ -223,7 +225,7 @@ impl MeetGraph {
             opt(f.dialect.1),
             opt(f.dialect.2)
         );
-        let core = format!("{core} | {flux} | {}", self.remainders.line());
+        let core = format!("{core} | {flux} | {} | overflowed {}", self.remainders.line(), self.overflowed);
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
             self.thoughts,
@@ -278,6 +280,7 @@ impl Contemplation {
         let r = &self.remainders;
         crate::transducer::cech::RemainderReading {
             refused: r.refused,
+            past_carrier: r.past_carrier,
             unsited: r.unsited,
             unrecorded: r.unrecorded,
             unminted: r.unminted,
@@ -319,6 +322,7 @@ impl Contemplation {
             truncation: self.truncation,
             flux: self.flux_tally,
             remainders: self.remainder_reading(),
+            overflowed: self.overflowed,
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

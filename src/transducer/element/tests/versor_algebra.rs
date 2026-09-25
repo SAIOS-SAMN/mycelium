@@ -42,13 +42,14 @@ fn compose_is_the_geometric_product() {
     let a = elem_from_versor(translator_versor(1, 0));
     let b = elem_from_versor(translator_versor(0, 2));
     let c = elem_from_versor(translator_versor(3, 0));
-    let lhs = a.compose(&b).compose(&c);
-    let rhs = a.compose(&b.compose(&c));
+    let ab = a.compose(&b).expect("a ∘ b forms");
+    let lhs = ab.compose(&c).expect("(a ∘ b) ∘ c forms");
+    let rhs = a.compose(&b.compose(&c).expect("b ∘ c forms")).expect("a ∘ (b ∘ c) forms");
     assert!(
         same_versor(&lhs.versor().expect("lhs"), &rhs.versor().expect("rhs")),
         "compose is the geometric product, associative"
     );
-    let ab = a.compose(&b).versor().expect("ab");
+    let ab = ab.versor().expect("ab");
     let want = translator_versor(1, 0).geo(&translator_versor(0, 2));
     assert!(same_versor(&ab, &want));
 }
@@ -57,8 +58,8 @@ fn compose_is_the_geometric_product() {
 fn description_composed_with_its_reverse_is_identity() {
     let g = elem_from_versor(translator_versor(3, -2));
     let rev = g.reverse().expect("a versor description reads backward");
-    assert!(g.compose(&rev).is_identity(), "g ∘ g̃ = e — the coboundary closes");
-    assert!(rev.compose(&g).is_identity(), "g̃ ∘ g = e");
+    assert!(g.compose(&rev).expect("forms").is_identity(), "g ∘ g̃ = e — the coboundary closes");
+    assert!(rev.compose(&g).expect("forms").is_identity(), "g̃ ∘ g = e");
 }
 
 #[test]

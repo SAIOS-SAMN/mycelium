@@ -420,8 +420,10 @@ impl Kernel {
             self.remainders_unminted += 1;
             return None;
         };
-        if rw.record_cycle(cycle) == element::Filed::Refused {
-            self.remainders_refused += 1;
+        match rw.record_cycle(cycle) {
+            element::Filed::Refused => self.remainders_refused += 1,
+            element::Filed::PastCarrier => self.remainders_past_carrier += 1,
+            _ => {}
         }
         let addr = rw.address();
         let me = self.identity;

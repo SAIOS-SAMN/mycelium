@@ -158,7 +158,7 @@ fn perceive_speech_refuses_with_a_reason() {
         &mycelium::transducer::element::canonical_chain(&[(0, 0, 1u8, 2)])
             .expect("one cell is A5's chain"),
     );
-    bad.set_magnitude([99, 99, 99, 99]);
+    assert!(bad.set_magnitude([99, 99, 99, 99]), "a fresh word holds any lane");
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&bad));
     assert_eq!(
         codes,

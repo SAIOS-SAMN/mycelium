@@ -233,6 +233,36 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     );
 }
 
+/// STD1 — THE HOLONOMIC LANE AT ITS CARRIER. A record whose `𝒽` lane stands
+/// at `u64::MAX` beside a section is refused where it arrives, never read
+/// wrapped or pinned; and every writer refuses the step that would break
+/// `holonomic_fits` — the magnitude set, the section punctured, the cycle
+/// filed — leaving the word as it was.
+#[test]
+fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
+    let a = [(0, 0, 1u8), (0, 1, 2), (0, 2, 3)];
+    let b = [(0, 0, 2u8), (0, 1, 3), (0, 2, 1)];
+    let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
+    assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]), "a section is spoken");
+    let mut pos = 0;
+    assert!(Element::from_bytes(&t.to_bytes(), &mut pos).is_some(), "the word as spoken decodes");
+    let mut past = t.clone();
+    past.mag[3] = u64::MAX;
+    let mut pos = 0;
+    assert!(Element::from_bytes(&past.to_bytes(), &mut pos).is_none(), "a lane with no room for its section is refused");
+
+    let before = t.magnitude();
+    assert!(!t.set_magnitude([0, 0, 0, u64::MAX]), "a magnitude with no room for the section is refused");
+    assert_eq!(t.magnitude(), before, "and the word is as it was");
+    let mut full = from_canonical(&germinate(&a, &b).expect("a germ"));
+    assert!(full.set_magnitude([0, 0, 0, u64::MAX]), "a fresh word holds any lane");
+    assert!(!full.puncture(vec![(2, 3), (3, 1), (1, 2)]), "a section past the carrier is refused");
+    assert!(full.sections().is_empty());
+    let cycle = TorsionCycle { sigma: vec![(1, 2), (2, 3), (3, 1)], period: 3, fibre: FIBER_SPATIAL, remainder: None };
+    assert_eq!(full.record_cycle(cycle), Filed::PastCarrier, "a cycle past the carrier is refused by name");
+    assert!(full.torsion().is_empty());
+}
+
 #[test]
 fn rotated_connection_survives_the_tape() {
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");

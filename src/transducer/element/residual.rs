@@ -263,7 +263,9 @@ pub fn from_canonical_framed(chain: &CanonicalChain, frame: &crate::arc::Frame) 
 /// The word was called `linear`. It is not linear and there is nothing
 /// linear in the engine: it is the part of the transport that fixes the
 /// origin — the rotor — as against the carriage, which is the translation
-/// and the dilation that do not.
+/// and the dilation that do not. `None` too where the magnitude it carries
+/// would pass its carrier on any lane (STD1): a fresh word holds no section
+/// or cycle, so the lane that fits is the one that holds `holonomic_fits`.
 pub fn from_connection(
     rotor_word: &crate::transducer::alphabet::Word,
     carriage: &Versor,
@@ -278,9 +280,7 @@ pub fn from_connection(
     e.action.spatial = Some(v);
     e.action.gauge = sigma.to_vec();
     e.address.take();
-    for (g, c) in e.mag.iter_mut().zip(carried) {
-        *g = g.saturating_add(c);
-    }
+    e.mag = crate::core::lanes::lanes_add(e.mag, carried)?;
     Some(e)
 }
 

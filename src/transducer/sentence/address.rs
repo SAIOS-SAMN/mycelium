@@ -126,7 +126,11 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     // object itself. It is the SENTENCE tape that was redundant, because a
     // sentence's content is a cell complex its key writes out in full.
     let n = 0usize;
-    e.set_magnitude(mag);
+    // A fresh word holds no section or cycle, so any lane fits
+    // (`holonomic_fits`); the refusal travels all the same.
+    if !e.set_magnitude(mag) {
+        return None;
+    }
     // THE ADDRESS IS SET, NOT DERIVED (54.5, as ruled 2026-09-20).
     // `Element::address` derived it by parsing the tape — so a word could
     // not know its own name without one, which is the dependency that kept

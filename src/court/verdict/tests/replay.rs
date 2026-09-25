@@ -119,7 +119,7 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     // still said it. What closes the family is checked where the family is
     // (REFUSE_NOT_CLOSED); pricing is read afterwards, by the economy.
     let mut flat = as_element_form(&outer, [1, 0, 0, 0]).expect("tape");
-    flat.set_magnitude([0; 4]);
+    assert!(flat.set_magnitude([0; 4]), "a zero lane always fits");
     assert_eq!(
         blind_replay_with(&flat, &resolve),
         None,

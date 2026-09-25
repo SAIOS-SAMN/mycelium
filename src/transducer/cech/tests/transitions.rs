@@ -101,7 +101,7 @@ fn a_transition_and_its_reverse_cancel() {
     let (gx, gy) = (motion(3), motion(6));
     let f = transition(&gx, &gy).unwrap();
     let r = transition(&gy, &gx).unwrap();
-    assert!(f.compose(&r).is_identity(), "g_XY ∘ g_YX = 1 — asymmetric coboundary");
+    assert!(f.compose(&r).expect("the composite forms").is_identity(), "g_XY ∘ g_YX = 1 — asymmetric coboundary");
 }
 
 #[test]
@@ -109,7 +109,7 @@ fn consilient_charts_glue() {
     let g = motion(3);
     let id = transition(&g, &g).unwrap();
     assert!(id.is_identity());
-    assert!(glues(&id, &id, &id), "identical views → one sheaf");
+    assert_eq!(glues(&id, &id, &id), Some(true), "identical views → one sheaf");
 }
 
 #[test]
@@ -118,7 +118,7 @@ fn a_global_section_always_glues() {
     let g_ab = transition(&ga, &gb).unwrap();
     let g_bc = transition(&gb, &gc).unwrap();
     let g_ca = transition(&gc, &ga).unwrap();
-    assert!(glues(&g_ab, &g_bc, &g_ca), "a coboundary always satisfies δδ = 0");
+    assert_eq!(glues(&g_ab, &g_bc, &g_ca), Some(true), "a coboundary always satisfies δδ = 0");
 }
 
 #[test]
@@ -127,8 +127,11 @@ fn an_equivocation_shows_up_as_curvature() {
     let id = transition(&g, &g).unwrap();
     let disagree = transition(&motion(3), &motion(6)).unwrap();
     assert!(!disagree.is_identity(), "the disagreeing edge is nontrivial");
-    assert!(!glues(&id, &id, &disagree), "a lone dialect edge → curvature (δσ ≠ 0)");
-    assert!(!holonomy(&id, &id, &disagree).is_identity(), "the holonomy is the exact obstruction");
+    assert_eq!(glues(&id, &id, &disagree), Some(false), "a lone dialect edge → curvature (δσ ≠ 0)");
+    assert!(
+        !holonomy(&id, &id, &disagree).expect("the holonomy forms").is_identity(),
+        "the holonomy is the exact obstruction"
+    );
 }
 
 /// The link of one vertex is only the incident simplices; a tetra not on

@@ -40,8 +40,11 @@ pub struct RemainderReading {
     /// Congruent arm that mints no rewrite perceived it (the mind's
     /// `pivot_on`); nothing priced it; the mint refused it (a name past its
     /// wall); the book did not take the rewrite (the court); the merge named
-    /// no thought to be the rewrite's `after` (the mind).
+    /// no thought to be the rewrite's `after` (the mind). `past_carrier`: the
+    /// record had no room for the cycle under the holonomic lane's
+    /// invariant (STD1, `holonomic_fits`).
     pub refused: u64,
+    pub past_carrier: u64,
     pub unsited: u64,
     pub unrecorded: u64,
     pub unpriced: u64,
@@ -148,12 +151,13 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {} unfilled {}",
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} past carrier {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {} unfilled {}",
             self.classes,
             self.across,
             self.unplaced,
             self.refilled,
             self.refused,
+            self.past_carrier,
             self.unsited,
             self.unrecorded,
             self.unpriced,
@@ -194,6 +198,7 @@ impl RemainderReading {
             self.unplaced,
             self.refilled,
             self.refused,
+            self.past_carrier,
             self.unsited,
             self.unrecorded,
             self.unpriced,
@@ -250,6 +255,7 @@ impl RemainderReading {
             unplaced: u64_at(b, p)?,
             refilled: u64_at(b, p)?,
             refused: u64_at(b, p)?,
+            past_carrier: u64_at(b, p)?,
             unsited: u64_at(b, p)?,
             unrecorded: u64_at(b, p)?,
             unpriced: u64_at(b, p)?,

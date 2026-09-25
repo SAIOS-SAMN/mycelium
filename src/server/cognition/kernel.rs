@@ -296,6 +296,7 @@ pub struct Kernel {
     pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_refused: u64,
+    pub(crate) remainders_past_carrier: u64,
     pub(crate) remainders_unpriced: u64,
     pub(crate) remainders_unminted: u64,
     pub(crate) remainders_unoffered: u64,

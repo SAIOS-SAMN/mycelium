@@ -11,23 +11,26 @@ use super::*;
 /// the shared object: `g_XY = g_Y ∘ g_X⁻¹` (the change of view). Antisymmetric by
 /// construction — `g_YX = g_XY⁻¹`. `None` if X's germ is not invertible (a
 /// coboundary/residual chart has no group view-change; that overlap is handled by
-/// the additive coboundary, not this group transition).
+/// the additive coboundary, not this group transition), and `None` where the
+/// composite's counts would pass their carrier (STD1, `Element::compose`).
 pub fn transition(g_x: &Element, g_y: &Element) -> Option<Element> {
-    Some(g_y.compose(&g_x.reverse()?))
+    g_y.compose(&g_x.reverse()?)
 }
 
 /// The HOLONOMY around a triangle of charts — the composite transition
 /// `g_ab ∘ g_bc ∘ g_ca`. Identity ⇔ the charts GLUE (one sheaf); otherwise it is
-/// the exact obstruction (the equivocation) the charts must reconcile.
-pub fn holonomy(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> Element {
-    g_ab.compose(g_bc).compose(g_ca)
+/// the exact obstruction (the equivocation) the charts must reconcile. `None`
+/// where the composite's counts would pass their carrier (STD1).
+pub fn holonomy(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> Option<Element> {
+    g_ab.compose(g_bc)?.compose(g_ca)
 }
 
 /// Does a triangle of charts GLUE — the Čech cocycle `δg = 0`? True iff the
 /// holonomy around the overlap is trivial (the transitions are the coboundary of a
-/// consistent global assignment). False = CURVATURE (δσ ≠ 0), a dialect.
-pub fn glues(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> bool {
-    holonomy(g_ab, g_bc, g_ca).is_identity()
+/// consistent global assignment). False = CURVATURE (δσ ≠ 0), a dialect. `None`
+/// where the holonomy could not be formed: neither a gluing nor a curvature.
+pub fn glues(g_ab: &Element, g_bc: &Element, g_ca: &Element) -> Option<bool> {
+    holonomy(g_ab, g_bc, g_ca).map(|h| h.is_identity())
 }
 
 /// Realise a group transition as an alphabet rotor. None is a remainder:

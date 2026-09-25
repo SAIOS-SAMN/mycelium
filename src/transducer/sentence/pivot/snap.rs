@@ -60,20 +60,12 @@ pub enum Snap {
 
 impl Snap {
     /// Lane measure of an A16 snap. Discharged and Vortex read the
-    /// certificate μ⃗ (before − after); TorsionFiled has no bundle μ⃗.
-    pub fn lanes(&self) -> [u64; 4] {
+    /// certificate μ⃗ (before − after); TorsionFiled has no bundle μ⃗. `None`
+    /// where a vortex's sum would pass its carrier (STD1).
+    pub fn lanes(&self) -> Option<[u64; 4]> {
         match self {
-            Snap::Discharged { certificate, .. } => mu_deflation(&certificate.mu),
-            Snap::Vortex { held, .. } => {
-                let mut s = [0u64; 4];
-                for c in held {
-                    let m = mu_deflation(&c.mu);
-                    for (t, d) in s.iter_mut().zip(&m) {
-                        *t = t.saturating_add(*d);
-                    }
-                }
-                s
-            }
+            Snap::Discharged { certificate, .. } => Some(mu_deflation(&certificate.mu)),
+            Snap::Vortex { held, .. } => crate::core::lanes::lanes_sum(held.iter().map(|c| mu_deflation(&c.mu))),
             // `Adjoin` is here for the reason `Demand` is: it widens the
             // language and discharges nothing on this form, so it deflates
             // no lane and its μ⃗ is not a reading to be summed.
@@ -83,7 +75,7 @@ impl Snap {
             | Snap::TorsionOpen { .. }
             | Snap::Demand { .. }
             | Snap::Demanded { .. }
-            | Snap::Adjoin { .. } => [0; 4],
+            | Snap::Adjoin { .. } => Some([0; 4]),
         }
     }
 }

@@ -5,9 +5,14 @@
 //! - `lattice` — exact ℤ linear algebra: the rank A18 reads (16.18) and the
 //!   Hermite form with its transform, which is the factorisation A12 looks
 //!   for (16.12).
+//! - `lanes` — the one checked step of a four-lane measure (STD1, rule 11).
 
 pub mod gaussian;
+pub mod lanes;
 pub mod lattice;
 pub mod q;
+
+#[cfg(test)]
+mod tests;
 
 pub use q::Q;

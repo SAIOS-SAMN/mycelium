@@ -206,7 +206,7 @@ impl Entity {
         self.contemplation.horizon_len()
     }
 
-    pub fn thought_potential(&self) -> [u64; 4] {
+    pub fn thought_potential(&self) -> Option<[u64; 4]> {
         self.contemplation.potential()
     }
 
@@ -266,7 +266,9 @@ impl Entity {
         germ.open_axis(v);
         let mut mag = measure_lanes(chain);
         mag[3] = mag[3].saturating_add(bodies.len() as u64);
-        germ.set_magnitude(mag);
+        if !germ.set_magnitude(mag) {
+            return Err(AXIS_PAST_CARRIER);
+        }
         Ok(germ)
     }
 

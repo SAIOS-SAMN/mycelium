@@ -183,8 +183,12 @@ impl Contemplation {
                             match unsited {
                                 true => self.remainders.unsited += 1,
                                 false => {
-                                    if rw.record_cycle(cycle) == crate::transducer::element::Filed::Refused {
-                                        self.remainders.refused += 1;
+                                    match rw.record_cycle(cycle) {
+                                        crate::transducer::element::Filed::Refused => self.remainders.refused += 1,
+                                        crate::transducer::element::Filed::PastCarrier => {
+                                            self.remainders.past_carrier += 1
+                                        }
+                                        _ => {}
                                     }
                                 }
                             }
@@ -300,7 +304,12 @@ impl Contemplation {
         }
         let volume = match &form {
             Some(f) => form_mag(f),
-            None => element::measure_lanes(&remainder),
+            None => Some(element::measure_lanes(&remainder)),
+        };
+        // STD1 — a volume past its carrier names no bubble, counted.
+        let Some(volume) = volume else {
+            self.overflowed += 1;
+            return None;
         };
         // A union of two remainders can say two things at one site, and
         // such a remainder has no A5 chain. The merge yields no bubble

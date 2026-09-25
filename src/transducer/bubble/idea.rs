@@ -34,6 +34,9 @@ pub struct Expansion {
     pub demanded: Vec<Demand>,
     /// R1 — the class keys of the orbits its pivots discharged.
     pub discharged: Vec<crate::transducer::address::Address>,
+    /// STD1 — snaps whose measure would pass its carrier, left out of
+    /// `pivoted` and counted: the contemplation carries the count.
+    pub overflowed: u64,
 }
 
 /// KB1 — A SECTION'S COORDINATES, the vertex of an idea's nerve: the idea's
@@ -95,16 +98,14 @@ pub(crate) fn idea_key(f: &Form) -> crate::transducer::address::Address {
     sentence::form_vertex_key(f)
 }
 
-pub(crate) fn form_mag(f: &Form) -> [u64; 4] {
-    let mut m = element::measure_lanes(&f.remainder);
-    for v in &f.vertices {
-        if let Vertex::Glued { magnitude, .. } = v {
-            for i in 0..4 {
-                m[i] = m[i].saturating_add(magnitude[i]);
-            }
-        }
-    }
-    m
+/// The form's magnitude: its remainder's measure and what its glued vertices
+/// carry, per lane; `None` where the sum would pass its carrier (STD1).
+pub(crate) fn form_mag(f: &Form) -> Option<[u64; 4]> {
+    let glued = f.vertices.iter().filter_map(|v| match v {
+        Vertex::Glued { magnitude, .. } => Some(*magnitude),
+        _ => None,
+    });
+    crate::core::lanes::lanes_sum(std::iter::once(element::measure_lanes(&f.remainder)).chain(glued))
 }
 
 /// Every remainder link this bubble holds: the form's own and each pair's.
@@ -638,6 +639,7 @@ impl Bubble {
             }
         }
         let mut pivoted = [0u64; 4];
+        let mut overflowed = 0u64;
         if budget.remaining() > 0 {
             if let Some(mut form) = self.form.clone() {
                 let key = self.key();
@@ -654,9 +656,10 @@ impl Bubble {
                     pivots,
                 );
                 for s in &snaps {
-                    let m = s.lanes();
-                    for i in 0..4 {
-                        pivoted[i] = pivoted[i].saturating_add(m[i]);
+                    // STD1 — a snap whose measure, or the sum it would join,
+                    // passes its carrier is left out of `pivoted`, counted.
+                    if !s.lanes().is_some_and(|m| crate::core::lanes::lanes_step(&mut pivoted, &m)) {
+                        overflowed += 1;
                     }
                     match s {
                         // 37.7 from the orbit's own residue, joining the
@@ -694,7 +697,7 @@ impl Bubble {
         }
         self.dissolve_candidates();
         self.dirty = spent > 0 && budget.remaining() == 0;
-        Expansion { spent, pivoted, adjoined, demanded, discharged }
+        Expansion { spent, pivoted, adjoined, demanded, discharged, overflowed }
     }
 
     /// P10(c), §25.12 — A CANDIDATE DIES ON AN INFINITE MONODROMY, AND ONLY

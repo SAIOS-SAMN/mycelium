@@ -491,7 +491,7 @@ let honest = from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
 );
 let mut fat = honest.clone();
-fat.set_magnitude([999, 0, 0, 0]);
+assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("syllabus-refuse"));
 assert!(
     entity.absorb_taught(&fat.to_bytes()).is_none(),
@@ -516,7 +516,7 @@ let honest = from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap(),
 );
 let mut fat = honest.clone();
-fat.set_magnitude([999, 0, 0, 0]);
+assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("learned-measured"));
 assert!(entity.absorb_taught(&fat.to_bytes()).is_none(), "the fat word is refused");
 assert_eq!(entity.take_learned_mu(), [0; 4], "a refused page measures nothing");

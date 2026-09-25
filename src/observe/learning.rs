@@ -321,6 +321,8 @@ impl Learning {
         opt(out, f.dialect.2);
         // RM1 — the mind's remainders.
         g.remainders.put(out);
+        // STD1 — the sums the contemplation refused.
+        out.extend_from_slice(&g.overflowed.to_le_bytes());
         // PR1 — the voice's probes.
         self.probes.put(out);
     }
@@ -472,6 +474,7 @@ impl Learning {
             flux.dialect.2 = Some(u64_at(b, p)?);
         }
         let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
+        let overflowed = u64_at(b, p)?;
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
             thoughts,
@@ -490,6 +493,7 @@ impl Learning {
             truncation,
             flux,
             remainders,
+            overflowed,
         };
         let probes = ProbeTally::take(b, p)?;
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes })

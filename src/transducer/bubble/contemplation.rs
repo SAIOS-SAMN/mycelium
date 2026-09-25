@@ -208,6 +208,10 @@ pub struct Contemplation {
     /// RM1 (c) — the classes whose docketed Demand a discharge answered, for
     /// the entity's re-fill at the close (volatile).
     pub(crate) demands_answered: Vec<crate::transducer::sentence::ClassVector>,
+    /// STD1 (rule 11) — lane sums the contemplation REFUSED because they
+    /// would pass their carrier (an escrow returned, a flux credited, an
+    /// extent read): the sum stands where it was, never pinned at a ceiling.
+    pub(crate) overflowed: u64,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the
@@ -982,7 +986,7 @@ impl Contemplation {
         if !f.is_cauterized() {
             return None;
         }
-        let mag = form_mag(f);
+        let mag = form_mag(f)?;
         if mag.iter().all(|&x| x == 0) {
             return None;
         }
@@ -1016,7 +1020,7 @@ impl Contemplation {
                 }
                 pay
             }
-            None => form_mag(f),
+            None => form_mag(f)?,
         };
         let e = sentence::as_element_form(f, mag)?;
         let (orbits, torsion, certificates, axes) =
@@ -1074,14 +1078,10 @@ impl Contemplation {
         n
     }
 
-    pub fn potential(&self) -> [u64; 4] {
-        let mut p = [0u64; 4];
-        for (_, b) in self.bubbles.scoped() {
-            for (t, d) in p.iter_mut().zip(&b.potential) {
-                *t = t.saturating_add(*d);
-            }
-        }
-        p
+    /// The held thoughts' potential, per lane; `None` where the sum would
+    /// pass its carrier (STD1).
+    pub fn potential(&self) -> Option<[u64; 4]> {
+        crate::core::lanes::lanes_sum(self.bubbles.scoped().map(|(_, b)| b.potential))
     }
 
 }

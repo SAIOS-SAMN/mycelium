@@ -149,18 +149,24 @@ pub fn rule(
                 [] => None,
                 _ => cech::transition(held, spoken),
             };
-            let group_view = group_view.map(|g| {
-                match unique_other_on_fiber(stalks, index, federation, spoken, addr) {
+            // STD1 — a closure whose counts pass their carrier is refused by
+            // name, never read as the transition it could not close.
+            let group_view = match group_view {
+                Some(g) => match unique_other_on_fiber(stalks, index, federation, spoken, addr) {
                     Some(i) => {
                         let z = &federation[i].1;
                         match (cech::transition(spoken, z), cech::transition(z, held)) {
-                            (Some(g_sz), Some(g_zh)) => cech::holonomy(&g, &g_sz, &g_zh),
-                            _ => g,
+                            (Some(g_sz), Some(g_zh)) => match cech::holonomy(&g, &g_sz, &g_zh) {
+                                Some(h) => Some(h),
+                                None => return Ruling::Slashed("the closing holonomy's counts pass their carrier"),
+                            },
+                            _ => Some(g),
                         }
                     }
-                    None => g,
-                }
-            });
+                    None => Some(g),
+                },
+                None => None,
+            };
             // A difference with no A5 form is no obstruction to name: the
             // identity stands where there is nothing to spell, and a
             // conflicting difference is not a chain this can speak.
