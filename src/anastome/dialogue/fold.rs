@@ -151,7 +151,10 @@ pub fn decode_rows_request(body: &[u8]) -> Option<RowsRequest> {
 /// `[total u64][m u32][row…]`: as many of `rows` as fit `budget`. The total
 /// is the span's rows, the mesh's count; `m` is this page's, bounded by the
 /// frame's budget.
-pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Vec<u8> {
+/// `None` where the page's count passes its field — counted as
+/// `encode_cover_page` counts the same shape, checked (3b).
+#[must_use]
+pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Option<Vec<u8>> {
     let mut out = Vec::new();
     out.extend_from_slice(&total.to_le_bytes());
     out.extend_from_slice(&0u32.to_le_bytes());
@@ -161,10 +164,10 @@ pub fn encode_rows_reply(total: u64, rows: &[Entry], budget: usize) -> Vec<u8> {
             break;
         }
         r.write(&mut out);
-        m += 1;
+        m = m.checked_add(1)?;
     }
     out[8..12].copy_from_slice(&m.to_le_bytes());
-    out
+    Some(out)
 }
 
 pub fn decode_rows_reply(body: &[u8]) -> Option<(u64, Vec<Entry>)> {

@@ -161,7 +161,9 @@ pub enum RankMove {
     /// Anything else, carried whole so a refusal can say what happened:
     /// `after − before` per coordinate, in the order torsion, free,
     /// off-plane, axes.
-    Inadmissible { delta: [i64; 4] },
+    /// `i128`: the difference of two `u64` counts is exact there, and in
+    /// `i64` it wrapped past 2⁶³ once the counts were widened (STD1 3c-4).
+    Inadmissible { delta: [i128; 4] },
 }
 
 impl Rank {
@@ -169,11 +171,14 @@ impl Rank {
     /// four coordinates and names the move; nothing here decides, and the
     /// trial is the site that refuses on `Inadmissible`.
     pub fn moved(before: Rank, after: Rank) -> RankMove {
+        // Exact: two `u64` counts differ by at most 2⁶⁴ − 1 either way,
+        // which `i128` holds without a cast (`From` is lossless).
+        let d = |a: u64, b: u64| i128::from(a) - i128::from(b);
         let delta = [
-            after.torsion as i64 - before.torsion as i64,
-            after.free as i64 - before.free as i64,
-            after.offplane as i64 - before.offplane as i64,
-            after.axes as i64 - before.axes as i64,
+            d(after.torsion, before.torsion),
+            d(after.free, before.free),
+            d(after.offplane, before.offplane),
+            d(after.axes, before.axes),
         ];
         if delta == [0; 4] {
             return RankMove::Equal;

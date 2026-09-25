@@ -75,10 +75,10 @@ fn the_fold_proposal_the_witness_answers_and_the_rows_round_trip() {
             arm: [None, Some(crate::economy::Arm::Pouw), Some(crate::economy::Arm::Powr)][i as usize],
         })
         .collect();
-    let all = encode_rows_reply(7, &rows, 1 << 16);
+    let all = encode_rows_reply(7, &rows, 1 << 16).expect("the page counts");
     assert_eq!(decode_rows_reply(&all), Some((7, rows.clone())));
     // The header is the total (u64) and the page's count (u32).
-    let page = encode_rows_reply(7, &rows, 12 + 2 * Entry::TAPE);
+    let page = encode_rows_reply(7, &rows, 12 + 2 * Entry::TAPE).expect("the page counts");
     assert_eq!(decode_rows_reply(&page).map(|(t, r)| (t, r.len())), Some((7, 2)), "a budget for two carries two");
     assert!(decode_rows_reply(&all[..all.len() - 1]).is_none(), "a short page refuses");
 }

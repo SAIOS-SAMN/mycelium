@@ -545,10 +545,12 @@ fn take_rank_move(b: &[u8], pos: &mut usize) -> Option<RankMove> {
             Some(RankMove::Discharged { from })
         }
         2 => {
-            let mut delta = [0i64; 4];
+            // Each delta whole, sixteen bytes: the carrier `Rank::moved`
+            // computes it in.
+            let mut delta = [0i128; 4];
             for d in &mut delta {
-                *d = i64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-                *pos += 8;
+                *d = i128::from_le_bytes(b.get(*pos..*pos + 16)?.try_into().ok()?);
+                *pos += 16;
             }
             Some(RankMove::Inadmissible { delta })
         }

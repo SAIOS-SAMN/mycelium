@@ -18,6 +18,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Ok(k) => k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most),
         Err(_) => return,
     };
-    let body = dialogue::encode_rows_reply(total, &rows, budget);
+    let Some(body) = dialogue::encode_rows_reply(total, &rows, budget) else {
+        eprintln!("  rows reply refused: the page's count passes its u32");
+        return;
+    };
     answer(stream, Frame { lane: frame.lane, body });
 }

@@ -190,7 +190,7 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
         held.len(),
         sources.len()
     )];
-    if held.len() < total as usize {
+    if (held.len() as u64) < total {
         lines.push(format!("{YELLOW}the reply held {} of {total}: the frame budget cut it{RESET}", held.len()));
     }
     lines.extend(tuniversal(&sources));
