@@ -80,6 +80,8 @@ impl Epigenome {
         }
         self.dialect_atlas.remove(da);
         self.dialect.remove(da);
+        // RM1 — its remainders leave the index, where it is not resident.
+        self.drop_remainders(da);
     }
 
     pub fn stand_dialect_at(&mut self, sentence: Element, k: u64, now_tu: u64) -> Option<Vec<u8>> {
@@ -111,6 +113,8 @@ impl Epigenome {
         let sentence = crate::transducer::element::Held::of(sentence);
         self.axis_admit(&sentence);
         self.moduli_admit(&sentence);
+        // RM1 — its remainders, by where they were perceived.
+        self.file_remainders(&addr, sentence.element());
         self.dialect.insert(
             addr.clone(),
             Dialect {

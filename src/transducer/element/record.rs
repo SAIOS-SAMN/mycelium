@@ -123,7 +123,7 @@ impl Element {
             }
         }
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for TorsionCycle { sigma, period: l, fibre } in &self.torsion {
+        for TorsionCycle { sigma, period: l, fibre, remainder } in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
             for (f, t) in sigma {
                 out.push(*f);
@@ -131,6 +131,15 @@ impl Element {
             }
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&fibre.to_le_bytes());
+            // RM1 — the remainder the cycle closed up to, flagged where it
+            // was not measured.
+            match remainder {
+                Some(r) => {
+                    out.push(1);
+                    r.put(&mut out);
+                }
+                None => out.push(0),
+            }
         }
         match &self.anchor {
             Some(t) => {
@@ -323,7 +332,18 @@ impl Element {
             }
             let fibre = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
             *pos += 2;
-            torsion.push(TorsionCycle { sigma, period: l, fibre });
+            let remainder = match b.get(*pos)? {
+                0 => {
+                    *pos += 1;
+                    None
+                }
+                1 => {
+                    *pos += 1;
+                    Some(super::Remainder::take(b, pos)?)
+                }
+                _ => return None,
+            };
+            torsion.push(TorsionCycle { sigma, period: l, fibre, remainder });
         }
         let anchor = match b.get(*pos) {
             Some(1) => {

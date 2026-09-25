@@ -10,6 +10,10 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::{self, Element};
 
+/// RM1 — a Congruent fill's remainder as the glue carries it to the mint:
+/// the class `κ`, the deficit `g`, the period `ℓ`.
+type Torsed = (Box<crate::transducer::sentence::ClassVector>, Box<crate::transducer::alphabet::Rotor>, u32);
+
 impl Kernel {
     pub fn glue_fetched(
         &mut self,
@@ -177,7 +181,9 @@ impl Kernel {
         }
         let mut filled = false;
         let mut class_simplex: Option<(crate::transducer::alphabet::Rotor, u8)> = None;
-        let mut congruent: Option<(crate::transducer::alphabet::Rotor, u32, Vec<Address>)> = None;
+        // RM1 — the congruent fill's remainder (κ, g, ℓ), its words, and the
+        // simplex's own key: the Torse rewrite's inputs.
+        let mut congruent: Option<(Torsed, Vec<Address>, Vec<u8>)> = None;
         let mut fill_gamma = crate::transducer::alphabet::Rotor::identity();
         let mut fill_carriage = crate::transducer::element::identity_versor();
         let mut fill_addrs: Vec<Address> = Vec::new();
@@ -228,13 +234,13 @@ impl Kernel {
                     }
                 }
                 crate::transducer::cech::CoboundaryOutcome::Attached(
-                    crate::transducer::cech::Fill::Congruent(_, g, ell),
+                    crate::transducer::cech::Fill::Congruent(kappa, g, ell),
                 ) => {
                     let addrs: Vec<Address> = vertices
                         .iter()
                         .filter_map(|v| cx.sections.get(v).map(|s| s.addr.clone()))
                         .collect();
-                    congruent = Some((*g, ell, addrs));
+                    congruent = Some(((kappa, g, ell), addrs, key.clone()));
                     eprintln!(
                         "  court simplex congruent degree {d} {:02x}{:02x}…",
                         key[0], key[1]
@@ -320,10 +326,13 @@ impl Kernel {
             }
             outcome = Glue::Attached;
         }
-        if let Some((_g, ell, addrs)) = congruent {
-            self.file_torsion(&addrs, ell);
+        if let Some((remainder, addrs, simplex)) = congruent {
             self.pay_simplex_volume(&inv, &addrs);
-            self.pay_torse(&addrs);
+            // RM1 — the Torse rewrite minted with its remainder on its record;
+            // the torsion paid cites it.
+            if let Some(rw) = self.mint_torse_at(&inv, &simplex, remainder, &addrs) {
+                self.pay_torse(&addrs, rw.as_bytes());
+            }
             outcome = Glue::Attached;
         }
         if let Some((class, degree)) = class_simplex {

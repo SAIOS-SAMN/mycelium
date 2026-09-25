@@ -448,6 +448,14 @@ pub struct Epigenome {
     /// and the ones this orbit (volatile, never persisted).
     pub(crate) traversed_k: crate::network::nerve::Keyed<u64>,
     pub(crate) traversed_orbit: crate::network::nerve::Keyed<()>,
+    /// RM1, 78.37(4) — THE REMAINDERS BY WHERE THEY WERE PERCEIVED: the
+    /// residue's chart chain ‖ κ → the word whose torsion record carries it,
+    /// over resident and dialect words alike; derived from the records at
+    /// every admission and at restore (the word_fibers pattern), and each
+    /// word's keys, so it leaves by them.
+    pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
+    pub(crate) remainders_coincident: u64,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

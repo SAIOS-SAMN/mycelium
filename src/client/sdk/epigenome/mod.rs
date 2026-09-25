@@ -8,6 +8,7 @@ pub mod comprehend;
 pub mod crystal;
 pub mod dialect;
 mod persist;
+pub mod remainder;
 pub mod shed;
 
 pub use persist::{genome_refused, GenomeRefused};

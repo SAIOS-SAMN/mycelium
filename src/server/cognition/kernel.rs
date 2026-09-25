@@ -286,6 +286,17 @@ pub struct Kernel {
     /// Each admitting stamp's fiber key, so a word that leaves its last row
     /// takes its fiber entry with it once its element is gone.
     pub(crate) fiber_key_at: crate::network::nerve::Keyed<Vec<u8>>,
+    /// RM1, 78.37(4) — THE REMAINDERS BY WHERE THEY WERE PERCEIVED: the
+    /// residue's chart ‖ κ → the word whose torsion record carries it,
+    /// derived from the records where a word is filed at its fiber and at
+    /// restore (the word_fibers pattern); each word's keys; the Torse mints
+    /// whose record refused the remainder, those not minted, and remainders
+    /// coinciding with one standing (one per class at a chart).
+    pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
+    pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
+    pub(crate) remainders_refused: u64,
+    pub(crate) remainders_unrecorded: u64,
+    pub(crate) remainders_coincident: u64,
     /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fiber
     /// read located at this word (`held_at` entries beside its own), dropped
     /// with the word. Re-derived at restore from the ledger's peer nodes.

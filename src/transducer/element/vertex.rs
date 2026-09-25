@@ -351,7 +351,7 @@ impl Element {
         }
         // The torsion cycles: (generator relations, period).
         out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
-        for TorsionCycle { sigma, period: l, fibre } in &self.torsion {
+        for TorsionCycle { sigma, period: l, fibre, .. } in &self.torsion {
             out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
             for (f, t) in sigma {
                 out.push(*f);

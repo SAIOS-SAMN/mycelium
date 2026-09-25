@@ -34,6 +34,14 @@ pub struct RemainderReading {
     pub unplaced: u64,
     /// `Congruent` simplices written `Filled`.
     pub refilled: u64,
+    /// Torse rewrites whose remainder the record refused (a differing one
+    /// standing for its `(σ, fibre)`), and those minted with none recorded
+    /// (no residue placed, or no rewrite minted), since the site began.
+    pub refused: u64,
+    pub unrecorded: u64,
+    /// Remainders not indexed because one of their class already stands at
+    /// their chart for another word (one per class): the receptor's question.
+    pub coincident: u64,
 }
 
 /// The reading as it accumulates: `ℓ` → count, class → the charts it stands
@@ -84,6 +92,9 @@ impl RemainderCount {
             across: self.at.scoped().filter(|(_, charts)| charts.len() >= 2).count() as u64,
             unplaced: self.unplaced,
             refilled: self.refilled,
+            refused: 0,
+            unrecorded: 0,
+            coincident: 0,
         }
     }
 }
@@ -95,8 +106,8 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}",
-            self.classes, self.across, self.unplaced, self.refilled
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unrecorded {}; coincident {}",
+            self.classes, self.across, self.unplaced, self.refilled, self.refused, self.unrecorded, self.coincident
         )
     }
 
@@ -106,7 +117,7 @@ impl RemainderReading {
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&n.to_le_bytes());
         }
-        for v in [self.classes, self.across, self.unplaced, self.refilled] {
+        for v in [self.classes, self.across, self.unplaced, self.refilled, self.refused, self.unrecorded, self.coincident] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -136,6 +147,9 @@ impl RemainderReading {
             across: u64_at(b, p)?,
             unplaced: u64_at(b, p)?,
             refilled: u64_at(b, p)?,
+            refused: u64_at(b, p)?,
+            unrecorded: u64_at(b, p)?,
+            coincident: u64_at(b, p)?,
         })
     }
 }

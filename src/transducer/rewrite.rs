@@ -294,6 +294,16 @@ impl Rewrite {
     }
 }
 
+/// A TORSE'S YIELD off the cycles it is priced by, `Σ(ℓ − 1)` on the shell
+/// lane as MU-ECONOMY has it. ℓ ≥ 1 at every filing and every tape (A17), so
+/// `ℓ − 1` is total. RM1: a Torse the court mints at a Congruent fill is
+/// priced off its own record's cycle, never off `after`'s element.
+pub fn torse_yield(cycles: &[crate::transducer::element::TorsionCycle]) -> [u64; 4] {
+    let mut mu = [0u64; 4];
+    mu[LANE_SHELL] = cycles.iter().map(|c| c.period as u64 - 1).sum();
+    mu
+}
+
 /// Lane vector read on the carriers. Zero on every lane is not work.
 pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [u64; 4] {
     let mut mu = [0u64; 4];
@@ -316,10 +326,7 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
                 .checked_sub(before_sec)
                 .map_or(joins, |gained| gained.max(joins)) as u64;
         }
-        RewriteKind::Torse => {
-            // ℓ ≥ 1 at every filing and every tape (A17), so `ℓ − 1` is total.
-            mu[LANE_SHELL] = after.torsion().iter().map(|c| c.period as u64 - 1).sum();
-        }
+        RewriteKind::Torse => mu = torse_yield(after.torsion()),
         RewriteKind::Refine => {
             // The chart the refine started from, and the one it reached.
             // A refine over no input started from no chart, which is a

@@ -97,7 +97,13 @@ impl Kernel {
             .scoped()
             .filter(|(_, w)| w.element().torsion().iter().any(|t| t.fibre == crate::transducer::element::FIBER_SPATIAL))
             .count() as u64;
-        (count.read(), torsion_words)
+        let read = crate::transducer::cech::RemainderReading {
+            refused: self.remainders_refused,
+            unrecorded: self.remainders_unrecorded,
+            coincident: self.remainders_coincident,
+            ..count.read()
+        };
+        (read, torsion_words)
     }
 
     pub fn basis_len(&self) -> usize {

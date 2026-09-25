@@ -653,7 +653,11 @@ impl Entity {
     /// 78.37(1), TP1 — the contemplation's meet graph as it stands, with its
     /// decoherences since the contemplation began.
     pub fn meet_graph(&self) -> crate::transducer::bubble::MeetGraph {
-        self.contemplation.meet_graph()
+        let mut m = self.contemplation.meet_graph();
+        // RM1 — the remainders the epigenome's index could not file over one
+        // standing, beside the contemplation's own.
+        m.remainders.coincident = self.epigenome.remainders_coincident;
+        m
     }
 
     /// THE CAVITY'S SIZE, on the wire (§8.1). `retire_on_t` writes one entry

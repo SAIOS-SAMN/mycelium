@@ -27,6 +27,74 @@ pub struct TorsionCycle {
     pub period: u32,
     /// The fibre it lives on: `FIBER_SPATIAL`, or a germinated axis.
     pub fibre: u16,
+    /// RM1, 78.37(4) — THE REMAINDER the cycle closed up to, where a
+    /// Congruent fill measured one: `None` is not measured (a cycle an
+    /// orbit condensed, a form's filed orbit), never a zero.
+    pub remainder: Option<Remainder>,
+}
+
+/// RM1, 78.37(4) — A SENTENCE'S REMAINDER, the torsion record completed: the
+/// class `κ` it closed up to, inline by its own coordinates; the deficit `g`
+/// as its ray; and `at`, the chart chain the residue was perceived on (the
+/// thoughts' shared chain on a mind, the complex's chart on a court), by its
+/// keys. Evidence on the record: the address never carries it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Remainder {
+    pub class: Box<crate::transducer::sentence::ClassVector>,
+    pub ray: Box<crate::transducer::alphabet::Rotor>,
+    pub at: Vec<Vec<u8>>,
+}
+
+impl Remainder {
+    /// The index key the receptor reads by: the residue's chart chain, its
+    /// keys written in order, then the class key.
+    pub fn index_key(&self) -> Vec<u8> {
+        let mut chain = Vec::new();
+        for c in &self.at {
+            crate::transducer::address::put_bytes(&mut chain, c);
+        }
+        let mut k = Vec::new();
+        crate::transducer::address::put_bytes(&mut k, &chain);
+        k.extend_from_slice(self.class.class_key().as_bytes());
+        k
+    }
+
+    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+        self.class.put_canonical(out);
+        self.ray.put_canonical(out);
+        out.extend_from_slice(&(self.at.len() as u32).to_le_bytes());
+        for c in &self.at {
+            crate::transducer::address::put_bytes(out, c);
+        }
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Remainder> {
+        let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);
+        let ray = Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?);
+        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+        *p += 4;
+        // Each chart is at least its length; a count the body cannot hold
+        // refuses before anything is reserved.
+        if n > b.len().checked_sub(*p)? / 4 {
+            return None;
+        }
+        let mut at = Vec::with_capacity(n);
+        for _ in 0..n {
+            at.push(crate::transducer::address::take_bytes(b, p)?);
+        }
+        Some(Remainder { class, ray, at })
+    }
+}
+
+/// What filing a cycle came to: new, a remainder gained by a cycle filed
+/// without one, already standing, or refused — a differing remainder for one
+/// `(σ, fibre)`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Filed {
+    New,
+    Gained,
+    Standing,
+    Refused,
 }
 
 /// ONE TRANSITION of the connection: how a sibling section was seen.
@@ -417,13 +485,38 @@ impl Element {
     /// File a torsion cycle `(σ, ℓ)` on fibre `fibre`. Duplicate generators
     /// on the same fibre are not stored twice.
     pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u32, fibre: u16) {
-        if period == 0 {
-            return;
+        let _ = self.record_cycle(TorsionCycle { sigma, period, fibre, remainder: None });
+    }
+
+    /// RM1 — FILE A CYCLE WITH WHAT IT CLOSED UP TO. One cycle per
+    /// `(σ, fibre)`: a cycle filed without a remainder GAINS the arriving
+    /// one; one filed with a different remainder refuses it, and the caller
+    /// counts the refusal. A period of zero files nothing (A17).
+    pub fn record_cycle(&mut self, cycle: TorsionCycle) -> Filed {
+        if cycle.period == 0 {
+            return Filed::Standing;
         }
-        if !self.torsion.iter().any(|t| t.sigma == sigma && t.fibre == fibre) {
-            self.torsion.push(TorsionCycle { sigma, period, fibre });
-            self.profiles.take();
+        match self.torsion.iter_mut().find(|t| t.sigma == cycle.sigma && t.fibre == cycle.fibre) {
+            None => {
+                self.torsion.push(cycle);
+                self.profiles.take();
+                Filed::New
+            }
+            Some(t) => match (&t.remainder, cycle.remainder) {
+                (_, None) => Filed::Standing,
+                (None, Some(r)) => {
+                    t.remainder = Some(r);
+                    Filed::Gained
+                }
+                (Some(have), Some(r)) if *have == r => Filed::Standing,
+                (Some(_), Some(_)) => Filed::Refused,
+            },
         }
+    }
+
+    /// RM1 — the remainders this word's torsion record carries.
+    pub fn remainders(&self) -> impl Iterator<Item = &Remainder> {
+        self.torsion.iter().filter_map(|t| t.remainder.as_ref())
     }
 
     /// The fibre's span ABOVE ITS BASE — free sections plus every torsion
@@ -499,7 +592,7 @@ impl Element {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }
-                self.torsion.push(TorsionCycle { sigma, period, fibre: FIBER_SPATIAL });
+                self.torsion.push(TorsionCycle { sigma, period, fibre: FIBER_SPATIAL, remainder: None });
                 self.profiles.take();
                 return spanned.len();
             }

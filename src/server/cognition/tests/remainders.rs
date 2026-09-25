@@ -28,3 +28,47 @@ fn the_courts_remainders_are_read_over_its_complexes() {
     assert_eq!((r.classes, r.across, r.unplaced, r.refilled), (2, 1, 0, 0), "{}", r.line());
     assert_eq!(torsion_words, 0);
 }
+
+/// RM1 — A SIMPLEX CLOSED UP TO ITS CLASS MINTS ITS TORSE REWRITE: `before`
+/// the simplex's words, `after` the simplex's own key, the payload σ and ℓ,
+/// priced off its own record (ℓ − 1 on the shell lane), and the remainder
+/// (κ, g, the complex's chart) on the rewrite's record. The court indexes it
+/// at chart ‖ κ; snapshotted and restored, the record comes back with the
+/// element and the index is rebuilt from it.
+#[test]
+fn a_courts_torse_carries_its_remainder_through_a_restart() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    use crate::transducer::address::Address;
+    let g = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]).rotor();
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(
+        &g,
+        crate::transducer::element::identity_versor(),
+        crate::transducer::sentence::CycleType::Identity,
+    )
+    .expect("a class");
+    let mut k = Kernel::new();
+    let inv = crate::transducer::stalk::Invariant::default();
+    let words = vec![Address::from(vec![1u8; 8]), Address::from(vec![2u8; 8])];
+    let simplex = b"the simplex's own key".to_vec();
+    let rw = k
+        .mint_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words)
+        .expect("the Torse rewrite is minted and offered");
+    let key = crate::transducer::element::Remainder {
+        class: Box::new(kappa),
+        ray: Box::new(g),
+        at: vec![inv.key().into_vec()],
+    }
+    .index_key();
+    assert_eq!(k.remainder_at(&key), Some(&rw), "indexed at the complex's chart ‖ κ");
+    let (r, _) = k.remainders();
+    assert_eq!((r.refused, r.unrecorded), (0, 0), "{}", r.line());
+    let snap = k.snapshot();
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&snap), "clean restore");
+    assert_eq!(booted.remainder_at(&key), Some(&rw), "the index is rebuilt from the record");
+    let word = booted.named_word(rw.as_bytes()).expect("the rewrite stands");
+    let back: Vec<_> = word.remainders().collect();
+    assert_eq!(back.len(), 1, "its record carries the remainder");
+    let claimed = crate::transducer::rewrite::Rewrite::from_element(word).expect("a rewrite").claimed;
+    assert_eq!(claimed[crate::transducer::rewrite::LANE_SHELL], 3, "priced off its own record: ℓ − 1");
+}

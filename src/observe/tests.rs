@@ -45,6 +45,9 @@ fn every_reading_reads_back_as_itself_through_the_act() {
             across: 1,
             unplaced: 0,
             refilled: 0,
+            refused: 1,
+            unrecorded: 2,
+            coincident: 3,
         },
         torsion_words: 6,
     };
@@ -515,6 +518,9 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 across: 117,
                 unplaced: 118,
                 refilled: 119,
+                refused: 120,
+                unrecorded: 121,
+                coincident: 122,
             },
         }),
     };

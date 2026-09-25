@@ -201,6 +201,11 @@ pub struct Contemplation {
     pub(crate) flux: Keyed<[u64; 4]>,
     pub(crate) flux_at: Keyed<u64>,
     pub(crate) flux_tally: super::flux::FluxTally,
+    /// RM1 — Torse rewrites whose remainder was refused on the record (a
+    /// differing one standing) or placed no residue (thoughts sharing no
+    /// chart).
+    pub(crate) remainders_refused: u64,
+    pub(crate) remainders_unplaced: u64,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the

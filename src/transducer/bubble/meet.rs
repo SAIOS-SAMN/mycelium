@@ -270,18 +270,7 @@ impl Contemplation {
     pub fn remainder_reading(&self) -> crate::transducer::cech::RemainderReading {
         let mut count = crate::transducer::cech::RemainderCount::default();
         for s in self.complex.congruent_standing() {
-            let mut shared: Option<Vec<Vec<u8>>> = None;
-            for v in &s.vertices {
-                let cover: Vec<Vec<u8>> = match self.bubbles.get(v) {
-                    Some(b) => b.cover.scoped().map(|(k, _)| k).collect(),
-                    None => Vec::new(),
-                };
-                shared = Some(match shared {
-                    None => cover,
-                    Some(prev) => prev.into_iter().filter(|k| cover.contains(k)).collect(),
-                });
-            }
-            let chain = shared.filter(|ks| !ks.is_empty()).map(|ks| {
+            let chain = self.shared_chain(&s.vertices).map(|ks| {
                 let mut key = Vec::new();
                 for k in &ks {
                     crate::transducer::address::put_bytes(&mut key, k);
@@ -291,7 +280,29 @@ impl Contemplation {
             count.add(&s, chain.as_deref());
         }
         count.refilled(self.complex.refilled());
-        count.read()
+        crate::transducer::cech::RemainderReading {
+            refused: self.remainders_refused,
+            unrecorded: self.remainders_unplaced,
+            ..count.read()
+        }
+    }
+
+    /// THE CHART CHAIN THOUGHTS SHARE: the intersection of their covers, in
+    /// key order — the chart a residue on their simplex is perceived on.
+    /// `None` where they share none.
+    pub(crate) fn shared_chain(&self, verts: &[Vec<u8>]) -> Option<Vec<Vec<u8>>> {
+        let mut shared: Option<Vec<Vec<u8>>> = None;
+        for v in verts {
+            let cover: Vec<Vec<u8>> = match self.bubbles.get(v) {
+                Some(b) => b.cover.scoped().map(|(k, _)| k).collect(),
+                None => Vec::new(),
+            };
+            shared = Some(match shared {
+                None => cover,
+                Some(prev) => prev.into_iter().filter(|k| cover.contains(k)).collect(),
+            });
+        }
+        shared.filter(|ks| !ks.is_empty())
     }
 
     /// 78.37(1), TP1 — THE MEET GRAPH AS IT STANDS, with the decoherences

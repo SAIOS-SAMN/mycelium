@@ -78,6 +78,8 @@ impl Epigenome {
         // The shape was measured on the old chain and is not the new
         // word's; it is dropped rather than carried across (law 12).
         w.shape = std::sync::OnceLock::new();
+        // RM1 — the old address's remainders leave the index.
+        self.drop_remainders(addr);
         let at = w.held.address();
         self.genome.insert(&at, entry);
         self.resident.insert(&at, w);

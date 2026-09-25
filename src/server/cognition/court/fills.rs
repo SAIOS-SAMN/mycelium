@@ -77,7 +77,7 @@ impl Kernel {
                 }
                 (
                     crate::transducer::cech::CoboundaryOutcome::Attached(
-                        crate::transducer::cech::Fill::Congruent(_, _g, _ell),
+                        crate::transducer::cech::Fill::Congruent(kappa, g, ell),
                     ),
                     addrs,
                 ) => {
@@ -85,9 +85,12 @@ impl Kernel {
                         "  court simplex congruent {:02x}{:02x}… torsion filed",
                         sim_key[0], sim_key[1]
                     );
-                    self.file_torsion(&addrs, _ell);
                     self.pay_simplex_volume(&inv, &addrs);
-                    self.pay_torse(&addrs);
+                    // RM1 — the Torse rewrite minted with its remainder; the
+                    // torsion paid cites it.
+                    if let Some(rw) = self.mint_torse_at(&inv, sim_key.as_bytes(), (kappa, g, ell), &addrs) {
+                        self.pay_torse(&addrs, rw.as_bytes());
+                    }
                 }
                 (
                     crate::transducer::cech::CoboundaryOutcome::Attached(
@@ -241,12 +244,10 @@ impl Kernel {
     /// and pay it to that member alone; a member with no measured tension
     /// is unmeasured and is paid nothing, never paid another member's
     /// reading (rule 11, 15).
-    pub(crate) fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A]) {
+    pub(crate) fn pay_torse<A: AsRef<[u8]>>(&mut self, addrs: &[A], rewrite: &[u8]) {
         // EC1: the torsion paid is a Settled act of this court citing the
-        // simplex's filed word — its least address by key, the head the
-        // callers hand over (see `file_torsion`) — sealed first; its POUW
-        // rows stand at it.
-        let [filed, ..] = addrs else { return };
+        // Torse rewrite the fill minted (RM1: never a word chosen from the
+        // simplex), sealed first; its POUW rows stand at it.
         let parties: Vec<([u8; 32], [u64; 4])> = addrs
             .iter()
             .filter_map(|a| {
@@ -261,33 +262,60 @@ impl Kernel {
             return;
         }
         let me = self.identity;
-        self.append_step(crate::chronometry::ActKind::Settled, filed.as_ref(), me);
+        self.append_step(crate::chronometry::ActKind::Settled, rewrite, me);
         let anchor = self.anchor();
         for (who, mag) in parties {
             let _ = self.treasury.settle_torse(who, mag, anchor);
         }
     }
 
-    /// Torsion is filed on the simplex's LEAST ADDRESS BY KEY. Both callers
-    /// hand these over in key order — one from `sorted_verts`, one from a
-    /// keyed fiber — so the head is the least key and every node files the
-    /// cycle on the same word rather than on whichever section it met
-    /// first.
-    pub(crate) fn file_torsion<A: AsRef<[u8]>>(&mut self, addrs: &[A], ell: u32) {
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — canonical key order: the addresses arrive in key order, so the head is the least key"
-        )]
-        let Some(rep) = addrs.first() else {
-            return;
+    // `file_torsion` STOOD HERE AND IS RETIRED (RM1, 78.37(4)). It recorded
+    // `(σ, ℓ)` on the simplex's least address by key — a representative
+    // chosen from the simplex (checklist (r)) — and dropped κ and g. The
+    // remainder is now recorded whole on the Torse rewrite the fill mints.
+
+    /// RM1, 78.37(4) — A SIMPLEX CLOSED UP TO ITS CLASS. The court mints the
+    /// Torse rewrite carrying the simplex's words to their class: `before`
+    /// the words, `after` the simplex's own key — its sections' coordinates
+    /// (KB1), the coordinate of the object glued, never a word chosen from it
+    /// — its payload σ and ℓ; and records the remainder (κ, g, the complex's
+    /// chart) on the rewrite's own record, priced off that record. `None`,
+    /// counted unrecorded, where nothing is priced, the mint refuses (a name
+    /// past its wall), or the book does not take it.
+    pub(crate) fn mint_torse_at(
+        &mut self,
+        inv: &crate::transducer::stalk::Invariant,
+        simplex: &[u8],
+        remainder: (Box<crate::transducer::sentence::ClassVector>, Box<crate::transducer::alphabet::Rotor>, u32),
+        addrs: &[crate::transducer::address::Address],
+    ) -> Option<crate::transducer::address::Address> {
+        let (kappa, g, ell) = remainder;
+        let cycle = element::TorsionCycle {
+            sigma: Vec::new(),
+            period: ell,
+            fibre: element::FIBER_SPATIAL,
+            remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()] }),
         };
-        let addr = rep.as_ref();
-        let Some(asg) = self.basis.get(addr).map(|w| element::assignment(w.sub())) else {
-            return;
+        let Some(mu) = self.treasury.price_torse(std::slice::from_ref(&cycle)) else {
+            self.remainders_unrecorded += 1;
+            return None;
         };
-        if let Some(wm) = self.word_mut(addr) {
-            wm.update(|e| e.record_torsion(asg, ell, element::FIBER_SPATIAL));
+        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma: Vec::new(), period: ell };
+        let after = crate::transducer::address::Address::from(simplex.to_vec());
+        let Some(mut rw) = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Torse, addrs, after, payload, mu)
+        else {
+            self.remainders_unrecorded += 1;
+            return None;
+        };
+        if rw.record_cycle(cycle) == element::Filed::Refused {
+            self.remainders_refused += 1;
         }
-        self.touch_at(addr);
+        let addr = rw.address();
+        let me = self.identity;
+        if !self.offer_rewrite(rw, me) {
+            self.remainders_unrecorded += 1;
+            return None;
+        }
+        Some(addr)
     }
 }

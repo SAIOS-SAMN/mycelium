@@ -25,8 +25,9 @@ impl Epigenome {
         };
         let gone = word.held.address();
         // A retired word is no longer work: its coordinate leaves the
-        // pending set with it.
+        // pending set with it; its remainders leave the index.
         self.unpivoted.remove(addr);
+        self.drop_remainders(addr);
         self.axis_retract(&word.held);
         self.moduli_retract(&word.held);
         // The recollections that spelled themselves with this word were
@@ -473,6 +474,8 @@ impl Epigenome {
         // coordinate enters the pending set; no ordinal is handed out and
         // nothing records when it arrived.
         self.unpivoted.insert(&at, ());
+        // RM1 — its remainders, by where they were perceived.
+        self.file_remainders(&at, held.element());
         self.genome.insert(&at, GenomeEntry { expression: uses });
         self.resident
             .insert(&at, GenomeWord { held, shape: std::sync::OnceLock::new() });

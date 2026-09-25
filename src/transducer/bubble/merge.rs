@@ -138,8 +138,11 @@ impl Contemplation {
                     self.truncate(&touched);
                     return;
                 }
-                CoboundaryOutcome::Attached(Fill::Congruent(_, _, ell)) if vol_nz => {
+                CoboundaryOutcome::Attached(Fill::Congruent(kappa, g, ell)) if vol_nz => {
                     self.torsion_merges += 1;
+                    // RM1 — the residue's chart, read before the merge takes
+                    // the thoughts: where the remainder was perceived.
+                    let at = self.shared_chain(&vertices);
                     // KB1 (C) — THE CLASS BETWEEN TWO THOUGHTS LIVES ON THIS
                     // COMPLEX AND ON THE TORSE REWRITE IT MINTS. It was filed a
                     // second time onto the merged idea's nerve between two
@@ -165,6 +168,26 @@ impl Contemplation {
                             // ℓ ≥ 1 and the subtraction is total.
                             [0, 0, ell as u64 - 1, 0],
                         ) {
+                            // RM1 — THE REMAINDER ON THE REWRITE'S RECORD: the
+                            // class it closed up to, the deficit as its ray,
+                            // where it was perceived. The payload says σ and
+                            // ℓ; the record is its evidence (law 12). Thoughts
+                            // sharing no chart place no residue: counted.
+                            let mut rw = rw;
+                            match at {
+                                Some(at) => {
+                                    let cycle = crate::transducer::element::TorsionCycle {
+                                        sigma: Vec::new(),
+                                        period: ell,
+                                        fibre: crate::transducer::element::FIBER_SPATIAL,
+                                        remainder: Some(crate::transducer::element::Remainder { class: kappa, ray: g, at }),
+                                    };
+                                    if rw.record_cycle(cycle) == crate::transducer::element::Filed::Refused {
+                                        self.remainders_refused += 1;
+                                    }
+                                }
+                                None => self.remainders_unplaced += 1,
+                            }
                             self.pending_rewrites.push(rw);
                         }
                     }

@@ -22,7 +22,7 @@ impl Kernel {
 
     /// THE WORD AN ACT NAMES, on whichever row holds it: the basis, the
     /// cavity, provisional, the listing book, or the court's federation.
-    fn named_word(&self, addr: &[u8]) -> Option<&Element> {
+    pub(crate) fn named_word(&self, addr: &[u8]) -> Option<&Element> {
         self.word_at(addr).or_else(|| self.pending.get(addr)).or_else(|| {
             let i = *self.court_fed_index.get(addr)?;
             self.court_federation.get(i).map(|(_, w)| w)
@@ -83,6 +83,12 @@ impl Kernel {
         if let Some(key) = fiber {
             self.file_fiber(addr, at, key);
         }
+        // RM1: and its remainders, by where each was perceived.
+        let keys: Vec<Vec<u8>> = match self.named_word(addr) {
+            Some(w) => w.remainders().map(|r| r.index_key()).collect(),
+            None => Vec::new(),
+        };
+        self.file_remainders(addr, keys);
         // EC1: a peer's ruling that waited on this stamp is heard now.
         self.rehear_rulings(&at);
     }
@@ -92,6 +98,33 @@ impl Kernel {
     pub(crate) fn file_fiber(&mut self, addr: &Address, at: Stamp, key: Vec<u8>) {
         self.fiber_key_at.insert(at.key(), key.clone());
         self.word_fibers.insert(key, addr.clone());
+    }
+
+    /// RM1 — FILE A WORD'S REMAINDERS at their index keys (the residue's
+    /// chart ‖ κ, read off its torsion record). One remainder per class at a
+    /// chart: a key already standing for another word is not filed over and
+    /// is counted.
+    pub(crate) fn file_remainders(&mut self, addr: &Address, keys: Vec<Vec<u8>>) {
+        let mut filed = Vec::new();
+        for k in keys {
+            match self.remainder_fibers.get(&k) {
+                Some(a) if a == addr => filed.push(k),
+                Some(_) => self.remainders_coincident += 1,
+                None => {
+                    self.remainder_fibers.insert(&k, addr.clone());
+                    filed.push(k);
+                }
+            }
+        }
+        if !filed.is_empty() {
+            self.remainder_keys.insert(addr.as_bytes(), filed);
+        }
+    }
+
+    /// RM1 — the words whose remainder of this class was perceived on this
+    /// chart chain: a keyed read.
+    pub fn remainder_at(&self, key: &[u8]) -> Option<&Address> {
+        self.remainder_fibers.get(key)
     }
 
     /// LD3-a — THE FIBER READ: every word this court holds on the fiber
@@ -153,6 +186,12 @@ impl Kernel {
             self.held_at.remove(&at.key());
             if let Some(key) = self.fiber_key_at.remove(&at.key()) {
                 self.word_fibers.remove(&key);
+            }
+        }
+        // Its remainders leave the index by the keys it filed.
+        if let Some(keys) = self.remainder_keys.remove(addr) {
+            for k in keys {
+                self.remainder_fibers.remove(&k);
             }
         }
         // Its aliases leave with it.

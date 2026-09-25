@@ -73,6 +73,16 @@ impl Treasury {
         }
     }
 
+    /// RM1 — A TORSE PRICED OFF ITS OWN RECORD: the cycle the rewrite will
+    /// carry, `None` where it measures nothing.
+    pub fn price_torse(&self, cycles: &[crate::transducer::element::TorsionCycle]) -> Option<[u64; 4]> {
+        let mu = crate::transducer::rewrite::torse_yield(cycles);
+        match mu.iter().any(|&x| x > 0) {
+            true => Some(mu),
+            false => None,
+        }
+    }
+
     /// Release an escrowed Rewrite: mint the claimed vector to the discoverer.
     /// Release an escrowed Rewrite to the parties the escrow names: EVERY
     /// voice that stood it, split per lane, as a consilience award is split.
