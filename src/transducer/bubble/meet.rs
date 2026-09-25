@@ -280,9 +280,13 @@ impl Contemplation {
             count.add(&s, chain.as_deref());
         }
         count.refilled(self.complex.refilled());
+        let r = &self.remainders;
         crate::transducer::cech::RemainderReading {
-            refused: self.remainders_refused,
-            unrecorded: self.remainders_unplaced,
+            refused: r.refused,
+            unsited: r.unsited,
+            unrecorded: r.unrecorded,
+            unminted: r.unminted,
+            unmerged: r.unmerged,
             ..count.read()
         }
     }

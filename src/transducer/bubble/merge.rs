@@ -183,13 +183,20 @@ impl Contemplation {
                                         remainder: Some(crate::transducer::element::Remainder { class: kappa, ray: g, at }),
                                     };
                                     if rw.record_cycle(cycle) == crate::transducer::element::Filed::Refused {
-                                        self.remainders_refused += 1;
+                                        self.remainders.refused += 1;
                                     }
                                 }
-                                None => self.remainders_unplaced += 1,
+                                None => self.remainders.unsited += 1,
                             }
                             self.pending_rewrites.push(rw);
+                        } else {
+                            // A name past its wall: no rewrite to record on.
+                            self.remainders.unminted += 1;
                         }
+                    } else {
+                        // The merge named no thought (`merges.unnamed`): no
+                        // `after` for the rewrite, the remainder unrecorded.
+                        self.remainders.unmerged += 1;
                     }
                     return;
                 }

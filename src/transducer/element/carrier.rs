@@ -46,17 +46,41 @@ pub struct Remainder {
 }
 
 impl Remainder {
-    /// The index key the receptor reads by: the residue's chart chain, its
-    /// keys written in order, then the class key.
+    /// The index key the receptor reads by, CLASS FIRST (a reading depends
+    /// on fewer coordinates first): the class key, then the residue's chart
+    /// chain, its keys written in order — each length-delimited, so one
+    /// prefix read under a class returns every chart it was perceived on.
     pub fn index_key(&self) -> Vec<u8> {
+        let mut k = Self::class_prefix(&self.class);
         let mut chain = Vec::new();
         for c in &self.at {
             crate::transducer::address::put_bytes(&mut chain, c);
         }
-        let mut k = Vec::new();
         crate::transducer::address::put_bytes(&mut k, &chain);
-        k.extend_from_slice(self.class.class_key().as_bytes());
         k
+    }
+
+    /// The prefix every remainder of `class` is indexed under.
+    pub fn class_prefix(class: &crate::transducer::sentence::ClassVector) -> Vec<u8> {
+        let mut k = Vec::new();
+        crate::transducer::address::put_bytes(&mut k, class.class_key().as_bytes());
+        k
+    }
+
+    /// The chart chain an index key names, read back.
+    pub fn chain_of_key(key: &[u8]) -> Option<Vec<Vec<u8>>> {
+        let mut p = 0usize;
+        let _class = crate::transducer::address::take_bytes(key, &mut p)?;
+        let chain = crate::transducer::address::take_bytes(key, &mut p)?;
+        if p != key.len() {
+            return None;
+        }
+        let mut q = 0usize;
+        let mut out = Vec::new();
+        while q < chain.len() {
+            out.push(crate::transducer::address::take_bytes(&chain, &mut q)?);
+        }
+        Some(out)
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -87,14 +111,15 @@ impl Remainder {
 }
 
 /// What filing a cycle came to: new, a remainder gained by a cycle filed
-/// without one, already standing, or refused — a differing remainder for one
-/// `(σ, fibre)`.
+/// without one, already standing, refused — a differing remainder for one
+/// `(σ, fibre)` — or no cycle at all: a period of zero closes nothing (A17).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Filed {
     New,
     Gained,
     Standing,
     Refused,
+    NoPeriod,
 }
 
 /// ONE TRANSITION of the connection: how a sibling section was seen.
@@ -491,10 +516,11 @@ impl Element {
     /// RM1 — FILE A CYCLE WITH WHAT IT CLOSED UP TO. One cycle per
     /// `(σ, fibre)`: a cycle filed without a remainder GAINS the arriving
     /// one; one filed with a different remainder refuses it, and the caller
-    /// counts the refusal. A period of zero files nothing (A17).
+    /// counts the refusal. A period of zero is no cycle and is refused by
+    /// name (A17).
     pub fn record_cycle(&mut self, cycle: TorsionCycle) -> Filed {
         if cycle.period == 0 {
-            return Filed::Standing;
+            return Filed::NoPeriod;
         }
         match self.torsion.iter_mut().find(|t| t.sigma == cycle.sigma && t.fibre == cycle.fibre) {
             None => {

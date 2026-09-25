@@ -34,14 +34,35 @@ pub struct RemainderReading {
     pub unplaced: u64,
     /// `Congruent` simplices written `Filled`.
     pub refilled: u64,
-    /// Torse rewrites whose remainder the record refused (a differing one
-    /// standing for its `(σ, fibre)`), and those minted with none recorded
-    /// (no residue placed, or no rewrite minted), since the site began.
+    /// Each remainder perceived and not recorded, by its own name, since the
+    /// site began: the record refused it (a differing one standing for its
+    /// `(σ, fibre)`); its thoughts shared no chart to site it (the mind); a
+    /// Congruent arm that mints no rewrite perceived it (the mind's
+    /// `pivot_on`); nothing priced it; the mint refused it (a name past its
+    /// wall); the book did not take the rewrite (the court); the merge named
+    /// no thought to be the rewrite's `after` (the mind).
     pub refused: u64,
+    pub unsited: u64,
     pub unrecorded: u64,
+    pub unpriced: u64,
+    pub unminted: u64,
+    pub unoffered: u64,
+    pub unmerged: u64,
     /// Remainders not indexed because one of their class already stands at
     /// their chart for another word (one per class): the receptor's question.
     pub coincident: u64,
+    /// THE RECEPTOR (the mind): a remainder of a class standing at a nested
+    /// chain (one vantage, finer), at an incomparable one with a differing
+    /// ray (discordant); and the calluses it raised — stood, unspelled (the
+    /// class docketed as a demand), a chain with no top, a remainder word the
+    /// voice held no stamp for, a form or act that did not mint.
+    pub nested: u64,
+    pub discordant: u64,
+    pub calluses: u64,
+    pub unspelled: u64,
+    pub untopped: u64,
+    pub uncited: u64,
+    pub callus_unminted: u64,
 }
 
 /// The reading as it accumulates: `ℓ` → count, class → the charts it stands
@@ -92,9 +113,7 @@ impl RemainderCount {
             across: self.at.scoped().filter(|(_, charts)| charts.len() >= 2).count() as u64,
             unplaced: self.unplaced,
             refilled: self.refilled,
-            refused: 0,
-            unrecorded: 0,
-            coincident: 0,
+            ..RemainderReading::default()
         }
     }
 }
@@ -106,8 +125,26 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unrecorded {}; coincident {}",
-            self.classes, self.across, self.unplaced, self.refilled, self.refused, self.unrecorded, self.coincident
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {}",
+            self.classes,
+            self.across,
+            self.unplaced,
+            self.refilled,
+            self.refused,
+            self.unsited,
+            self.unrecorded,
+            self.unpriced,
+            self.unminted,
+            self.unoffered,
+            self.unmerged,
+            self.coincident,
+            self.nested,
+            self.discordant,
+            self.calluses,
+            self.unspelled,
+            self.untopped,
+            self.uncited,
+            self.callus_unminted
         )
     }
 
@@ -117,7 +154,27 @@ impl RemainderReading {
             out.extend_from_slice(&l.to_le_bytes());
             out.extend_from_slice(&n.to_le_bytes());
         }
-        for v in [self.classes, self.across, self.unplaced, self.refilled, self.refused, self.unrecorded, self.coincident] {
+        for v in [
+            self.classes,
+            self.across,
+            self.unplaced,
+            self.refilled,
+            self.refused,
+            self.unsited,
+            self.unrecorded,
+            self.unpriced,
+            self.unminted,
+            self.unoffered,
+            self.unmerged,
+            self.coincident,
+            self.nested,
+            self.discordant,
+            self.calluses,
+            self.unspelled,
+            self.untopped,
+            self.uncited,
+            self.callus_unminted,
+        ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
     }
@@ -148,8 +205,20 @@ impl RemainderReading {
             unplaced: u64_at(b, p)?,
             refilled: u64_at(b, p)?,
             refused: u64_at(b, p)?,
+            unsited: u64_at(b, p)?,
             unrecorded: u64_at(b, p)?,
+            unpriced: u64_at(b, p)?,
+            unminted: u64_at(b, p)?,
+            unoffered: u64_at(b, p)?,
+            unmerged: u64_at(b, p)?,
             coincident: u64_at(b, p)?,
+            nested: u64_at(b, p)?,
+            discordant: u64_at(b, p)?,
+            calluses: u64_at(b, p)?,
+            unspelled: u64_at(b, p)?,
+            untopped: u64_at(b, p)?,
+            uncited: u64_at(b, p)?,
+            callus_unminted: u64_at(b, p)?,
         })
     }
 }

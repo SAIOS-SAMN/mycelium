@@ -280,8 +280,9 @@ impl Kernel {
     /// (KB1), the coordinate of the object glued, never a word chosen from it
     /// — its payload σ and ℓ; and records the remainder (κ, g, the complex's
     /// chart) on the rewrite's own record, priced off that record. `None`,
-    /// counted unrecorded, where nothing is priced, the mint refuses (a name
-    /// past its wall), or the book does not take it.
+    /// each counted by its own name, where nothing is priced (`unpriced`),
+    /// the mint refuses — a name past its wall (`unminted`) — or the book
+    /// does not take it (`unoffered`).
     pub(crate) fn mint_torse_at(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
@@ -297,14 +298,14 @@ impl Kernel {
             remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()] }),
         };
         let Some(mu) = self.treasury.price_torse(std::slice::from_ref(&cycle)) else {
-            self.remainders_unrecorded += 1;
+            self.remainders_unpriced += 1;
             return None;
         };
         let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma: Vec::new(), period: ell };
         let after = crate::transducer::address::Address::from(simplex.to_vec());
         let Some(mut rw) = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Torse, addrs, after, payload, mu)
         else {
-            self.remainders_unrecorded += 1;
+            self.remainders_unminted += 1;
             return None;
         };
         if rw.record_cycle(cycle) == element::Filed::Refused {
@@ -313,7 +314,7 @@ impl Kernel {
         let addr = rw.address();
         let me = self.identity;
         if !self.offer_rewrite(rw, me) {
-            self.remainders_unrecorded += 1;
+            self.remainders_unoffered += 1;
             return None;
         }
         Some(addr)

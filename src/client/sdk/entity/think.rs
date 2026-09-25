@@ -657,6 +657,14 @@ impl Entity {
         // RM1 — the remainders the epigenome's index could not file over one
         // standing, beside the contemplation's own.
         m.remainders.coincident = self.epigenome.remainders_coincident;
+        // And the receptor's: nested, discordant, the calluses.
+        let (e, c) = (&self.epigenome, &self.epigenome.calluses);
+        (m.remainders.nested, m.remainders.discordant) = (e.remainders_nested, e.remainders_discordant);
+        m.remainders.calluses = c.stood;
+        m.remainders.unspelled = c.unspelled;
+        m.remainders.untopped = c.untopped;
+        m.remainders.uncited = c.uncited;
+        m.remainders.callus_unminted = c.unminted;
         m
     }
 

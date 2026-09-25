@@ -378,6 +378,12 @@ impl Contemplation {
                         }
                         CoboundaryOutcome::Attached(Fill::Congruent(..)) => {
                             self.torsion_merges += 1;
+                            // RM1 — this arm mints no Torse rewrite, so the
+                            // remainder it perceived is recorded nowhere:
+                            // counted, A.17's refusal never dropped. Whether
+                            // it mints as decide_neighbors' arm does is ruled
+                            // on this count.
+                            self.remainders.unrecorded += 1;
                             // KB1 (C) — the class between the two thoughts
                             // stays on this complex's simplex; it is never
                             // filed again onto the merged idea's nerve, whose

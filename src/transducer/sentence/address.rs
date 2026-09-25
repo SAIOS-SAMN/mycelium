@@ -72,6 +72,32 @@ pub fn generator_form(
     as_element_form(&f, mu)
 }
 
+/// RM1, 78.37(4) — A CALLUS: one word vertex whose derivation SPELLS the
+/// twist in the held constructors (never adjoined — that would be a letter,
+/// which CS2's gate alone admits), acting on each chart it was perceived at,
+/// one member per chart: the one twist seen from both vantages. Its μ⃗ is the
+/// one lane a word that names no body occupies, the holonomic, as
+/// `generator_form` gives a letter.
+pub fn callus_form(
+    derivation: crate::transducer::alphabet::Derivation,
+    charts: &[crate::transducer::stalk::Invariant],
+) -> Option<Element> {
+    if charts.is_empty() {
+        return None;
+    }
+    let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
+    for chart in charts {
+        let member = Acting { chart: chart.clone(), carriage: crate::transducer::element::identity_versor().into(), gauge: Vec::new() };
+        acts.put(&member.key(), member);
+    }
+    let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, None);
+    let mut f = Form::default();
+    f.vertices.push(Vertex::Word { address, derivation, acts, contact: None });
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
+    as_element_form(&f, [0, 0, 0, 1])
+}
+
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the residual the form measures over
 /// its bundle. Zero is not a word.

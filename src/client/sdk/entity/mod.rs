@@ -4,6 +4,7 @@
 //! the quote, the speech, the adjudication, and what each writes.
 
 pub mod boot;
+pub mod callus;
 pub mod contract;
 pub mod learn;
 pub mod observe;

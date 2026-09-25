@@ -99,7 +99,9 @@ impl Kernel {
             .count() as u64;
         let read = crate::transducer::cech::RemainderReading {
             refused: self.remainders_refused,
-            unrecorded: self.remainders_unrecorded,
+            unpriced: self.remainders_unpriced,
+            unminted: self.remainders_unminted,
+            unoffered: self.remainders_unoffered,
             coincident: self.remainders_coincident,
             ..count.read()
         };

@@ -289,13 +289,16 @@ pub struct Kernel {
     /// RM1, 78.37(4) — THE REMAINDERS BY WHERE THEY WERE PERCEIVED: the
     /// residue's chart ‖ κ → the word whose torsion record carries it,
     /// derived from the records where a word is filed at its fiber and at
-    /// restore (the word_fibers pattern); each word's keys; the Torse mints
-    /// whose record refused the remainder, those not minted, and remainders
-    /// coinciding with one standing (one per class at a chart).
+    /// restore (the word_fibers pattern); each word's keys; each refusal of a
+    /// Torse mint by its own name — the record refused the remainder, nothing
+    /// priced it, the mint refused it, the book did not take it — and
+    /// remainders coinciding with one standing (one per class at a chart).
     pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_refused: u64,
-    pub(crate) remainders_unrecorded: u64,
+    pub(crate) remainders_unpriced: u64,
+    pub(crate) remainders_unminted: u64,
+    pub(crate) remainders_unoffered: u64,
     pub(crate) remainders_coincident: u64,
     /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fiber
     /// read located at this word (`held_at` entries beside its own), dropped

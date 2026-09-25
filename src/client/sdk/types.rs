@@ -456,6 +456,17 @@ pub struct Epigenome {
     pub(crate) remainder_fibers: crate::network::nerve::Keyed<crate::transducer::address::Address>,
     pub(crate) remainder_keys: crate::network::nerve::Keyed<Vec<Vec<u8>>>,
     pub(crate) remainders_coincident: u64,
+    /// RM1's RECEPTOR: a remainder arriving where one of its class stands at
+    /// a NESTED chain (one vantage at a finer depth), at an incomparable one
+    /// with a differing ray (DISCORDANT: agreeing on the class, not on the
+    /// twist); the calluses the receptor raised and awaits the voice to
+    /// stand, keyed per κ per pair of chains so each pair raises one; and
+    /// what the voice made of them.
+    pub(crate) remainders_nested: u64,
+    pub(crate) remainders_discordant: u64,
+    pub(crate) calluses_pending: Vec<super::epigenome::remainder::Callus>,
+    pub(crate) calloused: crate::network::nerve::Keyed<()>,
+    pub(crate) calluses: super::epigenome::remainder::CallusTally,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through

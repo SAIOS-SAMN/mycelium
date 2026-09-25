@@ -61,7 +61,14 @@ fn a_courts_torse_carries_its_remainder_through_a_restart() {
     .index_key();
     assert_eq!(k.remainder_at(&key), Some(&rw), "indexed at the complex's chart ‖ κ");
     let (r, _) = k.remainders();
-    assert_eq!((r.refused, r.unrecorded), (0, 0), "{}", r.line());
+    assert_eq!((r.refused, r.unpriced, r.unminted, r.unoffered), (0, 0, 0, 0), "{}", r.line());
+    // A period of one prices nothing: counted by its own name, never folded.
+    assert!(k.mint_torse_at(&inv, b"another", (Box::new(crate::transducer::sentence::ClassVector::of_rotor(
+        &crate::transducer::alphabet::Rotor::identity(),
+        crate::transducer::element::identity_versor(),
+        crate::transducer::sentence::CycleType::Identity,
+    ).expect("the identity's class")), Box::new(crate::transducer::alphabet::Rotor::identity()), 1), &words).is_none());
+    assert_eq!(k.remainders().0.unpriced, 1, "unpriced by name");
     let snap = k.snapshot();
     let mut booted = Kernel::new();
     assert!(booted.restore(&snap), "clean restore");

@@ -114,6 +114,9 @@ impl Entity {
     /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
     /// arms have run.
     pub fn close_orbit(&mut self) -> crate::chronometry::Close {
+        // RM1 — the calluses the receptor raised stand first, so a class no
+        // held word spells goes up in THIS orbit's plan.
+        self.stand_calluses();
         // 78.37 — the orbit's docket rides its close; sealed, it becomes the
         // next orbit's questions. A withheld close keeps it for the next.
         let close = self.session.voice_mut().orbit(self.contemplation.docket_cites());
