@@ -143,3 +143,16 @@ fn a_class_page_carries_its_representative_as_a_ray() {
     assert!(back[0].rotor.projective_eq(&r));
     assert!(decode_class_records(&body[..body.len() - 1]).is_empty(), "a cut page names no classes");
 }
+
+/// STD1 3c, LD0 — A PEERS REPLY IS WHOLE OR REFUSED. It clamped the count to
+/// two bytes and each address to its first 65 535 bytes, handing a peer a
+/// truncated address as though it were whole; an address past its u16 now
+/// refuses the reply, and one that fits round-trips exactly.
+#[test]
+fn a_peers_reply_past_its_wall_is_refused_never_clamped() {
+    let addrs = vec!["10.0.0.1:7000".to_string(), "10.0.0.2:7000".to_string()];
+    let body = encode_peers_reply(&addrs).expect("two short addresses fit");
+    assert_eq!(decode_peers_reply(&body), Some(addrs), "and read back whole");
+    let long = vec!["a".repeat(usize::from(u16::MAX) + 1)];
+    assert_eq!(encode_peers_reply(&long), None, "an address past two bytes refuses the reply");
+}

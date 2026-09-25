@@ -20,15 +20,20 @@ pub fn decode_peers_request(body: &[u8]) -> Option<[u8; 32]> {
     body[1..33].try_into().ok()
 }
 
-pub fn encode_peers_reply(addrs: &[String]) -> Vec<u8> {
+/// `None` where the reply passes its walls — more addresses than two bytes
+/// count, or an address longer than two bytes measure (STD1 3c, LD0). This
+/// CLAMPED both: the count to `u16::MAX`, dropping every address past it,
+/// and each address's own bytes to its first 65 535, so a peer was handed a
+/// truncated address as though it were whole.
+pub fn encode_peers_reply(addrs: &[String]) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    out.extend_from_slice(&(addrs.len().min(u16::MAX as usize) as u16).to_le_bytes());
-    for a in addrs.iter().take(u16::MAX as usize) {
+    crate::transducer::address::put_u16_count(&mut out, addrs.len())?;
+    for a in addrs {
         let b = a.as_bytes();
-        out.extend_from_slice(&(b.len().min(u16::MAX as usize) as u16).to_le_bytes());
-        out.extend_from_slice(&b[..b.len().min(u16::MAX as usize)]);
+        crate::transducer::address::put_u16_count(&mut out, b.len())?;
+        out.extend_from_slice(b);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_peers_reply(body: &[u8]) -> Option<Vec<String>> {

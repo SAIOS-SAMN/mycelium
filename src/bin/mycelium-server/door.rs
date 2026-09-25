@@ -247,8 +247,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     }
                 }
             }
-            let reply = Frame { lane: frame.lane, body: dialogue::encode_peers_reply(&nerve_addrs) };
-            answer(s, reply);
+            match dialogue::encode_peers_reply(&nerve_addrs) {
+                Some(body) => answer(s, Frame { lane: frame.lane, body }),
+                None => eprintln!("  peers reply refused: an address or the count passes its u16"),
+            }
         }
         return true;
     }
