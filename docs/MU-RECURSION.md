@@ -16979,8 +16979,21 @@ is set by its period: the period of the base under `σ` is the lcm of the
 cycle lengths of the hues the base carries (`class::cycle_lengths`, the
 one producer). The tree walked the orbit and gave up at 32 — a telescope
 that stops before the planet comes back and reports that it never does:
-an orbit of period 35 filed as NO torsion, its sections left free, the
-holonomic lane read low, nothing refused. RULED: the period is READ
+on the u8 hue domain the type admits, an orbit of period 35 (cycles of 5
+and 7) files as NO torsion, its sections left free, the holonomic lane
+read low, nothing refused. CORRECTED the same day, on the coordinator's
+own re-reading (STD1 3c-5's lint): the sensor's palette is ten hues
+(`PALETTE = 10`, `gauge_is_perm` refusing a hue past it), and the
+largest order of a permutation of ten things is Landau's `g(10) = 30`,
+below the cap — so on this sensor the cap was never reached, and the
+readings before and after PD1 are EQUAL. That does not restore the
+constant: two constants (a cap of 32, a palette of 10) happened to
+agree, which is exactly the shape 78.40 warns of — the physics undefined
+and covered by an accident of another number. The guard is the
+mechanism: the period read equals the traversal's on every cycle type
+of the palette (the 42 partitions of ten), a permutation naming a hue
+past the palette is refused by name, and the palette itself is asked
+its opposite at site 4. RULED: the period is READ
 before the first revolution, never waited for; `MAX_ORBIT` retires and
 the cast with it; a section BELONGS to the cycle exactly when its hue
 map is a power of the generator on the base — `derive_hue_map(base,
