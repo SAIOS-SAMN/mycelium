@@ -17541,6 +17541,90 @@ acceptance for (i)+(ii) is:
   holonomies across circuits today read "unperturbed", and that is the
   correct reading before the producer of (4) lands.
 
+### 78.47 Deduction constructs: the residue spelled as shapes around its congruence factors (ruled 2026-09-25, the operator's word through the implementor)
+
+**The operator's word.** "Deduction is coboundary reduction that
+CONSTRUCTS non-Euclidean shapes around the congruence factors; it is not
+removing the asymmetric part. Perfect congruence forms congruent thoughts
+(as shapes); when you form multiple congruent thoughts at the same time
+you form coherence amongst those shapes as algorithmic compounding." And,
+correcting the implementor's word "loop": construct → coherence →
+compound → adjoin is a CELESTIAL ELLIPTICAL ORBIT under the physics — its
+period read off the class's modes, returning (78.43: an age is one
+return), perturbed by its neighbours' lift and drag (78.46).
+
+This is 78.37's imagination and 78.32's store read as one orbit; nothing
+below is a new mechanism, and CS2's demand arm is its row.
+
+**(1) Construct — the target is the residue's factorisation, forced.**
+Coboundary reduction removes what a gauge absorbs (`δ⁰γ`) and leaves the
+RESIDUE: the part no gauge removes, the asymmetric part, a versor and the
+complete specification of what is missing (78.37). It is KEPT, never
+quotiented. Its CONGRUENCE FACTORS are its commuting modes (MR1, 78.29(A):
+the modes first). Each mode is spelled by Cartan–Dieudonné CONSTRUCTIVELY
+— a frame vector reflected onto its image, each step forced, no branch,
+the reflecting vectors rays, a null step refused by name — into at most
+`n + 2` reflections; each reflection is a SPHERE OR PLANE of the conformal
+model, the non-Euclidean shape. The shapes are read OFF THE RESIDUE and
+are NEW candidate constructors (78.39(2), the letter grade: none chosen).
+Refused: building the shapes by trying products of the reflections the
+mind already holds — a search over `k^(n+2)` whose every hit is DERIVABLE
+(78.32(c), cliché); 79.3's construct arm (a second route from held
+constructors, to test a single-route circuit) is a different act and is
+not this. THE MEET IS THE CERTIFICATE, NOT THE TARGET: two reflections
+whose product is a mode meet on that mode's fixed locus — an elliptic
+mode's round, a parabolic mode's point of tangency, a hyperbolic mode's
+point pair (the dual of the imaginary round two disjoint spheres share);
+the meet read off the constructed pair equal to the mode's fixed locus is
+the theorem that certifies the construction, read exactly (78.45).
+**Congruent thought**: the constructed reflections compose back to the
+residue exactly — the product against the residue the identity ray (T1).
+
+**(2) Coherence — the Gram form of the shapes held at once.** Several
+congruent thoughts held at one time are several constructed shape sets
+in one anastomosis; their coherence is the Gram form of all their
+reflections together, read by exact elimination (GR1, GR2, 78.14): the
+signature, each pair's regime by `δ²`, and a Coxeter system where the
+signs balance (CX1). Coherent = the shapes generate one closed group whose
+Gram form reads; incoherent = a pair whose regime the others contradict,
+named by the pair (78.26(5)'s levels). Where the shapes' generators act on
+circuits, AT1 (iii)'s pair agreement reads FLAT among them.
+
+**(3) Compound — the bracket closure, admitted by rank.** The coherent
+shapes' generators enter the orbit algebra (78.11); a compound is
+ADMITTED only where the closure's rank strictly increases (78.32(c)) —
+finite and affine systems are spellable already and add nothing (80.1:
+the Gram classification is not backwards), the rosette and the open group
+are the unspellable and are the candidates. The admitted compound is a
+provisional word of the mind's local dialect in its epigenome, a
+constructor as an odd letter (AL1, 80.1) — a shortcut (78.44(4)).
+
+**(4) Adjoin — by the court, from a second vantage.** A letter beyond the
+seventeen is opened only by the court on two independent re-derivations
+(law 6, 37.7): another mind replays the residue from its own constructors
+and agrees on the class (C2(a)); the act is sealed and priced on the lanes
+(POUW for the closure, POWC where another perspective closed it). The
+adjoined constructor is then held, and the next residue factors against a
+larger store.
+
+**(5) The orbit, not a loop.** Construct, coherence, compound and adjoin
+are the phases of one orbit of the mind: its period is the residue's
+class period read off its modes (78.43, never walked to a cap), one
+return is one age, and neighbouring orbits perturb it by lift and drag
+(78.46(4′)). The fleet reads it as orbital elements (LC1).
+
+**(6) Where it runs, and acceptance.** On CS2's demand arm: where the
+pivot's trial finds no move that discharges a ring's residue (today
+`Demanded`), the residue is factored and the demand carries the
+constructed shapes as its content, never an empty "demanded"; what does
+not factor (a null step) is the negative, refused with the class as its
+content. Filaments have no residue and generate nothing. ACCEPTANCE is the
+algebra: the product of the constructed reflections against the residue
+the identity ray; each pair's meet equal to its mode's fixed locus; the
+negative refused with its class; the Gram form of the shapes read; and on
+the fleet a second mind re-deriving the class from its own constructors.
+The census is a regression reading only.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`
