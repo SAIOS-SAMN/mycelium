@@ -154,6 +154,7 @@ impl Entity {
             // A cited form this mind sealed cannot be taught to any court:
             // the frame would refuse it here and carry the citer alone.
             if self.sealed.get(o.form.address().as_bytes()).is_some() {
+                let _ = crate::transducer::sentence::Refused::CitedSealed.noted();
                 continue;
             }
             let both = [o.form.clone(), o.citer.clone()];
@@ -182,20 +183,22 @@ impl Entity {
     /// the cited form, which is a fault of the utterance; or unless the
     /// citer has already been owed to every court this mind knows, since
     /// the owed frame goes to the courts in turn and a citer no court can
-    /// stand waits for its family to come round again. Whether it queued.
+    /// stand waits for its family to come round again. Queued, or the
+    /// refusal by name, counted where it forms (A.17, 78.9).
     pub(crate) fn owe_citation(
         &mut self,
         citer: &Element,
         form: &crate::transducer::address::Address,
         train: &crate::transducer::family::Family,
         task: &[u8],
-    ) -> bool {
+    ) -> Result<(), crate::transducer::sentence::Refused> {
+        use crate::transducer::sentence::Refused;
         let addr = citer.address();
         if self.sealed.get(form.as_bytes()).is_some() {
-            return false;
+            return Err(Refused::CitedSealed.noted());
         }
         let Some(cited) = self.epigenome.working_word(form.as_bytes()).map(|h| h.element().clone()) else {
-            return false;
+            return Err(Refused::CitedNotHeld.noted());
         };
         let courts = self.session.peers().len();
         let tried = match self.owed_tries.get(addr.as_bytes()) {
@@ -204,7 +207,7 @@ impl Entity {
         };
         if tried >= courts {
             self.owed_tries.remove(addr.as_bytes());
-            return false;
+            return Err(Refused::OwedToEveryCourt.noted());
         }
         self.owed_tries.insert(addr.as_bytes(), tried + 1);
         self.owed.push(crate::client::sdk::Owed {
@@ -213,7 +216,7 @@ impl Entity {
             train: train.to_vec(),
             task: task.to_vec(),
         });
-        true
+        Ok(())
     }
 
     /// The certificate a sentence cites: the contraction that produced the

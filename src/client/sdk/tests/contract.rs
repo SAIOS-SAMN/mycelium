@@ -164,19 +164,23 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
     assert!(courts >= 1, "the mind knows a court: {courts}");
     for n in 0..courts {
         assert!(
-            entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+            entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]).is_ok(),
             "owed to court {n}"
         );
     }
     assert_eq!(entity.owed_pending(), courts, "one owed frame per court");
-    assert!(
-        !entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+    assert_eq!(
+        entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+        Err(crate::transducer::sentence::Refused::OwedToEveryCourt),
         "owed to every court once, the citer waits for its family"
     );
     entity.owed.clear();
     // Admitted at a court, the citer starts afresh.
     entity.file_taught(&citer);
-    assert!(entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]), "owed again after an admission");
+    assert!(
+        entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]).is_ok(),
+        "owed again after an admission"
+    );
     entity.owed.clear();
     // A citation this mind sealed is owed to no court.
     let _ = entity.receive_adjudication(
@@ -187,8 +191,9 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
         &family,
         &[3; 32],
     );
-    assert!(
-        !entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+    assert_eq!(
+        entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
+        Err(crate::transducer::sentence::Refused::CitedSealed),
         "a sealed citation is owed to no court"
     );
     assert_eq!(entity.owed_pending(), 0);

@@ -84,8 +84,11 @@ pub fn factor_versor_target(
                 true => Ok(crate::transducer::alphabet::Derivation::factored(
                     cited, residue.geodesic(), composed,
                 )),
-                // The citations do not compose to the target: refused.
-                false => return None,
+                // Named and counted where it forms (A.17, 78.9).
+                false => {
+                    let _ = crate::transducer::sentence::Refused::CitationsDoNotCompose.noted();
+                    return None;
+                }
             }
         }
         Err(demand) => Err(demand),

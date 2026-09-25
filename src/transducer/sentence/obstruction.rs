@@ -128,6 +128,124 @@ pub fn read_obstruction(content: Content) -> ClosureObstruction {
     }
 }
 
+/// A.17 — A REFUSAL NAMED WHERE IT IS MADE (78.16 C3 as audited): the
+/// mind's, the pivot's and the mint's refusals that return no `Refusal`,
+/// each by its own name, its kind by 78.9, and counted once where it is formed
+/// by the one refusal reader ([`crate::observe::note_obstruction`]) — never a
+/// silent `None`, `false` or `continue`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Refused {
+    /// The mint: nothing in the form acts — no question stands (N).
+    MintNothingActs,
+    /// The mint: a vertex does not carry its family, at the kind the court's
+    /// own reader gave that refusal.
+    MintVertexNotCarried(ObstructionKind),
+    /// The mint: links remain and the form declares no demand (C).
+    MintLinksWithoutDemand,
+    /// The mint: links the form's demands do not declare (C).
+    MintLinksUndeclared,
+    /// The mint: the form has no tape at its measure (I).
+    MintNoTape,
+    /// A derivation: the citations do not compose to the target (I).
+    CitationsDoNotCompose,
+    /// 37.7, the Gödel step: the rotor mints no generator (P).
+    RotorMintsNoGenerator,
+    /// The pivot's trial: no orbit, class or measure stood to ask (N).
+    TrialNoQuestion,
+    /// The trial: the move leaves the coordinate it acted on standing (C).
+    TrialNotDischarged,
+    /// The trial: the member paths agree on no class after the move (C).
+    TrialPathsDisagree,
+    /// The trial: the rank moved as no elementary pivot moves it (I).
+    TrialRankInadmissible,
+    /// The trial: a lane rose, on a pair or on the bundle (C, law 10).
+    TrialLaneRose,
+    /// The trial: the move split two circuits of a cell that agreed (C,
+    /// 78.46(4′)).
+    TrialUnclosed,
+    /// An owed citation: the cited address is sealed, owed to no court (P).
+    CitedSealed,
+    /// An owed citation: the cited form is not held here (I).
+    CitedNotHeld,
+    /// An owed citation: every court this mind knows was taught it and none
+    /// rules it — it waits for its family (D).
+    OwedToEveryCourt,
+    /// The court: an end of the face is not a vertex of the form (I).
+    FaceEndNotVertex,
+    /// The court: the face's place does not re-derive (I).
+    FacePlaceNotRederived,
+    /// The court: no place derives at the face at all (P).
+    FacePlaceUnderived,
+}
+
+impl Refused {
+    /// Its kind (78.9).
+    pub fn kind(self) -> ObstructionKind {
+        use ObstructionKind::{C, D, I, N, P};
+        match self {
+            Refused::MintVertexNotCarried(k) => k,
+            Refused::MintNothingActs | Refused::TrialNoQuestion => N,
+            Refused::MintLinksWithoutDemand
+            | Refused::MintLinksUndeclared
+            | Refused::TrialNotDischarged
+            | Refused::TrialPathsDisagree
+            | Refused::TrialLaneRose
+            | Refused::TrialUnclosed => C,
+            Refused::MintNoTape
+            | Refused::CitationsDoNotCompose
+            | Refused::TrialRankInadmissible
+            | Refused::CitedNotHeld
+            | Refused::FaceEndNotVertex
+            | Refused::FacePlaceNotRederived => I,
+            Refused::RotorMintsNoGenerator | Refused::CitedSealed | Refused::FacePlaceUnderived => P,
+            Refused::OwedToEveryCourt => D,
+        }
+    }
+
+    /// Its name, the proof a permanent obstruction carries.
+    pub fn proof(self) -> &'static str {
+        match self {
+            Refused::MintNothingActs => "nothing in the form acts",
+            Refused::MintVertexNotCarried(_) => "a vertex does not carry its family",
+            Refused::MintLinksWithoutDemand => "links remain and the form declares no demand",
+            Refused::MintLinksUndeclared => "links undeclared by the form's demands",
+            Refused::MintNoTape => "the form has no tape at its measure",
+            Refused::CitationsDoNotCompose => "the citations do not compose to the target",
+            Refused::RotorMintsNoGenerator => "the rotor mints no generator",
+            Refused::TrialNoQuestion => "no orbit, class or measure stood to ask",
+            Refused::TrialNotDischarged => "the move leaves its coordinate standing",
+            Refused::TrialPathsDisagree => "the member paths agree on no class",
+            Refused::TrialRankInadmissible => "the rank moved as no elementary pivot moves it",
+            Refused::TrialLaneRose => "a lane rose",
+            Refused::TrialUnclosed => "the move splits two circuits of a cell that agreed",
+            Refused::CitedSealed => "the cited address is sealed, owed to no court",
+            Refused::CitedNotHeld => "the cited form is not held here",
+            Refused::OwedToEveryCourt => "owed to every court and none rules it",
+            Refused::FaceEndNotVertex => "an end is not a vertex of the form",
+            Refused::FacePlaceNotRederived => "the place does not re-derive",
+            Refused::FacePlaceUnderived => "the place does not derive at all",
+        }
+    }
+
+    /// The obstruction it is, for a refusal that carries one (78.9).
+    pub fn obstruction(self) -> ClosureObstruction {
+        match self.kind() {
+            ObstructionKind::P => ClosureObstruction::Permanent { proof: self.proof() },
+            ObstructionKind::D => ClosureObstruction::Dialect { coset: Vec::new(), chart: None },
+            ObstructionKind::C => ClosureObstruction::Cover { cocycle: Vec::new() },
+            ObstructionKind::I => ClosureObstruction::Integrity,
+            ObstructionKind::N => ClosureObstruction::NoQuestion,
+            ObstructionKind::Unclassified => ClosureObstruction::Unclassified,
+        }
+    }
+
+    /// Counted by the one refusal reader, and returned.
+    pub fn noted(self) -> Refused {
+        crate::observe::note_obstruction(self.kind());
+        self
+    }
+}
+
 /// A versor's canonical ray, each non-zero blade and its coefficient.
 #[expect(
     clippy::cast_possible_truncation,

@@ -4,7 +4,8 @@
 //! carrying the five things a timeline needs and nothing else: the
 //! READER'S NAME, the PREFIX LENGTH of the key it wrote (or `demand`, or
 //! `-`), the SPEND since the previous line on this token, the BYTES the
-//! reader moved where it can say, and the WALL CLOCK.
+//! reader moved where it can say, and the BUDGET left — the stroke's own
+//! clock, never a wall clock (law 9).
 //!
 //! THE TRACE REACHED ONLY EXTRACTION, which is why the `1019…` stall had
 //! no instrument: a family is extracted, and then it is SPOKEN, MINTED and
@@ -33,12 +34,9 @@
 //! remaining that ROSE is a new token — a new family's budget — and prints
 //! `-` rather than a negative dressed as a number (rule 11).
 //!
-//! THE CLOCK IS THE TRACE'S, NEVER A KERNEL'S. Law 9 and rule 5 forbid a
-//! kernel reading a wall clock; this is not a kernel. No branch in the
-//! engine consults a trace line, `trace` returns `()`, and the origin is a
-//! monotonic `Instant` taken at the first line so every line carries
-//! seconds since the trace began — comparable across lines, and never an
-//! absolute time anything could key on.
+//! NO WALL CLOCK, WHATEVER THE GATE (law 9, ruled 2026-09-26): the line's
+//! time is the spend and the budget the stroke itself counts. A monotonic
+//! origin read here once stood beside them and is gone.
 //!
 //! IT IS OFF UNLESS ASKED FOR. `MYC_TRACE=1` in the environment turns it
 //! on, read ONCE at the first call and held — a boot-time reading like
@@ -47,31 +45,10 @@
 //! of the tracing; left compiled out, the task that does not end could not
 //! be traced in the build that does not end.
 
-// THE GATE REFUSED THIS SHAPE AND THE EXEMPTION IS SCOPED TO THIS FILE.
-// `clippy.toml` disallows `std::time::Instant` with the reason "law 9: the
-// clock is the receipt chain's k and the height, never wall time", and that
-// ban is right for the engine. Law 9's scope, and rule 5's "looks like"
-// column, is a KERNEL reading a clock; D1 (2026-09-19) requires the trace
-// line to carry the wall clock and says "never by a kernel". This module is
-// not a kernel and the file's header says why: no branch in the engine
-// consults a trace line, `trace` returns `()`, and with `MYC_TRACE` unset
-// not a single read happens. A timeline cannot be rendered from a carrier
-// that has no seconds in it, and the alternative — a second clock in each
-// instrument binary — cannot reach the line, which is written here.
-//
-// It is an inner attribute so the exemption is the FILE's and cannot leak
-// into a kernel by someone moving a function next to it.
-#![allow(
-    clippy::disallowed_types,
-    reason = "D1 2026-09-19: the trace's own monotonic origin; law 9 binds kernels and this is an instrument"
-)]
-
 use std::cell::Cell;
 use std::sync::OnceLock;
-use std::time::Instant;
 
 static ON: OnceLock<bool> = OnceLock::new();
-static ORIGIN: OnceLock<Instant> = OnceLock::new();
 
 thread_local! {
     /// The `remaining` the last line on this thread carried, so the spend
@@ -150,7 +127,6 @@ fn line(
     if !on() {
         return;
     }
-    let t = ORIGIN.get_or_init(Instant::now).elapsed();
     let wrote = match wrote {
         Wrote::Key(k) => format!("key {}", k.len()),
         Wrote::Ordinal(i) => format!("ordinal {i}"),
@@ -171,11 +147,7 @@ fn line(
         }
     };
     let bytes = bytes.map_or_else(|| "-".to_string(), |b| b.to_string());
-    eprintln!(
-        "  trace {reader} {wrote} spend {spend} bytes {bytes} budget {remaining} t {}.{:03}",
-        t.as_secs(),
-        t.subsec_millis()
-    );
+    eprintln!("  trace {reader} {wrote} spend {spend} bytes {bytes} budget {remaining}");
 }
 
 /// THE CARRIAGE A WORD VERTEX WAS MEASURED WITH, by address, so a step

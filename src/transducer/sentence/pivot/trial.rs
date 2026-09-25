@@ -12,6 +12,7 @@
 
 use super::drive::{class_vectors_on, holonomy_words_on, orbit_holonomy_on, Prior};
 use super::*;
+use crate::transducer::sentence::Refused;
 
 /// WHAT ONE MEMBER PATH OF AN ORBIT CLOSES AT: the class its holonomy stands
 /// in, the period it closes at, and the hue generator it turns by.
@@ -33,13 +34,27 @@ pub(crate) struct OrbitClass {
 }
 
 impl Form {
+    /// ONE CANDIDATE TRIED: its certificate, or its refusal by name (A.17),
+    /// counted where it forms by the one refusal reader (78.9).
     pub(crate) fn trial(
         &self,
         idx: usize,
         cand: &Candidate,
         kappa: &ClassVector,
         before: &Prior<'_>,
-    ) -> Option<PivotCertificate> {
+    ) -> Result<PivotCertificate, Refused> {
+        self.trial_or_refuse(idx, cand, kappa, before).map_err(Refused::noted)
+    }
+
+    fn trial_or_refuse(
+        &self,
+        idx: usize,
+        cand: &Candidate,
+        kappa: &ClassVector,
+        before: &Prior<'_>,
+    ) -> Result<PivotCertificate, Refused> {
+        // No orbit, class, seed, row or measure stood to ask: no question.
+        let none = Refused::TrialNoQuestion;
         let &Prior { rank_before, crystal, bundle, t_extent, ref mu_before, ref agreements } = before;
         // THE TRIAL OWNS WHAT THE MOVE WRITES AND BORROWS THE REST. A
         // `Word`, `Placement` or `Hue` move writes ONE FACE's transport and
@@ -53,7 +68,7 @@ impl Form {
         // THE ORBIT TRIALLED, BY ITS CHORD (AT1): the trial re-reads the
         // orbits off the faces it wrote, and finds this one there by the
         // overlap that closes it, never by its position in either list.
-        let chord = self.orbits.get(idx)?.chord.clone();
+        let chord = self.orbits.get(idx).ok_or(none)?.chord.clone();
         let mut faces = self.faces.clone();
         let mut axes = self.axes.clone();
         apply_by(&mut faces, &cand.by);
@@ -64,15 +79,16 @@ impl Form {
         // class, no seed to re-derive it from — is not a candidate that
         // failed to discharge; there is no trial to read (rule 11).
         if let PivotBy::OpenAxis { face, .. } = &cand.by {
-            let lp = orbits.iter().find(|lp| lp.chord == *face)?;
+            let lp = orbits.iter().find(|lp| lp.chord == *face).ok_or(none)?;
             // THE TRIAL'S OWN FACES, not the form's. The move has already
             // been applied to `faces` above, so the composite this keys by is
             // the one the orbit carries AFTER the write — which is what
             // `class_vectors_on` reads two lines below to decide whether the
             // orbit discharged. Keyed off `self` the axis would be filed under
             // the holonomy the orbit had before its own opening.
-            let class = orbit_holonomy_on(&faces, &self.vertices, lp)?.rotor().holonomy_key()?;
-            element::versor_of_word(&orbit_holonomy_on(&faces, &self.vertices, lp)?)?;
+            let held = orbit_holonomy_on(&faces, &self.vertices, lp).ok_or(none)?;
+            let class = held.rotor().holonomy_key().ok_or(none)?;
+            element::versor_of_word(&held).ok_or(none)?;
             axes.put(&class, Some(face.clone()));
         }
         // 12.6: a pivot on axis x discharges when x reads zero after and no
@@ -88,9 +104,10 @@ impl Form {
         // no closed member path has nothing to read and refuses (rule 11).
         // The trial rewrites the faces and reopens the axes; the VERTICES are
         // untouched by it, so the Frame is read off the form's own.
-        let after = class_vectors_on(&faces, &self.vertices, &axes, orbits.iter().find(|lp| lp.chord == chord)?);
+        let after =
+            class_vectors_on(&faces, &self.vertices, &axes, orbits.iter().find(|lp| lp.chord == chord).ok_or(none)?);
         if after.is_empty() {
-            return None;
+            return Err(none);
         }
         let discharged = after.scoped().all(|(_, kappa_after)| {
             if cand.axis == Axis::Open {
@@ -100,7 +117,7 @@ impl Form {
             }
         });
         if !discharged {
-            return None;
+            return Err(Refused::TrialNotDischarged);
         }
         // THE CERTIFICATE NAMES ONE CLASS AFTER, so it is only writable where
         // every member path agrees on it. The plane and off-plane coordinates
@@ -110,11 +127,11 @@ impl Form {
         for (_, cv) in after.scoped() {
             match &agreed {
                 None => agreed = Some(cv.clone()),
-                Some(h) if h.class_key() != cv.class_key() => return None,
+                Some(h) if h.class_key() != cv.class_key() => return Err(Refused::TrialPathsDisagree),
                 Some(_) => {}
             }
         }
-        let kappa_after = agreed?;
+        let kappa_after = agreed.ok_or(none)?;
         // THE RANK AFTER IS READ OVER EVERY ROW, because no move a pivot
         // makes is confined to one orbit.
         //
@@ -158,9 +175,9 @@ impl Form {
                 &self.vertices,
                 &axes,
                 lp,
-            )?);
+            ).ok_or(none)?);
         }
-        let rank_after = rank_of_rows(&after_rows)?;
+        let rank_after = rank_of_rows(&after_rows).ok_or(none)?;
         // T21 (iii): the rank holds, or one unit moves out of torsion, free
         // or off-plane and into axes. Anything else is not this pivot's move
         // and the trial refuses it here, naming what the audit did.
@@ -168,7 +185,7 @@ impl Form {
         // The audit reads every row, so a sibling on the shared face carried
         // to a new class is a move of this pivot too (R26).
         if let RankMove::Inadmissible { .. } = rank_move {
-            return None;
+            return Err(Refused::TrialRankInadmissible);
         }
         let mu = match mu_before {
             None => Mu::Unmeasured,
@@ -187,18 +204,19 @@ impl Form {
                 };
                 let (pairs_after, after) = crate::transducer::family::bundle_pressure(
                     &trial_form,
-                    bundle?,
+                    bundle.ok_or(none)?,
                     crystal,
                     t_extent,
-                )?;
+                )
+                .ok_or(none)?;
                 // 12.6: a trial refuses a candidate that raises any lane on
                 // ANY pair, and the reading names the pairs. Two readings of
                 // different lengths are not the same bundle and are not
                 // comparable, which is also a refusal — of the comparison.
                 let raised =
-                    crate::transducer::family::pairs_raised(pairs_before, &pairs_after)?;
+                    crate::transducer::family::pairs_raised(pairs_before, &pairs_after).ok_or(none)?;
                 if !raised.is_empty() {
-                    return None;
+                    return Err(Refused::TrialLaneRose);
                 }
                 // 12.6, T21 (iv): a candidate that RAISES any lane is
                 // refused, read per lane and named. Strictness is not
@@ -207,7 +225,7 @@ impl Form {
                 let reading = crate::economy::lane_moves(&after, &before);
                 let risen = crate::economy::lanes_risen(&reading);
                 if !risen.is_empty() {
-                    return None;
+                    return Err(Refused::TrialLaneRose);
                 }
                 Mu::Measured { before, after }
             }
@@ -226,9 +244,9 @@ impl Form {
             ..super::PerturbTally::default()
         });
         if split {
-            return None;
+            return Err(Refused::TrialUnclosed);
         }
-        Some(PivotCertificate {
+        Ok(PivotCertificate {
             chord,
             axis: cand.axis,
             before: kappa.class_key(),

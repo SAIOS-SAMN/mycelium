@@ -420,7 +420,7 @@ impl Form {
                         starved = true;
                         break;
                     }
-                    if let Some(cert) = self.trial(idx, cand, &kappa, &prior) {
+                    if let Ok(cert) = self.trial(idx, cand, &kappa, &prior) {
                         discharging.push(cert);
                     }
                 }

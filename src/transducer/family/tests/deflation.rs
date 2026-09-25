@@ -232,3 +232,14 @@ assert_eq!(
     "the reading names PAIR TWO, and the sum descending does not hide it"
 );
 }
+
+/// A.17 — THE MINT'S REFUSAL IS NAMED, never a silent `None`: a form nothing
+/// in which acts is refused as that, with no question standing (78.9, N).
+#[test]
+fn a_form_nothing_in_which_acts_is_refused_by_name() {
+    use crate::transducer::sentence::{ObstructionKind, Refused};
+    let rule = crate::transducer::sentence::rule_of_form(crate::transducer::sentence::Form::default());
+    let refused = mint_sentence_why(&rule, &[], &NoCrystal, 0).err();
+    assert_eq!(refused, Some(Refused::MintNothingActs));
+    assert_eq!(refused.map(Refused::kind), Some(ObstructionKind::N));
+}

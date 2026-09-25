@@ -388,13 +388,14 @@ impl Entity {
     /// the demand — `pivot_orbit` defers on `Standing::Ruled` alone since R11.
     pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
         for (rotor, chart) in adjoined {
-            // Two different facts end a candidate: a rotor that mints no
-            // generator, and one the mind already stands — the same class is
-            // adjoined every stroke it is measured, and after the first the
-            // letter is held with nothing to add. Whether it ever became a
-            // word is the epigenome's standing and Learning's
-            // adjoined-by-closure, never a line.
+            // Two different facts end a candidate. A rotor that mints no
+            // generator is a REFUSAL, named and counted where it forms (A.17,
+            // 78.9): if adjoined-by-closure reads 0, this is the reading that
+            // says why (GD1). A rotor the mind already stands is not one —
+            // the same class is adjoined every stroke it is measured, and
+            // after the first the letter is held with nothing to add.
             let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
+                let _ = crate::transducer::sentence::Refused::RotorMintsNoGenerator.noted();
                 continue;
             };
             if self.epigenome.standing_of(e.address().as_bytes()).is_some() {

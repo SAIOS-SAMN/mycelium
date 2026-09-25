@@ -105,21 +105,28 @@ fn same_place(
 /// frame. A frame-axis overlap's place is the motor its member's body took
 /// between two frames — measured content its producer names, which the
 /// vertices do not derive — so only its ends are asked here.
-fn face_rederives(f: &Form, o: &crate::network::nerve::coord::Overlap, face: &crate::transducer::sentence::FormFace) -> bool {
+///
+/// WHICH BRANCH REFUSED is typed (A.17): three different defects, carried
+/// into the `REFUSE_FACE` refusal's obstruction and counted with it.
+fn face_rederives(
+    f: &Form,
+    o: &crate::network::nerve::coord::Overlap,
+    face: &crate::transducer::sentence::FormFace,
+) -> Result<(), sentence::Refused> {
+    use sentence::Refused;
     let (Some(_), Some(_)) = (f.vertices.at(&o.from_vertex()), f.vertices.at(&o.to_vertex())) else {
-        return false;
+        return Err(Refused::FaceEndNotVertex);
     };
     if face.producer == crate::transducer::sentence::Producer::Motor {
-        return true;
+        return Ok(());
     }
     // The edge is evidence the court re-measures against the FAMILY
     // (`edges_rederive_frames`), not something the vertices re-derive, so it
     // is carried in and compared by its presence alone here.
-    // A place that does not re-derive and one that does not derive at all
-    // are both refused at the face (`REFUSE_FACE`).
     match f.face_place(&o.from, &o.to, face.place.edge.clone()) {
-        Some(p) => same_place(&p, &face.place),
-        None => false,
+        Some(p) if same_place(&p, &face.place) => Ok(()),
+        Some(_) => Err(Refused::FacePlaceNotRederived),
+        None => Err(Refused::FacePlaceUnderived),
     }
 }
 
@@ -467,16 +474,16 @@ pub fn replay_form_on(
         // EVERY OVERLAP RE-DERIVES AT ITS MEMBER PAIR (AT1): the placement
         // and hue map re-derive from the two members its charts name, and an
         // overlap whose ends the form no longer holds does not re-derive.
-        if face_rederives(f, &o, face) {
+        let Err(branch) = face_rederives(f, &o, face) else {
             continue;
-        }
+        };
         // A PLACE THAT DOES NOT RE-DERIVE IS ADMITTED ONLY BY A CERTIFICATE
         // (AT1 A3): the pivot is the one producer of content the vertices do
         // not derive, and its certificate names the overlap it wrote. A
         // chord whose orbit carries is not a producer, so it never admits a
         // place alone.
         if !named.holds(&o) || !torsion_chord_carries(&traversed, &by_chord, &o) {
-            return Some(face_at(&o));
+            return Some(face_at(&o, branch));
         }
     }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
@@ -629,9 +636,14 @@ pub fn replay_form_on(
 
 /// `REFUSE_FACE` at the overlap's two vertices, by their coordinates (50.9,
 /// AT1): every end of an overlap is a vertex coordinate — a citation's is its
-/// site (54.7 B5a) — so the refusal always has a coordinate to name.
-fn face_at(o: &crate::network::nerve::coord::Overlap) -> Refusal {
-    Refusal::new(REFUSE_FACE, sentence::At::face(o.from_vertex(), o.to_vertex()))
+/// site (54.7 B5a) — so the refusal always has a coordinate to name. Its
+/// obstruction is the branch that refused (A.17), counted with the refusal.
+fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::Refused) -> Refusal {
+    Refusal {
+        reason: REFUSE_FACE,
+        at: sentence::At::face(o.from_vertex(), o.to_vertex()),
+        obstruction: branch.obstruction(),
+    }
 }
 
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
@@ -751,7 +763,7 @@ pub(crate) fn torsion_chord_carries(
         let Some(tf) = f.faces.at(&s.overlap) else {
             return false;
         };
-        if !face_rederives(f, &s.overlap, tf) {
+        if face_rederives(f, &s.overlap, tf).is_err() {
             return false;
         }
     }

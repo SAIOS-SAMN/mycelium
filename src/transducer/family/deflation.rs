@@ -225,14 +225,35 @@ pub fn mint_sentence(
     crystal: &dyn Crystal,
     t_extent: u64,
 ) -> Option<element::Element> {
+    mint_sentence_why(rule, family, crystal, t_extent).ok()
+}
+
+/// [`mint_sentence`] with its refusal named (A.17) and counted where it
+/// forms, by the one refusal reader (78.9).
+pub fn mint_sentence_why(
+    rule: &crate::transducer::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    t_extent: u64,
+) -> Result<element::Element, crate::transducer::sentence::Refused> {
+    mint_or_refuse(rule, family, crystal, t_extent).map_err(crate::transducer::sentence::Refused::noted)
+}
+
+fn mint_or_refuse(
+    rule: &crate::transducer::sentence::SentenceRule,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    t_extent: u64,
+) -> Result<element::Element, crate::transducer::sentence::Refused> {
+    use crate::transducer::sentence::Refused;
     // A form nothing in which acts is not uttered: the speaker's side of
     // `REFUSE_NOT_A_SENTENCE` (23.1 step 3, 50.6), reading the same
     // `Form::acts()` the court reads.
     if !rule.form.acts() {
-        return None;
+        return Err(Refused::MintNothingActs);
     }
-    if crate::court::verdict::body::vertices_carry_frames(&rule.form, family).is_some() {
-        return None;
+    if let Some(r) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
+        return Err(Refused::MintVertexNotCarried(r.obstruction.kind()));
     }
     // 50.5 — what the form leaves unspoken on this family is its demand.
     // The remainders are measured once here and read by the measure below
@@ -245,10 +266,8 @@ pub fn mint_sentence(
         Some(f) => f,
         None => &rule.form,
     };
-    // Refused where the form speaks a lamina its family refuses, or has no
-    // tape at its measure.
-    let mag = sentence_measure_from(form, family, t_extent, pay, &remainders)?;
-    crate::transducer::sentence::as_element_form(form, mag)
+    let mag = sentence_measure_why(form, family, t_extent, pay, &remainders)?;
+    crate::transducer::sentence::as_element_form(form, mag).ok_or(Refused::MintNoTape)
 }
 
 /// 50.5 — THE UNSPOKEN REMAINDER, DECLARED. A sentence is "the form saying
@@ -367,18 +386,32 @@ pub fn sentence_measure_from(
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Option<[u64; 4]> {
+    sentence_measure_why(form, family, t_extent, pay, remainders).ok()
+}
+
+/// [`sentence_measure_from`] with its refusal named (A.17) and not counted:
+/// a reader that only measures does not refuse, and the mint that does
+/// counts it where it forms.
+pub fn sentence_measure_why(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    t_extent: u64,
+    pay: [u64; 4],
+    remainders: &[crate::transducer::germinate::ResidualGerm],
+) -> Result<[u64; 4], crate::transducer::sentence::Refused> {
+    use crate::transducer::sentence::Refused;
     if form.demand_vertices().next().is_none() {
         let left: usize = remainders.iter().map(|r| r.len()).sum();
         if left != 0 {
-            return None;
+            return Err(Refused::MintLinksWithoutDemand);
         }
         let mut mag = pay;
         mag[2] = t_extent;
-        return Some(mag);
+        return Ok(mag);
     }
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if !undeclared.is_empty() {
-        return None;
+        return Err(Refused::MintLinksUndeclared);
     }
     let mut mag = [0u64; 4];
     // The remainders are the ones `form_deflation` measured (law 12); the
@@ -412,7 +445,7 @@ pub fn sentence_measure_from(
     // The span is the bundle's, not a sum over its pairs: a family standing
     // three frames does not age three times (51.9). It is written, not added.
     mag[2] = t_extent;
-    Some(mag)
+    Ok(mag)
 }
 
 /// Pressure of a form spoken over its germinating bundle (A1, 12.6):

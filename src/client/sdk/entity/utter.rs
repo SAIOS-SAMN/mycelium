@@ -410,7 +410,7 @@ impl Entity {
                 // citer (chapter 6's depth order). The mind HOLDS it,
                 // because it derived through it.
                 Some(dialogue::Adjudication::Awaiting { form }) => {
-                    self.owe_citation(&sentences[i], form, train, task);
+                    let _ = self.owe_citation(&sentences[i], form, train, task);
                 }
                 // Stood or ratified: sealed and filed above.
                 Some(_) | None => {}

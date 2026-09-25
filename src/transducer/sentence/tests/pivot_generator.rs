@@ -850,7 +850,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
     );
     let mut certified = 0usize;
     for cand in &cands {
-        let Some(cert) = f.trial(0, cand, &kappa, &prior) else {
+        let Ok(cert) = f.trial(0, cand, &kappa, &prior) else {
             continue;
         };
         certified += 1;
@@ -914,11 +914,11 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
     let _ = take_perturb_tally();
     let (mut admitted, mut refused) = (0usize, 0usize);
     for cand in &cands {
-        if f.trial(0, cand, &kappa, &unperturbed).is_none() {
+        if f.trial(0, cand, &kappa, &unperturbed).is_err() {
             continue;
         }
         admitted += 1;
-        if f.trial(0, cand, &kappa, &perturbed).is_none() {
+        if matches!(f.trial(0, cand, &kappa, &perturbed), Err(Refused::TrialUnclosed)) {
             refused += 1;
         }
     }
@@ -953,7 +953,7 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
         agreements,
     };
     let (unperturbed, perturbed) = (prior(Agreements::default()), prior(agreements));
-    let certified = |p| cands.iter().filter(|c| g.trial(0, c, &kappa, p).is_some()).count();
+    let certified = |p| cands.iter().filter(|c| g.trial(0, c, &kappa, p).is_ok()).count();
     assert!(certified(&unperturbed) > 0, "the quarter discharges, or this asserts nothing");
     assert_eq!(certified(&perturbed), certified(&unperturbed), "a curved cell's pairs were never agreeing");
 }
