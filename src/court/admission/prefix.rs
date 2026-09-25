@@ -68,7 +68,12 @@ impl SignedPrefix {
     /// The fixed fields' bytes: origin, epoch, predecessor, place, height.
     const FIXED: usize = 32 + 4 + 32 + 8 + 8 + 8;
 
-    pub fn bytes(&self) -> Vec<u8> {
+    /// The signed bytes, or `None` where the chart or the payload passes its
+    /// two-byte length (STD1 3c): the fields are public, so the writer
+    /// itself refuses rather than trust that `fits` was asked.
+    #[must_use]
+    pub fn bytes(&self) -> Option<Vec<u8>> {
+        use crate::transducer::address::put_u16_count;
         let mut out = Vec::with_capacity(Self::FIXED + 4 + self.chart.len() + self.payload.len());
         out.extend_from_slice(&self.genesis);
         out.extend_from_slice(&self.epoch.to_le_bytes());
@@ -76,11 +81,11 @@ impl SignedPrefix {
         out.extend_from_slice(&self.at.k.to_le_bytes());
         out.extend_from_slice(&self.at.i.to_le_bytes());
         out.extend_from_slice(&self.height.to_le_bytes());
-        out.extend_from_slice(&(self.chart.len() as u16).to_le_bytes());
+        put_u16_count(&mut out, self.chart.len())?;
         out.extend_from_slice(&self.chart);
-        out.extend_from_slice(&(self.payload.len() as u16).to_le_bytes());
+        put_u16_count(&mut out, self.payload.len())?;
         out.extend_from_slice(&self.payload);
-        out
+        Some(out)
     }
 
     /// Read the prefix back. Length-prefixed and decodable end to end (A21):

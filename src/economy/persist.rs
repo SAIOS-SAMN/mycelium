@@ -83,13 +83,15 @@ impl Entry {
 /// then `[nv u32][voice 32·nv][μ⃗ 4×u64][stamp 48][receipt 32]`. The word's
 /// row already carries its address, once; the award carries none. The one
 /// writing of it, for the snapshot and for LD1's measure.
-pub fn put_award(out: &mut Vec<u8>, award: Option<&super::escrow::Escrowed>) {
+/// `None` where the voices' count passes its four bytes (STD1 3c).
+#[must_use]
+pub fn put_award(out: &mut Vec<u8>, award: Option<&super::escrow::Escrowed>) -> Option<()> {
     let Some(row) = award else {
         out.push(0);
-        return;
+        return Some(());
     };
     out.push(1);
-    out.extend_from_slice(&(row.voices.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(out, row.voices.len())?;
     for v in &row.voices {
         out.extend_from_slice(v);
     }
@@ -98,6 +100,7 @@ pub fn put_award(out: &mut Vec<u8>, award: Option<&super::escrow::Escrowed>) {
     }
     row.anchor.0.put_canonical(out);
     out.extend_from_slice(&row.anchor.1);
+    Some(())
 }
 
 /// The inverse of [`put_award`]: none, one award, or a refusal.
@@ -137,8 +140,10 @@ impl Treasury {
     pub fn carriage(&self, c: &mut crate::observe::Carriage) {
         crate::snapshot::persist(&self.escrowed, |_, row| {
             let mut field = Vec::new();
-            put_award(&mut field, Some(row));
-            c.add(crate::observe::CARRIER_AWARD, 0, field.len() as u64);
+            // An award that does not write carries nothing to measure.
+            if put_award(&mut field, Some(row)).is_some() {
+                c.add(crate::observe::CARRIER_AWARD, 0, field.len() as u64);
+            }
         });
     }
 

@@ -124,7 +124,11 @@ pub fn verify_signature<'a>(
     signer: &[u8; 32],
     sig: &[u8; 64],
 ) -> Result<Verified<'a>, &'static str> {
-    if !crate::court::identity::verify(signer, &prefix.bytes(), sig) {
+    // A prefix that does not frame has no bytes a signature could cover.
+    let Some(bytes) = prefix.bytes() else {
+        return Err(REFUSE_SIGNATURE);
+    };
+    if !crate::court::identity::verify(signer, &bytes, sig) {
         return Err(REFUSE_SIGNATURE);
     }
     Ok(Verified { prefix, signer: *signer })

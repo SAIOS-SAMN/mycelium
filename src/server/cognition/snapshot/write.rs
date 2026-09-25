@@ -339,8 +339,10 @@ impl Kernel {
             }
             if let Some(award) = self.treasury.escrow_of(addr) {
                 let mut v = Vec::new();
-                crate::economy::persist::put_award(&mut v, Some(award));
-                leaf(LEAF_AWARD, v);
+                match crate::economy::persist::put_award(&mut v, Some(award)) {
+                    Some(()) => leaf(LEAF_AWARD, v),
+                    None => refused.unwritable += 1,
+                }
             }
             if let Some(mag) = self.deflations.get(addr) {
                 let mut v = Vec::new();

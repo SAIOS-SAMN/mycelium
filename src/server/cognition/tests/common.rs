@@ -109,7 +109,7 @@ pub fn verified<'a>(
     prefix: &'a crate::court::admission::SignedPrefix,
     key: &crate::court::identity::HyphaKey,
 ) -> crate::court::admission::Verified<'a> {
-    let sig = key.sign(&prefix.bytes());
+    let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     crate::court::admission::verify_signature(prefix, &key.vk_bytes(), &sig)
         .expect("a key verifies its own signature over its own prefix")
 }

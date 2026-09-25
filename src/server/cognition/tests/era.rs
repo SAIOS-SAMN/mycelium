@@ -27,7 +27,7 @@ fn co_sign(name: &str, root_hash: [u8; 32]) -> ReceiptSection {
         chart: vec![],
         payload: root_hash.to_vec(),
     };
-    let sig = key.sign(&prefix.bytes());
+    let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     ReceiptSection { prefix, sig, receipt: head }
 }
 

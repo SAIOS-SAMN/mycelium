@@ -247,15 +247,20 @@ impl TaskRegistry {
     /// identity, so ids are stable across restarts); only the STATES need
     /// disk. Without this, a hypha restart resets Settled → Unsolved and a
     /// crash-loop becomes a replay-bounty mint.
-    pub fn snapshot(&self) -> Vec<u8> {
+    ///
+    /// `None` where a cursor, the task count or a task's address passes its
+    /// field (STD1 3c): no snapshot is written rather than a short one —
+    /// the address's own refusal was dropped here.
+    pub fn snapshot(&self) -> Option<Vec<u8>> {
+        use crate::transducer::address::put_u32_count;
         let mut out = Vec::with_capacity(8 + self.tasks.len() * 41);
         // The dispatch cursor leads: a restart continues the corpus from
         // where it stood instead of re-dispatching its head.
         out.extend_from_slice(b"CUR2");
-        out.extend_from_slice(&(self.cursor as u32).to_le_bytes());
-        out.extend_from_slice(&(self.tasks.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.cursor)?;
+        put_u32_count(&mut out, self.tasks.len())?;
         for (id, _, state) in &self.tasks {
-            put_addr(&mut out, id);
+            put_addr(&mut out, id)?;
             match state {
                 TaskState::Unsolved => {
                     out.push(0);
@@ -268,9 +273,9 @@ impl TaskRegistry {
             }
         }
         out.extend_from_slice(b"INT1");
-        out.extend_from_slice(&(self.intake_cursor as u32).to_le_bytes());
+        put_u32_count(&mut out, self.intake_cursor)?;
         out.push(u8::from(self.intake_done));
-        out
+        Some(out)
     }
 
     /// OVERLAY persisted states onto the registered book (call after corpus
@@ -406,7 +411,7 @@ mod tests {
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
         assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
-        let snap = reg.snapshot();
+        let snap = reg.snapshot().expect("the snapshot writes");
 
         let mut reborn = TaskRegistry::new();
         reborn.register(toy_task()); // corpus re-registration at boot

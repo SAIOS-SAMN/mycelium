@@ -659,11 +659,11 @@ impl KStepReceipt {
                 p.put(out);
             }
         }
-        out.extend_from_slice(&(self.parents.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.parents.len())?;
         for p in &self.parents {
             p.put(out);
         }
-        out.extend_from_slice(&(self.cites.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.cites.len())?;
         for c in &self.cites {
             c.put_canonical(out)?;
         }

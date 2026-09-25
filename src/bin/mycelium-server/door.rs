@@ -174,17 +174,21 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(mut reg) = door.registry.lock() else { return true };
             match reg.settle(&tid, &outputs) {
                 mycelium::registry::SolveYield::Bounty(tension) => {
-                    let snap = reg.snapshot();
                     // A state path with no parent writes beside the
                     // working directory, which is where it already is.
                     let dir = match std::path::Path::new(&door.state_path).parent() {
                         Some(p) => p.join("corpora"),
                         None => std::path::PathBuf::from("corpora"),
                     };
-                    let _ = std::fs::create_dir_all(&dir);
-                    let tmp = dir.join("registry.tmp");
-                    if std::fs::write(&tmp, &snap).is_ok() {
-                        let _ = std::fs::rename(&tmp, dir.join("registry"));
+                    match reg.snapshot() {
+                        Some(snap) => {
+                            let _ = std::fs::create_dir_all(&dir);
+                            let tmp = dir.join("registry.tmp");
+                            if std::fs::write(&tmp, &snap).is_ok() {
+                                let _ = std::fs::rename(&tmp, dir.join("registry"));
+                            }
+                        }
+                        None => eprintln!("  registry snapshot refused: a cursor, the count or an address passes its field"),
                     }
                     drop(reg);
                     let paid = {

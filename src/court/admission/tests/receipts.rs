@@ -61,7 +61,7 @@ fn the_signed_prefix_is_written_out_and_decodes() {
         chart: vec![5, 0, 12],
         payload: b"an address, written".to_vec(),
     };
-    let b = p.bytes();
+    let b = p.bytes().expect("the prefix frames");
     assert_eq!(&b[..32], &G, "H_genesis first");
     assert_eq!(&b[32..36], &E.to_le_bytes(), "then E_origin");
     assert_eq!(&b[36..68], &[9u8; 32], "then prev_receipt_hash");
@@ -234,7 +234,7 @@ fn a_frame_is_admitted_only_under_a_signature_over_its_own_prefix() {
     let stranger = crate::court::identity::HyphaKey::vk_from_name("stranger");
     let r = line(vk, &[(1, Vec::new())]).remove(0);
     let p = prefix_for(&r);
-    let sig = court.sign(&p.bytes());
+    let sig = court.sign(&p.bytes().expect("the prefix frames"));
     let verified = admit_signature((G, E), &p, &vk, &sig).expect("the court's own signature over its own prefix");
     assert_eq!(verified.signer(), vk, "verified under the key the frame claims");
     assert_eq!(verified.prefix(), &p, "over exactly these prefix bytes");

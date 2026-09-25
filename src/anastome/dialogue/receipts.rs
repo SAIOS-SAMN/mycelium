@@ -37,7 +37,7 @@ pub fn encode_receipt_section(
     if !prefix.fits() {
         return None;
     }
-    let pb = prefix.bytes();
+    let pb = prefix.bytes()?;
     let plen = u16::try_from(pb.len()).ok()?;
     let mut rb = Vec::new();
     receipt.write(&mut rb)?;

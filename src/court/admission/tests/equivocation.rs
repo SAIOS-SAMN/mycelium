@@ -38,7 +38,7 @@ fn prefix_for(r: &KStepReceipt) -> SignedPrefix {
 /// The prefix signed by `key` and verified under its own vk: the one way a
 /// caller holds 47.2 step 2.
 fn signed<'a>(prefix: &'a SignedPrefix, key: &crate::court::identity::HyphaKey) -> Verified<'a> {
-    let sig = key.sign(&prefix.bytes());
+    let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
     verify_signature(prefix, &key.vk_bytes(), &sig).expect("a key verifies its own signature")
 }
 

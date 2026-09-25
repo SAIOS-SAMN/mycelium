@@ -74,7 +74,7 @@ impl Era {
     #[must_use = "a payload that cannot be written is refused by name, never dropped (LD0)"]
     pub fn payload(&self) -> Option<Vec<u8>> {
         let mut out = Vec::new();
-        out.extend_from_slice(&(self.receipts.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(&mut out, self.receipts.len())?;
         for r in &self.receipts {
             r.write(&mut out)?;
         }

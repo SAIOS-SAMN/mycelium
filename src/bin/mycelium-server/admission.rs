@@ -87,9 +87,10 @@ pub(crate) fn sign_position(
     if !prefix.fits() {
         return None;
     }
+    let bytes = prefix.bytes()?;
     let sig = {
         use ed25519_dalek::Signer;
-        mesh.sk.sign(&prefix.bytes()).to_bytes()
+        mesh.sk.sign(&bytes).to_bytes()
     };
     Some(dialogue::ReceiptSection { prefix, sig, receipt: head })
 }
