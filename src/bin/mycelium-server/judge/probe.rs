@@ -16,18 +16,19 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let kernel = &door.kernel;
 
     let Some((pvoice, target, cites)) = dialogue::decode_probe(&frame.body) else { return };
-    let (code, paid, remaining) = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
-    if matches!(code, dialogue::PROBE_CLOSED | dialogue::PROBE_RESIDUAL | dialogue::PROBE_SETTLED) {
+    let reading = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
+    // A probe that moved the listing, or found it gone, releases the lease.
+    if reading.moved() || reading.closure == dialogue::ProbeClosure::Gone {
         if let Ok(mut k) = kernel.lock() {
             k.release_t_lease(pvoice);
         }
     }
-    if code != dialogue::PROBE_NOTHING {
+    if reading.closure != dialogue::ProbeClosure::Nothing {
         eprintln!(
-            "  probe voice {:02x} on {:02x}{:02x}… code {code} paid {paid:?} remaining {remaining:?}",
-            pvoice[0], target[0], target[1]
+            "  probe voice {:02x} on {:02x}{:02x}… settled {:?} closure {:?} remaining {:?}",
+            pvoice[0], target[0], target[1], reading.settled, reading.closure, reading.remaining
         );
     }
-    let reply = Frame { lane: frame.lane, body: dialogue::encode_probe_reply(code, &paid, &remaining) };
+    let reply = Frame { lane: frame.lane, body: dialogue::encode_probe_reply(&reading) };
     answer(stream, reply);
 }

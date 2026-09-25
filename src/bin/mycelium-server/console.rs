@@ -567,6 +567,9 @@ fn learning(l: &observe::Learning) -> Vec<String> {
         // 78.37(1), TP1 — the meet graph, its rings, its decoherences, and
         // what TP1's fix owes, by name.
         format!("    {}", l.meet.line()),
+        // PR1 — the voice's probes: closure states, lanes moved, the residual
+        // versors' classes.
+        format!("    {}", l.probes.line()),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }

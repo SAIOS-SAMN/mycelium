@@ -65,6 +65,115 @@ pub struct Learning {
     /// Boxed: its counts are the reading's bulk, and the Reading enum holds
     /// every kind at the size of its largest.
     pub meet: Box<crate::transducer::bubble::MeetGraph>,
+    /// PR1 — what this voice's probes read, cumulative.
+    pub probes: ProbeTally,
+}
+
+/// PR1 — A VOICE'S PROBES, READ: how many left each closure state (closed,
+/// residual, residual whose versor did not read, nothing, gone), the μ⃗
+/// they settled and the μ⃗ they left remaining — each summed per lane, never
+/// across — and the residual versors by their CLASS KEY (VA1's class
+/// reading), each with its count: the classes met, bounded by the classes and
+/// never a list of probes, the coordinate a court matches a residual
+/// against. A residual versor with no class key is counted `unclassed`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ProbeTally {
+    pub closed: u64,
+    pub residual: u64,
+    pub residual_unread: u64,
+    pub nothing: u64,
+    pub gone: u64,
+    pub unclassed: u64,
+    pub settled: [u64; 4],
+    pub remaining: [u64; 4],
+    pub classes: Vec<(Vec<u8>, u64)>,
+}
+
+impl ProbeTally {
+    /// One probe's reading, folded in.
+    pub fn note(&mut self, r: &crate::anastome::dialogue::ProbeReading) {
+        use crate::anastome::dialogue::ProbeClosure;
+        match &r.closure {
+            ProbeClosure::Closed => self.closed += 1,
+            ProbeClosure::Residual(Some(v)) => {
+                self.residual += 1;
+                match v.class_key() {
+                    Some(k) => match self.classes.binary_search_by(|(c, _)| c.as_slice().cmp(k.as_bytes())) {
+                        Ok(at) => self.classes[at].1 += 1,
+                        Err(at) => self.classes.insert(at, (k.as_bytes().to_vec(), 1)),
+                    },
+                    None => self.unclassed += 1,
+                }
+            }
+            ProbeClosure::Residual(None) => {
+                self.residual += 1;
+                self.residual_unread += 1;
+            }
+            ProbeClosure::Nothing => self.nothing += 1,
+            ProbeClosure::Gone => self.gone += 1,
+        }
+        for (acc, x) in self.settled.iter_mut().zip(&r.settled) {
+            *acc = acc.saturating_add(*x);
+        }
+        for (acc, x) in self.remaining.iter_mut().zip(&r.remaining) {
+            *acc = acc.saturating_add(*x);
+        }
+    }
+
+    pub fn line(&self) -> String {
+        format!(
+            "probes: closed {} residual {} (versor unread {}, unclassed {}) nothing {} gone {} | settled {:?} remaining {:?} | residual classes {}",
+            self.closed,
+            self.residual,
+            self.residual_unread,
+            self.unclassed,
+            self.nothing,
+            self.gone,
+            self.settled,
+            self.remaining,
+            self.classes.len()
+        )
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        for v in [self.closed, self.residual, self.residual_unread, self.nothing, self.gone, self.unclassed] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        for v in self.settled.iter().chain(&self.remaining) {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+        out.extend_from_slice(&(self.classes.len() as u32).to_le_bytes());
+        for (k, n) in &self.classes {
+            crate::transducer::address::put_bytes(out, k);
+            out.extend_from_slice(&n.to_le_bytes());
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<ProbeTally> {
+        let u64_at = |b: &[u8], p: &mut usize| -> Option<u64> {
+            let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            Some(v)
+        };
+        let mut t = ProbeTally::default();
+        for v in [&mut t.closed, &mut t.residual, &mut t.residual_unread, &mut t.nothing, &mut t.gone, &mut t.unclassed] {
+            *v = u64_at(b, p)?;
+        }
+        for v in t.settled.iter_mut().chain(t.remaining.iter_mut()) {
+            *v = u64_at(b, p)?;
+        }
+        let n = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?) as usize;
+        *p += 4;
+        // Each entry is at least a length and a count: 12 bytes.
+        if b.len().checked_sub(*p)? < n.checked_mul(12)? {
+            return None;
+        }
+        for _ in 0..n {
+            let k = crate::transducer::address::take_bytes(b, p)?;
+            t.classes.push((k, u64_at(b, p)?));
+        }
+        Some(t)
+    }
 }
 
 impl Learning {
@@ -77,6 +186,7 @@ impl Learning {
         pivots: crate::transducer::sentence::PivotTally,
         merges: crate::transducer::bubble::merge::MergeTally,
         meet: crate::transducer::bubble::MeetGraph,
+        probes: ProbeTally,
     ) -> Learning {
         let mut radius = 0u64;
         let strata = epigenome
@@ -96,7 +206,7 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) }
+        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes }
     }
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
@@ -219,6 +329,8 @@ impl Learning {
         opt(out, f.dialect.2);
         // RM1 — the mind's remainders.
         g.remainders.put(out);
+        // PR1 — the voice's probes.
+        self.probes.put(out);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {
@@ -399,6 +511,7 @@ impl Learning {
             flux,
             remainders,
         };
-        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
+        let probes = ProbeTally::take(b, p)?;
+        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes })
     }
 }

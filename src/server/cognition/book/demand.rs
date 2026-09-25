@@ -32,14 +32,14 @@ impl Kernel {
     /// one the court holds under it, so a voice cannot answer a demand by
     /// asserting that it did.
     ///
-    /// An empty residual is `PROBE_CLOSED`: the demand is answered, the
+    /// An empty residual is `Closed`: the demand is answered, the
     /// discoverer of the cited form is paid for the use, and WHAT answered
     /// is recorded in `answered` — the address and the transport. The
     /// listing stays on the book: a sentence has as many demands as it
     /// has, and one answered vertex is not a closed sentence. What retires
     /// it is the expansion (item 5).
     ///
-    /// A non-empty residual is `PROBE_RESIDUAL`: the demand's chart carries
+    /// A non-empty residual is `Residual`: the demand's chart carries
     /// what the form did not reproduce, on the field, and NOTHING is
     /// written to any magnitude. A residual that writes a link count into a
     /// word's lanes makes the court slash its own listing on the next
@@ -50,16 +50,16 @@ impl Kernel {
         at: &[u8],
         demand: &[u8],
         cites: &[crate::anastome::dialogue::CiteWire],
-    ) -> (u8, [u64; 4], [u64; 4]) {
-        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
+    ) -> crate::anastome::dialogue::ProbeReading {
+        use crate::anastome::dialogue::{ProbeClosure, ProbeReading};
         use crate::transducer::family::{apply_form, scene_at_of_chain};
         use crate::transducer::stalk::Closure;
         let Some(listed) = self.pending.get(at) else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::gone();
         };
         let held = crate::transducer::element::Held::of(listed.clone());
         let Some(form) = held.form() else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         // THE WIRE IS WHERE BYTES BECOME A COORDINATE. A probe names the
         // demand vertex it answers, and `demands` answers that system and no
@@ -68,19 +68,19 @@ impl Kernel {
         let Ok(demand) = <crate::network::nerve::coord::DemandVertex
             as crate::network::nerve::Coordinate>::decode(demand)
         else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         let Some(&vi) = form.demands.at(&demand) else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         let Some(crate::transducer::sentence::Vertex::Demand { chart, bodies, .. }) =
             form.vertices.get(vi as usize)
         else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         let (chart, bodies) = (chart.clone(), bodies.clone());
         let Some(((r0, c0), scene, image)) = scene_at_of_chain(&bodies) else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         let _ = &image;
         self.record_spoken(Address::from(at), voice);
@@ -135,7 +135,7 @@ impl Kernel {
             }
         }
         let Some((cited, transport)) = spoke else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            return ProbeReading::nothing();
         };
         let residual: Vec<(i64, i64, u8, u8)> = bodies
             .iter()
@@ -165,7 +165,7 @@ impl Kernel {
                 }
             }
             eprintln!("  court demand answered on {}… by {by}…", short(at));
-            return (PROBE_CLOSED, [0; 4], [0; 4]);
+            return ProbeReading { settled: before, closure: ProbeClosure::Closed, remaining: [0; 4] };
         }
         // WHAT WAS RELEASED IS WHAT WAS SAID, measured on the links the
         // citations actually reached — not the difference of two measures.
@@ -177,10 +177,12 @@ impl Kernel {
             .copied()
             .filter(|&(r, c, _, _)| !open.contains(&crate::transducer::family::site_key(r, c)))
             .collect();
+        let v = super::speech::residual_versor(&bodies, &residual);
         self.write_field(at, chart, Closure::Cavity, residual, &before, &after);
-        self.physics.relieve(&element::measure_lanes(&reached));
+        let settled = element::measure_lanes(&reached);
+        self.physics.relieve(&settled);
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::Settled, at, voice);
-        (PROBE_RESIDUAL, [0; 4], after)
+        ProbeReading { settled, closure: ProbeClosure::Residual(v), remaining: after }
     }
 }

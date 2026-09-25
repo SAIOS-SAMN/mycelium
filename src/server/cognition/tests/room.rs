@@ -87,7 +87,7 @@ assert_eq!(
 /// speaks a chain (law 8); the next draw is a sentence the voice speaks.
 #[test]
 fn the_book_relocates_the_unreachable_before_it_refuses_room() {
-use crate::anastome::dialogue::PROBE_NOTHING;
+use crate::anastome::dialogue::ProbeClosure;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
@@ -111,16 +111,13 @@ assert_eq!(
 // One residual opens a face on the listing, then a full aperture of probes
 // that move nothing: the listing is unreachable.
 let rem = vec![(0, 1, 1u8, 0u8)];
-assert_eq!(
-    k.settle_probe([3; 32], &target, rem, &[], false).0,
-    crate::anastome::dialogue::PROBE_RESIDUAL
-);
+assert!(matches!(k.settle_probe([3; 32], &target, rem, &[], false).closure, ProbeClosure::Residual(_)));
 let mut listed_sorted = listed.clone();
 listed_sorted.sort_unstable();
 for _ in 0..crate::physics::aperture_cycle() {
     assert_eq!(
-        k.settle_probe([4; 32], &target, listed_sorted.clone(), &[], false).0,
-        PROBE_NOTHING
+        k.settle_probe([4; 32], &target, listed_sorted.clone(), &[], false).closure,
+        ProbeClosure::Nothing
     );
 }
 assert_eq!(

@@ -188,8 +188,8 @@ match entity.quote() {
                     let mag = measure_lanes(links);
                     StrokeOutcome::add(&mut outcome.uttered, &mag);
                     match entity.probe(&target, std::slice::from_ref(&cite)) {
-                        Ok((code, _paid, _remaining)) => match code {
-                            mycelium::anastome::dialogue::PROBE_CLOSED => {
+                        Ok(reading) => match reading.closure {
+                            mycelium::anastome::dialogue::ProbeClosure::Closed => {
                                 c.derived += 1;
                                 n_closed += 1;
                                 physics.bump(&mag);
@@ -203,13 +203,13 @@ match entity.quote() {
                                     cited[1]
                                 );
                             }
-                            mycelium::anastome::dialogue::PROBE_RESIDUAL => {
+                            mycelium::anastome::dialogue::ProbeClosure::Residual(_) => {
                                 c.witnessed += 1;
                                 n_residual += 1;
                                 physics.bump(&mag);
                             }
-                            mycelium::anastome::dialogue::PROBE_SETTLED => n_settled += 1,
-                            _ => n_nothing += 1,
+                            mycelium::anastome::dialogue::ProbeClosure::Gone => n_settled += 1,
+                            mycelium::anastome::dialogue::ProbeClosure::Nothing => n_nothing += 1,
                         },
                         Err(_) => {
                             c.errors += 1;

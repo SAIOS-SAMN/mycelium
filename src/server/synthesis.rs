@@ -25,15 +25,15 @@ pub enum Deliberation {
 
 /// THE PROBE, off the lock: the sentence replays over the language snapshot
 /// against the listing's chain; the settlement (closure or graded residual)
-/// runs under a brief lock. Returns (code, paid, remaining).
+/// runs under a brief lock. Returns the probe's reading (PR1).
 pub fn probe(
     k: &std::sync::Mutex<crate::cognition::Kernel>,
     voice: [u8; 32],
     target: &[u8],
     cites: &[crate::anastome::dialogue::CiteWire],
-) -> (u8, [u64; 4], [u64; 4]) {
-    use crate::anastome::dialogue::PROBE_NOTHING;
-    let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
+) -> crate::anastome::dialogue::ProbeReading {
+    use crate::anastome::dialogue::ProbeReading;
+    let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
     let view = g.market_open();
     drop(g);
     // A TARGET MAY NAME ONE DEMAND VERTEX of the listing (L8q). The
@@ -44,7 +44,7 @@ pub fn probe(
         None => target.to_vec(),
     };
     let Some(listing) = view.pending.get(&at) else {
-        return (crate::anastome::dialogue::PROBE_SETTLED, [0; 4], [0; 4]);
+        return ProbeReading::gone();
     };
     // The utterance is verified as spoken — its operators against the
     // listing — never against this hypha's copies of the words.
@@ -85,16 +85,16 @@ pub fn probe(
         );
     }
     let section = cites.iter().any(|c| c.gauge == u32::MAX);
-    let Ok(mut g) = k.lock() else { return (PROBE_NOTHING, [0; 4], [0; 4]) };
+    let Ok(mut g) = k.lock() else { return ProbeReading::nothing() };
     // The court replays the settlement on the chains it is handed, so the
     // measure spoken here is the chain's own, not the listing's fibre.
     let before = crate::transducer::element::measure_lanes(listing.sub());
     let settled = g.settle_probe(voice, target, residual, cites, section);
-    if matches!(settled.0, crate::anastome::dialogue::PROBE_CLOSED | crate::anastome::dialogue::PROBE_RESIDUAL) {
+    if settled.moved() {
         g.puncture_from(cites); // the fiber deepens on what was verified
         // The settlement goes to the court with the utterance that made it,
         // for the court to replay and measure itself.
-        g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.2);
+        g.record_settlement(crate::transducer::address::Address::from(target), listing.sub().to_vec(), voice, cites, before, settled.remaining);
     }
     settled
 }

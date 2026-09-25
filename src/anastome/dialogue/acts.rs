@@ -191,14 +191,69 @@ pub const ACT_OBSERVE: u8 = 0x39;
 /// the hypha replays linearly. Yield settles on the graded trajectory of
 /// the residual without germination; closure clears the listing.
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
-/// Reply: `[code][paid μ⃗ 4×u64][remaining μ⃗ 4×u64]`.
+/// Reply: the probe's READING (PR1) — `[settled μ⃗ 4×u64][closure][remaining
+/// μ⃗ 4×u64]`, never an outcome code.
 pub const ACT_PROBE: u8 = 0x12;
-pub const PROBE_NOTHING: u8 = 0;
-pub const PROBE_RESIDUAL: u8 = 1;
-pub const PROBE_CLOSED: u8 = 2;
-/// The listing is no longer on the book in the state it was quoted:
-/// another voice settled or moved it first.
-pub const PROBE_SETTLED: u8 = 3;
+
+/// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residual, with the versor
+/// it stands off the listing by where a residual body reads on both sides
+/// (`V = s_b s_a` between the listing's residual body and the probe's, the
+/// one producer `tether_of`), `None` — unread by name — where one does not;
+/// nothing covered or settled; or the listing gone from the book in the
+/// state it was quoted (another voice settled or moved it first).
+#[derive(Clone, Debug)]
+pub enum ProbeClosure {
+    Closed,
+    Residual(Option<crate::transducer::cga::Mv>),
+    Nothing,
+    Gone,
+}
+
+impl PartialEq for ProbeClosure {
+    /// Residuals are equal where their versors write one ray.
+    fn eq(&self, other: &ProbeClosure) -> bool {
+        let ray = |v: &Option<crate::transducer::cga::Mv>| {
+            v.as_ref().map(|m| {
+                let mut b = Vec::new();
+                m.put_canonical(&mut b);
+                b
+            })
+        };
+        match (self, other) {
+            (ProbeClosure::Closed, ProbeClosure::Closed)
+            | (ProbeClosure::Nothing, ProbeClosure::Nothing)
+            | (ProbeClosure::Gone, ProbeClosure::Gone) => true,
+            (ProbeClosure::Residual(a), ProbeClosure::Residual(b)) => ray(a) == ray(b),
+            _ => false,
+        }
+    }
+}
+
+/// PR1 — A PROBE'S READING: the μ⃗ it settled, per lane; where it left the
+/// listing; the μ⃗ remaining on it, per lane.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ProbeReading {
+    pub settled: [u64; 4],
+    pub closure: ProbeClosure,
+    pub remaining: [u64; 4],
+}
+
+impl ProbeReading {
+    /// A probe that settled nothing and left nothing standing to read.
+    pub fn nothing() -> ProbeReading {
+        ProbeReading { settled: [0; 4], closure: ProbeClosure::Nothing, remaining: [0; 4] }
+    }
+
+    /// The listing was gone from the book.
+    pub fn gone() -> ProbeReading {
+        ProbeReading { settled: [0; 4], closure: ProbeClosure::Gone, remaining: [0; 4] }
+    }
+
+    /// Did the probe move the listing — close it or leave a residual?
+    pub fn moved(&self) -> bool {
+        matches!(self.closure, ProbeClosure::Closed | ProbeClosure::Residual(_))
+    }
+}
 
 /// A PROVEN ROOT — a family a voice solved and a registry verified —
 /// gossiped across the nerve: `[ACT_ROOT][voice 32][task 32][solver 32]`.

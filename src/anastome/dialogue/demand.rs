@@ -27,17 +27,50 @@ pub fn decode_probe(body: &[u8]) -> Option<([u8; 32], Address, Vec<CiteWire>)> {
     Some((voice, target, cites))
 }
 
-pub fn encode_probe_reply(code: u8, paid: &[u64; 4], remaining: &[u64; 4]) -> Vec<u8> {
-    let mut out = vec![code];
-    push_mu(&mut out, paid);
-    push_mu(&mut out, remaining);
+/// PR1 — THE PROBE'S READING ON THE WIRE: the settled μ⃗, the closure (its
+/// kind, and a residual's versor behind a flag, as its ray), the remaining μ⃗.
+pub fn encode_probe_reply(r: &ProbeReading) -> Vec<u8> {
+    let mut out = Vec::new();
+    push_mu(&mut out, &r.settled);
+    match &r.closure {
+        ProbeClosure::Closed => out.push(0),
+        ProbeClosure::Residual(v) => {
+            out.push(1);
+            match v {
+                Some(v) => {
+                    out.push(1);
+                    v.put_canonical(&mut out);
+                }
+                None => out.push(0),
+            }
+        }
+        ProbeClosure::Nothing => out.push(2),
+        ProbeClosure::Gone => out.push(3),
+    }
+    push_mu(&mut out, &r.remaining);
     out
 }
 
-pub fn decode_probe_reply(body: &[u8]) -> Option<(u8, [u64; 4], [u64; 4])> {
-    let code = act_tag(body)?;
-    let mut p = 1usize;
-    let paid = read_mu(body, &mut p)?;
+pub fn decode_probe_reply(body: &[u8]) -> Option<ProbeReading> {
+    let mut p = 0usize;
+    let settled = read_mu(body, &mut p)?;
+    let kind = *body.get(p)?;
+    p += 1;
+    let closure = match kind {
+        0 => ProbeClosure::Closed,
+        1 => {
+            let flag = *body.get(p)?;
+            p += 1;
+            ProbeClosure::Residual(match flag {
+                0 => None,
+                1 => Some(crate::transducer::cga::Mv::from_bytes(body, &mut p)?),
+                _ => return None,
+            })
+        }
+        2 => ProbeClosure::Nothing,
+        3 => ProbeClosure::Gone,
+        _ => return None,
+    };
     let remaining = read_mu(body, &mut p)?;
-    Some((code, paid, remaining))
+    (p == body.len()).then_some(ProbeReading { settled, closure, remaining })
 }

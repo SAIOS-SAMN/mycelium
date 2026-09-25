@@ -553,6 +553,18 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 refill_unfilled: 143,
             },
         }),
+        // PR1 — the voice's probes, a residual class counted twice.
+        probes: crate::observe::ProbeTally {
+            closed: 144,
+            residual: 145,
+            residual_unread: 146,
+            nothing: 147,
+            gone: 148,
+            unclassed: 149,
+            settled: [150, 151, 152, 153],
+            remaining: [154, 155, 156, 157],
+            classes: vec![(vec![1, 2, 3], 2), (vec![4], 1)],
+        },
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
@@ -563,6 +575,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
     let fresh = Learning::of(
         &crate::client::sdk::Epigenome::default(),
         0,
+        Default::default(),
         Default::default(),
         Default::default(),
         Default::default(),

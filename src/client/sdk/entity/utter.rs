@@ -271,8 +271,19 @@ impl Entity {
         Concluded { cites, residual, familiar }
     }
 
-    pub fn probe(&self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<(u8, [u64; 4], [u64; 4])> {
-        self.session.probe(target, cites)
+    /// PR1 — A PROBE, AND ITS READING: folded into this voice's typed tally,
+    /// and printed with the lanes it moved and the versor its residual stands
+    /// off the listing by.
+    pub fn probe(&mut self, target: &[u8], cites: &[dialogue::CiteWire]) -> io::Result<dialogue::ProbeReading> {
+        let r = self.session.probe(target, cites)?;
+        self.probes.note(&r);
+        let off = match &r.closure {
+            dialogue::ProbeClosure::Residual(Some(v)) => format!("residual off by {v:?}"),
+            dialogue::ProbeClosure::Residual(None) => "residual, its versor unread".to_string(),
+            other => format!("{other:?}"),
+        };
+        eprintln!("  probe {:02x}{:02x}… settled {:?} remaining {:?} {off}", target[0], target[1], r.settled, r.remaining);
+        Ok(r)
     }
 
     /// STAND every sentence in the dialect, and say which of them are

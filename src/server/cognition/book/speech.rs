@@ -424,8 +424,8 @@ impl Kernel {
         residual: Vec<(i64, i64, u8, u8)>,
         cites: &[crate::anastome::dialogue::CiteWire],
         section: bool,
-    ) -> (u8, [u64; 4], [u64; 4]) {
-        use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
+    ) -> crate::anastome::dialogue::ProbeReading {
+        use crate::anastome::dialogue::{ProbeClosure, ProbeReading};
         use crate::transducer::stalk::Closure;
         // A PROBE MAY NAME ONE DEMAND VERTEX of the listing (L8q), and
         // then it is not a deflation of the listing's links at all: the
@@ -435,7 +435,8 @@ impl Kernel {
             return self.settle_demand(voice, &at, &demand, cites);
         }
         let Some(listing) = self.pending.get(target) else {
-            return (PROBE_NOTHING, [0; 4], [0; 4]);
+            // Gone from the book in the state it was quoted.
+            return ProbeReading::gone();
         };
         let listing = listing.clone();
         self.record_spoken(Address::from(target), voice);
@@ -472,11 +473,12 @@ impl Kernel {
             .map(|c| c.transport.clone())
             .reduce(|acc, g| acc.geo(&g));
         if residual.as_slice().is_empty() {
-            let paid = if section || listing.is_connection() {
-                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor)
-            } else {
-                [0; 4]
-            };
+            // The subsidy a section or a connection earns is the treasury's,
+            // written on its own rows; the reading carries the tension the
+            // closure removed.
+            if section || listing.is_connection() {
+                self.treasury.settle_subsidy(voice, crate::economy::price(&before, &self.physics.pressure), anchor);
+            }
             for chart in charts {
                 self.write_field(target, chart.clone(), Closure::Flat, Vec::new(), &before, &[0; 4]);
                 if let Some(g) = cite_g.clone() {
@@ -502,7 +504,7 @@ impl Kernel {
                     }
                 }
             }
-            return (PROBE_CLOSED, paid, [0; 4]);
+            return ProbeReading { settled: before, closure: ProbeClosure::Closed, remaining: [0; 4] };
         }
         let mut listed = listing.sub().to_vec();
         listed.sort_unstable();
@@ -521,7 +523,7 @@ impl Kernel {
             for chart in charts {
                 self.write_field(target, chart, Closure::Cavity, standing.clone(), &before, &before);
             }
-            return (PROBE_NOTHING, [0; 4], before);
+            return ProbeReading { settled: [0; 4], closure: ProbeClosure::Nothing, remaining: before };
         }
         let rem_inv = crate::transducer::stalk::invariant(&residual);
         for chart in &charts {
@@ -576,7 +578,24 @@ impl Kernel {
         self.book_gen += 1;
         self.physics.syntropy(&mag);
         self.append_step(crate::chronometry::ActKind::Settled, target, voice);
-        (PROBE_RESIDUAL, [0; 4], after)
+        ProbeReading {
+            settled,
+            closure: ProbeClosure::Residual(residual_versor(listing.sub(), &residual)),
+            remaining: after,
+        }
     }
 
+}
+
+/// PR1 — THE VERSOR A RESIDUAL STANDS OFF THE LISTING BY: the tether between
+/// the listing's body and the residual's, `V = s_b s_a` over their nuclei
+/// (`blade::tether`, the one producer). `None` — the residual's versor unread
+/// by name — where either body does not lift or its nucleus does not read.
+pub(crate) fn residual_versor(listing: &[(i64, i64, u8, u8)], residual: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
+    let lift = |links: &[(i64, i64, u8, u8)]| {
+        crate::transducer::blade::lift(
+            &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Lamina::from((r, c, 0i64, h))).collect::<Vec<_>>(),
+        )
+    };
+    crate::transducer::blade::tether(&lift(listing), &lift(residual))
 }

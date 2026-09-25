@@ -228,7 +228,7 @@ assert!(
 /// the proof and the hypha runs no search.
 #[test]
 fn a_probe_settles_a_residual_then_closure_without_search() {
-use crate::anastome::dialogue::{PROBE_CLOSED, PROBE_RESIDUAL, PROBE_NOTHING};
+use crate::anastome::dialogue::ProbeClosure;
 use crate::transducer::sentence::replay_at;
 let mut k = Kernel::new();
 // A coboundary listed on an empty language: a chain listing under a
@@ -265,10 +265,16 @@ assert_eq!(
     void,
     "the replay reproduces the residual"
 );
-let (code, paid, remaining) = k.settle_probe([3; 32], &target, void.clone(), &[], false);
-assert_eq!(code, PROBE_RESIDUAL);
-assert_eq!(paid, [0; 4], "a residual is measured, never paid: covering links opens no axis");
-assert_eq!(remaining, crate::transducer::element::measure_lanes(&void));
+let before = match k.tension.get(&target) {
+    Some(t) => *t,
+    None => k.quote().1[0].0.magnitude(),
+};
+let r = k.settle_probe([3; 32], &target, void.clone(), &[], false);
+assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert_eq!(r.remaining, crate::transducer::element::measure_lanes(&void));
+// PR1 — the reading settles what the residual removed, per lane; a residual
+// is measured, never paid, and the payment is the treasury's.
+assert_eq!(r.settled, crate::economy::shortfall(&before, &r.remaining));
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body: a residual never re-lists a fragment");
 assert_eq!(
@@ -278,8 +284,8 @@ assert_eq!(
 );
 // A probe that moves nothing settles nothing; closure clears the book.
 let t2 = listing.address();
-assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).0, PROBE_NOTHING);
-assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).0, PROBE_CLOSED);
+assert_eq!(k.settle_probe([3; 32], &t2, listing.sub().to_vec(), &[], false).closure, ProbeClosure::Nothing);
+assert_eq!(k.settle_probe([3; 32], &t2, Vec::new(), &[], false).closure, ProbeClosure::Closed);
 assert!(k.quote().1.is_empty(), "the listing cleared");
 }
 
@@ -300,7 +306,7 @@ assert!(k.quote().1.is_empty(), "the listing cleared");
 /// from its chain.
 #[test]
 fn a_residual_opens_a_face_and_drain_sheds_the_unmoved() {
-use crate::anastome::dialogue::PROBE_RESIDUAL;
+use crate::anastome::dialogue::ProbeClosure;
 let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8)];
@@ -315,9 +321,9 @@ let before = match k.tension.get(&target) {
 };
 let after = crate::transducer::element::measure_lanes(&rem);
 assert_ne!(after, before, "the residual moves the listing's measure");
-let (code, _, remaining) = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
-assert_eq!(code, PROBE_RESIDUAL);
-assert_eq!(remaining, after);
+let r = k.settle_probe([3; 32], &target, rem.clone(), &[], false);
+assert!(matches!(r.closure, ProbeClosure::Residual(_)), "{r:?}");
+assert_eq!(r.remaining, after);
 let listing = k.quote().1[0].0.clone();
 assert_eq!(listing.address(), target, "the listing stays the body");
 // THE LISTING'S MEASURE STILL RE-DERIVES FROM ITS OWN CHAIN, which is
@@ -359,8 +365,8 @@ listed_sorted.sort_unstable();
 let kappa = crate::physics::aperture_cycle();
 for _ in 0..kappa {
     assert_eq!(
-        k.settle_probe([4; 32], &target, listed_sorted.clone(), &[], false).0,
-        crate::anastome::dialogue::PROBE_NOTHING
+        k.settle_probe([4; 32], &target, listed_sorted.clone(), &[], false).closure,
+        crate::anastome::dialogue::ProbeClosure::Nothing
     );
 }
 let s = k.stagnant_of(&target);

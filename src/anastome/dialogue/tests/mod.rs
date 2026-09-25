@@ -5,6 +5,7 @@ mod acts;
 mod equivocation;
 mod fold_wire;
 mod offer;
+mod probe_reply;
 mod receipt_section;
 mod receipts_range;
 mod refine;

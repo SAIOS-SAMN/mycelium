@@ -493,6 +493,9 @@ pub struct Entity {
     /// is the same object. `None` is a circuit that has not started (X3) and
     /// is an absence, not an empty key.
     pub(crate) refine_cursor: Option<Vec<u8>>,
+    /// PR1 — what this voice's probes read, cumulative: published on its
+    /// Learning.
+    pub(crate) probes: crate::observe::ProbeTally,
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
     /// Where the bundle circuit stood, as a coordinate — the same reading as
     /// [`refine_cursor`], and for the same reason: `% genome.len()` is a

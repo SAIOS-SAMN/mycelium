@@ -33,6 +33,7 @@ impl Entity {
             self.pivot_reading(),
             self.merge_reading(),
             self.meet_graph(),
+            self.probes.clone(),
         );
         // ACT1 — THIS VOICE ON THE CLOCK: its `K`, its court's height as last
         // heard, where its genome was last written (78.21(3)), its radius
