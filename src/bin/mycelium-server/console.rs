@@ -383,6 +383,11 @@ fn court(c: &Court) -> Vec<String> {
             true => format!("{DIM}nothing yet{RESET}"),
             false => served.join(" "),
         }),
+        format!(
+            "  {BOLD}remainders{RESET}  {} | basis words with a filed torsion {}",
+            c.remainders.line(),
+            c.torsion_words
+        ),
     ]
 }
 

@@ -20,6 +20,7 @@ pub mod nerve;
 pub mod orbit_algebra;
 pub mod simplex;
 pub mod persist;
+pub mod remainder;
 
 pub use coboundary::*;
 pub use complex::*;
@@ -27,6 +28,7 @@ pub use coxeter::*;
 pub use nerve::*;
 pub use orbit_algebra::*;
 pub use simplex::*;
+pub use remainder::{RemainderCount, RemainderReading};
 
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::Rotor;

@@ -32,12 +32,17 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 k.treasury().carriage(&mut carriage);
                 carriage.of_chain(k.chain());
                 carriage.of_frames();
+                // RM1 — its remainders over its complexes, beside what the
+                // torsion filing kept of them.
+                let (remainders, torsion_words) = k.remainders();
                 let court = Court {
                     k: k.chain().head_k(),
                     basis: k.basis_len() as u64,
                     treasury: k.treasury_entry_count() as u64,
                     served: observe::served(),
                     reopened: k.reopened(),
+                    remainders,
+                    torsion_words,
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.

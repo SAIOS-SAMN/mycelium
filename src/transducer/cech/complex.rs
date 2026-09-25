@@ -33,6 +33,10 @@ pub struct Complex {
     /// identity, so two real classes annihilate into "nothing curved" and
     /// the axes 3.9 would have read its candidate pivots off are gone.
     pub(crate) orbits: Keyed<Fill>,
+    /// RM1 — RE-FILLS: a simplex standing `Congruent` written `Filled`,
+    /// counted where a fill is written (78.37(4)). Zero until the named door
+    /// of phase (c) lands; volatile.
+    pub(crate) refilled: u64,
 }
 
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at

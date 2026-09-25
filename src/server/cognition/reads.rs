@@ -80,6 +80,26 @@ impl Kernel {
         self.reopened
     }
 
+    /// RM1 — THE COURT'S REMAINDERS: every `Congruent` fill over its
+    /// complexes, each at its complex's chart, and the re-fills; and the
+    /// basis words carrying a torsion cycle `file_torsion` recorded (fibre
+    /// spatial) — ℓ alone, κ and g dropped — to read against them.
+    pub fn remainders(&self) -> (crate::transducer::cech::RemainderReading, u64) {
+        let mut count = crate::transducer::cech::RemainderCount::default();
+        for (chart, cx) in self.complexes.scoped() {
+            for s in cx.congruent_standing() {
+                count.add(&s, Some(&chart));
+            }
+            count.refilled(cx.refilled());
+        }
+        let torsion_words = self
+            .basis
+            .scoped()
+            .filter(|(_, w)| w.element().torsion().iter().any(|t| t.fibre == crate::transducer::element::FIBER_SPATIAL))
+            .count() as u64;
+        (count.read(), torsion_words)
+    }
+
     pub fn basis_len(&self) -> usize {
         self.basis.len()
     }

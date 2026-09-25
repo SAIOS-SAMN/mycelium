@@ -217,6 +217,8 @@ impl Learning {
         out.extend_from_slice(&f.dialect.0.to_le_bytes());
         opt(out, f.dialect.1);
         opt(out, f.dialect.2);
+        // RM1 — the mind's remainders.
+        g.remainders.put(out);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {
@@ -377,6 +379,7 @@ impl Learning {
         if flag(b, p)? {
             flux.dialect.2 = Some(u64_at(b, p)?);
         }
+        let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
             thoughts,
@@ -394,6 +397,7 @@ impl Learning {
             shed,
             truncation,
             flux,
+            remainders,
         };
         Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet) })
     }

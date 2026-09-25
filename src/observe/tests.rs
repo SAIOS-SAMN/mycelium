@@ -38,6 +38,15 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         served: vec![(0x03, 9), (0x39, 1)],
         // TP1 — the glue's reopened rings, by what each cut, travel.
         reopened: [4, 5],
+        // RM1 — the court's remainders by ℓ, ascending, and its torsion words.
+        remainders: crate::transducer::cech::RemainderReading {
+            by_ell: vec![(2, 3), (4, 1)],
+            classes: 2,
+            across: 1,
+            unplaced: 0,
+            refilled: 0,
+        },
+        torsion_words: 6,
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.
@@ -498,6 +507,14 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 extent: [[88, 89, 90, 91], [92, 93, 94, 95], [96, 97, 98, 99], [100, 101, 102, 103], [104, 105, 106, 107]],
                 extent_n: [108, 109, 110, 111, 112],
                 dialect: (113, Some(114), None),
+            },
+            // RM1 — the mind's remainders, one unplaced.
+            remainders: crate::transducer::cech::RemainderReading {
+                by_ell: vec![(3, 115)],
+                classes: 116,
+                across: 117,
+                unplaced: 118,
+                refilled: 119,
             },
         }),
     };

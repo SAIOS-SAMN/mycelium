@@ -414,6 +414,12 @@ pub struct Court {
     /// 78.26(6), TP1 — the closed rings of the cover's nerve a moved gauge
     /// reopened at the glue, by what each cut: `[filled, congruent]`.
     pub reopened: [u64; 2],
+    /// RM1 — the court's remainders over its complexes, a chart per complex;
+    /// and the words carrying a torsion cycle `file_torsion` recorded — ℓ
+    /// alone, κ and g dropped — against the Congruent simplices they came
+    /// from.
+    pub remainders: crate::transducer::cech::RemainderReading,
+    pub torsion_words: u64,
 }
 
 impl Court {
@@ -429,6 +435,8 @@ impl Court {
         for n in self.reopened {
             put_u64(out, n);
         }
+        self.remainders.put(out);
+        put_u64(out, self.torsion_words);
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Court> {
@@ -442,7 +450,9 @@ impl Court {
             served.push((take_u8(b, p)?, take_u64(b, p)?));
         }
         let reopened = [take_u64(b, p)?, take_u64(b, p)?];
-        Some(Court { k, basis, treasury, served, reopened })
+        let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
+        let torsion_words = take_u64(b, p)?;
+        Some(Court { k, basis, treasury, served, reopened, remainders, torsion_words })
     }
 }
 

@@ -97,7 +97,7 @@ pub const FILL_ARMS: [&str; 6] = ["filled", "congruent", "class", "unspellable",
 
 /// 78.37(1), TP1 — THE MEET GRAPH, READ AT THE PUBLISH, and the decoherences
 /// since the contemplation began.
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct MeetGraph {
     /// Held thoughts' vertices, `V`.
     pub vertices: u64,
@@ -134,6 +134,9 @@ pub struct MeetGraph {
     /// FX1 — the flux per lane over the last orbit and the aperture, and what
     /// the extent lapsed read under flux.
     pub flux: super::flux::FluxTally,
+    /// RM1 — the mind's remainders: `Congruent` fills by `ℓ`, their classes
+    /// and those standing across charts, the re-fills.
+    pub remainders: crate::transducer::cech::RemainderReading,
 }
 
 impl MeetGraph {
@@ -225,7 +228,7 @@ impl MeetGraph {
             opt(f.dialect.1),
             opt(f.dialect.2)
         );
-        let core = format!("{core} | {flux}");
+        let core = format!("{core} | {flux} | {}", self.remainders.line());
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
             self.thoughts,
@@ -257,6 +260,40 @@ impl MeetGraph {
 }
 
 impl Contemplation {
+    /// RM1 — THE MIND'S REMAINDERS: the contemplation's `Congruent` fills,
+    /// each at the chart its thoughts share. A cover is the chain of an
+    /// invariant's prefixes, so the intersection of the thoughts' covers is
+    /// a chain, fixed by its deepest member — the chart the edge was made
+    /// from; the chain itself, its keys written in order, is that chart's
+    /// coordinate, and nothing is chosen from it. Unplaced where they share
+    /// none.
+    pub fn remainder_reading(&self) -> crate::transducer::cech::RemainderReading {
+        let mut count = crate::transducer::cech::RemainderCount::default();
+        for s in self.complex.congruent_standing() {
+            let mut shared: Option<Vec<Vec<u8>>> = None;
+            for v in &s.vertices {
+                let cover: Vec<Vec<u8>> = match self.bubbles.get(v) {
+                    Some(b) => b.cover.scoped().map(|(k, _)| k).collect(),
+                    None => Vec::new(),
+                };
+                shared = Some(match shared {
+                    None => cover,
+                    Some(prev) => prev.into_iter().filter(|k| cover.contains(k)).collect(),
+                });
+            }
+            let chain = shared.filter(|ks| !ks.is_empty()).map(|ks| {
+                let mut key = Vec::new();
+                for k in &ks {
+                    crate::transducer::address::put_bytes(&mut key, k);
+                }
+                key
+            });
+            count.add(&s, chain.as_deref());
+        }
+        count.refilled(self.complex.refilled());
+        count.read()
+    }
+
     /// 78.37(1), TP1 — THE MEET GRAPH AS IT STANDS, with the decoherences
     /// since the contemplation began.
     pub fn meet_graph(&self) -> MeetGraph {
@@ -271,6 +308,7 @@ impl Contemplation {
             shed: self.shed,
             truncation: self.truncation,
             flux: self.flux_tally,
+            remainders: self.remainder_reading(),
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

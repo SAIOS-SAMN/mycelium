@@ -118,6 +118,18 @@ pub fn solve_gauge(n: usize, edges: &[(usize, usize, Rotor, Versor)]) -> Option<
 }
 
 impl Complex {
+    /// A FILL WRITTEN ON A SIMPLEX — the one writer the fill paths share. A
+    /// simplex standing `Congruent` written `Filled` is a RE-FILL, counted
+    /// (RM1, 78.37(4)).
+    fn write_fill(&mut self, degree: usize, key: &[u8], fill: &Fill) {
+        if let Some(c) = self.degrees[degree].get_mut(key) {
+            if matches!(c.fill, Fill::Congruent(..)) && matches!(fill, Fill::Filled(..)) {
+                self.refilled += 1;
+            }
+            c.fill = fill.clone();
+        }
+    }
+
     /// Mark a simplex Extended by a known gauge (a translation, a taught
     /// coboundary). Degree-1 never tree-solves — that would always succeed.
     pub fn fill_by_gauge(
@@ -151,9 +163,7 @@ impl Complex {
                 }
             }
             let filled = Fill::Filled(Box::new(gamma.clone()), Box::new(carriage.clone()));
-            if let Some(c) = self.degrees[degree].get_mut(key) {
-                c.fill = filled.clone();
-            }
+            self.write_fill(degree, key, &filled);
             return CoboundaryOutcome::Attached(filled);
         }
         self.fill(key)
@@ -603,9 +613,7 @@ impl Complex {
                 Box::new(Rotor::identity()),
                 Box::new(crate::transducer::element::identity_versor()),
             );
-            if let Some(c) = self.degrees[degree].get_mut(key) {
-                c.fill = filled.clone();
-            }
+            self.write_fill(degree, key, &filled);
             return CoboundaryOutcome::Attached(filled);
         }
         let verts = &simplex.vertices;
@@ -632,9 +640,7 @@ impl Complex {
                         return CoboundaryOutcome::Absent;
                     };
                     let filled = Fill::Filled(Box::new(g1), Box::new(c1));
-                    if let Some(c) = self.degrees[degree].get_mut(key) {
-                        c.fill = filled.clone();
-                    }
+                    self.write_fill(degree, key, &filled);
                     return CoboundaryOutcome::Attached(filled);
                 }
                 // THE CHORDS CARRY CLASSES — one per orbit, each filed at
@@ -679,9 +685,7 @@ impl Complex {
         };
         let outcome = extend(&a, &b, &simplex);
         self.index_congruent(&outcome);
-        if let Some(c) = self.degrees[degree].get_mut(key) {
-            c.fill = outcome.clone();
-        }
+        self.write_fill(degree, key, &outcome);
         CoboundaryOutcome::Attached(outcome)
     }
 
