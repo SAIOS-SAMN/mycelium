@@ -29,12 +29,12 @@ pub fn encode_task_envelope(
     put_addr(&mut out, id)?;
     crate::transducer::address::put_u8_count(&mut out, train.len())?;
     for (a, b) in train {
-        push_grid(&mut out, a);
-        push_grid(&mut out, b);
+        push_grid(&mut out, a)?;
+        push_grid(&mut out, b)?;
     }
     crate::transducer::address::put_u8_count(&mut out, tests.len())?;
     for x in tests {
-        push_grid(&mut out, x);
+        push_grid(&mut out, x)?;
     }
     Some(out)
 }
@@ -92,12 +92,11 @@ pub fn encode_solve_with_rule(
     put_addr(&mut out, id)?;
     crate::transducer::address::put_u8_count(&mut out, outputs.len())?;
     for g in outputs {
-        push_grid(&mut out, g);
+        push_grid(&mut out, g)?;
     }
     if let Some(r) = rule {
         out.extend_from_slice(b"RULE");
-        out.extend_from_slice(&(r.len() as u32).to_le_bytes());
-        out.extend_from_slice(r);
+        crate::transducer::address::put_bytes(&mut out, r)?;
     }
     Some(out)
 }

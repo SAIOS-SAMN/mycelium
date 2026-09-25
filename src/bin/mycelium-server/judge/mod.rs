@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
             if c == 0 || c.is_power_of_two() {
                 eprintln!("  court refuse act {kind:#04x}: {why} (count={c})");
             }
-            let body = dialogue::encode_outcome_reply(outcome_code(&Outcome::Refused(why)), 0, &[0; 4], &[]);
+            let body = dialogue::encode_outcome(outcome_code(&Outcome::Refused(why)), 0, &[0; 4]);
             answer(stream, Frame { lane: frame.lane, body });
         }
         _ => {}

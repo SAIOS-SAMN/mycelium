@@ -147,7 +147,7 @@ pub fn encode_speech_spoken(
     out.extend_from_slice(voice);
     put_addr(&mut out, task)?;
     out.extend_from_slice(&tu.to_le_bytes());
-    out.extend_from_slice(&(sentences.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(&mut out, sentences.len())?;
     for s in sentences {
         out.push(s.standing);
         match &s.contraction {
@@ -157,8 +157,7 @@ pub fn encode_speech_spoken(
             }
             None => out.push(0),
         }
-        out.extend_from_slice(&(s.tape.len() as u32).to_le_bytes());
-        out.extend_from_slice(&s.tape);
+        crate::transducer::address::put_bytes(&mut out, &s.tape)?;
     }
     Some(out)
 }

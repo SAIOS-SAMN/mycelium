@@ -34,8 +34,7 @@ pub fn encode_syllabus_reply(words: &[Taught]) -> Option<Vec<u8>> {
     crate::transducer::address::put_u8_count(&mut out, words.len())?;
     for t in words {
         t.at.put_canonical(&mut out);
-        out.extend_from_slice(&(t.word.len() as u32).to_le_bytes());
-        out.extend_from_slice(&t.word);
+        crate::transducer::address::put_bytes(&mut out, &t.word)?;
     }
     Some(out)
 }

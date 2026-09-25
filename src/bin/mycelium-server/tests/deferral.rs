@@ -20,7 +20,7 @@ fn a_deferral_frame_is_read_as_impedance_not_a_witness_refusal() {
         ),
         "decoded as an offer reply the same bytes read as a refusal by key 0000…"
     );
-    let answer = dialogue::encode_outcome_reply(code, 3, &[1, 0, 0, 0], &[]);
+    let answer = dialogue::encode_outcome(code, 3, &[1, 0, 0, 0]);
     assert!(
         !is_deferred(&answer),
         "a pending outcome carrying a height is an answer, not a deferral"
@@ -45,7 +45,7 @@ fn a_deferral_carries_the_doors_deficit_per_lane() {
     let read = dialogue::decode_outcome_reply(&deferral).expect("the codec reads its own layout");
     assert_eq!((read.code, read.height, read.pressure), (code, 0, deficit));
     assert!(read.taught.is_empty() && read.rest.is_empty());
-    let taught = dialogue::encode_outcome_reply(code, 0, &deficit, &[7]);
+    let taught = dialogue::encode_outcome_reply(code, 0, &deficit, &[7]).expect("one taught byte fits");
     assert_eq!(dialogue::deferral_lanes(&taught, code), None, "a frame that teaches is an answer");
     assert_eq!(
         dialogue::deferral_lanes(&deferral[..deferral.len() - 1], code),

@@ -108,10 +108,9 @@ pub fn encode_fetch<A: AsRef<[u8]>>(
         // One chart framed whole or not at all: a chart or an address that
         // reaches its u16 is refused by name and left out of the count.
         let mut rec = Vec::new();
-        let framed = push_invariant(&mut rec, inv).and_then(|()| {
-            rec.extend_from_slice(&(have.len() as u32).to_le_bytes());
-            have.iter().try_for_each(|a| put_addr(&mut rec, a))
-        });
+        let framed = push_invariant(&mut rec, inv)
+            .and_then(|()| crate::transducer::address::put_u32_count(&mut rec, have.len()))
+            .and_then(|()| have.iter().try_for_each(|a| put_addr(&mut rec, a)));
         if framed.is_none() {
             eprintln!("  fetch chart refused: a chart or an address it holds cannot be framed");
             continue;

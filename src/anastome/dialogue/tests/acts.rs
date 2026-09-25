@@ -101,7 +101,8 @@ fn the_five_acts_round_trip() {
         after: [0, 0, 1, 0],
         at: crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 42, i: 0 }),
     };
-    let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement));
+    let body = encode_docket_reply_with(std::slice::from_ref(&docket), std::slice::from_ref(&settlement))
+        .expect("the docket writes");
     assert_eq!(decode_docket_reply(&body).unwrap(), vec![docket.clone()]);
     assert_eq!(decode_settlements(&body), vec![settlement.clone()]);
     let cavity = vec![0xCAu8, 0xFE, 0xBA, 0xBE];
@@ -110,10 +111,11 @@ fn the_five_acts_round_trip() {
         std::slice::from_ref(&settlement),
         std::slice::from_ref(&cavity),
         usize::MAX,
-    );
+    )
+    .expect("the page writes");
     assert_eq!((w, s, n), (1, 1, 1));
     assert_eq!(decode_cavities(&paged), vec![cavity]);
-    assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD])).unwrap(), vec![0xAB, 0xCD]);
+    assert_eq!(decode_teach(&encode_teach(&[0xAB, 0xCD]).expect("it fits")).unwrap(), vec![0xAB, 0xCD]);
     let settle = encode_settle(&listing, &[voice, solver], &[0, 0, 12, 0]).expect("it fits");
     let (g2, vs, mu) = decode_settle(&settle).unwrap();
     assert_eq!((g2, vs, mu), (listing, vec![voice, solver], [0, 0, 12, 0]));

@@ -17,8 +17,7 @@ pub fn encode_equivocation(a: &ReceiptSection, b: &ReceiptSection) -> Option<Vec
     let mut out = vec![ACT_EQUIVOCATION, EQUIVOCATION_VERSION];
     for s in [a, b] {
         let bytes = encode_receipt_section(&s.prefix, &s.sig, &s.receipt)?;
-        out.extend_from_slice(&(bytes.len() as u32).to_le_bytes());
-        out.extend_from_slice(&bytes);
+        crate::transducer::address::put_bytes(&mut out, &bytes)?;
     }
     Some(out)
 }

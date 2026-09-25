@@ -72,12 +72,25 @@ pub fn encode_quote_reply(
 }
 
 /// Demand/percept reply: `[code][height u64][pressure 4×u64][taught_len u16][taught…]`.
-pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Vec<u8> {
+/// `None` where the taught bytes pass their two-byte length (STD1 3c).
+pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: &[u8]) -> Option<Vec<u8>> {
+    let mut body = outcome_head(code, height, pressure);
+    crate::transducer::address::put_u16_count(&mut body, taught.len())?;
+    body.extend_from_slice(taught);
+    Some(body)
+}
+
+/// The same reply with nothing taught: total, since an empty field fits.
+pub fn encode_outcome(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
+    let mut body = outcome_head(code, height, pressure);
+    body.extend_from_slice(&0u16.to_le_bytes());
+    body
+}
+
+fn outcome_head(code: u8, height: u64, pressure: &[u64; 4]) -> Vec<u8> {
     let mut body = vec![code];
     body.extend_from_slice(&height.to_le_bytes());
     push_mu(&mut body, pressure);
-    body.extend_from_slice(&(taught.len() as u16).to_le_bytes());
-    body.extend_from_slice(taught);
     body
 }
 
@@ -87,7 +100,7 @@ pub fn encode_outcome_reply(code: u8, height: u64, pressure: &[u64; 4], taught: 
 /// is a verdict; for any other act it is impedance; either way the asker
 /// dwells on the lanes it carries and never counts deferrals.
 pub fn encode_deferral(code: u8, deficit: &[u64; 4]) -> Vec<u8> {
-    encode_outcome_reply(code, 0, deficit, &[])
+    encode_outcome(code, 0, deficit)
 }
 
 /// THE OUTCOME REPLY READ BACK — the one reader of the layout
@@ -151,8 +164,7 @@ pub fn encode_quote_reply_within(height: u64, surface: &[u64; 4], k: u64, items:
         put_addr(&mut out, addr)?;
         push_mu(&mut out, mu);
         // The listing whole, length-prefixed as a chain's links are.
-        out.extend_from_slice(&(element.len() as u32).to_le_bytes());
-        out.extend_from_slice(element);
+        crate::transducer::address::put_bytes(&mut out, element)?;
         crate::transducer::address::put_u8_count(&mut out, open.len())?;
         for inv in open {
             push_invariant(&mut out, inv)?;

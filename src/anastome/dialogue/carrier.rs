@@ -33,13 +33,13 @@ pub fn act_is(body: &[u8], tag: u8) -> bool {
 /// framed: nothing is written then, never a partial frame (LD0, rule 11).
 pub fn push_cites(out: &mut Vec<u8>, cites: &[CiteWire]) -> Option<()> {
     let mut framed = Vec::new();
-    framed.extend_from_slice(&(cites.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(&mut framed, cites.len())?;
     for c in cites {
         crate::transducer::address::put_addr(&mut framed, &c.addr)?;
         framed.push(c.standing);
         c.transport.to_bytes(&mut framed);
         framed.extend_from_slice(&c.gauge.to_le_bytes());
-        push_chain(&mut framed, &c.body);
+        push_chain(&mut framed, &c.body)?;
     }
     out.append(&mut framed);
     Some(())
@@ -90,12 +90,16 @@ pub(crate) fn read_invariant(b: &[u8], p: &mut usize) -> Option<crate::transduce
     crate::transducer::stalk::Invariant::from_key(bytes)
 }
 
-pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) {
-    out.extend_from_slice(&(g.len() as u16).to_le_bytes());
-    out.extend_from_slice(&(crate::arc::grid_width(g) as u16).to_le_bytes());
+/// `None` where the grid's height or width passes its two bytes (STD1 3c):
+/// a grid is refused, never framed as a smaller one.
+#[must_use]
+pub(crate) fn push_grid(out: &mut Vec<u8>, g: &[Vec<u8>]) -> Option<()> {
+    crate::transducer::address::put_u16_count(out, g.len())?;
+    crate::transducer::address::put_u16_count(out, crate::arc::grid_width(g))?;
     for row in g {
         out.extend_from_slice(row);
     }
+    Some(())
 }
 
 pub(crate) fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
@@ -113,22 +117,30 @@ pub(crate) fn read_grid(b: &[u8], p: &mut usize) -> Option<Vec<Vec<u8>>> {
     Some(g)
 }
 
-pub fn push_chain(out: &mut Vec<u8>, chain: &[Link]) {
-    out.extend_from_slice(&(chain.len() as u32).to_le_bytes());
-    for (r, c, before, after) in chain {
-        out.extend_from_slice(&r.to_le_bytes());
-        out.extend_from_slice(&c.to_le_bytes());
-        out.push(*before);
-        out.push(*after);
+/// `None` where the chain's count passes its four bytes (STD1 3c).
+#[must_use]
+pub fn push_chain(out: &mut Vec<u8>, chain: &[Link]) -> Option<()> {
+    crate::transducer::address::put_u32_count(out, chain.len())?;
+    for link in chain {
+        push_link(out, link);
     }
+    Some(())
+}
+
+/// ONE LINK on the wire: the one writer `push_chain` and the width share.
+fn push_link(out: &mut Vec<u8>, &(r, c, before, after): &Link) {
+    out.extend_from_slice(&r.to_le_bytes());
+    out.extend_from_slice(&c.to_le_bytes());
+    out.push(before);
+    out.push(after);
 }
 
 /// The wire width of one chain link, measured from the encoder itself (the
 /// carrier's own coordinate, never a number chosen elsewhere).
 pub fn link_wire_width() -> usize {
     let mut probe = Vec::new();
-    push_chain(&mut probe, &[(0, 0, 0, 0)]);
-    probe.len() - 4
+    push_link(&mut probe, &(0, 0, 0, 0));
+    probe.len()
 }
 
 pub fn read_chain(b: &[u8], p: &mut usize) -> Option<Vec<Link>> {

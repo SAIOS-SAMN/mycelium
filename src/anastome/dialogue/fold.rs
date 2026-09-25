@@ -30,7 +30,7 @@ pub fn encode_fold(p: &FoldProposal) -> Option<Vec<u8>> {
         }
     }
     p.root.write(&mut out);
-    out.extend_from_slice(&(p.epochs.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(&mut out, p.epochs.len())?;
     for (who, mu) in &p.epochs {
         out.extend_from_slice(who);
         push_mu(&mut out, mu);
@@ -81,7 +81,7 @@ pub fn encode_fold_reply(w: &FoldWitness) -> Option<Vec<u8>> {
         FoldWitness::Refused { vk, why } => {
             out.push(0);
             out.extend_from_slice(vk);
-            out.extend_from_slice(&(why.len() as u16).to_le_bytes());
+            crate::transducer::address::put_u16_count(&mut out, why.len())?;
             out.extend_from_slice(why);
         }
         FoldWitness::Unmeasured { vk } => {

@@ -28,13 +28,13 @@ pub fn decode_docket_request(body: &[u8]) -> Option<([u8; 32], u64, u64)> {
     Some((voice, since, ticks))
 }
 
-pub fn encode_docket_reply(dockets: &[Docket]) -> Vec<u8> {
+pub fn encode_docket_reply(dockets: &[Docket]) -> Option<Vec<u8>> {
     encode_docket_reply_with(dockets, &[])
 }
 
 /// `[dockets…][ns u32] ( [listing 32][chain][voice 32][cites][μ⃗ before 32][μ⃗ after 32] )…`
-pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) -> Vec<u8> {
-    encode_docket_reply_paged(dockets, settlements, &[], usize::MAX).0
+pub fn encode_docket_reply_with(dockets: &[Docket], settlements: &[Settlement]) -> Option<Vec<u8>> {
+    Some(encode_docket_reply_paged(dockets, settlements, &[], usize::MAX)?.0)
 }
 
 /// THE DOCKET PAGE: words first, then settlements, then cavities, each
@@ -47,7 +47,8 @@ pub fn encode_docket_reply_paged(
     settlements: &[Settlement],
     cavities: &[Vec<u8>],
     budget: usize,
-) -> (Vec<u8>, usize, usize, usize) {
+) -> Option<(Vec<u8>, usize, usize, usize)> {
+    use crate::transducer::address::{put_bytes, put_u32_count};
     // Settlements are the proof of convergence and bounded by the reserve;
     // they are measured first, and the words take what remains, so a long
     // provisional list never starves the court of what actually settled.
@@ -62,7 +63,10 @@ pub fn encode_docket_reply_paged(
             eprintln!("  docket settlement refused: its listing's address cannot be framed");
             break;
         }
-        push_chain(&mut item, &s.chain);
+        if push_chain(&mut item, &s.chain).is_none() {
+            eprintln!("  docket settlement refused: its chain passes its count");
+            break;
+        }
         item.extend_from_slice(&s.voice);
         if push_cites(&mut item, &s.cites).is_none() {
             eprintln!("  docket settlement refused: a citation's address cannot be framed");
@@ -86,9 +90,12 @@ pub fn encode_docket_reply_paged(
             eprintln!("  docket word refused: its address cannot be framed");
             break;
         }
-        item.extend_from_slice(&(d.elem.len() as u32).to_le_bytes());
-        item.extend_from_slice(&d.elem);
-        item.extend_from_slice(&(d.voices.len() as u32).to_le_bytes());
+        // STD1 3c — a word whose element or voices pass their fields ends the
+        // page here, as the budget does: nothing is skipped past.
+        if put_bytes(&mut item, &d.elem).and_then(|()| put_u32_count(&mut item, d.voices.len())).is_none() {
+            eprintln!("  docket word refused: its element or voices pass their fields");
+            break;
+        }
         for v in &d.voices {
             item.extend_from_slice(v);
         }
@@ -101,8 +108,8 @@ pub fn encode_docket_reply_paged(
         out.extend_from_slice(&item);
         words += 1;
     }
-    out[..4].copy_from_slice(&(words as u32).to_le_bytes());
-    out.extend_from_slice(&(settled.len() as u32).to_le_bytes());
+    out[..4].copy_from_slice(&u32::try_from(words).ok()?.to_le_bytes());
+    put_u32_count(&mut out, settled.len())?;
     let served = settled.len();
     for item in settled {
         out.extend_from_slice(&item);
@@ -110,17 +117,19 @@ pub fn encode_docket_reply_paged(
     // Cavities: evicted unreachable listings, each the element itself.
     let cav_at = out.len();
     out.extend_from_slice(&0u32.to_le_bytes());
-    let mut ncav = 0u32;
+    let mut ncav = 0usize;
     for elem in cavities {
         if out.len() + 4 + elem.len() > budget {
             break;
         }
-        out.extend_from_slice(&(elem.len() as u32).to_le_bytes());
-        out.extend_from_slice(elem);
+        // A cavity past its four bytes ends the page, as the budget does.
+        if put_bytes(&mut out, elem).is_none() {
+            break;
+        }
         ncav += 1;
     }
-    out[cav_at..cav_at + 4].copy_from_slice(&ncav.to_le_bytes());
-    (out, words, served, ncav as usize)
+    out[cav_at..cav_at + 4].copy_from_slice(&u32::try_from(ncav).ok()?.to_le_bytes());
+    Some((out, words, served, ncav))
 }
 
 /// The settlements on a docket reply, after the dockets (absent in an
@@ -266,16 +275,17 @@ pub fn decode_evidence_deposit(body: &[u8]) -> Option<EvidenceDeposit> {
 pub fn encode_evidence_reply<A: AsRef<[u8]>>(
     items: &[EvidenceOf<A>],
 ) -> Option<Vec<u8>> {
+    use crate::transducer::address::put_u32_count;
     let mut out = Vec::new();
-    out.extend_from_slice(&(items.len() as u32).to_le_bytes());
+    put_u32_count(&mut out, items.len())?;
     for EvidenceOf { addr, footprint, scene } in items {
         put_addr(&mut out, addr)?;
-        out.extend_from_slice(&(footprint.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, footprint.len())?;
         for (r, c) in footprint {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
         }
-        out.extend_from_slice(&(scene.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, scene.len())?;
         for (r, c, h) in scene {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
@@ -378,11 +388,11 @@ pub fn decode_ruled(body: &[u8]) -> Option<Ruled> {
     }
 }
 
-pub fn encode_teach(element_bytes: &[u8]) -> Vec<u8> {
+/// `None` where the element passes its four bytes (STD1 3c).
+pub fn encode_teach(element_bytes: &[u8]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_TEACH];
-    out.extend_from_slice(&(element_bytes.len() as u32).to_le_bytes());
-    out.extend_from_slice(element_bytes);
-    out
+    crate::transducer::address::put_bytes(&mut out, element_bytes)?;
+    Some(out)
 }
 
 pub fn decode_teach(body: &[u8]) -> Option<Vec<u8>> {

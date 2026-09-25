@@ -16,9 +16,8 @@ pub fn encode_offer(o: &Offer) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OFFER];
     put_addr(&mut out, &o.addr)?;
     out.extend_from_slice(&o.home);
-    out.extend_from_slice(&(o.elem.len() as u32).to_le_bytes());
-    out.extend_from_slice(&o.elem);
-    out.extend_from_slice(&(o.voices.len() as u32).to_le_bytes());
+    crate::transducer::address::put_bytes(&mut out, &o.elem)?;
+    crate::transducer::address::put_u32_count(&mut out, o.voices.len())?;
     for v in &o.voices {
         out.extend_from_slice(v);
     }
@@ -69,8 +68,7 @@ pub fn encode_offer_reply(w: &Witnessed) -> Option<Vec<u8>> {
         Witnessed::Reached { vk, form } => {
             out.push(1);
             out.extend_from_slice(vk);
-            out.extend_from_slice(&(form.len() as u32).to_le_bytes());
-            out.extend_from_slice(form);
+            crate::transducer::address::put_bytes(&mut out, form)?;
         }
         Witnessed::Refused { vk, why } => {
             out.push(2);

@@ -198,10 +198,13 @@ impl Kernel {
         for s in self.settlements_cold.iter().chain(self.settlements.iter()) {
             let mut v = Vec::new();
             crate::snapshot::put_key(&mut v, &s.listing);
-            crate::anastome::dialogue::push_chain(&mut v, &s.chain);
+            // LD0 — a settlement whose chain or citations cannot be framed is
+            // not written, never a partial record.
+            if crate::anastome::dialogue::push_chain(&mut v, &s.chain).is_none() {
+                refused.settlements += 1;
+                continue;
+            }
             v.extend_from_slice(&s.voice);
-            // LD0 — a settlement whose citations cannot be framed is not
-            // written, never a partial record.
             if crate::anastome::dialogue::push_cites(&mut v, &s.cites).is_none() {
                 refused.settlements += 1;
                 continue;
