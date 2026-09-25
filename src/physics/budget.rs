@@ -139,11 +139,11 @@ impl Reserve {
 
     /// Return a draw to the reserve — the conjugate of `draw`, because an
     /// escrow that can only be spent is the ratchet one level down (62).
-    /// Saturating: a return larger than what was drawn would mint
-    /// attention, and the reserve is not a place capacity is created.
+    /// A return past the lane's carrier is refused and counted on the
+    /// ledger (STD1, rule 11), never pinned at a ceiling.
     pub fn restore(&mut self, cost: [u64; 4]) {
         for (l, c) in self.lanes.iter_mut().zip(cost.iter()) {
-            *l = l.saturating_add(*c);
+            crate::physics::metabolism::step_or_refuse(l, *c);
         }
         crate::physics::metabolism::note_restore(&cost);
     }

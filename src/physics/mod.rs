@@ -97,9 +97,15 @@ impl Circuits {
     /// returned when a circuit completed, so the caller writes its circuit
     /// line once per circuit (34.2, 34.3) and never per stroke.
     pub fn stroke(&mut self, circuits: u64) -> Option<(u64, u64)> {
-        self.strokes = self.strokes.saturating_add(1);
+        // A count past its carrier is refused and counted, and no circuit is
+        // read on the stroke that met it (STD1, rule 11).
+        if !metabolism::step_or_refuse(&mut self.strokes, 1) {
+            return None;
+        }
         let n = std::num::NonZeroU64::new(circuits)?;
-        self.circuits = self.circuits.saturating_add(n.get());
+        if !metabolism::step_or_refuse(&mut self.circuits, n.get()) {
+            return None;
+        }
         // A period is strokes since the last circuit. `at` is a stroke this
         // counter has already passed, so the difference is exact; a mark
         // ahead of the count is a broken counter and reports no circuit
@@ -330,7 +336,7 @@ impl Physics {
     /// the graded defect itself, never an event count through a threshold.
     pub fn bump(&mut self, m: &[u64; 4]) {
         for (p, d) in self.pressure.iter_mut().zip(m) {
-            *p = p.saturating_add(*d);
+            metabolism::step_or_refuse(p, *d);
         }
     }
 
@@ -374,7 +380,7 @@ impl Physics {
         let any = lanes.iter().any(|&b| b);
         for (t, &on) in self.torsion.iter_mut().zip(&lanes) {
             if on || !any {
-                *t = t.saturating_add(1);
+                metabolism::step_or_refuse(t, 1);
             }
         }
     }
@@ -394,7 +400,7 @@ impl Physics {
                     return false;
                 };
                 *t = next;
-                *o = o.saturating_add(spanned);
+                metabolism::step_or_refuse(o, spanned);
             }
         }
         true
@@ -404,7 +410,7 @@ impl Physics {
     /// Order built, by the magnitude of what was settled or composed.
     pub fn syntropy(&mut self, m: &[u64; 4]) {
         for (o, d) in self.syntropic.iter_mut().zip(m) {
-            *o = o.saturating_add(*d);
+            metabolism::step_or_refuse(o, *d);
         }
     }
 
@@ -466,7 +472,12 @@ impl Physics {
             };
             let add = regen_unit() * (1 + (verified > 0) as u64);
             let target = verified.max(expand_floor());
-            let next = self.reserve[l].saturating_add(add);
+            // A regeneration past the carrier is refused and counted; the
+            // lane stands where it was.
+            let mut next = self.reserve[l];
+            if !metabolism::step_or_refuse(&mut next, add) {
+                continue;
+            }
             self.reserve[l] = next.min(target.max(self.reserve[l]));
             self.regen_mark[l] = self.syntropic[l];
         }
@@ -550,8 +561,8 @@ pub struct StrokeOutcome {
 
 impl StrokeOutcome {
     pub fn add(dst: &mut [u64; 4], src: &[u64; 4]) {
-        for i in 0..4 {
-            dst[i] = dst[i].saturating_add(src[i]);
+        for (d, s) in dst.iter_mut().zip(src) {
+            metabolism::step_or_refuse(d, *s);
         }
     }
 
@@ -575,6 +586,19 @@ impl StrokeOutcome {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// STD1 (rule 11) — A LEDGER COUNTER PAST ITS CARRIER IS REFUSED AND
+    /// COUNTED, never pinned at a ceiling: the lane stands where it was and
+    /// the ledger's `overflowed` rises.
+    #[test]
+    fn a_counter_past_its_carrier_is_refused_and_counted() {
+        let _ = metabolism::take_metabolism();
+        let mut p = Physics::default();
+        p.bump(&[u64::MAX, 0, 0, 0]);
+        p.bump(&[1, 2, 0, 0]);
+        assert_eq!(p.pressure, [u64::MAX, 2, 0, 0], "the full lane stood; the others stepped");
+        assert_eq!(metabolism::take_metabolism().overflowed, 1, "one step refused, counted");
+    }
 
     #[test]
     fn pressure_is_per_lane_and_relieves() {

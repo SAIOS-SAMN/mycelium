@@ -72,6 +72,10 @@ pub struct Metabolism {
     /// event of the ledger or lost a reading (78.7 as amended), per lane
     /// (𝒮, 𝒢, 𝒯, 𝒽), never summed.
     pub viscous: [u64; 4],
+    /// STD1 (rule 11) — steps the ledger REFUSED because the counter would
+    /// pass its carrier: the counter stands where it was, never pinned at a
+    /// ceiling that would be an invented value.
+    pub overflowed: u64,
 }
 
 thread_local! {
@@ -79,7 +83,17 @@ thread_local! {
         const { std::cell::Cell::new(Metabolism {
             cauterized: 0, released: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
             depleted: 0, orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0, viscous: [0; 4],
+            overflowed: 0,
         }) };
+}
+
+/// ONE STEP OF A COUNTER: `slot + x`, or the step refused and counted where
+/// the sum would pass the carrier.
+fn step(slot: &mut u64, x: u64, overflowed: &mut u64) {
+    match slot.checked_add(x) {
+        Some(v) => *slot = v,
+        None => *overflowed += 1,
+    }
 }
 
 fn note(f: impl Fn(&mut Metabolism)) {
@@ -88,6 +102,23 @@ fn note(f: impl Fn(&mut Metabolism)) {
         f(&mut v);
         c.set(v);
     });
+}
+
+/// STD1 — A STEP OF A PHYSICS COUNTER OUTSIDE THIS LEDGER: `slot + x`, or the
+/// step refused — the counter standing where it was — and counted on this
+/// ledger's `overflowed` where the sum would pass the carrier. Returns
+/// whether it stepped.
+pub fn step_or_refuse(slot: &mut u64, x: u64) -> bool {
+    match slot.checked_add(x) {
+        Some(v) => {
+            *slot = v;
+            true
+        }
+        None => {
+            note(|m| m.overflowed += 1);
+            false
+        }
+    }
 }
 
 /// An irreversible termination at dimension 1 (`Drained::Cauterized`).
@@ -110,7 +141,7 @@ pub fn note_sealed() {
 pub fn note_viscous(lane: usize) {
     note(|m| {
         if let Some(slot) = m.viscous.get_mut(lane) {
-            *slot = slot.saturating_add(1);
+            step(slot, 1, &mut m.overflowed);
         }
     });
 }
@@ -120,7 +151,7 @@ pub fn note_draw(cost: &[u64; 4], afforded: bool) {
     note(|m| match afforded {
         true => {
             for (slot, c) in m.drawn.iter_mut().zip(cost.iter()) {
-                *slot = slot.saturating_add(*c);
+                step(slot, *c, &mut m.overflowed);
             }
         }
         false => m.depleted += 1,
@@ -131,7 +162,7 @@ pub fn note_draw(cost: &[u64; 4], afforded: bool) {
 pub fn note_restore(cost: &[u64; 4]) {
     note(|m| {
         for (slot, c) in m.restored.iter_mut().zip(cost.iter()) {
-            *slot = slot.saturating_add(*c);
+            step(slot, *c, &mut m.overflowed);
         }
     });
 }
@@ -142,7 +173,7 @@ pub fn note_orbit(order: Option<crate::transducer::alphabet::Order>) {
     note(|m| match order {
         Some(Order::Finite(n)) => {
             m.orbit_finite += 1;
-            m.orbit_sum = m.orbit_sum.saturating_add(u64::from(n));
+            step(&mut m.orbit_sum, u64::from(n), &mut m.overflowed);
         }
         Some(Order::Infinite) => m.orbit_infinite += 1,
         None => {}
@@ -167,7 +198,7 @@ impl Metabolism {
     pub fn line(&self) -> String {
         format!(
             "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} open {} \
-             | draw {:?} restore {:?} depleted {}",
+             | draw {:?} restore {:?} depleted {} | overflowed {}",
             self.cauterized,
             self.released,
             self.sealed,
@@ -177,6 +208,7 @@ impl Metabolism {
             self.drawn,
             self.restored,
             self.depleted,
+            self.overflowed,
         )
     }
 
