@@ -966,6 +966,8 @@ pub(crate) fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> 
             q.push(v);
         }
     }
+    // AT1 (r4) — A SEARCH, counted at its site: the atlas retires it.
+    super::atlas::note_tree_path(qi);
     prev[dst]?;
     let mut path = vec![dst];
     let mut crossed = Vec::new();

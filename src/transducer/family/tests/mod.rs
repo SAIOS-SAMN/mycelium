@@ -3,6 +3,7 @@
 
 pub mod common;
 
+mod address_set;
 mod budget;
 mod canonical;
 mod cells;

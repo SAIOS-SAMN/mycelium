@@ -275,6 +275,8 @@ pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
             _ => continue, // one body isotropic, the other not: not similar
         };
         for rotor in candidates {
+            // AT1 (r4) — the carry's candidate loop, counted at its site.
+            crate::transducer::sentence::form::atlas::note_carry_candidate();
             if !cga::is_versor(&rotor) {
                 continue;
             }

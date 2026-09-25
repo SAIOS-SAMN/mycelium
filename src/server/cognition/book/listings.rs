@@ -404,6 +404,9 @@ impl Kernel {
         // the torse span standing in for a period that was never witnessed
         // (A17: a period is believed only when the orbit closes at it, T5).
         // A word carrying no filed cycle has no torse to speak (rule 8).
+        // AT1 (r4) — the least-cycle choice, counted at its site with the
+        // cycles it chose among.
+        crate::transducer::sentence::form::atlas::note_listing_choice(after.torsion().len());
         let Some((generator, period)) = after
             .torsion()
             .iter()

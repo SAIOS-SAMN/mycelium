@@ -5,6 +5,7 @@
 //! form spoken back onto a scene. A family it does not close is a withheld
 //! form.
 
+mod atlas;
 mod chord;
 mod comprehend;
 pub use comprehend::{take_cells, take_progress, take_spend, take_viscosity};

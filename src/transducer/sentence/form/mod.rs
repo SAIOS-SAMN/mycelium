@@ -5,6 +5,7 @@
 //! the certificate a pivot on it writes, and the contraction a refusal
 //! makes on it.
 
+pub mod atlas;
 pub mod axis;
 pub mod carrier;
 pub mod certificate;

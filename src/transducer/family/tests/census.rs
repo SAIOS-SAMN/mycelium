@@ -394,6 +394,8 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     // test's own.
     let _ = crate::transducer::family::cover::take_cover_tally();
     let _ = crate::transducer::cga::take_motor_tally();
+    let _ = crate::transducer::sentence::form::atlas::take_atlas_tally();
+    let mut address_set = super::address_set::AddressSet::default();
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
     let (mut forms, mut with_orbits) = (0usize, 0usize);
@@ -405,6 +407,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
+        address_set.add(&rule.form);
         forms += 1;
         if !rule.form.orbits.is_empty() {
             with_orbits += 1;
@@ -413,6 +416,12 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     let t = crate::transducer::family::cover::take_cover_tally();
     // MT1 — EVERY TRANSITION OVER THE CORPUS READ BY ITS ACTION, by kind.
     eprintln!("  corpus {}", crate::transducer::cga::take_motor_tally().line());
+    // AT1's READING (r1–r7): the percepts' forms read as the table they are,
+    // and the family forms' address set — the compaction the atlas is
+    // measured by (78.41(2′)).
+    let atlas = crate::transducer::sentence::form::atlas::take_atlas_tally();
+    eprintln!("  corpus {}", atlas.line());
+    eprintln!("  corpus {}", address_set.line(atlas.sum.chart_frames));
     // BQ5a — AND WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED. A census
     // that reads `0 condensed` says nothing until it says WHICH arm refused
     // (§8.1); the field and its band are gone, so what is read is the

@@ -61,8 +61,11 @@ struct Member {
 /// existing reader between the member's body at consecutive OCCUPIED frames,
 /// on the inputs and on the outputs, two readings of one step typed by how
 /// they agree, never averaged. Each solve is one transition under the stroke,
-/// read by its action, with the frame its chain carries per lane.
-fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budget) {
+/// read by its action, with the frame its chain carries per lane. Each step
+/// is also the overlap the atlas would add between the member's two charts,
+/// `class ‖ Invariant ‖ k` and `… ‖ k′`, counted with its ruled key's bytes
+/// (AT1 r5).
+fn read_frame_axis(claimed: &mut [&Quotient], (class, chart): (&[u8], &[u8]), budget: &mut crate::physics::Budget) {
     use cga::{note_motor, note_step, note_unread, StepClass, TransitionKind::FrameAxis};
     // Succession along e₃ is the frame coordinate's own order (51.1); the
     // fibre's keys are little-endian and do not carry it.
@@ -82,6 +85,11 @@ fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budge
     };
     for step in claimed.windows(2) {
         let [q, next] = step else { continue };
+        let mut key = Vec::new();
+        for k in [q.frame, next.frame] {
+            crate::transducer::sentence::form::atlas::chart_coordinate(class, chart, u64::from(k), &mut key);
+        }
+        crate::transducer::sentence::form::atlas::note_frame_axis_step(key.len());
         // BOTH SIDES ARE ASKED, and a side the stroke did not reach is
         // counted unread under its kind (A.17): nothing is dropped by a
         // return, so every later step of the member is counted too. The step
@@ -361,7 +369,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 union_out.extend_from_slice(&q.b_k.laminae);
                 claimed.push(q);
             }
-            read_frame_axis(&mut claimed, budget);
+            read_frame_axis(&mut claimed, (tc.key().encode().as_bytes(), c.key().as_bytes()), budget);
             support.sort_unstable();
             support.dedup();
             let union = union_quotient(union_in, union_out, &first.car.v);
@@ -1260,6 +1268,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         }
     }
     eprintln!("  running {}", cga::motor_tally().line());
+    // AT1's READING (r1–r6): this form read as the table it is, and the
+    // searches and frame-axis steps counted so far (running).
+    let reached: Vec<u16> = (0..n).filter(|k| !unreached.contains(k)).map(|k| k as u16).collect();
+    let atlas = super::atlas::read_form_atlas(&form, &sections, &reached);
+    crate::transducer::sentence::form::atlas::note_form(atlas);
+    eprintln!(
+        "  atlas: {} | running {}",
+        atlas.line(),
+        crate::transducer::sentence::form::atlas::atlas_tally().searches_line()
+    );
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }
