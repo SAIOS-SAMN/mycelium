@@ -464,6 +464,12 @@ pub fn replay_form_on(
     // (tree faces of that orbit are face_of). Filing of that class is
     // the orbit check; a missing torsion entry is REFUSE_ORBIT, a chord
     // that does not carry the holonomy is REFUSE_FACE.
+    // THE OVERLAPS A CERTIFICATE NAMES, by their coordinates: the only
+    // producers of a face's content the vertices do not derive (A20, AT1).
+    let mut named: Keyed<(), crate::network::nerve::coord::Overlap> = Keyed::new();
+    for cert in &spoken.receipts().certificates {
+        named.put(cert.by.face(), ());
+    }
     for (o, face) in f.faces.entries() {
         // 50.3, 52.3: an edge transport of any order is a face. What it
         // carries is re-derived on the family below (`edges_rederive_frames`),
@@ -474,7 +480,12 @@ pub fn replay_form_on(
         if face_rederives(f, &o, face) {
             continue;
         }
-        if !torsion_chord_carries(&traversed, &by_chord, &o) {
+        // A PLACE THAT DOES NOT RE-DERIVE IS ADMITTED ONLY BY A CERTIFICATE
+        // (AT1 A3): the pivot is the one producer of content the vertices do
+        // not derive, and its certificate names the overlap it wrote. A
+        // chord whose orbit carries is not a producer, so it never admits a
+        // place alone.
+        if !named.holds(&o) || !torsion_chord_carries(&traversed, &by_chord, &o) {
             return Some(face_at(&o));
         }
     }
@@ -630,10 +641,6 @@ pub fn replay_form_on(
     // move, and the certificate whose chord names the overlap is their
     // producer. A factor with none was written by nothing the court can
     // replay.
-    let mut named: Keyed<(), crate::network::nerve::coord::Overlap> = Keyed::new();
-    for cert in &spoken.receipts().certificates {
-        named.put(cert.by.face(), ());
-    }
     if traversed.faces.entries().any(|(o, face)| face.is_pivoted() && !named.holds(&o)) {
         return Some(tape(REFUSE_PIVOT_INEXACT));
     }

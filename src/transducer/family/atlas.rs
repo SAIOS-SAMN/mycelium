@@ -44,146 +44,15 @@ fn edge_row(a: usize, b: usize) -> crate::core::lattice::SparseRow {
     }
 }
 
-/// A MEMBER WITH ITS FRAME FORGOTTEN: the node of the old member complex,
-/// `(vertex, chart)`, written as the member's chart at frame 0; the Frame's
-/// chart is its tag alone. A piece names its member.
-fn forgotten(c: &ChartAt) -> ChartAt {
-    match c {
-        ChartAt::Frame => ChartAt::Frame,
-        ChartAt::At(m) => ChartAt::at(m.vertex.clone(), m.chart.clone(), 0),
-    }
-}
-
-/// One edge of the old member complex: the frames its pair's overlaps stand
-/// at (empty for a frameless pair), and the face its reading takes.
-struct OldEdge {
-    frames: Keyed<()>,
-    frameless: bool,
-}
-
-/// THE OLD BASIS, DEDUCED IN THE NEW ENGINE (78.46(5)(b)–(c), ruled (A)).
-///
-/// The old carrier was the member complex with frames forgotten: nodes
-/// `(vertex, chart)`, one face per member pair. It is rebuilt here from the
-/// coordinate list — every overlap projected to its member pair (a
-/// frame-axis overlap or a chord between pieces projects to a member meeting
-/// itself and adds no edge), every frameless pair a refused edge carrying
-/// the place its two members make at their own frames — and its cycles are
-/// read by the one builder, `orbits_of`, on that projection. Each is then
-/// read by kind, deduced: its class keys by `orbit_classes`, the engine's
-/// one reader, looked up by class key among the atlas's circuits (all of
-/// them, or the across-frame ones for a frameless cycle). A reading taken
-/// and dropped: nothing here is held.
-fn read_old_basis(form: &Form, frameless: &[super::incidence::Frameless], r: &mut FormAtlas) {
-    use crate::transducer::sentence::{FormFace, Producer};
-    // The atlas's circuits' classes, all and across frames, by class key.
-    let mut classes: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
-    let mut across: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
-    for lp in &form.orbits {
-        let crosses = lp.steps.iter().any(|s| match (s.overlap.from.frame(), s.overlap.to.frame()) {
-            (Some(a), Some(b)) => a != b,
-            _ => false,
-        });
-        for row in form.orbit_classes(lp) {
-            classes.put(&row.class, ());
-            if crosses {
-                across.put(&row.class, ());
-            }
-        }
-    }
-    // The projection: a clone whose faces are the old complex's edges, each
-    // the first overlap of its pair in key order at the forgotten charts.
-    let mut old = form.clone();
-    old.faces = Keyed::new();
-    let mut edges: Keyed<OldEdge, crate::network::nerve::coord::Overlap> = Keyed::new();
-    for (o, face) in form.faces.entries() {
-        let (a, b) = (forgotten(&o.from), forgotten(&o.to));
-        if a == b {
-            continue;
-        }
-        let key = crate::network::nerve::coord::Overlap { from: a.clone(), to: b.clone() };
-        let back = key.reversed();
-        let at = match (edges.at(&key).is_some(), edges.at(&back).is_some()) {
-            (_, true) => back,
-            _ => key,
-        };
-        let frame = o.frame();
-        match edges.at_mut(&at) {
-            Some(e) => {
-                if let Some(k) = frame {
-                    e.frames.insert(crate::transducer::sentence::frame_key(k), ());
-                }
-            }
-            None => {
-                let mut frames = Keyed::new();
-                if let Some(k) = frame {
-                    frames.insert(crate::transducer::sentence::frame_key(k), ());
-                }
-                edges.put(&at, OldEdge { frames, frameless: false });
-                old.faces.put(&at, face.clone());
-            }
-        }
-    }
-    for refused in frameless {
-        let (va, ca, fa) = &refused.a;
-        let (vb, cb, fb) = &refused.b;
-        let key = crate::network::nerve::coord::Overlap {
-            from: ChartAt::at(va.clone(), ca.clone(), 0),
-            to: ChartAt::at(vb.clone(), cb.clone(), 0),
-        };
-        if edges.at(&key).is_some() || edges.at(&key.reversed()).is_some() {
-            continue;
-        }
-        // The place the two members make at their OWN frames, which is what
-        // the old face carried where no frame held both.
-        let ([ka, ..], [kb, ..]) = (fa.as_slice(), fb.as_slice()) else { continue };
-        let place = form.face_place(&ChartAt::at(va.clone(), ca.clone(), *ka), &ChartAt::at(vb.clone(), cb.clone(), *kb), None);
-        edges.put(&key, OldEdge { frames: Keyed::new(), frameless: true });
-        if let Some(p) = place {
-            old.faces.put(&key, FormFace::placed(p, Producer::Place));
-        }
-    }
-    // Each cycle of the old complex, by kind.
-    for lp in Form::orbits_of(&old.faces, &old.vertices) {
-        r.old_cycles += 1;
-        let steps: Vec<&OldEdge> = lp.steps.iter().filter_map(|s| edges.at(&s.overlap)).collect();
-        let crosses_frameless = steps.iter().any(|e| e.frameless);
-        // The frames every pair of the cycle stands at: the star's pairs
-        // stand wherever their member does, so they narrow nothing.
-        let mut shared: Option<Keyed<()>> = None;
-        for (s, e) in lp.steps.iter().zip(&steps) {
-            if matches!(s.overlap.from, ChartAt::Frame) || matches!(s.overlap.to, ChartAt::Frame) {
-                continue;
-            }
-            shared = Some(match shared {
-                None => e.frames.clone(),
-                Some(held) => held.meet(&e.frames),
-            });
-        }
-        let co_present = shared.is_none_or(|s| !s.is_empty());
-        let rows = old.orbit_classes(&lp);
-        match (crosses_frameless, co_present, rows.as_slice()) {
-            (true, _, []) | (false, true, []) => r.old_unread += 1,
-            (true, _, rows) => match rows.iter().all(|row| across.at(&row.class).is_some()) {
-                true => r.old_frameless_across += 1,
-                false => r.old_frameless_not += 1,
-            },
-            (false, false, _) => r.old_across += 1,
-            (false, true, rows) => match rows.iter().all(|row| classes.at(&row.class).is_some()) {
-                true => r.old_present += 1,
-                false => r.old_lost += 1,
-            },
-        }
-    }
-    // A face with no member pair does not exist under the atlas: refused at
-    // construction (Q-B2), so the column reads 0 by construction.
-    r.old_slot = 0;
-}
+// THE OLD-BASIS DEDUCTION STOOD HERE (78.46(5)(b)–(c)) AND RETIRED after
+// its one reading post-A2 — 9 cycles, present 6, frameless 3 (across 2 /
+// not 1), across 0, lost 0: it was the coordinator's acceptance instrument,
+// not the minds' (77(1)).
 
 /// ONE FORM READ AS THE ATLAS IT IS (AT1's reading). `reached` is the
 /// frames the family reached, which a member holding no frames of its own
-/// is read at; `frameless` the named pairs no frame placed (78.46(5)(d)).
-pub(super) fn read_form_atlas(form: &Form, reached: &[u64], frameless: &[super::incidence::Frameless]) -> FormAtlas {
+/// is read at.
+pub(super) fn read_form_atlas(form: &Form, reached: &[u64]) -> FormAtlas {
     let mut r = FormAtlas::default();
     // (r1)
     for (_, v) in form.vertices.scoped() {
@@ -272,6 +141,5 @@ pub(super) fn read_form_atlas(form: &Form, reached: &[u64], frameless: &[super::
         }
     }
     r.address_bytes = crate::transducer::sentence::form_vertex_key(form).as_bytes().len() as u64;
-    read_old_basis(form, frameless, &mut r);
     r
 }

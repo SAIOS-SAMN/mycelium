@@ -66,6 +66,36 @@ struct Member {
     support: Vec<Site>,
     union: Option<(Body, Body, Versor)>,
     steps: Vec<(u64, u64, Versor)>,
+    /// The member's INPUT body at each frame it is claimed on, at that
+    /// frame's own `k` — what the class's frame axis solves between when two
+    /// consecutive frames of the class stand on two charts (AT1 A2).
+    inputs: Vec<(u64, Body)>,
+}
+
+/// ONE STEP OF A CLASS'S FRAME AXIS ACROSS TWO CHARTS (AT1 A2): the vertex,
+/// the chart and frame it leaves, the chart and frame it arrives at, and the
+/// motor its input body took where `versor_between` solved — `None` where it
+/// refused, the step then carrying the sections' relative `τ = C_B·C_A⁻¹`.
+type CrossStep = (coord::VertexAt, Invariant, u64, Invariant, u64, Option<Versor>);
+
+/// THE CLASS'S STEPS ACROSS TWO CHARTS, BY KIND (AT1 A2): carried by a
+/// motor, carried by the sections' relative, refused where no place derives,
+/// and not taken where a frame holds several charts.
+#[derive(Default)]
+struct AcrossCharts {
+    motor: u64,
+    relative: u64,
+    unplaced: u64,
+    several: u64,
+}
+
+impl AcrossCharts {
+    fn line(&self) -> String {
+        format!(
+            "frame axis across charts: motor {} | sections' relative {} | no place {} | several charts at a frame {}",
+            self.motor, self.relative, self.unplaced, self.several
+        )
+    }
 }
 
 /// MT1 (1) — THE FRAME-AXIS TRANSITIONS OF ONE MEMBER: a new solve by the
@@ -143,8 +173,10 @@ fn member_of(chart: &Invariant, acting: Acting, claimed: &mut [&Quotient], union
     let mut support: Vec<Site> = Vec::new();
     let mut union_in: Vec<Lamina> = Vec::new();
     let mut union_out: Vec<Lamina> = Vec::new();
+    let mut inputs: Vec<(u64, Body)> = Vec::new();
     for q in claimed.iter() {
         frames.push(q.frame);
+        inputs.push((q.frame, q.a_k.clone()));
         at.push((q.frame, q.a0.clone(), q.b0.clone(), q.car.v.clone()));
         if let Ok(k) = i64::try_from(q.frame) {
             support.extend(support_at(&q.b0.laminae, k));
@@ -157,7 +189,7 @@ fn member_of(chart: &Invariant, acting: Acting, claimed: &mut [&Quotient], union
     frames.sort_unstable();
     frames.dedup();
     let union = union_quotient(union_in, union_out, union_by);
-    Member { chart: chart.clone(), acting, frames, at, support, union, steps: Vec::new() }
+    Member { chart: chart.clone(), acting, frames, at, support, union, steps: Vec::new(), inputs }
 }
 
 /// A class's vertex before it is placed: the least address among its
@@ -624,6 +656,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // THE FRAME-AXIS STEPS OF EACH MEMBER (MT1), kept until the vertices
     // stand, then filed as overlaps between the member's charts (AT1 Q3).
     let mut frame_steps: Vec<FrameSteps> = Vec::new();
+    // AT1 A2 — the class's steps across two charts, and their count by kind.
+    let mut cross_steps: Vec<CrossStep> = Vec::new();
+    let mut across_charts = AcrossCharts::default();
     // 53.6 — A COVER'S CARRIED PIECES ARE GROUPED BY TRANSPORT CLASS,
     // exactly as a chart's quotients are: ONE Word vertex per class present
     // in the cover, one member per chart the class carries a piece on.
@@ -684,6 +719,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 support,
                 union: None,
                 steps: Vec::new(),
+                // A cover's piece is read at its cover's one frame, with no
+                // body of its own at that frame's `k`: it takes no step.
+                inputs: Vec::new(),
             };
             match reads.at_mut(&tc.key()) {
                 Some(read) => {
@@ -762,6 +800,57 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             }
             if !m.steps.is_empty() {
                 frame_steps.push((at.clone(), m.chart.clone(), m.steps.clone()));
+            }
+        }
+        // AT1 A2 — THE CLASS'S FRAME AXIS ACROSS ITS CHARTS. The steps above
+        // join a chart to itself; a body that CHANGES CHART between two
+        // consecutive frames of its class — one vertex standing on chart A at
+        // `k` and on chart B at `k′` — was joined by nothing, and the cycles
+        // through it were lost (the audit of 8309b6e1). The class's occupied
+        // frames in their own order, each with the charts the class stands on
+        // there; a step where each of two consecutive frames holds ONE chart
+        // and the two differ. A frame holding several charts pairs with no
+        // one of them over another (rule 15: no representative): counted.
+        let mut succession: Keyed<Vec<(Invariant, Body)>> = Keyed::new();
+        for m in &read.members {
+            for (k, body) in &m.inputs {
+                let fk = frame_key(*k);
+                match succession.get_mut(&fk) {
+                    Some(on) => {
+                        if !on.iter().any(|(c, _)| c == &m.chart) {
+                            on.push((m.chart.clone(), body.clone()));
+                        }
+                    }
+                    None => {
+                        succession.insert(&fk, vec![(m.chart.clone(), body.clone())]);
+                    }
+                }
+            }
+        }
+        let frames: Vec<(u64, Vec<(Invariant, Body)>)> = succession
+            .scoped()
+            .filter_map(|(fk, on)| Some((crate::transducer::sentence::frame_of_key(&fk)?, on.clone())))
+            .collect();
+        for pair in frames.windows(2) {
+            let [(k, here), (k2, there)] = pair else { continue };
+            match (here.as_slice(), there.as_slice()) {
+                ([(a, body_a)], [(b, body_b)]) if a != b => {
+                    // BOTH READINGS ARE MADE by the type of the answer: the
+                    // input body's motor where one carries it, else the
+                    // sections' relative, which `face_place` re-derives at
+                    // each end's own frame (54.5 grade 0's vertical
+                    // transition).
+                    let motor = match budget.spend() {
+                        true => blade::versor_between(&body_a.shape, &body_b.shape),
+                        false => {
+                            cga::note_unread(cga::TransitionKind::FrameAxis);
+                            continue;
+                        }
+                    };
+                    cross_steps.push((at.clone(), a.clone(), *k, b.clone(), *k2, motor));
+                }
+                ([_], [_]) => {}
+                _ => across_charts.several += 1,
             }
         }
     }
@@ -1127,6 +1216,33 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             form.put_face(o, FormFace::placed(place, Producer::Motor));
         }
     }
+    // AT1 A2 — AND ACROSS TWO CHARTS: the motor where the input body's
+    // solved (producer Motor, its edge the motor read as a transport), the
+    // sections' relative `τ = C_B·C_A⁻¹` where it refused — `face_place`
+    // at each end's own frame, producer Place. Each counted by kind.
+    for (at, a, k, b, k2, motor) in cross_steps {
+        let o = Overlap { from: ChartAt::at(at.clone(), a, k), to: ChartAt::at(at, b, k2) };
+        match motor {
+            Some(motor) => {
+                let edge = edges.take(Some(super::perceive::edge_of(&motor).map_err(|e| vec![e])));
+                let Some(mut place) = form.face_place(&o.from, &o.to, edge) else {
+                    across_charts.unplaced += 1;
+                    continue;
+                };
+                place.carriage = motor;
+                form.put_face(o, FormFace::placed(place, Producer::Motor));
+                across_charts.motor += 1;
+            }
+            None => {
+                let Some(place) = form.face_place(&o.from, &o.to, None) else {
+                    across_charts.unplaced += 1;
+                    continue;
+                };
+                form.put_face(o, FormFace::placed(place, Producer::Place));
+                across_charts.relative += 1;
+            }
+        }
+    }
     // CV1b F3 — the pole's demands stand once each, by their coordinates.
     super::perceive::stand_demands(&mut form.vertices, pole_demanded);
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
@@ -1359,6 +1475,8 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     for refused in &frameless {
         eprintln!("  {}", refused.line());
     }
+    // AT1 A2 — the class's steps across two charts, by kind.
+    eprintln!("  {}", across_charts.line());
     super::comprehend::read_and_hold(&form, budget, (entry - budget.remaining()) as u64, unreached.len() as u64);
     // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
     // meet of its members' sections, read here from the members' frames and
@@ -1376,15 +1494,13 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // AT1's READING (r1–r6): this form read as the table it is, and the
     // searches and frame-axis steps counted so far (running).
     let reached: Vec<u64> = (0..n).filter(|k| !unreached.contains(k)).filter_map(|k| u64::try_from(k).ok()).collect();
-    let atlas = super::atlas::read_form_atlas(&form, &reached, &frameless);
+    let atlas = super::atlas::read_form_atlas(&form, &reached);
     crate::transducer::sentence::form::atlas::note_form(atlas);
     eprintln!(
         "  atlas: {} | running {}",
         atlas.line(),
         crate::transducer::sentence::form::atlas::atlas_tally().searches_line()
     );
-    // 78.46(5)(b)–(c): the old basis deduced, by kind.
-    eprintln!("  {}", atlas.old_basis_line());
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, varying, unreached }
 }

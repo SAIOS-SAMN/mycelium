@@ -43,23 +43,6 @@ pub struct FormAtlas {
     pub within_flat: u64,
     pub across_turned: u64,
     pub across_flat: u64,
-    /// AT1's ACCEPTANCE (78.46(5)(b)–(c), ruled (A)): THE OLD BASIS,
-    /// DEDUCED — the member complex with frames forgotten, each member pair
-    /// one edge and each frameless pair a refused edge — its cycles read by
-    /// kind: PRESENT (its pairs share a frame and its class key is among the
-    /// atlas's circuits'), FRAMELESS (it crosses a frameless pair) carried
-    /// ACROSS frames (its class among the across-frame circuits') or NOT,
-    /// ACROSS (no frame shared and no frameless pair), LOST (a shared frame
-    /// and its class not found), UNREAD (no class read on it), and the SLOT
-    /// ARTEFACT (a face with no member pair), which no atlas carries.
-    pub old_cycles: u64,
-    pub old_present: u64,
-    pub old_frameless_across: u64,
-    pub old_frameless_not: u64,
-    pub old_across: u64,
-    pub old_lost: u64,
-    pub old_unread: u64,
-    pub old_slot: u64,
     /// (r6) the ruled overlap keys — `framed(class ‖ Invariant ‖ frame)` at
     /// each end — their count, total and largest bytes, against the form
     /// address's bytes.
@@ -146,14 +129,6 @@ pub fn note_form(f: FormAtlas) {
         s.within_flat += f.within_flat;
         s.across_turned += f.across_turned;
         s.across_flat += f.across_flat;
-        s.old_cycles += f.old_cycles;
-        s.old_present += f.old_present;
-        s.old_frameless_across += f.old_frameless_across;
-        s.old_frameless_not += f.old_frameless_not;
-        s.old_across += f.old_across;
-        s.old_lost += f.old_lost;
-        s.old_unread += f.old_unread;
-        s.old_slot += f.old_slot;
         s.overlaps += f.overlaps;
         s.overlap_bytes += f.overlap_bytes;
         s.overlap_unread += f.overlap_unread;
@@ -215,22 +190,6 @@ pub fn take_atlas_tally() -> AtlasTally {
 }
 
 impl FormAtlas {
-    /// The old basis, deduced, by kind (78.46(5)).
-    pub fn old_basis_line(&self) -> String {
-        format!(
-            "old basis: {} cycles | present {} | frameless {} (across {} / not {}) | across {} | lost {} | unread {} | slot artefact {}",
-            self.old_cycles,
-            self.old_present,
-            self.old_frameless_across + self.old_frameless_not,
-            self.old_frameless_across,
-            self.old_frameless_not,
-            self.old_across,
-            self.old_lost,
-            self.old_unread,
-            self.old_slot
-        )
-    }
-
     /// One form's reading as its line's segment.
     pub fn line(&self) -> String {
         format!(

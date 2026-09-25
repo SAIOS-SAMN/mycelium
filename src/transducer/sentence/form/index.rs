@@ -20,7 +20,21 @@ impl Form {
     pub fn reindex(&mut self) {
         let mut by_class: Keyed<Vec<coord::VertexAt>, coord::Chart> = Keyed::new();
         let mut by_transport: Keyed<Vec<coord::VertexAt>, coord::Transport> = Keyed::new();
-        let mut hue_maps = std::mem::take(&mut self.hue_maps);
+        // CLEARED, THEN REFILLED (AT1 A4): a hue section is kept only under
+        // the stratum of a class a vertex of this form still holds — read by
+        // its class's own prefix, a fibre of the held sections — so an entry
+        // of a vertex retracted since the last reindex does not survive,
+        // while every section the percept filed for a claimed frame of a
+        // held class does (law 7). The members' own gauges are added below.
+        let held_maps = std::mem::take(&mut self.hue_maps);
+        let mut hue_maps: Keyed<Vec<(u8, u8)>> = Keyed::new();
+        for (_, v) in self.vertices.scoped() {
+            let Vertex::Word { derivation, .. } = v else { continue };
+            let Some(prefix) = hue_class_prefix_of(&derivation.rotor()) else { continue };
+            for (k, g) in held_maps.fiber_at(&prefix).into_iter().flatten() {
+                hue_maps.insert(&k, g.clone());
+            }
+        }
         let mut places: Keyed<Versor> = Keyed::new();
         for (_, v) in self.vertices.scoped() {
             let (Some(at), Some(tk)) = (v.at(), v.class()) else { continue };

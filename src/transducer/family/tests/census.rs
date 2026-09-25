@@ -421,8 +421,6 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     // measured by (78.41(2′)).
     let atlas = crate::transducer::sentence::form::atlas::take_atlas_tally();
     eprintln!("  corpus {}", atlas.line());
-    // 78.46(5)(b)–(c) — the old basis deduced over the corpus, by kind.
-    eprintln!("  corpus {}", atlas.sum.old_basis_line());
     eprintln!("  corpus {}", address_set.line(atlas.sum.chart_frames));
     // BQ5a — AND WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED. A census
     // that reads `0 condensed` says nothing until it says WHICH arm refused

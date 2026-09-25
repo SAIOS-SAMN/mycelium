@@ -379,6 +379,53 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// addresses when the union has no versor (the speaker claimed an edge
 /// where the pair is not rigid) or the transport is not the one measured.
 ///
+/// A FRAME-AXIS MOTOR, APPLIED (AT1 A1, law 8): the member's one body on its
+/// chart at the leaving frame, each lamina placed at that frame's own `k`
+/// and carried by the motor, must land exactly on the member's one body on
+/// its chart at the arriving frame, placed at its `k′`. `None` where it does
+/// — or where the court's frames hold no single body on either chart to ask,
+/// which the closure check reads as sections — and `REFUSE_EDGE` by content
+/// where it does not: the motor the overlap carries is no transition of the
+/// family the court holds. Nothing is solved here.
+fn motor_carries(
+    frames: &[Frame<'_>],
+    x: &crate::network::nerve::coord::MemberAt,
+    y: &crate::network::nerve::coord::MemberAt,
+    motor: &Versor,
+) -> Option<Refusal> {
+    use crate::transducer::base::FRAME_AXIS;
+    let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
+    let (Some(from), Some(to)) = (at(x.frame), at(y.frame)) else { return None };
+    let (Ok(k), Ok(k2)) = (i64::try_from(x.frame), i64::try_from(y.frame)) else { return None };
+    let (fiber_a, fiber_b) = (from.on_chart(&x.chart), to.on_chart(&y.chart));
+    let ([a], [b]) = (fiber_a.as_slice(), fiber_b.as_slice()) else { return None };
+    let placed = |body: &Body, k: i64| -> Option<Vec<crate::transducer::base::Site>> {
+        let mut s: Vec<_> = body.laminae.iter().map(|l| l.site.with_axis(FRAME_AXIS, k)).collect::<Option<_>>()?;
+        s.sort_unstable();
+        s.dedup();
+        Some(s)
+    };
+    let (Some(sources), Some(targets)) = (placed(a, k), placed(b, k2)) else { return None };
+    let carried: Option<Vec<_>> = sources.iter().map(|s| element::carry_site(motor, s)).collect();
+    let lands = carried.is_some_and(|mut c| {
+        c.sort_unstable();
+        c.dedup();
+        c == targets
+    });
+    match lands {
+        true => None,
+        false => Some(Refusal::closure(
+            REFUSE_EDGE,
+            sentence::At::vertex(x.vertex.clone(), x.chart.clone()),
+            sentence::Content::Holonomy {
+                versor: Some(motor),
+                chart: None,
+                proof: "the frame-axis motor does not carry the member's body at the leaving frame onto its body at the arriving frame",
+            },
+        )),
+    }
+}
+
 /// AN OVERLAP STANDS AT ONE FRAME (AT1, Q2): its edge is re-derived at the
 /// frame its two charts name, read by coordinate. A frame-axis overlap joins
 /// two frames and carries the motor its member's body took between them,
@@ -391,6 +438,16 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             continue;
         };
         if x.frame != y.frame {
+            // A FRAME-AXIS OVERLAP IS VERIFIED BY APPLYING ITS MOTOR (AT1 A1,
+            // law 8): the member's body at the leaving frame, carried by the
+            // overlap's carriage, lands on the member's body at the arriving
+            // frame, on the court's own copy of the family. The court APPLIES
+            // and never solves — a court that measures versors is thinking.
+            if face.producer == crate::transducer::sentence::Producer::Motor {
+                if let Some(refusal) = motor_carries(&frames, x, y, &face.place.carriage) {
+                    return Some(refusal);
+                }
+            }
             continue;
         }
         let (Some(vi), Some(vj)) = (f.vertices.at(&x.vertex), f.vertices.at(&y.vertex)) else {

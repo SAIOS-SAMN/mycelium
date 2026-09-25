@@ -57,6 +57,43 @@ assert!(
 /// holonomy is the transition between the members — the 180° conjugator,
 /// carriage content — held with a class vector the pivot orbit reads on the
 /// placement axis (AT1, ruled (a) 2026-09-25).
+/// AT1 A1, law 8 — THE COURT APPLIES A FRAME-AXIS MOTOR TO THE FAMILY. The
+/// 90° / −90° family's frame-axis overlaps carry the motor the member's
+/// input body took between its frames; the court carries the body at the
+/// leaving frame by it and finds the body at the arriving frame, and it
+/// refuses a motor that does not — never solving for one.
+#[test]
+fn the_court_refuses_a_forged_frame_axis_motor() {
+    let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
+    let a = ["111000", "100000", "000000", "000000", "000550", "000000"];
+    let b = ["001000", "111000", "000000", "000000", "000550", "000000"];
+    let family = vec![(grid(&l_in), grid(&a)), (grid(&l_in), grid(&b))];
+    let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("extracts");
+    let motors: Vec<crate::network::nerve::coord::Overlap> = rule
+        .form
+        .faces
+        .entries()
+        .filter(|(_, f)| f.producer == crate::transducer::sentence::Producer::Motor)
+        .map(|(o, _)| o)
+        .collect();
+    let [motor, ..] = motors.as_slice() else { panic!("the family's frame axis carries a motor overlap") };
+    assert!(
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family).is_none(),
+        "the measured motor carries the body across its frames"
+    );
+    let mut forged = rule.form.clone();
+    if let Some(f) = forged.faces.at_mut(motor) {
+        // A translator one column over: a motor the family never took.
+        let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+        f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
+    }
+    assert!(
+        crate::court::verdict::body::edges_rederive_frames(&forged, &family).is_some(),
+        "a forged frame-axis motor is refused by application, never admitted"
+    );
+}
+
 #[test]
 fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
