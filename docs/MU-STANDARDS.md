@@ -18,12 +18,17 @@ found and removed.
 
 ## 1. Files and modules
 
-1.1 **Bound.** No source file exceeds 600 lines (800 during Stage 8b of
-`MU-RECURSION-TASKS.md`, lowered to 600 in that stage's last commit). The
-bound is a gate (`xtask/lint/length.rs`) that fails the build
-and names the file and its count. The bound exists so that a reader, human
-or agent, reads a file whole in one pass; a file that has to be searched is
-a file that is not audited.
+1.1 **Bound.** No source file exceeds 2500 lines (600 to Stage 8b, 800
+during it, 1200 from 2026-09-10; raised to 2500 on 2026-09-25 on the
+operator's word relayed verbatim through the coordinator's console —
+"increase maximum file line size to 2500" — the passage the 2026-09-19
+raise lacked and was returned for). The bound is a gate
+(`xtask/lint/length.rs`) that fails the build and names the file and its
+count. The bound exists so that a reader, human or agent, reads a file
+whole in one pass; a file that has to be searched is a file that is not
+audited. The raise changes no other rule: an organ is still split where
+the document splits it (1.2), never where a number does, and the
+coordinator still reads every changed file whole at audit.
 
 1.2 **One organ per file.** A file holds one bound of the document: the
 moves of one chapter, the codec of one act family, one carrier and its
@@ -224,9 +229,12 @@ the compiler reads it, or it is a type, or it is a review item. Nothing
 in between exists again.
 
 4.1 **Two gates remain.** The reading bound (`xtask/lint/length.rs`: no
-source file over 1200 lines, no list of exceptions; a raise to 2500
+source file over 2500 lines, no list of exceptions; a raise to 2500
 landed 2026-09-19 on a word that did not pass through the coordinator's
-console and was returned) and the warning gate
+console and was returned, and landed again 2026-09-25 on the same word
+relayed through it — the constant and its test moved by the implementor
+as a named staging exception outside `src/`, like `Cargo.toml`'s and
+`clippy.toml`'s) and the warning gate
 (`cargo clippy --release --all-targets -- -D warnings`, rustc's warnings
 denied). `cd xtask && cargo run` runs the bound and then clippy and exits
 non-zero on either. There is no `build.rs`. Closing a warning by naming a
