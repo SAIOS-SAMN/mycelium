@@ -16483,6 +16483,87 @@ comparison between bodies related by the OTHER kind of similarity
 compares the sensor with itself, and refuses the very relation the
 language is there to spell.
 
+### 78.39 Opening is a commutator, and superposition is one principle at three grades (ruled 2026-09-25, the operator's word)
+
+**(1) A dimension is opened by a non-palindromic word, never by a
+palindrome.** A sandwich `V x Ṽ` and a conjugate `K = I T I` are
+PALINDROMES: a word followed by its own reverse around a core. A
+palindrome carries a thing to another vantage inside the same class and
+opens nothing — it is the receptor's instrument (two vantages on one
+class), the transport's instrument (a section carried along a gauge),
+and the court's (a replay from another mind's constructors). What OPENS
+a dimension is the group commutator of two held versors,
+
+```text
+   [A, B] = A B Ã B̃        ≠ 1 exactly where A and B do not commute
+```
+
+whose content is what neither carried alone, and which is NEW exactly
+where it leaves the algebra the held generators already span. This is
+78.11 and 78.32 read together: a cell's comprehension is the bracket
+closure of its circuits' generators; admission requires the closure's
+rank to strictly increase; the pivot's open-axis move is the act. Each
+mode has a BASE, the commutator of two held versors on that base is the
+algorithm that opens it, and the versor that results is the pivot's
+move — one move per bundle factor (78.32), a base per mode and a
+non-commuting word on each, which is the multi-dimensionality: never
+one base with palindromes around it. The conformal algebra says so in
+its own structure: for a translation `P_a` and a transversion `K_b`
+(A.13's pair), the conjugate `I T I` is a translation seen from the
+inverted vantage and opens nothing, while the commutator
+
+```text
+   [P_a, K_b]  ∝  ⟨a, b⟩ D  +  M_ab
+```
+
+generates the dilation and the rotation in the plane of `a` and `b`.
+Inversion enters the language not as a letter applied around a core but
+as an OPERAND of commutators, and its first opening is the scale and
+turn directions the similarity group left closed (REG1, after the
+recut). Two consequences for standing rows: CS2's DERIVABLE test is
+right as ruled — a palindrome of held generators is always derivable, a
+commutator derivable only where it lands inside the closure; and the
+hue fibre's move, the transposition word, is a base of its own and
+opens by its own commutators.
+
+**(2) Superposition is one principle at three grades.** The tree holds
+three superpositions and had never said they are one thing:
+
+| grade | what is superposed | held today as | the base its commutators act on | what collapses it |
+|---|---|---|---|---|
+| letter | candidate constructors for one mode — the spheres a residue factors into (78.37's Cartan–Dieudonné), none chosen | the store's candidates awaiting a second vantage; CS2's demand arm | the Gram form's pairs, their regimes by `δ²` | admission by rank increase and another mind's re-derivation (78.32(c)) |
+| word | candidate forms for one idea with their pivots — the vortex | the thought as a complex; the vortex with its certificates (25) | the circuits' actions — the orbit algebra (78.11) | fill by a perception, or a court replay making one a ruled citation |
+| conjugate | several twists under one class — several vantages on one residue | the dialect classes; the remainders of one class at several charts (78.37(4)) | the rays of one class against each other | a ruling that makes one twist the citation and the rest dialect |
+
+At every grade the superposition is the set of candidates the algebra
+has not yet distinguished, held whole with no weight (law 1), and the
+dimension that would distinguish them is opened by a commutator on
+that grade's own base: between candidate spheres at the letter,
+between circuit actions at the word, between rays of one class at the
+conjugate. A palindrome at any grade transports within the set; a
+non-palindromic word on that grade's base separates it. Collapse is by
+fill or class, as 25 already rules for the vortex; never by a scalar,
+never by an order on the lanes.
+
+RULED, correcting 78.37(4)'s receptor as first built: two remainders
+under one class with DIFFERING twists are not "discordant" and refused —
+they are a SUPERPOSITION at the conjugate grade, HELD. The two rays are
+kept together on the class, none chosen, and their commutator
+`g₁ g₂ g̃₁ g̃₂` is read into the class's own modes: trivial, and the two
+twists commute — one vantage seen twice; non-trivial, and it is the
+dimension that separates the two vantages, which is exactly the second
+vantage the constructor gate wants. The callus carries the
+superposition, never a chosen ray, and the line reads `held`,
+`commuting` or `separating` where it read `discordant`. At the letter,
+the demand arm's candidate spheres are held as ONE superposition on the
+docket's demand cite, never passed as a list to the court. At the word,
+the transport already holds two disagreeing arrivals as a class rather
+than choosing one — this principle on the meet graph. THE DOCKET is the
+carrier of the superposition at every grade: a docket entry is a class
+with its cover and its RAYS, plural, none chosen (`Cite::Class { κ,
+rays, cover }`, `Cite::Demand { κ, spheres, cover }`), a layout change
+riding the recut.
+
 ## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
