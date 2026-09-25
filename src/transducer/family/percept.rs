@@ -78,25 +78,7 @@ struct Member {
 /// refused, the step then carrying the sections' relative `τ = C_B·C_A⁻¹`.
 type CrossStep = (coord::VertexAt, Invariant, u64, Invariant, u64, Option<Versor>);
 
-/// THE CLASS'S STEPS ACROSS TWO CHARTS, BY KIND (AT1 A2): carried by a
-/// motor, carried by the sections' relative, refused where no place derives,
-/// and not taken where a frame holds several charts.
-#[derive(Default)]
-struct AcrossCharts {
-    motor: u64,
-    relative: u64,
-    unplaced: u64,
-    several: u64,
-}
-
-impl AcrossCharts {
-    fn line(&self) -> String {
-        format!(
-            "frame axis across charts: motor {} | sections' relative {} | no place {} | several charts at a frame {}",
-            self.motor, self.relative, self.unplaced, self.several
-        )
-    }
-}
+use super::percept_reading::{AcrossCharts, FormReading, PerceptReading};
 
 /// MT1 (1) — THE FRAME-AXIS TRANSITIONS OF ONE MEMBER: a new solve by the
 /// existing reader between the member's body at consecutive OCCUPIED frames,
@@ -1340,171 +1322,83 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // `body_of` refused (counted at `body_of`, whoever asked), laminae with
     // no section (counted at `on_grid`), and sections filed at their `n`
     // alone (counted at `section_moduli`). Zero while intake reads the
-    // grid's three.
-    eprintln!(
-        "  perceive unheard {}: components whose moduli are not read at their n | sectionless {} | coarse sections {}",
+    // grid's three. 78.16 C3: HELD, never printed — the census prints its
+    // lines off this reading and the observer takes it each stroke.
+    let unheard = [
         crate::transducer::family::perceive::take_unheard(),
         crate::transducer::family::perceive::take_sectionless(),
         crate::transducer::blade::take_coarse(),
-    );
-    eprintln!(
-        "  family form {nv} vertices, {} faces ({meet_faces} cover meets, {} site+ring), {} orbits \
-         | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
-         | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
-         (cone {} not rigid {} no face {}; edge refused: cone {} not rigid {} unrefracted {}) \
-         trivial {} (vacuum {} resonant {} over {} charged edges; \
-         μ read on {} steps, {} of them non-zero) \
-         | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
-         | spectra: closes {} open {} undecomposed {} isoclinic {} \
-         | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
-         | contacts: {} \
-         | planes: {} \
-         | mint: {} \
-         | metabolism: {} syntropy {} \
-         | nerve/source: {} charts over {} cells, {} shared by two or more, \
-         {} \
-         | contact complex: certified cells (grade cells meet≠0) {:?} \
-         | nerve/image: {} charts over {} cells, {} shared, {} \
-         | phase: {} finite {} infinite {} unread, periods {:?} \
-         | faces offered {} built {} dropped: member_key {} vertex {} chart {} word {} place {} frameless {} \
-         | contact faces offered {} built {} unnucleated {} | contact circuits: curved {} (gauge static {}) \
-         coset closed {} modulo-held {} open {} unread {}",
-        form.faces.len(),
-        // The site+ring faces COUNTED as they were built, not the total
-        // less the meets: a subtraction floored at zero invents a value
-        // where the two carriers disagree (rule 11), and `drops.built` is
-        // the measurement this label was reaching for.
-        drops.built,
-        form.orbits.len(),
-        edges.measured,
-        edges.unspelled,
-        edges.unread,
-        edges.not_rigid,
-        meet_chords.len(),
-        n_chords,
-        crate::transducer::sentence::Form::orbit_gates().0,
-        crate::transducer::sentence::Form::orbit_gates().1,
-        crate::transducer::sentence::Form::orbit_gates().2,
-        // H2c — the unread gate by what refused it, and the read cycles
-        // whose edge half was refused.
-        unread_why.0.cone,
-        unread_why.0.not_rigid,
-        unread_why.0.no_face,
-        unread_why.1.cone,
-        unread_why.1.not_rigid,
-        unread_why.1.unrefracted,
-        crate::transducer::sentence::Form::orbit_gates().3,
-        // HOW THE CLOSURES DIVIDE. `trivial` above counts every cycle whose
-        // boundary product is the identity; these two say whether that
-        // identity was a cancellation or an absence (54.7).
-        crate::transducer::sentence::orbit_resonance().0,
-        crate::transducer::sentence::orbit_resonance().1,
-        crate::transducer::sentence::orbit_resonance().2.len(),
-        crate::transducer::sentence::orbit_resonance().3,
-        crate::transducer::sentence::orbit_resonance().4,
-        crate::transducer::sentence::orbit_defects().0,
-        crate::transducer::sentence::orbit_defects().1,
-        crate::transducer::sentence::orbit_defects().2,
-        crate::transducer::sentence::orbit_defects().3,
-        crate::transducer::sentence::orbit_defects().4,
-        crate::transducer::sentence::orbit_spectra().0,
-        crate::transducer::sentence::orbit_spectra().1,
-        crate::transducer::sentence::orbit_spectra().2,
-        crate::transducer::sentence::orbit_spectra().3,
-        crate::transducer::sentence::orbit_synonyms().0,
-        crate::transducer::sentence::orbit_synonyms().1,
-        crate::transducer::sentence::orbit_synonyms().2,
-        crate::transducer::sentence::orbit_synonyms().3,
-        form.orbits.len(),
-        crate::transducer::sentence::form_operators(&form),
-        // THE CONTACTS, ON THE FLEET'S OWN LINE (66, BQ5a): what each
-        // contact the topology named carried, and why an edge did not form.
-        // Read WITHOUT clearing — the corpus test takes the total, this
-        // prints the running state, and only one reader may take (law 12).
-        crate::transducer::family::pairing::contact_tally().line(),
-        // D1 — DIMENSIONAL CAPACITY, PER FORM. Ten planes by name, the
-        // harmonic six and the luminal four kept apart, and how many
-        // generators coupled the halves (a screw, where `I₂ ≠ 0` lives).
-        crate::transducer::cga::plane_tally().line(),
-        // D3 — THE MINT, PER FORM. Where the unspellable turns stop: the
-        // three gates by name and what reached the court. 37.7's pipeline
-        // measured `adjoin 0` with nothing to say whether it was starved
-        // or shut.
-        crate::transducer::family::perceive::demand_tally().line(),
-        // D2 — THE THERMODYNAMIC LEDGER. Entropy is the cauterizations,
-        // the orbit structure is `ℓ`, and the rate is the reserve's own
-        // per-lane draw. SYNTROPY IS READ FROM THE CONTACTS' COUNTER, not
-        // duplicated: condensations are already counted there, and a
-        // second counter for one fact is law 12 inside one carrier.
-        crate::physics::metabolism::metabolism().line(),
-        crate::transducer::family::pairing::contact_tally().condensed,
-        source.charts,
-        source.cells,
-        source.shared,
-        source.cells_line(),
-        contact_cells_by_grade,
-        image.charts,
-        image.cells,
-        image.shared,
-        image.cells_line(),
-        spectrum.0,
-        spectrum.1,
-        spectrum.2,
-        spectrum.3,
-        drops.offered,
-        drops.built,
-        drops.member_key,
-        drops.vertex,
-        drops.chart,
-        drops.word,
-        drops.place,
-        drops.frameless,
-        drops.contact_offered,
-        drops.contact_built,
-        drops.unnucleated,
-        contact_circuits[0],
-        contact_circuits[1],
-        contact_circuits[2],
-        contact_circuits[3],
-        contact_circuits[4],
-        contact_circuits[5]
-    );
-    // OR1, 73.1 — EACH ORBIT THIS PERCEPT READ, beside the cycles line: its
-    // type, its class, the planes its precession turns in, the precession's
-    // canonical coordinates, and its centre read or refused by name — the
-    // modes under this stroke's budget (BD1), and the circuits' with them.
-    // Then its cells, circuits and bends, each held typed (78.16).
-    // 78.46(5)(d) — EACH FRAMELESS PAIR, its content on its own line; the
-    // count is the family form line's `frameless`.
-    for refused in &frameless {
-        eprintln!("  {}", refused.line());
-    }
-    // AT1 A2 — the class's steps across two charts, by kind.
-    eprintln!("  {}", across_charts.line());
-    super::comprehend::read_and_hold(&form, budget, (entry - budget.remaining()) as u64, unreached.len() as u64);
-    // FR2, 72.1c(3) — AND WHERE EACH CYCLE STANDS ALONG `e₃`: its span, the
-    // meet of its members' sections, read here from the members' frames and
-    // never stored beside them.
-    eprintln!("  {}", super::span::SpanTally::of(&form).line());
+    ];
+    // THE FAMILY FORM'S VALUES, taken here, before comprehension's reads
+    // move the running tallies. The site+ring faces are `drops.built`, as
+    // counted when built (rule 11); `unread` is H2c's gate by what refused
+    // it; the resonance says whether a trivial cycle's identity was a
+    // cancellation or an absence (54.7); the contacts, planes (D1), mint
+    // (D3) and metabolism (D2) are the running tallies read WITHOUT
+    // clearing, their one taker elsewhere (law 12), syntropy the contacts'
+    // own condensations.
+    let (gates, resonance) =
+        (crate::transducer::sentence::Form::orbit_gates(), crate::transducer::sentence::orbit_resonance());
+    let form_reading = FormReading {
+        vertices: nv,
+        faces: form.faces.len(),
+        meet_faces,
+        orbits: form.orbits.len(),
+        edges,
+        meet_chords: meet_chords.len(),
+        chords: n_chords,
+        gates,
+        unread: unread_why,
+        resonance: (resonance.0, resonance.1, resonance.2.len(), resonance.3, resonance.4),
+        defects: crate::transducer::sentence::orbit_defects(),
+        spectra: crate::transducer::sentence::orbit_spectra(),
+        synonyms: crate::transducer::sentence::orbit_synonyms(),
+        operators: crate::transducer::sentence::form_operators(&form),
+        contacts: crate::transducer::family::pairing::contact_tally(),
+        planes: crate::transducer::cga::plane_tally(),
+        mint: crate::transducer::family::perceive::demand_tally(),
+        metabolism: crate::physics::metabolism::metabolism(),
+        source,
+        contact_cells: contact_cells_by_grade,
+        image,
+        phase: spectrum,
+        drops,
+        contact_circuits,
+    };
+    // OR1, 73.1 — each orbit this percept read (its type, class, planes,
+    // precession, centre and modes under this stroke's budget, BD1), held
+    // with its cells, circuits and bends (78.16).
+    let orbits =
+        super::comprehend::read_and_hold(&form, budget, (entry - budget.remaining()) as u64, unreached.len() as u64);
+    // FR2, 72.1c(3) — where each cycle stands along `e₃`: its span, the meet
+    // of its members' sections, read from the members' frames.
+    let spans = super::span::SpanTally::of(&form);
     // MT1 — EVERY OVERLAP'S CARRIAGE READ BY ITS ACTION, under the stroke;
-    // then the motor line, read without clearing (the corpus test takes it).
+    // the motor tally read without clearing (the corpus test takes it).
     for (_, face) in form.faces.entries() {
         match budget.spend() {
             true => cga::note_motor(cga::TransitionKind::Face, &face.place.carriage, None),
             false => cga::note_unread(cga::TransitionKind::Face),
         }
     }
-    eprintln!("  running {}", cga::motor_tally().line());
     // AT1's READING (r1–r6): this form read as the table it is, and the
     // searches and frame-axis steps counted so far (running).
     let reached: Vec<u64> = (0..n).filter(|k| !unreached.contains(k)).filter_map(|k| u64::try_from(k).ok()).collect();
     let atlas = super::atlas::read_form_atlas(&form, &reached);
     crate::transducer::sentence::form::atlas::note_form(atlas);
-    eprintln!(
-        "  atlas: {} | running {}",
-        atlas.line(),
-        crate::transducer::sentence::form::atlas::atlas_tally().searches_line()
-    );
+    // 78.46(5)(d) — each frameless pair with its content; AT1 A2 — the
+    // class's steps across two charts, by kind.
+    super::comprehend::hold_percept(PerceptReading {
+        unheard,
+        form: form_reading,
+        frameless,
+        across: across_charts,
+        orbits,
+        spans,
+        motors: cga::motor_tally(),
+        atlas,
+        searches: crate::transducer::sentence::form::atlas::atlas_tally(),
+    });
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, varying, unreached }
 }

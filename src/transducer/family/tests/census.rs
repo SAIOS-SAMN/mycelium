@@ -20,6 +20,12 @@ fn per_mille(part: usize, whole: usize) -> String {
 /// reading, never a second one (78.16). A percept that did not run (a
 /// memoised family) held nothing and prints nothing.
 fn percept_lines() {
+    // 78.16 C3 — each percept's own lines, off the reading it held.
+    for held in crate::transducer::family::take_percepts() {
+        for line in held.lines() {
+            eprintln!("  {line}");
+        }
+    }
     if let Some(cells) = crate::transducer::family::take_cells() {
         let tally = super::tally::CellTally::of(&cells);
         eprintln!("  {}", tally.line());

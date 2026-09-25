@@ -503,6 +503,7 @@ pub(crate) enum OrbitLine {
     Unread { at: Option<usize>, why: Option<Unread> },
 }
 
+#[cfg(test)]
 impl OrbitLine {
     /// The orbit's line, for the cycles reading beside it.
     pub(crate) fn line(&self) -> String {

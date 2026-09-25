@@ -171,6 +171,7 @@ pub struct UnreadTally {
     pub no_face: u64,
 }
 
+#[cfg(test)]
 impl Unread {
     /// The refusal by name, for the lines that read it.
     pub(crate) fn label(self) -> &'static str {

@@ -633,6 +633,7 @@ fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
     let g = GradeProgress { grade: 2, cells: 3, round_kept: 1, held_z2: 1, refused: 1, finite: 1, affine: 1, infinite: 0, dual_frames: 2 };
     let p = Progress {
         percepts: 1,
+        cycles_curved: 7,
         contact_cycles: 5,
         contact_cycles_curved: 2,
         contact_cycles_unread: 1,

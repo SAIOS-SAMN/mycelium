@@ -243,6 +243,10 @@ pub struct GradeProgress {
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Progress {
     pub percepts: u64,
+    /// 78.44(5), 78.16 C3 — every kept cycle whose whole transport reads a
+    /// non-trivial class, contact or not: the census's second counter,
+    /// comprehension's reading on the fleet.
+    pub cycles_curved: u64,
     /// Circuits crossing a contact face; of them, those whose holonomy is
     /// read and not trivial; and those not read (OR3).
     pub contact_cycles: u64,
@@ -259,6 +263,7 @@ pub struct Progress {
 impl Progress {
     pub fn absorb(&mut self, o: &Progress) {
         self.percepts += o.percepts;
+        self.cycles_curved += o.cycles_curved;
         self.contact_cycles += o.contact_cycles;
         self.contact_cycles_curved += o.contact_cycles_curved;
         self.contact_cycles_unread += o.contact_cycles_unread;
@@ -286,7 +291,7 @@ impl Progress {
 
     pub(crate) fn put(&self, out: &mut Vec<u8>) {
         put_u64s(out, &[self.percepts, self.contact_cycles, self.contact_cycles_curved, self.contact_cycles_unread]);
-        put_u64s(out, &[self.contact_cycles_static]);
+        put_u64s(out, &[self.contact_cycles_static, self.cycles_curved]);
         put_u64s(out, &self.contact_cycles_coset);
         crate::transducer::address::put_key_count(out, self.grades.len());
         for g in &self.grades {
@@ -297,7 +302,7 @@ impl Progress {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Progress> {
         let [percepts, contact_cycles, contact_cycles_curved, contact_cycles_unread] = take_u64s::<4>(b, p)?;
-        let contact_cycles_static = take_u64(b, p)?;
+        let [contact_cycles_static, cycles_curved] = take_u64s::<2>(b, p)?;
         let contact_cycles_coset = take_u64s::<3>(b, p)?;
         let m = crate::transducer::address::take_key_count(b, p)?;
         if !holds(b, *p, m, 1 + 8 * 8) {
@@ -311,6 +316,7 @@ impl Progress {
         }
         Some(Progress {
             percepts,
+            cycles_curved,
             contact_cycles,
             contact_cycles_curved,
             contact_cycles_unread,

@@ -18,8 +18,16 @@ impl Entity {
         use crate::transducer::family::perceive;
         let voice = self.session.kernel().voice();
         let me = Source::Voice(voice);
-        let perception =
+        // 78.16 C3 — THE PERCEPTS' READINGS, taken each stroke so nothing
+        // grows. The percept is the one taker of what perception passed over
+        // (law 12): its triples are summed here with what arrived since.
+        let mut perception =
             [perceive::take_unheard(), perceive::take_sectionless(), crate::transducer::blade::take_coarse()];
+        for held in crate::transducer::family::take_percepts() {
+            for (at, n) in perception.iter_mut().zip(held.unheard) {
+                *at += n;
+            }
+        }
         observe::publish(me, Reading::Loss(Loss::of(perception, cover, &perceive::take_demand_tally())));
         observe::publish(me, Reading::Planes(Planes::of(&crate::transducer::cga::take_plane_tally())));
         if let Some(m) = Memory::now(self.own_k()) {

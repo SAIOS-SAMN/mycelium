@@ -25,6 +25,8 @@ pub mod memo;
 pub mod orbit;
 pub mod pair;
 mod percept;
+pub(crate) mod percept_reading;
+pub(crate) use comprehend::take_percepts;
 pub mod perceive;
 pub mod pairing;
 pub mod rebase;

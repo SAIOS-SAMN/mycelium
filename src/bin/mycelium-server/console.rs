@@ -848,7 +848,7 @@ fn spend(s: &observe::Spend) -> Vec<String> {
 /// at the grade), reversed or carried, their groups and dual frames.
 fn progress(p: &observe::Progress) -> Vec<String> {
     let mut out = vec![
-        format!("  {BOLD}progress{RESET}    {} percepts", p.percepts),
+        format!("  {BOLD}progress{RESET}    {} percepts  kept cycles curved {}", p.percepts, p.cycles_curved),
         format!(
             "    contact cycles {}  curved {} (gauge static {})  coset closed {} mod-held {} open {}  {DIM}unread {}{RESET}",
             p.contact_cycles,

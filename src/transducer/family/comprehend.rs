@@ -432,6 +432,13 @@ pub(crate) fn progress(form: &Form, traversed: &[crate::transducer::sentence::Tr
     use crate::network::nerve::coord::BivectorKind;
     let mut p = Progress { percepts: 1, ..Progress::default() };
     for w in traversed {
+        // Every kept cycle's class, off its whole transport (OR3): the
+        // census's second counter on the fleet (78.44(5)).
+        if let Some(Some((_, _, kind))) = w.composite.as_ref().map(|m| m.class_invariants()) {
+            if kind != BivectorKind::Trivial {
+                p.cycles_curved += 1;
+            }
+        }
         let contact =
             w.steps.iter().any(|(f, _)| form.faces.at(f).is_some_and(|x| x.interface.is_some()));
         if !contact {
@@ -492,14 +499,19 @@ pub(crate) fn progress(form: &Form, traversed: &[crate::transducer::sentence::Tr
 }
 
 /// THE PERCEPT'S READERS AFTER ITS FORM, each held typed for the observer
-/// and none of it printed but the orbits' lines (RC2): each kept orbit
-/// (OR1), each certified cell as its orbit algebra off the circuits this
+/// and none of it printed (RC2, 78.16 C3): each kept orbit (OR1), returned
+/// for the percept's reading, each certified cell as its orbit algebra off the circuits this
 /// percept traversed (CG1, CO1), the circuits step by step (PL1), each held
 /// loop's faces bent per pair of planes per lane (VS1, VO1), and the
 /// percept's progress (PG1). SP1 — each reader's spend is the stroke's own
 /// count before and after it, never a clock (law 9); perception's spend and
 /// the frames it left unreached are the caller's.
-pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, perceived: u64, unreached: u64) {
+pub(crate) fn read_and_hold(
+    form: &Form,
+    budget: &mut crate::physics::Budget,
+    perceived: u64,
+    unreached: u64,
+) -> Vec<crate::transducer::sentence::OrbitLine> {
     use crate::transducer::cga::Undecomposed;
     use crate::transducer::sentence::{ModesRead, OrbitLine};
     let mut spend = Spend { percepts: 1, ..Spend::default() };
@@ -517,13 +529,13 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     spend.reads[2] = (at - budget.remaining()) as u64;
     spend.unbounded[2] = cells_unbounded(&cells);
     let at = budget.remaining();
-    for orbit in crate::transducer::sentence::take_orbits(budget) {
-        if let OrbitLine::Read(r) | OrbitLine::Static(r) = &orbit {
+    let orbits = crate::transducer::sentence::take_orbits(budget);
+    for orbit in &orbits {
+        if let OrbitLine::Read(r) | OrbitLine::Static(r) = orbit {
             if let ModesRead::Undecomposed(Undecomposed::Unbounded(_)) = r.modes {
                 spend.unbounded[1] += 1;
             }
         }
-        eprintln!("  {}", orbit.line());
     }
     spend.reads[1] = (at - budget.remaining()) as u64;
     let at = budget.remaining();
@@ -537,6 +549,7 @@ pub(crate) fn read_and_hold(form: &Form, budget: &mut crate::physics::Budget, pe
     spend.unbounded[4] = viscosity.iter().map(|p| p.unread).sum();
     let progress = progress(form, &traversed, &cells);
     hold(cells, crate::transducer::sentence::viscosity_reading(&viscosity), spend, progress);
+    orbits
 }
 
 /// The readings a cell's comprehension left unbounded by a spent stroke: a
@@ -565,6 +578,9 @@ struct Held {
     viscosity: Option<Viscosity>,
     spend: Option<Spend>,
     progress: Option<Progress>,
+    /// 78.16 C3 — each percept's own reading since the last take, in the
+    /// order perceived.
+    percepts: Vec<super::percept_reading::PerceptReading>,
 }
 
 thread_local! {
@@ -589,6 +605,17 @@ pub(crate) fn hold(cells: Cells, viscosity: Viscosity, spend: Spend, progress: P
             None => h.progress = Some(progress),
         }
     });
+}
+
+/// Hold one percept's reading (78.16 C3).
+pub(crate) fn hold_percept(r: super::percept_reading::PerceptReading) {
+    HELD.with(|h| h.borrow_mut().percepts.push(r));
+}
+
+/// Every percept's reading since the last take, and stop holding them: the
+/// observer takes them each stroke, so nothing grows.
+pub(crate) fn take_percepts() -> Vec<super::percept_reading::PerceptReading> {
+    HELD.with(|h| std::mem::take(&mut h.borrow_mut().percepts))
 }
 
 /// The last percept's cells, and stop holding them. `None` where no percept

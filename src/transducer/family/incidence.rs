@@ -133,6 +133,7 @@ pub(crate) struct Frameless {
     pub(crate) why: FramelessWhy,
 }
 
+#[cfg(test)]
 impl Frameless {
     /// The refusal as the census line reads it: each member by its
     /// vertex's coordinate and its chart, with its frames, and the reason.
