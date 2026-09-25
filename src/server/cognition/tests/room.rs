@@ -252,6 +252,22 @@ fn the_cover_and_the_room_agree_by_construction() {
     }
 }
 
+/// STD1, 78.26(4) — A ROOM READ THAT DOES NOT ANSWER SAYS WHY. A lane drawn
+/// past its cover is a broken count, and the read that meets one answers
+/// nothing and is counted as broken — never as a room of zero, and never
+/// under the count a cover past its carrier keeps.
+#[test]
+fn a_room_that_does_not_read_is_counted_by_its_reason() {
+    let mut k = Kernel::new();
+    k.set_lane_cap([1, 1, 1, 1]);
+    let me = k.identity;
+    assert!(k.lane_room_of(&me).is_some(), "a voice drawing nothing has its cap");
+    assert_eq!(k.room_refusals(), (0, 0));
+    k.drawn.insert(me, [2, 0, 0, 0]);
+    assert_eq!(k.lane_room_of(&me), None, "a lane drawn past its cover reads no room");
+    assert_eq!(k.room_refusals(), (1, 0), "counted as broken, and only as broken");
+}
+
 /// The inverse index `discovered_by` is kept strictly synchronized with
 /// `discoverers`: admissions insert, removals and clears evict, and
 /// empty voice tries are pruned rather than leaked.

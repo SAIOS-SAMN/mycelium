@@ -175,7 +175,8 @@ pub struct Treasury {
     pub(crate) issued: Option<[u64; 4]>,
     pub(crate) burned: Option<[u64; 4]>,
     /// Sum of live identity bonds. Escrowed awards are `escrowed`, never this.
-    pub(crate) bond_total: [u64; 4],
+    /// `None` once it did not add up (STD1): unmeasured, like the supply.
+    pub(crate) bond_total: Option<[u64; 4]>,
     /// Enrolled identities and their staked μ⃗, keyed by identity.
     pub(crate) stakes: crate::network::nerve::Keyed<[u64; 4]>,
     /// AWARDS IN ESCROW (Step 5): consilience settlements held unfinalized —
@@ -183,6 +184,12 @@ pub struct Treasury {
     pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
     pub(crate) balances: crate::network::nerve::Keyed<[u64; 4]>,
+    /// STD1 (rule 11) — operations REFUSED because a sum of money would pass
+    /// its carrier: a credit a balance could not hold (the genesis, mint,
+    /// unstake or transfer it belonged to wrote no row), a bond total or a
+    /// released sum that did not add up. Never saturated; read on the
+    /// economy reading. Volatile: a count of this process's refusals.
+    pub(crate) overflowed: u64,
 }
 
 /// Written out rather than derived: `#[derive(Default)]` gives the folded
@@ -196,10 +203,11 @@ impl Default for Treasury {
             entries: Vec::new(),
             issued: Some([0; 4]),
             burned: Some([0; 4]),
-            bond_total: [0; 4],
+            bond_total: Some([0; 4]),
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
             balances: crate::network::nerve::Keyed::new(),
+            overflowed: 0,
         }
     }
 }
@@ -209,12 +217,30 @@ impl Treasury {
         Treasury::default()
     }
 
-    pub(crate) fn credit(&mut self, who: [u8; 32], mu: [u64; 4]) {
-        let mut b = self.balance_of(&who);
-        for l in 0..4 {
-            b[l] = b[l].saturating_add(mu[l]);
+    /// The balance `who` would hold after a credit of `mu`, or `None` where
+    /// a lane would pass its carrier (STD1). Read before anything moves, so
+    /// an operation that cannot land moves nothing.
+    pub(crate) fn credited(&self, who: &[u8; 32], mu: [u64; 4]) -> Option<[u64; 4]> {
+        crate::core::lanes::lanes_add(self.balance_of(who), mu)
+    }
+
+    /// CREDIT, WHOLE OR REFUSED: a balance that would pass its carrier on
+    /// any lane is refused and counted (`overflowed`), never saturated —
+    /// money never tops out silently (STD1, rule 11). Called BEFORE the row
+    /// it belongs to is written, so a refused credit leaves no row and §6
+    /// holds.
+    #[must_use]
+    pub(crate) fn credit(&mut self, who: [u8; 32], mu: [u64; 4]) -> bool {
+        match self.credited(&who, mu) {
+            Some(b) => {
+                self.balances.insert(who, b);
+                true
+            }
+            None => {
+                self.overflowed += 1;
+                false
+            }
         }
-        self.balances.insert(who, b);
     }
 
     /// THE SHORTFALL OF THE MOVEMENT, per lane: zero where the lane moved,
@@ -282,22 +308,27 @@ impl Treasury {
         if back.iter().all(|&x| x == 0) {
             return back;
         }
+        // The credit first: a balance with no room refuses the unstake, and
+        // the bond stays where it was.
+        if !self.credit(who, back) {
+            return [0; 4];
+        }
         let next: [u64; 4] = std::array::from_fn(|l| held[l] - back[l]);
         self.stakes.insert(who, next);
-        self.credit(who, back);
         self.write(Entry { kind: Kind::Unstake, who, mu: back, at: anchor.0, receipt: anchor.1, arm: None });
         self.refresh_bond();
         back
     }
 
+    /// The sum of live stakes, re-read. `None` — unmeasured, counted — where
+    /// it would pass its carrier (STD1), exactly as the folded supply is.
     pub(crate) fn refresh_bond(&mut self) {
-        let mut e = [0u64; 4];
-        crate::snapshot::persist(&self.stakes, |_, mu| {
-            for l in 0..4 {
-                e[l] = e[l].saturating_add(mu[l]);
-            }
-        });
-        self.bond_total = e;
+        let mut stakes = Vec::new();
+        crate::snapshot::persist(&self.stakes, |_, mu| stakes.push(*mu));
+        self.bond_total = crate::core::lanes::lanes_sum(stakes);
+        if self.bond_total.is_none() {
+            self.overflowed += 1;
+        }
     }
 
     /// Bond recorded for an identity, if enrolled. None is unbonded.
@@ -310,8 +341,8 @@ impl Treasury {
         self.bond_of(who)
     }
 
-    /// Sum of live stakes.
-    pub fn bond_total(&self) -> [u64; 4] {
+    /// Sum of live stakes; `None` where it does not add up (STD1).
+    pub fn bond_total(&self) -> Option<[u64; 4]> {
         self.bond_total
     }
 
@@ -481,6 +512,7 @@ impl Treasury {
                 *t = t.checked_add(m / 2)?;
             }
         }
+        e.overflowed = self.overflowed;
         Some(e)
     }
 
@@ -491,8 +523,11 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
+        // The credit first: a balance with no room writes no row (STD1).
+        if !self.credit(who, mu) {
+            return [0; 4];
+        }
         self.write(Entry { kind: Kind::Genesis, who, mu, at: anchor.0, receipt: anchor.1, arm: None });
-        self.credit(who, mu);
         mu
     }
 
@@ -573,8 +608,11 @@ impl Treasury {
         if mu.iter().all(|&x| x == 0) {
             return [0; 4];
         }
+        // The credit first: a balance with no room mints nothing (STD1).
+        if !self.credit(who, mu) {
+            return [0; 4];
+        }
         self.write(Entry { kind: Kind::Mint, who, mu, at: anchor.0, receipt: anchor.1, arm });
-        self.credit(who, mu);
         eprintln!(
             "  mint {:02x}{:02x}… μ⃗ {mu:?} at K {} h {}",
             who[0], who[1], anchor.0.k, anchor.0.h

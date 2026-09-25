@@ -90,13 +90,15 @@ impl Entity {
     pub fn lapse_held(&mut self) -> usize {
         let _ = self.contemplation.repay_unpaid();
         let (returned, n) = self.contemplation.lapse_on_clock();
+        // A return past a lane's carrier is refused and counted on the
+        // metabolic ledger, the lane standing where it was (STD1).
         for (r, back) in self.physics.reserve.iter_mut().zip(&returned) {
-            *r = r.saturating_add(*back);
+            crate::physics::metabolism::step_or_refuse(r, *back);
         }
         // TC1 — and what the truncation removed since, returned alike.
         let truncated = self.contemplation.take_truncated_escrow();
         for (r, back) in self.physics.reserve.iter_mut().zip(&truncated) {
-            *r = r.saturating_add(*back);
+            crate::physics::metabolism::step_or_refuse(r, *back);
         }
         if n > 0 {
             eprintln!("  held lapsed {n}, escrow returned {returned:?}");

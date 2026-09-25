@@ -152,6 +152,12 @@ pub fn quote(
     // at all; it does not bound the scale of what is served, which is the
     // body budget's job.
     view.pool.as_ref()?;
+    // STD1 — a surface past its carrier is refused by name, and no page is
+    // priced against a surface that was not measured.
+    let Some(surface) = view.surface.as_ref() else {
+        eprintln!("  quote refused: the yield surface passes its carrier");
+        return None;
+    };
     let (surface, priced) = {
         let g = k.lock().ok()?;
         crate::cognition::quote_incidence(
@@ -165,7 +171,7 @@ pub fn quote(
             },
             &crate::cognition::Ask {
                 charts,
-                surface: &view.surface,
+                surface,
                 pressure: &view.pressure,
                 budget,
                 voice: &voice,

@@ -542,8 +542,14 @@ impl Physics {
     /// building structure on that lane (settling faster than it pivots);
     /// negative: it is losing ground (a lane demanding a new fiber). The dynamic
     /// entropic/syntropic metabolism (#34), reported hypha→client each exchange.
-    pub fn order_flux(&self) -> [i64; 4] {
-        std::array::from_fn(|l| self.syntropic[l] as i64 - self.torsion[l] as i64)
+    ///
+    /// Exact over the whole of both counters (STD1), as `Metabolism::flux`
+    /// is: the difference of two `u64` is taken in `i128`, which holds every
+    /// such difference. The `as i64` this was wrapped a counter past 2⁶³
+    /// negative, and the difference could overflow — an invented value on
+    /// the price path.
+    pub fn order_flux(&self) -> [i128; 4] {
+        std::array::from_fn(|l| i128::from(self.syntropic[l]) - i128::from(self.torsion[l]))
     }
 }
 

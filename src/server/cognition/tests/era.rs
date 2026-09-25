@@ -153,7 +153,7 @@ assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was
 let mut broken = Kernel::new();
 broken.append_step(ActKind::List, [1; 32], [2; 32]);
 broken.orbit();
-broken.treasury.credit([9; 32], [1, 0, 0, 0]);
+assert!(broken.treasury.credit([9; 32], [1, 0, 0, 0]), "a credit with room lands");
 assert_eq!(broken.propose_fold(), Err(REFUSE_FOLD_INEXACT), "a ledger that does not conserve proposes nothing");
 assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }

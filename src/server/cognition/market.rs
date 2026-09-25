@@ -403,7 +403,13 @@ impl Kernel {
             let Some(t) = self.t_extent(&addr, now) else {
                 return;
             };
-            p[2] = p[2].saturating_add(t);
+            // STD1 — and a lane whose extent passes its carrier is unmeasured
+            // the same way, counted.
+            let Some(next) = p[2].checked_add(t) else {
+                self.overflowed += 1;
+                return;
+            };
+            p[2] = next;
         }
         self.physics.pressure = p;
         self.pressure_gen = self.book_gen;

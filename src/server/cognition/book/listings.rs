@@ -98,24 +98,42 @@ impl Kernel {
 
     fn list(&mut self, residual: Element, actor: [u8; 32], drawer: Option<[u8; 32]>) {
         let addr = residual.address();
-        self.stamp_standing(&addr);
         let mag = residual.magnitude();
-        self.physics.bump(&mag);
-        let inv = crate::transducer::stalk::invariant_of(&residual);
-        self.listing_atlas.admit(&inv, &addr);
-        self.tension.insert(&addr, mag);
-        self.on_page.insert(&addr, ());
         // A LISTING IS DRAWN ONCE (§3.1 as ruled, S13.15): an address
         // already on the page keeps its drawer and its occupancy, so a
         // second vantage on it neither doubles the occupancy nor takes the
         // drawer over — which left the first voice's room drawn for good
         // when the install released the second's instead.
         let already = self.pending.contains(&addr);
+        // STD1 — the lanes its draw would stand at, read before anything is
+        // written: a draw past a lane's carrier refuses the listing whole,
+        // counted on the court.
+        let occupied = match already {
+            true => None,
+            false => {
+                let occupant = match drawer {
+                    Some(v) => Some(v),
+                    None => self.drawers.get(&addr).copied(),
+                };
+                let Some(o) = self.occupied_by(occupant, &mag) else {
+                    self.overflowed += 1;
+                    eprintln!("  listing refused: its draw passes a lane's carrier");
+                    return;
+                };
+                Some(o)
+            }
+        };
+        self.stamp_standing(&addr);
+        self.physics.bump(&mag);
+        let inv = crate::transducer::stalk::invariant_of(&residual);
+        self.listing_atlas.admit(&inv, &addr);
+        self.tension.insert(&addr, mag);
+        self.on_page.insert(&addr, ());
         if let (Some(voice), false) = (drawer, already) {
             self.drawers.insert(&addr, voice);
         }
-        if !already {
-            self.occupy(&addr, &mag, true);
+        if let Some(o) = occupied {
+            self.occupy(&addr, &mag, o);
         }
         self.pending.insert(&addr, residual);
         self.book_gen += 1;
@@ -125,7 +143,7 @@ impl Kernel {
     pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {
         let elem = self.pending.remove(addr)?;
         let mag = elem.magnitude();
-        self.occupy(addr, &mag, false);
+        self.vacate(addr, &mag);
         self.drawers.remove(addr);
         self.physics.relieve(&mag);
         Some(elem)

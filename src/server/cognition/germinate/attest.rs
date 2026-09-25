@@ -11,11 +11,15 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
+/// The page as the local quote prices it: each listing with its μ⃗.
+pub type Priced = Vec<(Element, [u64; 4])>;
+
 impl Kernel {
     /// QUOTE — a local reading of the page: listings still on_page, in
     /// atlas order, under one stroke Budget. Tests use this; the wire
-    /// quote is an incidence query over the voice's charts.
-    pub fn quote(&mut self) -> ([u64; 4], Vec<(Element, [u64; 4])>) {
+    /// quote is an incidence query over the voice's charts. The surface is
+    /// `None` where it passes its carrier (STD1), refused rather than pinned.
+    pub fn quote(&mut self) -> (Option<[u64; 4]>, Priced) {
         self.remeasure_pressure();
         let surface = crate::economy::yield_surface(&self.physics);
         let mut priced = Vec::new();

@@ -177,7 +177,8 @@ pub enum OfferStanding {
 pub struct MarketView {
     pub language: std::sync::Arc<Language>,
     pub pending: std::sync::Arc<crate::network::nerve::Keyed<Element>>,
-    pub surface: [u64; 4],
+    /// `None` where the yield surface passes its carrier (STD1).
+    pub surface: Option<[u64; 4]>,
     /// The open book's tension per lane — the denominator every price is a
     /// share of.
     pub pressure: [u64; 4],

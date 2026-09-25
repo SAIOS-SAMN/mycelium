@@ -36,6 +36,12 @@ impl Treasury {
         if paid.iter().all(|&m| m == 0) {
             return paid;
         }
+        // STD1 — the discoverer's balance with the payment in it, read before
+        // anything moves: one with no room refuses the transfer, counted.
+        let Some(next) = self.credited(&discoverer, paid) else {
+            self.overflowed += 1;
+            return [0; 4];
+        };
         // The row is written for μ⃗ that MOVED: the debit is taken first,
         // and a debit that does not go through transfers nothing (§6).
         if !crate::economy::lanes_short(&self.debit(demander, paid)).is_empty() {
@@ -45,7 +51,7 @@ impl Treasury {
         let arm = Some(Arm::Powc);
         self.write(Entry { kind: Kind::Transfer, who: demander, mu: paid, at: anchor.0, receipt: anchor.1, arm });
         self.write(Entry { kind: Kind::Transfer, who: discoverer, mu: paid, at: anchor.0, receipt: anchor.1, arm });
-        self.credit(discoverer, paid);
+        self.balances.insert(discoverer, next);
         paid
     }
 
@@ -280,19 +286,17 @@ impl Treasury {
         // measure what it handed in.
         let asked = super::price(exercised, pressure);
         let short = super::shortfall(&asked, &held);
+        // paid ≤ held on every lane: it is the ask less what the balance
+        // lacked, and it is debited against that same balance below.
         let paid: [u64; 4] = std::array::from_fn(|l| asked[l] - short[l]);
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
-        // The burn row is written for μ⃗ that LEFT: the debit is taken
-        // first, and one that does not go through burns nothing (§6).
+        // The burn row is written for μ⃗ that LEFT, after the debit — which
+        // cannot be short, by `paid ≤ held` (STD1: the arm that read a short
+        // debit could not fire, and it is gone).
         let unmoved = self.debit(voice, paid);
-        if !crate::economy::lanes_short(&unmoved).is_empty() {
-            // The lanes the balance could not cover are added to what the
-            // voice still owes; nothing burned on any lane.
-            let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
-            return ([0; 4], short);
-        }
+        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
         self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
         (paid, short)
     }
@@ -317,19 +321,15 @@ impl Treasury {
     ) -> ([u64; 4], [u64; 4]) {
         let held = self.balance_mu(&voice);
         let short = super::shortfall(&fee, &held);
+        // paid ≤ held on every lane, as in `settle_recall`.
         let paid: [u64; 4] = std::array::from_fn(|l| fee[l] - short[l]);
         if paid.iter().all(|&m| m == 0) {
             return (paid, short);
         }
-        // The burn row is written for μ⃗ that LEFT: the debit is taken
-        // first, and one that does not go through burns nothing (§6).
+        // The burn row is written for μ⃗ that LEFT, after the debit — which
+        // cannot be short, by `paid ≤ held` (STD1).
         let unmoved = self.debit(voice, paid);
-        if !crate::economy::lanes_short(&unmoved).is_empty() {
-            // The lanes the balance could not cover are added to what the
-            // voice still owes; nothing burned on any lane.
-            let short: [u64; 4] = std::array::from_fn(|l| short[l].saturating_add(unmoved[l]));
-            return ([0; 4], short);
-        }
+        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "paid ≤ held, debited against it");
         self.write(Entry { kind: Kind::Burn, who: voice, mu: paid, at: anchor.0, receipt: anchor.1, arm: None });
         (paid, short)
     }

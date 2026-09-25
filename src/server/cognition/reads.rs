@@ -168,4 +168,16 @@ impl Kernel {
         self.settlements_cold.len()
     }
 
+    /// STD1 — the room reads that did not answer: `(broken, past carrier)`.
+    pub fn room_refusals(&self) -> (u64, u64) {
+        use std::sync::atomic::Ordering::Relaxed;
+        (self.room_broken.load(Relaxed), self.room_overflowed.load(Relaxed))
+    }
+
+    /// STD1 — the court's own operations and readings refused past their
+    /// carrier.
+    pub fn overflowed(&self) -> u64 {
+        self.overflowed
+    }
+
 }

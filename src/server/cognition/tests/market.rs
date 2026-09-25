@@ -24,7 +24,7 @@ assert_eq!(k.quote().1.len(), 1, "the sentence is quoted when the frontier is dr
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "A again: a use of the listing, nothing drawn");
 let (surface, quoted) = k.quote();
 assert_eq!(quoted.len(), 1, "the open demand is quoted as work, once");
-assert!(surface.iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
+assert!(surface.expect("the surface reads").iter().any(|&s| s >= 1), "the open demand tensions the lanes it occupies");
 let (work, mu) = &quoted[0];
 assert!(
     (0..4).any(|l| work.magnitude()[l] > 0 && mu[l] > 0),

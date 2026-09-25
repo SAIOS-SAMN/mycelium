@@ -420,6 +420,15 @@ pub struct Court {
     /// from.
     pub remainders: crate::transducer::cech::RemainderReading,
     pub torsion_words: u64,
+    /// STD1 — the room reads that did not answer, each by its own name (a
+    /// `None` never stands for two facts, 78.26(4)): a lane drawn past its
+    /// cover (a broken count), a cover or a credit past its carrier; and
+    /// the court's own operations and readings refused past their carrier
+    /// (an occupy, a recall owed, the book's T pressure, a relocation's
+    /// total, a solve's paid sum).
+    pub room_broken: u64,
+    pub room_overflowed: u64,
+    pub overflowed: u64,
 }
 
 impl Court {
@@ -437,6 +446,9 @@ impl Court {
         }
         self.remainders.put(out);
         put_u64(out, self.torsion_words);
+        put_u64(out, self.room_broken);
+        put_u64(out, self.room_overflowed);
+        put_u64(out, self.overflowed);
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Court> {
@@ -452,7 +464,19 @@ impl Court {
         let reopened = [take_u64(b, p)?, take_u64(b, p)?];
         let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
         let torsion_words = take_u64(b, p)?;
-        Some(Court { k, basis, treasury, served, reopened, remainders, torsion_words })
+        let (room_broken, room_overflowed, overflowed) = (take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?);
+        Some(Court {
+            k,
+            basis,
+            treasury,
+            served,
+            reopened,
+            remainders,
+            torsion_words,
+            room_broken,
+            room_overflowed,
+            overflowed,
+        })
     }
 }
 

@@ -7,6 +7,13 @@
 
 use super::*;
 
+/// STD1 — the lanes a listing's draw would stand at (`Kernel::occupied_by`).
+pub(crate) struct Occupied {
+    occupancy: [u64; 4],
+    pressure: [u64; 4],
+    drawn: Option<([u8; 32], [u64; 4])>,
+}
+
 impl Kernel {
     /// The heights a listing has stood for. A listing with NO STAMP has
     /// stood for none — 45.4's "accrues nothing", the reading of absence on
@@ -109,12 +116,16 @@ impl Kernel {
         let mut tot = 0u64;
         let mut best: Option<(Vec<u8>, u64)> = None;
         let mut unmeasured = false;
+        let mut past_carrier = false;
         let mut consider = |addr: Vec<u8>| {
             let Some(t) = self.t_extent(&addr, now) else {
                 unmeasured = true;
                 return;
             };
-            tot = tot.saturating_add(t);
+            match tot.checked_add(t) {
+                Some(v) => tot = v,
+                None => past_carrier = true,
+            }
             match best {
                 Some((_, bt)) if t <= bt => {}
                 _ => best = Some((addr, t)),
@@ -136,6 +147,12 @@ impl Kernel {
         // saturated lane; it is an unread one, and nothing is relocated
         // against it — as with a room that cannot be read, below.
         if unmeasured {
+            return;
+        }
+        // STD1 — and a standing extent past its carrier is refused as a
+        // reading, counted: nothing is relocated against it.
+        if past_carrier {
+            self.overflowed += 1;
             return;
         }
         // THE CAP IS THE LANE'S COVER, and it was `tot + room`.
@@ -270,29 +287,60 @@ impl Kernel {
         }
     }
 
-    pub(crate) fn occupy(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4], add: bool) {
+    /// STD1 — WHAT A LISTING'S DRAW WOULD STAND AT, read before anything is
+    /// written: the occupancy and the book's pressure per lane, and the
+    /// drawer's draw. `None` where any would pass its carrier: the listing
+    /// is refused whole, counted by its one caller, and nothing moves.
+    pub(crate) fn occupied_by(&self, drawer: Option<[u8; 32]>, mag: &[u64; 4]) -> Option<Occupied> {
+        use crate::core::lanes::lanes_add;
+        let drawn = match drawer {
+            Some(v) => {
+                // A voice that has drawn nothing draws nothing: absence.
+                let d = match self.drawn.get(&v) {
+                    Some(d) => *d,
+                    None => [0; 4],
+                };
+                Some((v, lanes_add(d, *mag)?))
+            }
+            None => None,
+        };
+        Some(Occupied {
+            occupancy: lanes_add(self.occupancy, *mag)?,
+            pressure: lanes_add(self.pressure_sum, *mag)?,
+            drawn,
+        })
+    }
+
+    /// A listing takes its lanes, at what `occupied_by` read.
+    pub(crate) fn occupy(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4], o: Occupied) {
+        let addr = addr.as_ref();
+        self.occupancy = o.occupancy;
+        self.pressure_sum = o.pressure;
+        for (l, &m) in mag.iter().enumerate() {
+            if m > 0 {
+                self.lane_listings[l].insert(addr, ());
+            }
+        }
+        if let Some((v, d)) = o.drawn {
+            self.drawn.insert(v, d);
+        }
+    }
+
+    /// A listing leaves its lanes: each by exactly what it occupied.
+    pub(crate) fn vacate(&mut self, addr: impl AsRef<[u8]>, mag: &[u64; 4]) {
         let addr = addr.as_ref();
         let voice = self.drawers.get(addr).copied();
         for (l, &m) in mag.iter().enumerate() {
-            if add {
-                self.occupancy[l] = self.occupancy[l].saturating_add(m);
-                if m > 0 {
-                    self.lane_listings[l].insert(addr, ());
-                }
-            } else {
-                // The listing occupied this lane by exactly `m`, so the
-                // release is exact; a lane holding less than it releases is
-                // a broken count and stays where it is (rule 11).
-                if let Some(next) = self.occupancy[l].checked_sub(m) {
-                    self.occupancy[l] = next;
-                }
-                if m > 0 {
-                    self.lane_listings[l].remove(addr);
-                }
+            // The listing occupied this lane by exactly `m`, so the
+            // release is exact; a lane holding less than it releases is
+            // a broken count and stays where it is (rule 11).
+            if let Some(next) = self.occupancy[l].checked_sub(m) {
+                self.occupancy[l] = next;
             }
-            if add {
-                self.pressure_sum[l] = self.pressure_sum[l].saturating_add(m);
-            } else if let Some(next) = self.pressure_sum[l].checked_sub(m) {
+            if m > 0 {
+                self.lane_listings[l].remove(addr);
+            }
+            if let Some(next) = self.pressure_sum[l].checked_sub(m) {
                 self.pressure_sum[l] = next;
             }
         }
@@ -303,33 +351,26 @@ impl Kernel {
                 None => [0; 4],
             };
             for (t, &m) in d.iter_mut().zip(mag) {
-                match add {
-                    true => *t = t.saturating_add(m),
-                    // The voice drew exactly `m` on this lane, so the
-                    // return is exact; a draw smaller than its return is a
-                    // broken count and stays where it is.
-                    false => {
-                        if let Some(next) = t.checked_sub(m) {
-                            *t = next;
-                        }
-                    }
+                // The voice drew exactly `m` on this lane, so the return is
+                // exact; a draw smaller than its return is a broken count
+                // and stays where it is.
+                if let Some(next) = t.checked_sub(m) {
+                    *t = next;
                 }
             }
             // §3.1 as ruled (S13.15): the voice's claim in flight on a lane
             // closed, so the recall shortfall that closed its room there
             // clears with it.
-            if !add {
-                if let Some(mut owed) = self.recall_short.get(&v).copied() {
-                    for l in 0..4 {
-                        if d[l] == 0 {
-                            owed[l] = 0;
-                        }
+            if let Some(mut owed) = self.recall_short.get(&v).copied() {
+                for l in 0..4 {
+                    if d[l] == 0 {
+                        owed[l] = 0;
                     }
-                    if owed == [0; 4] {
-                        self.recall_short.remove(&v);
-                    } else {
-                        self.recall_short.insert(v, owed);
-                    }
+                }
+                if owed == [0; 4] {
+                    self.recall_short.remove(&v);
+                } else {
+                    self.recall_short.insert(v, owed);
                 }
             }
             self.drawn.insert(v, d);

@@ -218,10 +218,11 @@ impl Treasury {
     ) -> Treasury {
         let mut t = Treasury {
             entries,
-            bond_total: [0; 4],
+            bond_total: Some([0; 4]),
             stakes,
             escrowed: crate::network::nerve::Keyed::new(),
             balances,
+            overflowed: 0,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
             issued: None,

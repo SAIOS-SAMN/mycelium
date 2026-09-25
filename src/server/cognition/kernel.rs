@@ -301,6 +301,16 @@ pub struct Kernel {
     pub(crate) remainders_unminted: u64,
     pub(crate) remainders_unoffered: u64,
     pub(crate) remainders_coincident: u64,
+    /// STD1 (rule 11) — THE ROOM READS THAT DID NOT ANSWER, each by its own
+    /// name: a lane drawn past its cover (a broken count) and a cover or
+    /// credit past its carrier. Atomic because the room is read through
+    /// `&self` on the request path; a count of this process, volatile.
+    pub(crate) room_broken: std::sync::atomic::AtomicU64,
+    pub(crate) room_overflowed: std::sync::atomic::AtomicU64,
+    /// STD1 — the court's own operations and readings refused past their
+    /// carrier: an occupy (its listing refused), a recall owed, the book's
+    /// T pressure, a relocation's total, a solve's paid sum. Volatile.
+    pub(crate) overflowed: u64,
     /// RM1 (c) — voices' re-fill acts replayed here: applied (the Congruent
     /// simplex written Filled, the rewrite's remainder answered, the pressure
     /// minted under POUW), and refused by why.

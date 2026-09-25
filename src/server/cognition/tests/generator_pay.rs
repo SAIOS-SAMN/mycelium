@@ -191,7 +191,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     );
     assert_eq!(
         k.use_credit(&teacher),
-        g_e.magnitude(),
+        Some(g_e.magnitude()),
         "the teacher's credit is the cited form's own μ⃗, once for this one citer"
     );
     let room_after = k.lane_room_of(&teacher);
@@ -328,7 +328,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
 
         assert_eq!(
             k.use_credit(&teacher),
-            g.magnitude(),
+            Some(g.magnitude()),
             "this court credits THIS mind's teacher, under that teacher's own key"
         );
         assert!(

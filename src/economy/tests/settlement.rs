@@ -60,13 +60,13 @@ fn release_mints_when_the_bond_is_empty() {
     let mut t = Treasury::new();
     let addr = [7u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
-    assert_eq!(t.bond_total(), [0; 4]);
+    assert_eq!(t.bond_total(), Some([0; 4]));
     let held = t.release_award(&addr).expect("claim");
     t.mint_claim(&held.voices, held.mu, held.anchor);
     assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
     assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
     assert_eq!(t.supply().expect("supply adds up"), [4, 0, 2, 0]);
-    assert_eq!(t.bond_total(), [0; 4], "mint does not touch the stake bond");
+    assert_eq!(t.bond_total(), Some([0; 4]), "mint does not touch the stake bond");
 }
 
 /// S9.3 — THE READING, PER LANE, AND THE AMOUNT INSIDE IT. Each lane is

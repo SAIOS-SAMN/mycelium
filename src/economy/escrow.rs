@@ -89,16 +89,19 @@ impl Treasury {
 
     /// A filled triangle releases the escrow of the listings its dialects
     /// settled, minted AT `at`, the act that released them (EC1), never at
-    /// the acts that escrowed them.
-    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A], at: Anchor) -> [u64; 4] {
-        let mut released = [0u64; 4];
+    /// the acts that escrowed them. The released total is a reading: `None`,
+    /// counted, where it would pass its carrier (STD1) — every release still
+    /// minted, each by its own row.
+    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A], at: Anchor) -> Option<[u64; 4]> {
+        let mut released = Some([0u64; 4]);
         for addr in listings {
             if let Some(Escrowed { voices, mu, .. }) = self.release_award(addr.as_ref()) {
                 self.mint_claim(&voices, mu, at);
-                for (r, m) in released.iter_mut().zip(&mu) {
-                    *r = r.saturating_add(*m);
-                }
+                released = released.and_then(|r| crate::core::lanes::lanes_add(r, mu));
             }
+        }
+        if released.is_none() {
+            self.overflowed += 1;
         }
         released
     }

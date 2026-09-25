@@ -285,13 +285,16 @@ fn orbits(o: &observe::Orbits) -> String {
 /// EC1, 78.33 — A COURT'S PAYMENTS BY PROOF OF WORK: each arm on its own
 /// four lanes, paid and burned, never summed across arms.
 fn economy(e: &observe::Economy) -> Vec<String> {
-    mycelium::economy::Arm::ALL
+    let mut out: Vec<String> = mycelium::economy::Arm::ALL
         .iter()
         .map(|arm| {
             let i = arm.index();
             format!("  {BOLD}{:<12}{RESET}paid {:?}  burned {:?}", arm.name(), e.paid[i], e.burned[i])
         })
-        .collect()
+        .collect();
+    // STD1 — what the treasury refused past its carrier.
+    out.push(format!("  {BOLD}{:<12}{RESET}{}", "overflowed", e.overflowed));
+    out
 }
 
 /// ACT1 — ONE NODE ON THE CLOCK, and its three counts.
@@ -387,6 +390,10 @@ fn court(c: &Court) -> Vec<String> {
             "  {BOLD}remainders{RESET}  {} | basis words with a filed torsion {}",
             c.remainders.line(),
             c.torsion_words
+        ),
+        format!(
+            "  {BOLD}refused{RESET}     room broken {} past carrier {} | overflowed {}",
+            c.room_broken, c.room_overflowed, c.overflowed
         ),
     ]
 }

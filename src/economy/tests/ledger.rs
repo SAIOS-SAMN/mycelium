@@ -77,6 +77,24 @@ fn the_audit_holds_through_genesis_mint_and_burn() {
     assert_eq!(t.supply().expect("supply adds up"), [11, 10, 12, 10]);
 }
 
+/// STD1 (rule 11) — MONEY NEVER TOPS OUT SILENTLY. A mint into a balance
+/// with no room on a lane is refused before its row is written: nothing is
+/// minted, the journal and the supply stand, the audit still holds, and the
+/// refusal is counted on the economy reading.
+#[test]
+fn a_credit_past_its_carrier_refuses_the_mint_and_writes_no_row() {
+    let mut t = Treasury::new();
+    let a = at(1, [1; 32]);
+    t.genesis([1; 32], [u64::MAX, 0, 0, 0], a);
+    let rows = t.entry_count();
+    assert_eq!(t.settle_subsidy([1; 32], [1, 1, 0, 0], a), [0; 4], "a lane with no room refuses the whole mint");
+    assert_eq!(t.entry_count(), rows, "and writes no row");
+    assert_eq!(t.balance_mu(&[1; 32]), [u64::MAX, 0, 0, 0], "the balance stands on every lane");
+    assert_eq!(t.audit().expect("the ledger still conserves"), [u64::MAX, 0, 0, 0]);
+    assert_eq!(t.economy().expect("the economy reads").overflowed, 1, "counted, by name");
+    assert_eq!(t.settle_subsidy([2; 32], [1, 1, 0, 0], a), [1, 1, 0, 0], "another balance with room is paid");
+}
+
 /// §4, §6, Stage 12 S12.5a (I38) — A STAKE OUTSIDE THE LIVE GENESIS IS
 /// BURNED, and the audit holds through it: the bond leaves the carriers and
 /// the supply by one vector as one `Burn` row; the identity's balance stays;

@@ -43,6 +43,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                     reopened: k.reopened(),
                     remainders,
                     torsion_words,
+                    room_broken: k.room_refusals().0,
+                    room_overflowed: k.room_refusals().1,
+                    overflowed: k.overflowed(),
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.

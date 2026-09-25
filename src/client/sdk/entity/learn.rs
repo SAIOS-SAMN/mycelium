@@ -339,9 +339,11 @@ impl Entity {
             if pos == before {
                 break;
             }
-            let m = e.magnitude();
-            for (lane, add) in mu.iter_mut().zip(m) {
-                *lane = lane.saturating_add(add);
+            // STD1 — a page whose measure passes its carrier is refused whole:
+            // its words arrived from the wire at any lane.
+            if !crate::core::lanes::lanes_step(&mut mu, &e.magnitude()) {
+                eprintln!("  page refused: its measure passes a lane's carrier");
+                return None;
             }
             heard_words.push(e);
         }

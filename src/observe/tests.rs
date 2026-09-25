@@ -56,6 +56,10 @@ fn every_reading_reads_back_as_itself_through_the_act() {
             ..Default::default()
         },
         torsion_words: 6,
+        // STD1 — the room's refusals and the court's, each by name.
+        room_broken: 7,
+        room_overflowed: 8,
+        overflowed: 9,
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.
@@ -89,7 +93,11 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         Reading::Clock(voice_clock),
         // EC1 — a court's payments by proof of work, each arm on its own
         // lanes.
-        Reading::Economy(Economy { paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]], burned: [[0; 4], [0; 4], [0, 0, 0, 3]] }),
+        Reading::Economy(Economy {
+            paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]],
+            burned: [[0; 4], [0; 4], [0, 0, 0, 3]],
+            overflowed: 7,
+        }),
     ];
     let push = encode_push(&vk(7), &all);
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));

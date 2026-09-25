@@ -9,7 +9,33 @@
 
 use super::*;
 
+/// STD1 — WHY A ROOM READ DID NOT ANSWER, by its own name: a `None` never
+/// stands for two facts (78.26(4)). A lane drawn past its cover is a BROKEN
+/// count; a cover or a credit whose sum passes its carrier is PAST CARRIER.
+/// Each is counted on the kernel where the read answers `None`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RoomRefused {
+    Broken,
+    PastCarrier,
+}
+
 impl Kernel {
+    /// A room read's answer, its refusal counted by name.
+    fn room_answer(&self, r: Result<[usize; 4], RoomRefused>) -> Option<[usize; 4]> {
+        use std::sync::atomic::Ordering::Relaxed;
+        match r {
+            Ok(v) => Some(v),
+            Err(RoomRefused::Broken) => {
+                self.room_broken.fetch_add(1, Relaxed);
+                None
+            }
+            Err(RoomRefused::PastCarrier) => {
+                self.room_overflowed.fetch_add(1, Relaxed);
+                None
+            }
+        }
+    }
+
     /// `None` where this court's own room cannot be read: a lane occupied
     /// beyond its cover is a broken count, not a court with no room.
     pub fn lane_room(&self) -> Option<[usize; 4]> {
@@ -23,26 +49,32 @@ impl Kernel {
     /// two readers of one fact (law 12), and it is how a saturation test
     /// came to compare a quantity with itself.
     pub fn lane_cover_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+        self.room_answer(self.cover_of(voice))
+    }
+
+    fn cover_of(&self, voice: &[u8; 32]) -> Result<[usize; 4], RoomRefused> {
         if let Some(cap) = self.lane_cap {
-            return Some(cap);
+            return Ok(cap);
         }
-        let credit = self.use_credit(voice);
+        let credit = self.use_credit(voice).ok_or(RoomRefused::PastCarrier)?;
         let bond = match self.treasury.bond_of(voice) {
             Some(b) => b,
-            None if credit.iter().all(|&c| c == 0) => return Some([0; 4]),
+            None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
-        let mut out = [0usize; 4];
-        for (l, o) in out.iter_mut().enumerate() {
-            *o = bond[l].checked_add(credit[l])? as usize;
-        }
-        Some(out)
+        let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)?;
+        Ok(cover.map(|c| c as usize))
     }
 
     /// `None` on a lane occupied beyond its cover: that is a broken count,
     /// as a lane releasing more than it holds is, and zero room would be
-    /// the invariant's failure read as a measurement (rule 11).
+    /// the invariant's failure read as a measurement (rule 11). `None` too
+    /// where the cover passes its carrier, counted apart (STD1).
     pub fn lane_room_of(&self, voice: &[u8; 32]) -> Option<[usize; 4]> {
+        self.room_answer(self.room_of(voice))
+    }
+
+    fn room_of(&self, voice: &[u8; 32]) -> Result<[usize; 4], RoomRefused> {
         // A voice that has drawn nothing occupies nothing: the reading of
         // absence on a keyed carrier, exactly zero per lane by definition.
         let occ = match self.drawn.get(voice) {
@@ -54,9 +86,9 @@ impl Kernel {
             // admitted against room that was not there.
             let mut free = [0usize; 4];
             for (l, f) in free.iter_mut().enumerate() {
-                *f = cap[l].checked_sub(occ[l] as usize)?;
+                *f = cap[l].checked_sub(occ[l] as usize).ok_or(RoomRefused::Broken)?;
             }
-            return Some(free);
+            return Ok(free);
         }
         // E2, 26 as ruled 2026-09-10: a voice whose forms other voices
         // derive through has more ROOM to speak, per lane. It is added to
@@ -68,18 +100,19 @@ impl Kernel {
         // voice with a use and no bond has the room its language earned
         // it, which is the whole of what E2 says a use is worth: the bond
         // is what a voice staked, the credit is what its language did.
-        let credit = self.use_credit(voice);
+        let credit = self.use_credit(voice).ok_or(RoomRefused::PastCarrier)?;
         let bond = match self.treasury.bond_of(voice) {
             Some(b) => b,
-            None if credit.iter().all(|&c| c == 0) => return Some([0; 4]),
+            None if credit.iter().all(|&c| c == 0) => return Ok([0; 4]),
             None => [0; 4],
         };
+        let cover = crate::core::lanes::lanes_add(bond, credit).ok_or(RoomRefused::PastCarrier)?;
         // A voice drawn BEYOND its cover is a broken count, as above.
         let mut free = [0usize; 4];
         for (l, f) in free.iter_mut().enumerate() {
-            *f = bond[l].saturating_add(credit[l]).checked_sub(occ[l])? as usize;
+            *f = cover[l].checked_sub(occ[l]).ok_or(RoomRefused::Broken)? as usize;
         }
-        Some(free)
+        Ok(free)
     }
 
     /// E2, 26 — WHAT THIS VOICE'S LANGUAGE EARNS IT. Lane-wise, over the
@@ -104,9 +137,13 @@ impl Kernel {
     /// still a whole read of a monotone carrier on a hot path, and the shape
     /// that removes it is a memo sealed at `basis_gen`, as `closure` and
     /// `language` are — owed, and named here so it is not lost.
-    pub fn use_credit(&self, voice: &[u8; 32]) -> [u64; 4] {
+    ///
+    /// `None` where the credit passes its carrier (STD1): the product
+    /// `mu × uses` and the lane sum are both checked. The product was an
+    /// unchecked `*`, which wraps in a release build — an invented credit.
+    pub fn use_credit(&self, voice: &[u8; 32]) -> Option<[u64; 4]> {
         let Some(mine) = self.discovered_by.get(voice.as_slice()) else {
-            return [0; 4];
+            return Some([0; 4]);
         };
         let mut credit = [0u64; 4];
         for (addr, ()) in mine.scoped() {
@@ -118,14 +155,15 @@ impl Kernel {
             };
             let mu = form.magnitude();
             // `mu × uses` is the sum the inner loop was computing, term by
-            // identical term. The lane sum stays `saturating_add`, which
-            // is accounting; the product is exact.
+            // identical term, exact or refused.
             let uses = citers.len() as u64;
-            for l in 0..4 {
-                credit[l] = credit[l].saturating_add(mu[l] * uses);
+            let mut earned = [0u64; 4];
+            for (e, m) in earned.iter_mut().zip(mu) {
+                *e = m.checked_mul(uses)?;
             }
+            credit = crate::core::lanes::lanes_add(credit, earned)?;
         }
-        credit
+        Some(credit)
     }
 
     /// 37.7, 45.9 — THE ADJOINED COUNT, READ FROM CONTENT. A generator
@@ -262,11 +300,18 @@ impl Kernel {
     }
 
     /// Test helper: remaining listing room, from each lane's own bond.
+    /// `None` where a lane's room plus its occupancy passes its carrier,
+    /// counted as a room read past its carrier (STD1).
     pub fn dynamic_lane_capacity(&self) -> Option<[usize; 4]> {
         let room = self.lane_room()?;
-        Some(std::array::from_fn(|l| {
-            room[l].saturating_add(self.occupancy[l] as usize)
-        }))
+        let mut cap = [0usize; 4];
+        for (l, c) in cap.iter_mut().enumerate() {
+            match room[l].checked_add(self.occupancy[l] as usize) {
+                Some(v) => *c = v,
+                None => return self.room_answer(Err(RoomRefused::PastCarrier)),
+            }
+        }
+        Some(cap)
     }
 
     /// THE SHORTFALL of a draw against the uttering voice's room, per lane:
@@ -325,14 +370,18 @@ impl Kernel {
             return;
         }
         // A voice with no recorded shortfall owes nothing: absence.
-        let mut owed = match self.recall_short.get(&voice) {
+        let owed = match self.recall_short.get(&voice) {
             Some(o) => *o,
             None => [0; 4],
         };
-        for l in crate::economy::lanes_short(short) {
-            owed[l] = owed[l].saturating_add(short[l]);
+        // A lane not short adds zero, so the whole vector is the step. One
+        // past its carrier leaves what is owed where it stood, counted (STD1).
+        match crate::core::lanes::lanes_add(owed, *short) {
+            Some(next) => {
+                self.recall_short.insert(voice, next);
+            }
+            None => self.overflowed += 1,
         }
-        self.recall_short.insert(voice, owed);
     }
 
     /// One line per short lane (34.2), read off the shortfall the caller

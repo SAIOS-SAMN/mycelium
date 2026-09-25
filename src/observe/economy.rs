@@ -13,6 +13,8 @@ pub struct Economy {
     pub paid: [[u64; 4]; 3],
     /// What each arm burned, per lane.
     pub burned: [[u64; 4]; 3],
+    /// STD1 — the treasury's operations refused past their carrier.
+    pub overflowed: u64,
 }
 
 impl Economy {
@@ -22,6 +24,7 @@ impl Economy {
                 out.extend_from_slice(&lane.to_le_bytes());
             }
         }
+        out.extend_from_slice(&self.overflowed.to_le_bytes());
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Economy> {
@@ -32,6 +35,8 @@ impl Economy {
                 *p += 8;
             }
         }
+        e.overflowed = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        *p += 8;
         Some(e)
     }
 }

@@ -39,8 +39,10 @@ impl Mu {
         self.0[lane]
     }
 
-    pub fn add(&self, other: &Mu) -> Mu {
-        Mu(std::array::from_fn(|l| self.0[l].saturating_add(other.0[l])))
+    /// Lane-wise, all lanes or none: `None` where a lane would pass its
+    /// carrier (STD1) — money never tops out silently.
+    pub fn add(&self, other: &Mu) -> Option<Mu> {
+        crate::core::lanes::lanes_add(self.0, other.0).map(Mu)
     }
 
     pub fn shortfall(&self, room: &Mu) -> Mu {
@@ -151,13 +153,23 @@ pub fn split_deflation(before: &[u64; 4], after: &[u64; 4]) -> Option<[u64; 4]> 
 /// magnitude the metabolism relaxes and `price` reads the word's own
 /// measure, so it priced nothing and paced everything — read as strokes it
 /// held every voice on one hypha for 48,000 strokes (2026-09-09).
-pub fn yield_surface(p: &crate::physics::Physics) -> [u64; 4] {
+///
+/// `None` where a lane's deficit plus its excess would pass its carrier
+/// (STD1): the surface is refused by name, never read pinned.
+pub fn yield_surface(p: &crate::physics::Physics) -> Option<[u64; 4]> {
     let flux = p.order_flux();
     let deficit = p.reserve_deficit();
-    std::array::from_fn(|l| {
-        let entropic = if flux[l] < 0 { (-flux[l]) as u64 } else { 0 };
-        deficit[l].saturating_add(entropic)
-    })
+    let mut out = [0u64; 4];
+    for (l, o) in out.iter_mut().enumerate() {
+        // The excess is torsion past syntropy: exact in `i128`, and a
+        // difference of two `u64` below zero is at most one `u64` whole.
+        let entropic = match flux[l] < 0 {
+            true => u64::try_from(-flux[l]).ok()?,
+            false => 0,
+        };
+        *o = deficit[l].checked_add(entropic)?;
+    }
+    Some(out)
 }
 
 /// PRICE IS THE MAGNITUDE ON THE LANE: a verified word is worth what it

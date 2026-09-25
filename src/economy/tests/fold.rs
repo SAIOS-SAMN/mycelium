@@ -51,7 +51,7 @@ fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
 
     let mut broken = Treasury::new();
     broken.genesis([1; 32], [10, 0, 0, 0], a(1));
-    broken.credit([1; 32], [1, 0, 0, 0]);
+    assert!(broken.credit([1; 32], [1, 0, 0, 0]), "a credit with room lands");
     assert_eq!(broken.fold(place(1), a(2)), Err(REFUSE_FOLD_INEXACT));
     assert_eq!(broken.entries().len(), 1, "a ledger that does not conserve writes nothing");
 }
