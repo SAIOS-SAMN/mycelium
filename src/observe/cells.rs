@@ -5,7 +5,7 @@
 // each nucleus against the base's mirrors it stands between (MG1) — served
 // to the console on demand, never printed per epoch.
 
-use super::circuit::{holds, put_int, take_int, take_u16, take_u32, take_u8};
+use super::circuit::{holds, put_int, take_int, take_len, take_u16, take_u32, take_u8};
 pub use crate::transducer::cech::{CapacityRefused, CellRefusals, CircuitUnread, ModesUnread, Rings};
 pub use crate::transducer::cga::OrbitUnread;
 use crate::transducer::cga::PairRegime;
@@ -348,19 +348,19 @@ fn take_flag(b: &[u8], p: &mut usize) -> Option<bool> {
 }
 
 fn take_refusals(b: &[u8], p: &mut usize) -> Option<CellRefusals> {
-    let n = take_u32(b, p)?;
+    let n = take_len(b, p)?;
     if !holds(b, *p, n, 1) {
         return None;
     }
     let circuits = (0..n).map(|_| take_coded(&CircuitUnread::ALL, b, p)).collect::<Option<Vec<_>>>()?;
-    let n = take_u32(b, p)?;
+    let n = take_len(b, p)?;
     if !holds(b, *p, n, 5) {
         return None;
     }
     let mut modes = Vec::with_capacity(n);
     for _ in 0..n {
         let tag = take_u8(b, p)?;
-        let d = take_u32(b, p)?;
+        let d = take_len(b, p)?;
         modes.push(match tag {
             0 => ModesUnread::NotVersor,
             1 => ModesUnread::Irrational(d),
@@ -372,18 +372,18 @@ fn take_refusals(b: &[u8], p: &mut usize) -> Option<CellRefusals> {
     let capacity = match take_u8(b, p)? {
         NONE => None,
         0 => Some(CapacityRefused::NoneRead),
-        1 => Some(CapacityRefused::NotVersor { circuit: take_u32(b, p)? }),
-        2 => Some(CapacityRefused::Spent { product: take_u32(b, p)? }),
+        1 => Some(CapacityRefused::NotVersor { circuit: take_len(b, p)? }),
+        2 => Some(CapacityRefused::Spent { product: take_len(b, p)? }),
         _ => return None,
     };
     let zero_meet = take_flag(b, p)?;
     let nuclei = take_flag(b, p)?;
-    let unordered = take_u32(b, p)?;
+    let unordered = take_len(b, p)?;
     let orbit = match take_u8(b, p)? {
         NONE => None,
-        0 => Some(OrbitUnread::NotConstructor { constructor: take_u32(b, p)? }),
-        1 => Some(OrbitUnread::NotVersor { generator: take_u32(b, p)? }),
-        2 => Some(OrbitUnread::NoRay { constructor: take_u32(b, p)? }),
+        0 => Some(OrbitUnread::NotConstructor { constructor: take_len(b, p)? }),
+        1 => Some(OrbitUnread::NotVersor { generator: take_len(b, p)? }),
+        2 => Some(OrbitUnread::NoRay { constructor: take_len(b, p)? }),
         3 => Some(OrbitUnread::CarryRefused),
         4 => Some(OrbitUnread::CarriedNoRay),
         _ => return None,
@@ -471,7 +471,7 @@ fn put_bytes(out: &mut Vec<u8>, v: &[u8]) {
 }
 
 fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
-    let len = take_u32(b, p)?;
+    let len = take_len(b, p)?;
     let v = b.get(*p..p.checked_add(len)?)?.to_vec();
     *p += len;
     Some(v)
@@ -582,9 +582,9 @@ impl Cells {
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Cells> {
-        let mirror_planes = take_u32(b, p)? as u32;
+        let mirror_planes = take_u32(b, p)?;
         let mirror_group = take_closure(b, p)?;
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         if !holds(b, *p, m, 8) {
             return None;
         }
@@ -596,7 +596,7 @@ impl Cells {
             let coherence = take_coded(&CellCoherence::ALL, b, p)?;
             let capacity = match take_u8(b, p)? {
                 0 => None,
-                1 => Some(take_u32(b, p)? as u32),
+                1 => Some(take_u32(b, p)?),
                 _ => return None,
             };
             let orbit = take_coded(&CellOrbit::ALL, b, p)?;
@@ -605,7 +605,7 @@ impl Cells {
                 1 => Some(((take_u8(b, p)?, take_u8(b, p)?, take_u8(b, p)?), take_u8(b, p)?)),
                 _ => return None,
             };
-            let np = take_u32(b, p)?;
+            let np = take_len(b, p)?;
             if !holds(b, *p, np, 1) {
                 return None;
             }
@@ -619,7 +619,7 @@ impl Cells {
                 NONE => None,
                 _ => return None,
             };
-            let nprod = take_u32(b, p)?;
+            let nprod = take_len(b, p)?;
             if !holds(b, *p, nprod, 14) {
                 return None;
             }
@@ -634,7 +634,7 @@ impl Cells {
                     _ => return None,
                 };
                 let classed = take_u8(b, p)? == 1;
-                let ns = take_u32(b, p)?;
+                let ns = take_len(b, p)?;
                 if !holds(b, *p, ns, 10) {
                     return None;
                 }
@@ -645,13 +645,13 @@ impl Cells {
                 products.push(CellProduct { order, grades, det, classed, seal });
             }
             let classes = take_u8(b, p)?;
-            let nm = take_u32(b, p)?;
+            let nm = take_len(b, p)?;
             if !holds(b, *p, nm, 4) {
                 return None;
             }
             let mut mirrors = Vec::with_capacity(nm);
             for _ in 0..nm {
-                let k = take_u32(b, p)?;
+                let k = take_len(b, p)?;
                 if !holds(b, *p, k, 18) {
                     return None;
                 }
@@ -667,11 +667,11 @@ impl Cells {
                 1 => {
                     let mut bodies = [0u32; 5];
                     for v in bodies.iter_mut() {
-                        *v = take_u32(b, p)? as u32;
+                        *v = take_u32(b, p)?;
                     }
                     let within = match take_u8(b, p)? {
                         0 => None,
-                        1 => Some(take_u32(b, p)? as u32),
+                        1 => Some(take_u32(b, p)?),
                         _ => return None,
                     };
                     Some(CellEnclosure::Round { bodies, within })
@@ -680,7 +680,7 @@ impl Cells {
             };
             let refusals = take_refusals(b, p)?;
             let constructors = match take_u8(b, p)? {
-                1 => Some(take_u32(b, p)? as u32),
+                1 => Some(take_u32(b, p)?),
                 NONE => None,
                 _ => return None,
             };
@@ -691,7 +691,7 @@ impl Cells {
             }
             let mut n = [0usize; 10];
             for v in n.iter_mut() {
-                *v = take_u32(b, p)?;
+                *v = take_len(b, p)?;
             }
             let [coherent, resonant, rosette, parabolic, boost, harmonic, luminal, holonomic, d, c] = n;
             let rings = Rings { coherent, resonant, rosette, parabolic, boost, harmonic, luminal, holonomic, d, c };
@@ -719,13 +719,13 @@ impl Cells {
         let bracket = match take_u8(b, p)? {
             NONE => None,
             1 => Some(CellBracket {
-                held: take_u32(b, p)? as u32,
-                lost: take_u32(b, p)? as u32,
-                unread: take_u32(b, p)? as u32,
+                held: take_u32(b, p)?,
+                lost: take_u32(b, p)?,
+                unread: take_u32(b, p)?,
             }),
             _ => return None,
         };
-        let cap = take_u32(b, p)? as u32;
+        let cap = take_u32(b, p)?;
         Some(Cells { mirror_planes, mirror_group, cells, bracket, cap })
     }
 }

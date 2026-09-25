@@ -15,7 +15,7 @@
 //!   round reversed, the refusals typed by grade, the closure classes and
 //!   the dual frames.
 
-use super::circuit::{holds, take_u16, take_u32, take_u8};
+use super::circuit::{holds, take_len, take_u16, take_u8};
 
 fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
     let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
@@ -94,7 +94,7 @@ impl Viscosity {
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Viscosity> {
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         if !holds(b, *p, m, 5 + 7 * 8) {
             return None;
         }
@@ -295,7 +295,7 @@ impl Progress {
         let [percepts, contact_cycles, contact_cycles_curved, contact_cycles_unread] = take_u64s::<4>(b, p)?;
         let contact_cycles_static = take_u64(b, p)?;
         let contact_cycles_coset = take_u64s::<3>(b, p)?;
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         if !holds(b, *p, m, 1 + 8 * 8) {
             return None;
         }

@@ -235,7 +235,7 @@ impl CircuitTest {
 
     fn take(b: &[u8], p: &mut usize) -> Option<CircuitTest> {
         let class = *CircuitClass::ALL.get(usize::from(take_u8(b, p)?))?;
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         if !holds(b, *p, m, 2) {
             return None;
         }
@@ -244,14 +244,14 @@ impl CircuitTest {
             let arm = *TestArm::ALL.get(usize::from(take_u8(b, p)?))?;
             let read = match take_u8(b, p)? {
                 0 => ArmRead::Empty,
-                1 => ArmRead::Reads(take_u32(b, p)? as u32),
-                2 => ArmRead::Routes { agree: take_u32(b, p)? as u32, disagree: take_u32(b, p)? as u32 },
+                1 => ArmRead::Reads(take_u32(b, p)?),
+                2 => ArmRead::Routes { agree: take_u32(b, p)?, disagree: take_u32(b, p)? },
                 3 => ArmRead::Permanent,
                 _ => return None,
             };
             arms.push((arm, read));
         }
-        let n = take_u32(b, p)?;
+        let n = take_len(b, p)?;
         if !holds(b, *p, n, 12) {
             return None;
         }
@@ -284,7 +284,7 @@ fn put_ray(out: &mut Vec<u8>, ray: &[(u16, BigRational)]) {
 }
 
 fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u16, BigRational)>> {
-    let m = take_u32(b, p)?;
+    let m = take_len(b, p)?;
     if !holds(b, *p, m, 10) {
         return None;
     }
@@ -370,10 +370,17 @@ pub(super) fn take_u16(b: &[u8], p: &mut usize) -> Option<u16> {
     Some(v)
 }
 
-pub(super) fn take_u32(b: &[u8], p: &mut usize) -> Option<usize> {
+pub(super) fn take_u32(b: &[u8], p: &mut usize) -> Option<u32> {
     let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
     *p += 4;
-    Some(v as usize)
+    Some(v)
+}
+
+/// A `u32` read as a count or a length, exact in its reader's own width
+/// (STD1 3c: the value is read at the width it was written at, never cast
+/// back and forth).
+pub(super) fn take_len(b: &[u8], p: &mut usize) -> Option<usize> {
+    usize::try_from(take_u32(b, p)?).ok()
 }
 
 /// A count the body cannot hold at `least` bytes an entry is refused before
@@ -392,7 +399,7 @@ pub(super) fn put_int(out: &mut Vec<u8>, v: &BigInt) {
 }
 
 pub(super) fn take_int(b: &[u8], p: &mut usize) -> Option<BigInt> {
-    let len = take_u32(b, p)?;
+    let len = take_len(b, p)?;
     let v = BigInt::from_signed_bytes_le(b.get(*p..p.checked_add(len)?)?);
     *p += len;
     Some(v)
@@ -431,27 +438,27 @@ fn put_modes(out: &mut Vec<u8>, m: &ModesRead) {
 fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
     match take_u8(b, p)? {
         0 => {
-            let m = take_u32(b, p)?;
+            let m = take_len(b, p)?;
             if !holds(b, *p, m, 6) {
                 return None;
             }
             let mut ms = Vec::with_capacity(m);
             for _ in 0..m {
                 let kind = BivectorKind::from_u8(take_u8(b, p)?)?;
-                let planes = take_u32(b, p)?;
+                let planes = take_len(b, p)?;
                 let order = match take_u8(b, p)? {
                     0 => None,
-                    1 => Some(take_u32(b, p)? as u32),
+                    1 => Some(take_u32(b, p)?),
                     _ => return None,
                 };
                 ms.push((kind, planes, order));
             }
             Some(ModesRead::Split(ms))
         }
-        1 => Some(ModesRead::Undecomposed(Undecomposed::Irrational(take_u32(b, p)?))),
+        1 => Some(ModesRead::Undecomposed(Undecomposed::Irrational(take_len(b, p)?))),
         2 => Some(ModesRead::Undecomposed(Undecomposed::Defective)),
         3 => Some(ModesRead::Unread),
-        4 => Some(ModesRead::Undecomposed(Undecomposed::Unbounded(take_u32(b, p)?))),
+        4 => Some(ModesRead::Undecomposed(Undecomposed::Unbounded(take_len(b, p)?))),
         _ => None,
     }
 }
@@ -488,7 +495,7 @@ impl CircuitStep {
             0 => Carried::Unread,
             1 => Carried::Cone,
             2 => {
-                let m = take_u32(b, p)?;
+                let m = take_len(b, p)?;
                 if !holds(b, *p, m, 10) {
                     return None;
                 }
@@ -532,7 +539,7 @@ impl Circuits {
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Circuits> {
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         // A circuit is at least its chord, its step count and its test flag.
         if !holds(b, *p, m, 7) {
             return None;
@@ -540,7 +547,7 @@ impl Circuits {
         let mut circuits = Vec::with_capacity(m);
         for _ in 0..m {
             let chord = take_u16(b, p)?;
-            let k = take_u32(b, p)?;
+            let k = take_len(b, p)?;
             // A step is at least its face, its flags and its arm.
             if !holds(b, *p, k, 4) {
                 return None;

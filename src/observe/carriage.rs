@@ -8,7 +8,7 @@
 //! Awards and deltas are measured at the question from what the court or
 //! the voice holds now; frames are counted where the wire writes them.
 
-use super::circuit::{holds, take_u32, take_u8};
+use super::circuit::{holds, take_len, take_u8};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 /// THE CARRIERS, in the reading's order, each with what one record of it
@@ -112,7 +112,7 @@ impl Carriage {
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Carriage> {
-        let m = take_u32(b, p)?;
+        let m = take_len(b, p)?;
         if !holds(b, *p, m, 2 + 3 * 8) {
             return None;
         }
