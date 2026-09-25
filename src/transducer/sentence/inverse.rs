@@ -14,6 +14,7 @@ use crate::transducer::element::Versor;
 use crate::transducer::sentence::Link;
 use crate::transducer::stalk;
 use super::chart::word_vertex_address;
+use crate::transducer::address::take_key_count;
 
 /// The chain back out of its address, AND THE CORNER IT SAT AT.
 ///
@@ -40,7 +41,7 @@ fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
             Some(out)
         }
         2 => {
-            let n = take_u32(k, p)? as usize;
+            let n = take_key_count(k, p)?;
             let mut out = Vec::with_capacity(n.min(k.len()));
             for _ in 0..n {
                 let r = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
@@ -108,7 +109,8 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // vertex the form has, that one included, so the vertices are taken
     // from the key alone and not appended to what the default seeded.
     f.vertices.clear();
-    let nv = take_u32(k, &mut p)? as usize;
+    // Every count in the key is read by its own coordinate (STD1 3c-2).
+    let nv = take_key_count(k, &mut p)?;
     for _ in 0..nv {
         let kind = *k.get(p)?;
         p += 1;
@@ -177,12 +179,12 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         };
         f.vertices.push(v);
     }
-    let nf = take_u32(k, &mut p)? as usize;
+    let nf = take_key_count(k, &mut p)?;
     for _ in 0..nf {
         let i = take_u16k(k, &mut p)?;
         let j = take_u16k(k, &mut p)?;
         let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
-        let n = take_u16k(k, &mut p)? as usize;
+        let n = take_key_count(k, &mut p)?;
         let mut at = Keyed::new();
         for _ in 0..n {
             let pk = crate::transducer::address::take_key_bytes(k, &mut p)?;
@@ -216,7 +218,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             }
             1 => {
                 p += 1;
-                let m = take_u16k(k, &mut p)? as usize;
+                let m = take_key_count(k, &mut p)?;
                 let mut ps = Keyed::new();
                 for _ in 0..m {
                     ps.insert(take_frame_key(k, &mut p)?, ());
@@ -256,10 +258,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         return None;
     }
     f.ratio = ((r[0] as usize, r[1] as usize), (r[2] as usize, r[3] as usize));
-    let ns = take_u32(k, &mut p)? as usize;
+    let ns = take_key_count(k, &mut p)?;
     for _ in 0..ns {
         let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
-        let m = take_u16k(k, &mut p)? as usize;
+        let m = take_key_count(k, &mut p)?;
         let mut members = Keyed::new();
         for _ in 0..m {
             members.insert(take_frame_key(k, &mut p)?, ());
@@ -267,7 +269,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         f.sections
             .put(&crate::network::nerve::coord::SectionAt::decode(&class).ok()?, members);
     }
-    let na = take_u32(k, &mut p)? as usize;
+    let na = take_key_count(k, &mut p)?;
     for _ in 0..na {
         let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
         // The tape's own bytes, declared as the holonomy coordinate `axes`
@@ -339,10 +341,7 @@ struct Acts(
 );
 
 fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
-    let n = match contact {
-        true => take_u32(k, p)? as usize,
-        false => take_u16k(k, p)? as usize,
-    };
+    let n = take_key_count(k, p)?;
     let mut out = Keyed::new();
     let mut got: Option<Option<crate::transducer::alphabet::Contact>> = None;
     for _ in 0..n {
@@ -405,19 +404,13 @@ fn take_frame_key(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
 }
 
 fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
-    let n = take_u16k(k, p)? as usize;
+    let n = take_key_count(k, p)?;
     let mut g = Vec::with_capacity(n.min(k.len()));
     for _ in 0..n {
         g.push((*k.get(*p)?, *k.get(*p + 1)?));
         *p += 2;
     }
     Some(g)
-}
-
-fn take_u32(k: &[u8], p: &mut usize) -> Option<u32> {
-    let v = u32::from_le_bytes(k.get(*p..*p + 4)?.try_into().ok()?);
-    *p += 4;
-    Some(v)
 }
 
 fn take_u16k(k: &[u8], p: &mut usize) -> Option<u16> {

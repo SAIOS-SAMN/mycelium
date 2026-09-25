@@ -360,7 +360,9 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // fact, and the one that was never read is the one that was wrong
     // (law 12).
     let vs = canonical_vertices(f);
-    buf.extend_from_slice(&(vs.len() as u32).to_le_bytes());
+    // Every count in this key is written by its own coordinate (STD1 3c-2,
+    // ruled (d)): LEB128, no width wall, read back by the inverse.
+    crate::transducer::address::put_key_count(&mut buf, vs.len());
     // THE VERTICES IN THEIR OWN CANONICAL ORDER, not the order they were
     // appended (law 2, rule 15).
     //
@@ -378,7 +380,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     for v in vs {
         put_vertex(&mut buf, v);
     }
-    buf.extend_from_slice(&(f.faces.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, f.faces.len());
     // A face names its ends by their place in the CANONICAL order, so the
     // incidence is read against the same ordering the vertices were
     // written in and not against the vector they happen to sit in.
@@ -409,10 +411,10 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // alone, and nothing said where one run ended. The key compared and
     // ordered correctly and could not be PARSED, which is the half of
     // §1.5 that had never been exercised.
-    buf.extend_from_slice(&(f.sections.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, f.sections.len());
     for (class, members) in f.sections.scoped() {
         crate::transducer::address::put_key_bytes(&mut buf, &class);
-        buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
+        crate::transducer::address::put_key_count(&mut buf, members.len());
         // The inner key IS the frame and its order IS the succession, so
         // the identity is spelled in coordinate order with nothing sorted.
         //
@@ -439,7 +441,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     }
     // An opened axis is a coordinate of the form (I6): the class it was
     // opened on, written out, key order.
-    buf.extend_from_slice(&(f.axes.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, f.axes.len());
     for (class, _) in f.axes.scoped() {
         crate::transducer::address::put_key_bytes(&mut buf, &class);
     }
@@ -466,13 +468,13 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
         // member pairs SAYS something a face with one does not, and the
         // address is what says it (D10).
         face.word.put_canonical(buf);
-        buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
+        crate::transducer::address::put_key_count(buf, face.at.len());
         for (pk, place) in face.at.scoped() {
             crate::transducer::address::put_key_bytes(buf, &pk);
             place.carriage.put_canonical(buf);
             let mut g = place.gauge.clone();
             g.sort_unstable();
-            buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+            crate::transducer::address::put_key_count(buf, g.len());
             for (a, b) in g {
                 buf.push(a);
                 buf.push(b);
@@ -491,7 +493,7 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
                     t.carriage.put_canonical(buf);
                     let mut eg = t.gauge.clone();
                     eg.sort_unstable();
-                    buf.extend_from_slice(&(eg.len() as u16).to_le_bytes());
+                    crate::transducer::address::put_key_count(buf, eg.len());
                     for (x, y) in eg {
                         buf.push(x);
                         buf.push(y);
@@ -510,7 +512,7 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
             None => buf.push(0),
             Some(ps) => {
                 buf.push(1);
-                buf.extend_from_slice(&(ps.len() as u16).to_le_bytes());
+                crate::transducer::address::put_key_count(buf, ps.len());
                 // Coordinate order: the inner key IS the frame, and it is
                 // written AS that key — big-endian, the one spelling the
                 // carrier uses (54.5). It went out through
@@ -618,7 +620,7 @@ fn put_chain_address(buf: &mut Vec<u8>, chain: &[crate::transducer::sentence::Li
         // optional.
         None => {
             buf.push(2);
-            buf.extend_from_slice(&(chain.len() as u32).to_le_bytes());
+            crate::transducer::address::put_key_count(buf, chain.len());
             for &(r, c, before, after) in chain {
                 buf.extend_from_slice(&r.to_le_bytes());
                 buf.extend_from_slice(&c.to_le_bytes());
@@ -904,7 +906,7 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             // two charts SAYS more than one acting on one, so the count is
             // on the key (D10); the chart key goes with each member for the
             // same reason a face's pair key does.
-            buf.extend_from_slice(&(acts.len() as u16).to_le_bytes());
+            crate::transducer::address::put_key_count(buf, acts.len());
             for (_, a) in acts.scoped() {
                 // THE CHART, NOT THE CARRIER'S KEY (54.7 R1) — the same
                 // rule as the Word arm: `take_acts` parses an `Invariant`
@@ -915,7 +917,7 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
                 a.carriage.put_canonical(buf);
                 let mut g = a.gauge.clone();
                 g.sort_unstable();
-                buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+                crate::transducer::address::put_key_count(buf, g.len());
                 for (x, y) in g {
                     buf.push(x);
                     buf.push(y);
@@ -1066,7 +1068,7 @@ fn put_word_vertex(
     // recover it. The compatibility that omission bought is
     // spent here: every address changes and a layout change is
     // a recut (§10).
-    buf.extend_from_slice(&(acts.len() as u32).to_le_bytes());
+    crate::transducer::address::put_key_count(buf, acts.len());
     for (_, a) in acts.scoped() {
         // THE CHART, NOT THE CARRIER'S KEY (54.7 R1). `Acting::key` is
         // `chart ‖ carriage` and `take_acts` parses an `Invariant` out of
@@ -1093,7 +1095,7 @@ fn put_word_vertex(
         }
         let mut g = a.gauge.clone();
         g.sort_unstable();
-        buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+        crate::transducer::address::put_key_count(buf, g.len());
         for (x, y) in g {
             buf.push(x);
             buf.push(y);
