@@ -235,7 +235,10 @@ impl Session {
         let mut pages = crate::physics::aperture_cycle().max(1) as usize;
         while pages > 0 {
             pages -= 1;
-            let ask = crate::anastome::dialogue::encode_cover_request(&self.kernel.voice, &from);
+            // A cursor past its four bytes asks nothing (STD1 3c).
+            let Some(ask) = crate::anastome::dialogue::encode_cover_request(&self.kernel.voice, &from) else {
+                return;
+            };
             let Ok(page) = self.exchange_at(addr, ask) else {
                 return;
             };

@@ -18,7 +18,7 @@ fn anchor_fiber_round_trips_and_top_is_default() {
     assert!(plain.anchor().is_none(), "born ⊤ until germination binds");
     let pi = Sel::Minus(Box::new(Sel::Hue(1)), Box::new(Sel::Delta(Box::new(Sel::Hue(1)))));
     let anchored = plain.clone().with_anchor(pi.clone());
-    let bytes = anchored.to_bytes();
+    let bytes = anchored.to_bytes().expect("the record writes");
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("parse");
     assert_eq!(back.anchor(), Some(&pi), "π survives the wire");
@@ -26,7 +26,7 @@ fn anchor_fiber_round_trips_and_top_is_default() {
     assert_eq!(back.address(), anchored.address(), "address is BASE-only — π never renames");
     // A pre-anchor serialization (anchor byte and connection count
     // stripped) parses to ⊤ with an empty connection.
-    let plain_bytes = plain.to_bytes();
+    let plain_bytes = plain.to_bytes().expect("the record writes");
     let mut pos2 = 0;
     let old = Element::from_bytes(&plain_bytes[..plain_bytes.len() - 5], &mut pos2).expect("old form");
     assert!(old.anchor().is_none(), "absent tail = the unconstrained carrier");
@@ -51,7 +51,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert_eq!(w.letters_rederive(), Some(true), "the tape re-derives V");
     assert_eq!(w.letters().map(|l| l.sigma), Some(vec![(1, 2), (2, 1)]), "the gauge rides the tape");
     let mut pos = 0;
-    let back = Element::from_bytes(&w.to_bytes(), &mut pos).expect("round trip");
+    let back = Element::from_bytes(&w.to_bytes().expect("the record writes"), &mut pos).expect("round trip");
     assert_eq!(back.letters(), w.letters(), "the letters survive the wire");
     assert!(w.reverse().is_some(), "the group component reads backward");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
@@ -85,7 +85,7 @@ fn a_connection_is_one_element_with_two_components() {
 #[test]
 fn the_record_round_trips_and_older_records_are_refused() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &vec![(0, 0, 3u8, 4)], [5, 2, 0, 0]).expect("spells");
-    let bytes = w.to_bytes();
+    let bytes = w.to_bytes().expect("the record writes");
     assert_eq!(
         crate::transducer::address::tag_of(&bytes),
         Some(Element::RECORD_MAGIC),
@@ -116,7 +116,7 @@ fn a_transition_gauge_crosses_as_its_ray() {
     let scaled = t.scale(&num_rational::BigRational::new(num_bigint::BigInt::from(-5), num_bigint::BigInt::from(3)));
     w.transitions.push(Transition { asg: vec![(1, 2)], gauge: scaled, fibre: 7 });
     w.transitions.push(Transition { asg: vec![], gauge: identity_versor(), fibre: 0 });
-    let bytes = w.to_bytes();
+    let bytes = w.to_bytes().expect("the record writes");
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("the record reads back");
     assert_eq!(pos, bytes.len(), "whole");
@@ -133,7 +133,7 @@ fn a_germ_round_trips_through_bytes() {
     let residual = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap());
     let swap = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]).unwrap());
     for g in [&residual, &swap] {
-        let bytes = g.to_bytes();
+        let bytes = g.to_bytes().expect("the record writes");
         let mut pos = 0;
         let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
         assert_eq!(pos, bytes.len(), "consumed exactly");
@@ -152,7 +152,7 @@ fn torsion_round_trips_through_bytes() {
     let mut t = from_canonical(&germinate(&a, &b).unwrap());
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     t.torse();
-    let bytes = t.to_bytes();
+    let bytes = t.to_bytes().expect("the record writes");
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
     assert_eq!(pos, bytes.len());
@@ -174,19 +174,19 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     t.puncture(vec![(2, 3), (3, 1), (1, 2)]);
     t.torse();
     assert_eq!(t.torsion().len(), 1, "one cycle is filed");
-    let bytes = t.to_bytes();
+    let bytes = t.to_bytes().expect("the record writes");
     let mut pos = 0;
     assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "the tape as filed decodes");
     let mut zero = t.clone();
     zero.torsion[0].period = 0;
     let mut pos = 0;
     assert!(
-        Element::from_bytes(&zero.to_bytes(), &mut pos).is_none(),
+        Element::from_bytes(&zero.to_bytes().expect("the record writes"), &mut pos).is_none(),
         "a filed period of zero is a malformed tape, not a cycle spanning nothing"
     );
 
     let one = from_canonical(&canonical_chain(&[(0, 0, 1, 2)]).expect("one link is a chain"));
-    let bytes = one.to_bytes();
+    let bytes = one.to_bytes().expect("the record writes");
     let mut pos = 0;
     assert!(Element::from_bytes(&bytes, &mut pos).is_some(), "one transition decodes");
     // The same site saying two different things. It cannot be put on an
@@ -211,7 +211,7 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     // 32 bytes and never 0 (an unreadable envelope must not be able to
     // masquerade as an empty one).
     let mut envelope = Vec::new();
-    one.receipts().to_block(&mut envelope);
+    one.receipts().to_block(&mut envelope).expect("the envelope writes");
     assert!(one.receipts().is_empty(), "a residual attests nothing");
     assert_eq!(envelope.len(), 4 + 32, "the empty envelope is a block of four zero counts");
     let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + envelope.len() + 32;
@@ -245,11 +245,11 @@ fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
     let mut t = from_canonical(&germinate(&a, &b).expect("a germ"));
     assert!(t.puncture(vec![(2, 3), (3, 1), (1, 2)]), "a section is spoken");
     let mut pos = 0;
-    assert!(Element::from_bytes(&t.to_bytes(), &mut pos).is_some(), "the word as spoken decodes");
+    assert!(Element::from_bytes(&t.to_bytes().expect("the record writes"), &mut pos).is_some(), "the word as spoken decodes");
     let mut past = t.clone();
     past.mag[3] = u64::MAX;
     let mut pos = 0;
-    assert!(Element::from_bytes(&past.to_bytes(), &mut pos).is_none(), "a lane with no room for its section is refused");
+    assert!(Element::from_bytes(&past.to_bytes().expect("the record writes"), &mut pos).is_none(), "a lane with no room for its section is refused");
 
     let before = t.magnitude();
     assert!(!t.set_magnitude([0, 0, 0, u64::MAX]), "a magnitude with no room for the section is refused");
@@ -263,6 +263,21 @@ fn a_lane_past_its_carrier_is_refused_where_it_arrives() {
     assert!(full.torsion().is_empty());
 }
 
+/// STD1 3c, LD0 — A COUNT PAST ITS FIELD REFUSES THE RECORD. The element
+/// record, the receipts envelope and every length inside them write through
+/// the checked puts; a count one past four bytes writes nothing and answers
+/// `None`, where the `as u32` they replaced wrote its low bits and a record
+/// no reader could frame. At the field's last value it writes whole.
+#[test]
+fn a_count_past_its_field_refuses_the_record() {
+    use crate::transducer::address::put_u32_count;
+    let mut out = vec![7u8];
+    assert_eq!(put_u32_count(&mut out, usize::try_from(u64::from(u32::MAX) + 1).expect("a 64-bit host")), None);
+    assert_eq!(out, vec![7u8], "nothing is written for a refused count");
+    assert_eq!(put_u32_count(&mut out, usize::try_from(u32::MAX).expect("a 64-bit host")), Some(()));
+    assert_eq!(out[1..], u32::MAX.to_le_bytes(), "the last value writes whole");
+}
+
 #[test]
 fn rotated_connection_survives_the_tape() {
     let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
@@ -271,7 +286,7 @@ fn rotated_connection_survives_the_tape() {
     let car = crate::transducer::cga::dilator(&two).geo(&translator_versor(3, 5));
     let w = from_connection(&rot, &car, &[], &Vec::new(), [1, 0, 0, 0]).expect("spells");
     let v0 = w.versor().expect("V");
-    let bytes = w.to_bytes();
+    let bytes = w.to_bytes().expect("the record writes");
     let mut pos = 0;
     let back = Element::from_bytes(&bytes, &mut pos).expect("reload");
     let v1 = back.versor().expect("V'");

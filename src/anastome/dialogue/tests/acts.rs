@@ -70,7 +70,7 @@ fn the_five_acts_round_trip() {
         [1, 0, 0, 0],
     )
     .expect("a connection on the plane")
-    .to_bytes();
+    .to_bytes().expect("the record writes");
     let items = vec![WorkItem {
         addr: listing.clone(),
         mu: [1, 2, 30, 4],

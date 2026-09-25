@@ -43,7 +43,7 @@ fn normal_form_two_tapes_one_key() {
 #[test]
 fn the_record_round_trip_and_size() {
     let w = conn(&[(1, 2)], vec![(0, 0, 1u8, 2)], [1, 1, 0, 0]);
-    let b = w.to_bytes();
+    let b = w.to_bytes().expect("the record writes");
     assert_eq!(b[0], Element::RECORD_MAGIC);
     let mut p = 0;
     let back = Element::from_bytes(&b, &mut p).unwrap();
@@ -139,7 +139,7 @@ fn speak_rule_recolours_or_conflicts() {
 #[test]
 fn speech_act_one_frame() {
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
-    let body = dialogue::encode_speech(&[1u8; 32], [2u8; 32], 7, &[w.to_bytes()]).expect("the task frames");
+    let body = dialogue::encode_speech(&[1u8; 32], [2u8; 32], 7, &[w.to_bytes().expect("the record writes")]).expect("the task frames");
     let act = dialogue::decode_speech(&body).expect("decode");
     assert_eq!(act.voice[0], 1);
     assert_eq!(act.task[0], 2);

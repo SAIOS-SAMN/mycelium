@@ -104,8 +104,8 @@ impl Rule {
 /// `(uv, w)` are two rules and not one key.
 pub fn rule_key(r: &Rule) -> Vec<u8> {
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, &tape_key(&r.lhs));
-    crate::transducer::address::put_bytes(&mut k, &tape_key(&r.rhs));
+    crate::transducer::address::put_key_bytes(&mut k, &tape_key(&r.lhs));
+    crate::transducer::address::put_key_bytes(&mut k, &tape_key(&r.rhs));
     k
 }
 

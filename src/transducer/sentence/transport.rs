@@ -79,8 +79,8 @@ pub fn face_pair_key(
     cj: &crate::transducer::stalk::Invariant,
 ) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, ci.key().as_bytes());
-    crate::transducer::address::put_bytes(&mut buf, cj.key().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut buf, ci.key().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut buf, cj.key().as_bytes());
     buf
 }
 

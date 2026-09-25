@@ -167,7 +167,7 @@ pub fn cells_over<'a>(
             match coords(m) {
                 Some(c) => {
                     let mut framed = Vec::new();
-                    crate::transducer::address::put_bytes(&mut framed, &c);
+                    crate::transducer::address::put_key_bytes(&mut framed, &c);
                     keyed.insert(&framed, m);
                 }
                 None => unread += 1,

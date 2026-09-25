@@ -263,7 +263,7 @@ pub fn demand_key(
 /// can only subtract links.
 pub fn demand_at(listing: &[u8], kind: &Demand, chart: &Invariant) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_DEMAND_AT];
-    crate::transducer::address::put_bytes(&mut buf, listing);
+    crate::transducer::address::put_key_bytes(&mut buf, listing);
     buf.extend_from_slice(
         crate::network::nerve::Coordinate::encode(&demand_key(kind, chart)).as_bytes(),
     );

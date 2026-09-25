@@ -45,7 +45,7 @@ fn the_receipt_section_is_found_after_a_full_digest_frame() {
 
     // The shape `judge` sends: the stratum-digest reply, the cover
     // digest, and the receipt section on the end.
-    let mut body = encode_digests_reply(&digests);
+    let mut body = encode_digests_reply(&digests).expect("the digests fit their fields");
     body.extend(
         encode_cover_digest(&room, &cover_roots, &ruled_root, &vk, "127.0.0.1:7500", &sig)
             .expect("the digest fits its lengths"),
@@ -113,7 +113,7 @@ fn a_cover_is_read_by_page_from_the_last_cursor_held() {
         (0u8, Invariant::counts(&[2, 7, 7])),
         (0u8, Invariant::counts(&[2, 3])),
     ];
-    let ask = encode_cover_request(&vk, b"");
+    let ask = encode_cover_request(&vk, b"").expect("an empty cursor fits");
     assert_eq!(decode_cover_request(&ask), Some((vk, Vec::new())), "an ask round-trips");
     assert!(decode_cover_page(&ask).is_none(), "an ask is not a page");
 

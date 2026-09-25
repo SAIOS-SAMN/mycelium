@@ -99,21 +99,22 @@ fn every_reading_reads_back_as_itself_through_the_act() {
             overflowed: 7,
         }),
     ];
-    let push = encode_push(&vk(7), &all);
+    let push = encode_push(&vk(7), &all).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));
     let entries: Vec<(Vec<u8>, Reading)> =
         all.iter().map(|r| (Source::Voice(vk(7)).key(r.tag()), r.clone())).collect();
-    let reply = encode_reply(&entries, usize::MAX);
+    let reply = encode_reply(&entries, usize::MAX).expect("the reply writes");
     assert_eq!(decode_reply(&reply), Some((7, entries.clone())));
     // A reply that cannot hold them all says how many were held.
-    let (total, sent) = decode_reply(&encode_reply(&entries, 64)).expect("a short reply still decodes");
+    let short = encode_reply(&entries, 64).expect("the reply writes");
+    let (total, sent) = decode_reply(&short).expect("a short reply still decodes");
     assert_eq!(total, 7);
     assert!(sent.len() < 7, "the budget is honoured");
     // A trailing byte is no act.
-    let mut long = encode_query(&[1, 2]);
+    let mut long = encode_query(&[1, 2]).expect("the query writes");
     long.push(0);
     assert_eq!(decode_act(&long), None);
-    assert_eq!(decode_act(&encode_query(&[1, 2])), Some(ObserveAct::Query(vec![1, 2])));
+    assert_eq!(decode_act(&encode_query(&[1, 2]).expect("the query writes")), Some(ObserveAct::Query(vec![1, 2])));
 }
 
 /// CV5 — replication per signer and adjudication by kind travel whole.
@@ -137,7 +138,7 @@ fn replication_and_adjudication_read_back_as_themselves() {
             obstructed: [1, 0, 3, 2, 0, 1],
         }),
     ];
-    let push = encode_push(&vk(8), &all);
+    let push = encode_push(&vk(8), &all).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
     assert_eq!(REPLICATION_AXES.len(), REP_AXES, "the axes and the counters agree");
     assert_eq!(REPLICATION_AXES[rep::LAG].0, "lag", "the last axis is the lag, a level");
@@ -314,7 +315,7 @@ fn the_circuits_read_back_whole_step_by_step() {
             },
         ],
     };
-    let push = encode_push(&vk(3), &[Reading::Circuit(circuits.clone())]);
+    let push = encode_push(&vk(3), &[Reading::Circuit(circuits.clone())]).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(3), vec![Reading::Circuit(circuits.clone())])));
     assert_eq!(circuits.circuits[0].first_refraction(), Some(1), "the refracting step is named");
     assert_eq!(circuits.circuits[1].first_refraction(), None);
@@ -419,7 +420,7 @@ fn the_cells_read_back_whole() {
         bracket: Some(CellBracket { held: 2, lost: 5, unread: 1 }),
         cap: 25,
     };
-    let push = encode_push(&vk(4), &[Reading::Cells(cells.clone())]);
+    let push = encode_push(&vk(4), &[Reading::Cells(cells.clone())]).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), vec![Reading::Cells(cells.clone())])));
     let mut earlier = Reading::Cells(Cells::default());
     assert!(earlier.absorb(&Reading::Cells(cells.clone())), "one kind folds");
@@ -575,7 +576,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             classes: vec![(vec![1, 2, 3], 2), (vec![4], 1)],
         },
     };
-    let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]);
+    let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), vec![Reading::Learning(curve.clone())])));
     let mut earlier = Reading::Learning(Learning { k: 3, ..Learning::default() });
     assert!(earlier.absorb(&Reading::Learning(curve.clone())), "one kind folds");
@@ -633,7 +634,7 @@ fn viscosity_spend_and_progress_read_back_whole_and_sum_per_axis() {
         Reading::Progress(p.clone()),
         Reading::Phase(phase.clone()),
     ];
-    let push = encode_push(&vk(9), &all);
+    let push = encode_push(&vk(9), &all).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(9), all.to_vec())));
 
     let mut held = Reading::Viscosity(v.clone());
@@ -673,7 +674,7 @@ fn the_carriage_reads_back_whole_filed_by_carrier_and_kind() {
         [(CARRIER_AWARD, 0, 1, 120, 120), (CARRIER_DELTA, 12, 2, 1000, 900), (CARRIER_FRAME, 0x0d, 1, 40, 40)]
     );
     let all = [Reading::Carriage(c)];
-    let push = encode_push(&vk(4), &all);
+    let push = encode_push(&vk(4), &all).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(4), all.to_vec())));
 }
 

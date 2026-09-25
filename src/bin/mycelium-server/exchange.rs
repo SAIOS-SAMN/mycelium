@@ -499,7 +499,12 @@ impl Exchange {
                             let mut from: Vec<u8> = Vec::new();
                             while organ_budget > 0 {
                                 organ_budget -= 1;
-                                let ask = dialogue::encode_cover_request(&mesh.vk, &from);
+                                // A cursor past its four bytes asks
+                                // nothing (STD1 3c).
+                                let Some(ask) = dialogue::encode_cover_request(&mesh.vk, &from) else {
+                                    eprintln!("  cover ask refused: the cursor passes its length field");
+                                    break;
+                                };
                                 let Some((page, dt3)) = tell_peer(&d, ask) else {
                                     note_rtt_timeout(&mesh, &pid);
                                     break;

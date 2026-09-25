@@ -139,18 +139,20 @@ impl ProbeTally {
         )
     }
 
-    fn put(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         for v in [self.closed, self.residual, self.residual_unread, self.nothing, self.gone, self.unclassed] {
             out.extend_from_slice(&v.to_le_bytes());
         }
         for v in self.settled.iter().chain(&self.remaining) {
             out.extend_from_slice(&v.to_le_bytes());
         }
-        out.extend_from_slice(&(self.classes.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.classes.len())?;
         for (k, n) in &self.classes {
-            crate::transducer::address::put_bytes(out, k);
+            crate::transducer::address::put_bytes(out, k)?;
             out.extend_from_slice(&n.to_le_bytes());
         }
+        Some(())
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<ProbeTally> {
@@ -213,13 +215,15 @@ impl Learning {
         Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes }
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+    /// `None` where a count or a key passes its field (STD1 3c): the reading
+    /// is refused, never written short.
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&self.k.to_le_bytes());
         out.extend_from_slice(&self.radius.to_le_bytes());
-        out.extend_from_slice(&(self.strata.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.strata.len())?;
         for (key, n) in &self.strata {
-            out.extend_from_slice(&(key.len() as u32).to_le_bytes());
-            out.extend_from_slice(key);
+            crate::transducer::address::put_bytes(out, key)?;
             out.extend_from_slice(&n.to_le_bytes());
         }
         for v in [self.adjoined_by_closure, self.installed, self.closing] {
@@ -328,7 +332,7 @@ impl Learning {
         // STD1 — the sums the contemplation refused.
         out.extend_from_slice(&g.overflowed.to_le_bytes());
         // PR1 — the voice's probes.
-        self.probes.put(out);
+        self.probes.put(out)
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {

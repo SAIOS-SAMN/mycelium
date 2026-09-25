@@ -291,8 +291,8 @@ pub(crate) fn site_key(r: i64, c: i64) -> Vec<u8> {
 /// the key order is the vertex order, which is content.
 pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, &vertex.to_le_bytes());
-    crate::transducer::address::put_bytes(&mut k, chart);
+    crate::transducer::address::put_key_bytes(&mut k, &vertex.to_le_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, chart);
     k
 }
 
@@ -338,8 +338,8 @@ pub(crate) fn read_member_key(k: &[u8]) -> Option<(u16, Vec<u8>)> {
 pub(crate) fn member_pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, lo);
-    crate::transducer::address::put_bytes(&mut k, hi);
+    crate::transducer::address::put_key_bytes(&mut k, lo);
+    crate::transducer::address::put_key_bytes(&mut k, hi);
     k
 }
 

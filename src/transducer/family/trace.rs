@@ -217,7 +217,7 @@ pub(crate) fn carriage_of(
         };
         for (ck, a) in acts.scoped() {
             let mut k = address.as_bytes().to_vec();
-            crate::transducer::address::put_bytes(&mut k, &ck);
+            crate::transducer::address::put_key_bytes(&mut k, &ck);
             out.insert(&k, (*a.carriage).clone());
         }
     }

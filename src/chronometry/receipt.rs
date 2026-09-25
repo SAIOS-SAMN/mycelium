@@ -495,9 +495,9 @@ impl Cite {
                     None => rec.push(0),
                     Some(charts) => {
                         rec.push(1);
-                        rec.extend_from_slice(&(charts.len() as u32).to_le_bytes());
+                        crate::transducer::address::put_u32_count(&mut rec, charts.len())?;
                         for c in charts {
-                            crate::transducer::address::put_bytes(&mut rec, c);
+                            crate::transducer::address::put_bytes(&mut rec, c)?;
                         }
                     }
                 }

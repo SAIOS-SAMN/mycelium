@@ -214,17 +214,21 @@ pub(crate) fn witness_vantage(
 ) -> dialogue::Witnessed {
     use mycelium::cognition::Glue;
     let refused = |why: &str| dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() };
+    // STD1 3c — a vantage reached on a word whose record does not write is
+    // refused by name, never a vantage carrying no form.
+    let reached = |word: &mycelium::transducer::element::Element| match word.to_bytes() {
+        Some(form) => dialogue::Witnessed::Reached { vk: me, form },
+        None => refused("the word's record passes a length its field writes"),
+    };
     if k.heard_contains(word.address().as_bytes()) {
         return match k.court_replay(&word) {
             Some(why) => refused(why),
-            None => dialogue::Witnessed::Reached { vk: me, form: word.to_bytes() },
+            None => reached(&word),
         };
     }
     match k.glue_fetched(word.clone(), home, me, cover) {
         Glue::Slashed(why) => refused(why),
-        Glue::Admitted | Glue::Attached | Glue::Dialect => {
-            dialogue::Witnessed::Reached { vk: me, form: word.to_bytes() }
-        }
+        Glue::Admitted | Glue::Attached | Glue::Dialect => reached(&word),
     }
 }
 

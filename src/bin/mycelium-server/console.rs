@@ -136,7 +136,11 @@ pub(crate) fn run(home: &Path, at: Option<&str>, ask: &Ask) -> ! {
         println!("{RED}no address to ask{RESET}: pass --at ADDR, or --home a home whose mesh names its bind");
         std::process::exit(2)
     };
-    let Some((reply, _)) = crate::transport::tell_peer(&addr, observe::encode_query(&prefix)) else {
+    let Some(query) = observe::encode_query(&prefix) else {
+        println!("{RED}the prefix passes its length field{RESET}");
+        std::process::exit(2)
+    };
+    let Some((reply, _)) = crate::transport::tell_peer(&addr, query) else {
         println!("{RED}{addr} did not answer{RESET}");
         std::process::exit(2)
     };

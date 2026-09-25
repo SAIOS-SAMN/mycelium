@@ -6,14 +6,14 @@ use super::*;
 
 pub(crate) fn chart_simplex_key(inv: &crate::transducer::stalk::Invariant, sim: &[u8]) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
-    crate::transducer::address::put_bytes(&mut buf, &inv.key());
-    crate::transducer::address::put_bytes(&mut buf, sim);
+    crate::transducer::address::put_key_bytes(&mut buf, &inv.key());
+    crate::transducer::address::put_key_bytes(&mut buf, sim);
     buf
 }
 
 pub(crate) fn orbit_key(chart: &crate::transducer::stalk::Invariant, voice: &[u8; 32]) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, &chart.key());
+    crate::transducer::address::put_key_bytes(&mut buf, &chart.key());
     buf.extend_from_slice(voice);
     buf
 }
@@ -25,7 +25,7 @@ pub(crate) fn footprint_key(addr: &[u8], fp: &[(i64, i64)], scene: &[(i64, i64, 
     let mut painted = scene.to_vec();
     painted.sort_unstable();
     let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, addr);
+    crate::transducer::address::put_key_bytes(&mut buf, addr);
     buf.extend_from_slice(&(points.len() as u32).to_le_bytes());
     for &(r, c) in &points {
         buf.extend_from_slice(&r.to_le_bytes());

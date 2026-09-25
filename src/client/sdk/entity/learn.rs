@@ -36,7 +36,13 @@ impl Entity {
         rule: Option<&Element>,
     ) -> io::Result<(u8, [u64; 4])> {
         let voice = self.session.kernel().voice();
-        let bytes = rule.map(|e| e.to_bytes());
+        // A rule whose record does not write is not sent as no rule (STD1 3c).
+        let bytes = match rule {
+            Some(e) => Some(e.to_bytes().ok_or_else(|| {
+                io::Error::new(io::ErrorKind::InvalidInput, "the rule's record passes a length its field writes")
+            })?),
+            None => None,
+        };
         // A solve that does not fit the lengths the frame writes is not
         // sent short: it is not sent (47.1).
         let Some(act) = dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref())
@@ -191,7 +197,11 @@ impl Entity {
                 if self.already_taught(&word) {
                     continue;
                 }
-                let bytes = word.to_bytes();
+                // A word whose record does not write is not taught (STD1 3c).
+                let Some(bytes) = word.to_bytes() else {
+                    eprintln!("  adopt refused: a word's record passes a length its field writes");
+                    continue;
+                };
                 if used + bytes.len() > crate::network::wire::frame_budget() {
                     break 'strata;
                 }

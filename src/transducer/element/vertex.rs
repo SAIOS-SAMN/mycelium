@@ -426,7 +426,7 @@ impl Element {
                 // type: `sub` is A5's accepted chain, and a rewrite's
                 // names are citations proven to fit their prefix, refused
                 // at `mint` where the element is built (47.1).
-                crate::transducer::address::put_bytes(&mut buf, &self.form_key_bytes());
+                crate::transducer::address::put_key_bytes(&mut buf, &self.form_key_bytes());
                 crate::transducer::address::Address::new(buf)
             })
             .clone()

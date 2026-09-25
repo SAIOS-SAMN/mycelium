@@ -141,7 +141,7 @@ pub fn canonical_nerve(edges: impl IntoIterator<Item = NerveEdge>) -> Vec<NerveE
         crate::network::nerve::Keyed::new();
     for e in edges {
         let mut k = e.host().into_vec();
-        crate::transducer::address::put_bytes(&mut k, e.target.as_bytes());
+        crate::transducer::address::put_key_bytes(&mut k, e.target.as_bytes());
         by_incidence.insert(k, e);
     }
     by_incidence.scoped().map(|(_, e)| e.clone()).collect()
@@ -215,11 +215,13 @@ impl NerveEdge {
     /// envelope that did not write, read back as a word attesting NOTHING.
     /// That is the empty-carrier reading that misled five times on
     /// 2026-09-20, and it is designed out here rather than caught later:
-    /// `put_bytes` is the KEY-FIELD embedding (u32) and every address in
-    /// this envelope is a key field.
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        crate::transducer::address::put_bytes(out, self.target.as_bytes());
-        crate::transducer::address::put_bytes(out, self.chart.key().as_bytes());
+    /// `put_bytes` is the u32 embedding and every address in this envelope
+    /// is written through it — refused, never cut, past its four bytes
+    /// (STD1 3c).
+    #[must_use]
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
+        crate::transducer::address::put_bytes(out, self.target.as_bytes())?;
+        crate::transducer::address::put_bytes(out, self.chart.key().as_bytes())?;
         for m in &self.magnitude {
             out.extend_from_slice(&m.to_le_bytes());
         }
@@ -227,6 +229,7 @@ impl NerveEdge {
         // LD0 step 6: the placement whole, the carriage as its ray (17.2).
         self.placement.put_whole(out);
         self.carriage.put_canonical(out);
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveEdge> {
@@ -422,15 +425,16 @@ impl NerveRound {
     pub fn key(&self) -> Vec<u8> {
         let mut k = Vec::new();
         for c in &self.charts {
-            crate::transducer::address::put_bytes(&mut k, c.as_bytes());
+            crate::transducer::address::put_key_bytes(&mut k, c.as_bytes());
         }
         k
     }
 
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&(self.charts.len() as u64).to_le_bytes());
         for c in &self.charts {
-            crate::transducer::address::put_bytes(out, c.as_bytes());
+            crate::transducer::address::put_bytes(out, c.as_bytes())?;
         }
         out.extend_from_slice(&(self.points.len() as u64).to_le_bytes());
         for x in &self.points {
@@ -446,6 +450,7 @@ impl NerveRound {
             }
             None => out.push(0),
         }
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<NerveRound> {
@@ -514,15 +519,17 @@ impl DerivationCite {
 
     /// `u32` lengths and a `u64` count, for [`NerveEdge::to_bytes`]'s
     /// reason: a cited form's address is not bounded by 64 KB.
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        crate::transducer::address::put_bytes(out, self.vertex.as_bytes());
+    #[must_use]
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
+        crate::transducer::address::put_bytes(out, self.vertex.as_bytes())?;
         out.extend_from_slice(&(self.generators.len() as u64).to_le_bytes());
         for (form, vertex, e) in &self.generators {
-            crate::transducer::address::put_bytes(out, form.as_bytes());
-            crate::transducer::address::put_bytes(out, vertex.as_bytes());
+            crate::transducer::address::put_bytes(out, form.as_bytes())?;
+            crate::transducer::address::put_bytes(out, vertex.as_bytes())?;
             out.extend_from_slice(&e.to_le_bytes());
         }
         self.residue.put_whole(out);
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<DerivationCite> {
@@ -671,23 +678,25 @@ impl ReceiptsEnvelope {
         out
     }
 
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+    #[must_use]
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&(self.nerve.len() as u64).to_le_bytes());
         for e in &self.nerve {
-            e.to_bytes(out);
+            e.to_bytes(out)?;
         }
         out.extend_from_slice(&(self.rounds.len() as u64).to_le_bytes());
         for t in &self.rounds {
-            t.to_bytes(out);
+            t.to_bytes(out)?;
         }
         out.extend_from_slice(&(self.derivations.len() as u64).to_le_bytes());
         for d in &self.derivations {
-            d.to_bytes(out);
+            d.to_bytes(out)?;
         }
         out.extend_from_slice(&(self.certificates.len() as u64).to_le_bytes());
         for c in &self.certificates {
             c.to_bytes(out);
         }
+        Some(())
     }
 
     /// THE ENVELOPE AS A SELF-CONTAINED BLOCK: `len u32 ‖ bytes`.
@@ -697,19 +706,20 @@ impl ReceiptsEnvelope {
     /// written after it, and a later field can be added to the envelope
     /// without moving anything else on the record.
     ///
-    /// THE WRITER IS TOTAL, and that is deliberate. It used to return
-    /// `Option` and fall back to a zero-length block, which made "the
-    /// envelope did not serialize" read back as "this word attests nothing"
-    /// — the empty-carrier collapse, designed in. With `u32` lengths and
-    /// `u64` counts the only unwritable envelope is one holding more than
-    /// 2⁶⁴ entries, which cannot be constructed, so there is no refusal path
-    /// left to confuse with emptiness. An EMPTY envelope writes four zero
-    /// counts and is 32 bytes, never 0.
-    pub fn to_block(&self, out: &mut Vec<u8>) {
+    /// NO FALLBACK BLOCK. It once returned `Option` and fell back to a
+    /// zero-length block, which made "the envelope did not serialize" read
+    /// back as "this word attests nothing" — the empty-carrier collapse.
+    /// It was then written total, but its frame and every address in it
+    /// were `as u32`, which truncates past four bytes of length (STD1 3c):
+    /// total by a cast, not by a proof. So it refuses — and the refusal is
+    /// the RECORD's, carried up through `Element::to_bytes`: no record is
+    /// written, short or empty, and nothing can read a refusal as an empty
+    /// envelope. An EMPTY envelope still writes four zero counts, 32 bytes.
+    #[must_use]
+    pub fn to_block(&self, out: &mut Vec<u8>) -> Option<()> {
         let mut body = Vec::new();
-        self.to_bytes(&mut body);
-        out.extend_from_slice(&(body.len() as u32).to_le_bytes());
-        out.extend_from_slice(&body);
+        self.to_bytes(&mut body)?;
+        crate::transducer::address::put_bytes(out, &body)
     }
 
     /// Read a framed envelope. A ZERO-LENGTH block is refused rather than

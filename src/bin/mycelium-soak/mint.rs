@@ -242,10 +242,13 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         match measured {
             None => println!("  mint {name} refused at: sentence_measure"),
             Some(mag) => match as_element_form(&rule.form, mag) {
-                Some(e) => println!(
-                    "  mint {name} as_element_form: some, {} bytes — and the mint did NOT refuse here",
-                    e.to_bytes().len()
-                ),
+                Some(e) => match e.to_bytes() {
+                    Some(record) => println!(
+                        "  mint {name} as_element_form: some, {} bytes — and the mint did NOT refuse here",
+                        record.len()
+                    ),
+                    None => println!("  mint {name} refused at: the record, a length past its field"),
+                },
                 None => println!("  mint {name} refused at: as_element_form, on mag {mag:?}"),
             },
         }

@@ -128,7 +128,7 @@ fn block(r0: i64, r1: i64, c0: i64, c1: i64) -> Vec<Site> {
 pub fn cover_key(cover: &Cover) -> Vec<u8> {
     let mut k = Vec::new();
     for (ck, _) in cover.scoped() {
-        crate::transducer::address::put_bytes(&mut k, &ck);
+        crate::transducer::address::put_key_bytes(&mut k, &ck);
     }
     k
 }
@@ -143,7 +143,7 @@ pub fn is_identity(cover: &Cover, scene: &[Grid], reading: Reading) -> bool {
         return false;
     };
     let mut want = Vec::new();
-    crate::transducer::address::put_bytes(&mut want, &whole.key(reading));
+    crate::transducer::address::put_key_bytes(&mut want, &whole.key(reading));
     cover_key(cover) == want
 }
 

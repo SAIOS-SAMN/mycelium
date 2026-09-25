@@ -37,7 +37,7 @@ pub fn stratum_root(members: &[Vec<u8>]) -> Vec<u8> {
     rows.sort();
     let mut buf = Vec::new();
     for a in &rows {
-        crate::transducer::address::put_bytes(&mut buf, a);
+        crate::transducer::address::put_key_bytes(&mut buf, a);
     }
     crate::chronometry::payload_hash(&buf).to_vec()
 }
@@ -103,7 +103,8 @@ pub fn serve<'a>(
             continue;
         }
         let Some(w) = at(&a) else { continue };
-        let bytes = w.to_bytes();
+        // A word whose record does not write is not served (STD1 3c).
+        let Some(bytes) = w.to_bytes() else { continue };
         if used + bytes.len() + 4 > budget {
             break;
         }

@@ -118,7 +118,7 @@ pub fn extract_rule_with(
                     continue;
                 }
                 let mut key = e.address().as_bytes().to_vec();
-                crate::transducer::address::put_bytes(&mut key, &placement_key);
+                crate::transducer::address::put_key_bytes(&mut key, &placement_key);
                 let reproduces = match spoken.get(&key) {
                     Some(&r) => r,
                     None => {

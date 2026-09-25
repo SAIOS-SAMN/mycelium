@@ -19,7 +19,7 @@ use super::*;
 pub(crate) fn cavity_key(rem: &[Link], bubble: &[u8]) -> Vec<u8> {
     let inv = stalk::invariant(rem);
     let mut k = inv.key().into_vec();
-    crate::transducer::address::put_bytes(&mut k, bubble);
+    crate::transducer::address::put_key_bytes(&mut k, bubble);
     k
 }
 

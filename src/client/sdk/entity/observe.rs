@@ -77,7 +77,11 @@ impl Entity {
         carriage.of_frames();
         observe::publish(me, Reading::Carriage(carriage));
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();
-        match self.session.speak_keyed(&voice, observe::encode_push(&voice, &totals)) {
+        // A push whose readings do not write is not sent (STD1 3c).
+        let Some(push) = observe::encode_push(&voice, &totals) else {
+            return false;
+        };
+        match self.session.speak_keyed(&voice, push) {
             Ok(body) => body.as_slice() == [1],
             Err(_) => false,
         }

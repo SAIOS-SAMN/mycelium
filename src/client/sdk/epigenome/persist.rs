@@ -54,11 +54,13 @@ pub struct GenomeRefused {
     pub unciteable: u64,
     /// Two words at one citation — one fiber, one admitting act.
     pub coincident: u64,
+    /// STD1 3c — words whose record passes a length its field writes.
+    pub unwritable: u64,
 }
 
 impl GenomeRefused {
     pub fn total(&self) -> u64 {
-        self.unstamped + self.unciteable + self.coincident
+        self.unstamped + self.unciteable + self.coincident + self.unwritable
     }
 
     /// Named once, with each count, where any is not zero.
@@ -67,6 +69,7 @@ impl GenomeRefused {
             ("words held with no admitting stamp", self.unstamped),
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
+            ("words whose record passes a length its field writes", self.unwritable),
         ] {
             if n > 0 {
                 eprintln!("  genome refused {n} {what}");
@@ -111,7 +114,11 @@ impl Epigenome {
                 refused.coincident += 1;
                 return;
             }
-            nodes.insert(key, vec![(LEAF_HELD, g.held.to_bytes())]);
+            let Some(record) = g.held.to_bytes() else {
+                refused.unwritable += 1;
+                return;
+            };
+            nodes.insert(key, vec![(LEAF_HELD, record)]);
         });
         put_trie(&mut out, WORDS, &nodes);
         (out, refused)

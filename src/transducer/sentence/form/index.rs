@@ -98,7 +98,7 @@ impl Form {
                         // claim it could not keep.
                         if let Some(tk) = vertex_transport_key_of(&rotor, &a.gauge) {
                             let mut key = tk.into_vec();
-                            crate::transducer::address::put_bytes(&mut key, &ck);
+                            crate::transducer::address::put_key_bytes(&mut key, &ck);
                             places.insert(key, (*a.carriage).clone());
                         }
                     }

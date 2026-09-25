@@ -148,7 +148,7 @@ impl CellCircuit {
     pub fn ring_of(steps: &[(u16, bool)]) -> Vec<u8> {
         let mut k = Vec::new();
         for &(face, forward) in steps {
-            crate::transducer::address::put_bytes(&mut k, &[&face.to_be_bytes()[..], &[u8::from(forward)]].concat());
+            crate::transducer::address::put_key_bytes(&mut k, &[&face.to_be_bytes()[..], &[u8::from(forward)]].concat());
         }
         k
     }

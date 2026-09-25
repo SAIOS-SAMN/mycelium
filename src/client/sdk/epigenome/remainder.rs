@@ -127,8 +127,8 @@ impl Epigenome {
             let (a, b) = (Self::chain_bytes(&r.at), Self::chain_bytes(&chain));
             let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
             let mut ck = prefix.clone();
-            crate::transducer::address::put_bytes(&mut ck, &lo);
-            crate::transducer::address::put_bytes(&mut ck, &hi);
+            crate::transducer::address::put_key_bytes(&mut ck, &lo);
+            crate::transducer::address::put_key_bytes(&mut ck, &hi);
             if self.calloused.contains(&ck) {
                 continue;
             }
@@ -145,7 +145,7 @@ impl Epigenome {
     fn chain_bytes(chain: &[Vec<u8>]) -> Vec<u8> {
         let mut out = Vec::new();
         for c in chain {
-            crate::transducer::address::put_bytes(&mut out, c);
+            crate::transducer::address::put_key_bytes(&mut out, c);
         }
         out
     }

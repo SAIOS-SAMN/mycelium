@@ -376,7 +376,7 @@ fn the_pivots_pending_work_is_a_set_of_coordinates() {
     let addr = a.address();
     assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");
 
-    epi.learn(&a.to_bytes());
+    epi.learn(&a.to_bytes().expect("the record writes"));
     assert_eq!(epi.unpivoted_len(), 1, "an admitted word is work the pivot has not reached");
 
     let taken = epi.take_unpivoted();
@@ -392,7 +392,7 @@ fn the_pivots_pending_work_is_a_set_of_coordinates() {
     // taken back; a coordinate leaves the set with the word.
     let b = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let b_addr = b.address();
-    epi.learn(&b.to_bytes());
+    epi.learn(&b.to_bytes().expect("the record writes"));
     assert_eq!(epi.unpivoted_len(), 1);
     assert!(epi.retire(b_addr.as_bytes()), "the word retires");
     assert_eq!(epi.unpivoted_len(), 0, "and leaves the pending set with it");

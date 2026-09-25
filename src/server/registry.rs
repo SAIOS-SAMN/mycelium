@@ -60,7 +60,7 @@ pub fn task_id(task: &Task) -> Option<Address> {
     let mut buf = vec![crate::transducer::address::TAG_TASK];
     for (a, b) in &task.train {
         if let Some(crate::arc::Refined { delta: chain, frame, .. }) = refine_delta(a, b) {
-            crate::transducer::address::put_bytes(
+            crate::transducer::address::put_key_bytes(
                 &mut buf,
                 &crate::transducer::element::listing_key(&chain, &frame)?,
             );
@@ -76,7 +76,7 @@ pub fn task_id(task: &Task) -> Option<Address> {
                 })
             })
             .collect();
-        crate::transducer::address::put_bytes(
+        crate::transducer::address::put_key_bytes(
             &mut buf,
             &crate::transducer::element::from_residual(&chain)?.address(),
         );

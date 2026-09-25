@@ -167,7 +167,7 @@ fn the_sibling_attaches_as_a_transported_section() {
     let v = element::transition(sibling.sub(), base.sub()).expect("congruent");
     assert_eq!(base.attach(&sibling, &v), 1);
     assert_eq!(base.attach(&sibling, &v), 0, "a second observation adds nothing");
-    let bytes = base.to_bytes();
+    let bytes = base.to_bytes().expect("the record writes");
     let mut pos = 0usize;
     let back = Element::from_bytes(&bytes, &mut pos).expect("round trip");
     assert_eq!(back.address(), base.address(), "the bundle round-trips");

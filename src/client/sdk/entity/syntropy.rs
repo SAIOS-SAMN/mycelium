@@ -268,11 +268,16 @@ impl Entity {
                 // the rewrite, it is sealed as Learned, which admits it; a
                 // section the genome refuses is said, never discarded.
                 if let Some(after_elem) = after {
-                    match self.epigenome.learn(&after_elem.to_bytes()) {
-                        Some(_) => {
-                            self.seal_word(crate::chronometry::ActKind::Learned, after_elem);
-                        }
-                        None => eprintln!("  bundle rewrite: the updated section was not learned"),
+                    match after_elem.to_bytes() {
+                        None => eprintln!(
+                            "  bundle rewrite: the updated section's record passes a length its field writes"
+                        ),
+                        Some(record) => match self.epigenome.learn(&record) {
+                            Some(_) => {
+                                self.seal_word(crate::chronometry::ActKind::Learned, after_elem);
+                            }
+                            None => eprintln!("  bundle rewrite: the updated section was not learned"),
+                        },
                     }
                 }
                 let mu = rw.magnitude();

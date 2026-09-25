@@ -33,7 +33,7 @@ fn deepened_word_replays_on_a_peer() {
     assert_eq!(w.base_magnitude(), base, "the chain's lanes do not move");
     assert_eq!(w.magnitude()[3], base[3] + 1, "the section is counted on the word");
     assert!(blind_replay(&w).is_none(), "the deepened word replays at home");
-    let bytes = w.to_bytes();
+    let bytes = w.to_bytes().expect("the record writes");
     let mut pos = 0usize;
     let served = Element::from_bytes(&bytes, &mut pos).expect("wire round trip");
     assert_eq!(pos, bytes.len());

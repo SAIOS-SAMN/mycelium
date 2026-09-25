@@ -21,17 +21,20 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let mycelium::synthesis::Quoted { surface, priced, k_step, cohesion, height } = quoted;
+    // A listing whose record does not write is not quoted (STD1 3c).
     let items: Vec<dialogue::WorkItem> = priced
         .iter()
-        .map(|p| dialogue::WorkItem {
-            addr: p.word.address(),
-            mu: p.mu,
-            // THE LISTING WHOLE (L8q). Served as `sub()` it would carry the
-            // coboundary links alone: a sentence listing would reach a voice
-            // with its demand vertices stripped and the only move left would
-            // be to subtract links.
-            element: p.word.to_bytes(),
-            open: p.open.clone(),
+        .filter_map(|p| {
+            Some(dialogue::WorkItem {
+                addr: p.word.address(),
+                mu: p.mu,
+                // THE LISTING WHOLE (L8q). Served as `sub()` it would carry
+                // the coboundary links alone: a sentence listing would reach
+                // a voice with its demand vertices stripped and the only move
+                // left would be to subtract links.
+                element: p.word.to_bytes()?,
+                open: p.open.clone(),
+            })
         })
         .collect();
     // The frame budget bounds what one contact carries: items ride in

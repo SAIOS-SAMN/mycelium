@@ -546,7 +546,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // The class opens a member coordinate — class ‖ chart — and the
             // transport coordinate is left behind where the extension begins.
             let mut mk = tc.key().encode().as_bytes().to_vec();
-            crate::transducer::address::put_bytes(&mut mk, chart.key().as_bytes());
+            crate::transducer::address::put_key_bytes(&mut mk, chart.key().as_bytes());
             let mut carriage = Vec::new();
             acting.carriage.put_canonical(&mut carriage);
             match piece_seen.get(&mk) {
@@ -611,7 +611,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 // The vertex ordinal opens a body coordinate — ordinal ‖
                 // chart ‖ body — and is left behind where that begins.
                 let mut bk = vertex_ix_key(ix).encode().as_bytes().to_vec();
-                crate::transducer::address::put_bytes(&mut bk, ck.as_bytes());
+                crate::transducer::address::put_key_bytes(&mut bk, ck.as_bytes());
                 bk.extend_from_slice(&k.to_le_bytes());
                 bodies_at.insert(bk, (a0.clone(), b0.clone(), v.clone()));
             }

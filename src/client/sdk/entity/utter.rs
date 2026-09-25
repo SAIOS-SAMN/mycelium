@@ -366,14 +366,24 @@ impl Entity {
             return Ok(codes);
         }
         let voice = self.session.kernel().voice();
-        let spoken: Vec<dialogue::Spoken> = fresh
+        // STD1 3c: a sentence whose record does not write refuses the speech
+        // whole, never a speech with that sentence left out.
+        let spoken: Option<Vec<dialogue::Spoken>> = fresh
             .iter()
-            .map(|&i| dialogue::Spoken {
-                tape: sentences[i].to_bytes(),
-                standing: Standing::Stood.as_u8(),
-                contraction: self.certificate_for(&sentences[i]),
+            .map(|&i| {
+                Some(dialogue::Spoken {
+                    tape: sentences[i].to_bytes()?,
+                    standing: Standing::Stood.as_u8(),
+                    contraction: self.certificate_for(&sentences[i]),
+                })
             })
             .collect();
+        let Some(spoken) = spoken else {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "speech refused: a sentence's record passes a length its field writes",
+            ));
+        };
         // LD0: a speech whose task address cannot be framed is not spoken.
         let Some(body) = dialogue::encode_speech_spoken(&voice, task, tu, &spoken) else {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "speech refused: the task's address cannot be framed"));

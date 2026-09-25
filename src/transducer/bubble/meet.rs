@@ -270,7 +270,7 @@ impl Contemplation {
             let chain = self.shared_chain(&s.vertices).map(|ks| {
                 let mut key = Vec::new();
                 for k in &ks {
-                    crate::transducer::address::put_bytes(&mut key, k);
+                    crate::transducer::address::put_key_bytes(&mut key, k);
                 }
                 key
             });

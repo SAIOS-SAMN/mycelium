@@ -139,7 +139,8 @@ impl Kernel {
             // The word with the stamp that admitted it (78.24 (2b)): a word
             // no act admitted has no locator and is not taught.
             let Some(at) = self.admitted_at(&addr) else { continue };
-            let bytes = w.to_bytes();
+            // A word whose record does not write is not taught (STD1 3c).
+            let Some(bytes) = w.to_bytes() else { continue };
             let width = crate::chronometry::Stamp::LEN + 4 + bytes.len();
             if used + width > budget {
                 break;
@@ -187,10 +188,10 @@ impl Kernel {
     /// A HELD WORD AS A PAGE CARRIES IT: its tape and the stamp that
     /// admitted it, for a page that seals no act of its own (a genesis
     /// page, a chart fetch). `None` where the word is not held or no act
-    /// has admitted it.
+    /// has admitted it, or its record does not write (STD1 3c).
     pub fn taught(&self, addr: &[u8]) -> Option<crate::anastome::dialogue::Taught> {
         let at = self.admitted_at(addr)?;
-        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(addr)?.to_bytes() })
+        Some(crate::anastome::dialogue::Taught { at, word: self.word_at(addr)?.to_bytes()? })
     }
 
     /// What this court already holds in the stratum over `inv`, sent with a

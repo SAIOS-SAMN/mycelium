@@ -23,7 +23,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     let mut epi = Epigenome::new();
     let one = from_connection(&held, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes());
+    epi.learn(&one.to_bytes().expect("the record writes"));
     assert_eq!(epi.genome_len(), 1, "the mind holds the quarter turn");
 
     // The quarter turn IS held; the prime is not. The demand must ask for
@@ -57,7 +57,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     // THE DEMAND IS THE SAME DEMAND ON EVERY MIND THAT HOLDS THE SAME
     // WORDS. The HNF residue is canonical, so two minds speak one element.
     let mut twin = Epigenome::new();
-    twin.learn(&one.to_bytes());
+    twin.learn(&one.to_bytes().expect("the record writes"));
     let Comprehension::Novel { demand: twins, .. } = twin.comprehend(&ask) else {
         panic!("the twin reaches the same arm");
     };
@@ -71,7 +71,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     assert!(demand.is_connection(), "the demand is an element on the wire");
     assert!(demand.sub().is_empty(), "spoken as a connection with no chain");
     let mut pos = 0usize;
-    let back = crate::transducer::element::Element::from_bytes(&demand.to_bytes(), &mut pos)
+    let back = crate::transducer::element::Element::from_bytes(&demand.to_bytes().expect("the record writes"), &mut pos)
         .expect("it round-trips as any word does");
     assert!(back.same_vertex(&demand), "and re-derives to the same vertex");
 }
@@ -93,7 +93,7 @@ fn the_factoring_basis_is_read_on_the_stratum_not_the_exact_chart() {
     let mut epi = Epigenome::new();
     let one = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
-    epi.learn(&one.to_bytes());
+    epi.learn(&one.to_bytes().expect("the record writes"));
     let ask = from_connection(&Word::from_letters(&[(q, false), (p5, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
 

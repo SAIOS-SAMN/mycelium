@@ -18,8 +18,8 @@ let chain_word = |links: &[(i64, i64, u8, u8)]| {
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refine"));
 let w1 = chain_word(&[(0, 0, 1u8, 2u8)]);
 let w2 = chain_word(&[(0, 0, 3u8, 4u8), (0, 1, 3, 4)]);
-assert!(entity.absorb_taught(&w1.to_bytes()).is_some(), "the first word is learned by an act of the voice");
-assert!(entity.absorb_taught(&w2.to_bytes()).is_some(), "the second word is learned by an act of the voice");
+assert!(entity.absorb_taught(&w1.to_bytes().expect("the record writes")).is_some(), "the first word is learned by an act of the voice");
+assert!(entity.absorb_taught(&w2.to_bytes().expect("the record writes")).is_some(), "the second word is learned by an act of the voice");
 assert_eq!(entity.epigenome.genome_len(), 2, "two ruled words");
 // A stood word carrying the second word's bar turned upright: another
 // vertex (a translation alone would re-derive the genome word's address,

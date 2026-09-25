@@ -52,8 +52,8 @@ pub enum Cut {
 /// is the simplex, which is what makes `orbits_of` a fiber read.
 pub(crate) fn orbit_key(simplex: &[u8], i: &[u8], j: &[u8]) -> crate::transducer::address::Address {
     let mut buf = simplex.to_vec();
-    crate::transducer::address::put_bytes(&mut buf, i);
-    crate::transducer::address::put_bytes(&mut buf, j);
+    crate::transducer::address::put_key_bytes(&mut buf, i);
+    crate::transducer::address::put_key_bytes(&mut buf, j);
     crate::transducer::address::Address::new(buf)
 }
 

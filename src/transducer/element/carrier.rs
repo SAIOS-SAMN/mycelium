@@ -79,16 +79,16 @@ impl Remainder {
         let mut k = Self::class_prefix(&self.class);
         let mut chain = Vec::new();
         for c in &self.at {
-            crate::transducer::address::put_bytes(&mut chain, c);
+            crate::transducer::address::put_key_bytes(&mut chain, c);
         }
-        crate::transducer::address::put_bytes(&mut k, &chain);
+        crate::transducer::address::put_key_bytes(&mut k, &chain);
         k
     }
 
     /// The prefix every remainder of `class` is indexed under.
     pub fn class_prefix(class: &crate::transducer::sentence::ClassVector) -> Vec<u8> {
         let mut k = Vec::new();
-        crate::transducer::address::put_bytes(&mut k, class.class_key().as_bytes());
+        crate::transducer::address::put_key_bytes(&mut k, class.class_key().as_bytes());
         k
     }
 
@@ -108,12 +108,15 @@ impl Remainder {
         Some(out)
     }
 
-    pub(crate) fn put(&self, out: &mut Vec<u8>) {
+    /// `None` where the chain's count or a chart's length passes its field
+    /// (STD1 3c, LD0): the record is refused, never written short.
+    #[must_use]
+    pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         self.class.put_canonical(out);
         self.ray.put_canonical(out);
-        out.extend_from_slice(&(self.at.len() as u32).to_le_bytes());
+        crate::transducer::address::put_u32_count(out, self.at.len())?;
         for c in &self.at {
-            crate::transducer::address::put_bytes(out, c);
+            crate::transducer::address::put_bytes(out, c)?;
         }
         match &self.answered {
             Some(s) => {
@@ -122,6 +125,7 @@ impl Remainder {
             }
             None => out.push(0),
         }
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Remainder> {

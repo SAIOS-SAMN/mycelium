@@ -390,8 +390,8 @@ pub fn product_class(p: &CoxeterProduct) -> Option<Vec<u8>> {
         k.push(m.kind.as_u8());
         k.extend_from_slice(&(m.planes as u32).to_le_bytes());
         k.push(u8::from(m.reflects));
-        crate::transducer::address::put_bytes(&mut k, &m.c.numer().to_signed_bytes_le());
-        crate::transducer::address::put_bytes(&mut k, &m.c.denom().to_signed_bytes_le());
+        crate::transducer::address::put_key_bytes(&mut k, &m.c.numer().to_signed_bytes_le());
+        crate::transducer::address::put_key_bytes(&mut k, &m.c.denom().to_signed_bytes_le());
     }
     Some(k)
 }

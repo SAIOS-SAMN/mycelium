@@ -116,15 +116,17 @@ pub fn decode_digests_request(body: &[u8]) -> Option<[u8; 32]> {
     body.get(1..33)?.try_into().ok()
 }
 
-pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest]) -> Vec<u8> {
+/// `None` where a count, a chart or a root passes the field that carries it
+/// (STD1 3c, LD0) — refused whole. The chart's own refusal was dropped here.
+pub fn encode_digests_reply(digests: &[crate::transducer::sheaf::StratumDigest]) -> Option<Vec<u8>> {
     let mut out = Vec::new();
-    out.extend_from_slice(&(digests.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(&mut out, digests.len())?;
     for d in digests {
-        push_invariant(&mut out, &d.inv);
+        push_invariant(&mut out, &d.inv)?;
         out.extend_from_slice(&d.count.to_le_bytes());
-        crate::transducer::address::put_bytes(&mut out, &d.root);
+        crate::transducer::address::put_bytes(&mut out, &d.root)?;
     }
-    out
+    Some(out)
 }
 
 pub fn decode_digests_reply(body: &[u8]) -> Option<Vec<crate::transducer::sheaf::StratumDigest>> {
@@ -293,12 +295,13 @@ pub fn cover_digest_end(body: &[u8]) -> Option<usize> {
 /// The cursor is the lane byte and the axes of the last chart the asker
 /// received, so a cover wider than one frame is read across asks and the
 /// asker holds no position of its own — the coordinate it sends IS the
-/// last chart it holds (rule 15, S13.3).
-pub fn encode_cover_request(voice: &[u8; 32], from: &[u8]) -> Vec<u8> {
+/// last chart it holds (rule 15, S13.3). `None` where the cursor passes its
+/// four bytes (STD1 3c).
+pub fn encode_cover_request(voice: &[u8; 32], from: &[u8]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_COVER];
     out.extend_from_slice(voice);
-    crate::transducer::address::put_bytes(&mut out, from);
-    out
+    crate::transducer::address::put_bytes(&mut out, from)?;
+    Some(out)
 }
 
 /// `None` when the body is not an ask — which is what a cover REPLY is,

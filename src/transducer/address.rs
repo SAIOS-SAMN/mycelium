@@ -325,6 +325,7 @@ pub fn tag_of(b: &[u8]) -> Option<u8> {
 /// refused the whole act while the sender believed it spoke (7.1). 47.1's
 /// rule: a length that does not fit its wire field is refused where the
 /// frame is built.
+#[must_use]
 pub fn put_u8_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
     out.push(u8::try_from(n).ok()?);
     Some(())
@@ -333,6 +334,7 @@ pub fn put_u8_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
 /// A byte string behind a one-byte length, or a refusal. The truncating
 /// form silently shortened an address or a bind string and signed the
 /// short one.
+#[must_use]
 pub fn put_u8_bytes(out: &mut Vec<u8>, b: &[u8]) -> Option<()> {
     put_u8_count(out, b.len())?;
     out.extend_from_slice(b);
@@ -345,6 +347,7 @@ pub fn put_u8_bytes(out: &mut Vec<u8>, b: &[u8]) -> Option<()> {
 /// bytes and a single-limb `Ratio` 28, so a body's chart — four counts,
 /// five conformal ratios and one ratio per hue — passes 255 at four hues.
 /// Refuses rather than truncates, as the one-byte form does.
+#[must_use]
 pub fn put_u16_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
     out.extend_from_slice(&u16::try_from(n).ok()?.to_le_bytes());
     Some(())
@@ -357,9 +360,30 @@ pub fn take_u16_count(b: &[u8], p: &mut usize) -> Option<usize> {
     Some(n)
 }
 
-pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) {
+/// A COUNT BEHIND FOUR BYTES, or a refusal (STD1 3c, LD0): a count past the
+/// field is a record refused by name, never a shorter one.
+#[must_use]
+pub fn put_u32_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
+    out.extend_from_slice(&u32::try_from(n).ok()?.to_le_bytes());
+    Some(())
+}
+
+/// A KEY COMPONENT: a coordinate written into a key, never a record a reader
+/// frames at a fixed width (STD1 3c-2, ruled (d)). Total: its length is
+/// written by the key commit as its own coordinate.
+pub fn put_key_bytes(out: &mut Vec<u8>, b: &[u8]) {
     out.extend_from_slice(&(b.len() as u32).to_le_bytes());
     out.extend_from_slice(b);
+}
+
+/// A byte string behind a four-byte length, or a refusal: the `as u32` this
+/// wrote truncated the length of a blob past 4 GiB and left its bytes whole
+/// behind it, a record no reader could frame.
+#[must_use]
+pub fn put_bytes(out: &mut Vec<u8>, b: &[u8]) -> Option<()> {
+    put_u32_count(out, b.len())?;
+    out.extend_from_slice(b);
+    Some(())
 }
 
 pub fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {

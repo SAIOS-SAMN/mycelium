@@ -256,7 +256,7 @@ impl Acting {
     /// key a face or an index recorded rather than the `Invariant`.
     pub fn chart_prefix_bytes(ck: &[u8]) -> Vec<u8> {
         let mut k = Vec::new();
-        crate::transducer::address::put_bytes(&mut k, ck);
+        crate::transducer::address::put_key_bytes(&mut k, ck);
         k
     }
 }
@@ -649,7 +649,7 @@ impl Orbit {
     pub fn path_key(charts: &[Vec<u8>]) -> Vec<u8> {
         let mut buf = Vec::new();
         for c in charts {
-            crate::transducer::address::put_bytes(&mut buf, c);
+            crate::transducer::address::put_key_bytes(&mut buf, c);
         }
         buf
     }

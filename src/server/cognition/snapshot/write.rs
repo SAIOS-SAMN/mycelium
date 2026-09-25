@@ -91,6 +91,8 @@ struct Refused {
     eras: u64,
     /// Cocycle rows whose class key is not a class's coordinates.
     cocycles: u64,
+    /// STD1 3c — words whose record passes a length its field writes.
+    unwritable: u64,
 }
 
 impl Refused {
@@ -109,6 +111,7 @@ impl Refused {
             ("dialect transitions that stood at no act", self.transitions),
             ("eras whose payload cannot be written or whose root stamp is another's", self.eras),
             ("cocycle rows whose class is not a class's coordinates", self.cocycles),
+            ("words whose record passes a length its field writes", self.unwritable),
         ];
         if b + p + l + c + f > 0 {
             eprintln!(
@@ -309,6 +312,12 @@ impl Kernel {
                 refused.coincident += 1;
                 return;
             }
+            // STD1 3c — a word whose record does not write is refused by
+            // name before it is held, so nothing of it is written.
+            let Some(record) = d.elem.to_bytes() else {
+                refused.unwritable += 1;
+                return;
+            };
             held.insert(addr, ());
             // This node's leaves, each filed at its kind's own place; each
             // kind is written once below.
@@ -318,7 +327,7 @@ impl Kernel {
                 leaves.insert(at, (kind, v));
             };
             let mut h = vec![d.members];
-            h.extend_from_slice(&d.elem.to_bytes());
+            h.extend_from_slice(&record);
             leaf(LEAF_HELD, h);
             if d.members & MEMBER_BASIS != 0 {
                 if let Some(who) = self.discoverer_of(addr) {
@@ -383,11 +392,19 @@ impl Kernel {
                 };
                 match spoken_key {
                     Some(sk) => {
-                        leaf(LEAF_PROVISIONAL, sk.clone());
-                        if sk != key && !nodes.contains(&sk) {
-                            let mut h = vec![MEMBER_SPOKEN];
-                            h.extend_from_slice(&spoken.to_bytes());
-                            nodes.insert(sk, vec![(LEAF_HELD, h)]);
+                        // Its own node where it is not the word here — and
+                        // no provisional leaf naming a node that did not
+                        // write (STD1 3c).
+                        let own = sk != key && !nodes.contains(&sk);
+                        match (own, own.then(|| spoken.to_bytes()).flatten()) {
+                            (true, None) => refused.unwritable += 1,
+                            (true, Some(record)) => {
+                                let mut h = vec![MEMBER_SPOKEN];
+                                h.extend_from_slice(&record);
+                                nodes.insert(&sk, vec![(LEAF_HELD, h)]);
+                                leaf(LEAF_PROVISIONAL, sk);
+                            }
+                            (false, _) => leaf(LEAF_PROVISIONAL, sk),
                         }
                     }
                     None => refused.unciteable += 1,

@@ -55,7 +55,7 @@ fn a_voice_with_a_ledger_and_no_words_boots_with_its_k_continued() {
 fn a_learned_word_restores_at_its_own_ledgers_stamp() {
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
-    assert!(e.absorb_taught(&word.to_bytes()).is_some(), "the word is learned");
+    assert!(e.absorb_taught(&word.to_bytes().expect("the record writes")).is_some(), "the word is learned");
     let at = e.session.voice().admitted_at(word.address().as_bytes()).expect("admitted by the Learned node");
     assert!(e.session.voice().chain().node(&at).is_some(), "at a node of this voice's own ledger");
     let (bytes, refused) = e.genome_bytes().expect("the ledger writes");

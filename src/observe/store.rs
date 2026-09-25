@@ -267,21 +267,23 @@ pub enum ObserveAct {
 const MODE_QUERY: u8 = 0;
 const MODE_PUSH: u8 = 1;
 
-pub fn encode_query(prefix: &[u8]) -> Vec<u8> {
+/// `None` where the prefix passes its four bytes (STD1 3c).
+pub fn encode_query(prefix: &[u8]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OBSERVE, MODE_QUERY];
-    out.extend_from_slice(&(prefix.len() as u32).to_le_bytes());
-    out.extend_from_slice(prefix);
-    out
+    crate::transducer::address::put_bytes(&mut out, prefix)?;
+    Some(out)
 }
 
-pub fn encode_push(vk: &[u8; 32], readings: &[Reading]) -> Vec<u8> {
+/// `None` where the count or a reading passes the field that carries it
+/// (STD1 3c): the push is refused whole, never sent short.
+pub fn encode_push(vk: &[u8; 32], readings: &[Reading]) -> Option<Vec<u8>> {
     let mut out = vec![ACT_OBSERVE, MODE_PUSH];
     out.extend_from_slice(vk);
-    out.extend_from_slice(&(readings.len() as u32).to_le_bytes());
+    crate::transducer::address::put_u32_count(&mut out, readings.len())?;
     for r in readings {
-        r.put(&mut out);
+        r.put(&mut out)?;
     }
-    out
+    Some(out)
 }
 
 fn take_u32(b: &[u8], p: &mut usize) -> Option<u32> {
@@ -325,14 +327,20 @@ pub fn decode_act(b: &[u8]) -> Option<ObserveAct> {
 /// The reply to a query: how many readings are held under the prefix, and
 /// as many of them, in key order, as fit `budget` bytes. A reply that could
 /// not hold them all says so by its total, never by silence.
-pub fn encode_reply(entries: &[Held], budget: usize) -> Vec<u8> {
+///
+/// STD1 3c: an entry whose key or reading passes the field that carries it
+/// is not sent — the total says it is held and the count sent does not —
+/// and a total past its four bytes refuses the reply.
+pub fn encode_reply(entries: &[Held], budget: usize) -> Option<Vec<u8>> {
+    // The total first: `m` counts at most one per entry, so it fits too.
+    let total = u32::try_from(entries.len()).ok()?;
     let mut body = Vec::new();
     let mut m = 0u32;
     for (k, r) in entries {
         let mut one = Vec::new();
-        one.extend_from_slice(&(k.len() as u32).to_le_bytes());
-        one.extend_from_slice(k);
-        r.put(&mut one);
+        if crate::transducer::address::put_bytes(&mut one, k).and_then(|()| r.put(&mut one)).is_none() {
+            continue;
+        }
         if 8 + body.len() + one.len() > budget {
             break;
         }
@@ -340,10 +348,10 @@ pub fn encode_reply(entries: &[Held], budget: usize) -> Vec<u8> {
         m += 1;
     }
     let mut out = Vec::with_capacity(8 + body.len());
-    out.extend_from_slice(&(entries.len() as u32).to_le_bytes());
+    out.extend_from_slice(&total.to_le_bytes());
     out.extend_from_slice(&m.to_le_bytes());
     out.extend_from_slice(&body);
-    out
+    Some(out)
 }
 
 /// The inverse of [`encode_reply`]: the total held, and the readings sent.

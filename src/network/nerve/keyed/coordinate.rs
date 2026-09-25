@@ -432,8 +432,8 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut buf = Vec::new();
-            a::put_bytes(&mut buf, self.kind.key().as_bytes());
-            a::put_bytes(&mut buf, self.chart.key().as_bytes());
+            a::put_key_bytes(&mut buf, self.kind.key().as_bytes());
+            a::put_key_bytes(&mut buf, self.chart.key().as_bytes());
             CompactBytes::written(buf)
         }
 
@@ -477,7 +477,7 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut k = Vec::new();
-            a::put_bytes(&mut k, self.chart.key().as_bytes());
+            a::put_key_bytes(&mut k, self.chart.key().as_bytes());
             self.carriage.put_canonical(&mut k);
             CompactBytes::written(k)
         }
@@ -516,7 +516,7 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut buf = vec![self.kind.as_u8()];
-            a::put_bytes(&mut buf, self.class.encode().as_bytes());
+            a::put_key_bytes(&mut buf, self.class.encode().as_bytes());
             CompactBytes::written(buf)
         }
 
@@ -561,11 +561,11 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut k = self.class.encode().as_bytes().to_vec();
-            a::put_bytes(&mut k, self.chart.key().as_bytes());
-            a::put_bytes(&mut k, self.address.as_bytes());
+            a::put_key_bytes(&mut k, self.chart.key().as_bytes());
+            a::put_key_bytes(&mut k, self.address.as_bytes());
             let mut carriage = Vec::new();
             self.carriage.put_canonical(&mut carriage);
-            a::put_bytes(&mut k, &carriage);
+            a::put_key_bytes(&mut k, &carriage);
             CompactBytes::written(k)
         }
 
@@ -745,7 +745,7 @@ pub mod coord {
 
         fn encode(&self) -> CompactBytes {
             let mut k = self.vertex_transport.as_bytes().to_vec();
-            a::put_bytes(&mut k, self.chart.key().as_bytes());
+            a::put_key_bytes(&mut k, self.chart.key().as_bytes());
             CompactBytes::written(k)
         }
 
@@ -796,7 +796,7 @@ pub mod coord {
     impl Stratum<Section> for Chart {
         fn opening(&self) -> CompactBytes {
             let mut k = Vec::new();
-            a::put_bytes(&mut k, self.0.key().as_bytes());
+            a::put_key_bytes(&mut k, self.0.key().as_bytes());
             CompactBytes::written(k)
         }
     }

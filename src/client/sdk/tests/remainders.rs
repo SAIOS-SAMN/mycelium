@@ -191,7 +191,7 @@ fn a_remainder_rides_the_record_through_a_restart_and_the_index_is_rebuilt() {
     assert_eq!(e.record_cycle(cycle(Some(remainder(&[b"d"])))), Filed::Refused, "a differing one is refused");
     let none = TorsionCycle { period: 0, ..cycle(None) };
     assert_eq!(e.record_cycle(none), Filed::NoPeriod, "a zero period is no cycle, refused by name");
-    let bytes = e.to_bytes();
+    let bytes = e.to_bytes().expect("the record writes");
     let back = Element::from_bytes(&bytes, &mut 0).expect("the record reads back");
     assert_eq!(back.remainders().collect::<Vec<_>>(), vec![&r], "the remainder rides the record whole");
     assert_eq!(back.address(), addr, "and the address does not carry it");

@@ -888,7 +888,7 @@ pub(crate) fn named_incidence(
     for c in over.cells {
         let mut key: Vec<u8> = Vec::new();
         for piece in &c.coords {
-            crate::transducer::address::put_bytes(&mut key, piece);
+            crate::transducer::address::put_key_bytes(&mut key, piece);
         }
         let nuclei: Option<Vec<crate::transducer::cga::Mv>> =
             c.members.iter().map(|&m| nucleus_of.get(m).cloned().flatten()).collect();

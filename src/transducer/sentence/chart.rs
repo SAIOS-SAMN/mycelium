@@ -411,7 +411,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // §1.5 that had never been exercised.
     buf.extend_from_slice(&(f.sections.len() as u32).to_le_bytes());
     for (class, members) in f.sections.scoped() {
-        crate::transducer::address::put_bytes(&mut buf, &class);
+        crate::transducer::address::put_key_bytes(&mut buf, &class);
         buf.extend_from_slice(&(members.len() as u16).to_le_bytes());
         // The inner key IS the frame and its order IS the succession, so
         // the identity is spelled in coordinate order with nothing sorted.
@@ -441,7 +441,7 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
     // opened on, written out, key order.
     buf.extend_from_slice(&(f.axes.len() as u32).to_le_bytes());
     for (class, _) in f.axes.scoped() {
-        crate::transducer::address::put_bytes(&mut buf, &class);
+        crate::transducer::address::put_key_bytes(&mut buf, &class);
     }
     // 54.2 — THE REMAINDER CHAIN IS IDENTITY, NOT EVIDENCE: it is what the
     // form does not close, and a form that closes and one that does not are
@@ -468,7 +468,7 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace, at: &[u16]) {
         face.word.put_canonical(buf);
         buf.extend_from_slice(&(face.at.len() as u16).to_le_bytes());
         for (pk, place) in face.at.scoped() {
-            crate::transducer::address::put_bytes(buf, &pk);
+            crate::transducer::address::put_key_bytes(buf, &pk);
             place.carriage.put_canonical(buf);
             let mut g = place.gauge.clone();
             g.sort_unstable();
@@ -595,7 +595,7 @@ fn put_chain_address(buf: &mut Vec<u8>, chain: &[crate::transducer::sentence::Li
     match element::from_residual(&chain.to_vec()) {
         Some(e) => {
             buf.push(1);
-            crate::transducer::address::put_bytes(buf, e.address().as_bytes());
+            crate::transducer::address::put_key_bytes(buf, e.address().as_bytes());
             let (r, c) = corner_of(chain);
             buf.extend_from_slice(&r.to_le_bytes());
             buf.extend_from_slice(&c.to_le_bytes());
@@ -719,8 +719,8 @@ pub(crate) fn vertex_match_key(form: &Form, i: u16) -> Option<Vec<u8>> {
 
 pub(crate) fn ends_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, a);
-    crate::transducer::address::put_bytes(&mut buf, b);
+    crate::transducer::address::put_key_bytes(&mut buf, a);
+    crate::transducer::address::put_key_bytes(&mut buf, b);
     buf
 }
 
@@ -893,7 +893,7 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
             // with `Invariant::default()` on its `Glued` vertices and the
             // court refused the placement face: "a vertex does not act on
             // the chart the pair names". Bounded, `O(1)` per citation.
-            crate::transducer::address::put_bytes(buf, chart.key().as_bytes());
+            crate::transducer::address::put_key_bytes(buf, chart.key().as_bytes());
         }
         Vertex::Rebased { by, of, acts } => {
             buf.push(3);
@@ -910,7 +910,7 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
                 // rule as the Word arm: `take_acts` parses an `Invariant`
                 // out of what is written here, and `Acting::key` is
                 // `chart ‖ carriage`.
-                crate::transducer::address::put_bytes(buf, a.chart.key().as_bytes());
+                crate::transducer::address::put_key_bytes(buf, a.chart.key().as_bytes());
                 // A4 output here as in the Word arm (17.2).
                 a.carriage.put_canonical(buf);
                 let mut g = a.gauge.clone();
@@ -942,8 +942,8 @@ pub(crate) fn put_vertex(buf: &mut Vec<u8>, v: &Vertex) {
         // address carries the chain and the demand's identity is whole.
         Vertex::Demand { kind, chart, bodies } => {
             buf.push(5);
-            crate::transducer::address::put_bytes(buf, kind.key().as_bytes());
-            crate::transducer::address::put_bytes(buf, chart.key().as_bytes());
+            crate::transducer::address::put_key_bytes(buf, kind.key().as_bytes());
+            crate::transducer::address::put_key_bytes(buf, chart.key().as_bytes());
             put_chain_address(buf, bodies);
         }
     }
@@ -1051,7 +1051,7 @@ fn put_word_vertex(
     acts: &Keyed<Acting, crate::network::nerve::coord::Section>,
     contact: Option<crate::transducer::alphabet::Contact>,
 ) {
-    crate::transducer::address::put_bytes(buf, &derivation.rotor().key());
+    crate::transducer::address::put_key_bytes(buf, &derivation.rotor().key());
 
     // THE MEMBERS, IN CANONICAL ORDER, which is the trie's —
     // their chart keys sorted, and a chart key is content.
@@ -1074,7 +1074,7 @@ fn put_word_vertex(
         // decoding. The address carries the chart and the carriage as its
         // own fields; the carrier's key is re-derived on insert, by the one
         // function that owns it.
-        crate::transducer::address::put_bytes(buf, a.chart.key().as_bytes());
+        crate::transducer::address::put_key_bytes(buf, a.chart.key().as_bytes());
         // A4 OUTPUT, NOT RAW VERSOR BYTES — 17.2's open item,
         // named at `same_vertex`: "a carriage and its negation
         // still read as two addresses here". Closed. An address

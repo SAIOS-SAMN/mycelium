@@ -111,7 +111,7 @@ fn a_chart_the_mind_holds_no_body_on_answers_nothing() {
 fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
     let (e, chart) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
-    epi.learn(&e.to_bytes()).expect("the word enters the genome");
+    epi.learn(&e.to_bytes().expect("the record writes")).expect("the word enters the genome");
     assert!(
         !Crystal::on_body(&epi, &chart).is_empty(),
         "the mind that learned it answers at the body's chart"
@@ -147,7 +147,7 @@ fn a_restored_genome_answers_at_the_chart_of_the_bodies_it_carries() {
 fn a_restored_genome_factors_through_the_generators_it_was_taught() {
     let (e, _) = closed_form_and_body_chart();
     let mut epi = Epigenome::new();
-    epi.learn(&e.to_bytes()).expect("the word enters the genome");
+    epi.learn(&e.to_bytes().expect("the record writes")).expect("the word enters the genome");
 
     // The presentation is filed at the versor chart of every word the
     // form carries — the coordinate F reads at, and the one the index is

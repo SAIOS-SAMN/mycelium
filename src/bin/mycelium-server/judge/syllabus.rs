@@ -30,7 +30,10 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Some(d) => d,
         None => mycelium::transducer::sheaf::digests(&language.stalks),
     };
-    let mut body = dialogue::encode_digests_reply(&digests);
+    let Some(mut body) = dialogue::encode_digests_reply(&digests) else {
+        eprintln!("  digests reply refused: a chart or a root passes the field that carries it");
+        return;
+    };
     body.extend(sign_cover_digest(kernel, mesh));
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);

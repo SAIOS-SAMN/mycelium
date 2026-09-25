@@ -174,10 +174,10 @@ impl Scene {
     /// placement's canonical bytes, length-delimited (A21).
     fn citation_key(address: &[u8], composed: &crate::transducer::alphabet::Word) -> Vec<u8> {
         let mut k = Vec::new();
-        crate::transducer::address::put_bytes(&mut k, address);
+        crate::transducer::address::put_key_bytes(&mut k, address);
         let mut w = Vec::new();
         composed.put_canonical(&mut w);
-        crate::transducer::address::put_bytes(&mut k, &w);
+        crate::transducer::address::put_key_bytes(&mut k, &w);
         k
     }
 }

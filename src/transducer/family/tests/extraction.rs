@@ -926,7 +926,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
         let mut bk = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix))
             .as_bytes()
             .to_vec();
-        crate::transducer::address::put_bytes(&mut bk, ck);
+        crate::transducer::address::put_key_bytes(&mut bk, ck);
         bk.extend_from_slice(&k.to_le_bytes());
         at.insert(bk, (body(), body(), v.clone()));
     };

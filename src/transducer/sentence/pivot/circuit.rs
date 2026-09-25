@@ -528,8 +528,8 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
 /// already carry rather than from invariants this traversal does not hold.
 pub(super) fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
     let mut buf = Vec::new();
-    crate::transducer::address::put_bytes(&mut buf, ci);
-    crate::transducer::address::put_bytes(&mut buf, cj);
+    crate::transducer::address::put_key_bytes(&mut buf, ci);
+    crate::transducer::address::put_key_bytes(&mut buf, cj);
     buf
 }
 

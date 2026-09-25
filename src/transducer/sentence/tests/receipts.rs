@@ -49,7 +49,7 @@ fn an_envelope_rides_the_record_and_reads_back() {
     assert_eq!(e.receipts().nerve.len(), 1, "one citation is one 1-simplex");
     assert_eq!(e.receipts().nerve[0].target, a_at, "the edge names the cited form");
 
-    let bytes = e.to_bytes();
+    let bytes = e.to_bytes().expect("the record writes");
     let mut p = 0usize;
     let back = crate::transducer::element::Element::from_bytes(&bytes, &mut p).expect("record");
     assert_eq!(
@@ -296,7 +296,7 @@ fn a_word_that_attests_nothing_says_so() {
     assert!(e.receipts().is_empty(), "a leaf cites nothing and pivots nothing");
 
     let mut block = Vec::new();
-    ReceiptsEnvelope::default().to_block(&mut block);
+    ReceiptsEnvelope::default().to_block(&mut block).expect("the envelope writes");
     assert_eq!(block.len(), 4 + 32, "len prefix and four zero u64 counts");
     let mut p = 0usize;
     assert_eq!(
@@ -431,7 +431,7 @@ fn an_envelope_carries_an_address_wider_than_the_wire_prefix() {
         ..ReceiptsEnvelope::default()
     };
     let mut block = Vec::new();
-    env.to_block(&mut block);
+    env.to_block(&mut block).expect("the envelope writes");
     let mut p = 0usize;
     let back = ReceiptsEnvelope::from_block(&block, &mut p).expect("a wide address round-trips");
     assert_eq!(back, env, "the 70 000-byte address survives, whole");

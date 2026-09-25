@@ -36,7 +36,12 @@ impl Element {
     /// GEN2, older still, and refused the same way.
     pub const GEN2_MAGIC: u8 = 0xA2;
 
-    pub fn to_bytes(&self) -> Vec<u8> {
+    /// `None` where a length or a count passes its field (STD1 3c, LD0): the
+    /// record is refused whole, never written short — every prefix below
+    /// goes through a checked put.
+    #[must_use]
+    pub fn to_bytes(&self) -> Option<Vec<u8>> {
+        use crate::transducer::address::{put_bytes, put_u32_count};
         let mut out = vec![Self::RECORD_MAGIC];
         // THE ADDRESS LEADS THE RECORD, AND THE KIND DECIDES THE REST
         // (54.7 B6 Site 4, as ruled 2026-09-21).
@@ -60,8 +65,7 @@ impl Element {
         // Written for every kind, because a residual's address is just as
         // much its name as a form's.
         let a = self.address();
-        out.extend_from_slice(&(a.len() as u32).to_le_bytes());
-        out.extend_from_slice(a.as_bytes());
+        put_bytes(&mut out, a.as_bytes())?;
         // AND A SENTENCE WRITES NO DESCRIPTION FIELD AT ALL — not a tape,
         // and not a zero length standing in for one. A form's content is a
         // cell complex and its key writes that complex out in full, so a
@@ -72,18 +76,16 @@ impl Element {
         //
         // §10 — a layout change is a recut, and B7 is the recut.
         if a.tag() != Some(crate::transducer::address::TAG_FORM) {
-            out.extend_from_slice(&(self.description.len() as u32).to_le_bytes());
-            out.extend_from_slice(&self.description);
+            put_bytes(&mut out, &self.description)?;
         }
         // THE SPEAKER'S FILING (54.5): class ‖ σ ‖ ℓ ‖ chord, in key order.
         // It is an attestation and travels with the word that makes it, so
         // the court can check a claim against geometry it re-derives rather
         // than asking a form to vouch for itself.
-        out.extend_from_slice(&(self.filing.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.filing.len())?;
         for (class, f) in self.filing.scoped() {
-            out.extend_from_slice(&(class.len() as u32).to_le_bytes());
-            out.extend_from_slice(&class);
-            out.extend_from_slice(&(f.sigma.len() as u32).to_le_bytes());
+            put_bytes(&mut out, &class)?;
+            put_u32_count(&mut out, f.sigma.len())?;
             for &(x, y) in &f.sigma {
                 out.push(x);
                 out.push(y);
@@ -103,28 +105,28 @@ impl Element {
         // Written but not yet read back into the readers (B1/B2 of the
         // glide path); `from_bytes` below restores it, and the three
         // verifiers take it at B3.
-        self.receipts.to_block(&mut out);
+        self.receipts.to_block(&mut out)?;
         for m in &self.mag {
             out.extend_from_slice(&m.to_le_bytes());
         }
-        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.sub.len())?;
         for (r, c, before, after) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());
             out.push(*before);
             out.push(*after);
         }
-        out.extend_from_slice(&(self.sections.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.sections.len())?;
         for s in &self.sections {
-            out.extend_from_slice(&(s.len() as u32).to_le_bytes());
+            put_u32_count(&mut out, s.len())?;
             for (b, a) in s {
                 out.push(*b);
                 out.push(*a);
             }
         }
-        out.extend_from_slice(&(self.torsion.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.torsion.len())?;
         for TorsionCycle { sigma, period: l, fibre, remainder } in &self.torsion {
-            out.extend_from_slice(&(sigma.len() as u32).to_le_bytes());
+            put_u32_count(&mut out, sigma.len())?;
             for (f, t) in sigma {
                 out.push(*f);
                 out.push(*t);
@@ -136,7 +138,7 @@ impl Element {
             match remainder {
                 Some(r) => {
                     out.push(1);
-                    r.put(&mut out);
+                    r.put(&mut out)?;
                 }
                 None => out.push(0),
             }
@@ -148,9 +150,9 @@ impl Element {
             }
             None => out.push(0),
         }
-        out.extend_from_slice(&(self.transitions.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.transitions.len())?;
         for Transition { asg: a, gauge: g, fibre } in &self.transitions {
-            out.extend_from_slice(&(a.len() as u32).to_le_bytes());
+            put_u32_count(&mut out, a.len())?;
             for (b, f) in a {
                 out.push(*b);
                 out.push(*f);
@@ -162,7 +164,7 @@ impl Element {
             g.put_canonical(&mut out);
             out.extend_from_slice(&fibre.to_le_bytes());
         }
-        out.extend_from_slice(&(self.action.germinated.len() as u32).to_le_bytes());
+        put_u32_count(&mut out, self.action.germinated.len())?;
         for (i, v) in &self.action.germinated {
             out.extend_from_slice(&i.to_le_bytes());
             v.to_bytes(&mut out);
@@ -186,7 +188,7 @@ impl Element {
             }
             _ => out.push(0),
         }
-        out
+        Some(out)
     }
 
     /// Deserialize the record this build writes. An older one is refused,

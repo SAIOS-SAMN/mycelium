@@ -16,7 +16,7 @@ use crate::transducer::germinate::germinate;
 let mut epi = Epigenome::new();
 // The mesh teaches a word down: first hearing is novel, then it is held.
 let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 4u8), (0, 1, 2)]).unwrap());
-assert!(matches!(epi.learn(&word.to_bytes()), Some(Comprehension::Novel { .. })));
+assert!(matches!(epi.learn(&word.to_bytes().expect("the record writes")), Some(Comprehension::Novel { .. })));
 assert_eq!(epi.genome_len(), 1);
 // The same utterance again — COMPREHENDED as the held word; expression rises.
 match epi.comprehend(&word) {
@@ -124,7 +124,7 @@ match epi.comprehend(&e) {
     other => panic!("expected Withheld, got {other:?}"),
 }
 assert!(
-    matches!(epi.learn(&e.to_bytes()), Some(Comprehension::Withheld { .. })),
+    matches!(epi.learn(&e.to_bytes().expect("the record writes")), Some(Comprehension::Withheld { .. })),
     "learn banks the withheld sentence"
 );
 assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
@@ -179,7 +179,7 @@ assert!(
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
 let mut epi = Epigenome::new();
 assert!(
-    matches!(epi.learn(&e.to_bytes()), Some(Comprehension::Withheld { .. })),
+    matches!(epi.learn(&e.to_bytes().expect("the record writes")), Some(Comprehension::Withheld { .. })),
     "learn banks the withheld sentence"
 );
 assert_eq!(
@@ -190,7 +190,7 @@ assert_eq!(
 assert_eq!(epi.genome_len(), 0, "withheld does not enter the genome");
 assert!(
     matches!(
-        epi.learn(&inner_e.to_bytes()),
+        epi.learn(&inner_e.to_bytes().expect("the record writes")),
         Some(Comprehension::Understood(_) | Comprehension::Admitted)
     ),
     "the cited form is learned"
@@ -225,7 +225,7 @@ assert_eq!(
     "the class is the chart"
 );
 let mut epi = Epigenome::new();
-assert!(epi.learn(&eb.to_bytes()).is_some());
+assert!(epi.learn(&eb.to_bytes().expect("the record writes")).is_some());
 let mut outer = crate::transducer::sentence::Form::default();
 outer
     .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
@@ -299,7 +299,7 @@ assert_ne!(
     crate::transducer::sentence::chart_of(&eo)
 );
 let mut epi = Epigenome::new();
-assert!(epi.learn(&eo.to_bytes()).is_some());
+assert!(epi.learn(&eo.to_bytes().expect("the record writes")).is_some());
 let mut outer = Form::default();
 outer
     .glue(&inner_a, ea.address(), Word::identity(), [1, 0, 0, 0])
@@ -411,7 +411,7 @@ let _gi = outer
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("v2 tape");
 let mut epi = Epigenome::new();
 assert!(matches!(
-    epi.learn_at(&e.to_bytes(), 7, 11),
+    epi.learn_at(&e.to_bytes().expect("the record writes"), 7, 11),
     Some(Comprehension::Withheld { .. })
 ));
 let d = epi
@@ -453,7 +453,7 @@ assert_eq!(epi.dialect_len(), 1);
 assert_eq!(epi.genome_len(), 0);
 let uses = 2u64;
 let _ = uses;
-let heard = epi.learn(&e1.to_bytes()).expect("promoted");
+let heard = epi.learn(&e1.to_bytes().expect("the record writes")).expect("promoted");
 let _ = heard;
 assert_eq!(epi.dialect_len(), 0, "dialect moves, it is not copied");
 assert_eq!(epi.genome_len(), 1, "genome is the promoted vertex");
@@ -494,13 +494,13 @@ let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("syllabus-refuse"));
 assert!(
-    entity.absorb_taught(&fat.to_bytes()).is_none(),
+    entity.absorb_taught(&fat.to_bytes().expect("the record writes")).is_none(),
     "a word that fails replay is not learned"
 );
 assert_eq!(entity.epigenome.genome_len(), 0, "genome stays empty");
 assert_eq!(entity.dialect_len(), 0, "dialect stays empty");
 assert!(
-    entity.absorb_taught(&honest.to_bytes()).is_some(),
+    entity.absorb_taught(&honest.to_bytes().expect("the record writes")).is_some(),
     "an honest derivation is learned"
 );
 }
@@ -518,9 +518,9 @@ let honest = from_canonical(
 let mut fat = honest.clone();
 assert!(fat.set_magnitude([999, 0, 0, 0]), "a residual holds no section, so any lane fits");
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("learned-measured"));
-assert!(entity.absorb_taught(&fat.to_bytes()).is_none(), "the fat word is refused");
+assert!(entity.absorb_taught(&fat.to_bytes().expect("the record writes")).is_none(), "the fat word is refused");
 assert_eq!(entity.take_learned_mu(), [0; 4], "a refused page measures nothing");
-assert!(entity.absorb_taught(&honest.to_bytes()).is_some(), "the honest word is learned");
+assert!(entity.absorb_taught(&honest.to_bytes().expect("the record writes")).is_some(), "the honest word is learned");
 let mu = honest.magnitude();
 assert_ne!(mu, [0; 4], "the page carries a measure");
 assert_eq!(entity.take_learned_mu(), mu, "the stroke takes the page's own measure");
@@ -565,9 +565,9 @@ let swap = from_connection(&id, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new
 let cycle = from_connection(&id, &identity_versor(), &[(1, 2), (2, 3), (3, 1)], &Vec::new(), [1, 0, 0, 0]).expect("cycle");
 let place = from_connection(&id, &translator_versor(5, 0), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0]).expect("shift");
 let mut epi = Epigenome::new();
-assert!(epi.learn(&swap.to_bytes()).is_some());
-assert!(epi.learn(&cycle.to_bytes()).is_some());
-assert!(epi.learn(&place.to_bytes()).is_some());
+assert!(epi.learn(&swap.to_bytes().expect("the record writes")).is_some());
+assert!(epi.learn(&cycle.to_bytes().expect("the record writes")).is_some());
+assert!(epi.learn(&place.to_bytes().expect("the record writes")).is_some());
 assert_eq!(epi.genome_len(), 3, "ρ/σ/shift are three vertices");
 let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
 let long = crate::transducer::alphabet::Word::from_letters(&[
@@ -587,6 +587,6 @@ alt.set_description(crate::transducer::element::connection_description(
     &rem,
 ));
 assert_eq!(alt.address(), swap.address(), "two spellings, one address");
-assert!(epi.learn(&alt.to_bytes()).is_some());
+assert!(epi.learn(&alt.to_bytes().expect("the record writes")).is_some());
 assert_eq!(epi.genome_len(), 3, "a second tape of the same address does not mint");
 }

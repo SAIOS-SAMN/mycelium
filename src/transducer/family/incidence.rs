@@ -76,7 +76,7 @@ pub(crate) fn union_quotient(
 /// beside them (law 12).
 pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, ck: &[u8]) -> Vec<u16> {
     let mut prefix = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix)).as_bytes().to_vec();
-    crate::transducer::address::put_bytes(&mut prefix, ck);
+    crate::transducer::address::put_key_bytes(&mut prefix, ck);
     let Some(fiber) = bodies_at.fiber_at(&prefix) else {
         return Vec::new();
     };
@@ -148,7 +148,7 @@ pub(crate) fn edge_between(
 ) -> (Option<Transport>, Option<Keyed<()>>) {
     let at = |ix: u16, ck: &[u8], k: u16| -> Option<&(Body, Body, Versor)> {
         let mut bk = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix)).as_bytes().to_vec();
-        crate::transducer::address::put_bytes(&mut bk, ck);
+        crate::transducer::address::put_key_bytes(&mut bk, ck);
         bk.extend_from_slice(&k.to_le_bytes());
         bodies_at.get(&bk)
     };

@@ -49,11 +49,11 @@ pub(crate) fn section_vertex(
     carriage: &crate::transducer::element::Versor,
 ) -> Vec<u8> {
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, address);
-    crate::transducer::address::put_bytes(&mut k, chart.key().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, address);
+    crate::transducer::address::put_key_bytes(&mut k, chart.key().as_bytes());
     let mut c = Vec::new();
     carriage.put_canonical(&mut c);
-    crate::transducer::address::put_bytes(&mut k, &c);
+    crate::transducer::address::put_key_bytes(&mut k, &c);
     k
 }
 

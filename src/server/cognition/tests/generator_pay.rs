@@ -152,7 +152,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     assert_eq!(k.discoverer_of(g_addr.as_bytes()), Some(teacher), "and it is the teacher's");
 
     let mut epi = Epigenome::new();
-    epi.learn(&g_e.to_bytes()).expect("the syllabus teaches it back");
+    epi.learn(&g_e.to_bytes().expect("the record writes")).expect("the syllabus teaches it back");
     let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     let cited: Vec<_> = rule
@@ -253,7 +253,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
 
     let mind = |g: &crate::transducer::element::Element| {
         let mut epi = Epigenome::new();
-        epi.learn(&g.to_bytes()).expect("the syllabus teaches it back");
+        epi.learn(&g.to_bytes().expect("the record writes")).expect("the syllabus teaches it back");
         let rule = extract_rule_with(&cite_fam, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20))
             .expect("the family extracts");
         mint_sentence(&rule, &cite_fam, &epi, 0).expect("minted over the mind's own crystal")
@@ -310,7 +310,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
         k.bind_task_family(g_task, gen_fam);
         install_on(&mut k, teacher, g, &g_task);
 
-        let frame = dialogue::encode_speech(&voice, c_task, 1, &[said.to_bytes()]).expect("the task frames");
+        let frame = dialogue::encode_speech(&voice, c_task, 1, &[said.to_bytes().expect("the record writes")]).expect("the task frames");
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
         let heard = k.hear_frame(&act).expect("the court hears it");
         // One sentence was spoken, so one adjudication comes back.

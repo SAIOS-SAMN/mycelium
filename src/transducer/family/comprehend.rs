@@ -258,8 +258,8 @@ pub(crate) fn comprehend(
     let mut planes: Keyed<Mv> = Keyed::new();
     for m in mirrors.iter().flatten().flatten() {
         let mut key = vec![m.axis as u8];
-        crate::transducer::address::put_bytes(&mut key, &m.k.numer().to_signed_bytes_le());
-        crate::transducer::address::put_bytes(&mut key, &m.k.denom().to_signed_bytes_le());
+        crate::transducer::address::put_key_bytes(&mut key, &m.k.numer().to_signed_bytes_le());
+        crate::transducer::address::put_key_bytes(&mut key, &m.k.denom().to_signed_bytes_le());
         if !planes.contains(&key) {
             planes.insert(&key, cga::base_mirror(m.axis, &m.k));
         }

@@ -34,7 +34,7 @@ impl Epigenome {
         rows.sort_by(|a, b| a.root.cmp(&b.root).then_with(|| a.inv.key().cmp(&b.inv.key())));
         let mut buf = Vec::new();
         for r in &rows {
-            crate::transducer::address::put_bytes(&mut buf, &r.root);
+            crate::transducer::address::put_key_bytes(&mut buf, &r.root);
         }
         crate::transducer::address::Address::new(buf)
     }

@@ -399,7 +399,7 @@ impl Kernel {
             let digests = crate::transducer::sheaf::digests(&self.ruled);
             let mut buf = Vec::new();
             for d in &digests {
-                crate::transducer::address::put_bytes(&mut buf, &d.root);
+                crate::transducer::address::put_key_bytes(&mut buf, &d.root);
             }
             self.ruled_root = crate::chronometry::payload_hash(&buf);
             self.ruled_root_due = false;
@@ -752,7 +752,12 @@ impl Kernel {
             let Some(w) = self.provisional.get(&addr) else {
                 continue;
             };
-            out.push((crate::transducer::address::Address::from(addr), w.to_bytes()));
+            // A word whose record does not write is not offered (STD1 3c):
+            // no record can carry it to a witness.
+            let Some(record) = w.to_bytes() else {
+                continue;
+            };
+            out.push((crate::transducer::address::Address::from(addr), record));
         }
         out
     }

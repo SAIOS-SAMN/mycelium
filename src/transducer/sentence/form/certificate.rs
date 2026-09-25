@@ -109,8 +109,8 @@ impl PivotCertificate {
         let mut buf = vec![crate::transducer::address::TAG_CERT];
         buf.extend_from_slice(&self.chord.to_le_bytes());
         buf.push(self.axis.to_byte());
-        crate::transducer::address::put_bytes(&mut buf, &self.before);
-        crate::transducer::address::put_bytes(&mut buf, &self.after);
+        crate::transducer::address::put_key_bytes(&mut buf, &self.before);
+        crate::transducer::address::put_key_bytes(&mut buf, &self.after);
         put_rank_move(&self.rank_move, &mut buf);
         match &self.by {
             PivotBy::Word { face, word, side } => {

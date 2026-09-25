@@ -720,8 +720,10 @@ impl Reading {
         true
     }
 
-    /// The reading written out, its tag first.
-    pub fn put(&self, out: &mut Vec<u8>) {
+    /// The reading written out, its tag first; `None` where a reading passes
+    /// a length its field writes (STD1 3c), refused whole.
+    #[must_use]
+    pub fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         out.push(self.tag());
         match self {
             Reading::Planes(r) => r.put(out),
@@ -730,7 +732,7 @@ impl Reading {
             Reading::Court(r) => r.put(out),
             Reading::Replication(r) => r.put(out),
             Reading::Adjudication(r) => r.put(out),
-            Reading::Learning(r) => r.put(out),
+            Reading::Learning(r) => r.put(out)?,
             Reading::Circuit(r) => r.put(out),
             Reading::Cells(r) => r.put(out),
             Reading::Viscosity(r) => r.put(out),
@@ -741,6 +743,7 @@ impl Reading {
             Reading::Clock(r) => r.put(out),
             Reading::Economy(r) => r.put(out),
         }
+        Some(())
     }
 
     /// The inverse of [`Reading::put`]; `None` for a tag this build does not

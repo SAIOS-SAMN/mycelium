@@ -382,7 +382,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Ok(mut k) = door.kernel.lock() else { return true };
             let mut out = Vec::new();
             for addr in page {
-                let Some(w) = k.word_at(&addr).map(|w| w.to_bytes()) else {
+                // A word not held, or whose record does not write (STD1 3c),
+                // is missed and not served.
+                let Some(w) = k.word_at(&addr).and_then(|w| w.to_bytes()) else {
                     missed.push(addr);
                     continue;
                 };

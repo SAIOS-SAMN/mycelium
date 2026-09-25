@@ -73,8 +73,8 @@ pub struct TransportTally {
 /// The key of one arrival: the source, then the thought reached, each framed.
 fn arrival_key(source: &[u8], at: &[u8]) -> Vec<u8> {
     let mut k = Vec::new();
-    crate::transducer::address::put_bytes(&mut k, source);
-    crate::transducer::address::put_bytes(&mut k, at);
+    crate::transducer::address::put_key_bytes(&mut k, source);
+    crate::transducer::address::put_key_bytes(&mut k, at);
     k
 }
 

@@ -65,7 +65,7 @@ pub(crate) fn simplex_key(verts: &[Vec<u8>]) -> crate::transducer::address::Addr
     let mut buf = vec![crate::transducer::address::TAG_SIMPLEX];
     buf.extend_from_slice(&(verts.len() as u32).to_le_bytes());
     for v in verts {
-        crate::transducer::address::put_bytes(&mut buf, v);
+        crate::transducer::address::put_key_bytes(&mut buf, v);
     }
     crate::transducer::address::Address::new(buf)
 }

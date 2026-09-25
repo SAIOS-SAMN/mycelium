@@ -106,8 +106,8 @@ pub(crate) fn class_section_key(
 pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> {
     let mut k = Vec::new();
     use crate::network::nerve::Coordinate;
-    crate::transducer::address::put_bytes(&mut k, a.key().encode().as_bytes());
-    crate::transducer::address::put_bytes(&mut k, b.key().encode().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, a.key().encode().as_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, b.key().encode().as_bytes());
     k
 }
 

@@ -271,11 +271,11 @@ pub(crate) fn classify_cover(
                             phi: &Versor,
                             d: &[crate::transducer::base::Site]| {
                     let mut k = Vec::new();
-                    crate::transducer::address::put_bytes(
+                    crate::transducer::address::put_key_bytes(
                         &mut k,
                         crate::network::nerve::Coordinate::encode(&t.key()).as_bytes(),
                     );
-                    crate::transducer::address::put_bytes(&mut k, c.key().as_bytes());
+                    crate::transducer::address::put_key_bytes(&mut k, c.key().as_bytes());
                     phi.put_canonical(&mut k);
                     for s in d {
                         s.put(&mut k);
@@ -294,8 +294,8 @@ pub(crate) fn classify_cover(
                     crate::transducer::family::cover::tally(|t| t.chords += 1);
                     let mut pk = Vec::new();
                     let (lo, hi) = if ma < mb { (&ma, &mb) } else { (&mb, &ma) };
-                    crate::transducer::address::put_bytes(&mut pk, lo);
-                    crate::transducer::address::put_bytes(&mut pk, hi);
+                    crate::transducer::address::put_key_bytes(&mut pk, lo);
+                    crate::transducer::address::put_key_bytes(&mut pk, hi);
                     if named.get(&pk).is_none() {
                         named.insert(pk, ());
                         // AND THE MEET'S OWN EDGE RIDES WITH IT. The
