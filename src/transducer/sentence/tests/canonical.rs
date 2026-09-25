@@ -95,7 +95,7 @@ fn a_certificate_is_written_as_its_rays() {
     let t = element::translator_versor(2, 3);
     let bytes = |c: &PivotCertificate| {
         let mut out = Vec::new();
-        c.to_bytes(&mut out);
+        c.to_bytes(&mut out).expect("the certificate writes");
         out
     };
     let placed = |translator: element::Versor| PivotCertificate {

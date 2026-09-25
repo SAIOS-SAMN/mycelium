@@ -694,7 +694,7 @@ impl ReceiptsEnvelope {
         }
         out.extend_from_slice(&(self.certificates.len() as u64).to_le_bytes());
         for c in &self.certificates {
-            c.to_bytes(out);
+            c.to_bytes(out)?;
         }
         Some(())
     }

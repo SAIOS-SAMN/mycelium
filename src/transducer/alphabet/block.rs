@@ -95,11 +95,16 @@ pub(crate) fn cited_of_cores(cores: &[SpellCore]) -> Option<(Vec<super::Cited>, 
                 // Keyed by the citation's own two addresses written out, so
                 // the shells of one generator sum into one exponent and the
                 // order is the key's and not the peel's arrival (rule 15).
+                // Key components (ruled (d)): each length by its own
+                // coordinate. The u16 citation writer's refusal was dropped
+                // here, so two long addresses keyed as their bare bytes.
                 let mut k = Vec::with_capacity(form.as_bytes().len() + vertex.as_bytes().len() + 8);
-                crate::transducer::address::put_addr(&mut k, form);
-                crate::transducer::address::put_addr(&mut k, vertex);
+                crate::transducer::address::put_key_bytes(&mut k, form.as_bytes());
+                crate::transducer::address::put_key_bytes(&mut k, vertex.as_bytes());
                 match by_gen.get_mut(&k) {
-                    Some((_, _, e)) => *e += exponent,
+                    // Exact or refused (rule 11): a sum past the carrier is
+                    // no exponent.
+                    Some((_, _, e)) => *e = e.checked_add(*exponent)?,
                     None => {
                         by_gen.insert(k, (form.clone(), vertex.clone(), *exponent));
                     }

@@ -146,11 +146,24 @@ impl PivotCertificate {
         buf
     }
 
-    pub fn to_bytes(&self, out: &mut Vec<u8>) {
+    /// `None` where a class key reaches the citation's u16 wall or the hue
+    /// gauge passes its two bytes: the certificate is refused WHOLE and
+    /// nothing is written (LD0). Both addresses were written by a put whose
+    /// refusal was dropped, which left a certificate short its class key
+    /// and the next field read in its place.
+    #[must_use]
+    pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
+        let mut rec = Vec::new();
+        self.put_record(&mut rec)?;
+        out.append(&mut rec);
+        Some(())
+    }
+
+    fn put_record(&self, out: &mut Vec<u8>) -> Option<()> {
         out.extend_from_slice(&self.chord.to_le_bytes());
         out.push(self.axis.to_byte());
-        crate::transducer::address::put_addr(out, &self.before);
-        crate::transducer::address::put_addr(out, &self.after);
+        crate::transducer::address::put_addr(out, &self.before)?;
+        crate::transducer::address::put_addr(out, &self.after)?;
         put_rank_move(&self.rank_move, out);
         match &self.mu {
             Mu::Unmeasured => out.push(0),
@@ -182,7 +195,7 @@ impl PivotCertificate {
             PivotBy::Hue { face, gauge } => {
                 out.push(2);
                 out.extend_from_slice(&face.to_le_bytes());
-                out.extend_from_slice(&(gauge.len() as u16).to_le_bytes());
+                crate::transducer::address::put_u16_count(out, gauge.len())?;
                 for &(a, b) in gauge {
                     out.push(a);
                     out.push(b);
@@ -194,6 +207,7 @@ impl PivotCertificate {
                 seed.put_canonical(out);
             }
         }
+        Some(())
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<PivotCertificate> {
@@ -394,7 +408,7 @@ impl At {
             At::Chart(inv, links) => {
                 rec.push(2);
                 inv.put_canonical(&mut rec);
-                rec.extend_from_slice(&(links.len() as u32).to_le_bytes());
+                crate::transducer::address::put_u32_count(&mut rec, links.len())?;
                 for (r, c, before, after) in links {
                     rec.extend_from_slice(&r.to_le_bytes());
                     rec.extend_from_slice(&c.to_le_bytes());

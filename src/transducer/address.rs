@@ -291,18 +291,15 @@ impl<Head: Stratum, Tail: PrefixOf<TailTarget>, TailTarget>
 }
 
 impl Stratum for Address {
+    /// A key component (ruled (d)): its length by its own coordinate.
     fn write_canonical(&self, out: &mut Vec<u8>) {
-        let b = self.as_bytes();
-        out.extend_from_slice(&(b.len() as u32).to_le_bytes());
-        out.extend_from_slice(b);
+        put_key_bytes(out, self.as_bytes());
     }
 
     fn read_canonical(bytes: &[u8]) -> Option<(Self, &[u8])> {
-        let len_bytes = bytes.get(0..4)?;
-        let len = u32::from_le_bytes(len_bytes.try_into().ok()?) as usize;
-        let b = bytes.get(4..4 + len)?;
-        let rest = bytes.get(4 + len..)?;
-        Some((Address::new(b.to_vec()), rest))
+        let mut p = 0usize;
+        let b = take_key_bytes(bytes, &mut p)?;
+        Some((Address::new(b), bytes.get(p..)?))
     }
 }
 
@@ -462,7 +459,8 @@ pub fn take_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
 /// wall (LD0 as re-ruled, 78.22): an address that reaches it is a blob
 /// written where a coordinate or a citation belongs, and it refuses,
 /// writing nothing; every caller refuses its whole write by name. A field
-/// of a key uses [`put_bytes`] (u32).
+/// of a key uses [`put_key_bytes`] (ruled (d)).
+#[must_use]
 pub fn put_addr(out: &mut Vec<u8>, addr: impl AsRef<[u8]>) -> Option<()> {
     let addr = addr.as_ref();
     let n = u16::try_from(addr.len()).ok()?;

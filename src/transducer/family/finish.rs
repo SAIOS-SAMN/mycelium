@@ -15,7 +15,7 @@ pub fn assignment_key(a: &crate::transducer::sentence::Acting) -> Vec<u8> {
     a.carriage.put_canonical(&mut buf);
     let mut g = a.gauge.clone();
     g.sort_unstable();
-    buf.extend_from_slice(&(g.len() as u16).to_le_bytes());
+    crate::transducer::address::put_key_count(&mut buf, g.len());
     for (x, y) in g {
         buf.push(x);
         buf.push(y);
