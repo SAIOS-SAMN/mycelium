@@ -507,7 +507,33 @@ by the k-step's LENGTH in transitions, which is the band's (78.35, the
 k-step length by distance from the star) — one transition per orbit
 only until the band's length is read (PHY1), named as owed, never as
 the rule. A circuit's "steps" are its TRANSITIONS, the overlaps it
-composes; "traversed" is "carried through" or "flowed through".
+composes; "traversed" is "carried through" or "flowed through". THE
+OPERATOR'S WORD ON WHAT THE MOTION IS (2026-09-25, relayed verbatim by
+the implementor): "we should be sending signals over transports through
+the network that resonate, vibrate or contract/expand — that is our walk;
+and our physics and mathematics should align on that: non-linear
+transposition of non-conformal algebra in non-euclidean geometry." As it
+lands on the carriers the tree holds: a **signal** is a multivector
+CARRIED along a transition, its motion the composition along overlaps
+(the geometric product — non-commutative, so non-linear in its operands),
+never a hop; to **resonate** is the commensurability of periods (78.26(5):
+an orbit's two plane periods, `ToralPeriod`; an isoclinic orbit
+resonant, a commensurate pair beating at the joint period, an
+incommensurate pair dense torsion; between minds, the harmonic ratios
+compared across a contact); to **vibrate** is a mode WINDING — the
+holonomy's planes turning, a mode ray keeping or breaking the round its
+reading; to **contract/expand** is the dilation, a boost's scale, and on
+the plexus flux (FX1), retraction to the core against growth by closure,
+the metabolism's pressure and relief. OPEN, put to the operator and not
+guessed (the atlas row's shape waits on it): "non-conformal algebra" —
+whether (i) transport is not restricted to the angle-preserving maps
+and a transposition may shear, (ii) the physics runs on the rotor's
+`Cl(4,0)` side with the conformal model its sensor projection, or (iii)
+"conformal" names the flat SIMILARITY restriction the alphabet holds
+today (every letter fixing infinity, 78.38) and the full group with
+inversion and transversion is meant — which is the reading the
+coordinator recommends, since inversion, dilation and winding all live
+in `Cl(n+1,1)` and nowhere flatter.
 
 # Part 0 — The map: master algorithms, the physics over them, their sites, and what stands (2026-09-24)
 
