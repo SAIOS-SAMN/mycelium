@@ -157,36 +157,36 @@ impl Contemplation {
                             sigma: Vec::new(),
                             period: ell,
                         };
-                        if let Some(rw) = crate::transducer::rewrite::mint(
+                        // RM1 — THE REMAINDER ON THE REWRITE'S RECORD: the
+                        // class it closed up to, the deficit as its ray, where
+                        // it was perceived. The payload says σ and ℓ; the
+                        // record is its evidence (law 12). Thoughts sharing no
+                        // chart place no residue: counted.
+                        let unsited = at.is_none();
+                        let cycle = crate::transducer::element::TorsionCycle {
+                            sigma: Vec::new(),
+                            period: ell,
+                            fibre: crate::transducer::element::FIBER_SPATIAL,
+                            remainder: at.map(|at| crate::transducer::element::Remainder { class: kappa, ray: g, at, answered: None }),
+                        };
+                        // STD1 (PH1) — the claim is the Torse's one yield,
+                        // derived from the cycle it carries (`torse_yield`): one
+                        // kind priced on one lane, as the court prices it.
+                        let claimed = crate::transducer::rewrite::torse_yield(std::slice::from_ref(&cycle));
+                        if let Some(mut rw) = crate::transducer::rewrite::mint(
                             crate::transducer::rewrite::RewriteKind::Torse,
                             &before,
                             nk.clone(),
                             payload,
-                            // What the period measures (L7b): a torsion of
-                            // period ℓ closes ℓ − 1. `classify` files a
-                            // congruence only at an order that closes, so
-                            // ℓ ≥ 1 and the subtraction is total.
-                            [0, 0, ell as u64 - 1, 0],
+                            claimed,
                         ) {
-                            // RM1 — THE REMAINDER ON THE REWRITE'S RECORD: the
-                            // class it closed up to, the deficit as its ray,
-                            // where it was perceived. The payload says σ and
-                            // ℓ; the record is its evidence (law 12). Thoughts
-                            // sharing no chart place no residue: counted.
-                            let mut rw = rw;
-                            match at {
-                                Some(at) => {
-                                    let cycle = crate::transducer::element::TorsionCycle {
-                                        sigma: Vec::new(),
-                                        period: ell,
-                                        fibre: crate::transducer::element::FIBER_SPATIAL,
-                                        remainder: Some(crate::transducer::element::Remainder { class: kappa, ray: g, at, answered: None }),
-                                    };
+                            match unsited {
+                                true => self.remainders.unsited += 1,
+                                false => {
                                     if rw.record_cycle(cycle) == crate::transducer::element::Filed::Refused {
                                         self.remainders.refused += 1;
                                     }
                                 }
-                                None => self.remainders.unsited += 1,
                             }
                             self.pending_rewrites.push(rw);
                         } else {
