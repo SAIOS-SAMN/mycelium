@@ -734,19 +734,16 @@ pub fn rotor_block_on(r: &Rotor, plane: (u8, u8)) -> Option<[[Q; 2]; 2]> {
 pub fn put_q(out: &mut Vec<u8>, v: &Q) {
     let nb = v.numer().to_signed_bytes_le();
     let db = v.denom().to_signed_bytes_le();
-    out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
-    out.extend_from_slice(&nb);
-    out.extend_from_slice(&(db.len() as u32).to_le_bytes());
-    out.extend_from_slice(&db);
+    // Each length by its own coordinate (STD1 3c-2, ruled (a)): LD0's
+    // first kind of bytes, the length intrinsic to the precision.
+    crate::transducer::address::put_key_bytes(out, &nb);
+    crate::transducer::address::put_key_bytes(out, &db);
 }
 
 pub fn take_q(b: &[u8], pos: &mut usize) -> Option<Q> {
     let take_int = |pos: &mut usize| -> Option<BigInt> {
-        let n = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-        *pos += 4;
-        let bytes = b.get(*pos..*pos + n)?;
-        *pos += n;
-        Some(BigInt::from_signed_bytes_le(bytes))
+        let bytes = crate::transducer::address::take_key_bytes(b, pos)?;
+        Some(BigInt::from_signed_bytes_le(&bytes))
     };
     let num = take_int(pos)?;
     let den = take_int(pos)?;

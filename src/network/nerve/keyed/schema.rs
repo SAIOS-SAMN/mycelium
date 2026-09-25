@@ -261,19 +261,10 @@ pub fn take_u8(key: &[u8], pos: &mut usize) -> Option<u8> {
     Some(b)
 }
 
-/// A `u32` length followed by that many bytes — the framing `put_q` writes
-/// for each of a rational's two integers, and `Mv::to_bytes` for each of a
-/// coefficient's.
-pub fn skip_len_u32(key: &[u8], pos: &mut usize) -> Option<()> {
-    let end = pos.checked_add(4)?;
-    let n = u32::from_le_bytes(key.get(*pos..end)?.try_into().ok()?) as usize;
-    *pos = end;
-    skip_n(key, pos, n)
-}
-
-/// One exact rational as `put_q` writes it: numerator then denominator,
-/// each a `u32` length and its bytes.
+/// One exact rational, read by `take_q`, the one reader of what `put_q`
+/// writes. A segment that restated the framing (a `u32` length, then its
+/// bytes) went on reading the old width when the value's own spelling
+/// moved to LEB128 (STD1 3c-2, ruled (a)), so it reads through the value.
 pub fn skip_q(key: &[u8], pos: &mut usize) -> Option<()> {
-    skip_len_u32(key, pos)?;
-    skip_len_u32(key, pos)
+    crate::transducer::alphabet::take_q(key, pos).map(|_| ())
 }

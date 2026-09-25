@@ -355,17 +355,19 @@ impl Word {
         rotor_block_on(&self.rotor(), plane)
     }
 
+    /// The letters behind their count, the count by its own coordinate
+    /// (STD1 3c-2, ruled (a)): a word's spelling is its coordinate wherever
+    /// it sits, key or record, so one LEB128 codec and no width wall.
     pub fn to_bytes(&self, out: &mut Vec<u8>) {
-        out.extend_from_slice(&(self.0.len() as u16).to_le_bytes());
+        crate::transducer::address::put_key_count(out, self.0.len());
         for &(id, inv) in &self.0 {
             out.push(id.raw() | if inv { 0x80 } else { 0 });
         }
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Word> {
-        let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
-        *pos += 2;
-        let mut tape = Vec::with_capacity(n);
+        let n = crate::transducer::address::take_key_count(b, pos)?;
+        let mut tape = Vec::with_capacity(n.min(b.len()));
         for _ in 0..n {
             let byte = *b.get(*pos)?;
             *pos += 1;

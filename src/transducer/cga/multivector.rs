@@ -552,8 +552,9 @@ impl Mv {
         m.put_coefficients(out);
     }
 
-    /// Every slot's exact coefficient: per coefficient `[sign u8][nlen u32]
-    /// [numerator][dlen u32][denominator]`, little-endian magnitudes, in
+    /// Every slot's exact coefficient: per coefficient `[sign u8][nlen]
+    /// [numerator][dlen][denominator]`, each length LEB128 (ruled (a)),
+    /// little-endian magnitudes, in
     /// mask order. At `n ≤ 3` that is thirty-two, the fixed carrier's
     /// coefficients exactly.
     pub fn put_coefficients(&self, out: &mut Vec<u8>) {
@@ -565,10 +566,9 @@ impl Mv {
                 num_bigint::Sign::NoSign => 0,
                 num_bigint::Sign::Plus => 1,
             });
-            out.extend_from_slice(&(nb.len() as u32).to_le_bytes());
-            out.extend_from_slice(&nb);
-            out.extend_from_slice(&(db.len() as u32).to_le_bytes());
-            out.extend_from_slice(&db);
+            // Each length by its own coordinate (STD1 3c-2, ruled (a)).
+            crate::transducer::address::put_key_bytes(out, &nb);
+            crate::transducer::address::put_key_bytes(out, &db);
         }
     }
 
@@ -587,21 +587,15 @@ impl Mv {
         for slot in m.c.iter_mut() {
             let sign = *b.get(*pos)?;
             *pos += 1;
-            let nl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-            *pos += 4;
-            let nb = b.get(*pos..*pos + nl)?;
-            *pos += nl;
-            let dl = u32::from_le_bytes(b.get(*pos..*pos + 4)?.try_into().ok()?) as usize;
-            *pos += 4;
-            let db = b.get(*pos..*pos + dl)?;
-            *pos += dl;
+            let nb = crate::transducer::address::take_key_bytes(b, pos)?;
+            let db = crate::transducer::address::take_key_bytes(b, pos)?;
             let s = match sign {
                 2 => num_bigint::Sign::Minus,
                 1 => num_bigint::Sign::Plus,
                 _ => num_bigint::Sign::NoSign,
             };
-            let numer = BigInt::from_bytes_le(s, nb);
-            let denom = BigInt::from_bytes_le(num_bigint::Sign::Plus, db);
+            let numer = BigInt::from_bytes_le(s, &nb);
+            let denom = BigInt::from_bytes_le(num_bigint::Sign::Plus, &db);
             if denom.is_zero() {
                 return None;
             }

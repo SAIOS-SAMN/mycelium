@@ -729,7 +729,7 @@ impl ClassVector {
 // fails at the coordinate it fails at, and the depth-one boundary is the
 // rotor's conjugacy stratum by parsing rather than by agreement.
 
-use crate::network::nerve::{skip_len_u32, skip_n, skip_q, take_u8, Schema, Segment};
+use crate::network::nerve::{skip_n, skip_q, take_u8, Schema, Segment};
 
 /// Tag, the two conjugacy invariants, the ray's sign byte — exactly what
 /// [`crate::transducer::alphabet::Rotor::class_key`] writes.
@@ -768,7 +768,8 @@ impl Segment for PlaneSection {
     }
 }
 
-/// The hue cycle type: a count, and that many sorted cycle lengths.
+/// The hue cycle type, read by its own reader: a count by its own
+/// coordinate, and that many sorted cycle lengths.
 struct HueCycle;
 
 impl Segment for HueCycle {
@@ -777,14 +778,14 @@ impl Segment for HueCycle {
     }
 
     fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
-        let n = take_u8(key, pos)? as usize;
-        skip_n(key, pos, n)
+        CycleType::from_bytes(key, pos).map(|_| ())
     }
 }
 
-/// The A4 carriage as `Mv::put_canonical` writes it: its `n`, then one
-/// coefficient per slot of that algebra, each a sign byte and two
-/// length-framed integers.
+/// The A4 carriage as `Mv::put_canonical` writes it, read by `Mv::from_bytes`,
+/// the one reader of that layout: its `n`, then one coefficient per slot of
+/// that algebra. The segment restated it and read the old widths once the
+/// value's spelling moved (ruled (a)).
 struct Carriage;
 
 impl Segment for Carriage {
@@ -793,13 +794,7 @@ impl Segment for Carriage {
     }
 
     fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
-        let n = take_u8(key, pos)?;
-        for _ in 0..crate::transducer::cga::slots(n) {
-            take_u8(key, pos)?;
-            skip_len_u32(key, pos)?;
-            skip_len_u32(key, pos)?;
-        }
-        Some(())
+        crate::transducer::cga::Mv::from_bytes(key, pos).map(|_| ())
     }
 }
 
@@ -819,8 +814,7 @@ impl Segment for Placement {
 
     fn skip(&self, key: &[u8], pos: &mut usize) -> Option<()> {
         for _ in 0..3 {
-            skip_len_u32(key, pos)?;
-            skip_len_u32(key, pos)?;
+            skip_q(key, pos)?;
         }
         Some(())
     }

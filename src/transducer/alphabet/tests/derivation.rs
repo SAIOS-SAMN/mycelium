@@ -26,7 +26,7 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
     let mut b = Vec::new();
     d.to_bytes(&mut b).expect("the derivation writes");
     let mut only_residue = Vec::new();
-    (0u16).to_le_bytes().iter().for_each(|x| only_residue.push(*x));
+    crate::transducer::address::put_key_count(&mut only_residue, 0);
     // The residue whole (LD0 step 6(b)): its letters and the byte that
     // says it is spelled.
     quarter(2).put_whole(&mut only_residue);
@@ -148,7 +148,7 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
 
     // What the tape holds after the citations and the residue is a ROTOR.
     let mut expect = Vec::new();
-    (1u16).to_le_bytes().iter().for_each(|x| expect.push(*x));
+    crate::transducer::address::put_key_count(&mut expect, 1);
     crate::transducer::address::put_addr(&mut expect, addr(1)).expect("form");
     crate::transducer::address::put_addr(&mut expect, addr(2)).expect("vertex");
     expect.extend_from_slice(&2i64.to_le_bytes());

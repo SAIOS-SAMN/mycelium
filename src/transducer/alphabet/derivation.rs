@@ -223,8 +223,9 @@ impl Derivation {
     }
 
     pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
-        let n = u16::try_from(self.generators.len()).ok()?;
-        out.extend_from_slice(&n.to_le_bytes());
+        // The count by its own coordinate (ruled (a)): the derivation is a
+        // value, so it has no width wall; only a citation's u16 refuses.
+        crate::transducer::address::put_key_count(out, self.generators.len());
         for (form, vertex, e) in &self.generators {
             crate::transducer::address::put_addr(out, form)?;
             crate::transducer::address::put_addr(out, vertex)?;
@@ -247,8 +248,7 @@ impl Derivation {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<Derivation> {
-        let n = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?) as usize;
-        *pos += 2;
+        let n = crate::transducer::address::take_key_count(b, pos)?;
         // The loop's boundary is the tape's own bytes (rule 10): every
         // iteration consumes two length-prefixed addresses and an i64, and
         // a byte that is not there refuses the whole read. Nothing is
