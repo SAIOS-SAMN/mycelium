@@ -452,7 +452,7 @@ impl Element {
             out.push(KIND_REWRITE);
             out.push(REWRITE_TAG);
             out.push(rw.kind as u8);
-            out.extend_from_slice(&(rw.before.len() as u16).to_le_bytes());
+            crate::transducer::address::put_key_count(&mut out, rw.before.len());
             for a in &rw.before {
                 crate::transducer::address::put_cited(&mut out, a);
             }
@@ -471,7 +471,7 @@ impl Element {
             letters.carriage.put_canonical(&mut out);
             let mut sigma = letters.sigma.clone();
             sigma.sort_unstable();
-            out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+            crate::transducer::address::put_key_count(&mut out, sigma.len());
             for (f, t) in sigma {
                 out.push(f);
                 out.push(t);
@@ -496,8 +496,9 @@ impl Element {
         }
         // The key IS the chain (law 2), and the chain is A5's by type: one
         // that says two things at a site has no centering and is refused
-        // where the element is built.
-        out.extend_from_slice(&(self.sub.len() as u32).to_le_bytes());
+        // where the element is built. Its count is a coordinate of the key,
+        // written by its own coordinate (STD1 3c-2, ruled (d)).
+        crate::transducer::address::put_key_count(&mut out, self.sub.len());
         for (r, c, b, a) in self.sub.as_slice() {
             out.extend_from_slice(&r.to_le_bytes());
             out.extend_from_slice(&c.to_le_bytes());

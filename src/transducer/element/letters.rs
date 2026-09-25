@@ -519,7 +519,15 @@ impl Element {
     /// question does not apply to it. A sentence's words are its orbit
     /// holonomies: `Form::orbit_words`.
     pub fn letters(&self) -> Option<Letters> {
+        self.connection_head().map(|(l, _)| l)
+    }
+
+    /// THE ONE READER OF `connection_description`'s layout: the letters
+    /// and the offset where the remainder ends. A translation's sections
+    /// follow there, so they are read from it, never searched for.
+    fn connection_head(&self) -> Option<(Letters, usize)> {
         use crate::transducer::alphabet::Spelling;
+        use crate::transducer::address::{take_key_bytes, take_key_count};
         let b = &self.description;
         let tag = crate::transducer::address::tag_of(b)?;
         if tag != CONNECTION_TAG && tag != TRANSLATION_TAG {
@@ -528,19 +536,14 @@ impl Element {
         let mut pos = 1usize;
         let spelling = Spelling::from_bytes(b, &mut pos)?;
         let carriage = Versor::from_bytes(b, &mut pos)?;
-        let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-        pos += 2;
-        let mut sigma = Vec::with_capacity(n);
+        let n = take_key_count(b, &mut pos)?;
+        let mut sigma = Vec::with_capacity(n.min(b.len()));
         for _ in 0..n {
             sigma.push((*b.get(pos)?, *b.get(pos + 1)?));
             pos += 2;
         }
-        let len = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?) as usize;
-        pos += 4;
-        if pos + len > b.len() {
-            return None;
-        }
-        Some(Letters { spelling, carriage, sigma })
+        take_key_bytes(b, &mut pos)?;
+        Some((Letters { spelling, carriage, sigma }, pos))
     }
 
     /// Tape re-derives vertex: the geodesic of the stored word is the same
@@ -630,24 +633,14 @@ impl Element {
         if !self.is_translation() {
             return None;
         }
+        // The tape is the connection's head, then the two sections
+        // (`from_translation`): read from where the head ends, never found
+        // by trying every offset for a pair that consumes the tail.
         let b = self.description();
-        // Walk back two length-delimited addresses at the tail.
-        // The tape is prefix + addr_a + addr_b; decode from the start of the pair
-        // by scanning: find the first put_addr that consumes the suffix.
-        let mut q = 0usize;
-        while q + 2 <= b.len() {
-            let mut t = q;
-            if let (Some(a), Some(c)) = (
-                crate::transducer::address::take_addr(b, &mut t),
-                crate::transducer::address::take_addr(b, &mut t),
-            ) {
-                if t == b.len() {
-                    return Some((a, c));
-                }
-            }
-            q += 1;
-        }
-        None
+        let (_, mut q) = self.connection_head()?;
+        let a = crate::transducer::address::take_addr(b, &mut q)?;
+        let c = crate::transducer::address::take_addr(b, &mut q)?;
+        (q == b.len()).then_some((a, c))
     }
 
 }

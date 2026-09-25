@@ -78,13 +78,16 @@ pub struct Rewrite {
 }
 
 impl Rewrite {
-    /// `None` where a count does not fit its field: a rewrite naming more
-    /// than 255 words, or a refine reaching a chart of more than 255 axes.
-    /// The truncating form wrote the tape short and `from_tape` then read
-    /// a different rewrite out of it.
+    /// `None` where a section address does not fit its citation prefix.
+    /// Every COUNT on the tape is written by its own coordinate (STD1 3c-2,
+    /// ruled (d)) — the tape is the word's description, keyed whole into
+    /// its address — so no count has a field to overflow. The truncating
+    /// form wrote the tape short and `from_tape` then read a different
+    /// rewrite out of it.
     pub fn to_tape(&self) -> Option<Vec<u8>> {
+        use crate::transducer::address::{put_key_bytes, put_key_count};
         let mut out = vec![REWRITE_TAG, self.kind as u8];
-        crate::transducer::address::put_u8_count(&mut out, self.before.len())?;
+        put_key_count(&mut out, self.before.len());
         for a in &self.before {
             crate::transducer::address::put_cited(&mut out, a);
         }
@@ -94,9 +97,9 @@ impl Rewrite {
         }
         match &self.payload {
             RewritePayload::Condense { sections, gauge } => {
-                out.extend_from_slice(&(sections.len() as u16).to_le_bytes());
+                put_key_count(&mut out, sections.len());
                 for s in sections {
-                    out.extend_from_slice(&(s.len() as u16).to_le_bytes());
+                    put_key_count(&mut out, s.len());
                     for &(f, t) in s {
                         out.push(f);
                         out.push(t);
@@ -106,7 +109,7 @@ impl Rewrite {
                 gauge.put_canonical(&mut out);
             }
             RewritePayload::Torse { sigma, period } => {
-                out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+                put_key_count(&mut out, sigma.len());
                 for &(f, t) in sigma {
                     out.push(f);
                     out.push(t);
@@ -115,13 +118,11 @@ impl Rewrite {
             }
             RewritePayload::Refine { chart, axis } => {
                 // The chart's own key (law 2), one encoding with the trie.
-                let key = chart.key();
-                crate::transducer::address::put_u16_count(&mut out, key.as_bytes().len())?;
-                out.extend_from_slice(key.as_bytes());
+                put_key_bytes(&mut out, chart.key().as_bytes());
                 out.extend_from_slice(&axis.to_le_bytes());
             }
             RewritePayload::Reanchor { gamma } => {
-                out.extend_from_slice(&(gamma.len() as u16).to_le_bytes());
+                put_key_count(&mut out, gamma.len());
                 for w in gamma {
                     w.put_whole(&mut out);
                 }
@@ -136,7 +137,7 @@ impl Rewrite {
                 gauge.put_canonical(&mut out);
             }
             RewritePayload::Retire { cites, freed } => {
-                out.extend_from_slice(&(cites.len() as u16).to_le_bytes());
+                put_key_count(&mut out, cites.len());
                 for a in cites {
                     crate::transducer::address::put_addr(&mut out, a)?;
                 }
@@ -149,19 +150,20 @@ impl Rewrite {
     }
 
     pub fn from_tape(b: &[u8]) -> Option<Self> {
+        use crate::transducer::address::{take_key_bytes, take_key_count};
         if crate::transducer::address::tag_of(b) != Some(REWRITE_TAG) {
             return None;
         }
         let kind = RewriteKind::from_u8(*b.get(1)?)?;
+        let mut pos = 2usize;
         // A rewrite names WHAT IT REWROTE. One that names nothing rewrote
         // nothing, which is not a rewrite with an empty before — it is a
         // malformed tape, and every reader may then take `n − 1` whole.
-        let n = match *b.get(2)? {
+        let n = match take_key_count(b, &mut pos)? {
             0 => return None,
-            n => n as usize,
+            n => n,
         };
-        let mut pos = 3usize;
-        let mut before = Vec::with_capacity(n);
+        let mut before = Vec::with_capacity(n.min(b.len()));
         for _ in 0..n {
             before.push(crate::transducer::address::take_cited(b, &mut pos)?);
         }
@@ -173,13 +175,11 @@ impl Rewrite {
         }
         let payload = match kind {
             RewriteKind::Condense => {
-                let ns = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-                pos += 2;
-                let mut sections = Vec::with_capacity(ns);
+                let ns = take_key_count(b, &mut pos)?;
+                let mut sections = Vec::with_capacity(ns.min(b.len()));
                 for _ in 0..ns {
-                    let k = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-                    pos += 2;
-                    let mut s = Vec::with_capacity(k);
+                    let k = take_key_count(b, &mut pos)?;
+                    let mut s = Vec::with_capacity(k.min(b.len()));
                     for _ in 0..k {
                         s.push((*b.get(pos)?, *b.get(pos + 1)?));
                         pos += 2;
@@ -190,9 +190,8 @@ impl Rewrite {
                 RewritePayload::Condense { sections, gauge }
             }
             RewriteKind::Torse => {
-                let ns = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-                pos += 2;
-                let mut sigma = Vec::with_capacity(ns);
+                let ns = take_key_count(b, &mut pos)?;
+                let mut sigma = Vec::with_capacity(ns.min(b.len()));
                 for _ in 0..ns {
                     sigma.push((*b.get(pos)?, *b.get(pos + 1)?));
                     pos += 2;
@@ -206,16 +205,13 @@ impl Rewrite {
                 RewritePayload::Torse { sigma, period }
             }
             RewriteKind::Refine => {
-                let nax = crate::transducer::address::take_u16_count(b, &mut pos)?;
-                let chart = Invariant::from_key(b.get(pos..pos + nax)?)?;
-                pos += nax;
+                let chart = Invariant::from_key(&take_key_bytes(b, &mut pos)?)?;
                 let axis = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
                 RewritePayload::Refine { chart, axis }
             }
             RewriteKind::Reanchor => {
-                let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-                pos += 2;
-                let mut gamma = Vec::with_capacity(n);
+                let n = take_key_count(b, &mut pos)?;
+                let mut gamma = Vec::with_capacity(n.min(b.len()));
                 for _ in 0..n {
                     gamma.push(Word::take_whole(b, &mut pos)?);
                 }
@@ -234,9 +230,8 @@ impl Rewrite {
                 RewritePayload::Translation { a, b: baddr, gauge }
             }
             RewriteKind::Retire => {
-                let n = u16::from_le_bytes(b.get(pos..pos + 2)?.try_into().ok()?) as usize;
-                pos += 2;
-                let mut cites = Vec::with_capacity(n);
+                let n = take_key_count(b, &mut pos)?;
+                let mut cites = Vec::with_capacity(n.min(b.len()));
                 for _ in 0..n {
                     cites.push(crate::transducer::address::take_addr(b, &mut pos)?);
                 }

@@ -296,14 +296,14 @@ pub(crate) fn connection_description(
     let mut out = vec![CONNECTION_TAG];
     spelling.to_bytes(&mut out);
     carriage.to_bytes(&mut out);
-    out.extend_from_slice(&(sigma.len() as u16).to_le_bytes());
+    // Each count by its own coordinate (STD1 3c-2, ruled (d)): the
+    // description is keyed whole into the word's address.
+    crate::transducer::address::put_key_count(&mut out, sigma.len());
     for &(f, t) in sigma {
         out.push(f);
         out.push(t);
     }
-    let germ = germ_bytes(remainder);
-    out.extend_from_slice(&(germ.len() as u32).to_le_bytes());
-    out.extend_from_slice(&germ);
+    crate::transducer::address::put_key_bytes(&mut out, &germ_bytes(remainder));
     out
 }
 

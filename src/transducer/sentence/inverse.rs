@@ -458,8 +458,8 @@ pub fn from_residual(addr: &[u8]) -> Option<Vec<Link>> {
             // M1's rotor, the A4 carriage, then σ.
             Rotor::from_bytes(&block, &mut q)?;
             Versor::from_bytes(&block, &mut q)?;
-            let n = u16::from_le_bytes(block.get(q..q + 2)?.try_into().ok()?) as usize;
-            q += 2 + n * 2;
+            let n = take_key_count(&block, &mut q)?;
+            q = q.checked_add(n.checked_mul(2)?)?;
         }
         crate::transducer::element::vertex::KIND_SPATIAL => {
             Versor::from_bytes(&block, &mut q)?;
@@ -471,8 +471,7 @@ pub fn from_residual(addr: &[u8]) -> Option<Vec<Link>> {
         crate::transducer::element::vertex::KIND_CHAIN => {}
         _ => return None,
     }
-    let n = u32::from_le_bytes(block.get(q..q + 4)?.try_into().ok()?) as usize;
-    q += 4;
+    let n = take_key_count(&block, &mut q)?;
     let mut out = Vec::with_capacity(n.min(block.len()));
     for _ in 0..n {
         let r = i64::from_le_bytes(block.get(q..q + 8)?.try_into().ok()?);
