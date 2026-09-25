@@ -109,6 +109,7 @@ impl Kernel {
             refill_unspelled: self.refills.unspelled,
             refill_unopen: self.refills.unopen,
             refill_unsited: self.refills.unsited,
+            refill_unfilled: self.refills.unfilled,
             ..count.read()
         };
         (read, torsion_words)

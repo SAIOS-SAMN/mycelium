@@ -550,6 +550,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 refill_unspelled: 140,
                 refill_unopen: 141,
                 refill_unsited: 142,
+                refill_unfilled: 143,
             },
         }),
     };

@@ -132,15 +132,18 @@ impl Complex {
 
     /// RM1 (c) — THE RE-FILL'S NAMED DOOR: a simplex standing `Congruent`
     /// written `Filled` by the twist `gamma` a held word now spells, through
-    /// the one fill writer (counted `refilled`). Every other fill is left
-    /// as it stands — `None` — so a Congruent simplex is never re-read by
-    /// being made unsettled.
+    /// the one fill writer (counted `refilled`). The carriage is the
+    /// Congruent's own — κ's `D(ρ)·T(t)` — so the placement is not lost at
+    /// the re-fill; a pure placement is not the identity. Every other fill
+    /// is left as it stands — `None` — so a Congruent simplex is never
+    /// re-read by being made unsettled.
     pub fn refill(&mut self, key: &[u8], gamma: Rotor) -> Option<()> {
         let degree = self.degree_of(key)?;
-        if !matches!(self.simplex(key)?.fill, Fill::Congruent(..)) {
+        let Fill::Congruent(kappa, _, _) = &self.simplex(key)?.fill else {
             return None;
-        }
-        let filled = Fill::Filled(Box::new(gamma), Box::new(crate::transducer::element::identity_versor()));
+        };
+        let carriage = kappa.carriage.clone();
+        let filled = Fill::Filled(Box::new(gamma), Box::new(carriage));
         self.write_fill(degree, key, &filled);
         Some(())
     }

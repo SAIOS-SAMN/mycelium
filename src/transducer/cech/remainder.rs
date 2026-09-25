@@ -83,6 +83,9 @@ pub struct RemainderReading {
     pub refill_unspelled: u64,
     pub refill_unopen: u64,
     pub refill_unsited: u64,
+    /// The court: a write the named door refused over a simplex read as
+    /// Congruent (LD0).
+    pub refill_unfilled: u64,
 }
 
 /// The reading as it accumulates: `ℓ` → count, class → the charts it stands
@@ -145,7 +148,7 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {}",
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {} unfilled {}",
             self.classes,
             self.across,
             self.unplaced,
@@ -174,7 +177,8 @@ impl RemainderReading {
             self.refill_unlocated,
             self.refill_unspelled,
             self.refill_unopen,
-            self.refill_unsited
+            self.refill_unsited,
+            self.refill_unfilled
         )
     }
 
@@ -214,6 +218,7 @@ impl RemainderReading {
             self.refill_unspelled,
             self.refill_unopen,
             self.refill_unsited,
+            self.refill_unfilled,
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -269,6 +274,7 @@ impl RemainderReading {
             refill_unspelled: u64_at(b, p)?,
             refill_unopen: u64_at(b, p)?,
             refill_unsited: u64_at(b, p)?,
+            refill_unfilled: u64_at(b, p)?,
         })
     }
 }

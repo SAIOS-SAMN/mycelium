@@ -91,8 +91,34 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
     let cycle = answered.torsion().iter().find(|t| t.remainder.is_some()).expect("its remainder").clone();
     assert_eq!(cycle.remainder.as_ref().and_then(|r| r.answered), Some(receipt.stamp), "answered at the act's stamp");
     assert_eq!(cycle.pressure(), Some([0; 4]), "its pressure reads zero");
+    // R1 — the re-fill carries the Congruent's own carriage, κ's.
+    assert!(
+        matches!(&s.fill, crate::transducer::cech::Fill::Filled(_, c) if crate::transducer::element::same_versor(c, &kappa.carriage)),
+        "the placement is not lost"
+    );
     k.hear_refill(&receipt);
     assert_eq!((k.refills.applied, k.refills.unopen), (1, 1), "nothing open the second time");
+
+    // R2 — a rewrite whose `after` is no court simplex (the complex of its
+    // chart holds none): the act replays whole, the record is answered, and
+    // only the write is skipped, counted `unsited`.
+    let inv2 = crate::transducer::stalk::Invariant::counts(&[3, 4]);
+    let rw2 = k.mint_torse_at(&inv2, b"no simplex here", (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
+    let rewrite2 = k.named_word(rw2.as_bytes()).expect("stands").clone();
+    let rw2_at = *k.admitted_at.get(rw2.as_bytes()).expect("admitted");
+    let receipt2 = KStepReceipt {
+        stamp: Stamp::new(6, [7; 32], Place { k: 2, i: 2 }),
+        cites: vec![
+            Cite::word(&rewrite2, rw2_at),
+            Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(g.clone()), cover: Some(vec![inv2.key().into_vec()]) },
+            Cite::word(&spelling, sp_at),
+        ],
+        ..receipt.clone()
+    };
+    k.hear_refill(&receipt2);
+    assert_eq!((k.refills.applied, k.refills.unsited), (2, 1), "{:?}", k.refills);
+    let back = k.named_word(rw2.as_bytes()).expect("the rewrite").clone();
+    assert!(back.remainders().all(|r| r.answered == Some(receipt2.stamp)), "answered though nothing was written");
 }
 
 /// RM1 — A SIMPLEX CLOSED UP TO ITS CLASS MINTS ITS TORSE REWRITE: `before`

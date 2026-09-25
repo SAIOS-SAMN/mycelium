@@ -10,10 +10,12 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element;
 
-/// RM1 (c) — VOICES' RE-FILLS REPLAYED: applied; and refused — not the
-/// re-fill's cites, a word not located here, a spelling word that does not
-/// spell the ray, a rewrite with no open remainder of the class there, and
-/// no Congruent simplex at the rewrite's `after` in its chart's complex.
+/// RM1 (c) — VOICES' RE-FILLS REPLAYED: applied (the record answered); and
+/// refused — not the re-fill's cites, a word not located here, a spelling
+/// word that does not spell the ray, a rewrite with no open remainder of the
+/// class there. Of the applied: no Congruent simplex at the rewrite's `after`
+/// in its chart's complex (the write skipped, the answer stands), and a
+/// write the named door refused.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct RefillTally {
     pub applied: u64,
@@ -22,6 +24,7 @@ pub struct RefillTally {
     pub unspelled: u64,
     pub unopen: u64,
     pub unsited: u64,
+    pub unfilled: u64,
 }
 
 impl Kernel {
@@ -334,22 +337,10 @@ impl Kernel {
             self.refills.unopen += 1;
             return;
         };
-        let (Some(rw), [chart]) = (crate::transducer::rewrite::Rewrite::from_element(&rewrite), at.as_slice()) else {
-            self.refills.unsited += 1;
-            return;
-        };
-        let after = rw.after.addr().as_bytes().to_vec();
-        let congruent = self
-            .complexes
-            .get(chart)
-            .and_then(|cx| cx.simplex(&after))
-            .is_some_and(|s| matches!(s.fill, crate::transducer::cech::Fill::Congruent(..)));
-        if !congruent {
-            self.refills.unsited += 1;
-            return;
-        }
-        // The rewrite's record answered on whichever row holds it — the
-        // basis, the provisional row it was offered on, or the listing book.
+        // The act replays whole: the rewrite's record is answered on
+        // whichever row holds it — the basis, the provisional row it was
+        // offered on, or the listing book — whether or not a simplex stands
+        // here to write, so the court's record and the mind's never diverge.
         let key = rw_addr.as_bytes();
         let answered = match self.word_mut(key) {
             Some(wm) => wm.update(|e| e.answer_remainder(class, at, r.stamp)),
@@ -362,8 +353,28 @@ impl Kernel {
             self.refills.unopen += 1;
             return;
         }
-        if let Some(cx) = self.complexes.get_mut(chart) {
-            let _ = cx.refill(&after, (**rotor).clone());
+        // Only the complex's write is skipped where no Congruent simplex
+        // stands at the rewrite's `after` (a mind's own rewrite, its `after`
+        // the merged thought), counted apart from the answer; a write the
+        // door refused is counted too (LD0). The court's own rewrite sits at
+        // one chart, its complex's; a chain of several is a mind's.
+        let site = match (crate::transducer::rewrite::Rewrite::from_element(&rewrite), at.as_slice()) {
+            (Some(rw), [chart]) => Some((chart.clone(), rw.after.addr().as_bytes().to_vec())),
+            _ => None,
+        };
+        let congruent = site.as_ref().is_some_and(|(chart, after)| {
+            self.complexes
+                .get(chart)
+                .and_then(|cx| cx.simplex(after))
+                .is_some_and(|s| matches!(s.fill, crate::transducer::cech::Fill::Congruent(..)))
+        });
+        match (congruent, site) {
+            (true, Some((chart, after))) => {
+                if self.complexes.get_mut(&chart).and_then(|cx| cx.refill(&after, (**rotor).clone())).is_none() {
+                    self.refills.unfilled += 1;
+                }
+            }
+            _ => self.refills.unsited += 1,
         }
         let anchor = self.anchor();
         self.treasury.mint_claim(&[r.stamp.vk], mu, anchor);
