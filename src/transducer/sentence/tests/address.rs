@@ -51,7 +51,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     );
     assert_eq!(
         read.fibre_volume(e.filing()),
-        0,
+        Some(0),
         "an infinite class reaches no members, whatever is filed for it"
     );
 }

@@ -324,7 +324,10 @@ impl Element {
                 *pos += 2;
                 sigma.push((f, t));
             }
-            let l = u32_at(b, pos)?;
+            // The period in its own carrier, u64 (78.43(2)); the record
+            // layout moves with it at the recut.
+            let l = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
+            *pos += 8;
             // A17: a cycle is believed only when the orbit CLOSES at its
             // period, so a filed period of zero is not a cycle with no
             // extent — it is a malformed tape, and every reader downstream

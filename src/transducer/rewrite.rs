@@ -47,7 +47,8 @@ impl RewriteKind {
 #[derive(Debug, Clone)]
 pub enum RewritePayload {
     Condense { sections: Vec<Vec<(u8, u8)>>, gauge: Versor },
-    Torse { sigma: Vec<(u8, u8)>, period: u32 },
+    /// The period in its own carrier, `u64` (78.43(2)).
+    Torse { sigma: Vec<(u8, u8)>, period: u64 },
     Refine { chart: Invariant, axis: u64 },
     Reanchor { gamma: Vec<Word> },
     /// Boxed: a rotor is half a kilobyte inline, the one large variant here
@@ -196,7 +197,7 @@ impl Rewrite {
                     sigma.push((*b.get(pos)?, *b.get(pos + 1)?));
                     pos += 2;
                 }
-                let period = u32::from_le_bytes(b.get(pos..pos + 4)?.try_into().ok()?);
+                let period = u64::from_le_bytes(b.get(pos..pos + 8)?.try_into().ok()?);
                 // A17, as at every other tape: a torsion is believed only
                 // where the orbit closes at ℓ, so a filed zero is malformed.
                 if period == 0 {
@@ -267,7 +268,7 @@ impl Rewrite {
                 // A torsion of period ℓ closes ℓ − 1. A17 believes a period
                 // only where the orbit closes at it and the tape refuses a
                 // zero, so ℓ ≥ 1 and the subtraction is total.
-                mu[LANE_SHELL] = *period as u64 - 1;
+                mu[LANE_SHELL] = *period - 1;
             }
             RewritePayload::Refine { .. } => {
                 mu[LANE_SHELL] = 1;
@@ -293,9 +294,20 @@ impl Rewrite {
 /// lane as MU-ECONOMY has it. ℓ ≥ 1 at every filing and every tape (A17), so
 /// `ℓ − 1` is total. RM1: a Torse the court mints at a Congruent fill is
 /// priced off its own record's cycle, never off `after`'s element.
+///
+/// The sum in the period's carrier, exact or refused: past it, the zero
+/// vector, which the court refuses as it refuses any yield that is not work
+/// (rule 11) — never a sum wrapped into a smaller one.
 pub fn torse_yield(cycles: &[crate::transducer::element::TorsionCycle]) -> [u64; 4] {
     let mut mu = [0u64; 4];
-    mu[LANE_SHELL] = cycles.iter().map(|c| c.period as u64 - 1).sum();
+    let mut shell = 0u64;
+    for c in cycles {
+        match c.period.checked_sub(1).and_then(|beyond| shell.checked_add(beyond)) {
+            Some(s) => shell = s,
+            None => return [0; 4],
+        }
+    }
+    mu[LANE_SHELL] = shell;
     mu
 }
 
@@ -478,29 +490,19 @@ pub fn replay(e: &Element) -> Option<&'static str> {
     None
 }
 
-fn hue_closed(sigma: &[(u8, u8)], period: u32) -> bool {
+/// DOES σ CLOSE UNDER `period` — decided ON THE CYCLES (78.43(2)), never
+/// by walking every hue `period` times: `σ^period` is the identity exactly
+/// when every listed hue is fixed or stands on a cycle, and every cycle's
+/// length divides the period. A hue the permutation does not move maps to
+/// itself (rule 11). A chain that never returns is on no cycle: open.
+fn hue_closed(sigma: &[(u8, u8)], period: u64) -> bool {
     if period == 0 {
         return false;
     }
-    // A hue the permutation does not move maps to itself: that is what the
-    // permutation says about it, not a value supplied where it is silent
-    // (rule 11).
-    let apply = |h: u8| -> u8 {
-        match sigma.iter().find(|(f, _)| *f == h) {
-            Some((_, t)) => *t,
-            None => h,
-        }
-    };
-    for &(f, _) in sigma {
-        let mut h = f;
-        for _ in 0..period {
-            h = apply(h);
-        }
-        if h != f {
-            return false;
-        }
-    }
-    true
+    let cycles = crate::transducer::sentence::hue_cycles(sigma);
+    let on_a_cycle = |h: u8| cycles.iter().any(|c| c.contains(&h));
+    sigma.iter().all(|&(f, t)| f == t || on_a_cycle(f))
+        && cycles.iter().all(|c| u64::try_from(c.len()).is_ok_and(|len| period % len == 0))
 }
 
 #[cfg(test)]

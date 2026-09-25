@@ -161,7 +161,7 @@ impl Contemplation {
                             .collect();
                         let payload = crate::transducer::rewrite::RewritePayload::Torse {
                             sigma: Vec::new(),
-                            period: ell,
+                            period: u64::from(ell),
                         };
                         // RM1 — THE REMAINDER ON THE REWRITE'S RECORD: the
                         // class it closed up to, the deficit as its ray, where
@@ -171,7 +171,7 @@ impl Contemplation {
                         let unsited = at.is_none();
                         let cycle = crate::transducer::element::TorsionCycle {
                             sigma: Vec::new(),
-                            period: ell,
+                            period: u64::from(ell),
                             fibre: crate::transducer::element::FIBER_SPATIAL,
                             remainder: at.map(|at| crate::transducer::element::Remainder { class: kappa, ray: g, at, answered: None }),
                         };

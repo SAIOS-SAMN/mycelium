@@ -194,7 +194,8 @@ impl Kernel {
 
     /// Topological volume: cards, fibre span, open listings. K is algebraic
     /// time and is not a persist event — ticking it must not flush the ledger.
-    pub fn volume(&self) -> (usize, usize, usize) {
+    /// The fibre span in the period's carrier (78.43(2)), `None` past it.
+    pub fn volume(&self) -> (usize, Option<u64>, usize) {
         (self.basis.len(), self.fibre_volume_total(), self.pending.len())
     }
 

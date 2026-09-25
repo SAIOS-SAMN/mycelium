@@ -244,11 +244,13 @@ impl Form {
     /// A FINITE PERIOD IS EXACT AND AT LEAST ONE (A17), so the subtraction
     /// is total; a class of infinite order, filed at `0` (52.3), condenses
     /// no members and reaches nothing.
-    #[expect(clippy::cast_possible_truncation, reason = "PD1 debt — the yield narrows with fibre_volume and the period, which PD1 widens together")]
+    ///
+    /// In the yield's own carrier, `u64`, the sum exact or `None` (78.43(2));
+    /// it narrowed each yield to `usize` and summed unchecked.
     pub fn fibre_volume(
         &self,
         filed: &Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy>,
-    ) -> usize {
+    ) -> Option<u64> {
         let mut derived: Keyed<
             crate::transducer::sentence::ToralPeriod,
             crate::network::nerve::coord::Holonomy,
@@ -258,18 +260,17 @@ impl Form {
                 derived.put(&row.class, row.periods);
             }
         }
-        filed
-            .entries()
-            .filter_map(|(k, _)| derived.at(&k).copied())
-            // THE LABOUR OF BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`. It read
-            // `(lcm − 1)`, which is neither plane's (54.7). A plane that
-            // does not close earns nothing — that is torsion, charged as
-            // shear, never estimated through an invented finite order.
-            .map(|p| match p.yield_units() {
-                Some(u) => u as usize,
-                None => 0,
-            })
-            .sum()
+        let mut volume = 0u64;
+        // THE LABOUR OF BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`. It read `(lcm −
+        // 1)`, which is neither plane's (54.7). A plane that does not close
+        // earns nothing — that is torsion, charged as shear, never estimated
+        // through an invented finite order.
+        for p in filed.entries().filter_map(|(k, _)| derived.at(&k).copied()) {
+            if let Some(u) = p.yield_units() {
+                volume = volume.checked_add(u)?;
+            }
+        }
+        Some(volume)
     }
 
     pub fn is_cauterized(&self) -> bool {

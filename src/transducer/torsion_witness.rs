@@ -26,24 +26,32 @@ impl HolonomicValency {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HolonomicOrbitWitness {
     /// ∮_γ dX = 0: the orbit closed in `period` steps — valency 1/period.
-    Closed { period: u32, valency: HolonomicValency },
+    Closed { period: u64, valency: HolonomicValency },
     /// The orbit did not close within the span run — the open residual.
-    Open { run: u32 },
+    Open { run: u64 },
 }
 
 /// Run a torsion cycle's generator σ round from the thought's base assignment and
 /// WITNESS the orbit: closure at step t ⇒ `Closed { t, 1/t }` (∮ = 0, exactly);
 /// domain exhaustion or no closure within `max` ⇒ `Open`.
-pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u32) -> HolonomicOrbitWitness {
+///
+/// The witness RUNS the orbit on purpose — it is the independent check of a
+/// period read off the cycles (78.43(2)) — and its run is set by the period
+/// it checks (`run_of`), never by a constant. Steps in the period's carrier,
+/// `u64`; a closure past `i64` has no valency to write and is not claimed.
+pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u64) -> HolonomicOrbitWitness {
     let base = assignment(thought.sub());
     let mut cur = base.clone();
     for step in 1..=max {
         match apply_hue_map(sigma, &cur) {
             Some(next) => {
                 if next == base {
+                    let Ok(den) = i64::try_from(step) else {
+                        return HolonomicOrbitWitness::Open { run: step - 1 };
+                    };
                     return HolonomicOrbitWitness::Closed {
                         period: step,
-                        valency: HolonomicValency::new(1, step as i64),
+                        valency: HolonomicValency::new(1, den),
                     };
                 }
                 cur = next;
@@ -59,10 +67,10 @@ pub fn witness_cycle(thought: &Element, sigma: &[(u8, u8)], max: u32) -> Holonom
 /// four steps so a period of one or two is still seen to close. A period
 /// whose double does not fit the carrier is run as far as the carrier
 /// counts, which is further than any orbit this reader holds.
-fn run_of(period: u32) -> u32 {
+fn run_of(period: u64) -> u64 {
     match period.checked_mul(2) {
         Some(twice) => twice.max(4),
-        None => u32::MAX,
+        None => u64::MAX,
     }
 }
 
@@ -79,7 +87,7 @@ pub fn witness_thought(thought: &Element) -> Vec<HolonomicOrbitWitness> {
 /// Closed orbit at the stored period is a witnessed winding; Closed at
 /// another period is a misspoken winding; Open names the anholonomity the
 /// label was filing over.
-pub fn witness_stored(thought: &Element) -> Vec<(u32, HolonomicOrbitWitness)> {
+pub fn witness_stored(thought: &Element) -> Vec<(u64, HolonomicOrbitWitness)> {
     thought
         .torsion()
         .iter()

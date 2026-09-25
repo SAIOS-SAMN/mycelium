@@ -41,8 +41,12 @@ impl Kernel {
     /// It was `sections_total`, which named one component and returned the
     /// composite of two (§2.2), and the caller (`Kernel::volume`) always wanted
     /// the volume its own doc says it takes.
-    pub fn fibre_volume_total(&self) -> usize {
-        self.basis
+    ///
+    /// In the period's carrier, `u64`, the sum exact or `None` (78.43(2)).
+    pub fn fibre_volume_total(&self) -> Option<u64> {
+        let mut total = 0u64;
+        for v in self
+            .basis
             .scoped()
             // The form is read off the HELD word, which decoded it once when
             // the organ took it in (L16), not through `form_torsion`, which
@@ -62,7 +66,10 @@ impl Kernel {
                 // on having filed anything rather than on being a sentence.
                 _ => t.fibre_volume(),
             })
-            .sum()
+        {
+            total = total.checked_add(v?)?;
+        }
+        Some(total)
     }
 
     /// The torsion cycles held across the basis — how much of the language has

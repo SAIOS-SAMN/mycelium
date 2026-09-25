@@ -96,7 +96,12 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // The sweep mints in the stroke it extracts: the bundle stood over no
         // receipts, so 𝒯 is zero as a reading.
         if let Some(w) = mycelium::transducer::family::mint_sentence(&rule, &task.train, &empty, 0) {
-            let reach = rule.form.fibre_volume(&rule.form.torsion);
+            // The reach in the period's carrier; `None` past it is no reach
+            // this line can print as a number, and is named as such.
+            let Some(reach) = rule.form.fibre_volume(&rule.form.torsion) else {
+                println!("  mint {name} reach: past its carrier");
+                continue;
+            };
             if reach > 0 {
                 reach_more += 1;
             } else {

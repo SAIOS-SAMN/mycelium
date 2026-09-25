@@ -158,6 +158,112 @@ pub fn apply_hue_map(sigma: &[(u8, u8)], asg: &[(u8, u8)]) -> Option<Vec<(u8, u8
     asg.iter().map(|(b, a)| Some((map(*b)?, map(*a)?))).collect()
 }
 
+/// One transition assignment: the (before, after) hue of each link.
+pub type Assignment = Vec<(u8, u8)>;
+
+/// One row of the profile table: a gauge charge's key and the assignments
+/// of that charge — the assignments themselves, never positions (78.43(1)).
+pub(crate) type ChargeRow = (Vec<u8>, Vec<Assignment>);
+
+/// WHY A HUE MAP HAS NO PERIOD ON A BASE, by name (78.43(2)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PeriodRefused {
+    /// A hue the base carries is not in the map's domain: the orbit ends at
+    /// the first step (the traversal's `apply_hue_map` answered `None`).
+    OffDomain,
+    /// The map names a hue past the sensor's PALETTE, or does not permute
+    /// its hues: no orbit of the base returns (`gauge_is_perm`).
+    NotAPermutation,
+    /// The lcm of the cycle lengths passes the period's carrier.
+    PastCarrier,
+}
+
+/// THE PERIOD OF A BASE UNDER σ, READ BEFORE THE FIRST REVOLUTION (78.43(2)):
+/// the lcm of the lengths of σ's cycles through the hues the base carries,
+/// off [`hue_cycles`](crate::transducer::sentence::hue_cycles), the one
+/// producer. `MAX_ORBIT` walked the orbit and gave up at 32 — a telescope
+/// that stops before the planet returns; the period is set by the cycles the
+/// way a planet's return is set by its period, and nothing caps it.
+///
+/// `u64` by the type's domain: a permutation of the u8 hues has order up to
+/// Landau's g(256) ≈ 2⁵⁴. A base of no moving hue returns at once: 1.
+pub fn orbit_period(sigma: &[(u8, u8)], base: &[(u8, u8)]) -> Result<u64, PeriodRefused> {
+    let listed = |h: u8| sigma.iter().any(|(f, _)| *f == h);
+    if !base.iter().all(|&(b, a)| listed(b) && listed(a)) {
+        return Err(PeriodRefused::OffDomain);
+    }
+    if !gauge_is_perm(sigma) {
+        return Err(PeriodRefused::NotAPermutation);
+    }
+    let carried = |c: &[u8]| base.iter().any(|&(b, a)| c.contains(&b) || c.contains(&a));
+    let mut period = 1u64;
+    for c in crate::transducer::sentence::hue_cycles(sigma).iter().filter(|c| carried(c)) {
+        let len = u64::try_from(c.len()).map_err(|_| PeriodRefused::PastCarrier)?;
+        let g = num_integer::Integer::gcd(&period, &len);
+        period = (period / g).checked_mul(len).ok_or(PeriodRefused::PastCarrier)?;
+    }
+    Ok(period)
+}
+
+/// DOES `section` STAND ON THE BASE'S ORBIT UNDER σ, one of `σ¹(base) …
+/// σ^(ℓ−1)(base)` — decided ON THE CYCLES, never by generating the orbit
+/// (78.43(2)): the hue map carrying the base onto the section must be one
+/// power `σᵗ` on every hue the base carries, `t ≢ 0` modulo the period.
+/// Each moving hue gives `t` modulo its cycle's length (its offset along the
+/// cycle); the congruences must agree (their common solution, read one
+/// cycle at a time over at most that cycle's length); a fixed hue must stay.
+/// `false` where σ has no period on the base.
+pub fn on_orbit(sigma: &[(u8, u8)], base: &[(u8, u8)], section: &[(u8, u8)]) -> bool {
+    let Ok(period) = orbit_period(sigma, base) else { return false };
+    let Some(tau) = derive_hue_map(base, section) else { return false };
+    let cycles = crate::transducer::sentence::hue_cycles(sigma);
+    // Each hue's cycle and its place on it, read by the hue itself: a table
+    // over the u8 hue domain, written once off the cycles.
+    let mut places: [Option<(usize, usize)>; 256] = [None; 256];
+    for (ci, c) in cycles.iter().enumerate() {
+        for (p, &h) in c.iter().enumerate() {
+            places[usize::from(h)] = Some((ci, p));
+        }
+    }
+    let place = |h: u8| places[usize::from(h)];
+    // `t ≡ r (mod m)`, the congruences met so far: m = 1 is no constraint.
+    let (mut r, mut m) = (0u64, 1u64);
+    for &(h, image) in &tau {
+        match (place(h), place(image)) {
+            (None, _) => {
+                if image != h {
+                    return false;
+                }
+            }
+            (Some((ci, p)), Some((cj, q))) if ci == cj => {
+                let Some(len) = cycles.get(ci).map(Vec::len) else { return false };
+                let (Ok(len), Ok(offset)) = (u64::try_from(len), u64::try_from((q + len - p) % len)) else {
+                    return false;
+                };
+                // The common solution of `t ≡ r (mod m)` and `t ≡ offset
+                // (mod len)`: one of `r + k·m` for `k` below `len`, or none.
+                let mut met = None;
+                for k in 0..len {
+                    let Some(x) = k.checked_mul(m).and_then(|km| km.checked_add(r)) else { return false };
+                    if x % len == offset {
+                        met = Some(x);
+                        break;
+                    }
+                }
+                let Some(x) = met else { return false };
+                let g = num_integer::Integer::gcd(&m, &len);
+                let Some(lcm) = (m / g).checked_mul(len) else { return false };
+                (r, m) = (x % lcm, lcm);
+            }
+            _ => return false,
+        }
+    }
+    // Every hue the base carries moved as one power `t` (mod m, which is the
+    // period: every cycle through a base hue was met); `t ≡ 0` is the base
+    // itself, which the orbit's members `σ¹ … σ^(ℓ−1)` do not include.
+    r % period != 0
+}
+
 /// Derive the hue-map carrying assignment A onto assignment B link by link —
 /// `None` if the relation is not functional (one hue demanding two images).
 /// This is DERIVATION from the data, never a hypothesized plane.
@@ -295,18 +401,23 @@ impl Element {
     /// each torsion cycle's ORBIT expanded exactly to its period (bounded by ℓ —
     /// a closed cycle speaks members never individually witnessed).
     /// The assignments this word speaks with a given gauge charge, read by
-    /// the charge's key: 0 is no such gauge, 1 is the citation, many is
+    /// the charge's key: none is no such gauge, one is the citation, many is
     /// multiplicity on the fibre. One read; the axis is never read whole.
-    pub fn assignments_by_profile(&self, key: &[u8]) -> Vec<usize> {
+    ///
+    /// THE ASSIGNMENTS THEMSELVES, never their positions (78.43(1)): a
+    /// position in `assignments()` is "the third thing I saw", and a reader
+    /// that held one had to look the assignment up after. The table holds
+    /// each assignment under its charge, and no reader holds a position.
+    pub fn assignments_by_profile(&self, key: &[u8]) -> Vec<Vec<(u8, u8)>> {
         let table = self.profiles.get_or_init(|| {
-            let mut rows: Vec<(Vec<u8>, Vec<usize>)> = Vec::new();
-            let mut keyed: Vec<(Vec<u8>, usize)> =
-                self.assignments().iter().enumerate().map(|(i, a)| (gauge_key(a), i)).collect();
+            let mut rows: Vec<ChargeRow> = Vec::new();
+            let mut keyed: Vec<(Vec<u8>, Assignment)> =
+                self.assignments().into_iter().map(|a| (gauge_key(&a), a)).collect();
             keyed.sort_unstable();
-            for (k, i) in keyed {
+            for (k, a) in keyed {
                 match rows.last_mut() {
-                    Some((last, is)) if *last == k => is.push(i),
-                    _ => rows.push((k, vec![i])),
+                    Some((last, held)) if *last == k => held.push(a),
+                    _ => rows.push((k, vec![a])),
                 }
             }
             rows
@@ -340,20 +451,10 @@ impl Element {
 
     /// Does a centered chain SIT on this thought — same base positions, and its
     /// assignment is the base's, a free section's, or a member of a torsion
-    /// cycle's orbit (run round to the period, O(ℓ·links) — the closed-form
-    /// membership that makes the compressed fiber CHEAPER than the list it
-    /// replaced)?
-    /// Which assignment (in [`assignments`] order: base, sections, torsion
-    /// orbit) the centered chain sits on, if any — the gauge coordinate a
-    /// citation names.
-    pub fn matching_assignment(&self, chain: &[(i64, i64, u8, u8)]) -> Option<usize> {
-        if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
-            return None;
-        }
-        let asg = assignment(chain);
-        self.assignments().iter().position(|a| *a == asg)
-    }
-
+    /// cycle's orbit, decided ON THE CYCLES ([`on_orbit`], 78.43(2)): the
+    /// orbit is never generated to ask whether one assignment is on it.
+    /// (`matching_assignment`, which answered a position in `assignments()`,
+    /// retired with its last reader — 78.43(1).)
     pub fn matches_chain(&self, chain: &[(i64, i64, u8, u8)]) -> bool {
         if self.sub.is_empty() || positions(&self.sub) != positions(chain) {
             return false;
@@ -363,21 +464,7 @@ impl Element {
         if asg == base || self.sections.contains(&asg) {
             return true;
         }
-        for TorsionCycle { sigma, period: l, .. } in &self.torsion {
-            let mut cur = base.clone();
-            for _ in 1..*l {
-                match apply_hue_map(sigma, &cur) {
-                    Some(next) => {
-                        if next == asg {
-                            return true;
-                        }
-                        cur = next;
-                    }
-                    None => break,
-                }
-            }
-        }
-        false
+        self.torsion.iter().any(|t| on_orbit(&t.sigma, &base, &asg))
     }
 
 }

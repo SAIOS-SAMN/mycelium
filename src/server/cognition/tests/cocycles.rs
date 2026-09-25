@@ -186,7 +186,7 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     let (spoken, _, _) = filed_v2_form();
     assert_eq!(
         spoken.fibre_volume(),
-        0,
+        Some(0),
         "a v2 sentence's own fibre fields are empty; the cycle is on its form"
     );
     let held = std::sync::Arc::new(crate::transducer::element::Held::of(spoken));
@@ -219,11 +219,10 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     // chosen beside it, so the claim is that the form and the basis AGREE
     // with the geometry — which is what this reading was always for.
     assert!(ell.closes(), "the filed cycle closes on both planes");
-    let units = usize::try_from(ell.yield_units().expect("a closing spectrum has a yield"))
-        .expect("a small rotor's yield, (ℓ₁ − 1) + (ℓ₂ − 1)");
+    let units = ell.yield_units().expect("a closing spectrum has a yield");
     assert_eq!(
         (f.fibre_volume(held.element().filing()), k.fibre_volume_total()),
-        (units, units),
+        (Some(units), Some(units)),
         "the filed cycle's yield reaches the same above the base, on the form and in the basis"
     );
 }

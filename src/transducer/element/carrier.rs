@@ -22,9 +22,12 @@ pub const PALETTE: usize = 10;
 pub struct TorsionCycle {
     /// The hue-map generator: the permutation one step around the cycle.
     pub sigma: Vec<(u8, u8)>,
-    /// The PERIOD it closes at — the order of that generator, measured, and
-    /// the extent the word owes on the T lane.
-    pub period: u32,
+    /// The PERIOD it closes at — the order of that generator, READ off its
+    /// cycles (78.43(2)), and the extent the word owes on the T lane. `u64`
+    /// by the type's domain: a permutation of the u8 hues has order up to
+    /// Landau's g(256) ≈ 2⁵⁴, past `u32` (the sensor's PALETTE is site 4's
+    /// constant, not this width's provenance).
+    pub period: u64,
     /// The fibre it lives on: `FIBER_SPATIAL`, or a germinated axis.
     pub fibre: u16,
     /// RM1, 78.37(4) — THE REMAINDER the cycle closed up to, where a
@@ -341,8 +344,9 @@ pub struct Element {
     /// (its own, its sections, its torsion orbits) reached by the key of
     /// its gauge charge — one read names the 0 / 1 / many assignments a
     /// body could be spoken with. Memoized; cleared wherever the fibre
-    /// mutates. Never serialized.
-    pub(crate) profiles: std::sync::OnceLock<Vec<(Vec<u8>, Vec<usize>)>>,
+    /// mutates. Never serialized. It holds the ASSIGNMENTS under their
+    /// charge, never positions into `assignments()` (78.43(1)).
+    pub(crate) profiles: std::sync::OnceLock<Vec<super::gauge::ChargeRow>>,
 }
 
 impl Element {
@@ -595,7 +599,7 @@ impl Element {
 
     /// File a torsion cycle `(σ, ℓ)` on fibre `fibre`. Duplicate generators
     /// on the same fibre are not stored twice.
-    pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u32, fibre: u16) {
+    pub fn record_torsion(&mut self, sigma: Vec<(u8, u8)>, period: u64, fibre: u16) {
         let _ = self.record_cycle(TorsionCycle { sigma, period, fibre, remainder: None });
     }
 
@@ -671,67 +675,59 @@ impl Element {
     /// It sums THIS element's own two fibre fields. A sentence carries its
     /// cycles on its form, leaves both of these empty, and is read through
     /// `sentence::form_torsion` (`Kernel::fibre_volume_total`).
-    pub fn fibre_volume(&self) -> usize {
-        self.sections.len()
-            + self
-                .torsion
-                .iter()
-                // A cycle of period ℓ spans ℓ − 1 beyond its base. A17 files
-                // a cycle only at the period it CLOSES at and the tape
-                // refuses a zero, so ℓ ≥ 1 here and the subtraction is total.
-                .map(|t| t.period as usize - 1)
-                .sum::<usize>()
+    ///
+    /// In the period's own carrier, `u64`, exact or refused (78.43(2)): a
+    /// period reaches Landau's g(256), and the volume sums them. `None`
+    /// where the sum passes its carrier.
+    pub fn fibre_volume(&self) -> Option<u64> {
+        let mut volume = u64::try_from(self.sections.len()).ok()?;
+        for t in &self.torsion {
+            // A cycle of period ℓ spans ℓ − 1 beyond its base. A17 files a
+            // cycle only at the period it CLOSES at and the tape refuses a
+            // zero, so ℓ ≥ 1 here; `checked_sub` says so rather than trusts.
+            volume = volume.checked_add(t.period.checked_sub(1)?)?;
+        }
+        Some(volume)
     }
 
     /// The fiber's total spoken span — base + the volume above it (cycles
-    /// count their full period).
-    pub fn fiber_span(&self) -> usize {
-        1 + self.fibre_volume()
+    /// count their full period). `None` past the carrier.
+    pub fn fiber_span(&self) -> Option<u64> {
+        self.fibre_volume()?.checked_add(1)
     }
 
     /// THE TORSE MOVE — extract the torsion of the punctured axis. Candidate
     /// generators are DERIVED from the witnessed family (base → each section,
     /// link by link — the same way peel derives offsets; nothing enumerated); the
     /// first σ whose orbit spans enough of the family condenses those sections
-    /// into ONE cycle `(σ, ℓ)`. A closure found within the traversal (σ^t·base = base)
-    /// sets ℓ = t — the FULL cycle, including unwitnessed members: capacity by
-    /// exact structure. Returns the number of sections condensed (0 = no torsion
-    /// found; the free part stays as it was).
+    /// into ONE cycle `(σ, ℓ)`. The period ℓ is READ before the first
+    /// revolution — the lcm of σ's cycle lengths through the base's hues
+    /// ([`orbit_period`], 78.43(2)) — the FULL cycle, including unwitnessed
+    /// members: capacity by exact structure. A section belongs to the cycle
+    /// exactly when its hue map is a power of σ on the cycles ([`on_orbit`]),
+    /// decided per section; the orbit is never walked, and nothing caps it —
+    /// `MAX_ORBIT = 32` was a telescope that stopped before the planet came
+    /// back. Returns the number of sections condensed (0 = no torsion found;
+    /// the free part stays as it was).
     pub fn torse(&mut self) -> usize {
-        const MAX_ORBIT: usize = 32;
         if self.sections.is_empty() {
             return 0;
         }
         let base = assignment(&self.sub);
         for k in 0..self.sections.len() {
             let Some(sigma) = derive_hue_map(&base, &self.sections[k]) else { continue };
-            // Traverse the orbit: collect members, note closure.
-            let mut orbit: Vec<Vec<(u8, u8)>> = Vec::new();
-            let mut cur = base.clone();
-            let mut period = 0u32;
-            for step in 1..=MAX_ORBIT {
-                match apply_hue_map(&sigma, &cur) {
-                    Some(next) => {
-                        #[expect(clippy::cast_possible_truncation, reason = "PD1 debt — bounded by MAX_ORBIT = 32, which PD1 retires with this cast")]
-                        if next == base {
-                            period = step as u32; // closed: σ^t = id on its support
-                            break;
-                        }
-                        orbit.push(next.clone());
-                        cur = next;
-                    }
-                    None => break,
-                }
-            }
+            // An orbit that leaves its domain, or a map that does not permute
+            // its hues, has no period and files nothing (refused by name).
+            let Ok(period) = orbit_period(&sigma, &base) else { continue };
             let spanned: Vec<usize> = (0..self.sections.len())
-                .filter(|&i| orbit.contains(&self.sections[i]))
+                .filter(|&i| on_orbit(&sigma, &base, &self.sections[i]))
                 .collect();
             // Only a CLOSED orbit is a cycle (σ^t = id on its support, the orbit
             // witnessed at the mint): it condenses the sections it spans, even
             // one (a swap). An orbit that leaves its domain is not filed under
             // a period — those sections stay free; the open orbit is the
             // remainder the word carries, never a winding it claims.
-            if period > 0 && !spanned.is_empty() {
+            if !spanned.is_empty() {
                 for &i in spanned.iter().rev() {
                     self.sections.remove(i);
                 }

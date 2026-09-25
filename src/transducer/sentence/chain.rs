@@ -270,10 +270,7 @@ pub fn body_assignment(body: &[Link]) -> Vec<(u8, u8)> {
 /// keyed read (`assignments_by_profile`), then exact equality among the
 /// assignments of that charge; never the whole axis, never an index.
 pub fn holds_assignment(word: &Element, asg: &[(u8, u8)]) -> bool {
-    let held = word.assignments();
-    word.assignments_by_profile(&element::gauge_key(asg))
-        .iter()
-        .any(|&i| held.get(i).is_some_and(|a| a.as_slice() == asg))
+    word.assignments_by_profile(&element::gauge_key(asg)).iter().any(|a| a.as_slice() == asg)
 }
 
 /// The chain a citation names in the word's own frame: the word's support
@@ -366,7 +363,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Lin
 /// stable coordinate across copies of the word (a copy that gained a
 /// section orders them differently); the target's own transitions are.
 /// None when no assignment agrees.
-pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
+pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<Vec<(u8, u8)>> {
     let mut at: Keyed<Link> = Keyed::new();
     for &link in target {
         at.insert(section_site_key(link.0, link.1), link);
@@ -388,10 +385,8 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
     if landed.is_empty() {
         return agreeing;
     }
-    let held = word.assignments();
-    for k in word.assignments_by_profile(&element::gauge_key(&landed)) {
-        let Some(assignment) = held.get(k) else { continue };
-        let ok = pos.iter().zip(assignment).all(|(&(wr, wc), &(wb, wa))| {
+    for assignment in word.assignments_by_profile(&element::gauge_key(&landed)) {
+        let ok = pos.iter().zip(&assignment).all(|(&(wr, wc), &(wb, wa))| {
             let Some(p) = element::carry_center(v, wr, wc, 0) else { return true };
             // A centre off the base, or off the section's frame, lands on
             // no site to disagree with.
@@ -405,7 +400,7 @@ pub fn gauge_of(word: &Element, v: &Versor, target: &[Link]) -> Keyed<usize> {
             }
         });
         if ok {
-            agreeing.insert(element::assignment_key(assignment), k);
+            agreeing.insert(element::assignment_key(&assignment), assignment);
         }
     }
     agreeing

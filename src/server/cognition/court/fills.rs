@@ -405,7 +405,7 @@ impl Kernel {
         let (kappa, g, ell) = remainder;
         let cycle = element::TorsionCycle {
             sigma: Vec::new(),
-            period: ell,
+            period: u64::from(ell),
             fibre: element::FIBER_SPATIAL,
             remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()], answered: None }),
         };
@@ -413,7 +413,7 @@ impl Kernel {
             self.remainders_unpriced += 1;
             return None;
         };
-        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma: Vec::new(), period: ell };
+        let payload = crate::transducer::rewrite::RewritePayload::Torse { sigma: Vec::new(), period: u64::from(ell) };
         let after = crate::transducer::address::Address::from(simplex.to_vec());
         let Some(mut rw) = crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Torse, addrs, after, payload, mu)
         else {

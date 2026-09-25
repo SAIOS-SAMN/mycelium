@@ -502,12 +502,10 @@ impl Kernel {
                 self.physics.pivot(crate::physics::Physics::lanes_of(mag));
             }
             let steps = match w {
-                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { run } => {
-                    u64::from(*run)
-                }
+                crate::transducer::torsion_witness::HolonomicOrbitWitness::Open { run } => *run,
                 crate::transducer::torsion_witness::HolonomicOrbitWitness::Closed {
                     period, ..
-                } => u64::from(*period),
+                } => *period,
             };
             for _ in 0..steps {
                 self.physics.bump(mag);

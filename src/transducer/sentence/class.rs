@@ -118,44 +118,52 @@ impl CycleType {
 }
 
 /// Cycle lengths greater than 1 of a hue listing, each written as `ℓ − 1`
-/// (see [`CycleType`]). Absence is identity, so a cycle is the orbit under
-/// the listed map until it returns.
+/// (see [`CycleType`]), read off [`hue_cycles`], the one producer.
 fn cycle_lengths(listing: &[(u8, u8)]) -> Vec<u8> {
+    hue_cycles(listing)
+        .iter()
+        // A cycle holds at most 256 distinct hues (the u8 domain), so the
+        // count past its first member is at most 255 and fits exactly.
+        .filter_map(|c| u8::try_from(c.len().checked_sub(1)?).ok())
+        .collect()
+}
+
+/// THE CYCLES OF A HUE LISTING of length greater than 1, each its members
+/// in the order the listed map carries them, from the first listed. Absence
+/// is identity, so a cycle is the orbit under the listed map until it
+/// returns; a fixed point is no cycle, and a chain that does not return to
+/// its start is no cycle either (78.43(2): the period is read off these, never
+/// walked to a cap).
+pub(crate) fn hue_cycles(listing: &[(u8, u8)]) -> Vec<Vec<u8>> {
     let keyed = gauge_keyed(listing);
     let mut seen: Keyed<()> = Keyed::new();
-    let mut lengths = Vec::new();
+    let mut cycles = Vec::new();
     for &(start, _) in listing {
         if seen.contains(&hue_key(start)) {
             continue;
         }
-        // The members past the first: `None` before the first is met. A
-        // cycle holds at most 256 distinct hues (`seen` admits each once),
-        // so the count past the first is at most 255 and fits exactly.
-        let mut past_first: Option<u8> = None;
+        let mut members = Vec::new();
         let mut h = start;
         loop {
             if seen.contains(&hue_key(h)) {
                 break;
             }
             seen.insert(hue_key(h), ());
-            past_first = Some(match past_first {
-                None => 0,
-                Some(n) => n + 1,
-            });
+            members.push(h);
             let next = gauge_image(&keyed, h);
             if next == h {
                 break;
             }
             h = next;
             if h == start {
-                if let Some(excess @ 1..) = past_first {
-                    lengths.push(excess);
+                if members.len() > 1 {
+                    cycles.push(members);
                 }
                 break;
             }
         }
     }
-    lengths
+    cycles
 }
 
 impl ClassVector {

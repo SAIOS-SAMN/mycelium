@@ -218,13 +218,11 @@ where
     // The gauges agreeing on THIS piece under this transport: the reading
     // is whether there is exactly one, so the read takes two and stops.
     let mut asgs = agreeing.scoped();
-    if let Some((_, &asg)) = asgs.next() {
+    if let Some((_, asg)) = asgs.next() {
         if asgs.next().is_none() {
-            // The cite carries the ASSIGNMENT the agreeing gauge names, read
-            // here once off the word it names; nothing downstream indexes.
-            let Some(assignment) = word.assignments().get(asg).cloned() else {
-                return unlocated(m);
-            };
+            // The cite carries the ASSIGNMENT the agreeing gauge IS — the
+            // reading answers it, and nothing looks a position up (78.43(1)).
+            let assignment = asg.clone();
             let cite = Cite {
                 word: crate::transducer::address::Address::new(addr.clone()),
                 transport: v.clone(),
