@@ -130,9 +130,12 @@ pub fn read_obstruction(content: Content) -> ClosureObstruction {
 
 /// A.17 — A REFUSAL NAMED WHERE IT IS MADE (78.16 C3 as audited): the
 /// mind's, the pivot's and the mint's refusals that return no `Refusal`,
-/// each by its own name, its kind by 78.9, and counted once where it is formed
-/// by the one refusal reader ([`crate::observe::note_obstruction`]) — never a
-/// silent `None`, `false` or `continue`.
+/// each by its own name, its kind by 78.9 — read off the content where the
+/// content decides it, never assigned per site — and counted once by the one
+/// refusal reader ([`crate::observe::note_obstruction`]); never a silent
+/// `None`, `false` or `continue`. The trial's per-candidate negatives are
+/// returned, never counted: one orbit tried by k candidates is one fact
+/// (law 12), counted on the demand arm.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Refused {
     /// The mint: nothing in the form acts — no question stands (N).
@@ -140,18 +143,22 @@ pub enum Refused {
     /// The mint: a vertex does not carry its family, at the kind the court's
     /// own reader gave that refusal.
     MintVertexNotCarried(ObstructionKind),
-    /// The mint: links remain and the form declares no demand (C).
+    /// The mint: links remain and the form declares no demand — its own
+    /// claim does not account for what it read (I).
     MintLinksWithoutDemand,
-    /// The mint: links the form's demands do not declare (C).
+    /// The mint: links the form's demands do not declare (I).
     MintLinksUndeclared,
     /// The mint: the form has no tape at its measure (I).
     MintNoTape,
     /// A derivation: the citations do not compose to the target (I).
     CitationsDoNotCompose,
-    /// 37.7, the Gödel step: the rotor mints no generator (P).
-    RotorMintsNoGenerator,
+    /// 37.7, the Gödel step: the rotor mints no generator, at the kind its
+    /// content reads — no versor P, a versor the letters do not spell D (the
+    /// letter demand). A spelled one is derivable and never this.
+    RotorMintsNoGenerator(ObstructionKind),
     /// The pivot's trial: no orbit, class or measure stood to ask (N).
     TrialNoQuestion,
+    /// The trial's arms (C, I) are the candidate's own and returned only.
     /// The trial: the move leaves the coordinate it acted on standing (C).
     TrialNotDischarged,
     /// The trial: the member paths agree on no class after the move (C).
@@ -163,42 +170,45 @@ pub enum Refused {
     /// The trial: the move split two circuits of a cell that agreed (C,
     /// 78.46(4′)).
     TrialUnclosed,
-    /// An owed citation: the cited address is sealed, owed to no court (P).
+    /// An owed citation: the cited address is sealed, owed to no court (I:
+    /// it says nothing about a closure).
     CitedSealed,
     /// An owed citation: the cited form is not held here (I).
     CitedNotHeld,
     /// An owed citation: every court this mind knows was taught it and none
-    /// rules it — it waits for its family (D).
+    /// rules it — it waits for its family (I).
     OwedToEveryCourt,
     /// The court: an end of the face is not a vertex of the form (I).
     FaceEndNotVertex,
     /// The court: the face's place does not re-derive (I).
     FacePlaceNotRederived,
-    /// The court: no place derives at the face at all (P).
+    /// The court: no place derives at the face at all — a claim that does
+    /// not re-derive (I, 78.9's face row).
     FacePlaceUnderived,
 }
 
 impl Refused {
     /// Its kind (78.9).
     pub fn kind(self) -> ObstructionKind {
-        use ObstructionKind::{C, D, I, N, P};
+        use ObstructionKind::{C, I, N};
         match self {
-            Refused::MintVertexNotCarried(k) => k,
+            Refused::MintVertexNotCarried(k) | Refused::RotorMintsNoGenerator(k) => k,
             Refused::MintNothingActs | Refused::TrialNoQuestion => N,
-            Refused::MintLinksWithoutDemand
-            | Refused::MintLinksUndeclared
-            | Refused::TrialNotDischarged
+            Refused::TrialNotDischarged
             | Refused::TrialPathsDisagree
             | Refused::TrialLaneRose
             | Refused::TrialUnclosed => C,
-            Refused::MintNoTape
+            Refused::MintLinksWithoutDemand
+            | Refused::MintLinksUndeclared
+            | Refused::MintNoTape
             | Refused::CitationsDoNotCompose
             | Refused::TrialRankInadmissible
+            | Refused::CitedSealed
             | Refused::CitedNotHeld
+            | Refused::OwedToEveryCourt
             | Refused::FaceEndNotVertex
-            | Refused::FacePlaceNotRederived => I,
-            Refused::RotorMintsNoGenerator | Refused::CitedSealed | Refused::FacePlaceUnderived => P,
-            Refused::OwedToEveryCourt => D,
+            | Refused::FacePlaceNotRederived
+            | Refused::FacePlaceUnderived => I,
         }
     }
 
@@ -211,7 +221,7 @@ impl Refused {
             Refused::MintLinksUndeclared => "links undeclared by the form's demands",
             Refused::MintNoTape => "the form has no tape at its measure",
             Refused::CitationsDoNotCompose => "the citations do not compose to the target",
-            Refused::RotorMintsNoGenerator => "the rotor mints no generator",
+            Refused::RotorMintsNoGenerator(_) => "the rotor mints no generator",
             Refused::TrialNoQuestion => "no orbit, class or measure stood to ask",
             Refused::TrialNotDischarged => "the move leaves its coordinate standing",
             Refused::TrialPathsDisagree => "the member paths agree on no class",

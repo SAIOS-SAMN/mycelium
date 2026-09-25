@@ -389,13 +389,24 @@ impl Entity {
     pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
         for (rotor, chart) in adjoined {
             // Two different facts end a candidate. A rotor that mints no
-            // generator is a REFUSAL, named and counted where it forms (A.17,
-            // 78.9): if adjoined-by-closure reads 0, this is the reading that
-            // says why (GD1). A rotor the mind already stands is not one —
-            // the same class is adjoined every stroke it is measured, and
-            // after the first the letter is held with nothing to add.
+            // generator is read by its content (78.9) — if adjoined-by-closure
+            // reads 0, this is the reading that says why (GD1): SPELLED by the
+            // held letters it is DERIVABLE (78.32(c)), no refusal, counted so;
+            // unspelled it is D, the letter demand 37.7 names; no versor at
+            // all is P. A rotor the mind already stands is neither — the same
+            // class is adjoined every stroke it is measured, and after the
+            // first the letter is held with nothing to add.
             let Some(e) = crate::transducer::sentence::generator_form(rotor, chart, &[]) else {
-                let _ = crate::transducer::sentence::Refused::RotorMintsNoGenerator.noted();
+                use crate::transducer::sentence::{ObstructionKind, Refused};
+                match crate::transducer::alphabet::factor_rotor(rotor) {
+                    Some(Ok(_)) => self.contemplation.pivots.derivable += 1,
+                    Some(Err(_)) => {
+                        let _ = Refused::RotorMintsNoGenerator(ObstructionKind::D).noted();
+                    }
+                    None => {
+                        let _ = Refused::RotorMintsNoGenerator(ObstructionKind::P).noted();
+                    }
+                }
                 continue;
             };
             if self.epigenome.standing_of(e.address().as_bytes()).is_some() {

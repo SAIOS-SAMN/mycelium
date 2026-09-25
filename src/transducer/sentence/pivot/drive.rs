@@ -520,6 +520,25 @@ impl Form {
                         handled.put(&orbit_k, ());
                     }
                     Discharge::NoneDischarged => {
+                        // A.17, 78.9 — NO CANDIDATE DISCHARGES THE ORBIT: one
+                        // fact, counted once, its kind read off the orbit's
+                        // own holonomy by the one reader — no versor P, a
+                        // versor the dialect does not spell D, a residue on
+                        // the cover C. The candidates' own refusals were the
+                        // trial's returns, never counted (law 12).
+                        let holonomy = self.orbits.get(idx).and_then(|lp| {
+                            paths_carried_quiet(&self.faces, &self.vertices, lp)?
+                                .scoped()
+                                .find_map(|(_, c)| c.composite())
+                        });
+                        crate::observe::note_obstruction(
+                            crate::transducer::sentence::read_obstruction(crate::transducer::sentence::Content::Holonomy {
+                                versor: holonomy.as_ref(),
+                                chart: None,
+                                proof: "no candidate discharges the orbit",
+                            })
+                            .kind(),
+                        );
                         let infinite = matches!(order, Order::Infinite);
                         if infinite && !held {
                             // One standing demand per chart the orbit

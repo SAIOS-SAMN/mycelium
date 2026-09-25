@@ -35,18 +35,10 @@ pub(crate) struct OrbitClass {
 
 impl Form {
     /// ONE CANDIDATE TRIED: its certificate, or its refusal by name (A.17),
-    /// counted where it forms by the one refusal reader (78.9).
+    /// returned and never counted — one orbit tried by k candidates is one
+    /// fact (law 12), counted once on the drive's demand arm, its kind read
+    /// off the orbit's holonomy (78.9).
     pub(crate) fn trial(
-        &self,
-        idx: usize,
-        cand: &Candidate,
-        kappa: &ClassVector,
-        before: &Prior<'_>,
-    ) -> Result<PivotCertificate, Refused> {
-        self.trial_or_refuse(idx, cand, kappa, before).map_err(Refused::noted)
-    }
-
-    fn trial_or_refuse(
         &self,
         idx: usize,
         cand: &Candidate,
