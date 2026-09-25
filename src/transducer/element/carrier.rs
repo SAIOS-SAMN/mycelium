@@ -43,9 +43,34 @@ pub struct Remainder {
     pub class: Box<crate::transducer::sentence::ClassVector>,
     pub ray: Box<crate::transducer::alphabet::Rotor>,
     pub at: Vec<Vec<u8>>,
+    /// RM1 (c) — ANSWERED: the stamp of the re-fill act that closed it, a
+    /// citation of that act by its coordinates; `None` is open. The
+    /// remainder stays on the record as evidence either way — the history is
+    /// the record's.
+    pub answered: Option<crate::chronometry::Stamp>,
+}
+
+impl TorsionCycle {
+    /// RM1 (c) — THE PRESSURE a remainder puts on the word while open: the
+    /// Torse's own yield, `ℓ − 1` on the shell lane (`torse_yield`, one
+    /// formula), and zero once answered. `None` where the cycle carries no
+    /// remainder (not measured). A READING: charging it to the room while
+    /// the word is held resident is the flux door's, after the recut.
+    pub fn pressure(&self) -> Option<[u64; 4]> {
+        let r = self.remainder.as_ref()?;
+        Some(match r.answered {
+            Some(_) => [0; 4],
+            None => crate::transducer::rewrite::torse_yield(std::slice::from_ref(self)),
+        })
+    }
 }
 
 impl Remainder {
+    /// One remainder and another are the same perception where class, ray
+    /// and chain agree; whether it has been answered is its history.
+    pub fn same(&self, other: &Remainder) -> bool {
+        self.class == other.class && self.ray == other.ray && self.at == other.at
+    }
     /// The index key the receptor reads by, CLASS FIRST (a reading depends
     /// on fewer coordinates first): the class key, then the residue's chart
     /// chain, its keys written in order — each length-delimited, so one
@@ -90,6 +115,13 @@ impl Remainder {
         for c in &self.at {
             crate::transducer::address::put_bytes(out, c);
         }
+        match &self.answered {
+            Some(s) => {
+                out.push(1);
+                s.put_canonical(out);
+            }
+            None => out.push(0),
+        }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Remainder> {
@@ -106,7 +138,18 @@ impl Remainder {
         for _ in 0..n {
             at.push(crate::transducer::address::take_bytes(b, p)?);
         }
-        Some(Remainder { class, ray, at })
+        let answered = match *b.get(*p)? {
+            0 => {
+                *p += 1;
+                None
+            }
+            1 => {
+                *p += 1;
+                Some(crate::chronometry::Stamp::take_canonical(b, p)?)
+            }
+            _ => return None,
+        };
+        Some(Remainder { class, ray, at, answered })
     }
 }
 
@@ -534,7 +577,7 @@ impl Element {
                     t.remainder = Some(r);
                     Filed::Gained
                 }
-                (Some(have), Some(r)) if *have == r => Filed::Standing,
+                (Some(have), Some(r)) if have.same(&r) => Filed::Standing,
                 (Some(_), Some(_)) => Filed::Refused,
             },
         }
@@ -543,6 +586,33 @@ impl Element {
     /// RM1 — the remainders this word's torsion record carries.
     pub fn remainders(&self) -> impl Iterator<Item = &Remainder> {
         self.torsion.iter().filter_map(|t| t.remainder.as_ref())
+    }
+
+    /// RM1 (c) — THE OPEN REMAINDER of `class` perceived at `at`, answered by
+    /// the re-fill act at `stamp`, and the pressure it put on the word. `None`
+    /// where the record carries no open remainder of that class there.
+    pub fn answer_remainder(
+        &mut self,
+        class: &crate::transducer::sentence::ClassVector,
+        at: &[Vec<u8>],
+        stamp: crate::chronometry::Stamp,
+    ) -> Option<[u64; 4]> {
+        let t = self.torsion.iter_mut().find(|t| {
+            t.remainder.as_ref().is_some_and(|r| *r.class == *class && r.at == at && r.answered.is_none())
+        })?;
+        let pressure = t.pressure()?;
+        if let Some(r) = t.remainder.as_mut() {
+            r.answered = Some(stamp);
+        }
+        Some(pressure)
+    }
+
+    /// The pressure an open remainder of `class` at `at` puts on this word.
+    pub fn open_pressure(&self, class: &crate::transducer::sentence::ClassVector, at: &[Vec<u8>]) -> Option<[u64; 4]> {
+        self.torsion
+            .iter()
+            .find(|t| t.remainder.as_ref().is_some_and(|r| *r.class == *class && r.at == at && r.answered.is_none()))?
+            .pressure()
     }
 
     /// The fibre's span ABOVE ITS BASE — free sections plus every torsion

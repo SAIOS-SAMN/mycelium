@@ -10,6 +10,20 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element;
 
+/// RM1 (c) — VOICES' RE-FILLS REPLAYED: applied; and refused — not the
+/// re-fill's cites, a word not located here, a spelling word that does not
+/// spell the ray, a rewrite with no open remainder of the class there, and
+/// no Congruent simplex at the rewrite's `after` in its chart's complex.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct RefillTally {
+    pub applied: u64,
+    pub unshaped: u64,
+    pub unlocated: u64,
+    pub unspelled: u64,
+    pub unopen: u64,
+    pub unsited: u64,
+}
+
 impl Kernel {
     pub(crate) fn stroke_fills(&mut self, budget: &mut crate::physics::Budget) {
         if budget.remaining() == 0 {
@@ -269,6 +283,93 @@ impl Kernel {
         }
     }
 
+    /// RM1 (c) — A VOICE'S RE-FILL, REPLAYED: its Settled act cites the
+    /// rewrite word, `Cite::Class {κ, g, cover: the chain}` and the word
+    /// that spells the twist. The court locates both words, re-reads the
+    /// spelling word's rotor against `g` and the rewrite's open remainder of
+    /// κ at that chain, and only then writes its Congruent simplex — at the
+    /// rewrite's `after` in the complex of the chain's chart — `Filled`
+    /// through the named door; the rewrite's remainder is answered at the
+    /// act's stamp, and the pressure it answered is minted to the voice under
+    /// POUW. Nothing else is paid. Each refusal is counted by why.
+    pub(crate) fn hear_refill(&mut self, r: &crate::chronometry::KStepReceipt) {
+        use crate::chronometry::Cite;
+        let [Cite::Word { chart: c1, class: k1, at: a1 }, Cite::Class { class, rotor, cover: Some(at) }, Cite::Word { chart: c2, class: k2, at: a2 }] =
+            r.cites.as_slice()
+        else {
+            self.refills.unshaped += 1;
+            return;
+        };
+        let locate = |k: &Self, chart, cls, at| {
+            k.word_admitted_at(at).cloned().or_else(|| match k.fiber_read(chart, cls).as_slice() {
+                [one] => Some(one.clone()),
+                _ => None,
+            })
+        };
+        let (Some(rw_addr), Some(sp_addr)) = (locate(self, c1, k1, a1), locate(self, c2, k2, a2)) else {
+            self.refills.unlocated += 1;
+            return;
+        };
+        let (Some(rewrite), Some(spelling)) =
+            (self.named_word(rw_addr.as_bytes()).cloned(), self.named_word(sp_addr.as_bytes()).cloned())
+        else {
+            self.refills.unlocated += 1;
+            return;
+        };
+        // The spelling word spells the twist: its word vertex's derivation
+        // re-read, projectively the cited ray.
+        let spells = crate::transducer::sentence::from_element_form(&spelling).is_some_and(|f| {
+            f.vertices.iter().any(|v| {
+                matches!(v, crate::transducer::sentence::Vertex::Word { derivation, .. } if derivation.rotor().projective_eq(rotor))
+            })
+        });
+        if !spells {
+            self.refills.unspelled += 1;
+            return;
+        }
+        let open = rewrite
+            .remainders()
+            .any(|o| *o.class == **class && o.at == *at && o.answered.is_none() && o.ray.projective_eq(rotor));
+        let Some(mu) = rewrite.open_pressure(class, at).filter(|_| open) else {
+            self.refills.unopen += 1;
+            return;
+        };
+        let (Some(rw), [chart]) = (crate::transducer::rewrite::Rewrite::from_element(&rewrite), at.as_slice()) else {
+            self.refills.unsited += 1;
+            return;
+        };
+        let after = rw.after.addr().as_bytes().to_vec();
+        let congruent = self
+            .complexes
+            .get(chart)
+            .and_then(|cx| cx.simplex(&after))
+            .is_some_and(|s| matches!(s.fill, crate::transducer::cech::Fill::Congruent(..)));
+        if !congruent {
+            self.refills.unsited += 1;
+            return;
+        }
+        // The rewrite's record answered on whichever row holds it — the
+        // basis, the provisional row it was offered on, or the listing book.
+        let key = rw_addr.as_bytes();
+        let answered = match self.word_mut(key) {
+            Some(wm) => wm.update(|e| e.answer_remainder(class, at, r.stamp)),
+            None => match self.provisional.get_mut(key) {
+                Some(e) => e.answer_remainder(class, at, r.stamp),
+                None => self.pending.get_mut(key).and_then(|e| e.answer_remainder(class, at, r.stamp)),
+            },
+        };
+        if answered.is_none() {
+            self.refills.unopen += 1;
+            return;
+        }
+        if let Some(cx) = self.complexes.get_mut(chart) {
+            let _ = cx.refill(&after, (**rotor).clone());
+        }
+        let anchor = self.anchor();
+        self.treasury.mint_claim(&[r.stamp.vk], mu, anchor);
+        self.refills.applied += 1;
+    }
+
     // `file_torsion` STOOD HERE AND IS RETIRED (RM1, 78.37(4)). It recorded
     // `(σ, ℓ)` on the simplex's least address by key — a representative
     // chosen from the simplex (checklist (r)) — and dropped κ and g. The
@@ -295,7 +396,7 @@ impl Kernel {
             sigma: Vec::new(),
             period: ell,
             fibre: element::FIBER_SPATIAL,
-            remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()] }),
+            remainder: Some(element::Remainder { class: kappa, ray: g, at: vec![inv.key().into_vec()], answered: None }),
         };
         let Some(mu) = self.treasury.price_torse(std::slice::from_ref(&cycle)) else {
             self.remainders_unpriced += 1;

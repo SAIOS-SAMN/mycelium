@@ -63,6 +63,26 @@ pub struct RemainderReading {
     pub untopped: u64,
     pub uncited: u64,
     pub callus_unminted: u64,
+    /// What the receptor could not read: an index key whose chain does not
+    /// read, a word the index names whose record carries no matching
+    /// remainder.
+    pub receive_malformed: u64,
+    pub receive_unrecorded: u64,
+    /// RM1 (c) — THE RE-FILL: remainders the receptor skipped as answered;
+    /// re-fill acts (the mind: Settled sealed and the record answered; the
+    /// court: a voice's act replayed and applied); refused on the mind (no
+    /// open remainder, a word not cited, the act not sealed); refused on the
+    /// court by why — not the re-fill's cites, a word not located, the
+    /// spelling word not spelling the ray, no open remainder, no Congruent
+    /// simplex at the rewrite's `after`.
+    pub answered_skipped: u64,
+    pub refill_acts: u64,
+    pub refill_refused: u64,
+    pub refill_unshaped: u64,
+    pub refill_unlocated: u64,
+    pub refill_unspelled: u64,
+    pub refill_unopen: u64,
+    pub refill_unsited: u64,
 }
 
 /// The reading as it accumulates: `ℓ` → count, class → the charts it stands
@@ -125,7 +145,7 @@ impl RemainderReading {
             false => self.by_ell.iter().map(|(l, n)| format!("ℓ{l} {n}")).collect::<Vec<_>>().join(" "),
         };
         format!(
-            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {}",
+            "remainders: congruent {ells}; classes {} across charts {} unplaced {}; re-filled {}; record refused {} unsited {} unrecorded {} unpriced {} unminted {} unoffered {} unmerged {}; coincident {}; receptor: nested {} discordant {} calluses {} unspelled {} untopped {} uncited {} unminted {} malformed {} unrecorded {} answered skipped {}; re-fill: acts {} refused {} unshaped {} unlocated {} unspelled {} unopen {} unsited {}",
             self.classes,
             self.across,
             self.unplaced,
@@ -144,7 +164,17 @@ impl RemainderReading {
             self.unspelled,
             self.untopped,
             self.uncited,
-            self.callus_unminted
+            self.callus_unminted,
+            self.receive_malformed,
+            self.receive_unrecorded,
+            self.answered_skipped,
+            self.refill_acts,
+            self.refill_refused,
+            self.refill_unshaped,
+            self.refill_unlocated,
+            self.refill_unspelled,
+            self.refill_unopen,
+            self.refill_unsited
         )
     }
 
@@ -174,6 +204,16 @@ impl RemainderReading {
             self.untopped,
             self.uncited,
             self.callus_unminted,
+            self.receive_malformed,
+            self.receive_unrecorded,
+            self.answered_skipped,
+            self.refill_acts,
+            self.refill_refused,
+            self.refill_unshaped,
+            self.refill_unlocated,
+            self.refill_unspelled,
+            self.refill_unopen,
+            self.refill_unsited,
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -219,6 +259,16 @@ impl RemainderReading {
             untopped: u64_at(b, p)?,
             uncited: u64_at(b, p)?,
             callus_unminted: u64_at(b, p)?,
+            receive_malformed: u64_at(b, p)?,
+            receive_unrecorded: u64_at(b, p)?,
+            answered_skipped: u64_at(b, p)?,
+            refill_acts: u64_at(b, p)?,
+            refill_refused: u64_at(b, p)?,
+            refill_unshaped: u64_at(b, p)?,
+            refill_unlocated: u64_at(b, p)?,
+            refill_unspelled: u64_at(b, p)?,
+            refill_unopen: u64_at(b, p)?,
+            refill_unsited: u64_at(b, p)?,
         })
     }
 }

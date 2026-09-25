@@ -163,6 +163,18 @@ impl Contemplation {
             })
             .map(|(k, _)| k)
             .collect();
+        // RM1 (c) — a DEMAND answered opens the re-fill's door for its
+        // class: the entity re-spells that class's open remainders at the
+        // close.
+        for k in &answered {
+            let demand = match (self.docket_open.get(k), self.docket.get(k)) {
+                (Some(Cite::Demand { class, .. }), _) | (_, Some(Cite::Demand { class, .. })) => Some((**class).clone()),
+                _ => None,
+            };
+            if let Some(class) = demand {
+                self.demands_answered.push(class);
+            }
+        }
         for k in answered {
             self.docket_answer(&k);
         }

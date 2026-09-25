@@ -300,6 +300,10 @@ pub struct Kernel {
     pub(crate) remainders_unminted: u64,
     pub(crate) remainders_unoffered: u64,
     pub(crate) remainders_coincident: u64,
+    /// RM1 (c) — voices' re-fill acts replayed here: applied (the Congruent
+    /// simplex written Filled, the rewrite's remainder answered, the pressure
+    /// minted under POUW), and refused by why.
+    pub(crate) refills: super::court::fills::RefillTally,
     /// THE STAMP ALIASES filed on a word: the peer admitting stamps a fiber
     /// read located at this word (`held_at` entries beside its own), dropped
     /// with the word. Re-derived at restore from the ledger's peer nodes.
@@ -639,6 +643,11 @@ impl Kernel {
                 // carries, on the word its citation locates here.
                 if let crate::chronometry::ActKind::Ruling(arm) = r.kind {
                     self.hear_ruling(r, arm);
+                }
+                // RM1 (c): a voice's re-fill, replayed here — the court's one
+                // door to its Congruent simplex.
+                if r.kind == crate::chronometry::ActKind::Settled {
+                    self.hear_refill(r);
                 }
             }
             crate::court::admission::Admitted::Equivocation { at, .. } => {

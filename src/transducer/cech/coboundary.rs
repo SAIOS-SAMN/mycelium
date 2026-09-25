@@ -130,6 +130,21 @@ impl Complex {
         }
     }
 
+    /// RM1 (c) — THE RE-FILL'S NAMED DOOR: a simplex standing `Congruent`
+    /// written `Filled` by the twist `gamma` a held word now spells, through
+    /// the one fill writer (counted `refilled`). Every other fill is left
+    /// as it stands — `None` — so a Congruent simplex is never re-read by
+    /// being made unsettled.
+    pub fn refill(&mut self, key: &[u8], gamma: Rotor) -> Option<()> {
+        let degree = self.degree_of(key)?;
+        if !matches!(self.simplex(key)?.fill, Fill::Congruent(..)) {
+            return None;
+        }
+        let filled = Fill::Filled(Box::new(gamma), Box::new(crate::transducer::element::identity_versor()));
+        self.write_fill(degree, key, &filled);
+        Some(())
+    }
+
     /// Mark a simplex Extended by a known gauge (a translation, a taught
     /// coboundary). Degree-1 never tree-solves — that would always succeed.
     pub fn fill_by_gauge(

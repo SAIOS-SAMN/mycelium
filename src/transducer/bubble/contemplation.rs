@@ -205,6 +205,9 @@ pub struct Contemplation {
     /// by its own name (the reading's `refused`, `unsited`, `unrecorded`,
     /// `unminted`, `unmerged`).
     pub(crate) remainders: crate::transducer::cech::RemainderReading,
+    /// RM1 (c) — the classes whose docketed Demand a discharge answered, for
+    /// the entity's re-fill at the close (volatile).
+    pub(crate) demands_answered: Vec<crate::transducer::sentence::ClassVector>,
 }
 
 /// P9 — THE CANDIDATE TRANSPORTS OVER ONE OPEN DEMAND, read from the

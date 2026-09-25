@@ -180,7 +180,7 @@ impl Contemplation {
                                         sigma: Vec::new(),
                                         period: ell,
                                         fibre: crate::transducer::element::FIBER_SPATIAL,
-                                        remainder: Some(crate::transducer::element::Remainder { class: kappa, ray: g, at }),
+                                        remainder: Some(crate::transducer::element::Remainder { class: kappa, ray: g, at, answered: None }),
                                     };
                                     if rw.record_cycle(cycle) == crate::transducer::element::Filed::Refused {
                                         self.remainders.refused += 1;

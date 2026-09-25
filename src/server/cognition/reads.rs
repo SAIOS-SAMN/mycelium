@@ -103,6 +103,12 @@ impl Kernel {
             unminted: self.remainders_unminted,
             unoffered: self.remainders_unoffered,
             coincident: self.remainders_coincident,
+            refill_acts: self.refills.applied,
+            refill_unshaped: self.refills.unshaped,
+            refill_unlocated: self.refills.unlocated,
+            refill_unspelled: self.refills.unspelled,
+            refill_unopen: self.refills.unopen,
+            refill_unsited: self.refills.unsited,
             ..count.read()
         };
         (read, torsion_words)

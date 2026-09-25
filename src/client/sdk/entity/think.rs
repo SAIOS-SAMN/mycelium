@@ -665,6 +665,10 @@ impl Entity {
         m.remainders.untopped = c.untopped;
         m.remainders.uncited = c.uncited;
         m.remainders.callus_unminted = c.unminted;
+        (m.remainders.receive_malformed, m.remainders.receive_unrecorded) = (c.malformed, c.unrecorded);
+        // RM1 (c) — the re-fills.
+        (m.remainders.answered_skipped, m.remainders.refill_acts, m.remainders.refill_refused) =
+            (c.answered, c.refilled, c.refill_refused);
         m
     }
 
