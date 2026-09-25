@@ -221,19 +221,25 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
+    // AT1 (Q1): three bodies of the identity's class are ONE vertex with a
+    // member per chart; the triangle is the Frame's chart and two of those
+    // members, overlapped pairwise.
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
     for tag in [2u8, 3u8, 4u8] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            // Each vertex stands on its OWN chart: with one chart they would be one
-            // vertex, since an address is derived from its coordinates (54.2, §1.5).
+            // Each body stands on its OWN chart: with one chart they would be one
+            // member, since an address is derived from its coordinates (54.2, §1.5).
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one, &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
+            [0],
             None,
-        ));
+        );
+        charts.push(f.stand_member(&v, 0).expect("a word vertex stands"));
     }
-    for (i, j) in [(0u16, 1u16), (1, 2), (0, 2)] {
-        f.faces.push(f.face_of(i, j).expect("face"));
+    for (i, j) in [(0usize, 1usize), (1, 2), (0, 2)] {
+        f.place_overlap(charts[i].clone(), charts[j].clone(), None).expect("face");
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert!(!f.orbits.is_empty(), "a triangle closes an orbit");
@@ -295,43 +301,45 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
 #[test]
 fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
-    use crate::transducer::sentence::{face_pair_key, FacePlace, Form, FormFace, Transport, Vertex};
-    let chart = crate::transducer::stalk::Invariant::counts(&[3, 5]);
-    let pair = face_pair_key(&chart, &chart);
+    use crate::transducer::sentence::{FacePlace, Form, FormFace, Producer, Transport, Vertex};
     let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("plane"), false)]);
     let mut f = Form::default();
+    // AT1 (Q1): the two bodies are ONE vertex of the identity's class with a
+    // member per chart; the triangle is the Frame's chart and the two.
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
     for tag in [2u8, 3u8] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             Derivation::spelled(Word::identity()),
             // Its own chart: two on one chart with one rotor, one carriage
-            // and one gauge are ONE vertex (54.2, §1.5).
+            // and one gauge are ONE member (54.2, §1.5).
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::identity_versor()),
             Vec::new(),
+            [0],
             None,
-        ));
+        );
+        charts.push(f.stand_member(&v, 0).expect("a word vertex stands"));
     }
-    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
-        let mut face = FormFace::new(i, j, Word::identity());
-        face.at.insert(
-            pair.clone(),
-            FacePlace {
+    for (i, j, edge) in [(0usize, 1usize, None), (0, 2, None), (1, 2, Some(q.clone()))] {
+        let place = FacePlace {
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+            edge: edge.map(|w| Transport {
+                word: w,
                 carriage: element::identity_versor(),
                 gauge: Vec::new(),
-                edge: edge.map(|w| Transport {
-                    word: w,
-                    carriage: element::identity_versor(),
-                    gauge: Vec::new(),
-                }),
-                refraction: None,
-            },
-        );
-        f.faces.push(face);
+            }),
+            refraction: None,
+        };
+        let o = crate::network::nerve::coord::Overlap { from: charts[i].clone(), to: charts[j].clone() };
+        f.put_face(o, FormFace::placed(place, Producer::Place));
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(f.orbits.len(), 1, "the triangle closes one orbit");
     assert_eq!(
-        f.orbits[0].holonomy.order(),
+        crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, &f.orbits[0])
+            .expect("the orbit's word reads")
+            .order(),
         Order::Finite(1),
         "the WORD holonomy is the identity, as a product of coboundaries always is"
     );
@@ -410,11 +418,13 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     // The same cycle, with the sentence asking the market to adjudicate the
     // boundary: the stroke is claimed, so the stroke is charged.
     let mut demanding = filed;
-    demanding.vertices.push(crate::transducer::family::demand_vertex(
-        crate::transducer::sentence::Demand::Source { multiplicity: 1 },
-        &crate::transducer::stalk::Invariant::counts(&[3, 5]),
-        vec![(0, 0, 0, 1)],
-    ));
+    demanding
+        .put_vertex(crate::transducer::family::demand_vertex(
+            crate::transducer::sentence::Demand::Source { multiplicity: 1 },
+            &crate::transducer::stalk::Invariant::counts(&[3, 5]),
+            vec![(0, 0, 0, 1)],
+        ))
+        .expect("a demand has a coordinate");
     demanding.reindex();
     let asked = crate::transducer::sentence::as_element_form(&demanding, [1, 1, 0, 0])
         .expect("a sentence tape");

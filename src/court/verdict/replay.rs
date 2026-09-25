@@ -99,48 +99,38 @@ fn same_place(
     }
 }
 
-fn face_rederives(f: &Form, face: &crate::transducer::sentence::FormFace) -> bool {
-    let (Some(vi), Some(vj)) = (
-        f.vertices.get(face.i as usize),
-        f.vertices.get(face.j as usize),
-    ) else {
+/// AN OVERLAP RE-DERIVES from its two charts (AT1): its word is derived on
+/// read and holds nothing to compare, so what is asked is that both ends
+/// stand and that the PLACE re-derives from the members at the overlap's
+/// frame. A frame-axis overlap's place is the motor its member's body took
+/// between two frames — measured content its producer names, which the
+/// vertices do not derive — so only its ends are asked here.
+fn face_rederives(f: &Form, o: &crate::network::nerve::coord::Overlap, face: &crate::transducer::sentence::FormFace) -> bool {
+    // §8.1 — WHICH BRANCH REFUSED. `REFUSE_FACE` names the face and not the
+    // reading inside it, and the ways a face can fail to re-derive are
+    // different defects.
+    let label = crate::transducer::sentence::At::face(o.from_vertex(), o.to_vertex()).label();
+    let (Some(_), Some(_)) = (f.vertices.at(&o.from_vertex()), f.vertices.at(&o.to_vertex())) else {
+        eprintln!("  {label} refused: an end is not a vertex of the form");
         return false;
     };
-    if f.face_word(face.i, face.j).as_ref() != Some(&face.word) {
-        // §8.1 — WHICH BRANCH REFUSED. `REFUSE_FACE` names the face and
-        // not the reading inside it, and the five ways a face can fail to
-        // re-derive are five different defects.
-        eprintln!("  face {}-{} refused: the word does not re-derive", face.i, face.j);
-        return false;
+    if face.producer == crate::transducer::sentence::Producer::Motor {
+        return true;
     }
-    for (pk, place) in face.at.scoped() {
-        let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-            eprintln!("  face {}-{} refused: a member pair key does not read", face.i, face.j);
-            return false;
-        };
-        let (Some(ci), Some(cj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
-            eprintln!(
-                "  face {}-{} refused: a vertex does not act on the chart the pair names",
-                face.i, face.j
-            );
-            return false;
-        };
-        // The edge is evidence the court re-measures against the FAMILY
-        // (`edges_rederive_frames`), not something the vertices re-derive, so it
-        // is carried in and compared by its presence alone here.
-        match f.face_place(face.i, &ci, face.j, &cj, place.edge.clone()) {
-            Some(p) if same_place(&p, place) => {}
-            Some(_) => {
-                eprintln!("  face {}-{} refused: the place does not re-derive", face.i, face.j);
-                return false;
-            }
-            None => {
-                eprintln!("  face {}-{} refused: the place does not derive at all", face.i, face.j);
-                return false;
-            }
+    // The edge is evidence the court re-measures against the FAMILY
+    // (`edges_rederive_frames`), not something the vertices re-derive, so it
+    // is carried in and compared by its presence alone here.
+    match f.face_place(&o.from, &o.to, face.place.edge.clone()) {
+        Some(p) if same_place(&p, &face.place) => true,
+        Some(_) => {
+            eprintln!("  {label} refused: the place does not re-derive");
+            false
+        }
+        None => {
+            eprintln!("  {label} refused: the place does not derive at all");
+            false
         }
     }
-    true
 }
 
 /// 50.2 step 2 — THE CITATIONS COMPOSE TO THE ACTION THE VERTEX CARRIES.
@@ -194,15 +184,14 @@ fn derivations_compose(
         // THE CITE'S BYTES BECOME A MEMBER COORDINATE HERE, at the court's
         // boundary, and a cite whose bytes are not one is evidence about
         // nothing exactly as an unheld vertex is (54.7 R5, rule 11).
-        let Ok(vk) = <crate::network::nerve::coord::Member as crate::network::nerve::Coordinate>::decode(
-            &cite.vertex,
-        ) else {
+        // Read at the vertex's own coordinate — the class its address's
+        // rotor names (AT1) — and held only where the address is the one
+        // the vertex carries.
+        let Some(v @ Vertex::Word { derivation, .. }) = crate::transducer::sentence::vertex_cited(f, cite.vertex.as_bytes())
+        else {
             continue;
         };
-        let Some(&i) = f.by_address.at(&vk) else {
-            continue;
-        };
-        let Some(v @ Vertex::Word { address, derivation, .. }) = f.vertices.get(i as usize) else {
+        let Some(vertex) = v.at() else {
             continue;
         };
         // The derivation reassembled: the citations from the envelope, the
@@ -236,10 +225,7 @@ fn derivations_compose(
         match derivation.verify_with(&held) {
             Verified::Composes => {}
             Verified::Differs => {
-                return Some(Refusal::new(
-                    REFUSE_DERIVATION,
-                    sentence::At::Vertex { address: address.clone(), chart: class.clone() },
-                ))
+                return Some(Refusal::new(REFUSE_DERIVATION, sentence::At::vertex(vertex.clone(), class.clone())))
             }
             // The door (`hear_sentence`) decides the WAIT before any
             // replay runs, so an unruled cited FORM never reaches here.
@@ -248,10 +234,7 @@ fn derivations_compose(
             // not in it — which is a claim about the tape and a refusal
             // at the vertex that made it, not a deferral.
             Verified::Unresolved { .. } => {
-                return Some(Refusal::new(
-                    REFUSE_DERIVATION,
-                    sentence::At::Vertex { address: address.clone(), chart: class.clone() },
-                ))
+                return Some(Refusal::new(REFUSE_DERIVATION, sentence::At::vertex(vertex.clone(), class.clone())))
             }
         }
     }
@@ -266,7 +249,7 @@ fn derivations_compose(
 /// its coordinates written out (A21), so the coordinate is content.
 fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
     use crate::transducer::sentence::Demand;
-    for (_, kind, chart, _) in f.demand_vertices() {
+    for (vertex, kind, chart, _) in f.demand_vertices() {
         let Demand::RotorPrime { prime, witness, .. } = kind else {
             continue;
         };
@@ -276,7 +259,7 @@ fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
         if !carries {
             return Some(Refusal::new(
                 REFUSE_LETTER_WITNESS,
-                sentence::At::Vertex { address: kind.key(), chart: chart.clone() },
+                sentence::At::vertex(vertex, chart.clone()),
             ));
         }
     }
@@ -339,22 +322,15 @@ pub fn replay_form_on(
     // that is where a received sentence carries it, and the site is the
     // vertex's own key contribution — a coordinate, never an index.
     let cover = &spoken.receipts().nerve;
-    for v in &f.vertices {
+    // The Glued vertices are one fibre of the atlas, read at their tag.
+    for (vertex, v) in f.glued_vertices() {
         // THE CHART COMES OFF THE VERTEX ITSELF, not through
         // `face_chart().unwrap_or_default()`: `Invariant::default()` is the
         // chart trie's ROOT and naming it would put the refusal at the top
         // of the atlas rather than at the boundary that is open.
         let Vertex::Glued { chart, .. } = v else { continue };
         let site = crate::transducer::sentence::vertex_bytes(v);
-        let at = |reason| {
-            Refusal::new(
-                reason,
-                sentence::At::Vertex {
-                    address: crate::transducer::address::Address::new(site.clone()),
-                    chart: chart.clone(),
-                },
-            )
-        };
+        let at = |reason| Refusal::new(reason, sentence::At::vertex(vertex.clone(), chart.clone()));
         // A MULTI-SHEETED SEAM IS ADMISSIBLE, A REPEATED SHEET IS NOT.
         // Several edges at one site is a junction between several charts —
         // gauge universality means the citing chart cannot tell them apart
@@ -382,12 +358,11 @@ pub fn replay_form_on(
     // boundary the form does not hold. Never erased, because erasure masks
     // perjury and corrupts the attestation that reads the cover for credit.
     for e in cover {
-        let host = e.host();
-        if !f.vertices.iter().any(|v| {
-            matches!(v, Vertex::Glued { .. })
-                && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
-        }) {
-            return Some(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::Vertex { address: host, chart: e.chart.clone() }));
+        // The host is the Glued vertex's site, which IS its coordinate: a
+        // keyed read, never a walk of the vertices.
+        let vertex = crate::network::nerve::coord::VertexAt::Glued(crate::network::nerve::coord::Site(e.host().as_bytes().to_vec()));
+        if !matches!(f.vertices.at(&vertex), Some(Vertex::Glued { .. })) {
+            return Some(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::vertex(vertex, e.chart.clone())));
         }
     }
     // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
@@ -432,11 +407,10 @@ pub fn replay_form_on(
         if !cited.is_closed() {
             return Some(tape(REFUSE_GLUED_UNRULED));
         }
-        // 18: A FORM OPENS AT ITS FRAME. Vertex zero is the frame by the
-        // form's own shape, so the slice pattern reads the coordinate and
-        // not the vertex that happened to be written first.
-        let frame_is_identity = match cited.vertices.as_slice() {
-            [fr @ Vertex::Frame, ..] => fr.word_in(&cited).is_some_and(|w| w.is_identity()),
+        // 18: A FORM OPENS AT ITS FRAME, read at the Frame's own coordinate
+        // (its tag alone, AT1).
+        let frame_is_identity = match cited.vertices.at(&crate::network::nerve::coord::VertexAt::Frame) {
+            Some(fr @ Vertex::Frame) => fr.word_in(&cited.vertices).is_some_and(|w| w.is_identity()),
             _ => false,
         };
         if !frame_is_identity {
@@ -490,19 +464,18 @@ pub fn replay_form_on(
     // (tree faces of that orbit are face_of). Filing of that class is
     // the orbit check; a missing torsion entry is REFUSE_ORBIT, a chord
     // that does not carry the holonomy is REFUSE_FACE.
-    for (i, face) in f.faces.iter().enumerate() {
+    for (o, face) in f.faces.entries() {
         // 50.3, 52.3: an edge transport of any order is a face. What it
         // carries is re-derived on the family below (`edges_rederive_frames`),
         // and a period is never a gate.
-        // THE FACE RE-DERIVES AT EVERY MEMBER PAIR IT CARRIES. The word is the
-        // face's and re-derives once; the placement and hue map at each pair
-        // re-derive from the two members that pair names, and a face whose
-        // pairs the vertices no longer relate does not re-derive at all.
-        if face_rederives(f, face) {
+        // EVERY OVERLAP RE-DERIVES AT ITS MEMBER PAIR (AT1): the placement
+        // and hue map re-derive from the two members its charts name, and an
+        // overlap whose ends the form no longer holds does not re-derive.
+        if face_rederives(f, &o, face) {
             continue;
         }
-        if !torsion_chord_carries(&traversed, &by_chord, i) {
-            return Some(face_at(f, face, spoken));
+        if !torsion_chord_carries(&traversed, &by_chord, &o) {
+            return Some(face_at(&o));
         }
     }
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
@@ -552,10 +525,10 @@ pub fn replay_form_on(
     // those; it cannot forge a forest, because it does not carry one.
     let _ = derived;
     if let Some(fam) = family {
-        // `Form.glued` is keyed by the cited address and `reindex` builds it,
-        // so "does this form cite anything" is a read of that index and not a
-        // read of every vertex asking each whether it is a citation.
-        let glued = !traversed.glued.is_empty();
+        // "Does this form cite anything" is a read of the Glued kind's own
+        // stratum of the vertex carrier (AT1), not a read of every vertex
+        // asking each whether it is a citation.
+        let glued = traversed.glued_vertices().next().is_some();
         let deflation_crystal: &dyn crate::transducer::family::Crystal = if glued {
             crystal
         } else {
@@ -652,27 +625,26 @@ pub fn replay_form_on(
             });
         }
     }
+    // A FACTOR NO CERTIFICATE NAMES IS REFUSED (AT1, ruled): an overlap's
+    // `left`/`right` are produced content, written only by the pivot's Word
+    // move, and the certificate whose chord names the overlap is their
+    // producer. A factor with none was written by nothing the court can
+    // replay.
+    let mut named: Keyed<(), crate::network::nerve::coord::Overlap> = Keyed::new();
+    for cert in &spoken.receipts().certificates {
+        named.put(cert.by.face(), ());
+    }
+    if traversed.faces.entries().any(|(o, face)| face.is_pivoted() && !named.holds(&o)) {
+        return Some(tape(REFUSE_PIVOT_INEXACT));
+    }
     replay_certificates(&traversed, &spoken.receipts().certificates, &by_chord).map(tape)
 }
 
-/// `REFUSE_FACE` at the face's two vertex addresses (50.9); a face reaching
-/// a vertex with no address is refused at the tape.
-fn face_at(f: &Form, face: &crate::transducer::sentence::FormFace, spoken: &Element) -> Refusal {
-    let addr_of = |i: u16| match f.vertices.get(i as usize) {
-        Some(Vertex::Word { address, .. }) => Some(address.clone()),
-        // 54.7 B5a — A CITATION IS REFUSED AT ITS SITE. It was refused at
-        // the form it cites, which is the cover's fact and not the
-        // vertex's; the boundary's own record is what this end of the face
-        // IS, and it is a coordinate the citing form holds (A21).
-        Some(v @ Vertex::Glued { .. }) => {
-            Some(crate::transducer::address::Address::new(sentence::vertex_bytes(v)))
-        }
-        _ => None,
-    };
-    match (addr_of(face.i), addr_of(face.j)) {
-        (Some(a), Some(b)) => Refusal::new(REFUSE_FACE, sentence::At::Face(a, b)),
-        _ => Refusal::of_tape(REFUSE_FACE, spoken),
-    }
+/// `REFUSE_FACE` at the overlap's two vertices, by their coordinates (50.9,
+/// AT1): every end of an overlap is a vertex coordinate — a citation's is its
+/// site (54.7 B5a) — so the refusal always has a coordinate to name.
+fn face_at(o: &crate::network::nerve::coord::Overlap) -> Refusal {
+    Refusal::new(REFUSE_FACE, sentence::At::face(o.from_vertex(), o.to_vertex()))
 }
 
 /// Chapter 23.1 steps 3 and 6: each Word vertex re-derives its rotor (M1)
@@ -689,9 +661,9 @@ pub(crate) fn vertex_tape_and_moves(
     use crate::transducer::family::{self, OrbitEnd};
     use crate::transducer::sentence::Measure;
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    for v in &f.vertices {
+    for (vertex, v) in f.vertices.entries() {
         match v {
-            Vertex::Word { address, derivation, contact, .. } => {
+            Vertex::Word { derivation, contact, .. } => {
                 // EVERY MEMBER'S CARRIAGE must give a conformal versor, or
                 // the tape carries a placement nothing can be spoken at.
                 // One member today; the traversal is the vertex's own fibre.
@@ -706,7 +678,7 @@ pub(crate) fn vertex_tape_and_moves(
                 if contact.is_some() {
                     let still = || match v.face_chart() {
                         Some(chart) => {
-                            Refusal::new(REFUSE_ORBIT_STILL, sentence::At::Vertex { address: address.clone(), chart })
+                            Refusal::new(REFUSE_ORBIT_STILL, sentence::At::vertex(vertex.clone(), chart))
                         }
                         None => tape(REFUSE_ORBIT_STILL),
                     };
@@ -727,7 +699,7 @@ pub(crate) fn vertex_tape_and_moves(
                 }
             }
             Vertex::Rebased { .. }
-                if v.word_in(f).is_some_and(|w| w.is_identity()) => {
+                if v.word_in(&f.vertices).is_some_and(|w| w.is_identity()) => {
                     return Some(tape(REFUSE_REBASE_TRIVIAL));
                 }
             Vertex::Unfolded { measure: Measure::Remainder } if f.remainder.is_empty() => {
@@ -755,14 +727,12 @@ pub(crate) fn vertex_tape_and_moves(
     None
 }
 
-pub(crate) fn chord_orbits(f: &Form) -> Keyed<u16> {
+/// Each orbit by the chord it closes on (AT1: the chord an overlap, its key
+/// the overlap's coordinates), to the orbit the replay reads.
+pub(crate) fn chord_orbits(f: &Form) -> Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap> {
     let mut by_chord = Keyed::new();
-    for (i, lp) in f.orbits.iter().enumerate() {
-        #[expect(
-            clippy::cast_possible_truncation,
-            reason = "AT1 debt — a slot number of the form's Vec (an orbit's position in f.orbits); the atlas row replaces the slot by the chart's coordinates"
-        )]
-        by_chord.insert(face_idx_key(lp.chord), i as u16);
+    for lp in &f.orbits {
+        by_chord.put(&lp.chord, lp.clone());
     }
     by_chord
 }
@@ -779,25 +749,22 @@ pub(crate) fn chord_orbits(f: &Form) -> Keyed<u16> {
 /// chord's own word, would be a reading that telescopes over words that
 /// commute: it would certify an orbit the voice never evaluated and demand a
 /// filing under a class nothing files.
-pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: usize) -> bool {
-    #[expect(
-        clippy::cast_possible_truncation,
-        reason = "AT1 debt — a slot number of the form's Vec (a face's position in f.faces); the atlas row replaces the slot by the chart's coordinates"
-    )]
-    let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
+pub(crate) fn torsion_chord_carries(
+    f: &Form,
+    by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
+    chord: &crate::network::nerve::coord::Overlap,
+) -> bool {
+    let Some(lp) = by_chord.at(chord) else {
         return false;
     };
-    let Some(lp) = f.orbits.get(li as usize) else {
-        return false;
-    };
-    for &fi in &lp.faces {
-        if fi == lp.chord {
+    for s in &lp.steps {
+        if &s.overlap == chord {
             continue;
         }
-        let Some(tf) = f.faces.get(fi as usize) else {
+        let Some(tf) = f.faces.at(&s.overlap) else {
             return false;
         };
-        if !face_rederives(f, tf) {
+        if !face_rederives(f, &s.overlap, tf) {
             return false;
         }
     }
@@ -905,16 +872,14 @@ pub(crate) fn receipts_price_the_terrain(
     None
 }
 
-pub(crate) fn face_idx_key(i: u16) -> Vec<u8> {
-    i.to_le_bytes().to_vec()
-}
-
 /// A20: each certificate is the un-pivot of one chord face, re-read.
 /// The orbit's class key and rank before and after must match the tape.
+/// The orbit is reached by its chord's coordinates on each side (AT1), never
+/// by its position in either form's list.
 pub(crate) fn replay_certificates(
     f: &Form,
     certificates: &[crate::transducer::sentence::PivotCertificate],
-    by_chord: &Keyed<u16>,
+    by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
 ) -> Option<&'static str> {
     // THE CERTIFICATES ARE THE SPEAKER'S (54.5 Road (d), B3). They hung off
     // the form, and a certificate is not geometry: it is what ONE mind's
@@ -927,7 +892,7 @@ pub(crate) fn replay_certificates(
     // refused; there is no subset of them that would do.
     for cert in certificates {
         let face = cert.by.face();
-        let Some(&li) = by_chord.get(&face_idx_key(face)) else {
+        let Some(after) = by_chord.at(face) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         let mut pre = f.clone();
@@ -938,25 +903,26 @@ pub(crate) fn replay_certificates(
             return Some(REFUSE_PIVOT_INEXACT);
         }
         pre.orbits = Form::orbits_of(&pre.faces, &pre.vertices);
+        let before = chord_orbits(&pre);
+        let Some(lp_before) = before.at(face) else {
+            return Some(REFUSE_PIVOT_INEXACT);
+        };
         // An opened axis (I6) is seeded by the orbit's own holonomy versor
         // (16.20): the court re-derives the seed from the orbit it re-read
         // and refuses a certificate whose seed is anything else (law 12).
         if let crate::transducer::sentence::PivotBy::OpenAxis { seed, .. } = &cert.by {
-            let rederived = pre
-                .orbits
-                .get(li as usize)
-                .and_then(|lp| pre.axis_seed_of(lp));
+            let rederived = pre.axis_seed_of(lp_before);
             if !rederived.is_some_and(|v| element::same_versor(&v, seed)) {
                 return Some(REFUSE_PIVOT_INEXACT);
             }
         }
-        let Some(kappa_before) = pre.class_vector(li as usize) else {
+        let Some(kappa_before) = pre.class_vector_of(lp_before) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         if kappa_before.class_key() != cert.before {
             return Some(REFUSE_PIVOT_INEXACT);
         }
-        let Some(kappa_after) = f.class_vector(li as usize) else {
+        let Some(kappa_after) = f.class_vector_of(after) else {
             return Some(REFUSE_PIVOT_INEXACT);
         };
         if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {

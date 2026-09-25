@@ -111,7 +111,7 @@ match entity.quote() {
             };
             let demands: Vec<_> = form
                 .demand_vertices()
-                .map(|(_, kind, chart, links)| (kind.clone(), chart.clone(), links.to_vec()))
+                .map(|(at, kind, chart, links)| (at, kind.clone(), chart.clone(), links.to_vec()))
                 .collect();
             if demands.is_empty() {
                 n_silent += 1;
@@ -123,7 +123,7 @@ match entity.quote() {
                 cluster.address[1],
                 demands.len()
             );
-            for (kind, chart, links) in &demands {
+            for (demand, kind, chart, links) in &demands {
                 // 50.5, L8r: the addresses standing on this demand's own
                 // chart — THE STRATUM AS COORDINATES, not as forms. The
                 // chart routes; what decides is whether the form
@@ -167,14 +167,10 @@ match entity.quote() {
                     }
                     n_closing += 1;
                     // THE TARGET NAMES THE DEMAND, not just the sentence:
-                    // the listing's address and the demand's own key, so
-                    // the court resolves which vertex is being answered
-                    // (50.5 files one vertex per kind and chart).
-                    let target = mycelium::transducer::sentence::demand_at(
-                        cluster.address.as_bytes(),
-                        kind,
-                        chart,
-                    );
+                    // the listing's address and the demand vertex's own
+                    // coordinate, so the court resolves which vertex is
+                    // being answered (AT1).
+                    let target = mycelium::transducer::sentence::demand_at(cluster.address.as_bytes(), demand);
                     // The cited form speaks in its OWN frame, so the
                     // placement is the identity (L14) and the transport
                     // carrying it there is the identity versor.

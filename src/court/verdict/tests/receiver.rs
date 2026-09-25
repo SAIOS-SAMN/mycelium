@@ -22,7 +22,7 @@ fn digits(rows: &[&str]) -> Grid {
 fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the bar's recolour extracts");
-    let words = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    let words = rule.form.vertices.entries().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     let demands = rule.form.demand_vertices().count();
     assert_eq!((words, demands), (1, 1), "one word and one demand ride the sentence");
     let e = mint_sentence(&rule, &family, &NoCrystal, 0).expect("a sentence with a demand is spoken whole");
@@ -49,7 +49,10 @@ fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
     let (family, e) = a_recolour_with_a_creation();
     let mut f =
         crate::transducer::sentence::from_element_form(&e).expect("the tape reads back");
-    f.vertices.retain(|v| !matches!(v, Vertex::Demand { .. }));
+    let demands: Vec<_> = f.demand_vertices().map(|(at, ..)| at).collect();
+    for at in &demands {
+        f.vertices.drop_at(at);
+    }
     f.reindex();
     let tampered = as_element_form(&f, e.magnitude()).expect("a tape");
     assert_eq!(
@@ -80,7 +83,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
     let family = vec![(digits(&["110", "100"]), digits(&["111", "000"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
-        !f.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
+        !f.vertices.entries().any(|(_, v)| matches!(v, Vertex::Word { .. })),
         "no body pair the eyes admit"
     );
     assert!(f.demand_vertices().next().is_some(), "the deformation rides as a demand");
@@ -124,12 +127,15 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
     let family = vec![(digits(&["1100200"]), digits(&["0011002"]))];
     let f = cipher_form(&family[0].0, &family[0].1);
     assert!(
-        !f.faces.iter().any(|face| face.has_edge()),
+        !f.faces.entries().any(|(_, face)| face.has_edge()),
         "two disjoint bodies share no cell, so no face carries an edge: {:?}",
         f.faces
     );
     assert!(
-        f.faces.iter().all(|face| face.i == 0 || face.j == 0),
+        f.faces.entries().all(|(o, _)| {
+            o.from_vertex() == crate::network::nerve::coord::VertexAt::Frame
+                || o.to_vertex() == crate::network::nerve::coord::VertexAt::Frame
+        }),
         "what is left is the Frame star and nothing between the bodies: {:?}",
         f.faces
     );
@@ -215,19 +221,18 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
     let family = vec![(digits(&x), digits(&y))];
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the turned L and the two shifts extract");
-    let words: Vec<usize> = rule
+    let words: Vec<crate::network::nerve::coord::VertexAt> = rule
         .form
         .vertices
-        .iter()
-        .enumerate()
-        .filter_map(|(i, v)| matches!(v, Vertex::Word { contact: None, .. }).then_some(i))
+        .entries()
+        .filter_map(|(at, v)| matches!(v, Vertex::Word { contact: None, .. }).then_some(at))
         .collect();
     assert_eq!(words.len(), 2, "the quarter turn and the translation: {:?}", rule.form.vertices);
     let between_words = rule
         .form
         .faces
-        .iter()
-        .filter(|f| words.contains(&(f.i as usize)) && words.contains(&(f.j as usize)))
+        .entries()
+        .filter(|(o, _)| words.contains(&o.from_vertex()) && words.contains(&o.to_vertex()))
         .count();
     // T1 — "BESIDE" IS NOT "OVERLAPPING" (60.5, ruled 2026-09-22). This
     // asserted two faces where the bar and the dot land BESIDE the L, and

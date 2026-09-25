@@ -65,17 +65,12 @@ impl Kernel {
         // demand vertex it answers, and `demands` answers that system and no
         // other; the declaration is made here, at the boundary, rather than
         // inside the carrier where nothing could see it (54.7 R5).
-        let Ok(demand) = <crate::network::nerve::coord::DemandVertex
+        let Ok(demand) = <crate::network::nerve::coord::VertexAt
             as crate::network::nerve::Coordinate>::decode(demand)
         else {
             return ProbeReading::nothing();
         };
-        let Some(&vi) = form.demands.at(&demand) else {
-            return ProbeReading::nothing();
-        };
-        let Some(crate::transducer::sentence::Vertex::Demand { chart, bodies, .. }) =
-            form.vertices.get(vi as usize)
-        else {
+        let Some(crate::transducer::sentence::Vertex::Demand { chart, bodies, .. }) = form.vertices.at(&demand) else {
             return ProbeReading::nothing();
         };
         let (chart, bodies) = (chart.clone(), bodies.clone());

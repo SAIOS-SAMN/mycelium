@@ -573,6 +573,12 @@ pub struct ReceiptsEnvelope {
     pub derivations: Vec<DerivationCite>,
     /// The pivots this crystallization rests on (A20).
     pub certificates: Vec<PivotCertificate>,
+    /// AT1, 54.5 ROAD (d) — each demand's bodies, by the demand's own
+    /// coordinate: evidence, which the key carries as the demand's measure
+    /// and pieces.
+    pub demands: Vec<DemandEvidence>,
+    /// The remainder's chain, which the key carries as its coordinates.
+    pub remainder: Vec<(i64, i64, u8, u8)>,
 }
 
 impl ReceiptsEnvelope {
@@ -599,7 +605,17 @@ impl ReceiptsEnvelope {
         // addresses, and a vertex no longer names the form it mates with:
         // the boundary is the chart's, the incidence is the cover's.
         let mut env = ReceiptsEnvelope { nerve: f.cover.clone(), ..ReceiptsEnvelope::default() };
-        for v in &f.vertices {
+        // THE DEMANDS' BODIES AND THE REMAINDER'S CHAIN, as evidence (AT1):
+        // in the demands' own key order, which is content.
+        for (at, v) in f.demands() {
+            if let crate::transducer::sentence::Vertex::Demand { bodies, .. } = v {
+                if !bodies.is_empty() {
+                    env.demands.push(DemandEvidence { at, bodies: bodies.clone() });
+                }
+            }
+        }
+        env.remainder = f.remainder.placed();
+        for (_, v) in f.vertices.scoped() {
             match v {
                 // A SPELLED VERTEX LEAVES NO CITE. Its whole word is the
                 // residue and the key carries the rotor, so an entry for it
@@ -636,6 +652,8 @@ impl ReceiptsEnvelope {
             && self.rounds.is_empty()
             && self.derivations.is_empty()
             && self.certificates.is_empty()
+            && self.demands.is_empty()
+            && self.remainder.is_empty()
     }
 
     /// The edge at a citation site, by the site's own coordinates.
@@ -698,6 +716,12 @@ impl ReceiptsEnvelope {
         for c in &self.certificates {
             c.to_bytes(out)?;
         }
+        out.extend_from_slice(&(self.demands.len() as u64).to_le_bytes());
+        for d in &self.demands {
+            crate::transducer::sentence::put_vertex_at(out, &d.at);
+            put_links(out, &d.bodies);
+        }
+        put_links(out, &self.remainder);
         Some(())
     }
 
@@ -760,6 +784,50 @@ impl ReceiptsEnvelope {
         for _ in 0..n {
             env.certificates.push(PivotCertificate::from_bytes(b, pos)?);
         }
+        let n = count(b, pos)?;
+        for _ in 0..n {
+            let at = crate::transducer::sentence::take_vertex_at(b, pos)?;
+            let bodies = take_links(b, pos)?;
+            env.demands.push(DemandEvidence { at, bodies });
+        }
+        env.remainder = take_links(b, pos)?;
         Some(env)
     }
+}
+
+/// AT1, 54.5 ROAD (d) — A DEMAND'S BODIES AS EVIDENCE: the demand by its
+/// coordinate in the form, and the links it stands for. The key carries the
+/// coordinate; the record carries this.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DemandEvidence {
+    pub at: crate::network::nerve::coord::VertexAt,
+    pub bodies: Vec<(i64, i64, u8, u8)>,
+}
+
+/// A run of links on the record: the count, then each link's two
+/// coordinates and two hues.
+fn put_links(out: &mut Vec<u8>, links: &[(i64, i64, u8, u8)]) {
+    out.extend_from_slice(&(links.len() as u64).to_le_bytes());
+    for &(r, c, a, b) in links {
+        out.extend_from_slice(&r.to_le_bytes());
+        out.extend_from_slice(&c.to_le_bytes());
+        out.push(a);
+        out.push(b);
+    }
+}
+
+fn take_links(b: &[u8], p: &mut usize) -> Option<Vec<(i64, i64, u8, u8)>> {
+    let n = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
+    // A count the body cannot hold is refused before anything is reserved.
+    let rest = b.len().checked_sub(*p)?;
+    let n = usize::try_from(n).ok().filter(|&n| rest / 18 >= n)?;
+    let mut out = Vec::with_capacity(n);
+    for _ in 0..n {
+        let r = i64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        let c = i64::from_le_bytes(b.get(*p + 8..*p + 16)?.try_into().ok()?);
+        out.push((r, c, *b.get(*p + 16)?, *b.get(*p + 17)?));
+        *p += 18;
+    }
+    Some(out)
 }

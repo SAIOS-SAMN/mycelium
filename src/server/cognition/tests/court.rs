@@ -470,13 +470,15 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     // addresses (law 6 — a letter is named by its content).
     let carried = |e: &crate::transducer::element::Element| {
         let f = crate::transducer::sentence::from_element_form(e).expect("a generator's tape decodes");
-        f.vertices
-            .iter()
-            .find_map(|v| match v {
+        let rotor = f
+            .vertices
+            .entries()
+            .find_map(|(_, v)| match v {
                 crate::transducer::sentence::Vertex::Word { derivation, .. } => Some(derivation.rotor()),
                 _ => None,
             })
-            .expect("one word vertex")
+            .expect("one word vertex");
+        rotor
     };
     assert!(carried(&held).projective_eq(&h), "the tape carries h");
     assert!(carried(&word).projective_eq(&w), "the tape carries w");
@@ -515,13 +517,15 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
         use crate::transducer::alphabet::Derivation;
         use crate::transducer::sentence::{as_element_form, Form, Vertex};
         let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             Derivation::adjoined(h.clone()),
             Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::identity_versor()),
             vec![(1, 2)],
+            [0],
             None,
-        ));
+        );
+        f.stand_member(&v, 0).expect("a word vertex stands");
         f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f.reindex();
         as_element_form(&f, [0, 0, 0, 1]).expect("a recolouring section has a tape")

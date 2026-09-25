@@ -19,6 +19,7 @@ pub mod spectrum;
 pub mod vertex;
 
 pub(crate) use axis::*;
+pub(crate) use vertex::demand_coordinates;
 pub use carrier::*;
 pub use certificate::*;
 pub use fiber::*;

@@ -7,46 +7,43 @@
 
 use super::*;
 
-/// 13.12: two forms are one section when a coboundary on their join coheres.
+/// 13.12: two forms are one section when their join coheres.
+///
+/// THE JOIN IS BY COORDINATES (AT1): a vertex both forms hold is one vertex
+/// — the same class, its members the union of both forms' — and every
+/// overlap of either stands at its own key, since it names its charts by
+/// their coordinates and never by a position that would have to be shifted.
+/// The tree gauge that re-solved the join's coboundary retired (AT1 step 2,
+/// ruled (a)); an overlap's word is derived from its ends, so the join
+/// coheres or it does not.
 pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
     if idea_key(a) == idea_key(b) {
         return true;
     }
     let mut f = a.clone();
-    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex offset of the join); the atlas row replaces the slot by the chart's coordinates")]
-    let off = f.vertices.len() as u16;
-    if off == 0 {
-        return b.coheres();
+    for (k, v) in b.vertices.entries() {
+        match (f.vertices.at_mut(&k), v) {
+            (Some(Vertex::Word { acts: held, .. }), Vertex::Word { acts, .. }) => {
+                for (sk, member) in acts.entries() {
+                    let mut member = member.clone();
+                    if let Some(prior) = held.drop_at(&sk) {
+                        for (fk, ()) in prior.frames.scoped() {
+                            member.frames.insert(&fk, ());
+                        }
+                    }
+                    held.put(&sk, member);
+                }
+            }
+            (Some(_), _) => {}
+            (None, _) => {
+                f.vertices.put(&k, v.clone());
+            }
+        }
     }
-    for v in b.vertices.iter().skip(1) {
-        f.vertices.push(v.clone());
-    }
-    for face in &b.faces {
-        // The join's own vertices start where this form's end, less the
-        // Frame the two share. `off` is a vertex count of at least one —
-        // the Frame — so the shift is exact.
-        let Some(shift) = off.checked_sub(1) else {
-            return false;
-        };
-        // STD1 — a shifted index past its carrier names no vertex of the
-        // join: the join is not read as coherent, exactly as a shift that
-        // did not read is not.
-        let shifted = |x: u16| if x == 0 { Some(0) } else { x.checked_add(shift) };
-        let (Some(i), Some(j)) = (shifted(face.i), shifted(face.j)) else {
-            return false;
-        };
-        f.faces.push(sentence::FormFace {
-            i,
-            j,
-            word: face.word.clone(),
-            at: face.at.clone(),
-            // The section is the BUNDLE's, and the shift moves vertices,
-            // so it crosses the merge unchanged with the face it names.
-            pairs: face.pairs.clone(),
-            // The interface is the two bodies', and it crosses the merge
-            // with the face that runs along it.
-            interface: face.interface.clone(),
-        });
+    for (o, face) in b.faces.entries() {
+        // The interface is the two bodies', and it crosses the merge with
+        // the overlap that runs along it.
+        f.faces.put(&o, face.clone());
     }
     // The join is taken in the SCENE, where the two chains actually sit,
     // and A5 decides it: two chains naming one site with different
@@ -59,13 +56,8 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
     };
     f.remainder = joined;
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    match f.solve_coboundary() {
-        Some(gamma) => {
-            let _ = f.regauge(&gamma);
-            f.coheres()
-        }
-        None => false,
-    }
+    f.reindex();
+    f.coheres()
 }
 
 /// ABSORB IS THE WHOLE OF THE SOURCE, by the meaning of the word: two

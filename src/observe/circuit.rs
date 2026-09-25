@@ -38,7 +38,8 @@ pub struct Circuits {
 /// and the reuse ladder's test where one ran (CT1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Circuit {
-    pub chord: u16,
+    /// The chord that closes it, by its overlap (AT1).
+    pub chord: crate::network::nerve::coord::Overlap,
     pub steps: Vec<CircuitStep>,
     /// `None` where the circuit read a class of its own that is not trivial,
     /// or rides a held coset: nothing triggered the ladder (79.3).
@@ -83,8 +84,8 @@ impl TestArm {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Offer {
     pub arm: TestArm,
-    /// The face the constructed route crosses in the circuit's place.
-    pub face: u16,
+    /// The overlap the constructed route crosses in the circuit's place.
+    pub face: crate::network::nerve::coord::Overlap,
     /// The constructed carrier's ray: the tether, or the constructor that
     /// carried it.
     pub constructor: Vec<(u16, BigRational)>,
@@ -239,7 +240,7 @@ impl CircuitTest {
                 reason = "STD1 C1 — a constant table: a position in TestArm::ALL, 8 entries"
             )]
             out.push(TestArm::ALL.iter().position(|a| *a == o.arm).map_or(0xff, |i| i as u8));
-            out.extend_from_slice(&o.face.to_le_bytes());
+            put_overlap(out, &o.face);
             put_ray(out, &o.constructor)?;
             out.push(u8::from(o.flat));
             put_ray(out, &o.holonomy)?;
@@ -273,7 +274,7 @@ impl CircuitTest {
         let mut offers = Vec::with_capacity(n);
         for _ in 0..n {
             let arm = *TestArm::ALL.get(usize::from(take_u8(b, p)?))?;
-            let face = take_u16(b, p)?;
+            let face = take_overlap(b, p)?;
             let constructor = take_ray(b, p)?;
             let flat = match take_u8(b, p)? {
                 0 => false,
@@ -329,8 +330,8 @@ impl Circuit {
 /// ONE MEMBER STEP.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CircuitStep {
-    /// The face crossed, by its index in the form.
-    pub face: u16,
+    /// The overlap crossed, by its two charts (AT1).
+    pub face: crate::network::nerve::coord::Overlap,
     /// Along the face's own orientation, or against it.
     pub forward: bool,
     /// The face carries an interface: two bodies in contact, a refraction.
@@ -379,6 +380,17 @@ pub(super) fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
     let v = *b.get(*p)?;
     *p += 1;
     Some(v)
+}
+
+/// An overlap framed, and read back (AT1).
+fn put_overlap(out: &mut Vec<u8>, o: &crate::network::nerve::coord::Overlap) {
+    use crate::network::nerve::Coordinate;
+    crate::transducer::address::put_key_bytes(out, o.encode().as_bytes());
+}
+
+fn take_overlap(b: &[u8], p: &mut usize) -> Option<crate::network::nerve::coord::Overlap> {
+    use crate::network::nerve::Coordinate;
+    crate::network::nerve::coord::Overlap::decode(&crate::transducer::address::take_key_bytes(b, p)?).ok()
 }
 
 pub(super) fn take_u16(b: &[u8], p: &mut usize) -> Option<u16> {
@@ -493,7 +505,7 @@ fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
 impl CircuitStep {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        out.extend_from_slice(&self.face.to_le_bytes());
+        put_overlap(out, &self.face);
         out.push(u8::from(self.forward) | (u8::from(self.refracted) << 1));
         match &self.carried {
             Carried::Unread => out.push(0),
@@ -511,7 +523,7 @@ impl CircuitStep {
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<CircuitStep> {
-        let face = take_u16(b, p)?;
+        let face = take_overlap(b, p)?;
         let flags = take_u8(b, p)?;
         if flags > 3 {
             return None;
@@ -551,7 +563,7 @@ impl Circuits {
         use crate::transducer::address::put_u32_count;
         put_u32_count(out, self.circuits.len())?;
         for c in &self.circuits {
-            out.extend_from_slice(&c.chord.to_le_bytes());
+            put_overlap(out, &c.chord);
             put_u32_count(out, c.steps.len())?;
             for s in &c.steps {
                 s.put(out)?;
@@ -575,7 +587,7 @@ impl Circuits {
         }
         let mut circuits = Vec::with_capacity(m);
         for _ in 0..m {
-            let chord = take_u16(b, p)?;
+            let chord = take_overlap(b, p)?;
             let k = take_len(b, p)?;
             // A step is at least its face, its flags and its arm.
             if !holds(b, *p, k, 4) {

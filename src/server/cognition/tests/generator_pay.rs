@@ -17,15 +17,17 @@ fn sentence_at(d: Derivation, tag: u8, mag: [u64; 4]) -> Element {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         d,
         // Its own chart: an address is derived from its coordinates (54.2).
         crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
+        [0],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("star");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, mag).expect("a tape")
@@ -158,8 +160,8 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     let cited: Vec<_> = rule
         .form
         .vertices
-        .iter()
-        .filter_map(|v| match v {
+        .entries()
+        .filter_map(|(_, v)| match v {
             Vertex::Word { derivation, .. } => Some(derivation.generators.clone()),
             _ => None,
         })

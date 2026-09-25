@@ -2,6 +2,7 @@
 // re-read against the flat form's: inviscid, elastic, curved, viscous.
 
 use super::common::*;
+use crate::network::nerve::coord;
 use crate::transducer::alphabet::Word;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::sentence::*;
@@ -19,16 +20,27 @@ fn held(edge: Transport) -> Form {
 /// The same, with the chord's edge transport as given — `None` refuses the
 /// edge half, so no class of the loop reads (OR3).
 fn held_with(edge: Option<Transport>) -> Form {
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    f.faces.push(f.face_carrying_with_edge(1, 2, Word::identity(), edge).expect("a chord"));
+    let (mut f, a, b) = two_bodies();
+    f.place_overlap(a, b, edge).expect("a chord");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(f.orbits.len(), 1, "the fixture must hold one loop, or nothing is tested");
     f
+}
+
+/// Two bodies on the Frame's star — two members of the identity's class, on
+/// charts `[1]` and `[2]` (AT1 Q1: one vertex, two members) — and their
+/// charts.
+fn two_bodies() -> (Form, coord::ChartAt, coord::ChartAt) {
+    let mut f = Form::default();
+    let a = stand_with_star(&mut f, &word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+    let b = stand_with_star(&mut f, &word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
+    (f, a, b)
+}
+
+/// The star overlap to the first body: the Frame's chart to chart `[1]`.
+fn star_a() -> coord::Overlap {
+    let c = stalk::Invariant::counts(&[1]);
+    coord::Overlap { from: coord::ChartAt::Frame, to: super::common::chart_of(&word_vertex_on(1, Word::identity(), c.clone()), c) }
 }
 
 fn totals(rs: &[PairViscosity], lane: BendLane) -> [u64; 4] {
@@ -97,22 +109,17 @@ fn a_loop_without_a_class_spends_no_read_on_viscosity() {
 /// Two bodies on the Frame's star and a CONTACT chord between them whose
 /// edge is a held `ℤ₂`'s coset: the identity and the half turn in `e₁₂`.
 fn held_coset() -> Form {
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
+    let (mut f, a, b) = two_bodies();
+    let o = f.place_overlap(a, b, None).expect("a chord");
+    let chord = f.faces.at_mut(&o).expect("the chord just placed");
     chord.interface = Some(super::common::contact(0, 3, 0));
     let candidate = |carriage| Transport { word: Word::identity(), carriage, gauge: Vec::new() };
-    set_face_place(&mut chord, |p| {
+    set_face_place(chord, |p| {
         p.refraction = Some(Refraction::Coset(vec![
             candidate(crate::transducer::element::identity_versor()),
             candidate(cga::rotator(&q(0), &q(1))),
         ]))
     });
-    f.faces.push(chord);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(f.orbits.len(), 1, "the coset keeps its loop: a held edge is never flat");
     f
@@ -150,7 +157,7 @@ fn a_held_half_turn_reads_unchanged_by_any_bend() {
         assert_eq!(totals(&rs, lane), [0; 4], "{lane:?}: no arm classed off a coset");
     }
     let quarter = Mv::scalar(q(1)).add(&Mv::blade(cga::E1 | cga::E3, q(1)));
-    form.apply_move(&PivotBy::Placement { face: 0, translator: quarter });
+    form.apply_move(&PivotBy::Placement { face: star_a(), translator: quarter });
     let after = cosets(&form);
     assert!(after.iter().all(|&(_, n)| n == 2), "both candidates stand after the bend: {after:?}");
 }
@@ -181,6 +188,6 @@ fn a_cosets_candidates_spend_the_stroke_and_refuse_unbounded_when_spent() {
 fn a_move_with_no_inverse_is_refused_never_skipped() {
     let mut form = held(Transport { word: Word::identity(), carriage: crate::transducer::element::identity_versor(), gauge: vec![(0, 1), (1, 0)] });
     let null = Mv::scalar(q(1)).add(&Mv::blade(cga::E1 | cga::EM, q(1)));
-    let by = PivotBy::Placement { face: 0, translator: null };
+    let by = PivotBy::Placement { face: star_a(), translator: null };
     assert!(!form.unapply_move(&by), "no inverse, no un-pivot");
 }

@@ -71,26 +71,9 @@ pub enum HeldPose {
     Refused(crate::transducer::blade::NoPose),
 }
 
-/// The key a member pair is filed under on a face: the two charts' own keys,
-/// each length-delimited so they read apart, `i` then `j`. Content (law 2), so
-/// the order is the trie's and the same on every node.
-pub fn face_pair_key(
-    ci: &crate::transducer::stalk::Invariant,
-    cj: &crate::transducer::stalk::Invariant,
-) -> Vec<u8> {
-    let mut buf = Vec::new();
-    crate::transducer::address::put_key_bytes(&mut buf, ci.key().as_bytes());
-    crate::transducer::address::put_key_bytes(&mut buf, cj.key().as_bytes());
-    buf
-}
-
-/// Read a member-pair key back as its two chart keys.
-pub fn read_face_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
-    let mut p = 0usize;
-    let ci = crate::transducer::address::take_key_bytes(k, &mut p)?;
-    let cj = crate::transducer::address::take_key_bytes(k, &mut p)?;
-    Some((ci, cj))
-}
+// `face_pair_key` AND `read_face_pair_key` STOOD HERE (a face's member pair
+// as two chart keys) AND ARE DELETED (AT1): a face IS its overlap, keyed by
+// its two charts' coordinates, and holds one pair.
 
 impl Transport {
     pub fn from_word(word: Word) -> Transport {
@@ -140,7 +123,7 @@ impl Form {
         f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f.reindex();
         let mut addr = crate::transducer::address::Address::new(Vec::new());
-        for v in &self.vertices {
+        for (_, v) in self.vertices.scoped() {
             if let Vertex::Word { address, .. } = v {
                 addr = address.clone();
                 break;
@@ -155,7 +138,14 @@ impl Form {
     }
 
     pub(crate) fn rebase_by_word(&mut self, by: &Word) {
-        for v in &mut self.vertices {
+        // A CONJUGATION KEEPS EVERY CLASS (15.3), so a Word vertex stays at
+        // its coordinate; a Glued vertex's site is its record, which the
+        // placement is part of, so a citation MOVES and takes its overlaps
+        // with it (AT1).
+        let keys: Vec<coord::VertexAt> = self.vertices.entries().map(|(k, _)| k).collect();
+        let mut moved: Vec<(coord::VertexAt, coord::VertexAt)> = Vec::new();
+        for k in keys {
+            let Some(v) = self.vertices.at_mut(&k) else { continue };
             match v {
                 // A rebase is conjugation (3.2), and a conjugated product
                 // is a product of conjugated generators — which these
@@ -170,8 +160,19 @@ impl Form {
                     };
                     *derivation = Derivation::spelled(w.rebase(by));
                 }
-                Vertex::Glued { placement, .. } => *placement = placement.rebase(by),
+                Vertex::Glued { placement, .. } => {
+                    *placement = placement.rebase(by);
+                    if let Some(to) = v.at().filter(|to| *to != k) {
+                        moved.push((k, to));
+                    }
+                }
                 _ => {}
+            }
+        }
+        for (from, to) in moved {
+            if let Some(held) = self.vertices.drop_at(&from) {
+                self.vertices.put(&to, held);
+                self.rekey_vertex(&from, &to);
             }
         }
         // AND THE COVER REBASES WITH THE PORTS IT BONDS TO (54.7 B5a, as
@@ -196,13 +197,22 @@ impl Form {
         }
         self.cover =
             crate::transducer::element::canonical_nerve(std::mem::take(&mut self.cover));
-        for face in &mut self.faces {
-            face.word = face.word.rebase(by);
+        // A FACE'S WORD IS DERIVED from its ends (AT1), which were rebased
+        // above; what a face holds of its own — the pivot's factors — is
+        // conjugated the same way.
+        let overlaps: Vec<coord::Overlap> = self.faces.entries().map(|(k, _)| k).collect();
+        for o in overlaps {
+            if let Some(f) = self.faces.at_mut(&o) {
+                f.left = f.left.rebase(by);
+                f.right = f.right.rebase(by);
+            }
         }
     }
 
     pub(crate) fn regauge_listing(&mut self, g: &[(u8, u8)]) {
-        for v in &mut self.vertices {
+        let keys: Vec<coord::VertexAt> = self.vertices.entries().map(|(k, _)| k).collect();
+        for k in keys {
+            let Some(v) = self.vertices.at_mut(&k) else { continue };
             match v {
                 // EVERY MEMBER IS REGAUGED. A word vertex acting on several
                 // charts composes the map into each of their gauges: one
@@ -239,20 +249,20 @@ impl Form {
                 _ => {}
             }
         }
-        // EVERY MEMBER PAIR'S HUE MAP. The regauge is a change of listing and
-        // it moves the map at every pair of bodies the face relates, not one.
-        for face in &mut self.faces {
-            let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-            for k in pairs {
-                if let Some(p) = face.at.get_mut(&k) {
-                    p.gauge = compose_gauge(g, &p.gauge);
-                }
+        // EVERY OVERLAP'S HUE MAP. The regauge is a change of listing and it
+        // moves the map at every pair of bodies, one overlap each.
+        let overlaps: Vec<coord::Overlap> = self.faces.entries().map(|(k, _)| k).collect();
+        for o in overlaps {
+            if let Some(f) = self.faces.at_mut(&o) {
+                f.place.gauge = compose_gauge(g, &f.place.gauge);
             }
         }
     }
 
     pub(crate) fn compose_carriages(&mut self, c: &Versor) {
-        for v in &mut self.vertices {
+        let keys: Vec<coord::VertexAt> = self.vertices.entries().map(|(k, _)| k).collect();
+        for k in keys {
+            let Some(v) = self.vertices.at_mut(&k) else { continue };
             match v {
                 // EVERY MEMBER'S CARRIAGE composes: the placement moves the
                 // vertex wherever it acts, on every chart it acts on.
@@ -277,22 +287,13 @@ impl Form {
                 _ => {}
             }
         }
-        // EVERY MEMBER PAIR'S CARRIAGE, and every MEMBER PATH's around each
-        // orbit: a change of frame moves the placement wherever there is one.
-        for face in &mut self.faces {
-            let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-            for k in pairs {
-                if let Some(p) = face.at.get_mut(&k) {
-                    p.carriage = c.geo(&p.carriage);
-                }
-            }
-        }
-        for lp in &mut self.orbits {
-            let paths: Vec<Vec<u8>> = lp.carriages.scoped().map(|(k, _)| k).collect();
-            for k in paths {
-                if let Some(v) = lp.carriages.get_mut(&k) {
-                    *v = c.geo(v);
-                }
+        // EVERY OVERLAP'S CARRIAGE: a change of frame moves the placement
+        // wherever there is one. An orbit's carriage is read off its
+        // overlaps (AT1) and follows by construction.
+        let overlaps: Vec<coord::Overlap> = self.faces.entries().map(|(k, _)| k).collect();
+        for o in overlaps {
+            if let Some(f) = self.faces.at_mut(&o) {
+                f.place.carriage = c.geo(&f.place.carriage);
             }
         }
     }
@@ -537,7 +538,7 @@ pub(crate) fn vertex_carriage_at(
         // overwritten by the rebase, so this is where `C_of` comes back.
         Vertex::Rebased { by, .. } => {
             let relative = &v.acting_on(chart)?.carriage;
-            match form.vertices.get(*by as usize) {
+            match form.vertices.at(by) {
                 Some(w @ Vertex::Word { .. }) => {
                     let charts = w.charts();
                     // The base stands at ONE chart — `Form::rebase` refuses

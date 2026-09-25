@@ -25,10 +25,10 @@ fn closed_form_and_body_chart() -> (Element, crate::transducer::stalk::Invariant
     let chart = crate::transducer::sentence::from_element_form(&e)
         .expect("the tape reads back")
         .vertices
-        .iter()
+        .entries()
         // A WORD VERTEX's chart, asked of its fibre: `charts()` answers for the
-        // Frame too — the root stratum — and the Frame is vertex 0.
-        .find_map(|v| v.acts().and_then(|a| a.scoped().next().map(|(_, m)| m.chart.clone())))
+        // Frame too — the root stratum — and the Frame has no members.
+        .find_map(|(_, v)| v.acts().and_then(|a| a.scoped().next().map(|(_, m)| m.chart.clone())))
         .expect("a word vertex carries the chart of the body it acts on");
     (e, chart)
 }

@@ -61,40 +61,10 @@ impl Entity {
         let [from, ..] = circuit.as_slice() else { return None };
         self.bundle_cursor = Some(from.clone());
 
-        // 1. Coboundary gauge transitions on sentence forms:
-        // A sentence whose 1-cochain is exact has gauge frame transitions γ in Spin(4,0)
-        // connecting its orbit frames to a single basepoint.
-        // Regauging extracts the connection and aligns the local sections.
-        for at in &circuit {
-            if !budget.spend() {
-                break;
-            }
-            let Some(held) = self.epigenome.word_at(at) else { continue };
-            if let Some(mut form) = held.form().cloned() {
-                if let Some(gamma) = form.solve_coboundary() {
-                    let non_id = gamma.iter().filter(|w| !w.is_identity()).count();
-                    if non_id > 0 && form.regauge(&gamma).is_some() {
-                        if let Some(after) =
-                            crate::transducer::sentence::as_element_form(&form, held.magnitude())
-                        {
-                            if after.address() != held.address() {
-                                let payload = RewritePayload::Reanchor { gamma };
-                                let claimed = [non_id as u64, 0, 0, 0];
-                                if let Some(rw) = crate::transducer::rewrite::mint(
-                                    RewriteKind::Reanchor,
-                                    std::slice::from_ref(&held.address()),
-                                    after.address(),
-                                    payload,
-                                    claimed,
-                                ) {
-                                    return Some((rw, vec![held.address()], Some(after)));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // 1. THE SENTENCE REGAUGE STOOD HERE AND RETIRED (AT1 step 2, ruled
+        // (a)): it solved a sentence's tree gauge and re-minted the regauged
+        // form. A face's word is derived from its ends now, so there is no
+        // gauge to solve and no regauged form to mint.
 
         // 2. Word pairs sharing the same conjugacy class (class_key):
         // For words w1, w2 with w1.class_key() == w2.class_key(),

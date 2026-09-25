@@ -595,6 +595,12 @@ fn learning(l: &observe::Learning) -> Vec<String> {
 /// refraction named, then every step — the face and which way, `|` where
 /// the face refracts, the step's class, its modes, the class composed
 /// through it and its ray — and the fields still owed, by their rows.
+/// An overlap as the console names it: its two vertices' coordinates, the
+/// refusal's own label (AT1 — a face is an overlap, never a position).
+fn overlap(o: &mycelium::network::nerve::coord::Overlap) -> String {
+    mycelium::transducer::sentence::At::face(o.from_vertex(), o.to_vertex()).label()
+}
+
 fn circuits(c: &observe::Circuits) -> Vec<String> {
     let kind = |k: Option<mycelium::network::nerve::coord::BivectorKind>| match k {
         Some(k) => format!("{k:?}").to_lowercase(),
@@ -608,12 +614,12 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
             _ => "unread".into(),
         };
         let refraction = match circuit.first_refraction() {
-            Some(i) => format!("{YELLOW}first refraction at step {} (face {}){RESET}", i + 1, circuit.steps[i].face),
+            Some(i) => format!("{YELLOW}first refraction at step {} (face {}){RESET}", i + 1, overlap(&circuit.steps[i].face)),
             None => format!("{DIM}no step refracts{RESET}"),
         };
         out.push(format!(
             "    chord {}  {} steps  holonomy {holonomy}  {refraction}",
-            circuit.chord,
+            overlap(&circuit.chord),
             circuit.steps.len()
         ));
         for (i, s) in circuit.steps.iter().enumerate() {
@@ -637,7 +643,7 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
                     )
                 }
             };
-            out.push(format!("      {:>2} face {}{way}  {read}", i + 1, s.face));
+            out.push(format!("      {:>2} face {}{way}  {read}", i + 1, overlap(&s.face)));
         }
         // CT1 — the reuse ladder's record: every arm that ran, what it read,
         // and the class their disagreement gives (79.3).
@@ -664,7 +670,7 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
                 out.push(format!(
                     "        {YELLOW}offer{RESET} {} at face {}: {}  modes [{}]  {DIM}constructor [{}] holonomy [{}]{RESET}",
                     o.arm.label(),
-                    o.face,
+                    overlap(&o.face),
                     if o.flat { "flat" } else { "curved" },
                     o.modes.label(),
                     ray(&o.constructor),

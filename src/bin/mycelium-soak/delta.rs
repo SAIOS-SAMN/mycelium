@@ -83,7 +83,7 @@ impl TaskWalk {
         };
         w.extracted = true;
         w.exhausted = budget.remaining() == 0;
-        for v in &rule.form.vertices {
+        for (_, v) in rule.form.vertices.scoped() {
             match v {
                 Vertex::Word { .. } => w.words += 1,
                 Vertex::Glued { .. } => w.glued += 1,
@@ -101,11 +101,17 @@ impl TaskWalk {
                 w.axis += 1;
                 continue;
             }
-            if lp.holonomy.is_identity() {
+            // The holonomy is a read along the orbit's overlaps (AT1); an
+            // orbit naming an overlap the form does not hold reads none.
+            let Some(holonomy) = mycelium::transducer::sentence::orbit_word_on(&rule.form.faces, &rule.form.vertices, lp)
+            else {
+                continue;
+            };
+            if holonomy.is_identity() {
                 w.flat += 1;
                 continue;
             }
-            match lp.holonomy.order() {
+            match holonomy.order() {
                 mycelium::transducer::alphabet::Order::Finite(_) => w.torsion += 1,
                 mycelium::transducer::alphabet::Order::Infinite => w.open += 1,
             }

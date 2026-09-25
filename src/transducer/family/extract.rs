@@ -14,7 +14,6 @@ use super::finish::finish;
 use super::percept::{family_percept, Percept, Ratio};
 use super::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::sentence::vertex_ix_key;
 use std::cell::RefCell;
 
 /// The percept, memoised on the sensor's bytes at the sensor boundary —
@@ -61,7 +60,7 @@ pub fn extract_rule_with(
             p
         }
     };
-    let Percept { form, mut sections, varying, unreached } = percept;
+    let Percept { form, varying, unreached } = percept;
     let unreached_pairs: Vec<(Grid, Grid)> = unreached.iter().filter_map(|&k| family.get(k).cloned()).collect();
     trace::trace("extract/1 derive_against", trace::Wrote::Nothing, Some(budget));
     let mut form = derive_against(form, crystal, budget)?;
@@ -75,8 +74,8 @@ pub fn extract_rule_with(
     // standing on that chart reads the one answer.
     let mut by_chart: Keyed<(Invariant, Vec<(TransportClass, crate::transducer::alphabet::Word)>)> =
         Keyed::new();
-    for v in &form.vertices {
-        let (Some(tc), Some(acts), Some(placement)) = (transport_class(v), v.acts(), v.word_in(&form))
+    for (_, v) in form.vertices.scoped() {
+        let (Some(tc), Some(acts), Some(placement)) = (transport_class(v), v.acts(), v.word_in(&form.vertices))
         else {
             continue;
         };
@@ -104,12 +103,12 @@ pub fn extract_rule_with(
     // citation retracts are the same vertices whatever order the pass
     // reaches them in, so the set is the pass's and the rebuild is taken
     // once after it.
-    let mut retract: Keyed<(), coord::VertexIx> = Keyed::new();
+    let mut retract: Keyed<(), coord::VertexAt> = Keyed::new();
     for (_, (moduli, classes)) in by_chart.scoped() {
         let held = crystal.on_body(moduli);
         for (tc, placement) in classes {
             if !budget.spend() {
-                return finish(form, scale, sections, &unreached_pairs);
+                return finish(form, scale, &unreached_pairs);
             }
             let mut placement_key = Vec::new();
             placement.put_canonical(&mut placement_key);
@@ -139,8 +138,8 @@ pub fn extract_rule_with(
                     // form carried into the pass: an append writes no
                     // transport class, so nothing here reads a stale entry.
                     if let Some(on) = form.by_transport.at(&tc.key()) {
-                        for &i in on {
-                            retract.put(&vertex_ix_key(i), ());
+                        for at in on {
+                            retract.put(at, ());
                         }
                     }
                 }
@@ -154,7 +153,7 @@ pub fn extract_rule_with(
     if retract.is_empty() {
         form.orbits = Form::orbits_of(&form.faces, &form.vertices);
         form.reindex();
-    } else if !form.retract_vertices(&retract) {
+    } else if !form.retract_vertices(&retract.entries().map(|(at, ())| at).collect::<Vec<_>>()) {
         trace::trace("extract/3 retract: depth unwritable", trace::Wrote::Nothing, Some(budget));
         return None;
     }
@@ -173,19 +172,17 @@ pub fn extract_rule_with(
     trace::trace_carriage("extract/4 rebase", &measured, &form);
     // 6. Contact: placement differs across frames, the ring to the Frame is
     // one value, and the word orbits (22).
-    if !contact::contact_named_vertices(&mut form, family, &varying, &mut sections, budget) {
-        return finish(form, scale, sections, &unreached_pairs);
+    if !contact::contact_named_vertices(&mut form, family, &varying, budget) {
+        return finish(form, scale, &unreached_pairs);
     }
     trace::trace_carriage("extract/6 contact", &measured, &form);
     trace::trace("extract/7 coherence", trace::Wrote::Nothing, Some(budget));
-    // 7. Coherence: tree gauge, else hold the orbits.
-    if !form.coheres() {
-        if let Some(gamma) = form.solve_coboundary() {
-            let _ = form.regauge(&gamma);
-        }
-    }
+    // 7. Coherence: the orbits are held. The tree gauge that re-solved the
+    // coboundary here retired (AT1 step 2, ruled (a)): an overlap's word is
+    // derived from its ends and the pivot's factors, so there is no gauge
+    // for a solve to choose and the orbits a form holds are its content.
     trace::trace("extract/8 finish", trace::Wrote::Nothing, Some(budget));
-    finish(form, scale, sections, &unreached_pairs)
+    finish(form, scale, &unreached_pairs)
 }
 
 /// Extract the invariant cochain of a family.

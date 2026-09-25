@@ -322,7 +322,7 @@ pub type Demanded = (crate::transducer::sentence::Demand, Invariant, Vec<Link>);
 
 /// 50.5: a demand vertex over the bodies it stands for.
 pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invariant, bodies: Vec<Link>) -> Vertex {
-    Vertex::Demand { kind, chart: chart.clone(), bodies }
+    Vertex::demand(kind, chart.clone(), bodies)
 }
 
 /// CV1b F3 — THE POLE'S DEMANDS STAND AS THE SENTENCE'S OWN VERTICES, one
@@ -331,7 +331,7 @@ pub fn demand_vertex(kind: crate::transducer::sentence::Demand, chart: &Invarian
 /// demand vertex carries no support and no face, so standing it after the
 /// faces is the vertex it would have been before them; the form's key is its
 /// vertices' coordinates, never their order.
-pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>) {
+pub(crate) fn stand_demands(vertices: &mut crate::transducer::sentence::Vertices, demanded: Vec<Demanded>) {
     use crate::transducer::sentence::Demand;
     let coords = |kind: &Demand| -> Option<Vec<u8>> {
         let Demand::RotorPrime { .. } = kind else { return None };
@@ -340,7 +340,7 @@ pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>)
         Some(key)
     };
     let mut standing: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
-    for v in vertices.iter() {
+    for (_, v) in vertices.entries() {
         if let Some(k) = match v {
             Vertex::Demand { kind, .. } => coords(kind),
             _ => None,
@@ -367,7 +367,10 @@ pub(crate) fn stand_demands(vertices: &mut Vec<Vertex>, demanded: Vec<Demanded>)
         standing.insert(&k, ());
         links.sort_unstable();
         links.dedup();
-        vertices.push(demand_vertex(kind, &chart, links));
+        let v = demand_vertex(kind, &chart, links);
+        if let Some(at) = v.at() {
+            vertices.put(&at, v);
+        }
     }
 }
 
@@ -633,6 +636,9 @@ pub(crate) fn word_vertex_on_chart(
         chart.clone(),
         Box::new(carriage),
         gauge,
+        // The frames the member holds are the percept's to write, once the
+        // frames reading this versor are grouped (AT1).
+        Vec::new(),
         None,
     ))
 }

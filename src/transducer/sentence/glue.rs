@@ -14,8 +14,8 @@
 //! moved the target off the vertex; the seam is the one the ruling drew.
 
 use super::form::*;
-use super::chart::{chart_of_form, vertex_bytes};
-use crate::network::nerve::Coordinate;
+use super::chart::chart_of_form;
+use crate::network::nerve::coord;
 use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 
@@ -23,7 +23,7 @@ impl Form {
     /// Glue a closed form in as one vertex, and re-read the orbits and the
     /// index for it. The single-citation reader; a PASS of citations calls
     /// [`Form::glue_append`] and re-reads once at the end (Z2 item 1).
-    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+    pub fn glue(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<coord::VertexAt> {
         self.glue_under(s, s_addr, placement, magnitude, element::identity_versor())
     }
 
@@ -38,11 +38,11 @@ impl Form {
         placement: Word,
         magnitude: [u64; 4],
         phi: element::Versor,
-    ) -> Option<u16> {
-        let idx = self.glue_append_under(s, s_addr, placement, magnitude, phi)?;
+    ) -> Option<coord::VertexAt> {
+        let at = self.glue_append_under(s, s_addr, placement, magnitude, phi)?;
         self.orbits = Self::orbits_of(&self.faces, &self.vertices);
         self.reindex();
-        Some(idx)
+        Some(at)
     }
 
     /// THE CITATION APPENDED AND NOTHING RE-READ (Z2 item 1): the `Glued`
@@ -60,7 +60,7 @@ impl Form {
     /// asks for the vertices to retract — is untouched by it; the orbits the
     /// appended face closes are read once after the pass, with the
     /// retractions, which rebuilds them anyway.
-    pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<u16> {
+    pub fn glue_append(&mut self, s: &Form, s_addr: crate::transducer::address::Address, placement: Word, magnitude: [u64; 4]) -> Option<coord::VertexAt> {
         self.glue_append_under(s, s_addr, placement, magnitude, element::identity_versor())
     }
 
@@ -72,16 +72,13 @@ impl Form {
         placement: Word,
         magnitude: [u64; 4],
         phi: element::Versor,
-    ) -> Option<u16> {
+    ) -> Option<coord::VertexAt> {
         if !s.is_closed() {
             return None;
         }
-        // 18: A FORM OPENS AT ITS FRAME, so vertex zero is the frame by the
-        // form's own shape and the slice pattern reads that coordinate.
-        let [frame @ Vertex::Frame, ..] = s.vertices.as_slice() else {
-            return None;
-        };
-        if !frame.word_in(s).is_some_and(|w| w.is_identity()) {
+        // 18: A FORM OPENS AT ITS FRAME, held at the Frame's own coordinate.
+        let frame = s.vertices.at(&coord::VertexAt::Frame)?;
+        if !frame.word_in(&s.vertices).is_some_and(|w| w.is_identity()) {
             return None;
         }
         // THE DEPTH REFUSAL IS GONE (54.2, as ruled 2026-09-20). It read
@@ -123,8 +120,6 @@ impl Form {
         if chart.0.is_empty() {
             return None;
         }
-        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex about to be glued); the atlas row replaces the slot by the chart's coordinates")]
-        let idx = self.vertices.len() as u16;
         // THE BOUNDARY ON THE VERTEX, THE COVER ON THE FORM (54.7, B5a).
         // The vertex states what this chart has — a rank, a depth, a
         // placement, a φ — and the edge states which form that boundary was
@@ -137,10 +132,10 @@ impl Form {
             placement: placement.clone(),
             carriage: Box::new(phi.clone()),
         };
-        // THE SITE IS A COORDINATE OF ITS OWN SYSTEM (54.7 B5a, R5): the
-        // host's boundary record, which is what `glued` answers — never the
-        // address of what it cites, which left the vertex with the target.
-        let site = crate::network::nerve::coord::Site::decode(&vertex_bytes(&v)).ok()?;
+        // THE SITE IS THE VERTEX'S COORDINATE (54.7 B5a, AT1): the host's
+        // boundary record — never the address of what it cites, which left the
+        // vertex with the target.
+        let at = v.at()?;
         // ONE EDGE PER INCIDENCE (54.7 B5a). `U_i` overlaps `U_j` under φ
         // is one fact however many times it is stated, and `of_form` files
         // the nerve under site‖target, so a duplicate would be collapsed
@@ -174,21 +169,19 @@ impl Form {
         // i-th vertex at this site with the i-th edge, which is an index and
         // not a coordinate (rule 15). One vertex, and the cover carries the
         // multiplicity.
-        if let Some(&at) = self.glued.at(&site) {
+        if self.vertices.holds(&at) {
             return Some(at);
         }
-        self.glued.put(&site, idx);
-        self.vertices.push(v);
-        // THE PLACEMENT FACE CARRIES ITS PLACEMENT. A Glued vertex stands at
-        // the cited form's chart and the Frame at the root, so there is one
-        // member pair and `face_carrying` names it; `FormFace::new` left it
-        // empty and the orbit through this face had no member path.
-        match self.face_carrying(0, idx, placement.clone()) {
-            Some(face) => self.faces.push(face),
-            None => self.faces.push(FormFace::new(0, idx, placement)),
-        }
+        self.vertices.put(&at, v);
+        // THE PLACEMENT OVERLAP. A Glued vertex stands at the cited form's
+        // chart and the Frame at its tag; a citation is at one frame — the
+        // cited form's own, frame 0 — so its star is one overlap carrying the
+        // placement (AT1: a face exists only at a member pair and its frame).
+        let o = coord::Overlap { from: coord::ChartAt::Frame, to: coord::ChartAt::at(at.clone(), self.vertices.at(&at)?.charts().into_iter().next()?, 0) };
+        let place = self.face_place(&o.from, &o.to, None)?;
+        self.faces.put(&o, FormFace::placed(place, Producer::Place));
         self.depth = after;
-        Some(idx)
+        Some(at)
     }
 
     /// EVERY FORM THE BOUNDARY AT THIS SITE MATES WITH (54.7 B5a).

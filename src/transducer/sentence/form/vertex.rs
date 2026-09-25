@@ -25,9 +25,10 @@ impl Vertex {
         chart: stalk::Invariant,
         carriage: Box<crate::transducer::element::Versor>,
         gauge: Vec<(u8, u8)>,
+        frames: impl IntoIterator<Item = u64>,
         contact: Option<alphabet::Contact>,
     ) -> Vertex {
-        let member = super::Acting { chart, carriage, gauge };
+        let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
         let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
         acts.put(&member.key(), member);
         // 54.2 — the vertex's address is its own coordinates, derived.
@@ -35,26 +36,74 @@ impl Vertex {
         Vertex::Word { address, derivation, acts, contact }
     }
 
-    /// A REBASED VERTEX ON ONE CHART — `of` read in `by`'s frame, carrying one
-    /// body. The counterpart of `word_on`, for the same reason: a site that
-    /// knows one chart says one chart, and `Form::rebase` builds the several-
-    /// chart case by inserting a member per chart `of` acted on.
+    /// A REBASED VERTEX ON ONE CHART — a vertex of class `class` read in
+    /// `by`'s frame, carrying one body. The counterpart of `word_on`, for the
+    /// same reason: a site that knows one chart says one chart, and
+    /// `Form::rebase` builds the several-chart case by inserting a member per
+    /// chart the rebased vertex acted on.
     pub fn rebased_on(
-        by: u16,
-        of: u16,
+        by: coord::VertexAt,
+        class: coord::Transport,
         chart: stalk::Invariant,
         carriage: Box<crate::transducer::element::Versor>,
         gauge: Vec<(u8, u8)>,
+        frames: impl IntoIterator<Item = u64>,
     ) -> Vertex {
-        let member = super::Acting { chart, carriage, gauge };
+        let member = super::Acting { chart, carriage, gauge, frames: section_of_frames(frames) };
         let mut acts: Keyed<super::Acting, coord::Section> = Keyed::new();
         acts.put(&member.key(), member);
-        Vertex::Rebased { by, of, acts }
+        Vertex::Rebased { by, class, acts }
+    }
+
+    /// A DEMAND OVER ITS BODIES: the measure per lane and the piece count are
+    /// read off the bodies here, the one place a demand is made from them, so
+    /// the coordinates the key writes and the evidence the record carries
+    /// cannot disagree (law 12).
+    pub fn demand(kind: crate::transducer::sentence::Demand, chart: stalk::Invariant, bodies: Vec<Link>) -> Vertex {
+        let (measure, pieces) = demand_coordinates(&bodies);
+        Vertex::Demand { kind, chart, measure, pieces, bodies }
+    }
+
+    /// THE TRANSPORT CLASS a vertex is: a Word's is its composed rotor's
+    /// conjugacy (21 step 1, 50.2 step 2 — never the residue's); a Rebased
+    /// vertex's is the class it held before the rebase. `None` for every
+    /// other kind, and for a rotor with no class (15.3).
+    pub fn class(&self) -> Option<coord::Transport> {
+        match self {
+            Vertex::Word { derivation, .. } => Some(coord::Transport {
+                kind: crate::transducer::peel::ShellKind::Whole,
+                class: derivation.rotor().holonomy_key()?,
+            }),
+            Vertex::Rebased { class, .. } => Some(class.clone()),
+            _ => None,
+        }
+    }
+
+    /// THE VERTEX'S COORDINATE IN THE ATLAS (AT1 Q1, ruled): what it is
+    /// keyed by, read off what it is. `None` where the kind's coordinate
+    /// does not read — a Word whose rotor has no class, a Rebased whose base
+    /// has none — and such a vertex has no place in a form (rule 11).
+    pub fn at(&self) -> Option<coord::VertexAt> {
+        Some(match self {
+            Vertex::Frame => coord::VertexAt::Frame,
+            Vertex::Word { .. } => coord::VertexAt::Word(self.class()?),
+            Vertex::Rebased { by, class, .. } => {
+                coord::VertexAt::Rebased { base: base_class(by)?, own: class.clone() }
+            }
+            Vertex::Unfolded { measure } => coord::VertexAt::Unfolded(unfolded_key(measure)),
+            Vertex::Demand { kind, chart, measure, pieces, .. } => coord::VertexAt::Demand {
+                kind: kind.clone(),
+                chart: chart.clone(),
+                measure: *measure,
+                pieces: *pieces,
+            },
+            v @ Vertex::Glued { .. } => coord::VertexAt::Glued(coord::Site(crate::transducer::sentence::vertex_bytes(v))),
+        })
     }
 
     /// The word a vertex speaks; a demand vertex speaks none (50.5), so no
     /// face reaches it and it enters no orbit.
-    pub fn word_in(&self, form: &Form) -> Option<Word> {
+    pub fn word_in(&self, vertices: &Vertices) -> Option<Word> {
         match self {
             Vertex::Frame | Vertex::Unfolded { .. } => Some(Word::identity()),
             // A FACE READS THE ACTION, WHICH IS THE COMPOSED ROTOR (§1.5,
@@ -97,24 +146,21 @@ impl Vertex {
             // absorbed, `rebase(v, 1) ≡ v`, and what the vertex speaks is
             // the identity — not a refusal and not a recursion, the
             // contraction of the cycle to its stationary point.
+            // The chain is followed by the bases' COORDINATES (AT1), each
+            // visited once: a base met again closes the chain.
             Vertex::Rebased { .. } => {
                 let mut at = self;
-                let mut seen: crate::network::nerve::Keyed<(), coord::VertexIx> =
+                let mut seen: crate::network::nerve::Keyed<(), coord::VertexAt> =
                     crate::network::nerve::Keyed::new();
                 loop {
-                    let Vertex::Rebased { by, of, .. } = at else {
-                        return at.word_in(form);
+                    let Vertex::Rebased { by, .. } = at else {
+                        return at.word_in(vertices);
                     };
-                    crate::transducer::family::trace::trace(
-                        "word_in/rebased by",
-                        crate::transducer::family::trace::Wrote::Ordinal(*by),
-                        None,
-                    );
-                    if seen.holds(&vertex_ix_key(*of)) {
+                    if seen.holds(by) {
                         return Some(Word::identity());
                     }
-                    seen.put(&vertex_ix_key(*of), ());
-                    at = form.vertices.get(*by as usize)?;
+                    seen.put(by, ());
+                    at = vertices.at(by)?;
                 }
             }
             Vertex::Demand { .. } => None,
@@ -304,6 +350,30 @@ impl Vertex {
         self.acts()?.scoped().find(|(k, _)| k.starts_with(&p)).map(|(_, a)| a)
     }
 
+    /// DOES THIS VERTEX'S CLASS CLAIM FRAME `k`: the class's section is the
+    /// union of its members' frames (AT1), and a vertex none of whose members
+    /// holds a frame is claimed whole (51.8). A vertex with no members claims
+    /// every frame, as a vertex with no section always did.
+    pub fn claims_frame(&self, k: u64) -> bool {
+        let Some(acts) = self.acts() else { return true };
+        let held = acts.scoped().any(|(_, a)| !a.frames.is_empty());
+        !held || acts.scoped().any(|(_, a)| a.frames.contains(&super::frame_key(k)))
+    }
+
+    /// THE SECTION OVER `chart` THAT STANDS ON FRAME `k` (AT1, ruled: a
+    /// section is a member holding its own frames). A chart read at a frame
+    /// names the member at that frame, and two sections of one chart stand on
+    /// different frames; where no section of the chart holds `k` — a member
+    /// written without frames — the chart's first section answers, as
+    /// [`Vertex::acting_on`] does.
+    pub fn acting_at(&self, chart: &stalk::Invariant, k: u64) -> Option<&super::Acting> {
+        let fk = super::frame_key(k);
+        self.acting_all_on(chart)
+            .into_iter()
+            .find(|a| a.frames.contains(&fk))
+            .or_else(|| self.acting_on(chart))
+    }
+
     /// DOES THIS VERTEX ACT ON THE CHART THIS KEY NAMES — a fibre read at
     /// the chart's stratum, for a reader holding the key rather than the
     /// `Invariant` (54.7 R1).
@@ -360,16 +430,21 @@ impl Vertex {
     /// and the entry keeps its place. A caller that means to move the vertex
     /// to ANOTHER chart is not replacing a carriage — it is inserting a
     /// member, which is D7b's business.
+    ///
+    /// Since 54.7 R1 the member's key IS `chart ‖ carriage`, so the member is
+    /// taken off its key and filed at its new one, and the vertex's address,
+    /// derived from its members (54.2), is derived again.
     pub fn set_carriage(&mut self, carriage: crate::transducer::element::Versor) {
-        let Vertex::Word { acts, .. } = self else {
+        let Vertex::Word { acts, address, derivation, contact } = self else {
             return;
         };
         let Some(k) = acts.entries().next().map(|(k, _)| k) else {
             return;
         };
-        if let Some(a) = acts.at_mut(&k) {
-            *a.carriage = carriage;
-        }
+        let Some(mut a) = acts.drop_at(&k) else { return };
+        *a.carriage = carriage;
+        acts.put(&a.key(), a);
+        *address = crate::transducer::sentence::word_vertex_address(derivation, acts, *contact);
     }
 
     pub fn depth(&self) -> u16 {
@@ -378,4 +453,29 @@ impl Vertex {
             _ => 0,
         }
     }
+}
+
+/// THE CLASS A REBASE'S BASE LENDS ITS WORD: a Word's own, a Rebased
+/// vertex's base's (its word is that base's), the identity's at the Frame.
+/// `None` for a kind that speaks no rebasable word.
+pub(crate) fn base_class(by: &coord::VertexAt) -> Option<coord::Transport> {
+    match by {
+        coord::VertexAt::Word(t) => Some(t.clone()),
+        coord::VertexAt::Rebased { base, .. } => Some(base.clone()),
+        coord::VertexAt::Frame => Some(coord::Transport {
+            kind: crate::transducer::peel::ShellKind::Whole,
+            class: Word::identity().rotor().holonomy_key()?,
+        }),
+        _ => None,
+    }
+}
+
+/// A DEMAND'S KEYED COORDINATES, read off its bodies: the chain's measure
+/// per lane and its pieces (54.5 Road (d)). The one reader of both, so the
+/// key and the evidence agree by construction.
+pub(crate) fn demand_coordinates(bodies: &[Link]) -> ([u64; 4], u64) {
+    (
+        crate::transducer::element::measure_lanes(bodies),
+        crate::transducer::sentence::pieces(bodies).len() as u64,
+    )
 }

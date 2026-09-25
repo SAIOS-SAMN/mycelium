@@ -47,7 +47,7 @@ pub(crate) fn speak_form(
 ) -> Option<[u64; 4]> {
     use mycelium::transducer::alphabet::Rotor;
     use mycelium::transducer::family::trace;
-    use mycelium::transducer::sentence::{as_element_form, Vertex};
+    use mycelium::transducer::sentence::as_element_form;
     let fam = fam_id(family);
     let form = &rule.form;
     // Why the form is withheld, in the order the court would refuse it.
@@ -56,8 +56,10 @@ pub(crate) fn speak_form(
             .delta1()
             .into_iter()
             .find(|(_, w)| !w.rotor().projective_eq(&Rotor::identity()));
-        if let Some((i, w)) = held {
-            format!("orbit {i} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
+        if let Some((chord, w)) = held {
+            // The orbit by its chord's two vertices' coordinates (AT1).
+            let at = mycelium::transducer::sentence::At::face(chord.from_vertex(), chord.to_vertex()).label();
+            format!("orbit at {at} holonomy {:02x}{:02x}…", w.key()[0], w.key()[1])
         } else if !form.remainder.is_empty() {
             format!("remainder {} links", form.remainder.len())
         } else {
@@ -139,7 +141,7 @@ pub(crate) fn speak_form(
                     None,
                     word.description().len() as i128,
                 );
-                let glued = form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
+                let glued = form.glued_vertices().count();
                 eprintln!(
                     "[{tag}] form spoken: {:02x}{:02x}… depth {} vertices {} glued {} faces {} \
                      carried {:?} deliberation {} span {}",
@@ -240,15 +242,14 @@ fn speak_with_demands(
             }
             _ => {
                 let demands = form.demand_vertices().count();
-                let remainder_edges = form
-                    .faces
-                    .iter()
-                    .filter(|f| f.i != 0 && f.j != 0 && !f.has_edge())
-                    .filter(|f| {
-                        matches!(form.vertices.get(f.i as usize), Some(Vertex::Word { .. }))
-                            && matches!(form.vertices.get(f.j as usize), Some(Vertex::Word { .. }))
-                    })
-                    .count();
+                // AN OVERLAP BETWEEN TWO WORD VERTICES CARRYING NO EDGE — the
+                // Frame's star excluded, read by the overlap's own ends (AT1).
+                let between_words = |o: &mycelium::network::nerve::coord::Overlap| {
+                    matches!(form.vertices.at(&o.from_vertex()), Some(Vertex::Word { .. }))
+                        && matches!(form.vertices.at(&o.to_vertex()), Some(Vertex::Word { .. }))
+                };
+                let remainder_edges =
+                    form.faces.entries().filter(|(o, f)| !f.has_edge() && between_words(o)).count();
                 eprintln!(
                     "[{tag}] sentence spoken: {} vertices {} demands {demands} orbits {} \
                      remainder edges {remainder_edges} deliberation {} span {}",
@@ -261,9 +262,10 @@ fn speak_with_demands(
                 for (_, kind, chart, _) in form.demand_vertices() {
                     eprintln!("[{tag}] demand {} chart {} on {}", kind.label(), hx(chart.key().as_bytes()), hx(addr.as_bytes()));
                 }
-                for f in &form.faces {
-                    if f.i != 0 && f.j != 0 && !f.has_edge() {
-                        eprintln!("[{tag}] edge remainder {}-{} on {}", f.i, f.j, hx(addr.as_bytes()));
+                for (o, f) in form.faces.entries() {
+                    if !f.has_edge() && between_words(&o) {
+                        let at = mycelium::transducer::sentence::At::face(o.from_vertex(), o.to_vertex()).label();
+                        eprintln!("[{tag}] edge remainder {at} on {}", hx(addr.as_bytes()));
                     }
                 }
                 Some(word.magnitude())

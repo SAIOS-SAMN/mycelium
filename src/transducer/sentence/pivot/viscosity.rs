@@ -99,7 +99,7 @@ fn class_of(lane: BendLane, c: &PathCarried) -> Class {
     }
 }
 
-fn read(lane: BendLane, faces: &[FormFace], vertices: &[Vertex], lp: &Orbit) -> Option<Keyed<Class>> {
+fn read(lane: BendLane, faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Keyed<Class>> {
     let carried = paths_carried_quiet(faces, vertices, lp)?;
     let mut out = Keyed::new();
     for (k, c) in carried.scoped() {
@@ -114,7 +114,7 @@ fn unread(c: &Class) -> bool {
 
 /// THE BEND on one plane: the move, and its generator's own class-reading
 /// element (the versor on `𝒮`, the word on `𝒽`).
-fn bend(lane: BendLane, face: u16, plane: usize) -> Option<PivotBy> {
+fn bend(lane: BendLane, face: coord::Overlap, plane: usize) -> Option<PivotBy> {
     match lane {
         BendLane::Spatial => {
             let blade = crate::transducer::cga::Mv::blade(plane, num_rational::BigRational::from_integer(1.into()));
@@ -169,14 +169,14 @@ fn ledger() -> (u64, u64, u64, [u64; 4], [u64; 4]) {
 /// or `None` where a bend has no inverse (refused by name).
 fn respond(
     lane: BendLane,
-    faces: &[FormFace],
-    vertices: &[Vertex],
+    faces: &Faces,
+    vertices: &Vertices,
     lp: &Orbit,
     before: &Keyed<Class>,
     (a, b): (&PivotBy, &PivotBy),
 ) -> Option<Vec<Arm>> {
     let ledger_before = ledger();
-    let mut work = faces.to_vec();
+    let mut work = faces.clone();
     apply_by(&mut work, a);
     let after_a = read(lane, &work, vertices, lp);
     if !unapply_by(&mut work, a) {
@@ -253,13 +253,15 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
                 let mut reading =
                     PairViscosity { lane: *lane, planes: (pa, pb), arms: [0; 4], refused: 0, unread: 0, no_class: 0 };
                 for (lp, read_before) in form.orbits.iter().zip(&before) {
-                    let mut seen: Vec<u16> = Vec::new();
-                    for &f in &lp.faces {
-                        if seen.contains(&f) {
+                    // EVERY OVERLAP THE LOOP CROSSES, once each, by its key.
+                    let mut seen: Keyed<(), coord::Overlap> = Keyed::new();
+                    for s in &lp.steps {
+                        let f = s.overlap.clone();
+                        if seen.holds(&f) {
                             continue;
                         }
-                        seen.push(f);
-                        let (Some(a), Some(b)) = (bend(*lane, f, pa), bend(*lane, f, pb)) else { continue };
+                        seen.put(&f, ());
+                        let (Some(a), Some(b)) = (bend(*lane, f.clone(), pa), bend(*lane, f, pb)) else { continue };
                         let Some((classes, paths, any)) = read_before else {
                             // The loop does not traverse: the trial would be
                             // refused before it bent anything.

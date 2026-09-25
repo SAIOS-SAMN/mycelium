@@ -23,21 +23,36 @@ fn eleven() -> Rotor {
 /// The same two vertices under the identity word carry their one pair, and
 /// the off-plane rotor stands on the edge transport instead, where every
 /// orbit through the face reads it (50.3).
+///
+/// AT1: a face's word is DERIVED from its ends' vertices, so the word with
+/// no sensor action is the coboundary between a member of the identity's
+/// class and a member of `eleven`'s; one overlap is one member pair, placed
+/// or not placed.
 #[test]
 fn a_face_whose_word_has_no_sensor_action_places_no_member_pair() {
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1, Word::identity()));
-    f.vertices.push(word_vertex(2, Word::identity()));
-    let off = f.face_carrying(1, 2, Word::formed(eleven())).expect("a face between two bodies");
-    assert_eq!(off.at.len(), 0, "the incidence named one pair and the word places none of it");
-    let on = f.face_carrying(1, 2, Word::identity()).expect("a face between two bodies");
-    assert_eq!(on.at.len(), 1, "the identity word places the pair the incidence named");
-    let edged = f
-        .face_carrying_with_edge(1, 2, Word::identity(), Some(Transport::from_word(Word::formed(eleven()))))
-        .expect("a face between two bodies");
-    assert_eq!(edged.at.len(), 1, "an edge transport rides the placed pair");
+    let a = f
+        .stand_member(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), FRAME)
+        .expect("member 1");
+    let b = f
+        .stand_member(&word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])), FRAME)
+        .expect("member 2");
+    let c = f
+        .stand_member(&word_vertex_on(3, Word::formed(eleven()), stalk::Invariant::counts(&[3])), FRAME)
+        .expect("member 3");
     assert!(
-        edged.at.scoped().all(|(_, p)| p.edge.as_ref().is_some_and(|t| t.word.rotor().projective_eq(&eleven()))),
+        f.place_overlap(a.clone(), c, None).is_none(),
+        "the incidence named one pair and the word places none of it"
+    );
+    let on = f.place_overlap(a.clone(), b.clone(), None);
+    assert!(on.is_some(), "the identity word places the pair the incidence named");
+    let edged = f
+        .place_overlap(a, b, Some(Transport::from_word(Word::formed(eleven()))))
+        .expect("an edge transport rides the placed pair");
+    assert!(
+        f.faces
+            .at(&edged)
+            .is_some_and(|face| face.place.edge.as_ref().is_some_and(|t| t.word.rotor().projective_eq(&eleven()))),
         "and carries the rotor whole"
     );
 }
@@ -69,10 +84,10 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
     );
     let whole = holonomy.class_key().expect("a class");
     assert_ne!(whole, q01.rotor().class_key().expect("a class"), "the orbit's class is the double rotation's");
-    f.open_axis_on(lp.chord).expect("the axis opens on the orbit");
+    f.open_axis_on(&lp.chord).expect("the axis opens on the orbit");
     assert_eq!(
         f.axes.at(&holonomy.holonomy_key().expect("a holonomy coordinate")),
-        Some(&lp.chord),
+        Some(&Some(lp.chord.clone())),
         "and the axis is keyed by that class"
     );
     let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("quarter (2,3)"), false)]);
@@ -119,7 +134,7 @@ fn a_free_part_orbit_is_spoken_as_a_standing_demand_carrying_its_holonomy() {
     // the doctrine the doc comment states.
     assert!(!demands.is_empty(), "the orbit is spoken as a standing demand: {snaps:?}");
     let charts: Vec<stalk::Invariant> =
-        f.vertices.iter().filter_map(|v| v.face_chart()).collect();
+        f.vertices.scoped().flat_map(|(_, v)| v.charts()).collect();
     for (rotor, chart) in &demands {
         // The orbit runs the chord backward, so the holonomy it carries is
         // `r⁻¹`: the same class as `r` (15.3 reads the ray, and inversion

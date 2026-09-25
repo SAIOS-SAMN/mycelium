@@ -33,14 +33,16 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         Derivation::spelled(w.clone()),
         chart.clone(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
+        [0],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("the star face"));
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("the star face");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");

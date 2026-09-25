@@ -241,10 +241,11 @@ impl Kernel {
                 }
             }
             eprintln!(
-                "  court pivot certified {:02x}{:02x}… orbit {} axis {} {:02x}{:02x}→{:02x}{:02x}",
+                "  court pivot certified {:02x}{:02x}… orbit at {} axis {} {:02x}{:02x}→{:02x}{:02x}",
                 addr[0],
                 addr[1],
-                cert.chord,
+                // The chord by its two vertices' coordinates (AT1).
+                crate::transducer::sentence::At::face(cert.chord.from_vertex(), cert.chord.to_vertex()).label(),
                 cert.axis.label(),
                 cert.before[0],
                 cert.before[1],

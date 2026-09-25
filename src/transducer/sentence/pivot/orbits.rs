@@ -54,15 +54,10 @@ fn unread(why: Unread) {
 /// identity written for a transport that was never read would be a
 /// refusal recorded as a value (rule 11). A node beyond it carries the
 /// refusal's own reason, so a cycle ending there is counted by it (H2c).
-fn tree_transports(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    adj: &[Vec<(usize, usize)>],
-    node_vertex: &[u16],
-    node_chart: &[Vec<u8>],
-) -> Vec<Result<element::Versor, Unread>> {
-    let n = node_vertex.len();
+fn tree_transports(faces: &Faces, forest: &Forest) -> (Vec<Result<element::Versor, Unread>>, Vec<usize>) {
+    let n = forest.charts.len();
     let mut theta: Vec<Result<element::Versor, Unread>> = vec![Ok(element::identity_versor()); n];
+    let mut root_of: Vec<usize> = (0..n).collect();
     let mut seen = vec![false; n];
     // index: the forest's own nodes, each visited once (rule 1).
     for root in 0..n {
@@ -72,12 +67,13 @@ fn tree_transports(
         seen[root] = true;
         let mut frontier = vec![root];
         while let Some(p) = frontier.pop() {
-            for &(c, fi) in &adj[p] {
+            for &(c, e) in &forest.adj[p] {
                 if seen[c] {
                     continue;
                 }
                 seen[c] = true;
-                let step = tree_step(faces, vertices, node_vertex, node_chart, p, c, fi);
+                root_of[c] = root;
+                let step = tree_step(faces, forest, p, e);
                 if let Err(why) = &step {
                     unread(*why);
                 }
@@ -89,50 +85,107 @@ fn tree_transports(
             }
         }
     }
-    theta
+    (theta, root_of)
 }
 
-/// THE TRANSPORT ACROSS ONE TREE EDGE, in the direction `p → c`.
+/// THE TRANSPORT ACROSS ONE TREE EDGE, leaving node `p`.
 ///
-/// Read off the face's own member pair, exactly as `paths_carried` reads a
+/// Read off the overlap's own place, exactly as `paths_carried` reads a
 /// step — the same coordinate, not a second derivation of it (rule 12) —
-/// and inverted where the circuit runs against the face's orientation.
-/// Identity where the face relates no member and both nodes stand at no
-/// chart, which is a real sector of the complex. A named pair the face does
-/// not hold is `NoPlace`, as the circuit reads it (O1).
+/// and reversed where the edge is crossed against its orientation.
 ///
 /// `Cone` where the carriage is no versor — a carriage on the light cone
 /// (57.4), whose action collapses — and that transport was never read;
-/// backward, the carriage is read by its reverse (78.32(1)). `NoFace` where the forest names a face the form does not
-/// hold.
-fn tree_step(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    node_vertex: &[u16],
-    node_chart: &[Vec<u8>],
-    p: usize,
-    c: usize,
-    fi: usize,
-) -> Result<element::Versor, Unread> {
-    let f = faces.get(fi).ok_or(Unread::NoFace)?;
-    let _ = vertices;
-    let (vp, cp) = (node_vertex[p], &node_chart[p]);
-    let (vc, cc) = (node_vertex[c], &node_chart[c]);
-    // O1 — CROSSED THE WAY THE FACE'S MEMBER PAIR RUNS, as the circuit crosses
-    // it. The vertex pair cannot say which way a face between two charts of
-    // one vertex runs, and the pair read backwards found nothing and wrote
-    // the identity for it.
-    let at = |pk: &[u8]| f.at.get(pk).ok_or(Unread::NoPlace);
-    match crossing(f, (vp, cp), (vc, cc)) {
-        Crossing::Forward(pk) => Ok(at(&pk)?.carriage.clone()),
-        // Backward by the carriage's reverse, a ray (78.32(1)).
-        Crossing::Backward(pk) => {
-            let c = &at(&pk)?.carriage;
-            crate::transducer::cga::is_versor(c).then(|| c.reverse()).ok_or(Unread::Cone)
+/// backward, the carriage is read by its reverse (78.32(1)). `NoFace` where
+/// the forest names an overlap the form does not hold.
+fn tree_step(faces: &Faces, forest: &Forest, p: usize, e: usize) -> Result<element::Versor, Unread> {
+    let (from, _, o) = forest.edges.get(e).ok_or(Unread::NoFace)?;
+    let c = &faces.at(o).ok_or(Unread::NoFace)?.place.carriage;
+    match *from == p {
+        true => Ok(c.clone()),
+        false => crate::transducer::cga::is_versor(c).then(|| c.reverse()).ok_or(Unread::Cone),
+    }
+}
+
+/// THE SPANNING FOREST OF THE CHART COMPLEX, on coordinates (AT1): a node
+/// per chart, an edge per overlap. The ordinals are this reading's own and
+/// leave it only as the charts and overlaps they stand for; (iii) retires
+/// the forest.
+struct Forest {
+    charts: Vec<coord::ChartAt>,
+    edges: Vec<(usize, usize, coord::Overlap)>,
+    adj: Vec<Vec<(usize, usize)>>,
+}
+
+impl Forest {
+    /// The steps a node path crosses, each overlap with the way it runs.
+    fn steps(&self, path: &[usize], crossed: &[usize]) -> Vec<OrbitStep> {
+        path.iter()
+            .zip(crossed)
+            .filter_map(|(&from, &e)| {
+                let (a, _, o) = self.edges.get(e)?;
+                Some(OrbitStep { overlap: o.clone(), forward: *a == from })
+            })
+            .collect()
+    }
+}
+
+/// The tree path from `src` to `dst` as its nodes and the edges crossed
+/// between them, named in the same pass that finds them. A SEARCH, counted
+/// at its site (AT1 r4): (iii) retires it.
+fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> Option<(Vec<usize>, Vec<usize>)> {
+    if src == dst {
+        return Some((vec![src], Vec::new()));
+    }
+    let mut prev: Vec<Option<(usize, usize)>> = vec![None; adj.len()];
+    prev[src] = Some((src, 0));
+    let mut q = vec![src];
+    let mut qi = 0usize;
+    while qi < q.len() {
+        let u = q[qi];
+        qi += 1;
+        if u == dst {
+            break;
         }
-        Crossing::TwoWays => Err(Unread::TwoWays),
-        Crossing::Unplaced if cp.is_empty() && cc.is_empty() => Ok(element::identity_versor()),
-        Crossing::Unplaced => Err(Unread::NoPlace),
+        for &(v, e) in &adj[u] {
+            if prev[v].is_some() {
+                continue;
+            }
+            prev[v] = Some((u, e));
+            q.push(v);
+        }
+    }
+    crate::transducer::sentence::form::atlas::note_tree_path(qi);
+    prev[dst]?;
+    let mut path = vec![dst];
+    let mut crossed = Vec::new();
+    let mut cur = dst;
+    while cur != src {
+        let (p, e) = prev[cur]?;
+        crossed.push(e);
+        path.push(p);
+        cur = p;
+    }
+    path.reverse();
+    crossed.reverse();
+    Some((path, crossed))
+}
+
+impl Form {
+    /// AXIOM A, READ (ruled: never a field): the transport from the orbit's
+    /// component root to where the cycle is based, composed along its stem.
+    /// `None` where a step is unread.
+    pub fn orbit_based_at(&self, lp: &Orbit) -> Option<element::Versor> {
+        let mut theta = element::identity_versor();
+        for s in &lp.stem {
+            let c = &self.faces.at(&s.overlap)?.place.carriage;
+            let step = match s.forward {
+                true => c.clone(),
+                false => crate::transducer::cga::is_versor(c).then(|| c.reverse())?,
+            };
+            theta = theta.geo(&step);
+        }
+        Some(theta)
     }
 }
 
@@ -181,7 +234,7 @@ impl Form {
         UNREAD.with(|c| c.get())
     }
 
-    pub fn orbits_of(faces: &[FormFace], vertices: &[Vertex]) -> Vec<Orbit> {
+    pub fn orbits_of(faces: &Faces, vertices: &Vertices) -> Vec<Orbit> {
         // THE CYCLE BASIS IS BUILT ON THE MEMBER COMPLEX, NOT ON THE VERTEX
         // INDICES (54.4, as ruled 2026-09-20).
         //
@@ -244,69 +297,40 @@ impl Form {
         if vertices.is_empty() {
             return Vec::new();
         }
-        // THE NODES, discovered from the faces' own member pairs. `at` is
-        // keyed by `face_pair_key`, so the two member keys of an edge are
-        // read out of the key the transport is filed under — the same
-        // coordinate, not a second derivation of it (law 12).
-        // A (vertex, chart) node's ordinal in this forest, in the count's
-        // own width: nodes grow with vertices × their charts and pass a u16
-        // while the vertices fit one, and a wrapped ordinal handed back
-        // another node, building the forest wrong (STD1 3c-5). Local; the
-        // forest itself retires at AT1.
+        // THE NODES ARE THE CHARTS AND THE EDGES THE OVERLAPS (AT1): each
+        // overlap names its two charts, so the node pair is read off the key
+        // the transport is filed under — the same coordinate, never a second
+        // derivation of it (law 12). A node's ordinal is this reading's own.
         let mut node_of: Keyed<usize> = Keyed::new();
-        let mut node_vertex: Vec<u16> = Vec::new();
-        let mut node_chart: Vec<Vec<u8>> = Vec::new();
-        let mut edges: Vec<(usize, usize, usize)> = Vec::new();
-        let node = |node_of: &mut Keyed<usize>,
-                        node_vertex: &mut Vec<u16>,
-                        node_chart: &mut Vec<Vec<u8>>,
-                        v: u16,
-                        chart: &[u8]|
-         -> usize {
-            let k = crate::transducer::family::member_key(v, chart);
-            match node_of.get(&k) {
+        let mut charts: Vec<coord::ChartAt> = Vec::new();
+        let mut edges: Vec<(usize, usize, coord::Overlap)> = Vec::new();
+        let mut node = |c: &coord::ChartAt| -> usize {
+            let k = c.encode();
+            match node_of.get(k.as_bytes()) {
                 Some(&ix) => ix,
                 None => {
-                    let ix = node_vertex.len();
-                    node_of.insert(&k, ix);
-                    node_vertex.push(v);
-                    node_chart.push(chart.to_vec());
+                    let ix = charts.len();
+                    node_of.insert(k.as_bytes(), ix);
+                    charts.push(c.clone());
                     ix
                 }
             }
         };
-        // STAR FACES FIRST, as before, so the spanning tree prefers the
-        // basepoint's edges and a chord is a face between two bodies.
-        let star = |f: &FormFace| {
-            [f.i, f.j].iter().any(|&v| matches!(vertices.get(v as usize), Some(Vertex::Frame)))
-        };
+        // STAR OVERLAPS FIRST, as before, so the spanning tree prefers the
+        // basepoint's edges and a chord is an overlap between two bodies.
         for pass in [true, false] {
-            for (fi, f) in faces.iter().enumerate() {
-                if star(f) != pass {
+            for (o, _) in faces.entries() {
+                if touches_frame(&o) != pass {
                     continue;
                 }
-                if f.i as usize >= vertices.len() || f.j as usize >= vertices.len() {
+                if !vertices.holds(&o.from_vertex()) || !vertices.holds(&o.to_vertex()) {
                     continue;
                 }
-                let mut named = 0usize;
-                for (pk, _) in f.at.scoped() {
-                    let Some((ci, cj)) = crate::transducer::sentence::read_face_pair_key(&pk)
-                    else {
-                        continue;
-                    };
-                    named += 1;
-                    let a = node(&mut node_of, &mut node_vertex, &mut node_chart, f.i, &ci);
-                    let b = node(&mut node_of, &mut node_vertex, &mut node_chart, f.j, &cj);
-                    edges.push((a, b, fi));
-                }
-                if named == 0 {
-                    let a = node(&mut node_of, &mut node_vertex, &mut node_chart, f.i, &[]);
-                    let b = node(&mut node_of, &mut node_vertex, &mut node_chart, f.j, &[]);
-                    edges.push((a, b, fi));
-                }
+                let (a, b) = (node(&o.from), node(&o.to));
+                edges.push((a, b, o));
             }
         }
-        let n = node_vertex.len();
+        let n = charts.len();
         if n == 0 {
             return Vec::new();
         }
@@ -334,16 +358,18 @@ impl Form {
         // edges are tree edges changes — the union-find is the same and in
         // the same order — only when the chords are read.
         let mut chords: Vec<(usize, usize, usize)> = Vec::new();
-        for (a, b, fi) in edges {
+        for (e, (a, b, _)) in edges.iter().enumerate() {
+            let (a, b) = (*a, *b);
             let (pa, pb) = (find(&mut parent, a), find(&mut parent, b));
             if pa != pb {
                 parent[pa] = pb;
-                adj[a].push((b, fi));
-                adj[b].push((a, fi));
+                adj[a].push((b, e));
+                adj[b].push((a, e));
                 continue;
             }
-            chords.push((a, b, fi));
+            chords.push((a, b, e));
         }
+        let forest = Forest { charts, edges, adj };
         // THE TRANSPORT FROM EACH COMPONENT'S ROOT TO EVERY NODE OF IT.
         //
         // `θ_root = 1` and `θ_c = θ_p · Ω_e` along each tree edge, by
@@ -354,8 +380,8 @@ impl Form {
         // the nodes were discovered in, which is the faces' own content
         // order — so two minds reading one form choose the same basepoint
         // and the gauge is not a matter of arrival order.
-        let theta = tree_transports(faces, vertices, &adj, &node_vertex, &node_chart);
-        for (a, b, fi) in chords {
+        let (theta, root_of) = tree_transports(faces, &forest);
+        for (a, b, e) in chords {
             // A 1-CELL ATTACHED AT ONE 0-CELL IS A CYCLE (54.7, ruled
             // 2026-09-21). `tree_path(adj, a, a)` yields nothing, so this
             // fell through the `continue` below and every reflexive chord
@@ -373,36 +399,14 @@ impl Form {
             if a == b {
                 gate(0);
             }
-            let Some((path, mut crossed)) = (if a == b {
+            let Some((path, crossed)) = (if a == b {
                 Some((vec![a], Vec::new()))
             } else {
-                tree_path(&adj, a, b)
+                tree_path(&forest.adj, a, b)
             }) else {
                 gate(1);
                 continue;
             };
-            // THE CYCLE PROJECTED TO ITS VERTICES. `Orbit` names its nodes
-            // by vertex index because every reader of it — the holonomy
-            // composite, the charts of an orbit, the face-direction test in
-            // `paths_carried` — asks the form for a vertex. The CHART at
-            // each step is carried by the faces the cycle crosses, which is
-            // where the transport is; the projection loses nothing the
-            // readers need, and the cycle is a cycle of M whatever it is
-            // named by.
-            // THE CYCLE, NAMED BY ITS MEMBERS, and the projection beside
-            // it. The members are the cycle; `vertices` is `π` of them,
-            // kept because every reader of an orbit asks the form for a
-            // vertex, and lossy at exactly the edge between two charts of
-            // one vertex.
-            let mut members: Vec<Vec<u8>> = path
-                .iter()
-                .map(|&ix| crate::transducer::family::member_key(node_vertex[ix], &node_chart[ix]))
-                .collect();
-            members.push(crate::transducer::family::member_key(node_vertex[a], &node_chart[a]));
-            let mut path: Vec<usize> =
-                path.into_iter().map(|ix| node_vertex[ix] as usize).collect();
-            path.push(node_vertex[a] as usize);
-            crossed.push(fi);
             // A CYCLE WITH AN END THE FOREST COULD NOT GAUGE IS UNREAD. Its
             // basepoint transport, or the one across its forest path, crossed
             // a carriage on the light cone (57.4), and an orbit based through
@@ -414,33 +418,22 @@ impl Form {
                     continue;
                 }
             };
-            let holonomy = form_named_holonomy(faces, &path, &crossed);
-            // THE CARRIAGES ARE THE TRANSPORT COMPOSITE'S, read from the one
-            // traversal that computes them. `path_carriages` stood here and traversed
-            // the orbit's member paths accumulating `place.carriage` —
-            // step for step the same traversal `orbit_transport_on` makes, with the
-            // word and the gauge thrown away. Two carriers for one quantity
-            // (law 12), and the expensive half: the traversal is combinatorial over
-            // each face's member pairs, and it ran once per orbit at
-            // construction and again per orbit at every class reading. On the
-            // fleet at e98e8a2 that is 70311 orbits traversed twice, and one pair
-            // form carried 3361 of them.
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "AT1 debt — a slot number of the form's Vec (the cycle's vertices, read back from node_vertex's u16; its crossed faces and its chord face); the atlas row replaces the slot by the chart's coordinates"
-            )]
-            let mut lp = Orbit {
-                members,
-                vertices: path.into_iter().map(|x| x as u16).collect(),
-                faces: crossed.into_iter().map(|x| x as u16).collect(),
-                chord: fi as u16,
-                holonomy,
-                carriages: Keyed::new(),
-                // AXIOM A — the cycle closes at `a` through the tree, so
-                // `a` is where it is based and `θ_a` is what carries it to
-                // the form's basepoint.
-                based_at: theta_a,
+            // THE CYCLE AS THE OVERLAPS IT CROSSES (AT1): the forest path
+            // from `a` to `b`, then the chord back from `b` to `a`, each step
+            // with the way it runs; and the stem from the component's root
+            // to `a`, where the cycle is based (Axiom A). The holonomy, the
+            // carriage and `θ_a` are READ off these (ruled), never held.
+            let Some((chord_from, _, chord)) = forest.edges.get(e) else {
+                unread(Unread::NoFace);
+                continue;
             };
+            let mut steps = forest.steps(&path, &crossed);
+            steps.push(OrbitStep { overlap: chord.clone(), forward: *chord_from == b });
+            let Some((stem_path, stem_crossed)) = tree_path(&forest.adj, root_of[a], a) else {
+                unread(Unread::NoFace);
+                continue;
+            };
+            let lp = Orbit { steps, chord: chord.clone(), stem: forest.steps(&stem_path, &stem_crossed) };
             // A CHORD THAT ENCLOSES NOTHING IS NOT AN ORBIT (ruled
             // 2026-09-18). `orbit_is_trivial` states the predicate once;
             // a cycle that encloses no rotation, no placement and no hue
@@ -477,7 +470,7 @@ impl Form {
                 note_closure(&carried);
                 continue;
             }
-            for (k, c) in carried.scoped() {
+            for (_, c) in carried.scoped() {
                 // THE DEFECT THIS CYCLE CARRIES, read once per member path
                 // off the transport it composes (§8.1).
                 note_defect(c);
@@ -497,12 +490,12 @@ impl Form {
                     coset: c.holds_coset().then(|| c.clone()),
                 });
                 // PL1 — AND THE SAME CIRCUIT'S BRICKS, step by step (78.12(4)).
-                super::trajectory::note_circuit(|| super::trajectory::read_circuit(lp.chord, c, faces));
+                super::trajectory::note_circuit(|| super::trajectory::read_circuit(&lp.chord, c, faces));
                 // AND THE OPERATOR THIS GENERATOR ENACTS, at the basepoint
                 // (Axiom A). Two cycles agreeing here are synonyms: distinct
                 // cellular paths, one physical dislocation.
-                if let (true, Some(composite)) = (crate::transducer::cga::is_versor(&lp.based_at), &composite) {
-                    note_synonym(&lp.based_at.sandwich(composite));
+                if let (true, Some(composite)) = (crate::transducer::cga::is_versor(&theta_a), &composite) {
+                    note_synonym(&theta_a.sandwich(composite));
                 }
                 // AND WHETHER ITS ORBIT CLOSES — asked of the CONNECTION,
                 // not of the alphabet (54.7).
@@ -535,7 +528,6 @@ impl Form {
                         s.set(t);
                     });
                 }
-                lp.carriages.insert(&k, c.face.carriage.clone());
             }
             orbits.push(lp);
         }

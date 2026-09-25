@@ -15,22 +15,37 @@ use crate::transducer::stalk;
 #[test]
 fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
     let mut f = closed_word_form(order4(), Some(Contact { anchor: 0, ring: 1 }));
-    let Some(Vertex::Word { address, contact: Some(_), .. }) = f.vertices.get(1).cloned() else {
+    let word = only_word(&f);
+    let Some(Vertex::Word { contact: Some(_), .. }) = f.vertices.at(&word) else {
         panic!("the fixture's word is a contact word");
     };
     let chart = stalk::Invariant::counts(&[3, 5]);
-    let at = At::Vertex { address: address.clone(), chart: chart.clone() };
+    let at = At::vertex(word.clone(), chart.clone());
     let remainder = vec![(0i64, 1i64, 1u8, 2u8)];
-    assert!(f.faces.iter().any(|face| face.j == 1), "the contact word has its star face");
-    assert_eq!(f.contract(RefusalKind::OrbitStill, &at, &remainder), Some(Contracted::Moved));
     assert!(
-        matches!(f.vertices.get(1), Some(Vertex::Demand { kind: Demand::Creation, chart: c, bodies }) if *c == chart && *bodies == remainder),
+        f.overlaps_at(&word).iter().any(|o| o.from == crate::network::nerve::coord::ChartAt::Frame),
+        "the contact word has its star face"
+    );
+    assert_eq!(f.contract(RefusalKind::OrbitStill, &at, &remainder), Some(Contracted::Moved));
+    // AT1: the demand stands at its OWN coordinate (kind, chart, measure,
+    // pieces), and the word's coordinate is empty.
+    assert!(!f.vertices.holds(&word), "the contact word's coordinate is empty");
+    let demands: Vec<Vec<(i64, i64, u8, u8)>> = f
+        .demand_vertices()
+        .filter(|(_, k, c, _)| matches!(k, Demand::Creation) && **c == chart)
+        .map(|(_, _, _, b)| b.to_vec())
+        .collect();
+    assert_eq!(
+        demands,
+        vec![remainder.clone()],
         "the contact word is now a demand over its chart with the links it was to reach: {:?}",
         f.vertices
     );
-    assert!(!f.faces.iter().any(|face| face.j == 1), "and its faces left with it");
+    assert!(f.overlaps_at(&word).is_empty(), "and its faces left with it");
     assert!(f.is_contraction_at(RefusalKind::OrbitStill, &at), "the court finds the contraction at the coordinate");
-    let elsewhere = At::Vertex { address: form_addr(9), chart };
+    let elsewhere_word = word_vertex(9, order2()).at().expect("a word vertex has a coordinate");
+    assert!(!f.vertices.holds(&elsewhere_word), "the elsewhere coordinate is one the form does not hold");
+    let elsewhere = At::vertex(elsewhere_word, chart);
     let mut g = closed_word_form(order4(), Some(Contact { anchor: 0, ring: 1 }));
     assert_eq!(g.contract(RefusalKind::OrbitStill, &elsewhere, &[]), None, "a vertex the form does not hold contracts nothing");
 }
@@ -43,20 +58,21 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
 fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
     let mut f = chord_form(&[order4()]);
     assert_eq!(f.orbits.len(), 1, "the chord closes one orbit");
-    // THE FACE IS NAMED BY ITS ENDS' OWN ADDRESSES (54.2). It was named by
-    // `form_addr(1)`/`form_addr(2)` — coordinates fabricated by the test —
-    // which named the vertices only because a caller used to hand a vertex
-    // whatever address it liked.
-    let end = |i: usize| match f.vertices.get(i) {
-        Some(Vertex::Word { address, .. }) => address.clone(),
-        _ => panic!("vertex {i} is a word"),
+    // THE FACE IS NAMED BY ITS ENDS' OWN COORDINATES (54.2, AT1). The
+    // chord's two ends are two members of ONE vertex — the identity's
+    // class, on charts [1] and [2] (Q1: one vertex per class) — so the
+    // face is named by that vertex at both ends.
+    let end = only_word(&f);
+    let at = At::face(end.clone(), end.clone());
+    let between = |f: &Form| {
+        f.faces
+            .entries()
+            .filter(|(o, _)| o.from_vertex() == end && o.to_vertex() == end)
+            .count()
     };
-    let at = At::Face(end(1), end(2));
+    assert_eq!(between(&f), 1, "the chord is the one overlap between the two members");
     assert_eq!(f.contract(RefusalKind::FaceDerivation, &at, &[]), Some(Contracted::Moved));
-    assert!(
-        !f.faces.iter().any(|face| (face.i == 1 && face.j == 2) || (face.i == 2 && face.j == 1)),
-        "no face stands between the two words"
-    );
+    assert_eq!(between(&f), 0, "no face stands between the two words");
     assert!(f.orbits.is_empty(), "the orbit through the chord dissolved");
     assert!(f.acts(), "both words still act");
     assert!(f.is_contraction_at(RefusalKind::FaceDerivation, &at), "the court finds no face between them");

@@ -15,6 +15,7 @@ let moving = Vertex::word_on(
     Invariant::default(),
     Box::new(element::carriage(&one.clone(), &(zero.clone(), one.clone()))),
     Vec::new(),
+    [0u64],
     None,
 );
 let still = Vertex::word_on(
@@ -24,6 +25,7 @@ let still = Vertex::word_on(
     Invariant::default(),
     Box::new(element::carriage(&one, &(zero.clone(), zero))),
     Vec::new(),
+    [0u64],
     None,
 );
 let painted = vec![(0i64, 0i64, 1u8)];
@@ -45,6 +47,7 @@ let with_c = Vertex::word_on(
     Invariant::default(),
     Box::new(element::carriage(&q(1), &(q(0), q(1)))),
     Vec::new(),
+    [0u64],
     Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 }),
 );
 match orbit(&with_c, &painted, &anchor, frame) {

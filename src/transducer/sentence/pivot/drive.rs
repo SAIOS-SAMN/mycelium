@@ -47,21 +47,16 @@ pub(crate) struct Prior<'a> {
 /// axis zeroes the orbit on every path: the holonomy IS the transition on that
 /// axis and no longer a defect (I6, 15.5, T14).
 pub(crate) fn class_vectors_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    axes: &crate::network::nerve::Keyed<u16, crate::network::nerve::coord::Holonomy>,
+    faces: &Faces,
+    vertices: &Vertices,
+    axes: &crate::network::nerve::Keyed<Option<coord::Overlap>, coord::Holonomy>,
     lp: &Orbit,
 ) -> crate::network::nerve::Keyed<ClassVector> {
     let mut out = crate::network::nerve::Keyed::new();
+    // An opened axis zeroes the orbit on its one member path (AT1: a cycle is
+    // one path, keyed by its charts).
     if crate::transducer::sentence::opened_axis_on(faces, vertices, axes, lp).is_some() {
-        for (k, _) in lp.carriages.scoped() {
-            out.insert(&k, ClassVector::zero());
-        }
-        // An orbit with no closed member path and an opened axis still reads as
-        // zero on the path the axis was opened over, which is the orbit itself.
-        if out.is_empty() {
-            out.insert(Vec::new(), ClassVector::zero());
-        }
+        out.insert(lp.path_key(), ClassVector::zero());
         return out;
     }
     // THE HOLONOMIC COORDINATE IS THE EDGE COMPOSITE'S, NOT THE WORD'S, and
@@ -115,11 +110,7 @@ pub(crate) fn class_vectors_on(
 /// that coboundary, and an orbit over one is curved on the word while its
 /// edges compose to the identity. Both carriers are real; the path decides
 /// which it has.
-pub(crate) fn holonomy_words_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> crate::network::nerve::Keyed<Word> {
+pub(crate) fn holonomy_words_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> crate::network::nerve::Keyed<Word> {
     let edges = edge_holonomies_on(faces, vertices, lp);
     let mut out = crate::network::nerve::Keyed::new();
     for (k, t) in orbit_transport_on(faces, vertices, lp).scoped() {
@@ -178,11 +169,7 @@ pub(crate) fn holonomy_words_on(
 /// reading applies with nothing to read it over. Returning `None` there made
 /// the RANK unmeasured on every such form: `rank_offplane_is_its_own_lane`
 /// went from a measured `(offplane 1, free 0)` to no rank at all.
-pub(crate) fn orbit_holonomy_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Option<Word> {
+pub(crate) fn orbit_holonomy_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Word> {
     let ws = holonomy_words_on(faces, vertices, lp);
     let mut held: Option<Word> = None;
     for (_, w) in ws.scoped() {
@@ -198,7 +185,7 @@ pub(crate) fn orbit_holonomy_on(
     // answer instead (rule 11 — this is not a default for a missing value).
     match held {
         Some(w) => Some(w),
-        None => Some(lp.holonomy.clone()),
+        None => crate::transducer::sentence::orbit_word_on(faces, vertices, lp),
     }
 }
 
@@ -233,7 +220,13 @@ impl Form {
     /// a caller that treated one path's answer as the orbit's would be making
     /// exactly the assertion D10 removes — or when no path closes.
     pub fn class_vector(&self, idx: usize) -> Option<ClassVector> {
-        let vs = self.class_vectors(idx);
+        self.class_vector_of(self.orbits.get(idx)?)
+    }
+
+    /// [`Form::class_vector`] of an orbit held by the caller — the one it
+    /// reached by its chord's coordinates (AT1), never by a position.
+    pub fn class_vector_of(&self, lp: &Orbit) -> Option<ClassVector> {
+        let vs = class_vectors_on(&self.faces, &self.vertices, &self.axes, lp);
         let mut held: Option<ClassVector> = None;
         for (_, cv) in vs.scoped() {
             match &held {
@@ -306,104 +299,22 @@ impl Form {
         // answer them. See `candidates_for`.
         let published = self.torsion.clone();
         let mut snaps = Vec::new();
-        let mut handled: Keyed<(), crate::network::nerve::coord::VertexIx> = Keyed::new();
+        let mut handled: Keyed<(), coord::Overlap> = Keyed::new();
         loop {
             if budget.remaining() == 0 {
                 break;
             }
             self.orbits = Self::orbits_of(&self.faces, &self.vertices);
-            let mut pending: Keyed<Order, crate::network::nerve::coord::VertexIx> = Keyed::new();
-            for lp in &self.orbits {
-                if self
-                    .faces
-                    .get(lp.chord as usize)
-                    .is_some_and(|f| !f.word.is_identity())
-                {
-                    pending.put(&vertex_ix_key(lp.chord), lp.holonomy.order());
-                }
-            }
-            let Some(rank_before_gauge) = self.rank() else {
-                eprintln!(
-                    "  pivot {:02x}{:02x}… held, rank overflow",
-                    idea[0], idea[1]
-                );
+            if self.rank().is_none() {
+                eprintln!("  pivot {:02x}{:02x}… held, rank overflow", idea[0], idea[1]);
                 break;
-            };
-            if let Some(gamma) = self.solve_coboundary() {
-                if self.regauge(&gamma).is_none() {
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… held, tree gauge cannot be applied",
-                        idea[0], idea[1]
-                    );
-                    break;
-                }
             }
-            // R1: re-gauging preserves rank, certified here as a move (§2.3,
-            // law 10): `Equal` continues, a discharge continues with its
-            // coordinate named, and only `Inadmissible` holds the form.
-            let after_gauge = self.rank();
-            match after_gauge.map(|a| Rank::moved(rank_before_gauge, a)) {
-                None => {
-                    eprintln!("  pivot {:02x}{:02x}… held, rank overflow", idea[0], idea[1]);
-                    break;
-                }
-                Some(RankMove::Equal) => {}
-                Some(RankMove::Discharged { from }) => {
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… the tree gauge discharged {from:?}",
-                        idea[0], idea[1]
-                    );
-                }
-                Some(RankMove::Inadmissible { delta }) => {
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… held, the tree gauge moved the rank by {delta:?} \
-                         (torsion, free, off-plane, axes)",
-                        idea[0], idea[1]
-                    );
-                    break;
-                }
-            }
-            for (idx, lp) in self.orbits.iter().enumerate() {
-                let Some(&order) = pending.at(&vertex_ix_key(lp.chord)) else {
-                    continue;
-                };
-                if self
-                    .faces
-                    .get(lp.chord as usize)
-                    .is_some_and(|f| f.word.is_identity())
-                {
-                    snaps.push(Snap::Closed {
-                        chord: idx,
-                        order,
-                    });
-                    // §8.1, measurement only: what the orbit's EDGES read
-                    // (50.3) on an orbit the gauge closed on the word. The
-                    // gauge conjugates face words and copies the edges, so
-                    // a non-flat edge here is curvature the word never held.
-                    let (mut flat, mut finite, mut infinite) = (0usize, 0usize, 0usize);
-                    let mut classes = String::new();
-                    if let Some(hs) = self.edge_holonomies(lp) {
-                        for (_, h) in hs.scoped() {
-                            if h.word.is_identity() {
-                                flat += 1;
-                                continue;
-                            }
-                            match h.word.order() {
-                                Order::Finite(_) => finite += 1,
-                                Order::Infinite => infinite += 1,
-                            }
-                            if let Some(k) = h.word.rotor().class_key() {
-                                use std::fmt::Write as _;
-                                let _ = write!(classes, " {:02x}{:02x}…", k[0], k[1]);
-                            }
-                        }
-                    }
-                    eprintln!(
-                        "  pivot {:02x}{:02x}… orbit {idx} closed by the tree gauge, edges flat {flat} finite {finite} infinite {infinite}{classes}",
-                        idea[0], idea[1]
-                    );
-                }
-            }
+            // THE TREE GAUGE RETIRED (AT1, ruled (a)), AND WITH IT THE ORBITS
+            // IT CLOSED. `Snap::Closed` read an orbit whose chord word the
+            // gauge had flattened; nothing regauges a form now, a face's word
+            // is derived from its ends, and an orbit is read as its overlaps
+            // compose — a flat one is trivial at `orbits_of` and never reaches
+            // here.
             let open: Vec<usize> = self
                 .orbits
                 .iter()
@@ -450,8 +361,11 @@ impl Form {
                 let Some(kappa) = self.class_vector(idx) else {
                     continue;
                 };
-                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — an ORBIT's position filed under the vertex-ordinal type; at AT1 it keys by the orbit's member-path key")]
-                let orbit_k = vertex_ix_key(idx as u16);
+                // AN ORBIT IS HANDLED BY ITS CHORD'S OVERLAP (AT1), never by
+                // its position in the orbit list.
+                let Some(orbit_k) = self.orbits.get(idx).map(|lp| lp.chord.clone()) else {
+                    continue;
+                };
                 if handled.holds(&orbit_k) {
                     continue;
                 }
@@ -611,8 +525,8 @@ impl Form {
                 let outcome = outcome_of(&moves, starved);
                 // CS2 — the outcome read against the cells its circuit
                 // crosses, noted and never branched on.
-                if let (Some(cells), Some(chord)) = (cells, self.orbits.get(idx).map(|lp| lp.chord)) {
-                    super::cells::note_outcome(cells, chord, &outcome, adjoining, tally);
+                if let Some(cells) = cells {
+                    super::cells::note_outcome(cells, &orbit_k, &outcome, adjoining, tally);
                 }
                 // 78.37 — THE DEMAND ARM'S DEMAND, carried to the docket: the
                 // orbit's undischarged class and its cover, where no held word
@@ -818,16 +732,12 @@ impl Form {
         chart: &stalk::Invariant,
         links: Vec<crate::transducer::sentence::Link>,
     ) {
-        let key = crate::transducer::sentence::demand_key(&kind, chart);
-        let held = self.demands.at(&key).copied();
-        match held.and_then(|i| self.vertices.get_mut(i as usize)) {
-            Some(Vertex::Demand { bodies, .. }) => {
-                bodies.extend(links);
-                bodies.sort_unstable();
-                bodies.dedup();
-            }
-            _ => self.vertices.push(Vertex::Demand { kind, chart: chart.clone(), bodies: links }),
-        }
+        // The one filer of a demand's bodies (AT1): the vertex re-files at
+        // its new coordinates when its chain grows.
+        let mut links = links;
+        links.sort_unstable();
+        links.dedup();
+        self.file_demand(kind, chart, &links);
         self.reindex();
     }
 
@@ -884,8 +794,8 @@ impl Form {
     fn charts_of_orbit(&self, idx: usize) -> Vec<stalk::Invariant> {
         let mut at: Keyed<stalk::Invariant> = Keyed::new();
         if let Some(lp) = self.orbits.get(idx) {
-            for vi in &lp.vertices {
-                let Some(v) = self.vertices.get(*vi as usize) else {
+            for vi in lp.vertices() {
+                let Some(v) = self.vertices.at(&vi) else {
                     continue;
                 };
                 for chart in v.charts() {
@@ -917,17 +827,14 @@ impl Form {
         let Some(lp) = self.orbits.get(idx) else {
             return Vec::new();
         };
-        let chord = lp.chord as usize;
-        if self.faces.get(chord).is_none() {
+        let chord = lp.chord.clone();
+        if !self.faces.holds(&chord) {
             return Vec::new();
         }
         let mut charts: Keyed<stalk::Invariant> = Keyed::new();
-        for &fi in &lp.faces {
-            let Some(f) = self.faces.get(fi as usize) else {
-                continue;
-            };
-            for vi in [f.i, f.j] {
-                if let Some(v) = self.vertices.get(vi as usize) {
+        for s in &lp.steps {
+            for vi in [s.overlap.from_vertex(), s.overlap.to_vertex()] {
+                if let Some(v) = self.vertices.at(&vi) {
                     // EVERY CHART THE VERTEX STANDS AT, so a vertex acting on
                     // two contributes both and the orbit's chart set is the
                     // whole of what the orbit passes through.
@@ -963,11 +870,10 @@ impl Form {
                     let Some(translator) = kappa.slip_translator() else {
                         continue;
                     };
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
-                            face: chord as u16,
+                            face: chord.clone(),
                             translator,
                         },
                     });
@@ -976,21 +882,19 @@ impl Form {
                     let Some(translator) = element::dilator_of(&kappa.carriage) else {
                         continue;
                     };
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
-                            face: chord as u16,
+                            face: chord.clone(),
                             translator,
                         },
                     });
                 }
                 Axis::Orientation(_) => {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Word {
-                            face: chord as u16,
+                            face: chord.clone(),
                             word: Box::new(crate::transducer::alphabet::PlaneForm::sheet_word()),
                             side: Side::Right,
                         },
@@ -1003,11 +907,10 @@ impl Form {
                 // skipping the rest is a move never offered on the others.
                 Axis::Hue => {
                     for (_, t) in orbit_transport(self, lp).scoped() {
-                        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                         out.push(Candidate {
                             axis,
                             by: PivotBy::Hue {
-                                face: chord as u16,
+                                face: chord.clone(),
                                 gauge: t.gauge.clone(),
                             },
                         });
@@ -1043,11 +946,10 @@ impl Form {
                                     continue;
                                 }
                                 seen.nested_insert(wk, sk, ());
-                                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                                 out.push(Candidate {
                                     axis,
                                     by: PivotBy::Word {
-                                        face: chord as u16,
+                                        face: chord.clone(),
                                         word: Box::new(w.clone()),
                                         side,
                                     },
@@ -1095,11 +997,10 @@ impl Form {
                     if off > 0 {
                         eprintln!("  pivot open seed orbit {idx} off-plane blades {off}");
                     }
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis: Axis::Open,
                         by: PivotBy::OpenAxis {
-                            face: chord as u16,
+                            face: chord.clone(),
                             seed,
                         },
                     });

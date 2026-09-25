@@ -10,7 +10,7 @@ impl Form {
     pub fn apply_move(&mut self, by: &PivotBy) {
         match by {
             PivotBy::OpenAxis { face, .. } => {
-                let _ = self.open_axis_on(*face);
+                let _ = self.open_axis_on(face);
             }
             _ => apply_by(&mut self.faces, by),
         }
@@ -24,7 +24,7 @@ impl Form {
     pub fn unapply_move(&mut self, by: &PivotBy) -> bool {
         match by {
             PivotBy::OpenAxis { face, .. } => {
-                let _ = self.close_axis_on(*face);
+                let _ = self.close_axis_on(face);
                 true
             }
             _ => unapply_by(&mut self.faces, by),
@@ -32,59 +32,39 @@ impl Form {
     }
 }
 
-pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
+pub(crate) fn apply_by(faces: &mut Faces, by: &PivotBy) {
     match by {
         PivotBy::OpenAxis { .. } => {}
-        // A WORD MOVE WRITES BOTH OF A FACE'S CARRIERS, because an orbit's
-        // holonomy is read from whichever one its path has. `holonomy_words_on`
-        // answers the EDGE COMPOSITE where a member path carries one and the
-        // face word where it does not, so a move that wrote `f.word` alone
-        // left the class unmoved on every path with an edge — the class was
-        // read from a carrier the move never touched.
-        //
-        // Measured: `Placement` and `Hue` moves discharge on the wire and
-        // `Word` moves do not — `axis Orientation(0) no discharge`, every
-        // occurrence, across every window. Those two write `p.carriage` and
-        // `p.gauge`, which `orbit_transport_on` composes and `ClassVector::read`
-        // takes; the word arm wrote the one carrier the reading skips. This is
-        // the same split R8 removed from `file_orbit` and R12 from the
-        // `OpenAxis` pipeline, at the site that makes the move.
-        //
-        // Both are written with the SAME composition, so a path reading either
-        // carrier sees the same move, and `unapply_by` inverts both.
+        // A WORD MOVE WRITES THE OVERLAP'S FACTOR AND ITS EDGE (AT1, ruled):
+        // the factor is the one produced content a face carries, and the
+        // derived word reads it (`face_word_on`); the edge is measured
+        // content the move moves too, because an orbit's holonomy is read
+        // from whichever carrier its path has, and a move that wrote one left
+        // the class unmoved on every path with the other. Both are written
+        // with the SAME composition, and `unapply_by` inverts both.
         PivotBy::Word { face, word, side } => {
-            if let Some(f) = faces.get_mut(*face as usize) {
-                f.word = pivoted_face(&f.word, word, *side);
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(e) = f.at.get_mut(&k).and_then(|p| p.edge.as_mut()) {
-                        e.word = pivoted_face(&e.word, word, *side);
-                    }
+            if let Some(f) = faces.at_mut(face) {
+                match side {
+                    // `g · w⁻¹`: the right factor gains `w` on its left, so it
+                    // enters inverted as `… · w⁻¹`.
+                    Side::Right => f.right = word.compose(&f.right).normal_form(),
+                    Side::Left => f.left = word.compose(&f.left).normal_form(),
+                }
+                if let Some(e) = f.place.edge.as_mut() {
+                    e.word = pivoted_face(&e.word, word, *side);
                 }
             }
         }
-        // A PIVOT MOVES THE FACE AT EVERY MEMBER PAIR. The move is a write on
-        // the FACE — a translator on its placement, a gauge on its hue map —
-        // and a face relating several pairs of bodies is moved at each of them
-        // or the pivot moves one pair and leaves the rest where they were.
+        // A PIVOT MOVES THE OVERLAP'S PLACE: a translator on its placement,
+        // a gauge on its hue map.
         PivotBy::Placement { face, translator } => {
-            if let Some(f) = faces.get_mut(*face as usize) {
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(p) = f.at.get_mut(&k) {
-                        p.carriage = translator.geo(&p.carriage);
-                    }
-                }
+            if let Some(f) = faces.at_mut(face) {
+                f.place.carriage = translator.geo(&f.place.carriage);
             }
         }
         PivotBy::Hue { face, gauge } => {
-            if let Some(f) = faces.get_mut(*face as usize) {
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(p) = f.at.get_mut(&k) {
-                        p.gauge = compose_gauge(&p.gauge, gauge);
-                    }
-                }
+            if let Some(f) = faces.at_mut(face) {
+                f.place.gauge = compose_gauge(&f.place.gauge, gauge);
             }
         }
     }
@@ -95,19 +75,19 @@ pub(crate) fn apply_by(faces: &mut [FormFace], by: &PivotBy) {
 /// the un-pivot silently skipped and the caller read a form it believed
 /// restored — and it now refuses by name, writing nothing.
 #[must_use]
-pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) -> bool {
+pub(crate) fn unapply_by(faces: &mut Faces, by: &PivotBy) -> bool {
     match by {
         PivotBy::OpenAxis { .. } => {}
         // The mirror of `apply_by`'s word arm, carrier for carrier — or a
         // trial leaves the edge composite moved on a candidate it refused.
         PivotBy::Word { face, word, side } => {
-            if let Some(f) = faces.get_mut(*face as usize) {
-                f.word = unpivoted_face(&f.word, word, *side);
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(e) = f.at.get_mut(&k).and_then(|p| p.edge.as_mut()) {
-                        e.word = unpivoted_face(&e.word, word, *side);
-                    }
+            if let Some(f) = faces.at_mut(face) {
+                match side {
+                    Side::Right => f.right = word.inverse().compose(&f.right).normal_form(),
+                    Side::Left => f.left = word.inverse().compose(&f.left).normal_form(),
+                }
+                if let Some(e) = f.place.edge.as_mut() {
+                    e.word = unpivoted_face(&e.word, word, *side);
                 }
             }
         }
@@ -118,24 +98,14 @@ pub(crate) fn unapply_by(faces: &mut [FormFace], by: &PivotBy) -> bool {
                 return false;
             }
             let inv = translator.reverse();
-            if let Some(f) = faces.get_mut(*face as usize) {
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(p) = f.at.get_mut(&k) {
-                        p.carriage = inv.geo(&p.carriage);
-                    }
-                }
+            if let Some(f) = faces.at_mut(face) {
+                f.place.carriage = inv.geo(&f.place.carriage);
             }
         }
         PivotBy::Hue { face, gauge } => {
-            if let Some(f) = faces.get_mut(*face as usize) {
+            if let Some(f) = faces.at_mut(face) {
                 let back = gauge_invert(gauge);
-                let pairs: Vec<Vec<u8>> = f.at.scoped().map(|(k, _)| k).collect();
-                for k in pairs {
-                    if let Some(p) = f.at.get_mut(&k) {
-                        p.gauge = compose_gauge(&p.gauge, &back);
-                    }
-                }
+                f.place.gauge = compose_gauge(&f.place.gauge, &back);
             }
         }
     }

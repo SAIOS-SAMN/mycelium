@@ -5,17 +5,44 @@
 use crate::transducer::base::Site;
 use crate::transducer::family::pairing::named_incidence;
 
+/// The identity's class: every fixture member is a member of it, told apart
+/// by its chart (AT1: a vertex by its coordinate, a member by its chart).
+fn identity_at() -> crate::network::nerve::coord::VertexAt {
+    crate::transducer::sentence::Vertex::word_on(
+        crate::transducer::alphabet::Derivation::spelled(crate::transducer::alphabet::Word::identity()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(crate::transducer::element::identity_versor()),
+        Vec::new(),
+        [0u64],
+        None,
+    )
+    .at()
+    .expect("the identity has a class")
+}
+
 fn member(i: u16) -> Vec<u8> {
-    crate::transducer::family::member_key(i, crate::transducer::stalk::Invariant::default().key().as_bytes())
+    let chart = crate::transducer::stalk::Invariant::counts(&[u64::from(i)]);
+    crate::transducer::family::member_key(&identity_at(), chart.key().as_bytes())
+}
+
+/// Face `n` of a fixture: the Frame's chart to the identity's member on
+/// chart `[n]` at frame 0 — an overlap by its coordinates (AT1).
+fn face(n: u64) -> crate::network::nerve::coord::Overlap {
+    use crate::network::nerve::coord;
+    coord::Overlap {
+        from: coord::ChartAt::Frame,
+        to: coord::ChartAt::at(identity_at(), crate::transducer::stalk::Invariant::counts(&[n]), 0),
+    }
 }
 
 /// A traversed circuit by its steps and composite, through no held coset and
 /// no static contact; a composite that did not read is unread as not rigid.
 /// Its steps carry no hue maps, so a read composite's hue is the composed
 /// empty map — measured, the fibre's holonomy the identity.
-fn traversed(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::TraversedCircuit {
+fn traversed(steps: Vec<(u64, bool)>, composite: Option<crate::transducer::cga::Mv>) -> crate::transducer::sentence::TraversedCircuit {
     let unread = composite.is_none().then_some(crate::transducer::cech::CircuitUnread::NotRigid);
     let hue = composite.is_some().then(Vec::new);
+    let steps = steps.into_iter().map(|(n, forward)| (face(n), forward)).collect();
     crate::transducer::sentence::TraversedCircuit { steps, composite, hue, unread, coset: None, gauge_static: false }
 }
 
@@ -93,13 +120,13 @@ fn a_circuit_crosses_a_cell_by_the_body_pair_of_the_face_it_steps_over() {
     let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
     let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
     form.cells.insert([0u8], cell);
-    form.face_bodies.insert(0u32.to_be_bytes(), (p.clone(), r.clone()));
-    form.face_bodies.insert(2u32.to_be_bytes(), (p, s));
+    form.face_bodies.put(&face(0), (p.clone(), r.clone()));
+    form.face_bodies.put(&face(2), (p, s));
     let turn = cga::rotator(&q(1), &q(1));
     let circuits = vec![
-        traversed(vec![(1u16, true), (0, false)], Some(turn.clone())),
-        traversed(vec![(1u16, true), (3, true)], Some(turn.clone())),
-        traversed(vec![(2u16, true)], Some(turn)),
+        traversed(vec![(1u64, true), (0, false)], Some(turn.clone())),
+        traversed(vec![(1u64, true), (3, true)], Some(turn.clone())),
+        traversed(vec![(2u64, true)], Some(turn)),
     ];
     let cells = crate::transducer::family::comprehend::cell_algebras(&form, &circuits,&mut crate::physics::Physics::default().stroke_n(1 << 16));
     let [c] = cells.as_slice() else { panic!("one cell") };
@@ -125,8 +152,8 @@ fn the_percepts_readings_agree_and_are_held_until_taken() {
     let nuclei = vec![Mv::blade(cga::E1, q(1)), Mv::blade(cga::E2, q(1))];
     let cell = crate::transducer::sentence::FormCell { bodies: vec![p.clone(), r.clone()], witnesses: Vec::new(), nuclei: Some(nuclei) };
     form.cells.insert([0u8], cell);
-    form.face_bodies.insert(0u32.to_be_bytes(), (p, r));
-    let circuits = vec![traversed(vec![(0u16, true)], Some(cga::rotator(&q(1), &q(1)))), traversed(vec![(0u16, false)], None)];
+    form.face_bodies.put(&face(0), (p, r));
+    let circuits = vec![traversed(vec![(0u64, true)], Some(cga::rotator(&q(1), &q(1)))), traversed(vec![(0u64, false)], None)];
     let mut stroke = crate::physics::Physics::default().stroke_n(1 << 16);
     let comprehension = comprehend::comprehend(&form, &circuits, &mut stroke);
     let cells = comprehend::cells_reading(&comprehension);
@@ -237,7 +264,7 @@ fn a_bracket_is_held_by_an_enclosure_over_any_cells_its_pair_spans() {
         let circuits: Vec<CellCircuit> = hs
             .into_iter()
             .enumerate()
-            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(u16::try_from(i).expect("a fixture of a handful of circuits"), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(face(u64::try_from(i).expect("a fixture of a handful of circuits")), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
             .collect();
         crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
     };

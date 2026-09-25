@@ -45,9 +45,9 @@ use crate::transducer::sentence::CycleType;
 /// ONE CYCLE'S READING, on its own planes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CyclePeriods {
-    /// The chord face the cycle closes on: which cycle this is, by the
-    /// form's own coordinate.
-    pub chord: u16,
+    /// The chord the cycle closes on: which cycle this is, by the overlap's
+    /// own coordinate (AT1).
+    pub chord: coord::Overlap,
     /// The two commuting plane periods of the holonomy, uncollapsed. A
     /// plane at `Order::Infinite` is a rotation that never returns on that
     /// plane; the other may still be compact and is not hidden by it.
@@ -84,12 +84,12 @@ pub struct CoherenceSpectrum {
     /// its cycle type. `CycleType::Identity` is two charts that colour the
     /// body alike; a `Type([…])` is an internal discrete phase the two
     /// charts see it under, which is a coordinate the pivot may open.
-    pub gauge_cycles: Vec<(u16, CycleType)>,
+    pub gauge_cycles: Vec<(coord::VertexAt, CycleType)>,
     /// GRADE 0, `𝒮` — a fibre whose vertical transition is NOT a pure
     /// displacement. Provably empty for a vertex whose members share a
     /// transport (see `FiberTransition`), so an entry here means the
     /// transport-class keying itself broke.
-    pub twisted_fibres: Vec<u16>,
+    pub twisted_fibres: Vec<coord::VertexAt>,
     /// GRADE 1, `𝒮` and `𝒯` — each cycle's periods, on its own planes.
     pub cycles: Vec<CyclePeriods>,
     /// GRADE 1 and 0 — the shears no origin absorbs, with whether the form
@@ -138,7 +138,7 @@ impl Form {
             if let Some(g) = t.gauge() {
                 let ct = CycleType::of(&g);
                 if !matches!(ct, CycleType::Identity) {
-                    s.gauge_cycles.push((i, ct));
+                    s.gauge_cycles.push((i.clone(), ct));
                 }
             }
             if !t.is_vertical() {
@@ -170,7 +170,7 @@ impl Form {
                 let Some(projective) = rotor.order() else {
                     continue;
                 };
-                s.cycles.push(CyclePeriods { chord: lp.chord, planes, projective });
+                s.cycles.push(CyclePeriods { chord: lp.chord.clone(), planes, projective });
                 // THE SLIP, where the circuit never closes. `screw_of` splits the
                 // transport exactly over ℚ; a zero twist is a turn that
                 // returns and is not a dislocation.
@@ -185,10 +185,12 @@ impl Form {
                         // site could not be named would have been filed at
                         // the coordinate every unsupported body already sits
                         // at. Unread is skipped.
-                        let Some(chart) = self
-                            .vertices
-                            .get(lp.chord as usize)
-                            .and_then(|v| v.face_chart())
+                        //
+                        // AT1 — THE SLIP STANDS AT THE CHORD'S OWN MEMBER
+                        // CHART. This read `vertices.get(lp.chord)`, a FACE
+                        // position used as a VERTEX position — two lists'
+                        // slots confused, which a coordinate cannot be.
+                        let Some(chart) = lp.chord.from.invariant().or_else(|| lp.chord.to.invariant()).cloned()
                         else {
                             continue;
                         };

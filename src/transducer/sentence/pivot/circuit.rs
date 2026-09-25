@@ -20,15 +20,10 @@ impl Form {
     }
 }
 
-/// A FACE THAT TOUCHES THE FRAME, asked of the vertex rather than of its
-/// slot. The Frame is a `Vertex` variant — it is what a vertex IS — and
-/// `f.i == 0` names it by the integer it happens to sit at, which is the
-/// vertex's identity collapsed onto a position (rule 15). Nine other sites
-/// still spell it that way and are owed the same correction.
-fn touches_frame(vertices: &[Vertex], f: &FormFace) -> bool {
-    [f.i, f.j]
-        .iter()
-        .any(|&v| matches!(vertices.get(v as usize), Some(Vertex::Frame)))
+/// AN OVERLAP THAT TOUCHES THE FRAME, asked of its charts: the Frame's
+/// chart is its tag alone (AT1 Q-B1), so the coordinate says so.
+pub(crate) fn touches_frame(o: &coord::Overlap) -> bool {
+    matches!(o.from, coord::ChartAt::Frame) || matches!(o.to, coord::ChartAt::Frame)
 }
 
 
@@ -132,12 +127,12 @@ pub(crate) struct PathCarried {
     pub(crate) refracted: Option<super::refracted::Refracted>,
 }
 
-/// PL1 — ONE STEP OF A CIRCUIT: the face it crosses, whether along the
-/// face's own orientation, and what it carried — `None` where the step's
+/// PL1 — ONE STEP OF A CIRCUIT: the overlap it crosses, whether along the
+/// overlap's own orientation, and what it carried — `None` where the step's
 /// transport was not read (rule 11: unread is not flat).
 #[derive(Clone, Debug)]
 pub(crate) struct Step {
-    pub(crate) face: u16,
+    pub(crate) face: coord::Overlap,
     pub(crate) forward: bool,
     pub(crate) transport: Option<Transport>,
 }
@@ -150,8 +145,8 @@ pub(crate) enum Unread {
     /// A carriage on the light cone: `MM̃ = 0` and the inverse does not
     /// exist (57.4).
     Cone,
-    /// The face holds no member pair at the two members the circuit names.
-    NoPlace,
+    // `NoPlace` STOOD HERE — a face holding no member pair at the members the
+    // circuit names. An overlap IS its member pair (AT1), so it cannot hold.
     /// A face between two bodies that carries no edge, because no versor
     /// carries their union (50.3's `NotRigid`).
     NotRigid,
@@ -162,20 +157,18 @@ pub(crate) enum Unread {
     /// The cycle names a face the form does not hold, or a member key that
     /// does not read. The cycle and the incidence disagree.
     NoFace,
-    /// The face relates the two members once each way and the cycle does
-    /// not say which it crossed (O1).
-    TwoWays,
+    // `TwoWays` STOOD HERE — a face relating two members once each way with
+    // the cycle not saying which it crossed (O1). A step names its overlap
+    // and its way (AT1), so it cannot hold.
 }
 
 /// THE UNREAD READINGS, split by why (H2c). A measurement and never a gate.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct UnreadTally {
     pub cone: u64,
-    pub no_place: u64,
     pub not_rigid: u64,
     pub unrefracted: u64,
     pub no_face: u64,
-    pub two_ways: u64,
 }
 
 impl Unread {
@@ -183,11 +176,9 @@ impl Unread {
     pub(crate) fn label(self) -> &'static str {
         match self {
             Unread::Cone => "cone",
-            Unread::NoPlace => "no place",
             Unread::NotRigid => "not rigid",
             Unread::Unrefracted => "unrefracted",
             Unread::NoFace => "no face",
-            Unread::TwoWays => "two ways",
         }
     }
 }
@@ -196,60 +187,17 @@ impl UnreadTally {
     pub(crate) fn note(&mut self, why: Unread) {
         match why {
             Unread::Cone => self.cone += 1,
-            Unread::NoPlace => self.no_place += 1,
             Unread::NotRigid => self.not_rigid += 1,
             Unread::Unrefracted => self.unrefracted += 1,
             Unread::NoFace => self.no_face += 1,
-            Unread::TwoWays => self.two_ways += 1,
         }
     }
 }
 
-/// WHICH WAY A CYCLE CROSSES A FACE, between the two members it names.
-pub(super) enum Crossing {
-    /// The face's own orientation: the first member is its `i` end. The key
-    /// is the member pair the face holds.
-    Forward(Vec<u8>),
-    /// Against it: the first member is its `j` end.
-    Backward(Vec<u8>),
-    /// The face relates the two members in both orientations, as two member
-    /// pairs, and the cycle does not say which one it crossed.
-    TwoWays,
-    /// The face holds no member pair between the two.
-    Unplaced,
-}
-
-/// O1, 70.7 — A FACE IS CROSSED THE WAY ITS MEMBER PAIR RUNS, never the way
-/// its vertex pair does.
-///
-/// The circuit read `f.i == v_i && f.j == v_j`. On a face between two charts
-/// of ONE vertex both halves are true whichever way the cycle runs, so it
-/// read the pair key backwards half the time. That is the orientation
-/// `437d253` lost under the vertex projection, at the circuit this time. H2c
-/// measured it: 18 of 18 `no place` refusals over the corpus were such
-/// faces, each holding the reversed key. The member pair names the
-/// orientation, so it is read: forward where the face holds
-/// `(c_from, c_to)` with `from` at its `i` end, and backward where it holds
-/// `(c_to, c_from)` with `to` there.
-///
-/// A face holding BOTH, with two different charts, relates the members
-/// twice, once each way. A cycle names the face and not the pair, so it
-/// does not say which it crossed. That refuses by name rather than taking
-/// one (rule 15). One member pair on one chart, `(c, c)`, is one key and is
-/// crossed in the face's own orientation.
-pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Crossing {
-    let fwd = pair_key_bytes(from.1, to.1);
-    let bwd = pair_key_bytes(to.1, from.1);
-    let can_fwd = f.i == from.0 && f.j == to.0 && f.at.contains(&fwd);
-    let can_bwd = f.i == to.0 && f.j == from.0 && f.at.contains(&bwd);
-    match (can_fwd, can_bwd) {
-        (true, false) => Crossing::Forward(fwd),
-        (false, true) => Crossing::Backward(bwd),
-        (true, true) if fwd == bwd => Crossing::Forward(fwd),
-        (true, true) => Crossing::TwoWays,
-        (false, false) => Crossing::Unplaced,
-    }
-}
+// `Crossing` AND `crossing` STOOD HERE (O1, 70.7) and are gone with the
+// faces that related several member pairs (AT1): an overlap relates ONE pair
+// at one frame, and the step that crosses it says which way — the
+// orientation is the step's own coordinate, never recovered from a pair key.
 
 /// THE ONE CIRCUIT — and it is a TRAVERSAL now, not a search (54.5, as ruled
 /// 2026-09-20).
@@ -302,11 +250,7 @@ pub(super) fn crossing(f: &FormFace, from: (u16, &[u8]), to: (u16, &[u8])) -> Cr
 /// `None` is an orbit naming a face this form does not have, or a member pair
 /// the face does not relate: the cycle and the incidence disagree, which is
 /// a refusal and not a zero (rule 11).
-pub(crate) fn paths_carried(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Option<Keyed<PathCarried>> {
+pub(crate) fn paths_carried(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Keyed<PathCarried>> {
     paths_carried_why(faces, vertices, lp).ok()
 }
 
@@ -314,38 +258,26 @@ pub(crate) fn paths_carried(
 /// that re-reads a circuit under a trial move (a bend) reads what the move
 /// does and must not write the census's cumulative counters, or the counters
 /// would count the trial's traversals as the corpus's.
-pub(crate) fn paths_carried_quiet(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Option<Keyed<PathCarried>> {
+pub(crate) fn paths_carried_quiet(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Keyed<PathCarried>> {
     traverse(faces, vertices, lp, false).ok()
 }
 
 /// THE ONE CIRCUIT, SAYING WHY IT REFUSED (H2c). [`paths_carried`] is this read
 /// with the reason dropped. `orbits_of` asks here, so the `unread` gate is
 /// counted by what refused it.
-pub(crate) fn paths_carried_why(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Result<Keyed<PathCarried>, Unread> {
+pub(crate) fn paths_carried_why(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Result<Keyed<PathCarried>, Unread> {
     traverse(faces, vertices, lp, true)
 }
 
 /// The same circuit and its reason, filing nothing on the census counters:
 /// a reader off the percept (CS2's, at the pivot) reads the held form's
 /// circuits without moving the percept's tallies.
-pub(crate) fn paths_carried_quiet_why(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Result<Keyed<PathCarried>, Unread> {
+pub(crate) fn paths_carried_quiet_why(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Result<Keyed<PathCarried>, Unread> {
     traverse(faces, vertices, lp, false)
 }
 
 /// The traversal itself; `note` files each step's charge on the census counters.
-fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
+fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
     // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
     // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
@@ -366,35 +298,25 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
-        steps: Vec::with_capacity(lp.faces.len()),
+        steps: Vec::with_capacity(lp.steps.len()),
         edge_refused: None,
         edge_lost_at: None,
         refracted: None,
     };
-    let mut charts: Vec<Vec<u8>> = Vec::with_capacity(lp.members.len());
-    for (win, &fi) in lp.members.windows(2).zip(&lp.faces) {
-        let f = faces.get(fi as usize).ok_or(Unread::NoFace)?;
-        // THE STEP IS NAMED BY ITS TWO MEMBERS. Each carries its vertex and
-        // its chart, so the face's pair is read off the members rather than
-        // guessed from the face's endpoints — which is the whole of what
-        // the projection lost.
-        let (vi, ci) = crate::transducer::family::read_member_key(&win[0]).ok_or(Unread::NoFace)?;
-        let (vj, cj) = crate::transducer::family::read_member_key(&win[1]).ok_or(Unread::NoFace)?;
-        // O1 — THE CROSSING IS READ OFF THE MEMBER PAIR THE FACE HOLDS. A
-        // face relating NO member pair stands at no named chart, and the
-        // members say so too — both charts empty. It contributes its word
-        // and nothing else, crossed the way its vertex pair runs.
-        let (forward, place) = match crossing(f, (vi, &ci), (vj, &cj)) {
-            Crossing::Forward(pk) => (true, f.at.get(&pk).cloned()),
-            Crossing::Backward(pk) => (false, f.at.get(&pk).cloned()),
-            Crossing::TwoWays => return Err(Unread::TwoWays),
-            Crossing::Unplaced if ci.is_empty() && cj.is_empty() => (f.i == vi && f.j == vj, None),
-            Crossing::Unplaced => return Err(Unread::NoPlace),
-        };
-        charts.push(ci);
+    for s in &lp.steps {
+        // THE STEP IS ITS OVERLAP AND THE WAY IT IS CROSSED (AT1): one member
+        // pair at one frame, so there is no pair to read off and nothing to
+        // guess. A step naming an overlap these faces do not hold is the
+        // cycle and the incidence disagreeing (rule 11).
+        let f = faces.at(&s.overlap).ok_or(Unread::NoFace)?;
+        let forward = s.forward;
+        let place = Some(f.place.clone());
+        // The word is DERIVED from the overlap's ends and the pivot's
+        // factors (ruled), never read off a field.
+        let word = face_word_on(vertices, &s.overlap, f).ok_or(Unread::NoFace)?;
         let word_step = match forward {
-            true => f.word.clone(),
-            false => f.word.inverse(),
+            true => word.clone(),
+            false => word.inverse(),
         };
         acc.face.word = word_step.compose(&acc.face.word);
         if let Some(place) = &place {
@@ -435,7 +357,7 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
         // member compose `γ₁ · γ₂⁻¹`, which is an equivocation — one body,
         // two transports from the basepoint — and read as identity-and-
         // identity it was exactly nothing.
-        let step = match (touches_frame(vertices, f), place.as_ref()) {
+        let step = match (touches_frame(&s.overlap), place.as_ref()) {
             // THE STAR STEP IS THE FACE'S WHOLE TRANSPORT, word included.
             // §3.6's `γ` is a WORD — a re-gauging is `γ_j · g_ij · γ_i⁻¹`
             // — so a star step that contributed the identity word would
@@ -443,7 +365,7 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
             // no stabilizer edge, replacing a real obstruction with
             // nothing. What the face measured is what it contributes.
             (true, Some(p)) => Some(Transport {
-                word: f.word.clone(),
+                word: word.clone(),
                 carriage: p.carriage.clone(),
                 gauge: p.gauge.clone(),
             }),
@@ -461,7 +383,7 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
             note_step_charge(&mu);
         }
         acc.steps.push(Step {
-            face: fi,
+            face: s.overlap.clone(),
             forward,
             transport: step.clone(),
         });
@@ -519,28 +441,14 @@ fn traverse(faces: &[FormFace], vertices: &[Vertex], lp: &Orbit, note: bool) -> 
         e.word = e.word.normal_form();
     }
     let mut out = Keyed::new();
-    out.insert(Orbit::path_key(&charts), acc);
+    out.insert(lp.path_key(), acc);
     Ok(out)
-}
-
-/// The face-pair key of two chart keys, as `face_pair_key` writes it from
-/// two `Invariant`s — the same bytes, read from the keys the members
-/// already carry rather than from invariants this traversal does not hold.
-pub(super) fn pair_key_bytes(ci: &[u8], cj: &[u8]) -> Vec<u8> {
-    let mut buf = Vec::new();
-    crate::transducer::address::put_key_bytes(&mut buf, ci);
-    crate::transducer::address::put_key_bytes(&mut buf, cj);
-    buf
 }
 
 /// THE HOLONOMY OF THE EDGE TRANSPORTS around an orbit (50.3), one per member
 /// path: a reader of the one circuit. A path with no edge reading is absent,
 /// which is what "not evaluated" means (13.9).
-pub(crate) fn edge_holonomies_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Option<Keyed<Transport>> {
+pub(crate) fn edge_holonomies_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Keyed<Transport>> {
     let carried = paths_carried(faces, vertices, lp)?;
     let mut out = Keyed::new();
     for (k, c) in carried.scoped() {
@@ -672,7 +580,7 @@ impl Form {
         // against its own budget — and it prices the yield (`fibre_volume`,
         // E2) and answers whether the stroke finished (`is_cauterized`).
         // Those are mind-state and they say so. Geometry is asked here.
-        if self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord)) {
+        if self.opened_axis_of(lp).is_some() && self.axis_rederives(lp) {
             return true;
         }
         let compact = self.orbit_classes(lp);
@@ -727,11 +635,7 @@ pub(crate) fn orbit_transport(form: &Form, lp: &Orbit) -> Keyed<Transport> {
 /// It traversed the frontier itself, beside `edge_holonomies_on` traversing the
 /// identical frontier for the other half. `vertices` is taken because the
 /// star-face rule belongs to the traversal, not to its readers.
-pub(crate) fn orbit_transport_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-) -> Keyed<Transport> {
+pub(crate) fn orbit_transport_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Keyed<Transport> {
     let Some(carried) = paths_carried(faces, vertices, lp) else {
         return Keyed::new();
     };
@@ -763,12 +667,7 @@ pub(crate) fn orbit_transport_on(
 /// accepts that only where the class is filed in the form's `torsion`. A
 /// cycle carrying any edge transport is not trivial by this reader and
 /// reaches every reading that holds it to account.
-pub(crate) fn orbit_is_trivial(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    lp: &Orbit,
-    carried: &Keyed<PathCarried>,
-) -> bool {
+pub(crate) fn orbit_is_trivial(faces: &Faces, vertices: &Vertices, lp: &Orbit, carried: &Keyed<PathCarried>) -> bool {
     use crate::transducer::alphabet::Rotor;
     let flat = |t: &Transport| {
         t.word.rotor().projective_eq(&Rotor::identity())
@@ -791,9 +690,9 @@ pub(crate) fn orbit_is_trivial(
     if carried.scoped().next().is_none() {
         return false;
     }
-    if !lp.holonomy.rotor().projective_eq(&Rotor::identity())
-        || !carried.scoped().all(|(_, c)| flat(&c.face))
-    {
+    let word_flat = crate::transducer::sentence::orbit_word_on(faces, vertices, lp)
+        .is_some_and(|w| w.rotor().projective_eq(&Rotor::identity()));
+    if !word_flat || !carried.scoped().all(|(_, c)| flat(&c.face)) {
         return false;
     }
     // THE EDGE READING, AND WHAT AN EMPTY ONE MEANS. `edge_holonomies_on`
@@ -803,10 +702,7 @@ pub(crate) fn orbit_is_trivial(
     // face and still answers empty had every path dropped on a remainder
     // edge, which is unread, not flat (rule 11). `None` is an orbit naming a
     // face this form does not have, and that is unread too.
-    let crosses_a_real_face = lp
-        .faces
-        .iter()
-        .any(|&fi| faces.get(fi as usize).is_some_and(|f| !touches_frame(vertices, f)));
+    let crosses_a_real_face = lp.steps.iter().any(|s| !touches_frame(&s.overlap));
     let mut any_edge = false;
     for (_, c) in carried.scoped() {
         // BQ5a — a refracted edge half is read, and never flat: its gauge

@@ -322,7 +322,7 @@ impl Kernel {
         // The spelling word spells the twist: its word vertex's derivation
         // re-read, projectively the cited ray.
         let spells = crate::transducer::sentence::from_element_form(&spelling).is_some_and(|f| {
-            f.vertices.iter().any(|v| {
+            f.vertices.scoped().any(|(_, v)| {
                 matches!(v, crate::transducer::sentence::Vertex::Word { derivation, .. } if derivation.rotor().projective_eq(rotor))
             })
         });

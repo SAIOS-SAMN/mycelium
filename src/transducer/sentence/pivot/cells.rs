@@ -20,7 +20,9 @@ use crate::transducer::cech::{algebra_contains, CellAlgebra};
 #[derive(Clone, Debug, Default)]
 pub struct PivotCells {
     pub algebras: Vec<CellAlgebra>,
-    pub by_chord: Keyed<Vec<usize>>,
+    /// The cells each orbit's circuit crosses, by the orbit's chord overlap
+    /// (AT1).
+    pub by_chord: Keyed<Vec<usize>, coord::Overlap>,
 }
 
 /// CS2 — THE PIVOT'S OUTCOMES BY CONTENT, counted per orbit per crossing
@@ -81,12 +83,12 @@ fn move_in_cell(by: &PivotBy, cell: &CellAlgebra) -> Result<bool, bool> {
 /// decided here: the pivot applies exactly as it did.
 pub(crate) fn note_outcome(
     cells: &PivotCells,
-    chord: u16,
+    chord: &coord::Overlap,
     outcome: &Discharge,
     adjoining: bool,
     tally: &mut PivotTally,
 ) {
-    let Some(crossed) = cells.by_chord.get(&chord.to_be_bytes()) else { return };
+    let Some(crossed) = cells.by_chord.at(chord) else { return };
     for &k in crossed {
         let Some(cell) = cells.algebras.get(k) else { continue };
         let certs: Vec<&PivotCertificate> = match outcome {

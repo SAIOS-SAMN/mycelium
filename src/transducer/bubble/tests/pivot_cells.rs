@@ -44,7 +44,7 @@ impl crate::transducer::family::Crystal for OneWord {
     }
 }
 
-/// Two word vertices on two charts, two star faces and a chord between them
+/// Two word members on two charts, two star overlaps and a chord between them
 /// carrying `chord`: one open orbit. The chord face joins two bodies, and a
 /// certified cell stands over them, so the orbit's circuit crosses it. The
 /// second body stands at `placed`, so the circuit's composite is the chord
@@ -52,42 +52,43 @@ impl crate::transducer::family::Crystal for OneWord {
 fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     let one = num_rational::BigRational::from_integer(1.into());
     let zero = num_rational::BigRational::from_integer(0.into());
+    use crate::transducer::sentence::tests::common::{chord as chord_between, stand_with_star, FRAME};
     let mut f = Form::default();
+    // AT1 (Q1): both bodies speak the identity, so they are ONE vertex —
+    // its class — with a member on each chart, each with its own star.
+    let mut charts = Vec::new();
     for tag in [2u8, 3u8] {
         let carriage = match tag {
             2 => element::carriage(&one, &(zero.clone(), zero.clone())),
             _ => element::versor_of_word(placed).expect("a placement is a versor"),
         };
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(carriage),
             vec![(1, 2)],
+            [FRAME],
             None,
-        ));
+        );
+        charts.push(stand_with_star(&mut f, &v));
     }
-    f.faces.push(f.face_of(0, 1).expect("star 1"));
-    f.faces.push(f.face_of(0, 2).expect("star 2"));
-    f.faces.push(f.face_carrying(1, 2, chord.clone()).expect("a chord between two bodies"));
+    let [c2, c3] = charts.as_slice() else { panic!("two members stood") };
+    let o = chord_between(&mut f, c2, c3, chord.clone());
     // The chord between the two bodies carries its edge (50.3): the chord
     // word's versor, as pairing leaves it on a perceived form.
     let carriage = element::versor_of_word(chord).expect("a quarter turn is a versor");
-    if let Some(face) = f.faces.get_mut(2) {
-        let at: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-        for k in at {
-            if let Some(place) = face.at.get_mut(&k) {
-                place.edge = Some(crate::transducer::sentence::Transport {
-                    word: chord.clone(),
-                    carriage: carriage.clone(),
-                    gauge: place.gauge.clone(),
-                });
-            }
-        }
+    if let Some(face) = f.faces.at_mut(&o) {
+        face.place.edge = Some(crate::transducer::sentence::Transport {
+            word: chord.clone(),
+            carriage,
+            gauge: face.place.gauge.clone(),
+        });
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     let (a, b) = (vec![0xa], vec![0xb]);
-    for face in 0..u32::try_from(f.faces.len()).expect("the fixture's handful of faces; AT1 debt — a face slot number keys face_bodies") {
-        f.face_bodies.insert(face.to_be_bytes(), (a.clone(), b.clone()));
+    let overlaps: Vec<crate::network::nerve::coord::Overlap> = f.faces.entries().map(|(o, _)| o).collect();
+    for o in overlaps {
+        f.face_bodies.put(&o, (a.clone(), b.clone()));
     }
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let nuclei = vec![

@@ -69,7 +69,8 @@ fn the_codes_that_are_not_a_closures_carry_their_ruled_arm() {
 fn the_mint_and_the_pose_arms_carry_their_kind() {
     use crate::transducer::blade::NoPose;
     use crate::transducer::family::Withheld;
-    assert_eq!(Withheld::OrbitObstruction { orbit_ix: 0, key: [0, 0] }.obstruction_kind(), ObstructionKind::C);
+    let chord = crate::transducer::sentence::tests::common::some_overlap();
+    assert_eq!(Withheld::OrbitObstruction { chord, key: [0, 0] }.obstruction_kind(), ObstructionKind::C);
     assert_eq!(Withheld::CoboundaryResidue { links: 1, pairs: 1 }.obstruction_kind(), ObstructionKind::C);
     assert_eq!(Withheld::Acyclic { links: 0, pairs: 0 }.obstruction_kind(), ObstructionKind::N);
     assert_eq!(Withheld::NoTrajectory.obstruction_kind(), ObstructionKind::N);

@@ -51,13 +51,16 @@ pub fn generator_form(
     use crate::transducer::alphabet::Derivation;
     rotor.is_versor().then_some(())?;
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    // A LETTER STANDS AT NO FRAME: it is the carrier of an action, not a
+    // placed body (above), so its member holds no frame and makes no chart.
+    f.put_vertex(Vertex::word_on(
         Derivation::adjoined(rotor.clone()),
         chart.clone(),
         crate::transducer::element::identity_versor().into(),
         Vec::new(),
+        [],
         None,
-    ));
+    ))?;
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     // What the language could not say without it: the demand's own bodies,
@@ -87,12 +90,18 @@ pub fn callus_form(
     }
     let mut acts: Keyed<Acting, crate::network::nerve::coord::Section> = Keyed::new();
     for chart in charts {
-        let member = Acting { chart: chart.clone(), carriage: crate::transducer::element::identity_versor().into(), gauge: Vec::new() };
+        // A callus names no body either: its members stand at no frame.
+        let member = Acting {
+            chart: chart.clone(),
+            carriage: crate::transducer::element::identity_versor().into(),
+            gauge: Vec::new(),
+            frames: Keyed::new(),
+        };
         acts.put(&member.key(), member);
     }
     let address = crate::transducer::sentence::word_vertex_address(&derivation, &acts, None);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Word { address, derivation, acts, contact: None });
+    f.put_vertex(Vertex::Word { address, derivation, acts, contact: None })?;
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [0, 0, 0, 1])
@@ -193,32 +202,19 @@ pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
                 "  mint cover desync: the address does not decode, so the court holds no form"
             ),
             Some(f) => {
-                let mut orphan = 0usize;
-                for v in &f.vertices {
-                    if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
-                        continue;
-                    }
-                    let site = crate::transducer::sentence::vertex_bytes(v);
-                    if !env.nerve.iter().any(|x| x.host().as_bytes() == site) {
-                        orphan += 1;
-                    }
-                }
-                let mut phantom = 0usize;
-                for x in &env.nerve {
-                    let host = x.host();
-                    if !f.vertices.iter().any(|v| {
-                        matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
-                            && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
-                    }) {
-                        phantom += 1;
-                    }
-                }
+                // THE PORTS ARE THE GLUED KIND'S STRATUM of the vertex
+                // carrier (AT1); a port and its bond meet at the site, which
+                // is the Glued vertex's coordinate.
+                let ports: Vec<Vec<u8>> = f
+                    .vertices
+                    .scoped()
+                    .filter(|(_, v)| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
+                    .map(|(_, v)| crate::transducer::sentence::vertex_bytes(v))
+                    .collect();
+                let orphan = ports.iter().filter(|site| !env.nerve.iter().any(|x| x.host().as_bytes() == site.as_slice())).count();
+                let phantom = env.nerve.iter().filter(|x| !ports.iter().any(|site| x.host().as_bytes() == site.as_slice())).count();
                 if orphan > 0 || phantom > 0 {
-                    let ports = f
-                        .vertices
-                        .iter()
-                        .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
-                        .count();
+                    let ports = ports.len();
                     eprintln!(
                         "  mint cover desync: {ports} ports, {} bonds, {orphan} orphan, {phantom} phantom",
                         env.nerve.len()
@@ -338,6 +334,19 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // utterance, the retirement scope, the use credit — reads an empty
     // cover and resolves nothing, silently.
     f.cover = e.receipts().nerve.clone();
+    // AND THE EVIDENCE THE KEY DOES NOT CARRY (AT1, 54.5 Road (d)): each
+    // demand's bodies, filed on the record under the demand's own coordinate,
+    // and the remainder's chain. A form read from its address holds the
+    // coordinates; the word holds what they stand for.
+    for d in &e.receipts().demands {
+        if let Some(Vertex::Demand { bodies, .. }) = f.vertices.at_mut(&d.at) {
+            *bodies = d.bodies.clone();
+        }
+    }
+    if !e.receipts().remainder.is_empty() {
+        f.remainder = crate::transducer::element::place_chain(&e.receipts().remainder)?;
+        f.remainder_at = None;
+    }
     Some(f)
 }
 
@@ -425,9 +434,18 @@ pub fn torsion_orbit_rotor(
     // (`orbit_classes`, through `cech::classify`), so the orbit carrying this
     // class is found by asking the geometry which one does. The filing only
     // ever memoized that answer, and law 12 keeps a theorem out of storage.
+    //
+    // AND THE ROTOR IS THE PATH'S HOLONOMY, the word the class was read off
+    // (`orbit_classes`, one reader) — never the chord's face word. Under AT1
+    // a face word is derived from its ends and a cycle of them telescopes to
+    // the identity, so measured torsion rides the overlaps' EDGES, and the
+    // chord's own word is the identity wherever no pivot wrote a factor.
     for lp in &f.orbits {
-        if f.orbit_classes(lp).iter().any(|row| &row.class == class) {
-            return f.faces.get(lp.chord as usize).map(|face| face.word.rotor());
+        let words = crate::transducer::sentence::pivot::drive::holonomy_words_on(&f.faces, &f.vertices, lp);
+        for (_, w) in words.scoped() {
+            if w.rotor().holonomy_key().as_ref() == Some(class) {
+                return Some(w.rotor());
+            }
         }
     }
     None

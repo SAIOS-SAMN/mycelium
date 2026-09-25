@@ -252,16 +252,27 @@ fn the_circuits_read_back_whole_step_by_step() {
         modes,
         after: None,
     };
+    // AT1 — a face is an overlap of two charts, never a slot number: the
+    // `n`th distinct overlap the fixture names, the Frame's chart to a member
+    // on chart `[n]` at frame `n`.
+    let ov = |n: u64| crate::network::nerve::coord::Overlap {
+        from: crate::network::nerve::coord::ChartAt::Frame,
+        to: crate::network::nerve::coord::ChartAt::at(
+            crate::network::nerve::coord::VertexAt::Frame,
+            crate::transducer::stalk::Invariant::counts(&[n]),
+            n,
+        ),
+    };
     let circuits = Circuits {
         circuits: vec![
             Circuit {
-                chord: 4,
+                chord: ov(4),
                 test: Some(CircuitTest {
                     arms: vec![(TestArm::OtherPairs, ArmRead::Reads(2)), (TestArm::Coset, ArmRead::Empty)],
                     class: CircuitClass::C,
                     offers: vec![Offer {
                         arm: TestArm::ConstructedFibre,
-                        face: 9,
+                        face: ov(9),
                         constructor: vec![(0b00001, q(1, 1)), (0b10000, q(-1, 2))],
                         flat: false,
                         holonomy: vec![(0, q(3, 1)), (0b00011, q(4, 1))],
@@ -270,13 +281,13 @@ fn the_circuits_read_back_whole_step_by_step() {
                 }),
                 steps: vec![
                     CircuitStep {
-                        face: 1,
+                        face: ov(1),
                         forward: true,
                         refracted: false,
                         carried: read(BivectorKind::Elliptic, ModesRead::Split(vec![(BivectorKind::Elliptic, 1, Some(4))])),
                     },
                     CircuitStep {
-                        face: 9,
+                        face: ov(9),
                         forward: false,
                         refracted: true,
                         carried: read(
@@ -284,11 +295,11 @@ fn the_circuits_read_back_whole_step_by_step() {
                             ModesRead::Undecomposed(cga::Undecomposed::Irrational(2)),
                         ),
                     },
-                    CircuitStep { face: 2, forward: true, refracted: false, carried: Carried::Cone },
+                    CircuitStep { face: ov(2), forward: true, refracted: false, carried: Carried::Cone },
                 ],
             },
             Circuit {
-                chord: 7,
+                chord: ov(7),
                 test: Some(CircuitTest {
                     arms: vec![
                         (TestArm::OtherCircuits, ArmRead::Routes { agree: 1, disagree: 2 }),
@@ -298,15 +309,15 @@ fn the_circuits_read_back_whole_step_by_step() {
                     offers: Vec::new(),
                 }),
                 steps: vec![
-                    CircuitStep { face: 3, forward: false, refracted: false, carried: Carried::Unread },
+                    CircuitStep { face: ov(3), forward: false, refracted: false, carried: Carried::Unread },
                     CircuitStep {
-                        face: 5,
+                        face: ov(5),
                         forward: true,
                         refracted: false,
                         carried: read(BivectorKind::Trivial, ModesRead::Unread),
                     },
                     CircuitStep {
-                        face: 6,
+                        face: ov(6),
                         forward: true,
                         refracted: false,
                         carried: read(BivectorKind::Parabolic, ModesRead::Undecomposed(cga::Undecomposed::Defective)),

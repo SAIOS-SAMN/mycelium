@@ -16,43 +16,33 @@ use crate::transducer::stalk;
 use super::chart::word_vertex_address;
 use crate::transducer::address::take_key_count;
 
-/// The chain back out of its address, AND THE CORNER IT SAT AT.
-///
-/// The address names the chain up to A5's centring; the corner beside it
-/// is where it stood. `from_residual` is the one reader of a residual
-/// address and this uses it rather than restating the layout (law 12).
-fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
-    // THE SHAPE LEADS: no chain, a chain by its address, or a chain A5
-    // refuses an address and the key writes out (54.5).
-    let shape = *k.get(*p)?;
+/// A chain's coordinates back out of the key (AT1, 54.5 Road (d)): the flag,
+/// then the measure per lane, the pieces and the corner, as
+/// `put_chain_at` writes them. `Some(None)` is the empty chain.
+fn take_chain_at(k: &[u8], p: &mut usize) -> Option<Option<ChainAt>> {
+    let flag = *k.get(*p)?;
     *p += 1;
-    match shape {
-        0 => Some(Vec::new()),
+    match flag {
+        0 => Some(None),
         1 => {
-            let a = crate::transducer::address::take_key_bytes(k, p)?;
-            let mut out = from_residual(&a)?;
-            let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
-            let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
+            let mut measure = [0u64; 4];
+            for lane in measure.iter_mut() {
+                *lane = take_u64(k, p)?;
+            }
+            let pieces = take_u64(k, p)?;
+            let r = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
+            let c = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
             *p += 16;
-            for l in &mut out {
-                l.0 += cr;
-                l.1 += cc;
-            }
-            Some(out)
-        }
-        2 => {
-            let n = take_key_count(k, p)?;
-            let mut out = Vec::with_capacity(n.min(k.len()));
-            for _ in 0..n {
-                let r = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
-                let c = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
-                out.push((r, c, *k.get(*p + 16)?, *k.get(*p + 17)?));
-                *p += 18;
-            }
-            Some(out)
+            Some(Some(ChainAt { measure, pieces, corner: (r, c) }))
         }
         _ => None,
     }
+}
+
+fn take_u64(k: &[u8], p: &mut usize) -> Option<u64> {
+    let v = u64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
+    Some(v)
 }
 
 /// THE INVERSE OF [`form_vertex_key`] (A21 §4, 1.5 as ruled 2026-09-20).
@@ -107,8 +97,8 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     let mut f = Form { n, ..Form::default() };
     // `Form::default()` opens with its Frame vertex; the key writes every
     // vertex the form has, that one included, so the vertices are taken
-    // from the key alone and not appended to what the default seeded.
-    f.vertices.clear();
+    // from the key alone and not added to what the default seeded.
+    f.vertices = Keyed::new();
     // Every count in the key is read by its own coordinate (STD1 3c-2).
     let nv = take_key_count(k, &mut p)?;
     for _ in 0..nv {
@@ -147,88 +137,79 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 }
             }
             3 => {
-                let by = take_u16k(k, &mut p)?;
-                let of = take_u16k(k, &mut p)?;
+                let by = coord::VertexAt::decode(&crate::transducer::address::take_key_bytes(k, &mut p)?).ok()?;
+                let class = coord::Transport::decode(&crate::transducer::address::take_key_bytes(k, &mut p)?).ok()?;
                 let acts = take_acts(k, &mut p, false)?;
-                Vertex::Rebased { by, of, acts: acts.0 }
+                Vertex::Rebased { by, class, acts: acts.0 }
             }
             4 => {
-                let m = *k.get(p)?;
-                p += 1;
-                let measure = match m {
-                    0 => Measure::Occupied,
-                    1 => Measure::Remainder,
-                    2 => Measure::Ring { anchor: take_u16k(k, &mut p)? },
-                    _ => return None,
-                };
-                Vertex::Unfolded { measure }
+                let unfolded = coord::Unfolded::decode(&crate::transducer::address::take_key_bytes(k, &mut p)?).ok()?;
+                Vertex::Unfolded { measure: unfolded.0 }
             }
             5 => {
                 let kb = crate::transducer::address::take_key_bytes(k, &mut p)?;
                 let mut kp = 1usize;
                 let kind = crate::transducer::sentence::Demand::from_bytes(&kb, &mut kp)?;
                 let chart = stalk::Invariant::from_key(&crate::transducer::address::take_key_bytes(k, &mut p)?)?;
-                // A demand whose bodies the caller did not supply is not a
-                // demand standing for nothing — it is a form that cannot be
-                // rebuilt from what was given, and it refuses (rule 11).
-                // 54.2: the remainder is in the key, as its chain's address.
-                let bodies = take_chain_address(k, &mut p)?;
-                Vertex::Demand { kind, chart, bodies }
+                // AT1, 54.5 ROAD (d) — THE DEMAND'S COORDINATES, not its
+                // bodies: the bodies ride the record and the record supplies
+                // them (`from_element_form`), as it supplies a citation's
+                // cover. A form read from its key alone holds none, and that
+                // is the truth about it.
+                let mut measure = [0u64; 4];
+                for lane in measure.iter_mut() {
+                    *lane = take_u64(k, &mut p)?;
+                }
+                let pieces = take_u64(k, &mut p)?;
+                Vertex::Demand { kind, chart, measure, pieces, bodies: Vec::new() }
             }
             _ => return None,
         };
-        f.vertices.push(v);
+        // THE VERTEX STANDS AT ITS OWN COORDINATE, read off what it is; a
+        // record whose coordinate does not read is no vertex (rule 11).
+        f.put_vertex(v)?;
     }
     let nf = take_key_count(k, &mut p)?;
     for _ in 0..nf {
-        let i = take_u16k(k, &mut p)?;
-        let j = take_u16k(k, &mut p)?;
-        let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
-        let n = take_key_count(k, &mut p)?;
-        let mut at = Keyed::new();
-        for _ in 0..n {
-            let pk = crate::transducer::address::take_key_bytes(k, &mut p)?;
-            let carriage = Versor::from_bytes(k, &mut p)?;
-            let gauge = take_gauge(k, &mut p)?;
-            // 50.3's edge: its PRESENCE is on the key and its value is
-            // not, because the court re-measures it. An absent value is
-            // not a zero edge; the face records that one stood and the
-            // court supplies what it measures.
-            // 54.2: the edge's VALUE, as the transport it is.
-            let edge = match *k.get(p)? {
-                0 => {
-                    p += 1;
-                    None
-                }
-                1 => {
-                    p += 1;
-                    let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
-                    let carriage = Versor::from_bytes(k, &mut p)?;
-                    let gauge = take_gauge(k, &mut p)?;
-                    Some(Transport { word, carriage, gauge })
-                }
-                _ => return None,
-            };
-            at.insert(&pk, FacePlace { carriage, gauge, edge, refraction: None });
-        }
-        let pairs = match *k.get(p)? {
+        let o = coord::Overlap::decode(&crate::transducer::address::take_key_bytes(k, &mut p)?).ok()?;
+        let producer = match *k.get(p)? {
+            0 => Producer::Place,
+            1 => Producer::Motor,
+            _ => return None,
+        };
+        p += 1;
+        let carriage = Versor::from_bytes(k, &mut p)?;
+        let gauge = take_gauge(k, &mut p)?;
+        // 54.2: the edge's VALUE, as the transport it is.
+        let edge = match *k.get(p)? {
             0 => {
                 p += 1;
                 None
             }
             1 => {
                 p += 1;
-                let m = take_key_count(k, &mut p)?;
-                let mut ps = Keyed::new();
-                for _ in 0..m {
-                    ps.insert(take_frame_key(k, &mut p)?, ());
-                }
-                Some(ps)
+                let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
+                let carriage = Versor::from_bytes(k, &mut p)?;
+                let gauge = take_gauge(k, &mut p)?;
+                Some(Transport { word, carriage, gauge })
             }
             _ => return None,
         };
-        // BQ5b — the interface, as `put_face` writes it: a flag, then `V`'s
-        // ray and the contact's grade.
+        // THE PIVOT'S FACTORS, each behind its flag (ruled): absent is the
+        // identity, which is what an unpivoted overlap carries.
+        let mut factors = [Word::identity(), Word::identity()];
+        for factor in factors.iter_mut() {
+            match *k.get(p)? {
+                0 => p += 1,
+                1 => {
+                    p += 1;
+                    *factor = Word::formed(Rotor::from_bytes(k, &mut p)?);
+                }
+                _ => return None,
+            }
+        }
+        let [left, right] = factors;
+        // BQ5b — the interface, as `put_face` writes it.
         let interface = match *k.get(p)? {
             0 => {
                 p += 1;
@@ -240,7 +221,8 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             }
             _ => return None,
         };
-        f.faces.push(FormFace { i, j, word, at, pairs, interface });
+        let place = FacePlace { carriage, gauge, edge, refraction: None };
+        f.faces.put(&o, FormFace { place, producer, left, right, interface });
     }
     let mut r = [0u64; 4];
     for x in &mut r {
@@ -261,33 +243,17 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     // carrier cannot hold is not truncated into another ratio.
     let at = |x: u64| usize::try_from(x).ok();
     f.ratio = ((at(r[0])?, at(r[1])?), (at(r[2])?, at(r[3])?));
-    let ns = take_key_count(k, &mut p)?;
-    for _ in 0..ns {
-        let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
-        let m = take_key_count(k, &mut p)?;
-        let mut members = Keyed::new();
-        for _ in 0..m {
-            members.insert(take_frame_key(k, &mut p)?, ());
-        }
-        f.sections
-            .put(&crate::network::nerve::coord::SectionAt::decode(&class).ok()?, members);
-    }
+    // THE SECTIONS ARE NOT IN THE KEY (AT1): each member's frames are in its
+    // record, and `Form::sections` reads them off the members.
     let na = take_key_count(k, &mut p)?;
     for _ in 0..na {
         let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
-        // The tape's own bytes, declared as the holonomy coordinate `axes`
-        // answers — the decoder is where wire bytes become a coordinate.
-        f.axes
-            .put(&crate::network::nerve::coord::Holonomy::decode(&class).ok()?, 0);
+        // The class alone: the chord is the orbit's, found by the class.
+        f.axes.put(&coord::Holonomy::decode(&class).ok()?, None);
     }
-    // 54.2: the remainder is identity and is in the key.
-    // `place_chain` is the tape decoder's own reader of a placed chain —
-    // the same one, not a second that agrees with it (law 12). An empty
-    // chain places nothing and leaves the default.
-    let rem = take_chain_address(k, &mut p)?;
-    if !rem.is_empty() {
-        f.remainder = crate::transducer::element::place_chain(&rem)?;
-    }
+    // 54.2, AT1 — THE REMAINDER BY ITS COORDINATES; the chain rides the
+    // record and `from_element_form` places it from there.
+    f.remainder_at = take_chain_at(k, &mut p)?;
     // ORBITS AND HOLONOMIES ARE DERIVED AND NEVER KEYED (§1.5), so they are
     // re-derived from the incidence just read, by the same reader the
     // extractor uses — not read back from a carrier that would be a second
@@ -385,25 +351,19 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
             }
         }
         let gauge = take_gauge(k, p)?;
-        // THE MEMBER NAMES ITSELF (54.7 R1, law 12). It was inserted under
-        // the bytes just read, which made the address's field and the
-        // carrier's key two statements of one fact; they agreed only while
-        // the key WAS the chart. `Acting::key` is the one writer.
-        let member = Acting { chart, carriage: Box::new(carriage), gauge };
+        // AT1 — THE MEMBER'S FRAMES, each by its own spelling (Q4).
+        let nf = take_key_count(k, p)?;
+        let mut frames = Keyed::new();
+        for _ in 0..nf {
+            let f = coord::take_frame(k, p)?;
+            frames.insert(frame_key(f), ());
+        }
+        // THE MEMBER NAMES ITSELF (54.7 R1, law 12): `Acting::key` is the
+        // one writer of its key.
+        let member = Acting { chart, carriage: Box::new(carriage), gauge, frames };
         out.put(&member.key(), member);
     }
     Some(Acts(out, got.flatten()))
-}
-
-/// A FRAME AS ITS OWN KEY, the two bytes `frame_key` writes. Read as bytes
-/// and not through a `u16`, because `frame_key` is big-endian on purpose —
-/// the trie's order is then the frame's order — and routing it through
-/// `take_u16k`, which is little-endian, is what gave a frame two spellings
-/// and the sections run two addresses (54.5).
-fn take_frame_key(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
-    let b = k.get(*p..*p + 2)?.to_vec();
-    *p += 2;
-    Some(b)
 }
 
 fn take_gauge(k: &[u8], p: &mut usize) -> Option<Vec<(u8, u8)>> {
@@ -421,6 +381,8 @@ fn take_u16k(k: &[u8], p: &mut usize) -> Option<u16> {
     *p += 2;
     Some(v)
 }
+
+use crate::network::nerve::coord;
 
 /// 54.3 — THE INVERSE OF A RESIDUAL ADDRESS: the chain a non-sentence word
 /// stands for, read back out of the coordinate it is keyed at.

@@ -10,10 +10,12 @@ use super::common::*;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
-use crate::network::nerve::Keyed;
 
 /// A closed one-word form at a given quarter-turn plane, so three of them
-/// are three distinct addresses.
+/// are three distinct addresses. The plane is one of the BASE's own —
+/// `(0,1)`, `(0,3)`, `(1,3)` — since AT1 places the star overlap from the
+/// word's action on the base, and a turn through `e₂` carries the base off
+/// itself and places none.
 fn leaf(plane: (u8, u8)) -> Form {
     let q = crate::transducer::alphabet::LetterId::quarter(plane).expect("quarter");
     closed_word_form(Word::from_letters(&[(q, false)]), None)
@@ -95,7 +97,7 @@ fn a_citation_set_is_not_an_arrival_order() {
 fn two_charts_may_cite_each_other() {
     use crate::transducer::element::{identity_versor, translator_versor};
     let a = leaf((0, 1));
-    let b = leaf((2, 3));
+    let b = leaf((0, 3));
     let (a_at, b_at) = (addr_of(&a), addr_of(&b));
 
     let mut u = a.clone();
@@ -139,7 +141,7 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
     // triple overlap. Composed, the translations cancel exactly over ℚ:
     // `T(3,0) · T(0,5) · T(−3,−5) = 1`. Nothing is rounded and nothing is
     // near: the identity is the identity (rule 11).
-    let charts = [leaf((0, 1)), leaf((2, 3)), leaf((1, 2))];
+    let charts = [leaf((0, 1)), leaf((0, 3)), leaf((1, 3))];
     let phi_ij = translator_versor(3, 0);
     let phi_jk = translator_versor(0, 5);
     let phi_ki = phi_ij.geo(&phi_jk).reverse();
@@ -165,13 +167,14 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
     let transition_of = |e: &Form| -> Versor {
         let key = form_vertex_key(e);
         let back = from_address(&key).expect("the edge's address decodes");
-        back.vertices
-            .iter()
-            .find_map(|v| match v {
+        let phi = back
+            .glued_vertices()
+            .find_map(|(_, v)| match v {
                 Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
                 _ => None,
             })
-            .expect("a nerve edge carries its morphism")
+            .expect("a nerve edge carries its morphism");
+        phi
     };
 
     let round = [
@@ -230,7 +233,7 @@ fn a_triangle_of_citations_closes_or_carries_its_holonomy() {
 /// is a ruling about what a form IS, and it is not taken by a serializer.
 #[test]
 fn a_citation_truncated_to_its_chart_names_two_forms() {
-    let (x, y) = (leaf((2, 3)), leaf((1, 2)));
+    let (x, y) = (leaf((0, 3)), leaf((1, 3)));
     assert_ne!(form_vertex_key(&x), form_vertex_key(&y), "two distinct sub-complexes");
 
     // The same own-cells, citing two different forms at the same place.
@@ -342,12 +345,14 @@ fn every_orbit_lifts_to_the_member_complex() {
 #[test]
 fn two_charts_of_one_vertex_are_not_a_cycle() {
     let mut f = Form::default();
-    // Two vertices at two charts — the two members the fleet's split
-    // vertices present, here as the smallest form that has them.
-    f.vertices.push(word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
-    f.vertices.push(word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
-    f.faces.push(f.face_of(0, 1).expect("star one"));
-    f.faces.push(f.face_of(0, 2).expect("star two"));
+    // Two members at two charts — the two members the fleet's split
+    // vertices present, here as the smallest form that has them. AT1 (Q1):
+    // one word class is ONE vertex, so this is literally one vertex on two
+    // charts, each overlapped from the Frame's.
+    stand_with_star(&mut f, &word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+    stand_with_star(&mut f, &word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
+    assert_eq!(f.vertices.len(), 2, "the Frame and one vertex of two members");
+    assert_eq!(f.faces.len(), 2, "two star overlaps");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     assert!(
@@ -375,36 +380,34 @@ fn a_cycle_through_a_split_vertex_lifts() {
     let b = stalk::Invariant::counts(&[9]);
     let mut f = Form::default();
     // TWO VERTICES, EACH ACTING ON TWO CHARTS. `Vertex::word_on` takes one
-    // chart, so the second is written onto `acts` directly — which is what
-    // a vertex with a section IS (18.2, 21 step 1).
-    for _ in 0..2 {
-        let mut v = word_vertex_on(1, Word::identity(), a.clone());
-        if let Vertex::Word { acts, .. } = &mut v {
-            let first = acts.scoped().next().map(|(_, x)| x.clone()).expect("one member");
-            // THE MEMBER NAMES ITSELF (54.7 R1). This inserted under the
-            // chart's key while building a member on a DIFFERENT chart —
-            // harmless while the key WAS the chart, and a section filed
-            // under another's name once it is `chart ‖ carriage`.
-            let member = Acting { chart: b.clone(), ..first };
-            acts.put(&member.key(), member);
-        }
-        f.vertices.push(v);
+    // chart, so each vertex stands a member per chart and the second JOINS
+    // the first — which is what a vertex with a section IS (18.2, 21 step 1).
+    // AT1 (Q1): two vertices are two CLASSES, so the second is the quarter
+    // turn; two of the identity would be one vertex.
+    let mut charts = Vec::new();
+    for word in [Word::identity(), order4()] {
+        let at_a = f.stand_member(&word_vertex_on(1, word.clone(), a.clone()), FRAME).expect("member on a");
+        let at_b = f.stand_member(&word_vertex_on(1, word, b.clone()), FRAME).expect("member on b");
+        assert_eq!(at_a.vertex(), at_b.vertex(), "one class, one vertex");
+        charts.push((at_a, at_b));
     }
-    assert_eq!(f.vertices[1].charts().len(), 2, "the fixture must split, or nothing is tested");
+    let [(v_a, v_b), (w_a, w_b)] = charts.as_slice() else { panic!("two vertices") };
+    for v in [v_a, w_a] {
+        assert_eq!(
+            f.vertices.at(&v.vertex()).map(|x| x.charts().len()),
+            Some(2),
+            "the fixture must split, or nothing is tested"
+        );
+    }
 
-    // TWO FACES BETWEEN THE SAME PAIR OF MEMBERS. In the vertex graph
-    // those are parallel edges between two indices; in the member complex
-    // they are parallel edges between `(1,a)` and `(2,a)`, and the second
-    // is a chord closing the cycle `(1,a) → (2,a) → (1,a)`. The vertices
-    // split, so the cycle exists only because the basis names the CHART:
-    // the other members of each vertex stand outside it.
-    for (ci, cj) in [(&a, &a), (&a, &a)] {
-        let mut face = f.face_carrying(1, 2, order4()).expect("a face between two bodies");
-        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-        let place = face.at.get(&pairs[0]).cloned().expect("one place");
-        face.at = Keyed::new();
-        face.at.insert(face_pair_key(ci, cj), place);
-        f.faces.push(face);
+    // A CYCLE THROUGH BOTH CHARTS OF EACH SPLIT VERTEX. One overlap relates
+    // one member pair at one frame (AT1 Q2), so the parallel faces between
+    // one pair are gone with the faces that had several; the cycle is
+    // `(1,a) → (2,a) → (1,b) → (2,b) → (1,a)`, crossing between the charts,
+    // and it exists only because the basis names the CHART: in the vertex
+    // graph it is two parallel edges between two vertices, doubled.
+    for (from, to) in [(v_a, w_a), (w_a, v_b), (v_b, w_b), (w_b, v_a)] {
+        f.place_overlap(from.clone(), to.clone(), None).expect("an overlap between two members");
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();

@@ -101,7 +101,7 @@ pub(crate) fn idea_key(f: &Form) -> crate::transducer::address::Address {
 /// The form's magnitude: its remainder's measure and what its glued vertices
 /// carry, per lane; `None` where the sum would pass its carrier (STD1).
 pub(crate) fn form_mag(f: &Form) -> Option<[u64; 4]> {
-    let glued = f.vertices.iter().filter_map(|v| match v {
+    let glued = f.vertices.scoped().filter_map(|(_, v)| match v {
         Vertex::Glued { magnitude, .. } => Some(*magnitude),
         _ => None,
     });
@@ -435,7 +435,7 @@ impl Bubble {
     /// site that builds a bubble around a form.
     pub(crate) fn rotor_of_form(f: &Form) -> Option<Rotor> {
         let mut held: Option<Rotor> = None;
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let Vertex::Word { derivation, .. } = v else {
                 continue;
             };
@@ -464,7 +464,7 @@ impl Bubble {
         let Some(f) = self.form.as_ref() else {
             return out;
         };
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let Vertex::Word { derivation, acts, .. } = v else {
                 continue;
             };
@@ -789,12 +789,11 @@ impl Bubble {
                         crate::transducer::alphabet::Order::Finite(_period) => {
                             stands = true;
                             // TORSION IS CONTENT, so it is filed at the
-                            // period it closes at (50.8 case 3). `chord` is
-                            // 0: a bundle connection cycle is transversal
-                            // and closes on no planar face of this form —
-                            // a demand's form has none to point at — so the
-                            // sentinel says which kind of cycle it is
-                            // rather than naming a face that is not there.
+                            // period it closes at (50.8 case 3). A bundle
+                            // connection cycle is transversal: it winds the
+                            // fibre's puncture and closes on no overlap of
+                            // this form, and the arm says so (AT1, ruled —
+                            // the slot era wrote `0`, naming a real face).
                             // σ is the gauge composed around the cycle,
                             // which the connections carried.
                             if let Some(class) = m.holonomy_key() {
@@ -803,7 +802,7 @@ impl Bubble {
                                     crate::transducer::sentence::FiledOrbit {
                                         sigma: sigma.clone(),
                                         periods: m.toral_period(),
-                                        chord: 0,
+                                        chord: crate::transducer::sentence::Closes::Fibre,
                                     },
                                 ));
                             }

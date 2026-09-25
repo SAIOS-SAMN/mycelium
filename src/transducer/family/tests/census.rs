@@ -113,7 +113,7 @@ fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
         let Some(rule) = rule else { continue };
         let f = &rule.form;
         forms += 1;
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let Some(acts) = v.acts() else { continue };
             vertices += 1;
             let n = acts.scoped().count();
@@ -309,14 +309,14 @@ fn where_the_corpus_goes_silent() {
         forms += 1;
         verts += f.vertices.len();
         faces += f.faces.len();
-        faces_with_edge += f.faces.iter().filter(|x| x.has_edge()).count();
+        faces_with_edge += f.faces.scoped().filter(|(_, x)| x.has_edge()).count();
         if !f.orbits.is_empty() {
             with_orbits += 1;
         }
         for lp in &f.orbits {
             orbits += 1;
             // THE WORD HALF, for comparison: the transport composite.
-            if !lp.holonomy.is_identity() {
+            if crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, lp).is_some_and(|w| !w.is_identity()) {
                 word_live += 1;
             }
             match f.edge_holonomies(lp) {
@@ -421,6 +421,8 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     // measured by (78.41(2′)).
     let atlas = crate::transducer::sentence::form::atlas::take_atlas_tally();
     eprintln!("  corpus {}", atlas.line());
+    // 78.46(5)(b)–(c) — the old basis deduced over the corpus, by kind.
+    eprintln!("  corpus {}", atlas.sum.old_basis_line());
     eprintln!("  corpus {}", address_set.line(atlas.sum.chart_frames));
     // BQ5a — AND WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED. A census
     // that reads `0 condensed` says nothing until it says WHICH arm refused
@@ -429,7 +431,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     let f = crate::transducer::family::pairing::take_contact_tally();
     eprintln!(
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
-         → chords {}, within one class {}, unclassed {} \
+         → chords {}, within one class {}, unclassed {}, pieces colliding {} \
          | axiom B: geodesic {} off-sheet {} \
          | poses: {} framed {} half-open {} unframed, {} on the tube \
          | contacts: {} offered, {} unlifted | tether: {} apart, {} contained \
@@ -441,6 +443,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         t.chords,
         t.within_class,
         t.unclassed,
+        t.piece_collisions,
         t.geodesic,
         t.off_sheet,
         t.framed,

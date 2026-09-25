@@ -3,11 +3,21 @@
 // face refracts is named.
 
 use super::common::*;
-use crate::network::nerve::coord::BivectorKind;
+use crate::network::nerve::coord::{self, BivectorKind};
 use crate::observe::{Carried, Circuit};
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
+
+/// Two bodies on the Frame's star — two members of the identity's class, on
+/// charts `[1]` and `[2]` (AT1 Q1: one vertex, two members) — and their
+/// charts.
+fn two_bodies() -> (Form, coord::ChartAt, coord::ChartAt) {
+    let mut f = Form::default();
+    let a = stand_with_star(&mut f, &word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+    let b = stand_with_star(&mut f, &word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
+    (f, a, b)
+}
 
 /// Two bodies on the Frame's star and a chord between them whose edge turns
 /// by the Pythagorean `3 + 4e₁₂` — its weight a rational square, so its
@@ -15,18 +25,12 @@ use crate::transducer::stalk;
 /// the circuit read off it.
 fn circuits(contact: bool) -> Vec<Circuit> {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
+    let (mut f, a, b) = two_bodies();
     let turn = Transport { word: order4(), carriage: crate::transducer::cga::rotator(&q(3), &q(4)), gauge: Vec::new() };
-    let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), Some(turn)).expect("a chord between two bodies");
+    let o = edge_chord(&mut f, &a, &b, turn);
     if contact {
-        chord.interface = Some(super::common::contact(0, 3, 1));
+        f.faces.at_mut(&o).expect("the chord just placed").interface = Some(super::common::contact(0, 3, 1));
     }
-    f.faces.push(chord);
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(orbits.len(), 1, "the fixture must close one orbit, or nothing is tested");
@@ -95,13 +99,8 @@ fn the_first_step_whose_face_refracts_is_named() {
 /// filed off the face half alone.
 #[test]
 fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    f.faces.push(f.face_carrying(1, 2, order4()).expect("a chord carrying no edge"));
+    let (mut f, a, b) = two_bodies();
+    let chord = chord(&mut f, &a, &b, order4());
     reset_orbit_defects();
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -114,7 +113,6 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
         panic!("one unread orbit: {lines:?}")
     };
     assert_eq!(why.label(), "not rigid");
-    let chord = u16::try_from(f.faces.len() - 1).expect("the fixture's chord, the last of its three faces");
     let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
         carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.steps[*at - 1].face == chord),
@@ -124,19 +122,21 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
 }
 
 /// Two bodies on the Frame's star and a chord carrying no edge, with `extra`
-/// written on the chord beside the pair the circuit crosses; the circuits read.
-fn refused_circuits(extra: Option<(Vec<u8>, FacePlace)>) -> Vec<Circuit> {
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+/// written beside the pair the circuit crosses; the circuits read.
+///
+/// AT1 — AN OVERLAP IS ONE MEMBER PAIR (Q2), so the chord holds no second
+/// chart pair to write `extra` into. The other chart pair is its own
+/// overlap between the same two vertices: two more members of the class, on
+/// charts `[9]` and `[10]`, overlapped carrying `extra`'s place. They stand
+/// on no star, so they close no second orbit.
+fn refused_circuits(extra: Option<FacePlace>) -> Vec<Circuit> {
+    let (mut f, a, b) = two_bodies();
+    chord(&mut f, &a, &b, order4());
+    if let Some(place) = extra {
+        let c9 = f.stand_member(&word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[9])), FRAME).expect("member 9");
+        let c10 = f.stand_member(&word_vertex_on(10, Word::identity(), stalk::Invariant::counts(&[10])), FRAME).expect("member 10");
+        f.put_face(coord::Overlap { from: c9, to: c10 }, FormFace::placed(place, Producer::Place));
     }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
-    if let Some((k, place)) = extra {
-        chord.at.insert(k, place);
-    }
-    f.faces.push(chord);
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(orbits.len(), 1, "the word keeps the orbit, or nothing is tested");
@@ -166,7 +166,7 @@ fn the_reuse_ladder_classes_a_refused_circuit_by_how_its_arms_read() {
         edge: Some(Transport::from_word(order4())),
         refraction: None,
     };
-    let [c] = refused_circuits(Some((vec![9, 9], other))).try_into().expect("one circuit");
+    let [c] = refused_circuits(Some(other)).try_into().expect("one circuit");
     let t = c.test.expect("tested");
     assert_eq!(t.arms[0], (TestArm::OtherPairs, ArmRead::Reads(1)), "the other chart pair carries an edge");
     assert_eq!(t.class, CircuitClass::C, "only a reused fibre reads it: cover-relative");
@@ -198,20 +198,15 @@ fn disagreeing_routes_are_curved_and_agreeing_trivial_ones_flat() {
 #[test]
 fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_static() {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    let mut chord = f.face_carrying_with_edge(1, 2, Word::identity(), None).expect("a chord");
+    let (mut f, ca, cb) = two_bodies();
+    let o = f.place_overlap(ca, cb, None).expect("a chord");
+    let chord = f.faces.at_mut(&o).expect("the chord just placed");
     chord.interface = Some(super::common::contact(0, 3, 0));
     let a = crate::transducer::cga::sphere_at(&[q(0), q(0), q(0)], &q(1));
     let b = crate::transducer::cga::sphere_at(&[q(3), q(0), q(0)], &q(1));
-    set_face_place(&mut chord, |p| {
+    set_face_place(chord, |p| {
         p.refraction = Some(Refraction::Static { tether: b.geo(&a), poses: [HeldPose::OneFrame, HeldPose::OneFrame] })
     });
-    f.faces.push(chord);
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     assert_eq!(orbits.len(), 1, "a static edge keeps its loop: its gauge is never flat");
@@ -229,18 +224,11 @@ fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_s
 /// the chord's bodies `p`, `r` and a third body `s` stand in one cell, each
 /// with its nucleus. The circuits read with the routes CT2 constructs.
 fn single_route_cell(nuclei: [crate::transducer::cga::Mv; 3]) -> Vec<Circuit> {
-    let mut f = Form::default();
-    for n in 1..=2u8 {
-        f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
-    }
-    f.faces.push(f.face_of(0, 1).expect("star a"));
-    f.faces.push(f.face_of(0, 2).expect("star b"));
-    let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
-    chord.interface = Some(super::common::contact(0, 3, 0));
-    let chord_ix = u32::try_from(f.faces.len()).expect("the fixture's chord, pushed after its two star faces");
-    f.faces.push(chord);
+    let (mut f, a, b) = two_bodies();
+    let o = chord(&mut f, &a, &b, order4());
+    f.faces.at_mut(&o).expect("the chord just placed").interface = Some(super::common::contact(0, 3, 0));
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
-    f.face_bodies.insert(chord_ix.to_be_bytes(), (p.clone(), r.clone()));
+    f.face_bodies.put(&o, (p.clone(), r.clone()));
     f.cells.insert([0u8], FormCell { bodies: vec![p, r, s], witnesses: Vec::new(), nuclei: Some(nuclei.to_vec()) });
     arm_orbits();
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);

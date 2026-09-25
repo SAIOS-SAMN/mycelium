@@ -76,8 +76,8 @@ let rule = extract_rule_with(&family, &cover, &mut crate::physics::Physics::defa
 assert!(
     rule.form
         .vertices
-        .iter()
-        .any(|v| matches!(v, Vertex::Glued { .. })),
+        .entries()
+        .any(|(_, v)| matches!(v, Vertex::Glued { .. })),
     "the rule cites the held form"
 );
 let spoken = mint_sentence(&rule, &family, &cover, 0).expect("mint through crystal");
@@ -133,7 +133,7 @@ epi.stand_dialect_at(held_e.clone(), 1, 1).expect("stood");
 // The rule the voice extracts over the whole bundle cites it.
 let rule = extract_rule_with(&family, &epi, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the family extracts");
 assert!(
-    rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
+    rule.form.vertices.entries().any(|(_, v)| matches!(v, Vertex::Glued { .. })),
     "the voice cites what it stood"
 );
 let spoken = mint_sentence(&rule, &family, &epi, 0).expect("minted over the voice's own crystal");

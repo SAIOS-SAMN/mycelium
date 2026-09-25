@@ -83,8 +83,8 @@ fn a_demands_candidate_transport_is_read_from_the_bodies_it_stands_for() {
         let f = measured(&grid(ga), &grid(gb));
         let chart = f
             .vertices
-            .iter()
-            .find_map(|v| match v {
+            .scoped()
+            .find_map(|(_, v)| match v {
                 Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, chart, .. } => {
                     Some(chart.clone())
                 }
@@ -152,7 +152,7 @@ fn a_covers_pieces_are_one_vertex_per_transport_class() {
     let (a, b) = four_bodies();
     let f = measured(&a, &b);
     let words: Vec<&Vertex> =
-        f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+        f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(_, v)| v).collect();
     assert_eq!(words.len(), 1, "four pieces of one transport class are one vertex");
     let [w] = words.as_slice() else { panic!("one vertex") };
     let members = w.acts().map_or(0, crate::network::nerve::Keyed::len);
@@ -177,12 +177,12 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
         panic!("the notched fixture perceives one body on each side");
     };
     assert!(carriage(input, image).is_none(), "the whole body does not carry");
-    let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    let words = f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(words, 0, "and the cover lists no pieces of it");
     assert!(
         f.vertices
-            .iter()
-            .any(|v| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. })),
+            .scoped()
+            .any(|(_, v)| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. })),
         "what no versor carries whole stands as one typed demand"
     );
 }
@@ -320,10 +320,10 @@ fn the_scenes_faces_are_its_own_incidence_not_the_covers_meets() {
     assert!(!f.faces.is_empty(), "the scene's form carries its own incidence");
     for lp in &f.orbits {
         assert!(
-            f.faces.get(lp.chord as usize).is_some(),
+            f.faces.holds(&lp.chord),
             "every orbit's chord names a live face: {lp:?}"
         );
-        assert!(lp.vertices.len() >= 2, "an orbit runs over at least two vertices: {lp:?}");
+        assert!(lp.vertices().len() >= 2, "an orbit runs over at least two vertices: {lp:?}");
     }
 }
 
@@ -434,8 +434,10 @@ fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
             filed.periods.yield_units().is_none_or(|u| u >= 1),
             "a filed period is a real rotation's order, never one: {filed:?}"
         );
+        // AT1 — a cycle of the base closes ON an overlap of the form; a
+        // fibre cycle winds the puncture and closes on none.
         assert!(
-            f.faces.get(filed.chord as usize).is_some(),
+            filed.chord.overlap().is_none_or(|o| f.faces.holds(o)),
             "the chord names a live face of this form"
         );
         assert_ne!(
@@ -462,8 +464,8 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
     let f = measured(&a, &b);
     let stands = f
         .vertices
-        .iter()
-        .any(|v| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. }));
+        .scoped()
+        .any(|(_, v)| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. }));
     assert!(stands, "laminae no piece reached leave the deformation on the form");
 }
 
@@ -678,22 +680,27 @@ fn cover_attempts_are_placed_times_unplaced() {
 fn a_pure_coboundary_form_yields_no_evaluated_orbit() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::Form;
+    use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
     let mut f = Form::default();
-    // Three vertices, three charts: one chart would make them one vertex,
-    // since an address is derived from its coordinates (54.2, §1.5).
+    // Three bodies, three charts. AT1 — one transport class is ONE vertex
+    // (Q1), so the three are three MEMBERS of the identity's class, each at
+    // its own chart; the star is an overlap from the Frame's chart to each.
+    let mut charts = vec![crate::network::nerve::coord::ChartAt::Frame];
     for tag in [1u8, 2u8, 3u8] {
-        f.vertices.push(crate::transducer::sentence::Vertex::word_on(
+        let v = crate::transducer::sentence::Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(crate::transducer::element::identity_versor()),
             Vec::new(),
+            [FRAME],
             None,
-        ));
+        );
+        charts.push(stand_with_star(&mut f, &v));
     }
-    // Every face the coboundary of its two vertices, and no edge on any of
+    // Every other face the coboundary of its two ends, and no edge on any of
     // them: the pieces were not carried, so there is no frame transition.
-    for (i, j) in [(0u16, 1u16), (0, 2), (0, 3), (1, 2), (2, 3), (1, 3)] {
-        f.faces.push(f.face_of(i, j).expect("a coboundary of two vertices"));
+    for (i, j) in [(1usize, 2usize), (2, 3), (1, 3)] {
+        f.place_overlap(charts[i].clone(), charts[j].clone(), None).expect("a coboundary of two members");
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
@@ -741,9 +748,9 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
     let f = measured(&a, &b);
     let classes: Vec<crate::network::nerve::coord::Transport> = f
         .vertices
-        .iter()
-        .filter(|v| matches!(v, Vertex::Word { .. }))
-        .filter_map(crate::transducer::family::transport_class)
+        .scoped()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .filter_map(|(_, v)| crate::transducer::family::transport_class(v))
         .map(|tc| tc.key())
         .collect();
     let mut seen: crate::network::nerve::Keyed<(), crate::network::nerve::coord::Transport> =
@@ -756,7 +763,7 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
         seen.put(k, ());
     }
     // And every Word vertex HAS a class, or the bound names nothing.
-    let words = f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    let words = f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(classes.len(), words, "every word vertex is bounded by a class it carries");
 }
 

@@ -8,7 +8,7 @@ use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circui
 /// ONE STEP AS THE TRAVERSAL LEFT IT: oriented, its composite's class read, its
 /// modes owed to the reader that holds the stroke's budget (BD1).
 struct PendingStep {
-    face: u16,
+    face: coord::Overlap,
     forward: bool,
     refracted: bool,
     /// `None` unread, `Some(None)` on the cone, `Some(Some(g))` read.
@@ -17,7 +17,7 @@ struct PendingStep {
 }
 
 pub(super) struct PendingCircuit {
-    chord: u16,
+    chord: coord::Overlap,
     /// Its whole transport by the one composite reader, `None` where the
     /// edge half was refused (OR3) or rides a held coset.
     composite: Option<element::Versor>,
@@ -97,7 +97,7 @@ fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Bud
     }
     // THE LOST FACE'S TWO BODIES, the way the circuit crosses it, and their
     // nuclei from the witness cells holding both.
-    let Some((i_end, j_end)) = form.face_bodies.get(&u32::from(step.face).to_be_bytes()) else { return nothing };
+    let Some((i_end, j_end)) = form.face_bodies.at(&step.face) else { return nothing };
     let (x, y) = match step.forward {
         true => (i_end, j_end),
         false => (j_end, i_end),
@@ -113,7 +113,7 @@ fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Bud
         let closed = after.geo(route).geo(&before);
         Offer {
             arm,
-            face: step.face,
+            face: step.face.clone(),
             constructor: ray_of(constructor),
             flat: element::same_versor(&closed, &identity),
             holonomy: ray_of(&closed),
@@ -154,12 +154,12 @@ fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Bud
 }
 
 /// CT1, 79.3 — THE LADDER ON ONE CIRCUIT, by its refusal's own type, each
-/// arm one keyed read of the faces: a refused circuit's lost face — its other
-/// chart pairs, its tether, its coset or static refraction — or, on a cone,
-/// nothing and permanently. A trivial circuit is seeded empty; its arm, the
-/// other circuits crossing its faces, is read over every circuit kept.
-/// `None` for a circuit that read a class of its own or rides a coset.
-fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm, ArmRead)>, bool)> {
+/// arm one keyed read of the overlaps: a refused circuit's lost overlap — its
+/// edge, its tether, its coset or static refraction — or, on a cone, nothing
+/// and permanently. A trivial circuit is seeded empty; its arm, the other
+/// circuits crossing its overlaps, is read over every circuit kept. `None`
+/// for a circuit that read a class of its own or rides a coset.
+fn ladder_of(carried: &PathCarried, faces: &Faces) -> Option<(Vec<(TestArm, ArmRead)>, bool)> {
     let composite = carried.composite();
     let identity = element::identity_versor();
     if let Some(m) = &composite {
@@ -171,16 +171,29 @@ fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm,
     if carried.edge_refused == Some(Unread::Cone) {
         return Some((vec![(TestArm::Cone, ArmRead::Permanent)], false));
     }
-    let lost = carried
-        .edge_lost_at
-        .and_then(|k| carried.steps.get(k.checked_sub(1)?))
-        .and_then(|s| faces.get(usize::from(s.face)));
+    let lost_at = carried.edge_lost_at.and_then(|k| carried.steps.get(k.checked_sub(1)?)).map(|s| s.face.clone());
+    let lost = lost_at.as_ref().and_then(|o| faces.at(o));
     let reads = |n: usize| match n {
         0 => ArmRead::Empty,
         n => ArmRead::Reads(n as u64),
     };
-    let places = |pred: &dyn Fn(&FacePlace) -> bool| lost.map_or(0, |f| f.at.scoped().filter(|(_, p)| pred(p)).count());
-    let mut arms = vec![(TestArm::OtherPairs, reads(places(&|p| p.edge.is_some())))];
+    // AN OVERLAP HOLDS ONE PLACE (AT1): the tether, coset and static arms
+    // read the lost overlap's own place, one or none.
+    let places = |pred: &dyn Fn(&FacePlace) -> bool| usize::from(lost.is_some_and(|f| pred(&f.place)));
+    // THE OTHER PAIRS are the OTHER overlaps between the lost overlap's two
+    // vertices, either way — the member pairs a face relating several held
+    // at once, each now its own overlap (AT1): a keyed read of each end's
+    // fibre, the lost overlap itself excluded.
+    let others = lost_at.as_ref().map_or(0, |o| {
+        let (a, b) = (o.from_vertex(), o.to_vertex());
+        use crate::transducer::sentence::form::face::overlaps_leaving;
+        let mut between: Vec<coord::Overlap> = overlaps_leaving(faces, &a).into_iter().filter(|x| x.to_vertex() == b).collect();
+        if a != b {
+            between.extend(overlaps_leaving(faces, &b).into_iter().filter(|x| x.to_vertex() == a));
+        }
+        between.iter().filter(|x| *x != o && faces.at(x).is_some_and(|f| f.place.edge.is_some())).count()
+    });
+    let mut arms = vec![(TestArm::OtherPairs, reads(others))];
     match carried.edge_refused {
         Some(Unread::NotRigid) => arms.push((TestArm::Tether, reads(places(&|p| p.refraction.is_some())))),
         Some(Unread::Unrefracted) => {
@@ -222,7 +235,7 @@ pub(super) fn note_circuit(r: impl FnOnce() -> PendingCircuit) {
 /// closes where it rides one, and whether its gauge half is static (78.6).
 #[derive(Clone, Debug)]
 pub struct TraversedCircuit {
-    pub steps: Vec<(u16, bool)>,
+    pub steps: Vec<(coord::Overlap, bool)>,
     pub composite: Option<element::Versor>,
     /// 78.26(5) — the circuit's hue, its steps' hue maps composed as the
     /// composite composes their carriages; `None` where it did not read.
@@ -244,7 +257,7 @@ pub fn traversed_circuits(budget: &mut crate::physics::Budget) -> Vec<TraversedC
         Some(held) => held
             .iter()
             .map(|p| TraversedCircuit {
-                steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
+                steps: p.steps.iter().map(|s| (s.face.clone(), s.forward)).collect(),
                 composite: p.composite.clone(),
                 hue: p.hue.clone(),
                 unread: p.unread,
@@ -346,13 +359,13 @@ pub fn take_circuits() -> Option<Circuits> {
 /// oriented the way the circuit runs before it is read; the composite runs
 /// on through it, and a step that is unread or on the cone leaves every
 /// later composite unread (rule 11).
-pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]) -> PendingCircuit {
+pub(super) fn read_circuit(chord: &coord::Overlap, carried: &PathCarried, faces: &Faces) -> PendingCircuit {
     let mut composite: Option<element::Versor> = Some(element::identity_versor());
     let steps = carried
         .steps
         .iter()
         .map(|s| {
-            let refracted = faces.get(usize::from(s.face)).is_some_and(|f| f.interface.is_some());
+            let refracted = faces.at(&s.face).is_some_and(|f| f.interface.is_some());
             let oriented = match (&s.transport, s.forward) {
                 (None, _) => None,
                 (Some(t), true) => Some(Some(t.carriage.clone())),
@@ -363,7 +376,7 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
                 _ => None,
             };
             let after = composite.as_ref().and_then(|m| m.class_invariants()).map(|(_, _, k)| k);
-            PendingStep { face: s.face, forward: s.forward, refracted, oriented, after }
+            PendingStep { face: s.face.clone(), forward: s.forward, refracted, oriented, after }
         })
         .collect();
     let composite = carried.composite();
@@ -375,7 +388,7 @@ pub(super) fn read_circuit(chord: u16, carried: &PathCarried, faces: &[FormFace]
         (false, None) => crate::transducer::cech::CircuitUnread::Unnamed,
     });
     PendingCircuit {
-        chord,
+        chord: chord.clone(),
         composite,
         hue: carried.hue(),
         unread,
@@ -393,11 +406,9 @@ fn circuit_unread(why: Unread) -> crate::transducer::cech::CircuitUnread {
     use crate::transducer::cech::CircuitUnread as Why;
     match why {
         Unread::Cone => Why::Cone,
-        Unread::NoPlace => Why::NoPlace,
         Unread::NotRigid => Why::NotRigid,
         Unread::Unrefracted => Why::Unrefracted,
         Unread::NoFace => Why::NoFace,
-        Unread::TwoWays => Why::TwoWays,
     }
 }
 
@@ -405,17 +416,17 @@ fn circuit_unread(why: Unread) -> crate::transducer::cech::CircuitUnread {
 /// member path's steps, composite and OR3's reason, by the orbit's chord,
 /// filing nothing on the percept's tallies. An orbit whose traversal refused
 /// stands as one unread circuit over its faces, by its reason.
-pub fn circuits_of(form: &Form) -> Vec<(u16, TraversedCircuit)> {
+pub fn circuits_of(form: &Form) -> Vec<(coord::Overlap, TraversedCircuit)> {
     let mut out = Vec::new();
     for lp in &form.orbits {
         match paths_carried_quiet_why(&form.faces, &form.vertices, lp) {
             Ok(carried) => {
                 for (_, c) in carried.scoped() {
-                    let p = read_circuit(lp.chord, c, &form.faces);
+                    let p = read_circuit(&lp.chord, c, &form.faces);
                     out.push((
-                        lp.chord,
+                        lp.chord.clone(),
                         TraversedCircuit {
-                            steps: p.steps.iter().map(|s| (s.face, s.forward)).collect(),
+                            steps: p.steps.iter().map(|s| (s.face.clone(), s.forward)).collect(),
                             composite: p.composite,
                             hue: p.hue,
                             unread: p.unread,
@@ -426,9 +437,9 @@ pub fn circuits_of(form: &Form) -> Vec<(u16, TraversedCircuit)> {
                 }
             }
             Err(why) => out.push((
-                lp.chord,
+                lp.chord.clone(),
                 TraversedCircuit {
-                    steps: lp.faces.iter().map(|&f| (f, true)).collect(),
+                    steps: lp.steps.iter().map(|s| (s.overlap.clone(), s.forward)).collect(),
                     composite: None,
                     hue: None,
                     unread: Some(circuit_unread(why)),

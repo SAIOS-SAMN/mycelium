@@ -28,20 +28,21 @@ fn two_bars() -> (Vec<TrainPair>, Element) {
     (family, e)
 }
 
-/// The word vertices of a sentence, with the charts they act on.
-fn words_of(e: &Element) -> Vec<(crate::transducer::address::Address, crate::transducer::stalk::Invariant)> {
+/// The word vertices of a sentence, by their coordinates (AT1: a vertex is
+/// keyed by its class), with the charts they act on.
+fn words_of(e: &Element) -> Vec<(crate::network::nerve::coord::VertexAt, crate::transducer::stalk::Invariant)> {
     let f = crate::transducer::sentence::from_element_form(e)
         .expect("a sentence tape reads back");
     f.vertices
-        .iter()
-        .filter_map(|v| match v {
+        .entries()
+        .filter_map(|(at, v)| match v {
             // EVERY CHART THE VERTEX ACTS ON, one entry each: the reading is
             // "the word vertices with the charts they act on", and a vertex
             // acting on two charts is two entries here rather than one
             // entry naming a representative.
-            Vertex::Word { address, acts, .. } => Some(
+            Vertex::Word { acts, .. } => Some(
                 acts.scoped()
-                    .map(|(_, a)| (address.clone(), a.chart.clone()))
+                    .map(|(_, a)| (at.clone(), a.chart.clone()))
                     .collect::<Vec<_>>(),
             ),
             _ => None,
@@ -66,7 +67,7 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
     let moved = entity.receive_adjudication(
         &e,
         RefusalKind::VertexBody,
-        At::Vertex { address: refused_addr.clone(), chart: refused_chart.clone() },
+        At::vertex(refused_addr.clone(), refused_chart.clone()),
         [7; 32],
         &family,
         &[3; 32],
@@ -84,7 +85,7 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
             let f = crate::transducer::sentence::from_element_form(&p.sentence)
                 .expect("the contracted tape reads back");
             assert!(
-                !f.vertices.iter().any(|v| matches!(v, Vertex::Word { address, .. } if address.as_bytes() == refused_addr.as_bytes() && v.acting_on(&refused_chart).is_some())),
+                !f.vertices.at(&refused_addr).is_some_and(|v| matches!(v, Vertex::Word { .. }) && v.acting_on(&refused_chart).is_some()),
                 "the refused word no longer acts on the refused chart"
             );
             assert!(
@@ -205,7 +206,7 @@ fn contraction_certificate_is_readable_by_minted_address() {
     let moved = entity.receive_adjudication(
         &e,
         RefusalKind::VertexBody,
-        At::Vertex { address: refused_addr.clone(), chart: refused_chart.clone() },
+        At::vertex(refused_addr.clone(), refused_chart.clone()),
         [7; 32],
         &family,
         &[3; 32],

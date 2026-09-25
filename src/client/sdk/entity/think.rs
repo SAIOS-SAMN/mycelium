@@ -441,10 +441,7 @@ impl Entity {
                 Some(f) => (
                     f.depth,
                     f.vertices.len(),
-                    f.vertices
-                        .iter()
-                        .filter(|v| matches!(v, crate::transducer::sentence::Vertex::Glued { .. }))
-                        .count(),
+                    f.glued_vertices().count(),
                     f.faces.len(),
                     f.torsion.len(),
                 ),

@@ -2,27 +2,34 @@
 // the spanning forest that solves it, and the residue a placement leaves.
 
 use super::common::*;
-use crate::network::nerve::{Keyed};
+use crate::network::nerve::{coord, Keyed};
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
 use crate::transducer::stalk::{self};
 
+/// Every overlap's place, written by `write` — a keyed walk of the faces by
+/// their overlaps (AT1 Q2), each written at its own key.
+fn write_every_place(f: &mut Form, write: impl Fn(&mut FacePlace)) {
+    let overlaps: Vec<coord::Overlap> = f.faces.entries().map(|(o, _)| o).collect();
+    for o in overlaps {
+        set_face_place(f.faces.at_mut(&o).expect("an overlap just read"), &write);
+    }
+}
+
 #[test]
 fn placement_residue_is_the_affine_translation() {
     let mut f = chord_form(&[Word::identity()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
-    }
-    let chord = f.orbits[0].chord as usize;
-    set_face_place(&mut f.faces[chord], |p| {
+    write_every_place(&mut f, |p| p.gauge.clear());
+    let chord = f.orbits[0].chord.clone();
+    set_face_place(f.faces.at_mut(&chord).expect("the chord"), |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
     // A trivial cycle no longer stands in `orbits`, so the position of an
     // orbit is not its identity and never was (rule 15).
-    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read off orbits[0].chord, a u16")).expect("the chord's orbit");
+    let at = f.orbit_of_chord(&chord).expect("the chord's orbit");
     let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Placement),
@@ -55,16 +62,14 @@ fn placement_residue_is_the_affine_translation() {
 #[test]
 fn hue_cycle_type_composes_around_the_orbit() {
     let mut f = chord_form(&[Word::identity()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
-    }
-    let chord = f.orbits[0].chord as usize;
-    set_face_place(&mut f.faces[chord], |p| p.gauge = vec![(3, 4), (4, 3)]);
+    write_every_place(&mut f, |p| p.gauge.clear());
+    let chord = f.orbits[0].chord.clone();
+    set_face_place(f.faces.at_mut(&chord).expect("the chord"), |p| p.gauge = vec![(3, 4), (4, 3)]);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
     // A trivial cycle no longer stands in `orbits`, so the position of an
     // orbit is not its identity and never was (rule 15).
-    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read off orbits[0].chord, a u16")).expect("the chord's orbit");
+    let at = f.orbit_of_chord(&chord).expect("the chord's orbit");
     let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Hue),
@@ -121,37 +126,36 @@ fn a_cycle_of_every_hue_is_read_exactly() {
 #[test]
 fn coboundary_gauge_matches_by_address() {
     let q = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+    // The quarter turn's class, the rebased vertex's own (AT1: a Rebased
+    // vertex holds the class it had, beside its base's coordinate).
+    let q_class = word_vertex(1, q.clone()).class().expect("a quarter turn has a class");
+    let rebased = || {
+        Vertex::rebased_on(
+            coord::VertexAt::Frame,
+            q_class.clone(),
+            stalk::Invariant::default(),
+            Box::new(element::carriage(&q1(), &(q0(), q1()))),
+            Vec::new(),
+            [FRAME],
+        )
+    };
     let mut a = Form::default();
-    a.vertices.push(word_vertex(1, q.clone()));
-    a.vertices.push(word_vertex(2, Word::identity()));
-    a.faces.push(a.face_of(0, 1).expect("a star 1"));
-    a.faces.push(a.face_of(0, 2).expect("a star 2"));
-    a.vertices.push(Vertex::rebased_on(
-        0,
-        1,
-        stalk::Invariant::default(),
-        Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        Vec::new(),
-    ));
-    a.vertices.push(Vertex::Unfolded {
+    stand_with_star(&mut a, &word_vertex(1, q.clone()));
+    stand_with_star(&mut a, &word_vertex(2, Word::identity()));
+    a.put_vertex(rebased()).expect("a rebased vertex has a coordinate");
+    a.put_vertex(Vertex::Unfolded {
         measure: Measure::Occupied,
-    });
+    })
+    .expect("an unfolded vertex has a coordinate");
     a.reindex();
     let mut b = Form::default();
-    b.vertices.push(word_vertex(2, Word::identity()));
-    b.vertices.push(word_vertex(1, q.clone()));
-    b.faces.push(b.face_of(0, 1).expect("b star 1"));
-    b.faces.push(b.face_of(0, 2).expect("b star 2"));
-    b.vertices.push(Vertex::Unfolded {
+    stand_with_star(&mut b, &word_vertex(2, Word::identity()));
+    stand_with_star(&mut b, &word_vertex(1, q.clone()));
+    b.put_vertex(Vertex::Unfolded {
         measure: Measure::Occupied,
-    });
-    b.vertices.push(Vertex::rebased_on(
-        0,
-        2,
-        stalk::Invariant::default(),
-        Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        Vec::new(),
-    ));
+    })
+    .expect("an unfolded vertex has a coordinate");
+    b.put_vertex(rebased()).expect("a rebased vertex has a coordinate");
     b.reindex();
     assert!(
         coboundary_gauge(&a, &b).is_some(),
@@ -159,57 +163,35 @@ fn coboundary_gauge_matches_by_address() {
     );
 }
 
-#[test]
-fn solve_coboundary_is_a_spanning_forest() {
-    let mut f = Form::default();
-    // TWO ISOLATED VERTICES ARE TWO SITES. Under 54.2 a vertex's address
-    // is derived from its coordinates, so two on one chart with one rotor,
-    // one carriage and one gauge are ONE vertex (§1.5); `k` names the chart
-    // each stands on, which is what made them two all along.
-    for k in 1..=2u8 {
-        f.vertices.push(Vertex::word_on(
-            alphabet::Derivation::spelled(Word::identity()),
-            stalk::Invariant::counts(&[u64::from(k)]),
-            Box::new(element::carriage(&q1(), &(q0(), q0()))),
-            Vec::new(),
-            None,
-        ));
-    }
-    f.faces.push(FormFace::new(0, 1, Word::identity(),));
-    let gamma = f.solve_coboundary().expect("an isolated vertex roots its own tree");
-    assert_eq!(gamma.len(), 3);
-    assert!(gamma[0].is_identity(), "the least index of a component is γ = 1");
-    assert!(gamma[2].is_identity(), "vertex 2 is its own root");
-    f.faces.push(FormFace::new(0, 9, Word::identity(),));
-    assert!(
-        f.solve_coboundary().is_none(),
-        "a face that names a vertex outside the form refuses"
-    );
-    assert!(f.regauge(&[Word::identity()]).is_none(), "a short gauge refuses");
-}
+// `solve_coboundary_is_a_spanning_forest` STOOD HERE and is deleted: it
+// tested the tree gauge — `solve_coboundary`'s spanning forest and
+// `regauge`'s refusal of a short gauge — and the tree gauge RETIRED with
+// both (AT1 step 2, ruled (a)); a test of a retired subject retires with it.
 
 #[test]
 fn holonomy_is_oriented() {
     let w = order4();
-    let mut fwd = Form::default();
-    fwd.vertices.push(word_vertex(1, Word::identity()));
-    fwd.vertices.push(word_vertex(2, Word::identity()));
-    fwd.faces.push(fwd.face_of(0, 1).expect("star"));
-    fwd.faces.push(fwd.face_of(0, 2).expect("star"));
-    fwd.faces.push(fwd.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
+    // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
+    // identity's class on charts `[1]` and `[2]`, each on the Frame's star.
+    let bodies = || {
+        let mut f = Form::default();
+        let a = stand_with_star(&mut f, &word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
+        let b = stand_with_star(&mut f, &word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
+        (f, a, b)
+    };
+    let (mut fwd, a, b) = bodies();
+    chord(&mut fwd, &a, &b, w.clone());
     fwd.orbits = Form::orbits_of(&fwd.faces, &fwd.vertices);
-    let mut rev = Form::default();
-    rev.vertices.push(word_vertex(1, Word::identity()));
-    rev.vertices.push(word_vertex(2, Word::identity()));
-    rev.faces.push(rev.face_of(0, 1).expect("star"));
-    rev.faces.push(rev.face_of(0, 2).expect("star"));
-    rev.faces.push(rev.face_carrying(2, 1, w.inverse()).expect("a chord between two bodies"));
+    let (mut rev, a, b) = bodies();
+    chord(&mut rev, &b, &a, w.inverse());
     rev.orbits = Form::orbits_of(&rev.faces, &rev.vertices);
     assert_eq!(fwd.orbits.len(), 1);
     assert_eq!(rev.orbits.len(), 1);
+    // The holonomy is READ along the steps (AT1, ruled), never held.
+    let holonomy = |f: &Form| orbit_word_on(&f.faces, &f.vertices, &f.orbits[0]).expect("the orbit's word reads");
     assert_eq!(
-        fwd.orbits[0].holonomy.class_key(),
-        rev.orbits[0].holonomy.class_key(),
+        holonomy(&fwd).class_key(),
+        holonomy(&rev).class_key(),
         "a reversed chord stores the inverse word and the same class"
     );
 }

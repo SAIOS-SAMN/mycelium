@@ -34,16 +34,17 @@ fn an_open_demand_is_held_as_an_idea_standing_on_its_chart() {
     use crate::transducer::sentence::{Demand, Form, Vertex};
     let bodies = vec![(0i64, 0i64, 1u8, 0u8), (0, 1, 1, 0)];
     let chart = crate::transducer::stalk::invariant(&bodies);
+    // `Form::default()` holds the Frame.
     let mut f = Form::default();
-    f.vertices.push(Vertex::Frame);
-    f.vertices.push(Vertex::Demand {
-        kind: Demand::TopologicalDeformation {
+    f.put_vertex(Vertex::demand(
+        Demand::TopologicalDeformation {
             image: crate::transducer::stalk::Invariant::default(),
             axes: Vec::new(),
         },
-        chart: chart.clone(),
-        bodies: bodies.clone(),
-    });
+        chart.clone(),
+        bodies.clone(),
+    ))
+    .expect("a demand has a coordinate");
     f.reindex();
     let mut c = Contemplation::new();
     c.hold_form(f.clone(), &[], &[], [0; 4]);
@@ -151,16 +152,18 @@ fn hold_form_keeps_a_glued_open_orbit() {
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+    use crate::transducer::sentence::tests::common::{chord, stand_with_star, FRAME};
     let inner = {
         let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(w.clone()),
             crate::transducer::stalk::Invariant::default(),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
+            [FRAME],
             None,
-        ));
-        f.faces.push(f.face_of(0, 1).expect("vertices"));
+        );
+        stand_with_star(&mut f, &v);
         f.orbits = Form::orbits_of(&f.faces, &f.vertices);
         f
     };
@@ -176,30 +179,34 @@ fn hold_form_keeps_a_glued_open_orbit() {
     assert!(
         b.form.as_ref().is_some_and(|f| {
             f.vertices
-                .iter()
-                .any(|v| matches!(v, Vertex::Glued { .. }))
+                .scoped()
+                .any(|(_, v)| matches!(v, Vertex::Glued { .. }))
         }),
         "the bubble carries the Form"
     );
 
     let mut open = Form::default();
-    // Two vertices, two charts: with one chart they would be one vertex,
-    // since an address is derived from its coordinates (54.2, §1.5).
+    // Two members, two charts: one vertex — the identity's class (AT1, Q1)
+    // — standing at each, each with its star, and a chord between them.
+    let mut charts = Vec::new();
     for tag in [2u8, 3u8] {
-        open.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
+            [FRAME],
             None,
-        ));
+        );
+        charts.push(stand_with_star(&mut open, &v));
     }
-    open.faces.push(open.face_of(0, 1).expect("star 1"));
-    open.faces.push(open.face_of(0, 2).expect("star 2"));
-    open.faces.push(open.face_carrying(1, 2, w.clone()).expect("a chord between two bodies"));
+    let [c2, c3] = charts.as_slice() else { panic!("two members stood") };
+    chord(&mut open, c2, c3, w.clone());
     open.orbits = Form::orbits_of(&open.faces, &open.vertices);
     assert!(
-        open.orbits.iter().any(|lp| !lp.holonomy.is_identity()),
+        open.orbits.iter().any(|lp| {
+            crate::transducer::sentence::orbit_word_on(&open.faces, &open.vertices, lp).is_some_and(|h| !h.is_identity())
+        }),
         "the held form has an open orbit"
     );
     let mut c2 = Contemplation::new();
@@ -298,14 +305,15 @@ fn hold_form_carries_bundle_and_remainder() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         crate::transducer::stalk::Invariant::default(),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [crate::transducer::sentence::tests::common::FRAME],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    );
+    crate::transducer::sentence::tests::common::stand_with_star(&mut f, &v);
     let train = vec![(vec![vec![1u8]], vec![vec![2u8]])];
     let rem = vec![vec![(0i64, 0i64, 1u8, 2u8)]];
     let mut c = Contemplation::new();
@@ -545,17 +553,22 @@ fn the_frame_key_orders_by_coordinate_and_not_by_byte() {
 /// A form that stands on a chart and cites nothing.
 fn standing_form(hue: u8) -> crate::transducer::sentence::Form {
     use crate::transducer::sentence::{Demand, Form, Vertex};
-    let bodies = vec![(0i64, 0i64, hue, 0u8), (0, 1, hue, 0)];
+    // AT1: a demand's key carries its kind, chart, μ⃗ and piece count, never
+    // its bodies, and the chart is the shape's — so two rows of one length
+    // in two hues are ONE demand and one form. Each fixture's row is `hue`
+    // bodies long, so the forms differ on a coordinate the key carries.
+    let bodies: Vec<(i64, i64, u8, u8)> = (0..i64::from(hue)).map(|c| (0, c, hue, 0)).collect();
     let chart = crate::transducer::stalk::invariant(&bodies);
     let mut f = Form::default();
-    f.vertices.push(Vertex::Demand {
-        kind: Demand::TopologicalDeformation {
+    f.put_vertex(Vertex::demand(
+        Demand::TopologicalDeformation {
             image: crate::transducer::stalk::Invariant::default(),
             axes: Vec::new(),
         },
         chart,
         bodies,
-    });
+    ))
+    .expect("a demand has a coordinate");
     f.reindex();
     f
 }
@@ -566,13 +579,14 @@ fn citing_form(hue: u8, cited: &crate::transducer::address::Address) -> crate::t
     use crate::transducer::sentence::Vertex;
     let mut f = standing_form(hue);
     let chart = crate::transducer::stalk::invariant(&[(0i64, 0i64, hue, 0u8)]);
-    f.vertices.push(Vertex::Glued {
+    f.put_vertex(Vertex::Glued {
         chart: chart.clone(),
         magnitude: [1, 0, 0, 0],
         depth: 0,
         placement: crate::transducer::alphabet::Word::identity(),
         carriage: Box::new(crate::transducer::element::identity_versor()),
-    });
+    })
+    .expect("a glued vertex has a coordinate");
     // 54.7 B5a — AND THE INCIDENCE IT STANDS FOR. The vertex is the
     // boundary; `glues` at the hold is written off the cover.
     f.cover.push(crate::transducer::element::NerveEdge {

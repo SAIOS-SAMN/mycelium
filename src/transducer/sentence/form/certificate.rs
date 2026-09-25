@@ -17,34 +17,34 @@ pub enum Side {
     Right,
 }
 
-/// The move a certificate records (A20 `by`).
+/// The move a certificate records (A20 `by`). Each names the chord it writes
+/// on by the chord's OVERLAP (AT1), never by its place in a list.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PivotBy {
-    /// A held word written onto the chord face `face` as the relation the
-    /// bundle was missing on that orbit. Boxed: a word is a kilobyte inline,
-    /// and since the versor carrier holds its coefficients on the heap
-    /// (BQ3) it is the one large variant here.
-    Word { face: u16, word: Box<Word>, side: Side },
+    /// A held word written onto the chord `face` as the relation the bundle
+    /// was missing on that orbit: the overlap's `left` or `right` factor, the
+    /// one producer of a factor (ruled). Boxed: a word is a kilobyte inline.
+    Word { face: coord::Overlap, word: Box<Word>, side: Side },
     /// The translator residue of the holonomy carriage (A4).
     Placement {
-        face: u16,
+        face: coord::Overlap,
         translator: Versor,
     },
     /// The hue cycle type, composed as inverse onto the chord gauge (A4).
-    Hue { face: u16, gauge: Vec<(u8, u8)> },
+    Hue { face: coord::Overlap, gauge: Vec<(u8, u8)> },
     /// A chart axis opened over the orbit closing on `face`, seeded by the
     /// orbit's holonomy versor (3.7, 16.16 step 3; I6). The move writes no
     /// face: it makes the holonomy a coordinate of the form.
-    OpenAxis { face: u16, seed: Versor },
+    OpenAxis { face: coord::Overlap, seed: Versor },
 }
 
 impl PivotBy {
-    pub(crate) fn face(&self) -> u16 {
+    pub(crate) fn face(&self) -> &coord::Overlap {
         match self {
             PivotBy::Word { face, .. }
             | PivotBy::Placement { face, .. }
             | PivotBy::Hue { face, .. }
-            | PivotBy::OpenAxis { face, .. } => *face,
+            | PivotBy::OpenAxis { face, .. } => face,
         }
     }
 
@@ -82,12 +82,32 @@ pub enum Mu {
     Unmeasured,
 }
 
+/// An overlap written framed, and read back: the one spelling a certificate
+/// and a refusal give a chord (AT1).
+pub(crate) fn put_overlap(out: &mut Vec<u8>, o: &coord::Overlap) {
+    crate::transducer::address::put_key_bytes(out, o.encode().as_bytes());
+}
+
+pub(crate) fn take_overlap(b: &[u8], pos: &mut usize) -> Option<coord::Overlap> {
+    coord::Overlap::decode(&crate::transducer::address::take_key_bytes(b, pos)?).ok()
+}
+
+/// A vertex coordinate written framed, and read back.
+pub(crate) fn put_vertex_at(out: &mut Vec<u8>, v: &coord::VertexAt) {
+    crate::transducer::address::put_key_bytes(out, v.encode().as_bytes());
+}
+
+pub(crate) fn take_vertex_at(b: &[u8], pos: &mut usize) -> Option<coord::VertexAt> {
+    coord::VertexAt::decode(&crate::transducer::address::take_key_bytes(b, pos)?).ok()
+}
+
 /// A certified discharge of one occupied axis (A20). Content-addressed:
 /// two minds that discharge one orbit by one move produce one key.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PivotCertificate {
-    /// The orbit's index in the orbit read before the move.
-    pub chord: u16,
+    /// The chord of the orbit the move discharged, by its overlap (AT1): the
+    /// factor the move writes names its producer through this.
+    pub chord: coord::Overlap,
     pub axis: Axis,
     /// Class key of κ(ℓ) before, and after (zero vector when the orbit closed).
     pub before: crate::transducer::address::Address,
@@ -107,14 +127,15 @@ pub struct PivotCertificate {
 impl PivotCertificate {
     pub fn key(&self) -> Vec<u8> {
         let mut buf = vec![crate::transducer::address::TAG_CERT];
-        buf.extend_from_slice(&self.chord.to_le_bytes());
+        put_overlap(&mut buf, &self.chord);
         buf.push(self.axis.to_byte());
         crate::transducer::address::put_key_bytes(&mut buf, &self.before);
         crate::transducer::address::put_key_bytes(&mut buf, &self.after);
         put_rank_move(&self.rank_move, &mut buf);
         match &self.by {
             PivotBy::Word { face, word, side } => {
-                buf.extend_from_slice(&face.to_le_bytes());
+                buf.push(0);
+                put_overlap(&mut buf, face);
                 buf.push(match side {
                     Side::Left => 0,
                     Side::Right => 1,
@@ -123,13 +144,13 @@ impl PivotCertificate {
             }
             PivotBy::Placement { face, translator } => {
                 buf.push(1);
-                buf.extend_from_slice(&face.to_le_bytes());
+                put_overlap(&mut buf, face);
                 // A4 output (17.2): a pivot by T and by −T is one pivot.
                 translator.put_canonical(&mut buf);
             }
             PivotBy::Hue { face, gauge } => {
                 buf.push(2);
-                buf.extend_from_slice(&face.to_le_bytes());
+                put_overlap(&mut buf, face);
                 crate::transducer::address::put_key_count(&mut buf, gauge.len());
                 for &(a, b) in gauge {
                     buf.push(a);
@@ -138,7 +159,7 @@ impl PivotCertificate {
             }
             PivotBy::OpenAxis { face, seed } => {
                 buf.push(3);
-                buf.extend_from_slice(&face.to_le_bytes());
+                put_overlap(&mut buf, face);
                 // A4 output (17.2): the seed is a ray, not a coefficient list.
                 seed.put_canonical(&mut buf);
             }
@@ -160,7 +181,7 @@ impl PivotCertificate {
     }
 
     fn put_record(&self, out: &mut Vec<u8>) -> Option<()> {
-        out.extend_from_slice(&self.chord.to_le_bytes());
+        put_overlap(out, &self.chord);
         out.push(self.axis.to_byte());
         crate::transducer::address::put_addr(out, &self.before)?;
         crate::transducer::address::put_addr(out, &self.after)?;
@@ -177,7 +198,7 @@ impl PivotCertificate {
         match &self.by {
             PivotBy::Word { face, word, side } => {
                 out.push(0);
-                out.extend_from_slice(&face.to_le_bytes());
+                put_overlap(out, face);
                 out.push(match side {
                     Side::Left => 0,
                     Side::Right => 1,
@@ -189,12 +210,12 @@ impl PivotCertificate {
             }
             PivotBy::Placement { face, translator } => {
                 out.push(1);
-                out.extend_from_slice(&face.to_le_bytes());
+                put_overlap(out, face);
                 translator.put_canonical(out);
             }
             PivotBy::Hue { face, gauge } => {
                 out.push(2);
-                out.extend_from_slice(&face.to_le_bytes());
+                put_overlap(out, face);
                 crate::transducer::address::put_u16_count(out, gauge.len())?;
                 for &(a, b) in gauge {
                     out.push(a);
@@ -203,7 +224,7 @@ impl PivotCertificate {
             }
             PivotBy::OpenAxis { face, seed } => {
                 out.push(3);
-                out.extend_from_slice(&face.to_le_bytes());
+                put_overlap(out, face);
                 seed.put_canonical(out);
             }
         }
@@ -211,7 +232,7 @@ impl PivotCertificate {
     }
 
     pub fn from_bytes(b: &[u8], pos: &mut usize) -> Option<PivotCertificate> {
-        let chord = take_u16(b, pos)?;
+        let chord = take_overlap(b, pos)?;
         let axis = Axis::from_byte(*b.get(*pos)?)?;
         *pos += 1;
         let before = crate::transducer::address::take_addr(b, pos)?;
@@ -236,7 +257,7 @@ impl PivotCertificate {
         *pos += 1;
         let by = match kind {
             0 => {
-                let face = take_u16(b, pos)?;
+                let face = take_overlap(b, pos)?;
                 let side = match *b.get(*pos)? {
                     0 => Side::Left,
                     1 => Side::Right,
@@ -247,12 +268,12 @@ impl PivotCertificate {
                 PivotBy::Word { face, word, side }
             }
             1 => {
-                let face = take_u16(b, pos)?;
+                let face = take_overlap(b, pos)?;
                 let translator = Versor::from_bytes(b, pos)?;
                 PivotBy::Placement { face, translator }
             }
             2 => {
-                let face = take_u16(b, pos)?;
+                let face = take_overlap(b, pos)?;
                 let ng = take_count(b, *pos, take_u16(b, pos)? as usize, 2)?;
                 let mut gauge = Vec::with_capacity(ng);
                 for _ in 0..ng {
@@ -262,7 +283,7 @@ impl PivotCertificate {
                 PivotBy::Hue { face, gauge }
             }
             3 => {
-                let face = take_u16(b, pos)?;
+                let face = take_overlap(b, pos)?;
                 let seed = Versor::from_bytes(b, pos)?;
                 PivotBy::OpenAxis { face, seed }
             }
@@ -360,18 +381,33 @@ impl RefusalKind {
 }
 
 /// THE COORDINATE A REFUSAL NAMES (50.9), as content and never as a
-/// position in the sender's tape: the word vertex with the chart it acts
-/// on, a face's two vertex addresses, the chart with the links the court
-/// read, or the whole tape.
+/// position in the sender's tape: the word vertex BY ITS COORDINATE (AT1)
+/// with the chart it acts on, a face by its two vertices' coordinates, the
+/// chart with the links the court read, or the whole tape.
+///
+/// The vertex coordinates are boxed: a `VertexAt` carries its class's
+/// invariants inline, and a refusal is carried by value through every
+/// verdict, so the coordinate rides behind a pointer rather than widening
+/// every refusal to its size.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum At {
-    Vertex { address: crate::transducer::address::Address, chart: stalk::Invariant },
-    Face(crate::transducer::address::Address, crate::transducer::address::Address),
+    Vertex { vertex: Box<coord::VertexAt>, chart: stalk::Invariant },
+    Face(Box<coord::VertexAt>, Box<coord::VertexAt>),
     Chart(stalk::Invariant, Vec<Link>),
     Tape(crate::transducer::address::Address),
 }
 
 impl At {
+    /// A refusal at a vertex, on the chart it acts on.
+    pub fn vertex(vertex: coord::VertexAt, chart: stalk::Invariant) -> At {
+        At::Vertex { vertex: Box::new(vertex), chart }
+    }
+
+    /// A refusal at a face, by its two vertices' coordinates.
+    pub fn face(a: coord::VertexAt, b: coord::VertexAt) -> At {
+        At::Face(Box::new(a), Box::new(b))
+    }
+
     /// The coordinate as 34.2 and 34.3 write it.
     pub fn label(&self) -> String {
         let hx = |a: &[u8]| -> String {
@@ -380,30 +416,32 @@ impl At {
             s
         };
         match self {
-            At::Vertex { address, chart } => format!("vertex {} chart {}", hx(address.as_bytes()), hx(chart.key().as_bytes())),
-            At::Face(a, b) => format!("face {}-{}", hx(a.as_bytes()), hx(b.as_bytes())),
+            At::Vertex { vertex, chart } => {
+                format!("vertex {} chart {}", hx(vertex.encode().as_bytes()), hx(chart.key().as_bytes()))
+            }
+            At::Face(a, b) => format!("face {}-{}", hx(a.encode().as_bytes()), hx(b.encode().as_bytes())),
             At::Chart(inv, links) => format!("chart {} links {}", hx(inv.key().as_bytes()), links.len()),
             At::Tape(a) => format!("tape {}", hx(a.as_bytes())),
         }
     }
 
     /// The coordinate written out: a chart as its own axes inline
-    /// (`put_canonical`), a cited address behind its u16. `None` where an
-    /// address reaches the u16 wall — a blob where a citation belongs — and
-    /// nothing is written then (LD0).
+    /// (`put_canonical`), a vertex as its own coordinate framed, a cited
+    /// address behind its u16. `None` where an address reaches the u16 wall
+    /// — a blob where a citation belongs — and nothing is written then (LD0).
     pub fn to_bytes(&self, out: &mut Vec<u8>) -> Option<()> {
         use crate::transducer::address::put_addr;
         let mut rec = Vec::new();
         match self {
-            At::Vertex { address, chart } => {
+            At::Vertex { vertex, chart } => {
                 rec.push(0);
-                put_addr(&mut rec, address)?;
+                put_vertex_at(&mut rec, vertex);
                 chart.put_canonical(&mut rec);
             }
             At::Face(a, b) => {
                 rec.push(1);
-                put_addr(&mut rec, a)?;
-                put_addr(&mut rec, b)?;
+                put_vertex_at(&mut rec, a);
+                put_vertex_at(&mut rec, b);
             }
             At::Chart(inv, links) => {
                 rec.push(2);
@@ -430,14 +468,14 @@ impl At {
         *pos += 1;
         Some(match tag {
             0 => {
-                let address = crate::transducer::address::take_addr(b, pos)?;
+                let vertex = take_vertex_at(b, pos)?;
                 let chart = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;
-                At::Vertex { address, chart }
+                At::vertex(vertex, chart)
             }
             1 => {
-                let a = crate::transducer::address::take_addr(b, pos)?;
-                let c = crate::transducer::address::take_addr(b, pos)?;
-                At::Face(a, c)
+                let a = take_vertex_at(b, pos)?;
+                let c = take_vertex_at(b, pos)?;
+                At::face(a, c)
             }
             2 => {
                 let inv = crate::transducer::stalk::Invariant::take_canonical(b, pos)?;

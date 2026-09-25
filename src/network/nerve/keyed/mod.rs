@@ -23,5 +23,6 @@ pub use walks::*;
 
 #[cfg(test)]
 mod tests {
+    mod atlas;
     mod ondisk;
 }

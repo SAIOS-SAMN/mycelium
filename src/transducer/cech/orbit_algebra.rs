@@ -144,11 +144,15 @@ pub struct CellCircuit {
 }
 
 impl CellCircuit {
-    /// A ring's coordinates from its steps: each face and its way, framed.
-    pub fn ring_of(steps: &[(u16, bool)]) -> Vec<u8> {
+    /// A ring's coordinates from its steps: each overlap by its own
+    /// coordinates (AT1) and its way, framed.
+    pub fn ring_of(steps: &[(crate::network::nerve::coord::Overlap, bool)]) -> Vec<u8> {
+        use crate::network::nerve::Coordinate;
         let mut k = Vec::new();
-        for &(face, forward) in steps {
-            crate::transducer::address::put_key_bytes(&mut k, &[&face.to_be_bytes()[..], &[u8::from(forward)]].concat());
+        for (o, forward) in steps {
+            let mut step = o.encode().as_bytes().to_vec();
+            step.push(u8::from(*forward));
+            crate::transducer::address::put_key_bytes(&mut k, &step);
         }
         k
     }

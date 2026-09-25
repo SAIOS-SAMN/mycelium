@@ -18,18 +18,31 @@
 use super::pair::{meet_edge, Covered};
 use super::perceive::EdgeTally;
 use super::*;
-use crate::network::nerve::Keyed;
-use crate::transducer::sentence::{face_pair_key, vertex_ix_key, Form, FormFace};
+use crate::network::nerve::coord::{ChartAt, Overlap, PieceAt};
+use crate::network::nerve::{Coordinate, Keyed};
+use crate::transducer::sentence::{Form, FormFace, Producer};
 
 /// One filed orbit of a cover, awaiting a chord the SCENE can name: the
-/// holonomy's class key, the orbit as filed, and the transport classes its
-/// ends belong to.
+/// holonomy's class key, its hue generator and plane periods — the filed
+/// orbit but for the chord, which is an overlap of the scene's and does not
+/// exist here (AT1) — the transport classes its ends belong to, and the
+/// holonomy's rotor.
 pub(crate) type PendingTorsion = (
     crate::network::nerve::coord::Holonomy,
-    crate::transducer::sentence::FiledOrbit,
+    (Vec<(u8, u8)>, crate::transducer::sentence::ToralPeriod),
     Vec<TransportClass>,
     crate::transducer::alphabet::Rotor,
 );
+
+/// A PIECE AS A CHART NAMES IT (AT1, ruled (a) on the chords): the nucleus
+/// of the body its footprint lifts to — the body's sphere, 78.31 — and the
+/// shape's fixed-size canonical coordinates, never the support sites. `None`
+/// where the footprint lifts to no body with a nucleus.
+pub(crate) fn piece_at(footprint: &[crate::transducer::base::Site]) -> Option<PieceAt> {
+    let blade = crate::transducer::blade::shape_of(footprint).blade;
+    Some(PieceAt { nucleus: blade.nucleus()?, moments: blade.moments() })
+}
+
 
 /// THE CHORD A COVER'S MEET NAMES, AT THE MEMBER AND NOT AT THE VERTEX
 /// (53.6 item 3, corrected 2026-09-21 by the lift's own reading).
@@ -76,12 +89,22 @@ pub(crate) type PendingTorsion = (
 /// transvection, `B = eᵢ∧e₋`, `I₁ > 0`, carrying a Burgers vector. A
 /// coordinate excluded from IDENTITY, correctly, and then excluded from
 /// INCIDENCE, which does not follow.
-pub(crate) type ChordEnd = (TransportClass, Invariant, Versor, Vec<crate::transducer::base::Site>);
+///
+/// AT1, ruled (a): the end is its PIECE-CHART in the pieces' form — the
+/// class's vertex, the chart, the frame, the piece by nucleus and shape —
+/// and the scene re-reads it at the scene's vertex of the same class. The
+/// footprint's sites ride beside it for the dispiration's measurement only;
+/// no key is written from them.
+pub(crate) type ChordEnd = (TransportClass, ChartAt, Versor, Vec<crate::transducer::base::Site>);
 
+///
+/// AND THE FRAME ITS COVER WAS READ ON: a chord is an overlap between two
+/// piece-charts of one member AT ONE FRAME (AT1, ruled (a)).
 pub(crate) type MeetChord = (
     ChordEnd,
     ChordEnd,
     Option<crate::transducer::sentence::Transport>,
+    u64,
 );
 
 /// Build the pieces' form, classify its orbits, and return what the scene
@@ -109,8 +132,15 @@ pub(crate) fn classify_cover(
     // carry their orbits long enough to classify them. Nothing downstream
     // ever sees it.
     let mut piece_form = Form::default();
-    let mut cover_vertex: Keyed<u16, crate::network::nerve::coord::Carriage> = Keyed::new();
-    let mut owner: Keyed<Keyed<()>, crate::network::nerve::coord::VertexIx> = Keyed::new();
+    // EACH CARRIED PIECE AT ITS PIECE-CHART (AT1, ruled (a)): its class's
+    // vertex, its chart, its cover's frame, and the piece by nucleus and
+    // shape. The chart is what a meet's end is, and the cover that placed it
+    // is filed under the same coordinate.
+    let mut cover_chart: Keyed<ChartAt, crate::network::nerve::coord::Carriage> = Keyed::new();
+    let mut owner: Keyed<Keyed<()>, ChartAt> = Keyed::new();
+    // The first carried piece each piece-chart named, which a second
+    // distinct piece at that chart is read against.
+    let mut first_at: Keyed<crate::network::nerve::coord::Carriage, ChartAt> = Keyed::new();
     for (ci, c) in covers.iter().enumerate() {
         let (carried, carried_refused) = c.cover.carried.decoded();
         if !carried_refused.is_empty() {
@@ -118,20 +148,36 @@ pub(crate) fn classify_cover(
                 t.undecodable += carried_refused.len() as u64
             });
         }
-        for (key, (v, _versor, _codomain)) in carried {
-            if v.face_chart().is_none() {
-                continue;
+        let Ok(frame) = u64::try_from(c.frame) else { continue };
+        for (key, (v, _versor, sup)) in carried {
+            // THE VERTEX A CARRIED PIECE STANDS AT: one per class, the pieces
+            // of one class its members (AT1), at the frame its cover was read
+            // on.
+            let Some(piece) = piece_at(&sup.codomain) else { continue };
+            let Some(ChartAt::At(member)) = piece_form.stand_member(v, frame) else { continue };
+            let pc = ChartAt::piece(member.vertex, member.chart, frame, piece);
+            // TWO DISTINCT PIECES AT ONE PIECE-CHART are a finding and never
+            // a wider key (AT1, ruled (a)): counted, and the first stands.
+            match first_at.at(&pc) {
+                Some(held) if held != &key => {
+                    crate::transducer::family::cover::tally(|t| t.piece_collisions += 1);
+                }
+                Some(_) => {}
+                None => {
+                    first_at.put(&pc, key.clone());
+                }
             }
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "AT1 debt — a slot number of the form's Vec (the next vertex pushed onto the pieces' form); the atlas row replaces the slot by the chart's coordinates"
-            )]
-            let ix = piece_form.vertices.len() as u16;
-            piece_form.vertices.push(v.clone());
-            cover_vertex.put(&key, ix);
-            let mut set = Keyed::new();
-            set.insert(ci.to_le_bytes(), ());
-            owner.put(&vertex_ix_key(ix), set);
+            match owner.at_mut(&pc) {
+                Some(set) => {
+                    set.insert(ci.to_le_bytes(), ());
+                }
+                None => {
+                    let mut set = Keyed::new();
+                    set.insert(ci.to_le_bytes(), ());
+                    owner.put(&pc, set);
+                }
+            }
+            cover_chart.put(&key, pc);
         }
     }
     // THE COVER'S MEETS ARE FACES OF THE PIECES' OWN FORM (50.3), not of
@@ -164,6 +210,7 @@ pub(crate) fn classify_cover(
     let mut chords: Vec<MeetChord> = Vec::new();
     let mut named: Keyed<()> = Keyed::new();
     for c in covers {
+        let Ok(frame) = u64::try_from(c.frame) else { continue };
         // THE MEETS, AS COORDINATES (§4.4 E8). A key that does not decode is
         // this reader failing on its own layout, which the cover counts as
         // `undecodable`; it is not a meet that named nothing.
@@ -175,9 +222,11 @@ pub(crate) fn classify_cover(
         }
         for (mk, ()) in meets {
             let (ka, kb) = mk.ends();
-            let (Some(&i), Some(&j)) = (cover_vertex.at(ka), cover_vertex.at(kb)) else { continue };
-            let (Some(vi), Some(vj)) = (piece_form.vertices.get(i as usize), piece_form.vertices.get(j as usize)) else { continue };
-            let (Some(ci), Some(cj)) = (vi.face_chart(), vj.face_chart()) else { continue };
+            let (Some(pi), Some(pj)) = (cover_chart.at(ka), cover_chart.at(kb)) else { continue };
+            let (Some(vi), Some(vj)) = (piece_form.vertices.at(&pi.vertex()), piece_form.vertices.at(&pj.vertex())) else {
+                continue;
+            };
+            let (class_i, class_j) = (transport_class(vi), transport_class(vj));
             let edge = edges.take(match (c.cover.carried.at(ka), c.cover.carried.at(kb)) {
                 // A meet of two SECTIONS has one `Γ` and therefore one
                 // refusal — there is no coset to read it through here, so
@@ -197,11 +246,16 @@ pub(crate) fn classify_cover(
                 crate::transducer::family::cover::tally(|t| t.edges += 1);
             }
             let carried_edge = edge.clone();
-            let Some(word) = piece_form.face_word(i, j) else { continue };
-            let Some(place) = piece_form.face_place(i, &ci, j, &cj, edge) else { continue };
-            let mut at = Keyed::new();
-            at.insert(face_pair_key(&ci, &cj), place);
-            piece_form.faces.push(FormFace { i, j, word, at, pairs: None, interface: None });
+            // THE MEET IS AN OVERLAP OF THE TWO PIECE-CHARTS (AT1): its word
+            // derived from the ends, its place measured here. A meet of one
+            // piece-chart with itself is no overlap.
+            // One overlap per pair of charts: the meet read from the other
+            // end is the same overlap backward, not a second face.
+            if pi != pj && piece_form.faces.at(&Overlap { from: pj.clone(), to: pi.clone() }).is_none() {
+                if let Some(place) = piece_form.face_place(pi, pj, edge) {
+                    piece_form.put_face(Overlap { from: pi.clone(), to: pj.clone() }, FormFace::placed(place, Producer::Place));
+                }
+            }
             // AND THE CHORD IT NAMES BETWEEN TWO CLASSES. Two pieces of ONE
             // class meet inside that class and close nothing the scene can
             // see, so only a meet between DISTINCT classes is a chord. Named
@@ -223,7 +277,7 @@ pub(crate) fn classify_cover(
                 continue;
             };
             let (da, db) = (&supa.codomain, &supb.codomain);
-            if let (Some(ta), Some(tb)) = (transport_class(vi), transport_class(vj)) {
+            if let (Some(ta), Some(tb)) = (class_i, class_j) {
                 // THE CHORD IS BETWEEN TWO SECTIONS, so the coordinate that
                 // must differ is `(class, chart, CARRIAGE)`.
                 //
@@ -270,24 +324,12 @@ pub(crate) fn classify_cover(
                 // same collapse the session has now found four times: a
                 // coordinate excluded from IDENTITY, correctly, and then
                 // excluded from INCIDENCE, which does not follow.
-                let site = |t: &TransportClass,
-                            c: &Invariant,
-                            phi: &Versor,
-                            d: &[crate::transducer::base::Site]| {
-                    let mut k = Vec::new();
-                    crate::transducer::address::put_key_bytes(
-                        &mut k,
-                        crate::network::nerve::Coordinate::encode(&t.key()).as_bytes(),
-                    );
-                    crate::transducer::address::put_key_bytes(&mut k, c.key().as_bytes());
-                    phi.put_canonical(&mut k);
-                    for s in d {
-                        s.put(&mut k);
-                    }
-                    k
-                };
-                let ma = site(&ta, &ci, pa, da);
-                let mb = site(&tb, &cj, pb, db);
+                //
+                // AT1, ruled (a): the footprint is named by the piece's
+                // fixed-size coordinates — nucleus and shape — on its chart,
+                // so the two ends are told apart by their PIECE-CHARTS and
+                // never by their sites.
+                let (ma, mb) = (pi.encode(), pj.encode());
                 if ma == mb {
                     // ONE SECTION MEETING ITSELF: one class, one chart, one
                     // carriage. The transition is the identity and carries
@@ -298,8 +340,8 @@ pub(crate) fn classify_cover(
                     crate::transducer::family::cover::tally(|t| t.chords += 1);
                     let mut pk = Vec::new();
                     let (lo, hi) = if ma < mb { (&ma, &mb) } else { (&mb, &ma) };
-                    crate::transducer::address::put_key_bytes(&mut pk, lo);
-                    crate::transducer::address::put_key_bytes(&mut pk, hi);
+                    crate::transducer::address::put_key_bytes(&mut pk, lo.as_bytes());
+                    crate::transducer::address::put_key_bytes(&mut pk, hi.as_bytes());
                     if named.get(&pk).is_none() {
                         named.insert(pk, ());
                         // AND THE MEET'S OWN EDGE RIDES WITH IT. The
@@ -323,9 +365,10 @@ pub(crate) fn classify_cover(
                         // chord dropped it and the face builder then could
                         // not tell them apart either (54.7).
                         chords.push((
-                            (ta, ci.clone(), pa.clone(), da.clone()),
-                            (tb, cj.clone(), pb.clone(), db.clone()),
+                            (ta, pi.clone(), pa.clone(), da.clone()),
+                            (tb, pj.clone(), pb.clone(), db.clone()),
                             carried_edge.clone(),
+                            frame,
                         ));
                     }
                 }
@@ -347,8 +390,8 @@ pub(crate) fn classify_cover(
         // a vertex two covers' pieces became is in both — and none where a
         // vertex belongs to no cover or the vertices to different ones.
         let mut common: Option<Keyed<()>> = None;
-        for v in &lp.vertices {
-            let Some(set) = owner.at(&vertex_ix_key(*v)) else {
+        for pc in lp.charts() {
+            let Some(set) = owner.at(&pc) else {
                 common = None;
                 break;
             };
@@ -419,21 +462,12 @@ pub(crate) fn classify_cover(
                     // with a piece index it would name a face nothing has
                     // (rule 11).
                     let ends: Vec<TransportClass> = lp
-                        .vertices
+                        .vertices()
                         .iter()
-                        .filter_map(|v| piece_form.vertices.get(*v as usize))
+                        .filter_map(|v| piece_form.vertices.at(v))
                         .filter_map(transport_class)
                         .collect();
-                    pending_torsion.push((
-                        class,
-                        crate::transducer::sentence::FiledOrbit {
-                            sigma,
-                            periods: g.toral_period(),
-                            chord: 0,
-                        },
-                        ends,
-                        g.as_ref().clone(),
-                    ));
+                    pending_torsion.push((class, (sigma, g.toral_period()), ends, g.as_ref().clone()));
                 }
                 crate::transducer::cech::Fill::Class(kappa, _) => {
                     // A standing class is filed under the cover it stands

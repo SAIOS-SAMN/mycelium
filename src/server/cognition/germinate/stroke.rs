@@ -89,9 +89,9 @@ impl Kernel {
                     self.refine_stratum(&a);
                 }
             }
-            if lanes[0] {
-                self.reanchor_chart(&inv);
-            }
+            // Lane 0 RE-ANCHORED a chart's words by the tree gauge; the
+            // gauge retired with the slots (AT1 step 2, ruled (a)): a face's
+            // word is derived from its ends and there is no gauge to move.
         }
         if t_stale {
             self.relocate_t_exhausted();
@@ -113,51 +113,10 @@ impl Kernel {
         self.physics.regenerate();
     }
 
-    pub(crate) fn reanchor_chart(&mut self, inv: &crate::transducer::stalk::Invariant) {
-        let members = self.stalks.fiber(inv);
-        for addr in members {
-            let Some(w) = self.word_at(&addr).cloned() else {
-                continue;
-            };
-            if !w.is_sentence() {
-                continue;
-            }
-            let Some(mut form) = crate::transducer::sentence::from_element_form(&w) else {
-                continue;
-            };
-            let Some(gamma) = form.solve_coboundary() else {
-                continue;
-            };
-            if gamma.iter().all(|g| g.is_identity()) {
-                continue;
-            }
-            let _ = form.regauge(&gamma);
-            // A RE-ANCHOR IS THE SAME MIND SPEAKING THE SAME WORD MOVED, so
-            // the attestation goes with it (54.5 Road (d)). `as_element_form`
-            // would have taken the filing, the derivations and the
-            // certificates off the DECODED form, which carries none of them
-            // — the word would have re-anchored into a word attesting
-            // nothing and refused on its next replay. A re-gauge conjugates
-            // (§3.6), and a class key is a conjugacy invariant, so the filing
-            // carries to the same keys.
-            let after = crate::transducer::sentence::remint_form(&form, w.magnitude(), &w);
-            let Some(after) = after else {
-                continue;
-            };
-            let payload = crate::transducer::rewrite::RewritePayload::Reanchor { gamma };
-            let Some(voice) = self.discoverer_of(&addr) else {
-                continue;
-            };
-            let _ = self.mint_rewrite(
-                crate::transducer::rewrite::RewriteKind::Reanchor,
-                &[w],
-                &after,
-                payload,
-                voice,
-            );
-            break;
-        }
-    }
+    // `reanchor_chart` STOOD HERE AND RETIRED (AT1 step 2, ruled (a)): it
+    // solved a chart's words' tree gauge and minted the regauged word as a
+    // `Reanchor` rewrite. The gauge was a choice held beside the coordinates;
+    // with the face word derived from its ends there is nothing to regauge.
 
     /// The whole stroke under one lock (the reflex and test paths).
     pub(crate) fn optimize(&mut self) {

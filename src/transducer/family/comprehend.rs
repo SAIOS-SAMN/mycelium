@@ -433,7 +433,7 @@ pub(crate) fn progress(form: &Form, traversed: &[crate::transducer::sentence::Tr
     let mut p = Progress { percepts: 1, ..Progress::default() };
     for w in traversed {
         let contact =
-            w.steps.iter().any(|&(f, _)| form.faces.get(usize::from(f)).is_some_and(|x| x.interface.is_some()));
+            w.steps.iter().any(|(f, _)| form.faces.at(f).is_some_and(|x| x.interface.is_some()));
         if !contact {
             continue;
         }
@@ -630,8 +630,8 @@ fn crossings(
     for (b, piece) in cell.bodies.iter().enumerate() {
         body_of.insert(piece, b);
     }
-    let crossing = |face: u16, forward: bool| -> Option<(usize, usize)> {
-        let (x, y) = form.face_bodies.get(&u32::from(face).to_be_bytes())?;
+    let crossing = |face: &crate::network::nerve::coord::Overlap, forward: bool| -> Option<(usize, usize)> {
+        let (x, y) = form.face_bodies.at(face)?;
         let (a, b) = (*body_of.get(x)?, *body_of.get(y)?);
         match (a == b, forward) {
             (true, _) => None,
@@ -642,8 +642,8 @@ fn crossings(
     let mut out = Vec::new();
     for (at, t) in traversed.iter().enumerate() {
         let mut order: Vec<usize> = Vec::new();
-        for &(face, forward) in &t.steps {
-            if let Some((from, to)) = crossing(face, forward) {
+        for (face, forward) in &t.steps {
+            if let Some((from, to)) = crossing(face, *forward) {
                 for b in [from, to] {
                     if !order.contains(&b) {
                         order.push(b);
@@ -666,16 +666,15 @@ pub(crate) fn pivot_cells(form: &Form, budget: &mut crate::physics::Budget) -> c
     let noted = crate::transducer::sentence::circuits_of(form);
     let traversed: Vec<crate::transducer::sentence::TraversedCircuit> = noted.iter().map(|(_, t)| t.clone()).collect();
     let algebras = cell_algebras(form, &traversed, budget);
-    let mut by_chord: Keyed<Vec<usize>> = Keyed::new();
+    let mut by_chord: Keyed<Vec<usize>, crate::network::nerve::coord::Overlap> = Keyed::new();
     for (k, (_, cell)) in form.cells.scoped().enumerate() {
         for (at, _) in crossings(form, cell, &traversed) {
             let Some((chord, _)) = noted.get(at) else { continue };
-            let key = chord.to_be_bytes();
-            match by_chord.get_mut(&key) {
+            match by_chord.at_mut(chord) {
                 Some(cells) if !cells.contains(&k) => cells.push(k),
                 Some(_) => {}
                 None => {
-                    by_chord.insert(key, vec![k]);
+                    by_chord.put(chord, vec![k]);
                 }
             }
         }

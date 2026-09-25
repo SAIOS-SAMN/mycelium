@@ -64,7 +64,7 @@ use crate::network::nerve::{coord, Coordinate};
 use super::blade::{self, Shape};
 use super::element::{self, Element, Versor};
 use super::base::Site;
-use super::sentence::{Form, FormFace, Link, Vertex};
+use super::sentence::{Form, Link, Vertex};
 use super::stalk::{Invariant, Standing};
 use std::cell::Cell;
 
@@ -289,50 +289,28 @@ pub(crate) fn site_key(r: i64, c: i64) -> Vec<u8> {
 /// of the sites they sit on.
 ///
 /// Both halves are length-delimited so they read apart, and the vertex leads so
-/// the key order is the vertex order, which is content.
-pub(crate) fn member_key(vertex: u16, chart: &[u8]) -> Vec<u8> {
+/// the key order is the vertex order, which is content. AT1 — THE VERTEX BY
+/// ITS COORDINATE, never by its place in a list.
+pub(crate) fn member_key(vertex: &crate::network::nerve::coord::VertexAt, chart: &[u8]) -> Vec<u8> {
+    use crate::network::nerve::Coordinate;
     let mut k = Vec::new();
-    crate::transducer::address::put_key_bytes(&mut k, &vertex.to_le_bytes());
+    crate::transducer::address::put_key_bytes(&mut k, vertex.encode().as_bytes());
     crate::transducer::address::put_key_bytes(&mut k, chart);
     k
 }
 
-/// ONE SECTION OF THE FIBRE OVER A MEMBER (54.7, as ruled 2026-09-21):
-/// the member, then the carriage that section acts by.
-///
-/// `member_key` names a point of the BASE — a vertex and a chart — and 53.6
-/// item 1 quotients two pieces of one rotor class onto one such point,
-/// correctly. The meets between those pieces live in the TOTAL space, so
-/// the carrier that indexes them must separate `σ₁ = (V, U, φ₁)` from
-/// `σ₂ = (V, U, φ₂)`. Keyed by the member alone it could not: the second
-/// `insert` overwrote the first, the site had one occupant, and
-/// `named_faces`'s chain over `windows(2)` had nothing to pair.
-///
-/// Measured before this: 186 meets over the 36 corpus forms, every one
-/// `within one class` and on one chart, `0 orbits` on every form.
-///
-/// THE MEMBER IS A PREFIX, so `read_member_key` reads the vertex and the
-/// chart and stops — every reader that wants the base point still gets it,
-/// unchanged, and the sheet is the tail (A21: a prefix is a coarser
-/// stratum). Two sections of one member are two keys that read back to one
-/// `(vertex, chart)`, which is exactly a 1-cell whose two ends project to
-/// one 0-cell: `∂e = e⁰ − e⁰ = 0`, the minimal CW decomposition of the
-/// circle, `b₁ = 1`, holonomy `τ = φ₂ · φ₁⁻¹`.
-pub(crate) fn section_key(
-    vertex: u16,
-    chart: &[u8],
-    carriage: &crate::transducer::element::Versor,
-) -> Vec<u8> {
-    let mut k = member_key(vertex, chart);
-    carriage.put_canonical(&mut k);
-    k
-}
+// `section_key` (member ‖ carriage, 54.7) STOOD HERE AND RETIRED WITH THE
+// SLOTS (AT1, ruled (a) on the chords): two pieces of one member are told
+// apart by their PIECE-CHARTS — nucleus and shape at the member's frame —
+// and two sections of one chart by the frames each holds, so no key widened
+// by the carriage names either.
 
-pub(crate) fn read_member_key(k: &[u8]) -> Option<(u16, Vec<u8>)> {
+pub(crate) fn read_member_key(k: &[u8]) -> Option<(crate::network::nerve::coord::VertexAt, Vec<u8>)> {
+    use crate::network::nerve::Coordinate;
     let mut p = 0usize;
     let v = crate::transducer::address::take_key_bytes(k, &mut p)?;
     let chart = crate::transducer::address::take_key_bytes(k, &mut p)?;
-    Some((u16::from_le_bytes(v.get(..2)?.try_into().ok()?), chart))
+    Some((crate::network::nerve::coord::VertexAt::decode(&v).ok()?, chart))
 }
 
 /// The unordered pair of two members, and the two read back out.

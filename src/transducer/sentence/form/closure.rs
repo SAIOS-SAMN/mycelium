@@ -46,8 +46,12 @@ impl Form {
     /// asks, so a refusal can carry the holonomy that refused (78.9).
     pub fn incoherent_orbit(&self) -> Option<&Orbit> {
         self.orbits.iter().find(|lp| {
-            !((lp.holonomy.rotor().projective_eq(&Rotor::identity())
-                || self.opened_axis_of(lp).is_some_and(|chord| self.axis_rederives(lp, chord))
+            // The word the orbit composes, read along its steps (AT1: never
+            // held beside them); a step naming no overlap is no identity.
+            let flat = orbit_word_on(&self.faces, &self.vertices, lp)
+                .is_some_and(|w| w.rotor().projective_eq(&Rotor::identity()));
+            !((flat
+                || (self.opened_axis_of(lp).is_some() && self.axis_rederives(lp))
                 || self.orbit_is_congruent(lp))
                 && self.edge_coheres(lp))
         })
@@ -128,14 +132,10 @@ impl Form {
     /// vertical. A reader that answered `Vec<u16>` of "bad" vertices would
     /// have collapsed an exact conformal element to an index and a
     /// judgement, which is the scalar this grade exists to stop making.
-    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex's position in self.vertices); the atlas row replaces the slot by the chart's coordinates")]
-    pub fn fiber_transitions(&self) -> Vec<(u16, crate::transducer::sentence::FiberTransition)> {
+    pub fn fiber_transitions(&self) -> Vec<(coord::VertexAt, crate::transducer::sentence::FiberTransition)> {
         self.vertices
-            .iter()
-            .enumerate()
-            .flat_map(|(i, v)| {
-                v.fiber_holonomy().into_iter().map(move |t| (i as u16, t))
-            })
+            .entries()
+            .flat_map(|(at, v)| v.fiber_holonomy().into_iter().map(move |t| (at.clone(), t)))
             .collect()
     }
 
@@ -149,7 +149,7 @@ impl Form {
     /// refusal.
     pub fn gauge_obstructions(
         &self,
-    ) -> Vec<(u16, crate::transducer::sentence::FiberTransition, crate::transducer::cech::Fill)> {
+    ) -> Vec<(coord::VertexAt, crate::transducer::sentence::FiberTransition, crate::transducer::cech::Fill)> {
         self.fiber_transitions()
             .into_iter()
             .filter(|(_, t)| !t.is_vertical())
@@ -163,34 +163,35 @@ impl Form {
         self.coheres() && self.remainder.is_empty() && self.demand_vertices().next().is_none()
     }
 
-    /// The demand vertices of this sentence, with their indices (50.5),
-    /// read off `demands`, which `reindex` built: one entry per (kind,
-    /// chart), a keyed read and never a whole-carrier read with a filter.
-    pub fn demand_vertices(&self) -> impl Iterator<Item = (u16, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Link])> {
-        self.demands.scoped().filter_map(move |(_, &i)| {
-            match self.vertices.get(i as usize) {
-                Some(Vertex::Demand { kind, chart, bodies }) => {
-                    Some((i, kind, chart, bodies.as_slice()))
-                }
-                _ => None,
-            }
+    /// The demand vertices of this sentence, with their coordinates (50.5):
+    /// the fibre at the Demand kind's own stratum ([`Form::demands`]), one
+    /// per (kind, chart), never a whole-carrier read with a filter.
+    pub fn demand_vertices(
+        &self,
+    ) -> impl Iterator<Item = (coord::VertexAt, &crate::transducer::sentence::Demand, &stalk::Invariant, &[Link])> {
+        self.demands().filter_map(|(at, v)| match v {
+            Vertex::Demand { kind, chart, bodies, .. } => Some((at, kind, chart, bodies.as_slice())),
+            _ => None,
         })
     }
 
     /// One more than the deepest glued vertex; zero where none is glued.
     ///
-    /// READS `glued`, WHICH `reindex` BUILT: the same whole-carrier read with a filter, and
-    /// the index is keyed by the cited address, so a glued vertex reachable by
-    /// the address it cites is reachable here.
+    /// READS THE GLUED KIND'S OWN STRATUM of the vertex carrier (AT1): the
+    /// vertices are keyed by their coordinates, and every citation opens
+    /// with the Glued tag.
     ///
     /// `None` where a glued vertex stands at the carrier's last depth, so one
     /// more is no `u16` (STD1): a depth that cannot be written is refused,
     /// never pinned at the last.
     pub fn depth_of(&self) -> Option<u16> {
         let mut d = 0u16;
-        for (_, &i) in self.glued.scoped() {
-            if let Some(Vertex::Glued { depth, .. }) = self.vertices.get(i as usize) {
-                d = d.max(depth.checked_add(1)?);
+        for (_, v) in self.vertices.fiber_at(&[coord::VertexAt::GLUED]).into_iter().flatten() {
+            if let Vertex::Glued { depth, .. } = v {
+                let next = depth.checked_add(1)?;
+                if next > d {
+                    d = next;
+                }
             }
         }
         Some(d)
@@ -278,11 +279,11 @@ impl Form {
             return false;
         }
         for lp in &self.orbits {
-            if lp.holonomy.is_identity() {
+            if orbit_word_on(&self.faces, &self.vertices, lp).is_some_and(|w| w.is_identity()) {
                 continue;
             }
-            if let Some(chord) = self.opened_axis_of(lp) {
-                if self.axis_rederives(lp, chord) {
+            if self.opened_axis_of(lp).is_some() {
+                if self.axis_rederives(lp) {
                     continue;
                 }
                 return false;

@@ -159,7 +159,7 @@ fn the_mints_first_gate_counts_each_answer_by_its_kind() {
 #[test]
 fn the_poles_demands_stand_once_and_every_other_is_named() {
     use crate::transducer::family::{oblique_rotor_prime, stand_demands, take_demand_tally};
-    use crate::transducer::sentence::{Demand, Vertex};
+    use crate::transducer::sentence::{Demand, Vertices};
     use crate::transducer::stalk::Invariant;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
@@ -168,7 +168,7 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
     let empty = Demand::RotorPrime { plane, prime, witness: Box::default() };
     let chart = Invariant::default();
     let _ = take_demand_tally();
-    let mut vertices: Vec<Vertex> = Vec::new();
+    let mut vertices = Vertices::new();
     stand_demands(
         &mut vertices,
         vec![

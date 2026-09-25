@@ -135,7 +135,10 @@ impl Contemplation {
             // coordinate: the holonomy is one word, so the horizon takes it
             // once, but whether it stands is a reading per path.
             if f.class_vectors(i).scoped().any(|(_, cv)| !cv.coordinates().is_empty()) {
-                horizon_put(horizon, lp.holonomy.rotor(), Standing::Held);
+                // The holonomy is a read along the orbit's overlaps (AT1).
+                if let Some(h) = crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, lp) {
+                    horizon_put(horizon, h.rotor(), Standing::Held);
+                }
             }
             // EVERY MEMBER PATH whose edge holonomy occupies a coordinate puts
             // its rotor on the horizon. An orbit running through two pairs of

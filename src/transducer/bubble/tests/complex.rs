@@ -352,15 +352,17 @@ fn vortex_collapses_by_glue_or_ruling() {
     // The orbit's own state vector, whose first coordinate is that stratum.
     let before = ClassVector::of_word(&w).expect("a quarter turn has a class vector").class_key();
     let after = ClassVector::zero().class_key();
+    // The one orbit's chord, both candidates' (AT1: a chord is an overlap).
+    let chord = crate::transducer::sentence::tests::common::some_overlap;
     let hit = PivotCertificate {
-        chord: 0,
+        chord: chord(),
         axis: Axis::Unit(0),
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
-            face: 0,
+            face: chord(),
             word: Box::new(w.clone()),
             side: Side::Right,
         },
@@ -372,14 +374,14 @@ fn vortex_collapses_by_glue_or_ruling() {
     .to_word();
     assert_ne!(w.key(), sheet.key(), "two words, one orbit");
     let other = PivotCertificate {
-        chord: 0,
+        chord: chord(),
         axis: Axis::Hue,
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
-            face: 0,
+            face: chord(),
             word: Box::new(sheet),
             side: Side::Left,
         },

@@ -22,8 +22,12 @@ pub(crate) fn derive_against(
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Form> {
-    for v in &mut peeled.vertices {
-        match v {
+    // EACH VERTEX IS TAKEN OFF ITS KEY, DERIVED, AND FILED AT ITS OWN KEY
+    // AGAIN (AT1): a demand the ring answers becomes a word and stands at a
+    // Word's coordinate, never at the demand's.
+    let held: Vec<(coord::VertexAt, Vertex)> = peeled.vertices.entries().map(|(k, v)| (k, v.clone())).collect();
+    for (key, mut v) in held {
+        match &mut v {
             // THE `𝒢` LANE IS THE VERTEX'S (42.6 as amended, L12). A
             // vertex's GAUGE says whether it recolours, and a target that
             // recolours is not derived by a generator that only turns.
@@ -38,7 +42,7 @@ pub(crate) fn derive_against(
                     Some((_, a)) => a.gauge.clone(),
                     None => Vec::new(),
                 };
-                *derivation = derivation_of_spelled(crystal, budget, derivation, &gauge)?;
+                *derivation = derivation_of_spelled(crystal, budget, &*derivation, &gauge)?;
             }
             // 37.7 AT THE SECOND STEP. A demand the peel typed is not
             // final: the peel spells with the seventeen alone, and this
@@ -62,12 +66,17 @@ pub(crate) fn derive_against(
                     | crate::transducer::sentence::Demand::Standing { .. },
                 ..
             } => {
-                if let Some(word) = ring_answer(crystal, budget, v) {
-                    *v = word;
+                if let Some(word) = ring_answer(crystal, budget, &v) {
+                    v = word;
                 }
             }
             _ => {}
         }
+        let Some(at) = v.at() else { continue };
+        if at != key {
+            let _ = peeled.vertices.drop_at(&key);
+        }
+        peeled.vertices.put(&at, v);
     }
     // `reindex` reads the composed word of every word vertex, so it runs
     // after the derivations land and not before.

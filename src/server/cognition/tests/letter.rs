@@ -24,22 +24,25 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
     let one = q(1);
     let zero = q(0);
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         Derivation::spelled(w),
         // Its own chart: an address is derived from its coordinates (54.2).
         crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
+        [0],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("star"));
-    f.vertices.push(Vertex::Demand {
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("star");
+    f.put_vertex(Vertex::demand(
         kind,
-        chart: crate::transducer::stalk::Invariant::counts(&[17]),
+        crate::transducer::stalk::Invariant::counts(&[17]),
         // The links the demand stands for, and they MOVE: a demand
         // whose bodies measure nothing cost the language nothing.
-        bodies: vec![(0, 0, 0, 1), (0, 1, 0, 1)],
-    });
+        vec![(0, 0, 0, 1), (0, 1, 0, 1)],
+    ))
+    .expect("a demand has a coordinate");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
@@ -100,7 +103,7 @@ fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
             .find(|a| {
                 k.provisional.get(a).is_some_and(|e| {
                     crate::transducer::sentence::from_element_form(e).is_some_and(|f| {
-                        f.vertices.iter().any(|v| match v {
+                        f.vertices.entries().any(|(_, v)| match v {
                             Vertex::Word { derivation, .. } => {
                                 derivation.generators.is_empty()
                                     && !matches!(
@@ -183,7 +186,7 @@ fn two_courts_docket_one_rotor_no_plane_holds_from_two_standing_demands() {
             .find(|a| {
                 k.provisional.get(a).is_some_and(|e| {
                     crate::transducer::sentence::from_element_form(e).is_some_and(|f| {
-                        f.vertices.iter().any(|v| match v {
+                        f.vertices.entries().any(|(_, v)| match v {
                             Vertex::Word { derivation, .. } => {
                                 derivation.generators.is_empty() && derivation.rotor().projective_eq(&r)
                             }
@@ -234,14 +237,16 @@ fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
 fn derived_sentence(d: Derivation, tag: u8) -> Element {
     let (one, zero) = (q(1), q(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         d,
         // Its own chart: an address is derived from its coordinates (54.2).
         crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
+        [0],
         None,
-    ));
+    );
+    f.stand_member(&v, 0).expect("a word vertex stands");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
@@ -307,7 +312,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     // letter the court opened is in the basis and is still unspellable.
     let letter_held = k.basis().iter().any(|w| {
         crate::transducer::sentence::from_element_form(w).is_some_and(|f| {
-            f.vertices.iter().any(|v| match v {
+            f.vertices.entries().any(|(_, v)| match v {
                 Vertex::Word { derivation, .. } => {
                     derivation.generators.is_empty()
                         && !matches!(
@@ -425,7 +430,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     // As above: the generator, not the count (the count is pre-X4).
     let letter_held = k.basis().iter().any(|w| {
         crate::transducer::sentence::from_element_form(w).is_some_and(|f| {
-            f.vertices.iter().any(|v| match v {
+            f.vertices.entries().any(|(_, v)| match v {
                 Vertex::Word { derivation, .. } => {
                     derivation.generators.is_empty()
                         && !matches!(
@@ -490,15 +495,13 @@ fn docketed_letter(
 ) -> Option<(Vec<u8>, crate::transducer::element::Element)> {
     k.provisional.scoped().find_map(|(a, e)| {
         let f = crate::transducer::sentence::from_element_form(e)?;
-        f.vertices
-            .iter()
-            .any(|v| match v {
-                Vertex::Word { derivation, .. } => {
-                    derivation.generators.is_empty() && derivation.rotor().projective_eq(r)
-                }
-                _ => false,
-            })
-            .then_some((a, e.clone()))
+        let found = f.vertices.entries().any(|(_, v)| match v {
+            Vertex::Word { derivation, .. } => {
+                derivation.generators.is_empty() && derivation.rotor().projective_eq(r)
+            }
+            _ => false,
+        });
+        found.then_some((a, e.clone()))
     })
 }
 
@@ -574,7 +577,7 @@ fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
         .expect("installed");
     let f = crate::transducer::sentence::from_element_form(&held).expect("a form");
     assert!(
-        f.vertices.iter().any(|v| match v {
+        f.vertices.entries().any(|(_, v)| match v {
             Vertex::Word { derivation, .. } => {
                 derivation.generators.is_empty()
                     && !matches!(

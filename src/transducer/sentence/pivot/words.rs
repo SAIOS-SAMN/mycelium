@@ -36,7 +36,7 @@ pub(crate) fn axis_slot(axis: Axis) -> Vec<u8> {
 /// none until its citations resolve and contributes nothing here (L14).
 pub fn acting_of_form(f: &Form) -> Vec<Transport> {
     let mut out = Vec::new();
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { derivation, acts, .. } = v else {
             continue;
         };
@@ -111,7 +111,7 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
     let mut carried = 0usize;
     let mut turning = 0usize;
     let mut filed: Vec<Axis> = Vec::new();
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { derivation, acts, .. } = v else {
             continue;
         };
@@ -142,47 +142,39 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
             admit_words(index, &a.chart, std::slice::from_ref(&t));
         }
     }
-    // WHERE THE TURNING ACTUALLY IS: Curvature resides on FormFace.at[pair].edge,
-    // the edge transports, and on turning face words. We thread them into the
-    // axis index under the member chart so the crystal ingests the curvature.
+    // WHERE THE TURNING ACTUALLY IS: curvature resides on each overlap's edge
+    // and on its word (derived, AT1). They are threaded into the axis index
+    // under the member charts so the crystal ingests the curvature.
     let mut members = 0usize;
     let mut turning_edges = 0usize;
-    for face in &f.faces {
-        for (k, p) in face.at.scoped() {
-            members += 1;
-            let Some((ci_bytes, cj_bytes)) = crate::transducer::sentence::read_face_pair_key(&k) else {
-                continue;
-            };
-            let ci = stalk::Invariant::from_key(&ci_bytes);
-            let cj = stalk::Invariant::from_key(&cj_bytes);
-            if let Some(ref e) = p.edge {
-                if !e.word.rotor().is_identity() {
-                    turning_edges += 1;
-                }
-                if let Some(cv) = acted_class(e) {
-                    filed.extend(cv.coordinates());
-                }
-                if let Some(ref ci) = ci {
-                    admit_words(index, ci, std::slice::from_ref(e));
-                }
-                if let Some(ref cj) = cj {
-                    admit_words(index, cj, std::slice::from_ref(&e.reverse()));
-                }
+    for (o, face) in f.faces.entries() {
+        members += 1;
+        let p = &face.place;
+        let (ci, cj) = (o.from.invariant(), o.to.invariant());
+        if let Some(ref e) = p.edge {
+            if !e.word.rotor().is_identity() {
+                turning_edges += 1;
             }
-            let t = Transport {
-                word: face.word.clone(),
-                carriage: p.carriage.clone(),
-                gauge: p.gauge.clone(),
-            };
-            if let Some(cv) = acted_class(&t) {
+            if let Some(cv) = acted_class(e) {
                 filed.extend(cv.coordinates());
             }
-            if let Some(ref ci) = ci {
-                admit_words(index, ci, std::slice::from_ref(&t));
+            if let Some(ci) = ci {
+                admit_words(index, ci, std::slice::from_ref(e));
             }
-            if let Some(ref cj) = cj {
-                admit_words(index, cj, std::slice::from_ref(&t.reverse()));
+            if let Some(cj) = cj {
+                admit_words(index, cj, std::slice::from_ref(&e.reverse()));
             }
+        }
+        let Some(word) = face_word_on(&f.vertices, &o, face) else { continue };
+        let t = Transport { word, carriage: p.carriage.clone(), gauge: p.gauge.clone() };
+        if let Some(cv) = acted_class(&t) {
+            filed.extend(cv.coordinates());
+        }
+        if let Some(ci) = ci {
+            admit_words(index, ci, std::slice::from_ref(&t));
+        }
+        if let Some(cj) = cj {
+            admit_words(index, cj, std::slice::from_ref(&t.reverse()));
         }
     }
     eprintln!(
@@ -194,7 +186,7 @@ pub fn admit_words_acting(index: &mut AxisIndex, f: &Form) {
 /// The mirror of [`admit_words_acting`], member for member — or one chart's
 /// axes are emptied and the word is left named at the others.
 pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { derivation, acts, .. } = v else {
             continue;
         };
@@ -210,32 +202,24 @@ pub fn retract_words_acting(index: &mut AxisIndex, f: &Form) {
             retract_words(index, &a.chart, std::slice::from_ref(&t));
         }
     }
-    for face in &f.faces {
-        for (k, p) in face.at.scoped() {
-            let Some((ci_bytes, cj_bytes)) = crate::transducer::sentence::read_face_pair_key(&k) else {
-                continue;
-            };
-            let ci = stalk::Invariant::from_key(&ci_bytes);
-            let cj = stalk::Invariant::from_key(&cj_bytes);
-            if let Some(ref e) = p.edge {
-                if let Some(ref ci) = ci {
-                    retract_words(index, ci, std::slice::from_ref(e));
-                }
-                if let Some(ref cj) = cj {
-                    retract_words(index, cj, std::slice::from_ref(&e.reverse()));
-                }
+    for (o, face) in f.faces.entries() {
+        let p = &face.place;
+        let (ci, cj) = (o.from.invariant(), o.to.invariant());
+        if let Some(ref e) = p.edge {
+            if let Some(ci) = ci {
+                retract_words(index, ci, std::slice::from_ref(e));
             }
-            let t = Transport {
-                word: face.word.clone(),
-                carriage: p.carriage.clone(),
-                gauge: p.gauge.clone(),
-            };
-            if let Some(ref ci) = ci {
-                retract_words(index, ci, std::slice::from_ref(&t));
+            if let Some(cj) = cj {
+                retract_words(index, cj, std::slice::from_ref(&e.reverse()));
             }
-            if let Some(ref cj) = cj {
-                retract_words(index, cj, std::slice::from_ref(&t.reverse()));
-            }
+        }
+        let Some(word) = face_word_on(&f.vertices, &o, face) else { continue };
+        let t = Transport { word, carriage: p.carriage.clone(), gauge: p.gauge.clone() };
+        if let Some(ci) = ci {
+            retract_words(index, ci, std::slice::from_ref(&t));
+        }
+        if let Some(cj) = cj {
+            retract_words(index, cj, std::slice::from_ref(&t.reverse()));
         }
     }
 }
@@ -435,7 +419,7 @@ pub fn admit_generators(
     form: &crate::transducer::address::Address,
     f: &Form,
 ) {
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
@@ -460,7 +444,7 @@ pub fn admit_generators_by_lane(
     form: &crate::transducer::address::Address,
     f: &Form,
 ) {
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { address, derivation, acts, .. } = v else {
             continue;
         };
@@ -487,7 +471,7 @@ pub fn retract_generators_by_lane(
     _form: &crate::transducer::address::Address,
     f: &Form,
 ) {
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { address, derivation, acts, .. } = v else {
             continue;
         };
@@ -591,7 +575,7 @@ pub fn retract_generators(
     _form: &crate::transducer::address::Address,
     f: &Form,
 ) {
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { address, derivation, .. } = v else {
             continue;
         };
@@ -658,19 +642,35 @@ pub fn generators_under(
     }
 }
 
+/// THE VERTEX A CITATION NAMES, by the address it cites: a Word vertex's
+/// address opens with its rotor's key (`put_word_vertex`), so the class
+/// coordinate the vertex is keyed by is read off the address and the vertex
+/// is one keyed read (AT1) — and it is that vertex only where its own
+/// address IS the one cited.
+pub(crate) fn vertex_cited<'a>(f: &'a Form, vertex: &[u8]) -> Option<&'a Vertex> {
+    let mut p = 2usize;
+    match vertex {
+        [tag, 1, ..] if *tag == crate::transducer::address::TAG_FORM => {}
+        _ => return None,
+    }
+    let rotor = crate::transducer::alphabet::Rotor::from_key(&crate::transducer::address::take_key_bytes(vertex, &mut p)?)?;
+    let at = coord::VertexAt::Word(coord::Transport {
+        kind: crate::transducer::peel::ShellKind::Whole,
+        class: rotor.holonomy_key()?,
+    });
+    let v = f.vertices.at(&at)?;
+    match v {
+        Vertex::Word { address, .. } if address.as_bytes() == vertex => Some(v),
+        _ => None,
+    }
+}
+
 /// The word a form's vertex carries, by the address that names it. A keyed
-/// read of the form's own index, never a whole-carrier read (law 3).
+/// read of the form's own vertices, never a whole-carrier read (law 3).
 pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
-    let i = *f
-        .by_address
-        .at(&<crate::network::nerve::coord::Member
-            as crate::network::nerve::Coordinate>::decode(vertex)
-            .ok()?)?;
-    match f.vertices.get(i as usize)? {
+    match vertex_cited(f, vertex)? {
         // What the vertex CARRIES: its letters when it spells, its action
-        // when it is an adjoined generator (37.7). `word_local` alone
-        // answered `None` for a letter, so a mind holding one offered it
-        // as a generator to nobody.
+        // when it is an adjoined generator (37.7).
         Vertex::Word { derivation, .. } => derivation.word_carried(),
         _ => None,
     }
@@ -678,16 +678,9 @@ pub fn word_at_vertex(f: &Form, vertex: &[u8]) -> Option<Word> {
 
 /// The ACTION at a form's vertex, by the address that names it (L14).
 /// What a court composes when it replays a citation: rotors compose by
-/// the geometric product whether or not the alphabet spells them, so a
-/// citation of an adjoined generator verifies exactly as one of a
-/// spelled generator does.
+/// the geometric product whether or not the alphabet spells them.
 pub fn rotor_at_vertex(f: &Form, vertex: &[u8]) -> Option<crate::transducer::alphabet::Rotor> {
-    let i = *f
-        .by_address
-        .at(&<crate::network::nerve::coord::Member
-            as crate::network::nerve::Coordinate>::decode(vertex)
-            .ok()?)?;
-    match f.vertices.get(i as usize)? {
+    match vertex_cited(f, vertex)? {
         Vertex::Word { derivation, .. } => Some(derivation.rotor()),
         _ => None,
     }

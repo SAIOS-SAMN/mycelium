@@ -262,12 +262,14 @@ pub fn demand_key(
 /// knowing how long either is. A probe at the listing's address alone
 /// cannot say which vertex it closes, and a court that cannot say that
 /// can only subtract links.
-pub fn demand_at(listing: &[u8], kind: &Demand, chart: &Invariant) -> Vec<u8> {
+///
+/// THE DEMAND IS NAMED BY ITS VERTEX'S COORDINATE (AT1): kind, chart, the
+/// chain's measure and piece count — two demands of one kind and chart whose
+/// chains differ are two vertices, and a probe answers one of them.
+pub fn demand_at(listing: &[u8], demand: &crate::network::nerve::coord::VertexAt) -> Vec<u8> {
     let mut buf = vec![crate::transducer::address::TAG_DEMAND_AT];
     crate::transducer::address::put_key_bytes(&mut buf, listing);
-    buf.extend_from_slice(
-        crate::network::nerve::Coordinate::encode(&demand_key(kind, chart)).as_bytes(),
-    );
+    buf.extend_from_slice(crate::network::nerve::Coordinate::encode(demand).as_bytes());
     buf
 }
 

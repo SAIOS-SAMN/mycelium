@@ -179,6 +179,12 @@ pub struct CoverTally {
     pub chords: u64,
     pub within_class: u64,
     pub unclassed: u64,
+    /// AT1, ruled (a) on the chords — TWO DISTINCT PIECES AT ONE PIECE-CHART:
+    /// one member at one frame, equal nucleus and equal shape moments, and
+    /// yet two carried entries of the cover. The chart's key is fixed-size by
+    /// ruling and is never widened to tell them apart; the second is a
+    /// finding, counted here, and meets nothing as a node of its own.
+    pub piece_collisions: u64,
     /// §4.4 E8 — A KEY THIS READER WROTE AND COULD NOT READ BACK.
     ///
     /// The cover's three carriers are keyed by [`coord::Piece`],

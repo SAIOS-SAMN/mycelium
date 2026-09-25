@@ -11,7 +11,6 @@
 
 use super::*;
 use crate::transducer::family::{on_grid, perceive, Body, Grid, Lamina};
-use crate::transducer::sentence::frame_key;
 
 /// What one vertex does at one frame of the family's one body.
 pub(crate) enum Carried {
@@ -124,12 +123,7 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
 /// B_in = B_out` under exact equality lamina by lamina, for every body of
 /// the vertex's chart on the frame.
-pub(crate) fn vertex_carries_frame(
-    vertex: &Vertex,
-    here: &Frame<'_>,
-    frame: usize,
-    sections: &Keyed<Keyed<()>, crate::network::nerve::coord::SectionAt>,
-) -> Carried {
+pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
         return Carried::Silent;
     };
@@ -154,13 +148,9 @@ pub(crate) fn vertex_carries_frame(
     // The chart every refusal below names is THE MEMBER'S OWN, so the court
     // refuses at the coordinate that actually failed.
     for (_, member) in acts.scoped() {
-        if let Some(mps) =
-            crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
-        {
-            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
-            if !mps.contains(&frame_key(frame as u16)) {
-                continue;
-            }
+        // The member is asked at the frames it holds (AT1).
+        if !member.stands_at(frame) {
+            continue;
         }
         let at = || member.chart.clone();
         let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else {
@@ -236,7 +226,7 @@ pub(crate) fn vertex_carries_frame(
 /// the hue it carries — by a word vertex's carriage or a demand's claim?
 fn form_covers_laminae(
     f: &Form,
-    frame: usize,
+    frame: u64,
     at: &Frame<'_>,
     laminae: &[Lamina],
 ) -> bool {
@@ -246,30 +236,16 @@ fn form_covers_laminae(
             covered.insert(site_key(r, c), after);
         }
     }
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let Vertex::Word { acts, derivation, contact, .. } = v else { continue; };
         if contact.is_some() { continue; }
-        let only = crate::transducer::family::transport_class(v)
-            .and_then(|tc| {
-                f.sections
-                    .at(&crate::network::nerve::coord::SectionAt::Class(
-                        crate::transducer::family::class_section_key(&tc),
-                    ))
-                    .cloned()
-            });
-        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
-        if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
+        if !v.claims_frame(frame) {
             continue;
         }
         let rotor = derivation.rotor();
         for (_, member) in acts.scoped() {
-            if let Some(mps) =
-                crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
-            {
-                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
-                if !mps.contains(&frame_key(frame as u16)) {
-                    continue;
-                }
+            if !member.stands_at(frame) {
+                continue;
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in at.on_chart(&member.chart) {
@@ -308,11 +284,11 @@ fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Si
 ///
 /// Every rule vertex's support meets every FRAME it claims — the vertex
 /// stands along the whole of `e₃` unless it is a section of some frames
-/// only — and the claim is a keyed read of `f.sections` at the frame's own
-/// coordinate, [`frame_key`], never a walk of a list.
+/// only — and the claim is a keyed read of its members' frames at the frame's
+/// own coordinate (AT1), never a walk of a list.
 pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
     let frames = frames_of(family);
-    for v in &f.vertices {
+    for (vertex, v) in f.vertices.entries() {
         let Vertex::Word { address, .. } = v else {
             continue;
         };
@@ -325,20 +301,13 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         //
         // A class the rule declares no section for is claimed whole and is
         // checked whole, which is what it says of itself.
-        let only = crate::transducer::family::transport_class(v)
-            .and_then(|tc| {
-                f.sections
-                    .at(&crate::network::nerve::coord::SectionAt::Class(
-                        crate::transducer::family::class_section_key(&tc),
-                    ))
-                    .cloned()
-            });
+        let class_sec = v.acts().is_some_and(|a| a.scoped().any(|(_, m)| !m.frames.is_empty()));
         for (frame, at) in frames.iter().enumerate() {
-            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
-            if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
+            let Ok(frame) = u64::try_from(frame) else { continue };
+            if !v.claims_frame(frame) {
                 continue;
             }
-            if let Carried::Fails(why, chart) = vertex_carries_frame(v, at, frame, &f.sections) {
+            if let Carried::Fails(why, chart) = vertex_carries_frame(v, at, frame) {
                 if why == FAIL_PART {
                     let uncovered = at.images.iter().any(|image| {
                         if image.moduli == chart {
@@ -358,13 +327,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                 // court replays against would otherwise produce one line.
                 let at: String =
                     address.iter().take(2).map(|b| format!("{b:02x}")).collect();
-                let class_sec = only.is_some();
-                let member_sec = crate::transducer::family::member_section_key(v, &chart)
-                    .is_some_and(|mk| {
-                        f.sections
-                            .at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk)))
-                            .is_some()
-                    });
+                let member_sec = v.acting_all_on(&chart).iter().any(|m| !m.frames.is_empty());
                 eprintln!(
                     "  court vertex body {at}… frame {frame} of {}: {why} [class_sec: {class_sec}, member_sec: {member_sec}]",
                     family.len()
@@ -380,7 +343,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                 let key = chart.key();
                 return Some(Refusal::closure(
                     REFUSE_VERTEX_BODY,
-                    sentence::At::Vertex { address: address.clone(), chart: chart.clone() },
+                    sentence::At::vertex(vertex.clone(), chart.clone()),
                     sentence::Content::Holonomy { versor: versor.as_ref(), chart: Some(key.as_bytes()), proof: why },
                 ));
             }
@@ -416,18 +379,26 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// addresses when the union has no versor (the speaker claimed an edge
 /// where the pair is not rigid) or the transport is not the one measured.
 ///
-/// The edge is re-derived at each frame the face's own section names:
-/// `measured_on` asks the section at the frame's coordinate rather than
-/// walking its list.
+/// AN OVERLAP STANDS AT ONE FRAME (AT1, Q2): its edge is re-derived at the
+/// frame its two charts name, read by coordinate. A frame-axis overlap joins
+/// two frames and carries the motor its member's body took between them,
+/// not a union edge; it is not re-measured here.
 pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+    use crate::network::nerve::coord::ChartAt;
     let frames = frames_of(family);
-    for face in &f.faces {
-        let (Some(vi), Some(vj)) = (f.vertices.get(face.i as usize), f.vertices.get(face.j as usize)) else {
+    for (o, face) in f.faces.entries() {
+        let (ChartAt::At(x), ChartAt::At(y)) = (&o.from, &o.to) else {
+            continue;
+        };
+        if x.frame != y.frame {
+            continue;
+        }
+        let (Some(vi), Some(vj)) = (f.vertices.at(&x.vertex), f.vertices.at(&y.vertex)) else {
             continue;
         };
         let (
-            Vertex::Word { address: ai, derivation: di, contact: None, .. },
-            Vertex::Word { address: aj, derivation: dj, contact: None, .. },
+            Vertex::Word { derivation: di, contact: None, .. },
+            Vertex::Word { derivation: dj, contact: None, .. },
         ) = (vi, vj)
         else {
             continue;
@@ -439,31 +410,22 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         // re-measured transport differs — the claim is I.
         let refused = |o: sentence::ClosureObstruction| Refusal {
             reason: REFUSE_EDGE,
-            at: sentence::At::Face(ai.clone(), aj.clone()),
+            at: sentence::At::face(x.vertex.clone(), y.vertex.clone()),
             obstruction: o,
         };
         let none = |proof| sentence::read_obstruction(sentence::Content::Holonomy { versor: None, chart: None, proof });
         let false_claim = sentence::ClosureObstruction::Integrity;
-        // EVERY MEMBER PAIR OF THE FACE, each re-measured on ITS OWN two
-        // bodies (D10 item 8). The edge is measured on the union of two bodies,
-        // so a face relating several pairs carries an edge at each, and this
-        // read one member of each end and re-derived that pair's edge for all
-        // of them. A pair with no edge is a remainder edge there and there is
-        // nothing to re-derive.
-        for (pk, place) in face.at.scoped() {
-        let Some(edge) = &place.edge else {
+        // THE MEMBER PAIR OF THE OVERLAP, re-measured on ITS OWN two bodies
+        // (D10 item 8), each member the section standing at the overlap's
+        // frame. An overlap with no edge is a remainder edge there and there
+        // is nothing to re-derive.
+        let Some(edge) = &face.place.edge else {
             continue;
         };
-        let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
+        let (class_i, class_j) = (&x.chart, &y.chart);
+        let (Some(mi), Some(mj)) = (vi.acting_at(class_i, x.frame), vj.acting_at(class_j, y.frame)) else {
             continue;
         };
-        let (Some(class_i), Some(class_j)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
-            continue;
-        };
-        let (Some(mi), Some(mj)) = (vi.acting_on(&class_i), vj.acting_on(&class_j)) else {
-            continue;
-        };
-        let (class_i, class_j) = (&class_i, &class_j);
         let (ci, cj) = (&mi.carriage, &mj.carriage);
         let Some(expected) = element::conformal_of(&edge.word, &edge.carriage) else {
             return Some(refused(false_claim));
@@ -473,20 +435,9 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
         else {
             return Some(refused(none("a vertex's rotor and carriage lift to no versor")));
         };
-        for (frame, at) in frames.iter().enumerate() {
-            // A FACE IS ASKED FOR THE FRAMES ITS WORD WAS MEASURED AT. 21
-            // step 2 keeps every word the bundle spoke between two ends as
-            // a face of its own, each a section along `e₃` over the frames
-            // it holds on (18.2: two carriages on one class are two
-            // sections), and re-deriving every face at every frame would
-            // refuse each section at the frames it never claimed — the
-            // fault the class path above refuses the same way.
-            //
-            // A face nothing sectioned claims them all and is checked
-            // whole, which is what it says of itself.
-            if !face.measured_on(frame) {
-                continue;
-            }
+        // THE OVERLAP'S OWN FRAME, by its coordinate: a frame of the family
+        // the court replays against, or none it can ask.
+        if let Some(at) = usize::try_from(x.frame).ok().and_then(|k| frames.get(k)) {
             let fiber_i = at.on_chart(class_i);
             let fiber_j = at.on_chart(class_j);
             let ([a_i], [a_j]) = (fiber_i.as_slice(), fiber_j.as_slice()) else {
@@ -508,7 +459,6 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             if !element::same_versor(&v_i.reverse().geo(&v_ij), &expected) {
                 return Some(refused(false_claim));
             }
-        }
         }
     }
     None

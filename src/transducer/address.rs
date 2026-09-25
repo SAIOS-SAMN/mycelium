@@ -574,18 +574,21 @@ mod tests {
     #[test]
     fn a_form_address_is_a_function_of_its_content() {
         use crate::transducer::alphabet::Derivation;
+        use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
         use crate::transducer::sentence::{form_vertex_key, Form, Vertex};
         use crate::transducer::stalk::Invariant;
         let build = |gauge: Vec<(u8, u8)>, chart: Invariant| -> Form {
             let mut f = Form::default();
-            f.vertices.push(Vertex::word_on(
+            let v = Vertex::word_on(
                 Derivation::spelled(sample_words()[0].clone()),
                 chart,
                 Box::new(crate::transducer::element::identity_versor()),
                 gauge,
+                [FRAME],
                 None,
-            ));
-            f.faces.push(f.face_of(0, 1).expect("the star face"));
+            );
+            // The member stood at the fixture frame, with its star overlap.
+            stand_with_star(&mut f, &v);
             f.reindex();
             f
         };

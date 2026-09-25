@@ -11,6 +11,56 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::element;
 use crate::transducer::sentence::*;
 
+/// THE COBOUNDARY TRIANGLE WITH ONE TURNING EDGE: three overlaps whose words
+/// all derive the identity, so the word holonomy telescopes flat, and a
+/// quarter turn on 50.3's edge of the one overlap that does not touch the
+/// Frame. Every place is the identity carriage with an empty hue map, as the
+/// fixture has always written them.
+///
+/// AT1: the two ends are two SITES — one chart each — and, being of one
+/// class (the identity's), they are ONE vertex with a member on each chart
+/// (Q1); the triangle is the Frame's chart and the two members' charts.
+/// Returns the form, its one orbit read, and the chord that closes it.
+pub(super) fn coboundary_triangle_with_edge(q: &Word) -> (Form, crate::network::nerve::coord::Overlap) {
+    use crate::network::nerve::coord::{ChartAt, Overlap};
+    use crate::transducer::alphabet::Derivation;
+    use crate::transducer::stalk::Invariant;
+    let word_vertex = |b: u8| {
+        Vertex::word_on(
+            Derivation::spelled(Word::identity()),
+            Invariant::counts(&[u64::from(b)]),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            [FRAME],
+            None,
+        )
+    };
+    let place = |edge: Option<Word>| FacePlace {
+        carriage: element::identity_versor(),
+        gauge: Vec::new(),
+        edge: edge.map(|w| Transport {
+            word: w,
+            carriage: element::identity_versor(),
+            gauge: Vec::new(),
+        }),
+        refraction: None,
+    };
+    let mut f = Form::default();
+    let c1 = f.stand_member(&word_vertex(1), FRAME).expect("member 1");
+    let c2 = f.stand_member(&word_vertex(2), FRAME).expect("member 2");
+    for (from, to, edge) in [
+        (ChartAt::Frame, c1.clone(), None),
+        (ChartAt::Frame, c2.clone(), None),
+        (c1, c2, Some(q.clone())),
+    ] {
+        f.put_face(Overlap { from, to }, FormFace::placed(place(edge), Producer::Place));
+    }
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let [lp] = f.orbits.as_slice() else { panic!("three faces close one orbit, got {}", f.orbits.len()) };
+    let chord = lp.chord.clone();
+    (f, chord)
+}
+
 /// 37.7 FROM AN ORBIT'S OWN RESIDUE — THE PIVOT ADJOINS WHAT NOTHING REACHED.
 ///
 /// The basis reached no coordinate the orbit occupies, the class was
@@ -114,8 +164,8 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
     // minted letter is found where it actually stands.
     let minted = f
         .vertices
-        .iter()
-        .find_map(|v| match v {
+        .scoped()
+        .find_map(|(_, v)| match v {
             crate::transducer::sentence::Vertex::Word { address, .. } => Some(address.clone()),
             _ => None,
         })
@@ -224,45 +274,10 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
 /// the face words are identity.
 #[test]
 fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
-    use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::pivot::moves::{apply_by, unapply_by};
-    use crate::transducer::stalk::Invariant;
-    let chart = Invariant::counts(&[3, 5]);
-    let pair = face_pair_key(&chart, &chart);
     let q = order4();
-    // The two ends are two SITES: one chart each, so they are two vertices
-    // rather than one named twice (54.2). The faces carry their own pair
-    // key and their own edges, so the holonomy this test reads is unmoved.
-    let word_vertex = |b: u8| {
-        Vertex::word_on(
-            Derivation::spelled(Word::identity()),
-            Invariant::counts(&[u64::from(b)]),
-            Box::new(element::identity_versor()),
-            Vec::new(),
-            None,
-        )
-    };
-    let place = |edge: Option<Word>| FacePlace {
-        carriage: element::identity_versor(),
-        gauge: Vec::new(),
-        edge: edge.map(|w| Transport {
-            word: w,
-            carriage: element::identity_versor(),
-            gauge: Vec::new(),
-        }),
-        refraction: None,
-    };
-    let mut f = Form::default();
-    f.vertices.push(word_vertex(1));
-    f.vertices.push(word_vertex(2));
-    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
-        let mut face = FormFace::new(i, j, Word::identity());
-        face.at.insert(pair.clone(), place(edge));
-        f.faces.push(face);
-    }
-    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let (mut f, chord) = coboundary_triangle_with_edge(&q);
     let [lp, ..] = f.orbits.as_slice() else { panic!("one orbit") };
-    let chord = lp.chord;
     let before = f.orbit_holonomy(lp).expect("one holonomy");
     assert!(
         !before.rotor().is_identity(),
@@ -271,9 +286,9 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
 
     // THE MOVE REACHES THE CARRIER, which is the whole claim: the old arm
     // wrote `f.word` and left this reading bit-identical.
-    let by = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Right };
+    let by = PivotBy::Word { face: chord.clone(), word: Box::new(before.clone()), side: Side::Right };
     apply_by(&mut f.faces, &by);
-    let read = |faces: &[FormFace], vs: &[Vertex]| {
+    let read = |faces: &Faces, vs: &Vertices| {
         let orbits = Form::orbits_of(faces, vs);
         let [lp, ..] = orbits.as_slice() else { panic!("one orbit") };
         crate::transducer::sentence::pivot::drive::orbit_holonomy_on(faces, vs, lp)
@@ -289,7 +304,7 @@ fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     // backward, so its composite is the edge's inverse and the move that
     // closes it composes on the left.
     assert!(unapply_by(&mut f.faces, &by), "a word move inverts");
-    let closing = PivotBy::Word { face: chord, word: Box::new(before.clone()), side: Side::Left };
+    let closing = PivotBy::Word { face: chord.clone(), word: Box::new(before.clone()), side: Side::Left };
     apply_by(&mut f.faces, &closing);
     let closed = read(&f.faces, &f.vertices);
     assert!(
@@ -334,13 +349,15 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
     let acting = Invariant::counts(&[1, 7, 4]);
     let gauge = vec![(1u8, 2u8), (2, 1)];
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    f.put_vertex(Vertex::word_on(
         Derivation::spelled(Word::identity()),
         acting.clone(),
         Box::new(element::translator_versor(3, 5)),
         gauge.clone(),
+        [FRAME],
         None,
-    ));
+    ))
+    .expect("the identity's vertex has a coordinate");
 
     // THE ROTOR ALONE OCCUPIES NOTHING. This is the reader the admit used
     // and it is why the three assignment axes were unreachable.
@@ -380,7 +397,7 @@ fn a_word_is_filed_under_the_carriage_and_the_gauge_it_acts_by() {
             "what the admit filed at {axis:?} the retract empties"
         );
     }
-    f.vertices.clear();
+    f.vertices = Keyed::new();
 }
 
 /// 18.2, A21 §2 — A WORD IS FILED WHERE IT ACTS, AND THE CHART IS A
@@ -413,13 +430,15 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     let q = order4();
     let acting = Invariant::counts(&[1, 7, 4]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    f.put_vertex(Vertex::word_on(
         Derivation::spelled(q.clone()),
         acting.clone(),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [FRAME],
         None,
-    ));
+    ))
+    .expect("q's vertex has a coordinate");
 
     let occupied = ClassVector::of_word(&q).expect("q has a class").coordinates();
     assert!(
@@ -471,7 +490,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
             "what the admit filed at {axis:?} the retract empties"
         );
     }
-    f.vertices.clear();
+    f.vertices = Keyed::new();
 }
 
 /// 16.20, A20, I6, R8 — THE WHOLE `OpenAxis` PIPELINE READS ONE HOLONOMY,
@@ -497,49 +516,16 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
 /// keying invariant is total or it is not an invariant.
 #[test]
 fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
-    use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{opened_axis_on, orbit_row_on};
-    use crate::transducer::stalk::Invariant;
-    let chart = Invariant::counts(&[3, 5]);
-    let pair = face_pair_key(&chart, &chart);
     let q = order4();
-    // The ends are two SITES: one chart each, so they are two vertices and
-    // not one named twice (54.2). The faces carry their own pair key and
-    // their own edges, so the holonomy this test reads is unmoved.
-    let word_vertex = |b: u8| {
-        Vertex::word_on(
-            Derivation::spelled(Word::identity()),
-            Invariant::counts(&[u64::from(b)]),
-            Box::new(element::identity_versor()),
-            Vec::new(),
-            None,
-        )
-    };
-    let place = |edge: Option<Word>| FacePlace {
-        carriage: element::identity_versor(),
-        gauge: Vec::new(),
-        edge: edge.map(|w| Transport {
-            word: w,
-            carriage: element::identity_versor(),
-            gauge: Vec::new(),
-        }),
-        refraction: None,
-    };
-    let mut f = Form::default();
-    f.vertices.push(word_vertex(1));
-    f.vertices.push(word_vertex(2));
-    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
-        let mut face = FormFace::new(i, j, Word::identity());
-        face.at.insert(pair.clone(), place(edge));
-        f.faces.push(face);
-    }
-    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    // The ends are two SITES: one chart each (54.2), one vertex of the
+    // identity's class with a member on each (AT1 Q1).
+    let (f, chord) = coboundary_triangle_with_edge(&q);
     let [lp, ..] = f.orbits.as_slice() else { panic!("three faces close one orbit") };
-    let chord = lp.chord;
 
     // THE TWO CARRIERS DISAGREE, which is the precondition for the rest.
     assert!(
-        lp.holonomy.rotor().is_identity(),
+        orbit_word_on(&f.faces, &f.vertices, lp).is_some_and(|w| w.rotor().is_identity()),
         "the word holonomy telescopes flat, as a product of coboundaries always does"
     );
     let composite = f.orbit_holonomy(lp).expect("the paths agree on one holonomy");
@@ -565,13 +551,17 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
         "no axis is open yet"
     );
     let mut opened = f.clone();
-    opened.open_axis_on(chord).expect("the axis opens over the composite's class");
+    opened.open_axis_on(&chord).expect("the axis opens over the composite's class");
     let [olp, ..] = opened.orbits.as_slice() else { panic!("one orbit") };
+    // AT1: the reader answers the CLASS the axis is keyed by, and the carrier
+    // holds the chord under it.
+    let class = composite.rotor().holonomy_key().expect("the composite has a class");
     assert_eq!(
         opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, olp),
-        Some(chord),
+        Some(class.clone()),
         "the reader finds the axis the writer filed"
     );
+    assert_eq!(opened.axes.at(&class), Some(&Some(chord.clone())), "filed over the orbit's chord");
     assert_eq!(
         orbit_row_on(&opened.faces, &opened.vertices, &opened.axes, olp),
         Some(OrbitRow::Opened(
@@ -584,7 +574,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     // AND THE INVERSE REMOVES WHAT THE OPENING WROTE. Keyed to the word,
     // `close_axis_on` removed nothing and the axis stood with no orbit
     // claiming it.
-    opened.close_axis_on(chord).expect("the axis closes under the same class");
+    opened.close_axis_on(&chord).expect("the axis closes under the same class");
     let [clp, ..] = opened.orbits.as_slice() else { panic!("one orbit") };
     assert!(
         opened_axis_on(&opened.faces, &opened.vertices, &opened.axes, clp).is_none(),
@@ -633,7 +623,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
     // Orbit 0 by the slice pattern, not by `first()`: the index IS content
     // here, because `trial` is asked about that orbit and no other (rule 15).
     let [lp, ..] = f.orbits.as_slice() else { panic!("two orbits") };
-    let chord = lp.chord;
+    let chord = lp.chord.clone();
     let seed = f.axis_seed_of(lp).expect("the composite seeds the axis");
     let cand = Candidate {
         axis: Axis::Open,
@@ -684,7 +674,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
     let cand = Candidate {
         axis: Axis::Open,
         by: PivotBy::OpenAxis {
-            face: lp.chord,
+            face: lp.chord.clone(),
             seed: one.axis_seed_of(lp).expect("seed"),
         },
     };
@@ -836,7 +826,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
     let rows = f.orbit_rows().expect("rows");
     let rank_before = rank_of_rows(&rows).expect("rank");
     let [lp, ..] = f.orbits.as_slice() else { panic!("two orbits") };
-    let chord = lp.chord;
+    let chord = lp.chord.clone();
     let kappa = f.class_vector(0).expect("class");
 
     // Every candidate the drive would offer on this orbit, trialled exactly as
@@ -873,7 +863,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
     }
     assert!(
         certified > 0,
-        "at least one candidate certifies, or this asserts nothing: chord {chord}"
+        "at least one candidate certifies, or this asserts nothing: chord {chord:?}"
     );
 }
 
@@ -895,8 +885,24 @@ fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
     let chart_b = Invariant::counts(&[1, 7, 5]);
     let q = order4();
 
+    // AT1: a face's word is DERIVED, so the turning face word is the
+    // pivot's factor on an overlap between two members of the identity's
+    // class — one on chart A, one on chart B, each acting by the identity
+    // carriage and no hue, so every coordinate either chart is filed under
+    // comes from the overlap and none from the members.
+    let member = |chart: &Invariant| {
+        Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            chart.clone(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            [FRAME],
+            None,
+        )
+    };
     let mut f = Form::default();
-    let mut face = FormFace::new(0, 1, q.clone());
+    let ca = f.stand_member(&member(&chart_a), FRAME).expect("member on chart A");
+    let cb = f.stand_member(&member(&chart_b), FRAME).expect("member on chart B");
     let edge_transport = Transport {
         word: Word::identity(),
         carriage: element::translator_versor(2, 4),
@@ -908,11 +914,14 @@ fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
         edge: Some(edge_transport),
         refraction: None,
     };
-    face.at.insert(
-        crate::transducer::sentence::face_pair_key(&chart_a, &chart_b),
-        place,
+    let mut face = FormFace::placed(place, Producer::Place);
+    face.left = q.clone();
+    let o = crate::network::nerve::coord::Overlap { from: ca, to: cb };
+    f.put_face(o.clone(), face);
+    assert!(
+        f.face_word(&o).is_some_and(|w| w.rotor().projective_eq(&q.rotor())),
+        "the overlap derives the turning word"
     );
-    f.faces.push(face);
 
     let mut ix = AxisIndex::new();
     admit_words_acting(&mut ix, &f);

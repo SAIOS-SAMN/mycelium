@@ -6,7 +6,6 @@
 
 use super::perceive::{frame_of, Grid};
 use super::*;
-use crate::network::nerve::Keyed;
 use crate::transducer::sentence::{Form, SentenceRule};
 
 /// An assignment's content key: carriage bytes and sorted gauge (A4, A21).
@@ -48,12 +47,11 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
 }
 
 /// The tail of an extraction: the unreached frames ride the rule as the
-/// demands of 50.5, and the form is closed out with its depth, orbits, ratio
-/// and sections.
+/// demands of 50.5, and the form is closed out with its depth, orbits and
+/// ratio. Its sections are its members' frames, already on it (AT1).
 pub(crate) fn finish(
     mut form: Form,
     scale: ((usize, usize), (usize, usize)),
-    sections: Keyed<Keyed<()>, crate::network::nerve::coord::SectionAt>,
     unreached: &[(Grid, Grid)],
 ) -> Option<SentenceRule> {
     for (a, b) in unreached {
@@ -69,7 +67,6 @@ pub(crate) fn finish(
     form.depth = form.depth_of()?;
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     form.ratio = scale;
-    form.sections = sections;
     form.hue_maps = hue_maps_of_form(&form);
     Some(crate::transducer::sentence::rule_of_form(form))
 }

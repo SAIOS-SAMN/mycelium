@@ -3,6 +3,7 @@
 // rather than partly read.
 
 use super::common::*;
+use crate::network::nerve::coord;
 use crate::transducer::sentence::ToralPeriod;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element;
@@ -24,7 +25,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
     let [class] = classes.as_slice() else { panic!("one member path, so one class") };
     f.torsion.put(
         class,
-        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: Closes::On(lp.chord.clone()) },
     );
     // THE FILING IS THE SPEAKER'S AND IT DOES NOT CLOSE THE CIRCUIT (54.5,
     // as ruled 2026-09-20). This asserted `f.coheres()` — that writing "0"
@@ -76,51 +77,53 @@ fn form_tape_v6_round_trips() {
     let glued = f
         .glue(&inner, inner_addr, Word::identity(), [0, 0, 0, 1])
         .expect("glue depth 0 into depth 0");
-    let rebased = u16::try_from(f.vertices.len()).expect("a fixture form of a handful of vertices");
-    f.vertices.push(Vertex::rebased_on(
-        0,
-        1,
-        stalk::Invariant::counts(&[3, 5]),
-        Box::new(element::carriage(&q1(), &(q0(), q1()))),
-        vec![(1, 2)],
-    ));
-    let unfolded = f.unfold(Measure::Occupied);
-    let demand = u16::try_from(f.vertices.len()).expect("a fixture form of a handful of vertices");
-    f.vertices.push(Vertex::Demand {
-        kind: Demand::Source { multiplicity: 2 },
-        chart: stalk::Invariant::counts(&[1, 4, 4]),
-        bodies: vec![(9, 9, 0, 1), (9, 10, 0, 1)],
-    });
-    // A FACE CARRYING AN EDGE AT ONE MEMBER PAIR. `FormFace::new` records the
-    // word alone, so the pair is written here with its edge on it.
-    let mut edged = FormFace::new(1, glued, w.clone());
-    edged.at.insert(
-        crate::transducer::sentence::face_pair_key(
-            &stalk::Invariant::default(),
-            &stalk::Invariant::counts(&[1, 4, 4]),
-        ),
-        crate::transducer::sentence::FacePlace {
-            carriage: element::identity_versor(),
-            gauge: Vec::new(),
-            edge: Some(Transport::from_word(w.clone())),
-            refraction: None,
-        },
+    // AT1 — A VERTEX IS REACHED BY ITS COORDINATE: the word by its class,
+    // the rebase by its base's class then the class it held (ruled).
+    let word = only_word(&f);
+    let word_class = f.vertices.at(&word).and_then(Vertex::class).expect("the word's class");
+    let rebased = f
+        .put_vertex(Vertex::rebased_on(
+            coord::VertexAt::Frame,
+            word_class.clone(),
+            stalk::Invariant::counts(&[3, 5]),
+            Box::new(element::carriage(&q1(), &(q0(), q1()))),
+            vec![(1, 2)],
+            [FRAME],
+        ))
+        .expect("a rebase on the Frame has a coordinate");
+    let unfolded = f.unfold(Measure::Occupied).expect("an unfolded vertex has a coordinate");
+    let demand = f
+        .put_vertex(Vertex::demand(
+            Demand::Source { multiplicity: 2 },
+            stalk::Invariant::counts(&[1, 4, 4]),
+            vec![(9, 9, 0, 1), (9, 10, 0, 1)],
+        ))
+        .expect("a demand has a coordinate");
+    // AN OVERLAP CARRYING AN EDGE, from the word's chart to the citation's
+    // (AT1 Q2: one member pair at one frame, the edge on its place).
+    let glued_chart = coord::ChartAt::at(
+        glued.clone(),
+        f.vertices.at(&glued).map(Vertex::charts).and_then(|c| c.into_iter().next()).expect("the citation's chart"),
+        FRAME,
     );
-    f.faces.push(edged);
+    let word_chart = coord::ChartAt::at(word.clone(), stalk::Invariant::counts(&[3, 5]), FRAME);
+    let edged = edge_chord(&mut f, &word_chart, &glued_chart, Transport::from_word(w.clone()));
+    let star = coord::Overlap { from: coord::ChartAt::Frame, to: word_chart };
+    assert!(f.faces.holds(&star), "the fixture's star overlap");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.remainder = crate::transducer::element::place_chain(&[(9, 9, 1, 0)])
         .expect("one link is A5's chain");
     f.reindex();
-    assert!(matches!(f.vertices[glued as usize], Vertex::Glued { .. }));
+    assert!(matches!(f.vertices.at(&glued), Some(Vertex::Glued { .. })));
     assert!(matches!(
-        f.vertices[rebased as usize],
-        Vertex::Rebased { by: 0, of: 1, .. }
+        f.vertices.at(&rebased),
+        Some(Vertex::Rebased { by: coord::VertexAt::Frame, class, .. }) if *class == word_class
     ));
     assert!(matches!(
-        f.vertices[unfolded as usize],
-        Vertex::Unfolded {
+        f.vertices.at(&unfolded),
+        Some(Vertex::Unfolded {
             measure: Measure::Occupied
-        }
+        })
     ));
 
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("mint");
@@ -135,10 +138,10 @@ fn form_tape_v6_round_trips() {
     assert_eq!(back.remainder.placed(), f.remainder.placed());
     assert_eq!(back.remainder.chain(), f.remainder.chain());
     assert_eq!(back.depth, f.depth);
-    match (&f.vertices[1], &back.vertices[1]) {
+    match (f.vertices.at(&word), back.vertices.at(&word)) {
         (
-            Vertex::Word { derivation: a, acts: aa, contact: ca_c, .. },
-            Vertex::Word { derivation: b, acts: ab, contact: cb_c, .. },
+            Some(Vertex::Word { derivation: a, acts: aa, contact: ca_c, .. }),
+            Some(Vertex::Word { derivation: b, acts: ab, contact: cb_c, .. }),
         ) => {
             assert_eq!(ca_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
             assert_eq!(cb_c.map(|c| (c.anchor, c.ring)), Some((1, 2)));
@@ -151,8 +154,8 @@ fn form_tape_v6_round_trips() {
         }
         _ => panic!("word vertex"),
     }
-    match (&f.vertices[glued as usize], &back.vertices[glued as usize]) {
-        (Vertex::Glued { depth: da, .. }, Vertex::Glued { depth: db, .. }) => {
+    match (f.vertices.at(&glued), back.vertices.at(&glued)) {
+        (Some(Vertex::Glued { depth: da, .. }), Some(Vertex::Glued { depth: db, .. })) => {
             assert_eq!(da, db);
         }
         _ => panic!("glued vertex"),
@@ -160,10 +163,10 @@ fn form_tape_v6_round_trips() {
     // 54.7 B5a — AND THE COVER COMES BACK WITH IT. The target left the
     // vertex; the incidence is the form's, one edge per citation.
     assert_eq!(f.cover, back.cover, "the cover round-trips whole");
-    match (&back.vertices[rebased as usize], &f.vertices[rebased as usize]) {
-        (Vertex::Rebased { by, of, acts }, Vertex::Rebased { acts: was, .. }) => {
-            assert_eq!(*by, 0);
-            assert_eq!(*of, 1);
+    match (back.vertices.at(&rebased), f.vertices.at(&rebased)) {
+        (Some(Vertex::Rebased { by, class, acts }), Some(Vertex::Rebased { acts: was, .. })) => {
+            assert_eq!(*by, coord::VertexAt::Frame);
+            assert_eq!(*class, word_class, "the class it held before the rebase");
             // THE WHOLE FIBRE ROUND-TRIPS, keyed by chart: the relative and the
             // hue map at each chart `of` acted on, and one member here.
             assert_eq!(acts, was, "every member comes back filed at its own chart");
@@ -186,28 +189,35 @@ fn form_tape_v6_round_trips() {
         _ => panic!("rebased vertex"),
     }
     assert_eq!(
-        back.vertices[unfolded as usize],
-        Vertex::Unfolded {
+        back.vertices.at(&unfolded),
+        Some(&Vertex::Unfolded {
             measure: Measure::Occupied
-        }
+        })
     );
-    assert_eq!(back.faces[0].i, 0);
-    assert_eq!(back.faces[0].j, 1);
-    assert_eq!(back.faces[0].word, f.faces[0].word);
-    // THE WHOLE MEMBER FIBRE RIDES THE TAPE, keyed by chart pair: the placement
-    // at each pair and the edge where the pair has one.
-    assert_eq!(back.faces[0].at, f.faces[0].at, "every member pair comes back at its own key");
-    assert!(!back.faces[0].has_edge(), "a face with no measured edge transport is a remainder edge");
-    let last = back.faces.len() - 1;
+    // THE STAR OVERLAP comes back at its own key, Frame first, its word
+    // derived as it was.
+    assert!(back.faces.holds(&star), "the star overlap comes back at its key");
+    assert_eq!(back.face_word(&star), f.face_word(&star));
+    // THE OVERLAP'S PLACE RIDES THE TAPE: the placement at its member pair
+    // and the edge where it has one.
     assert_eq!(
-        back.faces[last].at.scoped().filter_map(|(_, p)| p.edge.as_ref().map(|t| t.word.clone())).collect::<Vec<_>>(),
-        vec![w.clone()],
-        "the edge transport rides the face at its member pair"
+        back.faces.at(&star).map(|x| &x.place),
+        f.faces.at(&star).map(|x| &x.place),
+        "the overlap's place comes back at its own key"
     );
-    match (&f.vertices[demand as usize], &back.vertices[demand as usize]) {
+    assert!(
+        back.faces.at(&star).is_some_and(|x| !x.has_edge()),
+        "a face with no measured edge transport is a remainder edge"
+    );
+    assert_eq!(
+        back.faces.at(&edged).and_then(|x| x.place.edge.as_ref()).map(|t| t.word.clone()),
+        Some(w.clone()),
+        "the edge transport rides the overlap at its member pair"
+    );
+    match (f.vertices.at(&demand), back.vertices.at(&demand)) {
         (
-            Vertex::Demand { kind: ka, chart: ca, bodies: ba },
-            Vertex::Demand { kind: kb, chart: cb, bodies: bb },
+            Some(Vertex::Demand { kind: ka, chart: ca, bodies: ba, .. }),
+            Some(Vertex::Demand { kind: kb, chart: cb, bodies: bb, .. }),
         ) => {
             assert_eq!(ka, kb);
             assert_eq!(ca, cb);
@@ -216,11 +226,13 @@ fn form_tape_v6_round_trips() {
         _ => panic!("demand vertex"),
     }
     assert!(!back.is_closed(), "a sentence with a demand vertex is not closed");
-    assert_eq!(
-        back.demands.at(&demand_key(&Demand::Source { multiplicity: 2 }, &stalk::Invariant::counts(&[1, 4, 4]))),
-        Some(&demand),
-        "the demand is read by (kind, chart)"
-    );
+    let (want_kind, want_chart) = (Demand::Source { multiplicity: 2 }, stalk::Invariant::counts(&[1, 4, 4]));
+    let by_kind_chart: Vec<coord::VertexAt> = back
+        .demand_vertices()
+        .filter(|(_, k, c, _)| **k == want_kind && **c == want_chart)
+        .map(|(at, ..)| at)
+        .collect();
+    assert_eq!(by_kind_chart, vec![demand.clone()], "the demand is read by (kind, chart)");
     let e_plain = as_element_form(&closed_word_form(w.clone(), None), [1, 0, 0, 0]).expect("plain");
     let e_contact = as_element_form(
         &closed_word_form(
@@ -342,12 +354,15 @@ fn a_form_stands_one_demand_per_kind_and_chart_and_gathers_the_bodies() {
     let demanded: Vec<(Demand, Vec<Link>)> =
         f.demand_vertices().map(|(_, k, _, links)| (k.clone(), links.to_vec())).collect();
     assert_eq!(demanded.len(), 2, "one vertex per (kind, chart), got {demanded:?}");
-    let on_chart = f
-        .demands
-        .at(&demand_key(&Demand::Creation, &chart))
-        .copied()
-        .expect("the demand is indexed under its key");
-    let Some(Vertex::Demand { bodies, .. }) = f.vertices.get(on_chart as usize) else {
+    // AT1 — THE DEMAND STANDS AT ITS OWN COORDINATE, in the Demand stratum
+    // of the vertices, and is read there by its kind and chart.
+    let on_chart: Vec<_> = f
+        .demand_vertices()
+        .filter(|(_, k, c, _)| **k == Demand::Creation && **c == chart)
+        .map(|(at, ..)| at)
+        .collect();
+    let [on_chart] = on_chart.as_slice() else { panic!("one demand on the chart, got {on_chart:?}") };
+    let Some(Vertex::Demand { bodies, .. }) = f.vertices.at(on_chart) else {
         panic!("the index names the demand vertex")
     };
     assert_eq!(bodies, &vec![(0, 0, 0, 3), (0, 1, 0, 3)], "the bodies are gathered, sorted, once each");
@@ -436,11 +451,7 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
         host.glue(&inner, inner_addr.clone(), p.clone(), [0, 0, 0, 1])
             .expect("glue the same form at another place");
     }
-    let glued = host
-        .vertices
-        .iter()
-        .filter(|v| matches!(v, Vertex::Glued { .. }))
-        .count();
+    let glued = host.glued_vertices().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count();
     assert_eq!(glued, 3, "three glued vertices, got {glued}");
 
     // IDENTITY IS NOT SHORTENED (1.7) — AND IT IS THE COVER THAT CARRIES
@@ -487,7 +498,7 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
     let one = from_element_form(&as_element_form(&once, [1, 0, 0, 0]).expect("mints"))
         .expect("decodes");
     assert_eq!(
-        one.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count(),
+        one.glued_vertices().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count(),
         1,
         "one boundary mating under one transition is one citation, however often it was written"
     );

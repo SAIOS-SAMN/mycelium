@@ -10,13 +10,13 @@ use crate::transducer::sentence::*;
 
 fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> PivotCertificate {
     PivotCertificate {
-        chord: 0,
+        chord: some_overlap(),
         axis,
         before: ClassVector::of_word(&order4()).expect("class").class_key(),
         after,
         rank_move: RankMove::Equal,
         mu: Mu::Unmeasured,
-        by: PivotBy::Word { face: 0, word: Box::new(word), side: Side::Right },
+        by: PivotBy::Word { face: some_overlap(), word: Box::new(word), side: Side::Right },
     }
 }
 
@@ -94,7 +94,7 @@ fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex(
     let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
     let s = PlaneForm::sheet_word();
     let sided = |word: &Word, side: Side| PivotCertificate {
-        by: PivotBy::Word { face: 0, word: Box::new(word.clone()), side },
+        by: PivotBy::Word { face: some_overlap(), word: Box::new(word.clone()), side },
         ..cert(Axis::Unit(0), word.clone(), closed.clone())
     };
 

@@ -561,7 +561,7 @@ pub(crate) fn contact_circuits(form: &crate::transducer::sentence::Form, budget:
     let identity = crate::transducer::element::identity_versor();
     let mut t = [0usize; 6];
     for o in &form.orbits {
-        if !o.faces.iter().any(|&fi| form.faces.get(usize::from(fi)).is_some_and(|f| f.interface.is_some())) {
+        if !o.steps.iter().any(|s| form.faces.at(&s.overlap).is_some_and(|f| f.interface.is_some())) {
             continue;
         }
         let Some(carried) = paths_carried(&form.faces, &form.vertices, o) else {

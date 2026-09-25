@@ -67,7 +67,7 @@ impl AddressSet {
         let mut vertices: Keyed<()> = Keyed::new();
         let mut members: Keyed<()> = Keyed::new();
         let mut classes = Vec::new();
-        for v in &form.vertices {
+        for (_, v) in form.vertices.scoped() {
             let Vertex::Word { address, acts, .. } = v else { continue };
             if !self.words.contains(address.as_bytes()) {
                 self.words.insert(address.as_bytes(), ());

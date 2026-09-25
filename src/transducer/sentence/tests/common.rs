@@ -1,6 +1,7 @@
 //! 39 — FIXTURES for the sentence's tests: the two rationals, a form
 //! address, a closed word form, a star, and the words of each order.
 
+use crate::network::nerve::coord;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
@@ -28,51 +29,78 @@ pub fn form_addr(n: u8) -> crate::transducer::address::Address {
     crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, n])
 }
 
+/// THE FIXTURES' FRAME: every member a fixture stands, stands at frame 0 —
+/// one frame, the single pair a fixture scene is (AT1: a member holds its
+/// frames, and a fixture writes them as it writes its member pairs).
+pub const FRAME: u64 = 0;
+
+/// A word vertex stood on the form at [`FRAME`], with its star from the
+/// Frame's chart (Q-B1): the member's chart back.
+pub fn stand_with_star(f: &mut Form, v: &Vertex) -> coord::ChartAt {
+    let c = f.stand_member(v, FRAME).expect("a word vertex stands");
+    f.place_overlap(coord::ChartAt::Frame, c.clone(), None).expect("star");
+    c
+}
+
+/// A CHORD between two charts carrying `w`: the overlap placed, and `w`
+/// written as the pivot writes it — the left factor (AT1, ruled: produced
+/// content, written only by the pivot's Word move) — so its derived word is
+/// `w · (w_b w_a⁻¹)`, which is `w` between two ends of one word.
+pub fn chord(f: &mut Form, a: &coord::ChartAt, b: &coord::ChartAt, w: Word) -> coord::Overlap {
+    let o = f.place_overlap(a.clone(), b.clone(), None).expect("a chord between two placed members");
+    f.apply_move(&PivotBy::Word { face: o.clone(), word: Box::new(w), side: Side::Left });
+    o
+}
+
+/// A chord whose EDGE carries the transport, its factors the identity.
+pub fn edge_chord(f: &mut Form, a: &coord::ChartAt, b: &coord::ChartAt, edge: Transport) -> coord::Overlap {
+    f.place_overlap(a.clone(), b.clone(), Some(edge)).expect("a chord between two placed members")
+}
+
+/// The chart of a form's one member on `chart` at [`FRAME`], by the class
+/// of the vertex it stands at.
+pub fn chart_of(v: &Vertex, chart: stalk::Invariant) -> coord::ChartAt {
+    coord::ChartAt::at(v.at().expect("a fixture vertex has a coordinate"), chart, FRAME)
+}
+
+/// The coordinate of a form's one vertex of kind Word (a fixture with one
+/// word class).
+pub fn only_word(f: &Form) -> coord::VertexAt {
+    let words: Vec<coord::VertexAt> = f
+        .vertices
+        .entries()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .map(|(k, _)| k)
+        .collect();
+    let [w] = words.as_slice() else { panic!("a fixture with one word class, got {}", words.len()) };
+    w.clone()
+}
+
 pub fn closed_word_form(word: Word, contact: Option<alphabet::Contact>) -> Form {
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         alphabet::Derivation::spelled(word.clone()),
         stalk::Invariant::counts(&[3, 5]),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
         vec![(1, 2)],
+        [FRAME],
         contact,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    );
+    let c = stand_with_star(&mut f, &v);
     f.remainder = crate::transducer::element::PlacedChain::default();
     f.depth = f.depth_of().expect("a fixture's depth reads");
     let k = form_vertex_key(&f);
-    if let Some(Vertex::Word { address, .. }) = f.vertices.get_mut(1) {
+    if let Some(Vertex::Word { address, .. }) = f.vertices.at_mut(&c.vertex()) {
         *address = k;
     }
     f.reindex();
     f
 }
 
-/// THE ONE MEMBER PAIR OF A FIXTURE'S FACE. Every vertex these fixtures build
-/// stands at exactly one chart, so each of their faces relates exactly one pair
-/// of bodies — this asserts that and hands back its key, so a test writing a
-/// face's placement writes the pair the face HAS rather than a representative
-/// of several (D10).
-pub fn only_pair(face: &FormFace) -> Vec<u8> {
-    let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-    let [pk] = pairs.as_slice() else {
-        panic!("a fixture face relates one member pair, got {}", pairs.len())
-    };
-    pk.clone()
-}
-
-/// That pair's placement, read.
-pub fn face_place(face: &FormFace) -> FacePlace {
-    let pk = only_pair(face);
-    face.at.get(&pk).expect("the pair just read").clone()
-}
-
-/// That pair's placement, written.
+/// An overlap's placement, written (AT1: one member pair per overlap; it is
+/// read as `face.place`).
 pub fn set_face_place(face: &mut FormFace, write: impl FnOnce(&mut FacePlace)) {
-    let pk = only_pair(face);
-    if let Some(p) = face.at.get_mut(&pk) {
-        write(p);
-    }
+    write(&mut face.place);
 }
 
 pub fn word_vertex(addr: u8, word: Word) -> Vertex {
@@ -110,6 +138,7 @@ pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
         chart,
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [FRAME],
         None,
     )
 }
@@ -129,21 +158,27 @@ pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
 /// The chart is what separates them, for `chord_form`'s reason: the chart
 /// is where a body stands, not how it is carried, so the star's transports
 /// are untouched.
+///
+/// AT1 (Q1): spokes of one word are ONE vertex — its class — with a member
+/// per spoke's chart, and the star is an overlap from the Frame's chart to
+/// each. `extra` names chords by spoke number, `0` the Frame's chart.
 pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     let mut f = Form::default();
+    let mut charts = vec![coord::ChartAt::Frame];
     for i in 0..n_words {
         let j = u16::try_from(i).expect("a star fixture's spoke, n_words small") + 1;
-        f.vertices.push(word_vertex_on(
+        let v = word_vertex_on(
             u8::try_from(j).expect("a star fixture's spoke, n_words small"),
             Word::identity(),
             stalk::Invariant::counts(&[u64::from(j)]),
-        ));
-        f.faces.push(f.face_of(0, j).expect("star"));
+        );
+        charts.push(stand_with_star(&mut f, &v));
     }
     // A CHORD CARRIES ITS PLACEMENTS as well as its word, or the orbit it
     // closes has no member path and no carriage (D10).
     for (i, j, w) in extra {
-        f.faces.push(f.face_carrying(i, j, w).expect("a chord between two placed vertices"));
+        let (a, b) = (&charts[usize::from(i)], &charts[usize::from(j)]);
+        chord(&mut f, a, b, w);
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
@@ -181,11 +216,9 @@ pub fn chord_form(chords: &[Word]) -> Form {
             u8::try_from(a).expect("a chord fixture's end, a few chords"),
             u8::try_from(b).expect("a chord fixture's end, a few chords"),
         );
-        f.vertices.push(word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
-        f.vertices.push(word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
-        f.faces.push(f.face_of(0, a).expect("star a"));
-        f.faces.push(f.face_of(0, b).expect("star b"));
-        f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));
+        let ca = stand_with_star(&mut f, &word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        let cb = stand_with_star(&mut f, &word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
+        chord(&mut f, &ca, &cb, w.clone());
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
@@ -210,14 +243,9 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
             u8::try_from(a).expect("an edge fixture's end, a few edges"),
             u8::try_from(b).expect("an edge fixture's end, a few edges"),
         );
-        f.vertices.push(word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
-        f.vertices.push(word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
-        f.faces.push(f.face_of(0, a).expect("star a"));
-        f.faces.push(f.face_of(0, b).expect("star b"));
-        f.faces.push(
-            f.face_carrying_with_edge(a, b, Word::identity(), Some(Transport::from_word(w.clone())))
-                .expect("a chord between two bodies"),
-        );
+        let ca = stand_with_star(&mut f, &word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        let cb = stand_with_star(&mut f, &word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
+        edge_chord(&mut f, &ca, &cb, Transport::from_word(w.clone()));
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
@@ -227,20 +255,31 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
 pub fn coboundary_chord_form() -> Form {
     let r = order4();
     let mut f = Form::default();
-    // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`.
-    f.vertices.push(word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])));
-    f.vertices.push(word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])));
-    for (i, j, w) in [(0u16, 1u16, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
-        f.faces.push(f.face_carrying(i, j, w).expect("two placed vertices and the Frame"));
+    // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
+    // identity's class, each overlapped from the Frame's chart.
+    let c1 = f.stand_member(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), FRAME).expect("member 1");
+    let c2 = f.stand_member(&word_vertex_on(2, Word::identity(), stalk::Invariant::counts(&[2])), FRAME).expect("member 2");
+    let charts = [coord::ChartAt::Frame, c1, c2];
+    for (i, j, w) in [(0usize, 1usize, r.clone()), (0, 2, Word::identity()), (1, 2, r.inverse())] {
+        chord(&mut f, &charts[i], &charts[j], w);
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
 }
 
+/// An overlap for a fixture that needs one by name and holds no form: the
+/// Frame's chart to the identity's member on chart `[1]` at [`FRAME`].
+pub fn some_overlap() -> coord::Overlap {
+    coord::Overlap {
+        from: coord::ChartAt::Frame,
+        to: chart_of(&word_vertex_on(1, Word::identity(), stalk::Invariant::counts(&[1])), stalk::Invariant::counts(&[1])),
+    }
+}
+
 pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
     PivotCertificate {
-        chord: 0,
+        chord: some_overlap(),
         axis,
         before: Word::identity().class_key().expect("identity"),
         after: Word::identity().class_key().expect("identity"),
@@ -250,7 +289,7 @@ pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
             after: mu,
         },
         by: PivotBy::Word {
-            face: 0,
+            face: some_overlap(),
             word: Box::new(Word::identity()),
             side: Side::Right,
         },

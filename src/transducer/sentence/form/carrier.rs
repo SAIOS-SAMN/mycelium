@@ -64,12 +64,13 @@ impl Form {
 }
 
 /// How an unfolding stops. The step count is an instance coordinate, never
-/// stored on the form.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// stored on the form. A ring stops at the vertex it is anchored on, named
+/// by that vertex's coordinate (AT1), never by its place in a list.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Measure {
     Occupied,
     Remainder,
-    Ring { anchor: u16 },
+    Ring { anchor: Box<coord::VertexAt> },
 }
 
 /// A FILED ORBIT: a torsion cycle of a FORM, keyed by the class of the orbit
@@ -184,8 +185,61 @@ pub struct FiledOrbit {
     /// recut is required anyway; leaving this scalar would persist collapsed
     /// periods into the fresh genome and demand a second recut to undo.
     pub periods: ToralPeriod,
-    /// The chord it closes on: an index into the form's faces.
-    pub chord: u16,
+    /// WHAT IT CLOSES ON (AT1, ruled 2026-09-25): the overlap of this form
+    /// its cycle closes on, by its two charts, or the fibre's puncture.
+    pub chord: Closes,
+}
+
+/// WHERE A FILED CYCLE CLOSES (AT1, ruled 2026-09-25). A cycle of the base
+/// closes ON an overlap of the form, its chord. A fibre cycle — a bundle
+/// connection's monodromy, `σ^ℓ = id` along the sections — winds the
+/// PUNCTURE and closes on no overlap of the form; none is invented for it
+/// (the slot era's `chord: 0` named a real face it did not close on). Its
+/// own coordinate is its winding over the fibre's hole, WN1's.
+///
+/// Two arms, never an `Option` whose `None` must be read for its meaning:
+/// the address writes the arm.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Closes {
+    On(coord::Overlap),
+    Fibre,
+}
+
+impl Closes {
+    /// The overlap it closes on, where it closes on one.
+    pub fn overlap(&self) -> Option<&coord::Overlap> {
+        match self {
+            Closes::On(o) => Some(o),
+            Closes::Fibre => None,
+        }
+    }
+
+    /// The arm, written: `0 ‖ framed(overlap)` or `1`.
+    pub fn put(&self, out: &mut Vec<u8>) {
+        use crate::network::nerve::Coordinate;
+        match self {
+            Closes::On(o) => {
+                out.push(0);
+                crate::transducer::address::put_key_bytes(out, o.encode().as_bytes());
+            }
+            Closes::Fibre => out.push(1),
+        }
+    }
+
+    /// The arm, read back; `None` on a tag or an overlap that does not read.
+    pub fn take(b: &[u8], pos: &mut usize) -> Option<Closes> {
+        use crate::network::nerve::Coordinate;
+        let tag = *b.get(*pos)?;
+        *pos += 1;
+        match tag {
+            0 => {
+                let bytes = crate::transducer::address::take_key_bytes(b, pos)?;
+                Some(Closes::On(coord::Overlap::decode(&bytes).ok()?))
+            }
+            1 => Some(Closes::Fibre),
+            _ => None,
+        }
+    }
 }
 
 /// ONE CHART A WORD VERTEX ACTS ON, and what it acts by there: the A4
@@ -206,9 +260,21 @@ pub struct Acting {
     /// footprint.
     pub carriage: Box<Versor>,
     pub gauge: Vec<(u8, u8)>,
+    /// AT1 (ruled) — THE FRAMES THIS MEMBER STANDS ON, each by its own
+    /// spelling ([`frame_key`]): the member's charts are `class ‖ chart ‖
+    /// frame` for each, held HERE and nowhere beside it. `Form.sections`
+    /// read these off the members and retired as a carrier (law 12).
+    pub frames: Keyed<()>,
 }
 
 impl Acting {
+    /// DOES THIS MEMBER STAND AT FRAME `k` (AT1, ruled: a member holds its
+    /// frames)? A member holding no frames is claimed whole along `e₃`, as the
+    /// court has always read a member with no section (51.8).
+    pub fn stands_at(&self, k: u64) -> bool {
+        self.frames.is_empty() || self.frames.contains(&frame_key(k))
+    }
+
     /// THE KEY A SECTION IS FILED UNDER: its chart AND the carriage it acts
     /// by (54.7 R1, as ruled 2026-09-21).
     ///
@@ -351,9 +417,14 @@ pub enum Vertex {
     /// word is `by`'s, realised at `placement_by + shift`; the body it
     /// speaks to, its hue map and its dilation stay `of`'s own, so a
     /// rebased body keeps its shape, its colours and its scale.
+    ///
+    /// AT1 — `by` IS THE BASE'S COORDINATE, and `class` is the class `of`
+    /// had before the rebase overwrote it: held, because the overwrite made
+    /// it underivable, and the vertex is keyed by the base's class then this
+    /// one (ruled). The `of` slot is gone; the vertex's own key replaces it.
     Rebased {
-        by: u16,
-        of: u16,
+        by: coord::VertexAt,
+        class: coord::Transport,
         /// EVERY CHART `of` ACTED ON, and what the rebase carries it by there:
         /// the member's `carriage` is the RELATIVE `t = C_of,chart · C_by⁻¹` at
         /// that chart and its `gauge` is `of`'s there (D10).
@@ -378,61 +449,60 @@ pub enum Vertex {
     /// 50.5: what the speaker could not spell or the eyes could not pair,
     /// one vertex per (kind, chart), carrying the bodies it stands for as
     /// the sentence's remainder. It has no word and reconstructs nothing.
+    ///
+    /// AT1, 54.5 ROAD (d) — THE BODIES ARE EVIDENCE AND RIDE THE RECORD,
+    /// NEVER THE KEY. The key carries the kind, the chart, the chain's
+    /// measure per lane and its piece count; the bodies ride the receipts
+    /// envelope beside the cover and a form read back from its address
+    /// holds none until the record supplies them, exactly as a Glued vertex
+    /// holds no cover. `measure` and `pieces` are read off the bodies where
+    /// the bodies are held ([`Vertex::demand`]), and held beside them only
+    /// because a form read from its key has no bodies to read them from.
     Demand {
         kind: crate::transducer::sentence::Demand,
         chart: stalk::Invariant,
+        measure: [u64; 4],
+        pieces: u64,
         bodies: Vec<Link>,
     },
 }
 
-/// Face of a `Form` (21 step 2, 3.1): two vertices, the word between them,
-/// and what it carries AT EACH PAIR OF MEMBERS.
+/// WHICH ORGAN PRODUCED AN OVERLAP'S TRANSITION (78.41(2′)(a): every
+/// transition names what built it). A PLACE is the relative of two members'
+/// placements, measured where the face was made (21 step 2); a MOTOR is the
+/// frame-axis transition, a member's body carried from one occupied frame
+/// to the next and read by its action (MT1).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Producer {
+    Place,
+    Motor,
+}
+
+/// A FACE OF THE ATLAS: ONE OVERLAP OF TWO CHARTS, keyed by the two
+/// (`coord::Overlap`, AT1 Q2) and never by two positions in a list.
 ///
-/// It held one `Transport` and one edge. 21 step 2 defines a face between
-/// BODIES — "vertices whose after-supports overlap or sit at ring distance
-/// one" — and D7 made one vertex cover several bodies on several charts, so
-/// the face's endpoints became coarser than the face's meaning and one
-/// transport was asserted across every member pair. Measured over the
-/// families that mint: 87 faces, 19 of them between two multi-member
-/// vertices and 52 with at least one.
+/// It holds two kinds of content, and the carrier says which (ruled):
 ///
-/// The WORD stays single because it is not a member coordinate: `face_of`
-/// reads it as `w_j ∘ w_i⁻¹` from the two derivations, and a derivation is a
-/// vertex's. So the rotor half of the skeleton — holonomy, torsion, class
-/// vectors' plane and off-plane coordinates, every word move the pivot makes
-/// — is untouched by this, and only the carriage and the hue map fibre.
+/// - MEASURED — the place (the relative carriage, the relative hue map,
+///   50.3's edge, BQ5a's refraction), the interface of a contact, and the
+///   producer that measured it.
+/// - PRODUCED — `left` and `right`, the identity by default and written
+///   ONLY by a pivot's Word move, the one producer that writes a word on a
+///   face; the certificate whose chord names this overlap is that factor's
+///   producer (A20).
+///
+/// THE WORD IS DERIVED, never held: `left · (w_to ∘ w_from⁻¹) · right⁻¹`,
+/// read from the two ends' vertices ([`Form::face_word`]). A face carrying
+/// a word its ends do not derive is the table 78.41(2′) names; a section
+/// is a vertex of its own class, not a word on a face.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FormFace {
-    pub i: u16,
-    pub j: u16,
-    /// `w_j ∘ w_i⁻¹`, one word for the face.
-    pub word: Word,
-    /// Carriage, hue map and 50.3 edge per member pair, keyed by
-    /// `face_pair_key(chart_i, chart_j)`. Empty where the face records only
-    /// its word — a section face pushed by `FormFace::new`.
-    pub at: Keyed<FacePlace>,
-    /// THE PAIRS OF THE BUNDLE THIS FACE'S WORD WAS MEASURED ON (21 step 2,
-    /// S12.2). `None` is the unrestricted claim: nothing sectioned this
-    /// face and it answers for every pair its two ends exist on. `Some(ps)`
-    /// is a SECTION — the bundle spoke several words between these two ends
-    /// and this face carries one of them, on the pairs it was spoken on.
-    ///
-    /// IT LIVES ON THE FACE BECAUSE NO KEY CAN REACH IT. The extractor kept
-    /// these lists in `Form.sections` under `ends_pair_key(ea, eb)` and, for
-    /// the alternates, that key with the word's key appended — a SECOND key
-    /// family in a carrier whose only reader asks at `TransportClass::key()`
-    /// (rule 6: one coordinate system, where a prefix is a stratum). Nothing
-    /// read the face family, and nothing could have: `Form::regauge` rewrites
-    /// EVERY face's word to `γ_j · w · γ_i⁻¹` at extraction step 7, and
-    /// `rebase_named_faces` rewrites the star faces' words and turns a
-    /// `Vertex::Word` into a `Vertex::Rebased` — after which `end_of`
-    /// answers `None` and neither half of the key can be rebuilt. The key
-    /// was stale by construction before the form ever left the extractor.
-    ///
-    /// Carried on the face, the section rides through both rewrites and
-    /// through `retract_vertices` with the face it describes, and the court
-    /// reads it where it stands.
-    pub pairs: Option<Keyed<()>>,
+    pub place: FacePlace,
+    pub producer: Producer,
+    /// The pivot's factor on the left of the derived word.
+    pub left: Word,
+    /// The pivot's factor on the right, entering inverted.
+    pub right: Word,
     /// BQ5b, 72.2, A.10 — THE INTERFACE A CONTACT FACE CARRIES, WHOLE: the
     /// versor `V = s_b s_a` between its two bodies' nuclei and the grade of
     /// the contact's largest shared cell. WHAT two bodies are to each other
@@ -490,31 +560,31 @@ impl PartialEq for Interface {
 
 impl Eq for Interface {}
 
-/// A FRAME AS A COORDINATE (51.1, 51.8): the frame index along `e₃`,
-/// written big-endian so the trie's order is the coordinate's order.
-///
-/// Little-endian would put 256 before 1, and a section enumerated in that
-/// order is not the succession — `occupied_frames` already carries that
-/// note for the fibers carrier, where the reading is sorted afterwards.
-/// Here the key is the order, and nothing sorts.
-pub fn frame_key(k: u16) -> [u8; 2] {
-    k.to_be_bytes()
+/// A FRAME AS A COORDINATE (51.1, 51.8, AT1 Q4): the frame along `e₃` by
+/// its own spelling — a length byte, then the minimal big-endian bytes — so
+/// the trie's order is the succession and no width walls it.
+pub fn frame_key(k: u64) -> Vec<u8> {
+    let mut out = Vec::new();
+    coord::put_frame(k, &mut out);
+    out
 }
 
 /// The frame a section's inner key names. `None` for a key that is not one.
-pub fn frame_of_key(k: &[u8]) -> Option<u16> {
-    Some(u16::from_be_bytes(k.try_into().ok()?))
+pub fn frame_of_key(k: &[u8]) -> Option<u64> {
+    let mut pos = 0usize;
+    let f = coord::take_frame(k, &mut pos)?;
+    (pos == k.len()).then_some(f)
 }
 
 /// The frames a section stands on, in succession. A reader that needs the
 /// list — the tape, the form key — takes it here rather than keeping a
 /// second copy beside the carrier (law 12).
-pub fn frames_of_section(section: &Keyed<()>) -> Vec<u16> {
+pub fn frames_of_section(section: &Keyed<()>) -> Vec<u64> {
     section.scoped().filter_map(|(k, _)| frame_of_key(&k)).collect()
 }
 
 /// A section over the frames it stands on.
-pub fn section_of_frames(frames: impl IntoIterator<Item = u16>) -> Keyed<()> {
+pub fn section_of_frames(frames: impl IntoIterator<Item = u64>) -> Keyed<()> {
     let mut out = Keyed::new();
     for k in frames {
         out.insert(frame_key(k), ());
@@ -523,133 +593,156 @@ pub fn section_of_frames(frames: impl IntoIterator<Item = u16>) -> Keyed<()> {
 }
 
 impl FormFace {
-    /// A face carrying only its word. The member pairs are filled by
-    /// `Form::face_of` from the vertices, or by the incidence that created
-    /// the face; they are never invented as the product of the two fibres.
-    ///
-    /// It claims every pair until something measures otherwise: a face with
-    /// no section is the unrestricted claim, which is what every face made
-    /// before sections existed.
-    pub fn new(i: u16, j: u16, word: Word) -> FormFace {
-        FormFace { i, j, word, at: Keyed::new(), pairs: None, interface: None }
+    /// An overlap carrying its measured place, unpivoted.
+    pub fn placed(place: FacePlace, producer: Producer) -> FormFace {
+        FormFace { place, producer, left: Word::identity(), right: Word::identity(), interface: None }
     }
 
     // `interface_tower` STOOD HERE AND IS DELETED (BQ5b): it lifted the
     // shared-cell set as a support, a tower of the witness of WHETHER, and
     // nothing read it. The interface is `V` whole.
 
-    /// Is this face's word measured at `frame` of the family's one body
-    /// (51.8)? A face that was never sectioned claims every frame, so it
-    /// is; a sectioned face answers at the frames it names and at no
-    /// others.
-    ///
-    /// A keyed read at the frame's own coordinate. It was
-    /// `ps.contains(&(pair as u16))` — a read of the whole list, once per
-    /// face per frame in the court's edge replay.
-    pub fn measured_on(&self, frame: usize) -> bool {
-        match &self.pairs {
-            None => true,
-            Some(ps) => u16::try_from(frame).is_ok_and(|k| ps.contains(&frame_key(k))),
+    /// Does this overlap carry 50.3's edge? The reading a contraction makes
+    /// when it asks whether a face is carried at all.
+    pub fn has_edge(&self) -> bool {
+        self.place.edge.is_some()
+    }
+
+    /// The overlap's edge becomes a remainder edge. A contraction that
+    /// retracts a body cannot leave the edge that was measured on it.
+    pub fn clear_edges(&mut self) {
+        self.place.edge = None;
+    }
+
+    /// Has a pivot written a factor on this overlap?
+    pub fn is_pivoted(&self) -> bool {
+        !self.left.is_identity() || !self.right.is_identity()
+    }
+}
+
+impl coord::Overlap {
+    /// The vertex at the overlap's leaving end; the Frame's own coordinate
+    /// where the chart is the Frame's.
+    pub fn from_vertex(&self) -> coord::VertexAt {
+        self.from.vertex()
+    }
+
+    /// The vertex at its arriving end.
+    pub fn to_vertex(&self) -> coord::VertexAt {
+        self.to.vertex()
+    }
+
+    /// The frame this overlap stands on: the member end's, the Frame having
+    /// none. A frame-axis overlap stands on two, and answers its leaving one.
+    pub fn frame(&self) -> Option<u64> {
+        self.from.frame().or_else(|| self.to.frame())
+    }
+
+    /// The same overlap read backward.
+    pub fn reversed(&self) -> coord::Overlap {
+        coord::Overlap { from: self.to.clone(), to: self.from.clone() }
+    }
+}
+
+impl coord::ChartAt {
+    /// The vertex this chart belongs to; the Frame's chart is the Frame's.
+    pub fn vertex(&self) -> coord::VertexAt {
+        match self {
+            coord::ChartAt::Frame => coord::VertexAt::Frame,
+            coord::ChartAt::At(m) => m.vertex.clone(),
         }
     }
 
-    /// What this face carries at one member pair. A keyed read: `None` is
-    /// "this face does not relate those two bodies".
-    pub fn place_at(&self, ci: &stalk::Invariant, cj: &stalk::Invariant) -> Option<&FacePlace> {
-        self.at.get(&crate::transducer::sentence::face_pair_key(ci, cj))
+    /// The Invariant the member acts on; `None` at the Frame.
+    pub fn invariant(&self) -> Option<&stalk::Invariant> {
+        match self {
+            coord::ChartAt::Frame => None,
+            coord::ChartAt::At(m) => Some(&m.chart),
+        }
     }
 
-    /// 50.3's edge at one member pair; `None` is a remainder edge there, or a
-    /// pair this face does not relate at all.
-    pub fn edge_at(&self, ci: &stalk::Invariant, cj: &stalk::Invariant) -> Option<&Transport> {
-        self.place_at(ci, cj)?.edge.as_ref()
-    }
-
-    /// Does any member pair of this face carry an edge? The reading a
-    /// contraction makes when it asks whether a face is carried at all.
-    pub fn has_edge(&self) -> bool {
-        self.at.scoped().any(|(_, p)| p.edge.is_some())
-    }
-
-    /// Every member pair of this face becomes a remainder edge. A contraction
-    /// that retracts a body cannot leave the edges that were measured on it.
-    pub fn clear_edges(&mut self) {
-        let pairs: Vec<Vec<u8>> = self.at.scoped().map(|(k, _)| k).collect();
-        for k in pairs {
-            if let Some(p) = self.at.get_mut(&k) {
-                p.edge = None;
-            }
+    /// The frame; `None` at the Frame.
+    pub fn frame(&self) -> Option<u64> {
+        match self {
+            coord::ChartAt::Frame => None,
+            coord::ChartAt::At(m) => Some(m.frame),
         }
     }
 }
 
-/// Independent orbit of a form: the closed vertex circuit, the faces along it,
-/// the chord (never a star face), and the oriented holonomy.
+/// THE ATLAS'S VERTICES AND FACES, as every reader takes them.
+pub type Vertices = Keyed<Vertex, coord::VertexAt>;
+pub type Faces = Keyed<FormFace, coord::Overlap>;
+
+/// ONE STEP OF A CIRCUIT: an overlap, crossed with its orientation or
+/// against it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct OrbitStep {
+    pub overlap: coord::Overlap,
+    pub forward: bool,
+}
+
+impl OrbitStep {
+    /// The chart the step leaves.
+    pub fn leaves(&self) -> &coord::ChartAt {
+        match self.forward {
+            true => &self.overlap.from,
+            false => &self.overlap.to,
+        }
+    }
+
+    /// The chart it arrives at.
+    pub fn arrives(&self) -> &coord::ChartAt {
+        match self.forward {
+            true => &self.overlap.to,
+            false => &self.overlap.from,
+        }
+    }
+}
+
+/// AN INDEPENDENT ORBIT OF A FORM, AS THE SEQUENCE OF OVERLAPS IT CROSSES
+/// (AT1, ruled): the cycle, closing where it began; the chord that closed it
+/// (never a star overlap); and the forest's stem from its component's root
+/// to where it is based (Axiom A).
 ///
-/// The HOLONOMY is a word and is the product of the faces' words around the
-/// orbit, which are vertex coordinates, so it is one word per orbit and does
-/// not fibre. The CARRIAGE is the product of the faces' carriages, which are
-/// member coordinates, so it is one versor PER MEMBER PATH — the sequence of
-/// charts the orbit passes through, keyed by those charts in circuit order.
+/// NOTHING THE STEPS DERIVE IS HELD. The holonomy word, the carriage along
+/// the cycle and the transport `θ` to the basepoint are READ by composing
+/// the overlaps (`Form::orbit_word`, `orbit_transport_on`,
+/// `Form::orbit_based_at`); a holonomy stored beside the transitions it
+/// composes is the table 78.41(2′) names. Each overlap relates ONE member
+/// pair at one frame, so a cycle is one member path and carries one
+/// transport: the frontier over a face's several pairs is gone with the
+/// faces that had several.
+///
+/// The stem and the chord stay until (iii) retires the forest; they are
+/// sequences of coordinates, never positions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Orbit {
-    /// THE CYCLE ITSELF, as an element of `Z₁(M)`: the MEMBER at each node,
-    /// `member_key(vertex, chart)`, in circuit order and closing on its first.
-    ///
-    /// `vertices` below is `π` of this — the projection that forgets the
-    /// chart — and it is kept because every reader of an orbit asks the form
-    /// for a vertex. It is not the cycle. Under `π` a 1-cell between two
-    /// charts AT ONE VERTEX, `((v,c_a),(v,c_b))`, collapses to the
-    /// degenerate self-loop `(v,v)` and loses its orientation, which is
-    /// exactly the defect that broke 62 of 62 live orbits at `437d253`: the
-    /// traversal could not tell which way it ran because the projection had
-    /// thrown the answer away.
-    ///
-    /// Carried, the cycle IS its own path. There is nothing to search for.
-    pub members: Vec<Vec<u8>>,
-    pub vertices: Vec<u16>,
-    pub faces: Vec<u16>,
-    pub chord: u16,
-    pub holonomy: Word,
-    /// Member path key → the carriage accumulated along it.
-    pub carriages: Keyed<Versor>,
-    /// AXIOM A — THE TREE TRANSPORT FROM THE FORM'S BASEPOINT TO WHERE THIS
-    /// CYCLE IS BASED (54.7, ruled 2026-09-21).
-    ///
-    /// `tree_path` closes a cycle through the spanning forest, so the
-    /// holonomy `paths_carried` composes is based at the chord's own node
-    /// `u`, in `u`'s frame. Two cycles based at different nodes are
-    /// operators on DIFFERENT tangent spaces, and multiplying them is
-    /// meaningless — which is why `π₁` could not be formed even with `b₁ >
-    /// 0`: the generators existed and could not be concatenated.
-    ///
-    /// `θ_u = Ω_{T(x₀ → u)}` carries the basepoint's frame to `u`'s, so
-    ///
-    /// ```text
-    ///     ρ(γ) = θ_u · Ω_γ · θ_u⁻¹  ∈  Spin⁺(3,1)(ℚ)
-    /// ```
-    ///
-    /// is the same cycle read at `x₀`, where every other cycle is also
-    /// read. `Ad_θ` is an isometry of the algebra, so the defect
-    /// invariants `(I₁, I₂, kind)` are unchanged by it — which is the
-    /// acceptance test: basing must move no reading, only make the
-    /// operators composable.
-    ///
-    /// The identity where the cycle is based at the basepoint itself, and
-    /// for a component whose root is its own basepoint (`b₀ > 1` gives one
-    /// per component; a chord between components has no transport and is
-    /// refused, never synthesised).
-    pub based_at: Versor,
+    pub steps: Vec<OrbitStep>,
+    pub chord: coord::Overlap,
+    pub stem: Vec<OrbitStep>,
 }
 
 impl Orbit {
-    /// The key a member path is filed under: the chart key at each vertex of
-    /// the orbit, in circuit order, each length-delimited. Content, so the same
-    /// path reads the same on every node.
-    pub fn path_key(charts: &[Vec<u8>]) -> Vec<u8> {
+    /// The charts the cycle stands at, in circuit order: each step's leaving
+    /// chart.
+    pub fn charts(&self) -> Vec<coord::ChartAt> {
+        self.steps.iter().map(|s| s.leaves().clone()).collect()
+    }
+
+    /// The vertices it passes through, in circuit order (π of the charts).
+    pub fn vertices(&self) -> Vec<coord::VertexAt> {
+        self.steps.iter().map(|s| s.leaves().vertex()).collect()
+    }
+
+    /// THE KEY THE CYCLE'S ONE MEMBER PATH IS FILED UNDER: its charts in
+    /// circuit order, each length-delimited. Content, so the same path reads
+    /// the same on every node.
+    pub fn path_key(&self) -> Vec<u8> {
+        use crate::network::nerve::Coordinate;
         let mut buf = Vec::new();
-        for c in charts {
-            crate::transducer::address::put_key_bytes(&mut buf, c);
+        for c in self.charts() {
+            crate::transducer::address::put_key_bytes(&mut buf, c.encode().as_bytes());
         }
         buf
     }
@@ -694,6 +787,28 @@ impl FormCell {
     }
 }
 
+/// A CHAIN BY ITS COORDINATES (54.5 Road (d), AT1): its measure per lane,
+/// its pieces and its corner — what the key writes of a demand's bodies or
+/// of the remainder; the chain itself is evidence and rides the record.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ChainAt {
+    pub measure: [u64; 4],
+    pub pieces: u64,
+    pub corner: (i64, i64),
+}
+
+impl ChainAt {
+    /// The coordinates of a chain, read off it; `None` for the empty chain,
+    /// which has no corner and is written as the absence it is.
+    #[expect(clippy::disallowed_methods, reason = "rule 4 — the min corner is the chain's extent, content; §1.4, the sensor boundary where a site's coordinates are read")]
+    pub fn of(chain: &[Link]) -> Option<ChainAt> {
+        let r = chain.iter().map(|(r, _, _, _)| *r).min()?;
+        let c = chain.iter().map(|(_, c, _, _)| *c).min()?;
+        let (measure, pieces) = demand_coordinates(chain);
+        Some(ChainAt { measure, pieces, corner: (r, c) })
+    }
+}
+
 /// A sentence as vertices, faces, orbits, remainder.
 #[derive(Debug, Clone)]
 pub struct Form {
@@ -703,8 +818,14 @@ pub struct Form {
     /// the form, so it is written FIRST on its address and a reader takes
     /// every versor after it at this `n`.
     pub n: u8,
-    pub vertices: Vec<Vertex>,
-    pub faces: Vec<FormFace>,
+    /// AT1 — THE VERTICES BY THEIR COORDINATES (Q1): a Word by its
+    /// transport class, the Frame by its tag alone, every other kind by the
+    /// coordinate its kind names. Never a position: a vertex is reached by
+    /// what it is, and two forms holding one vertex hold it at one key.
+    pub vertices: Vertices,
+    /// AT1 — THE FACES BY THEIR OVERLAPS (Q2): one per member pair per
+    /// frame, keyed by the two charts, the order the orientation.
+    pub faces: Faces,
     pub orbits: Vec<Orbit>,
     /// A5's chain and the translator that places it (§2.1, 19). The proof
     /// rides the coordinate: a tape whose remainder puts two transitions on
@@ -715,24 +836,20 @@ pub struct Form {
     /// Čech complex reads for overlap, which is the reading
     /// `two_bubbles_on_one_chart_share_an_edge_not_a_triangle` asserts.
     pub remainder: crate::transducer::element::PlacedChain,
+    /// AT1, 54.5 ROAD (d) — THE REMAINDER'S COORDINATES where its chain is
+    /// not held: a form read back from its address carries the chain's
+    /// measure, pieces and corner and not the chain, which rides the record
+    /// exactly as a demand's bodies do. `None` wherever `remainder` holds the
+    /// chain, whose coordinates are then read off it ([`ChainAt::of`]).
+    pub remainder_at: Option<ChainAt>,
     pub depth: u16,
     pub hue_maps: Keyed<Vec<(u8, u8)>>,
     pub ratio: ((usize, usize), (usize, usize)),
-    /// THE SECTIONS ALONG `e₃` (51.8): class or member key → the FRAMES it
-    /// stands on, each frame its own coordinate in the inner carrier.
-    ///
-    /// It was `Keyed<Vec<u16>>` and every reader asked it the same question
-    /// — does this section claim frame `k` — with `ps.contains(&k)`, a read
-    /// of the whole list, once per vertex per member per frame in the
-    /// court's replay. 51.8 rules the court's readers onto the coordinate:
-    /// "the same refusal on a coordinate instead of on a list". Keyed by
-    /// [`frame_key`] all the way down, the frame IS the coordinate and the
-    /// question is a keyed read.
-    ///
-    /// The inner key is big-endian, so the trie's own order is the frame's
-    /// order and a reader that enumerates a section — the tape, the form
-    /// key — gets the frames in succession without sorting them (law 2).
-    pub sections: Keyed<Keyed<()>, coord::SectionAt>,
+    // `sections` STOOD HERE AND RETIRED AS A CARRIER (AT1, ruled): class or
+    // member key → the frames it stands on. Each member now holds its own
+    // frames (`Acting.frames`), so the sections are READ off the members
+    // ([`Form::sections`]) and nothing beside them has to agree with them
+    // (law 12).
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
@@ -747,16 +864,10 @@ pub struct Form {
     /// the holonomy class opened on → the chord of the orbit that is its
     /// section. The relation is all the form carries; the seed versor and
     /// A7's coordinate are re-derived from that orbit on every read (law
-    /// 12), never stored beside it. On the tape and in the address.
-    pub axes: Keyed<u16, coord::Holonomy>,
-    /// SITE → glued vertex index. Written by [`Form::glue`] and rebuilt by
-    /// the decoder from Glued vertices.
-    ///
-    /// 54.7 B5a — THE DOC SAID "cited form address" AND THE CODE SAID SITE.
-    /// The target left the vertex when it left `form_vertex_key`; this is
-    /// keyed by `vertex_bytes`, the host's own boundary record, and the
-    /// sentence that had drifted from the code is now the type.
-    pub glued: Keyed<u16, coord::Site>,
+    /// 12), never stored beside it. On the tape and in the address. The
+    /// chord is the overlap (AT1); a form read from its address holds the
+    /// class alone and finds the orbit by it.
+    pub axes: Keyed<Option<coord::Overlap>, coord::Holonomy>,
     /// THE COVER: WHICH FORM EACH OPEN BOUNDARY MATES WITH (54.7, B5a, as
     /// ruled 2026-09-21).
     ///
@@ -792,12 +903,6 @@ pub struct Form {
     /// Incomparable discharges held as candidates until a glue or ruling.
     /// Outer key is the after class; inner is the discharging rotor A1 key.
     pub vortex: Keyed<Keyed<PivotCertificate>>,
-    /// Word vertex address → index. The meet for A6 and Mayer–Vietoris.
-    ///
-    /// The address is `word_vertex_address`'s, which opens `TAG_FORM` — a
-    /// MEMBER coordinate, strictly finer than the form's own address and
-    /// coarser than a section (54.7 R5).
-    pub by_address: Keyed<u16, coord::Member>,
     /// Chart key → the Word vertices on that chart (18.2): the fiber a
     /// listing body's chart reads when a cite asks what this form holds
     /// there (24.1 as ruled 2026-09-09). Derived by `reindex`, never on
@@ -810,8 +915,9 @@ pub struct Form {
     /// check could have separated them. Every reader asked for a chart and
     /// got nothing, `incident_chart` read every idea as standing on no
     /// chart, and the defect surfaced only when a cite broke. `coord::Chart`
-    /// is that sentence where the compiler reads it (§4.4).
-    pub by_class: Keyed<Vec<u16>, coord::Chart>,
+    /// is that sentence where the compiler reads it (§4.4). It holds the
+    /// vertices' COORDINATES (AT1), never their positions.
+    pub by_class: Keyed<Vec<coord::VertexAt>, coord::Chart>,
     /// TRANSPORT CLASS KEY → the Word vertices of that class (21 step 1).
     /// Derived by `reindex`, never on the tape.
     ///
@@ -829,59 +935,46 @@ pub struct Form {
     ///
     /// The key is `TransportClass::key()`'s own, taken from
     /// `family::transport_class(v)`, so a reader asks with the key it already
-    /// builds and there is one definition of it.
-    pub by_transport: Keyed<Vec<u16>, coord::Transport>,
-    /// Vertex index key → Frame face index. Star incidence, one face per vertex.
-    pub star: Keyed<u16, coord::VertexIx>,
+    /// builds and there is one definition of it. It holds the vertices'
+    /// COORDINATES (AT1): a Word's is its class, and a Rebased vertex on a
+    /// base of the class stands under it too.
+    pub by_transport: Keyed<Vec<coord::VertexAt>, coord::Transport>,
     /// Word vertex address → carriage, filled at construction.
     pub carriages: Keyed<Versor>,
-    /// Rebased vertex keyed by the `of` Word address — the same member
-    /// coordinate `by_address` answers, over a different vertex kind.
-    pub by_rebased: Keyed<u16, coord::Member>,
-    /// Unfolded vertex keyed by its measure key.
-    pub by_unfolded: Keyed<u16, coord::Unfolded>,
-    /// Demand vertex keyed by (kind, chart) (50.5): the read that keeps a
-    /// sentence to one demand vertex per pair. Written by `reindex`.
-    pub demands: Keyed<u16, coord::DemandVertex>,
     /// NB1 — THE CONTACT COMPLEX'S CERTIFIED CELLS, keyed by their bodies'
     /// pieces written inline, each framed: one per standing set, read by
     /// perception and held in memory only (see [`FormCell`]).
     pub cells: Keyed<FormCell>,
-    /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by face index:
-    /// the two bodies' pieces in the face's orientation, the body at its `i`
-    /// end first. `FormFace` carries no body,
-    /// so a circuit's step reads its body off the face it crosses here —
-    /// never off its member (checklist (m)). In memory only; the tape at the
-    /// recut (BQ5b).
-    pub face_bodies: Keyed<(Vec<u8>, Vec<u8>)>,
+    /// BD2 — THE BODY PAIR EACH CONTACT FACE RUNS BETWEEN, by its overlap:
+    /// the two bodies' pieces in the overlap's orientation, the body at its
+    /// leaving end first. `FormFace` carries no body, so a circuit's step
+    /// reads its body off the overlap it crosses here — never off its member
+    /// (checklist (m)). In memory only; the tape at the recut (BQ5b).
+    pub face_bodies: Keyed<(Vec<u8>, Vec<u8>), coord::Overlap>,
 }
 
 impl Default for Form {
     fn default() -> Self {
+        let mut vertices = Keyed::new();
+        vertices.put(&coord::VertexAt::Frame, Vertex::Frame);
         Form {
             n: crate::transducer::element::GRID_N,
-            vertices: vec![Vertex::Frame],
-            faces: Vec::new(),
+            vertices,
+            faces: Keyed::new(),
             orbits: Vec::new(),
             remainder: crate::transducer::element::PlacedChain::default(),
+            remainder_at: None,
             depth: 0,
             hue_maps: Keyed::new(),
             ratio: ((1, 1), (1, 1)),
-            sections: Keyed::new(),
             certificates: Keyed::new(),
             torsion: Keyed::new(),
             axes: Keyed::new(),
-            glued: Keyed::new(),
             cover: Vec::new(),
             vortex: Keyed::new(),
-            by_address: Keyed::new(),
             by_class: Keyed::new(),
             by_transport: Keyed::new(),
-            star: Keyed::new(),
             carriages: Keyed::new(),
-            by_rebased: Keyed::new(),
-            by_unfolded: Keyed::new(),
-            demands: Keyed::new(),
             cells: Keyed::new(),
             face_bodies: Keyed::new(),
         }
@@ -911,7 +1004,7 @@ pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
     for e in &f.cover {
         out.push(e.target.clone());
     }
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         if let Vertex::Word { derivation, .. } = v {
             for (form_addr, _, _) in &derivation.generators {
                 out.push(form_addr.clone());
@@ -921,64 +1014,31 @@ pub fn cited_addresses(f: &Form) -> Vec<crate::transducer::address::Address> {
     out
 }
 
-pub(crate) fn form_face_step(faces: &[FormFace], fi: usize, from: usize, to: usize) -> Option<Word> {
-    let f = faces.get(fi)?;
-    if f.i as usize == from && f.j as usize == to {
-        Some(f.word.clone())
-    } else {
-        Some(f.word.inverse())
-    }
+/// THE WORD ACROSS ONE OVERLAP, DERIVED (AT1 Q2, ruled): the pivot's left
+/// factor, the coboundary `w_to ∘ w_from⁻¹` of the two ends' vertices, and
+/// the pivot's right factor inverted. Never held: a face carries only what
+/// a producer wrote on it. `None` where an end speaks no word (a demand,
+/// 50.5) or is not a vertex of these.
+pub fn face_word_on(vertices: &Vertices, overlap: &coord::Overlap, face: &FormFace) -> Option<Word> {
+    let wa = vertices.at(&overlap.from_vertex())?.word_in(vertices)?;
+    let wb = vertices.at(&overlap.to_vertex())?.word_in(vertices)?;
+    Some(face.left.compose(&wb.compose(&wa.inverse())).compose(&face.right.inverse()).normal_form())
 }
 
-pub(crate) fn form_named_holonomy(faces: &[FormFace], path: &[usize], crossed: &[usize]) -> Word {
+/// THE WORD AN ORBIT COMPOSES, read along its steps (ruled: a holonomy is
+/// never held beside the transitions it composes). `None` where a step
+/// names an overlap these faces do not hold.
+pub fn orbit_word_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Word> {
     let mut w = Word::identity();
-    for (win, &fi) in path.windows(2).zip(crossed) {
-        if let Some(s) = form_face_step(faces, fi, win[0], win[1]) {
-            w = w.compose(&s);
-        }
+    for s in &lp.steps {
+        let step = face_word_on(vertices, &s.overlap, faces.at(&s.overlap)?)?;
+        let step = match s.forward {
+            true => step,
+            false => step.inverse(),
+        };
+        // The order `form_named_holonomy` composed in, kept, so the word an
+        // orbit reads is the one it read before the atlas, not a conjugate.
+        w = w.compose(&step);
     }
-    w.normal_form()
-}
-
-/// The tree path from `src` to `dst` as its vertices and the faces crossed
-/// between them, named in the same pass that finds them: each vertex is
-/// reached through one face of its own adjacency, so no face is searched
-/// for afterwards.
-pub(crate) fn tree_path(adj: &[Vec<(usize, usize)>], src: usize, dst: usize) -> Option<(Vec<usize>, Vec<usize>)> {
-    if src == dst {
-        return Some((vec![src], Vec::new()));
-    }
-    let mut prev: Vec<Option<(usize, usize)>> = vec![None; adj.len()];
-    prev[src] = Some((src, 0));
-    let mut q = vec![src];
-    let mut qi = 0usize;
-    while qi < q.len() {
-        let u = q[qi];
-        qi += 1;
-        if u == dst {
-            break;
-        }
-        for &(v, fi) in &adj[u] {
-            if prev[v].is_some() {
-                continue;
-            }
-            prev[v] = Some((u, fi));
-            q.push(v);
-        }
-    }
-    // AT1 (r4) — A SEARCH, counted at its site: the atlas retires it.
-    super::atlas::note_tree_path(qi);
-    prev[dst]?;
-    let mut path = vec![dst];
-    let mut crossed = Vec::new();
-    let mut cur = dst;
-    while cur != src {
-        let (p, fi) = prev[cur]?;
-        crossed.push(fi);
-        path.push(p);
-        cur = p;
-    }
-    path.reverse();
-    crossed.reverse();
-    Some((path, crossed))
+    Some(w.normal_form())
 }

@@ -9,7 +9,8 @@
 use super::perceive::{edge_transport, EdgeTally};
 use super::*;
 use crate::network::nerve::Keyed;
-use crate::transducer::sentence::{section_of_frames, vertex_ix_key, Transport};
+use crate::network::nerve::coord;
+use crate::transducer::sentence::{section_of_frames, Transport};
 
 /// Two transports are one edge: the word projectively, the carriage as a
 /// versor, the gauge as a listing (rule 3).
@@ -65,29 +66,22 @@ pub(crate) fn union_quotient(
 }
 
 /// THE FRAMES A MEMBER OCCUPIES, read at its own coordinate (52.5 reading
-/// 6). `bodies_at` is keyed `vertex ++ chart ++ frame`, so the frames this
-/// member stands on are the fiber under its own `vertex ++ chart` prefix
-/// and the remaining key IS the frame. Read in coordinate order, because
-/// succession along `e₃` is the next frame OCCUPIED and the set may skip,
-/// repeat or reorder in ℤ; the trie's own order is the key's bytes, which
-/// for a little-endian frame is not the coordinate's.
+/// 6). `bodies_at` is keyed `member ‖ frame`, so the frames this member
+/// stands on are the fiber under its own member prefix and the remaining key
+/// IS the frame, by its own spelling (AT1 Q4) — whose byte order is the
+/// frames' order, so the trie's walk is the succession along `e₃` and nothing
+/// sorts.
 ///
 /// Re-derived from the carrier that already holds the bodies, never stored
 /// beside them (law 12).
-pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, ix: u16, ck: &[u8]) -> Vec<u16> {
-    let mut prefix = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix)).as_bytes().to_vec();
-    crate::transducer::address::put_key_bytes(&mut prefix, ck);
+pub(crate) fn occupied_frames(bodies_at: &Keyed<(Body, Body, Versor)>, v: &coord::VertexAt, ck: &[u8]) -> Vec<u64> {
+    let prefix = member_key(v, ck);
     let Some(fiber) = bodies_at.fiber_at(&prefix) else {
         return Vec::new();
     };
-    let mut out: Vec<u16> = fiber
-        .filter_map(|(k, _)| {
-            let tail = k.get(prefix.len()..)?;
-            Some(u16::from_le_bytes(tail.try_into().ok()?))
-        })
-        .collect();
-    out.sort_unstable();
-    out
+    fiber
+        .filter_map(|(k, _)| crate::transducer::sentence::frame_of_key(k.get(prefix.len()..)?))
+        .collect()
 }
 
 /// WHAT HAPPENED TO EVERY FACE THIS FORM WAS OFFERED, by the reader that
@@ -112,6 +106,59 @@ pub(crate) struct FaceDrops {
     pub(crate) chart: usize,
     pub(crate) word: usize,
     pub(crate) place: usize,
+    /// AT1 — a pair the incidence named that stands on NO FRAME TOGETHER: a
+    /// face is one overlap per frame both members hold (Q2), and a pair with
+    /// none has no overlap to be.
+    pub(crate) frameless: usize,
+}
+
+/// WHY NO FRAME PLACES A NAMED PAIR (78.46(5)(d)).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum FramelessWhy {
+    /// The two members hold no frame in common.
+    NoCommonFrame,
+    /// They hold frames in common, and the edge re-derived on none of them.
+    EdgeOnNone,
+}
+
+/// A NAMED PAIR NO FRAME PLACES — A REFUSAL THAT CARRIES ITS CONTENT
+/// (78.46(5)(d), A.17, law 7): the incidence named the pair, and a face is
+/// one overlap per frame both members stand on (AT1, Q2), so with no such
+/// frame there is no overlap to be. It is counted and it keeps the pair,
+/// both members with the frames each holds, and why; never dropped.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct Frameless {
+    pub(crate) a: (coord::VertexAt, Invariant, Vec<u64>),
+    pub(crate) b: (coord::VertexAt, Invariant, Vec<u64>),
+    pub(crate) why: FramelessWhy,
+}
+
+impl Frameless {
+    /// The refusal as the census line reads it: each member by its
+    /// vertex's coordinate and its chart, with its frames, and the reason.
+    pub(crate) fn line(&self) -> String {
+        use crate::network::nerve::Coordinate;
+        let hx = |b: &[u8]| -> String {
+            let mut s: String = b.iter().take(2).map(|x| format!("{x:02x}")).collect();
+            s.push('…');
+            s
+        };
+        // The chart WHOLE: two charts of one vertex share a prefix, and a
+        // prefix that cannot tell them apart is no reading of either (78.45).
+        let whole = |b: &[u8]| -> String { b.iter().map(|x| format!("{x:02x}")).collect() };
+        let member = |(_, c, ks): &(coord::VertexAt, Invariant, Vec<u64>)| {
+            format!("chart {} on frames {ks:?}", whole(c.key().as_bytes()))
+        };
+        let vertices = match self.a.0 == self.b.0 {
+            true => format!("one vertex {}", hx(self.a.0.encode().as_bytes())),
+            false => format!("vertices {} and {}", hx(self.a.0.encode().as_bytes()), hx(self.b.0.encode().as_bytes())),
+        };
+        let why = match self.why {
+            FramelessWhy::NoCommonFrame => "no frame both stand on",
+            FramelessWhy::EdgeOnNone => "the edge re-derived on no frame both stand on",
+        };
+        format!("frameless pair at {vertices}: {} ↔ {}: {why}", member(&self.a), member(&self.b))
+    }
 }
 
 /// THE EDGE BETWEEN TWO MEMBERS (50.3), MEASURED ON THEIR UNION SHAPES
@@ -142,14 +189,13 @@ pub(crate) fn edge_between(
     bodies_at: &Keyed<(Body, Body, Versor)>,
     unions: &Keyed<(Body, Body, Versor)>,
     n_reached: usize,
-    (i, cik): (u16, &[u8]),
-    (j, cjk): (u16, &[u8]),
+    (i, cik): (&coord::VertexAt, &[u8]),
+    (j, cjk): (&coord::VertexAt, &[u8]),
     tally: &mut EdgeTally,
 ) -> (Option<Transport>, Option<Keyed<()>>) {
-    let at = |ix: u16, ck: &[u8], k: u16| -> Option<&(Body, Body, Versor)> {
-        let mut bk = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix)).as_bytes().to_vec();
-        crate::transducer::address::put_key_bytes(&mut bk, ck);
-        bk.extend_from_slice(&k.to_le_bytes());
+    let at = |v: &coord::VertexAt, ck: &[u8], k: u64| -> Option<&(Body, Body, Versor)> {
+        let mut bk = member_key(v, ck);
+        bk.extend_from_slice(&crate::transducer::sentence::frame_key(k));
         bodies_at.get(&bk)
     };
     let union_edge = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
@@ -159,7 +205,7 @@ pub(crate) fn edge_between(
         _ => None,
     };
     let mut edge: Option<Transport> = None;
-    let mut agreeing: Vec<u16> = Vec::new();
+    let mut agreeing: Vec<u64> = Vec::new();
     let mut common = 0usize;
     // SUCCESSION ALONG e₃ IS THE NEXT FRAME OCCUPIED, never `k + 1` (52.5
     // reading 6, ruled 2026-09-18). This read `for k in 0..n`, probing every

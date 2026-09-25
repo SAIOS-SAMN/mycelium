@@ -60,19 +60,31 @@ let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), 
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
+// AT1 (Q1): the two bodies are ONE vertex of the identity's class, a member
+// per chart, each overlapped from the Frame's chart.
+let mut charts = Vec::new();
 for tag in [2u8, 3u8] {
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         // Its own chart: an address is derived from its coordinates (54.2).
         crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         vec![(1, 2)],
+        [0],
         None,
-    ));
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+    charts.push(c);
 }
-f.faces.push(f.face_of(0, 1).expect("star 1"));
-f.faces.push(f.face_of(0, 2).expect("star 2"));
-f.faces.push(f.face_carrying(1, 2, order4).expect("a chord between two bodies"));
+// The chord carries the quarter turn as the pivot writes a word on an
+// overlap: its left factor (AT1).
+let chord = f.place_overlap(charts[0].clone(), charts[1].clone(), None).expect("a chord between two bodies");
+f.apply_move(&crate::transducer::sentence::PivotBy::Word {
+    face: chord,
+    word: Box::new(order4),
+    side: crate::transducer::sentence::Side::Left,
+});
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 let _ = f.pivot_orbit(
     [0xca; 32],

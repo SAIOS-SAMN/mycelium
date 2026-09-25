@@ -31,14 +31,16 @@ fn swap() -> Vec<(u8, u8)> {
 /// hue map: a generator as the language holds one (L5).
 fn generator_form(w: Word, gauge: Vec<(u8, u8)>, tag: u8) -> (Address, Form) {
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    f.put_vertex(Vertex::word_on(
         Derivation::spelled(w),
         // `tag` named the vertex and now charts it (54.2).
         Invariant::counts(&[u64::from(tag)]),
         Box::new(element::identity_versor()),
         gauge,
+        [0u64],
         None,
-    ));
+    ))
+    .expect("a generator's word vertex has a class");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)

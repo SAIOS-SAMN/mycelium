@@ -418,7 +418,7 @@ fn walk(dir: &str, limit: usize, stroke: Option<usize>) -> Result<Reading, Strin
             r.exhausted += 1;
         }
         r.extracted += 1;
-        for v in &rule.form.vertices {
+        for (_, v) in rule.form.vertices.scoped() {
             match v {
                 Vertex::Glued { .. } => r.glued += 1,
                 Vertex::Demand { kind, .. } => {
@@ -471,7 +471,7 @@ fn read_engine(epi: &mut Epigenome, r: &mut Reading) {
         // are fibers already, the first by the form that holds it and the
         // second by being built here.
         r.simplices_filled += f.torsion.scoped().count() as u64;
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let Vertex::Word { address, derivation, .. } = v else {
                 continue;
             };

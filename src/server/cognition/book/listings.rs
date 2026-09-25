@@ -547,7 +547,7 @@ impl Kernel {
         // its presentation, which the key excludes (`evidence_is_not_identity`).
         let env = candidate.receipts();
         let mut any = false;
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
                 continue;
             };
@@ -588,17 +588,7 @@ impl Kernel {
         vertex: &crate::transducer::address::Address,
     ) -> Option<crate::transducer::alphabet::Rotor> {
         let f = self.held_word(form.as_bytes()).and_then(|e| e.form().cloned())?;
-        let i = *f
-            .by_address
-            .at(&<crate::network::nerve::coord::Member as crate::network::nerve::Coordinate>::decode(
-                vertex.as_bytes(),
-            )
-            .ok()?)?;
-        let crate::transducer::sentence::Vertex::Word { derivation, .. } = f.vertices.get(i as usize)?
-        else {
-            return None;
-        };
-        Some(derivation.rotor())
+        crate::transducer::sentence::rotor_at_vertex(&f, vertex.as_bytes())
     }
 
     /// The word at an address, read by its coordinate. Restored keys are

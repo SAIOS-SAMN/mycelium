@@ -33,7 +33,6 @@ pub(crate) struct OrbitClass {
 }
 
 impl Form {
-    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (an orbit, filed as the certificate's chord); the atlas row replaces the slot by the chart's coordinates")]
     pub(crate) fn trial(
         &self,
         idx: usize,
@@ -51,6 +50,10 @@ impl Form {
         //
         // Opening an axis writes the form's axis carrier as well, and that
         // carrier is small: the trial owns a copy of it for that arm.
+        // THE ORBIT TRIALLED, BY ITS CHORD (AT1): the trial re-reads the
+        // orbits off the faces it wrote, and finds this one there by the
+        // overlap that closes it, never by its position in either list.
+        let chord = self.orbits.get(idx)?.chord.clone();
         let mut faces = self.faces.clone();
         let mut axes = self.axes.clone();
         apply_by(&mut faces, &cand.by);
@@ -69,7 +72,7 @@ impl Form {
             // the holonomy the orbit had before its own opening.
             let class = orbit_holonomy_on(&faces, &self.vertices, lp)?.rotor().holonomy_key()?;
             element::versor_of_word(&orbit_holonomy_on(&faces, &self.vertices, lp)?)?;
-            axes.put(&class, *face);
+            axes.put(&class, Some(face.clone()));
         }
         // 12.6: a pivot on axis x discharges when x reads zero after and no
         // other coordinate moved; opening an axis discharges the ORBIT — it
@@ -84,7 +87,7 @@ impl Form {
         // no closed member path has nothing to read and refuses (rule 11).
         // The trial rewrites the faces and reopens the axes; the VERTICES are
         // untouched by it, so the Frame is read off the form's own.
-        let after = class_vectors_on(&faces, &self.vertices, &axes, orbits.get(idx)?);
+        let after = class_vectors_on(&faces, &self.vertices, &axes, orbits.iter().find(|lp| lp.chord == chord)?);
         if after.is_empty() {
             return None;
         }
@@ -277,7 +280,7 @@ impl Form {
             }
         };
         Some(PivotCertificate {
-            chord: idx as u16,
+            chord,
             axis: cand.axis,
             before: kappa.class_key(),
             after: kappa_after.class_key(),
@@ -334,10 +337,10 @@ impl Form {
         let Some(lp) = self.orbits.get(idx) else {
             return Vec::new();
         };
-        let chord = lp.chord;
+        let chord = lp.chord.clone();
         let mut filed: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
         for OrbitClass { class, periods, sigma } in self.orbit_classes(lp) {
-            self.torsion.put(&class, FiledOrbit { sigma, periods, chord });
+            self.torsion.put(&class, FiledOrbit { sigma, periods, chord: Closes::On(chord.clone()) });
             // THE YIELD IS ACROSS BOTH PLANES: `(ℓ₁ − 1) + (ℓ₂ − 1)`, not
             // `(lcm − 1)`, which is neither plane's labour.
             //

@@ -2,6 +2,7 @@
 // pair lives outside the four functions law 11 allows one.
 
 use super::common::*;
+use crate::network::nerve::coord;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self};
 use crate::transducer::sentence::*;
@@ -9,8 +10,7 @@ use crate::transducer::sentence::*;
 #[test]
 fn refraction_is_rebase_regauge_and_carriage() {
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1, order4()));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    stand_with_star(&mut f, &word_vertex(1, order4()));
     f.reindex();
     let gamma = Transport {
         word: order4(),
@@ -19,16 +19,15 @@ fn refraction_is_rebase_regauge_and_carriage() {
     };
     let out = gamma.refract(&f).expect("on the plane");
     // The member at the chart the fixture put the vertex on: a keyed read, and
-    // this fixture puts it on the root stratum.
+    // this fixture puts it on the root stratum. The vertex is read at its own
+    // coordinate on each form (AT1 Q1), never at a position.
     let root = crate::transducer::stalk::Invariant::default();
-    let (Vertex::Word { derivation: old_d, .. }, Some(old_a)) =
-        (&f.vertices[1], f.vertices[1].acting_on(&root))
-    else {
+    let old_v = f.vertices.at(&only_word(&f)).expect("the fixture's word vertex");
+    let new_v = out.vertices.at(&only_word(&out)).expect("the refracted word vertex");
+    let (Vertex::Word { derivation: old_d, .. }, Some(old_a)) = (old_v, old_v.acting_on(&root)) else {
         panic!("word vertex");
     };
-    let (Vertex::Word { derivation, .. }, Some(a)) =
-        (&out.vertices[1], out.vertices[1].acting_on(&root))
-    else {
+    let (Vertex::Word { derivation, .. }, Some(a)) = (new_v, new_v.acting_on(&root)) else {
         panic!("word vertex");
     };
     assert!(derivation.rotor().projective_eq(&old_d.word_local().expect("spelled").rebase(&gamma.word).rotor()));
@@ -45,8 +44,7 @@ fn refraction_is_rebase_regauge_and_carriage() {
 #[test]
 fn refraction_replays_as_its_three_moves() {
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1, order4()));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    stand_with_star(&mut f, &word_vertex(1, order4()));
     f.reindex();
     let gamma = Transport {
         word: order2(),
@@ -61,7 +59,10 @@ fn refraction_replays_as_its_three_moves() {
     by_hand.orbits = Form::orbits_of(&by_hand.faces, &by_hand.vertices);
     by_hand.reindex();
     assert_eq!(via.vertices.len(), by_hand.vertices.len());
-    for (a, b) in via.vertices.iter().zip(&by_hand.vertices) {
+    // Vertex by vertex AT ONE COORDINATE (AT1 Q1): the two paths must key
+    // every vertex alike, and each pair is compared where it stands.
+    for (k, a) in via.vertices.entries() {
+        let b = by_hand.vertices.at(&k).expect("the three moves by hand key the vertex where Γ does");
         match (a, b) {
             (
                 Vertex::Word { derivation: da, acts: aa, .. },
@@ -89,24 +90,28 @@ fn refraction_replays_as_its_three_moves() {
 #[test]
 fn rebase_conjugates_by_a_versor_never_subtracts() {
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1, order4()));
-    f.vertices[1].set_carriage(element::carriage(&q1(), &(q1(), q0())));
-    f.faces.push(f.face_of(0, 1).expect("star"));
-    let by = f.face_of(0, 1).expect("relative");
+    let mut v = word_vertex(1, order4());
+    v.set_carriage(element::carriage(&q1(), &(q1(), q0())));
+    let c = stand_with_star(&mut f, &v);
+    let star = coord::Overlap { from: coord::ChartAt::Frame, to: c.clone() };
+    let by = f.face_place(&coord::ChartAt::Frame, &c, None).expect("relative");
     assert!(
-        !element::same_versor(&face_place(&by).carriage, &element::identity_versor())
-            || f.vertices.get(1).is_some(),
-        "face_of composes carriages by the geometric product"
+        !element::same_versor(&by.carriage, &element::identity_versor())
+            || f.vertices.at(&c.vertex()).is_some(),
+        "face_place composes carriages by the geometric product"
     );
     let of = f
-        // Face 0 is the star the fixture pushed: the chord this rebase
-        // would close on, were it a closed orbit. It is not — 0 and 1 are
-        // two vertices — so nothing is filed and the vertex is rebased.
-        .rebase(0, 1, element::carriage(&q1(), &(q0(), q1())), 0)
+        // The star the fixture placed: the chord this rebase would close
+        // on, were it a closed orbit. It is not — the Frame and the word
+        // are two vertices — so nothing is filed and the vertex is rebased.
+        .rebase(&coord::VertexAt::Frame, &c.vertex(), element::carriage(&q1(), &(q0(), q1())), &star)
         .expect("rebase");
-    assert!(matches!(f.vertices[of as usize], Vertex::Rebased { .. }));
-    let t = f.face_of(0, of).expect("rebased face");
-    let _ = face_place(&t).carriage;
+    assert!(matches!(f.vertices.at(&of), Some(Vertex::Rebased { .. })));
+    // The rebased vertex's member at the fixture's frame, on the chart it
+    // stood on (AT1: a rebase keeps every chart and frame `of` held).
+    let rebased = coord::ChartAt::at(of, c.invariant().expect("a member's chart").clone(), FRAME);
+    let t = f.face_place(&coord::ChartAt::Frame, &rebased, None).expect("rebased face");
+    let _ = t.carriage;
 }
 
 // `no_coordinate_pair_outside_the_sensor` and its `walk_named_pairs` stood

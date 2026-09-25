@@ -128,7 +128,7 @@ pub(super) fn phase_spectrum(meet_chords: &[MeetChord]) -> (usize, usize, usize,
     // The periods in the cyclotomic order they may occupy, counted at
     // their own index rather than summed into a total (rule 5).
     let mut by_period = [0usize; 13];
-    for (_, _, e) in meet_chords.iter() {
+    for (_, _, e, _) in meet_chords.iter() {
         let Some(t) = e.as_ref() else {
             unread += 1;
             continue;

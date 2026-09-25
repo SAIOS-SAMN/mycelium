@@ -44,14 +44,17 @@ fn a_class_key_is_one_under_every_scaling_of_the_carriage() {
 fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
     let form_with = |car: element::Versor| -> Form {
         let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
-            alphabet::Derivation::spelled(order4()),
-            stalk::Invariant::counts(&[3, 5]),
-            Box::new(car),
-            vec![(1, 2)],
-            None,
-        ));
-        f.faces.push(f.face_of(0, 1).expect("star"));
+        stand_with_star(
+            &mut f,
+            &Vertex::word_on(
+                alphabet::Derivation::spelled(order4()),
+                stalk::Invariant::counts(&[3, 5]),
+                Box::new(car),
+                vec![(1, 2)],
+                [FRAME],
+                None,
+            ),
+        );
         f.remainder = crate::transducer::element::PlacedChain::default();
         f.depth = f.depth_of().expect("a fixture's depth reads");
         f.reindex();
@@ -71,7 +74,7 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
 fn a_certificate_key_is_one_under_every_scaling_of_its_versor() {
     let t = element::translator_versor(2, 3);
     let placed = |translator: element::Versor| PivotCertificate {
-        by: PivotBy::Placement { face: 0, translator },
+        by: PivotBy::Placement { face: some_overlap(), translator },
         ..cert(Axis::Placement, [0; 4])
     };
     assert_eq!(placed(t.clone()).key(), placed(by(&t, -1, 1)).key(), "one certificate: A4, not the sign");
@@ -79,7 +82,7 @@ fn a_certificate_key_is_one_under_every_scaling_of_its_versor() {
     assert_ne!(placed(t.clone()).key(), placed(element::translator_versor(2, 4)).key());
 
     let seeded = |seed: element::Versor| PivotCertificate {
-        by: PivotBy::OpenAxis { face: 0, seed },
+        by: PivotBy::OpenAxis { face: some_overlap(), seed },
         ..cert(Axis::Open, [0; 4])
     };
     assert_eq!(seeded(t.clone()).key(), seeded(by(&t, -1, 1)).key(), "one opening: the seed is a ray");
@@ -99,7 +102,7 @@ fn a_certificate_is_written_as_its_rays() {
         out
     };
     let placed = |translator: element::Versor| PivotCertificate {
-        by: PivotBy::Placement { face: 0, translator },
+        by: PivotBy::Placement { face: some_overlap(), translator },
         ..cert(Axis::Placement, [0; 4])
     };
     assert_eq!(bytes(&placed(t.clone())), bytes(&placed(by(&t, -3, 4))), "one ray, one writing");
@@ -107,7 +110,7 @@ fn a_certificate_is_written_as_its_rays() {
     let formed = alphabet::Word::formed(order4().rotor());
     assert!(formed.letters().is_empty() && !formed.is_identity(), "an action no tape spells");
     let worded = PivotCertificate {
-        by: PivotBy::Word { face: 0, word: Box::new(formed.clone()), side: Side::Right },
+        by: PivotBy::Word { face: some_overlap(), word: Box::new(formed.clone()), side: Side::Right },
         ..cert(Axis::Placement, [0; 4])
     };
     let tape = bytes(&worded);

@@ -14,23 +14,35 @@ use super::*;
 /// the linear block and moves the centre, so `t · w_i · t⁻¹` is realised
 /// by `apply_form` as `w_i` at `p_i + t`; nothing is spelled for `t`.
 pub(crate) fn rebase_named_faces(form: &mut Form) {
-    // THE FACES AS THEY STAND, taken once: the rebase writes vertices and
-    // adds no face, so the faces are read from this copy while the vertices
-    // move under them.
-    let named: Vec<FormFace> = form.faces.clone();
-    // THE RELATIVES OF EVERY CLASS PAIR, read off the faces once before any
-    // vertex is rebased, and read below by key per face (rule 1).
-    let relatives = relatives_by_class(&named, &form.vertices);
-    // The face's own index IS the chord it closes on where it closes: this
-    // is a clone of `form.faces` and the rebase adds no face, so the two
-    // agree throughout. A caller that crossed a face knows which one; it is
-    // passed and never searched for (15.5).
-    for (fi, face) in named.iter().enumerate() {
-        let (i, j) = (face.i as usize, face.j as usize);
-        if matches!(form.vertices.get(j), Some(Vertex::Rebased { .. })) {
-            continue;
+    use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
+    use crate::network::nerve::Coordinate;
+    // THE OVERLAPS AS THEY STAND, taken once and grouped by the ordered pair
+    // of vertices they join: the rebase moves vertices to new keys and adds
+    // no overlap, so the pairs are read from this copy while the vertices
+    // move under them. A pair is the old face — every member pair and every
+    // frame the two vertices overlap at.
+    let mut pairs: crate::network::nerve::Keyed<(VertexAt, VertexAt, Vec<Overlap>)> = crate::network::nerve::Keyed::new();
+    for (o, _) in form.faces.entries() {
+        let (ChartAt::At(_), ChartAt::At(_)) = (&o.from, &o.to) else { continue };
+        let (a, b) = (o.from_vertex(), o.to_vertex());
+        let mut k = Vec::new();
+        crate::transducer::address::put_key_bytes(&mut k, a.encode().as_bytes());
+        crate::transducer::address::put_key_bytes(&mut k, b.encode().as_bytes());
+        match pairs.get_mut(&k) {
+            Some((_, _, os)) => os.push(o),
+            None => {
+                pairs.insert(&k, (a, b, vec![o]));
+            }
         }
-        let (Some(vi), Some(vj)) = (form.vertices.get(i), form.vertices.get(j)) else {
+    }
+    let pairs: Vec<(VertexAt, VertexAt, Vec<Overlap>)> = pairs.scoped().map(|(_, p)| p.clone()).collect();
+    // THE RELATIVES OF EVERY CLASS PAIR, read off the overlaps once before
+    // any vertex is rebased, and read below by key per pair (rule 1).
+    let relatives = relatives_by_class(&form.faces, &form.vertices);
+    for (i, j, overlaps) in pairs {
+        // A vertex already rebased has left its key; the pair no longer
+        // stands, and a vertex that is not a Word is no frame to read in.
+        let (Some(vi), Some(vj)) = (form.vertices.at(&i), form.vertices.at(&j)) else {
             continue;
         };
         let (Vertex::Word { derivation: di, .. }, Vertex::Word { .. }) = (vi, vj) else {
@@ -40,10 +52,10 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
         if di.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
             continue;
         }
-        let Some(tc_i) = transport_class(&form.vertices[i]) else {
+        let Some(tc_i) = transport_class(vi) else {
             continue;
         };
-        let Some(tc_j) = transport_class(&form.vertices[j]) else {
+        let Some(tc_j) = transport_class(vj) else {
             continue;
         };
         // THE RELATIVE IS READ PER CHART PAIR, at the pairs THIS FACE relates
@@ -58,15 +70,9 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
         // disagree there is no one relative to rebase by (rule 11).
         let mut relative: Option<Versor> = None;
         let mut agree = true;
-        for (pk, _) in face.at.scoped() {
-            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-                continue;
-            };
-            let (Some(cci), Some(ccj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
-                agree = false;
-                break;
-            };
-            let (Some(a), Some(b)) = (vi.acting_on(&cci), vj.acting_on(&ccj)) else {
+        for o in &overlaps {
+            let (ChartAt::At(x), ChartAt::At(y)) = (&o.from, &o.to) else { continue };
+            let (Some(a), Some(b)) = (vi.acting_at(&x.chart, x.frame), vj.acting_at(&y.chart, y.frame)) else {
                 agree = false;
                 break;
             };
@@ -95,13 +101,12 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
         let constant = relatives
             .get(&class_pair_key(&tc_i, &tc_j))
             .is_some_and(|rs| !rs.is_empty() && rs.scoped().all(|(_, (_, r))| element::same_versor(r, &relative)));
+        // The chord is the first overlap this pair crossed, in key order: it
+        // is passed and never searched for (15.5).
+        let [chord, ..] = overlaps.as_slice() else { continue };
         if constant {
-            #[expect(
-                clippy::cast_possible_truncation,
-                reason = "AT1 debt — a slot number of the form's Vec (a face's position in form.faces); the atlas row replaces the slot by the chart's coordinates"
-            )]
-            let _ = form.rebase(face.i, face.j, relative, fi as u16);
-            trace::trace("extract/4 rebased", trace::Wrote::Ordinal(face.j), None);
+            let _ = form.rebase(&i, &j, relative, chord);
+            trace::trace("extract/4 rebased", trace::Wrote::Nothing, None);
         }
     }
     trace::trace("extract/4 reindex", trace::Wrote::Nothing, None);
@@ -116,41 +121,19 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
 /// coordinate; a face left as it was would carry a placement the vertex no
 /// longer has, which the court refuses as a face that does not re-derive.
 pub(crate) fn rederive_star_faces(form: &mut Form) {
-    for (_, &fi) in form.star.scoped() {
-        let Some(face) = form.faces.get(fi as usize) else {
-            continue;
-        };
-        let (i, j) = (face.i, face.j);
-        trace::trace("extract/4 star-face", trace::Wrote::Ordinal(j), None);
-        // THE RE-DERIVATION KEEPS THE MEMBER PAIRS THE FACE ALREADY CARRIES
-        // and keeps their edges: the rebase moved the vertices' placements, so
-        // the carriage at each pair is stale, but WHICH pairs this face relates
-        // is the scene's fact and re-deriving it from the vertices would take
-        // the product of their fibres. The pairs are read off the face and the
-        // placement at each is re-derived at its own coordinate.
-        let pairs: Vec<(Vec<u8>, Option<crate::transducer::sentence::Transport>)> = face
-            .at
-            .scoped()
-            .map(|(k, p)| (k, p.edge.clone()))
-            .collect();
-        let mut at = crate::network::nerve::Keyed::new();
-        for (pk, edge) in pairs {
-            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-                continue;
-            };
-            let (Some(ci), Some(cj)) = (
-                form.vertices.get(i as usize).and_then(|v| v.chart_keyed(&ik)),
-                form.vertices.get(j as usize).and_then(|v| v.chart_keyed(&jk)),
-            ) else {
-                continue;
-            };
-            if let Some(p) = form.face_place(i, &ci, j, &cj, edge) {
-                at.insert(&pk, p);
-            }
-        }
-        if let Some(word) = form.face_word(i, j) {
-            form.faces[fi as usize].word = word;
-            form.faces[fi as usize].at = at;
+    // THE STAR IS THE FRAME'S FIBRE: every overlap leaving the Frame's
+    // chart, read at its tag (AT1). Each keeps its edge, its producer and its
+    // interface — WHICH charts it joins is the scene's fact — and its place
+    // is re-derived at its own coordinate; the word is derived on read and
+    // has nothing to re-derive.
+    for o in form.overlaps_from(&crate::network::nerve::coord::VertexAt::Frame) {
+        trace::trace("extract/4 star-face", trace::Wrote::Nothing, None);
+        let Some(edge) = form.faces.at(&o).map(|f| f.place.edge.clone()) else { continue };
+        let Some(p) = form.face_place(&o.from, &o.to, edge) else { continue };
+        if let Some(f) = form.faces.at_mut(&o) {
+            let refraction = f.place.refraction.clone();
+            f.place = p;
+            f.place.refraction = refraction;
         }
     }
 }

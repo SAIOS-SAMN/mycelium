@@ -54,7 +54,7 @@ fn a_glued_vertex_speaks_its_cited_form_on_the_one_perception_of_the_scene() {
     // `Glued` vertex at one site, and one edge in the cover. It was two
     // vertices because each carried the cited address, and two vertices at
     // one site have a key that does not round-trip to them.
-    let glued = citing.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
+    let glued = citing.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count();
     assert_eq!(glued, 1, "two statements of one citation are one boundary");
     assert_eq!(citing.cover.len(), 1, "and one incidence");
     reset_sensor_reads();
@@ -73,18 +73,21 @@ let bodies = perceive(&x);
 let [body] = bodies.as_slice() else { panic!("a body") };
 let class = body.moduli.clone();
 let mut f = Form::default();
-f.vertices.push(Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(
-        crate::transducer::alphabet::Word::from_letters(&[(
-            crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
-            false,
-        )]),
-    ),
-    class,
-    Box::new(element::identity_versor()),
-    Vec::new(),
-    None,
-));
+let at = f
+    .put_vertex(Vertex::word_on(
+        crate::transducer::alphabet::Derivation::spelled(
+            crate::transducer::alphabet::Word::from_letters(&[(
+                crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
+                false,
+            )]),
+        ),
+        class,
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        [0u64],
+        None,
+    ))
+    .expect("an off-plane quarter has a class");
 let spoken = apply_form(
     &f,
     &x,
@@ -93,7 +96,7 @@ let spoken = apply_form(
 )
 .expect("speech");
 assert!(
-    spoken.unspoken.contains(&1),
+    spoken.unspoken.contains(&at),
     "an off-plane word does not spell on the sensor; the vertex is unspoken, got {:?}",
     spoken.unspoken
 );
@@ -115,24 +118,30 @@ let mut f = cipher_form(&x, &y);
 // its derivation, its carriage and its gauge, and acts on a chart no body
 // in the scene carries.
 let far = Invariant::counts(&[0xEEEE_EEEE_EEEE_EEEE]);
-for v in &mut f.vertices {
-    let moved = match &*v {
-        Vertex::Word { derivation, acts, contact, .. } => {
-            acts.scoped().next().map(|(_, a)| {
+let moved: Vec<(crate::network::nerve::coord::VertexAt, Vertex)> = f
+    .vertices
+    .entries()
+    .filter_map(|(at, v)| match v {
+        Vertex::Word { derivation, acts, contact, .. } => acts.scoped().next().map(|(_, a)| {
+            (
+                at,
                 Vertex::word_on(
                     derivation.clone(),
                     far.clone(),
                     a.carriage.clone(),
                     a.gauge.clone(),
+                    crate::transducer::sentence::frames_of_section(&a.frames),
                     *contact,
-                )
-            })
-        }
+                ),
+            )
+        }),
         _ => None,
-    };
-    if let Some(moved) = moved {
-        *v = moved;
-    }
+    })
+    .collect();
+// The class is the key and a moved member keeps its class, so the vertex
+// is rewritten under the key it stood at.
+for (at, v) in moved {
+    f.vertices.put(&at, v);
 }
 f.reindex();
 let spoken = apply_form(
@@ -164,8 +173,8 @@ let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::
 assert!(
     rule.form
         .vertices
-        .iter()
-        .any(|v| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
+        .scoped()
+        .any(|(_, v)| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
     "the rule is the form plus Unfolded Occupied, vertices {:?}",
     rule.form.vertices.len()
 );
@@ -173,8 +182,8 @@ let e = crate::transducer::sentence::as_element_form(&rule.form, [1, 0, 0, 0]).e
 let back = crate::transducer::sentence::from_element_form(&e).expect("round trip");
 assert!(
     back.vertices
-        .iter()
-        .any(|v| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
+        .scoped()
+        .any(|(_, v)| matches!(v, Vertex::Unfolded { measure: crate::transducer::sentence::Measure::Occupied })),
     "no step count on the tape; Occupied is the measure"
 );
 }
@@ -273,16 +282,18 @@ let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_
 let bodies = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(bodies, 1, "one body is one vertex, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.as_slice(), [Vertex::Frame, ..]),
+    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Frame), Some(Vertex::Frame)),
     "a frame vertex is on the form"
 );
-let frame_face = rule.form.faces.iter().any(|f| f.i == 0 || f.j == 0);
-let shifted = rule.form.vertices.iter().any(|v| match v {
+let frame_face = rule.form.faces.entries().any(|(o, _)| {
+    o.from == crate::network::nerve::coord::ChartAt::Frame || o.to == crate::network::nerve::coord::ChartAt::Frame
+});
+let shifted = rule.form.vertices.scoped().any(|(_, v)| match v {
     // ANY MEMBER placed away from the identity is a family-constant shift:
     // the claim is that the rule places something, and a vertex acting on
     // several charts places each of them.
@@ -361,7 +372,7 @@ let spoken = speak_rule(&rule, &train_in, &NoCrystal).expect("the test is spoken
 assert!(spoken.remainder.is_empty(), "all three squares are reached: {:?}", spoken.remainder);
 assert_eq!(spoken.grid(), Some(train_out));
 assert!(
-    rule.form.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
+    rule.form.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Word { .. })),
     "the recolour class is one vertex; the chart fiber names the three squares"
 );
 let minted = mint_sentence(&rule, &family, &NoCrystal, 0).expect("the family mints");

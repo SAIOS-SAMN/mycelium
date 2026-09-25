@@ -5,6 +5,19 @@
 use super::common::*;
 use crate::transducer::family::*;
 
+/// THE SECTIONS AS THE PERCEPT FILED THEM: a member or a class standing on
+/// fewer frames than the family reached, summed over the frames each holds.
+/// AT1 — a member now holds its frames (ruled), so `sections()` reads every
+/// member's frames, a member standing on every frame included; the section
+/// these tests name is the one short of the family, and that is read here.
+fn sections_short_of(rule: &crate::transducer::sentence::SentenceRule, frames: usize) -> usize {
+    rule.sections()
+        .scoped()
+        .filter(|(_, s)| !s.is_empty() && s.len() < frames)
+        .map(|(_, s)| s.len())
+        .sum()
+}
+
 /// One class in every pair is one vertex. Counts are not compared:
 /// 3, 4, 3 instances stay one class. A class in only some pairs is a section.
 #[test]
@@ -18,8 +31,8 @@ let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::
 let words = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(words, 1, "presence, not min count; got {words} Word vertices");
 // A reflection in only the first pair is a different word from the
@@ -31,18 +44,19 @@ let mixed = vec![
 ];
 let some = extract_rule_with(&mixed, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("sectioned");
 assert!(
-    some.section_count() > 0,
+    sections_short_of(&some, mixed.len()) > 0,
     "a class present in some pairs is a section"
 );
 }
 
 /// 21 step 2, 25, 12.6, Stage 12 S12.2 — FORMS WITH ORBITS. A body carried
-/// by a quarter turn in one pair and by its inverse in the other is one
+/// by a 90° turn in one pair and by its inverse, −90°, in the other is one
 /// transport class (the two words are conjugate), so the rule has one
-/// vertex for it; the face word from the Frame differs per pair and is KEPT
-/// as two sections over the pairs, never dropped. The form then has an orbit
-/// whose holonomy is the transition between the sections — a half turn —
-/// held with a class vector the pivot orbit reads on its unit axis.
+/// vertex for it; the −90° frames are KEPT as a second member of it, never
+/// dropped (AT1). The form then has an orbit across the two frames whose
+/// holonomy is the transition between the members — the 180° conjugator,
+/// carriage content — held with a class vector the pivot orbit reads on the
+/// placement axis (AT1, ruled (a) 2026-09-25).
 #[test]
 fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
@@ -53,8 +67,8 @@ let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::
 let words = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(words, 2, "the turned L and the recoloured bar: two vertices, one class each");
 // 21 step 1 IS the assertion: vertices are matched by "kind and the
@@ -67,8 +81,8 @@ assert_eq!(words, 2, "the turned L and the recoloured bar: two vertices, one cla
 let classes: Vec<_> = rule
     .form
     .vertices
-    .iter()
-    .filter_map(|v| match v {
+    .scoped()
+    .filter_map(|(_, v)| match v {
         Vertex::Word { derivation, .. } => derivation.rotor().class_key(),
         _ => None,
     })
@@ -84,16 +98,42 @@ assert!(
     "the varying face is kept, not dropped: {} faces over {words} words",
     rule.form.faces.len()
 );
-assert!(rule.section_count() > 0, "the two words of one face are sections over the pairs");
+// AT1 (Q2) — A FACE IS ONE OVERLAP PER MEMBER PAIR PER FRAME, so the face
+// whose word varies over the pairs is kept as its overlaps at each frame —
+// the sections over the pairs are the frames the star stands on at one
+// vertex, each overlap its own — never one face with the variation dropped.
+let mut star_frames: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>, crate::network::nerve::coord::VertexAt> =
+    crate::network::nerve::Keyed::new();
+for (o, _) in rule.form.faces.entries() {
+    let (crate::network::nerve::coord::ChartAt::Frame, Some(k)) = (&o.from, o.to.frame()) else { continue };
+    let v = o.to_vertex();
+    match star_frames.at_mut(&v) {
+        Some(ks) => {
+            ks.insert(crate::transducer::sentence::frame_key(k), ());
+        }
+        None => {
+            star_frames.put(&v, crate::transducer::sentence::section_of_frames([k]));
+        }
+    }
+}
+assert!(
+    star_frames.scoped().any(|(_, ks)| ks.len() == family.len()),
+    "the two words of one face are sections over the pairs: an overlap at each frame"
+);
 assert!(!rule.form.orbits.is_empty(), "the second section closes an orbit");
 let held: Vec<_> = (0..rule.form.orbits.len())
     .filter_map(|i| rule.form.class_vector(i))
     .filter(|cv| !cv.is_zero())
     .collect();
 assert!(!held.is_empty(), "a held orbit with a class vector");
+// AT1, RULED (a) 2026-09-25: the 90° and −90° readings are conjugate rotors,
+// one class and one vertex, the −90° frames a second member whose carriage
+// is the relative `V₋₉₀ · Ã`. The 180° conjugator between them is CARRIAGE
+// content — 21 step 1: the class excludes the carriage — so the circuit
+// across the two frames occupies the PLACEMENT axis, never the word lane.
 assert!(
-    held.iter().any(|cv| cv.occupied().contains(&crate::transducer::sentence::Axis::Unit(0))),
-    "the half turn occupies the unit axis of the sensor plane: {:?}",
+    held.iter().any(|cv| cv.occupied().contains(&crate::transducer::sentence::Axis::Placement)),
+    "the 180° conjugator between the two members occupies the placement axis: {:?}",
     held.iter().map(|c| c.occupied()).collect::<Vec<_>>()
 );
 let mut form = rule.form.clone();
@@ -118,7 +158,7 @@ fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_corresponden
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
     let words: Vec<&Vertex> =
-        rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+        rule.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(_, v)| v).collect();
     let [word] = words.as_slice() else {
         panic!("one word vertex for one translation on every frame: {:?}", rule.form.vertices)
     };
@@ -128,7 +168,7 @@ fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_corresponden
         .flat_map(|a| a.scoped())
         .all(|(_, m)| element::same_versor(&m.carriage, &element::translator_versor(0, 2)));
     assert!(carried_by_the_translator, "the vertex carries its body by the translation");
-    assert_eq!(rule.section_count(), 0, "a rule that holds on every frame is no section: {:?}", rule.sections);
+    assert_eq!(sections_short_of(&rule, family.len()), 0, "a rule that holds on every frame is no section: {:?}", rule.sections());
     assert_eq!(rule.form.demand_vertices().count(), 0, "and asks for nothing");
     let (_, rems) = form_deflation(&rule.form, &family, &NoCrystal);
     assert!(rems.iter().all(|r| r.is_empty()), "it closes every frame: {rems:?}");
@@ -205,47 +245,70 @@ let b = bodies
     .find(|b| b.laminae.iter().any(|c| c.hue == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
-// Form::default() carries the Frame at index 0.
-let mut pf = Form::default();
-pf.vertices.push(Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(rot.clone()),
-    a.moduli.clone(),
-    Box::new(element::carriage(&q(1), &(q(3), q(3)))),
-    vec![(1, 1)],
-    None,
-));
-pf.vertices.push(Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(rot.clone()),
-    b.moduli.clone(),
-    Box::new(element::carriage(&q(1), &(q(3), q(3)))),
-    vec![(3, 5)],
-    None,
-));
-pf.faces.push(pf.face_of(1, 2).expect("pair vertices"));
-let mut form = pf.clone();
-let tc_a = transport_class(&pf.vertices[1]).expect("A has a transport class");
-let tc_b = transport_class(&pf.vertices[2]).expect("B has a transport class");
+use crate::transducer::sentence::tests::common::FRAME;
+let word_at = |w: &crate::transducer::alphabet::Word, chart: &Invariant, gauge: Vec<(u8, u8)>| {
+    Vertex::word_on(
+        crate::transducer::alphabet::Derivation::spelled(w.clone()),
+        chart.clone(),
+        Box::new(element::carriage(&q(1), &(q(3), q(3)))),
+        gauge,
+        [FRAME],
+        None,
+    )
+};
+let va = word_at(&rot, &a.moduli, vec![(1, 1)]);
+// B CARRYING A'S WORD AT B'S PLACEMENT — the pair form the rebased form must
+// speak. AT1 (Q1): one transport class is ONE vertex, so A and B carrying
+// one word are one vertex with a member at each chart.
+let vb_as_a = word_at(&rot, &b.moduli, vec![(3, 5)]);
+let tc_a = transport_class(&va).expect("A has a transport class");
+let tc_b = transport_class(&vb_as_a).expect("B has a transport class");
 assert_eq!(
     tc_a, tc_b,
     "A and B share a transport class: the same word, two hue sections"
 );
+let mut pf = Form::default();
+let ca = pf.stand_member(&va, FRAME).expect("A stands");
+let cb = pf.stand_member(&vb_as_a, FRAME).expect("B stands");
+pf.place_overlap(ca, cb, None).expect("the pair's overlap");
 pf.reindex();
+assert_eq!(
+    pf.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count(),
+    1,
+    "one class, one vertex: A and B are its two members"
+);
 assert_eq!(
     pf.hue_maps.len(),
     2,
     "two hue sections on one word class, got {}",
     pf.hue_maps.len()
 );
-rebase_named_faces(&mut form);
+// THE REBASE IS A RELATION BETWEEN TWO VERTICES (3.2), so B stands at its own
+// class — its own motion, here none — and is rebased on A: read in B's frame
+// as A's word. AT1 — `rebase_named_faces` offers a rebase only between two
+// vertices whose words are equal, which is one class and so one vertex, a
+// stabilizer element and never a Rebased vertex; the move it would make is
+// `Form::rebase`, called here with the relative the overlap measures.
+let vb = word_at(&crate::transducer::alphabet::Word::identity(), &b.moduli, vec![(3, 5)]);
+let mut form = Form::default();
+let ca = form.stand_member(&va, FRAME).expect("A stands");
+let cb = form.stand_member(&vb, FRAME).expect("B stands at its own class");
+let chord = form.place_overlap(ca.clone(), cb.clone(), None).expect("the pair's overlap");
+let (a_at, b_at) = (ca.vertex(), cb.vertex());
+assert_ne!(a_at, b_at, "two classes, two vertices");
+let relative = element::carriage(&q(1), &(q(3), q(3))).geo(&element::carriage(&q(1), &(q(3), q(3))).reverse());
+let re_at = form.rebase(&a_at, &b_at, relative, &chord).expect("B is rebased on A");
+form.reindex();
 let n_re = form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Rebased { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Rebased { .. }))
     .count();
 assert_eq!(n_re, 1, "one Rebased; the w_i w_j w_i⁻¹ test is gone");
-match &form.vertices[2] {
-    Vertex::Rebased { by, of, acts } => {
-        assert_eq!((*by, *of), (1, 2));
+match form.vertices.at(&re_at) {
+    Some(Vertex::Rebased { by, class, acts }) => {
+        assert_eq!(by, &a_at, "read in A's frame");
+        assert_eq!(Some(class.clone()), vb.class(), "and holding the class B had");
         // B'S OWN CHART IS A MEMBER OF THE REBASED VERTEX'S FIBRE, asked for by
         // key: B kept its chart, and the rebase carries it by the relative at
         // that chart (D10). One member here, because B acted on one.
@@ -265,7 +328,11 @@ match &form.vertices[2] {
             "relative carriage is the identity translator"
         );
         assert_eq!(m.gauge, vec![(3, 5)], "B keeps its own hue map");
-        assert_eq!(form.vertices[2].word_in(&form), Some(rot), "the word is A's");
+        assert_eq!(
+            form.vertices.at(&re_at).and_then(|v| v.word_in(&form.vertices)),
+            Some(rot),
+            "the word is A's"
+        );
     }
     other => panic!("expected Rebased, got {other:?}"),
 }
@@ -313,8 +380,8 @@ let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::
 let flat_words = flat
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 let held_form = cipher_form(&family[0].0, &family[0].1);
 assert!(held_form.is_closed(), "a pair form of a shift coheres");
@@ -377,15 +444,15 @@ assert_eq!(rule.form.depth_of(), Some(1), "gluing a depth-0 form is depth 1");
 let glued = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Glued { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Glued { .. }))
     .count();
 assert_eq!(glued, 1, "one Glued vertex");
 let words = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert!(
     words < flat_words,
@@ -438,7 +505,8 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
     ];
     let flat = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts");
-    let words: Vec<&Vertex> = flat.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+    let words: Vec<&Vertex> =
+        flat.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(_, v)| v).collect();
     let [word] = words.as_slice() else {
         panic!("one translation, one class: {:?}", flat.form.vertices)
     };
@@ -490,7 +558,7 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
         "the held form is spoken over the family once: one reading at one placement, read back for every chart"
     );
     assert!(
-        rule.form.vertices.iter().any(|v| matches!(v, Vertex::Glued { .. })),
+        rule.form.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Glued { .. })),
         "and the bar's shift, which reproduces the family, is glued"
     );
 }
@@ -566,7 +634,7 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
     crate::transducer::sentence::reset_retractions();
     let rule = extract_rule_with(&family, &crystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("the family extracts against the crystal");
-    let cited = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Glued { .. })).count();
+    let cited = rule.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Glued { .. })).count();
     assert!(cited > 0, "the bar's shift, which reproduces the family, is cited");
     assert!(
         crate::transducer::sentence::retractions() <= 1,
@@ -675,30 +743,32 @@ let family = vec![
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("section class");
 assert!(
-    rule.section_count() > 0,
+    sections_short_of(&rule, family.len()) > 0,
     "a some-pair class exists, got {} vertices",
     rule.form.vertices.len()
 );
+let sections = rule.sections();
 let mut section_star = 0usize;
-for (i, v) in rule.form.vertices.iter().enumerate() {
-    let Some(tc) = transport_class(v) else {
-        continue;
-    };
-    if rule
-        .sections
-        .at(&crate::network::nerve::coord::SectionAt::Class(
-            crate::transducer::family::class_section_key(&tc),
-        ))
-        .is_none()
-    {
+for (at, v) in rule.form.vertices.entries() {
+    if transport_class(v).is_none() {
         continue;
     }
-    let ii = u16::try_from(i).expect("a vertex of the extracted rule's form, a handful");
+    let Some(class) = v.class() else { continue };
+    // A SOME-PAIR CLASS: its section stands on fewer frames than the family's
+    // (AT1 — the class's section is read off its members' frames).
+    let short = sections
+        .at(&crate::network::nerve::coord::SectionAt::Class(class))
+        .is_some_and(|s| !s.is_empty() && s.len() < family.len());
+    if !short {
+        continue;
+    }
+    // ITS STAR FACE: an overlap between the Frame's chart and a chart of it.
+    let frame = crate::network::nerve::coord::ChartAt::Frame;
     if rule
         .form
         .faces
-        .iter()
-        .any(|f| (f.i == 0 && f.j == ii) || (f.j == 0 && f.i == ii))
+        .entries()
+        .any(|(o, _)| (o.from == frame && o.to_vertex() == at) || (o.to == frame && o.from_vertex() == at))
     {
         section_star += 1;
     }
@@ -707,7 +777,7 @@ assert!(
     section_star > 0,
     "a class present in one of two pairs keeps its star face, got {} faces {} sections {} vertices",
     rule.form.faces.len(),
-    rule.section_count(),
+    sections_short_of(&rule, family.len()),
     rule.form.vertices.len()
 );
 }
@@ -720,10 +790,10 @@ let family = vec![
 ];
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("frame plus a some-pair class");
 assert!(
-    rule.section_count() > 0,
+    sections_short_of(&rule, family.len()) > 0,
     "a class present in some pairs is a section, got {} vertices {} sections",
     rule.form.vertices.len(),
-    rule.section_count()
+    sections_short_of(&rule, family.len())
 );
 }
 
@@ -740,12 +810,12 @@ let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_
 let bodies = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert!(bodies >= 1, "a body vertex of the recolour class survives, got {}", rule.form.vertices.len());
 assert!(
-    matches!(rule.form.vertices.as_slice(), [Vertex::Frame, ..]),
+    matches!(rule.form.vertices.at(&crate::network::nerve::coord::VertexAt::Frame), Some(Vertex::Frame)),
     "frames match by kind, not [MAX,h,w]"
 );
 assert!(
@@ -768,8 +838,9 @@ let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_
 let words: Vec<&Vertex> = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+    .map(|(_, v)| v)
     .collect();
 assert_eq!(
     words.len(),
@@ -841,7 +912,7 @@ let family = vec![
     (grid(&["000000", "110022"]), grid(&["000000", "001122"])),
 ];
 let pf = cipher_form(&family[0].0, &family[0].1);
-let words: Vec<&Vertex> = pf.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).collect();
+let words: Vec<&Vertex> = pf.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).map(|(_, v)| v).collect();
 assert!(
     words.is_empty(),
     "the merged body is one hue-blind piece, and no preimage carries it whole: {:?}",
@@ -907,49 +978,64 @@ assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
 /// fiber of `bodies_at`. The occupied set may skip, repeat or reorder in ℤ,
 /// and a frame outside `0..n` was never read at all.
 ///
-/// The order is the COORDINATE'S, not the trie's. The frame is written
-/// little-endian, so byte order puts 256 (`[0, 1]`) before 1 (`[1, 0]`);
-/// read in that order the succession is not the family's.
+/// The order is the COORDINATE'S. It was not the trie's while the frame was
+/// written little-endian, so byte order put 256 (`[0, 1]`) before 1
+/// (`[1, 0]`); AT1 Q4 spells the frame by its length then its big-endian
+/// bytes, so the trie's walk IS the succession and nothing sorts.
 #[test]
 fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
     use crate::network::nerve::Keyed;
     use crate::transducer::family::{body_of, occupied_frames};
-    use crate::transducer::sentence::vertex_ix_key;
     let body = || body_of(vec![Lamina::from((0i64, 0i64, 0i64, 1u8))]).expect("one lamina is heard");
     let v = crate::transducer::element::identity_versor();
+    // TWO VERTICES BY THEIR COORDINATES (AT1): two classes, the identity's
+    // and the quarter turn's.
+    let at_of = |w: crate::transducer::alphabet::Word| {
+        Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(w),
+            Invariant::default(),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            [0u64],
+            None,
+        )
+        .at()
+        .expect("a word vertex has a class")
+    };
+    let seven = at_of(crate::transducer::alphabet::Word::identity());
+    let quarter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let nine = at_of(crate::transducer::alphabet::Word::from_letters(&[(quarter, false)]));
+    assert_ne!(seven, nine, "two classes, two vertices");
     let mut at: Keyed<(
         crate::transducer::family::Body,
         crate::transducer::family::Body,
         crate::transducer::element::Versor,
     )> = Keyed::new();
-    let put = |at: &mut Keyed<_>, ix: u16, ck: &[u8], k: u16| {
-        let mut bk = crate::network::nerve::Coordinate::encode(&vertex_ix_key(ix))
-            .as_bytes()
-            .to_vec();
-        crate::transducer::address::put_key_bytes(&mut bk, ck);
-        bk.extend_from_slice(&k.to_le_bytes());
+    let put = |at: &mut Keyed<_>, vx: &crate::network::nerve::coord::VertexAt, ck: &[u8], k: u64| {
+        let mut bk = crate::transducer::family::member_key(vx, ck);
+        bk.extend_from_slice(&crate::transducer::sentence::frame_key(k));
         at.insert(bk, (body(), body(), v.clone()));
     };
     // ONE member on sparse, non-contiguous frames — including 256, which is
     // outside any `0..n` a three-pair family would have scanned.
-    for k in [5u16, 0, 256, 2, 1] {
-        put(&mut at, 7, b"chart-a", k);
+    for k in [5u64, 0, 256, 2, 1] {
+        put(&mut at, &seven, b"chart-a", k);
     }
     // A second member, and the same vertex on another chart: neither is
     // this member's fiber.
-    put(&mut at, 9, b"chart-a", 3);
-    put(&mut at, 7, b"chart-b", 4);
+    put(&mut at, &nine, b"chart-a", 3);
+    put(&mut at, &seven, b"chart-b", 4);
 
-    let occ = occupied_frames(&at, 7, b"chart-a");
+    let occ = occupied_frames(&at, &seven, b"chart-a");
     assert_eq!(occ, vec![0, 1, 2, 5, 256], "the occupied set, in coordinate order");
     assert!(occ.contains(&256), "a frame outside 0..n is occupied and is read");
     assert!(!occ.contains(&3), "another member's frame is not in this member's fiber");
     assert!(!occ.contains(&4), "nor the same vertex's frame on another chart");
-    // THE ORDERING IS LOAD-BEARING. The frame is little-endian, so the
-    // trie's own order — the key's bytes — reads 256 as `[0, 1]` and 1 as
-    // `[1, 0]`, putting 256 second. That sequence is written out here
-    // rather than sorted into existence, and it is not the succession.
-    assert_ne!(vec![0u16, 256, 1, 2, 5], occ, "trie order is not coordinate order");
+    // THE ORDERING IS LOAD-BEARING. Under the little-endian spelling the
+    // trie's own order read 256 as `[0, 1]` and 1 as `[1, 0]`, putting 256
+    // second. That sequence is written out here rather than sorted into
+    // existence, and it is not the succession.
+    assert_ne!(vec![0u64, 256, 1, 2, 5], occ, "the little-endian order is not coordinate order");
 }
 
 /// 52.5, 51.3 — THE FACE IS MEASURED ON THE FIBER'S UNION SHAPES. A

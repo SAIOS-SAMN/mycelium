@@ -89,8 +89,8 @@ impl Held {
         let Some(f) = self.form() else { return 0 };
         let env = self.element().receipts();
         f.vertices
-            .iter()
-            .filter(|v| match v {
+            .scoped()
+            .filter(|(_, v)| match v {
                 crate::transducer::sentence::Vertex::Word { address, derivation, .. } => {
                     env.cite_for(address.as_bytes()).is_none()
                         && !matches!(crate::transducer::alphabet::factor_rotor(&derivation.rotor()), Some(Ok(_)))

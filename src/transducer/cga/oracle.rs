@@ -127,15 +127,13 @@ fn harvest() -> Vec<(String, Mv)> {
         let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget) else {
             continue;
         };
-        for face in &rule.form.faces {
-            for (_, place) in face.at.scoped() {
-                hold(&place.carriage);
-                if let Some(e) = &place.edge {
-                    hold(&e.carriage);
-                }
+        for (_, face) in rule.form.faces.entries() {
+            hold(&face.place.carriage);
+            if let Some(e) = &face.place.edge {
+                hold(&e.carriage);
             }
         }
-        for v in &rule.form.vertices {
+        for (_, v) in rule.form.vertices.scoped() {
             if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
                 for (_, a) in acts.scoped() {
                     hold(&a.carriage);

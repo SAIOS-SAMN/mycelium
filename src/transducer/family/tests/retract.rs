@@ -50,7 +50,7 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     }
     let kinds = |f: &Form| -> [usize; 6] {
         let mut n = [0usize; 6];
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let i = match v {
                 Vertex::Frame => 0,
                 Vertex::Word { .. } => 1,
@@ -66,20 +66,21 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     if kinds(a) != kinds(b) {
         return Err(format!("vertex kinds {:?} vs {:?}", kinds(a), kinds(b)));
     }
-    let members = |f: &Form| -> usize { f.vertices.iter().map(|v| v.charts().len()).sum() };
+    let members = |f: &Form| -> usize { f.vertices.scoped().map(|(_, v)| v.charts().len()).sum() };
     if members(a) != members(b) {
         return Err(format!("members {} vs {}", members(a), members(b)));
     }
     if a.faces.len() != b.faces.len() {
         return Err(format!("faces {} vs {}", a.faces.len(), b.faces.len()));
     }
-    let pairs = |f: &Form| -> usize { f.faces.iter().map(|x| x.at.len()).sum() };
+    // AT1 — ONE OVERLAP PER MEMBER PAIR PER FRAME: the member pairs are the
+    // overlaps themselves, so they are compared by their charts rather than
+    // summed per face (a face no longer holds several).
+    let pairs = |f: &Form| -> Vec<crate::network::nerve::coord::Overlap> { f.faces.entries().map(|(o, _)| o).collect() };
     if pairs(a) != pairs(b) {
-        return Err(format!("member pairs {} vs {}", pairs(a), pairs(b)));
+        return Err(format!("member pairs {} vs {}", pairs(a).len(), pairs(b).len()));
     }
-    let edges = |f: &Form| -> usize {
-        f.faces.iter().map(|x| x.at.scoped().filter(|(_, p)| p.edge.is_some()).count()).sum()
-    };
+    let edges = |f: &Form| -> usize { f.faces.scoped().filter(|(_, x)| x.has_edge()).count() };
     if edges(a) != edges(b) {
         return Err(format!("faces carrying 50.3's edge {} vs {}", edges(a), edges(b)));
     }
@@ -91,30 +92,26 @@ fn same_complex(a: &Form, b: &Form) -> Result<(), String> {
     // so they are the two places a round-trip can return a different chain.
     // Sorted, because the vertex order is not preserved and a demand's
     // identity is its bodies rather than its slot.
-    let bodies = |f: &Form| -> Vec<usize> {
-        let mut n: Vec<usize> = f
-            .vertices
-            .iter()
-            .filter_map(|v| match v {
-                Vertex::Demand { bodies, .. } => Some(bodies.len()),
-                _ => None,
-            })
-            .collect();
-        n.sort_unstable();
-        n
-    };
+    // AT1, 54.5 ROAD (d) — A DEMAND'S BODIES ARE EVIDENCE AND RIDE THE
+    // RECORD, NEVER THE KEY: `from_address` returns every demand with empty
+    // bodies (the receipts envelope refills them). What the key carries is
+    // the chain's COORDINATES — kind, chart, measure per lane, piece count —
+    // and those are the demand's own key, so the demands are compared by it.
+    let bodies = |f: &Form| -> Vec<crate::network::nerve::coord::VertexAt> { f.demands().map(|(at, _)| at).collect() };
     if bodies(a) != bodies(b) {
-        return Err(format!("demand bodies {:?} links vs {:?}", bodies(a), bodies(b)));
+        return Err(format!("demand coordinates {:?} vs {:?}", bodies(a), bodies(b)));
     }
-    if a.remainder.placed() != b.remainder.placed() {
-        return Err(format!(
-            "the A5 remainder differs: {} links vs {}",
-            a.remainder.placed().len(),
-            b.remainder.placed().len()
-        ));
+    // AT1 — THE REMAINDER BY ITS COORDINATES: a form read back from its
+    // address holds `remainder_at` (measure, pieces, corner) and no chain,
+    // which rides the record; the two are compared where both stand.
+    let remainder_at = |f: &Form| {
+        f.remainder_at.or_else(|| crate::transducer::sentence::ChainAt::of(&f.remainder.placed()))
+    };
+    if remainder_at(a) != remainder_at(b) {
+        return Err(format!("the A5 remainder differs: {:?} vs {:?}", remainder_at(a), remainder_at(b)));
     }
-    if a.sections.len() != b.sections.len() {
-        return Err(format!("sections {} vs {}", a.sections.len(), b.sections.len()));
+    if a.sections().len() != b.sections().len() {
+        return Err(format!("sections {} vs {}", a.sections().len(), b.sections().len()));
     }
     if a.axes.len() != b.axes.len() {
         return Err(format!("axes {} vs {}", a.axes.len(), b.axes.len()));
@@ -266,8 +263,12 @@ fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes()
         // EVERY FACE RE-DERIVES FROM ITS OWN VERTICES, which is what
         // `face_rederives` asks and what refused 28 tests. Asked here of
         // the DECODED form, since that is the one the court would hold.
-        for face in &back.faces {
-            if back.face_word(face.i, face.j).as_ref() != Some(&face.word) {
+        // AT1 — the word is derived from the overlap's ends and the pivot's
+        // factors, never held, so the decoded form's word across each
+        // overlap is compared with the extracted form's across the same one.
+        for (o, _) in back.faces.entries() {
+            let word = back.face_word(&o);
+            if word.is_none() || word != f.face_word(&o) {
                 note("a face word does not re-derive", &mut why);
                 bad = true;
                 break;
@@ -419,14 +420,14 @@ fn the_carrier_holds_its_own_invariants_without_the_oracle() {
         for x in &env.nerve {
             let host = x.host();
             assert!(
-                back.vertices.iter().any(|v| {
+                back.vertices.scoped().any(|(_, v)| {
                     matches!(v, crate::transducer::sentence::Vertex::Glued { .. })
                         && crate::transducer::sentence::vertex_bytes(v) == host.as_bytes()
                 }),
                 "no phantom edge: every citation anchors to a boundary the complex holds"
             );
         }
-        for v in &back.vertices {
+        for (_, v) in back.vertices.scoped() {
             if !matches!(v, crate::transducer::sentence::Vertex::Glued { .. }) {
                 continue;
             }

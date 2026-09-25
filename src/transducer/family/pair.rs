@@ -17,7 +17,8 @@ use super::*;
 /// absence is absence — nothing to encode, and no `usize::MAX` reachable as
 /// "no member here".
 pub(crate) struct Scenery {
-    pub(crate) vertices: Vec<Vertex>,
+    /// The vertices BY THEIR COORDINATES (AT1): the atlas's own carrier.
+    pub(crate) vertices: crate::transducer::sentence::Vertices,
     /// The support of each MEMBER — vertex and chart (D10) — because a
     /// face relates two BODIES and the support is a body's sites.
     pub(crate) supports: crate::network::nerve::Keyed<Vec<Site>>,
@@ -25,23 +26,22 @@ pub(crate) struct Scenery {
 
 impl Scenery {
     pub(crate) fn new() -> Self {
-        Scenery { vertices: Vec::new(), supports: crate::network::nerve::Keyed::new() }
+        Scenery { vertices: crate::network::nerve::Keyed::new(), supports: crate::network::nerve::Keyed::new() }
     }
 
-    /// THE ONE SITE THAT ADDS A VERTEX. It returns the vertex's coordinate,
-    /// so a caller that needs to speak about what it placed is given it
-    /// rather than computing it from a length. A vertex standing at one
-    /// chart files its support under that member; a vertex acting on
-    /// several charts is filed by the caller, one support per member.
-    pub(crate) fn place(&mut self, vertex: Vertex, support: Vec<Site>) -> u16 {
-        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex about to be pushed, the one site that adds a vertex); the atlas row replaces the slot by the chart's coordinates")]
-        let ix = self.vertices.len() as u16;
-        let member = vertex.face_chart().map(|c| member_key(ix, c.key().as_bytes()));
-        self.vertices.push(vertex);
+    /// THE ONE SITE THAT ADDS A VERTEX, at its own coordinate, which it
+    /// returns; `None` where the vertex has none (rule 11) and nothing is
+    /// placed. A vertex standing at one chart files its support under that
+    /// member; a vertex acting on several charts is filed by the caller, one
+    /// support per member.
+    pub(crate) fn place(&mut self, vertex: Vertex, support: Vec<Site>) -> Option<crate::network::nerve::coord::VertexAt> {
+        let at = vertex.at()?;
+        let member = vertex.face_chart().map(|c| member_key(&at, c.key().as_bytes()));
+        self.vertices.put(&at, vertex);
         if let (Some(m), false) = (member, support.is_empty()) {
             self.supports.insert(&m, support);
         }
-        ix
+        Some(at)
     }
 }
 

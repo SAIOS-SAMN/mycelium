@@ -5,19 +5,15 @@
 use super::*;
 
 impl Form {
-    /// The orbit closing on `chord`, by index. A read of this form's own
-    /// orbits — its boundary, never a search over anything else.
-    pub(crate) fn orbit_of_chord(&self, chord: u16) -> Option<usize> {
-        for (i, lp) in self.orbits.iter().enumerate() {
-            if lp.chord == chord {
-                return Some(i);
-            }
-        }
-        None
+    /// The orbit closing on `chord`, by the chord's own overlap (AT1). A read
+    /// of this form's own orbits — its boundary, never a search over
+    /// anything else.
+    pub(crate) fn orbit_of_chord(&self, chord: &coord::Overlap) -> Option<usize> {
+        self.orbits.iter().position(|lp| &lp.chord == chord)
     }
 
-    /// The chord of the orbit this orbit's class was opened on, if any (I6).
-    pub fn opened_axis_of(&self, lp: &Orbit) -> Option<u16> {
+    /// The class of the axis this orbit's class was opened on, if any (I6).
+    pub fn opened_axis_of(&self, lp: &Orbit) -> Option<coord::Holonomy> {
         opened_axis_on(&self.faces, &self.vertices, &self.axes, lp)
     }
 
@@ -26,33 +22,19 @@ impl Form {
     /// seed (A20 `OpenAxis`) re-derives from it. Otherwise the relation is
     /// a stored coordinate the form cannot re-derive, and the orbit stays a
     /// defect.
+    ///
     /// AN AXIS IS KEYED BY A CLASS, SO THE CLASS IS WHAT IDENTIFIES IT
-    /// (rule 15, 54.5 as ruled 2026-09-20).
-    ///
-    /// This read `chord == lp.chord` beside the seed, and the chord is a
-    /// FACE INDEX — a position, not a coordinate. `form_vertex_key` knows
-    /// that and writes an opened axis as its CLASS alone; the decoder has
-    /// nothing to put in the chord slot and writes `0`. So on every form
-    /// that came out of an address the stored chord was a placeholder, and
-    /// this compared it as though it were real: the axis re-derived only
-    /// when the orbit's chord happened to be face zero, and otherwise a form
-    /// that opened an axis was refused for it.
-    ///
-    /// `opened_axis_of` already finds the axis BY THE ORBIT'S OWN CLASS,
-    /// which is content. Two orbits of one class are one obstruction and one
-    /// axis serves both — that is what keying by class means — so there is
-    /// nothing left for an index to disambiguate. What remains is the real
+    /// (rule 15, 54.5 as ruled 2026-09-20): two orbits of one class are one
+    /// obstruction and one axis serves both. What remains is the real
     /// question: does this orbit have a holonomy for the axis to be the
     /// transition OF (16.20).
-    pub fn axis_rederives(&self, lp: &Orbit, _chord: u16) -> bool {
+    pub fn axis_rederives(&self, lp: &Orbit) -> bool {
         self.axis_seed_of(lp).is_some()
     }
 
     /// The seed of the axis an orbit opens: its own holonomy versor (16.20),
-    /// which is the EDGE COMPOSITE where its paths carry one. Read off
-    /// `lp.holonomy` — the word — it seeded the axis from a coboundary that
-    /// telescopes to the identity, so the seed was the identity versor and
-    /// the axis it opened stood for nothing the orbit turns by. See
+    /// which is the EDGE COMPOSITE where its paths carry one — never the
+    /// word, which telescopes to the identity on a coboundary cycle. See
     /// [`crate::transducer::sentence::pivot::drive::orbit_holonomy_on`].
     pub fn axis_seed_of(&self, lp: &Orbit) -> Option<Versor> {
         element::versor_of_word(&self.orbit_holonomy(lp)?)
@@ -60,26 +42,20 @@ impl Form {
 
     /// THE HOLONOMY EVERY MEMBER PATH OF THIS ORBIT AGREES ON, on this form.
     /// One reader for the whole `OpenAxis` pipeline — the gate, the seed,
-    /// the class the axis is keyed by, and the row the audit reads — so the
-    /// writer and the reader cannot key one carrier by two objects, which is
-    /// exactly the split R8 removed from `file_orbit`.
+    /// the class the axis is keyed by, and the row the audit reads.
     pub(crate) fn orbit_holonomy(&self, lp: &Orbit) -> Option<Word> {
-        crate::transducer::sentence::pivot::drive::orbit_holonomy_on(
-            &self.faces,
-            &self.vertices,
-            lp,
-        )
+        crate::transducer::sentence::pivot::drive::orbit_holonomy_on(&self.faces, &self.vertices, lp)
     }
 
     /// Open a chart axis over the orbit closing on `chord` (A20 `OpenAxis`).
     /// Refuses a chord with no orbit, a holonomy with no class, and a
     /// holonomy with no versor to seed the axis.
-    pub(crate) fn open_axis_on(&mut self, chord: u16) -> Option<()> {
+    pub(crate) fn open_axis_on(&mut self, chord: &coord::Overlap) -> Option<()> {
         let i = self.orbit_of_chord(chord)?;
         let lp = self.orbits.get(i)?;
         let class = self.orbit_holonomy(lp)?.rotor().holonomy_key()?;
         self.axis_seed_of(lp)?;
-        self.axes.put(&class, chord);
+        self.axes.put(&class, Some(chord.clone()));
         Some(())
     }
 
@@ -87,7 +63,7 @@ impl Form {
     /// leaves the form (the court's un-pivot, A20 step 3). Keyed by the same
     /// composite the opening used, or it removes nothing and the axis stands
     /// with no orbit claiming it.
-    pub(crate) fn close_axis_on(&mut self, chord: u16) -> Option<()> {
+    pub(crate) fn close_axis_on(&mut self, chord: &coord::Overlap) -> Option<()> {
         let i = self.orbit_of_chord(chord)?;
         let lp = self.orbits.get(i)?;
         let class = self.orbit_holonomy(lp)?.rotor().holonomy_key()?;
@@ -114,48 +90,38 @@ impl Form {
 
 /// THE AXIS CARRIER AND THE ORBIT, without the form between them. An orbit's
 /// opened axis is a keyed read of the form's axis carrier at the orbit's own
-/// class, so a trial holding that carrier reads it directly (I6).
-/// THE FACES AND VERTICES ARE THE CARRIER, not decoration on the signature.
-/// The axis is keyed by the orbit's holonomy CLASS, and an orbit's holonomy is
-/// its edge composite wherever a path carries one — which cannot be read
-/// from `lp` alone, because `lp.holonomy` is the word and the word
-/// telescopes to the identity on any coboundary cycle. Read there, this
-/// answered `axes.get(identity_class)` for every orbit on the corpus and the
-/// opening was invisible to the audit that has to count it.
+/// class, so a trial holding that carrier reads it directly (I6). The class
+/// is the edge composite's wherever a path carries one, which cannot be read
+/// from the orbit alone — so the faces and vertices are the carrier.
 pub(crate) fn opened_axis_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    axes: &Keyed<u16, coord::Holonomy>,
+    faces: &Faces,
+    vertices: &Vertices,
+    axes: &Keyed<Option<coord::Overlap>, coord::Holonomy>,
     lp: &Orbit,
-) -> Option<u16> {
+) -> Option<coord::Holonomy> {
     let class = crate::transducer::sentence::pivot::drive::orbit_holonomy_on(faces, vertices, lp)?
         .rotor()
         .holonomy_key()?;
-    axes.at(&class).copied()
+    axes.holds(&class).then_some(class)
 }
 
 /// The row one orbit contributes to the rank audit (A18), read off the axis
 /// carrier and the orbit's own holonomy — the edge composite, the same object
 /// the axis is keyed by and the class vector is read from.
 pub(crate) fn orbit_row_on(
-    faces: &[FormFace],
-    vertices: &[Vertex],
-    axes: &Keyed<u16, coord::Holonomy>,
+    faces: &Faces,
+    vertices: &Vertices,
+    axes: &Keyed<Option<coord::Overlap>, coord::Holonomy>,
     lp: &Orbit,
 ) -> Option<crate::transducer::sentence::OrbitRow> {
     // The class the axis was opened under IS the row's coordinate, so it is
     // carried: `rank_of_rows` counts axes by class, and one opening over a
     // class shared by two orbits is one axis, not two.
-    if opened_axis_on(faces, vertices, axes, lp).is_some() {
-        let class = crate::transducer::sentence::pivot::drive::orbit_holonomy_on(faces, vertices, lp)?
-            .rotor()
-            .holonomy_key()?;
+    if let Some(class) = opened_axis_on(faces, vertices, axes, lp) {
         return Some(crate::transducer::sentence::OrbitRow::Opened(class));
     }
-    // The row is the obstruction's, so it is read off the obstruction the
-    // rest of this pipeline names. An orbit whose paths disagree has no single
-    // holonomy and therefore no row (rule 11), which is the same refusal
-    // `orbit_row` makes for a holonomy that is not a versor.
+    // The row is the obstruction's. An orbit whose paths disagree has no
+    // single holonomy and therefore no row (rule 11).
     crate::transducer::sentence::orbit_row(&crate::transducer::sentence::pivot::drive::orbit_holonomy_on(
         faces, vertices, lp,
     )?)

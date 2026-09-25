@@ -57,7 +57,7 @@ assert_eq!(
 // than the whole.
 let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
 let f = crate::transducer::sentence::from_element_form(&spoken).expect("a sentence tape");
-let demanded: Vec<(u16, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Link>)> = f
+let demanded: Vec<(crate::network::nerve::coord::VertexAt, crate::transducer::sentence::Demand, Vec<crate::transducer::sentence::Link>)> = f
     .demand_vertices()
     .map(|(i, k, _, links)| (i, k.clone(), links.to_vec()))
     .collect();
@@ -181,7 +181,8 @@ fn a_remainder_the_demands_do_not_cover_is_refused_at_the_measure() {
     let elsewhere: Vec<crate::transducer::sentence::Link> = vec![(5, 5, 0, 9)];
     let chart = crate::transducer::stalk::invariant(&elsewhere);
     let mut f = Form::default();
-    f.vertices.push(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere));
+    f.put_vertex(demand_vertex(crate::transducer::sentence::Demand::Creation, &chart, elsewhere))
+        .expect("a demand vertex has a coordinate");
     f.reindex();
     assert!(f.demand_vertices().next().is_some(), "the form declares a demand");
     assert!(

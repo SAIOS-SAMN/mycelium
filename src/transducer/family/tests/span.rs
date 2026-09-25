@@ -5,7 +5,7 @@ use crate::network::nerve::Keyed;
 use crate::transducer::family::span::{span_of_members, AtStratum, Span};
 use crate::transducer::sentence::{frame_key, frames_of_section};
 
-fn frames(ks: &[u16]) -> Keyed<()> {
+fn frames(ks: &[u64]) -> Keyed<()> {
     let mut s = Keyed::new();
     for &k in ks {
         s.insert(frame_key(k), ());

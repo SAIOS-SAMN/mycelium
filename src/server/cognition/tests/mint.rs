@@ -322,9 +322,9 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     // carrying its own hue map.
     let pure_words: usize = pf
         .vertices
-        .iter()
-        .filter(|v| matches!(v, Vertex::Word { .. }))
-        .map(|v| v.acts().map_or(0, |a| a.len()))
+        .entries()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .map(|(_, v)| v.acts().map_or(0, |a| a.len()))
         .sum();
     assert_eq!(pure_words, 3, "three bodies recoloured: three members of the closed sub-complex");
     let (three_closed_deflation, _) = crate::transducer::family::form_deflation(
@@ -361,11 +361,7 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     for s in &demand_shapes {
         let links: Vec<(i64, i64, u8, u8)> = s.iter().map(|&(r, c)| (r, c, 0u8, 7u8)).collect();
         let chart = stalk::invariant(&links);
-        pf.vertices.push(Vertex::Demand {
-            kind: Demand::Creation,
-            chart,
-            bodies: links,
-        });
+        pf.put_vertex(Vertex::demand(Demand::Creation, chart, links)).expect("a demand has a coordinate");
     }
     pf.reindex();
     let rule = crate::transducer::sentence::rule_of_form(pf);
@@ -373,9 +369,9 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     let words_count: usize = rule
         .form
         .vertices
-        .iter()
-        .filter(|v| matches!(v, Vertex::Word { .. }))
-        .map(|v| v.acts().map_or(0, |a| a.len()))
+        .entries()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .map(|(_, v)| v.acts().map_or(0, |a| a.len()))
         .sum();
     let demands_count = rule.form.demand_vertices().count();
     assert_eq!((words_count, demands_count), (3, 7), "three members act, seven demands stand");
@@ -390,17 +386,21 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     assert!(spoken.is_sentence());
 
     let mut zero_word_rule = rule.clone();
-    zero_word_rule
+    let words: Vec<_> = zero_word_rule
         .form
         .vertices
-        .retain(|v| !matches!(v, Vertex::Word { .. }));
+        .entries()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .map(|(k, _)| k)
+        .collect();
+    assert!(zero_word_rule.form.retract_vertices(&words), "the Frame and the demands keep a depth");
     zero_word_rule.form.reindex();
     assert_eq!(
         zero_word_rule
             .form
             .vertices
-            .iter()
-            .filter(|v| matches!(v, Vertex::Word { .. }))
+            .entries()
+            .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
             .count(),
         0
     );

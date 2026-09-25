@@ -141,7 +141,7 @@ impl Epigenome {
             // from the vertex — cites nothing and A22 cannot spell its
             // action — never from a flag on the tape.
             let env = e.element().receipts();
-            for v in &f.vertices {
+            for (_, v) in f.vertices.scoped() {
                 let crate::transducer::sentence::Vertex::Word { address, derivation, .. } = v else {
                     continue;
                 };
@@ -205,7 +205,7 @@ pub(crate) fn body_charts_of(e: &Held) -> Vec<crate::transducer::stalk::Invarian
     // words speak to, and a vertex acting on two charts speaks to bodies on
     // both — listing one left the other unnamed by the atlas, so a cite at that
     // chart found nothing the form holds.
-    for v in &f.vertices {
+    for (_, v) in f.vertices.scoped() {
         let crate::transducer::sentence::Vertex::Word { .. } = v else {
             continue;
         };

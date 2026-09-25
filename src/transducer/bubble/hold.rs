@@ -109,7 +109,7 @@ impl Contemplation {
             glues.insert(&e.target, ());
         }
         let mut candidates: Keyed<Keyed<Rotor>> = Keyed::new();
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             match v {
                 // EVERY CHART THE VERTEX ACTS ON is a chart the bubble's
                 // cover holds: a vertex acting on several is on several.
@@ -154,7 +154,7 @@ impl Contemplation {
                 // reading `ring_answer` makes in `family/memo.rs`).
                 Vertex::Demand { chart, bodies, .. } => {
                     cover.insert(chart.key(), ());
-                    for (rk, r) in candidates_over(bodies).scoped() {
+                    for (rk, r) in candidates_over(bodies.as_slice()).scoped() {
                         candidates.nested_insert(chart.key(), rk, r.clone());
                     }
                 }

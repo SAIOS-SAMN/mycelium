@@ -33,7 +33,7 @@ pub use words::*;
 use super::class::*;
 use super::form::*;
 use super::transport::*;
-use crate::network::nerve::Keyed;
+use crate::network::nerve::{coord, Coordinate, Keyed};
 use crate::physics::Budget;
 use crate::transducer::alphabet::{Order, Rotor, Word};
 use crate::transducer::element::{self, Element};

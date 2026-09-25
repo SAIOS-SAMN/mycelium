@@ -100,14 +100,16 @@ let inner = {
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w.clone()),
         crate::transducer::stalk::Invariant::default(),
         Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [0],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("vertices"));
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
@@ -151,21 +153,22 @@ let word_vertex = |addr: u64| Vertex::word_on(
     crate::transducer::stalk::Invariant::counts(&[addr]),
     Box::new(crate::transducer::element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
     vec![(1, 2)],
+    [0],
     None,
 );
 let inner = {
     let mut f = Form::default();
-    f.vertices.push(word_vertex(1));
-    f.faces.push(f.face_of(0, 1).expect("vertices"));
+    let c = f.stand_member(&word_vertex(1), 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
 let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
 let inner_addr = inner_e.address();
 let mut outer = Form::default();
-outer.vertices.push(word_vertex(2));
-outer.faces.push(outer.face_of(0, 1).expect("vertices"));
-let _gi = outer
+let word_chart = outer.stand_member(&word_vertex(2), 0).expect("a word vertex stands");
+outer.place_overlap(crate::network::nerve::coord::ChartAt::Frame, word_chart.clone(), None).expect("vertices");
+let gi = outer
     .glue(&inner, inner_addr.clone(), Word::identity(), [1, 0, 0, 0])
     .expect("glue");
 assert!(
@@ -173,7 +176,9 @@ assert!(
     "glue records the cited address on the cover"
 );
 assert!(
-    outer.faces.iter().any(|f| f.i == 0 && f.j == _gi && f.i != 1),
+    outer.faces.entries().any(|(o, _)| matches!(o.from, crate::network::nerve::coord::ChartAt::Frame)
+        && o.to_vertex() == gi
+        && o.to_vertex() != word_chart.vertex()),
     "the glue's placement face is not the first Word face"
 );
 let e = as_element_form(&outer, [1, 0, 0, 0]).expect("outer tape");
@@ -265,23 +270,37 @@ let other = {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
+    // AT1 (Q1): the two bodies are ONE vertex of the identity's class, a
+    // member per chart, each overlapped from the Frame's chart.
+    let mut charts = Vec::new();
     for tag in [9u8, 10u8] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero.clone()))),
             Vec::new(),
+            [0],
             None,
-        ));
+        );
+        let c = f.stand_member(&v, 0).expect("a word vertex stands");
+        f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+        charts.push(c);
     }
-    f.faces.push(f.face_of(0, 1).expect("star 1"));
-    f.faces.push(f.face_of(0, 2).expect("star 2"));
-    f.faces.push(f.face_carrying(1, 2, half.clone()).expect("a chord between two bodies"));
+    // The chord carries the half turn on its EDGE, which is measured content
+    // (50.3): a word on an overlap's factors is PRODUCED content, written
+    // only by the pivot's Word move under a certificate naming the overlap
+    // (AT1, ruled), and a fixture has none to hand the replay.
+    f.place_overlap(
+        charts[0].clone(),
+        charts[1].clone(),
+        Some(crate::transducer::sentence::Transport::from_word(half.clone())),
+    )
+    .expect("a chord between two bodies");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // A17: the orbit is believed at the period it closes at, and a court
     // replays it only where the form files it under its own class.
     let [lp, ..] = f.orbits.as_slice() else { panic!("the chord closes an orbit") };
-    let chord = lp.chord;
+    let chord = crate::transducer::sentence::Closes::On(lp.chord.clone());
     f.torsion.put(
         &half.rotor().holonomy_key().expect("the half turn has a class"),
         crate::transducer::sentence::FiledOrbit {
@@ -324,14 +343,16 @@ let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
-f.vertices.push(Vertex::word_on(
+let v = Vertex::word_on(
     crate::transducer::alphabet::Derivation::spelled(w),
     crate::transducer::stalk::Invariant::default(),
     Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
     vec![(1, 2)],
+    [0],
     None,
-));
-f.faces.push(f.face_of(0, 1).expect("vertices"));
+);
+let c = f.stand_member(&v, 0).expect("a word vertex stands");
+f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 assert!(f.is_closed(), "a tree of two vertices coheres");
 let e = as_element_form(&f, [1, 0, 0, 0]).expect("v2 tape");
@@ -393,14 +414,16 @@ let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let inner = {
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w),
         crate::transducer::stalk::Invariant::default(),
         Box::new(crate::transducer::element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [0],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("vertices"));
+    );
+    let c = f.stand_member(&v, 0).expect("a word vertex stands");
+    f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None).expect("vertices");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f
 };
@@ -473,8 +496,8 @@ assert!(
 let body = crate::transducer::sentence::from_element_form(&e1)
     .expect("the tape reads back")
     .vertices
-    .iter()
-    .find_map(|v| v.acts().and_then(|a| a.scoped().next().map(|(_, m)| m.chart.clone())))
+    .entries()
+    .find_map(|(_, v)| v.acts().and_then(|a| a.scoped().next().map(|(_, m)| m.chart.clone())))
     .expect("a word vertex carries its body's chart");
 assert!(
     epi.on_body(&body).iter().any(|(_, _, st)| *st == Standing::Ruled),

@@ -22,14 +22,25 @@ fn round() -> (Mv, Vec<Mv>) {
     (meet_of(&nuclei).expect("two nuclei meet"), nuclei)
 }
 
+/// The `n`th overlap a fixture's rings step over: the Frame's chart to the
+/// Frame's own member on chart `[n + 1]` at frame 0 — one overlap per ring,
+/// each its own coordinates (AT1: a face is an overlap, never a slot).
+fn overlap(n: u64) -> crate::network::nerve::coord::Overlap {
+    use crate::network::nerve::coord::{ChartAt, Overlap, VertexAt};
+    Overlap {
+        from: ChartAt::Frame,
+        to: ChartAt::at(VertexAt::Frame, crate::transducer::stalk::Invariant::counts(&[n + 1]), 0),
+    }
+}
+
 /// Circuits crossing a cell, each its own ring — one step over its own face
 /// — with the hue its steps compose: none carries a hue map, so the composed
 /// map is empty, measured.
 fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<CellCircuit> {
     holonomies
         .into_iter()
-        .enumerate()
-        .map(|(i, holonomy)| CellCircuit { ring: CellCircuit::ring_of(&[(u16::try_from(i).expect("the fixture's handful of circuits; AT1 debt — a face slot number"), true)]), holonomy, hue: Some(Vec::new()) })
+        .zip(0u64..)
+        .map(|(holonomy, i)| CellCircuit { ring: CellCircuit::ring_of(&[(overlap(i), true)]), holonomy, hue: Some(Vec::new()) })
         .collect()
 }
 
@@ -121,7 +132,7 @@ fn an_incoherence_is_held_by_its_ring_class_and_modes() {
     assert_eq!(held.congruence, Congruence::Congruent);
     let Coherence::Open(rings) = &held.coherence else { panic!("a rosette never returns: {:?}", held.coherence) };
     let [ring] = rings.as_slice() else { panic!("one ring, none chosen: {rings:?}") };
-    assert_eq!(ring.ring, CellCircuit::ring_of(&[(0, true)]), "the ring's own coordinates");
+    assert_eq!(ring.ring, CellCircuit::ring_of(&[(overlap(0), true)]), "the ring's own coordinates");
     assert!(ring.class.is_ok(), "its class read by the one producer: {:?}", ring.class);
     assert!(
         matches!(ring.modes.as_slice(), [ResidueMode { kind: BivectorKind::Elliptic, order: None, .. }]),
@@ -137,7 +148,7 @@ fn an_incoherence_is_held_by_its_ring_class_and_modes() {
         "held open by its parabolic mode: {:?}",
         rings[0].modes
     );
-    let unhued = vec![CellCircuit { ring: CellCircuit::ring_of(&[(0, true)]), holonomy: Ok(rosette), hue: None }];
+    let unhued = vec![CellCircuit { ring: CellCircuit::ring_of(&[(overlap(0), true)]), holonomy: Ok(rosette), hue: None }];
     let cell = read_cell(1, Some(&m), Some(&nuclei), &unhued, &[], &mut stroke());
     let Coherence::Open(rings) = &cell.coherence else { panic!("still open: {:?}", cell.coherence) };
     assert_eq!(rings[0].class, Err(ClassUnread::HueUnread), "the hue unread, named on the class");

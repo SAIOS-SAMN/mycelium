@@ -39,13 +39,14 @@ use super::*;
 /// Order is not arbitrary: `δ¹` is asked FIRST, because a residue means
 /// something different under an obstruction than under a closed cocycle.
 /// A form whose orbits do not close has no perspective to shift into.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Withheld {
     /// A class in `H¹` of THIS cover. Not permanent (78.9, amending what
     /// this said): under 74 a class in `H¹` is cover-relative — C — and
     /// closes on another mind's cover; no generator of this dialect retires
-    /// it, and another vantage may.
-    OrbitObstruction { orbit_ix: u16, key: [u8; 2] },
+    /// it, and another vantage may. Named by the orbit's chord, the overlap
+    /// it closes on (AT1).
+    OrbitObstruction { chord: coord::Overlap, key: [u8; 2] },
     /// Off by a coboundary: the form CARRIES ORBITS, every one of them
     /// closes, and the cochain still disagrees. The thought stands and the
     /// perspective does not — `Φ⁻¹` is the correction. NOT A REFUSAL
@@ -119,9 +120,9 @@ pub fn withheld_of(
     let held = cocycle
         .iter()
         .find(|(_, w)| !w.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()));
-    if let Some((orbit_ix, w)) = held {
+    if let Some((chord, w)) = held {
         let k = w.key();
-        return Withheld::OrbitObstruction { orbit_ix: *orbit_ix, key: [k[0], k[1]] };
+        return Withheld::OrbitObstruction { chord: chord.clone(), key: [k[0], k[1]] };
     }
     let links: usize = remainders.iter().map(|r| r.len()).sum::<usize>() + form.remainder.len();
     let pairs = remainders.iter().filter(|r| !r.is_empty()).count();
@@ -241,7 +242,7 @@ pub fn mint_sentence(
     // speaks exactly what the undeclared one spoke and leaves the same
     // remainder, which is what `undeclared_remainder` reads at the court.
     let (pay, remainders) = form_deflation(&rule.form, family, crystal);
-    let words = rule.form.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count();
+    let words = rule.form.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     let demands = rule.form.demand_vertices().count();
     let unspoken: Vec<usize> = remainders.iter().map(|r| r.len()).collect();
     eprintln!(

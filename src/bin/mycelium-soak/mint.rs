@@ -107,7 +107,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             } else {
                 reach_one += 1;
             }
-            form_sections += rule.form.sections.len() as u64;
+            form_sections += rule.form.sections().len() as u64;
             form_torsion += rule.form.torsion.len() as u64;
             let periods: Vec<u32> =
                 rule
@@ -120,7 +120,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 "  mint {name} reach: form fibre_volume {reach} \
                  (form sections {} torsion {} periods {periods:?}) \
                  | element's own fibre: sections {} torsion {}",
-                rule.form.sections.len(),
+                rule.form.sections().len(),
                 rule.form.torsion.len(),
                 w.sections().len(),
                 w.torsion().len(),
@@ -169,7 +169,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
         // WHAT THE MINT IS HANDED. The form, by what its vertices are, and
         // the family, by what its pairs are.
         let (mut words, mut glued, mut demands) = (0u64, 0u64, 0u64);
-        for v in &rule.form.vertices {
+        for (_, v) in rule.form.vertices.scoped() {
             match v {
                 Vertex::Word { .. } => words += 1,
                 Vertex::Glued { .. } => glued += 1,
@@ -289,7 +289,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let mut gauges: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
             let mut rotors: mycelium::network::nerve::Keyed<()> = mycelium::network::nerve::Keyed::new();
             let mut carriages = 0u64;
-            for v in &pf.vertices {
+            for (_, v) in pf.vertices.scoped() {
                 if let Vertex::Word { derivation, .. } = v {
                     // EVERY MEMBER's chart and gauge, so the count reads the
                     // fibre and not a representative of it (D7).
@@ -333,8 +333,8 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
             let hits: Vec<usize> = rule
                 .form
                 .vertices
-                .iter()
-                .filter_map(|v| match v {
+                .scoped()
+                .filter_map(|(_, v)| match v {
                     // The fibre hits the vertex's members reach, summed:
                     // one member today, so this is the same number D7a
                     // must preserve, and D7b is where it rises.
@@ -402,7 +402,7 @@ pub(crate) fn trace(dir: &str, names: &[String]) {
                 println!("  mint {name} pairform {i}: none");
                 continue;
             };
-            let (pf_words, pf_demands) = pf.vertices.iter().fold((0u64, 0u64), |(w, d), v| match v {
+            let (pf_words, pf_demands) = pf.vertices.scoped().fold((0u64, 0u64), |(w, d), (_, v)| match v {
                 Vertex::Word { .. } => (w + 1, d),
                 Vertex::Demand { .. } => (w, d + 1),
                 _ => (w, d),

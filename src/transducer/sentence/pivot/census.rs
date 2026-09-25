@@ -232,13 +232,15 @@ pub fn reset_orbit_class_ops() {
 pub fn form_operators(f: &Form) -> usize {
     let mut ops: Keyed<()> = Keyed::new();
     for lp in &f.orbits {
-        // `θ Ω θ̃`, filed by its canonical key — a ray (78.32(1)).
-        if !crate::transducer::cga::is_versor(&lp.based_at) {
+        // `θ Ω θ̃`, filed by its canonical key — a ray (78.32(1)). `θ` and `Ω`
+        // are READ off the orbit's overlaps (AT1), never held beside them.
+        let Some(theta) = f.orbit_based_at(lp) else { continue };
+        if !crate::transducer::cga::is_versor(&theta) {
             continue;
         }
-        let inv = lp.based_at.reverse();
-        for (_, omega) in lp.carriages.scoped() {
-            let based = lp.based_at.geo(omega).geo(&inv);
+        let inv = theta.reverse();
+        for (_, t) in orbit_transport_on(&f.faces, &f.vertices, lp).scoped() {
+            let based = theta.geo(&t.carriage).geo(&inv);
             let Some(canonical) = based.canonical() else { continue };
             let mut bytes = Vec::new();
             canonical.to_bytes(&mut bytes);

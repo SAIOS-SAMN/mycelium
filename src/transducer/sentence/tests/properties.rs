@@ -4,7 +4,6 @@
 use super::common::*;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::sentence::*;
-use crate::network::nerve::Keyed;
 use crate::transducer::stalk;
 
 /// Equality by RE-DERIVATION, never by bytes (1.5). Two forms are the one
@@ -18,20 +17,35 @@ fn same_form(a: &Form, b: &Form) -> bool {
     if a.vertices.len() != b.vertices.len() || a.faces.len() != b.faces.len() {
         return false;
     }
-    for (x, y) in a.faces.iter().zip(&b.faces) {
-        if x.i != y.i || x.j != y.j || !x.word.rotor().projective_eq(&y.word.rotor()) {
+    // FACE BY FACE AT ONE OVERLAP (AT1 Q2): each overlap of one form is an
+    // overlap of the other, by its two charts, and derives the same word.
+    // An overlap is one member pair, so there is no pair count to compare.
+    for (o, _) in a.faces.entries() {
+        if !b.faces.holds(&o) {
             return false;
         }
-        if x.at.len() != y.at.len() || x.pairs.as_ref().map(Keyed::len) != y.pairs.as_ref().map(Keyed::len) {
+        let (Some(x), Some(y)) = (a.face_word(&o), b.face_word(&o)) else {
+            return false;
+        };
+        if !x.rotor().projective_eq(&y.rotor()) {
             return false;
         }
     }
     if !same_torsion(a, b) {
         return false;
     }
-    a.sections.len() == b.sections.len()
+    a.sections().len() == b.sections().len()
         && a.axes.len() == b.axes.len()
-        && a.remainder.placed() == b.remainder.placed()
+        && remainder_at(a) == remainder_at(b)
+}
+
+/// THE REMAINDER BY ITS COORDINATES (AT1, 54.5 Road (d)): the address carries
+/// the chain's measure, pieces and corner and never the chain, which rides
+/// the record as a demand's bodies do — so a form read back from its address
+/// holds `remainder_at` and no chain, and the two are compared where both
+/// stand: at the coordinates, read off the chain where the chain is held.
+fn remainder_at(f: &Form) -> Option<ChainAt> {
+    f.remainder_at.or_else(|| ChainAt::of(&f.remainder.placed()))
 }
 
 /// THE FILED CYCLES, CLASS BY CLASS. `Form.torsion` is not in the key —
@@ -80,11 +94,13 @@ fn generated() -> Vec<(&'static str, Form)> {
         .expect("glue the gluer");
 
     let mut demanding = Form::default();
-    demanding.vertices.push(Vertex::Demand {
-        kind: Demand::Source { multiplicity: 2 },
-        chart: stalk::Invariant::counts(&[3]),
-        bodies: vec![(1, 1, 1, 2), (1, 2, 1, 2)],
-    });
+    demanding
+        .put_vertex(Vertex::demand(
+            Demand::Source { multiplicity: 2 },
+            stalk::Invariant::counts(&[3]),
+            vec![(1, 1, 1, 2), (1, 2, 1, 2)],
+        ))
+        .expect("a demand has a coordinate");
 
     let mut residual = closed_word_form(w, None);
     residual.remainder =
@@ -125,13 +141,16 @@ fn generated() -> Vec<(&'static str, Form)> {
 fn two_vertices_at_one_coordinate_are_one_vertex() {
     let mut f = Form::default();
     for _ in 0..3 {
-        f.vertices.push(word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[7])));
-        let j = u16::try_from(f.vertices.len() - 1).expect("the fixture's vertex just pushed, one of three");
-        f.faces.push(f.face_of(0, j).expect("star"));
+        stand_with_star(&mut f, &word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[7])));
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
-    assert_eq!(f.vertices.len(), 4, "the form was built holding one coordinate three times");
+    // AT1 Q1 — THE CARRIER IS KEYED BY THE COORDINATE, so standing one
+    // coordinate three times holds it once: the Frame and one vertex, one
+    // member, one star overlap. The collapse the address used to make is now
+    // the carrier's own, and the address must agree with it.
+    assert_eq!(f.vertices.len(), 2, "the form was built standing one coordinate three times, and holds it once");
+    assert_eq!(f.faces.len(), 1, "one member at one frame is one star overlap");
 
     let key = form_vertex_key(&f);
     let back = from_address(&key).expect("the address parses — the count is of what was written");
@@ -236,13 +255,15 @@ fn evidence_is_not_identity() {
 
     let build = |d: alphabet::Derivation| {
         let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
+        f.put_vertex(Vertex::word_on(
             d,
             stalk::Invariant::counts(&[1]),
             Box::new(crate::transducer::element::identity_versor()),
             Vec::new(),
+            [FRAME],
             None,
-        ));
+        ))
+        .expect("a word vertex has a coordinate");
         f
     };
     let a = build(spelled);
@@ -258,13 +279,13 @@ fn evidence_is_not_identity() {
     let mut c = build(alphabet::Derivation::spelled(w));
     let bare = form_vertex_key(&c);
     let cert = PivotCertificate {
-        chord: 0,
+        chord: some_overlap(),
         axis: Axis::Unit(0),
         before: crate::transducer::address::Address::from_bytes([1u8]),
         after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
         rank_move: RankMove::Discharged { from: RankAxis::Torsion },
         mu: Mu::Unmeasured,
-        by: PivotBy::Word { face: 0, word: Box::new(Word::identity()), side: Side::Left },
+        by: PivotBy::Word { face: some_overlap(), word: Box::new(Word::identity()), side: Side::Left },
     };
     c.certificates.insert(cert.key(), cert);
     assert_eq!(c.certificates.len(), 1, "the fixture carries a certificate");
@@ -325,7 +346,7 @@ fn a_citation_carries_the_morphism_it_acts_under() {
         let key = form_vertex_key(f);
         let back = from_address(&key).expect("recovers");
         assert_eq!(form_vertex_key(&back), key, "the recovery re-derives its address");
-        let got = back.vertices.iter().find_map(|v| match v {
+        let got = back.vertices.entries().find_map(|(_, v)| match v {
             Vertex::Glued { carriage, .. } => Some((**carriage).clone()),
             _ => None,
         });
@@ -400,13 +421,22 @@ fn the_address_is_independent_of_vertex_append_order() {
             // forms hold the same set of vertices and differ only in the
             // order they were appended.
             let c = u64::from(id.raw());
-            f.vertices.push(Vertex::word_on(
-                alphabet::Derivation::spelled(Word::from_letters(&[(id, false)])),
-                stalk::Invariant::counts(&[c]),
-                Box::new(crate::transducer::element::identity_versor()),
-                Vec::new(),
-                None,
-            ));
+            // STOOD, never put: the two quarter turns are one transport
+            // class (AT1 Q1), so the second JOINS the first's vertex as a
+            // member on its own chart; a `put` would overwrite it and the
+            // survivor would be whichever arrived last.
+            f.stand_member(
+                &Vertex::word_on(
+                    alphabet::Derivation::spelled(Word::from_letters(&[(id, false)])),
+                    stalk::Invariant::counts(&[c]),
+                    Box::new(crate::transducer::element::identity_versor()),
+                    Vec::new(),
+                    [FRAME],
+                    None,
+                ),
+                FRAME,
+            )
+            .expect("a word vertex stands");
         }
         f.reindex();
         f
@@ -611,21 +641,27 @@ fn the_interface_fixes_the_witness_of_its_contact() {
 #[test]
 fn a_face_carries_its_interface_through_its_address() {
     let mut f = star_form(2, vec![(1, 2, Word::identity())]);
-    let chord = f.faces.len() - 1;
+    // The chord the fixture wrote, by its overlap: the orbit's chord is never
+    // a star overlap (AT1).
+    let [lp] = f.orbits.as_slice() else { panic!("the fixture closes one orbit") };
+    let chord = lp.chord.clone();
+    let set = |f: &mut Form, i: Interface| {
+        f.faces.at_mut(&chord).expect("the chord's overlap").interface = Some(i);
+    };
     let apart = contact(0, 3, 1);
-    f.faces[chord].interface = Some(apart.clone());
+    set(&mut f, apart.clone());
     let back = from_address(&form_vertex_key(&f)).expect("the address parses");
     assert!(same_form(&f, &back), "the form comes back");
-    let interfaces: Vec<&Interface> = back.faces.iter().filter_map(|x| x.interface.as_ref()).collect();
+    let interfaces: Vec<&Interface> = back.faces.entries().filter_map(|(_, x)| x.interface.as_ref()).collect();
     assert_eq!(interfaces, vec![&apart], "with its interface, V's ray and the grade");
     let mut other = f.clone();
-    other.faces[chord].interface = Some(contact(0, 1, 1));
+    set(&mut other, contact(0, 1, 1));
     assert_ne!(form_vertex_key(&f), form_vertex_key(&other), "another V is another form");
     let mut regraded = f.clone();
-    regraded.faces[chord].interface = Some(contact(0, 3, 0));
+    set(&mut regraded, contact(0, 3, 0));
     assert_ne!(form_vertex_key(&f), form_vertex_key(&regraded), "another grade is another form");
     let mut scaled = f.clone();
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
-    scaled.faces[chord].interface = Some(Interface { v: apart.v.scale(&two), grade: 1 });
+    set(&mut scaled, Interface { v: apart.v.scale(&two), grade: 1 });
     assert_eq!(form_vertex_key(&f), form_vertex_key(&scaled), "λV is one interface: the ray is written");
 }

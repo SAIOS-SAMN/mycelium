@@ -153,8 +153,11 @@ fn a_citation_carries_its_slip_and_not_only_its_bend() {
 /// ARE one boundary and what distinguishes them is incidence in `N(𝒰)`.
 #[test]
 fn an_edge_stands_at_a_site_and_not_at_an_index() {
+    // Two leaves at two BASE planes: a quarter turn through e₂ has no base
+    // action, so its star overlap has no place to derive (AT1: an overlap is
+    // placed where its place derives, or not at all).
     let a = leaf((0, 1));
-    let b = leaf((0, 2));
+    let b = leaf((0, 3));
     let a_at = addr_of(&a);
     let b_at = addr_of(&b);
     assert_ne!(a_at, b_at, "two leaves at two planes are two forms");
@@ -286,7 +289,8 @@ fn a_chart_off_the_hyperboloid_is_refused() {
 /// AN ENVELOPE WITH NOTHING TO SAY IS EMPTY, NOT ABSENT (rule 11).
 ///
 /// A form with no citation, no factored vertex and no certificate attests
-/// nothing, and the record says so in four zero counts rather than omitting
+/// nothing, and the record says so in six zero counts (four, and since AT1
+/// the demands' bodies and the remainder's chain) rather than omitting
 /// the block — so a reader can tell "this word attests nothing" from "this
 /// record was written before the envelope rode it".
 #[test]
@@ -297,7 +301,7 @@ fn a_word_that_attests_nothing_says_so() {
 
     let mut block = Vec::new();
     ReceiptsEnvelope::default().to_block(&mut block).expect("the envelope writes");
-    assert_eq!(block.len(), 4 + 32, "len prefix and four zero u64 counts");
+    assert_eq!(block.len(), 4 + 48, "len prefix and six zero u64 counts");
     let mut p = 0usize;
     assert_eq!(
         ReceiptsEnvelope::from_block(&block, &mut p),
@@ -335,8 +339,10 @@ fn a_word_that_attests_nothing_says_so() {
 /// form's coordinates that neither host had any claim to.
 #[test]
 fn two_hosts_citing_two_forms_reach_one_coordinate() {
+    // Two BASE planes, for `an_edge_stands_at_a_site_and_not_at_an_index`'s
+    // reason.
     let a = leaf((0, 1));
-    let b = leaf((0, 2));
+    let b = leaf((0, 3));
     let a_at = addr_of(&a);
     let b_at = addr_of(&b);
     assert_ne!(a_at, b_at, "two leaves at two planes are two forms");

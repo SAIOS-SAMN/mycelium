@@ -43,10 +43,12 @@ fn each_demand_carries(
     f: &crate::transducer::sentence::Form,
     rotor: &Rotor,
 ) {
+    // AT1 (Q1): the chord's two ends are one class, so ONE vertex with a
+    // member on each end's chart — every chart it stands at, not its first.
     let charts: Vec<Invariant> = f
         .vertices
-        .iter()
-        .filter_map(|v| v.face_chart())
+        .scoped()
+        .flat_map(|(_, v)| v.charts())
         .collect();
     for (got, chart) in standing_demands(f) {
         assert_eq!(

@@ -2,6 +2,7 @@
 // and the oldest bubble is the one that moves.
 
 use crate::transducer::bubble::*;
+use crate::transducer::sentence::tests::common::{stand_with_star, FRAME};
 
 /// Every bubble the contemplation holds, by address — what a door is
 /// handed. `retire_on_t` picked ONE by age against a count; the doors are
@@ -190,17 +191,24 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::Invariant;
     let q01 = LetterId::quarter((0, 1)).expect("the sensor plane");
-    let q02 = LetterId::quarter((0, 2)).expect("another plane");
+    // AT1 (Q1): a Word vertex is keyed by its transport class, and the
+    // quarters on `(0, 1)` and `(0, 2)` are ONE class, so they would be one
+    // vertex with one rotor. Two rotors a form speaks are two classes: the
+    // quarter and the (3, 4, 5) turn.
+    let p02 = LetterId::pythagorean_5((0, 2)).expect("another plane");
     let mut f = Form::default();
-    for id in [q01, q02] {
-        f.vertices.push(Vertex::word_on(
+    for id in [q01, p02] {
+        let v = Vertex::word_on(
             Derivation::spelled(Word::from_letters(&[(id, false)])),
             Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
             Vec::new(),
+            [FRAME],
             None,
-        ));
+        );
+        f.stand_member(&v, FRAME).expect("a word vertex stands");
     }
+    assert_eq!(f.vertices.len(), 3, "the Frame and two word classes");
     let b = Bubble { form: Some(f), ..Default::default() };
     assert!(
         b.rotor().is_none(),
@@ -231,13 +239,15 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
     let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
     let mut f = Form::default();
     for car in [c, neg] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             Derivation::spelled(Word::from_letters(&[(q01, false)])),
             Invariant::counts(&[3, 5]),
             Box::new(car),
             Vec::new(),
+            [FRAME],
             None,
-        ));
+        );
+        f.stand_member(&v, FRAME).expect("a word vertex stands");
     }
     let b = Bubble { form: Some(f), ..Default::default() };
     assert_eq!(b.sections().len(), 1, "one carriage ray on one chart is one section, not one per sign");
@@ -271,16 +281,20 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
 
     // A form with one face for the certificate to name.
     let mut f = Form::default();
+    let mut charts = Vec::new();
     for w in [a.clone(), b.clone()] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             Derivation::spelled(w),
             Invariant::counts(&[3, 5]),
             Box::new(element::identity_versor()),
             Vec::new(),
+            [FRAME],
             None,
-        ));
+        );
+        charts.push(f.stand_member(&v, FRAME).expect("a word vertex stands"));
     }
-    f.faces.push(f.face_carrying(1, 2, a.clone()).expect("a chord between two placed vertices"));
+    let [ca, cb] = charts.as_slice() else { panic!("two members stood") };
+    let face = crate::transducer::sentence::tests::common::chord(&mut f, ca, cb, a.clone());
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
@@ -295,13 +309,13 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     let after = ClassVector::zero().class_key();
     assert_ne!(after, before, "a closed orbit's class is not the class it stood in");
     let cert = |w: &Word| PivotCertificate {
-        chord: 0,
+        chord: face.clone(),
         axis: Axis::Open,
         before: before.clone(),
         after: after.clone(),
         rank_move: RankMove::Equal,
         mu: Mu::Unmeasured,
-        by: PivotBy::Word { face: 0, word: Box::new(w.clone()), side: Side::Right },
+        by: PivotBy::Word { face: face.clone(), word: Box::new(w.clone()), side: Side::Right },
     };
     let mut vortex = crate::network::nerve::Keyed::new();
     for c in [cert(&a), cert(&b)] {
@@ -387,13 +401,15 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     let sibling = Invariant::counts(&[3, 7]);
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         mine.clone(),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [FRAME],
         None,
-    ));
+    );
+    f.stand_member(&v, FRAME).expect("a word vertex stands");
     let mut b = Bubble { form: Some(f), ..Default::default() };
 
     // Both charts hold a member, and both members read as sections.
@@ -438,15 +454,16 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     use crate::transducer::sentence::{Form, Vertex};
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let mut form = Form::default();
-    form.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         crate::transducer::stalk::Invariant::counts(&[3, 5]),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [FRAME],
         None,
-    ));
+    );
     form.remainder = crate::transducer::element::PlacedChain::default();
-    form.faces.push(form.face_of(0, 1).expect("the star face"));
+    stand_with_star(&mut form, &v);
 
     let mut c = Contemplation::new();
     c.set_now(10);
@@ -479,13 +496,15 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
         "a held form reports the extent it deliberated"
     );
     let mut other = Form::default();
-    other.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
         crate::transducer::stalk::Invariant::counts(&[9, 9]),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [FRAME],
         None,
-    ));
+    );
+    other.stand_member(&v, FRAME).expect("a word vertex stands");
     assert_eq!(
         c.span_of(&other),
         Some(Deliberation::Fresh),
@@ -518,14 +537,15 @@ fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
     // vertex acts on — which is what a rebase or a refinement moves.
     let build = |chart: Vec<u64>| {
         let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             Derivation::spelled(Word::from_letters(&[(q, false)])),
             crate::transducer::stalk::Invariant::counts(&chart),
             Box::new(element::identity_versor()),
             Vec::new(),
+            [FRAME],
             None,
-        ));
-        f.faces.push(f.face_of(0, 1).expect("the star face"));
+        );
+        stand_with_star(&mut f, &v);
         f
     };
     let before = build(vec![3, 5]);

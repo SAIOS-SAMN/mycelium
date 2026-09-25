@@ -30,16 +30,25 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
     use crate::transducer::sentence::{as_element_form, Form, Vertex};
     use crate::transducer::stalk;
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let spoken = |w: &Word| -> Element {
-        let mut f = Form::default();
-        f.vertices.push(Vertex::word_on(
+    use crate::transducer::sentence::tests::common::FRAME;
+    // AT1: a star overlap's place is MEASURED (the coboundary word's base
+    // versor), and these words carry no conformal action on the base — the
+    // premise of the test — so no star derives (rule 11). The member stands
+    // at the fixtures' frame without one.
+    let stand = |f: &mut Form, v: &Vertex| f.stand_member(v, FRAME).expect("a word vertex stands");
+    let word_vertex = |w: &Word| {
+        Vertex::word_on(
             alphabet::Derivation::spelled(w.clone()),
             stalk::Invariant::counts(&[3, 5]),
             Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
             Vec::new(),
+            [FRAME],
             None,
-        ));
-        f.faces.push(f.face_of(0, 1).expect("the frame star"));
+        )
+    };
+    let spoken = |w: &Word| -> Element {
+        let mut f = Form::default();
+        stand(&mut f, &word_vertex(w));
         f.reindex();
         as_element_form(&f, vol()).expect("a form with a vertex and a magnitude")
     };
@@ -74,20 +83,18 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
 
     // A FORM WHOSE VERTICES DISAGREE HAS NO ONE ROTOR, and says so rather
     // than picking a representative (rule 15).
+    //
+    // AT1 (Q1): a Word vertex is keyed by its TRANSPORT CLASS, and the
+    // quarters on `(0, 1)` and `(2, 3)` are one class — one vertex, the
+    // second member merging into the first. Two disagreeing vertices are two
+    // CLASSES: the quarter against the (3, 4, 5) turn, of infinite order.
+    let p01 = Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).expect("the sensor plane"), false)]);
     let mut mixed = Form::default();
-    for w in [&q01, &q23] {
-        mixed.vertices.push(Vertex::word_on(
-            alphabet::Derivation::spelled(w.clone()),
-            stalk::Invariant::counts(&[3, 5]),
-            Box::new(crate::transducer::element::carriage(&q(1), &(q(0), q(1)))),
-            Vec::new(),
-            None,
-        ));
-    }
-    for j in 1..=2u16 {
-        mixed.faces.push(mixed.face_of(0, j).expect("the frame star"));
+    for w in [&q01, &p01] {
+        stand(&mut mixed, &word_vertex(w));
     }
     mixed.reindex();
+    assert_eq!(mixed.vertices.len(), 3, "the Frame and two word classes");
     let m = as_element_form(&mixed, vol()).expect("a form of two disagreeing vertices");
     assert!(
         m.carried_rotor().is_none(),

@@ -2,14 +2,14 @@
 // closes over, read from the form's sections at the read and never stored.
 //
 //! A stratum here is a keyed FIBER of `e₃` coordinates — a set of sections,
-//! not a contiguous run — keyed by `frame_key` as `Form.sections` keys them.
+//! not a contiguous run — keyed by `frame_key` as a member's frames are.
 //! A transport between two members exists only where both stand (51.4), so a
 //! cycle's span is the INTERSECTION of its members' sections: the sections
 //! on which every transport it composes exists. The union of what its
 //! members touch is the cycle's REACH, a different reading, not built here.
 //!
-//! THE SPAN IS DERIVED, NEVER CARRIED (law 12). `Form.sections` is the one
-//! carrier of which frames a class or a member stands on; the span is the
+//! THE SPAN IS DERIVED, NEVER CARRIED (law 12). The members' own frames are
+//! the one carrier of which frames a member stands on (AT1); the span is the
 //! meet of those fibres, `Keyed::meet`, read along the trajectory the
 //! sections' shared coordinates trace — no direction preferred and nothing
 //! chosen. No `k` is enumerated to find it: the frames it holds are the keys the
@@ -21,7 +21,7 @@
 //! the cell to the part the stratum names.
 
 use crate::network::nerve::{coord, Keyed};
-use crate::transducer::sentence::{Acting, Orbit, Vertex};
+use crate::transducer::sentence::{section_of_frames, Form, Orbit};
 
 /// WHERE A CELL STANDS ALONG `e₃`.
 #[derive(Clone, Debug)]
@@ -71,54 +71,31 @@ impl Span {
     }
 }
 
-fn declared(section: Option<&Keyed<()>>) -> Span {
-    match section {
-        Some(s) => Span::Sections(s.clone()),
-        None => Span::Whole,
-    }
+/// THE SECTIONS THE MEMBER UNDER ONE CHART STANDS ON: the frames it holds
+/// (AT1, ruled — a member holds its frames, and its class's section is the
+/// union over its members, so the meet of the two is the member's own). The
+/// Frame's chart and a member holding no frames are claimed whole, as the
+/// court reads them (51.8). `None` where the chart names no vertex of the
+/// form (rule 11: an unread span is not a whole one).
+pub(crate) fn chart_span(form: &Form, chart: &coord::ChartAt) -> Option<Span> {
+    let coord::ChartAt::At(m) = chart else { return Some(Span::Whole) };
+    form.vertices.at(&m.vertex)?;
+    let frames = form.member_frames(&m.vertex, &m.chart);
+    Some(match frames.is_empty() {
+        true => Span::Whole,
+        false => Span::Sections(section_of_frames(frames)),
+    })
 }
 
-/// THE SECTIONS ONE MEMBER STANDS ON: its class's section met with its own,
-/// the two coordinates the court reads (51.8) — a class with none is
-/// claimed whole, and so is a member with none. `None` where the member key
-/// does not name a vertex of `vertices` (rule 11: an unread span is not a
-/// whole one).
-pub(crate) fn member_span(
-    vertices: &[Vertex],
-    sections: &Keyed<Keyed<()>, coord::SectionAt>,
-    member: &[u8],
-) -> Option<Span> {
-    let (ix, chart) = super::read_member_key(member)?;
-    let v = vertices.get(usize::from(ix))?;
-    let class = super::transport_class(v)
-        .and_then(|tc| sections.at(&coord::SectionAt::Class(super::class_section_key(&tc))));
-    // The member acting on this chart, read at the chart's stratum of the
-    // vertex's fibre; a vertex acting on none has no member section.
-    let own = v
-        .acts()
-        .and_then(|acts| acts.fiber_at(&Acting::chart_prefix_bytes(&chart)))
-        .and_then(|mut f| f.next())
-        .and_then(|(_, acting)| super::member_section_key(v, &acting.chart))
-        .and_then(|mk| sections.at(&coord::SectionAt::Member(Box::new(mk))));
-    Some(declared(class).meet(&declared(own)))
-}
-
-/// A CYCLE'S SPAN: the meet of its members' spans, each member once. `None`
-/// where a member is unread.
-pub(crate) fn orbit_span(
-    vertices: &[Vertex],
-    sections: &Keyed<Keyed<()>, coord::SectionAt>,
-    orbit: &Orbit,
-) -> Option<Span> {
-    span_of_members(orbit.members.iter().map(Vec::as_slice), |m| member_span(vertices, sections, m))
+/// A CYCLE'S SPAN: the meet of its charts' spans. `None` where a chart is
+/// unread.
+pub(crate) fn orbit_span(form: &Form, orbit: &Orbit) -> Option<Span> {
+    span_of_members(orbit.charts().into_iter(), |c| chart_span(form, &c))
 }
 
 /// THE MEET OVER A CELL'S MEMBERS, by whatever reads a member's span — the
-/// form's sections in production, a fixture's in the tests.
-pub(crate) fn span_of_members<'a>(
-    members: impl Iterator<Item = &'a [u8]>,
-    read: impl Fn(&[u8]) -> Option<Span>,
-) -> Option<Span> {
+/// form's charts in production, a fixture's in the tests.
+pub(crate) fn span_of_members<T>(members: impl Iterator<Item = T>, read: impl Fn(T) -> Option<Span>) -> Option<Span> {
     members.map(read).try_fold(Span::Whole, |acc, s| Some(acc.meet(&s?)))
 }
 
@@ -135,10 +112,10 @@ pub struct SpanTally {
 }
 
 impl SpanTally {
-    pub fn of(vertices: &[Vertex], sections: &Keyed<Keyed<()>, coord::SectionAt>, orbits: &[Orbit]) -> SpanTally {
+    pub fn of(form: &Form) -> SpanTally {
         let mut t = SpanTally::default();
-        for o in orbits {
-            match orbit_span(vertices, sections, o) {
+        for o in &form.orbits {
+            match orbit_span(form, o) {
                 None => t.unread += 1,
                 Some(Span::Whole) => t.whole += 1,
                 Some(Span::Sections(s)) if s.is_empty() => t.none += 1,

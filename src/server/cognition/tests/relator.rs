@@ -203,22 +203,36 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     let q1 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let q0 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
+    // AT1 (Q1): the two bodies are ONE vertex of the identity's class, a
+    // member per chart, each overlapped from the Frame's chart.
+    let mut charts = Vec::new();
     for tag in [2u8, 3u8] {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
             // Its own chart: an address is derived from its coordinates (54.2).
             crate::transducer::stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&q1, &(q0.clone(), q0.clone()))),
             Vec::new(),
+            [0],
             None,
-        ));
+        );
+        let c = f.stand_member(&v, 0).expect("a word vertex stands");
+        f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
+        charts.push(c);
     }
-    f.faces.push(f.face_of(0, 1).expect("star 1"));
-    f.faces.push(f.face_of(0, 2).expect("star 2"));
     // The chord carries the RELATOR the triangle left, not a word this
     // fixture chose: it is `quarter(2)` because that is what the holonomy
-    // above read, asserted there.
-    f.faces.push(f.face_carrying(1, 2, quarter(2)).expect("a chord between two bodies"));
+    // above read, asserted there. It rides the chord's EDGE, which is
+    // measured content (50.3): a word on an overlap's factors is PRODUCED
+    // content, written only by the pivot's Word move under a certificate
+    // naming the overlap (AT1, ruled), and a fixture has no certificate to
+    // hand the court.
+    f.place_overlap(
+        charts[0].clone(),
+        charts[1].clone(),
+        Some(crate::transducer::sentence::Transport::from_word(quarter(2))),
+    )
+    .expect("a chord between two bodies");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     let _ = f.pivot_orbit(
         [31; 32],

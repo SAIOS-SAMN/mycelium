@@ -18,7 +18,9 @@ use crate::transducer::stalk::{self, Standing};
 /// orbit; a tape whose axis was struck out is refused on that orbit.
 #[test]
 fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
-    let mut f = chord_form(&[infinite()]);
+    // AT1: measured torsion rides the overlap's EDGE — a pivot factor
+    // written without a certificate is refused at replay (REFUSE_PIVOT_INEXACT).
+    let mut f = edge_chord_form(&[infinite()]);
     let before = f.rank().expect("rank");
     assert_eq!((before.free, before.axes), (1, 0), "one free orbit, no axis yet");
     let snaps = f.pivot_orbit(
@@ -154,7 +156,9 @@ fn rank_offplane_is_its_own_lane() {
 /// the orbit.
 #[test]
 fn filed_torsion_chord_replays_or_refuses() {
-    let mut f0 = chord_form(&[order4()]);
+    // AT1: the measured torsion rides the chord's EDGE; an uncertified
+    // pivot factor is refused at replay (REFUSE_PIVOT_INEXACT).
+    let mut f0 = edge_chord_form(&[order4()]);
     let _ = f0.pivot_orbit(
         [0xca; 32],
         &crate::network::nerve::Keyed::new(),
@@ -184,7 +188,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         .find_map(|lp| match keyed.orbit_classes(lp).as_slice() {
             // The least class the orbit derives; `orbit_classes` walks a
             // `Keyed`, so the order is the member paths' own (rule 15).
-            [row, ..] => Some((row.class.clone(), lp.chord)),
+            [row, ..] => Some((row.class.clone(), lp.chord.clone())),
             [] => None,
         })
         .expect("the complex derives its own class");
@@ -194,7 +198,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         "the chord face is the keyed representative"
     );
     assert!(
-        keyed.faces.get(chord as usize).is_some(),
+        keyed.faces.holds(&chord),
         "the carrier stores a live chord face"
     );
     assert_eq!(
@@ -204,14 +208,14 @@ fn filed_torsion_chord_replays_or_refuses() {
     );
     let mut f = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let mag = e.magnitude();
-    let Some(ci) = f
-        .faces
-        .iter()
-        .position(|face| f.face_of(face.i, face.j).as_ref() != Some(face))
-    else {
+    // AT1: the torsion chord is the overlap whose EDGE carries the measured
+    // quarter turn, so the forger moves the edge's word.
+    let Some(ci) = f.faces.entries().find(|(_, face)| face.has_edge()).map(|(o, _)| o) else {
         panic!("the filed form has a torsion chord");
     };
-    f.faces[ci].word = order2();
+    if let Some(e) = f.faces.at_mut(&ci).and_then(|face| face.place.edge.as_mut()) {
+        e.word = order2();
+    }
     let bad = as_element_form(&f, mag).expect("tampered chord");
     // A TAMPERED CHORD NAMES A DIFFERENT WORD (54.5, as ruled 2026-09-20).
     // This expected `REFUSE_ORBIT` — "a chord whose holonomy is not the FILED
@@ -314,13 +318,16 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
         stalk::Invariant::counts(&[u64::from(addr)]),
         Box::new(element::carriage(&q1(), &(q0(), q0()))),
         Vec::new(),
+        [FRAME],
         None,
     );
-    f.vertices.push(empty(1));
-    f.vertices.push(empty(2));
-    f.faces.push(f.face_of(0, 1).expect("star 1"));
-    f.faces.push(f.face_of(0, 2).expect("star 2"));
-    f.faces.push(f.face_carrying(1, 2, w).expect("a chord between two bodies"));
+    // AT1: the two are one vertex of the identity's class with a member on
+    // each chart (Q1), each starred from the Frame.
+    let a = stand_with_star(&mut f, &empty(1));
+    let b = stand_with_star(&mut f, &empty(2));
+    // The measured word rides the chord's EDGE (an uncertified factor is
+    // refused at replay).
+    edge_chord(&mut f, &a, &b, Transport::from_word(w));
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     assert!(f.coheres(), "coheres reads projective identity");
@@ -329,7 +336,9 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
         "is_cauterized reads projective identity"
     );
     assert!(
-        f.orbits.iter().all(|lp| lp.holonomy.is_identity()),
+        f.orbits
+            .iter()
+            .all(|lp| orbit_word_on(&f.faces, &f.vertices, lp).is_some_and(|h| h.is_identity())),
         "the chord holonomy is A1 identity"
     );
     let snaps = f.pivot_orbit(
@@ -453,11 +462,14 @@ fn orientation_is_the_third_axis_half_turn() {
 #[test]
 fn an_orbit_residue_is_the_translator_of_its_holonomy_versor() {
     let mut f = chord_form(&[Word::identity()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
+    let overlaps: Vec<_> = f.faces.entries().map(|(o, _)| o).collect();
+    for o in &overlaps {
+        if let Some(fa) = f.faces.at_mut(o) {
+            set_face_place(fa, |p| p.gauge.clear());
+        }
     }
-    let chord = f.orbits[0].chord as usize;
-    set_face_place(&mut f.faces[chord], |p| {
+    let chord = f.orbits[0].chord.clone();
+    set_face_place(f.faces.at_mut(&chord).expect("the chord's face"), |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);

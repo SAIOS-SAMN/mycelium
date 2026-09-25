@@ -16,7 +16,7 @@ let f1 = cipher_form(&a, &b);
 let n = sensor_reads();
 assert!(n > 0, "first call reads the grids, got {n}");
 assert!(
-    f1.vertices.iter().any(|v| matches!(v, Vertex::Frame)),
+    f1.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Frame)),
     "every pair form has a frame"
 );
 assert!(
@@ -25,7 +25,7 @@ assert!(
     f1.vertices.len()
 );
 assert!(
-    f1.vertices.iter().any(|v| matches!(v, Vertex::Word { .. })),
+    f1.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Word { .. })),
     "a carried body is a word vertex"
 );
 let f2 = cipher_form(&a, &b);
@@ -95,7 +95,7 @@ assert_eq!(*kind, Demand::Source { multiplicity: 1 }, "the input bar's chart car
 assert_eq!(links, &[(2, 1, 0, 2), (2, 2, 0, 2)], "the created links, hue 0 before");
 assert!(!f.is_closed(), "a sentence with a demand is not closed");
 assert_eq!(
-    f.vertices.iter().filter(|v| matches!(v, Vertex::Word { .. })).count(),
+    f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count(),
     1,
     "the carried bar is the one word vertex; the created bar is no word: {:?}",
     f.vertices
@@ -139,10 +139,20 @@ use crate::transducer::sentence::Demand;
 let f = cipher_form(&grid(&["1100000", "0000000", "0000000"]), &grid(&["1100000", "0000000", "0220022"]));
 let demands: Vec<_> = f.demand_vertices().collect();
 assert_eq!(demands.len(), 1, "one vertex for one (kind, chart): {:?}", f.vertices);
-let (idx, kind, chart, links) = demands[0];
+let (idx, kind, chart, links) = demands[0].clone();
 assert_eq!(*kind, Demand::Source { multiplicity: 1 });
 assert_eq!(links.len(), 4, "both bars' links ride it");
-assert_eq!(f.demands.at(&crate::transducer::sentence::demand_key(kind, chart)), Some(&idx), "and it is read by (kind, chart)");
+// AT1 — THE DEMAND IS KEYED BY ITS COORDINATE, which opens with its kind and
+// its chart: the `demands` position index retired into the carrier's own
+// stratum, so the read by (kind, chart) is the vertex's key.
+assert!(
+    matches!(&idx, crate::network::nerve::coord::VertexAt::Demand { kind: k, chart: c, .. } if k == kind && c == chart),
+    "and it is keyed by (kind, chart): {idx:?}"
+);
+assert!(
+    matches!(f.vertices.at(&idx), Some(Vertex::Demand { .. })),
+    "and it is read by that key"
+);
 }
 
 /// 50.5 (F step 5) — THE DEMANDS RIDE THE RULE: over a bundle of two pairs
@@ -182,19 +192,21 @@ let undeclared = crate::court::verdict::body::undeclared_remainder(
 assert!(
     undeclared.is_empty(),
     "this form's demand covers what it leaves, which is why it mints; undeclared {undeclared:?} on {:?} with sections {:?}",
-    rule.form.vertices.iter().map(|v| match v {
+    rule.form.vertices.scoped().map(|(_, v)| match v {
         Vertex::Word { address, acts, .. } => format!("word {:02x}{:02x} acts {:?}", address.as_bytes()[0], address.as_bytes()[1], acts.scoped().map(|(_, a)| (a.chart.clone(), a.gauge.clone(), element::same_versor(&a.carriage, &element::identity_versor()))).collect::<Vec<_>>()),
         other => format!("{other:?}"),
     }).collect::<Vec<_>>(),
-    rule.form.sections.scoped().map(|(k, v)| (k.len(), v.clone())).collect::<Vec<_>>()
+    rule.form.sections().scoped().map(|(k, v)| (k.len(), v.clone())).collect::<Vec<_>>()
 );
 // Strip the links the demand declares. The form still HOLDS a demand
 // vertex — so the old test, which asked only whether one existed, still
 // passes it — and it now declares nothing, so the remainder is undeclared
-// and the voice withholds.
+// and the voice withholds. The bodies ride the record and not the key
+// (AT1), so each demand is emptied where it stands.
 let mut bare = rule.clone();
-for v in &mut bare.form.vertices {
-    if let Vertex::Demand { bodies, .. } = v {
+let demanded: Vec<crate::network::nerve::coord::VertexAt> = bare.form.demands().map(|(at, _)| at).collect();
+for at in &demanded {
+    if let Some(Vertex::Demand { bodies, .. }) = bare.form.vertices.at_mut(at) {
         bodies.clear();
     }
 }
@@ -254,12 +266,50 @@ fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
     v.iter().map(|&t| t.into()).collect()
 }
 
-/// The member key of vertex `i` standing at the root stratum.
-fn root_member(i: u16) -> Vec<u8> {
-    crate::transducer::family::member_key(
-        i,
-        crate::transducer::stalk::Invariant::default().key().as_bytes(),
+/// The identity's class, which every fixture body is a member of.
+fn identity_at() -> crate::network::nerve::coord::VertexAt {
+    Vertex::word_on(
+        crate::transducer::alphabet::Derivation::spelled(crate::transducer::alphabet::Word::identity()),
+        crate::transducer::stalk::Invariant::default(),
+        Box::new(element::identity_versor()),
+        Vec::new(),
+        [0u64],
+        None,
     )
+    .at()
+    .expect("the identity has a class")
+}
+
+/// The member key of fixture member `i`: `0` the Frame's, at the root
+/// stratum; every other a member of the identity's class on chart `[i]`
+/// (AT1: a vertex is keyed by its coordinate, so members of one class are
+/// told apart by their charts, never by a position). The chart's count is
+/// written little-endian, so for a fixture of a few members the key order
+/// is `i`'s order, as the vertex order was.
+fn root_member(i: u16) -> Vec<u8> {
+    match i {
+        0 => crate::transducer::family::member_key(
+            &crate::network::nerve::coord::VertexAt::Frame,
+            crate::transducer::stalk::Invariant::default().key().as_bytes(),
+        ),
+        _ => crate::transducer::family::member_key(
+            &identity_at(),
+            crate::transducer::stalk::Invariant::counts(&[u64::from(i)]).key().as_bytes(),
+        ),
+    }
+}
+
+/// The fixture member a key names, read back out of it: the Frame is `0`,
+/// every other member its chart's count.
+fn member_index(k: &[u8]) -> Option<u16> {
+    let (v, chart) = crate::transducer::family::read_member_key(k)?;
+    match v {
+        crate::network::nerve::coord::VertexAt::Frame => Some(0),
+        _ => match crate::transducer::stalk::Invariant::from_key(&chart)?.0.as_slice() {
+            [crate::transducer::stalk::ChartAxis::Count(n)] => u16::try_from(*n).ok(),
+            _ => None,
+        },
+    }
 }
 
 /// The member pairs `named_faces` names, without the incidences on each —
@@ -307,11 +357,7 @@ let pairs = named_pairs(Some(&root_member(0)), &supports);
 // its key rather than being the whole of it.
 let ends: Vec<(u16, u16)> = pairs
     .iter()
-    .filter_map(|(a, b)| {
-        let (i, _) = crate::transducer::family::read_member_key(a)?;
-        let (j, _) = crate::transducer::family::read_member_key(b)?;
-        Some((i, j))
-    })
+    .filter_map(|(a, b)| Some((member_index(a)?, member_index(b)?)))
     .collect();
 let adj: Vec<_> = ends.iter().copied().filter(|&(i, j)| i != 0 && j != 0).collect();
 assert_eq!(adj.len(), 0, "no adjacency face without the stencil, got {adj:?} from {ends:?}");
@@ -319,10 +365,10 @@ assert_eq!(adj.len(), 0, "no adjacency face without the stencil, got {adj:?} fro
 // nothing: every body is related to the Frame, and it is only the
 // body-to-body incidence that the dilation was inventing.
 assert_eq!(ends.len(), 3, "the Frame star stands over all three, got {ends:?}");
-let faces: Vec<FormFace> = ends
-    .iter()
-    .map(|&(i, j)| FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
-    .collect();
+// AT1 — A FACE IS AN OVERLAP OF TWO PLACED CHARTS and these ends are
+// fixture members, not charts a form holds, so the 1-skeleton is read on the
+// member pairs themselves: its edges are the generator's output.
+let faces: Vec<(u16, u16)> = ends.clone();
 // THE 1-SKELETON IS NOT A STAR TREE, and that is arithmetic on the
 // generator's own output (54.5, as ruled 2026-09-20). It was read through
 // `orbits_of`, which no longer answers it: these faces are `FormFace::new`
@@ -365,8 +411,7 @@ let ends = |how: Incidence| -> Vec<(u16, u16)> {
         .iter()
         .filter(|nf| nf.named.hows.contains(&how))
         .filter_map(|nf| {
-            let (i, _) = crate::transducer::family::read_member_key(&nf.a)?;
-            let (j, _) = crate::transducer::family::read_member_key(&nf.b)?;
+            let (i, j) = (member_index(&nf.a)?, member_index(&nf.b)?);
             Some((i.min(j), i.max(j)))
         })
         .collect()
@@ -398,10 +443,7 @@ let supports = supports_at(&[
 ]);
 let named = named_faces(None, &supports);
 let [nf] = named.as_slice() else { panic!("one pair, one face: {named:?}") };
-let ends = (
-    crate::transducer::family::read_member_key(&nf.a).map(|(i, _)| i),
-    crate::transducer::family::read_member_key(&nf.b).map(|(j, _)| j),
-);
+let ends = (member_index(&nf.a), member_index(&nf.b));
 assert_eq!(ends, (Some(1), Some(2)), "between the two L's");
 assert_eq!(nf.named.hows, vec![Incidence::Contact], "the corner alone names the pair");
 // AND ITS WITNESS IS THE TWO CORNERS, as a set (C2): `(1,0)+(0,1)` and
@@ -435,8 +477,7 @@ let ends = |how: Incidence| -> Vec<(u16, u16)> {
         .iter()
         .filter(|nf| nf.named.hows.contains(&how))
         .filter_map(|nf| {
-            let (i, _) = crate::transducer::family::read_member_key(&nf.a)?;
-            let (j, _) = crate::transducer::family::read_member_key(&nf.b)?;
+            let (i, j) = (member_index(&nf.a)?, member_index(&nf.b)?);
             Some((i.min(j), i.max(j)))
         })
         .collect()
@@ -626,13 +667,7 @@ let run = |k: usize| -> (usize, usize, u64) {
     // The vertex each member key names, read back out of it.
     let adj = pairs
         .iter()
-        .filter(|(a, b)| {
-            let ends = (
-                crate::transducer::family::read_member_key(a),
-                crate::transducer::family::read_member_key(b),
-            );
-            matches!(ends, (Some((i, _)), Some((j, _))) if i != 0 && j != 0)
-        })
+        .filter(|(a, b)| matches!((member_index(a), member_index(b)), (Some(i), Some(j)) if i != 0 && j != 0))
         .count();
     (pairs.len(), adj, work)
 };
@@ -664,7 +699,7 @@ assert_eq!(adj4, 31, "and thirty-two chain in thirty-one, not 496: {adj4}");
 // The claim this test carries is about the CHAIN, not about homology —
 // k−1 faces and not k(k−1)/2 — and the cycle rank of the 1-skeleton is
 // `E − V + 1`, arithmetic over the generator's own output.
-let rank = |faces: &[FormFace], n: usize| faces.len() + 1 - n;
+let rank = |faces: &[(u16, u16)], n: usize| faces.len() + 1 - n;
 assert_eq!(rank(&run_faces(8), 9), 7, "eight occupants carry seven independent cycles, not 28");
 assert_eq!(rank(&run_faces(32), 33), 31, "and thirty-two carry thirty-one, not 496");
 let (_, _, w) = run(8);
@@ -674,19 +709,17 @@ assert!(
 );
 }
 
-/// The faces eight bodies on one site name, as a form would hold them.
-fn run_faces(k: usize) -> Vec<FormFace> {
+/// The faces eight bodies on one site name, by the member pairs they join
+/// (AT1: a face is an overlap of two placed charts, and these are fixture
+/// members, so the 1-skeleton is read on the pairs).
+fn run_faces(k: usize) -> Vec<(u16, u16)> {
 let mut supports = vec![Vec::new()];
 for _ in 0..k {
     supports.push(vec![(0i64, 0i64)]);
 }
 named_pairs(Some(&root_member(0)), &supports_at(&supports))
     .iter()
-    .filter_map(|(a, b)| {
-        let (i, _) = crate::transducer::family::read_member_key(a)?;
-        let (j, _) = crate::transducer::family::read_member_key(b)?;
-        Some(FormFace::new(i, j, crate::transducer::alphabet::Word::identity()))
-    })
+    .filter_map(|(a, b)| Some((member_index(a)?, member_index(b)?)))
     .collect()
 }
 
@@ -703,15 +736,15 @@ let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::
 let words = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(
     words, 1,
     "one carriage is one vertex; moduli are a section coordinate, got {words}"
 );
 assert!(
-    rule.form.vertices.iter().any(|v| matches!(v, Vertex::Frame)),
+    rule.form.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Frame)),
     "the frame stays; the form is not frame-only"
 );
 }
@@ -724,8 +757,8 @@ let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_
 let bodies = rule
     .form
     .vertices
-    .iter()
-    .filter(|v| matches!(v, Vertex::Word { .. }))
+    .scoped()
+    .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
     .count();
 assert_eq!(bodies, 1, "one body is one vertex under ∃V, got {}", rule.form.vertices.len());
 let a = perceive(&family[0].0);
@@ -795,8 +828,8 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
     let words = rule
         .form
         .vertices
-        .iter()
-        .filter(|v| matches!(v, Vertex::Word { .. }))
+        .scoped()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
         .count();
     assert_eq!(words, 1, "extracts a rule vertex, got {words}");
     assert!(

@@ -356,35 +356,15 @@ pub mod coord {
         }
     }
 
-    /// A VERTEX'S POSITION IN ITS OWN FORM — an ordinal, not a coordinate
-    /// of the manifold (rule 15), typed so it cannot reach a carrier that
-    /// answers one.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct VertexIx(pub u16);
-
-    impl Coordinate for VertexIx {
-        const NAME: &'static str = "vertex-index";
-        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
-
-        fn encode(&self) -> CompactBytes {
-            let mut buf = vec![0u8];
-            buf.extend_from_slice(&self.0.to_le_bytes());
-            CompactBytes::written(buf)
-        }
-
-        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
-            match bytes {
-                [0u8, a, b] => Ok(VertexIx(u16::from_le_bytes([*a, *b]))),
-                _ => Err(Self::refuse("a vertex ordinal is one tag byte and a u16")),
-            }
-        }
-    }
+    // `VertexIx` — a vertex's position in its own form — STOOD HERE AND IS
+    // DELETED WITH THE SLOTS (AT1): a vertex is reached by its coordinate,
+    // [`VertexAt`], and nothing names it by where it was pushed.
 
     /// AN UNFOLDED VERTEX'S MEASURE. The form's own namespace, not A21's:
     /// it opens with `4`, which is `TAG_FORM` in the other namespace and
     /// means nothing here — two systems over one byte, which is the case
     /// only a type can decide.
-    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    #[derive(Clone, Debug, PartialEq, Eq)]
     pub struct Unfolded(pub crate::transducer::sentence::Measure);
 
     impl Coordinate for Unfolded {
@@ -394,12 +374,13 @@ pub mod coord {
         fn encode(&self) -> CompactBytes {
             use crate::transducer::sentence::Measure;
             let mut k = vec![4u8];
-            match self.0 {
+            match &self.0 {
                 Measure::Occupied => k.push(0),
                 Measure::Remainder => k.push(1),
+                // AT1 — the ring's anchor by the vertex's own coordinate.
                 Measure::Ring { anchor } => {
                     k.push(2);
-                    k.extend_from_slice(&anchor.to_le_bytes());
+                    a::put_key_bytes(&mut k, anchor.encode().as_bytes());
                 }
             }
             CompactBytes::written(k)
@@ -410,8 +391,14 @@ pub mod coord {
             match bytes {
                 [4u8, 0] => Ok(Unfolded(Measure::Occupied)),
                 [4u8, 1] => Ok(Unfolded(Measure::Remainder)),
-                [4u8, 2, a, b] => {
-                    Ok(Unfolded(Measure::Ring { anchor: u16::from_le_bytes([*a, *b]) }))
+                [4u8, 2, ..] => {
+                    let mut pos = 2usize;
+                    let ab = a::take_key_bytes(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the ring's anchor is not length-delimited"))?;
+                    if pos != bytes.len() {
+                        return Err(Self::refuse("the key carries bytes past its last coordinate"));
+                    }
+                    Ok(Unfolded(Measure::Ring { anchor: Box::new(VertexAt::decode(&ab)?) }))
                 }
                 _ => Err(Self::refuse("the bytes spell no unfolded measure")),
             }
@@ -1019,6 +1006,350 @@ pub mod coord {
                 true => Ok(Meet { lo, hi }),
                 false => Err(Self::refuse("a seam's two ends are not in canonical order")),
             }
+        }
+    }
+
+    /// AT1 Q4 — THE FRAME'S SPELLING: a length byte, then the minimal
+    /// big-endian bytes. Unbounded, and ordered by (length, bytes), which is
+    /// the numeric order the carrier reads the succession by (law 2) — not
+    /// LEB128, whose bytes order by the low bits, and not a u16 wall.
+    pub fn put_frame(k: u64, out: &mut Vec<u8>) {
+        let be = k.to_be_bytes();
+        let body: Vec<u8> = be.iter().copied().skip_while(|&b| b == 0).collect();
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: the minimal big-endian bytes of a u64, at most eight")]
+        out.push(body.len() as u8);
+        out.extend_from_slice(&body);
+    }
+
+    /// A u64 COUNT BY ITS OWN SPELLING, LEB128 (ruling (a)): a lane's
+    /// measure and a piece count are values, never fixed widths.
+    fn put_count(mut n: u64, out: &mut Vec<u8>) {
+        loop {
+            let low = (n & 0x7f) as u8;
+            n >>= 7;
+            match n {
+                0 => {
+                    out.push(low);
+                    return;
+                }
+                _ => out.push(low | 0x80),
+            }
+        }
+    }
+
+    /// The count read back; `None` past ten bytes or on a non-minimal
+    /// spelling (a trailing zero group is a second spelling of one value).
+    fn take_count(bytes: &[u8], pos: &mut usize) -> Option<u64> {
+        let mut n = 0u64;
+        for shift in (0..70).step_by(7) {
+            let b = *bytes.get(*pos)?;
+            *pos += 1;
+            n |= u64::from(b & 0x7f).checked_shl(shift)?;
+            if b & 0x80 == 0 {
+                return (b != 0 || shift == 0).then_some(n);
+            }
+        }
+        None
+    }
+
+    /// The frame read back; `None` for a length past eight or a body with a
+    /// leading zero, which would be a second spelling of one frame.
+    #[expect(clippy::disallowed_methods, reason = "rule 15 — the length byte at the cursor is the spelling's own discriminant, not a member chosen")]
+    pub fn take_frame(bytes: &[u8], pos: &mut usize) -> Option<u64> {
+        let n = usize::from(*bytes.get(*pos)?);
+        let body = bytes.get(*pos + 1..*pos + 1 + n)?;
+        if n > 8 || body.first() == Some(&0) {
+            return None;
+        }
+        *pos += 1 + n;
+        let mut be = [0u8; 8];
+        be.get_mut(8 - n..)?.copy_from_slice(body);
+        Some(u64::from_be_bytes(be))
+    }
+
+    /// AT1 (i), Q1 — A VERTEX OF THE ATLAS BY ITS COORDINATE, never by its
+    /// position in a list: its kind's tag first, then what that kind is
+    /// named by. A Word is its TRANSPORT CLASS (one vertex per class, 21
+    /// step 1); the Frame is its tag alone; an Unfolded vertex its measure;
+    /// a Demand its kind, its chart, its chain's measure per lane and its
+    /// piece count — the bodies are evidence and ride the record (54.5 Road
+    /// (d)); a Glued vertex its site, the boundary record it holds. A
+    /// Rebased vertex is its BASE's class then its own former class (ruled):
+    /// the base first, so every vertex rebased on one base is a fibre read
+    /// under it; its own class is held on the vertex, the overwrite having
+    /// made it underivable.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub enum VertexAt {
+        Frame,
+        Word(Transport),
+        Rebased { base: Transport, own: Transport },
+        Unfolded(Unfolded),
+        Demand {
+            kind: crate::transducer::sentence::Demand,
+            chart: crate::transducer::stalk::Invariant,
+            measure: [u64; 4],
+            pieces: u64,
+        },
+        Glued(Site),
+    }
+
+    impl VertexAt {
+        pub const FRAME: u8 = 0;
+        pub const WORD: u8 = 1;
+        pub const REBASED: u8 = 2;
+        pub const UNFOLDED: u8 = 3;
+        pub const DEMAND: u8 = 4;
+        pub const GLUED: u8 = 5;
+    }
+
+    impl Coordinate for VertexAt {
+        const NAME: &'static str = "atlas-vertex";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            match self {
+                VertexAt::Frame => buf.push(Self::FRAME),
+                VertexAt::Word(t) => {
+                    buf.push(Self::WORD);
+                    buf.extend_from_slice(t.encode().as_bytes());
+                }
+                VertexAt::Rebased { base, own } => {
+                    buf.push(Self::REBASED);
+                    a::put_key_bytes(&mut buf, base.encode().as_bytes());
+                    a::put_key_bytes(&mut buf, own.encode().as_bytes());
+                }
+                VertexAt::Unfolded(u) => {
+                    buf.push(Self::UNFOLDED);
+                    buf.extend_from_slice(u.encode().as_bytes());
+                }
+                VertexAt::Demand { kind, chart, measure, pieces } => {
+                    buf.push(Self::DEMAND);
+                    a::put_key_bytes(&mut buf, kind.key().as_bytes());
+                    a::put_key_bytes(&mut buf, chart.key().as_bytes());
+                    for lane in measure {
+                        put_count(*lane, &mut buf);
+                    }
+                    put_count(*pieces, &mut buf);
+                }
+                VertexAt::Glued(s) => {
+                    buf.push(Self::GLUED);
+                    buf.extend_from_slice(&s.0);
+                }
+            }
+            CompactBytes::written(buf)
+        }
+
+        #[expect(clippy::disallowed_methods, reason = "rule 15 — the tag byte at position 0 is the wire's discriminant, not a member chosen")]
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let (Some(&tag), Some(body)) = (bytes.first(), bytes.get(1..)) else {
+                return Err(Self::refuse("an empty key spells no vertex"));
+            };
+            match tag {
+                Self::FRAME if body.is_empty() => Ok(VertexAt::Frame),
+                Self::WORD => Ok(VertexAt::Word(Transport::decode(body)?)),
+                Self::UNFOLDED => Ok(VertexAt::Unfolded(Unfolded::decode(body)?)),
+                Self::GLUED => Ok(VertexAt::Glued(Site::decode(body)?)),
+                Self::REBASED => {
+                    let mut pos = 1usize;
+                    let bb = a::take_key_bytes(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the base's class is not length-delimited"))?;
+                    let ob = a::take_key_bytes(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the vertex's own class is not length-delimited"))?;
+                    if pos != bytes.len() {
+                        return Err(Self::refuse("the key carries bytes past its last coordinate"));
+                    }
+                    Ok(VertexAt::Rebased { base: Transport::decode(&bb)?, own: Transport::decode(&ob)? })
+                }
+                Self::DEMAND => {
+                    let mut pos = 1usize;
+                    let kb = a::take_key_bytes(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the demand kind is not length-delimited"))?;
+                    let cb = a::take_key_bytes(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
+                    let mut measure = [0u64; 4];
+                    for lane in measure.iter_mut() {
+                        *lane = take_count(bytes, &mut pos)
+                            .ok_or_else(|| Self::refuse("a lane's measure is not a count"))?;
+                    }
+                    let pieces = take_count(bytes, &mut pos)
+                        .ok_or_else(|| Self::refuse("the piece count is not a count"))?;
+                    if pos != bytes.len() {
+                        return Err(Self::refuse("the key carries bytes past its last coordinate"));
+                    }
+                    let mut kp = tagged::<Self>(&kb, a::TAG_DEMAND)?;
+                    let kind = crate::transducer::sentence::Demand::from_bytes(&kb, &mut kp)
+                        .ok_or_else(|| Self::refuse("the bytes spell no demand kind"))?;
+                    if kp != kb.len() {
+                        return Err(Self::refuse("the demand kind carries trailing bytes"));
+                    }
+                    let chart = crate::transducer::stalk::Invariant::from_key(&cb)
+                        .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
+                    Ok(VertexAt::Demand { kind, chart, measure, pieces })
+                }
+                _ => Err(Self::refuse("the tag names no vertex kind")),
+            }
+        }
+    }
+
+    /// AT1 (i), Q1–Q3 — A CHART OF THE ATLAS: a vertex's member at one
+    /// frame, `vertex ‖ Invariant ‖ frame`, each length-delimited but the
+    /// frame, whose spelling delimits itself. The Frame's chart is its tag
+    /// alone: it stands on no Invariant and at no frame.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub enum ChartAt {
+        Frame,
+        /// Boxed: a member at a frame carries a vertex coordinate and an
+        /// Invariant, and the Frame's chart should not carry that footprint.
+        At(Box<MemberAt>),
+    }
+
+    /// One member of a vertex at one frame, and — for a section's piece
+    /// only — the piece it names (AT1, ruled (a) on the chords).
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct MemberAt {
+        pub vertex: VertexAt,
+        pub chart: crate::transducer::stalk::Invariant,
+        pub frame: u64,
+        pub piece: Option<PieceAt>,
+    }
+
+    /// A PIECE BY ITS FIXED-SIZE COORDINATES (ruled): its nucleus — the
+    /// body's sphere, canonical — and its shape's moments, as the cover
+    /// matches pieces by them. NEVER its support sites: a footprint in a key
+    /// is sensor content copied into the address (LD0, R6).
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct PieceAt {
+        pub nucleus: crate::transducer::cga::Mv,
+        pub moments: Vec<u8>,
+    }
+
+    impl ChartAt {
+        /// A member's chart at a frame.
+        pub fn at(vertex: VertexAt, chart: crate::transducer::stalk::Invariant, frame: u64) -> ChartAt {
+            ChartAt::At(Box::new(MemberAt { vertex, chart, frame, piece: None }))
+        }
+
+        /// A section's piece within a member's chart at a frame: the end of a
+        /// meet chord (AT1, ruled (a)).
+        pub fn piece(
+            vertex: VertexAt,
+            chart: crate::transducer::stalk::Invariant,
+            frame: u64,
+            piece: PieceAt,
+        ) -> ChartAt {
+            ChartAt::At(Box::new(MemberAt { vertex, chart, frame, piece: Some(piece) }))
+        }
+
+        fn put(&self, buf: &mut Vec<u8>) {
+            match self {
+                ChartAt::Frame => buf.push(0),
+                ChartAt::At(m) => {
+                    buf.push(1);
+                    a::put_key_bytes(buf, m.vertex.encode().as_bytes());
+                    a::put_key_bytes(buf, m.chart.key().as_bytes());
+                    put_frame(m.frame, buf);
+                    match &m.piece {
+                        None => buf.push(0),
+                        Some(p) => {
+                            buf.push(1);
+                            let mut nucleus = Vec::new();
+                            p.nucleus.put_canonical(&mut nucleus);
+                            a::put_key_bytes(buf, &nucleus);
+                            a::put_key_bytes(buf, &p.moments);
+                        }
+                    }
+                }
+            }
+        }
+
+        fn take(bytes: &[u8], pos: &mut usize) -> Option<ChartAt> {
+            let tag = *bytes.get(*pos)?;
+            *pos += 1;
+            match tag {
+                0 => Some(ChartAt::Frame),
+                1 => {
+                    let vertex = VertexAt::decode(&a::take_key_bytes(bytes, pos)?).ok()?;
+                    let chart = crate::transducer::stalk::Invariant::from_key(&a::take_key_bytes(bytes, pos)?)?;
+                    let frame = take_frame(bytes, pos)?;
+                    let flag = *bytes.get(*pos)?;
+                    *pos += 1;
+                    let piece = match flag {
+                        0 => None,
+                        1 => {
+                            let nb = a::take_key_bytes(bytes, pos)?;
+                            let mut np = 0usize;
+                            let nucleus = crate::transducer::cga::Mv::from_bytes(&nb, &mut np)?;
+                            (np == nb.len()).then_some(())?;
+                            Some(PieceAt { nucleus, moments: a::take_key_bytes(bytes, pos)? })
+                        }
+                        _ => return None,
+                    };
+                    Some(ChartAt::At(Box::new(MemberAt { vertex, chart, frame, piece })))
+                }
+                _ => None,
+            }
+        }
+    }
+
+    impl Coordinate for ChartAt {
+        const NAME: &'static str = "atlas-chart";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            self.put(&mut buf);
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let c = ChartAt::take(bytes, &mut pos).ok_or_else(|| Self::refuse("the bytes spell no chart of the atlas"))?;
+            match pos == bytes.len() {
+                true => Ok(c),
+                false => Err(Self::refuse("the key carries bytes past its last coordinate")),
+            }
+        }
+    }
+
+    /// AT1 (i), Q2 — A FACE IS AN OVERLAP OF TWO CHARTS, keyed by the two:
+    /// the order is the orientation. It carries its place (the transition
+    /// and what rides it); its word is derived from its two ends' vertices,
+    /// never a coordinate of the key.
+    #[derive(Clone, Debug, PartialEq, Eq)]
+    pub struct Overlap {
+        pub from: ChartAt,
+        pub to: ChartAt,
+    }
+
+    impl Coordinate for Overlap {
+        const NAME: &'static str = "atlas-overlap";
+        const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
+
+        fn encode(&self) -> CompactBytes {
+            let mut buf = Vec::new();
+            self.from.put(&mut buf);
+            self.to.put(&mut buf);
+            CompactBytes::written(buf)
+        }
+
+        fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
+            let mut pos = 0usize;
+            let refuse = || Self::refuse("the bytes do not spell two charts");
+            let from = ChartAt::take(bytes, &mut pos).ok_or_else(refuse)?;
+            let to = ChartAt::take(bytes, &mut pos).ok_or_else(refuse)?;
+            match pos == bytes.len() {
+                true => Ok(Overlap { from, to }),
+                false => Err(Self::refuse("the key carries bytes past its last coordinate")),
+            }
+        }
+    }
+
+    /// Every overlap FROM one chart is a fibre read at the chart's own
+    /// bytes: the key opens with them.
+    impl Stratum<Overlap> for ChartAt {
+        fn opening(&self) -> CompactBytes {
+            self.encode()
         }
     }
 }

@@ -92,6 +92,32 @@ impl Blade {
         Some(crate::transducer::cga::sphere_at(&self.centroid()?, &self.radius2()))
     }
 
+    /// THE SHAPE'S FIXED-SIZE COORDINATES (AT1, ruled (a) on the chords): the
+    /// inertia, the quartic moments, the gauge and the shell, each exact —
+    /// what the body IS up to where it stands, and never its support sites,
+    /// which are sensor content (LD0). A piece-chart writes these beside its
+    /// nucleus.
+    pub fn moments(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        crate::transducer::address::put_key_count(&mut out, self.inertia.len());
+        for q in &self.inertia {
+            crate::transducer::alphabet::put_q(&mut out, q);
+        }
+        crate::transducer::address::put_key_count(&mut out, self.quartic.len());
+        for triple in &self.quartic {
+            for q in triple {
+                crate::transducer::alphabet::put_q(&mut out, q);
+            }
+        }
+        crate::transducer::address::put_key_count(&mut out, self.gauge.len());
+        for (h, q) in &self.gauge {
+            out.push(*h);
+            crate::transducer::alphabet::put_q(&mut out, q);
+        }
+        crate::transducer::alphabet::put_q(&mut out, &self.shell);
+        out
+    }
+
     /// Every extracted body is invertible by construction (`r² ≥ 1/6 > 0`).
     pub fn is_invertible(&self) -> bool {
         crate::transducer::cga::is_versor(&self.spatial)

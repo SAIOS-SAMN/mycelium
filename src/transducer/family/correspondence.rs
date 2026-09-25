@@ -59,46 +59,10 @@ pub(crate) fn pair_idx_key(i: u16) -> Vec<u8> {
     k
 }
 
-/// THE KEY A MEMBER'S SECTION IS FILED UNDER: the transport class, the
-/// chart, the vertex's address and the carriage the member acts by, so
-/// `Form.sections` answers which frames of the family that member was
-/// measured on (18.2, 21 step 1, 52.5 item 3). The address and the
-/// carriage are in the key because two vertices of one class can stand on
-/// one chart — a cover's pieces at two frames, a chart whose frames read
-/// two versors — and each is claimed on its own frames; two members whose
-/// every coordinate agrees act alike and are claimed alike.
-pub(crate) fn member_section_key(
-    v: &Vertex,
-    chart: &Invariant,
-) -> Option<crate::network::nerve::coord::MemberSection> {
-    let Vertex::Word { address, .. } = v else { return None };
-    let member = v.acting_on(chart)?;
-    // THE COORDINATE, WHOLE. The transport class is the coarse stratum it
-    // is built over, and that relation is `Stratum<MemberSection>` rather
-    // than a byte concatenation a reader has to reverse by hand.
-    Some(crate::network::nerve::coord::MemberSection {
-        class: transport_class(v)?.key(),
-        chart: chart.clone(),
-        address: address.clone(),
-        carriage: (*member.carriage).clone(),
-    })
-}
-
-/// THE CLASS-LEVEL SECTION: a transport class read as the COARSE STRATUM of
-/// [`member_section_key`], which opens with exactly these bytes.
-///
-/// 54.7 R5 — `Form.sections` is read at both depths and nothing said so.
-/// Its doc comment names only the class level; `extract` writes member keys
-/// into it as well, and the court reads both. They are one system — a
-/// member section is a class key with chart, address and carriage written
-/// over it — so a class key IS a prefix of a member key and the two reads
-/// are a coarse and a fine stratum of one carrier, not two carriers sharing
-/// a name. This is where a class key becomes that coordinate, said once.
-pub(crate) fn class_section_key(
-    tc: &TransportClass,
-) -> crate::network::nerve::coord::Transport {
-    tc.key()
-}
+// `member_section_key` AND `class_section_key` STOOD HERE AND RETIRED WITH
+// `Form.sections` AS A CARRIER (AT1, ruled (a)): a member holds its frames,
+// and the sections at both depths are READ off the members
+// ([`Form::sections`]), which builds the same two coordinates itself.
 
 /// THE KEY OF AN ORDERED PAIR OF TRANSPORT CLASSES: `a`'s key then `b`'s,
 /// each length-delimited, so the relatives from `a`'s bodies to `b`'s are
@@ -121,16 +85,18 @@ pub(crate) fn class_pair_key(a: &TransportClass, b: &TransportClass) -> Vec<u8> 
 /// class `a` relates to which body of class `b`. Taking the product of the two
 /// classes' placements would relate bodies nothing in the scene relates.
 ///
-/// Every face is read once and files its relative under both directions,
-/// so a caller holding two classes reads their stratum by key (rule 1). A
-/// pair whose words differ contributes nothing: the two ends do not speak
-/// one word there and there is no rebase to make. Each vertex's class is
-/// read once, from the vertices, not once per face end.
+/// Every overlap is read once and files its relative under both directions,
+/// keyed by the overlap read that way, so a caller holding two classes reads
+/// their stratum by key (rule 1). A pair whose words differ contributes
+/// nothing: the two ends do not speak one word there and there is no rebase
+/// to make. Each member is read AT THE OVERLAP'S FRAME — the section standing
+/// there (AT1).
 pub(crate) fn relatives_by_class(
-    faces: &[crate::transducer::sentence::FormFace],
-    vertices: &[Vertex],
+    faces: &crate::transducer::sentence::Faces,
+    vertices: &crate::transducer::sentence::Vertices,
 ) -> crate::network::nerve::Keyed<crate::network::nerve::Keyed<(crate::transducer::alphabet::Word, Versor)>> {
-    let classes: Vec<Option<TransportClass>> = vertices.iter().map(transport_class).collect();
+    use crate::network::nerve::coord::ChartAt;
+    use crate::network::nerve::Coordinate;
     let mut out: crate::network::nerve::Keyed<crate::network::nerve::Keyed<_>> =
         crate::network::nerve::Keyed::new();
     let mut file = |pair: Vec<u8>, at: Vec<u8>, value: (crate::transducer::alphabet::Word, Versor)| {
@@ -145,12 +111,12 @@ pub(crate) fn relatives_by_class(
             }
         }
     };
-    for face in faces {
-        let (Some(vi), Some(vj)) = (vertices.get(face.i as usize), vertices.get(face.j as usize)) else {
+    for (o, _) in faces.entries() {
+        let (ChartAt::At(a), ChartAt::At(b)) = (&o.from, &o.to) else { continue };
+        let (Some(vi), Some(vj)) = (vertices.at(&a.vertex), vertices.at(&b.vertex)) else {
             continue;
         };
-        let (Some(Some(ci)), Some(Some(cj))) = (classes.get(face.i as usize), classes.get(face.j as usize))
-        else {
+        let (Some(ci), Some(cj)) = (transport_class(vi), transport_class(vj)) else {
             continue;
         };
         let (Vertex::Word { derivation: di, .. }, Vertex::Word { derivation: dj, .. }) = (vi, vj)
@@ -163,43 +129,34 @@ pub(crate) fn relatives_by_class(
         if wi != wj {
             continue;
         }
-        let (forward, backward) = (class_pair_key(ci, cj), class_pair_key(cj, ci));
-        for (pk, _) in face.at.scoped() {
-            let Some((ik, jk)) = crate::transducer::sentence::read_face_pair_key(&pk) else {
-                continue;
-            };
-            let (Some(cci), Some(ccj)) = (vi.chart_keyed(&ik), vj.chart_keyed(&jk)) else {
-                continue;
-            };
-            let (Some(mi), Some(mj)) = (vi.acting_on(&cci), vj.acting_on(&ccj)) else {
-                continue;
-            };
-            // Each carriage's reverse, the incidence read as rays (78.32(1)).
-            let is_versor = crate::transducer::cga::is_versor;
-            if !is_versor(&mi.carriage) || !is_versor(&mj.carriage) {
-                continue;
-            }
-            let (inv_i, inv_j) = (mi.carriage.reverse(), mj.carriage.reverse());
-            // From `i`'s body to `j`'s under `(class_i, class_j)`, and back
-            // under `(class_j, class_i)`: the one incidence, both directions.
-            file(
-                forward.clone(),
-                crate::transducer::sentence::face_pair_key(&cci, &ccj),
-                (wj.clone(), mj.carriage.geo(&inv_i)),
-            );
-            file(
-                backward.clone(),
-                crate::transducer::sentence::face_pair_key(&ccj, &cci),
-                (wj.clone(), mi.carriage.geo(&inv_j)),
-            );
+        let (Some(mi), Some(mj)) = (vi.acting_at(&a.chart, a.frame), vj.acting_at(&b.chart, b.frame)) else {
+            continue;
+        };
+        // Each carriage's reverse, the incidence read as rays (78.32(1)).
+        let is_versor = crate::transducer::cga::is_versor;
+        if !is_versor(&mi.carriage) || !is_versor(&mj.carriage) {
+            continue;
         }
+        let (inv_i, inv_j) = (mi.carriage.reverse(), mj.carriage.reverse());
+        // From `i`'s body to `j`'s under `(class_i, class_j)`, and back
+        // under `(class_j, class_i)`: the one incidence, both directions.
+        file(
+            class_pair_key(&ci, &cj),
+            o.encode().as_bytes().to_vec(),
+            (wj.clone(), mj.carriage.geo(&inv_i)),
+        );
+        file(
+            class_pair_key(&cj, &ci),
+            o.reversed().encode().as_bytes().to_vec(),
+            (wj.clone(), mi.carriage.geo(&inv_j)),
+        );
     }
     out
 }
 
 pub(crate) fn hue_maps_of_form(form: &Form) -> crate::network::nerve::Keyed<Vec<(u8, u8)>> {
     let mut m = form.hue_maps.clone();
-    for v in &form.vertices {
+    for (_, v) in form.vertices.scoped() {
         // ONE HUE MAP PER MEMBER: a vertex acting on several charts carries
         // a gauge at each, and `hue_maps` is keyed by rotor and gauge, so
         // each is its own section (21 step 1).

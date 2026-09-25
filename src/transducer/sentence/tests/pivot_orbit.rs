@@ -24,6 +24,7 @@ use crate::transducer::stalk::{self, Standing};
 /// stands with nothing unread.
 #[test]
 fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
+    use crate::network::nerve::coord::{ChartAt, Overlap};
     let (a, b) = (stalk::Invariant::counts(&[7]), stalk::Invariant::counts(&[9]));
     let mut f = Form::default();
     let mut v = word_vertex_on(1, Word::identity(), a.clone());
@@ -32,15 +33,29 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
         let member = Acting { chart: b.clone(), ..first };
         acts.put(&member.key(), member);
     }
-    f.vertices.push(v);
-    assert_eq!(f.vertices[1].charts().len(), 2, "the fixture must split, or nothing is tested");
-    f.faces.push(f.face_of(0, 1).expect("the star reaches both charts"));
-    let mut at = Keyed::new();
-    at.insert(
-        face_pair_key(&a, &b),
-        FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None, refraction: None },
+    f.stand_member(&v, FRAME).expect("the vertex stands");
+    let at = v.at().expect("a word vertex has a coordinate");
+    assert_eq!(
+        f.vertices.at(&at).map(|x| x.charts().len()),
+        Some(2),
+        "the fixture must split, or nothing is tested"
     );
-    f.faces.push(FormFace { i: 1, j: 1, word: Word::identity(), at, pairs: None, interface: None });
+    // The star reaches both charts: one overlap from the Frame's chart to
+    // each member (AT1: one overlap per member pair per frame).
+    let star = f.star_overlaps(&at);
+    assert_eq!(star.len(), 2, "the star reaches both charts");
+    for (o, face) in star {
+        f.put_face(o, face);
+    }
+    // The self-face: one overlap from `(v, a)` to `(v, b)`, carrying the
+    // translation.
+    f.put_face(
+        Overlap { from: ChartAt::at(at.clone(), a.clone(), FRAME), to: ChartAt::at(at.clone(), b.clone(), FRAME) },
+        FormFace::placed(
+            FacePlace { carriage: element::translator_versor(3, 0), gauge: Vec::new(), edge: None, refraction: None },
+            Producer::Place,
+        ),
+    );
     Form::reset_orbit_gates();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
     let (_, _, unread, _) = Form::orbit_gates();
@@ -72,29 +87,34 @@ fn a_face_between_two_charts_of_one_vertex_is_crossed_by_its_member_pair() {
 #[test]
 fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
     use crate::transducer::cga::{Mv, E1, EM};
+    use crate::network::nerve::coord::ChartAt;
     let build = |on_the_cone: bool| {
         let mut f = Form::default();
+        // AT1: four bodies of the identity's class are ONE vertex with a
+        // member on each of four charts (Q1); `a`, `b`, `c`, `d` are those
+        // members' charts.
+        let mut charts = Vec::new();
         for n in 1..=4u8 {
-            f.vertices.push(word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)])));
+            let v = word_vertex_on(n, Word::identity(), stalk::Invariant::counts(&[u64::from(n)]));
+            charts.push(f.stand_member(&v, FRAME).expect("a member stands"));
         }
+        let [a, b, c, d] = charts.as_slice() else { panic!("four members") };
         // THE FOREST'S ROOT IS ITS FIRST-DISCOVERED NODE, so a star face
         // from the Frame to a fourth body comes first and roots it at the
         // Frame. Then `c`'s star face, written from `c`, is crossed against
         // its orientation.
-        f.faces.push(f.face_of(0, 4).expect("the star face of d, from the Frame"));
-        f.faces.push(f.face_of(3, 0).expect("the star face of c, oriented towards the Frame"));
-        f.faces.push(f.face_carrying(3, 1, Word::identity()).expect("c to a"));
-        f.faces.push(f.face_carrying(3, 2, Word::identity()).expect("c to b"));
-        f.faces.push(
-            f.face_carrying_with_edge(1, 2, Word::identity(), Some(Transport::from_word(order4())))
-                .expect("a chord between two bodies"),
-        );
+        f.place_overlap(ChartAt::Frame, d.clone(), None).expect("the star face of d, from the Frame");
+        let star_c = f
+            .place_overlap(c.clone(), ChartAt::Frame, None)
+            .expect("the star face of c, oriented towards the Frame");
+        f.place_overlap(c.clone(), a.clone(), None).expect("c to a");
+        f.place_overlap(c.clone(), b.clone(), None).expect("c to b");
+        edge_chord(&mut f, a, b, Transport::from_word(order4()));
         if on_the_cone {
             let one = num_rational::BigRational::from_integer(1.into());
             let null = Mv::scalar(one.clone()).add(&Mv::blade(E1 | EM, one));
             assert!(!crate::transducer::cga::is_versor(&null), "on the cone: the carriage is no versor");
-            let [_, star_c, ..] = f.faces.as_mut_slice() else { panic!("five faces") };
-            set_face_place(star_c, |p| p.carriage = null);
+            set_face_place(f.faces.at_mut(&star_c).expect("c's star face"), |p| p.carriage = null);
         }
         f
     };
@@ -137,7 +157,9 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
 
     // THE TRANSPORT IS A VERSOR, whatever it is — an unnormalised entry in
     // the tree is exactly the failure mode this guards.
-    let theta = &lp.based_at;
+    // AT1: θ and the carriages are READS composed from the overlaps, never
+    // fields of the orbit.
+    let theta = &f.orbit_based_at(lp).expect("the stem's transports read");
     assert!(
         crate::transducer::cga::is_versor(theta),
         "θ is a versor of Spin⁺(3,1)(ℚ), or the conjugation is not an isometry"
@@ -146,7 +168,10 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
     // AND CONJUGATION BY IT MOVES NEITHER CASIMIR. Read on the orbit's own
     // carriages, which is what `paths_carried` composed.
     let inv = theta.reverse();
-    for (_, omega) in lp.carriages.scoped() {
+    let transport = orbit_transport(&f, lp);
+    assert!(!transport.is_empty(), "the orbit carries a transport, or nothing is tested");
+    for (_, t) in transport.scoped() {
+        let omega = &t.carriage;
         let based = theta.geo(omega).geo(&inv);
         assert_eq!(
             based.class_invariants(),
@@ -180,10 +205,11 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
     for lp in &f.orbits {
         // EVERY cycle has a transport, and it composes: `θ · Ω · θ⁻¹` is a
         // versor of the same group, so the based operators multiply.
-        let theta = &lp.based_at;
+        let theta = &f.orbit_based_at(lp).expect("the stem's transports read");
         assert!(crate::transducer::cga::is_versor(theta), "a tree transport is a versor, or the cycle cannot be based");
         let inv = theta.reverse();
-        for (_, omega) in lp.carriages.scoped() {
+        for (_, t) in orbit_transport(&f, lp).scoped() {
+            let omega = &t.carriage;
             let based = theta.geo(omega).geo(&inv);
             assert!(
                 crate::transducer::cga::is_versor(&based),
@@ -198,10 +224,11 @@ fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
         .orbits
         .iter()
         .filter_map(|lp| {
-            let theta = &lp.based_at;
+            let theta = f.orbit_based_at(lp)?;
             let inv = theta.reverse();
-            let (_, omega) = lp.carriages.scoped().next()?;
-            Some(theta.geo(omega).geo(&inv))
+            let transport = orbit_transport(&f, lp);
+            let (_, t) = transport.scoped().next()?;
+            Some(theta.geo(&t.carriage).geo(&inv))
         })
         .collect();
     if let [g1, g2, ..] = based.as_slice() {
@@ -277,6 +304,8 @@ impl crate::transducer::family::Crystal for Hold {
 fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     let q = order4();
     let qinv = q.inverse();
+    // AT1: this test exercises the pivot itself — the certificate names the
+    // chord overlap — so the chord keeps its factor (`chord_form`).
     let mut f = chord_form(std::slice::from_ref(&q));
     let snaps = f.pivot_orbit(
         [0x11; 32],
@@ -310,8 +339,11 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the discharged form crystallizes");
     assert!(
-        matches!(f.vertices.as_slice(), [Vertex::Frame, ..]),
-        "Frame is vertex 0 of the crystallized form"
+        matches!(
+            f.vertices.entries().next(),
+            Some((crate::network::nerve::coord::VertexAt::Frame, Vertex::Frame))
+        ),
+        "Frame is the least vertex coordinate of the crystallized form"
     );
     assert_eq!(
         crate::court::verdict::blind_replay(&e),
@@ -330,8 +362,10 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
     let [cert] = e.receipts().certificates.as_slice() else {
         panic!("one certificate, on the word that made it")
     };
-    let fi = cert.by.face() as usize;
-    tampered.faces[fi].word = q.clone();
+    // AT1: the face's word is derived through the pivot's factors, so the
+    // forger moves the certified factor by `q`.
+    let face = tampered.faces.at_mut(cert.by.face()).expect("the certified overlap decodes");
+    face.left = q.compose(&face.left).normal_form();
     let bad = as_element_form(&tampered, e.magnitude()).expect("tampered tape");
     // TAMPERING A CERTIFIED FACE NAMES A DIFFERENT WORD (54.5, as ruled
     // 2026-09-20), and that is the stronger property.
@@ -420,7 +454,7 @@ fn pivot_writes_the_chord_transport_only() {
     let q = order4();
     let mut f = chord_form(std::slice::from_ref(&q));
     let verts_before = f.vertices.clone();
-    let chord = f.orbits[0].chord;
+    let chord = f.orbits[0].chord.clone();
     let snaps = f.pivot_orbit(
         [0xc0; 32],
         &Keyed::new(),
@@ -437,15 +471,28 @@ fn pivot_writes_the_chord_transport_only() {
         f.vertices, verts_before,
         "a pivot writes no vertex placement or gauge"
     );
-    for (fi, face) in f.faces.iter().enumerate() {
-        if u16::try_from(fi).expect("a face of the chord fixture, a few faces") == chord {
+    // AT1: an overlap re-derives where its place is the one its two charts
+    // measure and no pivot factor is written on it.
+    for (o, face) in f.faces.entries() {
+        if o == chord {
             continue;
         }
+        let derived = f.face_place(&o.from, &o.to, face.place.edge.clone()).map(|p| FormFace::placed(p, Producer::Place));
         assert_eq!(
-            f.face_of(face.i, face.j).as_ref(),
+            derived.as_ref(),
             Some(face),
-            "tree face {fi} re-derives, word and every member pair"
+            "tree face {o:?} re-derives, place and factors"
         );
+    }
+}
+
+/// Every overlap's hue map cleared, each reached by its own coordinate.
+fn clear_gauges(f: &mut Form) {
+    let overlaps: Vec<crate::network::nerve::coord::Overlap> = f.faces.entries().map(|(o, _)| o).collect();
+    for o in &overlaps {
+        if let Some(fa) = f.faces.at_mut(o) {
+            set_face_place(fa, |p| p.gauge.clear());
+        }
     }
 }
 
@@ -453,17 +500,15 @@ fn pivot_writes_the_chord_transport_only() {
 fn pivot_discharges_only_its_axis_and_raises_none() {
     // T14: Placement.
     let mut f = chord_form(&[Word::identity()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
-    }
-    let chord = f.orbits[0].chord as usize;
-    set_face_place(&mut f.faces[chord], |p| {
+    clear_gauges(&mut f);
+    let chord = f.orbits[0].chord.clone();
+    set_face_place(f.faces.at_mut(&chord).expect("the chord's face"), |p| {
         p.carriage = element::carriage(&q1(), &(q1(), q0()));
     });
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // The orbit the fixture wrote, by its chord — a trivial cycle no longer
     // stands in `orbits`, so position is not identity (rule 15).
-    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read from a u16")).expect("the chord's orbit");
+    let at = f.orbit_of_chord(&chord).expect("the chord's orbit");
     let before = f.class_vector(at).expect("orbit");
     assert!(before.occupies(Axis::Placement));
     let _ = f.pivot_orbit(
@@ -483,14 +528,12 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 
     // T14: Orientation.
     let mut f = chord_form(&[order2()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
-    }
+    clear_gauges(&mut f);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // The orbit by its chord, and the chord read by destructuring rather
     // than by position: one orbit stands here and the pattern says so.
     let [only, ..] = f.orbits.as_slice() else { panic!("one orbit stands") };
-    let at = f.orbit_of_chord(only.chord).expect("its index");
+    let at = f.orbit_of_chord(&only.chord).expect("its index");
     let before = f.class_vector(at).expect("ori");
     assert!(before.occupies(Axis::Orientation(0)), "got {:?}", before.coordinates());
     let _ = f.pivot_orbit(
@@ -511,16 +554,14 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 
     // T14: Dilation.
     let mut f = chord_form(&[Word::identity()]);
-    for fa in &mut f.faces {
-        set_face_place(fa, |p| p.gauge.clear());
-    }
-    let chord = f.orbits[0].chord as usize;
+    clear_gauges(&mut f);
+    let chord = f.orbits[0].chord.clone();
     let two = num_rational::BigRational::from_integer(num_bigint::BigInt::from(2));
-    set_face_place(&mut f.faces[chord], |p| {
+    set_face_place(f.faces.at_mut(&chord).expect("the chord's face"), |p| {
         p.carriage = element::carriage(&two, &(q0(), q0()));
     });
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read from a u16")).expect("the chord's orbit");
+    let at = f.orbit_of_chord(&chord).expect("the chord's orbit");
     let before = f.class_vector(at).expect("dil");
     assert!(
         before.occupies(Axis::Dilation),
@@ -582,8 +623,8 @@ fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
     // a trial holding its own copy of it reads the opened orbit as opened.
     let mut opened = f.clone();
     let [lp, ..] = f.orbits.as_slice() else { panic!("three chords close three orbits") };
-    let chord = lp.chord;
-    if opened.open_axis_on(chord).is_some() {
+    let chord = lp.chord.clone();
+    if opened.open_axis_on(&chord).is_some() {
         for (i, lp) in opened.orbits.iter().enumerate() {
             let cvs_a = class_vectors_on(&opened.faces, &opened.vertices, &opened.axes, lp);
             let cvs_b = opened.class_vectors(i);
@@ -619,48 +660,15 @@ fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
 /// that does not touch the Frame.
 #[test]
 fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
-    use crate::transducer::alphabet::Derivation;
-    use crate::transducer::stalk::Invariant;
-    let chart = Invariant::counts(&[3, 5]);
-    let pair = face_pair_key(&chart, &chart);
     let q = order4();
-    // The ends are two SITES: one chart each, so they are two vertices and
-    // not one named twice (54.2). The faces carry their own pair key and
-    // their own edges, so the holonomy this test reads is unmoved.
-    let word_vertex = |b: u8| {
-        Vertex::word_on(
-            Derivation::spelled(Word::identity()),
-            Invariant::counts(&[u64::from(b)]),
-            Box::new(element::identity_versor()),
-            Vec::new(),
-            None,
-        )
-    };
-    let place = |edge: Option<Word>| FacePlace {
-        carriage: element::identity_versor(),
-        gauge: Vec::new(),
-        edge: edge.map(|w| Transport {
-            word: w,
-            carriage: element::identity_versor(),
-            gauge: Vec::new(),
-        }),
-        refraction: None,
-    };
-    // `Form::default` already seeds the Frame at 0; the words are 1 and 2.
-    let mut f = Form::default();
-    f.vertices.push(word_vertex(1));
-    f.vertices.push(word_vertex(2));
-    // Every face word is the identity, so the word holonomy telescopes to
-    // the identity — which is what it does for every coboundary anyway.
-    for (i, j, edge) in [(0u16, 1u16, None), (0, 2, None), (1, 2, Some(q.clone()))] {
-        let mut face = FormFace::new(i, j, Word::identity());
-        face.at.insert(pair.clone(), place(edge));
-        f.faces.push(face);
-    }
-    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    assert_eq!(f.orbits.len(), 1, "three faces on three vertices close one orbit");
+    // The ends are two SITES: one chart each (54.2) — one vertex of the
+    // identity's class with a member on each (AT1 Q1). Every face word
+    // derives the identity, so the word holonomy telescopes to the identity
+    // — which is what it does for every coboundary anyway.
+    let (mut f, _) = super::pivot_generator::coboundary_triangle_with_edge(&q);
+    assert_eq!(f.orbits.len(), 1, "three faces on three charts close one orbit");
     assert!(
-        f.orbits[0].holonomy.rotor().is_identity(),
+        orbit_word_on(&f.faces, &f.vertices, &f.orbits[0]).is_some_and(|w| w.rotor().is_identity()),
         "the word holonomy is flat, as a product of coboundaries always is"
     );
 
@@ -703,23 +711,20 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
         "and not under the identity the word holonomy reports"
     );
 
-    // D2: `Orbit.carriages` IS the transport composite's carriage, path for
-    // path. `path_carriages` computed it in a second traversal — the same
-    // frontier, the same steps, the same closing rule, with the word and the
-    // gauge discarded — so the traversal ran once at `orbits_of` and again at every
-    // class reading. One carrier now; this asserts they were the same thing.
+    // D2: the orbit's carriage IS the transport composite's carriage, path
+    // for path. AT1 retired `Orbit.carriages` as a carrier (ruled: nothing
+    // the steps derive is held), so there is no stored copy left to compare;
+    // what stands is the read itself, one per closed member path — a cycle
+    // is ONE member path now that each overlap relates one member pair.
     let lp = &f.orbits[0];
     let transport = orbit_transport(&f, lp);
-    assert_eq!(
-        lp.carriages.len(),
-        transport.len(),
-        "one carriage per closed member path, and the same paths"
-    );
+    assert_eq!(transport.len(), 1, "one carriage per closed member path, and one path per cycle");
+    let carried = paths_carried(&f.faces, &f.vertices, lp).expect("the circuit reads the cycle");
     for (k, t) in transport.scoped() {
-        let held = lp.carriages.get(&k).expect("the orbit carries this path");
+        let c = carried.get(&k).expect("the transport's path is the circuit's");
         assert!(
-            element::same_versor(held, &t.carriage),
-            "the stored carriage is the transport composite's"
+            element::same_versor(&c.face.carriage, &t.carriage),
+            "the carriage read is the transport composite's"
         );
     }
 }

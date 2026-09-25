@@ -13,7 +13,7 @@ use mycelium::sdk::Epigenome;
 use mycelium::transducer::alphabet::{relators, RelatorKind, Word, LetterId};
 use mycelium::transducer::element::{from_connection, identity_versor, Element};
 use mycelium::transducer::family::{extract_rule, perceive, speak_rule, mint_sentence, NoCrystal};
-use mycelium::transducer::sentence::{FormFace, Vertex};
+use mycelium::transducer::sentence::Vertex;
 use mycelium::transducer::stalk::Stalks;
 
 use mycelium::arc::Grid;
@@ -79,11 +79,10 @@ fn faces_by_constancy_three_squares() {
         .collect();
     let family = vec![(train_in.clone(), train_out.clone())];
     let rule = extract_rule(&family, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)).expect("three squares extract");
-    let non_frame: Vec<(usize, &Vertex)> = rule
+    let non_frame: Vec<(mycelium::network::nerve::coord::VertexAt, &Vertex)> = rule
         .form
         .vertices
-        .iter()
-        .enumerate()
+        .entries()
         .filter(|(_, v)| !matches!(v, Vertex::Frame))
         .collect();
     assert_eq!(
@@ -92,7 +91,7 @@ fn faces_by_constancy_three_squares() {
         "three squares carried by one recolour are one vertex, got {}",
         rule.form.vertices.len()
     );
-    let (vi, v) = non_frame[0];
+    let (vi, v) = non_frame[0].clone();
     let Vertex::Word { acts, .. } = v else {
         panic!("the class vertex is a Word, got {v:?}");
     };
@@ -102,9 +101,11 @@ fn faces_by_constancy_three_squares() {
         acts.scoped().map(|(_, a)| a.gauge.clone()).collect::<Vec<_>>()
     );
     assert!(
-        rule.form.faces.iter().any(|FormFace { i, j, .. }| {
-            let vi = u16::try_from(vi).expect("the one class vertex of a two-vertex form");
-            (*i == 0 && *j == vi) || (*j == 0 && *i == vi)
+        // A star overlap: the Frame's chart to a member of the class (AT1).
+        rule.form.faces.entries().any(|(o, _)| {
+            use mycelium::network::nerve::coord::VertexAt;
+            (o.from_vertex() == VertexAt::Frame && o.to_vertex() == vi)
+                || (o.to_vertex() == VertexAt::Frame && o.from_vertex() == vi)
         }),
         "a named face joins Frame to the class"
     );
@@ -180,7 +181,8 @@ fn a_single_recolour_is_a_one_morphism_sentence() {
     let words: Vec<_> = rule
         .form
         .vertices
-        .iter()
+        .scoped()
+        .map(|(_, v)| v)
         .filter(|v| matches!(v, mycelium::transducer::sentence::Vertex::Word { .. }))
         .collect();
     // ONE RECOLOUR IS ONE WORD VERTEX, which the slice pattern says: the

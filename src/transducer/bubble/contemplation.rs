@@ -758,8 +758,8 @@ impl Contemplation {
             let Some(on) = form.by_class.at(&ck) else {
                 continue;
             };
-            for &i in on {
-                if let Some(v @ Vertex::Word { .. }) = form.vertices.get(i as usize) {
+            for at in on {
+                if let Some(v @ Vertex::Word { .. }) = form.vertices.at(at) {
                     out.push(v);
                 }
             }

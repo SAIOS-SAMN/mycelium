@@ -16,11 +16,13 @@ fn an_assignment_key_is_one_under_every_scaling_of_the_carriage() {
         chart: chart.clone(),
         carriage: Box::new(c.clone()),
         gauge: vec![(2, 1), (1, 2)],
+        frames: crate::network::nerve::Keyed::new(),
     };
     let b = Acting {
         chart: chart.clone(),
         carriage: Box::new(neg),
         gauge: vec![(1, 2), (2, 1)],
+        frames: crate::network::nerve::Keyed::new(),
     };
     assert_eq!(assignment_key(&a), assignment_key(&b), "one assignment: A4 carriage, gauge as a map");
 
@@ -28,6 +30,7 @@ fn an_assignment_key_is_one_under_every_scaling_of_the_carriage() {
         chart,
         carriage: Box::new(element::translator_versor(1, 3)),
         gauge: vec![(1, 2), (2, 1)],
+        frames: crate::network::nerve::Keyed::new(),
     };
     assert_ne!(assignment_key(&a), assignment_key(&other), "a different carriage is a different assignment");
 }

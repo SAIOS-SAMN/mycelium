@@ -175,7 +175,7 @@ impl Element {
         }
         let f = crate::transducer::sentence::from_element_form(self)?;
         let mut held: Option<crate::transducer::alphabet::Rotor> = None;
-        for v in &f.vertices {
+        for (_, v) in f.vertices.scoped() {
             let crate::transducer::sentence::Vertex::Word { derivation, .. } = v else {
                 continue;
             };

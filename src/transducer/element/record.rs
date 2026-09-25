@@ -91,7 +91,9 @@ impl Element {
                 out.push(y);
             }
             f.periods.to_bytes(&mut out);
-            out.extend_from_slice(&f.chord.to_le_bytes());
+            // What it closes on, by its arm: the overlap by its coordinates,
+            // or the fibre's puncture (AT1).
+            f.chord.put(&mut out);
         }
         // THE RECEIPTS ENVELOPE (54.5 Road (d)). The GEN3 record is
         // `Key → ⟨μ⃗, ReceiptsEnvelope⟩` as ruled 2026-09-20: the form
@@ -246,8 +248,7 @@ impl Element {
                 *pos += 2;
             }
             let periods = crate::transducer::sentence::ToralPeriod::from_pair(u32_at(b, pos)?, u32_at(b, pos)?);
-            let chord = u16::from_le_bytes(b.get(*pos..*pos + 2)?.try_into().ok()?);
-            *pos += 2;
+            let chord = crate::transducer::sentence::Closes::take(b, pos)?;
             filing.put(
                 &<crate::network::nerve::coord::Holonomy
                     as crate::network::nerve::Coordinate>::decode(&class)

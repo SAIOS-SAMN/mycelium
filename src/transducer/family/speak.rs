@@ -204,9 +204,9 @@ fn speak_on_scene(
     let Scene { bodies, atlas, .. } = scene;
     let mut painted: Vec<Painted> = Vec::new();
     let mut remainder: Vec<Painted> = Vec::new();
-    let mut unspoken: Vec<u16> = Vec::new();
+    let mut unspoken: Vec<crate::network::nerve::coord::VertexAt> = Vec::new();
     let mut unfolded = false;
-    for (vi, v) in f.vertices.iter().enumerate() {
+    for (vi, v) in f.vertices.entries() {
         match v {
             Vertex::Frame => {}
             // ONE VERTEX SPEAKS EVERY BODY IT ACTS ON. 21 step 1: two bodies
@@ -220,18 +220,16 @@ fn speak_on_scene(
             // one member's carriage and applying it to another chart's bodies
             // would carry a body by a versor measured on a different one.
             Vertex::Word { derivation, acts, .. } => {
-                let tc_key = crate::transducer::family::transport_class(v).map(|tc| {
-                    crate::network::nerve::coord::SectionAt::Class(
-                        crate::transducer::family::class_section_key(&tc),
-                    )
-                });
-                if let (Some(k), Some(pi)) = (&tc_key, pair) {
-                    if let Some(only) = f.sections.at(k) {
-                        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — slot numbers of the form's Vecs (pi a frame of the family, filed by frame_key; vi a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                        if !only.contains(&frame_key(pi as u16)) {
-                            unspoken.push(vi as u16);
-                            continue;
-                        }
+                // THE CLASS'S SECTION IS ITS MEMBERS' FRAMES (AT1): a class
+                // none of whose members holds a frame is claimed whole, and
+                // one whose members hold frames speaks only on those.
+                let pi = pair.and_then(|pi| u64::try_from(pi).ok());
+                if let Some(k) = pi {
+                    let held = acts.scoped().any(|(_, a)| !a.frames.is_empty());
+                    let here = acts.scoped().any(|(_, a)| a.frames.contains(&frame_key(k)));
+                    if held && !here {
+                        unspoken.push(vi);
+                        continue;
                     }
                 }
                 // The action composes: the placement's rotor times the
@@ -245,14 +243,10 @@ fn speak_on_scene(
                 // absence as a demand is D8's move, not this one.
                 let mut spoke = false;
                 for (_, member) in acts.scoped() {
-                    if let Some(pi) = pair {
-                        if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| {
-                            f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk)))
-                        }) {
-                            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
-                            if !mps.contains(&frame_key(pi as u16)) {
-                                continue;
-                            }
+                    // A member holding frames speaks on them alone.
+                    if let Some(k) = pi {
+                        if !member.frames.is_empty() && !member.frames.contains(&frame_key(k)) {
+                            continue;
                         }
                     }
                     let Some(versor) = element::conformal_of_rotor(&r, &member.carriage) else {
@@ -275,8 +269,7 @@ fn speak_on_scene(
                     }
                 }
                 if !spoke {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                 }
             }
             // A CITED FORM SPEAKS ONTO THE SCENE THIS SPEECH ALREADY
@@ -327,18 +320,16 @@ fn speak_on_scene(
                 // which form; that is a gap in what reached this reader and
                 // it is reported, never painted over as an empty citation.
                 if !spoke_any {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                 }
             }
             // A REBASED VERTEX SPEAKS EVERY CHART `of` ACTED ON, as a Word
             // vertex does: `by`'s word, the relative at that chart composed with
             // the base's placement, and that chart's own bodies and hue map.
             Vertex::Rebased { by, acts, .. } => {
-                let Some(w @ Vertex::Word { derivation, .. }) = f.vertices.get(*by as usize)
+                let Some(w @ Vertex::Word { derivation, .. }) = f.vertices.at(by)
                 else {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                     continue;
                 };
                 // THE BASE'S CARRIAGE AT THE BASE'S OWN CHART. The placement is
@@ -350,13 +341,11 @@ fn speak_on_scene(
                 // rather than composing against a body it was not measured on.
                 let base_charts = w.charts();
                 let [base_chart] = base_charts.as_slice() else {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                     continue;
                 };
                 let Some(base) = w.acting_on(base_chart) else {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                     continue;
                 };
                 let r = placement.rotor().geo(&derivation.rotor());
@@ -382,8 +371,7 @@ fn speak_on_scene(
                     }
                 }
                 if !spoke {
-                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
-                    unspoken.push(vi as u16);
+                    unspoken.push(vi);
                 }
             }
             Vertex::Unfolded {
@@ -453,8 +441,9 @@ pub struct Speech {
     pub frame: (usize, usize),
     pub painted: Vec<Painted>,
     pub remainder: Vec<Painted>,
-    /// Vertex indices whose class fiber was empty on this grid.
-    pub unspoken: Vec<u16>,
+    /// The vertices, by their coordinates, whose class fiber was empty on
+    /// this grid.
+    pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
 }
 
 impl Speech {

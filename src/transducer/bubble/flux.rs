@@ -129,14 +129,16 @@ pub(crate) fn circuits_of(form: &crate::transducer::sentence::Form) -> Circuits 
     let mut unnamed = 0u64;
     for o in &form.orbits {
         let mut charts = Vec::new();
-        for m in &o.members {
-            match crate::transducer::family::read_member_key(m) {
-                Some((_, chart)) if !chart.is_empty() => charts.push(chart),
-                _ => unnamed += 1,
+        // Each chart the circuit leaves, by its Invariant's key; the Frame's
+        // chart is its tag alone and names no chart (AT1).
+        for c in o.charts() {
+            match c.invariant() {
+                Some(chart) => charts.push(chart.key().as_bytes().to_vec()),
+                None => unnamed += 1,
             }
         }
-        for &v in &o.vertices {
-            if let Some(crate::transducer::sentence::Vertex::Word { address, .. }) = form.vertices.get(v as usize) {
+        for v in o.vertices() {
+            if let Some(crate::transducer::sentence::Vertex::Word { address, .. }) = form.vertices.at(&v) {
                 words.insert(address.as_bytes(), ());
             }
         }

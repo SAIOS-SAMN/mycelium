@@ -560,8 +560,8 @@ fn single_rotor(e: &Element) -> Option<crate::transducer::alphabet::Rotor> {
     let rotors: Vec<crate::transducer::alphabet::Rotor> = match crate::transducer::sentence::from_element_form(e) {
         Some(f) => f
             .vertices
-            .iter()
-            .filter_map(|v| match v {
+            .scoped()
+            .filter_map(|(_, v)| match v {
                 Vertex::Word { derivation, .. } => Some(derivation.rotor()),
                 _ => None,
             })

@@ -110,13 +110,16 @@ fn mu_neither_certifies_nor_selects() {
     let class = bodies[0].moduli.clone();
     assert!(!class.0.is_empty(), "the body has a chart");
     let mut spoken = Form::default();
-    spoken.vertices.push(Vertex::word_on(
-        crate::transducer::alphabet::Derivation::spelled(q.clone()),
-        class.clone(),
-        Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
-        vec![(1, 1)],
-        None,
-    ));
+    spoken
+        .put_vertex(Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(q.clone()),
+            class.clone(),
+            Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
+            vec![(1, 1)],
+            [FRAME],
+            None,
+        ))
+        .expect("q's vertex has a coordinate");
     let y = crate::transducer::family::apply_form(
         &spoken,
         &x,
@@ -129,22 +132,32 @@ fn mu_neither_certifies_nor_selects() {
         y.iter().flatten().any(|&h| h != 0),
         "the spoken image is not the empty frame"
     );
-    let mut f = chord_form(std::slice::from_ref(&q));
-    // THE VERTEX KEEPS ITS IDENTITY AND CHANGES ITS MEMBER. The chart is the
-    // key the member is filed under, so putting the vertex on `class` is
-    // building the member on that chart — the derivation is read off the
-    // vertex that is there rather than restated here. The address is no
-    // longer read: it is derived from the coordinates being rebuilt (54.2).
-    let Vertex::Word { derivation, .. } = &f.vertices[1] else {
-        panic!("the chord form's first body is a word vertex");
-    };
-    f.vertices[1] = Vertex::word_on(
-        derivation.clone(),
-        class,
-        Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
-        vec![(1, 1)],
-        None,
+    // THE CHORD'S FIRST END STANDS ON THE BODY'S CHART. The chart is the
+    // key the member is filed under, so putting the end on `class` is
+    // building the member on that chart. AT1: the chord form is built here
+    // as `chord_form` builds it — two members of the identity's class, each
+    // starred from the Frame, the chord carrying `q` — with the first
+    // member on `class` rather than rewritten into place afterwards, since a
+    // vertex is keyed by its coordinate and its overlaps by its charts.
+    let mut f = Form::default();
+    let a = stand_with_star(
+        &mut f,
+        &Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            class,
+            Box::new(element::carriage(&q1(), &(q1() + q1() + q1(), q1() + q1() + q1()))),
+            vec![(1, 1)],
+            [FRAME],
+            None,
+        ),
     );
+    let b = stand_with_star(
+        &mut f,
+        &word_vertex_on(2, Word::identity(), crate::transducer::stalk::Invariant::counts(&[2])),
+    );
+    chord(&mut f, &a, &b, q.clone());
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
     let bundle = vec![(x, y)];
     let snaps = f.pivot_orbit(
         [0xde; 32],
@@ -272,6 +285,11 @@ fn two_orbits_of_one_class_are_both_filed_or_discharged() {
 #[test]
 fn pivot_never_reopens_a_closed_chord() {
     let mut cob = coboundary_chord_form();
+    // AT1 — THE TREE GAUGE RETIRED (ruled), and with it the `Closed` snap
+    // this asserted ("a coboundary chord closes by the tree gauge"). A cycle
+    // of derived face words telescopes to the identity, so the chord is
+    // closed before the pivot reads it; what stands is T2 below — it stays
+    // closed and is never demanded.
     let cob_snaps = cob.pivot_orbit(
         [0xcd; 32],
         &crate::network::nerve::Keyed::new(),
@@ -281,11 +299,13 @@ fn pivot_never_reopens_a_closed_chord() {
         0,
     );
     assert!(
-        cob_snaps.iter().any(|s| matches!(s, Snap::Closed { .. })),
-        "a coboundary chord closes by the tree gauge: {cob_snaps:?}"
+        !cob_snaps.iter().any(|s| matches!(s, Snap::Demand { .. })),
+        "a coboundary chord is not demanded: {cob_snaps:?}"
     );
     assert!(
-        cob.orbits.iter().all(|lp| lp.holonomy.is_identity()),
+        cob.orbits
+            .iter()
+            .all(|lp| orbit_word_on(&cob.faces, &cob.vertices, lp).is_some_and(|w| w.is_identity())),
         "T2: the closed chord stays closed"
     );
     let again = cob.pivot_orbit(
@@ -337,7 +357,9 @@ fn pivot_never_reopens_a_closed_chord() {
             "a closed finite chord is not demanded"
         );
         let still = f.orbits.iter().any(|lp| {
-            !lp.holonomy.is_identity() && matches!(lp.holonomy.order(), Order::Finite(ell) if u64::from(ell) == o)
+            orbit_word_on(&f.faces, &f.vertices, lp).is_some_and(|h| {
+                !h.is_identity() && matches!(h.order(), Order::Finite(ell) if u64::from(ell) == o)
+            })
         });
         // THE SPECTRUM, not the envelope: a filing whose `lcm` matches and
         // whose planes do not is a different orbit (54.7).

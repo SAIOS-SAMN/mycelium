@@ -23,7 +23,7 @@ pub fn sentence_of(a: &[(i64, i64, u8)], b: &[(i64, i64, u8)]) -> Option<Element
     use crate::transducer::sentence::Vertex;
     let family = family_of_pair(a, b);
     let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20))?;
-    let acts = rule.form.vertices.iter().any(|v| {
+    let acts = rule.form.vertices.entries().any(|(_, v)| {
         matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
     });
     if !acts {
@@ -56,7 +56,13 @@ pub fn strip_words(spoken: &Element) -> Element {
     use crate::transducer::sentence::{as_element_form, Vertex};
     let mut f = crate::transducer::sentence::from_element_form(spoken)
         .expect("a sentence tape reads back");
-    f.vertices.retain(|v| !matches!(v, Vertex::Word { .. }));
+    let words: Vec<_> = f
+        .vertices
+        .entries()
+        .filter(|(_, v)| matches!(v, Vertex::Word { .. }))
+        .map(|(k, _)| k)
+        .collect();
+    assert!(f.retract_vertices(&words), "the Frame and its demands keep a depth");
     f.reindex();
     as_element_form(&f, spoken.magnitude()).expect("a tape")
 }

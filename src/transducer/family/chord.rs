@@ -77,7 +77,7 @@ pub(super) fn form_chart(
 ) -> (Vec<num_rational::BigRational>, num_rational::BigRational) {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let mut cells: Vec<Site> = Vec::new();
-    for ((_, _, _, da), (_, _, _, db), _) in meet_chords.iter() {
+    for ((_, _, _, da), (_, _, _, db), _, _) in meet_chords.iter() {
         cells.extend(da.iter().cloned());
         cells.extend(db.iter().cloned());
     }

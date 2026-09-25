@@ -1,10 +1,44 @@
 // 23, 42 — replay: a clean word replays, a false speech is named, and a
 // form whose rank or certificate does not re-derive is refused.
 
+use crate::network::nerve::coord;
 use crate::transducer::element::Element;
-use crate::transducer::sentence::ToralPeriod;
+use crate::transducer::sentence::tests::common::{only_word, stand_with_star, FRAME};
+use crate::transducer::sentence::{Closes, ToralPeriod};
 use crate::verdict::*;
 use super::common::*;
+
+/// A VERTEX RE-WRITTEN UNDER ITS NEW COORDINATE (AT1). A vertex is keyed by
+/// what it is, so a tamper that moves a coordinate the key writes moves the
+/// key: the vertex is taken out, edited, put back under what it now is, and
+/// every overlap that named it names it again at the same chart and frame.
+/// The tamper still reaches the tape whole; the key follows it.
+fn rekey_vertex(f: &mut Form, at: &coord::VertexAt, edit: impl FnOnce(&mut Vertex)) -> coord::VertexAt {
+    let mut v = f.vertices.drop_at(at).expect("the vertex is held");
+    edit(&mut v);
+    let new = f.put_vertex(v).expect("the edited vertex has a coordinate");
+    let moved = |c: &coord::ChartAt| match (c.vertex() == *at, c.invariant(), c.frame()) {
+        (true, Some(inv), Some(k)) => coord::ChartAt::at(new.clone(), inv.clone(), k),
+        _ => c.clone(),
+    };
+    for o in f.overlaps_at(at) {
+        let face = f.faces.drop_at(&o).expect("an overlap the form holds");
+        f.put_face(coord::Overlap { from: moved(&o.from), to: moved(&o.to) }, face);
+    }
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
+    new
+}
+
+/// The one star overlap the form holds at `v`: from the Frame's chart to the
+/// vertex's one chart at one frame. Read off the overlaps held, since a
+/// citation's star is held on a vertex with no members to stand it.
+fn star_of(f: &Form, v: &coord::VertexAt) -> coord::Overlap {
+    let stars: Vec<coord::Overlap> =
+        f.overlaps_at(v).into_iter().filter(|o| matches!(o.from, coord::ChartAt::Frame)).collect();
+    let [o] = stars.as_slice() else { panic!("one member at one frame, got {}", stars.len()) };
+    o.clone()
+}
 
 /// A clean word replays; an unparseable body is a named Slashed state.
 #[test]
@@ -48,20 +82,55 @@ fn closed_turn_form() -> Form {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w),
         stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [FRAME],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("vertices"));
+    );
+    stand_with_star(&mut f, &v);
     f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     // A form off the tape is indexed by the decoder; one built by hand
-    // must be indexed too, or its `by_address` answers nothing and a
-    // citation into it reads as unheld (50.2 step 2).
+    // must be indexed too, or its indices answer nothing and a citation
+    // into it reads as unheld (50.2 step 2).
     f.reindex();
     assert!(f.is_closed(), "the star form coheres");
+    f
+}
+
+/// A TRIANGLE OF COBOUNDARIES: two bodies on their own charts ([1] and [2]),
+/// each overlapped from the Frame's chart with `star` as its edge, and the
+/// overlap between them carrying `chord` as its edge. Every transport is the
+/// coboundary of its ends. AT1: the two bodies are carried by one word — the
+/// identity — so they are ONE vertex with a member per chart, and the
+/// triangle is three overlaps among the Frame's chart and those two members.
+fn triangle_with_edges(
+    star: &crate::transducer::sentence::Transport,
+    chord: &crate::transducer::sentence::Transport,
+) -> Form {
+    use crate::transducer::alphabet::Word;
+    let mut f = Form::default();
+    let mut charts = Vec::new();
+    for tag in [1u8, 2u8] {
+        let v = Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            // Its own chart: an address is derived from its coordinates (54.2).
+            stalk::Invariant::counts(&[u64::from(tag)]),
+            Box::new(element::identity_versor()),
+            Vec::new(),
+            [FRAME],
+            None,
+        );
+        let c = f.stand_member(&v, FRAME).expect("a word vertex stands");
+        f.place_overlap(coord::ChartAt::Frame, c.clone(), Some(star.clone())).expect("a star overlap");
+        charts.push(c);
+    }
+    let [c1, c2] = charts.as_slice() else { panic!("two members") };
+    f.place_overlap(c1.clone(), c2.clone(), Some(chord.clone())).expect("the chord between the bodies");
+    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
     f
 }
 
@@ -88,30 +157,34 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     let resolve = |a: &[u8]| (a == inner_addr.as_bytes()).then(|| inner.clone());
     assert_eq!(blind_replay_with(&outer_e, &resolve), None, "a resolved citation replays");
     let mut bad = outer.clone();
-    bad.faces[0] = {
+    let glued_star = star_of(&outer, &gi);
+    {
         // The tamper keeps the face's ENDS and takes the inner form's word and
         // placements, which is what made this face fail to re-derive before the
-        // face was a fibre.
-        let taken = inner.face_of(0, 1).expect("vertices");
-        crate::transducer::sentence::FormFace {
-            i: bad.faces[0].i,
-            j: bad.faces[0].j,
-            word: taken.word,
-            at: taken.at,
-            pairs: bad.faces[0].pairs.clone(),
-            interface: bad.faces[0].interface.clone(),
-        }
-    };
+        // face was a fibre. AT1: the word is derived, so the inner word is
+        // written as the factor that makes this overlap derive it, and the
+        // placement is the inner star overlap's measured place.
+        let inner_star = star_of(&inner, &only_word(&inner));
+        let taken = inner.faces.at(&inner_star).expect("the inner star overlap").clone();
+        let inner_word = inner.face_word(&inner_star).expect("the inner star derives its word");
+        let face = bad.faces.at_mut(&glued_star).expect("the glued star overlap");
+        face.left = inner_word;
+        face.place = taken.place;
+    }
     let bad_e = as_element_form(&bad, [1, 0, 0, 0]).expect("tampered tape");
     assert_eq!(blind_replay_with(&bad_e, &resolve), Some(REFUSE_FACE));
     // 50.9 (R1): the face that does not re-derive is refused at its two
-    // addresses and travels as `FaceDerivation`. The tampered face is the
-    // Frame's star face, and the Frame has no address, so this one is at
-    // the tape; a face between two addressed vertices names both.
+    // addresses and travels as `FaceDerivation`. AT1: the Frame HAS a
+    // coordinate — its tag alone — so the Frame's star overlap names both
+    // its ends, the Frame and the citation's site, like every other face.
     let face_refusal = replay_form_at(&bad_e, &resolve, None, &crate::transducer::family::NoCrystal)
         .expect("the tampered face refuses");
     assert_eq!(face_refusal.kind(), crate::transducer::sentence::RefusalKind::FaceDerivation);
-    assert!(matches!(face_refusal.at, crate::transducer::sentence::At::Tape(_)), "a star face has one address to name");
+    assert!(
+        matches!(&face_refusal.at, crate::transducer::sentence::At::Face(a, _) if **a == coord::VertexAt::Frame),
+        "a star face names the Frame's coordinate and the vertex it reaches: {:?}",
+        face_refusal.at
+    );
     // S9.4 — A ZERO MAGNITUDE IS NOT A REFUSAL. This tape replays: its
     // orbits return, its faces re-derive, its citation resolves. It was
     // refused for measuring nothing, which made the court an economist —
@@ -140,9 +213,14 @@ fn replay_form_refuses_unruled_glue_and_replays_resolved() {
     // citation's own `depth` is in the key, so moving it names a different
     // word whatever reads it.
     let mut cited_deeper = outer.clone();
-    if let Vertex::Glued { depth, .. } = &mut cited_deeper.vertices[gi as usize] {
-        *depth = 1;
-    }
+    // AT1: the depth is in the citation's SITE, which is its coordinate, so
+    // the tampered vertex stands at a new key and its star overlap moves
+    // with it.
+    rekey_vertex(&mut cited_deeper, &gi, |v| {
+        if let Vertex::Glued { depth, .. } = v {
+            *depth = 1;
+        }
+    });
     // 54.7 B5a — AND THE EDGE MOVES WITH IT, because the boundary and the
     // incidence are two coordinates of one citation. `depth` is part of the
     // vertex's SITE, so tampering the vertex alone leaves it standing where
@@ -222,28 +300,29 @@ fn an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
     // path — and `holonomy_words_on` reads the composite THIS PATH traverses
     // now, member by member, so a value parked on that field is not what
     // the class is read from. The face carries it and the traversal composes it.
-    if let Some(face) = f.faces.first_mut() {
-        face.word = Word::formed(Rotor::zero());
+    // AT1: a face's word is derived, so the non-versor is written as the
+    // overlap's factor, which is the one place a word on a face is held.
+    let star = star_of(&f, &only_word(&f));
+    if let Some(face) = f.faces.at_mut(&star) {
+        face.left = Word::formed(Rotor::zero());
     }
     f.orbits.push(crate::transducer::sentence::Orbit {
-        // The cycle names its members; `vertices` is π of them. This one is
-        // hand-built to carry a holonomy that is not a versor, so its nodes
-        // are the two vertices at no named chart.
-        members: vec![
-            crate::transducer::family::member_key(0, &[]),
-            crate::transducer::family::member_key(1, &[]),
-            crate::transducer::family::member_key(0, &[]),
+        // The cycle names the overlaps it crosses. This one is hand-built to
+        // carry a holonomy that is not a versor: out along the star and back
+        // across it, closing on it, at the basepoint (no stem, 54.7 Axiom A).
+        steps: vec![
+            crate::transducer::sentence::OrbitStep { overlap: star.clone(), forward: true },
+            crate::transducer::sentence::OrbitStep { overlap: star.clone(), forward: false },
         ],
-        vertices: vec![0, 1, 0],
-        faces: vec![0, 0],
-        chord: 0,
-        holonomy: Word::formed(Rotor::zero()),
-        carriages: crate::network::nerve::Keyed::new(),
-        // Hand-built at the basepoint: this cycle's frame IS the form's,
-        // so its tree transport is the identity (54.7 Axiom A).
-        based_at: crate::transducer::element::identity_versor(),
+        chord: star,
+        stem: Vec::new(),
     });
-    assert!(f.orbits[0].holonomy.rotor().class_key().is_none(), "a zero rotor is not a class");
+    // The holonomy is a READ of the overlaps the cycle crosses (AT1).
+    let holonomy = crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, &f.orbits[0]);
+    assert!(
+        holonomy.is_none_or(|w| w.rotor().class_key().is_none()),
+        "a zero rotor is not a class"
+    );
     assert!(f.rank().is_none(), "the audit is unmeasured, not counted under a rotor key");
     assert!(!f.is_cauterized(), "nothing files what has no class");
     assert!(!form_orbits_replay(&f), "and the orbit does not replay");
@@ -265,8 +344,9 @@ fn pivot_certificate_replays_or_refuses() {
         "a closed form with no certificates replays"
     );
     let mut bad = f.clone();
+    let star = star_of(&f, &only_word(&f));
     let bogus = PivotCertificate {
-        chord: 0,
+        chord: star.clone(),
         axis: crate::transducer::sentence::Axis::Unit(0),
         before: crate::transducer::address::Address::from_bytes([1u8]),
         after: ClassVector::of_word(&Word::identity()).expect("identity is a versor").class_key(),
@@ -275,7 +355,7 @@ fn pivot_certificate_replays_or_refuses() {
         },
         mu: crate::transducer::sentence::Mu::Unmeasured,
         by: PivotBy::Word {
-            face: 0,
+            face: star,
             word: Box::new(Word::identity()),
             side: Side::Left,
         },
@@ -300,20 +380,31 @@ fn rank_lost_refused() {
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
     let sheet = Word::from_letters(&[(q, false)]);
     let mut f = Form::default();
+    let mut charts = Vec::new();
     for tag in 1..=2u8 {
-        f.vertices.push(Vertex::word_on(
+        let v = Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            // Each vertex stands on its OWN chart: with one chart they would be one
-            // vertex, since an address is derived from its coordinates (54.2, §1.5).
+            // Each body stands on its OWN chart: with one chart they would be one
+            // member, since an address is derived from its coordinates (54.2, §1.5).
+            // AT1: one class, so ONE vertex with a member per chart.
             stalk::Invariant::counts(&[u64::from(tag)]),
             Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
             vec![(1, 2)],
+            [FRAME],
             None,
-        ));
+        );
+        charts.push(stand_with_star(&mut f, &v));
     }
-    f.faces.push(f.face_of(0, 1).expect("star 1"));
-    f.faces.push(f.face_of(0, 2).expect("star 2"));
-    f.faces.push(f.face_carrying(1, 2, sheet).expect("a chord between two placed bodies"));
+    let [c1, c2] = charts.as_slice() else { panic!("two members") };
+    // AT1: derived face words telescope around a cycle, so the torsion a
+    // pivot did not write lives in MEASURED content — the overlap's edge
+    // (50.3) — with no factor and so no certificate involved.
+    crate::transducer::sentence::tests::common::edge_chord(
+        &mut f,
+        c1,
+        c2,
+        crate::transducer::sentence::Transport::from_word(sheet),
+    );
     f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     let _ = f.pivot_orbit(
         [0x18; 32],
@@ -377,7 +468,7 @@ fn rank_lost_refused() {
 #[test]
 fn vertex_tape_and_moves_replay_or_refuse() {
     use crate::transducer::alphabet::Word;
-    use crate::transducer::sentence::{as_element_form, FormFace, Measure};
+    use crate::transducer::sentence::{as_element_form, Measure};
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let f = closed_turn_form();
@@ -385,11 +476,16 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     assert_eq!(replay_form(&e, &|_| None), None, "a closed word vertex re-derives");
 
     let mut rho0 = f.clone();
-    if let Vertex::Word { derivation, .. } = &mut rho0.vertices[1] {
-        let q02 = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane");
-        *derivation =
-            crate::transducer::alphabet::Derivation::spelled(Word::from_letters(&[(q02, false)]));
-    }
+    // AT1: the derivation's rotor is the vertex's class, its coordinate, so
+    // the tampered vertex stands at the key of what it now claims to be.
+    let w0 = only_word(&rho0);
+    rekey_vertex(&mut rho0, &w0, |v| {
+        if let Vertex::Word { derivation, .. } = v {
+            let q02 = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane");
+            *derivation =
+                crate::transducer::alphabet::Derivation::spelled(Word::from_letters(&[(q02, false)]));
+        }
+    });
     let bad_e = as_element_form(&rho0, [1, 0, 0, 0]).expect("off-plane tape");
     assert_eq!(
         replay_form(&bad_e, &|_| None),
@@ -398,21 +494,27 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     );
 
     let mut re = Form::default();
-    re.vertices.push(Vertex::word_on(
+    let base = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(Word::identity()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         Vec::new(),
+        [FRAME],
         None,
-    ));
-    re.vertices.push(Vertex::rebased_on(
-        1,
-        2,
+    );
+    let by = stand_with_star(&mut re, &base).vertex();
+    // AT1: `by` is the base's coordinate and `class` the class the rebased
+    // vertex held before the rebase — the identity's, as the base's is.
+    let class = base.class().expect("the identity has a class");
+    re.put_vertex(Vertex::rebased_on(
+        by,
+        class,
         stalk::Invariant::default(),
         Box::new(element::carriage(&one.clone(), &(zero.clone(), zero.clone()))),
         Vec::new(),
-    ));
-    re.faces.push(re.face_of(0, 1).expect("vertices"));
+        [FRAME],
+    ))
+    .expect("a rebased vertex has a coordinate");
     re.orbits =Form::orbits_of(&re.faces, &re.vertices);
     let re_e = as_element_form(&re, [1, 0, 0, 0]).expect("rebased tape");
     assert_eq!(
@@ -422,8 +524,16 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     );
 
     let mut un = Form::default();
-    un.unfold(Measure::Remainder);
-    un.faces.push(FormFace::new(0, 0, Word::identity(),));
+    let unfolded = un.unfold(Measure::Remainder).expect("an unfolded vertex has a coordinate");
+    // AT1: the self-face at the Frame this carried is no overlap (an overlap
+    // relates two charts); the unfolded vertex's star from the Frame stands
+    // in its place.
+    un.place_overlap(
+        coord::ChartAt::Frame,
+        coord::ChartAt::at(unfolded, stalk::Invariant::default(), FRAME),
+        None,
+    )
+    .expect("the unfolded vertex's star places");
     un.orbits =Form::orbits_of(&un.faces, &un.vertices);
     let un_e = as_element_form(&un, [1, 0, 0, 0]).expect("unfold tape");
     assert_eq!(
@@ -433,14 +543,17 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     );
 
     let mut orb = Form::default();
-    orb.vertices.push(Vertex::word_on(
-        crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-        stalk::Invariant::default(),
-        Box::new(element::carriage(&one, &(zero.clone(), zero))),
-        Vec::new(),
-        Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
-    ));
-    orb.faces.push(orb.face_of(0, 1).expect("vertices"));
+    stand_with_star(
+        &mut orb,
+        &Vertex::word_on(
+            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
+            stalk::Invariant::default(),
+            Box::new(element::carriage(&one, &(zero.clone(), zero))),
+            Vec::new(),
+            [FRAME],
+            Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 1 }),
+        ),
+    );
     orb.orbits =Form::orbits_of(&orb.faces, &orb.vertices);
     let orb_e = as_element_form(&orb, [1, 0, 0, 0]).expect("orbit tape");
     assert_eq!(
@@ -454,22 +567,20 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let still = replay_form_at(&orb_e, &|_| None, None, &crate::transducer::family::NoCrystal)
         .expect("the still orbit refuses");
     assert_eq!(still.kind(), crate::transducer::sentence::RefusalKind::OrbitStill);
-    // THE CONTACT VERTEX IS NAMED BY ITS OWN ADDRESS (54.2). It was
+    // THE CONTACT VERTEX IS NAMED BY ITS OWN COORDINATE (54.2, AT1). It was
     // `[TAG_FORM, 3]`, a coordinate the fixture invented and handed to
-    // `word_on`; a vertex now derives its address from its coordinates.
+    // `word_on`; a vertex is now keyed by its coordinates.
     let contact_at = crate::transducer::sentence::from_element_form(&orb_e)
         .expect("the orbit form decodes")
         .vertices
-        .iter()
-        .find_map(|v| match v {
-            crate::transducer::sentence::Vertex::Word { address, contact: Some(_), .. } => {
-                Some(address.clone())
-            }
+        .entries()
+        .find_map(|(at, v)| match v {
+            crate::transducer::sentence::Vertex::Word { contact: Some(_), .. } => Some(at),
             _ => None,
         })
         .expect("the orbit form has a contact vertex");
     assert!(
-        matches!(&still.at, crate::transducer::sentence::At::Vertex { address, .. } if *address == contact_at),
+        matches!(&still.at, crate::transducer::sentence::At::Vertex { vertex, .. } if **vertex == contact_at),
         "at the contact vertex: {:?}",
         still.at
     );
@@ -478,11 +589,12 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     // source no chart carries onto is a creation, not a source of
     // multiplicity zero; the court refuses the vertex by name.
     let mut dem = closed_turn_form();
-    dem.vertices.push(Vertex::Demand {
-        kind: crate::transducer::sentence::Demand::Source { multiplicity: 0 },
-        chart: stalk::Invariant::counts(&[1, 2, 2]),
-        bodies: vec![(3, 3, 0, 2)],
-    });
+    dem.put_vertex(Vertex::demand(
+        crate::transducer::sentence::Demand::Source { multiplicity: 0 },
+        stalk::Invariant::counts(&[1, 2, 2]),
+        vec![(3, 3, 0, 2)],
+    ))
+    .expect("a demand has a coordinate");
     let dem_e = as_element_form(&dem, [1, 0, 0, 0]).expect("demand tape");
     assert_eq!(
         replay_form(&dem_e, &|_| None),
@@ -490,11 +602,13 @@ fn vertex_tape_and_moves_replay_or_refuse() {
         "a demand vertex carrying nothing is refused by name"
     );
     let mut typed = closed_turn_form();
-    typed.vertices.push(Vertex::Demand {
-        kind: crate::transducer::sentence::Demand::Creation,
-        chart: stalk::Invariant::counts(&[1, 2, 2]),
-        bodies: vec![(3, 3, 0, 2)],
-    });
+    typed
+        .put_vertex(Vertex::demand(
+            crate::transducer::sentence::Demand::Creation,
+            stalk::Invariant::counts(&[1, 2, 2]),
+            vec![(3, 3, 0, 2)],
+        ))
+        .expect("a demand has a coordinate");
     let typed_e = as_element_form(&typed, [1, 0, 0, 0]).expect("typed demand tape");
     assert_eq!(replay_form(&typed_e, &|_| None), None, "a typed demand vertex replays beside its words");
 }
@@ -510,23 +624,20 @@ fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
     use crate::transducer::sentence::as_element_form;
     let mut edged = closed_turn_form();
     let p5 = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
-    let fi = edged.faces.iter().position(|f| f.i == 0 && f.j == 1).expect("the star face");
-    // The edge goes on every member pair of the face — one here.
-    let set_edge = |f: &mut crate::transducer::sentence::Form, fi: usize, w: Word| {
-        let pairs: Vec<Vec<u8>> = f.faces[fi].at.scoped().map(|(k, _)| k).collect();
-        for k in pairs {
-            if let Some(p) = f.faces[fi].at.get_mut(&k) {
-                p.edge = Some(crate::transducer::sentence::Transport::from_word(w.clone()));
-            }
+    let fi = star_of(&edged, &only_word(&edged));
+    // The edge goes on the overlap — one member pair at one frame (AT1).
+    let set_edge = |f: &mut crate::transducer::sentence::Form, fi: &coord::Overlap, w: Word| {
+        if let Some(face) = f.faces.at_mut(fi) {
+            face.place.edge = Some(crate::transducer::sentence::Transport::from_word(w));
         }
     };
     let tilt = Word::from_letters(&[(p5, false)]);
     assert_eq!(tilt.order(), Order::Infinite, "the (3,4,5) rotor has no period");
-    set_edge(&mut edged, fi, tilt);
+    set_edge(&mut edged, &fi, tilt);
     let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&edged_e, &|_| None), None, "an edge of infinite order is not refused for its order");
     let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
-    set_edge(&mut edged, fi, Word::from_letters(&[(q, false)]));
+    set_edge(&mut edged, &fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
 }
@@ -540,7 +651,7 @@ fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
 #[test]
 fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
     use crate::transducer::alphabet::{LetterId, Order, Word};
-    use crate::transducer::sentence::{as_element_form, FiledOrbit, Form, FormFace, Transport};
+    use crate::transducer::sentence::{as_element_form, FiledOrbit, Transport};
     let p5 = LetterId::pythagorean_5((0, 1)).expect("(3,4,5)");
     let tilt = Word::from_letters(&[(p5, false)]);
     let edge_of = |w: &Word| Transport {
@@ -548,36 +659,14 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
         carriage: element::identity_versor(),
         gauge: Vec::new(),
     };
-    let mut f = Form::default();
-    for tag in [1u8, 2u8] {
-        f.vertices.push(Vertex::word_on(
-            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            // Its own chart: an address is derived from its coordinates (54.2).
-            stalk::Invariant::counts(&[u64::from(tag)]),
-            Box::new(element::identity_versor()),
-            Vec::new(),
-            None,
-        ));
-    }
-    let with_edge = |mut face: FormFace, edge: Transport| -> FormFace {
-        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-        for k in pairs {
-            if let Some(p) = face.at.get_mut(&k) {
-                p.edge = Some(edge.clone());
-            }
-        }
-        face
-    };
-    for (i, j) in [(0u16, 1u16), (0, 2)] {
-        let face = f.face_of(i, j).expect("a coboundary");
-        f.faces.push(with_edge(face, edge_of(&Word::identity())));
-    }
-    let face = f.face_of(1, 2).expect("a coboundary");
-    f.faces.push(with_edge(face, edge_of(&tilt)));
-    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
-    f.reindex();
+    let f = triangle_with_edges(&edge_of(&Word::identity()), &edge_of(&tilt));
     let [lp, ..] = f.orbits.as_slice() else { panic!("the triangle closes") };
-    assert!(lp.holonomy.is_identity(), "the transport composite is flat");
+    assert!(
+        crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, lp)
+            .expect("the orbit composes")
+            .is_identity(),
+        "the transport composite is flat"
+    );
     let es = f.edge_holonomies(lp).expect("the orbit names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else { panic!("one member path") };
     assert_eq!(e.word.order(), Order::Infinite, "and its edge holonomy has no period");
@@ -594,7 +683,7 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let mut filed = f.clone();
     filed.torsion.put(
         class,
-        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::OPEN, chord: Closes::On(lp.chord.clone()) },
     );
     assert!(!form_orbits_replay(&filed), "and filing it as open does not close a circuit that runs on");
     let filed_e = as_element_form(&filed, [1, 0, 0, 0]).expect("the tape carries the filed zero");
@@ -610,7 +699,7 @@ fn a_filed_orbit_of_infinite_order_replays_and_a_wrong_period_does_not() {
     let mut wrong = f.clone();
     wrong.torsion.put(
         class,
-        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(4, 4), chord: Closes::On(lp.chord.clone()) },
     );
     assert_eq!(
         receipts_price_the_terrain(&wrong, &wrong.torsion),
@@ -664,7 +753,7 @@ fn citing_form(
     exponent: i64,
     residue: crate::transducer::alphabet::Word,
 ) -> Form {
-    let vertex = match inner.vertices.get(1) {
+    let vertex = match inner.vertices.at(&only_word(inner)) {
         Some(Vertex::Word { address, derivation, .. }) => {
             (address.clone(), derivation.word_local().expect("the inner vertex spells").clone())
         }
@@ -677,14 +766,15 @@ fn citing_form(
         residue,
     );
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         derivation,
         stalk::Invariant::counts(&[7]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         vec![(1, 2)],
+        [FRAME],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("vertices"));
+    );
+    stand_with_star(&mut f, &v);
     f.orbits =Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     f
@@ -760,8 +850,10 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
         }
     };
     let mut tampered = honest.clone();
-    match (&mut tampered.vertices[1], lying.vertices.get(1)) {
-        (Vertex::Word { derivation, .. }, Some(Vertex::Word { derivation: other, .. })) => {
+    // The tamper keeps the rotor, so the vertex keeps its class and its key.
+    let at = only_word(&honest);
+    match (tampered.vertices.at_mut(&at), lying.vertices.at(&only_word(&lying))) {
+        (Some(Vertex::Word { derivation, .. }), Some(Vertex::Word { derivation: other, .. })) => {
             *derivation = crate::transducer::alphabet::Derivation::factored(
                 other.generators.clone(),
                 other.residue.clone(),
@@ -799,7 +891,7 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
 #[test]
 fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     use crate::transducer::alphabet::{LetterId, Word};
-    use crate::transducer::sentence::{FiledOrbit, Form, FormFace, Transport};
+    use crate::transducer::sentence::{FiledOrbit, Transport};
     let q = LetterId::quarter((0, 1)).expect("the sensor plane");
     let half = Word::from_letters(&[(q, false), (q, false)]);
     let edge_of = |w: &Word| Transport {
@@ -807,47 +899,21 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
         carriage: element::identity_versor(),
         gauge: Vec::new(),
     };
-    let mut f = Form::default();
-    for tag in [1u8, 2u8] {
-        f.vertices.push(Vertex::word_on(
-            crate::transducer::alphabet::Derivation::spelled(Word::identity()),
-            // Its own chart: an address is derived from its coordinates (54.2).
-            stalk::Invariant::counts(&[u64::from(tag)]),
-            Box::new(element::identity_versor()),
-            Vec::new(),
-            None,
-        ));
-    }
     // The two star faces and the body-to-body face, every transport the
     // coboundary of its vertices; the body face carries the half turn as
     // the transition between the two pieces' own frames.
-    // THE EDGE IS SET AT EVERY MEMBER PAIR the face carries — one here, since
-    // each of these vertices stands at one chart.
-    let with_edge = |mut face: FormFace, edge: Transport| -> FormFace {
-        let pairs: Vec<Vec<u8>> = face.at.scoped().map(|(k, _)| k).collect();
-        for k in pairs {
-            if let Some(p) = face.at.get_mut(&k) {
-                p.edge = Some(edge.clone());
-            }
-        }
-        face
-    };
-    for (i, j) in [(0u16, 1u16), (0, 2)] {
-        let face = f.face_of(i, j).expect("a coboundary");
-        f.faces.push(with_edge(face, edge_of(&Word::identity())));
-    }
-    let face = f.face_of(1, 2).expect("a coboundary");
-    f.faces.push(with_edge(face, edge_of(&half)));
-    f.orbits =Form::orbits_of(&f.faces, &f.vertices);
-    f.reindex();
+    // THE EDGE IS SET ON EACH OVERLAP — one member pair at one frame (AT1).
+    let f = triangle_with_edges(&edge_of(&Word::identity()), &edge_of(&half));
     let [lp, ..] = f.orbits.as_slice() else { panic!("the triangle closes") };
     assert!(
-        lp.holonomy.is_identity(),
+        crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, lp)
+            .expect("the orbit composes")
+            .is_identity(),
         "the transport composite is flat: every face is a coboundary"
     );
     let es = f.edge_holonomies(lp).expect("the orbit names live faces");
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else {
-        panic!("one member path, since each vertex stands at one chart")
+        panic!("one member path, since each overlap relates one member pair")
     };
     assert!(!e.word.is_identity(), "and its edge holonomy is the half turn");
 
@@ -886,7 +952,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
                 [row, ..] => row.periods,
                 [] => panic!("the orbit carries a class"),
             },
-            chord: lp.chord,
+            chord: Closes::On(lp.chord.clone()),
         },
     );
     assert!(form_orbits_replay(&filed), "and filing it says nothing the geometry did not");
@@ -904,7 +970,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let mut wrong = f.clone();
     wrong.torsion.put(
         &class,
-        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(3, 3), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(3, 3), chord: Closes::On(lp.chord.clone()) },
     );
     assert!(form_orbits_replay(&wrong), "the terrain is what it is, whatever is claimed of it");
     assert_eq!(
@@ -935,7 +1001,7 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let mut colliding = f.clone();
     colliding.torsion.put(
         &class,
-        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(12, 1), chord: lp.chord },
+        FiledOrbit { sigma: Vec::new(), periods: ToralPeriod::from_pair(12, 1), chord: Closes::On(lp.chord.clone()) },
     );
     assert_eq!(
         receipts_price_the_terrain(&colliding, &colliding.torsion),

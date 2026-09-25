@@ -119,39 +119,28 @@ impl Bytes for Vertex {
 impl Bytes for Form {
     fn bytes(&self) -> usize {
         let mut n = std::mem::size_of::<Self>();
-        for v in &self.vertices {
+        // THE ATLAS (AT1): the vertices and the overlaps by their keys, and
+        // what each holds.
+        n += self.vertices.key_bytes() + self.faces.key_bytes();
+        for (_, v) in self.vertices.scoped() {
             n += v.bytes();
         }
-        for f in &self.faces {
-            n += std::mem::size_of_val(f) + f.word.rotor().bytes();
-            for (k, p) in f.at.scoped() {
-                n += k.len() + p.carriage.bytes();
-                if let Some(e) = &p.edge {
-                    n += e.word.rotor().bytes() + e.carriage.bytes() + e.gauge.len() * 2;
-                }
-            }
-            if let Some(ps) = &f.pairs {
-                n += ps.key_bytes();
+        for (_, f) in self.faces.entries() {
+            n += std::mem::size_of_val(f) + f.place.carriage.bytes() + f.left.rotor().bytes() + f.right.rotor().bytes();
+            if let Some(e) = &f.place.edge {
+                n += e.word.rotor().bytes() + e.carriage.bytes() + e.gauge.len() * 2;
             }
         }
+        // An orbit holds its steps and stem, each an overlap coordinate; its
+        // holonomy and carriages are reads (AT1) and hold nothing.
         for lp in &self.orbits {
             n += std::mem::size_of_val(lp)
-                + lp.vertices.len() * 2
-                + lp.faces.len() * 2
-                + lp.holonomy.rotor().bytes();
-            for (k, c) in lp.carriages.scoped() {
-                n += k.len() + c.bytes();
-            }
+                + (lp.steps.len() + lp.stem.len()) * std::mem::size_of::<crate::transducer::sentence::OrbitStep>();
         }
-        // The indexes the form keeps current; keys only, their values are
-        // the indices above.
-        n += self.by_address.key_bytes()
-            + self.by_class.key_bytes()
+        // The indexes the form keeps current; keys only.
+        n += self.by_class.key_bytes()
             + self.by_transport.key_bytes()
-            + self.star.key_bytes()
             + self.carriages.key_bytes()
-            + self.glued.key_bytes()
-            + self.sections.key_bytes()
             + self.hue_maps.key_bytes()
             + self.torsion.key_bytes()
             + self.axes.key_bytes();

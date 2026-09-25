@@ -20,14 +20,21 @@ fn sentence_of(w: Word, tag: u8) -> (Address, Form) {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    let v = Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(w),
         Invariant::counts(&[u64::from(tag)]),
         Box::new(element::carriage(&one, &(zero.clone(), zero))),
         Vec::new(),
+        [crate::transducer::sentence::tests::common::FRAME],
         None,
-    ));
-    f.faces.push(f.face_of(0, 1).expect("star"));
+    );
+    let c = f.stand_member(&v, crate::transducer::sentence::tests::common::FRAME).expect("a generator stands");
+    // THE STAR, WHERE ITS PLACE DERIVES (AT1): an overlap's place is measured
+    // through the coboundary's versor, and an off-plane word has none on the
+    // sensor plane — as `letter_of`'s letter has none — so its star is not
+    // put (rule 11). The generator this fixture holds is the vertex, never
+    // the face.
+    let _star = f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c, None);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
     (Address::from_bytes([TAG_FORM, tag]), f)
@@ -188,13 +195,15 @@ fn letter_of(a: i64, b: i64, tag: u8) -> (Address, Form) {
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
     let rotor = Rotor::scalar(q(a)).add(&Rotor::blade(0b0011, q(b)));
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    f.put_vertex(Vertex::word_on(
         Derivation::adjoined(rotor),
         Invariant::counts(&[u64::from(tag)]),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [crate::transducer::sentence::tests::common::FRAME],
         None,
-    ));
+    ))
+    .expect("an adjoined letter has a class");
     // No star face: the face would be the letter's own action, which the
     // seventeen cannot spell (L11 (2/2)).
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -300,8 +309,8 @@ fn a_court_holding_the_letter_composes_a_citation_of_it() {
     // derives its address from its coordinates.
     let cited_vertex = letter_form
         .vertices
-        .iter()
-        .find_map(|v| match v {
+        .scoped()
+        .find_map(|(_, v)| match v {
             crate::transducer::sentence::Vertex::Word { address, .. } => Some(address.clone()),
             _ => None,
         })
@@ -363,13 +372,15 @@ fn adjoined_basis_discovers_generators_on_offplane_channels() {
     let rotor = Rotor::scalar(q(4)).add(&Rotor::blade(mask_03, q(1)));
     let address = Address::from_bytes([TAG_FORM, 55]);
     let mut f = Form::default();
-    f.vertices.push(Vertex::word_on(
+    f.put_vertex(Vertex::word_on(
         Derivation::adjoined(rotor),
         Invariant::default(),
         Box::new(element::identity_versor()),
         Vec::new(),
+        [crate::transducer::sentence::tests::common::FRAME],
         None,
-    ));
+    ))
+    .expect("an adjoined generator has a class");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
 
