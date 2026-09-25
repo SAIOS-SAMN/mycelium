@@ -140,8 +140,9 @@ pub enum TransitionKind {
 }
 
 /// One kind's transitions by what their actions are: versors; of full
-/// algebra rank and no versor; DEGENERATE, keyed by the algebra rank they
-/// kept; SUPERPOSED — a sum of rotors, which nothing produces today and the
+/// algebra rank and no versor; DEGENERATE, keyed by the contraction
+/// `contracted()` answers — `r of n` on the vector block, or none — with the
+/// algebra rank kept a second coordinate beside it; SUPERPOSED — a sum of rotors, which nothing produces today and the
 /// arm exists to count; and unread where the stroke ended first.
 #[derive(Clone, Debug, Default)]
 pub struct KindReading {
@@ -203,6 +204,33 @@ fn count_key(v: u64) -> [u8; 8] {
     v.to_be_bytes()
 }
 
+/// A degenerate action's key: its contraction first — a flag, then `r` and
+/// `n` where the vector block lost rank — and the algebra rank after it.
+fn degenerate_key(action: &MotorAction) -> Vec<u8> {
+    let mut k = Vec::with_capacity(25);
+    match action.contracted() {
+        Some((r, n)) => {
+            k.push(1);
+            k.extend_from_slice(&count_key(r as u64));
+            k.extend_from_slice(&count_key(n as u64));
+        }
+        None => k.push(0),
+    }
+    k.extend_from_slice(&count_key(action.algebra_rank as u64));
+    k
+}
+
+/// The degenerate key read back for the line: `r of n` or `uncontracted`,
+/// then the algebra rank.
+fn degenerate_label(k: &[u8]) -> Option<String> {
+    let word = |b: &[u8], at: usize| -> Option<u64> { Some(u64::from_be_bytes(b.get(at..at + 8)?.try_into().ok()?)) };
+    match k {
+        [1, rest @ ..] => Some(format!("contracted {} of {} algebra {}", word(rest, 0)?, word(rest, 8)?, word(rest, 16)?)),
+        [0, rest @ ..] => Some(format!("uncontracted algebra {}", word(rest, 0)?)),
+        _ => None,
+    }
+}
+
 fn bump(carrier: &mut crate::network::nerve::Keyed<u64>, k: &[u8]) {
     let now = match carrier.get(k) {
         Some(&v) => v + 1,
@@ -224,11 +252,8 @@ impl MotorTally {
     /// steps by class, the planes they turn by name, the lanes' values.
     pub fn line(&self) -> String {
         let kind = |name: &str, k: &KindReading| {
-            let degenerate: Vec<String> = k
-                .degenerate
-                .scoped()
-                .filter_map(|(r, c)| Some(format!("r{} {c}", u64::from_be_bytes(r.as_slice().try_into().ok()?))))
-                .collect();
+            let degenerate: Vec<String> =
+                k.degenerate.scoped().filter_map(|(key, c)| Some(format!("{}: {c}", degenerate_label(&key)?))).collect();
             format!(
                 "{name} read {} versors {} full-rank {} degenerate [{}] superposed {} unread {}",
                 k.read,
@@ -296,7 +321,7 @@ pub fn note_motor(kind: TransitionKind, m: &Mv, lanes: Option<[u64; 4]>) {
         match (action.acts_as_versor(), action.algebra_rank == action.dim()) {
             (true, _) => k.versors += 1,
             (false, true) => k.full_rank += 1,
-            (false, false) => bump(&mut k.degenerate, &count_key(action.algebra_rank as u64)),
+            (false, false) => bump(&mut k.degenerate, &degenerate_key(&action)),
         }
         if let Some(lanes) = lanes {
             for (d, v) in t.lanes.iter_mut().zip(lanes) {
@@ -315,10 +340,11 @@ pub fn note_unread(kind: TransitionKind) {
     });
 }
 
-/// ONE FRAME-AXIS STEP by class, and the planes its action turns — read off
-/// the motor that solved (the input's where both did).
-pub fn note_step(class: StepClass, turned: Option<&Mv>) {
-    let occupied = turned.map(|m| super::occupancy(m, m.n()));
+/// ONE FRAME-AXIS STEP by class, and the planes its actions turn — read off
+/// every motor the caller names: the one that solved, the input's where
+/// both agree, and BOTH where they disagree.
+pub fn note_step(class: StepClass, turned: &[&Mv]) {
+    let occupied: Vec<super::Occupancy> = turned.iter().map(|m| super::occupancy(m, m.n())).collect();
     MOTORS.with(|t| {
         let mut t = t.borrow_mut();
         let s = &mut t.steps;
@@ -328,7 +354,7 @@ pub fn note_step(class: StepClass, turned: Option<&Mv>) {
             StepClass::OneSided => s.one_sided += 1,
             StepClass::Neither => s.neither += 1,
         }
-        if let Some(o) = occupied {
+        for o in occupied {
             for p in o.planes {
                 bump(&mut s.planes, &count_key(p as u64));
             }

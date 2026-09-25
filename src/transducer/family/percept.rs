@@ -82,18 +82,21 @@ fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budge
     };
     for step in claimed.windows(2) {
         let [q, next] = step else { continue };
-        // A side the stroke did not reach leaves the step unclassed: its
-        // transition is counted unread under its kind.
-        let (Some(input), Some(output)) = (solve(&q.a_k, &next.a_k), solve(&q.b_k, &next.b_k)) else {
-            return;
+        // BOTH SIDES ARE ASKED, and a side the stroke did not reach is
+        // counted unread under its kind (A.17): nothing is dropped by a
+        // return, so every later step of the member is counted too. The step
+        // itself stands unclassed.
+        let (input, output) = (solve(&q.a_k, &next.a_k), solve(&q.b_k, &next.b_k));
+        let (Some(input), Some(output)) = (input, output) else { continue };
+        // The planes turned: the solved side's, and on a DISAGREEMENT both
+        // motors' — the disagreement is the content.
+        let (class, turned): (StepClass, Vec<&Versor>) = match (&input, &output) {
+            (Some(i), Some(o)) if cga::projective_ratio(i, o).is_some() => (StepClass::Agree, vec![i]),
+            (Some(i), Some(o)) => (StepClass::Disagree, vec![i, o]),
+            (Some(m), None) | (None, Some(m)) => (StepClass::OneSided, vec![m]),
+            (None, None) => (StepClass::Neither, Vec::new()),
         };
-        let class = match (&input, &output) {
-            (Some(i), Some(o)) if cga::projective_ratio(i, o).is_some() => StepClass::Agree,
-            (Some(_), Some(_)) => StepClass::Disagree,
-            (Some(_), None) | (None, Some(_)) => StepClass::OneSided,
-            (None, None) => StepClass::Neither,
-        };
-        note_step(class, input.as_ref().or(output.as_ref()));
+        note_step(class, &turned);
     }
 }
 
@@ -1256,7 +1259,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             false => cga::note_unread(cga::TransitionKind::Face),
         }
     }
-    eprintln!("  {}", cga::motor_tally().line());
+    eprintln!("  running {}", cga::motor_tally().line());
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }
