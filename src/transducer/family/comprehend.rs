@@ -308,10 +308,10 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.constructors)
         .map(|(((a, ms), enclosure), held)| CellEntry {
             rings: a.rings,
-            constructors: held.map(|k| k as u32),
+            constructors: *held,
             refusals: a.refusals(),
             enclosure: enclosure.clone(),
-            grade: a.grade as u8,
+            grade: a.grade,
             round: match a.congruence {
                 Congruence::Congruent => CellRound::Kept,
                 Congruence::HeldZ2 { .. } => CellRound::HeldZ2,
@@ -354,7 +354,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                 .gram
                 .as_ref()
                 .ok()
-                .map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2 as u8), g.rank as u8)),
+                .map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2), g.rank as u8)),
             pairs: a.gram.iter().flat_map(|g| g.pairs.iter().map(|(_, _, _, r)| *r)).collect(),
             coxeter: a.coxeter.as_ref().map(cell_closure),
             polars: a.polars.as_ref().map(cell_closure),
@@ -374,7 +374,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                     seal: ray(&p.seal),
                 })
                 .collect(),
-            classes: a.classes as u8,
+            classes: a.classes,
             mirrors: ms
                 .iter()
                 .map(|n| n.iter().map(|m| (m.axis as u8, m.k.clone(), m.delta2.clone(), m.regime)).collect())
@@ -382,7 +382,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         })
         .collect();
     Cells {
-        mirror_planes: c.planes as u32,
+        mirror_planes: c.planes,
         mirror_group: c.mirror_group.as_ref().map(cell_closure),
         cells,
         bracket: c.bracket,

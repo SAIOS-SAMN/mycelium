@@ -523,7 +523,11 @@ impl Contemplation {
             Some(b) => b.vortex_strata(),
             None => return,
         };
-        let ord = self.ordinal_for(&std::sync::Arc::from(key)).to_le_bytes();
+        let Some(ord) = self.ordinal_for(&std::sync::Arc::from(key)) else {
+            eprintln!("  contemplation ordinal refused: admissions past its u16, vortex strata not filed");
+            return;
+        };
+        let ord = ord.to_le_bytes();
         for ck in strata {
             self.by_vortex.nested_insert(&ck, ord, ());
         }
@@ -665,14 +669,20 @@ impl Contemplation {
     /// Z4c: the caller hands the ONE copy of the address. `Arc::from(&[u8])`
     /// would copy it here — 7 MB per hold on the 590-vertex rule — and the
     /// caller always has the address as an object, never only as a slice.
-    pub(crate) fn ordinal_for(&mut self, key: &std::sync::Arc<[u8]>) -> u16 {
+    ///
+    /// `None` past the u16 (STD1 3c-5): the ordinal counts ADMISSIONS over
+    /// the contemplation's life and is never reused, so `as u16` wrapped at
+    /// 65 536 admissions whatever the form's size, and a new bubble took a
+    /// live one's ordinal. Refused by name until AT1 keys the index by the
+    /// bubble's own coordinates (the slot is AT1's debt).
+    pub(crate) fn ordinal_for(&mut self, key: &std::sync::Arc<[u8]>) -> Option<u16> {
         if let Some(&o) = self.ordinals.get(key) {
-            return o;
+            return Some(o);
         }
-        let o = self.addresses.len() as u16;
+        let o = u16::try_from(self.addresses.len()).ok()?;
         self.addresses.push(Some(std::sync::Arc::clone(key)));
         self.ordinals.insert_shared(std::sync::Arc::clone(key), o);
-        o
+        Some(o)
     }
 
     /// The address an ordinal names, or `None` where it names nothing —
@@ -687,7 +697,10 @@ impl Contemplation {
     }
 
     pub(crate) fn admit_incidence(&mut self, key: &std::sync::Arc<[u8]>, b: &Bubble) {
-        let ord = self.ordinal_for(key);
+        let Some(ord) = self.ordinal_for(key) else {
+            eprintln!("  contemplation ordinal refused: admissions past its u16, incidence not indexed");
+            return;
+        };
         let ord = ord.to_le_bytes();
         let key = &ord[..];
         for (ck, _) in b.cover.scoped() {

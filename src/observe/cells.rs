@@ -176,7 +176,11 @@ pub struct CellProduct {
 /// ONE CELL.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct CellEntry {
-    pub grade: u8,
+    /// The cell's ARITY, bodies − 1: bounded by the base's `2ⁿ` at a corner
+    /// (n data), never the algebra's `n + 2` — a count, written by its own
+    /// coordinate (STD1 3c-5, re-ruled). The meet blade's grade is another
+    /// quantity under the same name (NM1).
+    pub grade: usize,
     pub round: CellRound,
     pub permutes: CellPermutes,
     pub coherence: CellCoherence,
@@ -184,15 +188,18 @@ pub struct CellEntry {
     pub capacity: Option<u32>,
     pub orbit: CellOrbit,
     /// The Gram form's span signature `(p, q, z)` and the vector rank;
-    /// `None` where the nuclei did not read.
-    pub signature: Option<((u8, u8, u8), u8)>,
+    /// `None` where the nuclei did not read. `p`, `q` and the rank are the
+    /// algebra's (≤ n + 2); `z`, the directions of zero norm, is the bodies
+    /// less the rank — a count of bodies, so held as one.
+    pub signature: Option<((u8, u8, usize), u8)>,
     /// Each pair's regime, in the Gram form's pair order.
     pub pairs: Vec<PairRegime>,
     pub coxeter: Option<CellClosure>,
     pub polars: Option<CellClosure>,
     pub dual: Option<CellDual>,
     pub products: Vec<CellProduct>,
-    pub classes: u8,
+    /// The product classes: a count.
+    pub classes: usize,
     /// MG1 — per nucleus, each bracketing mirror: `(axis, k, δ², regime)`.
     pub mirrors: Vec<Vec<(u8, BigRational, BigRational, PairRegime)>>,
     /// EN1 — its enclosure; `None` where its nuclei did not read.
@@ -200,8 +207,8 @@ pub struct CellEntry {
     /// CV1b — what the cell's readers could not hold, by content (78.26(4)).
     pub refusals: CellRefusals,
     /// CS2 — the cell's held constructors, its nuclei, one per body; `None`
-    /// where they did not read.
-    pub constructors: Option<u32>,
+    /// where they did not read. One per body: a count of bodies.
+    pub constructors: Option<usize>,
     /// 78.26(5) — the rings through the cell by their residue: resonance,
     /// level and kind.
     pub rings: Rings,
@@ -399,7 +406,8 @@ fn take_refusals(b: &[u8], p: &mut usize) -> Option<CellRefusals> {
 /// many distinct base mirrors bracket its nuclei, and how their group closes.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Cells {
-    pub mirror_planes: u32,
+    /// Distinct base mirrors bracketing the nuclei: a count.
+    pub mirror_planes: usize,
     pub mirror_group: Option<CellClosure>,
     pub cells: Vec<CellEntry>,
     /// 78.26(2), CB1 — the cross-cell bracket of a sentence spanning more
@@ -482,12 +490,12 @@ impl Cells {
     /// (STD1 3c): the reading is refused whole, never written short.
     #[must_use]
     pub(crate) fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        use crate::transducer::address::{put_bytes, put_u32_count};
-        out.extend_from_slice(&self.mirror_planes.to_le_bytes());
+        use crate::transducer::address::{put_bytes, put_key_count, put_u32_count};
+        put_key_count(out, self.mirror_planes);
         put_closure(out, self.mirror_group);
         put_u32_count(out, self.cells.len())?;
         for c in &self.cells {
-            out.push(c.grade);
+            put_key_count(out, c.grade);
             out.push(code_in(&CellRound::ALL, c.round));
             out.push(code_in(&CellPermutes::ALL, c.permutes));
             out.push(code_in(&CellCoherence::ALL, c.coherence));
@@ -500,7 +508,11 @@ impl Cells {
             }
             out.push(code_in(&CellOrbit::ALL, c.orbit));
             match c.signature {
-                Some(((p, q, z), r)) => out.extend_from_slice(&[1, p, q, z, r]),
+                Some(((p, q, z), r)) => {
+                    out.extend_from_slice(&[1, p, q]);
+                    put_key_count(out, z);
+                    out.push(r);
+                }
                 None => out.push(0),
             }
             put_u32_count(out, c.pairs.len())?;
@@ -531,7 +543,7 @@ impl Cells {
                     put_q(out, q)?;
                 }
             }
-            out.push(c.classes);
+            put_key_count(out, c.classes);
             put_u32_count(out, c.mirrors.len())?;
             for ms in &c.mirrors {
                 put_u32_count(out, ms.len())?;
@@ -563,7 +575,7 @@ impl Cells {
             match c.constructors {
                 Some(k) => {
                     out.push(1);
-                    out.extend_from_slice(&k.to_le_bytes());
+                    put_key_count(out, k);
                 }
                 None => out.push(NONE),
             }
@@ -587,7 +599,8 @@ impl Cells {
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Cells> {
-        let mirror_planes = take_u32(b, p)?;
+        use crate::transducer::address::take_key_count;
+        let mirror_planes = take_key_count(b, p)?;
         let mirror_group = take_closure(b, p)?;
         let m = take_len(b, p)?;
         if !holds(b, *p, m, 8) {
@@ -595,7 +608,7 @@ impl Cells {
         }
         let mut cells = Vec::with_capacity(m);
         for _ in 0..m {
-            let grade = take_u8(b, p)?;
+            let grade = take_key_count(b, p)?;
             let round = take_coded(&CellRound::ALL, b, p)?;
             let permutes = take_coded(&CellPermutes::ALL, b, p)?;
             let coherence = take_coded(&CellCoherence::ALL, b, p)?;
@@ -607,7 +620,7 @@ impl Cells {
             let orbit = take_coded(&CellOrbit::ALL, b, p)?;
             let signature = match take_u8(b, p)? {
                 0 => None,
-                1 => Some(((take_u8(b, p)?, take_u8(b, p)?, take_u8(b, p)?), take_u8(b, p)?)),
+                1 => Some(((take_u8(b, p)?, take_u8(b, p)?, take_key_count(b, p)?), take_u8(b, p)?)),
                 _ => return None,
             };
             let np = take_len(b, p)?;
@@ -649,7 +662,7 @@ impl Cells {
                 }
                 products.push(CellProduct { order, grades, det, classed, seal });
             }
-            let classes = take_u8(b, p)?;
+            let classes = take_key_count(b, p)?;
             let nm = take_len(b, p)?;
             if !holds(b, *p, nm, 4) {
                 return None;
@@ -685,7 +698,7 @@ impl Cells {
             };
             let refusals = take_refusals(b, p)?;
             let constructors = match take_u8(b, p)? {
-                1 => Some(take_u32(b, p)?),
+                1 => Some(take_key_count(b, p)?),
                 NONE => None,
                 _ => return None,
             };

@@ -222,7 +222,9 @@ impl Phase {
 /// ONE GRADE OF CERTIFIED CELLS (PG1).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct GradeProgress {
-    pub grade: u8,
+    /// The cell ARITY this row counts (bodies − 1, ≤ 2ⁿ − 1 with n data): a
+    /// count, by its own coordinate on the reading (STD1 3c-5, re-ruled).
+    pub grade: usize,
     pub cells: u64,
     /// Every circuit read and every mode ray keeping the round: the
     /// coboundary's agreement at this grade.
@@ -286,9 +288,9 @@ impl Progress {
         put_u64s(out, &[self.percepts, self.contact_cycles, self.contact_cycles_curved, self.contact_cycles_unread]);
         put_u64s(out, &[self.contact_cycles_static]);
         put_u64s(out, &self.contact_cycles_coset);
-        out.extend_from_slice(&(self.grades.len() as u32).to_le_bytes());
+        crate::transducer::address::put_key_count(out, self.grades.len());
         for g in &self.grades {
-            out.push(g.grade);
+            crate::transducer::address::put_key_count(out, g.grade);
             put_u64s(out, &[g.cells, g.round_kept, g.held_z2, g.refused, g.finite, g.affine, g.infinite, g.dual_frames]);
         }
     }
@@ -297,13 +299,13 @@ impl Progress {
         let [percepts, contact_cycles, contact_cycles_curved, contact_cycles_unread] = take_u64s::<4>(b, p)?;
         let contact_cycles_static = take_u64(b, p)?;
         let contact_cycles_coset = take_u64s::<3>(b, p)?;
-        let m = take_len(b, p)?;
+        let m = crate::transducer::address::take_key_count(b, p)?;
         if !holds(b, *p, m, 1 + 8 * 8) {
             return None;
         }
         let mut grades = Vec::with_capacity(m);
         for _ in 0..m {
-            let grade = take_u8(b, p)?;
+            let grade = crate::transducer::address::take_key_count(b, p)?;
             let [cells, round_kept, held_z2, refused, finite, affine, infinite, dual_frames] = take_u64s::<8>(b, p)?;
             grades.push(GradeProgress { grade, cells, round_kept, held_z2, refused, finite, affine, infinite, dual_frames });
         }

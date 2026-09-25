@@ -17,7 +17,7 @@ struct GradeRow {
     capacity: Vec<usize>,
     /// CS2 — each cell's held constructors (`None` unread), and the cells
     /// whose rank stands above the associative cap `(n+2)²`.
-    held: Vec<Option<u32>>,
+    held: Vec<Option<usize>>,
     above_cap: u64,
     /// closed, open, unbounded, unread.
     constructors: [u64; 4],
@@ -103,14 +103,14 @@ impl CellTally {
     pub(super) fn of(cells: &Cells) -> CellTally {
         let mut t =
             CellTally {
-                planes: cells.mirror_planes as usize,
+                planes: cells.mirror_planes,
                 mirror_group: cells.mirror_group,
                 bracket: cells.bracket,
                 cap: cells.cap,
                 ..CellTally::default()
             };
         for c in &cells.cells {
-            let grade = usize::from(c.grade);
+            let grade = c.grade;
             let at = match t.rows.binary_search_by_key(&grade, |r| r.grade) {
                 Ok(at) => at,
                 Err(at) => {
@@ -138,7 +138,7 @@ impl CellTally {
                 Some(CellDual::Degenerate) => row.dual[2] += 1,
                 None => {}
             }
-            row.products.push((c.products.len(), usize::from(c.classes)));
+            row.products.push((c.products.len(), c.classes));
             // 78.26(5) — the rings, axis by axis.
             let (s, x) = (&mut row.rings, &c.rings);
             s.coherent += x.coherent;
@@ -203,7 +203,7 @@ impl CellTally {
                 }] += 1;
             }
             if let Some(((p, q, z), rank)) = c.signature {
-                row.signatures.push(((usize::from(p), usize::from(q), usize::from(z)), usize::from(rank)));
+                row.signatures.push(((usize::from(p), usize::from(q), z), usize::from(rank)));
                 for r in &c.pairs {
                     row.pairs[match r {
                         PairRegime::Finite(_) => 0,

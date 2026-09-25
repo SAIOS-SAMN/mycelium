@@ -161,14 +161,26 @@ fn components(g: &[Vec<Q>]) -> Vec<Vec<usize>> {
 /// THE SIGN BALANCE on one component: `ε_a ε_b = −sign(G_ab)` along every
 /// non-zero pair, propagated from the least member; `None` where a cycle
 /// disagrees. Unique up to the one global sign.
-fn sign_balance(g: &[Vec<Q>], comp: &[usize]) -> Option<Vec<i8>> {
+///
+/// EACH SIGN IS KEYED BY ITS CONSTRUCTOR'S RAY (78.43(1)), never by the
+/// Gram row that holds it: a row number is a position, the ray is what the
+/// constructor is, and two constructors of one ray are one sign — which the
+/// balance wants. The matrix's own arithmetic stays by row, the algebra's
+/// carrier; only the key moves. The balance is answered in `comp`'s order.
+fn sign_balance(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> Option<Vec<i8>> {
     let mut sign: Keyed<i8> = Keyed::new();
-    let key = |a: usize| (a as u32).to_be_bytes();
+    // A row with no constructor behind it has no ray to key by: refused,
+    // never keyed by an empty key that every such row would share.
+    let key = |a: usize| -> Option<Vec<u8>> {
+        let mut k = Vec::new();
+        constructors.get(a)?.put_canonical(&mut k);
+        Some(k)
+    };
     let [first, ..] = comp else { return Some(Vec::new()) };
-    sign.insert(key(*first), 1);
+    sign.insert(key(*first)?, 1);
     let mut work = vec![*first];
     while let Some(a) = work.pop() {
-        let Some(&sa) = sign.get(&key(a)) else { continue };
+        let Some(&sa) = sign.get(&key(a)?) else { continue };
         for &b in comp {
             if b == a || g[a][b].is_zero() {
                 continue;
@@ -177,17 +189,18 @@ fn sign_balance(g: &[Vec<Q>], comp: &[usize]) -> Option<Vec<i8>> {
                 true => -sa,
                 false => sa,
             };
-            match sign.get(&key(b)) {
+            let kb = key(b)?;
+            match sign.get(&kb) {
                 Some(&sb) if sb != want => return None,
                 Some(_) => {}
                 None => {
-                    sign.insert(key(b), want);
+                    sign.insert(kb, want);
                     work.push(b);
                 }
             }
         }
     }
-    comp.iter().map(|&a| sign.get(&key(a)).copied()).collect()
+    comp.iter().map(|&a| sign.get(&key(a)?).copied()).collect()
 }
 
 fn class_of(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> ComponentClass {
@@ -201,7 +214,7 @@ fn class_of(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> ComponentClass
         })
     });
     let independent = cga::vector_rank(&vs) == comp.len();
-    if !(real && pairs_ok && independent) || sign_balance(g, comp).is_none() {
+    if !(real && pairs_ok && independent) || sign_balance(constructors, g, comp).is_none() {
         return ComponentClass::Unrecognized;
     }
     // Signs are a congruence by `diag(±1)`: the signature is the Gram form's.
