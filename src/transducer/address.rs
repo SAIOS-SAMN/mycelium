@@ -369,11 +369,60 @@ pub fn put_u32_count(out: &mut Vec<u8>, n: usize) -> Option<()> {
 }
 
 /// A KEY COMPONENT: a coordinate written into a key, never a record a reader
-/// frames at a fixed width (STD1 3c-2, ruled (d)). Total: its length is
-/// written by the key commit as its own coordinate.
+/// frames at a fixed width (STD1 3c-2, ruled (d)).
+///
+/// ITS LENGTH IS WRITTEN BY ITS OWN COORDINATE: LEB128, seven bits a byte,
+/// the high bit saying more follows. Exact for any length, so the writer is
+/// total with no cast and no width wall — an address held once is
+/// legitimately megabytes, and the only wall against a blob is the
+/// citation's u16 (LD0). Minimal and prefix-free, so the key is injective by
+/// construction; and a component under 128 bytes takes one length byte, not
+/// four.
 pub fn put_key_bytes(out: &mut Vec<u8>, b: &[u8]) {
-    out.extend_from_slice(&(b.len() as u32).to_le_bytes());
+    let mut n = b.len();
+    loop {
+        let low = n.to_le_bytes()[0] & 0x7f;
+        n >>= 7;
+        if n == 0 {
+            out.push(low);
+            break;
+        }
+        out.push(low | 0x80);
+    }
     out.extend_from_slice(b);
+}
+
+/// A key component read back: its LEB128 length, then that many bytes.
+/// `None` where the length is not minimal (a key has one spelling), does not
+/// fit a `usize`, or runs past the key.
+pub fn take_key_bytes(b: &[u8], p: &mut usize) -> Option<Vec<u8>> {
+    let mut n = 0usize;
+    let mut shift = 0u32;
+    loop {
+        let byte = *b.get(*p)?;
+        *p += 1;
+        let v = usize::from(byte & 0x7f);
+        let placed = v.checked_shl(shift)?;
+        // Bits shifted past the carrier are a length no usize holds.
+        if placed >> shift != v {
+            return None;
+        }
+        n |= placed;
+        if byte & 0x80 == 0 {
+            // A final zero byte after the first is an over-long spelling.
+            if byte == 0 && shift > 0 {
+                return None;
+            }
+            break;
+        }
+        shift += 7;
+    }
+    if n > b.len().checked_sub(*p)? {
+        return None;
+    }
+    let out = b.get(*p..*p + n)?.to_vec();
+    *p += n;
+    Some(out)
 }
 
 /// A byte string behind a four-byte length, or a refusal: the `as u32` this

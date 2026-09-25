@@ -28,7 +28,7 @@ fn take_chain_address(k: &[u8], p: &mut usize) -> Option<Vec<Link>> {
     match shape {
         0 => Some(Vec::new()),
         1 => {
-            let a = take_bytes(k, p)?;
+            let a = crate::transducer::address::take_key_bytes(k, p)?;
             let mut out = from_residual(&a)?;
             let cr = i64::from_le_bytes(k.get(*p..*p + 8)?.try_into().ok()?);
             let cc = i64::from_le_bytes(k.get(*p + 8..*p + 16)?.try_into().ok()?);
@@ -115,7 +115,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         let v = match kind {
             0 => Vertex::Frame,
             1 => {
-                let rotor = Rotor::from_key(&take_bytes(k, &mut p)?)?;
+                let rotor = Rotor::from_key(&crate::transducer::address::take_key_bytes(k, &mut p)?)?;
                 let acts = take_acts(k, &mut p, true)?;
                 let contact = acts.1;
                 let derivation =
@@ -135,7 +135,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 let placement = Word::formed(Rotor::from_bytes(k, &mut p)?);
                 let depth = take_u16k(k, &mut p)?;
                 let carriage = Box::new(Versor::from_bytes(k, &mut p)?);
-                let chart = stalk::Invariant::from_key(&take_bytes(k, &mut p)?)?;
+                let chart = stalk::Invariant::from_key(&crate::transducer::address::take_key_bytes(k, &mut p)?)?;
                 Vertex::Glued {
                     chart,
                     magnitude: [0; 4],
@@ -162,10 +162,10 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
                 Vertex::Unfolded { measure }
             }
             5 => {
-                let kb = take_bytes(k, &mut p)?;
+                let kb = crate::transducer::address::take_key_bytes(k, &mut p)?;
                 let mut kp = 1usize;
                 let kind = crate::transducer::sentence::Demand::from_bytes(&kb, &mut kp)?;
-                let chart = stalk::Invariant::from_key(&take_bytes(k, &mut p)?)?;
+                let chart = stalk::Invariant::from_key(&crate::transducer::address::take_key_bytes(k, &mut p)?)?;
                 // A demand whose bodies the caller did not supply is not a
                 // demand standing for nothing — it is a form that cannot be
                 // rebuilt from what was given, and it refuses (rule 11).
@@ -185,7 +185,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
         let n = take_u16k(k, &mut p)? as usize;
         let mut at = Keyed::new();
         for _ in 0..n {
-            let pk = take_bytes(k, &mut p)?;
+            let pk = crate::transducer::address::take_key_bytes(k, &mut p)?;
             let carriage = Versor::from_bytes(k, &mut p)?;
             let gauge = take_gauge(k, &mut p)?;
             // 50.3's edge: its PRESENCE is on the key and its value is
@@ -258,7 +258,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     f.ratio = ((r[0] as usize, r[1] as usize), (r[2] as usize, r[3] as usize));
     let ns = take_u32(k, &mut p)? as usize;
     for _ in 0..ns {
-        let class = take_bytes(k, &mut p)?;
+        let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
         let m = take_u16k(k, &mut p)? as usize;
         let mut members = Keyed::new();
         for _ in 0..m {
@@ -269,7 +269,7 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
     }
     let na = take_u32(k, &mut p)? as usize;
     for _ in 0..na {
-        let class = take_bytes(k, &mut p)?;
+        let class = crate::transducer::address::take_key_bytes(k, &mut p)?;
         // The tape's own bytes, declared as the holonomy coordinate `axes`
         // answers — the decoder is where wire bytes become a coordinate.
         f.axes
@@ -346,7 +346,7 @@ fn take_acts(k: &[u8], p: &mut usize, contact: bool) -> Option<Acts> {
     let mut out = Keyed::new();
     let mut got: Option<Option<crate::transducer::alphabet::Contact>> = None;
     for _ in 0..n {
-        let ck = take_bytes(k, p)?;
+        let ck = crate::transducer::address::take_key_bytes(k, p)?;
         let chart = stalk::Invariant::from_key(&ck)?;
         let carriage = Versor::from_bytes(k, p)?;
         if contact {
@@ -426,13 +426,6 @@ fn take_u16k(k: &[u8], p: &mut usize) -> Option<u16> {
     Some(v)
 }
 
-fn take_bytes(k: &[u8], p: &mut usize) -> Option<Vec<u8>> {
-    let n = take_u32(k, p)? as usize;
-    let b = k.get(*p..*p + n)?.to_vec();
-    *p += n;
-    Some(b)
-}
-
 /// 54.3 — THE INVERSE OF A RESIDUAL ADDRESS: the chain a non-sentence word
 /// stands for, read back out of the coordinate it is keyed at.
 ///
@@ -458,7 +451,7 @@ pub fn from_residual(addr: &[u8]) -> Option<Vec<Link>> {
         // is the collision this pair exists to end.
         _ => return None,
     }
-    let block = take_bytes(addr, &mut p)?;
+    let block = crate::transducer::address::take_key_bytes(addr, &mut p)?;
     let mut q = 0usize;
     // The shape leads, and the slice pattern reads that coordinate rather
     // than taking a member by position (rule 15).

@@ -515,3 +515,39 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
         "and the nested form re-derives its address too"
     );
 }
+
+/// STD1 3c-2, ruled (d) — A KEY COMPONENT'S LENGTH IS ITS OWN COORDINATE.
+/// Any length round-trips its LEB128 prefix exactly — across every width a
+/// fixed field would have walled — and a short component takes one length
+/// byte. Two distinct components, or one split differently, never share a
+/// key; and an over-long spelling of a length is no key at all.
+#[test]
+fn a_key_component_of_any_length_round_trips_and_never_collides() {
+    use crate::transducer::address::{put_key_bytes, take_key_bytes};
+    for n in [0usize, 1, 127, 128, 16_383, 16_384, 70_000] {
+        let comp = vec![0xabu8; n];
+        let mut k = Vec::new();
+        put_key_bytes(&mut k, &comp);
+        let mut p = 0;
+        assert_eq!(take_key_bytes(&k, &mut p), Some(comp), "length {n} round-trips");
+        assert_eq!(p, k.len(), "and consumes its key exactly");
+    }
+    let mut short = Vec::new();
+    put_key_bytes(&mut short, b"chart");
+    assert_eq!(short.len(), 1 + 5, "a component under 128 bytes takes one length byte");
+
+    let key = |parts: &[&[u8]]| {
+        let mut k = Vec::new();
+        for part in parts {
+            put_key_bytes(&mut k, part);
+        }
+        k
+    };
+    assert_ne!(key(&[b"ab", b"c"]), key(&[b"a", b"bc"]), "a split is part of the key");
+    assert_ne!(key(&[b"ab"]), key(&[b"ab", b""]), "an empty component is a component");
+    assert_ne!(key(&[&[0u8; 128]]), key(&[&[0u8; 127]]), "neighbouring lengths differ");
+
+    // 0x80 0x00 spells zero over-long: refused, so a key has one spelling.
+    let mut p = 0;
+    assert_eq!(take_key_bytes(&[0x80, 0x00], &mut p), None);
+}

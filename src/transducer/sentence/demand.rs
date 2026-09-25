@@ -279,7 +279,7 @@ pub fn read_demand_at(target: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
         return None;
     }
     let mut p = 1usize;
-    let listing = crate::transducer::address::take_bytes(target, &mut p)?;
+    let listing = crate::transducer::address::take_key_bytes(target, &mut p)?;
     let demand = target.get(p..)?.to_vec();
     if listing.is_empty() || demand.is_empty() {
         return None;

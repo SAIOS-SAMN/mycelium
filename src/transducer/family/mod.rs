@@ -329,8 +329,8 @@ pub(crate) fn section_key(
 
 pub(crate) fn read_member_key(k: &[u8]) -> Option<(u16, Vec<u8>)> {
     let mut p = 0usize;
-    let v = crate::transducer::address::take_bytes(k, &mut p)?;
-    let chart = crate::transducer::address::take_bytes(k, &mut p)?;
+    let v = crate::transducer::address::take_key_bytes(k, &mut p)?;
+    let chart = crate::transducer::address::take_key_bytes(k, &mut p)?;
     Some((u16::from_le_bytes(v.get(..2)?.try_into().ok()?), chart))
 }
 
@@ -345,8 +345,8 @@ pub(crate) fn member_pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
 
 pub(crate) fn read_member_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
     let mut p = 0usize;
-    let a = crate::transducer::address::take_bytes(k, &mut p)?;
-    let b = crate::transducer::address::take_bytes(k, &mut p)?;
+    let a = crate::transducer::address::take_key_bytes(k, &mut p)?;
+    let b = crate::transducer::address::take_key_bytes(k, &mut p)?;
     Some((a, b))
 }
 

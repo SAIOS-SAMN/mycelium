@@ -87,8 +87,8 @@ pub fn face_pair_key(
 /// Read a member-pair key back as its two chart keys.
 pub fn read_face_pair_key(k: &[u8]) -> Option<(Vec<u8>, Vec<u8>)> {
     let mut p = 0usize;
-    let ci = crate::transducer::address::take_bytes(k, &mut p)?;
-    let cj = crate::transducer::address::take_bytes(k, &mut p)?;
+    let ci = crate::transducer::address::take_key_bytes(k, &mut p)?;
+    let cj = crate::transducer::address::take_key_bytes(k, &mut p)?;
     Some((ci, cj))
 }
 

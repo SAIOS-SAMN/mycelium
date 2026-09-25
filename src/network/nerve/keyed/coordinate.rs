@@ -439,9 +439,9 @@ pub mod coord {
 
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let mut pos = 0usize;
-            let kb = a::take_bytes(bytes, &mut pos)
+            let kb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the demand kind is not length-delimited"))?;
-            let cb = a::take_bytes(bytes, &mut pos)
+            let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
             if pos != bytes.len() {
                 return Err(Self::refuse("the key carries bytes past its last coordinate"));
@@ -484,7 +484,7 @@ pub mod coord {
 
         fn decode(bytes: &[u8]) -> Result<Self, CoordinateError> {
             let mut pos = 0usize;
-            let cb = a::take_bytes(bytes, &mut pos)
+            let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
             let chart = crate::transducer::stalk::Invariant::from_key(&cb)
                 .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
@@ -531,7 +531,7 @@ pub mod coord {
                 .and_then(crate::transducer::peel::ShellKind::from_u8)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
-            let cb = a::take_bytes(bytes, &mut pos)
+            let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
             if pos != bytes.len() {
                 return Err(Self::refuse("the key carries bytes past its last coordinate"));
@@ -583,16 +583,16 @@ pub mod coord {
                 .and_then(crate::transducer::peel::ShellKind::from_u8)
                 .ok_or_else(|| Self::refuse("the leading byte names no shell kind"))?;
             let mut pos = 1usize;
-            let cb = a::take_bytes(bytes, &mut pos)
+            let cb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the word class is not length-delimited"))?;
             let class = Transport { kind, class: Holonomy::decode(&cb)? };
-            let chb = a::take_bytes(bytes, &mut pos)
+            let chb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the chart is not length-delimited"))?;
             let chart = crate::transducer::stalk::Invariant::from_key(&chb)
                 .ok_or_else(|| Self::refuse("the bytes spell no chart"))?;
-            let ab = a::take_bytes(bytes, &mut pos)
+            let ab = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the address is not length-delimited"))?;
-            let vb = a::take_bytes(bytes, &mut pos)
+            let vb = a::take_key_bytes(bytes, &mut pos)
                 .ok_or_else(|| Self::refuse("the carriage is not length-delimited"))?;
             let mut vp = 0usize;
             let carriage = crate::transducer::cga::Mv::from_bytes(&vb, &mut vp)
@@ -756,24 +756,15 @@ pub mod coord {
             let n = bytes.len();
             let mut best: Option<(usize, crate::transducer::stalk::Invariant)> = None;
             // index: the one framed tail this layout writes — scanned from
-            // the only position a u32 length can start such that it spans
-            // exactly to the end (A21 self-delimiting tail).
-            // A key shorter than one frame's length holds no chart at all,
-            // and that is a refusal rather than an empty scan (rule 11).
-            let last = n
-                .checked_sub(4)
-                .ok_or_else(|| Self::refuse("the key is too short to hold a chart frame"))?;
-            for start in 0..last {
-                let Some(raw) = bytes.get(start..start + 4) else { continue };
-                let len = u32::from_le_bytes(raw.try_into().map_err(|_| {
-                    Self::refuse("the chart frame is not a u32 length")
-                })?) as usize;
-                if start + 4 + len != n {
+            // each position a key-component length can start such that it
+            // spans exactly to the end (A21 self-delimiting tail).
+            for start in 0..n {
+                let mut pos = start;
+                let Some(cb) = a::take_key_bytes(bytes, &mut pos) else { continue };
+                if pos != n {
                     continue;
                 }
-                if let Some(inv) =
-                    crate::transducer::stalk::Invariant::from_key(&bytes[start + 4..n])
-                {
+                if let Some(inv) = crate::transducer::stalk::Invariant::from_key(&cb) {
                     best = Some((start, inv));
                     break;
                 }

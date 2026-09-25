@@ -95,15 +95,15 @@ impl Remainder {
     /// The chart chain an index key names, read back.
     pub fn chain_of_key(key: &[u8]) -> Option<Vec<Vec<u8>>> {
         let mut p = 0usize;
-        let _class = crate::transducer::address::take_bytes(key, &mut p)?;
-        let chain = crate::transducer::address::take_bytes(key, &mut p)?;
+        let _class = crate::transducer::address::take_key_bytes(key, &mut p)?;
+        let chain = crate::transducer::address::take_key_bytes(key, &mut p)?;
         if p != key.len() {
             return None;
         }
         let mut q = 0usize;
         let mut out = Vec::new();
         while q < chain.len() {
-            out.push(crate::transducer::address::take_bytes(&chain, &mut q)?);
+            out.push(crate::transducer::address::take_key_bytes(&chain, &mut q)?);
         }
         Some(out)
     }
