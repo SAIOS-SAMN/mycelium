@@ -210,6 +210,11 @@ pub struct CellEntry {
     /// CS2 — the cell's held constructors, its nuclei, one per body; `None`
     /// where they did not read. One per body: a count of bodies.
     pub constructors: Option<usize>,
+    /// MT1 — the anastomosis's DEGENERACY `k + 1 − g`: its bodies less the
+    /// grade of the blade their nuclei span (78.41(3)'s contraction by rank,
+    /// read where the motor loses it); `None` where the nuclei did not read.
+    /// A count of bodies.
+    pub degeneracy: Option<usize>,
     /// 78.26(5) — the rings through the cell by their residue: resonance,
     /// level and kind.
     pub rings: Rings,
@@ -580,6 +585,13 @@ impl Cells {
                 }
                 None => out.push(NONE),
             }
+            match c.degeneracy {
+                Some(d) => {
+                    out.push(1);
+                    put_key_count(out, d);
+                }
+                None => out.push(NONE),
+            }
             let counts = rings_counts(&c.rings);
             #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: rings_counts is [usize; 10], ten entries")]
             out.push(counts.len() as u8);
@@ -704,6 +716,11 @@ impl Cells {
                 NONE => None,
                 _ => return None,
             };
+            let degeneracy = match take_u8(b, p)? {
+                1 => Some(take_key_count(b, p)?),
+                NONE => None,
+                _ => return None,
+            };
             // The count of ring axes is written, so another build's layout
             // refuses rather than reading one axis as another.
             if usize::from(take_u8(b, p)?) != rings_counts(&Rings::default()).len() {
@@ -718,6 +735,7 @@ impl Cells {
             cells.push(CellEntry {
                 rings,
                 constructors,
+                degeneracy,
                 refusals,
                 enclosure,
                 grade,

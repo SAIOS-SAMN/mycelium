@@ -377,6 +377,7 @@ fn the_cells_read_back_whole() {
                     orbit: Some(OrbitUnread::NoRay { constructor: 1 }),
                 },
                 constructors: Some(2),
+                degeneracy: Some(1),
                 // 78.26(5) — every ring axis travels, each its own value.
                 rings: crate::observe::Rings {
                     coherent: 1,
@@ -414,6 +415,7 @@ fn the_cells_read_back_whole() {
                     ..CellRefusals::default()
                 },
                 constructors: None,
+                degeneracy: None,
                 rings: crate::observe::Rings::default(),
             },
         ],

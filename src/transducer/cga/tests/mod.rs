@@ -12,6 +12,7 @@ mod hyperboloid;
 mod mirrors;
 mod modes;
 mod motion;
+mod motor;
 mod roots;
 mod oracle;
 mod period;

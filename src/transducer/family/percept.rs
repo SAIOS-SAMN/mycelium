@@ -13,6 +13,7 @@ use super::perceive::{
 use super::witness::{cover_nerves, phase_spectrum};
 use super::*;
 use crate::network::nerve::Keyed;
+use crate::transducer::cga;
 use crate::transducer::sentence::{section_of_frames, vertex_ix_key, Acting, Demand, FormFace, Transport};
 
 pub(super) type Ratio = ((usize, usize), (usize, usize));
@@ -54,6 +55,46 @@ struct Member {
     support: Vec<Site>,
     union: Option<(Body, Body, Versor)>,
     section_words: Vec<(crate::transducer::alphabet::Word, Vec<u16>)>,
+}
+
+/// MT1 (1) — THE FRAME-AXIS TRANSITIONS OF ONE MEMBER: a new solve by the
+/// existing reader between the member's body at consecutive OCCUPIED frames,
+/// on the inputs and on the outputs, two readings of one step typed by how
+/// they agree, never averaged. Each solve is one transition under the stroke,
+/// read by its action, with the frame its chain carries per lane.
+fn read_frame_axis(claimed: &mut [&Quotient], budget: &mut crate::physics::Budget) {
+    use cga::{note_motor, note_step, note_unread, StepClass, TransitionKind::FrameAxis};
+    // Succession along e₃ is the frame coordinate's own order (51.1); the
+    // fibre's keys are little-endian and do not carry it.
+    #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by a canonical key: the frame, the corpus's e₃ coordinate, whose succession IS the frame-axis transition")]
+    claimed.sort_by_key(|q| q.frame);
+    let mut solve = |a: &Body, b: &Body| -> Option<Option<Versor>> {
+        if !budget.spend() {
+            note_unread(FrameAxis);
+            return None;
+        }
+        let m = blade::versor_between(&a.shape, &b.shape);
+        if let Some(m) = &m {
+            let lanes = element::measure_lanes(&super::perceive::chain_of(Some(a), Some(b), m));
+            note_motor(FrameAxis, m, Some(lanes));
+        }
+        Some(m)
+    };
+    for step in claimed.windows(2) {
+        let [q, next] = step else { continue };
+        // A side the stroke did not reach leaves the step unclassed: its
+        // transition is counted unread under its kind.
+        let (Some(input), Some(output)) = (solve(&q.a_k, &next.a_k), solve(&q.b_k, &next.b_k)) else {
+            return;
+        };
+        let class = match (&input, &output) {
+            (Some(i), Some(o)) if cga::projective_ratio(i, o).is_some() => StepClass::Agree,
+            (Some(_), Some(_)) => StepClass::Disagree,
+            (Some(_), None) | (None, Some(_)) => StepClass::OneSided,
+            (None, None) => StepClass::Neither,
+        };
+        note_step(class, input.as_ref().or(output.as_ref()));
+    }
 }
 
 /// A class's vertex before it is placed: the least address among its
@@ -179,6 +220,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             };
             match carriage(&a0, &b0) {
                 Some(car) => {
+                    // MT1 — THE IN→OUT TRANSITION READ BY ITS ACTION, the
+                    // whole matrix once under the stroke, with the frame it
+                    // carries per lane.
+                    match budget.spend() {
+                        true => {
+                            let lanes = element::measure_lanes(&super::perceive::chain_of(Some(&a0), Some(&b0), &car.v));
+                            cga::note_motor(cga::TransitionKind::InOut, &car.v, Some(lanes));
+                        }
+                        false => cga::note_unread(cga::TransitionKind::InOut),
+                    }
                     if let Some(qc) = usize::try_from(k).ok().and_then(|k| quotient_charts.get_mut(k)) {
                         qc.insert(&ck, ());
                     }
@@ -291,6 +342,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // refuses is not in it.
             let mut union_in: Vec<Lamina> = Vec::new();
             let mut union_out: Vec<Lamina> = Vec::new();
+            let mut claimed: Vec<&Quotient> = Vec::new();
             for q in rep {
                 if let Some(hk) = crate::transducer::sentence::hue_section_key_of(&rotor, &q.car.sigma) {
                     hue_maps.insert(hk, q.car.sigma.clone());
@@ -304,7 +356,9 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 support.extend(support_at(&q.b0.laminae, i64::from(q.frame)));
                 union_in.extend_from_slice(&q.a_k.laminae);
                 union_out.extend_from_slice(&q.b_k.laminae);
+                claimed.push(q);
             }
+            read_frame_axis(&mut claimed, budget);
             support.sort_unstable();
             support.dedup();
             let union = union_quotient(union_in, union_out, &first.car.v);
@@ -1193,6 +1247,16 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // meet of its members' sections, read here from the sections the percept
     // carries and never stored beside them.
     eprintln!("  {}", super::span::SpanTally::of(&form.vertices, &sections, &form.orbits).line());
+    // MT1 — EVERY FACE'S CARRIAGE READ BY ITS ACTION, per member pair, under
+    // the stroke; then the motor line, read without clearing (the corpus
+    // test takes it).
+    for place in form.faces.iter().flat_map(|f| f.at.scoped().map(|(_, p)| p)) {
+        match budget.spend() {
+            true => cga::note_motor(cga::TransitionKind::Face, &place.carriage, None),
+            false => cga::note_unread(cga::TransitionKind::Face),
+        }
+    }
+    eprintln!("  {}", cga::motor_tally().line());
     trace::trace("extract/2 faces", trace::Wrote::Nothing, Some(budget));
     Percept { form, sections, varying, unreached }
 }

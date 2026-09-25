@@ -29,7 +29,7 @@
 //! VERIFIED, never assumed: the rays commute and their product is `Ω` as a
 //! ray (EQ1), else `Defective` by name.
 
-use super::modes::{characteristic, column, generators, identity, invert, kind_of, mul, order_on, rational_roots, Undecomposed};
+use super::modes::{characteristic, generators, identity, invert, kind_of, mul, order_on, rational_roots, Undecomposed};
 use super::multivector::{one, Mv};
 use crate::network::nerve::coord::BivectorKind;
 use num_rational::BigRational;
@@ -66,16 +66,12 @@ pub(super) fn is_odd(m: &Mv) -> bool {
 
 /// `x ↦ a x b` on the vectors, as the matrix of its columns, signed `−1` for
 /// an odd `a` (MR1b: the action of an odd versor carries the sign).
-fn action(a: &Mv, b: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
+/// The vector block of the motion's action as a matrix over `masks`, read
+/// off the MOTOR (MT1) — `M̂ x M̃`, the twisted adjoint, whose sign for an
+/// odd motion is the `±` this reader wrote by hand.
+fn action(a: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
     let d = masks.len();
-    let sign = match is_odd(a) {
-        true => -one(),
-        false => one(),
-    };
-    let cols: Vec<Vec<Q>> = masks
-        .iter()
-        .map(|&m| column(&a.geo(&Mv::blade(m, one())).geo(b).grade(1).scale(&sign), masks))
-        .collect();
+    let cols = super::Motor::new(a).columns_on(masks);
     (0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect()
 }
 
@@ -85,7 +81,7 @@ fn action(a: &Mv, b: &Mv, masks: &[usize]) -> Vec<Vec<Q>> {
 /// `None` where the motion is no versor.
 pub fn action_of(motion: &Mv) -> Option<Vec<Vec<Q>>> {
     let w = super::weight_of(motion)?;
-    Some(scaled(&action(motion, &motion.reverse(), &generators(motion.n())), &w))
+    Some(scaled(&action(motion, &generators(motion.n())), &w))
 }
 
 /// THE ACTION MATRIX'S SCALE IS CONTENT (78.28(2)): the matrix is the motion
@@ -147,8 +143,9 @@ pub fn motion_modes(
     let w = super::weight_of(motion)?;
     let masks = generators(motion.n());
     let reverse = motion.reverse();
-    let r = scaled(&action(motion, &reverse, &masks), &w);
-    let r_inv = scaled(&action(&reverse, motion, &masks), &w);
+    let r = scaled(&action(motion, &masks), &w);
+    // The reverse's own action: `Ω̃^ x Ω`, the inverse's up to the weight.
+    let r_inv = scaled(&action(&reverse, &masks), &w);
     let half = Q::new(1.into(), 2.into());
     let s: Vec<Vec<Q>> =
         r.iter().zip(&r_inv).map(|(x, y)| x.iter().zip(y).map(|(p, q)| (p + q) * &half).collect()).collect();

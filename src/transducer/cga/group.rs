@@ -2,7 +2,7 @@
 //! and the closed-form tests of versorhood and projective equality.
 
 use super::embedding::{e_inf, e_o, point_at};
-use super::multivector::{one, Mv, E1, EM, EP};
+use super::multivector::{one, Mv, E1};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -55,25 +55,15 @@ pub fn reflector() -> Mv {
 /// reader, and the tests read them as a test OF it, never as it.
 ///
 /// Independence refuses what a grade test alone would let through: a null
-/// vector sends every generator onto one line, and `1 + I` sends every
-/// generator to zero.
+/// vector sends every generator onto one line. `1 + I` is refused by parity
+/// alone — its action is `2x`, the identity's (MT1's test).
+///
+/// MT1 — A FACT OF THE ELEMENT: definite parity, and its motor's action
+/// ([`super::Motor`]) `acts_as_versor` — the same three clauses on the same
+/// `n + 3` images, the rank by the exact-rank reader. The action's fact is
+/// named apart, and `1 + I` is the witness the two differ.
 pub fn is_versor(m: &Mv) -> bool {
-    if m.parity().is_none() {
-        return false;
-    }
-    let n = m.n();
-    let gens: Vec<usize> = (1..=usize::from(n)).map(super::multivector::base_axis).chain([EP, EM]).collect();
-    let images: Vec<Mv> = gens.iter().map(|&g| m.twisted(&Mv::blade(g, one()))).collect();
-    if images.iter().any(|x| !x.sub(&x.grade(1)).is_zero()) {
-        return false;
-    }
-    let rows: Vec<Vec<BigRational>> =
-        images.iter().map(|x| gens.iter().map(|&g| x.coeff(g).clone()).collect()).collect();
-    if !super::fixed::nullspace(rows, gens.len()).is_empty() {
-        return false;
-    }
-    let pseudoscalar = Mv::blade(super::multivector::pseudo(n), one());
-    projective_ratio(&m.twisted(&pseudoscalar), &pseudoscalar).is_some()
+    m.parity().is_some() && super::Motor::new(m).vector_reading().acts_as_versor()
 }
 
 /// THE WEIGHT `⟨m m̃⟩₀` OF A VERSOR, READ — never the test, never carried

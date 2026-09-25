@@ -95,6 +95,10 @@ pub(super) struct CellTally {
     mirror_group: Option<CellClosure>,
     /// 78.26(2) — the cross-cell bracket, where the sentence spans cells.
     bracket: Option<crate::observe::CellBracket>,
+    /// MT1 — the anastomoses by degeneracy `k + 1 − g`: value → count, keyed
+    /// by the value's own bytes; and those whose nuclei did not read.
+    degeneracy: crate::network::nerve::Keyed<u64>,
+    degeneracy_unread: u64,
 }
 
 impl CellTally {
@@ -127,6 +131,18 @@ impl CellTally {
                 row.above_cap += u64::from(k > cells.cap);
             }
             row.held.push(c.constructors);
+            match c.degeneracy {
+                Some(d) => {
+                    let k = (d as u64).to_be_bytes();
+                    let now = match t.degeneracy.get(&k) {
+                        Some(&n) => n + 1,
+                        None => 1,
+                    };
+                    t.degeneracy.insert(k, now);
+                }
+                None => t.degeneracy_unread += 1,
+            }
+            let row = &mut t.rows[at];
             row.constructors[axis(&CellOrbit::ALL, c.orbit)] += 1;
             row.coxeter[closure_axis(c.coxeter)] += 1;
             if c.polars.is_some() {
@@ -269,5 +285,16 @@ impl CellTally {
             true => "cells: none certified".into(),
             false => format!("cells: {} | {mirrors}{bracket}", rows.join(" ; ")),
         }
+    }
+
+    /// MT1 — THE DEGENERACY LINE, its own: every anastomosis by its
+    /// degeneracy, value → count, and the unread.
+    pub(super) fn degeneracy_line(&self) -> String {
+        let counts: Vec<String> = self
+            .degeneracy
+            .scoped()
+            .filter_map(|(v, c)| Some(format!("{}:{c}", u64::from_be_bytes(v.as_slice().try_into().ok()?))))
+            .collect();
+        format!("anastomoses by degeneracy: {{{}}} unread {}", counts.join(" "), self.degeneracy_unread)
     }
 }

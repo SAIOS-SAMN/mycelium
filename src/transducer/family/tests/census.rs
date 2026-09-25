@@ -21,7 +21,9 @@ fn per_mille(part: usize, whole: usize) -> String {
 /// memoised family) held nothing and prints nothing.
 fn percept_lines() {
     if let Some(cells) = crate::transducer::family::take_cells() {
-        eprintln!("  {}", super::tally::CellTally::of(&cells).line());
+        let tally = super::tally::CellTally::of(&cells);
+        eprintln!("  {}", tally.line());
+        eprintln!("  {}", tally.degeneracy_line());
     }
     if let Some(v) = crate::transducer::family::take_viscosity() {
         eprintln!("  {}", crate::transducer::sentence::viscosity_line(&v));
@@ -391,6 +393,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     // Clear whatever the process has accumulated, so the window is this
     // test's own.
     let _ = crate::transducer::family::cover::take_cover_tally();
+    let _ = crate::transducer::cga::take_motor_tally();
     let epi = crate::client::sdk::Epigenome::new();
     let mut physics = crate::physics::Physics::default();
     let (mut forms, mut with_orbits) = (0usize, 0usize);
@@ -408,6 +411,8 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         }
     }
     let t = crate::transducer::family::cover::take_cover_tally();
+    // MT1 — EVERY TRANSITION OVER THE CORPUS READ BY ITS ACTION, by kind.
+    eprintln!("  corpus {}", crate::transducer::cga::take_motor_tally().line());
     // BQ5a — AND WHAT EACH CONTACT THE TOPOLOGY NAMED CARRIED. A census
     // that reads `0 condensed` says nothing until it says WHICH arm refused
     // (§8.1); the field and its band are gone, so what is read is the

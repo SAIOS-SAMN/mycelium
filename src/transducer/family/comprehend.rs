@@ -42,6 +42,10 @@ pub(crate) struct Comprehension {
     /// CS2 — each cell's held constructors, its nuclei, one per body; `None`
     /// where they did not read.
     pub(crate) constructors: Vec<Option<usize>>,
+    /// MT1 — each anastomosis's DEGENERACY `k + 1 − g`: its bodies less the
+    /// grade of the blade their nuclei span; `None` where the nuclei did not
+    /// read.
+    pub(crate) degeneracy: Vec<Option<usize>>,
     /// CS2, 78.32(e) — the `n` of the base the form was read on, whose
     /// associative cap `(n+2)²` bounds the rank the capacity reads.
     pub(crate) n: u8,
@@ -274,7 +278,26 @@ pub(crate) fn comprehend(
     let enclosures = read_enclosures(form);
     let bracket = read_bracket(form, traversed, &algebras, &enclosures);
     let constructors = form.cells.scoped().map(|(_, c)| c.nuclei.as_ref().map(Vec::len)).collect();
-    Comprehension { algebras, mirrors, planes: plane_list.len(), mirror_group, enclosures, bracket, constructors, n }
+    // MT1 — THE MEET'S GRADE READ AS THE RANK OF THE NUCLEI, never as the
+    // wedge's grade: the wedge of k + 1 vectors is of grade k + 1 or the zero
+    // blade, so `k + 1 − grade(⋀ sᵢ)` reads 0 or nothing. The blade the
+    // nuclei carve is their span, and its grade is their rank.
+    let degeneracy = form
+        .cells
+        .scoped()
+        .map(|(_, c)| c.nuclei.as_ref().and_then(|ns| ns.len().checked_sub(cga::vector_rank(ns))))
+        .collect();
+    Comprehension {
+        algebras,
+        mirrors,
+        planes: plane_list.len(),
+        mirror_group,
+        enclosures,
+        bracket,
+        constructors,
+        degeneracy,
+        n,
+    }
 }
 
 fn cell_closure(r: &CoxeterReading) -> CellClosure {
@@ -313,9 +336,11 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
         .zip(&c.mirrors)
         .zip(&c.enclosures)
         .zip(&c.constructors)
-        .map(|(((a, ms), enclosure), held)| CellEntry {
+        .zip(&c.degeneracy)
+        .map(|((((a, ms), enclosure), held), degeneracy)| CellEntry {
             rings: a.rings,
             constructors: *held,
+            degeneracy: *degeneracy,
             refusals: a.refusals(),
             enclosure: enclosure.clone(),
             grade: a.grade,

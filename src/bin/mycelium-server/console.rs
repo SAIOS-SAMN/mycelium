@@ -721,13 +721,18 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             Some(k) => format!("{k}"),
             None => "unread".into(),
         };
+        // MT1 — the anastomosis's degeneracy, bodies less the nuclei's rank.
+        let degeneracy = match cell.degeneracy {
+            Some(d) => format!("{d}"),
+            None => "unread".into(),
+        };
         let rank = match cell.capacity {
             Some(r) if r > c.cap => format!("rank {r} ABOVE cap {}", c.cap),
             Some(r) => format!("rank {r} of cap {}", c.cap),
             None => format!("rank unread of cap {}", c.cap),
         };
         out.push(format!(
-            "    #{i} grade {}  constructors {held}  {rank}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
+            "    #{i} grade {}  constructors {held}  degeneracy {degeneracy}  {rank}  gram {sig}  pairs [{}]  group {}  polars {}  dual {dual}  classes {}",
             cell.grade,
             cell.pairs.iter().map(regime).collect::<Vec<_>>().join(", "),
             closure(cell.coxeter),
