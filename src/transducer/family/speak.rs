@@ -27,8 +27,10 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
         return false;
     }
     let mut occ: Vec<(i64, i64, u8)> = ins.clone();
-    let mut guard = 0u32;
-    while occ.len() < frame_n && guard < frame_n as u32 {
+    // The guard in the frame's own count: a ring can grow at most once per
+    // site, so `frame_n` passes bound the fill.
+    let mut guard = 0usize;
+    while occ.len() < frame_n && guard < frame_n {
         guard += 1;
         let ring = crate::transducer::blade::adjacent_ring(&occ);
         let keyed = occupy_keys(&occ);
@@ -391,8 +393,8 @@ fn speak_on_scene(
         // A frame whose site count does not fit the carrier is wider than
         // this speech fills; nothing is unfolded into it.
         let need = fy.0.checked_mul(fy.1)?;
-        let mut guard = 0u32;
-        while painted.len() < need && guard < need as u32 {
+        let mut guard = 0usize;
+        while painted.len() < need && guard < need {
             guard += 1;
             let ring = crate::transducer::blade::adjacent_ring(&painted);
             let mut hues: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();

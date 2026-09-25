@@ -101,9 +101,10 @@ pub enum ArmRead {
     Empty,
     /// Routes carried by a reused fibre or carrier where the circuit's own
     /// reading refused: how many.
-    Reads(u32),
+    /// Counts of routes, so `u64` (STD1 3b's rule, the provenance ruling).
+    Reads(u64),
     /// Other routes read against the circuit's own: agreeing, disagreeing.
-    Routes { agree: u32, disagree: u32 },
+    Routes { agree: u64, disagree: u64 },
     /// Refused by name, permanent at this grade.
     Permanent,
 }
@@ -192,7 +193,7 @@ impl CircuitTest {
         let reads = arms.iter().any(|(a, r)| reused(a) && matches!(r, ArmRead::Reads(n) if *n > 0));
         let constructed = arms
             .iter()
-            .any(|(a, r)| a.constructs() && matches!(r, ArmRead::Routes { agree, disagree } if agree + disagree > 0));
+            .any(|(a, r)| a.constructs() && matches!(r, ArmRead::Routes { agree, disagree } if *agree > 0 || *disagree > 0));
         let class = match (disagree, trivial, reads, constructed) {
             (true, _, _, _) => CircuitClass::Curved,
             (false, true, _, _) => CircuitClass::Flat,
@@ -246,8 +247,8 @@ impl CircuitTest {
             let arm = *TestArm::ALL.get(usize::from(take_u8(b, p)?))?;
             let read = match take_u8(b, p)? {
                 0 => ArmRead::Empty,
-                1 => ArmRead::Reads(take_u32(b, p)?),
-                2 => ArmRead::Routes { agree: take_u32(b, p)?, disagree: take_u32(b, p)? },
+                1 => ArmRead::Reads(take_u64(b, p)?),
+                2 => ArmRead::Routes { agree: take_u64(b, p)?, disagree: take_u64(b, p)? },
                 3 => ArmRead::Permanent,
                 _ => return None,
             };
@@ -377,6 +378,12 @@ pub(super) fn take_u16(b: &[u8], p: &mut usize) -> Option<u16> {
 pub(super) fn take_u32(b: &[u8], p: &mut usize) -> Option<u32> {
     let v = u32::from_le_bytes(b.get(*p..*p + 4)?.try_into().ok()?);
     *p += 4;
+    Some(v)
+}
+
+fn take_u64(b: &[u8], p: &mut usize) -> Option<u64> {
+    let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
     Some(v)
 }
 

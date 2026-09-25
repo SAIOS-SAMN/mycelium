@@ -496,7 +496,7 @@ pub(crate) enum OrbitLine {
     Static(Box<OrbitReading>),
     /// 78.6(1) — through a held coset: how the coset closes, the held steps
     /// crossed and the candidates carried, none chosen.
-    Coset { closure: super::circuit::CosetClosure, held: u32, candidates: usize },
+    Coset { closure: super::circuit::CosetClosure, held: u64, candidates: usize },
     /// The step, counted from one, and the refusal where one was named.
     Unread { at: Option<usize>, why: Option<Unread> },
 }

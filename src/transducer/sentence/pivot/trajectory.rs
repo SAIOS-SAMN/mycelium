@@ -142,12 +142,11 @@ fn constructed(form: &Form, p: &PendingCircuit, budget: &mut crate::physics::Bud
         }
     }
     let routes = |arm: TestArm| {
-        let (agree, disagree) = offers.iter().filter(|o| o.arm == arm).fold((0u32, 0u32), |(a, d), o| match o.flat {
-            true => (a + 1, d),
-            false => (a, d + 1),
-        });
-        match agree + disagree {
-            0 => ArmRead::Empty,
+        // Counted, never summed: each side is the count of its own offers.
+        let agree = offers.iter().filter(|o| o.arm == arm && o.flat).count() as u64;
+        let disagree = offers.iter().filter(|o| o.arm == arm && !o.flat).count() as u64;
+        match (agree, disagree) {
+            (0, 0) => ArmRead::Empty,
             _ => ArmRead::Routes { agree, disagree },
         }
     };
@@ -178,7 +177,7 @@ fn ladder_of(carried: &PathCarried, faces: &[FormFace]) -> Option<(Vec<(TestArm,
         .and_then(|s| faces.get(usize::from(s.face)));
     let reads = |n: usize| match n {
         0 => ArmRead::Empty,
-        n => ArmRead::Reads(n as u32),
+        n => ArmRead::Reads(n as u64),
     };
     let places = |pred: &dyn Fn(&FacePlace) -> bool| lost.map_or(0, |f| f.at.scoped().filter(|(_, p)| pred(p)).count());
     let mut arms = vec![(TestArm::OtherPairs, reads(places(&|p| p.edge.is_some())))];
@@ -273,19 +272,21 @@ pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
         .map(|(i, p)| {
             let (mut arms, trivial) = p.ladder.clone()?;
             if trivial {
-                let (mut agree, mut disagree) = (0u32, 0u32);
-                for (j, q) in pending.iter().enumerate() {
-                    if j == i || !q.steps.iter().any(|s| p.steps.iter().any(|t| t.face == s.face)) {
-                        continue;
-                    }
-                    match &q.composite {
-                        Some(m) if element::same_versor(m, &identity) => agree += 1,
-                        Some(_) => disagree += 1,
-                        None => {}
-                    }
-                }
-                let read = match agree + disagree {
-                    0 => ArmRead::Empty,
+                // The circuits sharing a face with this one, each side
+                // counted as the count of its own members, never summed.
+                let sharing = || {
+                    pending.iter().enumerate().filter(|(j, q)| {
+                        *j != i && q.steps.iter().any(|s| p.steps.iter().any(|t| t.face == s.face))
+                    })
+                };
+                let agree = sharing()
+                    .filter(|(_, q)| q.composite.as_ref().is_some_and(|m| element::same_versor(m, &identity)))
+                    .count() as u64;
+                let disagree = sharing()
+                    .filter(|(_, q)| q.composite.as_ref().is_some_and(|m| !element::same_versor(m, &identity)))
+                    .count() as u64;
+                let read = match (agree, disagree) {
+                    (0, 0) => ArmRead::Empty,
                     _ => ArmRead::Routes { agree, disagree },
                 };
                 arms.push((TestArm::OtherCircuits, read));

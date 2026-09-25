@@ -105,9 +105,13 @@ fn frame_ratio(input: &Grid, output: &Grid) -> Option<(i64, i64)> {
 
 /// The site's coordinate as the key it is written under (law 2, rule 6):
 /// row and column big-endian, so the trie's order is the reading order.
+///
+/// Each as `u64`, which every `usize` coordinate fits: `as u32` truncated,
+/// and two sites a multiple of 2³² apart were one key (a defect, not a
+/// width).
 fn site_key(r: usize, c: usize) -> Vec<u8> {
-    let mut k = (r as u32).to_be_bytes().to_vec();
-    k.extend_from_slice(&(c as u32).to_be_bytes());
+    let mut k = (r as u64).to_be_bytes().to_vec();
+    k.extend_from_slice(&(c as u64).to_be_bytes());
     k
 }
 

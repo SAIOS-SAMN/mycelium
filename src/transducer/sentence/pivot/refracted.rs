@@ -105,8 +105,8 @@ impl Refracted {
     }
 
     /// The held steps crossed, `k`.
-    pub(crate) fn held_steps(&self) -> u32 {
-        self.steps.iter().filter(|s| matches!(s, RefractedStep::Coset(_))).count() as u32
+    pub(crate) fn held_steps(&self) -> u64 {
+        self.steps.iter().filter(|s| matches!(s, RefractedStep::Coset(_))).count() as u64
     }
 
     /// 78.6(2) — a static contact crossed: the gauge half unread by name.
@@ -209,7 +209,7 @@ impl PathCarried {
     pub(crate) fn coset(
         &self,
         budget: &mut crate::physics::Budget,
-    ) -> Option<Result<(Vec<element::Versor>, u32), Unbounded>> {
+    ) -> Option<Result<(Vec<element::Versor>, u64), Unbounded>> {
         let r = self.refracted.as_ref().filter(|r| r.held_steps() > 0)?;
         Some(r.candidates(budget).map(|cands| {
             (cands.iter().map(|c| c.carriage.geo(&self.face.carriage)).collect(), r.held_steps())
