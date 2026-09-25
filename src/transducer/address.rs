@@ -181,6 +181,7 @@ impl Address {
 /// Write a citation. TOTAL: the type is the proof that the length fits.
 pub fn put_cited(out: &mut Vec<u8>, c: &Cited) {
     let b = c.addr().as_bytes();
+    #[expect(clippy::cast_possible_truncation, reason = "the u16 prefix's bound is the Cited type: its only constructor, Address::cited, refuses by u16::try_from any address longer than u16::MAX")]
     out.extend_from_slice(&(b.len() as u16).to_le_bytes());
     out.extend_from_slice(b);
 }

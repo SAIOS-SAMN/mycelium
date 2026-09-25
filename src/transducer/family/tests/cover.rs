@@ -528,7 +528,7 @@ fn a_cover_that_ends_is_parked_and_the_next_stroke_resumes_it() {
     // construction, and is comfortably above the floor the doc names above:
     // the defects re-read each stroke cost far less than the whole cover.
     cursor::clear();
-    let stroke = (spend - 1) as usize;
+    let stroke = usize::try_from(spend - 1).expect("one less than a spend this process performed");
     let mut strokes = 0u32;
     let piecewise = loop {
         let mut small = crate::physics::Physics::default().stroke_n(stroke);
@@ -654,7 +654,8 @@ fn cover_attempts_are_placed_times_unplaced() {
     let (_, t, ins) = measured_cover(&a, &b);
     assert!(t.carried > 0, "the pullback places the pieces that stand in place");
     assert!(
-        t.propagated as usize <= (t.carried as usize) * ins,
+        usize::try_from(t.propagated).expect("attempts this process made")
+            <= usize::try_from(t.carried).expect("carriages this process placed") * ins,
         "attempts are placed × unplaced: {} against {} × {ins}",
         t.propagated,
         t.carried

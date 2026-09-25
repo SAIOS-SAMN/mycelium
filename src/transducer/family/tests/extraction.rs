@@ -693,7 +693,7 @@ for (i, v) in rule.form.vertices.iter().enumerate() {
     {
         continue;
     }
-    let ii = i as u16;
+    let ii = u16::try_from(i).expect("a vertex of the extracted rule's form, a handful");
     if rule
         .form
         .faces

@@ -211,7 +211,7 @@ fn a_round_rises_by_wedging_and_ends_where_the_algebra_does() {
         charts: xs
             .iter()
             .enumerate()
-            .map(|(i, _)| crate::transducer::address::Address::new(vec![i as u8]))
+            .map(|(i, _)| crate::transducer::address::Address::new(vec![u8::try_from(i).expect("a fixture round of a handful of points")]))
             .collect(),
         points: xs.to_vec(),
         radius: r.clone(),

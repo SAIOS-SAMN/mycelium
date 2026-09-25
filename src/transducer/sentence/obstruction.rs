@@ -129,6 +129,10 @@ pub fn read_obstruction(content: Content) -> ClosureObstruction {
 }
 
 /// A versor's canonical ray, each non-zero blade and its coefficient.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1), c.slot_count()"
+)]
 fn ray(h: &Versor) -> Vec<(u16, num_rational::BigRational)> {
     match h.canonical() {
         Some(c) => (0..c.slot_count())

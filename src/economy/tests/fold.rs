@@ -13,7 +13,7 @@ use crate::verdict::REFUSE_FOLD_INEXACT;
 /// carries the epoch rows; a ledger that does not conserve folds nothing.
 #[test]
 fn a_fold_re_expresses_the_prefix_as_epoch_rows_and_conserves() {
-    let a = |k: u64| at(k, [k as u8; 32]);
+    let a = |k: u64| at(k, [u8::try_from(k).expect("the test's heights are small literals, each one byte"); 32]);
     let mut t = Treasury::new();
     t.genesis([1; 32], [10, 10, 10, 10], a(1));
     t.enroll([1; 32], [2, 2, 2, 2], a(1));

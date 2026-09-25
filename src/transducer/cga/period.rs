@@ -71,6 +71,10 @@ use super::multivector::{one, Mv};
 /// order), and a set is kept at the least degree its lcm needs.
 pub fn cyclotomic_orders(n: u8) -> Vec<u32> {
     let d = u32::from(n) + 1;
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a count of 1..=ℓ with ℓ a u32 ≤ 2d², d = n + 1 ≤ 256, so φ(ℓ) ≤ ℓ"
+    )]
     let totient = |l: u32| (1..=l).filter(|&k| gcd(k, l) == 1).count() as u32;
     // `(order, degree)`: the lcm a set of atoms closes at and the degree it
     // spends. The empty set closes at 1 and spends nothing.

@@ -76,7 +76,7 @@ fn form_tape_v6_round_trips() {
     let glued = f
         .glue(&inner, inner_addr, Word::identity(), [0, 0, 0, 1])
         .expect("glue depth 0 into depth 0");
-    let rebased = f.vertices.len() as u16;
+    let rebased = u16::try_from(f.vertices.len()).expect("a fixture form of a handful of vertices");
     f.vertices.push(Vertex::rebased_on(
         0,
         1,
@@ -85,7 +85,7 @@ fn form_tape_v6_round_trips() {
         vec![(1, 2)],
     ));
     let unfolded = f.unfold(Measure::Occupied);
-    let demand = f.vertices.len() as u16;
+    let demand = u16::try_from(f.vertices.len()).expect("a fixture form of a handful of vertices");
     f.vertices.push(Vertex::Demand {
         kind: Demand::Source { multiplicity: 2 },
         chart: stalk::Invariant::counts(&[1, 4, 4]),

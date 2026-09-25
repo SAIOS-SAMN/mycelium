@@ -211,6 +211,8 @@ pub struct Contemplation {
     /// STD1 (rule 11) — lane sums the contemplation REFUSED because they
     /// would pass their carrier (an escrow returned, a flux credited, an
     /// extent read): the sum stands where it was, never pinned at a ceiling.
+    /// An admission refused because the bubble's ordinal would pass its u16
+    /// is counted here too (STD1 3c-5; the slot itself is AT1's debt).
     pub(crate) overflowed: u64,
 }
 
@@ -524,6 +526,7 @@ impl Contemplation {
             None => return,
         };
         let Some(ord) = self.ordinal_for(&std::sync::Arc::from(key)) else {
+            self.overflowed += 1;
             eprintln!("  contemplation ordinal refused: admissions past its u16, vortex strata not filed");
             return;
         };
@@ -698,6 +701,7 @@ impl Contemplation {
 
     pub(crate) fn admit_incidence(&mut self, key: &std::sync::Arc<[u8]>, b: &Bubble) {
         let Some(ord) = self.ordinal_for(key) else {
+            self.overflowed += 1;
             eprintln!("  contemplation ordinal refused: admissions past its u16, incidence not indexed");
             return;
         };

@@ -290,6 +290,7 @@ impl Exchange {
                 }
             }
             persist_if_due(&kernel, &state_path);
+            #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
             intake_corpus(&kernel, &mesh, &registry, budget);
             rebuild_own_cover(&kernel, &mesh);
@@ -342,6 +343,7 @@ impl Exchange {
                 .scoped()
                 .map(|(id, a)| (id, a.clone()))
                 .collect();
+            #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let mut organ_budget = mycelium::physics::expansion_unit() as usize;
             let (mut reached, mut silent) = (0usize, 0usize);
             let mut asked_any = false;

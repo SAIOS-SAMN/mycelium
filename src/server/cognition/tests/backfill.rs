@@ -69,7 +69,7 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
                      after: Option<crate::chronometry::Place>,
                      upto: crate::chronometry::Place|
          -> Option<Vec<crate::chronometry::KStepReceipt>> {
-            (*who == vk).then(|| b.line_between(who, after, upto, PAGE as usize).into_iter().cloned().collect())
+            (*who == vk).then(|| b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8")).into_iter().cloned().collect())
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,

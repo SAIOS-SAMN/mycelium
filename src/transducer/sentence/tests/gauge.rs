@@ -22,7 +22,7 @@ fn placement_residue_is_the_affine_translation() {
     // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
     // A trivial cycle no longer stands in `orbits`, so the position of an
     // orbit is not its identity and never was (rule 15).
-    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read off orbits[0].chord, a u16")).expect("the chord's orbit");
     let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Placement),
@@ -64,7 +64,7 @@ fn hue_cycle_type_composes_around_the_orbit() {
     // THE ORBIT THE FIXTURE SET UP, by the chord it wrote — not index 0.
     // A trivial cycle no longer stands in `orbits`, so the position of an
     // orbit is not its identity and never was (rule 15).
-    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read off orbits[0].chord, a u16")).expect("the chord's orbit");
     let kappa = f.class_vector(at).expect("orbit");
     assert!(
         kappa.occupies(Axis::Hue),

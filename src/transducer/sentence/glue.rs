@@ -123,6 +123,7 @@ impl Form {
         if chart.0.is_empty() {
             return None;
         }
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex about to be glued); the atlas row replaces the slot by the chart's coordinates")]
         let idx = self.vertices.len() as u16;
         // THE BOUNDARY ON THE VERTEX, THE COVER ON THE FORM (54.7, B5a).
         // The vertex states what this chart has — a rank, a depth, a

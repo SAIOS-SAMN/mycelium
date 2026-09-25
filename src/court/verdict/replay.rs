@@ -758,6 +758,10 @@ pub(crate) fn vertex_tape_and_moves(
 pub(crate) fn chord_orbits(f: &Form) -> Keyed<u16> {
     let mut by_chord = Keyed::new();
     for (i, lp) in f.orbits.iter().enumerate() {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "AT1 debt — a slot number of the form's Vec (an orbit's position in f.orbits); the atlas row replaces the slot by the chart's coordinates"
+        )]
         by_chord.insert(face_idx_key(lp.chord), i as u16);
     }
     by_chord
@@ -776,6 +780,10 @@ pub(crate) fn chord_orbits(f: &Form) -> Keyed<u16> {
 /// commute: it would certify an orbit the voice never evaluated and demand a
 /// filing under a class nothing files.
 pub(crate) fn torsion_chord_carries(f: &Form, by_chord: &Keyed<u16>, face_idx: usize) -> bool {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "AT1 debt — a slot number of the form's Vec (a face's position in f.faces); the atlas row replaces the slot by the chart's coordinates"
+    )]
     let Some(&li) = by_chord.get(&face_idx_key(face_idx as u16)) else {
         return false;
     };

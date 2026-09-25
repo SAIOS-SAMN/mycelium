@@ -92,6 +92,7 @@ pub(crate) fn tell_peer_within(addr: &str, body: Vec<u8>, rtt_hint: u64) -> Opti
     s.set_nonblocking(true).ok()?;
     // A deadline the ledger cannot count does not end the read; an
     // unmeasured one has no deadline to spend either.
+    #[expect(clippy::cast_possible_truncation, reason = "site 4 — transport_deadline's strokes (rtt × aperture_cycle), a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     let stall = match mycelium::physics::transport_deadline(rtt_hint) {
         mycelium::physics::Lambda::Strokes(n) => n as usize,
         mycelium::physics::Lambda::BeyondTheLedger

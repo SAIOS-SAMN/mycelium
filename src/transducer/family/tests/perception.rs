@@ -243,7 +243,7 @@ fn supports_at(rows: &[Vec<(i64, i64)>]) -> crate::network::nerve::Keyed<Vec<Sit
     // the vertex's with that chart's; every support stands in frame 0.
     for (i, s) in rows.iter().enumerate() {
         if !s.is_empty() {
-            k.insert(root_member(i as u16), s.iter().map(|&(r, c)| Site::from((r, c, 0))).collect());
+            k.insert(root_member(u16::try_from(i).expect("a fixture row, a few vertices")), s.iter().map(|&(r, c)| Site::from((r, c, 0))).collect());
         }
     }
     k

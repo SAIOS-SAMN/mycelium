@@ -349,7 +349,11 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     let mut y_with_7_creations = y_recoloured.clone();
     for s in &demand_shapes {
         for &(r, c) in s {
-            y_with_7_creations[r as usize][c as usize] = 7;
+            let (r, c) = (
+                usize::try_from(r).expect("a literal row of the fixture's grid"),
+                usize::try_from(c).expect("a literal column of the fixture's grid"),
+            );
+            y_with_7_creations[r][c] = 7;
         }
     }
     let family = vec![(x.clone(), y_with_7_creations.clone())];

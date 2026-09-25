@@ -248,11 +248,16 @@ impl Form {
         // keyed by `face_pair_key`, so the two member keys of an edge are
         // read out of the key the transport is filed under — the same
         // coordinate, not a second derivation of it (law 12).
-        let mut node_of: Keyed<u16> = Keyed::new();
+        // A (vertex, chart) node's ordinal in this forest, in the count's
+        // own width: nodes grow with vertices × their charts and pass a u16
+        // while the vertices fit one, and a wrapped ordinal handed back
+        // another node, building the forest wrong (STD1 3c-5). Local; the
+        // forest itself retires at AT1.
+        let mut node_of: Keyed<usize> = Keyed::new();
         let mut node_vertex: Vec<u16> = Vec::new();
         let mut node_chart: Vec<Vec<u8>> = Vec::new();
         let mut edges: Vec<(usize, usize, usize)> = Vec::new();
-        let node = |node_of: &mut Keyed<u16>,
+        let node = |node_of: &mut Keyed<usize>,
                         node_vertex: &mut Vec<u16>,
                         node_chart: &mut Vec<Vec<u8>>,
                         v: u16,
@@ -260,10 +265,10 @@ impl Form {
          -> usize {
             let k = crate::transducer::family::member_key(v, chart);
             match node_of.get(&k) {
-                Some(&ix) => ix as usize,
+                Some(&ix) => ix,
                 None => {
                     let ix = node_vertex.len();
-                    node_of.insert(&k, ix as u16);
+                    node_of.insert(&k, ix);
                     node_vertex.push(v);
                     node_chart.push(chart.to_vec());
                     ix
@@ -420,6 +425,10 @@ impl Form {
             // construction and again per orbit at every class reading. On the
             // fleet at e98e8a2 that is 70311 orbits traversed twice, and one pair
             // form carried 3361 of them.
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "AT1 debt — a slot number of the form's Vec (the cycle's vertices, read back from node_vertex's u16; its crossed faces and its chord face); the atlas row replaces the slot by the chart's coordinates"
+            )]
             let mut lp = Orbit {
                 members,
                 vertices: path.into_iter().map(|x| x as u16).collect(),

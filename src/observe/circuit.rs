@@ -206,9 +206,17 @@ impl CircuitTest {
 
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — a constant table: a position in CircuitClass::ALL, 6 entries"
+        )]
         out.push(CircuitClass::ALL.iter().position(|&c| c == self.class).map_or(0xff, |i| i as u8));
         crate::transducer::address::put_u32_count(out, self.arms.len())?;
         for (arm, read) in &self.arms {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — a constant table: a position in TestArm::ALL, 8 entries"
+            )]
             out.push(TestArm::ALL.iter().position(|a| a == arm).map_or(0xff, |i| i as u8));
             match read {
                 ArmRead::Empty => out.push(0),
@@ -226,6 +234,10 @@ impl CircuitTest {
         }
         crate::transducer::address::put_u32_count(out, self.offers.len())?;
         for o in &self.offers {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — a constant table: a position in TestArm::ALL, 8 entries"
+            )]
             out.push(TestArm::ALL.iter().position(|a| *a == o.arm).map_or(0xff, |i| i as u8));
             out.extend_from_slice(&o.face.to_le_bytes());
             put_ray(out, &o.constructor)?;

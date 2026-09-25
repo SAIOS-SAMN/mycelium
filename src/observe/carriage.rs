@@ -83,6 +83,10 @@ impl Carriage {
     }
 
     /// The frames this process wrote, by act tag.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — a constant table: a position in FRAMES, 256 rows, one per act tag byte"
+    )]
     pub fn of_frames(&mut self) {
         for (tag, row) in FRAMES.iter().enumerate() {
             let records = row[0].load(Ordering::Relaxed);

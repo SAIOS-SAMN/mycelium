@@ -162,16 +162,19 @@ pub fn orbit_at(
     let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     seen.insert(state_key(x_painted), ());
     seen.insert(state_key(&painted), ());
+    // A carried site can be any i64: inside the frame by `try_from` and a
+    // comparison, exact at every width — a cast could wrap a far site in.
+    let within = |x: i64, n: usize| usize::try_from(x).is_ok_and(|x| x < n);
     for step in 1..=bound {
         let d = ring_dist_peel(&positions_of(&painted), anchor, bound);
-        let left = painted.iter().any(|&(r, c, _)| r < 0 || c < 0 || (r as usize) >= frame.0 || (c as usize) >= frame.1);
+        let left = painted.iter().any(|&(r, c, _)| !(within(r, frame.0) && within(c, frame.1)));
         if left {
             return OrbitEnd::LeftFrame { steps: step };
         }
         if d == Some(want) {
             let inside: Vec<Painted> = painted
                 .into_iter()
-                .filter(|&(r, c, _)| r >= 0 && c >= 0 && (r as usize) < frame.0 && (c as usize) < frame.1)
+                .filter(|&(r, c, _)| within(r, frame.0) && within(c, frame.1))
                 .collect();
             return OrbitEnd::Contact { painted: inside, steps: step };
         }

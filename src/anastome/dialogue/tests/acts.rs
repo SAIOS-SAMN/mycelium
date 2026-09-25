@@ -22,7 +22,7 @@ fn a_count_past_its_field_refuses_the_frame() {
     );
 
     // The same at a settlement's parties and a syllabus page.
-    let voices: Vec<[u8; 32]> = (0..=255u16).map(|i| [i as u8; 32]).collect();
+    let voices: Vec<[u8; 32]> = (0..=255u16).map(|i| [u8::try_from(i).expect("the range is 0..=255, one voice per byte value"); 32]).collect();
     let listing = crate::transducer::element::listing_key(
         &[(0i64, 0i64, 1u8, 4u8)],
         &crate::transducer::element::IDENTITY_FRAME,

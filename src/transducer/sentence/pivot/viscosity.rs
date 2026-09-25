@@ -306,6 +306,10 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
 
 /// VO1 — THE TYPED READING THE OBSERVER SERVES: every pair on which a trial
 /// ran, by its lane's index, and the ledger's entropy by lane as it stands.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: a lane, one of four; a bivector plane mask below the 2^(n+2) slots of Cl(n+1,1)"
+)]
 pub fn viscosity_reading(readings: &[PairViscosity]) -> crate::observe::Viscosity {
     crate::observe::Viscosity {
         pairs: readings

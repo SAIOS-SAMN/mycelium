@@ -20,6 +20,7 @@ pub type Hnf<const N: usize> = (Vec<[num_bigint::BigInt; N]>, Vec<Vec<num_bigint
 /// elimination (Bareiss) over exact integers of any size — the division by
 /// the previous pivot is exact by Bareiss's theorem, so nothing overflows
 /// and nothing is refused for its size (STD1).
+#[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a rank at most N, the rows' const-generic column count (one pivot per column)")]
 pub fn z_rank<const N: usize>(rows: &[[i64; N]]) -> u32 {
     use num_bigint::BigInt;
     use num_traits::{One, Zero};

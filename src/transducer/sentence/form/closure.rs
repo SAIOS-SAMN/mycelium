@@ -128,6 +128,7 @@ impl Form {
     /// vertical. A reader that answered `Vec<u16>` of "bad" vertices would
     /// have collapsed an exact conformal element to an index and a
     /// judgement, which is the scalar this grade exists to stop making.
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex's position in self.vertices); the atlas row replaces the slot by the chart's coordinates")]
     pub fn fiber_transitions(&self) -> Vec<(u16, crate::transducer::sentence::FiberTransition)> {
         self.vertices
             .iter()
@@ -243,6 +244,7 @@ impl Form {
     /// A FINITE PERIOD IS EXACT AND AT LEAST ONE (A17), so the subtraction
     /// is total; a class of infinite order, filed at `0` (52.3), condenses
     /// no members and reaches nothing.
+    #[expect(clippy::cast_possible_truncation, reason = "PD1 debt — the yield narrows with fibre_volume and the period, which PD1 widens together")]
     pub fn fibre_volume(
         &self,
         filed: &Keyed<FiledOrbit, crate::network::nerve::coord::Holonomy>,

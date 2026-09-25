@@ -118,6 +118,10 @@ impl Rotor {
     pub fn reverse(&self) -> Rotor {
         Rotor {
             c: std::array::from_fn(|i| {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+                )]
                 let g = (i as u32).count_ones();
                 if (g * g.wrapping_sub(1) / 2) & 1 == 0 {
                     self.c[i].clone()
@@ -139,6 +143,10 @@ impl Rotor {
     pub fn is_versor(&self) -> bool {
         // Even or odd throughout: the one parity every occupied blade has,
         // and none for zero.
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0), every caller reading 0..16"
+        )]
         let parity = |i: usize| (i as u32).count_ones() & 1;
         let mut held: Option<u32> = None;
         for i in (0..16).filter(|&i| !self.c[i].is_zero()) {
@@ -164,6 +172,10 @@ impl Rotor {
             let mut e = Rotor::zero();
             e.c[g] = Q::one();
             let img = involute.geo(&e).geo(&rev);
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+            )]
             if (0..16).any(|i| (i as u32).count_ones() != 1 && !img.c[i].is_zero()) {
                 return false;
             }
@@ -196,6 +208,10 @@ impl Rotor {
     /// reading callers take: "is this an element of `Cl⁺(4,0)`" is the same
     /// question as "are its occupied grades even", and two readers of one
     /// fact is what law 12 refuses.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+    )]
     pub fn is_even(&self) -> bool {
         (0..16).all(|i| (i as u32).count_ones() % 2 == 0 || self.c[i].is_zero())
     }
@@ -426,6 +442,10 @@ impl Rotor {
         // THE TWISTED ADJOINT `Φ̂ v Φ̃` (78.28(1), VA2): an odd rotor's image
         // is the reflection of `v`, not its negative, which the plain
         // sandwich gave (d1's shape one algebra down).
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+        )]
         let involute = Rotor {
             c: std::array::from_fn(|i| match (i as u32).count_ones() & 1 {
                 0 => self.c[i].clone(),
@@ -433,6 +453,10 @@ impl Rotor {
             }),
         };
         let out = involute.geo(&x).geo(&self.reverse());
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+        )]
         if (0..16).any(|i| (i as u32).count_ones() != 1 && !out.c[i].is_zero()) {
             return None;
         }
@@ -474,6 +498,10 @@ impl Rotor {
     pub fn grade(&self, k: u32) -> Rotor {
         let mut out = Rotor::zero();
         for m in 0..16usize {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+            )]
             if (m as u32).count_ones() == k {
                 out.c[m] = self.c[m].clone();
             }
@@ -486,6 +514,10 @@ impl Rotor {
     pub fn grades(&self) -> Vec<u32> {
         let mut out = Vec::new();
         for k in 0..=4u32 {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)"
+            )]
             if (0..16usize).any(|m| (m as u32).count_ones() == k && !self.c[m].is_zero()) {
                 out.push(k);
             }

@@ -328,6 +328,10 @@ pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
     let mut b1 = Rotor::zero();
     let mut b2 = Rotor::zero();
     for mask in 0..16 {
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the algebra's range: a blade mask below the 2^4 = 16 slots of Cl(4,0)'s rotor"
+        )]
         if (mask as u32).count_ones() == 2 {
             b1 = b1.add(&Rotor::blade(mask, n1.coeff(mask).clone()));
             b2 = b2.add(&Rotor::blade(mask, n2.coeff(mask).clone()));

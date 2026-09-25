@@ -103,7 +103,8 @@ fn faces_by_constancy_three_squares() {
     );
     assert!(
         rule.form.faces.iter().any(|FormFace { i, j, .. }| {
-            (*i == 0 && *j == vi as u16) || (*j == 0 && *i == vi as u16)
+            let vi = u16::try_from(vi).expect("the one class vertex of a two-vertex form");
+            (*i == 0 && *j == vi) || (*j == 0 && *i == vi)
         }),
         "a named face joins Frame to the class"
     );

@@ -43,9 +43,12 @@ pub fn grid_of_painted(painted: &[(i64, i64, u8)]) -> Grid {
             max_c = c;
         }
     }
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box height, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let h = (max_r - min_r + 1) as usize;
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the painted sites' bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
     let mut g = vec![vec![0u8; w]; h];
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a painted site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, hue) in painted {
         g[(r - min_r) as usize][(c - min_c) as usize] = hue;
     }
@@ -85,10 +88,13 @@ pub fn scene_at_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<((i64, i64), Gr
             max_c = c;
         }
     }
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box height, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let h = (max_r - min_r + 1) as usize;
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the chain's bounding-box width, an i64 span ≥ 1 of the sites the sensor delivers, narrowing only on a 32-bit target")]
     let w = (max_c - min_c + 1) as usize;
     let mut before = vec![vec![0u8; w]; h];
     let mut after = vec![vec![0u8; w]; h];
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a chain site's offset inside the bounding box just sized from these same sites, 0 ≤ r − min_r < h and 0 ≤ c − min_c < w")]
     for &(r, c, b, a) in chain {
         before[(r - min_r) as usize][(c - min_c) as usize] = b;
         after[(r - min_r) as usize][(c - min_c) as usize] = a;
@@ -675,6 +681,7 @@ pub(crate) fn support_at(laminae: &[Lamina], k: i64) -> Vec<Site> {
 
 /// The axes on which two charts differ, by position; an axis one chart
 /// lacks differs.
+#[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (an axis position in the longer of two charts' Invariant vectors); the atlas row replaces the slot by the chart's coordinates")]
 pub(crate) fn differing_axes(a: &Invariant, b: &Invariant) -> Vec<u16> {
     let n = a.0.len().max(b.0.len());
     (0..n).filter(|&i| a.0.get(i) != b.0.get(i)).map(|i| i as u16).collect()

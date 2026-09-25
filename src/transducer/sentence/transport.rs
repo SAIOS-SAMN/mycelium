@@ -434,6 +434,10 @@ pub enum HueAgreement {
 /// other.
 pub fn hue_agreement(a: &HueTable, b: &HueTable) -> HueAgreement {
     let mut out: HueTable = [None; 10];
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the sensor's: a hue below PALETTE = 10, the HueTable's ten slots"
+    )]
     for h in 0..10usize {
         out[h] = match (a[h], b[h]) {
             (None, x) | (x, None) => x,

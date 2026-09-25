@@ -310,7 +310,7 @@ fn meet_is_intersection_and_costs_shared_prefixes() {
         small.insert(key(1), 1);
         small.insert(key(2), 2);
         for i in 0..n {
-            big.insert([10u8, i as u8], 1);
+            big.insert([10u8, u8::try_from(i).expect("n is 8 or 32 here, each key byte distinct")], 1);
         }
         big.insert(key(1), 1);
         work::reset();

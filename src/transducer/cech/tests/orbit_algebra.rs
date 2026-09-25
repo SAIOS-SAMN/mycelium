@@ -29,7 +29,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<CellCircuit> {
     holonomies
         .into_iter()
         .enumerate()
-        .map(|(i, holonomy)| CellCircuit { ring: CellCircuit::ring_of(&[(i as u16, true)]), holonomy, hue: Some(Vec::new()) })
+        .map(|(i, holonomy)| CellCircuit { ring: CellCircuit::ring_of(&[(u16::try_from(i).expect("the fixture's handful of circuits; AT1 debt — a face slot number"), true)]), holonomy, hue: Some(Vec::new()) })
         .collect()
 }
 

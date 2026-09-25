@@ -81,6 +81,10 @@ pub fn enclosure(nuclei: &[Mv]) -> Option<Mv> {
     if round.is_zero() {
         return None;
     }
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a non-zero wedge of k points in Cl(n+1,1) has k ≤ n + 2 (the zero round returned above)"
+    )]
     let k = centres.len() as u32;
     let flat = round.wedge_vector(k, &e_inf());
     // `round · flat̃`: the carrier as a ray, which `weighted` sets at weight

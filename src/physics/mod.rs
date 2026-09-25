@@ -188,6 +188,7 @@ pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
 /// eviction sweep above the book's ceiling is such a pass — a book past
 /// the manifold is not a pacing question — and it is read here so the
 /// spend unit stays inside physics (rules 1, 8).
+#[expect(clippy::cast_possible_truncation, reason = "site 4 — spend_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4 (aperture_cycle is a u32 ratio below 16, widened)")]
 pub fn aperture_strokes() -> usize {
     spend_unit() as usize * aperture_cycle() as usize
 }
@@ -233,6 +234,7 @@ pub fn book_ceiling() -> usize {
     let Some(gib) = mem_available_gib() else {
         return BOOK_HIGH;
     };
+    #[expect(clippy::cast_possible_truncation, reason = "site 4 — PER_GIB × mem_available_gib, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     let measured = (gib.max(1) * PER_GIB) as usize;
     measured.min(BOOK_HIGH)
 }
@@ -270,6 +272,7 @@ pub const COURT_PERSIST_RULINGS: u64 = 0;
 
 /// Strokes per reserve cycle — the aperture ratio κ. Drain reads this;
 /// it is not a free constant.
+#[expect(clippy::cast_possible_truncation, reason = "site 4 — the aperture ratio reserve_max / spend_unit, bounded below 16 by spend_unit's own definition max(reserve_max / 8, 2); a u64 → u32 narrowing of a ratio, never of the reserve")]
 pub fn aperture_cycle() -> u32 {
     (reserve_max() / spend_unit()).max(1) as u32
 }
@@ -313,6 +316,7 @@ impl Default for Physics {
 impl Physics {
     /// Draw one stroke's read token. The only constructor of [`Budget`].
     /// Remaining reads equal one spend; cognition never names that number.
+    #[expect(clippy::cast_possible_truncation, reason = "site 4 — spend_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     pub fn stroke(&mut self) -> Budget {
         Budget { remaining: spend_unit() as usize }
     }

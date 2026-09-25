@@ -176,6 +176,7 @@ impl Form {
         self.face_at(i, j, &self.face_pairs(i, j)?)
     }
 
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (an orbit of self.orbits); the atlas row replaces the slot by the chart's coordinates")]
     pub fn delta1(&self) -> Vec<(u16, Word)> {
         self.orbits
             .iter()

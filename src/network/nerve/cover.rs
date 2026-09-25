@@ -197,6 +197,10 @@ impl Cover {
         }
         for (l, t) in touched.iter().enumerate() {
             if *t {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "STD1 C1 — the algebra's range: a lane, one of four (the [bool; 4] it enumerates)"
+                )]
                 self.refresh_root(l as u8);
             }
         }

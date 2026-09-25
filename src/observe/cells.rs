@@ -69,6 +69,7 @@ impl CellClosure {
 }
 
 /// A coded axis's byte: its place in the axis's own list of arms.
+#[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: a position in the axis's ALL list (CircuitUnread, CellRound, CellPermutes, CellCoherence, CellOrbit), a handful of fixed arms each, below NONE")]
 fn code_in<T: PartialEq + Copy>(all: &[T], x: T) -> u8 {
     all.iter().position(|&a| a == x).map_or(NONE, |i| i as u8)
 }
@@ -580,6 +581,7 @@ impl Cells {
                 None => out.push(NONE),
             }
             let counts = rings_counts(&c.rings);
+            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: rings_counts is [usize; 10], ten entries")]
             out.push(counts.len() as u8);
             for n in counts {
                 put_u32_count(out, n)?;

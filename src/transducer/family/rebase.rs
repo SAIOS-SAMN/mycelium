@@ -96,6 +96,10 @@ pub(crate) fn rebase_named_faces(form: &mut Form) {
             .get(&class_pair_key(&tc_i, &tc_j))
             .is_some_and(|rs| !rs.is_empty() && rs.scoped().all(|(_, (_, r))| element::same_versor(r, &relative)));
         if constant {
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "AT1 debt — a slot number of the form's Vec (a face's position in form.faces); the atlas row replaces the slot by the chart's coordinates"
+            )]
             let _ = form.rebase(face.i, face.j, relative, fi as u16);
             trace::trace("extract/4 rebased", trace::Wrote::Ordinal(face.j), None);
         }

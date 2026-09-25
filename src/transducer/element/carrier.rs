@@ -712,6 +712,7 @@ impl Element {
             for step in 1..=MAX_ORBIT {
                 match apply_hue_map(&sigma, &cur) {
                     Some(next) => {
+                        #[expect(clippy::cast_possible_truncation, reason = "PD1 debt — bounded by MAX_ORBIT = 32, which PD1 retires with this cast")]
                         if next == base {
                             period = step as u32; // closed: σ^t = id on its support
                             break;

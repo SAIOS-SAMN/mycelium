@@ -126,7 +126,15 @@ pub const fn flip_plane(plane: (u8, u8)) -> Option<(u8, u8)> {
 /// the (5,12,13) rotors. They were `1`, `7` and `13` written out at every
 /// reader, which is `PAIR_PLANES` restated in three places.
 const QUARTER_BASE: u8 = 1;
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: PAIR_PLANES = C(LETTER_RANK = 4, 2) = 6, a const expression"
+)]
 const PRIME_5_BASE: u8 = QUARTER_BASE + PAIR_PLANES as u8;
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the algebra's range: PAIR_PLANES = C(LETTER_RANK = 4, 2) = 6, a const expression"
+)]
 const PRIME_13_BASE: u8 = PRIME_5_BASE + PAIR_PLANES as u8;
 
 impl LetterId {
@@ -155,11 +163,19 @@ impl LetterId {
     }
 
     /// The quarter turn on a pair plane.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a pair plane's slot in SLOT_PLANES_SIX, one of PAIR_PLANES = 6"
+    )]
     pub fn quarter(plane: (u8, u8)) -> Option<LetterId> {
         Self::slot_of(plane).map(|i| LetterId(QUARTER_BASE + i as u8))
     }
 
     /// The (3,4,5) rotor on a pair plane.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a pair plane's slot in SLOT_PLANES_SIX, one of PAIR_PLANES = 6"
+    )]
     pub fn pythagorean_5(plane: (u8, u8)) -> Option<LetterId> {
         Self::slot_of(plane).map(|i| LetterId(PRIME_5_BASE + i as u8))
     }
@@ -167,6 +183,10 @@ impl LetterId {
     /// The (5,12,13) rotor on a pair plane. `None` is the reading for a
     /// plane the alphabet carries no such letter on, and it is the question
     /// every `p < 4` was asking without being able to name it.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — a constant table: a position in SLOT_PLANES_13, 4 entries"
+    )]
     pub fn pythagorean_13(plane: (u8, u8)) -> Option<LetterId> {
         SLOT_PLANES_13
             .iter()
@@ -182,6 +202,10 @@ impl LetterId {
     }
 
     /// Every letter, in slot order.
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: CAYLEY_ALPHABET_LEN = 1 + 2·PAIR_PLANES + 4 = 17 letters, a const expression"
+    )]
     pub fn all() -> impl Iterator<Item = LetterId> {
         (0..CAYLEY_ALPHABET_LEN as u8).map(LetterId)
     }
@@ -224,6 +248,10 @@ pub fn rotor_pair(id: LetterId) -> (Q, Q) {
 /// than tabulated — the six-case match below was the rank-4 answer written
 /// out, and a chart of another rank had no entry in it.
 pub const fn complement_plane(plane: (u8, u8)) -> Option<(u8, u8)> {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: LETTER_RANK = 4, the letter chart's axis count e0..e3"
+    )]
     let none = LETTER_RANK as u8;
     let (mut lo, mut hi) = (none, none);
     let mut k = 0u8;
@@ -303,6 +331,10 @@ pub fn relators() -> [Relator; RELATOR_N] {
     // The letters are named by slot (law VIII), never searched for by
     // plane: a quarter turn in slot `i` of the six planes is letter `1 + i`.
     // It looked each one up and panicked on a plane it declared itself (§2.4).
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the algebra's range: a quarter-turn slot, one of PAIR_PLANES = 6"
+    )]
     let quarter_in = |slot: usize| LetterId(QUARTER_BASE + slot as u8);
     let mut out: [Relator; RELATOR_N] = std::array::from_fn(|_| Relator {
         kind: RelatorKind::PrimeInfinite,

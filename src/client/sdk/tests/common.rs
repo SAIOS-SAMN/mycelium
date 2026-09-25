@@ -36,7 +36,7 @@ for (i, g) in gauges.iter().enumerate() {
         g.to_vec(),
         None,
     ));
-    let j = (i as u16) + 1;
+    let j = u16::try_from(i).expect("a fixture star's vertex, one per gauge, a handful") + 1;
     f.faces.push(f.face_of(0, j).expect("star"));
 }
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);

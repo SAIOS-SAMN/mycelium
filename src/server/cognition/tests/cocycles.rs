@@ -219,7 +219,8 @@ fn a_filed_form_cycle_is_volume_the_basis_counts() {
     // chosen beside it, so the claim is that the form and the basis AGREE
     // with the geometry — which is what this reading was always for.
     assert!(ell.closes(), "the filed cycle closes on both planes");
-    let units = ell.yield_units().expect("a closing spectrum has a yield") as usize;
+    let units = usize::try_from(ell.yield_units().expect("a closing spectrum has a yield"))
+        .expect("a small rotor's yield, (ℓ₁ − 1) + (ℓ₂ − 1)");
     assert_eq!(
         (f.fibre_volume(held.element().filing()), k.fibre_volume_total()),
         (units, units),

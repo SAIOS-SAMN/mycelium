@@ -36,6 +36,7 @@ pub(crate) fn grows_to_frame(a: &Grid, b: &Grid) -> bool {
         let keyed = occupy_keys(&occ);
         let mut grew = false;
         for (r, c, _) in ring {
+            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a site one ring out from sites painted_of_grid delivered or this check admitted, so within the sensor's grid plus one, checked non-negative first")]
             if r < 0 || c < 0 || (r as usize) >= fa.0 || (c as usize) >= fa.1 {
                 continue;
             }
@@ -89,8 +90,12 @@ pub(crate) fn emit_carried(
             // carried into another frame is not spoken on it, and is
             // remainder.
             Some(image) if image.iter().all(|s| s.axis(crate::transducer::base::FRAME_AXIS) == frame) => {
+                // A carried site can be any i64: inside the frame by
+                // `try_from` and a comparison, exact at every width — a cast
+                // could wrap a far site into the frame.
+                let within = |x: i64, n: usize| usize::try_from(x).is_ok_and(|x| x < n);
                 for (i, j) in image.iter().filter_map(on_grid) {
-                    if i >= 0 && j >= 0 && (i as usize) < fy.0 && (j as usize) < fy.1 {
+                    if within(i, fy.0) && within(j, fy.1) {
                         painted.push((i, j, spoken));
                     }
                 }
@@ -222,6 +227,7 @@ fn speak_on_scene(
                 });
                 if let (Some(k), Some(pi)) = (&tc_key, pair) {
                     if let Some(only) = f.sections.at(k) {
+                        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — slot numbers of the form's Vecs (pi a frame of the family, filed by frame_key; vi a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                         if !only.contains(&frame_key(pi as u16)) {
                             unspoken.push(vi as u16);
                             continue;
@@ -243,6 +249,7 @@ fn speak_on_scene(
                         if let Some(mps) = member_section_key(v, &member.chart).and_then(|mk| {
                             f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk)))
                         }) {
+                            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
                             if !mps.contains(&frame_key(pi as u16)) {
                                 continue;
                             }
@@ -268,6 +275,7 @@ fn speak_on_scene(
                     }
                 }
                 if !spoke {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                 }
             }
@@ -319,6 +327,7 @@ fn speak_on_scene(
                 // which form; that is a gap in what reached this reader and
                 // it is reported, never painted over as an empty citation.
                 if !spoke_any {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                 }
             }
@@ -328,6 +337,7 @@ fn speak_on_scene(
             Vertex::Rebased { by, acts, .. } => {
                 let Some(w @ Vertex::Word { derivation, .. }) = f.vertices.get(*by as usize)
                 else {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                     continue;
                 };
@@ -340,10 +350,12 @@ fn speak_on_scene(
                 // rather than composing against a body it was not measured on.
                 let base_charts = w.charts();
                 let [base_chart] = base_charts.as_slice() else {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                     continue;
                 };
                 let Some(base) = w.acting_on(base_chart) else {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                     continue;
                 };
@@ -370,6 +382,7 @@ fn speak_on_scene(
                     }
                 }
                 if !spoke {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex of f.vertices); the atlas row replaces the slot by the chart's coordinates")]
                     unspoken.push(vi as u16);
                 }
             }
@@ -403,6 +416,7 @@ fn speak_on_scene(
             }
             let mut grew = false;
             for (r, c, _) in ring {
+                #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a site one ring out from painted sites already inside the frame fy or on the sensor's grid, checked non-negative first")]
                 if r < 0 || c < 0 || (r as usize) >= fy.0 || (c as usize) >= fy.1 {
                     continue;
                 }

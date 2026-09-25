@@ -345,6 +345,7 @@ impl NerveRound {
         // THE GRADE IS HOW MANY POINTS ARE IN THE BLADE, so it is read off
         // the walk rather than counted beside it (law 12): after `i` further
         // points the blade has grade `i + 1`.
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: the wedge is non-zero at grade i + 1 (it returns on zero), so i + 1 ≤ n + 2 with n data (A.15), the blade's grade in Cl(n+1,1)")]
         for (i, x) in it.enumerate() {
             s = s.wedge_vector(i as u32 + 1, &at(x)?);
             if s.is_zero() {
@@ -356,6 +357,7 @@ impl NerveRound {
 
     /// The grade the round actually reached — `0` where the wedge vanished.
     /// A reading, never a field.
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a non-zero wedge of k points has k ≤ n + 2 with n data (A.15), the blade's grade in Cl(n+1,1)")]
     pub fn grade(&self) -> u32 {
         match self.blade() {
             Some(s) if !s.is_zero() => self.points.len() as u32,

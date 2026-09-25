@@ -51,6 +51,7 @@ impl Form {
         }
         let mut old_to_new: Vec<Option<u16>> = vec![None; n];
         let mut new_verts = Vec::new();
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex's position in self.vertices, and a kept vertex's new position after the retraction); the atlas row replaces the slot by the chart's coordinates")]
         for (i, v) in self.vertices.iter().enumerate() {
             if i != 0 && drop.holds(&vertex_ix_key(i as u16)) {
                 continue;
@@ -60,6 +61,7 @@ impl Form {
         }
         let mut face_old_to_new: Vec<Option<u16>> = vec![None; self.faces.len()];
         let mut new_faces = Vec::new();
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a kept face's new position after the retraction); the atlas row replaces the slot by the chart's coordinates")]
         for (fi, f) in self.faces.iter().enumerate() {
             let Some(&Some(i)) = old_to_new.get(f.i as usize) else {
                 continue;
@@ -557,6 +559,7 @@ fn canonical_faces<'a>(f: &'a Form, at: &[u16]) -> Vec<&'a FormFace> {
     let mut by: Keyed<Vec<u16>> = Keyed::new();
     for (i, face) in f.faces.iter().enumerate() {
         let k = face_bytes(face, at);
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a face's position in f.faces); the atlas row replaces the slot by the chart's coordinates")]
         match by.get_mut(&k) {
             Some(v) => v.push(i as u16),
             None => {
@@ -971,6 +974,7 @@ fn canonical_vertices(f: &Form) -> Vec<&Vertex> {
     let mut at: Keyed<u16> = Keyed::new();
     let mut out: Vec<&Vertex> = Vec::with_capacity(f.vertices.len());
     for (i, v) in f.vertices.iter().enumerate() {
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex's position in f.vertices); the atlas row replaces the slot by the chart's coordinates")]
         match v {
             Vertex::Frame => out.push(v),
             _ => {
@@ -997,6 +1001,7 @@ fn canonical_places(f: &Form) -> Vec<u16> {
     for face in &f.faces {
         n = n.max(face.i as usize + 1).max(face.j as usize + 1);
     }
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a vertex place, n the vertex count or a face end's index + 1); the atlas row replaces the slot by the chart's coordinates")]
     let mut out: Vec<u16> = (0..n).map(|i| i as u16).collect();
     // EVERY VERTEX SHARING A COORDINATE GETS THAT COORDINATE'S PLACE
     // (§1.5, 54.5).

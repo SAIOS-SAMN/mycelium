@@ -33,6 +33,7 @@ pub(crate) struct OrbitClass {
 }
 
 impl Form {
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (an orbit, filed as the certificate's chord); the atlas row replaces the slot by the chart's coordinates")]
     pub(crate) fn trial(
         &self,
         idx: usize,

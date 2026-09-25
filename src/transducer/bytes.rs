@@ -51,7 +51,9 @@ pub trait Bytes {
 /// what `bits()` reports and what the allocator actually went and got.
 fn bytes_q(q: &crate::core::Q) -> usize {
     use num_traits::Signed;
+    #[expect(clippy::cast_possible_truncation, reason = "the bytes of an integer already allocated, so at most isize::MAX on every target: the u64 → usize narrowing loses nothing")]
     let n = q.numer().abs().bits().div_ceil(8) as usize;
+    #[expect(clippy::cast_possible_truncation, reason = "the bytes of an integer already allocated, so at most isize::MAX on every target: the u64 → usize narrowing loses nothing")]
     let d = q.denom().abs().bits().div_ceil(8) as usize;
     n + d
 }

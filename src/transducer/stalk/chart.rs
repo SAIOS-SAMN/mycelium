@@ -185,6 +185,7 @@ impl ChartAxis {
             0 => Some(ChartAxis::Count(u64_at(payload)?)),
             1 => {
                 let mut p = 0usize;
+                #[expect(clippy::cast_possible_truncation, reason = "a u64 limb split into its low and high u32 halves on purpose; the high half is `>> 32`")]
                 let take_mag = |p: &mut usize| -> Option<num_bigint::BigUint> {
                     let n = crate::transducer::address::take_key_count(payload, p)?;
                     // Each limb is eight bytes; a count the payload cannot
@@ -400,6 +401,7 @@ pub(crate) fn connection_chart(word: &element::Element) -> Option<Invariant> {
     // between (A21 §2).
     let mut axes = vec![ChartAxis::Count(0)];
     axes.extend(rotor_axes(&letters.spelling.word.rotor())?);
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: the identity image of the hues, each below PALETTE = 10 (the array's ten slots)")]
     let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
     for &(f, t) in &letters.sigma {
         image[f as usize] = t;

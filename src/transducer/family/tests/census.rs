@@ -777,7 +777,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
             k.insert(key, 1);
         }
     };
-    let axes_key = |axes: &[usize]| -> Vec<u8> { axes.iter().map(|&a| a as u8).collect() };
+    let axes_key = |axes: &[usize]| -> Vec<u8> { axes.iter().map(|&a| u8::try_from(a).expect("an axis of the base, below its n")).collect() };
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
@@ -811,7 +811,7 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
                 true => elements_in += 1,
                 false => elements_across += 1,
             }
-            bump(&mut cells_by_grade, vec![cell.grade as u8]);
+            bump(&mut cells_by_grade, vec![u8::try_from(cell.grade).expect("a contact cell's grade, at most the base's n")]);
             bump(&mut cells_by_axes, axes_key(&cell.axes));
             let mut k = (a as u64).to_le_bytes().to_vec();
             k.extend_from_slice(&(b as u64).to_le_bytes());
@@ -838,14 +838,17 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
                 (false, true) => e_across += 1,
                 _ => e_both += 1,
             }
-            bump(&mut pairs_by_grade, vec![grade as u8]);
+            bump(&mut pairs_by_grade, vec![u8::try_from(grade).expect("the largest shared cell's grade, at most the base's n")]);
             let (Ok(a), Ok(b)) = (
                 <[u8; 8]>::try_from(&k[..8]).map(u64::from_le_bytes),
                 <[u8; 8]>::try_from(&k[8..]).map(u64::from_le_bytes),
             ) else {
                 panic!("a body pair key is two roots")
             };
-            cg.push((ix(a as usize), ix(b as usize)));
+            cg.push((
+                ix(usize::try_from(a).expect("a root id written from a usize")),
+                ix(usize::try_from(b).expect("a root id written from a usize")),
+            ));
         }
         let n_comp = {
             let mut c = components(root_ids.len(), &cg);

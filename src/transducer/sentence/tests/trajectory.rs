@@ -114,7 +114,7 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
         panic!("one unread orbit: {lines:?}")
     };
     assert_eq!(why.label(), "not rigid");
-    let chord = (f.faces.len() - 1) as u16;
+    let chord = u16::try_from(f.faces.len() - 1).expect("the fixture's chord, the last of its three faces");
     let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
         carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.steps[*at - 1].face == chord),
@@ -237,7 +237,7 @@ fn single_route_cell(nuclei: [crate::transducer::cga::Mv; 3]) -> Vec<Circuit> {
     f.faces.push(f.face_of(0, 2).expect("star b"));
     let mut chord = f.face_carrying(1, 2, order4()).expect("a chord carrying no edge");
     chord.interface = Some(super::common::contact(0, 3, 0));
-    let chord_ix = f.faces.len() as u32;
+    let chord_ix = u32::try_from(f.faces.len()).expect("the fixture's chord, pushed after its two star faces");
     f.faces.push(chord);
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
     f.face_bodies.insert(chord_ix.to_be_bytes(), (p.clone(), r.clone()));

@@ -57,6 +57,10 @@ impl PlaneForm {
             let Some(&pl) = SLOT_PLANES_SIX.get(p) else {
                 continue;
             };
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — the algebra's range: a quarter-turn exponent reduced by rem_euclid(4), one of four"
+            )]
             let unit = exp(LetterId::quarter(pl)).rem_euclid(4) as u32;
             *slot = (
                 // Orientation is the SENSOR plane's, which is a comparison
@@ -154,6 +158,10 @@ impl PlaneForm {
             if n == 0 {
                 continue;
             }
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "STD1 C1 — the algebra's range: a position in rot, one of CAYLEY_ALPHABET_LEN = 17 letters; try_new re-checks it"
+            )]
             let Some(id) = LetterId::try_new(i as u8) else { continue };
             if id.raw() == 0 {
                 continue;

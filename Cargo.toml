@@ -46,6 +46,11 @@ unsafe_code = "deny"
 [lints.clippy]
 float_arithmetic    = "deny"
 cast_precision_loss = "deny"
+# STD1 3c-5: A WIDTH IS A PROVENANCE, NEVER A HOPE. A narrowing `as` stands
+# only under an `#[expect]` naming where its bound comes from — the
+# algebra's own range, the sensor's byte, a constant table — or the debt it
+# is (AT1's slot, site 4's constant); anything else is exact or refused.
+cast_possible_truncation = "deny"
 # MU-STANDARDS 4.2: the tables of clippy.toml are read through these two.
 disallowed_types    = "deny"
 disallowed_methods  = "deny"

@@ -96,6 +96,7 @@ impl Frame {
         }
         let mut out = Vec::with_capacity(5 + self.body.len());
         out.push(self.lane.as_u8());
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant: the body length is at most BODY_BUDGET = 768 · 1024, refused above it three lines up")]
         out.extend_from_slice(&(self.body.len() as u32).to_le_bytes());
         out.extend_from_slice(&self.body);
         // LD1: the frame's bytes, by the act its body opens with.

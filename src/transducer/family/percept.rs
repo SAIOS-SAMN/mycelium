@@ -56,7 +56,6 @@ struct Member {
     section_words: Vec<(crate::transducer::alphabet::Word, Vec<u16>)>,
 }
 
-
 /// A class's vertex before it is placed: the least address among its
 /// members' readings, that member's derivation, and every member.
 struct ClassRead {
@@ -69,6 +68,7 @@ struct ClassRead {
 /// frame the budget reaches is perceived once; every chart's fiber is read
 /// frame by frame; a budget that ends leaves the frames it did not measure
 /// as the demands of `finish` and says so.
+#[expect(clippy::cast_possible_truncation, reason = "AT1 debt — slot numbers of the form's Vecs, every one: fiber frames filed as u16 (Quotient.frame, a cover's frame), the face position keying face_bodies, the chord face's position; the atlas row replaces each by the chart's coordinates")]
 pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::physics::Budget) -> Percept {
     use crate::transducer::sentence::face_pair_key;
     let entry = budget.remaining();
@@ -179,7 +179,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             };
             match carriage(&a0, &b0) {
                 Some(car) => {
-                    if let Some(qc) = quotient_charts.get_mut(k as usize) {
+                    if let Some(qc) = usize::try_from(k).ok().and_then(|k| quotient_charts.get_mut(k)) {
                         qc.insert(&ck, ());
                     }
                     for b in bo {
@@ -1033,9 +1033,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     }
     for (kind, chart) in standing_demands {
         crate::transducer::family::cover::tally(|t| t.standing += 1);
-        let ix = form.vertices.len() as u16;
         form.vertices.push(demand_vertex(kind, &chart, Vec::new()));
-        let _ = ix;
     }
     form.reindex();
     // READ WHETHER OR NOT ANYTHING CLOSED. It was gated on

@@ -193,6 +193,7 @@ impl Form {
     }
 
     pub fn unfold(&mut self, measure: Measure) -> u16 {
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the Unfolded vertex about to be pushed); the atlas row replaces the slot by the chart's coordinates")]
         let idx = self.vertices.len() as u16;
         self.vertices.push(Vertex::Unfolded { measure });
         idx

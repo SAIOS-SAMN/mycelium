@@ -126,7 +126,7 @@ fn two_vertices_at_one_coordinate_are_one_vertex() {
     let mut f = Form::default();
     for _ in 0..3 {
         f.vertices.push(word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[7])));
-        let j = (f.vertices.len() - 1) as u16;
+        let j = u16::try_from(f.vertices.len() - 1).expect("the fixture's vertex just pushed, one of three");
         f.faces.push(f.face_of(0, j).expect("star"));
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);

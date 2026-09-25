@@ -401,6 +401,10 @@ pub fn product_class(p: &CoxeterProduct) -> Option<Vec<u8>> {
     let mut k = vec![p.det? as u8];
     for m in ms {
         k.push(m.kind.as_u8());
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the algebra's range: a mode's planes, at most the C(n + 2, 2) bivector planes of Cl(n+1,1)"
+        )]
         k.extend_from_slice(&(m.planes as u32).to_le_bytes());
         k.push(u8::from(m.reflects));
         crate::transducer::address::put_key_bytes(&mut k, &m.c.numer().to_signed_bytes_le());

@@ -658,6 +658,7 @@ pub fn elements_standing(positions: &[crate::transducer::base::Site]) -> Vec<(cr
         let n = p.n();
         // `o` counts through `{0,1,2}ⁿ` as the digits of `0 .. 3ⁿ`, least
         // axis first: generated, never tabled.
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: n is the base's n, a site's coordinate count and the n of Cl(n+1,1) (the algebra's u8); 3ⁿ overflows usize at n = 41 and is refused by checked_pow")]
         let Some(count) = 3usize.checked_pow(n as u32) else { continue };
         for code in 0..count {
             let mut rest = code;

@@ -438,7 +438,7 @@ fn pivot_writes_the_chord_transport_only() {
         "a pivot writes no vertex placement or gauge"
     );
     for (fi, face) in f.faces.iter().enumerate() {
-        if fi as u16 == chord {
+        if u16::try_from(fi).expect("a face of the chord fixture, a few faces") == chord {
             continue;
         }
         assert_eq!(
@@ -463,7 +463,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // The orbit the fixture wrote, by its chord — a trivial cycle no longer
     // stands in `orbits`, so position is not identity (rule 15).
-    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read from a u16")).expect("the chord's orbit");
     let before = f.class_vector(at).expect("orbit");
     assert!(before.occupies(Axis::Placement));
     let _ = f.pivot_orbit(
@@ -520,7 +520,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
         p.carriage = element::carriage(&two, &(q0(), q0()));
     });
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    let at = f.orbit_of_chord(chord as u16).expect("the chord's orbit");
+    let at = f.orbit_of_chord(u16::try_from(chord).expect("the chord was read from a u16")).expect("the chord's orbit");
     let before = f.class_vector(at).expect("dil");
     assert!(
         before.occupies(Axis::Dilation),

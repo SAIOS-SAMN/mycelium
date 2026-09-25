@@ -23,7 +23,7 @@ fn traversed(steps: Vec<(u16, bool)>, composite: Option<crate::transducer::cga::
 fn bodies(sites: &[Vec<i64>]) -> crate::network::nerve::Keyed<Vec<Site>> {
     let mut k = crate::network::nerve::Keyed::new();
     for (i, s) in sites.iter().enumerate() {
-        k.insert(member(i as u16 + 1), vec![Site::new(s.clone())]);
+        k.insert(member(u16::try_from(i).expect("a fixture of a handful of bodies") + 1),vec![Site::new(s.clone())]);
     }
     k
 }
@@ -237,7 +237,7 @@ fn a_bracket_is_held_by_an_enclosure_over_any_cells_its_pair_spans() {
         let circuits: Vec<CellCircuit> = hs
             .into_iter()
             .enumerate()
-            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(i as u16, true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(u16::try_from(i).expect("a fixture of a handful of circuits"), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
             .collect();
         crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
     };

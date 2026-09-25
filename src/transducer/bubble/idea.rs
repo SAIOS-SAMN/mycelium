@@ -334,6 +334,10 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         // THE GAUGE COMPOSED AROUND THE CYCLE, not discarded and not filed
         // empty: each connection carries its own hue map and the orbit's is
         // their composition, which is what a filed orbit's σ IS (52.3).
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the sensor's: a hue slot of the [u8; 10] image, below PALETTE = 10 as the sensor delivers it"
+        )]
         let mut image: [u8; 10] = std::array::from_fn(|i| i as u8);
         for w in occupied.windows(2) {
             let [la, lb] = w else { continue };
@@ -364,6 +368,10 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         if rotors.is_empty() {
             continue;
         }
+        #[expect(
+            clippy::cast_possible_truncation,
+            reason = "STD1 C1 — the sensor's: a hue slot of the [u8; 10] image, below PALETTE = 10 as the sensor delivers it"
+        )]
         let sigma: Vec<(u8, u8)> = image
             .iter()
             .enumerate()

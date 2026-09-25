@@ -480,6 +480,7 @@ fn main() {
     // a bounded channel drained here, so the door never dials. The bound is
     // the reserve ceiling; a full nerve drops the act, as a full reflex
     // pool defers a demand.
+    #[expect(clippy::cast_possible_truncation, reason = "site 4 — reserve_max, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
     let (nerve_tx, nerve_rx) = std::sync::mpsc::sync_channel::<(String, Vec<u8>)>(mycelium::physics::reserve_max() as usize);
     exchange::spawn_nerve(mesh.clone(), nerve_rx);
     // The roots this book already holds settled are announced to the nerve

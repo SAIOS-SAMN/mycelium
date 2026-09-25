@@ -450,6 +450,7 @@ impl Form {
                 let Some(kappa) = self.class_vector(idx) else {
                     continue;
                 };
+                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — an ORBIT's position filed under the vertex-ordinal type; at AT1 it keys by the orbit's member-path key")]
                 let orbit_k = vertex_ix_key(idx as u16);
                 if handled.holds(&orbit_k) {
                     continue;
@@ -962,6 +963,7 @@ impl Form {
                     let Some(translator) = kappa.slip_translator() else {
                         continue;
                     };
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
@@ -974,6 +976,7 @@ impl Form {
                     let Some(translator) = element::dilator_of(&kappa.carriage) else {
                         continue;
                     };
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Placement {
@@ -983,6 +986,7 @@ impl Form {
                     });
                 }
                 Axis::Orientation(_) => {
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis,
                         by: PivotBy::Word {
@@ -999,6 +1003,7 @@ impl Form {
                 // skipping the rest is a move never offered on the others.
                 Axis::Hue => {
                     for (_, t) in orbit_transport(self, lp).scoped() {
+                        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                         out.push(Candidate {
                             axis,
                             by: PivotBy::Hue {
@@ -1038,6 +1043,7 @@ impl Form {
                                     continue;
                                 }
                                 seen.nested_insert(wk, sk, ());
+                                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                                 out.push(Candidate {
                                     axis,
                                     by: PivotBy::Word {
@@ -1089,6 +1095,7 @@ impl Form {
                     if off > 0 {
                         eprintln!("  pivot open seed orbit {idx} off-plane blades {off}");
                     }
+                    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the orbit's chord face in self.faces); the atlas row replaces the slot by the chart's coordinates")]
                     out.push(Candidate {
                         axis: Axis::Open,
                         by: PivotBy::OpenAxis {

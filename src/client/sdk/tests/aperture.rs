@@ -64,11 +64,11 @@ let n = 2 * aperture;
 let (dialect_n, receipts_n) = run(n);
 let (dialect_4n, receipts_4n) = run(4 * n);
 assert!(
-    dialect_4n <= dialect_n + aperture as usize,
+    dialect_4n <= dialect_n + usize::try_from(aperture).expect("aperture_cycle() is the aperture ratio 8"),
     "dialect at 4N ({dialect_4n}) stays within an aperture of N ({dialect_n})"
 );
 assert!(
-    receipts_4n <= receipts_n + aperture as usize,
+    receipts_4n <= receipts_n + usize::try_from(aperture).expect("aperture_cycle() is the aperture ratio 8"),
     "utterance receipts at 4N ({receipts_4n}) stay within an aperture of N ({receipts_n}): a receipt leaves with its word"
 );
 }

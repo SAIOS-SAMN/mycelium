@@ -89,7 +89,7 @@ fn r3_a_cell_is_the_members_standing_at_its_witness() {
     let standing: Vec<(Lamina, Vec<usize>)> = vec![(at(0), vec![0, 1]), (at(2), vec![1, 2]), (at(4), vec![0, 1])];
     let cells = crate::transducer::cech::cells_over(
         standing.iter().map(|(l, m)| (l.clone(), m.as_slice())),
-        |m| Some(vec![m as u8]),
+        |m| Some(vec![u8::try_from(m).expect("a member of the three-member standing list")]),
         |_| None,
     )
     .cells;
@@ -215,7 +215,7 @@ fn c1_capacity_is_the_rank_of_the_actions_algebra() {
         let circuits: Vec<CellCircuit> = hs
             .into_iter()
             .enumerate()
-            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(i as u16, true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
+            .map(|(i, h)| CellCircuit { ring: CellCircuit::ring_of(&[(u16::try_from(i).expect("a circuit of the test's one- or two-circuit list"), true)]), holonomy: Ok(h), hue: Some(Vec::new()) })
             .collect();
         crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
     };

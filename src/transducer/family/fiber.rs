@@ -112,6 +112,7 @@ pub(super) fn unreached_demands(
 
 /// A body that vanished: the empty chart on every axis (50.5).
 pub(super) fn vanished(body: &Body) -> Demanded {
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the chart's Vec (an axis position in the body's moduli Invariant); the atlas row replaces the slot by the chart's coordinates")]
     let axes: Vec<u16> = (0..body.moduli.0.len() as u16).collect();
     let links: Vec<Link> = body
         .laminae

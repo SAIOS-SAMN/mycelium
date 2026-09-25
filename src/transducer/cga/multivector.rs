@@ -63,6 +63,7 @@ pub fn pseudo(n: u8) -> usize {
 
 /// The smallest `n` whose algebra holds every generator of `mask`: the
 /// highest base axis it names.
+#[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: an axis of a machine-word blade mask, below usize::BITS ≤ 64")]
 fn n_of_mask(mask: usize) -> u8 {
     let mut n = 0usize;
     let mut bit = 0usize;
@@ -302,6 +303,7 @@ impl Mv {
                 .iter()
                 .enumerate()
                 .map(|(i, v)| {
+                    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
                     let g = (i as u32).count_ones();
                     if (g * (g.wrapping_sub(1)) / 2) & 1 == 0 {
                         v.clone()
@@ -315,6 +317,7 @@ impl Mv {
 
     /// The grade involution `M̂`: blade of grade g gets sign `(−1)^g`. On a
     /// vector it is the negation; on an even element the identity.
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
     pub fn involute(&self) -> Self {
         Self {
             n: self.n,
@@ -347,6 +350,7 @@ impl Mv {
             if v.is_zero() {
                 continue;
             }
+            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
             let o = (i as u32).count_ones() & 1 == 1;
             match odd {
                 None => odd = Some(o),
@@ -481,6 +485,7 @@ impl Mv {
     }
 
     /// The grade-`g` part.
+    #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the algebra's range: a blade mask below the 2^(n+2) slots of Cl(n+1,1)")]
     pub fn grade(&self, g: u32) -> Self {
         Self {
             n: self.n,

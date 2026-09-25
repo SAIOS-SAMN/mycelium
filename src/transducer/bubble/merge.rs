@@ -13,6 +13,7 @@ pub(crate) fn form_one_section(a: &Form, b: &Form) -> bool {
         return true;
     }
     let mut f = a.clone();
+    #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex offset of the join); the atlas row replaces the slot by the chart's coordinates")]
     let off = f.vertices.len() as u16;
     if off == 0 {
         return b.coheres();

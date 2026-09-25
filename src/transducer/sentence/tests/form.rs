@@ -764,7 +764,7 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
             continue;
         };
         assert!(
-            f.by_transport.at(&k).is_some_and(|on| on.contains(&(i as u16))),
+            f.by_transport.at(&k).is_some_and(|on| on.contains(&u16::try_from(i).expect("a vertex of the fixture form, as the index files it"))),
             "vertex {i} carries a transport class and the fiber names it"
         );
     }
@@ -795,7 +795,7 @@ fn a_pivot_derives_the_address_meet_it_reads() {
                 f.by_address
                     .at(&coord::Member::decode(address.as_bytes())
                         .expect("a word vertex address")),
-                Some(&(i as u16)),
+                Some(&u16::try_from(i).expect("a vertex of the chord form, as the meet files it")),
                 "vertex {i} at {:?} is not what the meet resolves",
                 address.as_bytes()
             );

@@ -81,6 +81,10 @@ pub(crate) fn compose_perm(a: &[(u8, u8)], b: &[(u8, u8)]) -> Vec<(u8, u8)> {
 }
 
 pub(crate) fn gauge_is_perm(sigma: &[(u8, u8)]) -> bool {
+    #[expect(
+        clippy::cast_possible_truncation,
+        reason = "STD1 C1 — the sensor's: a hue below PALETTE = 10, the slots of the [u8; PALETTE] it fills"
+    )]
     let mut image: [u8; PALETTE] = std::array::from_fn(|i| i as u8);
     for &(f, t) in sigma {
         if (f as usize) >= PALETTE || (t as usize) >= PALETTE {

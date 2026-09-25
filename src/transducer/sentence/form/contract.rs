@@ -27,6 +27,10 @@ impl Form {
         for (i, v) in self.vertices.iter().enumerate() {
             if let Vertex::Word { address: a, .. } = v {
                 if a == address {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "AT1 debt — a slot number of the form's Vec (a Word vertex); the atlas row replaces the slot by the chart's coordinates"
+                    )]
                     return Some(i as u16);
                 }
             }

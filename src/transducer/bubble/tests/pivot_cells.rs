@@ -86,7 +86,7 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     }
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     let (a, b) = (vec![0xa], vec![0xb]);
-    for face in 0..f.faces.len() as u32 {
+    for face in 0..u32::try_from(f.faces.len()).expect("the fixture's handful of faces; AT1 debt — a face slot number keys face_bodies") {
         f.face_bodies.insert(face.to_be_bytes(), (a.clone(), b.clone()));
     }
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());

@@ -33,6 +33,10 @@ impl Form {
                     let Ok(member_key) = coord::Member::decode(address.as_bytes()) else {
                         continue;
                     };
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "AT1 debt — a slot number of the form's Vec (a Word vertex filed by address); the atlas row replaces the slot by the chart's coordinates"
+                    )]
                     by_address.put(&member_key, i as u16);
                     // THE TRANSPORT CLASS IS THE VERTEX'S, not a member's, so
                     // this files the vertex once however many charts it acts
@@ -44,6 +48,10 @@ impl Form {
                         // class it is. `TransportClass::key` is the one
                         // writer of these bytes, so this is the one place
                         // they become a coordinate of that system.
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            reason = "AT1 debt — a slot number of the form's Vec (a Word vertex filed by transport class); the atlas row replaces the slot by the chart's coordinates"
+                        )]
                         match by_transport.at_mut(&tk) {
                             Some(on) => on.push(i as u16),
                             None => {
@@ -69,6 +77,10 @@ impl Form {
                         // different type and cannot reach this carrier.
                         let chart_key = coord::Chart(a.chart.clone());
                         let ck = chart_key.encode().as_bytes().to_vec();
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            reason = "AT1 debt — a slot number of the form's Vec (a Word vertex on a chart's fibre); the atlas row replaces the slot by the chart's coordinates"
+                        )]
                         match by_class.at_mut(&chart_key) {
                             Some(on) => {
                                 if !on.contains(&(i as u16)) {
@@ -106,14 +118,26 @@ impl Form {
                 Vertex::Rebased { of, .. } => {
                     if let Some(Vertex::Word { address, .. }) = self.vertices.get(*of as usize) {
                         if let Ok(k) = coord::Member::decode(address.as_bytes()) {
+                            #[expect(
+                                clippy::cast_possible_truncation,
+                                reason = "AT1 debt — a slot number of the form's Vec (a Rebased vertex); the atlas row replaces the slot by the chart's coordinates"
+                            )]
                             by_rebased.put(&k, i as u16);
                         }
                     }
                 }
                 Vertex::Unfolded { measure } => {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "AT1 debt — a slot number of the form's Vec (an Unfolded vertex); the atlas row replaces the slot by the chart's coordinates"
+                    )]
                     by_unfolded.put(&unfolded_key(measure), i as u16);
                 }
                 Vertex::Demand { kind, chart, .. } => {
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "AT1 debt — a slot number of the form's Vec (a Demand vertex); the atlas row replaces the slot by the chart's coordinates"
+                    )]
                     demands.put(
                         &crate::transducer::sentence::demand_key(kind, chart),
                         i as u16,
@@ -126,6 +150,10 @@ impl Form {
                     if let Ok(site) =
                         coord::Site::decode(&crate::transducer::sentence::vertex_bytes(v))
                     {
+                        #[expect(
+                            clippy::cast_possible_truncation,
+                            reason = "AT1 debt — a slot number of the form's Vec (a Glued vertex, by site); the atlas row replaces the slot by the chart's coordinates"
+                        )]
                         glued.put(&site, i as u16);
                     }
                 }
@@ -158,6 +186,10 @@ impl Form {
                 continue;
             };
             if !star.holds(&key) {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "AT1 debt — a slot number of the form's Vec (a star face); the atlas row replaces the slot by the chart's coordinates"
+                )]
                 star.put(&key, fi as u16);
             }
         }

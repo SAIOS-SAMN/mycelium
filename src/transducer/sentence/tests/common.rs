@@ -132,9 +132,9 @@ pub fn word_vertex_on(addr: u8, word: Word, chart: stalk::Invariant) -> Vertex {
 pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     let mut f = Form::default();
     for i in 0..n_words {
-        let j = (i as u16) + 1;
+        let j = u16::try_from(i).expect("a star fixture's spoke, n_words small") + 1;
         f.vertices.push(word_vertex_on(
-            j as u8,
+            u8::try_from(j).expect("a star fixture's spoke, n_words small"),
             Word::identity(),
             stalk::Invariant::counts(&[u64::from(j)]),
         ));
@@ -169,16 +169,20 @@ pub fn infinite() -> Word {
 pub fn chord_form(chords: &[Word]) -> Form {
     let mut f = Form::default();
     for (ci, w) in chords.iter().enumerate() {
-        let a = (ci * 2 + 1) as u16;
-        let b = (ci * 2 + 2) as u16;
+        let a = u16::try_from(ci * 2 + 1).expect("a chord fixture's end, a few chords");
+        let b = u16::try_from(ci * 2 + 2).expect("a chord fixture's end, a few chords");
         // TWO ENDS ARE TWO SITES, and the site is the chart. They used to
         // be one vertex twice — same rotor, same chart, same carriage,
         // same gauge — distinguished only by the address each was handed,
         // which is identity by fiat (§1.5) and a form extraction cannot
         // produce. The chord's own transport is unchanged by this: the
         // chart is where a body stands, not how it is carried.
-        f.vertices.push(word_vertex_on(a as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
-        f.vertices.push(word_vertex_on(b as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
+        let (a8, b8) = (
+            u8::try_from(a).expect("a chord fixture's end, a few chords"),
+            u8::try_from(b).expect("a chord fixture's end, a few chords"),
+        );
+        f.vertices.push(word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        f.vertices.push(word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
         f.faces.push(f.face_of(0, a).expect("star a"));
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(f.face_carrying(a, b, w.clone()).expect("a chord between two bodies"));
@@ -196,14 +200,18 @@ pub fn chord_form(chords: &[Word]) -> Form {
 pub fn edge_chord_form(edges: &[Word]) -> Form {
     let mut f = Form::default();
     for (ci, w) in edges.iter().enumerate() {
-        let a = (ci * 2 + 1) as u16;
-        let b = (ci * 2 + 2) as u16;
+        let a = u16::try_from(ci * 2 + 1).expect("an edge fixture's end, a few edges");
+        let b = u16::try_from(ci * 2 + 2).expect("an edge fixture's end, a few edges");
         // TWO ENDS ARE TWO SITES (§1.5), for `chord_form`'s reason and at
         // the site that repair missed: one rotor, one chart, one carriage
         // and one gauge is ONE vertex, and a form holding it twice keys to
         // a form holding it once.
-        f.vertices.push(word_vertex_on(a as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
-        f.vertices.push(word_vertex_on(b as u8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
+        let (a8, b8) = (
+            u8::try_from(a).expect("an edge fixture's end, a few edges"),
+            u8::try_from(b).expect("an edge fixture's end, a few edges"),
+        );
+        f.vertices.push(word_vertex_on(a8, Word::identity(), stalk::Invariant::counts(&[u64::from(a)])));
+        f.vertices.push(word_vertex_on(b8, Word::identity(), stalk::Invariant::counts(&[u64::from(b)])));
         f.faces.push(f.face_of(0, a).expect("star a"));
         f.faces.push(f.face_of(0, b).expect("star b"));
         f.faces.push(

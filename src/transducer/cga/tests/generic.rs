@@ -29,7 +29,7 @@ fn the_algebra_at_n4_has_its_own_count_and_holds_n3_inside_it() {
     assert_eq!(one(EP | EM).n(), 0, "e+ and e- belong to every algebra");
     // The pseudoscalar is grade n + 2, and invertible.
     let i4 = one(pseudo(4));
-    assert_eq!((pseudo(4) as u32).count_ones(), 6, "grade n + 2");
+    assert_eq!(u32::try_from(pseudo(4)).expect("a blade mask of Cl(5,1), below 2^6").count_ones(), 6, "grade n + 2");
     assert!(crate::transducer::cga::is_versor(&i4), "the pseudoscalar is a versor, so invertible");
     // THE INCLUSION: an n = 3 value is the same value at n = 4.
     let a = Mv::blade(0b00011, q(2, 1));

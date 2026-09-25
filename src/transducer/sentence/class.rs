@@ -456,6 +456,10 @@ impl ClassVector {
         let mut out = Vec::new();
         if let Some(plane) = self.plane {
             for (p, &(orientation, unit, m5, m13)) in plane.iter().enumerate() {
+                #[expect(
+                    clippy::cast_possible_truncation,
+                    reason = "STD1 C1 — the algebra's range: a pair plane, one of PAIR_PLANES = C(4, 2) = 6 (the array it enumerates)"
+                )]
                 let p = p as u8;
                 if orientation {
                     out.push(Axis::Orientation(p));

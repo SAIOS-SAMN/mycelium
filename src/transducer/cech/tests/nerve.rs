@@ -10,7 +10,7 @@ fn cell(row: i64, col: i64, frame: i64) -> coord::Lamina {
 
 /// Each chart with its own section coordinates: here, one carriage each.
 fn sections(footprints: &[Vec<coord::Lamina>]) -> Vec<Chart> {
-    footprints.iter().enumerate().map(|(i, f)| (vec![b's', i as u8], f.clone())).collect()
+    footprints.iter().enumerate().map(|(i, f)| (vec![b's', u8::try_from(i).expect("a fixture's chart ordinal, a few charts")], f.clone())).collect()
 }
 
 /// THE PORE CASE — the whole reason the read is over the base.

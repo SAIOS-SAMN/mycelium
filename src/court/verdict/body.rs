@@ -157,6 +157,7 @@ pub(crate) fn vertex_carries_frame(
         if let Some(mps) =
             crate::transducer::family::member_section_key(vertex, &member.chart).and_then(|mk| sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
         {
+            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
             if !mps.contains(&frame_key(frame as u16)) {
                 continue;
             }
@@ -256,6 +257,7 @@ fn form_covers_laminae(
                     ))
                     .cloned()
             });
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
         if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
             continue;
         }
@@ -264,6 +266,7 @@ fn form_covers_laminae(
             if let Some(mps) =
                 crate::transducer::family::member_section_key(v, &member.chart).and_then(|mk| f.sections.at(&crate::network::nerve::coord::SectionAt::Member(Box::new(mk))))
             {
+                #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
                 if !mps.contains(&frame_key(frame as u16)) {
                     continue;
                 }
@@ -331,6 +334,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                     .cloned()
             });
         for (frame, at) in frames.iter().enumerate() {
+            #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (a frame of the family, filed by frame_key); the atlas row replaces the slot by the chart's coordinates")]
             if only.as_ref().is_some_and(|ps| !ps.contains(&frame_key(frame as u16))) {
                 continue;
             }

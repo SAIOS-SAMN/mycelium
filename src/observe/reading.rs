@@ -292,6 +292,7 @@ impl Loss {
     }
 
     fn put(&self, out: &mut Vec<u8>) {
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: the axes array is sized LOSS_AXES.len(), 26 entries")]
         out.push(self.axes.len() as u8);
         for v in &self.axes {
             put_u64(out, *v);
@@ -547,6 +548,7 @@ pub struct Replication {
 impl Replication {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: REPLICATION_AXES, REP_AXES = 17 entries")]
         out.push(REPLICATION_AXES.len() as u8);
         crate::transducer::address::put_u32_count(out, self.signers.len())?;
         for (vk, axes) in &self.signers {

@@ -104,6 +104,10 @@ impl Complex {
                 // its own list of arms.
                 Fill::Unread(why) => {
                     fill.push(5);
+                    #[expect(
+                        clippy::cast_possible_truncation,
+                        reason = "STD1 C1 — a constant table: a position in FillUnread::ALL, 3 entries"
+                    )]
                     fill.push(FillUnread::ALL.iter().position(|w| w == why).map_or(u8::MAX, |i| i as u8));
                 }
             }

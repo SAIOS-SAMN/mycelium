@@ -122,6 +122,10 @@ pub(crate) fn classify_cover(
             if v.face_chart().is_none() {
                 continue;
             }
+            #[expect(
+                clippy::cast_possible_truncation,
+                reason = "AT1 debt — a slot number of the form's Vec (the next vertex pushed onto the pieces' form); the atlas row replaces the slot by the chart's coordinates"
+            )]
             let ix = piece_form.vertices.len() as u16;
             piece_form.vertices.push(v.clone());
             cover_vertex.put(&key, ix);

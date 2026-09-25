@@ -102,7 +102,7 @@ fn a_cube_shares_a_cell_of_its_own_grade_with_every_neighbour() {
         let positions = block(n);
         let centre = positions.binary_search(&Site::new(vec![0; n])).expect("the centre is in its block");
         let about: Vec<_> = shared_cells(&positions).into_iter().filter(|c| c.i == centre || c.j == centre).collect();
-        assert_eq!(about.len() + 1, 3usize.pow(n as u32), "every neighbour once, at n = {n}");
+        assert_eq!(about.len() + 1, 3usize.pow(u32::try_from(n).expect("n is 3 or 4, the loop's literals")), "every neighbour once, at n = {n}");
         for c in &about {
             let (p, q) = (&positions[c.i], &positions[c.j]);
             let offset: Vec<i64> = q.axes().iter().zip(p.axes()).map(|(a, b)| a - b).collect();

@@ -35,7 +35,7 @@ fn the_grades_sum_to_the_element() {
             sum.coeff(m),
             r.coeff(m),
             "grade {} of blade {m:#06b} is lost or doubled",
-            (m as u32).count_ones()
+            u32::try_from(m).expect("a blade mask below Cl(4,0)'s 16 slots").count_ones()
         );
     }
 }

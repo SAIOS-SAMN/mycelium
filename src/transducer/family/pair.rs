@@ -34,6 +34,7 @@ impl Scenery {
     /// chart files its support under that member; a vertex acting on
     /// several charts is filed by the caller, one support per member.
     pub(crate) fn place(&mut self, vertex: Vertex, support: Vec<Site>) -> u16 {
+        #[expect(clippy::cast_possible_truncation, reason = "AT1 debt — a slot number of the form's Vec (the vertex about to be pushed, the one site that adds a vertex); the atlas row replaces the slot by the chart's coordinates")]
         let ix = self.vertices.len() as u16;
         let member = vertex.face_chart().map(|c| member_key(ix, c.key().as_bytes()));
         self.vertices.push(vertex);
