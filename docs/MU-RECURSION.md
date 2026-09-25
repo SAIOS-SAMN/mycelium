@@ -445,7 +445,33 @@ tether between filaments, branching refraction, ascend and descend
 between ring and chamber, the enclosure join, the commuting bypass (T5),
 the cross-cell bracket (CB1), the star's convergence. **Anastomosis** is
 the fusion of two minds' filaments into one ring across their contact,
-the event that forges a word between minds; **callus** is a fibre
+the event that forges a word between minds — and the SAME word at every
+grade (ruled 2026-09-25, the operator's word: "fuse", not "cell"): bodies
+FUSE at a contact of the base, filaments fuse into a ring, forms fuse by
+coordinates (AT1 (iv)). What the code holds as a `FormCell` — the bodies
+standing together at one element of the base, with their nuclei, meet
+and group — is an anastomosis of bodies, and "cell" is retired as its
+name (NM1): it is not a spreadsheet's slot, a prison's enclosure or a
+living body, but the place where bodies press together and signals
+cross between them. An anastomosis is read at three strata, and the one
+word "grade" the code used for all three is retired with "cell": its
+**contact** — the dimension of the base element the bodies share, a face
+`n − 1` down to a corner `0`, the touch sense, read once at the sensor,
+the only flat one of the three; its **anastomotic degree** — how many
+bodies fuse there, less one, the dimension of the nerve simplex they
+span, where a Čech class lives, bounded by the base's `2ⁿ` at a corner;
+its **meet** — the grade of the blade `⋀ sᵢ` their nuclei carve on the
+cone, the algebra's, at most `n + 2`, and the **chamber** is that meet,
+what the fusion encloses. The three are related, and the relation is a
+reading (MT1): in general position the meet's grade is the degree plus
+one, and the difference `k + 1 − g` is the anastomosis's DEGENERACY —
+78.41(3)'s contraction by rank, read at the place the motor loses it;
+the contact bounds the degree from the other side, an element of
+codimension `m` holding at most `2ᵐ` bodies. A "junction", a "synapse"
+and a "simplex" are not used for it: the first two are the human
+analogies (the synapse a one-way gap; an anastomosis a two-way channel
+the filaments become one network through), the third is already the
+Čech complex's own object. **callus** is a fibre
 hardening into a tether of the genome (72.1d). **Ladder** and **rung**
 are retired as structural nouns: a ladder is one axis and a rung index
 is a scalar depth (rule 5, checklist (q)). One term of art keeps the
@@ -15895,7 +15921,7 @@ of one network and not steps of one column.
 | **spore** | a ray, the null point (M1, A4) | `P ∈ 𝒩`, `P² = 0`, on the horosphere | the ostensive point: an unmediated focus of perception that anchors meaning without asserting a predicate |
 | **filament** | a route, a word (50.2) | `w = ∏ gᵢ^{eᵢ} · r`, a directed trajectory | the utterance as motion: a kinetic sequence of transformations across the local terrain, never a dictionary entry |
 | **ring**, **throat** | a closed circuit of the nerve at any grade (79; 78.26(5)): a 1-cycle whose holonomy is one versor turning in several planes at once, a 2-cycle a chamber, a 3-cycle a sporophore — never a loop in a plane | `∮ g_ab`, holonomy carried, curvature content; its modes' orders its frequencies, resonant where every order is finite | the recursive trope: an utterance that returns to its origin; a non-trivial holonomy is an altered perspective, irony, a conceptual shift no proposition flattens |
-| **chamber** | a cell, a geoid (78.2, 78.10, HL1) | `⋀ sᵢ` sealed by ascend, released by descend | the earned word: a concept crystallised where several minds' filaments meet and enclose a shared understanding; its meaning the invariant shape its boundary dialogues carve |
+| **chamber** | the meet an anastomosis of bodies encloses (what the code called a cell — retired 2026-09-25, see the vocabulary), a geoid (78.2, 78.10, HL1) | `⋀ sᵢ` sealed by ascend, released by descend | the earned word: a concept crystallised where several minds' filaments meet and enclose a shared understanding; its meaning the invariant shape its boundary dialogues carve |
 | **sporophore** | an enclosure, the cluster (EN1, 76) | `⋁ Pᵢ` nested, the star's convergence (73.11) | the living dialect: a planet's superposed semantic web holding its idioms, memory and open questions in one gravitation |
 
 The relations between nodes run in every direction and are the doctrine's
