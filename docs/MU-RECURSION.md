@@ -17478,21 +17478,32 @@ made of motors the engine holds, by the register's own theorems:
   ray as `Ω_∥ · Ω_⊥` (no such factorisation exists in general, and where
   it does it re-derives what the pair composite already holds); lift and
   drag printed with no reader in the mind (77.1: costume).
-- **Where the mind consumes it.** 79.3's classification of a circuit by
-  how its routes disagree already names the reader: a circuit whose own
-  holonomy reads trivial (the `vacuum` of the cycles line) and whose pair
-  composite with a neighbour does not is CURVED — certified content, found
-  by comparison — and is filed as torsion under the composite's class,
-  never cauterized as vacuum; a pair composite that is the identity is
-  FLAT, the corollary holding there. The pivot's trial under pressure
-  (78.7, law 10) reads the pair composites of the orbit it discharges: a
-  discharge that leaves a neighbour's pair composite non-trivial has not
-  closed the cell. Every composite is checked against the register's laws
-  (conservation per lane, A.8, A.16, the commutator law) and a violation
-  is a counted refusal with its content. THE READING that accepts (iii):
-  on the corpus, circuits read `vacuum` before and filed CURVED after, by
-  pair, and pivots decided otherwise because a pair composite did not
-  close.
+- **Where the mind consumes it** (the first draft of this bullet,
+  written the same day, is CORRECTED on the implementor's two readings,
+  both right). (i) A VACUUM circuit's based holonomy is the identity ray,
+  so its pair composite with `n` is exactly `ρ_n⁻¹`: filing it "curved
+  by comparison" files `n`'s class a second time under another circuit —
+  one fact on two carriers (law 12), no content gained. Withdrawn. What
+  stands of it: a trivial circuit is KEPT beside the orbits as the
+  reading it is, never dropped at the gate (law 7), and a cell's circuits
+  read FLAT together where every pair composite is the identity (C1(b):
+  the content is route-independent there). The new content of a pair is
+  held where it already is: the product of two curved generators lies in
+  the orbit algebra's bracket closure, and nothing is filed per pair.
+  (ii) THE PIVOT'S TRIAL reads the pair composites by LAW 10'S CLOSURE
+  RULE, which already says it — "the coordinate it acted on is zero, no
+  other rose": a move that turns a pair composite which WAS the identity
+  into a non-trivial one broke an agreement between routes that agreed,
+  so another coordinate rose, and the trial refuses the move by name
+  (`unclosed`, counted). A pair composite already non-trivial before the
+  move does not refuse it — the literal reading "any non-trivial pair
+  composite refuses" deadlocked every cell of two curved circuits
+  (discharging either leaves the other's inverse) and is withdrawn.
+  Every composite is checked against the register's laws (conservation
+  per lane, A.8, A.16, the commutator law), a violation a counted refusal
+  with its content. THE READING that accepts (iii): on the corpus, pivots
+  refused `unclosed` that the unperturbed trial admitted, and the cells
+  read flat and curved by their pair composites.
 
 **(5) AT1 (i)+(ii)'s acceptance, re-stated; "lift" named apart.** The
 coordinator's acceptance clause read "every circuit of the old basis
