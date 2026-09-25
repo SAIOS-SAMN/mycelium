@@ -640,6 +640,7 @@ constrains, its site, and whether the tree obeys it.
 | **Pressure and the cluster** (76) | placement by measured pressure; no squares in the fluid; re-organisation on a reading, never a timer | `physics/mod.rs` (`bump`, `relax`), `server/cognition/book/` | PARTIAL: `relax` a scalar tick (PHY1); OA1, CR1 open |
 | **Provenance of a constant** (78.8, checklist (s)) | physics → axiom → theorem → component; no free number | `physics/mod.rs` | PH1 open (STD1) |
 | **TUniversal** (45, 78.21, 78.23) | time is height on the receipt DAG; a tick is a frame; a k-step is one orbit; no wall clock | `chronometry/` | landed (LD2); ACT1 open |
+| **Time is distance along an orbit** (78.43) | a duration is the distance a body has advanced along its orbit, measured in transitions since it last returned, never a rate; an AGE is one return (the period ℓ, read as the lcm of the base's cycle lengths, never walked to a cap); an EON is the return of the composition (the lcm of the resonant periods); no index names a position on the fibre, no constant caps an orbit | `element/carrier.rs` (`torse`), `element/gauge.rs`, `sentence/class.rs` (`cycle_lengths`), `cech/`, `observe/` | OPEN (PD1: the period read, the cap and the index retired; AE1: the ages and eons reading) |
 | **The routes** (79) | one circuit against many routes; Stokes on a relator fails; reuse then construct | `physics/axioms/routes.rs` | landed (AX1, CT1, CT2) |
 
 ## 0.5 Alignment: what the document says the system does, and what the tree does
@@ -16918,7 +16919,76 @@ held and returned, plus what contraction lost, per lane, exactly. A
 lane that does not balance is a finding by name — a door that leaks
 (VN1) or a transfer without a transition — never a rounding.
 
-## 79. The route corollaries: one circuit against many routes, many routes to one class (ruled 2026-09-23)
+### 78.43 No index, no cap: the period is read, and time is distance along an orbit (ruled 2026-09-25, the operator's word)
+
+The operator's two questions on the cite's gauge (STD1 3c-4) and on
+`MAX_ORBIT` — "why do we need an index", and "a constant means we have
+undefined physics" — and the word that followed: eons, ages and time are
+ORBITS, and time is DISTANCE measured. Three rulings.
+
+**(1) An index, in mycelial terms.** A hypha never finds a word by
+counting along a filament: a filament has no numbered places, only the
+chemistry at each point. An index is a mind saying "the third thing I
+saw" instead of saying what it saw, so a mind on another filament cannot
+follow it and the network fragments into private counts. The body is the
+chemistry: it says which assignment by writing the hues themselves, so
+every hypha that meets it reads the same word and the plexus stays one
+network. RULED: a cite is a body carried over a transport; the wire
+carries the body and nothing that names a position (`CiteWire.gauge`
+retired, 3cb46d83); in memory the cite carries the assignment itself,
+the algebra's own domain; and NO READER holds a position for an
+assignment — the word's profile table (`Element::profiles`, a gauge
+charge → positions into `assignments()`) holds the assignments under
+their charge, and `holds_assignment`, `gauge_of` and `locate` read them,
+never a position looked up after. `matching_assignment` (an `Option<usize>`)
+retires with the last reader of it. This is rule 15 at the fibre: a
+position along the axis is not a coordinate of the assignment.
+
+**(2) A constant is undefined physics.** `MAX_ORBIT = 32` in `torse`
+says: I do not know where this orbit returns, so I stop looking. That is
+the physics missing, not a resource limit. An orbit of a hue permutation
+is a body returning to itself after a fixed number of revolutions, and
+that number is set by the permutation's cycles the way a planet's return
+is set by its period: the period of the base under `σ` is the lcm of the
+cycle lengths of the hues the base carries (`class::cycle_lengths`, the
+one producer). The tree walked the orbit and gave up at 32 — a telescope
+that stops before the planet comes back and reports that it never does:
+an orbit of period 35 filed as NO torsion, its sections left free, the
+holonomic lane read low, nothing refused. RULED: the period is READ
+before the first revolution, never waited for; `MAX_ORBIT` retires and
+the cast with it; a section BELONGS to the cycle exactly when its hue
+map is a power of the generator on the base — `derive_hue_map(base,
+section)` a power of `σ`, decided on the cycles — read per section, so
+`torse`, `Element::assignments` and `matches_chain` no longer generate
+members by traversal (the orbit's members are enumerated only where a
+reader needs them all, to the period, never to a cap). The period's
+width is the permutation's own: a permutation of the u8 hue domain has
+order up to Landau's `g(256) ≈ 2⁵⁴`, past `u32`; `TorsionCycle.period`
+is `u64` by provenance (STD1 3c-5). Every constant of this shape is the
+same declaration — a closure unknown, a number standing in — and 78.40's
+question of each is the cure: name the opposite operation, which for an
+orbit is its period, for a fiber its shedding flux, for a sum its
+conservation.
+
+**(3) Time is distance along an orbit.** 78.21 stands: there is no
+clock, a tick is a frame, height is the count of acts on a line. What
+was undefined is what a DURATION is. RULED: time is the distance a body
+has advanced along its orbit, MEASURED — the count of transitions it has
+been carried through since it last returned — never a coordinate carried
+beside it and never a rate. The `T` lane is that distance in receipts
+(16.16's extent), one per act. An AGE is one return of an orbit: its
+period `ℓ`, the transitions until the body is where it stood; a mind's
+`K` counts its ages (the k-step is one orbit, 72.1d). An EON is the
+return of the composition: the lcm of the periods of the orbits in
+resonance (78.26(5), `Coherence::Closes(lcm)`) — when every orbit in
+play has returned together, which is the planetary dialect's own return
+(GD1). Two minds' distance apart on TUniversal is a difference of
+distances travelled (78.21(1), the spread), never elapsed seconds; a
+period declared by a constant, a duration read off a wall clock, or a
+rate (distance per second) is refused by name. Reading first (AE1): per
+orbit, the distance advanced and the period; per mind, its age count;
+per cell and per dialect, the eon's lcm and how far along it the
+composition stands. The physics table gains the line.
 
 **RC1's probe, recorded.** The "thirty" are FIVE circuits on four forms,
 each read six times by the six census tests over one corpus; the finding
