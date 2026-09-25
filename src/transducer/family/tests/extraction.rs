@@ -94,6 +94,46 @@ fn the_court_refuses_a_forged_frame_axis_motor() {
     );
 }
 
+/// AT1 A1's correction (law 8) — A CHART HOLDING TWO BODIES AT A FRAME. The
+/// motor was measured on the chart's whole fibre at each frame, the union of
+/// both bodies, so the court applies it to that same union and finds the
+/// union at the next frame: a chart with several bodies is verified, never
+/// passed unread, and a forged motor on it is refused.
+#[test]
+fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
+    let a_in = ["110000", "000000", "110000", "000000"];
+    let a_out = ["220000", "000000", "220000", "000000"];
+    let b_in = ["011000", "000000", "011000", "000000"];
+    let b_out = ["022000", "000000", "022000", "000000"];
+    let family = vec![(grid(&a_in), grid(&a_out)), (grid(&b_in), grid(&b_out))];
+    let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("extracts");
+    let motors: Vec<crate::network::nerve::coord::Overlap> = rule
+        .form
+        .faces
+        .entries()
+        .filter(|(_, f)| f.producer == crate::transducer::sentence::Producer::Motor)
+        .map(|(o, _)| o)
+        .collect();
+    let [motor, ..] = motors.as_slice() else {
+        panic!("the two dominoes' chart steps between its frames: a motor overlap")
+    };
+    assert!(
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family).is_none(),
+        "the measured motor carries the chart's two bodies onto its two bodies at the next frame"
+    );
+    let mut forged = rule.form.clone();
+    if let Some(f) = forged.faces.at_mut(motor) {
+        // A translator one row over: no transition of this family.
+        let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+        f.place.carriage = crate::transducer::cga::at_three::translator(&q(1), &q(0), &q(0));
+    }
+    assert!(
+        crate::court::verdict::body::edges_rederive_frames(&forged, &family).is_some(),
+        "a forged motor on a chart of two bodies is refused, never passed unread"
+    );
+}
+
 #[test]
 fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];

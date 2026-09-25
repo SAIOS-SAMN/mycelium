@@ -379,14 +379,17 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// addresses when the union has no versor (the speaker claimed an edge
 /// where the pair is not rigid) or the transport is not the one measured.
 ///
-/// A FRAME-AXIS MOTOR, APPLIED (AT1 A1, law 8): the member's one body on its
-/// chart at the leaving frame, each lamina placed at that frame's own `k`
-/// and carried by the motor, must land exactly on the member's one body on
-/// its chart at the arriving frame, placed at its `k′`. `None` where it does
-/// — or where the court's frames hold no single body on either chart to ask,
-/// which the closure check reads as sections — and `REFUSE_EDGE` by content
-/// where it does not: the motor the overlap carries is no transition of the
-/// family the court holds. Nothing is solved here.
+/// A FRAME-AXIS MOTOR, APPLIED (AT1 A1, law 8): the chart's WHOLE fibre at
+/// the leaving frame — the union of every body the court perceives on the
+/// member's chart there, each lamina placed at that frame's own `k`, which
+/// is the `a_k` the percept measured the motor on — carried by the motor,
+/// must land exactly on the whole fibre of the arriving chart at the arriving
+/// frame, placed at its `k′`, whatever the body count. `None` only where it
+/// lands. A frame the court's family does not hold, an empty fibre, or a
+/// site that does not place or carry is REFUSED, never passed: what the
+/// court does not check it has not verified. `REFUSE_EDGE` by content — the
+/// motor the overlap carries is no transition of the family the court
+/// holds. Nothing is solved here.
 fn motor_carries(
     frames: &[Frame<'_>],
     x: &crate::network::nerve::coord::MemberAt,
@@ -395,26 +398,29 @@ fn motor_carries(
 ) -> Option<Refusal> {
     use crate::transducer::base::FRAME_AXIS;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
-    let (Some(from), Some(to)) = (at(x.frame), at(y.frame)) else { return None };
-    let (Ok(k), Ok(k2)) = (i64::try_from(x.frame), i64::try_from(y.frame)) else { return None };
-    let (fiber_a, fiber_b) = (from.on_chart(&x.chart), to.on_chart(&y.chart));
-    let ([a], [b]) = (fiber_a.as_slice(), fiber_b.as_slice()) else { return None };
-    let placed = |body: &Body, k: i64| -> Option<Vec<crate::transducer::base::Site>> {
-        let mut s: Vec<_> = body.laminae.iter().map(|l| l.site.with_axis(FRAME_AXIS, k)).collect::<Option<_>>()?;
+    let placed = |fiber: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
+        let mut s: Vec<_> = fiber
+            .iter()
+            .flat_map(|b| b.laminae.iter())
+            .map(|l| l.site.with_axis(FRAME_AXIS, k))
+            .collect::<Option<_>>()?;
         s.sort_unstable();
         s.dedup();
-        Some(s)
+        (!s.is_empty()).then_some(s)
     };
-    let (Some(sources), Some(targets)) = (placed(a, k), placed(b, k2)) else { return None };
-    let carried: Option<Vec<_>> = sources.iter().map(|s| element::carry_site(motor, s)).collect();
-    let lands = carried.is_some_and(|mut c| {
-        c.sort_unstable();
-        c.dedup();
-        c == targets
-    });
+    let lands = (|| {
+        let (from, to) = (at(x.frame)?, at(y.frame)?);
+        let (k, k2) = (i64::try_from(x.frame).ok()?, i64::try_from(y.frame).ok()?);
+        let sources = placed(&from.on_chart(&x.chart), k)?;
+        let targets = placed(&to.on_chart(&y.chart), k2)?;
+        let mut carried: Vec<_> = sources.iter().map(|s| element::carry_site(motor, s)).collect::<Option<_>>()?;
+        carried.sort_unstable();
+        carried.dedup();
+        Some(carried == targets)
+    })();
     match lands {
-        true => None,
-        false => Some(Refusal::closure(
+        Some(true) => None,
+        _ => Some(Refusal::closure(
             REFUSE_EDGE,
             sentence::At::vertex(x.vertex.clone(), x.chart.clone()),
             sentence::Content::Holonomy {
