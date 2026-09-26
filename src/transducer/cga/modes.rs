@@ -71,40 +71,6 @@ pub(super) fn generators(n: u8) -> Vec<usize> {
     masks
 }
 
-pub(super) fn column(v: &Mv, masks: &[usize]) -> Vec<Q> {
-    masks.iter().map(|&m| v.coeff(m).clone()).collect()
-}
-
-pub(crate) fn mul(a: &[Vec<Q>], b: &[Vec<Q>]) -> Vec<Vec<Q>> {
-    let d = a.len();
-    (0..d).map(|i| (0..d).map(|j| (0..d).fold(Q::zero(), |acc, k| acc + &a[i][k] * &b[k][j])).collect()).collect()
-}
-
-pub(crate) fn identity(d: usize) -> Vec<Vec<Q>> {
-    (0..d).map(|i| (0..d).map(|j| if i == j { one() } else { Q::zero() }).collect()).collect()
-}
-
-/// THE SCALAR INVARIANTS OF `A` AT EVERY EXPONENT: its characteristic
-/// polynomial `det(x − A)`, coefficients low to high, by Faddeev–LeVerrier —
-/// `cₖ` from `tr(A Mₖ)`, exact over ℚ, no root taken.
-pub(super) fn characteristic(a: &[Vec<Q>]) -> Vec<Q> {
-    let d = a.len();
-    let mut coeff = vec![Q::zero(); d + 1];
-    coeff[d] = one();
-    let mut m = vec![vec![Q::zero(); d]; d];
-    for k in 1..=d {
-        let mut next = mul(a, &m);
-        for (i, row) in next.iter_mut().enumerate() {
-            row[i] += &coeff[d + 1 - k];
-        }
-        m = next;
-        let am = mul(a, &m);
-        let tr = (0..d).fold(Q::zero(), |acc, i| acc + &am[i][i]);
-        coeff[d - k] = -tr / Q::from_integer(num_bigint::BigInt::from(k));
-    }
-    coeff
-}
-
 /// The polynomial with its vanishing leading coefficients dropped: its
 /// degree, read off the coefficients themselves.
 fn trim(mut p: Vec<Q>) -> Vec<Q> {
@@ -260,51 +226,76 @@ fn nonzero_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Result<Vec<Q>,
     Ok(rational_roots(p, budget)?.into_iter().filter(|r| !r.is_zero()).collect())
 }
 
-/// `A` as the columns of a basis of `ker(A − λ)`.
-fn eigenspace(a: &[Vec<Q>], lambda: &Q) -> Vec<Vec<Q>> {
-    let d = a.len();
-    let shifted: Vec<Vec<Q>> =
-        (0..d).map(|i| (0..d).map(|j| if i == j { &a[i][j] - lambda } else { a[i][j].clone() }).collect()).collect();
-    super::nullspace(shifted, d)
-}
-
-/// The inverse of an invertible matrix, column by column through the one
-/// elimination (`nullspace`).
-pub(super) fn invert(t: &[Vec<Q>]) -> Option<Vec<Vec<Q>>> {
-    let d = t.len();
-    let mut cols: Vec<Vec<Q>> = Vec::with_capacity(d);
-    for j in 0..d {
-        let rows: Vec<Vec<Q>> = (0..d)
-            .map(|i| {
-                let mut row = t[i].clone();
-                row.push(if i == j { -one() } else { Q::zero() });
-                row
-            })
-            .collect();
-        match super::nullspace(rows, d + 1).as_slice() {
-            [v] if v[d] == one() => cols.push(v[..d].to_vec()),
-            _ => return None,
-        }
-    }
-    Some((0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect())
-}
-
 /// `B` carried by the outermorphism of `P`: every `e_k ∧ e_l` to
 /// `P e_k ∧ P e_l`.
-fn project(b: &Mv, p: &[Vec<Q>], masks: &[usize]) -> Mv {
-    let d = masks.len();
-    let image = |k: usize| (0..d).fold(Mv::zero(), |acc, i| acc.add(&Mv::blade(masks[i], p[i][k].clone())));
+fn project(b: &Mv, p: &super::LinearFunction) -> Mv {
+    let masks = p.masks();
+    let images = p.images();
     let mut out = Mv::zero();
-    for k in 0..d {
-        for l in (k + 1)..d {
+    for k in 0..masks.len() {
+        for l in (k + 1)..masks.len() {
             let c = b.coeff(masks[k] | masks[l]);
             if c.is_zero() {
                 continue;
             }
-            out = out.add(&image(k).geo(&image(l)).grade(2).scale(c));
+            out = out.add(&images[k].geo(&images[l]).grade(2).scale(c));
         }
     }
     out
+}
+
+/// THE SPECTRAL PROJECTORS OF A FUNCTION, AS POLYNOMIALS IN IT: one per
+/// value in `values` onto that value's space along every other, and the rest
+/// — the generalised space at `root` where one is named — as the identity
+/// less them. For a value `λⱼ` the projector is
+///
+/// ```text
+///     Pⱼ(x) = (x − r)^d Π_{i≠j} (x − λᵢ)  /  ((λⱼ − r)^d Π_{i≠j} (λⱼ − λᵢ))
+/// ```
+///
+/// with `r` the root whose generalised space carries a nilpotent part (its
+/// factor raised to the dimension `d` kills it) — `1` at every `λⱼ`, `0` at
+/// every other value and on the root's whole space. Exact over ℚ, no change of
+/// basis and no inverse. Each value's space must be the function's own there
+/// (checked by the caller), which is what makes these the projectors.
+pub(super) fn spectral_projectors(
+    f: &super::LinearFunction,
+    values: &[Q],
+    root: Option<&Q>,
+) -> Vec<super::LinearFunction> {
+    let d = f.masks().len();
+    let linear = |c: &Q| vec![-c.clone(), one()];
+    let times = |p: &[Q], q: &[Q]| -> Vec<Q> {
+        let mut out = vec![Q::zero(); p.len() + q.len() - 1];
+        for (i, a) in p.iter().enumerate() {
+            for (j, b) in q.iter().enumerate() {
+                out[i + j] += a * b;
+            }
+        }
+        out
+    };
+    values
+        .iter()
+        .enumerate()
+        .map(|(j, lj)| {
+            let mut poly = vec![one()];
+            let mut norm = one();
+            if let Some(r) = root {
+                for _ in 0..d {
+                    poly = times(&poly, &linear(r));
+                    norm *= lj - r;
+                }
+            }
+            for (i, li) in values.iter().enumerate() {
+                if i != j {
+                    poly = times(&poly, &linear(li));
+                    norm *= lj - li;
+                }
+            }
+            let poly: Vec<Q> = poly.iter().map(|c| c / &norm).collect();
+            f.polynomial(&poly)
+        })
+        .collect()
 }
 
 pub(super) fn kind_of(blade: &Mv) -> BivectorKind {
@@ -386,40 +377,28 @@ pub fn modes(b: &Mv, budget: &mut crate::physics::Budget) -> Result<Vec<Mode>, U
     if bivector.is_zero() {
         return Ok(Vec::new());
     }
-    let masks = generators(bivector.n());
-    let d = masks.len();
-    let f: Vec<Vec<Q>> = {
-        let cols: Vec<Vec<Q>> =
-            masks.iter().map(|&m| column(&Mv::blade(m, one()).geo(&bivector).grade(1), &masks)).collect();
-        (0..d).map(|i| (0..d).map(|j| cols[j][i].clone()).collect()).collect()
-    };
-    let a = mul(&f, &f);
-    let values = nonzero_roots(&characteristic(&a), budget)?;
-    // The generalised kernel: `ker(Aᵈ)`.
-    let mut power = identity(d);
-    for _ in 0..d {
-        power = mul(&power, &a);
-    }
-    let kernel = super::nullspace(power, d);
-    let spaces: Vec<(Option<Q>, Vec<Vec<Q>>)> = std::iter::once((None, kernel))
-        .chain(values.iter().map(|l| (Some(l.clone()), eigenspace(&a, l))))
-        .collect();
-    let columns: Vec<Vec<Q>> = spaces.iter().flat_map(|(_, s)| s.iter().cloned()).collect();
-    if columns.len() != d {
+    let n = bivector.n();
+    let d = generators(n).len();
+    // `F(x) = ⟨x B⟩₁`, the generator's action on the vectors, and `F²`.
+    let f = super::LinearFunction::of(n, |x| x.geo(&bivector));
+    let a = f.after(&f);
+    let values = nonzero_roots(&a.characteristic(), budget)?;
+    // The generalised kernel `ker(Aᵈ)`, and each value's space `ker(A − λ)`.
+    let kernel = a.power(d).kernel();
+    let eigen: Vec<Vec<Mv>> = values.iter().map(|l| a.shifted(l).kernel()).collect();
+    if kernel.len() + eigen.iter().map(Vec::len).sum::<usize>() != d {
         return Err(Undecomposed::Defective);
     }
-    let t: Vec<Vec<Q>> = (0..d).map(|i| columns.iter().map(|c| c[i].clone()).collect()).collect();
-    let t_inv = invert(&t).ok_or(Undecomposed::Defective)?;
+    // THE PROJECTORS AS POLYNOMIALS IN `A`: one per value, and the
+    // generalised kernel's as the identity less them.
+    let per_value = spectral_projectors(&a, &values, Some(&Q::zero()));
+    let onto_kernel = per_value.iter().fold(super::LinearFunction::identity(n), |acc, p| acc.minus(p));
+    let spaces: Vec<(Option<&Q>, usize, &super::LinearFunction)> = std::iter::once((None, kernel.len(), &onto_kernel))
+        .chain(values.iter().zip(&eigen).zip(&per_value).map(|((l, s), p)| (Some(l), s.len(), p)))
+        .collect();
     let mut out: Vec<Mode> = Vec::new();
-    let mut at = 0usize;
-    for (value, space) in &spaces {
-        let width = space.len();
-        let indicator: Vec<Vec<Q>> = (0..d)
-            .map(|i| (0..d).map(|j| if i == j && i >= at && i < at + width { one() } else { Q::zero() }).collect())
-            .collect();
-        at += width;
-        let p = mul(&mul(&t, &indicator), &t_inv);
-        let blade = project(&bivector, &p, &masks);
+    for (value, width, p) in spaces {
+        let blade = project(&bivector, p);
         if blade.is_zero() {
             continue;
         }

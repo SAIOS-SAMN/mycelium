@@ -35,7 +35,7 @@
 
 use super::embedding::{base_at, e_inf};
 use super::group::weight_of;
-use super::multivector::{base_axis, one, Mv, EM, EP};
+use super::multivector::{one, Mv};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -109,31 +109,11 @@ pub fn centre_of(m: &Mv, n: u8) -> Centre {
     // The weight is the eigenvalue the fixed set is read at, never a test.
     let Some(w) = weight_of(m) else { return Centre::Unread };
     let n = n.max(m.n());
-    let gens: Vec<usize> = (1..=usize::from(n)).map(base_axis).chain([EP, EM]).collect();
-    // THE ACTION, column by column: the twisted image of each generator,
-    // read on every generator.
-    let images: Vec<Mv> = gens.iter().map(|&g| m.twisted(&Mv::blade(g, one()))).collect();
+    // THE ACTION, the twisted adjoint as a linear function of the vectors
+    // (unscaled: the weight is the eigenvalue the fixed set is read at).
+    let action = super::LinearFunction::of(n, |x| m.twisted(x));
     // The vectors held at eigenvalue `eigen`: the kernel of `L − eigen`.
-    let held_at = |eigen: &BigRational| -> Vec<Mv> {
-        let rows: Vec<Vec<BigRational>> = gens
-            .iter()
-            .enumerate()
-            .map(|(a, &ga)| {
-                images
-                    .iter()
-                    .enumerate()
-                    .map(|(b, img)| match a == b {
-                        true => img.coeff(ga) - eigen,
-                        false => img.coeff(ga).clone(),
-                    })
-                    .collect()
-            })
-            .collect();
-        nullspace(rows, gens.len())
-            .iter()
-            .map(|v| gens.iter().zip(v).fold(Mv::zero(), |acc, (&g, x)| acc.add(&Mv::blade(g, x.clone()))))
-            .collect()
-    };
+    let held_at = |eigen: &BigRational| -> Vec<Mv> { action.shifted(eigen).kernel() };
     let has_origin_weight = |x: &Mv| !(-x.geo(&e_inf()).scalar_part()).is_zero();
     let basis = held_at(&w);
     let holds_infinity = m.twisted(&e_inf()).sub(&e_inf().scale(&w)).is_zero();

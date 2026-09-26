@@ -136,139 +136,120 @@ pub(super) fn centred(b: &Blade, n: usize) -> Option<(Q, Vec<Vec<Q>>)> {
 /// second moment `M`, the odd moment `t` and the fourth order's symmetric
 /// part `N = ⟨d dᵀ |d|²⟩` about the sites' mean, each normalised by the
 /// count (A.12). `M` and `N` are the EVEN tower: they turn with the body and
-/// cannot see a 180° turn.
-pub(super) fn point_tower_of(count: &Q, points: &[Vec<Q>], n: usize) -> PointTower {
-    let mut m = vec![vec![Q::zero(); n]; n];
-    let mut t = vec![Q::zero(); n];
-    let mut n4 = vec![vec![Q::zero(); n]; n];
-    for d in points {
-        let r2 = d.iter().fold(Q::zero(), |acc, x| acc + x * x);
-        for ((row, row4), di) in m.iter_mut().zip(n4.iter_mut()).zip(d) {
-            for ((x, x4), dj) in row.iter_mut().zip(row4.iter_mut()).zip(d) {
-                let p = di * dj;
-                *x4 += &p * &r2;
-                *x += p;
-            }
-        }
-        for (x, di) in t.iter_mut().zip(d) {
-            *x += di * &r2;
-        }
-    }
-    for row in m.iter_mut().chain(n4.iter_mut()) {
-        for x in row.iter_mut() {
-            *x = &*x / count;
-        }
-    }
-    for x in t.iter_mut() {
-        *x = &*x / count;
-    }
-    PointTower { m, t, n4 }
+/// cannot see a 180° turn. Each is the linear function it is, `M(x) = ⟨d
+/// (d·x)⟩` and `N(x) = ⟨d (d·x) |d|²⟩`, and `t = ⟨d |d|²⟩` a vector of the
+/// base — no matrix holds them. `None` where `n` passes the algebra.
+pub(super) fn point_tower_of(count: &Q, points: &[Vec<Q>], n: usize) -> Option<PointTower> {
+    let n = u8::try_from(n).ok()?;
+    let inv = Q::one() / count;
+    let ds: Vec<(Mv, Q)> = points
+        .iter()
+        .map(|p| {
+            let d = cga::base_vector(p);
+            let r2 = d.norm2();
+            (d, r2)
+        })
+        .collect();
+    let m = cga::LinearFunction::of(n, |x| {
+        ds.iter().fold(Mv::zero(), |acc, (d, _)| acc.add(&d.scale(&d.geo(x).scalar_part())))
+    })
+    .scaled(&inv);
+    let n4 = cga::LinearFunction::of(n, |x| {
+        ds.iter().fold(Mv::zero(), |acc, (d, r2)| acc.add(&d.scale(&(d.geo(x).scalar_part() * r2))))
+    })
+    .scaled(&inv);
+    let t = ds.iter().fold(Mv::zero(), |acc, (d, r2)| acc.add(&d.scale(r2))).scale(&inv);
+    Some(PointTower { m, t, n4 })
 }
 
-/// `tr M`, the point tower's scale.
-fn trace(m: &[Vec<Q>]) -> Q {
-    m.iter().enumerate().fold(Q::zero(), |acc, (i, row)| acc + &row[i])
+/// The outer product of vectors, `v₁ ∧ ⋯ ∧ v_k`: zero exactly where they
+/// are dependent.
+fn wedge_of(vs: &[Mv]) -> Mv {
+    vs.iter().zip(1u32..).fold(Mv::scalar(Q::one()), |w, (v, k)| w.geo(v).grade(k))
 }
 
-fn apply(m: &[Vec<Q>], v: &[Q]) -> Vec<Q> {
-    m.iter().map(|row| row.iter().zip(v).fold(Q::zero(), |acc, (x, y)| acc + x * y)).collect()
+/// The base's unit pseudoscalar `e₁ e₂ ⋯ eₙ`, in axis order.
+fn base_pseudoscalar(n: usize) -> Mv {
+    (1..=n).fold(Mv::scalar(Q::one()), |acc, i| acc.geo(&Mv::blade(cga::base_axis(i), Q::one())))
 }
 
-/// The columns as the columns of an `n`-row matrix: independent exactly
-/// where its kernel is empty.
-fn independent(cols: &[Vec<Q>], n: usize) -> bool {
-    let rows: Vec<Vec<Q>> = (0..n).map(|i| cols.iter().map(|c| c[i].clone()).collect()).collect();
-    cga::nullspace(rows, cols.len()).is_empty()
+/// `n` base vectors' volume `(v₁ ∧ ⋯ ∧ vₙ) Iₙ⁻¹`: the scalar the algebra reads
+/// for the determinant of the frame, `Iₙ⁻¹ = Ĩₙ` on the Euclidean base.
+fn volume(vs: &[Mv], n: usize) -> Q {
+    wedge_of(vs).geo(&base_pseudoscalar(n).reverse()).scalar_part()
 }
 
-/// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent. The
-/// sequence is a Krylov sequence, so the first column that depends on those
-/// before it ends it: every later one depends too.
-fn columns(tw: &PointTower, n: usize) -> Vec<Vec<Q>> {
-    let mut cols: Vec<Vec<Q>> = Vec::new();
+/// `v`'s coordinates on the base axes, as a frame's images are combined.
+fn on_frame(frame: &[Mv], v: &Mv) -> Mv {
+    frame
+        .iter()
+        .enumerate()
+        .fold(Mv::zero(), |acc, (k, img)| acc.add(&img.scale(v.coeff(cga::base_axis(k + 1)))))
+}
+
+/// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent — their
+/// wedge non-zero. The sequence is a Krylov sequence, so the first column
+/// that depends on those before it ends it: every later one depends too.
+fn columns(tw: &PointTower, n: usize) -> Vec<Mv> {
+    let mut cols: Vec<Mv> = Vec::new();
     let mut w = tw.t.clone();
     while cols.len() < n {
         let mut trial = cols.clone();
         trial.push(w.clone());
-        if !independent(&trial, n) {
+        if wedge_of(&trial).is_zero() {
             break;
         }
-        let next = apply(&tw.m, &w);
+        let next = tw.m.at(&w);
         cols.push(w);
         w = next;
     }
     cols
 }
 
-/// The determinant by the elimination's own pivots: the first row at or
-/// below the diagonal holding the column, which is the algorithm and not a
-/// choice.
-fn det(mut rows: Vec<Vec<Q>>) -> Q {
-    let k = rows.len();
-    let mut d = Q::one();
-    for c in 0..k {
-        let Some(p) = (c..k).find(|&i| !rows[i][c].is_zero()) else {
-            return Q::zero();
-        };
-        if p != c {
-            rows.swap(p, c);
-            d = -d;
-        }
-        let lead = rows[c][c].clone();
-        d *= &lead;
-        let pivot = rows[c].clone();
-        for row in rows.iter_mut().skip(c + 1) {
-            let f = &row[c] / &lead;
-            for (x, y) in row.iter_mut().zip(&pivot) {
-                *x = &*x - &f * y;
-            }
-        }
+/// THE DUAL OF `n − 1` COLUMNS: the vector `c` with `c · x = (w₀ ∧ ⋯ ∧
+/// w_{n−2} ∧ x) Iₙ⁻¹`, so `c(R w) = det R · R c(w)` for `R` orthogonal. Exact,
+/// one volume per axis.
+fn dual(cols: &[Mv], n: usize) -> Mv {
+    (1..=n).fold(Mv::zero(), |acc, i| {
+        let e = Mv::blade(cga::base_axis(i), Q::one());
+        let mut frame = cols.to_vec();
+        frame.push(e.clone());
+        acc.add(&e.scale(&volume(&frame, n)))
+    })
+}
+
+/// `R` WITH `R a_k = b_k`, by THE RECIPROCAL FRAME: `aᵏ = (−1)^{k−1} (a₁ ∧ ⋯
+/// ǎ_k ⋯ ∧ aₙ) A⁻¹`, `A = a₁ ∧ ⋯ ∧ aₙ`, so `aᵏ · a_j = δ` and `R(x) = Σ_k b_k
+/// (aᵏ · x)`. Returned as `R`'s image of each base axis. `None` where the
+/// `a`'s are dependent: `A = 0` has no inverse.
+fn solve(wa: &[Mv], wb: &[Mv], n: usize) -> Option<Vec<Mv>> {
+    if wa.len() != n || wb.len() != n {
+        return None;
     }
-    d
-}
-
-/// THE DUAL OF `n − 1` COLUMNS: `c · x = det[w₀, …, w_{n−2}, x]`, so
-/// `c(R w) = det R · R c(w)` for `R` orthogonal. Exact, one determinant per
-/// axis.
-fn dual(cols: &[Vec<Q>], n: usize) -> Vec<Q> {
-    (0..n)
-        .map(|i| {
-            let rows: Vec<Vec<Q>> = (0..n)
-                .map(|r| {
-                    let mut row: Vec<Q> = cols.iter().map(|c| c[r].clone()).collect();
-                    row.push(match r == i {
-                        true => Q::one(),
-                        false => Q::zero(),
-                    });
-                    row
-                })
-                .collect();
-            det(rows)
+    let a = wedge_of(wa);
+    let aa = a.geo(&a.reverse()).scalar_part();
+    if aa.is_zero() {
+        return None;
+    }
+    let a_inv = a.reverse().scale(&(Q::one() / aa));
+    let reciprocal: Vec<Mv> = (0..n)
+        .map(|k| {
+            let others: Vec<Mv> = wa.iter().enumerate().filter(|&(j, _)| j != k).map(|(_, v)| v.clone()).collect();
+            let sign = match k % 2 {
+                0 => Q::one(),
+                _ => -Q::one(),
+            };
+            wedge_of(&others).geo(&a_inv).grade(1).scale(&sign)
         })
-        .collect()
-}
-
-/// `R` WITH `R · W_a = W_b`, row by row: `W_aᵀ rᵢ = (row i of W_b)`, the
-/// kernel of `[W_aᵀ | −y]` with its last coordinate one. `None` where `W_a`
-/// is singular.
-fn solve(wa: &[Vec<Q>], wb: &[Vec<Q>], n: usize) -> Option<Vec<Vec<Q>>> {
-    (0..n)
-        .map(|i| {
-            let rows: Vec<Vec<Q>> = wa
-                .iter()
-                .zip(wb)
-                .map(|(ca, cb)| {
-                    let mut row = ca.clone();
-                    row.push(-cb[i].clone());
-                    row
-                })
-                .collect();
-            match cga::nullspace(rows, n + 1).as_slice() {
-                [v] if v[n].is_one() => Some(v[..n].to_vec()),
-                _ => None,
-            }
-        })
-        .collect()
+        .collect();
+    Some(
+        (1..=n)
+            .map(|i| {
+                let e = Mv::blade(cga::base_axis(i), Q::one());
+                reciprocal.iter().zip(wb).fold(Mv::zero(), |acc, (ak, bk)| acc.add(&bk.scale(&ak.geo(&e).scalar_part())))
+            })
+            .collect(),
+    )
 }
 
 /// THE VERSOR OF THE MAP `R` over ℚ, as a product of constructors: a motion
@@ -278,7 +259,7 @@ fn solve(wa: &[Vec<Q>], wb: &[Vec<Q>], n: usize) -> Option<Vec<Vec<Q>>> {
 /// `V = u₁ ⋯ u_m`, `V x Ṽ ∝ R x` — projective, no weight divided and no root.
 /// Refused by name: a base beyond the algebra's generators is
 /// `Incongruent(Base)`, a step reflecting in a null vector `NullStep`.
-fn versor_of(r: &[Vec<Q>], n: usize) -> Result<Mv, NoPose> {
+fn versor_of(r: &[Mv], n: usize) -> Result<Mv, NoPose> {
     let n = u8::try_from(n).map_err(|_| NoPose::Incongruent(Incongruence::Base))?;
     let us = cga::constructors_of_base_turn(r, n).map_err(|why| match why {
         cga::TurnUnspelled::Axis(_) => NoPose::Incongruent(Incongruence::Base),
@@ -296,7 +277,7 @@ fn versor_of(r: &[Vec<Q>], n: usize) -> Result<Mv, NoPose> {
 /// where it does not. Each candidate draws one read from the stroke (65.5):
 /// a spent stroke is the typed cut [`NoPose::Unbounded`], never "not carried".
 fn carried(
-    r: &[Vec<Q>],
+    r: &[Mv],
     a: &Blade,
     b: &Blade,
     rho: &Q,
@@ -328,7 +309,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget
     if ca.len() != cb.len() {
         return Err(NoPose::Isotropy);
     }
-    let (tra, trb) = (trace(&ta.m), trace(&tb.m));
+    let (tra, trb) = (ta.m.trace(), tb.m.trace());
     if tra.is_zero() {
         return Err(NoPose::Unoriented);
     }
@@ -339,9 +320,9 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget
     // `w_k(b) / ρ^{2k+1}`, `k` from one — `t` has degree 3, `Mt` 5, `M²t`
     // 7: `b`'s columns at `a`'s scale, so `R` is a turn.
     let mut scale = &rho * &rho2;
-    let mut wb: Vec<Vec<Q>> = Vec::new();
+    let mut wb: Vec<Mv> = Vec::new();
     for c in &cb {
-        wb.push(c.iter().map(|x| x / &scale).collect());
+        wb.push(c.scale(&(Q::one() / &scale)));
         scale = &scale * &rho2;
     }
     // FR1b — TOO FEW COLUMNS IS A SYMMETRY, NOT A REFUSAL: the even tower
@@ -370,9 +351,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget
         return Err(NoPose::Incongruent(Incongruence::Tube));
     }
     if let Some(last) = wb.last_mut() {
-        for x in last.iter_mut() {
-            *x = -x.clone();
-        }
+        *last = last.scale(&-Q::one());
     }
     let mirrored = match solve(&wa, &wb, n) {
         Some(r) => carried(&r, a, b, &rho, n, budget)?,
@@ -419,34 +398,40 @@ fn even_pose(
     b: &Blade,
     ta: &PointTower,
     tb: &PointTower,
-    ca: &[Vec<Q>],
-    wb: &[Vec<Q>],
+    ca: &[Mv],
+    wb: &[Mv],
     rho: &Q,
     n: usize,
     budget: &mut crate::physics::Budget,
 ) -> Result<Pose, NoPose> {
     let rho2 = rho * rho;
     let rho4 = &rho2 * &rho2;
-    let scaled = |m: &[Vec<Q>], s: &Q| -> Vec<Vec<Q>> { m.iter().map(|row| row.iter().map(|x| x / s).collect()).collect() };
-    let (mb, nb) = (scaled(&tb.m, &rho2), scaled(&tb.n4, &rho4));
-    // `X A_a − A_b X = 0`, entry `(p, q)`, over the unknowns `X[p][r]` at
-    // `p·n + r`.
+    let (mb, nb) = (tb.m.scaled(&(Q::one() / &rho2)), tb.n4.scaled(&(Q::one() / &rho4)));
+    // THE INTERTWINERS, unknown by their image of each base axis: `X(e_r) =
+    // Σ_p X_{pr} e_p`, the unknown `X_{pr}` at `p·n + r`. `X ∘ A_a = A_b ∘ X`
+    // read on `e_q` and then on `e_p`, one equation each, with the tower's
+    // own value `⟨A(e_q)⟩_r` where the product needs it.
+    let axis = |i: usize| Mv::blade(cga::base_axis(i + 1), Q::one());
+    let value = |f: &cga::LinearFunction, r: usize, qq: usize| f.at(&axis(qq)).coeff(cga::base_axis(r + 1)).clone();
     let mut rows: Vec<Vec<Q>> = Vec::new();
     for (aa, ab) in [(&ta.m, &mb), (&ta.n4, &nb)] {
         for p in 0..n {
             for qq in 0..n {
                 let mut row = vec![Q::zero(); n * n];
                 for r in 0..n {
-                    row[p * n + r] += &aa[r][qq];
-                    row[r * n + qq] -= &ab[p][r];
+                    row[p * n + r] += value(aa, r, qq);
+                    row[r * n + qq] -= value(ab, p, r);
                 }
                 rows.push(row);
             }
         }
     }
-    let kernel: Vec<Vec<Vec<Q>>> =
-        cga::nullspace(rows, n * n).into_iter().map(|v| v.chunks(n).map(<[Q]>::to_vec).collect()).collect();
-    let lines: Vec<Vec<Vec<Q>>> = match kernel.as_slice() {
+    // Each solution as the frame it is: its image of each base axis.
+    let kernel: Vec<Vec<Mv>> = crate::core::span::solutions(rows, n * n)
+        .into_iter()
+        .map(|v| (0..n).map(|r| (0..n).fold(Mv::zero(), |acc, p| acc.add(&axis(p).scale(&v[p * n + r])))).collect())
+        .collect();
+    let lines: Vec<Vec<Mv>> = match kernel.as_slice() {
         [] => return Err(NoPose::Incongruent(Incongruence::Tube)),
         [x] => vec![x.clone()],
         [x1, x2] => match orthogonal_lines(x1, x2, n) {
@@ -460,17 +445,19 @@ fn even_pose(
     // own carriage), and every odd column there is must land.
     let mut poses: Vec<Mv> = Vec::new();
     for x in &lines {
-        // The first column's squared length, READ FROM THE ALGEBRA (law 12):
-        // the column as a base vector, squared by the product's own metric.
-        let first: Vec<Q> = (0..n).map(|k| x[k][0].clone()).collect();
-        let g = cga::base_vector(&first).norm2();
+        // The first axis's image, squared by the product's own metric (law
+        // 12): the frame's scale.
+        // The image of `e₁`: the first axis by content, and every image of an
+        // orthogonal candidate has its length.
+        let [first, ..] = x.as_slice() else { continue };
+        let g = first.norm2();
         let Some(lambda) = rational_sqrt(&g) else { continue };
         if lambda.is_zero() {
             continue;
         }
         for sign in [Q::one(), -Q::one()] {
-            let r: Vec<Vec<Q>> = x.iter().map(|row| row.iter().map(|v| v * &sign / &lambda).collect()).collect();
-            if !ca.iter().zip(wb).all(|(wa, wb)| apply(&r, wa) == *wb) {
+            let r: Vec<Mv> = x.iter().map(|img| img.scale(&(&sign / &lambda))).collect();
+            if !ca.iter().zip(wb).all(|(wa, wb)| on_frame(&r, wa).sub(wb).is_zero()) {
                 continue;
             }
             let Some(v) = carried(&r, a, b, rho, n, budget)? else { continue };
@@ -497,21 +484,22 @@ fn even_pose(
 
 /// The orthogonal lines of a two-dimensional kernel, or why there are none.
 enum Lines {
-    Found(Vec<Vec<Vec<Q>>>),
+    Found(Vec<Vec<Mv>>),
     Irrational,
     Pencil,
 }
 
-/// THE ELEMENTS `a X₁ + b X₂` WITH `XᵀX ∝ 1`. `G(a, b) = a² G₁₁ + ab (G₁₂ +
-/// G₂₁) + b² G₂₂`; each off-diagonal entry, and each diagonal entry against
-/// the first, is a binary quadratic in `(a, b)` that must vanish. The first
-/// that is not identically zero — in entry order, the matrix's own — gives
-/// the candidate ratios, exact where its discriminant is a rational square;
-/// each candidate is kept only where every quadratic vanishes on it. All of
-/// them identically zero is a pencil: every element is orthogonal, a
+/// THE ELEMENTS `a X₁ + b X₂` WHOSE IMAGES OF THE BASE AXES ARE ORTHOGONAL
+/// AND OF ONE LENGTH — `X(eᵢ) · X(eⱼ) ∝ δᵢⱼ`, each product the algebra's own.
+/// `G(a, b) = a² G₁₁ + ab (G₁₂ + G₂₁) + b² G₂₂`; each off-diagonal product,
+/// and each length against the first, is a binary quadratic in `(a, b)` that
+/// must vanish. The first that is not identically zero — in axis order —
+/// gives the candidate ratios, exact where its discriminant is a rational
+/// square; each candidate is kept only where every quadratic vanishes on it.
+/// All of them identically zero is a pencil: every element is orthogonal, a
 /// continuous freedom.
-fn orthogonal_lines(x1: &[Vec<Q>], x2: &[Vec<Q>], n: usize) -> Lines {
-    let gram = |x: &[Vec<Q>], y: &[Vec<Q>], i: usize, j: usize| (0..n).fold(Q::zero(), |acc, k| acc + &x[k][i] * &y[k][j]);
+fn orthogonal_lines(x1: &[Mv], x2: &[Mv], n: usize) -> Lines {
+    let gram = |x: &[Mv], y: &[Mv], i: usize, j: usize| x[i].geo(&y[j]).scalar_part();
     let form = |i: usize, j: usize| -> [Q; 3] {
         [gram(x1, x1, i, j), gram(x1, x2, i, j) + gram(x2, x1, i, j), gram(x2, x2, i, j)]
     };
@@ -551,12 +539,7 @@ fn orthogonal_lines(x1: &[Vec<Q>], x2: &[Vec<Q>], n: usize) -> Lines {
         roots
             .iter()
             .filter(|r| vanishes(r))
-            .map(|(a, b)| {
-                x1.iter()
-                    .zip(x2)
-                    .map(|(r1, r2)| r1.iter().zip(r2).map(|(u, v)| a * u + b * v).collect())
-                    .collect()
-            })
+            .map(|(a, b)| x1.iter().zip(x2).map(|(u, v)| u.scale(a).add(&v.scale(b))).collect())
             .collect(),
     )
 }

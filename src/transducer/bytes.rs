@@ -94,12 +94,16 @@ impl Bytes for crate::transducer::blade::Towers {
         let orders = |rows: &[[Option<[crate::core::Q; 2]>; 3]]| -> usize {
             rows.iter().flat_map(|r| r.iter().flatten()).flat_map(|h| h.iter()).map(bytes_q).sum()
         };
-        let matrix = |m: &[Vec<crate::core::Q>]| -> usize { m.iter().flat_map(|r| r.iter()).map(bytes_q).sum() };
+        let function = |f: &crate::transducer::cga::LinearFunction| -> usize {
+            f.images().iter().map(Bytes::bytes).sum()
+        };
         std::mem::size_of::<Self>()
             + self.region3.iter().flatten().flat_map(|h| h.iter()).map(bytes_q).sum::<usize>()
             + orders(&self.sites)
             + self.spread.iter().flatten().map(bytes_q).sum::<usize>()
-            + self.points.as_ref().map_or(0, |p| matrix(&p.m) + p.t.iter().map(bytes_q).sum::<usize>() + matrix(&p.n4))
+            + self.points.as_ref().map_or(0, |p| {
+                function(&p.m) + p.t.bytes() + function(&p.n4)
+            })
     }
 }
 

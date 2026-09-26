@@ -153,6 +153,54 @@ fn cancel(r: &Vector, a: BigInt, b: &BigInt, f: &Vector) -> Vector {
     next
 }
 
+/// THE SOLUTIONS OF A SYSTEM OF LINEAR EQUATIONS over ℚ in `cols` unknowns:
+/// every vector orthogonal to each equation's coefficient vector — the
+/// complement of the span of the equations. Returned as its reduced basis:
+/// the equations brought to reduced form by their own leading unknowns,
+/// each unknown that leads no equation FREE, and one solution per free
+/// unknown, `1` there and `0` on every other free one. That basis is fixed
+/// by the solution space alone (the free unknowns are the complement of the
+/// earliest independent set of the equations' columns), so it is content,
+/// not an order of arrival. Exact, no division by zero, no root.
+pub fn solutions(mut rows: Vec<Vec<num_rational::BigRational>>, cols: usize) -> Vec<Vec<num_rational::BigRational>> {
+    use num_rational::BigRational;
+    let mut leads: Vec<usize> = Vec::new();
+    let mut r = 0usize;
+    for c in 0..cols {
+        // The reduction's own lead: the first equation at or below `r` that
+        // holds this unknown, which is the algorithm and not a choice.
+        let Some(p) = (r..rows.len()).find(|&i| rows[i].get(c).is_some_and(|x| !x.is_zero())) else { continue };
+        rows.swap(r, p);
+        let lead = rows[r][c].clone();
+        for x in rows[r].iter_mut() {
+            *x = &*x / &lead;
+        }
+        let pivot = rows[r].clone();
+        for (i, row) in rows.iter_mut().enumerate() {
+            if i == r || row[c].is_zero() {
+                continue;
+            }
+            let f = row[c].clone();
+            for (x, y) in row.iter_mut().zip(&pivot) {
+                *x = &*x - &f * y;
+            }
+        }
+        leads.push(c);
+        r += 1;
+    }
+    (0..cols)
+        .filter(|c| !leads.contains(c))
+        .map(|free| {
+            let mut v = vec![BigRational::zero(); cols];
+            v[free] = BigRational::one();
+            for (row, &lead) in rows.iter().zip(&leads) {
+                v[lead] = -row[free].clone();
+            }
+            v
+        })
+        .collect()
+}
+
 /// A dense integer vector as the sparse one it is.
 pub fn vector_of<const N: usize>(v: &[i64; N]) -> Vector {
     v.iter().enumerate().filter(|(_, x)| **x != 0).map(|(i, x)| (i, BigInt::from(*x))).collect()

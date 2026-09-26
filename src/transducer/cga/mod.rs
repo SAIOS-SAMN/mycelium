@@ -13,6 +13,7 @@ mod fixed;
 mod gram;
 mod group;
 mod hyperboloid;
+mod linear;
 mod mirrors;
 mod modes;
 mod motion;
@@ -37,6 +38,7 @@ pub use fixed::{centre_of, nullspace, Centre, PoleAt};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole};
+pub use linear::LinearFunction;
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
 pub use motion::{action_det, action_of, motion_modes, MotionMode};
@@ -44,7 +46,6 @@ pub use motor::{
     motor_tally, note_motor, note_step, note_unread, take_motor_tally, KindReading, Motor, MotorAction, MotorTally,
     StepClass, StepReading, TransitionKind, VectorReading,
 };
-pub(crate) use modes::{identity as identity_matrix, mul as matrix_mul};
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};

@@ -9,6 +9,7 @@ mod generic;
 mod gram;
 mod group;
 mod hyperboloid;
+mod linear;
 mod mirrors;
 mod modes;
 mod motion;

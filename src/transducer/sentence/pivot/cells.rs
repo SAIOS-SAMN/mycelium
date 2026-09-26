@@ -70,8 +70,8 @@ fn move_in_cell(by: &PivotBy, cell: &CellAlgebra) -> Result<bool, bool> {
     };
     let v = versor.ok_or(false)?;
     let [first, ..] = cell.actions.as_deref().ok_or(false)? else { return Err(false) };
-    // The cell's algebra acts on `n + 2` vectors; the move is widened to it.
-    let n = u8::try_from(first.len().checked_sub(2).ok_or(false)?).map_err(|_| false)?;
+    // The cell's algebra acts in `Cl(n+1, 1)`; the move is widened to it.
+    let n = first.n();
     if v.n() > n {
         return Err(false);
     }

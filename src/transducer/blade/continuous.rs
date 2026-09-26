@@ -40,7 +40,7 @@ pub struct ContinuousSupport<'a> {
     /// order two on every plane, the base planes and every plane between them.
     /// Borrowed from the point tower on the sites; derived from the inertia
     /// on the region.
-    pub second: std::borrow::Cow<'a, [Vec<Q>]>,
+    pub second: std::borrow::Cow<'a, cga::LinearFunction>,
     /// The third and fourth harmonics on each plane of the base, in
     /// [`crate::transducer::base::planes`] order; `None` where one vanishes.
     pub upper: Vec<[Option<[Q; 2]>; 2]>,
@@ -107,16 +107,6 @@ fn on_base(y: &Mv, n: usize) -> Mv {
     cga::base_vector(&(0..n).map(|k| y.coeff(cga::base_axis(k + 1)).clone()).collect::<Vec<Q>>())
 }
 
-/// THE SECOND MOMENT AS THE MAP IT IS, `M(x) = ⟨(d·x) d⟩`: the vector the
-/// tower sends `x` to, formed on the body's `n` axes.
-fn moment(m: &[Vec<Q>], x: &Mv, n: usize) -> Mv {
-    cga::base_vector(
-        &(0..n)
-            .map(|l| (0..n).fold(Q::zero(), |acc, k| acc + x.coeff(cga::base_axis(k + 1)) * &m[k][l]))
-            .collect::<Vec<Q>>(),
-    )
-}
-
 impl<'a> ContinuousSupport<'a> {
     /// A body's continuous support on one tower, read off its coordinates.
     /// `None` for a body with no support.
@@ -124,18 +114,25 @@ impl<'a> ContinuousSupport<'a> {
         let n = b.n();
         let centre = super::carry::vertex_centroid(b)?;
         let second = match tower {
+            // THE REGION'S SECOND MOMENT AS THE FUNCTION IT IS, off the
+            // body's inertia: `M(eᵢ) = Σ_j I_ij eⱼ / M₀`.
             Tower::Region => {
                 let m0 = Q::from_integer(BigInt::from(i64::try_from(b.support.len()).ok()?));
                 if m0.is_zero() {
                     return None;
                 }
-                std::borrow::Cow::Owned(
-                    (0..n)
-                        .map(|i| (0..n).map(|j| b.moment2(i, j).map(|x| x / &m0)).collect::<Option<Vec<Q>>>())
-                        .collect::<Option<Vec<Vec<Q>>>>()?,
-                )
+                let rows: Vec<Mv> = (0..n)
+                    .map(|i| {
+                        (0..n).try_fold(Mv::zero(), |acc, j| Some(acc.add(&axis(j).scale(&(b.moment2(i, j)? / &m0)))))
+                    })
+                    .collect::<Option<Vec<Mv>>>()?;
+                let at = |mask: usize| (0..n).find(|&i| cga::base_axis(i + 1) == mask);
+                std::borrow::Cow::Owned(cga::LinearFunction::on_generators(u8::try_from(n).ok()?, |mask| match at(mask) {
+                    Some(i) => rows[i].clone(),
+                    None => Mv::zero(),
+                }))
             }
-            Tower::Sites => std::borrow::Cow::Borrowed(b.towers.points.as_ref()?.m.as_slice()),
+            Tower::Sites => std::borrow::Cow::Borrowed(&b.towers.points.as_ref()?.m),
         };
         let upper = crate::transducer::base::planes(n)
             .into_iter()
@@ -231,8 +228,8 @@ impl<'a> ContinuousSupport<'a> {
         }
         let rho2 = rho * rho;
         let second_carried = images.iter().enumerate().all(|(k, y)| {
-            let turned = rotation.twisted(&moment(&self.second, &axis(k), n)).scale(&rho2);
-            moment(&other.second, y, n).sub(&turned).is_zero()
+            let turned = rotation.twisted(&self.second.at(&axis(k))).scale(&rho2);
+            other.second.at(y).sub(&turned).is_zero()
         });
         if !second_carried {
             return Err(NotCarried::Second);

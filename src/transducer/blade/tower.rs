@@ -125,13 +125,14 @@ fn plane_points(points: &[Vec<BigRational>], plane: (usize, usize)) -> Option<Ve
 
 /// THE POINT TOWER ON `n` AXES (78.38): each compartment the point it stands
 /// at, about the points' mean, normalised by the count — the second moment
-/// `M`, the odd moment `t = ⟨d |d|²⟩` and the fourth order's symmetric part
-/// `N = ⟨d dᵀ |d|²⟩`.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+/// `M(x) = ⟨d (d·x)⟩`, the odd moment `t = ⟨d |d|²⟩` and the fourth order's
+/// symmetric part `N(x) = ⟨d (d·x) |d|²⟩`: two linear functions of the
+/// vectors and a vector, each the algebra's own, never a matrix.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct PointTower {
-    pub m: Vec<Vec<BigRational>>,
-    pub t: Vec<BigRational>,
-    pub n4: Vec<Vec<BigRational>>,
+    pub m: crate::transducer::cga::LinearFunction,
+    pub t: crate::transducer::cga::Mv,
+    pub n4: crate::transducer::cga::LinearFunction,
 }
 
 /// WHAT THE LIFT READS OF A BODY BEYOND ITS INERTIA AND ITS QUARTIC (A.11:
@@ -174,7 +175,7 @@ pub(super) fn read_towers(blade: &Blade) -> Towers {
             Some(pts.iter().fold(BigRational::zero(), |acc, (u, v)| acc + *u * *u + *v * *v) / &count)
         })
         .collect();
-    Towers { region3, sites, spread, points: Some(super::pose::point_tower_of(&count, &points, blade.n())) }
+    Towers { region3, sites, spread, points: super::pose::point_tower_of(&count, &points, blade.n()) }
 }
 
 /// An order's place in the towers' rows.

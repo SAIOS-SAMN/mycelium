@@ -233,7 +233,7 @@ fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
     let turn = cga::rotator(&q(1, 1), &q(1, 1)).widened(across.n());
     let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn.clone())]), &[], &mut stroke());
     let r = cga::action_of(&turn).expect("a versor acts");
-    assert_eq!(algebra_contains(&cell, &cga::matrix_mul(&r, &r)), Some(true), "the 180° turn is in the algebra");
+    assert_eq!(algebra_contains(&cell, &r.after(&r)), Some(true), "the 180° turn is in the algebra");
     let other = cga::action_of(&across).expect("a versor acts");
     assert_eq!(algebra_contains(&cell, &other), Some(false), "a turn in another plane is not");
     // An action of another algebra's width is not compared: unread, never false.

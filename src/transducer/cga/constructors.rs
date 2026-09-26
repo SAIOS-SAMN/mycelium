@@ -155,73 +155,51 @@ fn orbit_or_why(
     Ok(ConstructorOrbit::Closed { rays: held.len() })
 }
 
-fn eta(metric: &[Q], a: &[Q], b: &[Q]) -> Q {
-    metric.iter().zip(a).zip(b).fold(Q::zero(), |acc, ((s, x), y)| acc + s * x * y)
-}
-
-/// THE INVERSE OF COMPOSING: CONSTRUCTIVE CARTAN–DIEUDONNÉ. An isometry `r`
-/// of the algebra's metric (columns the images of the generators) spelled
-/// as reflecting vectors `u₁ … u_m`, `r = H_{u₁} ∘ ⋯ ∘ H_{u_m}`: at column `k`
-/// the current image `x` of `e_k` is reflected home by `u = x − e_k`, which
-/// fixes the columns already home because `r` is an isometry. Each step
-/// forced, no branch; the vectors rational rays. `Err(column)` where a step
-/// is NULL (`η(u, u) = 0`): no reflection exists there, refused by name.
-fn reflections_of(r: &[Vec<Q>], metric: &[Q]) -> Result<Vec<Vec<Q>>, usize> {
-    let d = r.len();
-    let mut rest: Vec<Vec<Q>> = (0..d).map(|k| (0..d).map(|i| r[i][k].clone()).collect()).collect();
+/// THE INVERSE OF COMPOSING: CONSTRUCTIVE CARTAN–DIEUDONNÉ, on the vectors.
+/// An isometry of the algebra's metric, held as its image of each generator,
+/// spelled as reflecting vectors `u₁ … u_m`, `r = H_{u₁} ∘ ⋯ ∘ H_{u_m}`: at
+/// generator `e_k` its current image `x` is reflected home by `u = x − e_k`,
+/// every image reflected with it (`y ↦ y − 2⟨u y⟩₀ u / u²`, the vector part of
+/// `−u y u⁻¹`), which fixes the generators already home because `r` is an
+/// isometry. Each step forced, no branch; the vectors rational rays.
+/// `Err(k)` where a step is NULL (`u² = 0`): no reflection exists there,
+/// refused by name.
+fn reflections_of(r: &super::LinearFunction) -> Result<Vec<Mv>, usize> {
+    let two = Q::from_integer(2.into());
+    let mut rest: Vec<Mv> = r.images().to_vec();
     let mut us = Vec::new();
-    for k in 0..d {
-        let mut u = rest[k].clone();
-        u[k] -= one();
-        if u.iter().all(Zero::is_zero) {
+    for (k, &m) in r.masks().iter().enumerate() {
+        let u = rest[k].sub(&Mv::blade(m, one()));
+        if u.is_zero() {
             continue;
         }
-        let uu = eta(metric, &u, &u);
+        let uu = u.geo(&u).scalar_part();
         if uu.is_zero() {
             return Err(k);
         }
-        for col in rest.iter_mut() {
-            let f = eta(metric, &u, col) * Q::from_integer(2.into()) / &uu;
-            for (y, ui) in col.iter_mut().zip(&u) {
-                *y = &*y - &f * ui;
-            }
+        for y in rest.iter_mut() {
+            let f = u.geo(y).scalar_part() * &two / &uu;
+            *y = y.sub(&u.scale(&f));
         }
         us.push(u);
     }
     Ok(us)
 }
 
-/// The metric on the generators, read off the geometric product (`e² = ±1`)
-/// — never written in: the conformal model's own signature.
-fn metric_of(masks: &[usize]) -> Vec<Q> {
-    masks.iter().map(|&m| Mv::blade(m, one()).geo(&Mv::blade(m, one())).scalar_part()).collect()
-}
-
-/// A MOTION'S ACTION ON THE VECTORS OF `Cl(n+1, 1)` (columns over the
-/// algebra's generators, as `action_of` reads them) SPELLED AS CONSTRUCTORS,
-/// in composition order, in the algebra's own metric. `Err(column)` at a
-/// null step.
-fn constructors_of_action(r: &[Vec<Q>], n: u8) -> Result<Vec<Mv>, usize> {
-    let masks = super::modes::generators(n);
-    let us = reflections_of(r, &metric_of(&masks))?;
-    Ok(us.iter().map(|u| masks.iter().zip(u).fold(Mv::zero(), |acc, (&k, x)| acc.add(&Mv::blade(k, x.clone())))).collect())
-}
-
-/// A TURN OF THE BASE — an `n × n` isometry on `e₁ … eₙ` — as the conformal
-/// motion it is: embedded in the action on `Cl(n+1, 1)` with `e₊`, `e₋` held
-/// fixed, and spelled there. One factorizer, one metric, no flat case.
-pub(crate) fn constructors_of_base_turn(r: &[Vec<Q>], n: u8) -> Result<Vec<Mv>, TurnUnspelled> {
-    let masks = super::modes::generators(n);
-    let at: Vec<Option<usize>> = (0..r.len()).map(|axis| masks.iter().position(|&m| m == super::base_axis(axis + 1))).collect();
-    let d = masks.len();
-    let mut full: Vec<Vec<Q>> = (0..d).map(|i| (0..d).map(|j| if i == j { one() } else { Q::zero() }).collect()).collect();
-    for (i, row) in r.iter().enumerate() {
-        for (j, x) in row.iter().enumerate() {
-            let (Some(Some(fi)), Some(Some(fj))) = (at.get(i), at.get(j)) else { return Err(TurnUnspelled::Axis(i)) };
-            full[*fi][*fj] = x.clone();
-        }
+/// A TURN OF THE BASE — its image of each base axis `e₁ … eₙ`, vectors of the
+/// base — as the conformal motion it is: `e₊`, `e₋` held fixed, and spelled
+/// in the algebra by the one factorizer. No flat case.
+pub(crate) fn constructors_of_base_turn(images: &[Mv], n: u8) -> Result<Vec<Mv>, TurnUnspelled> {
+    if images.len() > usize::from(n) {
+        return Err(TurnUnspelled::Axis(usize::from(n)));
     }
-    constructors_of_action(&full, n).map_err(TurnUnspelled::NullStep)
+    let turn = super::LinearFunction::on_generators(n, |mask| {
+        match (0..images.len()).find(|&i| super::base_axis(i + 1) == mask) {
+            Some(i) => images[i].clone(),
+            None => Mv::blade(mask, one()),
+        }
+    });
+    reflections_of(&turn).map_err(TurnUnspelled::NullStep)
 }
 
 /// WHY A TURN OF THE BASE DOES NOT SPELL AS CONSTRUCTORS, each by name.
@@ -283,30 +261,23 @@ pub fn construct(residue: &Mv, budget: &mut crate::physics::Budget) -> Result<Co
     if ms.is_empty() {
         return Err(NotConstructed::NoResidue);
     }
-    let masks = super::modes::generators(residue.n());
-    let metric = metric_of(&masks);
-    let d = masks.len();
     let mut shapes = Vec::with_capacity(ms.len());
     for (mode, m) in ms.iter().enumerate() {
-        let r = super::action_of(&m.ray).ok_or(NotConstructed::NotVersor)?;
-        let us = reflections_of(&r, &metric).map_err(|column| NotConstructed::NullStep { mode, column })?;
-        // THE CERTIFICATE: the meet is exactly the mode's fixed locus.
-        let meet_rows: Vec<Vec<Q>> = us.iter().map(|u| u.iter().zip(&metric).map(|(x, s)| x * s).collect()).collect();
-        let meet = super::nullspace(meet_rows, d);
-        let fixed_rows: Vec<Vec<Q>> =
-            (0..d).map(|i| (0..d).map(|j| if i == j { &r[i][j] - one() } else { r[i][j].clone() }).collect()).collect();
-        let fixed = super::nullspace(fixed_rows, d);
-        let on_locus = meet.iter().all(|v| {
-            (0..d).all(|i| r[i].iter().zip(v).fold(Q::zero(), |acc, (a, x)| acc + a * x) == v[i])
-        });
+        let r = super::LinearFunction::of_versor(&m.ray).ok_or(NotConstructed::NotVersor)?;
+        let us = reflections_of(&r).map_err(|column| NotConstructed::NullStep { mode, column })?;
+        // THE CERTIFICATE: the meet of the reflecting hyperplanes — every
+        // vector orthogonal to each `uᵢ`, `⟨uᵢ x⟩₀ = 0` — is exactly the
+        // mode's fixed locus `ker(R − 1)`, and every vector of it is held.
+        let meet_equations: Vec<Vec<Q>> =
+            us.iter().map(|u| r.masks().iter().map(|&k| u.geo(&Mv::blade(k, one())).scalar_part()).collect()).collect();
+        let meet: Vec<Mv> =
+            crate::core::span::solutions(meet_equations, r.masks().len()).iter().map(|v| r.vector(v)).collect();
+        let fixed = r.shifted(&one()).kernel();
+        let on_locus = meet.iter().all(|v| r.at(v).sub(v).is_zero());
         if meet.len() != fixed.len() || !on_locus {
             return Err(NotConstructed::MeetOffLocus { mode });
         }
-        shapes.push(
-            us.iter()
-                .map(|u| masks.iter().zip(u).fold(Mv::zero(), |acc, (&k, x)| acc.add(&Mv::blade(k, x.clone()))))
-                .collect::<Vec<Mv>>(),
-        );
+        shapes.push(us);
     }
     // A CONGRUENT THOUGHT: the constructors compose back to the residue (T1).
     let product = shapes.iter().flatten().fold(Mv::scalar(one()), |acc, u| acc.geo(u));

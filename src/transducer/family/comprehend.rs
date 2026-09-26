@@ -132,7 +132,7 @@ pub(crate) fn bracket_over(
         out
     };
     // A crossing circuit's action in one cell, where it read there.
-    let action = |cell: usize, at: usize| -> Option<&Vec<Vec<num_rational::BigRational>>> {
+    let action = |cell: usize, at: usize| -> Option<&cga::LinearFunction> {
         let k = generators.get(cell)?.iter().position(|x| *x == at)?;
         algebras.get(cell)?.actions.as_ref()?.get(k)
     };
@@ -165,7 +165,7 @@ pub(crate) fn bracket_over(
             // The two actions at one width, from any cells they read in.
             let read_i: Vec<_> = at_i.iter().filter_map(|&a| action(a, i)).collect();
             let read_j: Vec<_> = at_j.iter().filter_map(|&c| action(c, j)).collect();
-            let same_width = read_i.iter().find_map(|g| read_j.iter().find(|h| h.len() == g.len()).map(|h| (*g, *h)));
+            let same_width = read_i.iter().find_map(|g| read_j.iter().find(|h| h.n() == g.n()).map(|h| (*g, *h)));
             // A pair whose generator did not read, or whose two actions read
             // at no one width, has no bracket this reading can form: unread,
             // never skipped.
@@ -173,12 +173,11 @@ pub(crate) fn bracket_over(
                 b.unread += 1;
                 continue;
             };
-            let (gh, hg) = (cga::matrix_mul(g, h), cga::matrix_mul(h, g));
-            if gh == hg {
+            // THE BRACKET `g∘h − h∘g`, one action applied after the other.
+            let bracket = g.after(h).minus(&h.after(g));
+            if bracket.is_zero() {
                 continue;
             }
-            let bracket: Vec<Vec<num_rational::BigRational>> =
-                gh.iter().zip(&hg).map(|(r, s)| r.iter().zip(s).map(|(x, y)| x - y).collect()).collect();
             let reads: Vec<Option<bool>> =
                 wrapping.iter().map(|&w| crate::transducer::cech::algebra_contains(&algebras[w], &bracket)).collect();
             match (reads.contains(&Some(true)), reads.contains(&None)) {

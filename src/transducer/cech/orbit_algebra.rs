@@ -39,10 +39,7 @@
 use crate::network::nerve::coord::BivectorKind;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::{self, ConstructorOrbit, GramReading, MotionMode, Mv};
-use num_rational::BigRational;
 use num_traits::Zero;
-
-type Q = BigRational;
 
 /// WHAT ONE MODE RAY DOES TO THE ROUND.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -455,52 +452,37 @@ pub struct CellAlgebra {
     /// read circuits, and the closed algebra's basis rows where the capacity
     /// read: what the cross-cell bracket is read against. Volatile, the
     /// percept's own, never persisted. `None` where an action did not read.
-    pub actions: Option<Vec<Vec<Vec<Q>>>>,
+    pub actions: Option<Vec<cga::LinearFunction>>,
     pub basis: Option<crate::core::span::Span>,
     /// 78.26(5) — the rings through the cell, by their residue.
     pub rings: Rings,
 }
 
-/// An action as one vector of its algebra, the ray it is: its denominators
-/// cleared, reduced by the gcd of what is left — exact integers of any size
-/// (STD1).
-fn row_of(m: &[Vec<Q>]) -> crate::core::span::Vector {
-    use num_bigint::BigInt;
-    let lcm = m.iter().flatten().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
-    let ints: Vec<BigInt> = m.iter().flatten().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
-    let g = ints.iter().fold(BigInt::from(0), |g, x| num_integer::Integer::gcd(&g, x));
-    let g = match g.is_zero() {
-        true => BigInt::from(1),
-        false => g,
-    };
-    ints.iter().enumerate().filter(|(_, x)| !x.is_zero()).map(|(at, x)| (at, x / &g)).collect()
-}
-
 /// THE CAPACITY: the dimension of the unital algebra the actions generate —
 /// the grade of the span of its products — closed on a worklist, one read of
-/// the budget per product. A product JOINS the span only where it lies
-/// outside it, and only a product that joined is multiplied on: each is read
-/// once against the span as it stands, never the whole set again. A refusal
-/// carries what it could not hold: the product the budget ran out at. Exact
-/// at any size (STD1).
+/// the budget per product. Each product is one action applied after another
+/// (`LinearFunction::after`), read as the ray it is; it JOINS the span only
+/// where it lies outside it, and only a product that joined is multiplied
+/// on. A refusal carries what it could not hold: the product the budget ran
+/// out at. Exact at any size (STD1).
 fn capacity(
-    actions: &[Vec<Vec<Q>>],
+    actions: &[cga::LinearFunction],
     budget: &mut crate::physics::Budget,
 ) -> Result<(usize, crate::core::span::Span), CapacityRefused> {
     let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
-    let d = first.len();
+    let identity = cga::LinearFunction::identity(first.n());
     let mut span = crate::core::span::Span::new();
-    span.join(&row_of(&cga::identity_matrix(d)));
+    span.join(&identity.as_ray());
     let mut product = 0usize;
-    let mut work: Vec<Vec<Vec<Q>>> = vec![cga::identity_matrix(d)];
+    let mut work: Vec<cga::LinearFunction> = vec![identity];
     while let Some(b) = work.pop() {
         for a in actions {
             product += 1;
             if !budget.spend() {
                 return Err(CapacityRefused::Spent { product });
             }
-            let p = cga::matrix_mul(&b, a);
-            if span.join(&row_of(&p)) {
+            let p = b.after(a);
+            if span.join(&p.as_ray()) {
                 work.push(p);
             }
         }
@@ -508,22 +490,16 @@ fn capacity(
     Ok((span.grade(), span))
 }
 
-/// A matrix's row as the capacity writes it, for the bracket reading.
-pub(crate) fn algebra_row(m: &[Vec<Q>]) -> crate::core::span::Vector {
-    row_of(m)
-}
-
-/// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS MATRIX: it lies in
+/// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS FUNCTION: it lies in
 /// the algebra's span. `None` where the cell's algebra did not read or the
-/// widths differ.
-pub(crate) fn algebra_contains(cell: &CellAlgebra, m: &[Vec<Q>]) -> Option<bool> {
+/// two act in algebras of different `n`.
+pub(crate) fn algebra_contains(cell: &CellAlgebra, f: &cga::LinearFunction) -> Option<bool> {
     let span = cell.basis.as_ref()?;
     let [first, ..] = cell.actions.as_deref()? else { return None };
-    let width = first.len() * first.len();
-    if m.len() * m.len() != width {
+    if first.n() != f.n() {
         return None;
     }
-    Some(span.holds(&algebra_row(m)))
+    Some(span.holds(&f.as_ray()))
 }
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.
@@ -567,7 +543,7 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 /// the unital algebra they generate with its closed basis — or why not.
 #[derive(Clone, Debug)]
 pub struct CellRank {
-    actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused>,
+    actions: Result<Vec<cga::LinearFunction>, CapacityRefused>,
     rank: Result<(usize, crate::core::span::Span), CapacityRefused>,
 }
 
@@ -578,9 +554,9 @@ pub struct CellRank {
 pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> CellRank {
     let read: Vec<&Mv> = circuits.iter().filter_map(|c| c.holonomy.as_ref().ok()).collect();
     // Every action in the one algebra the cell's circuits span — the join of
-    // their algebras, a value never narrowed — so the matrices compose.
+    // their algebras, a value never narrowed — so the actions compose.
     let n = read.iter().fold(0u8, |n, h| n.max(h.n()));
-    let actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused> = read
+    let actions: Result<Vec<cga::LinearFunction>, CapacityRefused> = read
         .iter()
         .enumerate()
         .map(|(circuit, h)| cga::action_of(&h.widened(n)).ok_or(CapacityRefused::NotVersor { circuit }))
@@ -664,7 +640,7 @@ pub fn read_cell_after(
     let coupled = match &actions {
         Some(a) => (0..a.len())
             .flat_map(|i| ((i + 1)..a.len()).map(move |j| (i, j)))
-            .filter(|&(i, j)| cga::matrix_mul(&a[i], &a[j]) != cga::matrix_mul(&a[j], &a[i]))
+            .filter(|&(i, j)| !a[i].after(&a[j]).minus(&a[j].after(&a[i])).is_zero())
             .count(),
         None => 0,
     };
