@@ -126,11 +126,10 @@ pub fn signature(form: &[Vec<Q>]) -> (usize, usize, usize) {
     (p, q, d - p - q)
 }
 
-/// The constructors' rank as vectors, by the one elimination (`nullspace`).
+/// The constructors' rank as vectors: the grade of their span, each read as
+/// the ray it is (`core::span`).
 pub fn vector_rank(constructors: &[Mv]) -> usize {
-    let slots = constructors.iter().fold(0usize, |s, v| s.max(v.slot_count()));
-    let rows: Vec<Vec<Q>> = constructors.iter().map(|v| (0..slots).map(|k| v.coeff(k).clone()).collect()).collect();
-    slots - super::nullspace(rows, slots).len()
+    crate::core::span::grade_of(&constructors.iter().map(super::linear::ray_of).collect::<Vec<_>>())
 }
 
 /// ONE PAIR'S REGIME off its `δ²`.

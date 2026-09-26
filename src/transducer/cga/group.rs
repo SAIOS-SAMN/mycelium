@@ -41,8 +41,8 @@ pub fn reflector() -> Mv {
 /// IS `m` A VERSOR — READ BY ITS ACTION (78.28(1) as amended), never by a
 /// sum of squares. `m` is even or odd throughout; its twisted adjoint
 /// `m̂ eᵢ m̃` carries every generator `eᵢ` of `Cl(n+1, 1)` to a vector, the
-/// images independent (exact elimination over ℚ,
-/// [`super::fixed::nullspace`]); AND it carries the pseudoscalar `I` to its
+/// images independent (their span's grade is the generators' count,
+/// `core::span`); AND it carries the pseudoscalar `I` to its
 /// own line, `m̂ I m̃` a multiple of `I` read as a ray equality. `n + 3`
 /// actions, no norm formed as a value.
 ///

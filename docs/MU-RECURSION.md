@@ -186,9 +186,13 @@ These are not restated in each chapter; every chapter assumes them.
     vector, the pivots and the connecting maps need. Every action in this
     engine is an element of an exact algebra composed by its own product:
     a rotor or versor by the geometric product, a gauge by permutation
-    composition. A dimension is the grade of a span, the blade its vectors
-    wedge to, held by its factors (A18, `core::span`): no matrix, no rank
-    of one. Integer rows appear only as a word's letter exponents, whose
+    composition. An action on the vectors — a versor's twisted adjoint, or
+    a sum of them — is a linear function held by its images of the
+    generators (`cga::LinearFunction`): composed by application, its trace
+    the vector derivative's, its projectors polynomials in it, its kernel
+    the solutions of the equations its images set. A dimension is the grade
+    of a span, the blade its vectors wedge to, held by its factors (A18,
+    `core::span`): no matrix, no rank of one. Integer rows appear only as a word's letter exponents, whose
     Hermite form factors it (A12, `core::exponents`), and a matrix only as
     the sensor-plane block a rotor projects to (A3), never as the carrier
     of an element (18.3).

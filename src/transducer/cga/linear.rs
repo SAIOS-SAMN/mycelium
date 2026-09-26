@@ -211,22 +211,33 @@ impl LinearFunction {
     /// images' coefficients in turn — as the ray `core::span` joins: its
     /// denominators cleared and its content divided out, exact.
     pub fn as_ray(&self) -> crate::core::span::Vector {
-        use num_bigint::BigInt;
         let d = self.masks.len();
-        let flat: Vec<(usize, &Q)> = self
+        ray(self
             .images
             .iter()
             .enumerate()
             .flat_map(|(j, y)| self.masks.iter().enumerate().map(move |(i, &m)| (j * d + i, y.coeff(m))))
-            .filter(|(_, c)| !c.is_zero())
-            .collect();
-        let lcm = flat.iter().fold(BigInt::from(1), |l, (_, c)| num_integer::Integer::lcm(&l, c.denom()));
-        let ints: Vec<(usize, BigInt)> =
-            flat.iter().map(|(at, c)| (*at, (*c * Q::from_integer(lcm.clone())).to_integer())).collect();
-        let g = ints.iter().fold(BigInt::from(0), |g, (_, x)| num_integer::Integer::gcd(&g, x));
-        match g.is_zero() {
-            true => ints,
-            false => ints.into_iter().map(|(at, x)| (at, x / &g)).collect(),
-        }
+            .collect())
+    }
+}
+
+/// AN ELEMENT OF THE ALGEBRA AS THE RAY IT IS, for `core::span`: its
+/// coefficients on every blade, denominators cleared and content divided
+/// out, exact.
+pub fn ray_of(v: &Mv) -> crate::core::span::Vector {
+    ray((0..v.slot_count()).map(|k| (k, v.coeff(k))).collect())
+}
+
+/// Exact rational coordinates as the primitive integer ray on them.
+fn ray(coords: Vec<(usize, &Q)>) -> crate::core::span::Vector {
+    use num_bigint::BigInt;
+    let flat: Vec<(usize, &Q)> = coords.into_iter().filter(|(_, c)| !c.is_zero()).collect();
+    let lcm = flat.iter().fold(BigInt::from(1), |l, (_, c)| num_integer::Integer::lcm(&l, c.denom()));
+    let ints: Vec<(usize, BigInt)> =
+        flat.iter().map(|(at, c)| (*at, (*c * Q::from_integer(lcm.clone())).to_integer())).collect();
+    let g = ints.iter().fold(BigInt::from(0), |g, (_, x)| num_integer::Integer::gcd(&g, x));
+    match g.is_zero() {
+        true => ints,
+        false => ints.into_iter().map(|(at, x)| (at, x / &g)).collect(),
     }
 }

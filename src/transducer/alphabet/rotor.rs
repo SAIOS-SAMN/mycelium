@@ -181,7 +181,8 @@ impl Rotor {
             }
             rows.push(gens.iter().map(|&h| img.c[h].clone()).collect::<Vec<Q>>());
         }
-        if !crate::transducer::cga::nullspace(rows, 4).is_empty() {
+        // The four images independent: no combination of them vanishes.
+        if !crate::core::span::solutions(rows, 4).is_empty() {
             return false;
         }
         // The pseudoscalar to its own line: every coefficient but `e₀₁₂₃`'s

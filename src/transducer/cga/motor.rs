@@ -15,8 +15,6 @@
 //! opening stays the commutator (78.39).
 
 use super::multivector::{base_axis, one, Mv, EM, EP};
-use num_rational::BigRational;
-use num_traits::Zero;
 
 /// A MOTOR: any element of the algebra, even or odd, read by its action.
 /// 78.41's noun — `element::Action` is the element's four-lane action, and
@@ -51,20 +49,20 @@ impl VectorReading {
 }
 
 /// THE ACTION OF A MOTOR ON THE WHOLE ALGEBRA: the image of every blade of
-/// `Cl(n+1, 1)`, `2^(n+2)` of them, as the exact rational column over the
-/// blades, with the readings made of it.
+/// `Cl(n+1, 1)`, `2^(n+2)` of them, each an element of the algebra — never a
+/// column of a matrix — with the readings made of them.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MotorAction {
     pub n: u8,
-    /// The blades, as masks, in the order the columns and rows run.
+    /// The blades, as masks, in the order their images stand.
     pub blades: Vec<usize>,
-    /// Column `j`: the image of blade `j`, its coefficient on every blade.
-    pub columns: Vec<Vec<BigRational>>,
+    /// The image of each blade, `M̂ b M̃`.
+    pub images: Vec<Mv>,
     /// Every blade's image stands in the blade's own grade.
     pub grade_preserving: bool,
     /// The vectors and the pseudoscalar, read as `is_versor` reads them.
     pub vectors: VectorReading,
-    /// The rank of the whole matrix, by the exact-rank reader.
+    /// The dimension the images span: the grade of their span.
     pub algebra_rank: usize,
 }
 
@@ -105,23 +103,10 @@ fn all_blades(n: u8) -> Vec<usize> {
     out
 }
 
-/// THE DIMENSION RATIONAL VECTORS SPAN: the grade of their blade
-/// (`core::span`), each vector read as the ray it is — its denominators
-/// cleared to the integer vector it is proportional to, the same direction.
-pub(crate) fn rational_rank(rows: &[Vec<BigRational>]) -> usize {
-    use num_integer::Integer;
-    let cleared: Vec<crate::core::span::Vector> = rows
-        .iter()
-        .map(|row| {
-            let lcm = row.iter().fold(num_bigint::BigInt::from(1), |l, q| l.lcm(q.denom()));
-            row.iter()
-                .enumerate()
-                .filter(|(_, q)| !q.is_zero())
-                .map(|(j, q)| (j, q.numer() * (&lcm / q.denom())))
-                .collect()
-        })
-        .collect();
-    crate::core::span::grade_of(&cleared)
+/// THE DIMENSION ELEMENTS OF THE ALGEBRA SPAN: the grade of their span
+/// (`core::span`), each element read as the ray it is.
+fn span_grade(elements: &[Mv]) -> usize {
+    crate::core::span::grade_of(&elements.iter().map(super::linear::ray_of).collect::<Vec<_>>())
 }
 
 // MT1 — THE READING: every transition the percept holds, read by its
@@ -400,28 +385,15 @@ impl Motor {
         let gens = generators(n);
         let images: Vec<Mv> = gens.iter().map(|&g| self.image(g)).collect();
         let vectors_to_vectors = images.iter().all(|x| x.sub(&x.grade(1)).is_zero());
-        let rows: Vec<Vec<BigRational>> =
-            images.iter().map(|x| gens.iter().map(|&g| x.coeff(g).clone()).collect()).collect();
+        let vector_parts: Vec<Mv> = images.iter().map(|x| x.grade(1)).collect();
         let pseudoscalar = Mv::blade(super::multivector::pseudo(n), one());
         VectorReading {
             vectors_to_vectors,
-            rank: rational_rank(&rows),
+            rank: span_grade(&vector_parts),
             dim: gens.len(),
             pseudo_fixed: super::group::projective_ratio(&self.image(super::multivector::pseudo(n)), &pseudoscalar)
                 .is_some(),
         }
-    }
-
-    /// The images of the named generators, each read on those generators as
-    /// a column over them — the vector block a versor's reader takes.
-    pub fn columns_on(&self, masks: &[usize]) -> Vec<Vec<BigRational>> {
-        masks
-            .iter()
-            .map(|&m| {
-                let x = self.image(m).grade(1);
-                masks.iter().map(|&k| x.coeff(k).clone()).collect()
-            })
-            .collect()
     }
 
     /// THE WHOLE ACTION: one image per blade, `2^(n+2)` of them — the
@@ -434,12 +406,10 @@ impl Motor {
             .iter()
             .zip(&images)
             .all(|(&b, x)| x.sub(&x.grade(b.count_ones())).is_zero());
-        let columns: Vec<Vec<BigRational>> =
-            images.iter().map(|x| blades.iter().map(|&k| x.coeff(k).clone()).collect()).collect();
         MotorAction {
             n,
-            algebra_rank: rational_rank(&columns),
-            columns,
+            algebra_rank: span_grade(&images),
+            images,
             grade_preserving,
             vectors: self.vector_reading(),
             blades,

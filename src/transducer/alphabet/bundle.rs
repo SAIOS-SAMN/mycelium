@@ -278,55 +278,14 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
     out
 }
 
-/// The kernel of a 16×16 rational matrix, as basis vectors and then their
-/// pairwise sums. Exact row reduction over ℚ — every pivot is a rational
-/// division and nothing is rounded or thresholded.
-fn nullspace(m: &[Vec<num_rational::BigRational>]) -> Vec<Vec<num_rational::BigRational>> {
+/// THE KERNEL OF THE CONJUGATION RELATION `γ ↦ γa ∓ bγ` on the rotor
+/// algebra's sixteen blades: the solutions of the equations its images of
+/// the blades set, by the tree's one solver (`core::span::solutions`), then
+/// one canonical combination of them.
+fn nullspace(equations: &[Vec<num_rational::BigRational>]) -> Vec<Vec<num_rational::BigRational>> {
     use num_traits::{One, Zero};
     let n = 16usize;
-    let mut a: Vec<Vec<num_rational::BigRational>> = m.to_vec();
-    let mut pivot_of: Vec<Option<usize>> = vec![None; n];
-    let mut row = 0usize;
-    for col in 0..n {
-        // The pivot is the first row at or below `row` with a non-zero entry
-        // in this column — a position in the elimination, which is the
-        // algorithm's own order and not a choice among members.
-        let Some(p) = (row..n).find(|&r| !a[r][col].is_zero()) else {
-            continue;
-        };
-        a.swap(row, p);
-        let lead = a[row][col].clone();
-        for x in a[row].iter_mut() {
-            *x = &*x / &lead;
-        }
-        for r in 0..n {
-            if r == row || a[r][col].is_zero() {
-                continue;
-            }
-            let f = a[r][col].clone();
-            let pivot_row = a[row].clone();
-            for (x, p) in a[r].iter_mut().zip(pivot_row.iter()) {
-                *x = &*x - &(&f * p);
-            }
-        }
-        pivot_of[col] = Some(row);
-        row += 1;
-        if row == n {
-            break;
-        }
-    }
-    let free: Vec<usize> = (0..n).filter(|c| pivot_of[*c].is_none()).collect();
-    let mut basis: Vec<Vec<num_rational::BigRational>> = Vec::new();
-    for &f in &free {
-        let mut v = vec![num_rational::BigRational::zero(); n];
-        v[f] = num_rational::BigRational::one();
-        for c in 0..n {
-            if let Some(r) = pivot_of[c] {
-                v[c] = -a[r][f].clone();
-            }
-        }
-        basis.push(v);
-    }
+    let basis = crate::core::span::solutions(equations.to_vec(), n);
     // THE SINGULAR ELEMENTS ARE A HYPERSURFACE, and coordinate axes land on
     // it easily. Gaussian elimination returns a basis aligned to the
     // coordinate axes, and a non-versor — `γγ̃` not a non-zero scalar — is a
