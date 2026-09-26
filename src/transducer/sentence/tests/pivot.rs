@@ -12,7 +12,7 @@ use crate::transducer::sentence::*;
 fn pivot_candidates_are_read_from_occupied_axes_only() {
     let id = ClassVector::of_word(&Word::identity()).expect("identity");
     assert!(id.occupied().is_empty() && id.is_zero());
-    let k2 = ClassVector::of_word(&order2()).expect("order2");
+    let k2 = ClassVector::of_word(&word_turn_180()).expect("180° turn");
     let occ = k2.coordinates();
     assert_eq!(occ, vec![Axis::Orientation(0)], "sheet parity occupies Sheet(0), got {occ:?}");
     let inf = ClassVector::of_word(&infinite()).expect("infinite");
@@ -95,7 +95,7 @@ fn mu_neither_certifies_nor_selects() {
         "and two on different axes are a vortex too"
     );
 
-    let q = order4();
+    let q = word_turn_90();
     let qinv = q.inverse();
     let x: Vec<Vec<u8>> = vec![
         vec![0, 0, 0, 0, 0, 0],
@@ -203,7 +203,7 @@ fn mu_neither_certifies_nor_selects() {
 /// returns is not.
 ///
 /// This opened `assert!(!f.is_closed())` on a form whose single orbit is a
-/// quarter turn about a fixed point — a `ℤ/4ℤ` class, the most ordinary
+/// 90° turn about a fixed point — a `ℤ/4ℤ` class, the most ordinary
 /// torsion there is — and that assertion was the whole defect in one line.
 /// `coheres` demanded holonomy ≡ 1 on every orbit, which is `H¹ = 0`, and
 /// since only closed forms are stood and only closed forms survive the
@@ -217,10 +217,10 @@ fn mu_neither_certifies_nor_selects() {
 /// not. The free part is what a demand is for (52.3).
 #[test]
 fn cauterize_filed_torsion_crystallizes() {
-    let mut f = chord_form(&[order4()]);
+    let mut f = chord_form(&[word_turn_90()]);
     assert!(
         f.is_closed(),
-        "a quarter turn about a fixed point closes at four: the form carries a ℤ/4ℤ \
+        "a 90° turn about a fixed point closes at four: the form carries a ℤ/4ℤ \
          class and is closed WITH it, not opened BY it"
     );
     assert!(
@@ -245,7 +245,7 @@ fn cauterize_filed_torsion_crystallizes() {
 
 #[test]
 fn two_orbits_of_one_class_are_both_filed_or_discharged() {
-    let w = order4();
+    let w = word_turn_90();
     fn two_chords(w: &Word) -> Form {
         chord_form(&[w.clone(), w.clone()])
     }
@@ -265,7 +265,7 @@ fn two_orbits_of_one_class_are_both_filed_or_discharged() {
         .count();
     assert_eq!(filed, 2, "both orbits of one class file: {snaps:?}");
 
-    let q = order4();
+    let q = word_turn_90();
     let mut f = two_chords(&q);
     let snaps = f.pivot_orbit(
         [0xa3; 32],
@@ -321,7 +321,7 @@ fn pivot_never_reopens_a_closed_chord() {
         "T2: a closed chord is not demanded: {again:?}"
     );
 
-    let mut f = chord_form(&[order2(), order4()]);
+    let mut f = chord_form(&[word_turn_180(), word_turn_90()]);
     let mut budget = crate::physics::Physics::default().stroke_n(16);
     let first = f.pivot_orbit(
         [0xcd; 32],

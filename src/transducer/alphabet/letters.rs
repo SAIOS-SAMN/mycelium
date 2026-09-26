@@ -1,6 +1,6 @@
 // 1.1, 1.2 — THE SEVENTEEN LETTERS and the relators between them.
 //
-//! One identity, six quarter turns, six Pythagorean (3,4,5) rotors and four
+//! One identity, six 90° turns, six Pythagorean (3,4,5) rotors and four
 //! (5,12,13) rotors, each the one pair with its carried inverse, exact over
 //! the rationals. The relators are stated, never searched for.
 
@@ -76,7 +76,7 @@ const fn pair_planes_of_rank() -> [(u8, u8); PAIR_PLANES] {
 }
 
 /// LAW VIII cardinality, DERIVED from what the alphabet holds: the
-/// identity, a quarter turn and a (3,4,5) rotor on every pair plane, and a
+/// identity, a 90° turn and a (3,4,5) rotor on every pair plane, and a
 /// (5,12,13) rotor on the planes that carry one. It was `17` written out,
 /// which is the same fact as the three tables below stated a fourth time.
 pub const CAYLEY_ALPHABET_LEN: usize = 1 + 2 * PAIR_PLANES + SLOT_PLANES_13.len();
@@ -87,7 +87,7 @@ pub const CAYLEY_ALPHABET_LEN: usize = 1 + 2 * PAIR_PLANES + SLOT_PLANES_13.len(
 #[repr(transparent)]
 pub struct LetterId(u8);
 
-/// The pair planes in slot order, carrying the quarter turns and the
+/// The pair planes in slot order, carrying the 90° turns and the
 /// (3,4,5) rotors.
 pub(crate) const SLOT_PLANES_SIX: [(u8, u8); PAIR_PLANES] = pair_planes_of_rank();
 
@@ -105,7 +105,7 @@ pub const fn sensor_plane() -> (u8, u8) {
     (PLANE_ROW, PLANE_COL)
 }
 
-/// THE PLANE WHOSE HALF-TURN IS THE ORIENTATION CHARACTER of `plane`: the
+/// THE PLANE WHOSE 180°-TURN IS THE ORIENTATION CHARACTER of `plane`: the
 /// pair of `plane.1` with the least axis outside `plane`. `SpellStep`
 /// derives its flip letter exactly this way; this is that derivation named
 /// once so `LetterId::SHEET` can be checked against it rather than written
@@ -122,15 +122,15 @@ pub const fn flip_plane(plane: (u8, u8)) -> Option<(u8, u8)> {
 }
 
 /// Slot bases, each read off what precedes it: the identity, then a
-/// quarter turn per pair plane, then a (3,4,5) rotor per pair plane, then
+/// 90° turn per pair plane, then a (3,4,5) rotor per pair plane, then
 /// the (5,12,13) rotors. They were `1`, `7` and `13` written out at every
 /// reader, which is `PAIR_PLANES` restated in three places.
-const QUARTER_BASE: u8 = 1;
+const TURN_90_BASE: u8 = 1;
 #[expect(
     clippy::cast_possible_truncation,
     reason = "STD1 C1 — the algebra's range: PAIR_PLANES = C(LETTER_RANK = 4, 2) = 6, a const expression"
 )]
-const PRIME_5_BASE: u8 = QUARTER_BASE + PAIR_PLANES as u8;
+const PRIME_5_BASE: u8 = TURN_90_BASE + PAIR_PLANES as u8;
 #[expect(
     clippy::cast_possible_truncation,
     reason = "STD1 C1 — the algebra's range: PAIR_PLANES = C(LETTER_RANK = 4, 2) = 6, a const expression"
@@ -139,7 +139,7 @@ const PRIME_13_BASE: u8 = PRIME_5_BASE + PAIR_PLANES as u8;
 
 impl LetterId {
     pub const IDENTITY: LetterId = LetterId(0);
-    /// The quarter turn on the sheet plane `(1, 2)` (slot 4): two of them
+    /// The 90° turn on the sheet plane `(1, 2)` (slot 4): two of them
     /// are the orientation character of the sensor plane; there is no
     /// reflection letter.
     pub const SHEET: LetterId = LetterId(4);
@@ -162,13 +162,13 @@ impl LetterId {
         self.0
     }
 
-    /// The quarter turn on a pair plane.
+    /// The 90° turn on a pair plane.
     #[expect(
         clippy::cast_possible_truncation,
         reason = "STD1 C1 — the algebra's range: a pair plane's slot in SLOT_PLANES_SIX, one of PAIR_PLANES = 6"
     )]
-    pub fn quarter(plane: (u8, u8)) -> Option<LetterId> {
-        Self::slot_of(plane).map(|i| LetterId(QUARTER_BASE + i as u8))
+    pub fn turn_90(plane: (u8, u8)) -> Option<LetterId> {
+        Self::slot_of(plane).map(|i| LetterId(TURN_90_BASE + i as u8))
     }
 
     /// The (3,4,5) rotor on a pair plane.
@@ -220,7 +220,7 @@ pub fn plane_of(id: LetterId) -> Option<(u8, u8)> {
         return None;
     }
     if i < PRIME_5_BASE {
-        return SLOT_PLANES_SIX.get((i - QUARTER_BASE) as usize).copied();
+        return SLOT_PLANES_SIX.get((i - TURN_90_BASE) as usize).copied();
     }
     if i < PRIME_13_BASE {
         return SLOT_PLANES_SIX.get((i - PRIME_5_BASE) as usize).copied();
@@ -312,30 +312,30 @@ pub struct Relator {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RelatorKind {
-    QuarterOrderFour,
+    Turn90OrderFour,
     PlaneCommute,
     SheetConjugate,
     PrimeInfinite,
 }
 
-/// The relators, counted from what the grammar states: a quarter turn of
+/// The relators, counted from what the grammar states: a 90° turn of
 /// order four on every pair plane, one commuting relation per
 /// complementary pair, the sheet's square, and the two prime letters of
 /// infinite order. It was `12`, which is those four facts added up by hand.
 pub(crate) const RELATOR_N: usize = PAIR_PLANES + PAIR_PLANES / 2 + 1 + 2;
 
-/// Grammar of the seventeen: quarter turns order four, complementary
+/// Grammar of the seventeen: 90° turns order four, complementary
 /// planes commute, a sheet conjugates a rotation to its inverse, prime
 /// letters have infinite order.
 pub fn relators() -> [Relator; RELATOR_N] {
     // The letters are named by slot (law VIII), never searched for by
-    // plane: a quarter turn in slot `i` of the six planes is letter `1 + i`.
+    // plane: a 90° turn in slot `i` of the six planes is letter `1 + i`.
     // It looked each one up and panicked on a plane it declared itself (§2.4).
     #[expect(
         clippy::cast_possible_truncation,
-        reason = "STD1 C1 — the algebra's range: a quarter-turn slot, one of PAIR_PLANES = 6"
+        reason = "STD1 C1 — the algebra's range: a 90°-turn slot, one of PAIR_PLANES = 6"
     )]
-    let quarter_in = |slot: usize| LetterId(QUARTER_BASE + slot as u8);
+    let turn_90_in = |slot: usize| LetterId(TURN_90_BASE + slot as u8);
     let mut out: [Relator; RELATOR_N] = std::array::from_fn(|_| Relator {
         kind: RelatorKind::PrimeInfinite,
         plane: None,
@@ -343,11 +343,11 @@ pub fn relators() -> [Relator; RELATOR_N] {
     });
     let mut i = 0usize;
     for (slot, &plane) in SLOT_PLANES_SIX.iter().enumerate() {
-        let id = quarter_in(slot);
-        // q^4 = 1 — stored as the raw tape of four quarters, then reduced
+        let id = turn_90_in(slot);
+        // q^4 = 1 — stored as the raw tape of four 90° turns, then reduced
         // to the identity vertex.
         let w = Word::from_letters(&[(id, false), (id, false), (id, false), (id, false)]);
-        out[i] = Relator { kind: RelatorKind::QuarterOrderFour, plane: Some(plane), word: w };
+        out[i] = Relator { kind: RelatorKind::Turn90OrderFour, plane: Some(plane), word: w };
         i += 1;
     }
     // COMPLEMENTARY PLANES COMMUTE, and each pair is stated once. The
@@ -366,15 +366,15 @@ pub fn relators() -> [Relator; RELATOR_N] {
         if b <= a {
             continue;
         }
-        let qa = quarter_in(a);
-        let qb = quarter_in(b);
+        let qa = turn_90_in(a);
+        let qb = turn_90_in(b);
         // aba^{-1}b^{-1} = 1
         let w = Word::from_letters(&[(qa, false), (qb, false), (qa, true), (qb, true)]);
         out[i] = Relator { kind: RelatorKind::PlaneCommute, plane: Some(plane), word: w };
         i += 1;
     }
     let sheet = LetterId::SHEET;
-    // S² = 1: four quarter-turns on the sheet plane reduce to the identity.
+    // S² = 1: four 90°-turns on the sheet plane reduce to the identity.
     let w = Word::from_letters(&[(sheet, false), (sheet, false), (sheet, false), (sheet, false)]);
     out[i] = Relator {
         kind: RelatorKind::SheetConjugate,

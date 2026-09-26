@@ -116,7 +116,7 @@ fn volume_is_what_makes_the_quotient_exist() {
 
 /// The versor sandwich rotates the whole body exactly. The π-rotor e1e2 (unit,
 /// rational — the hole the Cayley chart cannot reach) sends x ↦ −x on its plane
-/// and leaves the frame axis; the unnormalised quarter-turn 1+e1e2 sends (1,0,0)
+/// and leaves the frame axis; the unnormalised 90° turn 1+e1e2 sends (1,0,0)
 /// ↦ (0,−1,0) with its scale absorbed by homogeneity (read back through `base`);
 /// and the same turn on `e1e3` carries the row axis onto the frame axis (51.2).
 #[test]
@@ -125,15 +125,15 @@ fn the_sandwich_rotates_the_whole_body() {
     let turned = pi.sandwich(&point(&q(3), &q(2), &q(5)));
     assert_eq!(base(&turned), Some((q(-3), q(-2), q(5))), "π rotation sends x ↦ −x on its plane, k untouched");
 
-    let quarter = rotator(&q(1), &q(1)); // 1 + e1e2, unnormalised 90°
-    let spun = quarter.sandwich(&point(&q(1), &q(0), &q(0)));
+    let turn_90 = rotator(&q(1), &q(1)); // 1 + e1e2, unnormalised 90°
+    let spun = turn_90.sandwich(&point(&q(1), &q(0), &q(0)));
     assert_eq!(
         base(&spun),
         Some((q(0), q(-1), q(0))),
-        "quarter turn (1,0,0) ↦ (0,−1,0), homogeneous scale divided out"
+        "a 90° turn: (1,0,0) ↦ (0,−1,0), homogeneous scale divided out"
     );
-    let quarter_13 = rotator_on_blade(&q(1), &q(1), E1 | E3);
-    let lifted = quarter_13.sandwich(&point(&q(1), &q(0), &q(0)));
+    let turn_90_13 = rotator_on_blade(&q(1), &q(1), E1 | E3);
+    let lifted = turn_90_13.sandwich(&point(&q(1), &q(0), &q(0)));
     assert_eq!(
         base(&lifted),
         Some((q(0), q(0), q(-1))),

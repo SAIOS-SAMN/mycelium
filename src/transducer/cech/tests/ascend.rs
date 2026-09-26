@@ -8,7 +8,7 @@ use crate::transducer::cech::*;
 use crate::transducer::element::identity_versor as ident;
 
 /// Three sectioned vertices and their three edges, the third carrying
-/// `third`: the identity closes the boundary flat, a quarter turn leaves it
+/// `third`: the identity closes the boundary flat, a 90° turn leaves it
 /// carrying a class.
 fn triangle(third: Rotor) -> (Complex, Vec<Vec<u8>>) {
     let mut c = Complex::new();
@@ -34,7 +34,7 @@ fn edges(c: &Complex, vs: &[Vec<u8>]) -> Vec<Option<(Rotor, crate::transducer::e
 /// seals and one release, and never nets them.
 #[test]
 fn ascend_seals_descend_releases_and_ascend_reseals_the_same_content() {
-    for third in [Rotor::identity(), quarter()] {
+    for third in [Rotor::identity(), turn_90()] {
         let _ = crate::physics::metabolism::take_metabolism();
         let (mut c, vs) = triangle(third);
         let boundary = edges(&c, &vs);

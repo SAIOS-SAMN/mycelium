@@ -427,7 +427,7 @@ assert!(
 /// N1, BQ5a — A PAIR THE TOPOLOGY NAMES IS ONE FACE, CARRYING ITS
 /// REFRACTION.
 ///
-/// Two L pentominoes, the one the other turned a half turn, hooked so they
+/// Two L pentominoes, the one the other turned a 180° turn, hooked so they
 /// meet at two corners and share no edge. The diagonal names them: they
 /// touch at `(1,0)–(0,1)` and `(3,2)–(2,3)`. The condensation field named
 /// them a second time, through a band on `δ`; the band is gone and whether

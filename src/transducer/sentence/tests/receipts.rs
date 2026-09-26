@@ -14,7 +14,7 @@ use crate::transducer::element::{NerveEdge, ReceiptsEnvelope};
 use crate::transducer::sentence::*;
 
 fn leaf(plane: (u8, u8)) -> Form {
-    let q = crate::transducer::alphabet::LetterId::quarter(plane).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90(plane).expect("90° turn");
     closed_word_form(Word::from_letters(&[(q, false)]), None)
 }
 
@@ -153,7 +153,7 @@ fn a_citation_carries_its_slip_and_not_only_its_bend() {
 /// ARE one boundary and what distinguishes them is incidence in `N(𝒰)`.
 #[test]
 fn an_edge_stands_at_a_site_and_not_at_an_index() {
-    // Two leaves at two BASE planes: a quarter turn through e₂ has no base
+    // Two leaves at two BASE planes: a 90° turn through e₂ has no base
     // action, so its star overlap has no place to derive (AT1: an overlap is
     // placed where its place derives, or not at all).
     let a = leaf((0, 1));

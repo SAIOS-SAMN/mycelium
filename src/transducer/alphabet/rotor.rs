@@ -612,10 +612,10 @@ impl Rotor {
     /// carried e₀ and e₁, took each image's FIRST TWO components into a 2×2
     /// block, and spelled that — so a rotor whose images leave the plane had
     /// its shadow on the plane spelled as though it were the whole motion.
-    /// Two readings of the engine, not of the text: a quarter turn on plane
+    /// Two readings of the engine, not of the text: a 90° turn on plane
     /// (2,3) carries e₀ and e₁ unmoved, projects to the identity block, and
     /// returned the IDENTITY WORD against this doc line; and a legal
-    /// two-letter word whose holonomy lives in (0,2)∧(1,3) returned a half
+    /// two-letter word whose holonomy lives in (0,2)∧(1,3) returned a 180°
     /// turn on the sensor plane.
     ///
     /// The consequence is not local. `ClassVector::of_rotor` writes an

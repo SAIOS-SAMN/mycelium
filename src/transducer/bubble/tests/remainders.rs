@@ -3,15 +3,15 @@
 
 use super::super::*;
 
-/// Thoughts on charts: a quarter turn filed Congruent between two thoughts
-/// on `c` and between two on `d`, a half turn between two on `d`, and a
-/// quarter turn between two that share no chart. ℓ 2 once, ℓ 4 three times;
-/// two classes, the quarter's across two charts; one unplaced; no re-fill.
+/// Thoughts on charts: a 90° turn filed Congruent between two thoughts
+/// on `c` and between two on `d`, a 180° turn between two on `d`, and a
+/// 90° turn between two that share no chart. ℓ 2 once, ℓ 4 three times;
+/// two classes, the 90° turn's across two charts; one unplaced; no re-fill.
 #[test]
 fn the_minds_remainders_are_read_at_the_chart_their_thoughts_share() {
     use crate::transducer::alphabet::{LetterId, Word};
     let turn = |n: usize| {
-        let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+        let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
         Word::from_letters(&vec![(q, false); n]).rotor()
     };
     let mut c = Contemplation::new();

@@ -14,8 +14,8 @@ use crate::transducer::family::{factor_versor, occupied_lanes, Crystal};
 use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk::Invariant;
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -125,7 +125,7 @@ fn lanes_of(v: &[(usize, Invariant)]) -> Vec<usize> {
 #[test]
 fn a_turn_occupies_one_lane_and_a_turn_that_recolours_occupies_two() {
     use crate::transducer::sentence::CycleType;
-    let turn = quarter(2).rotor();
+    let turn = turn_90(2).rotor();
     let alone = occupied_lanes(&turn, &CycleType::Identity);
     assert_eq!(lanes_of(&alone), vec![3], "a turn is holonomic and nothing else");
     let with_hue = occupied_lanes(&turn, &CycleType::of(&swap()));
@@ -143,9 +143,9 @@ fn a_turn_occupies_one_lane_and_a_turn_that_recolours_occupies_two() {
 #[test]
 fn a_generator_that_recolours_is_filed_on_the_gauge_cover_as_well() {
     use crate::transducer::sentence::CycleType;
-    let turn = quarter(1).rotor();
-    let holonomic = Lanes::holding(quarter(1), Vec::new(), 1);
-    let recolouring = Lanes::holding(quarter(1), swap(), 2);
+    let turn = turn_90(1).rotor();
+    let holonomic = Lanes::holding(turn_90(1), Vec::new(), 1);
+    let recolouring = Lanes::holding(turn_90(1), swap(), 2);
     let h_chart = crate::transducer::sentence::versor_chart_of(&turn).expect("the 𝒽 chart");
     let g_chart = {
         let cv = occupied_lanes(&turn, &CycleType::of(&swap()));
@@ -181,8 +181,8 @@ fn a_generator_that_recolours_is_filed_on_the_gauge_cover_as_well() {
 #[test]
 fn the_meet_refuses_a_generator_that_only_one_occupied_lane_holds() {
     use crate::transducer::sentence::CycleType;
-    let held = Lanes::holding(quarter(1), Vec::new(), 1);
-    let turn = quarter(2).rotor();
+    let held = Lanes::holding(turn_90(1), Vec::new(), 1);
+    let turn = turn_90(2).rotor();
     let holonomic_only = occupied_lanes(&turn, &CycleType::Identity);
     let with_hue = occupied_lanes(&turn, &CycleType::of(&swap()));
     assert_eq!(
@@ -205,8 +205,8 @@ fn the_meet_refuses_a_generator_that_only_one_occupied_lane_holds() {
 #[test]
 fn the_meet_admits_a_generator_every_occupied_lane_holds() {
     use crate::transducer::sentence::CycleType;
-    let held = Lanes::holding(quarter(1), swap(), 2);
-    let with_hue = occupied_lanes(&quarter(2).rotor(), &CycleType::of(&swap()));
+    let held = Lanes::holding(turn_90(1), swap(), 2);
+    let with_hue = occupied_lanes(&turn_90(2).rotor(), &CycleType::of(&swap()));
     assert_eq!(lanes_of(&with_hue), vec![1, 3], "the target occupies two lanes");
     let at_meet = held.generators_at_meet(&with_hue, &mut budget());
     let [(form, _, _)] = at_meet.as_slice() else {
@@ -225,7 +225,7 @@ fn the_meet_admits_a_generator_every_occupied_lane_holds() {
 /// nothing to reduce.
 #[test]
 fn a_target_on_no_lane_is_given_no_basis() {
-    let held = Lanes::holding(quarter(1), swap(), 2);
+    let held = Lanes::holding(turn_90(1), swap(), 2);
     assert_eq!(
         held.generators_at_meet(&[], &mut budget()).len(),
         0,
@@ -242,15 +242,15 @@ fn a_target_on_no_lane_is_given_no_basis() {
 ///
 /// Measured, and the reason this test exists: reading the target's own
 /// carriage into the lane vector put `𝒮` in the meet, no generator is ever
-/// held on `𝒮`, and the citation in `generator_pay`'s half turn was lost —
+/// held on `𝒮`, and the citation in `generator_pay`'s 180° turn was lost —
 /// a refusal by bookkeeping of a claim the derivation never made.
 #[test]
 fn a_target_that_translates_still_derives_through_a_turning_generator() {
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let held = Lanes::holding(quarter(1), Vec::new(), 1);
-    // V = D(1)·T(3,0)·R(half turn): a turn carried to another place.
-    let turn = element::versor_of_word(&quarter(2)).expect("a plane versor");
+    let held = Lanes::holding(turn_90(1), Vec::new(), 1);
+    // V = D(1)·T(3,0)·R(180° turn): a turn carried to another place.
+    let turn = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let placed = element::carriage(&one, &(q(3), q(0))).geo(&turn);
     let d = factor_versor(&held, &mut budget(), &placed, &[])
         .expect("a linear block")

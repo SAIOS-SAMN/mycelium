@@ -31,13 +31,13 @@ fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Elem
 
 #[test]
 fn normal_form_two_tapes_one_key() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     let b = Word::identity();
     assert_eq!(a.key(), b.key());
     let geo = a.geodesic();
     assert_eq!(a.matrix(), geo.matrix());
-    assert!(relators().iter().any(|r| r.kind == RelatorKind::QuarterOrderFour));
+    assert!(relators().iter().any(|r| r.kind == RelatorKind::Turn90OrderFour));
 }
 
 #[test]

@@ -289,7 +289,7 @@ impl CoboundaryOutcome {
 /// the rotor in `Cl(4,0)` over all six planes, the carriage `D·T` in
 /// `Cl(3,1)`. Nothing is projected and nothing is re-factored.
 ///
-/// `Congruent` requires a FIXED POINT, not a flat carriage. A quarter turn
+/// `Congruent` requires a FIXED POINT, not a flat carriage. A 90° turn
 /// carried along a translation has the same rotor order as one about a
 /// fixed point and is not the same class: filing it at period four would
 /// put a theorem on the simplex that the seam does not satisfy, because

@@ -25,7 +25,7 @@ fn is_even(m: &Mv) -> bool {
 /// THE CAYLEY BIVECTOR of an even versor, `⟨V⟩₂ / ⟨V⟩₀` (52.1): the element
 /// of `Λ²(ℚ^{4,1})` the versor is derived from, projective in `V`, so `V` and
 /// `λV` read one bivector. Refused at the chart's whole boundary and nowhere
-/// else: no scalar part — a half turn, or an odd versor, whose derivation is
+/// else: no scalar part — a 180° turn, or an odd versor, whose derivation is
 /// its mirror (52.4) — and an even element that is not a versor, read as
 /// `V Ṽ` not a scalar or the grade-4 part other than `⟨V⟩₂∧⟨V⟩₂ / (2⟨V⟩₀)`,
 /// which is what `V Ṽ ∈ ℚ` forces of a versor.

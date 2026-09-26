@@ -11,13 +11,13 @@ use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::*;
 use crate::transducer::stalk;
 
-/// A closed one-word form at a given quarter-turn plane, so three of them
+/// A closed one-word form at a given 90°-turn plane, so three of them
 /// are three distinct addresses. The plane is one of the BASE's own —
 /// `(0,1)`, `(0,3)`, `(1,3)` — since AT1 places the star overlap from the
 /// word's action on the base, and a turn through `e₂` carries the base off
 /// itself and places none.
 fn leaf(plane: (u8, u8)) -> Form {
-    let q = crate::transducer::alphabet::LetterId::quarter(plane).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90(plane).expect("90° turn");
     closed_word_form(Word::from_letters(&[(q, false)]), None)
 }
 
@@ -314,9 +314,9 @@ fn a_citation_truncated_to_its_chart_names_two_forms() {
 #[test]
 fn every_orbit_lifts_to_the_member_complex() {
     let cases: Vec<(&str, Form)> = vec![
-        ("a chord with a quarter turn", chord_form(&[order4()])),
-        ("two chords of one class", chord_form(&[order4(), order4()])),
-        ("a chord whose EDGE carries the word", edge_chord_form(&[order4()])),
+        ("a chord with a 90° turn", chord_form(&[word_turn_90()])),
+        ("two chords of one class", chord_form(&[word_turn_90(), word_turn_90()])),
+        ("a chord whose EDGE carries the word", edge_chord_form(&[word_turn_90()])),
         ("a coboundary triangle", coboundary_chord_form()),
         ("an infinite-order chord", chord_form(&[infinite()])),
     ];
@@ -382,10 +382,10 @@ fn a_cycle_through_a_split_vertex_lifts() {
     // TWO VERTICES, EACH ACTING ON TWO CHARTS. `Vertex::word_on` takes one
     // chart, so each vertex stands a member per chart and the second JOINS
     // the first — which is what a vertex with a section IS (18.2, 21 step 1).
-    // AT1 (Q1): two vertices are two CLASSES, so the second is the quarter
+    // AT1 (Q1): two vertices are two CLASSES, so the second is the 90°
     // turn; two of the identity would be one vertex.
     let mut charts = Vec::new();
-    for word in [Word::identity(), order4()] {
+    for word in [Word::identity(), word_turn_90()] {
         let at_a = f.stand_member(&word_vertex_on(1, word.clone(), a.clone()), FRAME).expect("member on a");
         let at_b = f.stand_member(&word_vertex_on(1, word, b.clone()), FRAME).expect("member on b");
         assert_eq!(at_a.vertex(), at_b.vertex(), "one class, one vertex");

@@ -146,9 +146,9 @@ fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
 #[test]
 fn a_face_that_varies_across_the_pairs_is_kept_as_sections_and_holds_an_orbit() {
 let l_in = ["100000", "100000", "110000", "000000", "000330", "000000"];
-let cw = ["111000", "100000", "000000", "000000", "000550", "000000"];
-let ccw = ["001000", "111000", "000000", "000000", "000550", "000000"];
-let family = vec![(grid(&l_in), grid(&cw)), (grid(&l_in), grid(&ccw))];
+let turned_minus_90 = ["111000", "100000", "000000", "000000", "000550", "000000"];
+let turned_90 = ["001000", "111000", "000000", "000000", "000550", "000000"];
+let family = vec![(grid(&l_in), grid(&turned_minus_90)), (grid(&l_in), grid(&turned_90))];
 let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
 let words = rule
     .form
@@ -314,11 +314,11 @@ assert!(
 /// through A's class or A's gauge would be visible.
 #[test]
 fn b_does_as_rotation_about_its_centre_is_rebased() {
-let letter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+let letter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
 // A is the single hue-1 lamina; B is the hue-3 bar, another shape.
 // A placement of (3, 3) keeps both images inside the frame for
-// either orientation of the quarter turn (laminae map to
+// either orientation of the 90° turn (laminae map to
 // (c, −r−1) + p or (−c−1, r) + p).
 let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
@@ -1075,7 +1075,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
     let body = || body_of(vec![Lamina::from((0i64, 0i64, 0i64, 1u8))]).expect("one lamina is heard");
     let v = crate::transducer::element::identity_versor();
     // TWO VERTICES BY THEIR COORDINATES (AT1): two classes, the identity's
-    // and the quarter turn's.
+    // and the 90° turn's.
     let at_of = |w: crate::transducer::alphabet::Word| {
         Vertex::word_on(
             crate::transducer::alphabet::Derivation::spelled(w),
@@ -1089,8 +1089,8 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
         .expect("a word vertex has a class")
     };
     let seven = at_of(crate::transducer::alphabet::Word::identity());
-    let quarter = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
-    let nine = at_of(crate::transducer::alphabet::Word::from_letters(&[(quarter, false)]));
+    let turn_90 = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
+    let nine = at_of(crate::transducer::alphabet::Word::from_letters(&[(turn_90, false)]));
     assert_ne!(seven, nine, "two classes, two vertices");
     let mut at: Keyed<(
         crate::transducer::family::Body,

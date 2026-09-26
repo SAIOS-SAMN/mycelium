@@ -7,8 +7,8 @@ use crate::transducer::alphabet::{Derivation, LetterId, Word};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -43,10 +43,10 @@ fn generator_and_citer() -> (Element, Element) {
     // The generator measures on a lane the speaker can actually draw:
     // a mint bonds the first lane, so a use priced only there is a use
     // no voice can pay and the test would prove nothing.
-    let g = sentence_at(Derivation::spelled(quarter(1)), 1, [0, 1, 0, 0]);
+    let g = sentence_at(Derivation::spelled(turn_90(1)), 1, [0, 1, 0, 0]);
     let citer = sentence_with(
         Derivation::compose(
-            &[(g.address(), Address::from_bytes([TAG_FORM, 1]), 2, quarter(1))],
+            &[(g.address(), Address::from_bytes([TAG_FORM, 1]), 2, turn_90(1))],
             Word::identity(),
         ),
         9,
@@ -86,19 +86,19 @@ fn a_citer_that_does_not_install_pays_no_generator() {
 }
 
 /// The family D6 and L8t are proved on: a body the taught generator does
-/// NOT reproduce. An L turning a half is `q²`; the generator taught is a
-/// BAR turning a quarter, `q`. The bar's chart is not the L's, so 21 step
+/// NOT reproduce. An L turning 180° is `q²`; the generator taught is a
+/// BAR turning 90°, `q`. The bar's chart is not the L's, so 21 step
 /// 3's glue never sees it (`on_body` answers at the body's chart) while
 /// the derivation does (`generators_under` answers at the VERSOR's), and
 /// A12 factors `q² = q·q`. Where the generator acts on the same body the
 /// glue fires instead and the placement word absorbs the difference —
 /// which is the same mechanism at the form level, not a failure of this
 /// one.
-fn bar_quarter() -> Vec<crate::transducer::family::TrainPair> {
+fn bar_turn_90() -> Vec<crate::transducer::family::TrainPair> {
     vec![(digits(&["111", "000", "000"]), digits(&["001", "001", "001"]))]
 }
 
-fn l_half() -> Vec<crate::transducer::family::TrainPair> {
+fn l_turn_180() -> Vec<crate::transducer::family::TrainPair> {
     vec![(digits(&["110", "100", "000"]), digits(&["000", "001", "011"]))]
 }
 
@@ -121,8 +121,8 @@ fn install_on(k: &mut Kernel, voice: [u8; 32], e: &Element, task: &[u8]) {
 }
 
 /// 26 AS RULED 2026-09-10 (L8t) — THE USE OF A CITED GENERATOR IS A SHARE
-/// OF THE CITER'S OWN MINT. The teacher speaks the bar's quarter turn and
-/// the court rules it. A mind learns it and derives the L's half turn
+/// OF THE CITER'S OWN MINT. The teacher speaks the bar's 90° turn and
+/// the court rules it. A mind learns it and derives the L's 180° turn
 /// through it. A second voice speaks that sentence; at ITS install the
 /// cited form's own deflation on the citer's family is minted to the
 /// teacher, out of what the citer closed — not transferred out of the
@@ -137,7 +137,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     use crate::transducer::sentence::as_element_form;
     let teacher = [1u8; 32];
     let speaker = [3u8; 32];
-    let (gen_fam, cite_fam) = (bar_quarter(), l_half());
+    let (gen_fam, cite_fam) = (bar_turn_90(), l_turn_180());
 
     let g = cipher_form(&gen_fam[0].0, &gen_fam[0].1);
     let g_mag = sentence_measure(&g, &gen_fam, &NoCrystal, 0).expect("the bar is spoken");
@@ -169,7 +169,7 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
         .collect();
     assert!(
         cited.iter().any(|(form, _, _)| form.as_bytes() == g_addr.as_bytes()),
-        "the half turn DERIVES through the quarter the mind was taught, and is not glued to it"
+        "the 180° turn DERIVES through the 90° turn the mind was taught, and is not glued to it"
     );
     let spoken = mint_sentence(&rule, &cite_fam, &epi, 0).expect("minted over the mind's own crystal");
 
@@ -208,10 +208,10 @@ fn a_cited_generators_speaker_is_paid_a_share_of_the_citers_mint() {
     );
 }
 
-/// The three-quarter turn of the same bar: mind B's generator, where
-/// mind A holds the quarter. `q³` and `q`, and the L's half turn is `q²`
+/// The 270° turn of the same bar: mind B's generator, where
+/// mind A holds the 90° turn. `q³` and `q`, and the L's 180° turn is `q²`
 /// through either — `q·q` for A and `q³·q³ = q⁶ ≡ q²` for B.
-fn bar_three_quarter() -> Vec<crate::transducer::family::TrainPair> {
+fn bar_turn_270() -> Vec<crate::transducer::family::TrainPair> {
     vec![(digits(&["111", "000", "000"]), digits(&["100", "100", "100"]))]
 }
 
@@ -236,7 +236,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
 
     let (teacher_a, teacher_b) = ([1u8; 32], [2u8; 32]);
     let (voice_a, voice_b) = ([3u8; 32], [4u8; 32]);
-    let cite_fam = l_half();
+    let cite_fam = l_turn_180();
     let c_task = [7u8; 32];
 
     // One court teaches both generators; each mind learns its own.
@@ -249,8 +249,8 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
         install_on(k, who, &e, &task);
         e
     };
-    let g_a = taught(&mut school, &bar_quarter(), teacher_a, [11u8; 32]);
-    let g_b = taught(&mut school, &bar_three_quarter(), teacher_b, [12u8; 32]);
+    let g_a = taught(&mut school, &bar_turn_90(), teacher_a, [11u8; 32]);
+    let g_b = taught(&mut school, &bar_turn_270(), teacher_b, [12u8; 32]);
     assert!(!g_a.same_vertex(&g_b), "the two minds are taught different generators");
 
     let mind = |g: &crate::transducer::element::Element| {
@@ -308,7 +308,7 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
         k.set_court_voice(court_id);
         k.bind_task_family(c_task, cite_fam.clone());
         let g_task = [13u8; 32];
-        let gen_fam = match teacher == teacher_a { true => bar_quarter(), false => bar_three_quarter() };
+        let gen_fam = match teacher == teacher_a { true => bar_turn_90(), false => bar_turn_270() };
         k.bind_task_family(g_task, gen_fam);
         install_on(&mut k, teacher, g, &g_task);
 

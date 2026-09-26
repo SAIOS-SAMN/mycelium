@@ -244,8 +244,8 @@ fn at_four_axes_four_bodies_at_one_element_mint_a_three_cell() {
 }
 
 /// 78.26(2), R1 — A BRACKET IS HELD BY AN ENCLOSURE OVER ANY CELLS ITS PAIR
-/// SPANS. Circuit 0 (a quarter turn in `e₁₂`) crosses cells A and A′; circuit
-/// 1 (a quarter turn in `e₂₃`) crosses C; the enclosure W wraps A′ and C,
+/// SPANS. Circuit 0 (a 90° turn in `e₁₂`) crosses cells A and A′; circuit
+/// 1 (a 90° turn in `e₂₃`) crosses C; the enclosure W wraps A′ and C,
 /// never A, and W's algebra is the one circuits 2 and 3 (the same two turns)
 /// generate, which contains their bracket. Decided at the first cells the
 /// pair spans, (A, C), nothing wraps both and the pair would read LOST; over

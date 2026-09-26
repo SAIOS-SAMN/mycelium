@@ -9,8 +9,8 @@ use crate::transducer::alphabet::{Derivation, LetterId, Word};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -44,12 +44,12 @@ fn sentence_with(d: Derivation, tag: u8) -> Element {
 #[test]
 fn a_sentence_citing_an_unruled_form_waits_and_is_reheard_when_it_is_ruled() {
     let mut k = Kernel::new();
-    let generator = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let g_addr = generator.address();
 
     let citer = sentence_with(
         Derivation::compose(
-            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, quarter(1))],
+            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, turn_90(1))],
             Word::identity(),
         ),
         9,
@@ -100,17 +100,17 @@ fn a_sentence_citing_an_unruled_form_waits_and_is_reheard_when_it_is_ruled() {
 fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
     use crate::anastome::dialogue::{self, Adjudication};
     let mut k = Kernel::new();
-    let generator = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let generator = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let g_addr = generator.address();
     let citer = sentence_with(
         Derivation::compose(
-            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, quarter(1))],
+            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, turn_90(1))],
             Word::identity(),
         ),
         9,
     );
     // A first sentence with nothing to wait on, spoken in the same frame.
-    let plain = sentence_with(Derivation::spelled(quarter(3)), 5);
+    let plain = sentence_with(Derivation::spelled(turn_90(3)), 5);
 
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
     let heard = k.hear_speech([1; 32], &[0; 32], &spoken).expect("the frame is heard");
@@ -165,8 +165,8 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
     let mut k = Kernel::new();
     // An address this court holds no word at, and a sentence with nothing
     // to wait on, docketed under it.
-    let absent = sentence_with(Derivation::spelled(quarter(1)), 1).address();
-    let plain = sentence_with(Derivation::spelled(quarter(3)), 5);
+    let absent = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
+    let plain = sentence_with(Derivation::spelled(turn_90(3)), 5);
     k.await_citation([1; 32], &[0; 32], &plain, &absent);
     assert_eq!(k.awaiting_len(absent.as_bytes()), 1, "the sentence is docketed");
     assert!(
@@ -223,7 +223,7 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
     use crate::transducer::sentence::{on_axis_of, ClassVector};
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[1, 7, 11]);
-    let w = quarter(1);
+    let w = turn_90(1);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -242,9 +242,9 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 
     let axes = ClassVector::of_word(&w)
-        .expect("a quarter turn has a class vector")
+        .expect("a 90° turn has a class vector")
         .coordinates();
-    assert!(!axes.is_empty(), "a quarter turn occupies a coordinate");
+    assert!(!axes.is_empty(), "a 90° turn occupies a coordinate");
 
     let mut k = Kernel::new();
     assert_eq!(
@@ -268,7 +268,7 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
 /// on a plane of its own beside it, so it says more than the word it cites
 /// and is not merely a use of it.
 fn citer_of(word: &Element, tag: u8) -> Element {
-    let beyond = LetterId::quarter((0, 3)).expect("a quarter turn on another plane of the base");
+    let beyond = LetterId::turn_90((0, 3)).expect("a 90° turn on another plane of the base");
     let f = crate::transducer::sentence::from_element_form(word).expect("the cited form decodes");
     let vertex = f
         .vertices
@@ -278,7 +278,7 @@ fn citer_of(word: &Element, tag: u8) -> Element {
             _ => None,
         })
         .expect("the cited form has a word vertex");
-    sentence_with(Derivation::compose(&[(word.address(), vertex, 1, quarter(1))], Word::from_letters(&[(beyond, false)])), tag)
+    sentence_with(Derivation::compose(&[(word.address(), vertex, 1, turn_90(1))], Word::from_letters(&[(beyond, false)])), tag)
 }
 
 /// 47.3, 76, 78.42 — A PROVISIONAL WORD'S ORBIT, PRESSURED AND CLOSED. The
@@ -291,7 +291,7 @@ fn citer_of(word: &Element, tag: u8) -> Element {
 #[test]
 fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
     let mut k = Kernel::new();
-    let word = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&word)),
@@ -339,7 +339,7 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
 #[test]
 fn a_word_nothing_flows_to_for_an_orbit_lapses_and_its_citer_is_released_as_d() {
     let mut k = Kernel::new();
-    let word = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let word = sentence_with(Derivation::spelled(turn_90(1)), 1);
     let w = word.address();
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&word)),
@@ -375,10 +375,10 @@ fn a_word_nothing_flows_to_for_an_orbit_lapses_and_its_citer_is_released_as_d() 
 #[test]
 fn one_sentence_waiting_twice_is_docketed_once() {
     let mut k = Kernel::new();
-    let g_addr = sentence_with(Derivation::spelled(quarter(1)), 1).address();
+    let g_addr = sentence_with(Derivation::spelled(turn_90(1)), 1).address();
     let citer = sentence_with(
         Derivation::compose(
-            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, quarter(1))],
+            &[(g_addr.clone(), Address::from_bytes([TAG_FORM, 1]), 2, turn_90(1))],
             Word::identity(),
         ),
         9,

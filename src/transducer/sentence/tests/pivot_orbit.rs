@@ -109,7 +109,7 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
             .expect("the star face of c, oriented towards the Frame");
         f.place_overlap(c.clone(), a.clone(), None).expect("c to a");
         f.place_overlap(c.clone(), b.clone(), None).expect("c to b");
-        edge_chord(&mut f, a, b, Transport::from_word(order4()));
+        edge_chord(&mut f, a, b, Transport::from_word(word_turn_90()));
         if on_the_cone {
             let one = num_rational::BigRational::from_integer(1.into());
             let null = Mv::scalar(one.clone()).add(&Mv::blade(E1 | EM, one));
@@ -150,7 +150,7 @@ fn a_carriage_on_the_light_cone_leaves_its_orbit_unread() {
 /// is the assertion that would catch it.
 #[test]
 fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let f = edge_chord_form(std::slice::from_ref(&w));
     let [lp] = f.orbits.as_slice() else { panic!("one chord closes one orbit") };
@@ -195,8 +195,8 @@ fn basing_a_cycle_conjugates_it_and_preserves_both_casimirs() {
 /// it is asserted.
 #[test]
 fn every_cycle_carries_a_transport_to_the_forms_basepoint() {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
-    let h = crate::transducer::alphabet::LetterId::quarter((0, 3)).expect("quarter on another plane");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
+    let h = crate::transducer::alphabet::LetterId::turn_90((0, 3)).expect("90° turn on another plane");
     let f = edge_chord_form(&[
         Word::from_letters(&[(q, false)]),
         Word::from_letters(&[(h, false)]),
@@ -302,7 +302,7 @@ impl crate::transducer::family::Crystal for Hold {
 
 #[test]
 fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
-    let q = order4();
+    let q = word_turn_90();
     let qinv = q.inverse();
     // AT1: this test exercises the pivot itself — the certificate names the
     // chord overlap — so the chord keeps its factor (`chord_form`).
@@ -451,7 +451,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
 
 #[test]
 fn pivot_writes_the_chord_transport_only() {
-    let q = order4();
+    let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let verts_before = f.vertices.clone();
     let chord = f.orbits[0].chord.clone();
@@ -465,7 +465,7 @@ fn pivot_writes_the_chord_transport_only() {
     );
     assert!(
         snaps.iter().any(|s| matches!(s, Snap::Discharged { .. })),
-        "a held quarter discharges: {snaps:?}"
+        "a held 90° turn discharges: {snaps:?}"
     );
     assert_eq!(
         f.vertices, verts_before,
@@ -527,7 +527,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
     );
 
     // T14: Orientation.
-    let mut f = chord_form(&[order2()]);
+    let mut f = chord_form(&[word_turn_180()]);
     clear_gauges(&mut f);
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     // The orbit by its chord, and the chord read by destructuring rather
@@ -595,7 +595,7 @@ fn pivot_discharges_only_its_axis_and_raises_none() {
 fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
     use crate::transducer::sentence::pivot::drive::class_vectors_on;
     use crate::transducer::sentence::{orbit_row_on, opened_axis_on};
-    let f = chord_form(&[order4(), order2(), Word::identity()]);
+    let f = chord_form(&[word_turn_90(), word_turn_180(), Word::identity()]);
     assert!(f.orbits.len() >= 3, "three chords close three orbits: {}", f.orbits.len());
     for (i, lp) in f.orbits.iter().enumerate() {
         // EVERY MEMBER PATH, compared path for path: the trial and the form
@@ -656,11 +656,11 @@ fn an_orbits_class_and_row_read_off_its_faces_and_the_axis_carrier() {
 /// zero torsion filed.
 ///
 /// This fixture is exactly that disagreement: three coboundary faces, so
-/// the word holonomy is the identity, and a quarter turn on the one face
+/// the word holonomy is the identity, and a 90° turn on the one face
 /// that does not touch the Frame.
 #[test]
 fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
-    let q = order4();
+    let q = word_turn_90();
     // The ends are two SITES: one chart each (54.2) — one vertex of the
     // identity's class with a member on each (AT1 Q1). Every face word
     // derives the identity, so the word holonomy telescopes to the identity
@@ -680,12 +680,12 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
     assert_eq!(
         hw.rotor().order(),
         Some(crate::transducer::alphabet::Order::Finite(4)),
-        "the holonomy the paths carry is the edge composite's quarter turn"
+        "the holonomy the paths carry is the edge composite's 90° turn"
     );
     assert_eq!(
         hw.rotor().class_key(),
         q.rotor().class_key(),
-        "and it is the quarter turn's class"
+        "and it is the 90° turn's class"
     );
 
     // And the filing follows the judging: the class written is the edge's,
@@ -693,12 +693,12 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
     // is not.
     // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
-    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // invariant planes of the double rotation, not `lcm − 1`. A 90°
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
     assert_eq!(f.file_orbit(0), vec![6], "a path with a class files, at its own spectrum");
-    let edge_class = q.rotor().holonomy_key().expect("the quarter turn has a class");
+    let edge_class = q.rotor().holonomy_key().expect("the 90° turn has a class");
     let flat_class = crate::transducer::alphabet::Rotor::identity()
         .holonomy_key()
         .expect("the identity has a class");
@@ -733,7 +733,7 @@ fn an_orbit_flat_on_the_word_files_under_its_edge_composite() {
 /// and certifies on a constructed family.
 #[test]
 fn a_held_orbit_with_a_held_word_discharges_and_certifies() {
-    let q = order4();
+    let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
     let snaps = f.pivot_orbit(
@@ -776,7 +776,7 @@ fn a_held_orbit_with_a_held_word_discharges_and_certifies() {
 /// on a constructed family.
 #[test]
 fn two_certified_discharges_are_held_as_a_vortex() {
-    let q = order4();
+    let q = word_turn_90();
     let qinv = q.inverse();
     let mut f = chord_form(std::slice::from_ref(&q));
     let family = vec![(vec![vec![0u8; 4]; 4], vec![vec![0u8; 4]; 4])];
@@ -819,9 +819,9 @@ fn two_certified_discharges_are_held_as_a_vortex() {
 #[test]
 fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
     use crate::transducer::sentence::chart_of_form;
-    let many = chord_form(&[order4(), order2(), Word::identity()]);
+    let many = chord_form(&[word_turn_90(), word_turn_180(), Word::identity()]);
     assert!(many.orbits.len() >= 3, "a form carrying several orbits: {}", many.orbits.len());
-    let one = chord_form(&[order4()]);
+    let one = chord_form(&[word_turn_90()]);
     let base = chart_of_form(&many).expect("a measured rank is a base point");
     assert_eq!(base.0.len(), 5, "the tag and the four rank coordinates, and nothing else");
     assert!(
@@ -862,9 +862,9 @@ fn a_forms_base_chart_is_five_coordinates_however_many_orbits_it_holds() {
 fn a_falling_coordinate_is_not_a_rise() {
     use crate::transducer::sentence::{Axis, ClassVector};
     let of = |w: &Word| ClassVector::of_word(w).expect("a word carries a class");
-    // Measured, not assumed: a quarter turn stands on `Unit(0)`, a half
+    // Measured, not assumed: a 90° turn stands on `Unit(0)`, a 180°
     // turn on `Orientation(0)`, and the identity on nothing.
-    let (four, two, flat) = (of(&order4()), of(&order2()), ClassVector::zero());
+    let (four, two, flat) = (of(&word_turn_90()), of(&word_turn_180()), ClassVector::zero());
     assert_eq!(four.coordinates(), vec![Axis::Unit(0)]);
     assert_eq!(two.coordinates(), vec![Axis::Orientation(0)]);
     assert!(flat.coordinates().is_empty());

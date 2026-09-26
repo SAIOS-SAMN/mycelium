@@ -48,8 +48,8 @@ fn demanding_sentence(w: crate::transducer::alphabet::Word, tag: u8, kind: Deman
     as_element_form(&f, [1, 0, 0, 0]).expect("a tape")
 }
 
-fn quarter(n: usize) -> crate::transducer::alphabet::Word {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the quarter turn");
+fn turn_90(n: usize) -> crate::transducer::alphabet::Word {
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the 90° turn");
     crate::transducer::alphabet::Word::from_letters(&vec![(q, false); n])
 }
 
@@ -68,8 +68,8 @@ fn seventeen() -> Demand {
 #[test]
 fn two_courts_open_one_letter_from_two_witnesses_and_the_count_leaves_zero() {
     let (voice_a, voice_b) = ([1u8; 32], [2u8; 32]);
-    let said_a = demanding_sentence(quarter(1), 1, seventeen());
-    let said_b = demanding_sentence(quarter(3), 3, seventeen());
+    let said_a = demanding_sentence(turn_90(1), 1, seventeen());
+    let said_b = demanding_sentence(turn_90(3), 3, seventeen());
 
     // The premise, asserted rather than assumed: the factor's rotor is a
     // versor the seventeen cannot spell. If A22 could spell it there
@@ -169,8 +169,8 @@ fn standing_eleven() -> Demand {
 #[test]
 fn two_courts_docket_one_rotor_no_plane_holds_from_two_standing_demands() {
     let r = eleven();
-    let said_a = demanding_sentence(quarter(1), 1, standing_eleven());
-    let said_b = demanding_sentence(quarter(3), 3, standing_eleven());
+    let said_a = demanding_sentence(turn_90(1), 1, standing_eleven());
+    let said_b = demanding_sentence(turn_90(3), 3, standing_eleven());
     let mut opened = Vec::new();
     for (court, voice, said) in [([31u8; 32], [1u8; 32], &said_a), ([32u8; 32], [2u8; 32], &said_b)] {
         let mut k = Kernel::new();
@@ -211,7 +211,7 @@ fn a_witness_that_does_not_carry_its_prime_is_refused_at_the_vertex() {
     let mut k = Kernel::new();
     // 2 + i has norm 5 and is coprime to 17.
     let bad = Demand::RotorPrime { plane: (0, 1), prime: 17, witness: witness(2, 1) };
-    let said = demanding_sentence(quarter(1), 1, bad);
+    let said = demanding_sentence(turn_90(1), 1, bad);
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&said)),
         vec![crate::anastome::dialogue::SPEECH_REFUSED],
@@ -289,7 +289,7 @@ fn versor_of_arc(s: i64, t: i64) -> element::Versor {
 fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it() {
     use crate::client::sdk::Epigenome;
     let voice = [1u8; 32];
-    let said = demanding_sentence(quarter(1), 1, seventeen());
+    let said = demanding_sentence(turn_90(1), 1, seventeen());
 
     // 1. THE COURT OPENS IT, from the witness and nothing else.
     let mut k = Kernel::new();
@@ -413,7 +413,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::element::Element as El;
     let voice = [1u8; 32];
-    let said = demanding_sentence(quarter(1), 1, seventeen());
+    let said = demanding_sentence(turn_90(1), 1, seventeen());
 
     let mut k = Kernel::new();
     assert_eq!(
@@ -559,14 +559,14 @@ fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_deriv
     let mut far = Kernel::new();
     far.set_court_voice([32u8; 32]);
     assert_eq!(
-        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(3), 3, demand.clone()))),
+        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(3), 3, demand.clone()))),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
     let (far_addr, reached) = docketed_letter(&far, &pi).expect("the far court docketed the letter");
     let mut home = Kernel::new();
     home.set_court_voice([31u8; 32]);
     assert_eq!(
-        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(1), 1, demand))),
+        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(1), 1, demand))),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
     let (addr, _) = docketed_letter(&home, &pi).expect("the home court docketed the letter");
@@ -636,7 +636,7 @@ fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
     let mut far = Kernel::new();
     far.set_court_voice([32u8; 32]);
     assert_eq!(
-        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(3), 3, standing_eleven()))),
+        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(3), 3, standing_eleven()))),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
     let (far_addr, reached) = docketed_letter(&far, &r).expect("the far court docketed the rotor");
@@ -646,7 +646,7 @@ fn a_letter_is_docketed_on_one_vantage_and_installed_on_two() {
     let mut home = Kernel::new();
     home.set_court_voice([31u8; 32]);
     assert_eq!(
-        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(1), 1, standing_eleven()))),
+        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(turn_90(1), 1, standing_eleven()))),
         vec![crate::anastome::dialogue::SPEECH_STOOD]
     );
     let (addr, _) = docketed_letter(&home, &r).expect("the home court docketed the rotor");

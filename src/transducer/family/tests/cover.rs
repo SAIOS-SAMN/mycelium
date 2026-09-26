@@ -785,9 +785,9 @@ fn a_forms_word_vertices_are_bounded_by_its_transport_classes() {
 fn a_filed_orbit_with_no_chord_leaves_as_a_standing_demand() {
     use crate::transducer::alphabet::{standing_of, LetterId, Word};
     use crate::transducer::sentence::Demand;
-    // The quarter turn is a versor that turns, so it has a standing
+    // The 90° turn is a versor that turns, so it has a standing
     // reading; the identity is a versor that does not, and has none.
-    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let turned = Word::from_letters(&[(q, false)]).rotor();
     let Some(d @ Demand::Standing { .. }) = standing_of(&turned) else {
         panic!("a rotor that turns has a standing reading");

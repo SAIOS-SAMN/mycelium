@@ -10,7 +10,7 @@ use super::*;
 
 /// The plane group element a word represents: orientation and the
 /// rotation in (e0, e1). Rotation exponents are those of the unflipped
-/// spelling; a half-turn conjugates a rotation to its inverse, so this is
+/// spelling; a 180°-turn conjugates a rotation to its inverse, so this is
 /// not the commuting sum of the tape.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PlaneForm {
@@ -59,9 +59,9 @@ impl PlaneForm {
             };
             #[expect(
                 clippy::cast_possible_truncation,
-                reason = "STD1 C1 — the algebra's range: a quarter-turn exponent reduced by rem_euclid(4), one of four"
+                reason = "STD1 C1 — the algebra's range: a 90°-turn exponent reduced by rem_euclid(4), one of four"
             )]
-            let unit = exp(LetterId::quarter(pl)).rem_euclid(4) as u32;
+            let unit = exp(LetterId::turn_90(pl)).rem_euclid(4) as u32;
             *slot = (
                 // Orientation is the SENSOR plane's, which is a comparison
                 // of planes and not a test of a slot index against zero.
@@ -109,7 +109,7 @@ impl PlaneForm {
         crate::transducer::address::Address::new(buf)
     }
 
-    /// Plane-group product: rotations ⋊ orientation. A trailing half-turn
+    /// Plane-group product: rotations ⋊ orientation. A trailing 180°-turn
     /// conjugates the leading rotation to its inverse.
     pub fn compose(&self, other: &PlaneForm) -> PlaneForm {
         let orientation = self.orientation ^ other.orientation;
@@ -129,7 +129,7 @@ impl PlaneForm {
         }
     }
 
-    /// The half-turn acting on exponents: `S R S⁻¹ = R⁻¹`.
+    /// The 180°-turn acting on exponents: `S R S⁻¹ = R⁻¹`.
     pub fn conjugate_by(&self, by: &PlaneForm) -> PlaneForm {
         if !by.orientation {
             *self
@@ -140,8 +140,8 @@ impl PlaneForm {
         }
     }
 
-    /// Half-turn on (e1,e2): the column flip of the sensor plane, two
-    /// quarter-turns. The orientation letter of the plane group; there is
+    /// 180°-turn on (e1,e2): the column flip of the sensor plane, two
+    /// 90°-turns. The orientation letter of the plane group; there is
     /// no reflection letter.
     pub fn sheet_word() -> Word {
         let id = LetterId::SHEET;

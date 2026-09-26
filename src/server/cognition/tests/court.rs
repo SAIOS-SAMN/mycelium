@@ -458,8 +458,8 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::sentence::generator_form;
     use crate::transducer::stalk::Invariant;
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
-    let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
+    let gamma = Word::from_letters(&[(LetterId::turn_90((0, 2)).expect("90° turn"), false)]);
     let h = q.rotor();
     let w = h.conjugate(&gamma.rotor());
     assert!(!w.projective_eq(&h), "the gauge moves the operator");
@@ -495,7 +495,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     k.ruled_admit(&wa);
     // A gauge that does not conjugate them: refused by the algebra, and
     // the language is unmoved.
-    let wrong = Word::from_letters(&[(LetterId::quarter((0, 3)).expect("quarter"), false)]);
+    let wrong = Word::from_letters(&[(LetterId::turn_90((0, 3)).expect("90° turn"), false)]);
     assert!(k.try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::Section(Box::new(wrong))).is_none());
     assert!(k.try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::SameOperator).is_none());
     assert_eq!(k.basis_len(), 2);

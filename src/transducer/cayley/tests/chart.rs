@@ -24,7 +24,7 @@ fn rapidity_of(b: &Mv) -> Option<BigRational> {
 }
 
 /// Every versor the tree writes — a dilation, a translation with a frame
-/// component, the quarter turn, the (3,4,5) rotor, a turn onto the frame
+/// component, the 90° turn, the (3,4,5) rotor, a turn onto the frame
 /// axis, and their composite, which carries a grade-4 part — reads its
 /// bivector by grade and is read back from it projectively; the bivector
 /// read back off the derived versor is coefficient-exact.
@@ -33,12 +33,12 @@ fn a_versor_is_its_bivector_read_back_in_either_direction() {
     let (z, o) = (q(0, 1), q(1, 1));
     let d = cga::dilator(&q(2, 1));
     let t = cga::at_three::translator(&o, &q(-2, 1), &q(3, 1));
-    let quarter = cga::rotator(&o, &o);
+    let turn_90 =cga::rotator(&o, &o);
     let pythagorean = cga::rotator(&q(2, 1), &o);
     let onto_frame = cga::rotator_on_blade(&o, &o, E1 | E3);
-    let composite = d.geo(&t).geo(&quarter);
+    let composite = d.geo(&t).geo(&turn_90);
     assert!(!composite.grade(4).is_zero(), "the composite carries a grade-4 part the chart must account for");
-    for v in [&d, &t, &quarter, &pythagorean, &onto_frame, &composite] {
+    for v in [&d, &t, &turn_90, &pythagorean, &onto_frame, &composite] {
         let b = bivector_of(v).expect("an even versor with a scalar part is in the chart");
         assert!(b.grade(2).sub(&b).is_zero(), "the derivation is a bivector");
         let back = versor_of_bivector(&b).expect("a bivector derives a versor");
@@ -47,8 +47,8 @@ fn a_versor_is_its_bivector_read_back_in_either_direction() {
         assert!(again.sub(&b).is_zero(), "and reads the same bivector, coefficient for coefficient");
         assert!(bivector_of(&v.scale(&q(-7, 3))).expect("projective").sub(&b).is_zero(), "λV reads one bivector");
     }
-    let b = bivector_of(&quarter).expect("the quarter turn");
-    assert!(b.sub(&Mv::blade(E1 | E2, o.clone())).is_zero(), "the quarter turn reads 1 on its plane");
+    let b = bivector_of(&turn_90).expect("the 90° turn");
+    assert!(b.sub(&Mv::blade(E1 | E2, o.clone())).is_zero(), "the 90° turn reads 1 on its plane");
     let b = bivector_of(&pythagorean).expect("the (3,4,5) rotor");
     assert!(b.sub(&Mv::blade(E1 | E2, q(1, 2))).is_zero(), "the (3,4,5) rotor reads 1/2 on its plane");
     let b = bivector_of(&t).expect("a translator");
@@ -78,15 +78,15 @@ fn the_dilation_by_two_is_the_rapidity_one_third_and_dilations_add_by_the_ration
     assert_eq!(&b6 * &b6, q(25, 49), "the dilation by six is five sevenths");
 }
 
-/// The chart's boundary: a half turn has no scalar part, a reflection is
+/// The chart's boundary: a 180° turn has no scalar part, a reflection is
 /// odd and is its own derivation, and the zero element is nothing.
 #[test]
-fn a_half_turn_and_a_reflection_have_no_bivector() {
+fn a_turn_180_and_a_reflection_have_no_bivector() {
     let o = q(1, 1);
-    let quarter = cga::rotator(&o, &o);
-    let half_turn = quarter.geo(&quarter);
-    assert!(half_turn.scalar_part().is_zero(), "a half turn is a pure bivector");
-    assert_eq!(bivector_of(&half_turn), None, "and has no bivector in the chart");
+    let turn_90 =cga::rotator(&o, &o);
+    let turn_180 = turn_90.geo(&turn_90);
+    assert!(turn_180.scalar_part().is_zero(), "a 180° turn is a pure bivector");
+    assert_eq!(bivector_of(&turn_180), None, "and has no bivector in the chart");
     assert_eq!(bivector_of(&cga::reflector()), None, "a reflection is its mirror, not a bivector");
     assert_eq!(bivector_of(&Mv::zero()), None);
 }
@@ -112,7 +112,7 @@ fn an_even_element_that_is_not_a_versor_is_refused_by_the_chart() {
 }
 
 /// On one plane the parameters add by the rational law — the (3,4,5) and
-/// (5,12,13) rotors compose to the quarter turn, `(1/2 + 1/3)/(1 − 1/6) =
+/// (5,12,13) rotors compose to the 90° turn, `(1/2 + 1/3)/(1 − 1/6) =
 /// 1` — and across two planes that share an axis they do not: the product
 /// is the reading and the sum of the bivectors derives another versor.
 #[test]
@@ -123,7 +123,7 @@ fn bivectors_on_two_planes_do_not_add_and_the_product_is_the_reading() {
     let product = a.geo(&b);
     let expected = Mv::blade(E1 | E2, o.clone());
     assert!(bivector_of(&product).expect("one plane").sub(&expected).is_zero(), "on one plane the parameters add to 1");
-    assert!(product.projective_eq(&cga::rotator(&o, &o)), "which is the quarter turn");
+    assert!(product.projective_eq(&cga::rotator(&o, &o)), "which is the 90° turn");
     let p = cga::rotator_on_blade(&o, &o, E1 | E2);
     let r = cga::rotator_on_blade(&o, &o, E1 | E3);
     let across = p.geo(&r);

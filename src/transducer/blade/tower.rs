@@ -144,7 +144,7 @@ pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
 ///
 /// - order 2, the DEVIATORIC `((Σu² − Σv²)/2, Σuv)/M₀` — the body's axis; the
 ///   lamina's isotropic `1/12` cancels in it, so the two towers agree here.
-/// - order 3, `Σ(u + iv)³/M₀` — the odd moment that closes the half turn. On
+/// - order 3, `Σ(u + iv)³/M₀` — the odd moment that closes the 180° turn. On
 ///   the region each square's odd corrections cancel on the grid plane, and
 ///   a site off the grid is a point along that axis.
 /// - order 4, `Σ(u + iv)⁴/M₀` — the orientation of a shape isotropic at order

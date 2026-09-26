@@ -4,19 +4,19 @@
 use crate::client::sdk::*;
 use crate::transducer::element::{Element, Filed, Generator, Remainder, TorsionCycle, FIBER_SPATIAL};
 
-fn quarter() -> crate::transducer::alphabet::Rotor {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+fn turn_90() -> crate::transducer::alphabet::Rotor {
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
 }
 
 fn remainder(at: &[&[u8]]) -> Remainder {
-    let g = quarter();
+    let g = turn_90();
     let class = crate::transducer::sentence::ClassVector::of_rotor(
         &g,
         crate::transducer::element::identity_versor(),
         crate::transducer::sentence::CycleType::Identity,
     )
-    .expect("a quarter turn has a class");
+    .expect("a 90° turn has a class");
     Remainder { class: Box::new(class), at: at.iter().map(|c| c.to_vec()).collect(), answered: None }
 }
 
@@ -44,7 +44,7 @@ fn chains() -> (Chain, Chain, Chain) {
     (a, b, nested)
 }
 
-/// A word standing with a remainder of the quarter's class at `at`, its ray
+/// A word standing with a remainder of the 90° turn's class at `at`, its ray
 /// `ray`, sealed Stood by the entity and stood in the dialect.
 fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
     let mut r = remainder(&[]);
@@ -65,14 +65,14 @@ fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray
 #[test]
 fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
     let (a, b, nested) = chains();
-    let other_quarter = || {
-        let q = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("a plane");
+    let other_turn_90 = || {
+        let q = crate::transducer::alphabet::LetterId::turn_90((0, 2)).expect("a plane");
         crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
     };
 
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("callus"));
-    let w1 = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, quarter());
-    let w2 = stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, quarter());
+    let w1 = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
+    let w2 = stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, turn_90());
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.nested, r.discordant, r.unspelled), (1, 0, 0, 0), "{}", r.line());
@@ -116,21 +116,21 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
     // class at a third vantage finds both standing ones answered and raises
     // nothing.
     let c: Chain = crate::transducer::stalk::Invariant::counts(&[1, 7, 3]).prefixes().iter().map(|p| p.key().into_vec()).collect();
-    stand_with(&mut e, [&[(1, 9)], &[(3, 9)]], &c, quarter());
+    stand_with(&mut e, [&[(1, 9)], &[(3, 9)]], &c, turn_90());
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.answered_skipped), (1, 2), "the receptor skips the answered: {}", r.line());
 
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("nested"));
-    stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, quarter());
-    stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &nested, quarter());
+    stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
+    stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &nested, turn_90());
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.nested), (0, 1), "one vantage at a finer depth: {}", r.line());
 
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("discordant"));
-    stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, quarter());
-    stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, other_quarter());
+    stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
+    stand_with(&mut e, [&[(5, 6)], &[(7, 8)]], &b, other_turn_90());
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.discordant), (0, 1), "one class, two twists, none chosen: {}", r.line());
@@ -167,7 +167,7 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
 fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     let (a, _, _) = chains();
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("answered"));
-    let w = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, quarter());
+    let w = stand_with(&mut e, [&[(1, 2)], &[(3, 4)]], &a, turn_90());
     let class = *remainder(&[]).class;
     let charts: Vec<crate::transducer::stalk::Invariant> =
         a.iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
@@ -183,7 +183,7 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
 }
 
 fn cycle(r: Option<Remainder>) -> TorsionCycle {
-    cycle_by(quarter(), r)
+    cycle_by(turn_90(), r)
 }
 
 /// A word's torsion record carries its remainder (κ, g, the residue's chart):

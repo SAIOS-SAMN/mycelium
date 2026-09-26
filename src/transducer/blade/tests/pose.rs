@@ -22,26 +22,26 @@ fn sends(v: &cga::Mv, from: usize, to: usize) -> bool {
 
 const L4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
 
-/// The S-tetromino: symmetric by a half turn in its own plane, so its odd
+/// The S-tetromino: symmetric by a 180° turn in its own plane, so its odd
 /// moment vanishes and no column orients it.
 const S4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
 
 #[test]
 fn fr1b_a_symmetric_body_reads_half_open_at_one_section_and_on_the_tube() {
     let s = body(&S4);
-    // At one section, against its own quarter turn: the planar reader.
+    // At one section, against its own 90° turn: the planar reader.
     let turned = body(&S4.map(|(r, c, k)| (-c, r, k)));
     assert!(matches!(relative_pose(&s, &turned), Ok(Pose::HalfOpen(_))), "{:?}", relative_pose(&s, &turned));
-    // On the tube, against itself turned a quarter into the plane of the row
+    // On the tube, against itself turned 90° into the plane of the row
     // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: the same held `ℤ₂`,
     // never a permanent refusal.
     let standing = body(&S4.map(|(r, c, k)| (-k, c, r)));
     assert!(on_tube(&s, &standing));
     let Ok(Pose::HalfOpen(candidates)) = relative_pose(&s, &standing) else {
-        panic!("the tube holds the half turn: {:?}", relative_pose(&s, &standing));
+        panic!("the tube holds the 180° turn:{:?}", relative_pose(&s, &standing));
     };
     // BOTH turns the `ℤ₂` holds are carried, never a representative
-    // (78.6(1)) — the quarter turn in `e₁₃`, and it composed with the half
+    // (78.6(1)) — the 90° turn in `e₁₃`, and it composed with the 180°
     // turn in the S's own plane — and each keeps the column axis on its
     // line, either way along it.
     assert_eq!(candidates.len(), 2, "the held ℤ₂'s two candidates");
@@ -101,7 +101,7 @@ fn two_flat_bodies_at_two_sections_turn_in_the_sensors_plane() {
 
 #[test]
 fn a_body_turning_between_two_sections_reads_a_pose_with_a_plane_containing_e3() {
-    // L4 at one section, and L4 turned a quarter in the plane of the row
+    // L4 at one section, and L4 turned 90° in the plane of the row
     // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: it now stands along
     // three sections. No turn of the sensor's plane relates them.
     let a = body(&L4);
@@ -117,7 +117,7 @@ fn a_body_turning_between_two_sections_reads_a_pose_with_a_plane_containing_e3()
 
 /// A body with extent on all three axes and NO symmetry: its columns span
 /// the base (checked exactly when the fixture was chosen; a body with a
-/// hidden half turn — `L4` with one cell above its corner is one, by
+/// hidden 180° turn —`L4` with one cell above its corner is one, by
 /// `(x₁, x₂, x₃) ↦ (2 − x₁, x₃, x₂)` — leaves its pose unread, as it should).
 const SOLID: [(i64, i64, i64); 6] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0), (0, 0, 1), (0, 0, 2)];
 
@@ -128,7 +128,7 @@ fn mapped(f: impl Fn((i64, i64, i64)) -> (i64, i64, i64)) -> Blade {
 #[test]
 fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
     let a = body(&SOLID);
-    // Turned a quarter in `e₂₃`: `(x₂, x₃) ↦ (−x₃, x₂)`.
+    // Turned 90° in `e₂₃`: `(x₂, x₃) ↦ (−x₃, x₂)`.
     let turned = mapped(|(r, c, k)| (r, -k, c));
     let Ok(Pose::Turn(v)) = relative_pose(&a, &turned) else {
         panic!("a turn in e23: {:?}", relative_pose(&a, &turned));
@@ -152,7 +152,7 @@ fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
         panic!("a pure dilation: {:?}", relative_pose(&a, &doubled));
     };
     assert!(id.projective_eq(&cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()))));
-    // Turned an eighth in `e₁₃` at scale √2, `(x₁, x₃) ↦ (x₁ − x₃, x₁ + x₃)`:
+    // Turned 45° in `e₁₃` at scale √2, `(x₁, x₃) ↦ (x₁ − x₃, x₁ + x₃)`:
     // `ρ² = 2`, and no versor over ℚ carries it.
     let oblique = mapped(|(r, c, k)| (r - k, c, r + k));
     assert_eq!(relative_pose(&a, &oblique).err(), Some(NoPose::Irrational));

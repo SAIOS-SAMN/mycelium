@@ -22,9 +22,9 @@ fn ident() -> Versor {
     identity_versor()
 }
 
-/// The quarter turn on the sensor plane, as a rotor of order four.
-fn quarter() -> Rotor {
-    let id = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+/// The 90° turn on the sensor plane, as a rotor of order four.
+fn turn_90() -> Rotor {
+    let id = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
 }
 
@@ -78,11 +78,11 @@ fn a_dilation_stands_with_its_scale() {
     assert_eq!(rho_of(&kappa.carriage), Some(q(3)), "the scale rides on the class's carriage");
 }
 
-/// A quarter turn with NO residue is the one thing that files: a torsion
+/// A 90° turn with NO residue is the one thing that files: a torsion
 /// class at its own period.
 #[test]
-fn a_residue_free_quarter_turn_files_at_its_period() {
-    let Fill::Congruent(kappa, g, ell) = classify(&quarter(), &ident(), CycleType::Identity) else {
+fn a_residue_free_turn_90_files_at_its_period() {
+    let Fill::Congruent(kappa, g, ell) = classify(&turn_90(), &ident(), CycleType::Identity) else {
         panic!("a residue-free finite rotation files");
     };
     assert!(
@@ -90,9 +90,9 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
         "and it files WITH its class vector: 11.3 holds the orbit with it, and 3.9 reads \
          the candidate pivots off the axes it occupies — a period alone has none"
     );
-    assert_eq!(ell, 4, "a quarter turn closes at four");
+    assert_eq!(ell, 4, "a 90° turn closes at four");
     assert_eq!(g.order(), Some(Order::Finite(4)), "and the filed rotor says so itself");
-    assert!(g.projective_eq(&quarter()), "and it is the rotor that caused it");
+    assert!(g.projective_eq(&turn_90()), "and it is the rotor that caused it");
 }
 
 /// A TURN ABOUT A POINT FILES; A SCREW STANDS. Both carry the same rotor
@@ -111,13 +111,13 @@ fn a_residue_free_quarter_turn_files_at_its_period() {
 fn a_turn_about_a_point_files_and_a_screw_stands() {
     use crate::transducer::element::turn_base_point;
     let about_a_point = cga::at_three::translator(&q(5), &q(0), &q(0));
-    let p = turn_base_point(&quarter(), &about_a_point).expect("a quarter turn has a base point");
+    let p = turn_base_point(&turn_90(), &about_a_point).expect("a 90° turn has a base point");
     let Fill::Congruent(kappa, g, ell) =
-        classify(&quarter(), &about_a_point, CycleType::Identity)
+        classify(&turn_90(), &about_a_point, CycleType::Identity)
     else {
         panic!("a turn about a point files at its period");
     };
-    assert_eq!(ell, 4, "a quarter turn about a point closes at four, wherever the point is");
+    assert_eq!(ell, 4, "a 90° turn about a point closes at four, wherever the point is");
     // The base point is not lost by filing: the class vector carries the
     // carriage `T(p − Rp)`, so `p` is re-solved from what was filed.
     assert!(
@@ -139,17 +139,17 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     // from the turn, not measured against it. The base's three axes sit at
     // `e₀, e₁, e₃` of the rotor chart (51.2), so `e₂` carries nothing.
     let embedded = [p[0].clone(), p[1].clone(), q(0), p[2].clone()];
-    let turned = quarter().carry(&embedded).expect("the quarter turn carries the base");
+    let turned = turn_90().carry(&embedded).expect("the 90° turn carries the base");
     assert_eq!(&embedded[0] - &turned[0], q(5), "r: p − Rp is the carriage's own translation");
     assert_eq!(&embedded[1] - &turned[1], q(0), "c: and nothing is left over");
     assert_eq!(&embedded[3] - &turned[3], q(0), "k: the axis is untouched");
 
     let screw = cga::at_three::translator(&q(0), &q(0), &q(5));
     assert!(
-        turn_base_point(&quarter(), &screw).is_none(),
+        turn_base_point(&turn_90(), &screw).is_none(),
         "a translation along the axis fixes no point: the system is inconsistent"
     );
-    let Fill::Class(kappa, r) = classify(&quarter(), &screw, CycleType::Identity) else {
+    let Fill::Class(kappa, r) = classify(&turn_90(), &screw, CycleType::Identity) else {
         panic!("a screw stands; it does not file at four");
     };
     assert_eq!(
@@ -175,11 +175,11 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     // origin absorbs the translation. A screw is curvature on the first
     // tensored with torsion on the second, and both are returned.
     //
-    // This screw turns a quarter on `e₀∧e₁` and translates by 5 along `e₃`
+    // This screw turns 90° on `e₀∧e₁` and translates by 5 along `e₃`
     // — the axis the rotor fixes — so the Burgers vector is exactly
     // `(0, 0, 5)` and the centre is the origin. Exact over ℚ: not near it,
     // it IS it.
-    let split = crate::transducer::element::screw_of(&quarter(), &screw)
+    let split = crate::transducer::element::screw_of(&turn_90(), &screw)
         .expect("a screw splits; it is the FIXED POINT that does not exist");
     assert_eq!(split.twist, [q(0), q(0), q(5)], "the slip per circuit, on the axis the rotor fixes");
     assert_eq!(split.centre, [q(0), q(0), q(0)], "and the bend turns about the origin");
@@ -191,30 +191,30 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
     // A PURE TURN HAS NO SLIP, and the same reader says so: the two arms
     // are one function, so a fixed point cannot be found by one reader and
     // denied by another (law 12).
-    let about = crate::transducer::element::screw_of(&quarter(), &about_a_point)
+    let about = crate::transducer::element::screw_of(&turn_90(), &about_a_point)
         .expect("a turn about a point splits too");
     assert_eq!(about.twist, [q(0), q(0), q(0)], "a turn that returns slips by nothing");
     assert_eq!(
-        crate::transducer::element::turn_base_point(&quarter(), &about_a_point),
+        crate::transducer::element::turn_base_point(&turn_90(), &about_a_point),
         Some(about.centre),
         "and `turn_base_point` IS the zero-twist case of the split"
     );
 
     // AND THE TWO TURNS ARE ONE CLASS. `T(p − Rp)·R = T_p R T_p⁻¹` is
-    // CONJUGATE to `R`, so a quarter turn about the origin and the same
-    // quarter turn about `p` stand at one conjugacy stratum. The old
+    // CONJUGATE to `R`, so a 90° turn about the origin and the same
+    // 90° turn about `p` stand at one conjugacy stratum. The old
     // placement byte wrote `0` for the first and `1` for the second and
     // split them into two class keys — a choice of origin promoted to
     // identity. Both write the zero Burgers vector now, and the split is
     // gone.
     let at_origin = crate::transducer::sentence::ClassVector::of_rotor(
-        &quarter(),
+        &turn_90(),
         ident(),
         CycleType::Identity,
     )
-    .expect("a quarter turn has a class");
+    .expect("a 90° turn has a class");
     let about_p = crate::transducer::sentence::ClassVector::of_rotor(
-        &quarter(),
+        &turn_90(),
         about_a_point.clone(),
         CycleType::Identity,
     )
@@ -233,7 +233,7 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
 
 /// THE READING THE ENGINE ACTUALLY TAKES, from two bodies rather than a
 /// hand-built carriage. `versor_coset` builds every member as
-/// `T(c_b)·D(ρ)·R·T(−c_a)`, so a body turned a quarter about itself
+/// `T(c_b)·D(ρ)·R·T(−c_a)`, so a body turned 90° about itself
 /// arrives with a placement in its carriage ALWAYS — there is no path by
 /// which such a transport reaches `classify` flat. That is the whole of
 /// why no turning body ever filed a period: the carriage was never flat,
@@ -244,19 +244,19 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
 /// translation it carries is the turn's own base point and solves.
 ///
 /// The L is chiral and carries an odd harmonic, so the transition has one
-/// member — the quarter turn, verified by the tower's covariance — with a
+/// member — the 90° turn, verified by the tower's covariance — with a
 /// placement, which could not file while `flat` was the gate.
 #[test]
 fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     use crate::transducer::blade::{shape_of, versor_coset_ordered};
     use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
     // An L, and the same L under `(r, c) → (c, −r)` carried back onto the
-    // non-negative quadrant: a genuine quarter turn between two bodies.
+    // non-negative quadrant: a genuine 90° turn between two bodies.
     let l = vec![(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
     let turned = vec![(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
     let (a, b) = (shape_of(&l), shape_of(&turned));
     let members = versor_coset_ordered(&a, &b);
-    assert!(!members.is_empty(), "a quarter turn carries the L onto its image");
+    assert!(!members.is_empty(), "a 90° turn carries the L onto its image");
     let mut read = 0usize;
     let mut placed = 0usize;
     let mut filed = 0usize;
@@ -278,18 +278,18 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     }
     assert_eq!(read, 1, "one member carries the L onto its image");
     assert_eq!(placed, read, "it carries a placement: it is not flat");
-    assert_eq!(filed, 1, "and the quarter turn files at four, placement and all");
+    assert_eq!(filed, 1, "and the 90° turn files at four, placement and all");
 }
 
 /// 24.4, 78.14 — CONGRUENCE IS THE COVER'S READING OVER MANY SHAPES. Three
-/// L's, each a quarter turn of the last, with the transitions between them
+/// L's, each a 90° turn of the last, with the transitions between them
 /// read by `versor_between` alone: around the cycle `A → B → C → A` the
 /// holonomy is the identity, and `classify` fills it — the three are one
 /// shape, whose shape is their nuclei's Gram form, the same under every
 /// motion of the configuration (the transition `A → B` applied to all three
 /// nuclei at once rescales the form by the versor's weight squared and no
 /// more). Close the cycle on the L turned once more instead of on `A`, and
-/// the holonomy does not close: its residue is a quarter turn about a point,
+/// the holonomy does not close: its residue is a 90° turn about a point,
 /// and it is CLASSIFIED — `Congruent`, filed at four — never dropped.
 #[test]
 fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() {
@@ -323,7 +323,7 @@ fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() 
     let twisted = edge(&c, &d).geo(&bc).geo(&ab);
     assert!(
         matches!(fill_of(&twisted), Fill::Congruent(_, _, 4)),
-        "the residue is a quarter turn, classified at four: {:?}",
+        "the residue is a 90° turn, classified at four: {:?}",
         fill_of(&twisted)
     );
 }

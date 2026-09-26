@@ -242,7 +242,7 @@ impl Word {
     /// to a plane sharing one axis with it as `diag(−1, 1)`, a reflection,
     /// and only `det = +1` is a rotation of the plane and spelled. THE
     /// SHEET IS FACTORED OUT FIRST: `orientation` is the ℤ/2 acting on the
-    /// exponent lattice by inversion, realised by the half turn on the
+    /// exponent lattice by inversion, realised by the 180° turn on the
     /// sensor's flip plane, so it leaves the rotor before any plane is read
     /// (`R' = R · S`) and `to_word` puts it back — recorded once, never
     /// twice. `None` is "no pair plane is turned"; a plane that is closed
@@ -318,7 +318,7 @@ impl Word {
     /// the rotor's two commuting quaternion factors (`Rotor::order`). Read
     /// on the plane form, a word off the sensor plane — which keeps that
     /// plane closed and reads the identity there — answered 1 or an
-    /// assumed 4, and two quarter turns on planes sharing an axis, which
+    /// assumed 4, and two 90° turns on planes sharing an axis, which
     /// close in three, were never a cycle. A word is a product of letters,
     /// each a versor of positive weight, so its rotor has a weight; an even
     /// element with none has `|q₊| ≠ |q₋|` and no power that is a scalar,
@@ -405,17 +405,17 @@ impl Word {
     }
 }
 
-/// Reduce quarter-turn exponents mod 4; three quarters is one inverse.
+/// Reduce 90°-turn exponents mod 4; three 90° turns are one inverse.
 ///
-/// The slots are the QUARTER LETTERS of the pair planes, asked for by
+/// The slots are the 90° LETTERS of the pair planes, asked for by
 /// name. `1..=6` was the alphabet's layout written out beside the table
-/// that defines it, and it would silently stop covering the quarters on a
+/// that defines it, and it would silently stop covering the 90° turns on a
 /// chart of another rank. The four and the three are letter exponents —
-/// the quarter's order and its inverse — which is what a number in this
+/// the 90° turn's order and its inverse — which is what a number in this
 /// tree is allowed to be.
 pub(crate) fn reduce_unit_exponents(f: &mut PlaneForm) {
     for &plane in &SLOT_PLANES_SIX {
-        let Some(id) = LetterId::quarter(plane) else {
+        let Some(id) = LetterId::turn_90(plane) else {
             continue;
         };
         let Some(slot) = f.rot.get_mut(id.raw() as usize) else {

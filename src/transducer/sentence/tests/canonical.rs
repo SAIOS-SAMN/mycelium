@@ -25,16 +25,16 @@ fn a_class_key_is_one_under_every_scaling_of_the_carriage() {
     let neg = by(&c, -1, 1);
     assert!(same_versor(&c, &neg), "one projective element");
 
-    let a = ClassVector::read(&order4(), c.clone(), CycleType::Identity).expect("a placed turn");
-    let b = ClassVector::read(&order4(), neg, CycleType::Identity).expect("the same turn, carriage negated");
-    let s = ClassVector::read(&order4(), by(&c, 7, 3), CycleType::Identity).expect("the same turn, carriage scaled");
+    let a = ClassVector::read(&word_turn_90(), c.clone(), CycleType::Identity).expect("a placed turn");
+    let b = ClassVector::read(&word_turn_90(), neg, CycleType::Identity).expect("the same turn, carriage negated");
+    let s = ClassVector::read(&word_turn_90(), by(&c, 7, 3), CycleType::Identity).expect("the same turn, carriage scaled");
     assert_eq!(a.class_key(), b.class_key(), "one class key: the carriage is written A4, not by sign");
     assert_eq!(a.class_key(), s.class_key(), "and not by scale");
 
     let back = ClassVector::from_key(a.class_key().as_bytes()).expect("a class key reads back");
     assert!(same_versor(&back.carriage, &c), "the key names the ray");
 
-    let other = ClassVector::read(&order4(), element::translator_versor(0, 4), CycleType::Identity)
+    let other = ClassVector::read(&word_turn_90(), element::translator_versor(0, 4), CycleType::Identity)
         .expect("a different placement");
     assert_ne!(a.class_key(), other.class_key(), "a different carriage is a different class");
 }
@@ -47,7 +47,7 @@ fn a_form_address_is_one_under_every_scaling_of_a_members_carriage() {
         stand_with_star(
             &mut f,
             &Vertex::word_on(
-                alphabet::Derivation::spelled(order4()),
+                alphabet::Derivation::spelled(word_turn_90()),
                 stalk::Invariant::counts(&[3, 5]),
                 Box::new(car),
                 vec![(1, 2)],
@@ -107,7 +107,7 @@ fn a_certificate_is_written_as_its_rays() {
     };
     assert_eq!(bytes(&placed(t.clone())), bytes(&placed(by(&t, -3, 4))), "one ray, one writing");
 
-    let formed = alphabet::Word::formed(order4().rotor());
+    let formed = alphabet::Word::formed(word_turn_90().rotor());
     assert!(formed.letters().is_empty() && !formed.is_identity(), "an action no tape spells");
     let worded = PivotCertificate {
         by: PivotBy::Word { face: some_overlap(), word: Box::new(formed.clone()), side: Side::Right },

@@ -16,7 +16,7 @@ use crate::transducer::element::identity_versor;
 /// the cut is forced by the algebra.
 #[test]
 fn conjugate_words_share_a_base_and_unrelated_ones_do_not() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     // A sheet conjugates a rotation to its inverse — a stated relator — so
     // `q` and `s·q·s⁻¹` are two basepoints on ONE fibre.
@@ -32,15 +32,15 @@ fn conjugate_words_share_a_base_and_unrelated_ones_do_not() {
         "conjugate words stand in one base"
     );
 
-    // A half turn is a different class and therefore a different bundle.
-    let half = Word::from_letters(&[
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    // A 180° turn is a different class and therefore a different bundle.
+    let turn_180 =Word::from_letters(&[
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
     ]);
     assert_ne!(
         Base::of_word(&q),
-        Base::of_word(&half),
-        "a quarter and a half turn are two bases, not one bundle"
+        Base::of_word(&turn_180),
+        "a 90° turn and a 180° turn are two bases, not one bundle"
     );
 }
 
@@ -49,7 +49,7 @@ fn conjugate_words_share_a_base_and_unrelated_ones_do_not() {
 /// the ALPHABET spells one, and proves it by the exact conjugation.
 #[test]
 fn the_conjugator_is_solved_and_re_derived() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
 
@@ -78,14 +78,14 @@ fn the_conjugator_is_solved_and_re_derived() {
 /// comes first.
 #[test]
 fn words_of_two_classes_have_no_conjugator() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
-    let half = Word::from_letters(&[
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
+    let turn_180 =Word::from_letters(&[
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
     ]);
     assert!(
-        solve_conjugator(&q, &half).is_none(),
-        "no change of basepoint turns a quarter into a half"
+        solve_conjugator(&q, &turn_180).is_none(),
+        "no change of basepoint turns a 90° turn into a 180° turn"
     );
 }
 
@@ -94,7 +94,7 @@ fn words_of_two_classes_have_no_conjugator() {
 /// the fibre's lanes are separate carriers (law 5).
 #[test]
 fn the_projection_carries_the_base_and_the_fibre() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let hue = vec![(1u8, 2u8)];
     let s = project(&q, &identity_versor(), &hue, Some(&q)).expect("a versor projects");
     assert_eq!(s.base, Base::of_word(&q).expect("base"));
@@ -115,12 +115,12 @@ fn the_projection_carries_the_base_and_the_fibre() {
 /// This is the count that stops growing with the contexts.
 #[test]
 fn sections_of_one_base_group_and_another_base_does_not_join_them() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
-    let half = Word::from_letters(&[
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    let turn_180 =Word::from_letters(&[
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
     ]);
 
     let mk = |w: &Word| {
@@ -129,18 +129,18 @@ fn sections_of_one_base_group_and_another_base_does_not_join_them() {
             project(w, &identity_versor(), &[], Some(&q)).expect("projects"),
         )
     };
-    let grouped = by_base(&[mk(&q), mk(&conj), mk(&half)]);
+    let grouped = by_base(&[mk(&q), mk(&conj), mk(&turn_180)]);
     let qb = Base::of_word(&q).expect("base");
-    let hb = Base::of_word(&half).expect("base");
+    let hb = Base::of_word(&turn_180).expect("base");
     assert_eq!(
         grouped.get(qb.as_bytes()).map(|v| v.len()),
         Some(2),
-        "the quarter and its conjugate are two sections of one base"
+        "the 90° turn and its conjugate are two sections of one base"
     );
     assert_eq!(
         grouped.get(hb.as_bytes()).map(|v| v.len()),
         Some(1),
-        "and the half turn is its own bundle"
+        "and the 180° turn is its own bundle"
     );
 }
 
@@ -149,12 +149,12 @@ fn sections_of_one_base_group_and_another_base_does_not_join_them() {
 /// transition is an assertion and with it is a re-derivation anyone replays.
 #[test]
 fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
-    let half = Word::from_letters(&[
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    let turn_180 =Word::from_letters(&[
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
     ]);
 
     let (held, g) =
@@ -167,8 +167,8 @@ fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
 
     // A word of another base is nobody's section.
     assert!(
-        section_of(std::slice::from_ref(&q), &half).is_none(),
-        "a half turn is not a section of a quarter's bundle"
+        section_of(std::slice::from_ref(&q), &turn_180).is_none(),
+        "a 180° turn is not a section of a 90° turn's bundle"
     );
 }
 
@@ -183,7 +183,7 @@ fn a_conjugate_of_a_held_word_is_a_section_and_names_its_transition() {
 #[test]
 fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
     use crate::transducer::alphabet::bundle::{conjugation, Conjugation};
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
 
@@ -199,13 +199,13 @@ fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
     ));
     // Two classes are related by nothing, and that is the OTHER `None` —
     // a refusal about the words and not a candidate generator.
-    let half = Word::from_letters(&[
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
-        (LetterId::quarter((0, 1)).expect("quarter"), false),
+    let turn_180 =Word::from_letters(&[
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
+        (LetterId::turn_90((0, 1)).expect("90° turn"), false),
     ]);
     assert!(
-        conjugation(&q, &half).is_none(),
-        "no γ relates a quarter to a half, spellable or otherwise"
+        conjugation(&q, &turn_180).is_none(),
+        "no γ relates a 90° turn to a 180° turn, spellable or otherwise"
     );
 }
 
@@ -217,7 +217,7 @@ fn a_conjugation_says_whether_the_alphabet_can_spell_it() {
 #[test]
 fn every_offered_conjugator_actually_conjugates() {
     use crate::transducer::alphabet::bundle::conjugators;
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let sheet = PlaneForm::sheet_word();
     let conj = q.rebase(&sheet);
     let (a, b) = (q.rotor().normalised(), conj.rotor().normalised());
@@ -241,7 +241,7 @@ fn every_offered_conjugator_actually_conjugates() {
 #[test]
 fn every_offered_conjugator_is_even() {
     use crate::transducer::alphabet::bundle::conjugators;
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let (a, b) = (q.rotor().normalised(), q.inverse().rotor().normalised());
     // The reflection in `e₀` conjugates `a` to `b` — an odd solution the
     // solve must not offer.

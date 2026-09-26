@@ -54,7 +54,7 @@ const BASE_EVEN: [(usize, usize); 4] = [
     (0b1010, crate::transducer::cga::E2 | crate::transducer::cga::E3),
 ];
 
-/// The half turn `e₀₂`: the orientation character (51.2), which flips `e₀`
+/// The 180° turn `e₀₂`: the orientation character (51.2), which flips `e₀`
 /// on the base and nothing else there, and is realised on the base as the
 /// reflector `e1`.
 const ORIENTATION: usize = 0b0101;
@@ -64,7 +64,7 @@ const ORIENTATION: usize = 0b0101;
 /// versor of `Cl(4,1)` on `e1, e2, e3`. Exact, and complete on those axes:
 /// an even element of `Cl(4,0)` that carries the base onto itself is, up
 /// to scale, a rotor of the base's own even subalgebra `⟨1, e₀₁, e₀₃,
-/// e₁₃⟩`, read off blade for blade; or that times the half turn `e₀₂` —
+/// e₁₃⟩`, read off blade for blade; or that times the 180° turn `e₀₂` —
 /// the orientation character — realised as the reflector `e1`. A rotor
 /// that carries the base off itself (one turning `e₂` into a base axis)
 /// has no base action, and says so: nothing of it is projected.

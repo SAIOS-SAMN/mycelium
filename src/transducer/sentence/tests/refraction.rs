@@ -10,10 +10,10 @@ use crate::transducer::sentence::*;
 #[test]
 fn refraction_is_rebase_regauge_and_carriage() {
     let mut f = Form::default();
-    stand_with_star(&mut f, &word_vertex(1, order4()));
+    stand_with_star(&mut f, &word_vertex(1, word_turn_90()));
     f.reindex();
     let gamma = Transport {
-        word: order4(),
+        word: word_turn_90(),
         carriage: element::carriage(&q1(), &(q1(), q0())),
         gauge: vec![(1, 3)],
     };
@@ -34,7 +34,7 @@ fn refraction_is_rebase_regauge_and_carriage() {
     assert!(element::same_versor(&a.carriage, &gamma.carriage.geo(&old_a.carriage)));
     assert_eq!(a.gauge, compose_gauge(&gamma.gauge, &old_a.gauge));
     let off = Transport {
-        word: Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]),
+        word: Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]),
         carriage: element::identity_versor(),
         gauge: Vec::new(),
     };
@@ -44,10 +44,10 @@ fn refraction_is_rebase_regauge_and_carriage() {
 #[test]
 fn refraction_replays_as_its_three_moves() {
     let mut f = Form::default();
-    stand_with_star(&mut f, &word_vertex(1, order4()));
+    stand_with_star(&mut f, &word_vertex(1, word_turn_90()));
     f.reindex();
     let gamma = Transport {
-        word: order2(),
+        word: word_turn_180(),
         carriage: element::carriage(&q1(), &(q0(), q1())),
         gauge: vec![(2, 5)],
     };
@@ -90,7 +90,7 @@ fn refraction_replays_as_its_three_moves() {
 #[test]
 fn rebase_conjugates_by_a_versor_never_subtracts() {
     let mut f = Form::default();
-    let mut v = word_vertex(1, order4());
+    let mut v = word_vertex(1, word_turn_90());
     v.set_carriage(element::carriage(&q1(), &(q1(), q0())));
     let c = stand_with_star(&mut f, &v);
     let star = coord::Overlap { from: coord::ChartAt::Frame, to: c.clone() };

@@ -221,7 +221,7 @@ impl Form {
     /// orbit in the tree the pivot actually fires on (a turned L across two
     /// pairs, occupying `Unit(0)`), because an extraction's faces carry an
     /// edge whose composite is the identity while their transports carry
-    /// the half turn. They are two objects and neither replaces the other.
+    /// the 180° turn. They are two objects and neither replaces the other.
     /// ONE PER MEMBER PATH (D10 item 7), keyed by the path.
     pub fn class_vectors(&self, idx: usize) -> crate::network::nerve::Keyed<ClassVector> {
         match self.orbits.get(idx) {
@@ -630,7 +630,7 @@ impl Form {
                         //
                         // THE PERIOD IS THE FILER'S, NOT THIS CALLER'S. It
                         // passed `order.to_u32()` — the ROTOR'S order — and
-                        // a quarter turn carried along a translation has
+                        // a 90° turn carried along a translation has
                         // the same rotor order as one about a fixed point
                         // while closing at neither: the screw slips. The
                         // filer solves for the fixed point exactly and

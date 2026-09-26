@@ -122,7 +122,7 @@ pub struct CoverTally {
     /// which is the defect that let `ℓ = 1` pass as a measurement.
     pub framed: u64,
     pub unframed: u64,
-    /// A frame whose half turn no even moment can close and whose
+    /// A frame whose 180° turn no even moment can close and whose
     /// supports differ in cardinality, so no cell test can either (56.5).
     /// Counted apart from `framed` because it is a PROJECTIVE class, not
     /// a determined rotor, and reporting the two as one would be the same

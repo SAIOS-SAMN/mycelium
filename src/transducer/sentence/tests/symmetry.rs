@@ -12,7 +12,7 @@ fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> P
     PivotCertificate {
         chord: some_overlap(),
         axis,
-        before: ClassVector::of_word(&order4()).expect("class").class_key(),
+        before: ClassVector::of_word(&word_turn_90()).expect("class").class_key(),
         after,
         rank_move: RankMove::Equal,
         mu: Mu::Unmeasured,
@@ -27,7 +27,7 @@ fn cert(axis: Axis, word: Word, after: crate::transducer::address::Address) -> P
 #[test]
 fn two_discharges_of_one_orbit_name_the_symmetry_between_them() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
 
     let a = cert(Axis::Unit(0), q.clone(), closed.clone());
@@ -49,8 +49,8 @@ fn two_discharges_of_one_orbit_name_the_symmetry_between_them() {
 #[test]
 fn discharges_to_two_classes_name_no_symmetry() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let other = ClassVector::of_word(&order4()).expect("quarter").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let other = ClassVector::of_word(&word_turn_90()).expect("90° turn").class_key();
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
 
     let a = cert(Axis::Unit(0), q, closed);
@@ -67,9 +67,9 @@ fn discharges_to_two_classes_name_no_symmetry() {
 #[test]
 fn one_move_spelled_twice_admits_no_freedom() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     // `q` and `q⁵` are one element and two tapes (1.5).
-    let q5 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false); 5]);
+    let q5 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false); 5]);
     assert!(q.operator_eq(&q5), "one element, two spellings");
 
     let a = cert(Axis::Unit(0), q, closed.clone());
@@ -91,7 +91,7 @@ fn one_move_spelled_twice_admits_no_freedom() {
 #[test]
 fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
     let sided = |word: &Word, side: Side| PivotCertificate {
         by: PivotBy::Word { face: some_overlap(), word: Box::new(word.clone()), side },
@@ -135,7 +135,7 @@ fn a_word_discharging_on_both_sides_is_one_discharge_and_two_words_are_a_vortex(
 #[test]
 fn a_starved_search_is_not_a_refusal_and_a_discharge_survives_one() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let one = cert(Axis::Unit(0), q, closed);
 
     assert_eq!(
@@ -160,9 +160,9 @@ fn a_starved_search_is_not_a_refusal_and_a_discharge_survives_one() {
 #[test]
 fn each_losing_candidate_is_its_own_symmetry() {
     let closed = ClassVector::of_word(&Word::identity()).expect("identity").class_key();
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
     let s = PlaneForm::sheet_word();
-    let qq = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false); 2]);
+    let qq = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false); 2]);
 
     let win = cert(Axis::Unit(0), q, closed.clone());
     let held = vec![

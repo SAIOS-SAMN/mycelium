@@ -19,14 +19,14 @@ fn a_flat_cells_orbit_closes_at_once() {
     assert_eq!(constructor_orbit(&axes(), &[flat], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
 }
 
-/// A THREE-BODY CELL'S CONSTRUCTORS UNDER A QUARTER TURN: `e₁` and `e₂` are
+/// A THREE-BODY CELL'S CONSTRUCTORS UNDER A 90° TURN: `e₁` and `e₂` are
 /// carried onto each other's rays and `e₃` stays — the orbit closes on the
 /// three rays it began with.
 #[test]
-fn three_constructors_under_a_quarter_turn_close_on_three_rays() {
-    let quarter = rotator(&q(1, 1), &q(1, 1));
-    assert_eq!(carry(&quarter, &axes()[0]), Some(Mv::blade(E2, q(1, 1))), "e₁ is carried onto e₂'s ray");
-    assert_eq!(constructor_orbit(&axes(), &[quarter], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
+fn three_constructors_under_a_turn_90_close_on_three_rays() {
+    let turn_90 = rotator(&q(1, 1), &q(1, 1));
+    assert_eq!(carry(&turn_90, &axes()[0]), Some(Mv::blade(E2, q(1, 1))), "e₁ is carried onto e₂'s ray");
+    assert_eq!(constructor_orbit(&axes(), &[turn_90], &mut budget()), ConstructorOrbit::Closed { rays: 3 });
 }
 
 /// A SCREW'S ORBIT NEVER CLOSES: its slip is a parabolic mode that carries

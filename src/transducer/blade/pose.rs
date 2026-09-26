@@ -107,7 +107,7 @@ pub fn relative_pose(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
 /// `t` and the fourth order's symmetric part `N = ⟨d dᵀ |d|²⟩` about the
 /// sites' mean, each normalised by the count (A.12), and `tr M`, the scale's
 /// reading. `M` and `N` are the EVEN tower: they turn with the body and
-/// cannot see a half turn.
+/// cannot see a 180° turn.
 struct Tower {
     m: Vec<Vec<Q>>,
     t: Vec<Q>,
@@ -365,7 +365,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
 /// fix the turn (57.3, 59.5, 67.1).
 ///
 /// A body whose odd moment vanishes — a centrosymmetric body, or a flat one
-/// symmetric by a half turn in its own plane — has no column, and at one
+/// symmetric by a 180° turn in its own plane — has no column, and at one
 /// section the planar reader holds it `HalfOpen`: a `ℤ₂` freedom its own
 /// symmetry makes real. The tube holds it the same way. The turn is read
 /// from the matrices that INTERTWINE the even tower,
@@ -382,8 +382,8 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
 /// - two lines: the elements `a X₁ + b X₂` with `XᵀX ∝ 1`, the roots of one
 ///   binary quadratic, rational or refused as [`NoPose::Irrational`];
 /// - three or more, or a pencil of solutions: a stabilizer beyond `ℤ₂` —
-///   a line's continuous turn about itself, or a rectangle's three half
-///   turns — which this reader does not name a representative for:
+///   a line's continuous turn about itself, or a rectangle's three 180°
+///   turns —which this reader does not name a representative for:
 ///   [`NoPose::Unoriented`].
 ///
 /// Each candidate, and its negative, is kept where its versor — even or odd,

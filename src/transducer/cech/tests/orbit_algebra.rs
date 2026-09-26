@@ -45,7 +45,7 @@ fn at(holonomies: Vec<Result<Mv, CircuitUnread>>) -> Vec<CellCircuit> {
 }
 
 /// A CIRCUIT TURNING IN THE ROUND'S OWN PLANE KEEPS IT: every mode ray
-/// commutes with the round — congruent — and the quarter turn closes at
+/// commutes with the round — congruent — and the 90° turn closes at
 /// four; the constructors close on their two rays.
 #[test]
 fn a_turn_in_the_rounds_plane_is_congruent_and_closes() {
@@ -77,28 +77,28 @@ fn a_turn_that_carries_the_round_refuses_with_grade_mode_and_plane() {
 }
 
 /// CG1b — A TURN INSIDE THE SPAN KEEPS THE ROUND AND MOVES THE CONSTRUCTORS:
-/// the quarter turn in `e₁₂` keeps `e₁ ∧ e₂` and carries `e₁` onto `e₂`'s
+/// the 90° turn in `e₁₂` keeps `e₁ ∧ e₂` and carries `e₁` onto `e₂`'s
 /// ray — a permutation of the two. A turn by `(3, 4, 5)` in the same plane
 /// keeps the round and carries every nucleus off the set.
 #[test]
 fn a_turn_inside_the_span_keeps_the_round_and_not_the_constructors() {
     let (m, nuclei) = round();
-    let quarter = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
-    assert_eq!((quarter.congruence.clone(), quarter.permutes.clone()), (Congruence::Congruent, Permutes::All));
-    assert_eq!(quarter.modes[0].permutation, Some(vec![1, 0]), "e₁ ↦ e₂, e₂ ↦ −e₁: the swap, as rays");
+    let turn_90 = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(1, 1), &q(1, 1)))]), &[], &mut stroke());
+    assert_eq!((turn_90.congruence.clone(), turn_90.permutes.clone()), (Congruence::Congruent, Permutes::All));
+    assert_eq!(turn_90.modes[0].permutation, Some(vec![1, 0]), "e₁ ↦ e₂, e₂ ↦ −e₁: the swap, as rays");
     let rosette = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(cga::rotator(&q(3, 1), &q(4, 1)))]), &[], &mut stroke());
     assert_eq!(rosette.congruence, Congruence::Congruent, "the round is kept");
     assert_eq!(rosette.permutes, Permutes::Moves(vec![(0, 0)]), "and the constructors are not");
 }
 
-/// CG1b — THE ROUND REVERSED IS THE HELD ℤ₂, NEVER INCONGRUENT: a half turn
+/// CG1b — THE ROUND REVERSED IS THE HELD ℤ₂, NEVER INCONGRUENT: a 180° turn
 /// in `e₂₃` carries `e₁ ∧ e₂` to `−e₁ ∧ e₂`, and it permutes the
 /// constructors (`e₁` fixed, `e₂` onto its own ray).
 #[test]
 fn a_reversed_round_reads_the_held_z2() {
     let (m, nuclei) = round();
-    let half = Mv::blade(E2 | E3, q(1, 1));
-    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(half)]), &[], &mut stroke());
+    let turn_180 = Mv::blade(E2 | E3, q(1, 1));
+    let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn_180)]), &[], &mut stroke());
     assert_eq!(cell.modes[0].round, RoundKept::Reversed);
     assert_eq!(cell.congruence, Congruence::HeldZ2 { reversed: 1 });
     assert_eq!(cell.permutes, Permutes::All);
@@ -155,22 +155,22 @@ fn an_incoherence_is_held_by_its_ring_class_and_modes() {
 }
 
 /// 78.26(5) — THE RINGS THROUGH A CELL, BY THEIR RESIDUE: the identity is
-/// coherent; a quarter turn resonant (no kind: the alphabet spells it); a
+/// coherent; a 90° turn resonant (no kind: the alphabet spells it); a
 /// turn by `(3, 4, 5)` a rosette, harmonic (D); a screw parabolic, harmonic,
-/// its turn of finite order (C); a quarter turn across the round resonant and
+/// its turn of finite order (C); a 90° turn across the round resonant and
 /// holonomic (no kind); a circuit refused at the cone luminal (C); one unread
 /// for another reason is on the refusals and not here.
 #[test]
 fn the_rings_through_a_cell_read_by_resonance_level_and_kind() {
     let (m, nuclei) = round();
     let identity = Mv::scalar(q(1, 1));
-    let quarter = cga::rotator(&q(1, 1), &q(1, 1));
+    let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
     let rosette = cga::rotator(&q(3, 1), &q(4, 1));
     let screw = cga::rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     let across = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     let circuits = at(vec![
         Ok(identity),
-        Ok(quarter),
+        Ok(turn_90),
         Ok(rosette),
         Ok(screw),
         Ok(across),
@@ -222,7 +222,7 @@ fn unread_circuits_a_missing_round_and_no_circuit_are_named() {
 }
 
 /// 78.26(2) — A CELL'S CLOSED ALGEBRA CONTAINS WHAT ITS CIRCUITS GENERATE AND
-/// NOT WHAT THEY DO NOT: a quarter turn's cell holds the square of its own
+/// NOT WHAT THEY DO NOT: a 90° turn's cell holds the square of its own
 /// action, and not the action of a turn in another plane; a cell whose
 /// capacity did not read contains nothing it can say.
 #[test]
@@ -233,7 +233,7 @@ fn a_cells_algebra_contains_its_own_products_and_no_other_plane() {
     let turn = cga::rotator(&q(1, 1), &q(1, 1)).widened(across.n());
     let cell = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn.clone())]), &[], &mut stroke());
     let r = cga::action_of(&turn).expect("a versor acts");
-    assert_eq!(algebra_contains(&cell, &cga::matrix_mul(&r, &r)), Some(true), "the half turn is in the algebra");
+    assert_eq!(algebra_contains(&cell, &cga::matrix_mul(&r, &r)), Some(true), "the 180° turn is in the algebra");
     let other = cga::action_of(&across).expect("a versor acts");
     assert_eq!(algebra_contains(&cell, &other), Some(false), "a turn in another plane is not");
     // An action of another algebra's width is not compared: unread, never false.

@@ -3,7 +3,7 @@
 //! EXPANSION 2, 1.8, 15.3 — THE WORD AS A BUNDLE: `π : Word → B × F`, the
 //! base generator it turns by and the fibre coordinate it turns at.
 //!
-//! A word observed twice in two contexts — the same quarter turn recolouring
+//! A word observed twice in two contexts — the same 90° turn recolouring
 //! blue here and green there — is ONE base and TWO sections, not two words.
 //! Held as two monoliths the vocabulary grows with the contexts; held as a
 //! bundle it grows with the BASES, and the contexts become coordinates on a
@@ -261,7 +261,7 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
                 // of a coset and not others, and a solve that returns one
                 // arbitrary element answers "unspellable" for a relation the
                 // seventeen can say in a different basepoint. Four powers,
-                // because a quarter turn has order four and `a⁴` is the
+                // because a 90° turn has order four and `a⁴` is the
                 // identity — past that the multiples repeat and nothing new
                 // is offered.
                 let mut acc = r.clone();

@@ -29,7 +29,7 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     use crate::transducer::stalk::Invariant;
 
     let chart = Invariant::counts(&[1, 7, 11]);
-    let w = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -47,12 +47,12 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
     f.reindex();
     let sentence = as_element_form(&f, [1, 0, 0, 0]).expect("a tape");
 
-    // The coordinates a quarter turn occupies are the slots it is filed
+    // The coordinates a 90° turn occupies are the slots it is filed
     // under; a word occupying none files nowhere and would prove nothing.
     let axes = ClassVector::of_word(&w)
-        .expect("a quarter turn has a class vector")
+        .expect("a 90° turn has a class vector")
         .coordinates();
-    assert!(!axes.is_empty(), "a quarter turn occupies a coordinate");
+    assert!(!axes.is_empty(), "a 90° turn occupies a coordinate");
 
     let mut epi = Epigenome::new();
     let addr = epi
@@ -81,15 +81,15 @@ fn a_shed_dialect_word_leaves_the_axis_index_it_was_filed_in() {
 
 #[test]
 fn two_bodies_deflating_one_listing_open_an_axis_on_the_versor_between_them() {
-    // A row of two sites and a column of two: the same body turned a
-    // quarter, two distinct words on the atlas.
+    // A row of two sites and a column of two: the same body turned
+    // 90°, two distinct words on the atlas.
     let row = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let column = from_canonical(&germinate(&[(0, 0, 1u8), (1, 0, 1)], &[(0, 0, 2u8), (1, 0, 2)]).unwrap());
     assert_ne!(row.address(), column.address(), "two words");
     let chain = vec![(0, 0, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
     let germ = Entity::axis_germ(&chain, &[row.sub().to_vec(), column.sub().to_vec()]).expect("two bodies glue");
     let v = versor_between(&shape_of_chain(row.sub()).unwrap(), &shape_of_chain(column.sub()).unwrap())
-        .expect("a quarter turn carries the row onto the column");
+        .expect("a 90° turn carries the row onto the column");
     assert!(germ.is_connection(), "the axis stands on a connection");
     assert!(same_versor(&germ.versor().expect("a carriage"), &v), "the carriage is the versor between the bodies");
     assert_eq!(germ.opened_axes().len(), 1, "one axis opened on it");

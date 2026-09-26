@@ -9,7 +9,7 @@
 //! generator's modes — gives the invariant spaces `V_j`, where `S = c_j`:
 //! `cos θ_j` on a turn, `cosh θ_j` on a boost, `1` on the generalised kernel
 //! a parabolic mode lives in. Each `c_j` is rational wherever the motion is:
-//! `0` for the quarter turn, `−1` for the half turn, `3/5` for the `(3,4,5)`
+//! `0` for the 90° turn, `−1` for the 180° turn, `3/5` for the `(3,4,5)`
 //! turn — the points the inverse Cayley chart could not reach.
 //!
 //! THE MODE'S VERSOR RAY, exact. `K_j = ½ Σ_k e^k ∧ A(P_j e_k)` is the
@@ -22,7 +22,7 @@
 //! — `(1 + c_j) − K_j` up to scale on one plane, which is `1 + tan(θ_j/2) B̂_j`
 //! with no root taken; the wedge powers carry an isoclinic set whole, the
 //! product over its planes whatever split of them is written, so none is
-//! chosen (checklist (r)). AT THE HALF TURN `1 + c_j = 0` and `K_j = 0`: the
+//! chosen (checklist (r)). AT THE 180° TURN `1 + c_j = 0` and `K_j = 0`: the
 //! ray degenerates and the mode's versor is `V_j`'s own blade, `B̂_j` and
 //! `−B̂_j` one rotation — the held `ℤ₂` by construction.
 //!
@@ -206,7 +206,7 @@ fn split(
         let (ray, kind, planes) = match (k_j.is_zero(), lift.is_zero(), *c == one()) {
             // A FIXED SPACE: `S = 1` and no skew part — nothing turns there.
             (true, _, true) => continue,
-            // THE HALF TURN: the space's own blade, the held `ℤ₂`. Of ODD
+            // THE 180° TURN: the space's own blade, the held `ℤ₂`. Of ODD
             // dimension it holds a reflection (MR1b): an odd versor's `−1`
             // space, its blade odd, the mirror's normal among it.
             (true, true, _) => {

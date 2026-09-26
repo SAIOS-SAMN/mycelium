@@ -5,7 +5,7 @@
 // tape with no vertex that acts is a chain.
 
 // `LetterId` and `Word` were imported for the tampered-edge fixture that
-// T1 removed (60.5): a quarter turn written over a carried edge, which
+// T1 removed (60.5): a 90° turn written over a carried edge, which
 // needed an edge to write over. They come back with the fixture, when T2
 // gives two bodies a reason to relate.
 use crate::transducer::element::Element;
@@ -99,7 +99,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 ///
 /// This read: a bar and a lamina of two hues carried together are a rigid
 /// pair whose edge is the identity of the stabilizer; the honest edge
-/// re-derives on the union, and an edge naming a quarter turn the union
+/// re-derives on the union, and an edge naming a 90° turn the union
 /// did not make is refused.
 ///
 /// `11200 -> 00112` is a HUE SEAM: the hue-1 body at cells 0,1 and the
@@ -201,7 +201,7 @@ fn a_hue_seam_carries_no_edge_without_the_stencil() {
 }
 
 /// 51.8, LAW 12 — THE COURT PERCEIVES EACH FRAME ONCE. A turned L, a
-/// shifted bar and a shifted dot are two word vertices — the quarter turn,
+/// shifted bar and a shifted dot are two word vertices — the 90° turn,
 /// and the translation acting on two charts — with two faces between them
 /// where the bar and the dot land beside the L. The replay reads each frame
 /// from one perception of it: the vertex replay reads the sensor once per
@@ -214,7 +214,7 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
     // different hues. This read `"110000"/"033000"`, where the L's foot at
     // (2,1) is 4-adjacent to the bar at (3,1): under chapter 20 that was
     // two bodies, and under H1 the L, the bar and the 5 chain into ONE.
-    // The motions are unchanged — the L quarter-turns, the bar and the 5
+    // The motions are unchanged — the L 90°-turns, the bar and the 5
     // shift — only the gaps are.
     let x = ["100000", "100000", "110000", "000000", "033000", "000005"];
     let y = ["111000", "100000", "000000", "033000", "000000", "500000"];
@@ -227,7 +227,7 @@ fn the_court_perceives_each_frame_once_for_every_vertex_and_face() {
         .entries()
         .filter_map(|(at, v)| matches!(v, Vertex::Word { contact: None, .. }).then_some(at))
         .collect();
-    assert_eq!(words.len(), 2, "the quarter turn and the translation: {:?}", rule.form.vertices);
+    assert_eq!(words.len(), 2, "the 90° turn and the translation: {:?}", rule.form.vertices);
     let between_words = rule
         .form
         .faces

@@ -50,7 +50,7 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor, translator_versor};
 
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
     let conn = |w: &Word, shift: i64| {
         from_connection(w, &translator_versor(shift, 0), &[], &Vec::new(), [1, 0, 0, 0])
@@ -78,7 +78,7 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
         "another rotor is another stratum"
     );
 
-    // The key is over the ROTOR, not the tape: four quarter turns are the
+    // The key is over the ROTOR, not the tape: four 90° turns are the
     // identity projectively, so a word spelled long lands where the word
     // spelled short does. A key over spelling would let the mind utter one
     // vertex twice under two spellings, which is 1.5's fork exactly.
@@ -86,7 +86,7 @@ fn one_vertex_lies_in_one_stratum_however_it_is_spelled() {
         &Word::from_letters(&[(q, false), (q, false), (q, false), (q, false), (q, false)]),
         0,
     );
-    assert!(long.same_vertex(&here), "five quarter turns are one, projectively");
+    assert!(long.same_vertex(&here), "five 90° turns are one, projectively");
     assert_eq!(
         vertex_stratum(&long),
         vertex_stratum(&here),

@@ -5,11 +5,11 @@
 // summed.
 //
 //! THE BEND is a pivot move on one face, parameter-free and exact: on an
-//! ELLIPTIC plane its quarter turn `1 + e_ij`, on a HYPERBOLIC plane its blade
-//! (its half turn) — no boost with a parameter enters (rule 5). On the
+//! ELLIPTIC plane its 90° turn `1 + e_ij`, on a HYPERBOLIC plane its blade
+//! (its 180° turn) — no boost with a parameter enters (rule 5). On the
 //! spatial lane `𝒮` it is a `Placement` on the face's carriage over the
 //! algebra's planes; on the holonomic lane `𝒽` a `Word` move, the
-//! quarter-turn letter on the six rotor planes. The gauge `𝒢` and the
+//! 90°-turn letter on the six rotor planes. The gauge `𝒢` and the
 //! temporal `𝒯` lanes carry no generator on a pair of planes: NO BEND ON
 //! THIS LANE, by name, never zero.
 //!
@@ -41,7 +41,7 @@ use crate::transducer::alphabet::LetterId;
 pub enum BendLane {
     /// `𝒮` — the carriage, bent on the algebra's planes.
     Spatial,
-    /// `𝒽` — the word, bent by the quarter-turn letter on a rotor plane.
+    /// `𝒽` — the word, bent by the 90°-turn letter on a rotor plane.
     Holonomic,
 }
 
@@ -128,7 +128,7 @@ fn bend(lane: BendLane, face: coord::Overlap, plane: usize) -> Option<PivotBy> {
         }
         BendLane::Holonomic => {
             let (i, j) = ROTOR_PLANES.get(plane).copied()?;
-            let letter = LetterId::quarter((i, j))?;
+            let letter = LetterId::turn_90((i, j))?;
             Some(PivotBy::Word { face, word: Box::new(Word::from_letters(&[(letter, false)])), side: Side::Right })
         }
     }

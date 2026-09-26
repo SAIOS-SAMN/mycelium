@@ -45,7 +45,7 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
     assert_eq!(moduli(&sq.blade), moduli(&sq3.blade));
     assert!(versor_between(&sq, &sq3).is_some(), "ρ = 3 on an isotropic body");
     // An isotropic body with an orientation (a pinwheel of four arms)
-    // is oriented by the fourth harmonic: its quarter-turn image carries.
+    // is oriented by the fourth harmonic: its 90°-turn image carries.
     let pin = at_frame_0(&[(1, 1), (1, 2), (2, 2), (0, 1), (1, 0), (2, 1), (1, 3), (3, 2), (0, 3)]);
     let pin_shape = shape_of(&pin);
     let pin_rot: Vec<crate::transducer::base::Site> = pin
@@ -53,7 +53,7 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
         .map(|s| crate::transducer::base::Site::new(vec![s.axes()[1], -s.axes()[0], s.axes()[2]]))
         .collect();
     assert_eq!(moduli(&pin_shape.blade), moduli(&shape_of(&pin_rot).blade));
-    assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a quarter turn found");
+    assert!(versor_between(&pin_shape, &shape_of(&pin_rot)).is_some(), "a 90° turn found");
 }
 
 /// 50.2 step 1 as ruled 2026-09-09 (L7c): several versors carry a
@@ -62,7 +62,7 @@ fn moduli_and_transport_are_exact_and_similarity_invariant() {
 /// the same whatever order the candidates were tried in. A dilated square
 /// is carried by the dilation and not by the dilation and one of its
 /// turns; a dilated bar by the dilation and not by the dilation and its
-/// half turn.
+/// 180° turn.
 #[test]
 fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     let sq = shape_of(&rect(0, 0, 2, 2));
@@ -88,9 +88,9 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     let bar = shape_of(&rect(0, 0, 2, 3));
     let bar2 = shape_of(&rect(0, 0, 4, 6));
     let coset = versor_coset(&bar, &bar2);
-    assert!(coset.len() > 1, "a bar's stabilizer holds its half turn: {} members", coset.len());
+    assert!(coset.len() > 1, "a bar's stabilizer holds its 180° turn:{} members", coset.len());
     let v2 = versor_between(&bar, &bar2).expect("a dilation");
-    assert_eq!(carry(&v2, &[0, 0, 0]), Some(vec![q(0), q(0), q(0)]), "the dilation, not the dilation and a half turn");
+    assert_eq!(carry(&v2, &[0, 0, 0]), Some(vec![q(0), q(0), q(0)]), "the dilation, not the dilation and a 180° turn");
     assert_eq!(carry(&v2, &[2, 3, 0]), Some(vec![q(4), q(6), q(0)]));
 }
 

@@ -26,7 +26,7 @@ fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::
 ///
 /// Two L-trominoes meet at ONE corner, `δ² > 4` — outside the band
 /// `1 < δ ≤ 2` that decided whether a face was written, so the field refused
-/// them. Under the transition the first turns a quarter and the second
+/// them. Under the transition the first turns 90° and the second
 /// stays: each body's own pose is read against itself, `θ_bθ_a⁻¹` is how the
 /// one turned against the other, and the contact carries it composed with
 /// the tether — in the carriage entire, never split by lane, never the
@@ -52,14 +52,14 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     assert!(edge.carriage.projective_eq(&relative.geo(&v)), "the carriage is (θ_bθ_a⁻¹)·V, whole");
     assert!(
         !edge.word.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()),
-        "the word reads the quarter turn one body made against the other"
+        "the word reads the 90° turn one body made against the other"
     );
     let t = take_contact_tally();
     assert_eq!((t.offered, t.apart, t.condensed), (1, 1, 1), "offered, read apart, condensed");
 
     // Two unlike touching bodies — no turn carries the one onto the other —
     // still carry their refraction: each is read against itself.
-    // (An asymmetric one: a bar's own half turn would hold its pose open.)
+    // (An asymmetric one: a bar's own 180° turn would hold its pose open.)
     let bar = body(&[(3, 0, 0), (4, 0, 0), (5, 0, 0), (5, 1, 0)]);
     assert!(blade::relative_pose(&a, &bar).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
     assert!(
@@ -134,12 +134,12 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
 fn the_mints_first_gate_counts_each_answer_by_its_kind() {
     use crate::transducer::family::{oblique_rotor_prime, take_demand_tally};
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
-    let quarter = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
+    let turn_90 = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let empty = blade::shape_of::<(i64, i64, i64)>(&[]).blade;
     let _ = take_demand_tally();
-    assert!(blade::relative_pose(&l, &quarter).is_ok(), "the fixture: a quarter turn apart");
-    for (a, b) in [(&l, &quarter), (&l, &s), (&empty, &l)] {
+    assert!(blade::relative_pose(&l, &turn_90).is_ok(), "the fixture: a 90° turn apart");
+    for (a, b) in [(&l, &turn_90),(&l, &s), (&empty, &l)] {
         assert!(oblique_rotor_prime(a, b).is_none(), "none of them is oblique");
     }
     let d = take_demand_tally();
@@ -183,16 +183,16 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
 }
 
 /// 78.6(1) — A HELD `ℤ₂` RIDES THE EDGE AS A COSET: an S-tetromino against
-/// its own quarter turn holds its pose open (its odd moment vanishes), so
+/// its own 90° turn holds its pose open (its odd moment vanishes), so
 /// its contact carries BOTH candidates `θ·V` — two distinct transports,
 /// never a representative — and the tally names a coset formed.
 #[test]
-fn a_held_half_turn_rides_the_contact_edge_as_a_coset() {
+fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
     let s4 = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
     let s = body(&s4);
     let turned = body(&s4.map(|(r, c, k)| (-c, r, k)));
     let Ok(blade::Pose::HalfOpen(candidates)) = blade::relative_pose(&s, &turned) else {
-        panic!("the S holds its half turn");
+        panic!("the S holds its 180° turn");
     };
     let b = body(&[(4, 0, 0), (5, 0, 0), (4, 1, 0)]);
     let v = blade::tether(&s, &b).expect("both nuclei read");

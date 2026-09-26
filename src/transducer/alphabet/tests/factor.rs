@@ -24,7 +24,7 @@ fn witness_carries(w: &[[Q; 2]; 2], prime: u64) -> bool {
 /// blocks in the order of 50.4: the sensor pair first.
 #[test]
 fn factor_rotor_peels_commuting_blocks_in_order() {
-    let q01 = LetterId::quarter((0, 1)).expect("quarter (0,1)");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn (0,1)");
     let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
     let p13 = LetterId::pythagorean_5((1, 3)).expect("(3,4,5) on (1,3)");
     let r = word(&[(q01, false), (p23, false), (p13, true)]).rotor();
@@ -48,7 +48,7 @@ fn factor_rotor_peels_commuting_blocks_in_order() {
 #[test]
 fn a_run_on_another_plane_survives_the_normal_form() {
     let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter (2,3)");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn (2,3)");
     let w = word(&[(p23, false), (q23, false), (q23, false), (p23, false)]);
     let n = w.normal_form();
     assert!(!n.is_empty(), "the run is not erased");
@@ -87,16 +87,16 @@ fn a_prime_outside_the_alphabet_is_a_rotor_prime_demand() {
     }
 }
 
-/// The order of 50.4 is a presentation, not a restriction: the quarter on
-/// (0,2) after the quarter on (0,1) is the same rotor as the quarter on
-/// (0,1) after the quarter on (1,2), a relation of the group, and the peel
+/// The order of 50.4 is a presentation, not a restriction: the 90° turn on
+/// (0,2) after the 90° turn on (0,1) is the same rotor as the 90° turn on
+/// (0,1) after the 90° turn on (1,2), a relation of the group, and the peel
 /// finds it in order. A rotor whose Tait–Bryan half-angle is irrational —
 /// `1 + e01 + e02`, a versor of weight 3 — has no rational plane rotors in
 /// any order and stands as a `Standing` demand, never a chain.
 #[test]
 fn a_block_the_order_does_not_decompose_is_a_standing_demand() {
-    let q01 = LetterId::quarter((0, 1)).expect("quarter (0,1)");
-    let q02 = LetterId::quarter((0, 2)).expect("quarter (0,2)");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn (0,1)");
+    let q02 = LetterId::turn_90((0, 2)).expect("90° turn (0,2)");
     let r = word(&[(q02, false), (q01, false)]).rotor();
     let w = factor_rotor(&r).expect("a versor").expect("a relation of the group");
     assert!(w.rotor().projective_eq(&r), "the reordered word re-derives the rotor");

@@ -65,8 +65,8 @@ fn a_face_whose_word_has_no_sensor_action_places_no_member_pair() {
 /// nothing — refused, never projected (checklist (m)).
 #[test]
 fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor() {
-    let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
-    let q13 = Word::from_letters(&[(LetterId::quarter((1, 3)).expect("quarter (1,3)"), false)]);
+    let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
+    let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("90° turn (1,3)"), false)]);
     let double = q01.compose(&q13);
     assert_eq!(
         double.rotor().off_plane_blades((alphabet::PLANE_ROW, alphabet::PLANE_COL)).len(),
@@ -90,7 +90,7 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
         Some(&Some(lp.chord.clone())),
         "and the axis is keyed by that class"
     );
-    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("quarter (2,3)"), false)]);
+    let q23 = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("90° turn (2,3)"), false)]);
     let off = edge_chord_form(std::slice::from_ref(&q23));
     let [lp] = off.orbits.as_slice() else { panic!("one chord closes one orbit") };
     assert!(off.axis_seed_of(lp).is_none(), "a rotation turning e₂ into the base seeds no axis");

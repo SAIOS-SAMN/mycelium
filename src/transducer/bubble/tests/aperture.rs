@@ -190,11 +190,11 @@ fn a_form_speaking_two_rotors_carries_two_sections_and_no_single_rotor() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::Invariant;
-    let q01 = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q01 = LetterId::turn_90((0, 1)).expect("the sensor plane");
     // AT1 (Q1): a Word vertex is keyed by its transport class, and the
-    // quarters on `(0, 1)` and `(0, 2)` are ONE class, so they would be one
+    // 90° turns on `(0, 1)` and `(0, 2)` are ONE class, so they would be one
     // vertex with one rotor. Two rotors a form speaks are two classes: the
-    // quarter and the (3, 4, 5) turn.
+    // 90° turn and the (3, 4, 5) turn.
     let p02 = LetterId::pythagorean_5((0, 2)).expect("another plane");
     let mut f = Form::default();
     for id in [q01, p02] {
@@ -234,7 +234,7 @@ fn two_vertices_whose_carriages_differ_by_sign_hold_one_section() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
     use crate::transducer::stalk::Invariant;
-    let q01 = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q01 = LetterId::turn_90((0, 1)).expect("the sensor plane");
     let c = element::translator_versor(1, 2);
     let neg = c.scale(&num_rational::BigRational::from_integer(num_bigint::BigInt::from(-1)));
     let mut f = Form::default();
@@ -273,11 +273,11 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
         Axis, ClassVector, Form, Mu, PivotBy, PivotCertificate, RankMove, Side, Vertex,
     };
     use crate::transducer::stalk::Invariant;
-    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     let a = Word::from_letters(&[(q, false)]);
     let b = Word::from_letters(&[(q, true)]);
     let symmetry = a.inverse().compose(&b).normal_form().rotor();
-    assert!(!symmetry.is_identity(), "q⁻¹·q⁻¹ is a half turn, not the identity");
+    assert!(!symmetry.is_identity(), "q⁻¹·q⁻¹ is a 180° turn, not the identity");
 
     // A form with one face for the certificate to name.
     let mut f = Form::default();
@@ -304,7 +304,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     // is why filing under `after` put every closed vortex in the tree
     // under one key and left nothing for a deciding word to find.
     let before = ClassVector::of_word(&a)
-        .expect("a quarter turn has a class vector")
+        .expect("a 90° turn has a class vector")
         .class_key();
     let after = ClassVector::zero().class_key();
     assert_ne!(after, before, "a closed orbit's class is not the class it stood in");
@@ -343,7 +343,7 @@ fn a_learned_candidate_collapses_the_vortex_and_its_symmetry_is_carried_out() {
     // THE STRATUM IS THE COORDINATE, and it is the depth-one projection of
     // the class vector the candidate hangs under — not a second key written
     // to agree with it.
-    let stratum = a.rotor().class_key().expect("a quarter turn has a class");
+    let stratum = a.rotor().class_key().expect("a 90° turn has a class");
     let end = ClassVector::class_schema()
         .boundary(before.as_bytes(), 1)
         .expect("the class vector spells its first coordinate");
@@ -399,7 +399,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
     use crate::transducer::stalk::{Invariant, Stalks};
     let mine = Invariant::counts(&[3, 5]);
     let sibling = Invariant::counts(&[3, 7]);
-    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     let mut f = Form::default();
     let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
@@ -452,7 +452,7 @@ fn an_idea_meets_its_own_charts_and_not_their_siblings() {
 fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::sentence::{Form, Vertex};
-    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     let mut form = Form::default();
     let v = Vertex::word_on(
         Derivation::spelled(Word::from_letters(&[(q, false)])),
@@ -530,7 +530,7 @@ fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::bubble::contemplation::Deliberation;
     use crate::transducer::sentence::{Form, Vertex};
-    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
     // The forms must differ on a coordinate the KEY carries. A vertex's own
     // address is deliberately not one of them (1.5: two minds whose
     // derivations differ reach one address), so they differ by the chart the

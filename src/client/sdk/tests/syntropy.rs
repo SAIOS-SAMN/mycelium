@@ -10,7 +10,7 @@ use crate::transducer::rewrite::{self, LANE_GAUGE, LANE_SPATIAL};
 
 #[test]
 fn solve_gauge_between_finds_connecting_sheet() {
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w1 = Word::from_letters(&[(q, false)]);
     let sheet = PlaneForm::sheet_word();
     let w2 = w1.rebase(&sheet);
@@ -29,9 +29,9 @@ fn solve_gauge_between_finds_connecting_sheet() {
 
 #[test]
 fn solve_gauge_between_finds_generator_rotor() {
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w1 = Word::from_letters(&[(q, false)]);
-    let q_rot = LetterId::quarter((1, 2)).expect("sheet quarter turn");
+    let q_rot = LetterId::turn_90((1, 2)).expect("sheet 90° turn");
     let g_test = Word::from_letters(&[(q_rot, false)]);
     let w2 = w1.rebase(&g_test);
 
@@ -87,7 +87,7 @@ fn solve_gauge_between_finds_generator_rotor() {
 fn probe_conjugate_reanchor_on_word_pair() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_word_reanchor"));
 
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w1 = Word::from_letters(&[(q, false)]);
     let sheet = PlaneForm::sheet_word();
     let w2 = w1.rebase(&sheet);
@@ -151,7 +151,7 @@ fn probe_bundle_condensation_folds_sibling_sections() {
 fn bid_bundle_rewrite_retires_inputs_and_credits_syntropy() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("test_bid_rewrite"));
 
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w1 = Word::from_letters(&[(q, false)]);
     let sheet = PlaneForm::sheet_word();
     let w2 = w1.rebase(&sheet);
@@ -212,7 +212,7 @@ fn the_conjugacy_fibre_answers_every_sibling_the_whole_genome_read_would_have_fo
     // Two words of one conjugacy class, and a third of another, so a read
     // that answered everything would pass this as readily as one that
     // answered nothing.
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter turn");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w1 = Word::from_letters(&[(q, false)]);
     let w2 = w1.rebase(&PlaneForm::sheet_word());
     let other = PlaneForm::sheet_word();

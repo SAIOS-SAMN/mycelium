@@ -4,12 +4,12 @@
 use crate::transducer::blade::sensor_plane as blade;
 use num_traits::Zero;
 
-/// THE ODD HARMONIC CLOSES THE HALF TURN, AND VANISHES EXACTLY WHERE
+/// THE ODD HARMONIC CLOSES THE 180° TURN, AND VANISHES EXACTLY WHERE
 /// THE FREEDOM IS REAL (68).
 ///
 /// `h₃` turns at `3φ` and is the first odd-order harmonic the tower
 /// carries. It is zero precisely for a body with 2-fold symmetry,
-/// because the half turn maps such a body to itself and sends
+/// because the 180° turn maps such a body to itself and sends
 /// `h₃ ↦ −h₃` — so where it vanishes, the two candidate turns act
 /// IDENTICALLY and there is no fact left to recover.
 ///
@@ -25,16 +25,16 @@ fn the_odd_harmonic_vanishes_exactly_on_a_two_fold_symmetric_body() {
         let b = blade::shape_of(&cells);
         assert!(
             blade::third_harmonic(&b.blade).is_none(),
-            "a half turn maps it to itself, so h3 must vanish: {cells:?}"
+            "a 180° turn maps it to itself, so h3 must vanish: {cells:?}"
         );
     }
     // An L-tetromino has no 2-fold symmetry, so h₃ is there to read
-    // and the half turn is determined rather than left open.
+    // and the 180° turn is determined rather than left open.
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     assert!(blade::third_harmonic(&l.blade).is_some(), "chiral, no 2-fold");
 }
 
-/// THE HALF TURN IS NOW READ ACROSS A CHANGE OF SCALE (68).
+/// THE 180° TURN IS NOW READ ACROSS A CHANGE OF SCALE (68).
 ///
 /// The cell test was gated on `support.len()` equality, so a pair of
 /// different size was refused a reading and returned mod `π` —
@@ -42,7 +42,7 @@ fn the_odd_harmonic_vanishes_exactly_on_a_two_fold_symmetric_body() {
 /// `φ = z₃·conj(z₂)` is scale-free, so the turn between a body and its
 /// dilate is DETERMINED, not left open.
 #[test]
-fn the_half_turn_is_determined_between_a_body_and_its_dilate() {
+fn the_turn_180_is_determined_between_a_body_and_its_dilate() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let l2 = blade::shape_of(&[
         (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
@@ -63,14 +63,14 @@ fn the_half_turn_is_determined_between_a_body_and_its_dilate() {
 /// A moment of azimuthal order `m` turns at `m·φ`, so the same
 /// `(wedge, dot)` means different things at `m = 2` and `m = 4`. At
 /// `m = 4`, `wedge = 0` and `dot > 0` is `4φ ≡ 0`, which is EVERY
-/// quarter turn — but the reader tried `[0, 2]` and refused the other
+/// 90° turn — but the reader tried `[0, 2]` and refused the other
 /// two, reporting `Incongruent` on exactly the bodies the quartic
 /// exists to orient: those isotropic at second order.
 ///
-/// A square is `C₄`, so every quarter turn carries it onto itself and
+/// A square is `C₄`, so every 90° turn carries it onto itself and
 /// all four must be reachable.
 #[test]
-fn a_quartic_oriented_body_reaches_every_quarter_turn() {
+fn a_quartic_oriented_body_reaches_every_turn_90() {
     let sq = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     assert!(blade::deviatoric(&sq.blade).is_none(), "isotropic at order 2");
     assert!(blade::quartic_harmonic(&sq.blade).is_some(), "the quartic orients it");
@@ -107,11 +107,11 @@ fn a_pythagorean_site_map_is_carried_at_its_rational_turn() {
     let image = blade::shape_of(&image);
     assert_eq!(blade::dilation(&l.blade, &image.blade), Ok(blade::Dilation::Sites), "a site map");
     let pose = blade::relative_rotor(&l.blade, &image.blade).expect("carried at its rational turn");
-    assert!(matches!(pose, blade::Pose::Turn(_)), "determined, the odd harmonic settling the half turn: {pose:?}");
+    assert!(matches!(pose, blade::Pose::Turn(_)), "determined, the odd harmonic settling the 180° turn: {pose:?}");
     assert!(pose.rotor().projective_eq(&cga::rotator(&q(2), &q(1))), "the map's own rotor, read back: {pose:?}");
 }
 
-/// 55.3, 68 — THE CHIRAL L IS CARRIED ONTO ITS QUARTER TURN BY COVARIANCE:
+/// 55.3, 68 — THE CHIRAL L IS CARRIED ONTO ITS 90° TURN BY COVARIANCE:
 /// one member, even, and the verification is the tower's — the centre, the
 /// second moment, the odd and quartic harmonics — never a lamina landing.
 #[test]
@@ -119,7 +119,7 @@ fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
     let pose = blade::relative_rotor(&l.blade, &turned.blade).expect("a turn");
-    assert!(matches!(pose, blade::Pose::Turn(_)), "h₃ settles the half turn: {pose:?}");
+    assert!(matches!(pose, blade::Pose::Turn(_)), "h₃ settles the 180° turn: {pose:?}");
     assert_eq!(pose.rotor().parity(), Some(false), "a turn, not a mirror");
     let v = blade::versor_between(&l, &turned).expect("the transition");
     assert!(
@@ -128,7 +128,7 @@ fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     );
     assert!(
         !blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region),
-        "and not the other way: a quarter turn is not its own inverse"
+        "and not the other way: a 90° turn is not its own inverse"
     );
 }
 
@@ -414,6 +414,6 @@ fn an_aligned_unlike_pair_is_refused_before_the_turn_branch() {
     assert_eq!(
         blade::relative_rotor(&dom.blade, &bar.blade).err(),
         Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: two, sites: four })),
-        "unlike, not a held half turn"
+        "unlike, not a held 180° turn"
     );
 }

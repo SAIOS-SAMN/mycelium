@@ -12,7 +12,7 @@ fn the_algebraic_bid_round_trips_both_witnesses() {
     let voice = [7u8; 32];
     let word = Address::from_bytes([4u8, 1, 2, 3]);
     let held = Address::from_bytes([4u8, 9, 8]);
-    let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), true)]);
+    let gamma = Word::from_letters(&[(LetterId::turn_90((0, 2)).expect("90° turn"), true)]);
     for witness in [AlgebraicWitness::SameOperator, AlgebraicWitness::Section(Box::new(gamma.clone()))] {
         let body = encode_refine_algebraic(&voice, &word, &held, &witness).expect("the addresses frame");
         let (v, w, h, back) = decode_refine_algebraic(&body).expect("the bid decodes");
@@ -35,7 +35,7 @@ fn a_bid_cut_short_of_its_witness_is_malformed() {
     let voice = [7u8; 32];
     let word = Address::from_bytes([4u8, 1]);
     let held = Address::from_bytes([4u8, 2]);
-    let gamma = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
+    let gamma = Word::from_letters(&[(LetterId::turn_90((0, 2)).expect("90° turn"), false)]);
     let body = encode_refine_algebraic(&voice, &word, &held, &AlgebraicWitness::Section(Box::new(gamma)))
         .expect("the addresses frame");
     let short = &body[..body.len() - 1];
@@ -54,7 +54,7 @@ fn a_formed_witness_crosses_the_wire_as_its_action() {
     let voice = [7u8; 32];
     let word = Address::from_bytes([4u8, 1]);
     let held = Address::from_bytes([4u8, 2]);
-    let spelled = Word::from_letters(&[(LetterId::quarter((0, 2)).expect("quarter"), false)]);
+    let spelled = Word::from_letters(&[(LetterId::turn_90((0, 2)).expect("90° turn"), false)]);
     let formed = Word::formed(spelled.rotor());
     assert!(formed.letters().is_empty() && !formed.is_identity(), "an action no tape spells");
     let body = encode_refine_algebraic(&voice, &word, &held, &AlgebraicWitness::Section(Box::new(formed.clone())))

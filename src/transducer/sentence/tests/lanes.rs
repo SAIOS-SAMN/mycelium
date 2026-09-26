@@ -47,7 +47,7 @@ fn the_axis_to_lane_table_is_42_6s() {
 /// (law 5).
 #[test]
 fn a_class_occupies_the_lanes_its_coordinates_name() {
-    let turn = ClassVector::of_word(&order4()).expect("a quarter turn is a versor");
+    let turn = ClassVector::of_word(&word_turn_90()).expect("a 90° turn is a versor");
     assert_eq!(
         turn.lanes(),
         [false, false, false, true],
@@ -82,7 +82,7 @@ fn a_class_occupies_the_lanes_its_coordinates_name() {
     let q3 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(3));
     let z = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let screw = crate::transducer::cga::at_three::translator(&z, &z, &q3);
-    let both = ClassVector::read(&order4(), screw, CycleType::Identity)
+    let both = ClassVector::read(&word_turn_90(), screw, CycleType::Identity)
         .expect("a placed turn");
     assert_eq!(
         both.lanes(),
@@ -120,7 +120,7 @@ fn a_lane_chart_is_that_lanes_axes_and_the_four_are_disjoint() {
 
     // The holonomic chart is the rotor's, unchanged: what `versor_chart`
     // always answered IS this lane's chart, so nothing filed under it moves.
-    let turn = order4();
+    let turn = word_turn_90();
     assert_eq!(
         versor_chart(&turn).map(|c| c.key()),
         crate::transducer::sentence::versor_chart_of(&turn.rotor()).map(|c| c.key()),
@@ -149,7 +149,7 @@ fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
     // In the turning plane: `(I − R)p = t` solves, so the translation is
     // where the turn stands.
     let about_a_point =
-        ClassVector::read(&order4(), element::translator_versor(0, 3), CycleType::Identity)
+        ClassVector::read(&word_turn_90(), element::translator_versor(0, 3), CycleType::Identity)
             .expect("a turn about a point");
     assert!(
         !about_a_point.occupies(Axis::Placement),
@@ -165,7 +165,7 @@ fn a_turns_base_point_occupies_no_placement_and_a_screw_does() {
     // Along the axis: no `p` fixes it, the seam slips, and that IS an
     // obstruction with a translation word that can zero it.
     let screw = crate::transducer::cga::at_three::translator(&q(0), &q(0), &q(3));
-    let slipping = ClassVector::read(&order4(), screw, CycleType::Identity).expect("a screw");
+    let slipping = ClassVector::read(&word_turn_90(), screw, CycleType::Identity).expect("a screw");
     assert!(
         slipping.occupies(Axis::Placement),
         "a slip occupies placement: {:?}",

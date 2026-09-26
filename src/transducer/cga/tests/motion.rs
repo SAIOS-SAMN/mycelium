@@ -1,5 +1,5 @@
 // 78.12, MR1, EQ1, MD1b — a motion's modes read off its own action: rational
-// `c`, exact rays that commute and multiply back to the motion, the half turn
+// `c`, exact rays that commute and multiply back to the motion, the 180° turn
 // the plane's blade; rays equal by proportion; rational roots at any degree.
 
 use super::common::{budget, q};
@@ -18,11 +18,11 @@ fn product(ms: &[MotionMode]) -> Mv {
     ms.iter().fold(Mv::scalar(q(1, 1)), |acc, m| acc.geo(&m.ray))
 }
 
-/// THE QUARTER-TURN SCREW, which the chart could not reach: its turn reads
+/// THE 90°-TURN SCREW, which the chart could not reach: its turn reads
 /// elliptic, `c = 0`, closing at four; its slip parabolic and open; the two
 /// rays commute and multiply back to the screw.
 #[test]
-fn a_quarter_turn_screw_reads_its_turn_closing_at_four_and_its_slip_open() {
+fn a_turn_90_screw_reads_its_turn_closing_at_four_and_its_slip_open() {
     let screw = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
     assert!(cayley_inverse(&screw).is_none(), "the chart has no point here: tan(π/8) ∉ ℚ");
     let ms = read(&screw);
@@ -30,21 +30,21 @@ fn a_quarter_turn_screw_reads_its_turn_closing_at_four_and_its_slip_open() {
         ms.iter().map(|m| (m.kind, m.planes, m.order)).collect::<Vec<_>>(),
         vec![(BivectorKind::Parabolic, 1, None), (BivectorKind::Elliptic, 1, Some(4))]
     );
-    assert_eq!(ms[1].c, q(0, 1), "a quarter turn: cos θ = 0, rational");
+    assert_eq!(ms[1].c, q(0, 1), "a 90° turn: cos θ = 0, rational");
     assert!(ms[0].ray.geo(&ms[1].ray).sub(&ms[1].ray.geo(&ms[0].ray)).is_zero(), "the rays commute");
     assert_eq!(product(&ms), screw, "and multiply back to the screw, as a ray");
 }
 
-/// THE HALF TURN IS THE PLANE'S BLADE: `c = −1`, the ray degenerate, the
+/// THE 180° TURN IS THE PLANE'S BLADE: `c = −1`, the ray degenerate, the
 /// mode's versor `e₁₂` itself, and `−e₁₂` the same rotation — the held `ℤ₂`
 /// by construction.
 #[test]
-fn a_half_turn_reads_as_its_planes_blade() {
-    let half = Mv::blade(E1 | E2, q(1, 1));
-    let [m] = read(&half).try_into().expect("one mode");
+fn a_turn_180_reads_as_its_planes_blade() {
+    let turn_180 = Mv::blade(E1 | E2, q(1, 1));
+    let [m] = read(&turn_180).try_into().expect("one mode");
     assert_eq!((m.kind, m.planes, m.c.clone(), m.order), (BivectorKind::Elliptic, 1, q(-1, 1), Some(2)));
-    assert_eq!(m.ray, half, "the ray is the plane's blade");
-    assert_eq!(m.ray, half.scale(&q(-1, 1)), "and its negative is the same ray: the held ℤ₂");
+    assert_eq!(m.ray, turn_180, "the ray is the plane's blade");
+    assert_eq!(m.ray, turn_180.scale(&q(-1, 1)), "and its negative is the same ray: the held ℤ₂");
 }
 
 /// THE (3,4,5) TURN READS `c = −7/25` — `cos θ` with `cos(θ/2) = 3/5` — a
@@ -61,7 +61,7 @@ fn a_pythagorean_turn_is_a_rosette_and_a_boost_reads_its_cosh() {
     assert_eq!(b.ray, boost);
 }
 
-/// A DISPIRATION: a quarter turn and a boost on orthogonal planes, two
+/// A DISPIRATION: a 90° turn and a boost on orthogonal planes, two
 /// modes whose rays multiply back to the motion.
 #[test]
 fn a_dispiration_reads_a_turn_and_a_boost_that_multiply_back() {
@@ -74,7 +74,7 @@ fn a_dispiration_reads_a_turn_and_a_boost_that_multiply_back() {
     assert_eq!(product(&ms), motion);
 }
 
-/// AN ISOCLINIC PAIR IS HELD WHOLE: equal quarter turns on `e₁₂` and `e₃₄`
+/// AN ISOCLINIC PAIR IS HELD WHOLE: equal 90° turns on `e₁₂` and `e₃₄`
 /// read one mode over two planes, its ray carrying the grade-four term the
 /// planes' product has, no split among them chosen.
 #[test]

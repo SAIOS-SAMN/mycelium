@@ -9,11 +9,11 @@ fn restart_refills_horizon_from_syllabus() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     assert_eq!(c.horizon_len(), 0);
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let rec = ClassRecord {
-        key: r.class_key().expect("quarter class"),
-        order: r.order().expect("quarter has an order"),
+        key: r.class_key().expect("90° turn class"),
+        order: r.order().expect("the 90° turn has an order"),
         representative: r,
     };
     let n = c.seed_horizon(std::slice::from_ref(&rec));

@@ -119,7 +119,7 @@ fn the_corner_products_are_of_order_two_and_the_whole_is_odd() {
     let corner = [plane(E1, 0), plane(E2, 0), plane(E3, 0)];
     let pair = coxeter_product(&corner, &[0, 1], true, &mut stroke()).expect("a product");
     let Some(Ok(ms)) = &pair.modes else { panic!("modes") };
-    assert_eq!(ms.iter().map(|m| m.order).collect::<Vec<_>>(), vec![Some(2)], "a pair: a half turn");
+    assert_eq!(ms.iter().map(|m| m.order).collect::<Vec<_>>(), vec![Some(2)], "a pair: a 180° turn");
     let whole = coxeter_product(&corner, &[0, 1, 2], true, &mut stroke()).expect("a product");
     assert_eq!(whole.det, Some(-1), "an odd product reverses orientation");
     assert_eq!(whole.grades, vec![3], "orthogonal mirrors: the meet alone, no Gram entry to place");

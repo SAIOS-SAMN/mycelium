@@ -265,7 +265,7 @@ impl Entity {
 /// conjugate words w1 and w2 such that w2 = γ · w1 · γ⁻¹.
 ///
 /// Exact closed-form in Cl(4,0) coordinates — zero Cartesian enumeration or search loops:
-/// 1. Sheet plane half-turn conjugates a rotation to its inverse (w2 = w1⁻¹ in-plane).
+/// 1. Sheet plane 180°-turn conjugates a rotation to its inverse (w2 = w1⁻¹ in-plane).
 /// 2. For bivectors B₁ and B₂ in Cl(4,0), the exact connecting rotor is:
 ///    γ = 1 + B₂ · B₁⁻¹  (where B₁⁻¹ = -B₁ / ||B₁||²).
 ///    Then γ · B₁ = B₁ + B₂ = B₂ · γ, guaranteeing γ · B₁ · γ⁻¹ = B₂ in closed form.
@@ -277,7 +277,7 @@ pub(crate) fn solve_gauge_between(w1: &Word, w2: &Word) -> Option<Word> {
         return None;
     }
 
-    // 1. Sheet plane half-turn (inverts orientation on the sensor plane)
+    // 1. Sheet plane 180°-turn (inverts orientation on the sensor plane)
     let sheet = PlaneForm::sheet_word();
     if w1.rebase(&sheet).rotor().projective_eq(&r2) {
         return Some(sheet);

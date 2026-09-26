@@ -531,10 +531,10 @@ mod tests {
     fn a_torse_at_twice_its_generators_order_is_refused() {
         use crate::transducer::address::Address;
         use crate::transducer::element::Generator;
-        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
-        let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+        let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
+        let turn_90 = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
         let swap = Generator::Hue(vec![(1, 2), (2, 1)]);
-        let turn = Generator::Holonomy(Box::new(quarter));
+        let turn = Generator::Holonomy(Box::new(turn_90));
         for (generator, order) in [(swap, 2u64), (turn, 4)] {
             let torse = |period: u64| {
                 let payload = RewritePayload::Torse { generator: generator.clone(), period };

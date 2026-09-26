@@ -17,11 +17,11 @@ use crate::cognition::*;
 fn cocycle_supersedes_by_causal_order_and_keeps_concurrent() {
 use crate::transducer::alphabet::{LetterId, Word};
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
-// Two words on the sensor plane: one quarter turn and two. Both keep
+// Two words on the sensor plane: one 90° turn and two. Both keep
 // the plane closed, so both lift to versors, and they are not the same
 // projective element.
 let vsr = |n: usize| {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&vec![(q, false); n]);
     (rotor_versor(&w.rotor()).expect("versor"), w.rotor().class_key().expect("ck"))
 };

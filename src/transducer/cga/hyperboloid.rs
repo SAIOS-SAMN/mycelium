@@ -83,7 +83,7 @@ pub fn hyperboloid_pole() -> Mv {
 ///
 /// WHY NOT `Ω = m n` WITH `m = v_b+v_a`, `n = v_b−v_a`. On null rays those
 /// are orthogonal (`m·n = p_b² − p_a² = 0`), so they anticommute and
-/// `Ω² = −m²n² = 4s² ∈ ℚ*`: an INVOLUTION of order two, a half-turn that
+/// `Ω² = −m²n² = 4s² ∈ ℚ*`: an INVOLUTION of order two, a 180°-turn that
 /// swaps its endpoints. Edges built from it would oscillate `v_a ↔ v_b`
 /// rather than propagate along the geodesic, and every scalar check would
 /// still pass.

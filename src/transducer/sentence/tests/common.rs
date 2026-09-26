@@ -185,7 +185,7 @@ pub fn star_form(n_words: usize, extra: Vec<(u16, u16, Word)>) -> Form {
     f
 }
 
-pub fn order2() -> Word {
+pub fn word_turn_180() -> Word {
     alphabet::PlaneForm {
         orientation: true,
         rot: [0; alphabet::CAYLEY_ALPHABET_LEN],
@@ -193,8 +193,8 @@ pub fn order2() -> Word {
     .to_word()
 }
 
-pub fn order4() -> Word {
-    Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)])
+pub fn word_turn_90() -> Word {
+    Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)])
 }
 
 pub fn infinite() -> Word {
@@ -253,7 +253,7 @@ pub fn edge_chord_form(edges: &[Word]) -> Form {
 }
 
 pub fn coboundary_chord_form() -> Form {
-    let r = order4();
+    let r = word_turn_90();
     let mut f = Form::default();
     // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
     // identity's class, each overlapped from the Frame's chart.

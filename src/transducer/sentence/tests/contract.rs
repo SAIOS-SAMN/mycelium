@@ -14,7 +14,7 @@ use crate::transducer::stalk;
 /// does not hold contracts nothing.
 #[test]
 fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
-    let mut f = closed_word_form(order4(), Some(Contact { anchor: 0, ring: 1 }));
+    let mut f = closed_word_form(word_turn_90(), Some(Contact { anchor: 0, ring: 1 }));
     let word = only_word(&f);
     let Some(Vertex::Word { contact: Some(_), .. }) = f.vertices.at(&word) else {
         panic!("the fixture's word is a contact word");
@@ -43,10 +43,10 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
     );
     assert!(f.overlaps_at(&word).is_empty(), "and its faces left with it");
     assert!(f.is_contraction_at(RefusalKind::OrbitStill, &at), "the court finds the contraction at the coordinate");
-    let elsewhere_word = word_vertex(9, order2()).at().expect("a word vertex has a coordinate");
+    let elsewhere_word = word_vertex(9, word_turn_180()).at().expect("a word vertex has a coordinate");
     assert!(!f.vertices.holds(&elsewhere_word), "the elsewhere coordinate is one the form does not hold");
     let elsewhere = At::vertex(elsewhere_word, chart);
-    let mut g = closed_word_form(order4(), Some(Contact { anchor: 0, ring: 1 }));
+    let mut g = closed_word_form(word_turn_90(), Some(Contact { anchor: 0, ring: 1 }));
     assert_eq!(g.contract(RefusalKind::OrbitStill, &elsewhere, &[]), None, "a vertex the form does not hold contracts nothing");
 }
 
@@ -56,7 +56,7 @@ fn a_still_orbit_contracts_its_contact_word_to_a_demand() {
 /// same coordinate contracts nothing a second time.
 #[test]
 fn a_face_that_does_not_rederive_is_dropped_by_its_contraction() {
-    let mut f = chord_form(&[order4()]);
+    let mut f = chord_form(&[word_turn_90()]);
     assert_eq!(f.orbits.len(), 1, "the chord closes one orbit");
     // THE FACE IS NAMED BY ITS ENDS' OWN COORDINATES (54.2, AT1). The
     // chord's two ends are two members of ONE vertex — the identity's
@@ -106,7 +106,7 @@ fn a_demand_declares_silence_and_a_wrong_remainder_contracts_to_nothing() {
     let wrong = |r: i64| (r, 1i64, 2u8, 4u8);
 
     // SILENT ALONE: the demand mounts, over exactly those links.
-    let mut f = chord_form(&[order4()]);
+    let mut f = chord_form(&[word_turn_90()]);
     let at = At::Chart(chart.clone(), vec![silent(0), silent(1)]);
     assert_eq!(
         f.contract(RefusalKind::RemainderUndeclared, &at, &[]),
@@ -121,7 +121,7 @@ fn a_demand_declares_silence_and_a_wrong_remainder_contracts_to_nothing() {
     assert_eq!(stood, vec![vec![silent(0), silent(1)]], "the demand carries the silent links");
 
     // WRONG ALONE: nothing mounts, and the form does not move.
-    let mut g = chord_form(&[order4()]);
+    let mut g = chord_form(&[word_turn_90()]);
     let before = crate::transducer::sentence::form_vertex_key(&g);
     let at = At::Chart(chart.clone(), vec![wrong(0), wrong(1)]);
     assert_eq!(
@@ -141,7 +141,7 @@ fn a_demand_declares_silence_and_a_wrong_remainder_contracts_to_nothing() {
     );
 
     // MIXED: the silent links mount; the wrong ones are not in the demand.
-    let mut h = chord_form(&[order4()]);
+    let mut h = chord_form(&[word_turn_90()]);
     let at = At::Chart(chart, vec![silent(0), wrong(1)]);
     assert_eq!(
         h.contract(RefusalKind::RemainderUndeclared, &at, &[]),

@@ -294,7 +294,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
 /// `yield_surface` a reply carries never saw a cycle. Measured at 7582ada:
 /// 196 cycles filed by the voices, 0 charged on any court.
 ///
-/// This fixture is the same triangle as the test above with a quarter turn
+/// This fixture is the same triangle as the test above with a 90° turn
 /// on the one face that does not touch the Frame — flat on the word, curved
 /// on the edge — and it asserts the reader reports the turn's period and not
 /// the identity's.
@@ -302,7 +302,7 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
 fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     use crate::transducer::alphabet::{Derivation, LetterId, Order, Word};
     use crate::transducer::sentence::{FacePlace, Form, FormFace, Producer, Transport, Vertex};
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("plane"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("plane"), false)]);
     let mut f = Form::default();
     // AT1 (Q1): the two bodies are ONE vertex of the identity's class with a
     // member per chart; the triangle is the Frame's chart and the two.
@@ -347,7 +347,7 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     assert!(!words.is_empty(), "the orbit reports a holonomy per member path");
     assert!(
         words.iter().any(|(w, _)| matches!(w.order(), Order::Finite(4))),
-        "and what it reports is the edge composite's quarter turn, not the identity: {:?}",
+        "and what it reports is the edge composite's 90° turn, not the identity: {:?}",
         words.iter().map(|(w, _)| w.order()).collect::<Vec<_>>()
     );
 
@@ -371,7 +371,7 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     // gate, so this reads what the orbit closes at rather than handing it in.
     // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
-    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // invariant planes of the double rotation, not `lcm − 1`. A 90°
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.

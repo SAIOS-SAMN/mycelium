@@ -69,7 +69,7 @@ fn a_flat_form_reads_inviscid_or_elastic_everywhere() {
 }
 
 /// A SCREW READS CURVED ON THE PLANE ITS LOOP TURNS IN: the screw turns in
-/// `e₁₂` and slips along `e₃`; the quarter turns on `e₁₃` and `e₂₃` loop to a
+/// `e₁₂` and slips along `e₃`; the 90° turns on `e₁₃` and `e₂₃` loop to a
 /// `K` turning in `e₁₂`, the screw's own plane, and the loop reads a class
 /// the flat loop does not — the form's curvature felt through the bend. A
 /// pair of boosts on `e₁₋` and `e₂₋`, planes the screw does not couple to,
@@ -107,7 +107,7 @@ fn a_loop_without_a_class_spends_no_read_on_viscosity() {
 }
 
 /// Two bodies on the Frame's star and a CONTACT chord between them whose
-/// edge is a held `ℤ₂`'s coset: the identity and the half turn in `e₁₂`.
+/// edge is a held `ℤ₂`'s coset: the identity and the 180° turn in `e₁₂`.
 fn held_coset() -> Form {
     let (mut f, a, b) = two_bodies();
     let o = f.place_overlap(a, b, None).expect("a chord");
@@ -145,7 +145,7 @@ fn cosets(form: &Form) -> Vec<(Option<CosetClosure>, usize)> {
 /// and none spends a read (VS1b); a bend applied leaves both candidates
 /// standing — which one stands is T5's kernel, never a bend's.
 #[test]
-fn a_held_half_turn_reads_unchanged_by_any_bend() {
+fn a_held_turn_180_reads_unchanged_by_any_bend() {
     let mut form = held_coset();
     let before = cosets(&form);
     assert!(!before.is_empty() && before.iter().all(|c| *c == (Some(CosetClosure::ClosedModuloHeld), 2)), "{before:?}");
@@ -156,8 +156,8 @@ fn a_held_half_turn_reads_unchanged_by_any_bend() {
     for lane in [BendLane::Spatial, BendLane::Holonomic] {
         assert_eq!(totals(&rs, lane), [0; 4], "{lane:?}: no arm classed off a coset");
     }
-    let quarter = Mv::scalar(q(1)).add(&Mv::blade(cga::E1 | cga::E3, q(1)));
-    form.apply_move(&PivotBy::Placement { face: star_a(), translator: quarter });
+    let turn_90 = Mv::scalar(q(1)).add(&Mv::blade(cga::E1 | cga::E3, q(1)));
+    form.apply_move(&PivotBy::Placement { face: star_a(), translator: turn_90 });
     let after = cosets(&form);
     assert!(after.iter().all(|&(_, n)| n == 2), "both candidates stand after the bend: {after:?}");
 }

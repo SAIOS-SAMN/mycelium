@@ -105,7 +105,7 @@ pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
 /// an axis-aligned square of integer side: one site under an isometry, an
 /// s×s block under a dilation by an integer s. Everything else is no lamina
 /// of the sensor and is refused (law 11): a tilted image (a rotor off the
-/// quarter turns), a fractional image (a shrink, a dilation by a ratio), a
+/// 90° turns), a fractional image (a shrink, a dilation by a ratio), a
 /// square standing across the frames (a versor turning a non-grid axis into
 /// the plane, 16.4), a corner at infinity or off the base (W6). Nothing is
 /// read off a span of centres.

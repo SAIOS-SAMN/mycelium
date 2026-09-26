@@ -13,16 +13,16 @@ fn qn(n: i64, d: i64) -> crate::core::Q {
 /// The (3,4,5) rotor on the sensor plane turns the unit square off the
 /// lattice: its corners land between the base's vertices, so no block of
 /// laminae is its image and the sensor refuses to carry it (law 11), at
-/// the origin and away from it alike. The quarter turn keeps the lattice
+/// the origin and away from it alike. The 90° turn keeps the lattice
 /// and carries one lamina onto one lamina, the one its centre lands in.
 #[test]
-fn the_pythagorean_rotor_carries_a_lamina_onto_no_lamina_and_the_quarter_turn_onto_one() {
+fn the_pythagorean_rotor_carries_a_lamina_onto_no_lamina_and_the_turn_90_onto_one() {
     let tilt = LetterId::pythagorean_5((0, 1)).expect("the (3,4,5) rotor on the sensor plane");
     let v = versor_of_word(&Word::from_letters(&[(tilt, false)])).expect("a base action");
     assert_eq!(carry_lamina(&v, 0, 0, 0), None, "a tilted image is no lamina");
     assert_eq!(carry_lamina(&v, 2, 3, 0), None, "wherever the lamina stands");
-    let quarter = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
-    let w = versor_of_word(&Word::from_letters(&[(quarter, false)])).expect("a base action");
+    let turn_90 = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
+    let w = versor_of_word(&Word::from_letters(&[(turn_90, false)])).expect("a base action");
     let image = carry_lamina(&w, 2, 3, 0).expect("an isometry carries a lamina onto a lamina");
     let [(i, j, frame)] = image.as_slice() else {
         panic!("one lamina, exactly: {image:?}");
@@ -76,7 +76,7 @@ fn a_shrink_carries_one_lamina_to_none_and_a_block_as_a_body_to_one() {
 /// (16.4): refused, wherever the lamina stands.
 #[test]
 fn a_lamina_carried_across_the_frames_is_refused() {
-    let turn = LetterId::quarter((0, 3)).expect("the quarter turn on the row–frame plane");
+    let turn = LetterId::turn_90((0, 3)).expect("the 90° turn on the row–frame plane");
     let v = versor_of_word(&Word::from_letters(&[(turn, false)])).expect("a base action");
     assert_eq!(carry_lamina(&v, 0, 0, 0), None, "a square across the frames is no lamina");
     assert_eq!(carry_lamina(&v, 3, 1, 2), None, "wherever it stands");

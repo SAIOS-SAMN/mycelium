@@ -9,8 +9,8 @@ use crate::transducer::family::{factor_versor, Crystal, NoCrystal};
 use crate::transducer::sentence::{Form, Vertex};
 use crate::transducer::stalk::Invariant;
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -109,23 +109,23 @@ const NO_GAUGE: &[(u8, u8)] = &[];
 /// residue A22 peeled from the identity and the derivation cites nobody.
 #[test]
 fn a_voice_that_holds_nothing_spells_from_the_identity() {
-    let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
+    let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let d = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert!(d.is_spelled(), "no citation, because nothing is held");
-    assert!(d.rotor().projective_eq(&quarter(2).rotor()), "and it reaches the vertex");
+    assert!(d.rotor().projective_eq(&turn_90(2).rotor()), "and it reaches the vertex");
 }
 
 /// 50.2 step 2, the whole claim of this row: the SAME measured versor,
-/// read by a mind that holds the quarter turn, is a derivation THROUGH
+/// read by a mind that holds the 90° turn, is a derivation THROUGH
 /// that generator. A22 from the identity is a function of the versor
 /// alone; this is not, and that is the difference between a language and
 /// a cipher.
 #[test]
 fn a_voice_that_holds_a_generator_derives_through_it() {
-    let held = Holds::of(quarter(1), 1);
-    let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
+    let held = Holds::of(turn_90(1), 1);
+    let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
     let d = factor_versor(&held, &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
@@ -138,7 +138,7 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
     );
     assert!(d.residue.is_identity(), "the generator reached the whole word");
     assert!(
-        d.rotor().projective_eq(&quarter(2).rotor()),
+        d.rotor().projective_eq(&turn_90(2).rotor()),
         "and the derivation composes to the same vertex the cipher reached"
     );
 }
@@ -148,11 +148,11 @@ fn a_voice_that_holds_a_generator_derives_through_it() {
 /// cannot tell them apart and must not; the derivations can.
 #[test]
 fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
-    let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
+    let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
+    let a = factor_versor(&Holds::of(turn_90(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
-    let b = factor_versor(&Holds::of(quarter(3), 3), &mut budget(), &v, NO_GAUGE)
+    let b = factor_versor(&Holds::of(turn_90(3), 3), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert_ne!(a.generators, b.generators, "two presentations, two proofs");
@@ -169,8 +169,8 @@ fn two_presentations_read_one_versor_as_two_derivations_of_one_vertex() {
 /// presentation would let a digest decide whether F re-derives.
 #[test]
 fn one_memoised_percept_gives_each_mind_its_own_derivation() {
-    let v = element::versor_of_word(&quarter(2)).expect("a plane versor");
-    let a = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
+    let v = element::versor_of_word(&turn_90(2)).expect("a plane versor");
+    let a = factor_versor(&Holds::of(turn_90(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     let bare = factor_versor(&NoCrystal, &mut budget(), &v, NO_GAUGE)
@@ -178,7 +178,7 @@ fn one_memoised_percept_gives_each_mind_its_own_derivation() {
         .expect("the peel closes");
     // Re-read by the first mind after the second: no root was consulted
     // and no entry was overwritten, because there is no entry.
-    let again = factor_versor(&Holds::of(quarter(1), 1), &mut budget(), &v, NO_GAUGE)
+    let again = factor_versor(&Holds::of(turn_90(1), 1), &mut budget(), &v, NO_GAUGE)
         .expect("a linear block")
         .expect("the peel closes");
     assert!(bare.is_spelled(), "the mind that holds nothing still spells");
@@ -343,7 +343,7 @@ fn a_versor_carrying_the_prime_finds_the_letter_at_its_chart() {
 #[test]
 fn derivation_factors_offplane_generator_and_verifies_rotor() {
     // A generator on an off-sensor plane (2, 3)
-    let offplane_q = LetterId::quarter((2, 3)).expect("offplane quarter");
+    let offplane_q = LetterId::turn_90((2, 3)).expect("offplane 90° turn");
     let gen_word = Word::from_letters(&[(offplane_q, false)]);
     let held = Holds::of(gen_word.clone(), 99);
 
@@ -421,8 +421,8 @@ fn peels_agree(r: &crate::transducer::alphabet::Rotor) -> bool {
 /// together and reach one vertex, across blocks that do not commute.
 #[test]
 fn the_peel_over_a_basis_and_the_alphabets_own_factorization_agree_on_the_letters() {
-    let q01 = LetterId::quarter((0, 1)).expect("quarter (0,1)");
-    let q02 = LetterId::quarter((0, 2)).expect("quarter (0,2)");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn (0,1)");
+    let q02 = LetterId::turn_90((0, 2)).expect("90° turn (0,2)");
     let p23 = LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)");
     let p13 = LetterId::pythagorean_5((1, 3)).expect("(3,4,5) on (1,3)");
     let rotors = [
@@ -466,11 +466,11 @@ fn a_rotor_no_coordinate_plane_holds_stands_as_a_demand_on_both_peels() {
 fn peel_versor_with_peels_identity_and_turned_planes() {
     use crate::transducer::family::derivation::peel_versor_with;
 
-    let v = element::versor_of_word(&quarter(1)).expect("sensor quarter versor");
+    let v = element::versor_of_word(&turn_90(1)).expect("sensor 90° turn versor");
     let res = peel_versor_with(&v, Vec::new()).expect("peel succeeds");
     let (cited, word) = res.expect("closed peel");
     assert!(cited.is_empty(), "no citations");
-    assert_eq!(word, quarter(1), "exact single plane word produced");
+    assert_eq!(word, turn_90(1), "exact single plane word produced");
 
     let id_v = element::identity_versor();
     let id_res = peel_versor_with(&id_v, Vec::new()).expect("identity peel succeeds");

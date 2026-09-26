@@ -14,12 +14,12 @@ use crate::transducer::stalk::{self, Stalks};
 /// 50.3 — THE EDGE HOLONOMY DOES NOT TELESCOPE. The face transports of an
 /// orbit are the coboundary of the placements and compose to the identity
 /// by construction; the edge transports are stabilizer elements, and two
-/// quarter turns around a triangle compose to the half turn, a class the
+/// 90° turns around a triangle compose to the 180° turn, a class the
 /// orbit holds until it is filed. An orbit through a remainder edge is not
 /// evaluated.
 #[test]
 fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
-    let qw = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+    let qw = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     let mut f = Form::default();
     // AT1 — THREE BODIES OF ONE WORD ARE ONE VERTEX WITH THREE MEMBERS (Q1),
     // so the three stand at three charts: two members on one chart at one
@@ -64,7 +64,7 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
     set_edge(&mut f, &e23, Some(Transport::from_word(qw.clone())));
     set_edge(&mut f, &e13, Some(Transport::from_word(Word::identity())));
     // A face write invalidates the orbits — `apply_move` says so in its own
-    // line — and the cycle stands now that its edges compose to a half turn.
+    // line — and the cycle stands now that its edges compose to a 180° turn.
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit 1-2-3 among the bodies") };
     // ONE MEMBER PATH, so one holonomy — and the slice pattern says so rather
@@ -77,12 +77,12 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
         Some(h.clone())
     };
     let h = one_holonomy(&f, triangle).expect("every edge of the orbit is carried");
-    let half = qw.compose(&qw);
-    assert!(h.word.rotor().projective_eq(&half.rotor()), "quarter, quarter, identity compose to the half turn: {:?}", h.word);
+    let turn_180 = qw.compose(&qw);
+    assert!(h.word.rotor().projective_eq(&turn_180.rotor()), "90°, 90°, identity compose to the 180° turn: {:?}", h.word);
     assert_eq!(
         f.edge_classes(triangle).scoped().map(|(_, c)| c.clone()).collect::<Vec<_>>(),
-        vec![half.rotor().holonomy_key().expect("the half turn has a class")],
-        "read up to conjugacy: the half turn's class, on the one path"
+        vec![turn_180.rotor().holonomy_key().expect("the 180° turn has a class")],
+        "read up to conjugacy: the 180° turn's class, on the one path"
     );
     // A COMPACT HOLONOMY IS CONTENT AND COHERES (54.5, as ruled
     // 2026-09-20). This read `!f.coheres()` and then filed a period to
@@ -93,10 +93,10 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
     // one beside the coordinates that determine it, and a predicate
     // reading it was asking "has a stroke got around to this orbit".
     //
-    // The half turn returns after two circuits about a fixed point. That
+    // The 180° turn returns after two circuits about a fixed point. That
     // is `ℤ/2ℤ` torsion, and torsion is content (law 7): the orbit coheres
     // BECAUSE it is compact, not because anyone wrote it down.
-    assert!(f.coheres(), "a half turn returns: ℤ/2ℤ is a compact resonance, and it coheres");
+    assert!(f.coheres(), "a 180° turn returns: ℤ/2ℤ is a compact resonance, and it coheres");
     // AND THE FILING CHANGES NOTHING HERE. It is the speaker's
     // attestation — what its stroke discharged against its own budget —
     // and it prices the yield (E2) and answers whether the stroke
@@ -106,8 +106,8 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
     // thing `REFUSE_INFLATED_YIELD` exists to catch, so a fixture must file
     // what the rotor says.
     f.torsion.put(
-        &half.rotor().holonomy_key().expect("class"),
-        FiledOrbit { sigma: Vec::new(), periods: half.rotor().toral_period(), chord: Closes::On(triangle.chord.clone()) },
+        &turn_180.rotor().holonomy_key().expect("class"),
+        FiledOrbit { sigma: Vec::new(), periods: turn_180.rotor().toral_period(), chord: Closes::On(triangle.chord.clone()) },
     );
     assert!(f.coheres(), "and filing it says nothing the geometry did not already say");
     // NO RE-READ HERE. `edge_holonomies` reads `self.faces` live, so the
@@ -118,7 +118,7 @@ fn orbit_holonomy_in_the_stabilizer_does_not_telescope() {
     set_edge(&mut f, &e23, Some(Transport::from_word(qw.inverse())));
     let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit") };
     let h = one_holonomy(&f, triangle).expect("carried");
-    assert!(h.word.rotor().projective_eq(&alphabet::Rotor::identity()), "quarter, quarter inverse, identity is the identity");
+    assert!(h.word.rotor().projective_eq(&alphabet::Rotor::identity()), "90°, 90° inverse, identity is the identity");
     set_edge(&mut f, &e13, None);
     let [triangle, ..] = f.orbits.as_slice() else { panic!("the orbit") };
     assert!(
@@ -172,7 +172,7 @@ fn an_orbit_of_infinite_order_files_at_period_zero_and_does_not_cohere() {
     );
     assert!(!f.edge_coheres(lp), "filed or unfiled, a free part is not a compact resonance");
     assert!(!f.coheres());
-    // A SPECTRUM THE ORBIT DOES NOT HAVE. `[4, 4]` is an isoclinic quarter
+    // A SPECTRUM THE ORBIT DOES NOT HAVE. `[4, 4]` is an isoclinic 90°
     // turn and this orbit is a free part; naming it is not a filing.
     f.torsion.put(
         class,
@@ -201,7 +201,7 @@ fn face_of_a_missing_vertex_is_none() {
     // AT1 — A FACE IS AN OVERLAP OF TWO CHARTS, and its place is read off
     // the two ends' vertices: a chart of a vertex the form does not hold
     // places nothing.
-    let missing = super::common::chart_of(&word_vertex_on(5, order4(), stalk::Invariant::counts(&[5])), stalk::Invariant::counts(&[5]));
+    let missing = super::common::chart_of(&word_vertex_on(5, word_turn_90(), stalk::Invariant::counts(&[5])), stalk::Invariant::counts(&[5]));
     assert!(
         f.face_place(&coord::ChartAt::Frame, &missing, None).is_none(),
         "a missing vertex is not the identity word"
@@ -214,11 +214,11 @@ fn face_of_a_missing_vertex_is_none() {
 
 #[test]
 fn glue_retract_remaps_faces_and_placement_refuses() {
-    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
+    let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
     let mut host = Form::default();
     // AT1 — TWO WORD VERTICES ARE TWO CLASSES (Q1): two vertices of one word
     // are one vertex, and retracting it would retract both. The second is
-    // the half turn, so one of two can be retracted and one remain.
+    // the 180° turn, so one of two can be retracted and one remain.
     let v1 = Vertex::word_on(
         alphabet::Derivation::spelled(w.clone()),
         stalk::Invariant::default(),
@@ -228,7 +228,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
         None,
     );
     let v2 = Vertex::word_on(
-        alphabet::Derivation::spelled(order2()),
+        alphabet::Derivation::spelled(word_turn_180()),
         stalk::Invariant::default(),
         Box::new(element::carriage(&q1(), &(q0(), q1()))),
         Vec::new(),
@@ -314,7 +314,7 @@ fn glue_retract_remaps_faces_and_placement_refuses() {
 /// block are two vertices.
 #[test]
 fn two_shifts_are_two_addresses() {
-    let letter = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let letter = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(letter, false)]);
     let mut a = closed_word_form(w.clone(), None);
     let mut b = closed_word_form(w, None);
@@ -346,7 +346,7 @@ fn two_shifts_are_two_addresses() {
 /// asks the one decoder that remains.
 #[test]
 fn ratio_and_sections_are_on_the_form_key() {
-    let letter = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let letter = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(letter, false)]);
     let a = closed_word_form(w.clone(), None);
     let mut b = closed_word_form(w.clone(), None);
@@ -357,7 +357,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     // this system, and the carrier accepted them because it took bytes.
     let class = coord::SectionAt::Class(coord::Transport {
         kind: crate::transducer::peel::ShellKind::Whole,
-        class: w.rotor().holonomy_key().expect("the quarter turn has a class"),
+        class: w.rotor().holonomy_key().expect("the 90° turn has a class"),
     });
     // AT1 — A MEMBER HOLDS ITS FRAMES, and the sections are read off them:
     // the word's member stands at frame 1 as well as the fixture's frame.
@@ -380,7 +380,7 @@ fn ratio_and_sections_are_on_the_form_key() {
     // (hn, hd))` and `hd = 0` is no ratio at all, so the key that carries
     // it does not decode back to a form — refused, never repaired to 1.
     let mut broken = closed_word_form(
-        Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).expect("quarter"), false)]),
+        Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).expect("90° turn"), false)]),
         None,
     );
     broken.ratio = ((1, 1), (1, 0));
@@ -406,7 +406,7 @@ fn ratio_and_sections_are_on_the_form_key() {
 /// than the DEEPEST citation, never a count of them.
 #[test]
 fn depth_is_one_plus_max_glued() {
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     assert_eq!(inner.depth_of(), Some(0));
@@ -687,7 +687,7 @@ fn axis_index_admit_is_linear_on_axis_is_constant() {
     use crate::network::nerve::work;
     let inv = stalk::Invariant::default();
     let w = Transport {
-        word: order2(),
+        word: word_turn_180(),
         carriage: crate::transducer::element::identity_versor(),
         gauge: Vec::new(),
     };
@@ -714,7 +714,7 @@ fn axis_index_admit_is_linear_on_axis_is_constant() {
 
 #[test]
 fn chord_is_never_a_star_face() {
-    let f = chord_form(&[order4(), order2()]);
+    let f = chord_form(&[word_turn_90(), word_turn_180()]);
     assert_eq!(f.orbits.len(), 2, "two chords, two orbits");
     for lp in &f.orbits {
         assert!(f.faces.holds(&lp.chord), "the chord is an overlap the form holds");
@@ -732,9 +732,9 @@ fn a_chart_names_the_word_vertices_on_it() {
     let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     // AT1 (Q1): three words of ONE class would be one vertex, so the three
-    // are three classes — the identity, the quarter and the half turn.
+    // are three classes — the identity, the 90° turn and the 180° turn.
     let mut at = Vec::new();
-    for (k, word, class) in [(1u8, Word::identity(), &near), (2, order4(), &far), (3, order2(), &near)] {
+    for (k, word, class) in [(1u8, Word::identity(), &near), (2, word_turn_90(), &far), (3, word_turn_180(), &near)] {
         at.push(f.put_vertex(word_vertex_on(k, word, class.clone())).expect("a word vertex has a coordinate"));
     }
     f.put_vertex(Vertex::demand(Demand::Creation, near.clone(), vec![(0, 0, 0, 1)])).expect("a demand has a coordinate");
@@ -784,21 +784,21 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
     let (near, far) = (stalk::Invariant::counts(&[3, 5]), stalk::Invariant::counts(&[7]));
     let mut f = Form::default();
     // Two words of one class on two charts, and a third of a DIFFERENT class
-    // (the quarter turn) on a chart one of them is already on.
+    // (the 90° turn) on a chart one of them is already on.
     // AT1 (Q1): the two words of one class are ONE vertex whose members
     // stand at the two charts; `stand_member` joins the second to the first.
     let id_at = f.stand_member(&word_vertex_on(1, Word::identity(), near.clone()), FRAME).expect("near").vertex();
     let id_far = f.stand_member(&word_vertex_on(2, Word::identity(), far.clone()), FRAME).expect("far").vertex();
     assert_eq!(id_at, id_far, "one class, one vertex");
-    let q_at = f.stand_member(&word_vertex_on(3, order4(), near.clone()), FRAME).expect("quarter").vertex();
+    let q_at = f.stand_member(&word_vertex_on(3, word_turn_90(), near.clone()), FRAME).expect("90° turn").vertex();
     f.reindex();
     let key_of = |at: &coord::VertexAt| {
         crate::transducer::family::transport_class(f.vertices.at(at).expect("a held vertex"))
             .expect("a word vertex has a transport class")
             .key()
     };
-    let (identity_class, quarter_class) = (key_of(&id_at), key_of(&q_at));
-    assert_ne!(identity_class, quarter_class, "two words, two transport classes");
+    let (identity_class, turn_90_class) = (key_of(&id_at), key_of(&q_at));
+    assert_ne!(identity_class, turn_90_class, "two words, two transport classes");
     assert_eq!(
         f.by_transport.at(&identity_class),
         Some(&vec![id_at.clone()]),
@@ -810,9 +810,9 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
         "and that vertex stands across the two charts"
     );
     assert_eq!(
-        f.by_transport.at(&quarter_class),
+        f.by_transport.at(&turn_90_class),
         Some(&vec![q_at.clone()]),
-        "the quarter turn is its own class on a chart another vertex is also on"
+        "the 90° turn is its own class on a chart another vertex is also on"
     );
     // The chart fiber cannot answer the same question: it splits the one
     // class over two charts and merges two classes on one chart.
@@ -869,7 +869,7 @@ fn a_transport_class_names_the_word_vertices_of_that_class() {
 #[test]
 fn a_form_is_recovered_from_its_key() {
     use crate::transducer::sentence::{form_vertex_key, from_address};
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();

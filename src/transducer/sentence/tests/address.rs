@@ -62,7 +62,7 @@ fn the_tape_carries_a_filed_zero_as_infinite_order() {
 /// (50.3), and orbits.
 #[test]
 fn form_tape_v6_round_trips() {
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     assert!(inner.is_closed(), "a tree of two vertices coheres");
@@ -429,7 +429,7 @@ fn a_sentence_round_trips_its_nerve() {
 #[test]
 fn a_citation_is_the_cited_address_and_it_re_derives() {
     use crate::transducer::sentence::{as_element_form, from_element_form, Vertex};
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
@@ -446,7 +446,7 @@ fn a_citation_is_the_cited_address_and_it_re_derives() {
     // places inside the host, which is three boundaries and three
     // citations.
     let mut host = Form::default();
-    let places = [Word::identity(), order4(), order2()];
+    let places = [Word::identity(), word_turn_90(), word_turn_180()];
     for p in &places {
         host.glue(&inner, inner_addr.clone(), p.clone(), [0, 0, 0, 1])
             .expect("glue the same form at another place");

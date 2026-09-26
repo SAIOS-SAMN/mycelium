@@ -41,7 +41,7 @@
 //! different jobs and both are required for those numbers to mean
 //! anything across hyphae.
 
-use super::common::{quarter, sheet, v, vol};
+use super::common::{sheet, turn_90, v, vol};
 use crate::transducer::alphabet::Rotor;
 use crate::transducer::cech::{CoboundaryOutcome, Complex, Fill, Section};
 use crate::transducer::element::identity_versor as ident;
@@ -57,7 +57,7 @@ fn triangle_in(order: &[usize]) -> Complex {
     // and there is a holonomy to be order-dependent about. A flat triangle
     // would pass this test while proving nothing.
     let edges: [(&crate::transducer::address::Address, &crate::transducer::address::Address, Rotor); 3] =
-        [(&a, &b, quarter()), (&b, &c, sheet()), (&a, &c, Rotor::identity())];
+        [(&a, &b, turn_90()), (&b, &c, sheet()), (&a, &c, Rotor::identity())];
     for &i in order {
         let (x, y, g) = &edges[i];
         cx.set_edge(*x, *y, g.clone(), ident(), vol());

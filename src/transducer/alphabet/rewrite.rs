@@ -115,7 +115,7 @@ pub fn rule_key(r: &Rule) -> Vec<u8> {
 ///
 /// ONLY THE FINITE-ORDER RELATORS PARTICIPATE. `PrimeInfinite` records that
 /// a prime letter has infinite order — there is no relation to orient, and
-/// including it would assert one. The quarter turns (order four), the
+/// including it would assert one. The 90° turns (order four), the
 /// complementary-plane commutators and the sheet are the finite content of
 /// the presentation and the whole of what can be completed.
 pub fn rules_from_relators() -> Vec<Rule> {
@@ -402,7 +402,7 @@ pub fn rule_plane(r: &Rule) -> Option<(u8, u8)> {
 }
 
 /// THE ALPHABET'S OWN PRESENTATION, COMPLETED ONCE (Expansion 1). The
-/// finite relators the alphabet states — the quarter turns' order, the
+/// finite relators the alphabet states — the 90° turns' order, the
 /// commutators of complementary planes, the sheet — oriented into rules
 /// and completed by Knuth–Bendix, so every word the language writes reduces
 /// to one geodesic tape under one system. Held once per process: the

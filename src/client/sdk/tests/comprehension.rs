@@ -96,7 +96,7 @@ use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let missing_addr = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 0xab]);
 let inner = {
     let mut f = Form::default();
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -142,7 +142,7 @@ assert!(
 fn withheld_waiting_on_resolves_at_the_overlap_face() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -255,7 +255,7 @@ let inner_a = closed_turn(None);
 let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
 // A FORM THAT HOLDS SOMETHING ELSE UP TO GAUGE, which is what a
 // different chart now means: two bodies and a CHORD between them
-// carrying a half turn, filed as torsion at its own period, so the form
+// carrying a 180° turn, filed as torsion at its own period, so the form
 // closes an orbit and its rank reads `torsion 1` where the turn's star
 // tree reads zero on every coordinate.
 //
@@ -265,8 +265,8 @@ let ea = as_element_form(&inner_a, [1, 0, 0, 0]).expect("A");
 // what a chart is for. The old chart wrote a row per vertex and told
 // them apart by the spelling.
 let other = {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
-    let half = Word::from_letters(&[(q, false), (q, false)]);
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
+    let turn_180 = Word::from_letters(&[(q, false), (q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
     let mut f = Form::default();
@@ -286,14 +286,14 @@ let other = {
         f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
         charts.push(c);
     }
-    // The chord carries the half turn on its EDGE, which is measured content
+    // The chord carries the 180° turn on its EDGE, which is measured content
     // (50.3): a word on an overlap's factors is PRODUCED content, written
     // only by the pivot's Word move under a certificate naming the overlap
     // (AT1, ruled), and a fixture has none to hand the replay.
     f.place_overlap(
         charts[0].clone(),
         charts[1].clone(),
-        Some(crate::transducer::sentence::Transport::from_word(half.clone())),
+        Some(crate::transducer::sentence::Transport::from_word(turn_180.clone())),
     )
     .expect("a chord between two bodies");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -302,10 +302,10 @@ let other = {
     let [lp, ..] = f.orbits.as_slice() else { panic!("the chord closes an orbit") };
     let chord = crate::transducer::sentence::Closes::On(lp.chord.clone());
     f.torsion.put(
-        &half.rotor().holonomy_key().expect("the half turn has a class"),
+        &turn_180.rotor().holonomy_key().expect("the 180° turn has a class"),
         crate::transducer::sentence::FiledOrbit {
             sigma: Vec::new(),
-            periods: half.rotor().toral_period(),
+            periods: turn_180.rotor().toral_period(),
             chord,
         },
     );
@@ -338,7 +338,7 @@ match epi.comprehend(&e) {
 fn citation_free_closed_form_is_admitted() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -408,7 +408,7 @@ fn learn_at_stamps_voice_k_and_tuniversal() {
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 let missing_addr = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 0xab]);
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -592,7 +592,7 @@ assert!(epi.learn(&swap.to_bytes().expect("the record writes")).is_some());
 assert!(epi.learn(&cycle.to_bytes().expect("the record writes")).is_some());
 assert!(epi.learn(&place.to_bytes().expect("the record writes")).is_some());
 assert_eq!(epi.genome_len(), 3, "ρ/σ/shift are three vertices");
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
 let long = crate::transducer::alphabet::Word::from_letters(&[
     (q, false),
     (q, false),

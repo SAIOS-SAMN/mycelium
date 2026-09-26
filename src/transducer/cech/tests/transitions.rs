@@ -19,7 +19,7 @@ use crate::transducer::element::{identity_versor as ident, same_versor};
 ///
 /// A form whose word vertices agree on one rotor up to projective
 /// equality HAS that rotor. The discriminating case: the two forms here
-/// carry quarters on `(0, 1)` and on `(2, 3)`, which have the SAME
+/// carry 90° turns on `(0, 1)` and on `(2, 3)`, which have the SAME
 /// conformal action on the base — the second is the identity there — so
 /// neither sentence has a versor at all and `Cl(3, 1)` cannot separate
 /// them. The rotors can.
@@ -52,8 +52,8 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
         f.reindex();
         as_element_form(&f, vol()).expect("a form with a vertex and a magnitude")
     };
-    let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
-    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("the far plane"), false)]);
+    let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
+    let q23 = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("the far plane"), false)]);
     let (a, b) = (spoken(&q01), spoken(&q23));
 
     assert!(a.is_sentence() && b.is_sentence(), "both are forms, not words");
@@ -85,9 +85,9 @@ fn a_transition_between_two_sentences_answers_the_rotor_its_vertices_agree_on() 
     // than picking a representative (rule 15).
     //
     // AT1 (Q1): a Word vertex is keyed by its TRANSPORT CLASS, and the
-    // quarters on `(0, 1)` and `(2, 3)` are one class — one vertex, the
+    // 90° turns on `(0, 1)` and `(2, 3)` are one class — one vertex, the
     // second member merging into the first. Two disagreeing vertices are two
-    // CLASSES: the quarter against the (3, 4, 5) turn, of infinite order.
+    // CLASSES: the 90° turn against the (3, 4, 5) turn, of infinite order.
     let p01 = Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).expect("the sensor plane"), false)]);
     let mut mixed = Form::default();
     for w in [&q01, &p01] {
@@ -181,7 +181,7 @@ fn a_filled_ring_reopened_by_a_moved_gauge_is_named_by_the_link() {
     for x in [&a, &b, &cc] {
         c.set_section(x, Section::at((*x).clone(), Rotor::identity()), vol());
     }
-    let q = quarter();
+    let q = turn_90();
     c.set_edge(&a, &b, q.clone(), ident(), vol());
     c.set_edge(&b, &cc, q.clone(), ident(), vol());
     c.set_edge(&a, &cc, q.geo(&q), ident(), vol());
@@ -208,7 +208,7 @@ fn fill_is_gauge_or_class() {
     for x in [&a, &b, &cc] {
         c.set_section(x, Section::at((*x).clone(), Rotor::identity()), vol());
     }
-    let q = quarter();
+    let q = turn_90();
     c.set_edge(&a, &b, q.clone(), ident(), vol());
     c.set_edge(&b, &cc, q.clone(), ident(), vol());
     c.set_edge(&a, &cc, q.geo(&q), ident(), vol());
@@ -226,8 +226,8 @@ fn fill_is_gauge_or_class() {
         }
         other => panic!("a coboundary fills by a gauge, not {other:?}"),
     }
-    // The holonomy left over is q·q — a HALF turn, since the two legs are
-    // quarters and the chord is now the identity — so it is congruent at
+    // The holonomy left over is q·q — a 180° turn, since the two legs are
+    // 90° turns and the chord is now the identity — so it is congruent at
     // TWO, and the period is asserted: a congruence at any period is not
     // this claim.
     c.set_edge(&a, &cc, Rotor::identity(), ident(), vol());
@@ -235,10 +235,10 @@ fn fill_is_gauge_or_class() {
     let key = c.link(&a, 2)[0].clone();
     match c.fill(&key) {
         CoboundaryOutcome::Attached(Fill::Congruent(_, g, ell)) => {
-            assert_eq!(ell, 2, "two quarter turns against an identity chord close at two");
+            assert_eq!(ell, 2, "two 90° turns against an identity chord close at two");
             assert_eq!(g.order(), Some(Order::Finite(2)), "and the filed rotor says so");
             assert!(
-                g.projective_eq(&quarter().geo(&quarter())),
+                g.projective_eq(&turn_90().geo(&turn_90())),
                 "the filed rotor is the holonomy itself: {g:?}"
             );
         }
@@ -313,15 +313,15 @@ fn a_placement_that_does_not_close_is_a_class_carrying_it() {
 #[test]
 fn congruent_is_read_by_class_key() {
     let mut c = Complex::new();
-    let q = quarter();
-    let ck = q.class_key().expect("quarter class");
+    let q = turn_90();
+    let ck = q.class_key().expect("90° turn class");
     c.file_congruent(v(1), v(2), q.clone(), 4);
     // The index is keyed by the orbit's WHOLE class key and asked here by
     // the rotor's conjugacy key, which is that key's depth-one stratum:
     // the answer is the fiber under it, holding the one orbit filed.
     let got = c.congruent(ck.as_bytes());
     let [(rotor, ell)] = got.as_slice() else {
-        panic!("one Congruent orbit stands under the quarter's conjugacy class, got {got:?}")
+        panic!("one Congruent orbit stands under the 90° turn's conjugacy class, got {got:?}")
     };
     assert_eq!(*ell, 4);
     assert!(rotor.projective_eq(&q), "the index holds the rotor that was filed");

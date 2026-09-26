@@ -587,7 +587,7 @@ impl Element {
     ///
     /// S IS OCCUPIED BY THE MOTION, WHEREVER THE MOTION IS WRITTEN. This
     /// read `versor()` alone, which is `Cl(3,1)` and holds ONE rotation
-    /// plane: a quarter turn on `e₂∧e₃` has the IDENTITY versor, so the
+    /// plane: a 90° turn on `e₂∧e₃` has the IDENTITY versor, so the
     /// element that turns it reported no occupied stratum at all. That is
     /// not a cosmetic reading — `is_identity` is `axes().is_empty()`, and
     /// `cech::glues`, `ruling`, `learn`, `stalk::chart` and `comprehend`

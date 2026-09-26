@@ -244,7 +244,7 @@ pub const LOSS_AXES: [(&str, &str); 26] = [
     ("tau_unfooted", "chord ends carrying no footprint"),
     ("tau_refused", "footprint displacements the Cayley chart could not carry"),
     ("unframed", "meets no proper turn relates"),
-    ("half_open", "frames whose half turn nothing closes (a projective class)"),
+    ("half_open", "frames whose 180° turn nothing closes (a projective class)"),
     ("unspellable", "orbits whose holonomy the seventeen do not spell"),
     ("orbit_unread", "orbits evaluated and not measured: a rotation no versor"),
     ("refused", "pieces carried whose rotor the seventeen do not spell"),

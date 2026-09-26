@@ -110,14 +110,14 @@ fn torsion_filed_only_when_witnessed_at_period() {
 
 #[test]
 fn rank_offplane_is_its_own_lane() {
-    // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` quarter,
+    // A ROTOR WITH NO INVARIANT PAIR PLANE. It was a `(0, 2)` 90° turn,
     // which was off-plane only because the speller could not see its
-    // plane; it turns plane one and reads as torsion now. Two quarters on
+    // plane; it turns plane one and reads as torsion now. Two 90° turns on
     // planes sharing an axis leave no two-subset invariant, and that is
     // what the off-plane lane counts.
     let w = Word::from_letters(&[
-        (alphabet::LetterId::quarter((0, 1)).unwrap(), false),
-        (alphabet::LetterId::quarter((0, 2)).unwrap(), false),
+        (alphabet::LetterId::turn_90((0, 1)).unwrap(), false),
+        (alphabet::LetterId::turn_90((0, 2)).unwrap(), false),
     ]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane");
     assert!(w.form().is_none(), "and turns no pair plane at all");
@@ -158,7 +158,7 @@ fn rank_offplane_is_its_own_lane() {
 fn filed_torsion_chord_replays_or_refuses() {
     // AT1: the measured torsion rides the chord's EDGE; an uncertified
     // pivot factor is refused at replay (REFUSE_PIVOT_INEXACT).
-    let mut f0 = edge_chord_form(&[order4()]);
+    let mut f0 = edge_chord_form(&[word_turn_90()]);
     let _ = f0.pivot_orbit(
         [0xca; 32],
         &crate::network::nerve::Keyed::new(),
@@ -209,12 +209,12 @@ fn filed_torsion_chord_replays_or_refuses() {
     let mut f = crate::transducer::sentence::from_element_form(&e).expect("v2 tape");
     let mag = e.magnitude();
     // AT1: the torsion chord is the overlap whose EDGE carries the measured
-    // quarter turn, so the forger moves the edge's word.
+    // 90° turn, so the forger moves the edge's word.
     let Some(ci) = f.faces.entries().find(|(_, face)| face.has_edge()).map(|(o, _)| o) else {
         panic!("the filed form has a torsion chord");
     };
     if let Some(e) = f.faces.at_mut(&ci).and_then(|face| face.place.edge.as_mut()) {
-        e.word = order2();
+        e.word = word_turn_180();
     }
     let bad = as_element_form(&f, mag).expect("tampered chord");
     // A TAMPERED CHORD NAMES A DIFFERENT WORD (54.5, as ruled 2026-09-20).
@@ -280,8 +280,8 @@ fn horizon_seeded_infinite_is_not_demanded() {
 
 #[test]
 fn offplane_word_refuses_to_act_on_a_translation() {
-    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
-    assert!(w.plane_block().is_none(), "a (0,2) quarter leaves the sensor plane");
+    let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
+    assert!(w.plane_block().is_none(), "a (0,2) 90° turn leaves the sensor plane");
     let t = (q1(), q0());
     assert!(
         apply_plane_block(&w, &t).is_none(),
@@ -302,12 +302,12 @@ fn offplane_word_refuses_to_act_on_a_translation() {
     );
 }
 
-/// A1: a (0,2) quarter to the fourth power is projectively identity and
+/// A1: a (0,2) 90° turn to the fourth power is projectively identity and
 /// closed to coheres, pivot_orbit, is_cauterized, and the court. The
 /// sensor-plane abelianisation does not see it.
 #[test]
-fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
-    let q = alphabet::LetterId::quarter((0, 2)).expect("quarter");
+fn offplane_turn_90_to_the_fourth_is_closed_to_all_four_readers() {
+    let q = alphabet::LetterId::turn_90((0, 2)).expect("90° turn");
     let w = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(w.is_identity(), "Φ⁴ is projectively 1");
     let mut f = Form::default();
@@ -366,14 +366,14 @@ fn offplane_quarter_to_the_fourth_is_closed_to_all_four_readers() {
 
 #[test]
 fn rotor_class_is_read_before_the_plane_form() {
-    let w = order4();
-    let rk = w.rotor().class_key().expect("quarter is a versor");
+    let w = word_turn_90();
+    let rk = w.rotor().class_key().expect("a 90° turn is a versor");
     assert_eq!(
         w.class_key(),
         Some(rk.clone()),
         "Word::class_key is the rotor conjugacy, not the plane form"
     );
-    let cv = ClassVector::of_word(&w).expect("quarter");
+    let cv = ClassVector::of_word(&w).expect("90° turn");
     let kb = cv.class_key();
     assert!(
         kb.as_bytes().starts_with(rk.as_bytes()),
@@ -381,7 +381,7 @@ fn rotor_class_is_read_before_the_plane_form() {
     );
     assert!(cv.occupies(Axis::Unit(0)));
     assert!(!cv.occupies(Axis::OffPlane), "a plane word is not an off-plane fallback");
-    let other = order2();
+    let other = word_turn_180();
     assert!(
         !w.same_class(&other),
         "distinct rotor classes are distinct even when both have a plane form"
@@ -391,7 +391,7 @@ fn rotor_class_is_read_before_the_plane_form() {
 /// A WORD OFF THE SENSOR PLANE OCCUPIES ITS OWN PLANE, and `OffPlane` is
 /// what is left when no pair plane is turned at all.
 ///
-/// `Word::form` spelled the sensor block alone, so a quarter on `(0, 2)`
+/// `Word::form` spelled the sensor block alone, so a 90° turn on `(0, 2)`
 /// had no form and fell to `OffPlane` — the one coordinate that survives a
 /// missing plane block. It turns `(0, 2)`, that is a coordinate the
 /// carrier has always had a seat for, and it is occupied now.
@@ -402,14 +402,14 @@ fn rotor_class_is_read_before_the_plane_form() {
 /// sensor's.
 #[test]
 fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
-    let w = Word::from_letters(&[(alphabet::LetterId::quarter((0, 2)).unwrap(), false)]);
+    let w = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 2)).unwrap(), false)]);
     assert!(w.plane_block().is_none(), "it moves the sensor plane, as it always did");
     let f = w.form().expect("and it turns (0, 2), which the carrier has a seat for");
-    assert!(!f.is_identity(), "a quarter turn is not the identity of the plane group");
-    let cv = ClassVector::of_word(&w).expect("a quarter is a versor");
+    assert!(!f.is_identity(), "a 90° turn is not the identity of the plane group");
+    let cv = ClassVector::of_word(&w).expect("a 90° turn is a versor");
     assert!(
         cv.occupies(Axis::Unit(1)),
-        "the (0, 2) quarter occupies the unit axis of plane one, got {:?}",
+        "the (0, 2) 90° turn occupies the unit axis of plane one, got {:?}",
         cv.coordinates()
     );
     assert!(
@@ -424,10 +424,10 @@ fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
     assert!(w.same_form(&w));
 
     // A ROTOR THAT TURNS NO PAIR PLANE is what `OffPlane` now reads. Two
-    // quarters on planes sharing an axis leave no two-subset invariant.
+    // 90° turns on planes sharing an axis leave no two-subset invariant.
     let mixed = Word::from_letters(&[
-        (alphabet::LetterId::quarter((0, 1)).unwrap(), false),
-        (alphabet::LetterId::quarter((0, 2)).unwrap(), false),
+        (alphabet::LetterId::turn_90((0, 1)).unwrap(), false),
+        (alphabet::LetterId::turn_90((0, 2)).unwrap(), false),
     ]);
     assert!(mixed.form().is_none(), "no pair plane is turned by it");
     let cv = ClassVector::of_word(&mixed).expect("still a versor, so still a class");
@@ -439,19 +439,19 @@ fn a_word_off_the_sensor_plane_occupies_its_own_plane() {
 }
 
 #[test]
-fn orientation_is_the_third_axis_half_turn() {
+fn orientation_is_the_third_axis_turn_180() {
     let s = alphabet::PlaneForm::sheet_word();
-    assert_eq!(s.len(), 2, "the 1.2 relator is two quarter turns, S = q²");
-    let f = s.form().expect("the half-turn keeps the sensor plane");
+    assert_eq!(s.len(), 2, "the 1.2 relator is two 90° turns, S = q²");
+    let f = s.form().expect("the 180°-turn keeps the sensor plane");
     assert!(f.orientation, "det/ρ² = −1 is the orientation character");
-    let cv = ClassVector::of_word(&s).expect("half-turn");
+    let cv = ClassVector::of_word(&s).expect("180°-turn");
     assert_eq!(
         cv.coordinates(),
         vec![Axis::Orientation(0)],
         "orientation occupies Orientation(0), never a stored flag, got {:?}",
         cv.coordinates()
     );
-    let q = order4();
+    let q = word_turn_90();
     let conj = s.compose(&q).compose(&s).compose(&q.inverse());
     assert!(
         !conj.form().expect("plane").is_identity(),

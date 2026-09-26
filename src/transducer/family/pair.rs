@@ -119,7 +119,7 @@ pub(crate) fn meet_edge(
             Some(inv) => {
                 // A frame either side of which is only fixed mod `π` makes
                 // the composite open too, and it is counted apart: an
-                // even moment cannot close a half turn (56.5), so this is
+                // even moment cannot close a 180° turn (56.5), so this is
                 // a projective class and not a determined rotor.
                 let open = matches!(
                     (&ta, &tb),

@@ -16,15 +16,15 @@ use super::common::*;
 /// producer of `Fill::Class` and `Fill::Unspellable`.
 ///
 /// The rotor composes in `Cl(4,0)`, six planes. This is the case that says
-/// so: a quarter on the sensor and a quarter on `(2, 3)` have the SAME
+/// so: a 90° turn on the sensor and a 90° turn on `(2, 3)` have the SAME
 /// sensor action — the second is the identity there — so the `Cl(3,1)`
 /// product cannot tell them apart, and the composed spelling can.
 #[test]
 fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
     use crate::transducer::alphabet::{LetterId, Word};
-    let q01 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
-    let q13 = Word::from_letters(&[(LetterId::quarter((1, 3)).expect("the (1,3) base plane"), false)]);
-    let q23 = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("the far plane"), false)]);
+    let q01 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
+    let q13 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("the (1,3) base plane"), false)]);
+    let q23 = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("the far plane"), false)]);
 
     // A word turning the base off itself has no base action and cannot be a
     // connection on the base manifold (51.2, A4).
@@ -39,13 +39,13 @@ fn a_composite_carries_its_rotor_and_a_transition_answers_one() {
     };
     let (a, b) = (conn(&q01), conn(&q13));
 
-    // The (1,3) quarter's action on the base rotates e₂ ∧ e₃: non-identity in Cl(4,1).
+    // The (1,3) 90° turn's action on the base rotates e₂ ∧ e₃: non-identity in Cl(4,1).
     assert!(
         !same_versor(&b.versor().expect("a versor"), &identity_versor()),
         "a (1,3) rotation is active in the conformal algebra of the base"
     );
     assert_eq!(b.axes(), vec![FIBER_SPATIAL], "the turn occupies S");
-    assert!(!b.is_identity(), "a quarter turn is not the identity word");
+    assert!(!b.is_identity(), "a 90° turn is not the identity word");
 
     let c = a.compose(&b).expect("the composite forms");
     let r = c.carried_rotor().expect("the composite carries its rotor");
@@ -155,7 +155,7 @@ fn same_vertex_is_address_rho_sigma_and_shift() {
 #[test]
 fn m2_two_spellings_one_address() {
     let w = from_connection(&crate::transducer::alphabet::Word::identity(), &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [5, 2, 0, 0]).expect("spells");
-    let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+    let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
     let mut alt = w.clone();
     if let Some(letters) = alt.letters() {

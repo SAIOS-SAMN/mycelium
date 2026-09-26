@@ -259,7 +259,7 @@ impl Form {
     ///
     /// THE PERIOD IS DERIVED HERE AND NO LONGER HANDED IN (54.3, as ruled
     /// 2026-09-20). It was a parameter, and `drive.rs` passed `hw.order()`
-    /// — THE ROTOR'S ORDER ALONE. A quarter turn carried along a
+    /// — THE ROTOR'S ORDER ALONE. A 90° turn carried along a
     /// translation has the same rotor order as one about a fixed point and
     /// is not the same class: the screw does not return after four turns,
     /// it SLIPS, and it generates a non-compact ℤ rather than a compact

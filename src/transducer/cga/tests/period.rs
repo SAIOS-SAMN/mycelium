@@ -11,10 +11,10 @@ fn a_period_is_crystallographic_or_it_is_infinite() {
     let boost = transvection(&q(2, 1), &q(1, 1), transvection_planes(3)[0]).expect("a boost");
     assert_eq!(compact_period(&boost), Spectrum::Open, "a dislocation slips and never returns");
 
-    // A quarter turn closes at a crystallographic order, which is ℚ's
+    // A 180° turn closes at a crystallographic order, which is ℚ's
     // doing and not a convention.
-    let quarter = rotator(&q(0, 1), &q(1, 1));
-    let Spectrum::Closes(p) = compact_period(&quarter) else { panic!("a quarter turn closes") };
+    let turn_180 = rotator(&q(0, 1), &q(1, 1));
+    let Spectrum::Closes(p) = compact_period(&turn_180) else { panic!("a 180° turn closes") };
     let ell = p.plane_1.expect("the turning plane has an order").get();
     assert_eq!(ell, 2, "s = 0 is the half-angle π/2, so the turn is by π");
     assert!(matches!(ell, 1 | 2 | 3 | 4 | 6), "Niven allows only these, got {ell}");

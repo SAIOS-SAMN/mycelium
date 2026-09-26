@@ -74,10 +74,10 @@ fn deepened_word_replays_on_a_peer() {
     assert!(blind_replay(&served).is_none(), "the served copy replays on the peer");
 }
 
-/// A closed depth-0 form: Frame, one quarter-turn word, the star face.
+/// A closed depth-0 form: Frame, one 90°-turn word, the star face.
 fn closed_turn_form() -> Form {
     use crate::transducer::alphabet::{LetterId, Word};
-    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -377,7 +377,7 @@ fn rank_lost_refused() {
     use crate::transducer::sentence::as_element_form;
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let sheet = Word::from_letters(&[(q, false)]);
     let mut f = Form::default();
     let mut charts = Vec::new();
@@ -481,7 +481,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
     let w0 = only_word(&rho0);
     rekey_vertex(&mut rho0, &w0, |v| {
         if let Vertex::Word { derivation, .. } = v {
-            let q02 = crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane");
+            let q02 = crate::transducer::alphabet::LetterId::turn_90((0, 2)).expect("off-plane");
             *derivation =
                 crate::transducer::alphabet::Derivation::spelled(Word::from_letters(&[(q02, false)]));
         }
@@ -616,7 +616,7 @@ fn vertex_tape_and_moves_replay_or_refuse() {
 /// 50.3, 52.3 — AN EDGE TRANSPORT OF ANY ORDER IS A FACE. A (3,4,5) rotor
 /// on an edge has no period and is not refused for that: with no family to
 /// re-derive its transport against, the tape replays exactly as it does
-/// with a quarter turn there. What an edge carries is judged on the family
+/// with a 90° turn there. What an edge carries is judged on the family
 /// (`edges_rederive_frames`), never by its order.
 #[test]
 fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
@@ -636,10 +636,10 @@ fn a_face_whose_edge_word_has_infinite_order_is_not_refused_for_its_order() {
     set_edge(&mut edged, &fi, tilt);
     let edged_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
     assert_eq!(replay_form(&edged_e, &|_| None), None, "an edge of infinite order is not refused for its order");
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     set_edge(&mut edged, &fi, Word::from_letters(&[(q, false)]));
     let fine_e = as_element_form(&edged, [1, 0, 0, 0]).expect("edged tape");
-    assert_eq!(replay_form(&fine_e, &|_| None), None, "a quarter turn on an edge is a stabilizer element and replays");
+    assert_eq!(replay_form(&fine_e, &|_| None), None, "a 90° turn on an edge is a stabilizer element and replays");
 }
 
 /// 52.3 — AN ORBIT OF INFINITE ORDER REPLAYS ON ITS FILING. The transports
@@ -839,7 +839,7 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
     let inner = closed_turn_form();
     let inner_e = as_element_form(&inner, [1, 0, 0, 0]).expect("inner tape");
     let inner_addr = inner_e.address();
-    // The citation says the quarter turn once; the tape says it three
+    // The citation says the 90° turn once; the tape says it three
     // times. One of them is wrong and the court says which vertex.
     let honest = citing_form(&inner_addr, &inner, 1, crate::transducer::alphabet::Word::identity());
     let lying = citing_form(&inner_addr, &inner, 3, crate::transducer::alphabet::Word::identity());
@@ -886,24 +886,24 @@ fn a_derivation_that_does_not_compose_to_its_word_is_refused_at_the_vertex() {
 /// the scene is.
 ///
 /// Here the transports are pure coboundaries and compose to the identity,
-/// while the faces carry a half-turn edge: the orbit is flat on the reading
+/// while the faces carry a 180°-turn edge: the orbit is flat on the reading
 /// the court had and curved on the one the voice made.
 #[test]
 fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::sentence::{FiledOrbit, Transport};
-    let q = LetterId::quarter((0, 1)).expect("the sensor plane");
-    let half = Word::from_letters(&[(q, false), (q, false)]);
+    let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
+    let turn_180 = Word::from_letters(&[(q, false), (q, false)]);
     let edge_of = |w: &Word| Transport {
         word: w.clone(),
         carriage: element::identity_versor(),
         gauge: Vec::new(),
     };
     // The two star faces and the body-to-body face, every transport the
-    // coboundary of its vertices; the body face carries the half turn as
+    // coboundary of its vertices; the body face carries the 180° turn as
     // the transition between the two pieces' own frames.
     // THE EDGE IS SET ON EACH OVERLAP — one member pair at one frame (AT1).
-    let f = triangle_with_edges(&edge_of(&Word::identity()), &edge_of(&half));
+    let f = triangle_with_edges(&edge_of(&Word::identity()), &edge_of(&turn_180));
     let [lp, ..] = f.orbits.as_slice() else { panic!("the triangle closes") };
     assert!(
         crate::transducer::sentence::orbit_word_on(&f.faces, &f.vertices, lp)
@@ -915,17 +915,17 @@ fn a_cover_filed_class_is_what_the_court_reads_on_a_flat_transport() {
     let [(_, e)] = es.scoped().collect::<Vec<_>>()[..] else {
         panic!("one member path, since each overlap relates one member pair")
     };
-    assert!(!e.word.is_identity(), "and its edge holonomy is the half turn");
+    assert!(!e.word.is_identity(), "and its edge holonomy is the 180° turn");
 
     // A COMPACT EDGE HOLONOMY REPLAYS ON ITS OWN ALGEBRA (54.5, as ruled
-    // 2026-09-20). The half turn returns after two circuits about a fixed
+    // 2026-09-20). The 180° turn returns after two circuits about a fixed
     // point: `ℤ/2ℤ`, which is torsion, and torsion is content (law 7).
     //
     // This asserted the orbit did NOT replay until a class was filed, which
     // made an annotation's presence a geometric property. What the
     // transport reading still cannot say is the interesting half, and it
     // stands: on the transport composite this orbit is FLAT, and only the
-    // edge holonomy sees the half turn (50.3, `edge_class_vector`).
+    // edge holonomy sees the 180° turn (50.3, `edge_class_vector`).
     assert!(
         form_orbits_replay(&f),
         "a compact edge holonomy replays unfiled: ℤ/2ℤ is a resonance, not a debt"

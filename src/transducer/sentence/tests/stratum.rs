@@ -8,8 +8,8 @@ use crate::transducer::alphabet::{LetterId, Rotor, Word};
 use crate::transducer::element;
 use crate::transducer::sentence::{ClassVector, CycleType};
 
-fn quarter() -> Word {
-    Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)])
+fn turn_90() -> Word {
+    Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)])
 }
 
 /// THE CLAIM THE VORTEX COLLAPSE RESTS ON, asserted rather than trusted.
@@ -26,10 +26,10 @@ fn quarter() -> Word {
 /// silently emptying a fiber on a fleet.
 #[test]
 fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
-    let w = quarter();
-    let cv = ClassVector::of_word(&w).expect("a quarter turn has a class vector");
+    let w = turn_90();
+    let cv = ClassVector::of_word(&w).expect("a 90° turn has a class vector");
     let vector_key = cv.class_key();
-    let rotor_key = w.rotor().class_key().expect("a quarter turn has a class");
+    let rotor_key = w.rotor().class_key().expect("a 90° turn has a class");
 
     let schema = ClassVector::class_schema();
     let end = schema
@@ -59,7 +59,7 @@ fn the_rotor_class_is_the_first_stratum_of_the_class_vector() {
 /// answers itself.
 #[test]
 fn a_conjugacy_stratum_answers_every_class_vector_under_it() {
-    let w = quarter();
+    let w = turn_90();
     let here = ClassVector::read(&w, element::identity_versor(), CycleType::Identity)
         .expect("a class vector at the origin");
     let moved = ClassVector::read(&w, element::translator_versor(1, 2), CycleType::Identity)
@@ -112,7 +112,7 @@ fn a_foreign_key_refuses_by_name_instead_of_reading_as_absent() {
 /// either by accident.
 #[test]
 fn depth_zero_and_the_whole_path_are_not_fibers() {
-    let w = quarter();
+    let w = turn_90();
     let cv = ClassVector::of_word(&w).expect("a class vector");
     let key = cv.class_key();
     let mut held: Stratified<u8> = Stratified::new(ClassVector::class_schema());
@@ -135,7 +135,7 @@ fn depth_zero_and_the_whole_path_are_not_fibers() {
 /// branches name one coordinate.
 #[test]
 fn a_rotor_and_its_inverse_stand_at_one_stratum() {
-    let w = quarter();
+    let w = turn_90();
     let r = w.rotor();
     let inv = r.reverse();
     assert!(!r.projective_eq(&inv), "q and q⁻¹ are two elements");

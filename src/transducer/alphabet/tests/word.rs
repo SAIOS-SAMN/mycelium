@@ -17,7 +17,7 @@ fn eleven() -> Rotor {
 fn a_formed_word_composes_inverts_and_reduces_as_its_rotor() {
     let r = eleven();
     let w = Word::formed(r.clone());
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     assert!(w.rotor().projective_eq(&r), "the formed word carries its rotor");
     assert!(!w.is_identity(), "and is not the identity, though its tape is empty");
     assert!(
@@ -53,7 +53,7 @@ fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
         r.to_bytes(&mut b);
         b
     };
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     let mut w = Word::from_letters(&[(LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)"), false)]);
     let _ = w.rotor();
     for _ in 0..64 {
@@ -88,7 +88,7 @@ fn arithmetic_on_a_word_carries_no_scale_and_a_formed_word_stays_bounded() {
 /// tape's product before and after.
 #[test]
 fn a_letter_word_composes_as_its_tape_still() {
-    let q = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter (0,1)"), false)]);
+    let q = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn (0,1)"), false)]);
     let p = Word::from_letters(&[(LetterId::pythagorean_5((2, 3)).expect("(3,4,5) on (2,3)"), false)]);
     let both = q.compose(&p);
     assert_eq!(both.letters().len(), 2, "the tape is the two letters");

@@ -512,7 +512,7 @@ mod tests {
     use crate::transducer::stalk::Invariant;
 
     fn sample_words() -> [Word; 3] {
-        let q = LetterId::quarter((0, 1)).expect("quarter");
+        let q = LetterId::turn_90((0, 1)).expect("90° turn");
         let s = LetterId::try_new(0).expect("sheet");
         [
             Word::from_letters(&[(q, false)]),

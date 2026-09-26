@@ -12,12 +12,12 @@ fn turns(w: &Word) -> [Turn; 2] {
 }
 
 /// The identity turns 0°, and the letter on the sensor plane turns 90° in
-/// its plane — exact, a quarter of the circle, `360·1/4`.
+/// its plane — exact, 90° of the full 360°, `360·1/4`.
 #[test]
 fn a_finite_turn_is_its_exact_degrees() {
     let [a, b] = turns(&Word::identity());
     assert_eq!((a.degrees(), b.degrees()), (Some(q(0, 1)), Some(q(0, 1))), "the identity turns 0°");
-    let l = LetterId::quarter((0, 1)).expect("the sensor letter");
+    let l = LetterId::turn_90((0, 1)).expect("the sensor letter");
     let [a, b] = turns(&Word::from_letters(&[(l, false)]));
     assert_eq!(a.degrees(), Some(q(90, 1)), "the letter turns 90° in its plane");
     assert_eq!(b.degrees(), Some(q(90, 1)), "in both factors: one plane, one turn");

@@ -32,7 +32,7 @@ fn an_indefinite_orthogonal_pair_is_finite() {
     assert_eq!(g.pairs[0].3, PairRegime::Finite(2));
 }
 
-/// THE REGIMES BY δ²: a quarter-turn pair, two parallel planes (parabolic),
+/// THE REGIMES BY δ²: a 90°-turn pair, two parallel planes (parabolic),
 /// two disjoint spheres (a boost), a real sphere against an imaginary one
 /// not orthogonal (a boost), and a non-crystallographic angle (a rosette).
 #[test]

@@ -13,7 +13,7 @@ use crate::transducer::sentence::*;
 
 /// THE COBOUNDARY TRIANGLE WITH ONE TURNING EDGE: three overlaps whose words
 /// all derive the identity, so the word holonomy telescopes flat, and a
-/// quarter turn on 50.3's edge of the one overlap that does not touch the
+/// 90° turn on 50.3's edge of the one overlap that does not touch the
 /// Frame. Every place is the identity carriage with an empty hue map, as the
 /// fixture has always written them.
 ///
@@ -75,13 +75,13 @@ pub(super) fn coboundary_triangle_with_edge(q: &Word) -> (Form, crate::network::
 /// not.
 #[test]
 fn a_published_residue_no_generator_reaches_is_adjoined() {
-    let q = order4();
+    let q = word_turn_90();
 
     // PUBLISHED AND UNANSWERED, with nothing in the basis: adjoin.
     let mut f = chord_form(std::slice::from_ref(&q));
     // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
-    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // invariant planes of the double rotation, not `lcm − 1`. A 90°
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
@@ -107,7 +107,7 @@ fn a_published_residue_no_generator_reaches_is_adjoined() {
     // THE BASIS REACHES IT: no adjunction, because the mind already holds
     // the word and minting a second is a duplicate generator.
     let mut g = chord_form(std::slice::from_ref(&q));
-    // 54.7 — `(ℓ₁ − 1) + (ℓ₂ − 1)`: a quarter turn is isoclinic, `[4, 4]`,
+    // 54.7 — `(ℓ₁ − 1) + (ℓ₂ − 1)`: a 90° turn is isoclinic, `[4, 4]`,
     // so it earns `3 + 3 = 6` where the envelope said `4`.
     assert_eq!(g.file_orbit(0), vec![6]);
     let snaps = g.pivot_orbit(
@@ -145,7 +145,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
     };
     use crate::transducer::stalk::Invariant;
     let chart = Invariant::counts(&[1, 7, 4]);
-    let rotor = order4().rotor();
+    let rotor = word_turn_90().rotor();
     assert!(!rotor.is_identity(), "the rotor turns, or there is nothing to adjoin");
 
     let e = generator_form(&rotor, &chart, &[]).expect("a versor mints a generator");
@@ -180,7 +180,7 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
     // coordinate its class occupies.
     let mut ix: AxisIndex = AxisIndex::new();
     admit_words_acting(&mut ix, &f);
-    let occupied = ClassVector::of_word(&order4()).expect("class").coordinates();
+    let occupied = ClassVector::of_word(&word_turn_90()).expect("class").coordinates();
     assert!(!occupied.is_empty(), "the rotor occupies a coordinate");
     for axis in &occupied {
         assert!(
@@ -212,12 +212,12 @@ fn a_minted_generator_is_filed_and_answerable_on_its_own_coordinates() {
 /// a write.
 #[test]
 fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
-    let q = order4();
-    let half = order2();
+    let q = word_turn_90();
+    let turn_180 = word_turn_180();
     assert_ne!(
         q.rotor().class_key(),
-        half.rotor().class_key(),
-        "a quarter and a half turn are different classes, or this proves nothing"
+        turn_180.rotor().class_key(),
+        "a 90° turn and a 180° turn are different classes, or this proves nothing"
     );
 
     // THE CLASS THAT CAN CANCEL still discharges, through the whole drive
@@ -236,15 +236,15 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
         "the orbit's own class is not eliminated: {snaps:?}"
     );
 
-    // A CLASS THAT CANNOT is refused, and the orbit files instead. The half
-    // turn occupies an axis the quarter's orbit does not discharge on, so no
+    // A CLASS THAT CANNOT is refused, and the orbit files instead. The 180°
+    // turn occupies an axis the 90° turn's orbit does not discharge on, so no
     // positioning of it closes the orbit and the algebra says so before any
     // face is written.
     let mut g = chord_form(std::slice::from_ref(&q));
     let snaps = g.pivot_orbit(
         [0x7b; 32],
         &Keyed::new(),
-        &Hold(vec![half]),
+        &Hold(vec![turn_180]),
         &mut crate::physics::Physics::default().stroke_n(16),
         None,
         0,
@@ -270,12 +270,12 @@ fn the_eliminator_keeps_every_word_that_can_cancel_and_drops_the_rest() {
 /// wrote the one carrier the reading skips.
 ///
 /// This fixture is an orbit whose path HAS an edge composite, which is the
-/// case the old arm could not move: the quarter turn lives on the edge and
+/// case the old arm could not move: the 90° turn lives on the edge and
 /// the face words are identity.
 #[test]
 fn a_word_move_moves_the_edge_composite_the_class_is_read_from() {
     use crate::transducer::sentence::pivot::moves::{apply_by, unapply_by};
-    let q = order4();
+    let q = word_turn_90();
     let (mut f, chord) = coboundary_triangle_with_edge(&q);
     let [lp, ..] = f.orbits.as_slice() else { panic!("one orbit") };
     let before = f.orbit_holonomy(lp).expect("one holonomy");
@@ -427,7 +427,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     use crate::transducer::alphabet::Derivation;
     use crate::transducer::sentence::{admit_words_acting, on_axis_of, retract_words_acting, AxisIndex};
     use crate::transducer::stalk::Invariant;
-    let q = order4();
+    let q = word_turn_90();
     let acting = Invariant::counts(&[1, 7, 4]);
     let mut f = Form::default();
     f.put_vertex(Vertex::word_on(
@@ -443,7 +443,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     let occupied = ClassVector::of_word(&q).expect("q has a class").coordinates();
     assert!(
         !occupied.is_empty(),
-        "a quarter turn occupies a coordinate, or there is nothing to file"
+        "a 90° turn occupies a coordinate, or there is nothing to file"
     );
 
     let mut ix: AxisIndex = AxisIndex::new();
@@ -476,7 +476,7 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
     let unoccupied = (0..6u8)
         .map(Axis::Prime13)
         .find(|a| !occupied.contains(a))
-        .expect("a quarter carries no prime-13 exponent on some plane");
+        .expect("a 90° turn carries no prime-13 exponent on some plane");
     assert!(
         on_axis_of(&ix, &acting, unoccupied).is_empty(),
         "coarsening widens the chart, never the axis"
@@ -511,13 +511,13 @@ fn a_word_is_filed_where_it_acts_and_the_chart_coarsens_until_it_answers() {
 /// 92 torsion classes filed off the edge composite in the same five minutes.
 ///
 /// This fixture is the disagreement itself: three coboundary faces, so the
-/// word holonomy is the identity, and a quarter turn on the one face that
+/// word holonomy is the identity, and a 90° turn on the one face that
 /// does not touch the Frame. Every site is asserted on that one orbit — the
 /// keying invariant is total or it is not an invariant.
 #[test]
 fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     use crate::transducer::sentence::{opened_axis_on, orbit_row_on};
-    let q = order4();
+    let q = word_turn_90();
     // The ends are two SITES: one chart each (54.2), one vertex of the
     // identity's class with a member on each (AT1 Q1).
     let (f, chord) = coboundary_triangle_with_edge(&q);
@@ -531,7 +531,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
     let composite = f.orbit_holonomy(lp).expect("the paths agree on one holonomy");
     assert!(
         !composite.rotor().is_identity(),
-        "the edge composite carries the quarter the word cancelled"
+        "the edge composite carries the 90° turn the word cancelled"
     );
 
     // THE SEED comes from the composite, so it is a versor that turns.
@@ -608,7 +608,7 @@ fn the_open_axis_pipeline_keys_on_the_edge_composite_not_the_flat_word() {
 /// the `Word` arm of the identical reading.
 #[test]
 fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
-    let q = order4();
+    let q = word_turn_90();
     let f = chord_form(&[q.clone(), q.clone()]);
     assert_eq!(f.orbits.len(), 2, "two chords of one class close two orbits");
     let [a, b] = f.orbits.as_slice() else { panic!("two orbits") };
@@ -717,7 +717,7 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// filing and the whole filed-torsion path went dead.
 ///
 /// `kappa.free_part()` alone gated the widening, and a free part is ONE way
-/// a cover can be too narrow, not the only one. A quarter turn is finite
+/// a cover can be too narrow, not the only one. A 90° turn is finite
 /// order — torsion, no prime exponent, not off-plane — so it has no free
 /// part and never saw the move at all. On the fleet at 769a17c every orbit
 /// with no candidate occupied `[Unit(0)]`, 60 of 60, every crystal read
@@ -727,12 +727,12 @@ fn an_openings_certified_rank_is_the_rank_the_form_moves_by() {
 /// OWN ANSWER and the FORM'S OWN FILING, never a trial's failure.
 #[test]
 fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_is_not() {
-    let q = order4();
+    let q = word_turn_90();
     let mut f = chord_form(std::slice::from_ref(&q));
     let kappa = f.class_vector(0).expect("the chord closes one orbit");
     assert!(
         !kappa.free_part(),
-        "a quarter turn is torsion: no prime exponent and not off-plane, so \
+        "a 90° turn is torsion: no prime exponent and not off-plane, so \
          the free-part gate alone never offers it the widening — {:?}",
         kappa.coordinates()
     );
@@ -770,7 +770,7 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
     // not a demand anyone has had a stroke to answer.
     // 54.7 — THE YIELD IS BOTH PLANES. `file_orbit` returns the labour the
     // filing earns, and that is `(ℓ₁ − 1) + (ℓ₂ − 1)` across the two
-    // invariant planes of the double rotation, not `lcm − 1`. A quarter
+    // invariant planes of the double rotation, not `lcm − 1`. A 90°
     // turn is isoclinic here — `[4, 4]` — so it earns `3 + 3 = 6`, where
     // the envelope said `4`. The two planes are doing the work; the
     // envelope was never either plane's.
@@ -822,7 +822,7 @@ fn an_unanswered_irreducible_residual_is_widened_and_a_reducible_or_unasked_one_
 /// makes.
 #[test]
 fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
-    let q = order4();
+    let q = word_turn_90();
     let f = chord_form(&[q.clone(), q.clone()]);
     assert_eq!(f.orbits.len(), 2, "two chords close two orbits");
     let rows = f.orbit_rows().expect("rows");
@@ -846,7 +846,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
     let cands = f.candidates_for(0, &kappa, &Hold(vec![q.clone()]), false, &unpublished);
     assert!(
         cands.iter().any(|c| matches!(c.by, PivotBy::Word { .. })),
-        "the held quarter is offered as a word move on a shared face"
+        "the held 90° turn is offered as a word move on a shared face"
     );
     let mut certified = 0usize;
     for cand in &cands {
@@ -873,7 +873,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
 /// 78.46(4′), LAW 10 — A MOVE THAT SPLITS TWO CIRCUITS OF ONE ANASTOMOSIS
 /// THAT AGREED HAS NOT CLOSED THE CELL.
 ///
-/// Two chords carrying one quarter turn close two orbits, and both chords
+/// Two chords carrying one 90° turn close two orbits, and both chords
 /// step between the same two bodies of one certified cell (BD2), so the cell
 /// holds two circuits. Based at the basepoint they are one ray: their pair
 /// composite is the identity and the cell reads FLAT. A move that discharges
@@ -883,7 +883,7 @@ fn a_word_moves_certified_rank_counts_the_siblings_it_moved() {
 /// cells reads no agreement and the same move certifies.
 #[test]
 fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
-    let q = order4();
+    let q = word_turn_90();
     let mut f = chord_form(&[q.clone(), q.clone()]);
     let [lp0, lp1] = f.orbits.as_slice() else { panic!("two chords close two orbits") };
     let (c0, c1) = (lp0.chord.clone(), lp1.chord.clone());
@@ -927,10 +927,10 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
     let t = take_perturb_tally();
     assert_eq!(t.unclosed, u64::try_from(refused).expect("a handful"), "each refusal counted unclosed: {t:?}");
 
-    // A CELL ALREADY CURVED REFUSES NOTHING: a quarter beside a 180° turn
+    // A CELL ALREADY CURVED REFUSES NOTHING: a 90° turn beside a 180° turn
     // disagree before any move, so no move splits an agreement.
-    let half = q.compose(&q);
-    let mut g = chord_form(&[q.clone(), half]);
+    let turn_180 = q.compose(&q);
+    let mut g = chord_form(&[q.clone(), turn_180]);
     let [g0, g1] = g.orbits.as_slice() else { panic!("two orbits") };
     let (d0, d1) = (g0.chord.clone(), g1.chord.clone());
     let (p, r) = (vec![1u8], vec![2u8]);
@@ -954,7 +954,7 @@ fn a_move_that_splits_two_agreeing_circuits_of_a_cell_is_unclosed() {
     };
     let (unperturbed, perturbed) = (prior(Agreements::default()), prior(agreements));
     let certified = |p| cands.iter().filter(|c| g.trial(0, c, &kappa, p).is_ok()).count();
-    assert!(certified(&unperturbed) > 0, "the quarter discharges, or this asserts nothing");
+    assert!(certified(&unperturbed) > 0, "the 90° turn discharges, or this asserts nothing");
     assert_eq!(certified(&perturbed), certified(&unperturbed), "a curved cell's pairs were never agreeing");
 }
 
@@ -974,7 +974,7 @@ fn face_words_and_edge_transports_admit_bidirectionally_on_member_charts() {
 
     let chart_a = Invariant::counts(&[1, 7, 4]);
     let chart_b = Invariant::counts(&[1, 7, 5]);
-    let q = order4();
+    let q = word_turn_90();
 
     // AT1: a face's word is DERIVED, so the turning face word is the
     // pivot's factor on an overlap between two members of the identity's

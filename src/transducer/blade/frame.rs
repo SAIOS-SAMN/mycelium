@@ -47,11 +47,11 @@ use super::*;
 /// need congruence; the turn itself needs only similarity.
 ///
 /// IT DETERMINES `φ` ONLY MOD `π`. A rank-2 symmetric tensor is invariant
-/// under a half turn, so `u` cannot tell a body from its own 180°
+/// under a 180° turn, so `u` cannot tell a body from its own 180°
 /// rotation: `φ = 0` and `φ = π` both give `2φ ≡ 0`. The two differ as
 /// rotors — `1` against `e₁₂` — and are NOT projectively equal, so this
 /// returns the double angle and does not mint a rotor from it. Resolving
-/// the residual half turn is a question about the SUPPORT, answered by
+/// the residual 180° turn is a question about the SUPPORT, answered by
 /// carrying a candidate through [`versor_coset_ordered`], which tests it
 /// against the sites rather than guessing.
 ///
@@ -119,7 +119,7 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Hand
     }
 }
 
-/// A RELATIVE POSE, and whether its half turn is settled (56.5; named
+/// A RELATIVE POSE, and whether its 180° turn is settled (56.5; named
 /// `Frame` until FR1 — 72.1c keeps "frame" for 1.4's sense, the sensor's
 /// plane with a carriage, and a body's orientation with its placement is
 /// its POSE).
@@ -168,7 +168,7 @@ impl Pose {
 ///
 /// The deviatoric and the quartic say at what DOUBLE or QUADRUPLE angle
 /// two bodies differ, but neither fixes `φ` itself: a rank-2 symmetric
-/// tensor is invariant under a half turn, so `u` gives `φ` only mod `π`,
+/// tensor is invariant under a 180° turn, so `u` gives `φ` only mod `π`,
 /// and `1` against `e₁₂` are not projectively equal. The residue is a
 /// question about the SUPPORT, so the support answers it: each of the four
 /// proper turns is applied to `a`'s cells about their centroid and
@@ -284,7 +284,7 @@ impl NoPose {
 
 /// WHICH HARMONIC ORIENTS A PAIR (R1): the deviatoric, turning at `2φ`, where
 /// both bodies have a principal axis; the quartic, at `4φ`, where neither does.
-/// The odd order never orients — it only settles the half turn.
+/// The odd order never orients — it only settles the 180° turn.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Orienting {
     Deviatoric,
@@ -415,7 +415,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // members against the mirrored harmonics, each verified by the tower's
     // covariance — no lattice turn is listed and no lamina lands.
     //
-    // THE HALF TURN IS A PARITY OBSTRUCTION (68): `u` and `h₄` are even-rank
+    // THE 180° TURN IS A PARITY OBSTRUCTION (68): `u` and `h₄` are even-rank
     // and cannot tell `φ` from `φ + π`; the odd harmonic `h₃` does, and the
     // verification carries it, so where the body has one exactly one of the
     // pair carries. Where `h₃ = 0` the body has 2-fold symmetry, both carry,

@@ -18,15 +18,15 @@ use crate::cognition::*;
 use crate::transducer::alphabet::{LetterId, Order, Word};
 use crate::transducer::element::{self, Element};
 
-/// The quarter turn on the sensor plane, `n` times. One of the seventeen.
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+/// The 90° turn on the sensor plane, `n` times. One of the seventeen.
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
 /// The same, inverted: `q⁻ⁿ`.
-fn quarter_inv(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90_inv(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, true); n])
 }
 
@@ -82,9 +82,9 @@ fn transports_read_from_three_germs_of_one_object_always_glue() {
     // Three germs of one object, deliberately unequal and deliberately
     // not related by any pattern: what is claimed holds for any three.
     let (g_a, g_b, g_c) = (
-        transport(&quarter(1)),
-        transport(&quarter(3)),
-        transport(&quarter_inv(2)),
+        transport(&turn_90(1)),
+        transport(&turn_90(3)),
+        transport(&turn_90_inv(2)),
     );
     let t_ab = transition(&g_a, &g_b).expect("a germ with a versor is invertible");
     let t_bc = transition(&g_b, &g_c).expect("invertible");
@@ -105,9 +105,9 @@ fn transports_read_from_three_germs_of_one_object_always_glue() {
 fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
-        transport(&quarter(1)),
-        transport(&quarter(1)),
-        transport(&quarter_inv(2)),
+        transport(&turn_90(1)),
+        transport(&turn_90(1)),
+        transport(&turn_90_inv(2)),
     );
     let h = holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms");
     assert_eq!(glues(&t_ab, &t_bc, &t_ca), Some(true), "q · q · q⁻² closes");
@@ -127,7 +127,7 @@ fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
 }
 
 /// L17 DEPTH 4, THE NON-TRIVIAL CASE. Three charts whose transports do NOT
-/// close — `q`, `q`, identity — leave the half turn as the relator. Its
+/// close — `q`, `q`, identity — leave the 180° turn as the relator. Its
 /// order is 2, which is the period the relation is filed at, and it is not
 /// the identity, so the charts do not glue.
 ///
@@ -139,21 +139,21 @@ fn three_charts_whose_transports_close_are_one_proof_and_adjoin_nothing() {
 fn three_charts_that_do_not_close_leave_a_relator_of_order_two() {
     use crate::transducer::cech::{glues, holonomy};
     let (t_ab, t_bc, t_ca) = (
-        transport(&quarter(1)),
-        transport(&quarter(1)),
+        transport(&turn_90(1)),
+        transport(&turn_90(1)),
         transport(&Word::identity()),
     );
     assert_eq!(glues(&t_ab, &t_bc, &t_ca), Some(false), "q · q · 1 does not close");
     let h = holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms");
     let r = relator_of(&h).rotor();
-    assert!(!r.is_identity(), "the relator is the half turn, not the identity");
+    assert!(!r.is_identity(), "the relator is the 180° turn, not the identity");
     assert_eq!(
         r.order(),
         Some(Order::Finite(2)),
         "and its ORDER is the period the relation closes at: {r:?}"
     );
     assert!(
-        r.projective_eq(&quarter(2).rotor()),
+        r.projective_eq(&turn_90(2).rotor()),
         "the relator is q², read off the orbit and not named by the fixture"
     );
 
@@ -191,8 +191,8 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     use crate::transducer::cech::holonomy;
     use crate::transducer::sentence::{form_torsion, Form, Vertex};
     let (t_ab, t_bc, t_ca) = (
-        transport(&quarter(1)),
-        transport(&quarter(1)),
+        transport(&turn_90(1)),
+        transport(&turn_90(1)),
         transport(&Word::identity()),
     );
     let relator = relator_of(&holonomy(&t_ab, &t_bc, &t_ca).expect("the holonomy forms")).rotor();
@@ -221,7 +221,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
         charts.push(c);
     }
     // The chord carries the RELATOR the triangle left, not a word this
-    // fixture chose: it is `quarter(2)` because that is what the holonomy
+    // fixture chose: it is `turn_90(2)` because that is what the holonomy
     // above read, asserted there. It rides the chord's EDGE, which is
     // measured content (50.3): a word on an overlap's factors is PRODUCED
     // content, written only by the pivot's Word move under a certificate
@@ -230,7 +230,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     f.place_overlap(
         charts[0].clone(),
         charts[1].clone(),
-        Some(crate::transducer::sentence::Transport::from_word(quarter(2))),
+        Some(crate::transducer::sentence::Transport::from_word(turn_90(2))),
     )
     .expect("a chord between two bodies");
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -362,8 +362,8 @@ fn install(k: &mut Kernel, voice: [u8; 32], w: &Element) {
 fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
     use crate::transducer::rewrite::{RewriteKind, RewritePayload};
     // The transport the triangle is built from, and the relator it left.
-    let t = transport(&quarter(1));
-    let relator = transport(&quarter(2));
+    let t = transport(&turn_90(1));
+    let relator = transport(&turn_90(2));
     assert_ne!(t.address(), relator.address(), "two words, two addresses");
 
     let mut minted: Vec<Address> = Vec::new();
@@ -474,8 +474,8 @@ fn retirement_line(
 #[test]
 fn a_peers_retirement_is_replayed_here_and_applied_refused_or_waiting() {
     use crate::chronometry::{ActKind, Cite, Ruled};
-    let t = transport(&quarter(1));
-    let relator = transport(&quarter(2));
+    let t = transport(&turn_90(1));
+    let relator = transport(&turn_90(2));
     let retired = Ruled::Retired.index();
     let (r_addr, t_addr) = (relator.address(), t.address());
 

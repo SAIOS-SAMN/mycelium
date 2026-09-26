@@ -7,11 +7,11 @@ use crate::transducer::bubble::*;
 fn horizon_seeded_class_is_not_rederived() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let rec = ClassRecord {
-        key: r.class_key().expect("quarter class"),
-        order: r.order().expect("quarter has an order"),
+        key: r.class_key().expect("90° turn class"),
+        order: r.order().expect("the 90° turn has an order"),
         representative: r.clone(),
     };
     assert_eq!(c.seed_horizon(std::slice::from_ref(&rec)), 1);
@@ -32,9 +32,9 @@ fn horizon_is_keyed_by_class_key() {
     use crate::transducer::alphabet::{LetterId, Word};
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2), (1, 0, 1, 2)]);
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
-    let ck = r.class_key().expect("quarter class");
+    let ck = r.class_key().expect("90° turn class");
     let key = {
         let (k, _) = c.bubbles.scoped().next().expect("bubble");
         k
@@ -45,6 +45,6 @@ fn horizon_is_keyed_by_class_key() {
     let hb = c.bubbles.get(&key).expect("held");
     let (got, order, st) = hb.horizon.get(ck.as_bytes()).expect("class key");
     assert_eq!(got.class_key(), Some(ck.clone()));
-    assert_eq!(*order, r.order().expect("quarter has an order"));
+    assert_eq!(*order, r.order().expect("the 90° turn has an order"));
     assert_eq!(*st, Standing::Held);
 }

@@ -4,8 +4,8 @@
 use crate::transducer::address::{Address, TAG_FORM};
 use crate::transducer::alphabet::{Derivation, LetterId, Verified, Word};
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -18,9 +18,9 @@ fn addr(tag: u8) -> Address {
 /// tape carries no product beside the residue.
 #[test]
 fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
-    let d = Derivation::spelled(quarter(2));
+    let d = Derivation::spelled(turn_90(2));
     assert!(d.is_spelled(), "no citation");
-    assert_eq!(d.word_local(), Some(&quarter(2)), "the word IS the residue");
+    assert_eq!(d.word_local(), Some(&turn_90(2)), "the word IS the residue");
     assert_eq!(d.verify_with(&|_: &Address, _: &Address| None), Verified::Composes);
 
     let mut b = Vec::new();
@@ -29,7 +29,7 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
     crate::transducer::address::put_key_count(&mut only_residue, 0);
     // The residue whole (LD0 step 6(b)): its letters and the byte that
     // says it is spelled.
-    quarter(2).put_whole(&mut only_residue);
+    turn_90(2).put_whole(&mut only_residue);
     // No rotor follows: the residue determines the action, so the
     // presence byte is zero and nothing is written twice (1.9).
     only_residue.push(0);
@@ -40,17 +40,17 @@ fn a_spelled_derivation_is_its_residue_and_carries_no_second_word() {
     assert_eq!(pos, b.len(), "consuming exactly its bytes");
 }
 
-/// The half turn reached from the quarter turn: one citation, exponent
+/// The 180° turn reached from the 90° turn: one citation, exponent
 /// two, no residue left. The court re-derives the product from the
 /// citation and agrees.
 #[test]
 fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
-    let d = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
+    let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert!(!d.is_spelled(), "it cites a generator");
     assert_eq!(d.generators, vec![(addr(1), addr(2), 2)], "the form, the vertex, the exponent");
     assert!(
-        d.rotor().projective_eq(&quarter(2).rotor()),
-        "the quarter turn twice is the half turn"
+        d.rotor().projective_eq(&turn_90(2).rotor()),
+        "the 90° turn twice is the 180° turn"
     );
     assert_eq!(d.word_local(), None, "and it spells nothing on its own: it cites");
 
@@ -67,7 +67,7 @@ fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
     // exactly as this one does.
     let holds = |f: &Address, v: &Address| -> Option<crate::transducer::alphabet::Rotor> {
         match (f == &addr(1), v == &addr(2)) {
-            (true, true) => Some(quarter(1).rotor()),
+            (true, true) => Some(turn_90(1).rotor()),
             _ => None,
         }
     };
@@ -75,13 +75,13 @@ fn a_factored_derivation_travels_its_citations_and_re_derives_the_product() {
 }
 
 /// A negative exponent is the generator's inverse applied that many
-/// times: the three-quarter turn is the quarter turn once backwards.
+/// times: three 90° turns are the 90° turn once backwards.
 #[test]
 fn a_negative_exponent_applies_the_generators_inverse() {
-    let d = Derivation::compose(&[(addr(1), addr(2), -1, quarter(1))], Word::identity());
+    let d = Derivation::compose(&[(addr(1), addr(2), -1, turn_90(1))], Word::identity());
     assert!(
-        d.rotor().projective_eq(&quarter(3).rotor()),
-        "one quarter turn backwards is three forwards"
+        d.rotor().projective_eq(&turn_90(3).rotor()),
+        "one 90° turn backwards is three forwards"
     );
 }
 
@@ -91,9 +91,9 @@ fn a_negative_exponent_applies_the_generators_inverse() {
 /// vertex, never a smaller answer.
 #[test]
 fn citations_that_do_not_compose_to_the_product_are_refused() {
-    let honest = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
-    let lying = Derivation::factored(honest.generators.clone(), Word::identity(), quarter(3).rotor());
-    let holds = |_: &Address, _: &Address| Some(quarter(1).rotor());
+    let honest = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
+    let lying = Derivation::factored(honest.generators.clone(), Word::identity(), turn_90(3).rotor());
+    let holds = |_: &Address, _: &Address| Some(turn_90(1).rotor());
     assert_eq!(honest.verify_with(&holds), Verified::Composes);
     assert_eq!(lying.verify_with(&holds), Verified::Differs, "the court re-derives and disagrees");
 }
@@ -105,7 +105,7 @@ fn citations_that_do_not_compose_to_the_product_are_refused() {
 /// cover.
 #[test]
 fn a_citation_the_reader_does_not_hold_is_named_apart_from_a_disagreement() {
-    let d = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
+    let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert_eq!(
         d.verify_with(&|_: &Address, _: &Address| None),
         Verified::Unresolved { form: addr(1), vertex: addr(2) },
@@ -117,8 +117,8 @@ fn a_citation_the_reader_does_not_hold_is_named_apart_from_a_disagreement() {
 /// list is content the court replays and is deliberately not identity.
 #[test]
 fn two_derivations_that_reach_one_vertex_carry_one_word() {
-    let a = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
-    let b = Derivation::compose(&[(addr(3), addr(4), -2, quarter(3))], Word::identity());
+    let a = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
+    let b = Derivation::compose(&[(addr(3), addr(4), -2, turn_90(3))], Word::identity());
     assert_ne!(a.generators, b.generators, "two presentations, two proofs");
     assert!(
         a.rotor().projective_eq(&b.rotor()),
@@ -142,7 +142,7 @@ fn a_citation_count_the_tape_cannot_satisfy_is_refused() {
 /// `Word::key()` already reduces to, so the address does not move.
 #[test]
 fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
-    let d = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
+    let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     let mut b = Vec::new();
     d.to_bytes(&mut b).expect("writes");
 
@@ -157,17 +157,17 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
     // implies "the residue is the action", because an adjoined generator
     // cites nothing and spells nothing (37.7). Its canonical ray (A1).
     expect.push(1);
-    quarter(2).rotor().put_canonical(&mut expect);
+    turn_90(2).rotor().put_canonical(&mut expect);
     assert_eq!(b, expect, "citations, residue, rotor — and no spelling of the composite");
 
     // 1.5: the key is the canonical rotor coordinates, so a vertex that
     // cites and one that spells the same action key alike.
     assert_eq!(
         d.rotor().key(),
-        Derivation::spelled(quarter(2)).rotor().key(),
+        Derivation::spelled(turn_90(2)).rotor().key(),
         "one action, one key, whichever way it was reached"
     );
-    assert_eq!(d.rotor().key(), quarter(2).key(), "and it is Word::key()'s own value");
+    assert_eq!(d.rotor().key(), turn_90(2).key(), "and it is Word::key()'s own value");
 }
 
 /// 50.2 step 2: the spelling is RECOMPUTED and never stored. A cited
@@ -175,9 +175,9 @@ fn a_cited_vertex_carries_a_rotor_and_no_second_spelling() {
 /// the rotor by A22 that reaches the same vertex.
 #[test]
 fn a_cited_vertexs_spelling_is_recomputed_from_its_rotor() {
-    let d = Derivation::compose(&[(addr(1), addr(2), 2, quarter(1))], Word::identity());
+    let d = Derivation::compose(&[(addr(1), addr(2), 2, turn_90(1))], Word::identity());
     assert_eq!(d.word_local(), None, "it stores no spelling");
-    let spelled = d.spelling().expect("the seventeen spell the half turn");
+    let spelled = d.spelling().expect("the seventeen spell the 180° turn");
     assert!(
         spelled.rotor().projective_eq(&d.rotor()),
         "and the recomputed spelling is the same vertex (1.5)"

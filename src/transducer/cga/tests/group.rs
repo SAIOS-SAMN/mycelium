@@ -53,8 +53,8 @@ fn the_frame_axis_is_a_base_coordinate() {
         Some((q(2, 1), z.clone(), q(5, 1))),
         "and compose by adding the displacements"
     );
-    let quarter_13 = rotator_on_blade(&o, &o, E1 | E3);
-    let moved = base(&quarter_13.sandwich(&point(&o, &z, &z))).expect("a rotation keeps the point finite");
+    let turn_90_13 = rotator_on_blade(&o, &o, E1 | E3);
+    let moved = base(&turn_90_13.sandwich(&point(&o, &z, &z))).expect("a rotation keeps the point finite");
     assert!(moved.0.is_zero() && moved.1.is_zero() && !moved.2.is_zero(), "the row axis turns onto the frame axis: {moved:?}");
     let plane = rotator(&o, &o).geo(&translator(&q(3, 1), &q(-1, 1), &z));
     let carried = base(&plane.sandwich(&point(&q(4, 1), &q(4, 1), &z))).expect("finite");

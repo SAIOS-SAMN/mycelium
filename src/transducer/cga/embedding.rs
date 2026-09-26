@@ -126,7 +126,7 @@ pub fn translator_at(d: &[BigRational]) -> Mv {
 
 /// The Euclidean rotation versor in the `e1e2` plane as an EXACT even
 /// multivector `s + b·e1e2` (unnormalized: the sandwich carries the scale
-/// `s²+b²`, absorbed by homogeneity on the cone). The quarter turn is
+/// `s²+b²`, absorbed by homogeneity on the cone). The 180° turn is
 /// `s=0, b=1` — the hole a rational chart cannot reach, an ordinary citizen here.
 pub fn rotator(s: &BigRational, b: &BigRational) -> Mv {
     rotator_on_blade(s, b, E1 | E2)

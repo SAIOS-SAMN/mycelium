@@ -53,13 +53,13 @@ fn a_trivial_tether_drains_to_vacuum() {
 
 /// A STRAINED TETHER IS CAUTERIZED, NEVER DROPPED.
 ///
-/// A quarter turn between the two ends is a real coupling. When the bodies
+/// A 90° turn between the two ends is a real coupling. When the bodies
 /// leave one another's horizon that strain cannot be wiped from the ledger
 /// — the reading travels out so the caller can file it as torsion or carry
 /// it to the court as a demand (rule 11).
 #[test]
 fn a_strained_tether_is_cauterized_and_its_class_travels() {
-    let (mut c, key) = pair(quarter());
+    let (mut c, key) = pair(turn_90());
     let out = c.drain(&key);
     let fill = out.cauterized().expect("a turn is not nothing");
     assert!(

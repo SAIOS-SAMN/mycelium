@@ -160,7 +160,7 @@ pub fn factor_versor_target(
 /// derivation rather than inside it. 18.2 quotients the body's absolute
 /// position, so a body's own placement is not something a generator must
 /// divide. Reading the target's carriage here — measured — refused the
-/// half turn's citation of a quarter-turn generator in `generator_pay`,
+/// 180° turn's citation of a 90°-turn generator in `generator_pay`,
 /// because the target translated and no generator is held on `𝒮`: a
 /// refusal by bookkeeping, of a claim the derivation never made.
 ///
@@ -344,12 +344,12 @@ pub(crate) fn peel_versor_with_target(
     // signal read orientation-reversed — its even part `V·e1`, the reflector
     // undone, times the chart's orientation character `e₀₂` — never a letter
     // the language lacks. The even part is peeled as any versor is, and the
-    // orientation character is the alphabet's own half turn through the third
+    // orientation character is the alphabet's own 180° turn through the third
     // axis; the word is read back against the versor's own rotor as one ray,
     // and one that does not compose back is no reading.
     if target_rotor.is_none() && v.parity() == Some(true) {
         let even = v.geo(&crate::transducer::cga::reflector());
-        let orientation = crate::transducer::alphabet::LetterId::quarter((0, 2))?;
+        let orientation = crate::transducer::alphabet::LetterId::turn_90((0, 2))?;
         let flip = crate::transducer::alphabet::Word::from_letters(&[(orientation, false), (orientation, false)]);
         let whole = rotor_of_versor(v)?;
         return Some(match peel_versor_with_target(&even, None, adjoined)? {

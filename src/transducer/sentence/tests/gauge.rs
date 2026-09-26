@@ -125,10 +125,10 @@ fn a_cycle_of_every_hue_is_read_exactly() {
 
 #[test]
 fn coboundary_gauge_matches_by_address() {
-    let q = Word::from_letters(&[(alphabet::LetterId::quarter((0, 1)).unwrap(), false)]);
-    // The quarter turn's class, the rebased vertex's own (AT1: a Rebased
+    let q = Word::from_letters(&[(alphabet::LetterId::turn_90((0, 1)).unwrap(), false)]);
+    // The 90° turn's class, the rebased vertex's own (AT1: a Rebased
     // vertex holds the class it had, beside its base's coordinate).
-    let q_class = word_vertex(1, q.clone()).class().expect("a quarter turn has a class");
+    let q_class = word_vertex(1, q.clone()).class().expect("a 90° turn has a class");
     let rebased = || {
         Vertex::rebased_on(
             coord::VertexAt::Frame,
@@ -170,7 +170,7 @@ fn coboundary_gauge_matches_by_address() {
 
 #[test]
 fn holonomy_is_oriented() {
-    let w = order4();
+    let w = word_turn_90();
     // TWO ENDS ARE TWO SITES (§1.5), as in `chord_form`: two members of the
     // identity's class on charts `[1]` and `[2]`, each on the Frame's star.
     let bodies = || {

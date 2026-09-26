@@ -23,21 +23,21 @@ pub fn vol() -> [u64; 4] {
     [1, 0, 0, 0]
 }
 
-pub fn quarter() -> Rotor {
-    let id = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+pub fn turn_90() -> Rotor {
+    let id = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
 }
 
 pub fn sheet() -> Rotor {
-    let id = crate::transducer::alphabet::LetterId::quarter((1, 2)).unwrap();
+    let id = crate::transducer::alphabet::LetterId::turn_90((1, 2)).unwrap();
     crate::transducer::alphabet::Word::from_letters(&[(id, false), (id, false)]).rotor()
 }
 
-/// A quarter turn on `e₀∧e₂`: a letter of the seventeen that takes `e₀`
+/// A 90° turn on `e₀∧e₂`: a letter of the seventeen that takes `e₀`
 /// OFF the sensor plane, so it has no sensor-plane block and no versor.
 /// This is the transition `Cl(3,1)` cannot carry.
-pub fn off_plane_quarter() -> Rotor {
-    let id = crate::transducer::alphabet::LetterId::quarter((0, 2)).unwrap();
+pub fn off_plane_turn_90() -> Rotor {
+    let id = crate::transducer::alphabet::LetterId::turn_90((0, 2)).unwrap();
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
 }
 

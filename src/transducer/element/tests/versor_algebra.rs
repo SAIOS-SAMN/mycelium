@@ -185,7 +185,7 @@ fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
     let car = carriage(&q(2), &(q(3), q(5)));
     let mut on_base = 0usize;
     for &plane in &SLOT_PLANES_SIX {
-        let letters = [LetterId::quarter(plane), LetterId::pythagorean_5(plane), LetterId::pythagorean_13(plane)];
+        let letters = [LetterId::turn_90(plane), LetterId::pythagorean_5(plane), LetterId::pythagorean_13(plane)];
         for id in letters.into_iter().flatten() {
             let rotor = Word::from_letters(&[(id, false)]).rotor();
             let touches_e2 = plane.0 == 2 || plane.1 == 2;
@@ -203,8 +203,8 @@ fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
             }
         }
     }
-    assert_eq!(on_base, 8, "three base planes: three quarters, three (3,4,5) rotors, two (5,12,13) rotors (51.6)");
-    // The sheet: two quarters on (1,2), the half turn that flips e₁ and e₂,
+    assert_eq!(on_base, 8, "three base planes: three 90° turns, three (3,4,5) rotors, two (5,12,13) rotors (51.6)");
+    // The sheet: two 90° turns on (1,2), the 180° turn that flips e₁ and e₂,
     // which the base reads as the reflection of its column axis.
     let sheet = crate::transducer::alphabet::PlaneForm::sheet_word();
     let v = versor_of_word(&sheet).expect("the orientation character acts on the base");

@@ -12,11 +12,11 @@ use crate::transducer::alphabet::{Order, Rotor, Word};
 use crate::transducer::cech::{solve_gauge, Gauge};
 use crate::transducer::element::{identity_versor, same_versor, Versor};
 
-/// The quarter turn on a named plane, as a rotor of order four. Two turns
+/// The 90° turn on a named plane, as a rotor of order four. Two turns
 /// on DIFFERENT planes, never one scaled against another: a rotor told
 /// apart by a scalar carries no dimension the next reader can use.
-fn quarter_on(plane: (u8, u8)) -> Rotor {
-    let id = crate::transducer::alphabet::LetterId::quarter(plane).expect("a plane of the chart");
+fn turn_90_on(plane: (u8, u8)) -> Rotor {
+    let id = crate::transducer::alphabet::LetterId::turn_90(plane).expect("a plane of the chart");
     Word::from_letters(&[(id, false)]).rotor()
 }
 
@@ -29,7 +29,7 @@ fn edge(i: usize, j: usize, g: Rotor) -> (usize, usize, Rotor, Versor) {
 /// exactly what the two tree edges compose to.
 #[test]
 fn a_chord_that_agrees_leaves_no_class() {
-    let r = quarter_on((0, 1));
+    let r = turn_90_on((0, 1));
     let edges = [edge(0, 1, r.clone()), edge(1, 2, Rotor::identity()), edge(0, 2, r.clone())];
     let Some(Gauge { sections, holonomy }) = solve_gauge(3, &edges) else {
         panic!("every reading here is invertible");
@@ -55,7 +55,7 @@ fn a_chord_that_agrees_leaves_no_class() {
 /// sees the orbit.
 #[test]
 fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
-    let tree = quarter_on((0, 1));
+    let tree = turn_90_on((0, 1));
     let edges =
         [edge(0, 1, tree.clone()), edge(1, 2, Rotor::identity()), edge(0, 2, Rotor::identity())];
     let Some(Gauge { sections, holonomy }) = solve_gauge(3, &edges) else {
@@ -67,7 +67,7 @@ fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
     assert_eq!((*i, *j), (0, 2), "and it names the chord it closed");
     assert!(
         class.projective_eq(&tree),
-        "the orbit carries the quarter turn the chord did not: Ω = γ_2 γ_0⁻¹ g⁻¹"
+        "the orbit carries the 90° turn the chord did not: Ω = γ_2 γ_0⁻¹ g⁻¹"
     );
     assert_eq!(class.order(), Some(Order::Finite(4)), "H¹ here is torsion of order four");
     assert!(
@@ -83,8 +83,8 @@ fn a_chord_that_disagrees_returns_the_cocycle_it_measures() {
 /// to instantiate. Each `Ω` is its own cocycle.
 #[test]
 fn two_chords_are_two_cocycles_and_not_their_product() {
-    let r = quarter_on((0, 1));
-    // A path 0–1–2–3 carrying one quarter turn, closed by two chords. The
+    let r = turn_90_on((0, 1));
+    // A path 0–1–2–3 carrying one 90° turn, closed by two chords. The
     // tree puts `r` on 1, 2 and 3, so the chord 0–2 (carrying nothing)
     // reads `Ω = r` and the chord 1–3 (carrying `r`) reads `Ω = r⁻¹`:
     // two orbits of opposite class on one simplex.
@@ -122,7 +122,7 @@ fn two_chords_are_two_cocycles_and_not_their_product() {
 /// own fill is untouched: the orbits are filed BESIDE it.
 #[test]
 fn a_disagreeing_chord_files_its_orbit_on_the_complex() {
-    use super::common::{quarter, v, vol};
+    use super::common::{turn_90, v, vol};
     use crate::transducer::cech::{Complex, Fill};
     use crate::transducer::element::identity_versor as ident;
     let (a, b, c) = (v(1), v(2), v(3));
@@ -134,10 +134,10 @@ fn a_disagreeing_chord_files_its_orbit_on_the_complex() {
             vol(),
         );
     }
-    // Two quarter-turn legs and an identity chord: the tree says a half
+    // Two 90°-turn legs and an identity chord: the tree says a 180°
     // turn round the triangle, the chord says nothing, so the orbit stands.
-    cx.set_edge(&a, &b, quarter(), ident(), vol());
-    cx.set_edge(&b, &c, quarter(), ident(), vol());
+    cx.set_edge(&a, &b, turn_90(), ident(), vol());
+    cx.set_edge(&b, &c, turn_90(), ident(), vol());
     cx.set_edge(&a, &c, Rotor::identity(), ident(), vol());
     cx.coboundary_on_link(&a, |_| vol());
     let tri = cx.link(&a, 2);
@@ -149,9 +149,9 @@ fn a_disagreeing_chord_files_its_orbit_on_the_complex() {
     let [Fill::Congruent(kappa, class, ell)] = orbits.as_slice() else {
         panic!("the orbit closes at a finite period, got {orbits:?}")
     };
-    assert_eq!(*ell, 2, "two quarters against an identity chord close at two");
+    assert_eq!(*ell, 2, "two 90° turns against an identity chord close at two");
     assert!(
-        class.projective_eq(&quarter().geo(&quarter())),
+        class.projective_eq(&turn_90().geo(&turn_90())),
         "and the filed class is the orbit's own holonomy: {class:?}"
     );
     assert!(

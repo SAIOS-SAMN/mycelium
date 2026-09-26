@@ -10,7 +10,7 @@ use crate::transducer::peel::PeelNest;
 /// `17`, the plane table and its type `[_; 6]`, the `[_; 4]` beside it, the
 /// slot bases `1`, `7` and `13` at every reader, the `p < 4` that guarded
 /// the second prime, the `p == 0` that meant the sensor plane, the
-/// `[i64; 12]` free row, the `1..=6` quarter sweep, the three complementary
+/// `[i64; 12]` free row, the `1..=6` 90° sweep, the three complementary
 /// slot pairs, and the relator count. Each of those is the same fact as the
 /// rank and the two tables, said again where it could drift.
 ///
@@ -26,11 +26,11 @@ fn the_alphabet_layout_derives_to_what_was_written_out() {
         [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)],
         "the two-subsets in lexicographic order, which is slot order"
     );
-    assert_eq!(CAYLEY_ALPHABET_LEN, 17, "identity, six quarters, six (3,4,5), four (5,12,13)");
+    assert_eq!(CAYLEY_ALPHABET_LEN, 17, "identity, six 90° turns, six (3,4,5), four (5,12,13)");
     assert_eq!(crate::transducer::sentence::FREE_ROW, 12, "two prime exponents per plane");
 
     // The slot bases, read back off the letters they name.
-    assert_eq!(LetterId::quarter((0, 1)).map(|l| l.raw()), Some(1));
+    assert_eq!(LetterId::turn_90((0, 1)).map(|l| l.raw()), Some(1));
     assert_eq!(LetterId::pythagorean_5((0, 1)).map(|l| l.raw()), Some(7));
     assert_eq!(LetterId::pythagorean_13((0, 1)).map(|l| l.raw()), Some(13));
 
@@ -38,8 +38,8 @@ fn the_alphabet_layout_derives_to_what_was_written_out() {
     // flip, not positions someone counted to.
     assert_eq!(
         LetterId::SHEET,
-        flip_plane(sensor_plane()).and_then(LetterId::quarter).expect("the sensor plane flips"),
-        "the sheet is the quarter on the sensor plane's flip"
+        flip_plane(sensor_plane()).and_then(LetterId::turn_90).expect("the sensor plane flips"),
+        "the sheet is the 90° turn on the sensor plane's flip"
     );
     assert_eq!(LetterId::PRIME_5, LetterId::pythagorean_5(sensor_plane()).expect("on the sensor"));
     assert_eq!(LetterId::PRIME_13, LetterId::pythagorean_13(sensor_plane()).expect("on the sensor"));
@@ -55,7 +55,7 @@ fn the_alphabet_layout_derives_to_what_was_written_out() {
     assert_eq!(complement_plane((0, 2)), Some((1, 3)));
     assert_eq!(complement_plane((0, 3)), Some((1, 2)));
 
-    // Six quarter orders, three commuting pairs, one sheet, two primes.
+    // Six 90°-turn orders, three commuting pairs, one sheet, two primes.
     assert_eq!(relators().len(), 12);
     let commuting = relators()
         .iter()
@@ -82,8 +82,8 @@ fn seventeen_letters_each_with_its_inverse() {
     }
 }
 
-/// The lattice isometries are WORDS, not letters: rot90 is one quarter
-/// letter, rot180 two, the column flip a half turn through the third
+/// The lattice isometries are WORDS, not letters: rot90 is one 90°
+/// letter, rot180 two, the column flip a 180° turn through the third
 /// axis, and the transposition their product — every one spelled by
 /// the peel and re-derived exactly from its tape.
 #[test]
@@ -129,15 +129,15 @@ fn pythagorean_words_dilations_and_honest_remainders() {
     assert!(spell(&[[qn(8, 17), qn(-15, 17)], [qn(15, 17), qn(8, 17)]]).is_none());
     // A shear is not a similarity.
     assert!(spell(&[[q(1), q(1)], [q(0), q(1)]]).is_none());
-    // (5,12,13)² composed with a quarter turn: two letters.
-    let w = Word::from_letters(&[(LetterId::quarter((0, 1)).unwrap(), false), (LetterId::pythagorean_13((0, 1)).unwrap(), true)]);
+    // (5,12,13)² composed with a 90° turn: two letters.
+    let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).unwrap(), false), (LetterId::pythagorean_13((0, 1)).unwrap(), true)]);
     let block = w.plane_block().expect("plane preserved");
     let sp = spell(&block).expect("spells back");
     assert_eq!(sp.word.plane_block(), Some(block));
     assert_eq!(sp.word.len(), 2);
 }
 
-/// Sheet conjugates a rotation to its inverse: S Q S Q⁻¹ is a half
+/// Sheet conjugates a rotation to its inverse: S Q S Q⁻¹ is a 180°
 /// turn, not the identity the commuting sum would claim.
 #[test]
 fn sheet_conjugation_is_not_abelian() {
@@ -145,8 +145,8 @@ fn sheet_conjugation_is_not_abelian() {
     let q = spell_images((0, -1), (1, 0)).expect("rot90");
     let w = sheet.word.compose(&q.word).compose(&sheet.word).compose(&q.word.inverse());
     let f = w.form().expect("the product preserves the plane");
-    assert!(!f.is_identity(), "S Q S Q⁻¹ is a half turn, not 1");
+    assert!(!f.is_identity(), "S Q S Q⁻¹ is a 180° turn, not 1");
     assert_eq!(w.order(), Order::Finite(2));
-    let half = spell_images((-1, 0), (0, -1)).expect("rot180");
-    assert!(w.same_form(&half.word));
+    let turn_180 = spell_images((-1, 0), (0, -1)).expect("rot180");
+    assert!(w.same_form(&turn_180.word));
 }

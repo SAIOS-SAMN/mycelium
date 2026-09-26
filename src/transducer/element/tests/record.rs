@@ -56,7 +56,7 @@ fn a_connection_is_one_element_with_two_components() {
     assert!(w.reverse().is_some(), "the group component reads backward");
     assert_eq!(w.sub(), remainder.as_slice(), "the remainder is the chain");
     assert_ne!(w.address(), from_canonical(&canonical_chain(&remainder).expect("one link is A5's chain")).address(), "the connection is not the bare residual");
-    let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+    let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     let long = crate::transducer::alphabet::Word::from_letters(&[(qid, false), (qid, false), (qid, false), (qid, false)]);
     assert_eq!(long.key(), crate::transducer::alphabet::Word::identity().key());
     let mut alt = w.clone();
@@ -288,7 +288,7 @@ fn a_count_past_its_field_refuses_the_record() {
 
 #[test]
 fn rotated_connection_survives_the_tape() {
-    let qid = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let qid = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let rot = crate::transducer::alphabet::Word::from_letters(&[(qid, false)]);
     let two = Q::from(BigInt::from(2));
     let car = crate::transducer::cga::dilator(&two).geo(&translator_versor(3, 5));

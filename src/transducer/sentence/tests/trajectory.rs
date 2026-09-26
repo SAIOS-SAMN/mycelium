@@ -26,7 +26,7 @@ fn two_bodies() -> (Form, coord::ChartAt, coord::ChartAt) {
 fn circuits(contact: bool) -> Vec<Circuit> {
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let (mut f, a, b) = two_bodies();
-    let turn = Transport { word: order4(), carriage: crate::transducer::cga::rotator(&q(3), &q(4)), gauge: Vec::new() };
+    let turn = Transport { word: word_turn_90(), carriage: crate::transducer::cga::rotator(&q(3), &q(4)), gauge: Vec::new() };
     let o = edge_chord(&mut f, &a, &b, turn);
     if contact {
         f.faces.at_mut(&o).expect("the chord just placed").interface = Some(super::common::contact(0, 3, 1));
@@ -100,7 +100,7 @@ fn the_first_step_whose_face_refracts_is_named() {
 #[test]
 fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
     let (mut f, a, b) = two_bodies();
-    let chord = chord(&mut f, &a, &b, order4());
+    let chord = chord(&mut f, &a, &b, word_turn_90());
     reset_orbit_defects();
     arm_orbits();
     let orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -131,7 +131,7 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
 /// on no star, so they close no second orbit.
 fn refused_circuits(extra: Option<FacePlace>) -> Vec<Circuit> {
     let (mut f, a, b) = two_bodies();
-    chord(&mut f, &a, &b, order4());
+    chord(&mut f, &a, &b, word_turn_90());
     if let Some(place) = extra {
         let c9 = f.stand_member(&word_vertex_on(9, Word::identity(), stalk::Invariant::counts(&[9])), FRAME).expect("member 9");
         let c10 = f.stand_member(&word_vertex_on(10, Word::identity(), stalk::Invariant::counts(&[10])), FRAME).expect("member 10");
@@ -163,7 +163,7 @@ fn the_reuse_ladder_classes_a_refused_circuit_by_how_its_arms_read() {
     let other = FacePlace {
         carriage: crate::transducer::element::identity_versor(),
         gauge: Vec::new(),
-        edge: Some(Transport::from_word(order4())),
+        edge: Some(Transport::from_word(word_turn_90())),
         refraction: None,
     };
     let [c] = refused_circuits(Some(other)).try_into().expect("one circuit");
@@ -225,7 +225,7 @@ fn a_circuit_through_a_static_contact_reads_its_tether_holonomy_with_the_gauge_s
 /// with its nucleus. The circuits read with the routes CT2 constructs.
 fn single_route_cell(nuclei: [crate::transducer::cga::Mv; 3]) -> Vec<Circuit> {
     let (mut f, a, b) = two_bodies();
-    let o = chord(&mut f, &a, &b, order4());
+    let o = chord(&mut f, &a, &b, word_turn_90());
     f.faces.at_mut(&o).expect("the chord just placed").interface = Some(super::common::contact(0, 3, 0));
     let (p, r, s) = (vec![1u8], vec![2u8], vec![3u8]);
     f.face_bodies.put(&o, (p.clone(), r.clone()));

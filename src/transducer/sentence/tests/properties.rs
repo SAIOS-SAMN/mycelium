@@ -76,7 +76,7 @@ fn same_torsion(a: &Form, b: &Form) -> bool {
 /// and demands specifically, because those were the two the key did not
 /// carry before K6.
 fn generated() -> Vec<(&'static str, Form)> {
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w.clone(), None);
     let inner_addr = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
@@ -108,7 +108,7 @@ fn generated() -> Vec<(&'static str, Form)> {
 
     vec![
         ("a word form", inner),
-        ("a chord with an orbit", chord_form(&[order4()])),
+        ("a chord with an orbit", chord_form(&[word_turn_90()])),
         ("a glued citation", glued),
         ("a nested citation", nested),
         ("a demand with its bodies", demanding),
@@ -204,7 +204,7 @@ fn a_key_that_is_not_one_is_refused() {
         from_address(&Address::new(vec![0xFF, 0, 0, 0, 0])).is_none(),
         "a foreign tag refuses"
     );
-    let key = form_vertex_key(&chord_form(&[order4()]));
+    let key = form_vertex_key(&chord_form(&[word_turn_90()]));
     let bytes = key.as_bytes();
     for cut in [1, 5, bytes.len() / 3, bytes.len() / 2, bytes.len() - 1] {
         assert!(
@@ -232,7 +232,7 @@ fn a_key_that_is_not_one_is_refused() {
 /// evidence — which would fork one word into one address per presentation.
 #[test]
 fn evidence_is_not_identity() {
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let cited = crate::transducer::address::Address::from_bytes([9u8; 8]);
 
@@ -318,7 +318,7 @@ fn evidence_is_not_identity() {
 #[test]
 fn a_citation_carries_the_morphism_it_acts_under() {
     use crate::transducer::element::{identity_versor, translator_versor};
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let inner = closed_word_form(w, None);
     let at = as_element_form(&inner, [1, 0, 0, 0]).expect("inner").address();
@@ -374,7 +374,7 @@ fn a_citation_carries_the_morphism_it_acts_under() {
 /// were split precisely so one decoder cannot be handed the other's bytes.
 #[test]
 fn a_sentence_is_known_by_its_tag_and_carries_no_tape() {
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let inner = closed_word_form(Word::from_letters(&[(q, false)]), None);
     let e = as_element_form(&inner, [1, 0, 0, 0]).expect("mints");
     assert!(e.description().is_empty(), "a sentence mints no tape");
@@ -412,8 +412,8 @@ fn a_sentence_is_known_by_its_tag_and_carries_no_tape() {
 /// their own yet, and until they do a face cannot be `(A_i, A_j)`.
 #[test]
 fn the_address_is_independent_of_vertex_append_order() {
-    let q01 = alphabet::LetterId::quarter((0, 1)).expect("q");
-    let q23 = alphabet::LetterId::quarter((2, 3)).expect("q");
+    let q01 = alphabet::LetterId::turn_90((0, 1)).expect("q");
+    let q23 = alphabet::LetterId::turn_90((2, 3)).expect("q");
     let mk = |ids: [alphabet::LetterId; 2]| {
         let mut f = Form::default();
         for id in ids {
@@ -421,7 +421,7 @@ fn the_address_is_independent_of_vertex_append_order() {
             // forms hold the same set of vertices and differ only in the
             // order they were appended.
             let c = u64::from(id.raw());
-            // STOOD, never put: the two quarter turns are one transport
+            // STOOD, never put: the two 90° turns are one transport
             // class (AT1 Q1), so the second JOINS the first's vertex as a
             // member on its own chart; a `put` would overwrite it and the
             // survivor would be whichever arrived last.
@@ -487,7 +487,7 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
     );
 
     // AND THE TWO DECODERS REFUSE EACH OTHER.
-    let q = alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let form = closed_word_form(Word::from_letters(&[(q, false)]), None);
     let f_addr = form_vertex_key(&form);
     assert!(
@@ -530,7 +530,7 @@ fn a_form_and_a_residual_refuse_each_others_decoder() {
 /// recut; or 54.5's value carries it), never a decoder inventing a theorem.
 #[test]
 fn the_address_does_not_carry_the_filing() {
-    let mut f = chord_form(&[order4()]);
+    let mut f = chord_form(&[word_turn_90()]);
     assert!(!f.orbits.is_empty(), "the fixture must have an orbit, or nothing is being tested");
     let mut filed = 0usize;
     for idx in 0..f.orbits.len() {
@@ -541,7 +541,7 @@ fn the_address_does_not_carry_the_filing() {
 
     // THE FILING IS NOT IN THE ADDRESS: a form that has filed and the same
     // form before it filed reach ONE key.
-    let before = chord_form(&[order4()]);
+    let before = chord_form(&[word_turn_90()]);
     assert!(before.torsion.is_empty(), "the unfiled twin has no filing");
     assert_eq!(
         form_vertex_key(&f),
@@ -568,7 +568,7 @@ fn the_address_does_not_carry_the_filing() {
 /// 54.3 — AND THE PERIOD IT FILES AT IS THE ONE THE ORBIT CLOSES AT.
 ///
 /// `file_orbit` took its period as a PARAMETER and `drive.rs` passed
-/// `hw.order()` — the rotor's order alone. A quarter turn carried along a
+/// `hw.order()` — the rotor's order alone. A 90° turn carried along a
 /// translation has the rotor order of one about a fixed point and closes at
 /// neither: the screw slips, generating a non-compact ℤ rather than a
 /// compact ℤ/4ℤ. Filed at four, a theorem stood on the orbit that the orbit
@@ -585,9 +585,9 @@ fn the_filer_reaches_the_fixed_point_gate() {
     use crate::transducer::cech::{classify, Fill};
     use crate::transducer::cga;
     use crate::transducer::element::identity_versor;
-    let quarter = order4().rotor();
+    let turn_90 = word_turn_90().rotor();
     let period = |carriage: &crate::transducer::element::Versor| {
-        match classify(&quarter, carriage, CycleType::Identity) {
+        match classify(&turn_90, carriage, CycleType::Identity) {
             Fill::Congruent(_, _, ell) => ell,
             _ => 0,
         }
@@ -596,7 +596,7 @@ fn the_filer_reaches_the_fixed_point_gate() {
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(n))
     };
     let (zero, five) = (q(0), q(5));
-    assert_eq!(period(&identity_versor()), 4, "a residue-free quarter turn closes at four");
+    assert_eq!(period(&identity_versor()), 4, "a residue-free 90° turn closes at four");
     assert_eq!(
         period(&cga::at_three::translator(&five, &zero, &zero)),
         4,

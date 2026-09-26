@@ -21,8 +21,8 @@ fn q(v: i64) -> BigRational {
 /// without asking whether the rest were lost.
 #[test]
 fn the_grades_sum_to_the_element() {
-    let q4 = LetterId::quarter((0, 1)).expect("quarter on the sensor plane");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter on the complementary plane");
+    let q4 = LetterId::turn_90((0, 1)).expect("90° turn on the sensor plane");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn on the complementary plane");
     // A DOUBLE ROTATION: `Spin(4) = SU(2) × SU(2)`, so two independent
     // commuting turns. This is the element that carries a pseudoscalar; a
     // single-plane turn does not.
@@ -44,10 +44,10 @@ fn the_grades_sum_to_the_element() {
 /// the two readings of that agree because there is one reader.
 #[test]
 fn a_rotor_occupies_even_grades_and_a_double_turn_carries_the_pseudoscalar() {
-    let q01 = LetterId::quarter((0, 1)).expect("quarter");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
 
-    // A single-plane quarter: scalar and one bivector, no 4-volume.
+    // A single-plane 90° turn: scalar and one bivector, no 4-volume.
     let single = Word::from_letters(&[(q01, false)]).rotor();
     assert!(single.is_even(), "a rotor is even");
     assert_eq!(single.grades(), vec![0, 2], "scalar and bivector, got {:?}", single.grades());
@@ -81,8 +81,8 @@ fn a_rotor_occupies_even_grades_and_a_double_turn_carries_the_pseudoscalar() {
 /// on every grade, with no grade computed separately.
 #[test]
 fn one_product_composes_every_grade_at_once() {
-    let q01 = LetterId::quarter((0, 1)).expect("quarter");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
     let a = Word::from_letters(&[(q01, false)]).rotor();
     let b = Word::from_letters(&[(q23, false)]).rotor();
 
@@ -114,12 +114,12 @@ fn one_product_composes_every_grade_at_once() {
 #[test]
 fn the_factorisation_spells_a_double_turn_whole_and_refuses_an_odd_element() {
     use crate::transducer::alphabet::factor_rotor;
-    let q01 = LetterId::quarter((0, 1)).expect("quarter");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn");
     let double = Word::from_letters(&[(q01, false), (q23, false)]).rotor();
     assert_eq!(double.grades(), vec![0, 2, 4]);
     let Some(Ok(spelled)) = factor_rotor(&double) else {
-        panic!("a double rotation of two quarter turns is spelled by the seventeen");
+        panic!("a double rotation of two 90° turns is spelled by the seventeen");
     };
     assert!(spelled.rotor().projective_eq(&double), "the spelling IS the rotor, 4-volume included");
     assert_eq!(spelled.len(), 2, "one letter per commuting plane, got {:?}", spelled.letters());

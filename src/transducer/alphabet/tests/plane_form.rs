@@ -10,13 +10,13 @@ use crate::transducer::alphabet::*;
 /// and nowhere visible until a conjugation comes out inverted.
 #[test]
 fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
-    let q = |p| Word::from_letters(&[(LetterId::quarter(p).expect("a pair plane"), false)]);
+    let q = |p| Word::from_letters(&[(LetterId::turn_90(p).expect("a pair plane"), false)]);
     let cases: Vec<(&str, Word)> = vec![
-        ("sensor quarter", q((0, 1))),
-        ("off-sensor quarter", q((0, 2))),
-        ("far quarter", q((2, 3))),
+        ("sensor 90° turn", q((0, 1))),
+        ("off-sensor 90° turn", q((0, 2))),
+        ("far 90° turn", q((2, 3))),
         ("sheet", PlaneForm::sheet_word()),
-        ("sensor half", q((0, 1)).compose(&q((0, 1)))),
+        ("sensor 180° turn", q((0, 1)).compose(&q((0, 1)))),
         ("double rotation", q((0, 1)).compose(&q((2, 3)))),
         // The RAW conjugate tape, before any normalisation: `rebase` runs
         // `normal_form` itself, so asserting on its output would only say
@@ -24,9 +24,9 @@ fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
         (
             "raw conjugate tape",
             Word::from_letters(&[
-                (LetterId::quarter((1, 2)).expect("sheet plane"), false),
-                (LetterId::quarter((0, 1)).expect("sensor plane"), false),
-                (LetterId::quarter((1, 2)).expect("sheet plane"), true),
+                (LetterId::turn_90((1, 2)).expect("sheet plane"), false),
+                (LetterId::turn_90((0, 1)).expect("sensor plane"), false),
+                (LetterId::turn_90((1, 2)).expect("sheet plane"), true),
             ]),
         ),
         ("conjugate", q((0, 1)).rebase(&q((1, 2)))),
@@ -51,7 +51,7 @@ fn a_plane_form_rebuilds_the_rotor_it_was_read_from() {
 /// and O(1); a sheet conjugates exponents.
 #[test]
 fn plane_form_is_the_coefficient_group() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let rot = Word::from_letters(&[(q, false)]).form().unwrap();
     let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
     assert!(rot.compose(&rot.inverse()).is_identity());
@@ -70,7 +70,7 @@ fn plane_form_is_the_coefficient_group() {
 /// §52.1: conjugacy key is invariant on the four conjugation lines.
 #[test]
 fn plane_conjugacy_four_lines() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false), (q, false)]).form().unwrap();
     let r2 = Word::from_letters(&[(q, false)]).form().unwrap();
     let sheet = PlaneForm { orientation: true, rot: [0; CAYLEY_ALPHABET_LEN] };
@@ -84,7 +84,7 @@ fn plane_conjugacy_four_lines() {
 
 #[test]
 fn conjugacy_key_iff_conjugate() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).form().unwrap();
     let inv = r.inverse();
     assert!(r.conjugacy_eq(&inv), "r and -r are one even class");

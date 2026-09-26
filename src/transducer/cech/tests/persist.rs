@@ -1,7 +1,7 @@
 // 13, 78.27 — THE COMPLEX'S TRIES ARE A BIJECTION, and a bad byte is a
 // refusal.
 
-use super::common::{quarter, v, vol};
+use super::common::{turn_90, v, vol};
 use crate::transducer::cech::{Complex, Fill};
 use crate::transducer::element::identity_versor;
 
@@ -51,7 +51,7 @@ fn an_empty_complex_survives_its_own_tries() {
 #[test]
 fn one_edge_survives_its_own_tries() {
     let mut cx = Complex::new();
-    cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
+    cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     let before = fills(&cx);
     let back = round_trip(&cx);
     assert_eq!(fills(&back), before, "the stored fill returns as itself");
@@ -63,8 +63,8 @@ fn one_edge_survives_its_own_tries() {
 #[test]
 fn a_complex_survives_its_own_tries() {
     let mut cx = Complex::new();
-    cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
-    cx.set_edge(v(2), v(3), quarter(), identity_versor(), vol());
+    cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
+    cx.set_edge(v(2), v(3), turn_90(), identity_versor(), vol());
     let before = fills(&cx);
     assert!(!before.is_empty(), "the fixture carries simplices to test");
 
@@ -84,7 +84,7 @@ fn a_complex_survives_its_own_tries() {
 fn an_unread_fill_survives_its_own_tries_by_its_reason() {
     for why in crate::transducer::cech::FillUnread::ALL {
         let mut cx = Complex::new();
-        cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
+        cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
         let keys: Vec<Vec<u8>> = cx.degrees[1].scoped().map(|(k, _)| k).collect();
         for k in &keys {
             if let Some(s) = cx.degrees[1].get_mut(k) {
@@ -107,7 +107,7 @@ fn an_unread_fill_survives_its_own_tries_by_its_reason() {
 #[test]
 fn a_corrupt_byte_never_fabricates_an_open_cell() {
     let mut cx = Complex::new();
-    cx.set_edge(v(1), v(2), quarter(), identity_versor(), vol());
+    cx.set_edge(v(1), v(2), turn_90(), identity_versor(), vol());
     let mut bytes = Vec::new();
     cx.put_tries(&mut bytes);
     let honest = fills(&cx).iter().filter(|f| *f == "open").count();

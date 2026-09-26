@@ -118,22 +118,22 @@ fn wrap_glues_crystallized_form() {
     let rem = vec![(0, 0, 1, 2), (0, 1, 1, 2)];
     c.hold(rem);
     // A chain-free word carrying an honest torsion cycle: a HOLONOMY, the
-    // quarter turn, at its READ period 4 (PD1). The fixture filed σ = {1↦2}
+    // 90° turn, at its READ period 4 (PD1). The fixture filed σ = {1↦2}
     // at period 2, which permutes nothing and has no period — a claim the
     // record now refuses by name; a chain-free word's torsion is a
     // holonomy's, as the court's Congruent fill files it.
     let mut word = crate::transducer::element::Element::identity();
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
-    let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
+    let turn_90 = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
     assert_eq!(
         word.record_cycle(crate::transducer::element::TorsionCycle {
-            generator: crate::transducer::element::Generator::Holonomy(Box::new(quarter)),
+            generator: crate::transducer::element::Generator::Holonomy(Box::new(turn_90)),
             period: 4,
             fibre: FIBER_SPATIAL,
             remainder: None,
         }),
         crate::transducer::element::Filed::New,
-        "the quarter turn stands at its read period"
+        "the 90° turn stands at its read period"
     );
     let mut budget = crate::physics::Physics::default().stroke_n(32);
     let _ = c.pivot_on(&word, &crate::transducer::family::NoCrystal, &mut budget);
@@ -148,7 +148,7 @@ fn wrap_glues_crystallized_form() {
 fn hold_form_keeps_a_glued_open_orbit() {
     use crate::transducer::alphabet::Word;
     use crate::transducer::sentence::{Form, Vertex};
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
     let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
@@ -492,11 +492,11 @@ fn a_candidate_closes_flat_closes_at_a_period_or_ruptures() {
     let none = monodromy(&v, &[]).expect("the empty product is measured");
     assert_eq!(none.order(), Some(Order::Finite(1)), "nothing carried, nothing turned");
 
-    // A QUARTER TURN CLOSES AT FOUR. Carried around a flat connection it is
+    // A 90° TURN CLOSES AT FOUR. Carried around a flat connection it is
     // itself, and its order is its period — not `1`, and not a rupture.
-    let quarter = Rotor::blade(0b0011, q(1)).add(&Rotor::scalar(q(1)));
-    let flat = monodromy(&quarter, std::slice::from_ref(&Rotor::identity())).expect("measured");
-    assert!(flat.projective_eq(&quarter), "a flat connection returns the candidate");
+    let turn_90 = Rotor::blade(0b0011, q(1)).add(&Rotor::scalar(q(1)));
+    let flat = monodromy(&turn_90, std::slice::from_ref(&Rotor::identity())).expect("measured");
+    assert!(flat.projective_eq(&turn_90),"a flat connection returns the candidate");
     assert!(
         matches!(flat.order(), Some(Order::Finite(n)) if n >= 2),
         "and it closes at a period: {:?} — under an equality test this read as a rupture",

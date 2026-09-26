@@ -12,7 +12,7 @@ use crate::transducer::stalk;
 /// nothing for that vertex until the citation resolves.
 #[test]
 fn an_adjoined_generator_is_among_its_forms_words() {
-    let r = order4().rotor();
+    let r = word_turn_90().rotor();
     let letter = generator_form(&r, &stalk::Invariant::counts(&[3, 5]), &[]).expect("a rotor mints a generator");
     let words = acting_of_element(&letter);
     let [t] = words.as_slice() else {
@@ -25,9 +25,9 @@ fn an_adjoined_generator_is_among_its_forms_words() {
     assert!(versor_chart(w).is_some(), "it has the chart the generator index is keyed by");
 
     // A spelled vertex still yields its residue.
-    let spelled = closed_word_form(order4(), None);
+    let spelled = closed_word_form(word_turn_90(), None);
     let e = as_element_form(&spelled, [0, 0, 0, 1]).expect("a tape");
     let ws = acting_of_element(&e);
-    assert!(ws.iter().any(|t| t.word.rotor().projective_eq(&order4().rotor())));
+    assert!(ws.iter().any(|t| t.word.rotor().projective_eq(&word_turn_90().rotor())));
     let _ = Word::identity();
 }

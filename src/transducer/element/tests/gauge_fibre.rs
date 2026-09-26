@@ -189,10 +189,10 @@ fn a_hue_record_at_twice_its_read_period_is_refused_by_name() {
 /// read, and at the order itself it stands.
 #[test]
 fn a_holonomy_record_at_twice_its_rays_order_is_refused_by_name() {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
-    let quarter = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
-    let generator = Generator::Holonomy(Box::new(quarter));
-    assert_eq!(generator.order(), Some(4), "a quarter turn's order");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
+    let turn_90 = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
+    let generator = Generator::Holonomy(Box::new(turn_90));
+    assert_eq!(generator.order(), Some(4), "a 90° turn's order");
     let mut w = Element::identity();
     let twice = TorsionCycle { generator: generator.clone(), period: 8, fibre: FIBER_SPATIAL, remainder: None };
     assert_eq!(w.record_cycle(twice.clone()), Filed::Misspoken, "at twice its order: refused by name");

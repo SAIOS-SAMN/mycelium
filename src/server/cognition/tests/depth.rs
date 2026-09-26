@@ -8,8 +8,8 @@ use crate::transducer::alphabet::{Derivation, LetterId, Word};
 use crate::transducer::element::{self, Element};
 use crate::transducer::sentence::{as_element_form, Form, Vertex};
 
-fn quarter(n: usize) -> Word {
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn");
+fn turn_90(n: usize) -> Word {
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn");
     Word::from_letters(&vec![(q, false); n])
 }
 
@@ -42,7 +42,7 @@ fn sentence_with(w: Word, tag: u8) -> Element {
 #[test]
 fn a_word_committed_by_two_organs_reads_depth_two() {
     let mut k = Kernel::new();
-    let said = sentence_with(quarter(1), 1);
+    let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
     assert_eq!(k.depth_of(addr.as_bytes()), 0, "nothing has committed to it yet");
 
@@ -125,7 +125,7 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
 #[test]
 fn the_depth_index_rebuilds_from_the_chain_alone() {
     let mut k = Kernel::new();
-    let said = sentence_with(quarter(1), 1);
+    let said = sentence_with(turn_90(1), 1);
     let addr = said.address();
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&said)),
@@ -153,7 +153,7 @@ fn the_depth_index_rebuilds_from_the_chain_alone() {
 fn the_generators_are_read_by_depth() {
     let mut k = Kernel::new();
     assert!(k.generators_by_depth().is_empty(), "a court that ruled nothing has no rows");
-    let said = sentence_with(quarter(1), 1);
+    let said = sentence_with(turn_90(1), 1);
     assert_eq!(
         k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&said)),
         vec![crate::anastome::dialogue::SPEECH_STOOD]

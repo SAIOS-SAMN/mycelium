@@ -59,8 +59,8 @@ fn an_infinite_order_letter_states_no_relation() {
 #[test]
 fn reduction_descends_and_holds_the_operator() {
     let rules = rules_from_relators();
-    let q = LetterId::quarter((0, 1)).expect("quarter");
-    // Five quarters is one quarter: q⁴ = 1 is a stated relator.
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
+    // Five 90° turns are one 90° turn: q⁴ = 1 is a stated relator.
     let w = Word::from_letters(&[(q, false); 5]);
     let mut b = budget(4096);
     let out = reduce(&w, &rules, &mut b).expect("reduction finishes inside the budget");
@@ -157,7 +157,7 @@ fn two_spellings_of_one_element_reduce_to_one_tape() {
     let (rules, finished) = complete(&seed, &mut b);
     assert!(finished);
 
-    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
     // q³ and q⁻¹ are one element, spelled two ways and at two lengths.
     let long = Word::from_letters(&[(q, false), (q, false), (q, false)]);
     let short = Word::from_letters(&[(q, true)]);
@@ -183,7 +183,7 @@ fn two_spellings_of_one_element_reduce_to_one_tape() {
 /// identity.
 #[test]
 fn the_operator_is_decided_without_rewriting() {
-    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert!(
         a.operator_eq(&Word::identity()),
@@ -203,7 +203,7 @@ fn a_rule_names_its_plane_only_when_it_has_one() {
     let rules = rules_from_relators();
     let spanning = rules.iter().filter(|r| rule_plane(r).is_none()).count();
     let single = rules.iter().filter(|r| rule_plane(r).is_some()).count();
-    assert!(single > 0, "the quarter-turn rules live on one plane each");
+    assert!(single > 0, "the 90°-turn rules live on one plane each");
     assert!(
         spanning > 0,
         "and the complementary-plane commutators span two, so they name none"
@@ -228,8 +228,8 @@ fn the_presentation_reduces_words_in_flight() {
     assert!(*finished, "the alphabet's finite presentation completes under its own extent");
     assert!(!rules.is_empty());
 
-    let q01 = LetterId::quarter((0, 1)).expect("quarter");
-    let q23 = LetterId::quarter((2, 3)).expect("quarter on the complementary plane");
+    let q01 = LetterId::turn_90((0, 1)).expect("90° turn");
+    let q23 = LetterId::turn_90((2, 3)).expect("90° turn on the complementary plane");
     let a = Word::from_letters(&[(q01, false), (q23, false)]);
     let b = Word::from_letters(&[(q23, false), (q01, false)]);
     assert!(a.operator_eq(&b), "complementary planes commute: one element");
@@ -248,7 +248,7 @@ fn the_presentation_reduces_words_in_flight() {
     // construction.
     for w in [&a, &b] {
         let Some(Ok(spelled)) = factor_rotor(&w.rotor()) else {
-            panic!("a double quarter turn is spelled by the seventeen");
+            panic!("a double 90° turn is spelled by the seventeen");
         };
         assert_eq!(
             tape_key(&spelled),
@@ -262,7 +262,7 @@ fn the_presentation_reduces_words_in_flight() {
 /// rewrite, and a rule from it would rewrite a word to itself forever.
 #[test]
 fn a_relation_between_one_tape_and_itself_is_not_a_rule() {
-    let q = LetterId::quarter((0, 1)).expect("quarter");
+    let q = LetterId::turn_90((0, 1)).expect("90° turn");
     let w = Word::from_letters(&[(q, false)]);
     assert!(Rule::orient(&w, &w).is_none());
 }

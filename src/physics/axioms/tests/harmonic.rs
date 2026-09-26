@@ -11,7 +11,7 @@ use num_traits::Zero;
 #[test]
 fn a11_the_trace_cannot_orient_and_the_deviatoric_can() {
     // A domino lying along the rows, and the same domino along the
-    // columns: congruent, one a quarter turn from the other.
+    // columns: congruent, one a 90° turn from the other.
     let along_r = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
     let along_c = blade::shape_of(&[(0, 0, 0), (0, 1, 0)]);
 
@@ -33,7 +33,7 @@ fn a11_the_trace_cannot_orient_and_the_deviatoric_can() {
         blade::relative_double_angle(&ua, &ub).expect("congruent bodies have an angle");
     assert!(
         cos2 == crate::core::Q::from_integer((-1).into()) && sin2.is_zero(),
-        "a quarter turn is 2φ = π: cos 2φ = −1, sin 2φ = 0; got ({cos2}, {sin2})"
+        "a 90° turn is 2φ = π: cos 2φ = −1, sin 2φ = 0; got ({cos2}, {sin2})"
     );
 }
 
@@ -55,20 +55,20 @@ fn a11_the_quartic_orients_what_the_deviatoric_cannot() {
     );
 }
 
-/// A.11's FRAME, MINTED: a body and its quarter turn give the rotor
+/// A.11's FRAME, MINTED: a body and its 90° turn give the rotor
 /// `1 + e₁₂`, whose projective order is 4 — the reading `ℓ = 1` on
 /// every word exists to be moved off.
 #[test]
-fn a11_a_quarter_turn_mints_an_order_four_rotor() {
-    // An L-tromino and the same L turned a quarter: chiral enough
+fn a11_a_turn_90_mints_an_order_four_rotor() {
+    // An L-tromino and the same L turned 90°: chiral enough
     // that only one of the four turns can carry it.
     let upright = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0)]);
     let theta = blade::relative_rotor(&upright.blade, &turned.blade)
-        .expect("one proper turn carries an L onto its quarter turn");
+        .expect("one proper turn carries an L onto its 90° turn");
     assert!(
         matches!(theta, blade::Pose::Turn(_)),
-        "equal cardinality: the support settles the half turn, got {theta:?}"
+        "equal cardinality: the support settles the 180° turn, got {theta:?}"
     );
     assert!(
         !theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
@@ -99,13 +99,13 @@ fn a11_a_body_against_itself_is_the_identity_turn() {
 /// counts and equal `‖u‖²` refused this, which modelled every
 /// transformation as rigid when the carriage carries a dilator `D(ρ)`.
 ///
-/// The half turn stays OPEN here, and the REASON CHANGED (68). It was
+/// The 180° turn stays OPEN here, and the REASON CHANGED (68). It was
 /// "the cardinalities differ, so no cell test can run" — a count
 /// standing in for scale, and false as a general statement now that
 /// `φ = z₃·conj(z₂)` reads across any dilation.
 ///
 /// It stays open because A DOMINO IS 2-FOLD SYMMETRIC, so `h₃ = 0`
-/// exactly: the half turn maps it to itself and sends `h₃ ↦ −h₃`.
+/// exactly: the 180° turn maps it to itself and sends `h₃ ↦ −h₃`.
 /// Both candidates act identically on it and there is no fact to
 /// recover. The `ℤ₂` freedom is a property of the body, not a gap in
 /// the reader — and an L-tetromino at the same two scales is now
@@ -128,7 +128,7 @@ fn a11_a_dilated_body_keeps_its_frame() {
         .expect("a dilation is a similarity and its rotation is defined");
     assert!(
         matches!(theta, blade::Pose::HalfOpen(_)),
-        "a 2-fold symmetric body leaves the half turn open, got {theta:?}"
+        "a 2-fold symmetric body leaves the 180° turn open, got {theta:?}"
     );
     assert!(
         blade::third_harmonic(&domino.blade).is_none(),
@@ -258,14 +258,14 @@ fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
 fn a11_no_even_moment_separates_a_body_from_its_point_reflection() {
     let body = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]);
     // The same body reflected through the origin. Congruent to itself
-    // under a half turn, and a half turn is what must be detected.
+    // under a 180° turn, and a 180° turn is what must be detected.
     let flipped = blade::shape_of(&[(0, 0, 0), (-1, 0, 0), (0, -1, 0)]);
 
     let (ua, ub) = (
         blade::deviatoric(&body.blade).expect("anisotropic"),
         blade::deviatoric(&flipped.blade).expect("anisotropic"),
     );
-    assert_eq!(ua, ub, "the 2nd harmonic cannot see a half turn");
+    assert_eq!(ua, ub, "the 2nd harmonic cannot see a 180° turn");
 
     let (qa, qb) = (
         blade::quartic_harmonic(&body.blade),

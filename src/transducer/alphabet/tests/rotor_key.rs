@@ -7,7 +7,7 @@ use crate::transducer::alphabet::*;
 /// and is not in the M1 key.
 #[test]
 fn rebase_is_normal_form_and_contact_in_key() {
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let w = Word::from_letters(&[(q, false)]);
     let by = Word::from_letters(&[(q, false), (q, false)]);
     let r = w.rebase(&by);
@@ -25,19 +25,19 @@ fn rebase_is_normal_form_and_contact_in_key() {
 fn spelled_word_is_none_when_the_rotor_does_not_spell() {
     assert!(Rotor::zero().spelled_word().is_none());
     assert!(Rotor::zero().order().is_none());
-    let q = LetterId::quarter((0, 1)).expect("sensor quarter");
+    let q = LetterId::turn_90((0, 1)).expect("sensor 90° turn");
     let r = letter(q);
-    let w = r.spelled_word().expect("quarter spells");
+    let w = r.spelled_word().expect("the 90° turn spells");
     assert_eq!(w.key(), r.key());
-    assert_eq!(r.order().expect("quarter has order"), w.order());
+    assert_eq!(r.order().expect("the 90° turn has order"), w.order());
 }
 
 #[test]
 fn rotor_class_key_invariant() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
-    let s = Word::from_letters(&[(LetterId::quarter((0, 2)).unwrap(), false)]).rotor();
+    let s = Word::from_letters(&[(LetterId::turn_90((0, 2)).unwrap(), false)]).rotor();
     let conj = s.geo(&r).geo(&s.reverse());
     assert_eq!(r.class_key(), conj.class_key());
     let scaled = r.scale(&qn(3, 2));
@@ -63,14 +63,14 @@ fn rotor_class_key_invariant() {
 /// rotation, which a composition reaches without anyone choosing it.
 #[test]
 fn a_rotor_and_its_negative_are_one_class() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let neg = r.scale(&-qn(1, 1));
     assert!(r.projective_eq(&neg), "the action divides the scale out");
     assert_eq!(r.class_key(), neg.class_key(), "one ray, one class");
     assert!(r.class_eq(&neg));
     // And the composition that produces the other lift on its own: three
-    // quarter turns are `−q⁻¹`, whose class is `q⁻¹`'s.
+    // 90° turns are `−q⁻¹`, whose class is `q⁻¹`'s.
     let cubed = Word::from_letters(&[(q, false), (q, false), (q, false)]).rotor();
     let inv = r.reverse();
     assert!(cubed.projective_eq(&inv), "q³ is the other lift of q⁻¹");
@@ -81,7 +81,7 @@ fn a_rotor_and_its_negative_are_one_class() {
 /// replay to the same affine.
 #[test]
 fn two_tapes_of_one_vertex_have_one_key() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let a = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     let b = Word::identity();
     assert!(a.rotor().projective_eq(&b.rotor()), "q^4 and 1 are one rotor under ℚ×");
@@ -89,22 +89,22 @@ fn two_tapes_of_one_vertex_have_one_key() {
     assert_eq!(a.key(), b.key(), "q^4 and 1 are one A1 key");
     let long = Word::raw(vec![(q, false), (q, false), (q, false), (q, false), (q, false)]);
     let geo = long.geodesic();
-    assert_eq!(geo.len(), 1, "five quarters geodesic to one");
+    assert_eq!(geo.len(), 1, "five 90° turns geodesic to one");
     let ma = long.matrix().expect("affine");
     let mb = geo.matrix().expect("affine");
     assert_eq!(ma, mb, "tape and geodesic replay the same affine");
     let g = relators();
     assert_eq!(g.len(), RELATOR_N);
-    assert!(g.iter().any(|r| r.kind == RelatorKind::QuarterOrderFour));
+    assert!(g.iter().any(|r| r.kind == RelatorKind::Turn90OrderFour));
     assert!(g.iter().any(|r| r.kind == RelatorKind::PlaneCommute));
     assert!(g.iter().any(|r| r.kind == RelatorKind::SheetConjugate));
     assert!(g.iter().any(|r| r.kind == RelatorKind::PrimeInfinite));
-    assert!(g.iter().any(|r| r.kind == RelatorKind::QuarterOrderFour && r.word.geodesic().is_empty()));
+    assert!(g.iter().any(|r| r.kind == RelatorKind::Turn90OrderFour && r.word.geodesic().is_empty()));
 }
 
 #[test]
 fn a1_canonical_is_projective_either_sign() {
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let r = Word::from_letters(&[(q, false)]).rotor();
     let q4 = Word::from_letters(&[(q, false), (q, false), (q, false), (q, false)]);
     assert_eq!(q4.key(), Word::identity().key(), "q^4 and 1 share an A1 key");
@@ -113,5 +113,5 @@ fn a1_canonical_is_projective_either_sign() {
     let next = Word::from_letters(&[(q, false), (q, false)]).rotor();
     assert_ne!(r.key(), next.key(), "R and R·q are distinct vertices");
     let f = Word::from_letters(&[(q, false), (q, false), (q, false)]).form().unwrap();
-    assert_eq!(f.rot[q.raw() as usize], -1, "A3 writes three quarters as −1");
+    assert_eq!(f.rot[q.raw() as usize], -1, "A3 writes three 90° turns as −1");
 }

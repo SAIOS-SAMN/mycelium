@@ -15,7 +15,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
     let held = Word::from_letters(&[(q, false)]);
     let spoken = Word::from_letters(&[(q, false), (p5, false)]);
@@ -24,9 +24,9 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     let one = from_connection(&held, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
     epi.learn(&one.to_bytes().expect("the record writes"));
-    assert_eq!(epi.genome_len(), 1, "the mind holds the quarter turn");
+    assert_eq!(epi.genome_len(), 1, "the mind holds the 90° turn");
 
-    // The quarter turn IS held; the prime is not. The demand must ask for
+    // The 90° turn IS held; the prime is not. The demand must ask for
     // the prime and nothing else.
     let ask = from_connection(&spoken, &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
         .expect("a connection on the plane");
@@ -46,7 +46,7 @@ fn a_mind_speaks_the_element_it_lacks_and_never_a_count() {
     );
     assert!(
         (1..=6).all(|u| asked.rot[u] == 0),
-        "and never for the quarter turn it already holds: {:?}",
+        "and never for the 90° turn it already holds: {:?}",
         asked.rot
     );
     assert!(
@@ -88,7 +88,7 @@ fn the_factoring_basis_is_read_on_the_stratum_not_the_exact_chart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::element::{from_connection, identity_versor};
 
-    let q = LetterId::quarter((0, 1)).expect("the quarter turn on the sensor plane");
+    let q = LetterId::turn_90((0, 1)).expect("the 90° turn on the sensor plane");
     let p5 = LetterId::pythagorean_5((0, 1)).expect("a prime on the same plane");
     let mut epi = Epigenome::new();
     let one = from_connection(&Word::from_letters(&[(q, false)]), &identity_versor(), &[], &Vec::new(), [1, 0, 0, 0])
@@ -107,7 +107,7 @@ fn the_factoring_basis_is_read_on_the_stratum_not_the_exact_chart() {
     assert_eq!(
         generators[0].0.as_slice(),
         one.address().as_bytes(),
-        "and it is the quarter turn"
+        "and it is the 90° turn"
     );
     assert!(at.0.len() < exact.0.len(), "read one or more axes coarser than the exact chart");
     assert!(

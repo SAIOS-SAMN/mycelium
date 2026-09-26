@@ -69,8 +69,8 @@ pub(crate) fn rotor_between(a: &[BigRational; 2], b: &[BigRational; 2]) -> Optio
 }
 
 /// The rotor of half the angle of `s + b e₁₂`: `(|r| + s) + b e₁₂`, exact
-/// when `|r|` is rational. A half turn (`s < 0`, `b = 0`) halves to the
-/// quarter turn `1 + e₁₂`... whose own half-angle form is `e₁₂` itself when
+/// when `|r|` is rational. A 180° turn (`s < 0`, `b = 0`) halves to the
+/// 90° turn `1 + e₁₂`... whose own half-angle form is `e₁₂` itself when
 /// the rotor is the pure bivector.
 pub(crate) fn half_rotor(s: &BigRational, b: &BigRational) -> Option<(BigRational, BigRational)> {
     let m2 = s * s + b * b;
@@ -80,7 +80,7 @@ pub(crate) fn half_rotor(s: &BigRational, b: &BigRational) -> Option<(BigRationa
     let m = rational_sqrt(&m2)?;
     let s2 = &m + s;
     match (s2.is_zero(), b.is_zero()) {
-        (true, true) => Some((q(0), q(1))), // the half of a half turn: e₁₂
+        (true, true) => Some((q(0), q(1))), // the half of a 180° turn: e₁₂
         _ => Some((s2, b.clone())),
     }
 }
@@ -200,7 +200,7 @@ fn rotor_at(p: &(BigRational, BigRational), e_ij: &Mv) -> Mv {
 ///   scale    ρ² = s_b / s_a on that tower; no rational ρ, no member
 ///   turn     the second harmonic's point of 2φ, one exact half-angle step;
 ///            isotropic there, the fourth's point of 4φ and two steps
-///   coset    {R, R·e_ij} from the second; {R·Q_k}, the four quarter turns,
+///   coset    {R, R·e_ij} from the second; {R·Q_k}, the four 90° turns,
 ///            from the fourth; none chosen (L7c)
 ///   odd      the same against a's harmonics conjugated — `a` mirrored across
 ///            the plane's first axis — and the member R·e_j
@@ -250,9 +250,9 @@ pub(super) fn transitions_on(
     let dilator = cga::dilator(&rho);
     let e_ij = Mv::blade(cga::base_axis(plane.0 + 1) | cga::base_axis(plane.1 + 1), q(1));
     let mirror = Mv::blade(cga::base_axis(plane.1 + 1), q(1));
-    // The four quarter turns of the plane as rays: 0°, 90°, 180°, 270°.
+    // The four 90° turns of the plane as rays: 0°, 90°, 180°, 270°.
     let one = Mv::scalar(q(1));
-    let quarters = [one.clone(), one.add(&e_ij), e_ij.clone(), e_ij.sub(&one)];
+    let turns_90 =[one.clone(), one.add(&e_ij), e_ij.clone(), e_ij.sub(&one)];
     for odd in [false, true] {
         let read = |m: Harmonic| {
             let ha = harmonic(a, plane, tower, m).map(|h| match odd {
@@ -274,7 +274,7 @@ pub(super) fn transitions_on(
                 match phase_point(&qa, &qb, &(&rho2 * &rho2)).and_then(|p| half_point(&p)).and_then(|p| half_point(&p)) {
                     Some(p) => {
                         let r = rotor_at(&p, &e_ij);
-                        quarters.iter().map(|k| r.geo(k)).collect()
+                        turns_90.iter().map(|k| r.geo(k)).collect()
                     }
                     None => Vec::new(),
                 }
@@ -323,7 +323,7 @@ fn placed(a: &Blade, b: &Blade, linear: &Mv) -> Option<Mv> {
 /// Not a choice among candidates by a scalar (rule 4) — every member
 /// carries the body; what is fixed is which name the language gives the
 /// class, and a dilated bar is carried by the dilation, not by the
-/// dilation and the bar's own half turn.
+/// dilation and the bar's own 180° turn.
 pub fn coset_representative(coset: &[(Mv, Mv)]) -> Option<Mv> {
     let nearness = |rotation: &Mv| -> Option<BigRational> {
         // `a²/w`, scale-free, read as the class's order (Axiom C).

@@ -149,7 +149,7 @@ fn a_chain_measures_three_lanes_and_never_the_span() {
 fn reduction_magnitude_has_law_12_parity_with_axes_for_offplane_and_letters() {
     use crate::transducer::alphabet::{LetterId, Word};
     // An off-plane rotor on plane (2, 3)
-    let w = Word::from_letters(&[(LetterId::quarter((2, 3)).expect("offplane quarter"), false)]);
+    let w = Word::from_letters(&[(LetterId::turn_90((2, 3)).expect("offplane 90° turn"), false)]);
     let mut e = Element::identity();
     e.action.rotor = Some(w.rotor());
     assert_eq!(e.axes(), vec![FIBER_SPATIAL], "axes reports occupied spatial stratum");

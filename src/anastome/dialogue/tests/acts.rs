@@ -59,7 +59,7 @@ fn the_five_acts_round_trip() {
     // bytes, so the round trip is over what the court actually serves and
     // what the voice actually decodes — not over a chain of links the
     // voice could only subtract from.
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let word = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
     let element = crate::transducer::element::from_connection(
         &word,
@@ -133,7 +133,7 @@ fn the_five_acts_round_trip() {
 /// page cut inside a record is refused whole, never shortened.
 #[test]
 fn a_class_page_carries_its_representative_as_a_ray() {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
     let r = crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor();
     let page = ClassPage { key: r.class_key().expect("a class"), order: 4, rotor: r.clone() };
     let words = vec![Taught { at: crate::chronometry::Stamp::default(), word: vec![7u8] }];

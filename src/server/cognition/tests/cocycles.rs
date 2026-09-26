@@ -56,7 +56,7 @@ fn filed_v2_form() -> (
 ) {
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::sentence::{as_element_form, form_torsion, Form, Vertex};
-let order4 = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter"), false)]);
+let word_turn_90 = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn"), false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
 let mut f = Form::default();
@@ -77,12 +77,12 @@ for tag in [2u8, 3u8] {
     f.place_overlap(crate::network::nerve::coord::ChartAt::Frame, c.clone(), None).expect("star");
     charts.push(c);
 }
-// The chord carries the quarter turn as the pivot writes a word on an
+// The chord carries the 90° turn as the pivot writes a word on an
 // overlap: its left factor (AT1).
 let chord = f.place_overlap(charts[0].clone(), charts[1].clone(), None).expect("a chord between two bodies");
 f.apply_move(&crate::transducer::sentence::PivotBy::Word {
     face: chord,
-    word: Box::new(order4),
+    word: Box::new(word_turn_90),
     side: crate::transducer::sentence::Side::Left,
 });
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
@@ -285,7 +285,7 @@ assert!(
 #[test]
 fn a_held_fiber_germinates_its_holonomy_not_a_member() {
 use crate::transducer::alphabet::{LetterId, Word};
-let q = LetterId::quarter((0, 1)).expect("quarter turn");
+let q = LetterId::turn_90((0, 1)).expect("90° turn");
 let one = rotor_versor(&Word::from_letters(&[(q, false)]).rotor()).expect("versor");
 let inv = rotor_versor(&Word::from_letters(&[(q, true)]).rotor()).expect("inverse versor");
 let id = element::identity_versor();
@@ -296,10 +296,10 @@ assert!(fiber_holonomy(&[]).is_none(), "an empty fiber is not an orbit");
 let closed = fiber_holonomy(&[one.clone(), inv]).expect("an orbit");
 assert!(closed.projective_eq(&id), "q then q-inverse closes");
 
-// Four quarter turns on one plane: the product is the obstruction,
+// Three 90° turns on one plane: the product is the obstruction,
 // and it is not any member of the fiber.
 let held = fiber_holonomy(&[one.clone(), one.clone(), one.clone()]).expect("an orbit");
-assert!(!held.projective_eq(&id), "three quarter turns do not close");
+assert!(!held.projective_eq(&id), "three 90° turns do not close");
 assert!(
     !held.projective_eq(&one),
     "the holonomy is the composite, not the transition the fiber ends on"

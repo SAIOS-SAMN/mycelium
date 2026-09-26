@@ -9,7 +9,7 @@ pub fn closed_turn(contact: Option<crate::transducer::alphabet::Contact>) -> cra
 use crate::network::nerve::coord;
 use crate::transducer::alphabet::Word;
 use crate::transducer::sentence::{Form, Vertex};
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let w = Word::from_letters(&[(q, false)]);
 let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
 let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));

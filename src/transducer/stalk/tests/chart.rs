@@ -15,7 +15,7 @@ fn chain(sites: &[(i64, i64)]) -> element::CanonicalChain {
 
 #[test]
 fn chart_axes_read_from_the_rotor_not_a_matrix() {
-    let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let rot = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
     let w = from_connection(&rot, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
         .expect("connection");
@@ -35,14 +35,14 @@ fn chart_axes_read_from_the_rotor_not_a_matrix() {
     // greps for a forbidden identifier proves nothing about either, and it
     // goes green on a file that has been rewritten to do the wrong thing
     // under a different name.
-    let q2 = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("quarter");
+    let q2 = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
     let twice = crate::transducer::alphabet::Word::from_letters(&[(q2, false), (q2, false)]);
-    let half = from_connection(&twice, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
+    let turn_180 = from_connection(&twice, &identity_versor(), &[(1, 2), (2, 1)], &Vec::new(), [1, 0, 0, 0])
         .expect("connection");
     assert_ne!(
         inv.0,
-        invariant_of(&half).0,
-        "a quarter turn and a half turn are different charts, read from the rotor itself"
+        invariant_of(&turn_180).0,
+        "a 90° turn and a 180° turn are different charts, read from the rotor itself"
     );
 }
 
@@ -252,11 +252,11 @@ fn a_prefix_of_a_chart_is_a_byte_prefix_of_its_key() {
 #[test]
 fn a_rotors_conjugacy_stratum_is_whole_coordinates() {
     use crate::transducer::alphabet::{LetterId, Rotor, Word, PLANE_COL, PLANE_ROW};
-    let quarter = {
-        let id = LetterId::quarter((PLANE_ROW, PLANE_COL)).expect("the sensor plane");
+    let turn_90 = {
+        let id = LetterId::turn_90((PLANE_ROW, PLANE_COL)).expect("the sensor plane");
         Word::from_letters(&[(id, false)]).rotor()
     };
-    let axes = rotor_axes(&quarter).expect("a quarter turn carries a class");
+    let axes = rotor_axes(&turn_90).expect("a 90° turn carries a class");
     let [tag, sign_a, sign_p, a2, p2] = axes.as_slice() else {
         panic!("the stratum is the tag, two signs and two invariants: {axes:?}")
     };

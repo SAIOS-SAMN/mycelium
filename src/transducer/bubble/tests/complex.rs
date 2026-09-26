@@ -77,12 +77,12 @@ fn a_decoherence_is_settled_as_a_class_left_or_a_rejoining() {
     let _ = c.fill_meet(&ring);
     // A third, by a candidate, on a ring cut from its congruence that closes
     // at its period again: rejoined, counted apart under the congruent cut.
-    let quarter = {
-        let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("the sensor plane");
+    let turn_90 = {
+        let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("the sensor plane");
         crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()
     };
-    c.complex.set_edge(&vs[0], &vs[1], quarter.clone(), identity_versor(), [1, 0, 0, 0]);
-    c.complex.set_edge(&vs[1], &vs[2], quarter, identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[0], &vs[1], turn_90.clone(), identity_versor(), [1, 0, 0, 0]);
+    c.complex.set_edge(&vs[1], &vs[2], turn_90, identity_versor(), [1, 0, 0, 0]);
     c.complex.set_edge(&vs[0], &vs[2], id, identity_versor(), [1, 0, 0, 0]);
     let _ = c.complex.coboundary_on_link(&vs[0], |_| [1, 0, 0, 0]);
     c.note_decohered(vec![(ring.clone(), Cut::Congruent)], Adjunct::Candidate);
@@ -131,7 +131,7 @@ fn letter(id: Option<crate::transducer::alphabet::LetterId>) -> crate::transduce
 #[test]
 fn a_front_collapses_a_ring_whose_arrivals_agree() {
     use crate::transducer::alphabet::{LetterId, Rotor};
-    let q = letter(LetterId::quarter((0, 1)));
+    let q = letter(LetterId::turn_90((0, 1)));
     let (mut c, vs) = ring_of_three([Rotor::identity(), q.clone(), q.geo(&q)], [q.clone(), q.clone(), q.geo(&q)]);
     c.fix(&vs[0], false);
     c.transport(1);
@@ -345,12 +345,12 @@ fn vortex_collapses_by_glue_or_ruling() {
     use crate::transducer::sentence::{Axis, ClassVector, PivotBy, PivotCertificate, Side};
     let mut c = Contemplation::new();
     c.hold(vec![(0, 0, 1, 2)]);
-    let q = LetterId::quarter((0, 1)).unwrap();
+    let q = LetterId::turn_90((0, 1)).unwrap();
     let w = Word::from_letters(&[(q, false)]);
     let r = w.rotor();
-    let stratum = r.class_key().expect("quarter class");
+    let stratum = r.class_key().expect("90° turn class");
     // The orbit's own state vector, whose first coordinate is that stratum.
-    let before = ClassVector::of_word(&w).expect("a quarter turn has a class vector").class_key();
+    let before = ClassVector::of_word(&w).expect("a 90° turn has a class vector").class_key();
     let after = ClassVector::zero().class_key();
     // The one orbit's chord, both candidates' (AT1: a chord is an overlap).
     let chord = crate::transducer::sentence::tests::common::some_overlap;
@@ -394,7 +394,7 @@ fn vortex_collapses_by_glue_or_ruling() {
     }
     let rec = ClassRecord {
         key: stratum,
-        order: r.order().expect("quarter has an order"),
+        order: r.order().expect("the 90° turn has an order"),
         representative: r,
     };
     assert_eq!(c.seed_horizon(&[rec]), 1);

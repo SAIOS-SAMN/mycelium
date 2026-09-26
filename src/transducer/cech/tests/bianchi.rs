@@ -77,23 +77,23 @@ fn an_infinite_order_edge_is_a_class_naming_its_rotor() {
 
 /// A FINITE-order edge is a congruence at its own period, and the period
 /// is the rotor's order and not a number chosen at the call site.
-/// `sheet` is a half turn on `e₁∧e₂` — a letter of the seventeen acting
+/// `sheet` is a 180° turn on `e₁∧e₂` — a letter of the seventeen acting
 /// OFF the sensor plane, which is exactly the transition a versor-only
 /// section could not hold at all.
 #[test]
 fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
-    // `sheet()` is the DOUBLED quarter on `e₁∧e₂` — a half turn, which
+    // `sheet()` is the DOUBLED 90° turn on `e₁∧e₂` — a 180° turn, which
     // sends `e₁ → −e₁` and so KEEPS the sensor plane and does have a block
-    // there. The single quarter is the one that leaves it.
+    // there. The single 90° turn is the one that leaves it.
     assert!(
         crate::transducer::alphabet::rotor_block_on(&sheet(), (0, 1)).is_some(),
-        "a half turn on e₁∧e₂ keeps the sensor plane"
+        "a 180° turn on e₁∧e₂ keeps the sensor plane"
     );
-    let s = off_plane_quarter();
+    let s = off_plane_turn_90();
     assert_eq!(
         s.order(),
         Some(crate::transducer::alphabet::Order::Finite(4)),
-        "a quarter turn closes at four, on whichever plane it acts"
+        "a 90° turn closes at four, on whichever plane it acts"
     );
     assert!(
         crate::transducer::alphabet::rotor_block_on(&s, (0, 1)).is_none(),
@@ -114,7 +114,7 @@ fn a_finite_order_edge_off_the_sensor_plane_is_congruent_at_its_period() {
                 "and the filed rotor is the one that caused it: {g:?}"
             );
         }
-        other => panic!("a half-turn holonomy is congruent at two, not {other:?}"),
+        other => panic!("a 90°-turn holonomy is congruent at four, not {other:?}"),
     }
 }
 

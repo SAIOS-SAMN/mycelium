@@ -55,7 +55,7 @@ assert_eq!(booted.basis_len(), 2, "no re-germination");
 fn a_cocycle_row_round_trips_its_class_and_its_stamp() {
 let mut k = Kernel::new();
 let inv = crate::transducer::stalk::Invariant::counts(&[1]);
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).unwrap();
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).unwrap();
 let w = crate::transducer::alphabet::Word::from_letters(&[(q, false)]);
 let r = w.rotor();
 let v = rotor_versor(&r).expect("versor");
@@ -274,7 +274,7 @@ assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 let listing = k.pending.scoped().next().expect("listed").1.address();
 k.record_settlement(listing, vec![(0, 0, 1, 4)], [5; 32], &[], [2, 0, 0, 0], [0; 4]);
 let head = k.chain().head_stamp().expect("the court has acted");
-let q = crate::transducer::alphabet::LetterId::quarter((0, 1)).expect("a quarter turn");
+let q = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a 90° turn");
 let g = rotor_versor(&crate::transducer::alphabet::Word::from_letters(&[(q, false)]).rotor()).expect("a versor");
 k.dialect_chain.push((b"stood".to_vec(), g.clone(), Some(head)));
 k.dialect_chain.push((b"unstamped".to_vec(), g, None));

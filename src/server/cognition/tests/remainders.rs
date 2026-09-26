@@ -4,14 +4,14 @@
 
 use super::super::*;
 
-/// A quarter turn filed Congruent in the complexes of two charts and a half
-/// turn in one: ℓ 2 once and ℓ 4 twice, two classes, the quarter's standing
+/// A 90° turn filed Congruent in the complexes of two charts and a 180°
+/// turn in one: ℓ 2 once and ℓ 4 twice, two classes, the 90° turn's standing
 /// across two charts; nothing re-filled; no basis word carries a torsion.
 #[test]
 fn the_courts_remainders_are_read_over_its_complexes() {
     use crate::transducer::alphabet::{LetterId, Word};
     let turn = |n: usize| {
-        let q = LetterId::quarter((0, 1)).expect("the sensor plane");
+        let q = LetterId::turn_90((0, 1)).expect("the sensor plane");
         Word::from_letters(&vec![(q, false); n]).rotor()
     };
     let mut k = Kernel::new();
@@ -40,7 +40,7 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
     use crate::chronometry::{Cite, KStepReceipt, Place, Stamp};
     use crate::transducer::alphabet::{Derivation, LetterId, Word};
     use crate::transducer::address::Address;
-    let word = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]);
+    let word = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]);
     let g = word.rotor();
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &g,
@@ -61,7 +61,7 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
     let rw = k.mint_torse_at(&inv, &simplex, (Box::new(kappa.clone()), Box::new(g.clone()), 4), &words).expect("minted");
     let rewrite = k.named_word(rw.as_bytes()).expect("the rewrite stands").clone();
     let rw_at = *k.admitted_at.get(rw.as_bytes()).expect("admitted by the court's act");
-    // The spelling word: the quarter spelled, acting at the complex's chart.
+    // The spelling word: the 90° turn spelled, acting at the complex's chart.
     let spelling = crate::transducer::sentence::callus_form(Derivation::spelled(word), std::slice::from_ref(&inv)).expect("a form");
     k.basis_insert(spelling.clone(), [9; 32]);
     let sp_at = Stamp::new(3, [9; 32], Place { k: 1, i: 0 });
@@ -131,7 +131,7 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
 fn a_courts_torse_carries_its_remainder_through_a_restart() {
     use crate::transducer::alphabet::{LetterId, Word};
     use crate::transducer::address::Address;
-    let g = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("the sensor plane"), false)]).rotor();
+    let g = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("the sensor plane"), false)]).rotor();
     let kappa = crate::transducer::sentence::ClassVector::of_rotor(
         &g,
         crate::transducer::element::identity_versor(),

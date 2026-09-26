@@ -125,12 +125,12 @@ pub enum SpellCore {
 /// (5,12,13) letter exists on four planes only (1.1); on the other two the
 /// prime 13 is outside the plane's alphabet and stands as a remainder.
 pub(crate) struct SpellStep {
-    quarter: LetterId,
+    turn_90: LetterId,
     l5: LetterId,
     l13: Option<LetterId>,
     flip: LetterId,
-    /// The quarter letter's action on `e0`, as a Gaussian unit.
-    quarter_unit: Gauss,
+    /// The 90° letter's action on `e0`, as a Gaussian unit.
+    turn_90_unit: Gauss,
     /// Whether the forward (3,4,5) letter realises `((2+i)/(2−i))²` (true)
     /// or its conjugate.
     l5_forward: bool,
@@ -156,18 +156,18 @@ pub(crate) fn unit_of_block(b: &[[Q; 2]; 2]) -> Option<Gauss> {
 
 impl SpellStep {
     /// The step on one pair plane (50.4). The orientation sheet is the
-    /// half-turn through the least axis outside the plane, realised as
-    /// two quarter letters on the plane it shares with `plane.1` (1.2).
+    /// 180°-turn through the least axis outside the plane, realised as
+    /// two 90° letters on the plane it shares with `plane.1` (1.2).
     /// The step on one pair plane over a basis (50.4, L23a): the
     /// alphabet's own primes and whatever the caller adjoined. An empty
     /// basis is the seventeen alone.
     fn on_with(plane: (u8, u8), adjoined: Vec<AdjoinedPrime>) -> Option<SpellStep> {
-        let quarter = LetterId::quarter(plane)?;
+        let turn_90 = LetterId::turn_90(plane)?;
         let l5 = LetterId::pythagorean_5(plane)?;
         let l13 = LetterId::pythagorean_13(plane);
         let third = (0u8..4).find(|k| *k != plane.0 && *k != plane.1)?;
-        let flip = LetterId::quarter((plane.1.min(third), plane.1.max(third)))?;
-        let quarter_unit = unit_of_block(&Word::raw(vec![(quarter, false)]).block_on(plane)?)?;
+        let flip = LetterId::turn_90((plane.1.min(third), plane.1.max(third)))?;
+        let turn_90_unit = unit_of_block(&Word::raw(vec![(turn_90, false)]).block_on(plane)?)?;
         let pi5 = Gauss::from_i64(2, 1);
         let pi13 = Gauss::from_i64(3, 2);
         // ((2+i)/(2−i))² = (2+i)⁴/25 and ((3+2i)/(3−2i))² = (3+2i)⁴/169:
@@ -201,11 +201,11 @@ impl SpellStep {
             }
         };
         Some(SpellStep {
-            quarter,
+            turn_90,
             l5,
             l13,
             flip,
-            quarter_unit,
+            turn_90_unit,
             l5_forward,
             l13_forward,
             pi5,
@@ -308,7 +308,7 @@ impl SpellStep {
         Some(Read { m5: (v5p - v5m) / 2, m13: (v13p - v13m) / 2, cited, unit })
     }
 
-    /// Steps of the quarter letter from a unit back to 1.
+    /// Steps of the 90° letter from a unit back to 1.
     fn unit_steps(&self, u: &Gauss) -> Option<u64> {
         let one = Gauss::from_i64(1, 0);
         let mut cur = one.clone();
@@ -316,7 +316,7 @@ impl SpellStep {
             if &cur == u {
                 return Some(k.min(4 - k));
             }
-            cur = cur.mul(&self.quarter_unit);
+            cur = cur.mul(&self.turn_90_unit);
         }
         None
     }
@@ -408,16 +408,16 @@ impl ShellStep for SpellStep {
                 SpellResidual { z, n, ..r.clone() },
             ));
         }
-        // The unit: one quarter letter toward 1, oriented by the shorter arc.
+        // The unit: one 90° letter toward 1, oriented by the shorter arc.
         let one = Gauss::from_i64(1, 0);
         if unit == one {
             return None; // identity: the governor reads Closed before this
         }
-        let q_inv = self.quarter_unit.conj();
-        let forward = unit == self.quarter_unit || unit == self.quarter_unit.mul(&self.quarter_unit);
-        let (id_inv, step) = if forward { (false, q_inv) } else { (true, self.quarter_unit.clone()) };
+        let q_inv = self.turn_90_unit.conj();
+        let forward = unit == self.turn_90_unit || unit == self.turn_90_unit.mul(&self.turn_90_unit);
+        let (id_inv, step) = if forward { (false, q_inv) } else { (true, self.turn_90_unit.clone()) };
         let z = r.z.mul(&step);
-        Some((SpellCore::Letters(vec![(self.quarter, id_inv)]), SpellResidual { z, ..r.clone() }))
+        Some((SpellCore::Letters(vec![(self.turn_90, id_inv)]), SpellResidual { z, ..r.clone() }))
     }
 }
 
@@ -454,7 +454,7 @@ pub fn spell(block: &[[Q; 2]; 2]) -> Option<Spelling> {
 
 /// THE SAME SPELLING ON ANY PAIR PLANE (50.4, A22). `spell_peel_on`
 /// already took a plane and `SpellStep::on_with` already derives that
-/// plane's own quarter, primes and flip; only this closing step was
+/// plane's own 90° letter, primes and flip; only this closing step was
 /// pinned to the sensor, and with it every reader that spells a block.
 ///
 /// The verification reads the spelled word's block ON THE SAME PLANE.

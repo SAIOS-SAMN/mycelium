@@ -34,19 +34,19 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     let w = Word::from_letters(&[(p5, false)]);
 
     // SQ1-b4 — THE ROTOR IS APPLIED TO THE HARMONICS, NOT COMPARED BY NORM.
-    // A bar along the row and the same bar along the column are one quarter
-    // turn apart: the quarter-turn rotor carries the one's harmonics onto
+    // A bar along the row and the same bar along the column are one 90°
+    // turn apart: the 90°-turn rotor carries the one's harmonics onto
     // the other's. The (3,4,5) rotor does not — and the norm comparison this
     // replaces accepted it (and accepted a body "matching itself" under any
     // turn), because a squared norm cannot see the angle.
     let row_bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
     let col_bar = super::common::sites(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
     let (row, col) = (shape_of(&row_bar), shape_of(&col_bar));
-    let quarter =
-        versor_of_word(&Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter on (0, 1)"), false)]))
-            .expect("the quarter's base action");
+    let turn_90 =
+        versor_of_word(&Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("90° turn on (0, 1)"), false)]))
+            .expect("the 90° turn's base action");
     let p5_turn = versor_of_word(&w).expect("the (3,4,5) turn's base action");
-    assert!(versor_carrying(&row, &col, &quarter).is_some(), "the quarter turn carries the row bar onto the column bar");
+    assert!(versor_carrying(&row, &col, &turn_90).is_some(), "the 90° turn carries the row bar onto the column bar");
     assert!(versor_carrying(&row, &col, &p5_turn).is_none(), "the (3,4,5) turn does not");
     assert!(
         versor_carrying(&row, &row, &p5_turn).is_none(),

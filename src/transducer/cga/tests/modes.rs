@@ -30,26 +30,26 @@ fn a_screw_reads_an_elliptic_and_a_parabolic_mode() {
     assert!(ms[0].blade.geo(&ms[1].blade).sub(&ms[1].blade.geo(&ms[0].blade)).is_zero(), "and commute");
 }
 
-/// EACH MODE CLOSES ON ITS OWN PLANE: a half-turn screw's turn closes at two
+/// EACH MODE CLOSES ON ITS OWN PLANE: a 180°-turn screw's turn closes at two
 /// — read on the motion's action on `e₁₂` — while its slip along `e₃` is
 /// open by name; the joint motion never closes, and that is the parabolic
 /// planet's reading, not the turn's.
 ///
-/// AND THE CHART'S REACH, MEASURED: a QUARTER-turn screw has no rational
+/// AND THE CHART'S REACH, MEASURED: a 90°-turn screw has no rational
 /// point in the Cayley chart. Its rotor `1 + e₁₂` has weight 2, and the
 /// generator would need `tan(π/8) = √2 − 1`; the inverse chart refuses it by
 /// name (MD1's finding, for 78.11 link 2).
 #[test]
 fn a_screws_turn_closes_at_its_own_order_and_its_slip_is_open() {
-    let half = Mv::blade(E1 | E2, q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
-    let generator = cayley_inverse(&half).expect("a half-turn screw has a rational chart point");
+    let turn_180 = Mv::blade(E1 | E2, q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
+    let generator = cayley_inverse(&turn_180).expect("a 180°-turn screw has a rational chart point");
     let ms = modes(&generator, &mut budget()).expect("its modes split");
-    let orders: Vec<(BivectorKind, Option<u32>)> = ms.iter().map(|m| (m.kind, mode_order(&half, m))).collect();
+    let orders: Vec<(BivectorKind, Option<u32>)> = ms.iter().map(|m| (m.kind, mode_order(&turn_180, m))).collect();
     assert_eq!(orders, vec![(BivectorKind::Parabolic, None), (BivectorKind::Elliptic, Some(2))]);
-    assert_eq!(finite_order(&half), None, "and the whole motion's orbit never closes");
+    assert_eq!(finite_order(&turn_180), None, "and the whole motion's orbit never closes");
 
-    let quarter = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
-    assert!(cayley_inverse(&quarter).is_none(), "a quarter turn has no rational chart point: tan(π/8) ∉ ℚ");
+    let turn_90 = rotator(&q(1, 1), &q(1, 1)).geo(&translator(&q(0, 1), &q(0, 1), &q(1, 1)));
+    assert!(cayley_inverse(&turn_90).is_none(), "a 90° turn has no rational chart point: tan(π/8) ∉ ℚ");
 }
 
 /// A DISPIRATION READS TWO: a turn and a boost on orthogonal planes.

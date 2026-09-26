@@ -33,8 +33,8 @@ fn one() -> Mv {
     Mv::scalar(q(1, 1))
 }
 
-/// Five steps that do not commute: a quarter turn, a translation, a boost, a
-/// (3,4,5) turn on another plane, and a quarter turn about `(1, 2, 2)/3`.
+/// Five steps that do not commute: a 90° turn, a translation, a boost, a
+/// (3,4,5) turn on another plane, and a 90° turn about `(1, 2, 2)/3`.
 fn steps() -> [Mv; 5] {
     let u = Mv::blade(E2 | E3, q(1, 3)).add(&Mv::blade(E1 | E3, q(-2, 3))).add(&Mv::blade(E1 | E2, q(2, 3)));
     [
@@ -99,16 +99,16 @@ fn r3_a_cell_is_the_members_standing_at_its_witness() {
 }
 
 /// R4 — CURVATURE IS THE BOUNDARY'S HOLONOMY, AND FLAT IS THE IDENTITY RAY:
-/// two half turns on one plane compose to `−1`, which is flat; a boundary
+/// two 180° turns on one plane compose to `−1`, which is flat; a boundary
 /// that turns is not.
 #[test]
 fn r4_a_cell_is_flat_iff_its_boundary_is_the_identity_ray() {
-    let half = Mv::blade(E1 | E2, q(1, 1));
-    let boundary = route(&[&half, &half]);
+    let turn_180 = Mv::blade(E1 | E2, q(1, 1));
+    let boundary = route(&[&turn_180, &turn_180]);
     assert_eq!(boundary.scalar_part(), q(-1, 1), "the boundary composes to −1 exactly");
     assert_eq!(boundary, one(), "and −1 is the identity ray: flat");
     let [g1, ..] = steps();
-    assert_ne!(route(&[&g1, &half]), one(), "a boundary that turns is curved");
+    assert_ne!(route(&[&g1, &turn_180]), one(), "a boundary that turns is curved");
 }
 
 /// R5 — BASING IS CONJUGATION BY THE TREE TRANSPORT: at the root it moves
@@ -204,8 +204,8 @@ fn c1_one_reference_gives_every_pair() {
 }
 
 /// C1 (c) — THE CAPACITY IS THE RANK OF THE ALGEBRA THE ACTIONS GENERATE:
-/// the identity circuit generates the unit alone; one quarter turn
-/// `ℚ[x]/((x − 1)(x² + 1))`, rank three; two quarter turns on crossing
+/// the identity circuit generates the unit alone; one 90° turn
+/// `ℚ[x]/((x − 1)(x² + 1))`, rank three; two 90° turns on crossing
 /// planes the octahedral group's algebra, `M₃(ℚ) ⊕ ℚ`, rank ten, and they
 /// are coupled.
 #[test]
@@ -227,12 +227,12 @@ fn c1_capacity_is_the_rank_of_the_actions_algebra() {
         crate::transducer::cech::read_cell(1, None, None, &circuits, &[], &mut stroke())
     };
     assert_eq!(read(vec![one()]).capacity, Ok(1), "the identity: the unit alone");
-    let quarter = cga::rotator(&q(1, 1), &q(1, 1));
-    let a = read(vec![quarter.clone()]);
-    assert_eq!((a.capacity, a.coupled), (Ok(3), 0), "one quarter turn: rank three");
+    let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
+    let a = read(vec![turn_90.clone()]);
+    assert_eq!((a.capacity, a.coupled), (Ok(3), 0), "one 90° turn: rank three");
     let other = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
-    let b = read(vec![quarter, other]);
-    assert_eq!((b.capacity, b.coupled), (Ok(10), 1), "two crossing quarter turns: rank ten, coupled");
+    let b = read(vec![turn_90, other]);
+    assert_eq!((b.capacity, b.coupled), (Ok(10), 1), "two crossing 90° turns: rank ten, coupled");
 }
 
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are
@@ -260,7 +260,7 @@ fn c2_based_readings_converge_on_the_class() {
 }
 
 /// C2 (b) — MANY CONSTRUCTOR CHAINS, ONE VERSOR: reflecting in `e₁` then
-/// `e₁ + e₂`, and in `e₁ + e₂` then `e₂`, compose one quarter turn —
+/// `e₁ + e₂`, and in `e₁ + e₂` then `e₂`, compose one 90° turn —
 /// synonyms, one theorem with two proofs.
 #[test]
 fn c2_many_constructor_chains_compose_one_versor() {
@@ -268,10 +268,10 @@ fn c2_many_constructor_chains_compose_one_versor() {
     let first = cga::versor_of_reflections(&[a, b.clone()]).expect("a versor");
     let second = cga::versor_of_reflections(&[b, c]).expect("a versor");
     assert_eq!(first, second, "two chains, one ray");
-    assert_eq!(first, cga::rotator(&q(1, 1), &q(1, 1)), "the quarter turn");
+    assert_eq!(first, cga::rotator(&q(1, 1), &q(1, 1)), "the 90° turn");
 }
 
-/// CONJECTURE (79.2), REFUSED AS READ PER GENERATOR: two quarter turns whose
+/// CONJECTURE (79.2), REFUSED AS READ PER GENERATOR: two 90° turns whose
 /// axes meet at `cos θ = 2/3` — each generator's every mode elliptic of
 /// order four — generate no finite group, so the constructors' orbit does
 /// not close: under a stroke it refuses as `Unbounded`, never `Closed`.
@@ -281,7 +281,7 @@ fn c2_many_constructor_chains_compose_one_versor() {
 fn conjecture_the_orbit_closure_is_refused_read_per_generator() {
     let [g1, .., g5] = steps();
     for g in [&g1, &g5] {
-        let Some(Ok(ms)) = cga::motion_modes(g, &mut stroke()) else { panic!("a quarter turn splits") };
+        let Some(Ok(ms)) = cga::motion_modes(g, &mut stroke()) else { panic!("a 90° turn splits") };
         assert!(ms.iter().all(|m| m.kind == BivectorKind::Elliptic && m.order == Some(4)), "every mode elliptic of order four");
     }
     // A small stroke: the orbit's rays grow in their coefficients at every
@@ -296,9 +296,9 @@ fn conjecture_the_orbit_closure_is_refused_read_per_generator() {
 #[test]
 fn conjecture_the_sign_between_two_routes_is_not_read_by_t1() {
     let [g1, g2, ..] = steps();
-    let half = Mv::blade(E1 | E2, q(1, 1));
+    let turn_180 = Mv::blade(E1 | E2, q(1, 1));
     let r = route(&[&g1, &g2]);
-    let s = route(&[&g1, &g2, &half, &half]);
+    let s = route(&[&g1, &g2, &turn_180, &turn_180]);
     assert!(s.add(&r).is_zero(), "the transports differ by −1 exactly");
     assert_eq!(loop_of(&r, &s), one(), "and T1 reads them agreeing");
 }

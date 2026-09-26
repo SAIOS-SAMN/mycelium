@@ -77,7 +77,7 @@ let at = f
     .put_vertex(Vertex::word_on(
         crate::transducer::alphabet::Derivation::spelled(
             crate::transducer::alphabet::Word::from_letters(&[(
-                crate::transducer::alphabet::LetterId::quarter((0, 2)).expect("off-plane"),
+                crate::transducer::alphabet::LetterId::turn_90((0, 2)).expect("off-plane"),
                 false,
             )]),
         ),
@@ -87,7 +87,7 @@ let at = f
         [0u64],
         None,
     ))
-    .expect("an off-plane quarter has a class");
+    .expect("an off-plane 90° turn has a class");
 let spoken = apply_form(
     &f,
     &x,

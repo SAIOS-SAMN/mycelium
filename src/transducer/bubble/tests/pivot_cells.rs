@@ -76,7 +76,7 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     let o = chord_between(&mut f, c2, c3, chord.clone());
     // The chord between the two bodies carries its edge (50.3): the chord
     // word's versor, as pairing leaves it on a perceived form.
-    let carriage = element::versor_of_word(chord).expect("a quarter turn is a versor");
+    let carriage = element::versor_of_word(chord).expect("a 90° turn is a versor");
     if let Some(face) = f.faces.at_mut(&o) {
         face.place.edge = Some(crate::transducer::sentence::Transport {
             word: chord.clone(),
@@ -114,22 +114,22 @@ fn pivot(form: Form, offered: &Word) -> crate::transducer::sentence::PivotTally 
 }
 
 /// A HELD FORM'S PIVOT READ AGAINST THE CELL ITS ORBIT CROSSES. With both
-/// bodies at the origin the circuit's composite is the chord's quarter turn
+/// bodies at the origin the circuit's composite is the chord's 90° turn
 /// in `e₁₂`, the cell's closed algebra is that turn's (rank 3), and the move
 /// that discharges the orbit — the same turn — is already in it: DERIVABLE.
-/// With the second body placed by a quarter turn in `e₂₃` the composite is
+/// With the second body placed by a 90° turn in `e₂₃` the composite is
 /// the chord's turn carried to another plane, and the same discharging move
 /// raises the cell's algebra: REACHED. Note only: the pivot makes the same
 /// move with the reading as without it.
 #[test]
 fn a_pivot_reads_its_move_against_the_cells_its_orbit_crosses() {
-    let w = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("a quarter on e12"), false)]);
-    let e23 = Word::from_letters(&[(LetterId::quarter((1, 3)).expect("a quarter on e23"), false)]);
+    let w = Word::from_letters(&[(LetterId::turn_90((0, 1)).expect("a 90° turn on e12"), false)]);
+    let e23 = Word::from_letters(&[(LetterId::turn_90((1, 3)).expect("a 90° turn on e23"), false)]);
 
     let at_origin = held_form_over_a_cell(&w, &Word::identity());
     let cells = crate::transducer::family::pivot_cells(&at_origin, &mut crate::physics::Physics::default().stroke_n(1 << 12));
     let [cell] = cells.algebras.as_slice() else { panic!("one certified cell") };
-    assert_eq!(cell.capacity, Ok(3), "the chord's quarter turn: rank three");
+    assert_eq!(cell.capacity, Ok(3), "the chord's 90° turn: rank three");
     let derivable = pivot(at_origin.clone(), &w);
     assert_eq!(
         derivable,

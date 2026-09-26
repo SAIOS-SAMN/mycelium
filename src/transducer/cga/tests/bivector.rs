@@ -23,7 +23,7 @@ fn the_four_bivector_readings_are_distinct_and_exact() {
     use crate::network::nerve::coord::BivectorKind;
     let kind = |m: &Mv| m.class_invariants().map(|(_, _, k)| k);
 
-    // ELLIPTIC: a quarter turn on e₁e₂. B² = −1 < 0.
+    // ELLIPTIC: a 180° turn on e₁e₂. B² = −1 < 0.
     let rot = rotator(&q(0, 1), &q(1, 1));
     assert_eq!(kind(&rot), Some(BivectorKind::Elliptic));
 
@@ -230,7 +230,7 @@ fn a_lifted_rotor_is_always_elliptic_or_trivial() {
     use crate::network::nerve::coord::BivectorKind;
     use crate::transducer::alphabet::{LetterId, Word};
     for plane in [(0, 1), (0, 2), (1, 3), (2, 3)] {
-        let Some(letter) = LetterId::quarter(plane) else { continue };
+        let Some(letter) = LetterId::turn_90(plane) else { continue };
         let w = Word::from_letters(&[(letter, false)]);
         let Some((_, _, kind)) = w.rotor().class_invariants() else { continue };
         assert!(
