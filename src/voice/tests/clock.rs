@@ -96,7 +96,16 @@ fn an_orbits_docket_rides_its_close_and_survives_a_restart() {
     .expect("a class reads");
     let docket = vec![
         Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(p.clone()), cover: Some(vec![vec![1, 2], vec![3]]) },
-        Cite::Demand { class: Box::new(kappa), cover: None },
+        // 78.47 — the demand's residue rides by its canonical ray.
+        Cite::Demand {
+            class: Box::new(kappa),
+            residue: crate::transducer::cga::rotator(
+                &num_rational::BigRational::from_integer(4.into()),
+                &num_rational::BigRational::from_integer(1.into()),
+            )
+            .canonical(),
+            cover: None,
+        },
     ];
     assert!(docket.iter().all(|c| c.at().is_none()), "a docket entry locates by its coordinates, never a stamp");
     let mut v = Voice::named("worker-a");
@@ -128,7 +137,7 @@ fn an_open_entry_is_cited_by_every_close_until_answered() {
         crate::transducer::sentence::CycleType::Identity,
     )
     .expect("a class reads");
-    let entry = Cite::Demand { class: Box::new(kappa), cover: Some(vec![vec![7]]) };
+    let entry = Cite::Demand { class: Box::new(kappa), residue: None, cover: Some(vec![vec![7]]) };
     let mut c = crate::transducer::bubble::Contemplation::new();
     c.docket_reseed(std::slice::from_ref(&entry));
     let mut v = Voice::named("worker-a");

@@ -5,6 +5,7 @@
 
 pub mod common;
 
+mod both_poles;
 mod gauge_fibre;
 mod lanes_and_axes;
 mod record;

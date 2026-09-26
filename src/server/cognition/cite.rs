@@ -67,9 +67,19 @@ impl Kernel {
 
     /// FILE A WORD'S ADMITTING STAMP on its row, and the stamp's reverse.
     /// A word admitted once keeps the stamp it was admitted at.
-    pub fn file_admitted(&mut self, addr: &Address, at: Stamp) {
+    ///
+    /// WHETHER THIS CALL FILED IT: `true` where the stamp given is now the
+    /// word's, `false` where the word already stood at its own. A caller
+    /// that files a peer's stamp provisionally and withdraws it on a
+    /// refusal withdraws only what it filed — withdrawing unconditionally
+    /// erased this court's OWN stamp on a word it still held whenever a
+    /// peer offered the same address and the offer was refused, and that
+    /// word, provisional and unstamped, held every fold prefix open for the
+    /// life of the process (court a, epoch 99: unstamped provisional 0 → 4,
+    /// folded never).
+    pub fn file_admitted(&mut self, addr: &Address, at: Stamp) -> bool {
         if self.admitted_at.contains(addr) {
-            return;
+            return false;
         }
         self.admitted_at.insert_shared(addr.shared(), at);
         self.held_at.insert(at.key(), addr.clone());
@@ -91,6 +101,7 @@ impl Kernel {
         self.file_remainders(addr, keys);
         // EC1: a peer's ruling that waited on this stamp is heard now.
         self.rehear_rulings(&at);
+        true
     }
 
     /// FILE A WORD AT ITS FIBER KEY — T1's own key — beside its admitting

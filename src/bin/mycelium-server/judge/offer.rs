@@ -146,9 +146,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // 78.24 (2b): an offered word is located by the
                         // home receipt's stamp the offer's section carries;
                         // an offer this court refuses leaves nothing filed.
-                        k.file_admitted(&addr, section.receipt.stamp);
+                        // A refusal withdraws only the stamp this filing
+                        // placed, never this court's own on a word it holds.
+                        let filed = k.file_admitted(&addr, section.receipt.stamp);
                         let w = witness_vantage(&mut k, &mut cover, word, home, me);
-                        if matches!(w, dialogue::Witnessed::Refused { .. }) {
+                        if filed && matches!(w, dialogue::Witnessed::Refused { .. }) {
                             k.drop_admitted(&addr);
                         }
                         w

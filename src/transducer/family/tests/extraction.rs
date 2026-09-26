@@ -88,9 +88,18 @@ fn the_court_refuses_a_forged_frame_axis_motor() {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
     }
+    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family)
+        .expect("a forged frame-axis motor is refused by application, never admitted");
+    // PARALLEL TRANSPORT (A.13): the refusal carries the curvature the claim
+    // missed — the transport the fibre took, against the forged motor — and
+    // its kind is read off that deviation. The fibre does move rigidly, so it
+    // is no P; the frames are held, so it is no I; and never unclassified.
+    use crate::transducer::sentence::ObstructionKind;
+    assert_eq!(refusal.reason, crate::verdict::REFUSE_EDGE);
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&forged, &family).is_some(),
-        "a forged frame-axis motor is refused by application, never admitted"
+        matches!(refusal.obstruction.kind(), ObstructionKind::C | ObstructionKind::D),
+        "the deviation's kind is read: {:?}",
+        refusal.obstruction
     );
 }
 

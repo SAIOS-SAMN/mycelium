@@ -437,8 +437,15 @@ pub enum Cite {
     },
     /// THE DOCKET'S DEMAND: an orbit CS2's demand arm left, by its
     /// undischarged class vector inline — its own plane section names the
-    /// mode (3.9) — and its cover, as a class's.
-    Demand { class: Box<crate::transducer::sentence::ClassVector>, cover: Option<Vec<Vec<u8>>> },
+    /// mode (3.9) — its cover, as a class's, and (78.47) its RESIDUE's
+    /// canonical ray, fixed by the algebra's `n`: the coordinate its
+    /// constructors are derived from, never the constructors. `None` where
+    /// the residue did not read.
+    Demand {
+        class: Box<crate::transducer::sentence::ClassVector>,
+        residue: Option<crate::transducer::cga::Mv>,
+        cover: Option<Vec<Vec<u8>>>,
+    },
 }
 
 impl Cite {
@@ -482,14 +489,20 @@ impl Cite {
                 at.put_canonical(&mut rec);
                 rec.extend_from_slice(hash);
             }
-            Cite::Class { class, cover, .. } | Cite::Demand { class, cover } => {
+            Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
                     _ => 3,
                 });
                 class.put_canonical(&mut rec);
-                if let Cite::Class { rotor, .. } = self {
-                    rotor.put_canonical(&mut rec);
+                match self {
+                    Cite::Class { rotor, .. } => rotor.put_canonical(&mut rec),
+                    Cite::Demand { residue: None, .. } => rec.push(0),
+                    Cite::Demand { residue: Some(r), .. } => {
+                        rec.push(1);
+                        r.to_bytes(&mut rec);
+                    }
+                    Cite::Word { .. } | Cite::Root { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -538,6 +551,19 @@ impl Cite {
                     2 => Some(Box::new(crate::transducer::alphabet::Rotor::from_bytes(b, p)?)),
                     _ => None,
                 };
+                // 78.47 — a demand's residue, as its canonical ray.
+                let residue = match (tag, rotor.is_some()) {
+                    (3, false) => {
+                        let flag = *b.get(*p)?;
+                        *p += 1;
+                        match flag {
+                            0 => None,
+                            1 => Some(crate::transducer::cga::Mv::from_bytes(b, p)?),
+                            _ => return None,
+                        }
+                    }
+                    _ => None,
+                };
                 let cover = match *b.get(*p)? {
                     0 => {
                         *p += 1;
@@ -562,7 +588,7 @@ impl Cite {
                 };
                 Some(match rotor {
                     Some(rotor) => Cite::Class { class, rotor, cover },
-                    None => Cite::Demand { class, cover },
+                    None => Cite::Demand { class, residue, cover },
                 })
             }
             _ => None,

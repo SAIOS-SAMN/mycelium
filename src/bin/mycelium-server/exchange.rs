@@ -567,12 +567,19 @@ impl Exchange {
                                             // located by the stamp that admitted it there,
                                             // the peer's key its coordinate; every act
                                             // here cites that stamp.
-                                            k.file_admitted(&addr, t.at);
+                                            // A slash withdraws only the stamp
+                                            // this filing placed, never this
+                                            // court's own on a word it holds.
+                                            let filed = k.file_admitted(&addr, t.at);
                                             let g = match mesh.cover.lock() {
                                                 Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
+                                                Err(_) if filed => {
+                                                    k.drop_admitted(&addr);
+                                                    continue;
+                                                }
                                                 Err(_) => continue,
                                             };
-                                            if matches!(g, mycelium::cognition::Glue::Slashed(_)) {
+                                            if filed && matches!(g, mycelium::cognition::Glue::Slashed(_)) {
                                                 k.drop_admitted(&addr);
                                             }
                                             match g {

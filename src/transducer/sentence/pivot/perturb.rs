@@ -86,6 +86,12 @@ pub(crate) fn note_perturb(t: &PerturbTally) {
     });
 }
 
+/// The pair composites read so far, without clearing them (the voice's
+/// `Learning` reads the running total; the census takes).
+pub fn perturb_tally() -> PerturbTally {
+    PERTURB.with(|c| c.get())
+}
+
 /// The pair composites read since the last take.
 pub fn take_perturb_tally() -> PerturbTally {
     PERTURB.with(|c| c.replace(PerturbTally::default()))

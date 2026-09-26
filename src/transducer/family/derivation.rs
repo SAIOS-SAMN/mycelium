@@ -58,6 +58,55 @@ pub fn factor_versor(
     factor_versor_target(crystal, budget, v, None, gauge)
 }
 
+/// 78.47 — WHAT A CANDIDATE ROTOR IS TO A MIND, read through that mind's OWN
+/// held letters (its crystal, adjoined letters included), never the fixed
+/// seventeen alone — so a class a mind could not spell reads DERIVABLE once
+/// the court's adjoined letter reaches its crystal.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LetterReading {
+    /// The held letters spell it: derivable (78.32(c)), no new letter.
+    Derivable,
+    /// A versor the held letters do not spell: the letter demand (D).
+    Unspelled,
+    /// A versor with no plane reading to factor: unread by name.
+    Unread,
+    /// No versor at all (P).
+    NoVersor,
+}
+
+impl LetterReading {
+    /// Its kind as a refusal (78.9); `None` where it is none — derivable.
+    pub fn kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
+        use crate::transducer::sentence::ObstructionKind;
+        match self {
+            LetterReading::Derivable => None,
+            LetterReading::Unspelled => Some(ObstructionKind::D),
+            LetterReading::Unread => Some(ObstructionKind::Unclassified),
+            LetterReading::NoVersor => Some(ObstructionKind::P),
+        }
+    }
+}
+
+/// The one reader of [`LetterReading`], under the stroke's budget.
+pub fn letter_reading(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    rotor: &crate::transducer::alphabet::Rotor,
+) -> LetterReading {
+    if !rotor.is_versor() {
+        return LetterReading::NoVersor;
+    }
+    let Some(v) = crate::transducer::element::versor_of_word(&crate::transducer::alphabet::Word::formed(rotor.clone()))
+    else {
+        return LetterReading::Unread;
+    };
+    match factor_versor(crystal, budget, &v, &[]) {
+        Some(Ok(_)) => LetterReading::Derivable,
+        Some(Err(_)) => LetterReading::Unspelled,
+        None => LetterReading::Unread,
+    }
+}
+
 /// Factor a versor with an explicit multi-plane Cl(4,0) target rotor, opening
 /// kinematics to all six rotation planes.
 pub fn factor_versor_target(

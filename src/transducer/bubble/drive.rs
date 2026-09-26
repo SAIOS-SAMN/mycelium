@@ -98,8 +98,8 @@ impl Contemplation {
                 }
                 // 78.37 — the demands its pivots left, onto the docket, and the
                 // entries its discharges answered (R1).
-                for (class, charts) in &x.demanded {
-                    self.docket_demand(class, charts);
+                for (class, charts, residue) in &x.demanded {
+                    self.docket_demand(class, charts, residue.as_ref());
                 }
                 for key in &x.discharged {
                     self.docket_discharged(key.as_bytes());
@@ -238,14 +238,19 @@ impl Contemplation {
                         crate::transducer::sentence::Snap::Adjoin { rotor, chart, .. } => {
                             adjoined.push((rotor.as_ref().clone(), chart.clone()));
                         }
+                        // 78.47 — never a demand for a letter the mind's own
+                        // crystal spells; its kind and witness the peel's.
                         crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
-                            if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
-                                form.stand_demand(kind, chart, Vec::new());
+                            let own = crate::transducer::family::letter_reading(crystal, budget, rotor);
+                            if own != crate::transducer::family::LetterReading::Derivable {
+                                if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
+                                    form.stand_demand(kind, chart, Vec::new());
+                                }
                             }
                         }
                         // 78.37 — the demand arm's demand, onto the docket.
-                        crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
-                            self.docket_demand(class, charts);
+                        crate::transducer::sentence::Snap::Demanded { class, charts, residue, .. } => {
+                            self.docket_demand(class, charts, residue.as_ref());
                         }
                         // R1 — an orbit a held word discharged answers every
                         // docket entry of its class.

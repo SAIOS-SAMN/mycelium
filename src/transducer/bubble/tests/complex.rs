@@ -195,9 +195,9 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
             .expect("a class reads"),
         )
     };
-    let inner = Cite::Demand { class: kappa(), cover: Some(vec![vec![1]]) };
+    let inner = Cite::Demand { class: kappa(), residue: None, cover: Some(vec![vec![1]]) };
     let outer = Cite::Class { class: kappa(), rotor: Box::new(p.clone()), cover: Some(vec![vec![1], vec![2]]) };
-    let owed = Cite::Demand { class: kappa(), cover: None };
+    let owed = Cite::Demand { class: kappa(), residue: None, cover: None };
     c.docket_reseed(&[inner.clone(), owed.clone(), outer.clone()]);
     let order = c.docket_order();
     assert_eq!(order.len(), 3);

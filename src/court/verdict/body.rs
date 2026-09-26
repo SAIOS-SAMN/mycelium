@@ -379,6 +379,21 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 /// court does not check it has not verified. `REFUSE_EDGE` by content — the
 /// motor the overlap carries is no transition of the family the court
 /// holds. Nothing is solved here.
+///
+/// PARALLEL TRANSPORT, NOT A LANDING TEST. Where the motor does not land,
+/// what the refusal carries is the CURVATURE the claim missed: the
+/// transport the fibre actually took between the two frames — the coset of
+/// versors carrying the leaving fibre onto the arriving one, geodesic first
+/// in its content-fixed order, the one reader `edge_transport` measures an
+/// edge by — composed with the claimed motor's reverse, `Δ = V · M̃`, the
+/// identity ray exactly where the claim is true. The kind is read off `Δ`
+/// by the one reader: no rigid transport at all is P; a deviation the
+/// dialect does not spell is D with its coset; one it spells is C. It
+/// handed the claimed motor itself to the reader, which says nothing about
+/// what went wrong and read unclassified wherever the motor moved the point
+/// at infinity. A frame the family does not hold, an empty fibre, or a site
+/// that does not place is a transition claimed over nothing the court
+/// holds: a claim that does not re-derive, I.
 fn motor_carries(
     frames: &[Frame<'_>],
     x: &crate::network::nerve::coord::MemberAt,
@@ -397,28 +412,42 @@ fn motor_carries(
         s.dedup();
         (!s.is_empty()).then_some(s)
     };
-    let lands = (|| {
+    let fibres = (|| {
         let (from, to) = (at(x.frame)?, at(y.frame)?);
         let (k, k2) = (i64::try_from(x.frame).ok()?, i64::try_from(y.frame).ok()?);
-        let sources = placed(&from.on_chart(&x.chart), k)?;
-        let targets = placed(&to.on_chart(&y.chart), k2)?;
-        let mut carried: Vec<_> = sources.iter().map(|s| element::carry_site(motor, s)).collect::<Option<_>>()?;
+        Some((placed(&from.on_chart(&x.chart), k)?, placed(&to.on_chart(&y.chart), k2)?))
+    })();
+    let at_vertex = || sentence::At::vertex(x.vertex.clone(), x.chart.clone());
+    let Some((sources, targets)) = fibres else {
+        return Some(Refusal { reason: REFUSE_EDGE, at: at_vertex(), obstruction: sentence::ClosureObstruction::Integrity });
+    };
+    let carried: Option<Vec<_>> = sources.iter().map(|s| element::carry_site(motor, s)).collect();
+    if let Some(mut carried) = carried {
         carried.sort_unstable();
         carried.dedup();
-        Some(carried == targets)
-    })();
-    match lands {
-        Some(true) => None,
-        _ => Some(Refusal::closure(
-            REFUSE_EDGE,
-            sentence::At::vertex(x.vertex.clone(), x.chart.clone()),
-            sentence::Content::Holonomy {
-                versor: Some(motor),
-                chart: None,
-                proof: "the frame-axis motor does not carry the member's body at the leaving frame onto its body at the arriving frame",
-            },
-        )),
+        if carried == targets {
+            return None;
+        }
     }
+    // THE TRANSPORT TAKEN, and the claim's deviation from it (`Δ = V·M̃`).
+    let taken = crate::transducer::blade::versor_coset_ordered(
+        &crate::transducer::blade::shape_of(&sources),
+        &crate::transducer::blade::shape_of(&targets),
+    );
+    let deviation = match taken.as_slice() {
+        [geodesic, ..] => Some(geodesic.geo(&motor.reverse())),
+        [] => None,
+    };
+    let key = x.chart.key();
+    Some(Refusal::closure(
+        REFUSE_EDGE,
+        at_vertex(),
+        sentence::Content::Holonomy {
+            versor: deviation.as_ref(),
+            chart: Some(key.as_bytes()),
+            proof: "the member's fibre does not move rigidly between the two frames: no versor carries it",
+        },
+    ))
 }
 
 /// AN OVERLAP STANDS AT ONE FRAME (AT1, Q2): its edge is re-derived at the

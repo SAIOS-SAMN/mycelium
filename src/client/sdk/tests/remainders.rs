@@ -171,7 +171,7 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     let class = *remainder(&[]).class;
     let charts: Vec<crate::transducer::stalk::Invariant> =
         a.iter().filter_map(|k| crate::transducer::stalk::Invariant::from_key(k)).collect();
-    e.contemplation.docket_demand(&class, &charts);
+    e.contemplation.docket_demand(&class, &charts, None);
     e.contemplation.docket_discharged(class.class_key().as_bytes());
     e.stand_calluses();
     let r = e.meet_graph().remainders;

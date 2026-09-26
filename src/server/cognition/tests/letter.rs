@@ -486,6 +486,107 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     );
 }
 
+/// 78.47 — A MIND DEDUCES WHAT IT COULD NOT BEFORE, THE WHOLE ORBIT AS ONE
+/// CLAIM: construct → coherence → compound → adjoin, and the class flips.
+///
+///   1. The mind's own letters do not spell the residue: the Gödel step reads
+///      it D (`letter_reading`, through the mind's crystal).
+///   2. CONSTRUCT: the residue spelled mode by mode by constructive
+///      Cartan–Dieudonné; the constructors compose back to it as one ray
+///      (T1), each mode's meeting on its fixed locus; their Gram form reads.
+///   3. COMPOUND: admitted, for it strictly raises the rank of what the mind
+///      holds (78.32(c)).
+///   4. ADJOIN: the mind's letter demand is docketed on one court and
+///      installed when a second vantage re-derives it (law 6).
+///   5. The court's page teaches it back, and THE SAME CLASS READS DERIVABLE
+///      for that mind through the same reader.
+#[test]
+fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_derivable() {
+    use crate::client::sdk::Epigenome;
+    use crate::transducer::alphabet::{Rotor, Word};
+    use crate::transducer::family::{letter_reading, LetterReading};
+    let stroke = || crate::physics::Physics::default().stroke_n(1 << 20);
+    const WITNESS: [u8; 32] = [9u8; 32];
+    // The residue: the turn by the arc `4 + i`, prime 17.
+    let pi = Rotor::scalar(q(4)).add(&Rotor::blade(0b0011, q(1)));
+
+    // 1. D through the mind's own (empty) crystal.
+    let mut mind = Epigenome::new();
+    assert_eq!(letter_reading(&mind, &mut stroke(), &pi), LetterReading::Unspelled, "the mind cannot spell it: D");
+
+    // 2. CONSTRUCT, certified: T1, meets on the fixed loci (inside
+    //    `construct`), the Gram form read.
+    let residue = element::versor_of_word(&Word::formed(pi.clone())).expect("a plane versor");
+    let built = crate::transducer::cga::construct(&residue, &mut stroke()).expect("the residue spells as constructors");
+    let composed = built.reflections().iter().fold(crate::transducer::cga::Mv::scalar(q(1)), |acc, u| acc.geo(u));
+    assert!(composed.projective_eq(&residue), "a congruent thought: the constructors compose back to the residue (T1)");
+    assert!(built.reflections().iter().all(crate::transducer::cga::is_constructor), "each shape a sphere or a plane");
+    assert!(built.gram.rank >= 2, "the shapes' Gram form reads: {:?}", built.gram.signature);
+
+    // 2′. THE CHAIN REACHES THE RESIDUE (78.47(6), ruled (b)): the demand is
+    //     cited by its class and its residue's ray, never its constructors;
+    //     read back off the chain's bytes, the ray alone re-derives them.
+    let kappa = crate::transducer::sentence::ClassVector::of_rotor(
+        &pi,
+        element::identity_versor(),
+        crate::transducer::sentence::CycleType::Identity,
+    )
+    .expect("the residue's class reads");
+    let cite = crate::chronometry::Cite::Demand { class: Box::new(kappa), residue: residue.canonical(), cover: None };
+    let mut bytes = Vec::new();
+    cite.put_canonical(&mut bytes).expect("the citation writes");
+    let read = crate::chronometry::Cite::take_canonical(&bytes, &mut 0).expect("and reads back");
+    assert_eq!(read, cite, "the demand's citation reads back whole");
+    let crate::chronometry::Cite::Demand { residue: Some(cited), .. } = read else {
+        panic!("the citation carries the residue's ray")
+    };
+    let rederived = crate::transducer::cga::construct(&cited, &mut stroke()).expect("the cited ray re-derives");
+    let recomposed = rederived.reflections().iter().fold(crate::transducer::cga::Mv::scalar(q(1)), |acc, u| acc.geo(u));
+    assert!(recomposed.projective_eq(&residue), "whoever asks re-derives the constructors from the chain (law 12)");
+
+    // 3. COMPOUND: a mind holding nothing admits it by rank.
+    assert_eq!(
+        crate::transducer::cech::admits_compound(&[], &composed, &mut stroke()),
+        Some(true),
+        "the compound strictly raises the rank of what the mind holds"
+    );
+
+    // 4. ADJOIN, from a second vantage. The mind's letter demand is the one
+    //    its own peel types for the residue.
+    let Some(Err(demand)) = crate::transducer::alphabet::factor_rotor(&pi) else {
+        panic!("the peel types a letter demand for the residue")
+    };
+    let mut far = Kernel::new();
+    far.set_court_voice([32u8; 32]);
+    assert_eq!(
+        far.perceive_speech([2u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(3), 3, demand.clone()))),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    let (far_addr, reached) = docketed_letter(&far, &pi).expect("the far court docketed the letter");
+    let mut home = Kernel::new();
+    home.set_court_voice([31u8; 32]);
+    assert_eq!(
+        home.perceive_speech([1u8; 32], &[0; 32], std::slice::from_ref(&demanding_sentence(quarter(1), 1, demand))),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    let (addr, _) = docketed_letter(&home, &pi).expect("the home court docketed the letter");
+    assert_eq!(addr, far_addr, "two vantages, one address");
+    let cover = home.genesis_cover().expect("a measured cover");
+    home.enroll(WITNESS, cover);
+    home.witness_rederived(&Address::from(addr.clone()), WITNESS, reached);
+    assert!(basis_holds(&home, &addr), "the second vantage re-derived it and the court adjoined it");
+
+    // 5. TAUGHT BACK — and the same class, through the same reader, flips.
+    for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20) {
+        let _ = mind.learn(&t.word);
+    }
+    assert_eq!(
+        letter_reading(&mind, &mut stroke(), &pi),
+        LetterReading::Derivable,
+        "the class the mind could not spell reads DERIVABLE once the court's letter reaches its crystal"
+    );
+}
+
 /// The letter a kernel docketed, as an address and the element under it:
 /// found by the vertex it carries — a generator citing nothing whose rotor
 /// is `r` — never by an index into the docket (rule 15).

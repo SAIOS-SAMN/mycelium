@@ -59,3 +59,40 @@ fn a_null_constructor_or_a_non_versor_is_unread() {
         ConstructorOrbit::Unread(OrbitUnread::NotVersor { generator: 0 })
     );
 }
+
+fn composed(c: &Constructed) -> Mv {
+    c.reflections().iter().fold(Mv::scalar(q(1, 1)), |acc, u| acc.geo(u))
+}
+
+/// 78.47 — THE INVERSE: a turn by the arc `4 + i`, whose prime 17 the
+/// seventeen letters do not spell, spelled back into two constructors that
+/// compose to it (T1) and meet on its axis; their Gram form reads.
+#[test]
+fn a_turn_is_spelled_as_two_constructors_meeting_on_its_axis() {
+    let turn = rotator(&q(4, 1), &q(1, 1));
+    let c = construct(&turn, &mut budget()).expect("a turn spells");
+    assert_eq!(c.shapes.len(), 1, "one mode");
+    assert_eq!(c.shapes[0].len(), 2, "a planar turn is two mirrors");
+    assert!(composed(&c).projective_eq(&turn), "the constructors compose back to the residue (T1)");
+    assert!(c.reflections().iter().all(is_constructor), "each shape is a sphere or a plane");
+    assert_eq!(c.gram.rank, 2, "the Gram form of the two shapes reads");
+}
+
+/// A turn about a point off the origin, spelled mode by mode, the whole T1,
+/// within `n + 2` constructors.
+#[test]
+fn a_turn_about_a_point_off_the_origin_is_spelled_and_composes_back() {
+    let t = translator(&q(2, 1), &q(1, 1), &q(0, 1));
+    let turn = t.geo(&rotator(&q(3, 1), &q(4, 1))).geo(&t.reverse());
+    let c = construct(&turn, &mut budget()).expect("a turn about a point spells");
+    assert!(composed(&c).projective_eq(&turn), "T1");
+    assert!(c.reflections().len() <= 5, "at most n + 2 constructors");
+}
+
+/// No residue, nothing constructed; no versor, no action to spell.
+#[test]
+fn the_identity_and_a_non_versor_are_not_constructed_by_name() {
+    assert!(matches!(construct(&Mv::scalar(q(1, 1)), &mut budget()), Err(NotConstructed::NoResidue)));
+    let cone = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | EM, q(1, 1)));
+    assert!(matches!(construct(&cone, &mut budget()), Err(NotConstructed::NotVersor)));
+}

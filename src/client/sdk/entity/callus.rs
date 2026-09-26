@@ -87,7 +87,9 @@ impl Entity {
             // demand with its second vantage in hand, up through the docket.
             self.epigenome.calluses.unspelled += 1;
             let charts: Vec<Invariant> = cover.scoped().filter_map(|(k, _)| Invariant::from_key(&k)).collect();
-            self.contemplation.docket_demand(&c.class, &charts);
+            // Its residue is the two remainders' ray, already on RM1's leaf
+            // the chain reaches: the citation carries none beside it (78.47(6)).
+            self.contemplation.docket_demand(&c.class, &charts, None);
             return;
         };
         let Some(callus) = crate::transducer::sentence::callus_form(derivation, &tops) else {

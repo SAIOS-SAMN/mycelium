@@ -168,11 +168,16 @@ pub struct ResidueMode {
 }
 
 /// WHY A RING'S CLASS DID NOT READ: its holonomy does not split as
-/// `D(ρ)·T(t)·R` on the base; its rotor has no conjugacy invariants; or its
-/// hue did not read (a static contact's gauge half, a held coset).
+/// `T(a)·K(b)·D(ρ)·R` at all; it splits with a transversion `b ≠ 0`, or in
+/// the inversion's cell, which the class vector has no coordinate for (A.13:
+/// the key reads the `∞` pole's half — the placement, the dilation, the
+/// turn — and nothing yet keys the origin pole's); its rotor has no
+/// conjugacy invariants; or its hue did not read (a static contact's gauge
+/// half, a held coset).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ClassUnread {
     NoSplit,
+    Transversion,
     NoInvariants,
     HueUnread,
 }
@@ -188,15 +193,21 @@ pub struct Incoherence {
 }
 
 /// A RING'S CLASS: its holonomy split as the fill splits a transition — the
-/// carriage `D·T`, the rotor `(D·T)⁻¹ V` on the base — read by the one class
-/// producer with the ring's own hue (78.26(5), ruled).
+/// carriage `T·D`, the rotor `(T·D)⁻¹ V` on the base, read at both poles
+/// (A.13) — by the one class producer with the ring's own hue (78.26(5),
+/// ruled). A holonomy carrying the origin pole's half is read as that, by
+/// name, and never keyed as if it fixed infinity.
 fn class_of_ring(
     holonomy: &Mv,
     hue: Option<&[(u8, u8)]>,
 ) -> Result<Box<crate::transducer::sentence::ClassVector>, ClassUnread> {
-    use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
+    use crate::transducer::element::{base_rotor_of, conformal_factors};
     let hue = hue.ok_or(ClassUnread::HueUnread)?;
-    let carriage = dilator_of(holonomy).zip(translator_of(holonomy)).map(|(d, t)| d.geo(&t)).ok_or(ClassUnread::NoSplit)?;
+    let f = conformal_factors(holonomy).map_err(|_| ClassUnread::NoSplit)?;
+    if f.inverted || f.transverses() {
+        return Err(ClassUnread::Transversion);
+    }
+    let carriage = f.carriage();
     let rotor = base_rotor_of(holonomy).ok_or(ClassUnread::NoSplit)?;
     crate::transducer::sentence::ClassVector::of_rotor(&rotor, carriage, crate::transducer::sentence::CycleType::of(hue))
         .map(Box::new)
@@ -501,6 +512,25 @@ fn capacity(
     }
     // The rows kept are the closed algebra's basis: each raised the rank.
     Ok((rank, rows))
+}
+
+/// 78.47(3) — A COMPOUND IS ADMITTED ONLY WHERE IT STRICTLY RAISES THE RANK
+/// of the algebra its mind already holds: `held`'s actions closed, then with
+/// `compound` among them (78.32(c): a compound inside the held closure is
+/// derivable, a cliché). An empty `held` is the identity's algebra, rank 1.
+/// `None` where an action does not read or the budget is spent.
+pub fn admits_compound(held: &[Mv], compound: &Mv, budget: &mut crate::physics::Budget) -> Option<bool> {
+    let n = held.iter().chain(std::iter::once(compound)).fold(0u8, |n, g| n.max(g.n()));
+    let actions = |gs: &[&Mv]| gs.iter().map(|g| cga::action_of(&g.widened(n))).collect::<Option<Vec<_>>>();
+    let held_refs: Vec<&Mv> = held.iter().collect();
+    let before = match held_refs.is_empty() {
+        true => 1,
+        false => capacity(&actions(&held_refs)?, budget).ok()?.0,
+    };
+    let mut all = held_refs;
+    all.push(compound);
+    let after = capacity(&actions(&all)?, budget).ok()?.0;
+    Some(after > before)
 }
 
 /// A matrix's row as the capacity writes it, for the bracket reading.

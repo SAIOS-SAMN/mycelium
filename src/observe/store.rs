@@ -221,9 +221,41 @@ static REFUSED: [AtomicU64; 256] = [const { AtomicU64::new(0) }; 256];
 /// `ObstructionKind::index`'s axes.
 static OBSTRUCTED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
 
-/// Count one refusal by its kind, where the court refuses.
+/// THE FOLD'S ROUND BY OUTCOME, on [`super::FOLD_OUTCOMES`]'s axes (LD0).
+static FOLDS: [AtomicU64; super::FOLD_OUTCOMES.len()] = [const { AtomicU64::new(0) }; super::FOLD_OUTCOMES.len()];
+
+/// One outcome of the fold's round.
+pub fn note_fold(outcome: super::FoldOutcome) {
+    FOLDS[outcome as usize].fetch_add(1, Ordering::Relaxed);
+}
+
+/// The fold outcomes this process has counted.
+pub fn folds() -> [u64; super::FOLD_OUTCOMES.len()] {
+    std::array::from_fn(|i| FOLDS[i].load(Ordering::Relaxed))
+}
+
+/// 78.47 — the orbits a demand arm left undischarged, by the kind their own
+/// holonomy reads (78.9), apart from the refusals.
+static UNDISCHARGED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];
+
+/// Count one refusal by its kind, where it forms.
 pub fn note_obstruction(kind: crate::transducer::sentence::ObstructionKind) {
     OBSTRUCTED[kind.index()].fetch_add(1, Ordering::Relaxed);
+}
+
+/// Count one orbit no candidate discharged, by its kind.
+pub fn note_undischarged(kind: crate::transducer::sentence::ObstructionKind) {
+    UNDISCHARGED[kind.index()].fetch_add(1, Ordering::Relaxed);
+}
+
+/// The refusals this process has counted by kind.
+pub(crate) fn obstructed() -> [u64; 6] {
+    std::array::from_fn(|i| OBSTRUCTED[i].load(Ordering::Relaxed))
+}
+
+/// The undischarged orbits this process has counted by kind.
+pub(crate) fn undischarged() -> [u64; 6] {
+    std::array::from_fn(|i| UNDISCHARGED[i].load(Ordering::Relaxed))
 }
 
 /// Count one verdict, where the court reaches it.
@@ -253,7 +285,7 @@ pub fn adjudication() -> super::Adjudication {
             .map(|k| (k, REFUSED[usize::from(k)].load(Ordering::Relaxed)))
             .filter(|&(_, n)| n > 0)
             .collect(),
-        obstructed: std::array::from_fn(|i| OBSTRUCTED[i].load(Ordering::Relaxed)),
+        obstructed: obstructed(),
     }
 }
 

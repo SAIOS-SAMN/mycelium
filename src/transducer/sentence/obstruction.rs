@@ -112,6 +112,15 @@ pub enum Content<'a> {
 /// coset and chart; a versor it spells whose closure still refused, or a
 /// residue carried, is C with the cocycle; a versor the peel reads nothing
 /// from is unclassified, counted as the defect it is.
+///
+/// A.13 — THE PEEL READS BOTH POLES. A holonomy composed of transvections
+/// moves the point at infinity, and the peel read its rotor only where it
+/// did not: every such versor fell to unclassified. Its rotation is now
+/// read off beside its transversion (`conformal_factors`), and the peel
+/// spells it or types its demand. A holonomy in the INVERSION'S CELL — it
+/// carries the origin to infinity — is a versor no rotor spells, whatever
+/// letters are held: D with its coset, the demand for the letter the
+/// inversion is.
 pub fn read_obstruction(content: Content) -> ClosureObstruction {
     match content {
         Content::Residue(links) => ClosureObstruction::Cover { cocycle: links.to_vec() },
@@ -119,10 +128,14 @@ pub fn read_obstruction(content: Content) -> ClosureObstruction {
             let Some(h) = versor.filter(|h| crate::transducer::cga::is_versor(h)) else {
                 return ClosureObstruction::Permanent { proof };
             };
+            let dialect = || ClosureObstruction::Dialect { coset: ray(h), chart: chart.map(<[u8]>::to_vec) };
             match crate::transducer::family::derivation::peel_versor(h) {
-                Some(Err(_)) => ClosureObstruction::Dialect { coset: ray(h), chart: chart.map(<[u8]>::to_vec) },
+                Some(Err(_)) => dialect(),
                 Some(Ok(_)) => ClosureObstruction::Cover { cocycle: Vec::new() },
-                None => ClosureObstruction::Unclassified,
+                None => match crate::transducer::element::conformal_factors(h) {
+                    Ok(f) if f.inverted => dialect(),
+                    _ => ClosureObstruction::Unclassified,
+                },
             }
         }
     }

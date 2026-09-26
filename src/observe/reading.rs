@@ -432,6 +432,24 @@ pub struct Court {
     pub room_broken: u64,
     pub room_overflowed: u64,
     pub overflowed: u64,
+    /// THE FOLD'S ROUND BY OUTCOME, cumulative (LD0: a refusal is never
+    /// discarded): proposed, refused open, refused inexact, committed,
+    /// refused by a witness or at the commit, unmeasured.
+    pub folds: [u64; FOLD_OUTCOMES.len()],
+}
+
+/// THE AXES OF [`Court::folds`], in its writing's order.
+pub const FOLD_OUTCOMES: [&str; 6] = ["proposed", "open", "inexact", "folded", "refused", "unmeasured"];
+
+/// Where each fold outcome is counted on [`FOLD_OUTCOMES`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FoldOutcome {
+    Proposed = 0,
+    Open = 1,
+    Inexact = 2,
+    Folded = 3,
+    Refused = 4,
+    Unmeasured = 5,
 }
 
 impl Court {
@@ -453,6 +471,9 @@ impl Court {
         put_u64(out, self.room_broken);
         put_u64(out, self.room_overflowed);
         put_u64(out, self.overflowed);
+        for n in self.folds {
+            put_u64(out, n);
+        }
         Some(())
     }
 
@@ -470,6 +491,10 @@ impl Court {
         let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
         let torsion_words = take_u64(b, p)?;
         let (room_broken, room_overflowed, overflowed) = (take_u64(b, p)?, take_u64(b, p)?, take_u64(b, p)?);
+        let mut folds = [0u64; FOLD_OUTCOMES.len()];
+        for n in &mut folds {
+            *n = take_u64(b, p)?;
+        }
         Some(Court {
             k,
             basis,
@@ -481,6 +506,7 @@ impl Court {
             room_broken,
             room_overflowed,
             overflowed,
+            folds,
         })
     }
 }

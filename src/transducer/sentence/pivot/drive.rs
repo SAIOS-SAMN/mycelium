@@ -7,6 +7,22 @@
 
 use super::*;
 
+/// 78.47(6) — THE NEGATIVE'S KIND, read off why the residue did not spell
+/// (78.9): no versor, or a null step (no reflection exists there), is P; no
+/// residue asks nothing, N; modes that do not split over ℚ are unclassified;
+/// a construction that does not compose or meets off its locus is a claim
+/// that does not re-derive, I.
+fn not_constructed_kind(why: crate::transducer::cga::NotConstructed) -> crate::transducer::sentence::ObstructionKind {
+    use crate::transducer::cga::NotConstructed;
+    use crate::transducer::sentence::ObstructionKind;
+    match why {
+        NotConstructed::NotVersor | NotConstructed::NullStep { .. } => ObstructionKind::P,
+        NotConstructed::NoResidue => ObstructionKind::N,
+        NotConstructed::Undecomposed(_) => ObstructionKind::Unclassified,
+        NotConstructed::DoesNotCompose | NotConstructed::MeetOffLocus { .. } => ObstructionKind::I,
+    }
+}
+
 /// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
 /// candidate is applied — the orbit rows and the rank they carry, the
 /// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
@@ -456,16 +472,38 @@ impl Form {
                 if let Some(cells) = cells {
                     super::cells::note_outcome(cells, &orbit_k, &outcome, adjoining, tally);
                 }
+                // THE RESIDUE: the orbit's whole transport, read once where no
+                // candidate discharged it — the demand's content and the
+                // undischarged orbit's kind are both read off it.
+                let residue = match outcome {
+                    Discharge::NoneDischarged => self.orbits.get(idx).and_then(|lp| {
+                        paths_carried_quiet(&self.faces, &self.vertices, lp)?.scoped().find_map(|(_, c)| c.composite())
+                    }),
+                    _ => None,
+                };
                 // 78.37 — THE DEMAND ARM'S DEMAND, carried to the docket: the
                 // orbit's undischarged class and its cover, where no held word
                 // discharged it and none adjoins — and, A19, where the court
                 // has not ruled the class: another mind can supply that word,
-                // so this one does not demand it.
+                // so this one does not demand it. 78.47 — DEDUCTION CONSTRUCTS:
+                // the demand carries its residue, and the constructors around
+                // its congruence factors are read off it here only to name
+                // what does not spell — the negative, refused with the class
+                // and counted by kind. They are never carried beside the
+                // residue that derives them (law 12).
                 if matches!(outcome, Discharge::NoneDischarged) && !adjoining && !held {
+                    let spelled = match &residue {
+                        Some(r) => crate::transducer::cga::construct(r, budget).map(|_| ()),
+                        None => Err(crate::transducer::cga::NotConstructed::NotVersor),
+                    };
+                    if let Err(why) = spelled {
+                        crate::observe::note_obstruction(not_constructed_kind(why));
+                    }
                     snaps.push(Snap::Demanded {
                         chord: idx,
                         class: Box::new(kappa.clone()),
                         charts: self.charts_of_orbit(idx),
+                        residue: residue.clone(),
                     });
                 }
                 match outcome {
@@ -526,14 +564,9 @@ impl Form {
                         // versor the dialect does not spell D, a residue on
                         // the cover C. The candidates' own refusals were the
                         // trial's returns, never counted (law 12).
-                        let holonomy = self.orbits.get(idx).and_then(|lp| {
-                            paths_carried_quiet(&self.faces, &self.vertices, lp)?
-                                .scoped()
-                                .find_map(|(_, c)| c.composite())
-                        });
-                        crate::observe::note_obstruction(
+                        crate::observe::note_undischarged(
                             crate::transducer::sentence::read_obstruction(crate::transducer::sentence::Content::Holonomy {
-                                versor: holonomy.as_ref(),
+                                versor: residue.as_ref(),
                                 chart: None,
                                 proof: "no candidate discharges the orbit",
                             })

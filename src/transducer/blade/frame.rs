@@ -319,6 +319,11 @@ pub enum NoPose {
     /// nor `Oblique` (whose question is the square base's turns, one
     /// section's).
     Irrational,
+    /// 78.47 — THE TURN READ DOES NOT SPELL AS CONSTRUCTORS: the constructors'
+    /// one Cartan–Dieudonné factorizer, in the algebra's own metric, met a
+    /// null step — no reflection exists there, so no versor is built of it.
+    /// Carried by name, never assumed away.
+    NullStep,
 }
 
 /// WHERE TWO SHAPES DISAGREE (78.38(2), (C)): where neither similarity of the
@@ -344,7 +349,7 @@ impl NoPose {
     pub fn obstruction_kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
         use crate::transducer::sentence::ObstructionKind;
         match self {
-            NoPose::Mirrored | NoPose::Incongruent(_) | NoPose::Isotropy | NoPose::Irrational => {
+            NoPose::Mirrored | NoPose::Incongruent(_) | NoPose::Isotropy | NoPose::Irrational | NoPose::NullStep => {
                 Some(ObstructionKind::P)
             }
             NoPose::Oblique => Some(ObstructionKind::D),

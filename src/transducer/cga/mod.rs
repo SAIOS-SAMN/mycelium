@@ -23,7 +23,10 @@ mod perturbation;
 mod planes;
 mod spin;
 
-pub use constructors::{carry, constructor_orbit, is_constructor, ConstructorOrbit, OrbitUnread};
+pub use constructors::{
+    carry, construct, constructor_orbit, is_constructor, Constructed, ConstructorOrbit, NotConstructed, OrbitUnread,
+};
+pub(crate) use constructors::constructors_of_base_turn;
 pub use dual::{contract_to_face, dual_frame, wedge, DualFrame};
 pub use embedding::{
     base_at, base_vector, boundary_dual, e_inf, e_o, hyperbolic_point, on_sphere, point_at, rotator,

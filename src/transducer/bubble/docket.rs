@@ -57,18 +57,22 @@ impl Contemplation {
     }
 
     /// 78.37 — CS2's DEMAND ARM'S DEMAND onto the docket: the undischarged
-    /// orbit's class and the charts it stands on, as its cover.
+    /// orbit's class, the charts it stands on as its cover, and (78.47) its
+    /// residue as its canonical ray — the coordinate its constructors are
+    /// derived from by whoever asks.
     pub(crate) fn docket_demand(
         &mut self,
         class: &crate::transducer::sentence::ClassVector,
         charts: &[crate::transducer::stalk::Invariant],
+        residue: Option<&crate::transducer::cga::Mv>,
     ) {
         let mut keys: Keyed<()> = Keyed::new();
         for ch in charts {
             keys.insert(ch.key().as_bytes(), ());
         }
         let cover = Some(keys.scoped().map(|(k, _)| k).collect());
-        self.docket_put(Cite::Demand { class: Box::new(class.clone()), cover });
+        let residue = residue.and_then(crate::transducer::cga::Mv::canonical);
+        self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue, cover });
     }
 
     /// THE WHOLE PLAN, in its entries' own key order: the open questions

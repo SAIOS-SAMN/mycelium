@@ -60,6 +60,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         room_broken: 7,
         room_overflowed: 8,
         overflowed: 9,
+        // The fold's round by outcome, each in its own slot.
+        folds: [10, 11, 12, 13, 14, 15],
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.
@@ -588,6 +590,12 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             settled: [150, 151, 152, 153],
             remaining: [154, 155, 156, 157],
             classes: vec![(vec![1, 2, 3], 2), (vec![4], 1)],
+        },
+        // 78.47 — the reasons by kind travel whole.
+        reasons: crate::observe::Reasons {
+            refused: [159, 160, 161, 162, 163, 164],
+            undischarged: [165, 166, 167, 168, 169, 170],
+            perturbed: [171, 172, 173, 174, 175, 176, 177],
         },
     };
     let push = encode_push(&vk(8), &[Reading::Learning(curve.clone())]).expect("the push writes");

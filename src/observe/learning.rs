@@ -67,6 +67,57 @@ pub struct Learning {
     pub meet: Box<crate::transducer::bubble::MeetGraph>,
     /// PR1 — what this voice's probes read, cumulative.
     pub probes: ProbeTally,
+    /// 78.47 — why this mind did not move, by kind (78.9), cumulative: the
+    /// input the demand arm's construction is read against.
+    pub reasons: Reasons,
+}
+
+/// 78.47 — A MIND'S REFUSALS AND WHAT IT LEFT OPEN, BY KIND (P, D, C, I, N,
+/// unclassified — `ObstructionKind::ALL`'s order): every refusal it formed
+/// (the Gödel step's among them), the orbits its demand arm left
+/// undischarged, and the perturbation reading (78.46(4′)) — cells
+/// unperturbed, flat, curved, the vacuum circuits read in them, trial moves
+/// admitted and refused unclosed, routes the register refused.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Reasons {
+    pub refused: [u64; 6],
+    pub undischarged: [u64; 6],
+    pub perturbed: [u64; 7],
+}
+
+impl Reasons {
+    /// This process's counters, read without clearing them.
+    pub fn now() -> Reasons {
+        let t = crate::transducer::sentence::perturb_tally();
+        Reasons {
+            refused: super::store::obstructed(),
+            undischarged: super::store::undischarged(),
+            perturbed: [t.unperturbed, t.flat, t.curved, t.vacua, t.admitted, t.unclosed, t.refused],
+        }
+    }
+
+    pub fn line(&self) -> String {
+        let [p, f, c, v, a, u, r] = self.perturbed;
+        format!(
+            "reasons: refused by kind (P D C I N ?) {:?} | undischarged by kind {:?} | cells unperturbed {p} flat {f} curved {c} (vacua {v}) | trial moves admitted {a} unclosed {u} | routes refused {r}",
+            self.refused, self.undischarged
+        )
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        for v in self.refused.iter().chain(&self.undischarged).chain(&self.perturbed) {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Reasons> {
+        let mut r = Reasons::default();
+        for v in r.refused.iter_mut().chain(r.undischarged.iter_mut()).chain(r.perturbed.iter_mut()) {
+            *v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+        }
+        Some(r)
+    }
 }
 
 /// PR1 — A VOICE'S PROBES, READ: how many left each closure state (closed,
@@ -212,7 +263,19 @@ impl Learning {
                 closing += 1;
             }
         }
-        Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes }
+        Learning {
+            k,
+            strata,
+            radius,
+            adjoined_by_closure,
+            installed,
+            closing,
+            pivots,
+            merges,
+            meet: Box::new(meet),
+            probes,
+            reasons: Reasons::now(),
+        }
     }
 
     /// `None` where a count or a key passes its field (STD1 3c): the reading
@@ -332,7 +395,10 @@ impl Learning {
         // STD1 — the sums the contemplation refused.
         out.extend_from_slice(&g.overflowed.to_le_bytes());
         // PR1 — the voice's probes.
-        self.probes.put(out)
+        self.probes.put(out)?;
+        // 78.47 — its reasons by kind.
+        self.reasons.put(out);
+        Some(())
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Learning> {
@@ -504,6 +570,19 @@ impl Learning {
             overflowed,
         };
         let probes = ProbeTally::take(b, p)?;
-        Some(Learning { k, strata, radius, adjoined_by_closure, installed, closing, pivots, merges, meet: Box::new(meet), probes })
+        let reasons = Reasons::take(b, p)?;
+        Some(Learning {
+            k,
+            strata,
+            radius,
+            adjoined_by_closure,
+            installed,
+            closing,
+            pivots,
+            merges,
+            meet: Box::new(meet),
+            probes,
+            reasons,
+        })
     }
 }

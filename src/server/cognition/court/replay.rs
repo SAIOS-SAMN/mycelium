@@ -237,7 +237,15 @@ impl Kernel {
                 && self.fold_pending.is_none()
                 && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
             {
-                let _ = self.propose_fold();
+                // The proposal's reading is counted by outcome, never
+                // discarded (LD0): a court that never folds is read for
+                // which gate held it (`Court.folds`).
+                let outcome = match self.propose_fold() {
+                    Ok(_) => crate::observe::FoldOutcome::Proposed,
+                    Err(crate::verdict::REFUSE_FOLD_OPEN) => crate::observe::FoldOutcome::Open,
+                    Err(_) => crate::observe::FoldOutcome::Inexact,
+                };
+                crate::observe::note_fold(outcome);
             }
         }
         for addr in keys {

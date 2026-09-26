@@ -19,9 +19,9 @@ pub type SectionAt<'a> = &'a dyn Fn(&[u8]) -> Option<(Rotor, crate::transducer::
 /// for.
 pub type Held = (Invariant, Rotor, crate::transducer::element::Versor);
 
-/// 78.37 — ONE DEMAND OF CS2's ARM: the undischarged orbit's class and the
-/// charts it stands on.
-pub type Demand = (sentence::ClassVector, Vec<Invariant>);
+/// 78.37 — ONE DEMAND OF CS2's ARM: the undischarged orbit's class, the
+/// charts it stands on, and (78.47) its residue, where it read.
+pub type Demand = (sentence::ClassVector, Vec<Invariant>, Option<crate::transducer::cga::Mv>);
 
 /// WHAT ONE EXPANSION OF AN IDEA DID: the charts spent, the lane measure of
 /// its snaps, 37.7's adjunction candidates (a rotor and its chart), and the
@@ -684,15 +684,21 @@ impl Bubble {
                         // is no demand on the language (37.7 adjoins what
                         // the presentation lacks); the form's vertices
                         // carry no links, so the demand declares none.
+                        // 78.47 — a rotor the mind's OWN crystal spells is no
+                        // demand, whatever the fixed seventeen say; the demand's
+                        // kind and witness are still the peel's to type.
                         crate::transducer::sentence::Snap::Demand { rotor, chart, .. } => {
-                            if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
-                                form.stand_demand(kind, chart, Vec::new());
+                            let own = crate::transducer::family::letter_reading(crystal, budget, rotor);
+                            if own != crate::transducer::family::LetterReading::Derivable {
+                                if let Some(Err(kind)) = crate::transducer::alphabet::factor_rotor(rotor) {
+                                    form.stand_demand(kind, chart, Vec::new());
+                                }
                             }
                         }
                         // 78.37 — the demand arm's demand, carried out to the
                         // contemplation's docket.
-                        crate::transducer::sentence::Snap::Demanded { class, charts, .. } => {
-                            demanded.push((class.as_ref().clone(), charts.clone()));
+                        crate::transducer::sentence::Snap::Demanded { class, charts, residue, .. } => {
+                            demanded.push((class.as_ref().clone(), charts.clone(), residue.clone()));
                         }
                         crate::transducer::sentence::Snap::Discharged { certificate, .. } => {
                             discharged.push(certificate.before.clone());

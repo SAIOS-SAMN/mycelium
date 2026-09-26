@@ -154,3 +154,32 @@ fn an_upheld_claim_is_minted_at_the_ruling_act() {
     assert_ne!(economy.paid[crate::economy::Arm::Pouw.index()], [0; 4], "the observer reads it under POUW");
     assert_eq!(economy.paid[crate::economy::Arm::Powr.index()], [0; 4], "and under no other arm");
 }
+
+/// A PEER'S STAMP FILED OVER A WORD THIS COURT HOLDS FILES NOTHING, and a
+/// refusal withdraws only what its filing placed. The witness and the
+/// exchange file the offering home's stamp before judging and withdrew it
+/// on every refusal; where the court already held the word at its own
+/// stamp the filing was a no-op and the withdrawal erased the court's own —
+/// a provisional word left unstamped, every fold prefix open behind it
+/// (court a, epoch 99: unstamped provisional 0 → 4, folded never).
+#[test]
+fn a_refused_peer_stamp_never_erases_the_courts_own() {
+    use crate::chronometry::Stamp;
+    let (mut k, addr) = docketed([0x5a; 32]);
+    let own = k.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
+    let final_before = k.final_prefix_head();
+    let peer = Stamp::new(1, [0x9e; 32], crate::chronometry::Place { k: 0, i: 1 });
+    assert!(!k.file_admitted(&addr, peer), "the word stands at its own stamp: this filing placed nothing");
+    assert_eq!(k.admitted_at(addr.as_bytes()), Some(own), "and the court's own stamp is untouched");
+    assert_eq!(k.unstamped(), [0; 5], "no row holds a word without a stamp");
+    assert_eq!(k.final_prefix_head(), final_before, "and what was final stays final");
+    // A word this court did not hold is filed at the peer's stamp, and that
+    // filing is what a refusal withdraws.
+    let (other, stranger) = docketed([0x6b; 32]);
+    let word = other.provisional.get(stranger.as_bytes()).cloned().expect("provisional");
+    let mut c = Kernel::new();
+    c.bind_identity([0xc0; 32]);
+    c.pending.insert(stranger.clone(), word);
+    assert!(c.file_admitted(&stranger, peer), "a word held at no stamp here takes the peer's");
+    assert_eq!(c.admitted_at(stranger.as_bytes()), Some(peer));
+}

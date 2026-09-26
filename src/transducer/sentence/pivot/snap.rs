@@ -37,11 +37,16 @@ pub enum Snap {
     /// CS2's DEMAND ARM, 78.37 — an orbit no held word discharged and none
     /// adjoins: its undischarged class vector (whose own plane section names
     /// the mode, 3.9) and the charts it stands on, its cover. Carried to the
-    /// contemplation's docket and cited on the orbit's close.
+    /// contemplation's docket and cited on the orbit's close. 78.47 — with its
+    /// RESIDUE: the orbit's whole transport, the one coordinate the demand
+    /// carries (`None` where it did not read), cited on the chain by its ray.
+    /// Its constructors are a forced function of it and are never carried
+    /// beside it: whoever asks derives them (`cga::construct`, law 12).
     Demanded {
         chord: usize,
         class: Box<crate::transducer::sentence::ClassVector>,
         charts: Vec<crate::transducer::stalk::Invariant>,
+        residue: Option<crate::transducer::cga::Mv>,
     },
     /// 37.7 FROM AN ORBIT'S OWN RESIDUE: the basis reached no coordinate this
     /// orbit occupies, the class was published and nothing answered, so the

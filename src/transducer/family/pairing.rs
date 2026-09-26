@@ -76,6 +76,8 @@ pub struct ContactTally {
     /// no versor over ℚ relates them, and nothing is claimed about whether
     /// they are alike.
     pub irrational: u64,
+    /// 78.47 — a turn read whose constructors met a null step.
+    pub null_step: u64,
     pub half_open: u64,
     /// A relative turn the peel does not spell: 37.7's candidate, the
     /// demand typed and counted, never an edge invented for it.
@@ -146,7 +148,7 @@ thread_local! {
         tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
         oblique: 0, mirrored: 0,
         incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
-        irrational: 0, half_open: 0,
+        irrational: 0, null_step: 0, half_open: 0,
         unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0, cells_singular: 0,
     }) };
 }
@@ -180,7 +182,7 @@ impl ContactTally {
             "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
              unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
-             tube {}) irrational {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
+             tube {}) irrational {} null step {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
              static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {} singular {}",
             self.offered,
             self.unlifted,
@@ -201,6 +203,7 @@ impl ContactTally {
             self.incongruent.base,
             self.incongruent.tube,
             self.irrational,
+            self.null_step,
             self.half_open,
             self.unspelled,
             self.unread,
@@ -242,6 +245,7 @@ impl ContactTally {
             (NoPose::Incongruent(Incongruence::Base), i.base),
             (NoPose::Incongruent(Incongruence::Tube), i.tube),
             (NoPose::Irrational, self.irrational),
+            (NoPose::NullStep, self.null_step),
         ]
         .into_iter()
         .chain(orders)
@@ -434,6 +438,7 @@ pub(crate) fn contact_edge(
                 blade::NoPose::Mirrored => t.mirrored += 1,
                 blade::NoPose::Incongruent(why) => t.incongruent.note(why),
                 blade::NoPose::Irrational => t.irrational += 1,
+                blade::NoPose::NullStep => t.null_step += 1,
             });
             Err(why)
         }

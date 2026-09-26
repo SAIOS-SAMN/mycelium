@@ -91,20 +91,27 @@ fn base_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> 
     None
 }
 
-/// THE ROTOR A VERSOR'S BASE ACTION IS (51.2; N2): `V = D(ρ)·T(t)·R` on
-/// the base, so `R = (D·T)⁻¹ V`, read exactly off the carriage `dilator_of`
-/// and `translator_of` measure, and mapped back blade for blade onto
-/// `⟨1, e₀₁, e₀₃, e₁₃⟩`; a reflector `e1` in it is the orientation
-/// character `e₀₂`. `None` when `V` is no versor of the base or `R` is not
-/// a rotation or a reflection of it — nothing is projected. The inverse of
+/// THE ROTOR A VERSOR'S BASE ACTION IS (51.2; N2; A.13): `V = T(a)·K(b)·
+/// D(ρ)·R` read at both poles by [`conformal_factors`], and `R` mapped back
+/// blade for blade onto `⟨1, e₀₁, e₀₃, e₁₃⟩`; a reflector `e1` in it is the
+/// orientation character `e₀₂`. Where `V` fixes infinity this is the
+/// `(D·T)⁻¹ V` it always read, the same ray exactly; where `V` moves
+/// infinity — a holonomy composed of transvections, which carry both poles
+/// — the transversion is read off first instead of the whole reading being
+/// lost. `None` when `V` is no versor, carries the origin to infinity (the
+/// inversion is no rotation of the base), or `R` is not a rotation or a
+/// reflection of the base — nothing is projected. The inverse of
 /// [`versor_of_word`] on every rotor that has a base action.
 pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cga::E1;
-    let carriage = dilator_of(v)?.geo(&translator_of(v)?);
-    // `(DT)~ V`: the rotor as a ray, which is how a rotor is read (78.32(1)).
-    crate::transducer::cga::is_versor(&carriage).then_some(())?;
-    let r = carriage.reverse().geo(v);
+    let f = conformal_factors(v).ok()?;
+    if f.inverted {
+        return None;
+    }
+    // `(T·K·D)~ V`: the rotor as a ray, which is how a rotor is read
+    // (78.32(1)).
+    let r = f.rotation;
     let on_base = |m: &Versor| {
         (0..m.slot_count()).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero())
     };
@@ -269,6 +276,177 @@ pub fn dilator_of(v: &Versor) -> Option<Versor> {
     } else {
         Some(crate::transducer::cga::dilator(&rho))
     }
+}
+
+/// A.13 — THE CHART'S INVERSION `I`: reflection in the unit sphere about the
+/// origin, `sphere_at(o, 1) = e_o − ½e_∞ = −e₊`, from the one producer of a
+/// sphere. It exchanges the chart's two poles — `I(o) = ∞`, `I(∞) = o` —
+/// and conjugates the translation generator `eᵢ ∧ e_∞` onto the
+/// transversion's `eᵢ ∧ e_o`: one generator seen from the opposite pole.
+///
+/// ITS BASE IS THE CHART'S OWN. The sphere is centred where the translation
+/// is read from (the origin `origin_image` reads), so the two halves are
+/// read at the same two poles; its squared radius is the lattice's unit, the
+/// scale `translator_versor` steps by. Another radius `r` gives the same
+/// transversion group with `b` read as `b/r²` — a change of unit, never of
+/// content. `I² = 1` exactly: `I` is its own reverse and its own inverse.
+pub fn inversion() -> Versor {
+    crate::transducer::cga::sphere_at(&[], &Q::one())
+}
+
+/// A.13 — A CONFORMAL VERSOR READ AT BOTH POLES:
+///
+/// ```text
+///     V = T(a) · K(b) · D(ρ) · R · Iᵉ,     K(b) = I · T(b) · I
+/// ```
+///
+/// `T·D·R` alone reads only what fixes the point at infinity — the half of
+/// the conformal pair every placement reader used, and why `rho_of` had no
+/// reading for a motion that moves `∞`. Every rational conformal versor is
+/// read here exactly, in one of the two cells the origin's image decides:
+/// `V(o)` finite, and `ε = 0`; `V(o) = ∞`, and then `V·I` carries the
+/// origin to `V(∞)`, which is finite (a versor sending both poles to `∞`
+/// would not be invertible), so `ε = 1`.
+///
+/// Each factor is read off what the rest leaves still — nothing is solved:
+/// `a = V(o)`, since `K`, `D` and `R` fix the origin; `W = T(a)~·V` fixes
+/// the origin, so `I·W·I` fixes `∞` and is a similarity whose origin image
+/// is `b`; `U = K(b)~·W` fixes both poles, so its scale is `ρ` (`rho_of`);
+/// and `R = D(ρ)~·U` is a ray fixing both poles at unit scale — a rotation
+/// of the base, or a rotation and a mirror of it. The product is then read
+/// back against `V` as one ray (T1); a reading that does not compose back
+/// is refused, never approximated.
+///
+/// Where `b = 0` and `ε = 0` this is the `D(ρ)·T(t)·R` every reader here
+/// already took, exactly: `T(ρt)·D(ρ) = D(ρ)·T(t)`, so `a = ρt` and `R` is
+/// the same ray `base_rotor_of` always read.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Conformal {
+    /// `a`: where the origin goes — the translation, the `∞` pole's half.
+    pub translation: Vec<Q>,
+    /// `b`: the transversion, the origin pole's half, read through `I` as
+    /// the translation `I·K·I` is.
+    pub transversion: Vec<Q>,
+    /// `ρ`: the scale, read once both poles are held still.
+    pub rho: Q,
+    /// `R`: what fixes both poles at unit scale, as a ray.
+    pub rotation: Versor,
+    /// `ε`: the versor carries the origin to infinity — the inversion's cell.
+    pub inverted: bool,
+}
+
+/// WHY A VERSOR WAS NOT READ AT BOTH POLES, each by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unfactored {
+    /// No versor: its action is not a conformal motion.
+    NotVersor,
+    /// A factor that must fix a pole does not: the element is not a
+    /// conformal motion of this chart.
+    PolesNotHeld,
+    /// The factors read do not compose back to the versor (T1).
+    DoesNotCompose,
+}
+
+impl Conformal {
+    /// `T(a)`, the identity where `a = 0`.
+    pub fn translator(&self) -> Versor {
+        match self.translation.iter().all(Zero::is_zero) {
+            true => identity_versor(),
+            false => crate::transducer::cga::translator_at(&self.translation),
+        }
+    }
+
+    /// `K(b) = I · T(b) · I`, the identity where `b = 0`.
+    pub fn transversor(&self) -> Versor {
+        match self.transversion.iter().all(Zero::is_zero) {
+            true => identity_versor(),
+            false => {
+                let i = inversion();
+                i.geo(&crate::transducer::cga::translator_at(&self.transversion)).geo(&i)
+            }
+        }
+    }
+
+    /// `D(ρ)`, the identity where `ρ = 1`.
+    pub fn dilator(&self) -> Versor {
+        match self.rho.is_one() {
+            true => identity_versor(),
+            false => crate::transducer::cga::dilator(&self.rho),
+        }
+    }
+
+    /// The carriage `T(a)·K(b)·D(ρ)`: everything but the rotation and the
+    /// inversion.
+    pub fn carriage(&self) -> Versor {
+        self.translator().geo(&self.transversor()).geo(&self.dilator())
+    }
+
+    /// Whether the origin pole's half is present.
+    pub fn transverses(&self) -> bool {
+        !self.transversion.iter().all(Zero::is_zero)
+    }
+
+    /// The factors composed: `T·K·D·R·Iᵉ`.
+    pub fn composed(&self) -> Versor {
+        let v = self.carriage().geo(&self.rotation);
+        match self.inverted {
+            true => v.geo(&inversion()),
+            false => v,
+        }
+    }
+}
+
+/// The one reader of [`Conformal`].
+pub fn conformal_factors(v: &Versor) -> Result<Conformal, Unfactored> {
+    use crate::transducer::cga::{base_at, is_versor, point_at};
+    if !is_versor(v) {
+        return Err(Unfactored::NotVersor);
+    }
+    let n = usize::from(v.n());
+    let origin = point_at(&[]);
+    let i = inversion();
+    // THE CELL: where the origin goes. At infinity, `V·I` is read instead,
+    // and `V = (V·I)·I` since `I² = 1`.
+    let (w, inverted) = match base_at(&v.sandwich(&origin), n) {
+        Some(_) => (v.clone(), false),
+        None => (v.geo(&i), true),
+    };
+    let a = base_at(&w.sandwich(&origin), n).ok_or(Unfactored::PolesNotHeld)?;
+    let t = match a.iter().all(Zero::is_zero) {
+        true => identity_versor(),
+        false => crate::transducer::cga::translator_at(&a),
+    };
+    // `W` fixes the origin; under `I` it fixes infinity, a similarity whose
+    // origin image is the transversion's own coordinate.
+    let fixes_origin = t.reverse().geo(&w);
+    let b = base_at(&i.geo(&fixes_origin).geo(&i).sandwich(&origin), n).ok_or(Unfactored::PolesNotHeld)?;
+    let mut read = Conformal {
+        translation: a,
+        transversion: b,
+        rho: Q::one(),
+        rotation: identity_versor(),
+        inverted,
+    };
+    let still = read.transversor().reverse().geo(&fixes_origin);
+    read.rho = rho_of(&still).ok_or(Unfactored::PolesNotHeld)?;
+    read.rotation = read.dilator().reverse().geo(&still);
+    // R HOLDS BOTH POLES AT UNIT SCALE, read by its action, then the whole
+    // product is read back against the versor as one ray (T1).
+    let holds = |x: &Versor| read.rotation.sandwich(x).projective_eq(x);
+    if !holds(&origin) || !holds(&crate::transducer::cga::e_inf()) || rho_of(&read.rotation) != Some(Q::one()) {
+        return Err(Unfactored::PolesNotHeld);
+    }
+    match read.composed().projective_eq(v) {
+        true => Ok(read),
+        false => Err(Unfactored::DoesNotCompose),
+    }
+}
+
+/// A.13 — THE TRANSVERSION A VERSOR CARRIES, `K(b)`: the translator reader
+/// conjugated by the inversion, never a second pipeline. The identity where
+/// the versor fixes the point at infinity.
+pub fn transversor_of(v: &Versor) -> Option<Versor> {
+    conformal_factors(v).ok().map(|f| f.transversor())
 }
 
 /// The base's three axes in the rotor chart (51.2): `e₀, e₁, e₃` are `r,

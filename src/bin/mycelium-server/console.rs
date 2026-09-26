@@ -404,6 +404,10 @@ fn court(c: &Court) -> Vec<String> {
             "  {BOLD}refused{RESET}     room broken {} past carrier {} | overflowed {}",
             c.room_broken, c.room_overflowed, c.overflowed
         ),
+        format!(
+            "  {BOLD}fold{RESET}        {}",
+            observe::FOLD_OUTCOMES.iter().zip(c.folds).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join("  ")
+        ),
     ]
 }
 
@@ -586,6 +590,8 @@ fn learning(l: &observe::Learning) -> Vec<String> {
         // PR1 — the voice's probes: closure states, lanes moved, the residual
         // versors' classes.
         format!("    {}", l.probes.line()),
+        // 78.47 — why the mind did not move, by kind.
+        format!("    {}", l.reasons.line()),
         format!("    {DIM}owed: {}{RESET}", owed.join("  ")),
     ]
 }

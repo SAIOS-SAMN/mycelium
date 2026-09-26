@@ -27,7 +27,14 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             // ACT1: the origin this court adopted, read before the kernel's
             // lock and never under it.
             let genesis = door.mesh.origin.lock().ok().and_then(|o| *o);
-            let standing = door.kernel.lock().ok().map(|k| {
+            // THE OBSERVER NEVER WAITS ON COGNITION. A court stroke can hold
+            // the kernel for as long as its work takes, and a console queued
+            // behind it read nothing — the voices' readings, which need no
+            // kernel, included (hypha b, the recut of epoch 99). The standing
+            // is refreshed where the kernel is free; where it is held, every
+            // reading already held is served, the court's own at the K it
+            // last read.
+            let standing = door.kernel.try_lock().ok().map(|k| {
                 let mut carriage = observe::Carriage::default();
                 k.treasury().carriage(&mut carriage);
                 carriage.of_chain(k.chain());
@@ -46,6 +53,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                     room_broken: k.room_refusals().0,
                     room_overflowed: k.room_refusals().1,
                     overflowed: k.overflowed(),
+                    folds: observe::folds(),
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.

@@ -24,7 +24,7 @@ pub use snap::*;
 pub use cells::{PivotCells, PivotTally};
 pub use orbits::Cycles;
 pub(crate) use perturb::Agreements;
-pub use perturb::{take_perturb_tally, PerturbTally};
+pub use perturb::{perturb_tally, take_perturb_tally, PerturbTally};
 pub use trajectory::{
     circuits_of, construct_routes, finish_circuits, take_circuits, traversed_circuits, TraversedCircuit,
 };

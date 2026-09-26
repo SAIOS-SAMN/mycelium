@@ -11,6 +11,7 @@ use crate::exchange::Mesh;
 use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
+use mycelium::observe::{self, FoldOutcome};
 use std::sync::Mutex;
 
 pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
@@ -41,26 +42,35 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             Some(r) => (r * 8).max(32),
             None => (mycelium::physics::aperture_cycle() as u64 * 4).max(32),
         };
+        // Every answer is counted by outcome on the court's work reading;
+        // silence, a deferral and an undecodable reply measured nothing.
         let Some((reply, dt)) = tell_peer_within(&dest, body.clone(), hint) else {
             note_rtt_timeout(mesh, vk);
+            observe::note_fold(FoldOutcome::Unmeasured);
             continue;
         };
         note_rtt_ok(mesh, vk, dt);
         if crate::transport::is_deferred(&reply) {
+            observe::note_fold(FoldOutcome::Unmeasured);
             continue;
         }
         match dialogue::decode_fold_reply(&reply) {
             Some(dialogue::FoldWitness::CoSigned { section: w }) => {
                 let Ok(mut k) = kernel.lock() else { return };
                 match k.commit_fold(section.sig, &w) {
-                    Ok(_) => return,
+                    Ok(_) => {
+                        observe::note_fold(FoldOutcome::Folded);
+                        return;
+                    }
                     Err(why) => {
+                        observe::note_fold(FoldOutcome::Refused);
                         eprintln!("  court fold refused {:02x}{:02x}…: {why}", vk[0], vk[1]);
                         return;
                     }
                 }
             }
             Some(dialogue::FoldWitness::Refused { vk, why }) => {
+                observe::note_fold(FoldOutcome::Refused);
                 eprintln!(
                     "  court fold refused {:02x}{:02x}…: {}",
                     vk[0],
@@ -69,9 +79,11 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                 );
             }
             Some(dialogue::FoldWitness::Unmeasured { .. }) => {
+                observe::note_fold(FoldOutcome::Unmeasured);
                 eprintln!("  court fold unmeasured by witness {:02x}{:02x}…", vk[0], vk[1]);
             }
             None => {
+                observe::note_fold(FoldOutcome::Unmeasured);
                 eprintln!("  court fold unmeasured: reply undecodable from {:02x}{:02x}…", vk[0], vk[1]);
             }
         }

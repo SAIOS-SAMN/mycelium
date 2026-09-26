@@ -300,31 +300,15 @@ fn col_of(m: &[Vec<Q>], j: usize) -> Vec<Q> {
     m.iter().map(|row| row[j].clone()).collect()
 }
 
-/// THE VERSOR OF AN ORTHOGONAL `R` over ℚ, as a product of reflections
-/// (Cartan–Dieudonné), each vector rational: at column `k`, the current
-/// image `x` of `e_k` is carried home by the reflection in `u = x − e_k`,
-/// which fixes the columns already home. `R = H₁ ⋯ H_m`, so `V = u₁ ⋯ u_m`
-/// and `V x Ṽ ∝ R x` — projective, no weight divided and no root.
-fn versor_of(r: &[Vec<Q>], n: usize) -> Mv {
-    let mut rest: Vec<Vec<Q>> = r.to_vec();
-    let mut v = Mv::scalar(Q::one());
-    for k in 0..n {
-        let mut u = col_of(&rest, k);
-        u[k] -= Q::one();
-        if u.iter().all(Zero::is_zero) {
-            continue;
-        }
-        let uu = u.iter().fold(Q::zero(), |acc, x| acc + x * x);
-        for j in 0..n {
-            let f = u.iter().zip(&rest).fold(Q::zero(), |acc, (ui, row)| acc + ui * &row[j]) * q(2) / &uu;
-            for (row, ui) in rest.iter_mut().zip(&u) {
-                row[j] = &row[j] - &f * ui;
-            }
-        }
-        let vector = u.iter().enumerate().fold(Mv::zero(), |acc, (i, x)| acc.add(&Mv::blade(cga::base_axis(i + 1), x.clone())));
-        v = v.geo(&vector);
-    }
-    v
+/// THE VERSOR OF THE TURN `R` over ℚ, as a product of constructors: the
+/// turn is a conformal motion fixing `e₊`, `e₋`, spelled by the
+/// constructors' one Cartan–Dieudonné factorizer in the algebra's own metric
+/// ([`cga::constructors_of_base_turn`]). `V = u₁ ⋯ u_m`, `V x Ṽ ∝ R x` —
+/// projective, no weight divided and no root. `None` at a null step, which
+/// the base's turns never take: the refusal is carried, never assumed away.
+fn versor_of(r: &[Vec<Q>], n: usize) -> Option<Mv> {
+    let us = cga::constructors_of_base_turn(r, u8::try_from(n).ok()?).ok()?;
+    Some(us.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
 }
 
 /// THE POSE ON THE TUBE: the columns, the dual where a body is flat, the
@@ -384,7 +368,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
     };
     match det(r.clone()) < Q::zero() {
         true => Err(NoPose::Mirrored),
-        false => Ok(Pose::Turn(versor_of(&r, n))),
+        false => versor_of(&r, n).map(Pose::Turn).ok_or(NoPose::NullStep),
     }
 }
 
@@ -472,8 +456,11 @@ fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: 
         }
     }
     match (proper.as_slice(), improper) {
-        ([r], _) => Ok(Pose::Turn(versor_of(r, n))),
-        ([r, s], _) => Ok(Pose::HalfOpen(vec![versor_of(r, n), versor_of(s, n)])),
+        ([r], _) => versor_of(r, n).map(Pose::Turn).ok_or(NoPose::NullStep),
+        ([r, s], _) => match (versor_of(r, n), versor_of(s, n)) {
+            (Some(a), Some(b)) => Ok(Pose::HalfOpen(vec![a, b])),
+            _ => Err(NoPose::NullStep),
+        },
         ([], true) => Err(NoPose::Mirrored),
         ([], false) => Err(NoPose::Incongruent(Incongruence::Tube)),
         _ => Err(NoPose::Unoriented),
