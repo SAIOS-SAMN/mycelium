@@ -17616,7 +17616,11 @@ return is one age, and neighbouring orbits perturb it by lift and drag
 **(6) Where it runs, and acceptance.** On CS2's demand arm: where the
 pivot's trial finds no move that discharges a ring's residue (today
 `Demanded`), the residue is factored and the demand carries the
-constructed shapes as its content, never an empty "demanded"; what does
+constructed shapes as its content in memory (the docket, the epigenome),
+never an empty "demanded"; the CHAIN cites the residue by its
+coordinates (its class, and its ray reachable from the remainder leaf,
+RM1) and never the shapes, which are a forced function of the residue
+and re-derived by whoever asks (law 12, 78.41(2′); ruled 2026-09-26); what does
 not factor (a null step) is the negative, refused with the class as its
 content. Filaments have no residue and generate nothing. ACCEPTANCE is the
 algebra: the product of the constructed reflections against the residue
