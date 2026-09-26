@@ -146,7 +146,8 @@ on the shape of a rational matrix — `QMatrix`, `Vec<Vec<Q>>`,
 `as_operator`, `realize(` — in `src/transducer`, `src/server`,
 `src/client`, and `src/court` (the matrix gate, law 11 and rule 16; F2f
 deleted `core/{engine, matrix}.rs`, `core` exports `Q` alone, and
-`core::zlinalg` is the one matrix arithmetic, for ranks). Two more gates
+no module carries a matrix for a rank: a dimension is a span's grade,
+`core::span`). Two more gates
 and one scope rule (`MU-STANDARDS.md` §4): the file-length gate (no source
 file over 600 lines; `AWAITING_SPLIT` is empty since F2a) and the clippy
 gate (`cargo clippy --release --all-targets -- -D warnings` in

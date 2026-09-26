@@ -216,7 +216,7 @@ impl Contemplation {
                 };
                 // ∂[a b c] = [b c] − [a c] + [a b].
                 let faces = [(key_of(&[b.clone(), cc.clone()]), 1i64), (key_of(&[a.clone(), cc.clone()]), -1), (key_of(&[a.clone(), b.clone()]), 1)];
-                let row: Option<crate::core::lattice::SparseRow> =
+                let row: Option<crate::core::span::Vector> =
                     faces.iter().map(|(k, sign)| index.get(k).map(|&i| (i, num_bigint::BigInt::from(*sign)))).collect();
                 match row {
                     Some(mut r) => {
@@ -227,8 +227,9 @@ impl Contemplation {
                 }
             }
         }
-        // Exact at any size (STD1): the rank always reads.
-        let rank = crate::core::lattice::sparse_rank(&rows);
+        // Exact at any size (STD1): the grade of the boundaries' span always
+        // reads.
+        let rank = crate::core::span::grade_of(&rows);
         (edges.len() as i64 - v + c - rank as i64, unfaced, malformed)
     }
 

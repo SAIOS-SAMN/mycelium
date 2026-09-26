@@ -32,9 +32,9 @@
 //! quasi-periodic, HELD, never a refusal.
 //!
 //! THE CAPACITY IS COMPUTED, NEVER ADDED BY HAND: the rank of the unital
-//! ℚ-algebra the circuits' actions `R_c` generate on the vectors, by
-//! `sparse_rank` over the flattened matrices, the products closed under the
-//! stroke's budget. The COUPLING is the pairs whose actions do not commute.
+//! ℚ-algebra the circuits' actions `R_c` generate on the vectors, read as
+//! the grade of the span of the products (`core::span`), each product
+//! joining where it lies outside, closed under the stroke's budget. The COUPLING is the pairs whose actions do not commute.
 
 use crate::network::nerve::coord::BivectorKind;
 use crate::network::nerve::Keyed;
@@ -456,14 +456,15 @@ pub struct CellAlgebra {
     /// read: what the cross-cell bracket is read against. Volatile, the
     /// percept's own, never persisted. `None` where an action did not read.
     pub actions: Option<Vec<Vec<Vec<Q>>>>,
-    pub basis: Option<Vec<crate::core::lattice::SparseRow>>,
+    pub basis: Option<crate::core::span::Span>,
     /// 78.26(5) — the rings through the cell, by their residue.
     pub rings: Rings,
 }
 
-/// A matrix as one sparse integer row: its denominators cleared, reduced by
-/// the gcd of what is left — exact integers of any size (STD1).
-fn row_of(m: &[Vec<Q>]) -> crate::core::lattice::SparseRow {
+/// An action as one vector of its algebra, the ray it is: its denominators
+/// cleared, reduced by the gcd of what is left — exact integers of any size
+/// (STD1).
+fn row_of(m: &[Vec<Q>]) -> crate::core::span::Vector {
     use num_bigint::BigInt;
     let lcm = m.iter().flatten().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
     let ints: Vec<BigInt> = m.iter().flatten().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
@@ -475,19 +476,21 @@ fn row_of(m: &[Vec<Q>]) -> crate::core::lattice::SparseRow {
     ints.iter().enumerate().filter(|(_, x)| !x.is_zero()).map(|(at, x)| (at, x / &g)).collect()
 }
 
-/// THE CAPACITY: the rank of the unital algebra the actions generate, the
-/// products closed on a keyed worklist, one read of the budget per product.
-/// A refusal carries what it could not hold: the product the budget ran out
-/// at. The elimination is exact at any size (STD1), so no entry and no
-/// elimination is refused for its size.
+/// THE CAPACITY: the dimension of the unital algebra the actions generate —
+/// the grade of the span of its products — closed on a worklist, one read of
+/// the budget per product. A product JOINS the span only where it lies
+/// outside it, and only a product that joined is multiplied on: each is read
+/// once against the span as it stands, never the whole set again. A refusal
+/// carries what it could not hold: the product the budget ran out at. Exact
+/// at any size (STD1).
 fn capacity(
     actions: &[Vec<Vec<Q>>],
     budget: &mut crate::physics::Budget,
-) -> Result<(usize, Vec<crate::core::lattice::SparseRow>), CapacityRefused> {
+) -> Result<(usize, crate::core::span::Span), CapacityRefused> {
     let [first, ..] = actions else { return Err(CapacityRefused::NoneRead) };
     let d = first.len();
-    let mut rows = vec![row_of(&cga::identity_matrix(d))];
-    let mut rank = 1usize;
+    let mut span = crate::core::span::Span::new();
+    span.join(&row_of(&cga::identity_matrix(d)));
     let mut product = 0usize;
     let mut work: Vec<Vec<Vec<Q>>> = vec![cga::identity_matrix(d)];
     while let Some(b) = work.pop() {
@@ -497,41 +500,30 @@ fn capacity(
                 return Err(CapacityRefused::Spent { product });
             }
             let p = cga::matrix_mul(&b, a);
-            rows.push(row_of(&p));
-            let r = crate::core::lattice::sparse_rank(&rows);
-            match r > rank {
-                true => {
-                    rank = r;
-                    work.push(p);
-                }
-                false => {
-                    rows.pop();
-                }
+            if span.join(&row_of(&p)) {
+                work.push(p);
             }
         }
     }
-    // The rows kept are the closed algebra's basis: each raised the rank.
-    Ok((rank, rows))
+    Ok((span.grade(), span))
 }
 
 /// A matrix's row as the capacity writes it, for the bracket reading.
-pub(crate) fn algebra_row(m: &[Vec<Q>]) -> crate::core::lattice::SparseRow {
+pub(crate) fn algebra_row(m: &[Vec<Q>]) -> crate::core::span::Vector {
     row_of(m)
 }
 
-/// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS MATRIX: its basis
-/// rows and the matrix's row do not raise the rank. `None` where the cell's
-/// algebra did not read or the widths differ.
+/// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS MATRIX: it lies in
+/// the algebra's span. `None` where the cell's algebra did not read or the
+/// widths differ.
 pub(crate) fn algebra_contains(cell: &CellAlgebra, m: &[Vec<Q>]) -> Option<bool> {
-    let basis = cell.basis.as_ref()?;
+    let span = cell.basis.as_ref()?;
     let [first, ..] = cell.actions.as_deref()? else { return None };
     let width = first.len() * first.len();
     if m.len() * m.len() != width {
         return None;
     }
-    let mut rows = basis.clone();
-    rows.push(algebra_row(m));
-    Some(crate::core::lattice::sparse_rank(&rows) == basis.len())
+    Some(span.holds(&algebra_row(m)))
 }
 
 /// The planes a mode's ray turns in: its bivector part's non-zero blades.
@@ -576,7 +568,7 @@ fn permutation(ray: &Mv, nuclei: &[Mv], index: &Keyed<usize>) -> Option<Vec<usiz
 #[derive(Clone, Debug)]
 pub struct CellRank {
     actions: Result<Vec<Vec<Vec<Q>>>, CapacityRefused>,
-    rank: Result<(usize, Vec<crate::core::lattice::SparseRow>), CapacityRefused>,
+    rank: Result<(usize, crate::core::span::Span), CapacityRefused>,
 }
 
 /// READ A CELL'S RANK — the cell's dimension — off its crossing circuits,

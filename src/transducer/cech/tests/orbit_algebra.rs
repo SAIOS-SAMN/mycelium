@@ -255,34 +255,40 @@ fn a_spent_capacity_names_the_product_it_ran_out_at() {
     assert_eq!(cell.capacity, Err(CapacityRefused::Spent { product: 1 }), "spent at the first product");
 }
 
-/// STD1 (PH1) — THE EXACT ELIMINATION AT ANY SIZE: entries of 200 bits, far
-/// past `i128`, reduce exactly. Two rows that are multiples of each other are
-/// rank 1; a third independent one makes 2. Nothing is refused for its size.
+/// STD1 (PH1) — THE SPAN'S GRADE AT ANY SIZE: entries of 200 bits, far past
+/// `i128`, join exactly. A vector and its double are one ray, so the blade
+/// they span is grade 1 and the double lies in it (`v ∧ A = 0`); a third
+/// vector off it raises the grade to 2, and the grade is the same whatever
+/// order the vectors join in. Nothing is refused for its size.
 #[test]
-fn the_exact_elimination_reads_entries_of_any_size() {
+fn the_span_reads_its_grade_at_any_size_and_in_any_order() {
+    use crate::core::span::{grade_of, Span};
     use num_bigint::BigInt;
     let big = BigInt::from(1) << 200usize;
     let a = vec![(0usize, big.clone()), (3, big.clone() + 1)];
     let twice = vec![(0usize, &big * 2), (3, (&big + 1) * 2)];
     let other = vec![(1usize, big.clone() * 3), (3, BigInt::from(7))];
-    assert_eq!(crate::core::lattice::sparse_rank(&[a.clone(), twice.clone()]), 1, "one row and its double");
-    assert_eq!(crate::core::lattice::sparse_rank(&[a, twice, other]), 2, "and an independent third");
+    assert_eq!(grade_of(&[a.clone(), twice.clone()]), 1, "one ray and its double");
+    assert!(Span::of(std::slice::from_ref(&a)).holds(&twice), "the double lies in the span: its outside part is empty");
+    assert_eq!(grade_of(&[a.clone(), twice.clone(), other.clone()]), 2, "and a third off it raises the grade");
+    assert_eq!(grade_of(&[other, twice, a]), 2, "in any order");
 }
 
-/// STD1 — THE DENSE RANK AND THE HERMITE FORM AT ANY SIZE: a 4×4 of
-/// `i64::MAX` entries on the diagonal carries Bareiss's intermediates to
-/// ~2²⁵², past `i128`, where the old form refused; exact now, full rank, and
-/// a repeated row drops it. The Hermite form reduces a lattice point to a zero
-/// residue through its transform.
+/// STD1 — THE GRADE AND THE FACTORISATION AT ANY SIZE: four vectors of
+/// `i64::MAX` on the diagonal span grade 4 exactly, where an `i128`
+/// elimination refused; a repeated vector adds nothing. A word's exponents
+/// reduce through the Hermite form to a zero residue: a generator is a
+/// combination of the generators.
 #[test]
-fn the_dense_rank_and_the_hermite_form_read_any_size() {
+fn the_grade_and_the_factorisation_read_any_size() {
+    use crate::core::span::{grade_of, vector_of};
     use num_traits::Zero;
     let m = i64::MAX;
     let rows = [[m, 1, 0, 0], [1, m, 1, 0], [0, 1, m, 1], [0, 0, 1, m]];
-    assert_eq!(crate::core::lattice::z_rank(&rows), 4, "full rank, read exactly");
+    assert_eq!(grade_of(&rows.iter().map(vector_of).collect::<Vec<_>>()), 4, "grade four, read exactly");
     let dependent = [rows[0], rows[1], rows[0], rows[3]];
-    assert_eq!(crate::core::lattice::z_rank(&dependent), 3, "a repeated row drops it");
-    let (h, _) = crate::core::lattice::hnf_with_transform(&rows);
-    let (_, residue) = crate::core::lattice::reduce_against(&h, &rows[2]);
-    assert!(residue.iter().all(|x| x.is_zero()), "a generator is in its own lattice");
+    assert_eq!(grade_of(&dependent.iter().map(vector_of).collect::<Vec<_>>()), 3, "a repeated vector adds nothing");
+    let (h, _) = crate::core::exponents::hnf_with_transform(&rows);
+    let (_, residue) = crate::core::exponents::reduce_against(&h, &rows[2]);
+    assert!(residue.iter().all(|x| x.is_zero()), "a generator factors through the generators");
 }

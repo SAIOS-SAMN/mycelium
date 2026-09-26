@@ -5,7 +5,6 @@
 //! orbit at a time.
 
 use super::transport::{gauge_image, gauge_keyed, hue_key};
-use crate::core::lattice::z_rank;
 use crate::network::nerve::Keyed;
 use crate::transducer::alphabet::{self, Word};
 use crate::transducer::element::{self, Versor};
@@ -926,7 +925,7 @@ pub fn orbit_row(h: &Word) -> Option<OrbitRow> {
 /// EVERY COORDINATE COUNTS BY CLASS. A rank is the dimension of a module —
 /// the number of INDEPENDENT generators — never a tally of the orbits that
 /// exhibit them, and two of these four already read it that way: `free` is
-/// `z_rank`, a matrix rank over the free rows, and `offplane` is a keyed set
+/// the grade of the free rows' span (`core::span`), and `offplane` is a keyed set
 /// taking each class once. `torsion` and `axes` counted per orbit.
 ///
 /// Mixing the two breaks the rank delta itself. Two orbits of one finite
@@ -948,14 +947,16 @@ pub fn rank_of_rows(rows: &[OrbitRow]) -> Option<Rank> {
     let mut torsion: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
     let mut axes: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
     let mut offplane: Keyed<(), crate::network::nerve::coord::Holonomy> = Keyed::new();
-    let mut free: Vec<[i64; FREE_ROW]> = Vec::new();
+    let mut free = crate::core::span::Span::new();
     for r in rows {
         match r {
             OrbitRow::Closed => {}
             OrbitRow::Torsion(k) => {
                 torsion.put(k, ());
             }
-            OrbitRow::Free(row) => free.push(*row),
+            OrbitRow::Free(row) => {
+                free.join(&crate::core::span::vector_of(row));
+            }
             OrbitRow::OffPlane(k) => {
                 offplane.put(k, ());
             }
@@ -966,7 +967,7 @@ pub fn rank_of_rows(rows: &[OrbitRow]) -> Option<Rank> {
     }
     Some(Rank {
         torsion: torsion.len() as u64,
-        free: u64::from(z_rank(&free)),
+        free: free.grade() as u64,
         offplane: offplane.len() as u64,
         axes: axes.len() as u64,
     })

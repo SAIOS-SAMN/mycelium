@@ -186,9 +186,12 @@ These are not restated in each chapter; every chapter assumes them.
     vector, the pivots and the connecting maps need. Every action in this
     engine is an element of an exact algebra composed by its own product:
     a rotor or versor by the geometric product, a gauge by permutation
-    composition; a matrix appears only as the exact integer arithmetic of
-    a rank (A18, `core::zlinalg`) and as the sensor-plane block a rotor
-    projects to (A3), never as the carrier of an element (18.3).
+    composition. A dimension is the grade of a span, the blade its vectors
+    wedge to, held by its factors (A18, `core::span`): no matrix, no rank
+    of one. Integer rows appear only as a word's letter exponents, whose
+    Hermite form factors it (A12, `core::exponents`), and a matrix only as
+    the sensor-plane block a rotor projects to (A3), never as the carrier
+    of an element (18.3).
 12. **Every dimension is a proof.** A letter is an axiom. A word is a
     proof: a path whose vertex is the theorem it reaches, and a form
     **re-derives that vertex by composing the word's derivation** — the
@@ -223,7 +226,7 @@ shape is not reviewed further; it is returned.
 | 7 | **Meaning is never demoted to "fibre" to make a key stable.** If two tapes that mean different things get one key, the key is wrong, whatever the comment says. | dropping the bundle's agreed shift or a contact from a sentence key because "placement is a fibre coordinate" | a body's absolute position is quotiented; a relative placement inside a sentence is a face and is identity; contact is on the form and in its key (chapter 1.5) |
 | 8 | **No shims with placeholders.** A wrapper that fills a field with a constant so a call compiles is a defect that will be soaked. | `sentence_rule_of` with `ratio: ((1,1),(1,1))` and empty sections; `set_magnitude([0,0,0,1])` | carry the field on the tape and read it; measure the magnitude by speaking the form over its bundle; if the value cannot be measured, the form is not spoken |
 | 9 | **Carriers are `Keyed` or `Vec` of relations.** `HashMap`, `BTreeMap`, `HashSet` do not appear in cognition; a flat map keyed by a digest collapses a dimension, and a `Keyed` trie keyed by a digest is a `HashMap` in disguise. | `HashMap<Key, Vec<Candidate>>` buckets; `std::collections::*` in a transducer or kernel file; `Keyed<[u8; 32]>` over `blake3(...)` | `Keyed<V>` (PATRICIA over the canonical coordinate bytes of A21, so `fiber(prefix)` reads a stratum), `Keyed<Keyed<()>>` for incidence, `Vec<(a, b, relation)>` for a relational field |
-| 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibers: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a matrix only in `core::zlinalg` for a rank and in A3's sensor-plane block |
+| 16 | **An action is an algebra element, never a matrix.** A `QMatrix` fibre, an affine block, a matrix product as composition, or matrix equality as identity is a linear representation on squared coordinates: it flattens the blades it represents and adds a frame's rigidity (law 11). | `fibers: Vec<(u16, QMatrix)>`; `realize()`; `same_action = realize() == realize()`; `affine_of(versor)`; `Letters::affine`; `Element::identity(GERM_DIM)` | one versor per element (`carriage · linear_versor(word)`), a hue permutation, an extent, shell coordinates; `geo` for composition, `inverse` that refuses, `projective_eq` for identity; a dimension as a span's grade (`core::span`), never a matrix rank; a matrix only in A3's sensor-plane block |
 | 10 | **Every loop spends a `Budget` or walks a boundary.** A loop whose bound is neither a `Budget` nor the size of one site's or one simplex's boundary is unbounded work in disguise. | `while !done { … }`; `for peer in all_peers { exchange(peer) }` on one stroke | `while budget.spend() { … }`; a `Keyed::cursor(from, &mut budget)`; one peer per spend with a resume cursor |
 | 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
@@ -256,8 +259,8 @@ before the versor, a digest before the coordinates, a count before the
 fiber, a sensor-plane block rebuilt into a rotor before the rotor the
 vertex carries, a frame coordinate fixed to zero before the base's own
 (51.1, ruled 2026-09-17); (n) any `QMatrix`, affine block, or matrix product used to carry,
-compose, or compare an action, outside `core::zlinalg` and A3's
-sensor-plane block; (o) any reading measured inside a loop with more
+compose, or compare an action, outside A3's sensor-plane block — a
+dimension is a span's grade (`core::span`), never a matrix rank; (o) any reading measured inside a loop with more
 coordinates than the reading has — a chart's property taken per
 (vertex, chart, frame), a class's relatives taken per face, a form's
 standing taken per member — which is rule 17 at the orbit, and the fix is
@@ -512,9 +515,11 @@ in for coordinates the object has is refused (rule 15). The
 **substrate** is the sensor's ℤ² (or ℤⁿ) grid of laminae, the thing a
 hypha reads laminae from and never a space cognition lives in (law 11);
 "lattice" is retired from this document and the tree — the module that
-was `core::lattice` is the **exact-rank reader**, the integer-module
-algebra (rank, the Hermite form and its transform) over exact integers of
-any size, and the exponent module of held letters is called that. A
+was `core::lattice` is split by what it holds: `core::span`, the span of
+vectors as the blade they wedge to, held by its factors, whose grade is
+every dimension the engine reads; and `core::exponents`, the exponent
+module of held letters — a word's Hermite form and its transform, integer
+because an exponent counts letters. A
 **commutator** `A B Ã B̃` of two held versors is what OPENS a dimension
 (78.39); a **sandwich** `V x Ṽ` or a conjugate `K = I T I` is a
 palindrome that TRANSPORTS within a class and opens nothing — the two

@@ -105,12 +105,12 @@ fn all_blades(n: u8) -> Vec<usize> {
     out
 }
 
-/// THE RANK OF RATIONAL ROWS by the exact-rank reader (`core::lattice`):
-/// each row cleared of its denominators to the integers it is proportional
-/// to, which leaves its rank as it was.
+/// THE DIMENSION RATIONAL VECTORS SPAN: the grade of their blade
+/// (`core::span`), each vector read as the ray it is — its denominators
+/// cleared to the integer vector it is proportional to, the same direction.
 pub(crate) fn rational_rank(rows: &[Vec<BigRational>]) -> usize {
     use num_integer::Integer;
-    let cleared: Vec<crate::core::lattice::SparseRow> = rows
+    let cleared: Vec<crate::core::span::Vector> = rows
         .iter()
         .map(|row| {
             let lcm = row.iter().fold(num_bigint::BigInt::from(1), |l, q| l.lcm(q.denom()));
@@ -121,7 +121,7 @@ pub(crate) fn rational_rank(rows: &[Vec<BigRational>]) -> usize {
                 .collect()
         })
         .collect();
-    crate::core::lattice::sparse_rank(&cleared)
+    crate::core::span::grade_of(&cleared)
 }
 
 // MT1 — THE READING: every transition the percept holds, read by its

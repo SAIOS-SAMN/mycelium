@@ -37,7 +37,7 @@ impl Nodes {
 
 /// One overlap's boundary row, `∂(a → b) = b − a`; an overlap from a chart
 /// to itself bounds nothing and its row is empty.
-fn edge_row(a: usize, b: usize) -> crate::core::lattice::SparseRow {
+fn edge_row(a: usize, b: usize) -> crate::core::span::Vector {
     match a == b {
         true => Vec::new(),
         false => vec![(a, num_bigint::BigInt::from(-1)), (b, num_bigint::BigInt::from(1))],
@@ -74,7 +74,7 @@ pub(super) fn read_form_atlas(form: &Form, reached: &[u64]) -> FormAtlas {
     // orbits are built on — a node per chart.
     let mut joined: Keyed<()> = Keyed::new();
     let mut nodes = Nodes::default();
-    let mut boundary: Vec<crate::core::lattice::SparseRow> = Vec::new();
+    let mut boundary: Vec<crate::core::span::Vector> = Vec::new();
     for (o, _) in form.faces.entries() {
         let (a, b) = (o.from_vertex(), o.to_vertex());
         match (&o.from, &o.to) {
@@ -111,10 +111,11 @@ pub(super) fn read_form_atlas(form: &Form, reached: &[u64]) -> FormAtlas {
     // its member pair, and a face with none is refused where it would be
     // made (AT1, ruled) — the slot artefact the row named has no carrier.
     //
-    // (r3) the cycle rank `E − rank ∂` by the exact-rank reader, and each
-    // orbit's holonomy derived along the overlaps it names: `equal` where it
-    // derives, `differ` where an overlap it names does not.
-    r.cycle_rank = (boundary.len() - crate::core::lattice::sparse_rank(&boundary)) as u64;
+    // (r3) the cycle rank `E − dim ∂`, the boundaries' span read as its
+    // blade's grade, and each orbit's holonomy derived along the overlaps it
+    // names: `equal` where it derives, `differ` where an overlap it names
+    // does not.
+    r.cycle_rank = (boundary.len() - crate::core::span::grade_of(&boundary)) as u64;
     r.orbits = form.orbits.len() as u64;
     let identity = crate::transducer::element::identity_versor();
     for lp in &form.orbits {

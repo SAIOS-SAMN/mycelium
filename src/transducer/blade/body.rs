@@ -632,7 +632,8 @@ type Cell = (u64, Vec<i64>);
 ///     βₖ = Cₖ − rank ∂ₖ − rank ∂ₖ₊₁
 /// ```
 ///
-/// by [`crate::core::lattice::sparse_rank`], exact. Two facts of the
+/// each `rank ∂ₖ` the grade of the span of the boundaries of the `k`-cells
+/// ([`crate::core::span`]), exact. Two facts of the
 /// complex are theorems and are not eliminated: `rank ∂₀ = 0`, and `∂ₙ` is
 /// injective (`Hₙ = 0` for any finite cubical complex in ℝⁿ), so
 /// `rank ∂ₙ = Cₙ`.
@@ -644,8 +645,8 @@ type Cell = (u64, Vec<i64>);
 /// replaces took `β₀` from face adjacency and `χ`, `β₂` from the union,
 /// which is two complexes in one reading.
 ///
-/// `None` where the sites stand on bases of different `n`, or where the
-/// elimination overflows `i128` (refused, never wrapped).
+/// `None` where the sites stand on bases of different `n`, or where a
+/// count would go negative (refused, never wrapped).
 pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
     let mut sites: Vec<Site> = support.to_vec();
     sites.sort_unstable();
@@ -685,10 +686,10 @@ pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
     let mut rank = vec![0usize; n + 2];
     for k in 1..n {
         let faces = &by_dim[k - 1];
-        let rows: Vec<crate::core::lattice::SparseRow> = by_dim[k]
+        let rows: Vec<crate::core::span::Vector> = by_dim[k]
             .iter()
             .map(|(dirs, anchor)| {
-                let mut row: crate::core::lattice::SparseRow = Vec::with_capacity(2 * k);
+                let mut row: crate::core::span::Vector = Vec::with_capacity(2 * k);
                 for (p, i) in (0..n).filter(|i| dirs & (1 << i) != 0).enumerate() {
                     let sign: i64 = if p % 2 == 0 { 1 } else { -1 };
                     let face_dirs = dirs & !(1 << i);
@@ -704,7 +705,7 @@ pub fn topology(support: &[Site]) -> Option<Vec<u64>> {
                 row
             })
             .collect();
-        rank[k] = crate::core::lattice::sparse_rank(&rows);
+        rank[k] = crate::core::span::grade_of(&rows);
     }
     rank[n] = by_dim[n].len();
     // `βₖ ≥ 0` is a theorem; a negative difference is a broken count and

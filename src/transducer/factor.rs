@@ -100,7 +100,7 @@ fn tape_of(coeffs: &[num_bigint::BigInt], from: &[Gen]) -> Option<Vec<(usize, i6
 /// residue of a failure is canonical.
 pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     let (rows, from) = generators(basis);
-    let (h, u) = crate::core::lattice::hnf_with_transform(&rows);
+    let (h, u) = crate::core::exponents::hnf_with_transform(&rows);
     // s = 1: the target is odd, so one odd basis word is divided out first
     // and the rest is an even membership question. The least such index is
     // taken — an ordering over the basis, canonical on every node, never a
@@ -115,7 +115,7 @@ pub fn factor_on_plane(g: &PlaneForm, basis: &[PlaneForm]) -> Factored {
     } else {
         (g.rot, None)
     };
-    let (coeffs, residue) = crate::core::lattice::reduce_against(&h, &target);
+    let (coeffs, residue) = crate::core::exponents::reduce_against(&h, &target);
     // Pull the reduction back through U to exponents over the ORIGINAL
     // generators: H's rows are combinations of them, and that is what the
     // mind actually holds.
