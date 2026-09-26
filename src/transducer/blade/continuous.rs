@@ -48,23 +48,24 @@ fn times(z: &[Q; 2], w: &[Q; 2]) -> [Q; 2] {
     [&z[0] * &w[0] - &z[1] * &w[1], &z[0] * &w[1] + &z[1] * &w[0]]
 }
 
-/// THE LINEAR ACTION OF A ROTATION RAY on the base's `n` axes: column `c` is
-/// the image of `e_{c+1}` under the twisted adjoint (78.28(1)), divided by the
-/// ray's weight — a turn or a mirror alike. `None` where the ray is no versor
-/// or carries a base axis off the body's `n` axes.
-fn action(r: &Mv, n: usize) -> Option<Vec<Vec<Q>>> {
-    let w = cga::weight_of(r)?;
-    if w.is_zero() {
-        return None;
-    }
-    let cols = (0..n)
-        .map(|c| {
-            let image = r.twisted(&Mv::blade(cga::base_axis(c + 1), Q::one()));
-            let col: Vec<Q> = (0..n).map(|k| image.coeff(cga::base_axis(k + 1)) / &w).collect();
-            image.sub(&cga::base_vector(&col).scale(&w)).is_zero().then_some(col)
-        })
-        .collect::<Option<Vec<Vec<Q>>>>()?;
-    Some((0..n).map(|row| cols.iter().map(|c| c[row].clone()).collect()).collect())
+/// The base axis `e_{k+1}` as a vector of the algebra.
+fn axis(k: usize) -> Mv {
+    Mv::blade(cga::base_axis(k + 1), Q::one())
+}
+
+/// A vector's part on the body's `n` base axes.
+fn on_base(y: &Mv, n: usize) -> Mv {
+    cga::base_vector(&(0..n).map(|k| y.coeff(cga::base_axis(k + 1)).clone()).collect::<Vec<Q>>())
+}
+
+/// THE SECOND MOMENT AS THE MAP IT IS, `M(x) = ⟨(d·x) d⟩`: the vector the
+/// tower sends `x` to, formed on the body's `n` axes.
+fn moment(m: &[Vec<Q>], x: &Mv, n: usize) -> Mv {
+    cga::base_vector(
+        &(0..n)
+            .map(|l| (0..n).fold(Q::zero(), |acc, k| acc + x.coeff(cga::base_axis(k + 1)) * &m[k][l]))
+            .collect::<Vec<Q>>(),
+    )
 }
 
 impl ContinuousSupport {
@@ -98,18 +99,18 @@ impl ContinuousSupport {
     /// cycles of these edges feed.
     ///
     /// The versor is IN HAND, so it is applied. Read at both poles
-    /// (`conformal_factors`), `V = T·D(ρ)·R`, with `A` the action of `R` on the
-    /// base's axes — orthogonal, `det A = ±1`, a turn or a mirror:
+    /// (`conformal_factors`), `V = T·D(ρ)·R`, a turn or a mirror, each reading
+    /// formed by the sandwich (`carries_linear`):
     ///
     /// ```text
     ///     centre     V(c_a) = c_b
-    ///     order 2    M_b = ρ² A M_a Aᵀ                    on every plane at once
-    ///     order m    h_b^(m) = ρ^m w^m h_a^(m)            det +1 on the plane
-    ///                h_b^(m) = ρ^m w^m conj(h_a^(m))      det −1: a mirror conjugates
+    ///     order 2    M_b(R̂ e_k R̃) = ρ² R̂ M_a(e_k) R̃        every axis, every plane at once
+    ///     order m    h_b^(m) = ρ^m ω^m h_a^(m)             the plane's orientation kept
+    ///                h_b^(m) = ρ^m ω^m conj(h_a^(m))       reversed: a mirror conjugates
     /// ```
     ///
-    /// with `w` the image of the plane's first axis on the base plane the
-    /// action carries it onto. A harmonic vanishing on one side and not the
+    /// with `ω` the image of the plane's first axis on the base plane the
+    /// sandwich carries it onto. A harmonic vanishing on one side and not the
     /// other is a difference of shape; on both, agreement. The chirality `Z =
     /// h₂²·conj(h₄)` is carried exactly when its orders are, so it is not a
     /// second gate.
@@ -137,42 +138,68 @@ impl ContinuousSupport {
         if cga::base_at(&v.sandwich(&cga::point_at(&self.centre)), n).as_deref() != Some(other.centre.as_slice()) {
             return false;
         }
-        let Some(a) = action(&f.rotation, n) else {
+        self.carries_linear(other, &f.rotation, &f.rho)
+    }
+
+    /// THE COVARIANCE OF THE LINEAR PART, the rotation ray `R` and the scale
+    /// `ρ` in hand — the transition's own candidates know both, so nothing is
+    /// factored per candidate. Every reading is a vector the SANDWICH forms
+    /// (law 11, 3.9(c)): no matrix carries the action.
+    ///
+    /// - Each base axis's image `R̂ e_k R̃` stays on the body's `n` axes.
+    /// - Order two: `M_b(R̂ e_k R̃) = ρ² · R̂ M_a(e_k) R̃` for every `e_k` —
+    ///   both sides at the ray's weight `w`, so nothing is divided.
+    /// - A plane's image is the sandwich of its two axes: where it is a base
+    ///   plane `(k, l)`, the first axis's image there is `w·ω` and the pair's
+    ///   orientation the mirror's sign, and `w^m · h_b^(m) = (ρ w ω)^m ·
+    ///   h_a^(m)` (a mirror conjugating `h_a` first).
+    pub(super) fn carries_linear(&self, other: &Self, rotation: &Mv, rho: &Q) -> bool {
+        let n = self.centre.len();
+        if self.tower != other.tower || other.centre.len() != n {
+            return false;
+        }
+        let Some(w) = cga::weight_of(rotation) else {
             return false;
         };
-        let rho2 = &f.rho * &f.rho;
-        let turned = |r: usize, c: usize| -> Q {
-            (0..n).fold(Q::zero(), |acc, k| {
-                acc + (0..n).fold(Q::zero(), |row, l| row + &a[r][k] * &self.second[k][l] * &a[c][l])
-            })
-        };
-        if !(0..n).all(|r| (0..n).all(|c| other.second[r][c] == &rho2 * turned(r, c))) {
+        let images: Vec<Mv> = (0..n).map(|k| rotation.twisted(&axis(k))).collect();
+        if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
+            return false;
+        }
+        let rho2 = rho * rho;
+        let second_carried = images.iter().enumerate().all(|(k, y)| {
+            let turned = rotation.twisted(&moment(&self.second, &axis(k), n)).scale(&rho2);
+            moment(&other.second, y, n).sub(&turned).is_zero()
+        });
+        if !second_carried {
             return false;
         }
         let planes = crate::transducer::base::planes(n);
         for (p, held) in planes.iter().zip(&self.upper) {
-            let rows: Vec<usize> = (0..n).filter(|&r| !a[r][p.0].is_zero() || !a[r][p.1].is_zero()).collect();
+            let (yi, yj) = (&images[p.0], &images[p.1]);
+            let at = |y: &Mv, k: usize| y.coeff(cga::base_axis(k + 1)).clone();
+            let rows: Vec<usize> = (0..n).filter(|&k| !at(yi, k).is_zero() || !at(yj, k).is_zero()).collect();
             // The plane's image, where it is a plane of the base.
             let &[k, l] = rows.as_slice() else { continue };
             let Some(theirs) = crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix)) else {
                 return false;
             };
-            let w = [a[k][p.0].clone(), a[l][p.0].clone()];
-            let mirror = &a[k][p.0] * &a[l][p.1] - &a[k][p.1] * &a[l][p.0] < Q::zero();
+            let omega = [&at(yi, k) * rho, &at(yi, l) * rho];
+            let mirror = at(yi, k) * at(yj, l) - at(yi, l) * at(yj, k) < Q::zero();
             let carried = |h: &[Q; 2], m: u32| -> [Q; 2] {
                 let start = match mirror {
                     true => [h[0].clone(), -&h[1]],
                     false => h.clone(),
                 };
-                (0..m).fold(start, |z, _| {
-                    let t = times(&z, &w);
-                    [&t[0] * &f.rho, &t[1] * &f.rho]
-                })
+                (0..m).fold(start, |z, _| times(&z, &omega))
+            };
+            let weighed = |h: &[Q; 2], m: u32| -> [Q; 2] {
+                let wm = (0..m).fold(Q::one(), |acc, _| acc * &w);
+                [&h[0] * &wm, &h[1] * &wm]
             };
             for (m, (mine, yours)) in [3u32, 4].into_iter().zip(held.iter().zip(theirs)) {
                 let agrees = match (mine, yours) {
                     (None, None) => true,
-                    (Some(h), Some(hb)) => carried(h, m) == *hb,
+                    (Some(h), Some(hb)) => carried(h, m) == weighed(hb, m),
                     _ => false,
                 };
                 if !agrees {

@@ -427,7 +427,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // reflections as well as its turns, and its pose is the turns; a mirrored
     // pair is the same signal read orientation-reversed, its pose the odd
     // rotation, spelled through the letter chart's orientation character.
-    let members = transitions_between(a, b, plane)?;
+    let members = super::carry::transitions_on(a, b, plane, tower)?;
     let (turns, mirrors): (Vec<Mv>, Vec<Mv>) =
         members.into_iter().map(|(rotation, _)| rotation).partition(|r| r.parity() == Some(false));
     let read = match turns.is_empty() {

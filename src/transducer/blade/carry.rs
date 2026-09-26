@@ -215,14 +215,24 @@ fn rotor_at(p: &(BigRational, BigRational), e_ij: &Mv) -> Mv {
 /// before any candidate: a bodiless pair, a pair neither tower certifies, a
 /// pair where one body orients and the other does not.
 pub fn transitions_between(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Vec<(Mv, Mv)>, NoPose> {
-    use super::tower::{harmonic, scale2, Harmonic};
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
-    let tower = match dilation(a, b, plane) {
-        Ok(d) => d.tower(),
-        Err((region, sites)) => return Err(NoPose::Incongruent(Incongruence::Order { region, sites })),
-    };
+    match dilation(a, b, plane) {
+        Ok(d) => transitions_on(a, b, plane, d.tower()),
+        Err((region, sites)) => Err(NoPose::Incongruent(Incongruence::Order { region, sites })),
+    }
+}
+
+/// THE TRANSITION ON THE TOWER ALREADY CERTIFIED: the pose reads the
+/// certificate once and hands its tower here, so no pair is certified twice.
+pub(super) fn transitions_on(
+    a: &Blade,
+    b: &Blade,
+    plane: (usize, usize),
+    tower: super::tower::Tower,
+) -> Result<Vec<(Mv, Mv)>, NoPose> {
+    use super::tower::{harmonic, scale2, Harmonic};
     let (Some(sa), Some(sb)) = (ContinuousSupport::of(a, tower), ContinuousSupport::of(b, tower)) else {
         return Err(NoPose::Bodiless);
     };
@@ -237,6 +247,7 @@ pub fn transitions_between(a: &Blade, b: &Blade, plane: (usize, usize)) -> Resul
         return Ok(out);
     };
     let rho2 = &rho * &rho;
+    let dilator = cga::dilator(&rho);
     let e_ij = Mv::blade(cga::base_axis(plane.0 + 1) | cga::base_axis(plane.1 + 1), q(1));
     let mirror = Mv::blade(cga::base_axis(plane.1 + 1), q(1));
     // The four quarter turns of the plane as rays: 0°, 90°, 180°, 270°.
@@ -280,10 +291,14 @@ pub fn transitions_between(a: &Blade, b: &Blade, plane: (usize, usize)) -> Resul
                 true => rotor.geo(&mirror),
                 false => rotor,
             };
-            let Some(v) = placed(a, b, &cga::dilator(&rho).geo(&rotation)) else { continue };
-            if sa.matches(&sb, &v) {
-                out.push((rotation, v));
+            // The candidate's rotation and scale are in hand: its covariance is
+            // read on them, and only a member that carries is placed — the
+            // placement sends `c_a` to `c_b` by construction.
+            if !sa.carries_linear(&sb, &rotation, &rho) {
+                continue;
             }
+            let Some(v) = placed(a, b, &dilator.geo(&rotation)) else { continue };
+            out.push((rotation, v));
         }
     }
     Ok(out)
