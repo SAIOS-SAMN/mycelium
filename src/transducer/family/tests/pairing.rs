@@ -70,20 +70,19 @@ fn a_contact_edge_is_refraction_never_rigidity() {
         "yet their contact is read, never refused for unlikeness"
     );
 
-    // A body whose own transition is a mirror has no pose; the contact stands
-    // without an edge and the arm is named.
+    // A body whose own transition is a mirror is read orientation-reversed
+    // (AL1 as amended): its pose is the odd versor, and the contact carries
+    // its refraction where it used to be refused.
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j_after = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     let _ = take_contact_tally();
+    let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)));
     assert!(
-        matches!(
-            contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar))),
-            ContactEdge::Refused { poses: [Some(blade::NoPose::Mirrored), None] }
-        ),
-        "a mirrored transition carries no refraction, and the refusal names the member's arm"
+        matches!(edge, ContactEdge::Formed(_) | ContactEdge::Held(_)),
+        "a mirrored transition carries its refraction"
     );
     let t = take_contact_tally();
-    assert_eq!((t.offered, t.mirrored, t.condensed), (1, 1, 0), "refused by its arm, never dropped");
+    assert_eq!((t.offered, t.mirrored), (1, 0), "no pair refused as mirrored");
 }
 
 /// CV1b F3, 78.38 — AN OBLIQUE MEMBER REFUSES THE EDGE AND RAISES THE DEMAND.

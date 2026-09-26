@@ -54,18 +54,18 @@ fn a_dilation_by_two_carries_a_lamina_onto_its_block() {
 /// A shrink carries one lamina onto no lamina — its image is a quarter of
 /// a square, which no block of laminae tiles — and a 2×2 block onto one
 /// lamina only AS A BODY: `versor_between` finds the shrink from the two
-/// shapes and `carries` verifies it by where each lamina's centre lands,
-/// which is the body's reading and never the lamina's.
+/// shapes and the region tower's covariance verifies it — the body's
+/// reading, never the lamina's.
 #[test]
 fn a_shrink_carries_one_lamina_to_none_and_a_block_as_a_body_to_one() {
-    use crate::transducer::blade::{carries, shape_of, versor_between};
+    use crate::transducer::blade::{carries_by_covariance, shape_of, versor_between, Tower};
     let half = cga::dilator(&qn(1, 2));
     assert_eq!(carry_lamina(&half, 0, 0, 0), None, "a fractional image is no lamina");
     assert_eq!(carry_lamina(&half, 4, 4, 0), None, "even where its centre lands in one");
     let block = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     let one = shape_of(&[(0i64, 0i64, 0i64)]);
     let v = versor_between(&block, &one).expect("a shrink by one half carries the block onto the lamina");
-    assert!(carries(&v, &block, &one), "verified lamina by lamina, both ways");
+    assert!(carries_by_covariance(&v, &block.blade, &one.blade, Tower::Region), "the region's tower is carried");
     for s in &block.blade.support {
         assert_eq!(carry_lamina_site(&v, s), None, "no lamina of the block is carried alone: {s:?}");
     }

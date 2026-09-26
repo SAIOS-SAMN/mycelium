@@ -149,7 +149,7 @@ fn a11_a_dilated_body_keeps_its_frame() {
 /// the honest fixture — congruent as multisets, mirror images, and
 /// related by NO proper turn.
 #[test]
-fn a11_a_mirrored_body_mints_no_rotor() {
+fn a11_a_mirrored_body_is_read_as_its_odd_versor() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     // THIS READ `Oblique` UNTIL V1, AND THAT WAS THE FINDING THAT
@@ -166,11 +166,13 @@ fn a11_a_mirrored_body_mints_no_rotor() {
     // rotor. The deviatorics alone cannot separate the two, so the
     // cells do it — the four improper elements of `D₄`, applied and
     // compared, which nothing in this file had ever looked at.
-    assert_eq!(
-        blade::relative_rotor(&l.blade, &j.blade).err(),
-        Some(blade::NoPose::Mirrored),
-        "a reflection is proved improper by the cells, not left oblique"
-    );
+    //
+    // AND THE REFLECTION IS READ, NOT REFUSED (AL1 as amended): a mirrored
+    // pair is the same signal read orientation-reversed, its pose the odd
+    // versor the coset reader verifies — never `Oblique`, and never a
+    // demand for a generator.
+    let pose = blade::relative_rotor(&l.blade, &j.blade).expect("the mirror is read");
+    assert_eq!(pose.rotor().parity(), Some(true), "an odd versor, not a rotor: {pose:?}");
 }
 
 /// A NON-CONGRUENT PAIR HAS NO ANGLE. Two bodies whose anisotropies

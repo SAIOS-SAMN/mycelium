@@ -74,9 +74,61 @@ fn a_quartic_oriented_body_reaches_every_quarter_turn() {
     let sq = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     assert!(blade::deviatoric(&sq.blade).is_none(), "isotropic at order 2");
     assert!(blade::quartic_harmonic(&sq.blade).is_some(), "the quartic orients it");
+    let pose = blade::relative_rotor(&sq.blade, &sq.blade);
     assert!(
-        blade::relative_rotor(&sq.blade, &sq.blade).is_ok(),
-        "a C4 body carries onto itself"
+        matches!(&pose, Ok(blade::Pose::HalfOpen(c)) if c.len() == 4 && c.iter().all(|r| r.parity() == Some(false))),
+        "a C4 body carries onto itself by its four turns, the coset held and none chosen: {pose:?}"
+    );
+}
+
+/// DG1, 78.38(C) — A TRANSITION AT A RATIONAL TURN NO LATTICE TURN LISTS IS
+/// CARRIED. `z ↦ (3 + 4i)·z`, built by the algebra — the rotor `2 + e₁₂`
+/// under `D(5)` — carries the L's sites onto sites; the point tower certifies
+/// it, the second harmonic's point is `cos 2φ = −7/25`, and the exact
+/// half-angle step (`2(1 + C) = 36/25`) reads `φ` back as the map's own
+/// rotor. The square base's four turns refused it as `Oblique`.
+#[test]
+fn a_pythagorean_site_map_is_carried_at_its_rational_turn() {
+    use crate::transducer::cga;
+    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
+    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let map = cga::dilator(&q(5)).geo(&cga::rotator(&q(2), &q(1)));
+    let image: Vec<crate::transducer::base::Site> = l
+        .blade
+        .support
+        .iter()
+        .map(|s| {
+            let p = blade::carry(&map, s.axes()).expect("a finite image");
+            crate::transducer::base::Site::new(
+                p.iter().map(|x| i64::try_from(x.to_integer()).expect("a site of the lattice")).collect(),
+            )
+        })
+        .collect();
+    let image = blade::shape_of(&image);
+    assert_eq!(blade::dilation(&l.blade, &image.blade), Ok(blade::Dilation::Sites), "a site map");
+    let pose = blade::relative_rotor(&l.blade, &image.blade).expect("carried at its rational turn");
+    assert!(matches!(pose, blade::Pose::Turn(_)), "determined, the odd harmonic settling the half turn: {pose:?}");
+    assert!(pose.rotor().projective_eq(&cga::rotator(&q(2), &q(1))), "the map's own rotor, read back: {pose:?}");
+}
+
+/// 55.3, 68 — THE CHIRAL L IS CARRIED ONTO ITS QUARTER TURN BY COVARIANCE:
+/// one member, even, and the verification is the tower's — the centre, the
+/// second moment, the odd and quartic harmonics — never a lamina landing.
+#[test]
+fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
+    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
+    let pose = blade::relative_rotor(&l.blade, &turned.blade).expect("a turn");
+    assert!(matches!(pose, blade::Pose::Turn(_)), "h₃ settles the half turn: {pose:?}");
+    assert_eq!(pose.rotor().parity(), Some(false), "a turn, not a mirror");
+    let v = blade::versor_between(&l, &turned).expect("the transition");
+    assert!(
+        blade::carries_by_covariance(&v, &l.blade, &turned.blade, blade::Tower::Region),
+        "the region's tower is carried by it"
+    );
+    assert!(
+        !blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region),
+        "and not the other way: a quarter turn is not its own inverse"
     );
 }
 
@@ -135,11 +187,10 @@ fn v1_the_open_arm_needs_both_gates_and_a_dilate_passes_only_one() {
         blade::dilation_certified(&l.blade, &j.blade),
         "a reflection passes the even tower, which is why the odd gate exists"
     );
-    assert_eq!(
-        blade::relative_rotor(&l.blade, &j.blade).err(),
-        Some(blade::NoPose::Mirrored),
-        "and the odd gate is what refuses it"
-    );
+    // And the odd gate is what READS it (AL1 as amended): the pose is the
+    // odd versor, the pair read orientation-reversed, never a turn.
+    let pose = blade::relative_rotor(&l.blade, &j.blade).expect("a mirror is read, never refused");
+    assert_eq!(pose.rotor().parity(), Some(true), "the odd gate reads the reflection: {pose:?}");
 }
 
 /// V1 RECUT — THE ODD INVARIANT IS SCALE-FREE, AND THAT IS THE WHOLE
@@ -193,11 +244,8 @@ fn v1_a_reflection_is_proved_improper_across_a_dilation() {
         (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
     ]);
     assert_ne!(j.blade.support.len(), l2.blade.support.len(), "four against sixteen");
-    assert_eq!(
-        blade::relative_rotor(&j.blade, &l2.blade).err(),
-        Some(blade::NoPose::Mirrored),
-        "improper across a dilation, which no cell test can reach"
-    );
+    let pose = blade::relative_rotor(&j.blade, &l2.blade).expect("improper across a dilation, and read");
+    assert_eq!(pose.rotor().parity(), Some(true), "its pose is the odd versor, read across the scale: {pose:?}");
 }
 
 /// V1 RECUT — CHIRALITY ANSWERS THE ODD QUESTION ONLY, AND THE FIRST
@@ -338,10 +386,14 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
     let unlike = |r: &Option<blade::NoPose>| {
         matches!(r, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. })))
     };
+    // The improper pair is read as its odd versor (AL1 as amended), so it
+    // leaves the refusals entirely; the unlike pairs stay refused apart.
     assert!(
-        matches!(read, [Some(blade::NoPose::Mirrored), ref s, ref b, None] if unlike(s) && unlike(b)),
-        "improper, unlike, unlike, and a turn across a dilation: {read:?}"
+        matches!(read, [None, ref s, ref b, None] if unlike(s) && unlike(b)),
+        "read orientation-reversed, unlike, unlike, and a turn across a dilation: {read:?}"
     );
+    let mirror = blade::relative_rotor(&l.blade, &j.blade).expect("the improper pair is read");
+    assert_eq!(mirror.rotor().parity(), Some(true), "as the odd versor: {mirror:?}");
 }
 
 /// 78.38 (C), clarified — THE CERTIFICATE IS ASKED BEFORE THE TURN BRANCH.

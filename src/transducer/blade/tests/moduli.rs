@@ -80,7 +80,10 @@ fn the_versor_between_symmetric_bodies_is_the_cosets_geodesic() {
     assert_eq!(carry(&v, &[0, 0, 0]), Some(vec![q(4), q(4), q(0)]), "the dilation alone: (0,0) → (4,4)");
     assert_eq!(carry(&v, &[2, 2, 0]), Some(vec![q(10), q(10), q(0)]), "and (2,2) → (10,10)");
     for (_, member) in &coset {
-        assert!(carries(member, &sq, &sq3), "every member of the coset carries the body");
+        assert!(
+            carries_by_covariance(member, &sq.blade, &sq3.blade, Tower::Region),
+            "every member of the coset carries the body's tower"
+        );
     }
     let bar = shape_of(&rect(0, 0, 2, 3));
     let bar2 = shape_of(&rect(0, 0, 4, 6));
@@ -115,7 +118,10 @@ fn the_coset_is_ordered_geodesic_first_and_holds_every_carrying_member() {
         "the geodesic is first: naming and replay are unchanged"
     );
     for v in &ordered {
-        assert!(carries(v, &sq, &sq3), "every candidate offered carries the body");
+        assert!(
+            carries_by_covariance(v, &sq.blade, &sq3.blade, Tower::Region),
+            "every candidate offered carries the body's tower"
+        );
     }
     for (_, member) in &raw {
         assert!(

@@ -340,6 +340,29 @@ pub(crate) fn peel_versor_with_target(
     use crate::transducer::peel::PeelNest;
     use crate::transducer::sentence::Demand;
 
+    // THE DE-COMPACTION'S INVERSION (AL1 as amended): an odd versor is the
+    // signal read orientation-reversed — its even part `V·e1`, the reflector
+    // undone, times the chart's orientation character `e₀₂` — never a letter
+    // the language lacks. The even part is peeled as any versor is, and the
+    // orientation character is the alphabet's own half turn through the third
+    // axis; the word is read back against the versor's own rotor as one ray,
+    // and one that does not compose back is no reading.
+    if target_rotor.is_none() && v.parity() == Some(true) {
+        let even = v.geo(&crate::transducer::cga::reflector());
+        let orientation = crate::transducer::alphabet::LetterId::quarter((0, 2))?;
+        let flip = crate::transducer::alphabet::Word::from_letters(&[(orientation, false), (orientation, false)]);
+        let whole = rotor_of_versor(v)?;
+        return Some(match peel_versor_with_target(&even, None, adjoined)? {
+            Ok((cited, w)) => {
+                let word = w.compose(&flip);
+                if !word.rotor().projective_eq(&whole) {
+                    return None;
+                }
+                Ok((cited, word))
+            }
+            Err(d) => Err(d),
+        });
+    }
     let target = match target_rotor {
         Some(r) => r.clone(),
         None => rotor_of_versor(v)?,

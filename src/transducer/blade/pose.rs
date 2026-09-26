@@ -173,6 +173,12 @@ fn tower(b: &Blade, n: usize) -> Option<Tower> {
     Some(Tower { m, t, n4, tr })
 }
 
+/// The point tower's second moment `M`, the one reading the transition's
+/// covariance takes of it on the sites (law 12: `tower` is its producer).
+pub(super) fn point_second_moment(b: &Blade, n: usize) -> Option<Vec<Vec<Q>>> {
+    tower(b, n).map(|t| t.m)
+}
+
 fn apply(m: &[Vec<Q>], v: &[Q]) -> Vec<Q> {
     m.iter().map(|row| row.iter().zip(v).fold(Q::zero(), |acc, (x, y)| acc + x * y)).collect()
 }
@@ -274,41 +280,28 @@ fn solve(wa: &[Vec<Q>], wb: &[Vec<Q>], n: usize) -> Option<Vec<Vec<Q>>> {
         .collect()
 }
 
-/// DOES `R` CARRY THE TOWER: orthogonal, and `M_b = ρ² R M_a Rᵀ`. The odd
-/// moment is carried by construction — it is the first column.
-fn carries_tower(r: &[Vec<Q>], ta: &Tower, tb: &Tower, rho2: &Q, n: usize) -> bool {
-    let col = |j: usize| -> Vec<Q> { r.iter().map(|row| row[j].clone()).collect() };
-    let dot = |x: &[Q], y: &[Q]| x.iter().zip(y).fold(Q::zero(), |acc, (a, b)| acc + a * b);
-    let orthogonal = (0..n).all(|j| {
-        (0..n).all(|k| {
-            dot(&col(j), &col(k))
-                == match j == k {
-                    true => Q::one(),
-                    false => Q::zero(),
-                }
-        })
-    });
-    if !orthogonal {
-        return false;
-    }
-    // `R M_a Rᵀ`, entry by entry, against `M_b / ρ²`.
-    let rm: Vec<Vec<Q>> = r.iter().map(|row| (0..n).map(|j| dot(row, &col_of(&ta.m, j))).collect()).collect();
-    (0..n).all(|i| (0..n).all(|j| dot(&rm[i], &r[j]) * rho2 == tb.m[i][j]))
-}
-
-fn col_of(m: &[Vec<Q>], j: usize) -> Vec<Q> {
-    m.iter().map(|row| row[j].clone()).collect()
-}
-
-/// THE VERSOR OF THE TURN `R` over ℚ, as a product of constructors: the
-/// turn is a conformal motion fixing `e₊`, `e₋`, spelled by the
-/// constructors' one Cartan–Dieudonné factorizer in the algebra's own metric
-/// ([`cga::constructors_of_base_turn`]). `V = u₁ ⋯ u_m`, `V x Ṽ ∝ R x` —
-/// projective, no weight divided and no root. `None` at a null step, which
-/// the base's turns never take: the refusal is carried, never assumed away.
+/// THE VERSOR OF THE MAP `R` over ℚ, as a product of constructors: a motion
+/// fixing `e₊`, `e₋`, spelled by the constructors' one Cartan–Dieudonné
+/// factorizer in the algebra's own metric ([`cga::constructors_of_base_turn`])
+/// — an even count of reflections for a turn, odd for a mirror, both a pose.
+/// `V = u₁ ⋯ u_m`, `V x Ṽ ∝ R x` — projective, no weight divided and no root.
+/// `None` where `R` is no isometry of the metric (no reflections compose to
+/// it) or at a null step: the refusal is carried, never assumed away.
 fn versor_of(r: &[Vec<Q>], n: usize) -> Option<Mv> {
     let us = cga::constructors_of_base_turn(r, u8::try_from(n).ok()?).ok()?;
     Some(us.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
+}
+
+/// DOES THE MAP CARRY THE ONE TUBE ONTO THE OTHER, read by the algebra and
+/// never by a Euclidean oracle or the lattice: `R`'s versor from the
+/// Cartan–Dieudonné, even or odd, dilated and placed between the two bodies'
+/// centres, and verified by the transition's covariance on the point tower
+/// (`carried_on`, 78.38(C)) — the tower the pose reads, whose floor-free
+/// moments turn out of the grid plane. The versor where it carries, `None`
+/// where it does not.
+fn carried(r: &[Vec<Q>], a: &Blade, b: &Blade, rho: &Q, n: usize) -> Option<Mv> {
+    let v = versor_of(r, n)?;
+    super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites).map(|_| v)
 }
 
 /// THE POSE ON THE TUBE: the columns, the dual where a body is flat, the
@@ -339,36 +332,32 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
     // FR1b — TOO FEW COLUMNS IS A SYMMETRY, NOT A REFUSAL: the even tower
     // reads what the odd one cannot.
     if ca.len() + 1 < n {
-        return even_pose(&ta, &tb, &ca, &wb, &rho2, n);
+        return even_pose(a, b, &ta, &tb, &ca, &wb, &rho, n);
     }
     let mut wa = ca.clone();
     // A FLAT BODY'S FRAME OF COLUMNS IS COMPLETED BY THEIR DUAL, the proper
-    // completion first; its mirror is read only where the proper one fails.
+    // completion first; its mirror — the same frame read orientation-reversed
+    // — where the proper one does not carry.
     let flat = wa.len() + 1 == n;
     if flat {
         let (da, db) = (dual(&ca, n), dual(&wb, n));
         wa.push(da);
         wb.push(db);
     }
-    let proper = solve(&wa, &wb, n).filter(|r| carries_tower(r, &ta, &tb, &rho2, n));
-    let r = match (proper, flat) {
-        (Some(r), _) => r,
-        (None, true) => {
-            if let Some(last) = wb.last_mut() {
-                for x in last.iter_mut() {
-                    *x = -x.clone();
-                }
-            }
-            return Err(match solve(&wa, &wb, n).filter(|r| carries_tower(r, &ta, &tb, &rho2, n)) {
-                Some(_) => NoPose::Mirrored,
-                None => NoPose::Incongruent(Incongruence::Tube),
-            });
+    if let Some(v) = solve(&wa, &wb, n).and_then(|r| carried(&r, a, b, &rho, n)) {
+        return Ok(Pose::Turn(v));
+    }
+    if !flat {
+        return Err(NoPose::Incongruent(Incongruence::Tube));
+    }
+    if let Some(last) = wb.last_mut() {
+        for x in last.iter_mut() {
+            *x = -x.clone();
         }
-        (None, false) => return Err(NoPose::Incongruent(Incongruence::Tube)),
-    };
-    match det(r.clone()) < Q::zero() {
-        true => Err(NoPose::Mirrored),
-        false => versor_of(&r, n).map(Pose::Turn).ok_or(NoPose::NullStep),
+    }
+    match solve(&wa, &wb, n).and_then(|r| carried(&r, a, b, &rho, n)) {
+        Some(v) => Ok(Pose::Turn(v)),
+        None => Err(NoPose::Incongruent(Incongruence::Tube)),
     }
 }
 
@@ -397,14 +386,16 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
 ///   turns — which this reader does not name a representative for:
 ///   [`NoPose::Unoriented`].
 ///
-/// Each candidate, and its negative, is kept where it is proper and carries
-/// the tower and every odd column there is. One proper turn is a
-/// [`Pose::Turn`]; two are the held `ℤ₂`, [`Pose::HalfOpen`], its
-/// representative the first in the quadratic's own root order.
-fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: usize) -> Result<Pose, NoPose> {
-    let rho4 = rho2 * rho2;
+/// Each candidate, and its negative, is kept where its versor — even or odd,
+/// a turn or a mirror — carries the one tube onto the other and every odd
+/// column there is lands. One carried is a [`Pose::Turn`]; several are the
+/// held coset, [`Pose::HalfOpen`], in the quadratic's own root order.
+#[expect(clippy::too_many_arguments, reason = "the two bodies, their towers, the odd columns at one scale, the scale and the base's n: the pose's inputs, each read once")]
+fn even_pose(a: &Blade, b: &Blade, ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho: &Q, n: usize) -> Result<Pose, NoPose> {
+    let rho2 = rho * rho;
+    let rho4 = &rho2 * &rho2;
     let scaled = |m: &[Vec<Q>], s: &Q| -> Vec<Vec<Q>> { m.iter().map(|row| row.iter().map(|x| x / s).collect()).collect() };
-    let (mb, nb) = (scaled(&tb.m, rho2), scaled(&tb.n4, &rho4));
+    let (mb, nb) = (scaled(&tb.m, &rho2), scaled(&tb.n4, &rho4));
     // `X A_a − A_b X = 0`, entry `(p, q)`, over the unknowns `X[p][r]` at
     // `p·n + r`.
     let mut rows: Vec<Vec<Q>> = Vec::new();
@@ -432,38 +423,42 @@ fn even_pose(ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho2: &Q, n: 
         },
         _ => return Err(NoPose::Unoriented),
     };
-    // `N` is carried by any orthogonal element of the kernel, by
-    // construction; `M` is checked as the column reader checks it, and every
-    // odd column there is must land.
-    let carries =
-        |r: &[Vec<Q>]| carries_tower(r, ta, tb, rho2, n) && ca.iter().zip(wb).all(|(wa, wb)| apply(r, wa) == *wb);
-    let (mut proper, mut improper) = (Vec::new(), false);
+    // Each candidate's versor carries the tubes (`carried`, the algebra's
+    // own carriage), and every odd column there is must land.
+    let mut poses: Vec<Mv> = Vec::new();
     for x in &lines {
-        let g = (0..n).fold(Q::zero(), |acc, k| acc + &x[k][0] * &x[k][0]);
+        // The first column's squared length, READ FROM THE ALGEBRA (law 12):
+        // the column as a base vector, squared by the product's own metric.
+        let first: Vec<Q> = (0..n).map(|k| x[k][0].clone()).collect();
+        let g = cga::base_vector(&first).norm2();
         let Some(lambda) = rational_sqrt(&g) else { continue };
         if lambda.is_zero() {
             continue;
         }
         for sign in [Q::one(), -Q::one()] {
             let r: Vec<Vec<Q>> = x.iter().map(|row| row.iter().map(|v| v * &sign / &lambda).collect()).collect();
-            if !carries(&r) {
+            if !ca.iter().zip(wb).all(|(wa, wb)| apply(&r, wa) == *wb) {
                 continue;
             }
-            match det(r.clone()) < Q::zero() {
-                true => improper = true,
-                false => proper.push(r),
+            let Some(v) = carried(&r, a, b, rho, n) else { continue };
+            if !poses.iter().any(|p| p.projective_eq(&v)) {
+                poses.push(v);
             }
         }
     }
-    match (proper.as_slice(), improper) {
-        ([r], _) => versor_of(r, n).map(Pose::Turn).ok_or(NoPose::NullStep),
-        ([r, s], _) => match (versor_of(r, n), versor_of(s, n)) {
-            (Some(a), Some(b)) => Ok(Pose::HalfOpen(vec![a, b])),
-            _ => Err(NoPose::NullStep),
-        },
-        ([], true) => Err(NoPose::Mirrored),
-        ([], false) => Err(NoPose::Incongruent(Incongruence::Tube)),
-        _ => Err(NoPose::Unoriented),
+    // A PAIR IS READ ORIENTATION-REVERSED ONLY WHERE NO TURN CARRIES IT: a
+    // body symmetric under a mirror is carried by its reflections as well as
+    // by its turns, and its pose is the turns; the mirror is the reading of a
+    // pair no turn relates.
+    let (turns, mirrors): (Vec<Mv>, Vec<Mv>) = poses.into_iter().partition(|v| v.parity() == Some(false));
+    let read = match turns.is_empty() {
+        true => mirrors,
+        false => turns,
+    };
+    match read.as_slice() {
+        [] => Err(NoPose::Incongruent(Incongruence::Tube)),
+        [one] => Ok(Pose::Turn(one.clone())),
+        _ => Ok(Pose::HalfOpen(read)),
     }
 }
 

@@ -34,7 +34,7 @@ pub fn carry(v: &Mv, p: &[i64]) -> Option<Vec<BigRational>> {
 /// centres' centroid plus one half on each grid axis (a lamina's square
 /// spans the grid axes), and the offset alone on every other axis — a
 /// lamina stands AT its frame (16.4).
-fn vertex_centroid(b: &Blade) -> Option<Vec<BigRational>> {
+pub(super) fn vertex_centroid(b: &Blade) -> Option<Vec<BigRational>> {
     Some(
         b.centroid()?
             .into_iter()
@@ -136,158 +136,166 @@ pub fn rotor_and_placement_between(
     Some((total_rotor, t))
 }
 
-/// The Cl(4,0) Rotor carrying body a's orientation onto body b's orientation.
+/// The Cl(4,0) Rotor carrying body a's orientation onto body b's
+/// orientation: the base rotor of the transition's geodesic (51.2), read
+/// back from the versor the transition verified.
 pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::alphabet::Rotor> {
-    let (r, _) = rotor_and_placement_between(a, b)?;
-    if let (Some(sa), Some(sb)) = (
-        crate::transducer::blade::continuous::ContinuousSupport::of(a),
-        crate::transducer::blade::continuous::ContinuousSupport::of(b),
-    ) {
-        if !sa.matches_rotor(&sb, &r) {
-            return None;
-        }
-    }
-    Some(r)
+    crate::transducer::element::base_rotor_of(&versor_between(a, b)?)
 }
 
-/// THE COSET OF VERSORS carrying `a` onto `b`, each with the rotation it
-/// was built from. Translation from the body centroids; the dilation ρ
-/// from the per-lamina spread (a rational square, or the bodies are not
-/// similar in ℚ — a refusal, never a rounding); the rotation from the
-/// moment harmonics: the inertia's anisotropy turns at twice the body's
-/// angle, so the rotor carrying `a`'s anisotropy onto `b`'s is halved
-/// once; an isotropic body is oriented by its fourth harmonic, halved
-/// twice. Each harmonic leaves a finite ambiguity — the body's own
-/// stabilizer (a half turn for the second harmonic, quarter turns for the
-/// fourth) — and a reflection is tried as the odd versor; every candidate
-/// is verified by carrying every lamina's center of `a` onto a lamina of
-/// `b` and every lamina's center of `b` back onto a lamina of `a`. The
-/// ones that carry are one coset of the stabilizer acting on one
-/// transport, and none is chosen here: the coset is what is measured
-/// (L7c), its representative is `coset_representative`'s.
+/// THE COSET OF VERSORS carrying `a` onto `b` on the sensor's plane (BQ4,
+/// named), each with the rotation it was built from: the transition's
+/// members ([`transitions_between`]); none where the pair is refused, and
+/// the refusal is the pose's to name.
 pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<(Mv, Mv)> {
-    let mut coset: Vec<(Mv, Mv)> = Vec::new();
-    if a.blade.support.is_empty() || b.blade.support.is_empty() {
-        return coset;
+    transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).into_iter().flatten().collect()
+}
+
+/// THE DOUBLE-ANGLE POINT of a harmonic of degree `m` between two bodies:
+/// `conj(h_a)·h_b / (ρ^m ‖h_a‖²)`, the point `(cos mφ, sin mφ)` — rational,
+/// no root taken, because the order's certificate is `‖h_b‖² = ρ^{2m}‖h_a‖²`
+/// (A.12). `scale` is `ρ^m`.
+fn phase_point(ha: &[BigRational; 2], hb: &[BigRational; 2], scale: &BigRational) -> Option<(BigRational, BigRational)> {
+    let norm = (&ha[0] * &ha[0] + &ha[1] * &ha[1]) * scale;
+    if norm.is_zero() {
+        return None;
     }
-    // Body centroids in the sensor's vertex coordinates: the centroid of
-    // the laminae's centers plus one half on each plane axis; a lamina
-    // stands AT its frame (16.4).
-    let (Some(ca), Some(cb)) = (vertex_centroid(&a.blade), vertex_centroid(&b.blade)) else {
-        return coset;
+    Some((
+        (&ha[0] * &hb[0] + &ha[1] * &hb[1]) / &norm,
+        (&ha[0] * &hb[1] - &ha[1] * &hb[0]) / &norm,
+    ))
+}
+
+/// THE EXACT HALF-ANGLE STEP (DG1, 78.45): from the rational point of `2θ`
+/// to the rational point of `θ`, the representative with `cos θ ≥ 0` — the
+/// other is its antipode, which the coset carries. `2(1 + C) = r²` is the
+/// condition, `cos θ = (1 + C)/r`, `sin θ = S/r`; at `C = −1` (`2θ` is 180°)
+/// the point is `(0, 1)`, 90°. `None` where `2(1 + C)` is no rational square:
+/// `θ` is no rational point, never rounded.
+fn half_point(p: &(BigRational, BigRational)) -> Option<(BigRational, BigRational)> {
+    let one_c = q(1) + &p.0;
+    if one_c.is_zero() {
+        return Some((q(0), q(1)));
+    }
+    let r = rational_sqrt(&(q(2) * &one_c))?;
+    Some((one_c / &r, &p.1 / &r))
+}
+
+/// THE ROTOR RAY TURNING BY `θ` from its rational point, `cos θ ≥ 0`: `1 −
+/// t·e_ij` with `t = sin θ/(1 + cos θ)`, the half-angle tangent, exact. The
+/// sign is the algebra's: `(1 + t e_ij) e_i (1 − t e_ij) = (1 − t²) e_i −
+/// 2t e_j`, so `1 + t·e_ij` turns axis `i` AWAY from axis `j`, by `−θ` in
+/// the harmonics' convention `u + i·v`; the turn by `+θ` is its reverse.
+fn rotor_at(p: &(BigRational, BigRational), e_ij: &Mv) -> Mv {
+    let t = &p.1 / (q(1) + &p.0);
+    Mv::scalar(q(1)).sub(&e_ij.scale(&t))
+}
+
+/// THE TRANSITION BETWEEN TWO SHAPES ON ONE PLANE (55.3, 78.38(C), 68, A.12,
+/// DG1; one edge of a cover — congruence is the cover's reading over many
+/// shapes, 24.4): every versor carrying `a` onto `b`, each with its rotation.
+///
+/// ```text
+///   tower    the one `dilation` certifies; both refusing is Incongruent(Order)
+///   scale    ρ² = s_b / s_a on that tower; no rational ρ, no member
+///   turn     the second harmonic's point of 2φ, one exact half-angle step;
+///            isotropic there, the fourth's point of 4φ and two steps
+///   coset    {R, R·e_ij} from the second; {R·Q_k}, the four quarter turns,
+///            from the fourth; none chosen (L7c)
+///   odd      the same against a's harmonics conjugated — `a` mirrored across
+///            the plane's first axis — and the member R·e_j
+///   place    T(c_b − V_lin(c_a)) · V_lin,  V_lin = D(ρ)·R  (·e_j)
+///   verify   the tower carried by V (`ContinuousSupport::matches`)
+/// ```
+///
+/// No member lands a lamina: the verification is the covariance of the
+/// tower. An empty list is a pair no rational similarity carries on this
+/// plane — its reason the pose's to name (`unturned`): where the half-angle
+/// point or `ρ` is not rational, Oblique, the RotorPrime demand. Refused
+/// before any candidate: a bodiless pair, a pair neither tower certifies, a
+/// pair where one body orients and the other does not.
+pub fn transitions_between(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Vec<(Mv, Mv)>, NoPose> {
+    use super::tower::{harmonic, scale2, Harmonic};
+    if a.support.is_empty() || b.support.is_empty() {
+        return Err(NoPose::Bodiless);
+    }
+    let tower = match dilation(a, b, plane) {
+        Ok(d) => d.tower(),
+        Err((region, sites)) => return Err(NoPose::Incongruent(Incongruence::Order { region, sites })),
     };
-    let spread = |s: &Shape| {
-        // The trace on every axis the body has (PH2).
-        (0..s.blade.n())
-            .filter_map(|i| s.blade.moment2(i, i))
-            .fold(BigRational::zero(), |acc, x| acc + x)
-            / &s.blade.shell
+    let (Some(sa), Some(sb)) = (ContinuousSupport::of(a, tower), ContinuousSupport::of(b, tower)) else {
+        return Err(NoPose::Bodiless);
     };
-    let (sa, sb) = (spread(a), spread(b));
-    // ρ is ONE rational from the per-lamina spread, so a homothety with
-    // different horizontal and vertical factors — a stretch — is not a
-    // similarity and is refused exactly. Carrying an anisotropic scale would
-    // need a carrier that holds two factors, which is a ruling and not a
-    // repair.
-    let rho = match sa.is_zero() {
-        true => match sb.is_zero() {
-            true => q(1),
-            false => return coset,
-        },
-        false => match rational_sqrt(&(&sb / &sa)) {
-            Some(r) => r,
-            None => return coset,
-        },
+    let (Some(ra), Some(rb)) = (scale2(a, plane, tower), scale2(b, plane, tower)) else {
+        return Err(NoPose::Bodiless);
     };
-    // SQ1-b5: no scalar prefilter stands between ρ and the versor. With ρ in
-    // hand, D(ρ) is built and applied below, and `carries` reads whether the
-    // support lands; the lamina count scaling as ρ² is the sensor's unit
-    // squares, a reading (M₀), never a gate (rule 2, checklist (q)).
-    // The bodies stand in their frames: the transport returns the frame
-    // coordinate as it does the two of the plane.
-    let to_origin = cga::translator_at(&ca.iter().map(|x| -x).collect::<Vec<_>>());
-    let to_target = cga::translator_at(&cb);
-    let dil = cga::dilator(&rho);
-    // The stabilizer turns and the orientation sheet are WORDS of the
-    // alphabet realised as conformal versors — the quarter letter on the
-    // sensor's plane, its square, and the half turn through the third axis
-    // (the plane's flip). Nothing here is tabulated.
-    use crate::transducer::alphabet::{LetterId, Word, PLANE_COL, PLANE_ROW};
-    let realise = |tape: &[(LetterId, bool)]| -> Option<Mv> {
-        crate::transducer::element::versor_of_word(&Word::from_letters(tape))
+    if ra.is_zero() || rb.is_zero() {
+        return Err(NoPose::Unoriented);
+    }
+    let mut out: Vec<(Mv, Mv)> = Vec::new();
+    let Some(rho) = rational_sqrt(&(&rb / &ra)) else {
+        return Ok(out);
     };
-    let Some(quarter) = LetterId::quarter((PLANE_ROW, PLANE_COL)).and_then(|q| realise(&[(q, false)])) else {
-        return coset;
-    };
-    let half_turn = quarter.geo(&quarter);
-    let Some(sheet) = LetterId::quarter((PLANE_COL, 2)).and_then(|f| realise(&[(f, false), (f, false)])) else {
-        return coset;
-    };
-    // THE COSET IS READ ON THE SENSOR'S PLANE, where its quarter letter and
-    // its rotator stand (BQ4: named, never assumed).
-    let plane = crate::transducer::base::GRID_PLANE;
-    for reflect in [false, true] {
-        let (Some(a2), Some(b2)) =
-            (a.blade.harmonic_on_plane(plane, reflect), b.blade.harmonic_on_plane(plane, false))
-        else {
-            continue;
+    let rho2 = &rho * &rho;
+    let e_ij = Mv::blade(cga::base_axis(plane.0 + 1) | cga::base_axis(plane.1 + 1), q(1));
+    let mirror = Mv::blade(cga::base_axis(plane.1 + 1), q(1));
+    // The four quarter turns of the plane as rays: 0°, 90°, 180°, 270°.
+    let one = Mv::scalar(q(1));
+    let quarters = [one.clone(), one.add(&e_ij), e_ij.clone(), e_ij.sub(&one)];
+    for odd in [false, true] {
+        let read = |m: Harmonic| {
+            let ha = harmonic(a, plane, tower, m).map(|h| match odd {
+                true => [h[0].clone(), -&h[1]],
+                false => h,
+            });
+            (ha, harmonic(b, plane, tower, m))
         };
-        let iso_a = a2[0].is_zero() && a2[1].is_zero();
-        let iso_b = b2[0].is_zero() && b2[1].is_zero();
-        // The rotation candidates: the rotor of the body's angle and its
-        // stabilizer under the harmonic that oriented it.
-        let candidates: Vec<Mv> = match (iso_a, iso_b) {
-            (false, false) => {
-                let Some((s, bv)) = rotor_between(&a2, &b2) else { continue };
-                let (s, bv) = match (s.is_zero(), bv.is_zero()) {
-                    (true, true) => (q(0), q(1)), // antiparallel anisotropy: a half turn of the harmonic
-                    _ => (s, bv),
-                };
-                let Some((hs, hb)) = half_rotor(&s, &bv) else { continue };
-                let r = cga::rotator(&hs, &hb);
-                vec![r.clone(), r.geo(&half_turn)]
-            }
-            (true, true) => {
-                let (Some(a4), Some(b4)) =
-                    (a.blade.harmonic4_on(plane, reflect), b.blade.harmonic4_on(plane, false))
-                else {
-                    continue;
-                };
-                let iso4 = (a4[0].is_zero() && a4[1].is_zero()) || (b4[0].is_zero() && b4[1].is_zero());
-                match iso4 {
-                    true => vec![Mv::scalar(q(1))],
-                    false => {
-                        let Some((s, bv)) = rotor_between(&a4, &b4) else { continue };
-                        let (s, bv) = match (s.is_zero(), bv.is_zero()) {
-                            (true, true) => (q(0), q(1)),
-                            _ => (s, bv),
-                        };
-                        let Some((s1, b1)) = half_rotor(&s, &bv) else { continue };
-                        let Some((s2, b2)) = half_rotor(&s1, &b1) else { continue };
-                        let r = cga::rotator(&s2, &b2);
-                        let r90 = r.geo(&quarter);
-                        let r180 = r90.geo(&quarter);
-                        let r270 = r180.geo(&quarter);
-                        vec![r, r90, r180, r270]
+        let rotors: Vec<Mv> = match (read(Harmonic::Two), read(Harmonic::Four)) {
+            ((Some(ua), Some(ub)), _) => match phase_point(&ua, &ub, &rho2).and_then(|p| half_point(&p)) {
+                Some(p) => {
+                    let r = rotor_at(&p, &e_ij);
+                    vec![r.clone(), r.geo(&e_ij)]
+                }
+                // 2φ has no rational half: no rational member at this parity.
+                None => Vec::new(),
+            },
+            ((None, None), (Some(qa), Some(qb))) => {
+                match phase_point(&qa, &qb, &(&rho2 * &rho2)).and_then(|p| half_point(&p)).and_then(|p| half_point(&p)) {
+                    Some(p) => {
+                        let r = rotor_at(&p, &e_ij);
+                        quarters.iter().map(|k| r.geo(k)).collect()
                     }
+                    None => Vec::new(),
                 }
             }
-            _ => continue, // one body isotropic, the other not: not similar
+            // Isotropic at both orders on both: nothing orients the pair, and
+            // the identity is the one member the tower can verify.
+            ((None, None), (None, None)) => vec![one.clone()],
+            _ => return Err(NoPose::Isotropy),
         };
-        for rotor in candidates {
+        for rotor in rotors {
             // AT1 (r4) — the carry's candidate loop, counted at its site.
             crate::transducer::sentence::form::atlas::note_carry_candidate();
-            if !cga::is_versor(&rotor) {
-                continue;
-            }
-            let rotation = if reflect { rotor.geo(&sheet) } else { rotor };
-            let v = to_target.geo(&dil).geo(&rotation).geo(&to_origin);
-            if carries(&v, a, b) {
-                coset.push((rotation, v));
+            let rotation = match odd {
+                true => rotor.geo(&mirror),
+                false => rotor,
+            };
+            let Some(v) = placed(a, b, &cga::dilator(&rho).geo(&rotation)) else { continue };
+            if sa.matches(&sb, &v) {
+                out.push((rotation, v));
             }
         }
     }
-    coset
+    Ok(out)
+}
+
+/// THE PLACEMENT OF A LINEAR ACTION between two bodies: `T(c_b − V(c_a))·V`,
+/// the one freedom a listing's frame quotients solved from the two centres
+/// exactly (24.1). `None` where the centre goes to infinity.
+fn placed(a: &Blade, b: &Blade, linear: &Mv) -> Option<Mv> {
+    let (ca, cb) = (vertex_centroid(a)?, vertex_centroid(b)?);
+    let image = cga::base_at(&linear.sandwich(&cga::point_at(&ca)), ca.len())?;
+    Some(cga::translator_at(&difference(&cb, &image)?).geo(linear))
 }
 
 /// THE CANONICAL REPRESENTATIVE OF A COSET (50.2 step 1 as ruled, law 6):
@@ -354,46 +362,39 @@ pub fn versor_coset_ordered(a: &Shape, b: &Shape) -> Vec<Mv> {
     geodesic.into_iter().chain(rest.into_iter().map(|(_, at)| coset[at].1.clone())).collect()
 }
 
-/// EVERY LAMINA CARRIED, BOTH WAYS: `v` carries each lamina's center of
-/// `a` onto a lamina of `b`, and its inverse carries each lamina's center
-/// of `b` back onto a lamina of `a`. The verification every candidate of
-/// `versor_between` passes, and the one a held word's action passes on a
-/// listing body (24.1, 50.1 step 1). A versor with no inverse carries
-/// nothing.
-pub fn carries(v: &Mv, a: &Shape, b: &Shape) -> bool {
-    use crate::transducer::base::Site;
-    // A centre that lands at infinity or off the base lands on no held lamina.
-    let lands = |v: &Mv, site: &Site, held: &[Site]| -> bool {
-        match crate::transducer::element::carry_site(v, site) {
-            Some(s) => held.binary_search(&s).is_ok(),
-            None => false,
-        }
-    };
-    // Back by `ṽ`: a site is read off its point by proportion, so the reverse
-    // lands where the inverse does (78.32(1)).
-    if !cga::is_versor(v) {
-        return false;
+/// DOES `v` CARRY `a` ONTO `b` ON ONE TOWER: the transition's covariance
+/// (`ContinuousSupport::matches`) — the centre, the second moment on every
+/// plane, the odd and quartic harmonics on the base's planes — never where a
+/// carried lamina lands. The verification every member of the coset passes,
+/// and the one a held word's action passes on a listing body (24.1, 50.1
+/// step 1).
+pub fn carries_by_covariance(v: &Mv, a: &Blade, b: &Blade, tower: super::tower::Tower) -> bool {
+    match (ContinuousSupport::of(a, tower), ContinuousSupport::of(b, tower)) {
+        (Some(sa), Some(sb)) => sa.matches(&sb, v),
+        _ => false,
     }
-    let back = v.reverse();
-    a.blade.support.iter().all(|site| lands(v, site, &b.blade.support))
-        && b.blade.support.iter().all(|site| lands(&back, site, &a.blade.support))
+}
+
+/// A LINEAR ACTION PLACED AND VERIFIED on one tower: the versor where it
+/// carries `a` onto `b`, `None` where it does not.
+pub(super) fn carried_on(a: &Blade, b: &Blade, linear: &Mv, tower: super::tower::Tower) -> Option<Mv> {
+    let v = placed(a, b, linear)?;
+    carries_by_covariance(&v, a, b, tower).then_some(v)
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
 /// 2026-09-09): `linear` is a rotation with its dilation composed — a held
 /// word's rotor under its dilator — and the one freedom a listing's frame
-/// quotients is the translation, solved from the two centroids exactly as
-/// `versor_between` solves it. Nothing is measured from the harmonics and
-/// no candidate is tried: the word says which rotation, the bodies say
-/// where, and the result is verified lamina by lamina both ways. `None`
-/// when the action does not carry `a` onto `b`: the word is not a word for
-/// this body.
+/// quotients is the translation, solved from the two centres exactly as
+/// the transition solves it. No candidate is tried: the word says which
+/// rotation, the bodies say where, and the result is verified by the
+/// transition's covariance on the tower `dilation` certifies. `None` when
+/// the action does not carry `a` onto `b`: the word is not a word for this
+/// body.
 pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Mv> {
     if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return None;
     }
-    let (ca, cb) = (vertex_centroid(&a.blade)?, vertex_centroid(&b.blade)?);
-    let image = cga::base_at(&linear.sandwich(&cga::point_at(&ca)), ca.len())?;
-    let v = cga::translator_at(&difference(&cb, &image)?).geo(linear);
-    carries(&v, a, b).then_some(v)
+    let tower = dilation(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).ok()?.tower();
+    carried_on(&a.blade, &b.blade, linear, tower)
 }

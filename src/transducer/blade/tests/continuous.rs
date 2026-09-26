@@ -2,28 +2,29 @@
 
 use crate::transducer::alphabet::{LetterId, Word};
 use crate::transducer::blade::{continuous::ContinuousSupport, *};
+use crate::transducer::element::versor_of_word;
 use crate::transducer::sentence::class::{orbit_row, OrbitRow, FREE_ROW};
-use num_rational::BigRational;
 
 #[test]
 fn continuous_support_invariants_in_closed_form() {
     let bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)]);
     let s = shape_of(&bar);
-    let cs = ContinuousSupport::of(&s).expect("continuous support");
-
-    // Shell = 4 in Q
-    assert_eq!(cs.shell, BigRational::from_integer(4.into()));
-
-    // An anisotropic bar carries a second harmonic: H2 is not the zero vector.
-    assert!(cs.h2.iter().any(|x| *x != BigRational::from_integer(0.into())));
 
     // SQ1-b5 — similarity is the dilation APPLIED, not a scalar prefilter:
     // the coset carrying the bar onto its double is non-empty, and each of
-    // its versors carries the one support onto the other.
+    // its versors carries the one tower onto the other at ρ = 2.
     let dilated = super::common::dilate(&s.blade.support, 2);
     let s_dil = shape_of(&dilated);
     let coset = versor_coset(&s, &s_dil);
     assert!(!coset.is_empty(), "D(2) carries the bar onto its double");
+    let (sa, sb) = (
+        ContinuousSupport::of(&s.blade, Tower::Region).expect("support"),
+        ContinuousSupport::of(&s_dil.blade, Tower::Region).expect("support"),
+    );
+    for (_, v) in &coset {
+        assert!(sa.matches(&sb, v), "the member carries the tower");
+        assert!(!sb.matches(&sa, v), "and not back: its inverse does");
+    }
 }
 
 #[test]
@@ -31,7 +32,6 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     // Word carrying pythagorean_5 on plane (0, 1)
     let p5 = LetterId::pythagorean_5((0, 1)).expect("pythagorean 5 on (0, 1)");
     let w = Word::from_letters(&[(p5, false)]);
-    let r = w.rotor();
 
     // SQ1-b4 — THE ROTOR IS APPLIED TO THE HARMONICS, NOT COMPARED BY NORM.
     // A bar along the row and the same bar along the column are one quarter
@@ -41,12 +41,17 @@ fn continuous_support_pythagorean_rotor_holonomy() {
     // turn), because a squared norm cannot see the angle.
     let row_bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0)]);
     let col_bar = super::common::sites(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
-    let cs = ContinuousSupport::of(&shape_of(&row_bar)).expect("support");
-    let turned = ContinuousSupport::of(&shape_of(&col_bar)).expect("support");
-    let quarter = Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter on (0, 1)"), false)]).rotor();
-    assert!(cs.matches_rotor(&turned, &quarter), "the quarter turn carries the row bar onto the column bar");
-    assert!(!cs.matches_rotor(&turned, &r), "the (3,4,5) turn does not");
-    assert!(!cs.matches_rotor(&cs, &r), "and a body does not match itself under a turn it is not symmetric by");
+    let (row, col) = (shape_of(&row_bar), shape_of(&col_bar));
+    let quarter =
+        versor_of_word(&Word::from_letters(&[(LetterId::quarter((0, 1)).expect("quarter on (0, 1)"), false)]))
+            .expect("the quarter's base action");
+    let p5_turn = versor_of_word(&w).expect("the (3,4,5) turn's base action");
+    assert!(versor_carrying(&row, &col, &quarter).is_some(), "the quarter turn carries the row bar onto the column bar");
+    assert!(versor_carrying(&row, &col, &p5_turn).is_none(), "the (3,4,5) turn does not");
+    assert!(
+        versor_carrying(&row, &row, &p5_turn).is_none(),
+        "and a body does not match itself under a turn it is not symmetric by"
+    );
 
     // The holonomy word evaluates to OrbitRow::Free with non-zero exponent
     let row = orbit_row(&w).expect("orbit row");

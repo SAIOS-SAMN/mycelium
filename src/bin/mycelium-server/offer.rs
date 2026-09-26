@@ -92,9 +92,9 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             offered_out += 1;
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
             // witness replayed nothing, and the word is carried again only
-            // by a transition that concerns it.
+            // by a transition that concerns it. Nothing is printed per
+            // deferral (C3).
             if crate::transport::is_deferred(&reply) {
-                eprintln!("  court offer deferred {:02x}{:02x}… by {d}", oaddr[0], oaddr[1]);
                 continue;
             }
             // 47.3's SECOND VANTAGE, the key the reply names, and never this

@@ -1182,3 +1182,44 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
         "a fiber that is not one motion along e₃ has no union quotient"
     );
 }
+
+/// AL1 AS AMENDED — A MIRRORED PAIR MINTS. The L-tetromino and its mirror
+/// image: no turn relates them, and the pose used to refuse the pair as
+/// `Mirrored`, so the family minted nothing. The pair is the same signal read
+/// orientation-reversed: the pose is the odd versor, the peel spells it
+/// through the letter chart's orientation character, and the sentence mints.
+/// Its word vertices read DERIVABLE through the mind's own crystal — the
+/// reflection is read, never demanded or adjoined.
+#[test]
+fn a_mirrored_pair_mints_and_its_class_reads_derivable() {
+    let l = grid(&["1000", "1000", "1100", "0000"]);
+    let j = grid(&["0100", "0100", "1100", "0000"]);
+    let family = vec![(l, j)];
+    let rule = extract_rule_with(&family, &NoCrystal, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+        .expect("the mirrored pair extracts");
+    let word = mint_sentence_why(&rule, &family, &NoCrystal, 0).expect("and mints");
+    // The pair's transport is the reflection itself — odd — read exactly.
+    let la = crate::transducer::blade::shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let jb = crate::transducer::blade::shape_of(&[(0i64, 1i64, 0i64), (1, 1, 0), (2, 1, 0), (2, 0, 0)]);
+    let v = crate::transducer::blade::versor_between(&la, &jb).expect("a versor carries the L onto its mirror");
+    assert_eq!(v.parity(), Some(true), "and it is odd: the mirror, never a turn at an angle no lattice turns");
+    let form = crate::transducer::sentence::from_element_form(&word).expect("the form the court holds");
+    let rotors: Vec<crate::transducer::alphabet::Rotor> = form
+        .vertices
+        .entries()
+        .filter_map(|(_, v)| match v {
+            crate::transducer::sentence::Vertex::Word { derivation, .. } => Some(derivation.rotor()),
+            _ => None,
+        })
+        .collect();
+    assert!(!rotors.is_empty(), "the minted form carries its word vertices");
+    let epi = crate::client::sdk::Epigenome::new();
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
+    for r in &rotors {
+        assert_eq!(
+            letter_reading(&epi, &mut budget, r),
+            LetterReading::Derivable,
+            "each word vertex's class reads derivable through the mind's crystal: {r:?}"
+        );
+    }
+}

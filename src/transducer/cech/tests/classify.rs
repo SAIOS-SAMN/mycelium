@@ -243,11 +243,9 @@ fn a_turn_about_a_point_files_and_a_screw_stands() {
 /// the carriage is NOT flat, and it files at four anyway, because the
 /// translation it carries is the turn's own base point and solves.
 ///
-/// Measured on this pair: three members carry the L onto its image, all
-/// three with a placement, and none of them could file while `flat` was
-/// the gate. Two file now — the quarter turn at four and a half turn at
-/// two — and the third is a reflection the seventeen do not spell, which
-/// is 37.7's arm and not a missed fill.
+/// The L is chiral and carries an odd harmonic, so the transition has one
+/// member — the quarter turn, verified by the tower's covariance — with a
+/// placement, which could not file while `flat` was the gate.
 #[test]
 fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     use crate::transducer::blade::{shape_of, versor_coset_ordered};
@@ -278,9 +276,56 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
             filed += 1;
         }
     }
-    assert_eq!(read, 3, "three members carry the L onto its image");
-    assert_eq!(placed, read, "every one of them carries a placement: none is flat");
+    assert_eq!(read, 1, "one member carries the L onto its image");
+    assert_eq!(placed, read, "it carries a placement: it is not flat");
     assert_eq!(filed, 1, "and the quarter turn files at four, placement and all");
+}
+
+/// 24.4, 78.14 — CONGRUENCE IS THE COVER'S READING OVER MANY SHAPES. Three
+/// L's, each a quarter turn of the last, with the transitions between them
+/// read by `versor_between` alone: around the cycle `A → B → C → A` the
+/// holonomy is the identity, and `classify` fills it — the three are one
+/// shape, whose shape is their nuclei's Gram form, the same under every
+/// motion of the configuration (the transition `A → B` applied to all three
+/// nuclei at once rescales the form by the versor's weight squared and no
+/// more). Close the cycle on the L turned once more instead of on `A`, and
+/// the holonomy does not close: its residue is a quarter turn about a point,
+/// and it is CLASSIFIED — `Congruent`, filed at four — never dropped.
+#[test]
+fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() {
+    use crate::transducer::blade::{shape_of, versor_between};
+    use crate::transducer::element::{base_rotor_of, dilator_of, translator_of};
+    let a = shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let b = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
+    let c = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 1, 0), (2, 1, 0)]);
+    let d = shape_of(&[(0i64, 2i64, 0i64), (1, 0, 0), (1, 1, 0), (1, 2, 0)]);
+    let edge = |x: &crate::transducer::blade::Shape, y: &crate::transducer::blade::Shape| {
+        versor_between(x, y).expect("a transition")
+    };
+    let (ab, bc) = (edge(&a, &b), edge(&b, &c));
+    let fill_of = |h: &Versor| {
+        let (Some(r), Some(dil), Some(t)) = (base_rotor_of(h), dilator_of(h), translator_of(h)) else {
+            panic!("the holonomy is read on the base: {h:?}");
+        };
+        classify(&r, &dil.geo(&t), CycleType::Identity)
+    };
+    let closed = edge(&c, &a).geo(&bc).geo(&ab);
+    assert!(matches!(fill_of(&closed), Fill::Filled(..)), "the cycle closes: {:?}", fill_of(&closed));
+    let nuclei: Vec<Versor> = [&a, &b, &c].iter().map(|s| s.blade.nucleus().expect("a nucleus")).collect();
+    let moved: Vec<Versor> = nuclei.iter().map(|s| ab.sandwich(s)).collect();
+    let w = cga::weight_of(&ab).expect("a versor");
+    let (g, gm) = (cga::gram_form(&nuclei), cga::gram_form(&moved));
+    let w2 = &w * &w;
+    assert!(
+        g.iter().zip(&gm).all(|(r, rm)| r.iter().zip(rm).all(|(x, y)| *y == &w2 * x)),
+        "the new shape is the Gram form, carried by the motion unchanged"
+    );
+    let twisted = edge(&c, &d).geo(&bc).geo(&ab);
+    assert!(
+        matches!(fill_of(&twisted), Fill::Congruent(_, _, 4)),
+        "the residue is a quarter turn, classified at four: {:?}",
+        fill_of(&twisted)
+    );
 }
 
 /// A rotor the seventeen do not spell is 37.7's own arm, not a class of

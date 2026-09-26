@@ -134,9 +134,18 @@ fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
         panic!("a turn in e23: {:?}", relative_pose(&a, &turned));
     };
     assert!(sends(&v, E2, E3) && sends(&v, E1, E1), "the turn is in e23: {v:?}");
-    // Mirrored across the row: no proper motion carries it.
+    // Mirrored across the row: no proper motion carries it, and its pose is
+    // the odd versor — the same tube read orientation-reversed (AL1 as
+    // amended), fixing the row's line and reversing it.
     let mirrored = mapped(|(r, c, k)| (-r, c, k));
-    assert_eq!(relative_pose(&a, &mirrored).err(), Some(NoPose::Mirrored));
+    let Ok(Pose::Turn(m)) = relative_pose(&a, &mirrored) else {
+        panic!("a mirror is read, never refused: {:?}", relative_pose(&a, &mirrored));
+    };
+    assert_eq!(m.parity(), Some(true), "the mirror's pose is odd: {m:?}");
+    assert!(
+        m.projective_eq(&cga::Mv::blade(E1, num_rational::BigRational::from_integer(1.into()))),
+        "it is the reflector across the row, e1: {m:?}"
+    );
     // Doubled as points: the scale is 2 and the turn the identity.
     let doubled = mapped(|(r, c, k)| (2 * r, 2 * c, 2 * k));
     let Ok(Pose::Turn(id)) = relative_pose(&a, &doubled) else {
