@@ -15,7 +15,7 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(super::common::speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(super::common::speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
-    k.court_stroke(super::common::one_stroke_transport);
+    k.court_stroke();
     let addr = k.provisional.scoped().next().expect("docketed").0;
     (k, crate::transducer::address::Address::from(addr))
 }

@@ -89,6 +89,17 @@ fn take_u8(b: &[u8], p: &mut usize) -> Option<u8> {
     Some(v)
 }
 
+/// A PLANE CENSUS'S CLASSIFICATION ([`Planes::turning`]).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Turning {
+    Unread,
+    Unturned,
+    /// Every turn on the sensor's plane; `other` harmonic planes declared and
+    /// never turned.
+    Flattened { other: usize },
+    Turns { turned: usize, of: usize },
+}
+
 /// THE PLANE CENSUS AS A WHOLE OBJECT (D1, 68, 71.2(3)): the algebra's `n`,
 /// the transitions read and those coupling both halves, and each populated
 /// plane with its count, ascending by blade. A plane that never turned is
@@ -123,6 +134,22 @@ impl Planes {
             .filter(|&(_, _, c)| c > 0)
             .collect();
         Planes { n, read: t.read, coupled: t.coupled, counts, parabolic }
+    }
+
+    /// WHAT THE CENSUS TURNED ON, read off its counts and never stored: no
+    /// transition read; nothing turned (every transition a boost, a slip or
+    /// the identity); FLATTENED — every turn on the sensor's plane `e1e2`;
+    /// or turns on `turned` of the `of` harmonic planes the algebra declares.
+    pub fn turning(&self) -> Turning {
+        let harmonic = crate::transducer::cga::harmonic_planes(self.n);
+        let turned: Vec<usize> = harmonic.iter().copied().filter(|&b| self.count(b) > 0).collect();
+        let grid = crate::transducer::cga::E1 | crate::transducer::cga::E2;
+        match (self.read, turned.as_slice()) {
+            (0, _) => Turning::Unread,
+            (_, []) => Turning::Unturned,
+            (_, [only]) if *only == grid => Turning::Flattened { other: harmonic.len() - 1 },
+            _ => Turning::Turns { turned: turned.len(), of: harmonic.len() },
+        }
     }
 
     /// How often one plane was populated.

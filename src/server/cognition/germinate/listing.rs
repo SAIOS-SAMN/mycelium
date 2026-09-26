@@ -212,6 +212,8 @@ impl Kernel {
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             let anchor = self.anchor();
             self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
+            // A voice arriving on the word is flux reaching it (78.37 (3)).
+            self.note_flux(addr.as_bytes());
             return Outcome::GermPending;
         }
         if !word.is_sentence() {
@@ -306,7 +308,7 @@ impl Kernel {
                 &mag,
             );
         }
-        self.offered.insert(&addr, ());
+        self.enter_offered(addr.as_bytes());
         Outcome::GermPending
     }
 
@@ -322,7 +324,7 @@ impl Kernel {
             self.book_list(word.clone(), voice);
             self.list_demands(word, &voice);
             self.docket_connection(word, voice);
-            self.offered.insert(&addr, ());
+            self.enter_offered(addr.as_bytes());
         }
         Outcome::GermPending
     }

@@ -45,7 +45,7 @@ impl Kernel {
         // 78.24 (2c): the word is cited as it stood, read before it leaves
         // the provisional row.
         let cite = self.cite_of(addr);
-        if self.provisional.remove(addr).is_none() {
+        if self.leave_provisional(addr).is_none() {
             return false;
         }
         // 45.1: A RULING IS AN ADMITTED ACT. Every arm below moves the book
@@ -158,20 +158,9 @@ impl Kernel {
     /// triangles and tetrahedron classes. Fail → slash with a replay reason
     /// and relocate to the cavity atlas. Pass → a section on the ruled
     /// cover, escrow held. Fills and refinements share the stroke Budget.
-    ///
-    /// `lambda` is 47.5's Λ for a listing's chart, in admitted receipts,
-    /// from the caller's measured transport to the hypha the Cover homes
-    /// that chart to; it is asked with the chart, the listing's magnitude
-    /// and this court's room, and the lapse does not fire where it reads
-    /// `None`. See `lapse_docket`.
-    pub fn court_stroke(
-        &mut self,
-        lambda: impl Fn(
-            &crate::transducer::stalk::Invariant,
-            &[u64; 4],
-            &[u64; 4],
-        ) -> crate::physics::Lambda,
-    ) {
+    /// What lapses lapses at the close of the court's orbit (`orbit`), by
+    /// `ZeroFlux`, never on a stroke.
+    pub fn court_stroke(&mut self) {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
@@ -281,7 +270,7 @@ impl Kernel {
                 // The word keeps its address as a cavity (27); a word left
                 // on no row after that takes its stamp with it.
                 self.relocate_cavity(&addr);
-                self.provisional.remove(&addr);
+                self.leave_provisional(&addr);
                 self.forget_if_unheld(&addr);
                 self.court_slashed += 1;
                 continue;
@@ -292,7 +281,6 @@ impl Kernel {
             // against, which is what makes a glue a Mayer-Vietoris step.
             self.rule_own(&addr);
         }
-        self.lapse_docket(&lambda);
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
     }
@@ -328,7 +316,7 @@ impl Kernel {
             self.append_step(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Upheld), &addr, me);
             self.ruled_admit(&addr);
             self.fed_admit(&addr, t);
-            self.provisional.remove(&addr);
+            self.leave_provisional(&addr);
             self.court_upheld += 1;
             return;
         }

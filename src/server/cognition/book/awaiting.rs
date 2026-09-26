@@ -80,6 +80,24 @@ impl Kernel {
                 self.awaiting.insert(form.clone(), vec![entry]);
             }
         }
+        // 76 — A SENTENCE WAITING ON A WORD IS THAT WORD'S PRESSURE: its frame
+        // is transported to the word's escrow and the word is carried again,
+        // where this court holds it in flight.
+        self.press(form.as_bytes(), s.magnitude());
+    }
+
+    /// THE WORD THEY WAITED ON LAPSED: every sentence waiting on it is
+    /// released as the demand it is — it cites a word this court does not
+    /// hold, D (78.9, GLUED_UNRULED) — answered and recorded, so the voice's
+    /// next utterance can contract against it (50.9).
+    pub(crate) fn release_awaiting(&mut self, form: &[u8]) {
+        let Some(waiting) = self.awaiting.remove(form) else {
+            return;
+        };
+        for (voice, _task, s) in waiting {
+            let refusal = crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_GLUED_UNRULED, &s);
+            let _ = self.refuse_sentence(voice, &s.address(), refusal);
+        }
     }
 
     /// A form was ruled: every sentence that waited on it is heard again,

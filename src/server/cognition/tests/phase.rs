@@ -138,7 +138,6 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
 /// when the circuit count crosses a multiple of `aperture_cycle()`.
 #[test]
 fn the_phase_window_is_an_aperture_of_docket_circuits() {
-    use super::common::one_stroke_transport;
     let mut k = Kernel::new();
     let w = crate::transducer::element::from_connection(
         &crate::transducer::alphabet::Word::identity(),
@@ -158,7 +157,7 @@ fn the_phase_window_is_an_aperture_of_docket_circuits() {
             .and_then(|n| n.checked_add(2))
             .expect("two apertures fit the clock this test runs on");
         assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_circuits());
-        k.court_stroke(one_stroke_transport);
+        k.court_stroke();
         let c = k.docket_circuits().circuits();
         if c < aperture {
             assert!(k.phase_mark.is_none(), "no reading below the aperture: circuits {c} of {aperture}");

@@ -1,57 +1,36 @@
-// 47.3, 13.9 — THE OFFER ROUND: what this court offers at first vantage,
-// to which hyphae, and what it does with the answer.
+// 47.3, 13.9 — THE OFFER: what a transition that moved a provisional word
+// sends to the hyphae covering its chart, and what the home does with the
+// answer.
 
 use crate::exchange::Mesh;
 use crate::transport::tell_peer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
+use mycelium::transducer::address::Address;
 use std::sync::Mutex;
 
-/// One cycle's offers. The receiving side of the same act is
-/// `judge::offer`.
-pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
-    // OFFER what this court holds at first vantage. Without
-    // this the exchange has nothing to move: a ruled root only
-    // moves once a peer has glued a provisional, and a peer only
-    // sees a provisional when it is offered. `moved false` on
-    // every cycle was that deadlock.
-    // Both budgets are this court's own strokes (rule 5): what it offers in
-    // one cycle and how many witnesses it reaches are what its metabolism
-    // affords, not a default's. A court that cannot be read offers nothing.
-    let (offers, mut offer_budget) = match kernel.lock() {
-        Ok(mut k) => {
-            let mut b = k.stroke();
-            let offers = k.offers_pending(&mut b);
-            (offers, k.stroke())
-        }
-        Err(_) => return,
+/// THE OFFERS ONE TRANSITION EMITTED, sent when it returns (47.3). A word
+/// is offered by the act that admitted it to the docket, or by a transition
+/// that carried it — a sentence waiting on it, a peer arriving on its chart
+/// — and by nothing else: no round scans the docket for words to offer. The
+/// receiving side of the same act is `judge::offer`.
+///
+/// The budget is this court's own stroke (rule 5), spent one witness per
+/// spend. An offer goes to the hyphae covering the word's chart on the lanes
+/// it occupies (42.6, 47.3's nerve distance one); a chart no peer covers has
+/// no eligible witness, and the word waits for a transition that concerns it
+/// — its extent, if nothing does, ends its orbit at its lapse.
+pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, Vec<u8>)>) {
+    if offers.is_empty() {
+        return;
+    }
+    let Some(mut offer_budget) = kernel.lock().ok().map(|mut k| k.stroke()) else {
+        return;
     };
     let mut offered_out = 0usize;
-    // AN OFFER GOES TO THE HYPHAE COVERING ITS STRATUM, ONE PER
-    // SPEND. It went to every destination in `dests`, with a
-    // blocking `tell_peer` inside and neither a budget nor a
-    // resume cursor: rule 10's refused shape written out, "for peer
-    // in all_peers { exchange(peer) } on one stroke", and its
-    // "write instead" column says "one peer per spend with a resume
-    // cursor". Cost per cycle was offers × peers synchronous TCP
-    // round trips on one thread; at a thousand peers with ten
-    // offers that is ten thousand blocking connections before the
-    // cycle can do anything else, and at ten thousand it never
-    // completes -- the deadlock this loop was written to break,
-    // reintroduced by the loop itself.
-    //
-    // The destination set is not "everyone" either. 42.6 bounds the
-    // mesh cover by "the number of covering hyphae", and 47.3 says
-    // the witness "holds ruled sections over the chart, since
-    // replay needs them, so it is at nerve distance one from the
-    // home". That set is `cover.fiber(lane, &inv)` on the lanes the
-    // form occupies. A form whose chart no peer covers has no
-    // eligible witness and waits, which is the chapter's answer and
-    // not a failure to reach anyone.
     for (oaddr, elem) in offers {
         let mut pos = 0usize;
-        let Some(word) = mycelium::transducer::element::Element::from_bytes(&elem, &mut pos)
-        else {
+        let Some(word) = mycelium::transducer::element::Element::from_bytes(&elem, &mut pos) else {
             continue;
         };
         let inv = mycelium::transducer::stalk::invariant_of(&word);
@@ -59,20 +38,13 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             Ok(c) => c.witnesses(&inv, &word.magnitude(), &mesh.vk),
             Err(_) => mycelium::network::nerve::Keyed::new(),
         };
-        // 47.1: THE HOME SIGNS ITS OWN CAUSAL POSITION, with the
-        // offered ADDRESS as the payload. The three fields this
-        // replaces went out as `k: 0` and two all-zero signatures
-        // at this one call site, so nothing on the mesh ever signed
-        // an offer and the receiver had nothing to verify. A home
-        // that has adopted no origin, or holds no receipt yet, has
-        // no position to sign from and offers nothing.
-        // The prefix's chart is the offered word's (47.1), never the cover.
-        let Some(section) = crate::admission::sign_position(kernel, mesh, &inv, oaddr.as_bytes())
-        else {
+        // 47.1: THE HOME SIGNS ITS OWN CAUSAL POSITION, with the offered
+        // ADDRESS as the payload; a home with no origin or no receipt has no
+        // position to sign from and offers nothing. The prefix's chart is
+        // the offered word's (47.1), never the cover.
+        let Some(section) = crate::admission::sign_position(kernel, mesh, &inv, oaddr.as_bytes()) else {
             continue;
         };
-        // The witness set for THIS chart, which `Cover::witnesses` scoped;
-        // each is asked once, one per spend of the offer budget.
         for (vk, _) in witnesses.scoped() {
             if !offer_budget.spend() {
                 break;
@@ -80,45 +52,23 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             let Some(d) = mesh.addrs.lock().ok().and_then(|a| a.get(&vk).cloned()) else {
                 continue;
             };
-            let d = &d;
-            // 47.3, 47.5, S12.4d — RE-SENT ONLY AFTER THE WITNESS'S ANSWER OR
-            // ITS Λ. A witness that has answered is not asked again for this
-            // word; one that has answered nothing is asked again only once
-            // the round trips this court has measured to it say its Λ has
-            // elapsed since the offer left. Unmeasured, the offer stands: a
-            // silent witness is not polled. On the fleet of 2026-09-08 one
-            // hypha re-sent 12,165 offers in ten minutes.
             let Ok(witness) = <[u8; 32]>::try_from(vk.as_slice()) else {
                 continue;
             };
-            // An offer lapses only against a horizon the ledger counted: a
-            // peer with no measured round trip has none, and one beyond the
-            // ledger means nothing has waited that long.
-            let lambda = match crate::transport::rtt_floor(mesh, d.as_bytes()) {
-                None => None,
-                Some(floor) => {
-                    match mycelium::physics::from_transport(
-                        floor,
-                        mycelium::physics::aperture_cycle() as u64,
-                    ) {
-                        mycelium::physics::Lambda::Strokes(n) => Some(n),
-                        mycelium::physics::Lambda::BeyondTheLedger
-                        | mycelium::physics::Lambda::Unmeasured => None,
-                    }
-                }
-            };
-            let (standing, k_now) = match kernel.lock() {
-                Ok(k) => (k.offer_standing(oaddr.as_bytes(), &witness), k.k_step()),
+            // A witness that answered this word has given its vantage, and
+            // is not asked again (S12.4d).
+            let (answered, k_now) = match kernel.lock() {
+                Ok(k) => (
+                    matches!(
+                        k.offer_standing(oaddr.as_bytes(), &witness),
+                        Some(mycelium::cognition::OfferStanding::Answered)
+                    ),
+                    k.k_step(),
+                ),
                 Err(_) => continue,
             };
-            match (standing, lambda) {
-                (Some(mycelium::cognition::OfferStanding::Answered), _) => continue,
-                // The offer was made at a K this court has passed, so the
-                // wait is exact; one made in the future has not waited.
-                (Some(mycelium::cognition::OfferStanding::Pending { k }), Some(l))
-                    if k_now.checked_sub(k).is_some_and(|waited| waited >= l) => {}
-                (Some(mycelium::cognition::OfferStanding::Pending { .. }), _) => continue,
-                (None, _) => {}
+            if answered {
+                continue;
             }
             // An offer whose section cannot be framed is not spoken.
             let Some(body) = dialogue::encode_offer(&dialogue::Offer {
@@ -131,66 +81,30 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
             }) else {
                 continue;
             };
-            // The offer leaves: it stands pending at this witness from this
-            // K whether or not an answer comes back, and the round trip, or
-            // the silence, is the transport measure its Λ is read from.
             if let Ok(mut k) = kernel.lock() {
                 k.note_offered(oaddr.as_bytes(), witness, k_now);
             }
-            let Some((reply, dt)) = tell_peer(d, body) else {
+            let Some((reply, dt)) = tell_peer(&d, body) else {
                 crate::transport::note_rtt_timeout(mesh, d.as_bytes());
                 continue;
             };
             crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
-            // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE. The
-            // witness's reflex pool was full: it replayed nothing and the
-            // object keeps waiting. Read as an offer reply this frame was
-            // arm 2, a refusal by key `0000…`, logged 4,762 times on one
-            // hypha in ten minutes; the offer is asked again after that
-            // peer's Λ (S12.4d), never on the next cycle.
+            // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
+            // witness replayed nothing, and the word is carried again only
+            // by a transition that concerns it.
             if crate::transport::is_deferred(&reply) {
-                eprintln!(
-                    "  court offer deferred {:02x}{:02x}… by {d}",
-                    oaddr[0], oaddr[1]
-                );
+                eprintln!("  court offer deferred {:02x}{:02x}… by {d}", oaddr[0], oaddr[1]);
                 continue;
             }
-            // 47.3's SECOND VANTAGE. The peer replayed the offer
-            // on its own tapes and sent back the form it reached;
-            // that is a re-derivation, and the home converges on
-            // it by `same_vertex` (M1), never by comparing the
-            // bytes it happens to be spelled with. A reply with no
-            // form carries no vantage: the witness is UNMEASURED
-            // and the object keeps waiting, which is not the same
-            // as a witness that disagreed.
-            //
-            // THE VANTAGE IS THE KEY THE REPLY NAMES. This read the
-            // 32 bytes of the destination's BIND STRING as a
-            // verifying key: on any deployment whose addresses are
-            // not exactly 32 characters the `try_from` failed and
-            // every second vantage was dropped on the floor, and
-            // where it did not fail the witness was recorded under
-            // an ASCII address that no bond and no room answers to.
-            // Either way `converge_witness` never found an
-            // independent second organ and every germ stayed
-            // pending on one voice. An address is where a hypha
-            // answers; a vantage is a key.
+            // 47.3's SECOND VANTAGE, the key the reply names, and never this
+            // court's own (a voice never witnesses itself).
             let Some(w) = dialogue::decode_offer_reply(&reply) else {
                 continue;
             };
-            // A VOICE NEVER WITNESSES ITSELF (47.3).
             if w.vk() == mesh.vk {
                 continue;
             }
-            // THREE ARMS, MATCHED. The home tested `!w.refused.is_empty()`
-            // and then whether `w.reached` decoded -- two lengths standing
-            // in for the arm (checklist (b)). A refusal names the 34.1
-            // constant the witness slashed with; a form is the second
-            // vantage and goes to `converge_witness`, which compares the
-            // two re-derivations by `same_vertex` (M1); unmeasured is a
-            // witness that has re-derived nothing of its own, and the
-            // object keeps waiting.
             match w {
                 dialogue::Witnessed::Refused { vk, why } => {
                     eprintln!(
@@ -201,7 +115,6 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                         vk[1],
                         String::from_utf8_lossy(&why)
                     );
-                    // A refusal is the witness's answer (S12.4d).
                     if let Ok(mut k) = kernel.lock() {
                         k.note_witness_answered(oaddr.as_bytes(), vk);
                     }
@@ -210,11 +123,11 @@ pub(crate) fn offer_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                     "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
                     oaddr[0], oaddr[1], vk[0], vk[1]
                 ),
+                // The witness's re-derivation, read by the word's key: it
+                // converges the word, and the ruling closes its orbit.
                 dialogue::Witnessed::Reached { vk, form } => {
                     let mut p = 0usize;
-                    let Some(theirs) =
-                        mycelium::transducer::element::Element::from_bytes(&form, &mut p)
-                    else {
+                    let Some(theirs) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
                         continue;
                     };
                     if let Ok(mut k) = kernel.lock() {

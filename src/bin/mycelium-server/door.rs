@@ -190,10 +190,13 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         None => eprintln!("  registry snapshot refused: a cursor, the count or an address passes its field"),
                     }
                     drop(reg);
-                    let paid = {
+                    let (paid, offers) = {
                         let Ok(mut k) = door.kernel.lock() else { return true };
-                        k.pay_solve(&tid, svoice, tension, rule_elem.as_ref(), &withheld)
+                        let paid = k.pay_solve(&tid, svoice, tension, rule_elem.as_ref(), &withheld);
+                        (paid, k.take_offers())
                     };
+                    // The solving rule docketed is offered by the act that docketed it.
+                    crate::offer::offer(&door.kernel, &door.mesh, offers);
                     let hear = {
                         let Ok(mut roots) = door.roots.lock() else { return true };
                         note_root(&mut roots, &tid, svoice, 0)
@@ -213,10 +216,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 }
                 mycelium::registry::SolveYield::VerifyFloor => {
                     drop(reg);
-                    let paid = {
+                    let (paid, offers) = {
                         let Ok(mut k) = door.kernel.lock() else { return true };
-                        k.pay_solve(&tid, svoice, [0, 0, 1, 0], rule_elem.as_ref(), &withheld)
+                        let paid = k.pay_solve(&tid, svoice, [0, 0, 1, 0], rule_elem.as_ref(), &withheld);
+                        (paid, k.take_offers())
                     };
+                    crate::offer::offer(&door.kernel, &door.mesh, offers);
                     let hear = {
                         let Ok(mut roots) = door.roots.lock() else { return true };
                         note_root(&mut roots, &tid, svoice, 0)

@@ -92,8 +92,10 @@ assert_eq!(
 );
 }
 
-/// A listing that stands an aperture of receipts behind the head
-/// releases its draw; occupancy returns; nothing is slashed.
+/// 78.37 (3), FX1 — A LISTING NOTHING FLOWS TO FOR A WHOLE ORBIT LAPSES by
+/// `ZeroFlux`, at the close of the court's orbit: its draw is released,
+/// occupancy returns, and nothing is slashed. Through the orbit it was
+/// listed in and the one after it, it stands.
 #[test]
 fn docket_draw_releases_on_lapse() {
 let mut k = Kernel::new();
@@ -103,59 +105,19 @@ assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(k.pending.len(), 1, "listed");
 let occ = k.occupancy();
 assert!(occ.iter().any(|&x| x > 0), "the draw occupies");
-let lambda = crate::physics::aperture_cycle() as u64;
-#[expect(clippy::disallowed_methods, reason = "rule 11 — the fixture's height is a few acts and lambda one aperture cycle: far inside u64")]
-let past = k.height().saturating_add(lambda);
-k.set_height(past);
-k.court_stroke(one_stroke_transport);
-assert!(k.pending.is_empty(), "the listing lapsed");
+let elsewhere = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 7]);
+// The orbit it was listed in closes: it flowed in it, so it stands.
+k.orbit();
+assert_eq!(k.pending.len(), 1, "an orbit that carried its admission keeps it");
+// A whole orbit passes with nothing flowing to it.
+k.note_served(&elsewhere, [3; 32]);
+k.orbit();
+assert!(k.pending.is_empty(), "the listing lapsed by zero flux");
 assert_eq!(k.occupancy(), [0; 4], "the draw released");
 assert!(
     !k.treasury().entries().iter().any(|e| e.kind == crate::economy::Kind::Slash),
     "lapse does not slash"
 );
-}
-
-/// 47.5, Stage 11 I20 — Λ IS PER CHART. The lapse asks the caller with the
-/// listing's chart (`invariant_of` of the pending element), the listing's
-/// magnitude and this court's room — the three coordinates the Cover's
-/// `home` reads (16.11) — and never with the listing's address, which the
-/// router could only place by XOR distance. A caller that records what it
-/// was asked is asked exactly those coordinates, once for the one pending
-/// listing; a caller that has measured no transport lapses nothing.
-#[test]
-fn the_lapse_asks_lambda_with_the_listing_chart_magnitude_and_the_court_room() {
-let mut k = Kernel::new();
-let a = vec![(0, 0, 1u8)];
-let b = vec![(0, 0, 2u8)];
-assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-let listed = k
-    .pending
-    .scoped()
-    .next()
-    .map(|(_, e)| e.clone())
-    .expect("listed");
-let want_chart = crate::transducer::stalk::invariant_of(&listed);
-let want_mag = listed.magnitude();
-let room = k.lane_room().expect("this court's room reads");
-let want_room: [u64; 4] = room;
-// INSIDE this court's own horizon, so what the pass proves is WHAT Λ IS
-// ASKED WITH and not what an unmeasured answer does with it: past the
-// horizon the listing now leaves on the court's own aperture (the
-// stroke-duration ruling), which would empty the book before the
-// assertions below could read it.
-k.set_height(1);
-let asked = std::cell::RefCell::new(Vec::new());
-k.court_stroke(|chart, mag, room| {
-    asked.borrow_mut().push((chart.clone(), *mag, *room));
-    crate::physics::Lambda::Unmeasured
-});
-let asked = asked.into_inner();
-assert_eq!(asked.len(), 1, "Λ is asked once, for the one pending listing: {asked:?}");
-assert_eq!(asked[0].0, want_chart, "with the listing's chart, never its address");
-assert_eq!(asked[0].1, want_mag, "with the listing's magnitude, so the occupied lanes route it");
-assert_eq!(asked[0].2, want_room, "and with this court's room, so it is a candidate home");
-assert_eq!(k.pending.len(), 1, "and inside the horizon the listing stands");
 }
 
 /// D12 — THE ESCROW-PRICED DOOR: a calm mesh keeps a free door; a
@@ -441,9 +403,12 @@ let first_a = list(&mut ha, 4);
 let first_b = list(&mut hb, 4);
 assert_eq!(first_a, first_b);
 // Advance K on ha only — eight orbits, each an act and its close (OK1);
-// TUniversal stays the clock we set.
+// TUniversal stays the clock we set. The listing is spoken again in each
+// orbit, so flux reaches it and it does not lapse by zero flux (78.37 (3)):
+// what moves it is T, which is the claim.
 for _ in 0..8 {
     ha.append_step(crate::chronometry::ActKind::List, [1; 32], [2; 32]);
+    let _ = list(&mut ha, 4);
     ha.orbit();
 }
 assert!(ha.k_step() > hb.k_step());

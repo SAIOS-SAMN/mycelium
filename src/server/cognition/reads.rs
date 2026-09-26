@@ -138,7 +138,7 @@ impl Kernel {
     }
 
     pub fn offered(&self, addr: &[u8]) -> bool {
-        self.offered.get(addr).is_some()
+        self.in_flight(addr)
     }
 
     pub fn dialect_len(&self) -> usize {

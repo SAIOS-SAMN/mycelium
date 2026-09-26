@@ -62,7 +62,7 @@ impl Kernel {
                 return [0; 4];
             }
             self.docket_connection(rule, voice);
-            self.offered.insert(rule.address(), ());
+            self.enter_offered(rule.address().as_bytes());
         }
         // A task with no listings bound to it has none: the reading of
         // absence on a keyed carrier.

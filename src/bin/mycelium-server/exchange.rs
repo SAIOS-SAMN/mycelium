@@ -9,7 +9,7 @@ use crate::admission::{admit_peer_digest, admit_peer_receipt, rebuild_own_cover,
 use crate::door::{intake_corpus, relocate_corpus};
 use crate::persist::persist_if_due;
 use crate::syllabus::{syllabus_admit, Syllabus};
-use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer, withholding_lambda};
+use crate::transport::{note_rtt_ok, note_rtt_timeout, tell_peer};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
 use mycelium::court::identity::HyphaKey;
@@ -32,9 +32,7 @@ pub(crate) type Origin = ([u8; 32], u32);
 /// holds one lock while taking another. The kernel is taken first, and
 /// under it, in this order and never the reverse: `cover`, then `rooms`,
 /// then `addrs` (`homes_here`, the glue in the exchange and the offer
-/// judge, the court stroke's Λ in
-/// `withholding_lambda`), then, those three released, `rtt_window` (the
-/// same Λ). The router is never taken under the kernel. No path holds a
+/// judge), then, those three released, `rtt_window`. The router is never taken under the kernel. No path holds a
 /// mesh lock, the router, the registry, the syllabus, the roots or the
 /// origin while it takes the kernel: `sign_position`, `admit_peer_receipt`
 /// and the two judges read `origin` and drop it before the kernel; the
@@ -276,7 +274,10 @@ impl Exchange {
         loop {
             std::thread::yield_now();
             if let Ok(mut k) = kernel.lock() {
-                k.court_stroke(|chart, mag, room| withholding_lambda(&mesh, chart, mag, room));
+                k.court_stroke();
+                // The words the stroke moved onto the docket — a rewrite, the
+                // citers a slash re-docketed — are offered by it.
+                let offers = k.take_offers();
                 let seed = k.syllabus_seed();
                 // 23.8, S13.4: the door's deficit, read under the kernel and
                 // handed to the listener's deferral without it.
@@ -288,6 +289,7 @@ impl Exchange {
                 if let Ok(mut sy) = syllabus.lock() {
                     syllabus_admit(&mut sy, seed);
                 }
+                crate::offer::offer(&kernel, &mesh, offers);
             }
             persist_if_due(&kernel, &state_path);
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
@@ -533,6 +535,20 @@ impl Exchange {
                                     from = dialogue::cover_cursor(*lane, inv);
                                 }
                                 drop(c);
+                                // A PEER ARRIVING ON A CHART is a transition for
+                                // every word in flight under it: each is carried
+                                // to the peer that now covers it, and the
+                                // carriage draws on its escrow (47.3, 78.42).
+                                let offers = match kernel.lock() {
+                                    Ok(mut k) => {
+                                        for (_, inv) in &cover.charts {
+                                            k.carry_chart(inv);
+                                        }
+                                        k.take_offers()
+                                    }
+                                    Err(_) => Vec::new(),
+                                };
+                                crate::offer::offer(&kernel, &mesh, offers);
                                 eprintln!("  court cover read {read} charts from {d} more {more}");
                                 if !more || read == 0 {
                                     break;
@@ -679,7 +695,6 @@ impl Exchange {
                     genesis_written.store(true, std::sync::atomic::Ordering::Relaxed);
                 }
             }
-            crate::offer::offer_round(&kernel, &mesh);
             // 47.3, S13.10: a fold proposed on the docket circuit is carried
             // to a witness here and sealed on its co-signature.
             crate::fold::fold_round(&kernel, &mesh);

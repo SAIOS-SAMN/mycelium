@@ -277,7 +277,7 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     let inv = crate::transducer::stalk::invariant_of(&spoken);
 
     // Ruling own provisional creates own_section with spoken's geometry
-    own.court_stroke(one_stroke_transport);
+    own.court_stroke();
     let cx = own.complexes().get(&inv.key()).expect("complex exists");
     let own_sec = cx.sections.get(me.as_slice()).expect("own section exists");
     let exp_gamma = match spoken.carried_rotor() {

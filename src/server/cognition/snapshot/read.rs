@@ -476,12 +476,16 @@ impl Kernel {
             .collect();
         for addr in pending_addrs {
             if self.standing_h.get(&addr).is_none() {
-                self.standing_h.insert(addr, self.height());
+                self.standing_h.insert(&addr, self.height());
             }
+            self.note_flux(addr.as_bytes());
         }
+        // Each restored provisional word's orbit opens again: it is in flight,
+        // filed where it lapses, and offered by the next transition taken.
         let prov: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
         for addr in prov {
             self.stamp_standing(&addr);
+            self.enter_offered(&addr);
         }
         // Ruled cover is the lettered federation, not the leaked basis.
         self.ruled = crate::transducer::stalk::Stalks::over_elements(

@@ -263,6 +263,112 @@ fn a_ruled_word_is_filed_at_the_chart_its_vertex_acts_on() {
     }
 }
 
+/// A sentence citing `word`'s own word vertex once — the cited form's real
+/// coordinates, read off its address by the court's decoder — and turning
+/// on a plane of its own beside it, so it says more than the word it cites
+/// and is not merely a use of it.
+fn citer_of(word: &Element, tag: u8) -> Element {
+    let beyond = LetterId::quarter((0, 3)).expect("a quarter turn on another plane of the base");
+    let f = crate::transducer::sentence::from_element_form(word).expect("the cited form decodes");
+    let vertex = f
+        .vertices
+        .entries()
+        .find_map(|(_, v)| match v {
+            Vertex::Word { address, .. } => Some(address.clone()),
+            _ => None,
+        })
+        .expect("the cited form has a word vertex");
+    sentence_with(Derivation::compose(&[(word.address(), vertex, 1, quarter(1))], Word::from_letters(&[(beyond, false)])), tag)
+}
+
+/// 47.3, 76, 78.42 — A PROVISIONAL WORD'S ORBIT, PRESSURED AND CLOSED. The
+/// word's admission emits its offer. A sentence waiting on it is its
+/// pressure: the sentence's frame is transported to the word's escrow and the
+/// word is carried again, the carriage drawing the word's own frame. The
+/// witness's re-derivation, read by the word's key, converges it; the ruling
+/// closes the orbit, the word leaves the offered set, and the sentence that
+/// waited (D) is heard, stands, and is itself witnessed and ruled.
+#[test]
+fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
+    let mut k = Kernel::new();
+    let word = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let w = word.address();
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&word)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "the court hears the word"
+    );
+    let admitted = k.take_offers();
+    assert!(admitted.iter().any(|(a, _)| *a == w), "its admission emitted its offer");
+    let escrow_before = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu).expect("the word is under escrow");
+    let citer = citer_of(&word, 9);
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&citer)),
+        vec![crate::anastome::dialogue::SPEECH_DIALECT],
+        "the citer waits on the word (D)"
+    );
+    // THE PRESSURE, in the algebra of the lanes: the citer's frame arrived
+    // and one carriage drew the word's own, exactly.
+    let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu).expect("still under escrow");
+    let expected: [u64; 4] =
+        std::array::from_fn(|l| escrow_before[l] + citer.magnitude()[l] - word.magnitude()[l]);
+    assert_eq!(escrow_after, expected, "escrow + citer's frame − the carriage's draw, per lane");
+    assert!(k.take_offers().iter().any(|(a, _)| *a == w), "and the carriage emitted the word's offer again");
+    // A bonded second vantage re-derives the word; the ruling closes its orbit.
+    let witness = [2u8; 32];
+    k.enroll(witness, [12, 3, 0, 20]);
+    k.witness_rederived(&w, witness, word.clone());
+    assert!(k.ruled_contains(w.as_bytes()), "the word is ruled");
+    assert!(!k.in_flight(w.as_bytes()), "and its orbit closed: it left the offered set");
+    assert_eq!(k.awaiting_len(w.as_bytes()), 0, "the citer was heard when its word was ruled");
+    // The citer, heard, stands: its own admission offered it, and a second
+    // vantage rules it.
+    assert!(k.take_offers().iter().any(|(a, _)| *a == citer.address()), "the citer's admission offered it");
+    k.witness_rederived(&citer.address(), witness, citer.clone());
+    assert!(k.ruled_contains(citer.address().as_bytes()), "D → upheld");
+}
+
+/// 78.37 (3), FX1 — A WORD NOTHING FLOWS TO FOR A WHOLE ORBIT LAPSES by
+/// `ZeroFlux`. No witness answers it. Through the orbit it was admitted in
+/// and the one after, the citer's pressure among them, it stands; when an
+/// orbit of the court closes with nothing having flowed to it on any lane,
+/// it lapses there, read by key: what escrow is left returns at the door,
+/// the lapse is the court's act, the word leaves the docket, and the
+/// sentence that waited on it is released as the demand it is (D), refused
+/// by name and recorded.
+#[test]
+fn a_word_nothing_flows_to_for_an_orbit_lapses_and_its_citer_is_released_as_d() {
+    let mut k = Kernel::new();
+    let word = sentence_with(Derivation::spelled(quarter(1)), 1);
+    let w = word.address();
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&word)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD]
+    );
+    let citer = citer_of(&word, 9);
+    assert_eq!(
+        k.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&citer)),
+        vec![crate::anastome::dialogue::SPEECH_DIALECT]
+    );
+    let elsewhere = Address::from_bytes([TAG_FORM, 7]);
+    k.orbit();
+    assert!(k.provisional.contains(w.as_bytes()), "the orbit that carried its flux keeps it");
+    k.note_served(&elsewhere, [3; 32]);
+    let before = k.chain().own_len();
+    k.orbit();
+    assert!(!k.provisional.contains(w.as_bytes()), "a whole orbit with no flux: it lapses");
+    assert!(k.treasury().escrow_of(w.as_bytes()).is_none(), "its escrow returned at the door");
+    assert!(!k.in_flight(w.as_bytes()), "its orbit ended");
+    assert!(k.chain().own_len() > before, "and the lapse is the court's own act");
+    assert_eq!(k.awaiting_len(w.as_bytes()), 0, "no sentence waits on a word that lapsed");
+    let released = k.refusals.get(citer.address().as_bytes()).expect("the citer was answered, and recorded");
+    assert_eq!(
+        crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_GLUED_UNRULED, &citer).kind(),
+        released.kind,
+        "released as the demand it is: a word this court does not hold"
+    );
+}
+
 /// The docket is keyed by the address waited on and by the sentence
 /// inside it: a voice that speaks one sentence twice waits once, and the
 /// bucket does not grow with repetition (rule 10).

@@ -15,6 +15,13 @@ impl Kernel {
     /// receipt this act seals (45.1): a book that cannot say which vantage
     /// an install stood on cannot re-derive the install.
     pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32]) {
+        // THE ORBIT CLOSES WHOLE BEFORE WHAT WAITED ON IT IS HEARD. Ruling the
+        // word re-hears its citers, and it did so before this act released the
+        // word's own draw — so a citer spoken by the same voice met a room
+        // still full and was deferred, and the deferral was dropped: the
+        // sentence was neither heard nor waiting. The waiting sentences are
+        // held across the close and heard after it.
+        let waiting = self.awaiting.remove(addr);
         let held = self.word_at(addr).cloned().or_else(|| self.provisional.get(addr).cloned());
         // L8y: the voice whose draw this address occupies is `drawers`,
         // and where `pending_take` already cleared it the speaker recorded
@@ -85,11 +92,15 @@ impl Kernel {
             let _ = self.treasury.revoke_award(addr, false);
         }
         self.unlist(addr, false);
-        self.provisional.remove(addr);
+        self.leave_provisional(addr);
         self.court_upheld += 1;
         self.mark_persist();
         if let Some(w) = self.word_at(addr).cloned() {
             self.note_form_citations(addr, &w);
+        }
+        if let Some(bucket) = waiting {
+            self.awaiting.insert(addr, bucket);
+            self.rehear_awaiting(addr);
         }
     }
 
@@ -239,7 +250,11 @@ impl Kernel {
             .collect();
         for c in citers {
             if let Some(w) = self.word_at(&c).cloned() {
-                self.provisional.insert(c, w);
+                // Back on the docket, and its orbit opens again: its ruling
+                // stood on the word just slashed, so a second vantage must
+                // re-derive it (47.3).
+                self.provisional.insert(&c, w);
+                self.enter_offered(&c);
             }
         }
     }

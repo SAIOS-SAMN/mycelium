@@ -306,7 +306,7 @@ for (hue, voices) in [(4u8, [[1; 32], [2; 32]]), (5, [[3; 32], [4; 32]])] {
         assert_eq!(speak_pair(&mut k, &a, &b, v), Outcome::GermPending);
     }
 }
-k.court_stroke(super::common::one_stroke_transport);
+k.court_stroke();
 let docketed: Vec<Vec<u8>> = k.provisional.scoped().map(|(a, _)| a).collect();
 for addr in &docketed {
     assert!(k.apply_verdict(addr, RULING_UPHELD), "upheld");

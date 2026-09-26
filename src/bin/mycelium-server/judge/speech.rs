@@ -22,8 +22,13 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(act) = dialogue::decode_speech(&frame.body) else {
         return;
     };
-    let heard = match kernel.lock() {
-        Ok(mut k) => k.hear_frame(&act),
+    // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
+    // the sentences waiting on a word carried, it offers when it returns.
+    let (heard, offers) = match kernel.lock() {
+        Ok(mut k) => {
+            let heard = k.hear_frame(&act);
+            (heard, k.take_offers())
+        }
         Err(_) => return,
     };
     let body = match heard {
@@ -38,4 +43,6 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
+    // The voice is answered first; the offers leave after, from this act.
+    crate::offer::offer(kernel, &door.mesh, offers);
 }

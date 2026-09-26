@@ -93,7 +93,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole (20 as ruled, L7)
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending, "the sentence is listed");
 speak_pair(&mut k, &a, &b, [2; 32]);
-k.court_stroke(super::common::one_stroke_transport);
+k.court_stroke();
 let hot = (
     k.field_hot_len(),
     k.pending.len(),
@@ -102,7 +102,7 @@ let hot = (
     k.provisional.len(),
 );
 for _ in 0..16 {
-    k.court_stroke(super::common::one_stroke_transport);
+    k.court_stroke();
 }
 assert_eq!(
     (

@@ -42,6 +42,9 @@ impl Kernel {
         if self.standing_h.get(addr).is_none() {
             self.standing_h.insert(addr, h);
         }
+        // A word standing on the book or the docket: its admission is the
+        // first flux that reaches it (78.37 (3)).
+        self.note_flux(addr);
     }
 
     /// The root of this court's own stratum over `inv` — the SAME
@@ -212,9 +215,7 @@ impl Kernel {
             self.cavities.push(w);
             self.chill_field(addr);
         }
-        self.provisional.remove(addr);
-        self.offered.remove(addr);
-        self.offered_to.remove(addr);
+        self.leave_provisional(addr);
         if self.lane_listings[2].contains(addr) {
             // The lane lists it, so the lane carries it; a lane at zero
             // listing something is a broken count and stays at zero.
@@ -731,30 +732,98 @@ impl Kernel {
     }
 
 
-    /// The germs this court has Offered and still holds provisionally, with
-    /// their tapes — what a second organ needs in order to replay them.
-    /// Bounded by the caller's `Budget`: an offer is work like any other and
-    /// a stroke sends what it can pay for, never the whole docket.
-    pub fn offers_pending(
-        &self,
-        budget: &mut crate::physics::Budget,
-    ) -> Vec<(crate::transducer::address::Address, Vec<u8>)> {
-        let mut out = Vec::new();
-        for (addr, _) in self.offered.scoped() {
-            if !budget.spend() {
-                break;
+    /// A WORD LEAVES THE PROVISIONAL ROW — installed, ruled, slashed,
+    /// relocated or lapsed — and the offer it stood under leaves with it, at
+    /// the transition that closed its orbit and nowhere else: the ruling
+    /// returns it.
+    pub(crate) fn leave_provisional(&mut self, addr: &[u8]) -> Option<Element> {
+        if let Some(w) = self.provisional.get(addr) {
+            let chart = crate::transducer::stalk::invariant_of(w).key();
+            if let Some(on_chart) = self.offered.get_mut(chart.as_bytes()) {
+                on_chart.remove(addr);
             }
-            let Some(w) = self.provisional.get(&addr) else {
+        }
+        self.offered_to.remove(addr);
+        self.provisional.remove(addr)
+    }
+
+    /// 47.3 — A PROVISIONAL WORD'S ORBIT OPENS: admitted to the docket, it is
+    /// in flight under its chart and its offer is emitted by the admitting
+    /// act, sent by that act's caller when it returns. Nothing later scans
+    /// for pending offers.
+    pub(crate) fn enter_offered(&mut self, addr: &[u8]) {
+        let Some(w) = self.provisional.get(addr) else { return };
+        let chart = crate::transducer::stalk::invariant_of(w).key();
+        self.offered.nested_insert(chart.as_bytes(), addr, ());
+        self.emitted.push(Address::from(addr.to_vec()));
+    }
+
+    /// Whether the word at `addr` is in flight — read by its own key.
+    pub(crate) fn in_flight(&self, addr: &[u8]) -> bool {
+        self.provisional.get(addr).is_some_and(|w| {
+            let chart = crate::transducer::stalk::invariant_of(w).key();
+            self.offered.get(chart.as_bytes()).is_some_and(|on_chart| on_chart.contains(addr))
+        })
+    }
+
+    /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, with their records —
+    /// what a second organ needs in order to replay them. The caller that
+    /// ran the transition sends them when it returns. A word that left the
+    /// docket within the same transition is not offered, and a word whose
+    /// record does not write is not offered (STD1 3c).
+    pub fn take_offers(&mut self) -> Vec<(Address, Vec<u8>)> {
+        let emitted = std::mem::take(&mut self.emitted);
+        let mut out: Vec<(Address, Vec<u8>)> = Vec::new();
+        for addr in emitted {
+            if out.iter().any(|(a, _)| *a == addr) {
+                continue;
+            }
+            let Some(record) = self.provisional.get(addr.as_bytes()).and_then(Element::to_bytes) else {
                 continue;
             };
-            // A word whose record does not write is not offered (STD1 3c):
-            // no record can carry it to a witness.
-            let Some(record) = w.to_bytes() else {
-                continue;
-            };
-            out.push((crate::transducer::address::Address::from(addr), record));
+            out.push((addr, record));
         }
         out
+    }
+
+    /// 76, 78.42 (3) — PRESSURE ON A WORD IN FLIGHT: a sentence that cites it
+    /// transports its frame to the word's escrow, and carries the word — a
+    /// transition concerning it. A word this court does not hold in flight
+    /// takes no pressure here.
+    pub(crate) fn press(&mut self, addr: &[u8], frame: [u64; 4]) {
+        if !self.in_flight(addr) {
+            return;
+        }
+        if self.treasury.credit_escrow(addr, frame).is_none() {
+            self.overflowed += 1;
+        }
+        self.note_flux(addr);
+        self.carry(addr);
+    }
+
+    /// A TRANSITION CARRIES A WORD IN FLIGHT: its offer is emitted again, and
+    /// the carriage draws the word's own frame from its escrow, per lane. A
+    /// word whose escrow cannot pay the draw is exhausted and lapses here.
+    pub(crate) fn carry(&mut self, addr: &[u8]) {
+        let Some(frame) = self.provisional.get(addr).map(Element::magnitude) else { return };
+        match self.treasury.carry_escrow(addr, frame) {
+            Some(Ok(_)) => {
+                self.note_flux(addr);
+                self.emitted.push(Address::from(addr.to_vec()));
+            }
+            Some(Err(_)) => self.lapse_word(addr),
+            None => {}
+        }
+    }
+
+    /// A TRANSITION ON A CHART — a peer's cover admitting it — carries every
+    /// word in flight under that chart: one fiber, read by the chart's key.
+    pub fn carry_chart(&mut self, chart: &crate::transducer::stalk::Invariant) {
+        let Some(fiber) = self.offered.fiber_at(chart.key().as_bytes()) else { return };
+        let words: Vec<Vec<u8>> = fiber.flat_map(|(_, on_chart)| on_chart.scoped().map(|(a, _)| a)).collect();
+        for w in words {
+            self.carry(&w);
+        }
     }
 
     /// What the offer of `addr` stands at for `witness` (S12.4d): `None`

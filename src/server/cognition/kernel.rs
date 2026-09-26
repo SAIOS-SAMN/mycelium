@@ -156,8 +156,25 @@ pub struct Kernel {
     /// Unreachable listings for the court docket: the cavity is the
     /// element itself. Drained as the court pulls.
     pub(crate) cavities: Vec<Element>,
-    /// First-vantage words already Offered.
-    pub(crate) offered: crate::network::nerve::Keyed<()>,
+    /// THE ORBITS IN FLIGHT: each provisional word offered at first vantage,
+    /// filed under its chart's key and then its address — read by key, or
+    /// by one chart's fiber when a transition on that chart arrives, and
+    /// never walked.
+    pub(crate) offered: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    /// THE OFFERS THE TRANSITION IN HAND EMITTED: a word admitted to the
+    /// docket, or carried by pressure, is offered by the act that moved it,
+    /// and its caller sends them when the act returns (`take_offers`).
+    /// Emptied by that caller, never read later.
+    pub(crate) emitted: Vec<Address>,
+    /// WHERE EACH HELD WORD LAPSES (78.37 (3), FX1): a listing or a
+    /// provisional word, filed under the `K` of the last flux that reached
+    /// it, then its address. At each close of the court's orbit the words
+    /// nothing flowed to for a whole orbit are read there by key and lapse
+    /// by `ZeroFlux`; nothing in flight is walked.
+    pub(crate) lapse_at: crate::network::nerve::Keyed<()>,
+    /// Each held word's last flux `K`: the coordinate its `lapse_at` key was
+    /// written with, read to re-file it.
+    pub(crate) flux_k: crate::network::nerve::Keyed<u64>,
     /// Per offered word, per witness: what the offer stands at (S12.4d).
     /// In-memory work, never persisted: a restart offers once more and the
     /// witness's own idempotence by receipt (23.8) answers the repeat.
@@ -434,10 +451,6 @@ pub struct Kernel {
     pub(crate) open: crate::network::nerve::Keyed<()>,
     /// Keyed cursor into `open` for court_stroke.
     pub(crate) open_cursor: Option<Vec<u8>>,
-    /// Keyed cursor into `pending` for the lapse (45.7): the stroke's circuit
-    /// over the docket resumes where the last one left off, so a book that
-    /// outgrows one stroke's budget is still read whole across strokes.
-    pub(crate) lapse_cursor: Option<Vec<u8>>,
     /// The docket's circuits (45.7, S13.3): the circuits of `open` the court
     /// stroke completed and the strokes the last one took, written once
     /// per circuit as `court circuit docket` — the court's local time

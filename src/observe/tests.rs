@@ -218,6 +218,29 @@ fn the_census_of_a_tally_carries_each_plane_by_its_blade() {
     assert_eq!(p.counts.len(), 1, "and no other");
 }
 
+/// THE CENSUS CLASSIFIES ITSELF, typed and read off its counts: nothing read;
+/// every turn on the sensor's plane — FLATTENED, five other harmonic planes
+/// declared and never turned; and a turn on a second plane of the base,
+/// turning on two of the six. The transitions are noted by the engine's own
+/// census move on rotors of the letters' chart.
+#[test]
+fn the_census_classifies_what_it_turned_on() {
+    use crate::transducer::alphabet::Rotor;
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let _ = cga::take_plane_tally();
+    assert_eq!(Planes::of(&cga::take_plane_tally()).turning(), Turning::Unread);
+    let still = cga::Mv::scalar(q(1, 1));
+    let on_grid = Rotor::scalar(q(3, 5)).add(&Rotor::blade(0b0011, q(4, 5)));
+    cga::note_transition(&on_grid, &still);
+    let flat = Planes::of(&cga::take_plane_tally());
+    assert_eq!(flat.turning(), Turning::Flattened { other: 5 }, "every turn on e1e2");
+    cga::note_transition(&on_grid, &still);
+    let on_03 = Rotor::scalar(q(3, 5)).add(&Rotor::blade(0b1001, q(4, 5)));
+    cga::note_transition(&on_03, &still);
+    let two = Planes::of(&cga::take_plane_tally());
+    assert_eq!(two.turning(), Turning::Turns { turned: 2, of: 6 }, "a turn off the sensor's plane");
+}
+
 /// A process's store folds what it produced and holds what it was pushed as
 /// it stands; a query reads one source by its prefix.
 #[test]

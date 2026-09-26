@@ -439,17 +439,18 @@ fn dimensions(p: &Planes) -> Vec<String> {
         .join("  ");
     let parabolic_used = parabolic.iter().filter(|&&(i, q)| p.count_parabolic(i, q) > 0).count();
     let used = |planes: &[usize]| planes.iter().filter(|&&b| p.count(b) > 0).count();
-    let grid = cga::E1 | cga::E2;
-    let turned: Vec<usize> = harmonic.iter().copied().filter(|&b| p.count(b) > 0).collect();
-    let verdict = match (p.read, turned.as_slice()) {
-        (0, _) => format!("{DIM}no transition read yet{RESET}"),
-        (_, []) => format!("{YELLOW}nothing turned: every transition was a boost, a slip or the identity{RESET}"),
-        (_, [only]) if *only == grid => format!(
-            "{RED}{BOLD}FLATTENED{RESET}{RED} — every turn stands on the sensor's plane {}; {} other harmonic planes declared and never turned{RESET}",
-            cga::plane_name(grid),
-            harmonic.len() - 1
+    // The classification is the reading's own (`Planes::turning`); the
+    // console renders it.
+    let verdict = match p.turning() {
+        observe::Turning::Unread => format!("{DIM}no transition read yet{RESET}"),
+        observe::Turning::Unturned => {
+            format!("{YELLOW}nothing turned: every transition was a boost, a slip or the identity{RESET}")
+        }
+        observe::Turning::Flattened { other } => format!(
+            "{RED}{BOLD}FLATTENED{RESET}{RED} — every turn stands on the sensor's plane {}; {other} other harmonic planes declared and never turned{RESET}",
+            cga::plane_name(cga::E1 | cga::E2)
         ),
-        _ => format!("{GREEN}turns on {} of {} harmonic planes{RESET}", turned.len(), harmonic.len()),
+        observe::Turning::Turns { turned, of } => format!("{GREEN}turns on {turned} of {of} harmonic planes{RESET}"),
     };
     vec![
         format!(

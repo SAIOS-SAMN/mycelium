@@ -16,7 +16,7 @@ impl Kernel {
         }
         let addr = rw.address();
         self.docket_connection(&rw, voice);
-        self.offered.insert(addr, ());
+        self.enter_offered(addr.as_bytes());
         true
     }
 

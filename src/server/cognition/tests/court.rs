@@ -50,10 +50,10 @@ let mut k = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-let mut budget = k.stroke();
-let offers = k.offers_pending(&mut budget);
-// One germ was spoken, so one offer stands.
+// The admitting act emitted its offer: one germ was spoken, so one offer.
+let offers = k.take_offers();
 let [(addr, _)] = offers.as_slice() else { panic!("the germ is offered at first vantage") };
+assert!(k.take_offers().is_empty(), "taken once: the transition's offers are its own");
 let witness = [7u8; 32];
 assert_eq!(k.offer_standing(addr.as_bytes(), &witness), None, "not yet offered to this witness");
 let now = k.k_step();
@@ -142,7 +142,7 @@ let b = vec![(0, 0, 4), (0, 1, 4), (0, 3, 3)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 assert_eq!(speak_pair(&mut home, &a, &b, [2; 32]), Outcome::GermPending);
 assert_eq!(home.basis_len(), 0);
-home.court_stroke(one_stroke_transport);
+home.court_stroke();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
 assert!(matches!(
@@ -194,9 +194,9 @@ let ruled_n = |k: &Kernel, addrs: &[crate::transducer::address::Address]| {
         })
         .count()
 };
-k.court_stroke(one_stroke_transport);
+k.court_stroke();
 assert_eq!(ruled_n(&k, &addrs), cap, "one stroke rules a spend of unruled listings, not already-ruled ones");
-k.court_stroke(one_stroke_transport);
+k.court_stroke();
 assert_eq!(ruled_n(&k, &addrs), cap + 1, "later listings are not starved by already-ruled ones");
 }
 
@@ -250,7 +250,7 @@ let cap = crate::physics::Physics::default().stroke().remaining();
 for i in 0..(cap + 1) {
     assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32]), Adoption::Installed));
 }
-k.court_stroke(one_stroke_transport);
+k.court_stroke();
 assert_eq!(k.docket_circuits().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
 // The stroke above yielded keys, so the docket's cursor stands.
 let resume = k.open_cursor.clone().expect("one stroke over the docket set the cursor");
@@ -269,7 +269,7 @@ let mut strokes = 0;
 while !k.ruled_contains(addr.as_bytes()) {
     strokes += 1;
     assert!(strokes <= 3, "the listing below the cursor is ruled within one circuit");
-    k.court_stroke(one_stroke_transport);
+    k.court_stroke();
 }
 let docket = k.docket_circuits();
 assert!(docket.circuits() >= 1, "the circuit passed the end of the docket: {docket:?}");
@@ -307,7 +307,7 @@ let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
 let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
 assert_eq!(speak_pair(&mut home, &a, &b, [1; 32]), Outcome::GermPending);
 let addr = home.provisional.scoped().next().unwrap().0.clone();
-home.court_stroke(one_stroke_transport);
+home.court_stroke();
 assert!(home.provisional.contains(&addr), "still provisional until the second organ");
 // 47.3: a witness is a second VANTAGE with room, not merely a second
 // key. An unbonded peer has none and does not converge the object.
@@ -347,7 +347,7 @@ refusing.docket_connection(&word, [1; 32]);
 refusing.speech_task.insert(&addr, Address::from_bytes(task));
 assert!(refusing.provisional.contains(&addr), "docketed");
 let at = refusing.admitted_at(&addr).expect("the docket admitted it at an act");
-refusing.court_stroke(one_stroke_transport);
+refusing.court_stroke();
 assert_eq!(refusing.court_slashed, 1, "the stroke refuses the form on the family it does not close");
 assert!(!refusing.provisional.contains(&addr), "and it leaves the docket");
 assert!(!refusing.ruled_contains(&addr), "never ruled");
@@ -364,7 +364,7 @@ let mut ruling = Kernel::new();
 ruling.bind_task_family(task, one_pair);
 ruling.docket_connection(&word, [1; 32]);
 ruling.speech_task.insert(&addr, Address::from_bytes(task));
-ruling.court_stroke(one_stroke_transport);
+ruling.court_stroke();
 assert_eq!(ruling.court_slashed, 0, "the form closes every pair of the family it is bound to");
 assert!(ruling.ruled_contains(&addr), "and the stroke rules it");
 }
@@ -553,7 +553,7 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
-    home.court_stroke(one_stroke_transport);
+    home.court_stroke();
     let spoken =
         home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
@@ -609,7 +609,7 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
     assert_eq!(speak_pair(&mut home, &a, &b, home_vk), Outcome::GermPending);
     assert_eq!(speak_pair(&mut home, &a, &b, [3; 32]), Outcome::GermPending);
-    home.court_stroke(one_stroke_transport);
+    home.court_stroke();
     let spoken = home.provisional.scoped().next().unwrap().1.clone();
     let inv = crate::transducer::stalk::invariant_of(&spoken);
     let offered = spoken.address();
@@ -675,7 +675,7 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
         own.own_section(&inv).is_none(),
         "a provisional is not yet a section: the court has not ruled it"
     );
-    own.court_stroke(one_stroke_transport);
+    own.court_stroke();
     let mine = own
         .own_section(&inv)
         .expect("the stroke ruled it, so this court holds it at its own vantage");

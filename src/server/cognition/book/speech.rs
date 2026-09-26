@@ -191,7 +191,7 @@ impl Kernel {
     /// A refusal answered and recorded (50.9): the adjudication names the
     /// kind and the coordinate, the record keeps them under the refused
     /// address with the receipt.
-    fn refuse_sentence(
+    pub(super) fn refuse_sentence(
         &mut self,
         _voice: [u8; 32],
         addr: &Address,

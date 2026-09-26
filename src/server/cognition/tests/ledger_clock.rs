@@ -139,7 +139,7 @@ fn docketed(me: [u8; 32]) -> (Kernel, crate::transducer::address::Address) {
     let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut k, &a, &b, [2; 32]), Outcome::GermPending);
-    k.court_stroke(super::common::one_stroke_transport);
+    k.court_stroke();
     let addr = k.provisional.scoped().next().unwrap().0;
     (k, crate::transducer::address::Address::from(addr))
 }
@@ -216,10 +216,9 @@ fn an_install_seals_a_receipt_at_the_installed_address() {
     );
 }
 
-/// 45.1, 47.5: a lapsed citation releases an escrow and unlists a draw, so
-/// it is this court's own act. And a lapse measures its aperture in
-/// receipts, so a court whose lapses were not receipted stopped advancing
-/// the very quantity it lapses on.
+/// 45.1: a lapsed citation releases an escrow and unlists a draw, so it is
+/// this court's own act, sealed after the orbit close that lapsed it by
+/// zero flux (78.37 (3)).
 #[test]
 fn a_lapsed_citation_seals_a_receipt() {
     let mut k = Kernel::new();
@@ -229,60 +228,16 @@ fn a_lapsed_citation_seals_a_receipt() {
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
     let laddr = k.pending.scoped().next().unwrap().0;
     let at = k.admitted_at(&laddr).expect("the listing was admitted by its List act");
-    k.standing_h.insert(&laddr, 0);
-    k.set_height(crate::physics::aperture_cycle() as u64 + 1);
+    k.orbit();
+    let elsewhere = crate::transducer::address::Address::from_bytes([crate::transducer::address::TAG_FORM, 7]);
+    k.note_served(&elsewhere, [3; 32]);
     let before = k.chain().own_len();
-    k.lapse_docket(super::common::one_stroke_transport);
-    assert_eq!(k.chain().own_len(), before + 1, "a lapsed citation is one step");
+    k.orbit();
+    assert!(!k.pending.contains(&laddr), "a whole orbit with no flux lapsed it");
+    assert_eq!(k.chain().own_len(), before + 2, "the orbit's close, and the lapse as its own step");
     assert!(
         k.chain().head().is_some_and(|r| r.cites.iter().any(|c| c.at() == Some(at))),
         "the node cites the listing whose draw was released, read before it left (78.24 (2c))"
-    );
-}
-
-/// 47.5: Λ is `from_transport(rtt_floor, aperture_cycle())`, "never a
-/// constant" — and a home this node has measured no round trip to has no
-/// Λ, so nothing lapses AGAINST IT. That much stands. What this test used
-/// to assert beside it does not: that a listing on an unmeasured transport
-/// therefore stands FOREVER.
-///
-/// THE BOOK IS NOT NETWORK HOSTAGE (the stroke-duration ruling,
-/// 2026-09-11). `lapse_docket` read `let Some(lam) = lambda(…) else {
-/// continue }`, so memory reclamation depended on a packet: a court that
-/// could not reach a peer could not measure a transport, so it had no Λ,
-/// so it evicted nothing, so the book became an append-only sink.
-/// Measured on the fleet at epoch 10 — 250 listings a minute at ~26 KiB
-/// each, `pending` never shrinking, until the node ran out of memory. A
-/// node in a complete partition must still run its cycles and stay
-/// solvent.
-///
-/// So the unmeasured case falls back to THIS COURT'S OWN APERTURE, read
-/// off its own clock: nothing waits on a number that has anything to do
-/// with a home it cannot reach, and nothing stands past this court's own
-/// causal horizon either.
-#[test]
-fn an_unmeasured_transport_lapses_against_this_courts_own_horizon() {
-    let mut k = Kernel::new();
-    k.bind_identity([0x5d; 32]);
-    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
-    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)]; // the L recoloured whole: one body, one word (20 as ruled, L7)
-    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    let laddr = k.pending.scoped().next().unwrap().0;
-    k.standing_h.insert(&laddr, 0);
-    // WITHIN the court's own aperture, an unmeasured transport holds it:
-    // the horizon is a horizon, not an eviction on sight.
-    k.set_height(1);
-    let before = k.chain().own_len();
-    k.lapse_docket(super::common::unmeasured_transport);
-    assert_eq!(k.chain().own_len(), before, "inside the horizon, no lapse and no receipt");
-    assert!(k.pending.get(&laddr).is_some(), "and the listing stands");
-    // PAST it, the listing leaves whatever the network is doing.
-    k.set_height(crate::physics::aperture_cycle() as u64 * 4);
-    k.lapse_docket(super::common::unmeasured_transport);
-    assert_eq!(k.chain().own_len(), before + 1, "past the horizon it lapses, and that is one step");
-    assert!(
-        k.pending.get(&laddr).is_none(),
-        "and the book is not held open by a transport nobody measured"
     );
 }
 

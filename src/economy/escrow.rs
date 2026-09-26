@@ -222,6 +222,30 @@ impl Treasury {
         self.mint_to(voice, take, anchor, Some(Arm::Pouw))
     }
 
+    /// A CARRIAGE OF A PROVISIONAL WORD DRAWS ITS OWN FRAME from its escrow
+    /// (78.42 (3), 65.5): the energy a transition carries leaves the escrow,
+    /// per lane, exactly. `None` where no escrow stands; `Err` with the
+    /// shortfall per lane where the escrow cannot pay the draw — the word is
+    /// exhausted on those lanes, and nothing is drawn.
+    pub fn carry_escrow(&mut self, addr: &[u8], draw: [u64; 4]) -> Option<Result<[u64; 4], [u64; 4]>> {
+        let row = self.escrowed.get_mut(addr)?;
+        let short = super::shortfall(&draw, &row.mu);
+        if !super::lanes_short(&short).is_empty() {
+            return Some(Err(short));
+        }
+        row.mu = std::array::from_fn(|l| row.mu[l] - draw[l]);
+        Some(Ok(row.mu))
+    }
+
+    /// PRESSURE ARRIVING: a frame transported to a provisional word (a
+    /// sentence that cites it) is credited to its escrow, per lane. `None`
+    /// where no escrow stands or a lane would pass its carrier (STD1).
+    pub fn credit_escrow(&mut self, addr: &[u8], mu: [u64; 4]) -> Option<[u64; 4]> {
+        let row = self.escrowed.get_mut(addr)?;
+        row.mu = crate::core::lanes::lanes_add(row.mu, mu)?;
+        Some(row.mu)
+    }
+
     #[cfg(test)]
     pub fn escrowed_remaining(&self, addr: &[u8]) -> [u64; 4] {
         // An address with no escrow row holds nothing in escrow.

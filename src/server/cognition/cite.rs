@@ -298,7 +298,12 @@ impl Kernel {
         }
         let me = self.identity;
         match self.seal_step(ActKind::Orbit, frame, me, |_| Vec::new()) {
-            Some(r) => Close::Sealed(r.stamp),
+            Some(r) => {
+                // The orbit closed: what nothing flowed to for a whole orbit
+                // lapses by `ZeroFlux` (78.37 (3)).
+                self.lapse_silent();
+                Close::Sealed(r.stamp)
+            }
             None => Close::Nothing,
         }
     }

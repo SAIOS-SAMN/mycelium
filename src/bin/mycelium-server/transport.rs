@@ -200,43 +200,6 @@ pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
         .and_then(|w| w.get(id).and_then(|ring| ring.iter().copied().min()))
 }
 
-/// 47.5's Λ for one chart, in admitted receipts:
-/// `from_transport(rtt_floor, aperture_cycle())` to the hypha the Cover
-/// homes that chart to — the fibre on the lanes the listing's magnitude
-/// occupies, then room, then identity (16.11, `nerve::home`), this court a
-/// candidate at the room the kernel read. `Unmeasured` where this node has
-/// measured no round trip to that hypha — a chart homed here among them,
-/// since a court measures no transport to itself — or where a mesh lock
-/// cannot be read: an unmeasured transport has no deadline
-/// (`transport_deadline`), and a citation does not lapse against a number
-/// nobody read. `BeyondTheLedger` where the horizon is wider than any
-/// extent the ledger counts, which is arithmetic and says no listing has
-/// waited that long; the two are told apart so the eviction path reads one
-/// fact at a time (law 5).
-///
-/// It resolved the home by the router's XOR distance on the listing's
-/// address bytes (Stage 11 I20), which is where a percept rendezvous is
-/// routed and not where a chart is homed, and it looked the round trip up
-/// under the home's key where the windows are kept under the socket
-/// string, so it never named a hypha the transport had measured.
-pub(crate) fn withholding_lambda(
-    mesh: &Mesh,
-    chart: &mycelium::transducer::stalk::Invariant,
-    mag: &[u64; 4],
-    room: &[u64; 4],
-) -> mycelium::physics::Lambda {
-    let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
-        return mycelium::physics::Lambda::Unmeasured;
-    };
-    let (_, home_addr) =
-        mycelium::network::nerve::home(&c, chart, mag, &r, &a, Some((&mesh.vk, room, mesh.bind.as_str())));
-    drop((c, r, a));
-    let Some(floor) = rtt_floor(mesh, home_addr.as_bytes()) else {
-        return mycelium::physics::Lambda::Unmeasured;
-    };
-    mycelium::physics::from_transport(floor, mycelium::physics::aperture_cycle() as u64)
-}
-
 /// A measured round trip in strokes enters the peer's window.
 pub(crate) fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
     let id = id.as_ref();
