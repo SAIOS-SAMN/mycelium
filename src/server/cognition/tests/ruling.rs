@@ -206,7 +206,7 @@ fn a_cavity_word_resolves_for_replay_by_the_one_reader() {
     let resolved = k.resolve_form(addr.as_bytes()).expect("a cavity address resolves for replay");
     let (_, spoken) = k.by_address(addr.as_bytes()).expect("and the speech's crystal holds it");
     assert_eq!(
-        crate::transducer::sentence::form_vertex_key(spoken),
+        crate::transducer::sentence::form_vertex_key(&spoken),
         crate::transducer::sentence::form_vertex_key(&resolved),
         "one form, read by one reader"
     );

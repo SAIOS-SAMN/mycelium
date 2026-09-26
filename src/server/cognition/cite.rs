@@ -86,6 +86,14 @@ impl Kernel {
         }
         self.admitted_at.insert_shared(addr.shared(), at);
         self.held_at.insert(at.key(), addr.clone());
+        // THE ADMISSION IS THE FIRST FLUX (78.37 (3)): the word is filed where
+        // it lapses by the stamp just given, and a provisional word's orbit
+        // opens at it — the act that admits it offers it.
+        let key = at.key();
+        self.file_flux(&key);
+        if self.provisional.contains(addr) {
+            self.enter_flight(addr.as_bytes(), &key);
+        }
         // LD3-a: the word by its fiber, where a row holds it to read the
         // fiber off; a restore files it from T1's key instead.
         let fiber = self.named_word(addr).and_then(|w| {
@@ -198,7 +206,11 @@ impl Kernel {
     /// A word left every row: its admitting stamp leaves with it.
     pub fn drop_admitted(&mut self, addr: &[u8]) {
         if let Some(at) = self.admitted_at.remove(addr) {
-            self.held_at.remove(&at.key());
+            // Filed nowhere: no flux, no orbit in flight.
+            let key = at.key();
+            self.forget_flux_at(&key);
+            self.leave_flight(&key);
+            self.held_at.remove(&key);
             if let Some(key) = self.fiber_key_at.remove(&at.key()) {
                 self.word_fibers.remove(&key);
             }

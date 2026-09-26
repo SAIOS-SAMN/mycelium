@@ -80,7 +80,7 @@ impl Crystal for Lanes {
     ) -> Option<crate::transducer::family::Speech> {
         crate::transducer::family::apply_form(f, x, placement, self)
     }
-    fn by_address(&self, _a: &[u8]) -> Option<(&element::Element, &Form)> {
+    fn by_address(&self, _a: &[u8]) -> Option<(&element::Element, std::borrow::Cow<'_, Form>)> {
         None
     }
     fn on_axis(&self, _c: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<Word> {

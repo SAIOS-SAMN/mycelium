@@ -66,13 +66,15 @@ impl crate::transducer::family::Crystal for Kernel {
     fn by_address(
         &self,
         addr: &[u8],
-    ) -> Option<(&Element, &crate::transducer::sentence::Form)> {
-        if !self.ruled_contains(addr) && !self.cavity_book.contains(addr) {
-            return None;
+    ) -> Option<(&Element, std::borrow::Cow<'_, crate::transducer::sentence::Form>)> {
+        // An installed word holds its form, decoded once where it was placed.
+        if let Some(held) = self.held_word(addr).filter(|_| self.ruled_contains(addr)) {
+            return Some((held.element(), std::borrow::Cow::Borrowed(held.form()?)));
         }
-        // A word the cavity retired is ruled and held there, not installed.
-        let held = self.held_word(addr).or_else(|| self.cavity_book.get(addr))?;
-        Some((held.element(), held.form()?))
+        // A word the cavity retired is ruled and held there as its element
+        // alone: its form is derived from its address here, where it is read.
+        let e = self.cavity_book.get(addr)?;
+        Some((e, std::borrow::Cow::Owned(crate::transducer::sentence::from_element_form(e)?)))
     }
 
     fn on_axis(

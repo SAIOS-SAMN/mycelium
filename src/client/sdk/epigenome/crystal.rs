@@ -85,9 +85,9 @@ impl crate::transducer::family::Crystal for Epigenome {
     fn by_address(
         &self,
         addr: &[u8],
-    ) -> Option<(&Element, &crate::transducer::sentence::Form)> {
+    ) -> Option<(&Element, std::borrow::Cow<'_, crate::transducer::sentence::Form>)> {
         let held = self.working_word(addr)?;
-        Some((held.element(), held.form()?))
+        Some((held.element(), std::borrow::Cow::Borrowed(held.form()?)))
     }
 
     fn on_axis(

@@ -491,9 +491,9 @@ impl Crystal for Held {
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
+    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
         if addr == self.e.address().as_bytes() {
-            Some((&self.e, &self.f))
+            Some((&self.e, std::borrow::Cow::Borrowed(&self.f)))
         } else {
             None
         }
@@ -620,8 +620,8 @@ fn the_glue_speaks_a_cited_form_once_per_placement_and_asks_once_per_chart() {
             self.speeches.set(self.speeches.get() + 1);
             apply_form(f, x, placement, self)
         }
-        fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
-            (addr == self.e.address().as_bytes()).then_some((&self.e, &self.f))
+        fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+            (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
         }
         fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
             Vec::new()
@@ -689,8 +689,8 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
         fn speak_form(&self, f: &Form, x: &Grid, placement: &crate::transducer::alphabet::Word) -> Option<Speech> {
             apply_form(f, x, placement, self)
         }
-        fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
-            (addr == self.e.address().as_bytes()).then_some((&self.e, &self.f))
+        fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+            (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
         }
         fn on_axis(&self, _chart: &Invariant, _axis: crate::transducer::sentence::Axis) -> Vec<crate::transducer::alphabet::Word> {
             Vec::new()
@@ -712,7 +712,10 @@ fn a_glue_pass_retracts_once_and_a_citation_is_never_cloned() {
     let (e, f) = crystal
         .by_address(crystal.e.address().as_bytes())
         .expect("the crystal resolves its own citation");
-    assert!(std::ptr::eq(f, &crystal.f), "by_address hands back the held form, not a copy of it");
+    assert!(
+        matches!(f, std::borrow::Cow::Borrowed(held) if std::ptr::eq(held, &crystal.f)),
+        "by_address hands back the held form, not a copy of it"
+    );
     assert!(std::ptr::eq(e, &crystal.e), "and the held element, not a copy of it");
 
     // THE GLUE PASS RETRACTS ONCE. The extraction is run whole, so the

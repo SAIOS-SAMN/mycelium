@@ -52,8 +52,7 @@ impl Kernel {
             }
             let elem = self.basis_remove(&addr);
             self.ruled_admit(&addr, budget);
-            self.cavity_book.insert(addr, elem.clone().into());
-            self.cavities.push(elem);
+            self.cavity_book.insert(addr, elem);
         }
     }
 }

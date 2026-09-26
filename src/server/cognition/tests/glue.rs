@@ -38,8 +38,8 @@ impl Crystal for Held {
     ) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)> {
-        (addr == self.e.address().as_bytes()).then_some((&self.e, &self.f))
+    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
+        (addr == self.e.address().as_bytes()).then(|| (&self.e, std::borrow::Cow::Borrowed(&self.f)))
     }
     fn on_axis(
         &self,

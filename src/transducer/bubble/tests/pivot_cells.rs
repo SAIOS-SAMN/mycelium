@@ -26,7 +26,7 @@ impl crate::transducer::family::Crystal for OneWord {
     ) -> Option<crate::transducer::family::Speech> {
         None
     }
-    fn by_address(&self, _a: &[u8]) -> Option<(&element::Element, &Form)> {
+    fn by_address(&self, _a: &[u8]) -> Option<(&element::Element, std::borrow::Cow<'_, Form>)> {
         None
     }
     fn on_axis(&self, _c: &crate::transducer::stalk::Invariant, axis: crate::transducer::sentence::Axis) -> Vec<Word> {

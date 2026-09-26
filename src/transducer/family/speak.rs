@@ -321,7 +321,7 @@ fn speak_on_scene(
                         unresolved.push(edge.target.clone());
                         continue;
                     };
-                    let sp = speak_on_scene(s, x, scene, &composed, crystal, None)?;
+                    let sp = speak_on_scene(&s, x, scene, &composed, crystal, None)?;
                     scene
                         .spoken
                         .borrow_mut()

@@ -274,7 +274,7 @@ impl crate::transducer::family::Crystal for Hold {
     ) -> Option<crate::transducer::family::Speech> {
         None
     }
-    fn by_address(&self, _a: &[u8]) -> Option<(&Element, &Form)> {
+    fn by_address(&self, _a: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
         None
     }
     fn on_axis(&self, _chart: &stalk::Invariant, axis: Axis) -> Vec<Word> {

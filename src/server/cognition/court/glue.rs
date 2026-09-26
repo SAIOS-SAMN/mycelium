@@ -548,10 +548,9 @@ impl Kernel {
             return;
         }
         // S12.4d: the witness sent its vantage; the offer is answered at
-        // this witness whatever the two re-derivations turn out to be — and
-        // its reply is flux that reached the word in this orbit (78.37 (3)).
+        // this witness whatever the two re-derivations turn out to be. A
+        // reply transports no frame to the word, so it moves no flux.
         self.note_witness_answered(object.as_bytes(), witness);
-        self.note_flux(object.as_bytes());
         let (k, ht) = (self.k_step(), self.height());
         match self.converge_witness(object, witness, reached, k, ht) {
             crate::court::convergence::Converged::Witnessed { witness, .. } => {

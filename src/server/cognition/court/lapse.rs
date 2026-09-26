@@ -5,54 +5,107 @@ use crate::transducer::address::Address;
 
 impl Kernel {
     /// The key a held word is filed under: the K of its last flux,
-    /// big-endian so the key's order is the orbit's, then its address.
-    fn flux_key(k: u64, addr: &[u8]) -> Vec<u8> {
+    /// big-endian so the key's order is the orbit's, then its admitting
+    /// stamp — a coordinate, never a copy of the address.
+    fn flux_key(k: u64, at: &[u8]) -> Vec<u8> {
         let mut key = k.to_be_bytes().to_vec();
-        key.extend_from_slice(addr);
+        key.extend_from_slice(at);
         key
     }
 
-    /// 78.37 (3), FX1 — FLUX REACHED A HELD WORD in this orbit of the court:
-    /// its admission, a citer's frame, a carriage, a witness's reply. It is
-    /// filed again under this orbit's `K`.
-    pub(crate) fn note_flux(&mut self, addr: &[u8]) {
+    /// File the word admitted at `at` under this orbit's `K`, moving it from
+    /// where its last flux filed it.
+    pub(crate) fn file_flux(&mut self, at: &[u8]) {
         let k = self.k_step();
-        if let Some(&was) = self.flux_k.get(addr) {
-            self.lapse_at.remove(&Self::flux_key(was, addr));
+        if let Some(&was) = self.flux_k.get(at) {
+            self.lapse_at.remove(&Self::flux_key(was, at));
         }
-        self.flux_k.insert(addr, k);
-        self.lapse_at.insert(Self::flux_key(k, addr), ());
+        self.flux_k.insert(at, k);
+        self.lapse_at.insert(Self::flux_key(k, at), ());
+    }
+
+    /// 78.37 (3), FX1 — FLUX REACHED A HELD WORD in this orbit of the court:
+    /// a citer's frame, a carriage's draw, a voice's escrow. A touch that
+    /// carries nothing on any lane is no circulation and moves nothing: only
+    /// a flux `Φ` non-zero on some lane re-files the word. A word not yet
+    /// admitted is filed by its admission (`file_admitted`).
+    pub(crate) fn note_flux(&mut self, addr: &[u8], flux: [u64; 4]) {
+        if flux.iter().all(|&l| l == 0) {
+            return;
+        }
+        if let Some(at) = self.stamp_key(addr) {
+            self.file_flux(&at);
+        }
+    }
+
+    /// The stamp is filed nowhere.
+    pub(crate) fn forget_flux_at(&mut self, at: &[u8]) {
+        if let Some(was) = self.flux_k.remove(at) {
+            self.lapse_at.remove(&Self::flux_key(was, at));
+        }
     }
 
     /// The word left the book or the docket: it is filed nowhere.
     pub(crate) fn forget_flux(&mut self, addr: &[u8]) {
-        if let Some(was) = self.flux_k.remove(addr) {
-            self.lapse_at.remove(&Self::flux_key(was, addr));
+        if let Some(at) = self.stamp_key(addr) {
+            self.forget_flux_at(&at);
         }
     }
 
-    /// THE COURT'S ORBIT CLOSED AT `K`, AND WHAT NOTHING FLOWED TO LAPSES
-    /// (78.37 (3), `ZeroFlux`): a held word whose last flux stands before
-    /// `K − 1` saw a whole orbit pass with nothing flowing to it on any
-    /// lane. A filament lapses because nothing flowed through it, never
-    /// because a clock ran out. The index is read in its own key order and
-    /// stops at the first word that flowed since — the words due, each by
-    /// its key — and the words in flight are never walked.
+    /// THE LAPSE SWEEP (78.37 (3) `ZeroFlux`, 45.7, rule 10), taken on every
+    /// court stroke and at every close of the court's orbit, never only on a
+    /// sealed close. `lapse_at` is read in its own key order, oldest flux
+    /// first, one entry per spend:
+    ///
+    /// - a word whose last flux stands before `K − 1` saw a whole orbit pass
+    ///   with nothing flowing to it, and lapses;
+    /// - and while the book stands over its ceiling (`physics::book_ceiling`,
+    ///   what this node's memory carries) the listings of oldest flux lapse
+    ///   whatever their `K`, down to `BOOK_LOW`: the manifold is finite and
+    ///   the book is not entitled to exceed it.
+    ///
+    /// The sweep's stroke is the depth it has to clear where the book is
+    /// over its ceiling, else one stroke.
     pub(crate) fn lapse_silent(&mut self) {
-        let Some(bound) = self.k_step().checked_sub(1) else { return };
-        let due: Vec<Vec<u8>> = self
-            .lapse_at
-            .scoped()
-            .map(|(k, _)| k)
-            .take_while(|k| k.get(..8).and_then(|b| <[u8; 8]>::try_from(b).ok()).is_some_and(|b| u64::from_be_bytes(b) < bound))
-            .collect();
-        for key in due {
-            let Some(addr) = key.get(8..).map(<[u8]>::to_vec) else { continue };
-            self.forget_flux(&addr);
-            match (self.provisional.contains(&addr), self.pending.contains(&addr)) {
-                (true, _) => self.lapse_word(&addr),
-                (false, true) => self.lapse_listing(&addr),
-                (false, false) => {}
+        let bound = self.k_step().saturating_sub(1);
+        let held = self.pending.len();
+        let over = held > crate::physics::book_ceiling();
+        let mut sweep = match over {
+            true => self.physics.stroke_n(held - crate::physics::BOOK_LOW),
+            false => self.physics.stroke(),
+        };
+        let mut due: Vec<(u64, Vec<u8>)> = Vec::new();
+        for (key, ()) in self.lapse_at.scoped() {
+            let Some(k) = key.get(..8).and_then(|b| <[u8; 8]>::try_from(b).ok()).map(u64::from_be_bytes) else {
+                continue;
+            };
+            if k >= bound && !over {
+                break;
+            }
+            let Some(at) = key.get(8..) else { continue };
+            if !sweep.spend() {
+                break;
+            }
+            due.push((k, at.to_vec()));
+        }
+        for (k, at) in due {
+            let Some(addr) = self.word_of_stamp(&at) else {
+                self.forget_flux_at(&at);
+                continue;
+            };
+            let silent = k < bound;
+            let evict = !silent && self.pending.len() > crate::physics::BOOK_LOW;
+            match (self.provisional.contains(addr.as_bytes()), self.pending.contains(addr.as_bytes())) {
+                (true, _) if silent => {
+                    self.forget_flux_at(&at);
+                    self.lapse_word(addr.as_bytes());
+                }
+                (false, true) if silent || evict => {
+                    self.forget_flux_at(&at);
+                    self.lapse_listing(addr.as_bytes());
+                }
+                (false, false) => self.forget_flux_at(&at),
+                _ => {}
             }
         }
     }

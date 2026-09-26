@@ -212,8 +212,9 @@ impl Kernel {
             let mu = crate::economy::price(&mag, &self.physics.pressure);
             let anchor = self.anchor();
             self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
-            // A voice arriving on the word is flux reaching it (78.37 (3)).
-            self.note_flux(addr.as_bytes());
+            // A voice arriving on the word escrows its price: that frame is
+            // the flux reaching it (78.37 (3)).
+            self.note_flux(addr.as_bytes(), mu);
             return Outcome::GermPending;
         }
         if !word.is_sentence() {

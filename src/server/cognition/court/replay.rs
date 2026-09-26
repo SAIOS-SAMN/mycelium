@@ -130,8 +130,7 @@ impl Kernel {
                         &elem.magnitude(),
                         &elem.magnitude(),
                     );
-                    self.cavity_book.insert(addr, elem.clone().into());
-                    self.cavities.push(elem);
+                    self.cavity_book.insert(addr, elem);
                 }
                 self.mark_persist();
             }
@@ -167,8 +166,8 @@ impl Kernel {
     /// triangles and tetrahedron classes. Fail → slash with a replay reason
     /// and relocate to the cavity atlas. Pass → a section on the ruled
     /// cover, escrow held. Fills and refinements share the stroke Budget.
-    /// What lapses lapses at the close of the court's orbit (`orbit`), by
-    /// `ZeroFlux`, never on a stroke.
+    /// The lapse sweep runs on every stroke, on its own budget
+    /// (`lapse_silent`): the book's sink never waits on a sealed close.
     pub fn court_stroke(&mut self) {
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
@@ -290,6 +289,7 @@ impl Kernel {
             // against, which is what makes a glue a Mayer-Vietoris step.
             self.rule_own(&addr, &mut budget);
         }
+        self.lapse_silent();
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
     }

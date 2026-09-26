@@ -86,8 +86,10 @@ pub trait Crystal {
     /// (Z2 item 2, rule 17): a reader hands back the stratum it holds, and
     /// a caller that resolves one citation 578 times must not pay a form
     /// copy for each. The borrow is the crystal's own and it outlives no
-    /// call that does not hold the crystal.
-    fn by_address(&self, addr: &[u8]) -> Option<(&Element, &Form)>;
+    /// call that does not hold the crystal. A word the crystal holds without
+    /// its form — a court's cavity — has its form DERIVED from its address
+    /// where it is read, never stored beside it: that arm is owned.
+    fn by_address(&self, addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)>;
     /// Held words on `chart` whose class vector occupies `axis` (12.6): the
     /// vocabulary a pivot may write onto an orbit on that chart. One keyed read
     /// of the axis index the crystal filled when the word was admitted.
@@ -225,7 +227,7 @@ impl Crystal for NoCrystal {
     fn speak_form(&self, f: &Form, x: &Grid, placement: &super::alphabet::Word) -> Option<Speech> {
         apply_form(f, x, placement, self)
     }
-    fn by_address(&self, _addr: &[u8]) -> Option<(&Element, &Form)> {
+    fn by_address(&self, _addr: &[u8]) -> Option<(&Element, std::borrow::Cow<'_, Form>)> {
         None
     }
     fn on_axis(&self, _chart: &Invariant, _axis: super::sentence::Axis) -> Vec<super::alphabet::Word> {

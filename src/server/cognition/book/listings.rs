@@ -135,6 +135,8 @@ impl Kernel {
         if let Some(o) = occupied {
             self.occupy(&addr, &mag, o);
         }
+        // A word listed again leaves the cavity it was relocated to.
+        self.cavity_book.remove(&addr);
         self.pending.insert(&addr, residual);
         self.book_gen += 1;
         self.append_step(crate::chronometry::ActKind::List, &addr, actor);
@@ -197,8 +199,7 @@ impl Kernel {
         }
         let inv = crate::transducer::stalk::invariant_of(&elem);
         self.listing_atlas.admit_also(&inv, addr);
-        self.cavity_book.insert(addr, elem.clone().into());
-        self.cavities.push(elem);
+        self.cavity_book.insert(addr, elem);
         self.chill_field(addr);
         self.book_gen += 1;
     }
@@ -234,21 +235,16 @@ impl Kernel {
         let listing = self
             .pending
             .get(addr)
-            .or_else(|| self.cavity_book.get(addr).map(|h| h.element()));
+            .or_else(|| self.cavity_book.get(addr));
         match listing {
             Some(p) => open_charts_of(addr, p, &self.field),
             None => Vec::new(),
         }
     }
 
-    pub fn cavities(&self) -> &[Element] {
-        &self.cavities
-    }
-
-    /// The court heard `n` cavities; they leave the docket.
-    pub fn cavities_heard(&mut self, n: usize) {
-        let n = n.min(self.cavities.len());
-        self.cavities.drain(..n);
+    /// The cavity's words, read off the cavity book in key order.
+    pub fn cavities(&self) -> Vec<&Element> {
+        self.cavity_book.scoped().map(|(_, e)| e).collect()
     }
 
     #[cfg(test)]
@@ -607,7 +603,7 @@ impl Kernel {
         self.basis
             .get(addr)
             .map(|w| w.element())
-            .or_else(|| self.cavity_book.get(addr).map(|h| h.element()))
+            .or_else(|| self.cavity_book.get(addr))
             .or_else(|| self.provisional.get(addr))
     }
 
@@ -727,7 +723,7 @@ impl Kernel {
     /// ([`crate::transducer::family::Crystal::by_address`]), so the citation
     /// check and the speech that follows it can never disagree.
     pub fn resolve_form(&self, addr: &[u8]) -> Option<crate::transducer::sentence::Form> {
-        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.clone())
+        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.into_owned())
     }
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's

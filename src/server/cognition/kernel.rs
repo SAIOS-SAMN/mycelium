@@ -148,36 +148,37 @@ pub struct Kernel {
     /// Atlas of listings and cavities: admitted under the base chart at
     /// list and under every face in the field. Drain never removes from here.
     pub(crate) listing_atlas: crate::transducer::stalk::Stalks,
-    /// Relocated cavity elements, keyed, reachable through congruence —
-    /// each HELD (L16): its tape decoded once where the cavity took it in,
-    /// so a cavity address resolves for replay off a field, as a ruled one
-    /// does (3.8, ch. 8).
-    pub(crate) cavity_book: crate::network::nerve::Keyed<crate::transducer::element::Held>,
-    /// Unreachable listings for the court docket: the cavity is the
-    /// element itself. Drained as the court pulls.
-    pub(crate) cavities: Vec<Element>,
+    /// Relocated cavity elements, keyed, reachable through congruence: the
+    /// element once, its form decoded only where a circuit reads it (L16,
+    /// 3.8). A word leaves the cavity when it enters the basis or the book
+    /// again.
+    pub(crate) cavity_book: crate::network::nerve::Keyed<Element>,
     /// THE ORBITS IN FLIGHT: each provisional word offered at first vantage,
-    /// filed under its chart's key and then its address — read by key, or
-    /// by one chart's fiber when a transition on that chart arrives, and
-    /// never walked.
+    /// filed under its chart's key and then its ADMITTING STAMP — the word's
+    /// coordinate on the ledger, never a copy of its address, which
+    /// `held_at` holds once.
     pub(crate) offered: crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// THE OFFERS THE TRANSITION IN HAND EMITTED: a word admitted to the
-    /// docket, or carried by pressure, is offered by the act that moved it,
-    /// and its caller sends them when the act returns (`take_offers`).
-    /// Emptied by that caller, never read later.
-    pub(crate) emitted: Vec<Address>,
+    /// The reverse of `offered`: each stamp in flight to its chart's key, so
+    /// a word leaving its orbit reads its chart by key and never re-derives
+    /// it.
+    pub(crate) flight: crate::network::nerve::Keyed<Vec<u8>>,
+    /// THE OFFERS THE TRANSITION IN HAND EMITTED, by admitting stamp: a word
+    /// admitted to the docket, or carried by pressure, is offered by the act
+    /// that moved it, and its caller sends them when the act returns
+    /// (`take_offers`). Keyed, so a word emitted twice is one entry.
+    pub(crate) emitted: crate::network::nerve::Keyed<()>,
     /// WHERE EACH HELD WORD LAPSES (78.37 (3), FX1): a listing or a
     /// provisional word, filed under the `K` of the last flux that reached
-    /// it, then its address. At each close of the court's orbit the words
-    /// nothing flowed to for a whole orbit are read there by key and lapse
-    /// by `ZeroFlux`; nothing in flight is walked.
+    /// it, then its admitting stamp. Read in key order, oldest flux first,
+    /// by the budgeted sweep (`lapse_silent`).
     pub(crate) lapse_at: crate::network::nerve::Keyed<()>,
-    /// Each held word's last flux `K`: the coordinate its `lapse_at` key was
-    /// written with, read to re-file it.
+    /// Each held word's last flux `K`, by admitting stamp: the coordinate
+    /// its `lapse_at` key was written with, read to re-file it.
     pub(crate) flux_k: crate::network::nerve::Keyed<u64>,
-    /// Per offered word, per witness: what the offer stands at (S12.4d).
-    /// In-memory work, never persisted: a restart offers once more and the
-    /// witness's own idempotence by receipt (23.8) answers the repeat.
+    /// Per offered word (by admitting stamp), per witness: what the offer
+    /// stands at (S12.4d). In-memory work, never persisted: a restart offers
+    /// once more and the witness's own idempotence by receipt (23.8) answers
+    /// the repeat.
     pub(crate) offered_to:
         crate::network::nerve::Keyed<crate::network::nerve::Keyed<crate::cognition::OfferStanding>>,
     /// The court organ's federation (ruled language) and index.

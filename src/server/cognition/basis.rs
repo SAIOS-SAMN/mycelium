@@ -42,9 +42,6 @@ impl Kernel {
         if self.standing_h.get(addr).is_none() {
             self.standing_h.insert(addr, h);
         }
-        // A word standing on the book or the docket: its admission is the
-        // first flux that reaches it (78.37 (3)).
-        self.note_flux(addr);
     }
 
     /// The root of this court's own stratum over `inv` — the SAME
@@ -208,14 +205,14 @@ impl Kernel {
         let _ = self.treasury.revoke_award(addr, false);
         if self.pending.contains(addr) {
             self.relocate_cavity(addr);
-        } else if let Some(w) = self.provisional.get(addr).cloned() {
+            self.leave_provisional(addr);
+        } else if let Some(w) = self.leave_provisional(addr) {
+            // The word moves from the docket to the cavity: one element, moved.
             let inv = crate::transducer::stalk::invariant_of(&w);
             self.listing_atlas.admit(&inv, addr);
-            self.cavity_book.insert(addr, w.clone().into());
-            self.cavities.push(w);
+            self.cavity_book.insert(addr, w);
             self.chill_field(addr);
         }
-        self.leave_provisional(addr);
         if self.lane_listings[2].contains(addr) {
             // The lane lists it, so the lane carries it; a lane at zero
             // listing something is a broken count and stays at zero.
@@ -412,6 +409,8 @@ impl Kernel {
     pub(crate) fn basis_insert(&mut self, word: Element, discoverer: [u8; 32]) {
         let addr = word.address();
         self.index_word(&word);
+        // A word installed again leaves the cavity it was retired to.
+        self.cavity_book.remove(&addr);
         // ONE DECODE, HERE, where the court places the word (L16).
         let arc = std::sync::Arc::new(crate::transducer::element::Held::of(word));
         self.basis.insert(&addr, std::sync::Arc::clone(&arc));
@@ -742,33 +741,59 @@ impl Kernel {
     /// the transition that closed its orbit and nowhere else: the ruling
     /// returns it.
     pub(crate) fn leave_provisional(&mut self, addr: &[u8]) -> Option<Element> {
-        if let Some(w) = self.provisional.get(addr) {
-            let chart = crate::transducer::stalk::invariant_of(w).key();
-            if let Some(on_chart) = self.offered.get_mut(chart.as_bytes()) {
-                on_chart.remove(addr);
+        if let Some(at) = self.stamp_key(addr) {
+            self.leave_flight(&at);
+        }
+        self.provisional.remove(addr)
+    }
+
+    /// The word's admitting stamp as the key every in-flight index files it
+    /// under: its coordinate on the ledger, a fixed few bytes, where the
+    /// address itself is held once, by `held_at`.
+    pub(crate) fn stamp_key(&self, addr: &[u8]) -> Option<Vec<u8>> {
+        self.admitted_at.get(addr).map(crate::chronometry::Stamp::key)
+    }
+
+    /// The word a stamp admitted, read back through `held_at`.
+    pub(crate) fn word_of_stamp(&self, at: &[u8]) -> Option<Address> {
+        self.held_at.get(at).cloned()
+    }
+
+    /// The in-flight indexes forget a stamp: its chart's fiber, its pending
+    /// emission and its witnesses.
+    pub(crate) fn leave_flight(&mut self, at: &[u8]) {
+        if let Some(chart) = self.flight.remove(at) {
+            if let Some(on_chart) = self.offered.get_mut(&chart) {
+                on_chart.remove(at);
             }
         }
-        self.offered_to.remove(addr);
-        self.provisional.remove(addr)
+        self.emitted.remove(at);
+        self.offered_to.remove(at);
     }
 
     /// 47.3 — A PROVISIONAL WORD'S ORBIT OPENS: admitted to the docket, it is
     /// in flight under its chart and its offer is emitted by the admitting
     /// act, sent by that act's caller when it returns. Nothing later scans
-    /// for pending offers.
+    /// for pending offers. A word whose admitting act has not sealed yet is
+    /// opened by that act (`file_admitted`).
     pub(crate) fn enter_offered(&mut self, addr: &[u8]) {
-        let Some(w) = self.provisional.get(addr) else { return };
-        let chart = crate::transducer::stalk::invariant_of(w).key();
-        self.offered.nested_insert(chart.as_bytes(), addr, ());
-        self.emitted.push(Address::from(addr.to_vec()));
+        let Some(at) = self.stamp_key(addr) else { return };
+        self.enter_flight(addr, &at);
     }
 
-    /// Whether the word at `addr` is in flight — read by its own key.
+    /// The orbit opens at the word's stamp: filed under its chart, which is
+    /// read here once and kept beside the stamp so leaving reads it by key.
+    pub(crate) fn enter_flight(&mut self, addr: &[u8], at: &[u8]) {
+        let Some(w) = self.provisional.get(addr) else { return };
+        let chart = crate::transducer::stalk::invariant_of(w).key().into_vec();
+        self.offered.nested_insert(&chart, at, ());
+        self.flight.insert(at, chart);
+        self.emitted.insert(at, ());
+    }
+
+    /// Whether the word at `addr` is in flight — read by its stamp's key.
     pub(crate) fn in_flight(&self, addr: &[u8]) -> bool {
-        self.provisional.get(addr).is_some_and(|w| {
-            let chart = crate::transducer::stalk::invariant_of(w).key();
-            self.offered.get(chart.as_bytes()).is_some_and(|on_chart| on_chart.contains(addr))
-        })
+        self.stamp_key(addr).is_some_and(|at| self.flight.contains(&at))
     }
 
     /// THE OFFERS THE TRANSITION JUST TAKEN EMITTED, with their records —
@@ -779,10 +804,8 @@ impl Kernel {
     pub fn take_offers(&mut self) -> Vec<(Address, Vec<u8>)> {
         let emitted = std::mem::take(&mut self.emitted);
         let mut out: Vec<(Address, Vec<u8>)> = Vec::new();
-        for addr in emitted {
-            if out.iter().any(|(a, _)| *a == addr) {
-                continue;
-            }
+        for (at, ()) in emitted.scoped() {
+            let Some(addr) = self.word_of_stamp(&at) else { continue };
             let Some(record) = self.provisional.get(addr.as_bytes()).and_then(Element::to_bytes) else {
                 continue;
             };
@@ -802,7 +825,7 @@ impl Kernel {
         if self.treasury.credit_escrow(addr, frame).is_none() {
             self.overflowed += 1;
         }
-        self.note_flux(addr);
+        self.note_flux(addr, frame);
         self.carry(addr);
     }
 
@@ -813,8 +836,10 @@ impl Kernel {
         let Some(frame) = self.provisional.get(addr).map(Element::magnitude) else { return };
         match self.treasury.carry_escrow(addr, frame) {
             Some(Ok(_)) => {
-                self.note_flux(addr);
-                self.emitted.push(Address::from(addr.to_vec()));
+                self.note_flux(addr, frame);
+                if let Some(at) = self.stamp_key(addr) {
+                    self.emitted.insert(&at, ());
+                }
             }
             Some(Err(_)) => self.lapse_word(addr),
             None => {}
@@ -824,30 +849,35 @@ impl Kernel {
     /// A TRANSITION ON A CHART — a peer's cover admitting it — carries every
     /// word in flight under that chart: one fiber, read by the chart's key.
     pub fn carry_chart(&mut self, chart: &crate::transducer::stalk::Invariant) {
-        let Some(fiber) = self.offered.fiber_at(chart.key().as_bytes()) else { return };
-        let words: Vec<Vec<u8>> = fiber.flat_map(|(_, on_chart)| on_chart.scoped().map(|(a, _)| a)).collect();
+        let Some(on_chart) = self.offered.get(chart.key().as_bytes()) else { return };
+        let words: Vec<Address> = on_chart.scoped().filter_map(|(at, ())| self.word_of_stamp(&at)).collect();
         for w in words {
-            self.carry(&w);
+            self.carry(w.as_bytes());
         }
     }
 
     /// What the offer of `addr` stands at for `witness` (S12.4d): `None`
     /// until it has been offered to that witness.
     pub fn offer_standing(&self, addr: &[u8], witness: &[u8; 32]) -> Option<crate::cognition::OfferStanding> {
-        self.offered_to.get(addr).and_then(|w| w.get(witness)).copied()
+        let at = self.stamp_key(addr)?;
+        self.offered_to.get(&at).and_then(|w| w.get(witness)).copied()
     }
 
     /// The offer of `addr` went to `witness` at this court's K `k`; it
     /// stands pending there until the witness answers or its Λ elapses.
     pub fn note_offered(&mut self, addr: &[u8], witness: [u8; 32], k: u64) {
-        self.offered_to.nested_insert(addr, witness, crate::cognition::OfferStanding::Pending { k });
+        if let Some(at) = self.stamp_key(addr) {
+            self.offered_to.nested_insert(at, witness, crate::cognition::OfferStanding::Pending { k });
+        }
     }
 
     /// `witness` answered the offer of `addr` with a vantage of its own —
     /// the section it reached, or the refusal it named — and is not asked
     /// again for this word.
     pub fn note_witness_answered(&mut self, addr: &[u8], witness: [u8; 32]) {
-        self.offered_to.nested_insert(addr, witness, crate::cognition::OfferStanding::Answered);
+        if let Some(at) = self.stamp_key(addr) {
+            self.offered_to.nested_insert(at, witness, crate::cognition::OfferStanding::Answered);
+        }
     }
 
 }

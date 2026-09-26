@@ -243,7 +243,7 @@ fn hold_form_keeps_a_glued_open_orbit() {
         ) -> Option<crate::transducer::family::Speech> {
             None
         }
-        fn by_address(&self, _a: &[u8]) -> Option<(&crate::transducer::element::Element, &Form)> {
+        fn by_address(&self, _a: &[u8]) -> Option<(&crate::transducer::element::Element, std::borrow::Cow<'_, Form>)> {
             None
         }
         fn on_axis(

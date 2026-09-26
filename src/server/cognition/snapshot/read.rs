@@ -279,7 +279,7 @@ impl Kernel {
                 }
                 if members & MEMBER_CAVITY != 0 {
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.cavity_book.insert(&addr, elem.clone().into());
+                    kernel.cavity_book.insert(&addr, elem.clone());
                 }
                 if members & MEMBER_FEDERATION != 0 {
                     // THE FEDERATION'S ORDER IS RE-DERIVED from the stamps
@@ -481,13 +481,20 @@ impl Kernel {
             if self.standing_h.get(&addr).is_none() {
                 self.standing_h.insert(&addr, self.height());
             }
-            self.note_flux(addr.as_bytes());
+            // Restored, it stands at this orbit, filed where it lapses by the
+            // stamp that admitted it.
+            if let Some(at) = self.stamp_key(addr.as_bytes()) {
+                self.file_flux(&at);
+            }
         }
         // Each restored provisional word's orbit opens again: it is in flight,
         // filed where it lapses, and offered by the next transition taken.
         let prov: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
         for addr in prov {
             self.stamp_standing(&addr);
+            if let Some(at) = self.stamp_key(&addr) {
+                self.file_flux(&at);
+            }
             self.enter_offered(&addr);
         }
         // Ruled cover is the lettered federation, not the leaked basis.
