@@ -214,6 +214,30 @@ in the message. No test audit is opened for this and no development
 stops for it: the implementor removes a stale test when a change brings
 them to it, and the auditor returns a stale test found in a read.
 
+3.9 **No theatre; fixtures are the engine's constructs; the geometry is
+the engine's** (ruled 2026-09-26, the operator's word: "ensure there is
+no theatre going in our tests, that harnesses are legitimate only for our
+engine as constructs and that our geometry is non-euclidean").
+(a) A test asserts a law, a theorem or an algebraic identity ON TYPED
+VALUES THE ENGINE COMPUTES. It never asserts a printed string, a
+rendered line or a census diff, and a test that asserts nothing and
+prints is not a test: it is deleted. A classification a reader shows
+(FLATTENED, a regime, a kind) is a typed value on the reading, asserted
+there; the renderer shows it. A string may appear in an assertion's
+MESSAGE, never as what is compared. (b) A fixture is BUILT BY THE
+ENGINE'S OWN CONSTRUCTORS from its own inputs — grids, letters, words,
+reflections, the corpus — and run through the engine's own moves. No
+mock, fake, stub or double of an engine organ, and no carrier field set
+by hand to a value the engine would not produce. A corpus census is a
+legitimate construct only where it asserts a law over the real engine's
+run; its printed lines are the regression reading and never its claim.
+(c) THE GEOMETRY IS THE ENGINE'S, `Cl(n+1,1)(ℚ)`. No test and no code
+decides by a Euclidean oracle: no orthogonal matrix, no `Σx²`, no dot
+product and no `RMRᵀ` standing for an action or for the equality of two
+shapes (law 11: no matrix carries an action). Two bodies are related by
+the conformal versor between them, known by its action. Coordinates on
+ℤⁿ appear only at the sensor, where a site is read.
+
 ## 4. Gates
 
 Ruled 2026-09-12 by the operator, replacing this section as written on
