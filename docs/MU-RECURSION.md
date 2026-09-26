@@ -553,7 +553,7 @@ turn", "cw"/"ccw" retire from this document and from names in the
 tree (NM1): the letter that turns 90° is named by its degrees, and a
 test asserts `180°`, never "a half turn". English turn-words were an
 INVERSION the operator named — the word "half" carries no precision
-and the mathematics does; the gauge is the full circle. **LIFT** and
+and the mathematics does; the gauge is the full circle. **DEGREES OF SEPARATION** (ruled 2026-09-26, the operator's word: "there should be no more quarter turns, there should be degrees of separation — a quarter turn would be the total degrees of the orbit or circular object into 1/4") is the angular distance between two positions of one orbit or circular object, measured against its full 360°: a turn of `t/ℓ` of the orbit is `360·t/ℓ` degrees of separation (the `Turn` carrier, DG1), 90° where the English said "quarter", 180° for "half"; where the separation is no rational fraction of the circle it is the rational point with its sector (78.45). No identifier, comment, test name or doc line names a turn by an English fraction. **LIFT** and
 **DRAG** (ruled 2026-09-25, the operator's word, 78.46) are the two
 exact parts of a neighbouring generator against an orbit's own mode
 blade: DRAG the part that commutes with it (the rate — phase, period,
