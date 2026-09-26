@@ -163,6 +163,9 @@ pub enum Refused {
     MintLinksUndeclared,
     /// The mint: the form has no tape at its measure (I).
     MintNoTape,
+    /// The mint: the address it would write does not decode, so the court
+    /// would hold no form (I, 34.2).
+    MintAddressUndecoded,
     /// A derivation: the citations do not compose to the target (I).
     CitationsDoNotCompose,
     /// 37.7, the Gödel step: the rotor mints no generator, at the kind its
@@ -214,6 +217,7 @@ impl Refused {
             Refused::MintLinksWithoutDemand
             | Refused::MintLinksUndeclared
             | Refused::MintNoTape
+            | Refused::MintAddressUndecoded
             | Refused::CitationsDoNotCompose
             | Refused::TrialRankInadmissible
             | Refused::CitedSealed
@@ -233,6 +237,7 @@ impl Refused {
             Refused::MintLinksWithoutDemand => "links remain and the form declares no demand",
             Refused::MintLinksUndeclared => "links undeclared by the form's demands",
             Refused::MintNoTape => "the form has no tape at its measure",
+            Refused::MintAddressUndecoded => "the address does not decode, so the court holds no form",
             Refused::CitationsDoNotCompose => "the citations do not compose to the target",
             Refused::RotorMintsNoGenerator(_) => "the rotor mints no generator",
             Refused::TrialNoQuestion => "no orbit, class or measure stood to ask",

@@ -533,17 +533,22 @@ pub fn replay_form_on(
     // those; it cannot forge a forest, because it does not carry one.
     let _ = derived;
     if let Some(fam) = family {
-        // "Does this form cite anything" is a read of the Glued kind's own
-        // stratum of the vertex carrier (AT1), not a read of every vertex
-        // asking each whether it is a citation.
-        let glued = traversed.glued_vertices().next().is_some();
-        let deflation_crystal: &dyn crate::transducer::family::Crystal = if glued {
-            crystal
-        } else {
-            &crate::transducer::family::NoCrystal
-        };
-        let (pay, rems) =
-            crate::transducer::family::form_deflation(&traversed, fam, deflation_crystal);
+        // ONE CRYSTAL, ALWAYS: the court speaks the form through the words it
+        // holds, whatever the form cites. A reader chosen by whether the
+        // form cites was a switch standing where the object decides.
+        let read = crate::transducer::family::form_deflation_read(
+            &traversed,
+            fam,
+            crystal,
+            &crate::transducer::alphabet::Word::identity(),
+        );
+        // A CITATION THE COURT DOES NOT HOLD, reached inside a cited form,
+        // is the dialect the court lacks (D, 78.9), never the form's silence:
+        // the sites it would have spoken are not a remainder.
+        if !read.unresolved.is_empty() {
+            return Some(tape(REFUSE_GLUED_UNRULED));
+        }
+        let (pay, rems) = (read.pay, read.remainders);
         // S9.4 — CLOSURE IS THE CERTIFICATE. A remainder on any pair means
         // the form does not close the family it claims, and that is the
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair

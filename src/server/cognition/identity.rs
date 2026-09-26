@@ -57,11 +57,21 @@ impl crate::transducer::family::Crystal for Kernel {
         crate::transducer::family::apply_form(f, x, placement, self)
     }
 
+    /// THE ONE READER OF THE WORDS THIS COURT REPLAYS AGAINST: a ruled
+    /// address, installed, or a cavity address, which resolves for replay
+    /// and is never taught (3.8, ch. 8). It read the basis alone while the
+    /// citation check (`resolve_form`) admitted the cavity too, so a
+    /// sentence citing a cavity word passed the check and then spoke nothing
+    /// at the citation: the whole family read as undeclared remainder.
     fn by_address(
         &self,
         addr: &[u8],
     ) -> Option<(&Element, &crate::transducer::sentence::Form)> {
-        let held = self.held_word(addr)?;
+        if !self.ruled_contains(addr) && !self.cavity_book.contains(addr) {
+            return None;
+        }
+        // A word the cavity retired is ruled and held there, not installed.
+        let held = self.held_word(addr).or_else(|| self.cavity_book.get(addr))?;
         Some((held.element(), held.form()?))
     }
 

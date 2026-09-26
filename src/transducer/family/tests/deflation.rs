@@ -75,6 +75,31 @@ assert!(
 assert_ne!(spoken.magnitude(), [0; 4], "the sentence measures what it closed and what it asks");
 }
 
+/// 34.2, 54.3 — THE MINT AND THE COURT READ ONE FORM. The mint declares what
+/// its form left unspoken and measures the form the court will hold — read
+/// from the address and receipts it mints, by the court's one decoder —
+/// never the form in its hand. So on the family it minted over, the form the
+/// court decodes leaves nothing undeclared, and the court's own replay
+/// admits what the mint admitted.
+#[test]
+fn the_mint_admits_exactly_what_the_court_replays_on_the_same_family() {
+    let first = vec![(grid(&["1"]), grid(&["2"]))];
+    let rule = extract_rule(&first, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("recolour");
+    let family = vec![(grid(&["1"]), grid(&["2"])), (grid(&["100"]), grid(&["203"]))];
+    let spoken = mint_sentence(&rule, &family, &NoCrystal, 0).expect("spoken with its demand");
+    let held = crate::transducer::sentence::from_element_form(&spoken).expect("the form the court holds");
+    let (_, rems) = form_deflation(&held, &family, &NoCrystal);
+    assert!(
+        crate::court::verdict::body::undeclared_remainder(&rems, &held).is_empty(),
+        "on the form the court holds, the mint left nothing undeclared: {rems:?}"
+    );
+    assert_eq!(
+        crate::court::verdict::blind_replay_at(&spoken, &|_| None, Some(&family), &NoCrystal),
+        None,
+        "the court admits on the same family what the mint admitted"
+    );
+}
+
 /// A RULE THAT FAILS ON ITS OWN FAMILY IS NOT UTTERED. `mint_sentence`
 /// already holds the speaker's side of `REFUSE_NOT_A_SENTENCE` — a form
 /// nothing in which acts is withheld rather than spoken and refused — and

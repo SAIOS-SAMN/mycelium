@@ -121,7 +121,7 @@ impl Kernel {
                         &elem.magnitude(),
                         &elem.magnitude(),
                     );
-                    self.cavity_book.insert(addr, elem.clone());
+                    self.cavity_book.insert(addr, elem.clone().into());
                     self.cavities.push(elem);
                 }
                 self.mark_persist();

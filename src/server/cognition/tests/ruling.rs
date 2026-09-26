@@ -183,3 +183,26 @@ fn a_refused_peer_stamp_never_erases_the_courts_own() {
     assert!(c.file_admitted(&stranger, peer), "a word held at no stamp here takes the peer's");
     assert_eq!(c.admitted_at(stranger.as_bytes()), Some(peer));
 }
+
+/// ONE READER OF THE WORDS A COURT REPLAYS AGAINST (3.8, ch. 8): a cavity
+/// address resolves for replay and is never taught. The citation check
+/// (`resolve_form`) admitted the cavity while the speech's crystal
+/// (`by_address`) read the basis alone, so a sentence citing a cavity word
+/// passed the check and spoke nothing at the citation. The two are one
+/// reader now: whatever the check admits, the speech speaks.
+#[test]
+fn a_cavity_word_resolves_for_replay_by_the_one_reader() {
+    use crate::transducer::family::Crystal;
+    let (mut k, addr) = docketed([0x5a; 32]);
+    assert!(k.resolve_form(addr.as_bytes()).is_none(), "a provisional word resolves to nothing");
+    assert!(k.by_address(addr.as_bytes()).is_none(), "and the speech reads it the same");
+    k.relocate_standing(addr.as_bytes());
+    assert!(k.cavity_book.contains(addr.as_bytes()), "relocated onto the cavity");
+    let resolved = k.resolve_form(addr.as_bytes()).expect("a cavity address resolves for replay");
+    let (_, spoken) = k.by_address(addr.as_bytes()).expect("and the speech's crystal holds it");
+    assert_eq!(
+        crate::transducer::sentence::form_vertex_key(spoken),
+        crate::transducer::sentence::form_vertex_key(&resolved),
+        "one form, read by one reader"
+    );
+}

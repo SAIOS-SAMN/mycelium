@@ -148,8 +148,11 @@ pub struct Kernel {
     /// Atlas of listings and cavities: admitted under the base chart at
     /// list and under every face in the field. Drain never removes from here.
     pub(crate) listing_atlas: crate::transducer::stalk::Stalks,
-    /// Relocated cavity elements, keyed, reachable through congruence.
-    pub(crate) cavity_book: crate::network::nerve::Keyed<Element>,
+    /// Relocated cavity elements, keyed, reachable through congruence —
+    /// each HELD (L16): its tape decoded once where the cavity took it in,
+    /// so a cavity address resolves for replay off a field, as a ruled one
+    /// does (3.8, ch. 8).
+    pub(crate) cavity_book: crate::network::nerve::Keyed<crate::transducer::element::Held>,
     /// Unreachable listings for the court docket: the cavity is the
     /// element itself. Drained as the court pulls.
     pub(crate) cavities: Vec<Element>,

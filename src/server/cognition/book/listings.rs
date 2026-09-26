@@ -197,7 +197,7 @@ impl Kernel {
         }
         let inv = crate::transducer::stalk::invariant_of(&elem);
         self.listing_atlas.admit_also(&inv, addr);
-        self.cavity_book.insert(addr, elem.clone());
+        self.cavity_book.insert(addr, elem.clone().into());
         self.cavities.push(elem);
         self.chill_field(addr);
         self.book_gen += 1;
@@ -234,7 +234,7 @@ impl Kernel {
         let listing = self
             .pending
             .get(addr)
-            .or_else(|| self.cavity_book.get(addr));
+            .or_else(|| self.cavity_book.get(addr).map(|h| h.element()));
         match listing {
             Some(p) => open_charts_of(addr, p, &self.field),
             None => Vec::new(),
@@ -597,7 +597,7 @@ impl Kernel {
         self.basis
             .get(addr)
             .map(|w| w.element())
-            .or_else(|| self.cavity_book.get(addr))
+            .or_else(|| self.cavity_book.get(addr).map(|h| h.element()))
             .or_else(|| self.provisional.get(addr))
     }
 
@@ -710,16 +710,11 @@ impl Kernel {
     /// A crystallized form this hypha has ruled, or retired to the cavity,
     /// read as a `Form` for the court's replay of a citer. Provisional and
     /// heard words resolve to nothing: a citation stands only on a ruling.
+    /// Read through the court's one reader of its held words
+    /// ([`crate::transducer::family::Crystal::by_address`]), so the citation
+    /// check and the speech that follows it can never disagree.
     pub fn resolve_form(&self, addr: &[u8]) -> Option<crate::transducer::sentence::Form> {
-        if !self.ruled_contains(addr) && !self.cavity_book.contains(addr) {
-            return None;
-        }
-        // A RULED WORD is installed and its form is a field; a CAVITY word
-        // is not, and its tape is decoded here by name (L16).
-        if let Some(f) = self.held_word(addr).and_then(|h| h.form()) {
-            return Some(f.clone());
-        }
-        crate::transducer::sentence::from_element_form(self.word_at(addr)?)
+        crate::transducer::family::Crystal::by_address(self, addr).map(|(_, f)| f.clone())
     }
 
     /// THE DOCKET (Step 5): every provisional word, exported for the court's

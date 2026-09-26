@@ -164,8 +164,12 @@ pub(crate) struct Scene {
     /// `RefCell` because `speak_on_scene` recurses through `&Scene` and the
     /// memo is written by the recursion, never read by the engine as a
     /// decision.
-    spoken: std::cell::RefCell<crate::network::nerve::Keyed<(Vec<Painted>, Vec<Painted>)>>,
+    spoken: std::cell::RefCell<crate::network::nerve::Keyed<Cited>>,
 }
+
+/// What one citation spoke on this scene: its painted sites, its remainder,
+/// and the citations inside it this crystal could not resolve.
+type Cited = (Vec<Painted>, Vec<Painted>, Vec<crate::transducer::address::Address>);
 
 impl Scene {
     pub(crate) fn of(x: &Grid) -> Scene {
@@ -205,6 +209,7 @@ fn speak_on_scene(
     let mut painted: Vec<Painted> = Vec::new();
     let mut remainder: Vec<Painted> = Vec::new();
     let mut unspoken: Vec<crate::network::nerve::coord::VertexAt> = Vec::new();
+    let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     let mut unfolded = false;
     for (vi, v) in f.vertices.entries() {
         match v {
@@ -301,19 +306,29 @@ fn speak_on_scene(
                     // 578 times onto the same grid; what comes back is the
                     // same painted set every time, because nothing in the
                     // citation varies.
-                    if let Some((p, r)) = scene.spoken.borrow().get(&key) {
+                    if let Some((p, r, u)) = scene.spoken.borrow().get(&key) {
                         painted.extend_from_slice(p);
                         remainder.extend_from_slice(r);
+                        unresolved.extend_from_slice(u);
                         continue;
                     }
-                    let (_e, s) = crystal.by_address(&edge.target)?;
+                    // A CITATION THIS CRYSTAL DOES NOT HOLD is a fact about the
+                    // crystal, named by the cited address (78.22: a coordinate
+                    // locates, it never reconstructs), and the rest of the
+                    // form still speaks. It emptied the whole speech, and
+                    // every site of the family then read as unspoken.
+                    let Some((_e, s)) = crystal.by_address(&edge.target) else {
+                        unresolved.push(edge.target.clone());
+                        continue;
+                    };
                     let sp = speak_on_scene(s, x, scene, &composed, crystal, None)?;
                     scene
                         .spoken
                         .borrow_mut()
-                        .insert(&key, (sp.painted.clone(), sp.remainder.clone()));
+                        .insert(&key, (sp.painted.clone(), sp.remainder.clone(), sp.unresolved.clone()));
                     painted.extend(sp.painted);
                     remainder.extend(sp.remainder);
+                    unresolved.extend(sp.unresolved);
                 }
                 // A BOUNDARY WITH NO INCIDENCE IS UNSPOKEN, NOT SILENT
                 // (rule 11). The form states a citation and nothing told it
@@ -426,11 +441,14 @@ fn speak_on_scene(
     }
     painted.sort_unstable();
     painted.dedup();
+    unresolved.sort_unstable();
+    unresolved.dedup();
     Some(Speech {
         frame: fy,
         painted,
         remainder,
         unspoken,
+        unresolved,
     })
 }
 
@@ -444,6 +462,9 @@ pub struct Speech {
     /// The vertices, by their coordinates, whose class fiber was empty on
     /// this grid.
     pub unspoken: Vec<crate::network::nerve::coord::VertexAt>,
+    /// The cited forms, by address, the speaking crystal does not hold: the
+    /// sites they would have spoken are not the form's silence.
+    pub unresolved: Vec<crate::transducer::address::Address>,
 }
 
 impl Speech {
@@ -459,6 +480,11 @@ impl Speech {
     /// not what the form said, and indexing on it would kill the process
     /// where the court refuses.
     pub fn grid(&self) -> Option<Grid> {
+        // A speech missing a citation is not the form's whole speech, and no
+        // grid stands for it; the measure reads the citation by name.
+        if !self.unresolved.is_empty() {
+            return None;
+        }
         let mut out: Grid = vec![vec![0u8; self.frame.1]; self.frame.0];
         for &(r, c, h) in &self.painted {
             let (Ok(ur), Ok(uc)) = (usize::try_from(r), usize::try_from(c)) else {

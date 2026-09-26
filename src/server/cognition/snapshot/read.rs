@@ -276,7 +276,7 @@ impl Kernel {
                 }
                 if members & MEMBER_CAVITY != 0 {
                     kernel.listing_atlas.admit(&crate::transducer::stalk::invariant_of(&elem), &addr);
-                    kernel.cavity_book.insert(&addr, elem.clone());
+                    kernel.cavity_book.insert(&addr, elem.clone().into());
                 }
                 if members & MEMBER_FEDERATION != 0 {
                     // THE FEDERATION'S ORDER IS RE-DERIVED from the stamps

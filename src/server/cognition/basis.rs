@@ -208,7 +208,7 @@ impl Kernel {
         } else if let Some(w) = self.provisional.get(addr).cloned() {
             let inv = crate::transducer::stalk::invariant_of(&w);
             self.listing_atlas.admit(&inv, addr);
-            self.cavity_book.insert(addr, w.clone());
+            self.cavity_book.insert(addr, w.clone().into());
             self.cavities.push(w);
             self.chill_field(addr);
         }

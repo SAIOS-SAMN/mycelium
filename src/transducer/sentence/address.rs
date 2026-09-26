@@ -257,7 +257,19 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // what the form IS (law 2), and the tape it used to parse is now written
     // and read by nothing but itself. B5 has evicted the citation targets
     // from the key; B6 deletes the tape.
-    let mut f = crate::transducer::sentence::from_address(&e.address())?;
+    held_form(&e.address(), e.receipts())
+}
+
+/// THE FORM A COURT HOLDS FOR A WORD (34.2, 54.3): `from_address` of the
+/// word's address, with the cover and the evidence its receipts envelope
+/// carries. The one decoder, over the two carriers a word travels as — so
+/// the mint, which has both in hand before it mints, reads exactly the form
+/// the court will read, and never the form in its own hand.
+pub(crate) fn held_form(
+    address: &crate::transducer::address::Address,
+    receipts: &crate::transducer::element::ReceiptsEnvelope,
+) -> Option<Form> {
+    let mut f = crate::transducer::sentence::from_address(address)?;
     // THE COVER, FROM THE WORD'S OWN ENVELOPE (54.7 B5a).
     //
     // `from_address` is a faithful retract of the GEOMETRY and the geometry
@@ -274,18 +286,18 @@ pub(crate) fn from_element_form(e: &Element) -> Option<Form> {
     // the court speaking a submitted rule, the mind comprehending an
     // utterance, the retirement scope, the use credit — reads an empty
     // cover and resolves nothing, silently.
-    f.cover = e.receipts().nerve.clone();
+    f.cover = receipts.nerve.clone();
     // AND THE EVIDENCE THE KEY DOES NOT CARRY (AT1, 54.5 Road (d)): each
     // demand's bodies, filed on the record under the demand's own coordinate,
     // and the remainder's chain. A form read from its address holds the
     // coordinates; the word holds what they stand for.
-    for d in &e.receipts().demands {
+    for d in &receipts.demands {
         if let Some(Vertex::Demand { bodies, .. }) = f.vertices.at_mut(&d.at) {
             *bodies = d.bodies.clone();
         }
     }
-    if !e.receipts().remainder.is_empty() {
-        f.remainder = crate::transducer::element::place_chain(&e.receipts().remainder)?;
+    if !receipts.remainder.is_empty() {
+        f.remainder = crate::transducer::element::place_chain(&receipts.remainder)?;
         f.remainder_at = None;
     }
     Some(f)

@@ -158,7 +158,7 @@ impl Kernel {
         let retired = self.cite_of(addr.as_bytes());
         let elem = self.basis_remove(addr.as_bytes());
         self.ruled_admit(addr.as_bytes());
-        self.cavity_book.insert(addr, elem.clone());
+        self.cavity_book.insert(addr, elem.clone().into());
         self.cavities.push(elem);
         self.physics.syntropy(&freed);
         self.seal_retirement(addr.as_bytes(), retired, None, &cited, author);

@@ -171,8 +171,33 @@ pub fn form_deflation_at(
     crystal: &dyn Crystal,
     placement: &crate::transducer::alphabet::Word,
 ) -> ([u64; 4], Vec<crate::transducer::germinate::ResidualGerm>) {
+    let read = form_deflation_read(form, family, crystal, placement);
+    (read.pay, read.remainders)
+}
+
+/// WHAT ONE SPEECH OF A FORM OVER ITS FAMILY MEASURES: the pay, the
+/// remainder per pair, and the cited forms the crystal did not hold. Where a
+/// citation is unresolved the pair's remainder is not the form's silence —
+/// the citation would have spoken there — and a reader that judges closure
+/// reads `unresolved` first: the refusal it owes is the citation's (D, the
+/// word this crystal lacks), never the remainder's.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DeflationRead {
+    pub pay: [u64; 4],
+    pub remainders: Vec<crate::transducer::germinate::ResidualGerm>,
+    pub unresolved: Vec<crate::transducer::address::Address>,
+}
+
+/// [`form_deflation_at`]'s one computation, whole.
+pub fn form_deflation_read(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    placement: &crate::transducer::alphabet::Word,
+) -> DeflationRead {
+    let mut unresolved: Vec<crate::transducer::address::Address> = Vec::new();
     if family.is_empty() {
-        return ([0; 4], Vec::new());
+        return DeflationRead { pay: [0; 4], remainders: Vec::new(), unresolved };
     }
     let mut pay = [0u64; 4];
     let mut remainders = Vec::with_capacity(family.len());
@@ -184,6 +209,9 @@ pub fn form_deflation_at(
             None => residual_of(Some(x), y),
         };
         let spoken = apply_form_on(form, x, placement, crystal, Some(pi));
+        if let Some(s) = spoken.as_ref() {
+            unresolved.extend(s.unresolved.iter().cloned());
+        }
 
         // A speech that does not fit its own frame lays down no grid, so the
         // residual is measured against what the form actually said: nothing.
@@ -207,7 +235,9 @@ pub fn form_deflation_at(
         }
         remainders.push(after_chain);
     }
-    (pay, remainders)
+    unresolved.sort_unstable();
+    unresolved.dedup();
+    DeflationRead { pay, remainders, unresolved }
 }
 
 /// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
@@ -255,18 +285,36 @@ fn mint_or_refuse(
     if let Some(r) = crate::court::verdict::body::vertices_carry_frames(&rule.form, family) {
         return Err(Refused::MintVertexNotCarried(r.obstruction.kind()));
     }
-    // 50.5 — what the form leaves unspoken on this family is its demand.
-    // The remainders are measured once here and read by the measure below
-    // (law 12): a demand vertex acts on nothing, so the declared form
-    // speaks exactly what the undeclared one spoke and leaves the same
-    // remainder, which is what `undeclared_remainder` reads at the court.
-    let (pay, remainders) = form_deflation(&rule.form, family, crystal);
-    let declared = declare_unspoken(&rule.form, family, &remainders);
+    // 50.5 — what the form leaves unspoken on this family is its demand. A
+    // citation this mind's crystal does not hold leaves nothing to declare:
+    // the sites it would speak are not the form's silence.
+    let here = crate::transducer::alphabet::Word::identity();
+    let spoken = form_deflation_read(&rule.form, family, crystal, &here);
+    if !spoken.unresolved.is_empty() {
+        return Err(Refused::CitedNotHeld);
+    }
+    let declared = declare_unspoken(&rule.form, family, &spoken.remainders);
     let form = match declared.as_ref() {
         Some(f) => f,
         None => &rule.form,
     };
-    let mag = sentence_measure_why(form, family, t_extent, pay, &remainders)?;
+    // THE FORM THE COURT WILL HOLD, measured — never the form in hand (34.2,
+    // 54.3). The word travels as its address and its receipts envelope, and
+    // the court reads its form from exactly those by the one decoder; the
+    // mint reads the same two before it mints, so the remainder the mint
+    // admits and the remainder the court re-derives are one reading of one
+    // object. It measured the undeclared form and shipped the declared one,
+    // on the unchecked word that a demand vertex acts on nothing.
+    let held = crate::transducer::sentence::held_form(
+        &crate::transducer::sentence::form_vertex_key(form),
+        &crate::transducer::element::ReceiptsEnvelope::of_form(form),
+    )
+    .ok_or(Refused::MintAddressUndecoded)?;
+    let read = form_deflation_read(&held, family, crystal, &here);
+    if !read.unresolved.is_empty() {
+        return Err(Refused::CitedNotHeld);
+    }
+    let mag = sentence_measure_why(&held, family, t_extent, read.pay, &read.remainders)?;
     crate::transducer::sentence::as_element_form(form, mag).ok_or(Refused::MintNoTape)
 }
 
