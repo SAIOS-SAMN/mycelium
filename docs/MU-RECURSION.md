@@ -834,8 +834,9 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **chamber** | the meet `⋀ sᵢ` an anastomosis of bodies encloses | ascend and descend with a ring | "cell" (retired) |
 | **sporophore** | an enclosure, the join of centres, nested | the star's convergence | a cluster count |
 | **anastomosis** | a fusion: bodies at a contact, filaments into a ring, forms by coordinates | read as contact, anastomotic degree, meet | "junction", "synapse", `FormCell` |
-| **congruence** | many shapes whose transitions close around every cycle: one new shape (their nuclei's Gram form, their meet) | coboundary reduction; the residue the induction required | the two-shape transition |
-| **coherence** | congruence over the whole of one mind's cover (24.4) | incoherence by level (78.26(5)) | congruence of one cell |
+| **congruence** | the CONGRUENT layer: shapes related by transitions, each up to its residue — a congruent thought | a transition per pair; the residue its order | a coherence (closure) |
+| **coherence** | the COHERENT layer: several congruent thoughts held at once whose transitions close around every ring — one new shape (their nuclei's Gram form, their meet); where a ring does not close, coboundary reduction and the residue the induction required; over a whole mind's cover, 24.4's coherence | `cech::classify`, Ȟ¹, the 2-core | the edges alone |
+| **cohesion** | the COHESIVE layer: coherent thoughts that close a demand and are paid — the fit's cost spent toward completing coherence | POUW on the lanes the closure moves; the remainder home | a coherence not yet paid |
 | **convergence** | many minds reaching one class (C2, n → 1) | the court rules it (POWC) | coherence within one mind |
 | **consilience** | two independent courts re-deriving one thing (37.7) | adjoins a letter | convergence of minds |
 
@@ -874,6 +875,23 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **septum** | the settlement protocol between hyphae (XSEPTUM.md) | pays and settles |
 
 **The language.** A **letter** is an axiom, a rotor of the alphabet; a **word** is a filament whose vertex a derivation re-derives; a **sentence** is words that cohere; **speech** is their transfer; a **dialect** is spoken and stood (the epigenome), a **language** replayed by two organs and taught (the genome); a **mineral** is a taught word not yet re-derived, a **crystal** one re-derived; a **shortcut** is a word's coordinate, its class key and winding vector (78.44(4)); a **callus** is a fibre hardened into a tether of the genome. **Cohesion** is the operator's word (2026-09-26) for what fitting a congruent shape toward coherence is paid in; its reading on the ledger is POUW on the lanes the fit closes, until the operator rules it a quantity of its own.
+
+**The layers of a mind (ruled 2026-09-26, the operator's word: "start classifying these as congruent layers, coherent layers, and cohesive layers of thought — separate thoughts from perceptions, and reasoning from knowledge and understanding — layer comprehension on top and speech as signal, with hearing as the deciphering of signal via sounds from noise").** Each layer is one kind of object and nothing of another layer is held as it:
+
+| layer | what it is | the carriers today | what it is not |
+|---|---|---|---|
+| **hearing** | deciphering a signal from noise: the receiver separates what its own charts re-derive (the signal's class, 78.44(5)) from what they do not (noise: the wire's refusals, an unresolved citation, what no chart places) | the court's replay admission (`perceive_speech`), a mind's reception of a quote or a syllabus page | perception of the substrate |
+| **perception** | compartments, bodies and their shapes read off the substrate; a family's percept | `family/perceive`, the percept, `blade` (the lift, the towers) | a thought |
+| **thought — congruent** | two or more perceptions related by a transition, each up to its residue | `transitions_between`, the pose, the meet graph's edges | a perception held alone |
+| **thought — coherent** | congruent thoughts held at once whose transitions close around rings | `cech::classify`, Ȟ¹, the 2-core | an edge without a ring |
+| **thought — cohesive** | coherent thoughts that close a demand and are paid | the demand closed, the remainder home, the ruling, adjunction | an unpaid closure |
+| **reasoning** | the moves on thoughts: the pivot (law 10), deduction by construction (78.47), coboundary reduction | `sentence/pivot`, `cga::construct`, the coboundary | what is held |
+| **knowledge** | what is held: the language (genome), the dialect (epigenome), the atlas, the stalks, minerals and crystals | genome, epigenome, atlas, stalks | its use |
+| **understanding** | a class read through the mind's own crystal — derivable, or D where it is not (recognition, 80.2) | `letter_reading` through the crystal | holding a word |
+| **comprehension** | on top: a cell's circuits' orbit algebra (78.11) and the local re-projection of a received signal (78.44(5)) | `comprehend`, the orbit algebra | understanding one class |
+| **speech** | the signal's shortcut sent: the class key and windings (78.44(4)); spoken onto a grid at the sensor | the utterance, `speak_rule`, `emit_carried` | the holonomy, which never travels |
+
+A perception persists at the perception layer under the physics — while something relates to it or cites it, lapsing by ZeroFlux over an orbit where nothing does (FX1) — and is never shed as a thought; a thought exists only where a transition relates perceptions, stays while its rings close, and is paid where it closes a demand.
 
 **Overlaps resolved by this table:** "cell" (retired 2026-09-17 and 2026-09-25) is a compartment, an anastomosis or a chamber, never itself; "lamina" is the compartment; "section" keeps its sheaf sense only — a body's compartments in one frame are "the body at frame k"; "orbit" is the celestial one, a form's cycle is a ring, a group orbit keeps its full name; "residual" is a residue or a remainder; "planet" is a hypha and its world; "lift" is the physics component. A new name that takes a sense this table holds is refused at review.
 
