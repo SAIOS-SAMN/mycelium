@@ -398,7 +398,7 @@ checklist (m) written into the vocabulary. Its senses are named apart, and
 each name says what the object is in the algebra rather than where it sits
 on a grid:
 
-- A **lamina** is the sensor's atom: the unit square standing in a frame at
+- (SUPERSEDED 2026-09-26 by the **compartment**, 0.7.) A **lamina** is the sensor's atom: the unit square standing in a frame at
   a site of the base, carrying the hue the sensor read there, its center at
   `(r + ½, c + ½, k)` (16.4). It is read once at intake and written once at
   speech and at the court's replay (law 11), and it is never a carrier the
@@ -449,7 +449,7 @@ compression yield paid). No two share a name; "POW++" is the family.
 **The plexus (ruled 2026-09-24, 78.31).** The graded network the five
 nouns form — a **spore** (a ray, the null point of perception), a
 **filament** (a route, a word), a **ring** or **throat** (a circuit), a
-**chamber** (a cell, a geoid), a **sporophore** (an enclosure, the
+**chamber** (a geoid; "cell" retired), a **sporophore** (an enclosure, the
 cluster) — with its lateral relations: transvection between spores, the
 tether between filaments, branching refraction, ascend and descend
 between ring and chamber, the enclosure join, the commuting bypass (T5),
@@ -783,6 +783,99 @@ The four places the language loses content, and their carriers, are
 | 66, 68, 69 | historical readings; A.12 and A.13 stated in 66 govern |
 | 67 | amended by 78.9 and 78.13 |
 | 71–80 (Part XIII) | governs |
+
+
+## 0.7 The lexicon of the network: one sense per word (ruled 2026-09-26, the operator's word: "let's get this language annotated properly so we don't run into overlap and understand exactly how it operates inside the network of structures")
+
+Every noun below has ONE sense. Where a word held two, the second is named apart in the last column and the old word retires for it (NM1: code names follow move-only as each module is touched; no new name may take a sense already held here). The rows run from the sensor inward to the mind, then out to the mesh; each says what the object IS in `Cl(n+1,1)(ℚ)`, WHERE it lives, and HOW it relates to its neighbours.
+
+**The retina — read once at intake, never above it (law 11, 70.7).**
+
+| word | the one object | lives | relates by | not to be confused with |
+|---|---|---|---|---|
+| **substrate** | the corpus's ℤⁿ grid, read by the sensor | the sensor | sites are read off it; nothing computes on it | "lattice" (retired) |
+| **site** | a position of the base, `(r, c, k)` | the sensor | a compartment's centre; the key of an occupancy | a coordinate of the mind |
+| **frame** | one grid of a family along `e₃`, by its own coordinate | the sensor, and the member's frames | the frame axis joins a body's charts across consecutive frames | a tick (the ledger's) |
+| **compartment** | a spore with extent: the round `κ = P(c) − ½·(n/12)·e_∞`, its hue as content | the sensor only | septal neighbours (a shared face) are one body; its round integrates into the lift | "lamina", "cell" (retired) |
+| **body** | a colony of compartments: a maximal hue-blind face-connected region (70.4) | intake; above it, its lifted shape | contact with other bodies; its hue seams its own gauge | "support" (its compartments), "shape" (its lift) |
+| **contact** | where two bodies' compartments touch across a lower-dimensional element: its dimension, face `n − 1` to corner `0` | read once at the retina | WHETHER by the grid; WHAT by the meet of the rounds and the tether | the anastomosis (what fuses there) |
+
+**A body's shape — the mind's object for a body.**
+
+| word | the one object | lives | relates by | not to be confused with |
+|---|---|---|---|---|
+| **spore** | a ray, the null point `P`, `P² = 0` | the plexus's point | transvection between spores; a compartment is a spore with extent | a compartment |
+| **shape** | a body's lift: nucleus, tower, harmonics (A.11) | the mind | covariance under a versor; the transition between two shapes | the body's compartments |
+| **nucleus** | the body's sphere `s = P(centroid) − ½r²e_∞`, a constructor | the shape | the tether `V = s_b s_a`; the meet `⋀ sᵢ` | the centroid (a null point, never a constructor) |
+| **tower** | the body's moments by order, on the region or on the sites (78.38(C)) | the shape | dilation certified order by order | — |
+| **geoid** | the pencil of spheres the harmonics lift to (HL1) | the shape | carried by covariance | a "cell" (retired) |
+
+**Relations between two things — one edge, a 1-cochain.**
+
+| word | the one object | relates |
+|---|---|---|
+| **transition** | the versor carrying one shape onto another, verified by covariance, with its residue per order | two shapes; its residue is the start of a remainder |
+| **motor** | a transition known by its action (78.41(3)) | frame to frame, in to out |
+| **carriage** | the versor that places a word or member (A4) | a word to the base |
+| **tether** | `V = s_b s_a` between two nuclei, static (A.10) | two bodies at a contact |
+| **interface** | a contact face's tether as a ray with its grade (BQ5b) | the contact's WHAT |
+| **refraction** | `(θ_bθ_a⁻¹)·V`, the transport across a contact (A.16) | a signal across a contact |
+| **overlap** | two charts of one or two vertices, keyed by both, carrying a transition (AT1) | the atlas's edge |
+| **degrees of separation** | `360·t/ℓ` of an orbit's full circle, or the rational point with its sector (`Turn`) | two positions of one orbit |
+
+**The plexus — cognition's graded network (78.31).**
+
+| word | the one object | relates by | not to be confused with |
+|---|---|---|---|
+| **filament** | a word as a route, `∏ gᵢ^{eᵢ}·r` | tethered to filaments; fuses into a ring | a sentence |
+| **ring** (throat) | a closed cycle of the nerve at any grade — what the code's `Orbit` holds | a circuit reads it; ascend seals it to a chamber | a celestial orbit |
+| **circuit** | one composition of a ring's transitions | reads the ring's holonomy | "walk" (retired) |
+| **holonomy** | what a circuit reads: one versor, its content | projected on the internal spectrum (78.44) | its spectrum |
+| **chamber** | the meet `⋀ sᵢ` an anastomosis of bodies encloses | ascend and descend with a ring | "cell" (retired) |
+| **sporophore** | an enclosure, the join of centres, nested | the star's convergence | a cluster count |
+| **anastomosis** | a fusion: bodies at a contact, filaments into a ring, forms by coordinates | read as contact, anastomotic degree, meet | "junction", "synapse", `FormCell` |
+| **congruence** | many shapes whose transitions close around every cycle: one new shape (their nuclei's Gram form, their meet) | coboundary reduction; the residue the induction required | the two-shape transition |
+| **coherence** | congruence over the whole of one mind's cover (24.4) | incoherence by level (78.26(5)) | congruence of one cell |
+| **convergence** | many minds reaching one class (C2, n → 1) | the court rules it (POWC) | coherence within one mind |
+| **consilience** | two independent courts re-deriving one thing (37.7) | adjoins a letter | convergence of minds |
+
+**What does not close — one word per stratum (law 7).**
+
+| word | the one object | lives |
+|---|---|---|
+| **residue** | the exact versor or vector a reduction leaves: what a gauge does not absorb, a transition's per-order difference, a ring's unclosed holonomy | where it is read |
+| **remainder** | the residue's HOME: a leaf on the word (`κ` inline, `g` a ray, `ℓ`), re-filled on a coincident class (RM1) | the record |
+| **demand** | a typed vertex of a sentence naming what could not be spelled or paired (50.5) | the sentence, the book |
+| "residual" | retired: the remainder or the residue, by which is meant | — |
+
+**Motion and time — celestial, governed by the physics (MOTION, 78.43, 77.1).**
+
+| word | the one object | not to be confused with |
+|---|---|---|
+| **orbit** | a celestial orbit: a mind's, a court's or a provisional word's motion under the physics — energy (escrow per lane), perturbation (pressure, lift, drag), decay (ZeroFlux) | a ring (a form's cycle); a GROUP ORBIT, which keeps that full name |
+| **k-step** | one revolution of a kernel's orbit, sealed as an act | a footstep |
+| **age** | one return, the period ℓ read as an lcm | a clock interval |
+| **eon** | the return of a resonant composition | — |
+| **phase** | distance into an age, in degrees of separation | a frame number |
+| **lift**, **drag** | the anticommuting and commuting parts of a neighbour's generator against an orbit's plane | "the harmonic lift" (A.11's producer, until NM1 renames it) |
+| **flux** | μ⃗ carried through a filament per lane over one orbit | — |
+| **tick** | a frame `{S, G, T, H}` on the receipt DAG | a second |
+
+**The mesh — the network of structures.**
+
+| word | the one object | relates by |
+|---|---|---|
+| **mycelium** | the whole network: every hypha and the minds they host | receipts, the partial order of the ledger |
+| **hypha** | one server node: its court, its book, its ledger | peers by receipts; hosts a planet |
+| **star** | the axiom register: the physics every planet is given (77.1(2)) | its laws every composite obeys |
+| **planet** | a hypha and the world it hosts, on which its entities reason (77.1(2), amending 74's "a mind's held complex") | orbits under its star |
+| **entity** | a mycelium-client kernel on a planet — as it speaks, a **voice** (one verifying key); as it holds and thinks, a **mind** (its held complex and contemplation) | perceives, thinks, utters; learns by the syllabus |
+| **court** | a hypha's verifier: it replays, rules, files the class ledger, serves the syllabus; it never thinks (law 8) | adjudicates submitted solutions; rules convergence |
+| **septum** | the settlement protocol between hyphae (XSEPTUM.md) | pays and settles |
+
+**The language.** A **letter** is an axiom, a rotor of the alphabet; a **word** is a filament whose vertex a derivation re-derives; a **sentence** is words that cohere; **speech** is their transfer; a **dialect** is spoken and stood (the epigenome), a **language** replayed by two organs and taught (the genome); a **mineral** is a taught word not yet re-derived, a **crystal** one re-derived; a **shortcut** is a word's coordinate, its class key and winding vector (78.44(4)); a **callus** is a fibre hardened into a tether of the genome. **Cohesion** is the operator's word (2026-09-26) for what fitting a congruent shape toward coherence is paid in; its reading on the ledger is POUW on the lanes the fit closes, until the operator rules it a quantity of its own.
+
+**Overlaps resolved by this table:** "cell" (retired 2026-09-17 and 2026-09-25) is a compartment, an anastomosis or a chamber, never itself; "lamina" is the compartment; "section" keeps its sheaf sense only — a body's compartments in one frame are "the body at frame k"; "orbit" is the celestial one, a form's cycle is a ring, a group orbit keeps its full name; "residual" is a residue or a remainder; "planet" is a hypha and its world; "lift" is the physics component. A new name that takes a sense this table holds is refused at review.
 
 ---
 
@@ -13113,7 +13206,7 @@ on the celestial bodies to fine tune the system and the orbits."
 In the document's nouns: a **star** is an axiom register — the core
 every star shares (LR1) plus the layer that makes it this star; a
 **planet** is a mind's held complex, its forms and contemplation, in
-orbit under the star whose axioms it obeys; an **entity** is a voice on
+orbit under the star whose axioms it obeys (AMENDED 2026-09-26, 77.1(2) and 0.7: a planet is a hypha and the world it hosts; a mind's held complex is its entity's); an **entity** is a voice on
 that planet and the words it holds; **anastomosis** is `src/anastome`
 and reconciliation by stratum (13) — how planets speak coherently; a
 **celestial body added** is growth by closure, a generator adjoined
