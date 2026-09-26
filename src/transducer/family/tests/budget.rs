@@ -82,7 +82,7 @@ fn the_production_budget_reads_a_family_end_to_end() {
     let mut ph = crate::physics::Physics::default();
     let frames = perceive_family(&family);
     let mut sized = ph.stroke_n(crate::transducer::family::extraction_spend(&family, &frames));
-    let rule = extract_rule_on(&family, Some(&frames), &NoCrystal, &mut sized)
+    let rule = extract_rule_on(&family, &frames, &NoCrystal, &mut sized)
         .expect("a family the mesh hands over is a family that can be measured");
     assert_eq!(
         rule.form.demand_vertices().count(),

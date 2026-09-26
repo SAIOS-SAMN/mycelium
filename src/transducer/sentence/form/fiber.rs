@@ -78,7 +78,7 @@ impl FiberTransition {
     /// cannot be read at all, which is a refusal and never a flat rotor
     /// (rule 11).
     pub fn rotor(&self) -> Option<crate::transducer::alphabet::Rotor> {
-        crate::transducer::element::base_rotor_of(&self.carriage)
+        crate::transducer::element::base_rotor_of(&self.carriage).ok()
     }
 
     /// THE CARTAN SPLIT of the vertical transition: where the gauge bends,

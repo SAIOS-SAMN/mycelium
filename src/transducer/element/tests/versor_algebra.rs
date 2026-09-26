@@ -210,5 +210,5 @@ fn the_base_action_of_a_rotor_is_exact_and_its_inverse_reads_it_back() {
     let sheet = crate::transducer::alphabet::PlaneForm::sheet_word();
     let v = versor_of_word(&sheet).expect("the orientation character acts on the base");
     assert!(agrees(&sheet.rotor(), &v), "as the reflection it is on the base");
-    assert!(base_rotor_of(&v).is_some_and(|r| r.projective_eq(&sheet.rotor())), "and reads back");
+    assert!(base_rotor_of(&v).is_ok_and(|r| r.projective_eq(&sheet.rotor())), "and reads back");
 }

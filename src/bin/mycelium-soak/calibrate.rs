@@ -58,7 +58,7 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
         let mut physics = mycelium::physics::Physics::default();
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
-        match extract_rule_on(&task.train, Some(&frames), &epi, &mut b) {
+        match extract_rule_on(&task.train, &frames, &epi, &mut b) {
             Some(r) => println!(
                 "  id {hx} = {file}: {} vertices {} faces {} orbits",
                 r.form.vertices.len(),
@@ -107,7 +107,7 @@ pub(crate) fn report(dir: &str, name: &str) {
     let mut physics = mycelium::physics::Physics::default();
     let frames = perceive_family(&task.train);
     let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
-    let Some(rule) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else {
+    let Some(rule) = extract_rule_on(&task.train, &frames, &epi, &mut b) else {
         eprintln!("  calibrate refused: {name} extracts no rule");
         return;
     };

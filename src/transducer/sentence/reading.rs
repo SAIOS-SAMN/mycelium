@@ -111,7 +111,7 @@ fn vertex_cites_by(
     let shape_in = blade::shape_of_section(&in_support);
     let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
-    let v = blade::versor_carrying(&shape_in, &shape_out, &linear, budget)?.versor;
+    let v = blade::versor_carrying(&shape_in, &shape_out, &linear, budget).ok()?.versor;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c, 0)?;
         let (tr, tc, tk) = element::site_of(&p)?;
@@ -213,7 +213,7 @@ where
     let [addr] = stratum.as_slice() else { return unlocated(m) };
     let Some(word) = word_at(addr) else { return unlocated(m) };
     let Some(held) = shape_at(addr) else { return unlocated(m) };
-    let Some(to_word) = blade::versor_between(&shape, held, budget) else { return unlocated(m) };
+    let Ok(to_word) = blade::versor_between(&shape, held, budget) else { return unlocated(m) };
     // Back to the word by the reverse; a site is read by proportion (78.32(1)).
     if !crate::transducer::cga::is_versor(&to_word) {
         return unlocated(m);

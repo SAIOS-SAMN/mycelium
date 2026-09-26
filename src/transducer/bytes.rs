@@ -96,7 +96,7 @@ impl Bytes for crate::transducer::blade::Towers {
         };
         let matrix = |m: &[Vec<crate::core::Q>]| -> usize { m.iter().flat_map(|r| r.iter()).map(bytes_q).sum() };
         std::mem::size_of::<Self>()
-            + orders(&self.region)
+            + self.region3.iter().flatten().flat_map(|h| h.iter()).map(bytes_q).sum::<usize>()
             + orders(&self.sites)
             + self.spread.iter().flatten().map(bytes_q).sum::<usize>()
             + self.points.as_ref().map_or(0, |p| matrix(&p.m) + p.t.iter().map(bytes_q).sum::<usize>() + matrix(&p.n4))

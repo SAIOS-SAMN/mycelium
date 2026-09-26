@@ -190,7 +190,7 @@ impl Surgery {
         let surg = Self::detect(&src.blade.support, &dst.blade.support)?;
         let core = surg.apply(&src.blade.support);
         let core_shape = shape_of(&core);
-        let v = crate::transducer::blade::carry::versor_between(&core_shape, dst, budget)?;
+        let v = crate::transducer::blade::carry::versor_between(&core_shape, dst, budget).ok()?;
         Some((surg, v))
     }
 }

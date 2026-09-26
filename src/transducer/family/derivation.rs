@@ -185,7 +185,7 @@ pub(crate) fn occupied_lanes(
 /// The rotor a versor's base action is (51.2): exact on the three base
 /// planes, read whole and never off one plane's block.
 fn rotor_of_versor(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
-    crate::transducer::element::base_rotor_of(v)
+    crate::transducer::element::base_rotor_of(v).ok()
 }
 
 /// 37.7, L23a, L12 — THE ADJOINED GENERATORS THIS MIND HOLDS at the meet

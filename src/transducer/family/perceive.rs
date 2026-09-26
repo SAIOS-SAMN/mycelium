@@ -231,10 +231,6 @@ pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
 /// stroke is sized by ([`super::extraction_spend`]) and the percept then
 /// reads, so no frame's components are read a second time to size the draw.
 pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
-    // A family the percept memo already read is read back, not perceived.
-    if let Some(frames) = super::extract::memo_frames(family) {
-        return frames;
-    }
     family
         .iter()
         .enumerate()
@@ -851,22 +847,24 @@ pub(crate) fn edge_transport(
         let compartments: Vec<Compartment> = x.compartments.iter().chain(y.compartments.iter()).cloned().collect();
         blade::shape_of(&sites_of(&compartments))
     };
-    let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget);
+    // A pair no versor carries does not move rigidly; a spent stroke read
+    // nothing, and says so.
+    let members = match blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget) {
+        Ok(members) => members,
+        Err(blade::NoPose::Unbounded) => return Err(vec![EdgeRefusal::NoReading]),
+        Err(_) => return Err(vec![EdgeRefusal::NotRigid]),
+    };
     // `ṽᵢ vᵢⱼ`, the edge as a ray (78.32(1)).
     crate::transducer::cga::is_versor(v_i).then_some(()).ok_or_else(|| vec![EdgeRefusal::NoReading])?;
     let inv = v_i.reverse();
     let mut refusals: Vec<EdgeRefusal> = Vec::new();
-    for v_ij in &members {
-        match edge_of(&inv.geo(v_ij)) {
+    // The coset in its content order, geodesic first then by each member's
+    // own key: the least-keyed member that reads is the canonical one.
+    for t in &members {
+        match edge_of(&inv.geo(&t.versor)) {
             Ok(transport) => return Ok(transport),
             Err(e) => refusals.push(e),
         }
-    }
-    if refusals.is_empty() {
-        // Nothing refused because nothing carried: the empty coset, which
-        // is the pair not moving rigidly. Not a default standing in for a
-        // reading (rule 11).
-        refusals.push(EdgeRefusal::NotRigid);
     }
     Err(refusals)
 }

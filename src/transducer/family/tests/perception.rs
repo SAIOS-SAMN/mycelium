@@ -5,16 +5,19 @@ use super::common::*;
 use crate::transducer::base::Site;
 use crate::transducer::family::*;
 
-/// Perception writes the form once. A second call on the same grids
-/// does not touch a compartment.
+/// Perception reads each cell of the sensor ONCE per reading: the frames are
+/// perceived once and handed through, never perceived again to size the
+/// stroke, and nothing is held between readings — a second reading reads
+/// the cells again, once each.
 #[test]
 fn pair_form_reads_compartments_once() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
+let cells = 2 * 2 * 4;
 reset_sensor_reads();
 let f1 = cipher_form(&a, &b);
 let n = sensor_reads();
-assert!(n > 0, "first call reads the grids, got {n}");
+assert_eq!(n, cells, "one reading reads every cell of both frames once");
 assert!(
     f1.vertices.scoped().any(|(_, v)| matches!(v, Vertex::Frame)),
     "every pair form has a frame"
@@ -29,7 +32,7 @@ assert!(
     "a carried body is a word vertex"
 );
 let f2 = cipher_form(&a, &b);
-assert_eq!(sensor_reads(), n, "second call touches no compartment");
+assert_eq!(sensor_reads(), 2 * cells, "a second reading reads them again, once each: nothing is held");
 assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
 }

@@ -148,7 +148,7 @@ impl Kernel {
                 }
                 None => match bodies {
                     (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b, budget) {
-                        Some(between)
+                        Ok(between)
                             if crate::transducer::element::same_versor(
                                 &between,
                                 &crate::transducer::element::identity_versor(),
@@ -162,8 +162,8 @@ impl Kernel {
                                 vol0,
                             )
                         }
-                        Some(_) => cx.set_remainder_edge(v, peer.as_slice()),
-                        None => {}
+                        Ok(_) => cx.set_remainder_edge(v, peer.as_slice()),
+                        Err(_) => {}
                     },
                     _ => {
                         if tr.is_some() {

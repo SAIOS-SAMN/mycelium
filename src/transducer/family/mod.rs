@@ -353,7 +353,7 @@ pub struct Carriage {
 /// body's compartments stand at `k = 0` (51.3), which is their coordinate and
 /// not a second path.
 pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
-    let v = blade::versor_between(&a.shape, &b.shape, budget)?;
+    let v = blade::versor_between(&a.shape, &b.shape, budget).ok()?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for l in &a.compartments {
         let h2 = landed_hue(&v, &l.site, b)?;

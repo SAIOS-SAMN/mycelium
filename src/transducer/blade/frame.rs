@@ -252,6 +252,14 @@ pub enum NoPose {
     /// and a short stroke is this typed cut — never a silent overrun, and
     /// never a claim about the pair, which a longer stroke reads.
     Unbounded,
+    /// EVERY CANDIDATE WAS READ AND NONE CARRIES: the covariance refused
+    /// each — the first candidate's refusal, in the order the pair's content
+    /// builds them, named. Includes a versor that moves infinity (A.13 not
+    /// built) and a plane turned off the base, never passed unchecked.
+    Uncarried(super::continuous::NotCarried),
+    /// THE COSET CARRIES AND NO MEMBER READS A WEIGHT OR A KEY: no
+    /// representative names the class, and none is picked in its place.
+    Ungauged,
 }
 
 /// WHERE TWO SHAPES DISAGREE (78.38(2), (C)): where neither similarity of the
@@ -277,9 +285,13 @@ impl NoPose {
     pub fn obstruction_kind(self) -> Option<crate::transducer::sentence::ObstructionKind> {
         use crate::transducer::sentence::ObstructionKind;
         match self {
-            NoPose::Mirrored | NoPose::Incongruent(_) | NoPose::Isotropy | NoPose::Irrational | NoPose::NullStep => {
-                Some(ObstructionKind::P)
-            }
+            NoPose::Mirrored
+            | NoPose::Incongruent(_)
+            | NoPose::Isotropy
+            | NoPose::Irrational
+            | NoPose::NullStep
+            | NoPose::Uncarried(_) => Some(ObstructionKind::P),
+            NoPose::Ungauged => Some(ObstructionKind::Unclassified),
             NoPose::Oblique => Some(ObstructionKind::D),
             NoPose::Bodiless => Some(ObstructionKind::I),
             // A cut by the stroke is no reading of the pair at all.
@@ -443,7 +455,15 @@ pub fn relative_rotor(
     //
     // THE POSE IS THE ROTATION; the residue a fit leaves above its order is
     // the transition's (`transitions_between`), read there with its versor.
-    let members = super::carry::transitions_on(a, b, plane, fit, budget)?;
+    // A spent stroke is the stroke's cut. A coset nothing fills is named by
+    // the bodies' own invariants below — the pose's reading of WHICH fact
+    // no member carries (`unturned`), finer than the transition's.
+    let members = match super::carry::transitions_on(a, b, plane, fit, budget) {
+        Ok(members) => members,
+        Err(NoPose::Unbounded) => return Err(NoPose::Unbounded),
+        Err(NoPose::Uncarried(_) | NoPose::Oblique | NoPose::Irrational) => Vec::new(),
+        Err(other) => return Err(other),
+    };
     let (turns, mirrors): (Vec<Mv>, Vec<Mv>) =
         members.into_iter().map(|t| t.rotation).partition(|r| r.parity() == Some(false));
     let read = match turns.is_empty() {

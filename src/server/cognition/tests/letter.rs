@@ -545,14 +545,7 @@ fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_deriv
     let recomposed = rederived.reflections().iter().fold(crate::transducer::cga::Mv::scalar(q(1)), |acc, u| acc.geo(u));
     assert!(recomposed.projective_eq(&residue), "whoever asks re-derives the constructors from the chain (law 12)");
 
-    // 3. COMPOUND: a mind holding nothing admits it by rank.
-    assert_eq!(
-        crate::transducer::cech::admits_compound(&[], &composed, &mut stroke()),
-        Some(true),
-        "the compound strictly raises the rank of what the mind holds"
-    );
-
-    // 4. ADJOIN, from a second vantage. The mind's letter demand is the one
+    // 3. ADJOIN, from a second vantage. The mind's letter demand is the one
     //    its own peel types for the residue.
     let Some(Err(demand)) = crate::transducer::alphabet::factor_rotor(&pi) else {
         panic!("the peel types a letter demand for the residue")

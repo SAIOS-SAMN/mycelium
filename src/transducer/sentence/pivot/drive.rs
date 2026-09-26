@@ -7,22 +7,6 @@
 
 use super::*;
 
-/// 78.47(6) — THE NEGATIVE'S KIND, read off why the residue did not spell
-/// (78.9): no versor, or a null step (no reflection exists there), is P; no
-/// residue asks nothing, N; modes that do not split over ℚ are unclassified;
-/// a construction that does not compose or meets off its locus is a claim
-/// that does not re-derive, I.
-fn not_constructed_kind(why: crate::transducer::cga::NotConstructed) -> crate::transducer::sentence::ObstructionKind {
-    use crate::transducer::cga::NotConstructed;
-    use crate::transducer::sentence::ObstructionKind;
-    match why {
-        NotConstructed::NotVersor | NotConstructed::NullStep { .. } => ObstructionKind::P,
-        NotConstructed::NoResidue => ObstructionKind::N,
-        NotConstructed::Undecomposed(_) => ObstructionKind::Unclassified,
-        NotConstructed::DoesNotCompose | NotConstructed::MeetOffLocus { .. } => ObstructionKind::I,
-    }
-}
-
 /// WHAT A TRIAL IS MEASURED AGAINST: the form's standing before any
 /// candidate is applied — the orbit rows and the rank they carry, the
 /// crystal the axes are read in, the bundle and its T extent, and the μ⃗ the
@@ -485,20 +469,11 @@ impl Form {
                 // orbit's undischarged class and its cover, where no held word
                 // discharged it and none adjoins — and, A19, where the court
                 // has not ruled the class: another mind can supply that word,
-                // so this one does not demand it. 78.47 — DEDUCTION CONSTRUCTS:
-                // the demand carries its residue, and the constructors around
-                // its congruence factors are read off it here only to name
-                // what does not spell — the negative, refused with the class
-                // and counted by kind. They are never carried beside the
-                // residue that derives them (law 12).
+                // so this one does not demand it. 78.47 — the demand carries
+                // its residue; the constructors around its congruence factors
+                // are derived from it by whoever asks (`cga::construct`), never
+                // computed here to be counted and dropped (law 12).
                 if matches!(outcome, Discharge::NoneDischarged) && !adjoining && !held {
-                    let spelled = match &residue {
-                        Some(r) => crate::transducer::cga::construct(r, budget).map(|_| ()),
-                        None => Err(crate::transducer::cga::NotConstructed::NotVersor),
-                    };
-                    if let Err(why) = spelled {
-                        crate::observe::note_obstruction(not_constructed_kind(why));
-                    }
                     snaps.push(Snap::Demanded {
                         chord: idx,
                         class: Box::new(kappa.clone()),

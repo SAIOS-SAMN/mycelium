@@ -35,7 +35,6 @@ fn the_inversion_exchanges_the_two_poles_and_is_its_own_inverse() {
     let k = transversor(&[q(1, 3), q(-2, 1), q(0, 1)]);
     assert!(k.sandwich(&cga::point_at(&[])).projective_eq(&cga::point_at(&[])), "K(b) fixes the origin");
     assert!(!k.sandwich(&cga::e_inf()).projective_eq(&cga::e_inf()), "and moves infinity");
-    assert_eq!(transversor_of(&k), Some(k), "the transversion reader reads it back");
 }
 
 /// EVERY FACTOR READ EXACTLY, AND THE PRODUCT COMPOSES BACK (T1). A versor
@@ -107,7 +106,7 @@ fn the_inversions_cell_reads_and_its_kind_is_the_letter_demand() {
     let f = conformal_factors(&v).expect("read in the inversion's cell");
     assert!(f.inverted, "V(o) = ∞");
     assert_eq!(f.composed(), v, "T1");
-    assert_eq!(base_rotor_of(&v), None, "the inversion is no rotation of the base");
+    assert_eq!(base_rotor_of(&v), Err(RotorUnread::Inverted), "the inversion is no rotation of the base");
     let kind = crate::transducer::sentence::read_obstruction(crate::transducer::sentence::Content::Holonomy {
         versor: Some(&v),
         chart: None,

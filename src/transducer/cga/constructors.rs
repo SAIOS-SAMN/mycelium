@@ -210,18 +210,27 @@ fn constructors_of_action(r: &[Vec<Q>], n: u8) -> Result<Vec<Mv>, usize> {
 /// A TURN OF THE BASE — an `n × n` isometry on `e₁ … eₙ` — as the conformal
 /// motion it is: embedded in the action on `Cl(n+1, 1)` with `e₊`, `e₋` held
 /// fixed, and spelled there. One factorizer, one metric, no flat case.
-pub(crate) fn constructors_of_base_turn(r: &[Vec<Q>], n: u8) -> Result<Vec<Mv>, usize> {
+pub(crate) fn constructors_of_base_turn(r: &[Vec<Q>], n: u8) -> Result<Vec<Mv>, TurnUnspelled> {
     let masks = super::modes::generators(n);
-    let at = |axis: usize| masks.iter().position(|&m| m == super::base_axis(axis + 1));
+    let at: Vec<Option<usize>> = (0..r.len()).map(|axis| masks.iter().position(|&m| m == super::base_axis(axis + 1))).collect();
     let d = masks.len();
     let mut full: Vec<Vec<Q>> = (0..d).map(|i| (0..d).map(|j| if i == j { one() } else { Q::zero() }).collect()).collect();
     for (i, row) in r.iter().enumerate() {
         for (j, x) in row.iter().enumerate() {
-            let (Some(fi), Some(fj)) = (at(i), at(j)) else { return Err(i) };
-            full[fi][fj] = x.clone();
+            let (Some(Some(fi)), Some(Some(fj))) = (at.get(i), at.get(j)) else { return Err(TurnUnspelled::Axis(i)) };
+            full[*fi][*fj] = x.clone();
         }
     }
-    constructors_of_action(&full, n)
+    constructors_of_action(&full, n).map_err(TurnUnspelled::NullStep)
+}
+
+/// WHY A TURN OF THE BASE DOES NOT SPELL AS CONSTRUCTORS, each by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum TurnUnspelled {
+    /// A row of the turn names an axis the algebra at `n` does not have.
+    Axis(usize),
+    /// A forced step would reflect in a null vector, at this column.
+    NullStep(usize),
 }
 
 /// WHY A RESIDUE DOES NOT SPELL AS CONSTRUCTORS — the negative, refused with

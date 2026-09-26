@@ -158,11 +158,11 @@ fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     let four = crate::transducer::blade::Harmonic::Four;
     assert_eq!(
         blade::carries_by_covariance(&v, &l.blade, &turned.blade, blade::Tower::Region, four),
-        Some(Vec::new()),
+        Ok(blade::Covariance::default()),
         "the region's tower is carried by it whole, no residue at any order"
     );
     assert!(
-        blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region, four).is_none(),
+        blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region, four).is_err(),
         "and not the other way: a 90° turn is not its own inverse"
     );
 }

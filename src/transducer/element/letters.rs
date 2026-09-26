@@ -98,37 +98,60 @@ fn base_action_of(rotor: &crate::transducer::alphabet::Rotor) -> Option<Versor> 
 /// `(D·T)⁻¹ V` it always read, the same ray exactly; where `V` moves
 /// infinity — a holonomy composed of transvections, which carry both poles
 /// — the transversion is read off first instead of the whole reading being
-/// lost. `None` when `V` is no versor, carries the origin to infinity (the
-/// inversion is no rotation of the base), or `R` is not a rotation or a
-/// reflection of the base — nothing is projected. The inverse of
-/// [`versor_of_word`] on every rotor that has a base action.
-pub fn base_rotor_of(v: &Versor) -> Option<crate::transducer::alphabet::Rotor> {
+/// lost. Refused by name ([`RotorUnread`]) when `V` is not read at both
+/// poles, carries the origin to infinity (the inversion is no rotation of
+/// the base), or `R` is not a rotation or a reflection of the base —
+/// nothing is projected. The inverse of [`versor_of_word`] on every rotor
+/// that has a base action.
+pub fn base_rotor_of(v: &Versor) -> Result<crate::transducer::alphabet::Rotor, RotorUnread> {
+    rotor_of_factors(&conformal_factors(v).map_err(RotorUnread::Unfactored)?)
+}
+
+/// [`base_rotor_of`] on a versor already read at both poles: a caller that
+/// holds the factors reads the rotor off them, never factoring twice.
+pub fn rotor_of_factors(f: &Conformal) -> Result<crate::transducer::alphabet::Rotor, RotorUnread> {
     use crate::transducer::alphabet::Rotor;
     use crate::transducer::cga::E1;
-    let f = conformal_factors(v).ok()?;
     if f.inverted {
-        return None;
+        return Err(RotorUnread::Inverted);
     }
     // `(T·K·D)~ V`: the rotor as a ray, which is how a rotor is read
     // (78.32(1)).
-    let r = f.rotation;
+    let r = &f.rotation;
     let on_base = |m: &Versor| {
         (0..m.slot_count()).all(|b| BASE_EVEN.iter().any(|&(_, vm)| vm == b) || m.coeff(b).is_zero())
     };
     let read = |m: &Versor| -> Rotor {
         BASE_EVEN.iter().fold(Rotor::zero(), |acc, &(rm, vm)| acc.add(&Rotor::blade(rm, m.coeff(vm).clone())))
     };
-    if on_base(&r) {
-        let rotor = read(&r);
-        return rotor.is_versor().then_some(rotor);
+    let rotor = if on_base(r) {
+        read(r)
+    } else {
+        // `r = r₃ · e1` ⇒ `r₃ = r · e1`, and the chart reads `r₃ · e₀₂`.
+        let r3 = r.geo(&Versor::blade(E1, Q::one()));
+        if !on_base(&r3) {
+            return Err(RotorUnread::OffBase);
+        }
+        read(&r3).geo(&Rotor::blade(ORIENTATION, Q::one()))
+    };
+    match rotor.is_versor() {
+        true => Ok(rotor),
+        false => Err(RotorUnread::NotVersor),
     }
-    // `r = r₃ · e1` ⇒ `r₃ = r · e1`, and the chart reads `r₃ · e₀₂`.
-    let r3 = r.geo(&Versor::blade(E1, Q::one()));
-    if on_base(&r3) {
-        let rotor = read(&r3).geo(&Rotor::blade(ORIENTATION, Q::one()));
-        return rotor.is_versor().then_some(rotor);
-    }
-    None
+}
+
+/// WHY A VERSOR HAS NO ROTOR OF THE BASE, each by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RotorUnread {
+    /// Not read at both poles (`conformal_factors`).
+    Unfactored(Unfactored),
+    /// It carries the origin to infinity: the inversion is no rotation.
+    Inverted,
+    /// Its rotation part turns off the base's planes, as a turn and as a
+    /// turn with the reflector.
+    OffBase,
+    /// What the chart reads back is not a rotor.
+    NotVersor,
 }
 
 /// Projective equality of two versors: the same transport up to a nonzero
@@ -440,13 +463,6 @@ pub fn conformal_factors(v: &Versor) -> Result<Conformal, Unfactored> {
         true => Ok(read),
         false => Err(Unfactored::DoesNotCompose),
     }
-}
-
-/// A.13 — THE TRANSVERSION A VERSOR CARRIES, `K(b)`: the translator reader
-/// conjugated by the inversion, never a second pipeline. The identity where
-/// the versor fixes the point at infinity.
-pub fn transversor_of(v: &Versor) -> Option<Versor> {
-    conformal_factors(v).ok().map(|f| f.transversor())
 }
 
 /// The base's three axes in the rotor chart (51.2): `e₀, e₁, e₃` are `r,

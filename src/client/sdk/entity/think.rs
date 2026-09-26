@@ -274,7 +274,7 @@ impl Entity {
         let [base, other, ..] = bodies else { return Err(AXIS_ONE_BODY) };
         let sa = shape_of_chain(base).ok_or(AXIS_NO_BODY)?;
         let sb = shape_of_chain(other).ok_or(AXIS_NO_BODY)?;
-        let v = crate::transducer::blade::versor_between(&sa, &sb, budget).ok_or(AXIS_NO_VERSOR)?;
+        let v = crate::transducer::blade::versor_between(&sa, &sb, budget).map_err(|_| AXIS_NO_VERSOR)?;
         let mut germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
             .ok_or(AXIS_NO_VERSOR)?;
         germ.open_axis(v).ok_or(AXIS_PAST_CARRIER)?;

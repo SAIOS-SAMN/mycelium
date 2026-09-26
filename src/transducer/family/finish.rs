@@ -34,10 +34,17 @@ pub(crate) fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::elem
 
 /// The spend one extraction of this family is sized by (rule 10, L8w, ruled
 /// 2026-09-26): what the extraction reads — every cell of every frame, and
-/// for each pair of frames the transitions its bodies may be related by, at
-/// most [`crate::transducer::blade::CANDIDATES_PER_PAIR`] candidates per pair
-/// of bodies — read off the frames perceived ONCE ([`perceive_family`]), so
-/// no frame's components are read a second time to size the draw.
+/// for each pair of frames the transitions its bodies are related by, at
+/// most [`crate::transducer::blade::CANDIDATES_PER_PAIR`] candidates each —
+/// read off the frames perceived ONCE ([`perceive_family`]).
+///
+/// THE PAIRS ARE THE CONTACTS, NEVER THE PRODUCT (rule 1). The percept
+/// relates two bodies only where their supports meet or stand at ring
+/// distance one (the keyed occupancy), and disjoint connected bodies of one
+/// plane touching that way form a planar graph: by Euler's formula a planar
+/// graph on `V` vertices has at most `3V − 6` edges. So `3V` bounds the
+/// pairs a frame pair's `V` bodies can be read in, and the draw is linear in
+/// the bodies — a Cartesian `V²` would license the search rule 1 refuses.
 pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frames) -> usize {
     let mut n = 0usize;
     for (a, b) in family {
@@ -49,11 +56,10 @@ pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frame
         }
     }
     for (ins, outs) in frames {
-        // Ordered pairs, a body with itself among them: a transition is read
-        // in either direction and against the body's own symmetry.
+        // Euler's bound on the contacts of the frame pair's bodies (above).
         let bodies = ins.len() + outs.len();
-        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the body pairs of resident frames times a fixed candidate bound cannot pass a 64-bit usize")]
-        let reads = bodies.saturating_mul(bodies).saturating_mul(crate::transducer::blade::CANDIDATES_PER_PAIR);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the contacts of resident frames times a fixed candidate bound cannot pass a 64-bit usize")]
+        let reads = bodies.saturating_mul(3).saturating_mul(crate::transducer::blade::CANDIDATES_PER_PAIR);
         #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the reads of resident frames cannot sum past a 64-bit usize")]
         let next = n.saturating_add(reads);
         n = next;

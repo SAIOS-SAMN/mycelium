@@ -81,6 +81,10 @@ pub struct ContactTally {
     /// 65.5 — the stroke was spent before every candidate was read: the
     /// stroke's typed cut, named, never a claim about the pair.
     pub unbounded: u64,
+    /// Every candidate read and none carried by covariance (P).
+    pub uncarried: u64,
+    /// The coset carries and no member reads a weight or a key.
+    pub ungauged: u64,
     pub open_180: u64,
     /// A relative turn the peel does not spell: 37.7's candidate, the
     /// demand typed and counted, never an edge invented for it.
@@ -151,7 +155,7 @@ thread_local! {
         tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
         oblique: 0, mirrored: 0,
         incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
-        irrational: 0, null_step: 0, unbounded: 0, open_180: 0,
+        irrational: 0, null_step: 0, unbounded: 0, uncarried: 0, ungauged: 0, open_180: 0,
         unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0, cells_singular: 0,
     }) };
 }
@@ -185,7 +189,7 @@ impl ContactTally {
             "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
              unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
-             tube {}) irrational {} null step {} open-180° {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
+             tube {}) irrational {} null step {} uncarried {} ungauged {} open-180° {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
              static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {} singular {}",
             self.offered,
             self.unlifted,
@@ -207,6 +211,8 @@ impl ContactTally {
             self.incongruent.tube,
             self.irrational,
             self.null_step,
+            self.uncarried,
+            self.ungauged,
             self.open_180,
             self.unspelled,
             self.unread,
@@ -249,6 +255,7 @@ impl ContactTally {
             (NoPose::Incongruent(Incongruence::Tube), i.tube),
             (NoPose::Irrational, self.irrational),
             (NoPose::NullStep, self.null_step),
+            (NoPose::Ungauged, self.ungauged),
         ]
         .into_iter()
         .chain(orders)
@@ -257,6 +264,9 @@ impl ContactTally {
                 out[k.index()] += n;
             }
         }
+        // An uncarried pair is P whatever its covariance named (the one
+        // table, `NoPose::obstruction_kind`).
+        out[crate::transducer::sentence::ObstructionKind::P.index()] += self.uncarried;
         out
     }
 
@@ -444,6 +454,8 @@ pub(crate) fn contact_edge(
                 blade::NoPose::Irrational => t.irrational += 1,
                 blade::NoPose::NullStep => t.null_step += 1,
                 blade::NoPose::Unbounded => t.unbounded += 1,
+                blade::NoPose::Uncarried(_) => t.uncarried += 1,
+                blade::NoPose::Ungauged => t.ungauged += 1,
             });
             Err(why)
         }

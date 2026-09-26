@@ -7,7 +7,7 @@ use super::cover::cover_deformation;
 use super::fiber::{body_key, fiber_frame_of_key, fiber_key, fibers, compartments_of, unreached_demands, vanished};
 use super::pair::{delta_links, Covered, Scenery};
 use super::perceive::{
-    at_frame_zero, demand_vertex, differing_axes, frame_of_body, perceive_at, support_at,
+    at_frame_zero, demand_vertex, differing_axes, frame_of_body, support_at,
     word_or_demand_on_chart, Demanded, EdgeTally,
 };
 use super::witness::{cover_nerves, phase_spectrum};
@@ -108,7 +108,16 @@ fn read_frame_axis(
             note_unread(FrameAxis);
             return None;
         }
-        let m = blade::versor_between(&a.shape, &b.shape, budget);
+        // A spent stroke is the read not taken; any other refusal is the pair
+        // carried by no motor.
+        let m = match blade::versor_between(&a.shape, &b.shape, budget) {
+            Ok(m) => Some(m),
+            Err(blade::NoPose::Unbounded) => {
+                note_unread(FrameAxis);
+                return None;
+            }
+            Err(_) => None,
+        };
         if let Some(m) = &m {
             let lanes = element::measure_lanes(&super::perceive::chain_of(Some(a), Some(b), m));
             note_motor(FrameAxis, m, Some(lanes));
@@ -188,7 +197,7 @@ struct ClassRead {
 /// as the demands of `finish` and says so.
 pub(super) fn family_percept(
     family: &[(Grid, Grid)],
-    frames: Option<&super::perceive::Frames>,
+    frames: &super::perceive::Frames,
     scale: Ratio,
     budget: &mut crate::physics::Budget,
 ) -> Percept {
@@ -202,23 +211,20 @@ pub(super) fn family_percept(
     let mut unreached: Vec<usize> = Vec::new();
     let mut ins: Vec<Body> = Vec::new();
     let mut outs: Vec<Body> = Vec::new();
-    for (k, (a, b)) in family.iter().enumerate() {
+    for k in 0..family.len() {
         if !budget.spend() {
             unreached.push(k);
             continue;
         }
-        // THE FRAMES THE STROKE WAS SIZED BY, where the caller perceived them
-        // (`perceive_family`): read, never perceived a second time.
-        match frames.and_then(|f| f.get(k)) {
-            Some((a_bodies, b_bodies)) => {
-                ins.extend(a_bodies.iter().cloned());
-                outs.extend(b_bodies.iter().cloned());
-            }
-            None => {
-                ins.extend(perceive_at(a, k as i64));
-                outs.extend(perceive_at(b, k as i64));
-            }
-        }
+        // THE FRAMES THE STROKE WAS SIZED BY, perceived once by the caller
+        // (`perceive_family`): read, never perceived a second time. A pair
+        // the frames do not hold was not perceived, and is not reached.
+        let Some((a_bodies, b_bodies)) = frames.get(k) else {
+            unreached.push(k);
+            continue;
+        };
+        ins.extend(a_bodies.iter().cloned());
+        outs.extend(b_bodies.iter().cloned());
     }
     let n_reached = n - unreached.len();
     let fib_in = fibers(&ins);
@@ -364,7 +370,7 @@ pub(super) fn family_percept(
         // versor, the frames grouped by the versor they read, in frame order.
         let mut by_class: Keyed<Vec<Quotient>> = Keyed::new();
         for q in quotients {
-            let Some(class) = element::base_rotor_of(&q.car.v).and_then(|r| r.class_key()) else {
+            let Some(class) = element::base_rotor_of(&q.car.v).ok().and_then(|r| r.class_key()) else {
                 continue;
             };
             match by_class.get_mut(class.as_bytes()) {
@@ -838,7 +844,14 @@ pub(super) fn family_percept(
                     // each end's own frame (54.5 grade 0's vertical
                     // transition).
                     let motor = match budget.spend() {
-                        true => blade::versor_between(&body_a.shape, &body_b.shape, budget),
+                        true => match blade::versor_between(&body_a.shape, &body_b.shape, budget) {
+                            Ok(m) => Some(m),
+                            Err(blade::NoPose::Unbounded) => {
+                                cga::note_unread(cga::TransitionKind::FrameAxis);
+                                continue;
+                            }
+                            Err(_) => None,
+                        },
                         false => {
                             cga::note_unread(cga::TransitionKind::FrameAxis);
                             continue;

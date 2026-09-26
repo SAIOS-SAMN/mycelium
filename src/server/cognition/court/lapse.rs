@@ -67,7 +67,9 @@ impl Kernel {
     /// The sweep's stroke is the depth it has to clear where the book is
     /// over its ceiling, else one stroke.
     pub(crate) fn lapse_silent(&mut self) {
-        let bound = self.k_step().saturating_sub(1);
+        // At the first orbit no word has seen a whole orbit pass: nothing is
+        // silent, and only the ceiling lapses.
+        let bound = self.k_step().checked_sub(1);
         let held = self.pending.len();
         let over = held > crate::physics::book_ceiling();
         let mut sweep = match over {
@@ -79,7 +81,7 @@ impl Kernel {
             let Some(k) = key.get(..8).and_then(|b| <[u8; 8]>::try_from(b).ok()).map(u64::from_be_bytes) else {
                 continue;
             };
-            if k >= bound && !over {
+            if !over && bound.is_none_or(|b| k >= b) {
                 break;
             }
             let Some(at) = key.get(8..) else { continue };
@@ -93,7 +95,7 @@ impl Kernel {
                 self.forget_flux_at(&at);
                 continue;
             };
-            let silent = k < bound;
+            let silent = bound.is_some_and(|b| k < b);
             let evict = !silent && self.pending.len() > crate::physics::BOOK_LOW;
             match (self.provisional.contains(addr.as_bytes()), self.pending.contains(addr.as_bytes())) {
                 (true, _) if silent => {

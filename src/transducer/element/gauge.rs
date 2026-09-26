@@ -153,7 +153,7 @@ pub fn transition_from_shape(
     budget: &mut crate::physics::Budget,
 ) -> Option<Versor> {
     let to_shape = shape_of_chain(to)?;
-    crate::transducer::blade::versor_between(from, &to_shape, budget)
+    crate::transducer::blade::versor_between(from, &to_shape, budget).ok()
 }
 
 /// Apply a hue-map σ (functional from↦to relations) to a transition assignment:

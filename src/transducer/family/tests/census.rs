@@ -115,7 +115,7 @@ fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
+        let rule = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         let f = &rule.form;
@@ -210,7 +210,7 @@ fn the_pivot_trial_against_the_cells_agreements() {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget) else { continue };
+        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget) else { continue };
         let mut stroke = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
         let _ = rule.form.clone().pivot_orbit(
             name.as_bytes(),
@@ -283,7 +283,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
+        let rule = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         address_set.add(&rule.form);
@@ -416,7 +416,7 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
+        let rule = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         extracted += 1;
@@ -831,7 +831,7 @@ fn the_demand_kind_census_says_whether_language_can_grow() {
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
+        let rule = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         forms += 1;

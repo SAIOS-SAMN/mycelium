@@ -132,16 +132,16 @@ pub(super) fn centred(b: &Blade, n: usize) -> Option<(Q, Vec<Vec<Q>>)> {
 }
 
 /// A BODY'S POINT TOWER ON `n` AXES, produced once, by the lift
-/// ([`super::tower::read_towers`]): the second moment `M`, the odd moment `t`
-/// and the fourth order's symmetric part `N = ⟨d dᵀ |d|²⟩` about the sites'
-/// mean, each normalised by the count (A.12). `M` and `N` are the EVEN
-/// tower: they turn with the body and cannot see a 180° turn.
-pub(super) fn point_tower(b: &Blade, n: usize) -> Option<PointTower> {
-    let (count, points) = centred(b, n)?;
+/// ([`super::tower::read_towers`]), off the points it centred once: the
+/// second moment `M`, the odd moment `t` and the fourth order's symmetric
+/// part `N = ⟨d dᵀ |d|²⟩` about the sites' mean, each normalised by the
+/// count (A.12). `M` and `N` are the EVEN tower: they turn with the body and
+/// cannot see a 180° turn.
+pub(super) fn point_tower_of(count: &Q, points: &[Vec<Q>], n: usize) -> PointTower {
     let mut m = vec![vec![Q::zero(); n]; n];
     let mut t = vec![Q::zero(); n];
     let mut n4 = vec![vec![Q::zero(); n]; n];
-    for d in &points {
+    for d in points {
         let r2 = d.iter().fold(Q::zero(), |acc, x| acc + x * x);
         for ((row, row4), di) in m.iter_mut().zip(n4.iter_mut()).zip(d) {
             for ((x, x4), dj) in row.iter_mut().zip(row4.iter_mut()).zip(d) {
@@ -156,13 +156,13 @@ pub(super) fn point_tower(b: &Blade, n: usize) -> Option<PointTower> {
     }
     for row in m.iter_mut().chain(n4.iter_mut()) {
         for x in row.iter_mut() {
-            *x = &*x / &count;
+            *x = &*x / count;
         }
     }
     for x in t.iter_mut() {
-        *x = &*x / &count;
+        *x = &*x / count;
     }
-    Some(PointTower { m, t, n4 })
+    PointTower { m, t, n4 }
 }
 
 /// `tr M`, the point tower's scale.
@@ -276,11 +276,15 @@ fn solve(wa: &[Vec<Q>], wb: &[Vec<Q>], n: usize) -> Option<Vec<Vec<Q>>> {
 /// factorizer in the algebra's own metric ([`cga::constructors_of_base_turn`])
 /// — an even count of reflections for a turn, odd for a mirror, both a pose.
 /// `V = u₁ ⋯ u_m`, `V x Ṽ ∝ R x` — projective, no weight divided and no root.
-/// `None` where `R` is no isometry of the metric (no reflections compose to
-/// it) or at a null step: the refusal is carried, never assumed away.
-fn versor_of(r: &[Vec<Q>], n: usize) -> Option<Mv> {
-    let us = cga::constructors_of_base_turn(r, u8::try_from(n).ok()?).ok()?;
-    Some(us.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
+/// Refused by name: a base beyond the algebra's generators is
+/// `Incongruent(Base)`, a step reflecting in a null vector `NullStep`.
+fn versor_of(r: &[Vec<Q>], n: usize) -> Result<Mv, NoPose> {
+    let n = u8::try_from(n).map_err(|_| NoPose::Incongruent(Incongruence::Base))?;
+    let us = cga::constructors_of_base_turn(r, n).map_err(|why| match why {
+        cga::TurnUnspelled::Axis(_) => NoPose::Incongruent(Incongruence::Base),
+        cga::TurnUnspelled::NullStep(_) => NoPose::NullStep,
+    })?;
+    Ok(us.iter().fold(Mv::scalar(Q::one()), |v, u| v.geo(u)))
 }
 
 /// DOES THE MAP CARRY THE ONE TUBE ONTO THE OTHER, read by the algebra and
@@ -302,10 +306,15 @@ fn carried(
     if !budget.spend() {
         return Err(NoPose::Unbounded);
     }
-    let Some(v) = versor_of(r, n) else { return Ok(None) };
+    let v = versor_of(r, n)?;
     // Through the fourth order: the tube's pose is a whole fit, residue-free.
-    Ok(super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites, super::tower::Harmonic::Four)
-        .map(|_| v))
+    // A candidate the covariance refuses is not a member; the tube's pose
+    // reads its members, and names its own refusal where none carries.
+    match super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites, super::tower::Harmonic::Four) {
+        Ok(_) => Ok(Some(v)),
+        Err(NoPose::Unbounded) => Err(NoPose::Unbounded),
+        Err(_) => Ok(None),
+    }
 }
 
 /// THE POSE ON THE TUBE: the columns, the dual where a body is flat, the

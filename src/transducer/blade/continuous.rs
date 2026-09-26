@@ -27,9 +27,10 @@ use num_traits::{One, Zero};
 
 type Q = BigRational;
 
-/// A body's exact continuous support on one tower.
+/// A body's exact continuous support on one tower: a view of the body's
+/// own coordinates, borrowed where the lift holds them.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ContinuousSupport {
+pub struct ContinuousSupport<'a> {
     /// The tower the moments are read on (78.38(C)).
     pub tower: Tower,
     /// The centre, where the compartment's conformal points stand (16.4): the
@@ -37,7 +38,9 @@ pub struct ContinuousSupport {
     pub centre: Vec<Q>,
     /// The second moment on the body's `n` axes, normalised by `M₀` (A.12):
     /// order two on every plane, the base planes and every plane between them.
-    pub second: Vec<Vec<Q>>,
+    /// Borrowed from the point tower on the sites; derived from the inertia
+    /// on the region.
+    pub second: std::borrow::Cow<'a, [Vec<Q>]>,
     /// The third and fourth harmonics on each plane of the base, in
     /// [`crate::transducer::base::planes`] order; `None` where one vanishes.
     pub upper: Vec<[Option<[Q; 2]>; 2]>,
@@ -53,6 +56,40 @@ pub struct Residue {
     pub plane: (usize, usize),
     pub order: Harmonic,
     pub vector: [Q; 2],
+}
+
+/// WHY A VERSOR DOES NOT CARRY ONE BODY ONTO THE OTHER BY COVARIANCE, each
+/// by name: never an empty answer.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum NotCarried {
+    /// The two supports stand on different towers or bases.
+    Frames,
+    /// The versor is not read at both poles (`conformal_factors`).
+    Unfactored(crate::transducer::element::Unfactored),
+    /// The versor moves infinity — a transversion, or the inversion's cell:
+    /// A.13's action on the tower is not built, and nothing is approximated.
+    MovesInfinity,
+    /// The carried centre is not the other body's centre.
+    Centre,
+    /// The rotation has no weight: it is no ray.
+    Weightless,
+    /// A base axis's image leaves the body's `n` axes.
+    OffAxes,
+    /// The second moment is not carried.
+    Second,
+    /// An order up to the fit's differs.
+    Order(Harmonic),
+}
+
+/// WHAT A CARRYING VERSOR'S COVARIANCE READ: the residue above the fit's
+/// order, and — named, never passed over — the planes of the base whose
+/// image is no plane of the base, whose orders three and four the tower
+/// holds no harmonic to compare with (A.11 on `n` axes carries no rank-3 or
+/// rank-4 tensor). Their order two is the tensor's, read whole above.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Covariance {
+    pub residue: Vec<Residue>,
+    pub unread: Vec<(usize, usize)>,
 }
 
 /// `z · w` over ℚ(i).
@@ -80,10 +117,10 @@ fn moment(m: &[Vec<Q>], x: &Mv, n: usize) -> Mv {
     )
 }
 
-impl ContinuousSupport {
-    /// Lift a body into its continuous support on one tower. `None` for a
-    /// body with no support.
-    pub fn of(b: &Blade, tower: Tower) -> Option<Self> {
+impl<'a> ContinuousSupport<'a> {
+    /// A body's continuous support on one tower, read off its coordinates.
+    /// `None` for a body with no support.
+    pub fn of(b: &'a Blade, tower: Tower) -> Option<Self> {
         let n = b.n();
         let centre = super::carry::vertex_centroid(b)?;
         let second = match tower {
@@ -92,11 +129,13 @@ impl ContinuousSupport {
                 if m0.is_zero() {
                     return None;
                 }
-                (0..n)
-                    .map(|i| (0..n).map(|j| b.moment2(i, j).map(|x| x / &m0)).collect::<Option<Vec<Q>>>())
-                    .collect::<Option<Vec<Vec<Q>>>>()?
+                std::borrow::Cow::Owned(
+                    (0..n)
+                        .map(|i| (0..n).map(|j| b.moment2(i, j).map(|x| x / &m0)).collect::<Option<Vec<Q>>>())
+                        .collect::<Option<Vec<Vec<Q>>>>()?,
+                )
             }
-            Tower::Sites => b.towers.points.as_ref()?.m.clone(),
+            Tower::Sites => std::borrow::Cow::Borrowed(b.towers.points.as_ref()?.m.as_slice()),
         };
         let upper = crate::transducer::base::planes(n)
             .into_iter()
@@ -135,24 +174,23 @@ impl ContinuousSupport {
     ///
     /// A versor that moves infinity — a transversion, or the inversion's cell —
     /// acts on the tower non-linearly, and A.13 is docketed and not built:
-    /// refused, never approximated.
+    /// refused by that name, never approximated.
     ///
     /// THE FIT IS READ THROUGH AN ORDER (ruled 2026-09-26, the cost of a fit):
     /// every order up to `through` must be carried exactly; above it the
     /// difference is not a refusal but the transition's RESIDUE, returned
-    /// whole — `None` where the versor does not carry the body through
-    /// `through`.
-    pub fn matches(&self, other: &Self, v: &Mv, through: Harmonic) -> Option<Vec<Residue>> {
+    /// whole. Where the versor does not carry the body, why.
+    pub fn matches(&self, other: &Self, v: &Mv, through: Harmonic) -> Result<Covariance, NotCarried> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return None;
+            return Err(NotCarried::Frames);
         }
-        let f = crate::transducer::element::conformal_factors(v).ok()?;
+        let f = crate::transducer::element::conformal_factors(v).map_err(NotCarried::Unfactored)?;
         if f.inverted || f.transverses() {
-            return None;
+            return Err(NotCarried::MovesInfinity);
         }
         if cga::base_at(&v.sandwich(&cga::point_at(&self.centre)), n).as_deref() != Some(other.centre.as_slice()) {
-            return None;
+            return Err(NotCarried::Centre);
         }
         self.carries_linear(other, &f.rotation, &f.rho, through)
     }
@@ -175,18 +213,21 @@ impl ContinuousSupport {
     /// image plane — the part of `b` the fit leaves, never absorbed. Order two
     /// is carried by every fit the certificate passes, so the tensor is read
     /// exactly always.
-    pub(super) fn carries_linear(&self, other: &Self, rotation: &Mv, rho: &Q, through: Harmonic) -> Option<Vec<Residue>> {
+    pub(super) fn carries_linear(
+        &self,
+        other: &Self,
+        rotation: &Mv,
+        rho: &Q,
+        through: Harmonic,
+    ) -> Result<Covariance, NotCarried> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return None;
+            return Err(NotCarried::Frames);
         }
-        let w = cga::weight_of(rotation)?;
-        if w.is_zero() {
-            return None;
-        }
+        let w = cga::weight_of(rotation).filter(|w| !w.is_zero()).ok_or(NotCarried::Weightless)?;
         let images: Vec<Mv> = (0..n).map(|k| rotation.twisted(&axis(k))).collect();
         if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
-            return None;
+            return Err(NotCarried::OffAxes);
         }
         let rho2 = rho * rho;
         let second_carried = images.iter().enumerate().all(|(k, y)| {
@@ -194,22 +235,33 @@ impl ContinuousSupport {
             moment(&other.second, y, n).sub(&turned).is_zero()
         });
         if !second_carried {
-            return None;
+            return Err(NotCarried::Second);
         }
         let mut residue: Vec<Residue> = Vec::new();
+        let mut unread: Vec<(usize, usize)> = Vec::new();
         let planes = crate::transducer::base::planes(n);
+        let zero = [Q::zero(), Q::zero()];
         for (p, held) in planes.iter().zip(&self.upper) {
             let (yi, yj) = (&images[p.0], &images[p.1]);
-            let at = |y: &Mv, k: usize| y.coeff(cga::base_axis(k + 1)).clone();
+            fn at(y: &Mv, k: usize) -> &Q {
+                y.coeff(cga::base_axis(k + 1))
+            }
             let rows: Vec<usize> = (0..n).filter(|&k| !at(yi, k).is_zero() || !at(yj, k).is_zero()).collect();
-            // The plane's image, where it is a plane of the base.
-            let &[k, l] = rows.as_slice() else { continue };
-            let theirs = crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix))?;
-            let omega = [&at(yi, k) * rho, &at(yi, l) * rho];
+            // The plane's image, where it is a plane of the base: its upper
+            // orders are held there and compared. One turned off every base
+            // plane is carried as UNREAD by name, never passed as checked.
+            let theirs = match rows.as_slice() {
+                &[k, l] => crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix)).map(|t| (k, l, t)),
+                _ => None,
+            };
+            let Some((k, l, theirs)) = theirs else {
+                unread.push(*p);
+                continue;
+            };
+            let omega = [at(yi, k) * rho, at(yi, l) * rho];
             let mirror = at(yi, k) * at(yj, l) - at(yi, l) * at(yj, k) < Q::zero();
-            let zero = [Q::zero(), Q::zero()];
             let carried = |h: Option<&[Q; 2]>, m: u32| -> [Q; 2] {
-                let Some(h) = h else { return zero.clone() };
+                let Some(h) = h else { return [Q::zero(), Q::zero()] };
                 let start = match mirror {
                     true => [h[0].clone(), -&h[1]],
                     false => h.clone(),
@@ -235,11 +287,11 @@ impl ContinuousSupport {
                     continue;
                 }
                 if order <= through {
-                    return None;
+                    return Err(NotCarried::Order(order));
                 }
                 residue.push(Residue { plane: (k, l), order, vector: diff });
             }
         }
-        Some(residue)
+        Ok(Covariance { residue, unread })
     }
 }

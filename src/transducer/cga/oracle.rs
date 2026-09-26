@@ -125,7 +125,7 @@ fn harvest() -> Vec<(String, Mv)> {
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget) else {
+        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget) else {
             continue;
         };
         for (_, face) in rule.form.faces.entries() {

@@ -263,18 +263,16 @@ fn a_family_translated_along_e3_is_one_vertex_on_every_frame_and_no_corresponden
 }
 
 /// 51.10 PROOF 2, 50.9 — THE SAME ADDRESS ON TWO COURTS. Two extractions
-/// of one family with no shared runtime memory — the percept memo cleared
-/// between them — reach one form address, and a court replays each minted
-/// sentence on its own copy of the family.
+/// of one family with no shared runtime memory — an extraction holds
+/// nothing after it returns — reach one form address, and a court replays
+/// each minted sentence on its own copy of the family.
 #[test]
 fn two_courts_reach_one_address_for_one_family() {
     let family = vec![
         (grid(&["1100", "0000"]), grid(&["0011", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
     ];
-    crate::transducer::family::extract::clear_percept_memo();
     let first = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts");
-    crate::transducer::family::extract::clear_percept_memo();
     let second = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extracts again");
     assert_eq!(
         crate::transducer::sentence::form_vertex_key(&first.form),

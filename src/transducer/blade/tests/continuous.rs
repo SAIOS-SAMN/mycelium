@@ -25,10 +25,13 @@ fn continuous_support_pythagorean_rotor_holonomy() {
             .expect("the 90° turn's base action");
     let p5_turn = versor_of_word(&w).expect("the (3,4,5) turn's base action");
     let mut b = super::common::budget();
-    assert!(versor_carrying(&row, &col, &turn_90, &mut b).is_some(), "the 90° turn carries the row bar onto the column bar");
-    assert!(versor_carrying(&row, &col, &p5_turn, &mut b).is_none(), "the (3,4,5) turn does not");
+    assert!(versor_carrying(&row, &col, &turn_90, &mut b).is_ok(), "the 90° turn carries the row bar onto the column bar");
     assert!(
-        versor_carrying(&row, &row, &p5_turn, &mut b).is_none(),
+        matches!(versor_carrying(&row, &col, &p5_turn, &mut b), Err(NoPose::Uncarried(_))),
+        "the (3,4,5) turn does not, and the covariance names why"
+    );
+    assert!(
+        matches!(versor_carrying(&row, &row, &p5_turn, &mut b), Err(NoPose::Uncarried(_))),
         "and a body does not match itself under a turn it is not symmetric by"
     );
 

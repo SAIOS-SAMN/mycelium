@@ -79,7 +79,7 @@ fn the_open_seed_is_the_holonomys_base_action_and_the_axis_is_keyed_by_the_rotor
     let seed = f.axis_seed_of(lp).expect("a base rotation has a base action");
     let holonomy = f.orbit_holonomy(lp).expect("one holonomy").rotor();
     assert!(
-        element::base_rotor_of(&seed).is_some_and(|r| r.projective_eq(&holonomy)),
+        element::base_rotor_of(&seed).is_ok_and(|r| r.projective_eq(&holonomy)),
         "the seed carries the whole base rotation and reads back as it"
     );
     let whole = holonomy.class_key().expect("a class");

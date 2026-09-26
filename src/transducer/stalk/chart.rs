@@ -503,12 +503,20 @@ pub fn congruent_shaped<'a>(
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
     let fibre = stalks.fiber(&invariant(chain));
-    let mut related = fibre
-        .iter()
-        .filter_map(|a| shape_at(a).and_then(|held| crate::transducer::blade::versor_between(&shape, held, budget)).map(|v| (crate::transducer::address::Address::from(a.clone()), v)));
-    let first = related.next()?;
-    match related.next() {
-        None => Some(first),
-        Some(_) => None,
+    // EXACTLY ONE RELATING WORD: a second relates it too and nothing is
+    // located; a stroke spent before the fibre was read locates nothing —
+    // an unread member is never counted as unrelated.
+    let mut related: Option<(crate::transducer::address::Address, Versor)> = None;
+    for a in fibre.iter() {
+        let Some(held) = shape_at(a) else { continue };
+        match crate::transducer::blade::versor_between(&shape, held, budget) {
+            Ok(v) => match related {
+                None => related = Some((crate::transducer::address::Address::from(a.clone()), v)),
+                Some(_) => return None,
+            },
+            Err(crate::transducer::blade::NoPose::Unbounded) => return None,
+            Err(_) => {}
+        }
     }
+    related
 }

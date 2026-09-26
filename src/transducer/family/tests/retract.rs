@@ -149,7 +149,7 @@ fn from_address_retracts_every_corpus_form() {
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget)
+        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
         else {
             continue;
         };
@@ -250,7 +250,7 @@ fn the_decoded_form_agrees_with_the_extracted_on_every_reading_the_court_makes()
         let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
             physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
-        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget)
+        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
         else {
             continue;
         };
@@ -359,7 +359,7 @@ fn the_carrier_holds_its_own_invariants_without_the_oracle() {
             let mut budget =
                 physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
             if let Some(rule) =
-                crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget)
+                crate::transducer::family::extract_rule_on(&task.train, &frames, &epi, &mut budget)
             {
                 forms.push(rule.form);
             }

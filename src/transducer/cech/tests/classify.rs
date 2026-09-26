@@ -51,7 +51,7 @@ fn the_identity_is_flat_and_so_is_a_scaled_carriage() {
 fn a_translation_stands_with_its_placement_and_is_not_flat() {
     let t = cga::at_three::translator(&q(3), &q(-2), &q(0));
     assert!(
-        crate::transducer::element::base_rotor_of(&t).is_some_and(|r| r.is_identity()),
+        crate::transducer::element::base_rotor_of(&t).is_ok_and(|r| r.is_identity()),
         "the rotor part of a translation is the identity: the placement is the carriage's, not the rotor's"
     );
     let Fill::Class(kappa, r) = classify(&Rotor::identity(), &t, CycleType::Identity) else {
@@ -255,15 +255,15 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     let l = vec![(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
     let turned = vec![(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
     let (a, b) = (shape_of(&l), shape_of(&turned));
-    let members = versor_coset_ordered(&a, &b, &mut super::common::budget());
-    assert!(!members.is_empty(), "a 90° turn carries the L onto its image");
+    let members = versor_coset_ordered(&a, &b, &mut super::common::budget()).expect("a 90° turn carries the L onto its image");
     let mut read = 0usize;
     let mut placed = 0usize;
     let mut filed = 0usize;
-    for v in &members {
+    for member in &members {
+        let v = &member.versor;
         // `edge_of`'s own split: the rotation on the base, and `D·T` as
         // the carriage. Nothing here is built for the test.
-        let (Some(r), Some(d), Some(t)) = (base_rotor_of(v), dilator_of(v), translator_of(v))
+        let (Ok(r), Some(d), Some(t)) = (base_rotor_of(v), dilator_of(v), translator_of(v))
         else {
             continue;
         };
@@ -304,7 +304,7 @@ fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() 
     };
     let (ab, bc) = (edge(&a, &b), edge(&b, &c));
     let fill_of = |h: &Versor| {
-        let (Some(r), Some(dil), Some(t)) = (base_rotor_of(h), dilator_of(h), translator_of(h)) else {
+        let (Ok(r), Some(dil), Some(t)) = (base_rotor_of(h), dilator_of(h), translator_of(h)) else {
             panic!("the holonomy is read on the base: {h:?}");
         };
         classify(&r, &dil.geo(&t), CycleType::Identity)

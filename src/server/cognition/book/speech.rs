@@ -485,7 +485,7 @@ impl Kernel {
             // One stroke of this court's own metabolism reads the candidates.
             let mut budget = self.physics.stroke();
             match (base_shape, rem_shape) {
-                (Some(sb), Some(sr)) => crate::transducer::blade::versor_between(&sb, &sr, &mut budget),
+                (Some(sb), Some(sr)) => crate::transducer::blade::versor_between(&sb, &sr, &mut budget).ok(),
                 _ => None,
             }
         };

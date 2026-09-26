@@ -431,15 +431,14 @@ fn motor_carries(
         }
     }
     // THE TRANSPORT TAKEN, and the claim's deviation from it (`Δ = V·M̃`).
-    let taken = crate::transducer::blade::versor_coset_ordered(
+    // The coset's canonical representative (50.2 step 1), where one carries.
+    let deviation = crate::transducer::blade::versor_between(
         &crate::transducer::blade::shape_of(&sources),
         &crate::transducer::blade::shape_of(&targets),
         budget,
-    );
-    let deviation = match taken.as_slice() {
-        [geodesic, ..] => Some(geodesic.geo(&motor.reverse())),
-        [] => None,
-    };
+    )
+    .ok()
+    .map(|taken| taken.geo(&motor.reverse()));
     let key = x.chart.key();
     Some(Refusal::closure(
         REFUSE_EDGE,
@@ -533,7 +532,7 @@ pub(crate) fn edges_rederive_frames(
             let (Some(bi), Some(bj)) = (image_body(a_i, &v_i, at), image_body(a_j, &v_j, at)) else {
                 return Some(refused(none("a body carries to no body of the image")));
             };
-            let Some(v_ij) = crate::transducer::blade::versor_between(
+            let Ok(v_ij) = crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
                 &union_shape(bi, bj),
                 budget,

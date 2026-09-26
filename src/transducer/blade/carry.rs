@@ -56,97 +56,14 @@ fn difference(b: &[BigRational], a: &[BigRational]) -> Option<Vec<BigRational>> 
     }
 }
 
-/// The unnormalized rotor carrying direction `a` onto direction `b` in the
-/// e₁e₂ plane: `|a||b| + b·a + (b∧a) e₁₂`. Exact when `|a||b|` is rational
-/// (the two lengths' product is a rational square), else refused.
-pub(crate) fn rotor_between(a: &[BigRational; 2], b: &[BigRational; 2]) -> Option<(BigRational, BigRational)> {
-    let aa = &a[0] * &a[0] + &a[1] * &a[1];
-    let bb = &b[0] * &b[0] + &b[1] * &b[1];
-    let ab = rational_sqrt(&(&aa * &bb))?;
-    let s = &ab + &b[0] * &a[0] + &b[1] * &a[1];
-    let bv = &b[0] * &a[1] - &b[1] * &a[0];
-    Some((s, bv))
-}
-
-/// The rotor of half the angle of `s + b e₁₂`: `(|r| + s) + b e₁₂`, exact
-/// when `|r|` is rational. A 180° turn (`s < 0`, `b = 0`) halves to the
-/// 90° turn `1 + e₁₂`... whose own half-angle form is `e₁₂` itself when
-/// the rotor is the pure bivector.
-pub(crate) fn half_rotor(s: &BigRational, b: &BigRational) -> Option<(BigRational, BigRational)> {
-    let m2 = s * s + b * b;
-    if m2.is_zero() {
-        return None;
-    }
-    let m = rational_sqrt(&m2)?;
-    let s2 = &m + s;
-    match (s2.is_zero(), b.is_zero()) {
-        (true, true) => Some((q(0), q(1))), // the half of a 180° turn: e₁₂
-        _ => Some((s2, b.clone())),
-    }
-}
-
 /// THE TRANSPORT BETWEEN TWO BODIES, in closed form from their moments:
 /// the canonical representative (50.2 step 1 as ruled 2026-09-09) of the
-/// coset `versor_coset` measures. `None` when no rational versor carries
-/// `a` onto `b`, or when the stroke was spent first — which the caller's
-/// budget, run out, says (65.5).
-pub fn versor_between(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Option<Mv> {
-    coset_representative(&versor_coset(a, b, budget).ok()?)
-}
-
-/// The rotation measured as a Cl(4,0) Rotor across turned planes from the
-/// deviatoric tensors, and the translation placement as a CGA translator.
-pub fn rotor_and_placement_between(
-    a: &Shape,
-    b: &Shape,
-    budget: &mut crate::physics::Budget,
-) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
-    use crate::transducer::alphabet::Rotor;
-    let _ = versor_between(a, b, budget)?;
-    let t = cga::translator_at(&difference(&b.blade.centroid()?, &a.blade.centroid()?)?);
-
-    let mut total_rotor = Rotor::identity();
-    // THE BODY'S OWN PLANES, generated from its `n` (BQ4), each read in the
-    // rotor chart's slots (51.2).
-    //
-    // NOTHING IS PASSED OVER UNREAD (audit N-4). A plane `b` does not have is
-    // no rotor between the two, and refuses. A plane on which either body is
-    // isotropic has no orientation to turn, which is a reading. A plane that
-    // orients both and has no slot in the letters' chart carries a turn the
-    // seventeen cannot write (71.2(3)), and REFUSES: this `filter_map`ped
-    // such planes away and minted the rotor of the rest, a turn dropped and
-    // the result presented as whole.
-    for plane in a.blade.planes() {
-        let ha = a.blade.harmonic_on_plane(plane, false)?;
-        let hb = b.blade.harmonic_on_plane(plane, false)?;
-        if (ha[0].is_zero() && ha[1].is_zero()) || (hb[0].is_zero() && hb[1].is_zero()) {
-            continue;
-        }
-        let slot = crate::transducer::alphabet::slot_plane(plane)?;
-        if let Some((s, bv)) = rotor_between(&ha, &hb) {
-            let (s, bv) = match (s.is_zero(), bv.is_zero()) {
-                (true, true) => (q(0), q(1)),
-                _ => (s, bv),
-            };
-            if let Some((hs, hb)) = half_rotor(&s, &bv) {
-                let mask = (1usize << slot.0) | (1usize << slot.1);
-                let r_plane = Rotor::scalar(hs).add(&Rotor::blade(mask, hb));
-                total_rotor = total_rotor.geo(&r_plane);
-            }
-        }
-    }
-    Some((total_rotor, t))
-}
-
-/// The Cl(4,0) Rotor carrying body a's orientation onto body b's
-/// orientation: the base rotor of the transition's geodesic (51.2), read
-/// back from the versor the transition verified.
-pub fn rotor_between_shapes(
-    a: &Shape,
-    b: &Shape,
-    budget: &mut crate::physics::Budget,
-) -> Option<crate::transducer::alphabet::Rotor> {
-    crate::transducer::element::base_rotor_of(&versor_between(a, b, budget)?)
+/// coset `versor_coset` measures. The refusal is the pose's, typed: no
+/// rational versor carries `a` onto `b` by its named cause, or
+/// [`NoPose::Unbounded`] where the stroke was spent first (65.5).
+pub fn versor_between(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Result<Mv, NoPose> {
+    let coset = versor_coset(a, b, budget)?;
+    coset_representative(&coset).map(|t| t.versor.clone()).ok_or(NoPose::Ungauged)
 }
 
 /// THE MOST CANDIDATES ONE TRANSITION VERIFIES, and so the most reads it
@@ -166,19 +83,18 @@ pub struct Transition {
     pub rotation: Mv,
     pub versor: Mv,
     pub residue: Vec<Residue>,
+    /// The base planes whose image is no base plane: their orders three and
+    /// four are unread by the tower (`Covariance::unread`), named.
+    pub unread: Vec<(usize, usize)>,
 }
 
 /// THE COSET OF TRANSITIONS carrying `a` onto `b` on the sensor's plane
 /// (BQ4, named): the transition's members ([`transitions_between`]), each
-/// with its rotation and its residue; none where the pair is refused, and
-/// the refusal is the pose's to name. A stroke spent before every candidate
-/// was read is the typed cut [`NoPose::Unbounded`], never an empty coset.
+/// with its rotation and its residue — never empty: a pair nothing carries
+/// is refused by the pose's named cause, and a stroke spent before every
+/// candidate was read is the typed cut [`NoPose::Unbounded`].
 pub fn versor_coset(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Result<Vec<Transition>, NoPose> {
-    match transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE, budget) {
-        Err(NoPose::Unbounded) => Err(NoPose::Unbounded),
-        Ok(members) => Ok(members),
-        Err(_) => Ok(Vec::new()),
-    }
+    transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE, budget)
 }
 
 /// THE DOUBLE-ANGLE POINT of a harmonic of degree `m` between two bodies:
@@ -284,8 +200,12 @@ pub(super) fn transitions_on(
         return Err(NoPose::Unoriented);
     }
     let mut out: Vec<Transition> = Vec::new();
+    // Why nothing carried, where nothing did: the first candidate's
+    // covariance refusal in the candidates' constructed order, which the
+    // pair's content fixes (the proper parity first).
+    let mut uncarried: Option<super::continuous::NotCarried> = None;
     let Some(rho) = rational_sqrt(&(&rb / &ra)) else {
-        return Ok(out);
+        return Err(NoPose::Irrational);
     };
     let rho2 = &rho * &rho;
     let dilator = cga::dilator(&rho);
@@ -294,21 +214,26 @@ pub(super) fn transitions_on(
     // The four 90° turns of the plane as rays: 0°, 90°, 180°, 270°.
     let one = Mv::scalar(q(1));
     let turns_90 = [one.clone(), one.add(&e_ij), e_ij.clone(), e_ij.sub(&one)];
-    for odd in [false, true] {
-        let read = |m: Harmonic| {
-            let ha = harmonic(a, plane, tower, m).map(|h| match odd {
-                true => [h[0].clone(), -&h[1]],
-                false => h,
-            });
-            (ha, harmonic(b, plane, tower, m))
-        };
-        // ONLY AN ORDER THE FIT HOLDS THROUGH ORIENTS: above it the harmonic
-        // is part residue, and a phase read off it is not the pair's.
+    // Each body's orienting harmonics, read once for both parities. ONLY AN
+    // ORDER THE FIT HOLDS THROUGH ORIENTS: above it the harmonic is part
+    // residue, and a phase read off it is not the pair's.
+    let orienting = |x: &Blade| {
         let quartic = match fit.through {
-            Harmonic::Four => read(Harmonic::Four),
-            Harmonic::Two | Harmonic::Three => (None, None),
+            Harmonic::Four => harmonic(x, plane, tower, Harmonic::Four),
+            Harmonic::Two | Harmonic::Three => None,
         };
-        let rotors: Vec<Mv> = match (read(Harmonic::Two), quartic) {
+        (harmonic(x, plane, tower, Harmonic::Two), quartic)
+    };
+    let ((a2, a4), (b2, b4)) = (orienting(a), orienting(b));
+    for odd in [false, true] {
+        // The odd parity reads `a` mirrored across the plane's first axis.
+        let parity = |h: &Option<[BigRational; 2]>| {
+            h.as_ref().map(|h| match odd {
+                true => [h[0].clone(), -&h[1]],
+                false => h.clone(),
+            })
+        };
+        let rotors: Vec<Mv> = match ((parity(&a2), b2.clone()), (parity(&a4), b4.clone())) {
             ((Some(ua), Some(ub)), _) => match phase_point(&ua, &ub, &rho2).and_then(|p| half_point(&p)) {
                 Some(p) => {
                     let r = rotor_at(&p, &e_ij);
@@ -347,12 +272,28 @@ pub(super) fn transitions_on(
             // The candidate's rotation and scale are in hand: its covariance is
             // read on them, and only a member that carries is placed — the
             // placement sends `c_a` to `c_b` by construction.
-            let Some(residue) = sa.carries_linear(&sb, &rotation, &rho, fit.through) else { continue };
-            let Some(versor) = placed(a, b, &dilator.geo(&rotation)) else { continue };
-            out.push(Transition { rotation, versor, residue });
+            let covariance = match sa.carries_linear(&sb, &rotation, &rho, fit.through) {
+                Ok(c) => c,
+                Err(why) => {
+                    uncarried.get_or_insert(why);
+                    continue;
+                }
+            };
+            let Some(versor) = placed(a, b, &dilator.geo(&rotation)) else {
+                uncarried.get_or_insert(super::continuous::NotCarried::Centre);
+                continue;
+            };
+            out.push(Transition { rotation, versor, residue: covariance.residue, unread: covariance.unread });
         }
     }
-    Ok(out)
+    // A parity with no rational turn tries no candidate; every other arm of
+    // the turn builds one, so an empty coset with no candidate's refusal is
+    // the oblique turn's.
+    match (out.is_empty(), uncarried) {
+        (false, _) => Ok(out),
+        (true, Some(why)) => Err(NoPose::Uncarried(why)),
+        (true, None) => Err(NoPose::Oblique),
+    }
 }
 
 /// THE PLACEMENT OF A LINEAR ACTION between two bodies: `T(c_b − V(c_a))·V`,
@@ -375,15 +316,21 @@ fn placed(a: &Blade, b: &Blade, linear: &Mv) -> Option<Mv> {
 /// carries the body; what is fixed is which name the language gives the
 /// class, and a dilated bar is carried by the dilation, not by the
 /// dilation and the bar's own 180° turn.
-pub fn coset_representative(coset: &[Transition]) -> Option<Mv> {
+pub fn coset_representative(coset: &[Transition]) -> Option<&Transition> {
+    coset_geodesic(coset).map(|at| &coset[at])
+}
+
+/// Where the coset's geodesic stands in it (see [`coset_representative`]);
+/// `None` where no member's rotation reads a weight or a key.
+fn coset_geodesic(coset: &[Transition]) -> Option<usize> {
     let nearness = |rotation: &Mv| -> Option<BigRational> {
         // `a²/w`, scale-free, read as the class's order (Axiom C).
         let w = cga::weight_of(rotation)?;
         let a = rotation.scalar_part();
         Some(&a * &a / w)
     };
-    let mut geodesic: Option<(BigRational, Vec<u8>, &Mv)> = None;
-    for Transition { rotation, versor: v, .. } in coset {
+    let mut geodesic: Option<(BigRational, Vec<u8>, usize)> = None;
+    for (at, Transition { rotation, .. }) in coset.iter().enumerate() {
         let Some(n) = nearness(rotation) else { continue };
         let Some(key) = rotation.key() else { continue };
         let key = key.into_vec();
@@ -392,10 +339,10 @@ pub fn coset_representative(coset: &[Transition]) -> Option<Mv> {
             Some((held, held_key, _)) => n > *held || (n == *held && key < *held_key),
         };
         if nearer {
-            geodesic = Some((n, key, v));
+            geodesic = Some((n, key, at));
         }
     }
-    geodesic.map(|(_, _, v)| v.clone())
+    geodesic.map(|(_, _, at)| at)
 }
 
 /// THE COSET AS CANDIDATES, GEODESIC FIRST (50.2 step 1, L7c): the
@@ -411,29 +358,35 @@ pub fn coset_representative(coset: &[Transition]) -> Option<Mv> {
 /// as carrying no transport at all while a turning member of the same
 /// coset spelled fine. The geodesic stays first, so naming and replay are
 /// unchanged.
-pub fn versor_coset_ordered(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Vec<Mv> {
-    // A stroke spent first leaves no candidates; the budget, run out, says so.
-    let coset = versor_coset(a, b, budget).into_iter().flatten().collect::<Vec<Transition>>();
-    let geodesic = coset_representative(&coset);
-    // The key IS the member's coordinates written inline (A21), so sorting
-    // the keys is sorting by content and the member rides along by the
-    // position it was measured at — never the other way round.
-    let mut rest: Vec<(Vec<u8>, usize)> = coset
-        .iter()
-        .enumerate()
-        .filter(|(_, t)| geodesic.as_ref() != Some(&t.versor))
-        .filter_map(|(at, t)| t.versor.key().map(|k| (k.into_vec(), at)))
-        .collect();
-    rest.sort();
-    rest.dedup_by(|x, y| x.0 == y.0);
-    geodesic.into_iter().chain(rest.into_iter().map(|(_, at)| coset[at].versor.clone())).collect()
+pub fn versor_coset_ordered(
+    a: &Shape,
+    b: &Shape,
+    budget: &mut crate::physics::Budget,
+) -> Result<Vec<Transition>, NoPose> {
+    let coset = versor_coset(a, b, budget)?;
+    let geodesic = coset_geodesic(&coset).ok_or(NoPose::Ungauged)?;
+    // Each member filed by its own coordinates (A21): the keyed carrier IS
+    // the content order, and a member standing twice is one key. The
+    // geodesic is set apart by its place, never compared by bytes.
+    let first_key = coset[geodesic].versor.key().map(|k| k.into_vec());
+    let mut order: crate::network::nerve::Keyed<usize> = crate::network::nerve::Keyed::new();
+    for (at, t) in coset.iter().enumerate() {
+        let Some(key) = t.versor.key().map(|k| k.into_vec()) else { continue };
+        if at == geodesic || first_key.as_deref() == Some(key.as_slice()) {
+            continue;
+        }
+        order.insert(&key, at);
+    }
+    let rest: Vec<usize> = order.scoped().map(|(_, &at)| at).collect();
+    let mut slots: Vec<Option<Transition>> = coset.into_iter().map(Some).collect();
+    Ok(std::iter::once(geodesic).chain(rest).filter_map(|at| slots.get_mut(at).and_then(Option::take)).collect())
 }
 
 /// DOES `v` CARRY `a` ONTO `b` ON ONE TOWER, THROUGH AN ORDER: the
 /// transition's covariance (`ContinuousSupport::matches`) — the centre, the
 /// second moment on every plane, the odd and quartic harmonics on the base's
 /// planes — never where a carried compartment lands. The residue above `through`
-/// where it carries, `None` where it does not. The verification every
+/// where it carries; where it does not, why, by name. The verification every
 /// member of the coset passes, and the one a held word's action passes on a
 /// listing body (24.1, 50.1 step 1).
 pub fn carries_by_covariance(
@@ -442,23 +395,25 @@ pub fn carries_by_covariance(
     b: &Blade,
     tower: super::tower::Tower,
     through: super::tower::Harmonic,
-) -> Option<Vec<Residue>> {
-    let (sa, sb) = (ContinuousSupport::of(a, tower)?, ContinuousSupport::of(b, tower)?);
-    sa.matches(&sb, v, through)
+) -> Result<super::continuous::Covariance, NoPose> {
+    let (Some(sa), Some(sb)) = (ContinuousSupport::of(a, tower), ContinuousSupport::of(b, tower)) else {
+        return Err(NoPose::Bodiless);
+    };
+    sa.matches(&sb, v, through).map_err(NoPose::Uncarried)
 }
 
 /// A LINEAR ACTION PLACED AND VERIFIED on one tower through an order: the
-/// transition where it carries `a` onto `b`, `None` where it does not.
+/// transition where it carries `a` onto `b`; where it does not, why.
 pub(super) fn carried_on(
     a: &Blade,
     b: &Blade,
     linear: &Mv,
     tower: super::tower::Tower,
     through: super::tower::Harmonic,
-) -> Option<Transition> {
-    let versor = placed(a, b, linear)?;
-    let residue = carries_by_covariance(&versor, a, b, tower, through)?;
-    Some(Transition { rotation: linear.clone(), versor, residue })
+) -> Result<Transition, NoPose> {
+    let versor = placed(a, b, linear).ok_or(NoPose::Uncarried(super::continuous::NotCarried::Centre))?;
+    let covariance = carries_by_covariance(&versor, a, b, tower, through)?;
+    Ok(Transition { rotation: linear.clone(), versor, residue: covariance.residue, unread: covariance.unread })
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
@@ -468,17 +423,23 @@ pub(super) fn carried_on(
 /// the transition solves it. No candidate is tried: the word says which
 /// rotation, the bodies say where, and the result is verified by the
 /// transition's covariance through the fit the certificate reads, its
-/// residue carried with it. `None` when the action does not carry `a` onto
-/// `b`: the word is not a word for this body.
-pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv, budget: &mut crate::physics::Budget) -> Option<Transition> {
+/// residue carried with it. Where the action does not carry `a` onto `b` —
+/// the word is not a word for this body — the refusal names why; a spent
+/// stroke is the typed cut.
+pub fn versor_carrying(
+    a: &Shape,
+    b: &Shape,
+    linear: &Mv,
+    budget: &mut crate::physics::Budget,
+) -> Result<Transition, NoPose> {
     if a.blade.support.is_empty() || b.blade.support.is_empty() {
-        return None;
+        return Err(NoPose::Bodiless);
     }
-    let fit = certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).ok()?;
-    // One candidate verified: one read from the stroke (65.5); a spent
-    // stroke reads `None` here and the budget, run out, says why.
+    let fit = certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE)
+        .map_err(|(region, sites)| NoPose::Incongruent(Incongruence::Order { region, sites }))?;
+    // One candidate verified: one read from the stroke (65.5).
     if !budget.spend() {
-        return None;
+        return Err(NoPose::Unbounded);
     }
     carried_on(&a.blade, &b.blade, linear, fit.dilation.tower(), fit.through)
 }

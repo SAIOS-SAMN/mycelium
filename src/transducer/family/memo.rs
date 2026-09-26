@@ -212,11 +212,17 @@ pub fn extract_rule_cached(
     if let Some(rule) = cache.get(fam, &atlas_root) {
         return rule.clone();
     }
+    // Missed, and a stroke spent before the extraction starts has no answer
+    // for this family (rule 11).
     if !budget.spend() {
-        return cache.get(fam, &atlas_root).and_then(|r| r.clone());
+        return None;
     }
-    // The frames the caller sized its stroke by, where it perceived them.
-    let rule = super::extract::extract_rule_on(family, frames, crystal, budget);
+    // The frames the caller sized its stroke by; a caller that read the memo
+    // as holding this family perceived none, and a miss perceives them here.
+    let rule = match frames {
+        Some(frames) => super::extract::extract_rule_on(family, frames, crystal, budget),
+        None => super::extract::extract_rule_with(family, crystal, budget),
+    };
     cache.held = Some((fam.to_vec(), atlas_root, rule.clone()));
     rule
 }

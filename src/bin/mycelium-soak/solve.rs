@@ -21,7 +21,7 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
-        let Some(r) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
+        let Some(r) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
         let Some(w) = mint_sentence(&r, &task.train, &epi, 0) else { continue };
         let held = mycelium::transducer::element::Held::of(w);
         if held.form().is_some_and(|f| f.is_closed()) {
@@ -37,7 +37,7 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         tasks += 1;
         let frames = perceive_family(&task.train);
         let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
-        let Some(rule) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
+        let Some(rule) = extract_rule_on(&task.train, &frames, &epi, &mut b) else { continue };
         extracted += 1;
         // EVERY TEST PAIR, and the task counts as solved only if every one
         // of them is spoken exactly.
