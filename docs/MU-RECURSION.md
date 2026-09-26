@@ -444,6 +444,8 @@ perspective, the citation paid); **POWR** proof of work retirement (a
 re-expression over fewer letters, the freed description burned and the
 compression yield paid). No two share a name; "POW++" is the family.
 
+**Compartment (ruled 2026-09-26, the operator's word: "we need a more defined object for our cells that fits into the mycelia familia").** A septate hypha's cell is its COMPARTMENT, the segment between two septa; here it is the sensor's unit, what the tree called a lamina or a cell: a SPORE WITH EXTENT. Its centre is the spore `P(c)`, the null point of the site's centre at its frame (A4, 78.30(1)); its extent is the unit cube's inversive extent, `1/12` on each axis of the base (A.12), so the compartment is the ROUND `κ = P(c) − ½·(n/12)·e_∞`, a real sphere, `κ² = n/12`; its content is its hue, the fibre's value (70); it holds nothing of its own above order two, its harmonic at order `m` on a plane being `zᵐ + C(m,2)·z^(m−2)·ε` (`ε = eᵢ − eⱼ`, zero on the grid plane). A body is a colony of compartments — septal neighbours (sharing a face) one body, their hue seams its own gauge section (70.4); a contact is where two bodies' compartments touch across a corner, WHETHER read once by the lattice at the retina, WHAT read by the meet of their rounds. The compartment lives only at the sensor (70.7, law 11): it is integrated into the one lift, and above intake a body is carried by its lifted shape — nucleus, tower, harmonics — never by its compartments. "Lamina" and "cell" retire as names of it (NM1).
+
 **The plexus (ruled 2026-09-24, 78.31).** The graded network the five
 nouns form — a **spore** (a ray, the null point of perception), a
 **filament** (a route, a word), a **ring** or **throat** (a circuit), a
