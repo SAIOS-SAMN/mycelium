@@ -233,7 +233,7 @@ pub struct Contemplation {
 /// (16.16 step 6) — which is 37.7's object and is the candidate that
 /// matters. Every other outcome names no rotor and contributes none:
 /// nothing is stood in for a transport that was not measured (rule 11).
-pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
+pub(crate) fn candidates_over(bodies: &[Link], budget: &mut crate::physics::Budget) -> Keyed<Rotor> {
     let mut out: Keyed<Rotor> = Keyed::new();
     let before: Vec<Link> = bodies.iter().copied().filter(|c| c.2 != 0).collect();
     let after: Vec<Link> = bodies.iter().copied().filter(|c| c.3 != 0).collect();
@@ -251,7 +251,7 @@ pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
     let (Some(a), Some(b)) = (lift(&before), lift(&after)) else {
         return out;
     };
-    let Some(car) = crate::transducer::family::carriage_with_core(&a, &b) else {
+    let Some(car) = crate::transducer::family::carriage_with_core(&a, &b, budget) else {
         return out;
     };
     let rotor = match crate::transducer::family::peel_versor(&car.v) {

@@ -193,6 +193,7 @@ pub(crate) fn edge_between(
     (i, cik): (&coord::VertexAt, &[u8]),
     (j, cjk): (&coord::VertexAt, &[u8]),
     tally: &mut EdgeTally,
+    budget: &mut crate::physics::Budget,
 ) -> (Option<Transport>, Option<Keyed<()>>) {
     let at = |v: &coord::VertexAt, ck: &[u8], k: u64| -> Option<&(Body, Body, Versor)> {
         let mut bk = member_key(v, ck);
@@ -201,7 +202,7 @@ pub(crate) fn edge_between(
     };
     let union_edge = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
         (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) => {
-            tally.take(Some(edge_transport(v_i, a_i, a_j, b_i, b_j)))
+            tally.take(Some(edge_transport(v_i, a_i, a_j, b_i, b_j, budget)))
         }
         _ => None,
     };
@@ -220,7 +221,7 @@ pub(crate) fn edge_between(
             continue;
         };
         common += 1;
-        let measured = edge_transport(v_i, a_i, a_j, b_i, b_j);
+        let measured = edge_transport(v_i, a_i, a_j, b_i, b_j, budget);
         match &edge {
             None => {
                 edge = tally.take(Some(measured));

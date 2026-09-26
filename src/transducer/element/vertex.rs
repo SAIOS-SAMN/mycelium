@@ -21,11 +21,11 @@ impl Element {
     /// base geometry onto the other's, when they sit on one orbit. The chain
     /// is the boundary of a thought, never its identity. A chain-carrying and
     /// a chain-free element are never carried onto each other.
-    pub fn carriage(&self, other: &Element) -> Option<Versor> {
+    pub fn carriage(&self, other: &Element, budget: &mut crate::physics::Budget) -> Option<Versor> {
         match (self.sub.as_slice(), other.sub.as_slice()) {
             ([], []) => self.same_action(other).then(identity_versor),
             ([], _) | (_, []) => None,
-            (a, b) => transition(a, b),
+            (a, b) => transition(a, b, budget),
         }
     }
 

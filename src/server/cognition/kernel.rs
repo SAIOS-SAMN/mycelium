@@ -665,14 +665,18 @@ impl Kernel {
                 self.chain.admit(r.clone());
                 self.note_attestor(r);
                 self.pending_parents.insert(p.at.key(), *p);
+                // THE ACT'S ROOT (65.5): the wire hands this receipt here, and
+                // one stroke is the admission's draw, threaded to the
+                // rulings it hears.
+                let mut budget = self.physics.stroke();
                 // LD3-a: a word the peer's act admitted, located here by its
                 // fiber where exactly one word stands on it.
-                self.alias_admitting(r);
+                self.alias_admitting(r, &mut budget);
                 // EC1: a peer's ruling applies at the node that admits its
                 // receipt, through the receipt path — the arm its kind
                 // carries, on the word its citation locates here.
                 if let crate::chronometry::ActKind::Ruling(arm) = r.kind {
-                    self.hear_ruling(r, arm);
+                    self.hear_ruling(r, arm, &mut budget);
                 }
                 // RM1 (c): a voice's re-fill, replayed here — the court's one
                 // door to its Congruent simplex.
@@ -702,9 +706,13 @@ impl Kernel {
     /// paging A's chain died the moment A's receipt cited B — which every
     /// receipt on a live mesh does. On the fleet at epoch 10 that read
     /// `backfill ce02… 940..940 admitted 0`, fifty-two times, forever.
+    ///
+    /// The page is admitted on the stroke of the chase that fetched it
+    /// (65.5), threaded to the rulings an alias wakes.
     pub fn admit_backfill(
         &mut self,
         receipts: &[crate::chronometry::KStepReceipt],
+        budget: &mut crate::physics::Budget,
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
@@ -712,7 +720,7 @@ impl Kernel {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);
-                    self.alias_admitting(r);
+                    self.alias_admitting(r, budget);
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

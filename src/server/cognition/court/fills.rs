@@ -76,7 +76,7 @@ impl Kernel {
                     let settled = self.chain.head_stamp().filter(|h| Some(*h) != before);
                     if !gamma.is_identity() {
                         if let Some((a, b)) = edge_pair(&addrs) {
-                            self.mint_or_admit_translation(&gamma, a.clone(), b.clone(), [0; 32]);
+                            self.mint_or_admit_translation(&gamma, a.clone(), b.clone(), [0; 32], budget);
                             let key = Self::cocycle_key(&inv, &a, &b);
                             if let Some(row) = self.cocycle_at.remove(&key) {
                                 let stood = self.cocycle_receipt.get(&key).copied().or(settled);

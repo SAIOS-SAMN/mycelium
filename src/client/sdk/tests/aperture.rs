@@ -55,7 +55,8 @@ let run = |strokes: u64| -> (usize, usize) {
     for k in 1..=strokes {
         // A body no earlier stroke spoke: a bar one site longer each stroke.
         let bar: Vec<(i64, i64, u8, u8)> = (0..=k as i64).map(|c| (0, c, 1u8, 2u8)).collect();
-        entity.withhold_form(form.clone(), &[], std::slice::from_ref(&bar), [1, 0, 0, 0]);
+        let mut b = entity.stroke();
+        entity.withhold_form(form.clone(), &[], std::slice::from_ref(&bar), [1, 0, 0, 0], &mut b);
         entity.shed_at(k);
     }
     (entity.dialect_len(), entity.utterances_filed())
@@ -80,7 +81,7 @@ fn expressed_word_survives_shed_within_the_aperture() {
 use crate::transducer::element::{canonical_chain, from_canonical};
 let mut epi = Epigenome::new();
 let residual = [(0i64, 0i64, 1u8, 2u8)];
-assert!(epi.express(&residual, 7, 10), "the residual is claimed");
+assert!(epi.express(&residual, 7, 10, &mut super::common::budget()), "the residual is claimed");
 let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
 let d = epi.dialect.get(&addr).expect("stood");
 assert_eq!(d.last_used_k, 7, "k is the voice's K");
@@ -111,7 +112,7 @@ let mut epi = Epigenome::new();
 let residual = [(0i64, 0i64, 1u8, 2u8)];
 // Stood at the mind's K 1, with TUniversal frozen at 0 throughout:
 // no receipt was ever admitted.
-assert!(epi.express(&residual, 1, 0), "the residual is claimed");
+assert!(epi.express(&residual, 1, 0, &mut super::common::budget()), "the residual is claimed");
 let addr = from_canonical(&canonical_chain(&residual).expect("one link is A5's chain")).address();
 assert_eq!(epi.dialect_len(), 1);
 let aperture = crate::physics::aperture_cycle() as u64;
@@ -245,8 +246,9 @@ fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
         !entity.room_for(&second),
         "a lane with no room has no room for a thought that occupies one"
     );
+    let mut b = entity.stroke();
     assert!(
-        !entity.hold_form(second, &[], &[]),
+        !entity.hold_form(second, &[], &[], &mut b),
         "a lane with no room withholds the new thought"
     );
     assert_eq!(
@@ -291,7 +293,8 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
         ..crate::transducer::sentence::Form::default()
     };
     let drew = crate::transducer::element::measure_lanes(&f.remainder.placed());
-    assert!(entity.hold_form(f, &[], &[]), "a mind with room holds it");
+    let mut b = entity.stroke();
+    assert!(entity.hold_form(f, &[], &[], &mut b), "a mind with room holds it");
     let after = entity.physics.reserve;
     for l in 0..4 {
         match drew[l] {
@@ -376,7 +379,7 @@ fn the_pivots_pending_work_is_a_set_of_coordinates() {
     let addr = a.address();
     assert_eq!(epi.unpivoted_len(), 0, "a fresh mind has no pending work");
 
-    epi.learn(&a.to_bytes().expect("the record writes"));
+    epi.learn(&a.to_bytes().expect("the record writes"), &mut super::common::budget());
     assert_eq!(epi.unpivoted_len(), 1, "an admitted word is work the pivot has not reached");
 
     let taken = epi.take_unpivoted();
@@ -392,7 +395,7 @@ fn the_pivots_pending_work_is_a_set_of_coordinates() {
     // taken back; a coordinate leaves the set with the word.
     let b = two_body_sentence([&[(1, 3), (1, 3)], &[(3, 5), (3, 5)]]);
     let b_addr = b.address();
-    epi.learn(&b.to_bytes().expect("the record writes"));
+    epi.learn(&b.to_bytes().expect("the record writes"), &mut super::common::budget());
     assert_eq!(epi.unpivoted_len(), 1);
     assert!(epi.retire(b_addr.as_bytes()), "the word retires");
     assert_eq!(epi.unpivoted_len(), 0, "and leaves the pending set with it");

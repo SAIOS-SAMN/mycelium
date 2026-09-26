@@ -235,8 +235,9 @@ impl Kernel {
     /// already verified the blind replay and derivability OFF the lock on a
     /// basis snapshot; this brief step re-checks presence and installs. The
     /// ratifying voice is the discoverer of record — real provenance, no
-    /// sentinel identity.
-    pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32]) -> Adoption {
+    /// sentinel identity. On the stroke the adoption was replayed under
+    /// (65.5): the deliberation worker's `adopt` is the act's root.
+    pub fn install_adopted(&mut self, word: &Element, ratifier: [u8; 32], budget: &mut crate::physics::Budget) -> Adoption {
         // The orbit check at the mint: an arriving word's torsion cycles are
         // run round before they enter the genome. Only a witnessed closed orbit
         // at the spoken period is believed.
@@ -276,14 +277,14 @@ impl Kernel {
         if word.is_connection() || word.is_sentence() || word.is_rewrite() {
             self.docket_connection(word, ratifier);
         }
-        self.basis_push(word.clone(), ratifier);
+        self.basis_push(word.clone(), ratifier, budget);
         // ACT1-hold (78.27 Q1): the adoption is an act on this court's own
         // line by the ratifier, and it admits the word it holds.
         self.append_step(crate::chronometry::ActKind::Adopted, &addr, ratifier);
         // A word the court itself teaches is finalized language: it joins
         // the ruled cover on arrival.
         if self.court_voice == Some(ratifier) {
-            self.ruled_admit(&addr);
+            self.ruled_admit(&addr, budget);
         }
         self.physics.syntropy(&word.magnitude()); // convergence is order built
         Adoption::Installed

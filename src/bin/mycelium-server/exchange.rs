@@ -586,9 +586,14 @@ impl Exchange {
                                             // A slash withdraws only the stamp
                                             // this filing placed, never this
                                             // court's own on a word it holds.
-                                            let filed = k.file_admitted(&addr, t.at);
+                                            // THE ACT'S ROOT (65.5): one fetched
+                                            // word glued is one act, and its one
+                                            // stroke is the filing's and the
+                                            // glue's draw, threaded to both.
+                                            let mut stroke = k.stroke();
+                                            let filed = k.file_admitted(&addr, t.at, &mut stroke);
                                             let g = match mesh.cover.lock() {
-                                                Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c),
+                                                Ok(mut c) => k.glue_fetched(spoken, vk_peer, mesh.vk, &mut c, &mut stroke),
                                                 Err(_) if filed => {
                                                     k.drop_admitted(&addr);
                                                     continue;

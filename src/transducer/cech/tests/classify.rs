@@ -255,7 +255,7 @@ fn a_body_turned_about_itself_files_though_its_carriage_is_not_flat() {
     let l = vec![(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
     let turned = vec![(0i64, 0i64, 0i64), (0, 1, 0), (0, 2, 0), (1, 0, 0)];
     let (a, b) = (shape_of(&l), shape_of(&turned));
-    let members = versor_coset_ordered(&a, &b);
+    let members = versor_coset_ordered(&a, &b, &mut super::common::budget());
     assert!(!members.is_empty(), "a 90° turn carries the L onto its image");
     let mut read = 0usize;
     let mut placed = 0usize;
@@ -300,7 +300,7 @@ fn three_turned_bodies_fill_their_cycle_and_a_twisted_cycle_files_its_residue() 
     let c = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 1, 0), (2, 1, 0)]);
     let d = shape_of(&[(0i64, 2i64, 0i64), (1, 0, 0), (1, 1, 0), (1, 2, 0)]);
     let edge = |x: &crate::transducer::blade::Shape, y: &crate::transducer::blade::Shape| {
-        versor_between(x, y).expect("a transition")
+        versor_between(x, y, &mut super::common::budget()).expect("a transition")
     };
     let (ab, bc) = (edge(&a, &b), edge(&b, &c));
     let fill_of = |h: &Versor| {

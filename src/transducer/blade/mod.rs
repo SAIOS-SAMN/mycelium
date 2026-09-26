@@ -44,8 +44,8 @@ pub mod sensor_plane {
     use num_bigint::BigInt;
     use num_rational::BigRational;
 
-    pub fn relative_rotor(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
-        super::relative_rotor(a, b, P)
+    pub fn relative_rotor(a: &Blade, b: &Blade, budget: &mut crate::physics::Budget) -> Result<Pose, NoPose> {
+        super::relative_rotor(a, b, P, budget)
     }
     pub fn oblique_arc(a: &Blade, b: &Blade) -> Option<(BigInt, BigInt)> {
         super::oblique_arc(a, b, P)

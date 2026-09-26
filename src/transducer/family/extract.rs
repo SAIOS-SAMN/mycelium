@@ -23,11 +23,22 @@ use std::cell::RefCell;
 struct PerceptMemo {
     family: Vec<(Grid, Grid)>,
     scale: Ratio,
+    /// The frames the percept read, perceived once: what a caller sizing its
+    /// stroke by this family reads back rather than perceiving again.
+    frames: super::perceive::Frames,
     percept: Percept,
 }
 
 thread_local! {
     static PERCEPT_MEMO: RefCell<Option<PerceptMemo>> = const { RefCell::new(None) };
+}
+
+/// The frames the percept memo holds for `family`, where it holds this one:
+/// [`super::perceive_family`]'s answer without touching a compartment.
+pub(super) fn memo_frames(family: &[(Grid, Grid)]) -> Option<super::perceive::Frames> {
+    PERCEPT_MEMO.with(|m| {
+        m.borrow().as_ref().and_then(|held| (held.family.as_slice() == family).then(|| held.frames.clone()))
+    })
 }
 
 /// Seven moves on the family's one form (chapter 21 as ruled in 52.5),
@@ -36,6 +47,20 @@ thread_local! {
 /// never read leave as the demands of `finish`.
 pub fn extract_rule_with(
     family: &[(Grid, Grid)],
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+) -> Option<crate::transducer::sentence::SentenceRule> {
+    extract_rule_on(family, None, crystal, budget)
+}
+
+/// THE EXTRACTION ON FRAMES ALREADY PERCEIVED (rule 10, ruled 2026-09-26):
+/// the caller that sized its stroke by the family's frames
+/// ([`super::perceive_family`], [`super::extraction_spend`]) hands them here
+/// and the percept reads them rather than perceiving each frame again; with
+/// none handed, the percept perceives them itself.
+pub fn extract_rule_on(
+    family: &[(Grid, Grid)],
+    frames: Option<&super::perceive::Frames>,
     crystal: &dyn Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
@@ -51,10 +76,21 @@ pub fn extract_rule_with(
     let percept = match hit {
         Some(p) => p,
         None => {
-            let p = family_percept(family, scale, budget);
+            // The frames are perceived once, here where no caller handed
+            // them, so the memo holds what the percept read.
+            let perceived;
+            let frames = match frames {
+                Some(f) => f,
+                None => {
+                    perceived = super::perceive::perceive_family(family);
+                    &perceived
+                }
+            };
+            let p = family_percept(family, Some(frames), scale, budget);
             if budget.remaining() > 0 && p.unreached.is_empty() {
                 PERCEPT_MEMO.with(|m| {
-                    *m.borrow_mut() = Some(PerceptMemo { family: family.to_vec(), scale, percept: p.clone() });
+                    *m.borrow_mut() =
+                        Some(PerceptMemo { family: family.to_vec(), scale, frames: frames.clone(), percept: p.clone() });
                 });
             }
             p
@@ -205,6 +241,19 @@ pub fn scene_form(
 ) -> Option<Form> {
     let pair = [(a.clone(), b.clone())];
     extract_rule_with(&pair, crystal, budget).map(|r| r.form)
+}
+
+/// [`scene_form`] on the scene's frames already perceived, the ones its
+/// stroke was sized by.
+pub fn scene_form_on(
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+    a: &Grid,
+    b: &Grid,
+    frames: &super::perceive::Frames,
+) -> Option<Form> {
+    let pair = [(a.clone(), b.clone())];
+    extract_rule_on(&pair, Some(frames), crystal, budget).map(|r| r.form)
 }
 
 /// The percept memo, emptied: a test that asks whether two courts reach one

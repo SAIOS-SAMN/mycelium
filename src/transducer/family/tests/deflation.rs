@@ -94,7 +94,7 @@ fn the_mint_admits_exactly_what_the_court_replays_on_the_same_family() {
         "on the form the court holds, the mint left nothing undeclared: {rems:?}"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay_at(&spoken, &|_| None, Some(&family), &NoCrystal),
+        crate::court::verdict::blind_replay_at(&spoken, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
         None,
         "the court admits on the same family what the mint admitted"
     );

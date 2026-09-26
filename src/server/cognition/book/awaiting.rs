@@ -106,7 +106,9 @@ impl Kernel {
     /// resolves one link per ruling and never spins (rule 10: the bucket
     /// is taken before it is walked, so a re-docket under the same
     /// address cannot be re-entered in this pass).
-    pub(crate) fn rehear_awaiting(&mut self, form: &[u8]) {
+    /// The re-hearing runs inside the act that ruled the form, on that
+    /// act's stroke (65.5): it mints none of its own.
+    pub(crate) fn rehear_awaiting(&mut self, form: &[u8], budget: &mut crate::physics::Budget) {
         let Some(waiting) = self.awaiting.remove(form) else {
             return;
         };
@@ -118,7 +120,7 @@ impl Kernel {
             // and the refusal exists only in a log line. Dropping the
             // outcome here made the second hearing the one hearing whose
             // verdict nobody kept.
-            let _ = self.adjudicate_one(voice, task.as_bytes(), &s, None);
+            let _ = self.adjudicate_one(voice, task.as_bytes(), &s, None, budget);
         }
     }
 

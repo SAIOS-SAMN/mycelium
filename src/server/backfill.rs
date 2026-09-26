@@ -87,7 +87,7 @@ pub fn chase(
         }
         let Some(receipts) = fetch(&who, held, upto) else { return short(advanced) };
         let (n, missing) = match kernel.lock() {
-            Ok(mut k) => k.admit_backfill(&receipts),
+            Ok(mut k) => k.admit_backfill(&receipts, budget),
             Err(_) => return short(advanced),
         };
         // CV5: the receipts of `who` this page admitted, on the observer —

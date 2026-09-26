@@ -113,7 +113,8 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
     let plain = sentence_with(Derivation::spelled(turn_90(3)), 5);
 
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
-    let heard = k.hear_speech([1; 32], &[0; 32], &spoken).expect("the frame is heard");
+    let mut frame = k.stroke();
+    let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &mut frame).expect("the frame is heard");
 
     // The adjudications come back in the order the sentences were spoken,
     // so index zero is the first sentence's verdict — the frame's own
@@ -174,7 +175,8 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
         "this court holds no such word, so there is nothing to rule"
     );
 
-    k.ruled_admit(absent.as_bytes());
+    let mut ruling = k.stroke();
+    k.ruled_admit(absent.as_bytes(), &mut ruling);
 
     assert!(
         !k.ruled_contains(absent.as_bytes()),
@@ -197,7 +199,8 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
     let held = plain.address();
     k.await_citation([1; 32], &[0; 32], &plain, &held);
     assert_eq!(k.awaiting_len(held.as_bytes()), 1, "docketed under an address it holds");
-    k.ruled_admit(held.as_bytes());
+    let mut ruling = k.stroke();
+    k.ruled_admit(held.as_bytes(), &mut ruling);
     assert_eq!(
         k.awaiting_len(held.as_bytes()),
         0,

@@ -71,6 +71,7 @@ pub fn rank_over(
     prior: &Rank,
     basis_gen: u64,
     chart_listings: &crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
+    budget: &mut crate::physics::Budget,
 ) -> Rank {
     let stalks = &language.stalks;
     // A listing's base point moves only when a word lands in its own
@@ -91,11 +92,12 @@ pub fn rank_over(
             moved.insert(inv.key(), inv);
         }
     }
-    let locate = |p: &Element| {
+    let locate = |p: &Element, budget: &mut crate::physics::Budget| {
         crate::transducer::stalk::congruent_shaped(
             stalks,
             |a| language.shape_at(a),
             p.sub(),
+            budget,
         )
         // THE BASE POINT IS THE COORDINATE the congruence landed on, which
         // is what `congruent_shaped` already returns; it was converted to
@@ -113,7 +115,7 @@ pub fn rank_over(
         false => {
             for (addr, p) in pending.scoped() {
                 invariants.insert(&addr, crate::transducer::stalk::invariant_of(p));
-                out.put_closure(&addr, locate(p));
+                out.put_closure(&addr, locate(p, budget));
             }
         }
         true => {
@@ -128,7 +130,7 @@ pub fn rank_over(
                 invariants.insert(&addr, inv);
                 match prior.closure_of(&addr) {
                     Some(c) => out.put_closure(&addr, c.clone()),
-                    None => out.put_closure(&addr, locate(p)),
+                    None => out.put_closure(&addr, locate(p, budget)),
                 }
             }
             if !moved.is_empty() {
@@ -138,7 +140,7 @@ pub fn rank_over(
                 for (ck, _) in moved.scoped() {
                     for (addr, _) in chart_listings.link(&ck) {
                         if let Some(p) = pending.get(&addr) {
-                            out.put_closure(&addr, locate(p));
+                            out.put_closure(&addr, locate(p, budget));
                         }
                     }
                 }
@@ -298,6 +300,7 @@ pub fn normal_form(
     language: &Language,
     chain: &[(i64, i64, u8, u8)],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> NormalForm {
     let sentence = crate::transducer::sentence::deconstruct_at(
         &|a| language.word_at(a),
@@ -305,6 +308,7 @@ pub fn normal_form(
         &|a| language.shape_at(a),
         chain,
         exclude,
+        budget,
     );
     match (sentence.residual.as_slice(), sentence.punctures.as_slice()) {
         ([], []) => NormalForm::Decomposed(sentence.cites.iter().map(|c| c.word.clone()).collect()),

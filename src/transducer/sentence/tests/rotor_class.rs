@@ -67,7 +67,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     let back = crate::transducer::sentence::from_element_form(&e).expect("tape");
     assert_eq!(back.axes.len(), 1, "the axis rides the tape");
     assert_eq!(
-        crate::court::verdict::blind_replay(&e),
+        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
         None,
         "the court re-derives the seed from the orbit and the certificate re-reads"
     );
@@ -75,7 +75,7 @@ fn an_infinite_class_no_word_discharges_opens_an_axis_and_is_never_filed() {
     struck.axes = Keyed::new();
     let bad = as_element_form(&struck, [1, 0, 0, 0]).expect("tape without its axis");
     assert_eq!(
-        crate::court::verdict::blind_replay(&bad),
+        crate::court::verdict::blind_replay(&bad, &mut super::common::budget()),
         Some(crate::court::verdict::REFUSE_ORBIT),
         "without the axis the orbit is a free class again, and it does not replay"
     );
@@ -202,7 +202,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         "the carrier stores a live chord face"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&e),
+        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
         None,
         "a filed torsion chord replays: the chord carries the holonomy"
     );
@@ -252,7 +252,7 @@ fn filed_torsion_chord_replays_or_refuses() {
         "stripping a filing changes no byte of the word: it was never in the key"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&missing),
+        crate::court::verdict::blind_replay(&missing, &mut super::common::budget()),
         None,
         "and the geometry replays as it did, because that is what replay reads"
     );
@@ -358,7 +358,7 @@ fn offplane_turn_90_to_the_fourth_is_closed_to_all_four_readers() {
     );
     let e = as_element_form(&f, [1, 0, 0, 0]).expect("the identity chord crystallizes");
     assert_eq!(
-        crate::court::verdict::blind_replay(&e),
+        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
         None,
         "the court reads projective identity"
     );

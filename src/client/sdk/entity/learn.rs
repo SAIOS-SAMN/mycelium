@@ -113,11 +113,14 @@ impl Entity {
         let request = dialogue::encode_fetch(&voice, &charts, crate::network::wire::frame_budget());
         let mut learned = 0usize;
         let body = self.session.speak_keyed(&voice, request)?;
+        // The root of this act (the arm's sync): one stroke for every page
+        // it absorbs (65.5).
+        let mut budget = self.physics.stroke();
         // A reply that does not decode teaches nothing.
         for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
             let mut pos = 0usize;
             let fetched = Element::from_bytes(&t.word, &mut pos);
-            if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
+            if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
                 learned += 1;
             }
             // ČECH AFTER FETCH: the word is glued on the elements, not on
@@ -180,7 +183,7 @@ impl Entity {
                 }
             }
         }
-        self.absorb_class_page(&body, voice);
+        self.absorb_class_page(&body, voice, &mut budget);
         // THE OTHER DIRECTION OF THE SHEAF: in a discordant stratum this
         // genome may hold what the hypha lacks (a basis that regressed, a
         // word learned from another judge). Those words are taught up for
@@ -215,7 +218,7 @@ impl Entity {
         Ok(learned + taught)
     }
 
-    pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32]) {
+    pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32], budget: &mut crate::physics::Budget) {
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
@@ -236,7 +239,7 @@ impl Entity {
             let chart = crate::transducer::stalk::Invariant::default();
             let adjoined: crate::transducer::bubble::drive::Adjoined =
                 symmetries.into_iter().map(|r| (r, chart.clone())).collect();
-            self.adjoin_letters(&adjoined);
+            self.adjoin_letters(&adjoined, budget);
         }
     }
 
@@ -264,11 +267,11 @@ impl Entity {
                 };
                 // A reply that does not decode teaches nothing.
                 for t in dialogue::decode_syllabus_reply(&body).into_iter().flatten() {
-                    if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
+                    if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
                         learned += 1;
                     }
                 }
-                self.absorb_class_page(&body, voice);
+                self.absorb_class_page(&body, voice, &mut budget);
             }
             return Ok(learned);
         }
@@ -303,21 +306,25 @@ impl Entity {
                 None => (1u8, 0),
             }
         });
+        // The root of this act (the arm's pull): one stroke for every page
+        // it absorbs (65.5).
+        let mut budget = self.physics.stroke();
         let mut learned = 0usize;
         for t in &words {
-            if self.absorb_taught_at(&t.word, Some(t.at)).is_some() {
+            if self.absorb_taught_at(&t.word, Some(t.at), &mut budget).is_some() {
                 learned += 1;
             }
         }
-        self.absorb_class_page(&body, voice);
+        self.absorb_class_page(&body, voice, &mut budget);
         Ok(learned)
     }
 
     /// Hear a taught word with no stamp to locate it by: a word handed in
     /// whole rather than served, admitted by the Learned node that hears it
-    /// (78.27, LD3-c).
+    /// (78.27, LD3-c). The root of its act: one stroke, minted here (65.5).
     pub fn absorb_taught(&mut self, taught: &[u8]) -> Option<Comprehension> {
-        self.absorb_taught_at(taught, None)
+        let mut budget = self.physics.stroke();
+        self.absorb_taught_at(taught, None, &mut budget)
     }
 
     /// Hear a taught word by pivoting the contemplation before banking it.
@@ -328,6 +335,7 @@ impl Entity {
         &mut self,
         taught: &[u8],
         at: Option<crate::chronometry::Stamp>,
+        budget: &mut crate::physics::Budget,
     ) -> Option<Comprehension> {
         let mut pos = 0usize;
         // WHAT THE PAGE MEASURED, per lane: the sum over the words it
@@ -379,7 +387,7 @@ impl Entity {
                 }
                 (None, None) => {}
             }
-            let _ = self.pivot_on(e);
+            let _ = self.pivot_on(e, budget);
             // 78.37(1) — FIXED BY CLASS: a word arriving with its admitting
             // stamp is court-ruled, and every thought on its chart is fixed.
             if at.is_some() {
@@ -397,7 +405,8 @@ impl Entity {
                 }
             }
         }
-        let heard = self.epigenome.learn_at(taught, k, self.now_tu());
+        // The caller's stroke (65.5): the page is learned inside its act.
+        let heard = self.epigenome.learn_at(taught, k, self.now_tu(), budget);
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
         // nothing. The stroke takes the measure once.

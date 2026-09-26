@@ -9,10 +9,9 @@ use mycelium::physics::StrokeOutcome;
 
 pub(crate) fn syntropy_arm(stroke: &mut Stroke<'_>, genome_path: &str) {
 let Stroke { entity, physics, c, outcome, m, tag } = stroke;
-let shed = entity.shed();
-if shed > 0 {
-    eprintln!("[{tag}] shed {shed} dialect");
-}
+// C3 — the shed prints nothing per stroke (ruled 2026-09-26): what it took,
+// by door, is the meet graph's shed reading on the console.
+entity.shed();
 // 24.3, I37 — THE SYNC IS PACED AS THE QUOTE IS. Discovery, the syllabus
 // pull and the sheaf sync are wire acts, and they ran on every depleted
 // stroke of every voice: on the fleet of 2026-09-08 two hyphae each

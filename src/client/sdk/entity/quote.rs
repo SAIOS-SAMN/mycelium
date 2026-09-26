@@ -48,7 +48,8 @@ impl Entity {
         // does not hold is not a compression the mesh can replay), so a
         // deconstruction that leans on a stood or held word is no bid; it
         // was read as a genome index and voice 4 died on it (I35).
-        let located = self.epigenome.locate(sub.sub(), Some(&at));
+        let mut budget = self.physics.stroke();
+        let located = self.epigenome.locate(sub.sub(), Some(&at), &mut budget);
         let (cites, residual) = (located.cites, located.residual);
         // RULED IS "THE GENOME HOLDS THIS ADDRESS", asked at the coordinate.
         // It was `c.word < g.len()` — an offset compared against a length,
@@ -364,7 +365,7 @@ impl Entity {
     /// operator equality (Expansion 1, decided by the rotor), then a
     /// solvable change of basepoint (Expansion 2). A word outside the fibre
     /// is in another conjugacy class and can answer neither.
-    pub fn algebraic_redundancy(&mut self) -> Option<Redundancy> {
+    pub fn algebraic_redundancy(&mut self, budget: &mut crate::physics::Budget) -> Option<Redundancy> {
         let at = self.refine_cursor.clone()?;
         let held = self.epigenome.word_at(&at)?;
         let me = held.address();
@@ -373,11 +374,11 @@ impl Entity {
             .map(|t| t.word)
             .find(|w| !w.is_identity())?;
         let chart = crate::transducer::sentence::versor_chart(&mine)?;
-        let mut budget = self.physics.stroke();
+        // The caller's stroke (65.5).
         let fibre = crate::transducer::family::Crystal::generators_under(
             &self.epigenome,
             &chart,
-            &mut budget,
+            budget,
         );
         let mut siblings: Vec<(crate::transducer::address::Address, crate::transducer::alphabet::Word)> =
             Vec::new();
@@ -440,12 +441,15 @@ impl Entity {
             let at = self.refine_cursor.clone()?;
             self.epigenome.word_at(&at)?.address()
         };
-        match self.algebraic_redundancy()? {
+        // The root of this act (the syntropy arm holds no stroke): one stroke
+        // for the reading and the adjunction both (65.5).
+        let mut budget = self.physics.stroke();
+        match self.algebraic_redundancy(&mut budget)? {
             // 37.7: a gauge the alphabet cannot spell against a held word,
             // adjoined.
             Redundancy::UnspellableGauge { gamma, chart, .. } => {
                 let adjoined: crate::transducer::bubble::drive::Adjoined = vec![(*gamma, chart)];
-                self.adjoin_letters(&adjoined);
+                self.adjoin_letters(&adjoined, &mut budget);
                 Some(AlgebraicStep::Adjoined)
             }
             Redundancy::SameOperator { held } => Some(AlgebraicStep::Bid(Box::new(AlgebraicBid {

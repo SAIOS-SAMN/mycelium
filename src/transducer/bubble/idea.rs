@@ -298,7 +298,10 @@ pub(crate) type Connection = (Invariant, Vec<Rotor>, Vec<(u8, u8)>);
 /// the hue map it carries, composed around the cycle. A transport the
 /// seventeen do not spell names no rotor and contributes none; nothing is
 /// stood in for a connection that was not read (rule 11).
-pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]) -> Vec<Connection> {
+pub(crate) fn bundle_connections(
+    bundle: &[crate::transducer::family::TrainPair],
+    budget: &mut crate::physics::Budget,
+) -> Vec<Connection> {
     let ins: Vec<crate::transducer::family::Grid> =
         bundle.iter().map(|(a, _)| a.clone()).collect();
     let frame_key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
@@ -347,7 +350,7 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
             ) else {
                 continue;
             };
-            let Some(car) = crate::transducer::family::carriage(&a, &b) else {
+            let Some(car) = crate::transducer::family::carriage(&a, &b, budget) else {
                 continue;
             };
             let Some(Ok(word)) = crate::transducer::family::peel_versor(&car.v) else {
@@ -709,7 +712,7 @@ impl Bubble {
                 self.take_form(form);
             }
         }
-        self.dissolve_candidates();
+        self.dissolve_candidates(budget);
         self.dirty = spent > 0 && budget.remaining() == 0;
         Expansion { spent, pivoted, adjoined, demanded, discharged, overflowed }
     }
@@ -765,11 +768,11 @@ impl Bubble {
     /// whose `chord` is a face index — and a demand's form has no faces for
     /// it to point at. The period is read and the candidate stands on it;
     /// where it is filed is the operator's to rule.
-    pub(crate) fn dissolve_candidates(&mut self) {
+    pub(crate) fn dissolve_candidates(&mut self, budget: &mut crate::physics::Budget) {
         let Some(bundle) = self.bundle.clone() else {
             return;
         };
-        let connections = bundle_connections(&bundle);
+        let connections = bundle_connections(&bundle, budget);
         if connections.is_empty() {
             return;
         }

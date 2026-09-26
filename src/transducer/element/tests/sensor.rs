@@ -64,7 +64,7 @@ fn a_shrink_carries_one_compartment_to_none_and_a_block_as_a_body_to_one() {
     assert_eq!(carry_compartment(&half, 4, 4, 0), None, "even where its centre lands in one");
     let block = shape_of(&[(0i64, 0i64, 0i64), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     let one = shape_of(&[(0i64, 0i64, 0i64)]);
-    let v = versor_between(&block, &one).expect("a shrink by one half carries the block onto the compartment");
+    let v = versor_between(&block, &one, &mut super::common::budget()).expect("a shrink by one half carries the block onto the compartment");
     for s in &block.blade.support {
         assert_eq!(carry_compartment_site(&v, s), None, "no compartment of the block is carried alone: {s:?}");
     }

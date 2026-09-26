@@ -83,8 +83,14 @@ pub(crate) fn feed_arm(
         // Sized by the family, not by the box (L8w): a fixed spend unit is
         // three on this machine, and step 0 alone needs one per pair with
         // the cover's read out of the same purse.
+        // Its frames perceived once where the memo does not answer it, the
+        // stroke sized by them and the percept reading them (rule 10).
+        let frames = match extract_memo.holds(&fam, &gen) {
+            true => mycelium::transducer::family::Frames::new(),
+            false => mycelium::transducer::family::perceive_family(&task.train),
+        };
         let mut extract_budget = physics
-            .stroke_n(mycelium::transducer::family::extraction_spend(&task.train));
+            .stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
         let extracted = mycelium::transducer::family::extract_rule_cached(
             extract_memo,
             &fam,
@@ -92,6 +98,7 @@ pub(crate) fn feed_arm(
             gen,
             &mut extract_budget,
             &entity.epigenome,
+            Some(&frames),
         );
         if let Some(rule) = extracted.as_ref() {
             for (x, y) in &task.test {
@@ -107,7 +114,7 @@ pub(crate) fn feed_arm(
                     }
                 }
             }
-            if let Some(mag) = speak_form(entity, tag, rule, &task.train, &fam) {
+            if let Some(mag) = speak_form(entity, tag, rule, &task.train, &fam, &mut extract_budget) {
                 StrokeOutcome::add(&mut outcome.uttered, &mag);
             }
         } else {

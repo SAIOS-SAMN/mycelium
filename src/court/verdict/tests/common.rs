@@ -21,3 +21,7 @@ pub fn index_of(fed: &[(crate::transducer::address::Address, Element)]) -> Keyed
     }
     k
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

@@ -21,23 +21,24 @@ impl Entity {
     /// words are the vertices the eyes could pair and the alphabet could
     /// spell, and what they could not is its demand vertices (50.5).
     pub fn hold_chain(&mut self, chain: Vec<(i64, i64, u8, u8)>) {
-        use crate::transducer::family::{scene_form, scene_of_chain};
+        use crate::transducer::family::{extraction_spend, perceive_family, scene_form_on, scene_of_chain};
         let Some(scene) = scene_of_chain(&chain) else {
             return;
         };
         // 50.2 step 2: this mind's own presentation is what its word
         // vertices derive against, under a stroke sized by the scene it is
-        // handed (L8w); a fixed spend unit does not reach one scene.
-        let mut budget = self
-            .physics
-            .stroke_n(crate::transducer::family::extraction_spend(std::slice::from_ref(&scene)));
+        // handed (L8w); a fixed spend unit does not reach one scene. The
+        // scene's frames are perceived once: the stroke is sized by them and
+        // the percept reads them.
+        let frames = perceive_family(std::slice::from_ref(&scene));
+        let mut budget = self.physics.stroke_n(extraction_spend(std::slice::from_ref(&scene), &frames));
         // `None` is a vertex the stroke could not factor through this
         // mind's presentation: unmeasured, so nothing is held rather than
         // a form held with the presentation's reach asserted unread.
-        let Some(f) = scene_form(&self.epigenome, &mut budget, &scene.0, &scene.1) else {
+        let Some(f) = scene_form_on(&self.epigenome, &mut budget, &scene.0, &scene.1, &frames) else {
             return;
         };
-        self.hold_form(f, &[], &[]);
+        self.hold_form(f, &[], &[], &mut budget);
     }
 
     /// Hold a withheld form as an idea so the pivot orbit sees it next
@@ -53,6 +54,7 @@ impl Entity {
         f: crate::transducer::sentence::Form,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
+        budget: &mut crate::physics::Budget,
     ) -> bool {
         // Z4d — THE DRAW IS THE ROOM (door 3), AND IT IS PER LANE. The
         // thought's own four-lane measure leaves the reserve when it is
@@ -76,7 +78,8 @@ impl Entity {
             }
         }
         self.physics.reserve = next;
-        self.contemplation.hold_form(f, train, remainders, draw);
+        // 65.5: the caller's stroke — a hold is part of the act that holds.
+        self.contemplation.hold_form(f, train, remainders, draw, budget);
         true
     }
 
@@ -149,6 +152,7 @@ impl Entity {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
         mag: [u64; 4],
+        budget: &mut crate::physics::Budget,
     ) {
         let k = self.session.voice().k();
         let tu = self.now_tu();
@@ -163,14 +167,16 @@ impl Entity {
         }
         // No room on a lane withholds the thought; the demand stands on the
         // docket either way.
-        let _ = self.hold_form(f, train, remainders);
+        let _ = self.hold_form(f, train, remainders, budget);
     }
 
     /// Hold a withheld sentence as a bubble: form, remainder, cover. A word
     /// that is not a sentence is held as the form of its chain.
     pub fn hold_sentence(&mut self, word: &Element) {
         if let Some(f) = crate::transducer::sentence::from_element_form(word) {
-            self.hold_form(f, &[], &[]);
+            // The root of this act: one stroke, minted here (65.5).
+            let mut budget = self.physics.stroke();
+            self.hold_form(f, &[], &[], &mut budget);
         } else {
             self.hold_chain(word.sub().to_vec());
         }
@@ -229,15 +235,18 @@ impl Entity {
         chain: &[(i64, i64, u8, u8)],
         bodies: &[Vec<(i64, i64, u8, u8)>],
     ) -> Result<crate::transducer::address::Address, &'static str> {
-        if let Some(a) = self.open_contemplation_axis() {
+        // The root of this act (no caller holds a stroke): one stroke,
+        // minted here and threaded through everything it does (65.5).
+        let mut budget = self.physics.stroke();
+        if let Some(a) = self.open_contemplation_axis(&mut budget) {
             return Ok(a);
         }
         if self.opened.contains(listing) {
             return Err(AXIS_TRIED);
         }
-        let germ = Self::axis_germ(chain, bodies)?;
+        let germ = Self::axis_germ(chain, bodies, &mut budget)?;
         self.opened.insert(listing, ());
-        match self.speak_word(&germ) {
+        match self.speak_word(&germ, &mut budget) {
             Ok(Utterance::Spoken) => {
                 #[expect(clippy::disallowed_methods, reason = "rule 11 — one per event in one process: a 64-bit count cannot pass 2⁶⁴ events before the process ends")]
                 let n = self.axes_spoken.saturating_add(1);
@@ -256,12 +265,16 @@ impl Entity {
     /// with the holonomic lane raised by the count of words that met. One
     /// body, a body with no shape, or bodies no rational versor relates are
     /// refused by name.
-    pub fn axis_germ(chain: &[(i64, i64, u8, u8)], bodies: &[Vec<(i64, i64, u8, u8)>]) -> Result<Element, &'static str> {
+    pub fn axis_germ(
+        chain: &[(i64, i64, u8, u8)],
+        bodies: &[Vec<(i64, i64, u8, u8)>],
+        budget: &mut crate::physics::Budget,
+    ) -> Result<Element, &'static str> {
         use crate::transducer::element::{from_connection, measure_lanes, shape_of_chain};
         let [base, other, ..] = bodies else { return Err(AXIS_ONE_BODY) };
         let sa = shape_of_chain(base).ok_or(AXIS_NO_BODY)?;
         let sb = shape_of_chain(other).ok_or(AXIS_NO_BODY)?;
-        let v = crate::transducer::blade::versor_between(&sa, &sb).ok_or(AXIS_NO_VERSOR)?;
+        let v = crate::transducer::blade::versor_between(&sa, &sb, budget).ok_or(AXIS_NO_VERSOR)?;
         let mut germ = from_connection(&crate::transducer::alphabet::Word::identity(), &v, &[], &Vec::new(), [0; 4])
             .ok_or(AXIS_NO_VERSOR)?;
         germ.open_axis(v).ok_or(AXIS_PAST_CARRIER)?;
@@ -283,7 +296,10 @@ impl Entity {
     /// Seed from a class at any degree on the contemplation — the coordinate
     /// the current axes could not express. A class is an ideology; the gauge
     /// that would translate one frame into the other is a translation word.
-    pub(crate) fn open_contemplation_axis(&mut self) -> Option<crate::transducer::address::Address> {
+    pub(crate) fn open_contemplation_axis(
+        &mut self,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<crate::transducer::address::Address> {
         let classes = self.contemplation.classes_held();
         for (_kappa, class, _degree) in classes {
             let a = [0u8; 32];
@@ -291,7 +307,7 @@ impl Entity {
             let Some(t) = crate::transducer::element::from_translation(&class, a, b) else {
                 continue;
             };
-            if let Ok(Utterance::Spoken) = self.speak_word(&t) { return Some(t.address()) }
+            if let Ok(Utterance::Spoken) = self.speak_word(&t, budget) { return Some(t.address()) }
         }
         None
     }
@@ -367,9 +383,9 @@ impl Entity {
         // `Standing::Ruled` alone — so the mind adjoins the letter AND keeps
         // asking the mesh for one, and whichever arrives first closes the
         // loop.
-        self.adjoin_letters(&adjoined);
+        self.adjoin_letters(&adjoined, &mut budget);
         for e in &crystallized {
-            self.stand_crystallized(e);
+            self.stand_crystallized(e, &mut budget);
         }
         (pivoted, circuit)
     }
@@ -386,7 +402,11 @@ impl Entity {
     /// The letter stands in the DIALECT: it is this mind's own, memory only,
     /// until a court rules it (24.1), which is also why it does not suppress
     /// the demand — `pivot_orbit` defers on `Standing::Ruled` alone since R11.
-    pub(crate) fn adjoin_letters(&mut self, adjoined: &crate::transducer::bubble::drive::Adjoined) {
+    pub(crate) fn adjoin_letters(
+        &mut self,
+        adjoined: &crate::transducer::bubble::drive::Adjoined,
+        budget: &mut crate::physics::Budget,
+    ) {
         for (rotor, chart) in adjoined {
             // THE GÖDEL STEP, READ THROUGH THIS MIND'S OWN LETTERS (78.47): if
             // adjoined-by-closure reads 0, this is the reading that says why
@@ -397,8 +417,8 @@ impl Entity {
             // read D before an adjunction reads derivable after it.
             use crate::transducer::family::{letter_reading, LetterReading};
             use crate::transducer::sentence::Refused;
-            let mut budget = self.physics.stroke();
-            let reading = letter_reading(&self.epigenome, &mut budget, rotor);
+            // The caller's stroke (65.5): the reading is part of its act.
+            let reading = letter_reading(&self.epigenome, budget, rotor);
             if reading == LetterReading::Derivable {
                 self.contemplation.pivots.derivable += 1;
                 continue;
@@ -415,37 +435,37 @@ impl Entity {
             if self.epigenome.standing_of(e.address().as_bytes()).is_some() {
                 continue;
             }
-            self.stand_crystallized(&e);
+            self.stand_crystallized(&e, budget);
         }
     }
 
     /// A crystallized idea stands in the dialect and is uttered once
     /// (25.2, 24.3): the same vertex already stood or taught is a use, not
     /// a second utterance.
-    fn stand_crystallized(&mut self, e: &Element) {
+    fn stand_crystallized(&mut self, e: &Element, budget: &mut crate::physics::Budget) {
         if self.already_taught(e) {
             self.remember_spoken(e);
             return;
         }
         // Spoken, refused on the wire, or withheld on a transport error: the
         // court's reply is the record (its refusal code, its docket).
-        let _ = self.speak(std::slice::from_ref(e));
+        let _ = self.speak(std::slice::from_ref(e), budget);
     }
 
     /// PIVOT ON A WORD: read by_chart at the word's chart and peels, fill
-    /// those ideas under one stroke Budget. The atlas is borrowed, never cloned.
-    pub fn pivot_on(&mut self, word: &Element) -> usize {
-        let mut budget = self.physics.stroke();
+    /// those ideas under the caller's stroke (65.5). The atlas is borrowed,
+    /// never cloned.
+    pub fn pivot_on(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> usize {
         // TUniversal, not the voice's K — see `expand_ideas`.
         let tu = self.now_tu();
         self.contemplation.set_now(tu);
         let (_fills, _formed, _classes, spoken, adjoined) =
-            self.contemplation.pivot_on(word, &self.epigenome, &mut budget);
+            self.contemplation.pivot_on(word, &self.epigenome, budget);
         // The other path a pivot runs on, minting through the same reader.
-        self.adjoin_letters(&adjoined);
+        self.adjoin_letters(&adjoined, budget);
         let mut n = 0usize;
         for e in spoken {
-            if let Ok(Utterance::Spoken) = self.speak_word(&e) { n += 1 }
+            if let Ok(Utterance::Spoken) = self.speak_word(&e, budget) { n += 1 }
         }
         n
     }
@@ -459,9 +479,12 @@ impl Entity {
     /// are undischarged, and that is a set at coordinates.
     pub fn pivot_thoughts(&mut self) -> usize {
         let added: Vec<Element> = self.epigenome.take_unpivoted();
+        // The root of this act (called by the arm and the loop): one stroke
+        // for every pivot it runs (65.5).
+        let mut budget = self.physics.stroke();
         let mut spoken = 0usize;
         for w in &added {
-            spoken += self.pivot_on(w);
+            spoken += self.pivot_on(w, &mut budget);
         }
         spoken
     }

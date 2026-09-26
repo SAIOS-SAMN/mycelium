@@ -10,7 +10,7 @@
 //! holds changes what the glue can cite and therefore what it can say.
 
 use mycelium::client::sdk::Epigenome;
-use mycelium::transducer::family::{extract_rule_with, extraction_spend, mint_sentence, speak_rule};
+use mycelium::transducer::family::{extract_rule_on, extraction_spend, mint_sentence, perceive_family, speak_rule};
 
 pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
     let mut epi = Epigenome::new();
@@ -19,8 +19,9 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
     for (k, file) in names.iter().take(stand).enumerate() {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-        let mut b = physics.stroke_n(extraction_spend(&task.train));
-        let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
+        let frames = perceive_family(&task.train);
+        let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
+        let Some(r) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
         let Some(w) = mint_sentence(&r, &task.train, &epi, 0) else { continue };
         let held = mycelium::transducer::element::Held::of(w);
         if held.form().is_some_and(|f| f.is_closed()) {
@@ -34,8 +35,9 @@ pub(crate) fn report(dir: &str, names: &[String], stand: usize) {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
         tasks += 1;
-        let mut b = physics.stroke_n(extraction_spend(&task.train));
-        let Some(rule) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
+        let frames = perceive_family(&task.train);
+        let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
+        let Some(rule) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
         extracted += 1;
         // EVERY TEST PAIR, and the task counts as solved only if every one
         // of them is spoken exactly.

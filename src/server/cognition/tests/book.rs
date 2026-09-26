@@ -169,13 +169,15 @@ speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
-assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
+let mut glue = k.stroke();
+assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover, &mut glue), Glue::Slashed(_)));
 // The simplices the complexes hold, each by its own key: a row that is not
 // re-filed moves none of them.
 let simplices = |k: &Kernel| k.complexes.scoped().map(|(_, c)| c.by_key.len()).sum::<usize>();
 let n = simplices(&k);
 assert!(k.heard.contains(&forged.address()));
-assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32], &mut cover), Glue::Dialect));
+let mut again = k.stroke();
+assert!(matches!(k.glue_fetched(forged, [2; 32], [1; 32], &mut cover, &mut again), Glue::Dialect));
 assert_eq!(simplices(&k), n, "a heard slash is not re-rowed");
 }
 
@@ -245,7 +247,8 @@ speak_pair(&mut k, &a, &b, [2; 32]);
 let spoken = k.provisional.scoped().next().unwrap().1.clone();
 let forged = strip_words(&spoken);
 let mut cover = crate::network::nerve::Cover::new();
-assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover), Glue::Slashed(_)));
+let mut glue = k.stroke();
+assert!(matches!(k.glue_fetched(forged.clone(), [2; 32], [1; 32], &mut cover, &mut glue), Glue::Slashed(_)));
 assert_eq!(k.heard_len(), 1);
 let inv = crate::transducer::stalk::invariant_of(&forged);
 let mut moved = [0u8; 32];
@@ -326,7 +329,8 @@ assert!(served.is_empty(), "a provisional word is not language and is not taught
 k.basis_insert(w, [1; 32]);
 assert!(k.installed_word(&addr).is_some());
 assert!(k.serve_ruled(&inv, &[], 1 << 20).is_empty(), "a word no act admitted has no locator and is not taught");
-k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 });
+let mut filing = k.stroke();
+k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 }, &mut filing);
 assert_eq!(
     k.serve_ruled(&inv, &[], 1 << 20).len(),
     1,

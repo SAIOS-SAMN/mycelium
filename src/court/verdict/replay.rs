@@ -17,8 +17,12 @@ use super::*;
 /// carries and whose class is filed on torsion; every orbit of the
 /// recomputed spanning forest is projectively identity or filed finite
 /// torsion. The trajectory is checked by the caller on the element.
-pub fn replay_form(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
-    replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal)
+pub fn replay_form(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    budget: &mut crate::physics::Budget,
+) -> Option<&'static str> {
+    replay_form_with(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
 }
 
 /// Chapter 23.1 with the bound family, so rebase/unfold/orbit execute on
@@ -31,8 +35,9 @@ pub fn replay_form_with(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    replay_form_at(spoken, resolve, family, crystal).map(|r| r.reason)
+    replay_form_at(spoken, resolve, family, crystal, budget).map(|r| r.reason)
 }
 
 /// 50.2 step 2 at the court. Each cited `(form, vertex)` is TWO keyed
@@ -272,6 +277,7 @@ pub fn replay_form_at(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     // A SPOKEN word under replay: the court re-derives it from the tape it
     // was sent, which is the point of a replay, so the decode is named
@@ -287,7 +293,7 @@ pub fn replay_form_at(
     let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
         return Some(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
     };
-    replay_form_on(&f, spoken, resolve, family, crystal)
+    replay_form_on(&f, spoken, resolve, family, crystal, budget)
 }
 
 /// [`replay_form_at`] on a form already decoded — the whole verdict, with
@@ -298,6 +304,7 @@ pub fn replay_form_on(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     // A FORM'S OWN DEPTH AGREES WITH ITS OWN CITATIONS. This is a reading
@@ -492,7 +499,7 @@ pub fn replay_form_on(
     // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        if let Some(refusal) = edges_rederive_frames(&traversed, fam) {
+        if let Some(refusal) = edges_rederive_frames(&traversed, fam, budget) {
             return Some(refusal);
         }
     }

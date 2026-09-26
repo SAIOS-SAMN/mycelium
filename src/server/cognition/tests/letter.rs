@@ -330,7 +330,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
     let mut epi = Epigenome::new();
     for t in &page {
-        let _ = epi.learn(&t.word);
+        let _ = epi.learn(&t.word, &mut super::common::budget());
     }
 
     // 3. THE MIND DERIVES THROUGH IT. (4 + i)² = 15 + 8i, so the target's
@@ -379,7 +379,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     // is the control: it is what standing below is measured against, and
     // it is why standing is a fact about this court's ruled language.
     assert_eq!(
-        crate::court::verdict::blind_replay(&speaks),
+        crate::court::verdict::blind_replay(&speaks, &mut super::common::budget()),
         Some(crate::court::verdict::REFUSE_DERIVATION),
         "a court that resolves nothing cannot compose the citation"
     );
@@ -389,6 +389,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
             &|a| k.resolve_form(a),
             None,
             &crate::transducer::family::NoCrystal,
+            &mut super::common::budget(),
         ),
         None,
         "the court that ruled the letter re-derives the citation through it and agrees"
@@ -450,7 +451,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
     let mut epi = Epigenome::new();
     for t in &page {
-        let _ = epi.learn(&t.word);
+        let _ = epi.learn(&t.word, &mut super::common::budget());
     }
 
     // The mind now holds the letter as a GENERATOR, at the chart a versor
@@ -578,7 +579,7 @@ fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_deriv
 
     // 5. TAUGHT BACK — and the same class, through the same reader, flips.
     for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20) {
-        let _ = mind.learn(&t.word);
+        let _ = mind.learn(&t.word, &mut super::common::budget());
     }
     assert_eq!(
         letter_reading(&mind, &mut stroke(), &pi),

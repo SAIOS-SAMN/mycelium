@@ -15,18 +15,21 @@ use crate::transducer::element::{self, Element};
 type Torsed = (Box<crate::transducer::sentence::ClassVector>, Box<crate::transducer::alphabet::Rotor>, u32);
 
 impl Kernel {
+    /// On the stroke of the act that fetched the word (65.5): the exchange's
+    /// glue, or the witness door's offer — never one of its own.
     pub fn glue_fetched(
         &mut self,
         spoken: Element,
         peer: [u8; 32],
         self_id: [u8; 32],
         cover: &mut crate::network::nerve::Cover,
+        budget: &mut crate::physics::Budget,
     ) -> Glue {
         let addr = spoken.address();
         if self.heard.contains(&addr) {
             return Glue::Dialect;
         }
-        if let Some(reason) = self.court_replay(&spoken) {
+        if let Some(reason) = self.court_replay(&spoken, budget) {
             let inv = crate::transducer::stalk::invariant_of(&spoken);
             self.heard_mark(addr, &inv);
             return Glue::Slashed(reason);
@@ -144,7 +147,7 @@ impl Kernel {
                     );
                 }
                 None => match bodies {
-                    (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b) {
+                    (Some(a), Some(b)) => match crate::transducer::blade::versor_between(&a, &b, budget) {
                         Some(between)
                             if crate::transducer::element::same_versor(
                                 &between,
@@ -186,7 +189,6 @@ impl Kernel {
         let mut fill_gamma = crate::transducer::alphabet::Rotor::identity();
         let mut fill_carriage = crate::transducer::element::identity_versor();
         let mut fill_addrs: Vec<Address> = Vec::new();
-        let mut budget = self.physics.stroke();
         let spoken_rotor = spoken.letters().map(|l| l.spelling.word.rotor());
         // index: link of the fetched peer
         for key in cx.link_of(&peer) {
@@ -302,7 +304,7 @@ impl Kernel {
             self.pay_simplex_volume(&inv, &fill_addrs);
             if !fill_gamma.is_identity() {
                 if let Some((a, b)) = edge_pair(&fill_addrs) {
-                    self.mint_or_admit_translation(&fill_gamma, a, b, peer);
+                    self.mint_or_admit_translation(&fill_gamma, a, b, peer, budget);
                 }
             }
             outcome = Glue::Attached;
@@ -325,7 +327,7 @@ impl Kernel {
                 if self.basis.get(&addr).is_none()
                     && !(spoken.is_connection() && spoken.letters().is_none())
                 {
-                    self.basis_push(spoken.clone(), peer);
+                    self.basis_push(spoken.clone(), peer, budget);
                 }
                 if let Some(w) = self.word_mut(&addr) {
                     w.update(|e| {
@@ -345,7 +347,7 @@ impl Kernel {
                 // 78.27 (3): sealed before the federation files the word, so
                 // the word stands at the act that ruled it in.
                 self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
-                self.ruled_admit(&addr);
+                self.ruled_admit(&addr, budget);
                 self.fed_admit(&addr, spoken.clone());
                 // EC1: the released claim is minted AT the Install that
                 // carries it (POUW), never at the act that escrowed it.
@@ -373,7 +375,7 @@ impl Kernel {
                         }
                     }
                 }
-                self.ruled_admit(&addr);
+                self.ruled_admit(&addr, budget);
             }
             Glue::Dialect | Glue::Slashed(_) => {
                 self.heard_mark(addr, &inv);
@@ -385,6 +387,9 @@ impl Kernel {
     /// The home installs a word it ruled once a peer's ruled digest holds
     /// the same stratum (same root and count) — evidence the peer glued it.
     pub fn confirm_peer_holds(&mut self, remote: &[crate::transducer::sheaf::StratumDigest], peer: [u8; 32]) {
+        // THE ACT'S ROOT (65.5): the exchange hands the peer's digest here;
+        // one stroke is the confirmation's draw, threaded to every install.
+        let mut budget = self.physics.stroke();
         // index: the peer's digest charts; members from ruled fiber
         for d in remote {
             let members = self.ruled.fiber(&d.inv);
@@ -402,7 +407,7 @@ impl Kernel {
             if crate::transducer::sheaf::stratum_root(&members) == d.root {
                 for addr in members {
                     if self.provisional.contains(&addr) {
-                        self.home_install(&addr, peer);
+                        self.home_install(&addr, peer, &mut budget);
                     }
                 }
             }
@@ -550,7 +555,10 @@ impl Kernel {
         let (k, ht) = (self.k_step(), self.height());
         match self.converge_witness(object, witness, reached, k, ht) {
             crate::court::convergence::Converged::Witnessed { witness, .. } => {
-                self.home_install(object, witness);
+                // THE ACT'S ROOT (65.5): the witness's reply arrives on the
+                // wire here, and the install is its one stroke's draw.
+                let mut budget = self.physics.stroke();
+                self.home_install(object, witness, &mut budget);
             }
             // `REFUSE_MV_INEXACT`: the two re-derivations differ, and the
             // offer stands answered and uninstalled.
@@ -561,6 +569,9 @@ impl Kernel {
     /// A peer's have-list naming a ruled provisional is the same evidence:
     /// the address is on their cover, so the home installs.
     pub fn confirm_peer_holds_addrs(&mut self, have: &[crate::transducer::address::Address], peer: [u8; 32]) {
+        // THE ACT'S ROOT (65.5): the exchange hands the have-list here; one
+        // stroke is the confirmation's draw, threaded to every install.
+        let mut budget = self.physics.stroke();
         // index: the peer's have-list
         for h in have {
             if self.provisional.contains(h) && self.ruled_contains(h) {
@@ -581,7 +592,7 @@ impl Kernel {
                 let (k, ht) = (self.k_step(), self.height());
                 match self.converge_witness(h, peer, mine, k, ht) {
                     crate::court::convergence::Converged::Witnessed { witness, .. } => {
-                        self.home_install(h, witness);
+                        self.home_install(h, witness, &mut budget);
                     }
                     crate::court::convergence::Converged::Inexact { .. }
                     | crate::court::convergence::Converged::AwaitingWitness => {}

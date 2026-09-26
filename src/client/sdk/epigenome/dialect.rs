@@ -160,7 +160,13 @@ impl Epigenome {
     /// false when the expressed vocabulary already speaks it (the same body
     /// under a transport) — a claim already made, not to be made again.
     /// `k` is the voice's K (law 9); `now_tu` is TUniversal.
-    pub fn express(&mut self, residual: &[(i64, i64, u8, u8)], k: u64, now_tu: u64) -> bool {
+    pub fn express(
+        &mut self,
+        residual: &[(i64, i64, u8, u8)],
+        k: u64,
+        now_tu: u64,
+        budget: &mut crate::physics::Budget,
+    ) -> bool {
         if residual.is_empty() {
             return false;
         }
@@ -179,6 +185,7 @@ impl Epigenome {
                 &shape_at,
                 residual,
                 None,
+                budget,
             )
         };
         if let ([], []) = (located.residual.as_slice(), located.punctures.as_slice()) {

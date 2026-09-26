@@ -16,7 +16,7 @@ fn nucleus(b: &blade::Blade) -> crate::transducer::cga::Mv {
 }
 
 fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::Mv {
-    match blade::relative_pose(before, after) {
+    match blade::relative_pose(before, after, &mut super::common::budget()) {
         Ok(blade::Pose::Turn(r)) => r,
         other => panic!("a determined turn: {other:?}"),
     }
@@ -45,7 +45,7 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let (theta_a, theta_b) = (pose(&a, &a_after), pose(&b, &b));
     let relative = theta_b.geo(&theta_a.reverse());
     let ContactEdge::Formed(edge) =
-        contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)))
+        contact_edge((&nucleus(&a), &nucleus(&b)), Some((&a, &a_after)), Some((&b, &b)), &mut super::common::budget())
     else {
         panic!("the band gates nothing: the contact carries its edge");
     };
@@ -61,10 +61,10 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     // still carry their refraction: each is read against itself.
     // (An asymmetric one: a bar's own 180° turn would hold its pose open.)
     let bar = body(&[(3, 0, 0), (4, 0, 0), (5, 0, 0), (5, 1, 0)]);
-    assert!(blade::relative_pose(&a, &bar).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
+    assert!(blade::relative_pose(&a, &bar, &mut super::common::budget()).is_err(), "an L-tromino and an L-tetromino are not one turn apart");
     assert!(
         matches!(
-            contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar))),
+            contact_edge((&nucleus(&a), &nucleus(&bar)), Some((&a, &a)), Some((&bar, &bar)), &mut super::common::budget()),
             ContactEdge::Formed(_)
         ),
         "yet their contact is read, never refused for unlikeness"
@@ -76,7 +76,7 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j_after = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     let _ = take_contact_tally();
-    let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)));
+    let edge = contact_edge((&nucleus(&j), &nucleus(&bar)), Some((&j, &j_after)), Some((&bar, &bar)), &mut super::common::budget());
     assert!(
         matches!(edge, ContactEdge::Formed(_) | ContactEdge::Held(_)),
         "a mirrored transition carries its refraction"
@@ -104,7 +104,7 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
     let _ = take_contact_tally();
     assert!(
         matches!(
-            contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar))),
+            contact_edge((&nucleus(&l), &nucleus(&bar)), Some((&l, &image)), Some((&bar, &bar)), &mut super::common::budget()),
             ContactEdge::Refused { poses: [Some(blade::NoPose::Oblique), None] }
         ),
         "a similarity at an unspelled angle carries no edge, and the refusal names the arm"
@@ -113,7 +113,7 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
     assert_eq!((t.offered, t.oblique, t.condensed), (1, 1, 0), "refused oblique, never dropped");
 
     let _ = take_demand_tally();
-    let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image) else {
+    let Some(Demand::RotorPrime { prime, witness, .. }) = oblique_rotor_prime(&l, &image, &mut super::common::budget()) else {
         panic!("the oblique member raises the rotor-prime demand");
     };
     assert_eq!(prime, 17, "the prime 4 + i lies over");
@@ -121,7 +121,7 @@ fn an_oblique_member_refuses_the_edge_and_raises_the_rotor_prime() {
     assert_eq!(*witness, arc, "the witness is the arc of (4 + i)²");
 
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    assert!(oblique_rotor_prime(&s, &image).is_none(), "a different shape raises nothing");
+    assert!(oblique_rotor_prime(&s, &image, &mut super::common::budget()).is_none(), "a different shape raises nothing");
     let d = take_demand_tally();
     assert_eq!((d.offered, d.minted, d.permanent), (2, 1, 1), "one minted, one refused permanent");
 }
@@ -138,9 +138,9 @@ fn the_mints_first_gate_counts_each_answer_by_its_kind() {
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
     let empty = blade::shape_of::<(i64, i64, i64)>(&[]).blade;
     let _ = take_demand_tally();
-    assert!(blade::relative_pose(&l, &turn_90).is_ok(), "the fixture: a 90° turn apart");
+    assert!(blade::relative_pose(&l, &turn_90, &mut super::common::budget()).is_ok(), "the fixture: a 90° turn apart");
     for (a, b) in [(&l, &turn_90),(&l, &s), (&empty, &l)] {
-        assert!(oblique_rotor_prime(a, b).is_none(), "none of them is oblique");
+        assert!(oblique_rotor_prime(a, b, &mut super::common::budget()).is_none(), "none of them is oblique");
     }
     let d = take_demand_tally();
     assert_eq!(
@@ -162,7 +162,7 @@ fn the_poles_demands_stand_once_and_every_other_is_named() {
     use crate::transducer::stalk::Invariant;
     let l = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let image = body(&[(0, 0, 0), (4, 1, 0), (8, 2, 0), (7, 6, 0)]);
-    let rotor_prime = oblique_rotor_prime(&l, &image).expect("the oblique pair's demand");
+    let rotor_prime = oblique_rotor_prime(&l, &image, &mut super::common::budget()).expect("the oblique pair's demand");
     let Demand::RotorPrime { plane, prime, .. } = rotor_prime.clone() else { panic!("a rotor prime") };
     let empty = Demand::RotorPrime { plane, prime, witness: Box::default() };
     let chart = Invariant::default();
@@ -191,14 +191,14 @@ fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
     let s4 = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
     let s = body(&s4);
     let turned = body(&s4.map(|(r, c, k)| (-c, r, k)));
-    let Ok(blade::Pose::HalfOpen(candidates)) = blade::relative_pose(&s, &turned) else {
+    let Ok(blade::Pose::Open180(candidates)) = blade::relative_pose(&s, &turned, &mut super::common::budget()) else {
         panic!("the S holds its 180° turn");
     };
     let b = body(&[(4, 0, 0), (5, 0, 0), (4, 1, 0)]);
     let v = blade::tether(&s, &b).expect("both nuclei read");
     let _ = take_contact_tally();
     let ContactEdge::Held(Refraction::Coset(coset)) =
-        contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)))
+        contact_edge((&nucleus(&s), &nucleus(&b)), Some((&s, &turned)), Some((&b, &b)), &mut super::common::budget())
     else {
         panic!("a held pose is a coset edge");
     };
@@ -209,7 +209,7 @@ fn a_held_turn_180_rides_the_contact_edge_as_a_coset() {
     }
     assert!(!coset[0].carriage.projective_eq(&coset[1].carriage), "two candidates, two transports");
     let t = take_contact_tally();
-    assert_eq!((t.half_open, t.cosets, t.condensed), (1, 1, 0), "a coset formed, no representative condensed");
+    assert_eq!((t.open_180, t.cosets, t.condensed), (1, 1, 0), "a coset formed, no representative condensed");
 }
 
 /// 78.6(2), 78.18(a) — A PIECE AT ONE FRAME CARRIES ITS TETHER: the edge is
@@ -226,7 +226,7 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     let v = blade::tether(&a, &b).expect("both nuclei read");
     let _ = take_contact_tally();
     let ContactEdge::Held(Refraction::Static { tether, poses }) =
-        contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)))
+        contact_edge((&nucleus(&a), &nucleus(&b)), None, Some((&b, &b_after)), &mut super::common::budget())
     else {
         panic!("a piece at one frame is a static edge");
     };
@@ -234,6 +234,6 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     let [HeldPose::OneFrame, HeldPose::Read(theta_b)] = &poses else { panic!("the poses as read: {poses:?}") };
     assert!(theta_b[0].projective_eq(&pose(&b, &b_after)), "the transited end's pose, kept");
     let t = take_contact_tally();
-    assert_eq!((t.statics, t.half_open, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
+    assert_eq!((t.statics, t.open_180, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }
 

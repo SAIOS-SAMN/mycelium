@@ -41,7 +41,7 @@ pub struct Reading<'r, W, F, S, H> {
 
 /// A reading with no Held stratum: the genome, or the genome and the
 /// dialect, alone.
-pub fn no_held(_inv: &stalk::Invariant, _piece: &[Link]) -> Vec<HeldCite> {
+pub fn no_held(_inv: &stalk::Invariant, _piece: &[Link], _budget: &mut crate::physics::Budget) -> Vec<HeldCite> {
     Vec::new()
 }
 
@@ -57,7 +57,7 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[Link]) -> Vec<HeldCite> {
 /// here is not a word for this body. The cite carries the body in its own
 /// frame — the frame the action was evaluated in — and the vertex's
 /// address, which names the word and never the chain.
-pub fn vertex_cites(vertex: &Vertex, piece: &[Link]) -> Option<HeldCite> {
+pub fn vertex_cites(vertex: &Vertex, piece: &[Link], budget: &mut crate::physics::Budget) -> Option<HeldCite> {
     let Vertex::Word { acts, .. } = vertex else {
         return None;
     };
@@ -68,7 +68,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Link]) -> Option<HeldCite> {
     // position. Reading one member asked the question of one chart and
     // answered `None` for every body on the others.
     for (_, a) in acts.scoped() {
-        if let Some(cite) = vertex_cites_by(vertex, &a.carriage, &a.gauge, piece) {
+        if let Some(cite) = vertex_cites_by(vertex, &a.carriage, &a.gauge, piece, budget) {
             return Some(cite);
         }
     }
@@ -82,6 +82,7 @@ fn vertex_cites_by(
     carriage: &crate::transducer::element::Versor,
     gauge: &[(u8, u8)],
     piece: &[Link],
+    budget: &mut crate::physics::Budget,
 ) -> Option<HeldCite> {
     let Vertex::Word { address, derivation, .. } = vertex else {
         return None;
@@ -110,7 +111,7 @@ fn vertex_cites_by(
     let shape_in = blade::shape_of_section(&in_support);
     let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
-    let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?.versor;
+    let v = blade::versor_carrying(&shape_in, &shape_out, &linear, budget)?.versor;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c, 0)?;
         let (tr, tc, tk) = element::site_of(&p)?;
@@ -138,8 +139,9 @@ pub fn locate<'a>(
     shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     piece: &[Link],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> (Option<Cite>, usize) {
-    let found = locate_or_puncture_at(word_at, atlas, shape_at, piece, exclude);
+    let found = locate_or_puncture_at(word_at, atlas, shape_at, piece, exclude, budget);
     (found.cite, found.multiplicity)
 }
 
@@ -154,12 +156,14 @@ pub fn locate_or_puncture_at<'a>(
     shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     piece: &[Link],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> Located {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
     locate_or_puncture_on(
         &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
         piece,
         exclude,
+        budget,
     )
 }
 
@@ -178,12 +182,13 @@ pub fn locate_or_puncture_on<'a, W, F, S, H>(
     read: &Reading<'_, W, F, S, H>,
     piece: &[Link],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> Located
 where
     W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     S: Fn(&[u8]) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link], &mut crate::physics::Budget) -> Vec<HeldCite>,
 {
     let &Reading { word_at, fiber_of, shape_at, held_at } = read;
     let Some(shape) = element::shape_of_chain(piece) else {
@@ -200,7 +205,7 @@ where
         .collect();
     let m = stratum.len();
     if stratum.is_empty() {
-        let held = held_at(&chart, piece);
+        let held = held_at(&chart, piece, budget);
         let m = held.len();
         let [h] = held.as_slice() else { return unlocated(m) };
         return Located { cite: None, puncture: None, held: Some(h.clone()), multiplicity: m };
@@ -208,7 +213,7 @@ where
     let [addr] = stratum.as_slice() else { return unlocated(m) };
     let Some(word) = word_at(addr) else { return unlocated(m) };
     let Some(held) = shape_at(addr) else { return unlocated(m) };
-    let Some(to_word) = blade::versor_between(&shape, held) else { return unlocated(m) };
+    let Some(to_word) = blade::versor_between(&shape, held, budget) else { return unlocated(m) };
     // Back to the word by the reverse; a site is read by proportion (78.32(1)).
     if !crate::transducer::cga::is_versor(&to_word) {
         return unlocated(m);
@@ -266,11 +271,12 @@ fn place_located<'a, W, F, S, H>(
     body: &[Link],
     read: &Reading<'_, W, F, S, H>,
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) where
     W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     S: Fn(&[u8]) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link], &mut crate::physics::Budget) -> Vec<HeldCite>,
 {
     if let Some(k) = body_key(body) {
         out.multiplicity.insert(k, located.multiplicity);
@@ -289,8 +295,8 @@ fn place_located<'a, W, F, S, H>(
                 // out is a piece nothing places.
                 for (_, fiber) in idx.scoped() {
                     for sub in pieces(fiber) {
-                        let loc = locate_or_puncture_on(read, &sub, exclude);
-                        place_located(out, loc, &sub, read, exclude);
+                        let loc = locate_or_puncture_on(read, &sub, exclude, budget);
+                        place_located(out, loc, &sub, read, exclude, budget);
                     }
                 }
             }
@@ -310,12 +316,14 @@ pub fn deconstruct_at<'a>(
     shape_at: &impl Fn(&[u8]) -> Option<&'a Shape>,
     chain: &[Link],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> Sentence {
     let fiber_of = |inv: &stalk::Invariant| atlas.fiber(inv);
     deconstruct_on(
         &Reading { word_at, fiber_of: &fiber_of, shape_at, held_at: &no_held },
         chain,
         exclude,
+        budget,
     )
 }
 
@@ -325,29 +333,30 @@ pub fn deconstruct_on<'a, W, F, S, H>(
     read: &Reading<'_, W, F, S, H>,
     chain: &[Link],
     exclude: Option<&[u8]>,
+    budget: &mut crate::physics::Budget,
 ) -> Sentence
 where
     W: Fn(&[u8]) -> Option<&'a Element>,
     F: Fn(&stalk::Invariant) -> Vec<Vec<u8>>,
     S: Fn(&[u8]) -> Option<&'a Shape>,
-    H: Fn(&stalk::Invariant, &[Link]) -> Vec<HeldCite>,
+    H: Fn(&stalk::Invariant, &[Link], &mut crate::physics::Budget) -> Vec<HeldCite>,
 {
     let mut out = Sentence::default();
     if chain.is_empty() {
         return out;
     }
-    let whole = locate_or_puncture_on(read, chain, exclude);
+    let whole = locate_or_puncture_on(read, chain, exclude, budget);
     if let Some(k) = body_key(chain) {
         out.multiplicity.insert(k, whole.multiplicity);
     }
     match (whole.cite.is_some(), whole.held.is_some()) {
         (true, _) | (_, true) => {
-            place_located(&mut out, whole, chain, read, exclude);
+            place_located(&mut out, whole, chain, read, exclude, budget);
         }
         (false, false) => {
             for body in pieces(chain) {
-                let loc = locate_or_puncture_on(read, &body, exclude);
-                place_located(&mut out, loc, &body, read, exclude);
+                let loc = locate_or_puncture_on(read, &body, exclude, budget);
+                place_located(&mut out, loc, &body, read, exclude, budget);
             }
         }
     }

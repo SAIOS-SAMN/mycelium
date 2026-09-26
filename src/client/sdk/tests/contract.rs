@@ -64,6 +64,7 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("contracting"));
     let k_before = entity.kernel().voice();
     let _ = k_before;
+    let mut b = entity.stroke();
     let moved = entity.receive_adjudication(
         &e,
         RefusalKind::VertexBody,
@@ -71,6 +72,7 @@ fn a_refusal_contracts_the_held_form_and_seals_the_address() {
         [7; 32],
         &family,
         &[3; 32],
+        &mut b,
     );
     assert_eq!(moved, Contracted::Moved, "the word vertex contracts to a demand");
     assert!(entity.sealed_at(e.address().as_bytes()).is_some(), "the refused address is sealed");
@@ -112,6 +114,7 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
     use crate::anastome::dialogue::SPEECH_REFUSED;
     let (family, e) = two_bars();
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("sealed"));
+    let mut b = entity.stroke();
     let held = entity.receive_adjudication(
         &e,
         RefusalKind::MalformedComplex,
@@ -119,10 +122,11 @@ fn a_sealed_tape_is_refused_by_the_mind_before_the_wire() {
         [9; 32],
         &family,
         &[3; 32],
+        &mut b,
     );
     assert_eq!(held, Contracted::Quiescent, "a malformed complex is held inert");
     assert_eq!(entity.contracted_pending(), 0, "and nothing is re-spoken");
-    let codes = entity.speak(std::slice::from_ref(&e)).expect("no frame is built for a sealed tape");
+    let codes = entity.speak(std::slice::from_ref(&e), &mut b).expect("no frame is built for a sealed tape");
     assert_eq!(codes, vec![SPEECH_REFUSED], "refused by the mind itself");
     assert!(!entity.uttered(e.address().as_bytes()), "never filed as uttered");
     assert_eq!(entity.dialect_len(), 0, "a sealed sentence does not stand");
@@ -137,6 +141,7 @@ fn a_refused_sentence_leaves_the_dialect() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("refused-leaves"));
     entity.epigenome.stand_dialect_at(e.clone(), 1, 1);
     assert_eq!(entity.dialect_len(), 1, "the sentence stood in the dialect before the utterance");
+    let mut b = entity.stroke();
     let _ = entity.receive_adjudication(
         &e,
         RefusalKind::MalformedComplex,
@@ -144,6 +149,7 @@ fn a_refused_sentence_leaves_the_dialect() {
         [9; 32],
         &family,
         &[3; 32],
+        &mut b,
     );
     assert!(entity.sealed_at(e.address().as_bytes()).is_some(), "the refused address is sealed");
     assert_eq!(entity.dialect_len(), 0, "and the refused sentence no longer stands");
@@ -183,6 +189,7 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
     );
     entity.owed.clear();
     // A citation this mind sealed is owed to no court.
+    let mut b = entity.stroke();
     let _ = entity.receive_adjudication(
         &cited,
         RefusalKind::MalformedComplex,
@@ -190,6 +197,7 @@ fn a_citation_is_owed_once_per_court_and_a_sealed_one_to_none() {
         [9; 32],
         &family,
         &[3; 32],
+        &mut b,
     );
     assert_eq!(
         entity.owe_citation(&citer, &cited.address(), &family, &[3; 32]),
@@ -208,6 +216,7 @@ fn contraction_certificate_is_readable_by_minted_address() {
     let words = words_of(&e);
     let (refused_addr, refused_chart) = words[0].clone();
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("contracting-cert"));
+    let mut b = entity.stroke();
     let moved = entity.receive_adjudication(
         &e,
         RefusalKind::VertexBody,
@@ -215,6 +224,7 @@ fn contraction_certificate_is_readable_by_minted_address() {
         [7; 32],
         &family,
         &[3; 32],
+        &mut b,
     );
     assert_eq!(moved, Contracted::Moved);
     let pending = entity.take_contracted();

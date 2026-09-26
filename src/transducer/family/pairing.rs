@@ -78,7 +78,10 @@ pub struct ContactTally {
     pub irrational: u64,
     /// 78.47 — a turn read whose constructors met a null step.
     pub null_step: u64,
-    pub half_open: u64,
+    /// 65.5 — the stroke was spent before every candidate was read: the
+    /// stroke's typed cut, named, never a claim about the pair.
+    pub unbounded: u64,
+    pub open_180: u64,
     /// A relative turn the peel does not spell: 37.7's candidate, the
     /// demand typed and counted, never an edge invented for it.
     pub unspelled: u64,
@@ -148,7 +151,7 @@ thread_local! {
         tangent_internal: 0, contained: 0, bodiless: 0, isotropy: 0, unoriented: 0,
         oblique: 0, mirrored: 0,
         incongruent: Incongruents { orders: [[0; 4]; 4], chirality: 0, base: 0, tube: 0 },
-        irrational: 0, null_step: 0, half_open: 0,
+        irrational: 0, null_step: 0, unbounded: 0, open_180: 0,
         unspelled: 0, unread: 0, statics: 0, cosets: 0, condensed: 0, tube: 0, cells_unkeyed: 0, cells_singular: 0,
     }) };
 }
@@ -182,7 +185,7 @@ impl ContactTally {
             "offered {} unlifted {} | tether: apart {} tangent-out {} intersecting {} \
              tangent-in {} contained {} | pose: tube {} | bodiless {} isotropy {} \
              unoriented {} oblique {} mirrored {} incongruent {} (orders region×sites {:?} chirality {} base {} \
-             tube {}) irrational {} null step {} half-open {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
+             tube {}) irrational {} null step {} open-180° {} | unspelled {} unread {} | FORMED: CONDENSED {} coset {} \
              static {} | pose refusals by kind: P {} D {} I {} | cells unkeyed {} singular {}",
             self.offered,
             self.unlifted,
@@ -204,7 +207,7 @@ impl ContactTally {
             self.incongruent.tube,
             self.irrational,
             self.null_step,
-            self.half_open,
+            self.open_180,
             self.unspelled,
             self.unread,
             self.condensed,
@@ -371,7 +374,7 @@ pub(crate) fn body_pair_key(lo: &[u8], hi: &[u8]) -> Vec<u8> {
 /// one piece, and is not what their contact is.
 ///
 /// TWO ARMS FORM WHAT ONE TRANSPORT CANNOT (78.6). A body whose pose is a
-/// HELD STABILIZER (`HalfOpen`) rides the edge as its COSET: every candidate
+/// HELD STABILIZER (`Open180`) rides the edge as its COSET: every candidate
 /// `θ_b θ_a⁻¹` over the two bodies' candidates, each with `V`, distinct
 /// rays kept, never a representative (checklist (r)). A body AT ONE FRAME
 /// has no transition to read a pose across: the edge is STATIC — `V` carried
@@ -393,6 +396,7 @@ pub(crate) fn contact_edge(
     (s_a, s_b): (&crate::transducer::cga::Mv, &crate::transducer::cga::Mv),
     a: Option<(&blade::Blade, &blade::Blade)>,
     b: Option<(&blade::Blade, &blade::Blade)>,
+    budget: &mut crate::physics::Budget,
 ) -> ContactEdge {
     use crate::transducer::sentence::{HeldPose, Refraction, Transport};
     note_contact(|t| t.offered += 1);
@@ -409,24 +413,24 @@ pub(crate) fn contact_edge(
         }
     }
     let (Some((a, a_after)), Some((b, b_after))) = (a, b) else {
-        let held = |m: Option<(&blade::Blade, &blade::Blade)>| match m {
+        let held = |m: Option<(&blade::Blade, &blade::Blade)>, budget: &mut crate::physics::Budget| match m {
             None => HeldPose::OneFrame,
-            Some((before, after)) => match blade::relative_pose(before, after) {
+            Some((before, after)) => match blade::relative_pose(before, after, budget) {
                 Ok(blade::Pose::Turn(r)) => HeldPose::Read(vec![r]),
-                Ok(blade::Pose::HalfOpen(candidates)) => HeldPose::Read(candidates),
+                Ok(blade::Pose::Open180(candidates)) => HeldPose::Read(candidates),
                 Err(why) => HeldPose::Refused(why),
             },
         };
         note_contact(|t| t.statics += 1);
-        return ContactEdge::Held(Refraction::Static { tether: v, poses: [held(a), held(b)] });
+        return ContactEdge::Held(Refraction::Static { tether: v, poses: [held(a, budget), held(b, budget)] });
     };
     if blade::on_tube(a, a_after) || blade::on_tube(b, b_after) {
         note_contact(|t| t.tube += 1);
     }
-    let pose = |before: &blade::Blade, after: &blade::Blade| match blade::relative_pose(before, after) {
+    let pose = |before: &blade::Blade, after: &blade::Blade, budget: &mut crate::physics::Budget| match blade::relative_pose(before, after, budget) {
         Ok(blade::Pose::Turn(r)) => Ok(vec![r]),
-        Ok(blade::Pose::HalfOpen(candidates)) => {
-            note_contact(|t| t.half_open += 1);
+        Ok(blade::Pose::Open180(candidates)) => {
+            note_contact(|t| t.open_180 += 1);
             Ok(candidates)
         }
         Err(why) => {
@@ -439,13 +443,14 @@ pub(crate) fn contact_edge(
                 blade::NoPose::Incongruent(why) => t.incongruent.note(why),
                 blade::NoPose::Irrational => t.irrational += 1,
                 blade::NoPose::NullStep => t.null_step += 1,
+                blade::NoPose::Unbounded => t.unbounded += 1,
             });
             Err(why)
         }
     };
     // Each member's pose, or its refusal by name: the refusal rides the
     // edge to the caller, which reads the one arm a demand retires.
-    let (thetas_a, thetas_b) = match (pose(a, a_after), pose(b, b_after)) {
+    let (thetas_a, thetas_b) = match (pose(a, a_after, budget), pose(b, b_after, budget)) {
         (Ok(x), Ok(y)) => (x, y),
         (x, y) => return ContactEdge::Refused { poses: [x.err(), y.err()] },
     };
@@ -510,6 +515,7 @@ pub(crate) fn members_contact_edge(
     nuclei: Option<(&crate::transducer::cga::Mv, &crate::transducer::cga::Mv)>,
     a: Vec<u8>,
     b: Vec<u8>,
+    budget: &mut crate::physics::Budget,
 ) -> (
     Option<crate::transducer::sentence::Transport>,
     Option<crate::transducer::sentence::Refraction>,
@@ -531,7 +537,7 @@ pub(crate) fn members_contact_edge(
         return (None, None, Vec::new());
     };
     let (ta, tb) = (transit(&a), transit(&b));
-    match contact_edge(nuclei, ta.as_ref().map(|(x, y)| (x, y)), tb.as_ref().map(|(x, y)| (x, y))) {
+    match contact_edge(nuclei, ta.as_ref().map(|(x, y)| (x, y)), tb.as_ref().map(|(x, y)| (x, y)), budget) {
         ContactEdge::Formed(t) => (Some(*t), None, Vec::new()),
         ContactEdge::Held(r) => (None, Some(r), Vec::new()),
         ContactEdge::Refused { poses } => {
@@ -544,7 +550,7 @@ pub(crate) fn members_contact_edge(
                 else {
                     continue;
                 };
-                if let Some(d) = super::perceive::oblique_demanded(before, after, (before_blade, after_blade), &after.moduli) {
+                if let Some(d) = super::perceive::oblique_demanded(before, after, (before_blade, after_blade), &after.moduli, budget) {
                     demands.push(d);
                 }
             }

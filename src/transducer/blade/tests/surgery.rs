@@ -129,7 +129,7 @@ fn factor_composite_deformation_phi_is_versor_circ_surgery() {
     let src = shape_of(&ring);
     let dst = shape_of(&solid);
 
-    let (surg, versor) = Surgery::factor(&src, &dst).expect("factor Phi into V circ S");
+    let (surg, versor) = Surgery::factor(&src, &dst, &mut super::common::budget()).expect("factor Phi into V circ S");
     assert_eq!(surg.kind, SurgeryKind::FillHole);
     assert_eq!(surg.delta_betti, (0, -1));
     // The core after surgery is the solid square at identical location, so versor is identity

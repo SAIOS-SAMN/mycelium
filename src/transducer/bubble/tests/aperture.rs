@@ -467,13 +467,13 @@ fn a_form_re_held_unchanged_keeps_its_phase_change_stamp_and_ages() {
 
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4]);
+    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let key = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     assert_eq!(c.bubbles.get(&key).expect("held").moved_k, 10, "born at the stamp it entered on");
     // The same form re-held unchanged at a later TUniversal, as D8 re-holds
     // a withheld form every stroke.
     c.set_now(64);
-    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4]);
+    c.hold_form(form.clone(), &[], std::slice::from_ref(&vec![(0i64, 0i64, 1u8, 2u8)]), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let again = c.bubbles.get(&key).expect("still held");
     assert_eq!(again.moved_k, 10, "retention is not motion: the stamp is preserved");
     assert_eq!(
@@ -554,7 +554,7 @@ fn a_bubble_rekeyed_by_a_mutation_keeps_its_inception() {
 
     let mut c = Contemplation::new();
     c.set_now(10);
-    c.hold_form(before.clone(), &[], std::slice::from_ref(&rem), [0; 4]);
+    c.hold_form(before.clone(), &[], std::slice::from_ref(&rem), [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let old_key = crate::transducer::bubble::idea::idea_key(&before);
     let new_key = crate::transducer::bubble::idea::idea_key(&after);
     assert_ne!(old_key, new_key, "the mutation is a different form, so a different key");

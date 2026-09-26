@@ -207,7 +207,7 @@ mod tests {
         // a section attached on one side travels by teaching, never as
         // discordance.
         let mut grown = hypha.clone();
-        let g = crate::transducer::element::transition(bar_hue.sub(), grown[0].sub()).unwrap();
+        let g = crate::transducer::element::transition(bar_hue.sub(), grown[0].sub(), &mut crate::physics::Physics::default().stroke_n(1 << 20)).unwrap();
         grown[0].attach(&bar_hue, &g);
         let gd = digests(&atlas(&grown));
         assert!(discordant(&gd, &digests(&es2)).is_empty(), "the root is over the base");

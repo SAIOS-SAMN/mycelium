@@ -128,7 +128,7 @@ pub struct CoverTally {
     /// a determined rotor, and reporting the two as one would be the same
     /// defect as reporting "never fired" and "fired and was identity"
     /// together.
-    pub frame_half_open: u64,
+    pub frame_open_180: u64,
     /// FR1 — the pieces whose own pose was read on the tube, the domain or
     /// the codomain extending off the sensor's plane. The regime, beside the
     /// three outcomes above, not a fourth.
@@ -489,13 +489,13 @@ pub(crate) fn cover_deformation(
         if !budget.spend() {
             park!();
         }
-        let Some(car) = carriage_with_core(&pre, &op.body) else { break 'piece };
+        let Some(car) = carriage_with_core(&pre, &op.body, budget) else { break 'piece };
         // The carriage is CONFIRMED here — a versor exists and carries the
         // preimage onto this piece. If its rotor does not spell, that is
         // 37.7 and not a failure to carry, so the piece is kept as the
         // demand the peel typed rather than dropped (rule 11: a refusal is
         // a reading).
-        let v = match word_or_demand(&pre, &op.body) {
+        let v = match word_or_demand(&pre, &op.body, budget) {
             Some(Ok(v)) => v,
             Some(Err(demanded)) => {
                 cover.refused.put(&key, demanded);
@@ -614,10 +614,10 @@ pub(crate) fn cover_deformation(
                 park!();
             }
             tally(|t| t.propagated += 1);
-            let Some(car) = carriage(&ip.body, &img) else { continue };
+            let Some(car) = carriage(&ip.body, &img, budget) else { continue };
             // As in the pullback: a confirmed carriage whose rotor does not
             // spell is 37.7, and it is carried out rather than dropped.
-            let v = match word_or_demand(&ip.body, &img) {
+            let v = match word_or_demand(&ip.body, &img, budget) {
                 Some(Ok(v)) => v,
                 Some(Err(demanded)) => {
                     cover.refused.put(&key, demanded);

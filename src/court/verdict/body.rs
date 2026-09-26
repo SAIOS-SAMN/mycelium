@@ -399,6 +399,7 @@ fn motor_carries(
     x: &crate::network::nerve::coord::MemberAt,
     y: &crate::network::nerve::coord::MemberAt,
     motor: &Versor,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     use crate::transducer::base::FRAME_AXIS;
     let at = |k: u64| usize::try_from(k).ok().and_then(|i| frames.get(i));
@@ -433,6 +434,7 @@ fn motor_carries(
     let taken = crate::transducer::blade::versor_coset_ordered(
         &crate::transducer::blade::shape_of(&sources),
         &crate::transducer::blade::shape_of(&targets),
+        budget,
     );
     let deviation = match taken.as_slice() {
         [geodesic, ..] => Some(geodesic.geo(&motor.reverse())),
@@ -454,7 +456,11 @@ fn motor_carries(
 /// frame its two charts name, read by coordinate. A frame-axis overlap joins
 /// two frames and carries the motor its member's body took between them,
 /// not a union edge; it is not re-measured here.
-pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option<Refusal> {
+pub(crate) fn edges_rederive_frames(
+    f: &Form,
+    family: &[(Grid, Grid)],
+    budget: &mut crate::physics::Budget,
+) -> Option<Refusal> {
     use crate::network::nerve::coord::ChartAt;
     let frames = frames_of(family);
     for (o, face) in f.faces.entries() {
@@ -468,7 +474,7 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             // frame, on the court's own copy of the family. The court APPLIES
             // and never solves — a court that measures versors is thinking.
             if face.producer == crate::transducer::sentence::Producer::Motor {
-                if let Some(refusal) = motor_carries(&frames, x, y, &face.place.carriage) {
+                if let Some(refusal) = motor_carries(&frames, x, y, &face.place.carriage, budget) {
                     return Some(refusal);
                 }
             }
@@ -530,6 +536,7 @@ pub(crate) fn edges_rederive_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
             let Some(v_ij) = crate::transducer::blade::versor_between(
                 &union_shape(a_i, a_j),
                 &union_shape(bi, bj),
+                budget,
             ) else {
                 return Some(refused(none("no versor carries the union onto its image")));
             };

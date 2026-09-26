@@ -114,7 +114,7 @@ fn ring_answer(
         return None;
     }
     let (a, b) = (body_of(before)?, body_of(after)?);
-    let car = carriage(&a, &b)?;
+    let car = carriage(&a, &b, budget)?;
     // The carriage's OWN hue map is the gauge: this demand's target
     // recolours exactly where `sigma` is not the identity, so the `𝒢` lane
     // is occupied or not by what was measured (L12).
@@ -178,6 +178,12 @@ impl ExtractMemo {
         self.held.is_none()
     }
 
+    /// Whether the memo answers `fam` at `atlas_root`: a caller perceives the
+    /// family's frames to size its stroke only where it does not.
+    pub fn holds(&self, fam: &[u8], atlas_root: &crate::transducer::address::Address) -> bool {
+        self.get(fam, atlas_root).is_some()
+    }
+
     /// The rule this memo holds for `fam` at `atlas_root`, or `None`.
     fn get(&self, fam: &[u8], atlas_root: &crate::transducer::address::Address) -> Option<&Option<crate::transducer::sentence::SentenceRule>> {
         match &self.held {
@@ -201,6 +207,7 @@ pub fn extract_rule_cached(
     atlas_root: crate::transducer::address::Address,
     budget: &mut crate::physics::Budget,
     crystal: &dyn Crystal,
+    frames: Option<&super::perceive::Frames>,
 ) -> Option<crate::transducer::sentence::SentenceRule> {
     if let Some(rule) = cache.get(fam, &atlas_root) {
         return rule.clone();
@@ -208,7 +215,8 @@ pub fn extract_rule_cached(
     if !budget.spend() {
         return cache.get(fam, &atlas_root).and_then(|r| r.clone());
     }
-    let rule = extract_rule_with(family, crystal, budget);
+    // The frames the caller sized its stroke by, where it perceived them.
+    let rule = super::extract::extract_rule_on(family, frames, crystal, budget);
     cache.held = Some((fam.to_vec(), atlas_root, rule.clone()));
     rule
 }

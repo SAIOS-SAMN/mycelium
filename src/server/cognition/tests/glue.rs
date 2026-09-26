@@ -295,7 +295,8 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     let mut heard = Kernel::new();
     heard.bind_identity(me);
     let mut cover = crate::network::nerve::Cover::new();
-    let outcome = heard.glue_fetched(spoken.clone(), peer_id, me, &mut cover);
+    let mut glue = heard.stroke();
+    let outcome = heard.glue_fetched(spoken.clone(), peer_id, me, &mut cover, &mut glue);
     assert!(matches!(outcome, Glue::Admitted));
 
     let cx_h = heard.complexes().get(&inv.key()).expect("complex exists");

@@ -32,8 +32,9 @@ enum Heard {
 impl Kernel {
     /// EC1 — HEAR A PEER'S RULING whose receipt this court admitted as a
     /// parent, and count what it came to.
-    pub(crate) fn hear_ruling(&mut self, r: &KStepReceipt, arm: Ruled) {
-        match self.judge_ruling(r, arm) {
+    /// Heard inside the act that admitted the receipt, on its stroke (65.5).
+    pub(crate) fn hear_ruling(&mut self, r: &KStepReceipt, arm: Ruled, budget: &mut crate::physics::Budget) {
+        match self.judge_ruling(r, arm, budget) {
             Heard::Inert => {}
             Heard::Waits(at) => {
                 let counts = &mut self.rulings[arm.index()];
@@ -67,7 +68,8 @@ impl Kernel {
     /// ruling that waits on a SECOND citation re-dockets under that one and
     /// a chain of citations resolves one link per filing, never spinning
     /// (rule 10).
-    pub(crate) fn rehear_rulings(&mut self, at: &Stamp) {
+    /// On the stroke of the act that filed the word (65.5).
+    pub(crate) fn rehear_rulings(&mut self, at: &Stamp, budget: &mut crate::physics::Budget) {
         let Some(waiting) = self.awaiting_rulings.remove(&at.key()) else {
             return;
         };
@@ -78,11 +80,11 @@ impl Kernel {
             let counts = &mut self.rulings[arm.index()];
             counts[0] -= 1;
             counts[2] -= 1;
-            self.hear_ruling(&r, arm);
+            self.hear_ruling(&r, arm, budget);
         }
     }
 
-    fn judge_ruling(&mut self, r: &KStepReceipt, arm: Ruled) -> Heard {
+    fn judge_ruling(&mut self, r: &KStepReceipt, arm: Ruled, budget: &mut crate::physics::Budget) -> Heard {
         use crate::anastome::dialogue::{RULING_DEMOTED, RULING_SLASHED, RULING_UPHELD};
         // The first citation is the word ruled; a ruling that names none
         // rules nothing here.
@@ -98,12 +100,12 @@ impl Kernel {
             Ruled::Upheld => RULING_UPHELD,
             Ruled::Demoted => RULING_DEMOTED,
             Ruled::Slashed => RULING_SLASHED,
-            Ruled::Retired => return self.replay_retirement(&addr, rest, author),
+            Ruled::Retired => return self.replay_retirement(&addr, rest, author, budget),
         };
         if !self.provisional.contains(addr.as_bytes()) {
             return Heard::Inert;
         }
-        match self.apply_verdict_by(addr.as_bytes(), verdict, author) {
+        match self.apply_verdict_by(addr.as_bytes(), verdict, author, budget) {
             true => Heard::Applied,
             false => Heard::Refused(RulingRefused::NoParty),
         }
@@ -117,12 +119,14 @@ impl Kernel {
     /// and every speaker is ruled here. Where it re-derives, the word
     /// retires here as at the home, its freed measure goes to the reserve,
     /// and this court seals its own `Ruling(Retired)` with the peer's
-    /// receipt among its parents.
+    /// receipt among its parents. The replay draws on the stroke of the act
+    /// that heard the ruling (65.5), never one of its own.
     fn replay_retirement(
         &mut self,
         addr: &crate::transducer::address::Address,
         rest: &[crate::chronometry::Cite],
         author: [u8; 32],
+        budget: &mut crate::physics::Budget,
     ) -> Heard {
         if !self.ruled_contains(addr.as_bytes()) {
             return Heard::Inert;
@@ -151,13 +155,13 @@ impl Kernel {
                 return Heard::Refused(RulingRefused::SpeakerNotRuled);
             }
         }
-        if !matches!(self.reduce_excluding(&word, Some(addr.as_bytes())), NormalForm::Decomposed(_)) {
+        if !matches!(self.reduce_excluding(&word, Some(addr.as_bytes()), budget), NormalForm::Decomposed(_)) {
             return Heard::Refused(RulingRefused::DoesNotDecompose);
         }
         let freed = word.magnitude();
         let retired = self.cite_of(addr.as_bytes());
         let elem = self.basis_remove(addr.as_bytes());
-        self.ruled_admit(addr.as_bytes());
+        self.ruled_admit(addr.as_bytes(), budget);
         self.cavity_book.insert(addr, elem.clone().into());
         self.cavities.push(elem);
         self.physics.syntropy(&freed);

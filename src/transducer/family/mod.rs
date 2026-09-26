@@ -263,12 +263,13 @@ impl Crystal for NoCrystal {
 #[cfg(test)]
 pub fn cipher_form(a: &Grid, b: &Grid) -> Form {
     let pair = [(a.clone(), b.clone())];
-    let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&pair) << 4);
+    let frames = perceive_family(&pair);
+    let mut budget = crate::physics::Physics::default().stroke_n(extraction_spend(&pair, &frames) << 4);
     // A crystal that holds nothing has nothing to factor through, so the
     // factorisation is measured the moment it starts and cannot end on
     // the budget: this expect is the absence of a presentation, not an
     // unwrap of one that might be there.
-    scene_form(&NoCrystal, &mut budget, a, b).expect("a presentation of no generators measures at once")
+    scene_form_on(&NoCrystal, &mut budget, a, b, &frames).expect("a presentation of no generators measures at once")
 }
 
 /// The scene frame as a form vertex.
@@ -349,8 +350,8 @@ pub struct Carriage {
 /// reading for a body in one frame and a body across frames: a frame-0
 /// body's compartments stand at `k = 0` (51.3), which is their coordinate and
 /// not a second path.
-pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
-    let v = blade::versor_between(&a.shape, &b.shape)?;
+pub fn carriage(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
+    let v = blade::versor_between(&a.shape, &b.shape, budget)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
     for l in &a.compartments {
         let h2 = landed_hue(&v, &l.site, b)?;
@@ -374,11 +375,11 @@ pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
 /// Carry `a` onto `b`: directly via `carriage`, or by factoring a
 /// planar projection artifact with `Surgery::factor` to align the homeomorphic core.
 /// The continuous versor is preserved; the tape remains an invertible group action.
-pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
-    if let Some(car) = carriage(a, b) {
+pub fn carriage_with_core(a: &Body, b: &Body, budget: &mut crate::physics::Budget) -> Option<Carriage> {
+    if let Some(car) = carriage(a, b, budget) {
         return Some(car);
     }
-    let (surg, v) = crate::transducer::blade::surgery::Surgery::factor(&a.shape, &b.shape)?;
+    let (surg, v) = crate::transducer::blade::surgery::Surgery::factor(&a.shape, &b.shape, budget)?;
     match surg.kind {
         crate::transducer::blade::surgery::SurgeryKind::FillHole
         | crate::transducer::blade::surgery::SurgeryKind::Puncture

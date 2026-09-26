@@ -100,12 +100,15 @@ pub fn quote(
     let rank = match view.closure {
         Some(c) => c,
         None => {
+            // One stroke of this court's own metabolism (`Kernel::stroke`).
+            let mut budget = k.lock().ok()?.stroke();
             let measured = crate::cognition::rank_over(
                 &view.language,
                 &view.pending,
                 &view.prior,
                 view.gens.0,
                 &view.chart_listings,
+                &mut budget,
             );
             k.lock().ok()?.seal_closure(view.gens, measured)
         }
@@ -170,14 +173,19 @@ pub fn adopt(
     word: &crate::transducer::element::Element,
 ) -> crate::cognition::Adoption {
     use crate::cognition::Adoption;
+    // One stroke of this court's own metabolism (`Kernel::stroke`) reads the
+    // replay and the derivability below.
+    let Ok(mut budget) = k.lock().map(|mut g| g.stroke()) else {
+        return Adoption::Refused("kernel unavailable");
+    };
     // A form cites ruled forms and is bound to a family: its replay reads
     // the cover and the trains, so it takes the lock (23.8); every other
     // word replays pure, off the lock.
     let refused = if word.is_sentence() {
         let Ok(g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-        g.court_replay(word)
+        g.court_replay(word, &mut budget)
     } else {
-        crate::verdict::blind_replay(word)
+        crate::verdict::blind_replay(word, &mut budget)
     };
     if let Some(reason) = refused {
         return Adoption::Refused(reason);
@@ -186,7 +194,7 @@ pub fn adopt(
     if g.word_at(&word.address()).is_some() {
         // Held at this address: the arriving placement's fibre merges
         // (Known or Enriched — the install door decides).
-        return g.install_adopted(word, ratifier);
+        return g.install_adopted(word, ratifier, &mut budget);
     }
     let language = g.language();
     drop(g);
@@ -199,12 +207,13 @@ pub fn adopt(
         &|a| language.shape_at(a),
         sub.sub(),
         None,
+        &mut budget,
     );
     if let ([], [], [_, ..]) = (sentence.residual.as_slice(), sentence.punctures.as_slice(), sentence.cites.as_slice()) {
         return Adoption::Derivable;
     }
     let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
-    g.install_adopted(word, ratifier)
+    g.install_adopted(word, ratifier, &mut budget)
 }
 
 #[cfg(test)]

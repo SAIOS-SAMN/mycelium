@@ -127,3 +127,7 @@ rows.iter()
     .map(|r| r.bytes().map(|b| b - b'0').collect())
     .collect()
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

@@ -388,8 +388,9 @@ impl Epigenome {
         &mut self,
         chain: &[(i64, i64, u8, u8)],
         exclude: Option<&[u8]>,
+        budget: &mut crate::physics::Budget,
     ) -> crate::transducer::sentence::Sentence {
-        self.locate_on(chain, exclude, &crate::transducer::sentence::no_held)
+        self.locate_on(chain, exclude, &crate::transducer::sentence::no_held, budget)
     }
 
     /// Deconstruct a chain over the working language with the Held stratum
@@ -409,9 +410,14 @@ impl Epigenome {
         chain: &[(i64, i64, u8, u8)],
         exclude: Option<&[u8]>,
         held_at: &H,
+        budget: &mut crate::physics::Budget,
     ) -> crate::transducer::sentence::Sentence
     where
-        H: Fn(&crate::transducer::stalk::Invariant, &[(i64, i64, u8, u8)]) -> Vec<crate::transducer::sentence::HeldCite>,
+        H: Fn(
+            &crate::transducer::stalk::Invariant,
+            &[(i64, i64, u8, u8)],
+            &mut crate::physics::Budget,
+        ) -> Vec<crate::transducer::sentence::HeldCite>,
     {
         // THE READING RUNS OVER WHAT IS DECODED. Under Z11 the fiber read
         // decodes what it reaches before the closures are built; today
@@ -456,6 +462,7 @@ impl Epigenome {
             },
             chain,
             exclude,
+            budget,
         )
     }
 

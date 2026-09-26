@@ -102,7 +102,7 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
 /// Pivot one held form under a crystal offering `offered`, and read the tally.
 fn pivot(form: Form, offered: &Word) -> crate::transducer::sentence::PivotTally {
     let mut c = Contemplation::new();
-    c.hold_form(form, &[], &[], [0; 4]);
+    c.hold_form(form, &[], &[], [0; 4], &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let k = c.bubbles.scoped().next().map(|(k, _)| k).expect("held");
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 12);
     let mut tally = crate::transducer::sentence::PivotTally::default();

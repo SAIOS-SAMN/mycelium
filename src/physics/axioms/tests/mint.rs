@@ -60,7 +60,7 @@ fn d3_a_reflection_and_an_unlike_pair_mint_no_arc() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let j = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     assert_ne!(
-        blade::relative_rotor(&l.blade, &j.blade).err(),
+        blade::relative_rotor(&l.blade, &j.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).err(),
         Some(blade::NoPose::Oblique),
         "a reflection never reaches the demand path"
     );

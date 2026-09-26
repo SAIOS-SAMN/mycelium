@@ -14,7 +14,11 @@ impl Kernel {
     /// whose re-derivation the install rests on, and it is the author of the
     /// receipt this act seals (45.1): a book that cannot say which vantage
     /// an install stood on cannot re-derive the install.
-    pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32]) {
+    ///
+    /// The install is inside the act that witnessed it and draws on that
+    /// act's stroke (65.5), threaded to the basis, the ruling, the inputs a
+    /// rewrite retires and the sentences re-heard after the close.
+    pub(crate) fn home_install(&mut self, addr: &[u8], witness: [u8; 32], budget: &mut crate::physics::Budget) {
         // THE ORBIT CLOSES WHOLE BEFORE WHAT WAITED ON IT IS HEARD. Ruling the
         // word re-hears its citers, and it did so before this act released the
         // word's own draw — so a citer spoken by the same voice met a room
@@ -39,12 +43,12 @@ impl Kernel {
             if let Some(w) = held.as_ref() {
                 if !(w.is_connection() && w.letters().is_none()) {
                     match drawn {
-                        Some(voice) => self.basis_push(w.clone(), voice),
+                        Some(voice) => self.basis_push(w.clone(), voice, budget),
                         // No draw: a word this court did not receive from a
                         // voice — a peer's glue, a restore. It has no
                         // speaker here, which is a fact and not a default
                         // (rule 11).
-                        None => self.basis_push(w.clone(), [0; 32]),
+                        None => self.basis_push(w.clone(), [0; 32], budget),
                     }
                     federated = Some(w.clone());
                 }
@@ -52,7 +56,7 @@ impl Kernel {
         }
         // 13.9: the home's install is its OWN word, ruled on a witness's
         // re-derivation, so it becomes this court's section on the chart.
-        self.rule_own(addr);
+        self.rule_own(addr, budget);
         // 45.1: an install is an ADMITTED ACT, so it is a step of this
         // kernel's clock and a receipt in its chain. Without one the book
         // grew a ruled word at no position: nothing cited the peer receipts
@@ -70,7 +74,7 @@ impl Kernel {
                 if self.treasury.release_rewrite(addr, installed).is_none() {
                     return;
                 }
-                self.retire_rewrite_inputs(&w);
+                self.retire_rewrite_inputs(&w, budget);
             } else {
                 let pay = self.verified_install_deflation(addr, &w);
                 if pay.iter().all(|&x| x == 0) {
@@ -100,7 +104,7 @@ impl Kernel {
         }
         if let Some(bucket) = waiting {
             self.awaiting.insert(addr, bucket);
-            self.rehear_awaiting(addr);
+            self.rehear_awaiting(addr, budget);
         }
     }
 

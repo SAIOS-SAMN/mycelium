@@ -112,9 +112,10 @@ fn grade_zero_over_the_corpus_and_what_it_accounts_for() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         let f = &rule.form;
@@ -207,9 +208,10 @@ fn the_pivot_trial_against_the_cells_agreements() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
-        let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let Some(rule) = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget) else { continue };
-        let mut stroke = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
+        let frames = crate::transducer::family::perceive_family(&task.train);
+        let mut budget = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+        let Some(rule) = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget) else { continue };
+        let mut stroke = physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
         let _ = rule.form.clone().pivot_orbit(
             name.as_bytes(),
             &crate::network::nerve::Keyed::new(),
@@ -278,9 +280,10 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         address_set.add(&rule.form);
@@ -307,10 +310,10 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         "  lift over {forms} corpus forms: meets {} ({} carried an edge) \
          → chords {}, within one class {}, unclassed {}, pieces colliding {} \
          | axiom B: geodesic {} off-sheet {} \
-         | poses: {} framed {} half-open {} unframed, {} on the tube \
+         | poses: {} framed {} open-180° {} unframed, {} on the tube \
          | contacts: {} offered, {} unlifted | tether: {} apart, {} contained \
          | pose: {} on the tube | {} bodiless, {} isotropy, {} unoriented, {} OBLIQUE, \
-         {} mirrored, {} irrational, {} half-open | {} CONDENSED \
+         {} mirrored, {} irrational, {} open-180° | {} CONDENSED \
          | forms carrying an orbit: {with_orbits}",
         t.meets,
         t.edges,
@@ -321,7 +324,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         t.geodesic,
         t.off_sheet,
         t.framed,
-        t.frame_half_open,
+        t.frame_open_180,
         t.unframed,
         t.pose_tube,
         f.offered,
@@ -335,7 +338,7 @@ fn every_meet_of_the_corpus_is_accounted_for_at_the_lift() {
         f.oblique,
         f.mirrored,
         f.irrational,
-        f.half_open,
+        f.open_180,
         f.condensed
     );
     // THE ANTIPODAL TEST (54.7): the operators of each Casimir class, and
@@ -410,9 +413,10 @@ fn the_withhold_census_separates_the_reachable_from_the_obstructed() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         extracted += 1;
@@ -824,9 +828,10 @@ fn the_demand_kind_census_says_whether_language_can_grow() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
+        let frames = crate::transducer::family::perceive_family(&task.train);
         let mut budget =
-            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train));
-        let rule = crate::transducer::family::extract_rule_with(&task.train, &epi, &mut budget);
+            physics.stroke_n(crate::transducer::family::extraction_spend(&task.train, &frames));
+        let rule = crate::transducer::family::extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
         percept_lines();
         let Some(rule) = rule else { continue };
         forms += 1;

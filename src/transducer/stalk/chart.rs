@@ -469,6 +469,7 @@ pub fn congruent<'a>(
     stalks: &Stalks,
     at: impl Fn(&[u8]) -> Option<&'a element::Element>,
     spoken: &element::Element,
+    budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let fibre = stalks.fiber(&invariant_of(spoken));
     if spoken.is_connection() {
@@ -483,7 +484,7 @@ pub fn congruent<'a>(
     let mut related = fibre
         .iter()
         .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (a.clone(), w)))
-        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub()).map(|v| (crate::transducer::address::Address::from(a), v)));
+        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub(), budget).map(|v| (crate::transducer::address::Address::from(a), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),
@@ -498,12 +499,13 @@ pub fn congruent_shaped<'a>(
     stalks: &Stalks,
     shape_at: impl Fn(&[u8]) -> Option<&'a crate::transducer::blade::Shape>,
     chain: &[Link],
+    budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::address::Address, Versor)> {
     let shape = element::shape_of_chain(chain)?;
     let fibre = stalks.fiber(&invariant(chain));
     let mut related = fibre
         .iter()
-        .filter_map(|a| shape_at(a).and_then(|held| crate::transducer::blade::versor_between(&shape, held)).map(|v| (crate::transducer::address::Address::from(a.clone()), v)));
+        .filter_map(|a| shape_at(a).and_then(|held| crate::transducer::blade::versor_between(&shape, held, budget)).map(|v| (crate::transducer::address::Address::from(a.clone()), v)));
     let first = related.next()?;
     match related.next() {
         None => Some(first),

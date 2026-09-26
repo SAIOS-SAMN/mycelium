@@ -83,13 +83,13 @@ pub fn on_tube(a: &Blade, b: &Blade) -> bool {
 ///   orients where the other does not, and no motion changes that;
 /// - where the columns span fewer than `n − 1` dimensions on both, the even
 ///   tower reads the pose ([`even_pose`], FR1b): a symmetric body is
-///   [`Pose::HalfOpen`], its `ℤ₂` held as it is at one section;
+///   [`Pose::Open180`], its `ℤ₂` held as it is at one section;
 /// - [`NoPose::Unoriented`] only where no order orients: a stabilizer the
 ///   even tower leaves beyond `ℤ₂`;
 /// - [`NoPose::Irrational`] `ρ²` is not a rational square;
 /// - [`NoPose::Mirrored`] an improper `R` carries the tower and no proper
 ///   one does.
-pub fn relative_pose(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
+pub fn relative_pose(a: &Blade, b: &Blade, budget: &mut crate::physics::Budget) -> Result<Pose, NoPose> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
@@ -98,21 +98,9 @@ pub fn relative_pose(a: &Blade, b: &Blade) -> Result<Pose, NoPose> {
         return Err(NoPose::Incongruent(Incongruence::Base));
     }
     match on_tube(a, b) {
-        false => relative_rotor(a, b, crate::transducer::base::GRID_PLANE),
-        true => tube_pose(a, b, n),
+        false => relative_rotor(a, b, crate::transducer::base::GRID_PLANE, budget),
+        true => tube_pose(a, b, n, budget),
     }
-}
-
-/// A BODY'S POINT TOWER ON `n` AXES: the second moment `M`, the odd moment
-/// `t` and the fourth order's symmetric part `N = ⟨d dᵀ |d|²⟩` about the
-/// sites' mean, each normalised by the count (A.12), and `tr M`, the scale's
-/// reading. `M` and `N` are the EVEN tower: they turn with the body and
-/// cannot see a 180° turn.
-struct Tower {
-    m: Vec<Vec<Q>>,
-    t: Vec<Q>,
-    n4: Vec<Vec<Q>>,
-    tr: Q,
 }
 
 /// THE POINT TOWER'S ONE PRODUCER (78.38): each site as the point it stands
@@ -143,7 +131,12 @@ pub(super) fn centred(b: &Blade, n: usize) -> Option<(Q, Vec<Vec<Q>>)> {
     Some((count, points))
 }
 
-fn tower(b: &Blade, n: usize) -> Option<Tower> {
+/// A BODY'S POINT TOWER ON `n` AXES, produced once, by the lift
+/// ([`super::tower::read_towers`]): the second moment `M`, the odd moment `t`
+/// and the fourth order's symmetric part `N = ⟨d dᵀ |d|²⟩` about the sites'
+/// mean, each normalised by the count (A.12). `M` and `N` are the EVEN
+/// tower: they turn with the body and cannot see a 180° turn.
+pub(super) fn point_tower(b: &Blade, n: usize) -> Option<PointTower> {
     let (count, points) = centred(b, n)?;
     let mut m = vec![vec![Q::zero(); n]; n];
     let mut t = vec![Q::zero(); n];
@@ -169,14 +162,12 @@ fn tower(b: &Blade, n: usize) -> Option<Tower> {
     for x in t.iter_mut() {
         *x = &*x / &count;
     }
-    let tr = m.iter().enumerate().fold(Q::zero(), |acc, (i, row)| acc + &row[i]);
-    Some(Tower { m, t, n4, tr })
+    Some(PointTower { m, t, n4 })
 }
 
-/// The point tower's second moment `M`, the one reading the transition's
-/// covariance takes of it on the sites (law 12: `tower` is its producer).
-pub(super) fn point_second_moment(b: &Blade, n: usize) -> Option<Vec<Vec<Q>>> {
-    tower(b, n).map(|t| t.m)
+/// `tr M`, the point tower's scale.
+fn trace(m: &[Vec<Q>]) -> Q {
+    m.iter().enumerate().fold(Q::zero(), |acc, (i, row)| acc + &row[i])
 }
 
 fn apply(m: &[Vec<Q>], v: &[Q]) -> Vec<Q> {
@@ -193,7 +184,7 @@ fn independent(cols: &[Vec<Q>], n: usize) -> bool {
 /// THE COVARIANT COLUMNS `t, Mt, M²t, …` while they stay independent. The
 /// sequence is a Krylov sequence, so the first column that depends on those
 /// before it ends it: every later one depends too.
-fn columns(tw: &Tower, n: usize) -> Vec<Vec<Q>> {
+fn columns(tw: &PointTower, n: usize) -> Vec<Vec<Q>> {
     let mut cols: Vec<Vec<Q>> = Vec::new();
     let mut w = tw.t.clone();
     while cols.len() < n {
@@ -298,28 +289,41 @@ fn versor_of(r: &[Vec<Q>], n: usize) -> Option<Mv> {
 /// centres, and verified by the transition's covariance on the point tower
 /// (`carried_on`, 78.38(C)) — the tower the pose reads, whose floor-free
 /// moments turn out of the grid plane. The versor where it carries, `None`
-/// where it does not.
-fn carried(r: &[Vec<Q>], a: &Blade, b: &Blade, rho: &Q, n: usize) -> Option<Mv> {
-    let v = versor_of(r, n)?;
+/// where it does not. Each candidate draws one read from the stroke (65.5):
+/// a spent stroke is the typed cut [`NoPose::Unbounded`], never "not carried".
+fn carried(
+    r: &[Vec<Q>],
+    a: &Blade,
+    b: &Blade,
+    rho: &Q,
+    n: usize,
+    budget: &mut crate::physics::Budget,
+) -> Result<Option<Mv>, NoPose> {
+    if !budget.spend() {
+        return Err(NoPose::Unbounded);
+    }
+    let Some(v) = versor_of(r, n) else { return Ok(None) };
     // Through the fourth order: the tube's pose is a whole fit, residue-free.
-    super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites, super::tower::Harmonic::Four)
-        .map(|_| v)
+    Ok(super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites, super::tower::Harmonic::Four)
+        .map(|_| v))
 }
 
 /// THE POSE ON THE TUBE: the columns, the dual where a body is flat, the
 /// solve, the tower's check, the versor.
-fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
-    let (Some(ta), Some(tb)) = (tower(a, n), tower(b, n)) else {
+fn tube_pose(a: &Blade, b: &Blade, n: usize, budget: &mut crate::physics::Budget) -> Result<Pose, NoPose> {
+    // Each body's point tower as the lift read it, once per body.
+    let (Some(ta), Some(tb)) = (a.towers.points.as_ref(), b.towers.points.as_ref()) else {
         return Err(NoPose::Bodiless);
     };
-    let (ca, cb) = (columns(&ta, n), columns(&tb, n));
+    let (ca, cb) = (columns(ta, n), columns(tb, n));
     if ca.len() != cb.len() {
         return Err(NoPose::Isotropy);
     }
-    if ta.tr.is_zero() {
+    let (tra, trb) = (trace(&ta.m), trace(&tb.m));
+    if tra.is_zero() {
         return Err(NoPose::Unoriented);
     }
-    let rho2 = &tb.tr / &ta.tr;
+    let rho2 = &trb / &tra;
     let Some(rho) = rational_sqrt(&rho2) else {
         return Err(NoPose::Irrational);
     };
@@ -334,7 +338,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
     // FR1b — TOO FEW COLUMNS IS A SYMMETRY, NOT A REFUSAL: the even tower
     // reads what the odd one cannot.
     if ca.len() + 1 < n {
-        return even_pose(a, b, &ta, &tb, &ca, &wb, &rho, n);
+        return even_pose(a, b, ta, tb, &ca, &wb, &rho, n, budget);
     }
     let mut wa = ca.clone();
     // A FLAT BODY'S FRAME OF COLUMNS IS COMPLETED BY THEIR DUAL, the proper
@@ -346,7 +350,11 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
         wa.push(da);
         wb.push(db);
     }
-    if let Some(v) = solve(&wa, &wb, n).and_then(|r| carried(&r, a, b, &rho, n)) {
+    let proper = match solve(&wa, &wb, n) {
+        Some(r) => carried(&r, a, b, &rho, n, budget)?,
+        None => None,
+    };
+    if let Some(v) = proper {
         return Ok(Pose::Turn(v));
     }
     if !flat {
@@ -357,7 +365,11 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
             *x = -x.clone();
         }
     }
-    match solve(&wa, &wb, n).and_then(|r| carried(&r, a, b, &rho, n)) {
+    let mirrored = match solve(&wa, &wb, n) {
+        Some(r) => carried(&r, a, b, &rho, n, budget)?,
+        None => None,
+    };
+    match mirrored {
         Some(v) => Ok(Pose::Turn(v)),
         None => Err(NoPose::Incongruent(Incongruence::Tube)),
     }
@@ -368,7 +380,7 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
 ///
 /// A body whose odd moment vanishes — a centrosymmetric body, or a flat one
 /// symmetric by a 180° turn in its own plane — has no column, and at one
-/// section the planar reader holds it `HalfOpen`: a `ℤ₂` freedom its own
+/// section the planar reader holds it `Open180`: a `ℤ₂` freedom its own
 /// symmetry makes real. The tube holds it the same way. The turn is read
 /// from the matrices that INTERTWINE the even tower,
 ///
@@ -391,9 +403,19 @@ fn tube_pose(a: &Blade, b: &Blade, n: usize) -> Result<Pose, NoPose> {
 /// Each candidate, and its negative, is kept where its versor — even or odd,
 /// a turn or a mirror — carries the one tube onto the other and every odd
 /// column there is lands. One carried is a [`Pose::Turn`]; several are the
-/// held coset, [`Pose::HalfOpen`], in the quadratic's own root order.
+/// held coset, [`Pose::Open180`], in the quadratic's own root order.
 #[expect(clippy::too_many_arguments, reason = "the two bodies, their towers, the odd columns at one scale, the scale and the base's n: the pose's inputs, each read once")]
-fn even_pose(a: &Blade, b: &Blade, ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[Vec<Q>], rho: &Q, n: usize) -> Result<Pose, NoPose> {
+fn even_pose(
+    a: &Blade,
+    b: &Blade,
+    ta: &PointTower,
+    tb: &PointTower,
+    ca: &[Vec<Q>],
+    wb: &[Vec<Q>],
+    rho: &Q,
+    n: usize,
+    budget: &mut crate::physics::Budget,
+) -> Result<Pose, NoPose> {
     let rho2 = rho * rho;
     let rho4 = &rho2 * &rho2;
     let scaled = |m: &[Vec<Q>], s: &Q| -> Vec<Vec<Q>> { m.iter().map(|row| row.iter().map(|x| x / s).collect()).collect() };
@@ -442,7 +464,7 @@ fn even_pose(a: &Blade, b: &Blade, ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[
             if !ca.iter().zip(wb).all(|(wa, wb)| apply(&r, wa) == *wb) {
                 continue;
             }
-            let Some(v) = carried(&r, a, b, rho, n) else { continue };
+            let Some(v) = carried(&r, a, b, rho, n, budget)? else { continue };
             if !poses.iter().any(|p| p.projective_eq(&v)) {
                 poses.push(v);
             }
@@ -460,7 +482,7 @@ fn even_pose(a: &Blade, b: &Blade, ta: &Tower, tb: &Tower, ca: &[Vec<Q>], wb: &[
     match read.as_slice() {
         [] => Err(NoPose::Incongruent(Incongruence::Tube)),
         [one] => Ok(Pose::Turn(one.clone())),
-        _ => Ok(Pose::HalfOpen(read)),
+        _ => Ok(Pose::Open180(read)),
     }
 }
 

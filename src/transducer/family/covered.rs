@@ -113,6 +113,7 @@ pub(crate) type MeetChord = (
 pub(crate) fn classify_cover(
     covers: &[Covered],
     edges: &mut EdgeTally,
+    budget: &mut crate::physics::Budget,
 ) -> (
     Vec<MeetChord>,
     usize,
@@ -238,7 +239,7 @@ pub(crate) fn classify_cover(
                 // turn. They are the same supports the chord's ends
                 // already carry.
                 (Some((va, sa, supa)), Some((vb, sb, supb))) => {
-                    Some(meet_edge(va, sa, supa, vb, sb, supb).map_err(|e| vec![e]))
+                    Some(meet_edge(va, sa, supa, vb, sb, supb, budget).map_err(|e| vec![e]))
                 }
                 _ => None,
             });

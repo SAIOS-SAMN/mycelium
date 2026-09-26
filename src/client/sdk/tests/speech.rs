@@ -22,7 +22,8 @@ fn a_withheld_remainder_is_never_a_word() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
     let form = closed_turn(None);
     let remainder = vec![(0i64, 0i64, 1u8, 2u8), (5, 5, 3u8, 4u8)];
-    entity.withhold_form(form.clone(), &[], std::slice::from_ref(&remainder), [2, 0, 0, 0]);
+    let mut b = entity.stroke();
+    entity.withhold_form(form.clone(), &[], std::slice::from_ref(&remainder), [2, 0, 0, 0], &mut b);
     let first = chain_word(&[(0, 0, 1u8, 2u8)]);
     let second = chain_word(&[(5, 5, 3u8, 4u8)]);
     let whole = chain_word(&remainder);

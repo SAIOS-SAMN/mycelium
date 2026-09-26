@@ -125,9 +125,10 @@ fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
 fn rotor_and_placement_between_measures_rotation_and_translation() {
     let s1 = shape_of(&at_frame_0(&[(0, 0), (0, 1), (0, 2)]));
     let s2 = shape_of(&at_frame_0(&[(3, 5), (4, 5), (5, 5)])); // rotated by 90 degrees and translated
-    let (rotor, trans) = rotor_and_placement_between(&s1, &s2).expect("carried");
+    let mut b = super::common::budget();
+    let (rotor, trans) = rotor_and_placement_between(&s1, &s2, &mut b).expect("carried");
     assert!(!trans.is_zero());
     assert!(!rotor.is_identity());
-    let r = rotor_between_shapes(&s1, &s2).expect("rotor exists");
+    let r = rotor_between_shapes(&s1, &s2, &mut b).expect("rotor exists");
     assert_eq!(r, rotor);
 }

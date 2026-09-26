@@ -88,9 +88,10 @@ pub(crate) fn half_rotor(s: &BigRational, b: &BigRational) -> Option<(BigRationa
 /// THE TRANSPORT BETWEEN TWO BODIES, in closed form from their moments:
 /// the canonical representative (50.2 step 1 as ruled 2026-09-09) of the
 /// coset `versor_coset` measures. `None` when no rational versor carries
-/// `a` onto `b`.
-pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
-    coset_representative(&versor_coset(a, b))
+/// `a` onto `b`, or when the stroke was spent first — which the caller's
+/// budget, run out, says (65.5).
+pub fn versor_between(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Option<Mv> {
+    coset_representative(&versor_coset(a, b, budget).ok()?)
 }
 
 /// The rotation measured as a Cl(4,0) Rotor across turned planes from the
@@ -98,9 +99,10 @@ pub fn versor_between(a: &Shape, b: &Shape) -> Option<Mv> {
 pub fn rotor_and_placement_between(
     a: &Shape,
     b: &Shape,
+    budget: &mut crate::physics::Budget,
 ) -> Option<(crate::transducer::alphabet::Rotor, Mv)> {
     use crate::transducer::alphabet::Rotor;
-    let _ = versor_between(a, b)?;
+    let _ = versor_between(a, b, budget)?;
     let t = cga::translator_at(&difference(&b.blade.centroid()?, &a.blade.centroid()?)?);
 
     let mut total_rotor = Rotor::identity();
@@ -139,9 +141,20 @@ pub fn rotor_and_placement_between(
 /// The Cl(4,0) Rotor carrying body a's orientation onto body b's
 /// orientation: the base rotor of the transition's geodesic (51.2), read
 /// back from the versor the transition verified.
-pub fn rotor_between_shapes(a: &Shape, b: &Shape) -> Option<crate::transducer::alphabet::Rotor> {
-    crate::transducer::element::base_rotor_of(&versor_between(a, b)?)
+pub fn rotor_between_shapes(
+    a: &Shape,
+    b: &Shape,
+    budget: &mut crate::physics::Budget,
+) -> Option<crate::transducer::alphabet::Rotor> {
+    crate::transducer::element::base_rotor_of(&versor_between(a, b, budget)?)
 }
+
+/// THE MOST CANDIDATES ONE TRANSITION VERIFIES, and so the most reads it
+/// draws from the stroke (65.5, ruled 2026-09-26): two parities, each at most
+/// the fourth harmonic's four 90° turns. The tube's pose tries fewer (a
+/// proper and a mirrored solve, or two signs on two lines). What an
+/// extraction's stroke is sized by per body pair (`extraction_spend`).
+pub const CANDIDATES_PER_PAIR: usize = 8;
 
 /// ONE MEMBER OF A TRANSITION BETWEEN TWO SHAPES (ruled 2026-09-26): the
 /// rotation it was built from, the versor carrying `a` onto `b`, and the
@@ -158,9 +171,14 @@ pub struct Transition {
 /// THE COSET OF TRANSITIONS carrying `a` onto `b` on the sensor's plane
 /// (BQ4, named): the transition's members ([`transitions_between`]), each
 /// with its rotation and its residue; none where the pair is refused, and
-/// the refusal is the pose's to name.
-pub fn versor_coset(a: &Shape, b: &Shape) -> Vec<Transition> {
-    transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).into_iter().flatten().collect()
+/// the refusal is the pose's to name. A stroke spent before every candidate
+/// was read is the typed cut [`NoPose::Unbounded`], never an empty coset.
+pub fn versor_coset(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Result<Vec<Transition>, NoPose> {
+    match transitions_between(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE, budget) {
+        Err(NoPose::Unbounded) => Err(NoPose::Unbounded),
+        Ok(members) => Ok(members),
+        Err(_) => Ok(Vec::new()),
+    }
 }
 
 /// THE DOUBLE-ANGLE POINT of a harmonic of degree `m` between two bodies:
@@ -230,12 +248,17 @@ fn rotor_at(p: &(BigRational, BigRational), e_ij: &Mv) -> Mv {
 /// point or `ρ` is not rational, Oblique, the RotorPrime demand. Refused
 /// before any candidate: a bodiless pair, a pair neither tower certifies, a
 /// pair where one body orients and the other does not.
-pub fn transitions_between(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Vec<Transition>, NoPose> {
+pub fn transitions_between(
+    a: &Blade,
+    b: &Blade,
+    plane: (usize, usize),
+    budget: &mut crate::physics::Budget,
+) -> Result<Vec<Transition>, NoPose> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
     match certify(a, b, plane) {
-        Ok(fit) => transitions_on(a, b, plane, fit),
+        Ok(fit) => transitions_on(a, b, plane, fit, budget),
         Err((region, sites)) => Err(NoPose::Incongruent(Incongruence::Order { region, sites })),
     }
 }
@@ -247,6 +270,7 @@ pub(super) fn transitions_on(
     b: &Blade,
     plane: (usize, usize),
     fit: super::tower::Fit,
+    budget: &mut crate::physics::Budget,
 ) -> Result<Vec<Transition>, NoPose> {
     use super::tower::{extent, harmonic, Harmonic};
     let tower = fit.dilation.tower();
@@ -310,6 +334,12 @@ pub(super) fn transitions_on(
         for rotor in rotors {
             // AT1 (r4) — the carry's candidate loop, counted at its site.
             crate::transducer::sentence::form::atlas::note_carry_candidate();
+            // EACH CANDIDATE VERIFIED DRAWS ONE READ FROM THE STROKE (65.5,
+            // rule 10), so `Spend` reads the transition and a short stroke is
+            // a typed cut, never a silent overrun.
+            if !budget.spend() {
+                return Err(NoPose::Unbounded);
+            }
             let rotation = match odd {
                 true => rotor.geo(&mirror),
                 false => rotor,
@@ -381,8 +411,9 @@ pub fn coset_representative(coset: &[Transition]) -> Option<Mv> {
 /// as carrying no transport at all while a turning member of the same
 /// coset spelled fine. The geodesic stays first, so naming and replay are
 /// unchanged.
-pub fn versor_coset_ordered(a: &Shape, b: &Shape) -> Vec<Mv> {
-    let coset = versor_coset(a, b);
+pub fn versor_coset_ordered(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Vec<Mv> {
+    // A stroke spent first leaves no candidates; the budget, run out, says so.
+    let coset = versor_coset(a, b, budget).into_iter().flatten().collect::<Vec<Transition>>();
     let geodesic = coset_representative(&coset);
     // The key IS the member's coordinates written inline (A21), so sorting
     // the keys is sorting by content and the member rides along by the
@@ -439,10 +470,15 @@ pub(super) fn carried_on(
 /// transition's covariance through the fit the certificate reads, its
 /// residue carried with it. `None` when the action does not carry `a` onto
 /// `b`: the word is not a word for this body.
-pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv) -> Option<Transition> {
+pub fn versor_carrying(a: &Shape, b: &Shape, linear: &Mv, budget: &mut crate::physics::Budget) -> Option<Transition> {
     if a.blade.support.is_empty() || b.blade.support.is_empty() {
         return None;
     }
     let fit = certify(&a.blade, &b.blade, crate::transducer::base::GRID_PLANE).ok()?;
+    // One candidate verified: one read from the stroke (65.5); a spent
+    // stroke reads `None` here and the budget, run out, says why.
+    if !budget.spend() {
+        return None;
+    }
     carried_on(&a.blade, &b.blade, linear, fit.dilation.tower(), fit.through)
 }

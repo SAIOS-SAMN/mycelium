@@ -96,7 +96,7 @@ impl ContinuousSupport {
                     .map(|i| (0..n).map(|j| b.moment2(i, j).map(|x| x / &m0)).collect::<Option<Vec<Q>>>())
                     .collect::<Option<Vec<Vec<Q>>>>()?
             }
-            Tower::Sites => super::pose::point_second_moment(b, n)?,
+            Tower::Sites => b.towers.points.as_ref()?.m.clone(),
         };
         let upper = crate::transducer::base::planes(n)
             .into_iter()

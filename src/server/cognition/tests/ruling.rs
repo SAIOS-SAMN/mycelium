@@ -45,7 +45,8 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
     let mut b = Kernel::new();
     b.bind_identity([0xb0; 32]);
     b.provisional.insert(addr.clone(), word.clone());
-    b.file_admitted(&addr, at);
+    let mut filing = b.stroke();
+    b.file_admitted(&addr, at, &mut filing);
     let heard = super::common::admit_line(&mut b, &key, &line);
     assert!(heard.iter().all(|h| matches!(h, Admitted::Parent(_))), "a's line admits whole: {heard:?}");
     assert!(!b.provisional.contains(addr.as_bytes()), "the arm applied here: the word left b's docket");
@@ -59,14 +60,16 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
     super::common::admit_line(&mut c, &key, &line);
     assert_eq!(c.clock(None).rulings[upheld], [1, 0, 1, 0], "a stamp c does not hold: the ruling waits");
     c.provisional.insert(addr.clone(), word.clone());
-    c.file_admitted(&addr, at);
+    let mut filing = c.stroke();
+    c.file_admitted(&addr, at, &mut filing);
     assert_eq!(c.clock(None).rulings[upheld], [1, 1, 0, 0], "heard when a word is filed at that stamp");
     assert!(!c.provisional.contains(addr.as_bytes()), "and applied");
 
     let mut d = Kernel::new();
     d.bind_identity([0xd0; 32]);
     d.basis_insert(word, [1; 32]);
-    d.file_admitted(&addr, at);
+    let mut filing = d.stroke();
+    d.file_admitted(&addr, at, &mut filing);
     super::common::admit_line(&mut d, &key, &line);
     assert_eq!(d.clock(None).rulings[upheld], [0; 4], "a word d holds only ruled: the arm is inert, uncounted");
 }
@@ -169,7 +172,8 @@ fn a_refused_peer_stamp_never_erases_the_courts_own() {
     let own = k.admitted_at(addr.as_bytes()).expect("the docket admitted it at an act");
     let final_before = k.final_prefix_head();
     let peer = Stamp::new(1, [0x9e; 32], crate::chronometry::Place { k: 0, i: 1 });
-    assert!(!k.file_admitted(&addr, peer), "the word stands at its own stamp: this filing placed nothing");
+    let mut filing = k.stroke();
+    assert!(!k.file_admitted(&addr, peer, &mut filing), "the word stands at its own stamp: this filing placed nothing");
     assert_eq!(k.admitted_at(addr.as_bytes()), Some(own), "and the court's own stamp is untouched");
     assert_eq!(k.unstamped(), [0; 5], "no row holds a word without a stamp");
     assert_eq!(k.final_prefix_head(), final_before, "and what was final stays final");
@@ -180,7 +184,8 @@ fn a_refused_peer_stamp_never_erases_the_courts_own() {
     let mut c = Kernel::new();
     c.bind_identity([0xc0; 32]);
     c.pending.insert(stranger.clone(), word);
-    assert!(c.file_admitted(&stranger, peer), "a word held at no stamp here takes the peer's");
+    let mut filing = c.stroke();
+    assert!(c.file_admitted(&stranger, peer, &mut filing), "a word held at no stamp here takes the peer's");
     assert_eq!(c.admitted_at(stranger.as_bytes()), Some(peer));
 }
 

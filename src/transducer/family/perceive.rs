@@ -222,6 +222,26 @@ pub fn perceive_at(grid: &Grid, k: i64) -> Vec<Body> {
     bodies_of(&compartments)
 }
 
+/// A FAMILY'S FRAMES, PERCEIVED: each pair's input bodies and output bodies,
+/// frame `k` at `k`.
+pub type Frames = Vec<(Vec<Body>, Vec<Body>)>;
+
+/// THE FAMILY'S FRAMES PERCEIVED ONCE (rule 10, ruled 2026-09-26): each
+/// frame's bodies read by its components, the one reading an extraction's
+/// stroke is sized by ([`super::extraction_spend`]) and the percept then
+/// reads, so no frame's components are read a second time to size the draw.
+pub fn perceive_family(family: &[(Grid, Grid)]) -> Frames {
+    // A family the percept memo already read is read back, not perceived.
+    if let Some(frames) = super::extract::memo_frames(family) {
+        return frames;
+    }
+    family
+        .iter()
+        .enumerate()
+        .map(|(k, (a, b))| (perceive_at(a, k as i64), perceive_at(b, k as i64)))
+        .collect()
+}
+
 /// Perceive a family's frames as bodies on `(r, c, k)`: hue-blind
 /// 6-connected components across the frames (51.3, 51.4, 70.4), the frame of each
 /// grid its place in the family.
@@ -483,8 +503,8 @@ impl DemandTally {
 /// sensor's after FR1: `Oblique` is the square base's question and the
 /// witness a Gaussian arc in that plane, so the pose over the tube
 /// ([`blade::relative_pose`]) does not replace it here.
-fn oblique_demand(a: &Body, b: &Body, chart: &Invariant) -> Option<Demanded> {
-    oblique_demanded(a, b, (&a.shape.blade, &b.shape.blade), chart)
+fn oblique_demand(a: &Body, b: &Body, chart: &Invariant, budget: &mut crate::physics::Budget) -> Option<Demanded> {
+    oblique_demanded(a, b, (&a.shape.blade, &b.shape.blade), chart, budget)
 }
 
 /// D3's DEMAND ON ONE PAIR OF BODIES, their blades given: the three gates
@@ -495,8 +515,9 @@ pub(crate) fn oblique_demanded(
     b: &Body,
     (blade_a, blade_b): (&crate::transducer::blade::Blade, &crate::transducer::blade::Blade),
     chart: &Invariant,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Demanded> {
-    let demand = oblique_rotor_prime(blade_a, blade_b)?;
+    let demand = oblique_rotor_prime(blade_a, blade_b, budget)?;
     // THE LINKS STAND UNMOVED, because nothing moved them. A chain is
     // each compartment carried by the versor and read on the image; there IS
     // no versor here, so the source's compartments keep their own hues and the
@@ -515,6 +536,7 @@ pub(crate) fn oblique_demanded(
 pub(crate) fn oblique_rotor_prime(
     blade_a: &crate::transducer::blade::Blade,
     blade_b: &crate::transducer::blade::Blade,
+    budget: &mut crate::physics::Budget,
 ) -> Option<crate::transducer::sentence::Demand> {
     use crate::transducer::alphabet::{PLANE_COL, PLANE_ROW};
     use crate::transducer::blade;
@@ -527,7 +549,7 @@ pub(crate) fn oblique_rotor_prime(
     // refusal; a refusal is counted as the kind it reads — P permanent, I
     // bodiless — and any other kind is the defect count, unclassified.
     use crate::transducer::sentence::ObstructionKind as Kind;
-    match blade::relative_rotor(blade_a, blade_b, sensor) {
+    match blade::relative_rotor(blade_a, blade_b, sensor, budget) {
         Err(blade::NoPose::Oblique) => {}
         Ok(_) => {
             note_demand(|t| t.turned += 1);
@@ -564,8 +586,12 @@ pub(crate) fn oblique_rotor_prime(
 /// Carriage of two bodies spelled as a word form (50.2 F steps 1–2), or the
 /// demand its rotor leaves: the versor measured, its rotor spelled by A22.
 /// Class is the target's chart. `None` when no versor carries `a` onto `b`.
-pub(crate) fn word_or_demand(a: &Body, b: &Body) -> Option<Result<Vertex, Demanded>> {
-    word_or_demand_on_chart(a, b, &b.moduli)
+pub(crate) fn word_or_demand(
+    a: &Body,
+    b: &Body,
+    budget: &mut crate::physics::Budget,
+) -> Option<Result<Vertex, Demanded>> {
+    word_or_demand_on_chart(a, b, &b.moduli, budget)
 }
 
 /// The same reading on a NAMED CHART (52.5): the two bodies are the union
@@ -575,8 +601,9 @@ pub(crate) fn word_or_demand_on_chart(
     a: &Body,
     b: &Body,
     chart: &Invariant,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Result<Vertex, Demanded>> {
-    let Some(car) = carriage(a, b) else {
+    let Some(car) = carriage(a, b, budget) else {
         // D3 — A PAIR NO VERSOR CARRIES IS NOT NOTHING (68, ruled
         // 2026-09-22). This was a bare `?`: no versor, no vertex, no
         // demand, relation gone. That silent `None` is where 37.7's
@@ -585,7 +612,7 @@ pub(crate) fn word_or_demand_on_chart(
         //
         // An unspellable turn is CONTENT. It is asked for by name here
         // and minted only when the geometry proves it is one.
-        return oblique_demand(a, b, chart).map(Err);
+        return oblique_demand(a, b, chart, budget).map(Err);
     };
     let chain = chain_of(Some(a), Some(b), &car.v);
     // A22 alone: this is the PERCEPT, which is what the memo holds. The
@@ -818,12 +845,13 @@ pub(crate) fn edge_transport(
     a_j: &Body,
     b_i: &Body,
     b_j: &Body,
+    budget: &mut crate::physics::Budget,
 ) -> Result<crate::transducer::sentence::Transport, Vec<EdgeRefusal>> {
     let union = |x: &Body, y: &Body| -> Shape {
         let compartments: Vec<Compartment> = x.compartments.iter().chain(y.compartments.iter()).cloned().collect();
         blade::shape_of(&sites_of(&compartments))
     };
-    let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j));
+    let members = blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget);
     // `ṽᵢ vᵢⱼ`, the edge as a ray (78.32(1)).
     crate::transducer::cga::is_versor(v_i).then_some(()).ok_or_else(|| vec![EdgeRefusal::NoReading])?;
     let inv = v_i.reverse();

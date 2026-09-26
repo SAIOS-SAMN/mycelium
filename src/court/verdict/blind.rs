@@ -11,8 +11,8 @@ use super::*;
 /// another refuses as unruled, because nothing here can resolve the
 /// citation. Hyphae replay through `blind_replay_with` and their ruled
 /// cover.
-pub fn blind_replay(spoken: &Element) -> Option<&'static str> {
-    blind_replay_with(spoken, &|_| None)
+pub fn blind_replay(spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
+    blind_replay_with(spoken, &|_| None, budget)
 }
 
 /// `blind_replay_with` plus the bound family for chapter 23.1 step 6.
@@ -21,8 +21,9 @@ pub fn blind_replay_on(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, family, crystal)
+    blind_replay_on_inner(spoken, resolve, family, crystal, budget)
 }
 
 /// The same replay, refusing WITH THE COORDINATE (50.9): a sentence is
@@ -33,11 +34,12 @@ pub fn blind_replay_at(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
     if spoken.is_sentence() && !spoken.is_rewrite() && !spoken.is_connection() {
-        return replay_form_at(spoken, resolve, family, crystal);
+        return replay_form_at(spoken, resolve, family, crystal, budget);
     }
-    blind_replay_on_inner(spoken, resolve, family, crystal).map(|reason| Refusal::of_tape(reason, spoken))
+    blind_replay_on_inner(spoken, resolve, family, crystal, budget).map(|reason| Refusal::of_tape(reason, spoken))
 }
 
 /// Deterministic re-derivation of a spoken word from its own evidence
@@ -49,8 +51,12 @@ pub fn blind_replay_at(
 /// is traversed; and an install measures something on some lane
 /// (`settle_install`). Closure is the certificate, never a measured
 /// trajectory (12.6).
-pub fn blind_replay_with(spoken: &Element, resolve: &dyn Fn(&[u8]) -> Option<Form>) -> Option<&'static str> {
-    blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal)
+pub fn blind_replay_with(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<Form>,
+    budget: &mut crate::physics::Budget,
+) -> Option<&'static str> {
+    blind_replay_on_inner(spoken, resolve, None, &crate::transducer::family::NoCrystal, budget)
 }
 
 #[expect(
@@ -62,6 +68,7 @@ pub(crate) fn blind_replay_on_inner(
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
 ) -> Option<&'static str> {
     let chain = spoken.sub();
     // A CONNECTION is a word with two components: the group component (an
@@ -89,7 +96,7 @@ pub(crate) fn blind_replay_on_inner(
     if spoken.is_sentence() {
         // The version byte selects the replayer: a v3 tape is a form and
         // is replayed through the cover; a v2 tape is refused.
-        if let Some(reason) = replay_form_with(spoken, resolve, family, crystal) {
+        if let Some(reason) = replay_form_with(spoken, resolve, family, crystal, budget) {
             return Some(reason);
         }
         // S9.4 — WHAT CERTIFIES IS CLOSURE. `replay_form_with` above is the

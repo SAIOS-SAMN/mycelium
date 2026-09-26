@@ -66,6 +66,7 @@ pub(crate) fn meet_edge(
     vb: &Vertex,
     sb: &Versor,
     supb: &crate::transducer::family::cover::Supports,
+    budget: &mut crate::physics::Budget,
 ) -> Result<crate::transducer::sentence::Transport, EdgeRefusal> {
     // `s_b s̃_a`, the relation between the two frames as a ray (78.32(1)).
     crate::transducer::cga::is_versor(sa).then_some(()).ok_or(EdgeRefusal::NoReading)?;
@@ -100,7 +101,7 @@ pub(crate) fn meet_edge(
     // never fired" and "the frame fired and was the identity" cannot read
     // the same on the line, which is the defect that let `ℓ = 1` pass as
     // a measurement of the scene.
-    let own_turn = |s: &crate::transducer::family::cover::Supports| {
+    let own_turn = |s: &crate::transducer::family::cover::Supports, budget: &mut crate::physics::Budget| {
         // The pose over the piece's tube (FR1, 72.1c): the sensor's plane
         // where domain and codomain stand in one section, every axis where
         // either extends off it.
@@ -111,9 +112,9 @@ pub(crate) fn meet_edge(
         if crate::transducer::blade::on_tube(&d, &c) {
             crate::transducer::family::cover::tally(|t| t.pose_tube += 1);
         }
-        crate::transducer::blade::relative_pose(&d, &c)
+        crate::transducer::blade::relative_pose(&d, &c, budget)
     };
-    let framed = match (own_turn(supa), own_turn(supb)) {
+    let framed = match (own_turn(supa, budget), own_turn(supb, budget)) {
         // `θ_b θ̃_a γ`: the framed relation as a ray (78.32(1)).
         (Ok(ta), Ok(tb)) => match crate::transducer::cga::is_versor(ta.rotor()).then(|| ta.rotor().reverse()) {
             Some(inv) => {
@@ -123,11 +124,11 @@ pub(crate) fn meet_edge(
                 // a projective class and not a determined rotor.
                 let open = matches!(
                     (&ta, &tb),
-                    (crate::transducer::blade::Pose::HalfOpen(_), _)
-                        | (_, crate::transducer::blade::Pose::HalfOpen(_))
+                    (crate::transducer::blade::Pose::Open180(_), _)
+                        | (_, crate::transducer::blade::Pose::Open180(_))
                 );
                 crate::transducer::family::cover::tally(|t| match open {
-                    true => t.frame_half_open += 1,
+                    true => t.frame_open_180 += 1,
                     false => t.framed += 1,
                 });
                 tb.rotor().geo(&inv).geo(&gamma)

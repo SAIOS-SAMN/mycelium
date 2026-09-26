@@ -51,7 +51,8 @@ assert_eq!(speak_pair(&mut k, &a, &gb, [4; 32]), Outcome::GermPending);
 // A's quorum lands on the recovered lane and installs — spending it back out…
 assert_eq!(speak_pair(&mut k, &a, &ga, [2; 32]), Outcome::GermPending);
 let mut cover = crate::network::nerve::Cover::new();
-let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover);
+let mut glue = k.stroke();
+let _ = k.glue_fetched(ga_spoken, [2; 32], [1; 32], &mut cover, &mut glue);
 // …so B finds the lane DEPLETED. The METABOLISM is what defers -- the
 // only thing that should gate here (E3) -- and the germ is not lost: a
 // later submission dockets it once the reserve recovers. What does NOT

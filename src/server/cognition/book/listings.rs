@@ -276,7 +276,11 @@ impl Kernel {
     /// If the fibre over `addr` names exactly one other word a versor
     /// relates, absorb the card into the bundle and pay the absorbed
     /// discoverer the condense yield. Returns the surviving address.
-    pub(crate) fn condense_on(&mut self, addr: &[u8]) -> crate::transducer::address::Address {
+    pub(crate) fn condense_on(
+        &mut self,
+        addr: &[u8],
+        budget: &mut crate::physics::Budget,
+    ) -> crate::transducer::address::Address {
         let Some(word) = self.word_at(addr).cloned() else {
             return crate::transducer::address::Address::from_bytes(addr);
         };
@@ -296,7 +300,7 @@ impl Kernel {
                         continue;
                     };
                     if crate::transducer::sentence::coboundary_gauge(&na, &nb).is_some() {
-                        survivor = self.absorb_pair(survivor, crate::transducer::address::Address::from(sib));
+                        survivor = self.absorb_pair(survivor, crate::transducer::address::Address::from(sib), budget);
                     }
                 }
                 return survivor;
@@ -312,16 +316,22 @@ impl Kernel {
                 }
             },
             &word,
+            budget,
         ) else {
             return crate::transducer::address::Address::from_bytes(addr);
         };
-        self.absorb_pair(crate::transducer::address::Address::from_bytes(addr), sib)
+        self.absorb_pair(crate::transducer::address::Address::from_bytes(addr), sib, budget)
     }
 
     /// Absorb one of `new` / `sib` into the other: a bundle keeps the
     /// fibre; two cards make the newly admitted word the bundle. Pays the
     /// absorbed discoverer. Returns the surviving address.
-    pub(crate) fn absorb_pair(&mut self, new: crate::transducer::address::Address, sib: crate::transducer::address::Address) -> crate::transducer::address::Address {
+    pub(crate) fn absorb_pair(
+        &mut self,
+        new: crate::transducer::address::Address,
+        sib: crate::transducer::address::Address,
+        budget: &mut crate::physics::Budget,
+    ) -> crate::transducer::address::Address {
         let Some(nw) = self.basis.get(&new) else {
             return new;
         };
@@ -336,7 +346,7 @@ impl Kernel {
         let (Some(from), Some(to)) = (self.basis.get(&absorbed), self.basis.get(&base)) else {
             return new;
         };
-        let Some(g) = element::transition(from.sub(), to.sub()) else {
+        let Some(g) = element::transition(from.sub(), to.sub(), budget) else {
             return new;
         };
         let Some(card) = self.basis.get(&absorbed).map(|w| w.element().clone()) else {
@@ -626,7 +636,10 @@ impl Kernel {
     /// vantage would file the peer's tape as this court's re-derivation —
     /// the same byte exactness one level down (1.7). The three sites where
     /// the word is this court's own call `section_own` by name.
-    pub(crate) fn ruled_admit(&mut self, addr: &[u8]) {
+    ///
+    /// The ruling is inside an act, and the re-hearing it wakes draws on that
+    /// act's stroke (65.5), threaded here.
+    pub(crate) fn ruled_admit(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
         // WHETHER THIS ADDRESS ACTUALLY ENTERED THE RULED COVER. The
         // re-hearing below was unconditional, and the insert is not: a
         // court asked to rule an address whose word it does not hold does
@@ -687,7 +700,7 @@ impl Kernel {
         // that ran first would find it still unruled and wait again — and
         // only where the cover actually carries it.
         if ruled {
-            self.rehear_awaiting(addr);
+            self.rehear_awaiting(addr, budget);
         }
     }
 
@@ -696,8 +709,8 @@ impl Kernel {
     /// own vantage (13.9, 13.10). The stroke's own ruling, the home's
     /// install, and an upheld verdict are the three; a peer's glued word is
     /// not one of them.
-    pub(crate) fn rule_own(&mut self, addr: &[u8]) {
-        self.ruled_admit(addr);
+    pub(crate) fn rule_own(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
+        self.ruled_admit(addr, budget);
         let Some(w) = self.word_at(addr) else { return };
         let inv = crate::transducer::stalk::invariant_of(w);
         self.section_own(&inv, &crate::transducer::address::Address::from(addr.to_vec()));

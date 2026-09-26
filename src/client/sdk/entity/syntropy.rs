@@ -185,7 +185,7 @@ impl Entity {
                 }
 
                 // Solve transition versor between sibling forms projecting to same chart
-                let Some(trans) = crate::transducer::element::transition(h2.sub(), h1.sub()) else {
+                let Some(trans) = crate::transducer::element::transition(h2.sub(), h1.sub(), &mut budget) else {
                     continue;
                 };
 
@@ -227,7 +227,10 @@ impl Entity {
         retires: &[Address],
         after: Option<&Element>,
     ) -> io::Result<[u64; 4]> {
-        let codes = self.speak(std::slice::from_ref(rw))?;
+        // The root of this act (the syntropy arm holds no stroke): one stroke
+        // for the utterance and the learning both (65.5).
+        let mut budget = self.physics.stroke();
+        let codes = self.speak(std::slice::from_ref(rw), &mut budget)?;
         if let [code, ..] = codes.as_slice() {
             if *code == dialogue::SPEECH_STOOD || *code == dialogue::SPEECH_RATIFIED {
                 for b in retires {
@@ -242,7 +245,7 @@ impl Entity {
                         None => eprintln!(
                             "  bundle rewrite: the updated section's record passes a length its field writes"
                         ),
-                        Some(record) => match self.epigenome.learn(&record) {
+                        Some(record) => match self.epigenome.learn(&record, &mut budget) {
                             Some(_) => {
                                 self.seal_word(crate::chronometry::ActKind::Learned, after_elem);
                             }

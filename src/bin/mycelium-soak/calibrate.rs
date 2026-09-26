@@ -17,7 +17,7 @@
 //! arithmetic of `Bytes`, which is a property of the code; the fleet's own
 //! numbers come from a recut and nowhere else.
 
-use mycelium::transducer::family::{extract_rule_with, extraction_spend};
+use mycelium::transducer::family::{extract_rule_on, extraction_spend, perceive_family};
 use mycelium::transducer::bytes::Bytes;
 
 fn live() -> i128 {
@@ -56,8 +56,9 @@ pub(crate) fn find_id(dir: &str, names: &[String], want: &str) {
         // the family's own size, not the id.
         let epi = mycelium::client::sdk::Epigenome::new();
         let mut physics = mycelium::physics::Physics::default();
-        let mut b = physics.stroke_n(extraction_spend(&task.train));
-        match extract_rule_with(&task.train, &epi, &mut b) {
+        let frames = perceive_family(&task.train);
+        let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
+        match extract_rule_on(&task.train, Some(&frames), &epi, &mut b) {
             Some(r) => println!(
                 "  id {hx} = {file}: {} vertices {} faces {} orbits",
                 r.form.vertices.len(),
@@ -104,8 +105,9 @@ pub(crate) fn report(dir: &str, name: &str) {
     };
     let epi = mycelium::client::sdk::Epigenome::new();
     let mut physics = mycelium::physics::Physics::default();
-    let mut b = physics.stroke_n(extraction_spend(&task.train));
-    let Some(rule) = extract_rule_with(&task.train, &epi, &mut b) else {
+    let frames = perceive_family(&task.train);
+    let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
+    let Some(rule) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else {
         eprintln!("  calibrate refused: {name} extracts no rule");
         return;
     };

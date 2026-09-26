@@ -79,7 +79,7 @@ fn the_court_refuses_a_forged_frame_axis_motor() {
         .collect();
     let [motor, ..] = motors.as_slice() else { panic!("the family's frame axis carries a motor overlap") };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
         "the measured motor carries the body across its frames"
     );
     let mut forged = rule.form.clone();
@@ -88,7 +88,7 @@ fn the_court_refuses_a_forged_frame_axis_motor() {
         let q = |n: i64| num_rational::BigRational::from_integer(n.into());
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(0), &q(1), &q(0));
     }
-    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family)
+    let refusal = crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget())
         .expect("a forged frame-axis motor is refused by application, never admitted");
     // PARALLEL TRANSPORT (A.13): the refusal carries the curvature the claim
     // missed — the transport the fibre took, against the forged motor — and
@@ -128,7 +128,7 @@ fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
         panic!("the two dominoes' chart steps between its frames: a motor overlap")
     };
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family).is_none(),
+        crate::court::verdict::body::edges_rederive_frames(&rule.form, &family, &mut super::common::budget()).is_none(),
         "the measured motor carries the chart's two bodies onto its two bodies at the next frame"
     );
     let mut forged = rule.form.clone();
@@ -138,7 +138,7 @@ fn the_court_applies_a_motor_to_a_charts_whole_fibre() {
         f.place.carriage = crate::transducer::cga::at_three::translator(&q(1), &q(0), &q(0));
     }
     assert!(
-        crate::court::verdict::body::edges_rederive_frames(&forged, &family).is_some(),
+        crate::court::verdict::body::edges_rederive_frames(&forged, &family, &mut super::common::budget()).is_some(),
         "a forged motor on a chart of two bodies is refused, never passed unread"
     );
 }
@@ -284,7 +284,7 @@ fn two_courts_reach_one_address_for_one_family() {
     for rule in [&first, &second] {
         let word = mint_sentence(rule, &family, &NoCrystal, 0).expect("the family mints");
         assert_eq!(
-            crate::verdict::blind_replay_on(&word, &|_| None, Some(&family), &NoCrystal),
+            crate::verdict::blind_replay_on(&word, &|_| None, Some(&family), &NoCrystal, &mut super::common::budget()),
             None,
             "and a court replays it on its own copy of the family"
         );
@@ -761,15 +761,18 @@ fn extract_rule_cached_spends_once_per_generation() {
 let family = vec![(grid(&["1100", "0000"]), grid(&["2200", "0000"]))];
 let fam = b"fam";
 let mut cache = ExtractMemo::new();
-let mut budget = crate::physics::Physics::default().stroke_n(8);
+// Sized the physics' way, by the family's frames, for the two extractions
+// this reads (one per atlas generation), never by a fixed number.
+let frames = perceive_family(&family);
+let mut budget = crate::physics::Physics::default().stroke_n(2 * extraction_spend(&family, &frames));
 let atlas1 = crate::transducer::address::Address::from(vec![1]);
 let atlas2 = crate::transducer::address::Address::from(vec![2]);
-let a = extract_rule_cached(&mut cache, fam, &family, atlas1.clone(), &mut budget, &NoCrystal);
+let a = extract_rule_cached(&mut cache, fam, &family, atlas1.clone(), &mut budget, &NoCrystal, Some(&frames));
 let left = budget.remaining();
-let b = extract_rule_cached(&mut cache, fam, &family, atlas1, &mut budget, &NoCrystal);
+let b = extract_rule_cached(&mut cache, fam, &family, atlas1, &mut budget, &NoCrystal, Some(&frames));
 assert_eq!(a.is_some(), b.is_some());
 assert_eq!(budget.remaining(), left, "a cache hit spends nothing");
-let _ = extract_rule_cached(&mut cache, fam, &family, atlas2, &mut budget, &NoCrystal);
+let _ = extract_rule_cached(&mut cache, fam, &family, atlas2, &mut budget, &NoCrystal, Some(&frames));
 assert!(budget.remaining() < left, "a new atlas generation re-extracts");
 }
 
@@ -799,14 +802,14 @@ fn the_extract_memo_holds_one_rule_and_a_second_family_replaces_it() {
     let mut cache = ExtractMemo::new();
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     assert_eq!(cache.len(), 0, "a memo that has read nothing holds nothing");
-    let _ = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal);
+    let _ = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal, None);
     assert_eq!(cache.len(), 1, "one family read, one rule held");
-    let _ = extract_rule_cached(&mut cache, b"two", &two, atlas.clone(), &mut budget, &NoCrystal);
+    let _ = extract_rule_cached(&mut cache, b"two", &two, atlas.clone(), &mut budget, &NoCrystal, None);
     assert_eq!(cache.len(), 1, "a second family REPLACES the first: the memo cannot grow");
     // Returning to the first is a miss. That is the cost of the bound and
     // it is stated, not hidden: the spend is the reading.
     let left = budget.remaining();
-    let back = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal);
+    let back = extract_rule_cached(&mut cache, b"one", &one, atlas.clone(), &mut budget, &NoCrystal, None);
     assert!(back.is_some(), "and it re-extracts rather than answering for the other family");
     assert!(budget.remaining() < left, "which is a spend, and the memo says so by spending it");
     // A STARVED STROKE ANSWERS FOR THIS FAMILY OR NOT AT ALL. The memo now
@@ -814,7 +817,7 @@ fn the_extract_memo_holds_one_rule_and_a_second_family_replaces_it() {
     // back `one`'s rule (rule 11).
     let mut starved = crate::physics::Physics::default().stroke_n(0);
     assert!(
-        extract_rule_cached(&mut cache, b"two", &two, atlas, &mut starved, &NoCrystal).is_none(),
+        extract_rule_cached(&mut cache, b"two", &two, atlas, &mut starved, &NoCrystal, None).is_none(),
         "a rule read for another family is not this family's answer"
     );
 }
@@ -1201,7 +1204,7 @@ fn a_mirrored_pair_mints_and_its_class_reads_derivable() {
     // The pair's transport is the reflection itself — odd — read exactly.
     let la = crate::transducer::blade::shape_of(&[(0i64, 0i64, 0i64), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let jb = crate::transducer::blade::shape_of(&[(0i64, 1i64, 0i64), (1, 1, 0), (2, 1, 0), (2, 0, 0)]);
-    let v = crate::transducer::blade::versor_between(&la, &jb).expect("a versor carries the L onto its mirror");
+    let v = crate::transducer::blade::versor_between(&la, &jb, &mut super::common::budget()).expect("a versor carries the L onto its mirror");
     assert_eq!(v.parity(), Some(true), "and it is odd: the mirror, never a turn at an angle no lattice turns");
     let form = crate::transducer::sentence::from_element_form(&word).expect("the form the court holds");
     let rotors: Vec<crate::transducer::alphabet::Rotor> = form

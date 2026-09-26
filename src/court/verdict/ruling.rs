@@ -110,6 +110,7 @@ pub fn rule(
     addr: &[u8],
     spoken: Option<&Element>,
     deflation: Option<&[u64; 4]>,
+    budget: &mut crate::physics::Budget,
 ) -> Ruling {
     let Some(spoken) = spoken else {
         return Ruling::Slashed("unparseable word");
@@ -123,7 +124,7 @@ pub fn rule(
     if deflation.is_some_and(|d| d.iter().all(|&x| x == 0)) {
         return Ruling::Slashed("no deflation on a listed demand");
     }
-    if let Some(reason) = blind_replay(spoken) {
+    if let Some(reason) = blind_replay(spoken, budget) {
         return Ruling::Slashed(reason);
     }
     match index.get(addr).and_then(|&i| federation.get(i)) {
@@ -230,7 +231,7 @@ pub fn rule(
                 };
             }
             let at = |a: &[u8]| index.get(a).and_then(|&i| federation.get(i)).map(|(_, e)| e);
-            let congruent = stalk::congruent(stalks, at, spoken).filter(|(a, _)| a.as_bytes() != addr);
+            let congruent = stalk::congruent(stalks, at, spoken, budget).filter(|(a, _)| a.as_bytes() != addr);
             match congruent.and_then(|(a, g)| index.get(&a).map(|&base| (base, g))) {
                 Some((base, g)) => Ruling::Attached { base, g },
                 None => Ruling::Admitted(spoken.clone()),

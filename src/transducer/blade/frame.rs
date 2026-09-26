@@ -124,7 +124,7 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Hand
 /// plane with a carriage, and a body's orientation with its placement is
 /// its POSE).
 ///
-/// `Turn` is a rotor the SUPPORT confirmed. `HalfOpen` is one the even
+/// `Turn` is a rotor the SUPPORT confirmed. `Open180` is one the even
 /// moments fixed only mod `π`: `u` and `h₄` satisfy `u(−x) = u(x)`, so no
 /// even-rank moment distinguishes `φ` from `φ + π`, and where the two
 /// bodies differ in cardinality — a transmuted carry — no compartment test can
@@ -147,7 +147,7 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Hand
 pub enum Pose {
     Turn(Mv),
     /// The candidates, in the reader's own order; never fewer than two.
-    HalfOpen(Vec<Mv>),
+    Open180(Vec<Mv>),
 }
 
 impl Pose {
@@ -158,7 +158,7 @@ impl Pose {
     pub fn rotor(&self) -> &Mv {
         match self {
             Pose::Turn(r) => r,
-            Pose::HalfOpen(c) => &c[0],
+            Pose::Open180(c) => &c[0],
         }
     }
 }
@@ -247,6 +247,11 @@ pub enum NoPose {
     /// null step — no reflection exists there, so no versor is built of it.
     /// Carried by name, never assumed away.
     NullStep,
+    /// THE STROKE WAS SPENT before every candidate was read (65.5, rule 10):
+    /// each candidate a transition verifies draws one read from the stroke,
+    /// and a short stroke is this typed cut — never a silent overrun, and
+    /// never a claim about the pair, which a longer stroke reads.
+    Unbounded,
 }
 
 /// WHERE TWO SHAPES DISAGREE (78.38(2), (C)): where neither similarity of the
@@ -277,7 +282,8 @@ impl NoPose {
             }
             NoPose::Oblique => Some(ObstructionKind::D),
             NoPose::Bodiless => Some(ObstructionKind::I),
-            NoPose::Unoriented => None,
+            // A cut by the stroke is no reading of the pair at all.
+            NoPose::Unoriented | NoPose::Unbounded => None,
         }
     }
 }
@@ -396,7 +402,12 @@ pub fn oblique_arc(a: &Blade, b: &Blade, plane: (usize, usize)) -> Option<(BigIn
 /// relation between two bodies turns across — the pose over their tubes —
 /// is [`super::relative_pose`]'s reading (FR1); this answers one plane, and
 /// is what the pose reads where both bodies stand in one section.
-pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pose, NoPose> {
+pub fn relative_rotor(
+    a: &Blade,
+    b: &Blade,
+    plane: (usize, usize),
+    budget: &mut crate::physics::Budget,
+) -> Result<Pose, NoPose> {
     if a.support.is_empty() || b.support.is_empty() {
         return Err(NoPose::Bodiless);
     }
@@ -421,7 +432,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // and cannot tell `φ` from `φ + π`; the odd harmonic `h₃` does, and the
     // verification carries it, so where the body has one exactly one of the
     // pair carries. Where `h₃ = 0` the body has 2-fold symmetry, both carry,
-    // and `HalfOpen` is the honest reading — the `ℤ₂` gauge freedom the
+    // and `Open180` is the honest reading — the `ℤ₂` gauge freedom the
     // coboundary arbitrates, never a sign chosen per edge.
     //
     // A PAIR IS READ ORIENTATION-REVERSED ONLY WHERE NO TURN CARRIES IT (AL1
@@ -432,7 +443,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     //
     // THE POSE IS THE ROTATION; the residue a fit leaves above its order is
     // the transition's (`transitions_between`), read there with its versor.
-    let members = super::carry::transitions_on(a, b, plane, fit)?;
+    let members = super::carry::transitions_on(a, b, plane, fit, budget)?;
     let (turns, mirrors): (Vec<Mv>, Vec<Mv>) =
         members.into_iter().map(|t| t.rotation).partition(|r| r.parity() == Some(false));
     let read = match turns.is_empty() {
@@ -447,7 +458,7 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
         // a demand retires (D3).
         [] => Err(unturned(a, b, plane, tower, certified)),
         [one] => Ok(Pose::Turn(one.clone())),
-        _ => Ok(Pose::HalfOpen(read)),
+        _ => Ok(Pose::Open180(read)),
     }
 }
 

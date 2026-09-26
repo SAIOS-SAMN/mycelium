@@ -52,6 +52,11 @@ pub struct Blade {
     /// The body's support — the sites its compartments stand at, sorted (Vec,
     /// not a set). The stack, never its shadow (51.3).
     pub support: Vec<Site>,
+    /// 𝒮 refinement — THE TWO TOWERS ([`super::tower::Towers`]), read once by
+    /// the lift from the same compartments (A.11): every plane's harmonics on
+    /// the rounds and on the points, and the point tower. What every relation
+    /// between bodies reads, so no reader re-reads the compartments.
+    pub towers: super::tower::Towers,
 }
 
 impl Blade {
@@ -387,14 +392,18 @@ pub fn lift(comp: &[Compartment]) -> Blade {
     support.sort_unstable();
     support.dedup();
 
-    Blade {
+    let mut blade = Blade {
         spatial,
         inertia,
         quartic,
         gauge,
         shell: n_q,
         support,
-    }
+        towers: super::tower::Towers::default(),
+    };
+    // THE TOWERS, read once, from what the lift has just read (A.11).
+    blade.towers = super::tower::read_towers(&blade);
+    blade
 }
 
 /// The connected components of a scene on the sites of the base, as

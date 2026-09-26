@@ -59,10 +59,11 @@ let residual = vec![(0i64, 0i64, 1u8, 2u8)];
 let next = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 3, 4)];
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("cite-stood"));
 assert!(
-    entity.epigenome.express(&residual, 1, 1),
+    entity.epigenome.express(&residual, 1, 1, &mut super::common::budget()),
     "the residual stands in the dialect"
 );
-let (cites, _rem) = entity.cite(&next);
+let mut b = entity.stroke();
+let (cites, _rem) = entity.cite(&next, &mut b);
 assert!(
     cites.iter().any(|c| c.standing == Standing::Stood.as_u8()),
     "the stood residual is cited with standing Stood, got {cites:?}"
@@ -70,13 +71,15 @@ assert!(
 
 let mut held = Entity::open("127.0.0.1:1", Kernel::named("cite-held"));
 held.hold_chain(residual.clone());
-let (self_cites, self_rem) = held.cite(&residual);
+let mut b = held.stroke();
+let (self_cites, self_rem) = held.cite(&residual, &mut b);
 assert!(
     self_cites.is_empty(),
     "a remainder is not a citation of itself, got {self_cites:?}"
 );
 assert_eq!(self_rem, residual, "the remainder stays the residual");
-let (cites, _rem) = held.cite(&next);
+let mut b = held.stroke();
+let (cites, _rem) = held.cite(&next, &mut b);
 assert!(
     cites.iter().any(|c| c.standing == Standing::Held.as_u8()),
     "the held remainder is cited with standing Held, got {cites:?}"
@@ -107,7 +110,8 @@ let [Vertex::Word { address: vertex, .. }] = on_chart.as_slice() else {
     panic!("one Word vertex on the recoloured body's chart, got {on_chart:?}");
 };
 let vertex = vertex.clone();
-let (cites, residual) = entity.cite(&listing);
+let mut b = entity.stroke();
+let (cites, residual) = entity.cite(&listing, &mut b);
 assert_eq!(cites.len(), 1, "one held word deflates the listing, got {cites:?}");
 assert_eq!(cites[0].standing, Standing::Held.as_u8(), "with standing Held");
 assert_eq!(cites[0].addr, vertex, "and it is the vertex's address: the word");
@@ -173,7 +177,8 @@ let family = vec![
 let rule = extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("rule");
 let (mag, rems) = form_deflation(&rule.form, &family, &NoCrystal);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("withhold"));
-entity.withhold_form(rule.form.clone(), &family, &rems, mag);
+let mut b = entity.stroke();
+entity.withhold_form(rule.form.clone(), &family, &rems, mag, &mut b);
 assert!(entity.dialect_len() >= 1, "the withheld form stands, dialect {}", entity.dialect_len());
 assert!(entity.ideas_len() >= 1, "and is held as an idea");
 assert_eq!(entity.uttered_n(), 0, "nothing is uttered for a remainder, taught_up {}", entity.uttered_n());

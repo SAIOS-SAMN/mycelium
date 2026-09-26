@@ -26,21 +26,21 @@ fn the_ruling_maps_the_federation_correctly() {
     let addr = w.address();
     // Empty federation: new geometry admits — the sealed element is
     // the arm's payload, not a flag.
-    match rule(&[], &Keyed::new(), &Stalks::default(), addr.as_bytes(), Some(&w), None) {
+    match rule(&[], &Keyed::new(), &Stalks::default(), addr.as_bytes(), Some(&w), None, &mut super::common::budget()) {
         Ruling::Admitted(sealed) => assert_eq!(sealed.address(), addr),
         other => panic!("new geometry must admit, got {other:?}"),
     }
     // Same address, same substance: consilience (no re-admission).
     let fed = vec![(addr.clone(), w.clone())];
     let stalks = stalks_of(&fed);
-    assert!(matches!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None), Ruling::Consilient(_)));
-    assert_eq!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None).code(), dialogue::RULING_UPHELD);
+    assert!(matches!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None, &mut super::common::budget()), Ruling::Consilient(_)));
+    assert_eq!(rule(&fed, &index_of(&fed), &stalks, addr.as_bytes(), Some(&w), None, &mut super::common::budget()).code(), dialogue::RULING_UPHELD);
     // Different address, identical base geometry: attached (+axis) by
     // the identity transport.
     let mut other_bytes = addr.as_bytes().to_vec();
     other_bytes[0] ^= 0xFF;
     let other = crate::transducer::address::Address::new(other_bytes);
-    match rule(&fed, &index_of(&fed), &stalks, other.as_bytes(), Some(&w), None) {
+    match rule(&fed, &index_of(&fed), &stalks, other.as_bytes(), Some(&w), None, &mut super::common::budget()) {
         Ruling::Attached { base: 0, g } => {
             assert!(element::same_versor(&g, &element::identity_versor()), "the identity transport")
         }
@@ -53,7 +53,7 @@ fn the_ruling_maps_the_federation_correctly() {
     let rotated = from_canonical(
         &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
     );
-    match rule(&fed, &index_of(&fed), &stalks,&rotated.address(), Some(&rotated), None) {
+    match rule(&fed, &index_of(&fed), &stalks,&rotated.address(), Some(&rotated), None, &mut super::common::budget()) {
         Ruling::Attached { base: 0, g } => {
             assert!(!element::same_versor(&g, &element::identity_versor()), "the transport rotates")
         }
@@ -63,5 +63,5 @@ fn the_ruling_maps_the_federation_correctly() {
         &germinate(&[(0, 0, 1u8), (0, 1, 1), (1, 0, 1)], &[(0, 0, 2u8), (0, 1, 2), (1, 0, 2)])
             .unwrap(),
     );
-    assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&bent.address(), Some(&bent), None), Ruling::Admitted(_)));
+    assert!(matches!(rule(&fed, &index_of(&fed), &stalks,&bent.address(), Some(&bent), None, &mut super::common::budget()), Ruling::Admitted(_)));
 }

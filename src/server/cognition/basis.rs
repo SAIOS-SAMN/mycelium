@@ -427,17 +427,18 @@ impl Kernel {
     /// read back through `live_slot` and defaulted to 0 when the snapshot
     /// lagged the carrier -- slot 0 is a real word, and it is not this one.
     /// No caller read either return (rule 11).
-    pub(crate) fn basis_push(&mut self, word: Element, discoverer: [u8; 32]) {
+    pub(crate) fn basis_push(&mut self, word: Element, discoverer: [u8; 32], budget: &mut crate::physics::Budget) {
         let addr = word.address();
         self.basis_insert(word, discoverer);
-        self.syntropic_on_admit(addr);
+        self.syntropic_on_admit(addr, budget);
     }
 
     /// Path 2 at admit: the atlas names the sibling a versor relates, the
     /// stratum names a word the new generator derives. Fallback consolidate
-    /// still walks the cursor when these reads are empty.
-    pub(crate) fn syntropic_on_admit(&mut self, addr: Address) {
-        let survivor = self.condense_on(&addr);
+    /// still walks the cursor when these reads are empty. On the stroke of
+    /// the act that admits the word (65.5): every caller is inside one.
+    pub(crate) fn syntropic_on_admit(&mut self, addr: Address, budget: &mut crate::physics::Budget) {
+        let survivor = self.condense_on(&addr, budget);
         self.refine_stratum(&survivor);
         self.holonomy_orbit(&survivor);
         self.drain_unreachable();
@@ -654,8 +655,10 @@ impl Kernel {
     pub fn glue_local(&mut self) {
         let words: Vec<Element> = self.provisional.scoped().map(|(_, e)| e.clone()).collect();
         let mut cover = crate::network::nerve::Cover::new();
+        // The fixture's act: its root, one stroke.
+        let mut budget = self.physics.stroke();
         for w in words {
-            let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover);
+            let _ = self.glue_fetched(w, [2; 32], [1; 32], &mut cover, &mut budget);
         }
     }
 
@@ -667,8 +670,10 @@ impl Kernel {
     #[cfg(test)]
     pub(crate) fn rule_all_provisionals(&mut self) {
         let addrs: Vec<Vec<u8>> = self.provisional.scoped().map(|(a, _)| a).collect();
+        // The fixture's act: its root, one stroke.
+        let mut budget = self.physics.stroke();
         for a in addrs {
-            self.ruled_admit(&a);
+            self.ruled_admit(&a, &mut budget);
         }
     }
 

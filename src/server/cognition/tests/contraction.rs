@@ -78,7 +78,9 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     let task = task_of(&f_1);
     let mut k = court(1, &task, f_1);
     let voice = [5u8; 32];
-    let first = k.hear_speech(voice, task.as_bytes(), &[(s.clone(), None)]).expect("heard");
+    // Each speech frame is its own act: its root, one stroke.
+    let mut frame = k.stroke();
+    let first = k.hear_speech(voice, task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
     let [Adjudication::Refused { kind, at, receipt }] = first.as_slice() else {
         panic!("the second word does not carry its body on the court's family, got {first:?}");
     };
@@ -98,8 +100,9 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     // A FORGED CITATION: another sentence citing the receipt is not the
     // contraction at the coordinate.
     let other = sentence_over(&[(digits(&["11"]), digits(&["22"]))]);
+    let mut frame = k.stroke();
     let forged = k
-        .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))])
+        .hear_speech(voice, task.as_bytes(), &[(other.clone(), Some(certificate.clone()))], &mut frame)
         .expect("heard");
     assert!(
         matches!(forged.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
@@ -108,8 +111,9 @@ fn the_court_verifies_a_contraction_before_it_replays_the_sentence() {
     // THE HONEST ONE is verified and then replayed as a sentence: what the
     // court finds next is the sentence's own business, never the
     // contraction's.
+    let mut frame = k.stroke();
     let second = k
-        .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))])
+        .hear_speech(voice, task.as_bytes(), &[(contracted, Some(certificate))], &mut frame)
         .expect("heard");
     assert!(
         !matches!(second.as_slice(), [Adjudication::Refused { kind: RefusalKind::MalformedComplex, .. }]),
@@ -153,8 +157,9 @@ fn two_courts_of_distinct_identity_reach_one_standing_through_the_codec() {
         };
         match first {
             Adjudication::Refused { kind, at, receipt } => {
+                let mut b = voice.stroke();
                 assert_eq!(
-                    voice.receive_adjudication(&utter, *kind, at.clone(), *receipt, &f_v, task.as_bytes()),
+                    voice.receive_adjudication(&utter, *kind, at.clone(), *receipt, &f_v, task.as_bytes(), &mut b),
                     Contracted::Moved,
                     "the refusal contracts: {kind:?} at {}",
                     at.label()

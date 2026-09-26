@@ -80,8 +80,9 @@ fn the_production_budget_reads_a_family_end_to_end() {
         (grid(&["0000", "1100"]), grid(&["0000", "0011"])),
     ];
     let mut ph = crate::physics::Physics::default();
-    let mut sized = ph.stroke_n(crate::transducer::family::extraction_spend(&family));
-    let rule = extract_rule_with(&family, &NoCrystal, &mut sized)
+    let frames = perceive_family(&family);
+    let mut sized = ph.stroke_n(crate::transducer::family::extraction_spend(&family, &frames));
+    let rule = extract_rule_on(&family, Some(&frames), &NoCrystal, &mut sized)
         .expect("a family the mesh hands over is a family that can be measured");
     assert_eq!(
         rule.form.demand_vertices().count(),
@@ -89,7 +90,7 @@ fn the_production_budget_reads_a_family_end_to_end() {
         "the sized budget reaches the end of the bundle: nothing is left asking"
     );
     assert!(
-        crate::transducer::family::extraction_spend(&family)
+        crate::transducer::family::extraction_spend(&family, &frames)
             > crate::physics::Physics::default().stroke().remaining(),
         "and it is larger than the fixed spend unit that could not reach one pair"
     );
@@ -114,7 +115,7 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
     let root = crate::transducer::address::Address::new(Vec::new());
     let mut small = ph.stroke_n(2);
     let partial =
-        extract_rule_cached(&mut cache, b"fam", &family, root.clone(), &mut small, &NoCrystal)
+        extract_rule_cached(&mut cache, b"fam", &family, root.clone(), &mut small, &NoCrystal, None)
             .expect("the small budget says what it measured");
     assert!(
         partial.form.demand_vertices().next().is_some(),
@@ -123,7 +124,7 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
     // THE SECOND STROKE READS THE CACHE, not the family: the language has
     // not moved, so there is nothing more to spell, and no work is redone.
     let mut again = ph.stroke_n(1 << 20);
-    let held = extract_rule_cached(&mut cache, b"fam", &family, root, &mut again, &NoCrystal)
+    let held = extract_rule_cached(&mut cache, b"fam", &family, root, &mut again, &NoCrystal, None)
         .expect("the cached partial stands");
     assert_eq!(
         again.remaining(),
@@ -134,7 +135,7 @@ fn a_partial_extraction_is_cached_and_advances_when_the_language_moves() {
     // THE LANGUAGE MOVES, so the extraction runs again and reaches further.
     let moved = crate::transducer::address::Address::new(vec![9u8]);
     let mut large = ph.stroke_n(1 << 20);
-    let whole = extract_rule_cached(&mut cache, b"fam", &family, moved, &mut large, &NoCrystal)
+    let whole = extract_rule_cached(&mut cache, b"fam", &family, moved, &mut large, &NoCrystal, None)
         .expect("a moved atlas re-reads the family");
     assert_eq!(
         whole.form.demand_vertices().count(),

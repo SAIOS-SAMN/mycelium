@@ -45,3 +45,7 @@ pub fn pythag5() -> Rotor {
     let id = crate::transducer::alphabet::LetterId::pythagorean_5((0, 1)).unwrap();
     crate::transducer::alphabet::Word::from_letters(&[(id, false)]).rotor()
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

@@ -26,7 +26,7 @@ assert_eq!(entity.epigenome.genome_len(), 2, "two ruled words");
 // M2) on the same chart, so the deconstruction reaches it by a versor. The
 // mind expresses the residual and it stands in the dialect (24.3).
 let bar = [(5i64, 5i64, 3u8, 4u8), (6, 5, 3, 4)];
-assert!(entity.epigenome.express(&bar, 1, 1), "the residual is claimed and stands");
+assert!(entity.epigenome.express(&bar, 1, 1, &mut super::common::budget()), "the residual is claimed and stands");
 assert_eq!(entity.dialect_len(), 1, "it stands in the dialect, not the genome");
 // The second genome word deconstructs on the working atlas through the
 // STOOD word alone. The claim used to be spelled `c.word >= 2` — "its
@@ -35,7 +35,7 @@ assert_eq!(entity.dialect_len(), 1, "it stands in the dialect, not the genome");
 // itself is that the cited word is one the genome does not hold, and at a
 // coordinate that is what it says.
 let w2_addr = w2.address();
-let located = entity.epigenome.locate(w2.sub(), Some(w2_addr.as_bytes()));
+let located = entity.epigenome.locate(w2.sub(), Some(w2_addr.as_bytes()), &mut super::common::budget());
 assert!(
     located
         .cites

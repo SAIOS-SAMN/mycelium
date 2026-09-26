@@ -120,7 +120,7 @@ impl Entity {
     /// address is the chain's own key is passed over, since deconstruction
     /// reads other words, never the chain under locate. A citation is a use
     /// (45.4): a stood word cited here is touched at the mind's own K.
-    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)]) -> Cited {
+    pub fn cite(&mut self, chain: &[(i64, i64, u8, u8)], budget: &mut crate::physics::Budget) -> Cited {
         // The chain's own key, a listing key (17.2): the one address the
         // held stratum does not answer with.
         // A chain with no A5 form cites nothing and stands whole as the
@@ -138,12 +138,15 @@ impl Entity {
             w.dedup();
             w
         };
+        // The caller's stroke reads the citation (65.5).
         let contemplation = &self.contemplation;
-        let held_at = |inv: &crate::transducer::stalk::Invariant, piece: &[(i64, i64, u8, u8)]| {
+        let held_at = |inv: &crate::transducer::stalk::Invariant,
+                       piece: &[(i64, i64, u8, u8)],
+                       budget: &mut crate::physics::Budget| {
             contemplation
                 .held_at(inv)
                 .into_iter()
-                .filter_map(|v| crate::transducer::sentence::vertex_cites(v, piece))
+                .filter_map(|v| crate::transducer::sentence::vertex_cites(v, piece, budget))
                 // A REMAINDER IS NOT A CITATION OF ITSELF, and what says so
                 // is the BODY the cite reconstructs (L6: "a cite IS the
                 // body it reconstructs"), not the vertex's name.
@@ -163,7 +166,7 @@ impl Entity {
                 })
                 .collect::<Vec<_>>()
         };
-        let located = self.epigenome.locate_on(chain, None, &held_at);
+        let located = self.epigenome.locate_on(chain, None, &held_at, budget);
         let word_of = |a: &[u8]| -> Option<&Element> {
             self.epigenome.working_word(a).map(|h| h.element())
         };
@@ -252,7 +255,10 @@ impl Entity {
         &mut self,
         chain: &[(i64, i64, u8, u8)],
     ) -> crate::client::sdk::Concluded {
-        let (cites, residual) = self.cite(chain);
+        // The root of this act (no caller holds a stroke): one stroke for
+        // the citation and the expression both (65.5).
+        let mut budget = self.physics.stroke();
+        let (cites, residual) = self.cite(chain, &mut budget);
         // 24.2: a residual that raised a lane, or moved nothing at all, is
         // held as thought and never spoken. The reading says which case.
         let reading = residual_move(&residual, chain);
@@ -264,7 +270,7 @@ impl Entity {
         }
         let familiar = !self
             .epigenome
-            .express(&residual, self.session.voice().k(), self.now_tu());
+            .express(&residual, self.session.voice().k(), self.now_tu(), &mut budget);
         Concluded { cites, residual, familiar }
     }
 
@@ -307,8 +313,8 @@ impl Entity {
 
     /// SPEAK sentences as one act, bound to no family and no task: a word
     /// spoken for itself (an axis germ, a crystallized idea).
-    pub fn speak(&mut self, sentences: &[Element]) -> io::Result<Vec<u8>> {
-        self.speak_with(sentences, &[], &[])
+    pub fn speak(&mut self, sentences: &[Element], budget: &mut crate::physics::Budget) -> io::Result<Vec<u8>> {
+        self.speak_with(sentences, &[], &[], budget)
     }
 
     /// SPEAK a family's cohering sentences as one act, naming the task so
@@ -326,6 +332,7 @@ impl Entity {
         sentences: &[Element],
         train: &crate::transducer::family::Family,
         task: &[u8],
+        budget: &mut crate::physics::Budget,
     ) -> io::Result<Vec<u8>> {
         if sentences.is_empty() {
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "no sentence"));
@@ -402,7 +409,7 @@ impl Entity {
         for (j, &i) in fresh.iter().enumerate() {
             match adjudicated.get(j) {
                 Some(dialogue::Adjudication::Refused { kind, at, receipt }) => {
-                    self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task);
+                    self.receive_adjudication(&sentences[i], *kind, at.clone(), *receipt, train, task, budget);
                 }
                 // 21 step 3: the court has not ruled a form this sentence
                 // cited. Nothing is sealed — this is not a refusal — and
@@ -462,7 +469,7 @@ impl Entity {
 
     /// SPEAK A WORD as a one-sentence family. The word enters the dialect
     /// when it stands; the genome receives it only from the syllabus.
-    pub fn speak_word(&mut self, word: &Element) -> io::Result<Utterance> {
+    pub fn speak_word(&mut self, word: &Element, budget: &mut crate::physics::Budget) -> io::Result<Utterance> {
         // A thought that still has a remainder is work, not a message: the
         // wire never carries ∂g. A word with a chain is held, not uttered.
         if let [_, ..] = word.sub() {
@@ -480,7 +487,7 @@ impl Entity {
             return Ok(Utterance::Already);
         }
         let bytes = word.to_bytes();
-        let codes = self.speak(std::slice::from_ref(word))?;
+        let codes = self.speak(std::slice::from_ref(word), budget)?;
         self.file_taught(word);
         let _ = (voice, bytes, addr);
         // ONE SENTENCE WAS SENT, so the reply is one code — the slice says

@@ -14,3 +14,7 @@ pub fn elem_from_versor(v: Versor) -> Element {
     e.action.spatial = Some(v);
     e
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

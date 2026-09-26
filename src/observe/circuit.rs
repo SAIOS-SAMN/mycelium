@@ -54,7 +54,7 @@ pub enum TestArm {
     OtherPairs,
     /// `NotRigid`: the tether carrier `g = (θ_bθ_a⁻¹)·V` (BQ5a).
     Tether,
-    /// `Unrefracted`, half-open: the coset edge (78.6(1)).
+    /// `Unrefracted`, open-180°: the coset edge (78.6(1)).
     Coset,
     /// `Unrefracted`, static: `V` with the refraction static (78.6(2)).
     Static,

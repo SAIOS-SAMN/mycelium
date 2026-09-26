@@ -207,7 +207,8 @@ fn a_syllabus_page_served_seals_a_receipt() {
 fn an_install_seals_a_receipt_at_the_installed_address() {
     let (mut k, addr) = docketed([0x5c; 32]);
     let before = k.chain().own_len();
-    k.home_install(&addr, [0xbb; 32]);
+    let mut install = k.stroke();
+    k.home_install(&addr, [0xbb; 32], &mut install);
     assert_eq!(k.chain().own_len(), before + 1, "an install is one step");
     let at = k.admitted_at(addr.as_bytes()).expect("the installed word keeps its admitting stamp");
     assert!(

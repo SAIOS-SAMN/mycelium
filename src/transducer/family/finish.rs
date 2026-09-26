@@ -32,8 +32,13 @@ pub(crate) fn germ_of_pair(a: &Grid, b: &Grid) -> Option<crate::transducer::elem
     crate::transducer::element::place_chain(&cochain)
 }
 
-/// The spend one extraction of this family is sized by (rule 10, L8w).
-pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
+/// The spend one extraction of this family is sized by (rule 10, L8w, ruled
+/// 2026-09-26): what the extraction reads — every cell of every frame, and
+/// for each pair of frames the transitions its bodies may be related by, at
+/// most [`crate::transducer::blade::CANDIDATES_PER_PAIR`] candidates per pair
+/// of bodies — read off the frames perceived ONCE ([`perceive_family`]), so
+/// no frame's components are read a second time to size the draw.
+pub fn extraction_spend(family: &[(Grid, Grid)], frames: &super::perceive::Frames) -> usize {
     let mut n = 0usize;
     for (a, b) in family {
         for g in [a, b] {
@@ -42,6 +47,16 @@ pub fn extraction_spend(family: &[(Grid, Grid)]) -> usize {
             let next = n.saturating_add(h * w);
             n = next;
         }
+    }
+    for (ins, outs) in frames {
+        // Ordered pairs, a body with itself among them: a transition is read
+        // in either direction and against the body's own symmetry.
+        let bodies = ins.len() + outs.len();
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the body pairs of resident frames times a fixed candidate bound cannot pass a 64-bit usize")]
+        let reads = bodies.saturating_mul(bodies).saturating_mul(crate::transducer::blade::CANDIDATES_PER_PAIR);
+        #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): the reads of resident frames cannot sum past a 64-bit usize")]
+        let next = n.saturating_add(reads);
+        n = next;
     }
     n
 }

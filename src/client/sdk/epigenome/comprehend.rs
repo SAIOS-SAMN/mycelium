@@ -50,7 +50,7 @@ impl Epigenome {
     /// projective mathematics, `cognition::decompose_over`) and fold the
     /// understanding into the epigenome — expression weights rise on the cited
     /// words, the sentence joins the recollections. The genome is untouched.
-    pub fn comprehend(&mut self, utterance: &Element) -> Comprehension {
+    pub fn comprehend(&mut self, utterance: &Element, budget: &mut crate::physics::Budget) -> Comprehension {
         // A taught sentence is re-derived as a form: vertices, faces, orbits.
         // Understanding is re-deriving its cochain, not matching its bytes.
         if utterance.is_sentence() {
@@ -202,7 +202,7 @@ impl Epigenome {
         }
         // Located through the atlas and the versor, never searched. A taught
         // word is one piece: one stroke locates it.
-        let located = self.locate(utterance.sub(), None);
+        let located = self.locate(utterance.sub(), None, budget);
         // The remainder decides: no residual and no fiber to deepen is the
         // understood arm; anything left over is the novelty, measured.
         match (located.residual.len(), located.punctures.len()) {
@@ -315,11 +315,17 @@ impl Epigenome {
     /// what is already held, then bank it in the genome if it is new (by base
     /// address). Inheritance, not local invention: only taught words enter.
     /// Tests without a voice; a live mind uses [`learn_at`] with K and tu.
-    pub fn learn(&mut self, taught: &[u8]) -> Option<Comprehension> {
-        self.learn_at(taught, 0, 0)
+    pub fn learn(&mut self, taught: &[u8], budget: &mut crate::physics::Budget) -> Option<Comprehension> {
+        self.learn_at(taught, 0, 0, budget)
     }
 
-    pub fn learn_at(&mut self, taught: &[u8], k: u64, now_tu: u64) -> Option<Comprehension> {
+    pub fn learn_at(
+        &mut self,
+        taught: &[u8],
+        k: u64,
+        now_tu: u64,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<Comprehension> {
         // The syllabus may carry several words back to back (every anchored
         // citation of a sentence): each is learned in turn; the first
         // comprehension is returned.
@@ -327,7 +333,7 @@ impl Epigenome {
         let mut first: Option<Comprehension> = None;
         while pos < taught.len() {
             let before = pos;
-            let heard = self.learn_one(taught, &mut pos, k, now_tu);
+            let heard = self.learn_one(taught, &mut pos, k, now_tu, budget);
             if pos == before {
                 break;
             }
@@ -345,7 +351,14 @@ impl Epigenome {
         first
     }
 
-    pub(crate) fn learn_one(&mut self, taught: &[u8], pos: &mut usize, k: u64, now_tu: u64) -> Option<Comprehension> {
+    pub(crate) fn learn_one(
+        &mut self,
+        taught: &[u8],
+        pos: &mut usize,
+        k: u64,
+        now_tu: u64,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<Comprehension> {
         let e = Element::from_bytes(taught, pos)?;
         let addr = e.address();
         let resolve = |a: &[u8]| {
@@ -353,7 +366,7 @@ impl Epigenome {
             // a citation resolved twice parses the tape once.
             self.working_word(a).and_then(|e| e.form().cloned())
         };
-        match crate::verdict::blind_replay_with(&e, &resolve) {
+        match crate::verdict::blind_replay_with(&e, &resolve, budget) {
             Some(crate::verdict::REFUSE_GLUED_UNRULED)
             | Some(crate::verdict::REFUSE_GLUED_DEPTH) => {}
             Some(_) => {
@@ -375,7 +388,7 @@ impl Epigenome {
             self.refused += 1;
             return None;
         }
-        let heard = self.comprehend(&e);
+        let heard = self.comprehend(&e, budget);
         if let Comprehension::Withheld { missing } = &heard {
             let missing = missing.clone();
             if let Some(da) = self.stand_dialect_at(e, k, now_tu) {
@@ -439,7 +452,7 @@ impl Epigenome {
             }
             None => self.admit_word(held, 0),
         }
-        self.resolve_withheld(&arrived);
+        self.resolve_withheld(&arrived, budget);
         Some(heard)
     }
 
@@ -468,7 +481,7 @@ impl Epigenome {
 
     /// A cited tape that just arrived: withheld sentences naming it
     /// re-comprehend. The waiting-on index is the read.
-    pub(crate) fn resolve_withheld(&mut self, arrived: &Element) {
+    pub(crate) fn resolve_withheld(&mut self, arrived: &Element, budget: &mut crate::physics::Budget) {
         let addr = arrived.address();
         let citing: Vec<Vec<u8>> = match self.waiting_on.remove(&addr) {
             // `waiting_on.remove(&addr)` is the read by the key: these are the
@@ -489,7 +502,7 @@ impl Epigenome {
                 Some(d) => d.missing.clone(),
                 None => Vec::new(),
             };
-            let heard = self.comprehend(&sentence);
+            let heard = self.comprehend(&sentence, budget);
             match heard {
                 Comprehension::Withheld { missing } => {
                     for m in &old_missing {

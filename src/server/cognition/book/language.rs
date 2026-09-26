@@ -210,7 +210,8 @@ impl Kernel {
         let gens = (self.basis_gen, self.book_gen);
         if (self.closure.0, self.closure.1) != gens {
             let language = self.language();
-            let measured = rank_over(&language, &self.pending, &self.closure.2, gens.0, &self.chart_listings);
+            let mut budget = self.physics.stroke();
+            let measured = rank_over(&language, &self.pending, &self.closure.2, gens.0, &self.chart_listings, &mut budget);
             self.closure = (gens.0, gens.1, std::sync::Arc::new(measured));
         }
         std::sync::Arc::clone(&self.closure.2)

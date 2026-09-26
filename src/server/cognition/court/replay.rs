@@ -25,18 +25,27 @@ impl Kernel {
             Some(v) => v,
             None => self.identity,
         };
-        self.apply_verdict_by(addr, ruling, ruler)
+        // THE ACT'S ROOT (65.5): the verdict handed in is one act, one stroke.
+        let mut budget = self.physics.stroke();
+        self.apply_verdict_by(addr, ruling, ruler, &mut budget)
     }
 
     /// The verdict applied as authored by `ruler`: the court whose ruling
     /// this is — a peer's, where its Ruling receipt was admitted here (EC1).
-    pub(crate) fn apply_verdict_by(&mut self, addr: &[u8], ruling: u8, ruler: [u8; 32]) -> bool {
-        let landed = self.rule_on(addr, ruling, ruler);
+    /// On the stroke of the act that applies it (65.5).
+    pub(crate) fn apply_verdict_by(
+        &mut self,
+        addr: &[u8],
+        ruling: u8,
+        ruler: [u8; 32],
+        budget: &mut crate::physics::Budget,
+    ) -> bool {
+        let landed = self.rule_on(addr, ruling, ruler, budget);
         self.forget_if_unheld(addr);
         landed
     }
 
-    fn rule_on(&mut self, addr: &[u8], ruling: u8, ruler: [u8; 32]) -> bool {
+    fn rule_on(&mut self, addr: &[u8], ruling: u8, ruler: [u8; 32], budget: &mut crate::physics::Budget) -> bool {
         use crate::anastome::dialogue::{RULING_SLASHED, RULING_UPHELD};
         let Some(arm) = crate::chronometry::Ruled::of_verdict(ruling) else {
             return false;
@@ -74,7 +83,7 @@ impl Kernel {
         if ruling == RULING_UPHELD {
             // Upheld on this court's own book: the word joins the ruled
             // cover AND becomes this court's section on the chart (13.9).
-            self.rule_own(addr);
+            self.rule_own(addr, budget);
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());
             if let Some(w) = spoken {
                 if w.is_rewrite() {
@@ -85,7 +94,7 @@ impl Kernel {
                     if self.treasury.release_rewrite(addr, ruled).is_none() {
                         return false;
                     }
-                    self.retire_rewrite_inputs(&w);
+                    self.retire_rewrite_inputs(&w, budget);
                     self.fed_admit(addr, w);
                     self.unlist(addr, false);
                     self.mark_persist();
@@ -148,9 +157,9 @@ impl Kernel {
     /// `pub`: the witness door (`judge::offer`) replays an offered form it
     /// has already heard through this same reader, so the answer it gives a
     /// home is the replay's and never the heard mark's.
-    pub fn court_replay(&self, spoken: &Element) -> Option<&'static str> {
+    pub fn court_replay(&self, spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
         let family = self.family_of(&spoken.address());
-        crate::verdict::blind_replay_on(spoken, &|a| self.resolve_form(a), family, self)
+        crate::verdict::blind_replay_on(spoken, &|a| self.resolve_form(a), family, self, budget)
     }
 
     /// Court organ: the docket is the field's projection — listings whose
@@ -253,14 +262,14 @@ impl Kernel {
             let Some(spoken) = spoken else {
                 continue;
             };
-            if self.court_replay(&spoken).is_some() {
+            if self.court_replay(&spoken, &mut budget).is_some() {
                 // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
                 // through the verdict, which seals `Ruling(Slashed)`, revokes
                 // and re-dockets its citers; a listing of the book is ruled
                 // by the same act sealed here before its escrow is revoked.
                 let me = self.identity;
                 if self.provisional.contains(&addr) {
-                    self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me);
+                    self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me, &mut budget);
                 } else {
                     let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
                     self.append_step(kind, &addr, me);
@@ -279,7 +288,7 @@ impl Kernel {
             // book: the line already calls it a section, and now it is one
             // (13.9, 13.10) -- a vantage a peer's section can be compared
             // against, which is what makes a glue a Mayer-Vietoris step.
-            self.rule_own(&addr);
+            self.rule_own(&addr, &mut budget);
         }
         self.relocate_t_exhausted();
         self.stroke_fills(&mut budget);
@@ -300,6 +309,7 @@ impl Kernel {
         a: crate::transducer::address::Address,
         b: crate::transducer::address::Address,
         ratifier: [u8; 32],
+        budget: &mut crate::physics::Budget,
     ) {
         let Some(t) = element::from_translation(gamma, &a, &b) else {
             return;
@@ -314,7 +324,7 @@ impl Kernel {
             // word at it.
             let me = self.identity;
             self.append_step(crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Upheld), &addr, me);
-            self.ruled_admit(&addr);
+            self.ruled_admit(&addr, budget);
             self.fed_admit(&addr, t);
             self.leave_provisional(&addr);
             self.court_upheld += 1;

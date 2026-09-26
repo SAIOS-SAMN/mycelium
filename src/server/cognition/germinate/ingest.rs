@@ -73,7 +73,12 @@ impl Kernel {
     /// The reduction with one generator EXCLUDED from the alphabet — the syntropic
     /// stroke's redundancy probe: "does the REST of the basis already derive this
     /// generator?" (`exclude = None` is the ordinary full reduction.)
-    pub(crate) fn reduce_excluding(&self, g: &Element, exclude: Option<&[u8]>) -> NormalForm {
+    pub(crate) fn reduce_excluding(
+        &self,
+        g: &Element,
+        exclude: Option<&[u8]>,
+        budget: &mut crate::physics::Budget,
+    ) -> NormalForm {
         // A held residual word is a CENTERED COBOUNDARY CHAIN: the chain
         // reduction decomposes it over the other held words. The group path
         // below remains for pure-algebra elements.
@@ -81,7 +86,7 @@ impl Kernel {
         if !sub.sub().is_empty() {
             // The address passes straight through: it was converted to a
             // slot here only because the reduction addressed words by slot.
-            return self.reduce_chain(sub.sub().to_vec(), exclude);
+            return self.reduce_chain(sub.sub().to_vec(), exclude, budget);
         }
         // A12, ONCE. This peeled one generator at a time for up to 64
         // steps, re-deriving the whole question at every step from the new
@@ -199,8 +204,9 @@ impl Kernel {
         &self,
         first: Vec<(i64, i64, u8, u8)>,
         exclude: Option<&[u8]>,
+        budget: &mut crate::physics::Budget,
     ) -> NormalForm {
-        normal_form(&self.language, &first, exclude)
+        normal_form(&self.language, &first, exclude, budget)
     }
 
 }

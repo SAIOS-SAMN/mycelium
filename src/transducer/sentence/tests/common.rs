@@ -295,3 +295,7 @@ pub fn cert(axis: Axis, mu: [u64; 4]) -> PivotCertificate {
         },
     }
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

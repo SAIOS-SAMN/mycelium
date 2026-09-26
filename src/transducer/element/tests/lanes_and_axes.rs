@@ -85,7 +85,7 @@ fn a_bidirectional_swap_does_not_collapse_to_zero() {
     // The two descriptions share one base geometry: a versor carries one
     // support onto the other, and the reversed gauge is a second section
     // of the same word, never a second card.
-    assert!(l_to_bar.carriage(&bar_to_l).is_some(), "one base geometry, two sections");
+    assert!(l_to_bar.carriage(&bar_to_l, &mut super::common::budget()).is_some(), "one base geometry, two sections");
 }
 
 /// Multi-axial: distinct axes compose INDEPENDENTLY (no cross-talk, no cap on

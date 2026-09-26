@@ -77,7 +77,10 @@ impl Kernel {
     /// word, provisional and unstamped, held every fold prefix open for the
     /// life of the process (court a, epoch 99: unstamped provisional 0 → 4,
     /// folded never).
-    pub fn file_admitted(&mut self, addr: &Address, at: Stamp) -> bool {
+    ///
+    /// A ruling that waited on the stamp is heard on the stroke of the act
+    /// that files it (65.5), threaded here.
+    pub fn file_admitted(&mut self, addr: &Address, at: Stamp, budget: &mut crate::physics::Budget) -> bool {
         if self.admitted_at.contains(addr) {
             return false;
         }
@@ -100,7 +103,7 @@ impl Kernel {
         };
         self.file_remainders(addr, keys);
         // EC1: a peer's ruling that waited on this stamp is heard now.
-        self.rehear_rulings(&at);
+        self.rehear_rulings(&at, budget);
         true
     }
 
@@ -171,7 +174,8 @@ impl Kernel {
     /// held (rule 15: never a choice). Where it yields several, nothing is
     /// filed — the word waits for the syllabus to teach it with its home
     /// stamp (78.24 (2b)). A ruling waiting on the aliased stamp is heard.
-    pub(crate) fn alias_admitting(&mut self, r: &KStepReceipt) {
+    /// On the stroke of the act that admitted the receipt (65.5).
+    pub(crate) fn alias_admitting(&mut self, r: &KStepReceipt, budget: &mut crate::physics::Budget) {
         for c in &r.cites {
             let Cite::Word { chart, class, at } = c else { continue };
             if *at != r.stamp || self.word_admitted_at(at).is_some() {
@@ -187,7 +191,7 @@ impl Kernel {
                     self.aliases.insert(one.as_bytes(), vec![*at]);
                 }
             }
-            self.rehear_rulings(at);
+            self.rehear_rulings(at, budget);
         }
     }
 
@@ -252,7 +256,14 @@ impl Kernel {
             (None, None) => Vec::new(),
         });
         if let (Some(r), Some(_)) = (written, admits) {
-            self.file_admitted(&Address::from(addr), r.stamp);
+            // OPEN (65.5): the filing re-hears the peer rulings that waited
+            // on this stamp, and that re-hearing belongs to the act this step
+            // seals — whose stroke never reaches here, because `append_step`
+            // is the seal of every act and takes none. Until every act's
+            // stroke is threaded to its seal, the stroke is minted here, the
+            // one callee mint the ruling has not yet reached.
+            let mut budget = self.physics.stroke();
+            self.file_admitted(&Address::from(addr), r.stamp, &mut budget);
         }
     }
 

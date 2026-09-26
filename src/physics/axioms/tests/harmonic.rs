@@ -64,7 +64,7 @@ fn a11_a_turn_90_mints_an_order_four_rotor() {
     // that only one of the four turns can carry it.
     let upright = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0)]);
-    let theta = blade::relative_rotor(&upright.blade, &turned.blade)
+    let theta = blade::relative_rotor(&upright.blade, &turned.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("one proper turn carries an L onto its 90° turn");
     assert!(
         matches!(theta, blade::Pose::Turn(_)),
@@ -86,7 +86,7 @@ fn a11_a_turn_90_mints_an_order_four_rotor() {
 #[test]
 fn a11_a_body_against_itself_is_the_identity_turn() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0)]);
-    let theta = blade::relative_rotor(&l.blade, &l.blade).expect("a body carries onto itself");
+    let theta = blade::relative_rotor(&l.blade, &l.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a body carries onto itself");
     assert!(
         theta.rotor().projective_eq(&crate::transducer::element::identity_versor()),
         "no turn is no rotor, got {theta:?}"
@@ -124,10 +124,10 @@ fn a11_a_dilated_body_keeps_its_frame() {
         (3, 0, 0),
         (3, 1, 0),
     ]);
-    let theta = blade::relative_rotor(&domino.blade, &doubled.blade)
+    let theta = blade::relative_rotor(&domino.blade, &doubled.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20))
         .expect("a dilation is a similarity and its rotation is defined");
     assert!(
-        matches!(theta, blade::Pose::HalfOpen(_)),
+        matches!(theta, blade::Pose::Open180(_)),
         "a 2-fold symmetric body leaves the 180° turn open, got {theta:?}"
     );
     assert!(
@@ -171,7 +171,7 @@ fn a11_a_mirrored_body_is_read_as_its_odd_versor() {
     // pair is the same signal read orientation-reversed, its pose the odd
     // versor the coset reader verifies — never `Oblique`, and never a
     // demand for a generator.
-    let pose = blade::relative_rotor(&l.blade, &j.blade).expect("the mirror is read");
+    let pose = blade::relative_rotor(&l.blade, &j.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("the mirror is read");
     assert_eq!(pose.rotor().parity(), Some(true), "an odd versor, not a rotor: {pose:?}");
 }
 
@@ -248,7 +248,7 @@ fn a11_the_even_suite_covers_the_square_lattices_whole_order_set() {
 /// and its point reflection through the centroid carry the SAME
 /// deviatoric and the SAME quartic. This is independent of the order
 /// set — it holds for `C₁` bodies on a square lattice, which is most of
-/// them — and it is why `Pose::HalfOpen` exists.
+/// them — and it is why `Pose::Open180` exists.
 ///
 /// Closing it needs an ODD invariant. The 3rd harmonic is the candidate,
 /// and the reason it works is NOT that bodies have three-fold symmetry

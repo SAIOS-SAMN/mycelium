@@ -147,7 +147,8 @@ fn the_phase_window_is_an_aperture_of_docket_circuits() {
         [1, 0, 0, 0],
     )
     .expect("spells");
-    assert!(matches!(k.install_adopted(&w, [1; 32]), Adoption::Installed));
+    let mut adopt = k.stroke();
+    assert!(matches!(k.install_adopted(&w, [1; 32], &mut adopt), Adoption::Installed));
     let aperture = u64::from(crate::physics::aperture_cycle());
     let mut strokes = 0u64;
     loop {

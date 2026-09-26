@@ -19,9 +19,10 @@ fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
     let shifted: Vec<_> = l.iter().map(|(r, c, b, a)| (r + 7, c + 3, *b, *a)).collect();
     let rotated = vec![(0i64, 0i64, 1u8, 2u8), (1, 0, 1, 2), (0, -1, 1, 2)];
     let bar = vec![(0i64, 0i64, 1u8, 2u8), (0, 1, 1, 2), (0, 2, 1, 2)];
-    assert!(transition(&l, &shifted).is_some(), "translation is a versor");
-    assert!(transition(&l, &rotated).is_some(), "rotation is a versor");
-    assert!(transition(&l, &bar).is_none(), "distinct shapes refuse");
+    let mut budget = super::common::budget();
+    assert!(transition(&l, &shifted, &mut budget).is_some(), "translation is a versor");
+    assert!(transition(&l, &rotated, &mut budget).is_some(), "rotation is a versor");
+    assert!(transition(&l, &bar, &mut budget).is_none(), "distinct shapes refuse");
     // A 2× dilated L with other hues: the versor exists and the pullback
     // reads its assignment onto the base's three sites.
     let big: Vec<(i64, i64, u8, u8)> = l
@@ -32,7 +33,7 @@ fn the_versor_identifies_conformal_images_and_pulls_back_sections() {
                 .map(|(rr, cc)| (rr, cc, 5u8, 6u8))
         })
         .collect();
-    let v = transition(&big, &l).expect("a dilation by 1/2 carries the big L onto the L");
+    let v = transition(&big, &l, &mut budget).expect("a dilation by 1/2 carries the big L onto the L");
     assert_eq!(pullback(&positions(&l), &big, &v), Some(vec![(5, 6); 3]));
     assert_ne!(positions(&l), positions(&shifted), "the raw lens sees only coordinates");
 }

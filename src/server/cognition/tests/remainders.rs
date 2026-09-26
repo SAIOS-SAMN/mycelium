@@ -65,7 +65,8 @@ fn the_court_replays_a_voices_refill_and_its_congruent_simplex_fills() {
     let spelling = crate::transducer::sentence::callus_form(Derivation::spelled(word), std::slice::from_ref(&inv)).expect("a form");
     k.basis_insert(spelling.clone(), [9; 32]);
     let sp_at = Stamp::new(3, [9; 32], Place { k: 1, i: 0 });
-    k.file_admitted(&spelling.address(), sp_at);
+    let mut filing = k.stroke();
+    k.file_admitted(&spelling.address(), sp_at, &mut filing);
     let chart = vec![inv.key().into_vec()];
     let receipt = KStepReceipt {
         stamp: Stamp::new(5, [7; 32], Place { k: 2, i: 1 }),

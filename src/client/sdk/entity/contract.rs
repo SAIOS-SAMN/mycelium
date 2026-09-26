@@ -19,6 +19,7 @@ impl Entity {
     /// next utterance. `Quiescent` when nothing can be uttered: a malformed
     /// complex, a coordinate the form does not hold, or a form no vertex of
     /// which still acts — held inert until this mind's language moves.
+    #[expect(clippy::too_many_arguments, reason = "the refusal's three coordinates, the sentence, its family and task, and the stroke of the act that heard it (65.5)")]
     pub fn receive_adjudication(
         &mut self,
         spoken: &Element,
@@ -27,6 +28,7 @@ impl Entity {
         receipt: [u8; 32],
         train: &crate::transducer::family::Family,
         task: &[u8],
+        budget: &mut crate::physics::Budget,
     ) -> Contracted {
         use crate::transducer::family::{form_deflation, mint_sentence};
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
@@ -44,24 +46,24 @@ impl Entity {
         self.epigenome.drop_dialect(addr.as_bytes());
         self.owed_tries.remove(addr.as_bytes());
         let Some(mut form) = crate::transducer::sentence::from_element_form(spoken) else {
-            return self.quiescent(spoken, train);
+            return self.quiescent(spoken, train, budget);
         };
         if kind == RefusalKind::MalformedComplex {
-            return self.quiescent(spoken, train);
+            return self.quiescent(spoken, train, budget);
         }
         // The move, twice: once to read the remainder the contracted form
         // leaves on this mind's own family, once with that remainder as the
         // bodies a refused word's demand stands for.
         let mut probe = form.clone();
         if probe.contract(kind, &at, &[]).is_none() {
-            return self.quiescent(spoken, train);
+            return self.quiescent(spoken, train, budget);
         }
         let mut remainder: Vec<(i64, i64, u8, u8)> =
             form_deflation(&probe, train, &self.epigenome).1.into_iter().flatten().collect();
         remainder.sort_unstable();
         remainder.dedup();
         if form.contract(kind, &at, &remainder) != Some(Contracted::Moved) {
-            return self.quiescent(spoken, train);
+            return self.quiescent(spoken, train, budget);
         }
         let after = form_vertex_key(&form);
         let certificate = Contraction { kind, at: at.clone(), before: addr.clone(), after: after.clone(), receipt };
@@ -70,7 +72,7 @@ impl Entity {
         // afterwards is read from the value it still has here, before the
         // move: `acts` and the remainder are read below off `form`, so the
         // hold takes a clone at this one site and the other does not.
-        self.hold_form(form.clone(), train, &rems);
+        self.hold_form(form.clone(), train, &rems, budget);
         self.contractions.insert(&after, certificate.clone());
         if !form.acts() {
             self.contemplation.dirty.remove(&after);
@@ -94,13 +96,18 @@ impl Entity {
 
     /// Structural collapse (50.9 move 4): the form is held as an inert
     /// idea, not dirty, and nothing is re-spoken until the language moves.
-    fn quiescent(&mut self, spoken: &Element, train: &crate::transducer::family::Family) -> Contracted {
+    fn quiescent(
+        &mut self,
+        spoken: &Element,
+        train: &crate::transducer::family::Family,
+        budget: &mut crate::physics::Budget,
+    ) -> Contracted {
         use crate::transducer::sentence::form_vertex_key;
         if let Some(f) = crate::transducer::sentence::from_element_form(spoken) {
             // The key is the form's own coordinate and is taken BEFORE the
             // form is handed over, so nothing is cloned to read it back.
             let key = form_vertex_key(&f);
-            self.hold_form(f, train, &[]);
+            self.hold_form(f, train, &[], budget);
             self.contemplation.dirty.remove(&key);
         }
         Contracted::Quiescent
@@ -111,11 +118,14 @@ impl Entity {
     /// One this mind could not speak stays pending.
     pub fn speak_contracted(&mut self) -> Vec<(crate::transducer::address::Address, u8)> {
         let pending = std::mem::take(&mut self.contracted);
+        // The root of this act (the arm's): one stroke for every utterance
+        // it makes (65.5).
+        let mut budget = self.physics.stroke();
         let mut out = Vec::with_capacity(pending.len());
         for p in pending {
             let addr = p.sentence.address();
             self.contractions.insert(&addr, p.certificate.clone());
-            match self.speak_with(std::slice::from_ref(&p.sentence), &p.train, &p.task) {
+            match self.speak_with(std::slice::from_ref(&p.sentence), &p.train, &p.task, &mut budget) {
                 Ok(codes) => {
                     if let [code] = codes.as_slice() {
                         out.push((addr, *code));
@@ -158,7 +168,7 @@ impl Entity {
                 continue;
             }
             let both = [o.form.clone(), o.citer.clone()];
-            match self.speak_with(&both, &o.train, &o.task) {
+            match self.speak_with(&both, &o.train, &o.task, &mut budget) {
                 Ok(codes) => {
                     if let [_, code] = codes.as_slice() {
                         out.push((citer, *code));

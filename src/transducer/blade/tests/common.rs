@@ -52,3 +52,7 @@ pub fn sites_with_hue<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> 
 pub fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
     v.iter().map(|&t| t.into()).collect()
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

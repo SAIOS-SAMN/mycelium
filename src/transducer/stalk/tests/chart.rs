@@ -115,20 +115,21 @@ fn the_chart_finds_the_base_point_and_the_versor() {
     let mut stalks = Stalks::over_elements(held.iter());
     assert_eq!(stalks.len(), 3);
     let at = |a: &[u8]| held.iter().find(|w| w.address().as_bytes() == a);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let bar_rotated = from_canonical(&chain(&[(5, 5), (6, 5), (7, 5)]));
-    let (a, v) = congruent(&stalks, at, &bar_rotated).expect("the bar's orbit");
+    let (a, v) = congruent(&stalks, at, &bar_rotated, &mut budget).expect("the bar's orbit");
     assert_eq!(a, held[0].address());
     assert!(!element::same_versor(&v, &identity_versor()), "a rotation carries the vertical bar onto the base");
     let l_reflected = from_canonical(&chain(&[(3, 3), (3, 2), (4, 3)]));
-    assert_eq!(congruent(&stalks, at, &l_reflected).map(|(a, _)| a), Some(held[1].address()));
+    assert_eq!(congruent(&stalks, at, &l_reflected, &mut budget).map(|(a, _)| a), Some(held[1].address()));
     let zigzag = from_canonical(&chain(&[(0, 0), (0, 1), (1, 1), (1, 2)]));
     assert!(stalks.fiber(&invariant_of(&zigzag)).is_empty(), "an empty stratum is novelty");
-    assert_eq!(congruent(&stalks, at, &zigzag), None);
+    assert_eq!(congruent(&stalks, at, &zigzag, &mut budget), None);
     stalks.remove(&held[1].address());
     assert_eq!(stalks.len(), 2);
     let sq = from_canonical(&chain(&[(9, 9), (9, 10), (10, 9), (10, 10)]));
-    assert_eq!(congruent(&stalks, at, &sq).map(|(a, _)| a), Some(held[2].address()));
-    assert_eq!(congruent(&stalks, at, &l_reflected), None);
+    assert_eq!(congruent(&stalks, at, &sq, &mut budget).map(|(a, _)| a), Some(held[2].address()));
+    assert_eq!(congruent(&stalks, at, &l_reflected, &mut budget), None);
 }
 
 /// A connection is charted on its fibres: the linear class and the
@@ -148,8 +149,9 @@ fn a_connection_is_charted_on_its_fibres_not_on_an_empty_chain() {
     // Congruence on connections: the fibre's representative and the transition.
     let stalks = Stalks::over_elements([&a, &c].into_iter());
     let at = |x: &[u8]| [&a, &c].into_iter().find(|w| w.address().as_bytes() == x);
-    assert_eq!(congruent(&stalks, at, &b).map(|(x, _)| x), Some(a.address()), "b is a's word, placed elsewhere");
-    assert_eq!(congruent(&stalks, at, &c), None, "c has no other word on its chart");
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    assert_eq!(congruent(&stalks, at, &b, &mut budget).map(|(x, _)| x), Some(a.address()), "b is a's word, placed elsewhere");
+    assert_eq!(congruent(&stalks, at, &c, &mut budget), None, "c has no other word on its chart");
 }
 
 /// Connecting the bundle: a rotated, differently-hued sibling attaches
@@ -164,7 +166,7 @@ fn the_sibling_attaches_as_a_transported_section() {
     let sibling = from_canonical(
         &germinate(&[(0, 0, 3u8), (1, 0, 3)], &[(0, 0, 4u8), (1, 0, 4)]).unwrap(),
     );
-    let v = element::transition(sibling.sub(), base.sub()).expect("congruent");
+    let v = element::transition(sibling.sub(), base.sub(), &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("congruent");
     assert_eq!(base.attach(&sibling, &v), 1);
     assert_eq!(base.attach(&sibling, &v), 0, "a second observation adds nothing");
     let bytes = base.to_bytes().expect("the record writes");

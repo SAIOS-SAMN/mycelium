@@ -96,6 +96,9 @@ impl Kernel {
         let at = std::cell::Cell::new(COURT_TRIE);
         let mut pos = 4usize;
         let load = |kernel: &mut Kernel, b: &[u8], pos: &mut usize| -> Option<()> {
+            // THE ACT'S ROOT (65.5): the restore is one act, and its one
+            // stroke is what a ruling re-heard on a filed stamp draws on.
+            let mut budget = kernel.physics.stroke();
             // THE COURT: one node, the key this court signs as.
             let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT])?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
@@ -260,7 +263,7 @@ impl Kernel {
                     // that address's, filed where the address's node is read.
                     continue;
                 }
-                kernel.file_admitted(&addr, admitted);
+                kernel.file_admitted(&addr, admitted, &mut budget);
                 // The words by fiber, rebuilt from T1's own key; and RM1's
                 // remainders, rebuilt from the element's torsion record.
                 kernel.file_fiber(&addr, admitted, key.clone());
@@ -334,7 +337,7 @@ impl Kernel {
             // against the words just restored — never persisted.
             let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().cloned().collect();
             for r in &peers {
-                kernel.alias_admitting(r);
+                kernel.alias_admitting(r, &mut budget);
             }
             // THE RANK, its closures resolved by one T1 read each (78.27):
             // the prior measurement, continued incrementally and never read

@@ -57,3 +57,7 @@ for (i, g) in gauges.iter().enumerate() {
 f.orbits = Form::orbits_of(&f.faces, &f.vertices);
 as_element_form(&f, [1, 0, 0, 0]).expect("v2 sentence")
 }
+
+pub fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 20)
+}

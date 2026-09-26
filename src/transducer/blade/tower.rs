@@ -128,12 +128,90 @@ fn plane_points(blade: &Blade, plane: (usize, usize)) -> Option<(BigRational, Ve
     Some((count, pts))
 }
 
-/// A BODY'S EXTENT ON ONE TOWER (A.12's `r²`, the inversive extent): the
-/// region's `radius2` — its rounds' centres and their own extent — or the
-/// sites' spread `Σ(u² + v²)/M₀` on the plane. `None` where the body has no
-/// points on the plane — the plane off its base, or no support — on either
-/// tower alike.
+/// THE POINT TOWER ON `n` AXES (78.38): each compartment the point it stands
+/// at, about the points' mean, normalised by the count — the second moment
+/// `M`, the odd moment `t = ⟨d |d|²⟩` and the fourth order's symmetric part
+/// `N = ⟨d dᵀ |d|²⟩`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct PointTower {
+    pub m: Vec<Vec<BigRational>>,
+    pub t: Vec<BigRational>,
+    pub n4: Vec<Vec<BigRational>>,
+}
+
+/// A BODY'S TWO TOWERS, READ ONCE, AT THE LIFT (A.11: one producer, no
+/// consumer recomputes). They are the body's coordinates like its inertia
+/// and its quartic, derived from the same compartments in the same pass,
+/// never a cache: on every plane of the base, the harmonics of orders two,
+/// three and four on the region (the rounds) and on the sites (the points),
+/// the sites' spread, and the point tower on `n` axes. Every reader — the
+/// certificate, the chirality, the orientation, the transition, the tube's
+/// pose — reads these, so a body is read once however many pairs it stands
+/// in.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Towers {
+    /// Per plane, in [`crate::transducer::base::planes`] order: orders 2, 3, 4.
+    pub region: Vec<[Option<[BigRational; 2]>; 3]>,
+    /// Per plane: orders 2, 3, 4 on the points.
+    pub sites: Vec<[Option<[BigRational; 2]>; 3]>,
+    /// Per plane: the points' spread `Σ(u² + v²)/M₀`.
+    pub spread: Vec<Option<BigRational>>,
+    /// The point tower on the body's `n` axes; `None` for no support.
+    pub points: Option<PointTower>,
+}
+
+/// THE ONE READING OF BOTH TOWERS, at the lift: every plane's harmonics and
+/// spread, and the point tower, from the compartments the lift has just
+/// read. Read by nothing but `lift`.
+pub(super) fn read_towers(blade: &Blade) -> Towers {
+    let planes = crate::transducer::base::planes(blade.n());
+    let orders = |tower: Tower| -> Vec<[Option<[BigRational; 2]>; 3]> {
+        planes.iter().map(|&p| Harmonic::ALL.map(|m| harmonic_read(blade, p, tower, m))).collect()
+    };
+    Towers {
+        region: orders(Tower::Region),
+        sites: orders(Tower::Sites),
+        spread: planes.iter().map(|&p| extent_read(blade, p, Tower::Sites)).collect(),
+        points: super::pose::point_tower(blade, blade.n()),
+    }
+}
+
+/// An order's place in the towers' rows.
+fn order_index(m: Harmonic) -> usize {
+    match m {
+        Harmonic::Two => 0,
+        Harmonic::Three => 1,
+        Harmonic::Four => 2,
+    }
+}
+
+/// A BODY'S EXTENT ON ONE TOWER (A.12's `r²`, the inversive extent), read
+/// off the body's towers: the region's `radius2` — its rounds' centres and
+/// their own extent — or the sites' spread on the plane. `None` where the
+/// body has no points on the plane — the plane off its base, or no support —
+/// on either tower alike.
 pub fn extent(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
+    let spread = blade.towers.spread.get(crate::transducer::base::plane_index(plane)?)?.clone()?;
+    match tower {
+        Tower::Region => Some(blade.radius2()),
+        Tower::Sites => Some(spread),
+    }
+}
+
+/// THE HARMONIC OF AZIMUTHAL ORDER `m` ON ONE TOWER, read off the body's
+/// towers ([`read_towers`]); `None` where it vanishes, or on a plane the
+/// body's base does not have.
+pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic) -> Option<[BigRational; 2]> {
+    let ix = crate::transducer::base::plane_index(plane)?;
+    let row = match tower {
+        Tower::Region => blade.towers.region.get(ix)?,
+        Tower::Sites => blade.towers.sites.get(ix)?,
+    };
+    row[order_index(m)].clone()
+}
+
+/// The producer of a body's extent on one tower, from its compartments.
+fn extent_read(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
     match tower {
         Tower::Region => plane_points(blade, plane).map(|_| blade.radius2()),
         Tower::Sites => {
@@ -143,8 +221,9 @@ pub fn extent(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
     }
 }
 
-/// THE HARMONIC OF AZIMUTHAL ORDER `m` ON ONE TOWER, normalised by `M₀` so it
-/// carries degree `m` (A.12); turning at `m·φ`. `None` where it vanishes.
+/// THE PRODUCER OF THE HARMONIC OF AZIMUTHAL ORDER `m` ON ONE TOWER, from the
+/// compartments, normalised by `M₀` so it carries degree `m` (A.12); turning
+/// at `m·φ`. `None` where it vanishes. Read once per body, by the lift.
 ///
 /// - order 2, the DEVIATORIC `((Σu² − Σv²)/2, Σuv)/M₀` — the body's axis; the
 ///   round's isotropic extent cancels in it on the grid plane, so the two
@@ -153,7 +232,7 @@ pub fn extent(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
 ///   the region each round's own `(z + w)³` ([`super::body::round_harmonic`]).
 /// - order 4, `Σ(u + iv)⁴/M₀` — the orientation of a shape isotropic at order
 ///   two; on the region each round's, held by the lift (`quartic_on`).
-pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic) -> Option<[BigRational; 2]> {
+fn harmonic_read(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic) -> Option<[BigRational; 2]> {
     let (two, three, four, six) = (
         BigRational::from_integer(BigInt::from(2)),
         BigRational::from_integer(BigInt::from(3)),

@@ -36,7 +36,7 @@
 )]
 
 use mycelium::client::sdk::Epigenome;
-use mycelium::transducer::family::{extract_rule_with, extraction_spend, mint_sentence};
+use mycelium::transducer::family::{extract_rule_on, extraction_spend, mint_sentence, perceive_family};
 use std::time::Instant;
 
 /// Live allocator bytes, for the ten-pull reading. Instrument only.
@@ -75,8 +75,9 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         eprintln!("  regime [h {k}] family {}… {} pairs", stem_of(file), task.train.len());
         // THE VOICE'S OWN BUDGET on the standing slice too: a mind stood
         // under a stroke it never gets holds forms it never would.
-        let mut budget = physics.stroke_n(extraction_spend(&task.train));
-        let Some(rule) = extract_rule_with(&task.train, &epi, &mut budget) else { continue };
+        let frames = perceive_family(&task.train);
+        let mut budget = physics.stroke_n(extraction_spend(&task.train, &frames));
+        let Some(rule) = extract_rule_on(&task.train, Some(&frames), &epi, &mut budget) else { continue };
         let Some(spoken) = mint_sentence(&rule, &task.train, &epi, 0) else { continue };
         let held = mycelium::transducer::element::Held::of(spoken);
         let Some(form) = held.form() else { continue };
@@ -114,9 +115,10 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         for file in slice {
             let Ok(json) = std::fs::read_to_string(format!("{dir}/{file}")) else { continue };
             let Some(task) = mycelium::arc::parse_task(&json) else { continue };
-            let mut b = physics.stroke_n(extraction_spend(&task.train));
-            let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
-            hold.hold_form(r.form, &task.train, &[], [0; 4]);
+            let frames = perceive_family(&task.train);
+            let mut b = physics.stroke_n(extraction_spend(&task.train, &frames));
+            let Some(r) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
+            hold.hold_form(r.form, &task.train, &[], [0; 4], &mut b);
             held += 1;
         }
         // EXPAND BEFORE CENSUSING. `hold_form` writes `dirty: true` at
@@ -207,7 +209,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         eprintln!("  regime refused: {path} is not a task");
         std::process::exit(1);
     };
-    let spend = extraction_spend(&task.train);
+    let frames = perceive_family(&task.train);
+    let spend = extraction_spend(&task.train, &frames);
     println!("  regime pull {name} pairs {} budget {spend}", task.train.len());
     eprintln!("  regime [h pull] family {}… {} pairs", stem_of(name), task.train.len());
 
@@ -215,7 +218,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     // budget and against the mind it just stood.
     let mut budget = physics.stroke_n(spend);
     let pull_start = Instant::now();
-    let rule = extract_rule_with(&task.train, &epi, &mut budget);
+    let rule = extract_rule_on(&task.train, Some(&frames), &epi, &mut budget);
     let pull_s = pull_start.elapsed();
     let left = budget.remaining();
     match &rule {
@@ -244,7 +247,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         // fix is aimed at a measurement and not at a guess.
         {
             let mut b = physics.stroke_n(spend);
-            if let Some(r) = extract_rule_with(&task.train, &epi, &mut b) {
+            if let Some(r) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) {
                 let a0 = live_now();
                 let mut cloned = r.form.clone();
                 let a1 = live_now();
@@ -266,8 +269,8 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
         for pull in 0..10u32 {
             Contemplation::reset_held_bytes();
             let mut b = physics.stroke_n(spend);
-            let Some(r) = extract_rule_with(&task.train, &epi, &mut b) else { continue };
-            hold.hold_form(r.form.clone(), &task.train, &[], [0; 4]);
+            let Some(r) = extract_rule_on(&task.train, Some(&frames), &epi, &mut b) else { continue };
+            hold.hold_form(r.form.clone(), &task.train, &[], [0; 4], &mut b);
             if pull == 9 {
                 let c = hold.shed_census();
                 println!(

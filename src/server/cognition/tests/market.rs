@@ -219,6 +219,7 @@ let sentence = crate::transducer::sentence::deconstruct_at(
     &|a| language.shape_at(a),
     &chain,
     None,
+    &mut super::common::budget(),
 );
 let (void, cites) = (sentence.residual.clone(), sentence.cites.clone());
 assert_eq!(void, vec![(0, 3, 3, 4)]);
@@ -300,7 +301,7 @@ assert_eq!(
     "a residual leaves the listing's measure a function of its chain"
 );
 assert_eq!(
-    crate::court::verdict::blind_replay(&listing),
+    crate::court::verdict::blind_replay(&listing, &mut super::common::budget()),
     None,
     "so the court's own next circuit does not slash it"
 );

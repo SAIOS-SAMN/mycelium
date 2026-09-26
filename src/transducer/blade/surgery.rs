@@ -186,11 +186,11 @@ impl Surgery {
 
     /// Factor a non-homeomorphic transformation into a composite Φ = V ∘ S.
     /// Returns the surgery S and conformal alignment versor V.
-    pub fn factor(src: &Shape, dst: &Shape) -> Option<(Self, Mv)> {
+    pub fn factor(src: &Shape, dst: &Shape, budget: &mut crate::physics::Budget) -> Option<(Self, Mv)> {
         let surg = Self::detect(&src.blade.support, &dst.blade.support)?;
         let core = surg.apply(&src.blade.support);
         let core_shape = shape_of(&core);
-        let v = crate::transducer::blade::carry::versor_between(&core_shape, dst)?;
+        let v = crate::transducer::blade::carry::versor_between(&core_shape, dst, budget)?;
         Some((surg, v))
     }
 }

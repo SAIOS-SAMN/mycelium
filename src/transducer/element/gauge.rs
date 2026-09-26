@@ -125,9 +125,13 @@ pub(crate) fn invert_perm(a: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
 /// corner. None when no rational versor carries one onto the other — the
 /// exact congruence test on the conformal orbit, returning the transport
 /// operator rather than a verdict.
-pub fn transition(from: &[(i64, i64, u8, u8)], to: &[(i64, i64, u8, u8)]) -> Option<Versor> {
+pub fn transition(
+    from: &[(i64, i64, u8, u8)],
+    to: &[(i64, i64, u8, u8)],
+    budget: &mut crate::physics::Budget,
+) -> Option<Versor> {
     let from_shape = shape_of_chain(from)?;
-    transition_from_shape(&from_shape, to)
+    transition_from_shape(&from_shape, to, budget)
 }
 
 /// The shape of a chain's support (None for an empty chain) — lifted once
@@ -146,9 +150,10 @@ pub fn shape_of_chain(chain: &[(i64, i64, u8, u8)]) -> Option<crate::transducer:
 pub fn transition_from_shape(
     from: &crate::transducer::blade::Shape,
     to: &[(i64, i64, u8, u8)],
+    budget: &mut crate::physics::Budget,
 ) -> Option<Versor> {
     let to_shape = shape_of_chain(to)?;
-    crate::transducer::blade::versor_between(from, &to_shape)
+    crate::transducer::blade::versor_between(from, &to_shape, budget)
 }
 
 /// Apply a hue-map σ (functional from↦to relations) to a transition assignment:

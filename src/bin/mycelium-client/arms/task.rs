@@ -34,9 +34,15 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         StrokeOutcome::add(&mut outcome.fed, &mag);
     }
     let gen = entity.epigenome.atlas_root();
-    // Sized by the family, not by the box (L8w).
+    // Sized by the family, not by the box (L8w): its frames perceived once
+    // where the memo does not answer it, the stroke sized by them and the
+    // percept reading them (rule 10).
+    let frames = match extract_memo.holds(&tid, &gen) {
+        true => mycelium::transducer::family::Frames::new(),
+        false => mycelium::transducer::family::perceive_family(&train),
+    };
     let mut extract_budget =
-        physics.stroke_n(mycelium::transducer::family::extraction_spend(&train));
+        physics.stroke_n(mycelium::transducer::family::extraction_spend(&train, &frames));
     let extracted = mycelium::transducer::family::extract_rule_cached(
         extract_memo,
         &tid,
@@ -44,6 +50,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         gen,
         &mut extract_budget,
         &entity.epigenome,
+        Some(&frames),
     );
     eprintln!(
         "[{tag}] [{}] family {} {} pairs, {} tests: {}",
@@ -62,7 +69,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         },
     );
     if let Some(rule) = extracted.as_ref() {
-        if let Some(mag) = speak_form(entity, tag, rule, &train, &tid) {
+        if let Some(mag) = speak_form(entity, tag, rule, &train, &tid, &mut extract_budget) {
             StrokeOutcome::add(&mut outcome.uttered, &mag);
         }
         let outs: Option<Vec<mycelium::arc::Grid>> = tests

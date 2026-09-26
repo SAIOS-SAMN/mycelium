@@ -346,7 +346,7 @@ fn pivot_orbit_discharges_held_word_and_vortices_a_pair() {
         "Frame is the least vertex coordinate of the crystallized form"
     );
     assert_eq!(
-        crate::court::verdict::blind_replay(&e),
+        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
         None,
         "a certified discharge replays: every after-face is face_of, then the certificate"
     );

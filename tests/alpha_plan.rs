@@ -259,7 +259,7 @@ fn hypha_snapshot_is_myt1() {
 #[test]
 fn dialect_is_a_word_in_the_epigenome() {
     let mut epi = Epigenome::new();
-    assert!(epi.express(&[(0, 0, 1u8, 2)], 1, 1));
+    assert!(epi.express(&[(0, 0, 1u8, 2)], 1, 1, &mut mycelium::physics::Physics::default().stroke_n(1 << 20)));
     assert_eq!(epi.dialect_len(), 1, "an expressed word stands as dialect");
     assert_eq!(epi.genome_len(), 0, "the genome stays frozen");
 }

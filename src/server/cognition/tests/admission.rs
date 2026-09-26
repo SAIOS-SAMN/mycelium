@@ -218,7 +218,9 @@ fn a_gap_closes_when_the_missing_receipts_arrive() {
     assert_eq!(first, Admitted::Gap { vk, from: None, to: place(2) }, "from the line's start to the predecessor");
     assert_eq!(k.pending_parents(), 0, "nothing is cited while the chain is gapped");
     assert!(k.known_head(&vk).is_none());
-    assert_eq!(k.admit_backfill(&peer[..2]), (2, None), "a page of two admits by its chain, citing nothing unheld");
+    // The chase's own stroke, which every page it fetches is admitted on.
+    let mut chase = k.stroke();
+    assert_eq!(k.admit_backfill(&peer[..2], &mut chase), (2, None), "a page of two admits by its chain, citing nothing unheld");
     assert_eq!(k.known_head(&vk).map(|h| h.0), Some(place(1)), "the head this node holds moved to the second");
     assert_eq!(
         k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head),
@@ -226,16 +228,16 @@ fn a_gap_closes_when_the_missing_receipts_arrive() {
         "the page stopped short: still a gap"
     );
     assert_eq!(k.pending_parents(), 0, "and still nothing cited");
-    assert_eq!(k.admit_backfill(&peer[2..3]), (1, None), "the next page closes the chain");
+    assert_eq!(k.admit_backfill(&peer[2..3], &mut chase), (1, None), "the next page closes the chain");
     assert!(
         matches!(k.admit_receipt(ORIGIN, super::common::verified(&pre(&head), &key), &head), Admitted::Parent(_)),
         "the head admits once the chain reaches it"
     );
     assert_eq!(k.pending_parents(), 1, "only the closing frame is cited");
-    assert_eq!(k.admit_backfill(&peer[..1]), (1, None), "a receipt already held is passed over");
+    assert_eq!(k.admit_backfill(&peer[..1], &mut chase), (1, None), "a receipt already held is passed over");
     let mut forged = peer[3].clone();
     forged.mu = [0, 0, 0, 9];
-    assert_eq!(k.admit_backfill(&[forged]), (0, None), "a receipt that does not re-derive admits nothing, and names no hole");
+    assert_eq!(k.admit_backfill(&[forged], &mut chase), (0, None), "a receipt that does not re-derive admits nothing, and names no hole");
     let far = crate::chronometry::Place { k: 9, i: 0 };
     assert_eq!(k.receipts_range(&vk, None, far, 100), peer, "the place-range read: every admitted node in line order, never past a hole");
     assert_eq!(k.receipts_range(&vk, Some(place(1)), place(3), 1).len(), 1, "a page is bounded by its budget");

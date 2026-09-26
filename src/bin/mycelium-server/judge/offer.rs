@@ -148,8 +148,12 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // an offer this court refuses leaves nothing filed.
                         // A refusal withdraws only the stamp this filing
                         // placed, never this court's own on a word it holds.
-                        let filed = k.file_admitted(&addr, section.receipt.stamp);
-                        let w = witness_vantage(&mut k, &mut cover, word, home, me);
+                        // THE ACT'S ROOT (65.5): the offer is one act at this
+                        // door, and its one stroke is the filing's and the
+                        // replay's draw, threaded to both.
+                        let mut budget = k.stroke();
+                        let filed = k.file_admitted(&addr, section.receipt.stamp, &mut budget);
+                        let w = witness_vantage(&mut k, &mut cover, word, home, me, &mut budget);
                         if filed && matches!(w, dialogue::Witnessed::Refused { .. }) {
                             k.drop_admitted(&addr);
                         }
@@ -207,12 +211,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// refusal. Either way the vantage is: this court re-derived the form, or
 /// it refused it by name. Unmeasured is left for a court that could not
 /// be read at all.
+///
+/// On the stroke of the offer act that asked (65.5): the door mints it.
 pub(crate) fn witness_vantage(
     k: &mut mycelium::cognition::Kernel,
     cover: &mut mycelium::network::nerve::Cover,
     word: mycelium::transducer::element::Element,
     home: [u8; 32],
     me: [u8; 32],
+    budget: &mut mycelium::physics::Budget,
 ) -> dialogue::Witnessed {
     use mycelium::cognition::Glue;
     let refused = |why: &str| dialogue::Witnessed::Refused { vk: me, why: why.as_bytes().to_vec() };
@@ -223,12 +230,12 @@ pub(crate) fn witness_vantage(
         None => refused("the word's record passes a length its field writes"),
     };
     if k.heard_contains(word.address().as_bytes()) {
-        return match k.court_replay(&word) {
+        return match k.court_replay(&word, budget) {
             Some(why) => refused(why),
             None => reached(&word),
         };
     }
-    match k.glue_fetched(word.clone(), home, me, cover) {
+    match k.glue_fetched(word.clone(), home, me, cover, budget) {
         Glue::Slashed(why) => refused(why),
         Glue::Admitted | Glue::Attached | Glue::Dialect => reached(&word),
     }
@@ -260,8 +267,10 @@ mod tests {
         let (home, me) = ([2u8; 32], [3u8; 32]);
         let w = word();
         for _ in 0..2 {
+            // Each offer is its own act: its root, one stroke.
+            let mut budget = k.stroke();
             let dialogue::Witnessed::Reached { vk, form } =
-                witness_vantage(&mut k, &mut cover, w.clone(), home, me)
+                witness_vantage(&mut k, &mut cover, w.clone(), home, me, &mut budget)
             else {
                 panic!("a replay that stood is a vantage");
             };
@@ -283,14 +292,17 @@ mod tests {
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, me) = ([2u8; 32], [3u8; 32]);
         let w = false_word();
-        let first = witness_vantage(&mut k, &mut cover, w.clone(), home, me);
+        let mut budget = k.stroke();
+        let first = witness_vantage(&mut k, &mut cover, w.clone(), home, me, &mut budget);
         let dialogue::Witnessed::Refused { vk, why } = first else {
             panic!("a replay that refused is a refusal");
         };
         assert_eq!(vk, me);
         assert!(!why.is_empty(), "the refusal is named");
         assert!(k.heard_contains(w.address().as_bytes()), "and the address is marked heard");
-        let again = witness_vantage(&mut k, &mut cover, w, home, me);
+        // The second offer is a second act: a stroke of its own.
+        let mut budget = k.stroke();
+        let again = witness_vantage(&mut k, &mut cover, w, home, me, &mut budget);
         assert!(
             matches!(again, dialogue::Witnessed::Refused { .. }),
             "heard is not a verdict: the second offer is replayed and refused again"

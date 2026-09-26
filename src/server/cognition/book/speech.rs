@@ -27,7 +27,10 @@ impl Kernel {
     pub fn perceive_speech(&mut self, voice: [u8; 32], task: &[u8], sentences: &[Element]) -> Vec<u8> {
         let spoken: Vec<(Element, Option<crate::transducer::sentence::Contraction>)> =
             sentences.iter().map(|s| (s.clone(), None)).collect();
-        match self.hear_speech(voice, task, &spoken) {
+        // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
+        // for the whole speech, threaded to every sentence it hears.
+        let mut budget = self.physics.stroke();
+        match self.hear_speech(voice, task, &spoken, &mut budget) {
             Ok(adjudicated) => adjudicated.iter().map(|a| a.code()).collect(),
             Err(_) => vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
         }
@@ -51,7 +54,10 @@ impl Kernel {
                 None => unparsed.push(i),
             }
         }
-        let heard = self.hear_speech(act.voice, &act.task, &spoken)?;
+        // THE ACT'S ROOT (65.5): the wire hands the frame here, and one
+        // stroke is the whole frame's draw, threaded to every sentence.
+        let mut budget = self.physics.stroke();
+        let heard = self.hear_speech(act.voice, &act.task, &spoken, &mut budget)?;
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -114,12 +120,13 @@ impl Kernel {
         voice: [u8; 32],
         task: &[u8],
         spoken: &[(Element, Option<crate::transducer::sentence::Contraction>)],
+        budget: &mut crate::physics::Budget,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         let mut out = Vec::with_capacity(spoken.len());
         for (s, cited) in spoken {
             // CV5 — EVERY VERDICT COUNTED WHERE IT IS REACHED, by its kind,
             // for the observer's adjudication reading.
-            match self.adjudicate_one(voice, task, s, cited.as_ref()) {
+            match self.adjudicate_one(voice, task, s, cited.as_ref(), budget) {
                 Ok(a) => {
                     note_verdict_of(&a);
                     out.push(a);
@@ -147,6 +154,7 @@ impl Kernel {
         task: &[u8],
         s: &Element,
         cited: Option<&crate::transducer::sentence::Contraction>,
+        budget: &mut crate::physics::Budget,
     ) -> Result<crate::anastome::dialogue::Adjudication, [u64; 4]> {
         use crate::anastome::dialogue::Adjudication;
         let addr = s.address();
@@ -157,7 +165,7 @@ impl Kernel {
             }
             self.refusals.remove(&c.before);
         }
-        let out = match self.hear_sentence(voice, task, s) {
+        let out = match self.hear_sentence(voice, task, s, budget) {
             Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
             Ok(out) => out,
         };
@@ -228,7 +236,9 @@ impl Kernel {
     /// the tests read. `hear_sentence` carries the refusal's coordinate.
     #[cfg(test)]
     pub(crate) fn perceive_sentence(&mut self, voice: [u8; 32], task: &[u8], s: &Element) -> Outcome {
-        match self.hear_sentence(voice, task, s) {
+        // The test's own act: its root, one stroke.
+        let mut budget = self.physics.stroke();
+        match self.hear_sentence(voice, task, s, &mut budget) {
             Ok(out) => out,
             Err(refusal) => Outcome::Refused(refusal.reason),
         }
@@ -249,6 +259,7 @@ impl Kernel {
         voice: [u8; 32],
         task: &[u8],
         s: &Element,
+        budget: &mut crate::physics::Budget,
     ) -> Result<Outcome, crate::court::verdict::Refusal> {
         if let Err(deficit) = self.reflex_open(voice) {
             return Ok(Outcome::Deferred(deficit));
@@ -266,8 +277,10 @@ impl Kernel {
             return Ok(Outcome::Awaiting(form));
         }
         let family = self.task_family.get(task).cloned();
+        // The caller's stroke (65.5): a sentence is heard inside the act that
+        // hears it — a speech frame, or a ruling re-hearing what waited.
         if let Some(refusal) =
-            crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self)
+            crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self, budget)
         {
             // CV1 — every refusal carries its kind (78.9), and the observer
             // counts it by kind.
@@ -469,8 +482,10 @@ impl Kernel {
         let v_disloc = {
             let base_shape = element::shape_of_chain(listing.sub());
             let rem_shape = element::shape_of_chain(&residual);
+            // One stroke of this court's own metabolism reads the candidates.
+            let mut budget = self.physics.stroke();
             match (base_shape, rem_shape) {
-                (Some(sb), Some(sr)) => crate::transducer::blade::versor_between(&sb, &sr),
+                (Some(sb), Some(sr)) => crate::transducer::blade::versor_between(&sb, &sr, &mut budget),
                 _ => None,
             }
         };

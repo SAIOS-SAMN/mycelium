@@ -27,18 +27,19 @@ const L4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)];
 const S4: [(i64, i64, i64); 4] = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)];
 
 #[test]
-fn fr1b_a_symmetric_body_reads_half_open_at_one_section_and_on_the_tube() {
+fn fr1b_a_symmetric_body_reads_open_180_at_one_section_and_on_the_tube() {
+    let mut b = super::common::budget();
     let s = body(&S4);
     // At one section, against its own 90° turn: the planar reader.
     let turned = body(&S4.map(|(r, c, k)| (-c, r, k)));
-    assert!(matches!(relative_pose(&s, &turned), Ok(Pose::HalfOpen(_))), "{:?}", relative_pose(&s, &turned));
+    assert!(matches!(relative_pose(&s, &turned, &mut b), Ok(Pose::Open180(_))), "{:?}", relative_pose(&s, &turned, &mut b));
     // On the tube, against itself turned 90° into the plane of the row
     // and the succession axis, `(x₁, x₃) ↦ (−x₃, x₁)`: the same held `ℤ₂`,
     // never a permanent refusal.
     let standing = body(&S4.map(|(r, c, k)| (-k, c, r)));
     assert!(on_tube(&s, &standing));
-    let Ok(Pose::HalfOpen(candidates)) = relative_pose(&s, &standing) else {
-        panic!("the tube holds the 180° turn:{:?}", relative_pose(&s, &standing));
+    let Ok(Pose::Open180(candidates)) = relative_pose(&s, &standing, &mut b) else {
+        panic!("the tube holds the 180° turn:{:?}", relative_pose(&s, &standing, &mut b));
     };
     // BOTH turns the `ℤ₂` holds are carried, never a representative
     // (78.6(1)) — the 90° turn in `e₁₃`, and it composed with the 180°
@@ -55,7 +56,7 @@ fn fr1b_a_symmetric_body_reads_half_open_at_one_section_and_on_the_tube() {
     }
     assert!(!candidates[0].projective_eq(&candidates[1]), "two candidates, two turns");
     // And the standing body against itself: held, not a turn chosen.
-    assert!(matches!(relative_pose(&standing, &standing), Ok(Pose::HalfOpen(_))));
+    assert!(matches!(relative_pose(&standing, &standing, &mut b), Ok(Pose::Open180(_))));
 }
 
 #[test]
@@ -66,8 +67,9 @@ fn fr1b_a_centrosymmetric_solid_is_turned_not_held() {
     let solid = [(0, 0, 0), (1, 0, 0), (0, 2, 0), (0, 0, 3), (-1, 0, 0), (0, -2, 0), (0, 0, -3), (1, 1, 1), (-1, -1, -1)];
     let a = body(&solid);
     let turned = body(&solid.map(|(r, c, k)| (r, -k, c)));
-    let Ok(Pose::Turn(v)) = relative_pose(&a, &turned) else {
-        panic!("a determined turn: {:?}", relative_pose(&a, &turned));
+    let mut b = super::common::budget();
+    let Ok(Pose::Turn(v)) = relative_pose(&a, &turned, &mut b) else {
+        panic!("a determined turn: {:?}", relative_pose(&a, &turned, &mut b));
     };
     assert!(sends(&v, E2, E3) && sends(&v, E1, E1), "the turn is in e23: {v:?}");
 }
@@ -78,9 +80,10 @@ fn at_one_section_the_pose_is_the_sensor_planes_reading() {
     let turned = body(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (-1, 2, 0)]);
     let j = body(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, -1, 0)]);
     let s = body(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
+    let mut b = super::common::budget();
     for other in [&turned, &j, &s, &l] {
         assert!(!on_tube(&l, other), "one section, both");
-        let (pose, planar) = (relative_pose(&l, other), relative_rotor(&l, other, GRID_PLANE));
+        let (pose, planar) = (relative_pose(&l, other, &mut b), relative_rotor(&l, other, GRID_PLANE, &mut b));
         assert_eq!(pose.as_ref().err(), planar.as_ref().err(), "the same refusal");
         if let (Ok(p), Ok(r)) = (&pose, &planar) {
             assert!(p.rotor().projective_eq(r.rotor()), "the same turn");
@@ -96,7 +99,7 @@ fn two_flat_bodies_at_two_sections_turn_in_the_sensors_plane() {
     let a = body(&L4);
     let b = body(&[(0, 0, 1), (1, 0, 1), (2, 0, 1), (2, 1, 1)]);
     assert!(!on_tube(&a, &b));
-    assert!(matches!(relative_pose(&a, &b), Ok(Pose::Turn(_)) | Ok(Pose::HalfOpen(_))));
+    assert!(matches!(relative_pose(&a, &b, &mut super::common::budget()), Ok(Pose::Turn(_)) | Ok(Pose::Open180(_))));
 }
 
 #[test]
@@ -107,8 +110,8 @@ fn a_body_turning_between_two_sections_reads_a_pose_with_a_plane_containing_e3()
     let a = body(&L4);
     let b = body(&[(0, 0, 0), (0, 0, 1), (0, 0, 2), (0, 1, 2)]);
     assert!(on_tube(&a, &b), "the turned body spans sections");
-    let Ok(Pose::Turn(v)) = relative_pose(&a, &b) else {
-        panic!("a turn: {:?}", relative_pose(&a, &b));
+    let Ok(Pose::Turn(v)) = relative_pose(&a, &b, &mut super::common::budget()) else {
+        panic!("a turn: {:?}", relative_pose(&a, &b, &mut super::common::budget()));
     };
     assert!(*v.coeff(E1 | E3) != num_rational::BigRational::from_integer(0.into()), "the plane e13 is lit: {v:?}");
     assert!(sends(&v, E1, E3), "the row goes to the succession axis: {v:?}");
@@ -127,19 +130,20 @@ fn mapped(f: impl Fn((i64, i64, i64)) -> (i64, i64, i64)) -> Blade {
 
 #[test]
 fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
+    let mut b = super::common::budget();
     let a = body(&SOLID);
     // Turned 90° in `e₂₃`: `(x₂, x₃) ↦ (−x₃, x₂)`.
     let turned = mapped(|(r, c, k)| (r, -k, c));
-    let Ok(Pose::Turn(v)) = relative_pose(&a, &turned) else {
-        panic!("a turn in e23: {:?}", relative_pose(&a, &turned));
+    let Ok(Pose::Turn(v)) = relative_pose(&a, &turned, &mut b) else {
+        panic!("a turn in e23: {:?}", relative_pose(&a, &turned, &mut b));
     };
     assert!(sends(&v, E2, E3) && sends(&v, E1, E1), "the turn is in e23: {v:?}");
     // Mirrored across the row: no proper motion carries it, and its pose is
     // the odd versor — the same tube read orientation-reversed (AL1 as
     // amended), fixing the row's line and reversing it.
     let mirrored = mapped(|(r, c, k)| (-r, c, k));
-    let Ok(Pose::Turn(m)) = relative_pose(&a, &mirrored) else {
-        panic!("a mirror is read, never refused: {:?}", relative_pose(&a, &mirrored));
+    let Ok(Pose::Turn(m)) = relative_pose(&a, &mirrored, &mut b) else {
+        panic!("a mirror is read, never refused: {:?}", relative_pose(&a, &mirrored, &mut b));
     };
     assert_eq!(m.parity(), Some(true), "the mirror's pose is odd: {m:?}");
     assert!(
@@ -148,16 +152,16 @@ fn a_solid_tube_reads_its_turn_its_mirror_and_its_irrational_scale() {
     );
     // Doubled as points: the scale is 2 and the turn the identity.
     let doubled = mapped(|(r, c, k)| (2 * r, 2 * c, 2 * k));
-    let Ok(Pose::Turn(id)) = relative_pose(&a, &doubled) else {
-        panic!("a pure dilation: {:?}", relative_pose(&a, &doubled));
+    let Ok(Pose::Turn(id)) = relative_pose(&a, &doubled, &mut b) else {
+        panic!("a pure dilation: {:?}", relative_pose(&a, &doubled, &mut b));
     };
     assert!(id.projective_eq(&cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()))));
     // Turned 45° in `e₁₃` at scale √2, `(x₁, x₃) ↦ (x₁ − x₃, x₁ + x₃)`:
     // `ρ² = 2`, and no versor over ℚ carries it.
     let oblique = mapped(|(r, c, k)| (r - k, c, r + k));
-    assert_eq!(relative_pose(&a, &oblique).err(), Some(NoPose::Irrational));
+    assert_eq!(relative_pose(&a, &oblique, &mut b).err(), Some(NoPose::Irrational));
     // And a (3, 4, 5) turn in `e₁₃`, which the square base cannot turn by:
     // on the tube it is read, exactly, as the rational turn it is.
     let pythagorean = mapped(|(r, c, k)| (3 * r - 4 * k, 5 * c, 4 * r + 3 * k));
-    assert!(matches!(relative_pose(&a, &pythagorean), Ok(Pose::Turn(_))), "{:?}", relative_pose(&a, &pythagorean));
+    assert!(matches!(relative_pose(&a, &pythagorean, &mut b), Ok(Pose::Turn(_))), "{:?}", relative_pose(&a, &pythagorean, &mut b));
 }

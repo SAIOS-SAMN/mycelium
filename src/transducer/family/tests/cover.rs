@@ -92,7 +92,7 @@ fn a_demands_candidate_transport_is_read_from_the_bodies_it_stands_for() {
             })
             .expect("the deformation stands as a typed demand");
         let mut c = Contemplation::new();
-        c.hold_form(f.clone(), &[], &[], [0; 4]);
+        c.hold_form(f.clone(), &[], &[], [0; 4], &mut super::common::budget());
         let (_, b) = c.bubbles.scoped().next().expect("the demand is held as an idea");
         let over_chart =
             b.candidates.get(chart.key().as_bytes()).map_or(0, |m| m.len());
@@ -158,7 +158,7 @@ fn a_covers_pieces_are_one_vertex_per_transport_class() {
     let members = w.acts().map_or(0, crate::network::nerve::Keyed::len);
     assert!(members >= 1, "with a member per chart it carries a piece on: {members}");
     assert!(
-        carriage(&composite(&a), &composite(&b)).is_none(),
+        carriage(&composite(&a), &composite(&b), &mut super::common::budget()).is_none(),
         "the composite does not carry whole; this vertex is the cover's"
     );
 }
@@ -176,7 +176,7 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
     let ([input], [image]) = (ia.as_slice(), ib.as_slice()) else {
         panic!("the notched fixture perceives one body on each side");
     };
-    assert!(carriage(input, image).is_none(), "the whole body does not carry");
+    assert!(carriage(input, image, &mut super::common::budget()).is_none(),"the whole body does not carry");
     let words = f.vertices.scoped().filter(|(_, v)| matches!(v, Vertex::Word { .. })).count();
     assert_eq!(words, 0, "and the cover lists no pieces of it");
     assert!(

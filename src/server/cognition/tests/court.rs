@@ -19,7 +19,7 @@ use crate::verdict::blind_replay;
 let w = element::from_canonical(
     &germinate(&[(0, 0, 1u8), (0, 1, 2)], &[(0, 0, 1u8), (0, 1, 9)]).unwrap(),
 );
-assert!(blind_replay(&w).is_none(), "an honest derivation replays clean");
+assert!(blind_replay(&w, &mut super::common::budget()).is_none(), "an honest derivation replays clean");
 // Tamper 1 CANNOT BE BUILT any more: A5's chain is the field's type, so
 // an element cannot hold one that is off its min corner. What a shifted
 // chain is, is the same substance said at another place — A5's quotient,
@@ -28,15 +28,15 @@ let shifted: Vec<(i64, i64, u8, u8)> =
     w.sub().iter().map(|(r, c, b, a)| (r + 3, *c, *b, *a)).collect();
 let off = element::from_residual(&shifted).expect("a shift is still one transition per site");
 assert_eq!(off.address(), w.address(), "A5 quotients the translation: one substance");
-assert!(blind_replay(&off).is_none(), "so it replays clean — it is the same word");
+assert!(blind_replay(&off, &mut super::common::budget()).is_none(), "so it replays clean — it is the same word");
 // Tamper 2: inflate the claimed magnitude (yield fraud).
 let mut fat = w.clone();
 fat.mag = [999, 0, 0, 0];
-assert!(blind_replay(&fat).is_some(), "inflated magnitude does not re-derive");
+assert!(blind_replay(&fat, &mut super::common::budget()).is_some(), "inflated magnitude does not re-derive");
 // Tamper 3: an empty chain claiming work.
 let mut empty = w.clone();
 empty.sub = element::CanonicalChain::default();
-assert!(blind_replay(&empty).is_some(), "no evidence, no word");
+assert!(blind_replay(&empty, &mut super::common::budget()).is_some(), "no evidence, no word");
 }
 
 /// 47.3, 47.5, Stage 12 S12.4d — AN OFFER STANDS PENDING UNTIL THE WITNESS
@@ -145,18 +145,21 @@ assert_eq!(home.basis_len(), 0);
 home.court_stroke();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
+let mut glue = peer.stroke();
 assert!(matches!(
-    peer.glue_fetched(spoken.clone(), [1; 32], [2; 32], &mut cover),
+    peer.glue_fetched(spoken.clone(), [1; 32], [2; 32], &mut cover, &mut glue),
     Glue::Admitted
 ));
 assert!(peer.basis_len() >= 1, "the word is language on the second organ");
+let mut glue = third.stroke();
 assert!(matches!(
-    third.glue_fetched(spoken.clone(), [2; 32], [3; 32], &mut cover),
+    third.glue_fetched(spoken.clone(), [2; 32], [3; 32], &mut cover, &mut glue),
     Glue::Admitted
 ));
 let forged = strip_words(&spoken);
+let mut glue = third.stroke();
 assert!(
-    matches!(third.glue_fetched(forged, [2; 32], [3; 32], &mut cover), Glue::Slashed(_)),
+    matches!(third.glue_fetched(forged, [2; 32], [3; 32], &mut cover, &mut glue), Glue::Slashed(_)),
     "never admit on a word that fails replay"
 );
 }
@@ -182,7 +185,8 @@ let mut addrs = Vec::new();
 for i in 0..(cap + 1) {
     let w = conn(i as i64 + 1);
     let addr = w.address();
-    assert!(matches!(k.install_adopted(&w, [1; 32]), Adoption::Installed));
+    let mut adopt = k.stroke();
+    assert!(matches!(k.install_adopted(&w, [1; 32], &mut adopt), Adoption::Installed));
     assert!(k.field().get(&addr).is_some(), "adopt writes a field entry");
     addrs.push(addr);
 }
@@ -248,7 +252,8 @@ fn conn(shift: i64) -> Element {
 let mut k = Kernel::new();
 let cap = crate::physics::Physics::default().stroke().remaining();
 for i in 0..(cap + 1) {
-    assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32]), Adoption::Installed));
+    let mut adopt = k.stroke();
+    assert!(matches!(k.install_adopted(&conn(2 * (i as i64 + 1)), [1; 32], &mut adopt), Adoption::Installed));
 }
 k.court_stroke();
 assert_eq!(k.docket_circuits().circuits(), 0, "one stroke over cap + 1 listings is not a circuit");
@@ -261,7 +266,8 @@ let below = (0..cap as i64 + 2)
     .find(|w| w.address().as_bytes() < resume.as_slice())
     .expect("an odd shift sorts below the cursor");
 let addr = below.address();
-assert!(matches!(k.install_adopted(&below, [1; 32]), Adoption::Installed));
+let mut adopt = k.stroke();
+assert!(matches!(k.install_adopted(&below, [1; 32], &mut adopt), Adoption::Installed));
 assert!(!k.ruled_contains(addr.as_bytes()), "admitted, not yet ruled");
 // The circuit reaches it before the read returns to where it began: the
 // tail, then past the end from the first key.
@@ -289,7 +295,8 @@ assert_eq!(home.basis_len(), 0);
 home.rule_all_provisionals();
 let spoken = home.provisional.scoped().next().unwrap().1.clone();
 let mut cover = crate::network::nerve::Cover::new();
-assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover), Glue::Admitted));
+let mut glue = peer.stroke();
+assert!(matches!(peer.glue_fetched(spoken, [1; 32], [2; 32], &mut cover, &mut glue), Glue::Admitted));
 assert!(peer.basis_len() >= 1);
 let cover = home.genesis_cover().expect("measured");
 home.enroll([2; 32], cover); // 47.3: a witness with room
@@ -485,14 +492,16 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     let (ha, wa) = (held.address(), word.address());
     assert_ne!(ha, wa, "two letters, two addresses");
     let mut k = Kernel::new();
+    // The fixture's own act: its root, one stroke for its rulings.
+    let mut ruling = k.stroke();
     k.basis_insert(held, [1; 32]);
-    k.ruled_admit(&ha);
+    k.ruled_admit(&ha, &mut ruling);
     k.basis_insert(word, [1; 32]);
     // Against a word this court has not ruled: refused.
     assert!(k
         .try_refine_algebraic(&wa, [2; 32], &ha, &AlgebraicWitness::Section(Box::new(gamma.clone())))
         .is_none());
-    k.ruled_admit(&wa);
+    k.ruled_admit(&wa, &mut ruling);
     // A gauge that does not conjugate them: refused by the algebra, and
     // the language is unmoved.
     let wrong = Word::from_letters(&[(LetterId::turn_90((0, 3)).expect("90° turn"), false)]);
@@ -533,7 +542,7 @@ fn an_algebraic_bid_is_ruled_on_the_courts_own_algebra() {
     let ta = twin.address();
     assert_ne!(ta, ha, "the gauge is content: another element");
     k.basis_insert(twin, [1; 32]);
-    k.ruled_admit(&ta);
+    k.ruled_admit(&ta, &mut ruling);
     assert!(k.try_refine_algebraic(&ta, [2; 32], &ha, &AlgebraicWitness::SameOperator).is_some());
     assert_eq!(k.basis_len(), 1, "the section retired, the base stands");
 }
@@ -561,8 +570,9 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
 
     let mut witness = Kernel::new();
     let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = witness.stroke();
     assert!(matches!(
-        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover),
+        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover, &mut glue),
         Glue::Admitted
     ));
     let cx = witness.complexes().get(&inv.key()).expect("the class has a complex");
@@ -581,7 +591,8 @@ fn a_witness_glues_an_offer_at_the_homes_vantage() {
     // vantage, and the simplex has one vertex where 13.9 needs two.
     let mut confused = Kernel::new();
     let mut cover = crate::network::nerve::Cover::new();
-    let _ = confused.glue_fetched(spoken, witness_vk, witness_vk, &mut cover);
+    let mut glue = confused.stroke();
+    let _ = confused.glue_fetched(spoken, witness_vk, witness_vk, &mut cover, &mut glue);
     let cx = confused.complexes().get(&inv.key()).expect("the class has a complex");
     assert_eq!(
         cx.sections.get(witness_vk.as_slice()).map(|s| s.addr.clone()),
@@ -618,8 +629,9 @@ fn a_witness_that_rederived_nothing_answers_with_nothing() {
     let mut witness = Kernel::new();
     witness.bind_identity(witness_vk);
     let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = witness.stroke();
     assert!(matches!(
-        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover),
+        witness.glue_fetched(spoken.clone(), home_vk, witness_vk, &mut cover, &mut glue),
         Glue::Admitted
     ));
 
@@ -689,8 +701,9 @@ fn a_court_sections_what_it_ruled_itself_and_not_what_a_peer_sent() {
     let mut heard = Kernel::new();
     heard.bind_identity(me);
     let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = heard.stroke();
     assert!(matches!(
-        heard.glue_fetched(spoken.clone(), [0x0b; 32], me, &mut cover),
+        heard.glue_fetched(spoken.clone(), [0x0b; 32], me, &mut cover, &mut glue),
         Glue::Admitted
     ));
     assert!(

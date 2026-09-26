@@ -108,7 +108,7 @@ fn read_frame_axis(
             note_unread(FrameAxis);
             return None;
         }
-        let m = blade::versor_between(&a.shape, &b.shape);
+        let m = blade::versor_between(&a.shape, &b.shape, budget);
         if let Some(m) = &m {
             let lanes = element::measure_lanes(&super::perceive::chain_of(Some(a), Some(b), m));
             note_motor(FrameAxis, m, Some(lanes));
@@ -186,7 +186,12 @@ struct ClassRead {
 /// frame the budget reaches is perceived once; every chart's fiber is read
 /// frame by frame; a budget that ends leaves the frames it did not measure
 /// as the demands of `finish` and says so.
-pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut crate::physics::Budget) -> Percept {
+pub(super) fn family_percept(
+    family: &[(Grid, Grid)],
+    frames: Option<&super::perceive::Frames>,
+    scale: Ratio,
+    budget: &mut crate::physics::Budget,
+) -> Percept {
     let entry = budget.remaining();
     trace::trace("extract/0 frames", trace::Wrote::Nothing, Some(budget));
     // OR1 — THE ORBITS THIS PERCEPT READS are kept for its cycles line. A
@@ -202,8 +207,18 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             unreached.push(k);
             continue;
         }
-        ins.extend(perceive_at(a, k as i64));
-        outs.extend(perceive_at(b, k as i64));
+        // THE FRAMES THE STROKE WAS SIZED BY, where the caller perceived them
+        // (`perceive_family`): read, never perceived a second time.
+        match frames.and_then(|f| f.get(k)) {
+            Some((a_bodies, b_bodies)) => {
+                ins.extend(a_bodies.iter().cloned());
+                outs.extend(b_bodies.iter().cloned());
+            }
+            None => {
+                ins.extend(perceive_at(a, k as i64));
+                outs.extend(perceive_at(b, k as i64));
+            }
+        }
     }
     let n_reached = n - unreached.len();
     let fib_in = fibers(&ins);
@@ -293,7 +308,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             ) else {
                 continue;
             };
-            match carriage(&a0, &b0) {
+            match carriage(&a0, &b0, budget) {
                 Some(car) => {
                     // MT1 — THE IN→OUT TRANSITION READ BY ITS ACTION, the
                     // whole matrix once under the stroke, with the frame it
@@ -380,7 +395,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // THE VERTEX IS THE LEAST FRAME'S READING (51.1: the frame is the
             // corpus's coordinate); every other frame reading the same versor
             // is the frames it holds on.
-            let vertex = match word_or_demand_on_chart(&first.a0, &first.b0, c) {
+            let vertex = match word_or_demand_on_chart(&first.a0, &first.b0, c, budget) {
                 Some(Ok(v)) => v,
                 Some(Err(d)) => {
                     // A reader that returns a typed demand has answered
@@ -823,7 +838,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     // each end's own frame (54.5 grade 0's vertical
                     // transition).
                     let motor = match budget.spend() {
-                        true => blade::versor_between(&body_a.shape, &body_b.shape),
+                        true => blade::versor_between(&body_a.shape, &body_b.shape, budget),
                         false => {
                             cga::note_unread(cga::TransitionKind::FrameAxis);
                             continue;
@@ -844,7 +859,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // this form can name, and the classes standing per cover.
     let mut edges = EdgeTally::default();
     let (meet_chords, meet_faces, pending_torsion, stood) =
-        crate::transducer::family::covered::classify_cover(&covers, &mut edges);
+        crate::transducer::family::covered::classify_cover(&covers, &mut edges, budget);
     trace::trace("percept/4 orbits+classify", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
     // deformation dissolves when every compartment of both bodies is carried AND
@@ -1078,7 +1093,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             continue;
         };
         let (measured, pairs) =
-            edge_between(&bodies_at, &unions, n_reached, (&i, &cik), (&j, &cjk), &mut edges);
+            edge_between(&bodies_at, &unions, n_reached, (&i, &cik), (&j, &cjk), &mut edges, budget);
         // A CONTACT carries its refraction and nothing
         // else — the rigidity of the two bodies' union is not what their
         // contact is (BQ5a), so where the refraction was refused the face
@@ -1101,6 +1116,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     body_pair.as_ref().and_then(|(_, (x, y))| Some((x.as_ref()?, y.as_ref()?))),
                     member_key(&i, &cik),
                     member_key(&j, &cjk),
+                    budget,
                 );
                 pole_demanded.extend(demands);
                 (edge, refraction)

@@ -370,7 +370,7 @@ fn main() {
             learned,
             solves_paid,
         } = c;
-        let Metabolism { dwell_remaining, book_k, .. } = m;
+        let Metabolism { book_k, .. } = m;
         let cycle = mycelium::physics::aperture_cycle() as u64;
         // The mark is a stroke this voice has passed, so the gap is exact.
         let since = stroke_n.checked_sub(last_logged_n).is_some_and(|g| g >= cycle);
@@ -381,36 +381,12 @@ fn main() {
         if last_logged_k == u64::MAX || own_k != last_logged_k || since {
             let (atlas_ruled, atlas_stood, atlas_held) = entity.atlas_standing_counts();
             let (axis_charts, axis_words) = entity.axis_index_counts();
-            if moved == [false; 4] {
-                eprintln!(
-                    "[{tag}] [{}] stroke idle: dwell {dwell_remaining:?} K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed census {:?} | reserve {:?} | carriers {} | feed {}",
-                    mycelium::chronometry::Height::stamp_of(entity.now_tu()),
-                    entity.epigenome.genome_len(),
-                    entity.dialect_len(),
-                    entity.ideas_len(),
-                    entity.pivot_reading().line(),
-                    entity.cavity_len(),
-                    entity.cavity_links(),
-                    entity.idea_weight(),
-                    entity.carriers(),
-                    extract_memo.len(),
-                    heap(),
-                    entity.session_sizes(),
-                    // Z4b's instrument on the wire: why the shed declined
-                    // each held thought — glued_by, glues, dirty,
-                    // sheddable — so the holds column is ATTRIBUTED and
-                    // not inferred, and the reserve beside it so the four
-                    // lanes can be watched moving apart (Z4d).
-                    entity.shed_census(),
-                    entity.reserve(),
-                    // The growth's own instrument, on the wire: every
-                    // carrier this voice owns, its key bytes and its
-                    // entries, never a sum. A total cannot say which
-                    // carrier moved.
-                    carrier_line(&entity),
-                    if feed.exhausted() { "clear" } else { "held" },
-                );
-            } else {
+            // C3 — NOTHING PRINTS PER IDLE STROKE (ruled 2026-09-26): the
+            // `stroke idle` line fired on every idle stroke the pacing let
+            // through, 110 lines in five minutes on one voice. The idle stroke
+            // is carried by the percept's `Spend` reading and the readings
+            // pushed below; only a stroke that moved a lane is lined.
+            if moved != [false; 4] {
                 eprintln!(
                     "[{tag}] [{}] K {own_k} book {book_k} | genome {} | dialect {} | ideas {} | {} | cavity {} links {} | holds {:?} | entity {:?} memo {} | heap {} | grew {grew:?} | session {:?} | atlas words ruled {atlas_ruled} stood {atlas_stood} held {atlas_held} | axis index charts {axis_charts} words {axis_words} | shed {} census {:?} reserve {:?} carriers {} | fed {fed} derived {derived} witnessed {witnessed} settles {settles} err {errors} Z {} | learned {learned} projected {projected} solved {proj_solved} uniq {uniq_solved} paid {solves_paid} refined {refined} (reanchor {reanchored} condense {condensed}) discordance {} boundary {:?} axes {}",
                     mycelium::chronometry::Height::stamp_of(entity.now_tu()),

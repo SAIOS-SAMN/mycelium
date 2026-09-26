@@ -44,8 +44,9 @@ fn a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "0220"]));
-let v1 = carriage(&a1, &b1).expect("a translated bar carries").v;
-let edge = edge_transport(&v1, &a1, &a2, &b1, &b2).expect("the pair moved rigidly: an edge transport");
+let mut budget = super::common::budget();
+let v1 = carriage(&a1, &b1, &mut budget).expect("a translated bar carries").v;
+let edge = edge_transport(&v1, &a1, &a2, &b1, &b2, &mut budget).expect("the pair moved rigidly: an edge transport");
 assert!(edge.word.is_identity(), "a rigid motion is the identity on the edge: {:?}", edge.word);
 assert!(
     crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),
@@ -54,7 +55,7 @@ assert!(
 let b2_still = body(&["0000", "2200"]);
 // Every member of the coset refuses, and every refusal comes back; an
 // empty coset is the one that says `NotRigid`.
-let refused = edge_transport(&v1, &a1, &a2, &b1, &b2_still);
+let refused = edge_transport(&v1, &a1, &a2, &b1, &b2_still, &mut budget);
 assert!(
     matches!(refused.as_ref().err().map(|r| r.as_slice()), Some([EdgeRefusal::NotRigid])),
     "a pair no versor of the coset carries is a remainder edge, and says so: {refused:?}"
@@ -69,8 +70,9 @@ fn edge_transport_lies_in_the_stabilizer_or_the_exchange() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
-let v1 = carriage(&a1, &b1).expect("a translated compartment carries").v;
-let edge = edge_transport(&v1, &a1, &a2, &b1, &b2).expect("the pair-body is carried by the identity: an edge");
+let mut budget = super::common::budget();
+let v1 = carriage(&a1, &b1, &mut budget).expect("a translated compartment carries").v;
+let edge = edge_transport(&v1, &a1, &a2, &b1, &b2, &mut budget).expect("the pair-body is carried by the identity: an edge");
 assert!(edge.word.is_identity(), "the exchange has the identity word");
 assert!(
     !crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),
@@ -764,7 +766,7 @@ assert_eq!(bodies, 1, "one body is one vertex under ∃V, got {}", rule.form.ver
 let a = perceive(&family[0].0);
 let b = perceive(&family[0].1);
 assert_eq!(a[0].moduli, b[0].moduli, "the chart is exact axes, not a hash");
-assert!(carriage(&a[0], &b[0]).is_some(), "a versor carries the bar");
+assert!(carriage(&a[0], &b[0], &mut super::common::budget()).is_some(), "a versor carries the bar");
 }
 
 /// Y4 (24.4, 20, 21 step 1, W10, Rule 2):
@@ -858,7 +860,7 @@ fn perception_3d_coordinates_preserve_frame_and_moments() {
     )
     .expect("a square is heard at n = 3");
     assert_eq!(at_zero.moduli, b3d.moduli, "a frame carries no meaning on the chart (51.1)");
-    assert!(carriage(&at_zero, &b3d).is_some(), "and the translation along e₃ carries one onto the other");
+    assert!(carriage(&at_zero, &b3d, &mut super::common::budget()).is_some(), "and the translation along e₃ carries one onto the other");
 }
 
 #[test]

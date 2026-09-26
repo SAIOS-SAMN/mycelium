@@ -13,7 +13,7 @@ use num_traits::Zero;
 /// `h₃ ↦ −h₃` — so where it vanishes, the two candidate turns act
 /// IDENTICALLY and there is no fact left to recover.
 ///
-/// That is what makes `HalfOpen` honest rather than a shrug: the `ℤ₂`
+/// That is what makes `Open180` honest rather than a shrug: the `ℤ₂`
 /// gauge freedom is a property of the body, not of the reader.
 #[test]
 fn the_odd_harmonic_vanishes_exactly_on_a_two_fold_symmetric_body() {
@@ -38,7 +38,7 @@ fn the_odd_harmonic_vanishes_exactly_on_a_two_fold_symmetric_body() {
 ///
 /// The cell test was gated on `support.len()` equality, so a pair of
 /// different size was refused a reading and returned mod `π` —
-/// a cell count standing in for scale, which is the `half-open` group.
+/// a cell count standing in for scale, which is the `open-180°` group.
 /// `φ = z₃·conj(z₂)` is scale-free, so the turn between a body and its
 /// dilate is DETERMINED, not left open.
 #[test]
@@ -51,10 +51,10 @@ fn the_turn_180_is_determined_between_a_body_and_its_dilate() {
         (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
     ]);
     assert_ne!(l.blade.support.len(), l2.blade.support.len(), "four against sixteen");
-    let frame = blade::relative_rotor(&l.blade, &l2.blade).expect("a turn");
+    let frame = blade::relative_rotor(&l.blade, &l2.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a turn");
     assert!(
         matches!(frame, blade::Pose::Turn(_)),
-        "determined across a dilation, not HalfOpen: {frame:?}"
+        "determined across a dilation, not Open180: {frame:?}"
     );
 }
 
@@ -74,9 +74,9 @@ fn a_quartic_oriented_body_reaches_every_turn_90() {
     let sq = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0)]);
     assert!(blade::deviatoric(&sq.blade).is_none(), "isotropic at order 2");
     assert!(blade::quartic_harmonic(&sq.blade).is_some(), "the quartic orients it");
-    let pose = blade::relative_rotor(&sq.blade, &sq.blade);
+    let pose = blade::relative_rotor(&sq.blade, &sq.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20));
     assert!(
-        matches!(&pose, Ok(blade::Pose::HalfOpen(c)) if c.len() == 4 && c.iter().all(|r| r.parity() == Some(false))),
+        matches!(&pose, Ok(blade::Pose::Open180(c)) if c.len() == 4 && c.iter().all(|r| r.parity() == Some(false))),
         "a C4 body carries onto itself by its four turns, the coset held and none chosen: {pose:?}"
     );
 }
@@ -106,7 +106,7 @@ fn a_pythagorean_site_map_is_carried_at_its_rational_turn() {
         .collect();
     let image = blade::shape_of(&image);
     assert_eq!(blade::dilation(&l.blade, &image.blade), Ok(blade::Dilation::Sites), "a site map");
-    let pose = blade::relative_rotor(&l.blade, &image.blade).expect("carried at its rational turn");
+    let pose = blade::relative_rotor(&l.blade, &image.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("carried at its rational turn");
     assert!(matches!(pose, blade::Pose::Turn(_)), "determined, the odd harmonic settling the 180° turn: {pose:?}");
     assert!(pose.rotor().projective_eq(&cga::rotator(&q(2), &q(1))), "the map's own rotor, read back: {pose:?}");
 }
@@ -132,7 +132,7 @@ fn a_filled_blow_up_is_carried_with_its_order_four_residue() {
     let fit = crate::transducer::blade::certify(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE)
         .expect("the rounds fit the pair");
     assert_eq!(fit.through, Harmonic::Three, "exact through order three, the residue at four");
-    let members = transitions_between(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE).expect("carried");
+    let members = transitions_between(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("carried");
     let [t] = members.as_slice() else { panic!("one member: h₃ settles the 180° turn, got {}", members.len()) };
     assert!(t.residue.iter().all(|r| r.order == Harmonic::Four), "nothing below order four is left: {:?}", t.residue);
     let grid: Vec<_> = t.residue.iter().filter(|r| r.plane == crate::transducer::base::GRID_PLANE).collect();
@@ -150,10 +150,11 @@ fn a_filled_blow_up_is_carried_with_its_order_four_residue() {
 fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let turned = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (1, 0, 0)]);
-    let pose = blade::relative_rotor(&l.blade, &turned.blade).expect("a turn");
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    let pose = blade::relative_rotor(&l.blade, &turned.blade, &mut budget).expect("a turn");
     assert!(matches!(pose, blade::Pose::Turn(_)), "h₃ settles the 180° turn: {pose:?}");
     assert_eq!(pose.rotor().parity(), Some(false), "a turn, not a mirror");
-    let v = blade::versor_between(&l, &turned).expect("the transition");
+    let v = blade::versor_between(&l, &turned, &mut budget).expect("the transition");
     let four = crate::transducer::blade::Harmonic::Four;
     assert_eq!(
         blade::carries_by_covariance(&v, &l.blade, &turned.blade, blade::Tower::Region, four),
@@ -182,7 +183,7 @@ fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
 fn v1_an_unlike_pair_is_permanently_unturned() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
     let s = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]);
-    let refused = blade::relative_rotor(&l.blade, &s.blade).err();
+    let refused = blade::relative_rotor(&l.blade, &s.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).err();
     assert!(
         matches!(refused, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. }))),
         "an invariant separates them on both towers, so no vocabulary reaches them: {refused:?}"
@@ -223,7 +224,7 @@ fn v1_the_open_arm_needs_both_gates_and_a_dilate_passes_only_one() {
     );
     // And the odd gate is what READS it (AL1 as amended): the pose is the
     // odd versor, the pair read orientation-reversed, never a turn.
-    let pose = blade::relative_rotor(&l.blade, &j.blade).expect("a mirror is read, never refused");
+    let pose = blade::relative_rotor(&l.blade, &j.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a mirror is read, never refused");
     assert_eq!(pose.rotor().parity(), Some(true), "the odd gate reads the reflection: {pose:?}");
 }
 
@@ -244,7 +245,7 @@ fn v1_a_reflection_is_proved_improper_across_a_dilation() {
         (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
     ]);
     assert_ne!(j.blade.support.len(), l2.blade.support.len(), "four against sixteen");
-    let pose = blade::relative_rotor(&j.blade, &l2.blade).expect("improper across a dilation, and read");
+    let pose = blade::relative_rotor(&j.blade, &l2.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("improper across a dilation, and read");
     assert_eq!(pose.rotor().parity(), Some(true), "its pose is the odd versor, read across the scale: {pose:?}");
 }
 
@@ -268,7 +269,7 @@ fn v1_an_achiral_pair_is_still_refused_by_the_scale_certificate() {
     assert!(blade::chirality(&l3.blade).expect("read").1.is_zero(), "achiral");
     // The even tower does separate them, and that is what decides.
     assert!(!blade::dilation_certified(&d2.blade, &l3.blade), "not similar");
-    let refused = blade::relative_rotor(&d2.blade, &l3.blade).err();
+    let refused = blade::relative_rotor(&d2.blade, &l3.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).err();
     assert!(
         matches!(refused, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. }))),
         "chirality permits it; both towers refuse it; the towers win: {refused:?}"
@@ -309,7 +310,7 @@ fn a_site_map_certifies_on_the_point_tower_and_reads_oblique() {
     let arc = blade::oblique_arc(&l.blade, &image.blade).expect("the arc of the turn");
     assert_eq!(arc, (num_bigint::BigInt::from(15), num_bigint::BigInt::from(8)), "the arc of (4 + i)²");
     assert_eq!(
-        blade::relative_rotor(&l.blade, &image.blade).err(),
+        blade::relative_rotor(&l.blade, &image.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).err(),
         Some(blade::NoPose::Oblique),
         "a similarity at an angle the alphabet does not spell is left open"
     );
@@ -328,7 +329,7 @@ fn a_different_shape_is_incongruent_at_its_order_on_both_towers() {
     let two = blade::TowerRefusal::At(blade::Harmonic::Two);
     assert_eq!(blade::dilation(&image.blade, &s.blade), Err((two, two)), "both towers refuse at the deviatoric");
     assert_eq!(
-        blade::relative_rotor(&image.blade, &s.blade).err(),
+        blade::relative_rotor(&image.blade, &s.blade, &mut crate::physics::Physics::default().stroke_n(1 << 20)).err(),
         Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: two, sites: two })),
         "the refusal names the order from each tower"
     );
@@ -377,11 +378,12 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
         (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
         (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
     ]);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let read = [
-        blade::relative_rotor(&l.blade, &j.blade).err(),
-        blade::relative_rotor(&l.blade, &s.blade).err(),
-        blade::relative_rotor(&l.blade, &big.blade).err(),
-        blade::relative_rotor(&l.blade, &l2.blade).err(),
+        blade::relative_rotor(&l.blade, &j.blade, &mut budget).err(),
+        blade::relative_rotor(&l.blade, &s.blade, &mut budget).err(),
+        blade::relative_rotor(&l.blade, &big.blade, &mut budget).err(),
+        blade::relative_rotor(&l.blade, &l2.blade, &mut budget).err(),
     ];
     let unlike = |r: &Option<blade::NoPose>| {
         matches!(r, Some(blade::NoPose::Incongruent(blade::Incongruence::Order { .. })))
@@ -392,6 +394,6 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
         matches!(read, [None, ref s, ref b, None] if unlike(s) && unlike(b)),
         "read orientation-reversed, unlike, unlike, and a turn across a dilation: {read:?}"
     );
-    let mirror = blade::relative_rotor(&l.blade, &j.blade).expect("the improper pair is read");
+    let mirror = blade::relative_rotor(&l.blade, &j.blade, &mut budget).expect("the improper pair is read");
     assert_eq!(mirror.rotor().parity(), Some(true), "as the odd versor: {mirror:?}");
 }

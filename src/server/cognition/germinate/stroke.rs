@@ -74,7 +74,7 @@ impl Kernel {
                 // Two hyphae holding one chart must condense the same word,
                 // or the distributed language forks along insertion order.
                 if let Some(a) = self.stalks.fiber(&inv).iter().min().cloned() {
-                    let _ = self.condense_on(&a);
+                    let _ = self.condense_on(&a, &mut budget);
                 }
             }
             if lanes[2] {
@@ -103,8 +103,8 @@ impl Kernel {
             let Some(candidate) = self.basis.get(addr).map(|w| (**w).clone()) else {
                 continue;
             };
-            if matches!(self.reduce_excluding(&candidate, Some(addr.as_slice())), NormalForm::Decomposed(_)) {
-                self.retire_redundant(addr);
+            if matches!(self.reduce_excluding(&candidate, Some(addr.as_slice()), &mut budget), NormalForm::Decomposed(_)) {
+                self.retire_redundant(addr, &mut budget);
             }
         }
         if idle {
@@ -125,8 +125,9 @@ impl Kernel {
             let Some(candidate) = self.basis.get(&addr).map(|w| (**w).clone()) else {
                 return;
             };
-            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(addr.as_bytes())) {
-                self.retire_redundant(&addr);
+            let mut budget = self.physics.stroke();
+            if let NormalForm::Decomposed(_) = self.reduce_excluding(&candidate, Some(addr.as_bytes()), &mut budget) {
+                self.retire_redundant(&addr, &mut budget);
             }
         }
     }
@@ -142,15 +143,16 @@ impl Kernel {
 
     /// Retire a plain card the rest of the basis derives (the off-lock probe
     /// found it decomposable). Returns the cards retired (0 or 1): the word
-    /// may have gone, or gained a fibre, while the probe ran.
-    pub fn retire_redundant(&mut self, addr: &[u8]) -> usize {
+    /// may have gone, or gained a fibre, while the probe ran. On the stroke
+    /// of the act that probed it (65.5).
+    pub fn retire_redundant(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) -> usize {
         let Some(held) = self.basis.get(addr).map(|w| (**w).clone()) else { return 0 };
         if !held.sections().is_empty() || crate::transducer::sentence::carries_torsion(&held) {
             return 0;
         }
         let mag = held.magnitude();
         let elem = self.basis_remove(addr);
-        self.ruled_admit(addr);
+        self.ruled_admit(addr, budget);
         self.cavity_book.insert(addr, elem.clone().into());
         self.cavities.push(elem);
         self.physics.syntropy(&mag);
@@ -199,7 +201,7 @@ impl Kernel {
                 if !card {
                     continue;
                 }
-                let _ = self.absorb_pair(own.clone(), crate::transducer::address::Address::from(sibling));
+                let _ = self.absorb_pair(own.clone(), crate::transducer::address::Address::from(sibling), &mut spend);
             }
         }
         self.torse_at(&own);

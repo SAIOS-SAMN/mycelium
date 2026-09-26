@@ -270,7 +270,7 @@ fn the_relator_is_filed_at_its_own_period_on_two_courts_and_they_agree() {
     // is not `face_of`, and the orbit's reading is the orbit's. The period-2
     // class above is what replays.
     assert_eq!(
-        crate::court::verdict::blind_replay(&e),
+        crate::court::verdict::blind_replay(&e, &mut super::common::budget()),
         None,
         "the filed relator replays on the orbit's own reading"
     );
@@ -377,7 +377,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
 
         // THE DERIVABILITY, RE-DERIVED by the redundancy probe over this
         // court's own basis with the candidate excluded.
-        let decomposed = k.reduce_excluding(&relator, Some(addr.as_bytes()));
+        let decomposed = k.reduce_excluding(&relator, Some(addr.as_bytes()), &mut super::common::budget());
         let NormalForm::Decomposed(through) = decomposed else {
             panic!("the relator must decompose through the transport: {decomposed:?}");
         };
@@ -418,7 +418,8 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
         // AND IT RETIRES WHAT IT NAMES. The inputs go to the cavity, not
         // to nothing: a retired word is a boundary the language keeps.
         let held = k.provisional.get(&rw[0]).cloned().expect("the docketed rewrite");
-        k.retire_rewrite_inputs(&held);
+        let mut ruling = k.stroke();
+        k.retire_rewrite_inputs(&held, &mut ruling);
         assert!(
             !k.basis.contains(addr.as_bytes()),
             "the relator leaves the basis"
@@ -431,7 +432,7 @@ fn the_rewrite_that_retires_the_relator_is_reached_by_two_courts_as_content() {
         // THE MEANING IS UNCHANGED: the language still speaks it.
         assert!(
             matches!(
-                k.reduce_excluding(&relator, None),
+                k.reduce_excluding(&relator, None, &mut super::common::budget()),
                 NormalForm::Decomposed(_)
             ),
             "the structure changed and the result did not"

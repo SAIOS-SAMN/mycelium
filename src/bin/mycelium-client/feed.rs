@@ -68,10 +68,6 @@ impl Feed {
     pub(crate) fn finish(&mut self) {
         self.ti += 1;
     }
-
-    pub(crate) fn exhausted(&self) -> bool {
-        self.ti >= self.files.len()
-    }
 }
 
 pub(crate) fn family_magnitude(train: &mycelium::transducer::family::Family) -> [u64; 4] {

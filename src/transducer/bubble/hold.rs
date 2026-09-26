@@ -26,6 +26,7 @@ impl Contemplation {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
+        budget: &mut crate::physics::Budget,
     ) {
         use crate::transducer::family::trace;
         if f.vertices.len() <= 1
@@ -45,7 +46,7 @@ impl Contemplation {
         // wanted; `hold_form_inner` derives its own from the form it owns,
         // and neither is stored beside the other (law 12).
         let key = trace::tracing().then(|| idea_key(&f));
-        self.hold_form_inner(f, train, remainders, escrow);
+        self.hold_form_inner(f, train, remainders, escrow, budget);
         let retained = match (before, live_bytes()) {
             (Some(a), Some(b)) => {
                 HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
@@ -73,6 +74,7 @@ impl Contemplation {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
+        budget: &mut crate::physics::Budget,
     ) {
         mark("idea_key");
         let key = idea_key(&f);
@@ -154,7 +156,7 @@ impl Contemplation {
                 // reading `ring_answer` makes in `family/memo.rs`).
                 Vertex::Demand { chart, bodies, .. } => {
                     cover.insert(chart.key(), ());
-                    for (rk, r) in candidates_over(bodies.as_slice()).scoped() {
+                    for (rk, r) in candidates_over(bodies.as_slice(), budget).scoped() {
                         candidates.nested_insert(chart.key(), rk, r.clone());
                     }
                 }

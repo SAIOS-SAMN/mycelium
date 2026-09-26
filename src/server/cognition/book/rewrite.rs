@@ -37,7 +37,9 @@ impl Kernel {
         self.offer_rewrite(rw, voice).then_some(addr)
     }
 
-    pub(crate) fn retire_rewrite_inputs(&mut self, rw: &Element) {
+    /// The inputs a rewrite retires, replayed inside the act that ruled or
+    /// installed the rewrite, on that act's stroke (65.5); it mints none.
+    pub(crate) fn retire_rewrite_inputs(&mut self, rw: &Element, budget: &mut crate::physics::Budget) {
         let Some(r) = crate::transducer::rewrite::Rewrite::from_element(rw) else {
             return;
         };
@@ -45,11 +47,11 @@ impl Kernel {
             let Some(w) = self.basis.get(&addr).map(|e| (**e).clone()) else {
                 continue;
             };
-            if !matches!(self.reduce_excluding(&w, Some(addr.as_bytes())), NormalForm::Decomposed(_)) {
+            if !matches!(self.reduce_excluding(&w, Some(addr.as_bytes()), budget), NormalForm::Decomposed(_)) {
                 continue;
             }
             let elem = self.basis_remove(&addr);
-            self.ruled_admit(&addr);
+            self.ruled_admit(&addr, budget);
             self.cavity_book.insert(addr, elem.clone().into());
             self.cavities.push(elem);
         }
