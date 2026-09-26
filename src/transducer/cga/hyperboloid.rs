@@ -1,4 +1,4 @@
-//! 54.7 Axiom B — a lamina on the hyperboloid sheet, the directed geodesic
+//! 54.7 Axiom B — a compartment on the hyperboloid sheet, the directed geodesic
 //! transvection between two, and the base point a frame stands at.
 
 use super::group::is_versor;
@@ -7,7 +7,7 @@ use super::multivector::{one, Mv, EM};
 use num_rational::BigRational;
 use num_traits::{Signed, Zero};
 
-/// AXIOM B — A LAMINA LANDS ON THE HYPERBOLOID SHEET, EXACTLY OVER ℚ
+/// AXIOM B — A COMPARTMENT LANDS ON THE HYPERBOLOID SHEET, EXACTLY OVER ℚ
 /// (54.7, ruled 2026-09-21).
 ///
 /// ```text
@@ -22,10 +22,10 @@ use num_traits::{Signed, Zero};
 ///     v² = [4|u|² − (1+|u|²)²] / (1−|u|²)² = −(1−|u|²)²/(1−|u|²)² = −1
 /// ```
 ///
-/// THE SHEET, NOT THE CONE. `v² = −1` is the INTERIOR `ℍ³`, where a lamina
+/// THE SHEET, NOT THE CONE. `v² = −1` is the INTERIOR `ℍ³`, where a compartment
 /// and a member frame actually sit; the null cone `p² = 0` is the ideal
 /// boundary `∂_∞ℍ³`, the asymptotic horizon of infinite geodesic rays. A
-/// first cut put laminae on the cone, and there
+/// first cut put compartments on the cone, and there
 /// [`geodesic_transvection`] degenerates: `p_a² = 0` collapses the
 /// transport step and the operator carries nothing.
 ///
@@ -33,12 +33,12 @@ use num_traits::{Signed, Zero};
 /// `|u| < 1` so the denominator never vanishes and the point stays on the
 /// upper sheet. It sets the unit of one lattice step and nothing else — the
 /// curvature is still read off a remainder, never carried as a constant
-/// (51.2, 51.11). `None` where `M` does not bound the point: that lamina is
+/// (51.2, 51.11). `None` where `M` does not bound the point: that compartment is
 /// outside this chart and says so rather than being rounded into it.
 ///
-/// ON THE BASE'S OWN `n` COORDINATES (PH2): `x` is the lamina's offset on
+/// ON THE BASE'S OWN `n` COORDINATES (PH2): `x` is the compartment's offset on
 /// every axis it has, and the sheet is `ℍⁿ` of `Cl(n+1, 1)`.
-pub fn hyperbolic_lamina(x: &[BigRational], m: &BigRational) -> Option<Mv> {
+pub fn hyperbolic_compartment(x: &[BigRational], m: &BigRational) -> Option<Mv> {
     if m.is_zero() {
         return None;
     }

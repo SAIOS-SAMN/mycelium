@@ -222,7 +222,7 @@ fn relative_gauge_composite_fixes_what_neither_fixes() {
 /// chain whose links send one input hue to two different output hues yields
 /// both entries and neither is the answer. A hue decided by a Vec's order
 /// would be a member by position (rule 15), and the court and the speaker
-/// would read different images of one lamina; the listing is refused at
+/// would read different images of one compartment; the listing is refused at
 /// that hue instead.
 #[test]
 fn a_gauge_naming_two_images_for_one_hue_is_refused_not_resolved_by_order() {

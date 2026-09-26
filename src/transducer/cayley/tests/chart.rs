@@ -147,7 +147,7 @@ fn the_versor_between_two_shapes_has_a_bivector() {
     assert!(versor_of_bivector(&b).expect("derives").projective_eq(&v));
     let one = shape_of(&[(1, 2, 0)]);
     let block = shape_of(&[(2, 4, 0), (2, 5, 0), (3, 4, 0), (3, 5, 0)]);
-    let w = versor_between(&block, &one).expect("a dilation carries the block onto one lamina");
+    let w = versor_between(&block, &one).expect("a dilation carries the block onto one compartment");
     let c = bivector_of(&w).expect("in the chart");
     assert!(!c.geo(&dilation_plane()).scalar_part().is_zero(), "the bivector has a dilation component");
     assert!(versor_of_bivector(&c).expect("derives").projective_eq(&w));

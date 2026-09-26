@@ -185,7 +185,7 @@ mod tests {
 
     use crate::transducer::element::{self, Element};
 
-    /// A distinct object per `n`: the residual of one lamina recoloured to
+    /// A distinct object per `n`: the residual of one compartment recoloured to
     /// hue `n`, which is a different vertex for each n.
     fn obj(n: u8) -> Element {
         element::from_canonical(

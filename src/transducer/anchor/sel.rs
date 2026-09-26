@@ -58,11 +58,12 @@ pub(crate) fn has(s: &[(i64, i64)], p: (i64, i64)) -> bool {
 
 /// The connected components of a planar support, each sorted: the scene is
 /// one grid's, so its sites stand in frame 0 and are handed to the base as
-/// laminae there.
+/// compartments there.
 pub(crate) fn planar_components(sup: &[(i64, i64)]) -> Vec<Vec<(i64, i64)>> {
-    use crate::transducer::blade::Lamina;
-    let laminae: Vec<Lamina> = sup.iter().map(|&(r, c)| Lamina::from((r, c, 0, 0u8))).collect();
-    components(&laminae)
+    use crate::transducer::blade::Compartment;
+    let compartments: Vec<Compartment> =
+        sup.iter().map(|&(r, c)| Compartment::from((r, c, 0, 0u8))).collect();
+    components(&compartments)
         .into_iter()
         .map(|c| sorted(c.iter().filter_map(|l| crate::transducer::family::on_grid(&l.site)).collect()))
         .collect()

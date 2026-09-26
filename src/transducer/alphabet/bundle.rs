@@ -396,7 +396,7 @@ pub fn by_base(sections: &[(Word, Section)]) -> crate::network::nerve::Keyed<Vec
 /// IS THIS WORD A SECTION OF A BUNDLE THE LANGUAGE ALREADY HOLDS?
 ///
 /// The expansion's whole point: a word is redundant not only when its
-/// laminae tile, but when it is a CONJUGATE of something held — same base, and a
+/// compartments tile, but when it is a CONJUGATE of something held — same base, and a
 /// conjugator the alphabet can spell. Then the language keeps the base and
 /// the transition, and the second monolith is a section.
 ///

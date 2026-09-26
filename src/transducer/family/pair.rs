@@ -193,18 +193,18 @@ pub(crate) struct Covered {
 }
 
 /// The links a deformation stands for: the union of both bodies' supports,
-/// each with the hue before and after (0 where a body has no lamina).
+/// each with the hue before and after (0 where a body has no compartment).
 pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
     let mut before: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for l in &a.laminae {
+    for l in &a.compartments {
         before.insert(l.site.key(), l.hue);
     }
     let mut after: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for l in &b.laminae {
+    for l in &b.compartments {
         after.insert(l.site.key(), l.hue);
     }
     let mut links: Vec<Link> = Vec::new();
-    for l in &a.laminae {
+    for l in &a.compartments {
         // A site the image does not hold is absent there, and hue 0 IS
         // absence in this encoding.
         let gone = match after.get(&l.site.key()) {
@@ -215,7 +215,7 @@ pub(crate) fn delta_links(a: &Body, b: &Body) -> Vec<Link> {
             links.push((r, c, l.hue, gone));
         }
     }
-    for l in &b.laminae {
+    for l in &b.compartments {
         if let (false, Some((r, c))) = (before.contains(&l.site.key()), on_grid(&l.site)) {
             links.push((r, c, 0, l.hue));
         }

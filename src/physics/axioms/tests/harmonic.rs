@@ -364,13 +364,13 @@ fn a_non_simple_bivector_requires_content_off_the_sensor_plane() {
 /// `den2 = 4 r_a² r_b² → 0`, and the inversive distance diverges — the
 /// interaction horizon stops being defined at all.
 ///
-/// THE SMALLEST POSSIBLE BODY IS THE TEST. One lamina is the least
+/// THE SMALLEST POSSIBLE BODY IS THE TEST. One compartment is the least
 /// harmonic mass the sensor can deliver, and it is exactly where a
 /// point-mass reading would give `r² = 0`. It does not, because
-/// `blade::lift` INTEGRATES THE LAMINA'S OWN UNIT SQUARE and carries
+/// `blade::lift` LIFTS THE COMPARTMENT TO ITS OWN ROUND and carries
 /// the parallel-axis term at every order — which is the shadow trace's
 /// retirement (A.11's single producer) doing structural work rather
-/// than cosmetic work. A second producer taking cells as point masses
+/// than cosmetic work. A second producer taking compartments as point masses
 /// would have collapsed the nucleus onto the cone.
 #[test]
 fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
@@ -378,12 +378,12 @@ fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let sixth = q(1) / q(6);
 
-    // A SINGLE LAMINA — the least mass there is.
+    // A SINGLE COMPARTMENT — the least mass there is.
     let one = blade::shape_of(&[(0, 0, 0)]).blade;
     let r2 = one.radius2();
     assert!(
         r2 >= sixth,
-        "one lamina integrates its own square: r² = {r2} ≥ 1/6, never 0"
+        "one compartment carries its own round: r² = {r2} ≥ 1/6, never 0"
     );
 
     // A point-mass reading would put this at zero. It does not, so the
@@ -396,95 +396,3 @@ fn the_smallest_body_still_holds_its_nucleus_off_the_cone() {
     assert!(w > q(0), "so the regime is always defined");
 }
 
-/// THE GAUGE FREQUENCY IS THE SCALE EXPONENT — MEASURED (65.6).
-///
-/// The hypothesis: a harmonic of azimuthal order `m` carries scaling
-/// degree `m`, because a conformal homothety acts as `w = ρe^{iθ}` and
-/// `f_m(wz) = ρ^m e^{imθ} z^m` — the integer in the phase and the
-/// exponent in the amplitude are the SAME `m`. So `S` reads its weights
-/// off `G` rather than from a table.
-///
-/// IT MUST BE MEASURED AGAINST `blade::lift`, NOT ASSUMED. The
-/// derivation is for MASS-NORMALISED moments, and `deviatoric` returns
-/// raw `inertia` components with no division by area. If `lift` does
-/// not normalise, the degrees shift by the mass's own weight and every
-/// cross-multiplication gate built on them is off.
-///
-/// A body and its exact 2× dilate: each cell becomes a 2×2 block, which
-/// is the dilation `x ↦ 2x` performed on the lattice itself.
-#[test]
-fn the_scaling_degrees_of_the_harmonic_tower() {
-    use crate::transducer::blade::sensor_plane as blade;
-    let q = |n: i64| crate::core::Q::from_integer(n.into());
-
-    // An L-tromino: `C₁`, so every harmonic is non-vanishing and each
-    // degree is observable.
-    let base = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0)]).blade;
-    let dilate = {
-        let mut cells = Vec::new();
-        for &(r, c) in &[(0i64, 0i64), (1, 0), (0, 1)] {
-            for dr in 0..2 {
-                for dc in 0..2 {
-                    cells.push((2 * r + dr, 2 * c + dc, 0));
-                }
-            }
-        }
-        blade::shape_of(&cells).blade
-    };
-
-    // ρ = 2, so ρ² = 4. The trace is claimed at degree 2.
-    let (ra2, rb2) = (base.radius2(), dilate.radius2());
-    assert_eq!(&rb2 / &ra2, q(4), "r² scales as ρ² — the trace sits at degree 2");
-
-    let norm2 = |v: [crate::core::Q; 2]| &v[0] * &v[0] + &v[1] * &v[1];
-    let da = norm2(blade::deviatoric(&base).expect("anisotropic"));
-    let db = norm2(blade::deviatoric(&dilate).expect("anisotropic"));
-    // MEASURED: `‖D‖²` scales as 256 = ρ⁸, NOT ρ⁴.
-    //
-    // THE CARRIERS ARE AT MIXED NORMALISATION, and that is the finding.
-    // The theorem "azimuthal order m carries scaling degree m" holds for
-    // MASS-NORMALISED moments, `T^(k) = (1/M₀)∫(x−P)^⊗k`. `radius2()`
-    // is normalised — it is the conformal sphere's `r²`, a length², and
-    // scales as `ρ²`. `deviatoric` is NOT: it returns raw `inertia`
-    // combinations, and a raw second moment over a 2D region carries
-    // the area's own weight, `∫x² ~ ρ²·ρ² = ρ⁴`. So `‖D‖² ~ ρ⁸`.
-    //
-    // `S` therefore CANNOT read its exponent off `G` alone. It must
-    // account for each carrier's own normalisation, and `Blade` does not
-    // use one normalisation across the tower.
-    // A.12 — NORMALISED, so the harmonic order IS the degree.
-    //
-    // Before normalisation this read `ρ⁸` for `‖D‖²` and `ρ¹²` for
-    // `‖Q‖²`: `radius2()` was `Tr(I)/M₀` while the harmonics were raw,
-    // one tower at two normalisations. Dividing every central moment by
-    // `M₀` puts order `m` at degree `m`, so `‖M̃^(m)‖² ~ (ρ²)^m`.
-    assert_eq!(&db / &da, q(16), "‖D̃‖² ~ ρ⁴ = (ρ²)², the deviatoric at m = 2");
-
-    let qa = norm2(blade::quartic_harmonic(&base).expect("has a quartic"));
-    let qb = norm2(blade::quartic_harmonic(&dilate).expect("has a quartic"));
-    assert_eq!(&qb / &qa, q(256), "‖Q̃‖² ~ ρ⁸ = (ρ²)⁴, the quartic at m = 4");
-
-    // THE SCALE CERTIFICATE, with its exponent read STRAIGHT OFF THE
-    // GAUGE ORDER and no table anywhere:
-    //
-    //     ‖M̃_b^(m)‖² · (r_a²)^m  =  ‖M̃_a^(m)‖² · (r_b²)^m
-    assert_eq!(&db * ra2.pow(2), &da * rb2.pow(2), "m = 2 certificate");
-    assert_eq!(&qb * ra2.pow(4), &qa * rb2.pow(4), "m = 4 certificate");
-
-    // A SHEAR IS NOT A DILATION, and the certificate must say so: a
-    // body with the same trace but a different eccentricity fails at
-    // m = 2 even though the scalar ratio would admit it.
-    let bar = blade::shape_of(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)]).blade;
-    let square = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (0, 1, 0), (1, 1, 0)]).blade;
-    let (rs2, rq2) = (bar.radius2(), square.radius2());
-    let ds = norm2(blade::deviatoric(&bar).expect("a bar is anisotropic"));
-    // The square is `C₄`: its deviatoric VANISHES, so the certificate
-    // is `‖D_bar‖² · (r_sq²)² = 0`, which fails unless the bar is
-    // isotropic too. Shear refused.
-    assert!(blade::deviatoric(&square).is_none(), "a square has no deviatoric");
-    assert!(
-        &ds * rq2.pow(2) != q(0),
-        "so the m = 2 certificate refuses the bar against the square"
-    );
-    let _ = rs2;
-}

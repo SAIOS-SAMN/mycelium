@@ -102,12 +102,12 @@ pub enum ShellKind {
     Frame,
 }
 
-/// One shell of a body: its kind and its laminae on the three coordinates
+/// One shell of a body: its kind and its compartments on the three coordinates
 /// of the base, `(row, col, frame, hue)` (51.3).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Shell {
     pub kind: ShellKind,
-    pub laminae: Vec<(i64, i64, i64, u8)>,
+    pub compartments: Vec<(i64, i64, i64, u8)>,
 }
 
 /// One shell of one SECTION: the planar reading a stack's shells are
@@ -209,8 +209,8 @@ fn scale_factor(num: usize, den: usize) -> Option<(ShellKind, i64)> {
 /// taken from the residual the last shell left; the governor reads shrink.
 /// Scale shells only when a frame ratio is supplied and is not one.
 /// Cut is not produced here: it is taken only with sites a face names.
-pub fn peel_body(laminae: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
-    peel_body_scaled(laminae, None)
+pub fn peel_body(compartments: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
+    peel_body_scaled(compartments, None)
 }
 
 /// THE SHELLS OF A STACK are the shells of its sections (16.5): each frame
@@ -218,39 +218,39 @@ pub fn peel_body(laminae: &[(i64, i64, i64, u8)]) -> Vec<Shell> {
 /// one shell of the body, lifted back to their frames. `scale` is
 /// ((h_out, h_in), (w_out, w_in)).
 pub fn peel_body_scaled(
-    laminae: &[(i64, i64, i64, u8)],
+    compartments: &[(i64, i64, i64, u8)],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<Shell> {
-    if laminae.is_empty() {
+    if compartments.is_empty() {
         return Vec::new();
     }
-    let mut by_frame: Vec<(i64, i64, i64, u8)> = laminae.to_vec();
+    let mut by_frame: Vec<(i64, i64, i64, u8)> = compartments.to_vec();
     #[expect(
         clippy::disallowed_methods,
         reason = "rule 4 — canonical key order: frame first, then the site's own row and column"
     )]
     by_frame.sort_unstable_by_key(|&(r, c, k, _)| (k, r, c));
     let mut out: Vec<Shell> = Vec::new();
-    // The walk is the body's own laminae, one frame at a time.
+    // The walk is the body's own compartments, one frame at a time.
     let mut at = 0usize;
     while at < by_frame.len() {
         let k = by_frame[at].2;
         let end = by_frame[at..]
             .iter()
-            .position(|lamina| lamina.2 != k)
+            .position(|compartment| compartment.2 != k)
             .map_or(by_frame.len(), |n| at + n);
         let section: Vec<(i64, i64, u8)> = by_frame[at..end].iter().map(|&(r, c, _, h)| (r, c, h)).collect();
         for shell in peel_section_scaled(&section, scale) {
             let lifted = shell.painted.iter().map(|&(r, c, h)| (r, c, k, h));
             match out.iter_mut().find(|s| s.kind == shell.kind) {
-                Some(s) => s.laminae.extend(lifted),
-                None => out.push(Shell { kind: shell.kind, laminae: lifted.collect() }),
+                Some(s) => s.compartments.extend(lifted),
+                None => out.push(Shell { kind: shell.kind, compartments: lifted.collect() }),
             }
         }
         at = end;
     }
     for s in &mut out {
-        s.laminae.sort_unstable();
+        s.compartments.sort_unstable();
     }
     out
 }
@@ -381,36 +381,36 @@ mod tests {
 
     #[test]
     fn a_body_peels_into_outline_and_core() {
-        let mut laminae = Vec::new();
+        let mut compartments = Vec::new();
         for r in 0..3 {
             for c in 0..3 {
-                laminae.push((r, c, 0, 1u8));
+                compartments.push((r, c, 0, 1u8));
             }
         }
-        let shells = peel_body(&laminae);
-        assert!(shells.iter().any(|s| s.kind == ShellKind::Whole && s.laminae.len() == 9));
-        assert!(shells.iter().any(|s| s.kind == ShellKind::Outline && s.laminae.len() == 8));
-        assert!(shells.iter().any(|s| s.kind == ShellKind::Core && s.laminae.len() == 1));
+        let shells = peel_body(&compartments);
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Whole && s.compartments.len() == 9));
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Outline && s.compartments.len() == 8));
+        assert!(shells.iter().any(|s| s.kind == ShellKind::Core && s.compartments.len() == 1));
     }
 
     /// 16.5 — A STACK PEELS SECTION BY SECTION: two frames of one square
-    /// are one outline shell of sixteen laminae and one core of two, each
-    /// lamina in the frame it came from.
+    /// are one outline shell of sixteen compartments and one core of two, each
+    /// compartment in the frame it came from.
     #[test]
     fn a_stack_peels_each_section_in_its_own_frame() {
-        let mut laminae = Vec::new();
+        let mut compartments = Vec::new();
         for k in 0..2 {
             for r in 0..3 {
                 for c in 0..3 {
-                    laminae.push((r, c, k, 1u8));
+                    compartments.push((r, c, k, 1u8));
                 }
             }
         }
-        let shells = peel_body(&laminae);
+        let shells = peel_body(&compartments);
         let outline = shells.iter().find(|s| s.kind == ShellKind::Outline).expect("an outline");
-        assert_eq!(outline.laminae.len(), 16);
-        assert!(outline.laminae.iter().any(|c| c.2 == 1), "the second frame's outline is in its frame");
+        assert_eq!(outline.compartments.len(), 16);
+        assert!(outline.compartments.iter().any(|c| c.2 == 1), "the second frame's outline is in its frame");
         let core = shells.iter().find(|s| s.kind == ShellKind::Core).expect("a core");
-        assert_eq!(core.laminae, vec![(1, 1, 0, 1), (1, 1, 1, 1)]);
+        assert_eq!(core.compartments, vec![(1, 1, 0, 1), (1, 1, 1, 1)]);
     }
 }

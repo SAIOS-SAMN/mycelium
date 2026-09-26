@@ -290,28 +290,28 @@ pub mod coord {
         }
     }
 
-    /// A CELL OF THE BASE — `(row, col, frame)`, the three SPATIAL
+    /// A COMPARTMENT OF THE BASE — `(row, col, frame)`, the three SPATIAL
     /// coordinates the sensor writes, and a genuine coordinate of the
     /// manifold rather than an ordinal.
     ///
     /// THE THIRD AXIS IS THE FRAME, NOT THE HUE (§4.4 E8, corrected
     /// 2026-09-22). It was named `hue` and every caller fed it
-    /// `support_of`'s third component, which is `Lamina`'s `k` — the
+    /// `support_of`'s third component, which is `Compartment`'s `k` — the
     /// corpus's own `e₃`, 51.3's sixth adjacency direction, the axis
     /// `at_frame_zero` recentres. The colour never reached this coordinate
     /// and could not: a cover piece is of ONE hue by construction and
     /// carries it on [`Piece`], which is why the base a cover is read over
     /// is three spatial axes and the palette is a coordinate of the chart.
-    /// 71.2(1), BQ1 — the cell IS a site of the base, `n` coordinates with
+    /// 71.2(1), BQ1 — the compartment IS a site of the base, `n` coordinates with
     /// `n` written first ([`Site::put`](crate::transducer::base::Site::put)):
     /// row, column and frame at the corpus's `n = 3`, and whatever the base
     /// has at any other.
     ///
     /// It exists so the nerve's overlaps can be derived by READING THE
-    /// BASE. A 2-simplex of a cover is certified by a WITNESS: a cell
+    /// BASE. A 2-simplex of a cover is certified by a WITNESS: a compartment
     /// standing in three charts at once, `p ∈ U_i ∩ U_j ∩ U_k`. Keyed by
     /// this coordinate, the support of the cover is an inverted reading
-    /// `p ↦ charts(p)` built in one linear pass, and any cell whose
+    /// `p ↦ charts(p)` built in one linear pass, and any compartment whose
     /// reading names three or more charts hands back the simplex directly.
     ///
     /// THE ALTERNATIVE IS FALSE. Taking 3-cliques of the pairwise meet
@@ -319,14 +319,14 @@ pub mod coord {
     /// charts can ring a pore they do not cover — filling that triangle
     /// would kill an authentic `H₁` class by fiat. It is also a
     /// combinatorial scan over triples, which is a search (rule 3); the
-    /// base read is `O(cells · valence)` and derives the simplex from the
+    /// base read is `O(compartments · valence)` and derives the simplex from the
     /// cover the engine already built.
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-    pub struct Lamina {
+    pub struct Compartment {
         pub site: crate::transducer::base::Site,
     }
 
-    impl Coordinate for Lamina {
+    impl Coordinate for Compartment {
         const NAME: &'static str = "lamina-cell";
         const SYSTEM: CoordinateSystem = CoordinateSystem::Any;
 
@@ -347,7 +347,7 @@ pub mod coord {
                     let mut pos = 1usize;
                     let site = crate::transducer::base::Site::take(bytes, &mut pos).ok_or_else(refuse)?;
                     match pos == bytes.len() {
-                        true => Ok(Lamina { site }),
+                        true => Ok(Compartment { site }),
                         false => Err(refuse()),
                     }
                 }
@@ -797,10 +797,10 @@ pub mod coord {
     /// length-delimited, and the two passes agree because both sides are
     /// lists — not because one collapses to the other's shape.
     ///
-    /// A cell of the base carried into a support is a site with its `n` —
+    /// A compartment of the base carried into a support is a site with its `n` —
     /// `(row, col, frame)` at the corpus's three, FRAME the sensor's third axis. It is not the hue, and the hue
     /// is not on this address either: a piece is a HUE-BLIND component
-    /// (70.4), its colours are the gauge its laminae carry, and nothing reads
+    /// (70.4), its colours are the gauge its compartments carry, and nothing reads
     /// a colour back off a piece's key, so none is written there (law 12).
     #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct Piece {

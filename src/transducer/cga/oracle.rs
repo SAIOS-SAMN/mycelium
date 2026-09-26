@@ -83,8 +83,8 @@ fn fixtures() -> Vec<(String, Mv)> {
             out.push((format!("transvection{i}"), t));
         }
     }
-    let lam = |r: i64, c: i64, k: i64| cga::hyperbolic_lamina(&[q(r, 1), q(c, 1), q(k, 1)], &q(9, 1));
-    if let (Some(a), Some(b)) = (lam(1, 2, 0), lam(-3, 1, 2)) {
+    let compartment = |r: i64, c: i64, k: i64| cga::hyperbolic_compartment(&[q(r, 1), q(c, 1), q(k, 1)], &q(9, 1));
+    if let (Some(a), Some(b)) = (compartment(1, 2, 0), compartment(-3, 1, 2)) {
         out.push(("lamina_a".into(), a.clone()));
         if let Some(g) = cga::geodesic_transvection(&a, &b) {
             out.push(("geodesic".into(), g));

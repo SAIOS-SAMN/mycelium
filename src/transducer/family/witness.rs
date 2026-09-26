@@ -59,10 +59,10 @@ use crate::transducer::cech::{read_nerve, NerveTotals};
 pub(super) fn cover_nerves(covers: &[Covered]) -> (NerveTotals, NerveTotals) {
     // `support_of` writes the sites of the base — the SPATIAL axes, the
     // third being the corpus's own `e₃`. The hue never reaches here: it is
-    // the gauge a piece's laminae carry, a fibre coordinate, and the nerve
+    // the gauge a piece's compartments carry, a fibre coordinate, and the nerve
     // is read on the base (70.4).
-    let cells_of = |sup: &[crate::transducer::base::Site]| -> Vec<coord::Lamina> {
-        sup.iter().map(|s| coord::Lamina { site: s.clone() }).collect()
+    let compartments_of = |sup: &[crate::transducer::base::Site]| -> Vec<coord::Compartment> {
+        sup.iter().map(|s| coord::Compartment { site: s.clone() }).collect()
     };
     let mut src = NerveTotals::default();
     let mut img = NerveTotals::default();
@@ -88,8 +88,8 @@ pub(super) fn cover_nerves(covers: &[Covered]) -> (NerveTotals, NerveTotals) {
         let mut dom: Vec<crate::transducer::cech::Chart> = Vec::new();
         let mut cod: Vec<crate::transducer::cech::Chart> = Vec::new();
         for (_, (_, versor, sup)) in c.cover.carried.scoped() {
-            dom.push((section(versor, &sup.domain), cells_of(&sup.domain)));
-            cod.push((section(versor, &sup.codomain), cells_of(&sup.codomain)));
+            dom.push((section(versor, &sup.domain), compartments_of(&sup.domain)));
+            cod.push((section(versor, &sup.codomain), compartments_of(&sup.codomain)));
         }
         src.absorb(ci, read_nerve(&dom));
         img.absorb(ci, read_nerve(&cod));

@@ -68,20 +68,20 @@ thread_local! {
     static PENDING: RefCell<Keyed<Pending>> = RefCell::new(Keyed::new());
 }
 
-/// THE ADDRESS OF A DEFORMATION, as content: the two bodies' laminae
+/// THE ADDRESS OF A DEFORMATION, as content: the two bodies' compartments
 /// written out and the frame ratio that was asked for. Sensor bytes at the
 /// sensor boundary, which is the one place bytes may be a key (rule 6) and
 /// is where the percept memo beside this one is already keyed.
 pub(crate) fn deformation_key(
-    input: &[super::Lamina],
-    image: &[super::Lamina],
+    input: &[super::Compartment],
+    image: &[super::Compartment],
     scale: Option<((usize, usize), (usize, usize))>,
 ) -> Vec<u8> {
     let mut k = Vec::with_capacity((input.len() + image.len()) * 29 + 40);
-    for (tag, laminae) in [(0u8, input), (1u8, image)] {
+    for (tag, compartments) in [(0u8, input), (1u8, image)] {
         k.push(tag);
-        crate::transducer::address::put_key_count(&mut k, laminae.len());
-        for l in laminae {
+        crate::transducer::address::put_key_count(&mut k, compartments.len());
+        for l in compartments {
             l.site.put(&mut k);
             k.push(l.hue);
         }

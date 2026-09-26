@@ -1,7 +1,7 @@
 // AI-GENERATED CONTENT — see DISCLAIMER.md.
 //
 //! THE TRANSDUCER (Parts I–IV) — what a scene becomes on the way to being a
-//! word: blades lifted from laminae, versors that carry one shape onto
+//! word: blades lifted from compartments, versors that carry one shape onto
 //! another, words, forms, and the charts they are filed under.
 
 /// 71 — the base is ℚⁿ: a site and the count of its coordinates.

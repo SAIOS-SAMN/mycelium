@@ -290,11 +290,11 @@ pub fn cited_pattern(word: &Element, asg: &[(u8, u8)]) -> Option<Vec<Link>> {
 }
 
 /// THE REPLAY — in the algebra and linear in the proof. For every citation
-/// the word's own laminae are carried forward by V, each as its unit
-/// square (exact, or refused: a lamina the versor carries onto no block of
-/// laminae — a tilt, a shrink — speaks nothing, law 11), and every image
-/// lamina is one keyed read of the target: a hit with the same transition
-/// is spoken, an image lamina the target lacks is over-explanation. The
+/// the word's own compartments are carried forward by V, each as its unit
+/// square (exact, or refused: a compartment the versor carries onto no block of
+/// compartments — a tilt, a shrink — speaks nothing, law 11), and every image
+/// compartment is one keyed read of the target: a hit with the same transition
+/// is spoken, an image compartment the target lacks is over-explanation. The
 /// scene is never read whole. The
 /// residual is R = Q △ S: the target links no citation speaks, plus the
 /// over-explained links. An empty residual is closure; a citation naming
@@ -317,7 +317,7 @@ pub(crate) fn section_site_key(r: i64, c: i64) -> Vec<u8> {
 /// THE REPLAY OF OPERATORS: each operator is a body (the word's links in
 /// its own frame) with the versor that carries it; nothing is fetched. The
 /// utterance is verified as it was spoken. The target is one section, in
-/// its own frame: a word's lamina carried into another frame speaks
+/// its own frame: a word's compartment carried into another frame speaks
 /// nothing of it, and the section's site it was to cover stays unspoken.
 pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Link> {
     let mut at: Keyed<Link> = Keyed::new();
@@ -328,7 +328,7 @@ pub fn replay_operators(ops: &[(Versor, Vec<Link>)], target: &[Link]) -> Vec<Lin
     let mut over: Vec<Link> = Vec::new();
     for (v, pat) in ops {
         for &(wr, wc, wb, wa) in pat {
-            let Some(image) = element::carry_lamina(v, wr, wc, 0) else { continue };
+            let Some(image) = element::carry_compartment(v, wr, wc, 0) else { continue };
             for (tr, tc, tk) in image {
                 if tk != 0 {
                     continue;
@@ -588,7 +588,7 @@ impl SharedCell {
 /// `d`'s share of `t` stay constant, so ordering by those invariants and
 /// then by `t` puts the two ends of every adjacency along `d` next to each
 /// other, and the test is `t + 1`. Exact and integer, with no extent and no
-/// distance test against every lamina — the directions are read in turn, the
+/// distance test against every compartment — the directions are read in turn, the
 /// sites are ordered, and nothing is searched.
 ///
 /// Two sites of different `n` share no cell: a cell is of one base. EVERY

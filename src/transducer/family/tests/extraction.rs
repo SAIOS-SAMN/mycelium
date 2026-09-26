@@ -316,19 +316,19 @@ assert!(
 fn b_does_as_rotation_about_its_centre_is_rebased() {
 let letter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("90° turn");
 let rot = crate::transducer::alphabet::Word::from_letters(&[(letter, false)]);
-// A is the single hue-1 lamina; B is the hue-3 bar, another shape.
+// A is the single hue-1 compartment; B is the hue-3 bar, another shape.
 // A placement of (3, 3) keeps both images inside the frame for
-// either orientation of the 90° turn (laminae map to
+// either orientation of the 90° turn (compartments map to
 // (c, −r−1) + p or (−c−1, r) + p).
 let x = grid(&["330000", "000000", "001000", "000000", "000000", "000000"]);
 let bodies = perceive(&x);
 let a = bodies
     .iter()
-    .find(|b| b.laminae.iter().any(|c| c.hue == 1))
+    .find(|b| b.compartments.iter().any(|c| c.hue == 1))
     .expect("body A");
 let b = bodies
     .iter()
-    .find(|b| b.laminae.iter().any(|c| c.hue == 3))
+    .find(|b| b.compartments.iter().any(|c| c.hue == 3))
     .expect("body B");
 assert_ne!(a.moduli, b.moduli, "two shapes, two charts");
 use crate::transducer::sentence::tests::common::FRAME;
@@ -963,7 +963,7 @@ assert_eq!(
 /// a multiplicity of two — and this test asserted a single `Source`
 /// demand naming that multiplicity.
 ///
-/// Under H1 the output is ONE body of four laminae carrying two hues in
+/// Under H1 the output is ONE body of four compartments carrying two hues in
 /// its gauge, so the reading is two bodies IN and one body OUT: a merge.
 /// Each input body needs its own account, which is why the form carries
 /// TWO demands rather than one. That is derived from the ruling, not
@@ -1035,11 +1035,11 @@ assert!(
 // is where H3 will read the seam back out.
 let merged = perceive(&family[0].1);
 assert_eq!(merged.len(), 1, "the output is one body: {}", merged.len());
-// ON THE LAMINAE, NOT THE SHAPE. `body_of` builds the shape through
+// ON THE COMPARTMENTS, NOT THE SHAPE. `body_of` builds the shape through
 // `shape_of`, which writes hue `0` at every site — the shape has ALWAYS
 // been hue-blind, and only `components()` ever used hue. The body's
-// colours ride on its laminae, which is where H3 reads the seam.
-let mut hues: Vec<u8> = merged[0].laminae.iter().map(|l| l.hue).collect();
+// colours ride on its compartments, which is where H3 reads the seam.
+let mut hues: Vec<u8> = merged[0].compartments.iter().map(|l| l.hue).collect();
 hues.sort_unstable();
 hues.dedup();
 assert_eq!(hues.len(), 2, "the merged body carries both hues: {hues:?}");
@@ -1072,7 +1072,7 @@ assert!(!rule.form.is_closed(), "and the rule is valid, never closed");
 fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
     use crate::network::nerve::Keyed;
     use crate::transducer::family::{body_of, occupied_frames};
-    let body = || body_of(vec![Lamina::from((0i64, 0i64, 0i64, 1u8))]).expect("one lamina is heard");
+    let body = || body_of(vec![Compartment::from((0i64, 0i64, 0i64, 1u8))]).expect("one compartment is heard");
     let v = crate::transducer::element::identity_versor();
     // TWO VERTICES BY THEIR COORDINATES (AT1): two classes, the identity's
     // and the 90° turn's.
@@ -1126,7 +1126,7 @@ fn succession_reads_the_frames_a_member_occupies_in_coordinate_order() {
 
 /// 52.5, 51.3 — THE FACE IS MEASURED ON THE FIBER'S UNION SHAPES. A
 /// member's fiber is one body on `(r, c, k)`, and `union_quotient` is that
-/// body's quotient: every lamina the member stands on across its occupied
+/// body's quotient: every compartment the member stands on across its occupied
 /// frames, read at its own `k` and never flattened to frame zero.
 ///
 /// The two assertions are the point. A member whose frames all read one
@@ -1140,7 +1140,7 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
     use crate::transducer::family::union_quotient;
     // Three frames, each a bar translated by the same vector: one motion
     // over the whole fiber.
-    let ins: Vec<Lamina> = [
+    let ins: Vec<Compartment> = [
         (0i64, 0i64, 0i64, 1u8),
         (0, 1, 0, 1),
         (1, 0, 1, 1),
@@ -1148,32 +1148,32 @@ fn a_members_fiber_reads_as_one_union_body_or_not_at_all() {
         (2, 0, 2, 1),
         (2, 1, 2, 1),
     ]
-    .map(Lamina::from)
+    .map(Compartment::from)
     .to_vec();
     // Moved along the column axis by `d`, frame by frame.
-    let moved = |l: &Lamina, d: i64| Lamina {
+    let moved = |l: &Compartment, d: i64| Compartment {
         site: l.site.offset(&[0, d, 0]).expect("a small move stays on the base"),
         hue: l.hue,
     };
-    let outs: Vec<Lamina> = ins.iter().map(|l| moved(l, 2)).collect();
+    let outs: Vec<Compartment> = ins.iter().map(|l| moved(l, 2)).collect();
     let shift = element::translator_versor(0, 2);
     let (a, b, v) =
         union_quotient(ins.clone(), outs, &shift).expect("one motion carries the whole fiber");
     let frames: Vec<i64> = {
-        let mut f: Vec<i64> = a.laminae.iter().filter_map(|l| l.site.axis(2)).collect();
+        let mut f: Vec<i64> = a.compartments.iter().filter_map(|l| l.site.axis(2)).collect();
         f.sort_unstable();
         f.dedup();
         f
     };
     assert_eq!(frames, vec![0, 1, 2], "the union body stands on every frame of the fiber");
-    assert_eq!(b.laminae.len(), a.laminae.len(), "and carries the whole of it");
+    assert_eq!(b.compartments.len(), a.compartments.len(), "and carries the whole of it");
     assert!(
         element::same_versor(&v, &shift),
         "the fiber's quotient is the one translation, verified on the union"
     );
     // The same three frames with the middle one moved the other way: no
     // single motion carries the union.
-    let mixed: Vec<Lamina> = ins
+    let mixed: Vec<Compartment> = ins
         .iter()
         .map(|l| if l.site.axis(2) == Some(1) { moved(l, 3) } else { moved(l, 2) })
         .collect();

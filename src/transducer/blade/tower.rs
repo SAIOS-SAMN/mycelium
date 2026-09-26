@@ -1,33 +1,34 @@
 // 55.3, 65.6, 68, A.12, 78.38 — THE TWO TOWERS OF A BODY ON A PLANE: its
-// harmonics at orders two, three and four and its scale, read on the REGION
-// (each lamina's unit square integrated) and on the SITES (each site the point
-// it stands at); the chirality they compose; and the certificate that two
-// bodies are dilates, naming which similarity of the lattice carries them.
+// harmonics at orders two, three and four and its extent, read on the REGION
+// (each compartment lifted to its round) and on the SITES (each site the point it
+// stands at); the chirality they compose; and the certificate that two bodies
+// are dilates, naming which tower carries them.
 //
-//! 78.38 (C) — TWO SIMILARITIES OF THE LATTICE, ONE TOWER EACH. A body is
-//! read two ways, one producer each (law 12: two readings of one body, not
-//! two carriers of one reading):
+//! 78.38 (C) — TWO READINGS OF ONE BODY, one producer each (law 12):
 //!
-//! - the REGION tower (`moment2`, `quartic_on`, the lamina moments,
-//!   `radius2`): each site's unit square integrated. A filled blow-up — each
-//!   cell to a `k×k` block, ARC's scale tasks — is an EXACT similarity here,
-//!   because a block of unit squares is one square of side `k`.
+//! - the REGION tower (`moment2`, `quartic_on`, [`super::body::round_harmonic`],
+//!   `radius2`): each compartment lifted at the sensor to its ROUND, its centre
+//!   with the unit cube's extent (ruled 2026-09-26). A round is isotropic and
+//!   holds nothing above order two, so on the grid plane the region's
+//!   harmonics are its centres', and its extent carries the rounds' own
+//!   `2/12` (A.12). No square enters: a square's own higher moments were the
+//!   lattice's rigidity, and a filled `k×k` blow-up, which only a square
+//!   carries onto itself, now reads its block's own structure at order four.
 //! - the SITE tower ([`super::pose::centred`], the spread): each site the
-//!   point it stands at. A site map `z ↦ λz` — the demand's Gaussian case,
-//!   a body and its `(4 + i)` image — is an EXACT similarity here.
+//!   point it stands at. A site map `z ↦ λz` — the demand's Gaussian case, a
+//!   body and its `(4 + i)` image — is an EXACT similarity here.
 //!
-//! Each tower has a floor the other lacks (the lamina's unit square, the
-//! point tower's sub-site offsets), and a similarity is read on the tower
-//! whose floor it scales. Both are always read and neither is chosen by a
-//! score: a pair is dilates where EITHER tower certifies it, and the reading
-//! names which.
+//! The rounds' extent is the floor the site tower lacks, and a similarity is
+//! read on the tower whose extent it scales. Both are always read and neither
+//! is chosen by a score: a pair is dilates where EITHER tower certifies it,
+//! and the reading names which.
 
 use super::*;
 
 /// WHICH TOWER A HARMONIC IS READ ON (78.38).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Tower {
-    /// Each lamina's unit square integrated: exact for filled blow-ups.
+    /// Each compartment lifted to its round: its centre with its extent.
     Region,
     /// Each site the point it stands at: exact for site maps `z ↦ λz`.
     Sites,
@@ -55,8 +56,10 @@ impl Dilation {
 
 /// THE HARMONIC ORDERS THE TOWERS CARRY (A.12, 68): the deviatoric, the odd
 /// moment and the quartic, turning at `2φ`, `3φ` and `4φ`. An order is one of
-/// these by type, so no reader folds a number into range.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// these by type, so no reader folds a number into range; ordered as a
+/// FILTRATION, coarse to fine, so "exact through a higher order" is the finer
+/// fit and never a score.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Harmonic {
     Two,
     Three,
@@ -80,7 +83,7 @@ impl Harmonic {
 
 /// WHERE ONE TOWER REFUSES A PAIR AS DILATES (78.38 (C), R1): at the harmonic
 /// order the two shapes part, or — before any order is read — because a body
-/// has no points on the plane, so the tower carries no scale for it.
+/// has no points on the plane, so the tower carries no extent for it.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TowerRefusal {
     At(Harmonic),
@@ -98,7 +101,7 @@ impl TowerRefusal {
 }
 
 /// A.12 — THE ZEROTH MOMENT, the one place either tower is normalised: the
-/// body's lamina count. `None` on an empty support (rule 11).
+/// body's compartment count. `None` on an empty support (rule 11).
 fn zeroth_moment(blade: &Blade) -> Option<BigRational> {
     match blade.support.len() {
         0 => None,
@@ -125,11 +128,12 @@ fn plane_points(blade: &Blade, plane: (usize, usize)) -> Option<(BigRational, Ve
     Some((count, pts))
 }
 
-/// A BODY'S SCALE ON ONE TOWER: the region's radius `radius2` (its unit squares
-/// integrated), or the sites' spread `Σ(u² + v²)/M₀` on the plane. `None` where
-/// the body has no points on the plane — the plane off its base, or no support —
-/// on either tower alike.
-pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
+/// A BODY'S EXTENT ON ONE TOWER (A.12's `r²`, the inversive extent): the
+/// region's `radius2` — its rounds' centres and their own extent — or the
+/// sites' spread `Σ(u² + v²)/M₀` on the plane. `None` where the body has no
+/// points on the plane — the plane off its base, or no support — on either
+/// tower alike.
+pub fn extent(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigRational> {
     match tower {
         Tower::Region => plane_points(blade, plane).map(|_| blade.radius2()),
         Tower::Sites => {
@@ -143,12 +147,12 @@ pub fn scale2(blade: &Blade, plane: (usize, usize), tower: Tower) -> Option<BigR
 /// carries degree `m` (A.12); turning at `m·φ`. `None` where it vanishes.
 ///
 /// - order 2, the DEVIATORIC `((Σu² − Σv²)/2, Σuv)/M₀` — the body's axis; the
-///   lamina's isotropic `1/12` cancels in it, so the two towers agree here.
-/// - order 3, `Σ(u + iv)³/M₀` — the odd moment that closes the 180° turn. On
-///   the region each square's odd corrections cancel on the grid plane, and
-///   a site off the grid is a point along that axis.
+///   round's isotropic extent cancels in it on the grid plane, so the two
+///   towers agree there.
+/// - order 3, `Σ(u + iv)³/M₀` — the odd moment that closes the 180° turn; on
+///   the region each round's own `(z + w)³` ([`super::body::round_harmonic`]).
 /// - order 4, `Σ(u + iv)⁴/M₀` — the orientation of a shape isotropic at order
-///   two; on the region it carries each lamina's axis-aligned floor.
+///   two; on the region each round's, held by the lift (`quartic_on`).
 pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic) -> Option<[BigRational; 2]> {
     let (two, three, four, six) = (
         BigRational::from_integer(BigInt::from(2)),
@@ -172,10 +176,9 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic)
             for site in &blade.support {
                 let a = BigRational::from_integer(BigInt::from(site.axis(i)?)) - ci;
                 let b = BigRational::from_integer(BigInt::from(site.axis(j)?)) - cj;
-                let [u1, u2, u3, _] = super::body::lamina_moments(&a, crate::transducer::base::is_grid_axis(i));
-                let [v1, v2, v3, _] = super::body::lamina_moments(&b, crate::transducer::base::is_grid_axis(j));
-                re += &u3 - &three * &u1 * &v2;
-                im += &three * &u2 * &v1 - &v3;
+                let [h0, h1] = super::body::round_harmonic(&a, &b, plane, Harmonic::Three);
+                re += h0;
+                im += h1;
             }
             nonzero([re / &m0, im / &m0])
         }
@@ -211,7 +214,7 @@ pub fn harmonic(blade: &Blade, plane: (usize, usize), tower: Tower, m: Harmonic)
 
 /// THE DEVIATORIC VECTOR (55.3) on the region tower: `u = ((I_ii − I_jj)/2,
 /// I_ij)/M₀`, turning at `2φ`; `None` where the second moment is isotropic
-/// — a single lamina, a square, a cross — which [`quartic_harmonic`] orients.
+/// — a single compartment, a square, a cross — which [`quartic_harmonic`] orients.
 pub fn deviatoric(blade: &Blade, plane: (usize, usize)) -> Option<[BigRational; 2]> {
     harmonic(blade, plane, Tower::Region, Harmonic::Two)
 }
@@ -229,25 +232,25 @@ pub fn third_harmonic(blade: &Blade, plane: (usize, usize)) -> Option<[BigRation
     harmonic(blade, plane, Tower::Region, Harmonic::Three)
 }
 
-/// 78.38 — THE SITES' SPREAD on a plane, the site tower's scale.
-pub fn spread2_on(blade: &Blade, plane: (usize, usize)) -> Option<BigRational> {
-    scale2(blade, plane, Tower::Sites)
+/// 78.38 — THE SITES' SPREAD on a plane, the site tower's extent.
+pub fn spread_on(blade: &Blade, plane: (usize, usize)) -> Option<BigRational> {
+    extent(blade, plane, Tower::Sites)
 }
 
 /// AT WHICH ORDER ONE TOWER REFUSES THE PAIR AS DILATES, or `None` where it
 /// certifies them. A moment of order `m` carries degree `m`, so
 ///
 /// ```text
-///     ‖h_b^(m)‖² · (s_a²)^m  =  ‖h_a^(m)‖² · (s_b²)^m
+///     ‖h_b^(m)‖² · (r_a²)^m  =  ‖h_a^(m)‖² · (r_b²)^m
 /// ```
 ///
-/// with `s²` that tower's scale, by exact cross multiplication at `m = 2, 3,
-/// 4`; a harmonic vanishing on one and not the other is a difference of
+/// with `r²` that tower's extent, by exact cross multiplication at `m = 2,
+/// 3, 4`; a harmonic vanishing on one and not the other is a difference of
 /// shape at that order, on both is agreement. Each `‖h‖²` is the metric on a
-/// vector (78.28(4)). A body with no points on the plane carries no scale on
+/// vector (78.28(4)). A body with no points on the plane carries no extent on
 /// either tower and is refused by that name, before any order is read.
 fn refused_at(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Option<TowerRefusal> {
-    let (Some(sa), Some(sb)) = (scale2(a, plane, tower), scale2(b, plane, tower)) else {
+    let (Some(sa), Some(sb)) = (extent(a, plane, tower), extent(b, plane, tower)) else {
         return Some(TowerRefusal::Unplaced);
     };
     let norm2 = |v: &[BigRational; 2]| &v[0] * &v[0] + &v[1] * &v[1];
@@ -261,17 +264,48 @@ fn refused_at(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Opti
     })
 }
 
-/// A.12, 78.38 (C) — WHICH SIMILARITY CARRIES THE PAIR, or where each tower
-/// refuses it. Both towers are always read: the pair is dilates where EITHER
-/// certifies, and the answer names which; where both refuse, each tower's
-/// refusal, `(region, sites)`.
-pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation, (TowerRefusal, TowerRefusal)> {
-    match (refused_at(a, b, plane, Tower::Region), refused_at(a, b, plane, Tower::Sites)) {
-        (None, None) => Ok(Dilation::Both),
-        (None, Some(_)) => Ok(Dilation::Region),
-        (Some(_), None) => Ok(Dilation::Sites),
-        (Some(r), Some(s)) => Err((r, s)),
+/// THE ORDER THROUGH WHICH ONE TOWER CARRIES THE PAIR (ruled 2026-09-26, the
+/// cost of a fit): the pair fits through `m` and its residue begins at `m +
+/// 1`. Order four is a fit with no residue on the tower. A pair that parts at
+/// the deviatoric has no orientation in common and fits through nothing, and
+/// a body with no points on the plane is unplaced: both refused by name.
+pub fn fits_through(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Result<Harmonic, TowerRefusal> {
+    match refused_at(a, b, plane, tower) {
+        None => Ok(Harmonic::Four),
+        Some(TowerRefusal::At(Harmonic::Four)) => Ok(Harmonic::Three),
+        Some(TowerRefusal::At(Harmonic::Three)) => Ok(Harmonic::Two),
+        Some(refusal @ (TowerRefusal::At(Harmonic::Two) | TowerRefusal::Unplaced)) => Err(refusal),
     }
+}
+
+/// A PAIR'S FIT: the tower it is read on and the order through which that
+/// tower carries it — the residue, if any, begins one order above.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Fit {
+    pub dilation: Dilation,
+    pub through: Harmonic,
+}
+
+/// A.12, 78.38 (C) — THE PAIR'S FIT, or where each tower refuses it. Both
+/// towers are always read. The pair is carried where EITHER fits it through
+/// the deviatoric, on the tower that fits it through the finer order (a
+/// filtration, never a score) — both where they fit through the same order;
+/// where both refuse, each tower's refusal, `(region, sites)`.
+pub fn certify(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Fit, (TowerRefusal, TowerRefusal)> {
+    let fit = |dilation, through| Ok(Fit { dilation, through });
+    match (fits_through(a, b, plane, Tower::Region), fits_through(a, b, plane, Tower::Sites)) {
+        (Ok(r), Ok(s)) if r == s => fit(Dilation::Both, r),
+        (Ok(r), Ok(s)) if r > s => fit(Dilation::Region, r),
+        (Ok(_), Ok(s)) => fit(Dilation::Sites, s),
+        (Ok(r), Err(_)) => fit(Dilation::Region, r),
+        (Err(_), Ok(s)) => fit(Dilation::Sites, s),
+        (Err(r), Err(s)) => Err((r, s)),
+    }
+}
+
+/// WHICH TOWER CARRIES THE PAIR, the certificate's first half.
+pub fn dilation(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Dilation, (TowerRefusal, TowerRefusal)> {
+    certify(a, b, plane).map(|f| f.dilation)
 }
 
 /// Whether some similarity of the lattice carries the pair.

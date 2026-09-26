@@ -31,7 +31,7 @@
 //!
 //! Nothing is keyed by position. A piece is addressed by its content —
 //! shell kind and its support written out, the hue being a gauge the
-//! piece's laminae carry and not a coordinate of it (H1b) — so no arrival index
+//! piece's compartments carry and not a coordinate of it (H1b) — so no arrival index
 //! survives into the nerve (rule 6, rule 15).
 
 use super::pieces::pieces_of;
@@ -312,14 +312,14 @@ pub(crate) struct Cover {
     /// `derive_against`, which runs per mind.
     pub(crate) refused: crate::network::nerve::Keyed<Demanded, coord::Carriage>,
     /// What no piece carried, as a VOLUME on four lanes (law 5): the
-    /// input's laminae no piece carried and the image's laminae no piece
-    /// reached (50.8 case 4). A count of laminae is not this quantity —
-    /// laminae carry different lane weight — so the dissolution reads the
+    /// input's compartments no piece carried and the image's compartments no piece
+    /// reached (50.8 case 4). A count of compartments is not this quantity —
+    /// compartments carry different lane weight — so the dissolution reads the
     /// zero vector and never a cardinality.
     pub(crate) uncarried: [u64; 4],
     /// THE SITES A CARRIAGE REACHED, on either body, by their base key: the
     /// reading the demand for what was NOT reached is typed from (50.5),
-    /// so the links a demand stands for are the laminae no piece carried
+    /// so the links a demand stands for are the compartments no piece carried
     /// and never a count of them.
     pub(crate) reached: crate::network::nerve::Keyed<()>,
 }
@@ -379,12 +379,12 @@ pub(crate) fn cover_deformation(
 ) -> Result<Cover, Unmeasured> {
     use super::cursor;
     let opened = budget.remaining();
-    let ins = pieces_of(&input.laminae);
-    let outs = pieces_of(&image.laminae);
+    let ins = pieces_of(&input.compartments);
+    let outs = pieces_of(&image.compartments);
     // WHERE THIS COVER STOPPED, if a stroke stopped it (L20, S13.3). A
     // fresh deformation starts at the pullback's first piece; one a stroke
     // parked starts where that stroke left off, with what it had placed.
-    let ckey = cursor::deformation_key(&input.laminae, &image.laminae, scale);
+    let ckey = cursor::deformation_key(&input.compartments, &image.compartments, scale);
     let mut st = match cursor::take(&ckey) {
         Some(p) => p,
         None => cursor::Pending::new(),
@@ -403,7 +403,7 @@ pub(crate) fn cover_deformation(
         crate::network::nerve::Keyed::new();
     let (in_pieces, in_refused) = ins.decoded();
     for (k, p) in &in_pieces {
-        for l in &p.body.laminae {
+        for l in &p.body.compartments {
             occ_in.insert(l.site.key(), k.clone());
         }
     }
@@ -450,7 +450,7 @@ pub(crate) fn cover_deformation(
         // sites, deduped by their address and read in key order.
         let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
             crate::network::nerve::Keyed::new();
-        for l in &op.body.laminae {
+        for l in &op.body.compartments {
             if let Some(ki) = occ_in.get(&l.site.key()) {
                 named.put(ki, ());
             }
@@ -459,7 +459,7 @@ pub(crate) fn cover_deformation(
         // whole pieces so none is cut across the preimage boundary. The two
         // peels are under no obligation to agree on granularity, and this
         // is why they need not (50.8).
-        let mut laminae: Vec<Lamina> = Vec::new();
+        let mut compartments: Vec<Compartment> = Vec::new();
         let mut parts: Vec<coord::Piece> = Vec::new();
         let (named_pieces, named_refused) = named.decoded();
         if !named_refused.is_empty() {
@@ -467,12 +467,12 @@ pub(crate) fn cover_deformation(
         }
         for (ki, ()) in named_pieces {
             let Some(ip) = ins.at(&ki) else { continue };
-            laminae.extend_from_slice(&ip.body.laminae);
+            compartments.extend_from_slice(&ip.body.compartments);
             parts.push(ki);
         }
         // No preimage is no piece to carry, not a piece that failed to
         // carry (rule 11): nothing is reached and nothing is consumed.
-        let Some(pre) = (!laminae.is_empty()).then(|| body_of(laminae)).flatten() else {
+        let Some(pre) = (!compartments.is_empty()).then(|| body_of(compartments)).flatten() else {
             break 'piece;
         };
         // SETTLED? The preimage is a function of this piece's own sites, so
@@ -505,7 +505,7 @@ pub(crate) fn cover_deformation(
             // reader can factor, which is unmeasured and not a demand.
             None => break 'piece,
         };
-        for l in pre.laminae.iter().chain(op.body.laminae.iter()) {
+        for l in pre.compartments.iter().chain(op.body.compartments.iter()) {
             reached.insert(l.site.key(), ());
         }
         for ki in &parts {
@@ -522,7 +522,7 @@ pub(crate) fn cover_deformation(
     // piece is not looked for, it is CARRIED by what is already placed and
     // the image says where it landed.
     //
-    // Each distinct placed versor is applied to the piece's own laminae, the
+    // Each distinct placed versor is applied to the piece's own compartments, the
     // image positions are read from the output occupancy by a keyed read
     // per site (rule 1: never a whole read of the output pieces), the pieces they
     // name are assembled into one image, and `carriage` confirms that one
@@ -535,7 +535,7 @@ pub(crate) fn cover_deformation(
     let mut occ_out: crate::network::nerve::Keyed<coord::Piece> =
         crate::network::nerve::Keyed::new();
     for (k, p) in &out_pieces {
-        for l in &p.body.laminae {
+        for l in &p.body.compartments {
             occ_out.insert(l.site.key(), k.clone());
         }
     }
@@ -560,13 +560,13 @@ pub(crate) fn cover_deformation(
         }
         let Some(ip) = ins.at(ki) else { break 'piece };
         for pv in &propagate {
-            // WHERE THIS VERSOR PUTS THE PIECE. Each lamina's center is
+            // WHERE THIS VERSOR PUTS THE PIECE. Each compartment's center is
             // carried and the output piece holding it is read by position;
-            // a lamina whose image the lattice does not hold is one this
+            // a compartment whose image the lattice does not hold is one this
             // reader did not carry (W6) and names nothing.
             let mut named: crate::network::nerve::Keyed<(), coord::Piece> =
                 crate::network::nerve::Keyed::new();
-            for l in &ip.body.laminae {
+            for l in &ip.body.compartments {
                 let Some(t) = element::carry_site(pv, &l.site) else { continue };
                 if let Some(ko) = occ_out.get(&t.key()) {
                     named.put(ko, ());
@@ -577,7 +577,7 @@ pub(crate) fn cover_deformation(
             // across several output pieces is assembled whole and carried
             // once; one candidate, not several, and no piece cut across the
             // image boundary.
-            let mut laminae: Vec<Lamina> = Vec::new();
+            let mut compartments: Vec<Compartment> = Vec::new();
             let mut parts: Vec<coord::Piece> = Vec::new();
             let (named_pieces, named_refused) = named.decoded();
             if !named_refused.is_empty() {
@@ -585,12 +585,12 @@ pub(crate) fn cover_deformation(
             }
             for (ko, ()) in named_pieces {
                 let Some(op) = outs.at(&ko) else { continue };
-                laminae.extend_from_slice(&op.body.laminae);
+                compartments.extend_from_slice(&op.body.compartments);
                 parts.push(ko);
             }
             // No image is no piece to carry by this versor, not a piece that
             // failed to carry (rule 11).
-            let Some(img) = (!laminae.is_empty()).then(|| body_of(laminae)).flatten() else {
+            let Some(img) = (!compartments.is_empty()).then(|| body_of(compartments)).flatten() else {
                 continue;
             };
             // A carriage already placed between this piece and this image is
@@ -625,7 +625,7 @@ pub(crate) fn cover_deformation(
                 }
                 None => continue,
             };
-            for l in ip.body.laminae.iter().chain(img.laminae.iter()) {
+            for l in ip.body.compartments.iter().chain(img.compartments.iter()) {
                 reached.insert(l.site.key(), ());
             }
             consumed.put(ki, ());
@@ -638,15 +638,15 @@ pub(crate) fn cover_deformation(
     }
 
     // (c) WHAT IS LEFT, AS A VOLUME. Both bodies (50.8 case 4): the
-    // input's laminae no piece carried, and the image's laminae no piece
+    // input's compartments no piece carried, and the image's compartments no piece
     // reached.
     let mut left: Vec<Link> = Vec::new();
-    for l in &input.laminae {
+    for l in &input.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
             left.push((r, c, l.hue, 0));
         }
     }
-    for l in &image.laminae {
+    for l in &image.compartments {
         if let (false, Some((r, c))) = (reached.contains(&l.site.key()), on_grid(&l.site)) {
             left.push((r, c, 0, l.hue));
         }
@@ -667,7 +667,7 @@ pub(crate) fn cover_deformation(
     // THE RING IS GONE, AND WITH IT THE LAST STENCIL IN THE NERVE (58.3,
     // ruled 2026-09-22). This read `support ∪ ring_of_support(support)`,
     // so a 1-simplex existed wherever two supports came within one 4-step
-    // of each other while a 2-simplex needed three of them on one cell. A
+    // of each other while a 2-simplex needed three of them on one compartment. A
     // Cech nerve is functorial over ONE cover:
     //
     //     σ = [v₀ … v_k] ∈ N_k(𝒰)  ⟺  ⋂ᵢ U_i ≠ ∅
@@ -676,7 +676,7 @@ pub(crate) fn cover_deformation(
     // the 2-skeleton reads `𝒰_bare = {S}` is two competing producers of one
     // incidence (law 12) — the 1-cells permitted to bridge a gap by raster
     // dilation, the 2-cells starved unless three solid bodies occupy one
-    // discrete cell. A complex cannot have its dimensions evaluated against
+    // discrete compartment. A complex cannot have its dimensions evaluated against
     // different topologies.
     //
     // EXTENDING THE RING UPWARD WOULD HAVE BEEN WORSE. `ring_of_support` is

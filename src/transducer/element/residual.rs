@@ -113,12 +113,12 @@ impl PlacedChain {
 
     /// The chain as it sits in the scene: each canonical link's site
     /// carried through the translator, its transition unchanged, in the
-    /// frame the pose names (16.5). `carry_lamina` is the sensor's, and
+    /// frame the pose names (16.5). `carry_compartment` is the sensor's, and
     /// this is the one place the pair reappears.
     pub fn placed(&self) -> Vec<(i64, i64, u8, u8)> {
         let mut out = Vec::new();
         for &(r, c, hb, ha) in self.chain.as_slice() {
-            let Some(sites) = crate::transducer::element::sensor::carry_lamina(&self.at, r, c, 0) else {
+            let Some(sites) = crate::transducer::element::sensor::carry_compartment(&self.at, r, c, 0) else {
                 continue;
             };
             for (pr, pc, _) in sites {

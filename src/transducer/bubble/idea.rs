@@ -303,7 +303,7 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         bundle.iter().map(|(a, _)| a.clone()).collect();
     let frame_key = |k: i64| ((k as u64) ^ (1u64 << 63)).to_be_bytes();
     let mut charts: Keyed<Invariant> = Keyed::new();
-    let mut by_chart: Keyed<Keyed<Vec<crate::transducer::blade::Lamina>>> = Keyed::new();
+    let mut by_chart: Keyed<Keyed<Vec<crate::transducer::blade::Compartment>>> = Keyed::new();
     for b in &crate::transducer::family::perceive_frames(&ins) {
         let Some(k) = crate::transducer::family::frame_of_body(b) else {
             continue;
@@ -317,15 +317,15 @@ pub(crate) fn bundle_connections(bundle: &[crate::transducer::family::TrainPair]
         }
         let Some(at) = by_chart.get_mut(&ck) else { continue };
         match at.get_mut(&frame_key(k)) {
-            Some(l) => l.extend(b.laminae.iter().cloned()),
+            Some(l) => l.extend(b.compartments.iter().cloned()),
             None => {
-                at.insert(frame_key(k), b.laminae.to_vec());
+                at.insert(frame_key(k), b.compartments.to_vec());
             }
         }
     }
     let mut out = Vec::new();
     for (ck, at) in by_chart.scoped() {
-        let occupied: Vec<Vec<crate::transducer::blade::Lamina>> =
+        let occupied: Vec<Vec<crate::transducer::blade::Compartment>> =
             at.scoped().map(|(_, l)| l.clone()).collect();
         if occupied.len() < 2 {
             continue;

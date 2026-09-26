@@ -861,7 +861,7 @@ pub(crate) fn named_incidence(
     // keyed by their bodies' pieces, framed, in their own order.
     let over = crate::transducer::cech::cells_over(
         standing.iter().map(|(element, bodies)| {
-            (crate::network::nerve::coord::Lamina { site: element.clone() }, bodies.as_slice())
+            (crate::network::nerve::coord::Compartment { site: element.clone() }, bodies.as_slice())
         }),
         |m| address_of.get(m).cloned(),
         |members| {

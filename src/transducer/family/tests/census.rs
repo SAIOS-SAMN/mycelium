@@ -512,29 +512,29 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
         for (input, _) in &task.train {
-            // The scene's laminae, exactly as `perceive_at` builds them.
-            let mut laminae: Vec<crate::transducer::blade::Lamina> = Vec::new();
+            // The scene's compartments, exactly as `perceive_at` builds them.
+            let mut compartments: Vec<crate::transducer::blade::Compartment> = Vec::new();
             for (r, row) in input.iter().enumerate() {
                 for (c, &h) in row.iter().enumerate() {
                     if h != 0 {
-                        laminae.push(crate::transducer::blade::Lamina::from((r as i64, c as i64, 0i64, h)));
+                        compartments.push(crate::transducer::blade::Compartment::from((r as i64, c as i64, 0i64, h)));
                     }
                 }
             }
-            if laminae.is_empty() {
+            if compartments.is_empty() {
                 continue;
             }
-            laminae.sort_unstable();
-            laminae.dedup_by(|x, y| x.site == y.site);
+            compartments.sort_unstable();
+            compartments.dedup_by(|x, y| x.site == y.site);
             let positions: Vec<crate::transducer::base::Site> =
-                laminae.iter().map(|x| x.site.clone()).collect();
+                compartments.iter().map(|x| x.site.clone()).collect();
             // THE BODIES: hue-blind components of the 6-incidence (70.4).
             let all = face_incidence(&positions);
-            let roots = components(laminae.len(), &all);
+            let roots = components(compartments.len(), &all);
             // The 6-incidence edges across two hues lie INSIDE one body now:
             // they are its gauge seams, H3's content, and never contact.
             for &(i, j) in &all {
-                match laminae[i].hue == laminae[j].hue {
+                match compartments[i].hue == compartments[j].hue {
                     true => interior += 1,
                     false => seams += 1,
                 }
@@ -672,22 +672,22 @@ fn a14_contact_is_the_diagonal_between_hue_blind_bodies() {
     for name in &names {
         let Ok(json) = std::fs::read_to_string(format!("{CORPUS}/{name}")) else { continue };
         let Some(task) = crate::arc::parse_task(&json) else { continue };
-        let mut laminae: Vec<crate::transducer::blade::Lamina> = Vec::new();
+        let mut compartments: Vec<crate::transducer::blade::Compartment> = Vec::new();
         for (k, (input, _)) in task.train.iter().enumerate() {
             for (r, row) in input.iter().enumerate() {
                 for (c, &h) in row.iter().enumerate() {
                     if h != 0 {
-                        laminae.push(crate::transducer::blade::Lamina::from((r as i64, c as i64, k as i64, h)));
+                        compartments.push(crate::transducer::blade::Compartment::from((r as i64, c as i64, k as i64, h)));
                     }
                 }
             }
         }
-        if laminae.is_empty() {
+        if compartments.is_empty() {
             continue;
         }
-        laminae.sort_unstable();
-        laminae.dedup_by(|x, y| x.site == y.site);
-        let positions: Vec<crate::transducer::base::Site> = laminae.iter().map(|x| x.site.clone()).collect();
+        compartments.sort_unstable();
+        compartments.dedup_by(|x, y| x.site == y.site);
+        let positions: Vec<crate::transducer::base::Site> = compartments.iter().map(|x| x.site.clone()).collect();
         let roots = components(positions.len(), &face_incidence(&positions));
         // Each body pair with the fibre of its cells — `e₃ ∉ axes`,
         // `e₃ ∈ axes` — and the grade of the largest cell it shares.

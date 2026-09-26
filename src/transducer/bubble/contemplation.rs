@@ -244,7 +244,7 @@ pub(crate) fn candidates_over(bodies: &[Link]) -> Keyed<Rotor> {
         crate::transducer::family::body_of(
             links
                 .iter()
-                .map(|&(r, c, _, h)| crate::transducer::blade::Lamina::from((r, c, 0i64, h)))
+                .map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h)))
                 .collect::<Vec<_>>(),
         )
     };

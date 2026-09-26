@@ -1,31 +1,9 @@
 // 50.8, A6, 16.4 — Tests for continuous support correspondence and Pythagorean prime rotors.
 
 use crate::transducer::alphabet::{LetterId, Word};
-use crate::transducer::blade::{continuous::ContinuousSupport, *};
+use crate::transducer::blade::*;
 use crate::transducer::element::versor_of_word;
 use crate::transducer::sentence::class::{orbit_row, OrbitRow, FREE_ROW};
-
-#[test]
-fn continuous_support_invariants_in_closed_form() {
-    let bar = super::common::sites(&[(0, 0, 0), (0, 1, 0), (0, 2, 0), (0, 3, 0)]);
-    let s = shape_of(&bar);
-
-    // SQ1-b5 — similarity is the dilation APPLIED, not a scalar prefilter:
-    // the coset carrying the bar onto its double is non-empty, and each of
-    // its versors carries the one tower onto the other at ρ = 2.
-    let dilated = super::common::dilate(&s.blade.support, 2);
-    let s_dil = shape_of(&dilated);
-    let coset = versor_coset(&s, &s_dil);
-    assert!(!coset.is_empty(), "D(2) carries the bar onto its double");
-    let (sa, sb) = (
-        ContinuousSupport::of(&s.blade, Tower::Region).expect("support"),
-        ContinuousSupport::of(&s_dil.blade, Tower::Region).expect("support"),
-    );
-    for (_, v) in &coset {
-        assert!(sa.matches(&sb, v), "the member carries the tower");
-        assert!(!sb.matches(&sa, v), "and not back: its inverse does");
-    }
-}
 
 #[test]
 fn continuous_support_pythagorean_rotor_holonomy() {

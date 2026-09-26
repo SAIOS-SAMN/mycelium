@@ -111,9 +111,41 @@ fn a_pythagorean_site_map_is_carried_at_its_rational_turn() {
     assert!(pose.rotor().projective_eq(&cga::rotator(&q(2), &q(1))), "the map's own rotor, read back: {pose:?}");
 }
 
+/// CELLS AS ROUNDS, THE COST OF A FIT (ruled 2026-09-26) — A FILLED BLOW-UP IS
+/// CARRIED WITH ITS RESIDUE. Each compartment of the L blown up by 2 becomes a 2×2
+/// block of rounds: the rounds carry the pair exactly through order three,
+/// and at order four the image differs by the block's own harmonic, `S₄(2)/2²
+/// = −1/4` on the grid plane, which the transition carries beside its versor
+/// and never absorbs. No lattice turn, no landing: the certificate's fit and
+/// the covariance above it.
+#[test]
+fn a_filled_blow_up_is_carried_with_its_order_four_residue() {
+    use crate::transducer::blade::{transitions_between, Harmonic};
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
+    let l2 = blade::shape_of(&[
+        (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
+        (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
+        (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
+        (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
+    ]);
+    let fit = crate::transducer::blade::certify(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE)
+        .expect("the rounds fit the pair");
+    assert_eq!(fit.through, Harmonic::Three, "exact through order three, the residue at four");
+    let members = transitions_between(&l.blade, &l2.blade, crate::transducer::base::GRID_PLANE).expect("carried");
+    let [t] = members.as_slice() else { panic!("one member: h₃ settles the 180° turn, got {}", members.len()) };
+    assert!(t.residue.iter().all(|r| r.order == Harmonic::Four), "nothing below order four is left: {:?}", t.residue);
+    let grid: Vec<_> = t.residue.iter().filter(|r| r.plane == crate::transducer::base::GRID_PLANE).collect();
+    assert_eq!(
+        grid.iter().map(|r| r.vector.clone()).collect::<Vec<_>>(),
+        vec![[q(-1, 4), q(0, 1)]],
+        "the 2×2 block's own fourth harmonic, S₄(2)/2² = −1/4"
+    );
+}
+
 /// 55.3, 68 — THE CHIRAL L IS CARRIED ONTO ITS 90° TURN BY COVARIANCE:
 /// one member, even, and the verification is the tower's — the centre, the
-/// second moment, the odd and quartic harmonics — never a lamina landing.
+/// second moment, the odd and quartic harmonics — never a compartment landing.
 #[test]
 fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
@@ -122,12 +154,14 @@ fn the_chiral_l_is_carried_onto_its_turn_by_the_towers_covariance() {
     assert!(matches!(pose, blade::Pose::Turn(_)), "h₃ settles the 180° turn: {pose:?}");
     assert_eq!(pose.rotor().parity(), Some(false), "a turn, not a mirror");
     let v = blade::versor_between(&l, &turned).expect("the transition");
-    assert!(
-        blade::carries_by_covariance(&v, &l.blade, &turned.blade, blade::Tower::Region),
-        "the region's tower is carried by it"
+    let four = crate::transducer::blade::Harmonic::Four;
+    assert_eq!(
+        blade::carries_by_covariance(&v, &l.blade, &turned.blade, blade::Tower::Region, four),
+        Some(Vec::new()),
+        "the region's tower is carried by it whole, no residue at any order"
     );
     assert!(
-        !blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region),
+        blade::carries_by_covariance(&v, &turned.blade, &l.blade, blade::Tower::Region, four).is_none(),
         "and not the other way: a 90° turn is not its own inverse"
     );
 }
@@ -193,40 +227,6 @@ fn v1_the_open_arm_needs_both_gates_and_a_dilate_passes_only_one() {
     assert_eq!(pose.rotor().parity(), Some(true), "the odd gate reads the reflection: {pose:?}");
 }
 
-/// V1 RECUT — THE ODD INVARIANT IS SCALE-FREE, AND THAT IS THE WHOLE
-/// GAIN OVER THE LATTICE READING IT REPLACED (68).
-///
-/// `L4x2` is `L4` dilated by 2. Normalised, `h₂` has degree 2 and `h₄`
-/// degree 4, so `Z = h₂²·conj(h₄)` has degree 8 and the pair's
-/// invariants must stand in the ratio `2⁸ = 256` on BOTH components —
-/// asserted here as an exact rational identity, no root and no
-/// tolerance.
-///
-/// THE FIRST CUT OF V1 COULD NOT SEE THIS AT ALL. It compared cells
-/// about the centroid and refused outright when the supports differed
-/// in cardinality, so every dilated pair was unreadable by
-/// construction. The ray comparison divides the dilation out, and the
-/// pair reads as the turn it is.
-#[test]
-fn v1_the_odd_invariant_scales_by_its_degree_and_reads_across_a_dilation() {
-    let l = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0), (2, 1, 0)]);
-    let l2 = blade::shape_of(&[
-        (0, 0, 0), (0, 1, 0), (1, 0, 0), (1, 1, 0),
-        (2, 0, 0), (2, 1, 0), (3, 0, 0), (3, 1, 0),
-        (4, 0, 0), (4, 1, 0), (5, 0, 0), (5, 1, 0),
-        (4, 2, 0), (4, 3, 0), (5, 2, 0), (5, 3, 0),
-    ]);
-    let za = blade::chirality(&l.blade).expect("a chiral body");
-    let zb = blade::chirality(&l2.blade).expect("its dilate is chiral too");
-    let d8 = num_rational::BigRational::from_integer(num_bigint::BigInt::from(256));
-    assert_eq!(zb.0, &za.0 * &d8, "degree 8 on the real part");
-    assert_eq!(zb.1, &za.1 * &d8, "degree 8 on the imaginary part");
-    assert!(
-        blade::relative_rotor(&l.blade, &l2.blade).is_ok(),
-        "a dilated pair is a turn, which the cardinality test refused outright"
-    );
-}
-
 /// V1 RECUT — A REFLECTION IS SEEN ACROSS A CHANGE OF SCALE.
 ///
 /// `J4` is `L4` reflected; `L4x2` is `L4` dilated. The relation
@@ -280,9 +280,9 @@ fn v1_an_achiral_pair_is_still_refused_by_the_scale_certificate() {
 ///
 /// `z ↦ (4 + i)·z` carries the L-tetromino's four sites onto four sites
 /// of the lattice: one shape at two scales and an angle the alphabet does
-/// not spell. The lamina tower integrates each lamina's own unit square —
-/// A.12's floor, which no similarity of the lattice scales — so it
-/// refuses; the point tower is exact under the map and certifies. The
+/// not spell. The region tower carries each compartment's round's own extent —
+/// A.12's floor, which a site map does not scale — so it refuses; the
+/// point tower is exact under the map and certifies. The
 /// relation is read on the tower that certified: one ray for `Z`, the arc
 /// of `4 + i`, and the pose left open as `Oblique`.
 #[test]
@@ -394,26 +394,4 @@ fn v1_the_refusals_of_the_oblique_branch_stay_apart() {
     );
     let mirror = blade::relative_rotor(&l.blade, &j.blade).expect("the improper pair is read");
     assert_eq!(mirror.rotor().parity(), Some(true), "as the odd versor: {mirror:?}");
-}
-
-/// 78.38 (C), clarified — THE CERTIFICATE IS ASKED BEFORE THE TURN BRANCH.
-///
-/// A domino and a three-cell bar lie along one axis and are both 2-fold
-/// symmetric, so the aligned branch reads only their angle — `wedge = 0`,
-/// `h₃ = 0` — and held them `HalfOpen`, a turn between two shapes no
-/// similarity relates. Neither tower certifies them, and no reader past the
-/// angle would refuse them, so the refusal comes first, naming the order
-/// from each tower.
-#[test]
-fn an_aligned_unlike_pair_is_refused_before_the_turn_branch() {
-    let dom = blade::shape_of(&[(0, 0, 0), (1, 0, 0)]);
-    let bar = blade::shape_of(&[(0, 0, 0), (1, 0, 0), (2, 0, 0)]);
-    assert!(blade::third_harmonic(&dom.blade).is_none() && blade::third_harmonic(&bar.blade).is_none(), "2-fold, h3 = 0");
-    let (two, four) = (blade::TowerRefusal::At(blade::Harmonic::Two), blade::TowerRefusal::At(blade::Harmonic::Four));
-    assert_eq!(blade::dilation(&dom.blade, &bar.blade), Err((two, four)), "the region parts at 2, the sites at 4");
-    assert_eq!(
-        blade::relative_rotor(&dom.blade, &bar.blade).err(),
-        Some(blade::NoPose::Incongruent(blade::Incongruence::Order { region: two, sites: four })),
-        "unlike, not a held 180° turn"
-    );
 }

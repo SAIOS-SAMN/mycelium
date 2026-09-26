@@ -1,6 +1,6 @@
 // 50.8, A6, 16.4, 55.3, 78.38(C), A.12 — CONTINUOUS SUPPORT CORRESPONDENCE:
 // the transition between two shapes read on their exact moment towers, never
-// on where a carried lamina lands.
+// on where a carried compartment lands.
 //
 //! The crystallographic restriction of discrete raster grids (ℤ² admits C₄/D₄;
 //! ℤ³ admits O_h) limits lattice-to-lattice bijections to finite-order torsion
@@ -32,7 +32,7 @@ type Q = BigRational;
 pub struct ContinuousSupport {
     /// The tower the moments are read on (78.38(C)).
     pub tower: Tower,
-    /// The centre, where the lamina's conformal points stand (16.4): the
+    /// The centre, where the compartment's conformal points stand (16.4): the
     /// frame every versor of a carriage acts in.
     pub centre: Vec<Q>,
     /// The second moment on the body's `n` axes, normalised by `M₀` (A.12):
@@ -41,6 +41,18 @@ pub struct ContinuousSupport {
     /// The third and fourth harmonics on each plane of the base, in
     /// [`crate::transducer::base::planes`] order; `None` where one vanishes.
     pub upper: Vec<[Option<[Q; 2]>; 2]>,
+}
+
+/// THE PART OF A BODY A FIT LEAVES (ruled 2026-09-26): on the image plane,
+/// at an order above the one the fit holds through, `h_b − ρ^m ω^m h_a`,
+/// exact. A filled `k`-blow-up leaves the sensor block's own `S₄(k)/k²` at
+/// order four. It is the transition's, carried beside its versor, never
+/// absorbed — RM1's remainder, the price a fit pays.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Residue {
+    pub plane: (usize, usize),
+    pub order: Harmonic,
+    pub vector: [Q; 2],
 }
 
 /// `z · w` over ℚ(i).
@@ -124,21 +136,25 @@ impl ContinuousSupport {
     /// A versor that moves infinity — a transversion, or the inversion's cell —
     /// acts on the tower non-linearly, and A.13 is docketed and not built:
     /// refused, never approximated.
-    pub fn matches(&self, other: &Self, v: &Mv) -> bool {
+    ///
+    /// THE FIT IS READ THROUGH AN ORDER (ruled 2026-09-26, the cost of a fit):
+    /// every order up to `through` must be carried exactly; above it the
+    /// difference is not a refusal but the transition's RESIDUE, returned
+    /// whole — `None` where the versor does not carry the body through
+    /// `through`.
+    pub fn matches(&self, other: &Self, v: &Mv, through: Harmonic) -> Option<Vec<Residue>> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return false;
+            return None;
         }
-        let Ok(f) = crate::transducer::element::conformal_factors(v) else {
-            return false;
-        };
+        let f = crate::transducer::element::conformal_factors(v).ok()?;
         if f.inverted || f.transverses() {
-            return false;
+            return None;
         }
         if cga::base_at(&v.sandwich(&cga::point_at(&self.centre)), n).as_deref() != Some(other.centre.as_slice()) {
-            return false;
+            return None;
         }
-        self.carries_linear(other, &f.rotation, &f.rho)
+        self.carries_linear(other, &f.rotation, &f.rho, through)
     }
 
     /// THE COVARIANCE OF THE LINEAR PART, the rotation ray `R` and the scale
@@ -153,17 +169,24 @@ impl ContinuousSupport {
     ///   plane `(k, l)`, the first axis's image there is `w·ω` and the pair's
     ///   orientation the mirror's sign, and `w^m · h_b^(m) = (ρ w ω)^m ·
     ///   h_a^(m)` (a mirror conjugating `h_a` first).
-    pub(super) fn carries_linear(&self, other: &Self, rotation: &Mv, rho: &Q) -> bool {
+    ///
+    /// Orders up to `through` must hold exactly; each order above it that
+    /// does not is returned as a [`Residue`], `h_b − ρ^m ω^m h_a` exact on the
+    /// image plane — the part of `b` the fit leaves, never absorbed. Order two
+    /// is carried by every fit the certificate passes, so the tensor is read
+    /// exactly always.
+    pub(super) fn carries_linear(&self, other: &Self, rotation: &Mv, rho: &Q, through: Harmonic) -> Option<Vec<Residue>> {
         let n = self.centre.len();
         if self.tower != other.tower || other.centre.len() != n {
-            return false;
+            return None;
         }
-        let Some(w) = cga::weight_of(rotation) else {
-            return false;
-        };
+        let w = cga::weight_of(rotation)?;
+        if w.is_zero() {
+            return None;
+        }
         let images: Vec<Mv> = (0..n).map(|k| rotation.twisted(&axis(k))).collect();
         if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
-            return false;
+            return None;
         }
         let rho2 = rho * rho;
         let second_carried = images.iter().enumerate().all(|(k, y)| {
@@ -171,8 +194,9 @@ impl ContinuousSupport {
             moment(&other.second, y, n).sub(&turned).is_zero()
         });
         if !second_carried {
-            return false;
+            return None;
         }
+        let mut residue: Vec<Residue> = Vec::new();
         let planes = crate::transducer::base::planes(n);
         for (p, held) in planes.iter().zip(&self.upper) {
             let (yi, yj) = (&images[p.0], &images[p.1]);
@@ -180,33 +204,42 @@ impl ContinuousSupport {
             let rows: Vec<usize> = (0..n).filter(|&k| !at(yi, k).is_zero() || !at(yj, k).is_zero()).collect();
             // The plane's image, where it is a plane of the base.
             let &[k, l] = rows.as_slice() else { continue };
-            let Some(theirs) = crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix)) else {
-                return false;
-            };
+            let theirs = crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix))?;
             let omega = [&at(yi, k) * rho, &at(yi, l) * rho];
             let mirror = at(yi, k) * at(yj, l) - at(yi, l) * at(yj, k) < Q::zero();
-            let carried = |h: &[Q; 2], m: u32| -> [Q; 2] {
+            let zero = [Q::zero(), Q::zero()];
+            let carried = |h: Option<&[Q; 2]>, m: u32| -> [Q; 2] {
+                let Some(h) = h else { return zero.clone() };
                 let start = match mirror {
                     true => [h[0].clone(), -&h[1]],
                     false => h.clone(),
                 };
                 (0..m).fold(start, |z, _| times(&z, &omega))
             };
-            let weighed = |h: &[Q; 2], m: u32| -> [Q; 2] {
+            for (order, m, (mine, yours)) in [(Harmonic::Three, 3u32), (Harmonic::Four, 4)]
+                .into_iter()
+                .zip(held.iter().zip(theirs))
+                .map(|((o, m), pair)| (o, m, pair))
+            {
+                // `w^m · (h_b − ρ^m ω^m h_a)`, then the weight divided out:
+                // the residue at its own scale, exact.
                 let wm = (0..m).fold(Q::one(), |acc, _| acc * &w);
-                [&h[0] * &wm, &h[1] * &wm]
-            };
-            for (m, (mine, yours)) in [3u32, 4].into_iter().zip(held.iter().zip(theirs)) {
-                let agrees = match (mine, yours) {
-                    (None, None) => true,
-                    (Some(h), Some(hb)) => carried(h, m) == weighed(hb, m),
-                    _ => false,
+                let c = carried(mine.as_ref(), m);
+                // A harmonic that vanishes on `b` is the zero vector there.
+                let hb = match yours {
+                    Some(h) => h,
+                    None => &zero,
                 };
-                if !agrees {
-                    return false;
+                let diff = [(&hb[0] * &wm - &c[0]) / &wm, (&hb[1] * &wm - &c[1]) / &wm];
+                if diff[0].is_zero() && diff[1].is_zero() {
+                    continue;
                 }
+                if order <= through {
+                    return None;
+                }
+                residue.push(Residue { plane: (k, l), order, vector: diff });
             }
         }
-        true
+        Some(residue)
     }
 }

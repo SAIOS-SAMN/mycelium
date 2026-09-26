@@ -19,7 +19,7 @@ fn topology_counts_components_and_holes_exactly() {
     assert_eq!(m[..5], [Count(3), Count(1), Count(1), Count(0), Count(8)], "the base, β₀ β₁ β₂, the turns");
     assert_eq!(moduli(&shape_of(&dilate(&ring, 2)).blade), Some(m), "a dilated ring reads the same moduli");
     // The fourth-order axis separates bodies the inertia cannot: an
-    // L-tetromino and a T-tetromino... share a lamina count; the moduli
+    // L-tetromino and a T-tetromino... share a compartment count; the moduli
     // differ.
     let l4 = at_frame_0(&[(0, 0), (1, 0), (2, 0), (2, 1)]);
     let s4 = at_frame_0(&[(0, 1), (0, 2), (1, 0), (1, 1)]);
@@ -30,7 +30,7 @@ fn topology_counts_components_and_holes_exactly() {
 /// extent, and an invertible spatial sphere — the body HAS volume.
 #[test]
 fn a_square_lifts_to_an_invertible_body() {
-    let b = lift(&laminae(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
+    let b = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     assert_eq!(b.centroid(), Some(vec![qn(1, 2), qn(1, 2), q(0)]));
     assert!(b.radius2() > q(0), "the body has volume (off the null cone)");
     assert!(b.is_invertible());
@@ -38,16 +38,16 @@ fn a_square_lifts_to_an_invertible_body() {
     assert_eq!(b.gauge, vec![(1u8, q(4))]);
 }
 
-/// A lone lamina still HAS volume (r² = 1/6) — no body is a null point.
+/// A lone compartment still HAS volume (r² = 1/6) — no body is a null point.
 #[test]
-fn a_lone_lamina_has_volume() {
-    let b = lift(&laminae(&[(3, 5, 7)]));
+fn a_lone_compartment_has_volume() {
+    let b = lift(&compartments(&[(3, 5, 7)]));
     assert_eq!(b.radius2(), qn(1, 6));
     assert!(b.is_invertible());
 }
 
 /// H1, 70.4 — A BODY IS A MAXIMAL HUE-BLIND CONNECTED REGION. Adjacency
-/// joins whatever hues the laminae carry; a gap splits; the hue rides in
+/// joins whatever hues the compartments carry; a gap splits; the hue rides in
 /// the gauge.
 ///
 /// THIS REPLACES CHAPTER 20 (2026-09-09), AND ITS FEAR IS RECORDED
@@ -60,23 +60,23 @@ fn a_lone_lamina_has_volume() {
 /// was shattering into 7.8 pieces.
 ///
 /// The cost of the old rule, on the same corpus: 1646 bodies for 732
-/// objects, 64.0% of them single cells, and a "contact graph" whose
+/// objects, 64.0% of them single compartments, and a "contact graph" whose
 /// component count was exactly the region count — because it was the
 /// INTERNAL gauge structure of single objects, never contact at all.
 #[test]
 fn components_join_by_adjacency_whatever_the_hue() {
-    let one = components(&laminae(&[(0, 0, 1), (0, 1, 2)]));
-    assert_eq!(one.len(), 1, "adjacent laminae of two hues are ONE body, in two colours");
-    let same = components(&laminae(&[(0, 0, 1), (0, 1, 1)]));
-    assert_eq!(same.len(), 1, "adjacent laminae of one hue are one body");
-    let apart = components(&laminae(&[(0, 0, 1), (0, 5, 1)]));
+    let one = components(&compartments(&[(0, 0, 1), (0, 1, 2)]));
+    assert_eq!(one.len(), 1, "adjacent compartments of two hues are ONE body, in two colours");
+    let same = components(&compartments(&[(0, 0, 1), (0, 1, 1)]));
+    assert_eq!(same.len(), 1, "adjacent compartments of one hue are one body");
+    let apart = components(&compartments(&[(0, 0, 1), (0, 5, 1)]));
     assert_eq!(apart.len(), 2, "a gap separates bodies");
     let across = components(&sites_with_hue(&[(0, 0, 0, 1), (0, 0, 1, 1)]));
     assert_eq!(across.len(), 1, "one site in two consecutive frames is one body (51.3)");
     // THE HUE IS NOT LOST, IT MOVES TO THE FIBER. `Blade.gauge` carries it
     // as sorted `(hue, count)` relations — which is where every reader
     // downstream of perception already looked for it.
-    let body = lift(&laminae(&[(0, 0, 1), (0, 1, 2)]));
+    let body = lift(&compartments(&[(0, 0, 1), (0, 1, 2)]));
     assert_eq!(body.gauge.len(), 2, "both hues carried as gauge: {:?}", body.gauge);
     // AND THE DIAGONAL DOES NOT JOIN. H2 gives it to contact; if it
     // entered here it would merge the bodies it is meant to relate.
@@ -89,7 +89,7 @@ fn components_join_by_adjacency_whatever_the_hue() {
 /// same square in another frame.
 #[test]
 fn a_translate_shares_the_invariant() {
-    let a = lift(&laminae(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
+    let a = lift(&compartments(&[(0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 1)]));
     let b = lift(&sites_with_hue(&[(4, 7, 1, 1), (4, 8, 1, 1), (5, 7, 1, 1), (5, 8, 1, 1)]));
     assert_eq!(a.invariant(), b.invariant(), "a translate is the same orbit");
 }
@@ -109,7 +109,7 @@ fn volumetric_blade_3d_lift_computes_six_moments_and_3d_centroid() {
     // Inertia tensor has 6 components: [Ixx, Iyy, Ixy, Izz, Ixz, Iyz]
     assert_eq!(b.inertia.len(), 6);
     // Across frames, Izz carries the offsets along e₃ and nothing of a
-    // lamina's own thickness (16.4): four laminae one frame from the
+    // compartment's own thickness (16.4): four compartments one frame from the
     // centroid.
     assert_eq!(b.inertia[3], q(4), "Izz is the offsets alone");
 

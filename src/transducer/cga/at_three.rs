@@ -1,7 +1,7 @@
 //! THE CORPUS'S `n = 3`, NAMED FOR THE TESTS (PH2, BQ4). The production
 //! embeddings take any `n` ([`super::point_at`], [`super::sphere_at`],
 //! [`super::translator_at`], [`super::base_at`],
-//! [`super::hyperbolic_lamina`]); a fixture that reads the corpus's three
+//! [`super::hyperbolic_compartment`]); a fixture that reads the corpus's three
 //! coordinates — row, column, frame — says so by reading through here.
 
 use super::Mv;
@@ -28,7 +28,7 @@ pub fn base(p: &Mv) -> Option<(BigRational, BigRational, BigRational)> {
     Some((x[0].clone(), x[1].clone(), x[2].clone()))
 }
 
-/// A lamina on the sheet at the corpus's three coordinates.
-pub fn hyperbolic_lamina(r: &BigRational, c: &BigRational, k: &BigRational, m: &BigRational) -> Option<Mv> {
-    super::hyperbolic_lamina(&[r.clone(), c.clone(), k.clone()], m)
+/// A compartment on the sheet at the corpus's three coordinates.
+pub fn hyperbolic_compartment(r: &BigRational, c: &BigRational, k: &BigRational, m: &BigRational) -> Option<Mv> {
+    super::hyperbolic_compartment(&[r.clone(), c.clone(), k.clone()], m)
 }

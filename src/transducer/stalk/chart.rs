@@ -61,7 +61,7 @@ pub enum ChartAxis {
     /// A topological count: components, tunnels, cavities, turns.
     Count(u64),
     /// A conformal ratio, exact (law 4): the isoperimetric ratio, the frame
-    /// boundary, the anisotropy, the spread, the quartic, a hue fraction,
+    /// boundary, the anisotropy, the spread, a hue fraction,
     /// and a rotor's conjugacy invariants (15.3).
     Ratio(num_rational::BigRational),
 }

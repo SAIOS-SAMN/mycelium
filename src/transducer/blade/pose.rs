@@ -32,7 +32,7 @@
 //! space.
 //!
 //! THE MOMENTS ARE THE SITES' AS POINTS on every axis alike. The sensor's
-//! lamina is a square on the grid plane and a point along `e₃`; a turn out of
+//! compartment is a square on the grid plane and a point along `e₃`; a turn out of
 //! the grid plane carries the square's floor onto an axis that has none, so
 //! the floor would refuse every such turn at the sensor boundary (checklist
 //! (q)). The pose reads the sites as the points they stand at.
@@ -48,7 +48,7 @@ fn q(n: i64) -> Q {
 }
 
 /// DOES THIS BODY EXTEND OFF THE SENSOR'S PLANE — along the succession axis,
-/// or any axis the lamina's square does not span. Read from the sites
+/// or any axis the compartment's square does not span. Read from the sites
 /// themselves: two neighbours in the support differ on such an axis, and
 /// the sites are not all one value there under any order of them. A body at
 /// one section does not, and its pose is a turn in the sensor's plane.
@@ -117,10 +117,10 @@ struct Tower {
 
 /// THE POINT TOWER'S ONE PRODUCER (78.38): each site as the point it stands
 /// at, about the sites' mean, on `n` axes, beside the count every moment is
-/// normalised by. No lamina's own square enters, so every moment read off
+/// normalised by. No compartment's own round enters, so every moment read off
 /// these is floor-free at every order and scales exactly under a similarity
 /// — the tower every RELATION between shapes reads. The nucleus and its
-/// radius, which carry A.12's floor, are the lamina tower's.
+/// radius, which carry A.12's floor, are the compartment tower's.
 pub(super) fn centred(b: &Blade, n: usize) -> Option<(Q, Vec<Vec<Q>>)> {
     let count = q(i64::try_from(b.support.len()).ok()?);
     if count.is_zero() {
@@ -301,7 +301,9 @@ fn versor_of(r: &[Vec<Q>], n: usize) -> Option<Mv> {
 /// where it does not.
 fn carried(r: &[Vec<Q>], a: &Blade, b: &Blade, rho: &Q, n: usize) -> Option<Mv> {
     let v = versor_of(r, n)?;
-    super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites).map(|_| v)
+    // Through the fourth order: the tube's pose is a whole fit, residue-free.
+    super::carry::carried_on(a, b, &cga::dilator(rho).geo(&v), super::tower::Tower::Sites, super::tower::Harmonic::Four)
+        .map(|_| v)
 }
 
 /// THE POSE ON THE TUBE: the columns, the dual where a body is flat, the

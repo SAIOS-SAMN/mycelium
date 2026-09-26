@@ -345,14 +345,14 @@ pub struct Carriage {
 }
 
 /// Carry `a` onto `b`: the versor from the moments, and the hue map read
-/// lamina by lamina on the base `(r, c, k)` — functional, or refused. One
+/// compartment by compartment on the base `(r, c, k)` — functional, or refused. One
 /// reading for a body in one frame and a body across frames: a frame-0
-/// body's laminae stand at `k = 0` (51.3), which is their coordinate and
+/// body's compartments stand at `k = 0` (51.3), which is their coordinate and
 /// not a second path.
 pub fn carriage(a: &Body, b: &Body) -> Option<Carriage> {
     let v = blade::versor_between(&a.shape, &b.shape)?;
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for l in &a.laminae {
+    for l in &a.compartments {
         let h2 = landed_hue(&v, &l.site, b)?;
         let key = super::element::hue_pair_key(l.hue, 0);
         match sigma.get(&key) {
@@ -386,7 +386,7 @@ pub fn carriage_with_core(a: &Body, b: &Body) -> Option<Carriage> {
         | crate::transducer::blade::surgery::SurgeryKind::SplitCut => {}
     }
     let mut sigma: crate::network::nerve::Keyed<u8> = crate::network::nerve::Keyed::new();
-    for l in &a.laminae {
+    for l in &a.compartments {
         let Some(h2) = landed_hue(&v, &l.site, b) else { continue };
         let k = super::element::hue_pair_key(l.hue, 0);
         match sigma.get(&k) {

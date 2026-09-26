@@ -6,9 +6,9 @@ use crate::transducer::base::Site;
 use crate::transducer::family::*;
 
 /// Perception writes the form once. A second call on the same grids
-/// does not touch a lamina.
+/// does not touch a compartment.
 #[test]
-fn pair_form_reads_laminae_once() {
+fn pair_form_reads_compartments_once() {
 let a = grid(&["1100", "0000"]);
 let b = grid(&["0011", "0000"]);
 reset_sensor_reads();
@@ -29,7 +29,7 @@ assert!(
     "a carried body is a word vertex"
 );
 let f2 = cipher_form(&a, &b);
-assert_eq!(sensor_reads(), n, "second call touches no lamina");
+assert_eq!(sensor_reads(), n, "second call touches no compartment");
 assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
 }
@@ -69,7 +69,7 @@ fn edge_transport_lies_in_the_stabilizer_or_the_exchange() {
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
-let v1 = carriage(&a1, &b1).expect("a translated lamina carries").v;
+let v1 = carriage(&a1, &b1).expect("a translated compartment carries").v;
 let edge = edge_transport(&v1, &a1, &a2, &b1, &b2).expect("the pair-body is carried by the identity: an edge");
 assert!(edge.word.is_identity(), "the exchange has the identity word");
 assert!(
@@ -392,7 +392,7 @@ assert_eq!(faces.len() + 1 - 4, 0, "the 1-skeleton is the star tree: no independ
 /// body, so where two distinct bodies touch they touch at a corner. That
 /// corner is named as a contact between the two members, once, and a body
 /// whose own support turns a corner is not in contact with itself. A body
-/// a cell away from the others touches nothing and is named by the Frame
+/// a compartment away from the others touches nothing and is named by the Frame
 /// alone.
 #[test]
 fn two_bodies_meeting_at_a_corner_are_named_a_contact_face() {
@@ -402,7 +402,7 @@ let supports = supports_at(&[
     vec![(0, 0), (0, 1), (1, 0)],
     // …and a block meeting it diagonally at (1,0)–(2,1).
     vec![(2, 1), (2, 2)],
-    // A cell standing clear of both.
+    // A compartment standing clear of both.
     vec![(5, 5)],
 ]);
 let named = named_faces(Some(&root_member(0)), &supports);
@@ -456,7 +456,7 @@ assert_eq!(c.grade, 1, "in-plane corners, edges along the frame axis");
 }
 
 /// C1, 70.6 — A CORNER BETWEEN TWO BODIES OF SEVERAL MEMBERS OFFERS ONE
-/// FACE. Two members stand on one cell and two on the cell diagonal to it.
+/// FACE. Two members stand on one compartment and two on the compartment diagonal to it.
 /// H2b related every occupant of one site to every occupant of the other,
 /// four faces for one contact: the join of two occupancy simplices written
 /// as a clique. The contact is between the two bodies, so it is one face,
@@ -551,9 +551,9 @@ let contacts: Vec<_> = named.iter().filter(|nf| nf.named.hows.contains(&Incidenc
 let [nf] = contacts.as_slice() else { panic!("one member pair: {named:?}") };
 assert_eq!(nf.named.interfaces.len(), 2, "two interfaces between the one pair: {nf:?}");
 let tower = |i: &Vec<Site>| {
-    let laminae: Vec<crate::transducer::blade::Lamina> =
-        i.iter().map(|s| crate::transducer::blade::Lamina { site: s.clone(), hue: 0 }).collect();
-    crate::transducer::blade::lift(&laminae)
+    let compartments: Vec<crate::transducer::blade::Compartment> =
+        i.iter().map(|s| crate::transducer::blade::Compartment { site: s.clone(), hue: 0 }).collect();
+    crate::transducer::blade::lift(&compartments)
 };
 let (a, b) = (tower(&nf.named.interfaces[0].witness), tower(&nf.named.interfaces[1].witness));
 assert_ne!(a.inertia, b.inertia, "a straight seam and a bent one lift to two towers");
@@ -784,7 +784,7 @@ fn a_scene_of_five_bodies_on_three_charts_answers_the_chart_whose_fiber_holds_on
     let fibers = crate::transducer::family::perceive::bodies_by_chart(&bodies);
     assert_eq!(fibers.len(), 3, "three charts represented: {fibers:?}");
 
-    let dot = bodies.iter().find(|b| b.laminae == vec![Lamina::from((4i64, 2i64, 0i64, 5u8))]).expect("the dot");
+    let dot = bodies.iter().find(|b| b.compartments == vec![Compartment::from((4i64, 2i64, 0i64, 5u8))]).expect("the dot");
     let chart = crate::transducer::family::perceive::chart_holding_one(&bodies)
         .expect("unique chart holding one body");
     assert_eq!(chart, dot.moduli, "answers the chart whose fiber holds one");
@@ -841,20 +841,20 @@ fn a_family_whose_rule_selects_that_body_extracts_a_rule_vertex_where_it_extract
 }
 
 /// 51.3 — A BODY CARRIES ITS FRAME ON ITS SUPPORT, one carrier: a square
-/// perceived in frame 1 has its laminae at `k = 1`, its centroid there,
+/// perceived in frame 1 has its compartments at `k = 1`, its centroid there,
 /// and the same chart as the square in frame 0.
 #[test]
 fn perception_3d_coordinates_preserve_frame_and_moments() {
-    let laminae: Vec<Lamina> =
-        [(0i64, 0i64, 1i64, 1u8), (0, 1, 1, 1), (1, 0, 1, 1), (1, 1, 1, 1)].map(Lamina::from).to_vec();
-    let b3d = body_of(laminae).expect("a square is heard at n = 3");
-    assert_eq!(b3d.laminae.len(), 4);
-    assert!(b3d.laminae.iter().all(|c| c.site.axis(2) == Some(1)), "the support stands in its frame");
+    let compartments: Vec<Compartment> =
+        [(0i64, 0i64, 1i64, 1u8), (0, 1, 1, 1), (1, 0, 1, 1), (1, 1, 1, 1)].map(Compartment::from).to_vec();
+    let b3d = body_of(compartments).expect("a square is heard at n = 3");
+    assert_eq!(b3d.compartments.len(), 4);
+    assert!(b3d.compartments.iter().all(|c| c.site.axis(2) == Some(1)), "the support stands in its frame");
     assert_eq!(b3d.shape.blade.inertia.len(), 6);
     let c3 = b3d.shape.blade.centroid().expect("3d centroid");
     assert_eq!(c3[2], num_rational::BigRational::from_integer(num_bigint::BigInt::from(1)));
     let at_zero = body_of(
-        [(0i64, 0i64, 0i64, 1u8), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)].map(Lamina::from).to_vec(),
+        [(0i64, 0i64, 0i64, 1u8), (0, 1, 0, 1), (1, 0, 0, 1), (1, 1, 0, 1)].map(Compartment::from).to_vec(),
     )
     .expect("a square is heard at n = 3");
     assert_eq!(at_zero.moduli, b3d.moduli, "a frame carries no meaning on the chart (51.1)");
@@ -866,14 +866,14 @@ fn six_adjacency_connects_bodies_across_frames_into_one_streamline() {
     let frame0 = grid(&["10", "00"]);
     let frame1 = grid(&["10", "00"]);
     let bodies = perceive_frames(&[frame0, frame1]);
-    assert_eq!(bodies.len(), 1, "two adjacent laminae across k form one 3D body streamline");
+    assert_eq!(bodies.len(), 1, "two adjacent compartments across k form one 3D body streamline");
     assert_eq!(
         bodies[0].shape.blade.shell,
         num_rational::BigRational::from_integer(num_bigint::BigInt::from(2))
     );
 }
 
-/// Audit N-3 — A LAMINA WITH NO SECTION IS COUNTED WHERE IT IS REFUSED. A
+/// Audit N-3 — A COMPARTMENT WITH NO SECTION IS COUNTED WHERE IT IS REFUSED. A
 /// site of a base with one axis has no grid plane; the chain builder leaves
 /// it out and the one producer, `on_grid`, says so on the line.
 #[test]

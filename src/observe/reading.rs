@@ -237,7 +237,7 @@ impl Planes {
 /// by the codec and by every renderer (law 12).
 pub const LOSS_AXES: [(&str, &str); 26] = [
     ("unheard", "components whose moduli are not read at their n (body_of refused)"),
-    ("sectionless", "laminae with no grid plane, left out of a chain (on_grid refused)"),
+    ("sectionless", "compartments with no grid plane, left out of a chain (on_grid refused)"),
     ("coarse", "sections filed at their n alone, their topology refused"),
     ("unmeasured", "covers whose share ended before their pieces did"),
     ("off_sheet", "frames that did not stand on the sheet (Axiom B fell back)"),

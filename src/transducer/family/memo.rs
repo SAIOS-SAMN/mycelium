@@ -106,10 +106,10 @@ fn ring_answer(
     };
     // The demand's bodies are one section's links (16.5), read in the
     // section's own frame.
-    let before: Vec<Lamina> =
-        bodies.iter().filter(|c| c.2 != 0).map(|c| Lamina::from((c.0, c.1, 0, c.2))).collect();
-    let after: Vec<Lamina> =
-        bodies.iter().filter(|c| c.3 != 0).map(|c| Lamina::from((c.0, c.1, 0, c.3))).collect();
+    let before: Vec<Compartment> =
+        bodies.iter().filter(|c| c.2 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.2))).collect();
+    let after: Vec<Compartment> =
+        bodies.iter().filter(|c| c.3 != 0).map(|c| Compartment::from((c.0, c.1, 0, c.3))).collect();
     if before.is_empty() || after.is_empty() {
         return None;
     }

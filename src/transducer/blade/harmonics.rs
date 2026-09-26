@@ -2,7 +2,7 @@
 // of its stack and the hue spectrum, the axes it is heard on, coarsest
 // first.
 //
-//! Exact in ℚ and invariant under every versor `carry_lamina` accepts: what
+//! Exact in ℚ and invariant under every versor `carry_compartment` accepts: what
 //! a body sounds like, whatever its size, place, frame or orientation. The
 //! axes run coarsest first — the base's `n`, the topology (the Betti
 //! numbers of the union, then the turns), then the boundary and moment
@@ -29,19 +29,26 @@ pub struct Harmonics {
     pub betti: Vec<u64>,
     /// The sections' turning count.
     pub turns: u64,
-    /// h₄ — the in-plane boundary's length² over the laminae (the
+    /// h₄ — the in-plane boundary's length² over the compartments (the
     /// isoperimetric ratio).
     pub isoperimetric: BigRational,
-    /// h₅ — the sides open along `e₃` over the laminae: two for one
+    /// h₅ — the sides open along `e₃` over the compartments: two for one
     /// section, less for a stack.
     pub frame_boundary: BigRational,
     /// h₆ — det(I)/tr(I)² on the grid plane (anisotropy of the inertia).
     pub anisotropy: BigRational,
-    /// h₇ — the trace on every axis over the laminae² (spread per area).
+    /// h₇ — the trace on every axis over the compartments² (spread per area).
+    ///
+    /// THE CHART STOPS AT ORDER TWO (ruled 2026-09-26, compartments as rounds): the
+    /// isotropic fourth moment stood here as h₈, and it was invariant under a
+    /// blow-up only while each compartment was a square, whose `k×k` block is one
+    /// square. A body's rounds carry a blow-up exactly through order three
+    /// and leave the block's own residue at four, so an order-four axis would
+    /// file a body and its blow-up in two fibres and the chart would stop
+    /// locating what the physics relates (71.2(6)). The fourth order is the
+    /// transition's to read, with its residue.
     pub spread: BigRational,
-    /// h₈ — the isotropic fourth moment on the grid plane over n³.
-    pub quartic: BigRational,
-    /// h₉… — the hue fractions, sorted: the gauge spectrum.
+    /// h₈… — the hue fractions, sorted: the gauge spectrum.
     pub gauge: Vec<BigRational>,
 }
 
@@ -54,14 +61,13 @@ impl Harmonics {
         let count = |v: usize| BigRational::from_integer(num_bigint::BigInt::from(v as i64));
         let edges = count(blade::boundary_length(&b.support));
         let open = count(blade::frame_faces(&b.support));
-        // The anisotropy and the quartic are read on the grid plane, named
-        // (BQ4); the spread is the trace on every axis the body has.
+        // The anisotropy is read on the grid plane, named (BQ4); the spread is
+        // the trace on every axis the body has.
         let (gi, gj) = crate::transducer::base::GRID_PLANE;
         let (ixx, iyy, ixy) = (b.moment2(gi, gi)?, b.moment2(gj, gj)?, b.moment2(gi, gj)?);
         let tr = ixx + iyy;
         let det = ixx * iyy - ixy * ixy;
         let trace = (0..b.n()).filter_map(|i| b.moment2(i, i)).fold(BigRational::zero(), |s, x| s + x);
-        let [q_iso, _, _] = b.quartic_on(crate::transducer::base::GRID_PLANE)?;
         let mut gauge: Vec<BigRational> = b.gauge.iter().map(|(_, c)| c / &n).collect();
         gauge.sort();
         Some(Harmonics {
@@ -75,7 +81,6 @@ impl Harmonics {
                 false => &det / (&tr * &tr),
             },
             spread: trace / (&n * &n),
-            quartic: q_iso / (&n * &n * &n),
             gauge,
         })
     }
@@ -101,7 +106,6 @@ impl Harmonics {
             &self.frame_boundary,
             &self.anisotropy,
             &self.spread,
-            &self.quartic,
         ] {
             axes.push(ChartAxis::Ratio(r.clone()));
         }
@@ -242,7 +246,7 @@ mod tests {
         assert_eq!(blade::topology(&ring), Some(vec![1, 1, 0, 0]), "a ring has one tunnel at n = 4 too");
     }
 
-    /// 71.2(6) — THE COMPLEX IS THE UNION'S. Two cells meeting only at a
+    /// 71.2(6) — THE COMPLEX IS THE UNION'S. Two compartments meeting only at a
     /// corner are two bodies (face adjacency) and ONE component of the
     /// union; the chart reads the union.
     #[test]

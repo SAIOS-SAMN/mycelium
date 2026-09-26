@@ -1,9 +1,9 @@
 // Fixture constructors for the blade's tests (MU-STANDARDS 3.3): a
-// rectangle in frame 0, its exact dilation, and a list of laminae. Every
+// rectangle in frame 0, its exact dilation, and a list of compartments. Every
 // site is handed to the base through the sensor's own reading (71.2(1)).
 
 use crate::transducer::base::{Site, GRID_AXES};
-use crate::transducer::blade::Lamina;
+use crate::transducer::blade::Compartment;
 
 pub fn rect(r0: i64, c0: i64, h: i64, w: i64) -> Vec<Site> {
     let mut v: Vec<Site> =
@@ -33,9 +33,9 @@ pub fn dilate(support: &[Site], k: i64) -> Vec<Site> {
     v
 }
 
-/// A frame-0 scene: `(row, col, hue)` lifted to laminae on the base.
-pub fn laminae(v: &[(i64, i64, u8)]) -> Vec<Lamina> {
-    v.iter().map(|&(r, c, h)| Lamina::from((r, c, 0, h))).collect()
+/// A frame-0 scene: `(row, col, hue)` lifted to compartments on the base.
+pub fn compartments(v: &[(i64, i64, u8)]) -> Vec<Compartment> {
+    v.iter().map(|&(r, c, h)| Compartment::from((r, c, 0, h))).collect()
 }
 
 /// A support in frame 0.
@@ -43,8 +43,8 @@ pub fn at_frame_0(v: &[(i64, i64)]) -> Vec<Site> {
     v.iter().map(|&(r, c)| Site::from((r, c, 0))).collect()
 }
 
-/// Laminae from anything the sensor reads as one.
-pub fn sites_with_hue<T: Copy + Into<Lamina>>(v: &[T]) -> Vec<Lamina> {
+/// Compartments from anything the sensor reads as one.
+pub fn sites_with_hue<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
     v.iter().map(|&t| t.into()).collect()
 }
 

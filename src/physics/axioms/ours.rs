@@ -48,9 +48,9 @@ pub const A11_HARMONIC_MULTIPOLE_COMPLETENESS: &str =
 /// THIS WAS LOAD-BEARING BEFORE IT WAS STATED. `r² → 0` drops the nucleus
 /// onto the light cone, `den2 = 4r_a²r_b² → 0`, and the interaction horizon
 /// stops being DEFINED rather than merely large. The floor is bought by
-/// `blade::lift` integrating each lamina's own unit square with the
-/// parallel-axis term at every order — the `+1/12` — and the smallest body
-/// the sensor can deliver reads exactly `1/6`. A point-mass reading gives
+/// `blade::lift` lifting each compartment at the sensor to its ROUND — its centre
+/// with the unit cube's extent, `1/12` on each grid axis (ruled 2026-09-26) —
+/// and the smallest body the sensor can deliver reads exactly `1/6`. A point-mass reading gives
 /// `r² = 0`, and one existed until `6a5910f` retired `extract.rs`'s shadow
 /// trace as a law-12 defect. A.11's single producer is therefore not
 /// hygiene: it is what holds every nucleus off the cone.

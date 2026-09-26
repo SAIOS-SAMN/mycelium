@@ -2,10 +2,10 @@
 // which read a site of ℚⁿ exactly or refuse.
 //
 //! The functions permitted a site's coordinates: a conformal point read to
-//! the site whose lamina holds it, a lamina's center and a whole lamina
-//! carried by a versor, and a sibling's assignment pulled back onto a base's
-//! sites. A lamina (16.4) is the unit square standing on the grid axes at a
-//! site, with its center carried at the site plus ½ on each grid axis and
+//! the site whose compartment holds it, a compartment's center and a whole
+//! compartment carried by a versor, and a sibling's assignment pulled back
+//! onto a base's sites. A compartment (16.4) is the unit square standing on
+//! the grid axes at a site, with its center carried at the site plus ½ on each grid axis and
 //! the site's own coordinate on every other axis.
 //!
 //! THIS IS THE BOUNDARY WHERE THE CORPUS'S COORDINATES BECOME SITES (71.2(1)).
@@ -35,15 +35,15 @@ impl From<(i64, i64, i64)> for Site {
     }
 }
 
-/// A LAMINA AS THE GRID PRESENTS IT: row, column, frame and the hue it
+/// A COMPARTMENT AS THE GRID PRESENTS IT: row, column, frame and the hue it
 /// carries, read at the sensor.
-impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Lamina {
+impl From<(i64, i64, i64, u8)> for crate::transducer::blade::Compartment {
     fn from((r, c, k, hue): (i64, i64, i64, u8)) -> Self {
-        crate::transducer::blade::Lamina { site: Site::new(vec![r, c, k]), hue }
+        crate::transducer::blade::Compartment { site: Site::new(vec![r, c, k]), hue }
     }
 }
 
-/// The site whose lamina holds a rational point of the base — exact
+/// The site whose compartment holds a rational point of the base — exact
 /// containment (the floor of a rational is an exact integer, not a
 /// rounding) on every axis. `None` where a coordinate does not fit the base
 /// (W6): a site it could not convert is a site it did not read.
@@ -63,9 +63,9 @@ pub fn site_of(p: &Point) -> Option<(i64, i64, i64)> {
     }
 }
 
-/// Carry a lamina's center by V and read the base point back (None at
+/// Carry a compartment's center by V and read the base point back (None at
 /// infinity). The center stands at the site plus ½ on each grid axis: the
-/// other axes' origins lie at the laminae's centers (16.4), so a dilator
+/// other axes' origins lie at the compartments' centers (16.4), so a dilator
 /// about a point of the frame fixes the frame. At the site's own `n`.
 pub fn carry_site_center(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRational>> {
     let half = num_rational::BigRational::new(BigInt::from(1), BigInt::from(2));
@@ -84,12 +84,12 @@ pub fn carry_site_center(v: &Versor, s: &Site) -> Option<Vec<num_rational::BigRa
     crate::transducer::cga::base_at(&v.sandwich(&crate::transducer::cga::point_at(&x)), s.n())
 }
 
-/// The site a lamina's carried center lands in.
+/// The site a compartment's carried center lands in.
 pub fn carry_site(v: &Versor, s: &Site) -> Option<Site> {
     site_at(&carry_site_center(v, s)?)
 }
 
-/// Carry a lamina's center at the corpus's three coordinates.
+/// Carry a compartment's center at the corpus's three coordinates.
 pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
     match carry_site_center(v, &Site::new(vec![r, c, k]))?.as_slice() {
         [x, y, z] => Some((x.clone(), y.clone(), z.clone())),
@@ -97,19 +97,19 @@ pub fn carry_center(v: &Versor, r: i64, c: i64, k: i64) -> Option<Point> {
     }
 }
 
-/// Carry a whole lamina by V — its unit square standing on the grid axes —
-/// and read back the block of laminae its image IS: the sites whose squares
+/// Carry a whole compartment by V — its unit square standing on the grid
+/// axes — and read back the block of compartments its image IS: the sites whose squares
 /// tile it exactly. The square is carried by its four corners, and the
 /// image is a block of the sensor only where the corners land on the
 /// base's vertices, with every non-grid coordinate shared by all four, as
 /// an axis-aligned square of integer side: one site under an isometry, an
-/// s×s block under a dilation by an integer s. Everything else is no lamina
-/// of the sensor and is refused (law 11): a tilted image (a rotor off the
+/// s×s block under a dilation by an integer s. Everything else is no
+/// compartment of the sensor and is refused (law 11): a tilted image (a rotor off the
 /// 90° turns), a fractional image (a shrink, a dilation by a ratio), a
 /// square standing across the frames (a versor turning a non-grid axis into
 /// the plane, 16.4), a corner at infinity or off the base (W6). Nothing is
 /// read off a span of centres.
-pub fn carry_lamina_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
+pub fn carry_compartment_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
     let [ga, gb] = crate::transducer::base::GRID_AXES;
     // A corner carried onto a vertex of the base, or nothing.
     let corner = |da: i64, db: i64| -> Option<Vec<i64>> {
@@ -181,9 +181,9 @@ pub fn carry_lamina_site(v: &Versor, s: &Site) -> Option<Vec<Site>> {
     Some(out)
 }
 
-/// A whole lamina carried at the corpus's three coordinates.
-pub fn carry_lamina(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
-    carry_lamina_site(v, &Site::new(vec![r, c, k]))?
+/// A whole compartment carried at the corpus's three coordinates.
+pub fn carry_compartment(v: &Versor, r: i64, c: i64, k: i64) -> Option<Vec<(i64, i64, i64)>> {
+    carry_compartment_site(v, &Site::new(vec![r, c, k]))?
         .iter()
         .map(|s| match s.axes() {
             [r, c, k] => Some((*r, *c, *k)),

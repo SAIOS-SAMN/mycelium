@@ -19,7 +19,7 @@ use super::*;
 use crate::transducer::peel::ShellKind;
 
 /// A piece of a body: one shell, one HUE-BLIND connected component (70.4).
-/// Its hues are the gauge its laminae carry, read off them where a reader
+/// Its hues are the gauge its compartments carry, read off them where a reader
 /// needs them; a seam between two hues inside a piece is that piece's own
 /// gauge section, never a meet.
 ///
@@ -62,7 +62,7 @@ pub(crate) fn piece_at(
 
 /// THE PIECES OF A BODY ARE BODIES: its hue-blind connected components
 /// (`blade::components` on the three coordinates of the base, which is
-/// 51.3's 6-adjacency whatever hues the laminae carry, 70.4), filed by
+/// 51.3's 6-adjacency whatever hues the compartments carry, 70.4), filed by
 /// their own address.
 ///
 /// THE COVER DOES NOT DESCEND BELOW A BODY (51.3, 50.8 as ruled
@@ -83,14 +83,14 @@ pub(crate) fn piece_at(
 /// never a listing of pieces. `ShellKind::Whole` is the kind of a body read
 /// without a peel — the value, not a placeholder for one.
 pub(crate) fn pieces_of(
-    laminae: &[Lamina],
+    compartments: &[Compartment],
 ) -> crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> {
     let mut out: crate::network::nerve::Keyed<Piece, crate::network::nerve::coord::Piece> =
         crate::network::nerve::Keyed::new();
-    // WHATEVER HUES THE LAMINAE CARRY (70.4): the component is taken over
+    // WHATEVER HUES THE COMPARTMENTS CARRY (70.4): the component is taken over
     // the body's whole support, so a polychrome body is one piece and its
     // colour seams stay inside it as its gauge section.
-    for comp in crate::transducer::blade::components(laminae) {
+    for comp in crate::transducer::blade::components(compartments) {
         if comp.is_empty() {
             continue;
         }

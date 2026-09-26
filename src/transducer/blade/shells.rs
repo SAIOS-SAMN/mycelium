@@ -132,7 +132,7 @@ pub fn enclosed_interior(painted: &[(i64, i64, u8)]) -> Vec<(i64, i64, u8)> {
     out
 }
 
-/// THE BODY'S EXTENT: the least and greatest lamina coordinate its painted
+/// THE BODY'S EXTENT: the least and greatest compartment coordinate its painted
 /// sites occupy, read at the sensor boundary (§1.4, law 11's one place
 /// where a pair of integers is a coordinate).
 ///
@@ -164,7 +164,7 @@ pub fn cut(painted: &[(i64, i64, u8)]) -> Option<Vec<(i64, i64, u8)>> {
     Some(out)
 }
 
-/// MAGNIFIED ×k — each lamina becomes a k×k block.
+/// MAGNIFIED ×k — each compartment becomes a k×k block.
 pub fn magnified(painted: &[(i64, i64, u8)], k: i64) -> Vec<(i64, i64, u8)> {
     if k <= 0 {
         return Vec::new();

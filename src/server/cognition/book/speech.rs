@@ -526,7 +526,7 @@ impl Kernel {
 pub(crate) fn residual_versor(listing: &[(i64, i64, u8, u8)], residual: &[(i64, i64, u8, u8)]) -> Option<crate::transducer::cga::Mv> {
     let lift = |links: &[(i64, i64, u8, u8)]| {
         crate::transducer::blade::lift(
-            &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Lamina::from((r, c, 0i64, h))).collect::<Vec<_>>(),
+            &links.iter().map(|&(r, c, _, h)| crate::transducer::blade::Compartment::from((r, c, 0i64, h))).collect::<Vec<_>>(),
         )
     };
     crate::transducer::blade::tether(&lift(listing), &lift(residual))

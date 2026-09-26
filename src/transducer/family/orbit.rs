@@ -63,7 +63,7 @@ pub(crate) fn ring_dist_peel(image: &[(i64, i64)], anchor: &[(i64, i64)], bound:
 pub(crate) fn carry_painted(v: &Versor, painted: &[Painted]) -> Option<Vec<Painted>> {
     let mut out = Vec::new();
     for &(r, c, h) in painted {
-        if let Some(image) = element::carry_lamina(v, r, c, 0) {
+        if let Some(image) = element::carry_compartment(v, r, c, 0) {
             for (ir, ic, ik) in image {
                 if ik != 0 {
                     return None;

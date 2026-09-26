@@ -49,9 +49,9 @@ pub fn no_held(_inv: &stalk::Invariant, _piece: &[Link]) -> Vec<HeldCite> {
 /// 50.1 step 1). The vertex holds a rotor, a carriage and a gauge; the
 /// caller holds the body. The rotor under the carriage's dilator is
 /// carried onto the body's own frame by the translator its centroids
-/// solve (`versor_carrying`), and the action is verified lamina by lamina:
-/// every lamina of the body's before-support lands on a lamina of its
-/// after-support, every after-lamina is reached, and each landed hue is
+/// solve (`versor_carrying`), and the action is verified compartment by compartment:
+/// every compartment of the body's before-support lands on a compartment of its
+/// after-support, every after-compartment is reached, and each landed hue is
 /// the gauge's image of the hue it left. Nothing is decoded from the address,
 /// no element is minted to ask, and a vertex that reconstructs nothing
 /// here is not a word for this body. The cite carries the body in its own
@@ -76,7 +76,7 @@ pub fn vertex_cites(vertex: &Vertex, piece: &[Link]) -> Option<HeldCite> {
 }
 
 /// The reconstruction test at ONE member: the rotor under that member's
-/// dilator carried onto the body's frame, verified lamina by lamina.
+/// dilator carried onto the body's frame, verified compartment by compartment.
 fn vertex_cites_by(
     vertex: &Vertex,
     carriage: &crate::transducer::element::Versor,
@@ -110,7 +110,7 @@ fn vertex_cites_by(
     let shape_in = blade::shape_of_section(&in_support);
     let shape_out = blade::shape_of_section(&out_support);
     let linear = element::conformal_of_rotor(&rotor, &element::dilator_of(carriage)?)?;
-    let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?;
+    let v = blade::versor_carrying(&shape_in, &shape_out, &linear)?.versor;
     for &(r, c, h) in &before {
         let p = element::carry_center(&v, r, c, 0)?;
         let (tr, tc, tk) = element::site_of(&p)?;

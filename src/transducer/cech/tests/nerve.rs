@@ -4,12 +4,12 @@
 use crate::network::nerve::keyed::coord;
 use crate::transducer::cech::{cells_over, read_nerve, support_of_cover, Chart};
 
-fn cell(row: i64, col: i64, frame: i64) -> coord::Lamina {
-    coord::Lamina { site: crate::transducer::base::Site::from((row, col, frame)) }
+fn compartment(row: i64, col: i64, frame: i64) -> coord::Compartment {
+    coord::Compartment { site: crate::transducer::base::Site::from((row, col, frame)) }
 }
 
 /// Each chart with its own section coordinates: here, one carriage each.
-fn sections(footprints: &[Vec<coord::Lamina>]) -> Vec<Chart> {
+fn sections(footprints: &[Vec<coord::Compartment>]) -> Vec<Chart> {
     footprints.iter().enumerate().map(|(i, f)| (vec![b's', u8::try_from(i).expect("a fixture's chart ordinal, a few charts")], f.clone())).collect()
 }
 
@@ -23,13 +23,13 @@ fn sections(footprints: &[Vec<coord::Lamina>]) -> Vec<Chart> {
 #[test]
 fn three_charts_ringing_a_pore_certify_no_two_cell() {
     let charts = vec![
-        vec![cell(0, 0, 0), cell(0, 1, 0), cell(1, 0, 0)],
-        vec![cell(0, 1, 0), cell(0, 2, 0), cell(1, 1, 0)],
-        vec![cell(1, 1, 0), cell(2, 0, 0), cell(1, 0, 0)],
+        vec![compartment(0, 0, 0), compartment(0, 1, 0), compartment(1, 0, 0)],
+        vec![compartment(0, 1, 0), compartment(0, 2, 0), compartment(1, 1, 0)],
+        vec![compartment(1, 1, 0), compartment(2, 0, 0), compartment(1, 0, 0)],
     ];
     let support = support_of_cover(&charts);
     let (cells, refused) = support.decoded();
-    assert!(refused.is_empty(), "every lamina key decodes: {refused:?}");
+    assert!(refused.is_empty(), "every compartment key decodes: {refused:?}");
     assert_eq!(cells.iter().filter(|(_, s)| s.len() == 2).count(), 3, "three pairwise overlaps stand");
     let read = read_nerve(&sections(&charts));
     assert!(read.refused.is_empty(), "no refusals: {:?}", read.refused);
@@ -42,11 +42,11 @@ fn three_charts_ringing_a_pore_certify_no_two_cell() {
 /// charts' nuclei.
 #[test]
 fn an_element_standing_in_three_charts_certifies_one_two_cell() {
-    let shared = cell(4, 2, 3);
+    let shared = compartment(4, 2, 3);
     let charts = vec![
-        vec![cell(0, 0, 0), shared.clone()],
-        vec![cell(9, 9, 1), shared.clone()],
-        vec![shared.clone(), cell(7, 7, 2)],
+        vec![compartment(0, 0, 0), shared.clone()],
+        vec![compartment(9, 9, 1), shared.clone()],
+        vec![shared.clone(), compartment(7, 7, 2)],
     ];
     let read = read_nerve(&sections(&charts));
     assert!(read.refused.is_empty(), "no refusals: {:?}", read.refused);
@@ -63,9 +63,9 @@ fn an_element_standing_in_three_charts_certifies_one_two_cell() {
 #[test]
 fn many_witnesses_certify_one_cell() {
     let charts = vec![
-        vec![cell(0, 0, 0), cell(0, 1, 0), cell(0, 2, 0)],
-        vec![cell(0, 0, 0), cell(0, 1, 0), cell(0, 2, 0)],
-        vec![cell(0, 0, 0), cell(0, 1, 0), cell(0, 2, 0)],
+        vec![compartment(0, 0, 0), compartment(0, 1, 0), compartment(0, 2, 0)],
+        vec![compartment(0, 0, 0), compartment(0, 1, 0), compartment(0, 2, 0)],
+        vec![compartment(0, 0, 0), compartment(0, 1, 0), compartment(0, 2, 0)],
     ];
     let read = read_nerve(&sections(&charts));
     let [c] = read.certified.as_slice() else { panic!("one cell: {:?}", read.certified) };
@@ -79,7 +79,7 @@ fn many_witnesses_certify_one_cell() {
 /// its standing set mints nothing.
 #[test]
 fn cells_are_keyed_by_their_members_coordinates() {
-    let region = vec![cell(0, 0, 0), cell(0, 1, 0)];
+    let region = vec![compartment(0, 0, 0), compartment(0, 1, 0)];
     let two_carriages = vec![(vec![1u8], region.clone()), (vec![2u8], region.clone())];
     let read = read_nerve(&two_carriages);
     let [c] = read.certified.as_slice() else { panic!("two sections, one cell: {:?}", read.certified) };
@@ -88,7 +88,7 @@ fn cells_are_keyed_by_their_members_coordinates() {
     let once = read_nerve(&one_section_twice);
     assert!(once.certified.is_empty(), "one section is one member, not a cell");
     assert_eq!(once.singular, 2, "each witness whose members are one, counted (R1)");
-    let at = cell(0, 0, 0);
+    let at = compartment(0, 0, 0);
     let standing = [(at, vec![0usize, 1])];
     let over = cells_over(standing.iter().map(|(l, m)| (l.clone(), m.as_slice())), |m| (m == 0).then(|| vec![0u8]), |_| None);
     assert_eq!((over.cells.len(), over.unkeyed), (0, 1), "unkeyed by name, no cell minted");
@@ -97,11 +97,11 @@ fn cells_are_keyed_by_their_members_coordinates() {
 /// THE COORDINATE IS INVERTIBLE — `x ≡ decode(encode(x))`, including on
 /// negative axes, which a cover translated past its own origin produces.
 #[test]
-fn a_lamina_cell_survives_its_own_encoding() {
+fn a_compartment_survives_its_own_encoding() {
     use crate::network::nerve::keyed::Coordinate;
-    for p in [cell(0, 0, 0), cell(1, 2, 3), cell(-5, 7, -9), cell(i64::MIN, i64::MAX, 0)] {
-        let written = coord::Lamina::encode(&p);
-        let round = coord::Lamina::decode(written.as_bytes()).expect("a written lamina decodes");
-        assert_eq!(round, p, "a cell is what its coordinate says it is");
+    for p in [compartment(0, 0, 0), compartment(1, 2, 3), compartment(-5, 7, -9), compartment(i64::MIN, i64::MAX, 0)] {
+        let written = coord::Compartment::encode(&p);
+        let round = coord::Compartment::decode(written.as_bytes()).expect("a written compartment decodes");
+        assert_eq!(round, p, "a compartment is what its coordinate says it is");
     }
 }

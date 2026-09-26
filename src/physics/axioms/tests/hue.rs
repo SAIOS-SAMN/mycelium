@@ -1,10 +1,10 @@
 // 70.4 — hue is the gauge a body carries, and contact is the diagonal.
 
 use crate::transducer::base::Site;
-use crate::transducer::blade::{self, Lamina};
+use crate::transducer::blade::{self, Compartment};
 
-/// Laminae and sites as the sensor hands them over (71.2(1)).
-fn laminae<T: Copy + Into<Lamina>>(v: &[T]) -> Vec<Lamina> {
+/// Compartments and sites as the sensor hands them over (71.2(1)).
+fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
     v.iter().map(|&t| t.into()).collect()
 }
 fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
@@ -20,10 +20,10 @@ fn sites<T: Copy + Into<Site>>(v: &[T]) -> Vec<Site> {
 #[test]
 fn h1_a_two_coloured_object_is_one_body() {
     // A 2×2 block whose left column is hue 1 and right column hue 2.
-    let scene = laminae(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
+    let scene = compartments(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let comps = blade::components(&scene);
     assert_eq!(comps.len(), 1, "one object, whatever its colours: {comps:?}");
-    assert_eq!(comps[0].len(), 4, "and it carries all four laminae");
+    assert_eq!(comps[0].len(), 4, "and it carries all four compartments");
     // The colours are not lost — they ride in the gauge.
     let body = blade::lift(&comps[0]);
     assert_eq!(body.gauge.len(), 2, "two hues carried as gauge: {:?}", body.gauge);
@@ -42,7 +42,7 @@ fn h1_a_two_coloured_object_is_one_body() {
 #[test]
 fn h2_two_bodies_meet_at_a_corner_without_becoming_one() {
     use crate::transducer::sentence::contact_cells;
-    let scene = laminae(&[(0, 0, 0, 1u8), (1, 1, 0, 2)]);
+    let scene = compartments(&[(0, 0, 0, 1u8), (1, 1, 0, 2)]);
     // Still two bodies: the diagonal is NOT in the component relation.
     assert_eq!(
         blade::components(&scene).len(),

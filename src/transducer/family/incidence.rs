@@ -20,10 +20,10 @@ fn same_transport(a: &Transport, b: &Transport) -> bool {
         && a.gauge == b.gauge
 }
 
-/// THE QUOTIENT OF A FIBER'S UNION SHAPES (52.5): every lamina the member
+/// THE QUOTIENT OF A FIBER'S UNION SHAPES (52.5): every compartment the member
 /// stands on across its occupied frames, read at its own `(r, c, k)` and
 /// never at frame zero, with the versor that carries the one union onto
-/// the other — VERIFIED here, on the union, lamina by lamina.
+/// the other — VERIFIED here, on the union, compartment by compartment.
 ///
 /// A quotient measured at ONE frame is a motion of that frame's slice: its
 /// bodies all sit at a single `k`, so `versor_between` has no `e₃` extent
@@ -41,13 +41,13 @@ fn same_transport(a: &Transport, b: &Transport) -> bool {
 /// 60-task slice at 4 000 000 stroke: 32.5 s to 38.9 s, +19% wall clock for
 /// a reading identical in every count.
 ///
-/// It is verified rather than asserted (rule 11, law 12): every lamina of
+/// It is verified rather than asserted (rule 11, law 12): every compartment of
 /// the union is carried and its image read, which is `carriage`'s own check
 /// without `carriage`'s search, and a fiber the versor does not carry
 /// whole has no union quotient. `None` also where either side is empty.
 pub(crate) fn union_quotient(
-    mut ins: Vec<Lamina>,
-    mut outs: Vec<Lamina>,
+    mut ins: Vec<Compartment>,
+    mut outs: Vec<Compartment>,
     v: &Versor,
 ) -> Option<(Body, Body, Versor)> {
     if ins.is_empty() || outs.is_empty() {
@@ -59,7 +59,7 @@ pub(crate) fn union_quotient(
     outs.dedup();
     let a = body_of(ins)?;
     let b = body_of(outs)?;
-    for l in &a.laminae {
+    for l in &a.compartments {
         super::perceive::landed_hue(v, &l.site, &b)?;
     }
     Some((a, b, v.clone()))
@@ -168,7 +168,7 @@ impl Frameless {
 ///
 /// THE FACE IS ON THE UNION SHAPES, not on a slice. The edge was measured
 /// on the two members' bodies AT THE LEAST FRAME BOTH STAND ON: every
-/// lamina of that reading sits at one `k`, so `edge_transport`'s union
+/// compartment of that reading sits at one `k`, so `edge_transport`'s union
 /// `(a_i ∪ a_j)` has no `e₃` extent and `versor_between` on it cannot
 /// return a transport with `(r,k)` or `(c,k)` content whatever the family
 /// does along the frame axis. That is the shape of the flatness measured

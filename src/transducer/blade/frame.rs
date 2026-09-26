@@ -127,7 +127,7 @@ fn handedness(a: &Blade, b: &Blade, plane: (usize, usize), tower: Tower) -> Hand
 /// `Turn` is a rotor the SUPPORT confirmed. `HalfOpen` is one the even
 /// moments fixed only mod `π`: `u` and `h₄` satisfy `u(−x) = u(x)`, so no
 /// even-rank moment distinguishes `φ` from `φ + π`, and where the two
-/// bodies differ in cardinality — a transmuted carry — no cell test can
+/// bodies differ in cardinality — a transmuted carry — no compartment test can
 /// settle it either. EVERY CANDIDATE is carried — the held stabilizer's
 /// coset, never a representative (78.6(1), checklist (r)) — so a reader
 /// cannot mistake a projective class for a determined rotor. Two
@@ -171,7 +171,7 @@ impl Pose {
 /// tensor is invariant under a 180° turn, so `u` gives `φ` only mod `π`,
 /// and `1` against `e₁₂` are not projectively equal. The residue is a
 /// question about the SUPPORT, so the support answers it: each of the four
-/// proper turns is applied to `a`'s cells about their centroid and
+/// proper turns is applied to `a`'s compartments about their centroid and
 /// compared with `b`'s. This is a finite group's four elements checked
 /// exactly, as `versor_coset_ordered` checks its coset — not a search.
 ///
@@ -199,7 +199,7 @@ pub enum NoPose {
     /// the second harmonic AND at the fourth.
     Unoriented,
     /// THE AXES SIT AT AN ANGLE THE SQUARE BASE DOES NOT TURN BY, THE
-    /// BODIES DIFFER IN SIZE, AND SO NO CELL TEST CAN SETTLE IT. The
+    /// BODIES DIFFER IN SIZE, AND SO NO COMPARTMENT TEST CAN SETTLE IT. The
     /// relative orientation is WELL DEFINED and is not in `D₄`: `2φ =
     /// ±π/2` is the 45° relation whose half-angle `cos(π/8)` is irrational
     /// and refused by rule 4, and anything else is not a lattice turn.
@@ -403,17 +403,19 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // 78.38 (C) — BOTH TOWERS ARE READ, and the relation is read on the tower
     // whose similarity carries the pair: the sites' where only a site map
     // does, the region's otherwise.
-    let (tower, certified) = reading_tower(a, b, plane);
+    let (tower, fit) = reading_tower(a, b, plane);
+    let certified = fit.map(|f| f.dilation);
     orientation_of(a, b, plane, tower)?;
-    // WHERE NEITHER TOWER CERTIFIES, the pair is no similarity of either
-    // kind: refused with the order from each tower, the mirror named first.
-    if certified.is_err() {
+    // WHERE NEITHER TOWER FITS THE PAIR THROUGH ITS DEVIATORIC, it has no
+    // orientation in common: refused with the order from each tower, the
+    // mirror named first.
+    let Ok(fit) = fit else {
         return Err(unturned(a, b, plane, tower, certified));
-    }
+    };
     // THE TRANSITION'S MEMBERS (`transitions_between`): the turn read off the
     // harmonics' phases by the exact half-angle step, its coset, the odd
     // members against the mirrored harmonics, each verified by the tower's
-    // covariance — no lattice turn is listed and no lamina lands.
+    // covariance — no lattice turn is listed and no compartment lands.
     //
     // THE 180° TURN IS A PARITY OBSTRUCTION (68): `u` and `h₄` are even-rank
     // and cannot tell `φ` from `φ + π`; the odd harmonic `h₃` does, and the
@@ -427,9 +429,12 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     // reflections as well as its turns, and its pose is the turns; a mirrored
     // pair is the same signal read orientation-reversed, its pose the odd
     // rotation, spelled through the letter chart's orientation character.
-    let members = super::carry::transitions_on(a, b, plane, tower)?;
+    //
+    // THE POSE IS THE ROTATION; the residue a fit leaves above its order is
+    // the transition's (`transitions_between`), read there with its versor.
+    let members = super::carry::transitions_on(a, b, plane, fit)?;
     let (turns, mirrors): (Vec<Mv>, Vec<Mv>) =
-        members.into_iter().map(|(rotation, _)| rotation).partition(|r| r.parity() == Some(false));
+        members.into_iter().map(|t| t.rotation).partition(|r| r.parity() == Some(false));
     let read = match turns.is_empty() {
         true => mirrors,
         false => turns,
@@ -446,17 +451,17 @@ pub fn relative_rotor(a: &Blade, b: &Blade, plane: (usize, usize)) -> Result<Pos
     }
 }
 
-/// 78.38 (C) — THE TOWER A PAIR'S RELATION IS READ ON, and the certificate
-/// that named it: the tower whose similarity carries the pair, the region's
-/// where none does (the relation is then refused on it, at the order each
-/// tower names).
-fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<Dilation, (TowerRefusal, TowerRefusal)>) {
-    let certified = dilation(a, b, plane);
-    let tower = match certified {
-        Ok(d) => d.tower(),
+/// 78.38 (C) — THE TOWER A PAIR'S RELATION IS READ ON, and the certificate's
+/// fit that named it: the tower that fits the pair through the finer order,
+/// the region's where none fits it (the relation is then refused on it, at
+/// the order each tower names).
+fn reading_tower(a: &Blade, b: &Blade, plane: (usize, usize)) -> (Tower, Result<Fit, (TowerRefusal, TowerRefusal)>) {
+    let fit = certify(a, b, plane);
+    let tower = match fit {
+        Ok(f) => f.dilation.tower(),
         Err(_) => Tower::Region,
     };
-    (tower, certified)
+    (tower, fit)
 }
 
 /// WHICH FACT A PAIR NO TURN OF THE BASE RELATES IS: mirrored where the odd

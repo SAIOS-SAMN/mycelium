@@ -98,7 +98,7 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
 /// THE TETHER'S READING OF ADJACENCY, AND THAT IT IS SCALE-FREE — kept as
 /// a record, gating nothing.
 ///
-/// Two unit laminae sharing an edge read `δ² = 4`, a corner neighbour 25,
+/// Two unit compartments sharing an edge read `δ² = 4`, a corner neighbour 25,
 /// a one-cell gap 121; two `n×n` blocks sharing an edge read 4 at every `n`,
 /// because `δ` is a similarity invariant. The band that turned these values
 /// into a gate is retired (BQ5a, SQ1 item 2); the values stand as what the
@@ -109,7 +109,7 @@ fn the_tether_reads_adjacency_scale_free() {
     let u0 = blade::shape_of(&[(0, 0, 0)]).blade;
     let u1 = blade::shape_of(&[(0, 1, 0)]).blade;
     assert_eq!(u0.radius2(), q(1) / q(6), "the +1/12 floor, twice");
-    assert_eq!(delta2(&u0, &u1), q(4), "edge-adjacent unit laminae read δ² = 4");
+    assert_eq!(delta2(&u0, &u1), q(4), "edge-adjacent unit compartments read δ² = 4");
     let diag = blade::shape_of(&[(1, 1, 0)]).blade;
     let gap = blade::shape_of(&[(0, 2, 0)]).blade;
     assert_eq!(delta2(&u0, &diag), q(25), "a corner neighbour is δ = 5");

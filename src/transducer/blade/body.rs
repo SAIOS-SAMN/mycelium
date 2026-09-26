@@ -9,11 +9,11 @@
 use super::*;
 use crate::transducer::base::{is_grid_axis, Site, GRID_AXES};
 
-/// A lamina as the sensor hands it over: the site it stands at and the hue
+/// A compartment as the sensor hands it over: the site it stands at and the hue
 /// it carries (16.4, 51.3, 71.2(1)). The support of a body is a list of
 /// these. Ordered by site, then hue, as the tuple `(r, c, k, hue)` was.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct Lamina {
+pub struct Compartment {
     pub site: Site,
     pub hue: u8,
 }
@@ -33,8 +33,8 @@ pub struct Blade {
     /// with the axes before it, `(I₀₀, I₁₁, I₀₁, I₂₂, I₀₂, I₁₂, …)`. The
     /// order is prefix-stable, so at `n = 3` it is `(Ixx, Iyy, Ixy, Izz,
     /// Ixz, Iyz)` and a reader of the first six reads the same moments at
-    /// every `n`. A lamina (16.4) has the unit square's own moment on the
-    /// two grid axes and none along any other.
+    /// every `n`. A compartment (16.4) is its round: its extent `1/12` on each of
+    /// the two grid axes and none along any other.
     pub inertia: Vec<BigRational>,
     /// 𝒮 refinement — the exact fourth body moments about the centroid, ONE
     /// TRIPLE PER PLANE generated from `n` ([`crate::transducer::base::planes`]
@@ -47,9 +47,9 @@ pub struct Blade {
     /// 𝒢 — the gauge/hue content as sorted `(hue, count)` relations (Vec, not a
     /// map: cognition obeys the Anti-Flattening Law). Versor-invariant.
     pub gauge: Vec<(u8, BigRational)>,
-    /// 𝒽 — the shell topology: the component's lamina count.
+    /// 𝒽 — the shell topology: the component's compartment count.
     pub shell: BigRational,
-    /// The body's support — the sites its laminae stand at, sorted (Vec,
+    /// The body's support — the sites its compartments stand at, sorted (Vec,
     /// not a set). The stack, never its shadow (51.3).
     pub support: Vec<Site>,
 }
@@ -81,8 +81,8 @@ impl Blade {
     /// tangency cannot be reached at all (59.2).
     ///
     /// It never pinches to the cone: `radius2` is `≥ 1/6` for the smallest
-    /// body the sensor can deliver, because `lift` integrates each lamina's
-    /// own unit square rather than taking it as a point mass. That is what
+    /// body the sensor can deliver, because `lift` reads each compartment as its
+    /// round, with the extent `2/12`, rather than as a point mass. That is what
     /// keeps `den2 = 4r_a²r_b²` bounded away from zero and the horizon
     /// DEFINED (64.2).
     ///
@@ -136,7 +136,7 @@ impl Blade {
 
     /// The rigid-motion invariant key — strictly preserved by translations,
     /// rotations AND reflections, so it correspond-pairs bodies with zero spatial
-    /// search: lamina count, `Tr(I)`, `det(I)` (both O(2)-invariant, exact ℚ, no
+    /// search: compartment count, `Tr(I)`, `det(I)` (both O(2)-invariant, exact ℚ, no
     /// eigen), and the LABEL-AGNOSTIC hue profile (sorted per-hue counts — a
     /// recolour still matches by shape, the relabel falling out as `Δ𝒢`).
     pub fn invariant(&self) -> InvariantSignature {
@@ -144,7 +144,7 @@ impl Blade {
         let mut hue_profile: Vec<BigRational> = self.gauge.iter().map(|(_, c)| c.clone()).collect();
         hue_profile.sort();
         InvariantSignature {
-            lamina_count: self.shell.clone(),
+            compartment_count: self.shell.clone(),
             tr_i: ixx + iyy,
             det_i: ixx * iyy - ixy * ixy,
             hue_profile,
@@ -193,7 +193,7 @@ impl Blade {
 /// The rigid-motion invariant signature of a body (see [`Blade::invariant`]).
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct InvariantSignature {
-    pub lamina_count: BigRational,
+    pub compartment_count: BigRational,
     pub tr_i: BigRational,
     pub det_i: BigRational,
     pub hue_profile: Vec<BigRational>,
@@ -227,45 +227,97 @@ fn pair_index(i: usize, j: usize) -> usize {
     }
 }
 
-/// THE LAMINA'S OWN MOMENTS ALONG ONE AXIS, `∫uᵖ` for p = 1…4, at offset
-/// `d` from the centroid (16.4). On a grid axis the lamina is the unit
-/// interval centred at `d`: ∫u = d, ∫u² = d² + 1/12, ∫u³ = d³ + d/4,
-/// ∫u⁴ = d⁴ + d²/2 + 1/80. On every other axis it is the point `d`. The
-/// ONE producer of a lamina's moments, read by the lift and by the tower's
-/// odd harmonic (law 12).
-pub(crate) fn lamina_moments(d: &BigRational, grid: bool) -> [BigRational; 4] {
-    let x2 = d * d;
-    match grid {
-        true => [d.clone(), &x2 + qn(1, 12), &x2 * d + d * qn(1, 4), &x2 * &x2 + &x2 * qn(1, 2) + qn(1, 80)],
-        false => [d.clone(), x2.clone(), &x2 * d, &x2 * &x2],
+/// A COMPARTMENT'S ROUND, ALONG ONE AXIS (A4, A.12; ruled 2026-09-26): the
+/// compartment is lifted at the sensor, once, to its ROUND — the null point of
+/// its centre with the unit cube's inversive extent, `1/12` along each axis the
+/// cube spans, so a compartment (whose cube spans the grid axes) is the round of
+/// extent `ρ² = 2/12`, and a point along every other axis. A round is
+/// isotropic and holds nothing of its own above order two: its centre and its
+/// extent are the whole of it. Never a square, whose own higher moments are
+/// the lattice's rigidity.
+pub(crate) fn round_extent(axis: usize) -> BigRational {
+    match is_grid_axis(axis) {
+        true => qn(1, 12),
+        false => q(0),
     }
+}
+
+/// `z · w` over ℚ(i).
+fn times(z: &[BigRational; 2], w: &[BigRational; 2]) -> [BigRational; 2] {
+    [&z[0] * &w[0] - &z[1] * &w[1], &z[0] * &w[1] + &z[1] * &w[0]]
+}
+
+/// A ROUND'S HARMONIC OF ORDER `m` ON THE PLANE `(i, j)`, its centre at the
+/// offset `z = u + iv` from the body's centroid: the mean of `(z + w)^m` over
+/// the round, which the round's centre and extent fix exactly —
+///
+/// ```text
+///     z^m + C(m, 2) · z^{m−2} · ε,      ε = e_i − e_j
+/// ```
+///
+/// with `ε` the extent's own second harmonic on the plane (the round's odd
+/// moments vanish, and it holds none above two). On the grid plane the round
+/// is isotropic, `ε = 0`, and the round's harmonic is its centre's. The ONE
+/// producer of a round's harmonics, read by the lift and by the tower (law
+/// 12).
+pub(crate) fn round_harmonic(
+    u: &BigRational,
+    v: &BigRational,
+    plane: (usize, usize),
+    m: super::tower::Harmonic,
+) -> [BigRational; 2] {
+    use super::tower::Harmonic;
+    let z = [u.clone(), v.clone()];
+    let power = |k: u32| (0..k).fold([q(1), q(0)], |acc, _| times(&acc, &z));
+    let eps = round_extent(plane.0) - round_extent(plane.1);
+    // `C(m, 2)` and `z^{m−2}` beside `z^m`, by the order's type.
+    let (pairs, lower, order) = match m {
+        Harmonic::Two => (1, 0, 2),
+        Harmonic::Three => (3, 1, 3),
+        Harmonic::Four => (6, 2, 4),
+    };
+    let [lo0, lo1] = power(lower);
+    let [hi0, hi1] = power(order);
+    let coupling = q(pairs) * &eps;
+    [hi0 + &coupling * lo0, hi1 + &coupling * lo1]
+}
+
+/// A ROUND'S ISOTROPIC FOURTH MOMENT ON A PLANE, the mean of `|z + w|⁴`: the
+/// centre's `|z|⁴` and the extent's coupling to it,
+/// `4(u²·e_i + v²·e_j) + 2|z|²·(e_i + e_j)` — every term the round holds,
+/// none of its own fourth order (it has none).
+fn round_isotropic4(u: &BigRational, v: &BigRational, plane: (usize, usize)) -> BigRational {
+    let (u2, v2) = (u * u, v * v);
+    let (ei, ej) = (round_extent(plane.0), round_extent(plane.1));
+    let r2 = &u2 + &v2;
+    &r2 * &r2 + q(4) * (&u2 * &ei + &v2 * &ej) + q(2) * &r2 * (&ei + &ej)
 }
 
 /// Lift one connected component into a volumetric blade — exact ℚ
 /// throughout, on the base's `n` axes (71.2(3)). The centroid is in ℚⁿ and
 /// the moments are the full upper triangle of the second-moment tensor.
-/// Each element is a lamina (16.4): the unit square standing on the grid
-/// axes, so it contributes the square's own moment on those two axes and
-/// only its offset along every other. The component's laminae need not be
-/// sorted.
+/// Each element is a compartment lifted to its ROUND ([`round_extent`]): its
+/// centre with the extent `1/12` on each grid axis, so it contributes its
+/// offset and its extent at order two and its centre's offset alone at every
+/// higher order. The component's compartments need not be sorted.
 ///
-/// A COMPONENT HAS ONE `n`, and the lift reads it off its sites. A lamina
+/// A COMPONENT HAS ONE `n`, and the lift reads it off its sites. A compartment
 /// of a smaller base read beside a larger one stands in the larger by the
 /// inclusion ℚᵐ ⊂ ℚⁿ, its missing coordinates zero — the same inclusion the
 /// algebra composes values by — and `components` never builds such a
 /// component, since two sites of different `n` are never adjacent.
-pub fn lift(comp: &[Lamina]) -> Blade {
+pub fn lift(comp: &[Compartment]) -> Blade {
     let count = comp.len().max(1) as i64;
     let n_q = q(count);
     let dim = comp.iter().map(|l| l.site.n()).fold(0, usize::max);
-    let coord = |l: &Lamina, i: usize| -> i64 {
+    let coord = |l: &Compartment, i: usize| -> i64 {
         #[expect(
             clippy::manual_unwrap_or_default,
             reason = "the inclusion ℚᵐ ⊂ ℚⁿ (71): an axis a smaller base lacks is zero in the larger, measured and not defaulted"
         )]
         match l.site.axis(i) {
             Some(a) => a,
-            // The inclusion: a coordinate the lamina's smaller base does
+            // The inclusion: a coordinate the compartment's smaller base does
             // not have is zero in the larger one.
             None => 0,
         }
@@ -276,10 +328,9 @@ pub fn lift(comp: &[Lamina]) -> Blade {
         .map(|i| BigRational::new(BigInt::from(comp.iter().map(|l| coord(l, i)).sum::<i64>()), BigInt::from(count)))
         .collect();
 
-    // Moments about the centroid (exact ℚ) — of the BODY: the union of unit
-    // squares, so each lamina contributes the integral of the monomial over
-    // its own square (the parallel-axis law at every order) on the grid
-    // axes, and its offset alone along every other.
+    // Moments about the centroid (exact ℚ) — of the BODY: the union of its
+    // rounds, so each compartment contributes its centre's offset and, at order
+    // two, its round's extent on the grid axes.
     let pairs = inertia_pairs(dim);
     let mut inertia: Vec<BigRational> = vec![q(0); pairs.len()];
     let planes = crate::transducer::base::planes(dim);
@@ -289,29 +340,24 @@ pub fn lift(comp: &[Lamina]) -> Blade {
         let d: Vec<BigRational> = (0..dim).map(|i| q(coord(l, i)) - &centroid[i]).collect();
         for (slot, &(i, j)) in inertia.iter_mut().zip(&pairs) {
             let mut m = &d[i] * &d[j];
-            if i == j && is_grid_axis(i) {
-                m += qn(1, 12);
+            if i == j {
+                m += round_extent(i);
             }
             *slot += m;
         }
-
-        // The axes are independent, so a moment on a plane is the product
-        // of the lamina's own moments along its two axes.
-        let along = |i: usize| lamina_moments(&d[i], is_grid_axis(i));
-        // THE FOURTH MOMENTS ON EVERY PLANE generated from `n` (BQ4).
+        // THE FOURTH MOMENTS ON EVERY PLANE generated from `n` (BQ4): the
+        // round's isotropic part and its fourth harmonic.
         for (slot, &(i, j)) in quartic.iter_mut().zip(&planes) {
-            let ([u1, u2, u3, u4], [v1, v2, v3, v4]) = (along(i), along(j));
-            let u2v2 = &u2 * &v2;
-            let (u3v, uv3) = (&u3 * &v1, &u1 * &v3);
-            slot[0] += &u4 + &u2v2 * q(2) + &v4;
-            slot[1] += &u4 - &u2v2 * q(6) + &v4;
-            slot[2] += (&u3v - &uv3) * q(4);
+            let [h0, h1] = round_harmonic(&d[i], &d[j], (i, j), super::tower::Harmonic::Four);
+            slot[0] += round_isotropic4(&d[i], &d[j], (i, j));
+            slot[1] += h0;
+            slot[2] += h1;
         }
     }
 
     // Extent r² = the per-unit-mass polar second moment on the grid plane,
-    // with the unit square's own polar moment (1/6) in it, so r² > 0 even
-    // for a single lamina — off the null cone, invertible.
+    // with each round's own extent (1/6) in it, so r² > 0 even for a single
+    // compartment — off the null cone, invertible (A.12).
     // A grid axis the base lacks has no moment there, which is zero by the
     // inclusion ℚᵐ ⊂ ℚⁿ, as `coord` reads it.
     let diag = |i: usize| -> BigRational {
@@ -355,7 +401,7 @@ pub fn lift(comp: &[Lamina]) -> Blade {
 /// `Vec`-of-`Vec` (no maps/sets — Law II).
 ///
 /// H1, 70.4 — A BODY IS A MAXIMAL HUE-BLIND CONNECTED REGION, and its hue
-/// is the gauge section it carries, not its identity. Two laminae join iff
+/// is the gauge section it carries, not its identity. Two compartments join iff
 /// their cubes share a face — one coordinate differing by one (51.3) —
 /// WHATEVER HUES THEY CARRY.
 ///
@@ -366,7 +412,7 @@ pub fn lift(comp: &[Lamina]) -> Blade {
 ///
 /// ```text
 ///     732 hue-blind regions → 1646 bodies      2.25 bodies per region
-///     single-cell bodies    1053 of 1646       64.0%
+///     single-compartment bodies  1053 of 1646  64.0%
 ///     134 polychrome objects → 1048 bodies, 7.8 fragments each
 /// ```
 ///
@@ -386,23 +432,23 @@ pub fn lift(comp: &[Lamina]) -> Blade {
 /// distinct bodies sharing a face would be ONE body by maximality.
 /// [`crate::transducer::sentence::contact_cells`] carries it instead
 /// (70.6) — the cells of lower grade, off the same reader.
-pub fn components(laminae: &[Lamina]) -> Vec<Vec<Lamina>> {
+pub fn components(compartments: &[Compartment]) -> Vec<Vec<Compartment>> {
     // The support in canonical order; its 1-skeleton read off the ordering
     // (sentence::face_incidence), never a distance test against every
-    // lamina. Every adjacency joins, because hue no longer decides
+    // compartment. Every adjacency joins, because hue no longer decides
     // identity.
-    let mut sorted: Vec<Lamina> = laminae.to_vec();
+    let mut sorted: Vec<Compartment> = compartments.to_vec();
     sorted.sort_unstable();
     sorted.dedup_by(|a, b| a.site == b.site);
     let positions: Vec<Site> = sorted.iter().map(|l| l.site.clone()).collect();
     let edges: Vec<(usize, usize)> =
         crate::transducer::sentence::face_incidence(&positions);
     let roots = crate::transducer::sentence::components(sorted.len(), &edges);
-    let mut out: Vec<(usize, Vec<Lamina>)> = Vec::new();
-    for (i, lamina) in sorted.into_iter().enumerate() {
+    let mut out: Vec<(usize, Vec<Compartment>)> = Vec::new();
+    for (i, compartment) in sorted.into_iter().enumerate() {
         match out.iter_mut().find(|(r, _)| *r == roots[i]) {
-            Some((_, comp)) => comp.push(lamina),
-            None => out.push((roots[i], vec![lamina])),
+            Some((_, comp)) => comp.push(compartment),
+            None => out.push((roots[i], vec![compartment])),
         }
     }
     out.into_iter().map(|(_, comp)| comp).collect()
@@ -434,7 +480,7 @@ pub type Section = (Vec<i64>, Vec<(i64, i64)>);
 
 /// THE SECTIONS OF A SUPPORT: its sites grouped by their coordinates off
 /// the grid plane — the frame, and any further axis — each section's sites
-/// in row order: the laminae standing on one grid plane, the sections of
+/// in row order: the compartments standing on one grid plane, the sections of
 /// the stack (16.5). The in-plane readings (a section's turns and
 /// perimeter) are taken here and summed over the stack; the topology is
 /// not, because face adjacency off the plane joins the sections (51.3).
@@ -460,7 +506,7 @@ pub fn sections(support: &[Site]) -> Vec<Section> {
 pub(crate) type OpenFaces = (Vec<(i64, i64)>, Vec<(i64, i64)>);
 
 pub(crate) fn boundary_edges(sites: &[(i64, i64)]) -> OpenFaces {
-    // Which of a lamina's four faces are shared is read off the support's
+    // Which of a compartment's four faces are shared is read off the support's
     // 1-skeleton (sentence::incidence_of): a row edge (i, j) closes i's
     // right face and j's left face; a column edge closes i's lower face
     // and j's upper face. Every face left open is boundary.
@@ -523,7 +569,7 @@ pub fn turns(support: &[Site]) -> usize {
     sections(support).iter().map(|(_, section)| turns_of_section(section)).sum()
 }
 
-/// The in-plane boundary's length: the count of unit edges with a lamina
+/// The in-plane boundary's length: the count of unit edges with a compartment
 /// on exactly one side, summed over the sections.
 pub fn boundary_length(support: &[Site]) -> usize {
     sections(support)
@@ -536,10 +582,10 @@ pub fn boundary_length(support: &[Site]) -> usize {
 }
 
 /// THE BOUNDARY OFF THE GRID PLANE of a body: its sides open along every
-/// axis the lamina has no extent on — a lamina's face toward the site
+/// axis the compartment has no extent on — a compartment's face toward the site
 /// before it and toward the site after it on that axis, each counted where
-/// no lamina of the body stands there (51.3). At the corpus's `n = 3` that
-/// axis is the frame: two for every lamina of a body of one frame; fewer
+/// no compartment of the body stands there (51.3). At the corpus's `n = 3` that
+/// axis is the frame: two for every compartment of a body of one frame; fewer
 /// for a stack.
 pub fn frame_faces(support: &[Site]) -> usize {
     let mut sorted: Vec<Site> = support.to_vec();
@@ -710,7 +756,7 @@ pub struct Shape {
 /// Lift a support (sites of the base, no hue) to a shape. The sites may be
 /// handed over as anything the sensor reads as a site.
 pub fn shape_of<S: Clone + Into<Site>>(support: &[S]) -> Shape {
-    let comp: Vec<Lamina> = support.iter().map(|s| Lamina { site: s.clone().into(), hue: 0 }).collect();
+    let comp: Vec<Compartment> = support.iter().map(|s| Compartment { site: s.clone().into(), hue: 0 }).collect();
     Shape { blade: lift(&comp) }
 }
 
@@ -718,6 +764,6 @@ pub fn shape_of<S: Clone + Into<Site>>(support: &[S]) -> Shape {
 /// the sensor as `(r, c)` with the frame on the pose (16.5) — to its shape
 /// in the section's own frame.
 pub fn shape_of_section(sites: &[(i64, i64)]) -> Shape {
-    let comp: Vec<Lamina> = sites.iter().map(|&(r, c)| Lamina::from((r, c, 0, 0u8))).collect();
+    let comp: Vec<Compartment> = sites.iter().map(|&(r, c)| Compartment::from((r, c, 0, 0u8))).collect();
     Shape { blade: lift(&comp) }
 }

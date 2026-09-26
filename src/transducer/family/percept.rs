@@ -4,7 +4,7 @@
 
 use super::chord::dispiration;
 use super::cover::cover_deformation;
-use super::fiber::{body_key, fiber_frame_of_key, fiber_key, fibers, laminae_of, unreached_demands, vanished};
+use super::fiber::{body_key, fiber_frame_of_key, fiber_key, fibers, compartments_of, unreached_demands, vanished};
 use super::pair::{delta_links, Covered, Scenery};
 use super::perceive::{
     at_frame_zero, demand_vertex, differing_axes, frame_of_body, perceive_at, support_at,
@@ -36,7 +36,7 @@ pub(crate) struct Percept {
 
 /// WHAT ONE FRAME'S QUOTIENT OF ONE CHART MEASURED: the frame, the versor
 /// with its hue map, the two union bodies in the frame's own coordinates,
-/// and the same two bodies at their own `(r, c, k)` — the laminae the
+/// and the same two bodies at their own `(r, c, k)` — the compartments the
 /// fiber's union shape is built from (52.5).
 struct Quotient {
     /// The frame, by its own coordinate (AT1 Q4): no width walls it.
@@ -146,25 +146,25 @@ fn read_frame_axis(
 
 /// ONE MEMBER FROM THE QUOTIENTS IT IS CLAIMED ON: its frames, the bodies at
 /// each, the output support over them, the union shape of its fibre (52.5) —
-/// the laminae gathered at their own frames, so a frame not claimed is not in
+/// the compartments gathered at their own frames, so a frame not claimed is not in
 /// it. Its frame-axis steps are the CHART's, read once over every frame the
 /// class holds on it ([`read_frame_axis`] at the caller), not the member's.
 fn member_of(chart: &Invariant, acting: Acting, claimed: &mut [&Quotient], union_by: &Versor) -> Member {
     let mut frames: Vec<u64> = Vec::new();
     let mut at: Vec<(u64, Body, Body, Versor)> = Vec::new();
     let mut support: Vec<Site> = Vec::new();
-    let mut union_in: Vec<Lamina> = Vec::new();
-    let mut union_out: Vec<Lamina> = Vec::new();
+    let mut union_in: Vec<Compartment> = Vec::new();
+    let mut union_out: Vec<Compartment> = Vec::new();
     let mut inputs: Vec<(u64, Body)> = Vec::new();
     for q in claimed.iter() {
         frames.push(q.frame);
         inputs.push((q.frame, q.a_k.clone()));
         at.push((q.frame, q.a0.clone(), q.b0.clone(), q.car.v.clone()));
         if let Ok(k) = i64::try_from(q.frame) {
-            support.extend(support_at(&q.b0.laminae, k));
+            support.extend(support_at(&q.b0.compartments, k));
         }
-        union_in.extend_from_slice(&q.a_k.laminae);
-        union_out.extend_from_slice(&q.b_k.laminae);
+        union_in.extend_from_slice(&q.a_k.compartments);
+        union_out.extend_from_slice(&q.b_k.compartments);
     }
     support.sort_unstable();
     support.dedup();
@@ -221,7 +221,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     let mut out_at_site: Keyed<Vec<u8>> = Keyed::new();
     for b in &outs {
         let bk = body_key(b);
-        for l in &b.laminae {
+        for l in &b.compartments {
             out_at_site.insert(l.site.key(), bk.clone());
         }
         out_bodies.insert(bk, b.clone());
@@ -286,10 +286,10 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
             // union of heard sections at their `n` is heard; a union that is
             // not is no quotient to read (38.2, BQ4).
             let (Some(a_k), Some(b_k), Some(a0), Some(b0)) = (
-                body_of(laminae_of(ai)),
-                body_of(laminae_of(bo)),
-                body_of(at_frame_zero(&laminae_of(ai))),
-                body_of(at_frame_zero(&laminae_of(bo))),
+                body_of(compartments_of(ai)),
+                body_of(compartments_of(bo)),
+                body_of(at_frame_zero(&compartments_of(ai))),
+                body_of(at_frame_zero(&compartments_of(bo))),
             ) else {
                 continue;
             };
@@ -323,7 +323,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 None => match cover_deformation(&a0, &b0, Some(scale), budget) {
                     Ok(cover) => {
                         for b in bo {
-                            if at_frame_zero(&b.laminae).iter().all(|l| cover.reached.contains(&l.site.key())) {
+                            if at_frame_zero(&b.compartments).iter().all(|l| cover.reached.contains(&l.site.key())) {
                                 out_reached.insert(body_key(b), ());
                             }
                         }
@@ -559,7 +559,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                 }
                 // The outputs this body stands under, of other charts.
                 let mut meets: Keyed<()> = Keyed::new();
-                for l in &body.laminae {
+                for l in &body.compartments {
                     if let Some(bk) = out_at_site.get(&l.site.key()) {
                         meets.insert(bk, ());
                     }
@@ -572,7 +572,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     // Both were heard as perceived; moved to frame zero they
                     // are the same bodies (38.2, BQ4 for any other reading).
                     let (Some(a0), Some(b0)) =
-                        (body_of(at_frame_zero(&body.laminae)), body_of(at_frame_zero(&image.laminae)))
+                        (body_of(at_frame_zero(&body.compartments)), body_of(at_frame_zero(&image.compartments)))
                     else {
                         continue;
                     };
@@ -606,7 +606,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
                     continue;
                 }
                 let links: Vec<Link> = body
-                    .laminae
+                    .compartments
                     .iter()
                     .filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, 0u8, l.hue)))
                     .collect();
@@ -847,7 +847,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
         crate::transducer::family::covered::classify_cover(&covers, &mut edges);
     trace::trace("percept/4 orbits+classify", trace::Wrote::Nothing, Some(budget));
     // THE DEMANDS, one vertex per (kind, chart) (50.5), in key order. A
-    // deformation dissolves when every lamina of both bodies is carried AND
+    // deformation dissolves when every compartment of both bodies is carried AND
     // no orbit over its pieces stands (50.8).
     let mut by_demand: Keyed<Demanded, coord::DemandVertex> = Keyed::new();
     let mut declare = |kind: Demand, chart: Invariant, links: Vec<Link>| {
@@ -1319,7 +1319,7 @@ pub(super) fn family_percept(family: &[(Grid, Grid)], scale: Ratio, budget: &mut
     // arm.
     let contact_circuits = super::pairing::contact_circuits(&form, budget);
     // BQ1, audit N-3 — WHAT PERCEPTION PASSED OVER, always printed: bodies
-    // `body_of` refused (counted at `body_of`, whoever asked), laminae with
+    // `body_of` refused (counted at `body_of`, whoever asked), compartments with
     // no section (counted at `on_grid`), and sections filed at their `n`
     // alone (counted at `section_moduli`). Zero while intake reads the
     // grid's three. 78.16 C3: HELD, never printed — the census prints its

@@ -304,6 +304,6 @@ fn rotated_connection_survives_the_tape() {
     assert_eq!(
         crate::transducer::cga::at_three::base(&v0.sandwich(&p)),
         crate::transducer::cga::at_three::base(&v1.sandwich(&p)),
-        "equal spoken laminae on a rotated, dilated, translated body"
+        "equal spoken compartments on a rotated, dilated, translated body"
     );
 }

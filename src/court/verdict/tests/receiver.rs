@@ -17,7 +17,7 @@ fn digits(rows: &[&str]) -> Grid {
     rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect()
 }
 
-/// A bar recoloured and a lamina created beside it: one word vertex, one
+/// A bar recoloured and a compartment created beside it: one word vertex, one
 /// `Creation` demand, spoken as one sentence (50.5).
 fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     let family = vec![(digits(&["110", "000"]), digits(&["220", "003"]))];
@@ -29,7 +29,7 @@ fn a_recolour_with_a_creation() -> (Vec<(Grid, Grid)>, Element) {
     (family, e)
 }
 
-/// 50.5: valid, not closed. The created lamina is the remainder the demand
+/// 50.5: valid, not closed. The created compartment is the remainder the demand
 /// vertex names, and the court replays the sentence on its pair without
 /// refusing it for that remainder.
 #[test]
@@ -43,7 +43,7 @@ fn a_remainder_a_demand_names_is_valid_and_replays_on_the_family() {
 }
 
 /// The same sentence with its demand vertex struck out claims to close a
-/// pair it leaves a lamina on: `REFUSE_NOT_CLOSED`.
+/// pair it leaves a compartment on: `REFUSE_NOT_CLOSED`.
 #[test]
 fn an_undeclared_remainder_refuses_the_sentence_as_not_closed() {
     let (family, e) = a_recolour_with_a_creation();
@@ -97,7 +97,7 @@ fn a_tape_with_no_acting_vertex_is_a_chain() {
 
 /// 50.3, 23.1 step 4 — AND WHAT T1 TOOK FROM IT (60.5, ruled 2026-09-22).
 ///
-/// This read: a bar and a lamina of two hues carried together are a rigid
+/// This read: a bar and a compartment of two hues carried together are a rigid
 /// pair whose edge is the identity of the stabilizer; the honest edge
 /// re-derives on the union, and an edge naming a 90° turn the union
 /// did not make is refused.

@@ -22,13 +22,13 @@ use crate::transducer::cga::Mv;
 /// support.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum SurgeryKind {
-    /// Capping 1-cycles by adding the laminae of a hole (Δβ₁ = -k, fill).
+    /// Capping 1-cycles by adding the compartments of a hole (Δβ₁ = -k, fill).
     FillHole,
-    /// Deleting interior laminae, opening 1-cycles (Δβ₁ = +k, puncture).
+    /// Deleting interior compartments, opening 1-cycles (Δβ₁ = +k, puncture).
     Puncture,
-    /// Adding laminae that join components (Δβ₀ = -k, bridge merge).
+    /// Adding compartments that join components (Δβ₀ = -k, bridge merge).
     BridgeMerge,
-    /// Removing laminae that disconnect components (Δβ₀ = +k, separation cut).
+    /// Removing compartments that disconnect components (Δβ₀ = +k, separation cut).
     SplitCut,
 }
 

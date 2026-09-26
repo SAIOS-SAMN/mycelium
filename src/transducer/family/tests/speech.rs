@@ -414,7 +414,7 @@ assert_eq!(
 );
 }
 
-/// 52.5, 16.5 — THE OPEN SECTION IS SPOKEN THROUGH `carry_lamina`, AT ITS
+/// 52.5, 16.5 — THE OPEN SECTION IS SPOKEN THROUGH `carry_compartment`, AT ITS
 /// OWN FRAME. `emit_carried` is the one carry on the speaking path — the
 /// only other writer of `painted` is 16.16's unfold, which grows from
 /// neighbours and carries nothing — and it hands the sensor the body's own
@@ -430,7 +430,7 @@ assert_eq!(
 fn the_open_section_is_carried_at_its_own_frame_and_a_tilt_is_refused() {
     use crate::transducer::family::{body_of, emit_carried};
     let bar = |k: i64| {
-        body_of(vec![Lamina::from((0i64, 0i64, k, 1u8)), Lamina::from((0i64, 1i64, k, 1u8))])
+        body_of(vec![Compartment::from((0i64, 0i64, k, 1u8)), Compartment::from((0i64, 1i64, k, 1u8))])
             .expect("a bar is heard at n = 3")
     };
     let shift = element::translator_versor(2, 0);

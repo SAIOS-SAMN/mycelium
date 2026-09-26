@@ -52,7 +52,7 @@ fn a_residual_germinates_as_a_coboundary_germ() {
     let b = [(0, 0, 1u8), (0, 1, 9), (1, 0, 3)];
     let g = germinate(&a, &b).unwrap();
     let germ = from_canonical(&g);
-    // A hue transition on a standing lamina measures as GAUGE content
+    // A hue transition on a standing compartment measures as GAUGE content
     // alongside the residual defect (the four-lane projection).
     assert_eq!(germ.lanes(), [false, true, false, false], "a recolour is 𝒢 content; temporal and holonomic are empty until standing or punctured");
     let mag = germ.magnitude();
@@ -74,9 +74,9 @@ fn a_bidirectional_swap_does_not_collapse_to_zero() {
     let a = [(0, 0, 1u8), (0, 1, 1), (1, 0, 1)]; // L
     let b = [(0, 0, 1u8), (0, 1, 1), (0, 2, 1)]; // bar
     let l_to_bar = from_canonical(&germinate(&a, &b).unwrap());
-    // One lamina vacates and one appears: SPATIAL content (mass moved)
+    // One compartment vacates and one appears: SPATIAL content (mass moved)
     // alongside the two-link residual defect — measured, not defaulted.
-    assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved laminae, exact — not a canceled 0; the fibre lane is empty until punctured");
+    assert_eq!(l_to_bar.magnitude(), [2, 0, 0, 0], "two moved compartments, exact — not a canceled 0; the fibre lane is empty until punctured");
     assert_eq!(l_to_bar.lanes(), [true, false, false, false], "a real spatial germ");
     assert!(!l_to_bar.is_identity(), "the chain decides — a canceled tally is not identity");
     assert!(!l_to_bar.substance().is_identity(), "and its substance is real");
@@ -129,9 +129,9 @@ fn an_axis_past_the_last_seat_is_refused() {
 /// span, and whatever the chain holds, 𝒯 stays the mint's to supply.
 #[test]
 fn a_chain_measures_three_lanes_and_never_the_span() {
-    // Laminae appearing and vanishing are spatial; a hue change is gauge.
+    // Compartments appearing and vanishing are spatial; a hue change is gauge.
     let appears = measure_lanes(&[(0, 0, 0, 1), (1, 1, 0, 1)]);
-    assert!(appears[0] > 0, "laminae that appear are spatial");
+    assert!(appears[0] > 0, "compartments that appear are spatial");
     assert_eq!(appears[2], 0, "and none of them is a span");
 
     let recoloured = measure_lanes(&[(0, 0, 1, 2), (0, 1, 1, 2)]);

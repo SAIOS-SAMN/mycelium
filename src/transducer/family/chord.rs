@@ -13,7 +13,7 @@ use crate::transducer::base::Site;
 /// composing maps with no common domain — the holonomy would read as
 /// curvature that is only a change of ruler.
 ///
-/// The scene's extent bounds every centre of mass it can hold: a cell
+/// The scene's extent bounds every centre of mass it can hold: a compartment
 /// stands at `0 ≤ r < rows`, `0 ≤ c < cols`, `0 ≤ k < hues`, so any
 /// centroid has `|p|² < rows² + cols² + hues²`. Taking
 /// `M = 1 + rows + cols + hues` gives `M² > rows² + cols² + hues² > |p|²`
@@ -31,7 +31,7 @@ use crate::transducer::base::Site;
 /// and both SUM INCOMMENSURABLE AXES, adding a palette index to two
 /// lattice positions as though a hue were a length.
 ///
-/// Worse, the lamina was fed ABSOLUTE `(r, c, k)`. The same form drawn
+/// Worse, the compartment was fed ABSOLUTE `(r, c, k)`. The same form drawn
 /// at the origin and at the far corner of a grid then lands on different
 /// sheet points and reads as different geometry — position standing in
 /// for coordinate (rule 15), inside the connection itself.
@@ -45,7 +45,7 @@ use crate::transducer::base::Site;
 ///     M = 1 + S
 /// ```
 ///
-/// `S` is a MOMENT, not an EXTENT: every cell enters symmetrically and
+/// `S` is a MOMENT, not an EXTENT: every compartment enters symmetrically and
 /// no axis is privileged, so there is no box. The chart bound comes
 /// free — a sub-domain's centre lies in the convex hull of the whole, so
 /// `|c − P|² ≤ maxᵢ|pᵢ − P|² ≤ S`, and `M ≥ 1` gives `M² ≥ M > S`
@@ -54,20 +54,19 @@ use crate::transducer::base::Site;
 /// `c(D)` makes the reading invariant under where the scene was drawn.
 ///
 /// OPEN, and flagged rather than silently decided: the third axis is
-/// HUE, and a hue is not a length. The `(row, col, hue)` lamina is the
+/// HUE, and a hue is not a length. The `(row, col, hue)` compartment is the
 /// sensor's existing convention (`blade::shells`), so the moment mixes a
 /// palette index into a spatial scale. This predates the chart and is
 /// not repaired here; it wants a ruling on whether hue is a coordinate
 /// of the base or of the fibre.
 /// A.11's SINGLE PRODUCER (56.3, ruled 2026-09-22). This summed the
-/// cells a second time — a SHADOW PRODUCER of moments `blade::lift`
-/// already computes exactly, and a lossy one: it took each cell as a
-/// POINT MASS at integer coordinates, where `lift` integrates the
-/// lamina's own unit square and carries the parallel-axis term
-/// `N/12` at every order. Two producers of one quantity, and the
+/// compartments a second time — a SHADOW PRODUCER of moments `blade::lift`
+/// already computes exactly, and a lossy one: it took each compartment as a
+/// POINT MASS at integer coordinates, where `lift` reads each compartment as
+/// its round and carries the rounds' extent `N/12` on each grid axis. Two producers of one quantity, and the
 /// second disagreed with the first (law 12).
 ///
-/// The form's chart is one body — the union of every cell its chords
+/// The form's chart is one body — the union of every compartment its chords
 /// stand on — so `centroid()` is `P` and the trace of `inertia` on every
 /// axis is the scale. The trace is used HERE and only here, as a radius:
 /// it is an `SO(n)` invariant and carries no orientation (A.11), which is
@@ -136,12 +135,12 @@ pub(super) fn form_chart(
 /// ```
 ///
 /// so a flat translation injected as an `e₋` boost CANNOT generate a
-/// dispiration, no matter what the scene does. Both cells are now
+/// dispiration, no matter what the scene does. Both compartments are now
 /// carried onto the upper sheet by the form's quantum `M(X)` and the
 /// transport is Axiom B's own transition:
 ///
 /// ```text
-///     v_a = lamina(p(D_a), M),  v_b = lamina(p(D_b), M),  v² = −1
+///     v_a = compartment(p(D_a), M),  v_b = compartment(p(D_b), M),  v² = −1
 ///     R   = 1 − v_b v_a,        ⟨R⟩₂ = v_a ∧ v_b
 /// ```
 ///
@@ -203,7 +202,7 @@ fn basepoint_transvection(
     db: &[Site],
 ) -> Option<crate::transducer::sentence::Transport> {
     // THE INTRINSIC CENTRE of a support domain: its centre of mass, exact
-    // over ℚ and invariant under the order the cells arrive in, on every
+    // over ℚ and invariant under the order the compartments arrive in, on every
     // axis the sites have (the sheet is `ℍⁿ`, BQ4). A footprint mixing two
     // bases has no centre and is counted as unfooted.
     let centre = |d: &[Site]| -> Option<Vec<num_rational::BigRational>> {
@@ -242,7 +241,7 @@ fn basepoint_transvection(
     // Read from the form's own origin, so the transport does not depend
     // on where in the grid the scene happened to be drawn (rule 15).
     // The origin is read by inclusion: an axis it does not name is zero.
-    let lamina = |p: &[num_rational::BigRational]| {
+    let compartment = |p: &[num_rational::BigRational]| {
         let offset: Vec<num_rational::BigRational> = p
             .iter()
             .enumerate()
@@ -251,9 +250,9 @@ fn basepoint_transvection(
                 None => x.clone(),
             })
             .collect();
-        crate::transducer::cga::hyperbolic_lamina(&offset, quantum)
+        crate::transducer::cga::hyperbolic_compartment(&offset, quantum)
     };
-    let carriage = match (lamina(&a), lamina(&b)) {
+    let carriage = match (compartment(&a), compartment(&b)) {
         (Some(va), Some(vb)) => crate::transducer::cga::geodesic_transvection(&va, &vb),
         // Off the stereographic chart: the quantum did not cover this
         // form's extent, which is a defect in `M(X)` and not a reading.

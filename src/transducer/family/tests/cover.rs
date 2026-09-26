@@ -12,7 +12,7 @@ use super::common::*;
 use crate::transducer::family::*;
 use crate::transducer::sentence::{Demand, Vertex};
 
-/// A solid block against the same block with ONE LAMINA REMOVED. No versor
+/// A solid block against the same block with ONE COMPARTMENT REMOVED. No versor
 /// carries the whole body onto the whole image — that is what makes it a
 /// deformation — and under 51.3 as ruled 2026-09-18 the cover does not
 /// reach below the body, so this carries NOTHING and stands as one typed
@@ -60,12 +60,12 @@ fn four_bodies_one_left() -> (Grid, Grid) {
 /// and reads its bodies back out with `pieces_of`; a fixture of one body
 /// has nothing for it to cover (51.3).
 fn composite(g: &Grid) -> Body {
-    body_of(perceive(g).iter().flat_map(|b| b.laminae.iter().cloned()).collect::<Vec<_>>())
+    body_of(perceive(g).iter().flat_map(|b| b.compartments.iter().cloned()).collect::<Vec<_>>())
         .expect("a composite of heard bodies is heard at n = 3")
 }
 
-/// Laminae as the sensor hands them over (71.2(1)).
-fn laminae<T: Copy + Into<Lamina>>(v: &[T]) -> Vec<Lamina> {
+/// Compartments as the sensor hands them over (71.2(1)).
+fn compartments<T: Copy + Into<Compartment>>(v: &[T]) -> Vec<Compartment> {
     v.iter().map(|&t| t.into()).collect()
 }
 
@@ -192,26 +192,26 @@ fn one_body_that_does_not_carry_whole_is_a_demand_and_not_a_listing() {
 /// Perception joined the two colours into one body (H1); the cover must
 /// not split it again one colour at a time, or the seam between them comes
 /// back as a meet between two pieces when it is the body's own gauge
-/// section. The piece holds both hues on its laminae — the gauge is read
+/// section. The piece holds both hues on its compartments — the gauge is read
 /// off them — and its address names its kind and its support, no colour.
 /// Two bodies that meet only at a corner stay two pieces: the component is
 /// hue-blind, not adjacency-blind.
 #[test]
 fn a_polychrome_body_is_one_piece_of_the_cover() {
     use crate::network::nerve::{coord, Coordinate};
-    let block = laminae(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
+    let block = compartments(&[(0, 0, 0, 1u8), (1, 0, 0, 1), (0, 1, 0, 2), (1, 1, 0, 2)]);
     let pieces = crate::transducer::family::pieces::pieces_of(&block);
-    let held: Vec<(coord::Piece, Vec<Lamina>)> = pieces
+    let held: Vec<(coord::Piece, Vec<Compartment>)> = pieces
         .decoded()
         .0
         .into_iter()
-        .map(|(k, p)| (k, p.body.laminae.clone()))
+        .map(|(k, p)| (k, p.body.compartments.clone()))
         .collect();
-    let [(address, held_laminae)] = held.as_slice() else {
+    let [(address, held_compartments)] = held.as_slice() else {
         panic!("a two-coloured body is one piece of the cover, got {}", held.len())
     };
     assert_eq!(address.support.len(), 4, "the piece stands on the whole body");
-    let mut hues: Vec<u8> = held_laminae.iter().map(|l| l.hue).collect();
+    let mut hues: Vec<u8> = held_compartments.iter().map(|l| l.hue).collect();
     hues.sort_unstable();
     hues.dedup();
     assert_eq!(hues, vec![1, 2], "and carries both colours as its gauge");
@@ -221,7 +221,7 @@ fn a_polychrome_body_is_one_piece_of_the_cover() {
         "an address of kind and support alone decodes back to itself"
     );
 
-    let corner = laminae(&[(0, 0, 0, 1u8), (1, 1, 0, 1)]);
+    let corner = compartments(&[(0, 0, 0, 1u8), (1, 1, 0, 1)]);
     assert_eq!(
         crate::transducer::family::pieces::pieces_of(&corner).decoded().0.len(),
         2,
@@ -455,7 +455,7 @@ fn a_filled_simplex_is_a_filed_orbit_at_its_own_period() {
 }
 
 /// 50.8 CASE 4 — WHAT NO PIECE CARRIED KEEPS THE DEMAND ALIVE. The notched
-/// block leaves laminae no carriage reaches, so the deformation stands; it
+/// block leaves compartments no carriage reaches, so the deformation stands; it
 /// dissolves only when the uncarried volume is the zero vector on every
 /// lane AND no orbit over its pieces stands.
 #[test]
@@ -466,7 +466,7 @@ fn an_uncarried_remainder_leaves_the_deformation_standing() {
         .vertices
         .scoped()
         .any(|(_, v)| matches!(v, Vertex::Demand { kind: Demand::TopologicalDeformation { .. }, .. }));
-    assert!(stands, "laminae no piece reached leave the deformation on the form");
+    assert!(stands, "compartments no piece reached leave the deformation on the form");
 }
 
 /// 50.8 — A COVER THAT ENDS KEEPS WHAT IT MEASURED, AND GOES ON FROM THE
@@ -596,7 +596,7 @@ fn measured_cover(
     )
     .expect("a cover that runs to its end");
     let t = take_cover_tally();
-    let ins = pieces_of(&input.laminae).scoped().count();
+    let ins = pieces_of(&input.compartments).scoped().count();
     (cover, t, ins)
 }
 
@@ -633,8 +633,8 @@ fn an_image_across_several_output_pieces_is_assembled_and_carried_once() {
 /// was a piece the correspondence did not put there.
 #[test]
 fn cover_attempts_are_placed_times_unplaced() {
-    // TWO BODIES THAT DO NOT MEET. No lamina of the input stands under any
-    // lamina of the image, so the pullback names no preimage and places
+    // TWO BODIES THAT DO NOT MEET. No compartment of the input stands under any
+    // compartment of the image, so the pullback names no preimage and places
     // nothing; with nothing placed there is nothing to propagate.
     let apart = (
         grid(&["111", "111", "000", "000", "000", "000"]),

@@ -3,23 +3,23 @@
 // re-derives in the stabilizer, and the remainder is what the demands name.
 //
 //! Nothing here is trusted from the tape. A vertex is carried onto the
-//! court's own copy of each frame and every landed lamina is read; an edge
+//! court's own copy of each frame and every landed compartment is read; an edge
 //! is re-measured on the union of the two bodies; a remainder link stands
 //! only where a demand vertex said it would (50.5: valid, not closed). Each
 //! refusal names its coordinate as content (50.9): the vertex with its
 //! chart, the face's two addresses, the chart with the links read.
 
 use super::*;
-use crate::transducer::family::{on_grid, perceive, Body, Grid, Lamina};
+use crate::transducer::family::{on_grid, perceive, Body, Grid, Compartment};
 
 /// What one vertex does at one frame of the family's one body.
 pub(crate) enum Carried {
     /// No body of the vertex's chart at this frame: a section elsewhere.
     Silent,
-    /// Every lamina of every body of its chart lands on its image with the
+    /// Every compartment of every body of its chart lands on its image with the
     /// gauged hue, and every touched image body is reached whole.
     Carries,
-    /// A lamina landed off its image, on the wrong hue, or an image body
+    /// A compartment landed off its image, on the wrong hue, or an image body
     /// was reached in part — and WHICH of those, because they are five
     /// different faults, and a `REFUSE_VERTEX_BODY` that said only that one
     /// of them happened would leave the journal unable to distinguish a
@@ -37,19 +37,19 @@ pub(crate) enum Carried {
 pub(crate) const FAIL_NO_VERSOR: &str = "the rotor and carriage lift to no versor";
 pub(crate) const FAIL_NO_CARRY: &str = "a lamina of its body carries nowhere";
 /// THREE FAULTS, NOT ONE: a carried centre the sensor cannot convert to a
-/// lamina at all, a lamina at a negative coordinate, and a lamina past the
+/// compartment at all, a compartment at a negative coordinate, and a compartment past the
 /// image's extent say different things about a rule — the first that the
 /// transport left the sensor's own geometry, the second that the placement
 /// is wrong, the third that the scale or the extent is — and a court that
 /// reported one string for all three would tell a voice nothing it can
 /// contract on (50.9, rule 11).
-pub(crate) const FAIL_NO_LAMINA: &str = "a carried centre is not a lamina of the sensor";
+pub(crate) const FAIL_NO_COMPARTMENT: &str = "a carried centre is not a lamina of the sensor";
 pub(crate) const FAIL_BEFORE_FRAME: &str = "a lamina lands before the image frame's origin";
 pub(crate) const FAIL_PAST_FRAME: &str = "a lamina lands past the image frame's extent";
 pub(crate) const FAIL_HUE: &str = "a lamina lands on the wrong hue";
 pub(crate) const FAIL_PART: &str = "an image body is reached in part";
 /// The vertex's gauge names two images for one hue, so it is not a hue map
-/// and the lamina has no predicted hue to be right or wrong about. Read by
+/// and the compartment has no predicted hue to be right or wrong about. Read by
 /// the first matching entry of the listing (rule 15) it would be
 /// indistinguishable from `FAIL_HUE`.
 pub(crate) const FAIL_GAUGE_AMBIGUOUS: &str = "the gauge names two images for one hue";
@@ -86,7 +86,7 @@ impl<'a> Frame<'a> {
         }
         let mut image_at: Keyed<usize> = Keyed::new();
         for (i, b) in images.iter().enumerate() {
-            for l in &b.laminae {
+            for l in &b.compartments {
                 image_at.insert(l.site.key(), i);
             }
         }
@@ -112,7 +112,7 @@ pub(crate) fn frames_of(family: &[(Grid, Grid)]) -> Vec<Frame<'_>> {
     family.iter().map(|(x, y)| Frame::of(x, y)).collect()
 }
 
-/// A section's site, written out: the key a landed lamina is filed under.
+/// A section's site, written out: the key a landed compartment is filed under.
 fn site_key(r: i64, c: i64) -> Vec<u8> {
     let mut k = Vec::with_capacity(16);
     k.extend_from_slice(&r.to_le_bytes());
@@ -121,7 +121,7 @@ fn site_key(r: i64, c: i64) -> Vec<u8> {
 }
 
 /// 50.1 step 1 at one FRAME of the family's one body (51.8): `(V · W · γ) ·
-/// B_in = B_out` under exact equality lamina by lamina, for every body of
+/// B_in = B_out` under exact equality compartment by compartment, for every body of
 /// the vertex's chart on the frame.
 pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64) -> Carried {
     let Vertex::Word { derivation, contact, acts, .. } = vertex else {
@@ -162,21 +162,21 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
         }
         spoke = true;
         for body in fiber {
-            for l in &body.laminae {
+            for l in &body.compartments {
                 let h = l.hue;
                 let Some(p) = element::carry_site_center(&versor, &l.site) else {
                     return Carried::Fails(FAIL_NO_CARRY, at());
                 };
 
-                // A centre the sensor cannot convert is not a lamina at all
+                // A centre the sensor cannot convert is not a compartment at all
                 // (W6) — the transport left the sensor's own geometry — and
-                // a centre carried into another frame is no lamina of the
+                // a centre carried into another frame is no compartment of the
                 // grid this frame is replayed against.
                 let Some(t) = element::site_at(&p) else {
-                    return Carried::Fails(FAIL_NO_LAMINA, at());
+                    return Carried::Fails(FAIL_NO_COMPARTMENT, at());
                 };
                 let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
-                    return Carried::Fails(FAIL_NO_LAMINA, at());
+                    return Carried::Fails(FAIL_NO_COMPARTMENT, at());
                 };
                 // Before the origin, and past the extent, are two different
                 // statements about the rule: the first about its placement,
@@ -204,15 +204,15 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
     if !spoke {
         return Carried::Silent;
     }
-    // Every lamina of every image body it touched is reached: the image is
+    // Every compartment of every image body it touched is reached: the image is
     // a body, not a part of one. THE UNION OF WHAT EVERY MEMBER LANDED is
     // what this asks about — two members whose images meet in one image body
     // cover it between them, and asking per member would call that coverage
     // a part.
     for image in &here.images {
-        let landed_on = |l: &Lamina| on_grid(&l.site).is_some_and(|(r, c)| landed.contains(&site_key(r, c)));
-        let touched = image.laminae.iter().any(landed_on);
-        if touched && !image.laminae.iter().all(landed_on) {
+        let landed_on = |l: &Compartment| on_grid(&l.site).is_some_and(|(r, c)| landed.contains(&site_key(r, c)));
+        let touched = image.compartments.iter().any(landed_on);
+        if touched && !image.compartments.iter().all(landed_on) {
             // The image body is reached in part BY THE FIBRE AS A WHOLE, so the
             // chart named is the image's own: no one member is at fault and the
             // court says which image it is, which is the coordinate 50.9 wants.
@@ -222,13 +222,13 @@ pub(crate) fn vertex_carries_frame(vertex: &Vertex, here: &Frame<'_>, frame: u64
     Carried::Carries
 }
 
-/// Does the form, spoken at this frame, cover every one of `laminae` with
+/// Does the form, spoken at this frame, cover every one of `compartments` with
 /// the hue it carries — by a word vertex's carriage or a demand's claim?
-fn form_covers_laminae(
+fn form_covers_compartments(
     f: &Form,
     frame: u64,
     at: &Frame<'_>,
-    laminae: &[Lamina],
+    compartments: &[Compartment],
 ) -> bool {
     let mut covered: Keyed<u8> = Keyed::new();
     for (_, _, _, demand_links) in f.demand_vertices() {
@@ -249,7 +249,7 @@ fn form_covers_laminae(
             }
             let Some(versor) = element::conformal_of_rotor(&rotor, &member.carriage) else { continue; };
             for b in at.on_chart(&member.chart) {
-                for l in &b.laminae {
+                for l in &b.compartments {
                     let Some(t) = element::carry_site(&versor, &l.site) else { continue; };
                     let (Some((tr, tc)), true) = (on_grid(&t), same_frame(&t, &l.site)) else {
                         continue;
@@ -260,13 +260,13 @@ fn form_covers_laminae(
             }
         }
     }
-    laminae.iter().all(|l| {
+    compartments.iter().all(|l| {
         on_grid(&l.site).is_some_and(|(r, c)| covered.get(&site_key(r, c)).is_some_and(|&w| w == l.hue))
     })
 }
 
 /// Do two sites stand in one frame — every coordinate off the grid axes
-/// equal? A lamina carried into another frame is no lamina of the grid this
+/// equal? A compartment carried into another frame is no compartment of the grid this
 /// frame is replayed against.
 fn same_frame(a: &crate::transducer::base::Site, b: &crate::transducer::base::Site) -> bool {
     a.n() == b.n()
@@ -310,7 +310,7 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
                 if why == FAIL_PART {
                     let uncovered = at.images.iter().any(|image| {
                         if image.moduli == chart {
-                            !form_covers_laminae(f, frame, at, &image.laminae)
+                            !form_covers_compartments(f, frame, at, &image.compartments)
                         } else {
                             false
                         }
@@ -341,12 +341,12 @@ pub(crate) fn vertices_carry_frames(f: &Form, family: &[(Grid, Grid)]) -> Option
     None
 }
 
-/// The body of `y` the image of `body`'s anchor lamina falls in, under
+/// The body of `y` the image of `body`'s anchor compartment falls in, under
 /// `versor`: a keyed read of the frame's occupancy at the carried site. The
-/// anchor is the least lamina in the body's own order — a coordinate of
-/// the body, never a choice among its laminae.
+/// anchor is the least compartment in the body's own order — a coordinate of
+/// the body, never a choice among its compartments.
 fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a Body> {
-    let [anchor, ..] = body.laminae.as_slice() else {
+    let [anchor, ..] = body.compartments.as_slice() else {
         return None;
     };
     at.image_at(&element::carry_site(versor, &anchor.site)?)
@@ -354,7 +354,7 @@ fn image_body<'a>(body: &Body, versor: &Versor, at: &'a Frame<'_>) -> Option<&'a
 
 fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
     let mut pos: Vec<crate::transducer::base::Site> =
-        a.laminae.iter().chain(b.laminae.iter()).map(|l| l.site.clone()).collect();
+        a.compartments.iter().chain(b.compartments.iter()).map(|l| l.site.clone()).collect();
     pos.sort_unstable();
     pos.dedup();
     crate::transducer::blade::shape_of(&pos)
@@ -370,7 +370,7 @@ fn union_shape(a: &Body, b: &Body) -> crate::transducer::blade::Shape {
 ///
 /// A FRAME-AXIS MOTOR, APPLIED (AT1 A1, law 8): the chart's WHOLE fibre at
 /// the leaving frame — the union of every body the court perceives on the
-/// member's chart there, each lamina placed at that frame's own `k`, which
+/// member's chart there, each compartment placed at that frame's own `k`, which
 /// is the `a_k` the percept measured the motor on — carried by the motor,
 /// must land exactly on the whole fibre of the arriving chart at the arriving
 /// frame, placed at its `k′`, whatever the body count. `None` only where it
@@ -405,7 +405,7 @@ fn motor_carries(
     let placed = |fiber: &[&Body], k: i64| -> Option<Vec<crate::transducer::base::Site>> {
         let mut s: Vec<_> = fiber
             .iter()
-            .flat_map(|b| b.laminae.iter())
+            .flat_map(|b| b.compartments.iter())
             .map(|l| l.site.with_axis(FRAME_AXIS, k))
             .collect::<Option<_>>()?;
         s.sort_unstable();

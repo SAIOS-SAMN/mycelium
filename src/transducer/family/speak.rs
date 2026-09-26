@@ -75,7 +75,7 @@ pub(crate) fn emit_carried(
     remainder: &mut Vec<Painted>,
 ) {
     let hue = hue_map_from_pairs(map);
-    for l in &body.laminae {
+    for l in &body.compartments {
         let h = l.hue;
         let Some((r, c)) = on_grid(&l.site) else { continue };
         // A hue the map does not move keeps its own colour: that is what
@@ -85,8 +85,8 @@ pub(crate) fn emit_carried(
             None => h,
         };
         let frame = l.site.axis(crate::transducer::base::FRAME_AXIS);
-        match element::carry_lamina_site(v, &l.site) {
-            // The grid spoken onto is the body's own frame: a lamina
+        match element::carry_compartment_site(v, &l.site) {
+            // The grid spoken onto is the body's own frame: a compartment
             // carried into another frame is not spoken on it, and is
             // remainder.
             Some(image) if image.iter().all(|s| s.axis(crate::transducer::base::FRAME_AXIS) == frame) => {
@@ -403,7 +403,7 @@ fn speak_on_scene(
         if painted.is_empty() {
             painted = bodies
                 .iter()
-                .flat_map(|b| b.laminae.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue))))
+                .flat_map(|b| b.compartments.iter().filter_map(|l| on_grid(&l.site).map(|(r, c)| (r, c, l.hue))))
                 .collect();
         }
         // A frame whose site count does not fit the carrier is wider than

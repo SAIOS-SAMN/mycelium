@@ -38,7 +38,7 @@ pub struct Cell {
     /// by (78.30(7), A21).
     pub coords: Vec<Vec<u8>>,
     /// The witnesses, in the base's own coordinate order.
-    pub witnesses: Vec<coord::Lamina>,
+    pub witnesses: Vec<coord::Compartment>,
     /// `s₀ ∧ s₁ ∧ … ∧ s_k`; `None` where a member's nucleus did not read
     /// back (rule 11), the zero blade where the nuclei are dependent.
     pub meet: Option<Mv>,
@@ -95,7 +95,7 @@ pub struct NerveReading {
 
 /// ONE CHART OF A COVER: its section's coordinates — the carriage and the
 /// footprint, as `section_key` writes them — and the elements it stands on.
-pub type Chart = (Vec<u8>, Vec<coord::Lamina>);
+pub type Chart = (Vec<u8>, Vec<coord::Compartment>);
 
 /// READ THE NERVE OF ONE COVER. The support, the pairwise reading, the
 /// certified cells and their meets come off ONE read of the base, so the
@@ -103,7 +103,7 @@ pub type Chart = (Vec<u8>, Vec<coord::Lamina>);
 /// coordinates, which key its cells (KB1): two carriages over one region are
 /// two sections because their carriages differ, and nothing merges them.
 pub fn read_nerve(charts: &[Chart]) -> NerveReading {
-    let footprints: Vec<Vec<coord::Lamina>> = charts.iter().map(|(_, f)| f.clone()).collect();
+    let footprints: Vec<Vec<coord::Compartment>> = charts.iter().map(|(_, f)| f.clone()).collect();
     let support = support_of_cover(&footprints);
     let (cells, refused) = support.decoded();
     let shared = cells.iter().filter(|(_, s)| s.len() >= 2).count();
@@ -154,7 +154,7 @@ pub struct CellsOver {
 /// ordinals with one coordinate are one member. A single member standing
 /// alone is a point of the nerve, not a cell.
 pub fn cells_over<'a>(
-    standing: impl Iterator<Item = (coord::Lamina, &'a [usize])>,
+    standing: impl Iterator<Item = (coord::Compartment, &'a [usize])>,
     coords: impl Fn(usize) -> Option<Vec<u8>>,
     meet: impl Fn(&[usize]) -> Option<Mv>,
 ) -> CellsOver {
@@ -237,7 +237,7 @@ impl NerveTotals {
     }
 
     /// The nerve line's cells segment: the certified cells by grade, then
-    /// what did not key — lamina keys refused and members unkeyed (KB1).
+    /// what did not key — compartment keys refused and members unkeyed (KB1).
     pub fn cells_line(&self) -> String {
         format!(
             "certified cells (grade cells meet≠0) {:?}, {} refused, {} unkeyed, {} singular",
@@ -275,12 +275,12 @@ pub fn cells_by_grade(cells: impl Iterator<Item = (usize, Option<Mv>)>) -> Vec<(
 /// own order and deduplicated as they arrive, so the reading does not depend
 /// on the order the elements were read.
 pub fn support_of_cover(
-    charts: &[Vec<coord::Lamina>],
-) -> crate::network::nerve::Keyed<Vec<usize>, coord::Lamina> {
-    let mut support: crate::network::nerve::Keyed<Vec<usize>, coord::Lamina> =
+    charts: &[Vec<coord::Compartment>],
+) -> crate::network::nerve::Keyed<Vec<usize>, coord::Compartment> {
+    let mut support: crate::network::nerve::Keyed<Vec<usize>, coord::Compartment> =
         crate::network::nerve::Keyed::new();
-    for (ix, cells) in charts.iter().enumerate() {
-        for p in cells {
+    for (ix, compartments) in charts.iter().enumerate() {
+        for p in compartments {
             match support.at_mut(p) {
                 Some(standing) => {
                     if !standing.contains(&ix) {

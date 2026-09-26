@@ -1,21 +1,21 @@
-// 54.7 Axiom B — laminae on the sheet, and the frame's base point.
+// 54.7 Axiom B — compartments on the sheet, and the frame's base point.
 
 use super::common::q;
-use crate::transducer::cga::at_three::hyperbolic_lamina;
+use crate::transducer::cga::at_three::hyperbolic_compartment;
 use crate::transducer::cga::multivector::one;
 use crate::transducer::cga::*;
 use num_traits::Signed;
 
-/// 54.7 AXIOM B — A LAMINA IS A RATIONAL POINT OF `ℍ³`, and the
+/// 54.7 AXIOM B — A COMPARTMENT IS A RATIONAL POINT OF `ℍ³`, and the
 /// transition between two of them is a DIRECTED transvection.
 ///
 /// Every assertion here is a blade or a product, never a magnitude.
 #[test]
-fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
+fn a_compartment_lands_on_the_sheet_and_transports_along_a_geodesic() {
     let m = q(4, 1);
-    let a = hyperbolic_lamina(&q(0, 1), &q(0, 1), &q(0, 1), &m).expect("the pole");
-    let b = hyperbolic_lamina(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("one step");
-    let c = hyperbolic_lamina(&q(0, 1), &q(1, 1), &q(0, 1), &m).expect("one step, other axis");
+    let a = hyperbolic_compartment(&q(0, 1), &q(0, 1), &q(0, 1), &m).expect("the pole");
+    let b = hyperbolic_compartment(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("one step");
+    let c = hyperbolic_compartment(&q(0, 1), &q(1, 1), &q(0, 1), &m).expect("one step, other axis");
 
     // ON THE SHEET, exactly — `v² = −1` with no root taken anywhere.
     for v in [&a, &b, &c] {
@@ -23,7 +23,7 @@ fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
     }
     assert_eq!(a, hyperboloid_pole(), "u = 0 is the pole");
     // OFF THE CHART IS REFUSED, not clamped: `|u| ≥ 1`.
-    assert!(hyperbolic_lamina(&q(4, 1), &q(0, 1), &q(0, 1), &m).is_none());
+    assert!(hyperbolic_compartment(&q(4, 1), &q(0, 1), &q(0, 1), &m).is_none());
 
     // THE TRANSITION TRANSPORTS, and is not an involution.
     let r = geodesic_transvection(&a, &b).expect("a geodesic joins them");
@@ -68,7 +68,7 @@ fn a_lamina_lands_on_the_sheet_and_transports_along_a_geodesic() {
 #[test]
 fn a_frames_base_point_returns_to_the_sheet() {
     let m = q(4, 1);
-    let a = hyperbolic_lamina(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("a lamina");
+    let a = hyperbolic_compartment(&q(1, 1), &q(0, 1), &q(0, 1), &m).expect("a compartment");
     let r = geodesic_transvection(&hyperboloid_pole(), &a).expect("a geodesic");
     let p = frame_base_point(&r).expect("the frame stands somewhere");
     assert_eq!(p.geo(&p), Mv::scalar(-one()), "and that somewhere is on the sheet");
