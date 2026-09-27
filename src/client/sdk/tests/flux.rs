@@ -27,16 +27,15 @@ fn a_sealed_uttered_act_credits_the_edge_its_form_was_spoken_through() {
     let e = super::common::two_body_sentence([&[(1, 2)], &[(3, 4)]]);
     let circuits = crate::transducer::bubble::flux::Circuits { charts: vec![vec![chart]], words: Vec::new(), unnamed: 0 };
     entity.contemplation.file_spoken(e.address().as_bytes(), circuits);
-    entity.seal_word(crate::chronometry::ActKind::Uttered, &e);
-    let receipt = entity.session.voice().chain().head().expect("the Uttered act sealed").clone();
-    assert_eq!(receipt.kind, crate::chronometry::ActKind::Uttered);
+    entity.act_on(&e);
+    let mu = e.magnitude();
     let edge =
         crate::transducer::cech::simplex_key(&crate::transducer::cech::sorted_verts(vec![a.as_slice(), b.as_slice()]));
-    assert_eq!(entity.contemplation.flux.get(edge.as_bytes()), Some(&receipt.mu), "the edge reads the receipt's frame");
-    assert!(receipt.mu.iter().any(|&m| m > 0), "a frame that flowed");
+    assert_eq!(entity.contemplation.flux.get(edge.as_bytes()), Some(&mu), "the edge reads what the act carried");
+    assert!(mu.iter().any(|&m| m > 0), "a frame that flowed");
     let other = super::common::two_body_sentence([&[(5, 6)], &[(7, 8)]]);
-    entity.seal_word(crate::chronometry::ActKind::Uttered, &other);
+    entity.act_on(&other);
     let f = entity.contemplation.meet_graph().flux;
     assert_eq!((f.credited, f.unfiled), (1, 1), "{f:?}");
-    assert_eq!(entity.contemplation.flux.get(edge.as_bytes()), Some(&receipt.mu), "credited once");
+    assert_eq!(entity.contemplation.flux.get(edge.as_bytes()), Some(&mu), "credited once");
 }

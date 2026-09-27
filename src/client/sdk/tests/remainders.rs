@@ -45,23 +45,33 @@ fn chains() -> (Chain, Chain, Chain) {
 }
 
 /// A word standing with a remainder of the 90° turn's class at `at`, its ray
-/// `ray`, sealed Stood by the entity and stood in the dialect.
+/// `ray`, stood by the mind (an act at its own K) in the dialect.
 fn stand_with(entity: &mut Entity, gauges: [&[(u8, u8)]; 2], at: &[Vec<u8>], ray: crate::transducer::alphabet::Rotor) -> Element {
     let mut r = remainder(&[]);
     r.at = at.to_vec();
     let mut w = super::common::two_body_sentence(gauges);
     w.record_cycle(cycle_by(ray, Some(r)));
-    let k = entity.seal_word(crate::chronometry::ActKind::Stood, &w);
+    let k = entity.act_on(&w);
     let _ = entity.epigenome.stand_dialect_at(w.clone(), k, 0);
     w
 }
 
+/// The one remainder a held word's record carries, and whether this mind
+/// counts it answered.
+fn remainder_of(e: &Entity, w: &Element) -> (Remainder, bool) {
+    let held = e.epigenome.element_of(w.address().as_bytes()).expect("still held");
+    let r = held.remainders().next().expect("its remainder").clone();
+    let answered = e.epigenome.answered(w.address().as_bytes(), &r);
+    (r, answered)
+}
+
 /// THE RECEPTOR, constructed. One class at two incomparable chains with one
-/// ray → one callus, Stood, citing both remainder words and the class. The
-/// same at a nested chain → nested, no callus. The same class with a
-/// differing ray → discordant, no callus. A ray the held constructors do not
-/// spell → unspelled, the class docketed as a Demand over both chains, no
-/// callus.
+/// ray → one callus, stood as the mind's own word, and each remainder word
+/// re-spelled by it — marked in the mind by the callus, the record left to a
+/// court's seal (78.49). The same at a nested chain → nested, no callus. The
+/// same class with a differing ray → discordant, no callus. A ray the held
+/// constructors do not spell → unspelled, the class docketed as a Demand over
+/// both chains, no callus.
 #[test]
 fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
     let (a, b, nested) = chains();
@@ -76,41 +86,18 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.calluses, r.nested, r.discordant, r.unspelled), (1, 0, 0, 0), "{}", r.line());
-    // The callus stood, then its two remainder words re-filled: the line
-    // reads Stood, Settled, Settled.
-    let chain = e.session.voice().chain();
-    let head = chain.head().expect("the re-fill's act").clone();
-    let at = |back: u64| chain.at_place(crate::chronometry::Place { k: head.stamp.k, i: head.stamp.i - back }).expect("an act").clone();
-    let stood = at(2);
-    assert_eq!(stood.kind, crate::chronometry::ActKind::Stood);
-    let words = stood.cites.iter().filter(|c| matches!(c, crate::chronometry::Cite::Word { .. })).count();
-    assert_eq!(words, 3, "the callus at its own stamp and the two remainder words: {:?}", stood.cites);
-    assert!(
-        stood.cites.iter().any(|c| matches!(c, crate::chronometry::Cite::Class { cover: Some(cv), .. } if a.iter().chain(&b).all(|k| cv.contains(k)))),
-        "the class, its ray and both chains' charts"
-    );
-    // RM1 (c), door (a): each remainder word re-fills by a Settled act
-    // citing the word, its remainder and the callus; its μ⃗ the pressure
-    // answered, ℓ − 1 = 3 on the shell lane.
-    for settled in [at(1), head.clone()] {
-        assert_eq!(settled.kind, crate::chronometry::ActKind::Settled);
-        assert!(
-            matches!(
-                settled.cites.as_slice(),
-                [crate::chronometry::Cite::Word { .. }, crate::chronometry::Cite::Class { .. }, crate::chronometry::Cite::Word { .. }]
-            ),
-            "the rewrite word, its remainder, the spelling word: {:?}",
-            settled.cites
-        );
-        assert_eq!(settled.mu, [0, 0, 0, 3], "the pressure answered");
-    }
+    // RM1 (c), door (a): the callus stood in the dialect, and each remainder
+    // word re-filled — marked in the mind by the word that spells it.
     let r = e.meet_graph().remainders;
     assert_eq!((r.refill_acts, r.refill_refused), (2, 0), "{}", r.line());
+    let spellings: Vec<crate::transducer::address::Address> = e.epigenome.refilled.scoped().map(|(_, a)| a.clone()).collect();
+    let [one, two] = spellings.as_slice() else { panic!("two marks: {}", spellings.len()) };
+    assert_eq!(one, two, "both re-spelled by the one callus");
+    assert!(e.epigenome.dialect.get(one.as_bytes()).is_some(), "which stands in the dialect as the mind's own word");
     for w in [&w1, &w2] {
-        let held = e.epigenome.held_element(w.address().as_bytes()).expect("still held");
-        let cycle = held.torsion().iter().find(|t| t.remainder.is_some()).expect("its remainder").clone();
-        assert!(cycle.remainder.as_ref().is_some_and(|r| r.answered.is_some()), "answered at the act's stamp");
-        assert_eq!(cycle.pressure(), Some([0; 4]), "and its pressure reads zero");
+        let (r, answered) = remainder_of(&e, w);
+        assert!(answered, "the mind counts it answered");
+        assert!(r.answered.is_none(), "and its record is left to a court's seal");
     }
     // An answered remainder is evidence, not a question: a third word of the
     // class at a third vantage finds both standing ones answered and raises
@@ -162,7 +149,7 @@ fn the_receptor_raises_a_callus_only_for_one_twist_at_two_vantages() {
 /// open remainder of κ; the class docketed as a Demand and answered by class
 /// key (a discharge); at the close the ray is re-spelled in the held
 /// constructors, the spelling stood as the mind's own word, and the word
-/// re-fills by a Settled act, its remainder answered.
+/// re-fills, its remainder marked answered by that spelling in the mind.
 #[test]
 fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     let (a, _, _) = chains();
@@ -176,10 +163,9 @@ fn a_demand_answered_by_class_key_refills_an_open_remainder() {
     e.stand_calluses();
     let r = e.meet_graph().remainders;
     assert_eq!((r.refill_acts, r.refill_refused, r.calluses), (1, 0, 0), "{}", r.line());
-    let head = e.session.voice().chain().head().expect("the re-fill").clone();
-    assert_eq!((head.kind, head.mu), (crate::chronometry::ActKind::Settled, [0, 0, 0, 3]));
-    let held = e.epigenome.held_element(w.address().as_bytes()).expect("held");
-    assert!(held.remainders().all(|r| r.answered == Some(head.stamp)), "answered at the act's stamp");
+    let (r, answered) = remainder_of(&e, &w);
+    assert!(answered && r.answered.is_none(), "answered in the mind, the record left to a court's seal");
+    assert!(e.close_orbit(), "the re-fill was an act of this orbit");
 }
 
 fn cycle(r: Option<Remainder>) -> TorsionCycle {
@@ -210,8 +196,8 @@ fn a_remainder_rides_the_record_through_a_restart_and_the_index_is_rebuilt() {
     let mut epi = Epigenome::new();
     epi.admit_word(crate::transducer::element::Held::of(e.clone()), 0);
     assert_eq!(epi.remainders_at(&r.at, &r.class), vec![addr.clone()], "indexed at the residue's chart ‖ κ");
-    let admitting = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
-    let (frozen, refused) = epi.crystallize(|_| Some(admitting));
+    epi.admit_all_at(crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS));
+    let (frozen, refused) = epi.crystallize();
     assert_eq!(refused.total(), 0);
     let mut booted = Epigenome::new();
     assert!(booted.uncrystallize(&frozen).is_some(), "the genome restores");

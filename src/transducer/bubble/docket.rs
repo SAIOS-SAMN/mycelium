@@ -1,6 +1,7 @@
-// 78.37, TP1 — THE ORBIT'S DOCKET: the classes its rings held and the demands
-// its pivots left, cited on the orbit's close so a restart keeps the plan,
-// and taken by the next orbit outermost first.
+// 78.37, TP1, 78.49 — THE ORBIT'S DOCKET: the classes its rings held and the
+// demands its pivots left — the mind's plan, volatile, never written anywhere
+// — sealed into the next orbit's questions at its close and taken by that
+// orbit outermost first.
 //
 //! An entry is a citation by coordinates, never a copy (78.22): a held class
 //! (`Cite::Class`) or a demand (`Cite::Demand`), each with its COVER — the
@@ -14,10 +15,10 @@
 use super::*;
 use crate::chronometry::Cite;
 
-/// 78.37 — WHAT THE DOCKET HOLDS: this orbit's entries not yet cited, the
-/// next orbit's questions (the last close's docket, or the one a boot
-/// re-seeded), the entries of those whose enclosure is owed, and entries that
-/// could not be written (a coordinate past its wall, LD0).
+/// 78.37 — WHAT THE DOCKET HOLDS: this orbit's entries not yet sealed, the
+/// next orbit's questions (the last close's docket), the entries of those
+/// whose enclosure is owed, and entries that could not be written (a
+/// coordinate past its wall, LD0).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct DocketReading {
     pub pending: u64,
@@ -79,8 +80,8 @@ impl Contemplation {
     }
 
     /// THE WHOLE PLAN, in its entries' own key order: the open questions
-    /// carried forward and this orbit's new entries — what the close cites,
-    /// so the last Orbit act is the plan (R1).
+    /// carried forward and this orbit's new entries. The mind's reading of
+    /// its own plan; nothing writes it anywhere (78.49).
     pub fn docket_cites(&self) -> Vec<Cite> {
         let mut all: Keyed<Cite> = Keyed::new();
         for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
@@ -89,9 +90,8 @@ impl Contemplation {
         all.scoped().map(|(_, c)| c.clone()).collect()
     }
 
-    /// THE CLOSE SEALED WITH THE PLAN CITED: this orbit's entries MERGE into
-    /// the open questions, by their coordinates, and nothing leaves by
-    /// replacement (R1).
+    /// THE ORBIT CLOSED: this orbit's entries MERGE into the open questions,
+    /// by their coordinates, and nothing leaves by replacement (R1).
     pub fn docket_sealed(&mut self) {
         for (k, c) in std::mem::take(&mut self.docket).scoped() {
             self.docket_open.insert(&k, c.clone());
@@ -99,7 +99,7 @@ impl Contemplation {
         self.docket_to_take = true;
     }
 
-    /// THE CLASS TAKER, at the first stroke after a seal or a re-seed: in
+    /// THE CLASS TAKER, at the first stroke after an orbit closed: in
     /// `docket_order()`, each held class's thoughts — those standing on its
     /// cover's charts — are marked dirty with its rotor in their horizon, so
     /// the expand ring reaches them first. The horizon's own order is
@@ -158,8 +158,8 @@ impl Contemplation {
     }
 
     /// AN ORBIT DISCHARGED whose class key is `class_key`: a held word now
-    /// spells it, and every entry of that class — held or demanded, carried
-    /// in-process or re-seeded — is answered. One rule for both kinds.
+    /// spells it, and every entry of that class — held or demanded, pending
+    /// or open — is answered. One rule for both kinds.
     pub(crate) fn docket_discharged(&mut self, class_key: &[u8]) {
         let answered: Vec<Vec<u8>> = self
             .docket_open
@@ -187,8 +187,8 @@ impl Contemplation {
         }
     }
 
-    /// 78.48(9) — THE DOCKET'S FOLD, before the close cites it: an OPEN entry
-    /// — one that has stood a whole orbit, re-seeded ones among them — whose
+    /// 78.48(9) — THE DOCKET'S FOLD, at the close: an OPEN entry — one that
+    /// has stood a whole orbit — whose
     /// cover names no chart a held idea stands on has carried no flux for
     /// that orbit: nothing in the mind can answer it through a thought, a
     /// free face (TC1), and it lapses, counted. This orbit's new entries are
@@ -209,18 +209,6 @@ impl Contemplation {
             self.docket_open.remove(&k);
             self.docket_lapsed += 1;
         }
-    }
-
-    /// A RESTART KEEPS THE PLAN: the restored chain's last close's docket
-    /// re-seeds the next orbit's questions. Only its docket entries are read.
-    pub fn docket_reseed(&mut self, cites: &[Cite]) {
-        self.docket_open = Keyed::new();
-        for c in cites.iter().filter(|c| matches!(c, Cite::Class { .. } | Cite::Demand { .. })) {
-            if let Some(k) = entry_key(c) {
-                self.docket_open.insert(&k, c.clone());
-            }
-        }
-        self.docket_to_take = true;
     }
 
     /// THE ORDER THE NEXT ORBIT TAKES ITS QUESTIONS IN: outermost first by

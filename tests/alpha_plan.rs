@@ -268,8 +268,8 @@ fn dialect_is_a_word_in_the_epigenome() {
 fn genome_unchanged_by_dialect() {
     let mut epi = Epigenome::new();
     let n0 = epi.genome_len();
-    let (frozen, refused) = epi.crystallize(|_| None);
-    assert_eq!(&frozen[..4], b"GEN6");
+    let (frozen, refused) = epi.crystallize();
+    assert_eq!(&frozen[..4], b"GEN7");
     assert_eq!(refused.total(), 0, "an empty genome refuses nothing");
     let w = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 0, 0, 0]);
     epi.stand_dialect_at(w, 3, 3);

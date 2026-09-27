@@ -186,7 +186,7 @@ pub struct Contemplation {
     /// (volatile).
     pub(crate) docket_answered: u64,
     pub(crate) docket_rings: Keyed<Vec<u8>>,
-    /// The class taker: armed by a seal or a re-seed, run once at the next
+    /// The class taker: armed by an orbit's close, run once at the next
     /// stroke; and the thoughts it has marked.
     pub(crate) docket_to_take: bool,
     pub(crate) docket_taken: u64,

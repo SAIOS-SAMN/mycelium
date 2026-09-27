@@ -198,20 +198,24 @@ fn a_held_ring_is_docketed_and_the_docket_is_taken_outermost_first() {
     let inner = Cite::Demand { class: kappa(), residue: None, cover: Some(vec![vec![1]]) };
     let outer = Cite::Class { class: kappa(), rotor: Box::new(p.clone()), cover: Some(vec![vec![1], vec![2]]) };
     let owed = Cite::Demand { class: kappa(), residue: None, cover: None };
-    c.docket_reseed(&[inner.clone(), owed.clone(), outer.clone()]);
-    let order = c.docket_order();
+    let mut next = Contemplation::new();
+    for e in [&inner, &owed, &outer] {
+        next.docket_put(e.clone());
+    }
+    next.docket_sealed();
+    let order = next.docket_order();
     assert_eq!(order.len(), 3);
     let at = |x: &Cite| order.iter().position(|o| o == x).expect("taken");
     assert!(at(&outer) < at(&inner), "the wrapping entry before the one it wraps: {order:?}");
     assert!(at(&owed) < at(&inner), "an owed enclosure is outermost, never wrapped");
 }
 
-/// 78.37, R1 — A RESTORED CLASS IS A REAL ENTRY, END TO END: re-seeded with
-/// its rotor, the taker marks the thoughts standing on its cover dirty with
-/// that rotor in their horizon, and a discharge of its class key answers it
-/// by name — it leaves the open docket, counted.
+/// 78.37, R1 — A HELD CLASS IS A REAL ENTRY, END TO END: sealed into the
+/// plan with its rotor, the taker marks the thoughts standing on its cover
+/// dirty with that rotor in their horizon, and a discharge of its class key
+/// answers it by name — it leaves the open docket, counted.
 #[test]
-fn a_restored_class_is_taken_and_answered_by_its_class_key() {
+fn a_held_class_is_taken_and_answered_by_its_class_key() {
     use crate::chronometry::Cite;
     use crate::transducer::alphabet::LetterId;
     let p = letter(LetterId::pythagorean_5((0, 1)));
@@ -228,7 +232,8 @@ fn a_restored_class_is_taken_and_answered_by_its_class_key() {
         (k, b.cover.scoped().map(|(ck, _)| ck).collect())
     };
     let entry = Cite::Class { class: Box::new(kappa.clone()), rotor: Box::new(p.clone()), cover: Some(cover) };
-    c.docket_reseed(std::slice::from_ref(&entry));
+    c.docket_put(entry);
+    c.docket_sealed();
     c.dirty.remove(&thought);
     c.take_docket();
     let b = c.bubbles.get(&thought).expect("still held");

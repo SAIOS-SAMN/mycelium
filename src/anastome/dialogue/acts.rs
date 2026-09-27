@@ -335,7 +335,7 @@ pub struct SpeechAct {
     pub voice: [u8; 32],
     /// The task the sentences answer.
     pub task: Address,
-    /// The speaker's K — its own receipt-chain depth, not the hearer's.
+    /// The speaker's K — the orbits its mind acted in, not the hearer's.
     pub k: u64,
     /// The sentences, as full element tapes.
     pub sentences: Vec<Vec<u8>>,

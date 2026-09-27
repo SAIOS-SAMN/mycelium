@@ -247,7 +247,7 @@ impl Entity {
                         ),
                         Some(record) => match self.epigenome.learn(&record, &mut budget) {
                             Some(_) => {
-                                self.seal_word(crate::chronometry::ActKind::Learned, after_elem);
+                                self.act_on(after_elem);
                             }
                             None => eprintln!("  bundle rewrite: the updated section was not learned"),
                         },

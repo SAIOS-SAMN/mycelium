@@ -108,10 +108,12 @@ impl Orbits {
     }
 }
 
-/// ONE VOICE ON THE CLOCK (78.21(3)).
+/// ONE MIND ON THE CLOCK (78.21(3), 78.49): its own `K`, the court it last
+/// heard, its genome's write, its radius — no orbits against other signers,
+/// since a voice seals nothing.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct VoiceClock {
-    /// Its own `K`.
+    /// Its own `K`: the orbits the mind acted in.
     pub k: u64,
     /// Its court's height when it last heard it.
     pub heard: u64,
@@ -122,8 +124,6 @@ pub struct VoiceClock {
     /// deepest A21 prefix its genome's charts reach — the most axes any
     /// stratum's chart carries. Read with the curve, once.
     pub radius: u64,
-    /// Its orbits against the others' (OK1).
-    pub orbits: Orbits,
 }
 
 /// ACT1'S READING: a node on the clock, a court or a voice. The court's is
@@ -205,7 +205,7 @@ impl Clock {
                 u64s(out, &[v.k, v.heard]);
                 pair(out, v.persisted);
                 u64s(out, &[v.radius]);
-                v.orbits.put(out)
+                Some(())
             }
         }
     }
@@ -299,8 +299,7 @@ impl Clock {
                 let (k, heard) = (u64_at(b, p)?, u64_at(b, p)?);
                 let persisted = pair(b, p)?;
                 let radius = u64_at(b, p)?;
-                let orbits = Orbits::take(b, p)?;
-                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius, orbits }))
+                Some(Clock::Voice(VoiceClock { k, heard, persisted, radius }))
             }
             _ => None,
         }

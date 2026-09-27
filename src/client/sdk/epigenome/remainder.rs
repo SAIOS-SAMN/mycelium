@@ -17,24 +17,23 @@ pub struct Callus {
     pub words: [Address; 2],
 }
 
-/// What the voice made of the calluses raised: stood; unspelled (no held
+/// What the mind made of the calluses raised: stood; unspelled (no held
 /// constructor spells the ray — its class docketed as a demand); a chain
-/// whose top did not read; a word whose admitting stamp it did not hold; a
-/// form or an act that did not mint. And what the receptor could not read:
-/// an index key whose chain does not read (`malformed`), a word the index
-/// names whose record carries no matching remainder (`unrecorded`).
+/// whose top did not read; a form that did not mint. And what the receptor
+/// could not read: an index key whose chain does not read (`malformed`), a
+/// word the index names whose record carries no matching remainder
+/// (`unrecorded`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct CallusTally {
     pub stood: u64,
     pub unspelled: u64,
     pub untopped: u64,
-    pub uncited: u64,
     pub unminted: u64,
     pub malformed: u64,
     pub unrecorded: u64,
-    /// RM1 (c) — remainders the receptor skipped as answered; re-fills
-    /// sealed; re-fills refused because the word's record carried no open
-    /// remainder there, or its act did not seal.
+    /// RM1 (c) — remainders the receptor skipped as answered (by a court's
+    /// seal, or re-spelled by this mind); re-fills made; re-fills refused
+    /// because the word's record carried no open remainder there.
     pub answered: u64,
     pub refilled: u64,
     pub refill_refused: u64,
@@ -74,7 +73,7 @@ impl Epigenome {
     }
 
     /// The element a word this mind holds is, resident or dialect.
-    fn element_of(&self, addr: &[u8]) -> Option<&Element> {
+    pub(crate) fn element_of(&self, addr: &[u8]) -> Option<&Element> {
         match self.resident.get(addr) {
             Some(w) => Some(w.held.element()),
             None => self.dialect.get(addr).map(|d| d.sentence.element()),
@@ -90,7 +89,7 @@ impl Epigenome {
     /// (checklist (r)).
     fn receive(&mut self, addr: &Address, r: &Remainder, r_ray: &crate::transducer::alphabet::Rotor) {
         // RM1 (c): an answered remainder is evidence, not a question.
-        if r.answered.is_some() {
+        if self.answered(addr.as_bytes(), r) {
             self.calluses.answered += 1;
             return;
         }
@@ -115,7 +114,7 @@ impl Epigenome {
             let found = self.element_of(other.as_bytes()).and_then(|e| {
                 e.remainder_rays()
                     .find(|(o, _)| o.class == r.class && o.at == chain)
-                    .and_then(|(o, ray)| Some((ray?.clone(), o.answered)))
+                    .and_then(|(o, ray)| Some((ray?.clone(), self.answered(other.as_bytes(), o))))
             });
             let Some((ray, answered)) = found else {
                 // The index names a word whose record carries no remainder of
@@ -123,7 +122,7 @@ impl Epigenome {
                 self.calluses.unrecorded += 1;
                 continue;
             };
-            if answered.is_some() {
+            if answered {
                 self.calluses.answered += 1;
                 continue;
             }
@@ -164,11 +163,6 @@ impl Epigenome {
         std::mem::take(&mut self.calluses_pending)
     }
 
-    /// The word a held address is, for the voice's citation.
-    pub(crate) fn held_element(&self, addr: &[u8]) -> Option<Element> {
-        self.element_of(addr).cloned()
-    }
-
     /// A WORD LEFT, where it stands neither resident nor dialect: its
     /// remainders leave the index by the keys it filed.
     pub(crate) fn drop_remainders(&mut self, addr: &[u8]) {
@@ -179,6 +173,16 @@ impl Epigenome {
             for k in keys {
                 self.remainder_fibers.remove(&k);
             }
+        }
+        // Its re-fill marks leave with it: they stand under its address.
+        let mut word = Vec::new();
+        crate::transducer::address::put_key_bytes(&mut word, addr);
+        let marks: Vec<Vec<u8>> = match self.refilled.fiber_at(&word) {
+            Some(f) => f.map(|(k, _)| k).collect(),
+            None => Vec::new(),
+        };
+        for k in marks {
+            self.refilled.remove(&k);
         }
     }
 
@@ -211,7 +215,7 @@ impl Epigenome {
             let Some(chain) = Remainder::chain_of_key(&key) else { continue };
             let open = self.element_of(addr.as_bytes()).and_then(|e| {
                 e.remainder_rays()
-                    .find(|(o, _)| *o.class == *class && o.at == chain && o.answered.is_none())
+                    .find(|(o, _)| *o.class == *class && o.at == chain && !self.answered(addr.as_bytes(), o))
                     .and_then(|(_, ray)| ray.cloned())
             });
             if let Some(ray) = open {
@@ -221,20 +225,41 @@ impl Epigenome {
         out
     }
 
-    /// RM1 (c) — ANSWER a held word's open remainder of `class` at `at` by
-    /// the re-fill act at `stamp`, resident or dialect: the pressure it put
-    /// on the word, or `None` where its record carries no open one there.
-    pub(crate) fn answer_remainder(
+    /// A remainder's key among this mind's re-fills: the word, then the
+    /// remainder's own key.
+    fn refill_key(addr: &[u8], r: &Remainder) -> Vec<u8> {
+        let mut k = Vec::new();
+        crate::transducer::address::put_key_bytes(&mut k, addr);
+        crate::transducer::address::put_key_bytes(&mut k, &r.index_key());
+        k
+    }
+
+    /// IS A REMAINDER ANSWERED (78.49): on its record by a court's seal, or
+    /// re-spelled by this mind.
+    pub(crate) fn answered(&self, addr: &[u8], r: &Remainder) -> bool {
+        r.answered.is_some() || self.refilled.contains(&Self::refill_key(addr, r))
+    }
+
+    /// RM1 (c), 78.49 — THIS MIND RE-SPELLED a held word's open remainder of
+    /// `class` at `at` by the word `spelling`: marked, by the word that
+    /// spells it, in the mind — the record is left to a court's seal. `false`
+    /// where the word's record carries no open remainder there.
+    pub(crate) fn mark_refilled(
         &mut self,
         addr: &[u8],
         class: &crate::transducer::sentence::ClassVector,
         at: &[Vec<u8>],
-        stamp: crate::chronometry::Stamp,
-    ) -> Option<[u64; 4]> {
-        if let Some(w) = self.resident.get_mut(addr) {
-            return w.held.update(|e| e.answer_remainder(class, at, stamp));
+        spelling: &Address,
+    ) -> bool {
+        let open = self.element_of(addr).and_then(|e| {
+            e.remainder_rays().find(|(o, _)| *o.class == *class && o.at == at && !self.answered(addr, o)).map(|(o, _)| o.clone())
+        });
+        match open {
+            Some(r) => {
+                self.refilled.insert(Self::refill_key(addr, &r), spelling.clone());
+                true
+            }
+            None => false,
         }
-        let d = self.dialect.get_mut(addr)?;
-        d.sentence.update(|e| e.answer_remainder(class, at, stamp))
     }
 }

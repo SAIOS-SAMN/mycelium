@@ -467,6 +467,17 @@ pub struct Epigenome {
     pub(crate) calluses_pending: Vec<super::epigenome::remainder::Callus>,
     pub(crate) calloused: crate::network::nerve::Keyed<()>,
     pub(crate) calluses: super::epigenome::remainder::CallusTally,
+    /// 78.49 — THE COURT'S STAMP EACH WORD WAS ADMITTED AT, keyed by the
+    /// word and sharing its address's bytes: the court seals and
+    /// adjudicates, so a word is crystallized knowledge exactly where a
+    /// court admitted it, and this is its citation's coordinate. A word the
+    /// mind only stood itself has none until a court rules it.
+    pub(crate) admitted_at: crate::network::nerve::Keyed<crate::chronometry::Stamp>,
+    /// 78.49 — THE REMAINDERS THIS MIND RE-SPELLED (RM1 (c)), by the word and
+    /// the remainder's own key → the word that spells it: the mind's act,
+    /// volatile, never a stamp — a remainder is ANSWERED on the record only
+    /// by a court's seal. The receptor and the open read skip both.
+    pub(crate) refilled: crate::network::nerve::Keyed<crate::transducer::address::Address>,
 }
 
 /// THE ENTITY — a kernel identity with its genome/epigenome, conversing through
@@ -559,12 +570,19 @@ pub struct Entity {
     pub(crate) axes_spoken: usize,
     pub(crate) physics: crate::physics::Physics,
     pub(crate) height: crate::chronometry::Height,
+    /// 78.49, 78.23 — THIS MIND'S OWN K: the orbits it has closed, one per
+    /// stroke in which it acted — it stood, uttered, learned or settled —
+    /// counted at the close. The mind's clock is its own motion; the ledger
+    /// is the court's (law 8), and no receipt of the mind's exists.
+    pub(crate) k: u64,
+    /// Whether this orbit has acted yet: the close steps `k` only then.
+    pub(crate) acted: bool,
     /// ACT1 (78.21(3)) — the court's height this voice had heard, and its
     /// own `K`, when its genome was last written whole; none before.
     pub(crate) genome_persisted: Option<(u64, u64)>,
-    /// THE SEALED SET (50.9): addresses a court refused, each with the K
-    /// of this mind's own receipt of the refusal (45.1). Read before any
-    /// frame is built; a sealed tape is refused by the mind itself.
+    /// THE SEALED SET (50.9): addresses a court refused, each with the mind's
+    /// own K at which it heard the refusal (78.49). Read before any frame is
+    /// built; a sealed tape is refused by the mind itself.
     pub(crate) sealed: crate::network::nerve::Keyed<u64>,
     /// Contraction certificates by the contracted form's vertex key, cited
     /// on the next utterance of that form (50.9).

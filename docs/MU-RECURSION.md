@@ -17872,6 +17872,44 @@ read by nothing are harness (77.1).
   grows by one receipt per act; since the fold, no longer by the whole
   open plan at every close.
 
+### 78.49 A voice only speaks: the ledger is the court's, the plan is volatile, the genome is what a court admitted (ruled 2026-09-27, the operator's word)
+
+**The operator's word.** A voice should not have a chain: the ledger exists
+and is the sole responsibility of the server. The plan does not persist
+with the genome — the organization of the entity's long-running memory and
+order exists in the genome, crystallized knowledge. The voice only speaks.
+The court seals, and adjudicates.
+
+**(1) The misallocation it corrects.** Since 45.1 a voice seat carried its
+own `ReceiptChain` and sealed every act of the mind on it — Stood, Uttered,
+Learned, Settled, Refused, and an Orbit close citing the whole docket. One
+structure carried four owners' things: the MIND's clock (K as the chain's
+height), the MIND's plan (re-seeded from the last close), the COURT's
+office (receipts, sealing, folding — law 8), and the VOICE's speech. The
+voice chain is removed, and each thing goes to its owner:
+
+| was on the voice's chain | now |
+|---|---|
+| K, the chain's next step | the MIND's own K: the orbits it acted in, counted at the close (`Entity::own_k`, `act_on`, `close_orbit`), volatile |
+| every act sealed as a receipt | an act of the mind marks its orbit as having acted; nothing is sealed — the court seals what it admits |
+| a word's admitting stamp, on the voice's own line | the COURT's stamp, filed from a syllabus page (`Epigenome::admitted_at`); a word the mind only stood has none |
+| the plan cited on each close and re-seeded at boot | the plan is volatile: folded and sealed into the next orbit's questions, never written anywhere (`docket_reseed` deleted) |
+| a remainder answered at the mind's Settled stamp | the mind's refill MARKS the remainder, by the word that spells it (`Epigenome::refilled`), volatile; `Remainder::answered` is a court's seal only |
+| the genome's tail: the voice's ledger (GEN6) | GEN7: the words a court admitted, at their citations, and nothing after; GEN6 refused by name |
+| the voice clock's orbits against other signers; the carriage's receipt deltas | the court's readings only; the voice's clock is the mind's K, the court it heard, its genome's write, its radius |
+
+**(2) The genome is crystallized knowledge.** A word enters the genome file
+exactly where a court admitted it, at the court's stamp; everything else
+the mind holds — the dialect, the plan, the contemplation, its K — is the
+mind's motion and is volatile. A booted mind starts its K at zero.
+
+**(3) What reads differently.** The re-fill no longer writes a stamp into a
+word's record: the receptor and the open-remainder read count a remainder
+answered where a court sealed it OR this mind re-spelled it. The callus's
+cites (`uncited`) retired with the stamps they needed. 45.1–45.4's text
+describing the voice's ledger is superseded by this section; the court's
+chain (45.x on the hypha) is unchanged.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

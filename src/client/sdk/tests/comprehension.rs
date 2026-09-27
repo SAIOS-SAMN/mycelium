@@ -35,13 +35,15 @@ assert!(matches!(epi.comprehend(&other, &mut super::common::budget()), Comprehen
 assert_eq!(epi.genome_len(), 1, "comprehension never mutates the genome");
 // 5a: the genome crystallizes and restores EXACTLY; the epigenome does
 // not persist (expression resets — dialect is ephemeral by ruling).
-// The word stands at the act that admitted it; one with no admitting stamp
-// has no coordinates on the genome and is refused by name (78.27).
+// The word stands at the court's stamp that admitted it; one no court
+// admitted has no coordinates on the genome and is refused by name (78.27,
+// 78.49).
+let (_, unstamped) = epi.crystallize();
+assert_eq!(unstamped.unstamped, 1, "a word no court admitted is refused and counted, never written");
 let admitting = crate::chronometry::Stamp::new(1, [7; 32], crate::chronometry::Place::GENESIS);
-let (frozen, refused) = epi.crystallize(|_| Some(admitting));
+epi.admit_all_at(admitting);
+let (frozen, refused) = epi.crystallize();
 assert_eq!(refused.total(), 0, "nothing refused");
-let (_, unstamped) = epi.crystallize(|_| None);
-assert_eq!(unstamped.unstamped, 1, "a word with no admitting stamp is refused and counted, never written");
 let mut back = Epigenome::new();
 assert!(back.uncrystallize(&frozen).is_some(), "crystallized genome restores");
 assert_eq!(back.genome_len(), epi.genome_len());
@@ -61,7 +63,7 @@ assert_eq!(
     None,
     "a dialect with no word expresses nothing, and nothing has no peak"
 );
-assert!(Epigenome::new().uncrystallize(b"GEN6\xff\xff\xff\xff\xff\xff\xff\xff").is_none(), "hostile length refused");
+assert!(Epigenome::new().uncrystallize(b"GEN7\xff\xff\xff\xff\xff\xff\xff\xff").is_none(), "hostile length refused");
 assert!(Epigenome::new().uncrystallize(b"GEN3\x00\x00\x00\x00").is_none(), "an older layout refused");
 // THE POSITIONAL GENOME IS REFUSED BY NAME (78.27).
 let mut positional = frozen.clone();

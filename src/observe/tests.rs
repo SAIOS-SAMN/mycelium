@@ -84,7 +84,6 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         heard: 39,
         persisted: None,
         radius: 4,
-        orbits: Orbits { withheld: 0, distance: vec![(vk(2), [1, -2, 0, 7])] },
     });
     let all = vec![
         Reading::Planes(planes),
@@ -586,7 +585,6 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 calluses: 128,
                 unspelled: 129,
                 untopped: 130,
-                uncited: 131,
                 callus_unminted: 132,
                 receive_malformed: 133,
                 receive_unrecorded: 134,

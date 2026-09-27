@@ -317,34 +317,9 @@ impl Session {
         &self.kernel
     }
 
-    /// The voice this session speaks with.
+    /// The voice this session speaks with: an identity that speaks (78.49).
     pub fn voice(&self) -> &crate::voice::Voice {
         &self.voice
-    }
-
-    /// An act of this voice was admitted: a receipt naming what it acts on
-    /// by citations is sealed on the voice's own chain, and the new K is
-    /// the coordinate the act carries (45.1, 45.4, 78.24).
-    pub fn seal(
-        &mut self,
-        kind: crate::chronometry::ActKind,
-        mu: [u64; 4],
-        cites: Vec<crate::chronometry::Cite>,
-    ) -> u64 {
-        self.voice.seal(kind, mu, cites)
-    }
-
-    /// An act naming one word this voice holds, cited by its admitting
-    /// stamp or admitted by this act (78.24).
-    pub fn seal_word(&mut self, kind: crate::chronometry::ActKind, word: &Element) -> u64 {
-        let addr = word.address();
-        self.voice.seal_word(kind, word.magnitude(), &addr, word)
-    }
-
-    /// The voice's seat, mutably: where a taught word's admitting stamp
-    /// is filed.
-    pub fn voice_mut(&mut self) -> &mut crate::voice::Voice {
-        &mut self.voice
     }
 
     /// The measured impedance Z on THIS SESSION'S OWN WIRE: consecutive

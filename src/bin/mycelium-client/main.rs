@@ -49,8 +49,8 @@ pub(crate) struct Metabolism {
     /// four in lockstep. They were two readings of the same organ's time,
     /// and the outlier was a voice whose quotes were not landing.
     ///
-    /// A mind's own K is `Seat::k` — `chain.next_step_index()`, its own
-    /// admitted acts — and it is what `shed_at` ages the dialect by. Both
+    /// A mind's own K is `Entity::own_k` — the orbits it acted in (78.49) —
+    /// and it is what `shed_at` ages the dialect by. Both
     /// are now on the line, under their own names, so a per-voice rate has
     /// a denominator that belongs to the voice.
     pub(crate) book_k: u64,

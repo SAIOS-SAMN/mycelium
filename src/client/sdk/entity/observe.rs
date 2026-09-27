@@ -43,10 +43,10 @@ impl Entity {
             self.meet_graph(),
             self.probes.clone(),
         );
-        // ACT1 — THIS VOICE ON THE CLOCK: its `K`, its court's height as last
-        // heard, where its genome was last written (78.21(3)), its radius
-        // and its orbits against the others' (78.23 as amended, OK1).
-        let voice_seat = self.session.voice();
+        // ACT1 — THIS MIND ON THE CLOCK: its own `K`, its court's height as
+        // last heard, where its genome was last written (78.21(3)), and its
+        // radius. The orbits against other signers' are the court's reading:
+        // only the court seals (78.49).
         observe::publish(
             me,
             Reading::Clock(observe::Clock::Voice(observe::VoiceClock {
@@ -54,7 +54,6 @@ impl Entity {
                 heard: self.now_tu(),
                 persisted: self.genome_persisted,
                 radius: learning.radius,
-                orbits: observe::Orbits { withheld: voice_seat.withheld(), distance: voice_seat.chain().separation() },
             })),
         );
         observe::publish(me, Reading::Learning(learning));
@@ -78,10 +77,10 @@ impl Entity {
         if let Some(p) = crate::transducer::family::take_progress() {
             observe::publish(me, Reading::Progress(p));
         }
-        // LD1 — THE BYTES THIS VOICE'S RECEIPT DELTAS AND FRAMES CARRY,
-        // measured whole at its own `K`.
+        // LD1 — THE BYTES THIS VOICE'S FRAMES CARRY, measured whole at its
+        // own `K`. A voice carries no receipt: the court's deltas are the
+        // court's reading (78.49).
         let mut carriage = observe::Carriage::default();
-        carriage.of_chain(self.session.voice.chain());
         carriage.of_frames();
         observe::publish(me, Reading::Carriage(carriage));
         let totals: Vec<Reading> = observe::readings(&me.prefix()).into_iter().map(|(_, r)| r).collect();

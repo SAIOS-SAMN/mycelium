@@ -139,16 +139,15 @@ assert!(epi.working_word(&addr).is_none());
 fn standing_a_form_steps_the_minds_own_k() {
 let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
 let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clock"));
-assert_eq!(entity.session.voice().k(), 0, "a mind that has acted seats at zero");
+assert_eq!(entity.own_k(), 0, "a mind that has not acted seats at zero");
 
 // Standing is the act, and it is complete before anything is uttered. It
-// is one node of the open orbit; the stroke's close moves K (OK1).
+// acts in the open orbit; the stroke's close moves K (OK1, 78.49).
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
 assert_eq!(entity.dialect_len(), 1, "the form stands in the dialect");
-assert_eq!(entity.session.voice().chain().own_len(), 1, "standing it is one act");
-assert_eq!(entity.session.voice().k(), 0, "K stands while the orbit is open");
-entity.close_orbit();
-assert_eq!(entity.session.voice().k(), 1, "the stroke's close stepped the clock once");
+assert_eq!(entity.own_k(), 0, "K stands while the orbit is open");
+assert!(entity.close_orbit(), "standing it was an act, so the orbit closes");
+assert_eq!(entity.own_k(), 1, "the stroke's close stepped the clock once");
 assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about it");
 
 // Standing the same form again is a second act of this mind: it is
@@ -158,7 +157,7 @@ assert_eq!(codes, vec![0xff], "and it is fresh, so an utterance would ask about 
 entity.file_taught(&e1);
 let codes = entity.stand(std::slice::from_ref(&e1), 0);
 entity.close_orbit();
-assert_eq!(entity.session.voice().k(), 2, "a second act in a second stroke, a second step");
+assert_eq!(entity.own_k(), 2, "a second act in a second stroke, a second step");
 assert_eq!(
     codes,
     vec![crate::anastome::dialogue::SPEECH_STOOD],
@@ -167,34 +166,34 @@ assert_eq!(
 }
 
 /// THE MIND HOLDS TWO CLOCKS AND THEY ARE NOT ONE. `absorb_taught` states
-/// it in a line: "k is the voice's K (law 9), tu is TUniversal; they are not
-/// one clock." `Seat::k` is `chain.next_step_index()` — this voice's own
-/// receipt index, advancing only when THIS voice seals a receipt. TUniversal
-/// is the height of the receipt ledger, read off a reply and only advancing
-/// (23.8).
+/// it in a line: "k is the mind's K (law 9), tu is TUniversal; they are not
+/// one clock." The mind's K counts the orbits it acted in (78.49).
+/// TUniversal is the height of the court's receipt ledger, read off a reply
+/// and only advancing (23.8).
 ///
 /// Each carrier says which it wants, and two said one thing and were fed the
 /// other. `Contemplation.now_k` reads "TUniversal the entity last stamped"
 /// and `Bubble.moved_k` reads "TUniversal when this bubble's charts last
-/// moved"; both were stamped from `session.voice().k()`. Everything
+/// moved"; both were stamped from the mind's own K. Everything
 /// downstream is a span between two of those stamps —
 /// `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`, `span_of` is
 /// lane 𝒯 of a minted word, `retire_on_t` is the T-room — so all three
-/// measured a span of the wrong clock. A span in a voice's own K is not
+/// measured a span of the wrong clock. A span in a mind's own K is not
 /// comparable across voices; TUniversal is the shared coordinate.
 ///
 /// `shed` is the deliberate opposite and stays: 45.4 rules that a mind sheds
-/// by its own receipt index and NEVER by the mesh's height, because heights
+/// by its own K and NEVER by the mesh's height, because heights
 /// advance only on admitted receipts, so a fleet refusing work could not
 /// reclaim what it held.
 #[test]
 fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own_k() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("clocks"));
-    // Two clocks, driven apart: a receipt this voice sealed, and a height
+    // Two clocks, driven apart: an orbit this mind acted in, and a height
     // read off the mesh.
     let e1 = two_body_sentence([&[(1, 2), (1, 2)], &[(3, 4), (3, 4)]]);
     let _ = entity.stand(std::slice::from_ref(&e1), 0);
-    let k = entity.session.voice().k();
+    entity.close_orbit();
+    let k = entity.own_k();
     entity.advance_height(500);
     assert_ne!(k, entity.now_tu(), "the fixture separates them: {k} against 500");
     assert_eq!(entity.now_tu(), 500, "TUniversal is the height read off the mesh");
@@ -210,7 +209,7 @@ fn the_contemplation_is_stamped_with_tuniversal_and_the_shed_with_the_voices_own
     assert_ne!(
         entity.contemplation.now_k(),
         k,
-        "and it is not the voice's receipt index"
+        "and it is not the mind's own K"
     );
 }
 

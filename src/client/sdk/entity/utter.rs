@@ -215,7 +215,7 @@ impl Entity {
                 body: h.body,
             });
         }
-        let k = self.session.voice().k();
+        let k = self.own_k();
         for c in &cites {
             if c.standing == Standing::Stood.as_u8() {
                 self.epigenome.touch(&c.addr, k);
@@ -237,11 +237,11 @@ impl Entity {
             };
             deepened += 1;
             // THE PUNCTURED WORD IS ADMITTED BY AN ACT ON THIS VOICE'S LINE
-            // (78.27, LD3-c): a new address no act admitted, learned from a
-            // proof the hypha verified, so this voice's Learned act on it
-            // admits it and its stamp is the word's locator.
+            // (78.49): a new address learned from a proof the hypha
+            // verified — an act of this mind; the court admits it when it
+            // rules it, and its stamp is then the word's locator.
             if let Some(word) = self.epigenome.word_at(at.as_bytes()).map(|h| h.element().clone()) {
-                self.seal_word(crate::chronometry::ActKind::Learned, &word);
+                self.act_on(&word);
             }
         }
         deepened
@@ -270,7 +270,7 @@ impl Entity {
         }
         let familiar = !self
             .epigenome
-            .express(&residual, self.session.voice().k(), self.now_tu(), &mut budget);
+            .express(&residual, self.own_k(), self.now_tu(), &mut budget);
         Concluded { cites, residual, familiar }
     }
 
@@ -298,11 +298,10 @@ impl Entity {
         let mut codes = vec![dialogue::SPEECH_STOOD; sentences.len()];
         for (i, e) in sentences.iter().enumerate() {
             let taught = self.already_taught(e);
-            // 45.1, 45.4: STANDING A FORM IS AN ADMITTED ACT of this mind,
-            // so a receipt naming the form is sealed on the mind's own chain
-            // and the form stands at the K it took. The stamp is the act's
-            // own K, not a number the hypha last replied with.
-            let k = self.seal_word(crate::chronometry::ActKind::Stood, e);
+            // 78.49: STANDING A FORM IS AN ACT of this mind, and the form
+            // stands at the mind's own K — never a number the hypha last
+            // replied with. The court seals what it admits.
+            let k = self.act_on(e);
             self.epigenome.stand_dialect_at(e.clone(), k, tu);
             if !taught {
                 codes[i] = 0xff; // asked about on the wire below
@@ -393,11 +392,10 @@ impl Entity {
         };
         let got: Vec<u8> = adjudicated.iter().map(|a| a.code()).collect();
         for i in read_speech_reply(&mut codes, &got) {
-            // The utterance was admitted: the second act, and the second
-            // receipt on this mind's chain (45.1, 45.4). A refused utterance
-            // is not an act and seals nothing.
+            // The utterance was admitted by the court: an act of this mind
+            // (78.49). A refused utterance is not an admitted one.
             let e = sentences[i].clone();
-            self.seal_word(crate::chronometry::ActKind::Uttered, &e);
+            self.act_on(&e);
             self.file_taught(&e);
             self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)
@@ -454,7 +452,7 @@ impl Entity {
             return true;
         }
         if let Some(a) = self.epigenome.same_vertex_in_dialect(word) {
-            self.epigenome.touch(&a, self.session.voice().k());
+            self.epigenome.touch(&a, self.own_k());
             return true;
         }
         false
@@ -462,7 +460,7 @@ impl Entity {
 
     /// Stand the vertex in the dialect and mark it taught, without the wire.
     pub fn remember_spoken(&mut self, word: &Element) {
-        let k = self.session.voice().k();
+        let k = self.own_k();
         self.epigenome.stand_dialect_at(word.clone(), k, self.now_tu());
         self.file_taught(word);
     }

@@ -33,11 +33,9 @@ impl Entity {
         use crate::transducer::family::{form_deflation, mint_sentence};
         use crate::transducer::sentence::{form_vertex_key, rule_of_form};
         let addr = spoken.address();
-        // 45.1: the refusal is an admitted act of this mind, sealed on its
-        // own chain; the address is sealed in the utterance index.
-        // μ⃗ is the REFUSED SENTENCE'S OWN measure: what the mind staked and
-        // did not get through. It is the sentence in hand, not a number.
-        let k = self.seal_word(crate::chronometry::ActKind::Refused, spoken);
+        // 78.49: the refusal is an act of this mind at its own K; the address
+        // is sealed in the utterance index. The court sealed the refusal.
+        let k = self.act_on(spoken);
         self.sealed.insert(&addr, k);
         // 24.2: the dialect is what this mind spoke THAT STOOD. The refused
         // sentence stood there before it was uttered and did not stand at

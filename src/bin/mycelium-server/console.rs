@@ -253,11 +253,10 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             Some(observe::Clock::Voice(v)) => {
                 heights.push(v.heard);
                 format!(
-                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}{}",
+                    "  {name}  {BOLD}h {}{RESET} {DIM}(its court, last heard){RESET}  K {}  radius {}",
                     v.heard,
                     v.k,
-                    v.radius,
-                    orbits(&v.orbits)
+                    v.radius
                 )
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),

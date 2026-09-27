@@ -201,7 +201,7 @@ impl Entity {
         mag: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) {
-        let k = self.session.voice().k();
+        let k = self.own_k();
         let tu = self.now_tu();
         // The element is taken from the form BEFORE it is handed over, so
         // the withhold pays no copy of the form either (Z4 item 1).
@@ -382,12 +382,10 @@ impl Entity {
         // THE CONTEMPLATION'S CLOCK IS TUNIVERSAL, WHICH IS WHAT IT SAYS IT
         // IS. `Contemplation.now_k` reads "TUniversal the entity last
         // stamped" and `Bubble.moved_k` reads "TUniversal when this bubble's
-        // charts last moved"; this stamped both with
-        // `session.voice().k()` — `Seat::k` is `chain.next_step_index()`,
-        // this voice's own receipt index, which advances only when THIS
-        // voice seals a receipt. `absorb_taught` states the rule in one
-        // line: "k is the voice's K (law 9), tu is TUniversal; they are not
-        // one clock."
+        // charts last moved"; this stamped both with the mind's own K,
+        // which counts the orbits this mind acted in and moves on nothing
+        // else (78.49). `absorb_taught` states the rule in one line: "k is
+        // the mind's K (law 9), tu is TUniversal; they are not one clock."
         //
         // Everything downstream of `now_k` is a span in TUniversal:
         // `held_since(now_k, moved_k)` is `pivot_orbit`'s `t_extent`,
@@ -558,7 +556,7 @@ impl Entity {
     }
 
     pub fn shed(&mut self) -> usize {
-        self.shed_at(self.session.voice().k())
+        self.shed_at(self.own_k())
     }
 
     #[expect(
@@ -635,7 +633,7 @@ impl Entity {
     /// Fiber of the working atlas; a Stood hit is a use at the mind's own K.
     pub fn working_fiber(&mut self, c: &crate::transducer::stalk::Invariant) -> Vec<(Vec<u8>, Standing)> {
         let f = self.working_atlas().fiber(c);
-        let k = self.session.voice().k();
+        let k = self.own_k();
         for (a, st) in &f {
             if *st == Standing::Stood {
                 self.epigenome.touch(a, k);
@@ -701,7 +699,6 @@ impl Entity {
         m.remainders.calluses = c.stood;
         m.remainders.unspelled = c.unspelled;
         m.remainders.untopped = c.untopped;
-        m.remainders.uncited = c.uncited;
         m.remainders.callus_unminted = c.unminted;
         (m.remainders.receive_malformed, m.remainders.receive_unrecorded) = (c.malformed, c.unrecorded);
         // RM1 (c) — the re-fills.

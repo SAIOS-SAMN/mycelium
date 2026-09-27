@@ -51,6 +51,8 @@ impl Entity {
             axes_spoken: 0,
             physics: crate::physics::Physics::default(),
             height: crate::chronometry::Height::default(),
+            k: 0,
+            acted: false,
             genome_persisted: None,
             sealed: crate::network::nerve::Keyed::new(),
             contractions: crate::network::nerve::Keyed::new(),
@@ -80,9 +82,9 @@ impl Entity {
         self.height.get()
     }
 
-    /// THIS MIND'S OWN K (45.4) — `Seat::k`, the next index on its own
-    /// receipt chain, which counts the acts this voice had admitted and
-    /// nothing else.
+    /// THIS MIND'S OWN K (78.49, 78.23): the orbits it has closed, one per
+    /// stroke in which it acted. The mind's clock is its own motion — no
+    /// receipt of the mind's exists; the ledger is the court's (law 8).
     ///
     /// It is the clock the dialect ages by (`shed_at`) and the only
     /// denominator a per-voice rate may use. [`Self::now_tu`] beside it is
@@ -91,40 +93,38 @@ impl Entity {
     /// interchangeable with another, and the stroke line prints this one
     /// and the height under their own names.
     pub fn own_k(&self) -> u64 {
-        self.session.voice().k()
+        self.k
     }
 
-    /// AN ACT NAMING ONE WORD, sealed on the voice's line (78.24); and FX1 —
-    /// where the word was spoken out of the meet graph, the frame the act's
-    /// receipt carries is credited to the filaments its circuits traversed,
-    /// and the dialect words they ran through are noted at the new `K`. A
-    /// seal that wrote no receipt credits nothing.
-    pub(crate) fn seal_word(&mut self, kind: crate::chronometry::ActKind, word: &crate::transducer::element::Element) -> u64 {
-        let before = self.session.voice().chain().head_stamp();
-        let k = self.session.seal_word(kind, word);
-        let sealed =
-            self.session.voice().chain().head().filter(|r| Some(r.stamp) != before && r.kind == kind).map(|r| r.mu);
-        if let Some(mu) = sealed {
-            let words = self.contemplation.credit_flux(word.address().as_bytes(), mu);
-            self.epigenome.note_traversed(&words, k);
-        }
+    /// AN ACT OF THIS MIND NAMING ONE WORD — stood, uttered, learned or
+    /// refused (78.49): it marks the orbit as having acted, and FX1 — where
+    /// the word was spoken out of the meet graph, the act's measure (the
+    /// word's magnitude, what the act carried) is credited to the filaments
+    /// its circuits traversed, and the dialect words they ran through are
+    /// noted at this K. Nothing is sealed: the court seals what it admits.
+    pub(crate) fn act_on(&mut self, word: &crate::transducer::element::Element) -> u64 {
+        self.acted = true;
+        let k = self.own_k();
+        let words = self.contemplation.credit_flux(word.address().as_bytes(), word.magnitude());
+        self.epigenome.note_traversed(&words, k);
         k
     }
 
-    /// OK1 — THIS MIND'S STROKE CLOSES ITS ORBIT BY NAME (see
-    /// [`crate::voice::Voice::orbit`]): called once, where the stroke's
-    /// arms have run.
-    pub fn close_orbit(&mut self) -> crate::chronometry::Close {
+    /// OK1, 78.49 — THIS MIND'S STROKE CLOSES ITS ORBIT: called once, where
+    /// the stroke's arms have run. An orbit that acted steps the mind's K by
+    /// one; one that acted on nothing leaves K where it was. `true` where
+    /// the orbit closed.
+    pub fn close_orbit(&mut self) -> bool {
         // RM1 — the calluses the receptor raised stand first, so a class no
         // held word spells goes up in THIS orbit's plan.
         self.stand_calluses();
-        // 78.37 — the orbit's docket rides its close; sealed, it becomes the
-        // next orbit's questions. A withheld close keeps it for the next.
-        // 78.48(9) — folded first: an open question no held idea can carry
-        // lapses, so the plan is bounded by what the mind holds.
+        // 78.48(9) — the plan folded: an open question no held idea can
+        // carry lapses, so the plan is bounded by what the mind holds. The
+        // plan is volatile (78.49): nothing of it is written anywhere.
         self.contemplation.docket_fold();
-        let close = self.session.voice_mut().orbit(self.contemplation.docket_cites());
-        if matches!(close, crate::chronometry::Close::Sealed(_)) {
+        let closed = std::mem::take(&mut self.acted);
+        if closed {
+            self.k += 1;
             self.contemplation.docket_sealed();
             // FX1 — the orbit's flux read at its close, and the dialect's
             // words traversed beside it (alternative B).
@@ -132,22 +132,20 @@ impl Entity {
             self.contemplation.note_dialect_flux(d);
             self.contemplation.flux_close();
         }
-        // 78.37(1) — THE FRONTS STEP ON THE VOICE'S K, one edge per k-step:
-        // stamped once the close has sealed, and stepped at that K (a close
-        // that sealed nothing leaves K where it was, and the step does nothing).
+        // 78.37(1) — THE FRONTS STEP ON THE MIND'S K, one edge per k-step
+        // (a close that acted on nothing leaves K where it was, and the step
+        // does nothing).
         let k = self.own_k();
         self.contemplation.set_k(k);
         self.contemplation.transport(k);
-        close
+        closed
     }
 
     /// Open with CONTINUITY: restore the crystallized genome from `genome_path`
-    /// if present (GEN6) — its words at their citations, and this voice's
-    /// own ledger behind them, so its K continues across a boot rather than
-    /// restarting at zero. The epigenome starts empty: it is volatile, in
-    /// memory and never persisted (78.27). An older file, one whose ledger
-    /// does not verify, or one with a word admitted on this voice's line at
-    /// a stamp its ledger does not hold, is refused whole.
+    /// if present — the words a court admitted, at their citations. The
+    /// epigenome, the plan and the mind's K start empty: they are volatile,
+    /// the mind's motion, never persisted (78.27, 78.49). An older file, or
+    /// one that does not read whole, is refused whole.
     pub fn open_persistent(addr: &str, kernel: Kernel, genome_path: &str) -> Self {
         let mut e = Entity::open(addr, kernel);
         let Ok(bytes) = std::fs::read(genome_path) else {
@@ -160,75 +158,41 @@ impl Entity {
         }
         let n = e.epigenome.genome_len();
         let kb = bytes.len() / 1024;
-        eprintln!("genome {n} words (GEN6, {kb} KB), K {}, epigenome empty", e.own_k());
+        eprintln!("genome {n} words (GEN7, {kb} KB), epigenome empty");
         e
     }
 
-    /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words at
-    /// their citations, then this voice's ledger. Whole or not at all: the
-    /// words are read into an epigenome of their own and taken in only once
-    /// the ledger has restored, so a refusal leaves this mind as it was.
-    /// `Err` names why the file was refused.
+    /// RESTORE A GENOME'S BYTES into this freshly opened mind: the words a
+    /// court admitted, each at its citation. Whole or not at all: the words
+    /// are read into an epigenome of their own and taken in only once they
+    /// read whole, so a refusal leaves this mind as it was. `Err` names why
+    /// the file was refused.
     pub fn restore_genome(&mut self, bytes: &[u8]) -> Result<(), String> {
         if let Some(named) = crate::client::sdk::epigenome::genome_refused(bytes) {
             return Err(named.to_string());
         }
         let mut epigenome = Epigenome::new();
-        let read = epigenome
+        epigenome
             .uncrystallize(bytes)
-            .ok_or_else(|| "the file is not a whole GEN6 tape".to_string())?;
-        let mut pos = read.end;
-        let chain = crate::chronometry::ReceiptChain::take_tries(bytes, &mut pos)
-            .filter(|_| pos == bytes.len())
-            .ok_or_else(|| "this voice's ledger does not read whole".to_string())?;
-        // THE GENOME'S admitted_at FROM ITS OWN LEDGER (78.27): a word
-        // admitted on this voice's line stands at a node of the ledger just
-        // read; a stamp on a peer's line — the court's syllabus stamp — is a
-        // citation and stands as one.
-        let orphaned = read.admitted.iter().filter(|(_, at)| at.vk == chain.vk() && chain.node(at).is_none()).count();
-        if orphaned > 0 {
-            return Err(format!("{orphaned} words admitted at stamps on this voice's line its ledger does not hold"));
-        }
-        if !self.session.voice_mut().restore(chain, read.admitted) {
-            return Err("this voice's ledger does not verify under its key".to_string());
-        }
+            .filter(|end| *end == bytes.len())
+            .ok_or_else(|| "the file is not a whole GEN7 tape".to_string())?;
         self.epigenome = epigenome;
-        // 78.37 — A RESTART KEEPS THE PLAN: the last close's docket re-seeds
-        // the next orbit's questions, and the fronts step on the K restored.
-        let last_close = self
-            .session
-            .voice()
-            .chain()
-            .own()
-            .filter(|r| r.kind == crate::chronometry::ActKind::Orbit)
-            .last()
-            .map(|r| r.cites.clone());
-        if let Some(cites) = last_close {
-            self.contemplation.docket_reseed(&cites);
-        }
-        let k = self.own_k();
-        self.contemplation.set_k(k);
         Ok(())
     }
 
-    /// THE GENOME'S BYTES: the words at their citations, then this voice's
-    /// ledger as its tries. A word the writer refused is named once with its
-    /// count (LD0), and the counts are answered; `None` where a node of the
-    /// ledger cannot be written, and nothing is written then.
-    pub fn genome_bytes(&self) -> Option<(Vec<u8>, crate::client::sdk::epigenome::GenomeRefused)> {
-        let voice = self.session.voice();
-        let (mut bytes, refused) = self.epigenome.crystallize(|a| voice.admitted_at(a));
+    /// THE GENOME'S BYTES: the words a court admitted, at their citations. A
+    /// word the writer refused is named once with its count (LD0), and the
+    /// counts are answered.
+    pub fn genome_bytes(&self) -> (Vec<u8>, crate::client::sdk::epigenome::GenomeRefused) {
+        let (bytes, refused) = self.epigenome.crystallize();
         refused.name();
-        voice.chain().put_tries(&mut bytes)?;
-        Some((bytes, refused))
+        (bytes, refused)
     }
 
     /// Persist the genome atomically (write-then-rename). Call from the
     /// syntropic phase when the genome has grown.
     pub fn save_genome(&mut self, genome_path: &str) -> io::Result<crate::client::sdk::epigenome::GenomeRefused> {
-        let Some((bytes, refused)) = self.genome_bytes() else {
-            return Err(io::Error::new(io::ErrorKind::InvalidData, "genome refused: a node of this voice's ledger cannot be written"));
-        };
+        let (bytes, refused) = self.genome_bytes();
         // ACT1: where this voice stood when the genome was taken, noted only
         // once the write lands (78.21(3)).
         let at = (self.now_tu(), self.own_k());

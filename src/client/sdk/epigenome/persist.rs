@@ -1,15 +1,20 @@
-// 28, 78.27 — THE GENOME ON DISK: the voice's words in T1's shape, keyed by
-// their citations, and a tape that does not read whole refused rather than
-// partly restored.
+// 28, 78.27, 78.49 — THE GENOME ON DISK: the words a court admitted, in T1's
+// shape, keyed by their citations — crystallized knowledge and nothing else —
+// and a tape that does not read whole refused rather than partly restored.
 
 use crate::client::sdk::*;
 use crate::snapshot::{leaf, put_trie, take_trie, Leaves};
 use crate::transducer::element::Element;
 
-/// THE GENOME FILE'S MAGIC (78.27, LD3-c): the voice's words as a trie keyed
-/// by `Cite::Word{chart, class, at}`, then the voice's ledger as its tries —
-/// the signer and its nodes by stamp.
-pub const GENOME_MAGIC: &[u8; 4] = b"GEN6";
+/// THE GENOME FILE'S MAGIC (78.27, LD3-c, 78.49): the words a court admitted
+/// as a trie keyed by `Cite::Word{chart, class, at}`, `at` the court's
+/// admitting stamp — and nothing after them: a voice holds no ledger.
+pub const GENOME_MAGIC: &[u8; 4] = b"GEN7";
+
+/// THE GENOME THAT CARRIED A VOICE'S LEDGER (GEN6), refused BY NAME and never
+/// migrated: its tail was the voice's own receipt chain, and a voice holds
+/// none (78.49) — the court seals.
+pub const LEDGER_GENOME_MAGIC: &[u8; 4] = b"GEN6";
 
 /// THE POSITIONAL GENOME, refused BY NAME and never migrated: its words
 /// stood in a counted list with a `0` tag for a word held with no admitting
@@ -33,13 +38,16 @@ const LEAF_HELD: u8 = 1;
 pub fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
     match bytes.get(..4) {
         Some(m) if m == GENOME_MAGIC => None,
+        Some(m) if m == LEDGER_GENOME_MAGIC => {
+            Some("GEN6, the genome that carried a voice's ledger (78.49): refused by name, the recut is the road")
+        }
         Some(m) if m == PRE_TRIE_GENOME_MAGIC => {
             Some("GEN5, the positional genome (78.27): refused by name, the recut is the road")
         }
         Some(m) if m == PRE_ORBIT_GENOME_MAGIC => {
             Some("GEN4, the genome before the orbit coordinates (ACT1-orbit): refused by name, the recut is the road")
         }
-        _ => Some("not a GEN6 tape"),
+        _ => Some("not a GEN7 tape"),
     }
 }
 
@@ -47,8 +55,9 @@ pub fn genome_refused(bytes: &[u8]) -> Option<&'static str> {
 /// named once by its reason and counted, never written with a `0` tag.
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub struct GenomeRefused {
-    /// Words held with no admitting stamp: no act admitted them, so they
-    /// have no coordinates to be filed at.
+    /// Words held with no court's admitting stamp: no court admitted them,
+    /// so they are not crystallized knowledge and have no coordinates to be
+    /// filed at.
     pub unstamped: u64,
     /// Words whose citation cannot be written (a class key at its wall).
     pub unciteable: u64,
@@ -66,7 +75,7 @@ impl GenomeRefused {
     /// Named once, with each count, where any is not zero.
     pub fn name(&self) {
         for (what, n) in [
-            ("words held with no admitting stamp", self.unstamped),
+            ("words no court admitted", self.unstamped),
             ("words whose citation cannot be written", self.unciteable),
             ("words coinciding at one citation", self.coincident),
             ("words whose record passes a length its field writes", self.unwritable),
@@ -78,30 +87,43 @@ impl GenomeRefused {
     }
 }
 
-/// What a restored genome hands back beside its words: each word's
-/// admitting stamp (78.24 (2b)), read off its own key, and where the words
-/// end on the tape.
-pub struct Uncrystallized {
-    pub admitted: Vec<(crate::transducer::address::Address, crate::chronometry::Stamp)>,
-    pub end: usize,
-}
-
 impl Epigenome {
+    /// FILE A WORD'S ADMITTING STAMP (78.24 (2b), 78.49): the court's stamp
+    /// for a word it admitted — a syllabus page's. A word admitted once keeps
+    /// its stamp.
+    pub fn file_admitted(&mut self, addr: &crate::transducer::address::Address, at: crate::chronometry::Stamp) {
+        if !self.admitted_at.contains(addr) {
+            self.admitted_at.insert_shared(addr.shared(), at);
+        }
+    }
+
+    /// The court's stamp a word this mind holds was admitted at.
+    pub fn admitted_at(&self, addr: &[u8]) -> Option<crate::chronometry::Stamp> {
+        self.admitted_at.get(addr).copied()
+    }
+
+    /// FOR TESTS: every resident word filed at one court stamp, as a
+    /// syllabus page carrying them would file them.
+    #[cfg(test)]
+    pub(crate) fn admit_all_at(&mut self, at: crate::chronometry::Stamp) {
+        let words: Vec<Vec<u8>> = self.resident.scoped().map(|(k, _)| k).collect();
+        for w in words {
+            self.file_admitted(&crate::transducer::address::Address::from(w), at);
+        }
+    }
+
     /// CRYSTALLIZE the genome for persistence — the permanent language only;
     /// the epigenome is memory-only (78.27). The magic, then the words trie:
     /// each word at its citation `Cite::word(element, admitted)`, its one
-    /// leaf the element. A word with no admitting stamp has no coordinates
-    /// and is refused by name and counted, never written.
-    pub fn crystallize(
-        &self,
-        admitted: impl Fn(&[u8]) -> Option<crate::chronometry::Stamp>,
-    ) -> (Vec<u8>, GenomeRefused) {
+    /// leaf the element. A word no court admitted has no coordinates and is
+    /// refused by name and counted, never written.
+    pub fn crystallize(&self) -> (Vec<u8>, GenomeRefused) {
         let mut out = GENOME_MAGIC.to_vec();
         let mut refused = GenomeRefused::default();
         let mut nodes: crate::network::nerve::Keyed<Leaves> = crate::network::nerve::Keyed::new();
         crate::snapshot::persist(&self.resident, |_, g| {
             let elem = g.held.element();
-            let Some(at) = admitted(g.held.address().as_bytes()) else {
+            let Some(at) = self.admitted_at(g.held.address().as_bytes()) else {
                 refused.unstamped += 1;
                 return;
             };
@@ -127,8 +149,9 @@ impl Epigenome {
     /// Restore GEN6 only, whole or refused: an older file (named by
     /// [`genome_refused`]), a word that does not parse, or a word filed at a
     /// citation that is not its own refuses the tape (rule 11), and nothing
-    /// is restored. Each word's admitting stamp is read off its key.
-    pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<Uncrystallized> {
+    /// is restored. Each word's admitting stamp is read off its key and
+    /// filed; where the words end on the tape is answered.
+    pub fn uncrystallize(&mut self, bytes: &[u8]) -> Option<usize> {
         if genome_refused(bytes).is_some() {
             return None;
         }
@@ -162,10 +185,12 @@ impl Epigenome {
             // taken in — not on the first read of its form (L16).
             genome.push(crate::transducer::element::Held::of(e));
         }
-        // AN EMPTY WORDS TRIE IS A GENOME WITH NO WORDS, not a refusal: the
-        // voice's ledger behind it restores regardless, so a voice that has
-        // admitted no word keeps its K across a boot (R1).
+        // AN EMPTY WORDS TRIE IS A GENOME WITH NO WORDS, not a refusal.
         self.genome = crate::network::nerve::Keyed::new();
+        self.admitted_at = crate::network::nerve::Keyed::new();
+        for (addr, at) in admitted {
+            self.file_admitted(&addr, at);
+        }
         self.resident = crate::network::nerve::Keyed::new();
         self.unpivoted = crate::network::nerve::Keyed::new();
         self.atlas = crate::transducer::stalk::Stalks::default();
@@ -194,7 +219,7 @@ impl Epigenome {
             self.admit_word(w, 0);
         }
         self.atlas_len = self.genome.len();
-        Some(Uncrystallized { admitted, end: pos })
+        Some(pos)
     }
 
 }

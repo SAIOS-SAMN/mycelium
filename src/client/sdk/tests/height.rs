@@ -29,49 +29,56 @@ fn the_height_a_mind_reads_only_advances_and_stamps_what_it_stands() {
     );
 }
 
-/// R1 (LD3-c) — A VOICE WITH A LEDGER AND NO WORDS KEEPS ITS K ACROSS A
-/// BOOT. An empty words trie is a genome with no words, not a refusal, so
-/// the ledger behind it restores and K continues from where it stood.
+/// 78.49 — THE MIND'S K IS ITS OWN MOTION: one step per orbit in which it
+/// acted, counted at the close; an orbit that acted on nothing leaves it
+/// where it stood. It is volatile — the genome holds crystallized knowledge,
+/// not a clock — so a mind booted from a genome starts at zero.
 #[test]
-fn a_voice_with_a_ledger_and_no_words_boots_with_its_k_continued() {
+fn the_minds_k_counts_the_orbits_it_acted_in_and_is_not_persisted() {
+    let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("no-words"));
-    e.session.seal(crate::chronometry::ActKind::Uttered, [0, 1, 0, 0], Vec::new());
-    assert!(matches!(e.close_orbit(), crate::chronometry::Close::Sealed(_)), "the orbit closes by name");
-    e.session.seal(crate::chronometry::ActKind::Uttered, [0, 1, 0, 0], Vec::new());
-    assert!(matches!(e.close_orbit(), crate::chronometry::Close::Sealed(_)), "and the next");
-    assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 2), "a ledger of two orbits and no word");
-    let (bytes, refused) = e.genome_bytes().expect("the ledger writes");
+    e.act_on(&word);
+    assert!(e.close_orbit(), "an orbit that acted closes");
+    assert!(!e.close_orbit(), "one that acted on nothing does not");
+    e.act_on(&word);
+    assert!(e.close_orbit(), "and the next that acted");
+    assert_eq!((e.epigenome.genome_len(), e.own_k()), (0, 2), "two orbits acted in, no word admitted");
+    let (bytes, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "no word, nothing refused");
     let mut booted = Entity::open("127.0.0.1:1", Kernel::named("no-words"));
     assert_eq!(booted.restore_genome(&bytes), Ok(()), "a genome with no words restores");
-    assert_eq!(booted.own_k(), 2, "and the voice's K continues from where it stood");
+    assert_eq!(booted.own_k(), 0, "and the booted mind's K is its own, from zero");
 }
 
-/// THE STAMPS A GENOME'S WORDS STAND AT ARE ITS OWN LEDGER'S (78.27): a
-/// word the voice learned is admitted by its own Learned node, restores at
-/// that node's stamp, and a word filed on this voice's line at a stamp its
-/// ledger does not hold refuses the file.
+/// 78.49 — THE GENOME IS WHAT A COURT ADMITTED. A word a syllabus page
+/// taught with the court's stamp is crystallized at that stamp and restores
+/// at it; a word learned with no court's stamp is held in the mind and
+/// refused by the writer by name — it is not crystallized knowledge until a
+/// court rules it. A genome that carried a voice's ledger is refused by name.
 #[test]
-fn a_learned_word_restores_at_its_own_ledgers_stamp() {
+fn a_word_is_crystallized_at_the_courts_stamp_and_only_there() {
     let word = from_canonical(&germinate(&[(0, 0, 1u8), (0, 1, 1)], &[(0, 0, 2u8), (0, 1, 2)]).unwrap());
+    let court = crate::chronometry::Stamp::new(7, [3; 32], crate::chronometry::Place { k: 2, i: 1 });
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
-    assert!(e.absorb_taught(&word.to_bytes().expect("the record writes")).is_some(), "the word is learned");
-    let at = e.session.voice().admitted_at(word.address().as_bytes()).expect("admitted by the Learned node");
-    assert!(e.session.voice().chain().node(&at).is_some(), "at a node of this voice's own ledger");
-    let (bytes, refused) = e.genome_bytes().expect("the ledger writes");
+    let mut budget = e.stroke();
+    let bytes = word.to_bytes().expect("the record writes");
+    assert!(e.absorb_taught_at(&bytes, Some(court), &mut budget).is_some(), "the word is learned");
+    assert_eq!(e.epigenome.admitted_at(word.address().as_bytes()), Some(court), "filed at the court's stamp");
+    let (genome, refused) = e.genome_bytes();
     assert_eq!(refused.total(), 0, "nothing refused");
     let mut booted = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
-    assert_eq!(booted.restore_genome(&bytes), Ok(()), "the genome restores");
+    assert_eq!(booted.restore_genome(&genome), Ok(()), "the genome restores");
     assert_eq!(booted.epigenome.genome_len(), 1, "with its word");
-    assert_eq!(booted.session.voice().admitted_at(word.address().as_bytes()), Some(at), "at the stamp it was admitted at");
+    assert_eq!(booted.epigenome.admitted_at(word.address().as_bytes()), Some(court), "at the court's stamp");
 
-    // The same word filed at a stamp of this voice's line that its ledger
-    // does not hold: the file is refused.
-    let vk = e.session.voice().identity();
-    let (words, _) = e.epigenome.crystallize(|_| Some(crate::chronometry::Stamp::new(99, vk, crate::chronometry::Place { k: 9, i: 0 })));
-    let mut forged = words;
-    e.session.voice().chain().put_tries(&mut forged).expect("the ledger writes");
+    let mut unruled = Entity::open("127.0.0.1:1", Kernel::named("unruled"));
+    assert!(unruled.absorb_taught(&bytes).is_some(), "a word with no court's stamp is learned");
+    let (_, refused) = unruled.genome_bytes();
+    assert_eq!(refused.unstamped, 1, "and not crystallized: no court admitted it");
+
+    let mut ledgered = genome.clone();
+    ledgered[..4].copy_from_slice(b"GEN6");
     let mut refused_boot = Entity::open("127.0.0.1:1", Kernel::named("learned-word"));
-    assert!(refused_boot.restore_genome(&forged).is_err_and(|why| why.contains("does not hold")), "a stamp its ledger does not hold refuses the file");
-    assert_eq!((refused_boot.epigenome.genome_len(), refused_boot.own_k()), (0, 0), "and nothing is partly restored");
+    assert!(refused_boot.restore_genome(&ledgered).is_err_and(|why| why.contains("voice's ledger")), "GEN6 refused by name");
+    assert_eq!(refused_boot.epigenome.genome_len(), 0, "and nothing is partly restored");
 }

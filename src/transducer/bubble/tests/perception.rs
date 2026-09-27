@@ -152,9 +152,9 @@ fn a_blow_up_is_a_luminal_thought_and_its_class_is_demanded() {
 
 /// THE DOCKET'S FOLD (78.48(9)). The blow-up's demand stands on its chart.
 /// Pending in its own orbit it is not folded; sealed, it is kept while the
-/// perceptions stand on its chart. Re-seeded into a mind that holds nothing
-/// on that chart — a restart whose orbit met nothing there — it has carried
-/// no flux for a whole orbit, and the fold lapses it, counted.
+/// perceptions stand on its chart. Open in a mind that holds nothing on that
+/// chart, it has carried no flux for a whole orbit, and the fold lapses it,
+/// counted.
 #[test]
 fn a_question_nothing_can_carry_lapses_at_the_fold() {
     let mut c = Contemplation::new();
@@ -170,7 +170,10 @@ fn a_question_nothing_can_carry_lapses_at_the_fold() {
     c.docket_fold();
     assert_eq!((c.docket_reading().open, c.docket_reading().lapsed), (1, 0), "ideas stand on its chart: kept");
     let mut fresh = Contemplation::new();
-    fresh.docket_reseed(&c.docket_cites());
+    for cite in c.docket_cites() {
+        fresh.docket_put(cite);
+    }
+    fresh.docket_sealed();
     fresh.docket_fold();
     assert_eq!((fresh.docket_reading().open, fresh.docket_reading().lapsed), (0, 1), "nothing stands there: it lapses");
     assert!(fresh.docket_cites().is_empty(), "and the close cites nothing for it");
