@@ -139,9 +139,9 @@ pub struct MeetGraph {
     pub remainders: crate::transducer::cech::RemainderReading,
     /// STD1 — lane sums the contemplation refused past their carrier.
     pub overflowed: u64,
-    /// N4, RX1–RX7 — the thoughts between perceptions and the rings they
-    /// close, order by order.
-    pub sight: super::sight::SightTally,
+    /// N4, RX1–RX7 — the perceptions' bodies heard against each other: the
+    /// filaments, foraging tips and rings, and the hyphae's shape.
+    pub resonance: super::resonance::ResonanceTally,
 }
 
 impl MeetGraph {
@@ -232,7 +232,7 @@ impl MeetGraph {
             "{core} | {flux} | {} | overflowed {} | {}",
             self.remainders.line(),
             self.overflowed,
-            self.sight.line()
+            self.resonance.line()
         );
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
@@ -332,7 +332,7 @@ impl Contemplation {
             flux: self.flux_tally,
             remainders: self.remainder_reading(),
             overflowed: self.overflowed,
-            sight: self.sight,
+            resonance: self.resonance_reading(),
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

@@ -180,14 +180,14 @@ pub struct Bubble {
     /// N4 (0.7's layers, ruled 2026-09-26) — HELD AT THE PERCEPTION LAYER: a
     /// form the mind perceived. A perception is not a thought: it never
     /// passes the unglued door, and it leaves by the physics — its paid
-    /// height passed, or what it cites lapsed. A THOUGHT is formed where a
-    /// transition relates two held perceptions (an edge of the meet graph),
+    /// height passed, or what it cites lapsed. A THOUGHT is formed where the
+    /// bodies of two held perceptions resonate (a filament of the hyphae),
     /// and the transition is its glue.
     pub percept: bool,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
-    /// and output frames (`sight::Sight`): what a thought between two
-    /// perceptions is the transition of. Empty for every other idea.
-    pub sight: super::sight::Sight,
+    /// and output frames (`resonance::Spores`): the bodies heard against
+    /// another perception's. Empty for every other idea.
+    pub spores: super::resonance::Spores,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the

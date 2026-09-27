@@ -46,7 +46,7 @@ impl Contemplation {
         // wanted; `hold_form_inner` derives its own from the form it owns,
         // and neither is stored beside the other (law 12).
         let key = trace::tracing().then(|| idea_key(&f));
-        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::sight::Sight::default());
+        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::Spores::default());
         let retained = match (before, live_bytes()) {
             (Some(a), Some(b)) => {
                 HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
@@ -69,9 +69,9 @@ impl Contemplation {
     }
 
     /// N4 — A PERCEPTION HELD WITH ITS BODIES: the form, and the frames it was
-    /// perceived from, by chart (`sight::sight_of`) — and then the thoughts it
-    /// forms with every held perception it meets, each a reciprocal
-    /// transition (`link_perceived`), on the act's own stroke.
+    /// perceived from, by chart (`resonance::spores_of`) — and then the
+    /// filaments its bodies grow with every held perception it meets
+    /// (`link_perceived`), on the act's own stroke.
     pub fn hold_perceived(
         &mut self,
         f: Form,
@@ -81,7 +81,7 @@ impl Contemplation {
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
-        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::sight::sight_of(frames))?;
+        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames))?;
         self.link_perceived(key.as_bytes(), budget);
         Some(key)
     }
@@ -93,7 +93,7 @@ impl Contemplation {
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
-        sight: super::sight::Sight,
+        spores: super::resonance::Spores,
     ) -> Option<crate::transducer::address::Address> {
         mark("idea_key");
         let form_key = idea_key(&f);
@@ -101,11 +101,11 @@ impl Contemplation {
         // form's key, then the bodies' coordinates. A hold with no bodies of a
         // form this mind holds as perceptions is those perceptions renewed —
         // read as the stratum the form's key prefixes — never a second idea.
-        let seen = sight.iter().any(|s| !s.is_empty());
+        let seen = spores.iter().any(|s| !s.is_empty());
         let key = match seen {
             true => {
                 let mut k = form_key.as_bytes().to_vec();
-                crate::transducer::address::put_key_bytes(&mut k, &super::sight::sight_key(&sight));
+                crate::transducer::address::put_key_bytes(&mut k, &super::resonance::spores_key(&spores));
                 crate::transducer::address::Address::from(k)
             }
             false => {
@@ -256,7 +256,7 @@ impl Contemplation {
             dirty: true,
             // A perceived form is held at the perception layer (N4).
             percept: true,
-            sight,
+            spores,
             moved_k: self.now_k,
             // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
             // thought measures. They were the same number written in two
@@ -316,8 +316,8 @@ impl Contemplation {
             bubble.glued_by = prior.glued_by.clone();
             // The bodies it was perceived as stand with it where this hold
             // carries none (a re-hold of the same form).
-            if bubble.sight.iter().all(|s| s.is_empty()) {
-                bubble.sight = prior.sight.clone();
+            if bubble.spores.iter().all(|s| s.is_empty()) {
+                bubble.spores = prior.spores.clone();
             }
             // The horizon is a union: this stroke's painting of the form's
             // standing classes, over the classes expansion has already met.
