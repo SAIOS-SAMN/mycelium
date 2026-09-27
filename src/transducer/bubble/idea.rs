@@ -420,10 +420,11 @@ pub(crate) fn monodromy(v: &Rotor, gammas: &[Rotor]) -> Option<Rotor> {
 impl Bubble {
     /// Read off what the bubble holds on every call, never stored beside
     /// it (rule 6, law 12): the remainder carries A5's proof in its type,
-    /// so the address never refuses.
+    /// so the address never refuses. A perception's is its form's and its
+    /// spores' (`resonance::perceived_key`): the address it is filed at.
     pub fn key(&self) -> crate::transducer::address::Address {
         match &self.form {
-            Some(f) => idea_key(f),
+            Some(f) => super::resonance::perceived_key(idea_key(f), &self.spores),
             None => remainder_addr(&self.remainder),
         }
     }

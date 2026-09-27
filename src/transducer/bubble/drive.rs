@@ -115,10 +115,7 @@ impl Contemplation {
             // inception stamp and everything the bubble has built, so the
             // form that speaks can still be found by the deliberation that
             // produced it (`Contemplation::rekey`).
-            let moved_to = self
-                .bubbles
-                .get(&k)
-                .and_then(|b| b.form.as_ref().map(super::idea::idea_key));
+            let moved_to = self.bubbles.get(&k).and_then(|b| b.form.is_some().then(|| b.key()));
             if let Some(nk) = moved_to {
                 self.rekey(&k, nk.as_bytes());
             }

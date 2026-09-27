@@ -63,6 +63,17 @@ fn three_perceptions_of_one_shape_close_a_coherent_ring() {
     assert_eq!((r.spores, r.held, r.components, r.cycle_rank, r.core), (3, 3, 1, 1, 3), "one ring of three filaments");
     assert_eq!(r.coherent, [0, 0, 1], "the ring coherent through order four");
     assert_eq!(r.split, [0, 0, 0]);
+    // Each perception stands where its own key says, so the drive's rekey
+    // leaves it there; and a perception refiled elsewhere takes its
+    // filaments with it.
+    for k in [&a, &b, &d] {
+        assert_eq!(c.bubbles.get(k).expect("held").key().as_bytes(), k.as_slice(), "filed at its own key");
+    }
+    let moved = [a.as_slice(), b"'"].concat();
+    c.rekey(&a, &moved);
+    assert_eq!(c.filaments_between(&moved, &b).len(), 1, "the filament follows the perception");
+    let r = c.resonance_reading();
+    assert_eq!((r.spores, r.held, r.cycle_rank), (3, 3, 1), "the ring still stands");
 }
 
 /// RX6 AT THE EDGE — an L and its 2× blow-up: the filament between them

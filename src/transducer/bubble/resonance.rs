@@ -88,6 +88,19 @@ pub fn spores_key(spores: &Spores) -> Vec<u8> {
     k
 }
 
+/// WHERE A HELD FORM IS FILED: a perception at its form's key and its spores
+/// written out; any other idea at its form's key alone. The one derivation —
+/// the hold, the drive's rekey and every reader of `Bubble::key` go through
+/// it, so a perception is never refiled under its bare form.
+pub(crate) fn perceived_key(form_key: crate::transducer::address::Address, spores: &Spores) -> crate::transducer::address::Address {
+    if spores.iter().all(|s| s.is_empty()) {
+        return form_key;
+    }
+    let mut k = form_key.as_bytes().to_vec();
+    put_key_bytes(&mut k, &spores_key(spores));
+    crate::transducer::address::Address::from(k)
+}
+
 /// A SPORE'S ADDRESS in the hyphae: its perception's ordinal, the chart it
 /// stands on, its coordinates — each delimited, so a spore's address is a
 /// prefix of every filament it grows.
@@ -565,6 +578,37 @@ impl Contemplation {
                 self.hyphae.remove(&[far.as_slice(), near].concat());
             }
             self.hyphae.remove(&k);
+        }
+    }
+
+    /// A PERCEPTION'S FILAMENTS LIFTED OFF IT as it is refiled: each as its
+    /// near spore past the ordinal, its far spore, and both directions.
+    pub(crate) fn lift_hyphae(&mut self, key: &[u8]) -> Vec<(Vec<u8>, Vec<u8>, Transition, Transition)> {
+        let Some(ord) = self.ordinals.get(key).copied() else { return Vec::new() };
+        let out: Vec<Vec<u8>> = match self.hyphae.fiber_at(&ord.to_le_bytes()) {
+            Some(fiber) => fiber.map(|(k, _)| k).collect(),
+            None => return Vec::new(),
+        };
+        let mut lifted = Vec::new();
+        for k in out {
+            let Some((_, far)) = Self::far_end(&k) else { continue };
+            let near = &k[..k.len() - far.len()];
+            let back = self.hyphae.remove(&[far.as_slice(), near].concat());
+            if let (Some(there), Some(back)) = (self.hyphae.remove(&k), back) {
+                lifted.push((near[2..].to_vec(), far, there, back));
+            }
+        }
+        lifted
+    }
+
+    /// The lifted filaments refiled at the perception's ordinal where it
+    /// now stands, both ways.
+    pub(crate) fn refile_hyphae(&mut self, key: &[u8], lifted: Vec<(Vec<u8>, Vec<u8>, Transition, Transition)>) {
+        let Some(ord) = self.ordinals.get(key).copied() else { return };
+        for (rest, far, there, back) in lifted {
+            let near = [&ord.to_le_bytes()[..], &rest].concat();
+            self.hyphae.insert([near.as_slice(), far.as_slice()].concat(), there);
+            self.hyphae.insert([far.as_slice(), near.as_slice()].concat(), back);
         }
     }
 

@@ -103,11 +103,7 @@ impl Contemplation {
         // read as the stratum the form's key prefixes — never a second idea.
         let seen = spores.iter().any(|s| !s.is_empty());
         let key = match seen {
-            true => {
-                let mut k = form_key.as_bytes().to_vec();
-                crate::transducer::address::put_key_bytes(&mut k, &super::resonance::spores_key(&spores));
-                crate::transducer::address::Address::from(k)
-            }
+            true => super::resonance::perceived_key(form_key, &spores),
             false => {
                 let perceptions: Vec<Vec<u8>> = match self.bubbles.fiber_at(form_key.as_bytes()) {
                     Some(fiber) => fiber.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),
@@ -328,11 +324,14 @@ impl Contemplation {
             }
         }
         mark("prior merge");
+        // A re-held perception keeps its filaments: its bodies are the same.
+        let lifted = self.lift_hyphae(key.as_bytes());
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
         mark("retract_incidence");
         self.admit_incidence(&key.shared(), &bubble);
+        self.refile_hyphae(key.as_bytes(), lifted);
         mark("admit_incidence");
         self.bubbles.insert(&key, bubble);
         mark("bubbles.insert");

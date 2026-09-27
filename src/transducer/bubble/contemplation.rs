@@ -300,13 +300,27 @@ impl Contemplation {
     /// `None` where the clock went backwards — a K below the mark is a broken
     /// counter, and a span read off one is a measurement this contemplation
     /// cannot make, never a zero (rule 11).
+    ///
+    /// The form is held at its key and as every perception of it, the
+    /// stratum its key prefixes (`resonance::perceived_key`): its
+    /// deliberation began when the first of them began, as where two
+    /// lineages converge (`rekey`).
     pub fn span_of(&self, form: &crate::transducer::sentence::Form) -> Option<Deliberation> {
         let key = super::idea::idea_key(form);
-        match self.bubbles.get(key.as_bytes()) {
+        let mut since: Option<u64> = None;
+        if let Some(fiber) = self.bubbles.fiber_at(key.as_bytes()) {
+            for (_, b) in fiber {
+                since = Some(match since {
+                    Some(s) if s <= b.moved_k => s,
+                    _ => b.moved_k,
+                });
+            }
+        }
+        match since {
             // Held nowhere: minted in the stroke it was extracted in, so it
             // stood over no receipts. That is a reading of zero.
             None => Some(Deliberation::Fresh),
-            Some(b) => super::idea::held_since(self.now_k, b.moved_k).map(Deliberation::Held),
+            Some(k) => super::idea::held_since(self.now_k, k).map(Deliberation::Held),
         }
     }
 
@@ -651,6 +665,8 @@ impl Contemplation {
         let Some(moving) = self.bubbles.remove(from) else {
             return;
         };
+        // Its bodies did not move: its filaments go where it goes.
+        let lifted = self.lift_hyphae(from);
         self.retract_incidence(from, &moving);
         let was_dirty = self.dirty.remove(from).is_some();
         match self.bubbles.get_mut(to) {
@@ -663,6 +679,7 @@ impl Contemplation {
                 self.bubbles.insert_shared(shared, moving);
             }
         }
+        self.refile_hyphae(to, lifted);
         if was_dirty {
             self.dirty.insert(to, ());
         }
