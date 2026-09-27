@@ -113,6 +113,11 @@ pub struct Contemplation {
     /// naming another bubble — which is the one way an ordinal could lie.
     pub(crate) addresses: Vec<Option<std::sync::Arc<[u8]>>>,
     pub complex: Complex,
+    /// N4 — THE THOUGHTS BETWEEN PERCEPTIONS, each direction filed by the two
+    /// ideas' ordinals: the transition read from each side (RX1).
+    pub(crate) transitions: Keyed<crate::transducer::blade::Transition>,
+    /// N4, RX1–RX7 — the sight reading, cumulative at its producer.
+    pub sight: super::sight::SightTally,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
     /// The ring's resume cursor: `None` is a circuit that has not started,
@@ -857,6 +862,14 @@ impl Contemplation {
         if let Some(b) = self.bubbles.get(&key) {
             rems.insert(&key, b.remainder.placed());
         }
+        // Two perceptions that both hold their bodies are related by the
+        // transition between them (`link_perceived`, on the act's stroke),
+        // never by their words' rotors here.
+        let seen = |k: &[u8]| self.bubbles.get(k).is_some_and(|b| !b.sight[0].is_empty());
+        let nbs: Vec<Vec<u8>> = match seen(&key) {
+            true => nbs.into_iter().filter(|n| !seen(n)).collect(),
+            false => nbs,
+        };
         for n in &nbs {
             if let Some(b) = self.bubbles.get(n) {
                 rems.insert(n, b.remainder.placed());
@@ -943,6 +956,7 @@ impl Contemplation {
             dirty: true,
             // A remainder held alone is no perception (N4).
             percept: false,
+            sight: super::sight::Sight::default(),
             moved_k: self.now_k,
             escrow: volume,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),

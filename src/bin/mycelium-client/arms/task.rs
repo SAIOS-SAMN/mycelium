@@ -69,7 +69,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         },
     );
     if let Some(rule) = extracted.as_ref() {
-        if let Some(mag) = speak_form(entity, tag, rule, &train, &tid, &mut extract_budget) {
+        if let Some(mag) = speak_form(entity, tag, rule, &train, &frames, &tid, &mut extract_budget) {
             StrokeOutcome::add(&mut outcome.uttered, &mag);
         }
         let outs: Option<Vec<mycelium::arc::Grid>> = tests

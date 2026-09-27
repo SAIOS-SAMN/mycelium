@@ -331,6 +331,7 @@ impl Contemplation {
             dirty: false,
             // A merge is a thought, formed of what it merged (N4).
             percept: false,
+            sight: super::sight::Sight::default(),
             moved_k: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),

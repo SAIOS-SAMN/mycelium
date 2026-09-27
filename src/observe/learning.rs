@@ -394,6 +394,8 @@ impl Learning {
         g.remainders.put(out)?;
         // STD1 — the sums the contemplation refused.
         out.extend_from_slice(&g.overflowed.to_le_bytes());
+        // N4, RX — the thoughts between perceptions and their rings.
+        g.sight.put(out);
         // PR1 — the voice's probes.
         self.probes.put(out)?;
         // 78.47 — its reasons by kind.
@@ -549,6 +551,7 @@ impl Learning {
         }
         let remainders = crate::transducer::cech::RemainderReading::take(b, p)?;
         let overflowed = u64_at(b, p)?;
+        let sight = crate::transducer::bubble::SightTally::take(b, p)?;
         let meet = crate::transducer::bubble::MeetGraph {
             vertices,
             thoughts,
@@ -568,6 +571,7 @@ impl Learning {
             flux,
             remainders,
             overflowed,
+            sight,
         };
         let probes = ProbeTally::take(b, p)?;
         let reasons = Reasons::take(b, p)?;

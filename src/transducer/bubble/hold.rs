@@ -46,7 +46,7 @@ impl Contemplation {
         // wanted; `hold_form_inner` derives its own from the form it owns,
         // and neither is stored beside the other (law 12).
         let key = trace::tracing().then(|| idea_key(&f));
-        self.hold_form_inner(f, train, remainders, escrow, budget);
+        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::sight::Sight::default());
         let retained = match (before, live_bytes()) {
             (Some(a), Some(b)) => {
                 HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
@@ -68,6 +68,24 @@ impl Contemplation {
         }
     }
 
+    /// N4 — A PERCEPTION HELD WITH ITS BODIES: the form, and the frames it was
+    /// perceived from, by chart (`sight::sight_of`) — and then the thoughts it
+    /// forms with every held perception it meets, each a reciprocal
+    /// transition (`link_perceived`), on the act's own stroke.
+    pub fn hold_perceived(
+        &mut self,
+        f: Form,
+        frames: &crate::transducer::family::Frames,
+        train: &crate::transducer::family::Family,
+        remainders: &[Vec<Link>],
+        escrow: [u64; 4],
+        budget: &mut crate::physics::Budget,
+    ) -> Option<crate::transducer::address::Address> {
+        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::sight::sight_of(frames))?;
+        self.link_perceived(key.as_bytes(), budget);
+        Some(key)
+    }
+
     fn hold_form_inner(
         &mut self,
         f: Form,
@@ -75,9 +93,38 @@ impl Contemplation {
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
-    ) {
+        sight: super::sight::Sight,
+    ) -> Option<crate::transducer::address::Address> {
         mark("idea_key");
-        let key = idea_key(&f);
+        let form_key = idea_key(&f);
+        // A PERCEPTION IS KEYED BY ITS FORM AND ITS BODIES (N4, A21): the
+        // form's key, then the bodies' coordinates. A hold with no bodies of a
+        // form this mind holds as perceptions is those perceptions renewed —
+        // read as the stratum the form's key prefixes — never a second idea.
+        let seen = sight.iter().any(|s| !s.is_empty());
+        let key = match seen {
+            true => {
+                let mut k = form_key.as_bytes().to_vec();
+                crate::transducer::address::put_key_bytes(&mut k, &super::sight::sight_key(&sight));
+                crate::transducer::address::Address::from(k)
+            }
+            false => {
+                let perceptions: Vec<Vec<u8>> = match self.bubbles.fiber_at(form_key.as_bytes()) {
+                    Some(fiber) => fiber.map(|(k, _)| k).filter(|k| k.len() > form_key.len()).collect(),
+                    None => Vec::new(),
+                };
+                if !perceptions.is_empty() {
+                    for k in perceptions {
+                        self.dirty.insert(&k, ());
+                        if let Some(b) = self.bubbles.get_mut(&k) {
+                            b.dirty = true;
+                        }
+                    }
+                    return None;
+                }
+                form_key
+            }
+        };
         let mut rem_keyed: Keyed<Vec<Link>> = Keyed::new();
         let mut volume = [0u64; 4];
         let mut cover = Keyed::new();
@@ -209,6 +256,7 @@ impl Contemplation {
             dirty: true,
             // A perceived form is held at the perception layer (N4).
             percept: true,
+            sight,
             moved_k: self.now_k,
             // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
             // thought measures. They were the same number written in two
@@ -266,6 +314,11 @@ impl Contemplation {
             bubble.nerve = prior.nerve.clone();
             bubble.cover = prior.cover.clone();
             bubble.glued_by = prior.glued_by.clone();
+            // The bodies it was perceived as stand with it where this hold
+            // carries none (a re-hold of the same form).
+            if bubble.sight.iter().all(|s| s.is_empty()) {
+                bubble.sight = prior.sight.clone();
+            }
             // The horizon is a union: this stroke's painting of the form's
             // standing classes, over the classes expansion has already met.
             for (hk, hv) in prior.horizon.scoped() {
@@ -287,5 +340,6 @@ impl Contemplation {
         // A held form is a new candidate (78.26(6)).
         self.link_new(&key, super::meet::Adjunct::Candidate);
         mark("link_new");
+        Some(key)
     }
 }

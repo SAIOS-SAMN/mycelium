@@ -43,6 +43,7 @@ pub(crate) fn speak_form(
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
     train: &mycelium::transducer::family::Family,
+    frames: &mycelium::transducer::family::Frames,
     family: &[u8],
     budget: &mut mycelium::physics::Budget,
 ) -> Option<[u64; 4]> {
@@ -94,13 +95,13 @@ pub(crate) fn speak_form(
         trace::trace("speak/form", trace::Wrote::Demand, None);
         // The remainders are measured above and ride with it: that arm holds
         // what it does not speak, and it holds it against these.
-        return speak_with_demands(entity, tag, rule, train, family, &remainders, budget);
+        return speak_with_demands(entity, tag, rule, (train, frames), family, &remainders, budget);
     }
     let n_rem: usize = remainders.iter().map(|r| r.len()).sum();
     if remainders.iter().any(|r| !r.is_empty()) {
         let n_pairs = remainders.iter().filter(|r| !r.is_empty()).count();
         trace::trace("speak/remainder", trace::Wrote::Nothing, None);
-        entity.withhold_form(form.clone(), train, &remainders, mag, budget);
+        entity.withhold_perceived(form.clone(), frames, train, &remainders, mag, budget);
         eprintln!(
             "[{tag}] form withheld: family {fam} remainder {n_rem} links over {n_pairs} pairs"
         );
@@ -108,7 +109,7 @@ pub(crate) fn speak_form(
     }
     let Some(word) = as_element_form(form, mag) else {
         trace::trace("speak/mint", trace::Wrote::Nothing, None);
-        entity.hold_form(form.clone(), train, &remainders, budget);
+        entity.hold_perceived(form.clone(), frames, train, &remainders, budget);
         eprintln!("[{tag}] form withheld: family {fam} {}", why_open());
         return None;
     };
@@ -188,12 +189,13 @@ pub(crate) fn speak_form(
 /// The asymmetry predates D5 and D6 — they raised the traffic through it
 /// from 43/min to 134.5/min, they did not create it. `remainders` rides in
 /// from `speak_form`, which has already measured them, rather than being
-/// re-derived here (law 12).
+/// re-derived here (law 12). The scene is the family as perceived: its pairs
+/// and the frames read from them once.
 fn speak_with_demands(
     entity: &mut Entity,
     tag: &str,
     rule: &mycelium::transducer::sentence::SentenceRule,
-    train: &mycelium::transducer::family::Family,
+    (train, frames): (&mycelium::transducer::family::Family, &mycelium::transducer::family::Frames),
     family: &[u8],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     budget: &mut mycelium::physics::Budget,
@@ -215,7 +217,7 @@ fn speak_with_demands(
     else {
         // The mint refused it, so it is not a word — it is not stood in the
         // dialect, and it is held as the open work it is.
-        entity.hold_form(form.clone(), train, remainders, budget);
+        entity.hold_perceived(form.clone(), frames, train, remainders, budget);
         eprintln!("[{tag}] form withheld: family {fam} mint refused (trajectory, carry or demands)");
         return None;
     };
@@ -238,7 +240,7 @@ fn speak_with_demands(
                 // The court refused it. The work it names is still open, so
                 // it is held: the refusal names a coordinate (50.9) and the
                 // pivot orbit is what acts on it.
-                entity.hold_form(form.clone(), train, remainders, budget);
+                entity.hold_perceived(form.clone(), frames, train, remainders, budget);
                 eprintln!("[{tag}] sentence withheld: family {fam} refused on the wire");
                 None
             }
@@ -276,7 +278,7 @@ fn speak_with_demands(
         Err(e) => {
             // The wire failed, which says nothing about the form: it is held
             // exactly as it would be had it never been offered.
-            entity.hold_form(form.clone(), train, remainders, budget);
+            entity.hold_perceived(form.clone(), frames, train, remainders, budget);
             eprintln!("[{tag}] sentence withheld: family {fam} {e}");
             None
         }
@@ -358,7 +360,7 @@ pub(crate) fn withhold_unextracted(
         };
         let pair = vec![(a.clone(), b.clone())];
         let (mag, rem) = mycelium::transducer::family::form_deflation(&f, &pair, &entity.epigenome);
-        entity.withhold_form(f.clone(), &pair, &rem, mag, &mut budget);
+        entity.withhold_perceived(f.clone(), &frames, &pair, &rem, mag, &mut budget);
     }
     eprintln!("[{tag}] form withheld: family {fam} extract refused");
 }

@@ -601,6 +601,22 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
             },
             // STD1 — the sums the contemplation refused.
             overflowed: 158,
+            // N4, RX — the thoughts between perceptions, every count distinct.
+            sight: crate::transducer::bubble::SightTally {
+                related: 200,
+                unshared: 201,
+                several: 202,
+                uncarried: 203,
+                not_reciprocal: [204, 205, 206],
+                disagree: 207,
+                unbounded: 208,
+                edge_split: 209,
+                demanded: 210,
+                undemanded: 211,
+                coherent: [212, 213, 214],
+                split: [215, 216, 217],
+                rings_unread: 218,
+            },
         }),
         // PR1 — the voice's probes, a residual class counted twice.
         probes: crate::observe::ProbeTally {

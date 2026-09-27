@@ -38,7 +38,36 @@ impl Entity {
         let Some(f) = scene_form_on(&self.epigenome, &mut budget, &scene.0, &scene.1, &frames) else {
             return;
         };
-        self.hold_form(f, &[], &[], &mut budget);
+        // A perception, held with the bodies it was perceived as (N4).
+        self.hold_perceived(f, &frames, &[], &[], &mut budget);
+    }
+
+    /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
+    /// thoughts it forms with the perceptions it meets are the transitions
+    /// between their bodies. The draw is `hold_form`'s, one reading of it.
+    pub fn hold_perceived(
+        &mut self,
+        f: crate::transducer::sentence::Form,
+        frames: &crate::transducer::family::Frames,
+        train: &crate::transducer::family::Family,
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+        budget: &mut crate::physics::Budget,
+    ) -> bool {
+        let Some(draw) = self.draw_for(&f) else { return false };
+        self.contemplation.hold_perceived(f, frames, train, remainders, draw, budget);
+        true
+    }
+
+    /// Door 3's draw for a thought: its four-lane measure out of the reserve,
+    /// lane by lane, or `None` where a lane cannot fund it (rule 11).
+    fn draw_for(&mut self, f: &crate::transducer::sentence::Form) -> Option<[u64; 4]> {
+        let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
+        let mut next = self.physics.reserve;
+        for (r, d) in next.iter_mut().zip(&draw) {
+            *r = r.checked_sub(*d)?;
+        }
+        self.physics.reserve = next;
+        Some(draw)
     }
 
     /// Hold a withheld form as an idea so the pivot orbit sees it next
@@ -69,15 +98,7 @@ impl Entity {
         // has no room for it, and the subtraction refuses rather than
         // flooring at zero — which is the same reading as door 3's, taken
         // once, where the payment happens.
-        let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
-        let mut next = self.physics.reserve;
-        for (r, d) in next.iter_mut().zip(&draw) {
-            match r.checked_sub(*d) {
-                Some(v) => *r = v,
-                None => return false,
-            }
-        }
-        self.physics.reserve = next;
+        let Some(draw) = self.draw_for(&f) else { return false };
         // 65.5: the caller's stroke — a hold is part of the act that holds.
         self.contemplation.hold_form(f, train, remainders, draw, budget);
         true
@@ -154,6 +175,32 @@ impl Entity {
         mag: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) {
+        self.withhold_with(f, None, train, remainders, mag, budget);
+    }
+
+    /// [`Self::withhold_form`] for a perception: held with the frames it was
+    /// perceived from, so its thoughts are transitions between bodies (N4).
+    pub fn withhold_perceived(
+        &mut self,
+        f: crate::transducer::sentence::Form,
+        frames: &crate::transducer::family::Frames,
+        train: &crate::transducer::family::Family,
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+        mag: [u64; 4],
+        budget: &mut crate::physics::Budget,
+    ) {
+        self.withhold_with(f, Some(frames), train, remainders, mag, budget);
+    }
+
+    fn withhold_with(
+        &mut self,
+        f: crate::transducer::sentence::Form,
+        frames: Option<&crate::transducer::family::Frames>,
+        train: &crate::transducer::family::Family,
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+        mag: [u64; 4],
+        budget: &mut crate::physics::Budget,
+    ) {
         let k = self.session.voice().k();
         let tu = self.now_tu();
         // The element is taken from the form BEFORE it is handed over, so
@@ -166,8 +213,11 @@ impl Entity {
             self.epigenome.stand_dialect_withheld(word, k, tu);
         }
         // No room on a lane withholds the thought; the demand stands on the
-        // docket either way.
-        let _ = self.hold_form(f, train, remainders, budget);
+        // docket either way. A perception is held with its bodies.
+        let _ = match frames {
+            Some(frames) => self.hold_perceived(f, frames, train, remainders, budget),
+            None => self.hold_form(f, train, remainders, budget),
+        };
     }
 
     /// Hold a withheld sentence as a bubble: form, remainder, cover. A word

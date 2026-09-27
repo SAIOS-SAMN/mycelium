@@ -139,6 +139,9 @@ pub struct MeetGraph {
     pub remainders: crate::transducer::cech::RemainderReading,
     /// STD1 — lane sums the contemplation refused past their carrier.
     pub overflowed: u64,
+    /// N4, RX1–RX7 — the thoughts between perceptions and the rings they
+    /// close, order by order.
+    pub sight: super::sight::SightTally,
 }
 
 impl MeetGraph {
@@ -225,7 +228,12 @@ impl MeetGraph {
             opt(f.dialect.1),
             opt(f.dialect.2)
         );
-        let core = format!("{core} | {flux} | {} | overflowed {}", self.remainders.line(), self.overflowed);
+        let core = format!(
+            "{core} | {flux} | {} | overflowed {} | {}",
+            self.remainders.line(),
+            self.overflowed,
+            self.sight.line()
+        );
         format!(
             "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
             self.thoughts,
@@ -324,6 +332,7 @@ impl Contemplation {
             flux: self.flux_tally,
             remainders: self.remainder_reading(),
             overflowed: self.overflowed,
+            sight: self.sight,
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

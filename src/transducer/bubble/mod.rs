@@ -16,6 +16,7 @@ pub mod idea;
 pub mod meet;
 pub mod merge;
 pub mod shed;
+pub mod sight;
 pub mod transport;
 
 pub use contemplation::Contemplation;
@@ -28,6 +29,7 @@ pub use transport::TransportTally;
 pub use docket::DocketReading;
 pub use self::core::{CoreReading, Door, ShedTally, Truncation};
 pub use flux::{FluxTally, FluxWindow, UnderFlux};
+pub use sight::{ring_reading, RingOrder, SightTally, Unrelated};
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

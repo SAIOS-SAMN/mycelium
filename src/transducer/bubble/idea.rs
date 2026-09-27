@@ -184,6 +184,10 @@ pub struct Bubble {
     /// transition relates two held perceptions (an edge of the meet graph),
     /// and the transition is its glue.
     pub percept: bool,
+    /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
+    /// and output frames (`sight::Sight`): what a thought between two
+    /// perceptions is the transition of. Empty for every other idea.
+    pub sight: super::sight::Sight,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the
