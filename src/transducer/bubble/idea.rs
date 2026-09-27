@@ -181,8 +181,9 @@ pub struct Bubble {
     /// form the mind perceived. A perception is not a thought: it never
     /// passes the unglued door, and it leaves by the physics — its paid
     /// height passed, or what it cites lapsed. A THOUGHT is formed where the
-    /// bodies of two held perceptions resonate (a filament of the hyphae),
-    /// and the transition is its glue.
+    /// transition between the bodies of two held perceptions joins them (an
+    /// edge of the meet graph, `perceive_cells`), and the transition is its
+    /// glue.
     pub percept: bool,
     /// N4 — A PERCEPTION'S BODIES, by the chart each stands on, at its input
     /// and output frames (`resonance::Spores`): the bodies heard against

@@ -113,11 +113,7 @@ pub struct Contemplation {
     /// naming another bubble — which is the one way an ordinal could lie.
     pub(crate) addresses: Vec<Option<std::sync::Arc<[u8]>>>,
     pub complex: Complex,
-    /// N4 — THE HYPHAE: each filament between two resonating bodies, filed
-    /// at its near spore's address then its far one's, both ways — the
-    /// transition read from each side (RX1).
-    pub(crate) hyphae: Keyed<crate::transducer::blade::Transition>,
-    /// N4, RX1–RX7 — the resonance reading, cumulative at its producer.
+    /// N4 — the perception reading, cumulative at its producer.
     pub resonance: super::resonance::ResonanceTally,
     /// Bubbles whose cover still has work; written when dirty is set.
     pub(crate) dirty: Keyed<()>,
@@ -513,7 +509,6 @@ impl Contemplation {
         if let Some(slot) = self.addresses.get_mut(ord as usize) {
             *slot = None;
         }
-        self.cut_hyphae(ord);
         self.ordinals.remove(key);
         self.complex.drop_vertex(key);
     }
@@ -665,8 +660,6 @@ impl Contemplation {
         let Some(moving) = self.bubbles.remove(from) else {
             return;
         };
-        // Its bodies did not move: its filaments go where it goes.
-        let lifted = self.lift_hyphae(from);
         self.retract_incidence(from, &moving);
         let was_dirty = self.dirty.remove(from).is_some();
         match self.bubbles.get_mut(to) {
@@ -679,7 +672,6 @@ impl Contemplation {
                 self.bubbles.insert_shared(shared, moving);
             }
         }
-        self.refile_hyphae(to, lifted);
         if was_dirty {
             self.dirty.insert(to, ());
         }
@@ -882,9 +874,9 @@ impl Contemplation {
             rems.insert(&key, b.remainder.placed());
         }
         // Two perceptions that both hold their bodies are related by their
-        // bodies' resonance (`link_perceived`, on the act's stroke), never by
+        // bodies' cells (`perceive_cells`, on the act's stroke), never by
         // their words' rotors here.
-        let seen = |k: &[u8]| self.bubbles.get(k).is_some_and(|b| !b.spores[0].is_empty());
+        let seen = |k: &[u8]| self.bubbles.get(k).is_some_and(|b| !b.spores.is_empty());
         let nbs: Vec<Vec<u8>> = match seen(&key) {
             true => nbs.into_iter().filter(|n| !seen(n)).collect(),
             false => nbs,

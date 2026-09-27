@@ -29,7 +29,7 @@ pub use transport::TransportTally;
 pub use docket::DocketReading;
 pub use self::core::{CoreReading, Door, ShedTally, Truncation};
 pub use flux::{FluxTally, FluxWindow, UnderFlux};
-pub use resonance::{ring_reading, ResonanceTally, RingOrder, Unrelated};
+pub use resonance::{ResonanceTally, Unrelated};
 
 use crate::network::nerve::{coord, Keyed};
 use crate::physics::Budget;

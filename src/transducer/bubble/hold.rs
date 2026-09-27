@@ -71,7 +71,7 @@ impl Contemplation {
     /// N4 — A PERCEPTION HELD WITH ITS BODIES: the form, and the frames it was
     /// perceived from, by chart (`resonance::spores_of`) — and then the
     /// filaments its bodies grow with every held perception it meets
-    /// (`link_perceived`), on the act's own stroke.
+    /// (`perceive_cells`), on the act's own stroke.
     pub fn hold_perceived(
         &mut self,
         f: Form,
@@ -82,7 +82,7 @@ impl Contemplation {
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
         let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames))?;
-        self.link_perceived(key.as_bytes(), budget);
+        self.perceive_cells(key.as_bytes(), budget);
         Some(key)
     }
 
@@ -101,7 +101,7 @@ impl Contemplation {
         // form's key, then the bodies' coordinates. A hold with no bodies of a
         // form this mind holds as perceptions is those perceptions renewed —
         // read as the stratum the form's key prefixes — never a second idea.
-        let seen = spores.iter().any(|s| !s.is_empty());
+        let seen = !spores.is_empty();
         let key = match seen {
             true => super::resonance::perceived_key(form_key, &spores),
             false => {
@@ -312,7 +312,7 @@ impl Contemplation {
             bubble.glued_by = prior.glued_by.clone();
             // The bodies it was perceived as stand with it where this hold
             // carries none (a re-hold of the same form).
-            if bubble.spores.iter().all(|s| s.is_empty()) {
+            if bubble.spores.is_empty() {
                 bubble.spores = prior.spores.clone();
             }
             // The horizon is a union: this stroke's painting of the form's
@@ -324,14 +324,11 @@ impl Contemplation {
             }
         }
         mark("prior merge");
-        // A re-held perception keeps its filaments: its bodies are the same.
-        let lifted = self.lift_hyphae(key.as_bytes());
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);
         }
         mark("retract_incidence");
         self.admit_incidence(&key.shared(), &bubble);
-        self.refile_hyphae(key.as_bytes(), lifted);
         mark("admit_incidence");
         self.bubbles.insert(&key, bubble);
         mark("bubbles.insert");

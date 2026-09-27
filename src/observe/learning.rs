@@ -394,7 +394,7 @@ impl Learning {
         g.remainders.put(out)?;
         // STD1 — the sums the contemplation refused.
         out.extend_from_slice(&g.overflowed.to_le_bytes());
-        // N4, RX — the perceptions' resonance, its rings and its hyphae.
+        // N4 — perception across scenes: circuits, cells, thoughts, demands.
         g.resonance.put(out);
         // PR1 — the voice's probes.
         self.probes.put(out)?;

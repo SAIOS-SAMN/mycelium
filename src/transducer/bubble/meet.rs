@@ -139,8 +139,8 @@ pub struct MeetGraph {
     pub remainders: crate::transducer::cech::RemainderReading,
     /// STD1 — lane sums the contemplation refused past their carrier.
     pub overflowed: u64,
-    /// N4, RX1–RX7 — the perceptions' bodies heard against each other: the
-    /// filaments, foraging tips and rings, and the hyphae's shape.
+    /// N4 — perception across scenes: the circuits read, the cells they
+    /// cross and how they cohere, and the thoughts and demands filed.
     pub resonance: super::resonance::ResonanceTally,
 }
 
@@ -332,7 +332,7 @@ impl Contemplation {
             flux: self.flux_tally,
             remainders: self.remainder_reading(),
             overflowed: self.overflowed,
-            resonance: self.resonance_reading(),
+            resonance: self.resonance,
             ..MeetGraph::default()
         };
         m.vertices = self.bubbles.len() as u64;

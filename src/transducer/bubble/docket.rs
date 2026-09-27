@@ -75,24 +75,6 @@ impl Contemplation {
         self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue, cover });
     }
 
-    /// RX6 — A SPLIT'S DEMAND onto the docket: its class, the charts it
-    /// stands on as its cover, and its residue EXACT — a harmonic's residue
-    /// is a value on its plane, not a ray, so it is written as it is and
-    /// never normalised.
-    pub(crate) fn docket_residue(
-        &mut self,
-        class: &crate::transducer::sentence::ClassVector,
-        charts: &[crate::transducer::stalk::Invariant],
-        residue: crate::transducer::cga::Mv,
-    ) {
-        let mut keys: Keyed<()> = Keyed::new();
-        for ch in charts {
-            keys.insert(ch.key().as_bytes(), ());
-        }
-        let cover = Some(keys.scoped().map(|(k, _)| k).collect());
-        self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue: Some(residue), cover });
-    }
-
     /// THE WHOLE PLAN, in its entries' own key order: the open questions
     /// carried forward and this orbit's new entries — what the close cites,
     /// so the last Orbit act is the plan (R1).
