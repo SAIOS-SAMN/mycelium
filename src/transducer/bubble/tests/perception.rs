@@ -176,6 +176,80 @@ fn a_question_nothing_can_carry_lapses_at_the_fold() {
     assert!(fresh.docket_cites().is_empty(), "and the close cites nothing for it");
 }
 
+/// ONE ORBIT: the L turned 90° at a time about the grid's point (2, 2) —
+/// `(r, c) ↦ (c, 4 − r)` — each carried one column in its output.
+const O0: [&str; 5] = ["010000", "010000", "011000", "000000", "000000"];
+const O0_OUT: [&str; 5] = ["001000", "001000", "001100", "000000", "000000"];
+const O1: [&str; 5] = ["000000", "001110", "001000", "000000", "000000"];
+const O1_OUT: [&str; 5] = ["000000", "000111", "000100", "000000", "000000"];
+const O2: [&str; 5] = ["000000", "000000", "001100", "000100", "000100"];
+const O2_OUT: [&str; 5] = ["000000", "000000", "000110", "000010", "000010"];
+const O3: [&str; 5] = ["000000", "000000", "001000", "111000", "000000"];
+const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
+
+/// THE HOUR PREDICTED (78.48(7)). The L at hour 0 and hour 1 merge into one
+/// thought holding both, in the order they arrived; its orbit's step is the
+/// 90° turn about (2, 2), period 4. The L at hour 2 is exactly the orbit's
+/// next hour: predicted, it joins the thought by the orbit's step — a second
+/// torsion merge — and the thought stands on all three bodies.
+#[test]
+fn the_next_hour_of_an_orbit_is_predicted_and_joins_the_thought() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &O0, &O0_OUT);
+    perceive(&mut c, &O1, &O1_OUT);
+    assert_eq!(c.torsion_merges, 1, "hours 0 and 1 are one thought");
+    perceive(&mut c, &O2, &O2_OUT);
+    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (1, 0, 0), "{}", c.resonance.line());
+    assert_eq!(c.torsion_merges, 2, "the predicted hour joins by the orbit's step");
+    assert_eq!(torsions(&c), vec![4, 4], "each join a torsion at the orbit's period");
+    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let bodies: usize = thought.spores.scoped().map(|(_, bs)| bs.len()).sum();
+    assert_eq!(bodies, 3, "the thought stands on the three hours");
+}
+
+/// A PHASE SLIP. After hours 0 and 1 the orbit predicts hour 2; the L at
+/// hour 3 is on the orbit but not where it was predicted. It is not joined;
+/// its slip is a demand at the chart whose residue is the phase it slipped
+/// by — one step of the orbit, a congruence of period 4.
+#[test]
+fn an_hour_out_of_turn_is_a_phase_slip_demanded() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &O0, &O0_OUT);
+    perceive(&mut c, &O1, &O1_OUT);
+    perceive(&mut c, &O3, &O3_OUT);
+    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (0, 1, 0), "{}", c.resonance.line());
+    assert_eq!(c.torsion_merges, 1, "the slipped hour does not join");
+    let period = |r: &crate::transducer::cga::Mv| {
+        let f = crate::transducer::element::conformal_factors(r).ok()?;
+        crate::transducer::element::rotor_of_factors(&f).ok()?.order()
+    };
+    let slipped = c.docket_cites().into_iter().any(|cite| match cite {
+        Cite::Demand { residue: Some(r), .. } => period(&r) == Some(Order::Finite(4)),
+        _ => false,
+    });
+    assert!(slipped, "a demand at the chart, its residue one step of the orbit");
+}
+
+/// OFF THE ORBIT. After hours 0 and 1, the L of hour 0 carried one row down
+/// is on no hour of the orbit: its slip is a demand at the chart, counted
+/// apart from a phase slip.
+#[test]
+fn a_body_off_the_orbit_slips_and_is_demanded() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &O0, &O0_OUT);
+    perceive(&mut c, &O1, &O1_OUT);
+    perceive(
+        &mut c,
+        &["000000", "010000", "010000", "011000", "000000"],
+        &["000000", "001000", "001000", "001100", "000000"],
+    );
+    assert_eq!((c.resonance.predicted, c.resonance.phase_slips, c.resonance.off_orbit), (0, 0, 1), "{}", c.resonance.line());
+    assert!(
+        c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(_), .. })),
+        "the slip stands as a demand carrying its residue"
+    );
+}
+
 /// BRANCHING — one L, then two Ls each turned 90° about its own place: the
 /// one L's body is carried onto each by its own turn, two circuits of the
 /// chart's cell, both harmonic, so the cell closes. The two perceptions are

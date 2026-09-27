@@ -624,8 +624,11 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 several: 219,
                 kept_congruent: 220,
                 kept_class: 221,
-                demanded: 222,
-                undemanded: 223,
+                predicted: 222,
+                phase_slips: 223,
+                off_orbit: 224,
+                demanded: 225,
+                undemanded: 226,
             },
         }),
         // PR1 — the voice's probes, a residual class counted twice.

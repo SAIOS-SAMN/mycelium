@@ -17827,6 +17827,23 @@ least common multiple. Timing follows 78.43 at a lower grade — a SPIN is an
 hour, an ORBIT's return a day (an age), the resonant composition an eon —
 the hours relative, their count the physics' own, never a clock.
 
+HOW THE HOURS ARE READ (landed with this ruling). A thought's bodies on a
+chart are held in the order they arrived (a merge keeps its perceptions'
+bodies by admission order). They are samples of an orbit where each
+arrived one application of its STEP after the last: `y_j = g^{j−1} y_1`,
+read off a new body's transitions to them as `t_j ∝ g^{j−1} t_1`, the step
+`g = t_2 t̃_1` the first one observed. The step's period is its rotor's
+order — the lcm of its two planes' periods, orbit and spin — so the hours
+count both. With `m` hours seen the orbit PREDICTS the next, `g^m y_1`:
+- the body at that hour is PREDICTED, and joins the thought by the orbit's
+  step (the edge carries `g`, the fill reads it Congruent at ℓ, the merge
+  continues the orbit);
+- a body on the orbit at another hour is a PHASE SLIP, and one on no hour is
+  OFF THE ORBIT: each is a demand at the chart, its class read off the
+  residue `t̃_1 (g^m)˜` — what was seen against what was predicted — and the
+  residue its ray: the error localised to the hour it slipped at.
+Bounded by the period; nothing stored beyond the thought's bodies.
+
 **(8) What it gives the mind.** Anticipation (the phase inside a return
 says what the next tick must be, so speaking an output continues an orbit);
 compression (a trajectory is two generators and their ratio — a law, the
@@ -17837,16 +17854,23 @@ tick's); attention set by the motion (fine spin, many hours); recall by
 phase. ONLY WHERE THE HOURS REACH THE PIVOT AND SPEECH — hours counted and
 read by nothing are harness (77.1).
 
-**(9) What is not yet landed, and its acceptance.**
-- (7)–(8): ACCEPTANCE is a body turning and drifting over several frames
-  whose next frame the mind PREDICTS from spin, orbit and phase, and a
-  wrong ratio filed as a demand AT THE HOUR it slips.
-- THE DOCKET'S FOLD: a demand whose chart holds no 2-core ring and carries
-  zero flux lapses before the close (TC1's truncation, FX1's `ZeroFlux`),
-  and the close cites what remains. Posed with it: whether the close
-  cites only the orbit's changes (the restart's re-seed must then fold
-  every Orbit act or read the docket from the genome), and whether a
-  voice's chain folds as a court's does.
+**(9) Acceptance, landed.**
+- (7)–(8): the L turned 90° at a time about one point — hours 0 and 1 one
+  thought; hour 2 PREDICTED and joined (a second torsion at ℓ = 4, the
+  thought on three bodies); hour 3 in its place a PHASE SLIP demanded with a
+  residue of one step (period 4); the hour-0 body carried off the orbit
+  OFF THE ORBIT and demanded.
+- THE DOCKET'S FOLD (`docket_fold`, at the close before it cites): an OPEN
+  entry — one that has stood a whole orbit, re-seeded ones among them —
+  whose cover names no chart a held idea stands on has carried no flux
+  for that orbit, a free face, and lapses, counted (`lapsed`). A new entry
+  is given its orbit; an entry whose cover did not read is kept, its
+  enclosure owed. The plan is bounded by the charts the live ideas stand
+  on, and so is every Orbit receipt that cites it.
+- STILL POSED to the operator: whether a voice's own chain folds as a
+  court's does (`fold_before`). Every act seals one receipt, so the chain
+  grows by one receipt per act; since the fold, no longer by the whole
+  open plan at every close.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

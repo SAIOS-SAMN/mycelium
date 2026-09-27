@@ -273,19 +273,16 @@ impl Contemplation {
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();
         let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
         // THE THOUGHT STANDS ON THE BODIES IT WAS FORMED OF (78.48(5)): its
-        // perceptions' bodies by chart, so a later perception meets it.
-        let mut spores: super::resonance::Spores = Keyed::new();
+        // perceptions' bodies by chart, IN THE ORDER THEY ARRIVED — each
+        // idea's ordinal counts admissions, written big-endian so the keyed
+        // read is that order — which is the orbit's order of hours (78.48(7)).
+        let mut arrived: Keyed<super::resonance::Spores> = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
             };
-            for (chart, bodies) in b.spores.scoped() {
-                match spores.get_mut(&chart) {
-                    Some(held) => held.extend(bodies.iter().cloned()),
-                    None => {
-                        spores.insert(&chart, bodies.clone());
-                    }
-                }
+            if let Some(o) = self.ordinals.get(v.as_slice()) {
+                arrived.insert([&o.to_be_bytes()[..], v.as_slice()].concat(), b.spores.clone());
             }
             old_rems.insert(v, b.remainder.to_vec());
             self.retract_incidence(v, &b);
@@ -306,6 +303,17 @@ impl Contemplation {
             self.bubbles.remove(v);
         }
         self.paint_seeded(&mut horizon);
+        let mut spores: super::resonance::Spores = Keyed::new();
+        for (_, held) in arrived.scoped() {
+            for (chart, bodies) in held.scoped() {
+                match spores.get_mut(&chart) {
+                    Some(on) => on.extend(bodies.iter().cloned()),
+                    None => {
+                        spores.insert(&chart, bodies.clone());
+                    }
+                }
+            }
+        }
         if remainder.is_empty() && form.is_none() {
             self.merges.unnamed += 1;
             return None;

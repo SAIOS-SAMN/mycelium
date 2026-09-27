@@ -147,8 +147,14 @@ pub struct ResonanceTally {
     pub several: u64,
     pub kept_congruent: u64,
     pub kept_class: u64,
-    /// Incoherences filed as demands by class; and those whose class did not
-    /// read.
+    /// The hours (78.48(7)): bodies standing at the hour another idea's orbit
+    /// predicts; and the slipped predictions — on the orbit at another hour
+    /// (phase), or off it.
+    pub predicted: u64,
+    pub phase_slips: u64,
+    pub off_orbit: u64,
+    /// Incoherences and slipped predictions filed as demands by class; and
+    /// those whose class did not read.
     pub demanded: u64,
     pub undemanded: u64,
 }
@@ -156,7 +162,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -179,13 +185,16 @@ impl ResonanceTally {
             self.several,
             self.kept_congruent,
             self.kept_class,
+            self.predicted,
+            self.phase_slips,
+            self.off_orbit,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 24] {
+    fn fields(&mut self) -> [&mut u64; 27] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -210,6 +219,9 @@ impl ResonanceTally {
             &mut self.several,
             &mut self.kept_congruent,
             &mut self.kept_class,
+            &mut self.predicted,
+            &mut self.phase_slips,
+            &mut self.off_orbit,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -259,13 +271,84 @@ fn transition(a: &Shape, b: &Shape, budget: &mut crate::physics::Budget) -> Resu
     Ok(t.clone())
 }
 
-/// A transition's two halves as the complex carries an edge: the rotor on
-/// the letters' chart and the carriage `T·D`, split as the fill splits a
+/// A versor's two halves as the complex carries an edge: the rotor on the
+/// letters' chart and the carriage `T·D`, split as the fill splits a
 /// transport. `None` where the versor does not split.
-fn halves(t: &Transition) -> Option<(crate::transducer::alphabet::Rotor, crate::transducer::element::Versor)> {
-    let f = crate::transducer::element::conformal_factors(&t.versor).ok()?;
+fn halves(v: &Mv) -> Option<(crate::transducer::alphabet::Rotor, crate::transducer::element::Versor)> {
+    let f = crate::transducer::element::conformal_factors(v).ok()?;
     let rotor = crate::transducer::element::rotor_of_factors(&f).ok()?;
     Some((rotor, f.carriage()))
+}
+
+/// ONE BODY OF A PERCEPTION AGAINST ANOTHER IDEA'S BODIES ON ONE CHART: the
+/// transition to each of them, in the order they arrived — `None` where no
+/// reciprocal transition carries the pair.
+struct Row {
+    chart: Vec<u8>,
+    ts: Vec<Option<Transition>>,
+}
+
+/// WHERE A BODY STANDS ON ANOTHER IDEA'S ORBIT (78.48(7)).
+enum Hour {
+    /// The other's bodies are no uniform orbit: fewer than two, a pair no
+    /// transition carries, a first step of no finite order, or an arrival
+    /// off its hour.
+    NoOrbit,
+    /// The body is the orbit's NEXT HOUR, as predicted: it joins by the
+    /// orbit's step.
+    Predicted(Mv),
+    /// The prediction slipped: the body stands on the orbit at another hour
+    /// (a phase slip) or off it, and the residue is what was seen against
+    /// what the orbit predicted at its next hour.
+    Slipped { on_orbit: bool, residue: Mv },
+}
+
+/// Is `v` the identity ray — a non-zero scalar and nothing else?
+fn unit_ray(v: &Mv) -> bool {
+    let s = v.scalar_part();
+    !num_traits::Zero::is_zero(&s) && v.sub(&Mv::scalar(s)).is_zero()
+}
+
+/// THE HOURS INSIDE A RETURN (78.48(7), 78.43). The other idea's bodies, in
+/// the order they arrived, are samples of an orbit where each arrived one
+/// application of its STEP after the last: `y_j = g^{j−1} y_1`, read off the
+/// transitions from this body as `t_j ∝ g^{j−1} t_1`, `g = t_2 t̃_1` the first
+/// observed step. The step's period ℓ is its rotor's order — the lcm of its
+/// two planes' periods, orbit and spin, so the hours count both. With `m`
+/// hours seen, the orbit predicts the next, `g^m y_1`; this body `x = t̃_1
+/// y_1` is predicted exactly where `g^m t_1` is the identity ray. Otherwise
+/// the slip is read: on the orbit at another hour (`g^h t_1` the identity for
+/// some `h < ℓ`, read along the orbit's own period) or off it, the residue
+/// `t̃_1 (g^m)˜` in either case. Exact; bounded by the period.
+fn hour_of(row: &[Option<Transition>]) -> Hour {
+    let Some(ts) = row.iter().map(Option::as_ref).collect::<Option<Vec<&Transition>>>() else { return Hour::NoOrbit };
+    let [t1, t2, ..] = ts.as_slice() else { return Hour::NoOrbit };
+    let step = t2.versor.geo(&t1.versor.reverse());
+    let Some(crate::transducer::alphabet::Order::Finite(ell)) = halves(&step).and_then(|(r, _)| r.order()) else {
+        return Hour::NoOrbit;
+    };
+    let one = Mv::scalar(num_traits::One::one());
+    let mut power = one.clone();
+    for t in &ts {
+        if !t.versor.projective_eq(&power.geo(&t1.versor)) {
+            return Hour::NoOrbit;
+        }
+        power = step.geo(&power);
+    }
+    if unit_ray(&power.geo(&t1.versor)) {
+        return Hour::Predicted(step);
+    }
+    let residue = t1.versor.reverse().geo(&power.reverse());
+    let mut at = one;
+    let mut on_orbit = false;
+    for _ in 0..ell {
+        if unit_ray(&at.geo(&t1.versor)) {
+            on_orbit = true;
+            break;
+        }
+        at = step.geo(&at);
+    }
+    Hour::Slipped { on_orbit, residue }
 }
 
 /// A circuit's coordinates: the two perceptions' ordinals and the two
@@ -291,8 +374,9 @@ impl Contemplation {
         let Some(me) = self.bubbles.get(key) else { return };
         let Some(ok) = self.ordinals.get(key).copied() else { return };
         let charts: Vec<(Vec<u8>, Vec<Shape>)> = me.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
-        // Each other perception's transitions from this one, over every chart.
-        let mut to: Keyed<Vec<Transition>> = Keyed::new();
+        // Each other idea's rows: per body of this one, its transitions to
+        // the other's bodies in their arrival order, over every chart.
+        let mut to: Keyed<Vec<Row>> = Keyed::new();
         for (chart, mine) in &charts {
             let fibre: Vec<(u16, Vec<u8>)> = self
                 .by_chart
@@ -308,6 +392,7 @@ impl Contemplation {
                 let Some(theirs) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
                 bodies += theirs.len();
                 for x in mine {
+                    let mut row = Row { chart: chart.clone(), ts: Vec::with_capacity(theirs.len()) };
                     for y in &theirs {
                         match transition(x, y, budget) {
                             Ok(t) => {
@@ -319,18 +404,22 @@ impl Contemplation {
                                     // listing is what the transition carries.
                                     hue: Some(Vec::new()),
                                 });
-                                match to.get_mut(other) {
-                                    Some(ts) => ts.push(t),
-                                    None => {
-                                        to.insert(other, vec![t]);
-                                    }
-                                }
+                                row.ts.push(Some(t));
                             }
                             Err(Unrelated::Unbounded) => {
                                 self.resonance.note(Unrelated::Unbounded);
                                 return;
                             }
-                            Err(why) => self.resonance.note(why),
+                            Err(why) => {
+                                self.resonance.note(why);
+                                row.ts.push(None);
+                            }
+                        }
+                    }
+                    match to.get_mut(other) {
+                        Some(rows) => rows.push(row),
+                        None => {
+                            to.insert(other, vec![row]);
                         }
                     }
                 }
@@ -410,32 +499,61 @@ impl Contemplation {
         }
     }
 
-    /// THE THOUGHTS: each other perception related by one transition — or by
+    /// THE THOUGHTS: each other idea related by one transition — or by
     /// several that are one ray — is joined to this one by the edge the
-    /// complex fills; several distinct ones are each classified and filed by
-    /// class, none chosen as the edge. Then the complex climbs and decides,
-    /// as for any held idea.
-    fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Transition>>) {
+    /// complex fills. Where there are several, each of this perception's
+    /// bodies is read against the other's ORBIT (78.48(7)): every body at the
+    /// hour the orbit predicts, by one step, joins by that step — the orbit
+    /// continued; otherwise each transition is kept by its class, none chosen
+    /// as the edge, and every slipped prediction is a demand at its chart.
+    /// Then the complex climbs and decides, as for any held idea.
+    fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Row>>) {
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
         if let Some(b) = self.bubbles.get(key) {
             rems.insert(key, b.remainder.placed());
         }
-        for (other, ts) in to.scoped() {
-            let [first, rest @ ..] = ts.as_slice() else { continue };
+        for (other, rows) in to.scoped() {
+            if let Some(b) = self.bubbles.get(&other) {
+                rems.insert(&other, b.remainder.placed());
+            }
+            let all: Vec<&Transition> = rows.iter().flat_map(|r| r.ts.iter().flatten()).collect();
+            let [first, rest @ ..] = all.as_slice() else { continue };
             let one = rest.iter().all(|t| t.versor.projective_eq(&first.versor));
-            match (one, halves(first)) {
-                (true, Some((rotor, carriage))) => {
-                    if let Some(b) = self.bubbles.get(&other) {
-                        rems.insert(&other, b.remainder.placed());
-                    }
+            let hours: Vec<Hour> = match one {
+                true => Vec::new(),
+                false => rows.iter().map(|r| hour_of(&r.ts)).collect(),
+            };
+            let steps: Vec<&Mv> = hours
+                .iter()
+                .filter_map(|h| match h {
+                    Hour::Predicted(g) => Some(g),
+                    Hour::NoOrbit | Hour::Slipped { .. } => None,
+                })
+                .collect();
+            self.resonance.predicted += steps.len() as u64;
+            // The edge: the one transition, or the orbit's one step where
+            // every body stands at its predicted hour.
+            let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
+            let edge = match (one, steps.as_slice(), every) {
+                (true, _, _) => halves(&first.versor),
+                (false, [g, more @ ..], true) if more.iter().all(|s| s.projective_eq(g)) => halves(g),
+                _ => None,
+            };
+            match edge {
+                Some((rotor, carriage)) => {
                     let vol = volume_of(&rems, &[key, other.as_slice()]);
                     self.complex.set_edge(key, &other, rotor, carriage, vol);
                     self.resonance.edges += 1;
                 }
-                _ => {
+                None => {
                     self.resonance.several += 1;
-                    for t in ts {
+                    for t in &all {
                         self.keep_orbit(key, &other, t);
+                    }
+                    for (row, h) in rows.iter().zip(&hours) {
+                        if let Hour::Slipped { on_orbit, residue } = h {
+                            self.file_slip(&row.chart, residue, *on_orbit);
+                        }
                     }
                 }
             }
@@ -452,7 +570,7 @@ impl Contemplation {
     /// horizons, which marks them for the pivot. Never keyed by the pair —
     /// an index keyed by two addresses copies both.
     fn keep_orbit(&mut self, a: &[u8], b: &[u8], t: &Transition) {
-        let Some((rotor, carriage)) = halves(t) else {
+        let Some((rotor, carriage)) = halves(&t.versor) else {
             self.resonance.undemanded += 1;
             return;
         };
@@ -477,6 +595,30 @@ impl Contemplation {
                     self.dirty.insert(v, ());
                 }
             }
+        }
+    }
+
+    /// A SLIPPED PREDICTION IS A DEMAND AT ITS CHART (78.48(7), (8)): the
+    /// error localised to the hour the orbit predicted — its residue, what
+    /// was seen against what was predicted, classified as an edge is and
+    /// filed by that class with the residue as its ray; a phase slip (on the
+    /// orbit at another hour) and a body off the orbit counted apart.
+    fn file_slip(&mut self, chart: &[u8], residue: &Mv, on_orbit: bool) {
+        match on_orbit {
+            true => self.resonance.phase_slips += 1,
+            false => self.resonance.off_orbit += 1,
+        }
+        let class = halves(residue).and_then(|(r, c)| match crate::transducer::cech::classify(&r, &c, sentence::CycleType::Identity) {
+            Fill::Congruent(k, ..) | Fill::Class(k, _) => Some(k),
+            Fill::Filled(..) | Fill::Unspellable(_) | Fill::Unread(_) | Fill::Open => None,
+        });
+        match class {
+            Some(k) => {
+                let charts: Vec<stalk::Invariant> = stalk::Invariant::from_key(chart).into_iter().collect();
+                self.docket_demand(&k, &charts, Some(residue));
+                self.resonance.demanded += 1;
+            }
+            None => self.resonance.undemanded += 1,
         }
     }
 }
