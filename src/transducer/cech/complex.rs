@@ -22,6 +22,8 @@ pub struct Complex {
     /// key's depth-one stratum, so the read is a fiber; remember and fill
     /// write it.
     pub(crate) congruent: Keyed<(Rotor, u32)>,
+    /// Congruent fills whose carriage had no canonical ray: not filed.
+    pub(crate) congruent_unfiled: u64,
     /// THE ORBITS OF EACH SIMPLEX, one per chord, each at its OWN
     /// coordinate: `simplex_key ++ vertex_i ++ vertex_j` (law 2, A21), so
     /// a simplex's orbits are the fiber under its key and a reader moves to
@@ -110,9 +112,24 @@ impl Complex {
     /// conjugacy class landed on ONE key, so the last writer won and every
     /// finer coordinate of the orbits before it was unreachable: a whole
     /// fiber stored as its most recent member.
+    ///
+    /// AND WHERE THE ORBIT STANDS UNDER ITS CLASS (78.49(4)): the class key,
+    /// then the canonical ray of the class vector's carriage — where the turn
+    /// stands. Two turns of one class about different points are one class
+    /// and two orbits; keyed by the class alone, the second overwrote the
+    /// first. A carriage with no canonical ray is no versor and files
+    /// nothing, counted.
     pub(crate) fn index_congruent(&mut self, fill: &Fill) {
         if let Fill::Congruent(kappa, g, ell) = fill {
-            self.congruent.insert(kappa.class_key(), (g.as_ref().clone(), *ell));
+            let Some(at) = kappa.carriage.canonical() else {
+                self.congruent_unfiled += 1;
+                return;
+            };
+            let mut key = kappa.class_key().as_bytes().to_vec();
+            let mut ray = Vec::new();
+            at.put_canonical(&mut ray);
+            crate::transducer::address::put_key_bytes(&mut key, &ray);
+            self.congruent.insert(key, (g.as_ref().clone(), *ell));
         }
     }
 

@@ -135,6 +135,14 @@ fn a_blow_up_is_a_luminal_thought_and_its_class_is_demanded() {
     let l = perceive(&mut c, &L, &L_OUT);
     assert_eq!((c.resonance.boost, c.resonance.open, c.resonance.demanded), (1, 1, 1), "{}", c.resonance.line());
     assert!(matches!(thought(&c, &l, &blown), Some(Fill::Class(..))), "a standing class between them");
+    // THE EDGE CARRIES WHAT THE TRANSITION CARRIED, lane by lane (78.49(5)):
+    // the L's four sites all stand inside the blow-up's sixteen, so twelve
+    // appear — 𝒮 12 — and a hue-blind body and a clockless chain read
+    // nothing on 𝒢 and 𝒯.
+    let mut verts = vec![l.clone(), blown.clone()];
+    verts.sort();
+    let volume = c.complex.get(&verts).expect("the edge").volume;
+    assert_eq!((volume[0], volume[1], volume[2]), (12, 0, 0), "the lanes the transition carried: {volume:?}");
     let class = c
         .docket_cites()
         .into_iter()
@@ -266,6 +274,39 @@ fn a_body_carried_onto_two_keeps_both_congruences_and_chooses_no_edge() {
     assert_eq!((c.resonance.circuits, c.resonance.closes, c.resonance.several, c.resonance.kept_congruent), (2, 1, 1, 2), "{}", c.resonance.line());
     assert!(thought(&c, &one, &two).is_none(), "no one transition is chosen as the edge");
     let periods: Vec<u32> = c.complex.congruent.scoped().map(|(_, (_, ell))| *ell).collect();
-    assert!(!periods.is_empty() && periods.iter().all(|&l| l == 4), "each turn filed at its period: {periods:?}");
+    // One class, two orbits (78.49(4)): the two turns stand about different
+    // points, so each is filed under the class at where it stands — neither
+    // overwrites the other.
+    assert_eq!(periods, vec![4, 4], "each turn filed at its own coordinate, at its period");
     assert!(horizon_orders(&c, &one).contains(&4) && horizon_orders(&c, &two).contains(&4), "both horizons hold it");
+}
+
+/// THE STRATA ABOVE A CHART (78.49(4)): a solid block and the block with its
+/// middle cut out stand on charts that PART at the first Betti number the
+/// ring has and the block has not (β₁). Their deepest shared stratum is read,
+/// the surgery that carries one onto the other factors, and the deformation
+/// stands as a demand on both charts, its residue the core's ray.
+#[test]
+fn a_hole_cut_is_a_deformation_read_at_the_stratum_where_the_charts_part() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &["11100", "11100", "11100", "00000"], &["01110", "01110", "01110", "00000"]);
+    perceive(&mut c, &["11100", "10100", "11100", "00000"], &["01110", "01010", "01110", "00000"]);
+    assert_eq!((c.resonance.deformed, c.resonance.unfactored), (1, 0), "{}", c.resonance.line());
+    let on_both = c.docket_cites().into_iter().any(|cite| match cite {
+        Cite::Demand { cover: Some(cv), residue: Some(_), .. } => cv.len() == 2,
+        _ => false,
+    });
+    assert!(on_both, "the deformation a demand on both charts, carrying its core");
+}
+
+/// A PARTING NO MOTION CARRIES (78.49(4)): an L and a bar have one topology
+/// and part at their turns; every axis past the Betti numbers is invariant
+/// under every versor, so no conformal motion carries one onto the other —
+/// counted apart, and nothing filed.
+#[test]
+fn bodies_parting_past_their_topology_are_apart() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &L, &L_OUT);
+    perceive(&mut c, &["11100", "00000", "00000", "00000"], &["01110", "00000", "00000", "00000"]);
+    assert_eq!((c.resonance.apart, c.resonance.deformed), (1, 0), "{}", c.resonance.line());
 }

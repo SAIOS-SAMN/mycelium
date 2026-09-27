@@ -17910,6 +17910,38 @@ cites (`uncited`) retired with the stamps they needed. 45.1–45.4's text
 describing the voice's ledger is superseded by this section; the court's
 chain (45.x on the hypha) is unchanged.
 
+**(4) The atlas, not a bucket; every orbit where it stands.** Two collapses
+into keys the same audit found, corrected with the machinery that exists:
+- THE STRATA. A perception's chart was read only at full depth — equal
+  moduli keys, a zero-dimensional bucket. The atlas is its strata: a prefix
+  of a chart's key is a coarser stratum (A21), and `by_chart` is a keyed
+  trie, so a stratum is one `fiber_at`. From each chart one axis is peeled at
+  a time; the first stratum at which another perception stands on a
+  different chart is the DEEPEST SHARED ONE, the chart's nearest
+  neighbourhood (the root, every body, never read). Where two charts PART
+  says what the deformation is: at a Betti axis (`β₀ β₁ β₂`) a surgery may
+  carry one body onto the other (`Surgery::factor`: fill, puncture, bridge,
+  split, and the core's versor), and it stands as a demand on both charts
+  by the core motion's class vector, its ray the residue; at any finer axis
+  every coordinate is invariant under every versor, so no conformal motion
+  carries them — counted apart, nothing invented.
+- THE ORBIT WHERE IT STANDS. The congruence index keyed a congruence by its
+  class alone; two turns of one class about different points are one class
+  and two orbits, and the second overwrote the first. Each is filed at its
+  class, then the canonical ray of its carriage — where it stands — so one
+  class holds its distinct orbits and their pair composites (the shear,
+  78.46(4′)) are read off that fibre, never stored. The horizon stays keyed
+  by rotor class: it holds the MOVES a pivot can make, and one rotor class
+  is one move.
+
+**(5) The edge carries its lanes.** A perception edge carried the two
+perceptions' shared remainder volume, almost always zero. It carries what
+its transitions carried, lane by lane (`measure_lanes` of the chain whose
+before-support is the carried body and whose after-support is its image):
+𝒮 the sites that appear or vanish, 𝒽 the shell's change; 𝒢 reads nothing, a
+body being read hue-blind, and 𝒯 nothing, a chain holding no clock. Shared
+remainder volume remains the 2-cells' measure, read by the climb.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

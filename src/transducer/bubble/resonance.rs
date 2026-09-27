@@ -153,6 +153,12 @@ pub struct ResonanceTally {
     pub predicted: u64,
     pub phase_slips: u64,
     pub off_orbit: u64,
+    /// The strata (78.49(4)): body pairs parting at a Betti axis whose
+    /// surgery was read (deformed) or did not factor; and pairs parting at a
+    /// finer axis, which no conformal motion carries (apart).
+    pub deformed: u64,
+    pub unfactored: u64,
+    pub apart: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -162,7 +168,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -188,13 +194,16 @@ impl ResonanceTally {
             self.predicted,
             self.phase_slips,
             self.off_orbit,
+            self.deformed,
+            self.unfactored,
+            self.apart,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 27] {
+    fn fields(&mut self) -> [&mut u64; 30] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -222,6 +231,9 @@ impl ResonanceTally {
             &mut self.predicted,
             &mut self.phase_slips,
             &mut self.off_orbit,
+            &mut self.deformed,
+            &mut self.unfactored,
+            &mut self.apart,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -286,6 +298,46 @@ fn halves(v: &Mv) -> Option<(crate::transducer::alphabet::Rotor, crate::transduc
 struct Row {
     chart: Vec<u8>,
     ts: Vec<Option<Transition>>,
+    /// What the row's transitions carry, per lane, summed lane by lane
+    /// (`lanes_of`, law 5).
+    lanes: [u64; 4],
+}
+
+/// WHAT A TRANSITION CARRIES, PER LANE (78.49(5), `measure_lanes`): the
+/// chain whose before-support is the carried body's sites and whose
+/// after-support is its image's — 𝒮 the sites that appear or vanish, 𝒽 the
+/// shell's change; 𝒢 reads nothing, for a body is read hue-blind, and 𝒯
+/// nothing, for a chain holds no clock. `None` where a site is off the grid's
+/// two axes.
+fn lanes_of(x: &Shape, y: &Shape) -> Option<[u64; 4]> {
+    let mut at: Keyed<(i64, i64, u8, u8)> = Keyed::new();
+    for (s, before) in x.blade.support.iter().map(|s| (s, true)).chain(y.blade.support.iter().map(|s| (s, false))) {
+        let (r, c) = (s.axis(0)?, s.axis(1)?);
+        let k = super::remainder_site_key(r, c);
+        let link = match (at.get(&k).copied(), before) {
+            (Some((_, _, b, _)), false) => (r, c, b, 1),
+            (Some((_, _, _, a)), true) => (r, c, 1, a),
+            (None, true) => (r, c, 1, 0),
+            (None, false) => (r, c, 0, 1),
+        };
+        at.insert(&k, link);
+    }
+    let links: Vec<(i64, i64, u8, u8)> = at.scoped().map(|(_, l)| *l).collect();
+    Some(crate::transducer::element::measure_lanes(&links))
+}
+
+/// WHERE TWO CHARTS PART: the first axis at which their moduli differ, or
+/// where one ends — the deformation's coordinate (78.49(4)). The axes run
+/// `n`, then the Betti numbers, then the turns and the ratios.
+fn parting(a: &stalk::Invariant, b: &stalk::Invariant) -> usize {
+    a.0.iter().zip(&b.0).take_while(|(x, y)| x == y).count()
+}
+
+/// A parting at a Betti axis (`β₀ β₁ β₂`, axes 1 to 3) is TOPOLOGICAL: a
+/// surgery can carry it. At any finer axis no conformal motion carries one
+/// body onto the other, every axis being invariant under every versor.
+fn topological(axis: usize) -> bool {
+    (1..=3).contains(&axis)
 }
 
 /// WHERE A BODY STANDS ON ANOTHER IDEA'S ORBIT (78.48(7)).
@@ -392,7 +444,7 @@ impl Contemplation {
                 let Some(theirs) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
                 bodies += theirs.len();
                 for x in mine {
-                    let mut row = Row { chart: chart.clone(), ts: Vec::with_capacity(theirs.len()) };
+                    let mut row = Row { chart: chart.clone(), ts: Vec::with_capacity(theirs.len()), lanes: [0; 4] };
                     for y in &theirs {
                         match transition(x, y, budget) {
                             Ok(t) => {
@@ -404,6 +456,10 @@ impl Contemplation {
                                     // listing is what the transition carries.
                                     hue: Some(Vec::new()),
                                 });
+                                match lanes_of(x, y) {
+                                    Some(l) if crate::core::lanes::lanes_step(&mut row.lanes, &l) => {}
+                                    _ => self.overflowed += 1,
+                                }
                                 row.ts.push(Some(t));
                             }
                             Err(Unrelated::Unbounded) => {
@@ -441,6 +497,87 @@ impl Contemplation {
             self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to);
+        for (chart, mine) in &charts {
+            if !self.perceive_strata(key, chart, mine, budget) {
+                return;
+            }
+        }
+    }
+
+    /// 78.49(4) — THE STRATA ABOVE A CHART: the atlas is read, never a bucket.
+    /// From the chart, one axis is peeled at a time — a prefix of the key is a
+    /// coarser stratum (A21) — and the first stratum at which another held
+    /// perception stands on a different chart is the DEEPEST SHARED ONE: the
+    /// chart's nearest neighbourhood, read as a keyed fibre (`fiber_at`), no
+    /// index added. The root, every body, is never read (law 3). Each body
+    /// there is read against this perception's bodies where their charts
+    /// PART: at a Betti axis a surgery may carry one onto the other
+    /// (`Surgery::factor`), and the deformation — its core's versor, by its
+    /// class, on both charts — is a demand; at a finer axis no conformal
+    /// motion carries them, counted apart. `false` where the stroke ran out.
+    fn perceive_strata(&mut self, key: &[u8], chart: &[u8], mine: &[Shape], budget: &mut crate::physics::Budget) -> bool {
+        let Some(here) = stalk::Invariant::from_key(chart) else { return true };
+        let mut at = here.peel();
+        while !at.0.is_empty() {
+            let near: Vec<(Vec<u8>, Vec<u8>)> = match self.by_chart.fiber_at(at.key().as_bytes()) {
+                Some(fiber) => fiber
+                    .filter(|(c, _)| c.as_slice() != chart)
+                    .flat_map(|(c, members)| {
+                        members
+                            .scoped()
+                            .filter_map(|(id, _)| Self::ordinal_of_key(&id).and_then(|o| self.address_at(o)).map(<[u8]>::to_vec))
+                            .filter(|a| a.as_slice() != key)
+                            .map(move |a| (c.clone(), a))
+                            .collect::<Vec<_>>()
+                    })
+                    .filter(|(c, a)| self.bubbles.get(a).is_some_and(|b| b.spores.get(c).is_some()))
+                    .collect(),
+                None => Vec::new(),
+            };
+            if near.is_empty() {
+                at = at.peel();
+                continue;
+            }
+            for (theirs_chart, other) in near {
+                let Some(there) = stalk::Invariant::from_key(&theirs_chart) else { continue };
+                let axis = parting(&here, &there);
+                let Some(theirs) = self.bubbles.get(&other).and_then(|b| b.spores.get(&theirs_chart)).cloned() else { continue };
+                for x in mine {
+                    for y in &theirs {
+                        if !topological(axis) {
+                            self.resonance.apart += 1;
+                            continue;
+                        }
+                        if budget.remaining() == 0 {
+                            self.resonance.note(Unrelated::Unbounded);
+                            return false;
+                        }
+                        match crate::transducer::blade::surgery::Surgery::factor(x, y, budget) {
+                            Some((_, core)) => self.file_deformation(&here, &there, &core),
+                            None => self.resonance.unfactored += 1,
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+        true
+    }
+
+    /// A DEFORMATION READ (78.49(4)): the surgery's core carried by `core`, a
+    /// demand on both charts by the core motion's class vector — the zero
+    /// class for a change in place — with the core's ray as its residue: the
+    /// question of the deformation.
+    fn file_deformation(&mut self, here: &stalk::Invariant, there: &stalk::Invariant, core: &Mv) {
+        self.resonance.deformed += 1;
+        let class = halves(core).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
+        match class {
+            Some(k) => {
+                self.docket_demand(&k, &[here.clone(), there.clone()], Some(core));
+                self.resonance.demanded += 1;
+            }
+            None => self.resonance.undemanded += 1,
+        }
     }
 
     /// THE SHEAR ON THE CELL'S ORBITS (78.46(4′), 78.48(4)): the pair
@@ -541,8 +678,14 @@ impl Contemplation {
             };
             match edge {
                 Some((rotor, carriage)) => {
-                    let vol = volume_of(&rems, &[key, other.as_slice()]);
-                    self.complex.set_edge(key, &other, rotor, carriage, vol);
+                    // THE EDGE CARRIES WHAT ITS TRANSITIONS CARRIED, lane by
+                    // lane (78.49(5)); shared remainder volume stays the
+                    // 2-cells' measure, read by the climb below.
+                    let mut lanes = [0u64; 4];
+                    if !rows.iter().all(|r| crate::core::lanes::lanes_step(&mut lanes, &r.lanes)) {
+                        self.overflowed += 1;
+                    }
+                    self.complex.set_edge(key, &other, rotor, carriage, lanes);
                     self.resonance.edges += 1;
                 }
                 None => {
