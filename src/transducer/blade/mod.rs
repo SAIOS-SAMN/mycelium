@@ -12,10 +12,12 @@ pub mod surgery;
 pub mod continuous;
 pub mod frame;
 pub mod pose;
+pub mod reciprocity;
 pub mod tether;
 pub mod tower;
 
 pub use body::*;
+pub use reciprocity::{reciprocal, NotReciprocal};
 pub use carry::*;
 pub use shells::*;
 pub use surgery::*;

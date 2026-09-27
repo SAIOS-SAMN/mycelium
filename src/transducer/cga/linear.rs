@@ -128,6 +128,30 @@ impl LinearFunction {
         }
     }
 
+    /// THE TRANSPOSITION `f̄` (RX1): the one function with `⟨f̄(x) y⟩₀ =
+    /// ⟨x f(y)⟩₀` for every pair of vectors, read in the algebra's own
+    /// metric. On the generators, `e_i² = ηᵢ`, it is `f̄(eⱼ) = Σᵢ ηᵢ ηⱼ ⟨f(eᵢ)⟩ⱼ eᵢ`
+    /// — the images read back through the metric, exact over ℚ. A versor's
+    /// action at its weight is its own inverse's transpose, `f̄ ∘ f = 1`.
+    pub fn adjoint(&self) -> LinearFunction {
+        let eta: Vec<Q> = self.masks.iter().map(|&m| Mv::blade(m, one()).geo(&Mv::blade(m, one())).scalar_part()).collect();
+        let images = self
+            .masks
+            .iter()
+            .zip(&eta)
+            .map(|(&mj, ej)| {
+                self.masks.iter().zip(&eta).zip(&self.images).fold(Mv::zero(), |acc, ((&mi, ei), fi)| {
+                    let c = fi.coeff(mj);
+                    match c.is_zero() {
+                        true => acc,
+                        false => acc.add(&Mv::blade(mi, ei * ej * c)),
+                    }
+                })
+            })
+            .collect();
+        LinearFunction { n: self.n, masks: self.masks.clone(), images }
+    }
+
     /// Whether it sends every vector to zero.
     pub fn is_zero(&self) -> bool {
         self.images.iter().all(Mv::is_zero)

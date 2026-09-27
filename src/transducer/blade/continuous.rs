@@ -221,7 +221,7 @@ impl<'a> ContinuousSupport<'a> {
         if self.tower != other.tower || other.centre.len() != n {
             return Err(NotCarried::Frames);
         }
-        let w = cga::weight_of(rotation).filter(|w| !w.is_zero()).ok_or(NotCarried::Weightless)?;
+        cga::weight_of(rotation).filter(|w| !w.is_zero()).ok_or(NotCarried::Weightless)?;
         let images: Vec<Mv> = (0..n).map(|k| rotation.twisted(&axis(k))).collect();
         if !images.iter().all(|y| y.sub(&on_base(y, n)).is_zero()) {
             return Err(NotCarried::OffAxes);
@@ -239,56 +239,85 @@ impl<'a> ContinuousSupport<'a> {
         let planes = crate::transducer::base::planes(n);
         let zero = [Q::zero(), Q::zero()];
         for (p, held) in planes.iter().zip(&self.upper) {
-            let (yi, yj) = (&images[p.0], &images[p.1]);
-            fn at(y: &Mv, k: usize) -> &Q {
-                y.coeff(cga::base_axis(k + 1))
-            }
-            let rows: Vec<usize> = (0..n).filter(|&k| !at(yi, k).is_zero() || !at(yj, k).is_zero()).collect();
             // The plane's image, where it is a plane of the base: its upper
             // orders are held there and compared. One turned off every base
             // plane is carried as UNREAD by name, never passed as checked.
-            let theirs = match rows.as_slice() {
-                &[k, l] => crate::transducer::base::plane_index((k, l)).and_then(|ix| other.upper.get(ix)).map(|t| (k, l, t)),
-                _ => None,
-            };
-            let Some((k, l, theirs)) = theirs else {
+            let Some(carriage) = PlaneCarriage::of(rotation, rho, n, *p) else {
                 unread.push(*p);
                 continue;
             };
-            let omega = [at(yi, k) * rho, at(yi, l) * rho];
-            let mirror = at(yi, k) * at(yj, l) - at(yi, l) * at(yj, k) < Q::zero();
-            let carried = |h: Option<&[Q; 2]>, m: u32| -> [Q; 2] {
-                let Some(h) = h else { return [Q::zero(), Q::zero()] };
-                let start = match mirror {
-                    true => [h[0].clone(), -&h[1]],
-                    false => h.clone(),
-                };
-                (0..m).fold(start, |z, _| times(&z, &omega))
+            let Some(theirs) = crate::transducer::base::plane_index(carriage.image).and_then(|ix| other.upper.get(ix))
+            else {
+                unread.push(*p);
+                continue;
             };
-            for (order, m, (mine, yours)) in [(Harmonic::Three, 3u32), (Harmonic::Four, 4)]
-                .into_iter()
-                .zip(held.iter().zip(theirs))
-                .map(|((o, m), pair)| (o, m, pair))
-            {
-                // `w^m · (h_b − ρ^m ω^m h_a)`, then the weight divided out:
-                // the residue at its own scale, exact.
-                let wm = (0..m).fold(Q::one(), |acc, _| acc * &w);
-                let c = carried(mine.as_ref(), m);
-                // A harmonic that vanishes on `b` is the zero vector there.
+            for (order, (mine, yours)) in [Harmonic::Three, Harmonic::Four].into_iter().zip(held.iter().zip(theirs)) {
+                // `h_b − Ad(h_a)`: the residue at its own scale, exact. A
+                // harmonic that vanishes is the zero vector there.
+                let c = match mine {
+                    Some(h) => carriage.carry(h, order),
+                    None => zero.clone(),
+                };
                 let hb = match yours {
                     Some(h) => h,
                     None => &zero,
                 };
-                let diff = [(&hb[0] * &wm - &c[0]) / &wm, (&hb[1] * &wm - &c[1]) / &wm];
+                let diff = [&hb[0] - &c[0], &hb[1] - &c[1]];
                 if diff[0].is_zero() && diff[1].is_zero() {
                     continue;
                 }
                 if order <= through {
                     return Err(NotCarried::Order(order));
                 }
-                residue.push(Residue { plane: (k, l), order, vector: diff });
+                residue.push(Residue { plane: carriage.image, order, vector: diff });
             }
         }
         Ok(Covariance { residue, unread })
+    }
+}
+
+/// `Ad⁽ᵏ⁾` ON ONE PLANE: how a transition — its rotation ray and its scale —
+/// carries a harmonic of the base plane `p` onto its image plane. The
+/// rotation's sandwich turns `p`'s first axis to `w·ω` on the image plane
+/// (the ray's weight `w`), a mirror conjugating first, and an order-`k`
+/// harmonic goes to `(ρω)^k h`, the conjugate for a mirror — the graded
+/// adjoint action, read by the sandwich and never by a matrix.
+#[derive(Clone, Debug)]
+pub struct PlaneCarriage {
+    /// The base plane `p` is carried onto.
+    pub image: (usize, usize),
+    omega: [Q; 2],
+    mirror: bool,
+    w: Q,
+}
+
+impl PlaneCarriage {
+    /// The carriage of plane `p` by `rotation` at scale `rho` on `n` base
+    /// axes; `None` where the rotation has no weight or `p` is turned off
+    /// every plane of the base.
+    pub fn of(rotation: &Mv, rho: &Q, n: usize, p: (usize, usize)) -> Option<PlaneCarriage> {
+        fn at(y: &Mv, k: usize) -> &Q {
+            y.coeff(cga::base_axis(k + 1))
+        }
+        let w = cga::weight_of(rotation).filter(|w| !w.is_zero())?;
+        let (yi, yj) = (rotation.twisted(&axis(p.0)), rotation.twisted(&axis(p.1)));
+        let rows: Vec<usize> = (0..n).filter(|&k| !at(&yi, k).is_zero() || !at(&yj, k).is_zero()).collect();
+        let &[k, l] = rows.as_slice() else { return None };
+        crate::transducer::base::plane_index((k, l))?;
+        let omega = [at(&yi, k) * rho, at(&yi, l) * rho];
+        let mirror = at(&yi, k) * at(&yj, l) - at(&yi, l) * at(&yj, k) < Q::zero();
+        Some(PlaneCarriage { image: (k, l), omega, mirror, w })
+    }
+
+    /// `Ad⁽ᵏ⁾(h) = (ρω)^k h / w^k`, `h` conjugated first under a mirror.
+    pub fn carry(&self, h: &[Q; 2], order: Harmonic) -> [Q; 2] {
+        let m = order.m().unsigned_abs();
+        let start = match self.mirror {
+            true => [h[0].clone(), -&h[1]],
+            false => h.clone(),
+        };
+        let c = (0..m).fold(start, |z, _| times(&z, &self.omega));
+        let wm = (0..m).fold(Q::one(), |acc, _| acc * &self.w);
+        [&c[0] / &wm, &c[1] / &wm]
     }
 }

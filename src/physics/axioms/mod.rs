@@ -15,6 +15,7 @@
 mod coxeter;
 mod imported;
 mod ours;
+mod reciprocity;
 mod refused;
 mod routes;
 
@@ -26,6 +27,9 @@ pub use imported::{
 pub use ours::{
     A11_HARMONIC_MULTIPOLE_COMPLETENESS, A12_IRREDUCIBLE_INVERSIVE_EXTENT,
     A13_INVERSIVE_MOMENTUM_DOCKETED, OK1_K_STEP_IS_ONE_ORBIT,
+};
+pub use reciprocity::{
+    RX1_RECIPROCITY, RX2_EXACTNESS, RX3_FILTRATION, RX4_COMPOSITION, RX5_COHERENCE, RX6_SPLIT, RX7_COHESION,
 };
 pub use refused::{A4_POSITIVE_DEFINITE_REFUSED, A6_BIND_11_REFUSED, A7_ABELIAN_RETURN_REFUSED};
 pub use routes::{

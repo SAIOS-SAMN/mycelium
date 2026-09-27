@@ -82,6 +82,11 @@ pub const CANDIDATES_PER_PAIR: usize = 8;
 pub struct Transition {
     pub rotation: Mv,
     pub versor: Mv,
+    /// The scale `ρ` the transition dilates by (`ρ² = r_b² / r_a²`).
+    pub rho: BigRational,
+    /// The order the fit holds through (A3): every order up to it carried
+    /// exactly, the residue above it.
+    pub through: super::tower::Harmonic,
     pub residue: Vec<Residue>,
     /// The base planes whose image is no base plane: their orders three and
     /// four are unread by the tower (`Covariance::unread`), named.
@@ -283,7 +288,14 @@ pub(super) fn transitions_on(
                 uncarried.get_or_insert(super::continuous::NotCarried::Centre);
                 continue;
             };
-            out.push(Transition { rotation, versor, residue: covariance.residue, unread: covariance.unread });
+            out.push(Transition {
+                rotation,
+                versor,
+                rho: rho.clone(),
+                through: fit.through,
+                residue: covariance.residue,
+                unread: covariance.unread,
+            });
         }
     }
     // A parity with no rational turn tries no candidate; every other arm of
@@ -413,7 +425,17 @@ pub(super) fn carried_on(
 ) -> Result<Transition, NoPose> {
     let versor = placed(a, b, linear).ok_or(NoPose::Uncarried(super::continuous::NotCarried::Centre))?;
     let covariance = carries_by_covariance(&versor, a, b, tower, through)?;
-    Ok(Transition { rotation: linear.clone(), versor, residue: covariance.residue, unread: covariance.unread })
+    let rho = crate::transducer::element::conformal_factors(&versor)
+        .map_err(|why| NoPose::Uncarried(super::continuous::NotCarried::Unfactored(why)))?
+        .rho;
+    Ok(Transition {
+        rotation: linear.clone(),
+        versor,
+        rho,
+        through,
+        residue: covariance.residue,
+        unread: covariance.unread,
+    })
 }
 
 /// THE CARRIAGE OF A GIVEN LINEAR ACTION between two bodies (24.1 as ruled
