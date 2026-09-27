@@ -120,6 +120,9 @@ impl Entity {
         self.stand_calluses();
         // 78.37 — the orbit's docket rides its close; sealed, it becomes the
         // next orbit's questions. A withheld close keeps it for the next.
+        // 78.48(9) — folded first: an open question no held idea can carry
+        // lapses, so the plan is bounded by what the mind holds.
+        self.contemplation.docket_fold();
         let close = self.session.voice_mut().orbit(self.contemplation.docket_cites());
         if matches!(close, crate::chronometry::Close::Sealed(_)) {
             self.contemplation.docket_sealed();

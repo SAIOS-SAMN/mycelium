@@ -335,6 +335,7 @@ impl Learning {
             g.docket.unwritten,
             g.docket.answered,
             g.docket.taken,
+            g.docket.lapsed,
         ] {
             out.extend_from_slice(&v.to_le_bytes());
         }
@@ -486,6 +487,7 @@ impl Learning {
             unwritten: u64_at(b, p)?,
             answered: u64_at(b, p)?,
             taken: u64_at(b, p)?,
+            lapsed: u64_at(b, p)?,
         };
         let (free_vertices, isolated, faces_1, faces_2, core_size) =
             (u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?, u64_at(b, p)?);

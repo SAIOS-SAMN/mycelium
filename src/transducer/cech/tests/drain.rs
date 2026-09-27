@@ -269,3 +269,17 @@ fn drain_answers_only_at_dimension_one() {
         "a 0-cell is not a tether"
     );
 }
+
+/// A DROPPED SIMPLEX TAKES ITS ORBITS WITH IT (78.48(3)). The orbits of a
+/// simplex stand at coordinates its key prefixes; a vertex dropped from the
+/// complex drops every simplex on it, and the orbits filed under them leave
+/// too — they stood under every dropped ring for as long as the mind lived.
+#[test]
+fn a_dropped_vertex_takes_its_simplices_orbits() {
+    let (mut c, key) = pair(Rotor::identity());
+    let orbit = crate::transducer::cech::orbit_key(&key, v(1).as_bytes(), v(2).as_bytes());
+    c.orbits.insert(orbit, Fill::Open);
+    assert_eq!(c.orbits_of(&key).len(), 1, "the orbit stands under its simplex");
+    c.drop_vertex(v(1).as_bytes());
+    assert!(c.orbits_of(&key).is_empty(), "and leaves with it");
+}

@@ -28,6 +28,9 @@ pub struct DocketReading {
     pub answered: u64,
     /// Thoughts the class taker marked, since the contemplation began.
     pub taken: u64,
+    /// 78.48(9) — open entries folded at a close: a whole orbit stood and no
+    /// held idea on any chart of the cover, since the contemplation began.
+    pub lapsed: u64,
 }
 
 /// An entry's own coordinates, its key in the docket.
@@ -184,6 +187,30 @@ impl Contemplation {
         }
     }
 
+    /// 78.48(9) — THE DOCKET'S FOLD, before the close cites it: an OPEN entry
+    /// — one that has stood a whole orbit, re-seeded ones among them — whose
+    /// cover names no chart a held idea stands on has carried no flux for
+    /// that orbit: nothing in the mind can answer it through a thought, a
+    /// free face (TC1), and it lapses, counted. This orbit's new entries are
+    /// given their orbit; an entry whose cover did not read is kept, its
+    /// enclosure owed (its charts cannot be asked). The plan is then bounded
+    /// by the charts the live ideas stand on, never by what was ever asked.
+    pub fn docket_fold(&mut self) {
+        let lapsing: Vec<Vec<u8>> = self
+            .docket_open
+            .scoped()
+            .filter(|(_, c)| match c.cover() {
+                Some(charts) => !charts.iter().any(|ch| self.by_chart.link(ch).next().is_some()),
+                None => false,
+            })
+            .map(|(k, _)| k)
+            .collect();
+        for k in lapsing {
+            self.docket_open.remove(&k);
+            self.docket_lapsed += 1;
+        }
+    }
+
     /// A RESTART KEEPS THE PLAN: the restored chain's last close's docket
     /// re-seeds the next orbit's questions. Only its docket entries are read.
     pub fn docket_reseed(&mut self, cites: &[Cite]) {
@@ -220,6 +247,7 @@ impl Contemplation {
             unwritten: self.docket_unwritten,
             answered: self.docket_answered,
             taken: self.docket_taken,
+            lapsed: self.docket_lapsed,
         }
     }
 }

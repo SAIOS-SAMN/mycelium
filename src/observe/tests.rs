@@ -521,6 +521,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 unwritten: 45,
                 answered: 46,
                 taken: 47,
+                lapsed: 300,
             },
             // TC1 — the nerve's shape and every door, a rank lost negative.
             core: crate::transducer::bubble::CoreReading {
@@ -616,10 +617,15 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 parabolic: 212,
                 boost: 213,
                 holonomic: 214,
-                edges: 215,
-                several: 216,
-                demanded: 217,
-                undemanded: 218,
+                unperturbed: 215,
+                flat: 216,
+                curved: 217,
+                edges: 218,
+                several: 219,
+                kept_congruent: 220,
+                kept_class: 221,
+                demanded: 222,
+                undemanded: 223,
             },
         }),
         // PR1 — the voice's probes, a residual class counted twice.

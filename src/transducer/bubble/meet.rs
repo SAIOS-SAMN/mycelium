@@ -235,7 +235,7 @@ impl MeetGraph {
             self.resonance.line()
         );
         format!(
-            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} | {core} | owed: {owed}",
+            "meet graph: thoughts {} over {} vertices, components {} | edges {} | cycle rank {} | rings {} | ring orbits {} | decohered: {adj} | fronts: sources {} advanced {} this k-step; fixed by fill {} by class {}; rings collapsed {} (filled {}) held {}; candidates classified {}; unsectioned {} ungauged {} unclassed {} | docket: pending {} open {} (enclosure owed {}) unwritten {} answered {} taken {} lapsed {} | {core} | owed: {owed}",
             self.thoughts,
             self.vertices,
             self.components,
@@ -260,6 +260,7 @@ impl MeetGraph {
             self.docket.unwritten,
             self.docket.answered,
             self.docket.taken,
+            self.docket.lapsed,
         )
     }
 }

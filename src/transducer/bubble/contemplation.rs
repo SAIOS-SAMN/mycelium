@@ -190,6 +190,8 @@ pub struct Contemplation {
     /// stroke; and the thoughts it has marked.
     pub(crate) docket_to_take: bool,
     pub(crate) docket_taken: u64,
+    /// 78.48(9) — open entries the fold lapsed at a close.
+    pub(crate) docket_lapsed: u64,
     /// TC1 — what each shedding door removed, and of it what carried a loop.
     pub(crate) shed: super::core::ShedTally,
     /// TC1's fix — what the truncation did, and the escrow it returned not

@@ -134,10 +134,19 @@ pub struct ResonanceTally {
     pub parabolic: u64,
     pub boost: u64,
     pub holonomic: u64,
+    /// The shear (78.46(4′), C1): cells one circuit crosses (unperturbed),
+    /// cells whose circuits all agree on one ray (flat), and cells two of
+    /// whose circuits disagree (curved).
+    pub unperturbed: u64,
+    pub flat: u64,
+    pub curved: u64,
     /// Thoughts: perception pairs joined by their one transition's edge; and
-    /// pairs holding several, none chosen, each filed by class.
+    /// pairs holding several, none chosen, each orbit kept by its class —
+    /// congruent (the congruence index) or a standing class (both horizons).
     pub edges: u64,
     pub several: u64,
+    pub kept_congruent: u64,
+    pub kept_class: u64,
     /// Incoherences filed as demands by class; and those whose class did not
     /// read.
     pub demanded: u64,
@@ -147,7 +156,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | thoughts: edges {} several {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -163,15 +172,20 @@ impl ResonanceTally {
             self.parabolic,
             self.boost,
             self.holonomic,
+            self.unperturbed,
+            self.flat,
+            self.curved,
             self.edges,
             self.several,
+            self.kept_congruent,
+            self.kept_class,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 19] {
+    fn fields(&mut self) -> [&mut u64; 24] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -189,8 +203,13 @@ impl ResonanceTally {
             &mut self.parabolic,
             &mut self.boost,
             &mut self.holonomic,
+            &mut self.unperturbed,
+            &mut self.flat,
+            &mut self.curved,
             &mut self.edges,
             &mut self.several,
+            &mut self.kept_congruent,
+            &mut self.kept_class,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -330,8 +349,36 @@ impl Contemplation {
             // modes, their joint coherence, the capacity of their algebra.
             let cell = crate::transducer::cech::read_cell(grade, None, None, &circuits, &orders, budget);
             self.note_cell(&cell, chart);
+            self.note_shear(&circuits);
         }
         self.file_thoughts(key, &to);
+    }
+
+    /// THE SHEAR ON THE CELL'S ORBITS (78.46(4′), 78.48(4)): the pair
+    /// composite `ρ_n⁻¹ ρ_o` is the identity exactly where two orbits are one
+    /// ray (C1(a)), so the circuits keyed by their canonical rays hold every
+    /// pair at once — under one key they agree (FLAT), under several each is
+    /// sheared by the others (CURVED); one circuit alone is UNPERTURBED. A
+    /// ray that does not read canonically is keyed by nothing and so agrees
+    /// with nothing (rule 11).
+    fn note_shear(&mut self, circuits: &[CellCircuit]) {
+        let mut rays: Keyed<()> = Keyed::new();
+        let mut unkeyed = false;
+        for c in circuits {
+            match c.holonomy.as_ref().ok().and_then(Mv::canonical) {
+                Some(ray) => {
+                    let mut k = Vec::new();
+                    ray.put_canonical(&mut k);
+                    rays.insert(&k, ());
+                }
+                None => unkeyed = true,
+            }
+        }
+        match (circuits, rays.len(), unkeyed) {
+            ([_], _, _) => self.resonance.unperturbed += 1,
+            (_, 1, false) => self.resonance.flat += 1,
+            _ => self.resonance.curved += 1,
+        }
     }
 
     /// The cell's reading counted, and each incoherence filed as a demand on
@@ -388,11 +435,7 @@ impl Contemplation {
                 _ => {
                     self.resonance.several += 1;
                     for t in ts {
-                        if let Some((rotor, carriage)) = halves(t) {
-                            let fill =
-                                crate::transducer::cech::classify(&rotor, &carriage, sentence::CycleType::Identity);
-                            self.complex.index_congruent(&fill);
-                        }
+                        self.keep_orbit(key, &other, t);
                     }
                 }
             }
@@ -400,5 +443,40 @@ impl Contemplation {
         let reopened = self.complex.coboundary_on_link(key, |verts| volume_of(&rems, verts));
         self.note_decohered(reopened, super::meet::Adjunct::Candidate);
         self.decide_neighbors(key);
+    }
+
+    /// ONE ORBIT OF A PAIR THAT HOLDS SEVERAL, KEPT BY ITS OWN COORDINATES
+    /// (78.48(3), (6)): classified as the complex classifies an edge; a
+    /// congruence filed at its class in the congruence index, and a
+    /// congruence or a standing class written into BOTH perceptions'
+    /// horizons, which marks them for the pivot. Never keyed by the pair —
+    /// an index keyed by two addresses copies both.
+    fn keep_orbit(&mut self, a: &[u8], b: &[u8], t: &Transition) {
+        let Some((rotor, carriage)) = halves(t) else {
+            self.resonance.undemanded += 1;
+            return;
+        };
+        let fill = crate::transducer::cech::classify(&rotor, &carriage, sentence::CycleType::Identity);
+        let held = match &fill {
+            Fill::Congruent(..) => {
+                self.complex.index_congruent(&fill);
+                self.resonance.kept_congruent += 1;
+                true
+            }
+            Fill::Class(..) => {
+                self.resonance.kept_class += 1;
+                true
+            }
+            Fill::Filled(..) | Fill::Unspellable(_) | Fill::Unread(_) | Fill::Open => false,
+        };
+        if held {
+            for v in [a, b] {
+                if let Some(bubble) = self.bubbles.get_mut(v) {
+                    horizon_put(&mut bubble.horizon, rotor.clone(), Standing::Held);
+                    bubble.dirty = true;
+                    self.dirty.insert(v, ());
+                }
+            }
+        }
     }
 }

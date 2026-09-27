@@ -98,22 +98,23 @@ pub(crate) fn intersect(a: &[Link], b: &[Link]) -> Vec<Link> {
 }
 
 impl Contemplation {
-    /// Two bubbles on one simplex: extend decides. Extended merges and
-    /// re-gauges; Congruent merges with a torsion axis; Class keeps both
-    /// and writes each into the other's horizon. Zero volume never merges.
+    /// Two bubbles on one simplex: the fill decides (78.48(5)). Filled
+    /// merges and re-gauges; Congruent merges with a torsion axis; Class
+    /// keeps both and writes each into the other's horizon. Remainder volume
+    /// is what two thoughts share unexplained — a 2-cell's measure, never
+    /// the edge's decision: under a volume gate a perfect match never merged.
     pub(crate) fn decide_neighbors(&mut self, key: &[u8]) {
         let keys = self.complex.link(key, 1);
         for ck in keys {
-            let Some((fill, volume, vertices)) = self.complex.simplex(&ck).map(|c| (c.fill.clone(), c.volume, c.vertices.clone())) else {
+            let Some((fill, vertices)) = self.complex.simplex(&ck).map(|c| (c.fill.clone(), c.vertices.clone())) else {
                 continue;
             };
             if !fill.unsettled() {
                 continue;
             }
-            let vol_nz = volume.iter().any(|&x| x > 0);
             let outcome = self.fill_meet(&ck);
             match outcome {
-                CoboundaryOutcome::Attached(Fill::Filled(gamma, carriage)) if vol_nz => {
+                CoboundaryOutcome::Attached(Fill::Filled(gamma, carriage)) => {
                     self.fills += 1;
                     for v in &vertices {
                         if let Some(b) = self.bubbles.get_mut(v) {
@@ -136,7 +137,7 @@ impl Contemplation {
                     self.truncate(&touched);
                     return;
                 }
-                CoboundaryOutcome::Attached(Fill::Congruent(kappa, g, ell)) if vol_nz => {
+                CoboundaryOutcome::Attached(Fill::Congruent(kappa, g, ell)) => {
                     self.torsion_merges += 1;
                     // RM1 — the residue's chart, read before the merge takes
                     // the thoughts: where the remainder was perceived.
@@ -217,9 +218,6 @@ impl Contemplation {
                 // 37.7 at a simplex: a rotation the seventeen do not spell,
                 // which merges nothing and seeds no horizon.
                 CoboundaryOutcome::Attached(Fill::Unspellable(_)) => {}
-                // The volume-zero halves of the two arms above.
-                CoboundaryOutcome::Attached(Fill::Filled(..))
-                | CoboundaryOutcome::Attached(Fill::Congruent(..)) => {}
                 CoboundaryOutcome::Attached(Fill::Class(_, r)) => {
                     self.classes += 1;
                     for v in &vertices {
@@ -274,10 +272,21 @@ impl Contemplation {
         let mut bundle = None;
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();
         let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
+        // THE THOUGHT STANDS ON THE BODIES IT WAS FORMED OF (78.48(5)): its
+        // perceptions' bodies by chart, so a later perception meets it.
+        let mut spores: super::resonance::Spores = Keyed::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
             };
+            for (chart, bodies) in b.spores.scoped() {
+                match spores.get_mut(&chart) {
+                    Some(held) => held.extend(bodies.iter().cloned()),
+                    None => {
+                        spores.insert(&chart, bodies.clone());
+                    }
+                }
+            }
             old_rems.insert(v, b.remainder.to_vec());
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
@@ -318,7 +327,7 @@ impl Contemplation {
             return None;
         };
         let key = match &form {
-            Some(f) => idea_key(f),
+            Some(f) => super::resonance::perceived_key(idea_key(f), &spores),
             None => remainder_addr(&remainder),
         };
         let bubble = Bubble {
@@ -331,7 +340,7 @@ impl Contemplation {
             dirty: false,
             // A merge is a thought, formed of what it merged (N4).
             percept: false,
-            spores: super::resonance::Spores::default(),
+            spores,
             moved_k: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),

@@ -17750,6 +17750,104 @@ negative refused with its class; the Gram form of the shapes read; and on
 the fleet a second mind re-deriving the class from its own constructors.
 The census is a regression reading only.
 
+### 78.48 Perception to thought: the orbit, its shear, its spin, and the hours inside a return (ruled 2026-09-27, the operator's word)
+
+**The operator's word.** Keep the orbits on the physics: it is the SHEAR on
+an orbit that funnels through to the mathematics and makes each orbit
+unique. A planet spins while it orbits; the spin pushes the frames and
+works the lower boundary of timing — each tick an hour inside a day, the
+hours relative, defined by the physics. And the plan for thinking is built
+into the machinery that already exists, never beside it.
+
+**(1) The path.** A scene is perceived as bodies by chart (their moduli,
+every axis invariant under every versor, so only bodies on one chart can be
+carried onto each other). A form that does not close is held as a
+PERCEPTION, filed at its form's key and its bodies' coordinates
+(`resonance::perceived_key`, the one derivation `Bubble::key` reads). The
+chart's fibre is `by_chart` — a word vertex's chart is its body's moduli —
+so no index is added. Bodies meet only there.
+
+**(2) A transition is a 1-simplex; its circuit is its own orbit.** The
+versor carrying one perception's body onto another's (read both ways, RX1)
+is an EDGE, never a circuit. Its CIRCUIT is its orbit `Vᵏ`: an elliptic
+mode returns at its period ℓ (harmonic); a boost (luminal, `cga/planes.rs`:
+the `eᵢe₋`, `e₊e₋` half) and a parabolic slide never return — no limit is
+taken (law 1); an elliptic mode of no admitted order is a rosette. The
+chart's transitions are fed to `cech::read_cell` as that cell's circuits,
+and it reads their modes, their joint coherence and the capacity of their
+algebra. BODIES OF DIFFERENT SCENES ARE NO ANASTOMOSIS: one body seen twice
+is not two bodies fused, so the cell has no constructors and no round — an
+orbit of constructors under cross-scene transitions never closes (it spent
+a whole stroke per hold before this was ruled).
+
+**(3) Every orbit is kept at its own coordinates.** A body pair's symmetry
+is its coset (`versor_coset`, one canonical representative). Several
+DIFFERENT body pairs relating two perceptions are several orbits, each
+classified as the complex classifies an edge and KEPT BY ITS OWN
+COORDINATES — its class vector, which carries its turn, its placement and
+its dilation: a congruence in the congruence index, and a congruence or a
+standing class in BOTH perceptions' horizons — none refused, none chosen.
+Never keyed by the pair: an index keyed by two perceptions' addresses
+copies both, per orbit (the epoch-65 OOM). The pair's EDGE carries a
+transition only where every body pair reads one ray. (The same pass found
+`Complex::drop_vertex` leaving a dropped ring's orbits standing: they now
+leave with it.)
+
+**(4) Uniqueness is the shear.** Two orbits of one class are not one orbit:
+each is unique by the push and pull of its neighbours on its chart — DRAG
+along its mode (the rate), LIFT across it (the tilt) (78.46). Their pair
+composite `H(o, n) = ρ_n⁻¹ ρ_o` is the identity exactly where the two
+agree (C1(a)), so a chart's orbits keyed by their canonical rays read FLAT
+together where they stand under one key and CURVED where they do not
+(C1(b)); one orbit alone is "unperturbed" by name. Nothing is filed per
+pair: the shear's content lies in the orbit algebra's closure (78.11).
+
+**(5) The thought is decided by its fill, never by remainder volume.** The
+complex fills the edge by its own classification: FILLED (the same) merges
+the two perceptions into one thought; CONGRUENT at ℓ merges them on the
+torsion axis and mints its Torse (13.12); a CLASS writes each into the
+other's horizon. Remainder volume is a measure of what two thoughts SHARE
+UNEXPLAINED — it belongs to the 2-cells the climb builds, never to the
+1-edge's decision. The gate "zero volume never merges" is withdrawn: under
+it a perfect match could never merge.
+
+**(6) What perception saw is what the pivot moves on.** A classified
+perception edge's rotor enters BOTH endpoints' horizons (`horizon_put`)
+and marks them dirty, so the expansion ring's `pivot_orbit` reads the
+class the eyes found.
+
+**(7) Spin and orbit; the hours inside a return.** A rotor of the letters'
+chart has two invariant planes (`Rotor::toral_period`): the SENSOR PLANE's
+turn is the ORBIT, and a plane carrying the frame axis is the SPIN — the
+motion that pushes the frames. One rigid motion in the plane is always
+tidally locked (a single rotation about its fixed point turns the body by
+the angle it revolves), so spin and orbit part only across a trajectory,
+and are read there: the spin's period, the orbit's, their beat and their
+least common multiple. Timing follows 78.43 at a lower grade — a SPIN is an
+hour, an ORBIT's return a day (an age), the resonant composition an eon —
+the hours relative, their count the physics' own, never a clock.
+
+**(8) What it gives the mind.** Anticipation (the phase inside a return
+says what the next tick must be, so speaking an output continues an orbit);
+compression (a trajectory is two generators and their ratio — a law, the
+word a shortcut, 78.44(4)); relation by rhythm (bodies in step, leading,
+beating); order within a K-step without a clock; the error LOCALISED (the
+beat names the tick where a hypothesis slips, and the demand is that
+tick's); attention set by the motion (fine spin, many hours); recall by
+phase. ONLY WHERE THE HOURS REACH THE PIVOT AND SPEECH — hours counted and
+read by nothing are harness (77.1).
+
+**(9) What is not yet landed, and its acceptance.**
+- (7)–(8): ACCEPTANCE is a body turning and drifting over several frames
+  whose next frame the mind PREDICTS from spin, orbit and phase, and a
+  wrong ratio filed as a demand AT THE HOUR it slips.
+- THE DOCKET'S FOLD: a demand whose chart holds no 2-core ring and carries
+  zero flux lapses before the close (TC1's truncation, FX1's `ZeroFlux`),
+  and the close cites what remains. Posed with it: whether the close
+  cites only the orbit's changes (the restart's re-seed must then fold
+  every Orbit act or read the docket from the genome), and whether a
+  voice's chain folds as a court's does.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

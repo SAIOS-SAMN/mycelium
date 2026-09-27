@@ -373,6 +373,15 @@ impl Complex {
                     layer.remove(&k);
                 }
             }
+            // A dropped simplex's orbits leave with it: they stand at
+            // coordinates its key prefixes, and nothing else reads them.
+            let orbits: Vec<Vec<u8>> = match self.orbits.fiber_at(&k) {
+                Some(fiber) => fiber.map(|(ok, _)| ok).collect(),
+                None => Vec::new(),
+            };
+            for ok in orbits {
+                self.orbits.remove(&ok);
+            }
         }
         self.sections.remove(vertex);
     }
