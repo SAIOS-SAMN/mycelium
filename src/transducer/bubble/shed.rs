@@ -243,10 +243,20 @@ impl Contemplation {
                 self.bubbles.len(), c[0], c[1], c[2], c[3]
             );
         }
+        // THE UNGLUED DOOR ACTS ON THOUGHTS ONLY (N4): a perception never
+        // passes it — it leaves by the physics, its paid height passed or
+        // what it cites lapsed — and a thought's glue is also the transition
+        // that formed it, an edge of the meet graph.
         let drop: Vec<Vec<u8>> = self
             .bubbles
             .scoped()
-            .filter(|(_, b)| b.glued_by.is_empty() && b.glues.is_empty() && !b.dirty)
+            .filter(|(k, b)| {
+                !b.percept
+                    && b.glued_by.is_empty()
+                    && b.glues.is_empty()
+                    && !b.dirty
+                    && self.complex.link(k, 1).is_empty()
+            })
             .map(|(k, _)| k)
             .collect();
         let n = drop.len();

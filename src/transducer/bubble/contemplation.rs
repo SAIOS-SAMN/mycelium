@@ -767,13 +767,49 @@ impl Contemplation {
         out
     }
 
+    /// THE TRANSITION BETWEEN TWO HELD THOUGHTS OR PERCEPTIONS, `r_b r̃_a`, a
+    /// ray (78.32(1)). Where each form's word vertices agree on one rotor,
+    /// the two rotors' transition. Where a form speaks several (a percept of
+    /// bodies turned apart), THE TRANSITION ON THE CHART THEY MEET AT (N4):
+    /// the deepest chart both covers hold — the meet's own coordinate, fixed
+    /// by the covers' chain — and the one word vertex each form holds there.
+    /// A chart where either form holds several vertices names no one
+    /// transition, and none is chosen: no edge.
     pub(crate) fn rotor_between(&self, a: &[u8], b: &[u8]) -> Option<Rotor> {
         let ba = self.bubbles.get(a)?;
         let bb = self.bubbles.get(b)?;
-        let ra = ba.rotor()?;
-        let rb = bb.rotor()?;
-        // `r_b r̃_a`, a ray (78.32(1)).
-        Some(rb.geo(&ra.is_versor().then(|| ra.reverse())?))
+        let transition = |ra: &Rotor, rb: &Rotor| Some(rb.geo(&ra.is_versor().then(|| ra.reverse())?));
+        if let (Some(ra), Some(rb)) = (ba.rotor(), bb.rotor()) {
+            return transition(ra, rb);
+        }
+        let meet = self.shared_chain(&[a.to_vec(), b.to_vec()])?;
+        // THE MEET'S LEAVES: the shared charts no other shared chart
+        // refines — a cover is a chain of prefixes, and its deepest member is
+        // the one nothing in it extends (read off the prefix relation, never
+        // a length compared).
+        let leaves: Vec<&Vec<u8>> =
+            meet.iter().filter(|k| !meet.iter().any(|o| o.len() > k.len() && o.starts_with(k))).collect();
+        let one_on = |bub: &Bubble, chart: &stalk::Invariant| -> Option<Rotor> {
+            let f = bub.form.as_ref()?;
+            let [at] = f.by_class.at(&coord::Chart(chart.clone()))?.as_slice() else { return None };
+            match f.vertices.at(at)? {
+                Vertex::Word { derivation, .. } => Some(derivation.rotor()),
+                _ => None,
+            }
+        };
+        // Every leaf reads the transition; where they disagree the two hold
+        // no one transition, and none is chosen.
+        let mut read: Option<Rotor> = None;
+        for key in leaves {
+            let chart = stalk::Invariant::from_key(key)?;
+            let r = transition(&one_on(ba, &chart)?, &one_on(bb, &chart)?)?;
+            match &read {
+                None => read = Some(r),
+                Some(held) if held.projective_eq(&r) => {}
+                Some(_) => return None,
+            }
+        }
+        read
     }
 
     /// Link of one new bubble: edges to bubbles sharing a chart (by_chart
@@ -905,6 +941,8 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
+            // A remainder held alone is no perception (N4).
+            percept: false,
             moved_k: self.now_k,
             escrow: volume,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),

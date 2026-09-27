@@ -329,6 +329,8 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: false,
+            // A merge is a thought, formed of what it merged (N4).
+            percept: false,
             moved_k: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),

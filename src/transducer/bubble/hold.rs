@@ -207,6 +207,8 @@ impl Contemplation {
             potential: volume,
             volume,
             dirty: true,
+            // A perceived form is held at the perception layer (N4).
+            percept: true,
             moved_k: self.now_k,
             // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
             // thought measures. They were the same number written in two

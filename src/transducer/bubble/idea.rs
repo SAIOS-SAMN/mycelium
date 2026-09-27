@@ -177,6 +177,13 @@ pub struct Bubble {
     pub potential: [u64; 4],
     pub volume: [u64; 4],
     pub dirty: bool,
+    /// N4 (0.7's layers, ruled 2026-09-26) — HELD AT THE PERCEPTION LAYER: a
+    /// form the mind perceived. A perception is not a thought: it never
+    /// passes the unglued door, and it leaves by the physics — its paid
+    /// height passed, or what it cites lapsed. A THOUGHT is formed where a
+    /// transition relates two held perceptions (an edge of the meet graph),
+    /// and the transition is its glue.
+    pub percept: bool,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the
