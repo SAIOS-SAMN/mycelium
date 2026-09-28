@@ -97,6 +97,13 @@ impl Blade {
         Some(crate::transducer::cga::sphere_at(&self.centroid()?, &self.radius2()))
     }
 
+    /// The nucleus in the sensor's VERTEX coordinates — where a transition
+    /// between bodies acts (`carry::vertex_centroid`) — so a frame and the
+    /// motion carrying it stand in one chart (78.51(3)).
+    pub fn vertex_nucleus(&self) -> Option<crate::transducer::cga::Mv> {
+        Some(crate::transducer::cga::sphere_at(&super::carry::vertex_centroid(self)?, &self.radius2()))
+    }
+
     /// THE SHAPE'S FIXED-SIZE COORDINATES (AT1, ruled (a) on the chords): the
     /// inertia, the quartic moments, the gauge and the shell, each exact —
     /// what the body IS up to where it stands, and never its support sites,

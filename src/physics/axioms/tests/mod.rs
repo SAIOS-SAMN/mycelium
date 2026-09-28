@@ -11,4 +11,5 @@ mod orbit;
 mod reciprocity;
 mod refused;
 mod routes;
+mod tensegrity;
 mod tether;

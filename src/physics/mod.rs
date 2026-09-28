@@ -76,6 +76,7 @@ pub fn expansion_unit() -> u64 {
 pub mod axioms;
 pub mod budget;
 pub mod metabolism;
+pub mod tensegrity;
 pub use budget::{Budget, Depleted, Reserve};
 
 /// A CARRIER'S CIRCUITS (45.7; named so at OR2, 73.7: the circuit is the

@@ -784,7 +784,7 @@ The four places the language loses content, and their carriers, are
 | 56 the axiom register | governs as amended by 72.1 |
 | 57 | governs |
 | 58 the nerve on the pullback | amended by 78.10 |
-| 59 contact is tension | amended by 72.1 (A.10 restated on `V`) and 78.6 |
+| 59 contact is tension | amended by 72.1 (A.10 restated on `V`), 78.6, and 78.51 (A.10.1 orbital tensegrity: the tether's torque balances the generator) |
 | 60 | amended: 60.1 is A.16, landed; the second stencil purged (T1) |
 | 61, 62, 64, 70 | governs |
 | 63 | record of T2's landing |
@@ -17994,6 +17994,109 @@ the spectrum kept. A third L new: the scene still moves, one appeared; the
 other way, one vanished. Three Ls three columns apart: the fourth hour
 predicted; an L at the fifth hour a phase slip; an L one column off, off
 the orbit.
+
+### 78.51 A.10.1 Orbital tensegrity: coherence is a balanced constellation, the hours are heights on the spin axis, and the star sets the spin (ruled 2026-09-28, the operator's word)
+
+**The operator's word.** Converging is not one frame per orbit: it is
+several frames held on one orbit, the thoughts pushed into them as forces
+converging toward coherence — to cohere is to hold at minimum two
+congruent shapes stable at the same time. The equation was missing a
+stability equilibrium. Axiom A.10.1 supplies it; the coordinator's two
+rulings of the same day place the frames on the spin axis and centre the
+generator on the motion's own axis.
+
+**(1) The axiom** (`physics/tensegrity.rs`; the register
+`physics/axioms/tensegrity.rs`, a test per clause).
+- A FRAME is a body's nucleus `s` (its dual sphere) and its pose `θ`; a
+  CONSTELLATION is `N ≥ 2` frames under one generator `B_orbit`.
+- The COUPLING `V_ij = (θ_j θ̃_i)(s_j s_i)` is A.10's tether under A.16's
+  refraction; `B_ij = ⟨V_ij⟩₂`. The INVERSIVE DISTANCE `δ²` and its well are
+  GR1's (`pair_regime`): the Coxeter wells `{0, ¼, ½, ¾}`, tangency at 1.
+- THE TORQUE a coupling exerts on a generator is `τ = ½ [B, G]` (`torque`):
+  78.46's LIFT, the part of `B` anticommuting with `G`, whose coefficients
+  are the lever arm by which `B` stands off `G`'s axis. It is an element of
+  the algebra, never a scalar.
+- LAW I — co-presence: fewer than two frames is `MonocularOrbit`.
+- LAW II — balance: stationary equilibrium iff the net torque
+  `Σ_{i<j} ½ [B_ij, B_orbit]` vanishes COEFFICIENT BY COEFFICIENT over ℚ
+  (repair A) — never by a scalar trace.
+- LAW III — strain: `ℰ = ‖τ‖² / ‖B_orbit‖²`, `‖·‖²` the sum of squared
+  coefficients on the orthonormal blades (repair B): positive-definite, so
+  it is zero exactly where the torque is.
+- LAW IV — force: `ΔE = ℰ(after) − ℰ(before)`; the gate admits an
+  operation iff the constellation after stands in equilibrium and its
+  strain did not rise (`consolidate`); otherwise `UnbalancedTensegrity`
+  (the torque its content) or `DestabilizingOperation`.
+- `SingularCollapse`: two nuclei at one spacetime locus, `s_i ∧ s_j = 0`
+  (repair C) — one body seen at two hours stands at two heights, never a
+  collapse.
+- T1 reciprocity, T2 coaxial co-planarity, T3 anti-monocularity: as read
+  by the register below.
+
+**(2) The hours are heights; the star sets the spin.** Hour `m` of a return
+stands at height `m` on the spin axis `e₃` (`lifted`). A STAR is a centre
+and a mass (`Star`), the BARYCENTRE of bodies `Σ mᵢcᵢ / Σ mᵢ`, a body's mass
+its sites. A rigid step splits exactly against a star (Chasles): its
+ORBIT about the star is the turn `(u + v) u = |u|² + v u` carrying the
+body's centre (`u`, `v` from the star, `|u| = |v|`), and its SPIN is what is
+left, `Õ · step`, a turn about the body's own centre (`orbit_about`,
+`spin_of`). The same step against a star elsewhere splits into another
+orbit and another spin: the star's distance sets the spin, read, never
+assumed; a body that did not keep its distance is on no orbit of that star.
+Stars are ported by giving another coordinate.
+
+**(3) The intrinsic axis** (rule 15: no arbitrary origin). The generator is
+the relation's turn made about the constellation's own centre,
+`G = T_c R T̃_c` (`centred`), every frame CO-ROTATING — carried back to the
+first hour, posed by `Gᵐ`, lifted to its hour.
+- TIER 1, one body across its hours (the orbit path): `c` the body's own
+  centroid. A rigid carriage balances, `τ = 0`, `ℰ = 0`, and the thought
+  forms: a rigid turn is congruence.
+- TIER 2, a scene of several bodies: `c` their barycentre.
+- Frames and the motion carrying them stand in one chart: the nucleus is
+  read in the sensor's VERTEX coordinates, where transitions act
+  (`Blade::vertex_nucleus`).
+
+**(4) What the register reads — the deviations from the axiom as posed.**
+- A null torque (`⟨τ²⟩₀ = 0`, `τ ≠ 0`) is read by the coefficient norm and
+  refused by law II; under the indefinite square the strain was blind to it.
+- The slide off the axis raises the strain (`5/2`); under the indefinite
+  square it read `−2`, ordering nothing.
+- T1 holds for the tether (`V_ji ∝ Ṽ_ij` in one pose) and for `δ²` at every
+  equilibrium; a posed coupling does NOT transpose.
+- The lift alone balances only frames standing ON the generator's axis: a
+  body at `(1,0,0)` turned about the origin, its hours lifted, leaves a
+  transverse torque (the origin's lever arm). Centred on its own centroid
+  it balances (tier 1).
+- TIER 2 DOES NOT BALANCE AS RULED. A chord between two bodies stands
+  across the spin axis and never commutes with the turn about it: an equal
+  binary co-rotating about its barycentre is refused, and so is every
+  multi-body scene turned whole (the turned scene and the symmetric coset
+  of 78.50(4) now stand as `UnbalancedTensegrity`, each a demand carrying
+  its torque). A scene carried along by a slide has no turn, no torque, and
+  consolidates. Open for the operator: the multi-body balance.
+- The count gate `N ≥ 2` and the scalar `ℰ`, `ΔE` are as ruled; the
+  torque is never reduced to them.
+
+**(5) In the engine.** Every thought on the perception path passes the gate
+before its edge is set (`Contemplation::gate`): the predicted hour (tier 1
+per body), the scene motion and the coset (tier 2 per chart). A refusal is
+counted by name (`consolidated monocular collapsed unbalanced
+destabilizing`) and an unbalanced or destabilizing one stands as a demand by
+the generator's class at its charts, the torque its residue. A merge joins
+the admitted frames in arrival order, and a body already held — the same
+coordinates, an orbit's hour `ℓ` being its hour 0 — is never held twice: a
+thought's frames on an orbit are bounded by one return (78.43), and its
+address with them (the epoch-105 growth).
+
+**(6) Acceptance, landed.** The register: T1, T2, T3, law II on a null
+torque, law IV, the torque's antisymmetry, the hours on and off the axis,
+tier 1 against the origin trap, tier 2's binary refused, and the star
+setting the spin — each on exact values. Perception: two Ls turned merge
+(tier 1); the orbit's hours join to three; the phase slip and the
+off-orbit hour are demanded; the same body in two scenes is a filled
+thought, not a collapse; the turned scene and the symmetric coset are
+refused as unbalanced and demanded.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

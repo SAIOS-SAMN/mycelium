@@ -63,7 +63,7 @@ pub fn spores_of(frames: &crate::transducer::family::Frames) -> Spores {
 
 /// A BODY'S COORDINATES, written out: its nucleus, its inertia and its
 /// quartic, exact.
-fn body_coordinates(s: &Shape) -> Vec<u8> {
+pub(super) fn body_coordinates(s: &Shape) -> Vec<u8> {
     let mut body = Vec::new();
     s.blade.spatial.to_bytes(&mut body);
     for x in s.blade.inertia.iter().chain(s.blade.quartic.iter().flat_map(|t| t.iter())) {
@@ -170,6 +170,13 @@ pub struct ResonanceTally {
     pub appeared: u64,
     pub vanished: u64,
     pub unread_lines: u64,
+    /// A.10.1 — the consolidation gate: relations admitted as thoughts, and
+    /// refused by name — monocular, collapsed, unbalanced, destabilizing.
+    pub consolidated: u64,
+    pub monocular: u64,
+    pub collapsed: u64,
+    pub unbalanced: u64,
+    pub destabilizing: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -179,7 +186,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -214,13 +221,18 @@ impl ResonanceTally {
             self.appeared,
             self.vanished,
             self.unread_lines,
+            self.consolidated,
+            self.monocular,
+            self.collapsed,
+            self.unbalanced,
+            self.destabilizing,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 36] {
+    fn fields(&mut self) -> [&mut u64; 41] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -257,6 +269,11 @@ impl ResonanceTally {
             &mut self.appeared,
             &mut self.vanished,
             &mut self.unread_lines,
+            &mut self.consolidated,
+            &mut self.monocular,
+            &mut self.collapsed,
+            &mut self.unbalanced,
+            &mut self.destabilizing,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -324,6 +341,12 @@ struct Row {
     /// What each of the row's transitions carries, per lane, beside it
     /// (`lanes_of`); `None` where no transition carries the pair.
     lanes: Vec<Option<[u64; 4]>>,
+    /// A.10.1 — this body's nucleus, and each of the other's bodies' on the
+    /// chart, in their order: the frames a constellation is read on.
+    nucleus: Option<Mv>,
+    theirs: Vec<Option<Mv>>,
+    /// Each of the other's bodies' mass: its sites (78.51(3)).
+    their_mass: Vec<u64>,
 }
 
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
@@ -582,6 +605,9 @@ impl Contemplation {
                         chart: chart.clone(),
                         ts: Vec::with_capacity(theirs.len()),
                         lanes: Vec::with_capacity(theirs.len()),
+                        nucleus: x.blade.vertex_nucleus(),
+                        theirs: theirs.iter().map(|y| y.blade.vertex_nucleus()).collect(),
+                        their_mass: theirs.iter().map(|y| y.blade.support.len() as u64).collect(),
                     };
                     for y in &theirs {
                         match transition(x, y, budget) {
@@ -809,6 +835,10 @@ impl Contemplation {
             let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
             if let (true, [g, more @ ..]) = (every, steps.as_slice()) {
                 if let (true, Some((rotor, carriage))) = (more.iter().all(|s| s.projective_eq(g)), halves(g)) {
+                    if let Err(why) = self.gate(rows, g, true) {
+                        self.note_refusal(&why, g, rows);
+                        continue;
+                    }
                     let latest = rows.iter().filter_map(|r| match r.lanes.as_slice() {
                         [.., Some(l)] => Some(*l),
                         _ => None,
@@ -837,8 +867,11 @@ impl Contemplation {
             match whole.as_slice() {
                 // ONE MOTION CARRIES THE WHOLE CONFIGURATION: the thought.
                 [line] => {
-                    self.scene_edge(key, &other, &line.t, line.lanes);
                     self.note_unmatched(rows, &theirs, line);
+                    match self.gate(rows, &line.t.versor, false) {
+                        Ok(()) => self.scene_edge(key, &other, &line.t, line.lanes),
+                        Err(why) => self.note_refusal(&why, &line.t.versor, rows),
+                    }
                 }
                 // SEVERAL, CARRYING THE SAME BODIES ONTO THE SAME BODIES: one
                 // coset — they differ by symmetries of the configuration. The
@@ -847,6 +880,10 @@ impl Contemplation {
                 [first, rest @ ..] if rest.iter().all(|l| same_landing(l, first) && same_carried(l, first)) => {
                     let members: Vec<Transition> = whole.iter().map(|l| l.t.clone()).collect();
                     if let Some(rep) = crate::transducer::blade::coset_representative(&members) {
+                        if let Err(why) = self.gate(rows, &rep.versor, false) {
+                            self.note_refusal(&why, &rep.versor, rows);
+                            continue;
+                        }
                         self.scene_edge(key, &other, rep, first.lanes);
                         self.resonance.cosets += 1;
                         for m in &members {
@@ -881,6 +918,150 @@ impl Contemplation {
         let reopened = self.complex.coboundary_on_link(key, |verts| volume_of(&rems, verts));
         self.note_decohered(reopened, super::meet::Adjunct::Candidate);
         self.decide_neighbors(key);
+    }
+
+    /// A.10.1 — THE CONSOLIDATION GATE, before any thought is formed. The
+    /// other's bodies are the constellation BEFORE, and with this perception's
+    /// bodies joined, AFTER; the physics decides (`physics::tensegrity`):
+    /// admitted where every constellation stands in equilibrium and its
+    /// strain did not rise.
+    ///
+    /// THE INTRINSIC AXIS (78.51(3)): the relation's turn `R` (its rotation
+    /// factor, read about the origin) is made about the constellation's own
+    /// centre, `G = T_c R T̃_c` — never about the chart's origin (rule 15).
+    /// Every frame stands CO-ROTATING: its nucleus carried back to the first
+    /// hour, posed by `G` to its hour, and lifted to its hour's height on the
+    /// spin axis (78.51, `tensegrity::lifted`).
+    ///
+    /// - On an ORBIT (tier 1) each of this perception's bodies is ONE body
+    ///   across its hours: the other's bodies its hours `0 … m−1` in arrival
+    ///   order, carried back by `t_j t̃_1`, and this body hour `m`, carried
+    ///   back by `t_1`; `c` the body's own centroid at its first hour.
+    /// - In a SCENE (tier 2) the other's bodies stand at hour 0 as they are,
+    ///   this perception's at hour 1 carried back by the scene's motion, one
+    ///   constellation per chart; `c` the other's barycentre, each body
+    ///   weighed by its mass (its sites).
+    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool) -> Result<(), crate::physics::tensegrity::Refusal> {
+        use crate::physics::tensegrity::{barycentre, centred, consolidate, lifted, Constellation, Frame};
+        use crate::transducer::cga;
+        type Q = num_rational::BigRational;
+        let ray = |m: Mv| match m.canonical() {
+            Some(c) => c,
+            None => m,
+        };
+        let turn = match crate::transducer::element::conformal_factors(generator) {
+            Ok(f) => f.rotation,
+            Err(_) => generator.clone(),
+        };
+        let one = Mv::scalar(num_traits::One::one());
+        // The constellations: per row on an orbit, per chart in a scene.
+        let mut groups: Vec<Vec<&Row>> = Vec::new();
+        match orbit {
+            true => groups.extend(rows.iter().map(|r| vec![r])),
+            false => {
+                let mut charts: Keyed<()> = Keyed::new();
+                for r in rows {
+                    charts.insert(&r.chart, ());
+                }
+                groups.extend(charts.scoped().map(|(chart, _)| rows.iter().filter(|r| r.chart == chart).collect::<Vec<_>>()));
+            }
+        }
+        for on in groups {
+            let [first, ..] = on.as_slice() else { continue };
+            let [Some(t11), ..] = first.ts.as_slice() else { continue };
+            // Each of the other's bodies at its first hour, with its mass.
+            let mut theirs: Vec<(Mv, Q)> = Vec::new();
+            for ((t, s), m) in first.ts.iter().zip(&first.theirs).zip(&first.their_mass) {
+                let (Some(t), Some(s)) = (t, s) else { continue };
+                let m = Q::from_integer((*m).into());
+                theirs.push(match orbit {
+                    true => {
+                        let back = t.versor.geo(&t11.versor.reverse());
+                        (ray(back.reverse().sandwich(s)), m)
+                    }
+                    false => (s.clone(), m),
+                });
+            }
+            // The centre: on an orbit the body's own at its first hour — the
+            // first to arrive, arrival order being the orbit's content — in a
+            // scene the barycentre of all. A centre that does not read (a
+            // nucleus at infinity) leaves no frame standing.
+            let centres: Option<Vec<(Vec<Q>, Q)>> = match (orbit, theirs.as_slice()) {
+                (true, [(s, m), ..]) => cga::base_at(s, usize::from(s.n())).map(|c| vec![(c, m.clone())]),
+                (true, []) => None,
+                (false, _) => theirs.iter().map(|(s, m)| cga::base_at(s, usize::from(s.n())).map(|c| (c, m.clone()))).collect(),
+            };
+            let Some(star) = centres.as_deref().and_then(barycentre) else {
+                return Err(crate::physics::tensegrity::Refusal::MonocularOrbit);
+            };
+            let g = ray(centred(&turn, &star.centre));
+            let g = g.widened(g.n().max(3));
+            let mut power = one.clone();
+            let mut before: Vec<Frame> = Vec::new();
+            for (hour, (s, _)) in (0u64..).zip(&theirs) {
+                let (h, pose) = match orbit {
+                    true => (hour, power.clone()),
+                    false => (0, one.clone()),
+                };
+                before.push(lifted(&Frame { nucleus: s.clone(), pose }, h));
+                if orbit {
+                    power = ray(g.geo(&power));
+                }
+            }
+            let (next, pose) = match orbit {
+                true => (theirs.len() as u64, power),
+                false => (1, g.clone()),
+            };
+            let mut after = before.clone();
+            for r in &on {
+                let (Some(x), [Some(t), ..]) = (&r.nucleus, r.ts.as_slice()) else { continue };
+                let carry = if orbit { &t.versor } else { generator };
+                after.push(lifted(&Frame { nucleus: ray(carry.sandwich(x)), pose: pose.clone() }, next));
+            }
+            let (before, after) =
+                (Constellation { frames: before, generator: g.clone() }, Constellation { frames: after, generator: g });
+            consolidate(&before, &after)?;
+        }
+        self.resonance.consolidated += 1;
+        Ok(())
+    }
+
+    /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced or
+    /// destabilizing relation stands as a demand on its charts by its
+    /// generator's class, the torque it left its residue; a monocular orbit
+    /// or a collapse is counted.
+    fn note_refusal(&mut self, why: &crate::physics::tensegrity::Refusal, generator: &Mv, rows: &[Row]) {
+        use crate::physics::tensegrity::Refusal;
+        let residue = match why {
+            Refusal::MonocularOrbit => {
+                self.resonance.monocular += 1;
+                return;
+            }
+            Refusal::SingularCollapse => {
+                self.resonance.collapsed += 1;
+                return;
+            }
+            Refusal::UnbalancedTensegrity { net_torque } => {
+                self.resonance.unbalanced += 1;
+                Some(net_torque.clone())
+            }
+            Refusal::DestabilizingOperation { .. } => {
+                self.resonance.destabilizing += 1;
+                None
+            }
+        };
+        let class = halves(generator).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
+        let Some(class) = class else {
+            self.resonance.undemanded += 1;
+            return;
+        };
+        let mut charts: Keyed<()> = Keyed::new();
+        for r in rows {
+            charts.insert(&r.chart, ());
+        }
+        let charts: Vec<stalk::Invariant> = charts.scoped().filter_map(|(k, _)| stalk::Invariant::from_key(&k)).collect();
+        self.docket_demand(&class, &charts, residue.as_ref());
+        self.resonance.demanded += 1;
     }
 
     /// Lanes summed lane by lane (law 5); a sum past its carrier is counted

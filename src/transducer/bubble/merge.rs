@@ -303,13 +303,29 @@ impl Contemplation {
             self.bubbles.remove(v);
         }
         self.paint_seeded(&mut horizon);
+        // A.10.1 — THE CONSTELLATION JOINED: a frame the gate admitted joins
+        // the thought's frames, in the order it arrived. A body the thought
+        // already holds — the same coordinates, as an orbit's hour `ℓ` is its
+        // hour 0 — is the same frame and is never held twice: a thought's
+        // frames on an orbit are bounded by one return (78.43), and its
+        // address with them (the epoch-105 growth).
         let mut spores: super::resonance::Spores = Keyed::new();
-        for (_, held) in arrived.scoped() {
-            for (chart, bodies) in held.scoped() {
-                match spores.get_mut(&chart) {
-                    Some(on) => on.extend(bodies.iter().cloned()),
-                    None => {
-                        spores.insert(&chart, bodies.clone());
+        let mut held: Keyed<()> = Keyed::new();
+        for (_, bodies_by_chart) in arrived.scoped() {
+            for (chart, bodies) in bodies_by_chart.scoped() {
+                for b in bodies {
+                    let mut at = Vec::new();
+                    crate::transducer::address::put_key_bytes(&mut at, &chart);
+                    crate::transducer::address::put_key_bytes(&mut at, &super::resonance::body_coordinates(b));
+                    if held.contains(&at) {
+                        continue;
+                    }
+                    held.insert(&at, ());
+                    match spores.get_mut(&chart) {
+                        Some(on) => on.push(b.clone()),
+                        None => {
+                            spores.insert(&chart, vec![b.clone()]);
+                        }
                     }
                 }
             }
