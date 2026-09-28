@@ -159,6 +159,17 @@ pub struct ResonanceTally {
     pub deformed: u64,
     pub unfactored: u64,
     pub apart: u64,
+    /// The spectrum (78.50): pairs one motion carries whole (scene motions),
+    /// pairs whose several whole motions are one coset and the symmetries
+    /// their quotients are, this perception's bodies a scene motion does not
+    /// carry (appeared) and the other's it lands nothing on (vanished), and
+    /// lines whose ray did not read (unread).
+    pub scene_motions: u64,
+    pub cosets: u64,
+    pub symmetries: u64,
+    pub appeared: u64,
+    pub vanished: u64,
+    pub unread_lines: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -168,7 +179,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -197,13 +208,19 @@ impl ResonanceTally {
             self.deformed,
             self.unfactored,
             self.apart,
+            self.scene_motions,
+            self.cosets,
+            self.symmetries,
+            self.appeared,
+            self.vanished,
+            self.unread_lines,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 30] {
+    fn fields(&mut self) -> [&mut u64; 36] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -234,6 +251,12 @@ impl ResonanceTally {
             &mut self.deformed,
             &mut self.unfactored,
             &mut self.apart,
+            &mut self.scene_motions,
+            &mut self.cosets,
+            &mut self.symmetries,
+            &mut self.appeared,
+            &mut self.vanished,
+            &mut self.unread_lines,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -298,9 +321,78 @@ fn halves(v: &Mv) -> Option<(crate::transducer::alphabet::Rotor, crate::transduc
 struct Row {
     chart: Vec<u8>,
     ts: Vec<Option<Transition>>,
-    /// What the row's transitions carry, per lane, summed lane by lane
-    /// (`lanes_of`, law 5).
+    /// What each of the row's transitions carries, per lane, beside it
+    /// (`lanes_of`); `None` where no transition carries the pair.
+    lanes: Vec<Option<[u64; 4]>>,
+}
+
+/// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
+/// perception it carries (by row), the bodies of the other it lands on (by
+/// chart and place), and what it carries, per lane.
+struct Line {
+    t: Transition,
+    carried: Keyed<()>,
+    lands: Keyed<()>,
     lanes: [u64; 4],
+}
+
+/// A row's key among a line's carried bodies: its place, big-endian.
+fn row_key(i: usize) -> [u8; 8] {
+    (i as u64).to_be_bytes()
+}
+
+/// A landing's key: the chart, then the body's place on it, big-endian.
+fn land_key(chart: &[u8], j: usize) -> Vec<u8> {
+    let mut k = Vec::new();
+    crate::transducer::address::put_key_bytes(&mut k, chart);
+    k.extend_from_slice(&(j as u64).to_be_bytes());
+    k
+}
+
+/// THE PAIR'S SPECTRUM (78.50, 78.44): its transitions filed by their
+/// canonical rays — the coordinates a ray is — each with the bodies it
+/// carries and lands on and what it carries per lane. Transient: read, filed
+/// from, dropped. A ray with no canonical form is filed nowhere, counted by
+/// the caller as the pair's unread lines.
+fn spectrum_of(rows: &[Row]) -> (Keyed<Line>, u64) {
+    let mut spectrum: Keyed<Line> = Keyed::new();
+    let mut unread = 0u64;
+    for (i, row) in rows.iter().enumerate() {
+        for (j, (t, lanes)) in row.ts.iter().zip(&row.lanes).enumerate() {
+            let (Some(t), Some(lanes)) = (t, lanes) else { continue };
+            let Some(ray) = t.versor.canonical() else {
+                unread += 1;
+                continue;
+            };
+            let mut k = Vec::new();
+            ray.put_canonical(&mut k);
+            if spectrum.get(&k).is_none() {
+                spectrum.insert(&k, Line { t: t.clone(), carried: Keyed::new(), lands: Keyed::new(), lanes: [0; 4] });
+            }
+            if let Some(line) = spectrum.get_mut(&k) {
+                line.carried.insert(row_key(i), ());
+                line.lands.insert(land_key(&row.chart, j), ());
+                if !crate::core::lanes::lanes_step(&mut line.lanes, lanes) {
+                    unread += 1;
+                }
+            }
+        }
+    }
+    (spectrum, unread)
+}
+
+/// Do two lines land on the same bodies — so their quotient carries the
+/// other's configuration onto itself, a symmetry of it?
+fn same_landing(a: &Line, b: &Line) -> bool {
+    let (x, y): (Vec<Vec<u8>>, Vec<Vec<u8>>) = (a.lands.scoped().map(|(k, _)| k).collect(), b.lands.scoped().map(|(k, _)| k).collect());
+    x == y
+}
+
+/// Do two lines carry the same bodies of this perception?
+fn same_carried(a: &Line, b: &Line) -> bool {
+    let (x, y): (Vec<Vec<u8>>, Vec<Vec<u8>>) =
+        (a.carried.scoped().map(|(k, _)| k).collect(), b.carried.scoped().map(|(k, _)| k).collect());
+    x == y
 }
 
 /// WHAT A TRANSITION CARRIES, PER LANE (78.49(5), `measure_lanes`): the
@@ -376,8 +468,19 @@ fn hour_of(row: &[Option<Transition>]) -> Hour {
     let Some(ts) = row.iter().map(Option::as_ref).collect::<Option<Vec<&Transition>>>() else { return Hour::NoOrbit };
     let [t1, t2, ..] = ts.as_slice() else { return Hour::NoOrbit };
     let step = t2.versor.geo(&t1.versor.reverse());
-    let Some(crate::transducer::alphabet::Order::Finite(ell)) = halves(&step).and_then(|(r, _)| r.order()) else {
-        return Hour::NoOrbit;
+    // THE STEP'S RETURN: an elliptic turn returns at its period; a SLIDE —
+    // a pure translation `T(d)` — never returns, and its hours are its
+    // integer multiples, read exactly (`slide_of`). Anything else has no
+    // hours to read.
+    //
+    // THE SLIDE IS READ FIRST: a pure translation's rotor is the identity,
+    // whose order reads 1, and a slide read as a turn of period 1 is a
+    // one-hour orbit it is not.
+    let slide = slide_of(&step);
+    let period = match (&slide, halves(&step).and_then(|(r, _)| r.order())) {
+        (Some(_), _) => None,
+        (None, Some(crate::transducer::alphabet::Order::Finite(ell))) => Some(ell),
+        (None, _) => return Hour::NoOrbit,
     };
     let one = Mv::scalar(num_traits::One::one());
     let mut power = one.clone();
@@ -391,16 +494,47 @@ fn hour_of(row: &[Option<Transition>]) -> Hour {
         return Hour::Predicted(step);
     }
     let residue = t1.versor.reverse().geo(&power.reverse());
-    let mut at = one;
-    let mut on_orbit = false;
-    for _ in 0..ell {
-        if unit_ray(&at.geo(&t1.versor)) {
-            on_orbit = true;
-            break;
+    let on_orbit = match (period, slide) {
+        // A turn: on the orbit where `g^h t_1` is the identity ray for some
+        // `h` below the period — read along the period, which bounds it.
+        (Some(ell), _) => {
+            let mut at = one;
+            let mut on = false;
+            for _ in 0..ell {
+                if unit_ray(&at.geo(&t1.versor)) {
+                    on = true;
+                    break;
+                }
+                at = step.geo(&at);
+            }
+            on
         }
-        at = step.geo(&at);
-    }
+        // A slide: the residue between what was seen and what was predicted
+        // is a translation by a whole number of steps exactly where the body
+        // stands at another hour.
+        (None, Some(d)) => slide_of(&residue).is_some_and(|e| whole_multiple(&e, &d)),
+        (None, None) => false,
+    };
     Hour::Slipped { on_orbit, residue }
+}
+
+/// A SLIDE'S STEP: `v`'s translation `d` where `v` is a pure translation —
+/// no turn (its rotation the identity ray), no dilation, no transversion, no
+/// inversion — and `d` not zero. `None` otherwise.
+fn slide_of(v: &Mv) -> Option<Vec<num_rational::BigRational>> {
+    use num_traits::{One, Zero};
+    let f = crate::transducer::element::conformal_factors(v).ok()?;
+    let pure = unit_ray(&f.rotation) && f.rho.is_one() && !f.transverses() && !f.inverted;
+    (pure && !f.translation.iter().all(Zero::is_zero)).then_some(f.translation)
+}
+
+/// Is `e` a whole multiple `k·d` of the step `d`, `k` an integer — read
+/// exactly off the first coordinate `d` does not vanish on?
+fn whole_multiple(e: &[num_rational::BigRational], d: &[num_rational::BigRational]) -> bool {
+    use num_traits::Zero;
+    let Some((ei, di)) = e.iter().zip(d).find(|(_, di)| !di.is_zero()) else { return false };
+    let k = ei / di;
+    k.is_integer() && e.len() == d.len() && e.iter().zip(d).all(|(x, y)| *x == &k * y)
 }
 
 /// A circuit's coordinates: the two perceptions' ordinals and the two
@@ -444,7 +578,11 @@ impl Contemplation {
                 let Some(theirs) = self.bubbles.get(other).and_then(|b| b.spores.get(chart)).cloned() else { continue };
                 bodies += theirs.len();
                 for x in mine {
-                    let mut row = Row { chart: chart.clone(), ts: Vec::with_capacity(theirs.len()), lanes: [0; 4] };
+                    let mut row = Row {
+                        chart: chart.clone(),
+                        ts: Vec::with_capacity(theirs.len()),
+                        lanes: Vec::with_capacity(theirs.len()),
+                    };
                     for y in &theirs {
                         match transition(x, y, budget) {
                             Ok(t) => {
@@ -456,10 +594,7 @@ impl Contemplation {
                                     // listing is what the transition carries.
                                     hue: Some(Vec::new()),
                                 });
-                                match lanes_of(x, y) {
-                                    Some(l) if crate::core::lanes::lanes_step(&mut row.lanes, &l) => {}
-                                    _ => self.overflowed += 1,
-                                }
+                                row.lanes.push(lanes_of(x, y));
                                 row.ts.push(Some(t));
                             }
                             Err(Unrelated::Unbounded) => {
@@ -469,6 +604,7 @@ impl Contemplation {
                             Err(why) => {
                                 self.resonance.note(why);
                                 row.ts.push(None);
+                                row.lanes.push(None);
                             }
                         }
                     }
@@ -654,12 +790,14 @@ impl Contemplation {
                 rems.insert(&other, b.remainder.placed());
             }
             let all: Vec<&Transition> = rows.iter().flat_map(|r| r.ts.iter().flatten()).collect();
-            let [first, rest @ ..] = all.as_slice() else { continue };
-            let one = rest.iter().all(|t| t.versor.projective_eq(&first.versor));
-            let hours: Vec<Hour> = match one {
-                true => Vec::new(),
-                false => rows.iter().map(|r| hour_of(&r.ts)).collect(),
-            };
+            if all.is_empty() {
+                continue;
+            }
+            // 1. THE HOURS (78.48(7)): where every body of this perception
+            // stands at the hour the other's orbit predicts, by one step, the
+            // orbit continues — the edge carries the step, and what the step
+            // carried from the latest hour to this one.
+            let hours: Vec<Hour> = rows.iter().map(|r| hour_of(&r.ts)).collect();
             let steps: Vec<&Mv> = hours
                 .iter()
                 .filter_map(|h| match h {
@@ -668,30 +806,69 @@ impl Contemplation {
                 })
                 .collect();
             self.resonance.predicted += steps.len() as u64;
-            // The edge: the one transition, or the orbit's one step where
-            // every body stands at its predicted hour.
             let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
-            let edge = match (one, steps.as_slice(), every) {
-                (true, _, _) => halves(&first.versor),
-                (false, [g, more @ ..], true) if more.iter().all(|s| s.projective_eq(g)) => halves(g),
-                _ => None,
-            };
-            match edge {
-                Some((rotor, carriage)) => {
-                    // THE EDGE CARRIES WHAT ITS TRANSITIONS CARRIED, lane by
-                    // lane (78.49(5)); shared remainder volume stays the
-                    // 2-cells' measure, read by the climb below.
-                    let mut lanes = [0u64; 4];
-                    if !rows.iter().all(|r| crate::core::lanes::lanes_step(&mut lanes, &r.lanes)) {
-                        self.overflowed += 1;
-                    }
+            if let (true, [g, more @ ..]) = (every, steps.as_slice()) {
+                if let (true, Some((rotor, carriage))) = (more.iter().all(|s| s.projective_eq(g)), halves(g)) {
+                    let latest = rows.iter().filter_map(|r| match r.lanes.as_slice() {
+                        [.., Some(l)] => Some(*l),
+                        _ => None,
+                    });
+                    let lanes = self.lanes_summed(latest);
                     self.complex.set_edge(key, &other, rotor, carriage, lanes);
                     self.resonance.edges += 1;
+                    continue;
                 }
-                None => {
+            }
+            // 2. THE SPECTRUM (78.50): the pair's rays, each with what it
+            // carries and lands on. A SCENE MOTION is a ray that carries the
+            // whole of one side onto the other — every body of this
+            // perception carried, or every body of the other landed on.
+            let (spectrum, unread) = spectrum_of(rows);
+            self.resonance.unread_lines += unread;
+            let theirs = Self::their_bodies(rows);
+            let whole: Vec<&Line> = spectrum
+                .scoped()
+                .map(|(_, l)| l)
+                .filter(|l| {
+                    (0..rows.len()).all(|i| l.carried.contains(&row_key(i)))
+                        || theirs.scoped().all(|(k, _)| l.lands.contains(&k))
+                })
+                .collect();
+            match whole.as_slice() {
+                // ONE MOTION CARRIES THE WHOLE CONFIGURATION: the thought.
+                [line] => {
+                    self.scene_edge(key, &other, &line.t, line.lanes);
+                    self.note_unmatched(rows, &theirs, line);
+                }
+                // SEVERAL, CARRYING THE SAME BODIES ONTO THE SAME BODIES: one
+                // coset — they differ by symmetries of the configuration. The
+                // edge carries the canonical representative; each quotient, a
+                // symmetry, is filed by its class at its period.
+                [first, rest @ ..] if rest.iter().all(|l| same_landing(l, first) && same_carried(l, first)) => {
+                    let members: Vec<Transition> = whole.iter().map(|l| l.t.clone()).collect();
+                    if let Some(rep) = crate::transducer::blade::coset_representative(&members) {
+                        self.scene_edge(key, &other, rep, first.lanes);
+                        self.resonance.cosets += 1;
+                        for m in &members {
+                            let q = m.versor.geo(&rep.versor.reverse());
+                            if unit_ray(&q) {
+                                continue;
+                            }
+                            self.resonance.symmetries += 1;
+                            if let Some((r, c)) = halves(&q) {
+                                let fill = crate::transducer::cech::classify(&r, &c, sentence::CycleType::Identity);
+                                self.complex.index_congruent(&fill);
+                            }
+                        }
+                        self.note_unmatched(rows, &theirs, first);
+                    }
+                }
+                // NO ONE MOTION CARRIES THE SCENE: the spectrum is kept, each
+                // ray by its class, and every slipped hour is a demand.
+                _ => {
                     self.resonance.several += 1;
-                    for t in &all {
-                        self.keep_orbit(key, &other, t);
+                    for (_, line) in spectrum.scoped() {
+                        self.keep_orbit(key, &other, &line.t);
                     }
                     for (row, h) in rows.iter().zip(&hours) {
                         if let Hour::Slipped { on_orbit, residue } = h {
@@ -704,6 +881,52 @@ impl Contemplation {
         let reopened = self.complex.coboundary_on_link(key, |verts| volume_of(&rems, verts));
         self.note_decohered(reopened, super::meet::Adjunct::Candidate);
         self.decide_neighbors(key);
+    }
+
+    /// Lanes summed lane by lane (law 5); a sum past its carrier is counted
+    /// and stands where it was (STD1).
+    fn lanes_summed(&mut self, each: impl Iterator<Item = [u64; 4]>) -> [u64; 4] {
+        let mut lanes = [0u64; 4];
+        for l in each {
+            if !crate::core::lanes::lanes_step(&mut lanes, &l) {
+                self.overflowed += 1;
+            }
+        }
+        lanes
+    }
+
+    /// A SCENE MOTION'S EDGE (78.50): the ray that carries the whole
+    /// configuration, written as the complex carries an edge — its rotor and
+    /// carriage — with what it carried, per lane. The complex's fill decides
+    /// what the thought is.
+    fn scene_edge(&mut self, key: &[u8], other: &[u8], t: &Transition, lanes: [u64; 4]) {
+        let Some((rotor, carriage)) = halves(&t.versor) else {
+            self.resonance.undemanded += 1;
+            return;
+        };
+        self.complex.set_edge(key, other, rotor, carriage, lanes);
+        self.resonance.edges += 1;
+        self.resonance.scene_motions += 1;
+    }
+
+    /// The other's bodies on the charts the pair shares, by their landing
+    /// keys.
+    fn their_bodies(rows: &[Row]) -> Keyed<()> {
+        let mut theirs: Keyed<()> = Keyed::new();
+        for row in rows {
+            for j in 0..row.ts.len() {
+                theirs.insert(land_key(&row.chart, j), ());
+            }
+        }
+        theirs
+    }
+
+    /// WHAT THE SCENE MOTION LEAVES UNMATCHED: this perception's bodies it
+    /// does not carry — this is the newer scene, so they APPEARED — and the
+    /// other's bodies it lands nothing on, which VANISHED.
+    fn note_unmatched(&mut self, rows: &[Row], theirs: &Keyed<()>, line: &Line) {
+        self.resonance.appeared += (0..rows.len()).filter(|&i| !line.carried.contains(&row_key(i))).count() as u64;
+        self.resonance.vanished += theirs.scoped().filter(|(k, _)| !line.lands.contains(k)).count() as u64;
     }
 
     /// ONE ORBIT OF A PAIR THAT HOLDS SEVERAL, KEPT BY ITS OWN COORDINATES

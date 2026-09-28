@@ -17942,6 +17942,59 @@ before-support is the carried body and whose after-support is its image):
 body being read hue-blind, and 𝒯 nothing, a chain holding no clock. Shared
 remainder volume remains the 2-cells' measure, read by the climb.
 
+### 78.50 Perception is a spectrum: the scene's motion, its coset, what appeared and vanished, and the hours of a slide (ruled 2026-09-28, the operator's word)
+
+**The operator's word.** Perceptions must hold many rays at once — a
+SPECTRUM of visual perception, never one ray absorbed at a time. It is
+78.44's rule at perception: the holonomy projected on the internal
+spectrum, every route kept.
+
+**(1) What it corrects.** Epoch 104 read nearly every pair of perceptions
+into `several`: a pair related only where every body's transition was one
+ray, and ARC scenes hold many same-shaped bodies, each related to each of
+the other's by a different ray. No thought formed; every cross-pairing was
+kept by class.
+
+**(2) The spectrum.** A pair's transitions, already read, are filed by their
+canonical rays — each ray with the bodies of this perception it carries,
+the bodies of the other it lands on, and what it carries per lane —
+transient, read and dropped (`spectrum_of`). A SCENE MOTION is a ray that
+carries the whole of one side onto the other: every body of this
+perception carried, or every body of the other landed on.
+- ONE scene motion: the thought. The edge carries it and the complex's
+  fill decides (Filled merges, Congruent at ℓ torsion-merges, a Class — a
+  slide, a boost — writes the horizons).
+- SEVERAL, carrying the same bodies onto the same bodies: one COSET — they
+  differ by symmetries of the configuration. The edge carries the canonical
+  representative (`coset_representative`); each quotient, a symmetry of the
+  configuration, is filed by its class at its period.
+- NONE: no single motion carries the scene; the spectrum is kept, each ray
+  by its class, and every slipped hour is a demand.
+- WHAT THE MOTION LEAVES UNMATCHED: this perception's bodies it does not
+  carry APPEARED (this is the newer scene); the other's it lands on nothing
+  VANISHED. Both counted.
+
+The hours are read first (78.48(7)): a thought's orbit samples are an
+orbit, never mistaken for a symmetric configuration.
+
+**(3) The hours of a slide.** A slide — a pure translation `T(d)` — never
+returns and has no period, but its samples one step apart are still an
+orbit: its next hour `g^m y₁` is predicted as a turn's is, and where the
+body slips the residue `T(e)` is on the orbit exactly where `e = k·d` for an
+integer `k` — read exactly off the translations, bounded by nothing but the
+algebra. A slide's rotor is the identity, whose order reads 1: the slide is
+recognised FIRST, so it is never read as a turn of period 1.
+
+**(4) Acceptance, landed.** Two Ls carried along whole: one scene motion,
+the thought a Class edge (where `several` stood). The two Ls turned whole
+about one point: one scene motion, a torsion at ℓ = 4. An L and its 180°
+turn, turned whole: two motions landing on one configuration, one coset,
+its symmetry filed at ℓ = 2. One L carried and one turned: no scene motion,
+the spectrum kept. A third L new: the scene still moves, one appeared; the
+other way, one vanished. Three Ls three columns apart: the fourth hour
+predicted; an L at the fifth hour a phase slip; an L one column off, off
+the orbit.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

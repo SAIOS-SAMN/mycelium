@@ -26,6 +26,34 @@ fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str]) -> Vec<u8> {
     c.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], &mut budget).expect("held").as_bytes().to_vec()
 }
 
+/// A scene built from its cells: the input a `rows × cols` grid holding the
+/// cells, its output the same carried one column along.
+fn scene(c: &mut Contemplation, cells: &[(usize, usize)], rows: usize, cols: usize) -> Vec<u8> {
+    let draw = |shift: usize| -> Vec<String> {
+        (0..rows)
+            .map(|r| (0..cols).map(|col| if col >= shift && cells.contains(&(r, col - shift)) { '1' } else { '0' }).collect())
+            .collect()
+    };
+    let (input, output) = (draw(0), draw(1));
+    let i: Vec<&str> = input.iter().map(String::as_str).collect();
+    let o: Vec<&str> = output.iter().map(String::as_str).collect();
+    perceive(c, &i, &o)
+}
+
+/// The cells turned 90° about the grid point (3, 3): `(r, c) ↦ (c, 6 − r)`.
+fn turned(cells: &[(usize, usize)]) -> Vec<(usize, usize)> {
+    cells.iter().map(|&(r, c)| (c, 6 - r)).collect()
+}
+
+/// The cells carried `dc` columns along.
+fn slid(cells: &[(usize, usize)], dc: usize) -> Vec<(usize, usize)> {
+    cells.iter().map(|&(r, c)| (r, c + dc)).collect()
+}
+
+/// An L, and a second L of the same shape standing apart from it.
+const LA: [(usize, usize); 4] = [(0, 1), (1, 1), (2, 1), (2, 2)];
+const LB: [(usize, usize); 4] = [(4, 4), (5, 4), (6, 4), (6, 5)];
+
 /// The fill of the meet complex's edge between two ideas, where one stands.
 fn thought(c: &Contemplation, a: &[u8], b: &[u8]) -> Option<Fill> {
     let mut verts = vec![a.to_vec(), b.to_vec()];
@@ -279,6 +307,96 @@ fn a_body_carried_onto_two_keeps_both_congruences_and_chooses_no_edge() {
     // overwrites the other.
     assert_eq!(periods, vec![4, 4], "each turn filed at its own coordinate, at its period");
     assert!(horizon_orders(&c, &one).contains(&4) && horizon_orders(&c, &two).contains(&4), "both horizons hold it");
+}
+
+/// THE SCENE MOTION (78.50). Two Ls, then both carried one column along: each
+/// L's body relates to each of the other's, and the pair's spectrum holds four
+/// rays — but ONE carries the whole configuration. It is the thought: the
+/// edge the complex fills, a standing class (a slide never returns).
+#[test]
+fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
+    let mut c = Contemplation::new();
+    let a = scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
+    let b = scene(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 7, 9);
+    assert_eq!((c.resonance.scene_motions, c.resonance.several, c.resonance.appeared), (1, 0, 0), "{}", c.resonance.line());
+    assert!(matches!(thought(&c, &a, &b), Some(Fill::Class(..))), "the scene's motion is the thought");
+}
+
+/// A TURNED SCENE (78.50): the two Ls both turned 90° about one point — one
+/// motion carries the whole configuration, elliptic, and the thought is
+/// congruent at ℓ = 4: the two perceptions merge on its torsion axis.
+#[test]
+fn a_scene_turned_whole_is_one_congruent_thought() {
+    let mut c = Contemplation::new();
+    scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
+    scene(&mut c, &turned(&[&LA[..], &LB[..]].concat()), 7, 9);
+    assert_eq!(c.resonance.scene_motions, 1, "{}", c.resonance.line());
+    assert_eq!(torsions(&c), vec![4], "one torsion at the turn's period");
+}
+
+/// A SYMMETRIC SCENE (78.50): an L and its 180° turn about the point form a
+/// configuration the 180° turn carries onto itself; turned 90° whole, TWO
+/// motions carry it — the 90° and the 270° — landing on the same bodies:
+/// one coset. The edge carries its representative, and their quotient, the
+/// configuration's own symmetry, stands filed at ℓ = 2.
+#[test]
+fn a_symmetric_scene_is_one_coset_and_its_symmetry_is_filed() {
+    let lb: Vec<(usize, usize)> = LA.iter().map(|&(r, c)| (6 - r, 6 - c)).collect();
+    let mut c = Contemplation::new();
+    let before = [&LA[..], &lb[..]].concat();
+    scene(&mut c, &before, 7, 9);
+    scene(&mut c, &turned(&before), 7, 9);
+    assert_eq!((c.resonance.cosets, c.resonance.symmetries, c.resonance.scene_motions), (1, 1, 1), "{}", c.resonance.line());
+    let periods: Vec<u32> = c.complex.congruent.scoped().map(|(_, (_, ell))| *ell).collect();
+    assert!(periods.contains(&2), "the symmetry at its period: {periods:?}");
+}
+
+/// NO ONE MOTION (78.50): one L carried along, the other turned in its place —
+/// no ray carries both, so no scene motion stands; the spectrum is kept, each
+/// ray by its class.
+#[test]
+fn bodies_moving_apart_keep_the_spectrum() {
+    let turned_b: Vec<(usize, usize)> = [(4, 4), (4, 5), (4, 6), (5, 4)].to_vec();
+    let mut c = Contemplation::new();
+    scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
+    scene(&mut c, &[slid(&LA, 1), turned_b].concat(), 7, 9);
+    assert_eq!((c.resonance.scene_motions, c.resonance.several), (0, 1), "{}", c.resonance.line());
+    assert!(c.resonance.kept_class + c.resonance.kept_congruent > 0, "each ray kept by its class");
+}
+
+/// WHAT APPEARED AND WHAT VANISHED (78.50): both Ls carried along and a third
+/// L standing new — the motion still carries the whole of what was there, and
+/// the new L is what appeared. The other way, three Ls and then two of them
+/// carried along: the motion lands on the whole of what is there, and the
+/// third is what vanished.
+#[test]
+fn a_body_that_appears_or_vanishes_is_counted_and_the_scene_still_moves() {
+    let third = vec![(0, 5), (1, 5), (2, 5), (2, 6)];
+    let mut c = Contemplation::new();
+    scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
+    scene(&mut c, &[slid(&LA, 1), slid(&LB, 1), third.clone()].concat(), 7, 9);
+    assert_eq!((c.resonance.scene_motions, c.resonance.appeared, c.resonance.vanished), (1, 1, 0), "{}", c.resonance.line());
+    let mut c = Contemplation::new();
+    scene(&mut c, &[&LA[..], &LB[..], &third[..]].concat(), 7, 9);
+    scene(&mut c, &[slid(&LA, 1), slid(&LB, 1)].concat(), 7, 9);
+    assert_eq!((c.resonance.scene_motions, c.resonance.appeared, c.resonance.vanished), (1, 0, 1), "{}", c.resonance.line());
+}
+
+/// THE HOURS OF A SLIDE (78.50): three Ls three columns apart are an orbit's
+/// samples whose step is a slide; the L three columns on is its next hour,
+/// predicted and joined; the L six columns on stands at the hour after —
+/// a phase slip; the L one column on stands at no hour — off the orbit.
+#[test]
+fn a_slides_next_hour_is_predicted_and_its_slips_are_read_exactly() {
+    let l = [(0usize, 0usize), (1, 0), (2, 0), (2, 1)];
+    let samples = [slid(&l, 0), slid(&l, 3), slid(&l, 6)].concat();
+    for (at, expect) in [(9usize, (1u64, 0u64, 0u64)), (12, (0, 1, 0)), (7, (0, 0, 1))] {
+        let mut c = Contemplation::new();
+        scene(&mut c, &samples, 4, 16);
+        scene(&mut c, &slid(&l, at), 4, 16);
+        let r = &c.resonance;
+        assert_eq!((r.predicted, r.phase_slips, r.off_orbit), expect, "the L at column {at}: {}", r.line());
+    }
 }
 
 /// THE STRATA ABOVE A CHART (78.49(4)): a solid block and the block with its
