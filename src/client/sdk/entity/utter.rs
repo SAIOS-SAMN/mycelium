@@ -474,13 +474,11 @@ impl Entity {
             self.hold_chain(word.sub().to_vec());
             return Err(io::Error::new(io::ErrorKind::InvalidInput, "a remainder is thought, not speech"));
         }
-        // Speech is a connection, a connection with an opened axis, or a
-        // CLOSED THOUGHT'S WORD (78.52: a Constellation rewrite — its ground
-        // the message); a residual germ or the unit is not a message. Every
-        // other rewrite is the pivot's bookkeeping, not speech.
-        let closed = crate::transducer::rewrite::Rewrite::from_element(word)
-            .is_some_and(|r| matches!(r.payload, crate::transducer::rewrite::RewritePayload::Constellation { .. }));
-        if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty() && !closed) {
+        // Speech is a connection or a connection with an opened axis; a
+        // residual germ or the unit is not a message. A thought is never
+        // speech: a closed thought is spoken as the word it transcribes to
+        // (78.52), a connection like any other.
+        if word.is_identity() || (!word.is_connection() && word.opened_axes().is_empty()) {
             return Ok(Utterance::Silent);
         }
         let voice = self.session.kernel().voice();

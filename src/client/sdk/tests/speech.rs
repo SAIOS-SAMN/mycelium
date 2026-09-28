@@ -171,14 +171,14 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
 /// 78.52 — A MIND SPEAKS WHAT IT THOUGHT, IN ITS OWN DIALECT. An L seen at
 /// its four hours about the grid point (2, 2), held by one mind with no hypha
 /// to hear it: the fourth perception closes the thought's return, and the
-/// mind speaks the thought's word in that same act — it stands in the
-/// mind's dialect as a Constellation word at period 4, waiting on no word
-/// from anywhere.
+/// mind speaks the WORD the thought transcribes to in that same act — a
+/// connection spelled in the letters stands in the mind's dialect, carrying
+/// its return; the thought itself never does. It waits on no word from
+/// anywhere.
 #[test]
 fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
     use crate::client::sdk::*;
     use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
-    use crate::transducer::rewrite::{Rewrite, RewritePayload};
     let grid = |rows: &[&str]| -> Vec<Vec<u8>> { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
     let hours: [([&str; 5], [&str; 5]); 4] = [
         (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),
@@ -191,8 +191,8 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         e.epigenome
             .dialect
             .scoped()
-            .filter_map(|(_, d)| Rewrite::from_element(d.sentence.element()))
-            .filter(|r| matches!(&r.payload, RewritePayload::Constellation { ground } if ground.period == 4))
+            .map(|(_, d)| d.sentence.element())
+            .filter(|w| w.is_connection() && w.letters_rederive() == Some(true) && w.magnitude() == [0, 0, 0, 3])
             .count()
     };
     for (i, (input, output)) in hours.iter().enumerate() {

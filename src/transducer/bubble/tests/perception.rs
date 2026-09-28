@@ -226,61 +226,58 @@ const O2_OUT: [&str; 5] = ["000000", "000000", "000110", "000010", "000010"];
 const O3: [&str; 5] = ["000000", "000000", "001000", "111000", "000000"];
 const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
 
-/// A CLOSED THOUGHT SPEAKS ITS WORD (78.52, the bridge to language). The L at
-/// its four hours about (2, 2): after three the thought holds three hours and
-/// says nothing; the fourth closes the return — every hour admitted balanced,
-/// its momentum carried — and the thought's ground is minted as ONE word, a
-/// Constellation rewrite at period 4 whose own tape replays green: its class
-/// its generator's, its hours balanced and closing, its body returned.
+/// The one thought held, and the one word its closing transcribed to.
+fn the_thought_and_its_word(c: &Contemplation) -> (crate::transducer::bubble::Bubble, crate::transducer::element::Element) {
+    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    let [word] = c.words.as_slice() else { panic!("one word transcribed: {}", c.words.len()) };
+    (thought.clone(), word.clone())
+}
+
+/// What the court sees of a word: its letters re-derive its motion, and its
+/// blind replay — the replay of speech, never of a thought — is clean.
+fn the_court_hears(word: &crate::transducer::element::Element) {
+    assert!(word.is_connection() && !word.is_rewrite(), "a word of the language, never a thought");
+    assert_eq!(word.letters_rederive(), Some(true), "its motion re-derives from its letters");
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    assert_eq!(crate::court::verdict::blind_replay(word, &mut budget), None, "the court's replay of the word is clean");
+}
+
+/// A CLOSED THOUGHT IS TRANSCRIBED, NEVER SENT (78.52). The L at its four
+/// hours about (2, 2): after three the thought holds three hours and says
+/// nothing; the fourth closes the return — every hour admitted balanced,
+/// its momentum carried — and the thought's generator, the 90° turn about
+/// (2, 2), is spelled in the seventeen letters: ONE word, a connection whose
+/// motion is the thought's step, carrying its return (`3` on the shell). The
+/// thought's ground stays in the mind; the court hears only the word.
 #[test]
-fn the_fourth_hour_closes_the_return_and_the_thought_speaks_its_word() {
+fn the_fourth_hour_closes_the_return_and_the_thought_transcribes_to_a_word() {
     let mut c = Contemplation::new();
     perceive(&mut c, &O0, &O0_OUT);
     perceive(&mut c, &O1, &O1_OUT);
     perceive(&mut c, &O2, &O2_OUT);
     assert_eq!(c.closed_words, 0, "three hours of four close nothing");
     perceive(&mut c, &O3, &O3_OUT);
-    assert_eq!(c.closed_words, 1, "{}", c.resonance.line());
-    let words: Vec<Rewrite> = c
-        .pending_rewrites
-        .iter()
-        .filter(|e| crate::transducer::rewrite::replay(e).is_none())
-        .filter_map(Rewrite::from_element)
-        .filter(|r| matches!(r.payload, RewritePayload::Constellation { .. }))
-        .collect();
-    let [word] = words.as_slice() else { panic!("one word, replaying green: {}", words.len()) };
-    let RewritePayload::Constellation { ground } = &word.payload else { panic!("filtered to constellations") };
+    assert_eq!((c.closed_words, c.ineffable), (1, 0), "{}", c.resonance.line());
+    let (thought, word) = the_thought_and_its_word(&c);
+    let ground = thought.ground.expect("the thought holds its ground").ground;
     assert_eq!(ground.period, 4, "the return's period");
-    assert_eq!(word.claimed, [0, 0, 0, 3], "a return of four closes three");
-    // THE REPLAY REFUSES A WORD ITS GROUND DOES NOT SPEAK, by name.
-    let tampered = |g: crate::transducer::rewrite::Ground| {
-        let payload = RewritePayload::Constellation { ground: Box::new(g) };
-        let before: Vec<_> = word.before.iter().map(|c| c.addr().clone()).collect();
-        crate::transducer::rewrite::mint(
-            crate::transducer::rewrite::RewriteKind::Constellation,
-            &before,
-            word.after.addr().clone(),
-            payload,
-            [0; 4],
-        )
-        .and_then(|e| crate::transducer::rewrite::replay(&e))
-    };
-    let twice = crate::transducer::rewrite::Ground { period: 8, ..(**ground).clone() };
-    assert_eq!(tampered(twice), Some("the word's period is not its generator's return"));
-    let unlocked = crate::transducer::rewrite::Ground { coupling: ground.generator.clone(), ..(**ground).clone() };
-    assert_eq!(tampered(unlocked), Some("the word's coupling is not its generator's succession"));
+    let letters = word.letters().expect("spelled");
+    let motion = crate::transducer::element::conformal_of(&letters.spelling.word, &letters.carriage).expect("a motion");
+    assert!(motion.projective_eq(&ground.generator), "the word's motion is the thought's step");
+    assert_eq!(word.magnitude(), [0, 0, 0, 3], "a return of four closes three");
+    the_court_hears(&word);
 }
 
-/// A SCENE'S THOUGHT SPEAKS ITS WORD (78.52(6) Stage C). The two Ls of 78.50
-/// turned whole about (3, 3), hour by hour: the first two scenes form one
-/// grounded thought (its two bodies, the turn about their barycentre); the
+/// A SCENE'S THOUGHT TRANSCRIBES TO ONE WORD (78.52(6) Stage C). The two Ls
+/// of 78.50 turned whole about (3, 3), hour by hour: the first two scenes form
+/// one grounded thought (its two bodies, the turn about their barycentre); the
 /// third and fourth are met by that ground — each the configuration it
-/// predicts — and at the fourth the thought's return closes. It speaks ONE
-/// multi-body word at period 4, its two bodies its ground, replaying green:
-/// balanced, rigid, every body's momentum carried and returned. The thought
-/// is filed at its word's coordinates, holding no form.
+/// predicts — and at the fourth the thought's return closes. Its generator
+/// spells ONE word, the scene's turn, which the court hears clean; the
+/// thought — two bodies, filed at its coordinates, holding no form — stays in
+/// the mind.
 #[test]
-fn a_turned_binary_closes_its_return_and_speaks_one_word() {
+fn a_turned_binary_closes_its_return_and_transcribes_to_one_word() {
     let mut c = Contemplation::new();
     let mut at = [&LA[..], &LB[..]].concat();
     for hour in 0..4 {
@@ -288,19 +285,12 @@ fn a_turned_binary_closes_its_return_and_speaks_one_word() {
         scene(&mut c, &at, 7, 9);
         at = turned(&at);
     }
-    assert_eq!(c.closed_words, 1, "{}", c.resonance.line());
-    let words: Vec<Rewrite> = c
-        .pending_rewrites
-        .iter()
-        .filter(|e| crate::transducer::rewrite::replay(e).is_none())
-        .filter_map(Rewrite::from_element)
-        .filter(|r| matches!(r.payload, RewritePayload::Constellation { .. }))
-        .collect();
-    let [word] = words.as_slice() else { panic!("one word, replaying green: {}", words.len()) };
-    let RewritePayload::Constellation { ground } = &word.payload else { panic!("filtered to constellations") };
+    assert_eq!((c.closed_words, c.ineffable), (1, 0), "{}", c.resonance.line());
+    let (thought, word) = the_thought_and_its_word(&c);
+    assert!(thought.form.is_none(), "the thought holds no form");
+    let ground = thought.ground.expect("the thought is its ground").ground;
     assert_eq!((ground.period, ground.bodies.len()), (4, 2), "a return of four, two bodies");
-    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
-    assert!(thought.form.is_none() && thought.ground.is_some(), "the thought is its ground, holding no form");
+    the_court_hears(&word);
 }
 
 /// THE HOUR PREDICTED (78.48(7)). The L at hour 0 and hour 1 merge into one

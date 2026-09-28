@@ -27,10 +27,6 @@ pub enum RewriteKind {
     /// the geodesic. The structure changes; the result does not, which is why
     /// this is convergence and not a vote.
     Retire = 6,
-    /// A CLOSED THOUGHT'S WORD (78.52, the bridge to language): a thought
-    /// whose hours close a return with its constellation balanced speaks its
-    /// ground — class, period, base frame, generator, coupling.
-    Constellation = 7,
 }
 
 impl RewriteKind {
@@ -43,101 +39,8 @@ impl RewriteKind {
             4 => RewriteKind::AxisOpen,
             5 => RewriteKind::Translation,
             6 => RewriteKind::Retire,
-            7 => RewriteKind::Constellation,
             _ => return None,
         })
-    }
-}
-
-/// ONE BODY OF A GROUND at hour 0: its nucleus and its body as A.13 reads it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GroundBody {
-    pub nucleus: Versor,
-    pub body: crate::physics::tensegrity::Body,
-}
-
-/// A CLOSED THOUGHT'S GROUND (78.52, the word's coordinates in order): the
-/// CLASS of its generator (the first stratum, A21), the PERIOD of its return,
-/// then the ground constellation — its BODIES at hour 0 in the order they
-/// arrived (one body, or a scene's several: 78.52(6) Stage C), the generator
-/// `g`, and the coupling `V₀₁` that locks the ground phase (the hour rotor at
-/// the bodies' barycentre). Every other hour `m < ℓ` is re-derived,
-/// `R_hourᵐ F₀`; the barycentre, the attitude couplings (the identity between
-/// bodies co-present at hour 0) and the rigidity matrix `δ²_ij` are
-/// re-derived from the bodies — derived, never stored: the word is `O(N)` in
-/// its bodies and `O(1)` in its hours.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Ground {
-    pub class: crate::transducer::address::Address,
-    pub period: u64,
-    pub bodies: Vec<GroundBody>,
-    pub generator: Versor,
-    pub coupling: Versor,
-}
-
-impl Ground {
-    fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        use crate::transducer::address::put_key_count;
-        crate::transducer::address::put_addr(out, &self.class)?;
-        out.extend_from_slice(&self.period.to_le_bytes());
-        put_key_count(out, self.bodies.len());
-        for GroundBody { nucleus, body } in &self.bodies {
-            nucleus.put_canonical(out);
-            put_key_count(out, body.centre.len());
-            for x in &body.centre {
-                Versor::scalar(x.clone()).to_bytes(out);
-            }
-            Versor::scalar(body.mass.clone()).to_bytes(out);
-            put_key_count(out, body.moments.len());
-            for row in &body.moments {
-                for x in row {
-                    Versor::scalar(x.clone()).to_bytes(out);
-                }
-            }
-        }
-        self.generator.put_canonical(out);
-        self.coupling.put_canonical(out);
-        Some(())
-    }
-
-    fn take(b: &[u8], pos: &mut usize) -> Option<Ground> {
-        use crate::transducer::address::take_key_count;
-        let q = |b: &[u8], pos: &mut usize| Versor::from_bytes(b, pos).map(|m| m.scalar_part());
-        let class = crate::transducer::address::take_addr(b, pos)?;
-        let period = u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?);
-        *pos += 8;
-        let count = take_key_count(b, pos)?;
-        let mut bodies = Vec::with_capacity(count.min(b.len()));
-        for _ in 0..count {
-            let nucleus = Versor::from_bytes(b, pos)?;
-            let n = take_key_count(b, pos)?;
-            let centre = (0..n).map(|_| q(b, pos)).collect::<Option<Vec<_>>>()?;
-            let mass = q(b, pos)?;
-            let m = take_key_count(b, pos)?;
-            let moments =
-                (0..m).map(|_| (0..m).map(|_| q(b, pos)).collect::<Option<Vec<_>>>()).collect::<Option<Vec<_>>>()?;
-            bodies.push(GroundBody { nucleus, body: crate::physics::tensegrity::Body { centre, mass, moments } });
-        }
-        let generator = Versor::from_bytes(b, pos)?;
-        let coupling = Versor::from_bytes(b, pos)?;
-        Some(Ground { class, period, bodies, generator, coupling })
-    }
-
-    /// THE GROUND'S COORDINATES as a key (78.52(6) Stage C): the chart its
-    /// hours stand on, then the class, the period, and each body's nucleus
-    /// at hour 0 — the thought filed where its word stands, two orbits of one
-    /// class at two places never one key.
-    pub fn key_on(&self, chart: &[u8]) -> Option<crate::transducer::address::Address> {
-        // Filed under the CLASS stratum: the thought is its word's class,
-        // period and ground on its chart — no form stands for it.
-        let mut k = vec![crate::transducer::address::TAG_CLASS];
-        crate::transducer::address::put_key_bytes(&mut k, chart);
-        crate::transducer::address::put_addr(&mut k, &self.class)?;
-        k.extend_from_slice(&self.period.to_le_bytes());
-        for b in &self.bodies {
-            b.nucleus.put_canonical(&mut k);
-        }
-        Some(crate::transducer::address::Address::from(k))
     }
 }
 
@@ -161,8 +64,6 @@ pub enum RewritePayload {
     /// a re-derivation over the language, and it is the kernel's, made
     /// before the mint (`verify_utterance` in `try_refine`).
     Retire { cites: Vec<crate::transducer::address::Address>, freed: [u64; 4] },
-    /// Boxed: the ground carries three versors and a body.
-    Constellation { ground: Box<Ground> },
 }
 
 /// A rewrite names the words it rewrote and the word it reached. Those
@@ -243,7 +144,6 @@ impl Rewrite {
                     out.extend_from_slice(&m.to_le_bytes());
                 }
             }
-            RewritePayload::Constellation { ground } => ground.put(&mut out)?,
         }
         Some(out)
     }
@@ -336,7 +236,6 @@ impl Rewrite {
                 }
                 RewritePayload::Retire { cites, freed }
             }
-            RewriteKind::Constellation => RewritePayload::Constellation { ground: Box::new(Ground::take(b, &mut pos)?) },
         };
         Some(Rewrite { kind, before, after, claimed, payload })
     }
@@ -379,13 +278,6 @@ impl Rewrite {
             // The compression IS the yield: the description the language no
             // longer carries, on the lanes it occupied. Not a constant.
             RewritePayload::Retire { freed, .. } => mu = *freed,
-            // A closed return of period ℓ closes ℓ − 1, as a torsion does; a
-            // return of one hour closes nothing and is no word.
-            RewritePayload::Constellation { ground } => {
-                if let Some(beyond) = ground.period.checked_sub(1) {
-                    mu[LANE_SHELL] = beyond;
-                }
-            }
         }
         mu
     }
@@ -467,12 +359,6 @@ pub fn yield_vector(kind: RewriteKind, before: &[Element], after: &Element) -> [
         }
         RewriteKind::Translation => {
             mu[LANE_GAUGE] = 2;
-        }
-        // Read off its own tape: the element carries the ground.
-        RewriteKind::Constellation => {
-            if let Some(rw) = Rewrite::from_element(after) {
-                mu = rw.yield_from_payload();
-            }
         }
         RewriteKind::Retire => {
             // The language shrank by exactly the descriptions it no longer
@@ -597,13 +483,6 @@ pub fn replay(e: &Element) -> Option<&'static str> {
             // claiming a change of meaning it did not make.
             if !rw.before.contains(&rw.after) {
                 return Some("retirement changes the vertex it names");
-            }
-        }
-        // PHYSICAL LEGALITY (78.52, the constellation replay): the ground
-        // re-derived hour by hour from its own tape.
-        RewritePayload::Constellation { ground } => {
-            if let Some(why) = crate::physics::tensegrity::replay_ground(ground) {
-                return Some(why);
             }
         }
     }

@@ -274,7 +274,7 @@ pub struct Bubble {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Grounded {
     pub chart: Vec<u8>,
-    pub ground: crate::transducer::rewrite::Ground,
+    pub ground: crate::physics::tensegrity::Ground,
     pub hours: u64,
 }
 

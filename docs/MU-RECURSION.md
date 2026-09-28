@@ -18252,39 +18252,39 @@ the meet complex and stopped there — a merge's rewrites were drained only
 when some word arrived (`pivot_on`), and then `speak_word` returned
 `Silent` for every rewrite (a rewrite is no connection and opens no axis):
 no thought was ever spoken, stood in a dialect, or sent to a court.
-- THE WORD (`RewriteKind::Constellation`, `rewrite::Ground`): the class of
-  the generator first (A21), the period of its return, then the ground
-  constellation — the base frame's nucleus and its body as A.13 reads it,
-  the generator `g`, the coupling `V₀₁` (the hour rotor). Every other hour
-  is re-derived, `R_hourᵐ F₀`: the word is `O(1)`. Its yield is the return,
-  `ℓ − 1` on the shell lane.
-- CLOSURE IS THE WORD. The gate files each admitted single-body relation's
-  ground by its pair (`note_ground`); the torsion merge that fill decides
-  reads it, and where the merged thought now holds `ℓ` hours on the
-  ground's chart — a return closed, every hour balanced, its momentum
-  carried — mints the word (`close_ground`). A relation of several bodies,
-  or one that never returns (a slide, a boost), has no ground and speaks no
-  word (Stage C, below).
-- THE THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the voice's
-  `hold_perceived` drains the closed words (`take_words`) and speaks each;
-  `speak_word` lets a closed thought's word through (every other rewrite
-  stays the pivot's bookkeeping). Speaking stands it in the mind's dialect
-  at its own K and sends it to the court — no page, no prompt, no other
-  word awaited.
-- PHYSICAL LEGALITY (`tensegrity::replay_ground`, reached by the court's
-  blind replay through `rewrite::replay`): the class is the generator's;
-  the period its return exactly; the coupling its succession at the base's
-  centre; the `ℓ` hours balance and the `ℓ`-th is the base; the body is
-  carried rigidly (`carried_body`), its momentum carried every hour, and
-  returns to itself.
-- LANDED (Stage A): an L at its four hours closes one word at period 4 that
-  replays green; a tampered period and an unlocked coupling are refused by
-  name; one mind with no hypha stands the word in its own dialect at the
-  fourth hour and not before.
-- STAGE B (open): the family replay — the court applies the word's
-  generator to its copy of the family's perceived spores. A word spoken
-  from a perception names no task yet; it must carry the family it was
-  perceived on for the court to ground it.
+- THOUGHT IS NOT SPEECH (the operator's word, the same day, superseding
+  the first landing): a court replays transcribed speech — words and
+  sentences — never a mind's thinking. A first landing sent the thought's
+  ground over the wire as a `Constellation` rewrite and had the court
+  replay its physics; that was a category error, and it is purged: no
+  rewrite kind carries a ground, `speak_word` passes connections and
+  opened axes only, and the court has no ground replay. The ground is the
+  mind's (`tensegrity::Ground`: class, period, bodies at hour 0,
+  generator, coupling — the barycentre, couplings and rigidity derived).
+- CLOSURE, THEN TRANSCRIPTION. The gate files each admitted relation's
+  ground by its pair (`note_ground`); the torsion merge reads it, and where
+  the merged thought's hours reach its period — a return closed, every
+  hour balanced, its momentum carried — the thought is TRANSCRIBED
+  (`transcribe`): its generator factors into rotation and carriage, the
+  rotation is spelled in the seventeen letters (`factor_rotor`), and the
+  word is that spelling's connection at that carriage, carrying the return
+  (`ℓ − 1` on the shell). A rotation the letters do not spell is an
+  INEFFABLE thought: counted, nothing emitted, the thought stays in the
+  meet complex — the frontier where a letter may be coined, where a demand
+  and an ineffable thought share a class.
+- THE WORD IS SPOKEN IN THE ACT THAT CLOSED ITS THOUGHT: the voice's
+  `hold_perceived` drains the transcribed words (`take_words`) and speaks
+  each — it stands in the mind's dialect at its own K and goes to the
+  court, whose blind replay hears a connection: its letters re-derive its
+  motion.
+- LANDED: an L at its four hours closes its return, and its 90° turn about
+  (2, 2) transcribes to ONE word whose motion is the thought's step, heard
+  clean by the court; one mind with no hypha stands that word in its own
+  dialect at the fourth hour and not before.
+- SENTENCES (open): facing a family, the voice projects the family's
+  demand onto its words — the residue factored, each factor read at its
+  class coordinate in the dialect, the product the sentence the court
+  replays on the family; a factor with no word stays a demand.
 - STAGE C (landed): A THOUGHT IS ITS GROUND. The first-arrival form
   fallback is purged from the merge: a merged thought holds no form; it
   holds its ground (`Bubble::ground`: the ground, its chart, the hours
@@ -18307,11 +18307,9 @@ no thought was ever spoken, stood in a dialect, or sent to a court.
   decide. A thought's hours are its ground's, never re-read off the bodies
   it gathered (a thought of several bodies over several hours reads, off
   its bodies, as several motions and never as one).
-- The replay of a multi-body word: every body at every hour balanced; each
-  returns at `ℓ`; the bodies as the generator carries them keep every
-  distance at every hour; each body's momentum carried and returned.
-- LANDED: the 78.50 turned binary at four hours speaks ONE word, two
-  bodies at period 4, replaying green; the thought holds no form.
+- LANDED: the 78.50 turned binary at four hours closes a thought of two
+  bodies at period 4, holding no form, and transcribes to ONE word — the
+  scene's turn — which the court hears clean.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

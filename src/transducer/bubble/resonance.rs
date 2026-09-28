@@ -401,7 +401,7 @@ type Verdict = Result<(), crate::physics::tensegrity::Refusal>;
 /// canonical ray, its class and its return (a period of at least two), and
 /// the coupling — the step's succession at the bodies' barycentre. `None`
 /// where the step does not return or reads no succession.
-fn ground_of(bodies: Vec<crate::transducer::rewrite::GroundBody>, forward: &Mv) -> Option<crate::transducer::rewrite::Ground> {
+fn ground_of(bodies: Vec<crate::physics::tensegrity::GroundBody>, forward: &Mv) -> Option<crate::physics::tensegrity::Ground> {
     use crate::transducer::alphabet::Order;
     let generator = forward.canonical()?;
     let f = crate::transducer::element::conformal_factors(&generator).ok()?;
@@ -413,10 +413,10 @@ fn ground_of(bodies: Vec<crate::transducer::rewrite::GroundBody>, forward: &Mv) 
         return None;
     }
     let class = generator.class_key()?;
-    let draft = crate::transducer::rewrite::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
+    let draft = crate::physics::tensegrity::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
     let centre = crate::physics::tensegrity::ground_centre(&draft)?;
     let coupling = crate::physics::tensegrity::succession(&draft.generator, &centre)?.canonical()?;
-    Some(crate::transducer::rewrite::Ground { coupling, ..draft })
+    Some(crate::physics::tensegrity::Ground { coupling, ..draft })
 }
 
 /// A PAIR OF IDEAS' KEY (78.52): the two keys, least first, each delimited —
@@ -1167,14 +1167,14 @@ impl Contemplation {
         if rest.iter().any(|r| r.chart != first.chart) {
             return;
         }
-        let bodies: Option<Vec<crate::transducer::rewrite::GroundBody>> = match orbit {
+        let bodies: Option<Vec<crate::physics::tensegrity::GroundBody>> = match orbit {
             true => {
                 let ([], [Some(nucleus), ..], [Some(body), ..]) =
                     (rest, first.theirs.as_slice(), first.their_bodies.as_slice())
                 else {
                     return;
                 };
-                Some(vec![crate::transducer::rewrite::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
+                Some(vec![crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
             }
             false => first
                 .theirs
@@ -1182,7 +1182,7 @@ impl Contemplation {
                 .zip(&first.their_bodies)
                 .map(|(s, b)| match (s, b) {
                     (Some(nucleus), Some(body)) => {
-                        Some(crate::transducer::rewrite::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
+                        Some(crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
                     }
                     _ => None,
                 })
@@ -1248,7 +1248,7 @@ impl Contemplation {
         }
         // Each body of the ground, at its predicted place, against the one of
         // this perception's bodies that stands there.
-        let mut matched: Vec<(&crate::transducer::rewrite::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
+        let mut matched: Vec<(&crate::physics::tensegrity::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
             Vec::with_capacity(mine.len());
         for base in &g.bodies {
             let predicted = power.sandwich(&base.nucleus);

@@ -211,80 +211,53 @@ pub fn momentum(body: &Body, b: &Mv) -> Mv {
     t.geo(&pi).geo(&t.reverse())
 }
 
-/// THE GROUND'S REPLAY — PHYSICAL LEGALITY (78.52, the bridge to language):
-/// a closed thought's word re-derived from its own tape, hour by hour. The
-/// class is its generator's; the period is the generator's return exactly;
-/// the coupling is the generator's succession at the base's centre; the `ℓ`
-/// hours of the base frame balance (law II) and the `ℓ`-th is the base again;
-/// the body's momentum is carried through every hour (A.13) and the body
-/// returns to itself. `None` where all hold; otherwise the refusal by name.
-pub fn replay_ground(g: &crate::transducer::rewrite::Ground) -> Option<&'static str> {
-    use crate::transducer::alphabet::Order;
-    if g.generator.class_key().as_ref() != Some(&g.class) {
-        return Some("the word's class is not its generator's");
-    }
-    let Ok(f) = crate::transducer::element::conformal_factors(&g.generator) else {
-        return Some("the word's generator does not factor");
-    };
-    let order = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order());
-    if !matches!(order, Some(Order::Finite(ell)) if u64::from(ell) == g.period) || g.period < 2 {
-        return Some("the word's period is not its generator's return");
-    }
-    let Some(centre) = ground_centre(g) else {
-        return Some("the word's ground has no barycentre");
-    };
-    let Some(r) = succession(&g.generator, &centre).and_then(|r| r.canonical()) else {
-        return Some("the word's generator has no succession");
-    };
-    if !r.projective_eq(&g.coupling) {
-        return Some("the word's coupling is not its generator's succession");
-    }
-    // Every body at every hour: one constellation, balanced (law II).
-    let frames: Vec<Frame> =
-        (0..g.period).flat_map(|m| g.bodies.iter().map(move |b| (m, b))).map(|(m, b)| hour(&b.nucleus, &r, m)).collect();
-    if equilibrium(&Constellation { frames, generator: r.clone() }).is_err() {
-        return Some("the word's ground constellation does not balance");
-    }
-    if g.bodies.iter().any(|b| !hour(&b.nucleus, &r, g.period).nucleus.projective_eq(&b.nucleus)) {
-        return Some("the word's hours do not close");
-    }
-    // METRIC RIGIDITY at every hour: the bodies as the generator carries
-    // them keep every pair's inversive distance (78.51(4′)).
-    let mut power = Mv::scalar(num_traits::One::one());
-    for _ in 1..g.period {
-        let next = g.generator.geo(&power);
-        power = match next.canonical() {
-            Some(ray) => ray,
-            None => next,
-        };
-        let moved: Vec<(Mv, Mv)> = g.bodies.iter().map(|b| (b.nucleus.clone(), power.sandwich(&b.nucleus))).collect();
-        if rigid(&moved).is_err() {
-            return Some("the word's bodies do not keep their distances");
+/// ONE BODY OF A GROUND at hour 0: its nucleus and its body as A.13 reads it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct GroundBody {
+    pub nucleus: Mv,
+    pub body: Body,
+}
+
+/// A THOUGHT'S GROUND (78.52): the constellation a thought holds — PRIVATE to
+/// the mind, never on the wire (the operator's word, 2026-09-28: a court
+/// replays transcribed speech, not a mind's thinking). The CLASS of its
+/// generator, the PERIOD of its return, its BODIES at hour 0 in the order
+/// they arrived (one body or a scene's several), the generator `g`, and the
+/// coupling `V₀₁` (the hour rotor at the bodies' barycentre). Every other
+/// hour is re-derived, `R_hourᵐ F₀`; the barycentre, the attitude couplings
+/// and the rigidity matrix are derived from the bodies, never stored.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Ground {
+    pub class: crate::transducer::address::Address,
+    pub period: u64,
+    pub bodies: Vec<GroundBody>,
+    pub generator: Mv,
+    pub coupling: Mv,
+}
+
+impl Ground {
+    /// THE GROUND'S COORDINATES as a key (78.52(6) Stage C): the chart its
+    /// hours stand on, then the class, the period, and each body's nucleus
+    /// at hour 0 — the thought filed where it stands, two orbits of one class
+    /// at two places never one key.
+    pub fn key_on(&self, chart: &[u8]) -> Option<crate::transducer::address::Address> {
+        // Filed under the CLASS stratum: the thought is its class, period
+        // and ground on its chart — no form stands for it.
+        let mut k = vec![crate::transducer::address::TAG_CLASS];
+        crate::transducer::address::put_key_bytes(&mut k, chart);
+        crate::transducer::address::put_addr(&mut k, &self.class)?;
+        k.extend_from_slice(&self.period.to_le_bytes());
+        for b in &self.bodies {
+            b.nucleus.put_canonical(&mut k);
         }
+        Some(crate::transducer::address::Address::from(k))
     }
-    // A.13 for every body: its momentum carried every hour, the body returned.
-    for b in &g.bodies {
-        let mut body = b.body.clone();
-        for _ in 0..g.period {
-            let Some(next) = carried_body(&body, &g.generator) else {
-                return Some("the word's body is not carried rigidly");
-            };
-            if !external_torque(&body, &next, &g.generator).is_some_and(|t| t.is_zero()) {
-                return Some("the word's momentum is not carried");
-            }
-            body = next;
-        }
-        if body != b.body {
-            return Some("the word's body does not return");
-        }
-    }
-    None
 }
 
 /// THE GROUND'S BARYCENTRE (78.52(6) Stage C): its bodies' centres weighed by
 /// their masses — derived, never carried. `None` for a ground with no body
 /// or massless bodies.
-pub fn ground_centre(g: &crate::transducer::rewrite::Ground) -> Option<Vec<Q>> {
+pub fn ground_centre(g: &Ground) -> Option<Vec<Q>> {
     let bodies: Vec<(Vec<Q>, Q)> = g.bodies.iter().map(|b| (b.body.centre.clone(), b.body.mass.clone())).collect();
     barycentre(&bodies).map(|s| s.centre)
 }
