@@ -394,6 +394,16 @@ struct Line {
     lanes: [u64; 4],
 }
 
+/// A PAIR OF IDEAS' KEY (78.52): the two keys, least first, each delimited —
+/// the coordinate a relation's ground is filed under, whichever side reads it.
+pub(super) fn pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
+    let (lo, hi) = if a <= b { (a, b) } else { (b, a) };
+    let mut k = Vec::new();
+    crate::transducer::address::put_key_bytes(&mut k, lo);
+    crate::transducer::address::put_key_bytes(&mut k, hi);
+    k
+}
+
 /// A row's key among a line's carried bodies: its place, big-endian.
 fn row_key(i: usize) -> [u8; 8] {
     (i as u64).to_be_bytes()
@@ -876,6 +886,7 @@ impl Contemplation {
                         self.note_refusal(&why, g, rows);
                         continue;
                     }
+                    self.note_ground(key, &other, rows, g, true);
                     let latest = rows.iter().filter_map(|r| match r.lanes.as_slice() {
                         [.., Some(l)] => Some(*l),
                         _ => None,
@@ -906,7 +917,10 @@ impl Contemplation {
                 [line] => {
                     self.note_unmatched(rows, &theirs, line);
                     match self.gate(rows, &line.t.versor, false) {
-                        Ok(()) => self.scene_edge(key, &other, &line.t, line.lanes),
+                        Ok(()) => {
+                            self.note_ground(key, &other, rows, &line.t.versor, false);
+                            self.scene_edge(key, &other, &line.t, line.lanes);
+                        }
                         Err(why) => self.note_refusal(&why, &line.t.versor, rows),
                     }
                 }
@@ -1095,6 +1109,52 @@ impl Contemplation {
         }
         self.resonance.consolidated += 1;
         Ok(())
+    }
+
+    /// 78.52 — THE GROUND OF AN ADMITTED SINGLE-BODY RELATION, filed by the
+    /// pair it relates for the merge its fill decides: one body of this
+    /// perception against the other's on one chart. Its BASE is the other's
+    /// first body (hour 0: on an orbit its first hour, in a scene the older
+    /// perception's body); its GENERATOR the step FORWARD in arrival — an
+    /// orbit's `g = t₂ t̃₁`, a scene's `t̃` (the transition carries this body
+    /// onto the other's); its COUPLING the generator's succession at the
+    /// base's centre; its PERIOD the generator's return. A relation of
+    /// several bodies, or one that does not return (a slide, a boost), has
+    /// no ground and speaks no word.
+    fn note_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], generator: &Mv, orbit: bool) {
+        use crate::transducer::alphabet::Order;
+        let [row] = rows else { return };
+        // Hour 0 is the first to arrive: arrival order is the orbit's content.
+        let ([Some(base), ..], [Some(body), ..]) = (row.theirs.as_slice(), row.their_bodies.as_slice()) else { return };
+        if !orbit && row.theirs.len() != 1 {
+            return;
+        }
+        let forward = if orbit { generator.clone() } else { generator.reverse() };
+        let Some(forward) = forward.canonical() else { return };
+        let Ok(f) = crate::transducer::element::conformal_factors(&forward) else { return };
+        let Some(Order::Finite(ell)) = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order()) else {
+            return;
+        };
+        let period = u64::from(ell);
+        let (Some(class), Some(centre)) = (forward.class_key(), crate::transducer::cga::base_at(base, usize::from(base.n())))
+        else {
+            return;
+        };
+        let Some(coupling) = crate::physics::tensegrity::succession(&forward, &centre).and_then(|r| r.canonical()) else {
+            return;
+        };
+        if period < 2 {
+            return;
+        }
+        let ground = crate::transducer::rewrite::Ground {
+            class,
+            period,
+            base: base.clone(),
+            body: body.clone(),
+            generator: forward,
+            coupling,
+        };
+        self.grounds.insert(pair_key(key, other), (row.chart.clone(), ground));
     }
 
     /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced,

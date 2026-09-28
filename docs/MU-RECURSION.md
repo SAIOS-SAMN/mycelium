@@ -18245,6 +18245,51 @@ dilation by `r₂² / r₁²`). A 2-versor reads its streamline alone,
   fascicle carries `(1,0,0)` to `(4,0,0)` and a sphere of `r² = 1/4` to
   `r² = 4`.
 
+**(6) The bridge to language** (ruled 2026-09-28, the operator's word:
+word coordinates `(κ, ℓ, 𝓑₀)`; the court's constellation replay ADDS TO
+its family replay). The trace that ruled it: the physics of mind landed in
+the meet complex and stopped there — a merge's rewrites were drained only
+when some word arrived (`pivot_on`), and then `speak_word` returned
+`Silent` for every rewrite (a rewrite is no connection and opens no axis):
+no thought was ever spoken, stood in a dialect, or sent to a court.
+- THE WORD (`RewriteKind::Constellation`, `rewrite::Ground`): the class of
+  the generator first (A21), the period of its return, then the ground
+  constellation — the base frame's nucleus and its body as A.13 reads it,
+  the generator `g`, the coupling `V₀₁` (the hour rotor). Every other hour
+  is re-derived, `R_hourᵐ F₀`: the word is `O(1)`. Its yield is the return,
+  `ℓ − 1` on the shell lane.
+- CLOSURE IS THE WORD. The gate files each admitted single-body relation's
+  ground by its pair (`note_ground`); the torsion merge that fill decides
+  reads it, and where the merged thought now holds `ℓ` hours on the
+  ground's chart — a return closed, every hour balanced, its momentum
+  carried — mints the word (`close_ground`). A relation of several bodies,
+  or one that never returns (a slide, a boost), has no ground and speaks no
+  word (Stage C, below).
+- THE THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the voice's
+  `hold_perceived` drains the closed words (`take_words`) and speaks each;
+  `speak_word` lets a closed thought's word through (every other rewrite
+  stays the pivot's bookkeeping). Speaking stands it in the mind's dialect
+  at its own K and sends it to the court — no page, no prompt, no other
+  word awaited.
+- PHYSICAL LEGALITY (`tensegrity::replay_ground`, reached by the court's
+  blind replay through `rewrite::replay`): the class is the generator's;
+  the period its return exactly; the coupling its succession at the base's
+  centre; the `ℓ` hours balance and the `ℓ`-th is the base; the body is
+  carried rigidly (`carried_body`), its momentum carried every hour, and
+  returns to itself.
+- LANDED (Stage A): an L at its four hours closes one word at period 4 that
+  replays green; a tampered period and an unlocked coupling are refused by
+  name; one mind with no hypha stands the word in its own dialect at the
+  fourth hour and not before.
+- STAGE B (open): the family replay — the court applies the word's
+  generator to its copy of the family's perceived spores. A word spoken
+  from a perception names no task yet; it must carry the family it was
+  perceived on for the court to ground it.
+- STAGE C (open): merge keeps the constellation, not the first form — the
+  first-arrival form fallback purged and a thought keyed by its
+  coordinates; the multi-body ground (a scene's constellation), so tier-2
+  thoughts speak too.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

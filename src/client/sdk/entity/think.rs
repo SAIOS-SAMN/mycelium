@@ -55,6 +55,13 @@ impl Entity {
     ) -> bool {
         let Some(draw) = self.draw_for(&f) else { return false };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, budget);
+        // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the words
+        // this perception closed stand in the dialect and go to the court now,
+        // never on some later word's arrival. What the wire answers is the
+        // speech's own reading (`Utterance`); a refusal there stands as told.
+        for word in self.contemplation.take_words() {
+            let _ = self.speak_word(&word, budget);
+        }
         true
     }
 

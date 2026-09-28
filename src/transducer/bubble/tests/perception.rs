@@ -226,6 +226,51 @@ const O2_OUT: [&str; 5] = ["000000", "000000", "000110", "000010", "000010"];
 const O3: [&str; 5] = ["000000", "000000", "001000", "111000", "000000"];
 const O3_OUT: [&str; 5] = ["000000", "000000", "000100", "011100", "000000"];
 
+/// A CLOSED THOUGHT SPEAKS ITS WORD (78.52, the bridge to language). The L at
+/// its four hours about (2, 2): after three the thought holds three hours and
+/// says nothing; the fourth closes the return — every hour admitted balanced,
+/// its momentum carried — and the thought's ground is minted as ONE word, a
+/// Constellation rewrite at period 4 whose own tape replays green: its class
+/// its generator's, its hours balanced and closing, its body returned.
+#[test]
+fn the_fourth_hour_closes_the_return_and_the_thought_speaks_its_word() {
+    let mut c = Contemplation::new();
+    perceive(&mut c, &O0, &O0_OUT);
+    perceive(&mut c, &O1, &O1_OUT);
+    perceive(&mut c, &O2, &O2_OUT);
+    assert_eq!(c.closed_words, 0, "three hours of four close nothing");
+    perceive(&mut c, &O3, &O3_OUT);
+    assert_eq!(c.closed_words, 1, "{}", c.resonance.line());
+    let words: Vec<Rewrite> = c
+        .pending_rewrites
+        .iter()
+        .filter(|e| crate::transducer::rewrite::replay(e).is_none())
+        .filter_map(Rewrite::from_element)
+        .filter(|r| matches!(r.payload, RewritePayload::Constellation { .. }))
+        .collect();
+    let [word] = words.as_slice() else { panic!("one word, replaying green: {}", words.len()) };
+    let RewritePayload::Constellation { ground } = &word.payload else { panic!("filtered to constellations") };
+    assert_eq!(ground.period, 4, "the return's period");
+    assert_eq!(word.claimed, [0, 0, 0, 3], "a return of four closes three");
+    // THE REPLAY REFUSES A WORD ITS GROUND DOES NOT SPEAK, by name.
+    let tampered = |g: crate::transducer::rewrite::Ground| {
+        let payload = RewritePayload::Constellation { ground: Box::new(g) };
+        let before: Vec<_> = word.before.iter().map(|c| c.addr().clone()).collect();
+        crate::transducer::rewrite::mint(
+            crate::transducer::rewrite::RewriteKind::Constellation,
+            &before,
+            word.after.addr().clone(),
+            payload,
+            [0; 4],
+        )
+        .and_then(|e| crate::transducer::rewrite::replay(&e))
+    };
+    let twice = crate::transducer::rewrite::Ground { period: 8, ..(**ground).clone() };
+    assert_eq!(tampered(twice), Some("the word's period is not its generator's return"));
+    let unlocked = crate::transducer::rewrite::Ground { coupling: ground.generator.clone(), ..(**ground).clone() };
+    assert_eq!(tampered(unlocked), Some("the word's coupling is not its generator's succession"));
+}
+
 /// THE HOUR PREDICTED (78.48(7)). The L at hour 0 and hour 1 merge into one
 /// thought holding both, in the order they arrived; its orbit's step is the
 /// 90° turn about (2, 2), period 4. The L at hour 2 is exactly the orbit's

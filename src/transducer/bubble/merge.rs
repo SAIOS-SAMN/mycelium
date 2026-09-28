@@ -201,6 +201,7 @@ impl Contemplation {
                             // A name past its wall: no rewrite to record on.
                             self.remainders.unminted += 1;
                         }
+                        self.close_ground(&vertices, &before, &nk);
                     } else {
                         // The merge named no thought (`merges.unnamed`): no
                         // `after` for the rewrite, the remainder unrecorded.
@@ -229,6 +230,49 @@ impl Contemplation {
                     }
                 }
             }
+        }
+    }
+
+    /// 78.52 — THE WORDS CLOSED THOUGHTS SPOKE, drained from the pending
+    /// rewrites for the voice to speak in the act that closed them; every
+    /// other rewrite stays where the pivot drains it.
+    pub(crate) fn take_words(&mut self) -> Vec<Element> {
+        let (words, rest): (Vec<Element>, Vec<Element>) = std::mem::take(&mut self.pending_rewrites).into_iter().partition(|e| {
+            crate::transducer::rewrite::Rewrite::from_element(e)
+                .is_some_and(|r| matches!(r.payload, crate::transducer::rewrite::RewritePayload::Constellation { .. }))
+        });
+        self.pending_rewrites = rest;
+        words
+    }
+
+    /// 78.52 — A CLOSED THOUGHT SPEAKS ITS WORD. The pair just merged read its
+    /// ground at the gate; where the merged thought now holds as many hours
+    /// on the ground's chart as the ground's period — its constellation has
+    /// closed a return, each hour admitted balanced with its momentum carried
+    /// — the ground is minted as the thought's word (a Constellation rewrite)
+    /// and waits to be spoken with the other rewrites. The ground is dropped
+    /// either way: the next hour's relation reads its own.
+    fn close_ground(
+        &mut self,
+        vertices: &[Vec<u8>],
+        before: &[crate::transducer::address::Address],
+        nk: &crate::transducer::address::Address,
+    ) {
+        let [a, b] = vertices else { return };
+        let pk = super::resonance::pair_key(a, b);
+        let Some((chart, ground)) = self.grounds.get(&pk).cloned() else { return };
+        self.grounds.remove(&pk);
+        let held = self.bubbles.get(nk.as_bytes()).and_then(|t| t.spores.get(&chart)).map_or(0, |bodies| bodies.len() as u64);
+        if held < ground.period {
+            return;
+        }
+        let claimed = [0, 0, 0, ground.period - 1];
+        let payload = crate::transducer::rewrite::RewritePayload::Constellation { ground: Box::new(ground) };
+        if let Some(word) =
+            crate::transducer::rewrite::mint(crate::transducer::rewrite::RewriteKind::Constellation, before, nk.clone(), payload, claimed)
+        {
+            self.pending_rewrites.push(word);
+            self.closed_words += 1;
         }
     }
 

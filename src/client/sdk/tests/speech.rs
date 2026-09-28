@@ -167,3 +167,40 @@ fn a_code_the_hypha_did_not_send_is_not_an_outcome() {
         "and every sentence is unanswered, not stood"
     );
 }
+
+/// 78.52 — A MIND SPEAKS WHAT IT THOUGHT, IN ITS OWN DIALECT. An L seen at
+/// its four hours about the grid point (2, 2), held by one mind with no hypha
+/// to hear it: the fourth perception closes the thought's return, and the
+/// mind speaks the thought's word in that same act — it stands in the
+/// mind's dialect as a Constellation word at period 4, waiting on no word
+/// from anywhere.
+#[test]
+fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
+    use crate::client::sdk::*;
+    use crate::transducer::family::{perceive_family, scene_form_on, NoCrystal};
+    use crate::transducer::rewrite::{Rewrite, RewritePayload};
+    let grid = |rows: &[&str]| -> Vec<Vec<u8>> { rows.iter().map(|r| r.bytes().map(|b| b - b'0').collect()).collect() };
+    let hours: [([&str; 5], [&str; 5]); 4] = [
+        (["010000", "010000", "011000", "000000", "000000"], ["001000", "001000", "001100", "000000", "000000"]),
+        (["000000", "001110", "001000", "000000", "000000"], ["000000", "000111", "000100", "000000", "000000"]),
+        (["000000", "000000", "001100", "000100", "000100"], ["000000", "000000", "000110", "000010", "000010"]),
+        (["000000", "000000", "001000", "111000", "000000"], ["000000", "000000", "000100", "011100", "000000"]),
+    ];
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("bodies"));
+    let spoken = |e: &Entity| {
+        e.epigenome
+            .dialect
+            .scoped()
+            .filter_map(|(_, d)| Rewrite::from_element(d.sentence.element()))
+            .filter(|r| matches!(&r.payload, RewritePayload::Constellation { ground } if ground.period == 4))
+            .count()
+    };
+    for (i, (input, output)) in hours.iter().enumerate() {
+        let (a, b) = (grid(input), grid(output));
+        let frames = perceive_family(&[(a.clone(), b.clone())]);
+        let mut budget = entity.stroke_n(1 << 20);
+        let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");
+        assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], &mut budget), "hour {i} is held");
+        assert_eq!(spoken(&entity), usize::from(i == 3), "hour {i}: the word stands only once the return closes");
+    }
+}

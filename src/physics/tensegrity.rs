@@ -211,6 +211,97 @@ pub fn momentum(body: &Body, b: &Mv) -> Mv {
     t.geo(&pi).geo(&t.reverse())
 }
 
+/// THE GROUND'S REPLAY — PHYSICAL LEGALITY (78.52, the bridge to language):
+/// a closed thought's word re-derived from its own tape, hour by hour. The
+/// class is its generator's; the period is the generator's return exactly;
+/// the coupling is the generator's succession at the base's centre; the `ℓ`
+/// hours of the base frame balance (law II) and the `ℓ`-th is the base again;
+/// the body's momentum is carried through every hour (A.13) and the body
+/// returns to itself. `None` where all hold; otherwise the refusal by name.
+pub fn replay_ground(g: &crate::transducer::rewrite::Ground) -> Option<&'static str> {
+    use crate::transducer::alphabet::Order;
+    if g.generator.class_key().as_ref() != Some(&g.class) {
+        return Some("the word's class is not its generator's");
+    }
+    let Ok(f) = crate::transducer::element::conformal_factors(&g.generator) else {
+        return Some("the word's generator does not factor");
+    };
+    let order = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order());
+    if !matches!(order, Some(Order::Finite(ell)) if u64::from(ell) == g.period) || g.period < 2 {
+        return Some("the word's period is not its generator's return");
+    }
+    let Some(centre) = cga::base_at(&g.base, usize::from(g.base.n())) else {
+        return Some("the word's base frame has no centre");
+    };
+    let Some(r) = succession(&g.generator, &centre).and_then(|r| r.canonical()) else {
+        return Some("the word's generator has no succession");
+    };
+    if !r.projective_eq(&g.coupling) {
+        return Some("the word's coupling is not its generator's succession");
+    }
+    let frames: Vec<Frame> = (0..g.period).map(|m| hour(&g.base, &r, m)).collect();
+    if equilibrium(&Constellation { frames, generator: r.clone() }).is_err() {
+        return Some("the word's ground constellation does not balance");
+    }
+    if !hour(&g.base, &r, g.period).nucleus.projective_eq(&g.base) {
+        return Some("the word's hours do not close");
+    }
+    let mut body = g.body.clone();
+    for _ in 0..g.period {
+        let Some(next) = carried_body(&body, &g.generator) else {
+            return Some("the word's body is not carried rigidly");
+        };
+        if !external_torque(&body, &next, &g.generator).is_some_and(|t| t.is_zero()) {
+            return Some("the word's momentum is not carried");
+        }
+        body = next;
+    }
+    if body != g.body {
+        return Some("the word's body does not return");
+    }
+    None
+}
+
+/// A BODY CARRIED BY A RIGID STEP `g` (78.52, the word's replay): its centroid
+/// by the sandwich, its second moments turned by the step's rotation factor,
+/// `C′ = R C Rᵀ`, `R`'s columns the images of the base axes read at unit
+/// weight; the mass unchanged. `None` where the step does not factor, scales
+/// or transverses (no rigid carriage), or the centroid goes to infinity.
+pub fn carried_body(body: &Body, g: &Mv) -> Option<Body> {
+    let f = crate::transducer::element::conformal_factors(g).ok()?;
+    if !num_traits::One::is_one(&f.rho) || f.transverses() || f.inverted {
+        return None;
+    }
+    let centre = cga::base_at(&g.sandwich(&cga::point_at(&body.centre)), body.centre.len())?;
+    let r = &f.rotation;
+    let w = r.geo(&r.reverse()).scalar_part();
+    if w.is_zero() {
+        return None;
+    }
+    let n = body.moments.len();
+    let e = |i: usize| Mv::blade(cga::base_axis(i + 1), num_traits::One::one());
+    // image[a][b]: the b-th coordinate of the image of axis a.
+    let image: Vec<Vec<Q>> = (0..n)
+        .map(|a| {
+            let v = r.sandwich(&e(a));
+            (0..n).map(|b| v.coeff(cga::base_axis(b + 1)) / &w).collect()
+        })
+        .collect();
+    let mut moments = vec![vec![Q::zero(); n]; n];
+    for (b, row) in moments.iter_mut().enumerate() {
+        for (d, slot) in row.iter_mut().enumerate() {
+            let mut s = Q::zero();
+            for (a, ca) in body.moments.iter().enumerate() {
+                for (c, cac) in ca.iter().enumerate() {
+                    s += &image[a][b] * cac * &image[c][d];
+                }
+            }
+            *slot = s;
+        }
+    }
+    Some(Body { centre, mass: body.mass.clone(), moments })
+}
+
 /// A.13 · THE EXTERNAL TORQUE across one hour (78.52 Row 1): the body
 /// `before` carried by `step` to the body `after`, both read under the
 /// step's own bivector; `τ_ext = Π_after − g Π_before g̃`, zero exactly where

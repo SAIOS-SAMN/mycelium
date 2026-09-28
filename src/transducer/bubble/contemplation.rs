@@ -131,6 +131,15 @@ pub struct Contemplation {
     /// Bubbles retired to a cavity chart, address kept, remainder in the tape.
     pub(crate) cavity: Keyed<Vec<Link>>,
     pub(crate) pending_rewrites: Vec<Element>,
+    /// 78.52, THE BRIDGE TO LANGUAGE — each admitted single-body relation's
+    /// GROUND, by the pair it relates (the two ideas' keys, least first), with
+    /// the chart its hours stand on: read by the merge the relation's fill
+    /// decides, and spoken as the thought's word once its hours close a
+    /// return. Volatile, as the epigenome is; dropped when spoken.
+    pub(crate) grounds: Keyed<(Vec<u8>, crate::transducer::rewrite::Ground)>,
+    /// Closed thoughts spoken as words (78.52): each a Constellation rewrite
+    /// minted where a thought's hours closed a return.
+    pub closed_words: u64,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     pub(crate) now_k: u64,
     /// Z4d — THE APERTURE OF STROKES ON TUNIVERSAL, as a window of the
