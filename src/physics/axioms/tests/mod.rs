@@ -7,6 +7,7 @@ mod harmonic;
 mod hue;
 mod metabolism;
 mod mint;
+mod fascicle;
 mod orbit;
 mod reciprocity;
 mod refused;

@@ -825,6 +825,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 |---|---|---|
 | **transition** | the versor carrying one shape onto another, verified by covariance, with its residue per order | two shapes; its residue is the start of a remainder |
 | **motor** | a transition known by its action (78.41(3)) | frame to frame, in to out |
+| **fascicle** | a hyphal fascicle: two dual spheres whose reflections, one then the other, compose a motion `V = s₂ s₁` (78.52 Row 2); a slide is the fascicle of parallel planes kissing at `e_∞` | its two spheres; its STREAMLINE — elliptic, parabolic, hyperbolic — is their inversive distance. "pencil" is not used for it |
 | **carriage** | the versor that places a word or member (A4) | a word to the base |
 | **tether** | `V = s_b s_a` between two nuclei, static (A.10) | two bodies at a contact |
 | **interface** | a contact face's tether as a ray with its grade (BQ5b) | the contact's WHAT |
@@ -18209,6 +18210,40 @@ left by the body grown on the way. Perception: every test of 78.48–78.51
 reads as before — the same body in two scenes reflexive and filled, the
 luminal thought on its own parameter, the orbit's hours joined to three
 with their momentum carried.
+
+**(5) Row 2 — hyphal fascicles** (`physics::fascicle`; the name ruled the
+same day: motions are streaming fascicles of kissing spheres flowing along
+conformal streamlines, never rigid vectors — "pencil" is not used for
+them). A FASCICLE is two dual spheres `(s₁, s₂)`, `sᵢ² = rᵢ² ∈ ℚ` (a plane
+a sphere through `e_∞`); its versor `V = s₂ s₁`, its weight
+`V Ṽ = s₁² s₂²`, its action read at unit weight `V X Ṽ / (s₁² s₂²)` —
+exact, no root. Its STREAMLINE is its spheres' inversive distance:
+elliptic `δ² < 1` (the spheres cut; the stream turns about their circle,
+by twice the dihedral angle), parabolic `δ² = 1` (they kiss; the contact
+is fixed), hyperbolic `δ² > 1` (apart; the stream breathes — concentric, a
+dilation by `r₂² / r₁²`). A 2-versor reads its streamline alone,
+`δ² = ⟨V⟩₀² / (V Ṽ)` (`streamline_of`).
+- THE TRANSLATOR IS RETIRED AS A FORMULA: `cga::translator_at` is the
+  fascicle of parallel planes `d`, `d + ½|d|² e_∞` — kissing at `e_∞`,
+  parabolic — whose product is `|d|² (1 − ½ d e_∞)`, read at the first
+  plane's unit weight. It is the one producer, so every slide in the
+  engine — scene shifts, the conformal factors' `T(a)`, the succession of
+  a turnless step — is now that fascicle, and every reading and key is
+  unchanged (the coefficients are identical).
+- The succession (Row 1) winds a turnless step on its own parameter only
+  where its carriage is one fascicle's stream, parabolic or hyperbolic.
+- A FINDING — the fascicle kissing at a FINITE point is parabolic and fixes
+  its contact, but it is conformal, NOT rigid: it carries two points a unit
+  apart to points another distance apart. A slide of the grid is rigid, so
+  the slide perception sees is the fascicle kissing at `e_∞`, not at a
+  finite contact. Replacing it by a finite contact changes what is carried
+  — that is Row 3's question (bodies as Soddy clusters), not Row 2's.
+- The register: the orthogonal fascicle closes after two and fixes its
+  circle's rational points; the 60° fascicle closes after three; the plane
+  fascicle is the translator and is rigid; the finite kissing fascicle
+  fixes its contact, never closes, and is not rigid; the concentric
+  fascicle carries `(1,0,0)` to `(4,0,0)` and a sphere of `r² = 1/4` to
+  `r² = 4`.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

@@ -131,9 +131,16 @@ pub fn succession(step: &Mv, centre: &[Q]) -> Option<Mv> {
             let isoclinic = cga::rotator(&s, &b).geo(&cga::rotator_on_blade(&s, &b, E3 | EP));
             Some(centred(&isoclinic, centre))
         }
+        // No turn: the carriage winds on its own parameter where it is one
+        // fascicle's stream, PARABOLIC or HYPERBOLIC by its streamline (78.52
+        // Row 2); an elliptic reading here would be a turn the factors did
+        // not see, and a composite of two fascicles winds on no one parameter.
         true => {
+            use crate::physics::fascicle::{streamline_of, Streamline};
             let moves = !f.rho.is_one() || f.transverses() || !f.translation.iter().all(Zero::is_zero);
-            (moves && !f.inverted).then(|| f.carriage())
+            let carriage = f.carriage();
+            let flows = matches!(streamline_of(&carriage), Some(Streamline::Parabolic | Streamline::Hyperbolic));
+            (moves && !f.inverted && flows).then_some(carriage)
         }
     }
 }

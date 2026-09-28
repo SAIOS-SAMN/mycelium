@@ -48,6 +48,14 @@ pub const A10_1_VILLARCEAU_SUCCESSION: &str =
 /// `Π_{m+1} = g Π_m g̃ / (g g̃)`; what is not carried is the external torque.
 pub const A13_MOMENTUM_CARRIED: &str = "an unforced orbit carries its momentum; what it does not carry is external torque";
 
+/// HYPHAL FASCICLES (78.52 Row 2). Every motion is a fascicle's versor
+/// `V = s₂ s₁`, read at unit weight `V X Ṽ / (s₁² s₂²)`; its streamline is its
+/// spheres' inversive distance — elliptic `δ² < 1`, parabolic `δ² = 1`,
+/// hyperbolic `δ² > 1`; the slide is the fascicle of parallel planes kissing
+/// at `e_∞`.
+pub const R2_HYPHAL_FASCICLES: &str =
+    "every motion is a fascicle's product, its streamline its spheres' inversive distance; the slide the fascicle kissing at infinity";
+
 /// THE STAR SETS THE SPIN (78.51(2)). A rigid step splits exactly against a
 /// star into its orbit about the star and its spin about the body's own
 /// centre; a star elsewhere splits it into another spin.

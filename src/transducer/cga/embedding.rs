@@ -108,20 +108,26 @@ pub fn base_at(p: &Mv, n: usize) -> Option<Vec<BigRational>> {
     Some((1..=n).map(|i| p.coeff(super::multivector::base_axis(i)) / &alpha).collect())
 }
 
-/// The translation versor `T(d) = 1 − ½ d e_∞`, `d = Σ dᵢ eᵢ` over the
-/// displacement's own `n` coordinates (PH2: no fixed arity). Acts by
-/// sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
-/// Translators commute (51.2): the base is a lattice.
+/// THE SLIDE BY `d`, `d = Σ dᵢ eᵢ` over the displacement's own `n`
+/// coordinates (PH2: no fixed arity), READ OFF ITS FASCICLE (78.52 Row 2):
+/// the two parallel planes `d` and `d + ½|d|² e_∞` — spheres through `e_∞`,
+/// kissing there, a parabolic fascicle — compose `|d|² (1 − ½ d e_∞)`, read
+/// here at the first plane's unit weight. No translation is written as a
+/// formula of its own: the fascicle is the motion
+/// (`physics::fascicle::Fascicle::parallel`). The identity where `d = 0`.
+/// Acts by sandwich: `T X(x) T̃ = X(x + d)`, up to the homogeneous scale.
 ///
 /// 54.7 R3 — THIS IS THE PARABOLIC PINNING, and it is what the hyperbolic
-/// unification replaces. Its generator is `B = −½ d e_∞` with `e_∞² = 0`,
-/// so `B² = 0`: a null bivector fixing the point at infinity, which is a
-/// privileged planar boundary in a manifold whose sectional curvature is
-/// not zero. [`transvection`] is the geodesic motion that has no such
-/// fixed point.
+/// unification replaces: the fascicle kisses AT `e_∞`, so its generator
+/// `B = −½ d e_∞` has `B² = 0` and fixes the point at infinity.
+/// [`transvection`] is the geodesic motion that has no such fixed point; a
+/// fascicle kissing at a finite point fixes that point instead, and is not
+/// rigid.
 pub fn translator_at(d: &[BigRational]) -> Mv {
-    let d_einf = base_vector(d).geo(&e_inf());
-    Mv::scalar(one()).sub(&d_einf.scale(&half()))
+    match crate::physics::fascicle::Fascicle::parallel(d) {
+        Some(pair) => pair.versor().scale(&(one() / pair.first.norm2())),
+        None => Mv::scalar(one()),
+    }
 }
 
 /// The Euclidean rotation versor in the `e1e2` plane as an EXACT even
