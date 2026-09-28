@@ -18136,6 +18136,80 @@ demanded; the same body in two scenes is a filled thought, not a collapse;
 the turned scene is one congruent thought at ℓ = 4 and the symmetric scene
 one coset, its symmetry filed at ℓ = 2 — both consolidated (tier 2).
 
+### 78.52 The conformal foam: five rows; Row 1 — the hours wind on a Clifford torus, and a body's momentum is carried (ruled 2026-09-28, the operator's word)
+
+**The operator's word.** Squares, cubes and lattices were never native to
+the geometry — a raster crutch from 2D pixel grids. In `Cl(n+1,1)` a line
+or plane is a circle or sphere through `e_∞`; rectilinear offsets forced
+curved geodesics into flat ones. The architecture is rebuilt from spheres,
+circles and kissing foam, in five rows, in this order:
+
+| Row | Component | Retires |
+|---|---|---|
+| 1 | Villarceau succession, A.13 momentum | `T_axial`, the `k`-height, the unit hour step; the collapse test on the identity |
+| 2 | Sphere-pair versors `V = s₂ s₁` (intersecting: elliptic; concentric: hyperbolic; tangent: parabolic) | the translator `1 − ½ d e_∞` |
+| 3 | Soddy bodies: Apollonian packings of kissing dual spheres over ℚ; the centroid the orthogonal socket `⟨s₀, sᵢ⟩₀ = 0` | pixel grids, bounding boxes |
+| 4 | Schottky chambers: domains bounded by inversive sphere sets | grid-based complexes |
+| 5 | Descartes–Soddy coherence `(Σ bᵢ)² = n Σ bᵢ²`, tangency `δ² = 1` | heuristic shape metrics |
+
+**(1) Row 1 — the Villarceau succession** (`physics::tensegrity::{succession,
+hour}`). The hour axis is no linear pole with ticks: it is a Clifford
+torus. `Cl(4,1)` holds four positive axes, `e₁ e₂ e₃ e₊`; the planes `e₁e₂`
+and `e₃e₊` are orthogonal and their rotors commute, and a rotation in
+`e₃e₊` is an elliptic conformal map — `S³`'s own rotation. The HOUR ROTOR
+pairs the step's turn `R₁₂ = s + b e₁e₂` with the same rational point in
+the orthogonal plane, `R₃₊ = s + b e₃e₊`: `R_hour = T_c (R₁₂ R₃₊) T̃_c`,
+ISOCLINIC, centred on the constellation's own centre (78.51(3)). Hour `m`'s
+frame is the body's nucleus carried by `R_hourᵐ`, its pose that power; the
+coupling is the relative pose alone, `V_ij = θ_j θ̃_i`, and `R_hour` the
+constellation's generator. The hours close after the turn's own period —
+a Villarceau winding, no ruler. Deviation from the ruling's `t = 2π/ℓ`:
+that angle is irrational; the step's own rational point is exact and is the
+same turn (DG1).
+- A step with NO TURN — a slide (parabolic) or a breathing or boost
+  (hyperbolic) — winds on its own parameter: its hour rotor is its carriage
+  `T·K·D`, never put on the elliptic torus (reading 2, affirmed; extended
+  from the slide to every turnless flow, Row 2 unifying them as pencils).
+- THE IDENTITY IS REFLEXIVE (reading 1, affirmed): one frame seen twice,
+  the diagonal morphism — it bypasses the gate, counted `reflexive`, and
+  its fill (Filled) decides.
+- THE TORUS'S UNIT (a finding): the plane `e₃e₊` carries a length. The unit
+  sphere about the centre is the torus's pole, `∝ e₊`; the half period
+  carries it to `−e₊`, its own ray, and a body of exactly that extent
+  collapses onto itself at hour `ℓ/2`. Row 3's bodies, sized by their own
+  bends, are where this unit is to be derived.
+
+**(2) Row 1 — A.13, the momentum half** (`physics::tensegrity::{momentum,
+external_torque}`). `Π = M₂(B)`: the step's bivector read at the body's
+centroid, each spatial plane acted on as a rigid body's inertia acts,
+`M₂(e_a ∧ e_b) = Σ_k (C_ka e_k ∧ e_b − C_kb e_k ∧ e_a)` from the exact
+second moments (`Blade::moment2`), every part carrying the centroid weighed
+by the mass (the body's sites), and carried back. An unforced orbit carries
+it: `Π_{m+1} = g Π_m g̃ / (g g̃)` — the versor read at unit weight, exact.
+What it does not carry is the EXTERNAL TORQUE `τ_ext`, refused as
+`ExternalTorque` and filed as a demand — what body or field exerted it. The
+ruling's `Ad*_g(Π) = g̃ Π g` is the engine's sandwich `g Π g̃`, the
+convention every carriage here uses. The dynamical pitch of the earlier
+scope is retired with the height it would have set; A.13's inversive half
+(`K_i`) stays docketed.
+
+**(3) In the engine** (`Contemplation::gate`). The identity is reflexive;
+every other relation's hour rotor is read at the constellation's centre,
+its frames the hours, and on an orbit each hour's momentum must be carried
+to the next. Counted: `consolidated monocular collapsed unbalanced
+destabilizing reflexive non-rigid no-succession external-torque`.
+
+**(4) Acceptance, landed.** The register: the two planes commute and the
+hours close after four; four hours four nuclei, the fifth the first; the
+slide its own hour, the identity none; the unit sphere the torus's pole;
+tier 1 in its own succession balanced and against the origin refused; the
+synchronous binary balanced and rigid; the tumble refused; A.13 carried by
+the turned body (mass 4, moments `diag(2,1)` → `diag(1,2)`) and a torque
+left by the body grown on the way. Perception: every test of 78.48–78.51
+reads as before — the same body in two scenes reflexive and filled, the
+luminal thought on its own parameter, the orbit's hours joined to three
+with their momentum carried.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

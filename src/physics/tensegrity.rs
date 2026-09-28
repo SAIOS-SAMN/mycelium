@@ -11,13 +11,12 @@
 //!   its POSE `θ` — the versor carrying the constellation's first frame onto
 //!   it, at its canonical ray (`Mv::canonical`), so `θ_j θ_i⁻¹` is the
 //!   transition from frame `i` to frame `j`, gauge-free.
-//! - THE COUPLING is ATTITUDE (the amendment of 2026-09-28, 78.51(4′)):
-//!   `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)`, the relative pose and the
-//!   slide along the spin axis between the frames' hours, `k` a frame's
-//!   height on `e₃` read off its nucleus; `B_ij = ⟨V_ij⟩₂`. The transverse
-//!   chord `s_j s_i` stands in no bracket: a chord across the axis turns
-//!   with the turn, and asking it to commute asked a rotating dumbbell not to
-//!   rotate. Poses compose by the reverse (78.32(1): rays).
+//! - THE COUPLING is ATTITUDE, POSE ONLY (78.51(4′), Row 1 of 78.52):
+//!   `V_ij = θ_j θ̃_i`, `B_ij = ⟨V_ij⟩₂`. A frame's hour is carried IN its
+//!   pose by the hour rotor ([`succession`]), so no height is stored or read
+//!   and no axial slide stands between frames. The transverse chord `s_j s_i`
+//!   stands in no bracket: a chord across the axis turns with the turn.
+//!   Poses compose by the reverse (78.32(1): rays).
 //! - THE INVERSIVE DISTANCE `δ²_ij = ⟨s_i s_j⟩₀² / (s_i² s_j²)` and its well
 //!   are GR1's (`cga::pair_regime`): a Coxeter well `δ² ∈ {0, ¼, ½, ¾}`
 //!   (`m = 2, 3, 4, 6`), tangency at 1. The separation is governed by
@@ -33,14 +32,24 @@
 //! Stationary equilibrium is `τ = 0`, coefficient by coefficient over ℚ (law
 //! II, repair A) — never a scalar trace; `ℰ` is its reading, and law IV
 //! orders by it. A SINGULAR COLLAPSE is two nuclei at one spacetime locus,
-//! `s_i ∧ s_j = 0` (repair C): a body seen at two hours stands at two heights
-//! on the spin axis, two nuclei, never a collapse.
+//! `s_i ∧ s_j = 0` (repair C): a body seen at two hours stands at two places
+//! on its succession, two nuclei, never a collapse.
 //!
-//! THE HOURS ARE HEIGHTS (78.51, the ruling of 2026-09-28): hour `m` of a
-//! return stands at height `m` on the spin axis `e₃` ([`lifted`]), so a day's
-//! frames stand along the axis the spin turns about.
+//! THE HOURS WIND ON A CLIFFORD TORUS (78.52 Row 1, ruled 2026-09-28): the
+//! hour rotor pairs the step's turn in `e₁e₂` with the same turn in the
+//! orthogonal plane `e₃e₊` — an ISOCLINIC rotor, the two planes commuting —
+//! centred on the constellation's own centre. Hour `m` is the rotor's `m`-th
+//! power, and the hours close after the turn's own period `ℓ`: a Villarceau
+//! winding, no ruler, no unit step. A slide, which has no turn, advances
+//! along its own parabolic parameter: its hour is the slide's own power.
+//!
+//! A.13 · DISCRETE ANGULAR MOMENTUM (78.52 Row 1): a body's momentum is its
+//! inertia acting on the step's bivector, `Π = M₂(B)` ([`momentum`]), read at
+//! the body's own centroid; an unforced orbit carries it, `Π_{m+1} =
+//! g Π_m g̃`, and what it does not carry is the external torque
+//! ([`external_torque`]) — the demand for the body or field that exerted it.
 
-use crate::transducer::cga::{self, Mv, PairRegime};
+use crate::transducer::cga::{self, Mv, PairRegime, E1, E2, E3, EP};
 use num_rational::BigRational;
 use num_traits::Zero;
 
@@ -75,35 +84,143 @@ pub enum Refusal {
     /// Two frames' nuclei coincide as a ray, `s_i ∧ s_j = 0`: two frames
     /// crushed into one.
     SingularCollapse,
-    /// A frame's nucleus stands at infinity: it has no height on the spin
-    /// axis, and its coupling does not read.
-    Unplaced,
     /// The pair `(i, j)` did not keep its inversive distance across the
     /// transition: `Δδ² = delta ≠ 0` — shear, drift, or bodies flying apart.
     NonRigid { i: usize, j: usize, delta: Q },
+    /// The step reads no succession: it does not factor, turns off the spin
+    /// plane, or — with no turn — is no pure slide.
+    NoSuccession,
+    /// A.13 — the momentum was not carried from one hour to the next: `tau`,
+    /// the external torque, is what some other body or field exerted.
+    ExternalTorque { tau: Mv },
 }
 
-/// A FRAME'S HEIGHT on the spin axis `e₃`: its nucleus's third base
-/// coordinate — its hour (78.51(2)). Zero in an algebra with no `e₃`; `None`
-/// at infinity.
-pub fn height(f: &Frame) -> Option<Q> {
-    let n = usize::from(f.nucleus.n());
-    match n >= 3 {
-        true => cga::base_at(&f.nucleus, n).and_then(|c| match c.as_slice() {
-            [_, _, k, ..] => Some(k.clone()),
-            _ => None,
-        }),
-        false => cga::base_at(&f.nucleus, n).map(|_| Q::zero()),
+/// THE ATTITUDE COUPLING `V_ij = θ_j θ̃_i` between two frames (78.51(4′),
+/// 78.52 Row 1): the relative pose, the hour carried in it.
+pub fn coupling(i: &Frame, j: &Frame) -> Mv {
+    j.pose.geo(&i.pose.reverse())
+}
+
+/// THE HOUR ROTOR (78.52 Row 1): the succession a step winds its hours on,
+/// centred at `centre`.
+/// - A TURN `R₁₂ = s + b e₁e₂` (the step's rotation factor, its rational
+///   point exact) is paired with the same turn in the orthogonal plane,
+///   `R₃₊ = s + b e₃e₊`: `R_hour = T_c (R₁₂ R₃₊) T̃_c`, isoclinic, the two
+///   planes commuting; it closes after the turn's own period.
+/// - A step with NO TURN — a slide (parabolic), a breathing or boost
+///   (hyperbolic), no inversion — winds on its own parameter: its hour rotor
+///   is its carriage `T·K·D` itself, never put on the elliptic torus.
+///
+/// `None` where the step does not factor, turns outside `e₁e₂`, inverts, or
+/// is the identity (reflexive, never an orbit, decided before any
+/// succession is asked).
+///
+/// THE TORUS'S UNIT (78.52(1)): the plane `e₃e₊` carries a length — the unit
+/// sphere about the centre is its pole, `∝ e₊`, and a body of exactly that
+/// extent returns to its own ray at half the period.
+pub fn succession(step: &Mv, centre: &[Q]) -> Option<Mv> {
+    use num_traits::One;
+    let f = crate::transducer::element::conformal_factors(step).ok()?;
+    let r = f.rotation.canonical()?;
+    let (s, b) = (r.scalar_part(), r.coeff(E1 | E2).clone());
+    if !r.sub(&cga::rotator(&s, &b)).is_zero() {
+        return None;
+    }
+    match b.is_zero() {
+        false => {
+            let isoclinic = cga::rotator(&s, &b).geo(&cga::rotator_on_blade(&s, &b, E3 | EP));
+            Some(centred(&isoclinic, centre))
+        }
+        true => {
+            let moves = !f.rho.is_one() || f.transverses() || !f.translation.iter().all(Zero::is_zero);
+            (moves && !f.inverted).then(|| f.carriage())
+        }
     }
 }
 
-/// THE ATTITUDE COUPLING `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)` between two
-/// frames (78.51(4′)): the relative pose and the slide along the spin axis
-/// between their hours. `None` where a frame is unplaced.
-pub fn coupling(i: &Frame, j: &Frame) -> Option<Mv> {
-    let dk = height(j)? - height(i)?;
-    let axial = cga::translator_at(&[Q::zero(), Q::zero(), dk]);
-    Some(j.pose.geo(&i.pose.reverse()).geo(&axial))
+/// HOUR `m`'S FRAME (78.52 Row 1): the body's nucleus `s` at its first hour,
+/// carried by the hour rotor's `m`-th power — the nucleus to its place on the
+/// succession, the pose the power itself. Each power held at its canonical
+/// ray.
+pub fn hour(s: &Mv, r_hour: &Mv, m: u64) -> Frame {
+    let mut power = Mv::scalar(num_traits::One::one());
+    for _ in 0..m {
+        let next = r_hour.geo(&power);
+        power = match next.canonical() {
+            Some(ray) => ray,
+            None => next,
+        };
+    }
+    carried(&Frame { nucleus: s.clone(), pose: Mv::scalar(num_traits::One::one()) }, &power)
+}
+
+/// A BODY AS A.13 READS IT: its centroid, its mass (its sites), and its
+/// second moments about the centroid on its base axes, `moments[a][b] =
+/// ∫ x_a x_b` (`Blade::moment2`), exact.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Body {
+    pub centre: Vec<Q>,
+    pub mass: Q,
+    pub moments: Vec<Vec<Q>>,
+}
+
+/// `e_a ∧ e_b` for base axes `a`, `b` counted from 0.
+fn plane(a: usize, b: usize) -> Mv {
+    let e = |i: usize| Mv::blade(cga::base_axis(i + 1), num_traits::One::one());
+    e(a).geo(&e(b)).grade(2)
+}
+
+/// A.13 · THE DISCRETE ANGULAR MOMENTUM `Π = M₂(B)` of a body under the
+/// bivector `B` (78.52 Row 1). `B` is read at the body's centroid (`T̃_c B
+/// T_c`); on each spatial plane the inertia acts as a rigid body's does,
+/// `M₂(e_a ∧ e_b) = Σ_k (C_ka e_k ∧ e_b − C_kb e_k ∧ e_a)` — `Σ x ∧ (x · B)`
+/// over the body — and every other part, which carries the centroid, is
+/// weighed by the mass; the result is carried back to the centroid's place.
+/// Exact over ℚ; no velocity, no derivative (law 1): `B` is a step's own
+/// bivector.
+pub fn momentum(body: &Body, b: &Mv) -> Mv {
+    let t = cga::translator_at(&body.centre);
+    let local = t.reverse().geo(b).geo(&t).grade(2);
+    let n = body.moments.len();
+    let mut pi = Mv::zero();
+    for mask in 0..local.slot_count() {
+        let c = local.coeff(mask);
+        if mask.count_ones() != 2 || c.is_zero() {
+            continue;
+        }
+        let axes: Vec<usize> = (0..n).filter(|&i| mask & cga::base_axis(i + 1) != 0).collect();
+        match axes.as_slice() {
+            [a, b] => {
+                for (k, row) in body.moments.iter().enumerate() {
+                    let (cka, ckb) = (row.get(*a), row.get(*b));
+                    if let (Some(cka), Some(ckb)) = (cka, ckb) {
+                        pi = pi.add(&plane(k, *b).scale(&(c * cka)).sub(&plane(k, *a).scale(&(c * ckb))));
+                    }
+                }
+            }
+            _ => pi = pi.add(&Mv::blade(mask, c * &body.mass)),
+        }
+    }
+    t.geo(&pi).geo(&t.reverse())
+}
+
+/// A.13 · THE EXTERNAL TORQUE across one hour (78.52 Row 1): the body
+/// `before` carried by `step` to the body `after`, both read under the
+/// step's own bivector; `τ_ext = Π_after − g Π_before g̃`, zero exactly where
+/// the orbit carried the momentum unforced.
+///
+/// A versor acts as a ray: its sandwich scales by its weight `g g̃`, so the
+/// carried momentum is read at unit weight — divided by it, exactly (the
+/// scale is content here: momentum is compared coefficient by coefficient).
+/// `None` for a null versor, which has no weight to read.
+pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
+    let b = step.grade(2);
+    let w = step.geo(&step.reverse()).scalar_part();
+    if w.is_zero() {
+        return None;
+    }
+    let carried = step.sandwich(&momentum(before, &b)).scale(&(Q::from_integer(1.into()) / w));
+    Some(momentum(after, &b).sub(&carried))
 }
 
 /// THE INVERSIVE DISTANCE of two frames and its well (GR1).
@@ -129,15 +246,15 @@ pub fn torque(coupling: &Mv, generator: &Mv) -> Mv {
 
 /// THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]`: each coupling's
 /// [`torque`] over the pairs of one constellation's own frames (rule 1),
-/// summed in the algebra. `None` where a frame is unplaced.
-pub fn net_torque(c: &Constellation) -> Option<Mv> {
+/// summed in the algebra.
+pub fn net_torque(c: &Constellation) -> Mv {
     let mut tau = Mv::zero();
     for (a, i) in c.frames.iter().enumerate() {
         for j in c.frames.iter().skip(a + 1) {
-            tau = tau.add(&torque(&coupling(i, j)?, &c.generator));
+            tau = tau.add(&torque(&coupling(i, j), &c.generator));
         }
     }
-    Some(tau)
+    tau
 }
 
 /// METRIC RIGIDITY (78.51(4′)): each body `(before, after)` — its nucleus on
@@ -244,22 +361,13 @@ pub fn coefficient_norm(a: &Mv) -> Q {
 }
 
 /// THE STRAIN `ℰ = ‖τ‖² / ‖B_orbit‖²` (A.10.1 law III, repair B). `None`
-/// where the generator has no bivector — no orbit to strain — or a frame is
-/// unplaced.
+/// where the generator has no bivector — no orbit to strain.
 pub fn strain(c: &Constellation) -> Option<Q> {
     let b = coefficient_norm(&c.generator.grade(2));
     if b.is_zero() {
         return None;
     }
-    Some(coefficient_norm(&net_torque(c)?) / b)
-}
-
-/// HOUR `m`'S FRAME ON THE SPIN AXIS (78.51): the nucleus carried to height
-/// `m` along `e₃`, the axis a turn in `e₁e₂` spins about. The pose stands.
-pub fn lifted(f: &Frame, m: u64) -> Frame {
-    let n = f.nucleus.n().max(3);
-    let lift = cga::translator_at(&[Q::zero(), Q::zero(), Q::from_integer(m.into())]).widened(n);
-    Frame { nucleus: lift.sandwich(&f.nucleus.widened(n)), pose: f.pose.widened(n) }
+    Some(coefficient_norm(&net_torque(c)) / b)
 }
 
 /// STATIONARY EQUILIBRIUM (A.10.1 laws I, II): at least two co-present
@@ -276,7 +384,7 @@ pub fn equilibrium(c: &Constellation) -> Result<(), Refusal> {
         }
         seen.push(f);
     }
-    let Some(tau) = net_torque(c) else { return Err(Refusal::Unplaced) };
+    let tau = net_torque(c);
     match tau.is_zero() {
         true => Ok(()),
         false => Err(Refusal::UnbalancedTensegrity { net_torque: tau }),

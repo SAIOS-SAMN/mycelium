@@ -100,12 +100,16 @@ pub const A12_IRREDUCIBLE_INVERSIVE_EXTENT: &str =
 /// `Quotient { frame, car, … }` already carries that transition and has
 /// never been read as a momentum.
 ///
-/// NOT BUILT. Stated so the asymmetry is a recorded gap rather than an
-/// unnoticed one (T21(iii): an axiom that cannot fail a test is a
-/// coordinate standing for no theorem, and this one is marked as work).
+/// THE MOMENTUM HALF IS BUILT (78.52 Row 1, 2026-09-28): `Π = M₂(B)`, the
+/// body's inertia acting on the step's bivector at its centroid, carried by
+/// an unforced orbit, the external torque what it did not carry
+/// (`physics::tensegrity::{momentum, external_torque}`, register
+/// `A13_MOMENTUM_CARRIED`). THE INVERSIVE HALF IS NOT BUILT: `K_i` stays
+/// unvoiced. Stated so the asymmetry is a recorded gap rather than an
+/// unnoticed one (T21(iii)).
 pub const A13_INVERSIVE_MOMENTUM_DOCKETED: &str =
     "docketed: K_i = I·T_i·I⁻¹ is unvoiced, so every motion fixes infinity; \
-     momentum is inertia paired with the inter-frame carriage";
+     momentum — inertia paired with the inter-frame carriage — is built (78.52)";
 
 /// OK1 — A K-STEP IS ONE ORBIT (ours, 78.23 as amended, ruled 2026-09-24).
 ///

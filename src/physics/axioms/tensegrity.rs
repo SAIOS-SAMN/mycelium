@@ -21,7 +21,8 @@ pub const A10_1_TORQUE: &str = "a coupling's torque on a generator is half their
 
 /// LAW II · TENSEGRITY BALANCE. Stationary equilibrium iff the net torque
 /// `τ = Σ_{i<j} ½[B_ij, B_orbit]` vanishes coefficient by coefficient over ℚ
-/// (repair A), `B_ij = ⟨V_ij⟩₂`, `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)`
+/// (repair A), `B_ij = ⟨V_ij⟩₂`, `V_ij = θ_j θ̃_i` the pose coupling, the hour
+/// carried in the pose (78.52 Row 1; `T_axial` retired)
 /// the ATTITUDE coupling (78.51(4′)).
 pub const A10_1_II_BALANCE: &str = "a constellation is in stationary equilibrium iff its net commutator torque vanishes";
 
@@ -35,6 +36,18 @@ pub const A10_1_III_STRAIN: &str = "the strain is the torque's coefficient norm 
 /// every pair, never the planar commutator.
 pub const A10_1_METRIC_RIGIDITY: &str = "every pair keeps its inversive distance across the transition";
 
+/// THE VILLARCEAU SUCCESSION (78.52 Row 1). A turn's hours wind on the
+/// isoclinic rotor pairing it with the same turn in `e₃e₊`, centred on the
+/// constellation's own centre, closing after the turn's own period; a step
+/// with no turn winds on its own parameter; the identity is reflexive.
+pub const A10_1_VILLARCEAU_SUCCESSION: &str =
+    "the hours wind isoclinically on e1e2 and e3e+ and close after the turn's own period";
+
+/// A.13 · MOMENTUM CARRIED (78.52 Row 1). `Π = M₂(B)` — the inertia acting on
+/// the step's bivector at the centroid — is carried by an unforced orbit,
+/// `Π_{m+1} = g Π_m g̃ / (g g̃)`; what is not carried is the external torque.
+pub const A13_MOMENTUM_CARRIED: &str = "an unforced orbit carries its momentum; what it does not carry is external torque";
+
 /// THE STAR SETS THE SPIN (78.51(2)). A rigid step splits exactly against a
 /// star into its orbit about the star and its spin about the body's own
 /// centre; a star elsewhere splits it into another spin.
@@ -42,8 +55,8 @@ pub const A10_1_STAR_SETS_SPIN: &str = "a step splits against a star into an orb
 
 /// THE INTRINSIC AXIS (78.51(3)). The generator is made about the
 /// constellation's own centre — a body's centroid, a scene's barycentre —
-/// never an arbitrary origin; the hours stand at their heights on its axis.
-pub const A10_1_INTRINSIC_AXIS: &str = "the generator turns about the constellation's own centre, its hours at their heights on its axis";
+/// never an arbitrary origin; the hours wind on its succession (78.52).
+pub const A10_1_INTRINSIC_AXIS: &str = "the generator turns about the constellation's own centre, its hours winding on its succession";
 
 /// LAW IV · FORCE. An operation carrying frame `k` exerts `ΔE = ℰ(𝒞') − ℰ(𝒞)`:
 /// admitted where it does not raise the strain and the constellation it

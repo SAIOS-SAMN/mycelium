@@ -172,14 +172,18 @@ pub struct ResonanceTally {
     pub unread_lines: u64,
     /// A.10.1 — the consolidation gate: relations admitted as thoughts, and
     /// refused by name — monocular, collapsed, unbalanced, destabilizing,
-    /// unplaced (a nucleus at infinity), non-rigid (`Δδ² ≠ 0`, 78.51(4′)).
+    /// non-rigid (`Δδ² ≠ 0`, 78.51(4′)), no succession, an external torque
+    /// (A.13); and the reflexive — the identity, one frame seen twice, which
+    /// bypasses the gate (78.52 Row 1).
     pub consolidated: u64,
     pub monocular: u64,
     pub collapsed: u64,
     pub unbalanced: u64,
     pub destabilizing: u64,
-    pub unplaced: u64,
+    pub reflexive: u64,
     pub nonrigid: u64,
+    pub unsucceeded: u64,
+    pub torqued: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -189,7 +193,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} unplaced {} non-rigid {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -229,15 +233,17 @@ impl ResonanceTally {
             self.collapsed,
             self.unbalanced,
             self.destabilizing,
-            self.unplaced,
+            self.reflexive,
             self.nonrigid,
+            self.unsucceeded,
+            self.torqued,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 43] {
+    fn fields(&mut self) -> [&mut u64; 45] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -279,8 +285,10 @@ impl ResonanceTally {
             &mut self.collapsed,
             &mut self.unbalanced,
             &mut self.destabilizing,
-            &mut self.unplaced,
+            &mut self.reflexive,
             &mut self.nonrigid,
+            &mut self.unsucceeded,
+            &mut self.torqued,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -354,6 +362,26 @@ struct Row {
     theirs: Vec<Option<Mv>>,
     /// Each of the other's bodies' mass: its sites (78.51(3)).
     their_mass: Vec<u64>,
+    /// A.13 — this body and each of the other's as momentum reads them:
+    /// centroid, mass, second moments (78.52 Row 1).
+    body: Option<crate::physics::tensegrity::Body>,
+    their_bodies: Vec<Option<crate::physics::tensegrity::Body>>,
+}
+
+/// A BODY AS A.13 READS IT: its centroid in the vertex coordinates the
+/// transitions act in, its sites as its mass, and its second moments about
+/// the centroid on each pair of its base's axes (`Blade::moment2`).
+fn momentum_body(s: &Shape) -> Option<crate::physics::tensegrity::Body> {
+    let b = &s.blade;
+    let nucleus = b.vertex_nucleus()?;
+    let n = b.n();
+    let centre = crate::transducer::cga::base_at(&nucleus, n)?;
+    let moments = (0..n).map(|i| (0..n).map(|j| b.moment2(i, j).cloned()).collect::<Option<Vec<_>>>()).collect::<Option<Vec<_>>>()?;
+    Some(crate::physics::tensegrity::Body {
+        centre,
+        mass: num_rational::BigRational::from_integer((b.support.len() as u64).into()),
+        moments,
+    })
 }
 
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
@@ -615,6 +643,8 @@ impl Contemplation {
                         nucleus: x.blade.vertex_nucleus(),
                         theirs: theirs.iter().map(|y| y.blade.vertex_nucleus()).collect(),
                         their_mass: theirs.iter().map(|y| y.blade.support.len() as u64).collect(),
+                        body: momentum_body(x),
+                        their_bodies: theirs.iter().map(momentum_body).collect(),
                     };
                     for y in &theirs {
                         match transition(x, y, budget) {
@@ -934,34 +964,41 @@ impl Contemplation {
     /// its strain did not rise, and — in a scene — every pair of bodies kept
     /// its inversive distance.
     ///
-    /// THE INTRINSIC AXIS (78.51(3)): the relation's turn `R` (its rotation
-    /// factor, read about the origin) is made about the constellation's own
-    /// centre, `G = T_c R T̃_c` — never about the chart's origin (rule 15).
-    /// Every frame stands CO-ROTATING: its nucleus carried back to the first
-    /// hour, posed by `G` to its hour, and lifted to its hour's height on the
-    /// spin axis (78.51, `tensegrity::lifted`).
+    /// THE REFLEXIVE (78.52 Row 1): an identity relation is one frame seen
+    /// twice — the diagonal morphism, no constellation — and bypasses the
+    /// gate; its fill (Filled) decides.
+    ///
+    /// THE SUCCESSION (78.52 Row 1): the relation's hour rotor
+    /// (`tensegrity::succession`) — its turn paired isoclinically with the
+    /// same turn in `e₃e₊`, or a slide's own parameter — centred on the
+    /// constellation's own centre (78.51(3), rule 15). Hour `m`'s frame is the
+    /// body's nucleus at its first hour carried by the rotor's `m`-th power
+    /// (`tensegrity::hour`), the rotor the constellation's generator.
     ///
     /// - On an ORBIT (tier 1) each of this perception's bodies is ONE body
     ///   across its hours: the other's bodies its hours `0 … m−1` in arrival
     ///   order, carried back by `t_j t̃_1`, and this body hour `m`, carried
-    ///   back by `t_1`; `c` the body's own centroid at its first hour.
+    ///   back by `t_1`; `c` the body's own centroid at its first hour. A.13:
+    ///   the orbit's step must carry each hour's momentum to the next, or the
+    ///   external torque is refused.
     /// - In a SCENE (tier 2) the other's bodies stand at hour 0 as they are,
     ///   this perception's at hour 1 carried back by the scene's motion, one
     ///   constellation per chart; `c` the other's barycentre, each body
     ///   weighed by its mass (its sites).
     fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool) -> Result<(), crate::physics::tensegrity::Refusal> {
-        use crate::physics::tensegrity::{barycentre, centred, consolidate, lifted, rigid, Constellation, Frame};
+        use crate::physics::tensegrity::{
+            barycentre, consolidate, external_torque, hour, rigid, succession, Constellation, Refusal,
+        };
         use crate::transducer::cga;
         type Q = num_rational::BigRational;
+        if unit_ray(generator) {
+            self.resonance.reflexive += 1;
+            return Ok(());
+        }
         let ray = |m: Mv| match m.canonical() {
             Some(c) => c,
             None => m,
         };
-        let turn = match crate::transducer::element::conformal_factors(generator) {
-            Ok(f) => f.rotation,
-            Err(_) => generator.clone(),
-        };
-        let one = Mv::scalar(num_traits::One::one());
         // The constellations: per row on an orbit, per chart in a scene.
         let mut groups: Vec<Vec<&Row>> = Vec::new();
         match orbit {
@@ -1000,35 +1037,46 @@ impl Contemplation {
                 (false, _) => theirs.iter().map(|(s, m)| cga::base_at(s, usize::from(s.n())).map(|c| (c, m.clone()))).collect(),
             };
             let Some(star) = centres.as_deref().and_then(barycentre) else {
-                return Err(crate::physics::tensegrity::Refusal::MonocularOrbit);
+                return Err(Refusal::MonocularOrbit);
             };
-            let g = ray(centred(&turn, &star.centre));
-            let g = g.widened(g.n().max(3));
-            let mut power = one.clone();
-            let mut before: Vec<Frame> = Vec::new();
-            for (hour, (s, _)) in (0u64..).zip(&theirs) {
-                let (h, pose) = match orbit {
-                    true => (hour, power.clone()),
-                    false => (0, one.clone()),
-                };
-                before.push(lifted(&Frame { nucleus: s.clone(), pose }, h));
-                if orbit {
-                    power = ray(g.geo(&power));
-                }
-            }
-            let (next, pose) = match orbit {
-                true => (theirs.len() as u64, power),
-                false => (1, g.clone()),
+            let Some(r_hour) = succession(generator, &star.centre).and_then(|r| r.canonical()) else {
+                return Err(Refusal::NoSuccession);
             };
+            let before: Vec<_> = (0u64..)
+                .zip(&theirs)
+                .map(|(m, (s, _))| hour(s, &r_hour, if orbit { m } else { 0 }))
+                .collect();
+            let next = if orbit { theirs.len() as u64 } else { 1 };
             let mut after = before.clone();
             for r in &on {
                 let (Some(x), [Some(t), ..]) = (&r.nucleus, r.ts.as_slice()) else { continue };
                 let carry = if orbit { &t.versor } else { generator };
-                after.push(lifted(&Frame { nucleus: ray(carry.sandwich(x)), pose: pose.clone() }, next));
+                after.push(hour(&ray(carry.sandwich(x)), &r_hour, next));
             }
-            let (before, after) =
-                (Constellation { frames: before, generator: g.clone() }, Constellation { frames: after, generator: g });
+            let (before, after) = (
+                Constellation { frames: before, generator: r_hour.clone() },
+                Constellation { frames: after, generator: r_hour },
+            );
             consolidate(&before, &after)?;
+            // A.13 (78.52 Row 1): on an orbit, the step carries each hour's
+            // momentum to the next — the other's bodies in arrival order, then
+            // this one — or what it did not carry is an external torque.
+            if orbit {
+                for r in &on {
+                    let hours: Option<Vec<&crate::physics::tensegrity::Body>> =
+                        first.their_bodies.iter().chain(std::iter::once(&r.body)).map(Option::as_ref).collect();
+                    let Some(hours) = hours else { continue };
+                    for pair in hours.windows(2) {
+                        if let [a, b] = pair {
+                            match external_torque(a, b, generator) {
+                                Some(tau) if !tau.is_zero() => return Err(Refusal::ExternalTorque { tau }),
+                                Some(_) => {}
+                                None => return Err(Refusal::NoSuccession),
+                            }
+                        }
+                    }
+                }
+            }
             // METRIC RIGIDITY (78.51(4′)): in a scene, each of this
             // perception's bodies against the other's body the motion lands
             // it on, every pair's inversive distance kept. A body landing on
@@ -1050,10 +1098,11 @@ impl Contemplation {
     }
 
     /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced,
-    /// destabilizing or non-rigid relation stands as a demand on its charts by
-    /// its generator's class — the torque it left its residue, or for a
-    /// non-rigid one the change in the pair's inversive distance; a monocular
-    /// orbit, a collapse or an unplaced frame is counted.
+    /// destabilizing, non-rigid or externally torqued relation stands as a
+    /// demand on its charts by its generator's class — the torque it left its
+    /// residue, the change in the pair's inversive distance, or the external
+    /// torque; a monocular orbit, a collapse or a step with no succession is
+    /// counted.
     fn note_refusal(&mut self, why: &crate::physics::tensegrity::Refusal, generator: &Mv, rows: &[Row]) {
         use crate::physics::tensegrity::Refusal;
         let residue = match why {
@@ -1073,9 +1122,14 @@ impl Contemplation {
                 self.resonance.destabilizing += 1;
                 None
             }
-            Refusal::Unplaced => {
-                self.resonance.unplaced += 1;
+            Refusal::NoSuccession => {
+                self.resonance.unsucceeded += 1;
                 return;
+            }
+            // A.13: the external torque — what exerted it is the demand.
+            Refusal::ExternalTorque { tau } => {
+                self.resonance.torqued += 1;
+                Some(tau.clone())
             }
             // The strain demand: what the pair's inversive distance changed by.
             Refusal::NonRigid { delta, .. } => {
