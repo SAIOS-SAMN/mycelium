@@ -1,7 +1,8 @@
 // A.10.1 — ORBITAL TENSEGRITY: coherence is the stationary equilibrium of a
 // constellation of at least two co-present congruent frames, circulating
-// under one generator, their mutual tethers balancing its strain (ruled
-// 2026-09-28, the operator's word; MU-RECURSION 78.51).
+// under one generator, their attitudes balancing it and their mutual
+// inversive distances kept (ruled and amended 2026-09-28, the operator's
+// word; MU-RECURSION 78.51).
 //
 //! The physics is composed of what the register already holds, never built
 //! beside it:
@@ -10,13 +11,18 @@
 //!   its POSE `θ` — the versor carrying the constellation's first frame onto
 //!   it, at its canonical ray (`Mv::canonical`), so `θ_j θ_i⁻¹` is the
 //!   transition from frame `i` to frame `j`, gauge-free.
-//! - THE COUPLING `V_ij = (θ_j θ̃_i) · (s_j s_i)` is A.10's tether `s_j s_i`
-//!   (`blade::tether_of`) under A.16's refraction; `B_ij = ⟨V_ij⟩₂`. Poses
-//!   compose by the reverse (78.32(1): rays), so every coupling is an exact
-//!   ray of the canonical frames.
+//! - THE COUPLING is ATTITUDE (the amendment of 2026-09-28, 78.51(4′)):
+//!   `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)`, the relative pose and the
+//!   slide along the spin axis between the frames' hours, `k` a frame's
+//!   height on `e₃` read off its nucleus; `B_ij = ⟨V_ij⟩₂`. The transverse
+//!   chord `s_j s_i` stands in no bracket: a chord across the axis turns
+//!   with the turn, and asking it to commute asked a rotating dumbbell not to
+//!   rotate. Poses compose by the reverse (78.32(1): rays).
 //! - THE INVERSIVE DISTANCE `δ²_ij = ⟨s_i s_j⟩₀² / (s_i² s_j²)` and its well
 //!   are GR1's (`cga::pair_regime`): a Coxeter well `δ² ∈ {0, ¼, ½, ¾}`
-//!   (`m = 2, 3, 4, 6`), tangency at 1.
+//!   (`m = 2, 3, 4, 6`), tangency at 1. The separation is governed by
+//!   METRIC RIGIDITY: `Δδ² = 0` for every pair across the transition
+//!   ([`rigid`]).
 //! - THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]` — the lift terms of 78.46,
 //!   summed in the orbit algebra, order-free — and the STRAIN
 //!   `ℰ = ‖τ‖² / ‖B_orbit‖²`, `‖·‖²` the sum of the squared coefficients on
@@ -69,11 +75,35 @@ pub enum Refusal {
     /// Two frames' nuclei coincide as a ray, `s_i ∧ s_j = 0`: two frames
     /// crushed into one.
     SingularCollapse,
+    /// A frame's nucleus stands at infinity: it has no height on the spin
+    /// axis, and its coupling does not read.
+    Unplaced,
+    /// The pair `(i, j)` did not keep its inversive distance across the
+    /// transition: `Δδ² = delta ≠ 0` — shear, drift, or bodies flying apart.
+    NonRigid { i: usize, j: usize, delta: Q },
 }
 
-/// THE COUPLING `V_ij = (θ_j θ̃_i)(s_j s_i)` between two frames.
-pub fn coupling(i: &Frame, j: &Frame) -> Mv {
-    j.pose.geo(&i.pose.reverse()).geo(&crate::transducer::blade::tether_of(&i.nucleus, &j.nucleus))
+/// A FRAME'S HEIGHT on the spin axis `e₃`: its nucleus's third base
+/// coordinate — its hour (78.51(2)). Zero in an algebra with no `e₃`; `None`
+/// at infinity.
+pub fn height(f: &Frame) -> Option<Q> {
+    let n = usize::from(f.nucleus.n());
+    match n >= 3 {
+        true => cga::base_at(&f.nucleus, n).and_then(|c| match c.as_slice() {
+            [_, _, k, ..] => Some(k.clone()),
+            _ => None,
+        }),
+        false => cga::base_at(&f.nucleus, n).map(|_| Q::zero()),
+    }
+}
+
+/// THE ATTITUDE COUPLING `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)` between two
+/// frames (78.51(4′)): the relative pose and the slide along the spin axis
+/// between their hours. `None` where a frame is unplaced.
+pub fn coupling(i: &Frame, j: &Frame) -> Option<Mv> {
+    let dk = height(j)? - height(i)?;
+    let axial = cga::translator_at(&[Q::zero(), Q::zero(), dk]);
+    Some(j.pose.geo(&i.pose.reverse()).geo(&axial))
 }
 
 /// THE INVERSIVE DISTANCE of two frames and its well (GR1).
@@ -99,15 +129,34 @@ pub fn torque(coupling: &Mv, generator: &Mv) -> Mv {
 
 /// THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]`: each coupling's
 /// [`torque`] over the pairs of one constellation's own frames (rule 1),
-/// summed in the algebra.
-pub fn net_torque(c: &Constellation) -> Mv {
+/// summed in the algebra. `None` where a frame is unplaced.
+pub fn net_torque(c: &Constellation) -> Option<Mv> {
     let mut tau = Mv::zero();
     for (a, i) in c.frames.iter().enumerate() {
         for j in c.frames.iter().skip(a + 1) {
-            tau = tau.add(&torque(&coupling(i, j), &c.generator));
+            tau = tau.add(&torque(&coupling(i, j)?, &c.generator));
         }
     }
-    tau
+    Some(tau)
+}
+
+/// METRIC RIGIDITY (78.51(4′)): each body `(before, after)` — its nucleus on
+/// either side of a transition, in the order the caller holds them — and
+/// every pair's inversive distance kept exactly, `Δδ² = 0` over ℚ. Rigid
+/// motions, reflections and inversions keep it; shear, drift and separation
+/// do not, and the first pair in that order that did not is refused with
+/// what changed.
+pub fn rigid(bodies: &[(Mv, Mv)]) -> Result<(), Refusal> {
+    let delta = |a: &Mv, b: &Mv| cga::pair_regime(&cga::gram_form(&[a.clone(), b.clone()]), 0, 1).0;
+    for (i, (bi, ai)) in bodies.iter().enumerate() {
+        for (j, (bj, aj)) in bodies.iter().enumerate().skip(i + 1) {
+            let d = delta(ai, aj) - delta(bi, bj);
+            if !d.is_zero() {
+                return Err(Refusal::NonRigid { i, j, delta: d });
+            }
+        }
+    }
+    Ok(())
 }
 
 /// A STAR (78.51(2)): the centre a constellation turns about and the mass
@@ -195,13 +244,14 @@ pub fn coefficient_norm(a: &Mv) -> Q {
 }
 
 /// THE STRAIN `ℰ = ‖τ‖² / ‖B_orbit‖²` (A.10.1 law III, repair B). `None`
-/// where the generator has no bivector — no orbit to strain.
+/// where the generator has no bivector — no orbit to strain — or a frame is
+/// unplaced.
 pub fn strain(c: &Constellation) -> Option<Q> {
     let b = coefficient_norm(&c.generator.grade(2));
     if b.is_zero() {
         return None;
     }
-    Some(coefficient_norm(&net_torque(c)) / b)
+    Some(coefficient_norm(&net_torque(c)?) / b)
 }
 
 /// HOUR `m`'S FRAME ON THE SPIN AXIS (78.51): the nucleus carried to height
@@ -226,7 +276,7 @@ pub fn equilibrium(c: &Constellation) -> Result<(), Refusal> {
         }
         seen.push(f);
     }
-    let tau = net_torque(c);
+    let Some(tau) = net_torque(c) else { return Err(Refusal::Unplaced) };
     match tau.is_zero() {
         true => Ok(()),
         false => Err(Refusal::UnbalancedTensegrity { net_torque: tau }),

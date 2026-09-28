@@ -171,12 +171,15 @@ pub struct ResonanceTally {
     pub vanished: u64,
     pub unread_lines: u64,
     /// A.10.1 — the consolidation gate: relations admitted as thoughts, and
-    /// refused by name — monocular, collapsed, unbalanced, destabilizing.
+    /// refused by name — monocular, collapsed, unbalanced, destabilizing,
+    /// unplaced (a nucleus at infinity), non-rigid (`Δδ² ≠ 0`, 78.51(4′)).
     pub consolidated: u64,
     pub monocular: u64,
     pub collapsed: u64,
     pub unbalanced: u64,
     pub destabilizing: u64,
+    pub unplaced: u64,
+    pub nonrigid: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -186,7 +189,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} unplaced {} non-rigid {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -226,13 +229,15 @@ impl ResonanceTally {
             self.collapsed,
             self.unbalanced,
             self.destabilizing,
+            self.unplaced,
+            self.nonrigid,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 41] {
+    fn fields(&mut self) -> [&mut u64; 43] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -274,6 +279,8 @@ impl ResonanceTally {
             &mut self.collapsed,
             &mut self.unbalanced,
             &mut self.destabilizing,
+            &mut self.unplaced,
+            &mut self.nonrigid,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -923,8 +930,9 @@ impl Contemplation {
     /// A.10.1 — THE CONSOLIDATION GATE, before any thought is formed. The
     /// other's bodies are the constellation BEFORE, and with this perception's
     /// bodies joined, AFTER; the physics decides (`physics::tensegrity`):
-    /// admitted where every constellation stands in equilibrium and its
-    /// strain did not rise.
+    /// admitted where every constellation's attitudes stand in equilibrium,
+    /// its strain did not rise, and — in a scene — every pair of bodies kept
+    /// its inversive distance.
     ///
     /// THE INTRINSIC AXIS (78.51(3)): the relation's turn `R` (its rotation
     /// factor, read about the origin) is made about the constellation's own
@@ -942,7 +950,7 @@ impl Contemplation {
     ///   constellation per chart; `c` the other's barycentre, each body
     ///   weighed by its mass (its sites).
     fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool) -> Result<(), crate::physics::tensegrity::Refusal> {
-        use crate::physics::tensegrity::{barycentre, centred, consolidate, lifted, Constellation, Frame};
+        use crate::physics::tensegrity::{barycentre, centred, consolidate, lifted, rigid, Constellation, Frame};
         use crate::transducer::cga;
         type Q = num_rational::BigRational;
         let ray = |m: Mv| match m.canonical() {
@@ -1021,15 +1029,31 @@ impl Contemplation {
             let (before, after) =
                 (Constellation { frames: before, generator: g.clone() }, Constellation { frames: after, generator: g });
             consolidate(&before, &after)?;
+            // METRIC RIGIDITY (78.51(4′)): in a scene, each of this
+            // perception's bodies against the other's body the motion lands
+            // it on, every pair's inversive distance kept. A body landing on
+            // none appeared, and stands in no pair.
+            if !orbit {
+                let mut bodies: Vec<(Mv, Mv)> = Vec::new();
+                for r in &on {
+                    let Some(x) = &r.nucleus else { continue };
+                    let landed = generator.sandwich(x);
+                    if let Some((s, _)) = theirs.iter().find(|(s, _)| s.projective_eq(&landed)) {
+                        bodies.push((s.clone(), x.clone()));
+                    }
+                }
+                rigid(&bodies)?;
+            }
         }
         self.resonance.consolidated += 1;
         Ok(())
     }
 
-    /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced or
-    /// destabilizing relation stands as a demand on its charts by its
-    /// generator's class, the torque it left its residue; a monocular orbit
-    /// or a collapse is counted.
+    /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced,
+    /// destabilizing or non-rigid relation stands as a demand on its charts by
+    /// its generator's class — the torque it left its residue, or for a
+    /// non-rigid one the change in the pair's inversive distance; a monocular
+    /// orbit, a collapse or an unplaced frame is counted.
     fn note_refusal(&mut self, why: &crate::physics::tensegrity::Refusal, generator: &Mv, rows: &[Row]) {
         use crate::physics::tensegrity::Refusal;
         let residue = match why {
@@ -1048,6 +1072,15 @@ impl Contemplation {
             Refusal::DestabilizingOperation { .. } => {
                 self.resonance.destabilizing += 1;
                 None
+            }
+            Refusal::Unplaced => {
+                self.resonance.unplaced += 1;
+                return;
+            }
+            // The strain demand: what the pair's inversive distance changed by.
+            Refusal::NonRigid { delta, .. } => {
+                self.resonance.nonrigid += 1;
+                Some(Mv::scalar(delta.clone()))
             }
         };
         let class = halves(generator).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));

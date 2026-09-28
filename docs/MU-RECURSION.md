@@ -18009,9 +18009,14 @@ generator on the motion's own axis.
 `physics/axioms/tensegrity.rs`, a test per clause).
 - A FRAME is a body's nucleus `s` (its dual sphere) and its pose `θ`; a
   CONSTELLATION is `N ≥ 2` frames under one generator `B_orbit`.
-- The COUPLING `V_ij = (θ_j θ̃_i)(s_j s_i)` is A.10's tether under A.16's
-  refraction; `B_ij = ⟨V_ij⟩₂`. The INVERSIVE DISTANCE `δ²` and its well are
-  GR1's (`pair_regime`): the Coxeter wells `{0, ¼, ½, ¾}`, tangency at 1.
+- The COUPLING is ATTITUDE (as amended, (4′)): `V_ij = (θ_j θ̃_i) ·
+  T_axial(k_j − k_i)`, the relative pose and the slide along the spin axis
+  between the frames' hours, `k` a frame's height read off its nucleus
+  (`height`); `B_ij = ⟨V_ij⟩₂`. As first posed it was A.10's tether
+  `(θ_j θ̃_i)(s_j s_i)`; that coupling is retired. The INVERSIVE DISTANCE
+  `δ²` and its well are GR1's (`pair_regime`): the Coxeter wells
+  `{0, ¼, ½, ¾}`, tangency at 1 — and it governs the separation: METRIC
+  RIGIDITY, `Δδ²_ij = 0` for every pair across a transition (`rigid`).
 - THE TORQUE a coupling exerts on a generator is `τ = ½ [B, G]` (`torque`):
   78.46's LIFT, the part of `B` anticommuting with `G`, whose coefficients
   are the lever arm by which `B` stands off `G`'s axis. It is an element of
@@ -18029,7 +18034,8 @@ generator on the motion's own axis.
   (the torque its content) or `DestabilizingOperation`.
 - `SingularCollapse`: two nuclei at one spacetime locus, `s_i ∧ s_j = 0`
   (repair C) — one body seen at two hours stands at two heights, never a
-  collapse.
+  collapse. `Unplaced`: a nucleus at infinity has no height. `NonRigid
+  { i, j, delta }`: the pair did not keep its inversive distance.
 - T1 reciprocity, T2 coaxial co-planarity, T3 anti-monocularity: as read
   by the register below.
 
@@ -18062,41 +18068,73 @@ first hour, posed by `Gᵐ`, lifted to its hour.
   refused by law II; under the indefinite square the strain was blind to it.
 - The slide off the axis raises the strain (`5/2`); under the indefinite
   square it read `−2`, ordering nothing.
-- T1 holds for the tether (`V_ji ∝ Ṽ_ij` in one pose) and for `δ²` at every
-  equilibrium; a posed coupling does NOT transpose.
-- The lift alone balances only frames standing ON the generator's axis: a
-  body at `(1,0,0)` turned about the origin, its hours lifted, leaves a
-  transverse torque (the origin's lever arm). Centred on its own centroid
-  it balances (tier 1).
-- TIER 2 DOES NOT BALANCE AS RULED. A chord between two bodies stands
-  across the spin axis and never commutes with the turn about it: an equal
-  binary co-rotating about its barycentre is refused, and so is every
-  multi-body scene turned whole (the turned scene and the symmetric coset
-  of 78.50(4) now stand as `UnbalancedTensegrity`, each a demand carrying
-  its torque). A scene carried along by a slide has no turn, no torque, and
-  consolidates. Open for the operator: the multi-body balance.
+- Under the TETHER coupling (as first posed): T1 held only in one pose;
+  the lift balanced only frames ON the generator's axis; and TIER 2 could
+  not balance — a chord between two bodies stands across the spin axis and
+  never commutes with the turn about it, so an equal binary about its
+  barycentre, the turned scene and the symmetric coset of 78.50(4) were
+  all refused. That was asking a rotating dumbbell not to rotate: the
+  amendment (4′) retires the tether from the bracket.
 - The count gate `N ≥ 2` and the scalar `ℰ`, `ΔE` are as ruled; the
   torque is never reduced to them.
 
+**(4′) The amendment: attitude coupling and metric rigidity** (the
+coordinator's ruling, 2026-09-28, the operator's word). `[v ∧ e_∞, e₁ ∧ e₂]
+= 0` iff `v ∥ e₃`: a separation in the plane of the turn turns with it,
+`[e₁e₂, r ∧ e_∞] = ω × r ≠ 0`. So the work is divided:
+- ATTITUDE EQUILIBRIUM (law II): the coupling is the relative pose and
+  the axial slide, `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)`, and the net
+  torque over it vanishes. What passes: a rigid turn of a scene, a
+  synchronous binary — every relative pose a power of the generator, every
+  slide along its axis. What refuses: a body TUMBLING out of the plane (a
+  turn in `e₁e₃`), a slide across the axis, a phase out of lock — the
+  torque is the precessional demand.
+- METRIC RIGIDITY: the separation is the inversive scalar `δ²_ij`, kept
+  exactly across the transition, `Δδ² = 0` over ℚ. What passes: rigid
+  motions, reflections, inversions. What refuses: shear, independent
+  drift, bodies flying apart — `NonRigid`, `Δδ²` its content, filed as the
+  strain demand.
+- The register reads under it: T1 transposes in one pose and posed along
+  the axis; a body in synchronous lock about the origin, its hours lifted,
+  balances, and tumbling it refuses; the equal binary about its barycentre
+  balances and is rigid; a pair drifting from `(±1,0,0)` to `(±2,0,0)` is
+  non-rigid; a slide across the axis leaves a null torque, read by the
+  coefficient norm and refused.
+- In the engine every pose of a scene's constellation is a power of the
+  generator centred on the barycentre, and every body is matched to the
+  one the scene's motion lands it on, a conformal motion keeping `δ²`: a
+  scene one motion carries consolidates by construction. The gate's
+  refusals in perception are therefore the motion's absence (no scene
+  motion reads), the collapse, and — for a generator with no centred turn
+  to read — the torque; tumbling needs a third axis the grid does not yet
+  perceive.
+
+The attitude coupling invariant: THE INTERNAL TORQUE OF AN ORBITAL
+CONSTELLATION IS EVALUATED OVER THE RELATIVE POSES AND AXIAL TRANSLATIONS OF
+ITS FRAMES; TRANSVERSE SPATIAL SEPARATIONS ARE GOVERNED BY THE CONSERVATION
+OF THE INVERSIVE METRIC `δ²`, NOT BY THE PLANAR COMMUTATOR.
+
 **(5) In the engine.** Every thought on the perception path passes the gate
 before its edge is set (`Contemplation::gate`): the predicted hour (tier 1
-per body), the scene motion and the coset (tier 2 per chart). A refusal is
-counted by name (`consolidated monocular collapsed unbalanced
-destabilizing`) and an unbalanced or destabilizing one stands as a demand by
-the generator's class at its charts, the torque its residue. A merge joins
+per body), the scene motion and the coset (tier 2 per chart, with metric
+rigidity). A refusal is counted by name (`consolidated monocular collapsed
+unbalanced destabilizing unplaced non-rigid`) and an unbalanced,
+destabilizing or non-rigid one stands as a demand by the generator's class
+at its charts, the torque — or `Δδ²` — its residue. A merge joins
 the admitted frames in arrival order, and a body already held — the same
 coordinates, an orbit's hour `ℓ` being its hour 0 — is never held twice: a
 thought's frames on an orbit are bounded by one return (78.43), and its
 address with them (the epoch-105 growth).
 
 **(6) Acceptance, landed.** The register: T1, T2, T3, law II on a null
-torque, law IV, the torque's antisymmetry, the hours on and off the axis,
-tier 1 against the origin trap, tier 2's binary refused, and the star
-setting the spin — each on exact values. Perception: two Ls turned merge
-(tier 1); the orbit's hours join to three; the phase slip and the
-off-orbit hour are demanded; the same body in two scenes is a filled
-thought, not a collapse; the turned scene and the symmetric coset are
-refused as unbalanced and demanded.
+torque, law IV, the torque's antisymmetry, the hours in lock and tumbling,
+tier 1 against the origin trap, tier 2's synchronous binary balanced and
+rigid, the tumble unbalanced and the drift non-rigid, and the star setting
+the spin — each on exact values. Perception: two Ls turned merge (tier 1);
+the orbit's hours join to three; the phase slip and the off-orbit hour are
+demanded; the same body in two scenes is a filled thought, not a collapse;
+the turned scene is one congruent thought at ℓ = 4 and the symmetric scene
+one coset, its symmetry filed at ℓ = 2 — both consolidated (tier 2).
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

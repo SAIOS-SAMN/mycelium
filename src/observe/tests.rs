@@ -639,6 +639,8 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 collapsed: 238,
                 unbalanced: 239,
                 destabilizing: 240,
+                unplaced: 241,
+                nonrigid: 242,
                 demanded: 225,
                 undemanded: 226,
             },

@@ -323,39 +323,46 @@ fn one_motion_carrying_every_body_is_the_scene_and_the_thought() {
 }
 
 /// A TURNED SCENE (78.50, 78.51 tier 2): the two Ls both turned 90° about one
-/// point — one motion carries the whole configuration. The constellation is
-/// the two bodies at hour 0 and, co-rotating, at hour 1, under the turn made
-/// about their barycentre: the chords between the two bodies stand ACROSS
-/// the spin axis, and the torque they leave does not vanish. The gate
-/// refuses it as unbalanced — no thought is formed — and the refusal stands
-/// as a demand at the chart carrying the torque.
+/// point — one motion carries the whole configuration, elliptic. The two
+/// bodies co-rotate about their barycentre in synchronous lock, their
+/// attitudes balanced, and the turn keeps their inversive distance: the gate
+/// consolidates it, and the thought is congruent at ℓ = 4 — the two
+/// perceptions merge on its torsion axis.
 #[test]
-fn a_scene_turned_whole_is_refused_as_unbalanced_and_demanded() {
+fn a_scene_turned_whole_is_one_congruent_thought() {
     let mut c = Contemplation::new();
     scene(&mut c, &[&LA[..], &LB[..]].concat(), 7, 9);
     scene(&mut c, &turned(&[&LA[..], &LB[..]].concat()), 7, 9);
-    assert_eq!((c.resonance.scene_motions, c.resonance.unbalanced, c.resonance.consolidated), (0, 1, 0), "{}", c.resonance.line());
-    assert!(torsions(&c).is_empty(), "no thought is formed");
-    assert!(
-        c.docket_cites().into_iter().any(|cite| matches!(cite, Cite::Demand { residue: Some(ref r), .. } if !r.is_zero())),
-        "the torque stands as a demand"
+    assert_eq!(
+        (c.resonance.scene_motions, c.resonance.consolidated, c.resonance.unbalanced, c.resonance.nonrigid),
+        (1, 1, 0, 0),
+        "{}",
+        c.resonance.line()
     );
+    assert_eq!(torsions(&c), vec![4], "one torsion at the turn's period");
 }
 
 /// A SYMMETRIC SCENE (78.50, 78.51 tier 2): an L and its 180° turn about the
-/// point, turned 90° whole — TWO motions carry it, one coset. The two bodies
-/// stand apart about their barycentre, their chords across the spin axis:
-/// the coset's representative leaves a torque, and the gate refuses it before
-/// any edge or symmetry is filed.
+/// point form a configuration the 180° turn carries onto itself; turned 90°
+/// whole, TWO motions carry it — the 90° and the 270° — landing on the same
+/// bodies: one coset. Its representative co-rotates the pair in lock and
+/// keeps their distance: consolidated, the edge carries it, and the
+/// quotient, the configuration's own symmetry, stands filed at ℓ = 2.
 #[test]
-fn a_symmetric_scene_is_refused_as_unbalanced_before_its_coset_is_filed() {
+fn a_symmetric_scene_is_one_coset_and_its_symmetry_is_filed() {
     let lb: Vec<(usize, usize)> = LA.iter().map(|&(r, c)| (6 - r, 6 - c)).collect();
     let mut c = Contemplation::new();
     let before = [&LA[..], &lb[..]].concat();
     scene(&mut c, &before, 7, 9);
     scene(&mut c, &turned(&before), 7, 9);
-    assert_eq!((c.resonance.cosets, c.resonance.symmetries, c.resonance.unbalanced), (0, 0, 1), "{}", c.resonance.line());
-    assert_eq!(c.resonance.demanded, 1, "the refusal is demanded");
+    assert_eq!(
+        (c.resonance.cosets, c.resonance.symmetries, c.resonance.scene_motions, c.resonance.consolidated, c.resonance.unbalanced),
+        (1, 1, 1, 1, 0),
+        "{}",
+        c.resonance.line()
+    );
+    let periods: Vec<u32> = c.complex.congruent.scoped().map(|(_, (_, ell))| *ell).collect();
+    assert!(periods.contains(&2), "the symmetry at its period: {periods:?}");
 }
 
 /// NO ONE MOTION (78.50): one L carried along, the other turned in its place —

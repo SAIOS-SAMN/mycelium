@@ -21,14 +21,19 @@ pub const A10_1_TORQUE: &str = "a coupling's torque on a generator is half their
 
 /// LAW II · TENSEGRITY BALANCE. Stationary equilibrium iff the net torque
 /// `τ = Σ_{i<j} ½[B_ij, B_orbit]` vanishes coefficient by coefficient over ℚ
-/// (repair A), `B_ij = ⟨V_ij⟩₂`, `V_ij = (θ_j θ̃_i)(s_j s_i)` (A.10's tether
-/// under A.16).
+/// (repair A), `B_ij = ⟨V_ij⟩₂`, `V_ij = (θ_j θ̃_i) · T_axial(k_j − k_i)`
+/// the ATTITUDE coupling (78.51(4′)).
 pub const A10_1_II_BALANCE: &str = "a constellation is in stationary equilibrium iff its net commutator torque vanishes";
 
 /// LAW III · STRAIN. `ℰ = ‖τ‖² / ‖B_orbit‖²`, the coefficient norm on the
 /// orthonormal blades (repair B): positive-definite, zero exactly where the
 /// torque is — a null torque is read.
 pub const A10_1_III_STRAIN: &str = "the strain is the torque's coefficient norm over the generator's";
+
+/// METRIC RIGIDITY (78.51(4′)). The separation between frames is governed by
+/// the inversive distance, kept exactly across a transition: `Δδ² = 0` for
+/// every pair, never the planar commutator.
+pub const A10_1_METRIC_RIGIDITY: &str = "every pair keeps its inversive distance across the transition";
 
 /// THE STAR SETS THE SPIN (78.51(2)). A rigid step splits exactly against a
 /// star into its orbit about the star and its spin about the body's own
@@ -48,7 +53,8 @@ pub const A10_1_IV_FORCE: &str =
     "an operation is admitted where it raises no strain and leaves the constellation in equilibrium";
 
 /// THEOREM 1 · BILATERAL INVERSIVE RECIPROCITY. At equilibrium the couplings
-/// read both ways, `V_ji ∝ Ṽ_ij` up to the tethers' reverse, and `δ²_ij = δ²_ji`.
+/// read both ways, `V_ji ∝ Ṽ_ij` — the pose and the axial slide commuting on
+/// the axis — and `δ²_ij = δ²_ji`.
 pub const A10_1_T1_RECIPROCITY: &str = "at equilibrium the inversive distance is symmetric and the couplings transpose";
 
 /// THEOREM 2 · COMMUTATIVE CO-PLANARITY. Where every coupling commutes with
