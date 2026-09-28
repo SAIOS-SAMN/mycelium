@@ -394,6 +394,31 @@ struct Line {
     lanes: [u64; 4],
 }
 
+/// The physics' verdict on a relation: admitted, or refused by name.
+type Verdict = Result<(), crate::physics::tensegrity::Refusal>;
+
+/// A GROUND FROM ITS BODIES AND ITS STEP FORWARD (78.52): the step at its
+/// canonical ray, its class and its return (a period of at least two), and
+/// the coupling — the step's succession at the bodies' barycentre. `None`
+/// where the step does not return or reads no succession.
+fn ground_of(bodies: Vec<crate::transducer::rewrite::GroundBody>, forward: &Mv) -> Option<crate::transducer::rewrite::Ground> {
+    use crate::transducer::alphabet::Order;
+    let generator = forward.canonical()?;
+    let f = crate::transducer::element::conformal_factors(&generator).ok()?;
+    let Some(Order::Finite(ell)) = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order()) else {
+        return None;
+    };
+    let period = u64::from(ell);
+    if period < 2 {
+        return None;
+    }
+    let class = generator.class_key()?;
+    let draft = crate::transducer::rewrite::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
+    let centre = crate::physics::tensegrity::ground_centre(&draft)?;
+    let coupling = crate::physics::tensegrity::succession(&draft.generator, &centre)?.canonical()?;
+    Some(crate::transducer::rewrite::Ground { coupling, ..draft })
+}
+
 /// A PAIR OF IDEAS' KEY (78.52): the two keys, least first, each delimited —
 /// the coordinate a relation's ground is filed under, whichever side reads it.
 pub(super) fn pair_key(a: &[u8], b: &[u8]) -> Vec<u8> {
@@ -866,6 +891,13 @@ impl Contemplation {
             if all.is_empty() {
                 continue;
             }
+            // 0. THE GROUND (78.52(6) Stage C): a grounded thought is met by
+            // its own ground — this perception its predicted next hour, or
+            // not; the thought's hours are its ground's, never re-read off
+            // the bodies it has gathered.
+            if self.join_ground(key, &other, rows).is_some() {
+                continue;
+            }
             // 1. THE HOURS (78.48(7)): where every body of this perception
             // stands at the hour the other's orbit predicts, by one step, the
             // orbit continues — the edge carries the step, and what the step
@@ -1111,50 +1143,158 @@ impl Contemplation {
         Ok(())
     }
 
-    /// 78.52 — THE GROUND OF AN ADMITTED SINGLE-BODY RELATION, filed by the
-    /// pair it relates for the merge its fill decides: one body of this
-    /// perception against the other's on one chart. Its BASE is the other's
-    /// first body (hour 0: on an orbit its first hour, in a scene the older
-    /// perception's body); its GENERATOR the step FORWARD in arrival — an
-    /// orbit's `g = t₂ t̃₁`, a scene's `t̃` (the transition carries this body
-    /// onto the other's); its COUPLING the generator's succession at the
-    /// base's centre; its PERIOD the generator's return. A relation of
-    /// several bodies, or one that does not return (a slide, a boost), has
-    /// no ground and speaks no word.
+    /// 78.52 — THE GROUND OF AN ADMITTED RELATION, filed by the pair it
+    /// relates for the merge its fill decides, with the hours the merged
+    /// thought will have seen.
+    /// - On an ORBIT (one body of this perception against one body's hours
+    ///   `0 … m−1`): the base is that body's first hour; the thought will have
+    ///   seen `m + 1`; the generator the orbit's step `g = t₂ t̃₁`.
+    /// - In a SCENE (every body of this perception on one chart against every
+    ///   body of the other there, 78.52(6) Stage C): the base is the other's
+    ///   bodies in the order they arrived; the thought will have seen 2; the
+    ///   generator the scene's motion forward, `t̃` (the transition carries
+    ///   this perception's bodies onto the other's).
+    ///
+    /// The coupling is the generator's succession at the base's barycentre;
+    /// the period its return. A grounded other is joined by its own ground
+    /// (`join_ground`), never here; a relation that does not return (a slide,
+    /// a boost) has no ground and speaks no word.
     fn note_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], generator: &Mv, orbit: bool) {
-        use crate::transducer::alphabet::Order;
-        let [row] = rows else { return };
-        // Hour 0 is the first to arrive: arrival order is the orbit's content.
-        let ([Some(base), ..], [Some(body), ..]) = (row.theirs.as_slice(), row.their_bodies.as_slice()) else { return };
-        if !orbit && row.theirs.len() != 1 {
+        if self.bubbles.get(other).is_some_and(|b| b.ground.is_some()) {
             return;
         }
+        let [first, rest @ ..] = rows else { return };
+        if rest.iter().any(|r| r.chart != first.chart) {
+            return;
+        }
+        let bodies: Option<Vec<crate::transducer::rewrite::GroundBody>> = match orbit {
+            true => {
+                let ([], [Some(nucleus), ..], [Some(body), ..]) =
+                    (rest, first.theirs.as_slice(), first.their_bodies.as_slice())
+                else {
+                    return;
+                };
+                Some(vec![crate::transducer::rewrite::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
+            }
+            false => first
+                .theirs
+                .iter()
+                .zip(&first.their_bodies)
+                .map(|(s, b)| match (s, b) {
+                    (Some(nucleus), Some(body)) => {
+                        Some(crate::transducer::rewrite::GroundBody { nucleus: nucleus.clone(), body: body.clone() })
+                    }
+                    _ => None,
+                })
+                .collect(),
+        };
+        let Some(bodies) = bodies else { return };
+        let hours = if orbit { first.theirs.len() as u64 + 1 } else { 2 };
         let forward = if orbit { generator.clone() } else { generator.reverse() };
-        let Some(forward) = forward.canonical() else { return };
-        let Ok(f) = crate::transducer::element::conformal_factors(&forward) else { return };
-        let Some(Order::Finite(ell)) = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order()) else {
-            return;
-        };
-        let period = u64::from(ell);
-        let (Some(class), Some(centre)) = (forward.class_key(), crate::transducer::cga::base_at(base, usize::from(base.n())))
-        else {
-            return;
-        };
-        let Some(coupling) = crate::physics::tensegrity::succession(&forward, &centre).and_then(|r| r.canonical()) else {
-            return;
-        };
-        if period < 2 {
-            return;
+        if let Some(ground) = ground_of(bodies, &forward) {
+            let grounded = super::idea::Grounded { chart: first.chart.clone(), hours: hours.min(ground.period), ground };
+            self.grounds.insert(pair_key(key, other), grounded);
         }
-        let ground = crate::transducer::rewrite::Ground {
-            class,
-            period,
-            base: base.clone(),
-            body: body.clone(),
-            generator: forward,
-            coupling,
+    }
+
+    /// 78.52(6) Stage C — A NEW PERCEPTION MEETS A GROUNDED THOUGHT BY ITS
+    /// GROUND. The thought has seen `h` hours of its return; its ground
+    /// predicts hour `h`, `g^h` carrying each of its bodies. Where this
+    /// perception's bodies on the ground's chart are exactly that
+    /// configuration — as many, each landing on one — the relation is read
+    /// by the physics: the constellation of every hour through `h` balanced
+    /// (law II), each pair's inversive distance kept, each body's momentum
+    /// carried from hour `h − 1` (A.13). Admitted, it is the thought's next
+    /// hour: the edge carries the step, and the ground is filed for the merge
+    /// with `h + 1` hours seen; refused, the refusal is filed by name as the
+    /// gate's are. `Some(true)` joined, `Some(false)` refused; `None` where the
+    /// thought holds no ground or the perception is not its predicted hour —
+    /// the other readings decide.
+    fn join_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row]) -> Option<bool> {
+        let (joined, generator) = self.read_ground(key, other, rows)?;
+        match joined {
+            Ok(()) => Some(true),
+            Err(why) => {
+                self.note_refusal(&why, &generator, rows);
+                Some(false)
+            }
+        }
+    }
+
+    /// `join_ground`'s reading: the verdict and the ground's generator.
+    fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row]) -> Option<(Verdict, Mv)> {
+        use crate::physics::tensegrity::{carried_body, consolidate, external_torque, hour, rigid, Constellation, Refusal};
+        let grounded = self.bubbles.get(other)?.ground.clone()?;
+        let g = &grounded.ground;
+        let mine: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
+            .iter()
+            .filter(|r| r.chart == grounded.chart)
+            .filter_map(|r| match (&r.nucleus, &r.body) {
+                (Some(s), Some(b)) => Some((s, b)),
+                _ => None,
+            })
+            .collect();
+        if mine.len() != g.bodies.len() {
+            return None;
+        }
+        let h = grounded.hours % g.period;
+        let mut power = Mv::scalar(num_traits::One::one());
+        for _ in 0..h {
+            let next = g.generator.geo(&power);
+            power = match next.canonical() {
+                Some(ray) => ray,
+                None => next,
+            };
+        }
+        // Each body of the ground, at its predicted place, against the one of
+        // this perception's bodies that stands there.
+        let mut matched: Vec<(&crate::transducer::rewrite::GroundBody, &Mv, &crate::physics::tensegrity::Body)> =
+            Vec::with_capacity(mine.len());
+        for base in &g.bodies {
+            let predicted = power.sandwich(&base.nucleus);
+            let (s, b) = mine.iter().find(|(s, _)| s.projective_eq(&predicted))?;
+            matched.push((base, s, b));
+        }
+        let before: Vec<_> = (0..h).flat_map(|m| g.bodies.iter().map(move |b| hour(&b.nucleus, &g.coupling, m))).collect();
+        let mut after = before.clone();
+        after.extend(g.bodies.iter().map(|b| hour(&b.nucleus, &g.coupling, h)));
+        let verdict = consolidate(
+            &Constellation { frames: before, generator: g.coupling.clone() },
+            &Constellation { frames: after, generator: g.coupling.clone() },
+        )
+        .and_then(|()| rigid(&matched.iter().map(|(base, s, _)| (base.nucleus.clone(), (*s).clone())).collect::<Vec<_>>()))
+        .and_then(|()| {
+            // A.13: each body carried to hour h − 1, then by one step to this
+            // perception's body at hour h. Hour 0 again (a return completed)
+            // is carried from the ground's last hour.
+            let steps = if h == 0 { g.period - 1 } else { h - 1 };
+            for (base, _, b) in &matched {
+                let mut carried = base.body.clone();
+                for _ in 0..steps {
+                    carried = carried_body(&carried, &g.generator).ok_or(Refusal::NoSuccession)?;
+                }
+                match external_torque(&carried, b, &g.generator) {
+                    Some(tau) if !tau.is_zero() => return Err(Refusal::ExternalTorque { tau }),
+                    Some(_) => {}
+                    None => return Err(Refusal::NoSuccession),
+                }
+            }
+            Ok(())
+        });
+        let generator = g.generator.clone();
+        if let Err(why) = verdict {
+            return Some((Err(why), generator));
+        }
+        let Some((rotor, carriage)) = halves(&generator) else {
+            return Some((Err(Refusal::NoSuccession), generator));
         };
-        self.grounds.insert(pair_key(key, other), (row.chart.clone(), ground));
+        self.resonance.consolidated += 1;
+        self.resonance.predicted += 1;
+        self.complex.set_edge(key, other, rotor, carriage, [0; 4]);
+        self.resonance.edges += 1;
+        let next = super::idea::Grounded { hours: (grounded.hours + 1).min(g.period), ..grounded.clone() };
+        self.grounds.insert(pair_key(key, other), next);
+        Some((Ok(()), generator))
     }
 
     /// A REFUSED CONSOLIDATION, filed by name (A.10.1 §4): an unbalanced,

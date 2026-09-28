@@ -142,6 +142,9 @@ impl Contemplation {
                     // RM1 — the residue's chart, read before the merge takes
                     // the thoughts: where the remainder was perceived.
                     let at = self.shared_chain(&vertices);
+                    // 78.52: does this merge close the thought's return? Read
+                    // before the merge takes the thoughts and their grounds.
+                    let closing = self.closing_ground(&vertices);
                     // KB1 (C) — THE CLASS BETWEEN TWO THOUGHTS LIVES ON THIS
                     // COMPLEX AND ON THE TORSE REWRITE IT MINTS. It was filed a
                     // second time onto the merged idea's nerve between two
@@ -201,7 +204,9 @@ impl Contemplation {
                             // A name past its wall: no rewrite to record on.
                             self.remainders.unminted += 1;
                         }
-                        self.close_ground(&vertices, &before, &nk);
+                        if let Some(ground) = closing {
+                            self.speak_ground(ground, &before, &nk);
+                        }
                     } else {
                         // The merge named no thought (`merges.unnamed`): no
                         // `after` for the rewrite, the remainder unrecorded.
@@ -245,27 +250,28 @@ impl Contemplation {
         words
     }
 
-    /// 78.52 — A CLOSED THOUGHT SPEAKS ITS WORD. The pair just merged read its
-    /// ground at the gate; where the merged thought now holds as many hours
-    /// on the ground's chart as the ground's period — its constellation has
-    /// closed a return, each hour admitted balanced with its momentum carried
-    /// — the ground is minted as the thought's word (a Constellation rewrite)
-    /// and waits to be spoken with the other rewrites. The ground is dropped
-    /// either way: the next hour's relation reads its own.
-    fn close_ground(
+    /// 78.52 — DOES THIS MERGE CLOSE A RETURN? The pair's ground, read at the
+    /// gate, carries the hours the merged thought will have seen; where that
+    /// reaches the ground's period and no thought merged had reached it — the
+    /// constellation has closed a return, every hour admitted balanced with
+    /// its momentum carried — the ground is the word to speak.
+    fn closing_ground(&self, vertices: &[Vec<u8>]) -> Option<crate::transducer::rewrite::Ground> {
+        let [a, b] = vertices else { return None };
+        let pair = self.grounds.get(&super::resonance::pair_key(a, b))?;
+        let period = pair.ground.period;
+        let closed_before = vertices.iter().any(|v| self.bubbles.get(v).and_then(|t| t.ground.as_ref()).is_some_and(|g| g.hours >= period));
+        (pair.hours >= period && !closed_before).then(|| pair.ground.clone())
+    }
+
+    /// 78.52 — A CLOSED THOUGHT SPEAKS ITS WORD: its ground minted as a
+    /// Constellation rewrite, waiting with the other rewrites for the voice
+    /// that speaks it in the same act.
+    fn speak_ground(
         &mut self,
-        vertices: &[Vec<u8>],
+        ground: crate::transducer::rewrite::Ground,
         before: &[crate::transducer::address::Address],
         nk: &crate::transducer::address::Address,
     ) {
-        let [a, b] = vertices else { return };
-        let pk = super::resonance::pair_key(a, b);
-        let Some((chart, ground)) = self.grounds.get(&pk).cloned() else { return };
-        self.grounds.remove(&pk);
-        let held = self.bubbles.get(nk.as_bytes()).and_then(|t| t.spores.get(&chart)).map_or(0, |bodies| bodies.len() as u64);
-        if held < ground.period {
-            return;
-        }
         let claimed = [0, 0, 0, ground.period - 1];
         let payload = crate::transducer::rewrite::RewritePayload::Constellation { ground: Box::new(ground) };
         if let Some(word) =
@@ -312,10 +318,11 @@ impl Contemplation {
             Keyed::new();
         let mut certificates = Keyed::new();
         let mut vortex = Keyed::new();
-        let mut form = None;
+        let mut ground: Option<super::idea::Grounded> = None;
         let mut bundle = None;
         let mut remainders: Keyed<Vec<Link>> = Keyed::new();
         let mut old_rems: Keyed<Vec<Link>> = Keyed::new();
+        let mut merged_volume = [0u64; 4];
         // THE THOUGHT STANDS ON THE BODIES IT WAS FORMED OF (78.48(5)): its
         // perceptions' bodies by chart, IN THE ORDER THEY ARRIVED — each
         // idea's ordinal counts admissions, written big-endian so the keyed
@@ -329,6 +336,9 @@ impl Contemplation {
                 arrived.insert([&o.to_be_bytes()[..], v.as_slice()].concat(), b.spores.clone());
             }
             old_rems.insert(v, b.remainder.to_vec());
+            for (m, x) in merged_volume.iter_mut().zip(&b.volume) {
+                *m = (*m).max(*x);
+            }
             self.retract_incidence(v, &b);
             remainder = union_rem(&remainder, &b.remainder);
             absorb_keyed(&mut cover, &b.cover);
@@ -337,8 +347,11 @@ impl Contemplation {
             absorb_keyed(&mut certificates, &b.certificates);
             absorb_vortex(&mut vortex, &b.vortex);
             absorb_keyed(&mut remainders, &b.remainders);
-            if form.is_none() {
-                form = b.form.clone();
+            // 78.52(6) Stage C — THE FIRST-ARRIVAL FORM IS PURGED: a thought
+            // is not the form of whichever perception came first. It holds
+            // its ground, adopted below, and is filed by it.
+            if ground.is_none() {
+                ground = b.ground.clone();
             }
             if bundle.is_none() {
                 bundle = b.bundle.clone();
@@ -347,6 +360,15 @@ impl Contemplation {
             self.bubbles.remove(v);
         }
         self.paint_seeded(&mut horizon);
+        // 78.52(6) — THE PAIR'S GROUND, read at the gate with the hours the
+        // merged thought has now seen, is the thought's ground from here on.
+        if let [a, b] = verts {
+            let pk = super::resonance::pair_key(a, b);
+            if let Some(pair) = self.grounds.get(&pk).cloned() {
+                self.grounds.remove(&pk);
+                ground = Some(pair);
+            }
+        }
         // A.10.1 — THE CONSTELLATION JOINED: a frame the gate admitted joins
         // the thought's frames, in the order it arrived. A body the thought
         // already holds — the same coordinates, as an orbit's hour `ℓ` is its
@@ -374,29 +396,20 @@ impl Contemplation {
                 }
             }
         }
-        if remainder.is_empty() && form.is_none() {
+        if remainder.is_empty() && spores.is_empty() && ground.is_none() {
             self.merges.unnamed += 1;
             return None;
         }
-        let volume = match &form {
-            Some(f) => form_mag(f),
-            None => Some(element::measure_lanes(&remainder)),
-        };
-        // STD1 — a volume past its carrier names no bubble, counted.
-        let Some(volume) = volume else {
-            self.overflowed += 1;
-            return None;
-        };
+        // THE THOUGHT'S VOLUME is the largest of what merged, lane by lane —
+        // never the first form's (purged), never a sum that grows with every
+        // hour joined.
+        let volume = merged_volume;
         // A union of two remainders can say two things at one site, and
         // such a remainder has no A5 chain. The merge yields no bubble
         // rather than one that cannot be named (U14).
         let Some(remainder) = element::place_chain(&remainder) else {
             self.merges.unnamed += 1;
             return None;
-        };
-        let key = match &form {
-            Some(f) => super::resonance::perceived_key(idea_key(f), &spores),
-            None => remainder_addr(&remainder),
         };
         let bubble = Bubble {
             remainder,
@@ -419,12 +432,16 @@ impl Contemplation {
             escrow: volume,
             until: None,
             paid_from: None,
-            rotor: form.as_ref().and_then(Bubble::rotor_of_form),
-            form,
+            rotor: None,
+            form: None,
             bundle,
             remainders,
             cells_read: None,
+            ground,
         };
+        // THE ONE DERIVATION of where a bubble is filed (`Bubble::key`): a
+        // grounded thought at its word's coordinates, else by its bodies.
+        let key = bubble.key();
         self.admit_incidence(&key.shared(), &bubble);
         self.bubbles.insert(&key, bubble);
         self.dirty.insert(&key, ());

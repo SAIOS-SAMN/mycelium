@@ -18285,10 +18285,33 @@ no thought was ever spoken, stood in a dialect, or sent to a court.
   generator to its copy of the family's perceived spores. A word spoken
   from a perception names no task yet; it must carry the family it was
   perceived on for the court to ground it.
-- STAGE C (open): merge keeps the constellation, not the first form — the
-  first-arrival form fallback purged and a thought keyed by its
-  coordinates; the multi-body ground (a scene's constellation), so tier-2
-  thoughts speak too.
+- STAGE C (landed): A THOUGHT IS ITS GROUND. The first-arrival form
+  fallback is purged from the merge: a merged thought holds no form; it
+  holds its ground (`Bubble::ground`: the ground, its chart, the hours
+  seen) and is filed at its word's coordinates — chart, class, period, its
+  bodies at hour 0 (`Ground::key_on`, under the class stratum; the bodies
+  keep two orbits of one class at two places apart). A thought with no
+  ground is filed by the bodies it stands on. Its volume is the largest of
+  what merged, lane by lane — never the first form's, never a sum growing
+  with every hour.
+- THE MULTI-BODY GROUND: its bodies at hour 0 in arrival order; the
+  barycentre, the attitude couplings (the identity between bodies
+  co-present at hour 0) and the rigidity matrix are DERIVED from them,
+  never carried (the ruling listed them as stored; derive-not-store keeps
+  them re-read). A scene's admitted motion files it (`note_ground`).
+- A GROUNDED THOUGHT IS MET BY ITS GROUND (`join_ground`): hour `h` is
+  predicted, `g^h` carrying each body; a perception that is exactly that
+  configuration is read by the physics — every hour through `h` balanced,
+  each pair's inversive distance kept, each body's momentum carried from
+  hour `h − 1` — and joins as the next hour; otherwise the other readings
+  decide. A thought's hours are its ground's, never re-read off the bodies
+  it gathered (a thought of several bodies over several hours reads, off
+  its bodies, as several motions and never as one).
+- The replay of a multi-body word: every body at every hour balanced; each
+  returns at `ℓ`; the bodies as the generator carries them keep every
+  distance at every hour; each body's momentum carried and returned.
+- LANDED: the 78.50 turned binary at four hours speaks ONE word, two
+  bodies at period 4, replaying green; the thought holds no form.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

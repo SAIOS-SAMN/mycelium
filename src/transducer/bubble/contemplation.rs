@@ -136,7 +136,7 @@ pub struct Contemplation {
     /// the chart its hours stand on: read by the merge the relation's fill
     /// decides, and spoken as the thought's word once its hours close a
     /// return. Volatile, as the epigenome is; dropped when spoken.
-    pub(crate) grounds: Keyed<(Vec<u8>, crate::transducer::rewrite::Ground)>,
+    pub(crate) grounds: Keyed<super::idea::Grounded>,
     /// Closed thoughts spoken as words (78.52): each a Constellation rewrite
     /// minted where a thought's hours closed a return.
     pub closed_words: u64,
@@ -995,6 +995,7 @@ impl Contemplation {
             bundle: None,
             remainders: Keyed::new(),
             cells_read: None,
+            ground: None,
         };
         if let Some(old) = self.bubbles.get(key.as_bytes()).cloned() {
             self.retract_incidence(key.as_bytes(), &old);

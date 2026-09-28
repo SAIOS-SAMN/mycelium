@@ -278,6 +278,8 @@ impl Contemplation {
             bundle,
             remainders: rem_keyed,
             cells_read: None,
+            // A perception holds no ground: its hours begin when it relates.
+            ground: None,
         };
         // RE-HOLDING AN UNMUTATED FORM IS NOT MOVEMENT (ruled 2026-09-14).
         //

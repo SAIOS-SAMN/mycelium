@@ -261,6 +261,21 @@ pub struct Bubble {
     /// moved, because the algebra depends on the form and not on the orbit.
     /// Volatile, never persisted.
     pub(crate) cells_read: Option<(crate::transducer::address::Address, std::sync::Arc<sentence::PivotCells>)>,
+    /// 78.52(6) Stage C — THE THOUGHT'S GROUND: the constellation it holds
+    /// (its bodies at hour 0, its generator, its coupling), the chart its
+    /// hours stand on, and the hours it has seen. A thought is its ground, not
+    /// the form of whichever perception arrived first. Volatile.
+    pub ground: Option<Grounded>,
+}
+
+/// 78.52(6) Stage C — A GROUND HELD: the ground, the chart its hours stand on,
+/// and how many of its hours have been seen (at most its period: an hour past
+/// the return is hour 0 again).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Grounded {
+    pub chart: Vec<u8>,
+    pub ground: crate::transducer::rewrite::Ground,
+    pub hours: u64,
 }
 
 /// CS2 — the cells a held form's pivot reads against, from the idea's memo
@@ -424,8 +439,19 @@ impl Bubble {
     /// so the address never refuses. A perception's is its form's and its
     /// spores' (`resonance::perceived_key`): the address it is filed at.
     pub fn key(&self) -> crate::transducer::address::Address {
+        // A GROUNDED THOUGHT is filed where its word stands (78.52(6)).
+        if let Some(k) = self.ground.as_ref().and_then(|g| g.ground.key_on(&g.chart)) {
+            return k;
+        }
         match &self.form {
             Some(f) => super::resonance::perceived_key(idea_key(f), &self.spores),
+            // A thought with no form and no ground is filed by the bodies it
+            // stands on, under the chart stratum; with none, by its remainder.
+            None if !self.spores.is_empty() => {
+                let mut k = vec![crate::transducer::address::TAG_CHART];
+                k.extend(super::resonance::spores_key(&self.spores));
+                crate::transducer::address::Address::from(k)
+            }
             None => remainder_addr(&self.remainder),
         }
     }

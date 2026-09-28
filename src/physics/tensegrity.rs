@@ -230,8 +230,8 @@ pub fn replay_ground(g: &crate::transducer::rewrite::Ground) -> Option<&'static 
     if !matches!(order, Some(Order::Finite(ell)) if u64::from(ell) == g.period) || g.period < 2 {
         return Some("the word's period is not its generator's return");
     }
-    let Some(centre) = cga::base_at(&g.base, usize::from(g.base.n())) else {
-        return Some("the word's base frame has no centre");
+    let Some(centre) = ground_centre(g) else {
+        return Some("the word's ground has no barycentre");
     };
     let Some(r) = succession(&g.generator, &centre).and_then(|r| r.canonical()) else {
         return Some("the word's generator has no succession");
@@ -239,27 +239,54 @@ pub fn replay_ground(g: &crate::transducer::rewrite::Ground) -> Option<&'static 
     if !r.projective_eq(&g.coupling) {
         return Some("the word's coupling is not its generator's succession");
     }
-    let frames: Vec<Frame> = (0..g.period).map(|m| hour(&g.base, &r, m)).collect();
+    // Every body at every hour: one constellation, balanced (law II).
+    let frames: Vec<Frame> =
+        (0..g.period).flat_map(|m| g.bodies.iter().map(move |b| (m, b))).map(|(m, b)| hour(&b.nucleus, &r, m)).collect();
     if equilibrium(&Constellation { frames, generator: r.clone() }).is_err() {
         return Some("the word's ground constellation does not balance");
     }
-    if !hour(&g.base, &r, g.period).nucleus.projective_eq(&g.base) {
+    if g.bodies.iter().any(|b| !hour(&b.nucleus, &r, g.period).nucleus.projective_eq(&b.nucleus)) {
         return Some("the word's hours do not close");
     }
-    let mut body = g.body.clone();
-    for _ in 0..g.period {
-        let Some(next) = carried_body(&body, &g.generator) else {
-            return Some("the word's body is not carried rigidly");
+    // METRIC RIGIDITY at every hour: the bodies as the generator carries
+    // them keep every pair's inversive distance (78.51(4′)).
+    let mut power = Mv::scalar(num_traits::One::one());
+    for _ in 1..g.period {
+        let next = g.generator.geo(&power);
+        power = match next.canonical() {
+            Some(ray) => ray,
+            None => next,
         };
-        if !external_torque(&body, &next, &g.generator).is_some_and(|t| t.is_zero()) {
-            return Some("the word's momentum is not carried");
+        let moved: Vec<(Mv, Mv)> = g.bodies.iter().map(|b| (b.nucleus.clone(), power.sandwich(&b.nucleus))).collect();
+        if rigid(&moved).is_err() {
+            return Some("the word's bodies do not keep their distances");
         }
-        body = next;
     }
-    if body != g.body {
-        return Some("the word's body does not return");
+    // A.13 for every body: its momentum carried every hour, the body returned.
+    for b in &g.bodies {
+        let mut body = b.body.clone();
+        for _ in 0..g.period {
+            let Some(next) = carried_body(&body, &g.generator) else {
+                return Some("the word's body is not carried rigidly");
+            };
+            if !external_torque(&body, &next, &g.generator).is_some_and(|t| t.is_zero()) {
+                return Some("the word's momentum is not carried");
+            }
+            body = next;
+        }
+        if body != b.body {
+            return Some("the word's body does not return");
+        }
     }
     None
+}
+
+/// THE GROUND'S BARYCENTRE (78.52(6) Stage C): its bodies' centres weighed by
+/// their masses — derived, never carried. `None` for a ground with no body
+/// or massless bodies.
+pub fn ground_centre(g: &crate::transducer::rewrite::Ground) -> Option<Vec<Q>> {
+    let bodies: Vec<(Vec<Q>, Q)> = g.bodies.iter().map(|b| (b.body.centre.clone(), b.body.mass.clone())).collect();
+    barycentre(&bodies).map(|s| s.centre)
 }
 
 /// A BODY CARRIED BY A RIGID STEP `g` (78.52, the word's replay): its centroid

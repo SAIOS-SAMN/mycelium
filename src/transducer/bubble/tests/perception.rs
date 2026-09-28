@@ -271,6 +271,38 @@ fn the_fourth_hour_closes_the_return_and_the_thought_speaks_its_word() {
     assert_eq!(tampered(unlocked), Some("the word's coupling is not its generator's succession"));
 }
 
+/// A SCENE'S THOUGHT SPEAKS ITS WORD (78.52(6) Stage C). The two Ls of 78.50
+/// turned whole about (3, 3), hour by hour: the first two scenes form one
+/// grounded thought (its two bodies, the turn about their barycentre); the
+/// third and fourth are met by that ground — each the configuration it
+/// predicts — and at the fourth the thought's return closes. It speaks ONE
+/// multi-body word at period 4, its two bodies its ground, replaying green:
+/// balanced, rigid, every body's momentum carried and returned. The thought
+/// is filed at its word's coordinates, holding no form.
+#[test]
+fn a_turned_binary_closes_its_return_and_speaks_one_word() {
+    let mut c = Contemplation::new();
+    let mut at = [&LA[..], &LB[..]].concat();
+    for hour in 0..4 {
+        assert_eq!(c.closed_words, 0, "hour {hour}: the return has not closed");
+        scene(&mut c, &at, 7, 9);
+        at = turned(&at);
+    }
+    assert_eq!(c.closed_words, 1, "{}", c.resonance.line());
+    let words: Vec<Rewrite> = c
+        .pending_rewrites
+        .iter()
+        .filter(|e| crate::transducer::rewrite::replay(e).is_none())
+        .filter_map(Rewrite::from_element)
+        .filter(|r| matches!(r.payload, RewritePayload::Constellation { .. }))
+        .collect();
+    let [word] = words.as_slice() else { panic!("one word, replaying green: {}", words.len()) };
+    let RewritePayload::Constellation { ground } = &word.payload else { panic!("filtered to constellations") };
+    assert_eq!((ground.period, ground.bodies.len()), (4, 2), "a return of four, two bodies");
+    let [(_, thought)] = c.bubbles.scoped().collect::<Vec<_>>().try_into().expect("one thought held");
+    assert!(thought.form.is_none() && thought.ground.is_some(), "the thought is its ground, holding no form");
+}
+
 /// THE HOUR PREDICTED (78.48(7)). The L at hour 0 and hour 1 merge into one
 /// thought holding both, in the order they arrived; its orbit's step is the
 /// 90° turn about (2, 2), period 4. The L at hour 2 is exactly the orbit's
