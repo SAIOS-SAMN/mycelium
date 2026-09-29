@@ -47,10 +47,18 @@ pub(crate) fn union_remainders(entries: &[FieldEntry]) -> Vec<(i64, i64, u8, u8)
     u
 }
 
+/// A listing's open charts, or its base chart where it is unprobed. The
+/// base chart is the one the listing was ADMITTED under (`atlas`), read by
+/// its address; it is lifted again only for a listing the atlas does not
+/// chart. It was lifted on every read — body, section moduli, towers — for
+/// every unprobed listing of every quote: on the fleet (epoch 106, hypha b
+/// at 194% of a core, its standing frozen) every stack sample of the quote
+/// workers stood in `invariant_of` under this line.
 pub(crate) fn open_charts_of(
     addr: &[u8],
     listing: &Element,
     field: &crate::network::nerve::Keyed<ListingField>,
+    atlas: &crate::transducer::stalk::Stalks,
 ) -> Vec<crate::transducer::stalk::Invariant> {
     match field.get(addr) {
         Some(f) if f.nonflat > 0 => f
@@ -60,7 +68,10 @@ pub(crate) fn open_charts_of(
             .map(|e| e.chart.clone())
             .collect(),
         Some(f) if !f.entries.is_empty() => Vec::new(),
-        _ => vec![crate::transducer::stalk::invariant_of(listing)],
+        _ => match atlas.chart_of(addr) {
+            Some(base) => vec![base.clone()],
+            None => vec![crate::transducer::stalk::invariant_of(listing)],
+        },
     }
 }
 
@@ -217,7 +228,7 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                     continue;
                 }
                 let Some(p) = pending.get(&addr) else { continue };
-                let open = open_charts_of(&addr, p, field);
+                let open = open_charts_of(&addr, p, field, listing_atlas);
                 let mut open_set: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
                 for c in &open {
                     open_set.insert(c.key(), ());

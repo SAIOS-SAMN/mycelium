@@ -237,7 +237,7 @@ impl Kernel {
             .get(addr)
             .or_else(|| self.cavity_book.get(addr));
         match listing {
-            Some(p) => open_charts_of(addr, p, &self.field),
+            Some(p) => open_charts_of(addr, p, &self.field, &self.listing_atlas),
             None => Vec::new(),
         }
     }
