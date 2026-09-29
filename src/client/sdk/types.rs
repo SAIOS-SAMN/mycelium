@@ -512,6 +512,9 @@ pub struct Entity {
     pub(crate) transcription: crate::observe::TranscriptionTally,
     /// What this voice's solves came to, as the court ruled each.
     pub(crate) solves: crate::observe::SolveTally,
+    /// The rule the court last refused for each task, by task id — so the
+    /// same rule is not sent again (`Entity::solve_task`). One per task.
+    pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; 3],

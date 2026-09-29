@@ -40,6 +40,7 @@ impl Entity {
             probes: crate::observe::ProbeTally::default(),
             transcription: crate::observe::TranscriptionTally::default(),
             solves: crate::observe::SolveTally::default(),
+            solve_refused: crate::network::nerve::Keyed::new(),
             hearing: [0; 3],
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),

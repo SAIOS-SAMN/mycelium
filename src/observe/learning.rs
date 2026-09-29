@@ -140,6 +140,11 @@ pub struct SolveTally {
     pub refused: [u64; 7],
     pub unruled: u64,
     pub paid: [u64; 4],
+    /// Solves not sent, by why (`Entity::solve_task`): no rule minted; a
+    /// rule its own train refutes; a rule the court already refused.
+    pub unminted: u64,
+    pub refuted: u64,
+    pub withheld_again: u64,
 }
 
 impl SolveTally {

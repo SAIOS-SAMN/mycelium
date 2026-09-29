@@ -16,6 +16,56 @@ impl Entity {
         Ok(dialogue::decode_task_envelope(&body))
     }
 
+    /// A SOLVE THIS VOICE CAN STAND BEHIND, OR NONE SENT. A solve is a rule,
+    /// and the court replays it on the task's withheld pairs; so the voice
+    /// first replays it on the pairs it holds — the train — exactly as the
+    /// court will (`blind_replay_at` over this mind's own crystal), and:
+    /// - a solve with no minted rule is not sent (UNMINTED): a raster is no
+    ///   proof of a motion, and the court refuses it by construction;
+    /// - a rule its own train refutes is not sent (REFUTED AT HOME);
+    /// - a rule the court already refused for this task is not sent again
+    ///   until this voice's rule for it changes (WITHHELD AGAIN).
+    ///
+    /// On the fleet (epoch 106) each voice sent ~600 solves the court
+    /// refused, the same rules round after round, with none of these read.
+    /// Answers the court's verdict where one was asked for.
+    pub fn solve_task(
+        &mut self,
+        id: &[u8],
+        train: &[(Grid, Grid)],
+        outputs: &[Grid],
+        rule: Option<&Element>,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<(u8, [u64; 4])> {
+        let Some(rule) = rule else {
+            self.solves.unminted += 1;
+            return None;
+        };
+        let addr = rule.address();
+        if self.solve_refused.get(id).is_some_and(|a| a == addr.as_bytes()) {
+            self.solves.withheld_again += 1;
+            return None;
+        }
+        let resolve = |a: &[u8]| self.epigenome.working_word(a).and_then(|e| e.form().cloned());
+        if crate::verdict::blind_replay_at(rule, &resolve, Some(train), &self.epigenome, budget).is_some() {
+            self.solves.refuted += 1;
+            return None;
+        }
+        let verdict = self.submit_solve_rule(id, outputs, Some(rule)).ok()?;
+        // A refusal is remembered against the rule it refused, one per
+        // task: the carrier is bounded by the tasks, and a new rule for the
+        // task replaces it.
+        match verdict.0 {
+            dialogue::SOLVE_BOUNTY | dialogue::SOLVE_FLOOR => {
+                self.solve_refused.remove(id);
+            }
+            _ => {
+                self.solve_refused.insert(id, addr.as_bytes().to_vec());
+            }
+        }
+        Some(verdict)
+    }
+
     /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
     /// court replays the RULE on its withheld pairs and pays what it
     /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's

@@ -817,7 +817,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.hearing = [6, 7, 8];
     senses.language = [9, 10, 11, 12, 13];
     senses.understanding = [14, 15, 16, 17];
-    senses.solving = [18, 19, 20, 21];
+    senses.solving = [18, 19, 20, 21, 26, 27, 28];
     senses.paid = [22, 23, 24, 25];
     let acts = Acts {
         k: 9,
@@ -835,6 +835,7 @@ fn the_senses_and_the_acts_travel_whole() {
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
     assert_eq!(senses.read("hearing", "words admitted"), Some(8), "read by its own name");
     assert_eq!(senses.read("solving", "refused"), Some(20));
+    assert_eq!(senses.read("solving", "refuted at home"), Some(27));
     assert_eq!(senses.read("sight", "no such"), None, "a name the table does not hold reads nothing");
 }
 

@@ -44,7 +44,8 @@ pub const LANGUAGE: [&str; 5] = ["dialect", "genome", "installed", "closing", "a
 /// What a mind UNDERSTOOD.
 pub const UNDERSTANDING: [&str; 4] = ["derivable", "glued", "obstructed", "discordant strata"];
 /// What a mind's solves came to (the actions' physics).
-pub const SOLVING: [&str; 4] = ["first closures", "closures again", "refused", "unruled"];
+pub const SOLVING: [&str; 7] =
+    ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again"];
 /// THE GROWING THAT GROW — the leak signals: sizes at one `K`.
 pub const GROWING: [&str; 9] = [
     "bubbles",

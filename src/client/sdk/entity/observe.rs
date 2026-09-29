@@ -65,7 +65,7 @@ impl Entity {
                 self.obstructions.len() as u64,
                 self.discordance as u64,
             ],
-            solving: [s.first, s.again, s.refused.iter().sum(), s.unruled],
+            solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again],
             paid: s.paid,
             carriers: [
                 c.len() as u64,

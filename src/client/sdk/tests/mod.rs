@@ -15,5 +15,6 @@ mod glue;
 mod height;
 mod refinement;
 mod remainders;
+mod solve;
 mod speech;
 mod syntropy;

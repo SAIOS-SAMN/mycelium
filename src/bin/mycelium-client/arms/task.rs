@@ -87,7 +87,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
             })
             .collect();
         if let Some(outs) = outs {
-            // An unmeasurable span mints nothing; the solve still goes up.
+            // An unmeasurable span mints nothing, and a solve with no rule
+            // is not sent (`solve_task`): the voice sends only a rule its
+            // own train does not refute, and not one the court refused.
             let spoken = entity.span_of(&rule.form).and_then(|d| {
                 mycelium::transducer::family::mint_sentence(
                     rule,
@@ -96,7 +98,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
                     d.span(),
                 )
             });
-            if let Ok((code, _mu)) = entity.submit_solve_rule(&tid, &outs, spoken.as_ref()) {
+            if let Some((code, _mu)) = entity.solve_task(&tid, &train, &outs, spoken.as_ref(), &mut extract_budget) {
                 c.projected += 1;
                 match code {
                     mycelium::anastome::dialogue::SOLVE_BOUNTY => {
