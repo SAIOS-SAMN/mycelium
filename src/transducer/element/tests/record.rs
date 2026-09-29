@@ -207,16 +207,16 @@ fn a_period_of_zero_and_a_chain_that_says_two_things_refuse_the_tape() {
     //
     // The address is a u32 length and its bytes; the filing is a u32 count;
     // the envelope is a u32 block length and its body. This word is a
-    // residual — no filing, and an envelope of six zero counts, which is
-    // 48 bytes and never 0 (an unreadable envelope must not be able to
+    // residual — no filing, and an envelope of seven zero counts, which is
+    // 56 bytes and never 0 (an unreadable envelope must not be able to
     // masquerade as an empty one). Six since AT1 (54.5 Road (d)): the nerve,
     // the rounds, the derivations and the certificates, and then the
     // demands' bodies and the remainder's chain, which left the key for the
-    // record.
+    // record; seven since 78.55, the tasks that witnessed a colour word.
     let mut envelope = Vec::new();
     one.receipts().to_block(&mut envelope).expect("the envelope writes");
     assert!(one.receipts().is_empty(), "a residual attests nothing");
-    assert_eq!(envelope.len(), 4 + 48, "the empty envelope is a block of six zero counts");
+    assert_eq!(envelope.len(), 4 + 56, "the empty envelope is a block of seven zero counts");
     let at = 1 + 4 + one.description().len() + 4 + one.address().len() + 4 + envelope.len() + 32;
     assert!(one.filing().scoped().next().is_none(), "a residual attests no filing");
     assert_eq!(

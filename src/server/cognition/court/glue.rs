@@ -34,6 +34,15 @@ impl Kernel {
             self.heard_mark(addr, &inv);
             return Glue::Slashed(reason);
         }
+        // 78.55 — A PEER'S COLOUR WORD IS ADMITTED HERE BY A PROOF HELD
+        // HERE: the task that witnessed it, re-derived from this court's own
+        // copy of that family, or the two installed words it cites. Its
+        // integrity replay above proves neither. Unproven, it waits as
+        // dialect and is not marked heard: once the words it cites are
+        // installed here, the next fetch proves it.
+        if spoken.is_colour_word() && !self.colour_proof(&spoken, None).stands() {
+            return Glue::Dialect;
+        }
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         let asg = element::assignment(spoken.sub());
         if spoken.is_sentence() {

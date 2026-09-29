@@ -579,6 +579,11 @@ pub struct ReceiptsEnvelope {
     pub demands: Vec<DemandEvidence>,
     /// The remainder's chain, which the key carries as its coordinates.
     pub remainder: Vec<(i64, i64, u8, u8)>,
+    /// 78.55 — THE TASKS WHOSE SCENES WITNESSED THIS WORD, by their
+    /// coordinates: where a colour word stood by evidence, the court that
+    /// admitted it writes the task, so a peer court fetching it re-derives
+    /// the relation from its own copy of that task — never searches for one.
+    pub witness: Vec<Address>,
 }
 
 impl ReceiptsEnvelope {
@@ -654,6 +659,7 @@ impl ReceiptsEnvelope {
             && self.certificates.is_empty()
             && self.demands.is_empty()
             && self.remainder.is_empty()
+            && self.witness.is_empty()
     }
 
     /// The edge at a citation site, by the site's own coordinates.
@@ -722,6 +728,10 @@ impl ReceiptsEnvelope {
             put_links(out, &d.bodies);
         }
         put_links(out, &self.remainder);
+        out.extend_from_slice(&(self.witness.len() as u64).to_le_bytes());
+        for w in &self.witness {
+            crate::transducer::address::put_bytes(out, w)?;
+        }
         Some(())
     }
 
@@ -791,6 +801,10 @@ impl ReceiptsEnvelope {
             env.demands.push(DemandEvidence { at, bodies });
         }
         env.remainder = take_links(b, pos)?;
+        let n = count(b, pos)?;
+        for _ in 0..n {
+            env.witness.push(Address::from_bytes(crate::transducer::address::take_bytes(b, pos)?));
+        }
         Some(env)
     }
 }

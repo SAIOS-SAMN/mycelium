@@ -95,6 +95,39 @@ fn a_colour_theorem_stands_by_composing_what_it_cites() {
     assert_eq!(k.perceive_speech([3; 32], &[], std::slice::from_ref(&stranger)), vec![crate::anastome::dialogue::SPEECH_REFUSED], "unproven here");
 }
 
+/// 78.55 — FEDERATION BY PROOF, NEVER BY TRUST. A colour word one court
+/// stood by a scene carries that task as its witness (outside its address,
+/// through the record); a peer court holding the same task admits it by
+/// re-deriving the relation from its own copy — no task named, nothing
+/// searched — and a court that holds no such task holds it as dialect.
+#[test]
+fn a_peer_admits_a_colour_word_by_re_deriving_its_witness() {
+    use crate::transducer::element::colour_word;
+    let family = vec![(vec![vec![1u8, 1]], vec![vec![2u8, 2]])];
+    let tid = [30u8; 32];
+    let mut home = Kernel::new();
+    home.bind_task_family(tid, family.clone());
+    let word = colour_word(&[(1, 2)]).expect("a colour word");
+    assert_eq!(home.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
+    let held = home.provisional.get(word.address().as_bytes()).cloned().expect("provisional");
+    assert_eq!(held.address(), word.address(), "the witness does not rename the word");
+    assert_eq!(held.receipts().witness, vec![crate::transducer::address::Address::from_bytes(tid)], "it carries its witness");
+    // THROUGH THE RECORD: what travels is what a peer reads.
+    let tape = held.to_bytes().expect("the record writes");
+    let sent = Element::from_bytes(&tape, &mut 0).expect("and reads back");
+    assert_eq!(sent.receipts().witness, held.receipts().witness);
+    // A PEER HOLDING THE TASK re-derives it.
+    let mut peer = Kernel::new();
+    peer.bind_task_family(tid, family);
+    let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = peer.stroke();
+    assert!(!matches!(peer.glue_fetched(sent.clone(), [1; 32], [2; 32], &mut cover, &mut glue), Glue::Dialect), "proven here");
+    // A COURT WITHOUT IT holds it as dialect.
+    let mut stranger = Kernel::new();
+    let mut glue = stranger.stroke();
+    assert!(matches!(stranger.glue_fetched(sent, [1; 32], [3; 32], &mut cover, &mut glue), Glue::Dialect), "unproven here");
+}
+
 #[test]
 fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
     let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");

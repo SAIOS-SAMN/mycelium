@@ -301,7 +301,7 @@ fn a_word_that_attests_nothing_says_so() {
 
     let mut block = Vec::new();
     ReceiptsEnvelope::default().to_block(&mut block).expect("the envelope writes");
-    assert_eq!(block.len(), 4 + 48, "len prefix and six zero u64 counts");
+    assert_eq!(block.len(), 4 + 56, "len prefix and seven zero u64 counts (78.55: the witnesses)");
     let mut p = 0usize;
     assert_eq!(
         ReceiptsEnvelope::from_block(&block, &mut p),

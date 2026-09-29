@@ -5,6 +5,24 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
+/// 78.53, 78.55 — WHAT PROVES A COLOUR WORD AT THIS COURT
+/// (`Kernel::colour_proof`).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ColourProof {
+    /// A scene this court holds shows the relation: the task that did.
+    Witnessed(Address),
+    /// It composes exactly the two installed colour words it cites.
+    Derived,
+    Unproven,
+}
+
+impl ColourProof {
+    /// Whether the word stands by this proof.
+    pub fn stands(&self) -> bool {
+        !matches!(self, ColourProof::Unproven)
+    }
+}
+
 /// One adjudication counted on the observer by its verdict (CV5).
 fn note_verdict_of(a: &crate::anastome::dialogue::Adjudication) {
     use crate::anastome::dialogue::Adjudication;
@@ -171,39 +189,32 @@ impl Kernel {
         // minted with) and hears the word only where the two are the same.
         // Nothing is stored for the evidence: it is the court's own copy of
         // the family.
-        if s.is_colour_word() {
-            let sigma = s.letters().map(|l| l.sigma.clone());
-            let witnessed = self
-                .task_family
-                .get(task)
-                .and_then(|family| crate::transducer::family::fibre_relation(family))
-                .is_some_and(|seen| sigma.as_ref() == Some(&seen));
-            // 78.55 — OR DERIVED FROM RULED LANGUAGE: the word cites two
-            // colour words this court installed, and their composite is the
-            // word. The court composes exactly what is cited — no search,
-            // no peeling (law 8) — so a relation no scene witnessed but the
-            // ruled language implies stands by its proof.
-            let derived = s.colour_citation().is_some_and(|(first, after)| {
-                match (self.installed_word(first.as_bytes()), self.installed_word(after.as_bytes())) {
-                    (Some(f), Some(a)) if f.is_colour_word() && a.is_colour_word() => {
-                        match (f.letters(), a.letters()) {
-                            (Some(fl), Some(al)) => {
-                                crate::transducer::element::compose_fibre(&al.sigma, &fl.sigma) == sigma
-                            }
-                            _ => false,
-                        }
-                    }
-                    _ => false,
-                }
-            });
-            if derived && !witnessed {
+        // The word as this court will hold it: a colour word witnessed here
+        // carries its witnessing task (outside its address).
+        let held: Element;
+        let s = if s.is_colour_word() {
+            let proof = self.colour_proof(s, Some(task));
+            if proof == ColourProof::Derived {
                 self.acts.colours_derived += 1;
             }
-            if !witnessed && !derived {
-                let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
-                return Ok(self.refuse_sentence(voice, &addr, refusal));
+            match proof {
+                ColourProof::Unproven => {
+                    let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
+                    return Ok(self.refuse_sentence(voice, &addr, refusal));
+                }
+                ColourProof::Witnessed(t) if !s.receipts().witness.contains(&t) => {
+                    let mut w = s.clone();
+                    let mut env = w.receipts().clone();
+                    env.witness.push(t);
+                    w.set_receipts(env);
+                    held = w;
+                    &held
+                }
+                _ => s,
             }
-        }
+        } else {
+            s
+        };
         let out = match self.hear_sentence(voice, task, s, budget) {
             Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
             Ok(out) => out,
@@ -232,6 +243,44 @@ impl Kernel {
             )),
             Outcome::Decomposed(_) => Ok(Adjudication::Ratified { receipt: self.chain.head_hash() }),
             _ => Ok(Adjudication::Stood { receipt: self.chain.head_hash() }),
+        }
+    }
+
+    /// 78.53, 78.55 — WHAT PROVES A COLOUR WORD HERE, read and never searched
+    /// for: WITNESSED by a scene — the task it was spoken with, or a task it
+    /// carries as its witness — whose base this court re-derives from its own
+    /// copy of the family (`fibre_relation`, the one reader the mind minted
+    /// with); or DERIVED — it cites two colour words this court installed
+    /// whose composite it is (law 8: the court composes what is cited, never
+    /// peels); or UNPROVEN.
+    pub(crate) fn colour_proof(&self, s: &Element, task: Option<&[u8]>) -> ColourProof {
+        let Some(sigma) = s.letters().map(|l| l.sigma.clone()) else { return ColourProof::Unproven };
+        let witnesses = |t: &[u8]| {
+            self.task_family
+                .get(t)
+                .and_then(|family| crate::transducer::family::fibre_relation(family))
+                .is_some_and(|seen| seen == sigma)
+        };
+        if let Some(t) = task.filter(|t| witnesses(t)) {
+            return ColourProof::Witnessed(Address::from_bytes(t));
+        }
+        if let Some(t) = s.receipts().witness.iter().find(|t| witnesses(t.as_bytes())) {
+            return ColourProof::Witnessed(t.clone());
+        }
+        let derived = s.colour_citation().is_some_and(|(first, after)| {
+            match (self.installed_word(first.as_bytes()), self.installed_word(after.as_bytes())) {
+                (Some(f), Some(a)) if f.is_colour_word() && a.is_colour_word() => match (f.letters(), a.letters()) {
+                    (Some(fl), Some(al)) => {
+                        crate::transducer::element::compose_fibre(&al.sigma, &fl.sigma).as_ref() == Some(&sigma)
+                    }
+                    _ => false,
+                },
+                _ => false,
+            }
+        });
+        match derived {
+            true => ColourProof::Derived,
+            false => ColourProof::Unproven,
         }
     }
 

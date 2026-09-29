@@ -18430,6 +18430,15 @@ a hue neither word speaks of (78.45).
   are refused. Counted: `speech: colour theorems` on each mind,
   `admitted by derivation` on each court. This is growth by closure in the
   colour language — a word installed because the ruled language implies it.
+- FEDERATION BY PROOF, NEVER BY TRUST (`Kernel::colour_proof`,
+  `ReceiptsEnvelope::witness`): a court that stands a colour word by a scene
+  writes the task that witnessed it into the word's envelope (outside the
+  address; through the record). A peer court fetching it admits it only by a
+  proof held there — that task, re-derived from its own copy of the family,
+  or the two installed words it cites; its integrity replay proves neither.
+  Unproven, it waits as dialect, unmarked, so the fetch after the cited
+  words arrive proves it. Courts converge on the colour language by
+  re-deriving it, never by taking a peer's word for it.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
