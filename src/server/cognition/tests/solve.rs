@@ -85,6 +85,57 @@ fn a_task_and_its_palette_permuted_read_one_word_and_one_verdict() {
     assert_ne!(rule_over(&raw(1, 2)).address(), rule_over(&raw(7, 4)).address(), "two integers, two addresses");
 }
 
+/// 78.54 — THE FRAME IS A GAUGE TOO. The task above, turned by 90°, 180°
+/// and 270°, mirrored, and with its palette permuted besides, is one task:
+/// through the sensor every reading is the same grids, so the rule mints one
+/// word and the court rules one verdict at one price.
+#[test]
+fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
+    type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
+    type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
+    let json = |train: &Pairs, test: &Pairs| {
+        let pair = |(a, b): &(Vec<Vec<u8>>, Vec<Vec<u8>>)| {
+            format!(r#"{{"input":{},"output":{}}}"#, serde_json::to_string(a).expect("a grid"), serde_json::to_string(b).expect("a grid"))
+        };
+        let list = |ps: &Pairs| ps.iter().map(pair).collect::<Vec<_>>().join(",");
+        format!(r#"{{"train":[{}],"test":[{}]}}"#, list(train), list(test))
+    };
+    let base: (Pairs, Pairs) = (
+        vec![(digits(&["1100", "0020", "0000"]), digits(&["0011", "0200", "0000"]))],
+        vec![(digits(&["0110", "2000", "0000"]), digits(&["1100", "0002", "0000"]))],
+    );
+    // Every grid of the task turned by 90°, clockwise, and mirrored across
+    // its diagonal; and the palette permuted (1→6, 2→3).
+    let turn = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
+        let (h, w) = (g.len(), g[0].len());
+        (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect()
+    };
+    let mirror = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
+        let (h, w) = (g.len(), g[0].len());
+        (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect()
+    };
+    let paint = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
+        g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 3, x => x }).collect()).collect()
+    };
+    let each = |ps: &Pairs, f: Frame<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
+    let read = |train: &Pairs, test: &Pairs| crate::arc::parse_task(&json(train, test)).expect("the task reads");
+    let one = read(&base.0, &base.1);
+    let turn180 = |g: &Vec<Vec<u8>>| turn(&turn(g));
+    let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));
+    let painted = |g: &Vec<Vec<u8>>| paint(&turn(&mirror(g)));
+    let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &painted];
+    let mut k = Kernel::new();
+    let rule = rule_over(&one.train);
+    let SolveVerdict::Solved { pay } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };
+    for (i, f) in frames.iter().enumerate() {
+        let other = read(&each(&base.0, *f), &each(&base.1, *f));
+        assert_eq!((&other.train, &other.test), (&one.train, &one.test), "frame {i}: one scene through the sensor");
+        let again = rule_over(&other.train);
+        assert_eq!(again.address(), rule.address(), "frame {i}: one word");
+        assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p } if p == pay), "frame {i}: one verdict, one price");
+    }
+}
+
 /// POUW: the task's FIRST closure mints the solver what its rule discharged;
 /// a closure AGAIN is verified and pays nothing — no floor.
 #[test]

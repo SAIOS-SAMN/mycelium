@@ -18362,6 +18362,39 @@ object and not its canonical form):
   refusal is a typed `Refused` read off content, 78.9); S₁₀ reads the palette
   at ten, the sensor's bound (`PALETTE`) — the gauge group a scene acts under
   is the permutations of the hues it carries.
+- LANDED 5fd72e68: the colour word end to end — the fibre relation read where
+  the base stands still (`fibre_relation`), minted as a motionless connection
+  carrying a partial injection of the hues that stand (a merge mints none; no
+  completion to a permutation, 78.45), spoken with its task, re-derived by
+  the court from its own copy of the family (`REFUSE_FIBRE_UNWITNESSED`, C),
+  installed on a second vantage, taught, and read as `Acts.colours` against
+  each mind's `colour words`. The corpus carries 33 distinct colour words
+  over 60 tasks (12 more only merge).
+
+### 78.54 The lattice's frame is a gauge too (PROPOSED by the implementor 2026-09-29 under 78.53's principle; the operator rules)
+
+78.53 applied at every site of its shape. A task turned by 90°, 180° or
+270°, or mirrored, as a whole — every grid of it — is the same task, exactly
+as a relabelled palette is: the frame the sensor read it in is a coordinate
+choice. Carried into the words, it makes a mind that learned a motion in one
+frame blind to it in another, and two minds that saw one task in two frames
+speak two words for one motion.
+
+- THE FRAME IS FIXED WITH THE PALETTE, at the sensor and nowhere after
+  (`arc::frame_fixed`, composed in `parse_task`): each of the eight
+  symmetries of the square lattice is read with its colours fixed, and the
+  task is handed on in the reading whose VISIBLE grids — train pairs, test
+  inputs; a withheld output never votes — stand first in the lattice's own
+  order. Where two readings show the same visible grids the task is
+  symmetric there, and either is the one task.
+- ACCEPTANCE, on engine values: the task in every frame and palette reads
+  the identical grids, mints the identical word, and receives the identical
+  verdict and price.
+- WHAT IT DOES NOT SETTLE: a relation that is only meaningful in one frame
+  (a scene with a physical "down") is still read identically in all eight —
+  the words carry the motion relative to the task's own geometry, which is
+  the gauge-free reading; whether any corpus family breaks that is a reading
+  for the fleet, never a reason to un-fix the frame (77(1)).
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

@@ -52,10 +52,74 @@ pub struct Task {
 /// its palette read at the sensor and nowhere after (`gauge_fixed`, 78.53).
 pub fn parse_task(json: &str) -> Option<Task> {
     let raw: RawTask = serde_json::from_str(json).ok()?;
-    Some(gauge_fixed(Task {
+    Some(frame_fixed(Task {
         train: raw.train.into_iter().map(|p| (p.input, p.output)).collect(),
         test: raw.test.into_iter().map(|p| (p.input, p.output)).collect(),
     }))
+}
+
+/// 78.54 — THE LATTICE'S FRAME IS A GAUGE TOO (78.53's principle, at every
+/// site of the shape). A task turned by 90°, 180° or 270°, or mirrored, as a
+/// whole — every grid of it — is the same task, exactly as a relabelled
+/// palette is: the frame the sensor happened to read it in is a coordinate
+/// choice, and a word that carried it would make a mind that learned a
+/// motion in one frame blind to it in another.
+///
+/// So the frame is fixed with the palette, at the sensor and nowhere after:
+/// each of the eight symmetries of the square lattice (a turn of 0°, 90°,
+/// 180° or 270°, each with or without the transpose) is read with its
+/// colours fixed (`gauge_fixed`), and the task is handed on in the reading
+/// whose VISIBLE grids — train pairs and test inputs; a withheld output
+/// never votes — stand first in the lattice's own order. The result is the
+/// same for every frame and palette the task could have been given in.
+/// Where two readings show the same visible grids the task is symmetric
+/// there and either is that one task; the first symmetry in the order
+/// listed is taken, and it changes no grid a mind is shown.
+pub fn frame_fixed(task: Task) -> Task {
+    let mut best: Option<(Vec<Grid>, Task)> = None;
+    for transpose in [false, true] {
+        for degrees in [0u16, 90, 180, 270] {
+            let at = |g: &Grid| turned(&if transpose { transposed(g) } else { g.clone() }, degrees);
+            let read = gauge_fixed(Task {
+                train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
+                test: task.test.iter().map(|(a, b)| (at(a), at(b))).collect(),
+            });
+            let visible: Vec<Grid> = read
+                .train
+                .iter()
+                .flat_map(|(a, b)| [a.clone(), b.clone()])
+                .chain(read.test.iter().map(|(a, _)| a.clone()))
+                .collect();
+            if best.as_ref().is_none_or(|(held, _)| visible < *held) {
+                best = Some((visible, read));
+            }
+        }
+    }
+    match best {
+        Some((_, t)) => t,
+        None => task,
+    }
+}
+
+/// A grid read with its rows as columns: the mirror across the main
+/// diagonal. A ragged row is read as far as it reaches.
+fn transposed(g: &Grid) -> Grid {
+    let width = grid_width(g);
+    (0..width).map(|c| g.iter().filter_map(|row| row.get(c).copied()).collect()).collect()
+}
+
+/// A grid turned by `degrees` (0, 90, 180 or 270; clockwise as the lattice
+/// is read, rows downward). A turn by 90° is the transpose read with each
+/// row reversed; the others are it repeated.
+fn turned(g: &Grid, degrees: u16) -> Grid {
+    let once = |g: &Grid| -> Grid {
+        transposed(g).into_iter().map(|row| row.into_iter().rev().collect()).collect()
+    };
+    let mut out = g.clone();
+    for _ in 0..(degrees / 90) {
+        out = once(&out);
+    }
+    out
 }
 
 /// 78.53 — THE PALETTE IS READ ONLY AT THE SENSOR, and the gauge is fixed
