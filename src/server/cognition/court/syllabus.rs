@@ -13,19 +13,20 @@ pub enum PageEnd {
     Frame,
     /// The wire's count (`u8`) was reached.
     Count,
-    /// This court's reserve could not fund the next word, on this lane.
-    Reserve(crate::physics::Depleted),
 }
 
 /// A SYLLABUS PAGE AS THE COURT SERVED IT: the words taught with their
-/// stamps; how many candidates the window consumed (served and missed);
-/// the candidates missed, to re-queue; what the page drew from the reserve,
-/// per lane; and where it ended.
+/// stamps; how many candidates the window consumed (served, missed and
+/// deferred); the candidates missed, to re-queue; the words this court's
+/// reserve could not fund yet, each with the lane that refused it, to
+/// re-queue behind the cursor; what the page drew from the reserve, per
+/// lane; and where it ended.
 #[derive(Clone, Debug, Default)]
 pub struct ServedPage {
     pub words: Vec<crate::anastome::dialogue::Taught>,
     pub consumed: usize,
     pub missed: Vec<Vec<u8>>,
+    pub deferred: Vec<(Vec<u8>, crate::physics::Depleted)>,
     pub drawn: [u64; 4],
     pub overflowed: bool,
     pub end: PageEnd,
@@ -131,15 +132,16 @@ impl Kernel {
 
     /// A SYLLABUS PAGE, SERVED AND PAID (the actions' metabolism, ruled
     /// 2026-09-29): the candidates are the order after a voice's cursor, in
-    /// ruling order; each is served while three walls stand, the first to
+    /// ruling order; each is served while two walls stand, the first to
     /// fall ending the page:
     /// - the FRAME: the page's bytes, `Stamp::LEN + 4 + tape` per word,
     ///   within `bytes`;
     /// - the COUNT the wire carries (`u8`), so no page is built that the
-    ///   encoder then refuses after its receipts are sealed;
-    /// - the RESERVE: each word's magnitude — what it carries — drawn from
-    ///   this court's reserve per lane, all or nothing (`Reserve::draw`); a
-    ///   lane that cannot fund it ends the page, named.
+    ///   encoder then refuses after its receipts are sealed.
+    ///
+    /// Each is PAID: its magnitude — what it carries — drawn from this
+    /// court's reserve per lane, all or nothing (`Reserve::draw`); a word no
+    /// lane can fund yet is deferred, its lane named, and the page goes on.
     ///
     /// Only an INSTALLED word is taught (the genome boundary, as
     /// `serve_ruled` reads it); one not installed, letterless or unwritable
@@ -158,11 +160,13 @@ impl Kernel {
         for _ in &page.missed {
             count(t, &SYLLABUS, "words missed");
         }
+        for _ in &page.deferred {
+            count(t, &SYLLABUS, "deferred: reserve");
+        }
         let end = match page.end {
             PageEnd::Order => "ended: order",
             PageEnd::Frame => "ended: frame",
             PageEnd::Count => "ended: count",
-            PageEnd::Reserve(_) => "ended: reserve",
         };
         count(t, &SYLLABUS, end);
         page
@@ -187,9 +191,18 @@ impl Kernel {
                 page.end = PageEnd::Frame;
                 return page;
             }
+            // A WORD THE RESERVE CANNOT FUND YET WAITS; THE PAGE GOES ON. It
+            // ended the page and left the cursor on it, so every later page
+            // to that voice tried the same word first and served nothing
+            // behind it: on the fleet (epoch 106) 95–99% of pages ended on
+            // the reserve with 0–4 words served against 40–53 ratified. The
+            // word is deferred behind the cursor, its refusing lane named,
+            // and is taught when the verified work of later orbits funds it
+            // (`orbit` regenerates the reserve).
             if let Err(depleted) = self.physics.reserve.draw(mag) {
-                page.end = PageEnd::Reserve(depleted);
-                return page;
+                page.deferred.push((addr.clone(), depleted));
+                page.consumed += 1;
+                continue;
             }
             let Some(at) = self.note_served(addr, voice) else {
                 // Not sealed: the draw is returned and the word missed.
@@ -259,10 +272,12 @@ impl Kernel {
             }
             // WHAT THE FETCH HANDS OUT IS PAID (the actions' metabolism): the
             // word's magnitude drawn from this court's reserve per lane; a
-            // lane that cannot fund it ends the page.
+            // word no lane can fund yet is deferred and the page goes on, as
+            // the syllabus does — one costly word first in the stratum
+            // starved every word behind it.
             if self.physics.reserve.draw(mag).is_err() {
-                crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "ended: reserve");
-                break;
+                crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: reserve");
+                continue;
             }
             used += width;
             crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "words served");

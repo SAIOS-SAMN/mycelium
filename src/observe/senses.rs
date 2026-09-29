@@ -76,9 +76,9 @@ pub struct Senses {
 
 /// What a court's syllabus pages came to.
 pub const SYLLABUS: [&str; 7] =
-    ["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "ended: reserve"];
+    ["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"];
 /// What a court's fetch pages came to.
-pub const FETCH: [&str; 2] = ["words served", "ended: reserve"];
+pub const FETCH: [&str; 2] = ["words served", "deferred: reserve"];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?).
 pub const JUDGED: [&str; 10] = [
     "first closures",

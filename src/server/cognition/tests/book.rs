@@ -341,8 +341,9 @@ assert_eq!(
 /// THE SYLLABUS IS PAID (the actions' metabolism, 2026-09-29). An installed,
 /// admitted word served to a voice draws its own magnitude from the court's
 /// reserve, per lane, and is sealed at the act that served it; a provisional
-/// word is MISSED and draws nothing; and a court whose reserve cannot fund
-/// the next word ends the page there, by lane, sealing nothing for it.
+/// word is MISSED and draws nothing; and a word the court's reserve cannot
+/// fund yet is DEFERRED, its lane named, sealing nothing for it, while the
+/// page goes on to the words behind it.
 #[test]
 fn a_syllabus_page_is_paid_by_the_magnitudes_it_serves() {
 use crate::transducer::element::from_canonical;
@@ -373,11 +374,21 @@ for l in 0..4 {
 let acts = k.acts_reading();
 assert_eq!(acts.syllabus[..4], [1, 1, 1, 1], "{:?}", acts.lines());
 assert_eq!(acts.drawn, mag, "the ledger drew what the page served");
-// A court that cannot fund the word ends the page there, by lane.
+// A court that cannot fund the word defers it, by lane, and the page goes
+// on to the word behind it: a costly word never blocks the cursor.
 k.physics.reserve = crate::physics::Reserve::of([0; 4]);
-let starved = k.serve_syllabus(&[addr.as_bytes().to_vec()], voice, 1 << 20);
-assert!(starved.words.is_empty() && starved.consumed == 0, "nothing served, nothing consumed");
-assert!(matches!(starved.end, crate::cognition::PageEnd::Reserve(d) if mag[d.lane] > 0), "ended on a lane the word needs");
+let starved = k.serve_syllabus(&[addr.as_bytes().to_vec(), provisional.as_bytes().to_vec()], voice, 1 << 20);
+assert!(starved.words.is_empty(), "nothing served");
+let [(deferred, d)] = starved.deferred.as_slice() else { panic!("one word deferred: {:?}", starved.deferred) };
+assert_eq!(deferred, &addr.as_bytes().to_vec(), "the unfunded word is deferred");
+assert!(mag[d.lane] > 0, "on a lane the word needs");
+assert_eq!(starved.missed, vec![provisional.as_bytes().to_vec()], "and the word behind it was still read");
+assert_eq!((starved.consumed, starved.end), (2, crate::cognition::PageEnd::Order), "the cursor passes both");
+// FUNDED BY THE ORBIT'S VERIFIED WORK: what was deferred is taught once the
+// reserve holds its magnitude.
+k.physics.reserve = crate::physics::Reserve::of(mag);
+let funded = k.serve_syllabus(&[addr.as_bytes().to_vec()], voice, 1 << 20);
+assert_eq!((funded.words.len(), funded.deferred.len()), (1, 0), "the deferred word is served once funded");
 }
 
 /// X3, rule 1 — THE COHESION READING IS CARRIED, NOT READ WHOLE. C and I are

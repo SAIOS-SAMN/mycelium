@@ -325,6 +325,13 @@ impl Kernel {
                 // The orbit closed: what nothing flowed to for a whole orbit
                 // lapses by `ZeroFlux` (78.37 (3)).
                 self.lapse_silent();
+                // AND THE RESERVE REGENERATES toward the deflation this
+                // court verified since the last close (65.5: the stroke is
+                // the act's draw; syntropy returns it). The court never
+                // regenerated but on hearing a sentence, so its reserve
+                // settled near the floor and refused 95–99% of its syllabus
+                // pages on the fleet (epoch 106).
+                self.physics.regenerate();
                 Close::Sealed(r.stamp)
             }
             None => Close::Nothing,

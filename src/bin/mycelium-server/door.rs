@@ -366,7 +366,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             }
             (page, classes)
         };
-        let (words, missed) = (page.words, page.missed);
+        // A word this court's reserve could not fund yet waits behind the
+        // cursor with the words it missed.
+        let words = page.words;
+        let mut missed = page.missed;
+        missed.extend(page.deferred.into_iter().map(|(addr, _)| addr));
         // An address whose word this court no longer holds is re-queued
         // behind the cursor, once. This rebuilt the whole tail index INSIDE
         // the loop, one full walk of the order per missed address —

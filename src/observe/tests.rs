@@ -846,9 +846,9 @@ fn every_counted_name_is_its_table_s() {
     holds(&HEARING, &["pages", "words heard", "words admitted"]);
     holds(
         &SYLLABUS,
-        &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "ended: reserve"],
+        &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"],
     );
-    holds(&FETCH, &["words served", "ended: reserve"]);
+    holds(&FETCH, &["words served", "deferred: reserve"]);
     holds(
         &JUDGED,
         &[
