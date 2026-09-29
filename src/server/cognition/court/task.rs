@@ -155,6 +155,7 @@ impl Kernel {
             judged: self.acts.judged,
             paid: self.acts.paid,
             colours: self.basis.scoped().filter(|(_, w)| w.is_colour_word()).count() as u64,
+            colours_derived: self.acts.colours_derived,
         }
     }
 

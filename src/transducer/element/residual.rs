@@ -335,6 +335,45 @@ pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, 
     is_fibre_relation(&out).then_some(out)
 }
 
+/// 78.55 — A DERIVED COLOUR WORD: the composite of two ruled colour words
+/// (`after ∘ first`), carrying HOW it was reached as a citation in its
+/// receipts envelope — the two words by their coordinates, in application
+/// order. The envelope is outside the address: the word is its relation,
+/// and a derivation is a presentation of it (§1.5), so a word derived is
+/// the same word as the one a scene witnessed. `None` where either is not a
+/// colour word, the composite is not a colour relation, or an address does
+/// not fit its citation.
+pub fn derived_colour_word(first: &Element, after: &Element) -> Option<Element> {
+    let (f, a) = (first.letters()?, after.letters()?);
+    if !(first.is_colour_word() && after.is_colour_word()) {
+        return None;
+    }
+    let sigma = compose_fibre(&a.sigma, &f.sigma)?;
+    let mut word = colour_word(&sigma)?;
+    let derivation = super::DerivationCite {
+        vertex: word.address(),
+        // Each generator is cited as (form, vertex, exponent): a colour word
+        // is its own form and vertex, applied once.
+        generators: vec![(first.address(), first.address(), 1), (after.address(), after.address(), 1)],
+        residue: crate::transducer::alphabet::Word::identity(),
+    };
+    word.set_receipts(super::ReceiptsEnvelope { derivations: vec![derivation], ..Default::default() });
+    Some(word)
+}
+
+impl Element {
+    /// The two ruled words a derived colour word cites (`first`, `after`),
+    /// read off its receipts envelope; `None` for a word that cites none.
+    pub fn colour_citation(&self) -> Option<(crate::transducer::address::Address, crate::transducer::address::Address)> {
+        let own = self.address();
+        let d = self.receipts().derivations.iter().find(|d| d.vertex == own)?;
+        match d.generators.as_slice() {
+            [(first, _, 1), (after, _, 1)] => Some((first.clone(), after.clone())),
+            _ => None,
+        }
+    }
+}
+
 /// The inverse of a colour relation on its image: each moved hue sent back.
 pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
     let mut out: Vec<(u8, u8)> = sigma.iter().map(|&(f, t)| (t, f)).collect();

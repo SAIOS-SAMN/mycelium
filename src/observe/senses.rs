@@ -36,7 +36,7 @@ pub const SIGHT: [&str; 10] = [
 pub const COGNITION: [&str; 8] =
     ["thoughts held", "grounded", "closed", "merged", "torsion merges", "stayed two", "fills", "classes"];
 /// What a mind SAID: its closed thoughts transcribed (78.52), and uttered.
-pub const SPEECH: [&str; 5] = ["uttered", "spelled", "said by an adjoined letter", "ineffable", "unread"];
+pub const SPEECH: [&str; 6] = ["uttered", "spelled", "said by an adjoined letter", "ineffable", "unread", "colour theorems"];
 /// What a mind HEARD from its court.
 pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
 /// What a mind holds as LANGUAGE.
@@ -111,6 +111,9 @@ pub struct Acts {
     /// 78.53 — the colour words this court has installed: the ruled set
     /// every mind it teaches converges on.
     pub colours: u64,
+    /// 78.55 — of the colour words it heard, those admitted by derivation
+    /// from its ruled colour words rather than by a scene's evidence.
+    pub colours_derived: u64,
 }
 
 fn put<const N: usize>(out: &mut Vec<u8>, xs: &[u64; N]) {
@@ -207,7 +210,7 @@ impl Acts {
         put(out, &self.fetch);
         put(out, &self.judged);
         put(out, &self.paid);
-        put(out, &[self.colours]);
+        put(out, &[self.colours, self.colours_derived]);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
@@ -215,8 +218,8 @@ impl Acts {
         let (reserve, drawn, restored) = (take(b, p)?, take(b, p)?, take(b, p)?);
         let [refused] = take::<1>(b, p)?;
         let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
-        let [colours] = take::<1>(b, p)?;
-        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours })
+        let [colours, colours_derived] = take::<2>(b, p)?;
+        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived })
     }
 
     /// The reading, act by act, named.
@@ -229,7 +232,7 @@ impl Acts {
             format!("syllabus: {}", line(&SYLLABUS, &self.syllabus)),
             format!("fetch: {}", line(&FETCH, &self.fetch)),
             format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
-            format!("colour words installed: {}", self.colours),
+            format!("colour words installed: {} · admitted by derivation: {}", self.colours, self.colours_derived),
         ]
     }
 }
@@ -242,6 +245,9 @@ pub struct ActsTally {
     pub fetch: [u64; FETCH.len()],
     pub judged: [u64; JUDGED.len()],
     pub paid: [u64; 4],
+    /// 78.55 — colour words this court admitted by their derivation from
+    /// ruled colour words, no scene witnessing them.
+    pub colours_derived: u64,
 }
 
 /// COUNT ONE EVENT on a named counter of a table — the name is the table's

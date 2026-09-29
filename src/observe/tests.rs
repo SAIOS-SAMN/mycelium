@@ -813,7 +813,7 @@ fn the_senses_and_the_acts_travel_whole() {
     for (i, x) in senses.sight.iter_mut().chain(senses.cognition.iter_mut()).chain(senses.carriers.iter_mut()).enumerate() {
         *x = 300 + i as u64;
     }
-    senses.speech = [1, 2, 3, 4, 5];
+    senses.speech = [1, 2, 3, 4, 5, 39];
     senses.hearing = [6, 7, 8];
     senses.language = [9, 10, 11, 12, 13, 29];
     senses.understanding = [14, 15, 16, 17, 38];
@@ -830,6 +830,7 @@ fn the_senses_and_the_acts_travel_whole() {
         judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
         paid: [33, 34, 35, 36],
         colours: 37,
+        colours_derived: 38,
     };
     let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
     let push = encode_push(&vk(8), &all).expect("the push writes");

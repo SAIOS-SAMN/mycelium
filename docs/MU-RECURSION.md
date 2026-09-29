@@ -18417,11 +18417,19 @@ a hue neither word speaks of (78.45).
 - BOUNDED: the candidates are the ruled colour words and their inverses,
   pairs at most, each composition one read drawn from the stroke; a spent
   stroke derives nothing and says so.
-- WHAT IT OPENS: a derivation is a CITATION of words by their coordinates —
-  the next step is the word carrying the derivation it was reached by, so
-  the court can re-derive it from ruled words alone (law 8: the court
-  composes what a word cites, it never peels), and a relation no scene
-  witnessed but the language implies can stand. Not built.
+- A THEOREM STANDS BY ITS PROOF (`derived_colour_word`,
+  `Element::colour_citation`, `Entity::speak_colour_theorem`): a mind
+  composes pairs of its ruled colour words (the genome's key order, so minds
+  holding one genome propose one theorem) and speaks the first composite it
+  neither holds nor has said, its derivation cited in the receipts envelope
+  — (form, vertex, exponent) per generator, outside the address, so a word
+  derived is the same word a scene would witness. The court admits a colour
+  word by its family's evidence OR by composing exactly the two installed
+  colour words it cites (law 8: it composes what is cited, never searches,
+  never peels); a forged citation and a citation of words it never installed
+  are refused. Counted: `speech: colour theorems` on each mind,
+  `admitted by derivation` on each court. This is growth by closure in the
+  colour language — a word installed because the ruled language implies it.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

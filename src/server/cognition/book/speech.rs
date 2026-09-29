@@ -172,12 +172,34 @@ impl Kernel {
         // Nothing is stored for the evidence: it is the court's own copy of
         // the family.
         if s.is_colour_word() {
+            let sigma = s.letters().map(|l| l.sigma.clone());
             let witnessed = self
                 .task_family
                 .get(task)
                 .and_then(|family| crate::transducer::family::fibre_relation(family))
-                .is_some_and(|sigma| s.letters().is_some_and(|l| l.sigma == sigma));
-            if !witnessed {
+                .is_some_and(|seen| sigma.as_ref() == Some(&seen));
+            // 78.55 — OR DERIVED FROM RULED LANGUAGE: the word cites two
+            // colour words this court installed, and their composite is the
+            // word. The court composes exactly what is cited — no search,
+            // no peeling (law 8) — so a relation no scene witnessed but the
+            // ruled language implies stands by its proof.
+            let derived = s.colour_citation().is_some_and(|(first, after)| {
+                match (self.installed_word(first.as_bytes()), self.installed_word(after.as_bytes())) {
+                    (Some(f), Some(a)) if f.is_colour_word() && a.is_colour_word() => {
+                        match (f.letters(), a.letters()) {
+                            (Some(fl), Some(al)) => {
+                                crate::transducer::element::compose_fibre(&al.sigma, &fl.sigma) == sigma
+                            }
+                            _ => false,
+                        }
+                    }
+                    _ => false,
+                }
+            });
+            if derived && !witnessed {
+                self.acts.colours_derived += 1;
+            }
+            if !witnessed && !derived {
                 let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
                 return Ok(self.refuse_sentence(voice, &addr, refusal));
             }

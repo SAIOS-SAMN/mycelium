@@ -518,6 +518,9 @@ pub struct Entity {
     /// 78.55 — the colour relations this mind perceived that its ruled
     /// colour words already derived (`colour_derivation`).
     pub(crate) colour_derived: u64,
+    /// 78.55 — the colour theorems this mind proposed: composites of its
+    /// ruled colour words, spoken with their derivation.
+    pub(crate) colour_theorems: u64,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; 3],

@@ -39,6 +39,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
     if !occluded {
         let mut colour_budget = physics.stroke();
         let _ = entity.speak_colour(&tid, &train, &mut colour_budget);
+        // 78.55 — and what the ruled colour language implies but no scene
+        // has shown: one theorem, cited, for the court to prove.
+        let _ = entity.speak_colour_theorem(&mut colour_budget);
     }
     let gen = entity.epigenome.atlas_root();
     // Sized by the family, not by the box (L8w): its frames perceived once

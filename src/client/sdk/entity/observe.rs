@@ -50,7 +50,7 @@ impl Entity {
                 c.fills,
                 c.classes,
             ],
-            speech: [self.uttered_n() as u64, t.spelled, t.adjoined, t.ineffable, t.unread],
+            speech: [self.uttered_n() as u64, t.spelled, t.adjoined, t.ineffable, t.unread, self.colour_theorems],
             hearing: self.hearing,
             language: [
                 self.epigenome.dialect_len() as u64,

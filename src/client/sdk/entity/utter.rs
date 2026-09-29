@@ -460,6 +460,40 @@ impl Entity {
         }
     }
 
+    /// 78.55 — A COLOUR THEOREM: the language's closure, spoken. The ruled
+    /// colour words this mind holds are composed in pairs (the genome's own
+    /// key order, so minds holding one genome propose one theorem), and the
+    /// first composite it neither holds nor has said is spoken with its
+    /// derivation cited — no task, no scene: the court admits it by
+    /// composing the two words it cites. Each composition draws one read.
+    /// Answers the court's code, or `None` where the language is closed
+    /// under composition as far as the stroke reached.
+    pub fn speak_colour_theorem(&mut self, budget: &mut crate::physics::Budget) -> Option<u8> {
+        let held: Vec<Element> =
+            self.epigenome.genome_words().filter(|w| w.is_colour_word()).map(|w| (**w).clone()).collect();
+        let mut theorem: Option<Element> = None;
+        'pairs: for first in &held {
+            for after in &held {
+                if !budget.spend() {
+                    break 'pairs;
+                }
+                let Some(w) = crate::transducer::element::derived_colour_word(first, after) else { continue };
+                let addr = w.address();
+                if !self.already_taught_addr(addr.as_bytes()) && !self.epigenome.holds(addr.as_bytes()) {
+                    theorem = Some(w);
+                    break 'pairs;
+                }
+            }
+        }
+        let theorem = theorem?;
+        self.colour_theorems += 1;
+        let codes = self.speak_with(std::slice::from_ref(&theorem), &[], &[], budget).ok()?;
+        match codes.as_slice() {
+            [code] => Some(*code),
+            _ => None,
+        }
+    }
+
     /// 78.55 — WHETHER THIS MIND'S COLOUR WORDS DERIVE `sigma`: a genome
     /// colour word, its inverse, or the composite of two of those, equal to
     /// it. The candidates are the court-ruled colour words it holds (its

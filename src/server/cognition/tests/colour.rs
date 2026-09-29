@@ -49,6 +49,52 @@ fn a_mind_derives_a_colour_relation_its_ruled_words_compose_to() {
     assert!(!mind.colour_derivation(&[(1, 4)], &mut budget), "nothing the words do not compose to");
 }
 
+/// 78.55 — A THEOREM STANDS BY ITS PROOF. With {1→2} and {2→3} installed,
+/// the derived word {1→3} — citing them — is the same word a scene would
+/// witness (the citation is outside the address), and the court admits it
+/// with no task and no scene by composing exactly what it cites. A forged
+/// citation (the cited words do not compose to the word) and a citation of
+/// words the court never installed are refused.
+#[test]
+fn a_colour_theorem_stands_by_composing_what_it_cites() {
+    use crate::transducer::element::{colour_word, derived_colour_word};
+    let mut k = Kernel::new();
+    let install = |k: &mut Kernel, task: u8, from: u8, to: u8| {
+        let word = colour_word(&[(from, to)]).expect("a colour word");
+        k.bind_task_family([task; 32], vec![(vec![vec![from, from]], vec![vec![to, to]])]);
+        assert_eq!(k.perceive_speech([1; 32], &[task; 32], std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
+        k.rule_all_provisionals();
+        k.enroll([2; 32], [8, 8, 8, 8]);
+        k.confirm_peer_holds_addrs(std::slice::from_ref(&word.address()), [2; 32]);
+        word
+    };
+    let a = install(&mut k, 20, 1, 2);
+    let b = install(&mut k, 21, 2, 3);
+    let theorem = derived_colour_word(&a, &b).expect("{2→3} ∘ {1→2}");
+    assert_eq!(theorem.address(), colour_word(&[(1, 3)]).expect("a word").address(), "a derivation is a presentation: one word");
+    assert!(theorem.colour_citation().is_some(), "it carries its proof");
+    assert_eq!(
+        k.perceive_speech([3; 32], &[], std::slice::from_ref(&theorem)),
+        vec![crate::anastome::dialogue::SPEECH_STOOD],
+        "no task, no scene: the court composes what it cites"
+    );
+    assert_eq!(k.acts_reading().colours_derived, 1, "admitted by derivation");
+    // A FORGED CITATION: the same citation on a word it does not compose to.
+    let mut forged = colour_word(&[(3, 1)]).expect("a word");
+    forged.set_receipts(crate::transducer::element::ReceiptsEnvelope {
+        derivations: vec![crate::transducer::element::DerivationCite {
+            vertex: forged.address(),
+            generators: vec![(a.address(), a.address(), 1), (b.address(), b.address(), 1)],
+            residue: crate::transducer::alphabet::Word::identity(),
+        }],
+        ..Default::default()
+    });
+    assert_eq!(k.perceive_speech([3; 32], &[], std::slice::from_ref(&forged)), vec![crate::anastome::dialogue::SPEECH_REFUSED], "a lie about its proof");
+    // A CITATION OF WORDS THIS COURT NEVER INSTALLED.
+    let stranger = derived_colour_word(&colour_word(&[(4, 5)]).expect("w"), &colour_word(&[(5, 6)]).expect("w")).expect("a theorem");
+    assert_eq!(k.perceive_speech([3; 32], &[], std::slice::from_ref(&stranger)), vec![crate::anastome::dialogue::SPEECH_REFUSED], "unproven here");
+}
+
 #[test]
 fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
     let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
