@@ -123,6 +123,10 @@ pub const REFUSE_VERTEX_BODY: &str = "vertex does not carry its body onto its im
 /// 50.9 (L8): a sentence citing a refusal receipt is not the contraction
 /// of the refused sentence at the coordinate the court named.
 pub const REFUSE_NOT_CONTRACTION: &str = "sentence is not the contraction of the refused sentence at the coordinate";
+/// 78.53: a colour word whose fibre relation is not the one the court
+/// re-derives from the family's base — or a family bound to no scene. It is
+/// C, relative to this cover: another family may witness the relation.
+pub const REFUSE_FIBRE_UNWITNESSED: &str = "colour word's fibre relation is not the one the family's base carries";
 
 /// A REFUSAL WITH ITS COORDINATE (50.9): the reason of 34.1 and where in
 /// the sentence the court found it, as content.
@@ -162,7 +166,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_ORIGIN | REFUSE_RECEIPT | REFUSE_RECEIPT_STALE | REFUSE_EQUIVOCATION | REFUSE_NOT_EQUIVOCATION
         | REFUSE_SIGNATURE | REFUSE_MV_INEXACT => O::Integrity,
         REFUSE_GLUED_UNRULED => O::Dialect { coset: Vec::new(), chart: None },
-        REFUSE_NOT_NATURAL => O::Cover { cocycle: Vec::new() },
+        REFUSE_NOT_NATURAL | REFUSE_FIBRE_UNWITNESSED => O::Cover { cocycle: Vec::new() },
         _ => O::Unclassified,
     }
 }

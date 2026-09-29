@@ -7,6 +7,7 @@ mod aperture;
 mod backfill;
 mod book;
 mod cocycles;
+mod colour;
 mod contraction;
 mod court;
 mod depth;

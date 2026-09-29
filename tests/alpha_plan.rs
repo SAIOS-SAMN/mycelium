@@ -29,6 +29,14 @@ fn conn(sigma: &[(u8, u8)], rem: Vec<(i64, i64, u8, u8)>, mag: [u64; 4]) -> Elem
     from_connection(&Word::identity(), &identity_versor(), sigma, &rem, mag).unwrap()
 }
 
+/// A connection that MOVES (one column) with its gauge: a word spoken with
+/// no task. Motionless, a σ alone is a colour word, which stands only by the
+/// evidence of the family it is spoken with (78.53).
+fn moved(sigma: &[(u8, u8)], mag: [u64; 4]) -> Element {
+    from_connection(&Word::identity(), &mycelium::transducer::element::translator_versor(1, 0), sigma, &Vec::new(), mag)
+        .unwrap()
+}
+
 #[test]
 fn normal_form_two_tapes_one_key() {
     let q = LetterId::turn_90((0, 1)).unwrap();
@@ -167,7 +175,7 @@ fn perceive_speech_refuses_with_a_reason() {
         vec![dialogue::SPEECH_REFUSED],
         "an unframed chain is refused, not stood"
     );
-    let ok = conn(&[(1, 2), (2, 1)], Vec::new(), [1, 1, 0, 0]);
+    let ok = moved(&[(1, 2), (2, 1)], [1, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&ok));
     assert_eq!(codes, vec![dialogue::SPEECH_STOOD], "a replay-clean word stands");
 }
@@ -288,7 +296,7 @@ fn genome_unchanged_by_dialect() {
 #[test]
 fn mint_once_on_home_install() {
     let mut k = Kernel::new();
-    let w = conn(&[(1, 2), (2, 1)], Vec::new(), [2, 1, 0, 0]);
+    let w = moved(&[(1, 2), (2, 1)], [2, 1, 0, 0]);
     let codes = k.perceive_speech([9; 32], &[0; 32], std::slice::from_ref(&w));
     // One sentence was spoken, so one code comes back.
     assert!(matches!(codes.as_slice(), [dialogue::SPEECH_STOOD]));

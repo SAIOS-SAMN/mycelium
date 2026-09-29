@@ -108,6 +108,9 @@ pub struct Acts {
     pub judged: [u64; JUDGED.len()],
     /// What the solves were paid, per lane.
     pub paid: [u64; 4],
+    /// 78.53 — the colour words this court has installed: the ruled set
+    /// every mind it teaches converges on.
+    pub colours: u64,
 }
 
 fn put<const N: usize>(out: &mut Vec<u8>, xs: &[u64; N]) {
@@ -204,13 +207,16 @@ impl Acts {
         put(out, &self.fetch);
         put(out, &self.judged);
         put(out, &self.paid);
+        put(out, &[self.colours]);
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
         let [k] = take::<1>(b, p)?;
         let (reserve, drawn, restored) = (take(b, p)?, take(b, p)?, take(b, p)?);
         let [refused] = take::<1>(b, p)?;
-        Some(Acts { k, reserve, drawn, restored, refused, syllabus: take(b, p)?, fetch: take(b, p)?, judged: take(b, p)?, paid: take(b, p)? })
+        let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
+        let [colours] = take::<1>(b, p)?;
+        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours })
     }
 
     /// The reading, act by act, named.
@@ -223,6 +229,7 @@ impl Acts {
             format!("syllabus: {}", line(&SYLLABUS, &self.syllabus)),
             format!("fetch: {}", line(&FETCH, &self.fetch)),
             format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
+            format!("colour words installed: {}", self.colours),
         ]
     }
 }

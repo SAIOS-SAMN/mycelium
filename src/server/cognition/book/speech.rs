@@ -165,6 +165,23 @@ impl Kernel {
             }
             self.refusals.remove(&c.before);
         }
+        // 78.53 — A COLOUR WORD STANDS BY EVIDENCE, NEVER BY WHO SAID IT: the
+        // court re-derives the fibre relation from the base of the family it
+        // holds for this task (`fibre_relation`, the one reader the mind
+        // minted with) and hears the word only where the two are the same.
+        // Nothing is stored for the evidence: it is the court's own copy of
+        // the family.
+        if s.is_colour_word() {
+            let witnessed = self
+                .task_family
+                .get(task)
+                .and_then(|family| crate::transducer::family::fibre_relation(family))
+                .is_some_and(|sigma| s.letters().is_some_and(|l| l.sigma == sigma));
+            if !witnessed {
+                let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
+                return Ok(self.refuse_sentence(voice, &addr, refusal));
+            }
+        }
         let out = match self.hear_sentence(voice, task, s, budget) {
             Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
             Ok(out) => out,
@@ -276,7 +293,14 @@ impl Kernel {
             self.await_citation(voice, task, s, &form);
             return Ok(Outcome::Awaiting(form));
         }
-        let family = self.task_family.get(task).cloned();
+        // 78.53 — A COLOUR WORD'S EVIDENCE IS ITS FIBRE RELATION, re-derived
+        // from this family at adjudication (`adjudicate_one`); it carries no
+        // chain by construction, so its replay against the family is that
+        // evidence, and here it is replayed for integrity alone.
+        let family = match s.is_colour_word() {
+            true => None,
+            false => self.task_family.get(task).cloned(),
+        };
         // The caller's stroke (65.5): a sentence is heard inside the act that
         // hears it — a speech frame, or a ruling re-hearing what waited.
         if let Some(refusal) =

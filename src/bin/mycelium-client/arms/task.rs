@@ -33,6 +33,13 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         physics.bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
     }
+    // 78.53 — WHAT THE COLOUR FIBRE DID in this family, spoken as its own
+    // word with the task it was seen in: the court re-derives it from its
+    // copy of the family and rules it by that evidence.
+    if !occluded {
+        let mut colour_budget = physics.stroke();
+        let _ = entity.speak_colour(&tid, &train, &mut colour_budget);
+    }
     let gen = entity.epigenome.atlas_root();
     // Sized by the family, not by the box (L8w): its frames perceived once
     // where the memo does not answer it, the stroke sized by them and the

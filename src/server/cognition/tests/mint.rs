@@ -59,9 +59,11 @@ assert_eq!(home.treasury().bond_total(), bond, "mint does not debit the stake bo
 #[test]
 fn speech_that_closes_nothing_mints_none() {
 let mut k = Kernel::new();
+// A restatement that MOVES (one column): motionless, a σ alone is a colour
+// word, which stands only by its family's evidence (78.53).
 let w = crate::transducer::element::from_connection(
     &crate::transducer::alphabet::Word::identity(),
-    &crate::transducer::element::identity_versor(),
+    &crate::transducer::element::translator_versor(1, 0),
     &[(1, 2), (2, 1)],
     &Vec::new(),
     [1, 1, 0, 0],
@@ -99,9 +101,11 @@ let listing = k.pending.scoped().next().expect("listed").1.address();
 let task = [7u8; 32];
 k.bind_listing_task(&listing, task);
 k.bind_task_family(task, family);
+// A restatement that MOVES (one column): motionless, a σ alone is a colour
+// word, which stands only by its family's evidence (78.53).
 let w = crate::transducer::element::from_connection(
     &crate::transducer::alphabet::Word::identity(),
-    &crate::transducer::element::identity_versor(),
+    &crate::transducer::element::translator_versor(1, 0),
     &[(1, 2), (2, 1)],
     &Vec::new(),
     [4, 4, 4, 4],

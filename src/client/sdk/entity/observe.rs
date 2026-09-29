@@ -58,11 +58,12 @@ impl Entity {
                 learning.installed,
                 learning.closing,
                 learning.adjoined_by_closure,
-                // 78.53 — THE COLOUR VOCABULARY: court-ruled genome words
-                // that move the colour fibre (𝒢 > 0, the cells they
-                // recolour). Gauge-invariant: the sensor fixed the labels,
-                // so minds that agree hold the same words.
-                self.epigenome.genome_words().filter(|w| w.magnitude()[1] > 0).count() as u64,
+                // 78.53 — THE COLOUR VOCABULARY: the court-ruled colour words
+                // in the genome (fibre relations, `is_colour_word`). The
+                // sensor fixed the labels and a colour word is its relation,
+                // so minds that agree hold the same words — and the same
+                // count as their court's `colours`.
+                self.epigenome.genome_words().filter(|w| w.is_colour_word()).count() as u64,
             ],
             understanding: [
                 self.pivot_reading().derivable,

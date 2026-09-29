@@ -829,6 +829,7 @@ fn the_senses_and_the_acts_travel_whole() {
         fetch: [21, 22],
         judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
         paid: [33, 34, 35, 36],
+        colours: 37,
     };
     let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
     let push = encode_push(&vk(8), &all).expect("the push writes");

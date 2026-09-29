@@ -154,6 +154,7 @@ impl Kernel {
             fetch: self.acts.fetch,
             judged: self.acts.judged,
             paid: self.acts.paid,
+            colours: self.basis.scoped().filter(|(_, w)| w.is_colour_word()).count() as u64,
         }
     }
 

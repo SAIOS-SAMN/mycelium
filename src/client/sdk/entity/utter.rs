@@ -424,6 +424,35 @@ impl Entity {
         Ok(codes)
     }
 
+    /// 78.53 — SPEAK WHAT THE COLOUR FIBRE DID. The family's fibre relation
+    /// (`fibre_relation`, read where the base stands still, in the sensor's
+    /// labels) is minted as a colour word, stood in this mind's dialect —
+    /// its short-term language, pruned by truncation — and spoken to the
+    /// court WITH THE TASK it was seen in, so the court can re-derive it
+    /// from its own copy of the family. A colour word is its relation, so
+    /// one already spoken or already in the genome is found by its address
+    /// (every colour word shares the motionless vertex; a vertex test would
+    /// call them all one). Answers the court's code, or `None` where the
+    /// family's fibre moved no hue or the word was already said.
+    pub fn speak_colour(
+        &mut self,
+        task: &[u8],
+        train: &crate::transducer::family::Family,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<u8> {
+        let sigma = crate::transducer::family::fibre_relation(train)?;
+        let word = crate::transducer::element::colour_word(&sigma)?;
+        let addr = word.address();
+        if self.already_taught_addr(addr.as_bytes()) || self.epigenome.holds(addr.as_bytes()) {
+            return None;
+        }
+        let codes = self.speak_with(std::slice::from_ref(&word), train, task, budget).ok()?;
+        match codes.as_slice() {
+            [code] => Some(*code),
+            _ => None,
+        }
+    }
+
     pub(crate) fn already_taught_addr(&self, addr: &[u8]) -> bool {
         self.taught_up.contains(addr)
     }

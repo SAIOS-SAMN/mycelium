@@ -340,6 +340,42 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
     refine::family_ratio(family)
 }
 
+/// 78.53 — THE FAMILY'S FIBRE RELATION: the section transition the colour
+/// fibre undergoes where the base stands still. At every site that stands
+/// in both the input and the output of a train pair (neither the void),
+/// the hue there goes to the hue there; over every pair, that is one map or
+/// none. Fixed points are no transition and are dropped; `None` where the
+/// map is not a function (a hue sent two ways), where it moves no hue, or
+/// where no site stands in both scenes. Read in the sensor's labels
+/// (`arc::gauge_fixed`), so a relabelled palette reads the same relation.
+///
+/// The ONE reader of it: the mind mints its colour word from it and the
+/// court re-derives it from the grids it holds (`element::colour_word`),
+/// so the word stands by evidence and never by a count of who said it.
+pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
+    let mut map: Vec<(u8, u8)> = Vec::new();
+    for (x, y) in family {
+        for (rx, ry) in x.iter().zip(y) {
+            for (&h, &t) in rx.iter().zip(ry) {
+                if h == 0 || t == 0 {
+                    continue;
+                }
+                match map.iter().find(|(f, _)| *f == h) {
+                    Some(&(_, seen)) if seen != t => return None,
+                    Some(_) => {}
+                    None => map.push((h, t)),
+                }
+            }
+        }
+    }
+    map.retain(|&(f, t)| f != t);
+    map.sort_unstable();
+    match map.is_empty() {
+        true => None,
+        false => Some(map),
+    }
+}
+
 /// One body carried onto another: the transport and the gauge map.
 #[derive(Clone, Debug)]
 pub struct Carriage {

@@ -284,6 +284,54 @@ pub fn from_connection(
     Some(e)
 }
 
+/// 78.53 — A COLOUR WORD: an automorphism of the colour fibre and nothing
+/// else — a connection that moves no body (the identity rotor, the identity
+/// carriage), carries no chain, and whose gauge map is the fibre relation σ
+/// (`family::fibre_relation`), in the sensor's labels. Its measure is on
+/// 𝒢 alone: the hues it moves. `None` for a relation that moves no hue.
+pub fn colour_word(sigma: &[(u8, u8)]) -> Option<Element> {
+    if !is_fibre_relation(sigma) {
+        return None;
+    }
+    from_connection(
+        &crate::transducer::alphabet::Word::identity(),
+        &identity_versor(),
+        sigma,
+        &Vec::new(),
+        [0, sigma.len() as u64, 0, 0],
+    )
+}
+
+/// WHAT A COLOUR WORD MAY CARRY (78.53): a PARTIAL INJECTION of the hues
+/// that stand — each moved hue to one hue, no two to the same one, none to
+/// itself, every label within the sensor's palette. It is invertible on its
+/// image, which is what a word's action must be. It is NOT completed to a
+/// permutation of the whole palette: a transition no scene showed would be
+/// a forward guess (78.45). A merge (two hues to one) loses a hue and is no
+/// automorphism of the fibre, so it mints no colour word.
+pub fn is_fibre_relation(sigma: &[(u8, u8)]) -> bool {
+    let within = |h: u8| usize::from(h) < PALETTE;
+    !sigma.is_empty()
+        && sigma.iter().all(|&(f, t)| f != t && within(f) && within(t))
+        && sigma.iter().enumerate().all(|(i, &(f, t))| {
+            sigma.iter().skip(i + 1).all(|&(g, u)| f != g && t != u)
+        })
+}
+
+impl Element {
+    /// Whether this word is a colour word (`colour_word`): a connection
+    /// whose only content is a fibre relation — no motion, no chain, a
+    /// gauge map that moves a hue. Read off the word itself.
+    pub fn is_colour_word(&self) -> bool {
+        let Some(l) = self.letters() else { return false };
+        self.sub().is_empty()
+            && l.spelling.word.is_identity()
+            && l.carriage.projective_eq(&identity_versor())
+            && !l.sigma.is_empty()
+            && l.sigma.iter().all(|&(f, t)| f != t)
+    }
+}
+
 /// The description of a connection: its spelling in the alphabet at its
 /// dilation, the placement, the gauge map, and the centered remainder. The
 /// doc said "description" and the name said `word`; the doc was right.
