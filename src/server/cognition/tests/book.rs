@@ -368,6 +368,11 @@ let after = k.reserve();
 for l in 0..4 {
     assert_eq!(after[l] + mag[l], before[l], "lane {l} paid exactly the word's magnitude");
 }
+// THE COURT'S ACTS READ IT, typed: one page, one word served, one missed,
+// ended at the order; the reserve's own ledger drew the magnitude.
+let acts = k.acts_reading();
+assert_eq!(acts.syllabus[..4], [1, 1, 1, 1], "{:?}", acts.lines());
+assert_eq!(acts.drawn, mag, "the ledger drew what the page served");
 // A court that cannot fund the word ends the page there, by lane.
 k.physics.reserve = crate::physics::Reserve::of([0; 4]);
 let starved = k.serve_syllabus(&[addr.as_bytes().to_vec()], voice, 1 << 20);

@@ -57,9 +57,11 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.
-                (court, carriage, k.clock(genesis), k.treasury().economy())
+                // 2026-09-29 — and its acts and metabolism.
+                (court, carriage, k.clock(genesis), k.treasury().economy(), k.acts_reading())
             });
-            let standing = standing.map(|(court, carriage, clock, economy)| {
+            let standing = standing.map(|(court, carriage, clock, economy, acts)| {
+                observe::replace(own, Reading::Acts(Box::new(acts)));
                 observe::replace(own, Reading::Carriage(carriage));
                 observe::replace(own, Reading::Clock(observe::Clock::Court(Box::new(clock))));
                 if let Some(e) = economy {

@@ -218,6 +218,8 @@ pub(crate) fn render(addr: &str, total: u64, held: &[observe::Held]) -> Vec<Stri
                 Reading::Carriage(c) => carriage(c),
                 Reading::Clock(c) => clock(c),
                 Reading::Economy(e) => economy(e),
+                Reading::Senses(f) => f.lines().into_iter().map(|l| format!("  {l}")).collect(),
+                Reading::Acts(a) => a.lines().into_iter().map(|l| format!("  {l}")).collect(),
             });
         }
     }

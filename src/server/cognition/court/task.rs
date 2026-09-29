@@ -53,6 +53,31 @@ impl Kernel {
     /// reason, coordinate and obstruction kind (78.9). Grids are never
     /// compared: a raster that matches is no proof of a motion.
     pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
+        use crate::observe::{count, JUDGED};
+        let verdict = self.judge_solve_read(rule, withheld);
+        // THE ACT, COUNTED WHERE IT HAPPENED: the verdict, a refusal by kind
+        // (78.9, `ObstructionKind::ALL`'s order). A solved verdict is
+        // counted first or again where it is paid (`pay_solve`).
+        let name = match &verdict {
+            SolveVerdict::Solved { .. } => None,
+            SolveVerdict::Refused(r) => Some(match r.obstruction.kind() {
+                crate::transducer::sentence::ObstructionKind::P => "refused P",
+                crate::transducer::sentence::ObstructionKind::D => "refused D",
+                crate::transducer::sentence::ObstructionKind::C => "refused C",
+                crate::transducer::sentence::ObstructionKind::I => "refused I",
+                crate::transducer::sentence::ObstructionKind::N => "refused N",
+                crate::transducer::sentence::ObstructionKind::Unclassified => "refused ?",
+            }),
+            SolveVerdict::NotARule => Some("not a rule"),
+            SolveVerdict::Unverifiable => Some("unverifiable"),
+        };
+        if let Some(name) = name {
+            count(&mut self.acts.judged, &JUDGED, name);
+        }
+        verdict
+    }
+
+    fn judge_solve_read(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
         if withheld.is_empty() {
             return SolveVerdict::Unverifiable;
         }
@@ -101,12 +126,35 @@ impl Kernel {
                 self.treasury.mint_claim(&voices, held, settled);
             }
         }
+        let name = if first { "first closures" } else { "closures again" };
+        crate::observe::count(&mut self.acts.judged, &crate::observe::JUDGED, name);
         if !first || pay.iter().all(|&x| x == 0) {
             return [0; 4];
         }
         self.append_step(crate::chronometry::ActKind::Settled, task, voice);
         let settled = self.anchor();
-        self.treasury.settle_solve(voice, pay, settled)
+        let paid = self.treasury.settle_solve(voice, pay, settled);
+        if let Some(total) = crate::core::lanes::lanes_add(self.acts.paid, paid) {
+            self.acts.paid = total;
+        }
+        paid
+    }
+
+    /// THIS COURT'S ACTS AND ITS METABOLISM, read at the question: the
+    /// reserve as it stands and its own ledger, and the acts as counted.
+    pub fn acts_reading(&self) -> crate::observe::Acts {
+        let (drawn, restored, refused) = self.physics.reserve.ledger();
+        crate::observe::Acts {
+            k: self.chain().head_k(),
+            reserve: self.physics.reserve.lanes(),
+            drawn,
+            restored,
+            refused,
+            syllabus: self.acts.syllabus,
+            fetch: self.acts.fetch,
+            judged: self.acts.judged,
+            paid: self.acts.paid,
+        }
     }
 
 }

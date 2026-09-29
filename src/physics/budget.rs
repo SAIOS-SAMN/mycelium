@@ -80,6 +80,13 @@ impl Budget {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Reserve {
     lanes: [u64; 4],
+    /// THE RESERVE'S OWN LEDGER: what it gave, per lane; what came back;
+    /// and how many draws it refused. Carried by the reserve itself so its
+    /// flux reads wherever it lives — the thread-local ledger (`note_draw`)
+    /// sees only its own thread, and a court's reserve is drawn on many.
+    drawn: [u64; 4],
+    restored: [u64; 4],
+    refused: u64,
 }
 
 /// WHICH LANE REFUSED A DRAW. Not a boolean: "the mind is out of
@@ -99,11 +106,24 @@ pub struct Depleted {
 
 impl Reserve {
     pub fn of(lanes: [u64; 4]) -> Reserve {
-        Reserve { lanes }
+        Reserve { lanes, drawn: [0; 4], restored: [0; 4], refused: 0 }
     }
 
     pub fn lanes(&self) -> [u64; 4] {
         self.lanes
+    }
+
+    /// THE LEDGER: drawn and restored per lane, and draws refused.
+    pub fn ledger(&self) -> ([u64; 4], [u64; 4], u64) {
+        (self.drawn, self.restored, self.refused)
+    }
+
+    /// A lane total stepped, or left where it was past its carrier (the
+    /// global ledger counts that refusal).
+    fn book(total: &mut [u64; 4], by: &[u64; 4]) {
+        for (t, b) in total.iter_mut().zip(by) {
+            crate::physics::metabolism::step_or_refuse(t, *b);
+        }
     }
 
     /// Is this reserve spent on every lane? A mind with nothing left
@@ -127,6 +147,7 @@ impl Reserve {
                 // D2 — the refusal is the metabolic reading, counted
                 // before the return so a depleted lane is visible at all.
                 crate::physics::metabolism::note_draw(&cost, false);
+                self.refused += 1;
                 return Err(Depleted { lane: i, asked: want, held });
             }
         }
@@ -134,6 +155,7 @@ impl Reserve {
             *l -= c;
         }
         crate::physics::metabolism::note_draw(&cost, true);
+        Self::book(&mut self.drawn, &cost);
         Ok(())
     }
 
@@ -146,6 +168,7 @@ impl Reserve {
             crate::physics::metabolism::step_or_refuse(l, *c);
         }
         crate::physics::metabolism::note_restore(&cost);
+        Self::book(&mut self.restored, &cost);
     }
 
     /// DRAIN: take what each lane holds of `cost`, up to what it holds — the
@@ -159,6 +182,7 @@ impl Reserve {
             *l -= t;
         }
         crate::physics::metabolism::note_draw(&taken, true);
+        Self::book(&mut self.drawn, &taken);
         std::array::from_fn(|l| cost[l] - taken[l])
     }
 }

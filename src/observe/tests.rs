@@ -797,6 +797,75 @@ fn an_award_is_measured_flat_in_its_word() {
 /// THEM, and a node citing a word carries the same bytes whatever the size
 /// of the word: the citation is the word's fiber and admitting stamp, never
 /// a copy of it.
+/// THE FACULTIES AND THE ACTS TRAVEL WHOLE (2026-09-29): a mind's `Senses`
+/// and a court's `Acts` go out in a push and come back as they were, every
+/// counter in its faculty; a reading of either kind later stands.
+#[test]
+fn the_senses_and_the_acts_travel_whole() {
+    let mut senses = Senses { k: 7, ..Senses::default() };
+    for (i, x) in senses.sight.iter_mut().chain(senses.cognition.iter_mut()).chain(senses.carriers.iter_mut()).enumerate() {
+        *x = 300 + i as u64;
+    }
+    senses.speech = [1, 2, 3, 4, 5];
+    senses.hearing = [6, 7, 8];
+    senses.language = [9, 10, 11, 12, 13];
+    senses.understanding = [14, 15, 16, 17];
+    senses.solving = [18, 19, 20, 21];
+    senses.paid = [22, 23, 24, 25];
+    let acts = Acts {
+        k: 9,
+        reserve: [1, 2, 3, 4],
+        drawn: [5, 6, 7, 8],
+        restored: [9, 10, 11, 12],
+        refused: 13,
+        syllabus: [14, 15, 16, 17, 18, 19, 20],
+        fetch: [21, 22],
+        judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
+        paid: [33, 34, 35, 36],
+    };
+    let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
+    let push = encode_push(&vk(8), &all).expect("the push writes");
+    assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(8), all)));
+    assert_eq!(senses.read("hearing", "words admitted"), Some(8), "read by its own name");
+    assert_eq!(senses.read("solving", "refused"), Some(20));
+    assert_eq!(senses.read("sight", "no such"), None, "a name the table does not hold reads nothing");
+}
+
+/// EVERY NAME A PRODUCER COUNTS UNDER IS ITS TABLE'S: `count` is silent on a
+/// name the table does not hold, so each name the producers use is pinned
+/// here, and a renamed slot fails this test rather than counting nothing.
+#[test]
+fn every_counted_name_is_its_table_s() {
+    fn holds<const N: usize>(table: &[&str; N], names: &[&str]) {
+        for n in names {
+            let mut slots = [0u64; N];
+            count(&mut slots, table, n);
+            assert_eq!(slots.iter().sum::<u64>(), 1, "{n} is a slot of its table");
+        }
+    }
+    holds(&HEARING, &["pages", "words heard", "words admitted"]);
+    holds(
+        &SYLLABUS,
+        &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "ended: reserve"],
+    );
+    holds(&FETCH, &["words served", "ended: reserve"]);
+    holds(
+        &JUDGED,
+        &[
+            "first closures",
+            "closures again",
+            "refused P",
+            "refused D",
+            "refused C",
+            "refused I",
+            "refused N",
+            "refused ?",
+            "not a rule",
+            "unverifiable",
+        ],
+    );
+}
+
 #[test]
 fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
     use crate::chronometry::{ActKind, Cite, ReceiptChain, Stamp};

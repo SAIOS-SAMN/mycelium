@@ -146,6 +146,29 @@ impl Kernel {
     /// is MISSED — consumed from the window and re-queued by the caller. A
     /// word served is sealed as a Syllabus act (45.1) and carries that stamp.
     pub fn serve_syllabus(&mut self, candidates: &[Vec<u8>], voice: [u8; 32], bytes: usize) -> ServedPage {
+        use crate::observe::{count, SYLLABUS};
+        let page = self.serve_syllabus_page(candidates, voice, bytes);
+        // THE ACT, COUNTED WHERE IT HAPPENED: one page, its words, its
+        // misses, and where it ended.
+        let t = &mut self.acts.syllabus;
+        count(t, &SYLLABUS, "pages");
+        for _ in &page.words {
+            count(t, &SYLLABUS, "words served");
+        }
+        for _ in &page.missed {
+            count(t, &SYLLABUS, "words missed");
+        }
+        let end = match page.end {
+            PageEnd::Order => "ended: order",
+            PageEnd::Frame => "ended: frame",
+            PageEnd::Count => "ended: count",
+            PageEnd::Reserve(_) => "ended: reserve",
+        };
+        count(t, &SYLLABUS, end);
+        page
+    }
+
+    fn serve_syllabus_page(&mut self, candidates: &[Vec<u8>], voice: [u8; 32], bytes: usize) -> ServedPage {
         let mut page = ServedPage::default();
         let mut used = 0usize;
         for addr in candidates {
@@ -238,9 +261,11 @@ impl Kernel {
             // word's magnitude drawn from this court's reserve per lane; a
             // lane that cannot fund it ends the page.
             if self.physics.reserve.draw(mag).is_err() {
+                crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "ended: reserve");
                 break;
             }
             used += width;
+            crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "words served");
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
         }
         out

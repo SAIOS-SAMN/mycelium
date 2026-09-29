@@ -391,6 +391,10 @@ pub struct Kernel {
     pub(crate) quote_cursor: Option<Vec<u8>>,
     /// Polytonic kinematic pressure + torsion (per lane).
     pub(crate) physics: crate::physics::Physics,
+    /// THIS COURT'S ACTS AS THEY HAPPEN (2026-09-29): its syllabus and fetch
+    /// pages and where each ended, and the solves it judged — kept by the
+    /// handlers themselves, read into `observe::Acts` at the question.
+    pub(crate) acts: crate::observe::ActsTally,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     pub(crate) treasury: crate::economy::Treasury,
     /// This hypha's verifying key.

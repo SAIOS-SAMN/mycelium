@@ -37,12 +37,17 @@ pub const TAG_PHASE: u8 = 13;
 pub const TAG_CARRIAGE: u8 = 14;
 pub const TAG_CLOCK: u8 = 15;
 pub const TAG_ECONOMY: u8 = 16;
+/// 2026-09-29 — a mind's faculties, and a court's acts and metabolism.
+pub const TAG_SENSES: u8 = 17;
+pub const TAG_ACTS: u8 = 18;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 16] = [
+pub const READING_NAMES: [(&str, u8); 18] = [
     ("clock", TAG_CLOCK),
     ("economy", TAG_ECONOMY),
+    ("senses", TAG_SENSES),
+    ("acts", TAG_ACTS),
     ("planes", TAG_PLANES),
     ("loss", TAG_LOSS),
     ("memory", TAG_MEMORY),
@@ -721,6 +726,11 @@ pub enum Reading {
     Clock(super::Clock),
     /// EC1, 78.33 — a court's payments by proof of work, per lane.
     Economy(super::Economy),
+    /// A mind's faculties: sight, cognition, speech, hearing, language,
+    /// understanding, solving, and its growing carriers.
+    Senses(Box<super::Senses>),
+    /// A court's acts and metabolism.
+    Acts(Box<super::Acts>),
 }
 
 impl Reading {
@@ -742,6 +752,8 @@ impl Reading {
             Reading::Carriage(_) => TAG_CARRIAGE,
             Reading::Clock(_) => TAG_CLOCK,
             Reading::Economy(_) => TAG_ECONOMY,
+            Reading::Senses(_) => TAG_SENSES,
+            Reading::Acts(_) => TAG_ACTS,
         }
     }
 
@@ -778,6 +790,10 @@ impl Reading {
             // A court's economy is read off its journal whole; the later
             // stands.
             (Reading::Economy(a), Reading::Economy(b)) => *a = b.clone(),
+            // A mind's faculties and a court's acts are read whole at their
+            // `K`; the later stands.
+            (Reading::Senses(a), Reading::Senses(b)) => *a = b.clone(),
+            (Reading::Acts(a), Reading::Acts(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -825,6 +841,14 @@ impl Reading {
                 r.put(out);
                 Some(())
             }
+            Reading::Senses(r) => {
+                r.put(out);
+                Some(())
+            }
+            Reading::Acts(r) => {
+                r.put(out);
+                Some(())
+            }
         }
     }
 
@@ -848,6 +872,8 @@ impl Reading {
             TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
             TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
             TAG_ECONOMY => Some(Reading::Economy(super::Economy::take(b, p)?)),
+            TAG_SENSES => Some(Reading::Senses(Box::new(super::Senses::take(b, p)?))),
+            TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             _ => None,
         }
     }

@@ -5,6 +5,82 @@ use crate::client::sdk::*;
 use crate::observe::{self, Loss, Memory, Planes, Reading, Source};
 
 impl Entity {
+    /// THIS MIND'S FACULTIES AT ITS OWN `K` (2026-09-29): each read off the
+    /// one carrier that holds it (law 12) — sight off the perception's
+    /// resonance tally, cognition off the contemplation, speech off the
+    /// transcription and the utterances, hearing off the pages and words
+    /// that reached the mind, language and learning off the genome and the
+    /// dialect, understanding off the pivots and the glue, solving off the
+    /// court's verdicts, and the growing carriers' sizes — the leak signals.
+    pub fn senses(&self, learning: &observe::Learning) -> observe::Senses {
+        let c = &self.contemplation;
+        let r = &c.resonance;
+        let refused_by_gate =
+            [r.monocular, r.collapsed, r.unbalanced, r.destabilizing, r.nonrigid, r.unsucceeded, r.torqued].iter().sum();
+        let (mut key_bytes, mut bodies, mut grounded) = (0u64, 0u64, 0u64);
+        for (k, b) in c.bubbles.scoped() {
+            key_bytes += k.len() as u64;
+            bodies += b.spores.scoped().map(|(_, on)| on.len() as u64).sum::<u64>();
+            grounded += u64::from(b.ground.is_some());
+        }
+        let merges = self.merge_reading();
+        let t = &self.transcription;
+        let s = &self.solves;
+        observe::Senses {
+            k: self.own_k(),
+            sight: [
+                r.circuits,
+                r.cells,
+                r.closes,
+                r.edges,
+                r.scene_motions,
+                r.predicted,
+                r.consolidated,
+                r.reflexive,
+                refused_by_gate,
+                r.demanded,
+            ],
+            cognition: [
+                c.len() as u64,
+                grounded,
+                c.closed_thoughts,
+                merges.merged,
+                c.torsion_merges,
+                merges.stayed,
+                c.fills,
+                c.classes,
+            ],
+            speech: [self.uttered_n() as u64, t.spelled, t.adjoined, t.ineffable, t.unread],
+            hearing: self.hearing,
+            language: [
+                self.epigenome.dialect_len() as u64,
+                self.epigenome.genome_len() as u64,
+                learning.installed,
+                learning.closing,
+                learning.adjoined_by_closure,
+            ],
+            understanding: [
+                self.pivot_reading().derivable,
+                self.glued.len() as u64,
+                self.obstructions.len() as u64,
+                self.discordance as u64,
+            ],
+            solving: [s.first, s.again, s.refused.iter().sum(), s.unruled],
+            paid: s.paid,
+            carriers: [
+                c.len() as u64,
+                key_bytes,
+                bodies,
+                c.pending_rewrites.len() as u64,
+                c.grounds.len() as u64,
+                c.cavity.len() as u64,
+                c.docket_reading().open,
+                self.epigenome.dialect_len() as u64,
+                self.epigenome.genome_len() as u64,
+            ],
+        }
+    }
+
     /// FOLD THIS STROKE'S INSTRUMENTS AND PUSH THE TOTALS. The tallies are
     /// taken here, by their one reader (law 12): the plane census, what
     /// perception passed over, the mint's gates, and the cover's — which the
@@ -56,6 +132,8 @@ impl Entity {
                 radius: learning.radius,
             })),
         );
+        // THE FACULTIES, read off this mind's own carriers at its `K`.
+        observe::publish(me, Reading::Senses(Box::new(self.senses(&learning))));
         observe::publish(me, Reading::Learning(learning));
         // PL1 — THE LAST PERCEPT'S CIRCUITS, step by step, where a percept
         // read any since the last push; otherwise the circuits held stand.

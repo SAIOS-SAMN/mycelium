@@ -221,6 +221,8 @@ impl Entity {
     }
 
     pub(crate) fn absorb_class_page(&mut self, body: &[u8], _from: [u8; 32], budget: &mut crate::physics::Budget) {
+        // HEARING — one page heard, on every path a page arrives by.
+        crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "pages");
         let pages = dialogue::decode_class_records(body);
         let mut recs = Vec::new();
         for p in pages {
@@ -382,10 +384,13 @@ impl Entity {
         let k = self.own_k();
         // The caller's stroke (65.5): the page is learned inside its act.
         let heard = self.epigenome.learn_at(taught, k, self.now_tu(), budget);
+        // HEARING — every word heard passes here; the ones admitted too.
+        crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "words heard");
         // 24.3: a page learned is a mode of the stroke's outcome, measured
         // by what the page brought; a page refused on replay measures
         // nothing. The stroke takes the measure once.
         if heard.is_some() {
+            crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "words admitted");
             crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);
         }
         heard
