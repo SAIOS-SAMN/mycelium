@@ -515,6 +515,9 @@ pub struct Entity {
     /// The rule the court last refused for each task, by task id — so the
     /// same rule is not sent again (`Entity::solve_task`). One per task.
     pub(crate) solve_refused: crate::network::nerve::Keyed<Vec<u8>>,
+    /// 78.55 — the colour relations this mind perceived that its ruled
+    /// colour words already derived (`colour_derivation`).
+    pub(crate) colour_derived: u64,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; 3],

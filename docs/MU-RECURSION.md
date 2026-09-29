@@ -18390,11 +18390,38 @@ speak two words for one motion.
 - ACCEPTANCE, on engine values: the task in every frame and palette reads
   the identical grids, mints the identical word, and receives the identical
   verdict and price.
+- SEE 78.55 for what the colour words do once they stand.
 - WHAT IT DOES NOT SETTLE: a relation that is only meaningful in one frame
   (a scene with a physical "down") is still read identically in all eight —
   the words carry the motion relative to the task's own geometry, which is
   the gauge-free reading; whether any corpus family breaks that is a reading
   for the fleet, never a reason to un-fix the frame (77(1)).
+
+### 78.55 The colour words compose: a mind derives a colour relation its ruled words imply (PROPOSED by the implementor 2026-09-30; the operator rules)
+
+A colour word is a partial injection of the hues that stand (78.53). Partial
+injections have an exact algebra — the SYMMETRIC INVERSE MONOID: every
+element has its inverse on its image, and `after ∘ first` is defined on a
+hue exactly where `first` moves it and `after` moves what it became. A
+product of partial injections is one; nothing merges, and nothing is said of
+a hue neither word speaks of (78.45).
+
+- THE LANGUAGE DERIVES (`compose_fibre`, `invert_fibre`,
+  `Entity::colour_derivation`): before a mind speaks the colour relation it
+  perceived, it asks whether its RULED colour words — its genome, never its
+  dialect — already derive it: one of them, an inverse, or two composed.
+  Where they do, the mind understood the scene from its language, a
+  deduction and not an observation, counted on the Senses (`understanding:
+  colour derived`). It still speaks the word: the court rules by evidence,
+  and a derivation is the mind's, not the court's.
+- BOUNDED: the candidates are the ruled colour words and their inverses,
+  pairs at most, each composition one read drawn from the stroke; a spent
+  stroke derives nothing and says so.
+- WHAT IT OPENS: a derivation is a CITATION of words by their coordinates —
+  the next step is the word carrying the derivation it was reached by, so
+  the court can re-derive it from ruled words alone (law 8: the court
+  composes what a word cites, it never peels), and a relation no scene
+  witnessed but the language implies can stand. Not built.
 
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 

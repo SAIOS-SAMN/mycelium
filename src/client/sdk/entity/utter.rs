@@ -446,11 +446,49 @@ impl Entity {
         if self.already_taught_addr(addr.as_bytes()) || self.epigenome.holds(addr.as_bytes()) {
             return None;
         }
+        // 78.55 — DID THE LANGUAGE ALREADY SAY IT? A relation this mind has
+        // not heard may still be DERIVED from the colour words it holds: one
+        // of them, an inverse, or two composed. Derived, the mind understood
+        // the scene from its language — a deduction, not an observation.
+        if self.colour_derivation(&sigma, budget) {
+            self.colour_derived += 1;
+        }
         let codes = self.speak_with(std::slice::from_ref(&word), train, task, budget).ok()?;
         match codes.as_slice() {
             [code] => Some(*code),
             _ => None,
         }
+    }
+
+    /// 78.55 — WHETHER THIS MIND'S COLOUR WORDS DERIVE `sigma`: a genome
+    /// colour word, its inverse, or the composite of two of those, equal to
+    /// it. The candidates are the court-ruled colour words it holds (its
+    /// genome, never its dialect: a derivation stands on ruled language),
+    /// and each composition draws one read from the stroke; a spent stroke
+    /// derives nothing, which is the honest reading of a search not made.
+    pub fn colour_derivation(&self, sigma: &[(u8, u8)], budget: &mut crate::physics::Budget) -> bool {
+        use crate::transducer::element::{compose_fibre, invert_fibre};
+        let mut held: Vec<Vec<(u8, u8)>> = Vec::new();
+        for w in self.epigenome.genome_words().filter(|w| w.is_colour_word()) {
+            if let Some(l) = w.letters() {
+                held.push(l.sigma.clone());
+                held.push(invert_fibre(&l.sigma));
+            }
+        }
+        if held.iter().any(|h| h.as_slice() == sigma) {
+            return true;
+        }
+        for a in &held {
+            for b in &held {
+                if !budget.spend() {
+                    return false;
+                }
+                if compose_fibre(a, b).is_some_and(|c| c.as_slice() == sigma) {
+                    return true;
+                }
+            }
+        }
+        false
     }
 
     pub(crate) fn already_taught_addr(&self, addr: &[u8]) -> bool {

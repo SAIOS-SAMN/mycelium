@@ -42,7 +42,7 @@ pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
 /// What a mind holds as LANGUAGE.
 pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
 /// What a mind UNDERSTOOD.
-pub const UNDERSTANDING: [&str; 4] = ["derivable", "glued", "obstructed", "discordant strata"];
+pub const UNDERSTANDING: [&str; 5] = ["derivable", "glued", "obstructed", "discordant strata", "colour derived"];
 /// What a mind's solves came to (the actions' physics).
 pub const SOLVING: [&str; 7] =
     ["first closures", "closures again", "refused", "unruled", "unminted", "refuted at home", "withheld again"];

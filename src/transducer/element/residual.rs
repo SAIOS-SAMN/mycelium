@@ -318,6 +318,30 @@ pub fn is_fibre_relation(sigma: &[(u8, u8)]) -> bool {
         })
 }
 
+/// 78.55 — COLOUR WORDS COMPOSE, in the algebra partial injections have:
+/// the SYMMETRIC INVERSE MONOID. `after ∘ first` is defined on a hue
+/// exactly where `first` moves it and `after` moves what it became — never
+/// on a hue either word says nothing about, so nothing is guessed (78.45)
+/// and no two hues merge: a product of partial injections is one. A hue
+/// the composite returns to itself moves nothing and is dropped; `None`
+/// where the composite moves no hue. Exact, on the sensor's labels.
+pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let mut out: Vec<(u8, u8)> = first
+        .iter()
+        .filter_map(|&(f, t)| after.iter().find(|(g, _)| *g == t).map(|&(_, u)| (f, u)))
+        .filter(|&(f, u)| f != u)
+        .collect();
+    out.sort_unstable();
+    is_fibre_relation(&out).then_some(out)
+}
+
+/// The inverse of a colour relation on its image: each moved hue sent back.
+pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    let mut out: Vec<(u8, u8)> = sigma.iter().map(|&(f, t)| (t, f)).collect();
+    out.sort_unstable();
+    out
+}
+
 impl Element {
     /// Whether this word is a colour word (`colour_word`): a connection
     /// whose only content is a fibre relation — no motion, no chain, a

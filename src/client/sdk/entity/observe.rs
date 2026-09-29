@@ -70,6 +70,7 @@ impl Entity {
                 self.glued.len() as u64,
                 self.obstructions.len() as u64,
                 self.discordance as u64,
+                self.colour_derived,
             ],
             solving: [s.first, s.again, s.refused.iter().sum(), s.unruled, s.unminted, s.refuted, s.withheld_again],
             paid: s.paid,

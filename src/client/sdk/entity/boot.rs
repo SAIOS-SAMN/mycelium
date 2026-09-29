@@ -41,6 +41,7 @@ impl Entity {
             transcription: crate::observe::TranscriptionTally::default(),
             solves: crate::observe::SolveTally::default(),
             solve_refused: crate::network::nerve::Keyed::new(),
+            colour_derived: 0,
             hearing: [0; 3],
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),
