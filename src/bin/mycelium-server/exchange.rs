@@ -99,8 +99,12 @@ impl Clone for Mesh {
 /// the nerve along one deterministic path and never as a broadcast.
 pub(crate) enum RootHear {
     Known,
+    /// The task's first solver here.
     First,
+    /// The second: the root is consilient from here.
     Second,
+    /// A third or later solver of a root already consilient.
+    Joined,
 }
 
 /// Record a root by (task, solver) with its stamp. A solver already held
@@ -113,10 +117,9 @@ pub(crate) fn note_root(roots: &mut Keyed<Keyed<u64>>, task: impl AsRef<[u8]>, s
                 RootHear::Known
             } else {
                 v.insert(solver, stamp);
-                if v.len() == 2 {
-                    RootHear::Second
-                } else {
-                    RootHear::First
+                match v.len() {
+                    2 => RootHear::Second,
+                    _ => RootHear::Joined,
                 }
             }
         }

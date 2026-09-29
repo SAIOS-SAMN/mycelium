@@ -138,3 +138,36 @@ pub fn decode_solve_receipt(body: &[u8]) -> Option<(u8, [u64; 4])> {
     let mu = read_mu(body, &mut p)?;
     Some((code, mu))
 }
+
+/// WHY A SOLVE WAS REFUSED, as the court read it (the actions' physics): the
+/// replay's reason and its obstruction kind (78.9), carried behind the
+/// receipt so the voice learns where its rule broke. A receipt reader that
+/// knows only `[code][μ]` reads the prefix and is unchanged.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SolveRefusal {
+    pub reason: Vec<u8>,
+    pub kind: u8,
+}
+
+/// `[code][μ 4×u64]` then, for a refusal, `[kind u8][reason, length-prefixed]`.
+pub fn encode_solve_verdict(code: u8, mu: &[u64; 4], refusal: Option<&SolveRefusal>) -> Vec<u8> {
+    let mut out = encode_solve_receipt(code, mu);
+    if let Some(r) = refusal {
+        out.push(r.kind);
+        crate::transducer::address::put_key_bytes(&mut out, &r.reason);
+    }
+    out
+}
+
+/// The receipt and, where one rode behind it, the refusal.
+pub fn decode_solve_verdict(body: &[u8]) -> Option<(u8, [u64; 4], Option<SolveRefusal>)> {
+    let (code, mu) = decode_solve_receipt(body)?;
+    let mut p = 1 + 32;
+    if p == body.len() {
+        return Some((code, mu, None));
+    }
+    let kind = *body.get(p)?;
+    p += 1;
+    let reason = crate::transducer::address::take_key_bytes(body, &mut p)?;
+    (p == body.len()).then_some((code, mu, Some(SolveRefusal { reason, kind })))
+}

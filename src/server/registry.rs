@@ -18,17 +18,13 @@ pub enum TaskState {
     Settled(u64),
 }
 
-/// What a submission earned — the decay made explicit.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SolveYield {
-    /// First verified solve: the full bounty (per-lane μ⃗ of the task's
-    /// boundary tension).
-    Bounty([u64; 4]),
-    /// A replay of settled work: the verification floor — one unit on the
-    /// residual lane, the attestation fee, nothing more.
-    VerifyFloor,
-    /// Wrong answer or unknown task: nothing (and the door fee already paid).
-    Nothing,
+/// A CLOSURE RECORDED: the task's first, or a closure of a task already
+/// closed (verified again, and paid nothing — the decay is the discharge
+/// itself, never a floor).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Closure {
+    First,
+    Again,
 }
 
 pub struct TaskRegistry {
@@ -84,24 +80,9 @@ pub fn task_id(task: &Task) -> Option<Address> {
     Some(Address::new(buf))
 }
 
-/// The task's boundary tension — the per-lane volume of its train
-/// coboundaries, MEASURED across all four lanes (spatial/gauge/residual/
-/// shell) so the bounty prices the axes the work actually occupies instead
-/// of funneling every task onto the residual scalar.
-pub fn task_tension(task: &Task) -> [u64; 4] {
-    let mut mu = [0u64; 4];
-    for (a, b) in &task.train {
-        if let Some(crate::arc::Refined { delta: chain, .. }) = refine_delta(a, b) {
-            let lanes = crate::transducer::element::measure_lanes(&chain);
-            for l in 0..4 {
-                #[expect(clippy::disallowed_methods, reason = "rule 11 — MEASURE_BOUND (element::carrier): a sum of chain measures over resident chains cannot pass u64")]
-                let m = mu[l].saturating_add(lanes[l]);
-                mu[l] = m;
-            }
-        }
-    }
-    mu
-}
+// `task_tension` (the train's coboundary volume, the old first-solve
+// bounty) is retired: a solve is priced by what its rule discharges on the
+// withheld pairs (`Kernel::judge_solve`), never by the size of the train.
 
 impl Default for TaskRegistry {
     fn default() -> Self {
@@ -327,38 +308,34 @@ impl TaskRegistry {
         restored
     }
 
-    /// VERIFY-AND-SETTLE a submission: predictions must match the held test
-    /// outputs EXACTLY (the server is the authority — it holds the answers
-    /// for its registered corpus). First verified solve → full bounty;
-    /// replays → the verification floor; wrong or unknown → nothing.
-    pub fn settle(&mut self, id: &[u8], predictions: &[Grid]) -> SolveYield {
-        let Some(&i) = self.by_id.get(id) else {
-            return SolveYield::Nothing; // no authoritative origin — rejected
-        };
-        let Some(entry) = self.tasks.get_mut(i) else {
-            return SolveYield::Nothing;
-        };
-        let expected: Vec<&Grid> =
-            entry.1.test.iter().filter(|(_, y)| !y.is_empty()).map(|(_, y)| y).collect();
-        if expected.is_empty()
-            || predictions.len() != expected.len()
-            || predictions.iter().zip(&expected).any(|(p, e)| p != *e)
-        {
-            return SolveYield::Nothing;
-        }
-        match &mut entry.2 {
+    /// IS THIS TASK STILL OPEN — would a closure now be its first? `None`
+    /// where this book holds no such task (no authoritative origin).
+    pub fn open(&self, id: &[u8]) -> Option<bool> {
+        let &i = self.by_id.get(id)?;
+        self.tasks.get(i).map(|(_, _, s)| *s == TaskState::Unsolved)
+    }
+
+    /// RECORD A CLOSURE THE COURT RULED (the actions' physics, 2026-09-29).
+    /// The registry never judges: the court replayed the solve's rule on the
+    /// withheld pairs (`Kernel::judge_solve`) and paid it before this is
+    /// asked, so a closure is recorded only after its payment and none is
+    /// lost between the two. The first closes the task; later ones are
+    /// counted. `None` where this book holds no such task.
+    pub fn close(&mut self, id: &[u8]) -> Option<Closure> {
+        let &i = self.by_id.get(id)?;
+        let entry = self.tasks.get_mut(i)?;
+        Some(match &mut entry.2 {
             TaskState::Unsolved => {
-                let mu = task_tension(&entry.1);
                 entry.2 = TaskState::Settled(1);
-                SolveYield::Bounty(mu)
+                Closure::First
             }
             TaskState::Settled(n) => {
                 #[expect(clippy::disallowed_methods, reason = "rule 11 — one per verified solve: a u64 cannot pass 2⁶⁴ events")]
                 let next = n.saturating_add(1);
                 *n = next;
-                SolveYield::VerifyFloor
+                Closure::Again
             }
-        }
+        })
     }
 }
 
@@ -373,11 +350,12 @@ mod tests {
         }
     }
 
-    /// THE ANTI-REPLAY COLLAPSE: identity is content (re-registration is
-    /// idempotent), the first verified solve takes the bounty, every replay
-    /// takes only the verification floor, and a wrong answer takes nothing.
+    /// THE REGISTRY RECORDS, NEVER JUDGES: identity is content
+    /// (re-registration is idempotent); the first ruled closure closes the
+    /// task, later ones are counted again; a task this book does not hold has
+    /// no closure.
     #[test]
-    fn first_solve_earns_the_bounty_and_replays_collapse_to_the_floor() {
+    fn the_first_closure_closes_the_task_and_later_ones_are_again() {
         let mut reg = TaskRegistry::new();
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         assert_eq!(
@@ -386,19 +364,11 @@ mod tests {
             "content is identity — no re-feeding"
         );
         assert_eq!(reg.len(), 1);
-        let wrong = vec![vec![vec![9u8, 9], vec![9, 9]]];
-        assert_eq!(reg.settle(&id, &wrong), SolveYield::Nothing, "wrong earns nothing");
-        let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
-        match reg.settle(&id, &right) {
-            SolveYield::Bounty(mu) => assert!(mu.iter().any(|&m| m > 0), "the first solve prices the tension"),
-            other => panic!("first verified solve must take the bounty, got {other:?}"),
-        }
-        assert_eq!(
-            reg.settle(&id, &right),
-            SolveYield::VerifyFloor,
-            "the replay collapses to the maintenance floor"
-        );
-        assert_eq!(reg.settle(&[9u8; 32], &right), SolveYield::Nothing, "no origin, no yield");
+        assert_eq!(reg.open(&id), Some(true), "open before any closure");
+        assert_eq!(reg.close(&id), Some(Closure::First), "the first ruled closure");
+        assert_eq!(reg.open(&id), Some(false));
+        assert_eq!(reg.close(&id), Some(Closure::Again), "a closure of a closed task");
+        assert_eq!(reg.close(&[9u8; 32]), None, "no origin, no closure");
         assert_eq!(reg.unsolved(), 0);
     }
 
@@ -409,18 +379,13 @@ mod tests {
     fn settled_states_survive_the_restart_overlay() {
         let mut reg = TaskRegistry::new();
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
-        let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
-        assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
+        assert_eq!(reg.close(&id), Some(Closure::First));
         let snap = reg.snapshot().expect("the snapshot writes");
 
         let mut reborn = TaskRegistry::new();
         reborn.register(toy_task()); // corpus re-registration at boot
         assert_eq!(reborn.overlay(&snap), 1, "one settled state restored");
-        assert_eq!(
-            reborn.settle(&id, &right),
-            SolveYield::VerifyFloor,
-            "the restart must not re-mint the bounty"
-        );
+        assert_eq!(reborn.close(&id), Some(Closure::Again), "the restart must not re-open the task");
         assert_eq!(reborn.overlay(&[]), 0, "garbage snapshot restores nothing");
         // STD1 — an older layout, with `u32` counts, is refused whole.
         let mut older = snap.clone();
@@ -437,8 +402,7 @@ mod tests {
         let id = reg.register(toy_task()).expect("a grid pair's chain is A5's");
         let (d1, _) = reg.dispatch().expect("work exists");
         assert_eq!(d1, id);
-        let right = vec![vec![vec![0u8, 0], vec![2, 2]]];
-        assert!(matches!(reg.settle(&id, &right), SolveYield::Bounty(_)));
+        assert_eq!(reg.close(&id), Some(Closure::First));
         assert!(reg.dispatch().is_none(), "a settled book dispatches nothing");
     }
 

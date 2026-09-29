@@ -510,6 +510,8 @@ pub struct Entity {
     pub(crate) probes: crate::observe::ProbeTally,
     /// 78.52 — what this voice's closed thoughts became when transcribed.
     pub(crate) transcription: crate::observe::TranscriptionTally,
+    /// What this voice's solves came to, as the court ruled each.
+    pub(crate) solves: crate::observe::SolveTally,
     /// Rotating cursor for the bundle synthesis engine (reanchor / condense).
     /// Where the bundle circuit stood, as a coordinate — the same reading as
     /// [`refine_cursor`], and for the same reason: `% genome.len()` is a

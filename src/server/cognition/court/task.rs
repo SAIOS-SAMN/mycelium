@@ -5,6 +5,19 @@ use crate::cognition::*;
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
+/// WHAT THE COURT READ OF A SOLVE (the actions' physics).
+#[derive(Clone, Debug)]
+pub enum SolveVerdict {
+    /// Replayed clean on every withheld pair; `pay` what it discharged there.
+    Solved { pay: [u64; 4] },
+    /// Refused by the replay, with its reason, coordinate and kind (78.9).
+    Refused(crate::verdict::Refusal),
+    /// The solve carried no rule: a raster is no proof of a motion.
+    NotARule,
+    /// The task holds no withheld answer to replay against.
+    Unverifiable,
+}
+
 impl Kernel {
     pub fn bind_listing_task(&mut self, listing: impl AsRef<[u8]>, task: impl AsRef<[u8]>) {
         let listing = Address::from_bytes(listing);
@@ -29,76 +42,71 @@ impl Kernel {
         }
     }
 
-    /// Speak a submitted rule onto withheld tests and compare the grids exactly.
-    /// The rule's cited forms resolve through this kernel's ruled cover.
-    pub fn rule_matches_tests(&self, rule: &Element, tests: &crate::transducer::family::Family) -> bool {
-        if tests.is_empty() {
-            return false;
+    /// THE SOLVE'S VERDICT, BY ITS ACTION (the actions' physics, 2026-09-29).
+    /// A solve is a RULE, and the court replays it on the task's withheld
+    /// pairs as it replays any sentence on its family (`blind_replay_at`
+    /// with the family: its derivation re-derived, every pair closed — step
+    /// 7, `REFUSE_NOT_CLOSED`); the rule's cited forms resolve through this
+    /// kernel's ruled cover. Clean, the rule is priced by what it
+    /// discharges on those pairs, per lane (`measured_replay`, the deflation
+    /// paid only where a pair closes); refused, the refusal names its
+    /// reason, coordinate and obstruction kind (78.9). Grids are never
+    /// compared: a raster that matches is no proof of a motion.
+    pub fn judge_solve(&mut self, rule: &Element, withheld: &crate::transducer::family::Family) -> SolveVerdict {
+        if withheld.is_empty() {
+            return SolveVerdict::Unverifiable;
         }
-        let Some(sr) = sentence_rule_of(rule) else {
-            return false;
-        };
-        tests.iter().all(|(x, y)| {
-            crate::transducer::family::speak_rule(&sr, x, self)
-                .and_then(|s| s.grid())
-                .is_some_and(|g| g == *y)
-        })
+        if crate::transducer::sentence::from_element_form(rule).is_none() {
+            return SolveVerdict::NotARule;
+        }
+        let mut budget = self.physics.stroke();
+        let court: &Kernel = self;
+        if let Some(refusal) = crate::verdict::blind_replay_at(
+            rule,
+            &|a| court.resolve_form(a),
+            Some(withheld),
+            court,
+            &mut budget,
+        ) {
+            return SolveVerdict::Refused(refusal);
+        }
+        SolveVerdict::Solved { pay: self.measured_replay(rule, withheld) }
     }
 
-    /// Pay a verified solve from the escrow of listings that task deflated.
-    /// When a rule is supplied, the home speaks it on the withheld tests;
-    /// a full match binds the solve to those listings, draws their escrow,
-    /// and Offers the rule on the docket.
-    pub fn pay_solve(
-        &mut self,
-        task: &[u8],
-        voice: [u8; 32],
-        mu: [u64; 4],
-        rule: Option<&Element>,
-        tests: &crate::transducer::family::Family,
-    ) -> [u64; 4] {
-        if let Some(rule) = rule {
-            if !self.rule_matches_tests(rule, tests) {
-                return [0; 4];
-            }
-            self.docket_connection(rule, voice);
-            self.enter_offered(rule.address().as_bytes());
-        }
+    /// A SOLVE PAID (POUW, the actions' physics). The rule, verdict clean, is
+    /// docketed and offered. Every listing bound to the task that holds an
+    /// escrow is RELEASED TO THE VOICES ITS ESCROW NAMES — the solve
+    /// confirmed their claim — at a Settled act citing that listing
+    /// (`mint_claim`, split as the escrow's consilience says); never to the
+    /// solver for another voice's claim. The solver is minted what its rule
+    /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
+    /// only: a repeat is verified and pays nothing — no floor, the decay is
+    /// the discharge itself. Answers what the solver was paid, per lane.
+    pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> [u64; 4] {
+        self.docket_connection(rule, voice);
+        self.enter_offered(rule.address().as_bytes());
         // A task with no listings bound to it has none: the reading of
         // absence on a keyed carrier.
         let listings: Vec<Address> = match self.task_listings.get(task) {
             Some(l) => l.clone(),
             None => Vec::new(),
         };
-        // EC1: each bound listing's release is a Settled act citing that
-        // listing, authored by the solving voice and sealed first; its POUW
-        // rows stand at it, never at the act that escrowed the listing.
-        let mut paid = [0u64; 4];
         for addr in &listings {
             if self.treasury.escrow_of(addr.as_bytes()).is_none() {
                 continue;
             }
             self.append_step(crate::chronometry::ActKind::Settled, addr, voice);
             let settled = self.anchor();
-            if let Some(crate::economy::escrow::Escrowed { mu: held, .. }) = self.treasury.release_award(addr) {
-                let take = self.treasury.settle_solve(voice, held, settled);
-                for l in 0..4 {
-                    #[expect(
-                        clippy::disallowed_methods,
-                        reason = "rule 11 — each take is minted to the one solving voice, whose credit is checked, and nothing in this loop debits it: Σ take ≤ that voice's balance ≤ u64::MAX"
-                    )]
-                    let p = paid[l].saturating_add(take[l]);
-                    paid[l] = p;
-                }
+            if let Some(crate::economy::escrow::Escrowed { voices, mu: held, .. }) = self.treasury.release_award(addr) {
+                self.treasury.mint_claim(&voices, held, settled);
             }
         }
-        if paid.iter().all(|&x| x == 0) {
-            // No listing binds: the solve settles the task itself.
-            self.append_step(crate::chronometry::ActKind::Settled, task, voice);
-            let settled = self.anchor();
-            return self.treasury.settle_solve(voice, mu, settled);
+        if !first || pay.iter().all(|&x| x == 0) {
+            return [0; 4];
         }
-        paid
+        self.append_step(crate::chronometry::ActKind::Settled, task, voice);
+        let settled = self.anchor();
+        self.treasury.settle_solve(voice, pay, settled)
     }
 
 }

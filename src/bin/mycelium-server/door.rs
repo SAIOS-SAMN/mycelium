@@ -64,6 +64,11 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", task[0], task[1]);
                 speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
             }
+            // A further solver of a consilient root is spoken on, never
+            // re-dispatched as a first nor re-wound as a second.
+            RootHear::Joined => {
+                speak_root_locked(&door.router, &door.nerve_tx, &door.id, &task, &solver, Some(from), spoken_at);
+            }
         }
         let reply = {
             let Ok(roots) = door.roots.lock() else { return true };
@@ -144,99 +149,115 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: tid, outputs, rule: rule_bytes }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: tid, rule: rule_bytes, .. }) =
             dialogue::decode_solve(&frame.body)
         else {
             return true;
         };
-        let rule_elem = rule_bytes.as_ref().and_then(|b| {
+        let rule = rule_bytes.as_ref().and_then(|b| {
             let mut p = 0usize;
             mycelium::transducer::element::Element::from_bytes(b, &mut p)
         });
-        let withheld = {
+        let (withheld, open) = {
             let Ok(reg) = door.registry.lock() else { return true };
-            reg.withheld(&tid)
+            (reg.withheld(&tid), reg.open(&tid))
         };
-        if let Some(rule) = rule_elem.as_ref() {
-            // The rule's cited forms resolve through this hypha's ruled cover.
-            let matches = match door.kernel.lock() {
-                Ok(k) => k.rule_matches_tests(rule, &withheld),
-                Err(_) => false,
+        // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
+        // court replays the rule on the withheld pairs and prices what it
+        // discharges; the registry records the closure only after payment.
+        // The kind as its place in the reader's own order (78.9,
+        // `ObstructionKind::ALL`): every kind has one, a byte.
+        let refused = |reason: &str, kind: mycelium::transducer::sentence::ObstructionKind| {
+            use mycelium::transducer::sentence::ObstructionKind as K;
+            let kind = match kind {
+                K::P => 0,
+                K::D => 1,
+                K::C => 2,
+                K::I => 3,
+                K::N => 4,
+                K::Unclassified => 5,
             };
-            if !matches {
-                let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(dialogue::SOLVE_NOTHING, &[0; 4]) };
-                answer(s, reply);
-                return true;
-            }
-        }
-        let (code, mu) = {
-            let Ok(mut reg) = door.registry.lock() else { return true };
-            match reg.settle(&tid, &outputs) {
-                mycelium::registry::SolveYield::Bounty(tension) => {
-                    // A state path with no parent writes beside the
-                    // working directory, which is where it already is.
-                    let dir = match std::path::Path::new(&door.state_path).parent() {
-                        Some(p) => p.join("corpora"),
-                        None => std::path::PathBuf::from("corpora"),
+            dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
+        };
+        let (code, mu, refusal, stamp) = match (open, rule.as_ref()) {
+            (None, _) => (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None),
+            (Some(_), None) => (
+                dialogue::SOLVE_NOTHING,
+                [0; 4],
+                Some(refused("a solve carries its rule: a raster is no proof of a motion", mycelium::transducer::sentence::ObstructionKind::I)),
+                None,
+            ),
+            (Some(first), Some(rule)) => {
+                let (verdict, offers) = {
+                    let Ok(mut k) = door.kernel.lock() else { return true };
+                    let verdict = match k.judge_solve(rule, &withheld) {
+                        mycelium::cognition::SolveVerdict::Solved { pay } => {
+                            let paid = k.pay_solve(&tid, svoice, rule, pay, first);
+                            let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_FLOOR };
+                            (code, paid, None, Some(k.height()))
+                        }
+                        mycelium::cognition::SolveVerdict::Refused(r) => {
+                            (dialogue::SOLVE_NOTHING, [0; 4], Some(refused(r.reason, r.obstruction.kind())), None)
+                        }
+                        mycelium::cognition::SolveVerdict::NotARule => (
+                            dialogue::SOLVE_NOTHING,
+                            [0; 4],
+                            Some(refused("the rule is no sentence", mycelium::transducer::sentence::ObstructionKind::I)),
+                            None,
+                        ),
+                        mycelium::cognition::SolveVerdict::Unverifiable => (
+                            dialogue::SOLVE_NOTHING,
+                            [0; 4],
+                            Some(refused("the task withholds no answer to replay against", mycelium::transducer::sentence::ObstructionKind::N)),
+                            None,
+                        ),
                     };
-                    match reg.snapshot() {
-                        Some(snap) => {
+                    (verdict, k.take_offers())
+                };
+                // The solving rule docketed is offered by the act that docketed it.
+                crate::offer::offer(&door.kernel, &door.mesh, offers);
+                verdict
+            }
+        };
+        if let Some(at) = stamp {
+            // PAID, THEN RECORDED: the closure enters the registry after its
+            // payment, so none is lost between the two.
+            if let Ok(mut reg) = door.registry.lock() {
+                if reg.close(&tid) == Some(mycelium::registry::Closure::First) {
+                        // A state path with no parent writes beside the
+                        // working directory, which is where it already is.
+                        let dir = match std::path::Path::new(&door.state_path).parent() {
+                            Some(p) => p.join("corpora"),
+                            None => std::path::PathBuf::from("corpora"),
+                        };
+                        if let Some(snap) = reg.snapshot() {
                             let _ = std::fs::create_dir_all(&dir);
                             let tmp = dir.join("registry.tmp");
                             if std::fs::write(&tmp, &snap).is_ok() {
                                 let _ = std::fs::rename(&tmp, dir.join("registry"));
                             }
                         }
-                        None => eprintln!("  registry snapshot refused: a cursor, the count or an address passes its field"),
-                    }
-                    drop(reg);
-                    let (paid, offers) = {
-                        let Ok(mut k) = door.kernel.lock() else { return true };
-                        let paid = k.pay_solve(&tid, svoice, tension, rule_elem.as_ref(), &withheld);
-                        (paid, k.take_offers())
-                    };
-                    // The solving rule docketed is offered by the act that docketed it.
-                    crate::offer::offer(&door.kernel, &door.mesh, offers);
-                    let hear = {
-                        let Ok(mut roots) = door.roots.lock() else { return true };
-                        note_root(&mut roots, &tid, svoice, 0)
-                    };
-                    match hear {
-                        RootHear::Known => {}
-                        RootHear::First | RootHear::Second => {
-                            eprintln!("  ROOT task {:02x}{:02x}… proven by voice {:02x}; spoken to its key's next hop", tid[0], tid[1], svoice[0]);
-                            speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
-                        }
-                    }
-                    if matches!(hear, RootHear::Second) {
-                        rewind_syllabus(door);
-                        eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
-                    }
-                    (dialogue::SOLVE_BOUNTY, paid)
                 }
-                mycelium::registry::SolveYield::VerifyFloor => {
-                    drop(reg);
-                    let (paid, offers) = {
-                        let Ok(mut k) = door.kernel.lock() else { return true };
-                        let paid = k.pay_solve(&tid, svoice, [0, 0, 1, 0], rule_elem.as_ref(), &withheld);
-                        (paid, k.take_offers())
-                    };
-                    crate::offer::offer(&door.kernel, &door.mesh, offers);
-                    let hear = {
-                        let Ok(mut roots) = door.roots.lock() else { return true };
-                        note_root(&mut roots, &tid, svoice, 0)
-                    };
-                    if matches!(hear, RootHear::Second) {
-                        rewind_syllabus(door);
-                        speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, 0);
-                        eprintln!("  ROOT CONSILIENT task {:02x}{:02x}… two voices; syllabus rewound", tid[0], tid[1]);
-                    }
-                    (dialogue::SOLVE_FLOOR, paid)
-                }
-                mycelium::registry::SolveYield::Nothing => (dialogue::SOLVE_NOTHING, [0; 4]),
             }
-        };
-        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_receipt(code, &mu) };
+            // THE ROOT, AT THE HEIGHT THE SOLVE WAS PAID: a new solver is
+            // spoken onward; the second makes the root consilient and rewinds
+            // the syllabus; a later one is consilient already.
+            let hear = {
+                let Ok(mut roots) = door.roots.lock() else { return true };
+                note_root(&mut roots, &tid, svoice, at)
+            };
+            match hear {
+                RootHear::Known => {}
+                RootHear::First | RootHear::Joined => {
+                    speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, at);
+                }
+                RootHear::Second => {
+                    rewind_syllabus(door);
+                    speak_root_locked(&door.router, &door.nerve_tx, &door.id, &tid, &svoice, None, at);
+                }
+            }
+        }
+        let reply = Frame { lane: frame.lane, body: dialogue::encode_solve_verdict(code, &mu, refusal.as_ref()) };
         answer(s, reply);
         return true;
     }

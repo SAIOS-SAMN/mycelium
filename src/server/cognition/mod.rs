@@ -26,6 +26,7 @@ mod wire;
 pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};
 pub use court::fold::Proposal;
 pub use court::syllabus::{PageEnd, ServedPage};
+pub use court::task::SolveVerdict;
 pub use kernel::Kernel;
 pub(crate) use keys::*;
 pub(crate) use cocycle::CocycleRow;

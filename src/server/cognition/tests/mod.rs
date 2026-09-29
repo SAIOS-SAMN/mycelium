@@ -27,3 +27,4 @@ mod relator;
 mod remainders;
 mod room;
 mod ruling;
+mod solve;

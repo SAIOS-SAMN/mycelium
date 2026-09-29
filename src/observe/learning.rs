@@ -127,6 +127,44 @@ impl Reasons {
 /// reading), each with its count: the classes met, bounded by the classes and
 /// never a list of probes, the coordinate a court matches a residual
 /// against. A residual versor with no class key is counted `unclassed`.
+/// WHAT THIS VOICE'S SOLVES CAME TO, as the court ruled each (the actions'
+/// physics): the task's FIRST closure (paid what the rule discharged), a
+/// closure AGAIN (verified, paid nothing), REFUSED by the replay's kind
+/// (P, D, C, I, N, unclassified — 78.9, in the reader's own order; an
+/// unknown kind in the last place), and UNRULED (no verdict decoded); and
+/// what the solves were paid, per lane.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SolveTally {
+    pub first: u64,
+    pub again: u64,
+    pub refused: [u64; 7],
+    pub unruled: u64,
+    pub paid: [u64; 4],
+}
+
+impl SolveTally {
+    /// One verdict, folded in.
+    pub fn note(&mut self, code: u8, mu: &[u64; 4], refusal: Option<&crate::anastome::dialogue::SolveRefusal>) {
+        use crate::anastome::dialogue::{SOLVE_BOUNTY, SOLVE_FLOOR};
+        match (code, refusal) {
+            (SOLVE_BOUNTY, _) => self.first += 1,
+            (SOLVE_FLOOR, _) => self.again += 1,
+            (_, Some(r)) => {
+                let place = usize::from(r.kind).min(self.refused.len() - 1);
+                if let Some(slot) = self.refused.get_mut(place) {
+                    *slot += 1;
+                }
+            }
+            (_, None) => self.unruled += 1,
+        }
+        // A lane's total past its carrier stands where it was, counted by
+        // the ledger (STD1).
+        if let Some(total) = crate::core::lanes::lanes_add(self.paid, *mu) {
+            self.paid = total;
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 /// 78.52 — WHAT THIS VOICE'S CLOSED THOUGHTS BECAME, read where each is
 /// transcribed against the mind's own letters (78.47 (i)): SPELLED and

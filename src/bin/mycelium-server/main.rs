@@ -496,7 +496,7 @@ fn main() {
         };
         match hear {
             RootHear::Known => {}
-            RootHear::First | RootHear::Second => {
+            RootHear::First | RootHear::Second | RootHear::Joined => {
                 speak_root_locked(&router, &nerve_tx, &id, t, &id, None, boot_stamp);
             }
         }

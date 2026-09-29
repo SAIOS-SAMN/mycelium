@@ -16,21 +16,14 @@ impl Entity {
         Ok(dialogue::decode_task_envelope(&body))
     }
 
-    /// SUBMIT predicted outputs for a dispatched task. The hypha verifies
-    /// against its held answers: (SOLVE_BOUNTY, μ⃗) on the first verified
-    /// solve, (SOLVE_FLOOR, μ⃗) on a replay, (SOLVE_NOTHING, 0⃗) otherwise —
-    /// the anti-replay collapse is the server's ruling, never the client's.
-    pub fn submit_solve(
-        &self,
-        id: &[u8],
-        outputs: &[Grid],
-    ) -> io::Result<(u8, [u64; 4])> {
-        self.submit_solve_rule(id, outputs, None)
-    }
-
-    /// Submit predicted outputs together with the sentence that spoke them.
+    /// SUBMIT A SOLVE: the sentence that spoke the outputs, with them. The
+    /// court replays the RULE on its withheld pairs and pays what it
+    /// discharges (the actions' physics): (SOLVE_BOUNTY, μ⃗) on the task's
+    /// first closure, (SOLVE_FLOOR, 0⃗) on a closure again, (SOLVE_NOTHING,
+    /// 0⃗) with the refusal otherwise. A solve without its rule is refused: a
+    /// raster is no proof of a motion.
     pub fn submit_solve_rule(
-        &self,
+        &mut self,
         id: &[u8],
         outputs: &[Grid],
         rule: Option<&Element>,
@@ -53,11 +46,20 @@ impl Entity {
             ));
         };
         let body = self.session.speak_keyed(id, act)?;
-        // A receipt that does not decode says nothing was solved and
-        // nothing was paid, which is what the solve earned.
-        Ok(match dialogue::decode_solve_receipt(&body) {
-            Some(r) => r,
-            None => (dialogue::SOLVE_NOTHING, [0; 4]),
+        // THE VOICE HEARS ITS VERDICT (the actions' physics): what the court
+        // read of its rule — closed first, closed again, or refused with the
+        // replay's reason and kind — folded into this voice's tally. A
+        // receipt that does not decode says nothing was solved and nothing
+        // was paid, which is what the solve earned, counted unruled.
+        Ok(match dialogue::decode_solve_verdict(&body) {
+            Some((code, mu, refusal)) => {
+                self.solves.note(code, &mu, refusal.as_ref());
+                (code, mu)
+            }
+            None => {
+                self.solves.unruled += 1;
+                (dialogue::SOLVE_NOTHING, [0; 4])
+            }
         })
     }
 
