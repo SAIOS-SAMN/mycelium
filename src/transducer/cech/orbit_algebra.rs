@@ -420,8 +420,10 @@ pub struct CellAlgebra {
     /// the budget spent at the k-th product, an entry that did not fit the
     /// exact elimination (78.26(4), rule 11).
     pub capacity: Result<usize, CapacityRefused>,
-    /// Pairs of read circuits whose actions do not commute.
-    pub coupled: usize,
+    /// Pairs of read circuits whose actions do not commute; where the
+    /// stroke was spent before every pair was composed, the pair it was
+    /// spent at (`Spent`), never a partial count.
+    pub coupled: Result<usize, CapacityRefused>,
     /// Every read mode ray against the cell.
     pub modes: Vec<ModeReading>,
     pub congruence: Congruence,
@@ -637,12 +639,30 @@ pub fn read_cell_after(
         })
         .collect();
     let unread = modes.iter().filter(|m| m.is_none()).count();
+    // EACH PAIR'S COMMUTATOR IS TWO COMPOSITIONS, AND DRAWS ONE READ. It
+    // drew none, so a cell crossed by k circuits composed k² exact linear
+    // functions outside any stroke: on the live wire (2026-09-29) a voice
+    // reading 5 315 circuits sat in this line for minutes of one stroke,
+    // every stack sample in `LinearFunction::after`.
     let coupled = match &actions {
-        Some(a) => (0..a.len())
-            .flat_map(|i| ((i + 1)..a.len()).map(move |j| (i, j)))
-            .filter(|&(i, j)| !a[i].after(&a[j]).minus(&a[j].after(&a[i])).is_zero())
-            .count(),
-        None => 0,
+        Some(a) => {
+            let mut product = 0usize;
+            let mut count = Ok(0usize);
+            'pairs: for i in 0..a.len() {
+                for j in (i + 1)..a.len() {
+                    product += 1;
+                    if !budget.spend() {
+                        count = Err(CapacityRefused::Spent { product });
+                        break 'pairs;
+                    }
+                    if !a[i].after(&a[j]).minus(&a[j].after(&a[i])).is_zero() {
+                        count = count.map(|c| c + 1);
+                    }
+                }
+            }
+            count
+        }
+        None => Ok(0),
     };
     let mut index: Keyed<usize> = Keyed::new();
     for (a, s) in nuclei.into_iter().flatten().enumerate() {

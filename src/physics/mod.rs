@@ -23,10 +23,20 @@
 /// same binary breathes correctly on a beta laptop and a compute node.
 static CALIBRATED_RESERVE_MAX: std::sync::OnceLock<u64> = std::sync::OnceLock::new();
 
-/// Available memory in GiB, or `None` where the host does not say. The
-/// field is the second word of the `MemAvailable:` line, which is that
-/// line's format and not a member picked by position (rule 15).
+static CALIBRATED_HEADROOM: std::sync::OnceLock<Option<u64>> = std::sync::OnceLock::new();
+
+/// Available memory in GiB at boot, or `None` where the host does not say:
+/// the reserve and the book's ceiling are calibrated against ONE reading,
+/// taken once. (Read per call, `book_ceiling` re-read `/proc/meminfo` on
+/// every court stroke — 4.3 million read calls and 870 MB in eleven minutes
+/// of one idle court on the live wire, 2026-09-29.)
 fn mem_available_gib() -> Option<u64> {
+    *CALIBRATED_HEADROOM.get_or_init(read_mem_available_gib)
+}
+
+/// The field is the second word of the `MemAvailable:` line, which is that
+/// line's format and not a member picked by position (rule 15).
+fn read_mem_available_gib() -> Option<u64> {
     let s = std::fs::read_to_string("/proc/meminfo").ok()?;
     let line = s.lines().find(|l| l.starts_with("MemAvailable:"))?;
     #[expect(

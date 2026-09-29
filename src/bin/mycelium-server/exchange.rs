@@ -331,17 +331,14 @@ impl Exchange {
             if cycles.is_power_of_two() {
                 eprintln!("  court exchange cycle {cycles} idle {idle}");
             }
-            if dests.is_empty() {
-                // AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
-                // ruling). This paid `while b.spend() {}` — three integer
-                // decrements on the reserve, no time at all — and called
-                // it a pace. 32,767 of 32,768 cycles took this branch and
-                // the thread sat at 99% of a core, which is what starved
-                // the listener the peers were asking through.
-                idle += 1;
-                std::thread::sleep(mycelium::physics::idle_park(None));
-                continue;
-            }
+            // A COURT WITH NO PEER STILL CLOSES ITS ORBIT. With no
+            // destination the peers' loop below asks nobody and the cycle
+            // parks as idle at its foot (the stroke-duration ruling); it
+            // `continue`d here instead, past the genesis, the fold and
+            // `orbit()` — so a lone court told to mint never wrote its
+            // origin and its `K` never moved while it served its voices
+            // (the live wire, 2026-09-29: 524 288 cycles, genesis unwritten,
+            // `K=0` on every quote).
             let req = dialogue::encode_digests_request(&mesh.vk);
             let mut any_moved = false;
             let dest_list: Vec<(Vec<u8>, String)> = dests

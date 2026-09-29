@@ -229,10 +229,10 @@ fn c1_capacity_is_the_rank_of_the_actions_algebra() {
     assert_eq!(read(vec![one()]).capacity, Ok(1), "the identity: the unit alone");
     let turn_90 = cga::rotator(&q(1, 1), &q(1, 1));
     let a = read(vec![turn_90.clone()]);
-    assert_eq!((a.capacity, a.coupled), (Ok(3), 0), "one 90° turn: rank three");
+    assert_eq!((a.capacity, a.coupled), (Ok(3), Ok(0)), "one 90° turn: rank three");
     let other = cga::rotator_on_blade(&q(1, 1), &q(1, 1), E2 | E3);
     let b = read(vec![turn_90, other]);
-    assert_eq!((b.capacity, b.coupled), (Ok(10), 1), "two crossing 90° turns: rank ten, coupled");
+    assert_eq!((b.capacity, b.coupled), (Ok(10), Ok(1)), "two crossing 90° turns: rank ten, coupled");
 }
 
 /// C1 (d) — THE SAME SHAPE INSIDE ONE GENERATOR: a motion's mode rays are
