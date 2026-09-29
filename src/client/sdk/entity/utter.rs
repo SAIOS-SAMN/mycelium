@@ -479,15 +479,20 @@ impl Entity {
                 }
                 let Some(w) = crate::transducer::element::derived_colour_word(first, after) else { continue };
                 let addr = w.address();
-                if !self.already_taught_addr(addr.as_bytes()) && !self.epigenome.holds(addr.as_bytes()) {
+                // A theorem the court refused is sealed here and never
+                // proposed again (it would be counted and not sent).
+                if !self.already_taught_addr(addr.as_bytes())
+                    && !self.epigenome.holds(addr.as_bytes())
+                    && self.sealed.get(&addr).is_none()
+                {
                     theorem = Some(w);
                     break 'pairs;
                 }
             }
         }
         let theorem = theorem?;
-        self.colour_theorems += 1;
         let codes = self.speak_with(std::slice::from_ref(&theorem), &[], &[], budget).ok()?;
+        self.colour_theorems += 1;
         match codes.as_slice() {
             [code] => Some(*code),
             _ => None,
