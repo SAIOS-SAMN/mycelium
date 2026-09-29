@@ -18311,6 +18311,58 @@ no thought was ever spoken, stood in a dialect, or sent to a court.
   bodies at period 4, holding no form, and transcribes to ONE word — the
   scene's turn — which the court hears clean.
 
+### 78.53 Colour is a fibre; a colour word names an invariant fibre relation, never a palette integer (ruled 2026-09-29, the operator's word)
+
+WHY THE ALGEBRA AND NOT THE BYTES. Truth in physics is invariant under a
+change of representation; byte exactness is the fixation of one coordinate
+gauge. An address is exact and decodable (A21), but it answers one question
+— is this canonical encoding identical to that one — and it carries none of
+what cognition uses: equivalence beyond its canonicalizer, composition,
+inversion, commutation, distance, incidence. Identity is decided in the
+algebra, by an exact canonicalizer and its invariants, BEFORE bytes are
+written; the address files what the algebra decided. A key locates; it never
+identifies. Comprehension is re-derivation (78.44), never a lookup of bytes.
+
+THE RULING.
+1. GAUGE INVARIANCE. The sensor's integer hue is a gauge choice — a local
+   coordinate patch on the colour fibre (61.1). The physics of a scene is its
+   partition into bodies, its contrasts, and the permutations of the fibre
+   between bodies and scenes. Two minds holding labellings related by a
+   gauge transformation 𝒢 (ψ_B = 𝒢·ψ_A) perceive the same scene and must
+   read the same word.
+2. COLOUR IS A FIBRE BUNDLE over the spatial base (61.1, 70): a body is where
+   mass is; its colour is the section it carries.
+3. A COLOUR WORD NAMES AN INVARIANT FIBRE RELATION — a section transition:
+   an identity section, a contrast, an automorphism of the fibre — never
+   "channel 3". The five-step proposal of this date (a word per palette
+   channel) is NOT landed: it would entrench a gauge choice in the address.
+4. THE COURT checks that the transformation on the colour fibre is an exact
+   isomorphism across the task's input and output scenes, independent of the
+   integer indexing of the palette.
+
+READ FOR THE BUILD (the implementor, stated where the ruling names the
+object and not its canonical form):
+- THE GAUGE IS FIXED BY THE BASE. The fibre's labels are ordered by the
+  geometry that carries them — each hue by the base-invariant reading of the
+  bodies that carry it (their charts, which are hue-blind, 70.4) — never by
+  the integer. A fibre relation is written in those labels: "the colour the
+  first body carries goes to the colour the second carries" is gauge-free,
+  because a relabelling moves every integer and no body.
+- WHERE THE BASE DOES NOT ORDER two hues (the scene is symmetric under
+  exchanging them), the relation is the COSET of labellings, held as a
+  superposition (law 10), never broken by the integer.
+- ACCEPTANCE, on engine values: a family with its palette relabelled by any
+  permutation reads the IDENTICAL word — address and verdict — as the family
+  itself; and the court's verdict does not change under the relabelling.
+- AGREEMENT is therefore agreement UP TO GAUGE: minds converge on colour
+  relations anchored to the geometry — which body's colour becomes which
+  body's — and not on a global name for one hue, which the physics does not
+  fix.
+- NOTED against the tree: `Refusal::Dissonance` names no type here (a
+  refusal is a typed `Refused` read off content, 78.9); S₁₀ reads the palette
+  at ten, the sensor's bound (`PALETTE`) — the gauge group a scene acts under
+  is the permutations of the hues it carries.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

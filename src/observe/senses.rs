@@ -40,7 +40,7 @@ pub const SPEECH: [&str; 5] = ["uttered", "spelled", "said by an adjoined letter
 /// What a mind HEARD from its court.
 pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
 /// What a mind holds as LANGUAGE.
-pub const LANGUAGE: [&str; 5] = ["dialect", "genome", "installed", "closing", "adjoined by closure"];
+pub const LANGUAGE: [&str; 6] = ["dialect", "genome", "installed", "closing", "adjoined by closure", "colour words"];
 /// What a mind UNDERSTOOD.
 pub const UNDERSTANDING: [&str; 4] = ["derivable", "glued", "obstructed", "discordant strata"];
 /// What a mind's solves came to (the actions' physics).

@@ -53,6 +53,38 @@ fn a_rule_that_leaves_a_pair_open_is_refused_by_the_replay() {
     assert!(matches!(k.judge_solve(&rule, &[]), SolveVerdict::Unverifiable), "no withheld answer, no verdict");
 }
 
+/// 78.53 — COLOUR IS A GAUGE, READ ONLY AT THE SENSOR. One task and the
+/// same task with its palette permuted (1→7, 2→4, 3→9) are one scene: read
+/// through the sensor they are the SAME grids, so the voice's rule mints the
+/// IDENTICAL word — address and all — and the court's verdict and price are
+/// identical. Read without the sensor's fixing, the two rules are two
+/// addresses: the gauge was in the bytes.
+#[test]
+fn a_task_and_its_palette_permuted_read_one_word_and_one_verdict() {
+    let json = |a: u8, b: u8, c: u8| {
+        format!(
+            r#"{{"train":[{{"input":[[{a},{a},0,{b},0,0,0]],"output":[[0,0,{a},{a},0,{b},0]]}}],
+                "test":[{{"input":[[{b},0,{a},{a},0,{c},0]],"output":[[0,0,{b},0,{a},{a},{c}]]}}]}}"#
+        )
+    };
+    let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
+    let permuted = crate::arc::parse_task(&json(7, 4, 9)).expect("the permuted task reads");
+    assert_eq!((&task.train, &task.test), (&permuted.train, &permuted.test), "one scene through the sensor");
+    let (rule, again) = (rule_over(&task.train), rule_over(&permuted.train));
+    assert_eq!(rule.address(), again.address(), "one word");
+    let mut k = Kernel::new();
+    let verdict = |k: &mut Kernel, r: &Element, t: &crate::arc::Task| match k.judge_solve(r, &t.train) {
+        SolveVerdict::Solved { pay } => Some(pay),
+        _ => None,
+    };
+    let v = verdict(&mut k, &rule, &task);
+    assert!(v.is_some(), "the rule closes its own pair");
+    assert_eq!(v, verdict(&mut k, &again, &permuted), "one verdict, one price");
+    // WITHOUT THE SENSOR'S FIXING the palette is in the word's bytes.
+    let raw = |a: u8, b: u8| vec![(digits(&[&format!("{a}{a}0{b}000")]), digits(&[&format!("00{a}{a}0{b}0")]))];
+    assert_ne!(rule_over(&raw(1, 2)).address(), rule_over(&raw(7, 4)).address(), "two integers, two addresses");
+}
+
 /// POUW: the task's FIRST closure mints the solver what its rule discharged;
 /// a closure AGAIN is verified and pays nothing — no floor.
 #[test]

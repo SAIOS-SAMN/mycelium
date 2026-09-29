@@ -48,13 +48,67 @@ pub struct Task {
     pub test: Vec<(Grid, Grid)>,
 }
 
-/// Parse a task's JSON (`{"train":[{"input","output"}],"test":[...]}`).
+/// Parse a task's JSON (`{"train":[{"input","output"}],"test":[...]}`),
+/// its palette read at the sensor and nowhere after (`gauge_fixed`, 78.53).
 pub fn parse_task(json: &str) -> Option<Task> {
     let raw: RawTask = serde_json::from_str(json).ok()?;
-    Some(Task {
+    Some(gauge_fixed(Task {
         train: raw.train.into_iter().map(|p| (p.input, p.output)).collect(),
         test: raw.test.into_iter().map(|p| (p.input, p.output)).collect(),
-    })
+    }))
+}
+
+/// 78.53 — THE PALETTE IS READ ONLY AT THE SENSOR, and the gauge is fixed
+/// by the base. The integer a grid gives a hue is a gauge choice on the
+/// colour fibre (61.1): relabel every hue of a task by any permutation and
+/// it is the same task. So the task is handed on in labels the GEOMETRY
+/// fixes — each hue labelled by where it first stands, in the lattice's
+/// own order across the task's scenes (train inputs and outputs, then the
+/// test inputs) — and every word, key and verdict downstream reads those
+/// labels, never the palette's integers.
+///
+/// Exact and with nothing to break a tie: a relabelling moves no cell, and
+/// two hues never stand on one cell, so two hues never share a first
+/// standing. The labels are read from what a voice is shown — the train
+/// pairs and the test inputs — and a hue standing only in a withheld test
+/// output is labelled after them, by where it first stands there, so no
+/// withheld answer moves a label a voice sees. Hue 0 is no colour — the
+/// sensor reads it as the void (`painted_of_grid`) — and stays 0.
+pub fn gauge_fixed(task: Task) -> Task {
+    let mut order: Vec<u8> = Vec::new();
+    let stand = |g: &Grid, order: &mut Vec<u8>| {
+        for row in g {
+            for &h in row {
+                if h != 0 && !order.contains(&h) {
+                    order.push(h);
+                }
+            }
+        }
+    };
+    for (a, b) in &task.train {
+        stand(a, &mut order);
+        stand(b, &mut order);
+    }
+    for (a, _) in &task.test {
+        stand(a, &mut order);
+    }
+    for (_, b) in &task.test {
+        stand(b, &mut order);
+    }
+    // The label of a hue is one past its place in the order: at most the
+    // palette's own count of colours, so it fits the byte the hue came in.
+    let label = |h: u8| -> u8 {
+        match order.iter().position(|&o| o == h) {
+            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a place in the order of a byte's distinct values is below 256")]
+            Some(i) => (i + 1) as u8,
+            None => 0,
+        }
+    };
+    let relabel = |g: Grid| -> Grid { g.into_iter().map(|row| row.into_iter().map(label).collect()).collect() };
+    Task {
+        train: task.train.into_iter().map(|(a, b)| (relabel(a), relabel(b))).collect(),
+        test: task.test.into_iter().map(|(a, b)| (relabel(a), relabel(b))).collect(),
+    }
 }
 
 /// A grid → its painted sites, the PERCEPTUAL convention: background hue 0
