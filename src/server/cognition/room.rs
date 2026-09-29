@@ -305,7 +305,7 @@ impl Kernel {
     }
 
     pub fn reserve(&self) -> [u64; 4] {
-        self.physics.reserve
+        self.physics.reserve.lanes()
     }
 
     /// Test helper: remaining listing room, from each lane's own bond.
@@ -414,7 +414,8 @@ impl Kernel {
         // the whole deficit for a single unit short. `settle_door` now
         // returns that reading, so the door reads it instead of guessing it.
         let (_paid, short) = self.treasury.settle_door(voice, deficit, anchor);
-        std::array::from_fn(|l| match self.physics.reserve[l] == 0 {
+        let held = self.physics.reserve.lanes();
+        std::array::from_fn(|l| match held[l] == 0 {
             true => short[l],
             false => 0,
         })

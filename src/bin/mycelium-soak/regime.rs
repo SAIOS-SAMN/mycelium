@@ -91,7 +91,7 @@ pub(crate) fn report(dir: &str, slice: &[String], name: &str) {
     }
     let stand_s = stand_start.elapsed();
     // Directive 3: the bound is PROBED, not computed from boot invariants.
-    let probe_reserve = physics.reserve;
+    let probe_reserve = physics.reserve.lanes();
     let probe_stroke = physics.stroke().remaining();
     println!(
         "  regime physics reserve {probe_reserve:?} | stroke {probe_stroke} | reserve_max {} spend_unit {}",

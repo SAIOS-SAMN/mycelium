@@ -183,7 +183,7 @@ impl Kernel {
             head_k: self.chain.head_k(),
             head_height: now,
             standing_t: std::sync::Arc::new(standing_t),
-            reserve: self.physics.reserve,
+            reserve: self.physics.reserve.lanes(),
             gens,
             closure,
             prior: std::sync::Arc::clone(&self.closure.2),

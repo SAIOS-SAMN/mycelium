@@ -51,7 +51,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut words: Vec<dialogue::Taught> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     let mut overran = false;
-    if let Ok(k) = kernel.lock() {
+    if let Ok(mut k) = kernel.lock() {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
         // which words the voice already holds so the page carries only what
         // it lacks; it stood here ALSO as evidence for

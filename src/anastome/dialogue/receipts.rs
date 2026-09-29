@@ -1,4 +1,4 @@
-// 47.1, 45.5 — ACT_GENESIS and ACT_FETCH, and the receipt section a cover
+// 47.1, 45.5 — ACT_FETCH, and the receipt section a cover
 // digest carries behind it.
 //
 //! The section is framed, so its start is derived from the digest frame
@@ -284,20 +284,4 @@ pub fn decode_receipts_reply(body: &[u8]) -> Option<Vec<crate::chronometry::KSte
         out.push(crate::chronometry::KStepReceipt::read(body, &mut p)?);
     }
     (p == body.len()).then_some(out)
-}
-
-pub fn encode_genesis_request(voice: &[u8; 32], cursor: u32) -> Vec<u8> {
-    let mut out = vec![ACT_GENESIS];
-    out.extend_from_slice(voice);
-    out.extend_from_slice(&cursor.to_le_bytes());
-    out
-}
-
-pub fn decode_genesis_request(body: &[u8]) -> Option<([u8; 32], u32)> {
-    if !act_is(body, ACT_GENESIS) || body.len() != 37 {
-        return None;
-    }
-    let voice: [u8; 32] = body.get(1..33)?.try_into().ok()?;
-    let cursor = u32::from_le_bytes(body.get(33..37)?.try_into().ok()?);
-    Some((voice, cursor))
 }

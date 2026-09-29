@@ -6,7 +6,7 @@
 //! about the language: peers, roots, the syllabus, task listing and intake.
 
 use crate::exchange::{note_root, speak_root_locked, Mesh, RootHear};
-use crate::syllabus::{syllabus_admit, syllabus_page, Syllabus};
+use crate::syllabus::{syllabus_admit, syllabus_window, Syllabus};
 use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
@@ -316,108 +316,36 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         answer(s, Frame { lane: frame.lane, body: vec![queued as u8] });
         return true;
     }
-    if kind == dialogue::ACT_GENESIS {
-        let Some((_gvoice, cursor)) = dialogue::decode_genesis_request(&frame.body) else { return true };
-        // A genesis page is a stroke's worth of basis from the cursor, read
-        // as a slice and not walked to it. The size was a sum of the four
-        // reserve lanes clamped at eight (law 5, rule 5); `skip(cursor)`
-        // walked every word before the cursor to reach it.
-        let words: Vec<dialogue::Taught> = {
-            let Ok(mut k) = door.kernel.lock() else { return true };
-            // The page is what THIS court's stroke affords, read off its own
-            // physics, never a default's (rule 5).
-            let mut budget = k.stroke();
-            let mut out = Vec::new();
-            let rest: Vec<mycelium::transducer::address::Address> = match k.basis().get(cursor as usize..) {
-                Some(rest) => rest.iter().map(|w| w.address()).collect(),
-                None => Vec::new(),
-            };
-            for addr in rest {
-                if !budget.spend() {
-                    break;
-                }
-                // Each word with the stamp that admitted it (78.24 (2b)); a
-                // word no act admitted is named and not taught.
-                match k.taught(&addr) {
-                    Some(t) => out.push(t),
-                    None => eprintln!("  genesis page: a basis word has no admitting stamp and is not taught"),
-                }
-            }
-            out
-        };
-        let Some(body) = dialogue::encode_syllabus_reply(&words) else {
-            eprintln!("  syllabus refused: the page does not fit its count");
-            return true;
-        };
-        let reply = Frame { lane: frame.lane, body };
-        answer(s, reply);
-        return true;
-    }
     if kind == dialogue::ACT_SYLLABUS {
         let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
-        let mut missed: Vec<Vec<u8>> = Vec::new();
-        // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK. This cloned
-        // `sy.order` — every address this court has ever ruled — out of the
-        // lock on every request, so that a window of at most `depth`
-        // entries could be read from it. Checklist (j) refuses "any
-        // `clone()` of a carrier into two places"; at ten thousand peers
-        // polling a court that holds a large order, the cost is O(ruled
-        // words) per request per peer, allocated and copied while the
-        // syllabus lock is held. The window is taken under the lock, from
-        // the cursor, by a slice read that is O(depth) and not O(cursor).
-        // THE PAGE IS WHAT A STROKE AFFORDS. Its size was
-        // `(1 + (free * 7) / (4 * reserve_max)).min(8)` over
-        // `free = reserve.iter().sum()`: law 5's "μ⃗ is never summed … or
-        // reduced to a scalar" in one expression, and rule 5's own named
-        // example, `depth.min(8)`, on the result.
-        // The budget is this court's own stroke, taken under the same lock
-        // as the seed: a default `Physics` is not the court's metabolism
-        // (rule 5).
-        let (seed, mut budget) = match door.kernel.lock() {
-            Ok(mut k) => (k.syllabus_seed(), k.stroke()),
+        // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK: a slice from the voice's
+        // cursor under the syllabus lock (checklist (j)).
+        let seed = match door.kernel.lock() {
+            Ok(k) => k.syllabus_seed(),
             Err(_) => return true,
         };
-        let (cursor, page) = {
+        let (cursor, window) = {
             let Ok(mut sy) = door.syllabus.lock() else { return true };
             syllabus_admit(&mut sy, seed);
-            syllabus_page(&mut sy, &svoice, &mut budget)
+            syllabus_window(&mut sy, &svoice)
         };
-        // 45.1, 78.24 (2b): A WORD SERVED IS TAUGHT AT THE STAMP OF THE ACT
-        // THAT SERVED IT. The Syllabus node is sealed first, and the page
-        // carries its stamp beside the word, so the voice files the word's
-        // locator from the act that taught it.
-        let (words, classes) = {
+        // THE PAGE IS WHAT THE COURT'S RESERVE AFFORDS (the actions'
+        // metabolism): each word served is paid by its magnitude, drawn per
+        // lane; the page ends at the frame, the wire's count, or the first
+        // word a lane cannot fund. 45.1, 78.24 (2b): each word served is
+        // sealed as a Syllabus act and carries that stamp. Nothing is sealed
+        // for a word that is not sent.
+        let (page, classes) = {
             let Ok(mut k) = door.kernel.lock() else { return true };
-            let mut out = Vec::new();
-            for addr in page {
-                // A word not held, or whose record does not write (STD1 3c),
-                // is missed and not served.
-                let Some(w) = k.word_at(&addr).and_then(|w| w.to_bytes()) else {
-                    missed.push(addr);
-                    continue;
-                };
-                let Some(at) = k.note_served(&addr, svoice) else {
-                    eprintln!(
-                        "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… refused: the act could not be sealed",
-                        addr[0], addr[1], svoice[0], svoice[1]
-                    );
-                    missed.push(addr);
-                    continue;
-                };
-                eprintln!(
-                    "  court syllabus {:02x}{:02x}… to {:02x}{:02x}… receipt K {} h {}",
-                    addr[0], addr[1], svoice[0], svoice[1], at.place().print(), at.h
-                );
-                out.push(dialogue::Taught { at, word: w });
-            }
+            let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::frame_budget());
             let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
-            let next = cursor + out.len() + missed.len();
             drop(k);
             if let Ok(mut sy) = door.syllabus.lock() {
-                sy.served.insert(svoice, next);
+                sy.served.insert(svoice, cursor + page.consumed);
             }
-            (out, classes)
+            (page, classes)
         };
+        let (words, missed) = (page.words, page.missed);
         // An address whose word this court no longer holds is re-queued
         // behind the cursor, once. This rebuilt the whole tail index INSIDE
         // the loop, one full walk of the order per missed address —

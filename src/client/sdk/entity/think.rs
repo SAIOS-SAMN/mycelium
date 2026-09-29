@@ -55,25 +55,71 @@ impl Entity {
     ) -> bool {
         let Some(draw) = self.draw_for(&f) else { return false };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, budget);
-        // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the words
-        // this perception closed stand in the dialect and go to the court now,
-        // never on some later word's arrival. What the wire answers is the
-        // speech's own reading (`Utterance`); a refusal there stands as told.
-        for word in self.contemplation.take_words() {
+        // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
+        // this perception closed are transcribed against this mind's own
+        // letters, and each word stands in the dialect and goes to the court
+        // now, never on some later word's arrival. What the wire answers is
+        // the speech's own reading (`Utterance`); a refusal there stands as
+        // told.
+        for word in self.transcribe_closed(budget) {
             let _ = self.speak_word(&word, budget);
         }
         true
+    }
+
+    /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A
+    /// closed thought's generator factors into rotation and carriage; the
+    /// rotation is read through the mind's crystal, adjoined letters
+    /// included (`letter_reading`), never the fixed seventeen alone:
+    /// - SPELLED by the seventeen: the word is that spelling's connection at
+    ///   that carriage, carrying the return (`ℓ − 1` on the shell) — spoken.
+    /// - DERIVABLE only through a letter this mind adjoined: that letter
+    ///   already stands in the dialect and says it; nothing new is spoken.
+    /// - UNSPELLED by every held letter: the thought is INEFFABLE — kept, and
+    ///   nothing emitted; the same class reads derivable once a letter for it
+    ///   is adjoined.
+    /// - No rotation to read: unread.
+    pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<Element> {
+        use crate::transducer::family::{letter_reading, LetterReading};
+        let mut words = Vec::new();
+        for ground in self.contemplation.take_closed() {
+            let factored = crate::transducer::element::conformal_factors(&ground.generator)
+                .ok()
+                .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok().map(|r| (f, r)));
+            let Some((f, rotor)) = factored else {
+                self.transcription.unread += 1;
+                continue;
+            };
+            match letter_reading(&self.epigenome, budget, &rotor) {
+                LetterReading::Derivable => {
+                    let spelled = match crate::transducer::alphabet::factor_rotor(&rotor) {
+                        Some(Ok(word)) => ground.period.checked_sub(1).and_then(|beyond| {
+                            crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, beyond])
+                        }),
+                        _ => None,
+                    };
+                    match spelled {
+                        Some(word) => {
+                            self.transcription.spelled += 1;
+                            words.push(word);
+                        }
+                        None => self.transcription.adjoined += 1,
+                    }
+                }
+                LetterReading::Unspelled => self.transcription.ineffable += 1,
+                LetterReading::Unread | LetterReading::NoVersor => self.transcription.unread += 1,
+            }
+        }
+        words
     }
 
     /// Door 3's draw for a thought: its four-lane measure out of the reserve,
     /// lane by lane, or `None` where a lane cannot fund it (rule 11).
     fn draw_for(&mut self, f: &crate::transducer::sentence::Form) -> Option<[u64; 4]> {
         let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
-        let mut next = self.physics.reserve;
-        for (r, d) in next.iter_mut().zip(&draw) {
-            *r = r.checked_sub(*d)?;
-        }
-        self.physics.reserve = next;
+        // All or nothing, through the metabolic ledger (65.5): a lane that
+        // cannot fund it refuses the whole draw by name.
+        self.physics.reserve.draw(draw).ok()?;
         Some(draw)
     }
 
@@ -123,14 +169,10 @@ impl Entity {
         let (returned, n) = self.contemplation.lapse_on_clock();
         // A return past a lane's carrier is refused and counted on the
         // metabolic ledger, the lane standing where it was (STD1).
-        for (r, back) in self.physics.reserve.iter_mut().zip(&returned) {
-            crate::physics::metabolism::step_or_refuse(r, *back);
-        }
+        self.physics.reserve.restore(returned);
         // TC1 — and what the truncation removed since, returned alike.
         let truncated = self.contemplation.take_truncated_escrow();
-        for (r, back) in self.physics.reserve.iter_mut().zip(&truncated) {
-            crate::physics::metabolism::step_or_refuse(r, *back);
-        }
+        self.physics.reserve.restore(truncated);
         n
     }
 
@@ -155,7 +197,7 @@ impl Entity {
         // The reserve already excludes what is escrowed on held thoughts
         // (Z4d), so the room on a lane is the reserve on it and the check
         // is the draw's own, asked without making it.
-        self.physics.reserve.iter().zip(&want).all(|(r, d)| r.checked_sub(*d).is_some())
+        self.physics.reserve.lanes().iter().zip(&want).all(|(r, d)| r.checked_sub(*d).is_some())
     }
 
     /// LANE 𝒯 FOR A FORM THIS MIND IS ABOUT TO SPEAK: the span in receipts
@@ -607,7 +649,7 @@ impl Entity {
 
     /// Z4d: what this voice can still escrow, per lane. Its attention.
     pub fn reserve(&self) -> [u64; 4] {
-        self.physics.reserve
+        self.physics.reserve.lanes()
     }
 
     pub fn dialect_len(&self) -> usize {

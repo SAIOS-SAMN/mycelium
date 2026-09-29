@@ -235,7 +235,7 @@ fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
     let held_now = entity.contemplation.len();
     assert!(held_now > 0, "a mind with room holds the thought");
     // Spend every lane: a reserve of zero is no room on any lane.
-    entity.physics.reserve = [0; 4];
+    entity.physics.reserve = crate::physics::Reserve::of([0; 4]);
     let second = crate::transducer::sentence::Form {
         remainder: crate::transducer::element::place_chain(&[(4i64, 4i64, 7u8, 8u8)])
             .expect("a one-link chain places"),
@@ -274,7 +274,7 @@ fn a_thought_the_room_cannot_hold_is_withheld_not_evicted() {
 #[test]
 fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("escrow"));
-    let before = entity.physics.reserve;
+    let before = entity.physics.reserve.lanes();
     assert_eq!(before[0], before[3], "the reserve begins as four copies of one number");
 
     entity.hold_chain(vec![(9, 0, 1, 2)]);
@@ -294,7 +294,7 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
     let drew = crate::transducer::element::measure_lanes(&f.remainder.placed());
     let mut b = entity.stroke();
     assert!(entity.hold_form(f, &[], &[], &mut b), "a mind with room holds it");
-    let after = entity.physics.reserve;
+    let after = entity.physics.reserve.lanes();
     for l in 0..4 {
         match drew[l] {
             0 => assert_eq!(after[l], before[l], "lane {l} was not occupied and did not move"),
@@ -334,7 +334,7 @@ fn a_hold_draws_its_own_lanes_and_returns_them_on_the_lapse() {
 #[test]
 fn a_lapse_returns_only_what_the_hold_drew() {
     let mut entity = Entity::open("127.0.0.1:1", Kernel::named("drew"));
-    let before = entity.physics.reserve;
+    let before = entity.physics.reserve.clone();
     // Held with no draw: `hold_chain` goes to the contemplation directly.
     entity.hold_chain(vec![(9, 0, 1, 2)]);
     assert_eq!(entity.physics.reserve, before, "a hold that drew nothing takes nothing");

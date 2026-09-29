@@ -203,4 +203,16 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], &mut budget), "hour {i} is held");
         assert_eq!(spoken(&entity), usize::from(i == 3), "hour {i}: the word stands only once the return closes");
     }
+    // Spelled against this mind's own letters (78.47 (i)): one word, spoken.
+    assert_eq!(
+        entity.transcription,
+        crate::observe::TranscriptionTally { spelled: 1, adjoined: 0, ineffable: 0, unread: 0 },
+        "the closed thought was spelled"
+    );
+    // What the court hears is the word: its letters re-derive its motion,
+    // and its blind replay — speech, never a thought — is clean.
+    let words: Vec<_> = entity.epigenome.dialect.scoped().map(|(_, d)| d.sentence.element().clone()).filter(|w| w.is_connection()).collect();
+    let [word] = words.as_slice() else { panic!("one word in the dialect: {}", words.len()) };
+    let mut budget = entity.stroke_n(1 << 16);
+    assert_eq!(crate::court::verdict::blind_replay(word, &mut budget), None, "the court's replay of the word is clean");
 }

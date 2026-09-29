@@ -38,6 +38,7 @@ impl Entity {
             epigenome: Epigenome::new(),
             refine_cursor: None,
             probes: crate::observe::ProbeTally::default(),
+            transcription: crate::observe::TranscriptionTally::default(),
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),
             taught_at: crate::network::nerve::Keyed::new(),

@@ -3,6 +3,34 @@
 
 use crate::cognition::*;
 
+/// WHERE A SERVED PAGE ENDED, by name (the actions' metabolism).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum PageEnd {
+    /// The order after the cursor was exhausted within the window.
+    #[default]
+    Order,
+    /// The frame's bytes would be passed by the next word.
+    Frame,
+    /// The wire's count (`u8`) was reached.
+    Count,
+    /// This court's reserve could not fund the next word, on this lane.
+    Reserve(crate::physics::Depleted),
+}
+
+/// A SYLLABUS PAGE AS THE COURT SERVED IT: the words taught with their
+/// stamps; how many candidates the window consumed (served and missed);
+/// the candidates missed, to re-queue; what the page drew from the reserve,
+/// per lane; and where it ended.
+#[derive(Clone, Debug, Default)]
+pub struct ServedPage {
+    pub words: Vec<crate::anastome::dialogue::Taught>,
+    pub consumed: usize,
+    pub missed: Vec<Vec<u8>>,
+    pub drawn: [u64; 4],
+    pub overflowed: bool,
+    pub end: PageEnd,
+}
+
 impl Kernel {
     /// Charts this hypha covers: Twisted or Cavity listings, per occupied lane.
     /// Never the whole pending book — that clone was the last deploy's leak.
@@ -101,8 +129,68 @@ impl Kernel {
         out
     }
 
+    /// A SYLLABUS PAGE, SERVED AND PAID (the actions' metabolism, ruled
+    /// 2026-09-29): the candidates are the order after a voice's cursor, in
+    /// ruling order; each is served while three walls stand, the first to
+    /// fall ending the page:
+    /// - the FRAME: the page's bytes, `Stamp::LEN + 4 + tape` per word,
+    ///   within `bytes`;
+    /// - the COUNT the wire carries (`u8`), so no page is built that the
+    ///   encoder then refuses after its receipts are sealed;
+    /// - the RESERVE: each word's magnitude — what it carries — drawn from
+    ///   this court's reserve per lane, all or nothing (`Reserve::draw`); a
+    ///   lane that cannot fund it ends the page, named.
+    ///
+    /// Only an INSTALLED word is taught (the genome boundary, as
+    /// `serve_ruled` reads it); one not installed, letterless or unwritable
+    /// is MISSED — consumed from the window and re-queued by the caller. A
+    /// word served is sealed as a Syllabus act (45.1) and carries that stamp.
+    pub fn serve_syllabus(&mut self, candidates: &[Vec<u8>], voice: [u8; 32], bytes: usize) -> ServedPage {
+        let mut page = ServedPage::default();
+        let mut used = 0usize;
+        for addr in candidates {
+            if page.words.len() == usize::from(u8::MAX) {
+                page.end = PageEnd::Count;
+                return page;
+            }
+            let word = self.installed_word(addr).filter(|w| !(w.is_connection() && w.letters().is_none()));
+            let Some((tape, mag)) = word.and_then(|w| w.to_bytes().map(|t| (t, w.magnitude()))) else {
+                page.missed.push(addr.clone());
+                page.consumed += 1;
+                continue;
+            };
+            let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
+            if used + width > bytes {
+                page.end = PageEnd::Frame;
+                return page;
+            }
+            if let Err(depleted) = self.physics.reserve.draw(mag) {
+                page.end = PageEnd::Reserve(depleted);
+                return page;
+            }
+            let Some(at) = self.note_served(addr, voice) else {
+                // Not sealed: the draw is returned and the word missed.
+                self.physics.reserve.restore(mag);
+                page.missed.push(addr.clone());
+                page.consumed += 1;
+                continue;
+            };
+            used += width;
+            // Each draw came out of one reserve, so the page's total is
+            // bounded by it; past the carrier it is counted, never wrapped.
+            match crate::core::lanes::lanes_add(page.drawn, mag) {
+                Some(total) => page.drawn = total,
+                None => page.overflowed = true,
+            }
+            page.words.push(crate::anastome::dialogue::Taught { at, word: tape });
+            page.consumed += 1;
+        }
+        page.end = PageEnd::Order;
+        page
+    }
+
     pub fn serve_ruled(
-        &self,
+        &mut self,
         inv: &crate::transducer::stalk::Invariant,
         have: &[crate::transducer::address::Address],
         budget: usize,
@@ -141,8 +229,15 @@ impl Kernel {
             let Some(at) = self.admitted_at(&addr) else { continue };
             // A word whose record does not write is not taught (STD1 3c).
             let Some(bytes) = w.to_bytes() else { continue };
+            let mag = w.magnitude();
             let width = crate::chronometry::Stamp::LEN + 4 + bytes.len();
-            if used + width > budget {
+            if used + width > budget || out.len() == usize::from(u8::MAX) {
+                break;
+            }
+            // WHAT THE FETCH HANDS OUT IS PAID (the actions' metabolism): the
+            // word's magnitude drawn from this court's reserve per lane; a
+            // lane that cannot fund it ends the page.
+            if self.physics.reserve.draw(mag).is_err() {
                 break;
             }
             used += width;

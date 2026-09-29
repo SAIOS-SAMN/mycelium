@@ -205,7 +205,7 @@ impl Contemplation {
                             self.remainders.unminted += 1;
                         }
                         if let Some(ground) = closing {
-                            self.transcribe_ground(&ground);
+                            self.close_thought(ground);
                         }
                     } else {
                         // The merge named no thought (`merges.unnamed`): no
@@ -238,10 +238,10 @@ impl Contemplation {
         }
     }
 
-    /// 78.52 — THE WORDS CLOSED THOUGHTS TRANSCRIBED TO, drained for the voice
-    /// to speak in the act that closed them.
-    pub(crate) fn take_words(&mut self) -> Vec<Element> {
-        std::mem::take(&mut self.words)
+    /// 78.52 — THE GROUNDS OF THE THOUGHTS THAT CLOSED, drained for the voice
+    /// to transcribe and speak in the act that closed them.
+    pub(crate) fn take_closed(&mut self) -> Vec<crate::physics::tensegrity::Ground> {
+        std::mem::take(&mut self.closed)
     }
 
     /// 78.52 — DOES THIS MERGE CLOSE A RETURN? The pair's ground, read at the
@@ -257,21 +257,12 @@ impl Contemplation {
         (pair.hours >= period && !closed_before).then(|| pair.ground.clone())
     }
 
-    /// 78.52 — A CLOSED THOUGHT IS TRANSCRIBED, never sent: its ground stays
-    /// the mind's; what is spoken is the word its generator spells in the
-    /// alphabet (`transcribe`), waiting for the voice that speaks it in the
-    /// same act. A generator the seventeen letters do not spell is an
-    /// INEFFABLE thought: it stays thought, in the meet complex, and nothing
-    /// is emitted — the frontier where a letter may one day be coined.
-    fn transcribe_ground(&mut self, ground: &crate::physics::tensegrity::Ground) {
-        match transcribe(&ground.generator, ground.period) {
-            Some(Ok(word)) => {
-                self.words.push(word);
-                self.closed_words += 1;
-            }
-            Some(Err(_)) => self.ineffable += 1,
-            None => self.untranscribed += 1,
-        }
+    /// 78.52 — A CLOSED THOUGHT WAITS FOR ITS VOICE: its ground stays the
+    /// mind's; the voice transcribes it against its own letters in the act
+    /// that closed it (`Entity::transcribe_closed`).
+    fn close_thought(&mut self, ground: crate::physics::tensegrity::Ground) {
+        self.closed.push(ground);
+        self.closed_thoughts += 1;
     }
 
     /// A merge of fewer than two bubbles is the bubble itself, and a merge
@@ -482,28 +473,6 @@ impl Contemplation {
 
 }
 
-/// 78.52 — TRANSCRIPTION: a thought's generator spelled as a WORD of the
-/// language. The generator factors into its rotation and its carriage; the
-/// rotation is spelled in the seventeen letters (`factor_rotor`, the ordered
-/// peel); the word is the connection of that spelling at that carriage —
-/// the motion the thought closed on, as speech — carrying its return
-/// (`ℓ − 1` on the shell lane, as a torsion's is priced). `Some(Err)` where
-/// the rotation is not spelled (the ineffable thought: the demand the peel
-/// names); `None` where the generator does not factor or is no rotor.
-pub(crate) fn transcribe(
-    generator: &element::Versor,
-    period: u64,
-) -> Option<Result<Element, crate::transducer::sentence::Demand>> {
-    let f = element::conformal_factors(generator).ok()?;
-    let rotor = element::rotor_of_factors(&f).ok()?;
-    match crate::transducer::alphabet::factor_rotor(&rotor)? {
-        Ok(word) => {
-            let carried = [0, 0, 0, period.checked_sub(1)?];
-            element::from_connection(&word, &f.carriage(), &[], &Vec::new(), carried).map(Ok)
-        }
-        Err(demand) => Some(Err(demand)),
-    }
-}
 
 /// 13.12, 78.26(6) — WHAT THE CONTEMPLATION'S MERGES CAME TO, counted where
 /// each is decided: MERGED into one thought; STAYED two, the forms refusing

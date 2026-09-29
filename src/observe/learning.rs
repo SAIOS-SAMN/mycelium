@@ -127,6 +127,20 @@ impl Reasons {
 /// reading), each with its count: the classes met, bounded by the classes and
 /// never a list of probes, the coordinate a court matches a residual
 /// against. A residual versor with no class key is counted `unclassed`.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+/// 78.52 — WHAT THIS VOICE'S CLOSED THOUGHTS BECAME, read where each is
+/// transcribed against the mind's own letters (78.47 (i)): SPELLED and
+/// spoken as a connection; DERIVABLE only through a letter this mind
+/// adjoined (said by that letter, which already stands); INEFFABLE — its
+/// turn unspelled by every held letter, the thought kept, nothing emitted;
+/// UNREAD — no rotation to spell.
+pub struct TranscriptionTally {
+    pub spelled: u64,
+    pub adjoined: u64,
+    pub ineffable: u64,
+    pub unread: u64,
+}
+
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ProbeTally {
     pub closed: u64,

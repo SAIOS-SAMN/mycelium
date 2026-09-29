@@ -306,12 +306,24 @@ pub struct Physics {
     /// grows); SYNTROPIC optimization (consolidation) REGENERATES it (the reserve
     /// recovers as the basis is pruned toward a minimal, confluent generating set).
     /// When a lane depletes, the mesh switches from expanding to optimizing.
-    pub reserve: [u64; 4],
+    ///
+    /// THE ONE RESERVE (65.5, PHY1): a [`Reserve`], so every draw and every
+    /// return passes through the metabolic ledger (`note_draw`,
+    /// `note_restore`) — the flux `drawn − restored` is read, never zero by
+    /// construction. Read by `lanes()`; moved only by `draw`, `drain` and
+    /// `restore`.
+    pub reserve: Reserve,
 }
 
 impl Default for Physics {
     fn default() -> Self {
-        Physics { pressure: [0; 4], syntropic: [0; 4], torsion: [0; 4], regen_mark: [0; 4], reserve: [reserve_max(); 4] }
+        Physics {
+            pressure: [0; 4],
+            syntropic: [0; 4],
+            torsion: [0; 4],
+            regen_mark: [0; 4],
+            reserve: Reserve::of([reserve_max(); 4]),
+        }
     }
 }
 
@@ -427,15 +439,8 @@ impl Physics {
     /// hide — the reserve would read empty either way and the governor
     /// could not tell a lane that just emptied from one overdrawn (rule 11).
     pub fn spend(&mut self, lanes: [bool; 4]) {
-        for (r, &on) in self.reserve.iter_mut().zip(&lanes) {
-            if on {
-                if let Some(next) = r.checked_sub(spend_unit()) {
-                    *r = next;
-                    continue;
-                }
-                *r = 0;
-            }
-        }
+        let unit = spend_unit();
+        let _ = self.reserve.drain(std::array::from_fn(|l| if lanes[l] { unit } else { 0 }));
     }
 
     /// THE TICK — a stroke that expanded nothing, charged as a stroke and not
@@ -458,16 +463,14 @@ impl Physics {
     /// one stroke". One unit, not one expansion. A lane with nothing left
     /// spends nothing, exactly as `spend` reads absence.
     pub fn tick(&mut self) {
-        for r in self.reserve.iter_mut() {
-            if let Some(next) = r.checked_sub(1) {
-                *r = next;
-            }
-        }
+        let _ = self.reserve.drain([1; 4]);
     }
 
     /// SYNTROPIC OPTIMIZATION regenerates each lane toward the deflation
     /// that lane verified since the last aperture — not toward one scalar cap.
     pub fn regenerate(&mut self) {
+        let held = self.reserve.lanes();
+        let mut back = [0u64; 4];
         for l in 0..4 {
             // The mark is a syntropic total this lane has already reached,
             // so the difference is exact. A mark AHEAD of the total is a
@@ -480,13 +483,16 @@ impl Physics {
             let target = verified.max(expand_floor());
             // A regeneration past the carrier is refused and counted; the
             // lane stands where it was.
-            let mut next = self.reserve[l];
+            let mut next = held[l];
             if !metabolism::step_or_refuse(&mut next, add) {
                 continue;
             }
-            self.reserve[l] = next.min(target.max(self.reserve[l]));
+            // What returns is the rise, read against what the lane held: a
+            // RESTORE, through the metabolic ledger.
+            back[l] = next.min(target.max(held[l])) - held[l];
             self.regen_mark[l] = self.syntropic[l];
         }
+        self.reserve.restore(back);
     }
 
     /// THE RESERVE SHORTFALL (S10 as ruled, 45.7; S13.2): per wanted lane,
@@ -506,7 +512,7 @@ impl Physics {
         // not a subtraction stopped at zero (rule 11).
         std::array::from_fn(|l| {
             match lanes[l] {
-                true => match expand_floor().checked_sub(self.reserve[l]) {
+                true => match expand_floor().checked_sub(self.reserve.lanes()[l]) {
                     Some(short) => short,
                     None => 0,
                 },
@@ -524,7 +530,7 @@ impl Physics {
     pub fn reserve_deficit(&self) -> [u64; 4] {
         // A lane at the ceiling is in deficit by NOTHING: the reading of
         // absence, as the shortfall above.
-        std::array::from_fn(|l| match reserve_max().checked_sub(self.reserve[l]) {
+        std::array::from_fn(|l| match reserve_max().checked_sub(self.reserve.lanes()[l]) {
             Some(down) => down,
             None => 0,
         })
@@ -682,9 +688,9 @@ mod tests {
         let mut expand = Physics::default();
         tick.tick();
         expand.spend([true; 4]);
-        assert_eq!(tick.reserve, [reserve_max() - 1; 4], "a tick is one unit on each lane");
+        assert_eq!(tick.reserve.lanes(), [reserve_max() - 1; 4], "a tick is one unit on each lane");
         assert!(
-            tick.reserve.iter().zip(&expand.reserve).all(|(t, e)| t > e),
+            tick.reserve.lanes().iter().zip(&expand.reserve.lanes()).all(|(t, e)| t > e),
             "and an expansion costs far more: {:?} against {:?}",
             tick.reserve,
             expand.reserve
@@ -699,9 +705,9 @@ mod tests {
         for _ in 0..8 {
             empty.spend([true; 4]);
         }
-        assert_eq!(empty.reserve, [0; 4], "eight expansions empty every lane");
+        assert_eq!(empty.reserve.lanes(), [0; 4], "eight expansions empty every lane");
         empty.tick();
-        assert_eq!(empty.reserve, [0; 4], "and a tick on an empty lane spends nothing");
+        assert_eq!(empty.reserve.lanes(), [0; 4], "and a tick on an empty lane spends nothing");
     }
 
     /// The metabolism is per-lane syntropic minus entropic — the order flux.

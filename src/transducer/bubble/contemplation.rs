@@ -137,15 +137,12 @@ pub struct Contemplation {
     /// decides, and spoken as the thought's word once its hours close a
     /// return. Volatile, as the epigenome is; dropped when spoken.
     pub(crate) grounds: Keyed<super::idea::Grounded>,
-    /// 78.52 — the words closed thoughts transcribed to, waiting for the voice
-    /// that speaks them in the act that closed them; and the counts: closed
-    /// thoughts transcribed to words, closed thoughts INEFFABLE (their turn
-    /// not spelled in the seventeen: they stay thought), and closed thoughts
-    /// whose generator did not factor.
-    pub(crate) words: Vec<Element>,
-    pub closed_words: u64,
-    pub ineffable: u64,
-    pub untranscribed: u64,
+    /// 78.52 — the grounds of thoughts whose hours closed a return, waiting for
+    /// the voice that transcribes them in the act that closed them: the voice
+    /// spells each against its OWN held letters (78.47, finding (i)), never
+    /// the fixed seventeen. And how many closed.
+    pub(crate) closed: Vec<crate::physics::tensegrity::Ground>,
+    pub closed_thoughts: u64,
     /// TUniversal the entity last stamped; T-room and potential[2] read it.
     pub(crate) now_k: u64,
     /// Z4d — THE APERTURE OF STROKES ON TUNIVERSAL, as a window of the

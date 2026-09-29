@@ -338,6 +338,43 @@ assert_eq!(
 );
 }
 
+/// THE SYLLABUS IS PAID (the actions' metabolism, 2026-09-29). An installed,
+/// admitted word served to a voice draws its own magnitude from the court's
+/// reserve, per lane, and is sealed at the act that served it; a provisional
+/// word is MISSED and draws nothing; and a court whose reserve cannot fund
+/// the next word ends the page there, by lane, sealing nothing for it.
+#[test]
+fn a_syllabus_page_is_paid_by_the_magnitudes_it_serves() {
+use crate::transducer::element::from_canonical;
+use crate::transducer::germinate::germinate;
+let mut k = Kernel::new();
+let w = from_canonical(&germinate(&[(0, 0, 1), (0, 1, 2)], &[(0, 0, 5), (0, 1, 2)]).expect("a coboundary"));
+let v = from_canonical(&germinate(&[(0, 0, 1)], &[(0, 0, 3)]).expect("a coboundary"));
+let (addr, provisional) = (w.address(), v.address());
+let mag = w.magnitude();
+assert!(mag.iter().any(|&m| m > 0), "the word carries something to pay for: {mag:?}");
+k.basis_insert(w, [1; 32]);
+let mut filing = k.stroke();
+k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 }, &mut filing);
+k.provisional.insert(&provisional, v);
+let voice = [7u8; 32];
+let before = k.reserve();
+let window = vec![provisional.as_bytes().to_vec(), addr.as_bytes().to_vec()];
+let page = k.serve_syllabus(&window, voice, 1 << 20);
+assert_eq!(page.words.len(), 1, "the installed word is served");
+assert_eq!(page.missed, vec![provisional.as_bytes().to_vec()], "the provisional one is missed, to re-queue");
+assert_eq!((page.consumed, page.drawn, page.end.clone()), (2, mag, crate::cognition::PageEnd::Order));
+let after = k.reserve();
+for l in 0..4 {
+    assert_eq!(after[l] + mag[l], before[l], "lane {l} paid exactly the word's magnitude");
+}
+// A court that cannot fund the word ends the page there, by lane.
+k.physics.reserve = crate::physics::Reserve::of([0; 4]);
+let starved = k.serve_syllabus(&[addr.as_bytes().to_vec()], voice, 1 << 20);
+assert!(starved.words.is_empty() && starved.consumed == 0, "nothing served, nothing consumed");
+assert!(matches!(starved.end, crate::cognition::PageEnd::Reserve(d) if mag[d.lane] > 0), "ended on a lane the word needs");
+}
+
 /// X3, rule 1 — THE COHESION READING IS CARRIED, NOT READ WHOLE. C and I are
 /// written when a listing's closure is bound (`Rank::put_closure`), for the
 /// same reason `ListingField::nonflat` is written by `write_field`: a read

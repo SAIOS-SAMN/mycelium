@@ -147,4 +147,18 @@ impl Reserve {
         }
         crate::physics::metabolism::note_restore(&cost);
     }
+
+    /// DRAIN: take what each lane holds of `cost`, up to what it holds — the
+    /// spend of work already done, where the work was not gated on the draw
+    /// (an expansion's charge, a tick). What was taken passes the ledger as
+    /// drawn; what a lane could not give is returned, per lane, and is the
+    /// shortfall the caller reads. Never a draw past empty (rule 11).
+    pub fn drain(&mut self, cost: [u64; 4]) -> [u64; 4] {
+        let taken: [u64; 4] = std::array::from_fn(|l| cost[l].min(self.lanes[l]));
+        for (l, t) in self.lanes.iter_mut().zip(&taken) {
+            *l -= t;
+        }
+        crate::physics::metabolism::note_draw(&taken, true);
+        std::array::from_fn(|l| cost[l] - taken[l])
+    }
 }

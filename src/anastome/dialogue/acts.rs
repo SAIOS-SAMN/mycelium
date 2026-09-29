@@ -131,14 +131,10 @@ impl Adjudication {
     }
 }
 
-/// GENESIS AUDIT (federation seeding): the court pages through a server's
-/// held basis, blind-replays each word, and seals the verified core into
-/// its federation — then propagates adoptions across the nerve so the
-/// server plane converges without waiting for incidental consensus.
-/// Request: `[ACT_GENESIS][voice 32][cursor u32]`. Reply shares the
-/// syllabus page shape (`encode_syllabus_reply`); an empty page ends the
-/// walk.
-pub const ACT_GENESIS: u8 = 0x0F;
+// 0x0F was ACT_GENESIS, a basis page by cursor. RETIRED 2026-09-29 (the
+// operator's word): nothing sent it; the syllabus and the fetch carry every
+// ruled word to a new node, and a cursor into the basis's key order moved
+// under it at every ruling. An unknown tag is not answered.
 
 /// THE SHEAF SYNC (Q3): a holder asks for the other's section digests over
 /// the atlas; a discordant stratum is then fetched by chart, with the
