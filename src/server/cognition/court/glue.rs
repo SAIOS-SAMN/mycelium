@@ -353,7 +353,7 @@ impl Kernel {
                 // carries it (POUW), never at the act that escrowed it.
                 let installed = self.anchor();
                 if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) =
-                    self.treasury.release_award(&addr)
+                    self.treasury.release_award(&addr, installed)
                 {
                     self.treasury.mint_claim(&voices, mu, installed);
                 }

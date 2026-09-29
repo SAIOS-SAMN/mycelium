@@ -105,7 +105,7 @@ impl Kernel {
             // EC1: the claim is minted AT the Ruling act sealed above
             // (POUW), never at the act that escrowed it.
             let ruled = self.anchor();
-            if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.treasury.release_award(addr) {
+            if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.treasury.release_award(addr, ruled) {
                 self.treasury.mint_claim(&voices, mu, ruled);
             }
             self.unlist(addr, false);

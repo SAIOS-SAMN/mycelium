@@ -165,11 +165,16 @@ k.rule_all_provisionals();
 // 47.3: the witness is a vantage with room. Bond it.
 let cover = k.genesis_cover().expect("measured");
 k.enroll([2; 32], cover);
+let escrowed = k.treasury().escrow_of(addr.as_bytes()).expect("the claim stands").anchor.0.h;
 k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+// 𝒯 is no deflation (a chain has no clock): the claim accrues on it the
+// heights it stood, from the act that escrowed it to the act that minted it.
+let minted_at = k.treasury().entries().iter().rev().find(|e| e.kind == crate::economy::Kind::Mint).expect("the ruling minted").at.h;
+expect[2] = minted_at - escrowed;
 assert_eq!(
     k.treasury().minted().expect("minted adds up"),
     expect,
-    "mint is the measured coboundary, not a bound listing's magnitude"
+    "mint is the measured coboundary, not a bound listing's magnitude, and the time it stood"
 );
 }
 
@@ -429,10 +434,16 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
     k.rule_all_provisionals();
     let cover = k.genesis_cover().expect("measured");
     k.enroll([2; 32], cover);
+    let escrowed = k.treasury().escrow_of(addr.as_bytes()).expect("the claim stands").anchor.0.h;
     k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    // 𝒯 is no deflation: the claim accrues on it the heights it stood, from
+    // the act that escrowed it to the act that minted it.
+    let minted_at = k.treasury().entries().iter().rev().find(|e| e.kind == crate::economy::Kind::Mint).expect("the ruling minted").at.h;
+    let mut expect = three_closed_deflation;
+    expect[2] = minted_at - escrowed;
     assert_eq!(
         k.treasury().minted().expect("minted adds up"),
-        three_closed_deflation,
-        "the amount is the deflation those three closed and nothing else"
+        expect,
+        "the amount is the deflation those three closed and nothing else, and the time it stood"
     );
 }

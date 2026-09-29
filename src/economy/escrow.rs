@@ -95,7 +95,7 @@ impl Treasury {
     pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A], at: Anchor) -> Option<[u64; 4]> {
         let mut released = Some([0u64; 4]);
         for addr in listings {
-            if let Some(Escrowed { voices, mu, .. }) = self.release_award(addr.as_ref()) {
+            if let Some(Escrowed { voices, mu, .. }) = self.release_award(addr.as_ref(), at) {
                 self.mint_claim(&voices, mu, at);
                 released = released.and_then(|r| crate::core::lanes::lanes_add(r, mu));
             }
@@ -106,10 +106,38 @@ impl Treasury {
         released
     }
 
-    /// Clear the listing claim. Payment is a mint of the same vector, done
-    /// by the caller after this returns (release then mint).
-    pub fn release_award(&mut self, addr: &[u8]) -> Option<Escrowed> {
-        self.escrowed.remove(addr)
+    /// Clear the listing claim, RELEASED AT `at`: the claim as it stood,
+    /// its temporal lane accrued (`accrued`). Payment is a mint of that
+    /// vector, done by the caller after this returns (release then mint).
+    pub fn release_award(&mut self, addr: &[u8], at: Anchor) -> Option<Escrowed> {
+        let mut row = self.escrowed.remove(addr)?;
+        row.mu = self.accrued(row.mu, row.anchor, at);
+        Some(row)
+    }
+
+    /// THE TEMPORAL LANE OF A CLAIM IS THE TIME IT STOOD (lane 𝒯, receipts
+    /// counted — law 9). A word's magnitude reads 𝒯 off its chain, and a
+    /// chain has no clock (`measure_lanes`), so every claim was priced 0 on
+    /// 𝒯 and every payment on the fleet read `[s, g, 0, h]` (epoch 106):
+    /// the court's own temporal work — standing the claim until it was ruled
+    /// — was never paid. The heights between the act that escrowed it and
+    /// the act that releases it are that work, read off the two stamps;
+    /// nothing is stored for it. A release stamped below its escrow is a
+    /// broken count and accrues nothing; a sum past the carrier is counted
+    /// and the claim stands as it was (STD1).
+    pub(crate) fn accrued(&mut self, mu: [u64; 4], escrowed: Anchor, at: Anchor) -> [u64; 4] {
+        let Some(stood) = at.0.h.checked_sub(escrowed.0.h) else { return mu };
+        match mu[2].checked_add(stood) {
+            Some(t) => {
+                let mut out = mu;
+                out[2] = t;
+                out
+            }
+            None => {
+                self.overflowed += 1;
+                mu
+            }
+        }
     }
 
     /// Mint a released claim: a consilience split when two or more voices

@@ -14,9 +14,10 @@ fn supply_is_the_sum_of_minted_deflations() {
     let d2 = [0u64, 4, 6, 2];
     t.escrow_award(&word([8; 32]), vec![[1; 32], [2; 32]], d1, at(1, [1; 32]));
     t.escrow_award(&word([9; 32]), vec![[1; 32], [2; 32]], d2, at(2, [2; 32]));
-    let h1 = t.release_award(&[8; 32]).expect("d1");
+    // Released at the acts they were escrowed at: they stood no height.
+    let h1 = t.release_award(&[8; 32], at(1, [1; 32])).expect("d1");
     t.mint_claim(&h1.voices, h1.mu, h1.anchor);
-    let h2 = t.release_award(&[9; 32]).expect("d2");
+    let h2 = t.release_award(&[9; 32], at(2, [2; 32])).expect("d2");
     t.mint_claim(&h2.voices, h2.mu, h2.anchor);
     let expect: [u64; 4] = std::array::from_fn(|l| d1[l] + d2[l]);
     assert_eq!(t.supply().expect("supply adds up"), expect);
@@ -144,13 +145,29 @@ fn a_claim_escrow_is_not_supply_until_a_ruling_mints_it() {
 
     // The claim, released, MINTS — supply rises by what the ruling
     // measured, which is E1's whole mechanism.
-    let held = t.release_award(&[7u8; 32]).expect("the claim stood");
+    let held = t.release_award(&[7u8; 32], a).expect("the claim stood");
     t.mint_claim(&held.voices, held.mu, held.anchor);
     let after = t.audit().expect("a ruling conserves");
     assert!(
         after.iter().zip(seeded.iter()).any(|(x, y)| x > y),
         "a claim released is issuance: {seeded:?} then {after:?}"
     );
+}
+
+/// THE TEMPORAL LANE OF A CLAIM IS THE TIME IT STOOD. A word's magnitude
+/// reads 𝒯 off its chain, which has no clock, so a claim is escrowed at 0 on
+/// 𝒯; released five heights later it carries those five heights on 𝒯, and
+/// the other lanes as escrowed. A release stamped below its escrow is a
+/// broken count and accrues nothing.
+#[test]
+fn a_claim_accrues_on_the_temporal_lane_the_heights_it_stood() {
+    let mut t = Treasury::new();
+    t.escrow_award(&word([7u8; 32]), vec![[2; 32]], [4, 1, 0, 3], at(1, [1; 32]));
+    let held = t.release_award(&[7u8; 32], at(6, [6; 32])).expect("the claim stood");
+    assert_eq!(held.mu, [4, 1, 5, 3], "five heights stood, on 𝒯 alone");
+    t.escrow_award(&word([8u8; 32]), vec![[2; 32]], [4, 1, 0, 3], at(6, [6; 32]));
+    let back = t.release_award(&[8u8; 32], at(1, [1; 32])).expect("the claim stood");
+    assert_eq!(back.mu, [4, 1, 0, 3], "a release below its escrow accrues nothing");
 }
 
 /// A stake MOVES value between two carriers of one identity and never

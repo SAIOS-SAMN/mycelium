@@ -109,7 +109,9 @@ impl Treasury {
         if row.voices.is_empty() {
             return None;
         }
-        let (voices, mu) = (row.voices.clone(), row.mu);
+        let (voices, mu, escrowed) = (row.voices.clone(), row.mu, row.anchor);
+        // The claim's temporal lane is the time it stood (`accrued`).
+        let mu = self.accrued(mu, escrowed, at);
         self.escrowed.remove(addr);
         let n = voices.len() as u64;
         // THE SPLIT CANNOT EXCEED WHAT IT RELEASES. This read
@@ -178,14 +180,19 @@ impl Treasury {
         pay: [u64; 4],
         anchor: Anchor,
     ) -> [u64; 4] {
-        let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow)
+        let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.release_award(escrow, anchor)
         else {
             return [0; 4];
         };
         // 50.5 (Y3): A sentence with word vertices and demand vertices mints
         // on its closed sub-complex: the amount is the deflation its closed
         // words achieved (`pay`) and nothing else, bounded by what was escrowed.
-        let mut left = std::array::from_fn(|l| pay[l].min(mu[l]));
+        // The TEMPORAL lane is no deflation — a chain has no clock — but the
+        // time the claim stood (`accrued`), whole, the escrowing voices'.
+        let mut left: [u64; 4] = std::array::from_fn(|l| match l {
+            2 => mu[l],
+            _ => pay[l].min(mu[l]),
+        });
         for (discoverer, share) in shares {
             let paid: [u64; 4] = std::array::from_fn(|l| match share[l] < left[l] {
                 true => share[l],
