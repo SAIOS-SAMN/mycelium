@@ -7,12 +7,14 @@
 pub mod escrow;
 pub mod fold;
 pub mod lanes;
+pub mod pay;
 pub mod persist;
 pub mod settle;
 pub mod treasury;
 
 pub use fold::{nets_of, Folded, Nets};
 pub use lanes::*;
+pub use pay::{Held, Unpaid};
 pub use treasury::*;
 
 use crate::transducer::element::Element;

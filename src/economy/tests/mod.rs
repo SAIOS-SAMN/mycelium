@@ -3,6 +3,7 @@
 
 mod fold;
 mod ledger;
+mod pay;
 mod settlement;
 mod surface;
 
@@ -27,7 +28,7 @@ pub(super) fn round_trip(t: &crate::economy::Treasury) -> Option<crate::economy:
     let mut tries = Vec::new();
     t.put_tries(&mut tries);
     let mut pos = 0usize;
-    let (stakes, balances) = crate::economy::Treasury::take_tries(&tries, &mut pos)?;
+    let (stakes, balances, held) = crate::economy::Treasury::take_tries(&tries, &mut pos)?;
     if pos != tries.len() {
         return None;
     }
@@ -38,7 +39,7 @@ pub(super) fn round_trip(t: &crate::economy::Treasury) -> Option<crate::economy:
         let mut p = 0usize;
         rows.push(crate::economy::Entry::read(&tape, &mut p).filter(|_| p == tape.len())?);
     }
-    Some(crate::economy::Treasury::from_parts(stakes, balances, rows))
+    Some(crate::economy::Treasury::from_parts(stakes, balances, held, rows))
 }
 
 /// THE PLACE OF ACT `k` while every act closes its orbit: a fold's head.

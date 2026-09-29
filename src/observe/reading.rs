@@ -837,10 +837,7 @@ impl Reading {
                 r.put(out);
                 Some(())
             }
-            Reading::Economy(r) => {
-                r.put(out);
-                Some(())
-            }
+            Reading::Economy(r) => r.put(out),
             Reading::Senses(r) => {
                 r.put(out);
                 Some(())

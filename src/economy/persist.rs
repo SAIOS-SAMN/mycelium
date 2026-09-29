@@ -185,11 +185,26 @@ impl Treasury {
             });
             crate::snapshot::put_trie(out, name, &nodes);
         }
+        // E3 — THE HELD CARRIER, keyed by what each hold is against: its
+        // μ⃗, its payer, and the act it was set aside at.
+        let mut nodes: crate::network::nerve::Keyed<crate::snapshot::Leaves> = crate::network::nerve::Keyed::new();
+        crate::snapshot::persist(&self.held, |key, h| {
+            let mut mu = Vec::with_capacity(32);
+            for m in &h.mu {
+                mu.extend_from_slice(&m.to_le_bytes());
+            }
+            let mut anchor = Vec::new();
+            h.anchor.0.put_canonical(&mut anchor);
+            anchor.extend_from_slice(&h.anchor.1);
+            nodes.insert(key, vec![(LEAF_MU, mu), (LEAF_PAYER, h.payer.to_vec()), (LEAF_ANCHOR, anchor)]);
+        });
+        crate::snapshot::put_trie(out, HELD_TRIE, &nodes);
     }
 
     /// The inverse of [`Treasury::put_tries`]: the stakes and the balances,
-    /// each keyed by a `vk` of 32 bytes carrying one μ⃗, or refused whole.
-    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk)> {
+    /// each keyed by a `vk` of 32 bytes carrying one μ⃗, and the held
+    /// carrier, or refused whole.
+    pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<(ByVk, ByVk, Holds)> {
         let mut read = |name: &str| -> Option<crate::network::nerve::Keyed<[u64; 4]>> {
             let nodes = crate::snapshot::take_trie(b, pos, name, &[LEAF_MU])?;
             let mut out = crate::network::nerve::Keyed::new();
@@ -209,7 +224,25 @@ impl Treasury {
         };
         let stakes = read(STAKES_TRIE)?;
         let balances = read(BALANCES_TRIE)?;
-        Some((stakes, balances))
+        let nodes = crate::snapshot::take_trie(b, pos, HELD_TRIE, &[LEAF_MU, LEAF_PAYER, LEAF_ANCHOR])?;
+        let mut held = crate::network::nerve::Keyed::new();
+        for (key, leaves) in nodes.scoped() {
+            let v = crate::snapshot::leaf(leaves, LEAF_MU)?;
+            if v.len() != 32 {
+                return None;
+            }
+            let mut mu = [0u64; 4];
+            for (l, m) in mu.iter_mut().enumerate() {
+                *m = u64::from_le_bytes(v.get(l * 8..l * 8 + 8)?.try_into().ok()?);
+            }
+            let payer: [u8; 32] = crate::snapshot::leaf(leaves, LEAF_PAYER)?.try_into().ok()?;
+            let a = crate::snapshot::leaf(leaves, LEAF_ANCHOR)?;
+            let mut p = 0usize;
+            let at = crate::chronometry::Stamp::take_canonical(a, &mut p)?;
+            let receipt: [u8; 32] = a.get(p..)?.try_into().ok()?;
+            held.insert(key, super::pay::Held { payer, mu, anchor: (at, receipt) });
+        }
+        Some((stakes, balances, held))
     }
 
     /// A TREASURY REBUILT FROM ITS PARTS at restore: the stakes and
@@ -219,6 +252,7 @@ impl Treasury {
     pub fn from_parts(
         stakes: crate::network::nerve::Keyed<[u64; 4]>,
         balances: crate::network::nerve::Keyed<[u64; 4]>,
+        held: Holds,
         entries: Vec<Entry>,
     ) -> Treasury {
         let mut t = Treasury {
@@ -227,6 +261,7 @@ impl Treasury {
             stakes,
             escrowed: crate::network::nerve::Keyed::new(),
             balances,
+            held,
             overflowed: 0,
             // Folded from the rows, since they arrived off disk and not
             // through `write`. This is the one O(journal) pass.
@@ -247,5 +282,14 @@ pub type ByVk = crate::network::nerve::Keyed<[u64; 4]>;
 pub const STAKES_TRIE: &str = "stakes";
 /// The balances trie's name.
 pub const BALANCES_TRIE: &str = "balances";
-/// The one leaf of a stake or balance node: its μ⃗, four lanes.
+/// The held carrier's trie (E3), keyed by what each hold is against.
+pub const HELD_TRIE: &str = "held";
+/// The held carrier, keyed by what each hold is against.
+pub type Holds = crate::network::nerve::Keyed<super::pay::Held>;
+/// The one leaf of a stake or balance node: its μ⃗, four lanes; a hold's
+/// μ⃗ likewise.
 pub const LEAF_MU: u8 = 1;
+/// A hold's payer, the `vk` it was set aside from.
+pub const LEAF_PAYER: u8 = 2;
+/// The act a hold was set aside at: its stamp, then that act's chain hash.
+pub const LEAF_ANCHOR: u8 = 3;

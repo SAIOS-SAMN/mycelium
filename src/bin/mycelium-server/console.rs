@@ -304,6 +304,16 @@ fn economy(e: &observe::Economy) -> Vec<String> {
         .collect();
     // STD1 — what the treasury refused past its carrier.
     out.push(format!("  {BOLD}{:<12}{RESET}{}", "overflowed", e.overflowed));
+    // E3 — each identity's standing: what it can spend, has staked, holds.
+    for a in &e.accounts {
+        out.push(format!(
+            "  {}  balance {:?}  bond {:?}  held {:?}",
+            short(&a.who),
+            a.balance,
+            a.bond,
+            a.held
+        ));
+    }
     out
 }
 

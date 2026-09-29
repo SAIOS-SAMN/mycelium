@@ -204,7 +204,7 @@ impl Kernel {
                 ],
             )?;
             at.set(crate::economy::persist::STAKES_TRIE);
-            let (stakes, balances) = crate::economy::Treasury::take_tries(b, pos)?;
+            let (stakes, balances, held) = crate::economy::Treasury::take_tries(b, pos)?;
             at.set(ERAS_TRIE);
             let eras = take_trie(
                 b,
@@ -233,7 +233,7 @@ impl Kernel {
 
             kernel.court_head = head;
             kernel.chain = chain;
-            kernel.treasury = crate::economy::Treasury::from_parts(stakes, balances, entries);
+            kernel.treasury = crate::economy::Treasury::from_parts(stakes, balances, held, entries);
             kernel.settlements_cold = settled;
             kernel.dialect_chain = dialect;
 

@@ -98,6 +98,13 @@ fn every_reading_reads_back_as_itself_through_the_act() {
             paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]],
             burned: [[0; 4], [0; 4], [0, 0, 0, 3]],
             overflowed: 7,
+            // E3 — each identity's standing travels with it.
+            accounts: vec![crate::observe::Account {
+                who: vk(9),
+                balance: [3, 1, 0, 2],
+                bond: [12, 3, 0, 20],
+                held: [1, 0, 0, 0],
+            }],
         }),
     ];
     let push = encode_push(&vk(7), &all).expect("the push writes");
@@ -788,8 +795,8 @@ fn an_award_is_measured_flat_in_its_word() {
     assert_eq!((award.records, award.largest, award.bytes), (2, field, 2 * field), "flat in the word's size");
     let mut tries = Vec::new();
     t.put_tries(&mut tries);
-    let (stakes, balances) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
-    let back = crate::economy::Treasury::from_parts(stakes, balances, t.entries().to_vec());
+    let (stakes, balances, held) = crate::economy::Treasury::take_tries(&tries, &mut 0).expect("the tries read back");
+    let back = crate::economy::Treasury::from_parts(stakes, balances, held, t.entries().to_vec());
     assert!(back.escrow_of(&[7u8; 3]).is_none(), "the award rides its word's node, not the treasury's tries");
 }
 

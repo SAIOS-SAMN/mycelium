@@ -184,6 +184,10 @@ pub struct Treasury {
     pub(crate) escrowed: crate::network::nerve::Keyed<super::escrow::Escrowed>,
     /// Per-voice balances, updated on every entry. Never a scan of the ledger.
     pub(crate) balances: crate::network::nerve::Keyed<[u64; 4]>,
+    /// E3 — value payers set aside, keyed by what it is held against, until
+    /// released or refunded (`pay.rs`). A carrier of supply, unlike an
+    /// award in escrow: it was issued, and it is the payer's until it moves.
+    pub(crate) held: crate::network::nerve::Keyed<super::pay::Held>,
     /// STD1 (rule 11) — operations REFUSED because a sum of money would pass
     /// its carrier: a credit a balance could not hold (the genesis, mint,
     /// unstake or transfer it belonged to wrote no row), a bond total or a
@@ -207,6 +211,7 @@ impl Default for Treasury {
             stakes: crate::network::nerve::Keyed::new(),
             escrowed: crate::network::nerve::Keyed::new(),
             balances: crate::network::nerve::Keyed::new(),
+            held: crate::network::nerve::Keyed::new(),
             overflowed: 0,
         }
     }
@@ -514,6 +519,31 @@ impl Treasury {
             }
         }
         e.overflowed = self.overflowed;
+        // E3 — EVERY IDENTITY'S STANDING, off the carriers themselves: one
+        // account per identity holding a balance, a bond or a hold.
+        let mut accounts: crate::network::nerve::Keyed<crate::observe::Account> = crate::network::nerve::Keyed::new();
+        let mut at = |who: &[u8], f: &mut dyn FnMut(&mut crate::observe::Account)| {
+            let Ok(w) = <[u8; 32]>::try_from(who) else { return };
+            let mut a = match accounts.get(who) {
+                Some(a) => a.clone(),
+                None => crate::observe::Account { who: w, ..Default::default() },
+            };
+            f(&mut a);
+            accounts.insert(who, a);
+        };
+        crate::snapshot::persist(&self.balances, |who, mu| at(who, &mut |a| a.balance = *mu));
+        crate::snapshot::persist(&self.stakes, |who, mu| at(who, &mut |a| a.bond = *mu));
+        let mut short = false;
+        crate::snapshot::persist(&self.held, |_, h| {
+            at(&h.payer, &mut |a| match crate::core::lanes::lanes_add(a.held, h.mu) {
+                Some(total) => a.held = total,
+                None => short = true,
+            })
+        });
+        if short {
+            return None;
+        }
+        e.accounts = accounts.scoped().map(|(_, a)| a.clone()).collect();
         Some(e)
     }
 
@@ -567,8 +597,11 @@ impl Treasury {
     ///
     /// ```text
     /// supply = genesis + mint − burn
-    /// supply = Σ balance + Σ bond + Σ escrow
+    /// supply = Σ balance + Σ bond + Σ held
     /// ```
+    ///
+    /// (An award in escrow is a claim on issuance and no carrier; value a
+    /// payer HOLDS was issued and is one, E3.)
     ///
     /// The first is read off the journal, the second off the carriers, and
     /// the fold of LEDGER_EPOCH_DESIGN is admissible only where this holds
@@ -593,12 +626,13 @@ impl Treasury {
         let mut sums: Vec<[u64; 4]> = Vec::new();
         crate::snapshot::persist(&self.balances, |_, mu| sums.push(*mu));
         crate::snapshot::persist(&self.stakes, |_, mu| sums.push(*mu));
+        crate::snapshot::persist(&self.held, |_, h| sums.push(h.mu));
         for v in &sums {
             add(v, &mut held)?;
         }
         if held != issued {
             return Err(format!(
-                "supply {issued:?} is not the carriers {held:?}: balances + bond must be what was issued"
+                "supply {issued:?} is not the carriers {held:?}: balances + bond + held must be what was issued"
             ));
         }
         Ok(issued)

@@ -541,6 +541,14 @@ impl Kernel {
         self.treasury.enroll(who, bond, anchor)
     }
 
+    /// E3 — A GENESIS ALLOCATION TO SPEND: `mu` onto `who`'s balance, its
+    /// own ledger kind (§6 keeps seeded value separable from earned), at
+    /// this court's head. Answers what landed.
+    pub fn fund(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
+        let anchor = self.anchor();
+        self.treasury.genesis(who, mu, anchor)
+    }
+
     /// Mint a genesis allocation once per identity.
     pub fn allocate(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
         if self.treasury.has_mint(&who) {

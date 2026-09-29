@@ -204,14 +204,24 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
 ///
 /// An identity already bonded is not re-bonded: what is held is never
 /// re-allocated (§6).
+///
+/// E3 — AND EACH IS FUNDED ONE COVER TO SPEND beside the cover it stakes.
+/// The whole allocation went into the bond, so every balance stood at zero
+/// and nothing could pay: a POWC use pays from the demander's balance
+/// (`settle_use`), and on the fleet it paid nothing on every court (epoch
+/// 106). The synthetic economy stands in for the contracts until they are
+/// deployed; the allocation is the corpus's measured cover, never a number
+/// chosen here.
 pub(crate) fn bond_genesis(k: &mut Kernel, vk: [u8; 32], cover: [u64; 4], genesis: &Genesis, tag: &str) {
     if k.treasury().bond_of(&vk).is_none() {
         let staked = k.enroll(vk, cover);
+        k.fund(vk, cover);
         eprintln!("[{tag}] genesis bond {cover:?}; staked {staked:?}");
     }
     for (who, _) in genesis.hypha.iter().chain(genesis.voice.iter()) {
         if k.treasury().bond_of(who).is_none() {
             k.enroll(*who, cover);
+            k.fund(*who, cover);
         }
     }
 }
@@ -231,9 +241,12 @@ mod tests {
         bond_genesis(&mut k, me, cover, &genesis, "t");
         for who in [me, peer, other, voice] {
             assert_eq!(k.treasury().bond_of(&who), Some(cover), "{who:?} is bonded at the cover");
+            assert_eq!(k.treasury().balance_mu(&who), cover, "{who:?} is funded the cover to spend");
         }
+        assert!(k.treasury().audit().is_ok(), "and the allocation conserves");
         // Bonded again with another cover: what is held stands (§6).
         bond_genesis(&mut k, me, [1, 1, 1, 1], &genesis, "t");
         assert_eq!(k.treasury().bond_of(&peer), Some(cover));
+        assert_eq!(k.treasury().balance_mu(&peer), cover, "and funded once, never again");
     }
 }
