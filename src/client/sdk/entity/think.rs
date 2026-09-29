@@ -53,6 +53,14 @@ impl Entity {
         remainders: &[Vec<(i64, i64, u8, u8)>],
         budget: &mut crate::physics::Budget,
     ) -> bool {
+        // A PERCEPTION IS ITS BODIES. An extraction memo hit hands no frames
+        // (the family was perceived, and held, when it was first
+        // extracted), and holding that form again held a thought with no
+        // bodies — a perception of nothing, filed beside the real one on
+        // every re-dispatch of the task (the cognition audit, 2026-09-29).
+        if frames.is_empty() {
+            return false;
+        }
         let Some(draw) = self.draw_for(&f) else { return false };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, budget);
         // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
