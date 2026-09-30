@@ -140,11 +140,8 @@ fn fetch_receipts(
     let mut out = Vec::new();
     let mut next = after;
     while next.is_none_or(|n| n < upto) {
-        let (reply, _) = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, upto), 16)?;
-        if crate::transport::is_deferred(&reply) {
-            return None;
-        }
-        let page = dialogue::decode_receipts_reply(&reply)?;
+        let reply = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, upto), 16).map(|(r, _)| r);
+        let page = crate::backfill::page_of(reply, mycelium::observe::CatchupPath::FoldWitness)?;
         // The page arrives in line order, so its tail names the place the
         // next page opens after — the chain's order, not the order of
         // arrival.

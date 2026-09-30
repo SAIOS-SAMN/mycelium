@@ -54,6 +54,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                     room_overflowed: k.room_refusals().1,
                     overflowed: k.overflowed(),
                     folds: observe::folds(),
+                    catchup: observe::catchups(),
                 };
                 // ACT1 — THIS COURT ON THE CLOCK, with its three counts.
                 // EC1 — and its payments by proof of work, off its journal.

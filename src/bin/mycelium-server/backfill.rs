@@ -43,10 +43,28 @@ pub(crate) fn fetch<'a>(
             None => dest,
         };
         let req = dialogue::encode_receipts_request(&mesh.vk, who, after, upto);
-        let (reply, _) = tell_peer(to_ask, req)?;
-        if crate::transport::is_deferred(&reply) {
-            return None;
-        }
-        dialogue::decode_receipts_reply(&reply)
+        page_of(tell_peer(to_ask, req).map(|(reply, _)| reply), mycelium::observe::CatchupPath::Backfill)
     }
+}
+
+/// ONE CATCH-UP PAGE READ, and counted by what came back (Phase 1): no
+/// answer, the door's deferral, a reply that is no page, an empty page, or
+/// a page. `None` for each failure, as the callers always read it — now
+/// each counted apart on `observe::catchups`.
+pub(crate) fn page_of(reply: Option<Vec<u8>>, path: mycelium::observe::CatchupPath) -> Option<Vec<KStepReceipt>> {
+    use mycelium::observe::{note_catchup, CatchupOutcome};
+    let Some(reply) = reply else {
+        note_catchup(path, CatchupOutcome::Unanswered);
+        return None;
+    };
+    if crate::transport::is_deferred(&reply) {
+        note_catchup(path, CatchupOutcome::Deferred);
+        return None;
+    }
+    let Some(page) = dialogue::decode_receipts_reply(&reply) else {
+        note_catchup(path, CatchupOutcome::Undecoded);
+        return None;
+    };
+    note_catchup(path, if page.is_empty() { CatchupOutcome::Empty } else { CatchupOutcome::Page });
+    Some(page)
 }

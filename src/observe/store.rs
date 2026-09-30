@@ -234,6 +234,20 @@ pub fn folds() -> [u64; super::FOLD_OUTCOMES.len()] {
     std::array::from_fn(|i| FOLDS[i].load(Ordering::Relaxed))
 }
 
+/// PHASE 1 — the catch-up pages by path and outcome (`Court::catchup`).
+static CATCHUP: [[AtomicU64; super::CATCHUP_OUTCOMES.len()]; super::CATCHUP_PATHS.len()] =
+    [const { [const { AtomicU64::new(0) }; super::CATCHUP_OUTCOMES.len()] }; super::CATCHUP_PATHS.len()];
+
+/// One catch-up page, by its path and what came back.
+pub fn note_catchup(path: super::CatchupPath, outcome: super::CatchupOutcome) {
+    CATCHUP[path as usize][outcome as usize].fetch_add(1, Ordering::Relaxed);
+}
+
+/// The catch-up pages this process has counted.
+pub fn catchups() -> [[u64; super::CATCHUP_OUTCOMES.len()]; super::CATCHUP_PATHS.len()] {
+    std::array::from_fn(|p| std::array::from_fn(|o| CATCHUP[p][o].load(Ordering::Relaxed)))
+}
+
 /// 78.47 — the orbits a demand arm left undischarged, by the kind their own
 /// holonomy reads (78.9), apart from the refusals.
 static UNDISCHARGED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];

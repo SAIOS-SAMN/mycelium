@@ -468,6 +468,34 @@ pub struct Court {
     /// discarded): proposed, refused open, refused inexact, committed,
     /// refused by a witness or at the commit, unmeasured.
     pub folds: [u64; FOLD_OUTCOMES.len()],
+    /// PHASE 1 (78.59) — THE CATCH-UP FETCHES BY PATH AND OUTCOME: a line's
+    /// back-fill and a fold witness's prefix, each asked of the court that
+    /// owns the line, on [`CATCHUP_PATHS`] × [`CATCHUP_OUTCOMES`]. Both
+    /// read one `None` for four different failures; the four are counted
+    /// apart (a `None` never stands for two facts, 78.26(4)).
+    pub catchup: [[u64; CATCHUP_OUTCOMES.len()]; CATCHUP_PATHS.len()],
+}
+
+/// The catch-up paths of [`Court::catchup`].
+pub const CATCHUP_PATHS: [&str; 2] = ["back-fill", "fold witness"];
+/// The outcomes of one catch-up page asked of the owning court.
+pub const CATCHUP_OUTCOMES: [&str; 5] = ["page", "unanswered", "deferred", "undecoded", "empty"];
+
+/// Where one catch-up page is counted.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CatchupPath {
+    Backfill = 0,
+    FoldWitness = 1,
+}
+
+/// What one catch-up page came back as.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CatchupOutcome {
+    Page = 0,
+    Unanswered = 1,
+    Deferred = 2,
+    Undecoded = 3,
+    Empty = 4,
 }
 
 /// THE AXES OF [`Court::folds`], in its writing's order.
@@ -506,6 +534,9 @@ impl Court {
         for n in self.folds {
             put_u64(out, n);
         }
+        for n in self.catchup.iter().flatten() {
+            put_u64(out, *n);
+        }
         Some(())
     }
 
@@ -527,6 +558,10 @@ impl Court {
         for n in &mut folds {
             *n = take_u64(b, p)?;
         }
+        let mut catchup = [[0u64; CATCHUP_OUTCOMES.len()]; CATCHUP_PATHS.len()];
+        for n in catchup.iter_mut().flatten() {
+            *n = take_u64(b, p)?;
+        }
         Some(Court {
             k,
             basis,
@@ -539,6 +574,7 @@ impl Court {
             room_overflowed,
             overflowed,
             folds,
+            catchup,
         })
     }
 }

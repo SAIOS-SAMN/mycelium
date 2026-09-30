@@ -419,6 +419,18 @@ fn court(c: &Court) -> Vec<String> {
             "  {BOLD}fold{RESET}        {}",
             observe::FOLD_OUTCOMES.iter().zip(c.folds).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join("  ")
         ),
+        format!(
+            "  {BOLD}catch-up{RESET}    {}",
+            observe::CATCHUP_PATHS
+                .iter()
+                .zip(c.catchup)
+                .map(|(path, row)| format!(
+                    "{path}: {}",
+                    observe::CATCHUP_OUTCOMES.iter().zip(row).map(|(o, n)| format!("{o} {n}")).collect::<Vec<_>>().join(" ")
+                ))
+                .collect::<Vec<_>>()
+                .join(" | ")
+        ),
     ]
 }
 
