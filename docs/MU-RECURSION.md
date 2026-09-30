@@ -18709,6 +18709,14 @@ is a genuine contradiction and is refused. Consensus is set equality of
 the section orbits. (τ_ext = 0 is named in the directive; between two
 static sections there is no motion for it to read, so the gate is the
 exact finite rotation.)
+REFINED (the operator, 2026-09-30): a peer's word that NO motion relates to
+the word held on the chart is a DISTINCT word, not a second section of the
+same object — one chart held 46–51 installed words at each court on epoch
+115 — and is admitted as another member, with no cocycle. Only a rotation
+that is not exact and finite is a contradiction, refused. AGREEMENT is on
+INSTALLED words (the operator, same day): the exchange compares its
+installed language with the peer's, as the peer's digests reply already
+carries; the ruled cover keeps its reading for confirming a pending word.
 
 READ AGAINST THE TREE for the addendum (the implementor):
 - P3: a fixed bit cap ("256 bits per component") is a capping constant,

@@ -135,30 +135,35 @@ impl Kernel {
                 // two sections — the chart's orbit is then finite — and a
                 // transition that is no such rotation is a genuine
                 // contradiction on the chart, refused.
-                Some(g) => {
-                    use crate::transducer::alphabet::Order;
-                    // Which part of the gate a refused transition fails is
-                    // named on the refusal: no rotor read, an order that is
-                    // not finite, or no versor or class for the rotor.
-                    let gate: Result<(crate::transducer::cga::Mv, crate::transducer::address::Address), &'static str> =
-                        match crate::transducer::cech::rotor_of(&g) {
-                            None => Err("sections of one chart related by no rotor (the transition reads none)"),
-                            Some(r) if !matches!(r.order(), Some(Order::Finite(_))) => {
-                                Err("sections of one chart related by a rotation of no finite order")
-                            }
-                            Some(r) => match (rotor_versor(&r), r.class_key()) {
-                                (Some(v), Some(ck)) => Ok((v, ck)),
-                                _ => Err("sections of one chart related by a rotation with no versor or class"),
-                            },
+                // A WORD NO MOTION RELATES TO THE HELD ONE IS A DISTINCT WORD
+                // (ruled 2026-09-30, the operator's word): not a second
+                // section of the same object but another word sharing the
+                // chart — one chart held 46–51 installed words at each court
+                // on epoch 115, and refusing these as contradictions kept the
+                // courts' installed sets apart for good. It is admitted as
+                // another member, with no cocycle.
+                Some(g) => match crate::transducer::cech::rotor_of(&g) {
+                    None => {}
+                    // A rotation relates them: it must be exact and finite,
+                    // and is then filed as the cocycle; one that is not is a
+                    // contradiction between sections of one object, refused,
+                    // named by the part of the gate it fails.
+                    Some(r) => {
+                        use crate::transducer::alphabet::Order;
+                        let gate = match (matches!(r.order(), Some(Order::Finite(_))), rotor_versor(&r), r.class_key()) {
+                            (false, _, _) => Err("sections of one chart related by a rotation of no finite order"),
+                            (true, Some(v), Some(ck)) => Ok((v, ck)),
+                            (true, _, _) => Err("sections of one chart related by a rotation with no versor or class"),
                         };
-                    match gate {
-                        Ok((v, ck)) => self.push_cocycle(&inv, self_id, peer, v, ck),
-                        Err(why) => {
-                            dialect(3, colour);
-                            outcome = Glue::Slashed(why);
+                        match gate {
+                            Ok((v, ck)) => self.push_cocycle(&inv, self_id, peer, v, ck),
+                            Err(why) => {
+                                dialect(3, colour);
+                                outcome = Glue::Slashed(why);
+                            }
                         }
                     }
-                }
+                },
             }
         }
         let others: Vec<Vec<u8>> = verts.scoped().map(|(k, _)| k).collect();
