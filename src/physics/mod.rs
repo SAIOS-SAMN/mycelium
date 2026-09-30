@@ -516,13 +516,24 @@ impl Physics {
         let held = self.reserve.lanes();
         let mut back = [0u64; 4];
         let mut excess = [0u64; 4];
+        // Σ ACTIVE BONDS IS THE SUM OVER THE BOND, not each lane's own: a
+        // court bonds nothing on 𝒯 ([142545, 29789, 0, 305223] on the
+        // fleet), and the per-lane reading capped the 𝒯 reserve at the 𝒯
+        // work verified in one orbit — near zero — so every word with any
+        // 𝒯 in its magnitude was deferred for reserve (6 257 syllabus words
+        // at hypha a, epoch 115). The ruling reads "Σ active bonds plus the
+        // work verified", so each lane stands within the whole bond plus its
+        // own verified work.
+        let Some(bond) = bonds.iter().try_fold(0u64, |s, &b| s.checked_add(b)) else {
+            return;
+        };
         for l in 0..4 {
             let Some(verified) = self.syntropic[l].checked_sub(self.regen_mark[l]) else {
                 continue;
             };
             // A ceiling past the carrier is refused and counted; the lane
             // stands where it was.
-            let Some(ceiling) = bonds[l].checked_add(verified) else {
+            let Some(ceiling) = bond.checked_add(verified) else {
                 continue;
             };
             let add = regen_unit() * (1 + (verified > 0) as u64);
@@ -726,16 +737,18 @@ mod tests {
     #[test]
     fn a_court_reserve_regenerates_within_bonds_and_verified_work() {
         let mut p = Physics { reserve: Reserve::of([0; 4]), ..Default::default() };
-        let bonds = [3, 3, 3, 3];
-        for _ in 0..8 {
+        // A bond with nothing on 𝒯, as the fleet's courts hold: every lane
+        // still stands within the whole bond (Σ = 9), never 𝒯's own 0.
+        let bonds = [3, 3, 0, 3];
+        for _ in 0..16 {
             p.regenerate_within(bonds);
         }
-        assert_eq!(p.reserve.lanes(), bonds, "refilled to the bonds and no further");
+        assert_eq!(p.reserve.lanes(), [9; 4], "refilled to Σ bonds on every lane, 𝒯 included, and no further");
         p.syntropy(&[5, 0, 0, 0]);
         p.regenerate_within(bonds);
-        assert!(p.reserve.lanes()[0] > 3, "verified work raises the ceiling on its lane");
+        assert!(p.reserve.lanes()[0] > 9, "verified work raises the ceiling on its lane");
         p.regenerate_within(bonds);
-        assert_eq!(p.reserve.lanes()[0], 3, "an idle window contracts it to the bonds");
+        assert_eq!(p.reserve.lanes()[0], 9, "an idle window contracts it to Σ bonds");
     }
 
     /// A TICK IS A STROKE, NOT AN EXPANSION. A stroke whose outcome moved no
