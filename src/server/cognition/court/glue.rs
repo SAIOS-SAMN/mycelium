@@ -122,14 +122,30 @@ impl Kernel {
                 Some(g) if crate::transducer::stalk::placement_of(&g).is_some() => {
                     outcome = Glue::Attached;
                 }
+                // TWO SECTIONS OF ONE CHART RELATED BY A TURN ARE BOTH KEPT
+                // (ruled 2026-09-30, the operator's word: every section, never
+                // a pair — 78.44 — and the curvature between them is content).
+                // The peer's word was held as dialect here, so three courts
+                // stood discordant in one stratum for good, each keeping its
+                // own section and refusing the others' (c: 121 re-glues of b's
+                // words as dialect with no voice speaking). It is admitted as
+                // another member of the stratum; the turn is the cocycle it
+                // files, its class recorded. THE GATE (the operator's
+                // directive): only an EXACT rotation of finite order links
+                // two sections — the chart's orbit is then finite — and a
+                // transition that is no such rotation is a genuine
+                // contradiction on the chart, refused.
                 Some(g) => {
-                    dialect(3, colour);
-                    outcome = Glue::Dialect;
-                    if let Some(r) = crate::transducer::cech::rotor_of(&g) {
-                        if let Some(v) = rotor_versor(&r) {
-                            if let Some(ck) = r.class_key() {
-                                self.push_cocycle(&inv, self_id, peer, v, ck);
-                            }
+                    use crate::transducer::alphabet::Order;
+                    let exact = crate::transducer::cech::rotor_of(&g).and_then(|r| {
+                        let finite = matches!(r.order(), Some(Order::Finite(_)));
+                        Some((rotor_versor(&r)?, r.class_key()?)).filter(|_| finite)
+                    });
+                    match exact {
+                        Some((v, ck)) => self.push_cocycle(&inv, self_id, peer, v, ck),
+                        None => {
+                            dialect(3, colour);
+                            outcome = Glue::Slashed("sections of one chart related by no exact rotation of finite order");
                         }
                     }
                 }
@@ -320,6 +336,12 @@ impl Kernel {
             }
         }
         self.complexes.insert(inv.key(), cx);
+        // A section the gate refused (no exact rotation to this court's) is
+        // refused whole: nothing below fills, pays or classes it.
+        if let Glue::Slashed(_) = outcome {
+            self.heard_mark(addr, &inv);
+            return outcome;
+        }
         if let Some(reason) = self.court_torsion(&spoken, &inv, self_id, peer) {
             self.heard_mark(addr, &inv);
             return Glue::Slashed(reason);

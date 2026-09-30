@@ -18685,6 +18685,26 @@ ADDENDUM (the operator, 2026-09-30) — FIVE PILLARS AND PHASE 1 ITEM 5:
   reputation and clade — and either writes a receipt and commits, or
   refuses at the door. The game (routes, grids, UI) is the application.
 
+RULING (the operator, 2026-09-30) — EVERY SECTION OF A CHART IS KEPT. When
+two courts rule different words on one chart and the words differ by a
+turn (a transition that is neither the identity nor a placement), both are
+kept: the peer's word is admitted as another member of the stratum, and the
+turn is the cocycle it files, its class recorded (78.44: every route kept,
+never a pair; the curvature between sections is content). Found on epoch
+115: the courts agreed on two strata of three and stood discordant in the
+third for good — each court kept its own section and glued its peers' as
+dialect (hypha c re-glued b's words as dialect 121 times with no voice
+speaking). The courts converge on the union.
+THE GATE (the operator's directive): a chart holds a section coset
+{(W₀, id), (W₁, R₀₁), …}; a peer's W′ on an occupied chart is admitted only
+where an EXACT rotation R of finite order links it to the section held
+(W′ = R W₀ R̃ over ℚ) — the orbit is then finite, |O| ≤ ℓ — its relative
+coordinate R filed as the cocycle; where no exact rotation links them it
+is a genuine contradiction and is refused. Consensus is set equality of
+the section orbits. (τ_ext = 0 is named in the directive; between two
+static sections there is no motion for it to read, so the gate is the
+exact finite rotation.)
+
 READ AGAINST THE TREE for the addendum (the implementor):
 - P3: a fixed bit cap ("256 bits per component") is a capping constant,
   which 78.43 calls undefined physics. The tree already meters the same
