@@ -26,7 +26,20 @@ impl Kernel {
         budget: &mut crate::physics::Budget,
     ) -> Glue {
         let addr = spoken.address();
+        // PHASE 1 DIAGNOSTIC — WHICH PATH HOLDS A FETCHED WORD AS DIALECT:
+        // three courts stood discordant in one stratum with no voice
+        // speaking, c gluing b's words as dialect 121 times.
+        let dialect = |path: usize, colour: bool| {
+            static SEEN: [std::sync::atomic::AtomicU64; 5] = [const { std::sync::atomic::AtomicU64::new(0) }; 5];
+            const NAMES: [&str; 5] = ["already heard", "colour unproven", "a citation missing", "a transition between sections", "a class simplex"];
+            let n = SEEN[path].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+            if n.is_power_of_two() {
+                eprintln!("  glue dialect ({n}) by {} — colour word {colour}", NAMES[path]);
+            }
+        };
+        let colour = spoken.is_colour_word();
         if self.heard.contains(&addr) {
+            dialect(0, colour);
             return Glue::Dialect;
         }
         if let Some(reason) = self.court_replay(&spoken, budget) {
@@ -41,6 +54,7 @@ impl Kernel {
         // dialect and is not marked heard: once the words it cites are
         // installed here, the next fetch proves it.
         if spoken.is_colour_word() && !self.colour_proof(&spoken, None).stands() {
+            dialect(1, colour);
             return Glue::Dialect;
         }
         let inv = crate::transducer::stalk::invariant_of(&spoken);
@@ -57,6 +71,7 @@ impl Kernel {
                 e.target != addr && self.word_at(e.target.as_bytes()).is_none()
             });
             if missing {
+                dialect(2, colour);
                 self.heard_mark(addr, &inv);
                 return Glue::Dialect;
             }
@@ -108,6 +123,7 @@ impl Kernel {
                     outcome = Glue::Attached;
                 }
                 Some(g) => {
+                    dialect(3, colour);
                     outcome = Glue::Dialect;
                     if let Some(r) = crate::transducer::cech::rotor_of(&g) {
                         if let Some(v) = rotor_versor(&r) {
@@ -328,6 +344,7 @@ impl Kernel {
             outcome = Glue::Attached;
         }
         if let Some((class, degree)) = class_simplex {
+            dialect(4, colour);
             self.mark_class(&inv, class.clone(), degree);
             outcome = Glue::Dialect;
         }
