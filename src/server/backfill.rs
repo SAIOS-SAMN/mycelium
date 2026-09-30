@@ -100,6 +100,26 @@ pub fn chase(
             // The page stopped on a citation: fetch that signer up to the
             // place it was cited at, then come back to this range.
             Some(p) => {
+                // WHAT IS HELD AT THE CITED PLACE, where the line's head
+                // already stands past it: nothing (the line holds a hole
+                // below its head) or another receipt (a fork). The chase
+                // judged "held" by the head alone (Phase 1 diagnostic).
+                let past = kernel.lock().ok().and_then(|k| {
+                    let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
+                    (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
+                });
+                if let Some(at) = past {
+                    static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                    let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                    if n.is_power_of_two() {
+                        let what = match at {
+                            None => "no receipt held there (a hole below the head)",
+                            Some(true) => "the cited receipt itself",
+                            Some(false) => "another receipt (a fork)",
+                        };
+                        eprintln!("  back-fill cited parent ({n}) {:02x}{:02x}… {:?}: head past it, {what}", p.at.vk[0], p.at.vk[1], p.at.place());
+                    }
+                }
                 frontier.push((who, upto));
                 frontier.push((p.at.vk, p.at.place()));
             }
