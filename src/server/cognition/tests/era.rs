@@ -259,5 +259,6 @@ fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
     k.orbit();
     let p2 = k.propose_fold().expect("the second fold");
     let second = k.receipts_range(&home, p2.after, p2.root.at, 100);
+    assert_eq!(fetched(&k, &p2), k.treasury().rows_below(p2.root.at), "the witness is served exactly the rows the proposal nets over");
     assert_eq!(witness.verify_fold(home, &p2, &second, &fetched(&k, &p2)), Ok(()), "the second fold verifies on the fetched rows");
 }

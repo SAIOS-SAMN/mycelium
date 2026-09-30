@@ -265,7 +265,14 @@ impl Kernel {
         if *signer != self.identity || from.is_some_and(|f| f >= upto) {
             return (0, Vec::new());
         }
-        let all = self.treasury.rows_span(from, upto);
+        // THE ROWS THE FOLD NETS OVER, and nothing else: the proposer's
+        // epochs are the nets of every row below its root — the last fold's
+        // epoch rows and all since — so the witness is served exactly that
+        // set. The span from `from` left the epoch rows out, and a fold
+        // proposed after another was refused by every witness as not
+        // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
+        // epoch 115). A fold compacts the journal, so the set stays small.
+        let all = self.treasury.rows_below(upto);
         // The span's rows are the mesh's count, `u64` on the wire.
         let total = all.len() as u64;
         // A cursor past every `usize` is past every row this node holds:
