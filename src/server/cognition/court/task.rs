@@ -122,7 +122,7 @@ impl Kernel {
             }
             self.append_step(crate::chronometry::ActKind::Settled, addr, voice);
             let settled = self.anchor();
-            if let Some(crate::economy::escrow::Escrowed { voices, mu: held, .. }) = self.treasury.release_award(addr, settled) {
+            if let Some(crate::economy::escrow::Escrowed { voices, mu: held, .. }) = self.treasury.release_award(addr) {
                 self.treasury.mint_claim(&voices, held, settled);
             }
         }

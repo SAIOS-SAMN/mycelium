@@ -61,7 +61,7 @@ fn release_mints_when_the_bond_is_empty() {
     let addr = [7u8; 32];
     t.escrow_award(&super::word(addr), vec![[1; 32], [2; 32]], [4, 0, 2, 0], at(1, [9; 32]));
     assert_eq!(t.bond_total(), Some([0; 4]));
-    let held = t.release_award(&addr, at(1, [9; 32])).expect("claim");
+    let held = t.release_award(&addr).expect("claim");
     t.mint_claim(&held.voices, held.mu, held.anchor);
     assert_eq!(t.balance_mu(&[1; 32]), [2, 0, 1, 0]);
     assert_eq!(t.balance_mu(&[2; 32]), [2, 0, 1, 0]);
@@ -108,8 +108,7 @@ fn a_released_rewrite_pays_every_voice_the_escrow_names() {
     t.escrow_award(&super::word(addr), vec![[2; 32]], [8, 0, 4, 0], at(1, [1; 32]));
     let released = at(5, [5; 32]);
     let share = t.release_rewrite(&addr, released).expect("two parties stood it");
-    // 𝒯 carried 4 and accrued the four heights it stood (0 → 4): 8, split.
-    assert_eq!(share, [4, 0, 4, 0], "one quantity, split per lane, lanes never meeting");
+    assert_eq!(share, [4, 0, 2, 0], "one quantity, split per lane, lanes never meeting");
     assert_eq!(t.balance_mu(&[1; 32]), share, "the voice that stood it");
     assert_eq!(t.balance_mu(&[2; 32]), share, "and the one that stood it after");
     let mints: Vec<&Entry> = t.entries().iter().filter(|e| e.kind == Kind::Mint).collect();

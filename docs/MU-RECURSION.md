@@ -18481,7 +18481,31 @@ not its exact form):
 - 78.54 is amended accordingly: `frame_fixed` fixes the frame only for a
   task whose momentum vanishes.
 
-THE FOUR CLOSURES, OPEN — the operator's, never derived:
+RULED 2026-09-30 (the operator's word), closing what follows:
+- THE POLAR VECTOR is the transition displacement of the centre of mass,
+  Δr_CM = r_CM(out) − r_CM(in): P = Δr_CM ∧ e_∞ couples the Hamiltonian to
+  a direction and orientation is physical; Δr_CM = 0 is the O(2) singlet and
+  orientation is gauge. The implementor's reading, canonical.
+- I. UNITARY WITH A RESERVOIR SINK. Spin(4,1) stays strictly unitary over ℚ;
+  no non-invertible projection semigroup. A merge c₁, c₂ ↦ c₃ is a unitary
+  swap into an unobserved ancilla — the background ∅; the language spells
+  only invertible automorphisms.
+- II. THE DETECTOR IS A DIRICHLET BOUNDARY. The sensor's channels are an
+  absolute laboratory anchor: inside the manifold colour transformations are
+  gauge-invariant section automorphisms, but at the boundary the channel
+  indices break the gauge globally, so minds ground shared words for
+  specific colours. (It supersedes 78.53's relabelling of the palette at the
+  sensor: a per-task relabelling would move the anchor.)
+- III. ORBITS ARE STRICTLY INTRA-TASK. A thought's hours wind across the
+  demonstration frames of one family; cross-task pairing for orbital
+  closure is abolished; what tasks share lives in the genome as words.
+- IV. VALUE IS DISSIPATIVE WORK ON MATTER. POUW pays only residue
+  annihilated; waiting in escrow earns nothing (f86916db revoked); a theorem
+  is admitted and mints nothing — it earns when a solver cites it to
+  annihilate residue, as a share of that payout; the court's reserve scales
+  with Σ active bonds plus the work verified over the current window.
+
+THE FOUR CLOSURES AS FIRST POSED:
 - I. UNITARITY VS DISSIPATION: colour merges (12 corpus tasks) — held as
   open systems coupled to an unobserved reservoir (Spin(4,1) stays
   unitary), or a projection semigroup admitting irreversible words?
