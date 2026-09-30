@@ -20,7 +20,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     let at_most = budget / mycelium::chronometry::KStepReceipt::MIN_TAPE;
     let receipts = match door.kernel.lock() {
-        Ok(k) => k.receipts_range(&req.signer, req.after, req.upto, at_most),
+        Ok(k) => k.receipts_page(&req.signer, req.after, req.upto, at_most, budget),
         Err(_) => return,
     };
     let body = dialogue::encode_receipts_reply(&receipts, budget);

@@ -109,10 +109,45 @@ impl Kernel {
     /// it, never past a hole: each receipt read names the one before it as
     /// its predecessor.
     pub fn receipts_range(&self, signer: &[u8; 32], after: Option<Place>, upto: Place, budget: usize) -> Vec<KStepReceipt> {
+        self.receipts_page(signer, after, upto, budget, usize::MAX)
+    }
+
+    /// THE SAME READ, BOUNDED BY THE BYTES A PAGE CAN CARRY (Phase 1 item
+    /// 3): no receipt is read past the one whose tape fills `bytes`. The
+    /// count bound alone is the frame over the SMALLEST tape, thousands of
+    /// receipts, and a page carries what fits — so each served page cloned
+    /// and re-read far more than it sent, and hypha b, serving its peers'
+    /// catch-up, answered its own console with none of four workers free
+    /// (12:05, 128 receipts pages since boot). The work now follows the page.
+    pub fn receipts_page(
+        &self,
+        signer: &[u8; 32],
+        after: Option<Place>,
+        upto: Place,
+        budget: usize,
+        bytes: usize,
+    ) -> Vec<KStepReceipt> {
         let mut out = Vec::new();
         if after.is_some_and(|a| a >= upto) {
             return out;
         }
+        let mut tape = Vec::new();
+        let mut used = 0usize;
+        // A receipt is taken while the page has room; the one that fills it
+        // is the last, so a page is never empty for want of bytes.
+        let mut fits = |r: &KStepReceipt| -> bool {
+            if used >= bytes {
+                return false;
+            }
+            tape.clear();
+            // A tape that will not write, or bytes past the counter, fill
+            // the page: it is read no further.
+            used = match r.write(&mut tape).and_then(|()| used.checked_add(tape.len())) {
+                Some(u) => u,
+                None => bytes,
+            };
+            true
+        };
         // AN ERA NAMES THE PLACE RANGE IT HOLDS, and the archive is in line
         // order, so the era that answers a place is FOUND, never searched for.
         //
@@ -130,21 +165,22 @@ impl Kernel {
         // selected — a court carries descriptors, not history.
         let within = |at: Place| after.is_none_or(|a| a < at) && at <= upto;
         let mut cold: Vec<KStepReceipt> = Vec::new();
-        for e in self.eras_over(signer, after, upto) {
-            // THE BUDGET BOUNDS THE CLONE, not the result. This cloned every
-            // receipt of every era the range named and truncated after: one
-            // back-fill request held 561 MB of clones at once on hypha c,
-            // which the kernel OOM-killed at its 2 GB cap every six minutes
-            // (epoch 114, the jemalloc heap profile at the peak). The run is
-            // in line order, so what the budget leaves room for is its head.
-            let room = match budget.checked_sub(cold.len()) {
-                Some(0) | None => break,
-                Some(room) => room,
-            };
+        // THE BUDGET BOUNDS THE CLONE, not the result. This cloned every
+        // receipt of every era the range named and truncated after: one
+        // back-fill request held 561 MB of clones at once on hypha c, which
+        // the kernel OOM-killed at its 2 GB cap every six minutes (epoch 114,
+        // the jemalloc heap profile at the peak). The run is in line order,
+        // so what the budget and the page's bytes leave room for is its head.
+        'eras: for e in self.eras_over(signer, after, upto) {
             let Some(page) = self.era_receipts(e) else { continue };
             // A paged era is in line order: the range is its run between
             // the two places.
-            cold.extend(page.iter().filter(|r| within(r.stamp.place())).take(room).cloned());
+            for r in page.iter().filter(|r| within(r.stamp.place())) {
+                if cold.len() >= budget || !fits(r) {
+                    break 'eras;
+                }
+                cold.push(r.clone());
+            }
         }
         // THE DESTINATION IS ALREADY KNOWN (law 3): the hot line is read
         // off the line relation between the two places.
@@ -154,25 +190,23 @@ impl Kernel {
         )]
         let hot_after = cold.last().map(|r| r.stamp.place()).or(after);
         let hot = self.chain.line_between(signer, hot_after, upto, budget);
-        if *signer == self.identity {
-            for r in cold.iter().chain(hot).take(budget) {
-                out.push(r.clone());
-            }
-            return out;
-        }
-        // Another signer's line, never past a hole: each receipt names the
-        // one before it.
+        let own = *signer == self.identity;
+        // Another signer's line is read never past a hole: each receipt
+        // names the one before it. The cold run was measured as it was
+        // read; the hot run is measured here.
         let mut last = after;
-        for r in cold.iter().chain(hot) {
-            if out.len() >= budget {
+        let cold_len = cold.len();
+        for (i, r) in cold.into_iter().map(std::borrow::Cow::Owned).chain(hot.into_iter().map(std::borrow::Cow::Borrowed)).enumerate() {
+            if out.len() >= budget || (i >= cold_len && !fits(&r)) {
                 break;
             }
-            let prev = r.prev.map(|p| p.at.place());
-            if prev != last {
-                break;
+            if !own {
+                if r.prev.map(|p| p.at.place()) != last {
+                    break;
+                }
+                last = Some(r.stamp.place());
             }
-            last = Some(r.stamp.place());
-            out.push(r.clone());
+            out.push(r.into_owned());
         }
         out
     }
