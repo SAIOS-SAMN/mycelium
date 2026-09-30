@@ -831,7 +831,7 @@ fn the_senses_and_the_acts_travel_whole() {
         drawn: [5, 6, 7, 8],
         restored: [9, 10, 11, 12],
         refused: 13,
-        syllabus: [14, 15, 16, 17, 18, 19, 20],
+        syllabus: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24],
         fetch: [21, 22],
         judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
         paid: [33, 34, 35, 36],

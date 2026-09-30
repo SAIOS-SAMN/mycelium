@@ -432,10 +432,58 @@ impl Kernel {
                 eprintln!("  syllabus: a learner's payment refused after its balance was read: {why:?}");
             }
         }
+        // 78.60 — what the sentence stands to among the words this court
+        // already taught this learner, read before it joins them.
+        let anchor = self.anchor_of(addr, voice);
+        crate::observe::count(&mut self.acts.syllabus, &crate::observe::SYLLABUS, anchor);
         let mut held = voice.to_vec();
         held.extend_from_slice(addr);
         self.taught_voice.insert(held, ());
         Learner::Served(crate::anastome::dialogue::Taught { at, word: tape }, width)
+    }
+
+    /// 78.60 — WHAT A TAUGHT SENTENCE STANDS TO IN ITS LEARNER'S
+    /// VOCABULARY, of the words this court taught that learner on the
+    /// sentence's chart: a held word ONE rotor γ takes onto it at every
+    /// vertex (the word half of a refraction — `Form::refract` would carry
+    /// it as (that word, Γ)); a held word a rotor PER VERTEX takes onto it
+    /// (a coboundary δγ, `coboundary_gauge`); a held word on the chart that
+    /// neither relates; or none. The strongest relation any held word
+    /// stands in is the reading. Exact (T1 of the cochains, over ℚ), never
+    /// a byte count; a lower bound, since the learner may hold words from
+    /// other courts and its own speech.
+    fn anchor_of(&self, addr: &[u8], voice: [u8; 32]) -> &'static str {
+        use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
+        let Some(word) = self.installed_word(addr) else { return "sentences: unanchored" };
+        let (Some(inv), Some(form)) = (chart_of(word), crate::transducer::sentence::from_element_form(word)) else {
+            return "sentences: unanchored";
+        };
+        let (mut chart, mut gauged) = (false, false);
+        for held in self.ruled.fiber(&inv) {
+            let mut key = voice.to_vec();
+            key.extend_from_slice(&held);
+            if held.as_slice() == addr || !self.taught_voice.contains(&key) {
+                continue;
+            }
+            chart = true;
+            let Some(h) = self.installed_word(&held).and_then(crate::transducer::sentence::from_element_form) else {
+                continue;
+            };
+            let Some(gamma) = coboundary_gauge(&h, &form) else { continue };
+            gauged = true;
+            // ONE γ: every vertex's rotor the same ray.
+            let mut rotors = gamma.entries().map(|(_, w)| w.rotor());
+            if let Some(r0) = rotors.next() {
+                if rotors.all(|r| r.projective_eq(&r0)) {
+                    return "sentences: one rotor γ";
+                }
+            }
+        }
+        match (gauged, chart) {
+            (true, _) => "sentences: rotor per vertex δγ",
+            (false, true) => "sentences: chart only",
+            (false, false) => "sentences: unanchored",
+        }
     }
 
     /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a

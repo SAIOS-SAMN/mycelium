@@ -493,4 +493,10 @@ fn a_sentence_is_taught_at_its_learners_expense() {
     let payment = crate::observe::FLOWS.iter().position(|f| *f == "payment").expect("a named flow");
     assert_eq!(economy.flows[payment], crate::observe::Flow { rows: 1, mu: cost }, "one payment, its vector once");
     assert_eq!(economy.tuition, crate::observe::Flow { rows: 1, mu: cost }, "paid to this court");
+    // 78.60 — the learner held nothing on the sentence's chart from this
+    // court: the sentence stood unanchored.
+    let acts = k.acts_reading();
+    let axis = |n: &str| crate::observe::SYLLABUS.iter().position(|a| *a == n).expect("a named axis");
+    assert_eq!(acts.syllabus[axis("sentences: unanchored")], 1, "{:?}", acts.lines());
+    assert_eq!(acts.syllabus[axis("sentences: one rotor γ")], 0);
 }

@@ -18841,6 +18841,76 @@ and whether the fibre's orbit is closed or open by which mode — so
 another mind replays it from its own constructors and agrees on the
 class (C2a) or refuses. That is the POW++ shape.
 
+### 78.60 A word is its generators; the address locates. The court is a compound eye; the wire relays refractions (ruled 2026-10-01, the operator's word)
+
+**The ruling.** A word's identity is its generating mathematics; the
+address merely locates. `record.rs`'s "the address is what a word IS
+(law 2)" was an affine holdover that took the container for the content:
+a form's key writes its cell complex out in full, so the wire carried the
+evaluated space (every vertex, face and chart coordinate) instead of the
+invariant generator that produces it — why syllabus pages ended on the
+64 KiB frame (38 of 73 at b, 15 of 52 at c on 1b8a8654) and an address
+once reached 10 MB. Identity(W) ≡ (κ, ℓ, B₀, g): class, period, ground
+bodies, generator. The address is an A21 fibre key — it locates without
+search and is never substance. The evaluated complex is the orbit g swept
+over B₀, built by the receiver in its own engine.
+
+**How it lands in the tree (the implementor's reading, 2026-10-01).**
+(κ, ℓ, B₀, g) is already a type: `physics::tensegrity::Ground {class,
+period, bodies, generator, coupling}` — a voice's perception files it
+(`ground_of`). Refraction is already a function: `Form::refract(Γ)`
+(3.10: rebase by word, regauge, compose carriage), with Γ = `Transport
+{word, carriage, gauge}` — proved by `sentence/tests/refraction.rs` and
+**called by nothing in production**. Refraction fires only inside
+perception, at a contact face between two bodies (BQ5a,
+`pivot/circuit.rs`). Between minds nothing refracts: the syllabus ships
+`Element::to_bytes` whole, and glue relates a peer's word to the held
+one by `cech::transition` — defined on letter words only; for a form it
+is `None`, and the sentence is admitted as a "distinct word". No reader
+solves for the Γ relating two forms. Live (epoch 115, 2026-10-01):
+adjoined-by-closure 0 and adjoin 0 against 156–157 installed — no new
+generator is constructed.
+
+**The directives, in the order they land.**
+1. *The wire relays mathematics.* A taught word travels as (held
+   address, Γ) where a transport relates it to a word the learner
+   holds — the learner runs `Form::refract` on its own copy and T1
+   replays it — or as its generators (κ, ℓ, B₀, g) where none does. The
+   evaluated complex leaves the wire; it is built locally, for display
+   or collision.
+2. *The court is a compound eye.* Every link — peer court or voice — is
+   an ocular nerve ν_i; a word arriving on ν_i is read as a held anchor
+   refracted by Γ_i. Tensegrity A10.1(i)'s two is a floor, never a
+   ceiling. Pairwise glue retires for the holonomy of the nerves: flat
+   (Ω = id) is grounded consensus; Ω ≠ id is curvature, recorded as
+   content in the chart (curvature is content), never refused.
+3. *Cost is the rank the word opens.* Teaching Γ to a learner holding V
+   costs dim_ℚ Lie(V ∪ {Γ}) / Lie(V): zero for grammar (a composite of
+   held generators), the dimension opened for new geometry. The orbit
+   algebra of 78.11 (bracket-closed, rank = capacity) is its reader.
+
+**Read against the laws (the implementor, for the operator).**
+(a) *Ω is per cycle.* The Γ_i do not commute, so ∏_{i=1..K} Γ_i in an
+order the court picks is rule 4's defect. Holonomy is read around each
+closed cycle of the nerve graph (`cech::holonomy`, the triangle
+composite, at every grade — NB1), every cycle kept.
+(b) *No ε fee.* A zero-rank extension costs zero; a constant fee beside
+it is an invented floor (rule 11, precision is the rule) unless ruled as
+a physical quantity.
+(c) *Γ's fibre.* The gauge half is a fibre relation on eleven hues with
+the reservoir e_∅ (78.58), not only a permutation of S₁₀: a merge
+records into e_∅.
+(d) *Forecasts are not readings.* "Under 96 bytes", "600 words a
+frame", "deferrals to zero" are forecasts; each is measured once
+built. Deferrals already read 0 on 1b8a8654 (learner pays).
+(e) *Purging the record is a recut* (§10): the voice's genome on disk is
+written in `Element::to_bytes`; the wire changes first, the record after.
+
+**Order.** Instrument first: of the sentences taught, how many share a
+class (κ) with a word their learner already holds — the exact bound on
+what (1) can refract, and what a Γ solver between two forms must cover.
+Then the solver and (1); then (3); then (2).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

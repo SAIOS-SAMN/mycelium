@@ -76,8 +76,23 @@ pub struct Senses {
 }
 
 /// What a court's syllabus pages came to.
-pub const SYLLABUS: [&str; 7] =
-    ["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"];
+pub const SYLLABUS: [&str; 11] = [
+    "pages",
+    "words served",
+    "words missed",
+    "ended: order",
+    "ended: frame",
+    "ended: count",
+    "deferred: reserve",
+    // 78.60 — each sentence taught, by what it stands to among the words
+    // this court already taught its learner on its chart: one rotor γ takes
+    // a held word onto it (a refraction's word half), a rotor per vertex
+    // does (a coboundary δγ), the chart alone is shared, or nothing is.
+    "sentences: one rotor γ",
+    "sentences: rotor per vertex δγ",
+    "sentences: chart only",
+    "sentences: unanchored",
+];
 /// What a court's fetch pages came to.
 pub const FETCH: [&str; 2] = ["words served", "deferred: reserve"];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?).
