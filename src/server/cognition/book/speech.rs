@@ -192,10 +192,12 @@ impl Kernel {
         // The word as this court will hold it: a colour word witnessed here
         // carries its witnessing task (outside its address).
         let held: Element;
+        let mut theorem = false;
         let s = if s.is_colour_word() {
             let proof = self.colour_proof(s, Some(task));
             if proof == ColourProof::Derived {
                 self.acts.colours_derived += 1;
+                theorem = true;
             }
             match proof {
                 ColourProof::Unproven => {
@@ -219,6 +221,14 @@ impl Kernel {
             Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
             Ok(out) => out,
         };
+        // 78.56 IV — A THEOREM MINTS NOTHING AT ADMISSION: a symmetry of the
+        // vacuum does no work until a solver cites it to annihilate residue,
+        // and then it earns as a share of that payout (the cited-generator
+        // shares of an install, `settle_recursive`). Its claim is dropped,
+        // never slashed: the word stands, and its install releases nothing.
+        if theorem {
+            let _ = self.treasury.revoke_award(addr.as_bytes(), false);
+        }
         match out {
             Outcome::Deferred(lanes) => Err(lanes),
             // Per sentence: this one waits, the rest of the frame is

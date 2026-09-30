@@ -505,6 +505,42 @@ impl Physics {
         self.reserve.restore(back);
     }
 
+    /// 78.56 IV — A COURT'S RESERVE, BY ITS CAPACITY. The ceiling is not a
+    /// hardware constant: it is `bonds` (the active bonds staked, per lane)
+    /// plus the work verified since the last close (the court's own window,
+    /// one orbit). Each close the reserve regenerates toward it at the
+    /// regeneration law's own rate (`regenerate`'s step), and a reserve held
+    /// above it — an idle orbit after a productive one — contracts to it, the
+    /// excess drained. It expands with useful work and contracts when idle.
+    pub fn regenerate_within(&mut self, bonds: [u64; 4]) {
+        let held = self.reserve.lanes();
+        let mut back = [0u64; 4];
+        let mut excess = [0u64; 4];
+        for l in 0..4 {
+            let Some(verified) = self.syntropic[l].checked_sub(self.regen_mark[l]) else {
+                continue;
+            };
+            // A ceiling past the carrier is refused and counted; the lane
+            // stands where it was.
+            let Some(ceiling) = bonds[l].checked_add(verified) else {
+                continue;
+            };
+            let add = regen_unit() * (1 + (verified > 0) as u64);
+            match held[l].checked_sub(ceiling) {
+                Some(over) if over > 0 => excess[l] = over,
+                _ => {
+                    let mut next = held[l];
+                    if metabolism::step_or_refuse(&mut next, add) {
+                        back[l] = next.min(ceiling) - held[l];
+                    }
+                }
+            }
+            self.regen_mark[l] = self.syntropic[l];
+        }
+        self.reserve.restore(back);
+        let _ = self.reserve.drain(excess);
+    }
+
     /// THE RESERVE SHORTFALL (S10 as ruled, 45.7; S13.2): per wanted lane,
     /// how far the reserve stands below one expansion — zero where the lane
     /// expands. A reading, never a verdict (§2.3): the caller acts on the
@@ -680,6 +716,27 @@ mod tests {
         assert!(p.reserve_shortfall(t)[2] > 0, "one stroke is not recovery");
         p.regenerate();
         assert_eq!(p.reserve_shortfall(t), [0; 4], "two strokes re-earn expansion");
+    }
+
+    /// 78.56 IV — A COURT'S RESERVE LIVES WITHIN ITS CAPACITY: Σ bonds plus
+    /// the work verified this window. Emptied, it refills toward that ceiling
+    /// at the regeneration law's rate and never past it; verified work raises
+    /// the ceiling; held above a lowered ceiling — an idle window after a
+    /// productive one — it contracts to it.
+    #[test]
+    fn a_court_reserve_regenerates_within_bonds_and_verified_work() {
+        let mut p = Physics::default();
+        p.reserve = Reserve::of([0; 4]);
+        let bonds = [3, 3, 3, 3];
+        for _ in 0..8 {
+            p.regenerate_within(bonds);
+        }
+        assert_eq!(p.reserve.lanes(), bonds, "refilled to the bonds and no further");
+        p.syntropy(&[5, 0, 0, 0]);
+        p.regenerate_within(bonds);
+        assert!(p.reserve.lanes()[0] > 3, "verified work raises the ceiling on its lane");
+        p.regenerate_within(bonds);
+        assert_eq!(p.reserve.lanes()[0], 3, "an idle window contracts it to the bonds");
     }
 
     /// A TICK IS A STROKE, NOT AN EXPANSION. A stroke whose outcome moved no

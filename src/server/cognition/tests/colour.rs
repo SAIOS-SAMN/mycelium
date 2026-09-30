@@ -79,6 +79,13 @@ fn a_colour_theorem_stands_by_composing_what_it_cites() {
         "no task, no scene: the court composes what it cites"
     );
     assert_eq!(k.acts_reading().colours_derived, 1, "admitted by derivation");
+    // 78.56 IV — AND IT MINTS NOTHING: no claim stands for it, so its
+    // install releases nothing; it earns only when cited to close residue.
+    assert!(k.treasury().escrow_of(theorem.address().as_bytes()).is_none(), "a theorem holds no claim");
+    let minted = k.treasury().minted().expect("minted adds up");
+    k.rule_all_provisionals();
+    k.confirm_peer_holds_addrs(std::slice::from_ref(&theorem.address()), [2; 32]);
+    assert_eq!(k.treasury().minted().expect("minted adds up"), minted, "its admission mints nothing");
     // A FORGED CITATION: the same citation on a word it does not compose to.
     let mut forged = colour_word(&[(3, 1)]).expect("a word");
     forged.set_receipts(crate::transducer::element::ReceiptsEnvelope {
