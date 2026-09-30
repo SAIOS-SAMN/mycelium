@@ -530,6 +530,11 @@ impl Exchange {
                             k.confirm_peer_holds(&remote, vk_peer);
                             let local = k.ruled_digests();
                             let discord = mycelium::transducer::sheaf::discordant(&remote, &local);
+                            // PHASE 1 ITEM 1 — AGREEMENT WITH THIS PEER, read
+                            // at its digest: the strata it named, and how many
+                            // of them differ from this court's ruled sections.
+                            mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::STRATA, remote.len() as u64);
+                            mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::DISCORDANT, discord.len() as u64);
                             if discord.is_empty() {
                                 local
                                     .iter()

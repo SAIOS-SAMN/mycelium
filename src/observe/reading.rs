@@ -605,11 +605,14 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("backfill_unlinked", "back-filled receipts past the head held: the page did not open at it"),
     ("backfill_refused", "back-filled receipts refused on their chain"),
     ("backfill_equivocation", "back-filled receipts at a held place with another hash"),
+    // Phase 1 item 1 — AGREEMENT, per peer, at its last digest (levels).
+    ("strata", "strata of ruled words the peer's last digest named (a level)"),
+    ("discordant", "of them, strata whose ruled sections differ from this court's (a level)"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 20;
+pub const REP_AXES: usize = 22;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -634,6 +637,9 @@ pub mod rep {
     pub const BACKFILL_UNLINKED: usize = 17;
     pub const BACKFILL_REFUSED: usize = 18;
     pub const BACKFILL_EQUIVOCATION: usize = 19;
+    /// LEVELS, set at each digest, never summed.
+    pub const STRATA: usize = 20;
+    pub const DISCORDANT: usize = 21;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
@@ -649,7 +655,7 @@ pub struct Replication {
 impl Replication {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: REPLICATION_AXES, REP_AXES = 20 entries")]
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: REPLICATION_AXES, REP_AXES = 22 entries")]
         out.push(REPLICATION_AXES.len() as u8);
         crate::transducer::address::put_u32_count(out, self.signers.len())?;
         for (vk, axes) in &self.signers {
