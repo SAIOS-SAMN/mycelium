@@ -18911,33 +18911,36 @@ class (κ) with a word their learner already holds — the exact bound on
 what (1) can refract, and what a Γ solver between two forms must cover.
 Then the solver and (1); then (3); then (2).
 
-**The solver, first cut (the implementor, 2026-10-01 — held, not landed).**
-Two instruments shipped on 98fc7f8f read the WRONG relation for (1): a
+**The solver, first cut (the implementor, 2026-10-01).**
+The instrument shipped on 98fc7f8f read the WRONG relation for (1): a
 uniform per-vertex γ from `coboundary_gauge` is `w_T = γ·w_W` (left
 translation), while a refraction is conjugation, `w_T = Γ w_W Γ⁻¹`
 (`rebase_by_word`); that axis ("sentences: one rotor γ") is to be read as
-nothing. The held cut (uncommitted on impl/soak) solves Γ exactly:
+nothing. The solver solves Γ exactly:
 `simultaneous_conjugators` stacks each word vertex's equation
 `γa_v − λ_v b_v γ = 0` into one elimination over ℚ, the scale λ_v read as
 `⟨a_v⟩₀/⟨b_v⟩₀` (a conjugation keeps the scalar part — no squaring, no
 search); Γ's carriage and gauge are read off one member pair
 (`c_T = Γc·c_W`, `g_T = Γg∘g_W`, which the rebase leaves alone); the
 address of `held.refract(Γ)` against the other's is the proof. Two
-findings, both open:
+findings:
 (i) *The factoriser is narrower than the alphabet.* A 180° turn in
 (e₂, e₃) — two letters `turn_90((1,2))` — acts on the sensor plane as
 diag(1, −1), and `factor_rotor` refuses it with a `Standing` demand: a
 conjugator the letters spell is read as unspellable. Every orientation
 reversal of the sensor plane is lost to the solve until the factoriser
 reads such a block.
-(ii) *A pure translation does not yet solve back.* A minted sentence
-refracted by one column's translator moves its address; the solve reads
-the identity word and the translator's carriage exactly (projectively
-equal, checked), yet `held.refract` by that Γ does not land on the
-refracted address. Something the refraction moves beyond the members'
-carriages and gauges — an overlap's carriage, a citation's site, the
-cover's ports — is not read by the one-member placement. This is the next
-thing to measure, before the syllabus relays anything.
+(ii) *A pure translation did not solve back — resolved the same night.*
+The solve read Γ's hue map as `g_T ∘ g_W⁻¹`, which assumes a member's hue
+map is invertible; it is a fibre relation, and a merge records into e_∅
+(78.58), so that composite named hues Γ never moved. Γg is now solved on
+g_W's image — `Γg(g_W(h)) = g_T(h)` for each hue, two hues g_W joins that
+g_T sends apart refusing (`gauge_after`) — and a minted sentence refracted
+by one column's translator solves back to a Γ whose refraction lands on the
+refracted address (`a_refraction_is_solved_back_from_the_two_forms`). The
+syllabus instrument reads by this relation from here on: refracted (held,
+Γ), conjugate with the placement apart, an unspellable conjugator, a rotor
+per vertex δγ, the chart only, or unanchored.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

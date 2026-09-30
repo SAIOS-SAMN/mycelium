@@ -105,6 +105,92 @@ impl Transport {
     }
 }
 
+/// 78.60 — WHAT RELATES A HELD FORM TO ANOTHER, read exactly: whether the
+/// other can be RELAYED as (held, Γ) and refracted by its receiver.
+#[derive(Clone, Debug)]
+pub enum Relation {
+    /// `held.refract(Γ)` is the other form, address for address (T1): it
+    /// travels as the held word's address and Γ.
+    Refracted(Transport),
+    /// One word the alphabet spells conjugates every word vertex, and the
+    /// refraction by it with the carriage and gauge read off the members
+    /// does not land on the other — the placement differs from vertex to
+    /// vertex, or a citation does: the word half of a refraction.
+    Conjugate(Word),
+    /// One rotor conjugates every word vertex and the alphabet cannot
+    /// spell it: the measured obstruction a generator is made of (37.7).
+    Unspellable(crate::transducer::alphabet::Rotor),
+    /// No one rotor conjugates them, or they stand on no common vertex set.
+    Unrelated,
+}
+
+/// 78.60 — SOLVE Γ WITH `held.refract(Γ) = other`, never by search. A
+/// refraction conjugates every word vertex by one rotor and keeps its
+/// coordinate (a word vertex is keyed by its class, which conjugation
+/// keeps), so the word vertices pair by coordinate and ONE γ is solved for
+/// all of them at once (`simultaneous_conjugators`, one elimination over
+/// ℚ). A citation moves under the rebase and is not paired; the refraction
+/// by each spelled γ is then taken and its address compared with the
+/// other's — the proof, whatever was paired.
+pub fn relation(held: &Form, other: &Form) -> Relation {
+    use crate::transducer::alphabet::bundle::simultaneous_conjugators;
+    if held.vertices.len() != other.vertices.len() || held.faces.len() != other.faces.len() {
+        return Relation::Unrelated;
+    }
+    let mut pairs = Vec::new();
+    for (at, va) in held.vertices.entries() {
+        if !matches!(at, coord::VertexAt::Word(_)) {
+            continue;
+        }
+        let Some(vb) = other.vertices.at(&at) else { return Relation::Unrelated };
+        let (Some(wa), Some(wb)) = (va.word_in(&held.vertices), vb.word_in(&other.vertices)) else {
+            return Relation::Unrelated;
+        };
+        pairs.push((wa.rotor(), wb.rotor()));
+    }
+    // Zero is not a word (`as_element_form`); the address is the form's,
+    // whatever unit magnitude it is minted at.
+    let address = |f: &Form| super::as_element_form(f, [0, 0, 0, 1]).map(|e| e.address());
+    let Some(target) = address(other) else { return Relation::Unrelated };
+    // THE PLACEMENT AND THE HUES OF Γ, read off one word vertex acting on
+    // one chart in both forms: a refraction composes Γ's carriage and gauge
+    // into every member (`compose_carriages`, `regauge_listing`) and the
+    // rebase touches neither, so `c_other = Γc·c_held` and
+    // `g_other = Γg ∘ g_held` there, exactly. The first such vertex in
+    // coordinate order is read; the address comparison below is the proof.
+    let placed = held.vertices.entries().find_map(|(at, va)| {
+        let (Vertex::Word { acts: aa, .. }, Some(Vertex::Word { acts: ab, .. })) = (va, other.vertices.at(&at)) else {
+            return None;
+        };
+        let (ea, eb): (Vec<_>, Vec<_>) = (aa.entries().collect(), ab.entries().collect());
+        match (ea.as_slice(), eb.as_slice()) {
+            ([(_, ma)], [(_, mb)]) => Some((mb.carriage.geo(&ma.carriage.reverse()), gauge_after(&ma.gauge, &mb.gauge)?)),
+            _ => None,
+        }
+    });
+    let mut read = Relation::Unrelated;
+    for g in simultaneous_conjugators(&pairs) {
+        match crate::transducer::alphabet::factor_rotor(&g) {
+            Some(Ok(w)) => {
+                let gamma = match &placed {
+                    Some((carriage, gauge)) => Transport { word: w.clone(), carriage: carriage.clone(), gauge: gauge.clone() },
+                    None => Transport::from_word(w.clone()),
+                };
+                if held.refract(&gamma).and_then(|f| address(&f)).is_some_and(|a| a == target) {
+                    return Relation::Refracted(gamma);
+                }
+                read = Relation::Conjugate(w);
+            }
+            _ => {
+                if matches!(read, Relation::Unrelated) {
+                    read = Relation::Unspellable(g);
+                }
+            }
+        }
+    }
+    read
+}
+
 impl Form {
     /// The one function that moves a form between frames (3.10).
     pub fn refract(&self, gamma: &Transport) -> Option<Form> {
@@ -303,6 +389,33 @@ pub(crate) fn apply_plane_block(
 
 pub(crate) fn hue_key(h: u8) -> Vec<u8> {
     vec![h]
+}
+
+/// 78.60 — THE HUE MAP Γg WITH `Γg ∘ first = second`, solved on first's
+/// image: a member's hue map is a fibre relation that need not be
+/// injective (a merge records into e_∅, 78.58), so `second ∘ first⁻¹` is
+/// no identity even where Γ moved no hue. Each hue h either map names
+/// sets `Γg(first(h)) = second(h)`; two hues first joins that second sends
+/// apart refuse (`None`: no one hue map carries first onto second). Fixed
+/// points are the identity's and are not written.
+pub(crate) fn gauge_after(first: &[(u8, u8)], second: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let (a, b) = (gauge_keyed(first), gauge_keyed(second));
+    let mut hues: Keyed<()> = Keyed::new();
+    for &(x, _) in first.iter().chain(second.iter()) {
+        hues.insert(hue_key(x), ());
+    }
+    let mut out: Keyed<u8> = Keyed::new();
+    for (k, _) in hues.scoped() {
+        let h = k[0];
+        let (from, to) = (gauge_image(&a, h), gauge_image(&b, h));
+        match out.get(&hue_key(from)) {
+            Some(&t) if t != to => return None,
+            _ => {
+                out.insert(hue_key(from), to);
+            }
+        }
+    }
+    Some(out.scoped().map(|(k, &t)| (k[0], t)).filter(|&(h, t)| h != t).collect())
 }
 
 pub(crate) fn gauge_invert(g: &[(u8, u8)]) -> Vec<(u8, u8)> {

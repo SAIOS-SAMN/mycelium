@@ -278,6 +278,62 @@ pub fn conjugators(a: &Rotor, b: &Rotor) -> Vec<Rotor> {
     out
 }
 
+/// 78.60 — ONE γ CONJUGATING EVERY PAIR AT ONCE: `γ·a_v·γ⁻¹ = b_v` for
+/// every v, projectively. The relation is linear in γ as `conjugators`
+/// reads it, and the pairs STACK — sixteen equations each, one kernel over
+/// ℚ — so the solve is one elimination however many pairs there are.
+///
+/// THE SCALE OF EACH PAIR IS READ, NOT GUESSED. `b_v` is `γa_vγ⁻¹` up to a
+/// scalar μ, and a conjugation keeps the scalar part: `⟨γaγ⁻¹⟩₀ = ⟨a⟩₀`.
+/// So where `⟨b_v⟩₀ ≠ 0` the scale is the exact rational `⟨a_v⟩₀/⟨b_v⟩₀`
+/// and the pair's equations are `γa_v − λ_v·b_v·γ = 0`. A pair whose scalar
+/// parts are both zero (a turn of 180°) fixes no scale and sets no
+/// equation; it is held to the exact sandwich below with every pair. One
+/// scalar part zero and the other not: no conjugation relates them, and
+/// the answer is empty. With no scaled pair at all, the one-pair solve of
+/// the first pair in vertex order offers the candidates.
+///
+/// Every candidate returned is even, a versor, and conjugates EVERY pair
+/// by the exact sandwich (rule 11: proved, not presumed).
+pub fn simultaneous_conjugators(pairs: &[(Rotor, Rotor)]) -> Vec<Rotor> {
+    use num_traits::{One, Zero};
+    let minus = -num_rational::BigRational::one();
+    let mut rows: Vec<Vec<num_rational::BigRational>> = Vec::new();
+    for (a, b) in pairs {
+        let (sa, sb) = (a.coeff(0), b.coeff(0));
+        match (sa.is_zero(), sb.is_zero()) {
+            (true, true) => continue,
+            (false, false) => {}
+            _ => return Vec::new(),
+        }
+        let scaled = b.scale(&(sa / sb));
+        let mut block = vec![vec![num_rational::BigRational::zero(); 16]; 16];
+        for j in 0..16usize {
+            let e = Rotor::blade(j, num_rational::BigRational::one());
+            let img = e.geo(a).add(&scaled.geo(&e).scale(&minus));
+            for (i, row) in block.iter_mut().enumerate() {
+                row[j] = img.coeff(i).clone();
+            }
+        }
+        rows.extend(block);
+    }
+    let candidates: Vec<Rotor> = if rows.is_empty() {
+        match pairs {
+            [(a, b), ..] => conjugators(a, b),
+            [] => return vec![Rotor::scalar(num_rational::BigRational::one())],
+        }
+    } else {
+        nullspace(&rows)
+            .into_iter()
+            .map(|c| (0..16usize).fold(Rotor::zero(), |acc, i| acc.add(&Rotor::blade(i, c[i].clone()))))
+            .collect()
+    };
+    candidates
+        .into_iter()
+        .filter(|g| g.is_even() && g.is_versor() && pairs.iter().all(|(a, b)| g.conjugate_holds(a, b)))
+        .collect()
+}
+
 /// THE KERNEL OF THE CONJUGATION RELATION `γ ↦ γa ∓ bγ` on the rotor
 /// algebra's sixteen blades: the solutions of the equations its images of
 /// the blades set, by the tree's one solver (`core::span::solutions`), then

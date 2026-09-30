@@ -444,46 +444,54 @@ impl Kernel {
 
     /// 78.60 — WHAT A TAUGHT SENTENCE STANDS TO IN ITS LEARNER'S
     /// VOCABULARY, of the words this court taught that learner on the
-    /// sentence's chart: a held word ONE rotor γ takes onto it at every
-    /// vertex (the word half of a refraction — `Form::refract` would carry
-    /// it as (that word, Γ)); a held word a rotor PER VERTEX takes onto it
-    /// (a coboundary δγ, `coboundary_gauge`); a held word on the chart that
-    /// neither relates; or none. The strongest relation any held word
-    /// stands in is the reading. Exact (T1 of the cochains, over ℚ), never
-    /// a byte count; a lower bound, since the learner may hold words from
-    /// other courts and its own speech.
+    /// sentence's chart, by the strongest relation any of them stands in:
+    /// refracted — `held.refract(Γ)` is the sentence, so it could have
+    /// travelled as (held, Γ); conjugate — one spelled word conjugates every
+    /// vertex, the carriage, gauge or a citation apart; an unspellable
+    /// conjugator — a generator's obstruction (37.7); a rotor per vertex (a
+    /// coboundary δγ, `coboundary_gauge`); the chart alone; or none. Exact
+    /// (the conjugators solved over ℚ, the refraction's address compared),
+    /// never a byte count; a lower bound, since the learner's own speech and
+    /// other courts' words are not read.
     fn anchor_of(&self, addr: &[u8], voice: [u8; 32]) -> &'static str {
         use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
-        let Some(word) = self.installed_word(addr) else { return "sentences: unanchored" };
+        use crate::transducer::sentence::Relation;
+        const READS: [&str; 6] = [
+            "sentences: refracted (held, Γ)",
+            "sentences: conjugate, carriage apart",
+            "sentences: unspellable conjugator",
+            "sentences: rotor per vertex δγ",
+            "sentences: chart only",
+            "sentences: unanchored",
+        ];
+        let Some(word) = self.installed_word(addr) else { return READS[5] };
         let (Some(inv), Some(form)) = (chart_of(word), crate::transducer::sentence::from_element_form(word)) else {
-            return "sentences: unanchored";
+            return READS[5];
         };
-        let (mut chart, mut gauged) = (false, false);
+        // The strongest relation met so far, as its place on READS.
+        let mut best = 5usize;
         for held in self.ruled.fiber(&inv) {
             let mut key = voice.to_vec();
             key.extend_from_slice(&held);
             if held.as_slice() == addr || !self.taught_voice.contains(&key) {
                 continue;
             }
-            chart = true;
+            best = best.min(4);
             let Some(h) = self.installed_word(&held).and_then(crate::transducer::sentence::from_element_form) else {
                 continue;
             };
-            let Some(gamma) = coboundary_gauge(&h, &form) else { continue };
-            gauged = true;
-            // ONE γ: every vertex's rotor the same ray.
-            let mut rotors = gamma.entries().map(|(_, w)| w.rotor());
-            if let Some(r0) = rotors.next() {
-                if rotors.all(|r| r.projective_eq(&r0)) {
-                    return "sentences: one rotor γ";
-                }
-            }
+            let read = match crate::transducer::sentence::relation(&h, &form) {
+                Relation::Refracted(_) => return READS[0],
+                Relation::Conjugate(_) => 1,
+                Relation::Unspellable(_) => 2,
+                Relation::Unrelated => match coboundary_gauge(&h, &form) {
+                    Some(_) => 3,
+                    None => 4,
+                },
+            };
+            best = best.min(read);
         }
-        match (gauged, chart) {
-            (true, _) => "sentences: rotor per vertex δγ",
-            (false, true) => "sentences: chart only",
-            (false, false) => "sentences: unanchored",
-        }
+        READS[best]
     }
 
     /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a

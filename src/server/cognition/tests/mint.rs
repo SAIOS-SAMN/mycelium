@@ -498,5 +498,38 @@ fn a_sentence_is_taught_at_its_learners_expense() {
     let acts = k.acts_reading();
     let axis = |n: &str| crate::observe::SYLLABUS.iter().position(|a| *a == n).expect("a named axis");
     assert_eq!(acts.syllabus[axis("sentences: unanchored")], 1, "{:?}", acts.lines());
-    assert_eq!(acts.syllabus[axis("sentences: one rotor γ")], 0);
+    assert_eq!(acts.syllabus[axis("sentences: refracted (held, Γ)")], 0);
+}
+
+/// 78.60 — Γ IS SOLVED BACK FROM THE TWO FORMS, never searched for: a
+/// minted sentence is refracted by a translation of one column, and the
+/// relation read off the held form and the refracted one is a refraction
+/// whose Γ lands on the refracted form's address — it could travel as
+/// (held, Γ). The sentence's words are unit rotors that move by their
+/// carriages, so the placement half of Γ is what is solved here. A form
+/// stands refracted from itself.
+#[test]
+fn a_refraction_is_solved_back_from_the_two_forms() {
+    use crate::transducer::sentence::{as_element_form, from_element_form, relation, Relation, Transport};
+    let family = vec![
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
+    let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal, 0).expect("mint");
+    let held = from_element_form(&spoken).expect("a form");
+    let gamma = Transport {
+        word: crate::transducer::alphabet::Word::identity(),
+        carriage: crate::transducer::element::translator_versor(1, 0),
+        gauge: Vec::new(),
+    };
+    let out = gamma.refract(&held).expect("Γ keeps the sensor plane");
+    let address = |f: &crate::transducer::sentence::Form| as_element_form(f, [0, 0, 0, 1]).map(|e| e.address());
+    assert!(address(&held).is_some() && address(&out).is_some(), "both forms are words");
+    assert_ne!(address(&held), address(&out), "the refraction moved the sentence");
+    let Relation::Refracted(gamma) = relation(&held, &out) else {
+        panic!("solved back: {:?} (moved: {})", relation(&held, &out), address(&held) != address(&out));
+    };
+    assert_eq!(gamma.refract(&held).and_then(|g| address(&g)), address(&out), "the Γ solved lands where the refraction did");
+    assert!(matches!(relation(&held, &held), Relation::Refracted(_)), "a form is its own refraction by the identity");
 }

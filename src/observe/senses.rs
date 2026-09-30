@@ -76,7 +76,7 @@ pub struct Senses {
 }
 
 /// What a court's syllabus pages came to.
-pub const SYLLABUS: [&str; 11] = [
+pub const SYLLABUS: [&str; 13] = [
     "pages",
     "words served",
     "words missed",
@@ -84,11 +84,16 @@ pub const SYLLABUS: [&str; 11] = [
     "ended: frame",
     "ended: count",
     "deferred: reserve",
-    // 78.60 — each sentence taught, by what it stands to among the words
-    // this court already taught its learner on its chart: one rotor γ takes
-    // a held word onto it (a refraction's word half), a rotor per vertex
-    // does (a coboundary δγ), the chart alone is shared, or nothing is.
-    "sentences: one rotor γ",
+    // 78.60 — each sentence taught, by the strongest relation it stands in
+    // to a word this court already taught its learner on its chart: the
+    // held word refracted by one Γ IS it (relayable as (held, Γ)); one
+    // spelled word conjugates every vertex and the carriage, gauge or a
+    // citation differs; one rotor does and the alphabet cannot spell it (a
+    // generator's obstruction); a rotor per vertex does (a coboundary δγ);
+    // the chart alone is shared; or nothing is.
+    "sentences: refracted (held, Γ)",
+    "sentences: conjugate, carriage apart",
+    "sentences: unspellable conjugator",
     "sentences: rotor per vertex δγ",
     "sentences: chart only",
     "sentences: unanchored",
