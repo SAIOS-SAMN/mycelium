@@ -629,10 +629,29 @@ impl Kernel {
         let Some(at) = era.at else {
             return Some(era.receipts.clone());
         };
+        // THE ERA'S OWN BYTES, NOT THE SEGMENT'S. This read the whole cold
+        // segment for every era it paged — 41 MB on hypha b — under the
+        // kernel, so a back-fill page from a line's start re-read the file
+        // once per era and took five seconds to answer (measured on the
+        // wire, 2026-09-30), and every asker counted it silent. Payloads are
+        // appended whole, so an era's bytes run from its offset to the next
+        // offset any era was filed at, or the segment's end: one positioned
+        // read of that window.
+        use std::os::unix::fs::FileExt;
         let path = self.eras_path.as_ref()?;
-        let bytes = std::fs::read(path).ok()?;
-        let mut pos = usize::try_from(at).ok()?;
-        crate::chronometry::Era::read_payload(&bytes, &mut pos)
+        let file = std::fs::File::open(path).ok()?;
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — the least offset filed past this one is where this payload ends: a coordinate of the append-only segment, not a choice"
+        )]
+        let next = self.archive.iter().filter_map(|e| e.at).filter(|&a| a > at).min();
+        let end = match next {
+            Some(next) => next,
+            None => file.metadata().ok()?.len(),
+        };
+        let mut bytes = vec![0u8; usize::try_from(end.checked_sub(at)?).ok()?];
+        file.read_exact_at(&mut bytes, at).ok()?;
+        crate::chronometry::Era::read_payload(&bytes, &mut 0)
     }
 
     pub fn genesis_cover(&self) -> Option<[u64; 4]> {
