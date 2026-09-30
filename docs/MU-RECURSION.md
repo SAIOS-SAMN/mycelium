@@ -18675,8 +18675,15 @@ ADDENDUM (the operator, 2026-09-30) — FIVE PILLARS AND PHASE 1 ITEM 5:
 - P5 RETIREMENT OF WORLD DEBRIS (POWR for worlds): ephemeral entities burn
   down on ℋ and their footprint is recycled into e_∅.
 - PHASE 1 ITEM 5, in parallel with the soak: the wire ABI extracted as a
-  crate (frames, the proof envelope, the session chit) and a deterministic
-  mock hypha, so client developers can build proof submissions against it.
+  crate (frames, the proof envelope, the session chit).
+- CORRECTION (the operator, 2026-09-30): NO MOCK. Both codebases live on one
+  host; xylarium speaks to the real mycelium-server over loopback or a unix
+  socket, and every test runs against ground truth. And the hypha is NOT a
+  simulator: it is an authoritative invariant court and state machine. It
+  asks of each transition only whether it breaks a conservation law — 𝒮
+  cargo and capacity, 𝒢 credits and debt, 𝒯 the order of execution, ℋ
+  reputation and clade — and either writes a receipt and commits, or
+  refuses at the door. The game (routes, grids, UI) is the application.
 
 READ AGAINST THE TREE for the addendum (the implementor):
 - P3: a fixed bit cap ("256 bits per component") is a capping constant,
