@@ -9,7 +9,6 @@
 //! closes (5.2g, S13.10a, R4).
 
 use crate::exchange::Mesh;
-use crate::transport::tell_peer;
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::{KStepReceipt, Place};
 
@@ -43,7 +42,10 @@ pub(crate) fn fetch<'a>(
             None => dest,
         };
         let req = dialogue::encode_receipts_request(&mesh.vk, who, after, upto);
-        page_of(tell_peer(to_ask, req).map(|(reply, _)| reply), mycelium::observe::CatchupPath::Backfill)
+        page_of(
+            crate::transport::tell_peer_measured(mesh, to_ask, req).map(|(reply, _)| reply),
+            mycelium::observe::CatchupPath::Backfill,
+        )
     }
 }
 

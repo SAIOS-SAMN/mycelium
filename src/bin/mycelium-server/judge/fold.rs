@@ -8,7 +8,7 @@
 //! era filed under the home's key.
 
 use crate::door::Door;
-use crate::transport::{answer, tell_peer_within};
+use crate::transport::{answer, tell_peer_measured};
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::Place;
 use mycelium::network::wire::Frame;
@@ -67,12 +67,12 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
-    let Some(receipts) = fetch_receipts(&dest, &me, &home, p.after, p.root.at) else {
+    let Some(receipts) = fetch_receipts(&door.mesh, &dest, &me, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch receipts failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
-    let Some(rows) = fetch_rows(&dest, &me, &home, p.after, p.root.at) else {
+    let Some(rows) = fetch_rows(&door.mesh, &dest, &me, &home, p.after, p.root.at) else {
         eprintln!("  court fold unmeasured {:02x}{:02x}…: fetch rows failed", home[0], home[1]);
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
@@ -131,6 +131,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
 /// `None` when a page comes back empty or malformed before the span is
 /// whole.
 fn fetch_receipts(
+    mesh: &crate::exchange::Mesh,
     dest: &str,
     me: &[u8; 32],
     home: &[u8; 32],
@@ -140,7 +141,7 @@ fn fetch_receipts(
     let mut out = Vec::new();
     let mut next = after;
     while next.is_none_or(|n| n < upto) {
-        let reply = tell_peer_within(dest, dialogue::encode_receipts_request(me, home, next, upto), 16).map(|(r, _)| r);
+        let reply = tell_peer_measured(mesh, dest, dialogue::encode_receipts_request(me, home, next, upto)).map(|(r, _)| r);
         let page = crate::backfill::page_of(reply, mycelium::observe::CatchupPath::FoldWitness)?;
         // The page arrives in line order, so its tail names the place the
         // next page opens after — the chain's order, not the order of
@@ -159,6 +160,7 @@ fn fetch_receipts(
 /// The home's rows standing at `from` or later and written before the act
 /// at `upto`, page by page from the cursor.
 fn fetch_rows(
+    mesh: &crate::exchange::Mesh,
     dest: &str,
     me: &[u8; 32],
     home: &[u8; 32],
@@ -168,7 +170,7 @@ fn fetch_rows(
     let mut out = Vec::new();
     let mut cursor = 0u64;
     loop {
-        let (reply, _) = tell_peer_within(dest, dialogue::encode_rows_request(me, home, from, upto, cursor), 16)?;
+        let (reply, _) = tell_peer_measured(mesh, dest, dialogue::encode_rows_request(me, home, from, upto, cursor))?;
         if crate::transport::is_deferred(&reply) {
             return None;
         }

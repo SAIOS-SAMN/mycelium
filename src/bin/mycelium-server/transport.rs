@@ -68,6 +68,33 @@ pub(crate) fn tell_peer(addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
     tell_peer_within(addr, body, 5)
 }
 
+/// SPEAK TO A PEER AT ITS OWN MEASURED PATIENCE (Phase 1 item 3). The mesh
+/// measured every peer's round trip and backed its deadline off on every
+/// timeout (`note_rtt_ok`, `note_rtt_timeout`, into `mesh.rtt`) — and no
+/// ask ever read it: every `tell_peer` waited the literal 5, forty polls, so
+/// a peer answering from behind one court stroke was counted silent, and
+/// every back-fill page on the fleet went unanswered (the catch-up reading,
+/// 2026-09-30). This waits the deadline the peer's own wire measured, the
+/// literal only where none is measured yet, and records what it saw.
+pub(crate) fn tell_peer_measured(mesh: &Mesh, addr: &str, body: Vec<u8>) -> Option<(Vec<u8>, u64)> {
+    // An unmeasured wire is asked as `tell_peer` asks every wire; the first
+    // answer measures it.
+    let reply = match mesh.rtt.lock().ok().and_then(|m| m.get(addr.as_bytes()).copied()) {
+        Some(hint) => tell_peer_within(addr, body, hint),
+        None => tell_peer(addr, body),
+    };
+    match reply {
+        Some((reply, dt)) => {
+            note_rtt_ok(mesh, addr.as_bytes(), dt);
+            Some((reply, dt))
+        }
+        None => {
+            note_rtt_timeout(mesh, addr.as_bytes());
+            None
+        }
+    }
+}
+
 /// `tell_peer` with the transport measure the caller holds: `rtt_hint` is
 /// the peer's measured round trip in strokes, and the wait is an aperture
 /// of it (`transport_deadline`). A caller with no measurement passes the
