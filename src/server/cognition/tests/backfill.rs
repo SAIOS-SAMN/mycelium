@@ -101,3 +101,54 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
     let b_h = b.head().expect("b").stamp.h;
     assert!(c.chain().head_height() > b_h, "c's act cites b's head: height {} over b's {b_h}", c.chain().head_height());
 }
+
+/// PHASE 1 — A HEAD THAT CITES ANOTHER SIGNER IS CITED ONCE THAT SIGNER IS
+/// FETCHED. b's head names a receipt of d's as a parent, and the court
+/// hearing it holds neither line: the chase closes b's own gap, finds d's
+/// receipt missing, chases d up to the place cited, and admits b's head as
+/// a parent. Before, `hear` chased only the frame's own line and returned
+/// on the missing parent — on the fleet, courts b's and c's lines, each
+/// citing the other's receipts, never advanced at a.
+#[test]
+fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
+    let key = super::common::court_key("backfill-cites-b");
+    let vk = key.vk_bytes();
+    let dvk = super::common::court_key("backfill-cites-d").vk_bytes();
+    let mut d = crate::chronometry::ReceiptChain::with_vk(dvk);
+    act(&mut d, 2);
+    let dh = d.head().expect("d has acted").clone();
+    let mut b = crate::chronometry::ReceiptChain::with_vk(vk);
+    act(&mut b, 1);
+    // b holds d's line, as a court holds what it heard, and cites its head.
+    for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
+        b.admit(r.clone());
+    }
+    b.append(
+        crate::chronometry::ActKind::List,
+        [0; 4],
+        Vec::new(),
+        [0; 32],
+        vec![crate::chronometry::Parent { at: dh.stamp, hash: dh.chain_hash }],
+    )
+    .expect("b cites d");
+    let (head, pre) = head_of(&b);
+    let mut c0 = Kernel::new();
+    c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
+    let c = std::sync::Mutex::new(c0);
+    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place| {
+        let line = match () {
+            _ if *who == vk => &b,
+            _ if *who == dvk => &d,
+            _ => return None,
+        };
+        Some(line.line_between(who, after, upto, 64).into_iter().cloned().collect::<Vec<_>>())
+    };
+    let heard: Result<_, ()> = crate::server::backfill::hear(
+        &c,
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
+        || c.lock().ok().map(|mut k| k.stroke()),
+        fetch,
+    );
+    assert!(matches!(heard, Ok(crate::court::admission::Admitted::Parent(_))), "b's head is cited: {heard:?}");
+    assert!(c.lock().expect("c").known_head(&dvk).is_some(), "d's line was fetched for the citation");
+}

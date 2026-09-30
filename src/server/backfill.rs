@@ -143,41 +143,60 @@ pub fn hear<E>(
     mut stroke: impl FnMut() -> Option<crate::physics::Budget>,
     mut fetch: impl FnMut(&[u8; 32], Option<Place>, Place) -> Option<Vec<KStepReceipt>>,
 ) -> Result<Admitted, E> {
-    let admitted = admit();
-    let Ok(Admitted::Gap { vk, to, .. }) = &admitted else { return admitted };
-    let (vk, to) = (*vk, *to);
-    // The lag at the report, in orbits: the orbit after the predecessor's
-    // against the orbit after the head held. A head held past the report
-    // is no lag, and none is set (rule 11: never floored to zero).
-    let held = kernel.lock().ok().and_then(|k| k.known_head(&vk)).map(|(at, _)| at);
-    if let Some(l) = (to.k + 1).checked_sub(held.map_or(0, |h| h.k + 1)) {
-        set_replication(vk, rep::LAG, l);
-    }
-    let mut pass = Pass { advanced: false, reached: false };
-    while let Some(mut budget) = stroke() {
-        let step = chase(kernel, vk, to, &mut budget, &mut fetch);
-        pass = Pass { advanced: pass.advanced || step.advanced, reached: step.reached };
-        // Continue only while a stroke moved the head held for the signer.
-        if step.reached || !step.advanced {
-            break;
+    let mut admitted = admit();
+    // EVERY HOLE THE FRAME NAMES IS CHASED, not only its own line's. A
+    // frame whose own line is held can still cite a parent of ANOTHER
+    // signer this court does not hold (`MissingParent`), and this chased
+    // only `Gap`: on the fleet, c's frames cited b's receipts a did not
+    // hold, b's cited c's, and neither line ever advanced at a — "reached"
+    // with nothing admitted, the tally reading both holes as one "gap"
+    // (2026-09-30). Each hole is chased at most once per hearing, so a
+    // hole the chase cannot close ends it.
+    let mut chased: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+    loop {
+        let (vk, to) = match &admitted {
+            Ok(Admitted::Gap { vk, to, .. }) => (*vk, *to),
+            Ok(Admitted::MissingParent(p)) => (p.at.vk, p.at.place()),
+            _ => return admitted,
+        };
+        let mut hole = vk.to_vec();
+        to.put_canonical(&mut hole);
+        if chased.contains(&hole) {
+            return admitted;
+        }
+        chased.insert(&hole, ());
+        // The lag at the report, in orbits: the orbit after the hole's
+        // place against the orbit after the head held. A head held past
+        // the report is no lag, and none is set (rule 11: never floored).
+        let held = kernel.lock().ok().and_then(|k| k.known_head(&vk)).map(|(at, _)| at);
+        if let Some(l) = (to.k + 1).checked_sub(held.map_or(0, |h| h.k + 1)) {
+            set_replication(vk, rep::LAG, l);
+        }
+        let mut pass = Pass { advanced: false, reached: false };
+        while let Some(mut budget) = stroke() {
+            let step = chase(kernel, vk, to, &mut budget, &mut fetch);
+            pass = Pass { advanced: pass.advanced || step.advanced, reached: step.reached };
+            // Continue only while a stroke moved the head held for the signer.
+            if step.reached || !step.advanced {
+                break;
+            }
+        }
+        note_replication(
+            Some(vk),
+            match pass.reached {
+                true => rep::BACKFILL_REACHED,
+                false => rep::BACKFILL_BUDGET,
+            },
+            1,
+        );
+        // Admitted again where the pass moved the chain or found it already
+        // at `to` — as the server's exchange always re-admitted.
+        if !pass.advanced && !pass.reached {
+            return admitted;
+        }
+        admitted = admit();
+        if let Ok(Admitted::Parent(p)) = &admitted {
+            note_replication(Some(p.at.vk), rep::PARENT_AFTER_BACKFILL, 1);
         }
     }
-    note_replication(
-        Some(vk),
-        match pass.reached {
-            true => rep::BACKFILL_REACHED,
-            false => rep::BACKFILL_BUDGET,
-        },
-        1,
-    );
-    // Admitted again where the pass moved the chain or found it already at
-    // `to` — as the server's exchange always re-admitted.
-    if !pass.advanced && !pass.reached {
-        return admitted;
-    }
-    let again = admit();
-    if let Ok(Admitted::Parent(_)) = &again {
-        note_replication(Some(vk), rep::PARENT_AFTER_BACKFILL, 1);
-    }
-    again
 }
