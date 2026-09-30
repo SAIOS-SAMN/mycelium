@@ -535,6 +535,24 @@ impl Exchange {
                             // of them differ from this court's ruled sections.
                             mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::STRATA, remote.len() as u64);
                             mycelium::observe::set_replication(vk_peer, mycelium::observe::rep::DISCORDANT, discord.len() as u64);
+                            // Which stratum, and each side's count (Phase 1
+                            // diagnostic, on the journal at powers of two).
+                            {
+                                static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                                for s in &discord {
+                                    let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                                    if n.is_power_of_two() {
+                                        let here = local.iter().find(|l| l.inv.key() == s.inv.key()).map(|l| l.count);
+                                        eprintln!(
+                                            "  discordant ({n}) with {:02x}{:02x}…: stratum {:02x?}… theirs {} ours {here:?}",
+                                            vk_peer[0],
+                                            vk_peer[1],
+                                            s.inv.key().iter().take(6).collect::<Vec<_>>(),
+                                            s.count
+                                        );
+                                    }
+                                }
+                            }
                             if discord.is_empty() {
                                 local
                                     .iter()
