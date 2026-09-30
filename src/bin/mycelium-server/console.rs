@@ -309,6 +309,15 @@ fn economy(e: &observe::Economy) -> Vec<String> {
         .collect();
     // STD1 — what the treasury refused past its carrier.
     out.push(format!("  {BOLD}{:<12}{RESET}{}", "overflowed", e.overflowed));
+    // What moved, by kind, on the journal since its last fold; a kind
+    // with no row is not printed.
+    out.push(format!("  {DIM}flows on the journal since its last fold{RESET}"));
+    for (name, f) in observe::FLOWS.iter().zip(&e.flows) {
+        if f.rows > 0 {
+            out.push(format!("    {name:<26}rows {:<8}{:?}", f.rows, f.mu));
+        }
+    }
+    out.push(format!("  {BOLD}{:<12}{RESET}payments {}  {:?}  {DIM}learners to this court, for sentences taught{RESET}", "tuition", e.tuition.rows, e.tuition.mu));
     // E3 — each identity's standing: what it can spend, has staked, holds.
     for a in &e.accounts {
         out.push(format!(

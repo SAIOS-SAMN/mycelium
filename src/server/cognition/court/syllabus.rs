@@ -196,6 +196,31 @@ impl Kernel {
             // operator, 2026-09-30): what it cites that this voice already
             // holds from this court is not paid for again.
             let mag = self.gluing_cost(addr, mag, voice);
+            // A SENTENCE IS PAID BY ITS LEARNER (ruled 2026-09-30, the
+            // operator's word): its gluing step comes out of the voice's own
+            // balance, never the court's reserve — the sentences starved
+            // there behind cheaper words that spent every refill first (38–54
+            // at each court, epoch 115). A voice that cannot pay yet waits,
+            // its own shortfall named; a word is still paid by the reserve.
+            if kind == SENTENCE {
+                match self.serve_paid_by_learner(addr, mag, voice, bytes, used) {
+                    Learner::Served(taught, width) => {
+                        used += width;
+                        page.words.push(taught);
+                    }
+                    Learner::Short(depleted) => {
+                        self.note_deferred(addr, kind, mag, &depleted, Some(voice));
+                        page.deferred.push((addr.clone(), depleted));
+                    }
+                    Learner::Frame => {
+                        page.end = PageEnd::Frame;
+                        return page;
+                    }
+                    Learner::Missed => page.missed.push(addr.clone()),
+                }
+                page.consumed += 1;
+                continue;
+            }
             // A WORD THE RESERVE CANNOT FUND YET WAITS; THE PAGE GOES ON. It
             // ended the page and left the cursor on it, so every later page
             // to that voice tried the same word first and served nothing
@@ -205,7 +230,7 @@ impl Kernel {
             // and is taught when the verified work of later orbits funds it
             // (`orbit` regenerates the reserve).
             if let Err(depleted) = self.physics.reserve.draw(mag) {
-                self.note_deferred(addr, kind, mag, &depleted);
+                self.note_deferred(addr, kind, mag, &depleted, None);
                 page.deferred.push((addr.clone(), depleted));
                 page.consumed += 1;
                 continue;
@@ -379,6 +404,40 @@ impl Kernel {
         h.scoped().map(|(k, _)| k).collect()
     }
 
+    /// ONE SENTENCE TAUGHT AT ITS LEARNER'S EXPENSE: the voice's balance
+    /// read first — a short voice waits, nothing written — then the tape and
+    /// the frame's room, the Syllabus act sealed, and the gluing step paid
+    /// from the voice to this court at that act. A step of nothing is free.
+    fn serve_paid_by_learner(&mut self, addr: &[u8], cost: [u64; 4], voice: [u8; 32], bytes: usize, used: usize) -> Learner {
+        let short = crate::economy::shortfall(&cost, &self.treasury.balance_mu(&voice));
+        // The short lane named is the first in (S, G, T, H) order — content
+        // order, as `Depleted` names it, never a priority.
+        if let [lane, ..] = crate::economy::lanes_short(&short).as_slice() {
+            let lane = *lane;
+            let held = self.treasury.balance_mu(&voice)[lane];
+            return Learner::Short(crate::physics::Depleted { lane, asked: cost[lane], held });
+        }
+        let Some(tape) = self.installed_word(addr).and_then(|w| w.to_bytes()) else { return Learner::Missed };
+        let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
+        if used + width > bytes {
+            return Learner::Frame;
+        }
+        self.deferred_words.remove(addr);
+        let Some(at) = self.note_served(addr, voice) else { return Learner::Missed };
+        if cost.iter().any(|&c| c > 0) {
+            let anchor = self.anchor();
+            if let Err(why) = self.treasury.pay(voice, self.identity, cost, anchor) {
+                // Read as affordable above; a refusal here is counted, and
+                // the word is taught — the act is sealed, the page stands.
+                eprintln!("  syllabus: a learner's payment refused after its balance was read: {why:?}");
+            }
+        }
+        let mut held = voice.to_vec();
+        held.extend_from_slice(addr);
+        self.taught_voice.insert(held, ());
+        Learner::Served(crate::anastome::dialogue::Taught { at, word: tape }, width)
+    }
+
     /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a
     /// sentence its magnitude less that of every distinct word it cites
     /// which this court has already served this voice, lane by lane — the
@@ -421,7 +480,7 @@ impl Kernel {
 
     /// A word a syllabus page could not pay for, filed under its address:
     /// its kind and cost, the lane that fell short, and one more try.
-    fn note_deferred(&mut self, addr: &[u8], kind: u8, mag: [u64; 4], depleted: &crate::physics::Depleted) {
+    fn note_deferred(&mut self, addr: &[u8], kind: u8, mag: [u64; 4], depleted: &crate::physics::Depleted, learner: Option<[u8; 32]>) {
         let mut head = [0u8; 8];
         for (h, b) in head.iter_mut().zip(addr) {
             *h = *b;
@@ -438,7 +497,9 @@ impl Kernel {
             Some(None) => u64::MAX,
             None => 1,
         };
-        self.deferred_words.insert(addr, crate::observe::Deferred { head, kind, mag, short, tries });
+        // The learner named by the head of its key, as the word is.
+        let learner = learner.map(|v| std::array::from_fn(|i| v[i]));
+        self.deferred_words.insert(addr, crate::observe::Deferred { head, kind, mag, short, tries, learner });
     }
 
     /// The deferred words in the order their addresses have — never ordered
@@ -449,11 +510,22 @@ impl Kernel {
     }
 }
 
+/// What serving one sentence at its learner's expense came to.
+enum Learner {
+    Served(crate::anastome::dialogue::Taught, usize),
+    Short(crate::physics::Depleted),
+    Frame,
+    Missed,
+}
+
+/// A sentence's kind on `observe::DEFERRED_KINDS`.
+const SENTENCE: u8 = 2;
+
 /// A word's kind on `observe::DEFERRED_KINDS`.
 fn deferred_kind(w: &crate::transducer::element::Element) -> u8 {
     match () {
         _ if w.is_colour_word() => 3,
-        _ if w.is_sentence() => 2,
+        _ if w.is_sentence() => SENTENCE,
         _ if w.is_connection() => 1,
         _ => 0,
     }

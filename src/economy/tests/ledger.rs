@@ -91,7 +91,7 @@ fn a_credit_past_its_carrier_refuses_the_mint_and_writes_no_row() {
     assert_eq!(t.entry_count(), rows, "and writes no row");
     assert_eq!(t.balance_mu(&[1; 32]), [u64::MAX, 0, 0, 0], "the balance stands on every lane");
     assert_eq!(t.audit().expect("the ledger still conserves"), [u64::MAX, 0, 0, 0]);
-    assert_eq!(t.economy().expect("the economy reads").overflowed, 1, "counted, by name");
+    assert_eq!(t.economy(&[0; 32]).expect("the economy reads").overflowed, 1, "counted, by name");
     assert_eq!(t.settle_subsidy([2; 32], [1, 1, 0, 0], a), [1, 1, 0, 0], "another balance with room is paid");
 }
 

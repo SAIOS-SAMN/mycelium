@@ -153,7 +153,7 @@ fn an_upheld_claim_is_minted_at_the_ruling_act() {
         mints.iter().all(|e| e.at == ruling && e.arm == Some(crate::economy::Arm::Pouw)),
         "at the Ruling act (not the escrow's {escrowed:?}), paying POUW"
     );
-    let economy = k.treasury().economy().expect("measured");
+    let economy = k.economy().expect("measured");
     assert_ne!(economy.paid[crate::economy::Arm::Pouw.index()], [0; 4], "the observer reads it under POUW");
     assert_eq!(economy.paid[crate::economy::Arm::Powr.index()], [0; 4], "and under no other arm");
 }

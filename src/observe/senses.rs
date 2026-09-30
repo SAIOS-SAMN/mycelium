@@ -136,8 +136,12 @@ pub struct Deferred {
     pub kind: u8,
     /// Its magnitude per lane — the cost of teaching it whole.
     pub mag: [u64; 4],
-    /// Where the reserve fell short of it, per lane, at the last try.
+    /// Where its payer fell short of it, per lane, at the last try.
     pub short: [u64; 4],
+    /// Its payer at the last try: the head of the learner whose balance
+    /// fell short (a sentence, paid by its learner), or `None` — the
+    /// court's reserve.
+    pub learner: Option<[u8; 8]>,
     /// Pages that tried it and could not pay.
     pub tries: u64,
 }
@@ -251,6 +255,13 @@ impl Acts {
             put(out, &d.mag);
             put(out, &d.short);
             put(out, &[d.tries]);
+            match d.learner {
+                None => out.push(0),
+                Some(v) => {
+                    out.push(1);
+                    out.extend_from_slice(&v);
+                }
+            }
         }
     }
 
@@ -270,7 +281,18 @@ impl Acts {
             *p += 1;
             let (mag, short) = (take(b, p)?, take(b, p)?);
             let [tries] = take::<1>(b, p)?;
-            deferred.push(Deferred { head, kind, mag, short, tries });
+            let flag = *b.get(*p)?;
+            *p += 1;
+            let learner = match flag {
+                0 => None,
+                1 => {
+                    let v: [u8; 8] = b.get(*p..*p + 8)?.try_into().ok()?;
+                    *p += 8;
+                    Some(v)
+                }
+                _ => return None,
+            };
+            deferred.push(Deferred { head, kind, mag, short, tries, learner });
         }
         Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred })
     }
@@ -293,8 +315,12 @@ impl Acts {
                 Some(k) => *k,
                 None => "an unnamed kind",
             };
+            let payer = match d.learner {
+                None => "the reserve".to_string(),
+                Some(v) => format!("learner {v:02x?}…"),
+            };
             format!(
-                "deferred {:02x?}… {kind} · cost {:?} · short {:?} · tried {}",
+                "deferred {:02x?}… {kind} · cost {:?} · {payer} short {:?} · tried {}",
                 d.head, d.mag, d.short, d.tries
             )
         }))

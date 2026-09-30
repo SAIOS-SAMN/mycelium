@@ -574,6 +574,12 @@ impl Kernel {
         self.treasury.genesis(who, mu, anchor)
     }
 
+    /// EC1 — THIS COURT'S ECONOMY: its ledger by arm, by kind, each
+    /// identity's standing, and the tuition paid to this court.
+    pub fn economy(&self) -> Option<crate::observe::Economy> {
+        self.treasury.economy(&self.identity)
+    }
+
     /// Mint a genesis allocation once per identity.
     pub fn allocate(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
         if self.treasury.has_mint(&who) {

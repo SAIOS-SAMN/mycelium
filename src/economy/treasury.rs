@@ -498,9 +498,45 @@ impl Treasury {
     /// the arm's transfer rows read in pairs and the paid is one of each pair
     /// — exact, since every pair is two equal vectors. `None` where a lane
     /// passes its u64: unmeasured, never saturated (rule 11).
-    pub fn economy(&self) -> Option<crate::observe::Economy> {
+    ///
+    /// THE FLOWS by kind and the TUITION `court` was paid read off the same
+    /// rows: a transfer's two rows are one flow, its debit first and its
+    /// credit after (as `nets_of` reads them), and a payment whose credit
+    /// names `court` is tuition.
+    pub fn economy(&self, court: &[u8; 32]) -> Option<crate::observe::Economy> {
         let mut e = crate::observe::Economy::default();
         let mut moved = [[0u64; 4]; 3];
+        let mut credit = false;
+        for row in &self.entries {
+            let flow = match (row.kind, row.arm) {
+                (Kind::Genesis, _) => 0,
+                (Kind::Mint, Some(_)) => 1,
+                (Kind::Mint, None) => 2,
+                (Kind::Stake, _) => 3,
+                (Kind::Unstake, _) => 4,
+                (Kind::Transfer, Some(_)) => 5,
+                (Kind::Transfer, None) => 6,
+                (Kind::Escrow, _) => 7,
+                (Kind::Release, _) => 8,
+                (Kind::Revoke, _) => 9,
+                (Kind::Slash, _) => 10,
+                (Kind::Burn, _) => 11,
+                (Kind::Epoch, _) => 12,
+            };
+            if row.kind == Kind::Transfer {
+                // The credit half: counted with its debit, and read for
+                // whom it paid.
+                if credit {
+                    credit = false;
+                    if row.arm.is_none() && &row.who == court {
+                        e.tuition.add(&row.mu)?;
+                    }
+                    continue;
+                }
+                credit = true;
+            }
+            e.flows.get_mut(flow)?.add(&row.mu)?;
+        }
         for row in &self.entries {
             let Some(arm) = row.arm else { continue };
             let into = match row.kind {

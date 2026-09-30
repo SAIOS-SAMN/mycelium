@@ -95,7 +95,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         Reading::Clock(voice_clock),
         // EC1 — a court's payments by proof of work, each arm on its own
         // lanes.
-        Reading::Economy(Economy {
+        Reading::Economy(Box::new(Economy {
             paid: [[5, 0, 2, 0], [0, 1, 0, 0], [0; 4]],
             burned: [[0; 4], [0; 4], [0, 0, 0, 3]],
             overflowed: 7,
@@ -106,7 +106,10 @@ fn every_reading_reads_back_as_itself_through_the_act() {
                 bond: [12, 3, 0, 20],
                 held: [1, 0, 0, 0],
             }],
-        }),
+            // What moved by kind, and the tuition paid to the court.
+            flows: std::array::from_fn(|i| crate::observe::Flow { rows: i as u64, mu: [i as u64, 0, 1, 2] }),
+            tuition: crate::observe::Flow { rows: 4, mu: [5, 6, 7, 8] },
+        })),
     ];
     let push = encode_push(&vk(7), &all).expect("the push writes");
     assert_eq!(decode_act(&push), Some(ObserveAct::Push(vk(7), all.clone())));
@@ -834,7 +837,7 @@ fn the_senses_and_the_acts_travel_whole() {
         paid: [33, 34, 35, 36],
         colours: 37,
         colours_derived: 38,
-        deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44 }],
+        deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
     };
     let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
     let push = encode_push(&vk(8), &all).expect("the push writes");

@@ -51,8 +51,8 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
     observe::replace(own, Reading::Acts(Box::new(k.acts_reading())));
     observe::replace(own, Reading::Carriage(carriage));
     observe::replace(own, Reading::Clock(observe::Clock::Court(Box::new(k.clock(genesis)))));
-    if let Some(e) = k.treasury().economy() {
-        observe::replace(own, Reading::Economy(e));
+    if let Some(e) = k.economy() {
+        observe::replace(own, Reading::Economy(Box::new(e)));
     }
     if let Some(m) = Memory::now(court.k) {
         observe::publish(own, Reading::Memory(m));

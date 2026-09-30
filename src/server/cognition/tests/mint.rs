@@ -440,3 +440,57 @@ fn a_sentence_of_three_word_vertices_and_seven_demands_mints_on_its_closed_subco
         "the amount is the deflation those three closed and nothing else"
     );
 }
+
+/// A SENTENCE IS TAUGHT AT ITS LEARNER'S EXPENSE (the operator,
+/// 2026-09-30). An installed sentence served on a syllabus page is paid
+/// from the voice's balance, never from the court's reserve: the reserve
+/// stands where it stood, the voice pays the sentence's gluing step to the
+/// court, and a voice that cannot pay is deferred with its own shortfall.
+#[test]
+fn a_sentence_is_taught_at_its_learners_expense() {
+    let family = vec![
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
+    let spoken = crate::transducer::family::mint_sentence(&rule, &family, &crate::transducer::family::NoCrystal, 0).expect("mint");
+    let mut k = Kernel::new();
+    let task = crate::registry::task_id(&crate::arc::Task { train: family.clone(), test: Vec::new() }).expect("a task");
+    k.bind_task_family(&task, family);
+    let addr = spoken.address();
+    assert_eq!(k.perceive_speech([1; 32], task.as_bytes(), std::slice::from_ref(&spoken)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
+    k.rule_all_provisionals();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll([2; 32], cover);
+    k.confirm_peer_holds_addrs(std::slice::from_ref(&addr), [2; 32]);
+    let cost = k.installed_word(addr.as_bytes()).expect("installed").magnitude();
+    assert!(cost.iter().any(|&c| c > 0), "the sentence carries a cost");
+    // A VOICE THAT CANNOT PAY waits, and nothing moves.
+    let poor = [9u8; 32];
+    let reserve = k.physics.reserve.lanes();
+    let page = k.serve_syllabus(&[addr.as_bytes().to_vec()], poor, 1 << 20);
+    assert!(page.words.is_empty() && page.deferred.len() == 1, "a voice with nothing waits");
+    assert_eq!(k.physics.reserve.lanes(), reserve, "and the reserve is untouched");
+    let [d] = k.deferred_reading().try_into().expect("one deferral");
+    assert_eq!(d.learner, Some([9; 8]), "the learner that fell short is named as its payer");
+    // A VOICE THAT CAN PAY is taught, and pays the court.
+    let rich = [8u8; 32];
+    k.enroll(rich, cover);
+    k.fund(rich, cost);
+    let before = k.treasury().balance_mu(&rich);
+    let court = k.treasury().balance_mu(&[0x11; 32]);
+    let page = k.serve_syllabus(&[addr.as_bytes().to_vec()], rich, 1 << 20);
+    assert_eq!(page.words.len(), 1, "the sentence is taught: cost {cost:?} balance {before:?} deferred {:?} missed {}", page.deferred, page.missed.len());
+    assert_eq!(k.physics.reserve.lanes(), reserve, "from the learner's balance, never the court's reserve");
+    let after = k.treasury().balance_mu(&rich);
+    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| before[l] - after[l]), cost, "the learner paid the sentence's step");
+    let court_after = k.treasury().balance_mu(&[0x11; 32]);
+    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| court_after[l] - court[l]), cost, "to the court that taught it");
+    assert!(k.treasury().audit().is_ok(), "the ledger conserves");
+    // THE ECONOMY READS IT: one payment on the journal, and it is tuition
+    // to this court.
+    let economy = k.economy().expect("measured");
+    let payment = crate::observe::FLOWS.iter().position(|f| *f == "payment").expect("a named flow");
+    assert_eq!(economy.flows[payment], crate::observe::Flow { rows: 1, mu: cost }, "one payment, its vector once");
+    assert_eq!(economy.tuition, crate::observe::Flow { rows: 1, mu: cost }, "paid to this court");
+}

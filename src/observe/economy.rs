@@ -18,6 +18,64 @@ pub struct Economy {
     /// E3 — every identity the ledger holds value for: what it can spend,
     /// what it has staked, and what it has set aside, in identity order.
     pub accounts: Vec<Account>,
+    /// WHAT MOVED, BY KIND (the operator, 2026-09-30): the journal's rows
+    /// since its last fold, one [`Flow`] per name on [`FLOWS`]. A transfer
+    /// is one flow per pair of rows, its vector once.
+    pub flows: [Flow; FLOWS.len()],
+    /// TUITION: the payments this court was paid, a learner's balance to
+    /// the court at the Syllabus act that taught it a sentence — of the
+    /// flows' payments, those credited to this court.
+    pub tuition: Flow,
+}
+
+/// The kinds a ledger row is read as on [`Economy::flows`]: a mint or a
+/// transfer that pays a proof of work apart from one that pays none (a
+/// subsidy, a payment), every other kind as the treasury names it.
+pub const FLOWS: [&str; 13] = [
+    "genesis",
+    "mint (proof of work)",
+    "subsidy",
+    "stake",
+    "unstake",
+    "transfer (proof of work)",
+    "payment",
+    "escrow",
+    "release",
+    "revoke",
+    "slash",
+    "burn",
+    "epoch",
+];
+
+/// ONE KIND OF MOVEMENT: how many rows (pairs, for a transfer) and what
+/// they carried, per lane.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Flow {
+    pub rows: u64,
+    pub mu: [u64; 4],
+}
+
+impl Flow {
+    /// One more row of `mu`; `None` where a count or a lane passes its u64
+    /// — unmeasured, never saturated (rule 11).
+    pub fn add(&mut self, mu: &[u64; 4]) -> Option<()> {
+        self.rows = self.rows.checked_add(1)?;
+        for (t, m) in self.mu.iter_mut().zip(mu) {
+            *t = t.checked_add(*m)?;
+        }
+        Some(())
+    }
+
+    fn put(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&self.rows.to_le_bytes());
+        put_lanes(out, &self.mu);
+    }
+
+    fn take(b: &[u8], p: &mut usize) -> Option<Flow> {
+        let rows = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        *p += 8;
+        Some(Flow { rows, mu: take_lanes(b, p)? })
+    }
 }
 
 /// ONE IDENTITY'S STANDING ON A COURT'S LEDGER, per lane.
@@ -58,6 +116,9 @@ impl Economy {
             put_lanes(out, &a.bond);
             put_lanes(out, &a.held);
         }
+        for f in self.flows.iter().chain([&self.tuition]) {
+            f.put(out);
+        }
         Some(())
     }
 
@@ -81,6 +142,10 @@ impl Economy {
             let (balance, bond, held) = (take_lanes(b, p)?, take_lanes(b, p)?, take_lanes(b, p)?);
             e.accounts.push(Account { who, balance, bond, held });
         }
+        for f in e.flows.iter_mut() {
+            *f = Flow::take(b, p)?;
+        }
+        e.tuition = Flow::take(b, p)?;
         Some(e)
     }
 }

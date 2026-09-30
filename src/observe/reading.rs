@@ -774,7 +774,7 @@ pub enum Reading {
     /// (78.21, 78.27(1), EC1).
     Clock(super::Clock),
     /// EC1, 78.33 — a court's payments by proof of work, per lane.
-    Economy(super::Economy),
+    Economy(Box<super::Economy>),
     /// A mind's faculties: sight, cognition, speech, hearing, language,
     /// understanding, solving, and its growing carriers.
     Senses(Box<super::Senses>),
@@ -917,7 +917,7 @@ impl Reading {
             TAG_PHASE => Some(Reading::Phase(super::Phase::take(b, p)?)),
             TAG_CARRIAGE => Some(Reading::Carriage(super::Carriage::take(b, p)?)),
             TAG_CLOCK => Some(Reading::Clock(super::Clock::take(b, p)?)),
-            TAG_ECONOMY => Some(Reading::Economy(super::Economy::take(b, p)?)),
+            TAG_ECONOMY => Some(Reading::Economy(Box::new(super::Economy::take(b, p)?))),
             TAG_SENSES => Some(Reading::Senses(Box::new(super::Senses::take(b, p)?))),
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
             _ => None,

@@ -49,7 +49,7 @@ fn a_hold_is_released_to_a_payee_or_refunded_and_conserves_throughout() {
     assert_eq!(t.audit(), Ok(supply), "and the held carrier is counted");
     assert_eq!(t.hold(A, b"task", [1, 0, 0, 0], at(3, [7; 32])), Err(Unpaid::Taken));
     // THE ECONOMY READS IT, typed: A's standing with what it holds.
-    let e = t.economy().expect("the reading adds up");
+    let e = t.economy(&[0; 32]).expect("the reading adds up");
     let [a] = e.accounts.as_slice() else { panic!("one identity: {:?}", e.accounts) };
     assert_eq!((a.who, a.balance, a.held), (A, [5, 2, 0, 5], [5, 2, 0, 1]));
     assert_eq!(t.held_of(b"task").map(|h| (h.payer, h.mu)), Some((A, [5, 2, 0, 1])));
