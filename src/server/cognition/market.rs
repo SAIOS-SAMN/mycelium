@@ -473,26 +473,51 @@ impl Kernel {
     /// speakable or already listed is not listed again; the intake answers
     /// whether anything new was.
     pub fn intake(&mut self, chain: &[(i64, i64, u8, u8)], frame: &crate::arc::Frame) -> bool {
-        if chain.is_empty() {
-            return false;
-        }
+        self.intake_prepared(prepare_intake(chain, frame))
+    }
+
+    /// THE COMMIT HALF OF THE INTAKE: pieces already read — each residual
+    /// and its chart — listed under the kernel. The reading is
+    /// `prepare_intake`'s and takes no lock: hypha b, ten minutes after
+    /// boot, held its kernel in `intake → list → invariant_of` in seven
+    /// samples of ten while fold, quote and syllabus judges waited behind
+    /// it, 0.2–9 s each (gdb and the wire, 2026-09-30).
+    pub fn intake_prepared(&mut self, pieces: Vec<(Element, crate::transducer::stalk::Invariant)>) -> bool {
         let mut listed = false;
-        for body in crate::transducer::sentence::pieces(chain) {
-            // A piece that cannot be addressed is a refusal that travels:
-            // never listed and never counted (U14).
-            let Some(residual) = element::from_residual_framed(&body, frame) else {
-                continue;
-            };
+        for (residual, chart) in pieces {
             let addr = residual.address();
             if self.basis.contains(&addr) || self.pending.contains(&addr) {
                 continue; // already speakable or already listed
             }
             self.stamp_standing(addr);
-            self.book_list_undrawn(residual);
+            self.book_list_charted(residual, chart);
             listed = true;
         }
         listed
     }
+}
+
+/// THE READING HALF OF THE INTAKE, with no kernel: the chain's pieces, each
+/// as its residual and its chart. A piece that cannot be addressed is a
+/// refusal that travels: never listed and never counted (U14).
+pub fn prepare_intake(
+    chain: &[(i64, i64, u8, u8)],
+    frame: &crate::arc::Frame,
+) -> Vec<(Element, crate::transducer::stalk::Invariant)> {
+    if chain.is_empty() {
+        return Vec::new();
+    }
+    crate::transducer::sentence::pieces(chain)
+        .into_iter()
+        .filter_map(|body| element::from_residual_framed(&body, frame))
+        .map(|residual| {
+            let chart = crate::transducer::stalk::invariant_of(&residual);
+            (residual, chart)
+        })
+        .collect()
+}
+
+impl Kernel {
 
     /// DEPOSIT evidence from the wire (an entity's verified dialect finding):
     /// local thought seeds the court's global refinement — what tasks

@@ -406,7 +406,12 @@ impl Cite {
     /// A WORD'S CITATION: its fiber, read off the word, and the stamp of
     /// the act that admitted it.
     pub fn word(w: &crate::transducer::element::Element, at: Stamp) -> Cite {
-        Cite::Word { chart: crate::transducer::stalk::invariant_of(w), class: ClassRecord::of(w), at }
+        Cite::word_charted(w, crate::transducer::stalk::invariant_of(w), at)
+    }
+
+    /// The same cite with the word's chart already read (`invariant_of(w)`).
+    pub fn word_charted(w: &crate::transducer::element::Element, chart: crate::transducer::stalk::Invariant, at: Stamp) -> Cite {
+        Cite::Word { chart, class: ClassRecord::of(w), at }
     }
 }
 

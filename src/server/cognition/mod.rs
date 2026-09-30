@@ -28,6 +28,7 @@ pub use court::fold::Proposal;
 pub use court::syllabus::{PageEnd, ServedPage};
 pub use court::task::SolveVerdict;
 pub use kernel::Kernel;
+pub use market::prepare_intake;
 pub(crate) use keys::*;
 pub(crate) use cocycle::CocycleRow;
 pub(crate) use reduce::*;

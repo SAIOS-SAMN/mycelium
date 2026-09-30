@@ -255,6 +255,19 @@ impl Kernel {
     /// the address (45.1, law 12), never handed in; an act naming a word
     /// this court no longer holds measured nothing, and says so.
     pub(super) fn append_step(&mut self, kind: ActKind, addr: impl AsRef<[u8]>, voice: [u8; 32]) {
+        self.append_step_charted(kind, addr, voice, None);
+    }
+
+    /// `append_step` with the named word's chart already read where the
+    /// caller holds it: the cite reuses it instead of perceiving the word
+    /// again under the kernel.
+    pub(super) fn append_step_charted(
+        &mut self,
+        kind: ActKind,
+        addr: impl AsRef<[u8]>,
+        voice: [u8; 32],
+        chart: Option<crate::transducer::stalk::Invariant>,
+    ) {
         let addr = addr.as_ref();
         let mu = self.frame_of(addr);
         let held = self.cite_of(addr);
@@ -262,10 +275,11 @@ impl Kernel {
             None => self.named_word(addr).cloned(),
             Some(_) => None,
         };
-        let written = self.seal_step(kind, mu, voice, |at| match (&held, &admits) {
-            (Some(c), _) => vec![c.clone()],
-            (None, Some(w)) => vec![Cite::word(w, at)],
-            (None, None) => Vec::new(),
+        let written = self.seal_step(kind, mu, voice, |at| match (&held, &admits, &chart) {
+            (Some(c), _, _) => vec![c.clone()],
+            (None, Some(w), Some(inv)) => vec![Cite::word_charted(w, inv.clone(), at)],
+            (None, Some(w), None) => vec![Cite::word(w, at)],
+            (None, None, _) => Vec::new(),
         });
         if let (Some(r), Some(_)) = (written, admits) {
             // OPEN (65.5): the filing re-hears the peer rulings that waited

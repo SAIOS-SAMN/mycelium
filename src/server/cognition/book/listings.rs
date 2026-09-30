@@ -91,12 +91,19 @@ impl Kernel {
     /// of the 2026-09-08 recut) and nothing homed here could lapse it back.
     /// The listing still tensions the book and admits its chart, and its
     /// receipt names the hypha as the actor.
-    pub(crate) fn book_list_undrawn(&mut self, residual: Element) {
+    /// The corpus's listing with its chart already read, outside the
+    /// kernel (`market::prepare_intake`): the lock commits, it never reads.
+    pub(crate) fn book_list_charted(&mut self, residual: Element, chart: crate::transducer::stalk::Invariant) {
         let actor = self.identity;
-        self.list(residual, actor, None);
+        self.list_charted(residual, chart, actor, None);
     }
 
     fn list(&mut self, residual: Element, actor: [u8; 32], drawer: Option<[u8; 32]>) {
+        let chart = crate::transducer::stalk::invariant_of(&residual);
+        self.list_charted(residual, chart, actor, drawer);
+    }
+
+    fn list_charted(&mut self, residual: Element, inv: crate::transducer::stalk::Invariant, actor: [u8; 32], drawer: Option<[u8; 32]>) {
         let addr = residual.address();
         let mag = residual.magnitude();
         // A LISTING IS DRAWN ONCE (§3.1 as ruled, S13.15): an address
@@ -125,7 +132,6 @@ impl Kernel {
         };
         self.stamp_standing(&addr);
         self.physics.bump(&mag);
-        let inv = crate::transducer::stalk::invariant_of(&residual);
         self.listing_atlas.admit(&inv, &addr);
         self.tension.insert(&addr, mag);
         self.on_page.insert(&addr, ());
@@ -139,7 +145,7 @@ impl Kernel {
         self.cavity_book.remove(&addr);
         self.pending.insert(&addr, residual);
         self.book_gen += 1;
-        self.append_step(crate::chronometry::ActKind::List, &addr, actor);
+        self.append_step_charted(crate::chronometry::ActKind::List, &addr, actor, Some(inv));
     }
 
     pub(crate) fn pending_take(&mut self, addr: &[u8]) -> Option<Element> {
