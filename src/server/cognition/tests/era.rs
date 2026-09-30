@@ -187,8 +187,8 @@ fn each_filed_era_reads_back_its_own_receipts() {
     let read = |k: &Kernel, after, upto| k.receipts_range(&home, after, upto, 100).iter().map(|r| r.stamp.place()).collect::<Vec<_>>();
     let one = read(&k, None, close(2));
     let two = read(&k, Some(close(2)), close(3));
-    assert_eq!(one.last(), Some(&close(2)), "the first era answers its own range");
-    assert_eq!(two.last(), Some(&close(3)), "the second era answers its own range, not the first's");
+    assert!(one.contains(&close(2)) && !one.contains(&close(3)), "the first era answers its own range");
+    assert!(two.contains(&close(3)) && !two.contains(&close(2)), "the second era answers its own range, not the first's");
     // A ledger written before the fix: every offset 0.
     let mut back = Kernel::new();
     assert!(back.restore(&k.snapshot()));
