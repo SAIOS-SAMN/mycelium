@@ -834,6 +834,7 @@ fn the_senses_and_the_acts_travel_whole() {
         paid: [33, 34, 35, 36],
         colours: 37,
         colours_derived: 38,
+        deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44 }],
     };
     let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
     let push = encode_push(&vk(8), &all).expect("the push writes");

@@ -114,7 +114,37 @@ pub struct Acts {
     /// 78.55 — of the colour words it heard, those admitted by derivation
     /// from its ruled colour words rather than by a scene's evidence.
     pub colours_derived: u64,
+    /// THE WORDS THE RESERVE KEEPS FROM BEING TAUGHT (the operator,
+    /// 2026-09-30): each installed word a syllabus page deferred, what it
+    /// is, what it costs, where the reserve fell short, and how often it was
+    /// tried. "Deferred: reserve" counts attempts; a
+    /// few words retried by every page to every voice read as thousands.
+    /// In address order.
+    pub deferred: Vec<Deferred>,
 }
+
+/// The kinds a deferred word is read as, on [`Deferred::kind`].
+pub const DEFERRED_KINDS: [&str; 4] = ["residual word", "connection", "sentence", "colour word"];
+
+/// ONE WORD THE RESERVE KEPT FROM A SYLLABUS PAGE.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Deferred {
+    /// The head of its address: enough to name it on the console, never a
+    /// key (the address itself stays the court's).
+    pub head: [u8; 8],
+    /// Its kind, on [`DEFERRED_KINDS`].
+    pub kind: u8,
+    /// Its magnitude per lane — the cost of teaching it whole.
+    pub mag: [u64; 4],
+    /// Where the reserve fell short of it, per lane, at the last try.
+    pub short: [u64; 4],
+    /// Pages that tried it and could not pay.
+    pub tries: u64,
+}
+
+/// How many deferred words the reading carries: what its one-byte count
+/// holds, in address order.
+pub const DEFERRED_SHOWN: usize = u8::MAX as usize;
 
 fn put<const N: usize>(out: &mut Vec<u8>, xs: &[u64; N]) {
     for x in xs {
@@ -211,6 +241,17 @@ impl Acts {
         put(out, &self.judged);
         put(out, &self.paid);
         put(out, &[self.colours, self.colours_derived]);
+        // At most DEFERRED_SHOWN rows, so the count is one byte.
+        let shown = &self.deferred[..self.deferred.len().min(DEFERRED_SHOWN)];
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant: at most DEFERRED_SHOWN = u8::MAX rows, sliced above")]
+        out.push(shown.len() as u8);
+        for d in shown {
+            out.extend_from_slice(&d.head);
+            out.push(d.kind);
+            put(out, &d.mag);
+            put(out, &d.short);
+            put(out, &[d.tries]);
+        }
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
@@ -219,7 +260,19 @@ impl Acts {
         let [refused] = take::<1>(b, p)?;
         let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
         let [colours, colours_derived] = take::<2>(b, p)?;
-        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived })
+        let n = usize::from(*b.get(*p)?);
+        *p += 1;
+        let mut deferred = Vec::with_capacity(n.min(DEFERRED_SHOWN));
+        for _ in 0..n {
+            let head: [u8; 8] = b.get(*p..*p + 8)?.try_into().ok()?;
+            *p += 8;
+            let kind = *b.get(*p)?;
+            *p += 1;
+            let (mag, short) = (take(b, p)?, take(b, p)?);
+            let [tries] = take::<1>(b, p)?;
+            deferred.push(Deferred { head, kind, mag, short, tries });
+        }
+        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred })
     }
 
     /// The reading, act by act, named.
@@ -234,6 +287,18 @@ impl Acts {
             format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
             format!("colour words installed: {} · admitted by derivation: {}", self.colours, self.colours_derived),
         ]
+        .into_iter()
+        .chain(self.deferred.iter().map(|d| {
+            let kind = match DEFERRED_KINDS.get(usize::from(d.kind)) {
+                Some(k) => *k,
+                None => "an unnamed kind",
+            };
+            format!(
+                "deferred {:02x?}… {kind} · cost {:?} · short {:?} · tried {}",
+                d.head, d.mag, d.short, d.tries
+            )
+        }))
+        .collect()
     }
 }
 

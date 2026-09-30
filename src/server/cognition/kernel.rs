@@ -395,6 +395,10 @@ pub struct Kernel {
     /// pages and where each ended, and the solves it judged — kept by the
     /// handlers themselves, read into `observe::Acts` at the question.
     pub(crate) acts: crate::observe::ActsTally,
+    /// The installed words a syllabus page deferred for reserve, by address:
+    /// a word leaves when it is served, so the record is bounded by the
+    /// words installed (`observe::Acts::deferred`).
+    pub(crate) deferred_words: crate::network::nerve::Keyed<crate::observe::Deferred>,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     pub(crate) treasury: crate::economy::Treasury,
     /// This hypha's verifying key.

@@ -180,17 +180,18 @@ impl Kernel {
                 page.end = PageEnd::Count;
                 return page;
             }
-            let word = self.installed_word(addr).filter(|w| !(w.is_connection() && w.letters().is_none()));
-            let Some((tape, mag)) = word.and_then(|w| w.to_bytes().map(|t| (t, w.magnitude()))) else {
+            // THE COST IS READ BEFORE THE WORD IS WRITTEN: a word the reserve
+            // cannot fund is never serialized. Every page to every voice
+            // wrote each deferred word out whole and threw the tape away.
+            let Some((mag, kind)) = self
+                .installed_word(addr)
+                .filter(|w| !(w.is_connection() && w.letters().is_none()))
+                .map(|w| (w.magnitude(), deferred_kind(w)))
+            else {
                 page.missed.push(addr.clone());
                 page.consumed += 1;
                 continue;
             };
-            let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
-            if used + width > bytes {
-                page.end = PageEnd::Frame;
-                return page;
-            }
             // A WORD THE RESERVE CANNOT FUND YET WAITS; THE PAGE GOES ON. It
             // ended the page and left the cursor on it, so every later page
             // to that voice tried the same word first and served nothing
@@ -200,10 +201,25 @@ impl Kernel {
             // and is taught when the verified work of later orbits funds it
             // (`orbit` regenerates the reserve).
             if let Err(depleted) = self.physics.reserve.draw(mag) {
+                self.note_deferred(addr, kind, mag, &depleted);
                 page.deferred.push((addr.clone(), depleted));
                 page.consumed += 1;
                 continue;
             }
+            // Paid: now the tape, and the frame's room for it.
+            let Some(tape) = self.installed_word(addr).and_then(|w| w.to_bytes()) else {
+                self.physics.reserve.restore(mag);
+                page.missed.push(addr.clone());
+                page.consumed += 1;
+                continue;
+            };
+            let width = crate::chronometry::Stamp::LEN + 4 + tape.len();
+            if used + width > bytes {
+                self.physics.reserve.restore(mag);
+                page.end = PageEnd::Frame;
+                return page;
+            }
+            self.deferred_words.remove(addr);
             let Some(at) = self.note_served(addr, voice) else {
                 // Not sealed: the draw is returned and the word missed.
                 self.physics.reserve.restore(mag);
@@ -356,4 +372,42 @@ impl Kernel {
         h.scoped().map(|(k, _)| k).collect()
     }
 
+    /// A word a syllabus page could not pay for, filed under its address:
+    /// its kind and cost, the lane that fell short, and one more try.
+    fn note_deferred(&mut self, addr: &[u8], kind: u8, mag: [u64; 4], depleted: &crate::physics::Depleted) {
+        let mut head = [0u8; 8];
+        for (h, b) in head.iter_mut().zip(addr) {
+            *h = *b;
+        }
+        // A draw is refused only where the lane held less than was asked, so
+        // the shortfall exists; a lane past the four names none.
+        let mut short = [0u64; 4];
+        if let (Some(s), Some(gap)) = (short.get_mut(depleted.lane), depleted.asked.checked_sub(depleted.held)) {
+            *s = gap;
+        }
+        // A count past the carrier stands where it was (never wrapped).
+        let tries = match self.deferred_words.get(addr).map(|d| d.tries.checked_add(1)) {
+            Some(Some(t)) => t,
+            Some(None) => u64::MAX,
+            None => 1,
+        };
+        self.deferred_words.insert(addr, crate::observe::Deferred { head, kind, mag, short, tries });
+    }
+
+    /// The deferred words in the order their addresses have — never ordered
+    /// by how often they were tried (rule 4) — as many as the reading's
+    /// count carries; the record is bounded by the words installed.
+    pub(crate) fn deferred_reading(&self) -> Vec<crate::observe::Deferred> {
+        self.deferred_words.scoped().map(|(_, d)| d.clone()).take(crate::observe::DEFERRED_SHOWN).collect()
+    }
+}
+
+/// A word's kind on `observe::DEFERRED_KINDS`.
+fn deferred_kind(w: &crate::transducer::element::Element) -> u8 {
+    match () {
+        _ if w.is_colour_word() => 3,
+        _ if w.is_sentence() => 2,
+        _ if w.is_connection() => 1,
+        _ => 0,
+    }
 }
