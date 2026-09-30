@@ -242,6 +242,25 @@ pub(crate) struct Exchange {
 
 impl Exchange {
     pub(crate) fn spawn(self) {
+        // THE CORPUS INTAKE IS PERCEPTION, AND THE CYCLE DOES NOT WAIT ON IT.
+        // It ran inside the exchange loop: every boot re-perceives the
+        // corpus's charts, and for the first minutes the one thread that
+        // strokes the court, replicates and folds spent eight samples in ten
+        // in `chart::invariant_of` (gdb on hypha a, 2026-09-30) — the window
+        // in which a restarted court most needs to catch up. The intake takes
+        // the kernel only per chain, so it runs on its own thread until the
+        // registry has taken the whole corpus in, and then ends.
+        {
+            let (kernel, mesh, registry) = (self.kernel.clone(), self.mesh.clone(), self.registry.clone());
+            std::thread::spawn(move || {
+                #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
+                let budget = mycelium::physics::expansion_unit() as usize;
+                while registry.lock().is_ok_and(|r| !r.intake_done()) {
+                    intake_corpus(&kernel, &mesh, &registry, budget);
+                    std::thread::yield_now();
+                }
+            });
+        }
         std::thread::spawn(move || self.run());
     }
 
@@ -297,7 +316,6 @@ impl Exchange {
             persist_if_due(&kernel, &state_path);
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
-            intake_corpus(&kernel, &mesh, &registry, budget);
             rebuild_own_cover(&kernel, &mesh);
             let roots = mesh.cover.lock().ok().map(|mut c| c.roots());
             // 45.7, S13.1: this court's own roots moving is one of the two
