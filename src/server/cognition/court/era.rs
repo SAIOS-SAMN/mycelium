@@ -131,12 +131,21 @@ impl Kernel {
         let within = |at: Place| after.is_none_or(|a| a < at) && at <= upto;
         let mut cold: Vec<KStepReceipt> = Vec::new();
         for e in self.eras_over(signer, after, upto) {
+            // THE BUDGET BOUNDS THE CLONE, not the result. This cloned every
+            // receipt of every era the range named and truncated after: one
+            // back-fill request held 561 MB of clones at once on hypha c,
+            // which the kernel OOM-killed at its 2 GB cap every six minutes
+            // (epoch 114, the jemalloc heap profile at the peak). The run is
+            // in line order, so what the budget leaves room for is its head.
+            let room = match budget.checked_sub(cold.len()) {
+                Some(0) | None => break,
+                Some(room) => room,
+            };
             let Some(page) = self.era_receipts(e) else { continue };
             // A paged era is in line order: the range is its run between
             // the two places.
-            cold.extend(page.iter().filter(|r| within(r.stamp.place())).cloned());
+            cold.extend(page.iter().filter(|r| within(r.stamp.place())).take(room).cloned());
         }
-        cold.truncate(budget);
         // THE DESTINATION IS ALREADY KNOWN (law 3): the hot line is read
         // off the line relation between the two places.
         #[expect(
