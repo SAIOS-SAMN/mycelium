@@ -46,7 +46,7 @@ impl Contemplation {
         // wanted; `hold_form_inner` derives its own from the form it owns,
         // and neither is stored beside the other (law 12).
         let key = trace::tracing().then(|| idea_key(&f));
-        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::Spores::default());
+        let _ = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::Spores::default(), &[]);
         let retained = match (before, live_bytes()) {
             (Some(a), Some(b)) => {
                 HELD_BYTES.with(|c| c.set(c.get().saturating_add(b - a)));
@@ -70,8 +70,11 @@ impl Contemplation {
 
     /// N4 — A PERCEPTION HELD WITH ITS BODIES: the form, and the frames it was
     /// perceived from, by chart (`resonance::spores_of`) — and then the
-    /// filaments its bodies grow with every held perception it meets
-    /// (`perceive_cells`), on the act's own stroke.
+    /// filaments its bodies grow with every held perception OF ITS FAMILY
+    /// it meets (`perceive_cells`, 78.56 III), on the act's own stroke.
+    /// `family` is the task's coordinate the perception was seen in (empty
+    /// where none is named).
+    #[expect(clippy::too_many_arguments, reason = "78.56 III — the family is the perception's own coordinate, passed where it is held, never carried as hidden context")]
     pub fn hold_perceived(
         &mut self,
         f: Form,
@@ -79,13 +82,15 @@ impl Contemplation {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<Link>],
         escrow: [u64; 4],
+        family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
-        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames))?;
+        let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames), family)?;
         self.perceive_cells(key.as_bytes(), budget);
         Some(key)
     }
 
+    #[expect(clippy::too_many_arguments, reason = "78.56 III — the family rides with the spores it scopes")]
     fn hold_form_inner(
         &mut self,
         f: Form,
@@ -94,6 +99,7 @@ impl Contemplation {
         escrow: [u64; 4],
         budget: &mut crate::physics::Budget,
         spores: super::resonance::Spores,
+        family: &[u8],
     ) -> Option<crate::transducer::address::Address> {
         mark("idea_key");
         let form_key = idea_key(&f);
@@ -253,6 +259,7 @@ impl Contemplation {
             // A perceived form is held at the perception layer (N4).
             percept: true,
             spores,
+            family: family.to_vec(),
             moved_k: self.now_k,
             // Z4d: THE ESCROW IS WHAT THE CALLER DREW, not what the
             // thought measures. They were the same number written in two

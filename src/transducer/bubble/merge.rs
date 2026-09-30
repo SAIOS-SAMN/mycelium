@@ -311,10 +311,14 @@ impl Contemplation {
         // idea's ordinal counts admissions, written big-endian so the keyed
         // read is that order — which is the orbit's order of hours (78.48(7)).
         let mut arrived: Keyed<super::resonance::Spores> = Keyed::new();
+        // 78.56 III — the thought is of the family its perceptions were seen
+        // in: they met only within it, so they share it.
+        let mut family: Vec<u8> = Vec::new();
         for v in verts {
             let Some(b) = self.bubbles.get(v.as_slice()).cloned() else {
                 continue;
             };
+            family.clone_from(&b.family);
             if let Some(o) = self.ordinals.get(v.as_slice()) {
                 arrived.insert([&o.to_be_bytes()[..], v.as_slice()].concat(), b.spores.clone());
             }
@@ -405,6 +409,7 @@ impl Contemplation {
             // A merge is a thought, formed of what it merged (N4).
             percept: false,
             spores,
+            family,
             moved_k: 0,
             glues: Keyed::new(),
             glued_by: Keyed::new(),

@@ -184,6 +184,10 @@ pub struct ResonanceTally {
     pub nonrigid: u64,
     pub unsucceeded: u64,
     pub torqued: u64,
+    /// 78.57 — transitions whose coherence form did not close, every defect
+    /// component filed (each also counted on its own: unbalanced, non-rigid,
+    /// external torque).
+    pub incoherent: u64,
     /// Incoherences and slipped predictions filed as demands by class; and
     /// those whose class did not read.
     pub demanded: u64,
@@ -193,7 +197,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -237,13 +241,14 @@ impl ResonanceTally {
             self.nonrigid,
             self.unsucceeded,
             self.torqued,
+            self.incoherent,
             self.demanded,
             self.undemanded,
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 45] {
+    fn fields(&mut self) -> [&mut u64; 46] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         [
             &mut self.circuits,
@@ -289,6 +294,7 @@ impl ResonanceTally {
             &mut self.nonrigid,
             &mut self.unsucceeded,
             &mut self.torqued,
+            &mut self.incoherent,
             &mut self.demanded,
             &mut self.undemanded,
         ]
@@ -653,6 +659,12 @@ impl Contemplation {
         let Some(me) = self.bubbles.get(key) else { return };
         let Some(ok) = self.ordinals.get(key).copied() else { return };
         let charts: Vec<(Vec<u8>, Vec<Shape>)> = me.spores.scoped().map(|(c, b)| (c, b.clone())).collect();
+        // 78.56 III — ORBITS ARE STRICTLY INTRA-TASK: a perception meets only
+        // perceptions of its own family on a chart. Paired across families,
+        // an orbit balanced across disjoint tasks that share no Hamiltonian
+        // (τ_ext ≠ 0 by construction), and no thought ever grounded on the
+        // fleet; what tasks share lives in the genome, as words.
+        let family = me.family.clone();
         // Each other idea's rows: per body of this one, its transitions to
         // the other's bodies in their arrival order, over every chart.
         let mut to: Keyed<Vec<Row>> = Keyed::new();
@@ -663,6 +675,7 @@ impl Contemplation {
                 .filter_map(|(id, _)| Self::ordinal_of_key(&id))
                 .filter_map(|o| self.address_at(o).map(|a| (o, a.to_vec())))
                 .filter(|(_, a)| a.as_slice() != key)
+                .filter(|(_, a)| self.bubbles.get(a).is_some_and(|b| b.family == family))
                 .collect();
             let mut circuits: Vec<CellCircuit> = Vec::new();
             // The cell's bodies: this perception's and the fibre's on the chart.
@@ -1033,8 +1046,11 @@ impl Contemplation {
     ///   weighed by its mass (its sites).
     fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool) -> Result<(), crate::physics::tensegrity::Refusal> {
         use crate::physics::tensegrity::{
-            barycentre, consolidate, external_torque, hour, rigid, succession, Constellation, Refusal,
+            barycentre, coherence, external_torque, hour, metric_defect, succession, Constellation, Defect, Refusal,
         };
+        // 78.57 — THE COHERENCE FORM: every defect of this transition read,
+        // each in its own grade; never the first alone, never summed.
+        let mut defect = Defect::default();
         use crate::transducer::cga;
         type Q = num_rational::BigRational;
         if unit_ray(generator) {
@@ -1103,10 +1119,14 @@ impl Contemplation {
                 Constellation { frames: before, generator: r_hour.clone() },
                 Constellation { frames: after, generator: r_hour },
             );
-            consolidate(&before, &after)?;
-            // A.13 (78.52 Row 1): on an orbit, the step carries each hour's
-            // momentum to the next — the other's bodies in arrival order, then
-            // this one — or what it did not carry is an external torque.
+            // THE STRUCTURE FIRST — frames that do not stand, or a strain that
+            // rises, leave no form to read, refused — then Δω, the torque the
+            // couplings leave on the generator.
+            defect.torsion.extend(coherence(&before, &after)?.torsion);
+            // τ_ext — A.13 (78.52 Row 1): on an orbit, the step carries each
+            // hour's momentum to the next — the other's bodies in arrival
+            // order, then this one — and what it did not carry is an external
+            // torque, every step read.
             if orbit {
                 for r in &on {
                     let hours: Option<Vec<&crate::physics::tensegrity::Body>> =
@@ -1115,7 +1135,7 @@ impl Contemplation {
                     for pair in hours.windows(2) {
                         if let [a, b] = pair {
                             match external_torque(a, b, generator) {
-                                Some(tau) if !tau.is_zero() => return Err(Refusal::ExternalTorque { tau }),
+                                Some(tau) if !tau.is_zero() => defect.momentum.push(tau),
                                 Some(_) => {}
                                 None => return Err(Refusal::NoSuccession),
                             }
@@ -1123,9 +1143,9 @@ impl Contemplation {
                     }
                 }
             }
-            // METRIC RIGIDITY (78.51(4′)): in a scene, each of this
-            // perception's bodies against the other's body the motion lands
-            // it on, every pair's inversive distance kept. A body landing on
+            // Δδ² — METRIC RIGIDITY (78.51(4′)): in a scene, each of this
+            // perception's bodies against the other's body the motion lands it
+            // on, every pair whose inversive distance moved. A body landing on
             // none appeared, and stands in no pair.
             if !orbit {
                 let mut bodies: Vec<(Mv, Mv)> = Vec::new();
@@ -1136,8 +1156,14 @@ impl Contemplation {
                         bodies.push((s.clone(), x.clone()));
                     }
                 }
-                rigid(&bodies)?;
+                defect.metric.extend(metric_defect(&bodies));
             }
+        }
+        // THE FORM CLOSES OR IT FILES WHAT IS MISSING: zero on every
+        // component, exactly, and the constellation locks; otherwise the
+        // whole defect is the answer, blade by blade.
+        if !defect.closes() {
+            return Err(Refusal::Incoherent { defect: Box::new(defect) });
         }
         self.resonance.consolidated += 1;
         Ok(())
@@ -1223,7 +1249,7 @@ impl Contemplation {
 
     /// `join_ground`'s reading: the verdict and the ground's generator.
     fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row]) -> Option<(Verdict, Mv)> {
-        use crate::physics::tensegrity::{carried_body, consolidate, external_torque, hour, rigid, Constellation, Refusal};
+        use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
         let grounded = self.bubbles.get(other)?.ground.clone()?;
         let g = &grounded.ground;
         let mine: Vec<(&Mv, &crate::physics::tensegrity::Body)> = rows
@@ -1258,12 +1284,17 @@ impl Contemplation {
         let before: Vec<_> = (0..h).flat_map(|m| g.bodies.iter().map(move |b| hour(&b.nucleus, &g.coupling, m))).collect();
         let mut after = before.clone();
         after.extend(g.bodies.iter().map(|b| hour(&b.nucleus, &g.coupling, h)));
-        let verdict = consolidate(
+        // 78.57 — THE COHERENCE FORM of the next hour, whole: Δω, then Δδ² of
+        // every matched body, then τ_ext of every body's step; closed only
+        // where every component vanishes.
+        let verdict = coherence(
             &Constellation { frames: before, generator: g.coupling.clone() },
             &Constellation { frames: after, generator: g.coupling.clone() },
         )
-        .and_then(|()| rigid(&matched.iter().map(|(base, s, _)| (base.nucleus.clone(), (*s).clone())).collect::<Vec<_>>()))
-        .and_then(|()| {
+        .and_then(|mut defect| {
+            defect.metric.extend(metric_defect(
+                &matched.iter().map(|(base, s, _)| (base.nucleus.clone(), (*s).clone())).collect::<Vec<_>>(),
+            ));
             // A.13: each body carried to hour h − 1, then by one step to this
             // perception's body at hour h. Hour 0 again (a return completed)
             // is carried from the ground's last hour.
@@ -1274,12 +1305,15 @@ impl Contemplation {
                     carried = carried_body(&carried, &g.generator).ok_or(Refusal::NoSuccession)?;
                 }
                 match external_torque(&carried, b, &g.generator) {
-                    Some(tau) if !tau.is_zero() => return Err(Refusal::ExternalTorque { tau }),
+                    Some(tau) if !tau.is_zero() => defect.momentum.push(tau),
                     Some(_) => {}
                     None => return Err(Refusal::NoSuccession),
                 }
             }
-            Ok(())
+            match defect.closes() {
+                true => Ok(()),
+                false => Err(Refusal::Incoherent { defect: Box::new(defect) }),
+            }
         });
         let generator = g.generator.clone();
         if let Err(why) = verdict {
@@ -1305,7 +1339,9 @@ impl Contemplation {
     /// counted.
     fn note_refusal(&mut self, why: &crate::physics::tensegrity::Refusal, generator: &Mv, rows: &[Row]) {
         use crate::physics::tensegrity::Refusal;
-        let residue = match why {
+        // The residues this refusal files, each its own demand: one blade
+        // per defect component, never summed (78.57).
+        let residues: Vec<Option<Mv>> = match why {
             Refusal::MonocularOrbit => {
                 self.resonance.monocular += 1;
                 return;
@@ -1316,11 +1352,11 @@ impl Contemplation {
             }
             Refusal::UnbalancedTensegrity { net_torque } => {
                 self.resonance.unbalanced += 1;
-                Some(net_torque.clone())
+                vec![Some(net_torque.clone())]
             }
             Refusal::DestabilizingOperation { .. } => {
                 self.resonance.destabilizing += 1;
-                None
+                vec![None]
             }
             Refusal::NoSuccession => {
                 self.resonance.unsucceeded += 1;
@@ -1329,12 +1365,35 @@ impl Contemplation {
             // A.13: the external torque — what exerted it is the demand.
             Refusal::ExternalTorque { tau } => {
                 self.resonance.torqued += 1;
-                Some(tau.clone())
+                vec![Some(tau.clone())]
             }
             // The strain demand: what the pair's inversive distance changed by.
             Refusal::NonRigid { delta, .. } => {
                 self.resonance.nonrigid += 1;
-                Some(Mv::scalar(delta.clone()))
+                vec![Some(Mv::scalar(delta.clone()))]
+            }
+            // 78.57 — THE COHERENCE FORM, whole: each component counted on its
+            // own counter and filed as its own demand — Δω the missing rotor,
+            // Δδ² the missing tangency, τ_ext the unmodelled force.
+            Refusal::Incoherent { defect } => {
+                self.resonance.incoherent += 1;
+                if !defect.torsion.is_empty() {
+                    self.resonance.unbalanced += 1;
+                }
+                if !defect.metric.is_empty() {
+                    self.resonance.nonrigid += 1;
+                }
+                if !defect.momentum.is_empty() {
+                    self.resonance.torqued += 1;
+                }
+                defect
+                    .torsion
+                    .iter()
+                    .cloned()
+                    .chain(defect.metric.iter().map(|(_, _, d)| Mv::scalar(d.clone())))
+                    .chain(defect.momentum.iter().cloned())
+                    .map(Some)
+                    .collect()
             }
         };
         let class = halves(generator).and_then(|(r, c)| sentence::ClassVector::of_rotor(&r, c, sentence::CycleType::Identity));
@@ -1347,8 +1406,10 @@ impl Contemplation {
             charts.insert(&r.chart, ());
         }
         let charts: Vec<stalk::Invariant> = charts.scoped().filter_map(|(k, _)| stalk::Invariant::from_key(&k)).collect();
-        self.docket_demand(&class, &charts, residue.as_ref());
-        self.resonance.demanded += 1;
+        for residue in &residues {
+            self.docket_demand(&class, &charts, residue.as_ref());
+            self.resonance.demanded += 1;
+        }
     }
 
     /// Lanes summed lane by lane (law 5); a sum past its carrier is counted

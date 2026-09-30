@@ -189,6 +189,11 @@ pub struct Bubble {
     /// and output frames (`resonance::Spores`): the bodies heard against
     /// another perception's. Empty for every other idea.
     pub spores: super::resonance::Spores,
+    /// 78.56 III — THE FAMILY A PERCEPTION WAS SEEN IN, by its task's
+    /// coordinate (empty where none was named): a thought's hours wind only
+    /// across the demonstration frames of one family, so a perception meets
+    /// only perceptions of its own family (`perceive_cells`).
+    pub family: Vec<u8>,
     /// TUniversal when this bubble's charts last moved.
     pub moved_k: u64,
     /// Z4d — THE ESCROW THIS THOUGHT IS HELD ON: the μ⃗ drawn from the

@@ -18522,6 +18522,42 @@ THE FOUR CLOSURES AS FIRST POSED:
   admission (4747e2f4) and the court's reserve ceiling stand as landed, each
   named here as provisional.
 
+### 78.57 Learning is a phase transition: the coherence form closes or files the missing blade (the operator's target, 2026-09-30)
+
+Gradient descent collapses every qualitative dimension of failure into one
+scalar loss, discards the geometry of why the system failed, and crawls
+along a derivative. The engine does not: a transition's DEFECTS live in
+distinct grades and are kept there —
+- Δω, the torsional defect: the net torque the couplings leave on the
+  generator, ½Σ[B_ij, G] (a bivector): the rotor still missing;
+- Δδ², the metric defect: every pair whose inversive distance moved (grade
+  0): the parabolic translation or dilation that would restore tangency;
+- τ_ext, the momentum defect: every hour step whose momentum the orbit did
+  not carry (A.13): the unmodelled force that broke it.
+
+Summed with weights, L = α‖Δω‖² + β‖Δδ²‖² + γ‖τ_ext‖², the structure is
+destroyed: nothing can tell a stretch from a twist. Combined as a coherence
+form, they are MET: Δ_total = τ_net ⊕ Δδ² ⊕ τ_ext ≡ 0 over ℚ.
+- STATIONARY EQUILIBRIUM (Δ_total = 0): the constellation locks — the thought
+  closes, factors into a word, and freezes as an invariant automorphism, in
+  one step and without search.
+- DISSONANCE AS AN EXACT DEMAND (Δ_total ≠ 0): the residue is not a penalty
+  but the missing blade itself, each component its own demand on the docket.
+No catastrophic forgetting (no weight is shifted), no hallucination (a near
+miss is not zero), no soft springs approximating rigid theorems.
+
+BUILT (the implementor, 2026-09-30): `tensegrity::Defect { torsion, metric,
+momentum }` and `Defect::closes`; `coherence(before, after)` reads the
+structure first — frames that do not stand or a strain that rises leave no
+form, refused — then Δω; `metric_defect` reads Δδ² WHOLE (every pair, never
+the first); the consolidation gate and the next-hour join (`read_ground`)
+read all three and refuse `Refusal::Incoherent { defect }` unless every
+component vanishes; `note_refusal` files one demand per component, each with
+its exact residue, and counts each on its own counter (`incoherent` beside
+unbalanced, non-rigid, external torque). Test: a transition that tumbles,
+drifts and grows files three blades; the rigid binary with its momentum
+carried closes.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

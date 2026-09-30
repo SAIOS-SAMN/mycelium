@@ -650,6 +650,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 nonrigid: 242,
                 unsucceeded: 243,
                 torqued: 244,
+                incoherent: 246,
                 demanded: 225,
                 undemanded: 226,
             },

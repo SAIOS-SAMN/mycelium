@@ -38,19 +38,23 @@ impl Entity {
         let Some(f) = scene_form_on(&self.epigenome, &mut budget, &scene.0, &scene.1, &frames) else {
             return;
         };
-        // A perception, held with the bodies it was perceived as (N4).
-        self.hold_perceived(f, &frames, &[], &[], &mut budget);
+        // A perception, held with the bodies it was perceived as (N4); a
+        // remainder scene is named by no task.
+        self.hold_perceived(f, &frames, &[], &[], &[], &mut budget);
     }
 
     /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
     /// thoughts it forms with the perceptions it meets are the transitions
     /// between their bodies. The draw is `hold_form`'s, one reading of it.
+    /// `family` is the task the perception was seen in (78.56 III: its
+    /// thoughts wind only within it); empty where none is named.
     pub fn hold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
+        family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> bool {
         // A PERCEPTION IS ITS BODIES. An extraction memo hit hands no frames
@@ -62,7 +66,7 @@ impl Entity {
             return false;
         }
         let Some(draw) = self.draw_for(&f) else { return false };
-        self.contemplation.hold_perceived(f, frames, train, remainders, draw, budget);
+        self.contemplation.hold_perceived(f, frames, train, remainders, draw, family, budget);
         // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
         // this perception closed are transcribed against this mind's own
         // letters, and each word stands in the dialect and goes to the court
@@ -232,11 +236,14 @@ impl Entity {
         mag: [u64; 4],
         budget: &mut crate::physics::Budget,
     ) {
-        self.withhold_with(f, None, train, remainders, mag, budget);
+        // A form withheld with no frames holds no perception, so it names
+        // no family.
+        self.withhold_with(f, None, train, remainders, mag, &[], budget);
     }
 
     /// [`Self::withhold_form`] for a perception: held with the frames it was
     /// perceived from, so its thoughts are transitions between bodies (N4).
+    #[expect(clippy::too_many_arguments, reason = "78.56 III — the family is the perception's own coordinate, passed where it is held")]
     pub fn withhold_perceived(
         &mut self,
         f: crate::transducer::sentence::Form,
@@ -244,11 +251,13 @@ impl Entity {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
         mag: [u64; 4],
+        family: &[u8],
         budget: &mut crate::physics::Budget,
     ) {
-        self.withhold_with(f, Some(frames), train, remainders, mag, budget);
+        self.withhold_with(f, Some(frames), train, remainders, mag, family, budget);
     }
 
+    #[expect(clippy::too_many_arguments, reason = "78.56 III — the family rides with the frames it scopes")]
     fn withhold_with(
         &mut self,
         f: crate::transducer::sentence::Form,
@@ -256,6 +265,7 @@ impl Entity {
         train: &crate::transducer::family::Family,
         remainders: &[Vec<(i64, i64, u8, u8)>],
         mag: [u64; 4],
+        family: &[u8],
         budget: &mut crate::physics::Budget,
     ) {
         let k = self.own_k();
@@ -272,7 +282,7 @@ impl Entity {
         // No room on a lane withholds the thought; the demand stands on the
         // docket either way. A perception is held with its bodies.
         let _ = match frames {
-            Some(frames) => self.hold_perceived(f, frames, train, remainders, budget),
+            Some(frames) => self.hold_perceived(f, frames, train, remainders, family, budget),
             None => self.hold_form(f, train, remainders, budget),
         };
     }

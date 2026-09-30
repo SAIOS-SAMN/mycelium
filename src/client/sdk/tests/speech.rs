@@ -200,7 +200,7 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         let frames = perceive_family(&[(a.clone(), b.clone())]);
         let mut budget = entity.stroke_n(1 << 20);
         let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");
-        assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], &mut budget), "hour {i} is held");
+        assert!(entity.hold_perceived(f, &frames, &Vec::new(), &[], b"one scene", &mut budget), "hour {i} is held");
         assert_eq!(spoken(&entity), usize::from(i == 3), "hour {i}: the word stands only once the return closes");
     }
     // THE FACULTIES READ IT, typed (never a log): one thought closed, one

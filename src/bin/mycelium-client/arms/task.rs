@@ -78,6 +78,21 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
             None => "extract withheld".to_string(),
         },
     );
+    // 78.56 III — THE FAMILY'S HOURS. A thought's hours wind across the
+    // demonstration frames of ONE family: each pair is held as its own
+    // perception, in frame order, under the family's own coordinate, so the
+    // family's scenes meet one another and never another family's. Held on
+    // the family's first perception (a memo hit perceived nothing new).
+    if !frames.is_empty() {
+        for (a, b) in &train {
+            let pair = [(a.clone(), b.clone())];
+            let hour = mycelium::transducer::family::perceive_family(&pair);
+            let mut hour_budget = physics.stroke_n(mycelium::transducer::family::extraction_spend(&pair, &hour));
+            if let Some(f) = mycelium::transducer::family::scene_form_on(&entity.epigenome, &mut hour_budget, a, b, &hour) {
+                entity.hold_perceived(f, &hour, &[], &[], &tid, &mut hour_budget);
+            }
+        }
+    }
     if let Some(rule) = extracted.as_ref() {
         if let Some(mag) = speak_form(entity, tag, rule, &train, &frames, &tid, &mut extract_budget) {
             StrokeOutcome::add(&mut outcome.uttered, &mag);

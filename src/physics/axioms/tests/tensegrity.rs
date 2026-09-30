@@ -5,8 +5,9 @@
 // (78.52 Row 1).
 
 use crate::physics::tensegrity::{
-    barycentre, carried, consolidate, coupling, equilibrium, external_torque, force, hour, inversive, momentum,
-    net_torque, rigid, spin_of, strain, succession, torque, Body, Constellation, Frame, Refusal, Star,
+    barycentre, carried, coherence, consolidate, coupling, equilibrium, external_torque, force, hour, inversive,
+    metric_defect, momentum, net_torque, rigid, spin_of, strain, succession, torque, Body, Constellation, Frame,
+    Refusal, Star,
 };
 use crate::transducer::cga::{rotator, rotator_on_blade, sphere_at, translator_at, Mv, E1, E3};
 use num_traits::{One, Zero};
@@ -177,6 +178,45 @@ fn tier_2_a_tumbling_body_is_unbalanced_and_a_drifting_pair_is_not_rigid() {
     let s = |x: i64| frame([x, 0, 0], one()).nucleus;
     let drift = [(s(1), s(2)), (s(-1), s(-2))];
     assert!(matches!(rigid(&drift), Err(Refusal::NonRigid { i: 0, j: 1, ref delta }) if !delta.is_zero()), "the drift is not rigid");
+}
+
+/// 78.57 · THE COHERENCE FORM IS READ WHOLE, EACH DEFECT IN ITS OWN GRADE,
+/// NEVER SUMMED. A transition that tumbles (Δω), drifts apart (Δδ²) and
+/// grows a body on its step (τ_ext) carries all three defects at once — the
+/// form files each blade, where a gate that stopped at the first would have
+/// told the mind one third of what is missing. The synchronous binary,
+/// turned rigidly with its momentum carried, closes: every component zero.
+#[test]
+fn the_coherence_form_files_every_defect_blade_and_closes_only_at_zero() {
+    let r = succession(&turn(), &at([0, 0, 0])).expect("the turn winds");
+    let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
+    let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
+    let c = Constellation { frames, generator: r };
+    let mut defect = coherence(&c, &c).expect("the frames stand and the strain does not rise");
+    let s = |x: i64| frame([x, 0, 0], one()).nucleus;
+    defect.metric.extend(metric_defect(&[(s(1), s(2)), (s(-1), s(-2))]));
+    let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
+    let before = Body { centre: vec![q(1, 1), zero()], mass: q(4, 1), moments: d(2, 1) };
+    let grown = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(3, 1) };
+    let g = rotator(&q(1, 1), &q(1, 1));
+    defect.momentum.extend(external_torque(&before, &grown, &g).filter(|t| !t.is_zero()));
+    assert_eq!(
+        (defect.torsion.len(), defect.metric.len(), defect.momentum.len()),
+        (1, 1, 1),
+        "three defects, three blades: {defect:?}"
+    );
+    assert!(!defect.closes(), "the form does not close");
+    // THE BINARY CLOSES: balanced, rigid, its momentum carried.
+    let star = barycentre(&[(at([1, 0, 0]), q(1, 1)), (at([-1, 0, 0]), q(1, 1))]).expect("the barycentre");
+    let r = succession(&turn(), &star.centre).expect("the turn winds");
+    let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
+    let frames: Vec<Frame> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
+    let binary = Constellation { frames, generator: r };
+    let mut closed = coherence(&binary, &binary).expect("the binary stands");
+    closed.metric.extend(metric_defect(&bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect::<Vec<_>>()));
+    let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
+    closed.momentum.extend(external_torque(&before, &after, &g).filter(|t| !t.is_zero()));
+    assert!(closed.closes(), "every component zero, exactly: the constellation locks: {closed:?}");
 }
 
 /// A.13 · THE MOMENTUM IS CARRIED BY AN UNFORCED ORBIT. A body of mass 4 at

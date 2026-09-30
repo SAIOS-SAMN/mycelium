@@ -17,13 +17,36 @@ fn grid(rows: &[&str]) -> Grid {
 
 /// Perceive the scene `input → output` and hold it with its bodies, as a
 /// voice does (`hold_perceived`): the frames perceived once, the stroke the
-/// act's own.
+/// act's own. Every scene here is of one family.
 fn perceive(c: &mut Contemplation, input: &[&str], output: &[&str]) -> Vec<u8> {
+    perceive_in(c, input, output, &[])
+}
+
+/// The same, seen in the family `family` (78.56 III).
+fn perceive_in(c: &mut Contemplation, input: &[&str], output: &[&str], family: &[u8]) -> Vec<u8> {
     let (a, b) = (grid(input), grid(output));
     let frames = perceive_family(&[(a.clone(), b.clone())]);
     let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
     let f = scene_form_on(&NoCrystal, &mut budget, &a, &b, &frames).expect("the scene reads");
-    c.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], &mut budget).expect("held").as_bytes().to_vec()
+    c.hold_perceived(f, &frames, &Vec::new(), &[], [0; 4], family, &mut budget).expect("held").as_bytes().to_vec()
+}
+
+/// 78.56 III — ORBITS ARE STRICTLY INTRA-TASK. The same body in two scenes
+/// is a filled thought where both scenes are of one family; seen in two
+/// different families, the two perceptions never meet — no circuit, no
+/// edge — and what the families share stays for the genome to hold.
+#[test]
+fn perceptions_of_two_families_never_meet() {
+    let (input, output) = (["0000", "0110", "0000"], ["0000", "0011", "0000"]);
+    let (other_in, other_out) = (["0000", "0000", "0110"], ["0000", "0000", "0011"]);
+    let mut apart = Contemplation::new();
+    perceive_in(&mut apart, &input, &output, b"family a");
+    perceive_in(&mut apart, &other_in, &other_out, b"family b");
+    assert_eq!((apart.resonance.circuits, apart.resonance.edges), (0, 0), "{}", apart.resonance.line());
+    let mut together = Contemplation::new();
+    perceive_in(&mut together, &input, &output, b"family a");
+    perceive_in(&mut together, &other_in, &other_out, b"family a");
+    assert!(together.resonance.circuits > 0, "within one family they meet: {}", together.resonance.line());
 }
 
 /// A scene built from its cells: the input a `rows × cols` grid holding the

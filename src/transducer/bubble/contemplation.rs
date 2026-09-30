@@ -982,6 +982,7 @@ impl Contemplation {
             // A remainder held alone is no perception (N4).
             percept: false,
             spores: super::resonance::Spores::default(),
+            family: Vec::new(),
             moved_k: self.now_k,
             escrow: volume,
             until: self.aperture_tu().and_then(|span| self.now_k.checked_add(span)),

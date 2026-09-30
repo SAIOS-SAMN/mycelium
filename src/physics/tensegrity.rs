@@ -93,6 +93,89 @@ pub enum Refusal {
     /// A.13 — the momentum was not carried from one hour to the next: `tau`,
     /// the external torque, is what some other body or field exerted.
     ExternalTorque { tau: Mv },
+    /// 78.57 — THE COHERENCE FORM DID NOT CLOSE: every defect the transition
+    /// carries, each in its own grade, never summed (`Defect`).
+    Incoherent { defect: Box<Defect> },
+}
+
+/// 78.57 — THE COHERENCE FORM OF ONE TRANSITION: its defects, each kept in its
+/// own grade and NEVER SUMMED into a scalar — no weights, no loss. A sum
+/// would destroy the one thing the engine needs to know: which blade is
+/// missing. The form closes exactly where every component vanishes over ℚ;
+/// a component that does not is the missing blade itself, filed as the next
+/// direction of growth.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Defect {
+    /// Δω — per constellation, the net torque its couplings leave on the
+    /// generator (a bivector, `½Σ[B_ij, G]`): the rotor still missing.
+    pub torsion: Vec<Mv>,
+    /// Δδ² — every pair `(i, j)` whose inversive distance moved across the
+    /// transition, with what it moved by (grade 0): shear, drift, separation.
+    pub metric: Vec<(usize, usize, Q)>,
+    /// τ_ext — every hour step whose momentum the orbit did not carry (A.13):
+    /// the external torque some unmodelled body or field exerted.
+    pub momentum: Vec<Mv>,
+}
+
+impl Defect {
+    /// Whether the form closes: every component zero, exactly.
+    pub fn closes(&self) -> bool {
+        self.torsion.is_empty() && self.metric.is_empty() && self.momentum.is_empty()
+    }
+}
+
+/// Δδ², WHOLE: every pair of `bodies` (each `(before, after)`) whose inversive
+/// distance moved, with what it moved by — never only the first.
+pub fn metric_defect(bodies: &[(Mv, Mv)]) -> Vec<(usize, usize, Q)> {
+    let delta = |a: &Mv, b: &Mv| cga::pair_regime(&cga::gram_form(&[a.clone(), b.clone()]), 0, 1).0;
+    let mut out = Vec::new();
+    for (i, (bi, ai)) in bodies.iter().enumerate() {
+        for (j, (bj, aj)) in bodies.iter().enumerate().skip(i + 1) {
+            let d = delta(ai, aj) - delta(bi, bj);
+            if !d.is_zero() {
+                out.push((i, j, d));
+            }
+        }
+    }
+    out
+}
+
+/// 78.57 — THE COHERENCE FORM BEGUN: the structure read first — frames that
+/// do not stand, or a strain the transition raises, leave no form to read and
+/// are refused — then Δω, the torque `after`'s couplings leave on its
+/// generator. The caller adds the transition's Δδ² and τ_ext (they depend on
+/// which bodies it relates) and asks `Defect::closes`.
+pub fn coherence(before: &Constellation, after: &Constellation) -> Result<Defect, Refusal> {
+    frames_stand(after)?;
+    if let (Some(b), Some(a)) = (strain(before), strain(after)) {
+        if a > b {
+            return Err(Refusal::DestabilizingOperation { delta_strain: a - b });
+        }
+    }
+    let mut defect = Defect::default();
+    let tau = net_torque(after);
+    if !tau.is_zero() {
+        defect.torsion.push(tau);
+    }
+    Ok(defect)
+}
+
+/// THE FRAMES STAND (the structural half of `equilibrium`): at least two, no
+/// two collapsed into one. Where they do not, the coherence form cannot be
+/// read at all — a refusal, never a defect.
+pub fn frames_stand(c: &Constellation) -> Result<(), Refusal> {
+    let [first, rest @ ..] = c.frames.as_slice() else { return Err(Refusal::MonocularOrbit) };
+    if rest.is_empty() {
+        return Err(Refusal::MonocularOrbit);
+    }
+    let mut seen: Vec<&Frame> = vec![first];
+    for f in rest {
+        if seen.iter().any(|g| collapsed(g, f)) {
+            return Err(Refusal::SingularCollapse);
+        }
+        seen.push(f);
+    }
+    Ok(())
 }
 
 /// THE ATTITUDE COUPLING `V_ij = θ_j θ̃_i` between two frames (78.51(4′),
@@ -362,16 +445,10 @@ pub fn net_torque(c: &Constellation) -> Mv {
 /// do not, and the first pair in that order that did not is refused with
 /// what changed.
 pub fn rigid(bodies: &[(Mv, Mv)]) -> Result<(), Refusal> {
-    let delta = |a: &Mv, b: &Mv| cga::pair_regime(&cga::gram_form(&[a.clone(), b.clone()]), 0, 1).0;
-    for (i, (bi, ai)) in bodies.iter().enumerate() {
-        for (j, (bj, aj)) in bodies.iter().enumerate().skip(i + 1) {
-            let d = delta(ai, aj) - delta(bi, bj);
-            if !d.is_zero() {
-                return Err(Refusal::NonRigid { i, j, delta: d });
-            }
-        }
+    match metric_defect(bodies).into_iter().next() {
+        Some((i, j, delta)) => Err(Refusal::NonRigid { i, j, delta }),
+        None => Ok(()),
     }
-    Ok(())
 }
 
 /// A STAR (78.51(2)): the centre a constellation turns about and the mass
@@ -471,17 +548,7 @@ pub fn strain(c: &Constellation) -> Option<Q> {
 /// STATIONARY EQUILIBRIUM (A.10.1 laws I, II): at least two co-present
 /// frames, no two collapsed into one, and the net torque zero, exactly.
 pub fn equilibrium(c: &Constellation) -> Result<(), Refusal> {
-    let [first, rest @ ..] = c.frames.as_slice() else { return Err(Refusal::MonocularOrbit) };
-    if rest.is_empty() {
-        return Err(Refusal::MonocularOrbit);
-    }
-    let mut seen: Vec<&Frame> = vec![first];
-    for f in rest {
-        if seen.iter().any(|g| collapsed(g, f)) {
-            return Err(Refusal::SingularCollapse);
-        }
-        seen.push(f);
-    }
+    frames_stand(c)?;
     let tau = net_torque(c);
     match tau.is_zero() {
         true => Ok(()),
