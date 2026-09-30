@@ -18911,6 +18911,34 @@ class (κ) with a word their learner already holds — the exact bound on
 what (1) can refract, and what a Γ solver between two forms must cover.
 Then the solver and (1); then (3); then (2).
 
+**The solver, first cut (the implementor, 2026-10-01 — held, not landed).**
+Two instruments shipped on 98fc7f8f read the WRONG relation for (1): a
+uniform per-vertex γ from `coboundary_gauge` is `w_T = γ·w_W` (left
+translation), while a refraction is conjugation, `w_T = Γ w_W Γ⁻¹`
+(`rebase_by_word`); that axis ("sentences: one rotor γ") is to be read as
+nothing. The held cut (uncommitted on impl/soak) solves Γ exactly:
+`simultaneous_conjugators` stacks each word vertex's equation
+`γa_v − λ_v b_v γ = 0` into one elimination over ℚ, the scale λ_v read as
+`⟨a_v⟩₀/⟨b_v⟩₀` (a conjugation keeps the scalar part — no squaring, no
+search); Γ's carriage and gauge are read off one member pair
+(`c_T = Γc·c_W`, `g_T = Γg∘g_W`, which the rebase leaves alone); the
+address of `held.refract(Γ)` against the other's is the proof. Two
+findings, both open:
+(i) *The factoriser is narrower than the alphabet.* A 180° turn in
+(e₂, e₃) — two letters `turn_90((1,2))` — acts on the sensor plane as
+diag(1, −1), and `factor_rotor` refuses it with a `Standing` demand: a
+conjugator the letters spell is read as unspellable. Every orientation
+reversal of the sensor plane is lost to the solve until the factoriser
+reads such a block.
+(ii) *A pure translation does not yet solve back.* A minted sentence
+refracted by one column's translator moves its address; the solve reads
+the identity word and the translator's carriage exactly (projectively
+equal, checked), yet `held.refract` by that Γ does not land on the
+refracted address. Something the refraction moves beyond the members'
+carriages and gauges — an overlap's carriage, a citation's site, the
+cover's ports — is not read by the one-member placement. This is the next
+thing to measure, before the syllabus relays anything.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
