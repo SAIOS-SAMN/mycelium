@@ -601,11 +601,15 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("backfill_budget", "back-fill passes that ended on their budget or closed nothing, short of it"),
     ("parent_after_backfill", "reported heads admitted as a parent once a back-fill closed their gap"),
     ("lag", "the K lag at the last report: the reported K against the head held (a level, not a count)"),
+    // Phase 1 — WHY A BACK-FILL PAGE STOPPED short of its range, each apart.
+    ("backfill_unlinked", "back-filled receipts past the head held: the page did not open at it"),
+    ("backfill_refused", "back-filled receipts refused on their chain"),
+    ("backfill_equivocation", "back-filled receipts at a held place with another hash"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 17;
+pub const REP_AXES: usize = 20;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -627,6 +631,9 @@ pub mod rep {
     pub const PARENT_AFTER_BACKFILL: usize = 15;
     /// A LEVEL: set at each report, never summed.
     pub const LAG: usize = 16;
+    pub const BACKFILL_UNLINKED: usize = 17;
+    pub const BACKFILL_REFUSED: usize = 18;
+    pub const BACKFILL_EQUIVOCATION: usize = 19;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
@@ -642,7 +649,7 @@ pub struct Replication {
 impl Replication {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
-        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: REPLICATION_AXES, REP_AXES = 17 entries")]
+        #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant table: REPLICATION_AXES, REP_AXES = 20 entries")]
         out.push(REPLICATION_AXES.len() as u8);
         crate::transducer::address::put_u32_count(out, self.signers.len())?;
         for (vk, axes) in &self.signers {

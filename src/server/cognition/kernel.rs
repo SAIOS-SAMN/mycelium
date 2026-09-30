@@ -816,7 +816,22 @@ impl Kernel {
                 // exposed it is not admitted and not refused, it waits for
                 // the citation to arrive (topological order).
                 crate::court::admission::Admitted::MissingParent(p) => return (n, Some(p)),
-                _ => break,
+                // THE PAGE STOPS, AND SAYS WHY (Phase 1): this was one silent
+                // break for every other outcome, and hypha a's chase of b's
+                // line read "reached" beside a flat admitted count.
+                other => {
+                    use crate::observe::rep;
+                    let axis = match other {
+                        crate::court::admission::Admitted::Gap { .. } => Some(rep::BACKFILL_UNLINKED),
+                        crate::court::admission::Admitted::Refused(_) => Some(rep::BACKFILL_REFUSED),
+                        crate::court::admission::Admitted::Equivocation { .. } => Some(rep::BACKFILL_EQUIVOCATION),
+                        _ => None,
+                    };
+                    if let Some(axis) = axis {
+                        crate::observe::note_replication(Some(r.stamp.vk), axis, 1);
+                    }
+                    break;
+                }
             }
         }
         (n, None)
