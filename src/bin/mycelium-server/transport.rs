@@ -211,7 +211,17 @@ pub(crate) fn exchange_due(last_asked: Option<u64>, k_now: u64, lambda: Option<u
         // The last ask was at a K this court has passed, so the gap is
         // exact; one recorded in the future is not yet due.
         (Some(last), Some(l)) => k_now.checked_sub(last).is_some_and(|gap| gap >= l),
-        (Some(_), None) => false,
+        // AN UNMEASURED PEER IS ASKED AGAIN ONCE PER APERTURE of this
+        // court's own K. It waited for this court's roots to move, which
+        // is rare: after the restarts of 2026-09-30 hypha a asked a booting
+        // b once, heard nothing, and asked it 3 times in twenty minutes
+        // against c's 120 — so a never learned b's address, 2 508 of b's
+        // folds went unmeasured at a, and its back-fill of b's line
+        // proxied through c. The aperture is the calibrated one, not a
+        // count chosen here.
+        (Some(last), None) => {
+            k_now.checked_sub(last).is_some_and(|gap| gap >= u64::from(mycelium::physics::aperture_cycle()))
+        }
     }
 }
 
