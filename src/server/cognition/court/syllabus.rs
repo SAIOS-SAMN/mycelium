@@ -192,6 +192,10 @@ impl Kernel {
                 page.consumed += 1;
                 continue;
             };
+            // A SENTENCE IS CHARGED ITS GLUING STEP, NOT ITS MASS (the
+            // operator, 2026-09-30): what it cites that this voice already
+            // holds from this court is not paid for again.
+            let mag = self.gluing_cost(addr, mag, voice);
             // A WORD THE RESERVE CANNOT FUND YET WAITS; THE PAGE GOES ON. It
             // ended the page and left the cursor on it, so every later page
             // to that voice tried the same word first and served nothing
@@ -228,6 +232,9 @@ impl Kernel {
                 continue;
             };
             used += width;
+            let mut held = voice.to_vec();
+            held.extend_from_slice(addr);
+            self.taught_voice.insert(held, ());
             // Each draw came out of one reserve, so the page's total is
             // bounded by it; past the carrier it is counted, never wrapped.
             match crate::core::lanes::lanes_add(page.drawn, mag) {
@@ -370,6 +377,46 @@ impl Kernel {
             }
         }
         h.scoped().map(|(k, _)| k).collect()
+    }
+
+    /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a
+    /// sentence its magnitude less that of every distinct word it cites
+    /// which this court has already served this voice, lane by lane — the
+    /// gluing step. The syllabus measured on epoch 115 deferred about twenty
+    /// sentences at every court, costing 25–540 against a reserve of 5–40 a
+    /// lane, charged their whole mass on every page, and taught nothing
+    /// composite. On a lane the held words already carry whole, the gluing
+    /// adds nothing and is charged nothing.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane the held words carry whole has no gluing step, named at the arm"
+    )]
+    fn gluing_cost(&self, addr: &[u8], mag: [u64; 4], voice: [u8; 32]) -> [u64; 4] {
+        let Some(w) = self.installed_word(addr).filter(|w| w.is_sentence()) else { return mag };
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        let mut held = [0u64; 4];
+        for c in w.receipts().cited_addresses() {
+            if c.as_bytes() == addr || seen.contains(c.as_bytes()) {
+                continue;
+            }
+            seen.insert(c.as_bytes(), ());
+            let mut key = voice.to_vec();
+            key.extend_from_slice(c.as_bytes());
+            if !self.taught_voice.contains(&key) {
+                continue;
+            }
+            let Some(m) = self.installed_word(c.as_bytes()).map(|x| x.magnitude()) else { continue };
+            match crate::core::lanes::lanes_add(held, m) {
+                Some(total) => held = total,
+                // Held words past the carrier carry every lane whole.
+                None => return [0; 4],
+            }
+        }
+        std::array::from_fn(|l| match mag[l].checked_sub(held[l]) {
+            Some(step) => step,
+            // The held words already carry this lane whole: nothing to glue.
+            None => 0,
+        })
     }
 
     /// A word a syllabus page could not pay for, filed under its address:

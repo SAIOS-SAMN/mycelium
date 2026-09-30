@@ -399,6 +399,10 @@ pub struct Kernel {
     /// a word leaves when it is served, so the record is bounded by the
     /// words installed (`observe::Acts::deferred`).
     pub(crate) deferred_words: crate::network::nerve::Keyed<crate::observe::Deferred>,
+    /// The words this court's syllabus has served each voice, keyed
+    /// `voice ‖ address`: what a voice holds from its court, read when a
+    /// sentence citing them is taught (only the gluing step is charged).
+    pub(crate) taught_voice: crate::network::nerve::Keyed<()>,
     /// The settlement ledger (POW++-gated bounties, consilience splits).
     pub(crate) treasury: crate::economy::Treasury,
     /// This hypha's verifying key.
