@@ -346,8 +346,9 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
 /// the hue there goes to the hue there; over every pair, that is one map or
 /// none. Fixed points are no transition and are dropped; `None` where the
 /// map is not a function (a hue sent two ways), where it moves no hue, or
-/// where no site stands in both scenes. Read in the sensor's labels
-/// (`arc::gauge_fixed`), so a relabelled palette reads the same relation.
+/// where no site stands in both scenes. Read in the detector's own channels
+/// — an absolute boundary (78.56 II) — so the colour words minds share name
+/// the same colours for every mind.
 ///
 /// The ONE reader of it: the mind mints its colour word from it and the
 /// court re-derives it from the grids it holds (`element::colour_word`),

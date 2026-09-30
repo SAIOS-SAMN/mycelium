@@ -53,14 +53,14 @@ fn a_rule_that_leaves_a_pair_open_is_refused_by_the_replay() {
     assert!(matches!(k.judge_solve(&rule, &[]), SolveVerdict::Unverifiable), "no withheld answer, no verdict");
 }
 
-/// 78.53 — COLOUR IS A GAUGE, READ ONLY AT THE SENSOR. One task and the
-/// same task with its palette permuted (1→7, 2→4, 3→9) are one scene: read
-/// through the sensor they are the SAME grids, so the voice's rule mints the
-/// IDENTICAL word — address and all — and the court's verdict and price are
-/// identical. Read without the sensor's fixing, the two rules are two
-/// addresses: the gauge was in the bytes.
+/// 78.56 II — THE DETECTOR IS A DIRICHLET BOUNDARY. The sensor's channels
+/// are the laboratory's anchor: one task and the same task with its palette
+/// permuted (1→7, 2→4, 3→9) are different colours, read as different grids,
+/// and the rule over each is its own word — so every mind that sees channel
+/// 1 names channel 1 the same. (78.53 relabelled the palette at the sensor;
+/// 78.56 II supersedes it.)
 #[test]
-fn a_task_and_its_palette_permuted_read_one_word_and_one_verdict() {
+fn a_task_and_its_palette_permuted_are_two_scenes_at_the_detector() {
     let json = |a: u8, b: u8, c: u8| {
         format!(
             r#"{{"train":[{{"input":[[{a},{a},0,{b},0,0,0]],"output":[[0,0,{a},{a},0,{b},0]]}}],
@@ -69,31 +69,26 @@ fn a_task_and_its_palette_permuted_read_one_word_and_one_verdict() {
     };
     let task = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
     let permuted = crate::arc::parse_task(&json(7, 4, 9)).expect("the permuted task reads");
-    assert_eq!((&task.train, &task.test), (&permuted.train, &permuted.test), "one scene through the sensor");
+    assert_ne!(task.train, permuted.train, "two scenes at the detector");
     let (rule, again) = (rule_over(&task.train), rule_over(&permuted.train));
-    assert_eq!(rule.address(), again.address(), "one word");
+    assert_ne!(rule.address(), again.address(), "two colours, two words");
     let mut k = Kernel::new();
-    let verdict = |k: &mut Kernel, r: &Element, t: &crate::arc::Task| match k.judge_solve(r, &t.train) {
-        SolveVerdict::Solved { pay } => Some(pay),
-        _ => None,
-    };
-    let v = verdict(&mut k, &rule, &task);
-    assert!(v.is_some(), "the rule closes its own pair");
-    assert_eq!(v, verdict(&mut k, &again, &permuted), "one verdict, one price");
-    // WITHOUT THE SENSOR'S FIXING the palette is in the word's bytes.
-    let raw = |a: u8, b: u8| vec![(digits(&[&format!("{a}{a}0{b}000")]), digits(&[&format!("00{a}{a}0{b}0")]))];
-    assert_ne!(rule_over(&raw(1, 2)).address(), rule_over(&raw(7, 4)).address(), "two integers, two addresses");
+    assert!(matches!(k.judge_solve(&rule, &task.train), SolveVerdict::Solved { .. }), "each rule closes its own pair");
+    assert!(matches!(k.judge_solve(&again, &permuted.train), SolveVerdict::Solved { .. }));
+    // AND THE SAME CHANNELS READ THE SAME WORD, whatever mind reads them.
+    let same = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
+    assert_eq!(rule_over(&same.train).address(), rule.address(), "one channel, one name");
 }
 
 /// 78.54, 78.56 — THE FRAME IS A GAUGE WHERE THE TASK CARRIES NO POLAR
 /// VECTOR. A task that recolours in place (its momentum vanishes), turned by
-/// 90°, 180° and 270°, mirrored, and with its palette permuted besides, is
-/// one task: through the sensor every reading is the same grids, so the
-/// rule mints one word and the court rules one verdict at one price. A task
-/// whose bodies move one way carries momentum, and its orientation is
-/// physical: turned, it reads differently.
+/// 90°, 180° and 270°, and mirrored, is one task: through the sensor every
+/// reading is the same grids, so the rule mints one word and the court rules
+/// one verdict at one price. A task whose bodies move one way carries
+/// momentum, and its orientation is physical: turned, it reads differently.
+/// Repainted, any task is other colours at the detector (78.56 II).
 #[test]
-fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
+fn a_task_in_every_frame_reads_one_word_and_one_verdict() {
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
     type Frame<'a> = &'a dyn Fn(&Vec<Vec<u8>>) -> Vec<Vec<u8>>;
     let json = |train: &Pairs, test: &Pairs| {
@@ -129,8 +124,8 @@ fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
     let one = read(&base.0, &base.1);
     let turn180 = |g: &Vec<Vec<u8>>| turn(&turn(g));
     let turn270 = |g: &Vec<Vec<u8>>| turn(&turn(&turn(g)));
-    let painted = |g: &Vec<Vec<u8>>| paint(&turn(&mirror(g)));
-    let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &painted];
+    let turned_mirror = |g: &Vec<Vec<u8>>| turn(&mirror(g));
+    let frames: Vec<Frame<'_>> = vec![&turn, &turn180, &turn270, &mirror, &turned_mirror];
     let mut k = Kernel::new();
     let rule = rule_over(&one.train);
     let SolveVerdict::Solved { pay } = k.judge_solve(&rule, &one.train) else { panic!("the rule closes its own pair") };
@@ -142,12 +137,13 @@ fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
         assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p } if p == pay), "frame {i}: one verdict, one price");
     }
     // A TASK WITH A POLAR VECTOR: its bodies move one way, so its frame is
-    // physical — turned, it is not the same scene; repainted, it still is.
+    // physical — turned, it is not the same scene.
     let drift = read(&moving.0, &moving.1);
     let turned_drift = read(&each(&moving.0, &turn), &each(&moving.1, &turn));
     assert_ne!(drift.train, turned_drift.train, "momentum breaks the symmetry: the orientation is observable");
-    let repainted = read(&each(&moving.0, &paint), &each(&moving.1, &paint));
-    assert_eq!(drift.train, repainted.train, "and the palette stays a gauge");
+    // REPAINTED, a task is other colours at the detector (78.56 II).
+    let repainted = read(&each(&base.0, &paint), &each(&base.1, &paint));
+    assert_ne!(one.train, repainted.train, "the channels are an absolute boundary");
 }
 
 /// POUW: the task's FIRST closure mints the solver what its rule discharged;

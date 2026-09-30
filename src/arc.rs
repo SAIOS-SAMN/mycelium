@@ -48,8 +48,9 @@ pub struct Task {
     pub test: Vec<(Grid, Grid)>,
 }
 
-/// Parse a task's JSON (`{"train":[{"input","output"}],"test":[...]}`),
-/// its palette read at the sensor and nowhere after (`gauge_fixed`, 78.53).
+/// Parse a task's JSON (`{"train":[{"input","output"}],"test":[...]}`), its
+/// frame fixed where it is a gauge (`frame_fixed`, 78.54, 78.56). Its
+/// channels are the detector's own — an absolute boundary (78.56 II).
 pub fn parse_task(json: &str) -> Option<Task> {
     let raw: RawTask = serde_json::from_str(json).ok()?;
     Some(frame_fixed(Task {
@@ -58,14 +59,15 @@ pub fn parse_task(json: &str) -> Option<Task> {
     }))
 }
 
-/// 78.54 — THE LATTICE'S FRAME IS A GAUGE TOO (78.53's principle, at every
-/// site of the shape). A task turned by 90°, 180° or 270°, or mirrored, as a
-/// whole — every grid of it — is the same task, exactly as a relabelled
-/// palette is: the frame the sensor happened to read it in is a coordinate
-/// choice, and a word that carried it would make a mind that learned a
-/// motion in one frame blind to it in another.
+/// 78.54, 78.56 — THE LATTICE'S FRAME IS A GAUGE WHERE THE TASK CARRIES NO
+/// POLAR VECTOR. A task turned by 90°, 180° or 270°, or mirrored, as a
+/// whole — every grid of it — is the same task when its centre of mass does
+/// not move from input to output (Δr_CM = 0, the O(2) singlet): the frame
+/// the sensor happened to read it in is a coordinate choice, and a word that
+/// carried it would make a mind that learned a motion in one frame blind to
+/// it in another. Where Δr_CM ≠ 0 the orientation is physical and kept.
 ///
-/// So the frame is fixed with the palette, at the sensor and nowhere after —
+/// The frame is fixed at the sensor and nowhere after —
 /// READ, AXIS BY AXIS, OFF THE SCENE'S OWN MOMENTS, never by enumerating the
 /// lattice's symmetry group (2ⁿ·n! poses in n axes; rules 3 and 4). Over the
 /// VISIBLE grids (train pairs and test inputs; a withheld output never
@@ -77,19 +79,17 @@ pub fn parse_task(json: &str) -> Option<Task> {
 ///   what a permutation of the axes changes.
 ///
 /// These are a gauge-fixing condition — the representative the geometry
-/// itself names — as a hue is labelled by where it first stands (78.53),
-/// never a candidate chosen by a scalar. They are hue-blind, so the frame
-/// does not move with the palette. Where an axis's odd moments all vanish,
-/// or two axes' even moments tie, the scene is symmetric under that move
-/// as far as these orders read, and the frame given is kept (law 10: held,
-/// never broken by an arbitrary choice). Then the palette is fixed in the
-/// frame the geometry chose (`gauge_fixed`).
+/// itself names — never a candidate chosen by a scalar. They are hue-blind.
+/// Where an axis's odd moments all vanish, or two axes' even moments tie,
+/// the scene is symmetric under that move as far as these orders read, and
+/// the frame given is kept (law 10: held, never broken by an arbitrary
+/// choice). The channels are never relabelled: the detector is a Dirichlet
+/// boundary, the laboratory's anchor for every mind (78.56 II).
 pub fn frame_fixed(task: Task) -> Task {
     // 78.56 — A TASK WITH A POLAR VECTOR HAS A PHYSICAL ORIENTATION: its
-    // momentum breaks the lattice's symmetry, and its frame is kept; only
-    // its palette is a gauge.
+    // momentum breaks the lattice's symmetry, and its frame is kept.
     if !momentum_vanishes(&task.train) {
-        return gauge_fixed(task);
+        return task;
     }
     // THE MOMENTS, per axis and per order 1..=4, over the visible grids.
     let mut moment = [[0i128; 4]; AXES];
@@ -119,10 +119,10 @@ pub fn frame_fixed(task: Task) -> Task {
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a gauge-fixing condition, not a choice among candidates: the axes are ordered by the even moments the scene itself carries (78.54)")]
     order.sort_by_key(|&axis| (moment[axis][1], moment[axis][3]));
     let at = |g: &Grid| reoriented(g, order, reversed);
-    gauge_fixed(Task {
+    Task {
         train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
         test: task.test.iter().map(|(a, b)| (at(a), at(b))).collect(),
-    })
+    }
 }
 
 /// THE SENSOR LATTICE'S AXES. A `Grid` is read on two — rows, columns — and
@@ -288,57 +288,6 @@ fn exact_root(n: i64) -> Option<i64> {
         next = (x + n / x) / 2;
     }
     (x * x == n).then_some(x)
-}
-
-/// 78.53 — THE PALETTE IS READ ONLY AT THE SENSOR, and the gauge is fixed
-/// by the base. The integer a grid gives a hue is a gauge choice on the
-/// colour fibre (61.1): relabel every hue of a task by any permutation and
-/// it is the same task. So the task is handed on in labels the GEOMETRY
-/// fixes — each hue labelled by where it first stands, in the lattice's
-/// own order across the task's scenes (train inputs and outputs, then the
-/// test inputs) — and every word, key and verdict downstream reads those
-/// labels, never the palette's integers.
-///
-/// Exact and with nothing to break a tie: a relabelling moves no cell, and
-/// two hues never stand on one cell, so two hues never share a first
-/// standing. The labels are read from what a voice is shown — the train
-/// pairs and the test inputs — and a hue standing only in a withheld test
-/// output is labelled after them, by where it first stands there, so no
-/// withheld answer moves a label a voice sees. Hue 0 is no colour — the
-/// sensor reads it as the void (`painted_of_grid`) — and stays 0.
-pub fn gauge_fixed(task: Task) -> Task {
-    let mut order: Vec<u8> = Vec::new();
-    let stand = |g: &Grid, order: &mut Vec<u8>| {
-        for (_, h) in painted_sites(g) {
-            if !order.contains(&h) {
-                order.push(h);
-            }
-        }
-    };
-    for (a, b) in &task.train {
-        stand(a, &mut order);
-        stand(b, &mut order);
-    }
-    for (a, _) in &task.test {
-        stand(a, &mut order);
-    }
-    for (_, b) in &task.test {
-        stand(b, &mut order);
-    }
-    // The label of a hue is one past its place in the order: at most the
-    // palette's own count of colours, so it fits the byte the hue came in.
-    let label = |h: u8| -> u8 {
-        match order.iter().position(|&o| o == h) {
-            #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — the sensor's: a place in the order of a byte's distinct values is below 256")]
-            Some(i) => (i + 1) as u8,
-            None => 0,
-        }
-    };
-    let relabel = |g: Grid| -> Grid { g.into_iter().map(|row| row.into_iter().map(label).collect()).collect() };
-    Task {
-        train: task.train.into_iter().map(|(a, b)| (relabel(a), relabel(b))).collect(),
-        test: task.test.into_iter().map(|(a, b)| (relabel(a), relabel(b))).collect(),
-    }
 }
 
 /// A grid → its painted sites, the PERCEPTUAL convention: background hue 0

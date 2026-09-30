@@ -3,7 +3,8 @@
 // copy of the family and stands it by that evidence, refusing a relation
 // the family does not carry; a second vantage makes it final; the syllabus
 // teaches it; the mind that learns it holds one colour word, as many as its
-// court installed. A palette relabelled reads the same word.
+// court installed. The detector's channels anchor the names (78.56 II): the
+// same colours read the same word for every mind; other colours, another.
 
 use crate::cognition::*;
 
@@ -144,11 +145,17 @@ fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
     let word = crate::transducer::element::colour_word(&sigma).expect("a relation that moves a hue");
     assert!(word.is_colour_word());
     assert_eq!(word.letters().map(|l| l.sigma.clone()), Some(sigma.clone()), "the word carries the relation");
-    let again = crate::transducer::element::colour_word(
-        &crate::transducer::family::fibre_relation(&permuted.train).expect("the same fibre"),
+    let other = crate::transducer::element::colour_word(
+        &crate::transducer::family::fibre_relation(&permuted.train).expect("a fibre relation"),
     )
     .expect("a word");
-    assert_eq!(word.address(), again.address(), "a relabelled palette mints the same word");
+    assert_ne!(word.address(), other.address(), "other channels are other colours: another word (78.56 II)");
+    let same = crate::arc::parse_task(&json(1, 2, 3)).expect("the task reads");
+    let again = crate::transducer::element::colour_word(
+        &crate::transducer::family::fibre_relation(&same.train).expect("the same fibre"),
+    )
+    .expect("a word");
+    assert_eq!(word.address(), again.address(), "the same channels, the same word, for every mind");
 
     // THE COURT RULES BY EVIDENCE: its own copy of the family.
     let mut k = Kernel::new();
