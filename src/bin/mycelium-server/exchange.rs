@@ -297,6 +297,9 @@ impl Exchange {
             std::thread::yield_now();
             if let Ok(mut k) = kernel.lock() {
                 k.court_stroke();
+                // A question the observer left while this stroke held the
+                // kernel is answered under the lock already held.
+                crate::judge::observe::answer_standing(&k, &mesh, mesh.vk);
                 // The words the stroke moved onto the docket — a rewrite, the
                 // citers a slash re-docketed — are offered by it.
                 let offers = k.take_offers();
