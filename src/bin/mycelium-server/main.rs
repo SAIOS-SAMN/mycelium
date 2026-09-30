@@ -605,8 +605,47 @@ fn main() {
     // new and silent where it is steady.
     let served: Arc<[std::sync::atomic::AtomicU64; 256]> =
         Arc::new(std::array::from_fn(|_| std::sync::atomic::AtomicU64::new(0)));
+    // THE DOOR READS, THEN JUDGES (Phase 1 item 2, 2026-10-01). One pool
+    // read each frame and judged it, so a query queued behind acts whose
+    // workers waited on the kernel: the console gave up at 0.6 s on a court
+    // whose stroke held the lock (c at 00:35:42 on 98fc7f8f, and a and c
+    // through epoch 115). READERS take each connection off the listener's
+    // queue and read its one frame — they never touch the kernel — serving
+    // an observation there and handing every other act, read, to the
+    // WORKERS that judge it. A worker queue that is full defers the act (the
+    // honest "come back"), as a full reflex queue did.
+    let (work_tx, work_rx) = std::sync::mpsc::sync_channel::<(TcpStream, Frame)>(cores);
+    let work_rx = Arc::new(Mutex::new(work_rx));
     for _ in 0..(cores / 2).max(1) {
         let rx = Arc::clone(&reflex_rx);
+        let door = door.clone();
+        let work_tx = work_tx.clone();
+        std::thread::spawn(move || loop {
+            let job = match rx.lock() {
+                Ok(r) => r.recv(),
+                Err(_) => break,
+            };
+            let Ok(ReflexJob { mut stream }) = job else { break };
+            // One act, then the reader returns — keep-alive must not hold a
+            // slot for the client's stroke. The transport deadline bounds
+            // the wait for that one frame.
+            arm_deadline(&stream);
+            let Some(frame) = read_frame(&mut stream) else { continue };
+            if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
+                judge::observe::judge(&mut stream, &frame, &door);
+                mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
+                continue;
+            }
+            if let Err(e) = work_tx.try_send((stream, frame)) {
+                let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
+                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
+                answer(&mut stream, Frame { lane: frame.lane, body });
+            }
+        });
+    }
+    for _ in 0..(cores / 2).max(1) {
+        let rx = Arc::clone(&work_rx);
         let door = door.clone();
         let served = Arc::clone(&served);
         std::thread::spawn(move || loop {
@@ -614,31 +653,18 @@ fn main() {
                 Ok(r) => r.recv(),
                 Err(_) => break,
             };
-            match job {
-                Ok(job) => {
-                    let ReflexJob { mut stream } = job;
-                    // One act, then the worker returns — keep-alive must not
-                    // hold a reflex slot for the client's stroke. The
-                    // transport deadline bounds the wait for that one frame.
-                    arm_deadline(&stream);
-                    if let Some(frame) = read_frame(&mut stream) {
-                        // An act with no kind byte is judged (and refused
-                        // there) but counted under no kind: 0xff was a
-                        // sentinel standing for a byte that was not read.
-                        let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
-                        judge::judge(&mut stream, frame, &door);
-                        if let Some(kind) = kind {
-                            mycelium::observe::note_served(kind);
-                            let n = served[kind as usize]
-                                .fetch_add(1, std::sync::atomic::Ordering::Relaxed)
-                                + 1;
-                            if n.is_power_of_two() {
-                                eprintln!("  reflex act {kind:02x} served {n}");
-                            }
-                        }
-                    }
+            let Ok((mut stream, frame)) = job else { break };
+            // An act with no kind byte is judged (and refused there) but
+            // counted under no kind: 0xff was a sentinel standing for a byte
+            // that was not read.
+            let kind = mycelium::anastome::dialogue::act_tag(&frame.body);
+            judge::judge(&mut stream, frame, &door);
+            if let Some(kind) = kind {
+                mycelium::observe::note_served(kind);
+                let n = served[kind as usize].fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                if n.is_power_of_two() {
+                    eprintln!("  reflex act {kind:02x} served {n}");
                 }
-                Err(_) => break,
             }
         });
     }
