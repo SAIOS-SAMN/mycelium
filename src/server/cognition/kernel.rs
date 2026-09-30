@@ -622,9 +622,21 @@ impl Kernel {
 
     /// A filed era's receipts, paged from the cold segment on demand. An
     /// era that still holds its payload answers from memory.
+    /// Every offset an era was filed at in the cold segment, ascending: read
+    /// once per page, so each era's end is FOUND by the order the offsets
+    /// already have, never scanned for (law 3). Scanning the archive for
+    /// the next offset once per era made a page from a line's start cost
+    /// eras × archive, and hypha b answered one in four seconds.
+    pub(crate) fn era_offsets(&self) -> Vec<u64> {
+        let mut out: Vec<u64> = self.archive.iter().filter_map(|e| e.at).collect();
+        out.sort_unstable();
+        out
+    }
+
     pub(crate) fn era_receipts(
         &self,
         era: &crate::chronometry::Era,
+        offsets: &[u64],
     ) -> Option<Vec<crate::chronometry::KStepReceipt>> {
         let Some(at) = era.at else {
             return Some(era.receipts.clone());
@@ -640,12 +652,7 @@ impl Kernel {
         use std::os::unix::fs::FileExt;
         let path = self.eras_path.as_ref()?;
         let file = std::fs::File::open(path).ok()?;
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 4 — the least offset filed past this one is where this payload ends: a coordinate of the append-only segment, not a choice"
-        )]
-        let next = self.archive.iter().filter_map(|e| e.at).filter(|&a| a > at).min();
-        let end = match next {
+        let end = match offsets.get(offsets.partition_point(|&o| o <= at)).copied() {
             Some(next) => next,
             None => file.metadata().ok()?.len(),
         };
