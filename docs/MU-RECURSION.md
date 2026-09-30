@@ -18658,6 +18658,39 @@ THE ORDER (Phase 1, hypha stability; client development paused):
 3. resilient peer catch-up (75cd66e5 bounded the receipts range);
 4. a 24-hour soak on the live fleet: no restart, no panic, ledgers agreeing.
 
+ADDENDUM (the operator, 2026-09-30) — FIVE PILLARS AND PHASE 1 ITEM 5:
+- P1 A GUEST MATH LIBRARY (hypha-guest-math), native and WebAssembly: game
+  actions (translate, rotate, transfer) built into exact Spin(4,1)
+  generators and sentences, momentum conservation asserted before sending;
+  without it client development cannot resume.
+- P2 BUBBLE HANDOFF AND STREAMING: a handshake for an entity crossing the
+  boundary of two charts adjudicated on different hyphae (one court
+  serialises it, no double-spend on 𝒮), and push acts on the wire
+  (ACT_SUBSCRIBE_CHART, ACT_STREAM_DELTA) — the wire today is request and
+  answer only.
+- P3 COMPLEXITY METERING in ℚ: a transition whose rationals grow without
+  bound is refused at the gate before admission.
+- P4 FAIR SEQUENCING on 𝒯: causal windowing or commit-reveal, so the nearer
+  client cannot front-run a zero-sum flow.
+- P5 RETIREMENT OF WORLD DEBRIS (POWR for worlds): ephemeral entities burn
+  down on ℋ and their footprint is recycled into e_∅.
+- PHASE 1 ITEM 5, in parallel with the soak: the wire ABI extracted as a
+  crate (frames, the proof envelope, the session chit) and a deterministic
+  mock hypha, so client developers can build proof submissions against it.
+
+READ AGAINST THE TREE for the addendum (the implementor):
+- P3: a fixed bit cap ("256 bits per component") is a capping constant,
+  which 78.43 calls undefined physics. The tree already meters the same
+  thing without one: every reading draws on the stroke's Budget and a spent
+  stroke refuses (rule 10). P3 is built as that — the gate's work charged to
+  the submitter's stroke, refused when spent — never a width.
+- P4: the sequence is read in height, never arrival latency (law 9); a
+  commit-reveal envelope keyed by the height it commits at fits TUniversal.
+- P5: retirement recycles a footprint into e_∅ as 78.58 records merges —
+  the distinction kept in the reservoir, the entity's storage released.
+- P1 lives in the library the client links (the SDK, `src/client/sdk`), so
+  it is built after item 5's crate fixes the ABI it speaks.
+
 READ AGAINST THE TREE (the implementor, noted for the operator):
 - "O(1)" proof-checking is the SIZE OF THE STEP, not constant: a word citing
   held theorems costs its new step (the 78.55 theorem path); a first-hand

@@ -292,6 +292,9 @@ fn main() {
     {
         let k = Arc::clone(&kernel);
         let path = state_path.clone();
+        // SIGINT, SIGTERM and SIGHUP alike (ctrlc's `termination`): systemd
+        // stops and restarts a unit with SIGTERM, and a court stopped
+        // without persisting boots with what it last marked.
         let _ = ctrlc::set_handler(move || {
             persist(&k, &path);
             std::process::exit(0);

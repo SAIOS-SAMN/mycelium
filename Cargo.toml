@@ -34,7 +34,11 @@ tikv-jemallocator = { version = "0.6.1", features = ["stats"] }
 # live bytes against resident, so retention is told from growth. The
 # `stats` feature is what builds jemalloc with its counters on.
 tikv-jemalloc-ctl = { version = "0.6", features = ["stats"] }
-ctrlc = "3.4"
+# `termination`: the handler also answers SIGTERM and SIGHUP. Without it
+# only SIGINT persisted the ledger, and every `systemctl stop`/`restart`
+# and every recut (SIGTERM) killed a court with its unpersisted state
+# (2026-09-30: hypha b restored 1 ruled sentence of 17 ratified).
+ctrlc = { version = "3.4", features = ["termination"] }
 
 [dev-dependencies]
 proptest = "1.4"
