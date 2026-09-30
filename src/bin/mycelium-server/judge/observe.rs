@@ -7,8 +7,8 @@ use mycelium::network::wire::Frame;
 use mycelium::observe::{self, Court, Memory, ObserveAct, Reading, Source};
 use std::net::TcpStream;
 
-/// A question the observer could not answer because the kernel was held:
-/// the court stroke takes it (`answer_standing`).
+/// A question the observer left for the court: the court stroke takes it
+/// (`answer_standing`) and publishes the standing the next question reads.
 static STANDING_ASKED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
 
 /// The court stroke's side: where the observer left a question, the
@@ -72,19 +72,18 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             answer(stream, Frame { lane: frame.lane, body: vec![u8::from(held)] });
         }
         ObserveAct::Query(prefix) => {
-            // THE COURT'S OWN STANDING, read at the question: what it holds
-            // now, and the allocator at its own K.
             let own = Source::Court(door.id);
-            // THE OBSERVER NEVER WAITS ON COGNITION. The standing is read
-            // here where the kernel is free; where a stroke holds it, the
-            // question is LEFT for the stroke, which publishes the standing
-            // at its end under the lock it already holds (Phase 1 item 2).
-            // A busy court read "0 readings" for whole boots before, because
-            // the try below never found the kernel free.
-            match door.kernel.try_lock() {
-                Ok(k) => publish_standing(&k, &door.mesh, own),
-                Err(_) => STANDING_ASKED.store(true, std::sync::atomic::Ordering::Relaxed),
-            }
+            // THE OBSERVER NEVER WAITS ON COGNITION, AND NEVER COMPUTES FOR
+            // IT. The question is LEFT for the court stroke, which publishes
+            // the standing at its end under the lock it already holds
+            // (Phase 1 item 2); the reply is what the last stroke published.
+            // It read the standing here wherever the kernel was free — the
+            // economy over the whole journal, the acts, the remainders, the
+            // chain's carriage — holding the kernel and the asker while it
+            // did: on f6ec8a74 a answered 3 of 34 asks and c 8 of 34
+            // (01:15–01:32, 2026-10-01), each refused at the console's
+            // 0.5–0.7 s, and b, the lighter court, all 34.
+            STANDING_ASKED.store(true, std::sync::atomic::Ordering::Relaxed);
             // PH5 — and its phase, the last window it wrote.
             if let Some(p) = observe::last_phase() {
                 observe::replace(own, Reading::Phase(p));
