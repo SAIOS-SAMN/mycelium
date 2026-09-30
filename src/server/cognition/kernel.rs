@@ -564,7 +564,61 @@ impl Kernel {
     /// receipts in hand, which is what a fixture wants and what a live
     /// court must not do.
     pub fn bind_eras(&mut self, path: std::path::PathBuf) {
+        self.reseat_eras(&path);
         self.eras_path = Some(path);
+    }
+
+    /// EVERY FILED ERA AT ITS OWN OFFSET, read back from the segment.
+    /// `file_era` took `stream_position()` on a file opened to append,
+    /// which is 0 until the first write, so every era ever filed was
+    /// recorded at offset 0: each read back the FIRST era's receipts, and
+    /// each read ran to the segment's end (hypha b: 5.5 GB read, 112
+    /// calls, for one page; the same 222 receipts for every range). The
+    /// payloads themselves were appended whole and in order, so the
+    /// segment is walked once and each era is found by what its payload
+    /// is — its signer, first place, last place (the root) and count. An
+    /// era whose payload is not in the segment keeps no offset and answers
+    /// empty rather than another era's receipts (rule 11).
+    fn reseat_eras(&mut self, path: &std::path::Path) {
+        let key = |vk: &[u8; 32], first: crate::chronometry::Place, last: crate::chronometry::Place, n: u64| {
+            let mut k = vk.to_vec();
+            first.put_canonical(&mut k);
+            last.put_canonical(&mut k);
+            k.extend_from_slice(&n.to_be_bytes());
+            k
+        };
+        let Ok(bytes) = std::fs::read(path) else { return };
+        let mut at_of: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
+        let mut pos = 0usize;
+        while pos < bytes.len() {
+            let start = pos as u64;
+            let Some(page) = crate::chronometry::Era::read_payload(&bytes, &mut pos) else { break };
+            let (first, last) = match page.as_slice() {
+                [] => continue,
+                [only] => (only, only),
+                [first, .., last] => (first, last),
+            };
+            let k = key(&first.stamp.vk, first.stamp.place(), last.stamp.place(), page.len() as u64);
+            if at_of.get(&k).is_none() {
+                at_of.insert(&k, start);
+            }
+        }
+        let (mut reseated, mut lost) = (0u64, 0u64);
+        for e in self.archive.iter_mut().filter(|e| e.at.is_some()) {
+            match at_of.get(&key(&e.signer, e.first, e.root.at, e.count)) {
+                Some(&at) => {
+                    e.at = Some(at);
+                    reseated += 1;
+                }
+                None => {
+                    e.at = None;
+                    lost += 1;
+                }
+            }
+        }
+        if reseated + lost > 0 {
+            eprintln!("  eras reseated {reseated} from the segment; {lost} with no payload there");
+        }
     }
 
     /// File a sealed era: its payload appended to the cold segment, and
@@ -607,10 +661,13 @@ impl Kernel {
             eprintln!("  era refused: a receipt of its payload cannot be written");
             return;
         };
+        // THE OFFSET IS THE SEGMENT'S END, read by seeking there: a file
+        // opened to append stands at 0 until its first write, and
+        // `stream_position()` filed every era at 0 (see `reseat_eras`).
         let at = match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
             Ok(mut f) => {
                 use std::io::{Seek, Write};
-                f.stream_position().and_then(|at| f.write_all(&payload).map(|()| at)).ok()
+                f.seek(std::io::SeekFrom::End(0)).and_then(|at| f.write_all(&payload).map(|()| at)).ok()
             }
             Err(_) => None,
         };

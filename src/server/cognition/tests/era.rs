@@ -157,3 +157,45 @@ assert!(broken.treasury.credit([9; 32], [1, 0, 0, 0]), "a credit with room lands
 assert_eq!(broken.propose_fold(), Err(REFUSE_FOLD_INEXACT), "a ledger that does not conserve proposes nothing");
 assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }
+
+/// THE COLD SEGMENT KEEPS EACH ERA AT ITS OWN OFFSET. Two folds filed into
+/// a real segment are each read back as their own receipts — `file_era`
+/// took the append handle's position, 0 until the first write, and every
+/// era read back the first one's. A court whose ledger carries offsets
+/// all at 0 (every court before the fix) finds each era's payload again
+/// when its segment is bound at boot.
+#[test]
+fn each_filed_era_reads_back_its_own_receipts() {
+    let close = |k: u64| Place { k, i: 1 };
+    let home = [0x5c; 32];
+    let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
+    let _ = std::fs::remove_file(&path);
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    k.bind_eras(path.clone());
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    let p = k.propose_fold().expect("a final prefix");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.orbit();
+    let p2 = k.propose_fold().expect("the second fold");
+    k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
+    let [first, second] = k.archive() else { panic!("two eras") };
+    assert!(first.at.is_some() && second.at.is_some() && first.at != second.at, "each at its own offset");
+    let read = |k: &Kernel, after, upto| k.receipts_range(&home, after, upto, 100).iter().map(|r| r.stamp.place()).collect::<Vec<_>>();
+    let one = read(&k, None, close(2));
+    let two = read(&k, Some(close(2)), close(3));
+    assert_eq!(one.last(), Some(&close(2)), "the first era answers its own range");
+    assert_eq!(two.last(), Some(&close(3)), "the second era answers its own range, not the first's");
+    // A ledger written before the fix: every offset 0.
+    let mut back = Kernel::new();
+    assert!(back.restore(&k.snapshot()));
+    for e in &mut back.archive {
+        e.at = Some(0);
+    }
+    back.bind_eras(path.clone());
+    assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "reseated from the segment");
+    let _ = std::fs::remove_file(&path);
+}
