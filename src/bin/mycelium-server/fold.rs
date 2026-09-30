@@ -15,7 +15,11 @@ use mycelium::observe::{self, FoldOutcome};
 use std::sync::Mutex;
 
 pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
-    let Some(p) = kernel.lock().ok().and_then(|k| k.fold_proposal().cloned()) else { return };
+    // A proposal whose rows moved beneath it is dropped before it is
+    // carried again (`pending_fold_stands`).
+    let Some(p) = kernel.lock().ok().and_then(|mut k| k.pending_fold_stands().then(|| k.fold_proposal().cloned()).flatten()) else {
+        return;
+    };
     let Some(section) = crate::admission::sign_position(kernel, mesh, &mycelium::transducer::stalk::Invariant::default(), &p.root.hash) else { return };
     let proposal = dialogue::FoldProposal { after: p.after, root: p.root, epochs: p.epochs.clone(), section: section.clone() };
     let Some(body) = dialogue::encode_fold(&proposal) else { return };
@@ -77,6 +81,14 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
                     vk[1],
                     String::from_utf8_lossy(&why)
                 );
+                // A witness that re-derived other nets: the proposal is not
+                // carried again as it stood.
+                if why == mycelium::verdict::REFUSE_FOLD_INEXACT.as_bytes() {
+                    if let Ok(mut k) = kernel.lock() {
+                        k.drop_fold_proposal();
+                    }
+                    return;
+                }
             }
             Some(dialogue::FoldWitness::Unmeasured { .. }) => {
                 observe::note_fold(FoldOutcome::Unmeasured);

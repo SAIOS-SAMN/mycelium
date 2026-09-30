@@ -87,6 +87,29 @@ impl Kernel {
     }
 
     /// The proposal awaiting a witness, if any.
+    /// THE PENDING PROPOSAL STILL STANDS: its nets are still the nets of the
+    /// rows below its root, and its root is still final. A proposal was
+    /// held and carried to witnesses cycle after cycle after rows were
+    /// written below its root (an escrow's release stands at the escrow's
+    /// place), so every witness re-derived other nets and refused it — the
+    /// "does not conserve" refusals of epoch 115, thousands an hour. A
+    /// stale proposal is dropped; the next stroke proposes afresh.
+    pub fn pending_fold_stands(&mut self) -> bool {
+        let Some(p) = self.fold_pending.as_ref() else { return false };
+        let nets = nets_of(&self.treasury.rows_below(p.root.at)).map(|n| n.rows);
+        let stands = nets.as_ref() == Ok(&p.epochs) && self.final_prefix_head().is_some_and(|h| h >= p.root.at);
+        if !stands {
+            self.fold_pending = None;
+        }
+        stands
+    }
+
+    /// A witness refused the pending proposal as not conserving: it is
+    /// dropped, never carried again as it stood.
+    pub fn drop_fold_proposal(&mut self) {
+        self.fold_pending = None;
+    }
+
     pub fn fold_proposal(&self) -> Option<&Proposal> {
         self.fold_pending.as_ref()
     }
