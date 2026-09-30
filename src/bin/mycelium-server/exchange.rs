@@ -528,7 +528,15 @@ impl Exchange {
                                 Err(_) => continue,
                             };
                             k.confirm_peer_holds(&remote, vk_peer);
-                            let local = k.ruled_digests();
+                            // AGREEMENT IS ON INSTALLED WORDS (ruled 2026-09-30,
+                            // the operator's word). The peer answers a court's
+                            // digests request with its language atlas — the
+                            // words it installed — and this compared them with
+                            // its own RULED cover, pending and attached words
+                            // included, which no fetch can ever carry: one
+                            // stratum stood discordant between every pair for
+                            // good. Both sides are now the installed language.
+                            let local = mycelium::transducer::sheaf::digests(&k.language().stalks);
                             let discord = mycelium::transducer::sheaf::discordant(&remote, &local);
                             // PHASE 1 ITEM 1 — AGREEMENT WITH THIS PEER, read
                             // at its digest: the strata it named, and how many

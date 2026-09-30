@@ -536,7 +536,15 @@ impl Physics {
             let Some(ceiling) = bond.checked_add(verified) else {
                 continue;
             };
-            let add = regen_unit() * (1 + (verified > 0) as u64);
+            // THE REFILL FOLLOWS THE WORK (ruled 2026-09-30, the operator's
+            // word): one regeneration unit, plus the work this lane verified
+            // in the orbit — a productive court teaches faster, an idle one
+            // no faster, and the ceiling still bounds it. A fixed step
+            // deferred 6 080 syllabus words in ten minutes against 56 served
+            // at hypha a (epoch 115).
+            let Some(add) = regen_unit().checked_add(verified) else {
+                continue;
+            };
             match held[l].checked_sub(ceiling) {
                 Some(over) if over > 0 => excess[l] = over,
                 _ => {
