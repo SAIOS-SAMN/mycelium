@@ -85,10 +85,13 @@ fn a_task_and_its_palette_permuted_read_one_word_and_one_verdict() {
     assert_ne!(rule_over(&raw(1, 2)).address(), rule_over(&raw(7, 4)).address(), "two integers, two addresses");
 }
 
-/// 78.54 — THE FRAME IS A GAUGE TOO. The task above, turned by 90°, 180°
-/// and 270°, mirrored, and with its palette permuted besides, is one task:
-/// through the sensor every reading is the same grids, so the rule mints one
-/// word and the court rules one verdict at one price.
+/// 78.54, 78.56 — THE FRAME IS A GAUGE WHERE THE TASK CARRIES NO POLAR
+/// VECTOR. A task that recolours in place (its momentum vanishes), turned by
+/// 90°, 180° and 270°, mirrored, and with its palette permuted besides, is
+/// one task: through the sensor every reading is the same grids, so the
+/// rule mints one word and the court rules one verdict at one price. A task
+/// whose bodies move one way carries momentum, and its orientation is
+/// physical: turned, it reads differently.
 #[test]
 fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
     type Pairs = Vec<(Vec<Vec<u8>>, Vec<Vec<u8>>)>;
@@ -101,11 +104,15 @@ fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
         format!(r#"{{"train":[{}],"test":[{}]}}"#, list(train), list(test))
     };
     let base: (Pairs, Pairs) = (
+        vec![(digits(&["1100", "0020", "0000"]), digits(&["3300", "0040", "0000"]))],
+        vec![(digits(&["0110", "2000", "0000"]), digits(&["0330", "4000", "0000"]))],
+    );
+    let moving: (Pairs, Pairs) = (
         vec![(digits(&["1100", "0020", "0000"]), digits(&["0011", "0200", "0000"]))],
         vec![(digits(&["0110", "2000", "0000"]), digits(&["1100", "0002", "0000"]))],
     );
     // Every grid of the task turned by 90°, clockwise, and mirrored across
-    // its diagonal; and the palette permuted (1→6, 2→3).
+    // its diagonal; and the palette permuted (1→6, 2→7, 3→8, 4→9).
     let turn = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
         let (h, w) = (g.len(), g[0].len());
         (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect()
@@ -115,7 +122,7 @@ fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
         (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect()
     };
     let paint = |g: &Vec<Vec<u8>>| -> Vec<Vec<u8>> {
-        g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 3, x => x }).collect()).collect()
+        g.iter().map(|row| row.iter().map(|&h| match h { 1 => 6, 2 => 7, 3 => 8, 4 => 9, x => x }).collect()).collect()
     };
     let each = |ps: &Pairs, f: Frame<'_>| -> Pairs { ps.iter().map(|(a, b)| (f(a), f(b))).collect() };
     let read = |train: &Pairs, test: &Pairs| crate::arc::parse_task(&json(train, test)).expect("the task reads");
@@ -134,6 +141,13 @@ fn a_task_in_every_frame_and_palette_reads_one_word_and_one_verdict() {
         assert_eq!(again.address(), rule.address(), "frame {i}: one word");
         assert!(matches!(k.judge_solve(&again, &other.train), SolveVerdict::Solved { pay: p } if p == pay), "frame {i}: one verdict, one price");
     }
+    // A TASK WITH A POLAR VECTOR: its bodies move one way, so its frame is
+    // physical — turned, it is not the same scene; repainted, it still is.
+    let drift = read(&moving.0, &moving.1);
+    let turned_drift = read(&each(&moving.0, &turn), &each(&moving.1, &turn));
+    assert_ne!(drift.train, turned_drift.train, "momentum breaks the symmetry: the orientation is observable");
+    let repainted = read(&each(&moving.0, &paint), &each(&moving.1, &paint));
+    assert_eq!(drift.train, repainted.train, "and the palette stays a gauge");
 }
 
 /// POUW: the task's FIRST closure mints the solver what its rule discharged;

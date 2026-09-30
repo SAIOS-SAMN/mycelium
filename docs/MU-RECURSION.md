@@ -18440,6 +18440,64 @@ a hue neither word speaks of (78.45).
   words arrive proves it. Courts converge on the colour language by
   re-deriving it, never by taking a peer's word for it.
 
+### 78.56 Three questions the physics already answers, four that are the operator's (ruled 2026-09-30, the operator's word)
+
+The implementor's ten open questions of 2026-09-30 divide in two. Three
+were false dilemmas made by falling back into Cartesian thinking:
+
+1. GRIDS OF DIFFERENT EXTENT (item 5). Aligning an N×M input with a P×Q
+   output at the top-left is a Cartesian artifact — an arbitrary origin
+   (rule 15). A change of extent is an inversive dilation carried by the
+   fascicle of concentric spheres, V = s_out s_in ∈ Spin(4,1): the anchor is
+   the envelope's own centre, and a site of the input corresponds to the
+   site of the output the dilation between the two envelopes carries it to.
+2. ORIENTATION (item 1). The dihedral poses are a global gauge IF AND ONLY
+   IF the scene carries no polar vector order parameter. A non-zero polar
+   vector p (an asymmetric directional drop, a gravity gradient) breaks the
+   symmetry spontaneously, and its orientation is an observable; p ≡ 0 is
+   the isotropic singlet, and all eight poses are one. The algebra detects
+   which, per task; no flag.
+3. PALETTE SIZE (item 10). N = 10 is the detector's channel capacity, an
+   extrinsic boundary condition of the retina, never an invariant of the
+   manifold: the fibre carries arbitrary rational curvature whatever the
+   sensor presents.
+
+READ FOR THE BUILD (the implementor, where the ruling names the object and
+not its exact form):
+- THE ENVELOPE of a grid of extent h×w is its circumscribed sphere: centre
+  the extent's midpoint, r² = (h² + w²)/4. The dilation between two
+  envelopes carries a centred offset x by s = r_out / r_in; s is exact only
+  where r²_out / r²_in is a rational square. Where it is not, no site
+  corresponds (78.45: no approximation), and the pair witnesses nothing.
+  Two grids of one extent correspond site for site (s = 1).
+- THE POLAR VECTOR is read as the task's MOMENTUM — the mass-weighted
+  displacement from input to output, Σ_out x − s·Σ_in x in centred
+  coordinates, summed over the train pairs — because p = Σ mᵢxᵢ about a
+  scene's own barycentre vanishes by construction, and about the grid's
+  centre nearly every scene has one: the ruling's examples (a drop, a
+  gradient) are motions. Where a pair's dilation is irrational its momentum
+  is unread, and the task's orientation is held PHYSICAL — the frame is
+  never un-fixed by a guess.
+- 78.54 is amended accordingly: `frame_fixed` fixes the frame only for a
+  task whose momentum vanishes.
+
+THE FOUR CLOSURES, OPEN — the operator's, never derived:
+- I. UNITARITY VS DISSIPATION: colour merges (12 corpus tasks) — held as
+  open systems coupled to an unobserved reservoir (Spin(4,1) stays
+  unitary), or a projection semigroup admitting irreversible words?
+- II. THE COLOUR FIBRE'S ONTOLOGY: purely relational (no absolute names;
+  minds agree on Δχ), or the sensor's channels ruled an absolute
+  symmetry-breaking boundary fixing the gauge across minds?
+- III. THE TOPOLOGY OF TIME: are a thought's hours bound to one family's
+  demonstrations, or is the step between tasks a parallel transport on a
+  moduli space with its own curvature?
+- IV. THE ACTION OF VALUE: does the economy pay only work done on task
+  matter (a residue annihilated; theorems and waiting earn nothing), or the
+  reduction of the network's descriptive entropy (a theorem earns a
+  dividend)? Until ruled: the T-lane accrual in escrow (f86916db), theorem
+  admission (4747e2f4) and the court's reserve ceiling stand as landed, each
+  named here as provisional.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

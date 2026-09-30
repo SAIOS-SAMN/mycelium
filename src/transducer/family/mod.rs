@@ -355,16 +355,21 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
 pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
     let mut map: Vec<(u8, u8)> = Vec::new();
     for (x, y) in family {
-        for (rx, ry) in x.iter().zip(y) {
-            for (&h, &t) in rx.iter().zip(ry) {
-                if h == 0 || t == 0 {
-                    continue;
-                }
-                match map.iter().find(|(f, _)| *f == h) {
-                    Some(&(_, seen)) if seen != t => return None,
-                    Some(_) => {}
-                    None => map.push((h, t)),
-                }
+        // 78.56 — WHERE THE BASE STANDS STILL across a change of extent:
+        // each input site at the output site the envelopes' dilation
+        // carries it to, never aligned at a corner. A pair whose dilation
+        // is irrational has no site that corresponds, and witnesses nothing.
+        let Some(s) = crate::arc::envelope_dilation(x, y) else { continue };
+        for (site, h) in crate::arc::painted_sites(x) {
+            let Some(there) = crate::arc::carried_site(x, y, s, site) else { continue };
+            let t = crate::arc::hue_at(y, there);
+            if t == 0 {
+                continue;
+            }
+            match map.iter().find(|(f, _)| *f == h) {
+                Some(&(_, seen)) if seen != t => return None,
+                Some(_) => {}
+                None => map.push((h, t)),
             }
         }
     }

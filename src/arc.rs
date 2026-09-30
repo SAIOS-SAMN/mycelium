@@ -65,61 +65,229 @@ pub fn parse_task(json: &str) -> Option<Task> {
 /// choice, and a word that carried it would make a mind that learned a
 /// motion in one frame blind to it in another.
 ///
-/// So the frame is fixed with the palette, at the sensor and nowhere after:
-/// each of the eight symmetries of the square lattice (a turn of 0°, 90°,
-/// 180° or 270°, each with or without the transpose) is read with its
-/// colours fixed (`gauge_fixed`), and the task is handed on in the reading
-/// whose VISIBLE grids — train pairs and test inputs; a withheld output
-/// never votes — stand first in the lattice's own order. The result is the
-/// same for every frame and palette the task could have been given in.
-/// Where two readings show the same visible grids the task is symmetric
-/// there and either is that one task; the first symmetry in the order
-/// listed is taken, and it changes no grid a mind is shown.
+/// So the frame is fixed with the palette, at the sensor and nowhere after —
+/// READ, AXIS BY AXIS, OFF THE SCENE'S OWN MOMENTS, never by enumerating the
+/// lattice's symmetry group (2ⁿ·n! poses in n axes; rules 3 and 4). Over the
+/// VISIBLE grids (train pairs and test inputs; a withheld output never
+/// moves the frame), each painted site a unit of mass, in centred
+/// coordinates:
+/// - an axis is REVERSED where its first non-zero odd moment (orders 1, 3)
+///   is negative — which is what a reflection along it changes;
+/// - the axes are ORDERED by their even moments (orders 2, 4) — which is
+///   what a permutation of the axes changes.
+///
+/// These are a gauge-fixing condition — the representative the geometry
+/// itself names — as a hue is labelled by where it first stands (78.53),
+/// never a candidate chosen by a scalar. They are hue-blind, so the frame
+/// does not move with the palette. Where an axis's odd moments all vanish,
+/// or two axes' even moments tie, the scene is symmetric under that move
+/// as far as these orders read, and the frame given is kept (law 10: held,
+/// never broken by an arbitrary choice). Then the palette is fixed in the
+/// frame the geometry chose (`gauge_fixed`).
 pub fn frame_fixed(task: Task) -> Task {
-    let mut best: Option<(Vec<Grid>, Task)> = None;
-    for transpose in [false, true] {
-        for degrees in [0u16, 90, 180, 270] {
-            let at = |g: &Grid| turned(&if transpose { transposed(g) } else { g.clone() }, degrees);
-            let read = gauge_fixed(Task {
-                train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
-                test: task.test.iter().map(|(a, b)| (at(a), at(b))).collect(),
-            });
-            let visible: Vec<Grid> = read
-                .train
-                .iter()
-                .flat_map(|(a, b)| [a.clone(), b.clone()])
-                .chain(read.test.iter().map(|(a, _)| a.clone()))
-                .collect();
-            if best.as_ref().is_none_or(|(held, _)| visible < *held) {
-                best = Some((visible, read));
+    // 78.56 — A TASK WITH A POLAR VECTOR HAS A PHYSICAL ORIENTATION: its
+    // momentum breaks the lattice's symmetry, and its frame is kept; only
+    // its palette is a gauge.
+    if !momentum_vanishes(&task.train) {
+        return gauge_fixed(task);
+    }
+    // THE MOMENTS, per axis and per order 1..=4, over the visible grids.
+    let mut moment = [[0i128; 4]; AXES];
+    let visible = task.train.iter().flat_map(|(a, b)| [a, b]).chain(task.test.iter().map(|(a, _)| a));
+    for g in visible {
+        let e = extents(g);
+        for (site, _) in painted_sites(g) {
+            for (axis, m) in moment.iter_mut().enumerate() {
+                let x = centred(site[axis], e[axis]);
+                let mut power = 1i128;
+                for order in m.iter_mut() {
+                    power *= x;
+                    *order += power;
+                }
             }
         }
     }
-    match best {
-        Some((_, t)) => t,
-        None => task,
-    }
+    let reversed: [bool; AXES] = std::array::from_fn(|axis| {
+        let [first, _, third, _] = moment[axis];
+        match first {
+            0 => third < 0,
+            f => f < 0,
+        }
+    });
+    let mut order: [usize; AXES] = std::array::from_fn(|axis| axis);
+    // A stable ordering: axes whose even moments tie keep the order given.
+    #[expect(clippy::disallowed_methods, reason = "rule 4 — a gauge-fixing condition, not a choice among candidates: the axes are ordered by the even moments the scene itself carries (78.54)")]
+    order.sort_by_key(|&axis| (moment[axis][1], moment[axis][3]));
+    let at = |g: &Grid| reoriented(g, order, reversed);
+    gauge_fixed(Task {
+        train: task.train.iter().map(|(a, b)| (at(a), at(b))).collect(),
+        test: task.test.iter().map(|(a, b)| (at(a), at(b))).collect(),
+    })
 }
 
-/// A grid read with its rows as columns: the mirror across the main
-/// diagonal. A ragged row is read as far as it reaches.
-fn transposed(g: &Grid) -> Grid {
-    let width = grid_width(g);
-    (0..width).map(|c| g.iter().filter_map(|row| row.get(c).copied()).collect()).collect()
+/// THE SENSOR LATTICE'S AXES. A `Grid` is read on two — rows, columns — and
+/// every geometric reader here is written ONCE PER AXIS over this count,
+/// never an axis by hand: a lattice of more axes changes this constant and
+/// the grid's own storage, and nothing else.
+pub const AXES: usize = 2;
+
+/// A grid's extent on each lattice axis.
+pub fn extents(g: &Grid) -> [usize; AXES] {
+    [g.len(), grid_width(g)]
 }
 
-/// A grid turned by `degrees` (0, 90, 180 or 270; clockwise as the lattice
-/// is read, rows downward). A turn by 90° is the transpose read with each
-/// row reversed; the others are it repeated.
-fn turned(g: &Grid, degrees: u16) -> Grid {
-    let once = |g: &Grid| -> Grid {
-        transposed(g).into_iter().map(|row| row.into_iter().rev().collect()).collect()
-    };
-    let mut out = g.clone();
-    for _ in 0..(degrees / 90) {
-        out = once(&out);
+/// THE SENSOR'S ONE READING OF A GRID: each painted site — its coordinate on
+/// every axis — with its hue, in the lattice's own order. The one pass over
+/// a scene's sites (law 11's sensor clause); every reader here takes it.
+pub fn painted_sites(g: &Grid) -> Vec<([usize; AXES], u8)> {
+    let mut out = Vec::new();
+    for (r, row) in g.iter().enumerate() {
+        for (c, &h) in row.iter().enumerate() {
+            if h != 0 {
+                out.push(([r, c], h));
+            }
+        }
     }
     out
+}
+
+/// The hue at a site, `0` (the void) where the site is not in the grid.
+pub fn hue_at(g: &Grid, site: [usize; AXES]) -> u8 {
+    match g.get(site[0]).and_then(|row| row.get(site[1])) {
+        Some(&h) => h,
+        None => 0,
+    }
+}
+
+/// A coordinate centred on its extent and doubled, so every centre is an
+/// integer: `X = 2x − (n − 1)`.
+fn centred(x: usize, n: usize) -> i128 {
+    2 * x as i128 - (n as i128 - 1)
+}
+
+/// A grid with its axes permuted (`order[j]` is the axis read as the j-th)
+/// and reversed where `reversed[axis]`: one pass over its painted sites,
+/// the void everywhere else.
+fn reoriented(g: &Grid, order: [usize; AXES], reversed: [bool; AXES]) -> Grid {
+    let e = extents(g);
+    let ne: [usize; AXES] = std::array::from_fn(|j| e[order[j]]);
+    let mut out: Grid = vec![vec![0; ne[1]]; ne[0]];
+    for (site, h) in painted_sites(g) {
+        let at: [usize; AXES] = std::array::from_fn(|j| {
+            let axis = order[j];
+            match reversed[axis] {
+                true => e[axis] - 1 - site[axis],
+                false => site[axis],
+            }
+        });
+        out[at[0]][at[1]] = h;
+    }
+    out
+}
+
+/// 78.56 — THE DILATION BETWEEN TWO ENVELOPES. A grid is enveloped by its
+/// circumscribed sphere — centre the extent's midpoint, r² = Σ eᵢ²/4 over
+/// its axes — and a change of extent is the dilation about the centres
+/// carrying one envelope onto the other, by s = r_to / r_from. It is exact
+/// only where r²_to / r²_from is a rational square: answered as `s = p/q`
+/// in lowest terms, `None` where s is irrational (78.45: no approximation)
+/// or an extent is empty. Two grids of one extent: 1/1.
+pub fn envelope_dilation(from: &Grid, to: &Grid) -> Option<(i64, i64)> {
+    let r2 = |g: &Grid| -> i64 { extents(g).iter().map(|&e| (e as i64) * (e as i64)).sum() };
+    let (a, b) = (r2(to), r2(from));
+    if a == 0 || b == 0 {
+        return None;
+    }
+    let g = gcd_i64(a, b);
+    let (a, b) = (a / g, b / g);
+    let (p, q) = (exact_root(a)?, exact_root(b)?);
+    Some((p, q))
+}
+
+/// Where a site of `from` stands in `to` under the envelopes' dilation
+/// (`envelope_dilation`, `s = p/q`), read in centred coordinates doubled
+/// so every centre is an integer: `X = 2r − (h − 1)`. `None` where the
+/// carried point is not a site of `to` — between sites, or outside it.
+pub fn carried_site(from: &Grid, to: &Grid, (p, q): (i64, i64), site: [usize; AXES]) -> Option<[usize; AXES]> {
+    let (e_from, e_to) = (extents(from), extents(to));
+    let (p, q) = (i128::from(p), i128::from(q));
+    let mut out = [0usize; AXES];
+    for axis in 0..AXES {
+        let scaled = centred(site[axis], e_from[axis]).checked_mul(p)?;
+        if scaled % q != 0 {
+            return None;
+        }
+        let doubled = scaled / q + (e_to[axis] as i128 - 1);
+        if doubled % 2 != 0 || doubled < 0 {
+            return None;
+        }
+        let at = usize::try_from(doubled / 2).ok()?;
+        if at >= e_to[axis] {
+            return None;
+        }
+        out[axis] = at;
+    }
+    Some(out)
+}
+
+/// 78.56 — WHETHER THE TASK CARRIES NO POLAR VECTOR: its momentum — the
+/// mass-weighted displacement from input to output, `Σ_out X − s·Σ_in X`
+/// in centred coordinates across each pair's envelope dilation, summed
+/// over the train pairs, every painted site a unit of mass — is exactly
+/// zero. `false` where it is not, and where any pair's dilation is
+/// irrational (its momentum unread: the orientation is held physical, so
+/// the frame is never un-fixed by a guess).
+pub fn momentum_vanishes(train: &[(Grid, Grid)]) -> bool {
+    use num_rational::Ratio;
+    let mut total: [Ratio<i128>; AXES] = std::array::from_fn(|_| Ratio::from_integer(0));
+    for (a, b) in train {
+        let Some((p, q)) = envelope_dilation(a, b) else { return false };
+        // A scene's first moment, per axis, each painted site a unit of mass.
+        let moment = |g: &Grid| -> [i128; AXES] {
+            let e = extents(g);
+            let mut m = [0i128; AXES];
+            for (site, _) in painted_sites(g) {
+                for (axis, at) in m.iter_mut().enumerate() {
+                    *at += centred(site[axis], e[axis]);
+                }
+            }
+            m
+        };
+        let (m_in, m_out) = (moment(a), moment(b));
+        for (axis, t) in total.iter_mut().enumerate() {
+            *t += Ratio::from_integer(m_out[axis]) - Ratio::new(m_in[axis] * i128::from(p), i128::from(q));
+        }
+    }
+    total.iter().all(|t| *t == Ratio::from_integer(0))
+}
+
+/// The greatest common divisor of two positive integers.
+fn gcd_i64(a: i64, b: i64) -> i64 {
+    let (mut a, mut b) = (a.abs(), b.abs());
+    while b != 0 {
+        (a, b) = (b, a % b);
+    }
+    a
+}
+
+/// The exact square root of a non-negative integer, or `None` where it is
+/// not a perfect square: Newton's iteration on the integers, which strictly
+/// decreases from `n` to ⌊√n⌋ — O(log n) steps, bounded by its own descent
+/// (rule 10), never a walk up from zero.
+fn exact_root(n: i64) -> Option<i64> {
+    if n < 0 {
+        return None;
+    }
+    if n < 2 {
+        return Some(n);
+    }
+    let mut x = n;
+    let mut next = (x + 1) / 2;
+    while next < x {
+        x = next;
+        next = (x + n / x) / 2;
+    }
+    (x * x == n).then_some(x)
 }
 
 /// 78.53 — THE PALETTE IS READ ONLY AT THE SENSOR, and the gauge is fixed
@@ -141,11 +309,9 @@ fn turned(g: &Grid, degrees: u16) -> Grid {
 pub fn gauge_fixed(task: Task) -> Task {
     let mut order: Vec<u8> = Vec::new();
     let stand = |g: &Grid, order: &mut Vec<u8>| {
-        for row in g {
-            for &h in row {
-                if h != 0 && !order.contains(&h) {
-                    order.push(h);
-                }
+        for (_, h) in painted_sites(g) {
+            if !order.contains(&h) {
+                order.push(h);
             }
         }
     };
@@ -331,6 +497,27 @@ pub fn refine_delta(a: &Grid, b: &Grid) -> Option<Refined> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// 78.56 — THE ENVELOPES' DILATION: two grids of one extent correspond
+    /// site for site; 3×3 onto 9×9 is s = 3, carrying each cell's centre to
+    /// the centre of its 3×3 block, never to a corner; an extent whose
+    /// envelope ratio is no rational square corresponds nowhere (78.45); and
+    /// a point that lands between sites carries nothing.
+    #[test]
+    fn a_change_of_extent_is_the_dilation_between_envelopes() {
+        let grid = |h: usize, w: usize| -> Grid { vec![vec![1; w]; h] };
+        assert_eq!(envelope_dilation(&grid(3, 4), &grid(3, 4)), Some((1, 1)));
+        assert_eq!(envelope_dilation(&grid(3, 3), &grid(9, 9)), Some((3, 1)));
+        assert_eq!(carried_site(&grid(3, 3), &grid(9, 9), (3, 1), [1, 1]), Some([4, 4]), "centre to centre");
+        assert_eq!(carried_site(&grid(3, 3), &grid(9, 9), (3, 1), [0, 0]), Some([1, 1]), "a cell to its block's centre");
+        assert_eq!(envelope_dilation(&grid(1, 1), &grid(1, 2)), None, "√(5/2) is no rational");
+        assert_eq!(carried_site(&grid(2, 2), &grid(4, 4), (2, 1), [0, 0]), None, "between sites");
+        // The momentum: a recolour in place carries none; a drift one way does.
+        let still = vec![(vec![vec![1, 1, 0]], vec![vec![2, 2, 0]])];
+        let drift = vec![(vec![vec![1, 1, 0]], vec![vec![0, 1, 1]])];
+        assert!(momentum_vanishes(&still));
+        assert!(!momentum_vanishes(&drift));
+    }
 
 
     #[test]
