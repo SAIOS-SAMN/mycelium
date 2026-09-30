@@ -190,3 +190,44 @@ fn a_colour_word_is_minted_ruled_by_evidence_taught_and_held() {
     let senses = mind.senses(&crate::observe::Learning::default());
     assert_eq!(senses.read("language", "colour words"), Some(1), "the mind holds what its court installed");
 }
+
+/// 78.58 (Closure I) — A MERGE IS UNITARY: hue 2 recoloured into hue 1,
+/// which stands still, loses no distinction. The word the scene witnesses
+/// keeps 1 still, moves 2 → 1 and rotates 2's distinction into the
+/// reservoir e_∅, so it inverts exactly; the relation that drops the
+/// record — the injection {2→1} this read as before — is not the scene's,
+/// and no word at all is minted for a merge with its distinction lost. No
+/// preimage is singled out to go unrecorded (rule 4): of two moved hues
+/// merged, both are recorded. It composes: after {1→3}, both hues go to 3,
+/// both recorded. The court stands the witnessed merge by its own copy of
+/// the family.
+#[test]
+fn a_merge_rotates_its_distinction_into_the_reservoir() {
+    use crate::transducer::element::{colour_word, compose_fibre, fibre_function, invert_fibre, is_fibre_relation, RESERVOIR};
+    let family = vec![(vec![vec![1u8, 2, 0]], vec![vec![1u8, 1, 0]])];
+    let sigma = crate::transducer::family::fibre_relation(&family).expect("the fibre moved");
+    assert_eq!(sigma, vec![(1, 1), (2, 1), (RESERVOIR, 2)], "1 still, 2 → 1: 2's distinction in e_∅");
+    assert_eq!(fibre_function(&sigma), vec![(1, 1), (2, 1)], "Π∘U on the empty reservoir: what the scene showed");
+    assert!(invert_fibre(&sigma).is_empty(), "1 returns to itself; 2 only with its record");
+    assert!(!is_fibre_relation(&[(1, 3), (2, 3)]), "a merge with its distinction lost is no word");
+    assert!(!is_fibre_relation(&[(1, 3), (2, 3), (RESERVOIR, 1)]), "no preimage is singled out unrecorded");
+    assert!(is_fibre_relation(&[(1, 3), (2, 3), (RESERVOIR, 1), (RESERVOIR, 2)]));
+    assert!(!is_fibre_relation(&[(1, 1), (2, 3)]), "a still hue nothing merges into is no row");
+    assert!(!is_fibre_relation(&[(2, 1), (RESERVOIR, 3)]), "a record names a hue that moved");
+    assert!(!is_fibre_relation(&[(2, 1), (RESERVOIR, 2)]), "a record names a merged hue");
+    let both = vec![(1, 3), (2, 3), (RESERVOIR, 1), (RESERVOIR, 2)];
+    assert_eq!(compose_fibre(&[(1, 3)], &sigma), Some(both.clone()), "the merge carried through");
+    assert!(invert_fibre(&both).is_empty(), "every merged hue returns only with its record");
+    assert_eq!(invert_fibre(&[(1, 2), (3, 1)]), vec![(1, 3), (2, 1)], "an injection inverts as before");
+    let word = colour_word(&sigma).expect("a unitary merge is a colour word");
+    assert!(word.is_colour_word());
+    let tape = word.to_bytes().expect("the record writes");
+    let sent = Element::from_bytes(&tape, &mut 0).expect("and reads back");
+    assert_eq!(sent.letters().map(|l| l.sigma.clone()), Some(sigma.clone()), "the record travels with the word");
+    let mut k = Kernel::new();
+    let tid = [40u8; 32];
+    k.bind_task_family(tid, family);
+    let lost = colour_word(&[(2, 1)]).expect("an injection is a word");
+    assert_ne!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&lost)), vec![crate::anastome::dialogue::SPEECH_STOOD], "not what the scene showed");
+    assert_eq!(k.perceive_speech([1; 32], &tid, std::slice::from_ref(&word)), vec![crate::anastome::dialogue::SPEECH_STOOD], "witnessed: it stands");
+}

@@ -18558,6 +18558,55 @@ unbalanced, non-rigid, external torque). Test: a transition that tumbles,
 drifts and grows files three blades; the rigid binary with its momentum
 carried closes.
 
+### 78.58 Closure I built: the reservoir is the ancilla ray e_∅, and a merge rotates its distinction into it (ruled 2026-09-30, the operator's word)
+
+THE COORDINATE (the operator): the colour fibre is the detector's channels
+extended by one ancilla ray, E = span_ℚ{e_0 … e_9} ⊕ ℚe_∅; e_∅ is the one
+coordinate outside the measurement subspace, and Π_sensor = Σ_{i<10}
+|e_i⟩⟨e_i| never sees it. A merge c₁, c₂ ↦ c₃ is the unitary
+(c₁ ∧ c₂) ⊗ e_∅ ↦ c₃ ⊗ (Δc ∧ e_∅): the grid shows c₃ for both, and the
+distinction Δc lives on in the reservoir, so the automorphism inverts.
+
+AS BUILT, in the sensor's discrete coordinates: `RESERVOIR` is the channel
+index after the last (10). A colour word's relation carries three kinds
+of row — a MOVE (f, t) inside the channels; a STILL (t, t), a merge's
+target the scenes showed standing still (written only where something
+merges into it); and a RECORD (⊥, c): the distinction of the merged hue c,
+rotated into e_∅. A target is merged where two or more hues go to it, a
+still target counted. It is UNITARY (`is_fibre_relation`) when every moved
+preimage of a merged target is recorded and nothing else is. No preimage
+is singled out to stay unrecorded: any one would be chosen by its label,
+which rule 4 refuses (the first build kept the least and the lint caught
+it). Π∘U on the empty reservoir is `fibre_function`; `lift_fibre` is the one reader
+from a function the scenes showed (still hues included) to the word; the
+family's fibre relation is that lift; words compose by composing their
+functions and lifting (`compose_fibre`); the inverse served to a mind is
+U⁻¹ on the empty reservoir (`invert_fibre`: a recorded hue returns only
+with its record, which no scene carries).
+
+THE DEFECT IT CLOSED: the fibre relation dropped still hues BEFORE testing
+injectivity, so a hue recoloured into one that stayed (2 → 1 with 1 still)
+read as the injection {2→1} and minted as a word that lost nothing. It lost
+a distinction. Offline on the ARC-AGI-2 training corpus (no palette
+relabel): 29 tasks injective, 10 merge among moved hues (no word before), 7
+merge into a still hue (minted before as injections); distinct words 31 →
+42 with the lift.
+
+DEVIATIONS NAMED (the operator may rule otherwise): (i) the operator's form
+keeps c₃ as the output of one preimage and sinks Δc; with no preimage
+singled out, a merge of k moved hues writes k records, so the empty
+reservoir returns only a still target — every moved hue returns with its
+record. (ii) e_∅ is one ray holding a set of records (the wedge of the
+distinctions), not one scalar. (iii) Composing lifts re-lifts the composite
+function rather than stacking both words' records; the observed action and
+the unitarity are the same.
+
+Test: `a_merge_rotates_its_distinction_into_the_reservoir` — the scene
+witnesses {1 still, 2→1, ⊥←2}; the record-less {2→1} is refused by the court
+as not what the scene showed; a merge with its distinction lost is no word;
+the record travels through the element record; the merge composes with
+{1→3} into {1→3, 2→3, ⊥←1, ⊥←2}.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`

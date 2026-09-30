@@ -344,9 +344,12 @@ pub fn family_ratio(family: &[(Grid, Grid)]) -> Option<((usize, usize), (usize, 
 /// fibre undergoes where the base stands still. At every site that stands
 /// in both the input and the output of a train pair (neither the void),
 /// the hue there goes to the hue there; over every pair, that is one map or
-/// none. Fixed points are no transition and are dropped; `None` where the
-/// map is not a function (a hue sent two ways), where it moves no hue, or
-/// where no site stands in both scenes. Read in the detector's own channels
+/// none, lifted unitarily (78.58, `element::lift_fibre`): a hue standing
+/// still is no move and is not written, but it keeps its target, and every
+/// other hue merged into a target rotates its distinction into the
+/// reservoir. `None` where the map is not a function (a hue sent two ways),
+/// where it moves no hue, or where no site stands in both scenes. Read in
+/// the detector's own channels
 /// — an absolute boundary (78.56 II) — so the colour words minds share name
 /// the same colours for every mind.
 ///
@@ -374,12 +377,12 @@ pub fn fibre_relation(family: &[TrainPair]) -> Option<Vec<(u8, u8)>> {
             }
         }
     }
-    map.retain(|&(f, t)| f != t);
-    map.sort_unstable();
-    match map.is_empty() {
-        true => None,
-        false => Some(map),
-    }
+    // 78.58 — the function the scenes showed, a hue standing still
+    // included, lifted unitarily: a merge rotates its distinction into
+    // the reservoir. Dropping the still hues first read a hue recoloured
+    // into one that stayed as an injection, and minted a merge as if
+    // nothing were lost.
+    crate::transducer::element::lift_fibre(&map)
 }
 
 /// One body carried onto another: the transport and the gauge map.

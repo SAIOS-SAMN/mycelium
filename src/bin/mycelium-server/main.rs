@@ -640,6 +640,36 @@ fn main() {
         });
     }
 
+    // THE OBSERVER NEVER WAITS ON COGNITION — AT THE DOOR TOO. The observe
+    // judge reads the kernel only by `try_lock`, but a query never reached
+    // it: while every reflex worker waited on the kernel behind a court
+    // stroke, the listener deferred each connection before reading which
+    // act it carried, and the console read "no reading" off hyphae b and c
+    // for whole epochs (the 43-byte deferral, epoch 113). A full pool now
+    // hands the connection to ONE overflow worker, which reads the frame:
+    // an observation is served, every other act gets the deferral it got
+    // before. It takes no kernel lock, so it never queues behind cognition;
+    // it is one thread, so a flood spawns nothing. Full too, the listener
+    // defers unread, as it did.
+    let (overflow_tx, overflow_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
+    {
+        let door = door.clone();
+        std::thread::spawn(move || {
+            for ReflexJob { mut stream } in overflow_rx {
+                arm_deadline(&stream);
+                let Some(frame) = read_frame(&mut stream) else { continue };
+                if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
+                    judge::observe::judge(&mut stream, &frame, &door);
+                    mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
+                    continue;
+                }
+                let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
+                let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
+                answer(&mut stream, Frame { lane: frame.lane, body });
+            }
+        });
+    }
+
     for stream in listener.incoming() {
         let Ok(s) = stream else { continue };
         let _ = s.set_nodelay(true);
@@ -647,6 +677,10 @@ fn main() {
         if let Err(e) = reflex_tx.try_send(ReflexJob { stream: s }) {
             let job = match e {
                 std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j) => j,
+            };
+            let job = match overflow_tx.try_send(job) {
+                Ok(()) => continue,
+                Err(std::sync::mpsc::TrySendError::Full(j) | std::sync::mpsc::TrySendError::Disconnected(j)) => j,
             };
             let mut s = job.stream;
             // 23.8 (S13.4): the deferral carries the door's per-lane reserve

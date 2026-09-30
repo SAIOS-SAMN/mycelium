@@ -298,41 +298,100 @@ pub fn colour_word(sigma: &[(u8, u8)]) -> Option<Element> {
         &identity_versor(),
         sigma,
         &Vec::new(),
-        [0, sigma.len() as u64, 0, 0],
+        // The hues it moves: a still row and a record move none.
+        [0, sigma.iter().filter(|&&(f, t)| f != t && f != RESERVOIR).count() as u64, 0, 0],
     )
 }
 
-/// WHAT A COLOUR WORD MAY CARRY (78.53): a PARTIAL INJECTION of the hues
-/// that stand — each moved hue to one hue, no two to the same one, none to
-/// itself, every label within the sensor's palette. It is invertible on its
-/// image, which is what a word's action must be. It is NOT completed to a
-/// permutation of the whole palette: a transition no scene showed would be
-/// a forward guess (78.45). A merge (two hues to one) loses a hue and is no
-/// automorphism of the fibre, so it mints no colour word.
+/// 78.58 (Closure I) — THE RESERVOIR: the ancilla ray e_∅ of the colour
+/// fibre, the one coordinate outside the detector's channels
+/// (E = span{e_0..e_9} ⊕ ℚe_∅). The sensor's projection Π never sees it,
+/// so no scene can paint it; a word writes to it and nothing else does.
+#[expect(
+    clippy::cast_possible_truncation,
+    reason = "STD1 C1 — the sensor's: PALETTE = 10 channels, and the reservoir is the coordinate after the last"
+)]
+pub const RESERVOIR: u8 = PALETTE as u8;
+
+/// WHAT A COLOUR WORD MAY CARRY (78.53, 78.58): a UNITARY relation of the
+/// fibre extended by the reservoir. Three kinds of row:
+///
+///   * a MOVE `(f, t)`: a hue the scenes showed going to another, both in
+///     the sensor's channels, each hue once;
+///   * a STILL `(t, t)`: a merge's target the scenes showed standing still —
+///     written only where it merges, since a still hue is otherwise no
+///     transition;
+///   * a RECORD `(RESERVOIR, c)`: the distinction of a merged hue `c`,
+///     rotated into e_∅ (Closure I: `(c₁ ∧ c₂) ⊗ e_∅ ↦ c₃ ⊗ (Δc ∧ e_∅)`).
+///
+/// A target is MERGED where two or more hues go to it, itself standing
+/// still counted among them. It is unitary when every moved preimage of a
+/// merged target is recorded, and nothing else is: no preimage is singled
+/// out to stay unrecorded, since any one would be chosen by its label (rule
+/// 4). So the word inverts exactly on the extended fibre — each recorded
+/// distinction returns to the hue it names, and a target standing still
+/// to itself. An injection has no records and no stills and is the 78.53
+/// partial injection unchanged. It is NOT completed to a permutation of the
+/// palette: a transition no scene showed would be a forward guess (78.45).
 pub fn is_fibre_relation(sigma: &[(u8, u8)]) -> bool {
     let within = |h: u8| usize::from(h) < PALETTE;
-    !sigma.is_empty()
-        && sigma.iter().all(|&(f, t)| f != t && within(f) && within(t))
-        && sigma.iter().enumerate().all(|(i, &(f, t))| {
-            sigma.iter().skip(i + 1).all(|&(g, u)| f != g && t != u)
-        })
+    let rows: Vec<(u8, u8)> = sigma.iter().copied().filter(|&(f, _)| f != RESERVOIR).collect();
+    let recorded = |c: u8| sigma.contains(&(RESERVOIR, c));
+    let merged = |t: u8| rows.iter().filter(|&&(_, u)| u == t).count() > 1;
+    rows.iter().any(|&(f, t)| f != t)
+        && rows.iter().all(|&(f, t)| within(f) && within(t) && (f != t || merged(t)))
+        && rows.iter().all(|&(f, t)| f == t || recorded(f) == merged(t))
+        && sigma.iter().filter(|&&(f, _)| f == RESERVOIR).all(|&(_, c)| rows.iter().any(|&(f, t)| f == c && f != t))
+        && sigma.windows(2).all(|w| w[0].0 < w[1].0 || (w[0].0 == RESERVOIR && w[0] < w[1]))
 }
 
-/// 78.55 — COLOUR WORDS COMPOSE, in the algebra partial injections have:
-/// the SYMMETRIC INVERSE MONOID. `after ∘ first` is defined on a hue
-/// exactly where `first` moves it and `after` moves what it became — never
-/// on a hue either word says nothing about, so nothing is guessed (78.45)
-/// and no two hues merge: a product of partial injections is one. A hue
-/// the composite returns to itself moves nothing and is dropped; `None`
-/// where the composite moves no hue. Exact, on the sensor's labels.
-pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
-    let mut out: Vec<(u8, u8)> = first
-        .iter()
-        .filter_map(|&(f, t)| after.iter().find(|(g, _)| *g == t).map(|&(_, u)| (f, u)))
-        .filter(|&(f, u)| f != u)
-        .collect();
+/// THE OBSERVED FUNCTION of a colour word, Π∘U on the empty reservoir: each
+/// moved hue to its target and each still target to itself — the hues the
+/// scenes showed, and no others. Sorted by hue.
+pub fn fibre_function(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
+    sigma.iter().copied().filter(|&(f, _)| f != RESERVOIR).collect()
+}
+
+/// 78.58 — THE UNITARY LIFT of a function on the hues the scenes showed
+/// (`(hue, hue it became)`, a hue standing still included): the moves; a
+/// merged target's still row where it stands still; and every moved
+/// preimage of a merged target rotated into the reservoir. A still hue no
+/// other hue merges into is no transition and is not written. `None` when
+/// the function moves no hue, or is not a function.
+pub fn lift_fibre(function: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let mut out: Vec<(u8, u8)> = Vec::new();
+    for &(f, t) in function {
+        if function.iter().any(|&(g, u)| g == f && u != t) {
+            return None;
+        }
+        let merged = function.iter().any(|&(g, u)| u == t && g != f);
+        if f != t || merged {
+            out.push((f, t));
+        }
+        if f != t && merged {
+            out.push((RESERVOIR, f));
+        }
+    }
     out.sort_unstable();
+    out.dedup();
     is_fibre_relation(&out).then_some(out)
+}
+
+/// 78.55 — COLOUR WORDS COMPOSE. `after ∘ first` is the composite of their
+/// observed functions (`fibre_function`), defined on a hue exactly where
+/// `first` says what it becomes and `after` says what that becomes — never
+/// on a hue either word says nothing about, so nothing is guessed (78.45)
+/// — then lifted unitarily (`lift_fibre`), so a merge the composite makes
+/// is carried into the reservoir and not lost. For injections this is the
+/// symmetric inverse monoid's product. `None` where the composite moves no
+/// hue. Exact, on the sensor's labels.
+pub fn compose_fibre(after: &[(u8, u8)], first: &[(u8, u8)]) -> Option<Vec<(u8, u8)>> {
+    let (f, a) = (fibre_function(first), fibre_function(after));
+    let out: Vec<(u8, u8)> = f
+        .iter()
+        .filter_map(|&(h, t)| a.iter().find(|(g, _)| *g == t).map(|&(_, u)| (h, u)))
+        .collect();
+    lift_fibre(&out)
 }
 
 /// 78.55 — A DERIVED COLOUR WORD: the composite of two ruled colour words
@@ -374,9 +433,17 @@ impl Element {
     }
 }
 
-/// The inverse of a colour relation on its image: each moved hue sent back.
+/// The inverse of a colour relation on its image, read on the EMPTY
+/// reservoir: each unmerged move sent back. A recorded hue returns only
+/// with its record, which no scene carries, so its row is not among them;
+/// a still target returns to itself and moves nothing.
 pub fn invert_fibre(sigma: &[(u8, u8)]) -> Vec<(u8, u8)> {
-    let mut out: Vec<(u8, u8)> = sigma.iter().map(|&(f, t)| (t, f)).collect();
+    let recorded = |c: u8| sigma.contains(&(RESERVOIR, c));
+    let mut out: Vec<(u8, u8)> = sigma
+        .iter()
+        .filter(|&&(f, t)| f != RESERVOIR && f != t && !recorded(f))
+        .map(|&(f, t)| (t, f))
+        .collect();
     out.sort_unstable();
     out
 }
@@ -390,8 +457,7 @@ impl Element {
         self.sub().is_empty()
             && l.spelling.word.is_identity()
             && l.carriage.projective_eq(&identity_versor())
-            && !l.sigma.is_empty()
-            && l.sigma.iter().all(|&(f, t)| f != t)
+            && l.sigma.iter().any(|&(f, t)| f != t && f != RESERVOIR)
     }
 }
 

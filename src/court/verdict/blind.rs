@@ -72,14 +72,15 @@ pub(crate) fn blind_replay_on_inner(
 ) -> Option<&'static str> {
     let chain = spoken.sub();
     // 78.53 — A COLOUR WORD moves no body and carries no chain: its action
-    // is its fibre relation alone, and what it must be is invertible on its
-    // image — a partial injection of the hues that stand
-    // (`is_fibre_relation`). Its evidence against a family is re-derived
+    // is its fibre relation alone, and what it must be is unitary on the
+    // fibre and its reservoir — a partial injection, or a merge whose
+    // distinctions it records in e_∅ (`is_fibre_relation`, 78.58). Its
+    // evidence against a family is re-derived
     // where it is heard (`adjudicate_one`), never replayed as a chain.
     if spoken.is_colour_word() {
         return match spoken.letters().is_some_and(|l| crate::transducer::element::is_fibre_relation(&l.sigma)) {
             true => None,
-            false => Some("colour word's relation is not invertible on its image"),
+            false => Some("colour word's relation is not unitary on the fibre and its reservoir"),
         };
     }
     // A CONNECTION is a word with two components: the group component (an
