@@ -192,12 +192,17 @@ pub struct ResonanceTally {
     /// those whose class did not read.
     pub demanded: u64,
     pub undemanded: u64,
+    /// 78.52 — THE GROUNDS of admitted relations (`note_ground`): filed;
+    /// a step that does not return (no finite order of at least two — a
+    /// slide, a boost); unplaced (bodies on several charts, or a body with
+    /// no nucleus); no succession read at the bodies' barycentre.
+    pub grounds: [u64; 4],
 }
 
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -244,12 +249,17 @@ impl ResonanceTally {
             self.incoherent,
             self.demanded,
             self.undemanded,
+            self.grounds[0],
+            self.grounds[1],
+            self.grounds[2],
+            self.grounds[3],
         )
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 46] {
+    fn fields(&mut self) -> [&mut u64; 50] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
+        let [g0, g1, g2, g3] = &mut self.grounds;
         [
             &mut self.circuits,
             &mut self.uncarried,
@@ -297,6 +307,10 @@ impl ResonanceTally {
             &mut self.incoherent,
             &mut self.demanded,
             &mut self.undemanded,
+            g0,
+            g1,
+            g2,
+            g3,
         ]
     }
 
@@ -405,24 +419,35 @@ type Verdict = Result<(), crate::physics::tensegrity::Refusal>;
 
 /// A GROUND FROM ITS BODIES AND ITS STEP FORWARD (78.52): the step at its
 /// canonical ray, its class and its return (a period of at least two), and
-/// the coupling — the step's succession at the bodies' barycentre. `None`
-/// where the step does not return or reads no succession.
-fn ground_of(bodies: Vec<crate::physics::tensegrity::GroundBody>, forward: &Mv) -> Option<crate::physics::tensegrity::Ground> {
+/// the coupling — the step's succession at the bodies' barycentre. Refused
+/// with what failed: the step does not return, or reads no succession.
+fn ground_of(bodies: Vec<crate::physics::tensegrity::GroundBody>, forward: &Mv) -> Result<crate::physics::tensegrity::Ground, Ungrounded> {
     use crate::transducer::alphabet::Order;
-    let generator = forward.canonical()?;
-    let f = crate::transducer::element::conformal_factors(&generator).ok()?;
+    let generator = forward.canonical().ok_or(Ungrounded::NoReturn)?;
+    let f = crate::transducer::element::conformal_factors(&generator).map_err(|_| Ungrounded::NoReturn)?;
     let Some(Order::Finite(ell)) = crate::transducer::element::rotor_of_factors(&f).ok().and_then(|r| r.order()) else {
-        return None;
+        return Err(Ungrounded::NoReturn);
     };
     let period = u64::from(ell);
     if period < 2 {
-        return None;
+        return Err(Ungrounded::NoReturn);
     }
-    let class = generator.class_key()?;
+    let class = generator.class_key().ok_or(Ungrounded::NoSuccession)?;
     let draft = crate::physics::tensegrity::Ground { class, period, bodies, generator: generator.clone(), coupling: generator };
-    let centre = crate::physics::tensegrity::ground_centre(&draft)?;
-    let coupling = crate::physics::tensegrity::succession(&draft.generator, &centre)?.canonical()?;
-    Some(crate::physics::tensegrity::Ground { coupling, ..draft })
+    let centre = crate::physics::tensegrity::ground_centre(&draft).ok_or(Ungrounded::NoSuccession)?;
+    let coupling = crate::physics::tensegrity::succession(&draft.generator, &centre)
+        .and_then(|c| c.canonical())
+        .ok_or(Ungrounded::NoSuccession)?;
+    Ok(crate::physics::tensegrity::Ground { coupling, ..draft })
+}
+
+/// Why an admitted relation filed no ground — its slot in
+/// `ResonanceTally::grounds` (slot 0 counts the grounds filed).
+#[derive(Clone, Copy)]
+enum Ungrounded {
+    NoReturn = 1,
+    Unplaced = 2,
+    NoSuccession = 3,
 }
 
 /// A PAIR OF IDEAS' KEY (78.52): the two keys, least first, each delimited —
@@ -1189,16 +1214,16 @@ impl Contemplation {
         if self.bubbles.get(other).is_some_and(|b| b.ground.is_some()) {
             return;
         }
-        let [first, rest @ ..] = rows else { return };
+        let [first, rest @ ..] = rows else { return self.ungrounded(Ungrounded::Unplaced) };
         if rest.iter().any(|r| r.chart != first.chart) {
-            return;
+            return self.ungrounded(Ungrounded::Unplaced);
         }
         let bodies: Option<Vec<crate::physics::tensegrity::GroundBody>> = match orbit {
             true => {
                 let ([], [Some(nucleus), ..], [Some(body), ..]) =
                     (rest, first.theirs.as_slice(), first.their_bodies.as_slice())
                 else {
-                    return;
+                    return self.ungrounded(Ungrounded::Unplaced);
                 };
                 Some(vec![crate::physics::tensegrity::GroundBody { nucleus: nucleus.clone(), body: body.clone() }])
             }
@@ -1214,13 +1239,21 @@ impl Contemplation {
                 })
                 .collect(),
         };
-        let Some(bodies) = bodies else { return };
+        let Some(bodies) = bodies else { return self.ungrounded(Ungrounded::Unplaced) };
         let hours = if orbit { first.theirs.len() as u64 + 1 } else { 2 };
         let forward = if orbit { generator.clone() } else { generator.reverse() };
-        if let Some(ground) = ground_of(bodies, &forward) {
-            let grounded = super::idea::Grounded { chart: first.chart.clone(), hours: hours.min(ground.period), ground };
-            self.grounds.insert(pair_key(key, other), grounded);
+        match ground_of(bodies, &forward) {
+            Ok(ground) => {
+                let grounded = super::idea::Grounded { chart: first.chart.clone(), hours: hours.min(ground.period), ground };
+                self.grounds.insert(pair_key(key, other), grounded);
+                self.resonance.grounds[0] += 1;
+            }
+            Err(why) => self.ungrounded(why),
         }
+    }
+
+    fn ungrounded(&mut self, why: Ungrounded) {
+        self.resonance.grounds[why as usize] += 1;
     }
 
     /// 78.52(6) Stage C — A NEW PERCEPTION MEETS A GROUNDED THOUGHT BY ITS

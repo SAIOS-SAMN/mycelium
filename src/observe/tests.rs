@@ -653,6 +653,7 @@ fn the_learning_curve_reads_back_whole_and_a_fresh_mind_reads_zero() {
                 incoherent: 246,
                 demanded: 225,
                 undemanded: 226,
+                grounds: [247, 248, 249, 250],
             },
         }),
         // PR1 — the voice's probes, a residual class counted twice.
