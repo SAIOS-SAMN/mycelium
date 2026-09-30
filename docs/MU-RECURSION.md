@@ -18504,6 +18504,11 @@ RULED 2026-09-30 (the operator's word), closing what follows:
   is admitted and mints nothing — it earns when a solver cites it to
   annihilate residue, as a share of that payout; the court's reserve scales
   with Σ active bonds plus the work verified over the current window.
+  (Built as the SUM over the bond, each lane within the whole bond plus its
+  own verified work — f2ceeaa0. The first build read Σ per lane, and a
+  court bonds nothing on 𝒯, so its 𝒯 reserve stood near zero and every word
+  carrying 𝒯 was deferred for reserve: 6 257 syllabus words at hypha a on
+  epoch 115.)
 
 THE FOUR CLOSURES AS FIRST POSED:
 - I. UNITARITY VS DISSIPATION: colour merges (12 corpus tasks) — held as
