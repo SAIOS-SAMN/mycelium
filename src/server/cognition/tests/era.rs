@@ -199,3 +199,37 @@ fn each_filed_era_reads_back_its_own_receipts() {
     assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "reseated from the segment");
     let _ = std::fs::remove_file(&path);
 }
+
+/// A PEER RECEIPT CITING A RECEIPT THIS COURT FOLDED IS ADMITTED. The
+/// court's own receipts leave its nodes for the archive when it folds; a
+/// peer that heard one before the fold still cites it. The citation is read
+/// back from the era by its stamp and hash, and the peer's line is admitted
+/// — before, admission read the folded receipt as missing for good, and
+/// every peer line citing it stopped at this court.
+#[test]
+fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
+    let home = [0x5c; 32];
+    let path = std::env::temp_dir().join(format!("mycelium-eras-{}-{}", std::process::id(), line!()));
+    let _ = std::fs::remove_file(&path);
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    k.bind_eras(path.clone());
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    // The peer hears the court's receipt at (1, 0) before the fold.
+    let cited = k.receipts_range(&home, Some(Place { k: 0, i: 1 }), Place { k: 1, i: 0 }, 1).remove(0);
+    let p = k.propose_fold().expect("a final prefix");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    assert!(k.chain().at(&home, cited.stamp.place()).is_none(), "the cited receipt left the nodes for the archive");
+    let dvk = super::common::court_key("folded-cite-d").vk_bytes();
+    let mut d = ReceiptChain::with_vk(dvk);
+    d.admit(cited.clone());
+    d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }])
+        .expect("d cites the court's receipt");
+    let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16).into_iter().cloned().collect();
+    let mut budget = k.stroke();
+    assert_eq!(k.admit_backfill(&line, &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
+    let _ = std::fs::remove_file(&path);
+}

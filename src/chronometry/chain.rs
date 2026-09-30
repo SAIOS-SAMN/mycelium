@@ -33,6 +33,12 @@ pub struct ReceiptChain {
     /// WHERE A PEER NODE STANDS AGAINST THIS CHAIN'S OWN LINE, by our
     /// place, keyed by the peer's stamp (see [`Placed`]).
     placed: Keyed<Placed>,
+    /// FOLDED RECEIPTS A CITATION RECALLED: `stamp → chain hash`, each one
+    /// read back out of an archived era and proved there by its stamp and
+    /// hash (`recall_folded`). A fold sheds its receipts from the nodes;
+    /// a peer receipt citing one of them still names it, and its height is
+    /// its stamp's. Only what a citation asked for is held here.
+    folded: Keyed<[u8; 32]>,
 }
 
 /// A PEER NODE'S TWO COORDINATES against this chain's own line, as our
@@ -360,8 +366,17 @@ impl ReceiptChain {
     /// stamp with its hash. `None` otherwise: UNMEASURED height, which a
     /// caller re-deriving a claim refuses rather than reads as zero.
     pub fn height_of(&self, p: &Parent) -> Option<u64> {
-        let held = self.node(&p.at)?;
-        (held.chain_hash == p.hash).then_some(p.at.h)
+        let hash = match self.node(&p.at) {
+            Some(held) => held.chain_hash,
+            None => *self.folded.get(&p.at.key())?,
+        };
+        (hash == p.hash).then_some(p.at.h)
+    }
+
+    /// A folded receipt, read back from its era and proved there, held by
+    /// its stamp and hash so a citation of it re-derives its height.
+    pub fn recall_folded(&mut self, p: Parent) {
+        self.folded.insert(p.at.key(), p.hash);
     }
 
     /// THE PREDECESSOR A ROOT OR A HEAD IS, as the next receipt names it.

@@ -736,6 +736,44 @@ impl Kernel {
     /// bytes nobody verified. A receipt whose signer is not the key that
     /// verified is two claims and is `REFUSE_RECEIPT` (A2's rule, one
     /// signer).
+    /// A CITED RECEIPT THAT WAS FOLDED IS READ BACK FROM ITS ERA (Phase 1).
+    /// A peer's receipt names its predecessor and parents by stamp and
+    /// hash; one this court folded — its own, or a peer's era it witnessed
+    /// — left the nodes for the archive, and admission read it as missing
+    /// for good: on the fleet, c's receipts citing a's receipt at (28, 21),
+    /// folded long before, stopped c's line at every court ("head past it,
+    /// no receipt held there", 2026-09-30). The signer's era over that place
+    /// is paged, and the receipt with that stamp and hash, if it is there,
+    /// is recalled into the chain's folded index. Only a missing citation
+    /// reads the archive; nothing is recalled that the era does not prove.
+    fn recall_cited(&mut self, r: &crate::chronometry::KStepReceipt) {
+        let missing: Vec<crate::chronometry::Parent> =
+            r.prev.iter().chain(r.parents.iter()).copied().filter(|p| self.chain.height_of(p).is_none()).collect();
+        if missing.is_empty() {
+            return;
+        }
+        let offsets = self.era_offsets();
+        for p in missing {
+            let place = p.at.place();
+            // The archive is in root order; the signer's eras are disjoint,
+            // so the first of its eras whose root is at or past the place is
+            // the one that can hold it.
+            let seat = self.archive.partition_point(|e| e.root.at < place);
+            let Some(era) = self.archive.get(seat..).and_then(|run| run.iter().find(|e| e.signer == p.at.vk)) else {
+                continue;
+            };
+            if era.first_place() > place {
+                continue;
+            }
+            let proved = self
+                .era_receipts(era, &offsets)
+                .is_some_and(|page| page.iter().any(|x| x.stamp == p.at && x.chain_hash == p.hash));
+            if proved {
+                self.chain.recall_folded(p);
+            }
+        }
+    }
+
     pub fn admit_receipt(
         &mut self,
         origin: ([u8; 32], u32),
@@ -747,6 +785,7 @@ impl Kernel {
                 crate::court::admission::REFUSE_RECEIPT,
             );
         }
+        self.recall_cited(r);
         let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
@@ -804,6 +843,7 @@ impl Kernel {
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
+            self.recall_cited(r);
             match crate::court::admission::admit_backfilled(r, &self.chain) {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
