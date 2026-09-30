@@ -333,6 +333,10 @@ impl Kernel {
                 // pages on the fleet (epoch 106). A bond total that does not
                 // add up is unmeasured (STD1): the capacity is the verified
                 // work alone.
+                #[expect(
+                    clippy::manual_unwrap_or_default,
+                    reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; an unmeasured bond total contributes nothing to the capacity, named"
+                )]
                 let bonds = match self.treasury.bond_total() {
                     Some(b) => b,
                     None => [0; 4],

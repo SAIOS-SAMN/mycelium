@@ -725,8 +725,7 @@ mod tests {
     /// productive one — it contracts to it.
     #[test]
     fn a_court_reserve_regenerates_within_bonds_and_verified_work() {
-        let mut p = Physics::default();
-        p.reserve = Reserve::of([0; 4]);
+        let mut p = Physics { reserve: Reserve::of([0; 4]), ..Default::default() };
         let bonds = [3, 3, 3, 3];
         for _ in 0..8 {
             p.regenerate_within(bonds);
