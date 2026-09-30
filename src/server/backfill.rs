@@ -205,8 +205,22 @@ pub fn hear<E>(
             return admitted;
         }
         admitted = admit();
-        if let Ok(Admitted::Parent(p)) = &admitted {
-            note_replication(Some(p.at.vk), rep::PARENT_AFTER_BACKFILL, 1);
+        match &admitted {
+            Ok(Admitted::Parent(p)) => note_replication(Some(p.at.vk), rep::PARENT_AFTER_BACKFILL, 1),
+            // What a chase that moved or reached its hole left the frame
+            // as, where it is not a parent: the line on the journal at
+            // powers of two, until the reading carries it (Phase 1).
+            Ok(other) => {
+                static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                if n.is_power_of_two() {
+                    eprintln!(
+                        "  back-fill re-admit ({n}): hole {:02x}{:02x}… {to:?} reached {} advanced {} → {other:?}",
+                        vk[0], vk[1], pass.reached, pass.advanced
+                    );
+                }
+            }
+            Err(_) => {}
         }
     }
 }
