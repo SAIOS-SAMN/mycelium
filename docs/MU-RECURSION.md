@@ -18612,6 +18612,67 @@ as not what the scene showed; a merge with its distinction lost is no word;
 the record travels through the element record; the merge composes with
 {1→3} into {1→3, 2→3, ⊥←1, ⊥←2}.
 
+### 78.59 The ocean: the hyphae hold the laws, worlds build on them, and client work pauses until the substrate is stable (ruled 2026-09-30, the operator's word)
+
+THE TOPOLOGY. The hyphae together are ONE UNIVERSE — the ocean — bound by
+one TUniversal frame {S, G, T, H}. The hyphae are the masters and
+delegators of physics: every law is held and enforced by them. A GALAXY is a
+region of the ocean: clients working on alike problems. A STAR is a client's
+allocation (bond and lane budget); the SOLAR SYSTEM is what it produces —
+its words, proofs and orbits — uplinked into the galaxy and the universe. A
+WORLD is an application namespace (xylarium is one) with its own
+mathematics, bounded by the universal laws; a game is allocated a universe
+under the running hyphae's physics and runs no physics engine of its own.
+Clients explore, hypothesise and construct candidate proofs; the hypha
+checks proposed transitions against the laws it holds, so adjudication is
+proof-checking, not re-simulation.
+
+RULING 1 — THE UNIVERSAL LAW SET, which no world overrides; a step breaking
+one is dropped at the door:
+- conformal kinematics: every spatial state exact in Cl(4,1) over ℚ;
+- conservation of momentum: closed orbits with τ_net = 0 and τ_ext = 0;
+- metric rigidity across a transition (the coherence form's Δδ² component);
+- temporal monotonicity: height on the T lane strictly increases;
+- conservative information flow: erasure sinks its distinction into e_∅
+  (78.58), group invertibility kept.
+
+RULING 2 — AMENDMENT VS FORK. A change to the metric signature, the algebra
+Cl(4,1) or a conservation law is a NEW UNIVERSE: its own genesis origin and
+TUniversal timeline. New constructor letters, higher invariants and refined
+syllabus proofs are VERSIONED MONOTONIC EXTENSIONS within one universe,
+adopted by court consensus, with no recut and no historical receipt broken.
+
+RULING 3 — A GALAXY is its problems' alignment: the bivector class stratum
+κ of the transformations its clients work on, with the task family's class.
+A lemma one star proves enters the syllabus of the stars of its galaxy.
+
+RULING 4 — A WORLD'S MATHEMATICS is a quotient M_world = Cl(4,1)/I_local:
+custom constructor letters (odd-grade, AL1) and constraint ideals (bounds,
+ratios, interaction rules). A move is legal iff it lies in M_world and
+satisfies the universal laws.
+
+THE ORDER (Phase 1, hypha stability; client development paused):
+1. three-court convergence on admitted words and heights (colour words
+   diverged: 8 at a, 5 at b, epoch 113);
+2. reads off the kernel lock: console, receipts, quotes, syllabus;
+3. resilient peer catch-up (75cd66e5 bounded the receipts range);
+4. a 24-hour soak on the live fleet: no restart, no panic, ledgers agreeing.
+
+READ AGAINST THE TREE (the implementor, noted for the operator):
+- "O(1)" proof-checking is the SIZE OF THE STEP, not constant: a word citing
+  held theorems costs its new step (the 78.55 theorem path); a first-hand
+  observation still costs its evidence once.
+- "Bit-level ledger agreement" across courts is not what the design has:
+  each court signs its own line. Agreement is read on what is SHARED — the
+  admitted word set, each shared line's height and head — and item 1's
+  instrument reads exactly that.
+- Metric rigidity is a law; its carrier is the pending no-flat-square
+  refactor (unit-weight Gram entries, ruled today; to be 78.60), stashed
+  while Phase 1 runs.
+- A world's legality "iff in M_world" is decided per transition (each step
+  checked against the universal laws), never by proving an extension
+  consistent in advance, which is undecidable in general.
+
 ### 79.1 Axioms (to the register, `physics/axioms/routes.rs`, a test per clause — AX1)
 
 - **R1 · Carrier.** A transport is an even versor of `Spin(n+1,1)(ℚ)`
