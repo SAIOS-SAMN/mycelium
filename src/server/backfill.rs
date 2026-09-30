@@ -162,6 +162,16 @@ pub fn hear<E>(
         let mut hole = vk.to_vec();
         to.put_canonical(&mut hole);
         if chased.contains(&hole) {
+            // THE SAME HOLE AFTER A CHASE THAT REACHED IT: this court holds
+            // the signer's line at the cited place, and holds ANOTHER receipt
+            // there — the line forked. Counted as the equivocation it is,
+            // per signer, never read as a hole still open.
+            if let Ok(Admitted::MissingParent(p)) = &admitted {
+                let held = kernel.lock().ok().and_then(|k| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash));
+                if held.is_some_and(|h| h != p.hash) {
+                    note_replication(Some(p.at.vk), rep::BACKFILL_EQUIVOCATION, 1);
+                }
+            }
             return admitted;
         }
         chased.insert(&hole, ());
