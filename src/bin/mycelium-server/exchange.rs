@@ -290,6 +290,11 @@ impl Exchange {
         // a live loop is visibly alive without becoming the noise it is here
         // to cut through.
         let mut cycles = 0u64;
+        // The cycle each peer was last asked at: the quiet-digest ceiling's
+        // reading, one entry per peer this court knows.
+        let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
+        // The cycle the ledger was last persisted at.
+        let mut persisted_cycle = 0u64;
         let mut idle = 0u64;
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
@@ -316,7 +321,19 @@ impl Exchange {
                 }
                 crate::offer::offer(&kernel, &mesh, offers);
             }
-            persist_if_due(&kernel, &state_path);
+            // THE LEDGER IS PERSISTED AT THE FEDERATION FLUSH, not on every
+            // marked change: hyphae b and c wrote their whole 27–33 MB
+            // ledger 223 and 347 times in six minutes, one per witnessed
+            // fold, each snapshot taken under the kernel (2026-09-30). A
+            // marked change waits `court_persist_dwell` of this loop's
+            // cycles; a stop persists whatever is still marked (SIGTERM).
+            let dwell = match mycelium::physics::court_persist_dwell(5) {
+                mycelium::physics::Lambda::Strokes(n) => n,
+                mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => 0,
+            };
+            if cycles.checked_sub(persisted_cycle).is_some_and(|gap| gap >= dwell) && persist_if_due(&kernel, &state_path) {
+                persisted_cycle = cycles;
+            }
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
             rebuild_own_cover(&kernel, &mesh);
@@ -402,7 +419,25 @@ impl Exchange {
                     }
                 };
                 let last = mesh.asked_at.lock().ok().and_then(|a| a.get(&pid).copied());
-                let due = crate::transport::exchange_due(last, k_now, lambda, own_moved);
+                // A QUIET COURT STILL ASKS: Λ is read on this court's K, which
+                // moves only when the court acts, so hypha a — spinning 340
+                // idle cycles a second with its K standing — asked each peer
+                // once in six minutes (2026-09-30). The quiet-digest ceiling
+                // bounds the wait in this loop's own strokes: a full reserve
+                // of the peer's measured transports.
+                let quiet = {
+                    let ceiling = match mycelium::physics::digest_ceiling(crate::transport::rtt_floor(&mesh, &pid).map_or(5, |f| f)) {
+                        mycelium::physics::Lambda::Strokes(n) => Some(n),
+                        mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => None,
+                    };
+                    let since = asked_cycle.get(&pid).copied();
+                    match (since, ceiling) {
+                        (Some(at), Some(c)) => cycles.checked_sub(at).is_some_and(|gap| gap >= c),
+                        (None, _) => true,
+                        (Some(_), None) => false,
+                    }
+                };
+                let due = crate::transport::exchange_due(last, k_now, lambda, own_moved) || quiet;
                 // 45.7, S13.3: the exchange to one peer is a carrier whose
                 // circuit is one ask; every cycle strokes it, so its period
                 // is read in this court's cycles between asks — velocity in
@@ -419,6 +454,7 @@ impl Exchange {
                 if let Ok(mut a) = mesh.asked_at.lock() {
                     a.insert(&pid, k_now);
                 }
+                asked_cycle.insert(&pid, cycles);
                 asked_any = true;
                 eprintln!("  court exchange asked {d} K {k_now}");
                 if let Some((n, period)) = circuit {

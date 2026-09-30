@@ -24,9 +24,11 @@ pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
     }
 }
 
-pub(crate) fn persist_if_due(kernel: &Mutex<Kernel>, state_path: &str) {
+/// Persist where a change was marked; whether it was.
+pub(crate) fn persist_if_due(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
     let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
     if due {
         persist(kernel, state_path);
     }
+    due
 }
