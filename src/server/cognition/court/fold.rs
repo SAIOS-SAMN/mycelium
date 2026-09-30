@@ -55,6 +55,32 @@ impl Kernel {
         // The line relation names the receipt at a place (78.24 P1).
         let at = self.chain.at_place(head).ok_or(REFUSE_FOLD_OPEN)?;
         let root = Root { at: at.stamp.place(), hash: at.chain_hash, height: at.stamp.h };
+        // PHASE 1 DIAGNOSTIC — the rows a witness will fetch (`rows_range`:
+        // the span from `after`) against the rows these nets are over: every
+        // court refused its peers' folds as not conserving on epoch 115.
+        {
+            let below = self.treasury.rows_below(head);
+            let span = self.treasury.rows_span(after, root.at);
+            if nets_of(&span).map(|n| n.rows) != Ok(epochs.clone()) {
+                static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+                let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+                if n.is_power_of_two() {
+                    let only_below: Vec<String> = below
+                        .iter()
+                        .filter(|e| !span.contains(e))
+                        .map(|e| format!("{:?}@{:?}", e.kind, e.stands_at()))
+                        .take(6)
+                        .collect();
+                    let only_span = span.iter().filter(|e| !below.contains(e)).count();
+                    eprintln!(
+                        "  fold nets differ ({n}): below {} rows, witness span {} rows; only below {only_below:?}; only in span {only_span}; after {after:?} head {head:?} root {:?}",
+                        below.len(),
+                        span.len(),
+                        root.at
+                    );
+                }
+            }
+        }
         let p = Proposal { after, root, epochs };
         self.fold_pending = Some(p.clone());
         Ok(p)

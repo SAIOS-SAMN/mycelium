@@ -233,3 +233,31 @@ fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
     assert_eq!(k.admit_backfill(&line, &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
     let _ = std::fs::remove_file(&path);
 }
+
+/// A SECOND FOLD VERIFIES ON THE ROWS A WITNESS FETCHES. The proposer nets
+/// every row below its head — the first fold's epoch rows and all since —
+/// and a witness pages the rows it verifies with through `rows_range`
+/// (ACT_ROWS). The first fold's witness read the whole journal; from the
+/// second on, the span began at the prefix the fold stands on, and every
+/// court refused its peers' folds as not conserving (epoch 115, thousands
+/// an hour).
+#[test]
+fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
+    let home = [0x5c; 32];
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    let p = k.propose_fold().expect("a final prefix");
+    let witness = Kernel::new();
+    let fetched = |k: &Kernel, p: &Proposal| k.rows_range(&home, p.after, p.root.at, 0, usize::MAX).1;
+    let first = k.receipts_range(&home, p.after, p.root.at, 100);
+    assert_eq!(witness.verify_fold(home, &p, &first, &fetched(&k, &p)), Ok(()), "the first fold verifies");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.orbit();
+    let p2 = k.propose_fold().expect("the second fold");
+    let second = k.receipts_range(&home, p2.after, p2.root.at, 100);
+    assert_eq!(witness.verify_fold(home, &p2, &second, &fetched(&k, &p2)), Ok(()), "the second fold verifies on the fetched rows");
+}
