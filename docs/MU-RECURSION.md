@@ -18592,7 +18592,12 @@ relabel): 29 tasks injective, 10 merge among moved hues (no word before), 7
 merge into a still hue (minted before as injections); distinct words 31 →
 42 with the lift.
 
-DEVIATIONS NAMED (the operator may rule otherwise): (i) the operator's form
+RULED CANONICAL (the operator, 2026-09-30): recording every moved hue of a
+merge into e_∅, no survivor chosen — a kept preimage would be chosen by its
+channel index, a scalar, and re-introduce coordinate bias into the fibre.
+The exact target is 42 words.
+
+DEVIATIONS AS FIRST NAMED: (i) the operator's form
 keeps c₃ as the output of one preimage and sinks Δc; with no preimage
 singled out, a merge of k moved hues writes k records, so the empty
 reservoir returns only a still target — every moved hue returns with its
