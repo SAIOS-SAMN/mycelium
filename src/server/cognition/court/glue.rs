@@ -137,15 +137,25 @@ impl Kernel {
                 // contradiction on the chart, refused.
                 Some(g) => {
                     use crate::transducer::alphabet::Order;
-                    let exact = crate::transducer::cech::rotor_of(&g).and_then(|r| {
-                        let finite = matches!(r.order(), Some(Order::Finite(_)));
-                        Some((rotor_versor(&r)?, r.class_key()?)).filter(|_| finite)
-                    });
-                    match exact {
-                        Some((v, ck)) => self.push_cocycle(&inv, self_id, peer, v, ck),
-                        None => {
+                    // Which part of the gate a refused transition fails is
+                    // named on the refusal: no rotor read, an order that is
+                    // not finite, or no versor or class for the rotor.
+                    let gate: Result<(crate::transducer::cga::Mv, crate::transducer::address::Address), &'static str> =
+                        match crate::transducer::cech::rotor_of(&g) {
+                            None => Err("sections of one chart related by no rotor (the transition reads none)"),
+                            Some(r) if !matches!(r.order(), Some(Order::Finite(_))) => {
+                                Err("sections of one chart related by a rotation of no finite order")
+                            }
+                            Some(r) => match (rotor_versor(&r), r.class_key()) {
+                                (Some(v), Some(ck)) => Ok((v, ck)),
+                                _ => Err("sections of one chart related by a rotation with no versor or class"),
+                            },
+                        };
+                    match gate {
+                        Ok((v, ck)) => self.push_cocycle(&inv, self_id, peer, v, ck),
+                        Err(why) => {
                             dialect(3, colour);
-                            outcome = Glue::Slashed("sections of one chart related by no exact rotation of finite order");
+                            outcome = Glue::Slashed(why);
                         }
                     }
                 }

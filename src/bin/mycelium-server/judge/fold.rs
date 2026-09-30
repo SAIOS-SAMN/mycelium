@@ -86,6 +86,33 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         }
     };
     if let Err(why) = verdict {
+        // PHASE 1 DIAGNOSTIC — the witness's side of a fold that does not
+        // conserve: what it fetched against what the home proposed.
+        if why == mycelium::verdict::REFUSE_FOLD_INEXACT {
+            static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let n = SEEN.fetch_add(1, std::sync::atomic::Ordering::Relaxed) + 1;
+            if n.is_power_of_two() {
+                let ours = mycelium::economy::nets_of(&rows).map(|n| n.rows);
+                let differ = match &ours {
+                    Ok(o) => o
+                        .iter()
+                        .zip(p.epochs.iter())
+                        .find(|(a, b)| a != b)
+                        .map(|(a, b)| format!("{:02x}{:02x}… {:?} vs proposed {:02x}{:02x}… {:?}", a.0[0], a.0[1], a.1, b.0[0], b.0[1], b.1)),
+                    Err(e) => Some(format!("nets refused: {e}")),
+                };
+                eprintln!(
+                    "  fold inexact ({n}) of {:02x}{:02x}…: rows fetched {} after {:?} root {:?}; parties ours {:?} proposed {}; first difference {differ:?}",
+                    home[0],
+                    home[1],
+                    rows.len(),
+                    p.after,
+                    p.root.at,
+                    ours.as_ref().map(Vec::len),
+                    p.epochs.len()
+                );
+            }
+        }
         refuse(s, why);
         return;
     }
