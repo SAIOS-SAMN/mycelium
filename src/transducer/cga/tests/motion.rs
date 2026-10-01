@@ -151,3 +151,24 @@ fn a_motion_is_charged_where_some_mode_turns_or_boosts() {
     assert_eq!(charged(&turn.geo(&slide)), Some(true), "a turn and a slide composed");
     assert_eq!(charged(&Mv::scalar(q(1, 1)).add(&e_inf())), None, "no versor: no action, unread");
 }
+
+/// 78.62 — A MODE'S ORDER IS READ OFF ITS RATIONAL POINT, never by powers:
+/// for every letter of the seventeen, its square and its cube — each one
+/// turning plane, so the plane's order is the motion's — the order MR1 reads
+/// off `c` is the order the motion's own powers close at.
+#[test]
+fn a_modes_order_is_read_off_its_rational_point() {
+    use crate::transducer::alphabet::{LetterId, Word};
+    let mut checked = 0;
+    for l in LetterId::all() {
+        for k in 1..=3usize {
+            let m = Word::from_letters(&vec![(l, false); k]).rotor().lift();
+            let Some(Ok(modes)) = motion_modes(&m, &mut budget()) else { continue };
+            let turning: Vec<_> = modes.iter().filter(|x| x.kind == BivectorKind::Elliptic).collect();
+            let [mode] = turning.as_slice() else { continue };
+            assert_eq!(mode.order, finite_order(&m).map(|o| o.get()), "letter {l:?}^{k}: c = {}", mode.c);
+            checked += 1;
+        }
+    }
+    assert!(checked >= 32, "the turning letters and their powers were read: {checked}");
+}

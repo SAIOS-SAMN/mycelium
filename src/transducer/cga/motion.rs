@@ -32,7 +32,7 @@
 //! ray (EQ1), else `Defective` by name.
 
 use super::linear::LinearFunction;
-use super::modes::{generators, kind_of, order_on, rational_roots, spectral_projectors, Undecomposed};
+use super::modes::{generators, kind_of, rational_roots, spectral_projectors, Undecomposed};
 use super::multivector::{one, Mv};
 use crate::network::nerve::coord::BivectorKind;
 use num_rational::BigRational;
@@ -138,6 +138,20 @@ pub fn charged(motion: &Mv) -> Option<bool> {
     Some(!off.power(generators(n).len()).is_zero())
 }
 
+/// THE ORDER OF A TURN WHOSE COSINE IS `c` (Niven): 2 at −1, 3 at −½, 4 at
+/// 0, 6 at ½; `None` at any other rational value — no finite order. (1 is a
+/// fixed space and has no turn to order.)
+fn order_of_point(c: &Q) -> Option<u32> {
+    let half = Q::new(1.into(), 2.into());
+    match () {
+        _ if *c == -one() => Some(2),
+        _ if *c == -half.clone() => Some(3),
+        _ if c.is_zero() => Some(4),
+        _ if *c == half => Some(6),
+        _ => None,
+    }
+}
+
 fn split(
     motion: &Mv,
     s: &LinearFunction,
@@ -224,8 +238,13 @@ fn split(
                 (ray, kind, planes)
             }
         };
+        // THE ORDER IS READ OFF THE MODE'S RATIONAL POINT, never by taking
+        // powers (78.62): on its own space the action turns by θ with
+        // `cos θ = c ∈ ℚ`, and a rotation of finite order has a rational
+        // cosine only at 1, ½, 0, −½, −1 (Niven) — orders 1, 6, 4, 3, 2. Any
+        // other rational `c` never returns: a rosette, `None`.
         let order = match kind {
-            BivectorKind::Elliptic => order_on(motion, &plane),
+            BivectorKind::Elliptic => order_of_point(c),
             _ => None,
         };
         let reflects = *c == -one() && width % 2 == 1;
