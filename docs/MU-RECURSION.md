@@ -19568,6 +19568,19 @@ A fold moves what is closed and nothing open holds it back:
 The witness reads unchanged: the same `nets_of` over the same rows on both
 organs, and no carried-row set to agree on.
 
+**The epoch rows stand at the root they net to.** 45.8 anchored them to the
+fold node, and the fold node stands at the line's head, which runs on while
+a witness co-signs. So they stood above rows they had not summarized: the
+journal left line order, and a later cut between the root and the fold node
+counted a party's debits without the credits its epoch carries. On the
+deployed fleet every court's next fold read a voice below zero (a: `1e14…`
+`[-865, -69, 0, -406]`), and with nothing pinning the cut any more, it
+landed there. The rows are the root's balance and stand at the root's stamp
+and hash; the snapshot already reads a row at the fold root.
+`nets_read` now names why nets refuse (an unpaired half at its row, a party
+below zero, a total past its carrier), and `--check` prints the fold as a
+home stands.
+
 **Tested.** `era::a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it`:
 - the fold passes the word's admitting act while the word is listed,
   docketed and escrowed;

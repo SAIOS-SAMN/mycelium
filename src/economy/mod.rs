@@ -12,7 +12,7 @@ pub mod persist;
 pub mod settle;
 pub mod treasury;
 
-pub use fold::{nets_of, Folded, Nets};
+pub use fold::{nets_of, nets_read, Folded, Inexact, Nets};
 pub use lanes::*;
 pub use pay::{Held, Unpaid};
 pub use treasury::*;

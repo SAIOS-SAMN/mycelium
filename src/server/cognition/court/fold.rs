@@ -156,8 +156,12 @@ impl Kernel {
         // hash (78.24): a fold names no word and measured nothing.
         let at = Stamp::new(root.height, me, root.at);
         self.append_cited(ActKind::Fold, vec![Cite::Root { at, hash: root.hash }], [0; 4], me);
-        let anchor = self.anchor();
-        let folded = match self.treasury.fold(p.root.at, anchor) {
+        // THE EPOCH ROWS STAND AT THE ROOT they net to (78.65): the balance
+        // the folded prefix leaves is the root's, so the journal stays in
+        // line order and the next fold's nets below its cut count them. At
+        // the fold node, which stands at the line's head, they stood above
+        // rows they summarized.
+        let folded = match self.treasury.fold(p.root.at, (at, root.hash)) {
             Ok(f) => f,
             Err(reason) => {
                 self.fold_pending = None;

@@ -36,22 +36,36 @@ pub struct Nets {
 /// re-derives a fold with this same reading over the rows it fetched
 /// (47.3).
 pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
-    let inexact = crate::verdict::REFUSE_FOLD_INEXACT;
+    nets_read(rows).map_err(|_| crate::verdict::REFUSE_FOLD_INEXACT)
+}
+
+/// WHY A FOLD'S NETS DO NOT READ EXACT, by what failed: a transfer half
+/// with no partner, at its row; a party whose net stands below zero on a
+/// lane; or a total past its carrier.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Inexact {
+    UnpairedHalf { row: usize, kind: Kind, at: Option<Place> },
+    BelowZero { who: [u8; 32], net: [i128; 4] },
+    PastCarrier,
+}
+
+/// [`nets_of`], with the reason it refused.
+pub fn nets_read(rows: &[Entry]) -> Result<Nets, Inexact> {
     let mut net: Keyed<[i128; 4]> = Keyed::new();
-    let mut half: Option<&Entry> = None;
-    for e in rows {
+    let mut half: Option<(usize, &Entry)> = None;
+    for (row, e) in rows.iter().enumerate() {
         let sign: i128 = match e.kind {
             Kind::Genesis | Kind::Mint | Kind::Epoch => 1,
             Kind::Burn | Kind::Slash => -1,
             Kind::Stake | Kind::Unstake | Kind::Escrow | Kind::Release | Kind::Revoke => 0,
             Kind::Transfer => match half.take() {
                 None => {
-                    half = Some(e);
+                    half = Some((row, e));
                     -1
                 }
-                Some(debit) => {
+                Some((first, debit)) => {
                     if (debit.at, debit.receipt, debit.mu) != (e.at, e.receipt, e.mu) {
-                        return Err(inexact);
+                        return Err(Inexact::UnpairedHalf { row: first, kind: debit.kind, at: debit.stands_at() });
                     }
                     1
                 }
@@ -71,24 +85,24 @@ pub fn nets_of(rows: &[Entry]) -> Result<Nets, &'static str> {
         }
         net.insert(e.who, n);
     }
-    if half.is_some() {
-        return Err(inexact);
+    if let Some((row, debit)) = half {
+        return Err(Inexact::UnpairedHalf { row, kind: debit.kind, at: debit.stands_at() });
     }
     let mut out = Vec::new();
     let mut total = [0u64; 4];
     // The net this function just accumulated, one entry per party to the
     // fold: every party is paid or the fold is inexact and refuses whole.
     for (who, n) in net.scoped() {
-        let who = <[u8; 32]>::try_from(who.as_slice()).map_err(|_| inexact)?;
+        let who = <[u8; 32]>::try_from(who.as_slice()).map_err(|_| Inexact::PastCarrier)?;
         let mut mu = [0u64; 4];
         for (m, &v) in mu.iter_mut().zip(n) {
-            *m = u64::try_from(v).map_err(|_| inexact)?;
+            *m = u64::try_from(v).map_err(|_| Inexact::BelowZero { who, net: *n })?;
         }
         if lanes_short(&mu).is_empty() {
             continue;
         }
         for (t, &m) in total.iter_mut().zip(&mu) {
-            *t = t.checked_add(m).ok_or(inexact)?;
+            *t = t.checked_add(m).ok_or(Inexact::PastCarrier)?;
         }
         out.push((who, mu));
     }

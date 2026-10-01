@@ -182,6 +182,21 @@ fn check_home(home: &Path) -> ! {
                     scratch.chain().own_len(),
                     scratch.archive().len()
                 );
+                // THE FOLD AS THIS HOME STANDS: where its line would cut, and
+                // whether the ledger and the nets below the cut read exact.
+                match scratch.fold_head() {
+                    Some(head) => {
+                        let rows = scratch.treasury().rows_below(head);
+                        println!(
+                            "  fold: head {} over {} rows — audit {:?}, nets {:?}",
+                            head.print(),
+                            rows.len(),
+                            scratch.treasury().audit().map(|_| "exact"),
+                            mycelium::economy::nets_read(&rows).map(|n| n.rows.len())
+                        );
+                    }
+                    None => println!("  fold: no close to cut at"),
+                }
                 // What this build writes of that state must read back: the
                 // restore reshapes the line (a peer's folded line leaves),
                 // so the next persist is not what was just read.

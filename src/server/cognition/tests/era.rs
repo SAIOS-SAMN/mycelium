@@ -314,6 +314,37 @@ fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
     assert_eq!(witness.verify_fold(home, &p2, &second, &fetched(&k, &p2)), Ok(()), "the second fold verifies on the fetched rows");
 }
 
+/// 78.65 — THE EPOCH ROWS STAND AT THE ROOT THEY NET TO. A court proposes a
+/// fold, and before its witness co-signs it pays out of a balance the fold
+/// will net and closes an orbit. The epoch rows, standing at the root, sit
+/// before that payment in the journal, so the next fold cut at that close
+/// nets the payer from what it held — at the fold node, above the payment,
+/// they were outside the cut and the payer read below zero.
+#[test]
+fn the_epoch_rows_stand_at_the_root_and_the_next_cut_counts_them() {
+    let home = [0x11; 32];
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.orbit();
+    let p = k.propose_fold().expect("a final prefix");
+    // Between the proposal and its co-signature: a payment out of the
+    // funded identity, and a close.
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    let paid_at = k.anchor();
+    let _ = k.treasury.settle_use(home, [0x22; 32], [1, 0, 0, 0], paid_at);
+    k.orbit();
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    let root = k.chain().root().expect("folded");
+    assert!(
+        k.treasury().entries().iter().filter(|e| e.kind == crate::economy::Kind::Epoch).all(|e| e.stands_at() == Some(root.at)),
+        "the epoch rows stand at the root"
+    );
+    let p2 = k.propose_fold().expect("the next cut nets exactly");
+    assert!(p2.root.at > root.at && p2.root.at < k.chain().head_place().expect("a head"), "it cuts between the payment and the fold node");
+    assert_eq!(crate::economy::nets_read(&k.treasury().rows_below(p2.root.at)).map(|n| !n.rows.is_empty()), Ok(true));
+}
+
 /// 78.65 — FINALITY IS PER ITEM. A listing, a provisional word and an
 /// escrow open below the cut hold nothing back: the line folds past them.
 /// The word is still read by its stamp, now in the era: it lapses after the
