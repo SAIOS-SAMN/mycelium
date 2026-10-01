@@ -140,14 +140,19 @@ impl Kernel {
                 crate::observe::note_replication(Some(peer), axis, 1);
             }
             // 78.61 C1 — AND PERCEIVED: both lifted into perception, compared
-            // invariant for invariant, never as written.
+            // lane by lane on TUniversal {S, G, T, H}: coherent where the four
+            // deltas are congruent; else each diverging lane counted apart.
             if let (Some(h), Some(o)) = (from_element_form(rep), from_element_form(&spoken)) {
                 use crate::transducer::sentence::{compare, lift};
-                let axis = match compare(&lift(&h, budget), &lift(&o, budget)).agrees() {
-                    true => rep::PERCEIVED_AGREE,
-                    false => rep::PERCEIVED_RESIDUE,
-                };
-                crate::observe::note_replication(Some(peer), axis, 1);
+                let c = compare(&lift(&h, budget), &lift(&o, budget));
+                if c.coherent() {
+                    crate::observe::note_replication(Some(peer), rep::PERCEIVED_COHERENT, 1);
+                } else if c.unread != (0, 0) {
+                    crate::observe::note_replication(Some(peer), rep::PERCEIVED_UNREAD, 1);
+                }
+                for lane in c.diverging() {
+                    crate::observe::note_replication(Some(peer), rep::RESIDUE_S + lane, 1);
+                }
             }
         }
         if let Some(rep) = &held_rep {
@@ -430,7 +435,30 @@ impl Kernel {
         };
         crate::observe::note_replication(Some(peer), path, 1);
         match outcome {
-            Glue::Admitted => {
+            // 78.63 — AN ATTACHED WORD IS HELD, as an admitted one is. It
+            // glues: it fills a simplex, the same word at another placement,
+            // and the placement is the dislocation recorded on this court's
+            // own section. It was left unheld — `ruled_admit` rules only a
+            // word this court holds, and nothing pushed it — so the peer sent
+            // it again every pass and the orbit never advanced: b attached
+            // 717 peer words in fifteen minutes on 263cc317, every one the
+            // same shear read again. Holding it absorbs the shear; the orbit
+            // advances by it.
+            Glue::Admitted | Glue::Attached => {
+                if matches!(outcome, Glue::Attached) {
+                    if let Some(rep) = held_rep {
+                        if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
+                            if let Some(v) = crate::transducer::stalk::placement_of(&g) {
+                                if let Some(w) = self.word_mut(&rep.address()) {
+                                    w.update(|e| {
+                                        e.record_dislocation(asg.clone(), v, element::FIBER_SPATIAL)
+                                    });
+                                    self.touch_at(&rep.address());
+                                }
+                            }
+                        }
+                    }
+                }
                 if self.basis.get(&addr).is_none()
                     && !(spoken.is_connection() && spoken.letters().is_none())
                 {
@@ -468,21 +496,6 @@ impl Kernel {
                 self.leave_provisional(&addr);
                 self.court_upheld += 1;
                 self.mark_persist();
-            }
-            Glue::Attached => {
-                if let Some(rep) = held_rep {
-                    if let Some(g) = crate::transducer::cech::transition(&rep, &spoken) {
-                        if let Some(v) = crate::transducer::stalk::placement_of(&g) {
-                            if let Some(w) = self.word_mut(&rep.address()) {
-                                w.update(|e| {
-                                    e.record_dislocation(asg, v, element::FIBER_SPATIAL)
-                                });
-                                self.touch_at(&rep.address());
-                            }
-                        }
-                    }
-                }
-                self.ruled_admit(&addr, budget);
             }
             Glue::Dialect | Glue::Slashed(_) => {
                 self.heard_mark(addr, &inv);

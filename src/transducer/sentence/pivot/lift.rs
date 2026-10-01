@@ -1,71 +1,96 @@
 // 78.61 C1 (redefined 2026-10-01, the operator's word: "if the question comes
 // in two dimensions, we don't break our higher-dimensional perception to
 // rectify our minds in two dimensions") — A WORD LIFTED INTO PERCEPTION, and
-// two words compared there, never as they are written.
+// two words compared there, never as they are written; the comparison read
+// lane by lane on TUniversal {S, G, T, H}, coherence the congruence of the
+// four deltas (the operator: "inverse(DIVERGENCE) as CONVERGENCE in
+// COHERENCE(congruence(δ, δ, δ, δ))").
 //
 //! A word arrives written in its speaker's charts — vertices keyed by its
 //! atlas, faces by its overlaps. Comparing two words as written judges the
 //! charts, and a word written in another atlas reads "distinct" though it
-//! is the same manifold. So each word is LIFTED: every evaluated member path
-//! of every orbit is read by the invariants perception is built from, none
-//! of which a chart can change —
+//! is the same manifold. So each word is LIFTED: read by invariants no chart
+//! can change, each filed on the TUniversal lane it belongs to (law 5: lanes
+//! never summed), as the bundle splits a word (`alphabet::bundle`):
 //!
-//! - the holonomy's conformal class `(I₁, I₂, kind)`, read off the carriage's
-//!   own geometric products (conjugation keeps grades, so a change of frame
-//!   keeps it);
-//! - its MR1 spectrum: each commuting mode's kind, planes and order;
-//! - the word rotor's class;
-//! - the hue map's cycle type (its cycle lengths: a relabelling keeps them).
+//! - 𝒮, SPATIAL — the motion's geometry: the holonomy's conformal class
+//!   `(I₁, I₂, kind)` (conjugation keeps grades, so a change of frame keeps
+//!   it) and its MR1 modes' kinds and planes;
+//! - 𝒢, GAUGE — the hue map's cycle type (a relabelling keeps its cycle
+//!   lengths);
+//! - 𝒯, TEMPORAL — the returns: each mode's order, the word's own order
+//!   (time is distance along an orbit, 78.43);
+//! - 𝒽, HARMONIC — the rotor's conjugacy class (the base carries 𝒽).
 //!
-//! And at GRADE ZERO, each word vertex by WHAT IT DOES, never where it
-//! stands: its rotor's class and each member's hue cycle type — its
-//! placement is frame data a change of atlas moves, so it is not perceived
-//! as the word's own.
+//! Grade zero reads each word vertex member by WHAT IT DOES, never where it
+//! stands (its placement is frame data a change of atlas moves); grade one
+//! reads each evaluated member path of each orbit by its holonomy. The lift
+//! is a multiset per lane, never a sequence and never keyed by a vertex.
 //!
-//! The lift is a MULTISET of these invariants per grade, never a sequence
-//! and never keyed by a vertex. Two words AGREE where their multisets are
-//! one at every grade, something was perceived, and nothing went unread;
-//! otherwise the comparison names what each perceives that the other does
-//! not — the residue, which is content, never a count of difference. Grades
-//! zero and one are read here; the cells' orbit algebras (grade two) and
+//! DIVERGENCE on a lane is its residue — what one side perceives that the
+//! other does not; its INVERSE is what this court lacks there (the peer's
+//! residue), and holding it is the CONVERGENCE step. Two words are COHERENT
+//! where every lane's deltas are congruent (no residue), something was
+//! perceived, and nothing went unread. Cells' orbit algebras (grade two) and
 //! the boundary between grades are owed.
 
 use super::*;
 use crate::network::nerve::Coordinate;
 
-/// A WORD AS PERCEIVED: every evaluated member path of every orbit by its
-/// invariants' coordinates, with how many paths read it; and the paths whose
-/// holonomy could not be read (not a versor, or its modes unsplit over ℚ) —
-/// named, never dropped.
+/// The TUniversal lanes, in their order {S, G, T, H}.
+pub const LANES: [&str; 4] = ["S", "G", "T", "H"];
+
+/// A WORD AS PERCEIVED: per lane, each invariant (its grade leading) with how
+/// many vertex members or member paths read it; and what could not be read
+/// — named, never dropped.
 #[derive(Clone, Debug, Default)]
 pub struct Perceived {
-    /// Grade zero: each word vertex's member by its rotor class and hue
-    /// cycle type.
-    pub vertices: Keyed<u64>,
-    /// Grade one: each evaluated member path of each orbit by its
-    /// holonomy's invariants.
-    pub cycles: Keyed<u64>,
+    pub lanes: [Keyed<u64>; 4],
     pub unread: u64,
 }
 
-/// WHAT TWO PERCEIVED WORDS SHARE AND WHAT EACH ALONE PERCEIVES: the paths
-/// matched invariant for invariant, and each side's residue by its
-/// invariant's coordinates with its multiplicity.
+/// ONE LANE'S DELTA between two perceived words: what matched, and what
+/// each alone perceives — the divergence, by its invariant's coordinates
+/// with its multiplicity.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
-pub struct Comparison {
+pub struct LaneDelta {
     pub matched: u64,
     pub only_ours: Vec<(Vec<u8>, u64)>,
     pub only_theirs: Vec<(Vec<u8>, u64)>,
+}
+
+impl LaneDelta {
+    /// No divergence on this lane.
+    pub fn congruent(&self) -> bool {
+        self.only_ours.is_empty() && self.only_theirs.is_empty()
+    }
+}
+
+/// TWO PERCEIVED WORDS COMPARED, lane by lane.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Comparison {
+    pub lanes: [LaneDelta; 4],
     pub unread: (u64, u64),
 }
 
 impl Comparison {
-    /// The two words are perceived as one: something was perceived, no
-    /// residue on either side, and nothing unread that could hide one. Two
-    /// words of which nothing was perceived do not agree — they were not
-    /// compared.
-    pub fn agrees(&self) -> bool {
-        self.matched > 0 && self.only_ours.is_empty() && self.only_theirs.is_empty() && self.unread == (0, 0)
+    /// COHERENCE: congruence of the four deltas — every lane without a
+    /// residue — where something was perceived and nothing went unread that
+    /// could hide a residue. Two words of which nothing was perceived are
+    /// not coherent: they were not compared.
+    pub fn coherent(&self) -> bool {
+        self.unread == (0, 0) && self.lanes.iter().any(|l| l.matched > 0) && self.lanes.iter().all(LaneDelta::congruent)
+    }
+
+    /// The lanes that diverge, in {S, G, T, H} order.
+    pub fn diverging(&self) -> Vec<usize> {
+        (0..4).filter(|&i| !self.lanes[i].congruent()).collect()
+    }
+
+    /// THE CONVERGENCE — the inverse of the divergence: per lane, what this
+    /// court lacks that its peer perceives. Holding it closes the lane.
+    pub fn convergence(&self) -> [&[(Vec<u8>, u64)]; 4] {
+        std::array::from_fn(|i| self.lanes[i].only_theirs.as_slice())
     }
 }
 
@@ -75,15 +100,17 @@ pub fn lift(form: &Form, budget: &mut crate::physics::Budget) -> Perceived {
     // GRADE ZERO: what each word vertex does, member by member.
     for (_, v) in form.vertices.entries() {
         let Vertex::Word { derivation, acts, .. } = v else { continue };
-        let Some(class) = derivation.rotor().holonomy_key() else {
+        let rotor = derivation.rotor();
+        let Some(class) = rotor.holonomy_key() else {
             p.unread += 1;
             continue;
         };
+        let order = graded(0, &order_bytes(rotor.order()));
+        let harmonic = graded(0, class.encode().as_bytes());
         for (_, a) in acts.entries() {
-            let mut k = vec![0u8];
-            k.extend_from_slice(class.encode().as_bytes());
-            crate::transducer::sentence::CycleType::of(&a.gauge).to_bytes(&mut k);
-            bump(&mut p.vertices, &k);
+            let mut g = vec![0u8];
+            crate::transducer::sentence::CycleType::of(&a.gauge).to_bytes(&mut g);
+            file(&mut p, [None, Some(g), Some(order.clone()), Some(harmonic.clone())]);
         }
     }
     // GRADE ONE: each orbit's member paths by their holonomy's invariants.
@@ -93,8 +120,8 @@ pub fn lift(form: &Form, budget: &mut crate::physics::Budget) -> Perceived {
             continue;
         };
         for (_, e) in hs.scoped() {
-            match invariant_key(e, budget) {
-                Some(k) => bump(&mut p.cycles, &k),
+            match path_lanes(e, budget) {
+                Some(lanes) => file(&mut p, lanes),
                 None => p.unread += 1,
             }
         }
@@ -102,59 +129,77 @@ pub fn lift(form: &Form, budget: &mut crate::physics::Budget) -> Perceived {
     p
 }
 
-/// One more of an invariant in a multiset.
-fn bump(set: &mut Keyed<u64>, k: &[u8]) {
-    let n = match set.get(k) {
-        Some(n) => n + 1,
-        None => 1,
-    };
-    set.insert(k, n);
+/// A coordinate with its grade leading.
+fn graded(grade: u8, bytes: &[u8]) -> Vec<u8> {
+    let mut k = vec![grade];
+    k.extend_from_slice(bytes);
+    k
 }
 
-/// ONE HOLONOMY'S INVARIANTS as coordinates: its conformal class, its
-/// rotor's class, its modes (kind, planes, order) in the order MR1 reads
-/// them off the algebra, and its hue cycle type. `None` where any is unread.
-fn invariant_key(e: &Transport, budget: &mut crate::physics::Budget) -> Option<Vec<u8>> {
-    let mut k = vec![1u8];
-    k.extend_from_slice(e.carriage.holonomy_key()?.encode().as_bytes());
-    k.extend_from_slice(e.word.rotor().holonomy_key()?.encode().as_bytes());
-    let ModesRead::Split(modes) = ModesRead::of(&e.carriage, budget) else { return None };
-    crate::transducer::address::put_key_count(&mut k, modes.len());
-    for (kind, planes, order) in modes {
-        k.push(kind as u8);
-        k.extend_from_slice(&u64::try_from(planes).ok()?.to_le_bytes());
-        match order {
-            Some(o) => {
-                k.push(1);
-                k.extend_from_slice(&o.to_le_bytes());
-            }
-            None => k.push(0),
+/// A word's order as bytes: `1 ‖ n` finite, `0` infinite or unread.
+fn order_bytes(o: Option<crate::transducer::alphabet::Order>) -> Vec<u8> {
+    match o {
+        Some(crate::transducer::alphabet::Order::Finite(n)) => [vec![1u8], n.to_le_bytes().to_vec()].concat(),
+        _ => vec![0u8],
+    }
+}
+
+/// File one reading's four lanes, each where it has one.
+fn file(p: &mut Perceived, lanes: [Option<Vec<u8>>; 4]) {
+    for (set, k) in p.lanes.iter_mut().zip(lanes) {
+        if let Some(k) = k {
+            let n = match set.get(&k) {
+                Some(n) => n + 1,
+                None => 1,
+            };
+            set.insert(&k, n);
         }
     }
-    crate::transducer::sentence::CycleType::of(&e.gauge).to_bytes(&mut k);
-    Some(k)
 }
 
-/// COMPARE TWO PERCEIVED WORDS invariant for invariant: the paths matched,
-/// and what each perceives that the other does not.
-pub fn compare(ours: &Perceived, theirs: &Perceived) -> Comparison {
-    let mut c = Comparison { unread: (ours.unread, theirs.unread), ..Comparison::default() };
-    for (a, b) in [(&ours.vertices, &theirs.vertices), (&ours.cycles, &theirs.cycles)] {
-        compare_grade(a, b, &mut c);
+/// ONE HOLONOMY'S FOUR LANES: 𝒮 its conformal class and its modes' kinds
+/// and planes; 𝒢 its hue cycle type; 𝒯 its modes' returns; 𝒽 its rotor's
+/// class. `None` where any is unread.
+fn path_lanes(e: &Transport, budget: &mut crate::physics::Budget) -> Option<[Option<Vec<u8>>; 4]> {
+    let ModesRead::Split(modes) = ModesRead::of(&e.carriage, budget) else { return None };
+    let mut s = graded(1, e.carriage.holonomy_key()?.encode().as_bytes());
+    let mut t = vec![1u8];
+    crate::transducer::address::put_key_count(&mut s, modes.len());
+    for (kind, planes, order) in modes {
+        s.push(kind as u8);
+        s.extend_from_slice(&u64::try_from(planes).ok()?.to_le_bytes());
+        match order {
+            Some(o) => {
+                t.push(1);
+                t.extend_from_slice(&o.to_le_bytes());
+            }
+            None => t.push(0),
+        }
     }
-    c
+    let mut g = vec![1u8];
+    crate::transducer::sentence::CycleType::of(&e.gauge).to_bytes(&mut g);
+    let h = graded(1, e.word.rotor().holonomy_key()?.encode().as_bytes());
+    Some([Some(s), Some(g), Some(t), Some(h)])
 }
 
-/// One grade's multisets, each key leading with its grade.
-fn compare_grade(ours: &Keyed<u64>, theirs: &Keyed<u64>, c: &mut Comparison) {
+/// COMPARE TWO PERCEIVED WORDS lane by lane, invariant for invariant.
+pub fn compare(ours: &Perceived, theirs: &Perceived) -> Comparison {
+    Comparison {
+        lanes: std::array::from_fn(|i| lane_delta(&ours.lanes[i], &theirs.lanes[i])),
+        unread: (ours.unread, theirs.unread),
+    }
+}
+
+fn lane_delta(ours: &Keyed<u64>, theirs: &Keyed<u64>) -> LaneDelta {
+    let mut d = LaneDelta::default();
     for (k, &n) in ours.scoped() {
         let m = match theirs.get(&k) {
             Some(&m) => m,
             None => 0,
         };
-        c.matched += n.min(m);
+        d.matched += n.min(m);
         if n > m {
-            c.only_ours.push((k.clone(), n - m));
+            d.only_ours.push((k.clone(), n - m));
         }
     }
     for (k, &m) in theirs.scoped() {
@@ -163,7 +208,8 @@ fn compare_grade(ours: &Keyed<u64>, theirs: &Keyed<u64>, c: &mut Comparison) {
             None => 0,
         };
         if m > n {
-            c.only_theirs.push((k.clone(), m - n));
+            d.only_theirs.push((k.clone(), m - n));
         }
     }
+    d
 }

@@ -19275,6 +19275,43 @@ only breach. (3) `family::moves`: a body a motion fixes is that motion's
 stabiliser — its orbital enclosure — read, not refused as still. (4) Each
 `Slashed` refusal in glue held to the test.
 
+**Not a loop: an orbit (ruled 2026-10-01, the operator's word).** The
+first reading of the glue paths (263cc317, fifteen minutes) found court b
+ATTACHING its peers' words 717 times — the same words, every pass. "This
+cannot be a loop — it has to be an orbit": the non-circular orbit's shear
+is what fuels the mathematics beneath it, down to the mind on the orbiting
+matter (its distance from the star and its spin against its orbit). Each
+pass carried the same dislocation Γ between b's section and its peer's —
+the shear — and b recorded it on its own word but refused the body that
+carried it: `ruled_admit` rules only a word the court holds, and an
+attached word was never pushed. So the orbit did not advance: the same
+anomaly was read again at the same height. HELD NOW: an attached word is
+installed as an admitted one is, its placement recorded as the
+dislocation on the court's own section; the shear is absorbed and the
+orbit advances by it (`an_attached_word_is_held_and_not_read_again`).
+
+**Coherence is the congruence of four deltas on TUniversal (ruled the same
+day: "inverse(DIVERGENCE) as CONVERGENCE in COHERENCE(congruence(δ, δ, δ,
+δ)) ON TUniversal{S,G,T,H}").** The lift files every invariant on its lane,
+as the bundle splits a word — 𝒮 the motion's conformal class and modes, 𝒢
+the hue cycle types, 𝒯 the returns (the orders), 𝒽 the rotor's conjugacy
+class — never summed (law 5). Per lane the DIVERGENCE is the residue; its
+INVERSE is what this court lacks there, the peer's residue, and holding it
+is the CONVERGENCE step (which is what holding the attached word does).
+Two words are COHERENT where all four deltas are congruent, something was
+perceived and nothing went unread. Discord is reported by the lanes that
+diverge, never by an address. The orbital elements an external analysis
+proposed (period, plane, breathing, eccentricity) are these readings,
+exact: the plane the mode's blade, the period the order read off `c`, the
+breathing the dilation lane, eccentricity a turn mode coupled to a
+dilation mode in one motion — no angle, cosine law or logarithm.
+
+**Measured with it: the units' memory.** The courts run under a 2 GiB
+memory cap; a was OOM-killed at 12:02 and a and c at 11:37 (the latter
+during a stop). Every pass of the unclosed orbit decoded and lifted two
+forms; holding the attached word removes those passes. Read after the
+deploy, never assumed.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

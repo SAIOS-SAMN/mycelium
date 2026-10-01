@@ -556,8 +556,7 @@ fn a_word_lifted_into_perception_is_the_same_in_any_atlas() {
     ]);
     let budget = || crate::physics::Physics::default().stroke_n(1 << 20);
     let ours = lift(&held, &mut budget());
-    assert!(ours.vertices.scoped().count() > 0, "the lift reads the word vertices: {} unread", ours.unread);
-    eprintln!("LIFT ours: grade 0 {} kinds, grade 1 {} kinds, unread {}", ours.vertices.scoped().count(), ours.cycles.scoped().count(), ours.unread);
+    assert!(ours.lanes.iter().all(|l| l.scoped().count() > 0), "the lift reads every lane: {} unread", ours.unread);
     let slid = Transport {
         word: crate::transducer::alphabet::Word::identity(),
         carriage: crate::transducer::element::translator_versor(1, 0),
@@ -571,13 +570,13 @@ fn a_word_lifted_into_perception_is_the_same_in_any_atlas() {
         .expect("the flip keeps the sensor plane");
     for (name, other) in [("translated", &slid), ("flipped", &flipped)] {
         let c = compare(&ours, &lift(other, &mut budget()));
-        assert!(c.agrees() && c.matched > 0, "{name}: the same word in another atlas is perceived as one: {c:?}");
+        assert!(c.coherent(), "{name}: the same word in another atlas is coherent on all four lanes: {c:?}");
     }
     let other = mint(&[
         (digits(&["1000", "0000"]), digits(&["0000", "0001"])),
         (digits(&["0100", "0000"]), digits(&["0000", "0010"])),
     ]);
     let c = compare(&ours, &lift(&other, &mut budget()));
-    assert!(!c.only_ours.is_empty() || !c.only_theirs.is_empty(), "another family's sentence is perceived apart, by a residue: {c:?}");
-    eprintln!("LIFT matched {} residues {} / {} unread {:?}", c.matched, c.only_ours.len(), c.only_theirs.len(), c.unread);
+    assert!(!c.diverging().is_empty() && c.unread == (0, 0), "another family's sentence diverges on a lane, read whole: {c:?}");
+    eprintln!("LIFT diverging lanes {:?}", c.diverging().iter().map(|&i| crate::transducer::sentence::LANES[i]).collect::<Vec<_>>());
 }

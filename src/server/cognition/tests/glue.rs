@@ -331,7 +331,7 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
     let mut glue = own.stroke();
     let _ = own.glue_fetched(spoken.clone(), same_peer, me, &mut cover, &mut glue);
     assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
-    assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_AGREE]), Some(1), "and is perceived as one: {:?}", axes(same_peer));
+    assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent on all four lanes: {:?}", axes(same_peer));
     let paths = |a: [u64; crate::observe::REP_AXES]| (rep::GLUE_HEARD..=rep::GLUE_ADMITTED).map(|i| a[i]).sum::<u64>();
     assert_eq!(axes(same_peer).map(paths), Some(1), "the word left the glue by exactly one path: {:?}", axes(same_peer));
     let held = from_element_form(&spoken).expect("a sentence");
@@ -350,5 +350,42 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
         "a translation of it reads as a refraction ({outcome:?}): {:?}",
         axes(refracting_peer)
     );
-    assert_eq!(axes(refracting_peer).map(|a| a[rep::PERCEIVED_AGREE]), Some(1), "and is perceived as the same word: {:?}", axes(refracting_peer));
+    assert_eq!(axes(refracting_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent with it: {:?}", axes(refracting_peer));
+}
+
+/// 78.63 — AN ATTACHED WORD IS HELD. A peer's word the same as this court's
+/// section but at another placement glues as Attached; it was left unheld,
+/// so the peer sent it again on every pass and the orbit never advanced.
+/// Now it is held — in the basis and the ruled cover, so the next fetch's
+/// have-list carries it and the same shear is not read again.
+#[test]
+fn an_attached_word_is_held_and_not_read_again() {
+    let me = [0x2au8; 32];
+    let peer = [0x2bu8; 32];
+    let word = |x: i64| {
+        crate::transducer::element::from_connection(
+            &crate::transducer::alphabet::Word::identity(),
+            &crate::transducer::element::translator_versor(x, 0),
+            &[(1, 2), (2, 1)],
+            &Vec::new(),
+            [1, 1, 0, 0],
+        )
+        .expect("a connection")
+    };
+    let mut own = Kernel::new();
+    own.bind_identity(me);
+    let held = word(1);
+    assert_eq!(own.perceive_speech([1; 32], &[0; 32], std::slice::from_ref(&held)), vec![crate::anastome::dialogue::SPEECH_STOOD]);
+    own.court_stroke();
+    let theirs = word(2);
+    let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = own.stroke();
+    let outcome = own.glue_fetched(theirs.clone(), peer, me, &mut cover, &mut glue);
+    if outcome == Glue::Attached {
+        assert!(own.word_at(theirs.address().as_bytes()).is_some(), "the attached word is held");
+        let inv = crate::transducer::stalk::invariant_of(&theirs);
+        assert!(own.fetch_have(&inv).iter().any(|a| a.as_slice() == theirs.address().as_bytes()), "and the next fetch's have-list carries it");
+    } else {
+        panic!("the fixture must attach: it glued {outcome:?}");
+    }
 }

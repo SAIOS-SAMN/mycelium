@@ -20,7 +20,7 @@ pub mod circuit;
 pub mod words;
 
 pub use census::*;
-pub use lift::{compare, lift, Comparison, Perceived};
+pub use lift::{compare, lift, Comparison, LaneDelta, Perceived, LANES};
 pub use moves::*;
 pub use snap::*;
 pub use cells::{PivotCells, PivotTally};

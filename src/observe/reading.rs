@@ -619,9 +619,15 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("relation_unspellable", "fetched sentences one rotor conjugates onto and the alphabet cannot spell"),
     ("relation_distinct", "fetched sentences no one motion relates to this court's section"),
     // 78.61 C1 — THE SAME, PERCEIVED: both words lifted into perception
-    // (their invariants per grade, never their charts) and compared there.
-    ("perceived_agree", "fetched sentences perceived as this court's section: every invariant matched, nothing unread"),
-    ("perceived_residue", "fetched sentences perceived apart: a residue of invariants on one side or both, or unread"),
+    // and compared lane by lane on TUniversal {S, G, T, H}: COHERENT where
+    // the four deltas are congruent; otherwise each diverging lane counted
+    // apart (never summed), and what could not be read apart from both.
+    ("perceived_coherent", "fetched sentences coherent with this court's section: congruent on all four lanes"),
+    ("perceived_unread", "fetched sentences whose lift could not be read whole on one side or both"),
+    ("residue_s", "fetched sentences diverging on the spatial lane (the motion's class and modes)"),
+    ("residue_g", "fetched sentences diverging on the gauge lane (the hue cycle types)"),
+    ("residue_t", "fetched sentences diverging on the temporal lane (the returns)"),
+    ("residue_h", "fetched sentences diverging on the harmonic lane (the rotor classes)"),
     // 78.63 — WHICH PATH OF THE GLUE EACH FETCHED WORD LEFT BY, one per
     // word: the refusals held to the test (does it name a law?).
     ("glue_heard", "fetched words already heard on their chart, held as dialect"),
@@ -637,7 +643,7 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 38;
+pub const REP_AXES: usize = 42;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -670,17 +676,19 @@ pub mod rep {
     pub const RELATION_CONJUGATE: usize = 24;
     pub const RELATION_UNSPELLABLE: usize = 25;
     pub const RELATION_DISTINCT: usize = 26;
-    pub const PERCEIVED_AGREE: usize = 27;
-    pub const PERCEIVED_RESIDUE: usize = 28;
-    pub const GLUE_HEARD: usize = 29;
-    pub const GLUE_REPLAY_REFUSED: usize = 30;
-    pub const GLUE_COLOUR_UNPROVEN: usize = 31;
-    pub const GLUE_CITATION_MISSING: usize = 32;
-    pub const GLUE_GATE_REFUSED: usize = 33;
-    pub const GLUE_TORSION_REFUSED: usize = 34;
-    pub const GLUE_CLASS_DIALECT: usize = 35;
-    pub const GLUE_ATTACHED: usize = 36;
-    pub const GLUE_ADMITTED: usize = 37;
+    pub const PERCEIVED_COHERENT: usize = 27;
+    pub const PERCEIVED_UNREAD: usize = 28;
+    /// The first of the four lane residues, S G T H in order.
+    pub const RESIDUE_S: usize = 29;
+    pub const GLUE_HEARD: usize = 33;
+    pub const GLUE_REPLAY_REFUSED: usize = 34;
+    pub const GLUE_COLOUR_UNPROVEN: usize = 35;
+    pub const GLUE_CITATION_MISSING: usize = 36;
+    pub const GLUE_GATE_REFUSED: usize = 37;
+    pub const GLUE_TORSION_REFUSED: usize = 38;
+    pub const GLUE_CLASS_DIALECT: usize = 39;
+    pub const GLUE_ATTACHED: usize = 40;
+    pub const GLUE_ADMITTED: usize = 41;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
