@@ -63,20 +63,15 @@ fn one_ring(family: &[(Grid, Grid)]) -> Option<u8> {
     rings
 }
 
-/// Does a contact word orbit on every input of the family (22)? A word
-/// whose first step leaves the ring unchanged returns `NoOrbit`, and the
-/// court refuses it (23.1 step 6); the voice does not mint it.
+/// Does a contact word move the body on every input of the family (22)? A
+/// word whose motion fixes the body as a set stands still, and the court
+/// refuses it (23.1 step 6); the voice does not mint it.
 fn orbits_everywhere(v: &Vertex, family: &[(Grid, Grid)]) -> bool {
     let Vertex::Word { derivation, .. } = v else { return false };
     if derivation.rotor().projective_eq(&crate::transducer::alphabet::Rotor::identity()) {
         return false;
     }
-    family.iter().all(|(x, _)| {
-        let painted = crate::arc::painted_of_grid(x);
-        let frame = (x.len(), crate::arc::grid_width(x));
-        let anchor: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).collect();
-        !matches!(orbit(v, &painted, &anchor, frame), OrbitEnd::NoOrbit)
-    })
+    family.iter().all(|(x, _)| moves(v, &crate::arc::painted_of_grid(x)))
 }
 
 /// Step 6 of chapter 21: a class whose placement differs across frames

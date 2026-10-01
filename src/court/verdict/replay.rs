@@ -669,7 +669,7 @@ pub(crate) fn vertex_tape_and_moves(
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     spoken: &Element,
 ) -> Option<Refusal> {
-    use crate::transducer::family::{self, OrbitEnd};
+    use crate::transducer::family;
     use crate::transducer::sentence::Measure;
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
     for (vertex, v) in f.vertices.entries() {
@@ -698,11 +698,9 @@ pub(crate) fn vertex_tape_and_moves(
                     }
                     if let Some(fam) = family {
                         for (x, _) in fam {
-                            let painted = crate::arc::painted_of_grid(x);
-                            // A grid with no rows has no width.
-                            let frame = (x.len(), crate::arc::grid_width(x));
-                            let anchor: Vec<(i64, i64)> = painted.iter().map(|&(r, c, _)| (r, c)).collect();
-                            if matches!(family::orbit(v, &painted, &anchor, frame), OrbitEnd::NoOrbit) {
+                            // THE MOTION MOVES THE BODY, read by one exact
+                            // application (78.62) — never a walk.
+                            if !family::moves(v, &crate::arc::painted_of_grid(x)) {
                                 return Some(still());
                             }
                         }

@@ -19203,6 +19203,27 @@ commuting invariant plane, never summed, signed by the Lorentzian kind.
    reorients the constellation rather than destabilizing it, and
    curvature is content.
 
+**The walker retired from the orbit (2026-10-01, the operator's word:
+"does the underlying logic need to be reworked — start").** "Step" was
+renamed where the MOTION ruling retires it (e7bfaf2a), and the one place a
+court still judged by a walker's bookkeeping was reworked: chapter 22's
+orbit march carried a body one application at a time, kept a set of seen
+grid states to find a return, measured contact by a hop-distance shell
+(`ring_dist_peel`, "not a metric") and stopped at a cap from the grid's
+extent. Its two readers — the court's `REFUSE_ORBIT_STILL` in replay and
+the voice's mint gate — asked only whether the body MOVES, with the body
+its own anchor, and the first application decides that. It is now one
+exact application (`family::moves`): the body read as its set of sites,
+carried once, still where its image is non-empty and inside its own sites.
+Measured before the march was removed: 680 of 680 cases agreed (every
+letter, both ways, four placements, five bodies; 350 moving, 330 still).
+Owed, named: the CONTACT RING (`contact::one_ring`) is the same hop-distance
+shell, read to the frame's edge; it is written into the contact word's
+address, so its reading in the algebra is a change of address and waits on
+its own row. The order of a motion is still found by iterating its powers to
+the cyclotomic bound in places; MR1's rational point `c` fixes it (1, −1,
+−½, 0, ½ → 1, 2, 3, 4, 6), owed next.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

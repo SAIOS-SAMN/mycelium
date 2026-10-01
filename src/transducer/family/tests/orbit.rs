@@ -3,55 +3,26 @@
 
 use crate::transducer::family::*;
 
-/// Contact when the first step moves the ring; NoOrbit when it does not.
+/// A WORD THAT MOVES THE BODY moves it; a still word does not; a contact
+/// word with a placement moves it — read by one exact application (78.62).
 #[test]
-fn orbit_contact_and_no_orbit() {
+fn a_vertex_moves_the_body_or_stands_still() {
 let zero = q(0);
 let one = q(1);
-let moving = Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(
-        crate::transducer::alphabet::Word::identity(),
-    ),
-    Invariant::default(),
-    Box::new(element::carriage(&one.clone(), &(zero.clone(), one.clone()))),
-    Vec::new(),
-    [0u64],
-    None,
-);
-let still = Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(
-        crate::transducer::alphabet::Word::identity(),
-    ),
-    Invariant::default(),
-    Box::new(element::carriage(&one, &(zero.clone(), zero))),
-    Vec::new(),
-    [0u64],
-    None,
-);
+let word = |carriage: element::Versor, contact| {
+    Vertex::word_on(
+        crate::transducer::alphabet::Derivation::spelled(crate::transducer::alphabet::Word::identity()),
+        Invariant::default(),
+        Box::new(carriage),
+        Vec::new(),
+        [0u64],
+        contact,
+    )
+};
 let painted = vec![(0i64, 0i64, 1u8)];
-let anchor = vec![(0i64, 3i64)];
-let frame = (5usize, 5usize);
-match orbit(&moving, &painted, &anchor, frame) {
-    OrbitEnd::Contact { steps, .. } => assert!(steps >= 1, "contact takes at least one step"),
-    other => panic!("expected Contact, got {other:?}"),
-}
-assert_eq!(
-    orbit(&still, &painted, &anchor, frame),
-    OrbitEnd::NoOrbit,
-    "a still word has no orbit"
-);
-let with_c = Vertex::word_on(
-    crate::transducer::alphabet::Derivation::spelled(
-        crate::transducer::alphabet::Word::identity(),
-    ),
-    Invariant::default(),
-    Box::new(element::carriage(&q(1), &(q(0), q(1)))),
-    Vec::new(),
-    [0u64],
-    Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 }),
-);
-match orbit(&with_c, &painted, &anchor, frame) {
-    OrbitEnd::Contact { .. } | OrbitEnd::LeftFrame { .. } | OrbitEnd::Torsion { .. } => {}
-    OrbitEnd::NoOrbit => panic!("contact word must orbit"),
-}
+assert!(moves(&word(element::carriage(&one, &(zero.clone(), one.clone())), None), &painted), "a placement moves the body");
+assert!(!moves(&word(element::carriage(&one, &(zero.clone(), zero.clone())), None), &painted), "a still word has no orbit");
+let contact = Some(crate::transducer::alphabet::Contact { anchor: 0, ring: 0 });
+assert!(moves(&word(element::carriage(&q(1), &(q(0), q(1))), contact), &painted), "a contact word must move the body");
+assert!(!moves(&word(element::carriage(&one, &(zero, one.clone())), None), &[]), "an empty body has nothing to move");
 }
