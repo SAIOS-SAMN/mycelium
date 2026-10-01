@@ -19024,6 +19024,119 @@ complex from the record (a recut, 78.60 (e)).
 **Order.** C0, C1, C2, C3, C4; each lands with its test by the algebra and
 its typed reading, and is read on the fleet before the next.
 
+**Amended (2026-10-01, the operator's word: "no component of this logic
+should be stuck in linearity"; two external analyses read against the
+laws by the implementor).** The plan above held five flat assumptions —
+one rigid Γ per form, an ordered peel, a single transport per relay, glue
+pairwise, one verdict per sentence — and the live reading showed the
+manifold through them: 529 sentences conjugate to a held word with the
+placement varying vertex by vertex, a connection, not a rigid motion.
+Ruled in their place:
+(a) *A relation is a non-abelian connection on the atlas.* Two forms are
+compared face by face (the pivot machinery's overlaps, orbits, axes); a
+path's transport is the product in the order the path traverses it — an
+order the geometry gives, never an axis order imposed — and each face's
+holonomy is read as its CLASS (gauge-invariant), never a raw element at a
+chosen base. One global Γ is the special case where every face is flat.
+(b) *Grades are coupled by the boundary* — the containment protocol. A
+curved face is consistent only where its enclosing cell's faces, carried
+to one base, compose to the identity (the discrete non-abelian
+Stokes–Bianchi condition); curvature at grade k is boundary data at
+k + 1; expansion inside is held against collapse around it by the
+dilation lane composing to unity on every closed boundary.
+(c) *Lift and drag are read in the moving frame.* 78.46's split is taken
+against the orbit's blade carried step by step; around a closed orbit the
+accumulated lift is the anholonomy, read as the holonomy's class.
+(d) *C0 is AL1 on MR1*, not a repair of the ordered peel (the repair was
+written and reverted: it took refusals from 272 to 346 of the 1156
+products of two letters). The factoriser splits a rotor into MR1's
+commuting modes; a mode on a plane a letter acts on is peeled there (the
+180° mode is its plane's blade, MR1 by construction); a TILTED mode is
+spelled by refraction — conjugated onto a letter plane, its conjugator
+solved exactly (`simultaneous_conjugators`) — and its word is the witness.
+(e) *The coining boundary has three readings, not one.* Spelled (directly
+or by refraction, with its witness): derivable, no docket. An arithmetic
+demand (the right plane, a prime or a rational angle no held letter
+carries — 37.7's `RotorPrime`): a letter docket, as today. A new
+direction (outside what the even letters generate: a boost, a dilation,
+a translation, or an odd element of Cl(4,1)): AL1's constructor docket. A
+Lie-rank increment alone decides nothing here: the seventeen act on all
+six planes, so their algebra is all of 𝔰𝔬(4) and every rotor's increment
+is zero.
+(f) *Refused from the analyses, each against a law.* Logarithms and the
+BCH series (not exact over ℚ: precision is the rule); "log(V_v Ṽ_u) =
+½[B_u, B_v]" (false; the bridge is the rational relative versor itself,
+split by MR1); adjoining "B_u ∧ B_v" (a 4-vector, not a generator; 𝔰𝔬(4,1)
+already holds every bivector of Cl(4,1)); the triad "area" formula (a
+vector over scalars, no rational scalar). Kept for perception, not for
+C1: oriented-blade rigidity at grades 3 and 4 (parity, torsion), compared
+projectively with its orientation sign; the angular-momentum bivector.
+Sentences are forms, not bodies, and moments are read on bodies.
+C1 is therefore: per form pair, the connection face by face, each face's
+holonomy class, lift and drag in the moving frame, the dilation lane,
+and the boundary check from grade to grade — read over the 529.
+
+### 78.62 The physics split: the hypha holds the laws, an uplinked kernel composes its bodies, the court decompiles the laws into its own cognition (ruled 2026-10-01, the operator's word)
+
+**The ruling.** The hypha server exports the universal physics to every
+kernel that uplinks — client, world, a xylarium universe — so all of them
+compose celestial matter (orbits, spins, tilt, stability, angular
+momentum) under one law set, and the server runs ITSELF by the same laws.
+Three layers, every quantity exact over ℚ:
+
+**L0 — the law register (the hypha's, universal).** 78.59's five laws —
+conformal kinematics in Cl(4,1)/ℚ; momentum (τ_net = τ_ext = 0); metric
+rigidity; temporal monotonicity; conservative flow into e_∅ — each a typed
+entry with an address (its coordinate), a version, its statement, and the
+register axioms that bind it (A10.1, A.13, 78.58). An amendment is a new
+version; a fork that changes a law is a new universe (78.59, Ruling 1).
+Laws are predicates, never generators (the star is the axioms). Served by
+address to every uplinking kernel.
+
+**L1 — the celestial composition (the uplinked kernel's).** The kernel
+computes its world; the hypha verifies. A body is its ground (κ, ℓ, B₀,
+g), its orbit mode and spin mode (MR1), its momentum Π = M₂(B) (A.13). A
+transition is the motor between two heights, each body before and after,
+and the hue relation it carries; the world's own mathematics is
+Cl(4,1)/I_local, an ideal, never a replacement of L0.
+
+**L2 — the court's cognition (the server's own).** The court does not
+simulate: it REPLAYS each transition against L0 and answers typed —
+admitted; admitted with the external torques each body exchanged docketed;
+or refused, every breach named with its law (never only the first). And
+the court reads ITSELF by the same laws: agreement among courts is the
+balance of the torque around the court triangle per chart (flat holonomy
+— 78.61's compound eye; a discordant stratum is a measured torque with a
+class, not a count); catch-up is momentum carried along an orbit, a word
+no one carried an external torque owed; the court's rhythms (aperture,
+fold, persist) are orbits measured in heights (78.43); the reserve and
+tuition are conservation.
+
+**Exact everywhere, no irrational quantity anywhere.** A turn of finite
+order is served as exact degrees 360·t/ℓ, any other as its rational point
+(`c`, `K` of `(1 + c) + K`) with its sector; tilt is the lift/drag pair
+compared projectively, never an angle; precession is the class of the spin
+plane's holonomy over one return; stability is the net torque compared
+with zero exactly; expansion against collapse is ρ's product around a
+closed cycle against unity; MR1 refuses by name where a split would need
+an irrational root. No square root, logarithm, angle or decimal.
+
+**Implementation, in order.**
+1. `physics::laws`: the register (five typed laws, each addressed under a
+   new coordinate kind `TAG_LAW`, versioned) and ONE verifier of a
+   transition composed from the predicates the voice already perceives
+   with (`tensegrity::{rigid, external_torque, carried_body}`, MR1's
+   `motion_modes`, `is_fibre_relation`) — one implementation shared by
+   perception and the court (law 12). Every breach named, never the first
+   only; the external torques that cancel docketed, a net that does not
+   refused.
+2. The celestial wire types and their exact codecs in the wire contract
+   crate (Phase 1 item 5), and the register act by address and version.
+3. The court's verifier act for uplinked transitions, with its typed
+   reading.
+4. Court agreement re-read as balance around the court triangle (Phase 1
+   item 1), through 78.61's C3.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
