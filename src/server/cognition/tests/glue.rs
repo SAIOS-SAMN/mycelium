@@ -305,3 +305,46 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     assert_eq!(peer_sec.carriage, exp_carriage);
 }
 
+
+/// PHASE 1 ITEM 1 — A PEER'S SENTENCE IS READ AGAINST THIS COURT'S SECTION ON
+/// ITS CHART, exactly, and counted per peer: this court's own word read back
+/// is the same word; the same word refracted by a translation reads as a
+/// refraction (the instrument the court-triangle balance is read from).
+#[test]
+fn a_peers_sentence_is_read_against_this_courts_section() {
+    use crate::observe::rep;
+    use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
+    let me = [0x1au8; 32];
+    let (same_peer, refracting_peer) = ([0x1bu8; 32], [0x1cu8; 32]);
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    let mut own = Kernel::new();
+    own.bind_identity(me);
+    assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
+    assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
+    let spoken = own.provisional.scoped().next().unwrap().1.clone();
+    own.court_stroke();
+    let axes = |peer: [u8; 32]| {
+        crate::observe::replication().signers.into_iter().find(|(k, _)| *k == peer).map(|(_, a)| a)
+    };
+    let mut cover = crate::network::nerve::Cover::new();
+    let mut glue = own.stroke();
+    let _ = own.glue_fetched(spoken.clone(), same_peer, me, &mut cover, &mut glue);
+    assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
+    let held = from_element_form(&spoken).expect("a sentence");
+    let moved = Transport {
+        word: crate::transducer::alphabet::Word::identity(),
+        carriage: crate::transducer::element::translator_versor(1, 0),
+        gauge: Vec::new(),
+    }
+    .refract(&held)
+    .and_then(|f| as_element_form(&f, spoken.magnitude()))
+    .expect("the refracted sentence is a word");
+    let outcome = own.glue_fetched(moved, refracting_peer, me, &mut cover, &mut glue);
+    assert_eq!(
+        axes(refracting_peer).map(|a| a[rep::RELATION_REFRACTED]),
+        Some(1),
+        "a translation of it reads as a refraction ({outcome:?}): {:?}",
+        axes(refracting_peer)
+    );
+}

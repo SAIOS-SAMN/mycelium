@@ -115,6 +115,27 @@ impl Kernel {
         let self_rep = cx.sections.get(self_id.as_slice()).map(|s| s.addr.clone());
         let mut outcome = Glue::Admitted;
         let held_rep = self_rep.and_then(|a| self.word_at(&a).cloned());
+        // PHASE 1 ITEM 1, 78.62 STEP 4 — WHAT THE PEER'S SENTENCE IS to this
+        // court's own section on its chart, read exactly and counted per
+        // peer: the instrument the court-triangle balance is read from. A
+        // reading only: what is admitted below is unchanged.
+        if let Some(rep) = held_rep.as_ref().filter(|r| r.is_sentence() && spoken.is_sentence()) {
+            use crate::observe::rep;
+            use crate::transducer::sentence::{from_element_form, relation, Relation};
+            let axis = match (rep.address() == addr, from_element_form(rep), from_element_form(&spoken)) {
+                (true, _, _) => Some(rep::RELATION_SAME),
+                (false, Some(h), Some(o)) => Some(match relation(&h, &o) {
+                    Relation::Refracted(_) => rep::RELATION_REFRACTED,
+                    Relation::Conjugate(_) => rep::RELATION_CONJUGATE,
+                    Relation::Unspellable(_) => rep::RELATION_UNSPELLABLE,
+                    Relation::Unrelated => rep::RELATION_DISTINCT,
+                }),
+                (false, _, _) => None,
+            };
+            if let Some(axis) = axis {
+                crate::observe::note_replication(Some(peer), axis, 1);
+            }
+        }
         if let Some(rep) = &held_rep {
             match crate::transducer::cech::transition(rep, &spoken) {
                 None => {}

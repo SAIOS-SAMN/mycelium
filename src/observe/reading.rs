@@ -608,11 +608,21 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // Phase 1 item 1 — AGREEMENT, per peer, at its last digest (levels).
     ("strata", "strata of ruled words the peer's last digest named (a level)"),
     ("discordant", "of them, strata whose ruled sections differ from this court's (a level)"),
+    // Phase 1 item 1, 78.62 step 4 — WHAT A PEER'S DIFFERING SENTENCE IS to
+    // this court's own section on its chart, read exactly (`relation`, 78.60):
+    // the one word, a refraction of it, its conjugate with the placement
+    // apart, related by a conjugator the alphabet cannot spell, or a word no
+    // one motion relates.
+    ("relation_same", "fetched sentences that are this court's own section on their chart"),
+    ("relation_refracted", "fetched sentences this court's section refracts onto by one Γ"),
+    ("relation_conjugate", "fetched sentences one spelled word conjugates onto, the placement apart"),
+    ("relation_unspellable", "fetched sentences one rotor conjugates onto and the alphabet cannot spell"),
+    ("relation_distinct", "fetched sentences no one motion relates to this court's section"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 22;
+pub const REP_AXES: usize = 27;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -640,6 +650,11 @@ pub mod rep {
     /// LEVELS, set at each digest, never summed.
     pub const STRATA: usize = 20;
     pub const DISCORDANT: usize = 21;
+    pub const RELATION_SAME: usize = 22;
+    pub const RELATION_REFRACTED: usize = 23;
+    pub const RELATION_CONJUGATE: usize = 24;
+    pub const RELATION_UNSPELLABLE: usize = 25;
+    pub const RELATION_DISTINCT: usize = 26;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
