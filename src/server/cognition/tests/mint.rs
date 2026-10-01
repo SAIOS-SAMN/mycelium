@@ -533,3 +533,51 @@ fn a_refraction_is_solved_back_from_the_two_forms() {
     assert_eq!(gamma.refract(&held).and_then(|g| address(&g)), address(&out), "the Γ solved lands where the refraction did");
     assert!(matches!(relation(&held, &held), Relation::Refracted(_)), "a form is its own refraction by the identity");
 }
+
+/// 78.61 C1 — A WORD IS LIFTED INTO PERCEPTION AND COMPARED THERE: the same
+/// minted sentence written in two other atlases — translated by a column,
+/// and turned 180° in (e₁, e₂) (an orientation reversal of the sensor plane
+/// the exact one-Γ solve could not even spell) — lifts to the same
+/// invariants as the original, and a sentence of another family leaves a
+/// residue on both sides. The lift reads real paths (never agrees on
+/// nothing).
+#[test]
+fn a_word_lifted_into_perception_is_the_same_in_any_atlas() {
+    use crate::transducer::sentence::{compare, from_element_form, lift, Transport};
+    type Family = [(Vec<Vec<u8>>, Vec<Vec<u8>>)];
+    let mint = |family: &Family| {
+        let rule = crate::transducer::family::extract_rule(family, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("extract");
+        let spoken = crate::transducer::family::mint_sentence(&rule, family, &crate::transducer::family::NoCrystal, 0).expect("mint");
+        from_element_form(&spoken).expect("a form")
+    };
+    let held = mint(&[
+        (digits(&["1100", "0000"]), digits(&["0022", "0000"])),
+        (digits(&["0000", "1100"]), digits(&["0000", "0022"])),
+    ]);
+    let budget = || crate::physics::Physics::default().stroke_n(1 << 20);
+    let ours = lift(&held, &mut budget());
+    assert!(ours.vertices.scoped().count() > 0, "the lift reads the word vertices: {} unread", ours.unread);
+    eprintln!("LIFT ours: grade 0 {} kinds, grade 1 {} kinds, unread {}", ours.vertices.scoped().count(), ours.cycles.scoped().count(), ours.unread);
+    let slid = Transport {
+        word: crate::transducer::alphabet::Word::identity(),
+        carriage: crate::transducer::element::translator_versor(1, 0),
+        gauge: Vec::new(),
+    }
+    .refract(&held)
+    .expect("the slide refracts");
+    let flip = crate::transducer::alphabet::LetterId::turn_90((1, 2)).expect("a letter");
+    let flipped = Transport::from_word(crate::transducer::alphabet::Word::from_letters(&[(flip, false), (flip, false)]))
+        .refract(&held)
+        .expect("the flip keeps the sensor plane");
+    for (name, other) in [("translated", &slid), ("flipped", &flipped)] {
+        let c = compare(&ours, &lift(other, &mut budget()));
+        assert!(c.agrees() && c.matched > 0, "{name}: the same word in another atlas is perceived as one: {c:?}");
+    }
+    let other = mint(&[
+        (digits(&["1000", "0000"]), digits(&["0000", "0001"])),
+        (digits(&["0100", "0000"]), digits(&["0000", "0010"])),
+    ]);
+    let c = compare(&ours, &lift(&other, &mut budget()));
+    assert!(!c.only_ours.is_empty() || !c.only_theirs.is_empty(), "another family's sentence is perceived apart, by a residue: {c:?}");
+    eprintln!("LIFT matched {} residues {} / {} unread {:?}", c.matched, c.only_ours.len(), c.only_theirs.len(), c.unread);
+}

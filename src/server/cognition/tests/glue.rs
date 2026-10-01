@@ -331,6 +331,9 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
     let mut glue = own.stroke();
     let _ = own.glue_fetched(spoken.clone(), same_peer, me, &mut cover, &mut glue);
     assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
+    assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_AGREE]), Some(1), "and is perceived as one: {:?}", axes(same_peer));
+    let paths = |a: [u64; crate::observe::REP_AXES]| (rep::GLUE_HEARD..=rep::GLUE_ADMITTED).map(|i| a[i]).sum::<u64>();
+    assert_eq!(axes(same_peer).map(paths), Some(1), "the word left the glue by exactly one path: {:?}", axes(same_peer));
     let held = from_element_form(&spoken).expect("a sentence");
     let moved = Transport {
         word: crate::transducer::alphabet::Word::identity(),
@@ -347,4 +350,5 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
         "a translation of it reads as a refraction ({outcome:?}): {:?}",
         axes(refracting_peer)
     );
+    assert_eq!(axes(refracting_peer).map(|a| a[rep::PERCEIVED_AGREE]), Some(1), "and is perceived as the same word: {:?}", axes(refracting_peer));
 }

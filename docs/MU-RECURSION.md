@@ -19224,6 +19224,57 @@ its own row. The order of a motion is still found by iterating its powers to
 the cyclotomic bound in places; MR1's rational point `c` fixes it (1, −1,
 −½, 0, ½ → 1, 2, 3, 4, 6), owed next.
 
+### 78.63 Rigidity is a symptom: the wrong math, a missing inverse, or curvature owed an orbital enclosure (ruled 2026-10-01, the operator's word)
+
+**The ruling.** "Our goal is to smooth over edges and mold cognitive
+abilities: anytime we encounter rigidity in our math or physics it means
+we either have the wrong math, are missing the inverse, or need to apply
+curvature with orbital enclosures." A hard edge — a refusal, a gate, a cap,
+a rigid frame — is read first as a symptom, and the three causes are
+looked for before it is kept.
+
+**The test (the implementor's reading, ruled with it).** Exactness is not
+rigidity (precision is the rule: refuse rather than guess), and a
+conservation law is an invariant, not stiffness. So a refusal STANDS where
+it names a conserved quantity a transition broke, with its exact residue —
+momentum made or lost, height not advanced, a distinction lost outside
+e_∅, an action that is no versor. Every other hard edge is a symptom of
+one of the three causes, and is smoothed by it.
+
+**Read against what the engine already met (2026-10-01).** The wrong math:
+one rigid Γ for a whole form (→ the lift into perception, 78.61 C1); the
+ordered factor peel (→ commuting modes, AL1); δ² and the strain norm (→
+unit-weight products, stability plane by plane). A missing inverse: the
+merging fibre relation (→ the reservoir records each merged distinction,
+Closure I: e_∅ IS the inverse made explicit); the heard mark (→ owed). A
+rigid budget: the per-lane reserve (→ the bond's sum, the learner pays). A
+rigid gate: sections refused unless an exact finite rotation (→ distinct
+words admitted, turned sections kept as cocycles). A walker: the orbit
+march (→ one exact application, a return read from the motion's order).
+
+**One correction owed by this ruling.** 78.62's δ² retirement made metric
+rigidity strict and isometric, so an INVERSION (which kept δ²) now breaks
+it and a dilation is excused only where a step dilates. By this ruling
+that was the wrong direction: an inversion turns an enclosure inside out
+and a dilation is expansion or collapse — curvature and enclosure events,
+read by EN1's containment and the dilation lane, never breaches. Only a
+tear — a pair no conformal motion carries — stays a breach.
+
+**Applied next, in order.** (1) The glue's refusals held to the test. A
+correction, measured in the code the same day: the heard mark HAS its
+inverse — on every peer digest, a heard mark whose recorded root differs
+from the peer's is forgotten (`glue.rs`, the confirm path), so on a
+discordant stratum a peer's words are re-opened, re-fetched and re-judged
+every cycle, never excluded for good. Discord is a stable loop, not a lost
+word: each cycle the same path keeps the same word out. So the instrument
+counts, per peer, the path each fetched word left the glue by (heard,
+replay refused, colour unproven, citation missing, gate refused, torsion
+refused, class dialect, attached — ruled, not installed — or admitted), and
+each refusing path is then held to the test. (2) Metric rigidity read as containment and dilation, the tear the
+only breach. (3) `family::moves`: a body a motion fixes is that motion's
+stabiliser — its orbital enclosure — read, not refused as still. (4) Each
+`Slashed` refusal in glue held to the test.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -7,6 +7,7 @@
 pub mod cells;
 pub mod census;
 pub mod drive;
+pub mod lift;
 pub mod moves;
 pub mod orbits;
 pub mod perturb;
@@ -19,6 +20,7 @@ pub mod circuit;
 pub mod words;
 
 pub use census::*;
+pub use lift::{compare, lift, Comparison, Perceived};
 pub use moves::*;
 pub use snap::*;
 pub use cells::{PivotCells, PivotTally};

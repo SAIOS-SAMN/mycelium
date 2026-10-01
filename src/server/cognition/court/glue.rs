@@ -40,11 +40,13 @@ impl Kernel {
         let colour = spoken.is_colour_word();
         if self.heard.contains(&addr) {
             dialect(0, colour);
+            crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_HEARD, 1);
             return Glue::Dialect;
         }
         if let Some(reason) = self.court_replay(&spoken, budget) {
             let inv = crate::transducer::stalk::invariant_of(&spoken);
             self.heard_mark(addr, &inv);
+            crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_REPLAY_REFUSED, 1);
             return Glue::Slashed(reason);
         }
         // 78.55 — A PEER'S COLOUR WORD IS ADMITTED HERE BY A PROOF HELD
@@ -55,6 +57,7 @@ impl Kernel {
         // installed here, the next fetch proves it.
         if spoken.is_colour_word() && !self.colour_proof(&spoken, None).stands() {
             dialect(1, colour);
+            crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_COLOUR_UNPROVEN, 1);
             return Glue::Dialect;
         }
         let inv = crate::transducer::stalk::invariant_of(&spoken);
@@ -73,6 +76,7 @@ impl Kernel {
             if missing {
                 dialect(2, colour);
                 self.heard_mark(addr, &inv);
+                crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_CITATION_MISSING, 1);
                 return Glue::Dialect;
             }
         }
@@ -133,6 +137,16 @@ impl Kernel {
                 (false, _, _) => None,
             };
             if let Some(axis) = axis {
+                crate::observe::note_replication(Some(peer), axis, 1);
+            }
+            // 78.61 C1 — AND PERCEIVED: both lifted into perception, compared
+            // invariant for invariant, never as written.
+            if let (Some(h), Some(o)) = (from_element_form(rep), from_element_form(&spoken)) {
+                use crate::transducer::sentence::{compare, lift};
+                let axis = match compare(&lift(&h, budget), &lift(&o, budget)).agrees() {
+                    true => rep::PERCEIVED_AGREE,
+                    false => rep::PERCEIVED_RESIDUE,
+                };
                 crate::observe::note_replication(Some(peer), axis, 1);
             }
         }
@@ -376,10 +390,12 @@ impl Kernel {
         // refused whole: nothing below fills, pays or classes it.
         if let Glue::Slashed(_) = outcome {
             self.heard_mark(addr, &inv);
+            crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_GATE_REFUSED, 1);
             return outcome;
         }
         if let Some(reason) = self.court_torsion(&spoken, &inv, self_id, peer) {
             self.heard_mark(addr, &inv);
+            crate::observe::note_replication(Some(peer), crate::observe::rep::GLUE_TORSION_REFUSED, 1);
             return Glue::Slashed(reason);
         }
         if filled {
@@ -406,6 +422,13 @@ impl Kernel {
             self.mark_class(&inv, class.clone(), degree);
             outcome = Glue::Dialect;
         }
+        // 78.63 — the path this word left the glue by, past the early exits.
+        let path = match &outcome {
+            Glue::Admitted => crate::observe::rep::GLUE_ADMITTED,
+            Glue::Attached => crate::observe::rep::GLUE_ATTACHED,
+            Glue::Dialect | Glue::Slashed(_) => crate::observe::rep::GLUE_CLASS_DIALECT,
+        };
+        crate::observe::note_replication(Some(peer), path, 1);
         match outcome {
             Glue::Admitted => {
                 if self.basis.get(&addr).is_none()

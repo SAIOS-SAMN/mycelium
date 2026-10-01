@@ -93,7 +93,7 @@ impl CycleType {
         }
     }
 
-    fn to_bytes(&self, buf: &mut Vec<u8>) {
+    pub(crate) fn to_bytes(&self, buf: &mut Vec<u8>) {
         match self {
             CycleType::Identity => buf.push(0),
             // The count by its own coordinate (STD1 3c-2, ruled (d)); a

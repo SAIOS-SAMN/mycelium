@@ -618,11 +618,26 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("relation_conjugate", "fetched sentences one spelled word conjugates onto, the placement apart"),
     ("relation_unspellable", "fetched sentences one rotor conjugates onto and the alphabet cannot spell"),
     ("relation_distinct", "fetched sentences no one motion relates to this court's section"),
+    // 78.61 C1 — THE SAME, PERCEIVED: both words lifted into perception
+    // (their invariants per grade, never their charts) and compared there.
+    ("perceived_agree", "fetched sentences perceived as this court's section: every invariant matched, nothing unread"),
+    ("perceived_residue", "fetched sentences perceived apart: a residue of invariants on one side or both, or unread"),
+    // 78.63 — WHICH PATH OF THE GLUE EACH FETCHED WORD LEFT BY, one per
+    // word: the refusals held to the test (does it name a law?).
+    ("glue_heard", "fetched words already heard on their chart, held as dialect"),
+    ("glue_replay_refused", "fetched words this court's replay refused"),
+    ("glue_colour_unproven", "fetched colour words whose proof does not stand here yet"),
+    ("glue_citation_missing", "fetched words citing a word this court does not hold"),
+    ("glue_gate_refused", "fetched sections the gate refused (no exact rotation of finite order)"),
+    ("glue_torsion_refused", "fetched words the torsion check refused"),
+    ("glue_class_dialect", "fetched words held as dialect on a class simplex"),
+    ("glue_attached", "fetched words attached to a section (ruled, not installed)"),
+    ("glue_admitted", "fetched words admitted"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 27;
+pub const REP_AXES: usize = 38;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -655,16 +670,35 @@ pub mod rep {
     pub const RELATION_CONJUGATE: usize = 24;
     pub const RELATION_UNSPELLABLE: usize = 25;
     pub const RELATION_DISTINCT: usize = 26;
+    pub const PERCEIVED_AGREE: usize = 27;
+    pub const PERCEIVED_RESIDUE: usize = 28;
+    pub const GLUE_HEARD: usize = 29;
+    pub const GLUE_REPLAY_REFUSED: usize = 30;
+    pub const GLUE_COLOUR_UNPROVEN: usize = 31;
+    pub const GLUE_CITATION_MISSING: usize = 32;
+    pub const GLUE_GATE_REFUSED: usize = 33;
+    pub const GLUE_TORSION_REFUSED: usize = 34;
+    pub const GLUE_CLASS_DIALECT: usize = 35;
+    pub const GLUE_ATTACHED: usize = 36;
+    pub const GLUE_ADMITTED: usize = 37;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
 /// with what it did with that signer's receipts on every axis of
 /// [`REPLICATION_AXES`]; and the frames no signer could be read off,
 /// apart, never attributed to one.
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Replication {
     pub signers: Vec<([u8; 32], [u64; REP_AXES])>,
     pub unattributed: [u64; REP_AXES],
+}
+
+/// Nothing heard: no signer, every unattributed axis zero. Written out
+/// because the axes outgrew the array width `Default` is derived for.
+impl Default for Replication {
+    fn default() -> Self {
+        Replication { signers: Vec::new(), unattributed: [0; REP_AXES] }
+    }
 }
 
 impl Replication {
