@@ -18942,6 +18942,88 @@ syllabus instrument reads by this relation from here on: refracted (held,
 Γ), conjugate with the placement apart, an unspellable conjugator, a rotor
 per vertex δγ, the chart only, or unanchored.
 
+### 78.61 The refraction solver enters cognition: adjoin, perceive, relay (PROPOSED by the implementor 2026-10-01 at the operator's word "move this from a harness into the engine's cognition"; the operator rules)
+
+**Where it stands.** `relation(held, other)` (78.60) is called by one
+production path, `anchor_of`, which counts. No court or voice acts on
+its answer: the syllabus ships whole tapes, glue reads a form against a
+held form as a "distinct word" (`cech::transition` is `None` on forms),
+and an unspellable conjugator is counted and dropped. Live on cbabf9f5,
+of the sentences taught: refracted 0, conjugate with the placement apart
+529, chart only 217, unanchored 5; adjoined-by-closure 0. It is an
+instrument. It becomes cognition where the network's state changes on
+its answer — the three below, in the order their dependencies force.
+
+**C0 — the factoriser reads what the letters spell (prerequisite).**
+`factor_rotor` refuses a sensor-plane orientation reversal as `Standing`
+though `turn_90((1,2))²` spells it (78.60 (i)). Until it reads such a
+block, every conjugator of that kind reads Unspellable, and C2 would
+docket letters the alphabet already has — a false generator, the worst
+error adjunction can make. Fix the factoriser; test by the algebra: for
+every product of two letters, `factor_rotor(w.rotor())` spells a word of
+the same rotor.
+
+**C1 — measure the placement field (instrument, one cut).** The 529
+conjugates share one word and differ in placement vertex by vertex. Read,
+per pair, the field `v ↦ c_T,v · c̃_W,v` on the word vertices: one versor
+(then it is a refraction the one-member read missed — a solver defect),
+one versor per orbit (a refraction per component), or a field whose
+δ around each face is the identity (a placement cocycle: the relay unit
+is (held, word, placement per orbit)), or none of these. This decides what
+C3's cocycle and C4's packet carry. Exact; a refusal names which.
+
+**C2 — ADJOIN: an unspellable conjugator is a generator offered.** Where
+`relation` reads `Unspellable(r)` — at the syllabus and, after C3, at
+glue — the court calls `open_unspellable(r, chart, bodies, voice)`
+(`germinate/listing.rs`), which already forms `generator_form` and
+dockets the letter; the docket rules it like any word (24.1, 47.3). Gated
+by `letter_reading` (78.47): a rotor the held letters derive is counted
+derivable and opens nothing. Proof: a test where two forms differ by a
+conjugator outside the seventeen dockets exactly one letter, and a second
+pass reads it Derivable. Fleet reading: generators docketed by this path,
+and `adjoined-by-closure` — the number 78.12 has waited on.
+
+**C3 — PERCEIVE: glue reads a peer's form through the solver.** In
+`glue_fetched`, where the held section and the spoken word are forms on
+one chart, `relation` replaces "distinct word": Refracted(Γ) — the peer's
+word is a section of the held object, its Γ the transition, recorded as
+the cocycle (a Transport-valued cochain: word rotor, carriage, gauge —
+`push_cocycle` takes the versor and class today, so the cocycle widens to
+the transport's three coordinates, never a blob); Conjugate — a section
+whose placement differs, recorded with C1's field; Unspellable — C2;
+Unrelated — a distinct word, as now. Then THE COMPOUND EYE (78.60 (2)):
+per chart, the holonomy around every cycle of sections (court a, b, c,
+and later each voice — every link a nerve), each cycle's composite read
+flat or curved, every cycle kept (78.60 (a)), curvature recorded as
+content. Needs: `Transport::compose` and its exact codec (neither exists).
+Cost: every relation decodes two forms; the court's held words decode
+once (`element::Held`) and are read there, never re-parsed under the
+kernel lock. Risk the operator rules: a peer word read as a SECTION of a
+held one is no longer a distinct installed word, which changes the
+installed counts 78.59's agreement is measured on.
+
+**C4 — RELAY, court to court (Phase 1 is the servers).** A fetch already
+carries what the asker holds on the chart (`serve_ruled(inv, have)`).
+For each word served, where a held word of `have` relates to it
+Refracted(Γ), the page carries (anchor address, Γ, and only those fields
+of the record a form does not derive — to be measured first: the filing,
+the receipts envelope and μ⃗ are evidence, not geometry); else the whole
+record, as now. The receiver refracts its own anchor, compares the
+address (T1), then glues as any fetched word; a refraction that does not
+land is refused by name and the whole record asked. Wire: one tag per
+taught entry, whole or relayed. Reading: entries relayed vs whole, bytes
+per entry, pages ended on the frame (38 of 73 at b on 1b8a8654).
+
+**C5 — relay to voices: scoped, held.** The voice's syllabus intake
+(`client/`) refracts and replays the same way. Client development is
+paused (78.59); C5 waits for it, and C4 proves the codec first.
+
+**Not in this cut.** Cost as rank (78.60 (3)); purging the evaluated
+complex from the record (a recut, 78.60 (e)).
+
+**Order.** C0, C1, C2, C3, C4; each lands with its test by the algebra and
+its typed reading, and is read on the fleet before the next.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
