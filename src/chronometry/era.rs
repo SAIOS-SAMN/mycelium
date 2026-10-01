@@ -24,8 +24,8 @@ pub struct Root {
 /// COLD MEANS OFF THE HEAP. `receipts` is the payload only while an era is
 /// being sealed or carried on the wire; once it is filed, the court holds
 /// the DESCRIPTOR — root, signer, witness, signatures, identities, and
-/// `first`/`count`/`at`, the K range and the byte offset of the payload in
-/// the cold segment — and `receipts` is empty.
+/// `first`/`count`/`at`, the K range and the span of the payload in the
+/// cold segment — and `receipts` is empty.
 ///
 /// A fold that moved receipts from one in-memory `Vec` to another, and
 /// then wrote every one of them into the hot ledger on every persist, is
@@ -52,14 +52,31 @@ pub struct Era {
     pub first: Place,
     /// How many receipts the payload holds.
     pub count: u64,
-    /// Where the payload begins in the cold segment. `None` on an era
-    /// that has not been filed — one being sealed, or one read off a wire.
-    pub at: Option<u64>,
+    /// Where the payload stands in the cold segment. `None` on an era that
+    /// has not been filed — one being sealed, or one read off a wire.
+    pub at: Option<Filed>,
     /// The payload, present only while the era is being sealed or carried.
     pub receipts: Vec<KStepReceipt>,
 }
 
+/// WHERE A FILED ERA'S PAYLOAD STANDS in the cold segment: its first byte
+/// and its length, written beside it, so a read is of its own bytes and
+/// nothing is found by scanning.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Filed {
+    pub offset: u64,
+    pub len: u64,
+}
+
 impl Era {
+    /// THE COLD SEGMENT'S MAGIC: each era is its descriptor, its payload's
+    /// length and its payload, appended once.
+    pub const SEGMENT_MAGIC: &'static [u8; 4] = b"MYE2";
+
+    /// The descriptor's tape: root, signer, witness, both signatures, the
+    /// identities, the first place and the count.
+    pub const DESCRIPTOR: usize = Root::TAPE + 32 + 32 + 64 + 64 + 8 + Place::LEN + 8;
+
     /// The first place the era holds; the root is its last.
     pub fn first_place(&self) -> Place {
         self.first
@@ -67,10 +84,54 @@ impl Era {
 
     /// The era with its payload shed: what the court keeps once the
     /// receipts are on disk at `at`.
-    pub fn filed_at(mut self, at: u64) -> Era {
+    pub fn filed_at(mut self, at: Filed) -> Era {
         self.at = Some(at);
         self.receipts = Vec::new();
         self
+    }
+
+    /// THE ERA AS THE SEGMENT CARRIES IT: its descriptor, its payload's
+    /// length, its payload. `None` where a receipt of the payload does not
+    /// write (LD0).
+    #[must_use = "a frame that cannot be written is refused by name, never dropped (LD0)"]
+    pub fn frame(&self) -> Option<Vec<u8>> {
+        let payload = self.payload()?;
+        let mut out = Vec::with_capacity(Self::DESCRIPTOR + 8 + payload.len());
+        self.root.write(&mut out);
+        out.extend_from_slice(&self.signer);
+        out.extend_from_slice(&self.witness);
+        out.extend_from_slice(&self.sig_home);
+        out.extend_from_slice(&self.sig_witness);
+        out.extend_from_slice(&self.identities.to_le_bytes());
+        self.first.put_canonical(&mut out);
+        out.extend_from_slice(&self.count.to_le_bytes());
+        out.extend_from_slice(&(payload.len() as u64).to_le_bytes());
+        out.extend_from_slice(&payload);
+        Some(out)
+    }
+
+    /// A DESCRIPTOR READ BACK with the length of the payload behind it, the
+    /// payload left where it stands: `head` is the descriptor and the
+    /// length, exactly. The era comes back unfiled; the caller names where.
+    pub fn read_descriptor(head: &[u8]) -> Option<(Era, u64)> {
+        let mut p = 0usize;
+        let root = Root::read(head, &mut p)?;
+        let mut take = |n: usize| -> Option<&[u8]> {
+            let v = head.get(p..p + n)?;
+            p += n;
+            Some(v)
+        };
+        let signer: [u8; 32] = take(32)?.try_into().ok()?;
+        let witness: [u8; 32] = take(32)?.try_into().ok()?;
+        let sig_home: [u8; 64] = take(64)?.try_into().ok()?;
+        let sig_witness: [u8; 64] = take(64)?.try_into().ok()?;
+        let identities = u64::from_le_bytes(take(8)?.try_into().ok()?);
+        let first = Place::take_canonical(head, &mut p)?;
+        let count = u64::from_le_bytes(head.get(p..p + 8)?.try_into().ok()?);
+        let len = u64::from_le_bytes(head.get(p + 8..p + 16)?.try_into().ok()?);
+        (p + 16 == head.len()).then_some(())?;
+        let era = Era { root, signer, witness, sig_home, sig_witness, identities, first, count, at: None, receipts: Vec::new() };
+        Some((era, len))
     }
 
     /// The payload alone, as it is appended to the cold segment: the count

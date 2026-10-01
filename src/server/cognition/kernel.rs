@@ -258,6 +258,17 @@ pub struct Kernel {
     /// history. `None` on a kernel with no home — the fixture and the
     /// tests — where a sealed era keeps its payload in hand as before.
     pub(crate) eras_path: Option<std::path::PathBuf>,
+    /// 45.8 — THE LINE ON DISK: where the hot ledger is written in its own
+    /// order (`chain/line.rs`), beside the snapshot, which then carries no
+    /// receipt. `line_held` says the chain was read from a line, so the
+    /// snapshot it is restored with names where that line stood and holds
+    /// none of it; a kernel without one carries its line in the snapshot,
+    /// which is what a fixture wants.
+    pub(crate) line_path: Option<std::path::PathBuf>,
+    pub(crate) line_held: bool,
+    /// Where the cold segment's last whole era ends: the next era is
+    /// appended there.
+    pub(crate) eras_end: u64,
     /// C6: a TEST knob, `None` on any live fleet. Production reads
     /// `dynamic_lane_capacity`, which is measured; a cap that can be set is
     /// a free constant (rule 5), so the SETTER is behind `cfg(test)`.
@@ -567,163 +578,186 @@ impl Kernel {
         self.genesis_cover = Some(bond);
     }
 
-    /// Bind the cold segment a fold sheds into (45.8). Called at boot
-    /// beside the ledger path; a kernel without one keeps a sealed era's
-    /// receipts in hand, which is what a fixture wants and what a live
-    /// court must not do.
-    pub fn bind_eras(&mut self, path: std::path::PathBuf) {
-        self.reseat_eras(&path);
-        self.eras_path = Some(path);
+    /// BIND THE LINE ON DISK (45.8) and hold the chain it carries, before
+    /// the snapshot is restored against it. A home with no line yet is a
+    /// line that starts empty; one that does not read refuses by name.
+    pub fn bind_line(&mut self, path: std::path::PathBuf) -> Result<(), String> {
+        match std::fs::read(&path) {
+            Ok(b) => self.hold_line(&b)?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => self.line_held = true,
+            Err(e) => return Err(format!("the line is unreadable: {e}")),
+        }
+        self.line_path = Some(path);
+        Ok(())
     }
 
-    /// EVERY FILED ERA AT ITS OWN OFFSET, read back from the segment.
-    /// `file_era` took `stream_position()` on a file opened to append,
-    /// which is 0 until the first write, so every era ever filed was
-    /// recorded at offset 0: each read back the FIRST era's receipts, and
-    /// each read ran to the segment's end (hypha b: 5.5 GB read, 112
-    /// calls, for one page; the same 222 receipts for every range). The
-    /// payloads themselves were appended whole and in order, so the
-    /// segment is walked once and each era is found by what its payload
-    /// is — its signer, first place, last place (the root) and count. An
-    /// era whose payload is not in the segment keeps no offset and answers
-    /// empty rather than another era's receipts (rule 11).
-    fn reseat_eras(&mut self, path: &std::path::Path) {
-        let key = |vk: &[u8; 32], first: crate::chronometry::Place, last: crate::chronometry::Place, n: u64| {
-            let mut k = vk.to_vec();
-            first.put_canonical(&mut k);
-            last.put_canonical(&mut k);
-            k.extend_from_slice(&n.to_be_bytes());
-            k
+    /// HOLD THE CHAIN A LINE CARRIES. A last frame that did not land is
+    /// named, and the line stands on the frames before it.
+    pub fn hold_line(&mut self, b: &[u8]) -> Result<(), String> {
+        let Some((chain, torn)) = crate::chronometry::ReceiptChain::from_line(b) else {
+            return Err("the line does not read whole as MYL1 — the recut is the road for an older layout".into());
         };
-        let Ok(bytes) = std::fs::read(path) else { return };
-        let mut at_of: crate::network::nerve::Keyed<u64> = crate::network::nerve::Keyed::new();
-        let mut pos = 0usize;
-        while pos < bytes.len() {
-            let start = pos as u64;
-            let Some(page) = crate::chronometry::Era::read_payload(&bytes, &mut pos) else { break };
-            let (first, last) = match page.as_slice() {
-                [] => continue,
-                [only] => (only, only),
-                [first, .., last] => (first, last),
-            };
-            let k = key(&first.stamp.vk, first.stamp.place(), last.stamp.place(), page.len() as u64);
-            if at_of.get(&k).is_none() {
-                at_of.insert(&k, start);
-            }
+        if torn {
+            eprintln!("  line: its last frame did not land; it stands on the frames before it");
         }
-        let (mut reseated, mut lost) = (0u64, 0u64);
-        for e in self.archive.iter_mut().filter(|e| e.at.is_some()) {
-            match at_of.get(&key(&e.signer, e.first, e.root.at, e.count)) {
-                Some(&at) => {
-                    e.at = Some(at);
-                    reseated += 1;
-                }
-                None => {
-                    e.at = None;
-                    lost += 1;
-                }
-            }
-        }
-        if reseated + lost > 0 {
-            eprintln!("  eras reseated {reseated} from the segment; {lost} with no payload there");
-        }
+        self.chain = chain;
+        self.line_held = true;
+        Ok(())
     }
 
-    /// File a sealed era: its payload appended to the cold segment, and
-    /// the descriptor — root, signers, signatures, K range and offset —
-    /// kept. `None` from the append leaves the era whole in memory rather
-    /// than losing it (rule 11: a write that did not happen is not a write
-    /// that did).
-    pub(crate) fn file_era(&mut self, era: crate::chronometry::Era) {
-        // AN ERA IS FILED ONCE. `fold_round` re-asks every witness on every
-        // exchange cycle while a proposal is pending, and a witness filed
-        // whatever it was asked to co-sign — so one uncommitted proposal
-        // was re-fetched and re-written by every peer, every cycle. At
-        // epoch 13 that put 7.3 GiB per court into the cold segments in
-        // about four minutes and filled the disk.
-        //
-        // The root names the era, and the archive is in K order, so the
-        // question is a bisection and not a scan (law 3).
-        // AND IT IS FILED IN K ORDER. `push` appended, so an archive that
-        // interleaves signers — a witness holds its own folds and the ones
-        // it co-signed — was not ordered by `root.k` at all, and the
-        // bisection `eras_over` makes over it was unsound. Inserting at the
-        // position the coordinate names keeps the one invariant both reads
-        // depend on.
-        let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
-        if let Some(run) = self.archive.get(seat..) {
-            for held in run {
-                if held.root.at != era.root.at {
-                    break;
-                }
-                if held.root.hash == era.root.hash && held.signer == era.signer {
-                    return;
-                }
+    /// WHAT THE LINE ON DISK DOES NOT YET CARRY, with where it goes: `None`
+    /// where no line is bound or nothing moved, `Err` where a node does not
+    /// write — and then the snapshot must not be written either, since it
+    /// names where the line stood.
+    pub fn take_line(&mut self) -> Result<Option<(std::path::PathBuf, crate::chronometry::LineWrite)>, &'static str> {
+        let Some(path) = self.line_path.clone() else { return Ok(None) };
+        Ok(self.chain.line_write()?.map(|w| (path, w)))
+    }
+
+    /// The line's write did not land: the next is the whole.
+    pub fn line_lost(&mut self) {
+        self.chain.line_lost();
+    }
+
+    /// The whole line as this court would write it, beside its snapshot:
+    /// what a preflight restores to read back what it wrote.
+    pub fn line_image(&self) -> Option<Vec<u8>> {
+        self.line_held.then(|| self.chain.line_image()).flatten()
+    }
+
+    /// BIND THE COLD SEGMENT a fold sheds into (45.8), and hold every era
+    /// it carries. Called at boot beside the ledger; a kernel without one
+    /// keeps a sealed era's receipts in hand, which is what a fixture
+    /// wants and what a live court must not do.
+    ///
+    /// Each era's descriptor is read where it stands and its payload is
+    /// passed over by its own length, so nothing of the history is read to
+    /// find the eras. A segment that is not this layout refuses by name; a
+    /// last era whose payload runs past the end is an append that did not
+    /// land (rule 11): the segment ends at the last whole era, and the next
+    /// append cuts it back there. Nothing is written here.
+    pub fn bind_eras(&mut self, path: std::path::PathBuf) -> Result<(), String> {
+        use crate::chronometry::{Era, Filed};
+        use std::os::unix::fs::FileExt;
+        let file = match std::fs::File::open(&path) {
+            Ok(f) => f,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+                self.eras_path = Some(path);
+                self.eras_end = 0;
+                return Ok(());
             }
+            Err(e) => return Err(format!("the cold segment is unreadable: {e}")),
+        };
+        let end = file.metadata().map_err(|e| format!("the cold segment is unreadable: {e}"))?.len();
+        let mut magic = [0u8; 4];
+        if end > 0 && (file.read_exact_at(&mut magic, 0).is_err() || &magic != Era::SEGMENT_MAGIC) {
+            return Err("the cold segment is not MYE2, the descriptor-framed layout — the recut is the road".into());
+        }
+        let mut pos = Era::SEGMENT_MAGIC.len() as u64;
+        let mut head = vec![0u8; Era::DESCRIPTOR + 8];
+        let mut held = 0u64;
+        while pos < end {
+            let read = file.read_exact_at(&mut head, pos).ok().and_then(|()| Era::read_descriptor(&head));
+            let offset = pos + head.len() as u64;
+            let Some((era, len)) = read.filter(|(_, len)| offset.checked_add(*len).is_some_and(|e| e <= end)) else {
+                eprintln!("  eras: the segment's last era did not land whole; it ends at byte {pos}");
+                break;
+            };
+            self.hold_filed(era.filed_at(Filed { offset, len }));
+            held += 1;
+            pos = offset + len;
+        }
+        if held > 0 {
+            eprintln!("  eras: {held} held from the segment");
+        }
+        self.eras_path = Some(path);
+        self.eras_end = pos.min(end);
+        Ok(())
+    }
+
+    /// AN ERA AT ITS PLACE IN THE ARCHIVE, which is in root order across
+    /// signers: once, where its root and signer name it. Whether it was
+    /// already held.
+    pub(crate) fn hold_filed(&mut self, era: crate::chronometry::Era) -> bool {
+        // The root names the era, and the archive is in root order, so the
+        // question is a bisection and not a scan (law 3).
+        if self.holds_era(&era) {
+            return true;
+        }
+        let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
+        self.archive.insert(seat, era);
+        false
+    }
+
+    /// File a sealed era: its frame appended to the cold segment, and the
+    /// descriptor — root, signers, signatures, K range and span — kept.
+    /// `None` from the append leaves the era whole in memory rather than
+    /// losing it (rule 11: a write that did not happen is not a write that
+    /// did).
+    pub(crate) fn file_era(&mut self, era: crate::chronometry::Era) {
+        // An era is filed once: a witness asked again to co-sign one it
+        // holds writes nothing.
+        if self.holds_era(&era) {
+            return;
         }
         let Some(path) = self.eras_path.clone() else {
-            self.archive.insert(seat, era);
+            self.hold_filed(era);
             return;
         };
-        let Some(payload) = era.payload() else {
+        let Some(frame) = era.frame() else {
             eprintln!("  era refused: a receipt of its payload cannot be written");
             return;
         };
-        // THE OFFSET IS THE SEGMENT'S END, read by seeking there: a file
-        // opened to append stands at 0 until its first write, and
-        // `stream_position()` filed every era at 0 (see `reseat_eras`).
-        let at = match std::fs::OpenOptions::new().create(true).append(true).open(&path) {
-            Ok(mut f) => {
-                use std::io::{Seek, Write};
-                f.seek(std::io::SeekFrom::End(0)).and_then(|at| f.write_all(&payload).map(|()| at)).ok()
+        match Self::append_frame(&path, self.eras_end, &frame) {
+            Some(at) => {
+                self.eras_end = at.offset + at.len;
+                self.hold_filed(era.filed_at(at));
             }
-            Err(_) => None,
-        };
-        match at {
-            Some(at) => self.archive.insert(seat, era.filed_at(at)),
-            None => self.archive.insert(seat, era),
+            None => {
+                self.hold_filed(era);
+            }
         }
     }
 
-    /// A filed era's receipts, paged from the cold segment on demand. An
-    /// era that still holds its payload answers from memory.
-    /// Every offset an era was filed at in the cold segment, ascending: read
-    /// once per page, so each era's end is FOUND by the order the offsets
-    /// already have, never scanned for (law 3). Scanning the archive for
-    /// the next offset once per era made a page from a line's start cost
-    /// eras × archive, and hypha b answered one in four seconds.
-    pub(crate) fn era_offsets(&self) -> Vec<u64> {
-        let mut out: Vec<u64> = self.archive.iter().filter_map(|e| e.at).collect();
-        out.sort_unstable();
-        out
+    /// Whether the archive holds this era: its root and signer, at the
+    /// place the root names.
+    fn holds_era(&self, era: &crate::chronometry::Era) -> bool {
+        let seat = self.archive.partition_point(|e| e.root.at < era.root.at);
+        let run = self.archive.get(seat..).into_iter().flatten();
+        run.take_while(|e| e.root.at == era.root.at).any(|e| e.root.hash == era.root.hash && e.signer == era.signer)
     }
 
-    pub(crate) fn era_receipts(
-        &self,
-        era: &crate::chronometry::Era,
-        offsets: &[u64],
-    ) -> Option<Vec<crate::chronometry::KStepReceipt>> {
+    /// ONE ERA'S FRAME APPENDED after the last whole era, at `end` — what
+    /// stands past it is an append that did not land, and is cut — the
+    /// segment's magic first where it is new: where its payload landed, or
+    /// `None` where the write did not.
+    fn append_frame(path: &std::path::Path, end: u64, frame: &[u8]) -> Option<crate::chronometry::Filed> {
+        use std::io::{Seek, Write};
+        let mut f = std::fs::OpenOptions::new().create(true).write(true).truncate(false).open(path).ok()?;
+        f.set_len(end).ok()?;
+        let mut at = f.seek(std::io::SeekFrom::Start(end)).ok()?;
+        if at == 0 {
+            f.write_all(crate::chronometry::Era::SEGMENT_MAGIC).ok()?;
+            at = crate::chronometry::Era::SEGMENT_MAGIC.len() as u64;
+        }
+        f.write_all(frame).ok()?;
+        let head = (crate::chronometry::Era::DESCRIPTOR + 8) as u64;
+        Some(crate::chronometry::Filed { offset: at + head, len: frame.len() as u64 - head })
+    }
+
+    /// A filed era's receipts, read from its own span of the cold segment;
+    /// an era that still holds its payload answers from memory.
+    pub(crate) fn era_receipts(&self, era: &crate::chronometry::Era) -> Option<Vec<crate::chronometry::KStepReceipt>> {
         let Some(at) = era.at else {
             return Some(era.receipts.clone());
         };
-        // THE ERA'S OWN BYTES, NOT THE SEGMENT'S. This read the whole cold
-        // segment for every era it paged — 41 MB on hypha b — under the
-        // kernel, so a back-fill page from a line's start re-read the file
-        // once per era and took five seconds to answer (measured on the
-        // wire, 2026-09-30), and every asker counted it silent. Payloads are
-        // appended whole, so an era's bytes run from its offset to the next
-        // offset any era was filed at, or the segment's end: one positioned
-        // read of that window.
         use std::os::unix::fs::FileExt;
-        let path = self.eras_path.as_ref()?;
-        let file = std::fs::File::open(path).ok()?;
-        let end = match offsets.get(offsets.partition_point(|&o| o <= at)).copied() {
-            Some(next) => next,
-            None => file.metadata().ok()?.len(),
-        };
-        let mut bytes = vec![0u8; usize::try_from(end.checked_sub(at)?).ok()?];
-        file.read_exact_at(&mut bytes, at).ok()?;
-        crate::chronometry::Era::read_payload(&bytes, &mut 0)
+        let file = std::fs::File::open(self.eras_path.as_ref()?).ok()?;
+        let mut bytes = vec![0u8; usize::try_from(at.len).ok()?];
+        file.read_exact_at(&mut bytes, at.offset).ok()?;
+        let mut p = 0usize;
+        let page = crate::chronometry::Era::read_payload(&bytes, &mut p)?;
+        (p == bytes.len()).then_some(page)
     }
 
     pub fn genesis_cover(&self) -> Option<[u64; 4]> {
@@ -754,13 +788,11 @@ impl Kernel {
     /// is paged, and the receipt with that stamp and hash, if it is there,
     /// is recalled into the chain's folded index. Only a missing citation
     /// reads the archive; nothing is recalled that the era does not prove.
-    fn recall_cited(&mut self, r: &crate::chronometry::KStepReceipt) {
+    /// Answers what was recalled, which leaves once the receipt is read.
+    fn recall_cited(&mut self, r: &crate::chronometry::KStepReceipt) -> Vec<crate::chronometry::Parent> {
         let missing: Vec<crate::chronometry::Parent> =
             r.prev.iter().chain(r.parents.iter()).copied().filter(|p| self.chain.height_of(p).is_none()).collect();
-        if missing.is_empty() {
-            return;
-        }
-        let offsets = self.era_offsets();
+        let mut recalled = Vec::new();
         for p in missing {
             let place = p.at.place();
             // The archive is in root order; the signer's eras are disjoint,
@@ -774,11 +806,20 @@ impl Kernel {
                 continue;
             }
             let proved = self
-                .era_receipts(era, &offsets)
+                .era_receipts(era)
                 .is_some_and(|page| page.iter().any(|x| x.stamp == p.at && x.chain_hash == p.hash));
             if proved {
                 self.chain.recall_folded(p);
+                recalled.push(p);
             }
+        }
+        recalled
+    }
+
+    /// The citations recalled for one receipt leave once it is read.
+    fn forget_recalled(&mut self, recalled: &[crate::chronometry::Parent]) {
+        for p in recalled {
+            self.chain.forget_folded(p);
         }
     }
 
@@ -793,8 +834,9 @@ impl Kernel {
                 crate::court::admission::REFUSE_RECEIPT,
             );
         }
-        self.recall_cited(r);
+        let recalled = self.recall_cited(r);
         let verdict = crate::court::admission::admit(origin, verified.prefix(), r, &self.chain);
+        self.forget_recalled(&recalled);
         match &verdict {
             crate::court::admission::Admitted::Parent(p) => {
                 self.chain.admit(r.clone());
@@ -856,8 +898,10 @@ impl Kernel {
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
-            self.recall_cited(r);
-            match crate::court::admission::admit_backfilled(r, &self.chain) {
+            let recalled = self.recall_cited(r);
+            let verdict = crate::court::admission::admit_backfilled(r, &self.chain);
+            self.forget_recalled(&recalled);
+            match verdict {
                 crate::court::admission::Admitted::Parent(_) => {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);

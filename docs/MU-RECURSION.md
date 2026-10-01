@@ -19390,10 +19390,10 @@ The roots are read off the peers' fold nodes, never persisted beside them.
 (ii) *A fold is one frame.* The fold's head is the last close within the page
 one `ACT_RECEIPTS` reply carries (`fold_head`), at the frame the witness is
 served by. An orbit longer than a page folds whole at its own close.
-(iii) *A restore streams.* The ledger trie is decoded node by node, with
-keys strictly rising. The alias and depth rebuilds copy only the nodes they
-read. `--check` now also writes the restored state and restores what it
-wrote.
+(iii) *A restore streams* (withdrawn by (iv)–(vi) below). The ledger trie
+was decoded node by node, with keys strictly rising. The alias and depth
+rebuilds copy only the nodes they read, which stands. `--check` writes the
+restored state and restores what it wrote.
 Measured with `--check` on copies of the three homes:
 - c's restore peak went from 2.19 to 1.56 GB;
 - the hot ledgers went from 552k / 343k / 560k nodes to 196k / 199k / 201k;
@@ -19401,11 +19401,49 @@ Measured with `--check` on copies of the three homes:
   122 MB, and each restores.
 
 What remains is b's unfolded line, which (ii) folds a page at a time.
-Owed:
-- The snapshot write still builds its trie whole.
-- `reseat_eras` reads the cold segment whole at boot.
-- `folded` and `placed` entries for receipts that are not held have no
-  inverse yet.
+
+**H1 ruled (the operator, 2026-10-01): "why are we rebuilding the ledger
+from scratch?"** We were doing more work than the ledger asks for. The
+snapshot predates 78.24 and kept its first shape: the whole mind as one
+picture, redrawn on every persist and rebuilt on every boot. 78.24 keyed
+the ledger by stamp, height first, and made a fold a cut below a root, so
+the ledger's own shape became *new at the top, cut at the bottom*.
+Persistence was never re-derived from that. (iii) above made the wrong
+shape cheaper. It is withdrawn, and persistence now follows the ledger's
+order:
+
+(iv) *The line on disk* (`var/<h>/line`, MYL1, `chronometry/chain/line.rs`).
+The file is a frame per write. A frame appends what was filed since the
+last write, the own root a fold moved to (one record cuts the whole
+prefix), and the peer nodes a shed removed, by stamp. The whole is written
+again, through a rename, only where the file would otherwise carry as many
+nodes that left as nodes that stand. That bound is the line's own
+measure, so a write costs what moved and the file is never more than
+twice what stands. A frame that runs past the end did not land: the line
+stands on the frames before it, and its next write is the whole. Boot
+replays the frames and settles the chain as `from_nodes` settles it.
+
+(v) *The cold segment carries its own descriptors* (MYE2). Each era is its
+fixed-width descriptor, its payload's byte length, and its payload,
+appended once. Boot reads each descriptor where it stands and steps over
+the payload by its length. An era reads its own span. `reseat_eras`, the
+offsets table and the eras trie's filed leaves are deleted. A torn last
+era is cut by the next append, so binding writes nothing.
+
+(vi) *The snapshot is what is not the line or the eras* (MYT2). It holds
+the words, the treasury, the rows at their stamps, the complexes and the
+cocycles. It names the stamp and hash the line stood at when it was
+written. Persist writes the line first, and writes no snapshot over a line
+that did not land. A restore refuses a line that neither holds that stamp
+nor has folded past it. A kernel with no line or segment bound (a fixture)
+carries both in its snapshot, as eras in hand always did. MYT1 is refused
+by name; the recut is the road (`scripts/recut` now removes `line` too).
+
+(vii) *The two lookup tables get their inverses.* A folded receipt recalled
+from its era for one citation leaves once that admission has read it, and
+is read back from the era where another cites it. A placement recorded for
+a node not held, at or below its signer's root, leaves with the shed:
+admission reads such a node stale, so it never arrives.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

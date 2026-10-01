@@ -11,7 +11,7 @@ use super::*;
 use crate::chronometry::{Cite, KStepReceipt, Stamp};
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
-use crate::snapshot::{leaf, take_trie, take_trie_each};
+use crate::snapshot::{leaf, take_trie};
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
@@ -76,6 +76,10 @@ impl Kernel {
                 eprintln!("  ledger refused: MYC7, the positional tape (78.25) — refused by name, the recut is the road");
                 return false;
             }
+            Some(m) if m == PRE_LINE_MAGIC => {
+                eprintln!("  ledger refused: MYT1, the tries with the line and the eras inside them — refused by name, the recut is the road");
+                return false;
+            }
             // A REFUSAL NAMES WHAT IT READ, not only what it wanted: a tape
             // that is not a ledger at all must not read the same as one an
             // older build wrote.
@@ -87,7 +91,7 @@ impl Kernel {
                     },
                     None => format!("{} bytes, too short to carry one", b.len()),
                 };
-                eprintln!("  ledger refused: the magic is {found}, not MYT1");
+                eprintln!("  ledger refused: the magic is {found}, not MYT2");
                 return false;
             }
         }
@@ -100,56 +104,77 @@ impl Kernel {
             // stroke is what a ruling re-heard on a filed stamp draws on.
             let mut budget = kernel.physics.stroke();
             // THE COURT: one node, the key this court signs as.
-            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT])?;
+            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE])?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
             let [(vk, leaves)] = nodes.as_slice() else { return None };
             let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
             let head: [u8; 32] = leaf(leaves, LEAF_HEAD)?.try_into().ok()?;
-            let root = match leaf(leaves, LEAF_ROOT) {
-                Some(v) => Some(whole(v, crate::chronometry::Root::read)?),
-                None => None,
+            // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
+            // folded to; or on disk, held already, which must hold the stamp
+            // the snapshot names — or have folded past it.
+            let line_held = kernel.line_held;
+            let root = match (line_held, leaf(leaves, LEAF_ROOT), leaf(leaves, LEAF_LINE)) {
+                (false, Some(v), None) => Some(whole(v, crate::chronometry::Root::read)?),
+                (false, None, None) => None,
+                (true, None, named) => {
+                    if !kernel.chain.bind_vk(vk) {
+                        return None;
+                    }
+                    if let Some(v) = named {
+                        let (stood, hash) = whole(v, |b, p| {
+                            let at = Stamp::take_canonical(b, p)?;
+                            let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                            *p += 32;
+                            Some((at, hash))
+                        })?;
+                        let held = kernel.chain.node(&stood).map(|r| r.chain_hash) == Some(hash);
+                        let folded = kernel.chain.root().is_some_and(|r| stood.place() <= r.at);
+                        if !held && !folded {
+                            eprintln!("  ledger refused: the line does not hold the stamp the snapshot stood at");
+                            return None;
+                        }
+                    }
+                    kernel.chain.root()
+                }
+                _ => return None,
             };
-            // T2 — THE LEDGER, by stamp: each node's receipt, and the rows,
-            // the settlements and the transitions standing at it.
+            // T2 — THE LEDGER, by stamp: the rows, the settlements and the
+            // transitions standing at it, and its receipt where the line is
+            // in the snapshot.
             at.set(LEDGER_TRIE);
-            // Each node is decoded as it is read, never held as tape beside
-            // what it decodes to; the trie is written in key order, and a
-            // key not past the last refuses it.
+            let ledger = take_trie(b, pos, LEDGER_TRIE, &[LEAF_RECEIPT, LEAF_ENTRIES, LEAF_SETTLEMENTS, LEAF_DIALECT])?;
             let origin = Stamp::new(0, vk, crate::chronometry::Place::GENESIS);
             let mut receipts: Vec<KStepReceipt> = Vec::new();
             let mut entries: Vec<crate::economy::Entry> = Vec::new();
             let mut settled: Vec<crate::anastome::dialogue::Settlement> = Vec::new();
             let mut dialect: Vec<(Vec<u8>, element::Versor, Option<Stamp>)> = Vec::new();
-            let mut last: Option<Vec<u8>> = None;
-            let kinds = [LEAF_RECEIPT, LEAF_ENTRIES, LEAF_SETTLEMENTS, LEAF_DIALECT];
-            take_trie_each(b, pos, LEDGER_TRIE, &kinds, |key, leaves| {
-                if last.as_ref().is_some_and(|l| *l >= key) {
-                    return None;
-                }
+            for (key, leaves) in ledger.scoped() {
                 let stamp = Stamp::from_key(&key)?;
-                last = Some(key);
-                let leaves = &leaves;
-                let receipt = match leaf(leaves, LEAF_RECEIPT) {
-                    Some(v) => {
+                let receipt = match (line_held, leaf(leaves, LEAF_RECEIPT)) {
+                    (false, Some(v)) => {
                         let r = whole(v, KStepReceipt::read)?;
                         if r.stamp != stamp {
                             return None;
                         }
                         Some(r)
                     }
-                    None => None,
+                    // A receipt has one home: the line on disk, where one is.
+                    (true, Some(_)) => return None,
+                    (_, None) => None,
                 };
                 // THE HASH A ROW AT THIS STAMP MAY CARRY: the receipt's
-                // where the node holds one; the root's at the fold root; the
-                // empty hash at the pre-genesis origin. A bare node at a
+                // where a node is held there; the root's at the fold root;
+                // the empty hash at the pre-genesis origin. A bare node at a
                 // folded act is read against its stamp alone: its receipt
                 // is cold, in the era that archived it.
-                let bare = receipt.is_none();
-                if bare && stamp.vk != vk {
+                let hash = match &receipt {
+                    Some(r) => Some(r.chain_hash),
+                    None => kernel.chain.node(&stamp).map(|r| r.chain_hash),
+                };
+                if hash.is_none() && stamp.vk != vk {
                     return None;
                 }
-                let hash = receipt.as_ref().map(|r| r.chain_hash);
                 let at_root = root.is_some_and(|r| Stamp::new(r.height, vk, r.at) == stamp);
                 let row_stands = |e: &crate::economy::Entry| -> bool {
                     e.at == stamp
@@ -190,11 +215,13 @@ impl Kernel {
                 if let Some(r) = receipt {
                     receipts.push(r);
                 }
-                Some(())
-            })?;
-            // The stamps were read in key order, which is height first, so
-            // every ancestor is placed before its descendant.
-            let chain = crate::chronometry::ReceiptChain::from_nodes(root, vk, receipts)?;
+            }
+            // The line in the snapshot, rehydrated whole; the line on disk is
+            // already held.
+            let chain = match line_held {
+                true => std::mem::take(&mut kernel.chain),
+                false => crate::chronometry::ReceiptChain::from_nodes(root, vk, receipts)?,
+            };
             // T1 — THE WORDS, by citation.
             at.set(WORDS_TRIE);
             let words = take_trie(
@@ -228,7 +255,6 @@ impl Kernel {
                     LEAF_IDENTITIES,
                     LEAF_FIRST,
                     LEAF_COUNT,
-                    LEAF_FILED_AT,
                     LEAF_PAYLOAD,
                 ],
             )?;
@@ -370,22 +396,17 @@ impl Kernel {
             }
             kernel.closure = (u64::MAX, u64::MAX, std::sync::Arc::new(rank));
 
-            // T3 — THE ERAS, each by its root's stamp: the root's height,
-            // signer and place read off the key, the rest off its leaves.
+            // T3 — THE ERAS HELD IN HAND, each by its root's stamp: the
+            // root's height, signer and place read off the key, the rest and
+            // the payload off its leaves; each held at its place in the
+            // archive, beside those the cold segment carries.
             at.set(ERAS_TRIE);
-            let mut archive: Keyed<crate::chronometry::Era> = Keyed::new();
             for (key, leaves) in eras.scoped() {
                 let root_at = Stamp::from_key(&key)?;
                 let root = crate::chronometry::Root {
                     at: root_at.place(),
                     hash: leaf(leaves, LEAF_ROOT_HASH)?.try_into().ok()?,
                     height: root_at.h,
-                };
-                let (at, receipts) = match (leaf(leaves, LEAF_FILED_AT), leaf(leaves, LEAF_PAYLOAD)) {
-                    (Some(v), None) => (Some(u64::from_le_bytes(v.try_into().ok()?)), Vec::new()),
-                    (None, Some(v)) => (None, whole(v, crate::chronometry::Era::read_payload)?),
-                    // Filed and carried, or neither: not an era.
-                    _ => return None,
                 };
                 let era = crate::chronometry::Era {
                     root,
@@ -396,16 +417,11 @@ impl Kernel {
                     identities: u64::from_le_bytes(leaf(leaves, LEAF_IDENTITIES)?.try_into().ok()?),
                     first: whole(leaf(leaves, LEAF_FIRST)?, crate::chronometry::Place::take_canonical)?,
                     count: u64::from_le_bytes(leaf(leaves, LEAF_COUNT)?.try_into().ok()?),
-                    at,
-                    receipts,
+                    at: None,
+                    receipts: whole(leaf(leaves, LEAF_PAYLOAD)?, crate::chronometry::Era::read_payload)?,
                 };
-                // The archive is in line order by root, across signers.
-                let mut order = Vec::new();
-                era.root.at.put_canonical(&mut order);
-                order.extend_from_slice(&era.signer);
-                archive.insert(order, era);
+                kernel.hold_filed(era);
             }
-            crate::snapshot::persist(&archive, |_, era| kernel.archive.push(era.clone()));
             // T3 — THE COMPLEXES, each its own tries. A complex that does not
             // read is named by its key, so the refusal locates the object and
             // not only the trie it stood in.

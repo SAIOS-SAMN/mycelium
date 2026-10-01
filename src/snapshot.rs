@@ -143,28 +143,6 @@ pub fn put_leaf(nodes: &mut Keyed<Leaves>, key: &[u8], kind: u8, value: Vec<u8>)
 /// strictly rising kind order and every kind must be one of `kinds`, and no
 /// key may come twice. The nodes come back keyed, never as a sequence.
 pub fn take_trie(b: &[u8], pos: &mut usize, name: &str, kinds: &[u8]) -> Option<Keyed<Leaves>> {
-    let mut nodes: Keyed<Leaves> = Keyed::new();
-    take_trie_each(b, pos, name, kinds, |key, leaves| {
-        if nodes.contains(&key) {
-            return None;
-        }
-        nodes.insert(key, leaves);
-        Some(())
-    })?;
-    Some(nodes)
-}
-
-/// Read the trie `name` node by node, each handed to `file` as it is read
-/// and held nowhere here, under the same checks as [`take_trie`] but the
-/// one on keys: the caller files each node, and refuses with `None` a key
-/// it already holds. A refusal from `file` refuses the trie.
-pub fn take_trie_each(
-    b: &[u8],
-    pos: &mut usize,
-    name: &str,
-    kinds: &[u8],
-    mut file: impl FnMut(Vec<u8>, Leaves) -> Option<()>,
-) -> Option<()> {
     if take_key(b, pos)? != name.as_bytes() {
         return None;
     }
@@ -177,6 +155,7 @@ pub fn take_trie_each(
     if n > len / 16 {
         return None;
     }
+    let mut nodes: Keyed<Leaves> = Keyed::new();
     for _ in 0..n {
         let key = take_key(b, pos)?;
         let nl = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
@@ -197,9 +176,12 @@ pub fn take_trie_each(
             }
             leaves.push((kind, take_key(b, pos)?));
         }
-        file(key, leaves)?;
+        if nodes.contains(&key) {
+            return None;
+        }
+        nodes.insert(key, leaves);
     }
-    (*pos == end).then_some(())
+    (*pos == end).then_some(nodes)
 }
 
 /// The value of one leaf kind on a node read back, or none where the node

@@ -235,9 +235,8 @@ impl Kernel {
         // the kernel OOM-killed at its 2 GB cap every six minutes (epoch 114,
         // the jemalloc heap profile at the peak). The run is in line order,
         // so what the budget and the page's bytes leave room for is its head.
-        let offsets = self.era_offsets();
         'eras: for e in self.eras_over(signer, after, upto) {
-            let Some(page) = self.era_receipts(e, &offsets) else { continue };
+            let Some(page) = self.era_receipts(e) else { continue };
             // A paged era is in line order: the range is its run between
             // the two places.
             for r in page.iter().filter(|r| within(r.stamp.place())) {

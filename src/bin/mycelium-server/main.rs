@@ -165,23 +165,32 @@ fn check_home(home: &Path) -> ! {
             refuses = true;
         }
         Ok(b) => {
+            // The line and the eras are held first, as the boot holds them;
+            // nothing here writes to the home.
             let mut scratch = Kernel::new();
-            if scratch.restore(&b) {
+            let bound = scratch.bind_line(home.join("line")).and_then(|()| scratch.bind_eras(home.join("eras")));
+            if let Err(why) = &bound {
+                println!("  line or eras: {why}");
+            }
+            if bound.is_ok() && scratch.restore(&b) {
                 println!(
-                    "  ledger: {} bytes, restores — {} ruled sentences, K {}, {} nodes held hot ({} this court's own)",
+                    "  ledger: {} bytes, restores — {} ruled sentences, K {}, {} nodes held hot ({} this court's own), {} eras",
                     b.len(),
                     scratch.basis_len(),
                     scratch.chain().head_k(),
                     scratch.chain().nodes().count(),
-                    scratch.chain().own_len()
+                    scratch.chain().own_len(),
+                    scratch.archive().len()
                 );
                 // What this build writes of that state must read back: the
-                // restore reshapes the ledger (a peer's folded line leaves),
-                // so the next persist is not the tape just read.
-                let again = scratch.snapshot();
+                // restore reshapes the line (a peer's folded line leaves),
+                // so the next persist is not what was just read.
+                let (again, line) = (scratch.snapshot(), scratch.line_image());
                 drop(scratch);
-                if Kernel::new().restore(&again) {
-                    println!("  ledger: as this build writes it, {} bytes, restores", again.len());
+                let mut back = Kernel::new();
+                let held = line.as_deref().map_or(Ok(()), |l| back.hold_line(l));
+                if held.is_ok() && back.restore(&again) {
+                    println!("  ledger: as this build writes it, {} bytes beside a line of {}, restores", again.len(), line.map_or(0, |l| l.len()));
                 } else {
                     println!("  ledger: as this build writes it, {} bytes, DOES NOT RESTORE", again.len());
                     refuses = true;
@@ -325,6 +334,16 @@ fn main() {
     // A ledger that is NOT THERE is a fresh court, which is a reading and
     // not a refusal; every other read error is a refusal, because a state
     // file this process cannot read is one it must not overwrite.
+    //
+    // 45.8: the line and the eras are on disk beside the snapshot, each in
+    // its own order, and are held before the snapshot is restored against
+    // them.
+    {
+        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at the line") };
+        if let Err(why) = k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras"))) {
+            refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
+        }
+    }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
             let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
@@ -375,10 +394,6 @@ fn main() {
             );
         }
         k.bind_identity(vk);
-        // 45.8: where a fold sheds to. Beside the ledger, append-only, and
-        // written once per fold — the ledger itself then carries only the
-        // era descriptors and stops growing with the history.
-        k.bind_eras(home.join("eras"));
         if let Some(held) = k.treasury().bond_of(&vk) {
             eprintln!("[{tag}] bond from ledger {held:?}");
         }

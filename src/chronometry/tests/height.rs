@@ -101,24 +101,22 @@ fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
     );
 }
 
-/// 78.24 — THE LEDGER WRITTEN AS ITS TRIE READS BACK AS ITSELF: every node
-/// once at its stamp, the line verified, the head where it was.
+/// 78.24, 45.8 — THE LEDGER WRITTEN AS ITS LINE READS BACK AS ITSELF: every
+/// node once at its stamp, the line verified, the head where it was.
 #[test]
-fn the_ledger_written_as_its_trie_reads_back_whole() {
+fn the_ledger_written_as_its_line_reads_back_whole() {
     let mut peer = ReceiptChain::with_vk([2; 32]);
     let p0 = step(&mut peer, Vec::new());
     let mut c = ReceiptChain::with_vk([1; 32]);
     step(&mut c, Vec::new());
     c.admit(p0.clone());
     step(&mut c, vec![cite(&p0)]);
-    let mut tape = Vec::new();
-    c.put_tries(&mut tape).expect("the ledger writes");
-    let mut pos = 0usize;
-    let back = ReceiptChain::take_tries(&tape, &mut pos).expect("and reads back");
-    assert_eq!(pos, tape.len(), "whole");
+    let tape = c.line_image().expect("the line writes");
+    let (back, torn) = ReceiptChain::from_line(&tape).expect("and reads back");
+    assert!(!torn, "whole");
     assert_eq!(back.nodes().cloned().collect::<Vec<_>>(), c.nodes().cloned().collect::<Vec<_>>());
     assert_eq!((back.head_k(), back.head_height(), back.head_hash()), (c.head_k(), c.head_height(), c.head_hash()));
-    assert_eq!(back.line_head(&[2; 32]).map(|r| r.stamp), Some(p0.stamp), "the peer's line is read off the same trie");
+    assert_eq!(back.line_head(&[2; 32]).map(|r| r.stamp), Some(p0.stamp), "the peer's line is read off the same file");
 }
 
 /// EVERY NODE THE LEDGER HOLDS IS FOUND AT ITS STAMP — its own and the

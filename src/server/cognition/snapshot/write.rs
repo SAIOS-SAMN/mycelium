@@ -144,27 +144,38 @@ impl Kernel {
         out
     }
 
-    /// THE COURT: its key, its court head, and the fold root its line
-    /// stands on where it was ever folded.
+    /// THE COURT: its key and its court head; where its line is in the
+    /// snapshot, the fold root that line stands on; where it is on disk,
+    /// the stamp and hash the line stands at as this snapshot is taken.
     fn put_court(&self, out: &mut Vec<u8>) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
         let mut leaves: Leaves = vec![(LEAF_HEAD, self.court_head.to_vec())];
-        if let Some(root) = self.chain.root() {
-            let mut v = Vec::new();
-            root.write(&mut v);
-            leaves.push((LEAF_ROOT, v));
+        match (self.line_held, self.chain.root(), self.chain.head_stamp()) {
+            (false, Some(root), _) => {
+                let mut v = Vec::new();
+                root.write(&mut v);
+                leaves.push((LEAF_ROOT, v));
+            }
+            (true, _, Some(at)) => {
+                let mut v = Vec::new();
+                at.put_canonical(&mut v);
+                v.extend_from_slice(&self.chain.head_hash());
+                leaves.push((LEAF_LINE, v));
+            }
+            _ => {}
         }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }
 
-    /// T2 — THE LEDGER: every node this court holds at its stamp, and at
-    /// each stamp the treasury rows, the settlements and the dialect
-    /// transitions standing there. A stamp carrying data and no hot receipt
-    /// is a bare node.
+    /// T2 — THE LEDGER: at each stamp the treasury rows, the settlements and
+    /// the dialect transitions standing there, and the receipt where the
+    /// line is in the snapshot. A stamp carrying data and no receipt is a
+    /// bare node.
     fn put_ledger(&self, out: &mut Vec<u8>, refused: &mut Refused) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        for r in self.chain.nodes() {
+        let in_hand = self.chain.nodes().filter(|_| !self.line_held);
+        for r in in_hand {
             let mut v = Vec::new();
             match r.write(&mut v) {
                 // One node per stamp: the receipt is its first leaf.
@@ -428,14 +439,13 @@ impl Kernel {
         put_trie(out, WORDS_TRIE, &nodes);
     }
 
-    /// T3 — THE ERAS by their root's stamp: the root's height, signer and
-    /// place are the key, and each other coordinate of the era is its own
-    /// leaf. A filed era names its payload's offset in the cold segment; an
-    /// era still being sealed carries its payload, the cold segment's own
-    /// record.
+    /// T3 — THE ERAS HELD IN HAND by their root's stamp: the root's height,
+    /// signer and place are the key, and each other coordinate of the era
+    /// and its payload are leaves. A filed era is its own frame in the cold
+    /// segment, and is not written here.
     fn put_eras(&self, out: &mut Vec<u8>, refused: &mut Refused) {
         let mut nodes: Keyed<Leaves> = Keyed::new();
-        for era in &self.archive {
+        for era in self.archive.iter().filter(|e| e.at.is_none()) {
             let key = Stamp::new(era.root.height, era.signer, era.root.at).key();
             if nodes.contains(&key) {
                 refused.eras += 1;
@@ -443,16 +453,11 @@ impl Kernel {
             }
             let mut first = Vec::new();
             era.first.put_canonical(&mut first);
-            let whereabouts = match era.at {
-                Some(at) => (LEAF_FILED_AT, at.to_le_bytes().to_vec()),
-                None => match era.payload() {
-                    Some(p) => (LEAF_PAYLOAD, p),
-                    None => {
-                        refused.eras += 1;
-                        continue;
-                    }
-                },
+            let Some(payload) = era.payload() else {
+                refused.eras += 1;
+                continue;
             };
+            let whereabouts = (LEAF_PAYLOAD, payload);
             nodes.insert(
                 key,
                 vec![

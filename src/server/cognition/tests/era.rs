@@ -158,12 +158,10 @@ assert_eq!(broken.propose_fold(), Err(REFUSE_FOLD_INEXACT), "a ledger that does 
 assert!(broken.chain().root().is_none() && broken.fold_proposal().is_none());
 }
 
-/// THE COLD SEGMENT KEEPS EACH ERA AT ITS OWN OFFSET. Two folds filed into
-/// a real segment are each read back as their own receipts — `file_era`
-/// took the append handle's position, 0 until the first write, and every
-/// era read back the first one's. A court whose ledger carries offsets
-/// all at 0 (every court before the fix) finds each era's payload again
-/// when its segment is bound at boot.
+/// THE COLD SEGMENT KEEPS EACH ERA IN ITS OWN SPAN. Two folds filed into a
+/// real segment are each read back as their own receipts, and a court that
+/// binds the segment again holds both eras from their descriptors alone,
+/// each answering its own range.
 #[test]
 fn each_filed_era_reads_back_its_own_receipts() {
     let close = |k: u64| Place { k, i: 1 };
@@ -172,7 +170,7 @@ fn each_filed_era_reads_back_its_own_receipts() {
     let _ = std::fs::remove_file(&path);
     let mut k = Kernel::new();
     k.bind_identity(home);
-    k.bind_eras(path.clone());
+    k.bind_eras(path.clone()).expect("a new segment binds");
     for _ in 0..3 {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();
@@ -189,15 +187,68 @@ fn each_filed_era_reads_back_its_own_receipts() {
     let two = read(&k, Some(close(2)), close(3));
     assert!(one.contains(&close(2)) && !one.contains(&close(3)), "the first era answers its own range");
     assert!(two.contains(&close(3)) && !two.contains(&close(2)), "the second era answers its own range, not the first's");
-    // A ledger written before the fix: every offset 0.
+    // The snapshot carries no filed era: the segment does.
     let mut back = Kernel::new();
     assert!(back.restore(&k.snapshot()));
-    for e in &mut back.archive {
-        e.at = Some(0);
-    }
-    back.bind_eras(path.clone());
-    assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "reseated from the segment");
+    assert!(back.archive().is_empty(), "no filed era in the snapshot");
+    back.bind_eras(path.clone()).expect("the segment binds");
+    assert_eq!(back.archive(), k.archive(), "the eras held from their descriptors");
+    assert_eq!((read(&back, None, close(2)), read(&back, Some(close(2)), close(3))), (one, two), "each era answers its own range");
     let _ = std::fs::remove_file(&path);
+}
+
+/// THE LINE AND THE SNAPSHOT ON DISK AGREE. A court bound to a line writes
+/// it before the snapshot that names where it stood; a court binding the
+/// same line restores that snapshot to the same head, root and eras; a line
+/// that ran ahead of an older snapshot — folded past the stamp it named —
+/// still restores it; and a snapshot naming a stamp its line does not hold
+/// refuses.
+#[test]
+fn a_court_restores_from_its_line_and_the_snapshot_that_names_it() {
+    let home = [0x5c; 32];
+    let dir = std::env::temp_dir().join(format!("mycelium-line-{}-{}", std::process::id(), line!()));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).expect("a home");
+    let (line, eras) = (dir.join("line"), dir.join("eras"));
+    let bound = |k: &mut Kernel, line: &std::path::Path| {
+        k.bind_line(line.to_path_buf()).expect("the line binds");
+        k.bind_eras(eras.clone()).expect("the segment binds");
+    };
+    let persist = |k: &mut Kernel| -> Vec<u8> {
+        if let Some((path, w)) = k.take_line().expect("the line writes") {
+            assert!(w.land(&path), "the line lands");
+        }
+        k.snapshot()
+    };
+    let mut k = Kernel::new();
+    bound(&mut k, &line);
+    k.bind_identity(home);
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    let early = persist(&mut k);
+    let p = k.propose_fold().expect("a final prefix");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.orbit();
+    let snap = persist(&mut k);
+
+    let mut back = Kernel::new();
+    bound(&mut back, &line);
+    assert!(back.restore(&snap), "the snapshot restores on its line");
+    assert_eq!((back.chain().head_stamp(), back.chain().root()), (k.chain().head_stamp(), k.chain().root()));
+    assert_eq!(back.chain().nodes().cloned().collect::<Vec<_>>(), k.chain().nodes().cloned().collect::<Vec<_>>());
+    assert_eq!(back.archive(), k.archive(), "and the eras from the segment");
+
+    let mut ahead = Kernel::new();
+    bound(&mut ahead, &line);
+    assert!(ahead.restore(&early), "a line folded past the stamp an older snapshot named restores it");
+
+    let mut lost = Kernel::new();
+    bound(&mut lost, &dir.join("no-line"));
+    assert!(!lost.restore(&snap), "a snapshot whose line does not hold its stamp refuses");
+    let _ = std::fs::remove_dir_all(&dir);
 }
 
 /// A PEER RECEIPT CITING A RECEIPT THIS COURT FOLDED IS ADMITTED. The
@@ -213,7 +264,7 @@ fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
     let _ = std::fs::remove_file(&path);
     let mut k = Kernel::new();
     k.bind_identity(home);
-    k.bind_eras(path.clone());
+    k.bind_eras(path.clone()).expect("a new segment binds");
     for _ in 0..3 {
         k.append_step(ActKind::List, [1; 32], [2; 32]);
         k.orbit();

@@ -53,9 +53,8 @@ fn a_peer_fold_sheds_its_line_but_what_our_hot_line_cites() {
 
     // THE INDEX IS DERIVED: a restored ledger reads the peer's root off its
     // fold node again, and what stayed stays.
-    let mut tape = Vec::new();
-    c.put_tries(&mut tape).expect("writes");
-    let mut restored = ReceiptChain::take_tries(&tape, &mut 0).expect("restores whole");
+    let tape = c.line_image().expect("writes");
+    let (mut restored, _) = ReceiptChain::from_line(&tape).expect("restores whole");
     assert_eq!(restored.shed_folded(|_| false), 0, "nothing more leaves on restore");
     assert!(restored.node(&e1.stamp).is_some());
 
