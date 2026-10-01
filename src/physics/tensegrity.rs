@@ -17,11 +17,14 @@
 //!   and no axial slide stands between frames. The transverse chord `s_j s_i`
 //!   stands in no bracket: a chord across the axis turns with the turn.
 //!   Poses compose by the reverse (78.32(1): rays).
-//! - THE INVERSIVE DISTANCE `δ²_ij = ⟨s_i s_j⟩₀² / (s_i² s_j²)` and its well
-//!   are GR1's (`cga::pair_regime`): a Coxeter well `δ² ∈ {0, ¼, ½, ¾}`
-//!   (`m = 2, 3, 4, 6`), tangency at 1. The separation is governed by
-//!   METRIC RIGIDITY: `Δδ² = 0` for every pair across the transition
-//!   ([`rigid`]).
+//! - THE PAIR, read in the algebra and never as a squared scalar (78.59):
+//!   its regime is GR1's (`cga::pair_regime` — the blade's geometric square,
+//!   the rotor's double-angle point: a Coxeter well at `m = 2, 3, 4, 6`,
+//!   tangency parabolic), and its separation the product at unit weight
+//!   ([`unit_product`]). METRIC RIGIDITY: every pair's product kept across
+//!   the transition ([`rigid`]); against a step that dilates, kept relative
+//!   to the step's own image; the common ratio read as the dilation lane
+//!   ([`similarity`]).
 //! - THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]` — the lift terms of 78.46,
 //!   summed in the orbit algebra, order-free — and the STRAIN
 //!   `ℰ = ‖τ‖² / ‖B_orbit‖²`, `‖·‖²` the sum of the squared coefficients on
@@ -84,8 +87,9 @@ pub enum Refusal {
     /// Two frames' nuclei coincide as a ray, `s_i ∧ s_j = 0`: two frames
     /// crushed into one.
     SingularCollapse,
-    /// The pair `(i, j)` did not keep its inversive distance across the
-    /// transition: `Δδ² = delta ≠ 0` — shear, drift, or bodies flying apart.
+    /// The pair `(i, j)` did not keep its unit-weight product across the
+    /// transition: `delta` is its ratio `after / before` (its product after,
+    /// where it was zero) — shear, drift, inversion, or bodies flying apart.
     NonRigid { i: usize, j: usize, delta: Q },
     /// The step reads no succession: it does not factor, turns off the spin
     /// plane, or — with no turn — is no pure slide.
@@ -109,8 +113,8 @@ pub struct Defect {
     /// Δω — per constellation, the net torque its couplings leave on the
     /// generator (a bivector, `½Σ[B_ij, G]`): the rotor still missing.
     pub torsion: Vec<Mv>,
-    /// Δδ² — every pair `(i, j)` whose inversive distance moved across the
-    /// transition, with what it moved by (grade 0): shear, drift, separation.
+    /// Every pair `(i, j)` whose unit-weight product moved (grade 0, its
+    /// ratio): shear, drift, separation.
     pub metric: Vec<(usize, usize, Q)>,
     /// τ_ext — every hour step whose momentum the orbit did not carry (A.13):
     /// the external torque some unmodelled body or field exerted.
@@ -124,26 +128,86 @@ impl Defect {
     }
 }
 
-/// Δδ², WHOLE: every pair of `bodies` (each `(before, after)`) whose inversive
-/// distance moved, with what it moved by — never only the first.
+/// THE PAIR'S PRODUCT AT UNIT WEIGHT (78.59, the operator's ruling "fix the
+/// normalisation": no flat square). Each nucleus is read at unit weight
+/// `ŝ = s / w`, `w = −⟨s e_∞⟩₀`, and the pair's invariant is `ŝ_a · ŝ_b =
+/// ⟨s_a s_b⟩₀ / (w_a w_b)` — first degree in each body, exact: for two points
+/// it is `−½` their squared distance, for spheres the power of the pair. An
+/// isometry keeps it; a dilation scales every pair by one ratio. It replaces
+/// `δ² = ⟨s_a s_b⟩₀² / (s_a² s_b²)`, a scalar squared and divided by squares.
+/// `None` for a nucleus of no finite weight (a flat through `e_∞`).
+pub fn unit_product(a: &Mv, b: &Mv) -> Option<Q> {
+    let einf = cga::e_inf();
+    let (wa, wb) = (-a.geo(&einf).scalar_part(), -b.geo(&einf).scalar_part());
+    if wa.is_zero() || wb.is_zero() {
+        return None;
+    }
+    Some(a.geo(b).scalar_part() / (wa * wb))
+}
+
+/// METRIC RIGIDITY, WHOLE (78.51(4′), at unit weight): every pair of
+/// `bodies` (each `(before, after)`) is read by [`unit_product`] on both
+/// sides, and every pair whose product moved is returned with its ratio
+/// `after / before` (its product after, where it was zero) — none chosen
+/// over another (rule 4). Strict: a dilation moves every pair and is read
+/// against the step that dilates, never excused here (a single pair flying
+/// apart is a common ratio of one pair). Pairs of no finite weight are
+/// [`unmeasured_pairs`], never kept.
 pub fn metric_defect(bodies: &[(Mv, Mv)]) -> Vec<(usize, usize, Q)> {
-    let delta = |a: &Mv, b: &Mv| cga::pair_regime(&cga::gram_form(&[a.clone(), b.clone()]), 0, 1).0;
+    let (ratios, mut out) = pair_ratios(bodies);
+    out.extend(ratios.into_iter().filter(|(_, _, r)| !num_traits::One::is_one(r)));
+    out
+}
+
+/// THE ONE RATIO every measured pair's unit-weight product moved by, where
+/// there is one: `1` for an isometry, another rational for a dilation — the
+/// expansion or collapse lane, a READING, never an exemption from rigidity.
+/// `None` where the pairs moved by different ratios, or no pair was measured.
+pub fn similarity(bodies: &[(Mv, Mv)]) -> Option<Q> {
+    let (ratios, _) = pair_ratios(bodies);
+    match ratios.as_slice() {
+        [(_, _, r), rest @ ..] if rest.iter().all(|(_, _, x)| x == r) => Some(r.clone()),
+        _ => None,
+    }
+}
+
+/// The pairs whose product cannot be read at unit weight, before or after.
+pub fn unmeasured_pairs(bodies: &[(Mv, Mv)]) -> Vec<(usize, usize)> {
     let mut out = Vec::new();
     for (i, (bi, ai)) in bodies.iter().enumerate() {
         for (j, (bj, aj)) in bodies.iter().enumerate().skip(i + 1) {
-            let d = delta(ai, aj) - delta(bi, bj);
-            if !d.is_zero() {
-                out.push((i, j, d));
+            if unit_product(bi, bj).is_none() || unit_product(ai, aj).is_none() {
+                out.push((i, j));
             }
         }
     }
     out
 }
 
+/// One pair `(i, j)` and a rational read of it.
+type PairRead = (usize, usize, Q);
+
+/// Each measured pair's ratio `after / before`, and apart the pairs whose
+/// product was zero and moved (with the product after).
+fn pair_ratios(bodies: &[(Mv, Mv)]) -> (Vec<PairRead>, Vec<PairRead>) {
+    let (mut ratios, mut moved_from_zero) = (Vec::new(), Vec::new());
+    for (i, (bi, ai)) in bodies.iter().enumerate() {
+        for (j, (bj, aj)) in bodies.iter().enumerate().skip(i + 1) {
+            let (Some(pb), Some(pa)) = (unit_product(bi, bj), unit_product(ai, aj)) else { continue };
+            match (pb.is_zero(), pa.is_zero()) {
+                (true, true) => {}
+                (true, false) => moved_from_zero.push((i, j, pa)),
+                (false, _) => ratios.push((i, j, pa / pb)),
+            }
+        }
+    }
+    (ratios, moved_from_zero)
+}
+
 /// 78.57 — THE COHERENCE FORM BEGUN: the structure read first — frames that
 /// do not stand, or a strain the transition raises, leave no form to read and
 /// are refused — then Δω, the torque `after`'s couplings leave on its
-/// generator. The caller adds the transition's Δδ² and τ_ext (they depend on
+/// generator. The caller adds the transition's metric defect and τ_ext (they depend on
 /// which bodies it relates) and asks `Defect::closes`.
 pub fn coherence(before: &Constellation, after: &Constellation) -> Result<Defect, Refusal> {
     frames_stand(after)?;
@@ -404,9 +468,10 @@ pub fn external_torque(before: &Body, after: &Body, step: &Mv) -> Option<Mv> {
     Some(momentum(after, &b).sub(&carried))
 }
 
-/// THE INVERSIVE DISTANCE of two frames and its well (GR1).
-pub fn inversive(i: &Frame, j: &Frame) -> (Q, PairRegime) {
-    cga::pair_regime(&cga::gram_form(&[i.nucleus.clone(), j.nucleus.clone()]), 0, 1)
+/// TWO FRAMES' PAIR: their product at unit weight ([`unit_product`]) and
+/// their regime, read in the algebra (GR1, 78.59) — never a squared ratio.
+pub fn inversive(i: &Frame, j: &Frame) -> (Option<Q>, PairRegime) {
+    (unit_product(&i.nucleus, &j.nucleus), cga::pair_regime(&[i.nucleus.clone(), j.nucleus.clone()], 0, 1))
 }
 
 /// Whether two frames' nuclei coincide as a ray: `s_i ∧ s_j = 0`.
@@ -440,10 +505,11 @@ pub fn net_torque(c: &Constellation) -> Mv {
 
 /// METRIC RIGIDITY (78.51(4′)): each body `(before, after)` — its nucleus on
 /// either side of a transition, in the order the caller holds them — and
-/// every pair's inversive distance kept exactly, `Δδ² = 0` over ℚ. Rigid
-/// motions, reflections and inversions keep it; shear, drift and separation
-/// do not, and the first pair in that order that did not is refused with
-/// what changed.
+/// every pair's unit-weight product kept exactly. Rigid motions and
+/// reflections keep it; shear, drift, separation, dilation and inversion do
+/// not, and the first pair in that order that did not is refused with its
+/// ratio. A dilation is admitted where a STEP dilates: the verifier reads
+/// rigidity against the step's own image of each body (`physics::laws`).
 pub fn rigid(bodies: &[(Mv, Mv)]) -> Result<(), Refusal> {
     match metric_defect(bodies).into_iter().next() {
         Some((i, j, delta)) => Err(Refusal::NonRigid { i, j, delta }),

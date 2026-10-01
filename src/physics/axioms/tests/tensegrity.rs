@@ -54,7 +54,7 @@ fn t2_frames_on_the_axis_circulate_coaxially_in_equilibrium() {
 }
 
 /// THEOREM 1 · BILATERAL INVERSIVE RECIPROCITY. The pose coupling transposes,
-/// `V_ji = Ṽ_ij`, in one pose and posed apart; `δ²` reads the same from both
+/// `V_ji = Ṽ_ij`, in one pose and posed apart; the pair reads the same from both
 /// frames.
 #[test]
 fn t1_at_equilibrium_the_inversive_distance_is_symmetric_and_the_coupling_transposes() {
@@ -62,7 +62,7 @@ fn t1_at_equilibrium_the_inversive_distance_is_symmetric_and_the_coupling_transp
         let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], pose));
         let c = Constellation { frames: vec![a.clone(), b.clone()], generator: turn() };
         assert_eq!(equilibrium(&c), Ok(()), "on the axis: equilibrium");
-        assert_eq!(inversive(&a, &b), inversive(&b, &a), "δ² symmetric, one well");
+        assert_eq!(inversive(&a, &b), inversive(&b, &a), "the pair symmetric, one well");
         assert!(coupling(&b, &a).projective_eq(&coupling(&a, &b).reverse()), "V_ji ∝ Ṽ_ij");
     }
 }
@@ -181,7 +181,7 @@ fn tier_2_a_tumbling_body_is_unbalanced_and_a_drifting_pair_is_not_rigid() {
 }
 
 /// 78.57 · THE COHERENCE FORM IS READ WHOLE, EACH DEFECT IN ITS OWN GRADE,
-/// NEVER SUMMED. A transition that tumbles (Δω), drifts apart (Δδ²) and
+/// NEVER SUMMED. A transition that tumbles (Δω), drifts apart (the metric) and
 /// grows a body on its step (τ_ext) carries all three defects at once — the
 /// form files each blade, where a gate that stopped at the first would have
 /// told the mind one third of what is missing. The synchronous binary,

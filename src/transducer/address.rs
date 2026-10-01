@@ -63,6 +63,9 @@ pub const TAG_RESIDUAL: u8 = 19;
 pub const TAG_PIECE: u8 = 20;
 pub const TAG_CARRIAGE: u8 = 21;
 pub const TAG_MEET: u8 = 22;
+/// 78.62 — A LAW OF THE UNIVERSAL REGISTER: `TAG_LAW ‖ index ‖ version`,
+/// the coordinate an uplinking kernel fetches it by and a verdict cites.
+pub const TAG_LAW: u8 = 23;
 
 /// Canonical A21 coordinates of a form, listing, or class. Coarse-first:
 /// a proper prefix is a coarser stratum of the same kind, never a sibling.

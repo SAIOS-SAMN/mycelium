@@ -4,15 +4,16 @@
 //
 //! A mirror `x_i = k` is the vector `π = e_i + k e_∞`: a point `X` has
 //! `X · π = x_i − k`, so the plane is its zero set, and `π² = 1`. Among
-//! the base's mirrors `δ²` is `0` across axes (orthogonal) and `1` along
-//! one axis (parallel): the lattice's affine group, `Ã₁` per axis, read by
-//! GR1/GR2 as any constructors are.
+//! the base's mirrors the pairs are orthogonal across axes and parallel
+//! along one: the lattice's affine group, `Ã₁` per axis, read by GR1/GR2 as
+//! any constructors are.
 //!
-//! A NUCLEUS AGAINST A MIRROR. For a sphere `s` of centre `c` and extent
-//! `s² = ρ²` (A.12), `s · π = c_i − k`, so `δ² = (c_i − k)² / ρ²`, the
-//! inversive strain's own carrier (65): `0` where the mirror runs through the
-//! centre, below `1` where it cuts the sphere, `1` where tangent, above `1`
-//! where the body stands apart from it. Read against the mirrors that
+//! A NUCLEUS AGAINST A MIRROR (78.59: at unit weight, never a squared
+//! ratio). The sphere `s` of centre `c`, normalised to unit weight
+//! `ŝ = s / (−s · e_∞)`, meets the mirror in its OFFSET `ŝ · π = c_i − k`,
+//! first-degree and exact: `0` where the mirror runs through the centre.
+//! Whether it cuts, touches or stands apart is the pair's regime (GR1),
+//! read in the algebra. Read against the mirrors that
 //! BRACKET the centre on each axis — `⌊c_i⌋` and `⌈c_i⌉`, one mirror where
 //! the centre stands on it — it says where a body sits in the grid, exactly,
 //! with no position taken as a key.
@@ -39,18 +40,18 @@ pub fn sphere_centre(s: &Mv, n: u8) -> Option<Vec<Q>> {
 }
 
 /// ONE NUCLEUS AGAINST ONE BRACKETING MIRROR: the axis, the mirror's offset,
-/// and the pair's `δ²` and regime by GR1's one reader.
+/// the unit-weight sphere's offset from it `c_i − k`, and the pair's regime
+/// by GR1's one reader.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MirrorReading {
     pub axis: usize,
     pub k: Q,
-    pub delta2: Q,
+    pub offset: Q,
     pub regime: super::PairRegime,
 }
 
-/// THE MIRRORS A SPHERE STANDS BETWEEN, and its `δ²` against each (MG1),
-/// read as the pair `(s, π)` by `pair_regime` — the one producer of `δ²`.
-/// Empty where the sphere has no finite centre.
+/// THE MIRRORS A SPHERE STANDS BETWEEN, its offset from each and the
+/// pair's regime (MG1). Empty where the sphere has no finite centre.
 pub fn mirrors_between(s: &Mv, n: u8) -> Vec<MirrorReading> {
     let Some(c) = sphere_centre(s, n) else { return Vec::new() };
     let mut out = Vec::new();
@@ -60,10 +61,17 @@ pub fn mirrors_between(s: &Mv, n: u8) -> Vec<MirrorReading> {
             true => vec![lo],
             false => vec![lo, hi],
         };
+        // The sphere at unit weight: its offset from the mirror is
+        // first degree, `ŝ · π = c_i − k`, never a squared ratio.
+        let w = -s.geo(&super::e_inf()).scalar_part();
+        if w.is_zero() {
+            return Vec::new();
+        }
         for k in ks {
-            let g = super::gram_form(&[s.clone(), base_mirror(i + 1, &k)]);
-            let (delta2, regime) = super::pair_regime(&g, 0, 1);
-            out.push(MirrorReading { axis: i + 1, k, delta2, regime });
+            let mirror = base_mirror(i + 1, &k);
+            let offset = s.geo(&mirror).scalar_part() / &w;
+            let regime = super::pair_regime(&[s.clone(), mirror], 0, 1);
+            out.push(MirrorReading { axis: i + 1, k, offset, regime });
         }
     }
     out

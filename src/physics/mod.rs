@@ -86,6 +86,7 @@ pub fn expansion_unit() -> u64 {
 pub mod axioms;
 pub mod budget;
 pub mod fascicle;
+pub mod laws;
 pub mod metabolism;
 pub mod tensegrity;
 pub use budget::{Budget, Depleted, Reserve};

@@ -24,9 +24,8 @@ fn pose(before: &blade::Blade, after: &blade::Blade) -> crate::transducer::cga::
 
 /// THE EDGE IS `g = (θ_bθ_a⁻¹)·V`, CARRIED WHOLE, AND NOTHING GATES IT.
 ///
-/// Two L-trominoes meet at ONE corner, `δ² > 4` — outside the band
-/// `1 < δ ≤ 2` that decided whether a face was written, so the field refused
-/// them. Under the transition the first turns 90° and the second
+/// Two L-trominoes meet at ONE corner — outside the retired band that
+/// decided whether a face was written, so the field refused them. Under the transition the first turns 90° and the second
 /// stays: each body's own pose is read against itself, `θ_bθ_a⁻¹` is how the
 /// one turned against the other, and the contact carries it composed with
 /// the tether — in the carriage entire, never split by lane, never the
@@ -40,8 +39,6 @@ fn a_contact_edge_is_refraction_never_rigidity() {
     let b = body(&[(2, 1, 0), (3, 1, 0), (2, 2, 0)]);
     let v = blade::tether(&a, &b).expect("both nuclei read");
     assert_eq!(Contact::of(&v), Some(Contact::Apart), "a corner contact reads apart as a tether");
-    let d2 = &v.scalar_part() * &v.scalar_part() / v.geo(&v.reverse()).scalar_part();
-    assert!(d2 > crate::core::Q::from_integer(4.into()), "outside the retired band: δ² = {d2}");
     let (theta_a, theta_b) = (pose(&a, &a_after), pose(&b, &b));
     let relative = theta_b.geo(&theta_a.reverse());
     let ContactEdge::Formed(edge) =

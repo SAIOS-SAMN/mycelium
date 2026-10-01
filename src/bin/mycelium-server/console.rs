@@ -820,7 +820,7 @@ fn cells(c: &observe::Cells) -> Vec<String> {
             None => {}
         }
         for (s, ms) in cell.mirrors.iter().enumerate() {
-            let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: δ² {d2} {}", regime(r))).collect();
+            let on: Vec<String> = ms.iter().map(|(axis, k, d2, r)| format!("x{axis}={k}: offset {d2} {}", regime(r))).collect();
             out.push(format!("      {DIM}nucleus {s} on mirrors [{}]{RESET}", on.join("; ")));
         }
         // CV1b — what the cell's readers could not hold, by content.

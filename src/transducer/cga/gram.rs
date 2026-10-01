@@ -12,13 +12,17 @@
 //!   sources and only one is affine: `z − (r − (p + q))` zero directions come
 //!   from linear dependence, and `r − (p + q)` from a null direction in the
 //!   span's own metric — the degenerate, affine case.
-//! - EACH PAIR'S REGIME by `δ² = G_ab² / (G_aa G_bb)`, the inversive strain's
-//!   own carrier (65), law 11 untouched: the pair's product has finite order
-//!   `m` iff `δ² ∈ {0, 1/4, 1/2, 3/4}` (`m = 2, 3, 4, 6`); `δ² = 1` is
-//!   tangent or parallel, parabolic; `δ² > 1` or `δ² < 0` — disjoint spheres,
-//!   or a real sphere against an imaginary one not orthogonal — a boost; any
-//!   other value in `(0, 1)` a rosette. Every open regime is CERTAIN and read
-//!   with no iteration; acceptance as finite needs a Coxeter system (GR2).
+//! - EACH PAIR'S REGIME, read in the algebra and never as a squared scalar
+//!   (78.59: no flat square exponent — the δ² = G_ab²/(G_aa G_bb) this read
+//!   is retired). The pair's blade `B = s_a ∧ s_b` squares in the geometric
+//!   product: `B B > 0` — disjoint spheres, or a real sphere against an
+//!   imaginary one not orthogonal — a boost; `B B = 0` tangent or parallel,
+//!   parabolic; `B B < 0` the spheres cut, and the pair's rotor
+//!   `V = s_a s_b` turns by twice their dihedral angle: its double-angle
+//!   point `⟨V V⟩₀ / ⟨V Ṽ⟩₀ = cos 2φ` is rational, and the product has finite
+//!   order `m` iff it is `−1, −½, 0, ½` (`m = 2, 3, 4, 6`); any other point a
+//!   rosette. Every open regime is CERTAIN and read with no iteration;
+//!   acceptance as finite needs a Coxeter system (GR2).
 
 use super::multivector::Mv;
 use num_rational::BigRational;
@@ -31,12 +35,12 @@ type Q = BigRational;
 pub enum PairRegime {
     /// The pair's product has this finite order `m ∈ {2, 3, 4, 6}`.
     Finite(u8),
-    /// `δ² = 1`: tangent or parallel — a parabolic product, infinite.
+    /// `B B = 0`: tangent or parallel — a parabolic product, infinite.
     Parabolic,
-    /// `δ² > 1` or `δ² < 0`: a boost, infinite.
+    /// `B B > 0`: a boost, infinite.
     Boost,
-    /// `δ²` in `(0, 1)` off the crystallographic set: a turn of no finite
-    /// order over ℚ, a rosette.
+    /// The spheres cut at a double-angle point off the crystallographic
+    /// set: a turn of no finite order over ℚ, a rosette.
     Rosette,
     /// A constructor with `s² = 0` in the pair: it reflects nothing.
     Null,
@@ -49,8 +53,8 @@ pub struct GramReading {
     pub signature: (usize, usize, usize),
     /// The constructors' rank as vectors.
     pub rank: usize,
-    /// Each pair `(a, b)`, `a < b`, with its `δ²` and regime, in order.
-    pub pairs: Vec<(usize, usize, Q, PairRegime)>,
+    /// Each pair `(a, b)`, `a < b`, with its regime, in order.
+    pub pairs: Vec<(usize, usize, PairRegime)>,
 }
 
 impl GramReading {
@@ -69,7 +73,7 @@ impl GramReading {
 
     /// Whether every pair's product is of finite order.
     pub fn crystallographic(&self) -> bool {
-        self.pairs.iter().all(|(_, _, _, r)| matches!(r, PairRegime::Finite(_)))
+        self.pairs.iter().all(|(_, _, r)| matches!(r, PairRegime::Finite(_)))
     }
 }
 
@@ -132,24 +136,37 @@ pub fn vector_rank(constructors: &[Mv]) -> usize {
     crate::core::span::grade_of(&constructors.iter().map(super::linear::ray_of).collect::<Vec<_>>())
 }
 
-/// ONE PAIR'S REGIME off its `δ²`.
-pub fn pair_regime(g: &[Vec<Q>], a: usize, b: usize) -> (Q, PairRegime) {
-    let den = &g[a][a] * &g[b][b];
-    if den.is_zero() {
-        return (Q::zero(), PairRegime::Null);
+/// ONE PAIR'S REGIME, in the algebra (78.59): the blade's geometric square,
+/// then the rotor's double-angle point. No scalar is squared.
+pub fn pair_regime(constructors: &[Mv], a: usize, b: usize) -> PairRegime {
+    let (sa, sb) = (&constructors[a], &constructors[b]);
+    if sa.geo(sa).scalar_part().is_zero() || sb.geo(sb).scalar_part().is_zero() {
+        return PairRegime::Null;
     }
-    let d2 = &g[a][b] * &g[a][b] / den;
-    let quarter = |n: i64| Q::new(n.into(), 4.into());
-    let regime = match () {
-        _ if d2.is_zero() => PairRegime::Finite(2),
-        _ if d2 == quarter(1) => PairRegime::Finite(3),
-        _ if d2 == quarter(2) => PairRegime::Finite(4),
-        _ if d2 == quarter(3) => PairRegime::Finite(6),
-        _ if d2 == quarter(4) => PairRegime::Parabolic,
-        _ if d2 > quarter(4) || d2.is_negative() => PairRegime::Boost,
+    let rotor = sa.geo(sb);
+    // ORTHOGONAL: the rotor is a pure bivector, so `V V` is a scalar and the
+    // product is of order two whatever the sign of the blade's square — a
+    // real sphere against an imaginary one included.
+    if rotor.scalar_part().is_zero() {
+        return PairRegime::Finite(2);
+    }
+    let blade = rotor.grade(2);
+    let bb = blade.geo(&blade).scalar_part();
+    if bb.is_positive() {
+        return PairRegime::Boost;
+    }
+    if bb.is_zero() {
+        return PairRegime::Parabolic;
+    }
+    let turn = rotor.geo(&rotor).scalar_part() / rotor.geo(&rotor.reverse()).scalar_part();
+    let half = |n: i64| Q::new(n.into(), 2.into());
+    match () {
+        _ if turn == half(-2) => PairRegime::Finite(2),
+        _ if turn == half(-1) => PairRegime::Finite(3),
+        _ if turn.is_zero() => PairRegime::Finite(4),
+        _ if turn == half(1) => PairRegime::Finite(6),
         _ => PairRegime::Rosette,
-    };
-    (d2, regime)
+    }
 }
 
 /// THE GRAM FORM'S READING of a configuration of constructors (GR1).
@@ -157,10 +174,7 @@ pub fn read_gram(constructors: &[Mv]) -> GramReading {
     let g = gram_form(constructors);
     let pairs = (0..constructors.len())
         .flat_map(|a| ((a + 1)..constructors.len()).map(move |b| (a, b)))
-        .map(|(a, b)| {
-            let (d2, r) = pair_regime(&g, a, b);
-            (a, b, d2, r)
-        })
+        .map(|(a, b)| (a, b, pair_regime(constructors, a, b)))
         .collect();
     GramReading { signature: signature(&g), rank: vector_rank(constructors), pairs }
 }

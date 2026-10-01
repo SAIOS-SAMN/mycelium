@@ -172,7 +172,7 @@ pub struct ResonanceTally {
     pub unread_lines: u64,
     /// A.10.1 — the consolidation gate: relations admitted as thoughts, and
     /// refused by name — monocular, collapsed, unbalanced, destabilizing,
-    /// non-rigid (`Δδ² ≠ 0`, 78.51(4′)), no succession, an external torque
+    /// non-rigid (a pair's unit-weight product moved, 78.51(4′)), no succession, an external torque
     /// (A.13); and the reflexive — the identity, one frame seen twice, which
     /// bypasses the gate (78.52 Row 1).
     pub consolidated: u64,
@@ -1168,9 +1168,9 @@ impl Contemplation {
                     }
                 }
             }
-            // Δδ² — METRIC RIGIDITY (78.51(4′)): in a scene, each of this
-            // perception's bodies against the other's body the motion lands it
-            // on, every pair whose inversive distance moved. A body landing on
+            // METRIC RIGIDITY (78.51(4′), at unit weight by 78.59): in a
+            // scene, each of this perception's bodies against the other's body
+            // the motion lands it on, every pair whose unit-weight product moved. A body landing on
             // none appeared, and stands in no pair.
             if !orbit {
                 let mut bodies: Vec<(Mv, Mv)> = Vec::new();
@@ -1317,7 +1317,7 @@ impl Contemplation {
         let before: Vec<_> = (0..h).flat_map(|m| g.bodies.iter().map(move |b| hour(&b.nucleus, &g.coupling, m))).collect();
         let mut after = before.clone();
         after.extend(g.bodies.iter().map(|b| hour(&b.nucleus, &g.coupling, h)));
-        // 78.57 — THE COHERENCE FORM of the next hour, whole: Δω, then Δδ² of
+        // 78.57 — THE COHERENCE FORM of the next hour, whole: Δω, then the metric defect of
         // every matched body, then τ_ext of every body's step; closed only
         // where every component vanishes.
         let verdict = coherence(
@@ -1407,7 +1407,7 @@ impl Contemplation {
             }
             // 78.57 — THE COHERENCE FORM, whole: each component counted on its
             // own counter and filed as its own demand — Δω the missing rotor,
-            // Δδ² the missing tangency, τ_ext the unmodelled force.
+            // the metric defect the missing tangency, τ_ext the unmodelled force.
             Refusal::Incoherent { defect } => {
                 self.resonance.incoherent += 1;
                 if !defect.torsion.is_empty() {

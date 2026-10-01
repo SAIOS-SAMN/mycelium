@@ -9,7 +9,8 @@
 //! constructors — an exact sign balance along the component's pairs,
 //! unique up to one global sign, no choice — (ii) its constructors are
 //! linearly independent, (iii) every pair is crystallographic or at
-//! infinity (`δ² ∈ {0, 1/4, 1/2, 3/4}` or `δ² ≥ 1`), and (iv) every
+//! infinity (GR1's regime, read in the algebra: finite of order 2, 3, 4 or
+//! 6, parabolic, or a boost — never a rosette), and (iv) every
 //! constructor is a real mirror (`s² > 0`). A recognised component is FINITE
 //! where its span is definite, AFFINE where it is positive semidefinite and
 //! degenerate, HYPERBOLIC otherwise — Coxeter's theorem, no iteration. `A₂`'s
@@ -94,7 +95,7 @@ pub struct CoxeterReading {
 /// mirror a wall and none chosen as a generator. `None` where the component
 /// is not such a family. The offsets are read against the first normal:
 /// each plane is `λ_a (n₀ + t_a e_∞)`, `t_a` exact.
-fn parallel_step(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> Option<Q> {
+fn parallel_step(constructors: &[Mv], comp: &[usize]) -> Option<Q> {
     let [first, rest @ ..] = comp else { return None };
     if rest.is_empty() {
         return None;
@@ -102,7 +103,7 @@ fn parallel_step(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> Option<Q>
     let einf = cga::e_inf();
     let through = comp.iter().all(|&a| constructors[a].geo(&einf).scalar_part().is_zero());
     let parallel = comp.iter().enumerate().all(|(i, &a)| {
-        comp.iter().skip(i + 1).all(|&b| cga::pair_regime(g, a, b).1 == PairRegime::Parabolic)
+        comp.iter().skip(i + 1).all(|&b| cga::pair_regime(constructors, a, b) == PairRegime::Parabolic)
     });
     let vs: Vec<Mv> = comp.iter().map(|&a| constructors[a].clone()).collect();
     if !(through && parallel && cga::vector_rank(&vs) == 2) {
@@ -208,10 +209,10 @@ fn class_of(constructors: &[Mv], g: &[Vec<Q>], comp: &[usize]) -> ComponentClass
     let vs: Vec<Mv> = comp.iter().map(|&a| constructors[a].clone()).collect();
     let real = comp.iter().all(|&a| g[a][a].is_positive());
     let pairs_ok = comp.iter().enumerate().all(|(i, &a)| {
-        comp.iter().skip(i + 1).all(|&b| {
-            !matches!(cga::pair_regime(g, a, b).1, PairRegime::Rosette | PairRegime::Null)
-                && !cga::pair_regime(g, a, b).0.is_negative()
-        })
+        // The retired δ² test also refused a real constructor against an
+        // imaginary one; `real` above already refuses every imaginary one,
+        // so the regime is the whole test.
+        comp.iter().skip(i + 1).all(|&b| !matches!(cga::pair_regime(constructors, a, b), PairRegime::Rosette | PairRegime::Null))
     });
     let independent = cga::vector_rank(&vs) == comp.len();
     if !(real && pairs_ok && independent) || sign_balance(constructors, g, comp).is_none() {
@@ -273,7 +274,7 @@ pub fn read_coxeter(
     let mut parallel: Vec<(Vec<usize>, Q)> = Vec::new();
     let comps: Vec<(Vec<usize>, ComponentClass)> = components(&g)
         .into_iter()
-        .map(|c| match parallel_step(constructors, &g, &c) {
+        .map(|c| match parallel_step(constructors, &c) {
             Some(step) => {
                 parallel.push((c.clone(), step));
                 (c, ComponentClass::Affine)
@@ -286,7 +287,7 @@ pub fn read_coxeter(
         .collect();
     let pair_refusal = (0..g.len())
         .flat_map(|a| ((a + 1)..g.len()).map(move |b| (a, b)))
-        .map(|(a, b)| (a, b, cga::pair_regime(&g, a, b).1))
+        .map(|(a, b)| (a, b, cga::pair_regime(constructors, a, b)))
         .find(|(_, _, r)| matches!(r, PairRegime::Rosette | PairRegime::Boost | PairRegime::Parabolic));
     let refusal = comps
         .iter()

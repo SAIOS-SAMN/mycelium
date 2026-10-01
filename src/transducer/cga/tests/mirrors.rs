@@ -5,34 +5,35 @@ use super::common::{budget, q};
 use crate::transducer::cech::{read_coxeter, Closure, ComponentClass, Refusal};
 use crate::transducer::cga::*;
 
-/// A NUCLEUS SITS IN THE GRID BY ITS δ² AGAINST ITS BRACKETING MIRRORS: the
-/// sphere of centre `(1/2, 0, 3/2)`, `ρ² = 1/4`, touches both mirrors of its
-/// first and third axes (δ² = 1, tangent) and stands centred on `x₂ = 0`
-/// (δ² = 0, the plane through its centre). With `ρ² = 1` the same centre's
-/// mirrors cut it at `δ² = 1/4`.
+/// A NUCLEUS SITS IN THE GRID BY ITS OFFSET FROM ITS BRACKETING MIRRORS, at
+/// unit weight and first degree (78.59 — never a squared ratio): the sphere
+/// of centre `(1/2, 0, 3/2)`, `ρ² = 1/4`, stands `±1/2` from both mirrors of
+/// its first and third axes and touches them (parabolic), and stands on
+/// `x₂ = 0` (offset 0, the plane through its centre: orthogonal, order two).
+/// With `ρ² = 1` the same mirrors cut it at 60°, a turn of order three.
 #[test]
-fn a_nucleus_reads_its_delta_squared_against_the_mirrors_it_stands_between() {
+fn a_nucleus_reads_its_offset_against_the_mirrors_it_stands_between() {
     let centre = [q(1, 2), q(0, 1), q(3, 2)];
     let read = |r2| {
         mirrors_between(&sphere_at(&centre, &r2), 3)
             .into_iter()
-            .map(|m| (m.axis, m.k, m.delta2, m.regime))
+            .map(|m| (m.axis, m.k, m.offset, m.regime))
             .collect::<Vec<_>>()
     };
     assert_eq!(
         read(q(1, 4)),
         vec![
-            (1, q(0, 1), q(1, 1), PairRegime::Parabolic),
-            (1, q(1, 1), q(1, 1), PairRegime::Parabolic),
+            (1, q(0, 1), q(1, 2), PairRegime::Parabolic),
+            (1, q(1, 1), q(-1, 2), PairRegime::Parabolic),
             (2, q(0, 1), q(0, 1), PairRegime::Finite(2)),
-            (3, q(1, 1), q(1, 1), PairRegime::Parabolic),
-            (3, q(2, 1), q(1, 1), PairRegime::Parabolic),
+            (3, q(1, 1), q(1, 2), PairRegime::Parabolic),
+            (3, q(2, 1), q(-1, 2), PairRegime::Parabolic),
         ]
     );
     let wide = read(q(1, 1));
     assert!(
-        wide.iter().filter(|m| m.0 != 2).all(|m| m.2 == q(1, 4) && m.3 == PairRegime::Finite(3)),
-        "the mirrors cut the wider sphere at δ² = 1/4: {wide:?}"
+        wide.iter().filter(|m| m.0 != 2).all(|m| m.3 == PairRegime::Finite(3)),
+        "the mirrors cut the wider sphere at 60°: {wide:?}"
     );
 }
 

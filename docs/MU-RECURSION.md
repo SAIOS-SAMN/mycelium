@@ -19137,6 +19137,42 @@ an irrational root. No square root, logarithm, angle or decimal.
 4. Court agreement re-read as balance around the court triangle (Phase 1
    item 1), through 78.61's C3.
 
+**Step 1 landed with δ² retired (the operator, 2026-10-01: "flat squares
+have no place in this code — a flat surface stacked into the physics will
+blow out any manifold").** The stashed 78.59 work is rolled in and every
+site of δ² = ⟨s_a s_b⟩₀² / (s_a² s_b²) is gone:
+- *A pair's regime is read in the algebra* (`cga::pair_regime`, GR1): an
+  orthogonal pair (the rotor `s_a s_b` a pure bivector) is of order two;
+  else the blade's geometric square — positive a boost, zero parabolic —
+  and, where the spheres cut, the rotor's double-angle point
+  `⟨VV⟩₀/⟨VṼ⟩₀`, finite of order 2, 3, 4, 6 at −1, −½, 0, ½, a rosette
+  elsewhere. Fascicles, streamlines (`streamline_of`), enclosures,
+  mirrors and Coxeter recognition read it.
+- *Separation is the product at unit weight* (`tensegrity::unit_product`):
+  `ŝ_a · ŝ_b = ⟨s_a s_b⟩₀ / (w_a w_b)`, `w = −⟨s e_∞⟩₀` — first degree in
+  each body, exact; a point is read (the null nucleus δ² could not read).
+  A sphere against a mirror is its first-degree OFFSET `c_i − k`.
+- *METRIC RIGIDITY CHANGES MEANING, stated:* it is isometric and strict —
+  every pair's unit-weight product kept exactly. A dilation moves every
+  pair: it is read as one ratio (`similarity`, the expansion or collapse
+  lane) and admitted only where a STEP dilates, since the verifier reads
+  rigidity against the step's own image of each body. An INVERSION, which
+  kept δ², now breaks rigidity: it is conformal, not rigid. A single pair
+  flying apart is refused (a "common ratio" of one pair would have
+  excused it).
+- *Records of the retired quantity are restated in the algebra*: the
+  tether's adjacency is its conjugacy CLASS, the same at every scale (a
+  similarity conjugates the tether); the rank-2 "directional" record of
+  69.3, a Euclidean quadratic form, is retired; `Contact::of` reads the
+  sign of the weight `V Ṽ`, never `s · s` against `B B`.
+The flat squares still standing, owed next and named so they are not
+lost: the kinematic charge `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1` (`step_charge`; its
+algebraic reading `(⟨ΩΩ⟩₀/⟨ΩΩ̃⟩₀ − 1)/2` agrees only on a scalar and one
+simple blade, so moving it moves the census on composite motors — the
+operator rules the meaning first) and the STRAIN `‖τ‖²/‖B‖²`, a
+positive-definite sum of squared coefficients (A10.1 III), which ranks
+operations by a Euclidean norm.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -31,10 +31,11 @@ pub const A10_1_II_BALANCE: &str = "a constellation is in stationary equilibrium
 /// torque is — a null torque is read.
 pub const A10_1_III_STRAIN: &str = "the strain is the torque's coefficient norm over the generator's";
 
-/// METRIC RIGIDITY (78.51(4′)). The separation between frames is governed by
-/// the inversive distance, kept exactly across a transition: `Δδ² = 0` for
-/// every pair, never the planar commutator.
-pub const A10_1_METRIC_RIGIDITY: &str = "every pair keeps its inversive distance across the transition";
+/// METRIC RIGIDITY (78.51(4′), at unit weight by 78.59). The separation
+/// between frames is each pair's product at unit weight, `ŝ_i · ŝ_j`, kept
+/// across a transition — against the step's own image where a step dilates
+/// — never a squared ratio, never the planar commutator.
+pub const A10_1_METRIC_RIGIDITY: &str = "every pair keeps its unit-weight product across the transition";
 
 /// THE VILLARCEAU SUCCESSION (78.52 Row 1). A turn's hours wind on the
 /// isoclinic rotor pairing it with the same turn in `e₃e₊`, centred on the
@@ -50,9 +51,9 @@ pub const A13_MOMENTUM_CARRIED: &str = "an unforced orbit carries its momentum; 
 
 /// HYPHAL FASCICLES (78.52 Row 2). Every motion is a fascicle's versor
 /// `V = s₂ s₁`, read at unit weight `V X Ṽ / (s₁² s₂²)`; its streamline is its
-/// spheres' inversive distance — elliptic `δ² < 1`, parabolic `δ² = 1`,
-/// hyperbolic `δ² > 1`; the slide is the fascicle of parallel planes kissing
-/// at `e_∞`.
+/// spheres' pair read in the algebra — the blade's geometric square negative
+/// (elliptic), zero (parabolic), positive (hyperbolic); the slide is the
+/// fascicle of parallel planes kissing at `e_∞`.
 pub const R2_HYPHAL_FASCICLES: &str =
     "every motion is a fascicle's product, its streamline its spheres' inversive distance; the slide the fascicle kissing at infinity";
 
@@ -75,7 +76,7 @@ pub const A10_1_IV_FORCE: &str =
 
 /// THEOREM 1 · BILATERAL INVERSIVE RECIPROCITY. At equilibrium the couplings
 /// read both ways, `V_ji ∝ Ṽ_ij` — the pose and the axial slide commuting on
-/// the axis — and `δ²_ij = δ²_ji`.
+/// the axis — and the pair reads the same both ways.
 pub const A10_1_T1_RECIPROCITY: &str = "at equilibrium the inversive distance is symmetric and the couplings transpose";
 
 /// THEOREM 2 · COMMUTATIVE CO-PLANARITY. Where every coupling commutes with

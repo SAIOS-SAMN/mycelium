@@ -18,11 +18,11 @@
 //! CONTAINMENT of a sphere `s` against an enclosure `e`, both written with
 //! the weight infinity reads (`s · e_∞ = −1`), is read in two steps:
 //!
-//! 1. GR1's `pair_regime` on the pair's Gram form. Tangent, orthogonal or
-//!    cutting at any angle (`δ² ≤ 1`): the body stands ON the enclosure —
+//! 1. GR1's `pair_regime`, read in the algebra. Tangent, orthogonal or
+//!    cutting at any angle: the body stands ON the enclosure —
 //!    by name, neither inside nor out. A body of the cell stands on its own
 //!    enclosure by construction: its centre is on the round.
-//! 2. Apart (`δ² > 1`): the sign of the inversive product `s · e`. Negative:
+//! 2. Apart (a boost): the sign of the inversive product `s · e`. Negative:
 //!    APART, each outside the other. Positive: NESTED — and which of the two
 //!    wraps is the side of the pair's radical plane `π = s − e` (the pencil's
 //!    member of weight zero) the enclosure stands on, the sign of `e · π`:
@@ -106,7 +106,7 @@ pub fn containment(s: &Mv, e: &Mv) -> Containment {
         _ if q.is_negative() => Containment::Apart,
         _ => Containment::On,
     };
-    match pair_regime(&g, 0, 1).1 {
+    match pair_regime(&[s.clone(), e.clone()], 0, 1) {
         // A point against the enclosure, or the enclosure a point: the sign
         // of the one product there is.
         PairRegime::Null => match (g[0][0].is_zero(), sign(&g[0][1])) {

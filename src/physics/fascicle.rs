@@ -10,13 +10,14 @@
 //! at unit weight, `Ad_V(X) = V X Ṽ / (s₁² s₂²)` — no root, no series, no
 //! matrix.
 //!
-//! THE STREAMLINE a fascicle flows along is read off its two spheres'
-//! inversive distance `δ² = ⟨s₁ s₂⟩₀² / (s₁² s₂²)` (GR1):
-//! - `δ² < 1` ELLIPTIC — the spheres cut; the stream turns about their
-//!   circle `s₁ ∧ s₂`, by twice their dihedral angle (`cos² φ = δ²`).
-//! - `δ² = 1` PARABOLIC — the spheres kiss; the stream flows about the
+//! THE STREAMLINE a fascicle flows along is read off its two spheres' pair
+//! in the algebra (GR1, 78.59 — never the squared ratio `δ²`): the pair's
+//! blade `B = s₁ ∧ s₂` squared in the geometric product —
+//! - `B B < 0` ELLIPTIC — the spheres cut; the stream turns about their
+//!   circle `s₁ ∧ s₂`, by twice their dihedral angle.
+//! - `B B = 0` PARABOLIC — the spheres kiss; the stream flows about the
 //!   contact, which it fixes.
-//! - `δ² > 1` HYPERBOLIC — the spheres are apart; the stream breathes along
+//! - `B B > 0` HYPERBOLIC — the spheres are apart; the stream breathes along
 //!   the orthogonal trajectories (concentric: a dilation by `r₂² / r₁²`).
 //!
 //! THE SLIDE IS A FASCICLE: the two parallel planes `d` and `d + ½|d|² e_∞`
@@ -29,28 +30,30 @@
 
 use crate::transducer::cga::{self, Mv};
 use num_rational::BigRational;
-use num_traits::{One, Zero};
+use num_traits::{One, Signed, Zero};
 
 type Q = BigRational;
 
-/// THE STREAMLINE a fascicle flows along, read off its inversive distance.
+/// THE STREAMLINE a fascicle flows along, read off its pair's regime.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Streamline {
-    /// `δ² < 1`: the spheres cut; the stream turns about their circle.
+    /// The spheres cut; the stream turns about their circle.
     Elliptic,
-    /// `δ² = 1`: the spheres kiss; the stream flows about the contact.
+    /// The spheres kiss; the stream flows about the contact.
     Parabolic,
-    /// `δ² > 1`: the spheres are apart; the stream breathes.
+    /// The spheres are apart; the stream breathes.
     Hyperbolic,
 }
 
 impl Streamline {
-    /// The streamline of an inversive distance `δ²`.
-    pub fn of(delta2: &Q) -> Streamline {
-        match delta2.cmp(&Q::one()) {
-            std::cmp::Ordering::Less => Streamline::Elliptic,
-            std::cmp::Ordering::Equal => Streamline::Parabolic,
-            std::cmp::Ordering::Greater => Streamline::Hyperbolic,
+    /// The streamline of a pair's regime (GR1); `None` for a null pair,
+    /// which reflects nothing.
+    pub fn of(regime: cga::PairRegime) -> Option<Streamline> {
+        match regime {
+            cga::PairRegime::Finite(_) | cga::PairRegime::Rosette => Some(Streamline::Elliptic),
+            cga::PairRegime::Parabolic => Some(Streamline::Parabolic),
+            cga::PairRegime::Boost => Some(Streamline::Hyperbolic),
+            cga::PairRegime::Null => None,
         }
     }
 }
@@ -74,20 +77,14 @@ impl Fascicle {
         self.first.norm2() * self.second.norm2()
     }
 
-    /// ITS INVERSIVE DISTANCE `δ² = ⟨s₁ s₂⟩₀² / (s₁² s₂²)`; `None` for a null
-    /// sphere (a point), which has no weight.
-    pub fn inversive(&self) -> Option<Q> {
-        let w = self.weight();
-        if w.is_zero() {
-            return None;
-        }
-        let dot = self.first.geo(&self.second).scalar_part();
-        Some(&dot * &dot / w)
+    /// ITS PAIR'S REGIME, read in the algebra (GR1, 78.59).
+    pub fn regime(&self) -> cga::PairRegime {
+        cga::pair_regime(&[self.first.clone(), self.second.clone()], 0, 1)
     }
 
-    /// THE STREAMLINE it flows along.
+    /// THE STREAMLINE it flows along; `None` for a null sphere (a point).
     pub fn streamline(&self) -> Option<Streamline> {
-        self.inversive().map(|d| Streamline::of(&d))
+        Streamline::of(self.regime())
     }
 
     /// `Ad_V(X) = V X Ṽ / (s₁² s₂²)` — the action read at unit weight; `None`
@@ -131,16 +128,22 @@ impl Fascicle {
 
 /// THE STREAMLINE OF A MOTION held as one versor (78.52 Row 2): a 2-versor —
 /// a scalar and one simple bivector, `B ∧ B = 0` — is a fascicle's product,
-/// and its inversive distance reads `δ² = ⟨V⟩₀² / (V Ṽ)`. `None` where `V`
+/// and its streamline is the sign of its blade's geometric square. `None` where `V`
 /// is no 2-versor (a loxodromic composite, two fascicles) or has no weight.
 pub fn streamline_of(v: &Mv) -> Option<Streamline> {
     let (s, b) = (v.scalar_part(), v.grade(2));
     if !v.sub(&Mv::scalar(s.clone())).sub(&b).is_zero() || !b.geo(&b).grade(4).is_zero() {
         return None;
     }
-    let w = v.geo(&v.reverse()).scalar_part();
-    if w.is_zero() {
+    if v.geo(&v.reverse()).scalar_part().is_zero() {
         return None;
     }
-    Some(Streamline::of(&(&s * &s / w)))
+    // THE SIGN OF THE BLADE'S GEOMETRIC SQUARE, which `pair_regime` reads
+    // for a pair (78.59): `s²/w` was `δ²`, a scalar squared.
+    let bb = b.geo(&b).scalar_part();
+    Some(match () {
+        _ if bb.is_negative() => Streamline::Elliptic,
+        _ if bb.is_zero() => Streamline::Parabolic,
+        _ => Streamline::Hyperbolic,
+    })
 }

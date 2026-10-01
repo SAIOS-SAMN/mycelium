@@ -386,7 +386,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
                 .as_ref()
                 .ok()
                 .map(|g| ((g.signature.0 as u8, g.signature.1 as u8, g.signature.2), g.rank as u8)),
-            pairs: a.gram.iter().flat_map(|g| g.pairs.iter().map(|(_, _, _, r)| *r)).collect(),
+            pairs: a.gram.iter().flat_map(|g| g.pairs.iter().map(|(_, _, r)| *r)).collect(),
             coxeter: a.coxeter.as_ref().map(cell_closure),
             polars: a.polars.as_ref().map(cell_closure),
             dual: a.dual.as_ref().map(|d| match d {
@@ -408,7 +408,7 @@ pub(crate) fn cells_reading(c: &Comprehension) -> Cells {
             classes: a.classes,
             mirrors: ms
                 .iter()
-                .map(|n| n.iter().map(|m| (m.axis as u8, m.k.clone(), m.delta2.clone(), m.regime)).collect())
+                .map(|n| n.iter().map(|m| (m.axis as u8, m.k.clone(), m.offset.clone(), m.regime)).collect())
                 .collect(),
         })
         .collect();

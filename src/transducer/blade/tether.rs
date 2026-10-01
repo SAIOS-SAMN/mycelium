@@ -90,7 +90,10 @@ impl Contact {
         let s = v.scalar_part();
         let b = v.grade(2);
         let mode = b.geo(&b).scalar_part();
-        if &s * &s <= mode {
+        // THE WEIGHT'S SIGN, read in the algebra (78.59): `V Ṽ = s² − B B`
+        // for a scalar and one simple blade, so a tether of no positive weight
+        // reads no contact — never `s · s` compared as a squared scalar.
+        if v.geo(&v.reverse()).scalar_part() <= zero {
             return None;
         }
         Some(match (mode.cmp(&zero), s < zero) {

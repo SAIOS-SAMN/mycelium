@@ -3,12 +3,12 @@
 
 use crate::transducer::blade;
 
-/// `δ²` READ OFF THE TETHER: `⟨V⟩₀² / ⟨VṼ⟩₀`, the projective reading of `V`'s
-/// class (72.1). Equal, value for value, to the `num²/den2` the split
-/// `Strain` carried.
-fn delta2(a: &blade::Blade, b: &blade::Blade) -> crate::core::Q {
-    let v = blade::tether(a, b).expect("both nuclei");
-    &v.scalar_part() * &v.scalar_part() / v.geo(&v.reverse()).scalar_part()
+/// THE TETHER'S CLASS: its conjugacy class as coordinates (72.1), the
+/// scale-free reading of `V` — a similarity conjugates the tether, so its
+/// class stands — read in the algebra, never the squared ratio
+/// `⟨V⟩₀² / ⟨VṼ⟩₀` this read before 78.59.
+fn tether_class(a: &blade::Blade, b: &blade::Blade) -> crate::transducer::address::Address {
+    blade::tether(a, b).expect("both nuclei").class_key().expect("a versor has a class")
 }
 
 // `the_adjacency_band_against_a_size_mismatch` STOOD HERE and is retired
@@ -27,18 +27,16 @@ fn delta2(a: &blade::Blade, b: &blade::Blade) -> crate::core::Q {
 /// else.
 ///
 /// THE RANK-1 READING FAILS IT: `radius2() = Tr(I)/M₀` is the mean of the
-/// extent over all directions, so `δ` cannot tell a long body from a
-/// distant one. The rank-2 reading along the separation is printed beside
-/// it as the record of 69.3.
+/// extent over all directions, so the tether's class cannot tell a long body
+/// from a distant one. (The rank-2 record of 69.3 — a Euclidean quadratic
+/// form, `Σ vᵢ²` and a squared ratio — is retired with δ², 78.59.)
 ///
 /// PH3, 69.3 as ruled — THE OBLIGATION IS MET BY THE LATTICE: contact is
 /// the cell the two cubes share, read by grade (BQ2), and that reading is
 /// asserted constant on the family.
 #[test]
 fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
-    let q = |n: i64| num_rational::BigRational::from_integer(num_bigint::BigInt::from(n));
-    let mut rank1: Vec<String> = Vec::new();
-    let mut rank2: Vec<String> = Vec::new();
+    let mut rank1: Vec<crate::transducer::address::Address> = Vec::new();
     let mut by_grade: Vec<Vec<usize>> = Vec::new();
     for n in 1..=6i64 {
         let bar: Vec<_> = (0..n).map(|c| (0i64, c, 0i64)).collect();
@@ -54,40 +52,14 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
             .collect();
         grades.sort_unstable();
         by_grade.push(grades);
-        let (ba, bb) = (&a.blade, &b.blade);
-        // RANK 1 — the tether's scale-free reading.
-        rank1.push(format!("{}", delta2(ba, bb)));
-        // RANK 2 — the same reading on the DIRECTIONAL extent.
-        let (ca, cb) = (ba.centroid().expect("a"), bb.centroid().expect("b"));
-        let v: Vec<num_rational::BigRational> = cb.iter().zip(&ca).map(|(x, y)| x - y).collect();
-        let vv = v.iter().fold(q(0), |s, x| s + x * x);
-        let dir = |bl: &blade::Blade| -> num_rational::BigRational {
-            let m0 = q(bl.support.len() as i64);
-            let mut quad = q(0);
-            for (i, vi) in v.iter().enumerate() {
-                for (j, vj) in v.iter().enumerate() {
-                    if let Some(m) = bl.moment2(i, j) {
-                        quad += vi * vj * m;
-                    }
-                }
-            }
-            quad / (&vv * &m0)
-        };
-        let (ra2, rb2) = (dir(ba), dir(bb));
-        let num = &vv - &ra2 - &rb2;
-        let den2 = q(4) * &ra2 * &rb2;
-        rank2.push(format!("{}", (&num * &num) / &den2));
+        // RANK 1 — the tether's class, its scale-free reading.
+        rank1.push(tether_class(&a.blade, &b.blade));
     }
-    eprintln!("  contact family (cell against a bar of n cells, edge to edge):");
-    eprintln!("    rank-1 δ² (the tether, Tr(I)/M₀): {rank1:?}");
-    eprintln!("    rank-2 δ² (directional v·I·v): {rank2:?}");
+    eprintln!("    shared cells by grade (the lattice's reading): {by_grade:?}");
     assert!(
         rank1.iter().any(|x| x != &rank1[0]),
         "if this ever passes, the rank-1 reading became constant and A.14 is moot"
     );
-    let rank2_constant = rank2.iter().all(|x| x == &rank2[0]);
-    eprintln!("    rank-2 constant on the family: {rank2_constant} (the record of 69.3, not the obligation)");
-    eprintln!("    shared cells by grade (the lattice's reading): {by_grade:?}");
     assert!(!by_grade[0].is_empty(), "a cell edge to edge with a bar shares a cell with it");
     assert!(
         by_grade.iter().all(|g| g == &by_grade[0]),
@@ -96,24 +68,21 @@ fn a14_the_pair_reading_must_be_constant_on_a_contact_family() {
 }
 
 /// THE TETHER'S READING OF ADJACENCY, AND THAT IT IS SCALE-FREE — kept as
-/// a record, gating nothing.
-///
-/// Two unit compartments sharing an edge read `δ² = 4`, a corner neighbour 25,
-/// a one-cell gap 121; two `n×n` blocks sharing an edge read 4 at every `n`,
-/// because `δ` is a similarity invariant. The band that turned these values
-/// into a gate is retired (BQ5a, SQ1 item 2); the values stand as what the
-/// tether's class reads.
+/// a record, gating nothing. Edge-adjacent unit compartments, a corner
+/// neighbour and a one-cell gap read three tether classes; two `n×n` blocks
+/// sharing an edge read the edge's class at every `n`, because a similarity
+/// conjugates the tether and its class stands. Read in the algebra — the
+/// squared ratio `δ²` this recorded as 4, 25 and 121 is retired (78.59).
 #[test]
 fn the_tether_reads_adjacency_scale_free() {
     let q = |n: i64| crate::core::Q::from_integer(n.into());
     let u0 = blade::shape_of(&[(0, 0, 0)]).blade;
     let u1 = blade::shape_of(&[(0, 1, 0)]).blade;
     assert_eq!(u0.radius2(), q(1) / q(6), "the +1/12 floor, twice");
-    assert_eq!(delta2(&u0, &u1), q(4), "edge-adjacent unit compartments read δ² = 4");
-    let diag = blade::shape_of(&[(1, 1, 0)]).blade;
-    let gap = blade::shape_of(&[(0, 2, 0)]).blade;
-    assert_eq!(delta2(&u0, &diag), q(25), "a corner neighbour is δ = 5");
-    assert_eq!(delta2(&u0, &gap), q(121), "a one-cell gap is δ = 11");
+    let edge = tether_class(&u0, &u1);
+    let diag = tether_class(&u0, &blade::shape_of(&[(1, 1, 0)]).blade);
+    let gap = tether_class(&u0, &blade::shape_of(&[(0, 2, 0)]).blade);
+    assert!(edge != diag && edge != gap && diag != gap, "edge, corner and gap read three classes");
     for n in 1..=5i64 {
         let cells = |r0: i64, c0: i64| {
             let mut v = Vec::new();
@@ -126,6 +95,6 @@ fn the_tether_reads_adjacency_scale_free() {
         };
         let (a, b) = (cells(0, 0), cells(0, n));
         assert_eq!(a.radius2(), q(n * n) / q(6), "an n×n block carries r² = n²/6");
-        assert_eq!(delta2(&a, &b), q(4), "and edge-adjacency is δ² = 4 at n = {n}");
+        assert_eq!(tether_class(&a, &b), edge, "and edge-adjacency reads the edge's class at n = {n}");
     }
 }

@@ -201,7 +201,8 @@ pub struct CellEntry {
     pub products: Vec<CellProduct>,
     /// The product classes: a count.
     pub classes: usize,
-    /// MG1 — per nucleus, each bracketing mirror: `(axis, k, δ², regime)`.
+    /// MG1 — per nucleus, each bracketing mirror: `(axis, k, offset, regime)`,
+    /// the offset the unit-weight sphere's from the mirror (78.59).
     pub mirrors: Vec<Vec<(u8, BigRational, BigRational, PairRegime)>>,
     /// EN1 — its enclosure; `None` where its nuclei did not read.
     pub enclosure: Option<CellEnclosure>,

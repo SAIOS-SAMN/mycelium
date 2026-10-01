@@ -85,7 +85,7 @@ fn a_parallel_family_reads_affine_with_twice_the_gcd_of_its_spacings() {
     assert_eq!(read_coxeter(&scaled, &[], &mut stroke()).parallel, vec![(vec![0, 1, 2], q(2, 1))], "the ray, not its writing");
 }
 
-/// A ROSETTE PAIR IS REFUSED BY ITS PAIR AND BY ITS PRODUCT: `δ² = 1/5`, and
+/// A ROSETTE PAIR IS REFUSED BY ITS PAIR AND BY ITS PRODUCT: a double-angle point off the crystallographic set, and
 /// the product of the two reflections is a turn of no admitted order.
 #[test]
 fn a_rosette_pair_reads_an_infinite_order_product() {
