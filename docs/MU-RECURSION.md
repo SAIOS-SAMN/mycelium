@@ -19314,6 +19314,50 @@ during a stop). Every pass of the unclosed orbit decoded and lifted two
 forms; holding the attached word removes those passes. Read after the
 deploy, never assumed.
 
+### 78.64 Phase 1 closes on a soak: the hypha and client work it needs, and six rulings (ruled 2026-10-01, the operator's word: "accept all recommendations")
+
+**The exit.** Three courts and five voices run 24 hours on one frozen commit,
+recut from height 0: the courts stable, agreeing and adjudicating; the voices
+taught, paying, and read — by typed readings, never logs. Client cognition
+stays paused; client work is only what the courts need to be judged.
+
+**Hypha work.** H1 memory stability (each court's growth read per `K` and
+tied to the act behind it, then fixed; no court unbounded over two hours of
+fleet height, none within a quarter of its cap). H2 agreement (the
+discordant strata read by glue path and by lane; every refusing path held
+to 78.63's test; court c's silence read; every discordant stratum converged
+or its divergence named on a lane). H3 the economy's return path (no learner
+drained to zero; deferrals bounded; court a's empty reserve read). H4 the
+wire contract crate (the law register, celestial transitions, verdicts and
+the voices' acts, exact codecs, round trips by the algebra; the register
+fetch act). H5 the standard of `glue.rs` brought to every file H1–H4 touch.
+H6 freeze and recut.
+
+**Client work.** C1 binary parity (the voices on the courts' commit: a fleet
+on two commits yields no reading, MU-STANDARDS §6.4). C2 the voices' readings
+verified. C3 why the voices close nothing, instrumented by stage. C4 the
+client on the wire contract crate. C5 a clean shutdown.
+
+**The rulings.**
+R1 — *Keep every fill.* Where several simplices of a peer's link fill, each
+is recorded, paid and minted; none is chosen by its place in the link
+(rule 15).
+R2 — *Tuition returns by verified learning.* A taught word the learner later
+closes or speaks earns the learner a share back, so value moves in an orbit
+between voice and court and never drains one way.
+R3 — *The wire contract crate lands before the soak*, so the soak runs the
+code that ships.
+R4 — *The soak passes* on zero OOM kills and zero unplanned restarts, bounded
+memory, lag recovered after every gap, discord stable or falling, no learner
+drained, and every console ask answered.
+R5 — *A recut before the soak*: one binary from height 0.
+R6 — *The voices' silence is instrumented in Phase 1 (C3) and fixed in
+Phase 2*, as cognition.
+
+**Order.** C1, C2; H1 with a one-hour H2 reading and C3; the fixes H1, H2,
+H3, each its own commit with H5; H4 and C4; H6; the soak; the phase closed
+in one entry here.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
