@@ -146,7 +146,7 @@ let mut open = Kernel::new();
 let a = vec![(0, 0, 1u8), (0, 1, 1)];
 let b = vec![(0, 0, 2u8), (0, 1, 2)];
 assert_eq!(super::common::speak_pair(&mut open, &a, &b, [7; 32]), Outcome::GermPending);
-assert_eq!(open.final_prefix_head(), None, "a listing open at the first receipt leaves nothing final");
+assert_eq!(open.final_prefix_head(), None, "no orbit has closed: no cut yet");
 assert_eq!(open.propose_fold(), Err(REFUSE_FOLD_OPEN));
 assert!(open.chain().root().is_none() && open.archive().is_empty(), "nothing was archived");
 
@@ -312,4 +312,66 @@ fn a_second_fold_verifies_on_the_rows_a_witness_fetches() {
     let second = k.receipts_range(&home, p2.after, p2.root.at, 100);
     assert_eq!(fetched(&k, &p2), k.treasury().rows_below(p2.root.at), "the witness is served exactly the rows the proposal nets over");
     assert_eq!(witness.verify_fold(home, &p2, &second, &fetched(&k, &p2)), Ok(()), "the second fold verifies on the fetched rows");
+}
+
+/// 78.65 — FINALITY IS PER ITEM. A listing, a provisional word and an
+/// escrow open below the cut hold nothing back: the line folds past them.
+/// The word is still read by its stamp, now in the era: it lapses after the
+/// fold, the lapse citing it. The escrow is a claim off the ledger: it is
+/// slashed after the fold, the slash standing at the act that slashed it.
+/// The ledger conserves throughout, and the next fold re-derives on its
+/// witness's rows.
+#[test]
+fn a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it() {
+    // The fixture's bonded identity, which the escrow names.
+    let home = [0x11; 32];
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    let a = vec![(0, 0, 1u8), (0, 1, 1)];
+    let b = vec![(0, 0, 2u8), (0, 1, 2)];
+    assert_eq!(super::common::speak_pair(&mut k, &a, &b, [7; 32]), Outcome::GermPending);
+    let word: Vec<u8> = k.provisional.scoped().map(|(a, _)| a).next().expect("a provisional word");
+    let admitted = k.admitted_at(&word).expect("the word stands at its admitting act");
+    assert!(k.pending.contains(&word), "and is listed");
+    // An escrow on it, standing at the act that escrowed it, voiced by a
+    // bonded identity so a slash debits something.
+    let escrowed_at = k.anchor();
+    k.treasury.escrow_award(&crate::transducer::address::Address::from(word.clone()), vec![home], [1, 0, 0, 0], escrowed_at);
+    // One close: a cut, and not yet a whole orbit with nothing flowing to
+    // the word, which would lapse it (78.37 (3)).
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.orbit();
+
+    let p = k.propose_fold().expect("nothing open pins the line");
+    assert!(p.root.at >= admitted.place(), "the fold passes the word's admitting act");
+    k.commit_fold([3; 64], &co_sign("w", p.root.hash)).expect("sealed");
+    assert!(k.chain().node(&admitted).is_none(), "the admitting act is in the era now");
+    assert!(k.pending.contains(&word) && k.provisional.contains(&word), "and the word is still open");
+
+    // The escrow closes after the fold, at the act that closes it.
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    let slashed_at = k.anchor();
+    let r = k
+        .treasury
+        .revoke_award(&word, crate::economy::escrow::Revocation::Slash(slashed_at))
+        .expect("the escrow was there");
+    assert!(!r.slashed.is_empty(), "the bond is debited");
+    assert!(
+        k.treasury().entries().iter().filter(|e| e.kind == crate::economy::Kind::Slash).all(|e| (e.at, e.receipt) == slashed_at),
+        "the slash stands at the act that slashed, past the fold"
+    );
+    // The word lapses after the fold, cited by the stamp the era holds.
+    k.lapse_word(&word);
+    assert!(!k.pending.contains(&word) && !k.provisional.contains(&word), "the word left every row");
+    assert!(k.treasury().audit().is_ok(), "the ledger conserves through all of it");
+
+    k.orbit();
+    let p2 = k.propose_fold().expect("the line folds again");
+    let fetched = k.rows_range(&home, p2.after, p2.root.at, 0, usize::MAX).1;
+    let line = k.chain().vk();
+    let receipts = k.receipts_range(&line, p2.after, p2.root.at, 100);
+    assert!(!receipts.is_empty(), "the witness is served the prefix");
+    assert_eq!(Kernel::new().verify_fold(line, &p2, &receipts, &fetched), Ok(()), "and its witness re-derives it");
+    k.commit_fold([3; 64], &co_sign("w", p2.root.hash)).expect("sealed");
+    assert!(k.treasury().audit().is_ok());
 }

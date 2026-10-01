@@ -118,7 +118,7 @@ impl Kernel {
     fn lapse_listing(&mut self, addr: &[u8]) {
         let me = self.identity;
         let cite = self.cite_of(addr);
-        let _ = self.treasury.revoke_award(addr, false);
+        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         self.unlist(&Address::from(addr.to_vec()), false);
         self.append_after_removal(crate::chronometry::ActKind::Lapse, addr, cite, me);
     }
@@ -131,7 +131,7 @@ impl Kernel {
     pub(crate) fn lapse_word(&mut self, addr: &[u8]) {
         let me = self.identity;
         let cite = self.cite_of(addr);
-        let _ = self.treasury.revoke_award(addr, false);
+        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         self.forget_flux(addr);
         self.leave_provisional(addr);
         // A word listed on the book as well leaves it in the same act.

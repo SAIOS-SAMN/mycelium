@@ -3,6 +3,7 @@
 // mint and burn.
 
 use super::{at, word};
+use crate::economy::escrow::Revocation;
 use crate::economy::*;
 
 /// Supply after N installs equals the sum of their deflations per lane.
@@ -37,7 +38,7 @@ fn slash_debits_the_bond_and_mints_nothing() {
     assert_eq!(bond, [8, 0, 0, 0], "the balance covered the bond asked for");
     let addr = [3u8; 32];
     t.escrow_award(&word(addr), vec![[1; 32]], [8, 0, 0, 0], at(1, [1; 32]));
-    assert!(t.revoke_award(&addr, true).is_some());
+    assert!(t.revoke_award(&addr, Revocation::Slash(at(2, [1; 32]))).is_some());
     assert_eq!(
         t.bond_of(&[1; 32]).expect("an enrolled identity holds a bond")[0],
         bond[0].checked_sub(8).expect("the bond covered the revoked award")
@@ -243,7 +244,7 @@ fn a_fee_and_a_slash_leave_the_supply_with_the_carrier() {
     t.escrow_award(&word([7u8; 32]), vec![[1; 32]], [9, 0, 0, 0], at(4, [1; 32]));
     // The slash reads what left each named voice's bond, and the lanes on
     // which the bond did not cover the ask, rather than clamping to it.
-    let r = t.revoke_award(&[7u8; 32], true).expect("the escrow was there");
+    let r = t.revoke_award(&[7u8; 32], Revocation::Slash(at(4, [2; 32]))).expect("the escrow was there");
     assert_eq!(r.slashed, vec![([1u8; 32], [6, 0, 0, 0])], "the whole bond, and no more");
     assert_eq!(r.short, vec![([1u8; 32], [3, 0, 0, 0])], "and the three it could not cover");
     assert_eq!(t.bond_of(&[1; 32]).expect("still enrolled")[0], 0, "the whole bond went");
@@ -283,7 +284,7 @@ fn the_supply_folded_as_it_is_written_equals_the_journal_it_describes() {
     t.settle_use(a, b, [1, 0, 0, 0], at(3, [0; 32])); // two transfers
     t.settle_recall(a, &[2, 0, 0, 0], &[0; 4], at(4, [0; 32])); // burn
     t.escrow_award(&word([7u8; 32]), vec![a], [9, 0, 0, 0], at(5, [0; 32]));
-    t.revoke_award(&[7u8; 32], true); // slash
+    t.revoke_award(&[7u8; 32], Revocation::Slash(at(6, [0; 32]))); // slash
 
     // The whole read this replaced, recomputed here from the rows themselves.
     let mut issued = [0u64; 4];
@@ -360,7 +361,7 @@ fn a_slash_debits_every_voice_the_escrow_names() {
     let before = t.audit().expect("two bonded voices conserve");
 
     t.escrow_award(&word([9u8; 32]), vec![a, b], [4, 0, 0, 0], at(2, [1; 32]));
-    let r = t.revoke_award(&[9u8; 32], true).expect("the escrow was there");
+    let r = t.revoke_award(&[9u8; 32], Revocation::Slash(at(2, [2; 32]))).expect("the escrow was there");
 
     assert_eq!(
         r.slashed,
@@ -381,11 +382,11 @@ fn a_slash_debits_every_voice_the_escrow_names() {
 
     // A plain revoke drops the claim and slashes nobody.
     t.escrow_award(&word([8u8; 32]), vec![a], [1, 0, 0, 0], at(3, [1; 32]));
-    let r = t.revoke_award(&[8u8; 32], false).expect("the escrow was there");
+    let r = t.revoke_award(&[8u8; 32], Revocation::Drop).expect("the escrow was there");
     assert!(r.slashed.is_empty() && r.short.is_empty(), "a revoke is not a slash");
     assert_eq!(r.released, [1, 0, 0, 0], "and it says what claim it dropped");
 
     // An address holding no escrow is the third state, which the old bool
     // could not tell from "slashed nothing".
-    assert!(t.revoke_award(&[7u8; 32], true).is_none(), "no escrow, nothing revoked");
+    assert!(t.revoke_award(&[7u8; 32], Revocation::Slash(at(4, [1; 32]))).is_none(), "no escrow, nothing revoked");
 }

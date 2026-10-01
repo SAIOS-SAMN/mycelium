@@ -227,7 +227,7 @@ impl Kernel {
         // shares of an install, `settle_recursive`). Its claim is dropped,
         // never slashed: the word stands, and its install releases nothing.
         if theorem {
-            let _ = self.treasury.revoke_award(addr.as_bytes(), false);
+            let _ = self.treasury.revoke_award(addr.as_bytes(), crate::economy::escrow::Revocation::Drop);
         }
         match out {
             Outcome::Deferred(lanes) => Err(lanes),

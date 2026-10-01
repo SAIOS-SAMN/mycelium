@@ -79,7 +79,7 @@ impl Kernel {
                 let pay = self.verified_install_deflation(addr, &w);
                 if pay.iter().all(|&x| x == 0) {
                     // Closes nothing: installed, and mints none.
-                    let _ = self.treasury.revoke_award(addr, false);
+                    let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
                 } else {
                     // 26 as ruled 2026-09-10: what this form closed is
                     // partly what the forms it CITED close inside it, and
@@ -93,7 +93,7 @@ impl Kernel {
                 }
             }
         } else {
-            let _ = self.treasury.revoke_award(addr, false);
+            let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         }
         self.unlist(addr, false);
         self.leave_provisional(addr);

@@ -10,45 +10,16 @@ use crate::chronometry::{Era, KStepReceipt, Place};
 use crate::cognition::Kernel;
 
 impl Kernel {
-    /// THE FINALITY READING (45.8): the greatest place below which nothing
-    /// is open — every listing on the page, every provisional word and
-    /// every escrow stands at a place above it — or none when something
-    /// open stands at or below every hot receipt, or no hot receipt is
-    /// there to fold.
+    /// THE FINALITY READING (45.8 as amended by 78.65): finality is per
+    /// item, not per prefix. A listing and a provisional word are located
+    /// by the stamp that admitted them, which the fold leaves citable
+    /// through its era; an escrow is a claim carrier off the ledger, closed
+    /// at the act that releases or slashes it — so nothing open holds the
+    /// line's fold back. The head is the line's last close; none where no
+    /// hot receipt is there to fold.
     pub fn final_prefix_head(&self) -> Option<Place> {
-        let head = self.chain.head_place()?;
+        let floor = self.chain.head_place()?;
         let first = self.chain.opening()?.stamp.place();
-        let mut floor = head;
-        // The act before an open one on our own line: its predecessor, as
-        // the node names it.
-        let before = |at: Place| -> Option<Place> { Some(self.chain.at_place(at)?.prev?.at.place()) };
-        // index: the open carriers, each a keyed fiber
-        // A listing stands at the List act that admitted it (78.24); one
-        // this court cannot place on its ledger is open at every prefix.
-        for (addr, _) in self.pending.scoped() {
-            let at = self.admitted_at(&addr)?.place();
-            if at <= first {
-                return None;
-            }
-            floor = floor.min(before(at)?);
-        }
-        // A provisional word stands at the act that admitted it (78.24).
-        for (addr, _) in self.provisional.scoped() {
-            let at = self.admitted_at(&addr)?.place();
-            if at <= first {
-                return None;
-            }
-            floor = floor.min(before(at)?);
-        }
-        // An escrow's row stands at the head act it was written after:
-        // that act and everything before it may fold.
-        for award in self.treasury.escrowed_awards() {
-            let at = crate::economy::stands_at(&award.held.anchor)?;
-            if at < first {
-                return None;
-            }
-            floor = floor.min(at);
-        }
         // A FOLD CUTS ONLY AT AN ORBIT'S CLOSE (OK1): the prefix head is the
         // last close at or below the floor, so every orbit is held whole on
         // one side of the cut and its close re-derives on the hot line.

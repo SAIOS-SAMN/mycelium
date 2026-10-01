@@ -137,6 +137,38 @@ fn several_words_on_one_fiber_file_no_alias() {
     assert_eq!(c.word_admitted_at(&at), None, "no alias: two candidates, and none is chosen");
 }
 
+/// LD3-a, 78.64 H1 — ONE ALIAS PER SIGNER. A peer that admits the one word
+/// on a fiber twice, by two acts, cites it by the later stamp from then on:
+/// the later alias replaces the earlier, which leaves with its depth, so a
+/// word's aliases are bounded by its signers and not by their acts.
+#[test]
+fn a_peers_later_admission_replaces_its_earlier_alias() {
+    use crate::chronometry::{Cite, ReceiptChain, Stamp};
+    let mut c = Kernel::new();
+    c.bind_identity([0xc3; 32]);
+    let chart = crate::transducer::stalk::Invariant::counts(&[3, 1]);
+    let addr = crate::transducer::address::Address::from_bytes([0x73u8; 3]);
+    let ours = Stamp::new(1, [0xc3; 32], crate::chronometry::Place { k: 0, i: 1 });
+    let mut fiber = Vec::new();
+    Cite::Word { chart: chart.clone(), class: None, at: ours }.put_canonical(&mut fiber).expect("a citation");
+    c.file_fiber(&addr, ours, fiber);
+    let key = super::common::court_key("twice-admitting peer");
+    let mut peer = ReceiptChain::with_vk(key.vk_bytes());
+    let mut stamps = Vec::new();
+    for _ in 0..2 {
+        let at = peer.next_stamp(&[]).expect("its next stamp");
+        let cite = Cite::Word { chart: chart.clone(), class: None, at };
+        peer.append(ActKind::List, [0; 4], vec![cite], [0; 32], Vec::new()).expect("it admits by its own act");
+        stamps.push(at);
+    }
+    let line: Vec<_> = peer.own().collect();
+    super::common::admit_line(&mut c, &key, &line);
+    let [first, second] = stamps.as_slice() else { panic!("two admissions") };
+    assert_eq!(c.word_admitted_at(second), Some(&addr), "the later admission is the alias");
+    assert_eq!(c.word_admitted_at(first), None, "the earlier one left");
+    assert_eq!(c.aliases.get(addr.as_bytes()).map(Vec::len), Some(1), "one alias for one signer");
+}
+
 /// EC1 — EVERY PAYMENT ROW STANDS AT THE ACT THAT PAID IT. A word upheld
 /// on its own book mints its released claim at the Ruling node, never at
 /// the act that escrowed it, and the row carries the arm it pays (POUW).

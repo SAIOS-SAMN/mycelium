@@ -113,7 +113,13 @@ impl Kernel {
             true
         } else {
             let slash = ruling == RULING_SLASHED;
-            let ok = self.treasury.revoke_award(addr, slash).is_some();
+            // A slash stands at the Ruling act sealed above, as a release
+            // mints there (EC1).
+            let how = match slash {
+                true => crate::economy::escrow::Revocation::Slash(self.anchor()),
+                false => crate::economy::escrow::Revocation::Drop,
+            };
+            let ok = self.treasury.revoke_award(addr, how).is_some();
             if slash {
                 self.redocket_citers_of(addr);
                 // A slashed word leaves the language and is admitted as a
@@ -272,7 +278,8 @@ impl Kernel {
                 } else {
                     let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
                     self.append_step(kind, &addr, me);
-                    let _ = self.treasury.revoke_award(&addr, true);
+                    let ruled = self.anchor();
+                    let _ = self.treasury.revoke_award(&addr, crate::economy::escrow::Revocation::Slash(ruled));
                     self.redocket_citers_of(&addr);
                 }
                 // The word keeps its address as a cavity (27); a word left

@@ -7947,7 +7947,8 @@ Three coordinates, and only the first is ever shared as a boundary:
 - an **era** is a fold of one chain at a height, per chain as K is;
 - **K and orbits** are the kernel's own (45.7).
 
-A hypha folds its ledger behind a **fully final prefix** — no listing,
+*Amended by 78.65: finality is per item, not per prefix — nothing open
+holds a line's fold back.* A hypha folds its ledger behind a **fully final prefix** — no listing,
 provisional word or escrow below the prefix's head — when its own room
 reading says so; never at a height interval, on memory alone, or on a
 wall clock. The reading is the reserve shortfall (S10): a docket orbit
@@ -19511,12 +19512,73 @@ row takes with it:
 An unlisted listing leaves the docket (`open`), its charts
 (`chart_listings`) and the cover (`own_cover`). A voice whose draws are
 returned holds no `drawn` row. A removal act sealed after its word left
-files no depth at the stamp no word stands at.
+files no depth at the stamp no word stands at. Depth is filed only where a
+word stands, or at the act's own stamp where it admits what it names. A word
+holds one alias per signer: a peer's later admission replaces its earlier
+one, since its acts cite the later stamp, so aliases are bounded by signers
+and not by their acts (the census named court a's `held_at` at 712 → 2146
+in an hour before it).
 
 `tests/carriers.rs` lists a sentence, lets it lapse, and requires every
 carrier but the ledger's history (`chain.*`, `treasury.*`) and the corpus
 (`task_family`) to read as it did before. A carrier added without its
 inverse fails there.
+
+### 78.65 Finality is per item: storage by state, not by position (ruled 2026-10-01, the operator's word: "build it")
+
+**The defect.** A court's memory grew with its history and not with its
+open work. The cause was storage by position. 45.8 let a fold cut a line
+only below the oldest open listing, provisional word or escrow anywhere on
+it, so one open item held everything after it hot, and the peers held that
+line too. On the recut fleet a court held 66k nodes after three hours and
+folded 3–7 eras in two.
+
+**What stands.** No law of the register moves; a fold is no motion. 45.8
+already rules many-fingered time ("an era is a fold of one chain at a
+height, per chain as K is") and that "what stays hot after the fold is what
+still acts". Only its finality clause was Newtonian: one cut below one place
+on a line taken for a total order.
+
+**The ruling.** Time is the causal order (`≺`, heights, each line on its
+own clock), and storage follows the state of each item:
+- *open* — still acting — is held hot;
+- *closed* — everything that depended on it has closed — is cold, in an era,
+  read by its coordinates when cited;
+- an open item whose history has closed is *carried*, as the claim it
+  already is.
+
+A fold moves what is closed and nothing open holds it back:
+- **A listing or a provisional word** writes no row and is located by the
+  stamp of the act that admitted it. A fold leaves that stamp citable
+  through its era, so neither pins the fold. The lapse, ruling, syllabus and
+  depth of such a word read its stamp, never its receipt, and a peer's
+  citation of it is recalled from the era.
+- **An escrow** is a claim carrier off the ledger (`escrowed`, keyed by its
+  word). It writes no row at escrow, its kind nets nothing (`nets_of`), and
+  `audit` reads supply from the carriers, so it is already the puncture
+  that crosses a fold. It closes at the act that closes it: a release mints
+  at the releasing act (EC1), and now a slash stands at the revoking act
+  (`Revocation::Slash(anchor)`) — never at the escrowed act, which a fold may
+  have passed, and which would set a row out of line order.
+- **The fold's floor** is the line's own last close (OK1), within one
+  `ACT_RECEIPTS` frame (`fold_head`). Its trigger stays as 45.8 rules it,
+  never at a height interval; folds become frequent because nothing pins
+  them.
+
+The witness reads unchanged: the same `nets_of` over the same rows on both
+organs, and no carried-row set to agree on.
+
+**Tested.** `era::a_fold_passes_an_open_listing_word_and_escrow_and_each_closes_after_it`:
+- the fold passes the word's admitting act while the word is listed,
+  docketed and escrowed;
+- the escrow is slashed after the fold, the slash at the slashing act;
+- the word lapses after the fold, its lapse citing the folded stamp;
+- the ledger conserves throughout, and the next fold re-derives on its
+  witness's rows.
+
+**Read on the fleet** by the carrier census every few minutes. Eras per
+`K` should rise, and `chain.nodes` and `treasury.entries` should follow the
+open work, not the hours.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

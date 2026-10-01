@@ -21,6 +21,16 @@ pub struct Revoked {
     pub short: Vec<([u8; 32], [u64; 4])>,
 }
 
+/// HOW AN ESCROW IS REVOKED: dropped, its claim returning nothing; or
+/// slashed, every voice it names debited, the slash standing at the act
+/// that revoked it (EC1) — never at the act that escrowed it, which a fold
+/// may already have passed (78.65).
+#[derive(Debug, Clone, Copy)]
+pub enum Revocation {
+    Drop,
+    Slash(Anchor),
+}
+
 /// WHAT AN ESCROW HOLDS: a claim on issuance (§5), pending the court.
 #[derive(Debug, Clone)]
 pub struct Escrowed {
@@ -158,12 +168,13 @@ impl Treasury {
     /// `mint_claim` splits an award across every voice the escrow names;
     /// a slash reaches the same set, or a word two voices stood costs one
     /// of them nothing at all.
-    pub fn revoke_award(&mut self, addr: &[u8], slash: bool) -> Option<Revoked> {
-        let Escrowed { voices, mu, anchor } = self.escrowed.remove(addr)?;
+    pub fn revoke_award(&mut self, addr: &[u8], how: Revocation) -> Option<Revoked> {
+        let Escrowed { voices, mu, .. } = self.escrowed.remove(addr)?;
         let mut out = Revoked { released: mu, slashed: Vec::new(), short: Vec::new() };
-        if !slash {
-            return Some(out);
-        }
+        let anchor = match how {
+            Revocation::Drop => return Some(out),
+            Revocation::Slash(at) => at,
+        };
         for who in voices {
             let held = match self.stakes.get(&who) {
                 Some(&h) => h,

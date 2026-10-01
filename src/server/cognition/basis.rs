@@ -202,7 +202,7 @@ impl Kernel {
     }
 
     pub(crate) fn relocate_standing(&mut self, addr: &[u8]) {
-        let _ = self.treasury.revoke_award(addr, false);
+        let _ = self.treasury.revoke_award(addr, crate::economy::escrow::Revocation::Drop);
         if self.pending.contains(addr) {
             self.relocate_cavity(addr);
             self.leave_provisional(addr);

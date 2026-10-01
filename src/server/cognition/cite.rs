@@ -193,11 +193,24 @@ impl Kernel {
             let [one] = hits.as_slice() else { continue };
             let one = one.clone();
             self.held_at.insert(at.key(), one.clone());
-            match self.aliases.get_mut(one.as_bytes()) {
-                Some(v) => v.push(*at),
+            // ONE ALIAS PER SIGNER: a signer admits a word at one stamp at a
+            // time, and its acts on the word cite that one; a newer
+            // admission replaces the older, which leaves with its depth.
+            let older: Vec<crate::chronometry::Stamp> = match self.aliases.get_mut(one.as_bytes()) {
+                Some(v) => {
+                    let (gone, kept): (Vec<_>, Vec<_>) = v.iter().partition(|s| s.vk == at.vk);
+                    *v = kept;
+                    v.push(*at);
+                    gone
+                }
                 None => {
                     self.aliases.insert(one.as_bytes(), vec![*at]);
+                    Vec::new()
                 }
+            };
+            for s in older {
+                self.held_at.remove(&s.key());
+                self.attestors.remove(&s.key());
             }
             self.rehear_rulings(at, budget);
         }
