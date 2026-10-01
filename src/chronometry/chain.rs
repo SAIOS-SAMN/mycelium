@@ -365,6 +365,31 @@ impl ReceiptChain {
         self.own_stamps().len() as u64
     }
 
+    /// THE LEDGER'S CARRIERS counted, each by its own members.
+    pub fn census(&self, c: &mut crate::observe::Carriers) {
+        let ReceiptChain {
+            nodes,
+            lines,
+            tops,
+            root: _,
+            vk: _,
+            head: _,
+            placed,
+            folded,
+            peer_roots,
+            operators,
+            operator_at: _,
+            journal: _,
+        } = self;
+        c.count("chain.nodes", nodes.len());
+        c.count("chain.lines", lines.len());
+        c.count("chain.tops", tops.len());
+        c.count("chain.placed", placed.len());
+        c.count("chain.folded", folded.len());
+        c.count("chain.peer_roots", peer_roots.len());
+        c.count("chain.operators", operators.len());
+    }
+
     /// How many nodes the ledger holds, its own and its peers'.
     pub fn len(&self) -> usize {
         self.nodes.len()

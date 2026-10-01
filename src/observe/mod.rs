@@ -11,6 +11,7 @@
 //! and any hypha can run the console (`mycelium-server --console`).
 
 mod carriage;
+mod carriers;
 mod cells;
 mod circuit;
 mod clock;
@@ -24,6 +25,7 @@ mod store;
 mod tests;
 
 pub use carriage::*;
+pub use carriers::*;
 pub use cells::*;
 pub use circuit::*;
 pub use clock::*;

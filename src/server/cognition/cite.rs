@@ -211,6 +211,8 @@ impl Kernel {
             self.forget_flux_at(&key);
             self.leave_flight(&key);
             self.held_at.remove(&key);
+            // Its depth is read at its stamp, and leaves with it.
+            self.attestors.remove(&key);
             if let Some(key) = self.fiber_key_at.remove(&at.key()) {
                 self.word_fibers.remove(&key);
             }
@@ -221,11 +223,47 @@ impl Kernel {
                 self.remainder_fibers.remove(&k);
             }
         }
-        // Its aliases leave with it.
+        // Its aliases leave with it, and the depth read at each.
         if let Some(stamps) = self.aliases.remove(addr) {
             for at in stamps {
                 self.held_at.remove(&at.key());
+                self.attestors.remove(&at.key());
             }
+        }
+        self.drop_word_fields(addr);
+    }
+
+    /// WHAT THE COURT HELD OF A WORD THAT LEFT: the deflation its install
+    /// settled, its coherence field hot or cold, the height it first stood
+    /// at, the organs' re-derivations of it, the task its sentence was
+    /// bound to, the task its listing paid, and what it taught each voice
+    /// of it — the per-word fields the snapshot already refuses as orphans.
+    fn drop_word_fields(&mut self, addr: &[u8]) {
+        self.deflations.remove(addr);
+        self.field.remove(addr);
+        self.field_cold.remove(addr);
+        self.standing_h.remove(addr);
+        self.convergence.forget(addr);
+        self.speech_task.remove(addr);
+        if let Some(task) = self.listing_task.remove(addr) {
+            let emptied = match self.task_listings.get_mut(task.as_bytes()) {
+                Some(listings) => {
+                    listings.retain(|l| l.as_bytes() != addr);
+                    listings.is_empty()
+                }
+                None => false,
+            };
+            if emptied {
+                self.task_listings.remove(task.as_bytes());
+            }
+        }
+        let width = addr.len() + 32;
+        let taught: Vec<Vec<u8>> = match self.taught_voice.fiber_at(addr) {
+            Some(fiber) => fiber.map(|(key, ())| key).filter(|key| key.len() == width).collect(),
+            None => Vec::new(),
+        };
+        for key in taught {
+            self.taught_voice.remove(&key);
         }
     }
 
@@ -299,8 +337,16 @@ impl Kernel {
     /// no row holds any more leaves its admitting stamp with it.
     pub(super) fn append_after_removal(&mut self, kind: ActKind, addr: &[u8], cite: Option<Cite>, voice: [u8; 32]) {
         let mu = self.frame_of(addr);
+        let at = cite.as_ref().and_then(Cite::at);
         self.append_cited(kind, cite.into_iter().collect(), mu, voice);
         self.forget_if_unheld(addr);
+        // Depth is read only where a word stands: the act sealed after its
+        // word left files none at the stamp no word stands at.
+        if let Some(at) = at {
+            if !self.held_at.contains(&at.key()) {
+                self.attestors.remove(&at.key());
+            }
+        }
     }
 
     /// A K-STEP naming what it names by citations already read: the fiber

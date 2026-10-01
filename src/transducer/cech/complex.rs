@@ -64,6 +64,15 @@ impl Complex {
         Complex::default()
     }
 
+    /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and
+    /// their index, its sections, its stars, its remainder and its
+    /// congruent fills.
+    pub fn held(&self) -> usize {
+        let simplices: usize = self.degrees.iter().map(|d| d.len()).sum();
+        let star: usize = self.star.scoped().map(|(_, s)| s.len()).sum();
+        simplices + self.by_key.len() + self.sections.len() + star + self.remainder.len() + self.congruent.len()
+    }
+
     pub(crate) fn ensure(&mut self, degree: usize) {
         while self.degrees.len() <= degree {
             self.degrees.push(Keyed::new());

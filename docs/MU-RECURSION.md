@@ -19472,6 +19472,52 @@ is read back from the era where another cites it. A placement recorded for
 a node not held, at or below its signer's root, leaves with the shed:
 admission reads such a node stale, so it never arrives.
 
+**H1 read on the recut fleet (57f8d7ec, 2026-10-01 17:37–19:27).** No OOM
+and no restart. Memory rose from about 35 MB to 174–224 MB per court and
+still climbed at about 1.5 MB a minute, against about 10 MB on disk. The
+carrier holding it was not measured: the operator's question, "what is your
+solution", ruled that measurement first and inverses second, both held by
+the build.
+
+(ix) *The carrier census* (`observe::Carriers`, the console's `carriers`
+reading, `Kernel::carriers`). Every court carrier is counted by its own
+members, a nested carrier by what it nests. The kernel is destructured with
+no rest pattern, so a field added to the court is counted or named (a count,
+a cursor, a flag, a path) or the build refuses it.
+
+First reading, court a at K 1058:
+- the chain: 43k nodes and 33k placements;
+- `attestors`: 20k;
+- the treasury's journal: 13k;
+- the rest bounded by the words (about 220–280) or the corpus.
+
+The chain's 43k held per court are mostly the peers' unfolded lines; a
+court's own unfolded line was 3–30k. Folds were rare (3–7 eras in two
+hours) because a fold's floor is pinned by the oldest open listing,
+provisional word or escrow (`final_prefix_head`). That is the next ruling
+H1 owes: a listing or a provisional word stands at a stamp, which a fold
+leaves citable through its era, so it need not hold the floor; an escrow's
+rows are netted by the fold, so it does.
+
+(x) *Every carrier a word fills, it leaves.* A word that leaves its last
+row takes with it:
+- its depth at its stamp and at its aliases' stamps;
+- its deflation, its field hot and cold, the height it first stood at;
+- the organs' re-derivations of it;
+- its speech task, and its listing's task binding;
+- what each voice was taught of it (`taught_voice`, now keyed word then
+  voice, so the word's marks are its own fiber).
+
+An unlisted listing leaves the docket (`open`), its charts
+(`chart_listings`) and the cover (`own_cover`). A voice whose draws are
+returned holds no `drawn` row. A removal act sealed after its word left
+files no depth at the stamp no word stands at.
+
+`tests/carriers.rs` lists a sentence, lets it lapse, and requires every
+carrier but the ledger's history (`chain.*`, `treasury.*`) and the corpus
+(`task_family`) to read as it did before. A carrier added without its
+inverse fails there.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

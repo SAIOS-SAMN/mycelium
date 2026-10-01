@@ -49,6 +49,8 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
     // ACT1 — this court on the clock; EC1 — its payments by proof of work;
     // and its acts and metabolism.
     observe::replace(own, Reading::Acts(Box::new(k.acts_reading())));
+    // 78.64 H1 — what each of its carriers holds, at its `K`.
+    observe::replace(own, Reading::Carriers(Box::new(k.carriers())));
     observe::replace(own, Reading::Carriage(carriage));
     observe::replace(own, Reading::Clock(observe::Clock::Court(Box::new(k.clock(genesis)))));
     if let Some(e) = k.economy() {

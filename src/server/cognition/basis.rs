@@ -369,7 +369,12 @@ impl Kernel {
                     self.recall_short.insert(v, owed);
                 }
             }
-            self.drawn.insert(v, d);
+            // A voice that draws nothing now holds no row: absence.
+            if d == [0; 4] {
+                self.drawn.remove(&v);
+            } else {
+                self.drawn.insert(v, d);
+            }
         }
     }
 

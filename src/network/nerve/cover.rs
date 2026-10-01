@@ -59,6 +59,11 @@ impl CoverNode {
         self.here.is_empty() && self.next.is_empty()
     }
 
+    /// The hyphae filed at this node and every node under it.
+    fn held(&self) -> usize {
+        self.here.len() + self.next.scoped().map(|(_, n)| n.held()).sum::<usize>()
+    }
+
     fn admit(&mut self, axes: &[ChartAxis], hypha: &[u8]) {
         match axes.split_first() {
             None => {
@@ -165,6 +170,13 @@ impl CoverNode {
 impl Cover {
     pub fn new() -> Self {
         Cover::default()
+    }
+
+    /// THE ENTRIES THE COVER HOLDS: every hypha filed on every lane's
+    /// trie, and every chart each hypha is filed under.
+    pub fn held(&self) -> usize {
+        let lanes: usize = self.lanes.iter().map(CoverNode::held).sum();
+        lanes + self.held.scoped().map(|(_, charts)| charts.len()).sum::<usize>()
     }
 
     pub fn admit(&mut self, lane: u8, inv: &crate::transducer::stalk::Invariant, hypha: impl AsRef<[u8]>) {

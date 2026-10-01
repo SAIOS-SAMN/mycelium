@@ -171,10 +171,25 @@ impl Kernel {
             for e in &listing.entries {
                 if !e.state.is_flat() {
                     self.listing_atlas.retract(&e.chart, addr);
+                    // Off the chart it was open on.
+                    let ck = e.chart.key();
+                    let emptied = match self.chart_listings.get_mut(&ck) {
+                        Some(on) => {
+                            on.remove(addr);
+                            on.is_empty()
+                        }
+                        None => false,
+                    };
+                    if emptied {
+                        self.chart_listings.remove(&ck);
+                    }
                 }
             }
             self.field_cold.insert(addr, listing);
         }
+        // Off the docket and the cover its open charts stood on.
+        self.open.remove(addr);
+        self.own_cover.retract_hypha(addr);
         self.listing_atlas.remove(addr);
         self.tension.remove(addr);
         self.forget_spoken(addr);

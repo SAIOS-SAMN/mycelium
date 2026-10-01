@@ -3,6 +3,14 @@
 
 use crate::cognition::*;
 
+/// WHAT THIS COURT TAUGHT A VOICE, keyed by the word then the voice: the
+/// word's marks are its own fiber, and leave with it.
+pub(crate) fn taught_key(addr: &[u8], voice: &[u8; 32]) -> Vec<u8> {
+    let mut key = addr.to_vec();
+    key.extend_from_slice(voice);
+    key
+}
+
 /// WHERE A SERVED PAGE ENDED, by name (the actions' metabolism).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum PageEnd {
@@ -257,9 +265,7 @@ impl Kernel {
                 continue;
             };
             used += width;
-            let mut held = voice.to_vec();
-            held.extend_from_slice(addr);
-            self.taught_voice.insert(held, ());
+            self.taught_voice.insert(taught_key(addr, &voice), ());
             // Each draw came out of one reserve, so the page's total is
             // bounded by it; past the carrier it is counted, never wrapped.
             match crate::core::lanes::lanes_add(page.drawn, mag) {
@@ -436,9 +442,7 @@ impl Kernel {
         // already taught this learner, read before it joins them.
         let anchor = self.anchor_of(addr, voice);
         crate::observe::count(&mut self.acts.syllabus, &crate::observe::SYLLABUS, anchor);
-        let mut held = voice.to_vec();
-        held.extend_from_slice(addr);
-        self.taught_voice.insert(held, ());
+        self.taught_voice.insert(taught_key(addr, &voice), ());
         Learner::Served(crate::anastome::dialogue::Taught { at, word: tape }, width)
     }
 
@@ -471,9 +475,7 @@ impl Kernel {
         // The strongest relation met so far, as its place on READS.
         let mut best = 5usize;
         for held in self.ruled.fiber(&inv) {
-            let mut key = voice.to_vec();
-            key.extend_from_slice(&held);
-            if held.as_slice() == addr || !self.taught_voice.contains(&key) {
+            if held.as_slice() == addr || !self.taught_voice.contains(&taught_key(&held, &voice)) {
                 continue;
             }
             best = best.min(4);
@@ -515,9 +517,7 @@ impl Kernel {
                 continue;
             }
             seen.insert(c.as_bytes(), ());
-            let mut key = voice.to_vec();
-            key.extend_from_slice(c.as_bytes());
-            if !self.taught_voice.contains(&key) {
+            if !self.taught_voice.contains(&taught_key(c.as_bytes(), &voice)) {
                 continue;
             }
             let Some(m) = self.installed_word(c.as_bytes()).map(|x| x.magnitude()) else { continue };

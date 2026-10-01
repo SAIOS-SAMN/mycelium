@@ -40,10 +40,12 @@ pub const TAG_ECONOMY: u8 = 16;
 /// 2026-09-29 — a mind's faculties, and a court's acts and metabolism.
 pub const TAG_SENSES: u8 = 17;
 pub const TAG_ACTS: u8 = 18;
+pub const TAG_CARRIERS: u8 = 19;
 
 /// CQ1 — EVERY READING'S NAME, by its tag: the ONE statement the console's
 /// `--reading NAME` is read against (law 12).
-pub const READING_NAMES: [(&str, u8); 18] = [
+pub const READING_NAMES: [(&str, u8); 19] = [
+    ("carriers", TAG_CARRIERS),
     ("clock", TAG_CLOCK),
     ("economy", TAG_ECONOMY),
     ("senses", TAG_SENSES),
@@ -837,6 +839,8 @@ pub enum Reading {
     Senses(Box<super::Senses>),
     /// A court's acts and metabolism.
     Acts(Box<super::Acts>),
+    /// 78.64 H1 — what each of a court's carriers holds, at its `K`.
+    Carriers(Box<super::Carriers>),
 }
 
 impl Reading {
@@ -860,6 +864,7 @@ impl Reading {
             Reading::Economy(_) => TAG_ECONOMY,
             Reading::Senses(_) => TAG_SENSES,
             Reading::Acts(_) => TAG_ACTS,
+            Reading::Carriers(_) => TAG_CARRIERS,
         }
     }
 
@@ -900,6 +905,8 @@ impl Reading {
             // `K`; the later stands.
             (Reading::Senses(a), Reading::Senses(b)) => *a = b.clone(),
             (Reading::Acts(a), Reading::Acts(b)) => *a = b.clone(),
+            // A census is read whole at its `K`; the later stands.
+            (Reading::Carriers(a), Reading::Carriers(b)) => *a = b.clone(),
             _ => return false,
         }
         true
@@ -952,6 +959,7 @@ impl Reading {
                 r.put(out);
                 Some(())
             }
+            Reading::Carriers(r) => r.put(out),
         }
     }
 
@@ -977,6 +985,7 @@ impl Reading {
             TAG_ECONOMY => Some(Reading::Economy(Box::new(super::Economy::take(b, p)?))),
             TAG_SENSES => Some(Reading::Senses(Box::new(super::Senses::take(b, p)?))),
             TAG_ACTS => Some(Reading::Acts(Box::new(super::Acts::take(b, p)?))),
+            TAG_CARRIERS => Some(Reading::Carriers(Box::new(super::Carriers::take(b, p)?))),
             _ => None,
         }
     }

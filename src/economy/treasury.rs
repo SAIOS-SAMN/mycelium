@@ -724,6 +724,16 @@ impl Treasury {
         self.entries.len()
     }
 
+    /// THE TREASURY'S CARRIERS counted: its journal, stakes, escrows,
+    /// balances and holds.
+    pub fn census(&self, c: &mut crate::observe::Carriers) {
+        c.count("treasury.entries", self.entries.len());
+        c.count("treasury.stakes", self.stakes.len());
+        c.count("treasury.escrowed", self.escrowed.len());
+        c.count("treasury.balances", self.balances.len());
+        c.count("treasury.held", self.held.len());
+    }
+
     /// Whether a mint entry already stands for this identity.
     pub fn has_mint(&self, who: &[u8; 32]) -> bool {
         self.entries.iter().any(|e| e.kind == Kind::Mint && e.who == *who)

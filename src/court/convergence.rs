@@ -61,6 +61,13 @@ impl Convergence {
         Convergence::default()
     }
 
+    /// THE ENTRIES CONVERGENCE HOLDS: each organ's re-derivation of each
+    /// object, and each use of each.
+    pub fn held(&self) -> usize {
+        let rederived: usize = self.rederived.scoped().map(|(_, by)| by.len()).sum();
+        rederived + self.uses.scoped().map(|(_, by)| by.len()).sum::<usize>()
+    }
+
     /// Record that `organ` re-derived `object` and reached `r.address`.
     /// Returns whether this organ is new to the object.
     pub fn rederived(&mut self, object: &[u8], organ: [u8; 32], r: Rederivation) -> bool {
@@ -83,6 +90,13 @@ impl Convergence {
 
     /// A voice uttered an identical residual: a use, and a party to the
     /// settlement. Never a vantage.
+    /// AN OBJECT THE COURT NO LONGER HOLDS: its re-derivations and its uses
+    /// leave with it.
+    pub fn forget(&mut self, object: &[u8]) {
+        self.rederived.remove(object);
+        self.uses.remove(object);
+    }
+
     pub fn used_by(&mut self, object: &[u8], voice: [u8; 32]) {
         match self.uses.get_mut(object) {
             Some(v) => {
