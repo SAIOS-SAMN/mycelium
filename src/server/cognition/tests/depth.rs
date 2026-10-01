@@ -92,12 +92,27 @@ fn cite(at: crate::chronometry::Stamp) -> crate::chronometry::Cite {
 fn one_signer_acting_twice_is_still_one_vantage() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
+    // A word stands at the stamp: depth is read only where one does.
+    k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling(crate::chronometry::Ruled::Upheld)] {
         let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);
     }
     assert_eq!(k.depth_at(&at), 1, "two acts, one organ, one vantage");
+}
+
+/// DEPTH IS FILED ONLY WHERE A WORD STANDS: a peer's act citing a stamp no
+/// word of this court stands at files nothing, so the index never holds a
+/// stamp nothing reads it at.
+#[test]
+fn depth_is_filed_only_where_a_word_stands() {
+    let mut k = Kernel::new();
+    let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
+    let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
+    let r = peer.append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
+    k.note_attestor(&r);
+    assert!(k.attestors.is_empty(), "no word stands at the stamp, and nothing is filed there");
 }
 
 /// The three kinds that COMMIT are `Install`, `Ruling` and `Adopted`. An
@@ -107,6 +122,8 @@ fn one_signer_acting_twice_is_still_one_vantage() {
 fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let mut k = Kernel::new();
     let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
+    // A word stands at the stamp: depth is read only where one does.
+    k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
     for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
         let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");

@@ -849,6 +849,7 @@ impl Kernel {
                 // LD3-a: a word the peer's act admitted, located here by its
                 // fiber where exactly one word stands on it.
                 self.alias_admitting(r, &mut budget);
+                self.settle_own_attestation(r);
                 // EC1: a peer's ruling applies at the node that admits its
                 // receipt, through the receipt path — the arm its kind
                 // carries, on the word its citation locates here.
@@ -906,6 +907,7 @@ impl Kernel {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);
                     self.alias_admitting(r, budget);
+                    self.settle_own_attestation(r);
                     if r.kind == crate::chronometry::ActKind::Fold {
                         self.shed_folded_lines();
                     }
