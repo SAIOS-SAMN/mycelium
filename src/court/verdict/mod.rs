@@ -166,7 +166,9 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_ORIGIN | REFUSE_RECEIPT | REFUSE_RECEIPT_STALE | REFUSE_EQUIVOCATION | REFUSE_NOT_EQUIVOCATION
         | REFUSE_SIGNATURE | REFUSE_MV_INEXACT => O::Integrity,
         REFUSE_GLUED_UNRULED => O::Dialect { coset: Vec::new(), chart: None },
-        REFUSE_NOT_NATURAL | REFUSE_FIBRE_UNWITNESSED => O::Cover { cocycle: Vec::new() },
+        REFUSE_NOT_NATURAL | REFUSE_FIBRE_UNWITNESSED | REFUSE_SECTION_TURN_OPEN | REFUSE_SECTION_TURN_UNREAD => {
+            O::Cover { cocycle: Vec::new() }
+        }
         _ => O::Unclassified,
     }
 }
@@ -244,6 +246,12 @@ pub const REFUSE_WITNESS_ROOM: &str = "witness room does not cover the escrow on
 /// addresses: not a disagreement for a third to settle, but inconsistent
 /// data, which can only arise from tapes that do not re-derive.
 pub const REFUSE_MV_INEXACT: &str = "Mayer–Vietoris exactness fails: cochains are inconsistent";
+/// 13.10, 78.44 — the gate on two sections of one chart: a turn relates them
+/// that closes at no finite order, so the chart's orbit is not finite.
+pub const REFUSE_SECTION_TURN_OPEN: &str = "sections of one chart related by a rotation of no finite order";
+/// 13.10 — a finite turn relates two sections and has no versor or class to
+/// file as the cocycle.
+pub const REFUSE_SECTION_TURN_UNREAD: &str = "sections of one chart related by a rotation with no versor or class";
 /// 47.2 step 1: the frame's genesis or epoch is not this node's.
 pub const REFUSE_ORIGIN: &str = "receipt names another genesis or origin epoch";
 /// 47.2 step 4: the claimed height does not re-derive from the parents
