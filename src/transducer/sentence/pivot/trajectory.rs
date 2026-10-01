@@ -3,7 +3,7 @@
 // class and modes, and the class of the transport composed through it.
 
 use super::*;
-use crate::observe::{ArmRead, Carried, Circuit, CircuitStep, CircuitTest, Circuits, Offer, TestArm};
+use crate::observe::{ArmRead, Carried, Circuit, CircuitTransition, CircuitTest, Circuits, Offer, TestArm};
 
 /// ONE STEP AS THE TRAVERSAL LEFT IT: oriented, its composite's class read, its
 /// modes owed to the reader that holds the stroke's budget (BD1).
@@ -171,7 +171,7 @@ fn ladder_of(carried: &PathCarried, faces: &Faces) -> Option<(Vec<(TestArm, ArmR
     if carried.edge_refused == Some(Unread::Cone) {
         return Some((vec![(TestArm::Cone, ArmRead::Permanent)], false));
     }
-    let lost_at = carried.edge_lost_at.and_then(|k| carried.steps.get(k.checked_sub(1)?)).map(|s| s.face.clone());
+    let lost_at = carried.edge_lost_at.and_then(|k| carried.transitions.get(k.checked_sub(1)?)).map(|s| s.face.clone());
     let lost = lost_at.as_ref().and_then(|o| faces.at(o));
     let reads = |n: usize| match n {
         0 => ArmRead::Empty,
@@ -313,10 +313,10 @@ pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
         .map(|(p, test)| Circuit {
             test,
             chord: p.chord,
-            steps: p
+            transitions: p
                 .steps
                 .into_iter()
-                .map(|s| CircuitStep {
+                .map(|s| CircuitTransition {
                     face: s.face,
                     forward: s.forward,
                     refracted: s.refracted,
@@ -336,7 +336,7 @@ pub fn finish_circuits(budget: &mut crate::physics::Budget) -> u64 {
         .collect();
     let unbounded = circuits
         .iter()
-        .flat_map(|c| &c.steps)
+        .flat_map(|c| &c.transitions)
         .filter(|s| {
             matches!(
                 s.carried,
@@ -362,7 +362,7 @@ pub fn take_circuits() -> Option<Circuits> {
 pub(super) fn read_circuit(chord: &coord::Overlap, carried: &PathCarried, faces: &Faces) -> PendingCircuit {
     let mut composite: Option<element::Versor> = Some(element::identity_versor());
     let steps = carried
-        .steps
+        .transitions
         .iter()
         .map(|s| {
             let refracted = faces.at(&s.face).is_some_and(|f| f.interface.is_some());
@@ -439,7 +439,7 @@ pub fn circuits_of(form: &Form) -> Vec<(coord::Overlap, TraversedCircuit)> {
             Err(why) => out.push((
                 lp.chord.clone(),
                 TraversedCircuit {
-                    steps: lp.steps.iter().map(|s| (s.overlap.clone(), s.forward)).collect(),
+                    steps: lp.transitions.iter().map(|s| (s.overlap.clone(), s.forward)).collect(),
                     composite: None,
                     hue: None,
                     unread: Some(circuit_unread(why)),

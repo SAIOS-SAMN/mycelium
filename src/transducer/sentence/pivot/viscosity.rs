@@ -255,7 +255,7 @@ pub fn read_viscosity(form: &Form, budget: &mut crate::physics::Budget) -> Vec<P
                 for (lp, read_before) in form.orbits.iter().zip(&before) {
                     // EVERY OVERLAP THE LOOP CROSSES, once each, by its key.
                     let mut seen: Keyed<(), coord::Overlap> = Keyed::new();
-                    for s in &lp.steps {
+                    for s in &lp.transitions {
                         let f = s.overlap.clone();
                         if seen.holds(&f) {
                             continue;

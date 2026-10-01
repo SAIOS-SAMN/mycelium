@@ -51,7 +51,7 @@ pub(crate) struct PathCarried {
     /// 50.3's edge composite: `None` where a remainder edge stands on this
     /// path, or where the path crossed no real face and measured no edge.
     pub(crate) edge: Option<Transport>,
-    /// THE KINEMATIC CHARGE EACH STEP OF THIS BOUNDARY DEPOSITED, in
+    /// THE KINEMATIC CHARGE EACH TRANSITION OF THIS BOUNDARY DEPOSITED, in
     /// boundary order and exact over ℚ (54.7, ruled 2026-09-21).
     ///
     /// `face` and `edge` above are ORDERED PRODUCTS around `∂f`, so a
@@ -75,8 +75,8 @@ pub(crate) struct PathCarried {
     /// irreversible reduction and does not determine its factors.
     ///
     /// AND KEPT AS THE VERSORS, NOT AS THE CHARGES. A first cut stored
-    /// `Vec<BigRational>` — the scalar `μ_e` per step — which is a LOSSY
-    /// PROJECTION of the step, discarding the bivector plane of the shear,
+    /// `Vec<BigRational>` — the scalar `μ_e` per transition — which is a LOSSY
+    /// PROJECTION of the transition, discarding the bivector plane of the shear,
     /// its orientation, and the Clifford sign. That is LAW-0's "the
     /// gradient is the state; the scalars are projections of it, never
     /// stored as independent fields" (`ipsal-autic`, `orbital/tether.rs`),
@@ -88,17 +88,17 @@ pub(crate) struct PathCarried {
     ///
     /// The charge remains a projection any reader takes on demand, and it
     /// is the motion's MODES (78.62, ruled 2026-10-01): whether some mode
-    /// of the step turns or boosts (`cga::charged`, no root, no budget), the
+    /// of the transition turns or boosts (`cga::charged`, no root, no budget), the
     /// values themselves the orbit's spectrum under the stroke's budget. The
     /// scalar `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1` it replaced squared one angle out of a
     /// motion of several planes and dropped the sign that tells a turn from
     /// its inverse.
     ///
-    /// PL1 — EVERY STEP, IN BOUNDARY ORDER: the face crossed, which way, and
-    /// the transport the step carried where it was read. The charge above is
-    /// read off each step's carriage by `step_charged`; the circuit's reading
-    /// (`trajectory::read_circuit`) is the same steps read whole.
-    pub(crate) steps: Vec<Step>,
+    /// PL1 — EVERY TRANSITION, IN BOUNDARY ORDER: the face crossed, which way, and
+    /// the transport the transition carried where it was read. The charge above is
+    /// read off each transition's carriage by `transition_charged`; the circuit's reading
+    /// (`trajectory::read_circuit`) is the same transitions read whole.
+    pub(crate) transitions: Vec<CarriedTransition>,
     /// WHY THE EDGE HALF WAS REFUSED, where it was (H2c, rule 11). The face
     /// composite can stand while the edge composite does not, and the two
     /// refusals are different facts. `NotRigid` is a real face carrying no
@@ -106,23 +106,23 @@ pub(crate) struct PathCarried {
     /// `Cone` is a face crossed against its orientation whose transport has
     /// no inverse (`MM̃ = 0`, 57.4).
     pub(crate) edge_refused: Option<Unread>,
-    /// OR3 — THE STEP, counted from one, at which the edge half was lost:
+    /// OR3 — THE TRANSITION, counted from one, at which the edge half was lost:
     /// where the circuit went unread, whatever refused it.
     pub(crate) edge_lost_at: Option<usize>,
     /// BQ5a — THE EDGE HALF THROUGH A CONTACT THAT IS NOT ONE TRANSPORT
-    /// (78.6): the composite before the first coset or static step, and
-    /// every step from it on, each as crossed — the factors, never their
+    /// (78.6): the composite before the first coset or static transition, and
+    /// every transition from it on, each as crossed — the factors, never their
     /// product, so the `2ᵏ` candidates are formed only by a reader holding
     /// the stroke's budget ([`Refracted`], rule 10). `edge` is `None` then;
     /// this is the edge half, never a refusal of it.
     pub(crate) refracted: Option<super::refracted::Refracted>,
 }
 
-/// PL1 — ONE STEP OF A CIRCUIT: the overlap it crosses, whether along the
-/// overlap's own orientation, and what it carried — `None` where the step's
+/// PL1 — ONE TRANSITION OF A CIRCUIT: the overlap it crosses, whether along the
+/// overlap's own orientation, and what it carried — `None` where the transition's
 /// transport was not read (rule 11: unread is not flat).
 #[derive(Clone, Debug)]
-pub(crate) struct Step {
+pub(crate) struct CarriedTransition {
     pub(crate) face: coord::Overlap,
     pub(crate) forward: bool,
     pub(crate) transport: Option<Transport>,
@@ -149,7 +149,7 @@ pub(crate) enum Unread {
     /// does not read. The cycle and the incidence disagree.
     NoFace,
     // `TwoWays` STOOD HERE — a face relating two members once each way with
-    // the cycle not saying which it crossed (O1). A step names its overlap
+    // the cycle not saying which it crossed (O1). A transition names its overlap
     // and its way (AT1), so it cannot hold.
 }
 
@@ -188,8 +188,8 @@ impl UnreadTally {
 
 // `Crossing` AND `crossing` STOOD HERE (O1, 70.7) and are gone with the
 // faces that related several member pairs (AT1): an overlap relates ONE pair
-// at one frame, and the step that crosses it says which way — the
-// orientation is the step's own coordinate, never recovered from a pair key.
+// at one frame, and the transition that crosses it says which way — the
+// orientation is the transition's own coordinate, never recovered from a pair key.
 
 /// THE ONE CIRCUIT — and it is a TRAVERSAL now, not a search (54.5, as ruled
 /// 2026-09-20).
@@ -202,11 +202,11 @@ impl UnreadTally {
 ///
 /// It also could not always reconstruct it. Under the projection a 1-cell
 /// between two charts at one vertex, `((v,c_a),(v,c_b))`, becomes `(v,v)`
-/// and loses its orientation — 62 of 62 live orbits broke there, one step
+/// and loses its orientation — 62 of 62 live orbits broke there, one transition
 /// from closing, and `437d253` patched it by trying both directions.
 ///
 /// `Orbit.members` carries the cycle, so there is nothing to search for and
-/// nothing to guess: the traversal steps the members it was given, reads each
+/// nothing to guess: the circuit carries through the members it was given, reads each
 /// face at the pair those two members name, and composes. ONE path per
 /// orbit, always, because a cycle is one cycle.
 ///
@@ -225,7 +225,7 @@ impl UnreadTally {
 /// measures nothing across a star face — `at(0, c_F, k)` finds nothing and
 /// the reading is ABSENT, not identity. The placement of a body against the
 /// scene is not lost with it: it is the member's own carriage, and the FACE
-/// composite above composes it at every step. Two carriers, one for where a
+/// composite above composes it at every transition. Two carriers, one for where a
 /// body stands and one for how two bodies relate, and the edge half reads
 /// only the second.
 ///
@@ -246,7 +246,7 @@ pub(crate) fn paths_carried(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> O
     paths_carried_why(faces, vertices, lp).ok()
 }
 
-/// VS1 — THE SAME CIRCUIT, READ QUIETLY: no step's charge is noted. A reader
+/// VS1 — THE SAME CIRCUIT, READ QUIETLY: no transition's charge is noted. A reader
 /// that re-reads a circuit under a trial move (a bend) reads what the move
 /// does and must not write the census's cumulative counters, or the counters
 /// would count the trial's traversals as the corpus's.
@@ -268,16 +268,16 @@ pub(crate) fn paths_carried_quiet_why(faces: &Faces, vertices: &Vertices, lp: &O
     traverse(faces, vertices, lp, false)
 }
 
-/// The traversal itself; `note` files each step's charge on the census counters.
+/// The traversal itself; `note` files each transition's charge on the census counters.
 fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Result<Keyed<PathCarried>, Unread> {
-    // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY STEP CONTRIBUTES.
+    // THE EDGE COMPOSITE OPENS AT THE IDENTITY AND EVERY TRANSITION CONTRIBUTES.
     // It used to open at `None` unless the orbit crossed a face between two
     // bodies, because the star faces contributed nothing and a star-only
     // orbit would then have reported "identity" for a measurement never
     // taken. Under the hybrid rule below every face carries a transport —
     // the stabilizer between bodies, the member's carriage to the Frame —
     // so a star-only orbit measures its own equivocation instead of
-    // vanishing, and `None` now means a step whose transport is genuinely
+    // vanishing, and `None` now means a transition whose transport is genuinely
     // unread (rule 11).
     let mut acc = PathCarried {
         face: Transport {
@@ -290,15 +290,15 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
             carriage: element::identity_versor(),
             gauge: Vec::new(),
         }),
-        steps: Vec::with_capacity(lp.steps.len()),
+        transitions: Vec::with_capacity(lp.transitions.len()),
         edge_refused: None,
         edge_lost_at: None,
         refracted: None,
     };
-    for s in &lp.steps {
-        // THE STEP IS ITS OVERLAP AND THE WAY IT IS CROSSED (AT1): one member
+    for s in &lp.transitions {
+        // THE TRANSITION IS ITS OVERLAP AND THE WAY IT IS CROSSED (AT1): one member
         // pair at one frame, so there is no pair to read off and nothing to
-        // guess. A step naming an overlap these faces do not hold is the
+        // guess. A transition naming an overlap these faces do not hold is the
         // cycle and the incidence disagreeing (rule 11).
         let f = faces.at(&s.overlap).ok_or(Unread::NoFace)?;
         let forward = s.forward;
@@ -325,7 +325,7 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
             acc.face.carriage = carriage.geo(&acc.face.carriage);
             acc.face.gauge = compose_gauge(&gauge, &acc.face.gauge);
         }
-        // THE EDGE HALF IS HYBRID, AND EVERY STEP CONTRIBUTES (54.5, as
+        // THE EDGE HALF IS HYBRID, AND EVERY TRANSITION CONTRIBUTES (54.5, as
         // ruled 2026-09-20). A cycle of the member complex crosses two
         // kinds of face and each has its own carrier:
         //
@@ -349,10 +349,10 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         // member compose `γ₁ · γ₂⁻¹`, which is an equivocation — one body,
         // two transports from the basepoint — and read as identity-and-
         // identity it was exactly nothing.
-        let step = match (touches_frame(&s.overlap), place.as_ref()) {
-            // THE STAR STEP IS THE FACE'S WHOLE TRANSPORT, word included.
+        let carried = match (touches_frame(&s.overlap), place.as_ref()) {
+            // THE STAR TRANSITION IS THE FACE'S WHOLE TRANSPORT, word included.
             // §3.6's `γ` is a WORD — a re-gauging is `γ_j · g_ij · γ_i⁻¹`
-            // — so a star step that contributed the identity word would
+            // — so a star transition that contributed the identity word would
             // erase the word-holonomy of every orbit whose bodies measured
             // no stabilizer edge, replacing a real obstruction with
             // nothing. What the face measured is what it contributes.
@@ -364,21 +364,21 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
             (false, Some(p)) => p.edge.clone(),
             (_, None) => None,
         };
-        // THE STEP ITSELF, before it is folded into the product and its
-        // identity is lost. Every step is kept, in boundary order, with the
-        // face it crosses and which way — a step whose transport was never
+        // THE TRANSITION ITSELF, before it is folded into the product and its
+        // identity is lost. Every transition is kept, in boundary order, with the
+        // face it crosses and which way — a transition whose transport was never
         // read is kept as unread rather than as an identity, because unread
         // is not flat (rule 11) — and `acc.edge` below goes `None` for it,
         // so the whole boundary is already refused. The charge is noted
-        // for every step that carries a transport: charged, uncharged, or
+        // for every transition that carries a transport: charged, uncharged, or
         // unread where its carriage is no versor.
-        if let (Some(t), true) = (step.as_ref(), note) {
-            note_step_charge(step_charged(&t.carriage));
+        if let (Some(t), true) = (carried.as_ref(), note) {
+            note_transition_charge(transition_charged(&t.carriage));
         }
-        acc.steps.push(Step {
+        acc.transitions.push(CarriedTransition {
             face: s.overlap.clone(),
             forward,
-            transport: step.clone(),
+            transport: carried.clone(),
         });
         // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
         // face with a place and no edge is not rigid, and a transport whose
@@ -386,38 +386,38 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         // the one that stands.
         // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
         // coset or the static tether its place carries, where no edge formed.
-        let refraction = match (&step, place.as_ref()) {
+        let refraction = match (&carried, place.as_ref()) {
             (None, Some(p)) if f.interface.is_some() => p.refraction.clone(),
             _ => None,
         };
-        let lost = match (&step, place.is_some(), f.interface.is_none(), &refraction) {
+        let lost = match (&carried, place.is_some(), f.interface.is_none(), &refraction) {
             (None, true, true, _) => Some(Unread::NotRigid),
             (None, true, false, None) => Some(Unread::Unrefracted),
             _ => None,
         };
-        let inverted = |step: Transport| match forward {
-            true => Some(step),
-            false => Some(step.reverse()),
+        let inverted = |carried: Transport| match forward {
+            true => Some(carried),
+            false => Some(carried.reverse()),
         };
-        match (acc.edge.take(), acc.refracted.take(), step, &refraction) {
-            (Some(held), _, Some(step), _) => {
-                let step = inverted(step);
-                if step.is_none() && acc.edge_refused.is_none() {
+        match (acc.edge.take(), acc.refracted.take(), carried, &refraction) {
+            (Some(held), _, Some(carried), _) => {
+                let carried = inverted(carried);
+                if carried.is_none() && acc.edge_refused.is_none() {
                     acc.edge_refused = Some(Unread::Cone);
                 }
-                acc.edge = step.map(|step| Transport {
-                    carriage: step.carriage.geo(&held.carriage),
-                    word: step.word.compose(&held.word),
-                    gauge: compose_gauge(&step.gauge, &held.gauge),
+                acc.edge = carried.map(|carried| Transport {
+                    carriage: carried.carriage.geo(&held.carriage),
+                    word: carried.word.compose(&held.word),
+                    gauge: compose_gauge(&carried.gauge, &held.gauge),
                 });
             }
-            // THE FIRST REFRACTED STEP: the edge composite so far is the
-            // head, and every later step is kept as a factor.
+            // THE FIRST REFRACTED TRANSITION: the edge composite so far is the
+            // head, and every later transition is kept as a factor.
             (Some(held), _, None, Some(r)) => {
                 acc.refracted = super::refracted::Refracted::open(held, r, forward);
             }
-            (None, Some(refracted), Some(step), _) => {
-                acc.refracted = inverted(step).map(|t| refracted.then(super::refracted::RefractedStep::Fixed(Box::new(t))));
+            (None, Some(refracted), Some(carried), _) => {
+                acc.refracted = inverted(carried).map(|t| refracted.then(super::refracted::RefractedTransition::Fixed(Box::new(t))));
             }
             (None, Some(refracted), None, Some(r)) => acc.refracted = refracted.cross(r, forward),
             _ => {}
@@ -426,7 +426,7 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
             acc.edge_refused = lost;
         }
         if acc.edge.is_none() && acc.refracted.is_none() && acc.edge_lost_at.is_none() {
-            acc.edge_lost_at = Some(acc.steps.len());
+            acc.edge_lost_at = Some(acc.transitions.len());
         }
     }
     acc.face.word = acc.face.word.normal_form();
@@ -695,7 +695,7 @@ pub(crate) fn orbit_is_trivial(faces: &Faces, vertices: &Vertices, lp: &Orbit, c
     // face and still answers empty had every path dropped on a remainder
     // edge, which is unread, not flat (rule 11). `None` is an orbit naming a
     // face this form does not have, and that is unread too.
-    let crosses_a_real_face = lp.steps.iter().any(|s| !touches_frame(&s.overlap));
+    let crosses_a_real_face = lp.transitions.iter().any(|s| !touches_frame(&s.overlap));
     let mut any_edge = false;
     for (_, c) in carried.scoped() {
         // BQ5a — a refracted edge half is read, and never flat: its gauge

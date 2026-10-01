@@ -310,9 +310,9 @@ fn an_orbit_whose_holonomy_is_not_a_versor_is_refused_not_keyed() {
         // The cycle names the overlaps it crosses. This one is hand-built to
         // carry a holonomy that is not a versor: out along the star and back
         // across it, closing on it, at the basepoint (no stem, 54.7 Axiom A).
-        steps: vec![
-            crate::transducer::sentence::OrbitStep { overlap: star.clone(), forward: true },
-            crate::transducer::sentence::OrbitStep { overlap: star.clone(), forward: false },
+        transitions: vec![
+            crate::transducer::sentence::OrbitTransition { overlap: star.clone(), forward: true },
+            crate::transducer::sentence::OrbitTransition { overlap: star.clone(), forward: false },
         ],
         chord: star,
         stem: Vec::new(),

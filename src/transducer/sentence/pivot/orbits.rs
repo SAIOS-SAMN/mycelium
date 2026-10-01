@@ -118,13 +118,14 @@ struct Forest {
 }
 
 impl Forest {
-    /// The steps a node path crosses, each overlap with the way it runs.
-    fn steps(&self, path: &[usize], crossed: &[usize]) -> Vec<OrbitStep> {
+    /// The transitions a node path is carried through, each overlap with
+    /// the way it runs.
+    fn transitions(&self, path: &[usize], crossed: &[usize]) -> Vec<OrbitTransition> {
         path.iter()
             .zip(crossed)
             .filter_map(|(&from, &e)| {
                 let (a, _, o) = self.edges.get(e)?;
-                Some(OrbitStep { overlap: o.clone(), forward: *a == from })
+                Some(OrbitTransition { overlap: o.clone(), forward: *a == from })
             })
             .collect()
     }
@@ -442,13 +443,13 @@ impl Form {
                 unread(Unread::NoFace);
                 continue;
             };
-            let mut steps = forest.steps(&path, &crossed);
-            steps.push(OrbitStep { overlap: chord.clone(), forward: *chord_from == b });
+            let mut transitions = forest.transitions(&path, &crossed);
+            transitions.push(OrbitTransition { overlap: chord.clone(), forward: *chord_from == b });
             let Some((stem_path, stem_crossed)) = tree_path(&forest.adj, root_of[a], a) else {
                 unread(Unread::NoFace);
                 continue;
             };
-            let lp = Orbit { steps, chord: chord.clone(), stem: forest.steps(&stem_path, &stem_crossed) };
+            let lp = Orbit { transitions, chord: chord.clone(), stem: forest.transitions(&stem_path, &stem_crossed) };
             // A CHORD THAT ENCLOSES NOTHING IS NOT AN ORBIT (ruled
             // 2026-09-18). `orbit_is_trivial` states the predicate once;
             // a cycle that encloses no rotation, no placement and no hue

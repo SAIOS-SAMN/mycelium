@@ -314,14 +314,14 @@ fn the_circuits_read_back_whole_step_by_step() {
                         modes: ModesRead::Split(vec![(BivectorKind::Elliptic, 1, None)]),
                     }],
                 }),
-                steps: vec![
-                    CircuitStep {
+                transitions: vec![
+                    CircuitTransition {
                         face: ov(1),
                         forward: true,
                         refracted: false,
                         carried: read(BivectorKind::Elliptic, ModesRead::Split(vec![(BivectorKind::Elliptic, 1, Some(4))])),
                     },
-                    CircuitStep {
+                    CircuitTransition {
                         face: ov(9),
                         forward: false,
                         refracted: true,
@@ -330,7 +330,7 @@ fn the_circuits_read_back_whole_step_by_step() {
                             ModesRead::Undecomposed(cga::Undecomposed::Irrational(2)),
                         ),
                     },
-                    CircuitStep { face: ov(2), forward: true, refracted: false, carried: Carried::Cone },
+                    CircuitTransition { face: ov(2), forward: true, refracted: false, carried: Carried::Cone },
                 ],
             },
             Circuit {
@@ -343,15 +343,15 @@ fn the_circuits_read_back_whole_step_by_step() {
                     class: CircuitClass::Curved,
                     offers: Vec::new(),
                 }),
-                steps: vec![
-                    CircuitStep { face: ov(3), forward: false, refracted: false, carried: Carried::Unread },
-                    CircuitStep {
+                transitions: vec![
+                    CircuitTransition { face: ov(3), forward: false, refracted: false, carried: Carried::Unread },
+                    CircuitTransition {
                         face: ov(5),
                         forward: true,
                         refracted: false,
                         carried: read(BivectorKind::Trivial, ModesRead::Unread),
                     },
-                    CircuitStep {
+                    CircuitTransition {
                         face: ov(6),
                         forward: true,
                         refracted: false,

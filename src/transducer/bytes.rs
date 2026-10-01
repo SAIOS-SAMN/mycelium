@@ -154,7 +154,7 @@ impl Bytes for Form {
         // holonomy and carriages are reads (AT1) and hold nothing.
         for lp in &self.orbits {
             n += std::mem::size_of_val(lp)
-                + (lp.steps.len() + lp.stem.len()) * std::mem::size_of::<crate::transducer::sentence::OrbitStep>();
+                + (lp.transitions.len() + lp.stem.len()) * std::mem::size_of::<crate::transducer::sentence::OrbitTransition>();
         }
         // The indexes the form keeps current; keys only.
         n += self.by_class.key_bytes()

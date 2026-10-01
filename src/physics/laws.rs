@@ -25,7 +25,7 @@ type Q = BigRational;
 /// THE FIVE UNIVERSAL LAWS (78.59, Ruling 1), in the order 78.59 states them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Law {
-    /// Conformal kinematics in Cl(4,1) over ℚ: a step is a versor whose
+    /// Conformal kinematics in Cl(4,1) over ℚ: a motion is a versor whose
     /// modes split exactly, and it carries every body it moves.
     Conformal,
     /// Momentum: τ_net = τ_ext = 0 — what the bodies exchange cancels.
@@ -70,9 +70,9 @@ impl Law {
     /// What the law says, as 78.59 rules it.
     pub fn statement(self) -> &'static str {
         match self {
-            Law::Conformal => "a step is a versor of Cl(4,1) over ℚ whose modes split exactly, and it carries every body it moves",
+            Law::Conformal => "a motion is a versor of Cl(4,1) over ℚ whose modes split exactly, and it carries every body it moves",
             Law::Momentum => "τ_net = τ_ext = 0: the torques the bodies exchange cancel, and no momentum is made or lost",
-            Law::Rigidity => "every pair of bodies keeps its unit-weight product across a transition, against the step that moves them",
+            Law::Rigidity => "every pair of bodies keeps its unit-weight product across a transition, against the motion that carries them",
             Law::Time => "a transition advances the height; nothing is written before what it follows",
             Law::Reservoir => "a hue relation is unitary: every distinction a merge removes is rotated into e_∅",
         }
@@ -110,7 +110,7 @@ pub struct BodyState {
 /// (empty where it recolours nothing).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Transition {
-    pub step: Mv,
+    pub motion: Mv,
     pub heights: (u64, u64),
     pub bodies: Vec<(BodyState, BodyState)>,
     pub hues: Vec<(u8, u8)>,
@@ -119,19 +119,19 @@ pub struct Transition {
 /// HOW A TRANSITION BROKE A LAW, carrying what it broke it by.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Breach {
-    /// The step is no versor: it acts as no motion.
+    /// The motion is no versor: it has no action to carry anything by.
     NotAVersor,
-    /// The step's modes did not split over ℚ, by MR1's reason.
+    /// The motion's modes did not split over ℚ, by MR1's reason.
     Undecomposed(Undecomposed),
-    /// Body `i`'s nucleus after is not the step's image of its nucleus
+    /// Body `i`'s nucleus after is not the motion's image of its nucleus
     /// before: the motion claimed does not carry it.
     NotCarried { body: usize },
-    /// Body `i`'s momentum could not be read: the step has no weight.
+    /// Body `i`'s momentum could not be read: the motion has no weight.
     MomentumUnread { body: usize },
     /// The torques the bodies exchanged do not cancel: `net` was made or lost.
     MomentumNotConserved { net: Mv },
     /// The pair `(i, j)` did not keep its unit-weight product against the
-    /// step's image of it: `delta` is the ratio (the product after, where the
+    /// motion's image of it: `delta` is the ratio (the product after, where the
     /// image's was zero) — shear, drift, inversion, separation.
     NonRigid { i: usize, j: usize, delta: Q },
     /// The pair `(i, j)` has a nucleus of no finite weight (a flat through
@@ -152,7 +152,7 @@ pub enum Breach {
 pub struct Verdict {
     pub breaches: Vec<(Law, Breach)>,
     pub exchanged: Vec<(usize, Mv)>,
-    /// How many commuting modes the step split into (MR1).
+    /// How many commuting modes the motion split into (MR1).
     pub modes: usize,
     /// The one ratio every pair's unit-weight product moved by — `1` for an
     /// isometry, another rational for a dilation (expansion or collapse) —
@@ -173,14 +173,14 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     // CONFORMAL KINEMATICS: a versor, split into its modes exactly, carrying
     // every body it moves. Its modes are read off its own action (MR1),
     // never a chart or an axis order.
-    if is_versor(&t.step) {
-        match motion_modes(&t.step, budget) {
+    if is_versor(&t.motion) {
+        match motion_modes(&t.motion, budget) {
             Some(Ok(modes)) => v.modes = modes.len(),
             Some(Err(why)) => v.breaches.push((Law::Conformal, Breach::Undecomposed(why))),
             None => v.breaches.push((Law::Conformal, Breach::NotAVersor)),
         }
         for (i, (before, after)) in t.bodies.iter().enumerate() {
-            if projective_ratio(&t.step.sandwich(&before.nucleus), &after.nucleus).is_none() {
+            if projective_ratio(&t.motion.sandwich(&before.nucleus), &after.nucleus).is_none() {
                 v.breaches.push((Law::Conformal, Breach::NotCarried { body: i }));
             }
         }
@@ -191,7 +191,7 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     // exchanges cancel, or momentum was made or lost.
     let mut net = Mv::zero();
     for (i, (before, after)) in t.bodies.iter().enumerate() {
-        match external_torque(&before.body, &after.body, &t.step) {
+        match external_torque(&before.body, &after.body, &t.motion) {
             Some(tau) => {
                 net = net.add(&tau);
                 if !tau.is_zero() {
@@ -205,14 +205,14 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
         v.breaches.push((Law::Momentum, Breach::MomentumNotConserved { net }));
     }
     // METRIC RIGIDITY at unit weight (78.59: no flat square), read against
-    // THE STEP: each body's nucleus after against the step's own image of
-    // it before, every pair's product kept exactly — so a step that dilates
+    // THE MOTION: each body's nucleus after against the motion's own image of
+    // it before, every pair's product kept exactly — so a motion that dilates
     // keeps the shape it dilates, and a pair that drifts from the motion
     // claimed is refused. Every pair the court cannot read is named; the
     // ratio every pair moved by from before to after is read as the
     // dilation lane, never an exemption.
     let against_step: Vec<(Mv, Mv)> =
-        t.bodies.iter().map(|(b, a)| (t.step.sandwich(&b.nucleus), a.nucleus.clone())).collect();
+        t.bodies.iter().map(|(b, a)| (t.motion.sandwich(&b.nucleus), a.nucleus.clone())).collect();
     for (i, j) in unmeasured_pairs(&against_step) {
         v.breaches.push((Law::Rigidity, Breach::RigidityUnmeasured { i, j }));
     }

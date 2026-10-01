@@ -1,13 +1,13 @@
-// 78.12(4), PL1 — THE CIRCUIT'S TRAJECTORY, STEP BY STEP: the bricks, not the
-// house. Every kept circuit of the last percept read at each member step —
-// the face crossed and which way, whether the face refracts, the step's own
+// 78.12(4), PL1 — THE CIRCUIT'S TRAJECTORY, TRANSITION BY TRANSITION: the bricks, not the
+// house. Every kept circuit of the last percept read at each member transition —
+// the face crossed and which way, whether the face refracts, the transition's own
 // ray and its class and modes, and the class of the transport composed so
 // far — served to the console on demand and never printed per epoch.
 //
 //! The census line `modes [none]` on thirty orbits says the house has no
 //! walls and nothing about the bricks. This reading is the bricks: a
-//! trivial holonomy reads as the sequence of steps whose product
-//! telescopes, and the first step whose face refracts is named where one
+//! trivial holonomy reads as the sequence of transitions whose product
+//! telescopes, and the first transition whose face refracts is named where one
 //! exists — where a wall could stand.
 //!
 //! Three of 78.12(4)'s fields have no producer yet, each named by the row
@@ -34,13 +34,13 @@ pub struct Circuits {
     pub circuits: Vec<Circuit>,
 }
 
-/// ONE CIRCUIT: the chord that closes it and its steps in boundary order,
+/// ONE CIRCUIT: the chord that closes it and its transitions in boundary order,
 /// and the reuse ladder's test where one ran (CT1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Circuit {
     /// The chord that closes it, by its overlap (AT1).
     pub chord: crate::network::nerve::coord::Overlap,
-    pub steps: Vec<CircuitStep>,
+    pub transitions: Vec<CircuitTransition>,
     /// `None` where the circuit read a class of its own that is not trivial,
     /// or rides a held coset: nothing triggered the ladder (79.3).
     pub test: Option<CircuitTest>,
@@ -319,17 +319,17 @@ fn take_ray(b: &[u8], p: &mut usize) -> Option<Vec<(u16, BigRational)>> {
 }
 
 impl Circuit {
-    /// THE FIRST STEP WHERE A REFRACTION ENTERS: the first face crossed that
-    /// carries an interface. `None` where no step refracts, which is a
+    /// THE FIRST TRANSITION WHERE A REFRACTION ENTERS: the first face crossed that
+    /// carries an interface. `None` where no transition refracts, which is a
     /// reading and not a refusal.
     pub fn first_refraction(&self) -> Option<usize> {
-        self.steps.iter().position(|s| s.refracted)
+        self.transitions.iter().position(|s| s.refracted)
     }
 }
 
-/// ONE MEMBER STEP.
+/// ONE MEMBER TRANSITION.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct CircuitStep {
+pub struct CircuitTransition {
     /// The overlap crossed, by its two charts (AT1).
     pub face: crate::network::nerve::coord::Overlap,
     /// Along the face's own orientation, or against it.
@@ -339,22 +339,22 @@ pub struct CircuitStep {
     pub carried: Carried,
 }
 
-/// WHAT ONE STEP CARRIED, oriented the way the circuit runs.
+/// WHAT ONE TRANSITION CARRIED, oriented the way the circuit runs.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Carried {
-    /// The step's transport was not read (rule 11: unread is not flat).
+    /// The transition's transport was not read (rule 11: unread is not flat).
     Unread,
-    /// The step's transport inverts on no ray: it is on the light cone.
+    /// The transition's transport inverts on no ray: it is on the light cone.
     Cone,
     Read {
-        /// The step's versor ray in its canonical coordinates: each non-zero
+        /// The transition's versor ray in its canonical coordinates: each non-zero
         /// blade and its exact coefficient, the first `+1` (A4).
         ray: Vec<(u16, BigRational)>,
-        /// The step's own class, `None` where it is unread.
+        /// The transition's own class, `None` where it is unread.
         kind: Option<BivectorKind>,
-        /// The step's modes, by the one reader of modes.
+        /// The transition's modes, by the one reader of modes.
         modes: ModesRead,
-        /// The class of the transport composed through this step, `None`
+        /// The class of the transport composed through this transition, `None`
         /// where it is unread.
         after: Option<BivectorKind>,
     },
@@ -502,7 +502,7 @@ fn take_modes(b: &[u8], p: &mut usize) -> Option<ModesRead> {
     }
 }
 
-impl CircuitStep {
+impl CircuitTransition {
     #[must_use]
     fn put(&self, out: &mut Vec<u8>) -> Option<()> {
         put_overlap(out, &self.face);
@@ -522,7 +522,7 @@ impl CircuitStep {
         Some(())
     }
 
-    fn take(b: &[u8], p: &mut usize) -> Option<CircuitStep> {
+    fn take(b: &[u8], p: &mut usize) -> Option<CircuitTransition> {
         let face = take_overlap(b, p)?;
         let flags = take_u8(b, p)?;
         if flags > 3 {
@@ -552,7 +552,7 @@ impl CircuitStep {
             }
             _ => return None,
         };
-        Some(CircuitStep { face, forward: flags & 1 == 1, refracted: flags & 2 == 2, carried })
+        Some(CircuitTransition { face, forward: flags & 1 == 1, refracted: flags & 2 == 2, carried })
     }
 }
 
@@ -564,8 +564,8 @@ impl Circuits {
         put_u32_count(out, self.circuits.len())?;
         for c in &self.circuits {
             put_overlap(out, &c.chord);
-            put_u32_count(out, c.steps.len())?;
-            for s in &c.steps {
+            put_u32_count(out, c.transitions.len())?;
+            for s in &c.transitions {
                 s.put(out)?;
             }
             match &c.test {
@@ -581,7 +581,7 @@ impl Circuits {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Circuits> {
         let m = take_len(b, p)?;
-        // A circuit is at least its chord, its step count and its test flag.
+        // A circuit is at least its chord, its transition count and its test flag.
         if !holds(b, *p, m, 7) {
             return None;
         }
@@ -589,20 +589,20 @@ impl Circuits {
         for _ in 0..m {
             let chord = take_overlap(b, p)?;
             let k = take_len(b, p)?;
-            // A step is at least its face, its flags and its arm.
+            // A transition is at least its face, its flags and its arm.
             if !holds(b, *p, k, 4) {
                 return None;
             }
-            let mut steps = Vec::with_capacity(k);
+            let mut transitions = Vec::with_capacity(k);
             for _ in 0..k {
-                steps.push(CircuitStep::take(b, p)?);
+                transitions.push(CircuitTransition::take(b, p)?);
             }
             let test = match take_u8(b, p)? {
                 0 => None,
                 1 => Some(CircuitTest::take(b, p)?),
                 _ => return None,
             };
-            circuits.push(Circuit { chord, steps, test });
+            circuits.push(Circuit { chord, transitions, test });
         }
         Some(Circuits { circuits })
     }

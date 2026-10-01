@@ -743,7 +743,7 @@ impl Form {
             return Vec::new();
         }
         let mut charts: Keyed<stalk::Invariant> = Keyed::new();
-        for s in &lp.steps {
+        for s in &lp.transitions {
             for vi in [s.overlap.from_vertex(), s.overlap.to_vertex()] {
                 if let Some(v) = self.vertices.at(&vi) {
                     // EVERY CHART THE VERTEX STANDS AT, so a vertex acting on

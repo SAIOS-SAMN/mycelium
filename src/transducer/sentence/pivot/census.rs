@@ -1,4 +1,4 @@
-// 54.7 — THE ORBIT CENSUS: the charge each step carries, how closing cycles
+// 54.7 — THE ORBIT CENSUS: the charge each transition carries, how closing cycles
 // divide, the defect and spectrum of each kept cycle, and the operators its
 // generators enact.
 
@@ -20,9 +20,9 @@ thread_local! {
     /// neither deposits net holonomic shear at `x₀` — so the gate is right
     /// and only the reporting was blind.
     ///
-    /// The third counts the charged steps the resonant ones carried. The
-    /// last three count EVERY step of EVERY cycle, closing or not: `(steps
-    /// whose charge was read, of those charged, steps whose carriage is no
+    /// The third counts the charged transitions the resonant ones carried. The
+    /// last three count EVERY transition of EVERY cycle, closing or not: `(transitions
+    /// whose charge was read, of those charged, transitions whose carriage is no
     /// versor and so carries no action to read)`. Without them "all
     /// closures are vacuum" cannot be distinguished from "the charge was
     /// never computed" — a probe that never fired reporting zero as though
@@ -38,13 +38,13 @@ thread_local! {
 /// orientation. The modes' values themselves are the orbit's spectrum
 /// (`ModesRead`), read under the stroke's budget. `None` where the carriage
 /// is no versor: unread, never a zero charge (rule 11).
-pub fn step_charged(omega: &element::Versor) -> Option<bool> {
+pub fn transition_charged(omega: &element::Versor) -> Option<bool> {
     crate::transducer::cga::charged(omega)
 }
 
-/// File one STEP's charge, on every cycle the circuit read reaches: read
+/// File one TRANSITION's charge, on every cycle the circuit read reaches: read
 /// and charged, read and uncharged, or unread.
-pub(super) fn note_step_charge(charged: Option<bool>) {
+pub(super) fn note_transition_charge(charged: Option<bool>) {
     RESONANCE.with(|r| {
         let mut b = r.borrow_mut();
         match charged {
@@ -65,8 +65,8 @@ pub(super) fn note_closure(carried: &Keyed<PathCarried>) {
     // back from a scalar written beside them (LAW-0, law 12: one producer).
     let mut charged = 0u64;
     for (_, c) in carried.scoped() {
-        let steps = c.steps.iter().filter_map(|s| s.transport.as_ref().and_then(|t| step_charged(&t.carriage)));
-        charged += steps.filter(|&c| c).count() as u64;
+        let charged_transitions = c.transitions.iter().filter_map(|s| s.transport.as_ref().and_then(|t| transition_charged(&t.carriage)));
+        charged += charged_transitions.filter(|&c| c).count() as u64;
     }
     RESONANCE.with(|r| {
         let mut b = r.borrow_mut();
@@ -80,8 +80,8 @@ pub(super) fn note_closure(carried: &Keyed<PathCarried>) {
     });
 }
 
-/// `(vacuum closures, resonant closures, the charged steps they carried,
-/// steps read, of those charged, steps unread)`.
+/// `(vacuum closures, resonant closures, the charged transitions they carried,
+/// transitions read, of those charged, transitions unread)`.
 pub fn orbit_resonance() -> (u64, u64, u64, u64, u64, u64) {
     RESONANCE.with(|r| *r.borrow())
 }
@@ -387,7 +387,7 @@ impl ModesRead {
         }
     }
 
-    /// The modes by name, for the orbit's line and the circuit's steps.
+    /// The modes by name, for the orbit's line and the circuit's transitions.
     pub fn label(&self) -> String {
         match self {
             ModesRead::Split(ms) if ms.is_empty() => "none".into(),
@@ -485,7 +485,7 @@ impl OrbitReading {
 }
 
 /// OR1, OR3 — ONE KEPT ORBIT AS ITS LINE READS IT: off its whole transport,
-/// or UNREAD at the step where its edge half was lost, by what refused it —
+/// or UNREAD at the transition where its edge half was lost, by what refused it —
 /// never classed off the face half alone (rule 11).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(crate) enum OrbitLine {
@@ -493,10 +493,10 @@ pub(crate) enum OrbitLine {
     /// 78.6(2) — through static contacts: the tether holonomy read, the
     /// gauge half static by name.
     Static(Box<OrbitReading>),
-    /// 78.6(1) — through a held coset: how the coset closes, the held steps
+    /// 78.6(1) — through a held coset: how the coset closes, the held transitions
     /// crossed and the candidates carried, none chosen.
     Coset { closure: super::circuit::CosetClosure, held: u64, candidates: usize },
-    /// The step, counted from one, and the refusal where one was named.
+    /// The transition, counted from one, and the refusal where one was named.
     Unread { at: Option<usize>, why: Option<Unread> },
 }
 
@@ -556,7 +556,7 @@ thread_local! {
 /// A reader starts listening: the orbits read from here are kept for it.
 pub fn arm_orbits() {
     ORBITS.with(|o| *o.borrow_mut() = Some(Vec::new()));
-    // PL1 — and the same orbits' circuits, step by step.
+    // PL1 — and the same orbits' circuits, transition by transition.
     super::trajectory::arm_circuits();
 }
 
@@ -601,7 +601,7 @@ pub(crate) fn take_orbits(budget: &mut crate::physics::Budget) -> Vec<OrbitLine>
                 }
                 Some(Err(_)) => OrbitLine::Coset {
                     closure: super::circuit::CosetClosure::Unbounded,
-                    held: path.refracted.as_ref().map_or(0, |r| r.held_steps()),
+                    held: path.refracted.as_ref().map_or(0, |r| r.held_transitions()),
                     candidates: 0,
                 },
                 None => OrbitLine::Unread { at: note.at, why: note.why },

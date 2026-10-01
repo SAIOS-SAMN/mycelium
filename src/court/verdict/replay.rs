@@ -768,7 +768,7 @@ pub(crate) fn torsion_chord_carries(
     let Some(lp) = by_chord.at(chord) else {
         return false;
     };
-    for s in &lp.steps {
+    for s in &lp.transitions {
         if &s.overlap == chord {
             continue;
         }

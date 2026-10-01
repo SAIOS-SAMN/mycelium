@@ -245,7 +245,7 @@ impl Form {
     /// `comprehend::crossings` reads a cell's circuits by.
     fn cells_crossed(&self, lp: &Orbit) -> Vec<Vec<u8>> {
         let mut out: Keyed<()> = Keyed::new();
-        for s in &lp.steps {
+        for s in &lp.transitions {
             let Some((x, y)) = self.face_bodies.at(&s.overlap) else { continue };
             if x == y {
                 continue;

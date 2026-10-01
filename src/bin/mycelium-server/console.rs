@@ -653,20 +653,20 @@ fn circuits(c: &observe::Circuits) -> Vec<String> {
     let owed: Vec<String> = observe::CIRCUIT_OWED.iter().map(|(field, row)| format!("{field} ({row})")).collect();
     let mut out = vec![format!("  {BOLD}circuits{RESET}    {} kept by the last percept", c.circuits.len())];
     for circuit in &c.circuits {
-        let holonomy = match circuit.steps.as_slice() {
-            [.., observe::CircuitStep { carried: observe::Carried::Read { after, .. }, .. }] => kind(*after),
+        let holonomy = match circuit.transitions.as_slice() {
+            [.., observe::CircuitTransition { carried: observe::Carried::Read { after, .. }, .. }] => kind(*after),
             _ => "unread".into(),
         };
         let refraction = match circuit.first_refraction() {
-            Some(i) => format!("{YELLOW}first refraction at step {} (face {}){RESET}", i + 1, overlap(&circuit.steps[i].face)),
-            None => format!("{DIM}no step refracts{RESET}"),
+            Some(i) => format!("{YELLOW}first refraction at transition {} (face {}){RESET}", i + 1, overlap(&circuit.transitions[i].face)),
+            None => format!("{DIM}no transition refracts{RESET}"),
         };
         out.push(format!(
-            "    chord {}  {} steps  holonomy {holonomy}  {refraction}",
+            "    chord {}  {} transitions  holonomy {holonomy}  {refraction}",
             overlap(&circuit.chord),
-            circuit.steps.len()
+            circuit.transitions.len()
         ));
-        for (i, s) in circuit.steps.iter().enumerate() {
+        for (i, s) in circuit.transitions.iter().enumerate() {
             let way = match (s.forward, s.refracted) {
                 (true, false) => "→",
                 (false, false) => "←",

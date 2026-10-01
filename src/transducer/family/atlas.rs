@@ -127,7 +127,7 @@ pub(super) fn read_form_atlas(form: &Form, reached: &[u64]) -> FormAtlas {
         // at two frames (a frame-axis overlap), within one frame otherwise;
         // TURNED where any member path's whole transport reads and is not the
         // identity ray, the reading `contact_circuits` takes (78.6).
-        let across = lp.steps.iter().any(|s| match (s.overlap.from.frame(), s.overlap.to.frame()) {
+        let across = lp.transitions.iter().any(|s| match (s.overlap.from.frame(), s.overlap.to.frame()) {
             (Some(a), Some(b)) => a != b,
             _ => false,
         });

@@ -677,12 +677,12 @@ pub type Faces = Keyed<FormFace, coord::Overlap>;
 /// ONE STEP OF A CIRCUIT: an overlap, crossed with its orientation or
 /// against it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct OrbitStep {
+pub struct OrbitTransition {
     pub overlap: coord::Overlap,
     pub forward: bool,
 }
 
-impl OrbitStep {
+impl OrbitTransition {
     /// The chart the step leaves.
     pub fn leaves(&self) -> &coord::ChartAt {
         match self.forward {
@@ -718,21 +718,21 @@ impl OrbitStep {
 /// sequences of coordinates, never positions.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Orbit {
-    pub steps: Vec<OrbitStep>,
+    pub transitions: Vec<OrbitTransition>,
     pub chord: coord::Overlap,
-    pub stem: Vec<OrbitStep>,
+    pub stem: Vec<OrbitTransition>,
 }
 
 impl Orbit {
     /// The charts the cycle stands at, in circuit order: each step's leaving
     /// chart.
     pub fn charts(&self) -> Vec<coord::ChartAt> {
-        self.steps.iter().map(|s| s.leaves().clone()).collect()
+        self.transitions.iter().map(|s| s.leaves().clone()).collect()
     }
 
     /// The vertices it passes through, in circuit order (π of the charts).
     pub fn vertices(&self) -> Vec<coord::VertexAt> {
-        self.steps.iter().map(|s| s.leaves().vertex()).collect()
+        self.transitions.iter().map(|s| s.leaves().vertex()).collect()
     }
 
     /// THE KEY THE CYCLE'S ONE MEMBER PATH IS FILED UNDER: its charts in
@@ -1030,7 +1030,7 @@ pub fn face_word_on(vertices: &Vertices, overlap: &coord::Overlap, face: &FormFa
 /// names an overlap these faces do not hold.
 pub fn orbit_word_on(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<Word> {
     let mut w = Word::identity();
-    for s in &lp.steps {
+    for s in &lp.transitions {
         let step = face_word_on(vertices, &s.overlap, faces.at(&s.overlap)?)?;
         let step = match s.forward {
             true => step,

@@ -1,10 +1,10 @@
 // 78.6, 78.18 — THE REFRACTED EDGE HALF, CARRIED AS ITS FACTORS: a circuit
-// through a held coset or a static contact keeps each step as crossed, and
+// through a held coset or a static contact keeps each transition as crossed, and
 // the candidates the held stabilizers multiply to are formed only by a
 // reader holding the stroke's budget (rule 10).
 //
-//! A held `ℤ₂` doubles the candidates at every held step it is crossed on, so
-//! a circuit over `k` held steps carries `2ᵏ` — a generate-and-test T5
+//! A held `ℤ₂` doubles the candidates at every held transition it is crossed on, so
+//! a circuit over `k` held transitions carries `2ᵏ` — a generate-and-test T5
 //! refuses beyond small `k`. The circuit keeps the factors, never the product;
 //! [`Refracted::candidates`] forms the product one candidate at a time,
 //! spending one read of the stroke per candidate formed, and refuses
@@ -13,11 +13,11 @@
 
 use super::*;
 
-/// ONE STEP OF THE EDGE HALF FROM THE FIRST REFRACTED ONE ON, oriented the
+/// ONE TRANSITION OF THE EDGE HALF FROM THE FIRST REFRACTED ONE ON, oriented the
 /// way the circuit crosses it.
 #[derive(Clone, Debug)]
-pub(crate) enum RefractedStep {
-    /// A step with one transport.
+pub(crate) enum RefractedTransition {
+    /// A transition with one transport.
     Fixed(Box<Transport>),
     /// A static contact: the tether; the gauge half unread by name.
     Static(element::Versor),
@@ -26,15 +26,15 @@ pub(crate) enum RefractedStep {
 }
 
 /// THE EDGE HALF AS ITS FACTORS: the composite before the first refracted
-/// step, and every step from it on.
+/// transition, and every transition from it on.
 #[derive(Clone, Debug)]
 pub(crate) struct Refracted {
     head: Transport,
-    steps: Vec<RefractedStep>,
+    transitions: Vec<RefractedTransition>,
 }
 
 /// ONE CANDIDATE OF A REFRACTED EDGE HALF: its geometric composite, and its
-/// gauge composite (word and hue) where every step read one (NB1: the two
+/// gauge composite (word and hue) where every transition read one (NB1: the two
 /// read apart and never summed).
 #[derive(Clone, Debug)]
 pub(crate) struct EdgeCandidate {
@@ -78,74 +78,74 @@ fn crossed(c: &EdgeCandidate, t: &Transport) -> EdgeCandidate {
 }
 
 impl Refracted {
-    /// The edge half at its first refracted step, the composite so far the
-    /// head; `None` where a step it must invert has no inverse (the cone).
+    /// The edge half at its first refracted transition, the composite so far the
+    /// head; `None` where a transition it must invert has no inverse (the cone).
     pub(crate) fn open(head: Transport, r: &Refraction, forward: bool) -> Option<Refracted> {
-        Refracted { head, steps: Vec::new() }.cross(r, forward)
+        Refracted { head, transitions: Vec::new() }.cross(r, forward)
     }
 
-    pub(crate) fn then(mut self, s: RefractedStep) -> Refracted {
-        self.steps.push(s);
+    pub(crate) fn then(mut self, s: RefractedTransition) -> Refracted {
+        self.transitions.push(s);
         self
     }
 
     /// One refracted contact crossed; `None` on the cone.
     pub(crate) fn cross(self, r: &Refraction, forward: bool) -> Option<Refracted> {
-        let step = match (r, forward) {
-            (Refraction::Static { tether, .. }, true) => RefractedStep::Static(tether.clone()),
+        let transition = match (r, forward) {
+            (Refraction::Static { tether, .. }, true) => RefractedTransition::Static(tether.clone()),
             // Backward by the reverse, a ray (78.32(1)).
             (Refraction::Static { tether, .. }, false) => {
                 crate::transducer::cga::is_versor(tether).then_some(())?;
-                RefractedStep::Static(tether.reverse())
+                RefractedTransition::Static(tether.reverse())
             }
-            (Refraction::Coset(c), true) => RefractedStep::Coset(c.clone()),
-            (Refraction::Coset(c), false) => RefractedStep::Coset(c.iter().map(Transport::reverse).collect()),
+            (Refraction::Coset(c), true) => RefractedTransition::Coset(c.clone()),
+            (Refraction::Coset(c), false) => RefractedTransition::Coset(c.iter().map(Transport::reverse).collect()),
         };
-        Some(self.then(step))
+        Some(self.then(transition))
     }
 
-    /// The held steps crossed, `k`.
-    pub(crate) fn held_steps(&self) -> u64 {
-        self.steps.iter().filter(|s| matches!(s, RefractedStep::Coset(_))).count() as u64
+    /// The held transitions crossed, `k`.
+    pub(crate) fn held_transitions(&self) -> u64 {
+        self.transitions.iter().filter(|s| matches!(s, RefractedTransition::Coset(_))).count() as u64
     }
 
     /// 78.6(2) — a static contact crossed: the gauge half unread by name.
     pub(crate) fn gauge_static(&self) -> bool {
-        self.steps.iter().any(|s| matches!(s, RefractedStep::Static(_)))
+        self.transitions.iter().any(|s| matches!(s, RefractedTransition::Static(_)))
     }
 
-    /// THE ONE CANDIDATE where no held step was crossed; `None` where one
+    /// THE ONE CANDIDATE where no held transition was crossed; `None` where one
     /// was — several candidates, none chosen.
     pub(crate) fn single(&self) -> Option<EdgeCandidate> {
         let mut c = EdgeCandidate {
             carriage: self.head.carriage.clone(),
             gauge: Some((self.head.word.clone(), self.head.gauge.clone())),
         };
-        for s in &self.steps {
+        for s in &self.transitions {
             c = match s {
-                RefractedStep::Fixed(t) => crossed(&c, t),
-                RefractedStep::Static(v) => EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None },
-                RefractedStep::Coset(_) => return None,
+                RefractedTransition::Fixed(t) => crossed(&c, t),
+                RefractedTransition::Static(v) => EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None },
+                RefractedTransition::Coset(_) => return None,
             };
         }
         Some(c)
     }
 
     /// EVERY CANDIDATE, formed one at a time under the stroke: one read spent
-    /// per candidate a held step forms, [`Unbounded`] where the stroke is
+    /// per candidate a held transition forms, [`Unbounded`] where the stroke is
     /// spent before the last (rule 10).
     pub(crate) fn candidates(&self, budget: &mut crate::physics::Budget) -> Result<Vec<EdgeCandidate>, Unbounded> {
         let mut cands = vec![EdgeCandidate {
             carriage: self.head.carriage.clone(),
             gauge: Some((self.head.word.clone(), self.head.gauge.clone())),
         }];
-        for s in &self.steps {
+        for s in &self.transitions {
             cands = match s {
-                RefractedStep::Fixed(t) => cands.iter().map(|c| crossed(c, t)).collect(),
-                RefractedStep::Static(v) => {
+                RefractedTransition::Fixed(t) => cands.iter().map(|c| crossed(c, t)).collect(),
+                RefractedTransition::Static(v) => {
                     cands.into_iter().map(|c| EdgeCandidate { carriage: v.geo(&c.carriage), gauge: None }).collect()
                 }
-                RefractedStep::Coset(coset) => {
+                RefractedTransition::Coset(coset) => {
                     let mut next = Vec::with_capacity(cands.len() * coset.len());
                     for c in &cands {
                         for t in coset {
@@ -185,7 +185,7 @@ impl PathCarried {
         }
     }
 
-    /// 78.26(5), 78.32 — THE CIRCUIT'S HUE, the fibre's holonomy: the steps'
+    /// 78.26(5), 78.32 — THE CIRCUIT'S HUE, the fibre's holonomy: the transitions'
     /// hue maps composed along the circuit the way [`PathCarried::composite`]
     /// composes their carriages, `h_edge ∘ h_face`. `None` where the edge half
     /// did not read, rides a held coset, or crossed a static contact, whose
@@ -200,19 +200,19 @@ impl PathCarried {
 
     /// Whether the edge half crosses a held coset.
     pub(crate) fn holds_coset(&self) -> bool {
-        self.refracted.as_ref().is_some_and(|r| r.held_steps() > 0)
+        self.refracted.as_ref().is_some_and(|r| r.held_transitions() > 0)
     }
 
     /// 78.6(1) — EVERY CANDIDATE'S WHOLE TRANSPORT through a held coset, and
-    /// the held steps crossed, formed under the stroke; `None` where the
+    /// the held transitions crossed, formed under the stroke; `None` where the
     /// edge half holds no coset.
     pub(crate) fn coset(
         &self,
         budget: &mut crate::physics::Budget,
     ) -> Option<Result<(Vec<element::Versor>, u64), Unbounded>> {
-        let r = self.refracted.as_ref().filter(|r| r.held_steps() > 0)?;
+        let r = self.refracted.as_ref().filter(|r| r.held_transitions() > 0)?;
         Some(r.candidates(budget).map(|cands| {
-            (cands.iter().map(|c| c.carriage.geo(&self.face.carriage)).collect(), r.held_steps())
+            (cands.iter().map(|c| c.carriage.geo(&self.face.carriage)).collect(), r.held_transitions())
         }))
     }
 

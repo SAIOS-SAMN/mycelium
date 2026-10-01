@@ -48,9 +48,9 @@ fn circuits(contact: bool) -> Vec<Circuit> {
 #[test]
 fn a_kept_circuit_reads_as_its_steps_and_composes_to_its_holonomy() {
     let [c] = circuits(false).try_into().expect("one circuit");
-    assert_eq!(c.steps.len(), 3, "the triangle through the Frame is three steps");
+    assert_eq!(c.transitions.len(), 3, "the triangle through the Frame is three steps");
     let kinds: Vec<(Option<BivectorKind>, Option<BivectorKind>)> = c
-        .steps
+        .transitions
         .iter()
         .map(|s| match &s.carried {
             Carried::Read { kind, after, .. } => (*kind, *after),
@@ -60,7 +60,7 @@ fn a_kept_circuit_reads_as_its_steps_and_composes_to_its_holonomy() {
     let turns = kinds.iter().filter(|(k, _)| *k == Some(BivectorKind::Elliptic)).count();
     assert_eq!(turns, 1, "one step turns — the chord — and the stars carry no turn: {kinds:?}");
     let modes: Vec<&ModesRead> = c
-        .steps
+        .transitions
         .iter()
         .filter_map(|s| match &s.carried {
             Carried::Read { kind: Some(BivectorKind::Elliptic), modes, .. } => Some(modes),
@@ -84,13 +84,13 @@ fn a_kept_circuit_reads_as_its_steps_and_composes_to_its_holonomy() {
 fn the_first_step_whose_face_refracts_is_named() {
     let [c] = circuits(true).try_into().expect("one circuit");
     let at = c.first_refraction().expect("the contact face refracts");
-    assert!(c.steps[at].refracted);
+    assert!(c.transitions[at].refracted);
     assert!(
-        matches!(&c.steps[at].carried, Carried::Read { kind: Some(BivectorKind::Elliptic), .. }),
+        matches!(&c.transitions[at].carried, Carried::Read { kind: Some(BivectorKind::Elliptic), .. }),
         "the refracting step is the chord's turn: {:?}",
-        c.steps[at]
+        c.transitions[at]
     );
-    assert_eq!(c.steps.iter().filter(|s| s.refracted).count(), 1, "and it is the only one");
+    assert_eq!(c.transitions.iter().filter(|s| s.refracted).count(), 1, "and it is the only one");
 }
 
 /// OR3 — AN ORBIT WHOSE EDGE HALF IS REFUSED IS UNREAD, NEVER TRIVIAL. The
@@ -115,7 +115,7 @@ fn an_orbit_whose_edge_half_is_refused_reads_unread_at_its_step() {
     assert_eq!(why.label(), "not rigid");
     let carried = paths_carried(&f.faces, &f.vertices, &orbits[0]).expect("the circuit reads the cycle");
     assert!(
-        carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.steps[*at - 1].face == chord),
+        carried.scoped().all(|(_, c)| c.edge_lost_at == Some(*at) && c.transitions[*at - 1].face == chord),
         "lost at the chord's step, {at}"
     );
     assert_eq!(orbit_defects(), (0, 0, 0, 0, 0), "no class filed off the face half");
