@@ -114,7 +114,10 @@ impl Kernel {
     /// own line alone, so depth from peers was lost at every restore.)
     pub(crate) fn rebuild_attestors(&mut self) {
         self.attestors = crate::network::nerve::Keyed::new();
-        let nodes: Vec<crate::chronometry::KStepReceipt> = self.chain.nodes().cloned().collect();
+        // Only a node that cites by stamp is filed, and only those are
+        // copied out of the ledger.
+        let nodes: Vec<crate::chronometry::KStepReceipt> =
+            self.chain.nodes().filter(|r| r.cites.iter().any(|c| c.at().is_some())).cloned().collect();
         for r in &nodes {
             self.note_attestor(r);
         }

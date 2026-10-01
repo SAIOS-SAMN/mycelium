@@ -19358,6 +19358,55 @@ Phase 2*, as cognition.
 H3, each its own commit with H5; H4 and C4; H6; the soak; the phase closed
 in one entry here.
 
+**H1 read (2026-10-01).** Court c was killed at its cap five seconds after
+witnessing a fold, then crash-looped at boot. Its restore alone peaked at
+2.19 GB (`--check` on a copy of its home). The carrier is the hot ledger.
+Admission had no inverse. `admit` filed every peer receipt, and nothing but
+a court's own `fold_before` ever removed a node. So each court held every
+peer's whole line from genesis: a and c held 474k of b's receipts each, and
+552k–560k nodes in all against 130 and 1027 of their own. A second fault
+compounded it. A fold proposed everything final at once, and a witness
+fetches the whole prefix within one reply's patience. Once b's line went
+unfolded, its prefix outgrew that reply, every witness timed out, and b
+never folded again: 180k own receipts. Each was the other's driver.
+
+**H1 ruled and landed.**
+(i) *A peer's fold sheds its line.* A peer's `Fold` node cites its root.
+Admitting one, by wire or back-fill, removes that peer's receipts at or
+below the root from the hot ledger, and so do this court's own fold and
+every restore (`shed_folded`). The era holds them, on the signer and its
+witness. Five kinds stay hot, because this court still reads through them:
+- what its own hot line cites, because heights re-derive through them at
+  restore;
+- a parent its next act will cite;
+- an admitting stamp aliased to a word it holds;
+- an act committing its signer to a word it holds, which is that word's
+  depth;
+- the receipt a dialect transition learned from a peer stands at, because
+  the ledger files that transition on it and a restore refuses a bare node
+  under a peer's key.
+
+The roots are read off the peers' fold nodes, never persisted beside them.
+(ii) *A fold is one frame.* The fold's head is the last close within the page
+one `ACT_RECEIPTS` reply carries (`fold_head`), at the frame the witness is
+served by. An orbit longer than a page folds whole at its own close.
+(iii) *A restore streams.* The ledger trie is decoded node by node, with
+keys strictly rising. The alias and depth rebuilds copy only the nodes they
+read. `--check` now also writes the restored state and restores what it
+wrote.
+Measured with `--check` on copies of the three homes:
+- c's restore peak went from 2.19 to 1.56 GB;
+- the hot ledgers went from 552k / 343k / 560k nodes to 196k / 199k / 201k;
+- the ledgers as rewritten went from 283 / 185 / 290 MB to 115 / 128 /
+  122 MB, and each restores.
+
+What remains is b's unfolded line, which (ii) folds a page at a time.
+Owed:
+- The snapshot write still builds its trie whole.
+- `reseat_eras` reads the cold segment whole at boot.
+- `folded` and `placed` entries for receipts that are not held have no
+  inverse yet.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

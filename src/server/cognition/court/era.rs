@@ -63,6 +63,70 @@ impl Kernel {
         head.filter(|h| *h >= first)
     }
 
+    /// THE FOLD'S HEAD, ONE FRAME AT A TIME (45.8, 47.3): the last close at
+    /// or below the finality reading within the page a witness fetches in
+    /// one `ACT_RECEIPTS` reply — the same read at the same frame. An orbit
+    /// longer than a page folds whole at its own close, since a fold cuts
+    /// nowhere else.
+    pub fn fold_head(&self) -> Option<Place> {
+        let head = self.final_prefix_head()?;
+        let me = self.chain.vk();
+        let after = self.chain.root().map(|r| r.at);
+        let (at_most, bytes) = Self::receipts_frame()?;
+        // The page is served in line order: walked once, it names the last
+        // close on it and the place it reached.
+        let (mut cut, mut past) = (None, after);
+        for r in self.receipts_page(&me, after, head, at_most, bytes) {
+            past = Some(r.stamp.place());
+            if r.kind == crate::chronometry::ActKind::Orbit {
+                cut = past;
+            }
+        }
+        if cut.is_some() {
+            return cut;
+        }
+        self.chain
+            .line_between(&me, past, head, usize::MAX)
+            .into_iter()
+            .find(|r| r.kind == crate::chronometry::ActKind::Orbit)
+            .map(|r| r.stamp.place())
+    }
+
+    /// THE PAGE ONE `ACT_RECEIPTS` REPLY CARRIES: at most this many
+    /// receipts and this many bytes of their tapes — the frame budget less
+    /// the reply's header, and the most of the smallest tape that fits it.
+    /// `None` where the frame is smaller than a header.
+    pub fn receipts_frame() -> Option<(usize, usize)> {
+        let bytes = crate::network::wire::frame_budget().checked_sub(64)?;
+        Some((bytes / KStepReceipt::MIN_TAPE, bytes))
+    }
+
+    /// THE PEERS' FOLDED LINES LEAVE THE HOT LEDGER (45.8): each peer's
+    /// receipts at or below its own fold's root, but for those this court
+    /// still reads by them — a parent its next act will cite, an admitting
+    /// stamp aliased to a word it holds, an act committing its signer to a
+    /// word it holds, which is that word's depth, and the receipt a dialect
+    /// transition learned from a peer stands at, which the ledger files it
+    /// on.
+    pub(crate) fn shed_folded_lines(&mut self) -> u64 {
+        let mut stood: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        for at in self.dialect_chain.iter().filter_map(|(_, _, at)| *at) {
+            stood.insert(at.key(), ());
+        }
+        for (_, at) in self.cocycle_receipt.scoped() {
+            stood.insert(at.key(), ());
+        }
+        let pending = &self.pending_parents;
+        let held = &self.held_at;
+        self.chain.shed_folded(|r| {
+            let key = r.stamp.key();
+            pending.contains(&key)
+                || held.contains(&key)
+                || stood.contains(&key)
+                || r.cites.iter().filter_map(crate::chronometry::Cite::at).any(|at| held.contains(&at.key()))
+        })
+    }
+
     /// The eras this court holds, in the order it filed them (`ARC1`): its
     /// own folds and the ones it witnessed, each under its signer's key.
     pub fn archive(&self) -> &[Era] {

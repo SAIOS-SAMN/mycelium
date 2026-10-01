@@ -48,7 +48,7 @@ impl Kernel {
     /// (`REFUSE_FOLD_OPEN`); a ledger that does not conserve over it
     /// proposes nothing (`REFUSE_FOLD_INEXACT`).
     pub fn propose_fold(&mut self) -> Result<Proposal, &'static str> {
-        let head = self.final_prefix_head().ok_or(REFUSE_FOLD_OPEN)?;
+        let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
         self.treasury.fold_reading(head)?;
         let epochs = nets_of(&self.treasury.rows_below(head))?.rows;
         let after = self.chain.root().map(|r| r.at);
@@ -184,6 +184,9 @@ impl Kernel {
             at: None,
             receipts: cold,
         });
+        // What this court's own folded line cited of its peers is no longer
+        // cited by its hot line, and their folded lines may leave.
+        self.shed_folded_lines();
         let done = FoldDone {
             at: self.chain.head_place(),
             h: self.chain.head_height(),

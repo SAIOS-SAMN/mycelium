@@ -818,6 +818,11 @@ impl Kernel {
                 if r.kind == crate::chronometry::ActKind::Settled {
                     self.hear_refill(r);
                 }
+                // 45.8: a peer's fold names the root its line was archived
+                // to, and what this court held of that line below it leaves.
+                if r.kind == crate::chronometry::ActKind::Fold {
+                    self.shed_folded_lines();
+                }
             }
             crate::court::admission::Admitted::Equivocation { at, .. } => {
                 self.burn_equivocation(r.stamp.vk, *at);
@@ -857,6 +862,9 @@ impl Kernel {
                     self.chain.admit(r.clone());
                     self.note_attestor(r);
                     self.alias_admitting(r, budget);
+                    if r.kind == crate::chronometry::ActKind::Fold {
+                        self.shed_folded_lines();
+                    }
                     n += 1;
                 }
                 crate::court::admission::Admitted::Stale => n += 1,

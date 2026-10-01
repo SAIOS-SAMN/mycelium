@@ -11,7 +11,7 @@ use super::*;
 use crate::chronometry::{Cite, KStepReceipt, Stamp};
 use crate::cognition::*;
 use crate::network::nerve::Keyed;
-use crate::snapshot::{leaf, take_trie};
+use crate::snapshot::{leaf, take_trie, take_trie_each};
 use crate::transducer::address::Address;
 use crate::transducer::element::Element;
 
@@ -113,14 +113,23 @@ impl Kernel {
             // T2 — THE LEDGER, by stamp: each node's receipt, and the rows,
             // the settlements and the transitions standing at it.
             at.set(LEDGER_TRIE);
-            let ledger = take_trie(b, pos, LEDGER_TRIE, &[LEAF_RECEIPT, LEAF_ENTRIES, LEAF_SETTLEMENTS, LEAF_DIALECT])?;
+            // Each node is decoded as it is read, never held as tape beside
+            // what it decodes to; the trie is written in key order, and a
+            // key not past the last refuses it.
             let origin = Stamp::new(0, vk, crate::chronometry::Place::GENESIS);
             let mut receipts: Vec<KStepReceipt> = Vec::new();
             let mut entries: Vec<crate::economy::Entry> = Vec::new();
             let mut settled: Vec<crate::anastome::dialogue::Settlement> = Vec::new();
             let mut dialect: Vec<(Vec<u8>, element::Versor, Option<Stamp>)> = Vec::new();
-            for (key, leaves) in ledger.scoped() {
+            let mut last: Option<Vec<u8>> = None;
+            let kinds = [LEAF_RECEIPT, LEAF_ENTRIES, LEAF_SETTLEMENTS, LEAF_DIALECT];
+            take_trie_each(b, pos, LEDGER_TRIE, &kinds, |key, leaves| {
+                if last.as_ref().is_some_and(|l| *l >= key) {
+                    return None;
+                }
                 let stamp = Stamp::from_key(&key)?;
+                last = Some(key);
+                let leaves = &leaves;
                 let receipt = match leaf(leaves, LEAF_RECEIPT) {
                     Some(v) => {
                         let r = whole(v, KStepReceipt::read)?;
@@ -181,7 +190,8 @@ impl Kernel {
                 if let Some(r) = receipt {
                     receipts.push(r);
                 }
-            }
+                Some(())
+            })?;
             // The stamps were read in key order, which is height first, so
             // every ancestor is placed before its descendant.
             let chain = crate::chronometry::ReceiptChain::from_nodes(root, vk, receipts)?;
@@ -334,8 +344,11 @@ impl Kernel {
                 kernel.treasury.restore_award(&addr, award);
             }
             // THE STAMP ALIASES, re-derived from the ledger's peer nodes
-            // against the words just restored — never persisted.
-            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().cloned().collect();
+            // against the words just restored — never persisted. Only a node
+            // that admits a word at its own stamp can alias one, and only
+            // those are copied out of the ledger.
+            let admits = |r: &KStepReceipt| r.cites.iter().any(|c| matches!(c, Cite::Word { at, .. } if *at == r.stamp));
+            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().filter(|r| admits(r)).cloned().collect();
             for r in &peers {
                 kernel.alias_admitting(r, &mut budget);
             }
@@ -541,6 +554,9 @@ impl Kernel {
         // it wrote and the peer receipts it admitted — exactly as it read
         // them when they arrived. Left out, every restored court read
         // depth zero for every address it had ever ruled.
+        // The peers' folded lines leave first, once the words they are kept
+        // for are restored and aliased (45.8).
+        self.shed_folded_lines();
         self.rebuild_attestors();
         // Unruled connections that survived the prune re-enter the docket.
         let held: Vec<Element> = self

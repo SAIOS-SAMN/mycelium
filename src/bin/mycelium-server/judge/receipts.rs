@@ -13,12 +13,10 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(req) = dialogue::decode_receipts_request(&frame.body) else { return };
-    // The frame budget is wider than one header, so the body's share is
-    // exact; a budget smaller than a header serves nothing.
-    let Some(budget) = mycelium::network::wire::frame_budget().checked_sub(64) else {
+    // A budget smaller than a header serves nothing.
+    let Some((at_most, budget)) = mycelium::cognition::Kernel::receipts_frame() else {
         return;
     };
-    let at_most = budget / mycelium::chronometry::KStepReceipt::MIN_TAPE;
     let receipts = match door.kernel.lock() {
         Ok(k) => k.receipts_page(&req.signer, req.after, req.upto, at_most, budget),
         Err(_) => return,

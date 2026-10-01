@@ -39,6 +39,10 @@ pub struct ReceiptChain {
     /// a peer receipt citing one of them still names it, and its height is
     /// its stamp's. Only what a citation asked for is held here.
     folded: Keyed<[u8; 32]>,
+    /// `vk → (K, i)`: THE ROOT EACH PEER'S OWN FOLD ARCHIVED ITS LINE TO, as
+    /// its `Fold` node cites it — where `shed_folded` cuts that line. Kept
+    /// where a peer's fold node is held, rebuilt at restore from the nodes.
+    peer_roots: Keyed<Place>,
 }
 
 /// A PEER NODE'S TWO COORDINATES against this chain's own line, as our
@@ -412,7 +416,65 @@ impl ReceiptChain {
         let reach = self.placed.get(&r.stamp.key()).and_then(|p| p.reach);
         self.placed.insert(r.stamp.key(), Placed { ours_in, reach });
         self.file_on_line(&r.stamp);
+        self.file_peer_root(&r);
         self.nodes.insert(r.stamp.key(), r);
+    }
+
+    /// A PEER'S FOLD ROOT, read off its `Fold` node: the root it cites on
+    /// its own signer's line, raising that signer's entry. Any other node
+    /// names no root.
+    fn file_peer_root(&mut self, r: &KStepReceipt) {
+        if r.kind != ActKind::Fold {
+            return;
+        }
+        for c in &r.cites {
+            let Cite::Root { at, .. } = c else { continue };
+            if at.vk != r.stamp.vk {
+                continue;
+            }
+            if let Some(top) = raise(self.peer_roots.get(&at.vk).copied(), at.place()) {
+                self.peer_roots.insert(at.vk, top);
+            }
+        }
+    }
+
+    /// THE INVERSE OF `admit` (45.8): a peer's receipts at or below the
+    /// root its own fold archived leave the hot ledger — its era holds
+    /// them, on the signer and on the witness that co-signed it. Two kinds
+    /// stay: what this chain's own hot line cites, through which its
+    /// heights re-derive at restore, and what `keep` names. The signer's
+    /// fold node stands above its root, so its line keeps the head
+    /// admission reads. Answers how many nodes left.
+    pub fn shed_folded(&mut self, keep: impl Fn(&KStepReceipt) -> bool) -> u64 {
+        let mut cited: Keyed<()> = Keyed::new();
+        for r in self.own() {
+            for p in &r.parents {
+                cited.insert(p.at.key(), ());
+            }
+        }
+        let roots: Vec<([u8; 32], Place)> = self
+            .peer_roots
+            .scoped()
+            .filter_map(|(vk, &at)| Some((<[u8; 32]>::try_from(vk.as_slice()).ok()?, at)))
+            .collect();
+        let mut shed = 0u64;
+        for (vk, upto) in roots {
+            let leaving: Vec<Stamp> = self
+                .line_between(&vk, None, upto, usize::MAX)
+                .into_iter()
+                .filter(|r| !cited.contains(&r.stamp.key()) && !keep(r))
+                .map(|r| r.stamp)
+                .collect();
+            for at in leaving {
+                let key = at.key();
+                self.lines.remove(&Stamp::line_key(&vk, at.place()));
+                self.placed.remove(&key);
+                if self.nodes.remove(&key).is_some() {
+                    shed += 1;
+                }
+            }
+        }
+        shed
     }
 
     /// The edges out of a node: its predecessor and its parents.
@@ -624,13 +686,14 @@ impl ReceiptChain {
     /// the root it stands on. Every node re-derives its own hash, the line
     /// verifies whole, and the peer placements are re-derived rather than
     /// persisted — in height order, so every ancestor is placed first.
-    /// `None` refuses the whole ledger.
+    /// `None` refuses the whole ledger, and a stamp met twice refuses it.
     pub fn from_nodes(root: Option<Root>, vk: [u8; 32], nodes: Vec<KStepReceipt>) -> Option<ReceiptChain> {
         let mut c = ReceiptChain::with_vk(vk);
         c.root = root;
         let mut peers = Vec::new();
         for r in nodes {
-            if !r.rederives() {
+            // A stamp names one node: a second at it refuses the ledger.
+            if !r.rederives() || c.nodes.contains(&r.stamp.key()) {
                 return None;
             }
             c.file_on_line(&r.stamp);
@@ -641,6 +704,7 @@ impl ReceiptChain {
                 });
             } else {
                 peers.push(r.stamp);
+                c.file_peer_root(&r);
             }
             c.nodes.insert(r.stamp.key(), r);
         }
@@ -699,7 +763,7 @@ impl ReceiptChain {
     /// The inverse of [`ReceiptChain::put_tries`], whole or refused: one
     /// signer, and each node's receipt standing at the stamp it is keyed by.
     pub fn take_tries(b: &[u8], pos: &mut usize) -> Option<ReceiptChain> {
-        use crate::snapshot::{leaf, take_trie};
+        use crate::snapshot::{leaf, take_trie, take_trie_each};
         let whole = |v: &[u8], read: fn(&[u8], &mut usize) -> Option<_>| {
             let mut p = 0usize;
             let t = read(v, &mut p)?;
@@ -718,15 +782,20 @@ impl ReceiptChain {
             }
             None => None,
         };
-        let ledger = take_trie(b, pos, Self::LEDGER_TRIE, &[Self::LEAF_RECEIPT])?;
-        let mut receipts = Vec::with_capacity(ledger.len());
-        for (key, leaves) in ledger.scoped() {
-            let r: KStepReceipt = whole(leaf(leaves, Self::LEAF_RECEIPT)?, KStepReceipt::read)?;
-            if r.stamp.key() != key {
+        // Each node is decoded as it is read: the tape's leaves are never
+        // held beside the receipts they decode to. The trie is written in
+        // key order, and a key not past the last refuses it.
+        let mut receipts: Vec<KStepReceipt> = Vec::new();
+        let mut last: Option<Vec<u8>> = None;
+        take_trie_each(b, pos, Self::LEDGER_TRIE, &[Self::LEAF_RECEIPT], |key, leaves| {
+            let r: KStepReceipt = whole(leaf(&leaves, Self::LEAF_RECEIPT)?, KStepReceipt::read)?;
+            if r.stamp.key() != key || last.as_ref().is_some_and(|l| *l >= key) {
                 return None;
             }
+            last = Some(key);
             receipts.push(r);
-        }
+            Some(())
+        })?;
         // The stamps were read in key order, which is height first, so
         // every ancestor is placed before its descendant.
         Self::from_nodes(root, vk, receipts)

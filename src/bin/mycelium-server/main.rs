@@ -168,11 +168,24 @@ fn check_home(home: &Path) -> ! {
             let mut scratch = Kernel::new();
             if scratch.restore(&b) {
                 println!(
-                    "  ledger: {} bytes, restores — {} ruled sentences, K {}",
+                    "  ledger: {} bytes, restores — {} ruled sentences, K {}, {} nodes held hot ({} this court's own)",
                     b.len(),
                     scratch.basis_len(),
-                    scratch.chain().head_k()
+                    scratch.chain().head_k(),
+                    scratch.chain().nodes().count(),
+                    scratch.chain().own_len()
                 );
+                // What this build writes of that state must read back: the
+                // restore reshapes the ledger (a peer's folded line leaves),
+                // so the next persist is not the tape just read.
+                let again = scratch.snapshot();
+                drop(scratch);
+                if Kernel::new().restore(&again) {
+                    println!("  ledger: as this build writes it, {} bytes, restores", again.len());
+                } else {
+                    println!("  ledger: as this build writes it, {} bytes, DOES NOT RESTORE", again.len());
+                    refuses = true;
+                }
             } else {
                 println!(
                     "  ledger: {} bytes, DOES NOT RESTORE — the refusal above names the magic and \
