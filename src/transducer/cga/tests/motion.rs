@@ -134,3 +134,20 @@ fn three_planes_read_three_modes_by_the_rational_root_theorem() {
         .add(&Mv::blade(base_axis(5) | EP, q(3, 1)));
     assert_eq!(kinds(&at_five), vec![(BivectorKind::Elliptic, 1); 3]);
 }
+
+/// 78.62 — THE CHARGE IS READ OFF THE ACTION, NEVER A SQUARED SCALAR: a turn
+/// and a dilation carry it, the identity and a translation do not — the
+/// translation's `(R + R⁻¹)/2` is not the identity, its values all `1` — a
+/// turn composed with a slide carries it, and an element with no action is
+/// unread.
+#[test]
+fn a_motion_is_charged_where_some_mode_turns_or_boosts() {
+    let turn = rotator(&q(2, 1), &q(1, 1));
+    let slide = translator_at(&[q(3, 1), q(0, 1), q(0, 1)]);
+    assert_eq!(charged(&turn), Some(true), "a turn");
+    assert_eq!(charged(&dilator(&q(2, 1))), Some(true), "a dilation");
+    assert_eq!(charged(&Mv::scalar(q(1, 1))), Some(false), "the identity");
+    assert_eq!(charged(&slide), Some(false), "a translation: every value 1, its S not the identity");
+    assert_eq!(charged(&turn.geo(&slide)), Some(true), "a turn and a slide composed");
+    assert_eq!(charged(&Mv::scalar(q(1, 1)).add(&e_inf())), None, "no versor: no action, unread");
+}

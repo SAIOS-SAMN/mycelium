@@ -6,11 +6,15 @@
 
 use crate::physics::tensegrity::{
     barycentre, carried, coherence, consolidate, coupling, equilibrium, external_torque, force, hour, inversive,
-    metric_defect, momentum, net_torque, rigid, spin_of, strain, succession, torque, Body, Constellation, Frame,
+    metric_defect, momentum, net_torque, rigid, spin_of, stability, succession, torque, Body, Constellation, Frame, Stability,
     Refusal, Star,
 };
 use crate::transducer::cga::{rotator, rotator_on_blade, sphere_at, translator_at, Mv, E1, E3};
 use num_traits::{One, Zero};
+
+fn budget() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 16)
+}
 
 fn q(n: i64, d: i64) -> num_rational::BigRational {
     num_rational::BigRational::new(n.into(), d.into())
@@ -40,7 +44,7 @@ fn at(c: [i64; 3]) -> Vec<num_rational::BigRational> {
 
 /// THEOREM 2 · COMMUTATIVE CO-PLANARITY. Two unit spheres on the turn's own
 /// axis, the second posed by the slide along it: the coupling commutes with
-/// the generator, the torque vanishes term by term, the strain zero.
+/// the generator, the torque vanishes term by term and opens no plane.
 #[test]
 fn t2_frames_on_the_axis_circulate_coaxially_in_equilibrium() {
     let (a, b) = (frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2]))));
@@ -50,7 +54,7 @@ fn t2_frames_on_the_axis_circulate_coaxially_in_equilibrium() {
     let c = Constellation { frames: vec![a, b], generator: turn() };
     assert!(net_torque(&c).is_zero(), "the torque vanishes");
     assert_eq!(equilibrium(&c), Ok(()), "stationary equilibrium");
-    assert_eq!(strain(&c), Some(zero()), "its strain zero");
+    assert_eq!(stability(&net_torque(&c), &net_torque(&c), &mut budget()), Ok(Stability::Kept), "its torque opens no plane");
 }
 
 /// THEOREM 1 · BILATERAL INVERSIVE RECIPROCITY. The pose coupling transposes,
@@ -67,11 +71,12 @@ fn t1_at_equilibrium_the_inversive_distance_is_symmetric_and_the_coupling_transp
     }
 }
 
-/// LAW II AND REPAIR B ON A NULL TORQUE: the second frame posed by a slide
-/// ACROSS the axis. Its torque against the turn is NULL, `⟨τ²⟩₀ = 0`; the
-/// coefficient norm reads it and law II refuses.
+/// LAW II ON A NULL TORQUE: the second frame posed by a slide ACROSS the
+/// axis. Its torque against the turn is NULL, `⟨τ²⟩₀ = 0`; it reads as its
+/// parabolic mode — a plane opened from no torque (78.62, no coefficient
+/// norm) — and law II refuses.
 #[test]
-fn law_ii_refuses_a_null_torque_and_the_coefficient_norm_reads_it() {
+fn law_ii_refuses_a_null_torque_and_its_parabolic_mode_reads_it() {
     let c = Constellation {
         frames: vec![frame([0, 0, 0], one()), frame([0, 0, 1], translator_at(&at([2, 0, 0])))],
         generator: turn(),
@@ -79,7 +84,10 @@ fn law_ii_refuses_a_null_torque_and_the_coefficient_norm_reads_it() {
     let tau = net_torque(&c);
     assert!(!tau.is_zero(), "the torque stands");
     assert!(tau.geo(&tau).scalar_part().is_zero(), "τ² has no scalar part: a null torque");
-    assert!(strain(&c).is_some_and(|e| e > zero()), "the coefficient norm reads it");
+    assert!(
+        matches!(stability(&Mv::zero(), &tau, &mut budget()), Ok(Stability::Destabilizing { ref rising }) if rising.len() == 1),
+        "the null torque reads as one plane opened"
+    );
     assert!(matches!(equilibrium(&c), Err(Refusal::UnbalancedTensegrity { .. })), "law II refuses it");
 }
 
@@ -145,7 +153,7 @@ fn tier_1_a_body_winding_about_its_own_centroid_balances_and_about_the_origin_do
     let frames: Vec<Frame> = (0..3).map(|m| hour(&s, &r, m)).collect();
     let own = Constellation { frames: frames.clone(), generator: r };
     assert_eq!(equilibrium(&own), Ok(()), "about its own centroid it balances");
-    assert_eq!(strain(&own), Some(zero()));
+    assert!(net_torque(&own).is_zero(), "no torque");
     let trapped = Constellation { frames, generator: turn() };
     assert!(matches!(equilibrium(&trapped), Err(Refusal::UnbalancedTensegrity { .. })), "about the origin it does not");
 }
@@ -192,7 +200,7 @@ fn the_coherence_form_files_every_defect_blade_and_closes_only_at_zero() {
     let tumble = rotator_on_blade(&q(1, 1), &q(1, 1), E1 | E3);
     let frames = vec![frame([1, 0, 0], one()), frame([-1, 0, 0], one()), carried(&frame([1, 0, 0], one()), &tumble)];
     let c = Constellation { frames, generator: r };
-    let mut defect = coherence(&c, &c).expect("the frames stand and the strain does not rise");
+    let mut defect = coherence(&c, &c, &mut budget()).expect("the frames stand and the torque rises on no plane");
     let s = |x: i64| frame([x, 0, 0], one()).nucleus;
     defect.metric.extend(metric_defect(&[(s(1), s(2)), (s(-1), s(-2))]));
     let d = |a: i64, b: i64| vec![vec![q(a, 1), zero()], vec![zero(), q(b, 1)]];
@@ -212,7 +220,7 @@ fn the_coherence_form_files_every_defect_blade_and_closes_only_at_zero() {
     let bodies = [frame([1, 0, 0], one()).nucleus, frame([-1, 0, 0], one()).nucleus];
     let frames: Vec<Frame> = (0..2).flat_map(|m| bodies.iter().map(move |s| (s.clone(), m))).map(|(s, m)| hour(&s, &r, m)).collect();
     let binary = Constellation { frames, generator: r };
-    let mut closed = coherence(&binary, &binary).expect("the binary stands");
+    let mut closed = coherence(&binary, &binary, &mut budget()).expect("the binary stands");
     closed.metric.extend(metric_defect(&bodies.iter().map(|s| (s.clone(), turn().sandwich(s))).collect::<Vec<_>>()));
     let after = Body { centre: vec![zero(), q(-1, 1)], mass: q(4, 1), moments: d(1, 2) };
     closed.momentum.extend(external_torque(&before, &after, &g).filter(|t| !t.is_zero()));
@@ -252,24 +260,27 @@ fn the_star_s_place_sets_the_spin_the_step_leaves() {
     assert_eq!(spin_of(&step, &star([2, 0, 0]), &before, &after), None, "no orbit of a star it did not keep its distance from");
 }
 
-/// LAW IV · FORCE. The turn about the axis exerts nothing; a slide across it
-/// raises the strain and law II refuses it.
+/// LAW IV · FORCE, PLANE BY PLANE (78.62). The turn about the axis moves no
+/// plane's torque; a slide across it opens one, and law II refuses it.
 #[test]
-fn law_iv_the_turn_is_conservative_and_the_slide_across_the_axis_raises_the_strain() {
+fn law_iv_the_turn_is_conservative_and_the_slide_across_the_axis_opens_a_plane() {
     let c = Constellation {
         frames: vec![frame([0, 0, 0], one()), frame([0, 0, 2], translator_at(&at([0, 0, 2])))],
         generator: turn(),
     };
-    assert_eq!(force(&c, 1, &turn()), Some(zero()), "the turn about the axis exerts nothing");
+    assert_eq!(force(&c, 1, &turn(), &mut budget()), Some(Ok(Stability::Kept)), "the turn about the axis exerts nothing");
     let mut kept = c.clone();
     kept.frames[1] = carried(&kept.frames[1], &turn());
-    assert_eq!(consolidate(&c, &kept), Ok(()), "and is consolidated");
+    assert_eq!(consolidate(&c, &kept, &mut budget()), Ok(()), "and is consolidated");
     let off = translator_at(&at([1, 0, 0]));
-    assert!(force(&c, 1, &off).is_some_and(|f| f > zero()), "the slide across the axis: the strain rises");
+    assert!(
+        matches!(force(&c, 1, &off, &mut budget()), Some(Ok(Stability::Destabilizing { .. }))),
+        "the slide across the axis opens a plane"
+    );
     let mut after = c.clone();
     after.frames[1] = carried(&after.frames[1], &off);
     assert!(
-        matches!(consolidate(&c, &after), Err(Refusal::UnbalancedTensegrity { net_torque }) if !net_torque.is_zero()),
+        matches!(consolidate(&c, &after, &mut budget()), Err(Refusal::UnbalancedTensegrity { net_torque }) if !net_torque.is_zero()),
         "and law II refuses it"
     );
 }
@@ -283,5 +294,34 @@ fn t3_a_contraction_to_one_frame_is_refused_never_coherent() {
     let crushed = Constellation { frames: vec![a.clone(), a.clone()], generator: turn() };
     assert_eq!(equilibrium(&crushed), Err(Refusal::SingularCollapse));
     let coherent = Constellation { frames: vec![a, frame([0, 0, 2], translator_at(&at([0, 0, 2])))], generator: turn() };
-    assert_eq!(consolidate(&coherent, &alone), Err(Refusal::MonocularOrbit), "the contraction refused");
+    assert_eq!(consolidate(&coherent, &alone, &mut budget()), Err(Refusal::MonocularOrbit), "the contraction refused");
+}
+
+/// LAW III PLANE BY PLANE (78.62): a torque of two commuting planes, `e₁₂`
+/// and `3e₃₊`, read against itself after each operation — kept; one plane
+/// lowered (stabilizing); one raised (destabilizing, refused, the raised
+/// plane named); a plane opened (destabilizing); and one raised while the
+/// other is lowered — a TILT, admitted with the raised plane docketed
+/// (ruling (b)). No norm is taken: each plane's projective ratio decides.
+#[test]
+fn law_iii_reads_the_torque_plane_by_plane_and_a_tilt_is_its_own_reading() {
+    use crate::transducer::cga::{E2, EP};
+    let p = |a: i64, b: i64| Mv::blade(E1 | E2, q(a, 1)).add(&Mv::blade(E3 | EP, q(b, 1)));
+    let half = Mv::blade(E1 | E2, q(1, 2)).add(&Mv::blade(E3 | EP, q(3, 1)));
+    let before = p(1, 3);
+    assert_eq!(stability(&before, &before, &mut budget()), Ok(Stability::Kept));
+    assert_eq!(stability(&before, &half, &mut budget()), Ok(Stability::Stabilizing), "e₁₂ halved");
+    assert_eq!(
+        stability(&before, &p(2, 3), &mut budget()),
+        Ok(Stability::Destabilizing { rising: vec![Mv::blade(E1 | E2, q(2, 1))] }),
+        "e₁₂ doubled, named"
+    );
+    let one_plane = Mv::blade(E1 | E2, q(1, 1));
+    assert!(matches!(stability(&one_plane, &before, &mut budget()), Ok(Stability::Destabilizing { .. })), "e₃₊ opened");
+    assert_eq!(stability(&before, &one_plane, &mut budget()), Ok(Stability::Stabilizing), "e₃₊ closed");
+    assert_eq!(
+        stability(&before, &p(2, 1), &mut budget()),
+        Ok(Stability::Tilting { rising: vec![Mv::blade(E1 | E2, q(2, 1))] }),
+        "e₁₂ raised while e₃₊ fell: a tilt, the raised plane docketed"
+    );
 }

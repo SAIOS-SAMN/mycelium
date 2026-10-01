@@ -86,26 +86,17 @@ pub(crate) struct PathCarried {
     /// `μ`. Storing magnitudes destroys exactly the coordinate that
     /// identifies a partner, so a drain could never find one.
     ///
-    /// The charge remains an `O(1)` projection any reader takes on demand:
-    ///
-    /// ```text
-    ///     μ = ⟨Ω⟩₀² / ⟨Ω Ω̃⟩₀ − 1
-    /// ```
-    ///
-    /// SCALE-FREE, which the closed form `(w − 4)/4` is not: a versor is
-    /// projective, so `Ω` and `λΩ` are one transport while `w → λ²w`, and
-    /// the stored identity is `1` rather than the canonical `1 − v_a v_a =
-    /// 2` — under `(w − 4)/4` the identity would read `−3/4` instead of
-    /// `0`. On the canonical normalisation `w = 2⟨R⟩₀` the two agree. It
-    /// reads the TRANSVECTION factor, not the composed step: the identity
-    /// is exact only where no rotation contributes cross-terms, and the
-    /// coupling belongs at the orbit, where `Π Ω_e` already evaluates it.
-    /// Over the whole group `μ > 0` is hyperbolic, `μ < 0` elliptic
-    /// (`−sin²(θ/2)`), `μ = 0` trivial — `I₁`'s own sign convention.
+    /// The charge remains a projection any reader takes on demand, and it
+    /// is the motion's MODES (78.62, ruled 2026-10-01): whether some mode
+    /// of the step turns or boosts (`cga::charged`, no root, no budget), the
+    /// values themselves the orbit's spectrum under the stroke's budget. The
+    /// scalar `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1` it replaced squared one angle out of a
+    /// motion of several planes and dropped the sign that tells a turn from
+    /// its inverse.
     ///
     /// PL1 — EVERY STEP, IN BOUNDARY ORDER: the face crossed, which way, and
     /// the transport the step carried where it was read. The charge above is
-    /// read off each step's carriage by `step_charge`; the circuit's reading
+    /// read off each step's carriage by `step_charged`; the circuit's reading
     /// (`trajectory::read_circuit`) is the same steps read whole.
     pub(crate) steps: Vec<Step>,
     /// WHY THE EDGE HALF WAS REFUSED, where it was (H2c, rule 11). The face
@@ -379,9 +370,10 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         // read is kept as unread rather than as an identity, because unread
         // is not flat (rule 11) — and `acc.edge` below goes `None` for it,
         // so the whole boundary is already refused. The charge is noted
-        // where `step_charge` reads one: where the carriage is a versor.
-        if let Some(mu) = step.as_ref().and_then(|t| step_charge(&t.carriage)).filter(|_| note) {
-            note_step_charge(&mu);
+        // for every step that carries a transport: charged, uncharged, or
+        // unread where its carriage is no versor.
+        if let (Some(t), true) = (step.as_ref(), note) {
+            note_step_charge(step_charged(&t.carriage));
         }
         acc.steps.push(Step {
             face: s.overlap.clone(),

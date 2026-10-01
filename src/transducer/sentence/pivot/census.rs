@@ -20,43 +20,41 @@ thread_local! {
     /// neither deposits net holonomic shear at `x₀` — so the gate is right
     /// and only the reporting was blind.
     ///
-    /// The charges are kept whole rather than summed: the distribution is
-    /// the content and a total cannot be un-added (rule 2).
-    /// The last two count EVERY step of EVERY cycle, closing or not:
-    /// `(steps whose charge was read, of those, steps carrying μ ≠ 0)`.
-    /// Without them "all closures are vacuum" cannot be distinguished from
-    /// "the charge was never computed" — a probe that never fired reporting
-    /// zero as though it had measured one (rule 11).
-    static RESONANCE: std::cell::RefCell<(u64, u64, Vec<num_rational::BigRational>, u64, u64)> =
-        const { std::cell::RefCell::new((0, 0, Vec::new(), 0, 0)) };
+    /// The third counts the charged steps the resonant ones carried. The
+    /// last three count EVERY step of EVERY cycle, closing or not: `(steps
+    /// whose charge was read, of those charged, steps whose carriage is no
+    /// versor and so carries no action to read)`. Without them "all
+    /// closures are vacuum" cannot be distinguished from "the charge was
+    /// never computed" — a probe that never fired reporting zero as though
+    /// it had measured one (rule 11).
+    static RESONANCE: std::cell::RefCell<(u64, u64, u64, u64, u64, u64)> =
+        const { std::cell::RefCell::new((0, 0, 0, 0, 0, 0)) };
 }
 
-/// THE KINEMATIC CHARGE A TRANSPORT CARRIES — a PROJECTION of the versor,
-/// computed where it is read and never stored beside it (LAW-0).
-///
-/// ```text
-///     μ = ⟨Ω⟩₀² / ⟨Ω Ω̃⟩₀ − 1
-/// ```
-///
-/// Scale-free, so `Ω` and `λΩ` — one transport, since a versor is
-/// projective — give one charge. `None` where the argument is not a
-/// versor, which is a refusal and not a zero charge (rule 11).
-pub fn step_charge(omega: &element::Versor) -> Option<num_rational::BigRational> {
-    // A scale-free ratio read as a class (Axiom C), never carried.
-    let w = crate::transducer::cga::weight_of(omega)?;
-    let s = omega.scalar_part();
-    let one = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1));
-    Some(&s * &s / &w - one)
+/// WHETHER A TRANSPORT CARRIES CHARGE (78.62, ruled 2026-10-01): whether
+/// some mode of its carriage turns or boosts, read off the carriage's own
+/// action (`cga::charged`) — never the scalar `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1`, which
+/// squared ONE angle out of a motion of several planes and dropped its
+/// orientation. The modes' values themselves are the orbit's spectrum
+/// (`ModesRead`), read under the stroke's budget. `None` where the carriage
+/// is no versor: unread, never a zero charge (rule 11).
+pub fn step_charged(omega: &element::Versor) -> Option<bool> {
+    crate::transducer::cga::charged(omega)
 }
 
-/// File one STEP's charge, on every cycle the circuit read reaches.
-pub(super) fn note_step_charge(mu: &num_rational::BigRational) {
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
+/// File one STEP's charge, on every cycle the circuit read reaches: read
+/// and charged, read and uncharged, or unread.
+pub(super) fn note_step_charge(charged: Option<bool>) {
     RESONANCE.with(|r| {
         let mut b = r.borrow_mut();
-        b.3 += 1;
-        if *mu != zero {
-            b.4 += 1;
+        match charged {
+            Some(c) => {
+                b.3 += 1;
+                if c {
+                    b.4 += 1;
+                }
+            }
+            None => b.5 += 1,
         }
     });
 }
@@ -65,32 +63,31 @@ pub(super) fn note_step_charge(mu: &num_rational::BigRational) {
 pub(super) fn note_closure(carried: &Keyed<PathCarried>) {
     // The charge is taken HERE, off the stored versors, rather than read
     // back from a scalar written beside them (LAW-0, law 12: one producer).
-    let mut charges: Vec<num_rational::BigRational> = Vec::new();
+    let mut charged = 0u64;
     for (_, c) in carried.scoped() {
-        charges.extend(c.steps.iter().filter_map(|s| s.transport.as_ref().and_then(|t| step_charge(&t.carriage))));
+        let steps = c.steps.iter().filter_map(|s| s.transport.as_ref().and_then(|t| step_charged(&t.carriage)));
+        charged += steps.filter(|&c| c).count() as u64;
     }
-    let zero = num_rational::BigRational::from_integer(num_bigint::BigInt::from(0));
-    let charged: Vec<num_rational::BigRational> =
-        charges.into_iter().filter(|m| *m != zero).collect();
     RESONANCE.with(|r| {
         let mut b = r.borrow_mut();
-        match charged.is_empty() {
-            true => b.0 += 1,
-            false => {
+        match charged {
+            0 => b.0 += 1,
+            n => {
                 b.1 += 1;
-                b.2.extend(charged);
+                b.2 += n;
             }
         }
     });
 }
 
-/// `(vacuum closures, resonant closures, the resonant charges)`.
-pub fn orbit_resonance() -> (u64, u64, Vec<num_rational::BigRational>, u64, u64) {
-    RESONANCE.with(|r| r.borrow().clone())
+/// `(vacuum closures, resonant closures, the charged steps they carried,
+/// steps read, of those charged, steps unread)`.
+pub fn orbit_resonance() -> (u64, u64, u64, u64, u64, u64) {
+    RESONANCE.with(|r| *r.borrow())
 }
 
 pub fn reset_orbit_resonance() {
-    RESONANCE.with(|r| *r.borrow_mut() = (0, 0, Vec::new(), 0, 0));
+    RESONANCE.with(|r| *r.borrow_mut() = (0, 0, 0, 0, 0, 0));
 }
 
 thread_local! {

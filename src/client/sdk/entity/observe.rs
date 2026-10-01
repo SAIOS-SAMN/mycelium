@@ -16,7 +16,7 @@ impl Entity {
         let c = &self.contemplation;
         let r = &c.resonance;
         let refused_by_gate =
-            [r.monocular, r.collapsed, r.unbalanced, r.destabilizing, r.nonrigid, r.unsucceeded, r.torqued].iter().sum();
+            [r.monocular, r.collapsed, r.unbalanced, r.destabilizing, r.stability_unread, r.nonrigid, r.unsucceeded, r.torqued].iter().sum();
         let (mut key_bytes, mut bodies, mut grounded) = (0u64, 0u64, 0u64);
         for (k, b) in c.bubbles.scoped() {
             key_bytes += k.len() as u64;

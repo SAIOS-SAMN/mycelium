@@ -180,6 +180,11 @@ pub struct ResonanceTally {
     pub collapsed: u64,
     pub unbalanced: u64,
     pub destabilizing: u64,
+    /// 78.62 — transitions that raised the torque on some planes and lowered
+    /// it on others: admitted, the rising planes filed as demands; and those
+    /// whose torque did not split over ℚ, refused unread.
+    pub tilted: u64,
+    pub stability_unread: u64,
     pub reflexive: u64,
     pub nonrigid: u64,
     pub unsucceeded: u64,
@@ -202,7 +207,7 @@ pub struct ResonanceTally {
 impl ResonanceTally {
     pub fn line(&self) -> String {
         format!(
-            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
+            "perception: circuits {} | no circuit: uncarried {} not reciprocal (reverse {} order {} residue {}) unbounded {} | cells {} closes {} open {} unread {} | circuits resonant {} rosette {} parabolic {} boost {} holonomic {} | shear: unperturbed {} flat {} curved {} | thoughts: edges {} several {} kept congruent {} class {} | hours: predicted {} phase slips {} off orbit {} | strata: deformed {} unfactored {} apart {} | spectrum: scene motions {} cosets {} symmetries {} appeared {} vanished {} unread {} | tensegrity: consolidated {} monocular {} collapsed {} unbalanced {} destabilizing {} tilted {} stability unread {} reflexive {} non-rigid {} no succession {} external torque {} incoherent {} | demanded {} undemanded {} | grounds: filed {} no return {} unplaced {} no succession {}",
             self.circuits,
             self.uncarried,
             self.not_reciprocal[0],
@@ -242,6 +247,8 @@ impl ResonanceTally {
             self.collapsed,
             self.unbalanced,
             self.destabilizing,
+            self.tilted,
+            self.stability_unread,
             self.reflexive,
             self.nonrigid,
             self.unsucceeded,
@@ -257,7 +264,7 @@ impl ResonanceTally {
     }
 
     /// Every count in the reading's order, one place (write and read both).
-    fn fields(&mut self) -> [&mut u64; 50] {
+    fn fields(&mut self) -> [&mut u64; 52] {
         let [nr0, nr1, nr2] = &mut self.not_reciprocal;
         let [g0, g1, g2, g3] = &mut self.grounds;
         [
@@ -300,6 +307,8 @@ impl ResonanceTally {
             &mut self.collapsed,
             &mut self.unbalanced,
             &mut self.destabilizing,
+            &mut self.tilted,
+            &mut self.stability_unread,
             &mut self.reflexive,
             &mut self.nonrigid,
             &mut self.unsucceeded,
@@ -768,7 +777,7 @@ impl Contemplation {
             self.note_cell(&cell, chart);
             self.note_shear(&circuits);
         }
-        self.file_thoughts(key, &to);
+        self.file_thoughts(key, &to, budget);
         for (chart, mine) in &charts {
             if !self.perceive_strata(key, chart, mine, budget) {
                 return;
@@ -916,7 +925,7 @@ impl Contemplation {
     /// continued; otherwise each transition is kept by its class, none chosen
     /// as the edge, and every slipped prediction is a demand at its chart.
     /// Then the complex climbs and decides, as for any held idea.
-    fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Row>>) {
+    fn file_thoughts(&mut self, key: &[u8], to: &Keyed<Vec<Row>>, budget: &mut crate::physics::Budget) {
         let mut rems: Keyed<Vec<Link>> = Keyed::new();
         if let Some(b) = self.bubbles.get(key) {
             rems.insert(key, b.remainder.placed());
@@ -933,7 +942,7 @@ impl Contemplation {
             // its own ground — this perception its predicted next hour, or
             // not; the thought's hours are its ground's, never re-read off
             // the bodies it has gathered.
-            if self.join_ground(key, &other, rows).is_some() {
+            if self.join_ground(key, &other, rows, budget).is_some() {
                 continue;
             }
             // 1. THE HOURS (78.48(7)): where every body of this perception
@@ -952,7 +961,7 @@ impl Contemplation {
             let every = hours.iter().all(|h| matches!(h, Hour::Predicted(_)));
             if let (true, [g, more @ ..]) = (every, steps.as_slice()) {
                 if let (true, Some((rotor, carriage))) = (more.iter().all(|s| s.projective_eq(g)), halves(g)) {
-                    if let Err(why) = self.gate(rows, g, true) {
+                    if let Err(why) = self.gate(rows, g, true, budget) {
                         self.note_refusal(&why, g, rows);
                         continue;
                     }
@@ -986,7 +995,7 @@ impl Contemplation {
                 // ONE MOTION CARRIES THE WHOLE CONFIGURATION: the thought.
                 [line] => {
                     self.note_unmatched(rows, &theirs, line);
-                    match self.gate(rows, &line.t.versor, false) {
+                    match self.gate(rows, &line.t.versor, false, budget) {
                         Ok(()) => {
                             self.note_ground(key, &other, rows, &line.t.versor, false);
                             self.scene_edge(key, &other, &line.t, line.lanes);
@@ -1001,7 +1010,7 @@ impl Contemplation {
                 [first, rest @ ..] if rest.iter().all(|l| same_landing(l, first) && same_carried(l, first)) => {
                     let members: Vec<Transition> = whole.iter().map(|l| l.t.clone()).collect();
                     if let Some(rep) = crate::transducer::blade::coset_representative(&members) {
-                        if let Err(why) = self.gate(rows, &rep.versor, false) {
+                        if let Err(why) = self.gate(rows, &rep.versor, false, budget) {
                             self.note_refusal(&why, &rep.versor, rows);
                             continue;
                         }
@@ -1069,7 +1078,7 @@ impl Contemplation {
     ///   this perception's at hour 1 carried back by the scene's motion, one
     ///   constellation per chart; `c` the other's barycentre, each body
     ///   weighed by its mass (its sites).
-    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool) -> Result<(), crate::physics::tensegrity::Refusal> {
+    fn gate(&mut self, rows: &[Row], generator: &Mv, orbit: bool, budget: &mut crate::physics::Budget) -> Result<(), crate::physics::tensegrity::Refusal> {
         use crate::physics::tensegrity::{
             barycentre, coherence, external_torque, hour, metric_defect, succession, Constellation, Defect, Refusal,
         };
@@ -1147,7 +1156,9 @@ impl Contemplation {
             // THE STRUCTURE FIRST — frames that do not stand, or a strain that
             // rises, leave no form to read, refused — then Δω, the torque the
             // couplings leave on the generator.
-            defect.torsion.extend(coherence(&before, &after)?.torsion);
+            let read = coherence(&before, &after, budget)?;
+            defect.torsion.extend(read.torsion);
+            defect.tilted.extend(read.tilted);
             // τ_ext — A.13 (78.52 Row 1): on an orbit, the step carries each
             // hour's momentum to the next — the other's bodies in arrival
             // order, then this one — and what it did not carry is an external
@@ -1269,8 +1280,8 @@ impl Contemplation {
     /// gate's are. `Some(true)` joined, `Some(false)` refused; `None` where the
     /// thought holds no ground or the perception is not its predicted hour —
     /// the other readings decide.
-    fn join_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row]) -> Option<bool> {
-        let (joined, generator) = self.read_ground(key, other, rows)?;
+    fn join_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<bool> {
+        let (joined, generator) = self.read_ground(key, other, rows, budget)?;
         match joined {
             Ok(()) => Some(true),
             Err(why) => {
@@ -1281,7 +1292,7 @@ impl Contemplation {
     }
 
     /// `join_ground`'s reading: the verdict and the ground's generator.
-    fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row]) -> Option<(Verdict, Mv)> {
+    fn read_ground(&mut self, key: &[u8], other: &[u8], rows: &[Row], budget: &mut crate::physics::Budget) -> Option<(Verdict, Mv)> {
         use crate::physics::tensegrity::{carried_body, coherence, external_torque, hour, metric_defect, Constellation, Refusal};
         let grounded = self.bubbles.get(other)?.ground.clone()?;
         let g = &grounded.ground;
@@ -1323,6 +1334,7 @@ impl Contemplation {
         let verdict = coherence(
             &Constellation { frames: before, generator: g.coupling.clone() },
             &Constellation { frames: after, generator: g.coupling.clone() },
+            budget,
         )
         .and_then(|mut defect| {
             defect.metric.extend(metric_defect(
@@ -1387,9 +1399,14 @@ impl Contemplation {
                 self.resonance.unbalanced += 1;
                 vec![Some(net_torque.clone())]
             }
-            Refusal::DestabilizingOperation { .. } => {
+            // 78.62 — the planes the operation raised, each its own demand.
+            Refusal::DestabilizingOperation { rising } => {
                 self.resonance.destabilizing += 1;
-                vec![None]
+                rising.iter().cloned().map(Some).collect()
+            }
+            Refusal::StabilityUnread { .. } => {
+                self.resonance.stability_unread += 1;
+                return;
             }
             Refusal::NoSuccession => {
                 self.resonance.unsucceeded += 1;
@@ -1400,7 +1417,7 @@ impl Contemplation {
                 self.resonance.torqued += 1;
                 vec![Some(tau.clone())]
             }
-            // The strain demand: what the pair's inversive distance changed by.
+            // The metric demand: the pair's unit-weight ratio.
             Refusal::NonRigid { delta, .. } => {
                 self.resonance.nonrigid += 1;
                 vec![Some(Mv::scalar(delta.clone()))]
@@ -1419,12 +1436,16 @@ impl Contemplation {
                 if !defect.momentum.is_empty() {
                     self.resonance.torqued += 1;
                 }
+                if !defect.tilted.is_empty() {
+                    self.resonance.tilted += 1;
+                }
                 defect
                     .torsion
                     .iter()
                     .cloned()
                     .chain(defect.metric.iter().map(|(_, _, d)| Mv::scalar(d.clone())))
                     .chain(defect.momentum.iter().cloned())
+                    .chain(defect.tilted.iter().cloned())
                     .map(Some)
                     .collect()
             }

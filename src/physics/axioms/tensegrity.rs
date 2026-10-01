@@ -26,10 +26,12 @@ pub const A10_1_TORQUE: &str = "a coupling's torque on a generator is half their
 /// the ATTITUDE coupling (78.51(4′)).
 pub const A10_1_II_BALANCE: &str = "a constellation is in stationary equilibrium iff its net commutator torque vanishes";
 
-/// LAW III · STRAIN. `ℰ = ‖τ‖² / ‖B_orbit‖²`, the coefficient norm on the
-/// orthonormal blades (repair B): positive-definite, zero exactly where the
-/// torque is — a null torque is read.
-pub const A10_1_III_STRAIN: &str = "the strain is the torque's coefficient norm over the generator's";
+/// LAW III · STRAIN, PLANE BY PLANE (78.62, ruled 2026-10-01). The torque is
+/// split into its own commuting modes and an operation is read by how it
+/// moves each plane's torque — the projective ratio of the plane's blade
+/// after to before — never by `‖τ‖²/‖B‖²`, a positive-definite sum of squared
+/// coefficients (A4 refused). A null torque reads as its parabolic mode.
+pub const A10_1_III_STRAIN: &str = "the strain is the torque's modes, each plane read by how an operation moves it";
 
 /// METRIC RIGIDITY (78.51(4′), at unit weight by 78.59). The separation
 /// between frames is each pair's product at unit weight, `ŝ_i · ŝ_j`, kept
@@ -55,7 +57,7 @@ pub const A13_MOMENTUM_CARRIED: &str = "an unforced orbit carries its momentum; 
 /// (elliptic), zero (parabolic), positive (hyperbolic); the slide is the
 /// fascicle of parallel planes kissing at `e_∞`.
 pub const R2_HYPHAL_FASCICLES: &str =
-    "every motion is a fascicle's product, its streamline its spheres' inversive distance; the slide the fascicle kissing at infinity";
+    "every motion is a fascicle's product, its streamline its spheres' pair read in the algebra; the slide the fascicle kissing at infinity";
 
 /// THE STAR SETS THE SPIN (78.51(2)). A rigid step splits exactly against a
 /// star into its orbit about the star and its spin about the body's own
@@ -67,12 +69,14 @@ pub const A10_1_STAR_SETS_SPIN: &str = "a step splits against a star into an orb
 /// never an arbitrary origin; the hours wind on its succession (78.52).
 pub const A10_1_INTRINSIC_AXIS: &str = "the generator turns about the constellation's own centre, its hours winding on its succession";
 
-/// LAW IV · FORCE. An operation carrying frame `k` exerts `ΔE = ℰ(𝒞') − ℰ(𝒞)`:
-/// admitted where it does not raise the strain and the constellation it
-/// leaves stands in equilibrium; refused as `DestabilizingOperation` where it
-/// raises it, `SingularCollapse` where it crushes two frames into one.
+/// LAW IV · FORCE. An operation carrying frame `k` is read by how it moves the
+/// torque plane by plane: admitted where it raises no plane (stabilizing or
+/// kept), admitted with its rising planes docketed where it raises some and
+/// lowers others (a tilt, 78.62 (b)); refused as `DestabilizingOperation`
+/// where it raises some and lowers none, `SingularCollapse` where it crushes
+/// two frames into one.
 pub const A10_1_IV_FORCE: &str =
-    "an operation is admitted where it raises no strain and leaves the constellation in equilibrium";
+    "an operation is admitted where it raises the torque on no plane, or tilts it, and refused where it raises and lowers none";
 
 /// THEOREM 1 · BILATERAL INVERSIVE RECIPROCITY. At equilibrium the couplings
 /// read both ways, `V_ji ∝ Ṽ_ij` — the pose and the axial slide commuting on

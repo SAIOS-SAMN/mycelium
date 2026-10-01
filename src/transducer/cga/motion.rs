@@ -120,6 +120,24 @@ pub fn motion_modes(
     Some(split(motion, &s, &a, budget))
 }
 
+/// 78.62 — WHETHER A MOTION CARRIES CHARGE: whether some mode of it turns
+/// or boosts — `c_j ≠ 1` on some invariant space — read off its own action
+/// with no root taken and no budget spent. Every mode at `c_j = 1` is
+/// exactly `S − I` nilpotent, `S = (R + R⁻¹)/2`, so the motion is UNCHARGED
+/// where `(S − I)ᵈ = 0` at the vectors' dimension `d` — a translation (its
+/// `S` is not the identity, its values all `1`) and the identity among
+/// them. It replaces the scalar `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1`, which squared one
+/// angle out of a motion of several planes. `None` where the element is no
+/// versor: it has no action, unread (rule 11).
+pub fn charged(motion: &Mv) -> Option<bool> {
+    let r = LinearFunction::of_versor(motion)?;
+    let r_inv = LinearFunction::of_versor(&motion.reverse())?;
+    let half = Q::new(1.into(), 2.into());
+    let n = r.n();
+    let off = r.plus(&r_inv).scaled(&half).minus(&LinearFunction::identity(n));
+    Some(!off.power(generators(n).len()).is_zero())
+}
+
 fn split(
     motion: &Mv,
     s: &LinearFunction,

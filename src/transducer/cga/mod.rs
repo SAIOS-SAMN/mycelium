@@ -41,7 +41,7 @@ pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compar
 pub use linear::LinearFunction;
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
-pub use motion::{action_det, action_of, motion_modes, MotionMode};
+pub use motion::{action_det, action_of, charged, motion_modes, MotionMode};
 pub use motor::{
     motor_tally, note_motor, note_step, note_unread, take_motor_tally, KindReading, Motor, MotorAction, MotorTally,
     StepClass, StepReading, TransitionKind, VectorReading,

@@ -1378,7 +1378,7 @@ pub(super) fn family_percept(
         chords: n_chords,
         gates,
         unread: unread_why,
-        resonance: (resonance.0, resonance.1, resonance.2.len(), resonance.3, resonance.4),
+        resonance,
         defects: crate::transducer::sentence::orbit_defects(),
         spectra: crate::transducer::sentence::orbit_spectra(),
         synonyms: crate::transducer::sentence::orbit_synonyms(),

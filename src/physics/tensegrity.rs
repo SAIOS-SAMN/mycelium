@@ -26,15 +26,15 @@
 //!   to the step's own image; the common ratio read as the dilation lane
 //!   ([`similarity`]).
 //! - THE NET TORQUE `τ = Σ_{i<j} ½ [B_ij, B_orbit]` — the lift terms of 78.46,
-//!   summed in the orbit algebra, order-free — and the STRAIN
-//!   `ℰ = ‖τ‖² / ‖B_orbit‖²`, `‖·‖²` the sum of the squared coefficients on
-//!   the orthonormal blades (78.51 repair B): positive-definite, so a null
-//!   torque (`⟨τ²⟩₀ = 0`, `τ ≠ 0`) reads, and the ratio is free of the
-//!   generator's scale.
+//!   summed in the orbit algebra, order-free — and its STABILITY, read plane
+//!   by plane (78.62): the torque before and after split into their own
+//!   modes and compared by each plane's projective ratio ([`stability`]) —
+//!   never the strain `‖τ‖²/‖B‖²`, a positive-definite sum of squares. A null
+//!   torque (`⟨τ²⟩₀ = 0`, `τ ≠ 0`) reads as its parabolic mode.
 //!
 //! Stationary equilibrium is `τ = 0`, coefficient by coefficient over ℚ (law
-//! II, repair A) — never a scalar trace; `ℰ` is its reading, and law IV
-//! orders by it. A SINGULAR COLLAPSE is two nuclei at one spacetime locus,
+//! II, repair A) — never a scalar trace; law IV reads how an operation moves
+//! it plane by plane and orders nothing by a sum. A SINGULAR COLLAPSE is two nuclei at one spacetime locus,
 //! `s_i ∧ s_j = 0` (repair C): a body seen at two hours stands at two places
 //! on its succession, two nuclei, never a collapse.
 //!
@@ -82,8 +82,13 @@ pub enum Refusal {
     /// The net torque does not vanish: the couplings do not balance the
     /// generator, and the constellation precesses.
     UnbalancedTensegrity { net_torque: Mv },
-    /// The operation raises the strain by this much.
-    DestabilizingOperation { delta_strain: Q },
+    /// The operation raised the torque on these planes — each the torque's
+    /// mode after, on a plane where it grew or opened — and lowered it on
+    /// none (78.62: plane by plane, never a summed norm).
+    DestabilizingOperation { rising: Vec<Mv> },
+    /// The torque's modes could not be split over ℚ, by MR1's reason: the
+    /// operation's stability is unread, never ranked (rule 11).
+    StabilityUnread { why: cga::Undecomposed },
     /// Two frames' nuclei coincide as a ray, `s_i ∧ s_j = 0`: two frames
     /// crushed into one.
     SingularCollapse,
@@ -119,6 +124,12 @@ pub struct Defect {
     /// τ_ext — every hour step whose momentum the orbit did not carry (A.13):
     /// the external torque some unmodelled body or field exerted.
     pub momentum: Vec<Mv>,
+    /// 78.62 (b) — A TILT: the planes on which the transition raised the
+    /// torque while lowering it on others. Admitted, docketed as content:
+    /// it reorients the constellation rather than destabilizing it. A tilt
+    /// leaves torque, so the torsion above already holds the form open; the
+    /// tilt names which planes rose.
+    pub tilted: Vec<Mv>,
 }
 
 impl Defect {
@@ -205,18 +216,20 @@ fn pair_ratios(bodies: &[(Mv, Mv)]) -> (Vec<PairRead>, Vec<PairRead>) {
 }
 
 /// 78.57 — THE COHERENCE FORM BEGUN: the structure read first — frames that
-/// do not stand, or a strain the transition raises, leave no form to read and
-/// are refused — then Δω, the torque `after`'s couplings leave on its
+/// do not stand, or a torque the transition raises on some plane and lowers
+/// on none (78.62), leave no form to read and are refused; a tilt is docketed
+/// — then Δω, the torque `after`'s couplings leave on its
 /// generator. The caller adds the transition's metric defect and τ_ext (they depend on
 /// which bodies it relates) and asks `Defect::closes`.
-pub fn coherence(before: &Constellation, after: &Constellation) -> Result<Defect, Refusal> {
+pub fn coherence(before: &Constellation, after: &Constellation, budget: &mut crate::physics::Budget) -> Result<Defect, Refusal> {
     frames_stand(after)?;
-    if let (Some(b), Some(a)) = (strain(before), strain(after)) {
-        if a > b {
-            return Err(Refusal::DestabilizingOperation { delta_strain: a - b });
-        }
-    }
     let mut defect = Defect::default();
+    match stability(&net_torque(before), &net_torque(after), budget) {
+        Err(why) => return Err(Refusal::StabilityUnread { why }),
+        Ok(Stability::Destabilizing { rising }) => return Err(Refusal::DestabilizingOperation { rising }),
+        Ok(Stability::Tilting { rising }) => defect.tilted = rising,
+        Ok(Stability::Kept | Stability::Stabilizing) => {}
+    }
     let tau = net_torque(after);
     if !tau.is_zero() {
         defect.torsion.push(tau);
@@ -595,20 +608,56 @@ pub fn spin_of(step: &Mv, star: &Star, before: &[Q], after: &[Q]) -> Option<Mv> 
     Some(orbit_about(star, before, after)?.reverse().geo(step))
 }
 
-/// THE COEFFICIENT NORM `‖A‖² = Σ c²` over the orthonormal blades (78.51
-/// repair B): zero exactly where `A` is.
-pub fn coefficient_norm(a: &Mv) -> Q {
-    (0..a.slot_count()).map(|m| a.coeff(m) * a.coeff(m)).fold(Q::zero(), |s, x| s + x)
+/// 78.62 — HOW AN OPERATION MOVED THE TORQUE, plane by plane: never a
+/// summed norm, so a turn plane and a boost plane are never added as one
+/// kind and no two operations are force-ranked (rule 4).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Stability {
+    /// No plane's torque rose or fell.
+    Kept,
+    /// Some plane's torque fell or closed, and none rose.
+    Stabilizing,
+    /// Some plane's torque rose or opened — each mode after, listed — and
+    /// none fell: refused.
+    Destabilizing { rising: Vec<Mv> },
+    /// Some planes rose while others fell: a reorientation, admitted with
+    /// the rising planes docketed (78.62 ruling (b)).
+    Tilting { rising: Vec<Mv> },
 }
 
-/// THE STRAIN `ℰ = ‖τ‖² / ‖B_orbit‖²` (A.10.1 law III, repair B). `None`
-/// where the generator has no bivector — no orbit to strain.
-pub fn strain(c: &Constellation) -> Option<Q> {
-    let b = coefficient_norm(&c.generator.grade(2));
-    if b.is_zero() {
-        return None;
+/// LAW III, PLANE BY PLANE (78.62, ruled 2026-10-01): the torque before and
+/// after, each split into its own commuting modes (MR1's `modes`), compared
+/// plane by plane. A plane is matched by its blade's projective equality, and
+/// the projective ratio `after / before` is how its torque moved — first
+/// degree, exact, no norm; a plane present only after OPENED (rose), one
+/// present only before CLOSED (fell). It replaces the strain
+/// `‖τ‖²/‖B_orbit‖²`, a positive-definite sum of squared coefficients — A4's
+/// refused Euclidean flattening on Cl(4,1). `Err` where a torque does not
+/// split over ℚ: unread, never ranked.
+pub fn stability(before: &Mv, after: &Mv, budget: &mut crate::physics::Budget) -> Result<Stability, cga::Undecomposed> {
+    let (mb, ma) = (cga::modes(&before.grade(2), budget)?, cga::modes(&after.grade(2), budget)?);
+    let one = Q::from_integer(1.into());
+    let mut rising = Vec::new();
+    let mut fell = false;
+    for a in &ma {
+        match mb.iter().find_map(|b| cga::projective_ratio(&a.blade, &b.blade)) {
+            None => rising.push(a.blade.clone()),
+            Some(r) => match num_traits::Signed::abs(&r).cmp(&one) {
+                std::cmp::Ordering::Greater => rising.push(a.blade.clone()),
+                std::cmp::Ordering::Less => fell = true,
+                std::cmp::Ordering::Equal => {}
+            },
+        }
     }
-    Some(coefficient_norm(&net_torque(c)) / b)
+    if mb.iter().any(|b| ma.iter().all(|a| cga::projective_ratio(&a.blade, &b.blade).is_none())) {
+        fell = true;
+    }
+    Ok(match (rising.is_empty(), fell) {
+        (true, false) => Stability::Kept,
+        (true, true) => Stability::Stabilizing,
+        (false, false) => Stability::Destabilizing { rising },
+        (false, true) => Stability::Tilting { rising },
+    })
 }
 
 /// STATIONARY EQUILIBRIUM (A.10.1 laws I, II): at least two co-present
@@ -628,28 +677,26 @@ pub fn carried(f: &Frame, t: &Mv) -> Frame {
     Frame { nucleus: t.sandwich(&f.nucleus), pose: t.geo(&f.pose) }
 }
 
-/// THE FORCE AN OPERATION EXERTS (A.10.1 law IV): `ΔE = ℰ(𝒞') − ℰ(𝒞)`, `𝒞'`
-/// the constellation with frame `k` carried by `t`. `None` where either
-/// strain has no reading (a parabolic generator) or `k` names no frame.
-pub fn force(c: &Constellation, k: usize, t: &Mv) -> Option<Q> {
+/// THE FORCE AN OPERATION EXERTS (A.10.1 law IV, plane by plane by 78.62):
+/// how carrying frame `k` by `t` moves the torque, read by [`stability`].
+/// `None` where `k` names no frame; `Some(Err)` where a torque is unread.
+pub fn force(c: &Constellation, k: usize, t: &Mv, budget: &mut crate::physics::Budget) -> Option<Result<Stability, cga::Undecomposed>> {
     let mut after = c.clone();
     let f = after.frames.get_mut(k)?;
     *f = carried(f, t);
-    Some(strain(&after)? - strain(c)?)
+    Some(stability(&net_torque(c), &net_torque(&after), budget))
 }
 
 /// THE CONSOLIDATION GATE (A.10.1 §5): a constellation `after` is admitted in
-/// place of `before` exactly where it stands in equilibrium (laws I, II) and,
-/// where both strains read, the strain did not rise and stands at zero.
-/// Where a strain has no reading, law II has decided.
-///
-/// Repair B makes the strain zero exactly where the torque is, so an `after`
-/// in equilibrium reads `ℰ = 0` and never rises: law II decides, and the
-/// strain's rise is refused where it is read on its own ([`force`]).
-pub fn consolidate(before: &Constellation, after: &Constellation) -> Result<(), Refusal> {
+/// place of `before` exactly where it stands in equilibrium (laws I, II) and
+/// its torque rose on no plane (78.62). In equilibrium the torque after is
+/// zero, so it opens no plane and law II decides; the plane-by-plane read
+/// stands where it is asked on its own ([`force`]).
+pub fn consolidate(before: &Constellation, after: &Constellation, budget: &mut crate::physics::Budget) -> Result<(), Refusal> {
     equilibrium(after)?;
-    match (strain(before), strain(after)) {
-        (Some(b), Some(a)) if a > b => Err(Refusal::DestabilizingOperation { delta_strain: a - b }),
-        _ => Ok(()),
+    match stability(&net_torque(before), &net_torque(after), budget) {
+        Err(why) => Err(Refusal::StabilityUnread { why }),
+        Ok(Stability::Destabilizing { rising }) => Err(Refusal::DestabilizingOperation { rising }),
+        Ok(_) => Ok(()),
     }
 }

@@ -45,7 +45,7 @@ pub(crate) struct FormReading {
     pub(crate) gates: (u64, u64, u64, u64),
     pub(crate) unread: (UnreadTally, UnreadTally),
     /// `(vacuum, resonant, charged edges, steps read, steps non-zero)`.
-    pub(crate) resonance: (u64, u64, usize, u64, u64),
+    pub(crate) resonance: (u64, u64, u64, u64, u64, u64),
     pub(crate) defects: (u64, u64, u64, u64, u64),
     pub(crate) spectra: (u64, u64, u64, u64),
     pub(crate) synonyms: (u64, u64, u64, u64),
@@ -73,7 +73,7 @@ impl FormReading {
              | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
              (cone {} not rigid {} no face {}; edge refused: cone {} not rigid {} unrefracted {}) \
              trivial {} (vacuum {} resonant {} over {} charged edges; \
-             μ read on {} steps, {} of them non-zero) \
+             charge read on {} steps, {} of them charged, {} unread) \
              | defects: trivial {} elliptic {} hyperbolic {} parabolic {} non-simple {} \
              | spectra: closes {} open {} undecomposed {} isoclinic {} \
              | ρ: |im| {} |conj| {} of {} generators, {} in ker | this form: b₁ {} |im| {} \
@@ -115,6 +115,7 @@ impl FormReading {
             self.resonance.2,
             self.resonance.3,
             self.resonance.4,
+            self.resonance.5,
             self.defects.0,
             self.defects.1,
             self.defects.2,
