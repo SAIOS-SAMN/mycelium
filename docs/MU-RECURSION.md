@@ -19173,6 +19173,36 @@ operator rules the meaning first) and the STRAIN `‖τ‖²/‖B‖²`, a
 positive-definite sum of squared coefficients (A10.1 III), which ranks
 operations by a Euclidean norm.
 
+**The last two flat squares retired (ruled 2026-10-01, the operator's
+word, both of the implementor's recommendations accepted).** Both
+collapsed a motion of several invariant planes into one scalar by squaring
+coefficients; both are replaced by MR1's spectrum — one exact entry per
+commuting invariant plane, never summed, signed by the Lorentzian kind.
+1. *The charge is the motor's spectrum.* `step_charge`'s
+   `μ = ⟨Ω⟩₀²/⟨ΩΩ̃⟩₀ − 1` is −sin² of ONE angle: it mixed a composite
+   motor's planes into one number (two different motions read alike) and
+   dropped orientation. A step's charge is now its modes by `motion_modes`
+   — each mode's kind (turn, boost, parabolic), rational point `c_j` (the
+   eigenvalue of `(R + R⁻¹)/2`, first degree in the action), order `ℓ_j`
+   and planes. Uncharged: every mode at `c_j = 1`. Two steps resonate
+   where their spectra agree mode for mode; a cycle returns at the lcm of
+   its orders (78.43). RULING (a): a motor MR1 cannot split over ℚ is
+   UNREAD, named — never given a number (precision is the rule).
+2. *Stability is a partial order, plane by plane.* The strain
+   `‖τ‖²/‖B‖²` summed squared coefficients into one positive-definite
+   number — A4's refused Euclidean flattening on Cl(4,1), a boost plane
+   and a turn plane added as one kind — and so force-ranked every pair of
+   operations (rule 4). The net torque `τ = ½[B, G]` is split by MR1's
+   generator modes; on each plane its value is read against the
+   generator's there (scale-free, exact); before and after compare plane
+   by plane: STABILIZING (no plane rises, none opens), DESTABILIZING (some
+   rise or open, none falls — refused, naming those planes), TILTING
+   (some rise while others fall). Equilibrium is unchanged: `τ = 0`
+   exactly. `force` is the per-plane change. RULING (b): a TILTING
+   operation is ADMITTED, its rising planes docketed as content — it
+   reorients the constellation rather than destabilizing it, and
+   curvature is content.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
