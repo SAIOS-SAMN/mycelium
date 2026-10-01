@@ -39,7 +39,7 @@ fn a_peers_ruling_applies_here_through_its_receipt() {
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
     let ruling = a.chain().head().expect("a ruled").clone();
     assert_eq!(ruling.kind, ActKind::Ruling(Ruled::Upheld), "the arm rides the node's kind");
-    let line: Vec<_> = a.chain().own().cloned().collect();
+    let line: Vec<_> = a.chain().own().collect();
     let upheld = Ruled::Upheld.index();
 
     let mut b = Kernel::new();
@@ -92,7 +92,7 @@ fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
     assert_eq!(addr, same, "one word, spoken alike at both courts");
     let ours = c.admitted_at(addr.as_bytes()).expect("c admitted it");
     assert_ne!(ours, theirs, "at two stamps: each court's own act");
-    let before_ruling: Vec<_> = a.chain().own().cloned().collect();
+    let before_ruling: Vec<_> = a.chain().own().collect();
     super::common::admit_line(&mut c, &key, &before_ruling);
     assert_eq!(c.word_admitted_at(&theirs), Some(&addr), "a's stamp is an alias of the word here");
     assert_eq!(c.admitted_at(addr.as_bytes()), Some(ours), "and c's own stamp still holds it");
@@ -101,7 +101,7 @@ fn a_peers_stamp_aliases_the_one_word_on_its_fiber() {
     assert_eq!(restored.word_admitted_at(&theirs), Some(&addr), "the alias is re-derived at restore");
 
     assert!(a.apply_verdict(addr.as_bytes(), RULING_UPHELD), "a upholds it");
-    let line: Vec<_> = a.chain().own().cloned().collect();
+    let line: Vec<_> = a.chain().own().collect();
     let [.., ruling] = line.as_slice() else { panic!("a ruled") };
     super::common::admit_line(&mut c, &key, std::slice::from_ref(ruling));
     assert_eq!(c.clock(None).rulings[Ruled::Upheld.index()], [1, 1, 0, 0], "a's ruling, located by the alias, applies at c");
@@ -132,7 +132,7 @@ fn several_words_on_one_fiber_file_no_alias() {
     let at = peer.next_stamp(&[]).expect("its first stamp");
     let cite = Cite::Word { chart: chart.clone(), class: None, at };
     peer.append(ActKind::List, [0; 4], vec![cite], [0; 32], Vec::new()).expect("it admits by its own act");
-    let line: Vec<_> = peer.own().cloned().collect();
+    let line: Vec<_> = peer.own().collect();
     super::common::admit_line(&mut c, &key, &line);
     assert_eq!(c.word_admitted_at(&at), None, "no alias: two candidates, and none is chosen");
 }

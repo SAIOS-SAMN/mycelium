@@ -10,7 +10,7 @@ fn peer_orbit(vk: [u8; 32], mu: [u64; 4]) -> Vec<crate::chronometry::KStepReceip
     p.append(ActKind::List, mu, Vec::new(), [0; 32], Vec::new()).expect("acts");
     let (_, frame) = p.open_orbit().expect("open");
     p.append(ActKind::Orbit, frame, Vec::new(), [0; 32], Vec::new()).expect("closes");
-    p.own().cloned().collect()
+    p.own().collect()
 }
 
 /// THE COURT'S CLOSE, WITHHELD AND THEN SEALED. The court acts once and

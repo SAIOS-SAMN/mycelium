@@ -379,7 +379,7 @@ impl Kernel {
         let queued = std::mem::take(&mut self.pending_parents);
         let parents = self.antichain_of(&queued);
         let sealed = match self.chain.next_stamp(&parents) {
-            Some(at) => self.chain.append(kind, mu, cites(at), op, parents).cloned(),
+            Some(at) => self.chain.append(kind, mu, cites(at), op, parents),
             None => None,
         };
         let written = match sealed {
@@ -387,7 +387,7 @@ impl Kernel {
             None => {
                 self.pending_parents = queued;
                 let at = self.chain.next_stamp(&[])?;
-                self.chain.append(kind, mu, cites(at), op, Vec::new()).cloned()
+                self.chain.append(kind, mu, cites(at), op, Vec::new())
             }
         };
         match &written {

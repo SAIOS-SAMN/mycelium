@@ -65,7 +65,6 @@ fn a_word_committed_by_two_organs_reads_depth_two() {
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     let r = peer
         .append(ActKind::Install, [0; 4], vec![cite(at)], [0; 32], Vec::new())
-        .cloned()
         .expect("the peer's receipt");
     k.note_attestor(&r);
 
@@ -95,7 +94,7 @@ fn one_signer_acting_twice_is_still_one_vantage() {
     let at = crate::chronometry::Stamp { h: 3, vk: [4; 32], k: 2, i: 0 };
     let mut peer = crate::chronometry::ReceiptChain::with_vk([7; 32]);
     for kind in [ActKind::Install, ActKind::Ruling(crate::chronometry::Ruled::Upheld)] {
-        let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
+        let r = peer.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);
     }
     assert_eq!(k.depth_at(&at), 1, "two acts, one organ, one vantage");
@@ -110,11 +109,11 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let at = crate::chronometry::Stamp { h: 5, vk: [4; 32], k: 4, i: 0 };
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
     for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
-        let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
+        let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);
     }
     assert_eq!(k.depth_at(&at), 0, "acts about it commit nobody to it");
-    let r = mind.append(ActKind::Adopted, [0; 4], vec![cite(at)], [0; 32], Vec::new()).cloned().expect("a receipt");
+    let r = mind.append(ActKind::Adopted, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
     k.note_attestor(&r);
     assert_eq!(k.depth_at(&at), 1, "and adopting it is one");
 }

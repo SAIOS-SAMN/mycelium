@@ -134,30 +134,31 @@ impl Era {
         Some((era, len))
     }
 
-    /// The payload alone, as it is appended to the cold segment: the count
-    /// and each node by the ledger's own writer.
+    /// The payload alone, as it is appended to the cold segment: its run of
+    /// one line, packed (`pack.rs`) — each node after the first re-derives
+    /// its stamp from the one before it — and the anchor on its last node.
     #[must_use = "a payload that cannot be written is refused by name, never dropped (LD0)"]
     pub fn payload(&self) -> Option<Vec<u8>> {
+        let mut packer = super::pack::Packer::new();
         let mut out = Vec::new();
-        // The receipt count is `count`'s, the mesh's, so `u64` as the
-        // descriptor carries it: no width refuses a fold the mesh made.
-        out.extend_from_slice(&(self.receipts.len() as u64).to_le_bytes());
         for r in &self.receipts {
-            r.write(&mut out)?;
+            packer.node(&mut out, r)?;
         }
+        packer.anchors(&mut out);
         Some(out)
     }
 
-    /// Read a payload back: the count and the receipts behind it.
+    /// Read a payload back, from `pos` to the end of `b`: its nodes, each
+    /// re-derived, the anchor holding.
     pub fn read_payload(b: &[u8], pos: &mut usize) -> Option<Vec<KStepReceipt>> {
-        let n = usize::try_from(u64::from_le_bytes(b.get(*pos..*pos + 8)?.try_into().ok()?)).ok()?;
-        *pos += 8;
-        if n > b.len().checked_sub(*pos)? / KStepReceipt::MIN_TAPE {
-            return None;
-        }
-        let mut out = Vec::with_capacity(n);
-        for _ in 0..n {
-            out.push(KStepReceipt::read(b, pos)?);
+        let mut unpacker = super::pack::Unpacker::new();
+        let mut out = Vec::new();
+        while *pos < b.len() {
+            match unpacker.take(b, pos)? {
+                super::pack::Record::Node(r) => out.push(*r),
+                super::pack::Record::Read => {}
+                super::pack::Record::Root(_) | super::pack::Record::Gone(_) => return None,
+            }
         }
         Some(out)
     }

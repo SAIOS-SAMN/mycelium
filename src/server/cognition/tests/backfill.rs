@@ -69,7 +69,7 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
                      after: Option<crate::chronometry::Place>,
                      upto: crate::chronometry::Place|
          -> Option<Vec<crate::chronometry::KStepReceipt>> {
-            (*who == vk).then(|| b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8")).into_iter().cloned().collect())
+            (*who == vk).then(|| b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8")))
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
@@ -141,7 +141,7 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
             _ if *who == dvk => &d,
             _ => return None,
         };
-        Some(line.line_between(who, after, upto, 64).into_iter().cloned().collect::<Vec<_>>())
+        Some(line.line_between(who, after, upto, 64))
     };
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,

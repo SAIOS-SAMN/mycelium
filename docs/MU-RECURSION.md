@@ -19439,6 +19439,33 @@ nor has folded past it. A kernel with no line or segment bound (a fixture)
 carries both in its snapshot, as eras in hand always did. MYT1 is refused
 by name; the recut is the road (`scripts/recut` now removes `line` too).
 
+(viii) *An act is held as what it carries* (the operator, 2026-10-01:
+"land 1-3"). Measured on court c's 560k receipts:
+- the predecessor (22% of the tape), the stamp (14%) and the chain hash
+  (8%) are derivable;
+- the operator hash (8%) took 8 distinct values;
+- citations (37.5%) were 214k distinct blocks over the 424k receipts that
+  cite at all.
+
+One packed form now serves the line file, the era payload and memory.
+- *On disk* (`pack.rs`, MYL2, and the era payload): a node is written as
+  its signer and operator by index (each defined once per stream), its kind,
+  its frame in seven-bit groups, its predecessor as "the last node of this
+  line in the stream" (or named whole where the stream does not carry it),
+  its parents and its citations. The stamp is re-derived: the place from
+  the predecessor's place and kind, the height as `1 + max` over the
+  predecessor and parents. The hash is re-derived from all of it. An anchor
+  on every line's last node must meet the re-derived hash, so any one byte
+  changed refuses the file or reads as a torn write (tested on every byte).
+  The key the line is written for is its stream's first signer, inside what
+  the anchors cover.
+- *In memory* (`chain/node.rs`): a node holds its kind, frame, parents,
+  citations, operator index and hash, and its predecessor as a place on its
+  own line. When that predecessor leaves, the next node names it whole, so
+  every receipt still assembles exactly as it was sealed. The stamp is the
+  node's key. The chain's reads hand out receipts assembled on demand; its
+  walks read the nodes directly.
+
 (vii) *The two lookup tables get their inverses.* A folded receipt recalled
 from its era for one citation leaves once that admission has read it, and
 is read back from the era where another cites it. A placement recorded for

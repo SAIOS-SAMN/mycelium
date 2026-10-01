@@ -260,7 +260,7 @@ impl Kernel {
         // read; the hot run is measured here.
         let mut last = after;
         let cold_len = cold.len();
-        for (i, r) in cold.into_iter().map(std::borrow::Cow::Owned).chain(hot.into_iter().map(std::borrow::Cow::Borrowed)).enumerate() {
+        for (i, r) in cold.into_iter().chain(hot).enumerate() {
             if out.len() >= budget || (i >= cold_len && !fits(&r)) {
                 break;
             }
@@ -270,7 +270,7 @@ impl Kernel {
                 }
                 last = Some(r.stamp.place());
             }
-            out.push(r.into_owned());
+            out.push(r);
         }
         out
     }

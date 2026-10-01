@@ -6,6 +6,7 @@
 
 pub mod chain;
 pub mod era;
+pub mod pack;
 pub mod receipt;
 
 pub use chain::*;

@@ -117,7 +117,7 @@ impl Kernel {
         // Only a node that cites by stamp is filed, and only those are
         // copied out of the ledger.
         let nodes: Vec<crate::chronometry::KStepReceipt> =
-            self.chain.nodes().filter(|r| r.cites.iter().any(|c| c.at().is_some())).cloned().collect();
+            self.chain.nodes().filter(|r| r.cites.iter().any(|c| c.at().is_some())).collect();
         for r in &nodes {
             self.note_attestor(r);
         }

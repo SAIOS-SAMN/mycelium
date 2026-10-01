@@ -374,7 +374,7 @@ impl Kernel {
             // that admits a word at its own stamp can alias one, and only
             // those are copied out of the ledger.
             let admits = |r: &KStepReceipt| r.cites.iter().any(|c| matches!(c, Cite::Word { at, .. } if *at == r.stamp));
-            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().filter(|r| admits(r)).cloned().collect();
+            let peers: Vec<KStepReceipt> = kernel.chain.admitted().into_iter().filter(|r| admits(r)).collect();
             for r in &peers {
                 kernel.alias_admitting(r, &mut budget);
             }

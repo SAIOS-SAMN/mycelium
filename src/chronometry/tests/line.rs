@@ -27,7 +27,7 @@ fn land(file: &mut Vec<u8>, w: LineWrite) {
 fn same(file: &[u8], c: &ReceiptChain) {
     let (back, torn) = ReceiptChain::from_line(file).expect("the line reads");
     assert!(!torn);
-    assert_eq!(back.nodes().cloned().collect::<Vec<_>>(), c.nodes().cloned().collect::<Vec<_>>(), "the same nodes");
+    assert_eq!(back.nodes().collect::<Vec<_>>(), c.nodes().collect::<Vec<_>>(), "the same nodes");
     assert_eq!((back.head_stamp(), back.root()), (c.head_stamp(), c.root()), "on the same head and root");
 }
 
@@ -119,6 +119,6 @@ fn a_torn_last_frame_leaves_the_line_on_the_frames_before_it() {
     file.extend_from_slice(&next.bytes[..next.bytes.len() - 1]);
     let (mut back, torn) = ReceiptChain::from_line(&file).expect("the line reads");
     assert!(torn, "the torn frame is named");
-    assert_eq!(back.nodes().cloned().collect::<Vec<_>>(), before.nodes().cloned().collect::<Vec<_>>(), "on the frames before it");
+    assert_eq!(back.nodes().collect::<Vec<_>>(), before.nodes().collect::<Vec<_>>(), "on the frames before it");
     assert!(back.line_write().expect("writes").expect("a write").whole, "the next write is the whole");
 }

@@ -238,7 +238,7 @@ fn a_court_restores_from_its_line_and_the_snapshot_that_names_it() {
     bound(&mut back, &line);
     assert!(back.restore(&snap), "the snapshot restores on its line");
     assert_eq!((back.chain().head_stamp(), back.chain().root()), (k.chain().head_stamp(), k.chain().root()));
-    assert_eq!(back.chain().nodes().cloned().collect::<Vec<_>>(), k.chain().nodes().cloned().collect::<Vec<_>>());
+    assert_eq!(back.chain().nodes().collect::<Vec<_>>(), k.chain().nodes().collect::<Vec<_>>());
     assert_eq!(back.archive(), k.archive(), "and the eras from the segment");
 
     let mut ahead = Kernel::new();
@@ -279,7 +279,7 @@ fn a_peer_receipt_citing_a_folded_receipt_is_admitted() {
     d.admit(cited.clone());
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }])
         .expect("d cites the court's receipt");
-    let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16).into_iter().cloned().collect();
+    let line: Vec<_> = d.line_between(&dvk, None, d.head().expect("d acted").stamp.place(), 16);
     let mut budget = k.stroke();
     assert_eq!(k.admit_backfill(&line, &mut budget), (line.len(), None), "the folded citation is read back and d's line admitted");
     let _ = std::fs::remove_file(&path);

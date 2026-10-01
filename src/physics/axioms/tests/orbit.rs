@@ -112,7 +112,7 @@ fn a_close_is_decided_by_exact_equality_of_frames_at_one_tick() {
     let theirs = close(&mut other);
     let mut mine = ReceiptChain::with_vk([5; 32]);
     act(&mut mine, [2, 0, 0, 0]);
-    for r in other.own().cloned().collect::<Vec<_>>() {
+    for r in other.own().collect::<Vec<_>>() {
         mine.admit(r);
     }
     let (_, frame) = mine.open_orbit().expect("open");

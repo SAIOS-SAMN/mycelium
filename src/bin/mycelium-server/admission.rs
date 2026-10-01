@@ -69,7 +69,7 @@ pub(crate) fn sign_position(
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
     let k = kernel.lock().ok()?;
-    let head = k.chain().head().cloned()?;
+    let head = k.chain().head()?;
     drop(k);
     let prefix = mycelium::court::admission::SignedPrefix {
         genesis,

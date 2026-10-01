@@ -18,18 +18,20 @@ fn the_ledger_is_temporal_authority_and_tamper_evident() {
     assert_eq!(c.next_step_index(), 1, "K is the algebraic clock: it moved at the close");
     assert!(c.verify_chain_integrity());
     let tape = c.line_image().expect("the line writes");
-    // One lane of the middle node changed, in its own record: the first
-    // byte after its stamp and its kind.
-    let middle = c.at_place(crate::chronometry::Place::GENESIS.within()).expect("the second act");
-    let mut rec = Vec::new();
-    middle.write(&mut rec).expect("writes");
-    let Some(at) = tape.windows(rec.len()).position(|w| w == rec.as_slice()) else {
-        panic!("the middle node's receipt stands in its record")
-    };
-    let mut bad = tape.clone();
-    bad[at + Stamp::LEN + 1] ^= 1;
-    assert!(ReceiptChain::from_line(&bad).is_none(), "a single byte of one node refuses the ledger whole");
-    assert!(ReceiptChain::from_line(&tape).is_some(), "and the ledger as written reads");
+    // EVERY SINGLE BYTE CHANGED, anywhere in the file: the line is refused,
+    // or reads as a write that did not land — never as another chain. A
+    // node's hash is re-derived from what it carries and its line's anchor
+    // must meet it.
+    for at in 0..tape.len() {
+        let mut bad = tape.clone();
+        bad[at] ^= 1;
+        assert!(
+            ReceiptChain::from_line(&bad).is_none_or(|(_, torn)| torn),
+            "byte {at} of {} changed reads as a whole line",
+            tape.len()
+        );
+    }
+    assert!(ReceiptChain::from_line(&tape).is_some_and(|(_, torn)| !torn), "and the ledger as written reads");
 }
 
 /// 45.1, S13.6, 78.24 — THE NODE CARRIES ITS ACT'S KIND: on the tape after

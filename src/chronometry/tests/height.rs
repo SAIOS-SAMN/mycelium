@@ -74,8 +74,8 @@ fn a_ledger_rehydrates_with_the_peer_nodes_its_line_cites() {
     c.admit(head.clone());
     let mine = step(&mut c, vec![cite(&head)]);
     assert_eq!(c.head_height(), 1 + 1, "h = 1 + max(h(prev)=0, h(parent)=1)");
-    let line: Vec<KStepReceipt> = c.own().cloned().collect();
-    let all: Vec<KStepReceipt> = c.nodes().cloned().collect();
+    let line: Vec<KStepReceipt> = c.own().collect();
+    let all: Vec<KStepReceipt> = c.nodes().collect();
     assert_eq!(c.admitted().len(), 1, "one peer node is held, once, at its stamp");
 
     assert!(ReceiptChain::from_nodes(None, [1; 32], line).is_none(), "the line alone cannot re-derive a height over a parent it does not hold");
@@ -114,7 +114,7 @@ fn the_ledger_written_as_its_line_reads_back_whole() {
     let tape = c.line_image().expect("the line writes");
     let (back, torn) = ReceiptChain::from_line(&tape).expect("and reads back");
     assert!(!torn, "whole");
-    assert_eq!(back.nodes().cloned().collect::<Vec<_>>(), c.nodes().cloned().collect::<Vec<_>>());
+    assert_eq!(back.nodes().collect::<Vec<_>>(), c.nodes().collect::<Vec<_>>());
     assert_eq!((back.head_k(), back.head_height(), back.head_hash()), (c.head_k(), c.head_height(), c.head_hash()));
     assert_eq!(back.line_head(&[2; 32]).map(|r| r.stamp), Some(p0.stamp), "the peer's line is read off the same file");
 }
@@ -131,7 +131,7 @@ fn a_ledgers_nodes_are_found_at_their_stamps() {
     step(&mut c, Vec::new());
     c.admit(p0.clone());
     for r in c.own() {
-        assert_eq!(c.height_of(&cite(r)), Some(r.stamp.h), "its own, at its stamp");
+        assert_eq!(c.height_of(&cite(&r)), Some(r.stamp.h), "its own, at its stamp");
     }
     assert_eq!(c.height_of(&cite(&p0)), Some(0), "and one it admitted");
     assert_eq!(c.height_of(&Parent { at: p0.stamp, hash: [0xab; 32] }), None, "a stamp held under another hash is unmeasured");

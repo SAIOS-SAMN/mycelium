@@ -148,12 +148,12 @@ pub struct Parent {
 }
 
 impl Parent {
-    fn put(&self, out: &mut Vec<u8>) {
+    pub(crate) fn put(&self, out: &mut Vec<u8>) {
         self.at.put_canonical(out);
         out.extend_from_slice(&self.hash);
     }
 
-    fn take(b: &[u8], p: &mut usize) -> Option<Parent> {
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Parent> {
         let at = Stamp::take_canonical(b, p)?;
         let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
         *p += 32;

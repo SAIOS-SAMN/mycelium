@@ -51,7 +51,7 @@ fn the_phase_is_read_off_the_kinds_and_the_cover_at_the_windows_ends() {
         vec![crate::chronometry::Parent { at: cited.stamp, hash: cited.chain_hash }],
     )
     .expect("an install reached through a lineage");
-    let window: Vec<_> = c.own().cloned().collect();
+    let window: Vec<_> = c.own().collect();
     let h0 = 0;
     let h1 = c.head_height();
 

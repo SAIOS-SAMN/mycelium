@@ -457,7 +457,7 @@ fn retirement_line(
     let mut line = ReceiptChain::with_vk(key.vk_bytes());
     line.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("an act");
     line.append(ActKind::Ruling(Ruled::Retired), [0; 4], cites, [0; 32], Vec::new()).expect("the retirement");
-    line.own().cloned().collect()
+    line.own().collect()
 }
 
 /// EC1 AS RULED — A PEER'S RETIREMENT IS REPLAYED HERE, never trusted and

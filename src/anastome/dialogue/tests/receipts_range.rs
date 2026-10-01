@@ -21,7 +21,7 @@ fn the_receipts_request_and_reply_round_trip_within_the_budget() {
     for lane in 1..=3u64 {
         c.append(ActKind::List, [lane, 0, 0, 0], Vec::new(), [0; 32], Vec::new()).expect("appends");
     }
-    let line: Vec<_> = c.own().cloned().collect();
+    let line: Vec<_> = c.own().collect();
     let all = encode_receipts_reply(&line, 1 << 16);
     assert_eq!(decode_receipts_reply(&all), Some(line.clone()), "the page reads back whole");
     // The first two nodes' own widths: genesis names no predecessor, so it

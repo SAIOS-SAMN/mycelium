@@ -202,7 +202,7 @@ impl Kernel {
         if let Some((m0, at_h0)) = self.phase_mark.take() {
             if let (Some(m1), true) = (mark, m0 < mark) {
                 let vk = self.chain.vk();
-                let window: Vec<KStepReceipt> = self.chain.line_between(&vk, m0, m1, usize::MAX).into_iter().cloned().collect();
+                let window: Vec<KStepReceipt> = self.chain.line_between(&vk, m0, m1, usize::MAX);
                 let h0 = m0.and_then(|m| self.chain.at_place(m)).map_or(0, |r| r.stamp.h);
                 let h1 = self.chain.head_height();
                 let mut phase = phase_over(&window, &at_h0, &now, h0, h1);
