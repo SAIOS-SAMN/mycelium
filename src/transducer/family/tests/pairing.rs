@@ -234,6 +234,36 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     assert_eq!((t.statics, t.open_180, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }
 
+/// 78.71 — EVERY LANE READ AS A FIELD: each body's transport through the rule
+/// books its own modes by the mass it carried — a turn on 𝒽, a dilation on
+/// 𝒮, a hue map on 𝒢 — and its null part as flux on 𝒯 in its tube's quanta,
+/// never a chord's length and never twice. Two bodies translated along one
+/// ray, one and two units, carry three quanta of four-compartment mass.
+#[test]
+fn every_lane_reads_its_transports_as_a_field() {
+    use crate::transducer::cga::{self, Mv, E1, E2};
+    use crate::transducer::family::pairing::transport_order;
+    let q = |n: i64, d: i64| num_rational::BigRational::new(n.into(), d.into());
+    let mut b = crate::physics::Physics::default().stroke_n(1 << 16);
+    let turn = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, q(1, 1)));
+    let dilate = cga::dilator(&q(2, 1));
+    let slide = |x: i64| cga::translator_at(&[q(x, 1), q(0, 1), q(0, 1)]);
+    let swap = vec![(1u8, 2u8), (2, 1)];
+    let one = Mv::scalar(q(1, 1));
+    let transports = vec![
+        (turn, Vec::new(), 3),
+        (dilate, Vec::new(), 5),
+        (one, swap, 7),
+        (slide(1), Vec::new(), 4),
+        (slide(2), Vec::new(), 4),
+    ];
+    let order = transport_order(&transports, &[], &mut b);
+    assert_eq!(order[3], 3, "the turn: 𝒽 by the mass it carried");
+    assert_eq!(order[0], 5, "the dilation: 𝒮");
+    assert_eq!(order[1], 7, "the hue map: 𝒢");
+    assert_eq!(order[2], 12, "two slides on one ray, one and two quanta of four: 𝒯 in quanta, never a length");
+}
+
 /// 78.68 — A CONFORMAL CARRIAGE'S LANES: a translator carries a
 /// displacement, 𝒯; a dilator is 𝒮; a turn about the origin is 𝒽 — the
 /// rotor's lane on 42.6's table (78.69) — and carries no displacement. And why the lanes are read off the conformal

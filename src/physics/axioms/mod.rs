@@ -13,6 +13,7 @@
 //! explicitly marked as a statement about work not yet built.
 
 mod coxeter;
+mod fluid;
 mod imported;
 mod ours;
 mod reciprocity;
@@ -21,6 +22,7 @@ mod routes;
 mod tensegrity;
 
 pub use coxeter::CX1_TREE_CONJUGACY;
+pub use fluid::{F1_NULL_HAS_NO_LENGTH, F2_FLUX_BY_STOKES, F3_FROZEN_IN, F4_QUANTUM_READ, F5_NO_LATTICE_ON_THE_SPHERE};
 pub use imported::{
     A10_CO_DIMENSIONALITY, A6_DIMENSIONAL_COMPLETENESS, A8_TORSIONAL_PERSISTENCE,
     A9_METRIC_AUTONOMY,

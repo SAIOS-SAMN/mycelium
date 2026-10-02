@@ -741,6 +741,9 @@ impl Exchange {
                                                 mycelium::cognition::Glue::Slashed(r) => {
                                                     eprintln!("  court glued slash from {d}: {r}");
                                                 }
+                                                // Held already from this peer: nothing
+                                                // written, nothing said (78.71).
+                                                mycelium::cognition::Glue::Held => {}
                                             }
                                         }
                                     }

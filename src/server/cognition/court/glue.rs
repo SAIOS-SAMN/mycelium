@@ -56,6 +56,24 @@ struct Fills {
     class: Option<(Rotor, usize)>,
 }
 
+/// 78.71 — A SENTENCE'S FLUX ON 𝒯, read at the court: its word vertices'
+/// acting carriages, each a field line carrying the word's support, through
+/// the voices' one reader (`transport_order`). A word that is no sentence, or
+/// whose transports carry no null mode, has none.
+fn admitted_flux(spoken: &Element, budget: &mut crate::physics::Budget) -> u64 {
+    let Some(form) = crate::transducer::sentence::from_element_form(spoken) else { return 0 };
+    let mass = spoken.sub().len() as u64;
+    let mut transports: Vec<crate::transducer::family::pairing::FieldLine> = Vec::new();
+    for (_, v) in form.vertices.scoped() {
+        if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
+            for (_, a) in acts.scoped() {
+                transports.push(((*a.carriage).clone(), a.gauge.clone(), mass));
+            }
+        }
+    }
+    crate::transducer::family::pairing::transport_order(&transports, &[], budget)[crate::transducer::rewrite::LANE_TEMPORAL]
+}
+
 impl Kernel {
     /// On the stroke of the act that fetched the word (65.5): the exchange's
     /// glue, or the witness door's offer — never one of its own. The acts in
@@ -71,10 +89,30 @@ impl Kernel {
         budget: &mut crate::physics::Budget,
     ) -> Glue {
         let addr = spoken.address();
+        let inv = crate::transducer::stalk::invariant_of(&spoken);
+        // 78.71 — A WORD HELD, HEARD AGAIN FROM THE SAME PEER, IS NO NEW
+        // EVIDENCE. Only dialect and slashed words were marked heard, so a
+        // word this court had admitted was glued whole every time a peer's
+        // page named it: an `Install` sealed, its order booked, a fold
+        // proposed, for nothing — 13 509 admissions of 201 words on hypha a in
+        // twenty minutes, the same words circling the mesh. Its install is
+        // stamped with this court's key, so a repeat adds no depth either.
+        // A first hearing from a NEW peer still writes that peer's section:
+        // a vantage for consilience.
+        // Keyed `address ‖ peer`: a complex holds ONE section per peer, the
+        // last word glued from it on that chart, so reading the section missed
+        // every earlier word from the same peer (c re-admitted 635 in five
+        // minutes after the first cut of this stop).
+        let mut heard_key = addr.as_bytes().to_vec();
+        heard_key.extend_from_slice(&peer);
+        let from_this_peer = self.glued_from.contains(&heard_key);
+        if from_this_peer && self.ruled_contains(&addr) {
+            crate::observe::note_replication(Some(peer), rep::GLUE_HEARD, 1);
+            return Glue::Held;
+        }
         if let Some(stop) = self.glue_stop(&spoken, &addr, budget) {
             return self.stopped(stop, &spoken, addr, peer);
         }
-        let inv = crate::transducer::stalk::invariant_of(&spoken);
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),
@@ -107,15 +145,20 @@ impl Kernel {
                 Glue::Admitted => rep::GLUE_ADMITTED,
                 Glue::Attached => rep::GLUE_ATTACHED,
                 Glue::Dialect | Glue::Slashed(_) => rep::GLUE_CLASS_DIALECT,
+                Glue::Held => rep::GLUE_HEARD,
             },
             1,
         );
+        if matches!(outcome, Glue::Admitted | Glue::Attached) {
+            self.glued_from.insert(&heard_key, ());
+        }
         match (&outcome, standing, held) {
             (Glue::Admitted | Glue::Attached, Standing::Placed(v), Some(rep)) => {
                 self.hold_glued(&spoken, addr, peer, Some((rep.address(), v)), budget);
             }
             (Glue::Admitted | Glue::Attached, _, _) => self.hold_glued(&spoken, addr, peer, None, budget),
             (Glue::Dialect | Glue::Slashed(_), _, _) => self.heard_mark(addr, &inv),
+            (Glue::Held, _, _) => {}
         }
         outcome
     }
@@ -379,6 +422,8 @@ impl Kernel {
                 self.touch_at(&rep);
             }
         }
+        // Whether the language gains a word here, read before it is held.
+        let entered = !self.ruled_contains(&addr);
         if let (None, false) = (self.basis.get(&addr), spoken.is_connection() && spoken.letters().is_none()) {
             self.basis_push(spoken.clone(), peer, budget);
         }
@@ -390,8 +435,19 @@ impl Kernel {
         // 78.69 — A GENERATOR ENTERED THE PRESENTATION: the order the
         // language gained, booked on every lane the word carries — its
         // standing extent on 𝒯 among them, which no producer of order on
-        // this court reached, so its 𝒯 pressure could only climb.
-        self.physics.syntropy(&spoken.magnitude());
+        // this court reached, so its 𝒯 pressure could only climb. ONCE, where
+        // the word enters (78.71): booked on every re-glue it read 36 481 on
+        // 𝒮 at hypha a, order the language never gained.
+        if entered {
+            // 78.71 — AND ITS FLUX ON 𝒯: the word's chain holds no transport
+            // (its magnitude reads 𝒯 = 0), so the order it carries on 𝒯 is
+            // read off its own transports — each word vertex's acting
+            // carriage, by its modes, in its tubes' quanta, the mass its
+            // support carries (`transport_order`, the voices' one reader).
+            let mut mag = spoken.magnitude();
+            crate::physics::metabolism::step_or_refuse(&mut mag[2], admitted_flux(spoken, budget));
+            self.physics.syntropy(&mag);
+        }
         self.ruled_admit(&addr, budget);
         self.fed_admit(&addr, spoken.clone());
         let installed = self.anchor();

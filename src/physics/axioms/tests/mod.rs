@@ -2,6 +2,7 @@
 
 mod contact;
 mod coxeter;
+mod fluid;
 mod frame;
 mod harmonic;
 mod hue;

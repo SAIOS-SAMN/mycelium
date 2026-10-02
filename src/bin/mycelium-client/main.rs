@@ -351,9 +351,15 @@ fn main() {
         // moved nothing draws nothing. And what the contacts this mind
         // perceived did is booked on the same physics: order built where
         // they condensed, pressure where they were refused.
-        let moved = outcome.moved();
+        // 78.71 — A STROKE THAT TRANSPORTED FLUX MOVED 𝒯: its percepts'
+        // closed flux (`mark_flux`) and its faces' null transports rose on 𝒯
+        // since the last booking. No outcome lane carries 𝒯 (a chain holds no
+        // transport), so it is read here, off the transport itself.
+        let seen = mycelium::transducer::family::pairing::contact_lanes();
+        let mut moved = outcome.moved();
+        moved[2] |= seen.0[2] > entity.physics().contacts_mark[0][2];
         let _ = entity.physics_mut().spend(moved);
-        entity.physics_mut().book_contacts(mycelium::transducer::family::pairing::contact_lanes());
+        entity.physics_mut().book_contacts(seen);
         let Counts {
             fed,
             derived,

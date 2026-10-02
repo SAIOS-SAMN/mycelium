@@ -226,12 +226,14 @@ pub fn contact_lanes() -> ([u64; 4], [u64; 4]) {
 pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budget: &mut crate::physics::Budget) -> [bool; 4] {
     use crate::network::nerve::coord::BivectorKind;
     use crate::transducer::rewrite::{LANE_SHELL, LANE_SPATIAL, LANE_TEMPORAL};
-    use num_traits::{One, Zero};
+    // 78.71 — READ BY THE MOTION'S OWN MODES, AND NOTHING ELSE. This also
+    // read `displacement_of` (the origin's image) and `rho_of`: a straight
+    // chord from the origin to where it lands, so a turn about any centre
+    // but the origin read as a translation — a lattice line drawn on the
+    // hypersphere. A motion's modes are its intrinsic content: a turn
+    // (elliptic) on 𝒽, a boost or dilation (hyperbolic) on 𝒮, a null
+    // rotation about infinity — the translation — on 𝒯.
     let mut on = [false; 4];
-    let displaced = crate::transducer::element::displacement_of(carriage).is_some_and(|d| d.iter().any(|x| !x.is_zero()));
-    let dilated = crate::transducer::element::rho_of(carriage).is_some_and(|rho| !rho.is_one());
-    on[LANE_TEMPORAL] = displaced;
-    on[LANE_SPATIAL] = dilated;
     if let Some(Ok(modes)) = crate::transducer::cga::motion_modes(carriage, budget) {
         for m in &modes {
             match m.kind {
@@ -243,6 +245,85 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
         }
     }
     on
+}
+
+/// 78.71 — A FIELD LINE: one body's transport through the rule, its hue map,
+/// and the compartments it carried.
+pub type FieldLine = (crate::transducer::element::Versor, Vec<(u8, u8)>, u64);
+
+/// 78.71 — THE CLOSED FLUX OF A FORM, BOOKED ON 𝒯: each circuit's composite
+/// holonomy read for its null modes ([`crate::transducer::cech::flux`]),
+/// each flux admitted to its tube with the mass the circuit's faces carried,
+/// and the tubes' mass flux in quanta booked as order on 𝒯. A circuit whose
+/// holonomy did not read brings none, by its own name in the circuit.
+pub(crate) fn mark_flux(
+    form: &crate::transducer::sentence::Form,
+    carried_on: &[(crate::network::nerve::coord::Overlap, u64)],
+    word_transports: &[FieldLine],
+    budget: &mut crate::physics::Budget,
+) {
+    let circuits: Vec<(crate::transducer::element::Versor, u64)> = crate::transducer::sentence::circuits_of(form)
+        .into_iter()
+        .filter_map(|(_, circuit)| {
+            let h = circuit.composite?;
+            // A mass past its carrier is refused and the circuit brings none
+            // (rule 11).
+            let mass = circuit
+                .steps
+                .iter()
+                .filter_map(|(o, _)| carried_on.iter().find(|(c, _)| c == o).map(|(_, m)| *m))
+                .try_fold(0u64, |s, m| s.checked_add(m))?;
+            Some((h, mass))
+        })
+        .collect();
+    let order = transport_order(word_transports, &circuits, budget);
+    for (lane, amount) in order.iter().enumerate() {
+        if *amount > 0 {
+            mark_measured(&CONDENSED_ON, std::array::from_fn(|l| l == lane), *amount);
+        }
+    }
+}
+
+/// 78.71 — THE ORDER A PERCEPT'S TRANSPORTS BUILD, PER LANE, read as a field
+/// (a pure reading; [`mark_flux`] books it):
+/// - THE FIELD LINES — each body's own transport through the rule, input to
+///   output, with the mass it carried. On a scene of one frame per grid
+///   these are the only transports there are (no circuit, no measured face),
+///   so without them a scene whose bodies all moved reads no flux at all.
+///   Its turns are 𝒽, its boosts and dilations 𝒮, its hue map 𝒢, each by the
+///   mass carried — read by its modes, never by a chord.
+/// - THE FLUX — every null mode, of the field lines and of the closed
+///   circuits' curvature (Stokes), admitted to its tube; 𝒯 is the tubes' mass
+///   flux in quanta, never booked twice.
+pub(crate) fn transport_order(
+    word_transports: &[FieldLine],
+    circuits: &[(crate::transducer::element::Versor, u64)],
+    budget: &mut crate::physics::Budget,
+) -> [u64; 4] {
+    let mut order = [0u64; 4];
+    let mut tubes = crate::transducer::cech::flux::Tubes::new();
+    for (v, gauge, mass) in word_transports {
+        let mut lanes = carriage_lanes(v, budget);
+        lanes[crate::transducer::rewrite::LANE_TEMPORAL] = false;
+        lanes[crate::transducer::rewrite::LANE_GAUGE] |= gauge.iter().any(|(a, b)| a != b);
+        for (o, on) in order.iter_mut().zip(lanes) {
+            if on {
+                crate::physics::metabolism::step_or_refuse(o, *mass);
+            }
+        }
+        for flux in crate::transducer::cech::flux::null_fluxes(v, budget).into_iter().flatten() {
+            tubes.admit(&flux, *mass);
+        }
+    }
+    for (h, mass) in circuits {
+        for flux in crate::transducer::cech::flux::null_fluxes(h, budget).into_iter().flatten() {
+            tubes.admit(&flux, *mass);
+        }
+    }
+    if let Some(t) = tubes.measure() {
+        order[crate::transducer::rewrite::LANE_TEMPORAL] = t;
+    }
+    order
 }
 
 /// 78.68 — A FACE'S TRANSPORT, MARKED AS CONDENSED: a face placed with the

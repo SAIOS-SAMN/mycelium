@@ -397,6 +397,10 @@ pub struct Kernel {
     /// `None` is unread (a restored court reads it once off its hot line);
     /// `Some(None)`, read and none held.
     pub(crate) last_transition: Option<Option<crate::chronometry::Place>>,
+    /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
+    /// held and heard again from the same peer is no new evidence (`Held`).
+    /// Volatile: a restart hears each pair once more, then holds it.
+    pub(crate) glued_from: crate::network::nerve::Keyed<()>,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

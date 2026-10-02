@@ -237,6 +237,16 @@ impl Kernel {
             // word is deferred behind the cursor, its refusing lane named,
             // and is taught when the verified work of later orbits funds it
             // (`orbit` regenerates the reserve).
+            // 78.71 — A REFUSAL STANDING IS NOT RE-ASKED. A word already
+            // deferred whose draw the reserve still cannot cover is passed
+            // over: its refusal stands on `deferred_words`, counted once, and
+            // it is tried again when the reserve can pay it. Re-drawing it on
+            // every page to every voice counted 40 829 refusals on 𝒮 in five
+            // minutes at hypha a — one standing fact, re-counted.
+            if self.deferred_words.contains(addr) && !self.physics.reserve.covers(&mag) {
+                page.consumed += 1;
+                continue;
+            }
             if let Err(depleted) = self.physics.reserve.draw(mag) {
                 self.note_deferred(addr, kind, mag, &depleted, None);
                 page.deferred.push((addr.clone(), depleted));
@@ -329,7 +339,10 @@ impl Kernel {
             // word no lane can fund yet is deferred and the page goes on, as
             // the syllabus does — one costly word first in the stratum
             // starved every word behind it.
-            if self.physics.reserve.draw(mag).is_err() {
+            // 78.71: asked, not attempted — the deferral is counted on the
+            // fetch reading, once per word per page, and the reserve's own
+            // refusals stay the draws that were made.
+            if !self.physics.reserve.covers(&mag) || self.physics.reserve.draw(mag).is_err() {
                 crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: reserve");
                 continue;
             }

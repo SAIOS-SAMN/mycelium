@@ -20315,6 +20315,75 @@ the algebra gives no finite certificate.
   normal closure checks; a forged period fails; a boost is held open,
   `Unbound`.
 
+### 78.71 The lanes as a field: 𝒯 is null flux, every lane is read by a motion's modes, and no lattice enters the sphere (ruled 2026-10-02, the operator's word: "there should be no lattice in our hypersphere")
+
+**The defect.** Every reader that put a motion on a lane drew a straight
+line:
+- `carriage_lanes` read `displacement_of`, the origin's image, a chord.
+  So a turn about any centre but the origin read as a translation.
+- The translation measure I proposed counted lattice steps (L1) on the
+  sensor's grid.
+
+§76.1 forbids both: the lattice never leaves the sensor. On the conformal
+sphere a translation is a rotation about the point at infinity, with no
+length of its own.
+
+**The fluid axioms** (`physics/axioms/fluid.rs`, a test per clause in
+`tests/fluid.rs`):
+- **F1 · A null generator has no length.** `d ∧ e_∞` squares to zero;
+  conjugation takes it anywhere on its ray. Only its ray and its ratios
+  on that ray are invariant.
+- **F2 · Flux by Stokes.** 𝒯 is the parabolic part of a closed cell's
+  curvature, and of a body's transport through the rule, read by its modes.
+- **F3 · Frozen in.** The flow carries a tube whole: one ray, the same
+  ratios, the same windings (Alfvén, exact).
+- **F4 · The quantum is read.** A tube's quantum is the generator of its
+  fluxes' ℤ-module: `gcd` of the numerators over `lcm` of the
+  denominators. Every flux winds it a whole number of times. A finer flux
+  refines it; nothing declares it.
+- **F5 · No lattice on the sphere.** A motion's lanes are its modes: a
+  turn on 𝒽, a boost or dilation on 𝒮, a null rotation on 𝒯. Never the
+  chord its image of the origin draws.
+
+**The reading** (`cech/flux.rs`, `family::pairing::transport_order`):
+- *Field lines.* Each body's own transport through the rule, input to
+  output (`m.at`'s versor), with the compartments it carried. On a scene
+  of one frame per grid these are the only transports there are, so
+  without them a scene whose bodies all moved read no flux.
+- *Lane by mode.* A field line's turns go to 𝒽, its boosts to 𝒮, and its
+  hue map to 𝒢, each by the mass carried.
+- *𝒯 from the tubes.* Its null modes, and the null curvature of closed
+  circuits, are admitted to tubes. 𝒯 is the tubes' net mass flux in
+  quanta, never a length and never booked twice.
+- *On the voice:* `mark_flux` books the order, and a stroke that
+  transported flux has moved 𝒯, so it draws there.
+- *On the court:* a generator's 𝒯 order at its first admission is read off
+  its word vertices' acting carriages by the same reader
+  (`admitted_flux`).
+
+**Read.**
+- *A probe over 40 corpus tasks* booked `[5, 471, 79, 36]`: every lane
+  from fluid readings.
+- *On the fleet, five minutes,* voice 1 read `syntropy [311, 1124, 89, 107]`
+  and `drawn [160, 175, 50, 160]`. 𝒯 was booked and drawn for the first
+  time.
+- *Tested:*
+  - `every_lane_reads_its_transports_as_a_field`: a turn reads 3 on 𝒽, a
+    dilation 5 on 𝒮, a hue map 7 on 𝒢, and two slides of one and two units
+    on one ray read (1 + 2) × 4 = 12 on 𝒯.
+  - the four `fluid` axiom tests.
+
+**Explosions removed on the way.**
+- *Re-glue.* A word held and heard again from the same peer is `Held`:
+  no act, no order, no fold. It is keyed `address ‖ peer`, because a
+  complex's one section per peer missed earlier words.
+- *Order booked once.* A generator's order is booked only where it enters
+  the language.
+- *Syllabus retries.* A refusal standing is not re-asked: a deferred word
+  whose draw the reserve still cannot cover is passed over, and the fetch
+  door asks `Reserve::covers` before drawing. One standing refusal had been
+  counted 40 829 times in five minutes.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

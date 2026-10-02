@@ -16,6 +16,7 @@
 pub mod coboundary;
 pub mod complex;
 pub mod coxeter;
+pub mod flux;
 pub mod nerve;
 pub mod orbit_algebra;
 pub mod simplex;

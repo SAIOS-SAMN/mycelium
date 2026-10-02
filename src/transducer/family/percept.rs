@@ -663,6 +663,8 @@ pub(super) fn family_percept(
     // THE FRAME-AXIS STEPS OF EACH MEMBER (MT1), kept until the vertices
     // stand, then filed as overlaps between the member's charts (AT1 Q3).
     let mut frame_steps: Vec<FrameSteps> = Vec::new();
+    // 78.71 — every body's in→out transport with the compartments it carried.
+    let mut word_transports: Vec<super::pairing::FieldLine> = Vec::new();
     // AT1 A2 — the class's steps across two charts, and their count by kind.
     let mut cross_steps: Vec<CrossStep> = Vec::new();
     let mut across_charts = AcrossCharts::default();
@@ -804,6 +806,12 @@ pub(super) fn family_percept(
                 let mut bk = member_key(&at, ck.as_bytes());
                 bk.extend_from_slice(&frame_key(*k));
                 bodies_at.insert(bk, (a0.clone(), b0.clone(), v.clone()));
+            }
+            // 78.71 — EACH BODY'S TRANSPORT THROUGH THE RULE, input to output
+            // at its frame, with the compartments it carried: the field line
+            // the word itself is, read for its null flux beside the circuits'.
+            for (_, a0, _, v) in &m.at {
+                word_transports.push((v.clone(), m.acting.gauge.clone(), a0.compartments.len() as u64));
             }
             if !m.steps.is_empty() {
                 // Each step with what it carried: the member's body at the
@@ -1233,6 +1241,9 @@ pub(super) fn family_percept(
     // member's two charts, carrying the motor it measured, producer `motor`.
     // Its edge is the motor read as a transport where it spells one; a motor
     // that does not is an overlap with no edge, counted as any edge is.
+    // 78.71 — what each measured face carried, by its overlap: a circuit's
+    // mass is the mass its faces carry, the unit every lane counts.
+    let mut carried_on: Vec<(Overlap, u64)> = Vec::new();
     for (at, chart, steps) in frame_steps {
         for (k, k2, motor, carried) in steps {
             let o = Overlap { from: ChartAt::at(at.clone(), chart.clone(), k), to: ChartAt::at(at.clone(), chart.clone(), k2) };
@@ -1243,6 +1254,7 @@ pub(super) fn family_percept(
             // compartments it carried.
             super::pairing::mark_face_carriage(&motor, &place.gauge, carried, budget);
             place.carriage = motor;
+            carried_on.push((o.clone(), carried));
             form.put_face(o, FormFace::placed(place, Producer::Motor));
         }
     }
@@ -1261,6 +1273,7 @@ pub(super) fn family_percept(
                 };
                 super::pairing::mark_face_carriage(&motor, &place.gauge, carried, budget);
                 place.carriage = motor;
+                carried_on.push((o.clone(), carried));
                 form.put_face(o, FormFace::placed(place, Producer::Motor));
                 across_charts.motor += 1;
             }
@@ -1283,6 +1296,11 @@ pub(super) fn family_percept(
     // 78.46(4′) — the certified cells read by their circuits' pair
     // composites, the vacuum circuits among them (79.3).
     let _ = form.read_agreements(&cycles, true);
+    // 78.71 — THE 𝒯 FLUX OF THIS PERCEPT: every closed circuit's null
+    // curvature (Stokes), grouped into tubes by the ray it fixes and counted
+    // in each tube's own quantum, weighed by the mass its faces carried —
+    // order built on 𝒯 as the field closes, never a length.
+    super::pairing::mark_flux(&form, &carried_on, &word_transports, budget);
     // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.
     // Each was classified inside the cover; its chord there indexed the
     // pieces' own form. Here it takes the face between the two CLASS

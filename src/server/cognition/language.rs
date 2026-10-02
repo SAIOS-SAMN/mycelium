@@ -59,6 +59,10 @@ pub enum Glue {
     Attached,
     Dialect,
     Slashed(&'static str),
+    /// 78.71 — HELD ALREADY, FROM THIS PEER: the word is on the ruled cover
+    /// and this court's complex already holds this peer's section of it.
+    /// Hearing it again adds no vantage and no depth, so it writes nothing.
+    Held,
 }
 
 /// The result of the redundancy probe over the language: the held words a

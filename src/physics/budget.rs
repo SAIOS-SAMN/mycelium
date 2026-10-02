@@ -120,6 +120,13 @@ impl Reserve {
         self.lanes
     }
 
+    /// WHETHER A DRAW WOULD LAND, read and not attempted: every lane holds
+    /// what `cost` asks. A refusal already standing is not re-counted by
+    /// asking this (78.71).
+    pub fn covers(&self, cost: &[u64; 4]) -> bool {
+        cost.iter().zip(self.lanes.iter()).all(|(want, held)| want <= held)
+    }
+
     /// THE LEDGER: drawn and restored per lane, and draws refused per lane.
     pub fn ledger(&self) -> ([u64; 4], [u64; 4], [u64; 4]) {
         (self.drawn, self.restored, self.refused)

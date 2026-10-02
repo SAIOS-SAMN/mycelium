@@ -237,7 +237,7 @@ pub(crate) fn witness_vantage(
     }
     match k.glue_fetched(word.clone(), home, me, cover, budget) {
         Glue::Slashed(why) => refused(why),
-        Glue::Admitted | Glue::Attached | Glue::Dialect => reached(&word),
+        Glue::Admitted | Glue::Attached | Glue::Dialect | Glue::Held => reached(&word),
     }
 }
 
