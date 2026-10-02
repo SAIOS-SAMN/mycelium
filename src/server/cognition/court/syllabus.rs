@@ -247,7 +247,8 @@ impl Kernel {
                 page.consumed += 1;
                 continue;
             }
-            if let Err(depleted) = self.physics.reserve.draw(mag) {
+            // 78.73 (1): the flow a refused draw blocked presses the lane.
+            if let Err(depleted) = self.physics.draw(mag) {
                 self.note_deferred(addr, kind, mag, &depleted, None);
                 page.deferred.push((addr.clone(), depleted));
                 page.consumed += 1;

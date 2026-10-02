@@ -97,6 +97,7 @@ pub mod axioms;
 pub mod budget;
 pub mod fascicle;
 pub mod laws;
+pub mod malleability;
 pub mod metabolism;
 pub mod tensegrity;
 pub use budget::{Budget, Depleted, Reserve};
@@ -314,6 +315,9 @@ pub struct Physics {
     /// What the voice's tubes had relieved, then transported, when this
     /// physics last booked its field (`book_flux`, 78.71).
     pub flux_mark: [[u64; 4]; 2],
+    /// 78.73 — PLASTIC events per lane: generators that entered the language
+    /// on it, the medium taking stress by changing shape (`malleability`).
+    pub plastic: [u64; 4],
     /// The METABOLIC RESERVE per lane — the two-stroke engine's fuel. ENTROPIC
     /// expansion (germination) SPENDS it (the reserve shrinks as the alphabet
     /// grows); SYNTROPIC optimization (consolidation) REGENERATES it (the reserve
@@ -338,6 +342,7 @@ impl Default for Physics {
             relax_mark: [0; 4],
             contacts_mark: [[0; 4]; 2],
             flux_mark: [[0; 4]; 2],
+            plastic: [0; 4],
             reserve: Reserve::of([reserve_max(); 4]),
         }
     }
@@ -465,7 +470,7 @@ impl Physics {
         let transported = since(&flux.1, &self.flux_mark[1]);
         self.flux_mark = [flux.0, flux.1];
         self.relieve(&relieved);
-        let refused = match self.reserve.draw(transported) {
+        let refused = match self.draw(transported) {
             Ok(()) => None,
             Err(refused) => {
                 let _ = self.reserve.drain(transported);
@@ -529,7 +534,8 @@ impl Physics {
     pub fn spend(&mut self, lanes: [bool; 4]) -> Option<Depleted> {
         let unit = spend_unit();
         let cost: [u64; 4] = std::array::from_fn(|l| if lanes[l] { unit } else { 0 });
-        match self.reserve.draw(cost) {
+        // 78.73 (1): a lane that cannot cover it is pressed by what it blocked.
+        match self.draw(cost) {
             Ok(()) => None,
             Err(refused) => {
                 let _ = self.reserve.drain(cost);

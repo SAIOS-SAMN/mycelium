@@ -442,6 +442,13 @@ impl Entity {
         if heard.is_some() {
             crate::observe::count(&mut self.hearing, &crate::observe::HEARING, "words admitted");
             crate::physics::StrokeOutcome::add(&mut self.learned_mu, &mu);
+            // 78.73 — PLASTIC: each court-admitted word this mind took in
+            // reshaped its language on the lanes the word occupies.
+            if at.is_some() {
+                for e in &heard_words {
+                    self.physics.plastic(e.lanes());
+                }
+            }
         }
         heard
     }

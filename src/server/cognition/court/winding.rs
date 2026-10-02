@@ -341,8 +341,8 @@ impl Kernel {
         self.mark_persist();
     }
 
-    /// 78.71 (3), (4) — A WORD'S FIELD, READ AT ITS ADMISSION against this
-    /// court's tubes held over time. Its field lines are its word vertices'
+    /// 78.71 (3), (4), 78.73 — A WORD'S FIELD, READ AT ITS ADMISSION against
+    /// this court's tubes and orbits held over time. Its field lines are its word vertices'
     /// acting carriages and its faces' relative carriages (78.68: the relative
     /// displacement survives the quotient), each carrying the word's support
     /// (`sub`, compartments — the unit every lane counts). Through the
@@ -378,15 +378,18 @@ impl Kernel {
         }
         // A reconnection is the links moving, never the helicity alone: flux
         // injected into a linked tube moves helicity at every admission.
-        let before = self.tubes.links();
-        let r = crate::transducer::family::pairing::transport_order(&lines, &[], &mut self.tubes, budget);
+        let before = self.flux_field.tubes.links();
+        let r = crate::transducer::family::pairing::transport_order(&lines, &[], &mut self.flux_field, budget);
+        // 78.73 — EVERY LANE BY ITS ORBITS: order where an orbit or tube
+        // closed, pressure where one opened, relief where one returned. 𝒢's
+        // pressure is now the hue fibre's open strain, not only the cells a
+        // listed word's chain recoloured.
+        self.physics.syntropy(&r.order);
+        self.physics.bump(&r.opened);
+        self.physics.relieve(&r.relieved);
         let t = crate::transducer::rewrite::LANE_TEMPORAL;
-        let on_t = |x: u64| -> [u64; 4] { std::array::from_fn(|l| if l == t { x } else { 0 }) };
-        self.physics.syntropy(&on_t(r.order[t]));
-        self.physics.bump(&on_t(r.opened[t]));
-        self.physics.relieve(&on_t(r.relieved[t]));
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.flux_transport, r.transport[t]);
-        if self.tubes.links() != before {
+        if self.flux_field.tubes.links() != before {
             let me = self.identity;
             self.append_step(crate::chronometry::ActKind::Reconnect, addr, me);
             crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.reconnections, 1);
@@ -401,7 +404,18 @@ impl Kernel {
     /// 78.71 — this court's field as it stands: how many tubes, their net
     /// flux, transport and open flux in windings, and their helicity.
     pub fn tube_reading(&self) -> (usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational) {
-        let (net, transport, open) = self.tubes.totals();
-        (self.tubes.len(), net, transport, open, self.tubes.helicity())
+        let t = &self.flux_field.tubes;
+        let (net, transport, open) = t.totals();
+        (t.len(), net, transport, open, t.helicity())
+    }
+
+    /// 78.73 (4) — this court's malleability line: `μ`, `β`, `ε` per lane,
+    /// and how many orbits stand open.
+    pub fn malleability_line(&self) -> String {
+        format!(
+            "{} orbits {}",
+            self.physics.malleability_line(&self.flux_field.elastic()),
+            self.flux_field.orbits.len()
+        )
     }
 }

@@ -20458,6 +20458,108 @@ So sign cancellation hides nothing.
 - `every_lane_reads_its_transports_as_a_field`: (opened, closed, relieved,
   transport) on 𝒯 = (4, 8, 4, 12).
 
+### 78.73 Malleability: every lane's stress read as elastic, plastic or fracture, in exact rationals (ruled 2026-10-02, the operator's word: "proceed with 1-4")
+
+**The reading that asked for it.** Hypha b read pressure `[129, 0, 93, 216]`
+while its 𝒢 was the lane under the most stress: drawn hardest (4 359),
+reserve at 2–21, and 92 refusals, nearly all of the court's. Three defects
+combined:
+- a refused draw was counted on the ledger and pressed no lane;
+- the court's 𝒢 pressure was only a listed word's magnitude, raised and
+  relieved by exactly the same amount;
+- that magnitude's 𝒢 counts sensor cells recoloured in place, an area on
+  the lattice.
+
+The operator's question was whether this needed a vent or a lane. It
+needed neither: the lane lacked its constitutive law.
+
+**The three regimes.** A medium under stress does one of three things:
+- **elastic** — it deforms and returns. Its tube or orbit closes, which
+  relieves pressure. This is the vent.
+- **plastic** — it deforms and keeps the shape. A generator enters the
+  language.
+- **fracture** — it fails at yield. A draw is refused.
+
+Per lane ℓ:
+- `μ_ℓ = plastic / (plastic + fracture)`;
+- `β_ℓ = fracture / (plastic + fracture)`, so `μ + β = 1`;
+- `ε_ℓ = open / transport`.
+
+All three are exact. `0/0` is named, never written as a number:
+*unstressed* for μ and β, *unmoved* for ε.
+
+**(1) Stagnation** (`Physics::draw`, `physics/malleability.rs`). A refused
+draw presses each short lane by the flow it blocked: what it asked past
+what the lane held. The reserve stands as it was. This is used at every
+draw that acts:
+- the stroke's spend and the court's listing expansion;
+- the voice's draw by flux (`book_flux`);
+- the syllabus page draw;
+- the voice's thought draw (`draw_for`).
+
+The fetch door only asks `covers` and does not stagnate, so a standing
+refusal is never re-counted (78.71).
+
+**(2) Every lane's elastic vent is its own orbit's return**
+(`cech/orbit.rs::OrbitRegistry`, held beside the tubes in one `Field` per
+mind):
+- **𝒽 and 𝒮.** A turn (elliptic) or a boost (hyperbolic) is a mode (MR1).
+  It is keyed by its plane's canonical generator and its rational point
+  `c`, so turns by one point in one plane wind one integer `w`. The sign
+  of `w` is the orientation, read against the plane's reference. `w` is
+  reduced modulo the turn's order where it has one (Niven: 2, 3, 4, 6).
+  The orbit returns at `w ≡ 0`.
+- **𝒢.** A hue map is keyed by its support. Maps on one support compose,
+  and the orbit returns when the composite is the identity. A map sending
+  one hue two places is no map and is not admitted.
+- **Each admission does one of three things:**
+  - *opens* — it moves away from the return, or no nearer, and presses by
+    its mass;
+  - *closes* — it moves nearer, builds order, and relieves up to its mass;
+  - *returns* — it relieves everything that stood open, and the orbit is
+    let go, so the carrier keeps its bound.
+- `transport_order` reads every field line's modes once. Null modes go to
+  the tubes, turns and boosts to their orbits, and the hue map to 𝒢's
+  orbit. It no longer books a line's lanes by mass alone.
+- The court books all four lanes from its `flux_field`. On the voice, 𝒮,
+  𝒢 and 𝒽 keep the stroke's unit draw; 𝒯 is drawn by flux, and relief
+  reaches every lane.
+
+**(3) Strain on 𝒢 is read on the fibre.** It is the hues the orbit holds
+displaced, never the cells a recolour covers.
+
+A word's *magnitude* stays its re-derivable coordinate. Records carry it,
+and a ruling's replay slashes a word whose magnitude does not re-derive
+from its chain. So `measure_lanes`'s 𝒢 is unchanged: changing it would
+slash every stored recoloured word. Retiring it is a recut, and the recut
+is the operator's.
+
+**Exact strain of one mode.** The pressure is the orbits' open strain. One
+mode's elastic strain is also exact, with no root taken:
+- `(1 − c)/2 = sin²(θ/2)` on a turn;
+- `(c − 1)/(c + 1) = tanh²(λ/2)` on a boost.
+
+The registry weighs by mass, not by these. Weighing by them is the next
+refinement, and it is not built.
+
+**(4) The lines.** The voice's stroke metabolism and the court metabolism
+each print `μ […] β […] ε […] orbits n`.
+
+**Plastic is admission.** A generator entering the language is plastic: at
+the court in `ruled_admit`, on the voice when a court-stamped word is
+learned. A tube's quantum refining is not plastic. It rescales the measure
+and keeps every winding (F4), so no shape changed.
+
+**Tested** (`axioms/tests/malleability.rs`):
+- four 90° turns go open, open, close, return, and the orbit is let go;
+- a turn and its inverse return at once;
+- a dilation by 2 and one by ½ return on 𝒮;
+- on 𝒢: a swap twice returns, a 3-cycle returns on its third admission,
+  a non-map and the identity are not admitted;
+- a refused draw presses only the lanes it blocked;
+- the line reads `μ [1, 1/2, unstressed, unstressed] β [0, 1/2, …]
+  ε [unmoved, unmoved, 1/4, unmoved]`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -35,16 +35,20 @@ use num_traits::{Signed, Zero};
 /// where that generator is null as a whole multivector. `None` where the
 /// holonomy's modes did not read.
 pub fn null_fluxes(holonomy: &Mv, budget: &mut crate::physics::Budget) -> Option<Vec<Mv>> {
-    use crate::network::nerve::coord::BivectorKind;
     let Ok(modes) = cga::motion_modes(holonomy, budget)? else { return None };
-    Some(
-        modes
-            .iter()
-            .filter(|m| m.kind == BivectorKind::Parabolic)
-            .filter_map(|m| crate::transducer::cayley::bivector_of(&m.ray))
-            .filter(|b| !b.is_zero() && b.geo(b).is_zero())
-            .collect(),
-    )
+    Some(null_fluxes_of(&modes))
+}
+
+/// The null fluxes among modes already read — so a reader that wants every
+/// mode of a field line splits it once.
+pub fn null_fluxes_of(modes: &[cga::MotionMode]) -> Vec<Mv> {
+    use crate::network::nerve::coord::BivectorKind;
+    modes
+        .iter()
+        .filter(|m| m.kind == BivectorKind::Parabolic)
+        .filter_map(|m| crate::transducer::cayley::bivector_of(&m.ray))
+        .filter(|b| !b.is_zero() && b.geo(b).is_zero())
+        .collect()
 }
 
 /// A TUBE'S KEY: its null ray's canonical coordinates — two fluxes on one

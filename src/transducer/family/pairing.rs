@@ -176,10 +176,11 @@ static RELIEVED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atom
 /// in quanta weighed by mass — what a stroke draws on 𝒯.
 static TRANSPORTED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 
-/// 78.71 (1) — THIS PROCESS'S TUBES, held over time: a voice is one mind per
-/// process, so its field's tubes keep their identity across strokes here.
-static VOICE_TUBES: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech::flux::TubeRegistry>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(crate::transducer::cech::flux::TubeRegistry::new()));
+/// 78.71 (1), 78.73 — THIS PROCESS'S FIELD, held over time: a voice is one
+/// mind per process, so its tubes and orbits keep their identity across
+/// strokes here.
+static VOICE_FIELD: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech::orbit::Field>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(crate::transducer::cech::orbit::Field::new()));
 
 /// 78.71 — the open flux closures relieved and the transport moved, per lane,
 /// since the process began.
@@ -191,9 +192,16 @@ pub fn flux_lanes() -> ([u64; 4], [u64; 4]) {
 /// 78.71 — the voice's tubes as they stand: how many, net flux, transport,
 /// open, and helicity, for the stroke's line.
 pub fn tube_reading() -> Option<(usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational)> {
-    let t = VOICE_TUBES.lock().ok()?;
-    let (n, tr, o) = t.totals();
-    Some((t.len(), n, tr, o, t.helicity()))
+    let f = VOICE_FIELD.lock().ok()?;
+    let (n, tr, o) = f.tubes.totals();
+    Some((f.tubes.len(), n, tr, o, f.tubes.helicity()))
+}
+
+/// 78.73 (4) — the voice's elastic strain terms per lane (open, transport),
+/// and how many orbits stand open.
+pub fn elastic_reading() -> Option<([(num_bigint::BigInt, num_bigint::BigInt); 4], usize)> {
+    let f = VOICE_FIELD.lock().ok()?;
+    Some((f.elastic(), f.orbits.len()))
 }
 
 /// A REFUSAL ON ITS LANES, one per lane it names: a refused contact
@@ -305,9 +313,9 @@ pub(crate) fn mark_flux(
     // The voice's own tubes, held across its strokes (78.71 (1)). A lock
     // poisoned by a panic elsewhere reads this percept's field into fresh
     // tubes rather than none.
-    let reading = match VOICE_TUBES.lock() {
-        Ok(mut tubes) => transport_order(word_transports, &circuits, &mut tubes, budget),
-        Err(_) => transport_order(word_transports, &circuits, &mut crate::transducer::cech::flux::TubeRegistry::new(), budget),
+    let reading = match VOICE_FIELD.lock() {
+        Ok(mut field) => transport_order(word_transports, &circuits, &mut field, budget),
+        Err(_) => transport_order(word_transports, &circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
     };
     let book = |on: &[std::sync::atomic::AtomicU64; 4], v: &[u64; 4]| {
         for (lane, amount) in v.iter().enumerate() {
@@ -339,51 +347,66 @@ pub struct FluxReading {
 ///   output, with the mass it carried. On a scene of one frame per grid
 ///   these are the only transports there are (no circuit, no measured face),
 ///   so without them a scene whose bodies all moved reads no flux at all.
-///   Its turns are 𝒽, its boosts and dilations 𝒮, its hue map 𝒢, each by the
-///   mass carried — read by its modes, never by a chord.
+///   Its modes and its hue map are each held on their own orbit (78.73).
 /// - THE FLUX — every null mode, of the field lines and of the closed
 ///   circuits' curvature (Stokes), admitted to the tubes held over time
 ///   (78.71 (1)): a flux on a new ray OPENS a tube and presses 𝒯; one on a
 ///   held tube CLOSES on it — order on 𝒯 — and relieves exactly the open
 ///   flux that tube held. The transport is both, in quanta weighed by mass.
+/// - THE OTHER LANES ALIKE (78.73) — each turn (𝒽), boost (𝒮) and hue map
+///   (𝒢) onto its orbit ([`crate::transducer::cech::orbit`]): moving away
+///   from the orbit's return OPENS (pressure), nearer CLOSES (order, relieving
+///   up to its mass), and the return relieves all that stood open — the
+///   lane's elastic vent. Never a booking per line by its lanes alone.
 pub(crate) fn transport_order(
     word_transports: &[FieldLine],
     circuits: &[(crate::transducer::element::Versor, u64)],
-    tubes: &mut crate::transducer::cech::flux::TubeRegistry,
+    field: &mut crate::transducer::cech::orbit::Field,
     budget: &mut crate::physics::Budget,
 ) -> FluxReading {
-    use crate::transducer::rewrite::LANE_TEMPORAL;
+    use crate::transducer::rewrite::{LANE_GAUGE, LANE_TEMPORAL};
     let mut r = FluxReading::default();
-    let mut admit = |r: &mut FluxReading, line: &crate::transducer::element::Versor, mass: u64, budget: &mut crate::physics::Budget| {
+    let book = |r: &mut FluxReading, lane: usize, a: crate::transducer::cech::flux::Admitted| {
+        crate::physics::metabolism::step_or_refuse(&mut r.order[lane], a.closed);
+        crate::physics::metabolism::step_or_refuse(&mut r.opened[lane], a.opened);
+        crate::physics::metabolism::step_or_refuse(&mut r.relieved[lane], a.relieved);
+        crate::physics::metabolism::step_or_refuse(&mut r.transport[lane], a.transport);
+    };
+    let mut admit = |r: &mut FluxReading,
+                     line: &crate::transducer::element::Versor,
+                     gauge: &[(u8, u8)],
+                     mass: u64,
+                     budget: &mut crate::physics::Budget| {
+        // The hue map onto 𝒢's orbit of its support.
+        if let Some(a) = field.orbits.admit_hues(gauge, mass) {
+            book(r, LANE_GAUGE, a);
+        }
+        // The line split into its modes once: its null modes to the tubes,
+        // its turns and boosts to their orbits.
+        let Some(Ok(modes)) = crate::transducer::cga::motion_modes(line, budget) else { return };
         // The generator of the field line, on §52's chart; a line off the
         // chart (a 180° turn) is paired by its flux alone.
         let generator = crate::transducer::cayley::bivector_of(line);
-        for flux in crate::transducer::cech::flux::null_fluxes(line, budget).into_iter().flatten() {
+        for flux in crate::transducer::cech::flux::null_fluxes_of(&modes) {
             let g = match &generator {
                 Some(g) => g.clone(),
                 None => flux.clone(),
             };
-            if let Some(a) = tubes.admit(&flux, &g, mass) {
-                crate::physics::metabolism::step_or_refuse(&mut r.order[LANE_TEMPORAL], a.closed);
-                crate::physics::metabolism::step_or_refuse(&mut r.opened[LANE_TEMPORAL], a.opened);
-                crate::physics::metabolism::step_or_refuse(&mut r.relieved[LANE_TEMPORAL], a.relieved);
-                crate::physics::metabolism::step_or_refuse(&mut r.transport[LANE_TEMPORAL], a.transport);
+            if let Some(a) = field.tubes.admit(&flux, &g, mass) {
+                book(r, LANE_TEMPORAL, a);
+            }
+        }
+        for m in &modes {
+            if let Some((lane, a)) = field.orbits.admit_mode(m, mass) {
+                book(r, lane, a);
             }
         }
     };
     for (v, gauge, mass) in word_transports {
-        let mut lanes = carriage_lanes(v, budget);
-        lanes[LANE_TEMPORAL] = false;
-        lanes[crate::transducer::rewrite::LANE_GAUGE] |= gauge.iter().any(|(a, b)| a != b);
-        for (o, on) in r.order.iter_mut().zip(lanes) {
-            if on {
-                crate::physics::metabolism::step_or_refuse(o, *mass);
-            }
-        }
-        admit(&mut r, v, *mass, budget);
+        admit(&mut r, v, gauge, *mass, budget);
     }
     for (h, mass) in circuits {
-        admit(&mut r, h, *mass, budget);
+        admit(&mut r, h, &[], *mass, budget);
     }
     r
 }

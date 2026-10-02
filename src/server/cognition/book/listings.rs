@@ -724,7 +724,13 @@ impl Kernel {
             // 78.68 — the word's circuits join its chart's holonomy algebra;
             // a new dimension is one RankStep act.
             self.step_rank(addr, budget);
-            // 78.71 — and its field against this court's tubes.
+            // 78.73 — PLASTIC: the language took a generator on the lanes
+            // the word occupies.
+            if let Some(lanes) = self.word_at(addr).map(|w| w.lanes()) {
+                self.physics.plastic(lanes);
+            }
+            // 78.71, 78.73 — and its field against this court's tubes and
+            // orbits.
             self.step_flux(addr, budget);
             self.rehear_awaiting(addr, budget);
         }

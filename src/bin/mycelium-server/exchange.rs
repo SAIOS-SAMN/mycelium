@@ -346,11 +346,12 @@ impl Exchange {
                     // apart, the flux left open, helicity, reconnections.
                     let (tubes, net, transport, open, helicity) = k.tube_reading();
                     eprintln!(
-                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.physics().syntropic,
                         k.physics().pressure,
+                        k.malleability_line(),
                         k.archive().len(),
                         k.chain().len(),
                         w.first,

@@ -365,7 +365,11 @@ fn main() {
             (2, Some(d)) => d,
             _ => 0,
         });
-        let _ = entity.physics_mut().book_flux(mycelium::transducer::family::pairing::flux_lanes(), closed);
+        // Relief on every lane its orbits returned (78.73); the transport
+        // drawn on 𝒯 alone, the lanes the unit draw above does not cover.
+        let (relieved, transported) = mycelium::transducer::family::pairing::flux_lanes();
+        let on_t: [u64; 4] = std::array::from_fn(|l| if l == 2 { transported[l] } else { 0 });
+        let _ = entity.physics_mut().book_flux((relieved, on_t), closed);
         entity.physics_mut().book_contacts(seen);
         let Counts {
             fed,
@@ -447,6 +451,12 @@ fn main() {
                 }
                 None => "tubes unread".to_string(),
             };
+            // 78.73 (4): what each lane does under stress, exact.
+            let malleable = match mycelium::transducer::family::pairing::elastic_reading() {
+                Some((elastic, orbits)) => format!("{} orbits {orbits}", entity.physics().malleability_line(&elastic)),
+                None => "malleability unread".to_string(),
+            };
+            let field = format!("{field} | {malleable}");
             eprintln!(
                 "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),

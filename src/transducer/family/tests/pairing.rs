@@ -240,6 +240,7 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
 /// never a chord's length and never twice. Two bodies translated along one
 /// ray, one and two units: the first opens the tube by its four, the second
 /// closes two quanta of four on it, relieving the four — twelve transported.
+/// The turn, the dilation and the hue map each open their own orbit (78.73).
 #[test]
 fn every_lane_reads_its_transports_as_a_field() {
     use crate::transducer::cga::{self, Mv, E1, E2};
@@ -258,17 +259,18 @@ fn every_lane_reads_its_transports_as_a_field() {
         (slide(1), Vec::new(), 4),
         (slide(2), Vec::new(), 4),
     ];
-    let mut tubes = crate::transducer::cech::flux::TubeRegistry::new();
-    let r = transport_order(&transports, &[], &mut tubes, &mut b);
-    assert_eq!(r.order[3], 3, "the turn: 𝒽 by the mass it carried");
-    assert_eq!(r.order[0], 5, "the dilation: 𝒮");
-    assert_eq!(r.order[1], 7, "the hue map: 𝒢");
+    let mut field = crate::transducer::cech::orbit::Field::new();
+    let r = transport_order(&transports, &[], &mut field, &mut b);
+    // 78.73: a first deformation on each orbit stands open — pressure by the
+    // mass it carried — and builds no order until the orbit comes back.
+    assert_eq!(r.opened, [5, 7, 4, 3], "the dilation on 𝒮, the hue map on 𝒢, the first slide on 𝒯, the turn on 𝒽");
+    assert_eq!(r.order, [0, 0, 8, 0], "only the second slide closed: on its tube");
     assert_eq!(
         (r.opened[2], r.order[2], r.relieved[2], r.transport[2]),
         (4, 8, 4, 12),
         "two slides on one ray: opened by four, closed by two quanta of four, 𝒯 in quanta, never a length"
     );
-    assert_eq!(tubes.len(), 1, "one ray, one tube");
+    assert_eq!((field.tubes.len(), field.orbits.len()), (1, 3), "one ray, one tube; three orbits open");
 }
 
 /// 78.68 — A CONFORMAL CARRIAGE'S LANES: a translator carries a

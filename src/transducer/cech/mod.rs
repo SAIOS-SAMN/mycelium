@@ -18,6 +18,7 @@ pub mod complex;
 pub mod coxeter;
 pub mod flux;
 pub mod nerve;
+pub mod orbit;
 pub mod orbit_algebra;
 pub mod simplex;
 pub mod persist;

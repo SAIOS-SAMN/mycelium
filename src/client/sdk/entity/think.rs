@@ -130,8 +130,9 @@ impl Entity {
     fn draw_for(&mut self, f: &crate::transducer::sentence::Form) -> Option<[u64; 4]> {
         let draw = crate::transducer::element::measure_lanes(&f.remainder.placed());
         // All or nothing, through the metabolic ledger (65.5): a lane that
-        // cannot fund it refuses the whole draw by name.
-        self.physics.reserve.draw(draw).ok()?;
+        // cannot fund it refuses the whole draw by name, and the attention it
+        // blocked presses that lane (78.73 (1)).
+        self.physics.draw(draw).ok()?;
         Some(draw)
     }
 

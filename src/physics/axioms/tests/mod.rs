@@ -6,6 +6,7 @@ mod fluid;
 mod frame;
 mod harmonic;
 mod hue;
+mod malleability;
 mod metabolism;
 mod mint;
 mod fascicle;
