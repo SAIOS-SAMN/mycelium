@@ -20416,7 +20416,10 @@ tube on its next flux).
 the court's tubes, every field line its form carries:
 - its word vertices' acting carriages;
 - its faces' placed carriages;
-- each weighed by the word's mass.
+- each weighing one. The court holds no body's compartments for an
+  algebra word, so it reads its flux in windings alone. The first deploy
+  weighed by the coboundary chain, which is empty for these words: five
+  tubes, every amount zero.
 
 The court then books order, open pressure and relief on its 𝒯, and
 transport on its winding tally. This replaces 78.71's `admitted_flux`,

@@ -356,7 +356,12 @@ impl Kernel {
     pub(crate) fn step_flux(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
         let Some(w) = self.word_at(addr) else { return };
         let Some(form) = crate::transducer::sentence::from_element_form(w) else { return };
-        let mass = w.sub().len() as u64;
+        // The court holds no body's compartments for a word: `sub` is the
+        // coboundary chain, empty for an algebra word, and weighed the
+        // court's tubes by nothing (2bd4773f's fleet: five tubes, every
+        // amount zero). Each field line weighs one, so the court reads its
+        // flux in windings alone.
+        let mass = 1;
         let mut lines: Vec<crate::transducer::family::pairing::FieldLine> = Vec::new();
         for (_, v) in form.vertices.scoped() {
             if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
