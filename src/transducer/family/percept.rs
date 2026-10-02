@@ -21,7 +21,10 @@ pub(super) type Ratio = ((usize, usize), (usize, usize));
 
 /// One member's frame-axis steps (MT1): its vertex, its chart, and each pair
 /// of consecutive occupied frames with the motor its input body took.
-type FrameSteps = (coord::VertexAt, Invariant, Vec<(u64, u64, Versor)>);
+/// A member's frame steps, each `(k, k2, motor, compartments)`: the motor it
+/// measured between two consecutive frames and the compartments of the body
+/// it carried from `k` — what the step transports, in the measure's unit.
+type FrameSteps = (coord::VertexAt, Invariant, Vec<(u64, u64, Versor, u64)>);
 
 /// THE PERCEPT OF A FAMILY (52.5): the peeled form, what move 6 reads, and
 /// the frames the budget did not reach. The sections along `e₃` are the
@@ -76,7 +79,8 @@ struct Member {
 /// the chart and frame it leaves, the chart and frame it arrives at, and the
 /// motor its input body took where `versor_between` solved — `None` where it
 /// refused, the step then carrying the sections' relative `τ = C_B·C_A⁻¹`.
-type CrossStep = (coord::VertexAt, Invariant, u64, Invariant, u64, Option<Versor>);
+/// A step across two charts, with the compartments of the body it carried.
+type CrossStep = (coord::VertexAt, Invariant, u64, Invariant, u64, Option<Versor>, u64);
 
 use super::percept_reading::{AcrossCharts, FormReading, PerceptReading};
 
@@ -802,7 +806,18 @@ pub(super) fn family_percept(
                 bodies_at.insert(bk, (a0.clone(), b0.clone(), v.clone()));
             }
             if !m.steps.is_empty() {
-                frame_steps.push((at.clone(), m.chart.clone(), m.steps.clone()));
+                // Each step with what it carried: the member's body at the
+                // step's first frame, by its compartments; a frame the
+                // member holds no body at carried none.
+                let sized = m
+                    .steps
+                    .iter()
+                    .map(|(k, k2, v)| {
+                        let carried = m.at.iter().find(|(f, ..)| f == k).map_or(0, |(_, a0, ..)| a0.compartments.len() as u64);
+                        (*k, *k2, v.clone(), carried)
+                    })
+                    .collect();
+                frame_steps.push((at.clone(), m.chart.clone(), sized));
             }
         }
         // AT1 A2 — THE CLASS'S FRAME AXIS ACROSS ITS CHARTS. The steps above
@@ -857,7 +872,7 @@ pub(super) fn family_percept(
                             continue;
                         }
                     };
-                    cross_steps.push((at.clone(), a.clone(), *k, b.clone(), *k2, motor));
+                    cross_steps.push((at.clone(), a.clone(), *k, b.clone(), *k2, motor, body_a.compartments.len() as u64));
                 }
                 ([_], [_]) => {}
                 _ => across_charts.several += 1,
@@ -1219,13 +1234,14 @@ pub(super) fn family_percept(
     // Its edge is the motor read as a transport where it spells one; a motor
     // that does not is an overlap with no edge, counted as any edge is.
     for (at, chart, steps) in frame_steps {
-        for (k, k2, motor) in steps {
+        for (k, k2, motor, carried) in steps {
             let o = Overlap { from: ChartAt::at(at.clone(), chart.clone(), k), to: ChartAt::at(at.clone(), chart.clone(), k2) };
             let edge = edges.take(Some(super::perceive::edge_of(&motor).map_err(|e| vec![e])));
             let Some(mut place) = form.face_place(&o.from, &o.to, edge) else { continue };
             // 78.68: the motor is the relative carriage across this face —
-            // the transport, booked on the lanes it moves.
-            super::pairing::mark_face_carriage(&motor, budget);
+            // the transport, booked on the lanes it moves by the
+            // compartments it carried.
+            super::pairing::mark_face_carriage(&motor, carried, budget);
             place.carriage = motor;
             form.put_face(o, FormFace::placed(place, Producer::Motor));
         }
@@ -1234,7 +1250,7 @@ pub(super) fn family_percept(
     // solved (producer Motor, its edge the motor read as a transport), the
     // sections' relative `τ = C_B·C_A⁻¹` where it refused — `face_place`
     // at each end's own frame, producer Place. Each counted by kind.
-    for (at, a, k, b, k2, motor) in cross_steps {
+    for (at, a, k, b, k2, motor, carried) in cross_steps {
         let o = Overlap { from: ChartAt::at(at.clone(), a, k), to: ChartAt::at(at, b, k2) };
         match motor {
             Some(motor) => {
@@ -1243,7 +1259,7 @@ pub(super) fn family_percept(
                     across_charts.unplaced += 1;
                     continue;
                 };
-                super::pairing::mark_face_carriage(&motor, budget);
+                super::pairing::mark_face_carriage(&motor, carried, budget);
                 place.carriage = motor;
                 form.put_face(o, FormFace::placed(place, Producer::Motor));
                 across_charts.motor += 1;

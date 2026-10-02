@@ -18,6 +18,8 @@ pub mod inverse;
 mod obstruction;
 mod reading;
 pub mod demand;
+pub mod compose;
+pub mod theorem;
 
 pub use chain::*;
 pub use demand::*;

@@ -299,7 +299,14 @@ fn speak_with_demands(
                         eprintln!("[{tag}] edge remainder {at} on {}", hx(addr.as_bytes()));
                     }
                 }
-                Some(word.magnitude())
+                // 78.69 fix 3: the sentence closed on its family and the court
+                // took it — the relation this voice composed, booked as the
+                // order it built by its own magnitude, read off the word. No
+                // sentence record is kept for it (78.69: sentences are the
+                // client's, re-derived; the court keeps the generators).
+                let mag = word.magnitude();
+                entity.physics_mut().syntropy(&mag);
+                Some(mag)
             }
         },
         Err(e) => {

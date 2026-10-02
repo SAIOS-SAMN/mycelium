@@ -20058,6 +20058,184 @@ The pieces:
 It is a layout change (new act kinds, two new snapshot tries), so the
 recut is the road.
 
+### 78.69 The ledger holds the algorithm; sentences are the client's composition (ruled 2026-10-02, the operator's word: "the point of the servers and the ledgers is to maintain the algorithm")
+
+**The ruling.**
+- *Sentences are client-side.* A sentence is a voice composing words
+  through spatial transports until the ring closes. It is evidence,
+  re-derivable from its words, its family and its address, and volatile
+  (78.49).
+- *The court and its ledger hold the algorithm:* the generators and the
+  composition rules the language runs on (78.59, 78.62).
+- *A generator is adjudicated by efficiency against the totality of the
+  language.* It is admitted where a sentence composed through it closes on
+  its family (37.7's adjunction by closure, re-derived), and where it
+  shortens the language: closures enabled per dimension added,
+  `dim_ℚ Lie(𝔊 ∪ {Γ}) / Lie(𝔊)` (78.60's cost). When a generator that
+  unlocks better cognition is admitted, the sentence structure of the
+  language updates on every client at runtime, with no new binary: the
+  clients compose from 𝔊. A new KIND of operation — a new act kind, the
+  field tower — still needs code.
+
+**The master sentence equation** (`transducer/sentence/compose.rs`). Rung
+0 is the word, `C(w) = [W]` (78.68). A sentence of words `Wᵢ` and spatial
+transports `g_{i→i+1}` — the relative carriage across the face, the last
+returning to the first — is:
+
+```
+Ω(s) = g_{k→1} · W_k · g_{k−1→k} · W_{k−1} ⋯ g_{1→2} · W₁
+closure: Ω(s)^ℓ ~ 1   (ℓ = 1 filled; finite ℓ congruent; none open — its demand)
+W̄ᵢ = Γᵢ⁻¹ Wᵢ Γᵢ,  Γᵢ = g_{i−1→i} ⋯ g_{1→2}   (each word carried into the first chart)
+rank: dim_ℚ Lie⟨B(W̄ᵢ)⟩, B = ⟨·⟩₂/⟨·⟩₀ on §52's chart   (the sentence's curvature)
+𝔊⁽ⁿ⁺¹⁾ = ⟨ C(w⁽ⁿ⁾), g | Ω(s)^{ℓ_s} ~ 1 for each closed s ⟩
+```
+
+- *Direction is the path order;* reversing the order inverts the sentence.
+- *Every lane composes in the one product:* turns by tangent addition,
+  translations by sum, dilations by tanh addition, hue maps by permutation
+  (§52.2). No lane is summed against another.
+- *A closed sentence is a relation.* Its open path
+  `P = W_k · g_{k−1→k} ⋯ g_{1→2} · W₁` is the closing transport's inverse,
+  up to its period: the sentence teaches a shortcut, one word for the whole
+  path. `next_rung` reads the closed sentences' shortcuts as the words of
+  the next rung, and those compose into sentences exactly as this rung's
+  do. The grammar is this equation applied to its own closures.
+
+`compose` reads:
+- `Ω`, path-ordered from the first word;
+- each word carried into the first chart;
+- the open path;
+- the closure, off `Ω`'s own modes (MR1, `period_of`); identity is ℓ = 1;
+- the carried words' Lie rank.
+
+**The Lie generators read on §52's chart.** `cech::cayley_generators` now
+takes `B = ⟨H⟩₂/⟨H⟩₀` (`cayley::bivector_of`): projective, exact, and no
+root taken. The span reads only a bivector's direction, so a holonomy whose
+weight has an irrational root — a 90° turn, weight 2 — is read, not refused
+as `cayley_inverse` refused it. This applies to the court's `step_rank`
+too.
+
+**The fold trigger reads the algorithm's changes.** The ledger holds no
+sentences, so a fold is proposed where the prefix carries work (78.67 (A))
+and the algorithm changed in it:
+- `Return`;
+- `RankStep`;
+- a generator entering the presentation: `Install`, `Ruling(Upheld)`,
+  `Adopted`.
+
+Otherwise `REFUSE_FOLD_NO_TRANSITION`. This gives 78.68's two events a
+third that fires on today's fleet: generators are admitted while no ring
+has yet reached a court.
+
+**The metabolism's three fixes (the order a voice builds, commensurate with
+its pressure).**
+1. *A condensed transport books what it carried.*
+   - A condensed contact books its two bodies' compartments
+     (`support.len()`), and a face's carriage the compartments of the body
+     it carried, on each lane the transport occupies (`mark_measured`).
+   - That is the unit `measure_lanes` counts and the unit pressure is raised
+     in. It replaces one tick per contact, which `relax` and `regenerate`
+     then spent as though it were a magnitude.
+   - A refused contact transported nothing and still presses one event on
+     the lane that refused it.
+2. *A demand closed on probe releases its pressure and books its order*
+   (`relieve` and `syntropy` by its magnitude). It had called `bump`,
+   booking settled work as disorder.
+3. *A sentence the court takes books the voice's order* by its magnitude,
+   re-derived from the word. No sentence record is kept for it.
+
+**Not done here.**
+- The court still dockets and rules sentences as items: speech listings,
+  sentence forms in the basis. Under this ruling it should receive a
+  sentence only as the proof attached to a generator candidate. That move
+  is a row, not this change.
+- Fix 4: a voice's reserve denominated in μ, as a court's already is, so
+  a stroke draws what it moved. Yours to rule.
+- The 𝒯 source: translation (78.68) or receipts (16.16), with exact
+  magnitude and no per-height draw. Yours to rule.
+- `compose` is a capability of the library. Wiring a voice's own forms
+  through it, so that its closed sentences' shortcuts become its next-rung
+  words in cognition, is the next step.
+
+**Tested.**
+- `compose::a_sentence_closes_at_the_period_of_its_holonomy`;
+- `compose::a_translated_sentence_is_open`;
+- `compose::every_word_is_carried_into_the_first_chart`;
+- `compose::a_sentence_reads_the_rank_of_its_carried_words`;
+- `compose::a_closed_sentence_teaches_a_word_of_the_next_rung`;
+- `orbit::a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands`
+  (now over all five transitions).
+
+### 78.70 Proofs that extrapolate: a theorem is a proof with a certificate that closes its ellipsis (ruled 2026-10-02, the operator's word: "record 78.70 and build the Theorem type")
+
+**Three stages.**
+1. *Static theorems*: the claims of the axiom register (79.1–79.2),
+   proven once by tests. They never grow at runtime.
+2. *Proofs*: a runtime certificate that one sentence closes (78.69's
+   `compose`, a court's replay).
+3. *Extrapolated theorems*: from finitely many proofs, an exact statement
+   for every n — the "⋯" of `Ω = g W ⋯ W₁`, of `Wᵐ`, of nested brackets.
+
+**The ellipsis closes exactly where the algebra supplies a finite
+certificate, and nowhere else.** There are four:
+- **Periodic.** `Ω^ℓ ~ 1` proves `Ωᵐ ~ Ω^{m mod ℓ}` for every m. The
+  traversals are ℤ/ℓ, which is the winding carrier's law (78.68).
+- **Nilpotent.** `Ω ∝ 1 + B` with `B² = 0` as a whole multivector proves
+  `Ωᵐ ∝ 1 + m·B`. A null motion's whole history is one integer: the 𝒯
+  lane's.
+- **Saturated.** A Lie basis closed under the bracket (`lie_close`, rank
+  ≤ 10 at n = 3) proves that every nested bracket of any depth lies in its
+  span.
+- **Normal.** `Ω ~ 1` proves `g Ω g̃ ~ 1` in every chart g carries it to:
+  one theorem seen from every chart (§1).
+
+Finite Hankel rank, which closes the ellipsis over sentence length, is the
+fifth. It is not built.
+
+Where no certificate stands — a rosette, a boost, a screw — the family is
+held open and its demand named (exact or refuse), until the field tower
+(§37) or the Gödel step (37.7) adjoins what spells it. The general word
+problem is undecidable. The engine never claims the ellipsis closes where
+the algebra gives no finite certificate.
+
+**The type** (`transducer/sentence/theorem.rs`):
+- `Theorem { omega, certificate }`, with
+  `Certificate::{Periodic { ell }, Nilpotent { generator }, Saturated { basis }}`.
+- `Theorem::of(proof)` extrapolates a `compose` proof to its theorem, or
+  names why it is held open (`Open::{Rosette, Unbound, Unread}`).
+- `Theorem::saturated(holonomies)` closes a set of motions' algebra.
+- `check` re-checks the certificate finitely and exactly — ℓ products;
+  `B² = 0` in every grade; every bracket of two basis members in the span
+  — which is the court's whole work on a theorem (78.69).
+- `at(m)` reads the family's member by the certificate, never by m
+  products: at most ℓ − 1 products when periodic, none when nilpotent.
+- `holds(x)` answers any nested bracket against a saturated span.
+- `conjugated(g)` is the normal closure: the theorem carried, with its
+  certificate, to another chart.
+
+**What comes next (not built).**
+- *Extrapolation by completion.* Two closed sentences sharing a sub-path
+  imply a third relation. This is critical-pair completion over the
+  presentation, the plexus's rewrite and procedure levels. Where it is
+  confluent the language's ellipsis closes at that rung; where it is not,
+  the open pair is the demand.
+- *Adjudicating theorems.* A client proposes a `Theorem` with its
+  certificate. The court checks it and admits it as a generator where it
+  compresses the totality (78.69). Every client then composes with it at
+  runtime.
+- *Wiring.* A voice's own forms are composed and extrapolated as they close.
+
+**Tested.**
+- `theorem::a_periodic_theorem_reads_every_power_by_its_period`: three
+  whole periods against the long product.
+- `theorem::a_nilpotent_theorem_reads_every_power_as_a_line`: a
+  translation's powers as `1 + m·B`.
+- `theorem::a_saturated_theorem_holds_every_nested_bracket`: a bracket
+  four deep stays in so(3); a boost does not.
+- `theorem::a_theorem_carries_to_every_chart_and_a_false_one_fails`: the
+  normal closure checks; a forged period fails; a boost is held open,
+  `Unbound`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

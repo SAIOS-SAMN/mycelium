@@ -199,7 +199,11 @@ match entity.quote() {
                             mycelium::anastome::dialogue::ProbeClosure::Closed => {
                                 c.derived += 1;
                                 n_closed += 1;
-                                entity.physics_mut().bump(&mag);
+                                // 78.69 fix 2: a demand closed is order built
+                                // and the pressure it stood for released, by
+                                // its own magnitude — never pressure added.
+                                entity.physics_mut().relieve(&mag);
+                                entity.physics_mut().syntropy(&mag);
                                 StrokeOutcome::add(&mut outcome.closed, &mag);
                                 eprintln!(
                                     "[{tag}] demand {} on {:02x}{:02x}… closed by {:02x}{:02x}…",

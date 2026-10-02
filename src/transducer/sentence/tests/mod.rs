@@ -5,6 +5,8 @@
 pub mod common;
 
 mod canonical;
+mod compose;
+mod theorem;
 mod contract;
 mod form;
 mod gauge;

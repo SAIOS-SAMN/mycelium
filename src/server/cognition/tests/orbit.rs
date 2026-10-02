@@ -43,15 +43,18 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
     );
 }
 
-/// 78.68 — THE FOLD IS ASKED AT EVERY CLOSE AND ANSWERS BY TRANSITION. A
-/// court that never ran a docket circuit is asked at its closes all the
-/// same. However much work its prefix carries, it proposes nothing while no
-/// phase transition stands there (`REFUSE_FOLD_NO_TRANSITION`). At the
-/// first close whose prefix holds a `Return` or a `RankStep`, the fold is
-/// proposed, cut at that close. Neither bytes nor the reserve enter.
+/// 78.68, 78.69 — THE FOLD IS ASKED AT EVERY CLOSE AND ANSWERS BY WHETHER THE
+/// ALGORITHM CHANGED. A court that never ran a docket circuit is asked at
+/// its closes all the same. However much work its prefix carries, it
+/// proposes nothing while no transition stands there
+/// (`REFUSE_FOLD_NO_TRANSITION`). At the first close whose prefix holds a
+/// `Return`, a `RankStep`, or a generator admitted (`Install`,
+/// `Ruling(Upheld)`, `Adopted`), the fold is proposed, cut at that close.
+/// Neither bytes nor the reserve enter.
 #[test]
 fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
-    for transition in [ActKind::Return, ActKind::RankStep] {
+    use crate::chronometry::Ruled;
+    for transition in [ActKind::Return, ActKind::RankStep, ActKind::Install, ActKind::Ruling(Ruled::Upheld), ActKind::Adopted] {
         let mut k = Kernel::new();
         k.bind_identity([0x5c; 32]);
         for _ in 0..8 {

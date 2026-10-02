@@ -107,20 +107,32 @@ impl Kernel {
     /// nearly every close, 337 815 eras in two hours on hypha a, each one
     /// moving the fold before it (`REFUSE_FOLD_IDLE`).
     ///
-    /// (B) A topological phase transition must stand in it: a `Return` (a
-    /// ring completed an age, `m ≡ 0 mod ℓ`) or a `RankStep` (a chart's
-    /// holonomy algebra gained a dimension). Between them the history is
-    /// coefficient motion, held on the winding carrier, and folding it would
-    /// cut nothing the physics names (`REFUSE_FOLD_NO_TRANSITION`). This
-    /// replaces 78.67's byte break-even, which measured the container and
-    /// not the physics.
+    /// (B) The algorithm must have changed in it (78.68, 78.69): a
+    /// `Return` (a ring completed an age, `m ≡ 0 mod ℓ`), a `RankStep` (a
+    /// chart's holonomy algebra gained a dimension), or a generator entering
+    /// the presentation — `Install`, `Ruling(Upheld)`, `Adopted`. The ledger
+    /// holds the algorithm and never the sentences composed from it (78.69),
+    /// so these are the acts that change what it holds. Between them the
+    /// history is coefficient motion, and folding it would cut nothing the
+    /// physics names (`REFUSE_FOLD_NO_TRANSITION`). This replaces 78.67's
+    /// byte break-even, which measured the container and not the physics.
     fn fold_transitions(&self, head: Place) -> Result<(), &'static str> {
         let me = self.chain.vk();
         let prefix = self.chain.line_between(&me, self.chain.root().map(|r| r.at), head, usize::MAX);
         if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {
             return Err(REFUSE_FOLD_IDLE);
         }
-        if !prefix.iter().any(|r| matches!(r.kind, ActKind::Return | ActKind::RankStep)) {
+        let transition = |k: ActKind| {
+            matches!(
+                k,
+                ActKind::Return
+                    | ActKind::RankStep
+                    | ActKind::Install
+                    | ActKind::Ruling(crate::chronometry::Ruled::Upheld)
+                    | ActKind::Adopted
+            )
+        };
+        if !prefix.iter().any(|r| transition(r.kind)) {
             return Err(REFUSE_FOLD_NO_TRANSITION);
         }
         Ok(())

@@ -506,8 +506,8 @@ pub enum LieRankRefused {
 /// 78.68, 78.11 item 4 — THE LIE RANK OF 𝔥_cell: the dimension over ℚ of
 /// `𝔥 = ⟨B_c, [B_c, B_c′], [[B_c, B_c′], B_c″], …⟩_ℚ ⊂ so(n+1,1)`, the
 /// Ambrose–Singer holonomy algebra of the cell. Each read circuit's
-/// holonomy is taken to its Cayley bivector `B_c = (1 − H_c)(1 + H_c)⁻¹`
-/// (`cga::cayley_inverse`), and the span is closed under the commutator on a
+/// holonomy is taken to its Cayley bivector `B_c = ⟨H_c⟩₂ / ⟨H_c⟩₀` (§52,
+/// [`cayley_generators`]), and the span is closed under the commutator on a
 /// worklist — a bracket JOINS only where it lies outside the span, and only
 /// a bracket that joined is bracketed on — one read of the budget per
 /// bracket. At n = 3 the rank is at most 10, dim so(4,1).
@@ -524,14 +524,18 @@ pub fn lie_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -
     Ok(lie_close(&[], &gens, budget)?.len())
 }
 
-/// Each read holonomy's Cayley bivector `B = (1 − H)(1 + H)⁻¹`, in order;
-/// an unread holonomy (`None`) is passed over, and one with no chart point
-/// refuses by its index.
+/// Each read holonomy's Cayley bivector, in order, on §52's chart
+/// `B = ⟨H⟩₂ / ⟨H⟩₀` (`cayley::bivector_of`): projective in `H`, exact, and
+/// no root taken — the span reads only the bivector's direction, so a
+/// holonomy of irrational-rooted weight (a 90° turn, weight 2) is read, not
+/// refused. An unread holonomy (`None`) is passed over; one off the chart —
+/// no scalar part (a 180° turn), an odd or non-versor element — refuses by
+/// its index.
 pub fn cayley_generators(holonomies: &[Option<&Mv>]) -> Result<Vec<Mv>, LieRankRefused> {
     let mut gens = Vec::new();
     for (circuit, h) in holonomies.iter().enumerate() {
         let Some(h) = h else { continue };
-        gens.push(cga::cayley_inverse(h).ok_or(LieRankRefused::NoChart { circuit })?);
+        gens.push(crate::transducer::cayley::bivector_of(h).ok_or(LieRankRefused::NoChart { circuit })?);
     }
     Ok(gens)
 }

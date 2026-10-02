@@ -170,10 +170,25 @@ thread_local! {
 static CONDENSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 static REFUSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 
+/// A REFUSAL ON ITS LANES, one per lane it names: a refused contact
+/// transported nothing, so its pressure is the event on the lane that
+/// refused it.
 fn mark_lanes(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4]) {
+    mark_measured(on, lanes, 1);
+}
+
+/// 78.69 fix 1 — WHAT A CONDENSED TRANSPORT CARRIED, BOOKED BY ITS MEASURE:
+/// `carried` compartments on each lane the transport occupies — the unit
+/// `measure_lanes` counts, the one pressure is raised in — never a tick per
+/// contact. A sum past its carrier is refused and counted (rule 11).
+fn mark_measured(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4], carried: u64) {
+    use std::sync::atomic::Ordering::Relaxed;
     for (count, moved) in on.iter().zip(lanes) {
-        if moved {
-            count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        // One atomic step per lane; a step past the carrier leaves the count
+        // where it stood and is counted on this thread's ledger.
+        if moved && count.fetch_update(Relaxed, Relaxed, |held| held.checked_add(carried)).is_err() {
+            let mut past = u64::MAX;
+            let _ = crate::physics::metabolism::step_or_refuse(&mut past, carried);
         }
     }
 }
@@ -238,8 +253,8 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
 /// with the motor a member measured across it carries that relative
 /// carriage as the 1-cochain on the nerve, and its lanes are booked as a
 /// condensed contact's are.
-pub(crate) fn mark_face_carriage(carriage: &crate::transducer::element::Versor, budget: &mut crate::physics::Budget) {
-    mark_lanes(&CONDENSED_ON, carriage_lanes(carriage, budget));
+pub(crate) fn mark_face_carriage(carriage: &crate::transducer::element::Versor, carried: u64, budget: &mut crate::physics::Budget) {
+    mark_measured(&CONDENSED_ON, carriage_lanes(carriage, budget), carried);
 }
 
 /// A refused contact on the lanes its two poses' refusals name.
@@ -597,7 +612,11 @@ pub(crate) fn contact_edge(
     match <[Transport; 1]>::try_from(edges) {
         Ok([edge]) => {
             note_contact(|t| t.condensed += 1);
-            mark_lanes(&CONDENSED_ON, transport_lanes(&edge, budget));
+            // 78.69 fix 1: the order a condensed contact builds is what it
+            // relates — its two bodies' compartments — on the lanes its
+            // transport occupies, never one tick per contact.
+            let carried = (a.support.len() + b.support.len()) as u64;
+            mark_measured(&CONDENSED_ON, transport_lanes(&edge, budget), carried);
             ContactEdge::Formed(Box::new(edge))
         }
         Err(coset) => {
