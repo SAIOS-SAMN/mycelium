@@ -19686,6 +19686,81 @@ the lanes should move on contact. The orbit line names closed / rosette /
 unbound. `Court.folds` should count proposals at closes on courts whose
 docket is empty.
 
+*Superseded in part by 78.67:* the fold trigger above (`Physics::hold`)
+caused the epoch-117 fold storm and is gone.
+
+### 78.67 A fold moves work, and more of it than it costs (ruled 2026-10-02, the operator's word: "approve Fix A and Fix B")
+
+**The defect (epoch 117, `1ee18a3b`).** In two hours hypha a held 337 815
+eras and b 327 675: about one fold per orbit close. Each era was about
+612 bytes, mostly framing, and the homes grew by about 300 MB an hour. Two
+defects compounded:
+- *Units that never met.* 78.66's `hold` drew the hot ledger's node count
+  (81–557) from a reserve counted in strokes (64 on this host, refilled
+  by about 4 a close). Every lane was short at every close, so the
+  shortfall said nothing about holding.
+- *A self-feeding loop.* A fold's own receipt is an act, so it opens an
+  orbit; that orbit's close proposed the next fold. K went from 2 441 over
+  all of epoch 116 to 238 219 in two hours.
+
+**The ruling.** At every sealed close the court asks whether to fold
+(`propose_fold_at_close`). `propose_fold` still answers whether it *can*
+(final, conserving); two gates answer whether it *should*:
+- **(A) No idle fold.** A prefix holding nothing but earlier folds and orbit
+  closes moves no work, and is refused with `REFUSE_FOLD_IDLE`. An idle
+  court stays at rest.
+- **(B) Break-even.** The history the fold moves — the prefix as the era's
+  payload packs it — must be at least the era's framing, otherwise
+  `REFUSE_FOLD_UNAMORTIZED`. The framing is the descriptor and length
+  word (`Era::DESCRIPTOR + 8`, the segment layout) plus the fold's own
+  receipt, read off the line's last fold, or `KStepReceipt::MIN_TAPE`
+  where the line has not folded. Both sides are bytes of one carrier,
+  measured, with no constant: an era never adds more framing than the
+  history it moves.
+
+The reserve no longer enters the fold. `Physics::hold` is gone, and so is
+the docket-window trigger. `Court.folds` counts `idle` and `unamortized`
+beside the earlier outcomes (LD0).
+
+**What else landed with it.**
+- *The mint's refusal is named by arm.* The voice printed every refusal
+  as "trajectory, carry or demands"; it now prints the typed `Refused`
+  arm and its proof:
+  - `carry`: a vertex does not carry its family;
+  - `demands`: links the form's demands do not account for;
+  - `citation`: a citation this mind does not hold;
+  - `integrity`: nothing acts, no tape, or the address does not decode.
+
+  The mint has no trajectory arm.
+- *The metabolism reaches the journal.* The reserve's own books now count
+  refusals per lane (`Reserve::line`; `Acts.refused: [u64; 4]`).
+  - The court writes `court metabolism` at each persist: K, the reserve
+    line, eras, hot nodes, and folds by outcome.
+  - The voice writes `stroke metabolism` beside its stroke line: its
+    reserve line and its thread's metabolic line (draws, refusals by lane,
+    orbit classes).
+- *Eras bind in one sort.* `bind_eras` inserted era by era into the sorted
+  archive. The segment interleaves signers, so each insert shifted the
+  archive and boot and `--check` took minutes at 330k eras. It now
+  collects, sorts once by root and deduplicates.
+- *`scripts/readings` reads the live lines.* Its three dead rows (`court
+  exchange admitted`, `court basis=`, `court circuit docket`, none printed
+  any more) are replaced by exchange asked, glued admitted and attached,
+  and folds witnessed, refused and unmeasured. New rows: the court's
+  metabolism with eras, K and hot nodes over the window; bytes on disk per
+  home; the voice's metabolism; and the mint's refusals by arm.
+
+**Tested.**
+- `orbit::a_close_proposes_the_fold_once_its_history_outweighs_the_eras_framing`:
+  closes below break-even refuse unamortized, the first close past it
+  proposes, and no docket circuit runs.
+- `era::a_fold_is_proposed_witnessed_and_committed_on_two_signatures`: the
+  fold's own orbit is idle at its close, and nothing is proposed.
+
+**Read on the fleet.** Eras should grow with the court's work, not its
+closes. An idle court should count `idle`, not `proposed`. `court
+metabolism` should show hot nodes bounded and eras rising slowly.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

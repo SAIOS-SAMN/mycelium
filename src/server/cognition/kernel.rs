@@ -655,7 +655,7 @@ impl Kernel {
         }
         let mut pos = Era::SEGMENT_MAGIC.len() as u64;
         let mut head = vec![0u8; Era::DESCRIPTOR + 8];
-        let mut held = 0u64;
+        let mut found: Vec<Era> = Vec::new();
         while pos < end {
             let read = file.read_exact_at(&mut head, pos).ok().and_then(|()| Era::read_descriptor(&head));
             let offset = pos + head.len() as u64;
@@ -663,10 +663,26 @@ impl Kernel {
                 eprintln!("  eras: the segment's last era did not land whole; it ends at byte {pos}");
                 break;
             };
-            self.hold_filed(era.filed_at(Filed { offset, len }));
-            held += 1;
+            found.push(era.filed_at(Filed { offset, len }));
             pos = offset + len;
         }
+        let held = found.len() as u64;
+        // ONE SORT, NOT ONE INSERT PER ERA (78.67). `hold_filed` seats each
+        // era by bisection and shifts the archive behind it; the segment
+        // interleaves signers, so most seats are mid-archive and the bind
+        // was quadratic — 337 815 eras took minutes to boot or `--check`
+        // (epoch 117). The archive and the segment are merged and sorted
+        // once by root, the order `hold_filed` keeps, and an era held twice
+        // — the same root, hash and signer — is held once.
+        let mut all = std::mem::take(&mut self.archive);
+        all.append(&mut found);
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 4 — canonical key order: the archive's own order, root place first (`hold_filed`, `eras_over`'s bisection), then signer and hash to bring an era held twice together"
+        )]
+        all.sort_by_key(|e| (e.root.at, e.signer, e.root.hash));
+        all.dedup_by(|a, b| a.root.at == b.root.at && a.root.hash == b.root.hash && a.signer == b.signer);
+        self.archive = all;
         if held > 0 {
             eprintln!("  eras: {held} held from the segment");
         }

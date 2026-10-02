@@ -61,7 +61,7 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         room_overflowed: 8,
         overflowed: 9,
         // The fold's round by outcome, each in its own slot.
-        folds: [10, 11, 12, 13, 14, 15],
+        folds: [10, 11, 12, 13, 14, 15, 16, 17],
         catchup: [[16, 17, 18, 19, 20], [21, 22, 23, 24, 25]],
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
@@ -832,7 +832,7 @@ fn the_senses_and_the_acts_travel_whole() {
         reserve: [1, 2, 3, 4],
         drawn: [5, 6, 7, 8],
         restored: [9, 10, 11, 12],
-        refused: 13,
+        refused: [13, 0, 1, 0],
         syllabus: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
         fetch: [21, 22],
         judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],

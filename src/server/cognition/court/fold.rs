@@ -12,7 +12,10 @@
 use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Place, Root, Stamp};
 use crate::cognition::Kernel;
 use crate::economy::{nets_of, Entry};
-use crate::verdict::{REFUSE_FOLD_INEXACT, REFUSE_FOLD_OPEN, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT, REFUSE_WITNESS_ROOM};
+use crate::verdict::{
+    REFUSE_FOLD_IDLE, REFUSE_FOLD_INEXACT, REFUSE_FOLD_OPEN, REFUSE_FOLD_UNAMORTIZED, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT,
+    REFUSE_WITNESS_ROOM,
+};
 
 /// What a fold needs a witness for: the place the prefix stands on (the
 /// previous fold's root, `None` from genesis), its root, and the epoch
@@ -84,6 +87,64 @@ impl Kernel {
         let p = Proposal { after, root, epochs };
         self.fold_pending = Some(p.clone());
         Ok(p)
+    }
+
+    /// THE FOLD ASKED AT A CLOSE (78.67): proposed only where the prefix up
+    /// to the fold's head moves work and outweighs its era's framing
+    /// (`fold_amortizes`). `propose_fold` answers whether the line CAN fold
+    /// — final and conserving; this answers whether it SHOULD.
+    pub fn propose_fold_at_close(&mut self) -> Result<Proposal, &'static str> {
+        let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
+        self.fold_amortizes(head)?;
+        self.propose_fold()
+    }
+
+    /// 78.67 — A FOLD MOVES WORK, AND MORE OF IT THAN IT COSTS.
+    ///
+    /// (A) The prefix up to `head` must hold an act other than a fold or an
+    /// orbit's close. A fold's own receipt is an act, so it opens an orbit
+    /// whose close proposed the next fold: the courts of epoch 117 folded at
+    /// nearly every close, 337 815 eras in two hours on hypha a, each one
+    /// moving the fold before it (`REFUSE_FOLD_IDLE`).
+    ///
+    /// (B) The history the fold moves — the prefix as the era's payload
+    /// packs it — must be at least what the era costs to write besides that
+    /// history: its descriptor and length word (the segment's layout), and
+    /// the fold's own receipt, read off the last fold on this line, or the
+    /// smallest receipt tape where the line has not folded. Both sides are
+    /// bytes of one carrier, measured; a fold below break-even adds more
+    /// framing than it moves (`REFUSE_FOLD_UNAMORTIZED`).
+    fn fold_amortizes(&self, head: Place) -> Result<(), &'static str> {
+        let me = self.chain.vk();
+        let prefix = self.chain.line_between(&me, self.chain.root().map(|r| r.at), head, usize::MAX);
+        if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {
+            return Err(REFUSE_FOLD_IDLE);
+        }
+        let packed = |receipts: Vec<KStepReceipt>| -> Option<usize> {
+            let era = Era {
+                root: Root { at: head, hash: [0; 32], height: 0 },
+                signer: me,
+                witness: me,
+                sig_home: [0; 64],
+                sig_witness: [0; 64],
+                identities: 0,
+                first: head,
+                count: 0,
+                at: None,
+                receipts,
+            };
+            era.payload().map(|p| p.len())
+        };
+        let fold_tape = match self.chain.opening().filter(|r| r.kind == ActKind::Fold) {
+            Some(f) => packed(vec![f.clone()]).ok_or(REFUSE_RECEIPT)?,
+            None => KStepReceipt::MIN_TAPE,
+        };
+        let framing = Era::DESCRIPTOR + 8 + fold_tape;
+        let history = packed(prefix).ok_or(REFUSE_RECEIPT)?;
+        if history < framing {
+            return Err(REFUSE_FOLD_UNAMORTIZED);
+        }
+        Ok(())
     }
 
     /// The proposal awaiting a witness, if any.

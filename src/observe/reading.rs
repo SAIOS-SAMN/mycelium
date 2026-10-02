@@ -468,7 +468,8 @@ pub struct Court {
     pub overflowed: u64,
     /// THE FOLD'S ROUND BY OUTCOME, cumulative (LD0: a refusal is never
     /// discarded): proposed, refused open, refused inexact, committed,
-    /// refused by a witness or at the commit, unmeasured.
+    /// refused by a witness or at the commit, unmeasured, refused idle (no
+    /// work in the prefix), refused unamortized (less history than framing).
     pub folds: [u64; FOLD_OUTCOMES.len()],
     /// PHASE 1 (78.59) — THE CATCH-UP FETCHES BY PATH AND OUTCOME: a line's
     /// back-fill and a fold witness's prefix, each asked of the court that
@@ -501,7 +502,8 @@ pub enum CatchupOutcome {
 }
 
 /// THE AXES OF [`Court::folds`], in its writing's order.
-pub const FOLD_OUTCOMES: [&str; 6] = ["proposed", "open", "inexact", "folded", "refused", "unmeasured"];
+pub const FOLD_OUTCOMES: [&str; 8] =
+    ["proposed", "open", "inexact", "folded", "refused", "unmeasured", "idle", "unamortized"];
 
 /// Where each fold outcome is counted on [`FOLD_OUTCOMES`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -512,6 +514,8 @@ pub enum FoldOutcome {
     Folded = 3,
     Refused = 4,
     Unmeasured = 5,
+    Idle = 6,
+    Unamortized = 7,
 }
 
 impl Court {

@@ -136,6 +136,10 @@ assert_eq!(held.rows_range(&home, None, act(9), 0, 10).0, 0, "another signer's r
 
 assert_eq!(k.propose_fold(), Err(REFUSE_FOLD_OPEN), "the fold receipt's orbit is open: no cut yet");
 k.orbit();
+// 78.67 (A): the close asks, and a prefix of the fold and its close alone
+// moves no work — nothing is proposed, so a fold never feeds the next one.
+assert_eq!(k.propose_fold_at_close(), Err(crate::verdict::REFUSE_FOLD_IDLE), "a fold's own orbit is idle");
+assert!(k.fold_proposal().is_none(), "the close proposed nothing");
 let p2 = k.propose_fold().expect("the fold receipt's orbit closed, and is itself final");
 assert_eq!((p2.after, p2.root.at), (Some(close(2)), close(3)));
 assert!(k.commit_fold(home_sig, &co_sign("w", p2.root.hash)).is_ok());

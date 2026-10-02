@@ -94,9 +94,27 @@ for h in "${HYPHAE[@]}"; do
   printf '    digest refused    '; lines "$u" 'cover digest refused'
   printf '    cover page over   '; lines "$u" 'cover page passed over'
   printf '    cover read        '; lines "$u" 'court cover read'
-  printf '    exchange admitted '; lines "$u" 'court exchange admitted'
-  printf '    court basis       '; lines "$u" 'court basis='
-  printf '    circuit docket    '; lines "$u" 'court circuit docket'
+  # THE EXCHANGE AND THE GLUE, by the lines the server prints. These rows
+  # read 'court exchange admitted', 'court basis=' and 'court circuit
+  # docket', which no build since the line relation prints: they read 0 for
+  # all of epoch 117 while the courts ruled (78.67).
+  printf '    exchange asked    '; lines "$u" 'court exchange asked'
+  printf '    glued admitted    '; lines "$u" 'court glued admitted'
+  printf '    glued attached    '; lines "$u" 'court glued attached'
+  printf '    fold witnessed    '; lines "$u" 'court fold witnessed'
+  printf '    fold refused      '; lines "$u" 'court fold refused'
+  printf '    fold unmeasured   '; lines "$u" 'court fold unmeasured'
+  # THE COURT'S METABOLISM, written at each persist (78.67): the reserve off
+  # its own books, eras and hot nodes held, the fold's round by outcome. The
+  # eras' growth over the window is the first such line against the last.
+  printf '    metabolism        '; lines "$u" 'court metabolism'
+  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+    | grep -oE 'court metabolism K [0-9]+ .* eras [0-9]+ hot [0-9]+' \
+    | sed -n '1p;$p' | sed -E 's/.*K ([0-9]+) .* eras ([0-9]+) hot ([0-9]+)/\1 \2 \3/' \
+    | paste -sd' ' \
+    | awk 'NF == 6 { printf "      over the window: K %d → %d, eras %d → %d (+%d), hot %d → %d\n", $1, $4, $2, $5, $5 - $2, $3, $6 }
+           NF == 3 { printf "      one line in the window: K %d, eras %d, hot %d\n", $1, $2, $3 }'
+  printf '    on disk           '; du -sh "$ROOT/$h" 2>/dev/null | awk '{print $1}'
   # WHAT THE COURT REFUSED, BY REASON. The fleet's dominant fact after the
   # recut of 649a4ac was that every speech is refused and nothing at all is
   # admitted, and this file had no line for it: the readings counted what
@@ -128,6 +146,16 @@ for v in "${VOICES[@]}"; do
   printf '    families extracted'; lines "$u" 'family .* pairs'
   printf '    withheld on wire  '; lines "$u" 'sentence withheld'
   printf '    learned           '; lines "$u" 'learned'
+  # THE VOICE'S METABOLISM beside its stroke (78.67): its reserve's books and
+  # its metabolic line — draws, refusals by lane, the orbit classes.
+  printf '    metabolism        '; lines "$u" 'stroke metabolism'
+  # THE MINT'S REFUSALS BY ARM (78.67): the line named every arm
+  # "trajectory, carry or demands"; it now names the arm and its proof.
+  printf '    mint refused      '; lines "$u" 'mint refused'
+  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+    | grep -oE 'mint refused \([a-z]+\): [^[]*' \
+    | sed -E 's/ +$//' | sort | uniq -c | sort -rn | head -6 \
+    | while read -r n reason; do printf '      %6s  %s\n' "$n" "$reason"; done
 done
 say ""
 

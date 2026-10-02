@@ -81,12 +81,13 @@ impl Budget {
 pub struct Reserve {
     lanes: [u64; 4],
     /// THE RESERVE'S OWN LEDGER: what it gave, per lane; what came back;
-    /// and how many draws it refused. Carried by the reserve itself so its
-    /// flux reads wherever it lives — the thread-local ledger (`note_draw`)
-    /// sees only its own thread, and a court's reserve is drawn on many.
+    /// and the draws it refused, by the lane that refused each (78.67). Carried by the
+    /// reserve itself so its flux reads wherever it lives — the thread-local
+    /// ledger (`note_draw`) sees only its own thread, and a court's reserve
+    /// is drawn on many.
     drawn: [u64; 4],
     restored: [u64; 4],
-    refused: u64,
+    refused: [u64; 4],
 }
 
 /// WHICH LANE REFUSED A DRAW. Not a boolean: "the mind is out of
@@ -106,15 +107,21 @@ pub struct Depleted {
 
 impl Reserve {
     pub fn of(lanes: [u64; 4]) -> Reserve {
-        Reserve { lanes, drawn: [0; 4], restored: [0; 4], refused: 0 }
+        Reserve { lanes, drawn: [0; 4], restored: [0; 4], refused: [0; 4] }
+    }
+
+    /// THE RESERVE LINE (78.67): what it holds, gave, got back and refused,
+    /// per lane, off its own books — one line whatever thread drew on it.
+    pub fn line(&self) -> String {
+        format!("reserve {:?} drawn {:?} restored {:?} refused {:?}", self.lanes, self.drawn, self.restored, self.refused)
     }
 
     pub fn lanes(&self) -> [u64; 4] {
         self.lanes
     }
 
-    /// THE LEDGER: drawn and restored per lane, and draws refused.
-    pub fn ledger(&self) -> ([u64; 4], [u64; 4], u64) {
+    /// THE LEDGER: drawn and restored per lane, and draws refused per lane.
+    pub fn ledger(&self) -> ([u64; 4], [u64; 4], [u64; 4]) {
         (self.drawn, self.restored, self.refused)
     }
 
@@ -147,7 +154,7 @@ impl Reserve {
                 // D2 — the refusal is the metabolic reading, counted on the
                 // lane that refused it before the return (PHY1).
                 crate::physics::metabolism::note_refused(i);
-                self.refused += 1;
+                crate::physics::metabolism::step_or_refuse(&mut self.refused[i], 1);
                 return Err(Depleted { lane: i, asked: want, held });
             }
         }

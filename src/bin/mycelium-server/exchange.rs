@@ -330,6 +330,28 @@ impl Exchange {
             // persists whatever is still marked (SIGTERM).
             if sealed_since_persist >= u64::from(mycelium::physics::aperture_cycle()) && persist_if_due(&kernel, &state_path) {
                 sealed_since_persist = 0;
+                // 78.67 — THE COURT'S METABOLISM AND ITS FOLDS, written at the
+                // persist, its own pace: the reserve off its own books (every
+                // thread that drew on it), the eras and hot nodes it holds,
+                // and the fold's round by outcome. None of this reached the
+                // journal, so epoch 117's fold storm and its reserve were
+                // read only by hand.
+                if let Ok(k) = kernel.lock() {
+                    let folds = mycelium::observe::folds();
+                    eprintln!(
+                        "  court metabolism K {} | {} | eras {} hot {} | folds {}",
+                        k.k_step(),
+                        k.physics().reserve.line(),
+                        k.archive().len(),
+                        k.chain().len(),
+                        mycelium::observe::FOLD_OUTCOMES
+                            .iter()
+                            .zip(folds)
+                            .map(|(axis, n)| format!("{axis} {n}"))
+                            .collect::<Vec<_>>()
+                            .join(" ")
+                    );
+                }
             }
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;

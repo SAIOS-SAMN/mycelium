@@ -417,6 +417,15 @@ fn main() {
                 "[{tag}] stroke outcome fed {:?} pivoted {:?} stood {:?} uttered {:?} closed {:?} learned {:?}",
                 outcome.fed, outcome.pivoted, outcome.stood, outcome.uttered, outcome.closed, outcome.learned
             );
+            // 78.67 — THE VOICE'S METABOLISM beside its stroke: its one
+            // reserve off its own books, and this thread's metabolic ledger
+            // (entropy, the orbit classes, draws, refusals by lane), which
+            // until now was held only inside the percept reading.
+            eprintln!(
+                "[{tag}] stroke metabolism {} | {}",
+                entity.physics().reserve.line(),
+                mycelium::physics::metabolism::metabolism().line()
+            );
             // WHAT THE COVERS' ORBITS CLASSIFIED AS, read from the counter
             // the engine already keeps. `tally_orbit` records every `Fill`
             // at `extract.rs` on the live path, and only `mycelium-soak`

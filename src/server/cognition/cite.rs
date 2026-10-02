@@ -415,22 +415,21 @@ impl Kernel {
                     None => [0; 4],
                 };
                 self.physics.regenerate_within(bonds);
-                // 78.66 — THE FOLD BY LEAST ACTION (45.8 as amended): the
-                // orbit's close draws what holding the hot ledger cost it,
-                // and a lane that cannot cover it is the syntropic phase —
-                // the fold is proposed at this close, the cut the close just
-                // made, and never on a height interval, a memory reading or a
-                // count of docket circuits. A court that holds nothing it
-                // cannot afford never folds; one whose history outgrows what
-                // its work regenerates folds as often as holding demands.
-                let _ = self.physics.hold(self.chain.len() as u64);
-                if self.fold_pending.is_none()
-                    && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
-                {
+                // 78.67 — THE FOLD IS ASKED AT THE CLOSE, and the prefix
+                // answers (45.8 as amended): it folds where it carries work
+                // and that work outweighs the era's framing
+                // (`fold_amortizes`), never on a height interval, a memory
+                // reading, a count of docket circuits or a reserve reading.
+                // 78.66 drew the hot ledger's node count from a reserve
+                // counted in strokes; the two never met, so every lane was
+                // short at every close and the courts folded at each one.
+                if self.fold_pending.is_none() {
                     // Counted by outcome, never discarded (LD0).
-                    let outcome = match self.propose_fold() {
+                    let outcome = match self.propose_fold_at_close() {
                         Ok(_) => crate::observe::FoldOutcome::Proposed,
                         Err(crate::verdict::REFUSE_FOLD_OPEN) => crate::observe::FoldOutcome::Open,
+                        Err(crate::verdict::REFUSE_FOLD_IDLE) => crate::observe::FoldOutcome::Idle,
+                        Err(crate::verdict::REFUSE_FOLD_UNAMORTIZED) => crate::observe::FoldOutcome::Unamortized,
                         Err(_) => crate::observe::FoldOutcome::Inexact,
                     };
                     crate::observe::note_fold(outcome);

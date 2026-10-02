@@ -497,24 +497,6 @@ impl Physics {
         }
     }
 
-    /// THE COST OF HOLDING (78.66, least action): one orbit of holding `held`
-    /// hot nodes, drawn on every lane as one vector — the ledger occupies the
-    /// frame each node carries, and a node held hot is held on all four. All
-    /// or nothing; a lane that cannot cover it refuses by name and is charged
-    /// what it still holds, never past empty (rule 11), and that shortfall is
-    /// the court's cue to fold (45.8 as amended). A ledger the fold keeps
-    /// short draws little, so the fold paces itself by what holding costs.
-    pub fn hold(&mut self, held: u64) -> Option<Depleted> {
-        let cost = [held; 4];
-        match self.reserve.draw(cost) {
-            Ok(()) => None,
-            Err(refused) => {
-                let _ = self.reserve.drain(cost);
-                Some(refused)
-            }
-        }
-    }
-
     /// SYNTROPIC OPTIMIZATION regenerates each lane toward the deflation
     /// that lane verified since the last aperture — not toward one scalar cap.
     pub fn regenerate(&mut self) {

@@ -168,6 +168,23 @@ pub(crate) fn speak_form(
     }
 }
 
+/// THE MINT'S REFUSAL BY ARM (78.67): a vertex that does not carry its
+/// family is `carry`; links the form's demands do not account for are
+/// `demands`; a citation this mind does not hold is `citation`; a form
+/// with nothing acting, no tape or an address that does not decode is
+/// `integrity`. Exhaustive over the refusals the mint returns; any other is
+/// named `other` rather than folded into one of these.
+fn mint_arm(why: mycelium::transducer::sentence::Refused) -> &'static str {
+    use mycelium::transducer::sentence::Refused;
+    match why {
+        Refused::MintVertexNotCarried(_) => "carry",
+        Refused::MintLinksWithoutDemand | Refused::MintLinksUndeclared => "demands",
+        Refused::CitedNotHeld | Refused::CitedSealed | Refused::OwedToEveryCourt => "citation",
+        Refused::MintNothingActs | Refused::MintNoTape | Refused::MintAddressUndecoded => "integrity",
+        _ => "other",
+    }
+}
+
 /// 50.5 — THE SENTENCE WITH ITS DEMANDS, uttered whole: the closed
 /// sub-complex measures what its words closed, the demand vertices what
 /// they ask for (`sentence_measure`); one `sentence spoken` line, one
@@ -212,14 +229,24 @@ fn speak_with_demands(
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
         return None;
     };
-    let Some(word) =
-        mycelium::transducer::family::mint_sentence(rule, train, &entity.epigenome, deliberation.span())
-    else {
-        // The mint refused it, so it is not a word — it is not stood in the
-        // dialect, and it is held as the open work it is.
-        entity.hold_perceived(form.clone(), frames, train, remainders, family, budget);
-        eprintln!("[{tag}] form withheld: family {fam} mint refused (trajectory, carry or demands)");
-        return None;
+    let word = match mycelium::transducer::family::mint_sentence_why(rule, train, &entity.epigenome, deliberation.span()) {
+        Ok(w) => w,
+        Err(why) => {
+            // The mint refused it, so it is not a word — it is not stood in
+            // the dialect, and it is held as the open work it is. THE ARM IS
+            // NAMED (78.67): this line read "trajectory, carry or demands"
+            // for every arm, so 250 refusals a voice in two hours (epoch
+            // 117) could not say which one held; the arm is the mint's own
+            // typed refusal, its kind by 78.9.
+            entity.hold_perceived(form.clone(), frames, train, remainders, family, budget);
+            eprintln!(
+                "[{tag}] form withheld: family {fam} mint refused ({}): {} [{:?}]",
+                mint_arm(why),
+                why.proof(),
+                why.kind()
+            );
+            return None;
+        }
     };
     let addr = word.address();
     // An address shorter than two bytes shows what it has; the journal

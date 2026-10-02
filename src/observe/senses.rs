@@ -122,7 +122,8 @@ pub struct Acts {
     pub reserve: [u64; 4],
     pub drawn: [u64; 4],
     pub restored: [u64; 4],
-    pub refused: u64,
+    /// Draws refused, by the lane that refused each (78.67).
+    pub refused: [u64; 4],
     pub syllabus: [u64; SYLLABUS.len()],
     pub fetch: [u64; FETCH.len()],
     pub judged: [u64; JUDGED.len()],
@@ -259,7 +260,7 @@ impl Acts {
         put(out, &self.reserve);
         put(out, &self.drawn);
         put(out, &self.restored);
-        put(out, &[self.refused]);
+        put(out, &self.refused);
         put(out, &self.syllabus);
         put(out, &self.fetch);
         put(out, &self.judged);
@@ -288,7 +289,7 @@ impl Acts {
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Acts> {
         let [k] = take::<1>(b, p)?;
         let (reserve, drawn, restored) = (take(b, p)?, take(b, p)?, take(b, p)?);
-        let [refused] = take::<1>(b, p)?;
+        let refused = take(b, p)?;
         let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
         let [colours, colours_derived] = take::<2>(b, p)?;
         let n = usize::from(*b.get(*p)?);
@@ -321,7 +322,7 @@ impl Acts {
     pub fn lines(&self) -> Vec<String> {
         vec![
             format!(
-                "K {} · reserve {:?} · drawn {:?} · restored {:?} · draws refused {}",
+                "K {} · reserve {:?} · drawn {:?} · restored {:?} · draws refused {:?}",
                 self.k, self.reserve, self.drawn, self.restored, self.refused
             ),
             format!("syllabus: {}", line(&SYLLABUS, &self.syllabus)),
