@@ -665,9 +665,10 @@ pub(super) fn family_percept(
     let mut frame_steps: Vec<FrameSteps> = Vec::new();
     // 78.71 — every body's in→out transport with the compartments it carried.
     let mut word_transports: Vec<super::pairing::FieldLine> = Vec::new();
-    // 78.74 — each field line's frame, and every carried body as a pivot.
-    let mut line_frames: Vec<u64> = Vec::new();
-    let mut pivots: Vec<super::fibres::Pivot> = Vec::new();
+    // 78.74 — each field line's transport class, and every carried piece as
+    // a pivot.
+    let mut line_classes: Vec<Vec<u8>> = Vec::new();
+    let mut pieces: Vec<super::fibres::Piece> = Vec::new();
     // AT1 A2 — the class's steps across two charts, and their count by kind.
     let mut cross_steps: Vec<CrossStep> = Vec::new();
     let mut across_charts = AcrossCharts::default();
@@ -690,9 +691,14 @@ pub(super) fn family_percept(
     let mut piece_seen: Keyed<Vec<u8>> = Keyed::new();
     for c in &covers {
         let Ok(frame) = u64::try_from(c.frame) else { continue };
-        for (_, (v, _versor, sup)) in c.cover.carried.scoped() {
+        for (_, (v, versor, sup)) in c.cover.carried.scoped() {
             let codomain = &sup.codomain;
             let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
+            // 78.74 — THE PIECE AS A PIVOT of its frame's fibres: carried from
+            // its domain by its own versor, in its class.
+            if let Some(piece) = super::fibres::piece_of(frame, tc.key().encode().as_bytes().to_vec(), versor, &sup.domain, &sup.codomain) {
+                pieces.push(piece);
+            }
             let Some(acting) = v.acting_on(&chart) else { continue };
             let Vertex::Word { address, derivation, .. } = v else { continue };
             let support: Vec<Site> = codomain
@@ -757,7 +763,8 @@ pub(super) fn family_percept(
         }
     }
 
-    for (_, read) in reads.entries() {
+    for (class_key, read) in reads.entries() {
+        let class = class_key.encode().as_bytes().to_vec();
         // EACH MEMBER HOLDS ITS FRAMES (AT1, ruled): the member's charts are
         // its chart at each of them. Two members of one section key — one
         // action placed twice, at two frames — are one member standing on
@@ -813,13 +820,23 @@ pub(super) fn family_percept(
             // 78.71 — EACH BODY'S TRANSPORT THROUGH THE RULE, input to output
             // at its frame, with the compartments it carried: the field line
             // the word itself is, read for its null flux beside the circuits'.
-            for (k, a0, _, v) in &m.at {
+            for (k, a0, b0, v) in &m.at {
                 let mass = a0.compartments.len() as u64;
                 word_transports.push(super::pairing::FieldLine { carriage: v.clone(), gauge: m.acting.gauge.clone(), mass, free: false });
-                line_frames.push(*k);
-                // 78.74 — and the body as a pivot of its frame's fibres.
+                line_classes.push(class.clone());
+                // 78.74 — THE CHART'S BODY AS A PIVOT: a rigid move is read
+                // through each chart's body at its frame (covers exist only
+                // for deformations), carried by the member's own versor.
                 if let Some(point) = a0.shape.blade.vertex_point() {
-                    pivots.push(super::fibres::Pivot { frame: *k, point, mass, carriage: v.clone(), n: a0.shape.blade.n() });
+                    pieces.push(super::fibres::Piece {
+                        frame: *k,
+                        class: class.clone(),
+                        point,
+                        out: b0.shape.blade.vertex_point(),
+                        mass,
+                        carriage: v.clone(),
+                        n: a0.shape.blade.n(),
+                    });
                 }
             }
             if !m.steps.is_empty() {
@@ -1309,12 +1326,13 @@ pub(super) fn family_percept(
     // curvature (Stokes), grouped into tubes by the ray it fixes and counted
     // in each tube's own quantum, weighed by the mass its faces carried —
     // order built on 𝒯 as the field closes, never a length.
-    // 78.74 — THE FRAMES' FIBRES, read before the field: a frame whose
-    // fibres were all carried rigidly or twisted did no work, and its field
-    // lines' turns press nothing.
-    let free_frames = super::fibres::read_frames(&pivots);
-    for (line, k) in word_transports.iter_mut().zip(&line_frames) {
-        line.free = free_frames.contains(k);
+    // 78.74 — THE FRAMES' FIBRES AND THE QUOTIENT BY TORSION, read before
+    // the field: a class merged into another's algorithm with certainty —
+    // every fibre between them torsion — turns free beyond the group's
+    // charged member; nothing partial is eliminated.
+    let quotient = super::fibres::read_pieces(&pieces, budget);
+    for (line, class) in word_transports.iter_mut().zip(&line_classes) {
+        line.free = quotient.free.contains(class);
     }
     super::pairing::mark_flux(&form, &carried_on, &word_transports, budget);
     // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.

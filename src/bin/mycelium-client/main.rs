@@ -459,18 +459,41 @@ fn main() {
             // 78.74: the frames' fibres — how relative motions treated them —
             // the shapes their pivots held, and the turning booked as torsion.
             let f = mycelium::transducer::family::fibres::fibre_tally();
+            let eliminated = match f.eliminated() {
+                Some(r) => r.to_string(),
+                None => "unread".to_string(),
+            };
+            let moving = match mycelium::transducer::family::fibres::moving_reading() {
+                Some((n, certain, partial, sum)) => {
+                    let c = match sum.certainty() {
+                        Some(c) => c.to_string(),
+                        None => "unobserved".to_string(),
+                    };
+                    format!("moving pairs {n} certain {certain} partial {partial} certainty {c}")
+                }
+                None => "moving unread".to_string(),
+            };
             let fibres = format!(
-                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} | shapes stable {} emergent {} open {} | free frames {} torsion turned {:?}",
+                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | torsion turned {:?}",
                 f.pairs,
                 f.rigid,
                 f.torsion,
                 f.field,
                 f.lift,
                 f.unpivoted,
+                f.unread,
+                f.aligned,
+                f.misaligned,
                 f.stable,
+                f.determined,
                 f.emergent,
                 f.open,
-                f.free_frames,
+                f.class_pairs,
+                f.certain,
+                f.partial,
+                f.conflicted,
+                f.classes,
+                f.algorithms,
                 mycelium::transducer::family::pairing::torsion_lanes()
             );
             let field = format!("{field} | {malleable} | {fibres}");

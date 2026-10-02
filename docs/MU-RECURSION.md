@@ -20679,6 +20679,103 @@ of three:
   switch, and slivers in its own scale;
 - a free frame's turn reads `opened 0`, `torsion 3`, no orbit.
 
+#### 78.74 (amended 2026-10-03) — torsion eliminates; certainty is graded, never a pole
+
+**The first reading.** On `72e6d621`, five voices read 6–67 fibres each in
+five minutes, every one of them rigid. Nothing came out torsion, field or
+lift, and no turn was booked as torsion. Two defects were mine:
+- **"Stable" could be vacuous.** It was reported with exactly `n + 1`
+  pivots, so nothing had been tested.
+- **The output was a verdict at the poles.** Each motion went into one of
+  four bins.
+
+The operator's word: torsion "should provide better signal by eliminating
+'something' — not providing new answers at the poles — but varying degrees
+of 'certainty' towards a moving algorithm".
+
+**Torsion eliminates** (`family/fibres.rs`). Two transport classes are one
+algorithm up to torsion where, on the fibres joining their pieces, the
+relative motion `R = ṽₐ v_b` keeps both pivots and every level. That is,
+its fibre is carried rigidly (the identity is in the torsion group) or
+twisted or flipped about its axis. Such a fibre **agrees**; a field or a
+lift **disagrees**.
+- **Certainty is counted, never measured.** The metric is indefinite, so no
+  part of a motion has a size. Certainty is `agree / observed` per class
+  pair, exact.
+- **Only what is certain is eliminated.** Classes whose every observed fibre
+  agreed are merged. A partial certainty is reported as the signal it is,
+  and nothing partial is eliminated.
+- **The merge is never blindly transitive.** Torsion is relative to each
+  fibre, so `a ≡ b` and `b ≡ d` can hold while `a`–`d` disagree. A merge
+  that would cross an observed disagreeing pair is refused and counted
+  (`conflicted`).
+- **The torsion eliminated** is `1 − algorithms / classes`, exact.
+
+**The moving algorithm.** Per class pair, the agreement over observed fibres
+is held across percepts for the life of the voice. A pair's certainty
+rises as frames agree and falls as the algorithm moves. To keep the sink
+bounded by the signal, a pair enters only once it has agreed, and is
+counted from then on (`moving_reading`, `moving_said`).
+
+**The draw.** A merged group is one algorithm and is charged once: its
+least class key, the canonical order derivations are chosen by, carries the
+charge. Every other member's turns, being torsion beyond it, are carried
+free (`FluxReading::torsion`). A class standing alone is never free: its
+turn is its algorithm. The free-frame rule of `72e6d621` exempted a whole
+scene's turn, which is the rule itself; it is withdrawn.
+
+**The pivots.** They come from both places a percept reads bodies:
+- **Each chart's body at its frame,** for a rigid move: in from `a0`, out
+  to `b0`, carried by the member's versor. A union body merges only
+  same-shaped bodies at one frame.
+- **Each piece a cover carried,** for a deformation: in from the centroid of
+  its domain sites in vertex coordinates (`vertex_point`, the same point
+  `Blade::vertex_point` reads), out to the centroid of its codomain sites.
+
+**The self-check.** Each piece's own versor must carry its input pivot onto
+its output pivot (`aligned`). Live and in test, none misses. Pieces of one
+class are its sections, never a class pair. The transport class already
+quotients translation, so a standing body and a sliding one are one
+algorithm.
+
+**Shapes.** `Determined` names exactly `n + 1` independent pivots with
+nothing left to test. `Stable` now requires at least one further pivot
+asked and lying on the round.
+
+**Read on the voice's line:**
+- fibres: rigid, torsion, field, lift, unpivoted, unread;
+- pieces: aligned, misaligned;
+- shapes: stable, determined, emergent, open;
+- class pairs: certain, partial, conflicted;
+- classes, algorithms, and the torsion eliminated;
+- the moving pairs with their summed certainty;
+- the turning booked as torsion.
+
+**Tested** (`family/tests/fibres.rs`, `axioms/tests/capacitor.rs`):
+- **Pivots.** Centroid plus ½ on the grid axes, the frame axis as it
+  stands, and the same point the lifted body reads. Two bases, or no sites,
+  give no pivot.
+- **Alignment.** A translator lands a piece on its landing; a wrong landing
+  is named; no landing gives no reading.
+- **The quotient.** Over four classes on two frames:
+  - the flip across the line through two pieces agrees 2/2 and is merged;
+  - the slide is 0/2;
+  - torsion then lift is 1/2, reported and not merged;
+  - moving alike is rigid and agrees 2/2;
+  - but `d` is refused into `{a, b}` across `a`–`d`'s 1/2.
+
+  That leaves three algorithms from four classes, with `b` free beyond `a`.
+- **Sections and the stroke.** A class's own sections make no pair. An
+  ended stroke merges nothing.
+- **The moving algorithm.** 1/1 after one agreeing frame, 1/2 after a later
+  disagreeing one; a pair that never agreed is never held.
+- **Real percepts.** On slides, flips and turns, no piece is misaligned.
+  Slides are one algorithm; a turn beside a standing body is two, joined
+  only by lift.
+- **Shapes.** Four pivots in 3D are determined, a fifth on the sphere
+  stable, a fifth off it emergent. Three on the grid's plane are
+  determined, and a repeated pivot is open.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

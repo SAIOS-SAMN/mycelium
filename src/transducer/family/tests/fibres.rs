@@ -1,0 +1,196 @@
+// 78.74 (as amended) — THE FIBRES OF A FRAME AND THE QUOTIENT BY TORSION
+// (`family/fibres.rs`): pieces as pivots, their coordinates checked against
+// their own versors, relative motions read on fibres, classes merged only
+// where every fibre agreed — never blindly transitive — and the certainty of
+// the moving algorithm held across percepts, exact.
+
+use crate::transducer::base::Site;
+use crate::transducer::cga::{self, Mv, E1, E2};
+use crate::transducer::family::fibres::{aligned, moving_said, piece_of, read_pieces, take_last, vertex_point, Piece, Said};
+use num_rational::BigRational;
+
+fn q(n: i64, d: i64) -> BigRational {
+    BigRational::new(n.into(), d.into())
+}
+
+fn at(x: i64, y: i64) -> Mv {
+    cga::point_at(&[q(x, 1), q(y, 1)])
+}
+
+/// The mirror across the line through the origin along (3, 4): an odd
+/// versor, the grid's flip.
+fn mirror() -> Mv {
+    Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)))
+}
+
+fn slide() -> Mv {
+    cga::translator_at(&[q(1, 1), q(0, 1)])
+}
+
+fn one() -> Mv {
+    Mv::scalar(q(1, 1))
+}
+
+fn piece(frame: u64, class: &[u8], point: Mv, carriage: Mv) -> Piece {
+    Piece { frame, class: class.to_vec(), point, out: None, mass: 2, carriage, n: 2 }
+}
+
+fn wide() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 16)
+}
+
+fn said(q: &crate::transducer::family::fibres::Quotient, a: &[u8], b: &[u8]) -> Option<Said> {
+    q.said.iter().find(|((x, y), _)| x.as_slice() == a && y.as_slice() == b).map(|(_, s)| s.clone())
+}
+
+/// A PIECE'S PIVOT IS ITS SITES' CENTROID IN VERTEX COORDINATES: each axis's
+/// mean, one half on each grid axis, the frame axis as it stands — the same
+/// point the lifted body reads (`Blade::vertex_point`). Sites of two bases,
+/// or none, give no pivot.
+#[test]
+fn a_pieces_pivot_is_its_sites_centroid_in_vertex_coordinates() {
+    let sites = [Site::new(vec![0, 0]), Site::new(vec![0, 1])];
+    let (point, n) = vertex_point(&sites).expect("two sites of one base");
+    assert_eq!(n, 2);
+    assert!(point.projective_eq(&cga::point_at(&[q(1, 2), q(1, 1)])), "(0, ½) + (½, ½)");
+    let framed = [Site::new(vec![1, 2, 5])];
+    let (point, _) = vertex_point(&framed).expect("one site");
+    assert!(point.projective_eq(&cga::point_at(&[q(3, 2), q(5, 2), q(5, 1)])), "the frame axis takes no half");
+    assert_eq!(vertex_point(&[Site::new(vec![0, 0]), Site::new(vec![0, 0, 1])]).map(|(_, n)| n), None, "two bases");
+    assert_eq!(vertex_point(&[]).map(|(_, n)| n), None, "no sites");
+    // The lifted body reads the same pivot.
+    let comps: Vec<crate::transducer::blade::Compartment> =
+        [(0, 0), (0, 1), (1, 1)].iter().map(|&(r, c)| crate::transducer::blade::Compartment { site: Site::new(vec![r, c]), hue: 3 }).collect();
+    let body = crate::transducer::blade::lift(&comps);
+    let sites: Vec<Site> = comps.iter().map(|c| c.site.clone()).collect();
+    let (from_sites, _) = vertex_point(&sites).expect("sites");
+    assert!(body.vertex_point().expect("the body's pivot").projective_eq(&from_sites), "one convention, two readers");
+}
+
+/// THE SELF-CHECK: a piece's own versor carries its input pivot onto its
+/// output pivot where the coordinates agree, and says so where they do not.
+#[test]
+fn a_pieces_versor_carries_its_input_pivot_onto_its_output() {
+    let domain = [Site::new(vec![0, 0]), Site::new(vec![0, 1])];
+    let landed = [Site::new(vec![2, 3]), Site::new(vec![2, 4])];
+    let elsewhere = [Site::new(vec![5, 5]), Site::new(vec![5, 6])];
+    let carriage = cga::translator_at(&[q(2, 1), q(3, 1)]);
+    let p = piece_of(1, b"c".to_vec(), &carriage, &domain, &landed).expect("a pivot");
+    assert_eq!((p.mass, aligned(&p)), (2, Some(true)), "carried where it landed");
+    let wrong = piece_of(1, b"c".to_vec(), &carriage, &domain, &elsewhere).expect("a pivot");
+    assert_eq!(aligned(&wrong), Some(false), "a landing the versor does not reach is named");
+    let nowhere = piece_of(1, b"c".to_vec(), &carriage, &domain, &[]).expect("a pivot");
+    assert_eq!(aligned(&nowhere), None, "no landing, no reading");
+}
+
+/// THE QUOTIENT, GRADED AND NEVER BLINDLY TRANSITIVE. Four classes over two
+/// frames:
+/// - `a` stands; `b` is `a` flipped across the line through them — torsion on
+///   both frames: certainty 2/2, merged;
+/// - `c` slides — lift on both: 0/2, its own algorithm;
+/// - `d` is flipped like `b` but its pivot leaves the line on the second
+///   frame: against `a`, 1/2 — partial, reported and not eliminated;
+/// - `b` and `d` move alike — rigid across two classes agrees: 2/2 certain;
+///   yet merging `d` into `{a, b}` would cross the 1/2 of `a`–`d`, so it is
+///   refused.
+///
+/// Three algorithms from four classes; `b`, torsion beyond `a`, turns free.
+#[test]
+fn torsion_is_eliminated_only_where_every_fibre_agreed() {
+    let pieces = vec![
+        piece(1, b"a", at(0, 0), one()),
+        piece(1, b"b", at(3, 4), mirror()),
+        piece(1, b"c", at(0, 5), slide()),
+        piece(1, b"d", at(6, 8), mirror()),
+        piece(2, b"a", at(0, 0), one()),
+        piece(2, b"b", at(3, 4), mirror()),
+        piece(2, b"c", at(0, 5), slide()),
+        piece(2, b"d", at(1, 0), mirror()),
+    ];
+    let q = read_pieces(&pieces, &mut wide());
+    let s = |a: &[u8], b: &[u8]| said(&q, a, b).map(|s| (s.agree, s.observed));
+    assert_eq!(s(b"a", b"b"), Some((2, 2)), "the flip across their line: torsion, twice");
+    assert_eq!(s(b"a", b"c"), Some((0, 2)), "the slide: lift, twice");
+    assert_eq!(s(b"a", b"d"), Some((1, 2)), "torsion, then lift: partial");
+    assert_eq!(s(b"b", b"d"), Some((2, 2)), "moving alike: rigid agrees");
+    assert_eq!(said(&q, b"a", b"d").and_then(|s| s.certainty()), Some(BigRational::new(1.into(), 2.into())), "certainty exact");
+    let groups: Vec<Vec<&[u8]>> = q.groups.iter().map(|g| g.iter().map(Vec::as_slice).collect()).collect();
+    assert_eq!(groups, vec![vec![&b"a"[..], &b"b"[..]], vec![&b"c"[..]], vec![&b"d"[..]]], "d is not merged across a–d's disagreement");
+    assert_eq!(q.free, vec![b"b".to_vec()], "b turns free beyond a; a carries the charge");
+}
+
+/// A CLASS'S OWN SECTIONS ARE NOT TWO ALGORITHMS: two pieces of one class
+/// carried by two versors make no class pair; and a stroke that ends reads
+/// no cross pair, so nothing is merged and nothing is free.
+#[test]
+fn sections_are_not_pairs_and_an_ended_stroke_merges_nothing() {
+    let sections = vec![piece(1, b"s", at(0, 0), one()), piece(1, b"s", at(3, 4), mirror())];
+    let q = read_pieces(&sections, &mut wide());
+    assert!(q.said.is_empty() && q.free.is_empty(), "one class: no pair");
+    let pieces = vec![piece(1, b"a", at(0, 0), one()), piece(1, b"b", at(3, 4), mirror())];
+    let mut spent = crate::physics::Physics::default().stroke_n(0);
+    let q = read_pieces(&pieces, &mut spent);
+    assert!(q.said.is_empty() && q.free.is_empty(), "nothing read, nothing eliminated");
+    assert_eq!(q.groups.len(), 2, "two classes stand apart");
+}
+
+/// ON A REAL PERCEPT, THE COORDINATES HOLD: every piece the covers carried
+/// is a pivot whose own versor carries its input pivot onto its output pivot
+/// — no piece misaligned — for a family where one body stands and another
+/// slides, and for one where a body is flipped.
+#[test]
+fn on_a_real_percept_every_pieces_versor_carries_its_pivot() {
+    use super::common::grid;
+    let slides = vec![
+        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
+        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+    ];
+    let flips = vec![
+        (grid(&["0000", "0120", "0000"]), grid(&["0000", "0210", "0000"])),
+        (grid(&["00000", "00340", "00000"]), grid(&["00000", "00430", "00000"])),
+    ];
+    let turns = vec![
+        (grid(&["11000", "00000", "00200", "00220"]), grid(&["11000", "00000", "00220", "00200"])),
+        (grid(&["00011", "00000", "20000", "22000"]), grid(&["00011", "00000", "22000", "20000"])),
+    ];
+    for (name, family) in [("slides", slides), ("flips", flips), ("turns", turns)] {
+        let _ = take_last();
+        let _ = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20));
+        let Some(q) = take_last() else { panic!("{name}: the percept read its fibres") };
+        assert!(q.pieces > 0, "{name}: the percept's bodies are pivots");
+        assert_eq!(q.misaligned, 0, "{name}: no piece's versor misses its own landing ({} aligned of {})", q.aligned, q.pieces);
+        assert!(q.aligned > 0, "{name}: and the check read pieces");
+        match name {
+            // The standing bar and the sliding body are ONE transport class
+            // — the class quotients the translation — so the fibre between
+            // them is the class's own sections, never a class pair.
+            "slides" => assert!(q.said.is_empty() && q.groups.len() == 1, "slides: one algorithm: {q:?}"),
+            // The standing bar and the body turned in place are two
+            // classes, joined by a fibre the turn lifts — work: two
+            // algorithms, nothing eliminated.
+            "turns" => {
+                let joined: Vec<&Said> = q.said.iter().map(|(_, s)| s).collect();
+                assert!(!joined.is_empty(), "turns: the two classes are joined by fibres: {q:?}");
+                assert!(joined.iter().all(|s| s.agree == 0 && s.observed >= 1), "turns: every fibre lifted: {joined:?}");
+                assert!(q.free.is_empty() && q.groups.len() >= 2, "turns: nothing eliminated: {:?}", q.groups);
+            }
+            _ => {}
+        }
+    }
+}
+
+/// THE MOVING ALGORITHM: a pair's certainty is held across percepts — 1/1
+/// after one agreeing frame, 1/2 once a later percept's fibre disagrees —
+/// and a pair that never agreed is never held.
+#[test]
+fn the_moving_algorithms_certainty_rises_and_falls_across_percepts() {
+    let (x, y, z): (&[u8], &[u8], &[u8]) = (b"moving-x", b"moving-y", b"moving-z");
+    let first = vec![piece(1, x, at(0, 0), one()), piece(1, y, at(3, 4), mirror()), piece(1, z, at(0, 5), slide())];
+    let _ = read_pieces(&first, &mut wide());
+    assert_eq!(moving_said(x, y), Some(Said { observed: 1, agree: 1 }), "agreed once: certain");
+    let second = vec![piece(1, x, at(0, 0), one()), piece(1, y, at(1, 0), mirror())];
+    let _ = read_pieces(&second, &mut wide());
+    let held = moving_said(y, x).expect("held, read in either order");
+    assert_eq!((held.agree, held.observed), (1, 2), "the algorithm moved: 1/2");
+    assert_eq!(moving_said(x, z), None, "a pair that never agreed is never held");
+}

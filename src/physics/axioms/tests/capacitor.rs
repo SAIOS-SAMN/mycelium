@@ -189,18 +189,24 @@ fn the_pivots_own_sphere_is_the_shape_every_switch_keeps() {
     }
     let fifth = cga::point_at(&[q(2, 1), q(2, 1), q(2, 1)]);
     assert!(!held.wedge_vector(4, &fifth).is_zero(), "a fifth pivot off it: no common round shape stands");
-    // The organ reads the same: stable through the pivots, emergent past
-    // them, open before enough stand.
-    assert_eq!(shape_of(&pts, 3), Shape::Stable(held.clone()), "four pivots: the sphere stands");
+    // The organ reads the same, and never calls an untested round stable:
+    // four pivots only determine the sphere; a fifth on it makes it stand; a
+    // fifth off it, emergent; three, open.
+    assert_eq!(shape_of(&pts, 3), Shape::Determined(held.clone()), "four pivots: determined, not yet tested");
+    let mut on_it = pts.clone();
+    on_it.push(cga::point_at(&[q(0, 1), q(-1, 1), q(0, 1)]));
+    assert_eq!(shape_of(&on_it, 3), Shape::Stable(held.clone()), "a fifth on it: the sphere stands");
     let mut more = pts.clone();
     more.push(fifth);
     assert_eq!(shape_of(&more, 3), Shape::Emergent, "a fifth off it: emergent");
     assert_eq!(shape_of(&pts[..3], 3), Shape::Open, "three cannot fix a sphere");
-    // On the grid's plane (n = 2) four points on one circle stand; a fourth
-    // off it does not.
+    // On the grid's plane (n = 2): three points determine a circle, a fourth
+    // on it stands, a fourth off it does not.
     let on = |x: i64, y: i64| cga::point_at(&[q(x, 1), q(y, 1)]);
+    assert!(matches!(shape_of(&[on(5, 0), on(0, 5), on(-5, 0)], 2), Shape::Determined(_)), "three: determined");
     assert!(matches!(shape_of(&[on(5, 0), on(0, 5), on(-5, 0), on(3, 4)], 2), Shape::Stable(_)), "concyclic");
     assert_eq!(shape_of(&[on(5, 0), on(0, 5), on(-5, 0), on(3, 3)], 2), Shape::Emergent, "not");
+    assert_eq!(shape_of(&[on(5, 0), on(5, 0), on(0, 5)], 2), Shape::Open, "a repeated pivot fixes nothing new");
 }
 
 /// 78.74 — HOW A FINITE MOTION TREATS A FIBRE, read on the versor itself: the
@@ -217,29 +223,6 @@ fn a_motion_carries_a_fibre_rigidly_by_torsion_by_field_or_by_lift() {
     assert_eq!(f.carried_by(&mirror), Carried::Torsion, "the flip across the fibre's line");
     assert_eq!(f.carried_by(&f.step(&q(2, 1), &q(3, 1))), Carried::Field, "a level step");
     assert_eq!(f.carried_by(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)])), Carried::Lift, "a slide");
-}
-
-/// 78.74 — A FRAME'S TURNING IS FREE WHERE NO FIBRE WORKED: bodies carried by
-/// one transport (rigid), and a pair whose relative motion is the flip
-/// across their line (torsion), are free frames; a pair one of which slides
-/// against the other (lift) is not.
-#[test]
-fn a_frame_is_free_only_where_no_fibre_did_work() {
-    use crate::transducer::family::fibres::{read_frames, Pivot};
-    let at = |x: i64, y: i64| cga::point_at(&[q(x, 1), q(y, 1), q(0, 1)]);
-    let one = Mv::scalar(q(1, 1));
-    let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
-    let mirror = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
-    let pivot = |frame: u64, point: Mv, carriage: Mv| Pivot { frame, point, mass: 2, carriage, n: 2 };
-    let pivots = vec![
-        pivot(1, at(0, 0), slide.clone()),
-        pivot(1, at(3, 4), slide.clone()),
-        pivot(2, at(0, 0), one.clone()),
-        pivot(2, at(3, 4), mirror),
-        pivot(3, at(0, 0), one),
-        pivot(3, at(3, 4), slide),
-    ];
-    assert_eq!(read_frames(&pivots), vec![1, 2], "rigid and torsion are free; the lift is work");
 }
 
 /// THE SOURCE AT P ON Σ, KEPT IN Σ. Two spheres through P with centres on

@@ -146,8 +146,13 @@ impl Fibre {
 pub enum Shape {
     /// Fewer than `n + 1` independent pivots: no round is determined yet.
     Open,
+    /// Exactly enough independent pivots to fix a round, and none left to
+    /// ask whether it holds: determined, not yet tested — never called
+    /// stable, which would be vacuous.
+    Determined(Mv),
     /// Every pivot lies on the round through the first `n + 1` independent
-    /// ones: the shape stands, read off the pivots, never set.
+    /// ones, and at least one further pivot was asked and lay on it: the
+    /// shape stands, read off the pivots, never set.
     Stable(Mv),
     /// A pivot leaves that round: no round shape stands; the shape is what
     /// the fibres' switches generate.
@@ -177,8 +182,15 @@ pub fn shape_of(pivots: &[Mv], n: usize) -> Shape {
         }
     }
     let Some(round) = round.filter(|_| grade == top) else { return Shape::Open };
-    match rest.all(|x| round.wedge_vector(top, x).is_zero()) {
+    let mut tested = false;
+    for x in rest {
+        if !round.wedge_vector(top, x).is_zero() {
+            return Shape::Emergent;
+        }
+        tested = true;
+    }
+    match tested {
         true => Shape::Stable(round),
-        false => Shape::Emergent,
+        false => Shape::Determined(round),
     }
 }
