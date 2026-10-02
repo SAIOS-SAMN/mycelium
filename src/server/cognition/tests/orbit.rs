@@ -54,7 +54,7 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
 #[test]
 fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
     use crate::chronometry::Ruled;
-    for transition in [ActKind::Return, ActKind::RankStep, ActKind::Install, ActKind::Ruling(Ruled::Upheld), ActKind::Adopted] {
+    for transition in [ActKind::Return, ActKind::RankStep, ActKind::Reconnect, ActKind::Install, ActKind::Ruling(Ruled::Upheld), ActKind::Adopted] {
         let mut k = Kernel::new();
         k.bind_identity([0x5c; 32]);
         for _ in 0..8 {

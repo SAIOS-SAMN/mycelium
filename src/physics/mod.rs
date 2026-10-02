@@ -311,6 +311,9 @@ pub struct Physics {
     /// What contacts had moved, per lane, when this physics last booked them
     /// — condensed, then refused (`book_contacts`).
     pub contacts_mark: [[u64; 4]; 2],
+    /// What the voice's tubes had relieved, then transported, when this
+    /// physics last booked its field (`book_flux`, 78.71).
+    pub flux_mark: [[u64; 4]; 2],
     /// The METABOLIC RESERVE per lane — the two-stroke engine's fuel. ENTROPIC
     /// expansion (germination) SPENDS it (the reserve shrinks as the alphabet
     /// grows); SYNTROPIC optimization (consolidation) REGENERATES it (the reserve
@@ -334,6 +337,7 @@ impl Default for Physics {
             regen_mark: [0; 4],
             relax_mark: [0; 4],
             contacts_mark: [[0; 4]; 2],
+            flux_mark: [[0; 4]; 2],
             reserve: Reserve::of([reserve_max(); 4]),
         }
     }
@@ -435,6 +439,43 @@ impl Physics {
         self.syntropy(&condensed);
         self.bump(&refused);
         self.contacts_mark = [seen.0, seen.1];
+    }
+
+    /// 78.71 (2) — WHAT THE FIELD DID, DRAWN AND REFILLED BY FLUX: since this
+    /// physics last booked it, the flux the voice's tubes transported is
+    /// drawn from 𝒯 by its amount in quanta (never a unit per stroke), the
+    /// open flux their closures relieved falls off 𝒯's pressure exactly, and
+    /// the flux that closed (`closed`, the condensed 𝒯 since the contacts'
+    /// mark) refills 𝒯. So the reserve falls by the flux left open and no
+    /// more. `flux` is (relieved, transported) so far, per lane; a count
+    /// behind its mark books nothing on that lane (rule 11). A draw 𝒯 cannot
+    /// cover is refused by name and charged what the lane holds.
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a count behind its mark books nothing, named at the arm"
+    )]
+    pub fn book_flux(&mut self, flux: ([u64; 4], [u64; 4]), closed: [u64; 4]) -> Option<Depleted> {
+        let since = |now: &[u64; 4], mark: &[u64; 4]| -> [u64; 4] {
+            std::array::from_fn(|l| match now[l].checked_sub(mark[l]) {
+                Some(d) => d,
+                None => 0,
+            })
+        };
+        let relieved = since(&flux.0, &self.flux_mark[0]);
+        let transported = since(&flux.1, &self.flux_mark[1]);
+        self.flux_mark = [flux.0, flux.1];
+        self.relieve(&relieved);
+        let refused = match self.reserve.draw(transported) {
+            Ok(()) => None,
+            Err(refused) => {
+                let _ = self.reserve.drain(transported);
+                Some(refused)
+            }
+        };
+        if closed != [0; 4] {
+            self.reserve.restore(closed);
+        }
+        refused
     }
 
     /// A pivot on `lane` — a torsion charge (the demand for a new fiber). An

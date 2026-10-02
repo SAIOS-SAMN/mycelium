@@ -342,8 +342,11 @@ impl Exchange {
                     // traversals, returns sealed, unbound closes — and the
                     // rank steps the charts' holonomy algebras took.
                     let w = k.winding_tally();
+                    // 78.71: the court's field — its tubes, net and transport
+                    // apart, the flux left open, helicity, reconnections.
+                    let (tubes, net, transport, open, helicity) = k.tube_reading();
                     eprintln!(
-                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.physics().syntropic,
@@ -360,6 +363,8 @@ impl Exchange {
                         w.rank_ringless,
                         w.rank_formless,
                         w.rank_unread,
+                        w.flux_transport,
+                        w.reconnections,
                         mycelium::observe::FOLD_OUTCOMES
                             .iter()
                             .zip(folds)

@@ -88,6 +88,7 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
         ActKind::Settled,
         ActKind::Return,
         ActKind::RankStep,
+        ActKind::Reconnect,
     ] {
         assert_eq!(ActKind::from_byte(k.to_byte()), Some(k), "every kind round-trips its byte");
     }

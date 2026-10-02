@@ -20384,6 +20384,77 @@ length of its own.
   door asks `Reserve::covers` before drawing. One standing refusal had been
   counted 40 829 times in five minutes.
 
+### 78.72 The field held: tubes over time, open flux as 𝒯's pressure, the court's flux, helicity and reconnection, net apart from transport (2026-10-02, the operator's "proceed through 1-5")
+
+78.71 read flux per percept and forgot it. A fluid holds its tubes.
+
+**(1) Tubes are held, frozen in** (`cech/flux.rs::TubeRegistry`). Each
+tube is keyed by its null ray and keeps:
+- its reference flux and the generator of the field line that opened it;
+- its quantum, refined exactly as F4 says, with everything held rescaled
+  by `q/q′`;
+- its **net** flux, **transport** and **open** flux, in windings × mass.
+
+`carried(g)` conjugates every ray and generator and keeps the amounts
+(F3). The voice holds one registry across its strokes (`VOICE_TUBES`), and
+each court holds its own (`Kernel::tubes`, volatile: a restart re-opens a
+tube on its next flux).
+
+**(2) Open flux is 𝒯's pressure; closure relieves it exactly.**
+- The first flux on a ray *opens* its tube by its mass, and that open flux
+  presses on 𝒯.
+- A later flux on the ray *closes* on the tube: its windings × mass are
+  order on 𝒯, and they relieve what stood open by exactly the lesser of
+  the two.
+- On the voice, 𝒯 leaves the stroke's unit draw. `Physics::book_flux`
+  draws the flux transported, refills by the flux that closed, and
+  relieves the open flux closure took. So the 𝒯 reserve falls by the flux
+  left open and by nothing else.
+
+**(3) The court's flux path** (`court/winding.rs::step_flux`, beside
+`step_rank` in `ruled_admit`). A word entering the language admits, into
+the court's tubes, every field line its form carries:
+- its word vertices' acting carriages;
+- its faces' placed carriages;
+- each weighed by the word's mass.
+
+The court then books order, open pressure and relief on its 𝒯, and
+transport on its winding tally. This replaces 78.71's `admitted_flux`,
+which read each generator alone and held nothing.
+
+**Ruling still owed: mint 𝒯.** A minted word keeps its 𝒯 *span*. That is
+the safer arm, chosen under "proceed". Its flux is booked apart, at the
+court. Whether mint 𝒯 becomes the flux is the operator's call.
+
+**(4) Helicity and reconnection.**
+- *Helicity* is `Σ_{a≤b} net_a net_b ⟨G_a G_b⟩₀`, exact. It is zero for
+  translations, because `e_∞² = 0` and parallel lines do not link. It is
+  non-zero for a screw.
+- *Helicity is not the act.* Flux injected into a self-linked tube moves
+  helicity at every admission, which would put a transition act on every
+  word.
+- *Reconnection is a change in the field's topology:* a change in the
+  **links**, meaning the pairs of distinct tubes, each with net flux, whose
+  generators pair non-zero. A word whose admission moves the links writes
+  one `Reconnect` act (byte 21). That act changes the algorithm, so it
+  qualifies a fold prefix beside `Return` and `RankStep`.
+
+**(5) Net is not transport.** Flux there and back on one ray nets to zero
+and transports both ways. Every line prints them apart:
+- voice: `tubes n net … transport … open … helicity …`;
+- court: the same, plus `flux` and `reconnections`.
+
+So sign cancellation hides nothing.
+
+**Tested:**
+- `a_held_tube_opens_then_closes_and_relieves_exactly`: opens 4; closes 8
+  and relieves 4; a half-quantum refines the held transport to 24 + 1.
+- `flux_there_and_back_nets_zero_and_transports_both`.
+- `a_carried_registry_keeps_its_windings_and_helicity`, including the
+  screw's self-link and its zero links.
+- `every_lane_reads_its_transports_as_a_field`: (opened, closed, relieved,
+  transport) on 𝒯 = (4, 8, 4, 12).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

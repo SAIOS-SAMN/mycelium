@@ -401,6 +401,11 @@ pub struct Kernel {
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.
     pub(crate) glued_from: crate::network::nerve::Keyed<()>,
+    /// 78.71 (1), (4) — THIS COURT'S FIELD: the tubes its admitted words' flux
+    /// opened and closed, held over time, keyed by their null rays; their
+    /// helicity's moves are `Reconnect` acts. Volatile for now: a restart
+    /// re-opens each tube on its next flux.
+    pub(crate) tubes: crate::transducer::cech::flux::TubeRegistry,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

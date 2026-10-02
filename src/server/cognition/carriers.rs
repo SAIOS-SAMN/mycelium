@@ -126,6 +126,7 @@ impl Kernel {
             witnessed,
             last_transition: _,
             glued_from,
+            tubes,
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,
@@ -216,6 +217,7 @@ impl Kernel {
         c.count("lie_basis", lie_basis.scoped().map(|(_, b)| b.len()).sum());
         c.count("witnessed", witnessed.len());
         c.count("glued_from", glued_from.len());
+        c.count("tubes", tubes.len());
         c.count("pending_refine", pending_refine.len());
         c.count("heard", heard.len());
         c.count("heard_at", nested(heard_at));

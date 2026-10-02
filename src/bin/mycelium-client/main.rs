@@ -351,14 +351,21 @@ fn main() {
         // moved nothing draws nothing. And what the contacts this mind
         // perceived did is booked on the same physics: order built where
         // they condensed, pressure where they were refused.
-        // 78.71 — A STROKE THAT TRANSPORTED FLUX MOVED 𝒯: its percepts'
-        // closed flux (`mark_flux`) and its faces' null transports rose on 𝒯
-        // since the last booking. No outcome lane carries 𝒯 (a chain holds no
-        // transport), so it is read here, off the transport itself.
+        // 78.71 (2) — 𝒯 IS DRAWN BY THE FLUX TRANSPORTED, NEVER A UNIT: no
+        // outcome lane carries 𝒯 (a chain holds no transport), so the
+        // stroke's unit draw leaves it, and the voice's tubes book it — the
+        // flux transported drawn, the closed flux refilling, the open flux
+        // relieved by closure (`book_flux`). The closed flux is the condensed
+        // 𝒯 since the contacts' mark, read before `book_contacts` moves it.
         let seen = mycelium::transducer::family::pairing::contact_lanes();
         let mut moved = outcome.moved();
-        moved[2] |= seen.0[2] > entity.physics().contacts_mark[0][2];
+        moved[2] = false;
         let _ = entity.physics_mut().spend(moved);
+        let closed: [u64; 4] = std::array::from_fn(|l| match (l, seen.0[l].checked_sub(entity.physics().contacts_mark[0][l])) {
+            (2, Some(d)) => d,
+            _ => 0,
+        });
+        let _ = entity.physics_mut().book_flux(mycelium::transducer::family::pairing::flux_lanes(), closed);
         entity.physics_mut().book_contacts(seen);
         let Counts {
             fed,
@@ -431,8 +438,17 @@ fn main() {
             // contact or a face's carriage condensed (`book_contacts`), it
             // books syntropy and never a draw, so the 𝒯 transport is read
             // here (78.68).
+            // 78.71 — and the voice's field: its tubes, their net flux and
+            // transport (sign cancellation never hides the second), the flux
+            // left open, and their helicity.
+            let field = match mycelium::transducer::family::pairing::tube_reading() {
+                Some((n, net, transport, open, helicity)) => {
+                    format!("tubes {n} net {net} transport {transport} open {open} helicity {helicity}")
+                }
+                None => "tubes unread".to_string(),
+            };
             eprintln!(
-                "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {}",
+                "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),
                 entity.physics().syntropic,
                 entity.physics().pressure,

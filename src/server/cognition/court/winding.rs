@@ -65,6 +65,10 @@ pub struct WindingTally {
     /// Ruled sentences whose circuits added no dimension: the chart's
     /// algebra already held them.
     pub rank_held: u64,
+    /// 78.71 — the flux transported through this court's tubes, in quanta
+    /// weighed by mass, and the reconnections its helicity recorded.
+    pub flux_transport: u64,
+    pub reconnections: u64,
 }
 
 impl Winding {
@@ -337,8 +341,62 @@ impl Kernel {
         self.mark_persist();
     }
 
+    /// 78.71 (3), (4) — A WORD'S FIELD, READ AT ITS ADMISSION against this
+    /// court's tubes held over time. Its field lines are its word vertices'
+    /// acting carriages and its faces' relative carriages (78.68: the relative
+    /// displacement survives the quotient), each carrying the word's support
+    /// (`sub`, compartments — the unit every lane counts). Through the
+    /// voices' one reader (`transport_order`): a flux on a new ray opens a
+    /// tube and presses 𝒯; one on a held tube closes on it, order on 𝒯, and
+    /// relieves exactly the open flux it held.
+    ///
+    /// RECONNECTION. Where the tubes' helicity — `Σ net_a net_b ⟨G_a G_b⟩₀` —
+    /// moved, the field's topology changed: one `Reconnect` act is sealed,
+    /// citing the word, a transition of the algorithm (78.68, 78.71 (4)).
+    pub(crate) fn step_flux(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
+        let Some(w) = self.word_at(addr) else { return };
+        let Some(form) = crate::transducer::sentence::from_element_form(w) else { return };
+        let mass = w.sub().len() as u64;
+        let mut lines: Vec<crate::transducer::family::pairing::FieldLine> = Vec::new();
+        for (_, v) in form.vertices.scoped() {
+            if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
+                for (_, a) in acts.scoped() {
+                    lines.push(((*a.carriage).clone(), a.gauge.clone(), mass));
+                }
+            }
+        }
+        for (_, f) in form.faces.entries() {
+            lines.push((f.place.carriage.clone(), f.place.gauge.clone(), mass));
+        }
+        if lines.is_empty() {
+            return;
+        }
+        // A reconnection is the links moving, never the helicity alone: flux
+        // injected into a linked tube moves helicity at every admission.
+        let before = self.tubes.links();
+        let r = crate::transducer::family::pairing::transport_order(&lines, &[], &mut self.tubes, budget);
+        let t = crate::transducer::rewrite::LANE_TEMPORAL;
+        let on_t = |x: u64| -> [u64; 4] { std::array::from_fn(|l| if l == t { x } else { 0 }) };
+        self.physics.syntropy(&on_t(r.order[t]));
+        self.physics.bump(&on_t(r.opened[t]));
+        self.physics.relieve(&on_t(r.relieved[t]));
+        crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.flux_transport, r.transport[t]);
+        if self.tubes.links() != before {
+            let me = self.identity;
+            self.append_step(crate::chronometry::ActKind::Reconnect, addr, me);
+            crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.reconnections, 1);
+        }
+    }
+
     /// The winding carrier's reading, for the observer.
     pub fn winding_tally(&self) -> WindingTally {
         self.winding_tally
+    }
+
+    /// 78.71 — this court's field as it stands: how many tubes, their net
+    /// flux, transport and open flux in windings, and their helicity.
+    pub fn tube_reading(&self) -> (usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational) {
+        let (net, transport, open) = self.tubes.totals();
+        (self.tubes.len(), net, transport, open, self.tubes.helicity())
     }
 }

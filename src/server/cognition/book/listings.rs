@@ -724,6 +724,8 @@ impl Kernel {
             // 78.68 — the word's circuits join its chart's holonomy algebra;
             // a new dimension is one RankStep act.
             self.step_rank(addr, budget);
+            // 78.71 — and its field against this court's tubes.
+            self.step_flux(addr, budget);
             self.rehear_awaiting(addr, budget);
         }
     }

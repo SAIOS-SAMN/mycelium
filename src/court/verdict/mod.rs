@@ -119,7 +119,7 @@ pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 pub const REFUSE_FOLD_IDLE: &str = "fold prefix carries no work";
 /// 78.68, 78.69: the algorithm did not change in the prefix — no `Return` (a
 /// ring completed an age), no `RankStep` (a chart's holonomy algebra gained
-/// a dimension), no generator entering the presentation (`Install`,
+/// a dimension), no `Reconnect` (the field's links moved, 78.71), no generator entering the presentation (`Install`,
 /// `Ruling(Upheld)`, `Adopted`) — so it is coefficient motion and a fold
 /// would cut nothing the physics names. Replaces 78.67 (B)'s byte
 /// break-even.

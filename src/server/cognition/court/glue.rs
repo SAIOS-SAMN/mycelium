@@ -56,24 +56,6 @@ struct Fills {
     class: Option<(Rotor, usize)>,
 }
 
-/// 78.71 — A SENTENCE'S FLUX ON 𝒯, read at the court: its word vertices'
-/// acting carriages, each a field line carrying the word's support, through
-/// the voices' one reader (`transport_order`). A word that is no sentence, or
-/// whose transports carry no null mode, has none.
-fn admitted_flux(spoken: &Element, budget: &mut crate::physics::Budget) -> u64 {
-    let Some(form) = crate::transducer::sentence::from_element_form(spoken) else { return 0 };
-    let mass = spoken.sub().len() as u64;
-    let mut transports: Vec<crate::transducer::family::pairing::FieldLine> = Vec::new();
-    for (_, v) in form.vertices.scoped() {
-        if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
-            for (_, a) in acts.scoped() {
-                transports.push(((*a.carriage).clone(), a.gauge.clone(), mass));
-            }
-        }
-    }
-    crate::transducer::family::pairing::transport_order(&transports, &[], budget)[crate::transducer::rewrite::LANE_TEMPORAL]
-}
-
 impl Kernel {
     /// On the stroke of the act that fetched the word (65.5): the exchange's
     /// glue, or the witness door's offer — never one of its own. The acts in
@@ -444,9 +426,9 @@ impl Kernel {
             // read off its own transports — each word vertex's acting
             // carriage, by its modes, in its tubes' quanta, the mass its
             // support carries (`transport_order`, the voices' one reader).
-            let mut mag = spoken.magnitude();
-            crate::physics::metabolism::step_or_refuse(&mut mag[2], admitted_flux(spoken, budget));
-            self.physics.syntropy(&mag);
+            // Its flux on 𝒯 is read where every admission is, `ruled_admit`
+            // (`Kernel::step_flux`), against the court's held tubes.
+            self.physics.syntropy(&spoken.magnitude());
         }
         self.ruled_admit(&addr, budget);
         self.fed_admit(&addr, spoken.clone());

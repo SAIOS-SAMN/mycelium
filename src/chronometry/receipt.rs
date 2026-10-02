@@ -307,6 +307,10 @@ pub enum ActKind {
     /// this court from the circuits a voice reported. The one act a new
     /// dimension writes.
     RankStep,
+    /// 78.71 (4) — THE FIELD RECONNECTED: the helicity of this court's tubes
+    /// moved when a word's flux was admitted — the topology of the language's
+    /// field changed. A transition of the algorithm.
+    Reconnect,
 }
 
 impl ActKind {
@@ -333,6 +337,7 @@ impl ActKind {
             ActKind::Orbit => 15,
             ActKind::Return => 19,
             ActKind::RankStep => 20,
+            ActKind::Reconnect => 21,
         }
     }
 
@@ -359,6 +364,7 @@ impl ActKind {
             15 => ActKind::Orbit,
             19 => ActKind::Return,
             20 => ActKind::RankStep,
+            21 => ActKind::Reconnect,
             _ => return None,
         })
     }
@@ -371,7 +377,12 @@ impl ActKind {
     pub fn changes_algorithm(self) -> bool {
         matches!(
             self,
-            ActKind::Return | ActKind::RankStep | ActKind::Install | ActKind::Ruling(Ruled::Upheld) | ActKind::Adopted
+            ActKind::Return
+                | ActKind::RankStep
+                | ActKind::Reconnect
+                | ActKind::Install
+                | ActKind::Ruling(Ruled::Upheld)
+                | ActKind::Adopted
         )
     }
 
@@ -395,6 +406,7 @@ impl ActKind {
             ActKind::Orbit => b"orbit",
             ActKind::Return => b"return",
             ActKind::RankStep => b"rank step",
+            ActKind::Reconnect => b"reconnect",
         }
     }
 

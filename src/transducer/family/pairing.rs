@@ -169,6 +169,32 @@ thread_local! {
 /// the process ends.
 static CONDENSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 static REFUSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+/// 78.71 (2) — THE OPEN FLUX A CLOSURE RELIEVED, per lane: the exact conjugate
+/// of the pressure an open field line raised (booked on `REFUSED_ON`).
+static RELIEVED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+/// 78.71 (2), (5) — THE TRANSPORT, per lane: how much flux moved, both ways,
+/// in quanta weighed by mass — what a stroke draws on 𝒯.
+static TRANSPORTED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+
+/// 78.71 (1) — THIS PROCESS'S TUBES, held over time: a voice is one mind per
+/// process, so its field's tubes keep their identity across strokes here.
+static VOICE_TUBES: std::sync::LazyLock<std::sync::Mutex<crate::transducer::cech::flux::TubeRegistry>> =
+    std::sync::LazyLock::new(|| std::sync::Mutex::new(crate::transducer::cech::flux::TubeRegistry::new()));
+
+/// 78.71 — the open flux closures relieved and the transport moved, per lane,
+/// since the process began.
+pub fn flux_lanes() -> ([u64; 4], [u64; 4]) {
+    let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
+    (read(&RELIEVED_ON), read(&TRANSPORTED_ON))
+}
+
+/// 78.71 — the voice's tubes as they stand: how many, net flux, transport,
+/// open, and helicity, for the stroke's line.
+pub fn tube_reading() -> Option<(usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational)> {
+    let t = VOICE_TUBES.lock().ok()?;
+    let (n, tr, o) = t.totals();
+    Some((t.len(), n, tr, o, t.helicity()))
+}
 
 /// A REFUSAL ON ITS LANES, one per lane it names: a refused contact
 /// transported nothing, so its pressure is the event on the lane that
@@ -276,12 +302,35 @@ pub(crate) fn mark_flux(
             Some((h, mass))
         })
         .collect();
-    let order = transport_order(word_transports, &circuits, budget);
-    for (lane, amount) in order.iter().enumerate() {
-        if *amount > 0 {
-            mark_measured(&CONDENSED_ON, std::array::from_fn(|l| l == lane), *amount);
+    // The voice's own tubes, held across its strokes (78.71 (1)). A lock
+    // poisoned by a panic elsewhere reads this percept's field into fresh
+    // tubes rather than none.
+    let reading = match VOICE_TUBES.lock() {
+        Ok(mut tubes) => transport_order(word_transports, &circuits, &mut tubes, budget),
+        Err(_) => transport_order(word_transports, &circuits, &mut crate::transducer::cech::flux::TubeRegistry::new(), budget),
+    };
+    let book = |on: &[std::sync::atomic::AtomicU64; 4], v: &[u64; 4]| {
+        for (lane, amount) in v.iter().enumerate() {
+            if *amount > 0 {
+                mark_measured(on, std::array::from_fn(|l| l == lane), *amount);
+            }
         }
-    }
+    };
+    book(&CONDENSED_ON, &reading.order);
+    book(&REFUSED_ON, &reading.opened);
+    book(&RELIEVED_ON, &reading.relieved);
+    book(&TRANSPORTED_ON, &reading.transport);
+}
+
+/// 78.71 — WHAT A PERCEPT'S FIELD DID, PER LANE: the order it built (closed),
+/// the open flux it pressed, the open flux its closures relieved, and the
+/// transport it moved.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct FluxReading {
+    pub order: [u64; 4],
+    pub opened: [u64; 4],
+    pub relieved: [u64; 4],
+    pub transport: [u64; 4],
 }
 
 /// 78.71 — THE ORDER A PERCEPT'S TRANSPORTS BUILD, PER LANE, read as a field
@@ -293,37 +342,50 @@ pub(crate) fn mark_flux(
 ///   Its turns are 𝒽, its boosts and dilations 𝒮, its hue map 𝒢, each by the
 ///   mass carried — read by its modes, never by a chord.
 /// - THE FLUX — every null mode, of the field lines and of the closed
-///   circuits' curvature (Stokes), admitted to its tube; 𝒯 is the tubes' mass
-///   flux in quanta, never booked twice.
+///   circuits' curvature (Stokes), admitted to the tubes held over time
+///   (78.71 (1)): a flux on a new ray OPENS a tube and presses 𝒯; one on a
+///   held tube CLOSES on it — order on 𝒯 — and relieves exactly the open
+///   flux that tube held. The transport is both, in quanta weighed by mass.
 pub(crate) fn transport_order(
     word_transports: &[FieldLine],
     circuits: &[(crate::transducer::element::Versor, u64)],
+    tubes: &mut crate::transducer::cech::flux::TubeRegistry,
     budget: &mut crate::physics::Budget,
-) -> [u64; 4] {
-    let mut order = [0u64; 4];
-    let mut tubes = crate::transducer::cech::flux::Tubes::new();
+) -> FluxReading {
+    use crate::transducer::rewrite::LANE_TEMPORAL;
+    let mut r = FluxReading::default();
+    let mut admit = |r: &mut FluxReading, line: &crate::transducer::element::Versor, mass: u64, budget: &mut crate::physics::Budget| {
+        // The generator of the field line, on §52's chart; a line off the
+        // chart (a 180° turn) is paired by its flux alone.
+        let generator = crate::transducer::cayley::bivector_of(line);
+        for flux in crate::transducer::cech::flux::null_fluxes(line, budget).into_iter().flatten() {
+            let g = match &generator {
+                Some(g) => g.clone(),
+                None => flux.clone(),
+            };
+            if let Some(a) = tubes.admit(&flux, &g, mass) {
+                crate::physics::metabolism::step_or_refuse(&mut r.order[LANE_TEMPORAL], a.closed);
+                crate::physics::metabolism::step_or_refuse(&mut r.opened[LANE_TEMPORAL], a.opened);
+                crate::physics::metabolism::step_or_refuse(&mut r.relieved[LANE_TEMPORAL], a.relieved);
+                crate::physics::metabolism::step_or_refuse(&mut r.transport[LANE_TEMPORAL], a.transport);
+            }
+        }
+    };
     for (v, gauge, mass) in word_transports {
         let mut lanes = carriage_lanes(v, budget);
-        lanes[crate::transducer::rewrite::LANE_TEMPORAL] = false;
+        lanes[LANE_TEMPORAL] = false;
         lanes[crate::transducer::rewrite::LANE_GAUGE] |= gauge.iter().any(|(a, b)| a != b);
-        for (o, on) in order.iter_mut().zip(lanes) {
+        for (o, on) in r.order.iter_mut().zip(lanes) {
             if on {
                 crate::physics::metabolism::step_or_refuse(o, *mass);
             }
         }
-        for flux in crate::transducer::cech::flux::null_fluxes(v, budget).into_iter().flatten() {
-            tubes.admit(&flux, *mass);
-        }
+        admit(&mut r, v, *mass, budget);
     }
     for (h, mass) in circuits {
-        for flux in crate::transducer::cech::flux::null_fluxes(h, budget).into_iter().flatten() {
-            tubes.admit(&flux, *mass);
-        }
+        admit(&mut r, h, *mass, budget);
     }
-    if let Some(t) = tubes.measure() {
-        order[crate::transducer::rewrite::LANE_TEMPORAL] = t;
-    }
-    order
+    r
 }
 
 /// 78.68 — A FACE'S TRANSPORT, MARKED AS CONDENSED: a face placed with the

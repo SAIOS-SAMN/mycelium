@@ -109,7 +109,8 @@ impl Kernel {
     ///
     /// (B) The algorithm must have changed in it (78.68, 78.69): a
     /// `Return` (a ring completed an age, `m ≡ 0 mod ℓ`), a `RankStep` (a
-    /// chart's holonomy algebra gained a dimension), or a generator entering
+    /// chart's holonomy algebra gained a dimension), a `Reconnect` (the
+    /// field's links moved, 78.71), or a generator entering
     /// the presentation — `Install`, `Ruling(Upheld)`, `Adopted`. The ledger
     /// holds the algorithm and never the sentences composed from it (78.69),
     /// so these are the acts that change what it holds. Between them the
