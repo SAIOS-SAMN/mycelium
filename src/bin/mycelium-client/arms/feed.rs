@@ -19,7 +19,7 @@ pub(crate) fn feed_arm(
     extract_memo: &mut mycelium::transducer::family::ExtractMemo,
     occluded: bool,
 ) {
-    let Stroke { entity, physics, c, outcome, m, tag } = stroke;
+    let Stroke { entity, c, outcome, m, tag } = stroke;
     // 50.9: what the last refusals contracted is uttered first, citing
     // the receipts, before any new family is presented. And 21 step 3:
     // what a court is waiting on is taught before it, so the generator a
@@ -67,10 +67,10 @@ pub(crate) fn feed_arm(
         // THE FAMILY WHOLE — the form engine is the only extractor. A family
         // it does not close is a withheld form (U1 stands it).
         let mag = family_magnitude(&task.train);
-        if !mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+        if !mycelium::economy::lanes_short(&entity.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
             break;
         }
-        physics.bump(&mag);
+        entity.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
         // A task whose members have no A5 form has no identity, so there is
         // nothing to extract a rule for and nothing to name it by (U14).
@@ -89,8 +89,8 @@ pub(crate) fn feed_arm(
             true => mycelium::transducer::family::Frames::new(),
             false => mycelium::transducer::family::perceive_family(&task.train),
         };
-        let mut extract_budget = physics
-            .stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
+        let mut extract_budget =
+            entity.stroke_n(mycelium::transducer::family::extraction_spend(&task.train, &frames));
         let extracted = mycelium::transducer::family::extract_rule_cached(
             extract_memo,
             &fam,

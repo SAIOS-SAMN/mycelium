@@ -40,12 +40,14 @@ where
 /// against a 4 KiB frame — so the back-fill stopped there and could never
 /// pass it. Receipts on either side, 1.9 KiB, served fine.
 ///
-/// The budget is now the same on every node of the mesh: one number, so a
-/// page that one node can build another can read, and no node's memory
-/// pressure changes what the protocol is. `BODY_BUDGET` remains the hard
-/// ceiling the codec refuses past.
+/// The budget is the same on every node of the mesh, so a page that one
+/// node can build another can read, and no node's memory pressure changes
+/// what the protocol is. AND IT IS THE WIRE'S ONE CARRIER (PH1): a nerve act
+/// carries what a frame carries, `BODY_BUDGET`, the protocol's coordinate
+/// the codec refuses past and the wire contract states (H4) — one number
+/// the mesh agrees on, not a second, smaller one chosen beside it.
 pub fn frame_budget() -> usize {
-    64 * 1024
+    BODY_BUDGET
 }
 
 /// The four orthogonal polytonic lanes (𝒮 spatial, 𝒢 gauge, 𝒯 temporal,

@@ -56,18 +56,26 @@ pub struct Metabolism {
     /// Returned to the reserve: `draw`'s conjugate, and the half that says
     /// whether the engine is spending or cycling.
     pub restored: [u64; 4],
-    /// Draws refused for want of a lane. A depleted lane does not preempt
-    /// the others, so this is a per-event count and not a stall.
-    pub depleted: u64,
+    /// Draws refused, BY THE LANE THAT REFUSED THEM (PHY1): a depleted lane
+    /// does not preempt the others, so a mind exhausts a degree of freedom
+    /// and not its time, and the reading says which.
+    pub depleted: [u64; 4],
     /// Rotors whose orbit closes, and the sum of their periods — `Σℓ`,
     /// which with `orbit_finite` gives the mean period without storing a
     /// histogram.
     pub orbit_finite: u64,
     pub orbit_sum: u64,
-    /// Rotors of infinite order: an orbit, which never closes. Kept apart
-    /// from `ℓ = 0`, because A19 spells infinite order that way and the
-    /// two readings are opposite (53.6).
+    /// Motions that turn at no order the algebra admits — rosettes, which
+    /// never close. Kept apart from `ℓ = 0`, because A19 spells infinite
+    /// order that way and the two readings are opposite (53.6).
     pub orbit_infinite: u64,
+    /// Motions with a mode that does not turn at all — a transvection or a
+    /// null shear, UNBOUND by name (PHY1): it carries and never returns, and
+    /// was counted closed by the rotation's order alone.
+    pub orbit_unbound: u64,
+    /// Motions whose modes did not read: no versor, undecomposed, or the
+    /// census's stroke spent — unmeasured, never counted closed or open.
+    pub orbit_unread: u64,
     /// VS1 — ENTROPY BY LANE: bends whose trial triggered an irreversible
     /// event of the ledger or lost a reading (78.7 as amended), per lane
     /// (𝒮, 𝒢, 𝒯, 𝒽), never summed.
@@ -82,7 +90,7 @@ thread_local! {
     static METABOLISM: std::cell::Cell<Metabolism> =
         const { std::cell::Cell::new(Metabolism {
             cauterized: 0, released: 0, sealed: 0, drawn: [0; 4], restored: [0; 4],
-            depleted: 0, orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0, viscous: [0; 4],
+            depleted: [0; 4], orbit_finite: 0, orbit_sum: 0, orbit_infinite: 0, orbit_unbound: 0, orbit_unread: 0, viscous: [0; 4],
             overflowed: 0,
         }) };
 }
@@ -146,15 +154,21 @@ pub fn note_viscous(lane: usize) {
     });
 }
 
-/// One draw against the reserve, per lane, and whether it was afforded.
-pub fn note_draw(cost: &[u64; 4], afforded: bool) {
-    note(|m| match afforded {
-        true => {
-            for (slot, c) in m.drawn.iter_mut().zip(cost.iter()) {
-                step(slot, *c, &mut m.overflowed);
-            }
+/// One draw against the reserve that was afforded, per lane.
+pub fn note_draw(cost: &[u64; 4]) {
+    note(|m| {
+        for (slot, c) in m.drawn.iter_mut().zip(cost.iter()) {
+            step(slot, *c, &mut m.overflowed);
         }
-        false => m.depleted += 1,
+    });
+}
+
+/// One draw the reserve refused, on the lane that could not cover it.
+pub fn note_refused(lane: usize) {
+    note(|m| {
+        if let Some(slot) = m.depleted.get_mut(lane) {
+            step(slot, 1, &mut m.overflowed);
+        }
     });
 }
 
@@ -167,16 +181,19 @@ pub fn note_restore(cost: &[u64; 4]) {
     });
 }
 
-/// One rotor's orbit period — the cyclotomic structure `μ` is carried by.
-pub fn note_orbit(order: Option<crate::transducer::alphabet::Order>) {
-    use crate::transducer::alphabet::Order;
-    note(|m| match order {
-        Some(Order::Finite(n)) => {
+/// One motion's period, read off its own modes (PHY1) — the cyclotomic
+/// structure `μ` is carried by, and the motions that never return named by
+/// why.
+pub fn note_orbit(period: Option<crate::transducer::cga::Period>) {
+    use crate::transducer::cga::Period;
+    note(|m| match period {
+        Some(Period::Closes(n)) => {
             m.orbit_finite += 1;
-            step(&mut m.orbit_sum, u64::from(n), &mut m.overflowed);
+            step(&mut m.orbit_sum, n, &mut m.overflowed);
         }
-        Some(Order::Infinite) => m.orbit_infinite += 1,
-        None => {}
+        Some(Period::Rosette) => m.orbit_infinite += 1,
+        Some(Period::Unbound) => m.orbit_unbound += 1,
+        None => m.orbit_unread += 1,
     });
 }
 
@@ -197,14 +214,16 @@ impl Metabolism {
     /// counter by the caller rather than duplicated here.
     pub fn line(&self) -> String {
         format!(
-            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} open {} \
-             | draw {:?} restore {:?} depleted {} | overflowed {}",
+            "entropy: cauterized {} released {} | sealed {} | orbit: closed {} Σℓ {} rosette {} unbound {} unread {} \
+             | draw {:?} restore {:?} depleted {:?} | overflowed {}",
             self.cauterized,
             self.released,
             self.sealed,
             self.orbit_finite,
             self.orbit_sum,
             self.orbit_infinite,
+            self.orbit_unbound,
+            self.orbit_unread,
             self.drawn,
             self.restored,
             self.depleted,

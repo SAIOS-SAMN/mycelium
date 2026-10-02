@@ -347,7 +347,7 @@ impl Contemplation {
     pub fn set_now(&mut self, k: u64) {
         self.now_k = k;
         // The window is the last aperture of stamps, in stamp order.
-        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let n = crate::physics::aperture_cycle() as usize;
         self.stroke_tu.push(k);
         if self.stroke_tu.len() > n {
             self.stroke_tu.remove(0);
@@ -362,7 +362,7 @@ impl Contemplation {
     /// first aperture after boot and no thought is paid to a height
     /// nothing measured.
     pub fn aperture_tu(&self) -> Option<u64> {
-        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let n = crate::physics::aperture_cycle() as usize;
         if self.stroke_tu.len() < n {
             return None;
         }

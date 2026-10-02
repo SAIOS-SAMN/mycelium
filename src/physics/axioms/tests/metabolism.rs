@@ -26,7 +26,7 @@ fn d2_the_ledger_separates_a_lane_that_cycles_from_one_that_spends() {
     assert_eq!(m.drawn, [3, 5, 0, 0], "only afforded draws move a lane");
     assert_eq!(m.restored, [3, 0, 0, 0], "the conjugate half");
     assert_eq!(m.flux(), [0, 5, 0, 0], "lane 0 cycled; lane 1 spent");
-    assert_eq!(m.depleted, 1, "the refusal is a reading, not a silence");
+    assert_eq!(m.depleted, [0, 1, 0, 0], "the refusal is a reading, named on the lane that refused it");
 }
 
 /// D2 — THE FLUX IS EXACT AT THE BOUND OF A LANE.
@@ -53,26 +53,55 @@ fn the_flux_is_exact_at_the_bound_of_a_lane() {
 ///
 /// The two cauterizations terminate different skeleta, so a ledger
 /// that merges them cannot say which dimension the engine spends.
-/// `orbit_infinite` is kept apart from a period of zero because A19
-/// spells infinite order as `0` and the two readings are opposite —
-/// an orbit that never closes against an orbit with no period at all.
+/// A rosette is kept apart from a period of zero because A19 spells
+/// infinite order as `0` and the two readings are opposite — an orbit
+/// that never closes against an orbit with no period at all; and an
+/// unbound motion (PHY1) apart from both, by name.
 #[test]
 fn d2_entropy_and_orbit_are_counted_at_their_own_dimensions() {
     use crate::physics::metabolism;
-    use crate::transducer::alphabet::Order;
+    use crate::transducer::cga::Period;
     let _ = metabolism::take_metabolism();
     metabolism::note_cauterized();
     metabolism::note_released();
     metabolism::note_released();
-    metabolism::note_orbit(Some(Order::Finite(4)));
-    metabolism::note_orbit(Some(Order::Finite(2)));
-    metabolism::note_orbit(Some(Order::Infinite));
+    metabolism::note_orbit(Some(Period::Closes(4)));
+    metabolism::note_orbit(Some(Period::Closes(2)));
+    metabolism::note_orbit(Some(Period::Rosette));
+    metabolism::note_orbit(Some(Period::Unbound));
     metabolism::note_orbit(None);
     let m = metabolism::take_metabolism();
     assert_eq!((m.cauterized, m.released), (1, 2), "two dimensions, two counts");
     assert_eq!(m.entropy(), 3, "and a total that does not lose them");
     assert_eq!((m.orbit_finite, m.orbit_sum), (2, 6), "Σℓ over closed orbits");
     assert_eq!(m.orbit_infinite, 1, "an orbit that never closes is not a period");
+    assert_eq!((m.orbit_unbound, m.orbit_unread), (1, 1), "a motion that carries and never returns, and one unread, each named");
+}
+
+/// PHY1 — A MOTION'S PERIOD IS ITS MODES', NOT ITS ROTATION'S. A turn of
+/// order four reads closed at four; the same turn carried by a translation
+/// reads unbound, which the rotation's order alone counted closed.
+#[test]
+fn a_motions_period_is_read_off_its_modes() {
+    use crate::transducer::cga::{motion_modes, period_of, Period};
+    use num_rational::BigRational;
+    let quarter = crate::transducer::alphabet::LetterId::turn_90((0, 1)).expect("a quarter turn");
+    let word = crate::transducer::alphabet::Word::from_letters(&[(quarter, false)]);
+    let turn = crate::transducer::element::versor_of_word(&word).expect("a word is a versor");
+    let mut b = crate::physics::Physics::default().stroke_n(1 << 16);
+    let modes = motion_modes(&turn, &mut b).expect("read").expect("decomposes");
+    assert_eq!(period_of(&modes), Some(Period::Closes(4)), "a quarter turn returns at four");
+    let one = BigRational::from_integer(1.into());
+    let zero = BigRational::from_integer(0.into());
+    // A shift in the turn's own plane is a turn about another centre: it
+    // still returns at four.
+    let in_plane = crate::transducer::cga::translator_at(&[one.clone(), zero.clone(), zero.clone()]);
+    let modes = motion_modes(&in_plane.geo(&turn), &mut b).expect("read").expect("decomposes");
+    assert_eq!(period_of(&modes), Some(Period::Closes(4)), "a turn about another centre returns at four");
+    // A shift along the turn's axis is a screw: it carries and never returns.
+    let along = crate::transducer::cga::translator_at(&[zero.clone(), zero, one]);
+    let modes = motion_modes(&along.geo(&turn), &mut b).expect("read").expect("decomposes");
+    assert_eq!(period_of(&modes), Some(Period::Unbound), "a screw never returns");
 }
 
 /// ATTENTION IS ANISOTROPIC: A DRAW IS A VECTOR AND REFUSES PER LANE

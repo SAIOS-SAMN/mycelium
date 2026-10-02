@@ -9,7 +9,7 @@ use mycelium::physics::StrokeOutcome;
 use mycelium::transducer::element::measure_lanes;
 
 pub(crate) fn quote_arm(stroke: &mut Stroke<'_>, occluded: bool) {
-let Stroke { entity, physics, c, outcome, m, tag } = stroke;
+let Stroke { entity, c, outcome, m, tag } = stroke;
 let lang = entity.atlas_standing_counts();
 // The T lane is excluded from the dwell entirely (C4), so it neither
 // holds a voice back nor releases it: a lane that never falls would
@@ -89,7 +89,11 @@ match entity.quote() {
         // That is rule 10's loop with no boundary, and it is paid for
         // here: one spend per carrier the voice actually speaks. A page
         // beyond one stroke is answered across quotes, never in one.
-        let mut spend = physics.stroke();
+        let mut spend = entity.stroke();
+        // PHY1: the demands passed over because a lane they occupy cannot
+        // fund an expansion, by that lane — a mind exhausts a degree of
+        // freedom and goes on answering on the lanes it still holds.
+        let mut short_on = [0u32; 4];
         for cluster in &q.clusters {
             // THE LISTING ARRIVES WHOLE (L8q). Served as a chain of links,
             // the only move here would be to subtract the links held words
@@ -124,6 +128,14 @@ match entity.quote() {
                 demands.len()
             );
             for (demand, kind, chart, links) in &demands {
+                let short = entity.physics().reserve_shortfall(mycelium::physics::Physics::lanes_of(&measure_lanes(links)));
+                let short_lanes = mycelium::economy::lanes_short(&short);
+                if !short_lanes.is_empty() {
+                    for l in short_lanes {
+                        short_on[l] += 1;
+                    }
+                    continue;
+                }
                 // 50.5, L8r: the addresses standing on this demand's own
                 // chart — THE STRATUM AS COORDINATES, not as forms. The
                 // chart routes; what decides is whether the form
@@ -187,7 +199,7 @@ match entity.quote() {
                             mycelium::anastome::dialogue::ProbeClosure::Closed => {
                                 c.derived += 1;
                                 n_closed += 1;
-                                physics.bump(&mag);
+                                entity.physics_mut().bump(&mag);
                                 StrokeOutcome::add(&mut outcome.closed, &mag);
                                 eprintln!(
                                     "[{tag}] demand {} on {:02x}{:02x}… closed by {:02x}{:02x}…",
@@ -201,7 +213,7 @@ match entity.quote() {
                             mycelium::anastome::dialogue::ProbeClosure::Residual(_) => {
                                 c.witnessed += 1;
                                 n_residual += 1;
-                                physics.bump(&mag);
+                                entity.physics_mut().bump(&mag);
                             }
                             mycelium::anastome::dialogue::ProbeClosure::Gone => n_settled += 1,
                             mycelium::anastome::dialogue::ProbeClosure::Nothing => n_nothing += 1,
@@ -229,7 +241,7 @@ match entity.quote() {
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
         );
         eprintln!(
-            "[{tag}] [{}] quote {} clusters: closed {n_closed} residual {n_residual} nothing {n_nothing} settled {n_settled} silent {n_silent} err {n_err}",
+            "[{tag}] [{}] quote {} clusters: closed {n_closed} residual {n_residual} nothing {n_nothing} settled {n_settled} silent {n_silent} err {n_err} short on {short_on:?}",
             mycelium::chronometry::Height::stamp_of(entity.now_tu()),
             q.clusters.len(),
         );
@@ -245,7 +257,7 @@ match entity.quote() {
 // Syllabus after quote so a voice can close dialect/idea charts
 // before its first SYLLABUS line. Under the Budget, not a timer.
 if !occluded
-    && mycelium::economy::lanes_short(&physics.reserve_shortfall([true; 4])).is_empty()
+    && mycelium::economy::lanes_short(&entity.physics().reserve_shortfall([true; 4])).is_empty()
     && (entity.epigenome.genome_len() == 0 || entity.epigenome.atlas_is_empty())
 {
     if let Ok(n) = entity.pull_syllabus() {

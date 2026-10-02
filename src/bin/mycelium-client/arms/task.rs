@@ -14,7 +14,7 @@ pub(crate) fn task_arm(
     extract_memo: &mut mycelium::transducer::family::ExtractMemo,
     occluded: bool,
 ) {
-let Stroke { entity, physics, c, outcome, tag, .. } = stroke;
+let Stroke { entity, c, outcome, tag, .. } = stroke;
 if !occluded {
     speak_contracted(entity, tag);
     speak_owed(entity, tag);
@@ -29,15 +29,15 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
     // The form engine is the only extractor. A family it does not
     // close is a withheld form; U1 stands it. No second extractor.
     let mag = family_magnitude(&train);
-    if mycelium::economy::lanes_short(&physics.reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
-        physics.bump(&mag);
+    if mycelium::economy::lanes_short(&entity.physics().reserve_shortfall(Physics::lanes_of(&mag))).is_empty() {
+        entity.physics_mut().bump(&mag);
         StrokeOutcome::add(&mut outcome.fed, &mag);
     }
     // 78.53 — WHAT THE COLOUR FIBRE DID in this family, spoken as its own
     // word with the task it was seen in: the court re-derives it from its
     // copy of the family and rules it by that evidence.
     if !occluded {
-        let mut colour_budget = physics.stroke();
+        let mut colour_budget = entity.stroke();
         let _ = entity.speak_colour(&tid, &train, &mut colour_budget);
         // 78.55 — and what the ruled colour language implies but no scene
         // has shown: one theorem, cited, for the court to prove.
@@ -52,7 +52,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         false => mycelium::transducer::family::perceive_family(&train),
     };
     let mut extract_budget =
-        physics.stroke_n(mycelium::transducer::family::extraction_spend(&train, &frames));
+        entity.stroke_n(mycelium::transducer::family::extraction_spend(&train, &frames));
     let extracted = mycelium::transducer::family::extract_rule_cached(
         extract_memo,
         &tid,
@@ -87,7 +87,7 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
         for (a, b) in &train {
             let pair = [(a.clone(), b.clone())];
             let hour = mycelium::transducer::family::perceive_family(&pair);
-            let mut hour_budget = physics.stroke_n(mycelium::transducer::family::extraction_spend(&pair, &hour));
+            let mut hour_budget = entity.stroke_n(mycelium::transducer::family::extraction_spend(&pair, &hour));
             if let Some(f) = mycelium::transducer::family::scene_form_on(&entity.epigenome, &mut hour_budget, a, b, &hour) {
                 entity.hold_perceived(f, &hour, &[], &[], &tid, &mut hour_budget);
             }

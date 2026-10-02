@@ -43,6 +43,36 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
     );
 }
 
+/// 78.66 — THE FOLD BY LEAST ACTION. A court that never ran a docket circuit
+/// (no `court_stroke`, nothing listed) still folds: its orbit's close draws
+/// what holding the hot ledger costs, and a lane that cannot cover it
+/// proposes the fold at that close. Folding needed docket circuits before,
+/// so a court with an empty docket held its whole history hot.
+#[test]
+fn a_court_with_an_empty_docket_folds_when_holding_its_ledger_runs_a_lane_short() {
+    let mut k = Kernel::new();
+    k.bind_identity([0x5c; 32]);
+    k.append_step(ActKind::List, [1; 32], [2; 32]);
+    k.physics.reserve = crate::physics::Reserve::of([0; 4]);
+    assert!(matches!(k.orbit(), Close::Sealed(_)), "the close seals");
+    assert_eq!(k.docket_circuits().circuits(), 0, "no docket circuit ran");
+    let p = k.fold_proposal().expect("the close that ran a lane short proposed the fold");
+    assert_eq!(p.root.at, crate::chronometry::Place { k: 0, i: 1 }, "the cut is the close just made");
+}
+
+/// HOLDING IS A DRAW, NAMED: a ledger held within every lane draws its
+/// length off each, and one past a lane refuses by that lane and empties
+/// what it held — never past empty.
+#[test]
+fn holding_the_ledger_draws_its_length_and_names_the_lane_that_refuses() {
+    let mut p = crate::physics::Physics { reserve: crate::physics::Reserve::of([10, 10, 3, 10]), ..Default::default() };
+    assert_eq!(p.hold(2), None, "held within every lane");
+    assert_eq!(p.reserve.lanes(), [8, 8, 1, 8]);
+    let refused = p.hold(4).expect("the 𝒯 lane holds one");
+    assert_eq!(refused.lane, 2, "the refusal names the lane");
+    assert_eq!(p.reserve.lanes(), [4, 4, 0, 4], "each lane is charged what it holds, never past empty");
+}
+
 /// THE DISTANCE AT A TICK, per lane and signed: a peer's orbit closed at the
 /// court's closing tick at another frame is read at its distance, never a
 /// sum of lanes.

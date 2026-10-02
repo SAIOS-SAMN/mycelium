@@ -381,13 +381,20 @@ pub(crate) fn peel_versor_with_target(
     // reached by refused targets is still a plane the corpus reaches for,
     // and gating the count would hide exactly that.
     crate::transducer::cga::note_transition(&target, v);
-    // D2 — THE ORBIT STRUCTURE, at the same site and for the same reason.
-    // `ℓ = Order(R)` is the cyclotomic period: the discrete bound `μ` is
-    // CARRIED BY, rather than a scalar `μ` would be flattened into. Read
-    // here because this is where the rotor exists as a rotor, and read
-    // before the gates so an orbit that never closes — infinite order — is
-    // counted as the reading it is rather than lost as a refusal.
-    crate::physics::metabolism::note_orbit(target.order());
+    // D2 — THE ORBIT STRUCTURE, at the same site and for the same reason:
+    // the cyclotomic period `μ` is CARRIED BY, rather than a scalar it would
+    // be flattened into. READ OFF THE MOTION'S OWN MODES (PHY1), never the
+    // rotation's order alone: a transvection or a null shear in the motion
+    // never returns, and the rotor's order counted it closed. Read before
+    // the gates so an orbit that never closes is counted as the reading it
+    // is rather than lost as a refusal; the census reads on a stroke of its
+    // own.
+    let mut census = crate::physics::Physics::default().stroke();
+    let period = match crate::transducer::cga::motion_modes(v, &mut census) {
+        Some(Ok(modes)) => crate::transducer::cga::period_of(&modes),
+        Some(Err(_)) | None => None,
+    };
+    crate::physics::metabolism::note_orbit(period);
     target.is_versor().then_some(())?;
     if !target.is_even() {
         return None;

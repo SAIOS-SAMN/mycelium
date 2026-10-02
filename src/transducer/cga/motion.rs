@@ -40,6 +40,44 @@ use num_traits::{Signed, Zero};
 
 type Q = BigRational;
 
+/// THE PERIOD OF A MOTION (PHY1), read off its modes and never off a letter
+/// rotor's order: the least order at which every mode returns, or why one
+/// never does — a turn that closes at no order the algebra admits (a
+/// rosette), or a mode that does not turn at all (unbound: a transvection
+/// or a null shear carries and never returns).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Period {
+    Closes(u64),
+    Rosette,
+    Unbound,
+}
+
+/// The period of a motion whose modes are `modes`: unbound where any mode
+/// is a transvection or a null shear, a rosette where a turn closes at no
+/// order, else the least common multiple of the modes' orders. `None` where
+/// that multiple passes its carrier.
+pub fn period_of(modes: &[MotionMode]) -> Option<Period> {
+    let open = |m: &&MotionMode| m.order.is_none();
+    if modes.iter().filter(open).any(|m| matches!(m.kind, BivectorKind::Hyperbolic | BivectorKind::Parabolic)) {
+        return Some(Period::Unbound);
+    }
+    if modes.iter().any(|m| m.order.is_none()) {
+        return Some(Period::Rosette);
+    }
+    let gcd = |mut a: u64, mut b: u64| {
+        while b != 0 {
+            (a, b) = (b, a % b);
+        }
+        a
+    };
+    let mut l = 1u64;
+    for o in modes.iter().filter_map(|m| m.order) {
+        let o = u64::from(o);
+        l = (l / gcd(l, o)).checked_mul(o)?;
+    }
+    Some(Period::Closes(l))
+}
+
 /// ONE MODE OF A MOTION: its versor ray, its class, the planes it spans (two
 /// or more for an isoclinic set, held whole), the value `c` of `S` on its
 /// space, and the least order at which the motion closes on that space —

@@ -144,9 +144,9 @@ impl Reserve {
     pub fn draw(&mut self, cost: [u64; 4]) -> Result<(), Depleted> {
         for (i, (&want, &held)) in cost.iter().zip(self.lanes.iter()).enumerate() {
             if want > held {
-                // D2 — the refusal is the metabolic reading, counted
-                // before the return so a depleted lane is visible at all.
-                crate::physics::metabolism::note_draw(&cost, false);
+                // D2 — the refusal is the metabolic reading, counted on the
+                // lane that refused it before the return (PHY1).
+                crate::physics::metabolism::note_refused(i);
                 self.refused += 1;
                 return Err(Depleted { lane: i, asked: want, held });
             }
@@ -154,7 +154,7 @@ impl Reserve {
         for (l, c) in self.lanes.iter_mut().zip(cost.iter()) {
             *l -= c;
         }
-        crate::physics::metabolism::note_draw(&cost, true);
+        crate::physics::metabolism::note_draw(&cost);
         Self::book(&mut self.drawn, &cost);
         Ok(())
     }
@@ -181,7 +181,7 @@ impl Reserve {
         for (l, t) in self.lanes.iter_mut().zip(&taken) {
             *l -= t;
         }
-        crate::physics::metabolism::note_draw(&taken, true);
+        crate::physics::metabolism::note_draw(&taken);
         Self::book(&mut self.drawn, &taken);
         std::array::from_fn(|l| cost[l] - taken[l])
     }

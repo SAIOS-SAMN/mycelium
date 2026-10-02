@@ -160,6 +160,64 @@ thread_local! {
     }) };
 }
 
+/// PHY1 — WHAT CONTACTS MOVED ON EACH LANE, IN THIS PROCESS: a condensed
+/// contact on every lane its transport `g_ab` occupies, a refused one on the
+/// lane its refusal names. Process-wide, because a court perceives on many
+/// threads and books its one reserve from all of them; each holder of a
+/// physics books what moved since it last read (`contact_lanes`). Event
+/// counts, one per contact per lane: a `u64` cannot pass 2⁶⁴ events before
+/// the process ends.
+static CONDENSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+static REFUSED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+
+fn mark_lanes(on: &[std::sync::atomic::AtomicU64; 4], lanes: [bool; 4]) {
+    for (count, moved) in on.iter().zip(lanes) {
+        if moved {
+            count.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        }
+    }
+}
+
+/// What contacts have moved since the process began, per lane: condensed,
+/// then refused.
+pub fn contact_lanes() -> ([u64; 4], [u64; 4]) {
+    let read = |on: &[std::sync::atomic::AtomicU64; 4]| std::array::from_fn(|l| on[l].load(std::sync::atomic::Ordering::Relaxed));
+    (read(&CONDENSED_ON), read(&REFUSED_ON))
+}
+
+/// THE LANES A CONTACT'S TRANSPORT OCCUPIES: 𝒢 where its word turns or its
+/// carriage holds a turn, 𝒮 where the carriage dilates (a hyperbolic mode),
+/// 𝒯 where it translates (a parabolic mode), 𝒽 where its hue map moves a
+/// hue. A carriage whose modes do not read occupies only what its word and
+/// hue map say.
+fn transport_lanes(t: &crate::transducer::sentence::Transport, budget: &mut crate::physics::Budget) -> [bool; 4] {
+    use crate::network::nerve::coord::BivectorKind;
+    use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL, LANE_SPATIAL, LANE_TEMPORAL};
+    let mut on = [false; 4];
+    on[LANE_GAUGE] = !t.word.is_identity();
+    if let Some(Ok(modes)) = crate::transducer::cga::motion_modes(&t.carriage, budget) {
+        for m in &modes {
+            match m.kind {
+                BivectorKind::Elliptic => on[LANE_GAUGE] = true,
+                BivectorKind::Hyperbolic => on[LANE_SPATIAL] = true,
+                BivectorKind::Parabolic => on[LANE_TEMPORAL] = true,
+                BivectorKind::Trivial => {}
+            }
+        }
+    }
+    on[LANE_SHELL] = t.gauge.iter().any(|(a, b)| a != b);
+    on
+}
+
+/// A refused contact on the lanes its two poses' refusals name.
+fn mark_refused(poses: [Option<blade::NoPose>; 2]) {
+    let mut lanes = [false; 4];
+    for lane in poses.into_iter().flatten().filter_map(blade::NoPose::lane) {
+        lanes[lane] = true;
+    }
+    mark_lanes(&REFUSED_ON, lanes);
+}
+
 pub(crate) fn note_contact(f: impl Fn(&mut ContactTally)) {
     CONTACTS.with(|c| {
         let mut v = c.get();
@@ -464,7 +522,11 @@ pub(crate) fn contact_edge(
     // edge to the caller, which reads the one arm a demand retires.
     let (thetas_a, thetas_b) = match (pose(a, a_after, budget), pose(b, b_after, budget)) {
         (Ok(x), Ok(y)) => (x, y),
-        (x, y) => return ContactEdge::Refused { poses: [x.err(), y.err()] },
+        (x, y) => {
+            let poses = [x.err(), y.err()];
+            mark_refused(poses);
+            return ContactEdge::Refused { poses };
+        }
     };
     // Every candidate refraction, each ray once.
     let mut thetas: Vec<crate::transducer::cga::Mv> = Vec::new();
@@ -488,6 +550,8 @@ pub(crate) fn contact_edge(
             Some(Ok(w)) => w,
             Some(Err(_)) => {
                 note_contact(|t| t.unspelled += 1);
+                // A turn the alphabet does not spell: the rotor's lane refused.
+                mark_lanes(&REFUSED_ON, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_GAUGE));
                 return ContactEdge::Refused { poses: [None, None] };
             }
             None => {
@@ -500,6 +564,7 @@ pub(crate) fn contact_edge(
     match <[Transport; 1]>::try_from(edges) {
         Ok([edge]) => {
             note_contact(|t| t.condensed += 1);
+            mark_lanes(&CONDENSED_ON, transport_lanes(&edge, budget));
             ContactEdge::Formed(Box::new(edge))
         }
         Err(coset) => {

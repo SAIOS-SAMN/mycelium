@@ -19593,6 +19593,99 @@ home stands.
 `K` should rise, and `chain.nodes` and `treasury.entries` should follow the
 open work, not the hours.
 
+### 78.66 One reserve, drawn by what moved; the fold paced by least action (ruled 2026-10-02, the operator's word: "wire PHY1 and PH1 first", "all of it, voice included")
+
+**The defect.** A voice held two reserves. The client binary built its own
+`Physics`, and the arms drew from it; the entity's physics was the one
+thoughts drew from and syntropy booked on. So `regenerate` and `relax` never
+saw the order the voice built. And the stroke was a toll: `tick()` charged
+every stroke whether it moved anything. In `physics/` the reserve, the book,
+the persist pace and the stroke floor stood on literals no reading derived.
+
+**PHY1, landed.**
+- *One reserve per voice*: the entity's (`Entity::physics`/`physics_mut`).
+  The binary's copy is gone; every arm reads and draws the one.
+- *A stroke is a draw of what it moved* (`Physics::spend(lanes)`): one
+  expansion on each lane the stroke moved, one vector, all or nothing. A
+  refusal names the lane (`Depleted{lane, asked, held}`), and the ledger
+  counts it per lane (`depleted: [u64; 4]`). A stroke that moved nothing
+  draws nothing; `tick()` is gone.
+- *Contacts book on the lanes they occupy* (`book_contacts`). A condensed
+  contact books syntropy on its transport's lanes:
+  - 𝒢 for a word that is not the identity, or an elliptic mode;
+  - 𝒮 for a hyperbolic mode;
+  - 𝒯 for a parabolic mode;
+  - ℋ for a gauge pair a ≠ b.
+
+  A refused contact presses on the lane its refusal names
+  (`NoPose::lane`): 𝒢 for isotropy, mirrored, oblique, null-step and
+  ungauged; 𝒮 for incongruent and irrational; none where no lane is named.
+  The court books them at the head of each stroke; the voice books them at
+  the end of each stroke.
+- *`relax` is the conjugate of `bump`*: each lane relaxes by what it settled
+  since its last relax (`syntropic − relax_mark`), never by a literal 1. The
+  voice relaxes when it is short or idle.
+- *The quote arm gates each demand by its own lanes*, and prints what it
+  was short on, per lane.
+- *`note_orbit` reads the connection's own period* (`cga::period_of` over
+  `motion_modes`):
+  - `Closes(lcm)` where every mode has an order;
+  - `Rosette` where a mode is elliptic without a finite order;
+  - `Unbound` where an open mode is hyperbolic or parabolic.
+
+  The orbit line counts the unbound and the unread, named.
+
+**PH1, the provenance of every constant in `physics/` and its callers.**
+
+| was | now | why |
+|---|---|---|
+| `BOOK_HIGH`, `BOOK_LOW`, `book_ceiling`, the eviction sweep | gone | 78.40(2): the opposing operation exists. A silent word lapses by `ZeroFlux` at the close (78.37 (3)); a ceiling stood in for it. |
+| `PER_GIB` | measured | the reserve's depth is cores × (1 + available GiB), rounded down to whole strokes |
+| `.max(2)` on `spend_unit` | gone | `RESERVE_FLOOR = STROKES_PER_RESERVE × 2` makes the spend at least two by the ratio |
+| `aperture_strokes`, the `aperture_cycle().max(1/2)` clamps (ten sites) | named ratio | the aperture *is* `STROKES_PER_RESERVE`; a clamp on it clamped nothing |
+| `COURT_PERSIST_RULINGS`, `court_persist_dwell` | gone | the server persists per aperture of sealed orbits (`Close::Sealed`), its own clock |
+| `STROKE_FLOOR` 1 ms | measured | the kernel's `CONFIG_HZ` from `/boot/config-<release>`, else the shortest wait the host grants (`stroke_floor`) |
+| `idle_park` literals | derived | floor × measured rtt, the floor where unmeasured |
+| `fold.rs` `(r*8).max(32)`, `aperture*4` hint | gone | the ask waits the measured rtt to the witness, else the transport's own deadline |
+| `frame_budget()` arithmetic | carrier | `BODY_BUDGET`, the one protocol carrier |
+| the unmeasured digest rtt `5` | unit | one stroke, the unit of the measure it stands in |
+| `relax`'s literal 1 | gone | the conjugate of `bump`, above |
+| `tick()` | gone | a stroke draws what it moved |
+
+**The fold by least action (45.8 as amended).** 45.8's trigger was a
+docket circuit window while a lane was short. A court with an empty docket
+completed no circuit, so it never folded, however long its history grew. And
+a court whose reserve was never short never folded either. Holding was free,
+and nothing paid for it.
+
+Now *the orbit's close draws what holding the hot ledger costs*:
+`Physics::hold(chain.len())` on every lane, one vector, all or nothing, a
+refusal named. A lane that cannot cover it is the syntropic phase, and the
+fold is proposed at that close. The cut is the close just made (a k-step is
+an orbit circuit). The trigger still never reads a height interval, a memory
+reading or a wall clock. It is the work the court regenerates set against
+the history it holds:
+- a ledger the fold keeps short draws little and folds rarely;
+- one that outgrows its work folds as often as holding demands.
+
+The phase reading keeps its docket window.
+
+**Tested.**
+- `orbit::a_court_with_an_empty_docket_folds_when_holding_its_ledger_runs_a_lane_short`;
+- `orbit::holding_the_ledger_draws_its_length_and_names_the_lane_that_refuses`;
+- `physics::a_stroke_draws_what_it_moved_and_names_the_lane_that_refuses`;
+- `physics::a_lane_relaxes_by_what_it_settled`;
+- `physics::contacts_book_order_where_they_condensed_and_pressure_where_refused`;
+- `physics::the_ratio_is_exact_and_the_stroke_floor_is_the_hosts`;
+- `metabolism::a_motions_period_is_read_off_its_modes`: a 90° turn closes
+  at 4; the same turn about another centre also closes at 4; a translation
+  along the axis is a screw, `Unbound`.
+
+**Read on the fleet.** In the metabolic line, draws should be non-zero and
+the lanes should move on contact. The orbit line names closed / rosette /
+unbound. `Court.folds` should count proposals at closes on courts whose
+docket is empty.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

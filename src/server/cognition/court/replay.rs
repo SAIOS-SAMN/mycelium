@@ -175,6 +175,10 @@ impl Kernel {
     /// The lapse sweep runs on every stroke, on its own budget
     /// (`lapse_silent`): the book's sink never waits on a sealed close.
     pub fn court_stroke(&mut self) {
+        // PHY1: what the contacts this court perceived did, on any thread,
+        // booked on its one reserve's physics — order built where they
+        // condensed, pressure where they were refused.
+        self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
         let from = self.open_cursor.clone();
@@ -206,49 +210,20 @@ impl Kernel {
             // circuit per stroke, and read per circuit its window was one
             // receipt or none (`comprehension 0/0` at period 1).
             let aperture = u64::from(crate::physics::aperture_cycle());
-            // THE WINDOW, read once and used by both the phase and the
-            // fold: one reading, two consumers (law 12).
             // The circuit just completed is part of this count, so the
             // difference is exact; a count smaller than the circuit it
             // just closed is a broken counter and opens no window.
             let Some(before) = n.checked_sub(u64::from(circuit)) else {
                 return;
             };
-            let window = n / aperture != before / aperture;
             // THE PHASE RIDES ITS OWN WINDOW, read and held for the observer
-            // (PH5); the circuit count is on `docket_circuits`.
-            if window {
+            // (PH5); the circuit count is on `docket_circuits`. The fold
+            // no longer rides it (78.66): a court whose docket is empty
+            // completed no circuit and never folded, however long its
+            // history grew. It is proposed at the orbit's close, by what
+            // holding the hot ledger costs (`Kernel::orbit`).
+            if n / aperture != before / aperture {
                 let _ = self.read_phase();
-            }
-            // 45.8, S13.9, S13.10: a circuit that completes while a lane is
-            // short is the syntropic phase, and the fold is the ledger's
-            // consolidation stroke in it — proposed here, carried to a
-            // witness by the exchange, sealed on both signatures (47.3). A
-            // prefix that is not final proposes nothing and writes no line.
-            //
-            // ONCE PER APERTURE OF CIRCUITS, NOT ONCE PER CIRCUIT. A docket
-            // that fits one budget completes a circuit every stroke, so
-            // this proposed a fold on every one of them where any lane was
-            // short — which is most of them. Measured at epoch 12: 374
-            // folds in six minutes, ~250 MiB a minute into the cold
-            // segments, 620 MiB and 662 MiB in two and a half minutes, on
-            // a root filesystem with 13 GiB left. An era is a
-            // consolidation of the ledger, not a per-stroke act, and it is
-            // paced by the same window the phase reading is — the aperture
-            // of docket circuits this court has actually completed.
-            if window
-                && self.fold_pending.is_none()
-                && !crate::economy::lanes_short(&self.physics.reserve_shortfall([true; 4])).is_empty()
-            {
-                // The proposal's reading is counted by outcome, never
-                // discarded (LD0): a court that never folds is read for
-                // which gate held it (`Court.folds`).
-                let outcome = match self.propose_fold() {
-                    Ok(_) => crate::observe::FoldOutcome::Proposed,
-                    Err(crate::verdict::REFUSE_FOLD_OPEN) => crate::observe::FoldOutcome::Open,
-                    Err(_) => crate::observe::FoldOutcome::Inexact,
-                };
-                crate::observe::note_fold(outcome);
             }
         }
         for addr in keys {

@@ -14,7 +14,7 @@ mod speak;
 pub(crate) use crate::feed::{Feed};
 use crate::arms::{feed::feed_arm, quote::quote_arm, syntropy::syntropy_arm, task::task_arm};
 use crate::feed::{pending_feed};
-use mycelium::physics::{Physics, StrokeOutcome};
+use mycelium::physics::StrokeOutcome;
 use mycelium::court::identity::HyphaKey;
 use mycelium::network::mesh;
 use mycelium::sdk::{Entity, Kernel};
@@ -63,13 +63,11 @@ pub(crate) struct Metabolism {
     pub(crate) last_synced_height: u64,
 }
 
-/// WHAT ONE STROKE WORKS ON: this voice's entity and the metabolism it
-/// breathes on, the counters the stroke line reads, the outcome being
-/// accumulated, and the tag it logs under. Every arm of a stroke takes all
-/// of it — there is no arm that reads the entity and not the physics.
+/// WHAT ONE STROKE WORKS ON: this voice's entity — with the one physics it
+/// breathes on (`Entity::physics_mut`, PHY1) — the counters the stroke line
+/// reads, the outcome being accumulated, and the tag it logs under.
 pub(crate) struct Stroke<'a> {
     pub(crate) entity: &'a mut Entity,
-    pub(crate) physics: &'a mut Physics,
     pub(crate) c: &'a mut Counts,
     pub(crate) outcome: &'a mut StrokeOutcome,
     pub(crate) m: &'a mut Metabolism,
@@ -246,7 +244,6 @@ fn main() {
         },
     );
 
-    let mut physics = Physics::default();
     let mut c = Counts::default();
     let mut m = Metabolism { last_genome: usize::MAX, ..Metabolism::default() };
     let stop = Arc::new(AtomicBool::new(false));
@@ -289,7 +286,6 @@ fn main() {
         {
             let mut stroke = Stroke {
                 entity: &mut entity,
-                physics: &mut physics,
                 c: &mut c,
                 outcome: &mut outcome,
                 m: &mut m,
@@ -302,11 +298,17 @@ fn main() {
             let a2 = allocated();
             task_arm(&mut stroke, &mut extract_memo, occluded);
             let a3 = allocated();
-            // The syntropic phase on any lane short of one expansion
-            // (S10's reading, S13.2).
-            if !mycelium::economy::lanes_short(&stroke.physics.reserve_shortfall([true; 4])).is_empty() {
+            // THE SYNTROPIC PHASE on any lane short of one expansion (S10's
+            // reading, S13.2), or on a stroke whose arms moved nothing — the
+            // two resting states of the two-stroke, as the court's reflex
+            // reads them. An idle stroke paid a tick that walked the reserve
+            // down until it went short; a stroke draws only what it does now
+            // (PHY1), so idleness is read as itself.
+            let short = !mycelium::economy::lanes_short(&stroke.entity.physics().reserve_shortfall([true; 4])).is_empty();
+            let idle = stroke.outcome.moved() == [false; 4];
+            if short || idle {
                 syntropy_arm(&mut stroke, &genome_path);
-                stroke.physics.relax();
+                stroke.entity.physics_mut().relax();
             }
             let a4 = allocated();
             for (g, (before, after)) in grew.iter_mut().zip([(a0, a1), (a1, a2), (a2, a3), (a3, a4)]) {
@@ -343,18 +345,15 @@ fn main() {
         // and nowhere else; a stroke that acted on nothing closes nothing. A
         // withheld close is counted on the clock, never printed beside it.
         entity.close_orbit();
-        // 24.3: a working stroke spends the lanes its outcome moved; a stroke
-        // that moved no lane spends the tick on all four — the tick, not work.
-        // 24.3: a working stroke spends the lanes its outcome moved; a stroke
-        // that moved no lane pays the TICK — one unit, the depletion floor —
-        // and not `spend([true; 4])`, which is four entropic expansions
-        // charged for germinating nothing. See `Physics::tick`.
+        // PHY1 — THE STROKE IS A DRAW: one expansion on each lane its outcome
+        // moved, as one vector out of the one reserve, refused by lane name
+        // where a lane cannot cover it (`Physics::spend`); a stroke that
+        // moved nothing draws nothing. And what the contacts this mind
+        // perceived did is booked on the same physics: order built where
+        // they condensed, pressure where they were refused.
         let moved = outcome.moved();
-        if moved == [false; 4] {
-            physics.tick();
-        } else {
-            physics.spend(moved);
-        }
+        let _ = entity.physics_mut().spend(moved);
+        entity.physics_mut().book_contacts(mycelium::transducer::family::pairing::contact_lanes());
         let Counts {
             fed,
             derived,
@@ -453,14 +452,13 @@ fn main() {
         }
         // The lanes the next stroke needs to expand on and cannot: one
         // reading per lane (S10, S13.2), never a bit recomputed per lane.
-        let short = physics.reserve_shortfall(moved);
+        let short = entity.physics().reserve_shortfall(moved);
         let wait: [bool; 4] = std::array::from_fn(|l| short[l] > 0);
-        m.dwell_remaining = physics.dwell(&m.last_pressure, wait);
+        m.dwell_remaining = entity.physics().dwell(&m.last_pressure, wait);
         // X6 — AN IDLE STROKE COSTS THE PROCESSOR (the stroke-duration
         // ruling of 2026-09-11). A stroke that moved no lane admitted
         // nothing: the feed is clear, the quote is not due, no task stands.
-        // It pays the tick above -- one integer decrement per lane -- and
-        // then goes round again at once.
+        // It draws nothing from the reserve, and then parks.
         // Measured on the fleet at 3d2987e: every voice between 81% and
         // 87% of a core while its own line read `stroke idle` and `quote 0
         // clusters`, which is five cores burnt to admit nothing and the

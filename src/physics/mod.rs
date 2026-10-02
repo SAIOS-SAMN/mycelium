@@ -47,11 +47,19 @@ fn read_mem_available_gib() -> Option<u64> {
     Some(kb >> 20)
 }
 
+/// THE TWO-STROKE RATIO (operator-ruled; 78.8's own example of a ratio that
+/// stands with its chain): a full reserve holds this many expansion strokes.
+/// It is algebra, not a scale — the scale is the host's (`reserve_max`).
+pub const STROKES_PER_RESERVE: u64 = 8;
+
+/// THE SMALLEST RESERVE THE RATIO STAYS EXACT ON: a spend of two, so the
+/// regeneration's half of it is a whole unit — derived from the ratio and
+/// the halving, never a number of its own.
+const RESERVE_FLOOR: u64 = STROKES_PER_RESERVE * 2;
+
 /// The calibrated reserve ceiling — measured, not declared: burst capacity
-/// per logical core, deepened by each GiB of available memory. The floor is
-/// the smallest reserve on which the ratio algebra stays exact (spend ≥ 2 so
-/// regeneration can genuinely halve it — the governor survives the smallest
-/// hardware).
+/// per logical core, deepened by each GiB of available memory, at least the
+/// floor the ratio is exact on, and a whole number of strokes.
 pub fn reserve_max() -> u64 {
     *CALIBRATED_RESERVE_MAX.get_or_init(|| {
         // A host that does not say how many cores it has, or how much
@@ -68,14 +76,16 @@ pub fn reserve_max() -> u64 {
             None => cores,
         };
         // Rounded DOWN to a whole number of strokes so the ratio algebra is
-        // exact on every machine: eight spends empty a full reserve, always.
-        (depth.max(16) / 8) * 8
+        // exact on every machine: the ratio's spends empty a full reserve,
+        // always.
+        (depth.max(RESERVE_FLOOR) / STROKES_PER_RESERVE) * STROKES_PER_RESERVE
     })
 }
 
-/// One entropic expansion's spend — an eighth of the full reserve (ratio law).
+/// One entropic expansion's spend — the full reserve over the ratio, at
+/// least two by the reserve's floor.
 pub fn spend_unit() -> u64 {
-    (reserve_max() / 8).max(2)
+    reserve_max() / STROKES_PER_RESERVE
 }
 
 /// One expansion, named for callers that must not mention the spend count.
@@ -166,90 +176,87 @@ pub fn from_transport(rtt: u64, strokes: u64) -> Lambda {
     }
 }
 
-/// THE MINIMAL OPERATIONAL FLOOR OF ONE STROKE, as a duration the
-/// processor understands (the stroke-duration ruling, 2026-09-11).
-///
-/// This is a FLOOR, not a pace: the pace is the stroke and the measured
-/// transport (law 9). What it says is that one stroke of WAITING costs the
-/// processor at least this much, so the thread the wait exists for can be
-/// scheduled — the smallest quantity that lets a scheduler place another
-/// thread. It is the one place the engine names wall time, and it names it
-/// for the scheduler and never for a measurement.
+#[expect(
+    clippy::disallowed_types,
+    reason = "law 9 — the host's stroke floor, calibrated once and told to the scheduler; no reading is taken from it"
+)]
+static CALIBRATED_STROKE_FLOOR: std::sync::OnceLock<std::time::Duration> = std::sync::OnceLock::new();
+
+/// THE MINIMAL OPERATIONAL FLOOR OF ONE STROKE, as a duration the processor
+/// understands (the stroke-duration ruling, 2026-09-11; PH1): the smallest
+/// quantity that lets a scheduler place another thread — THIS HOST'S
+/// scheduler tick, read from the kernel it runs (`CONFIG_HZ`), or, where the
+/// host does not say, the shortest wait its kernel actually grants, measured.
+/// It is a host measurement, taken once, never a number of milliseconds.
+/// It is a FLOOR, not a pace: the pace is the stroke and the measured
+/// transport (law 9), and it is told to the scheduler and never read as a
+/// measurement of anything else.
 #[expect(
     clippy::disallowed_types,
     reason = "law 9 — the parking floor is told to the scheduler in its own units; no reading is taken from it"
 )]
-pub const STROKE_FLOOR: std::time::Duration = std::time::Duration::from_millis(1);
+pub fn stroke_floor() -> std::time::Duration {
+    *CALIBRATED_STROKE_FLOOR.get_or_init(|| match scheduler_hz() {
+        Some(hz) => std::time::Duration::from_secs(1) / hz,
+        None => shortest_granted_wait(),
+    })
+}
+
+/// The kernel's tick rate, from the build configuration it publishes beside
+/// itself (`/boot/config-<release>`'s `CONFIG_HZ=`); `None` where the host
+/// does not publish it. The line's value is that line's format.
+fn scheduler_hz() -> Option<u32> {
+    let release = std::fs::read_to_string("/proc/sys/kernel/osrelease").ok()?;
+    let config = std::fs::read_to_string(format!("/boot/config-{}", release.trim())).ok()?;
+    let hz: u32 = config.lines().find_map(|l| l.strip_prefix("CONFIG_HZ="))?.trim().parse().ok()?;
+    (hz > 0).then_some(hz)
+}
+
+/// THE SHORTEST WAIT THIS KERNEL GRANTS: a wait of one nanosecond, asked
+/// once per stroke of a reserve's ratio, and the least of what it took —
+/// the kernel rounds every wait up to its own timer, which is the quantity
+/// a park needs.
+#[expect(
+    clippy::disallowed_types,
+    reason = "PH1 — a host measurement of the kernel's wait granularity, read once at calibration; never a reading of time in the engine"
+)]
+fn shortest_granted_wait() -> std::time::Duration {
+    let ask = std::time::Duration::from_nanos(1);
+    let mut least: Option<std::time::Duration> = None;
+    for _ in 0..STROKES_PER_RESERVE {
+        let at = std::time::Instant::now();
+        std::thread::sleep(ask);
+        let took = at.elapsed();
+        least = Some(match least {
+            Some(l) if l <= took => l,
+            _ => took,
+        });
+    }
+    match least {
+        Some(l) => l,
+        None => ask,
+    }
+}
 
 /// How long an idle stroke parks: the measured transport where one has
-/// been measured, and the floor where none has. `rtt` is in polls — the
-/// instrument's own resolution — so a measured wire parks a poll's worth
-/// per stroke and an unmeasured one parks the floor.
+/// been measured — `rtt` in polls, the instrument's own resolution, each
+/// poll a stroke of this host — and one stroke where none has, or where the
+/// measured wait passes the duration's carrier. A same-stroke reply (`0`)
+/// is still one stroke: a park is at least the stroke it parks.
 #[expect(
     clippy::disallowed_types,
     reason = "law 9 — a park is told to the scheduler in its own units; the pace is strokes"
 )]
 pub fn idle_park(rtt: Option<u64>) -> std::time::Duration {
-    match rtt {
-        Some(r) => STROKE_FLOOR * (r.clamp(1, 64) as u32),
-        None => STROKE_FLOOR,
-    }
-}
-
-/// AN APERTURE OF STROKES: what a pass that MUST finish is given, rather
-/// than the one stroke a pass that can resume next time is given. The
-/// eviction sweep above the book's ceiling is such a pass — a book past
-/// the manifold is not a pacing question — and it is read here so the
-/// spend unit stays inside physics (rules 1, 8).
-#[expect(clippy::cast_possible_truncation, reason = "site 4 — spend_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4 (aperture_cycle is a u32 ratio below 16, widened)")]
-pub fn aperture_strokes() -> usize {
-    spend_unit() as usize * aperture_cycle() as usize
-}
-
-/// THE BOOK'S CEILING: how many open listings this node's memory can
-/// carry, measured from the same live headroom the reserve is (rule 5 —
-/// measured, never declared). A listing on the fleet weighs about 26 KiB
-/// with its element and links, and the book is held twice while a market
-/// view stands, so a GiB of headroom carries roughly twenty thousand.
-///
-/// A NODE'S MEMORY IS A FINITE MANIFOLD. `pending` carried the comment
-/// "capacity is thermodynamic (`dynamic_lane_capacity`)… eviction is by
-/// ACTION POTENTIAL, never FIFO. No static cap exists" — and
-/// `dynamic_lane_capacity` is a test helper with no production caller.
-/// There was no cap of any kind: the only sink was `lapse_docket`, gated
-/// on a round trip that had never been measured. Measured at epoch 10, the
-/// book grew 250 listings a minute and the node ran out of memory.
-///
-/// THE BOOK IS AN EPHEMERAL SCRATCHPAD, not a store. My first cut read
-/// 20,000 listings per GiB of headroom, which on this box is about 200,000
-/// listings — some five gigabytes at the ~26 KiB a listing weighs. That is
-/// an open door with a number written on it, not a boundary: hypha b sat
-/// at 2,888 listings and 197 MB, nowhere near it, growing freely. What the
-/// book holds is the work in flight; anything the mesh has not answered
-/// within a horizon is not in flight, it is drift.
-pub const BOOK_HIGH: usize = 1024;
-
-/// Where the sweep drains TO once the ceiling is crossed. A single
-/// threshold makes the sweep chatter on and off at the boundary; draining
-/// to a low watermark means one pass does the work and the next has none
-/// to do.
-pub const BOOK_LOW: usize = 256;
-
-/// The book's ceiling: the high watermark, or what this node's memory can
-/// carry, whichever is smaller. On any machine the mesh runs on the
-/// watermark is the binding one; the measured term is there so a node with
-/// less memory than the watermark assumes is still bounded by its own.
-pub fn book_ceiling() -> usize {
-    const PER_GIB: u64 = 20_000;
-    // A host that does not say how much memory is available is bounded by
-    // the watermark alone; one GiB is the smallest depth the ceiling is
-    // measured against where it does say.
-    let Some(gib) = mem_available_gib() else {
-        return BOOK_HIGH;
+    let floor = stroke_floor();
+    let strokes = match rtt {
+        Some(r) => r.max(1),
+        None => 1,
     };
-    #[expect(clippy::cast_possible_truncation, reason = "site 4 — PER_GIB × mem_available_gib, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
-    let measured = (gib.max(1) * PER_GIB) as usize;
-    measured.min(BOOK_HIGH)
+    match u32::try_from(strokes).ok().and_then(|n| floor.checked_mul(n)) {
+        Some(d) => d,
+        None => floor,
+    }
 }
 
 /// Deadline for one nerve dial, in strokes: an aperture of the measured
@@ -263,31 +270,17 @@ pub fn persist_dwell(rtt: u64) -> Lambda {
     from_transport(rtt, aperture_cycle() as u64)
 }
 
-/// Court federation flush: two apertures of measured transport, in strokes.
-pub fn court_persist_dwell(rtt: u64) -> Lambda {
-    from_transport(rtt, aperture_cycle() as u64 * 2)
-}
-
 /// Quiet-digest ceiling: a full reserve of measured transports, in strokes.
 pub fn digest_ceiling(rtt: u64) -> Lambda {
     from_transport(rtt, reserve_max())
 }
 
-/// Court federation flush: a count of rulings, the measured reserve.
-pub fn court_persist_rulings() -> u64 {
-    reserve_max()
-}
-
-/// Backward name: a count, equal to the measured reserve.
-pub const COURT_PERSIST_RULINGS: u64 = 0;
-
-
-
-/// Strokes per reserve cycle — the aperture ratio κ. Drain reads this;
-/// it is not a free constant.
-#[expect(clippy::cast_possible_truncation, reason = "site 4 — the aperture ratio reserve_max / spend_unit, bounded below 16 by spend_unit's own definition max(reserve_max / 8, 2); a u64 → u32 narrowing of a ratio, never of the reserve")]
+/// Strokes per reserve cycle — the aperture ratio κ: the full reserve over
+/// one spend, which is the two-stroke ratio exactly, since the reserve is a
+/// whole number of spends.
+#[expect(clippy::cast_possible_truncation, reason = "PH1 — the two-stroke ratio, the constant 8, narrowed to the u32 its readers count circuits in")]
 pub fn aperture_cycle() -> u32 {
-    (reserve_max() / spend_unit()).max(1) as u32
+    STROKES_PER_RESERVE as u32
 }
 
 /// One syntropic regeneration — half an expansion, rounded up so exactly two
@@ -312,6 +305,12 @@ pub struct Physics {
     /// The syntropic count each lane last regenerated at: the relief a
     /// lane produced since is what earns it a second regeneration.
     pub regen_mark: [u64; 4],
+    /// The syntropic count each lane last relaxed at: what a lane settled
+    /// since is what its pressure relaxes by (PHY1).
+    pub relax_mark: [u64; 4],
+    /// What contacts had moved, per lane, when this physics last booked them
+    /// — condensed, then refused (`book_contacts`).
+    pub contacts_mark: [[u64; 4]; 2],
     /// The METABOLIC RESERVE per lane — the two-stroke engine's fuel. ENTROPIC
     /// expansion (germination) SPENDS it (the reserve shrinks as the alphabet
     /// grows); SYNTROPIC optimization (consolidation) REGENERATES it (the reserve
@@ -333,6 +332,8 @@ impl Default for Physics {
             syntropic: [0; 4],
             torsion: [0; 4],
             regen_mark: [0; 4],
+            relax_mark: [0; 4],
+            contacts_mark: [[0; 4]; 2],
             reserve: Reserve::of([reserve_max(); 4]),
         }
     }
@@ -388,19 +389,52 @@ impl Physics {
         }
     }
 
-    /// The metabolism RELAXES — the entropic backlog DISSIPATES as the mesh works,
-    /// so per-lane pressure is a RATE (unresolved demand per unit of work), not a
-    /// one-way ratchet that saturates and stalls the governor. Called once per
-    /// adjudication; steady-state pressure then equilibrates where the germination
-    /// rate meets this relaxation — a bounded, self-limiting metabolism.
+    /// The metabolism RELAXES — the entropic backlog DISSIPATES as the mesh
+    /// works, so per-lane pressure is a RATE, not a one-way ratchet. EACH LANE
+    /// BY WHAT IT SETTLED (PHY1): the conjugate of `bump`, which raised the
+    /// lane by the demand's own magnitude, is the order that lane built since
+    /// it last relaxed — its syntropic count over its mark — never a literal
+    /// taken off every lane alike. A lane that settled nothing does not
+    /// relax; one that settled more than it carries is relieved of what
+    /// stands on it (`relieve`).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a lane whose mark stands ahead of its total relaxes by nothing it settled, named at the arm"
+    )]
     pub fn relax(&mut self) {
-        // A lane with no pressure has nothing to dissipate: the reading of
-        // absence, not a floor put under a subtraction (rule 11).
-        for p in self.pressure.iter_mut() {
-            if let Some(next) = p.checked_sub(1) {
-                *p = next;
-            }
-        }
+        // The mark is a syntropic total this lane already reached, so the
+        // difference is exact; a mark ahead of the total is a broken counter
+        // and that lane relaxes by nothing it settled (rule 11).
+        let settled: [u64; 4] = std::array::from_fn(|l| match self.syntropic[l].checked_sub(self.relax_mark[l]) {
+            Some(d) => d,
+            None => 0,
+        });
+        self.relieve(&settled);
+        self.relax_mark = self.syntropic;
+    }
+
+    /// PHY1 — WHAT CONTACTS DID, BOOKED: since this physics last booked them,
+    /// a contact that condensed built order on the lanes its transport
+    /// occupies (syntropy), and one that was refused pressed on the lane its
+    /// refusal names (pressure). `seen` is what contacts have moved so far,
+    /// per lane — condensed, then refused; a count behind the mark is a
+    /// broken counter and books nothing on that lane (rule 11).
+    #[expect(
+        clippy::manual_unwrap_or_default,
+        reason = "rule 11 — `unwrap_or_default` is the spelling this refuses; a count behind its mark books nothing, named at the arm"
+    )]
+    pub fn book_contacts(&mut self, seen: ([u64; 4], [u64; 4])) {
+        let since = |now: &[u64; 4], mark: &[u64; 4]| -> [u64; 4] {
+            std::array::from_fn(|l| match now[l].checked_sub(mark[l]) {
+                Some(d) => d,
+                None => 0,
+            })
+        };
+        let condensed = since(&seen.0, &self.contacts_mark[0]);
+        let refused = since(&seen.1, &self.contacts_mark[1]);
+        self.syntropy(&condensed);
+        self.bump(&refused);
+        self.contacts_mark = [seen.0, seen.1];
     }
 
     /// A pivot on `lane` — a torsion charge (the demand for a new fiber). An
@@ -443,38 +477,42 @@ impl Physics {
         }
     }
 
-    /// ENTROPIC EXPANSION spends the reserve on the germinated lanes — the
-    /// metabolism SHRINKS as the alphabet grows.
-    /// A lane with nothing left spends nothing: the reading of absence, and
-    /// `remaining` says so. Spending PAST empty is what a floor would
-    /// hide — the reserve would read empty either way and the governor
-    /// could not tell a lane that just emptied from one overdrawn (rule 11).
-    pub fn spend(&mut self, lanes: [bool; 4]) {
+    /// ENTROPIC EXPANSION, DRAWN (PHY1): one expansion on each lane the act
+    /// moved, as ONE vector out of the reserve, all or nothing — the
+    /// metabolism SHRINKS as the alphabet grows. A lane that cannot cover it
+    /// refuses the draw by name (the ledger counts it on that lane, and the
+    /// refusal is answered); the act already happened, so it is then charged
+    /// what each lane still holds, never past empty (rule 11). A stroke that
+    /// moved no lane draws nothing: there is no tick, since a stroke is the
+    /// draw of what it did and not a toll for having run.
+    pub fn spend(&mut self, lanes: [bool; 4]) -> Option<Depleted> {
         let unit = spend_unit();
-        let _ = self.reserve.drain(std::array::from_fn(|l| if lanes[l] { unit } else { 0 }));
+        let cost: [u64; 4] = std::array::from_fn(|l| if lanes[l] { unit } else { 0 });
+        match self.reserve.draw(cost) {
+            Ok(()) => None,
+            Err(refused) => {
+                let _ = self.reserve.drain(cost);
+                Some(refused)
+            }
+        }
     }
 
-    /// THE TICK — a stroke that expanded nothing, charged as a stroke and not
-    /// as an expansion.
-    ///
-    /// A stroke whose outcome moved no lane called `spend([true; 4])`, and
-    /// `spend_unit` is by its own line "one entropic expansion's spend — an
-    /// eighth of the full reserve". So an idle stroke cost FOUR EXPANSIONS,
-    /// on four lanes, for germinating nothing on any of them. That is not a
-    /// pacing choice; it is charging work that did not happen.
-    ///
-    /// It also manufactured the lane vector's collapse. Every stroke reported
-    /// `learned [0,0,0,0]` on the fleet at 820678a, so every stroke took this
-    /// path, so all four reserves fell in lockstep, so all four deficits were
-    /// equal — and `yield_surface` reduces to `reserve_deficit` whenever
-    /// torsion is zero. Measured: the dwell's S, G and H were EQUAL in 1154
-    /// of 1247 readings and took two distinct values between them.
-    ///
-    /// The module's own scale says what a tick costs: "the depletion floor is
-    /// one stroke". One unit, not one expansion. A lane with nothing left
-    /// spends nothing, exactly as `spend` reads absence.
-    pub fn tick(&mut self) {
-        let _ = self.reserve.drain([1; 4]);
+    /// THE COST OF HOLDING (78.66, least action): one orbit of holding `held`
+    /// hot nodes, drawn on every lane as one vector — the ledger occupies the
+    /// frame each node carries, and a node held hot is held on all four. All
+    /// or nothing; a lane that cannot cover it refuses by name and is charged
+    /// what it still holds, never past empty (rule 11), and that shortfall is
+    /// the court's cue to fold (45.8 as amended). A ledger the fold keeps
+    /// short draws little, so the fold paces itself by what holding costs.
+    pub fn hold(&mut self, held: u64) -> Option<Depleted> {
+        let cost = [held; 4];
+        match self.reserve.draw(cost) {
+            Ok(()) => None,
+            Err(refused) => {
+                let _ = self.reserve.drain(cost);
+                Some(refused)
+            }
+        }
     }
 
     /// SYNTROPIC OPTIMIZATION regenerates each lane toward the deflation
@@ -490,7 +528,15 @@ impl Physics {
             let Some(verified) = self.syntropic[l].checked_sub(self.regen_mark[l]) else {
                 continue;
             };
-            let add = regen_unit() * (1 + (verified > 0) as u64);
+            // Two strokes re-earn one expansion; a lane that verified work
+            // since its last regeneration earns the second at once.
+            let add = match verified {
+                0 => regen_unit(),
+                _ => regen_unit() * 2,
+            };
+            // Toward the work the lane verified, and never below the
+            // depletion floor, one expansion (the ruled unit of the
+            // two-stroke governor, not a number of its own).
             let target = verified.max(expand_floor());
             // A regeneration past the carrier is refused and counted; the
             // lane stands where it was.
@@ -684,6 +730,35 @@ mod tests {
         assert_eq!(metabolism::take_metabolism().overflowed, 1, "one step refused, counted");
     }
 
+    /// PHY1 — A LANE RELAXES BY WHAT IT SETTLED: the conjugate of `bump`,
+    /// per lane, never a literal off every lane alike. A lane that settled
+    /// nothing keeps its pressure; a second relax with nothing settled since
+    /// moves nothing.
+    #[test]
+    fn a_lane_relaxes_by_what_it_settled() {
+        let mut p = Physics::default();
+        p.bump(&[5, 5, 0, 0]);
+        p.syntropy(&[3, 0, 0, 0]);
+        p.relax();
+        assert_eq!(p.pressure, [2, 5, 0, 0], "𝒮 settled three and relaxed three; 𝒢 settled nothing");
+        p.relax();
+        assert_eq!(p.pressure, [2, 5, 0, 0], "nothing settled since, nothing relaxed");
+    }
+
+    /// PHY1 — WHAT CONTACTS DID, BOOKED ONCE: condensed contacts build order
+    /// on their lanes, refused ones press on theirs, and a second booking of
+    /// the same totals moves nothing — the mark is what was already booked.
+    #[test]
+    fn contacts_book_order_where_they_condensed_and_pressure_where_refused() {
+        let mut p = Physics::default();
+        p.book_contacts(([0, 2, 0, 1], [3, 0, 0, 0]));
+        assert_eq!((p.syntropic, p.pressure), ([0, 2, 0, 1], [3, 0, 0, 0]));
+        p.book_contacts(([0, 2, 0, 1], [3, 0, 0, 0]));
+        assert_eq!((p.syntropic, p.pressure), ([0, 2, 0, 1], [3, 0, 0, 0]), "booked once");
+        p.book_contacts(([0, 3, 0, 1], [3, 1, 0, 0]));
+        assert_eq!((p.syntropic, p.pressure), ([0, 3, 0, 1], [3, 1, 0, 0]), "only what moved since");
+    }
+
     #[test]
     fn pressure_is_per_lane_and_relieves() {
         let mut p = Physics::default();
@@ -760,42 +835,34 @@ mod tests {
         assert_eq!(p.reserve.lanes()[0], 9, "an idle window contracts it to Σ bonds");
     }
 
-    /// A TICK IS A STROKE, NOT AN EXPANSION. A stroke whose outcome moved no
-    /// lane germinated nothing, and it called `spend([true; 4])` — four
-    /// entropic expansions, one per lane, for work that did not happen.
-    ///
-    /// That is also what collapsed the lane vector. Every stroke on the fleet
-    /// at 820678a reported `learned [0,0,0,0]`, so every stroke took that
-    /// path, so all four reserves fell in lockstep and all four deficits were
-    /// equal; with torsion zero `yield_surface` IS `reserve_deficit`, and the
-    /// dwell's S, G and H were equal in 1154 of 1247 readings, taking two
-    /// distinct values between them.
+    /// PHY1 — THE STROKE IS A DRAW. A stroke that moved no lane draws
+    /// nothing; one that moved lanes draws one expansion on each, as one
+    /// vector. A lane that cannot cover it refuses by name, counted on that
+    /// lane, and the work already done is charged what the lanes hold —
+    /// never past empty.
     #[test]
-    fn a_tick_costs_a_stroke_and_an_expansion_costs_an_expansion() {
-        let mut tick = Physics::default();
-        let mut expand = Physics::default();
-        tick.tick();
-        expand.spend([true; 4]);
-        assert_eq!(tick.reserve.lanes(), [reserve_max() - 1; 4], "a tick is one unit on each lane");
-        assert!(
-            tick.reserve.lanes().iter().zip(&expand.reserve.lanes()).all(|(t, e)| t > e),
-            "and an expansion costs far more: {:?} against {:?}",
-            tick.reserve,
-            expand.reserve
-        );
+    fn a_stroke_draws_what_it_moved_and_names_the_lane_that_refuses() {
+        let _ = metabolism::take_metabolism();
+        let mut idle = Physics::default();
+        assert_eq!(idle.spend([false; 4]), None, "a stroke that moved nothing draws nothing");
+        assert_eq!(idle.reserve.lanes(), [reserve_max(); 4], "and costs nothing");
+        let mut p = Physics::default();
+        assert_eq!(p.spend([true, false, true, false]), None, "two lanes moved, two expansions drawn");
         assert_eq!(
-            tick.reserve_shortfall([true; 4]),
-            [0; 4],
-            "one tick does not put a lane short of an expansion"
+            p.reserve.lanes(),
+            [reserve_max() - spend_unit(), reserve_max(), reserve_max() - spend_unit(), reserve_max()]
         );
-        // A lane with nothing left spends nothing, as `spend` reads absence.
-        let mut empty = Physics::default();
-        for _ in 0..8 {
-            empty.spend([true; 4]);
+        // Spent down on 𝒮 alone, the next draw that needs 𝒮 refuses on 𝒮.
+        let mut short = Physics::default();
+        for _ in 0..STROKES_PER_RESERVE {
+            short.spend([true, false, false, false]);
         }
-        assert_eq!(empty.reserve.lanes(), [0; 4], "eight expansions empty every lane");
-        empty.tick();
-        assert_eq!(empty.reserve.lanes(), [0; 4], "and a tick on an empty lane spends nothing");
+        let _ = metabolism::take_metabolism();
+        let refused = short.spend([true, true, false, false]).expect("𝒮 cannot cover an expansion");
+        assert_eq!(refused.lane, 0, "the refusal names 𝒮");
+        assert_eq!(metabolism::take_metabolism().depleted, [1, 0, 0, 0], "counted on the lane that refused");
+        assert_eq!(short.reserve.lanes()[1], reserve_max() - spend_unit(), "𝒢 is still charged what it did");
+        assert_eq!(short.reserve.lanes()[0], 0, "and 𝒮 never past empty");
     }
 
     /// The metabolism is per-lane syntropic minus entropic — the order flux.
@@ -851,6 +918,22 @@ mod tests {
         assert_eq!(o.stroke(1), Some((2, 1)), "a budget that covers the carrier circles it every stroke");
         assert_eq!(o.stroke(2), Some((4, 1)), "two circuits in one stroke are two");
         assert_eq!((o.circuits(), o.period()), (4, 1));
+    }
+
+    /// PH1 — THE RATIO STANDS EXACT ON THIS HOST AND THE FLOOR IS THE
+    /// HOST'S: the reserve is a whole number of spends, the aperture is the
+    /// two-stroke ratio itself, a spend halves exactly, and the stroke floor
+    /// is a positive measurement every park is at least one of.
+    #[test]
+    fn the_ratio_is_exact_and_the_stroke_floor_is_the_hosts() {
+        assert_eq!(spend_unit() * STROKES_PER_RESERVE, reserve_max(), "a whole number of spends");
+        assert_eq!(u64::from(aperture_cycle()), STROKES_PER_RESERVE, "the aperture is the ratio");
+        assert!(spend_unit() >= 2, "the reserve's floor leaves a spend the regeneration can halve");
+        let floor = stroke_floor();
+        assert!(!floor.is_zero(), "the floor is a measurement, never zero");
+        assert_eq!(idle_park(None), floor, "an unmeasured wire parks one stroke");
+        assert_eq!(idle_park(Some(0)), floor, "a same-stroke reply still parks the stroke it parks");
+        assert_eq!(idle_park(Some(3)), floor * 3, "a measured wire parks its round trip");
     }
 
     #[test]

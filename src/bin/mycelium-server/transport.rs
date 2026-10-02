@@ -190,7 +190,7 @@ pub(crate) fn read_budgeted(s: &mut TcpStream, buf: &mut [u8], stall: usize) -> 
                 // been scheduled was counted SILENT — which is what every
                 // court read of every peer on the epoch-10 fleet, while
                 // each of them pinned a core in its own idle loop.
-                std::thread::sleep(mycelium::physics::STROKE_FLOOR);
+                std::thread::sleep(mycelium::physics::stroke_floor());
             }
             Err(e) if e.kind() == std::io::ErrorKind::Interrupted => {}
             Err(_) => return None,
@@ -240,7 +240,7 @@ pub(crate) fn rtt_floor(mesh: &Mesh, id: &[u8]) -> Option<u64> {
 /// A measured round trip in strokes enters the peer's window.
 pub(crate) fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
     let id = id.as_ref();
-    let n = mycelium::physics::aperture_cycle().max(1) as usize;
+    let n = mycelium::physics::aperture_cycle() as usize;
     if let Ok(mut w) = mesh.rtt_window.lock() {
         // A peer with no window yet has measured no round trips.
         let mut ring = match w.get(id) {
@@ -274,7 +274,7 @@ pub(crate) fn note_rtt_ok(mesh: &Mesh, id: impl AsRef<[u8]>, sample: u64) {
 /// what its wire measured, never a wall clock and never unbounded.
 pub(crate) fn note_rtt_timeout(mesh: &Mesh, id: impl AsRef<[u8]>) {
     let id = id.as_ref();
-    let ratio = mycelium::physics::aperture_cycle().max(2);
+    let ratio = mycelium::physics::aperture_cycle();
     let Some(floor) = rtt_floor(mesh, id) else {
         return;
     };

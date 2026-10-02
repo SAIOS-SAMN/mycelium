@@ -59,29 +59,22 @@ impl Kernel {
     ///
     /// - a word whose last flux stands before `K − 1` saw a whole orbit pass
     ///   with nothing flowing to it, and lapses;
-    /// - and while the book stands over its ceiling (`physics::book_ceiling`,
-    ///   what this node's memory carries) the listings of oldest flux lapse
-    ///   whatever their `K`, down to `BOOK_LOW`: the manifold is finite and
-    ///   the book is not entitled to exceed it.
     ///
-    /// The sweep's stroke is the depth it has to clear where the book is
-    /// over its ceiling, else one stroke.
+    /// No ceiling stands beside it (PH1, 78.40(2)): the lapse IS the book's
+    /// opposing operation, so a count of listings held over a watermark was
+    /// a number standing in for an operation that exists, and it goes. The
+    /// sweep takes one stroke and resumes where it stopped.
     pub(crate) fn lapse_silent(&mut self) {
         // At the first orbit no word has seen a whole orbit pass: nothing is
-        // silent, and only the ceiling lapses.
+        // silent.
         let bound = self.k_step().checked_sub(1);
-        let held = self.pending.len();
-        let over = held > crate::physics::book_ceiling();
-        let mut sweep = match over {
-            true => self.physics.stroke_n(held - crate::physics::BOOK_LOW),
-            false => self.physics.stroke(),
-        };
+        let mut sweep = self.physics.stroke();
         let mut due: Vec<(u64, Vec<u8>)> = Vec::new();
         for (key, ()) in self.lapse_at.scoped() {
             let Some(k) = key.get(..8).and_then(|b| <[u8; 8]>::try_from(b).ok()).map(u64::from_be_bytes) else {
                 continue;
             };
-            if !over && bound.is_none_or(|b| k >= b) {
+            if bound.is_none_or(|b| k >= b) {
                 break;
             }
             let Some(at) = key.get(8..) else { continue };
@@ -96,13 +89,12 @@ impl Kernel {
                 continue;
             };
             let silent = bound.is_some_and(|b| k < b);
-            let evict = !silent && self.pending.len() > crate::physics::BOOK_LOW;
             match (self.provisional.contains(addr.as_bytes()), self.pending.contains(addr.as_bytes())) {
                 (true, _) if silent => {
                     self.forget_flux_at(&at);
                     self.lapse_word(addr.as_bytes());
                 }
-                (false, true) if silent || evict => {
+                (false, true) if silent => {
                     self.forget_flux_at(&at);
                     self.lapse_listing(addr.as_bytes());
                 }

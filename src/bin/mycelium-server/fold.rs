@@ -8,7 +8,7 @@
 //! circuit.
 
 use crate::exchange::Mesh;
-use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer_within};
+use crate::transport::{note_rtt_ok, note_rtt_timeout, rtt_floor, tell_peer, tell_peer_within};
 use mycelium::anastome::dialogue;
 use mycelium::cognition::Kernel;
 use mycelium::observe::{self, FoldOutcome};
@@ -42,13 +42,17 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         if !budget.spend() {
             break;
         }
-        let hint = match rtt_floor(mesh, &vk) {
-            Some(r) => (r * 8).max(32),
-            None => (mycelium::physics::aperture_cycle() as u64 * 4).max(32),
+        // The witness is asked within an aperture of its measured round trip
+        // (`transport_deadline`), and an unmeasured one as every wire is
+        // first asked, its answer measuring it — no patience chosen here
+        // (PH1).
+        let asked = match rtt_floor(mesh, &vk) {
+            Some(r) => tell_peer_within(&dest, body.clone(), r),
+            None => tell_peer(&dest, body.clone()),
         };
         // Every answer is counted by outcome on the court's work reading;
         // silence, a deferral and an undecodable reply measured nothing.
-        let Some((reply, dt)) = tell_peer_within(&dest, body.clone(), hint) else {
+        let Some((reply, dt)) = asked else {
             note_rtt_timeout(mesh, vk);
             observe::note_fold(FoldOutcome::Unmeasured);
             continue;

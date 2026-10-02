@@ -20,6 +20,19 @@ impl Entity {
         self.physics.stroke_n(n)
     }
 
+    /// THIS MIND'S ONE PHYSICS (PHY1): its pressure, its order built and its
+    /// reserve — the one the voice's arms gate on, its strokes draw from, its
+    /// held thoughts escrow in and its syntropy regenerates. A second
+    /// physics beside it in the binary held a second reserve the thoughts
+    /// never drew on and a syntropic count nothing booked.
+    pub fn physics(&self) -> &crate::physics::Physics {
+        &self.physics
+    }
+
+    pub fn physics_mut(&mut self) -> &mut crate::physics::Physics {
+        &mut self.physics
+    }
+
     pub fn add_hypha(&mut self, addr: &str) {
         self.session.add_peer(addr);
     }

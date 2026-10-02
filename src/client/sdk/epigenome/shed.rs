@@ -36,7 +36,7 @@ impl Epigenome {
     }
 
     pub fn note_stroke(&mut self, now_k: u64) {
-        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let n = crate::physics::aperture_cycle() as usize;
         self.stroke_k.push(now_k);
         if self.stroke_k.len() > n {
             self.stroke_k.remove(0);
@@ -55,7 +55,7 @@ impl Epigenome {
     /// unmeasured aperture is held, never guessed (rule 15), so nothing
     /// sheds in the first aperture after boot.
     pub(crate) fn aperture_k(&self, now_k: u64) -> Option<u64> {
-        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let n = crate::physics::aperture_cycle() as usize;
         if self.stroke_k.len() < n {
             return None;
         }

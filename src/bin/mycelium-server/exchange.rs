@@ -182,7 +182,7 @@ pub(crate) fn spawn_nerve(mesh: Mesh, nerve_rx: std::sync::mpsc::Receiver<(Strin
         // aperture of acts per peer, never per act: per act it was 376,000
         // lines in one aperture on the fleet of 2026-09-09.
         let mut deferred: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
-        let aperture = u64::from(mycelium::physics::aperture_cycle().max(1));
+        let aperture = u64::from(mycelium::physics::aperture_cycle());
         for (addr, body) in nerve_rx {
             match tell_peer(&addr, body) {
                 Some((reply, dt)) => {
@@ -293,8 +293,8 @@ impl Exchange {
         // The cycle each peer was last asked at: the quiet-digest ceiling's
         // reading, one entry per peer this court knows.
         let mut asked_cycle: mycelium::network::nerve::Keyed<u64> = mycelium::network::nerve::Keyed::new();
-        // The cycle the ledger was last persisted at.
-        let mut persisted_cycle = 0u64;
+        // The orbits this court sealed since the ledger was last persisted.
+        let mut sealed_since_persist = 0u64;
         let mut idle = 0u64;
         let mut last_tally = AdmissionTally::default();
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
@@ -325,14 +325,11 @@ impl Exchange {
             // marked change: hyphae b and c wrote their whole 27–33 MB
             // ledger 223 and 347 times in six minutes, one per witnessed
             // fold, each snapshot taken under the kernel (2026-09-30). A
-            // marked change waits `court_persist_dwell` of this loop's
-            // cycles; a stop persists whatever is still marked (SIGTERM).
-            let dwell = match mycelium::physics::court_persist_dwell(5) {
-                mycelium::physics::Lambda::Strokes(n) => n,
-                mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => 0,
-            };
-            if cycles.checked_sub(persisted_cycle).is_some_and(|gap| gap >= dwell) && persist_if_due(&kernel, &state_path) {
-                persisted_cycle = cycles;
+            // marked change waits an aperture of this court's own sealed
+            // orbits — its clock, never a count of loop cycles (PH1); a stop
+            // persists whatever is still marked (SIGTERM).
+            if sealed_since_persist >= u64::from(mycelium::physics::aperture_cycle()) && persist_if_due(&kernel, &state_path) {
+                sealed_since_persist = 0;
             }
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]
             let budget = mycelium::physics::expansion_unit() as usize;
@@ -426,7 +423,9 @@ impl Exchange {
                 // bounds the wait in this loop's own strokes: a full reserve
                 // of the peer's measured transports.
                 let quiet = {
-                    let ceiling = match mycelium::physics::digest_ceiling(crate::transport::rtt_floor(&mesh, &pid).map_or(5, |f| f)) {
+                    // An unmeasured wire is read at the instrument's own
+                    // resolution: one poll, as a first-poll reply measures.
+                    let ceiling = match mycelium::physics::digest_ceiling(crate::transport::rtt_floor(&mesh, &pid).map_or(1, |f| f)) {
                         mycelium::physics::Lambda::Strokes(n) => Some(n),
                         mycelium::physics::Lambda::BeyondTheLedger | mycelium::physics::Lambda::Unmeasured => None,
                     };
@@ -796,7 +795,9 @@ impl Exchange {
             // else; a cycle that sealed no act closes nothing. A withheld
             // close is counted on the clock, never printed beside it.
             if let Ok(mut k) = kernel.lock() {
-                k.orbit();
+                if matches!(k.orbit(), mycelium::chronometry::Close::Sealed(_)) {
+                    sealed_since_persist += 1;
+                }
             }
             // 45.7, S13.1: a circuit that asked no peer spends the tick, as
             // the circuit with no destination does, so the loop paces on the

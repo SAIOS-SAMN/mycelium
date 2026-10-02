@@ -160,7 +160,7 @@ fn flat_loop_class(lane: BendLane, a: &PivotBy, b: &PivotBy) -> Option<Class> {
 }
 
 /// The ledger's irreversible counters, as one comparable reading.
-fn ledger() -> (u64, u64, u64, [u64; 4], [u64; 4]) {
+fn ledger() -> (u64, u64, [u64; 4], [u64; 4], [u64; 4]) {
     let m = crate::physics::metabolism::metabolism();
     (m.entropy(), m.sealed, m.depleted, m.drawn, m.restored)
 }

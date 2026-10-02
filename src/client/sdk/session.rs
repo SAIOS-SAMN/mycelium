@@ -238,7 +238,7 @@ impl Session {
         // peer stops saying more", which is the peer's loop and not this
         // one's. A cover wider than the aperture converges over contacts,
         // since the cursor is the last chart held and nothing is re-read.
-        let mut pages = crate::physics::aperture_cycle().max(1) as usize;
+        let mut pages = crate::physics::aperture_cycle() as usize;
         while pages > 0 {
             pages -= 1;
             // A cursor past its four bytes asks nothing (STD1 3c).
@@ -350,7 +350,7 @@ impl Session {
         reason = "rule 4 — the floor of the RTT window is that window's extent, a measured reading of the samples it holds"
     )]
     pub(crate) fn rtt_ok(&self, addr: &str, sample: u64) {
-        let n = crate::physics::aperture_cycle().max(1) as usize;
+        let n = crate::physics::aperture_cycle() as usize;
         let mut windows = self.rtt_window.borrow_mut();
         let mut w = windows.get(addr.as_bytes()).cloned().unwrap_or_default();
         w.push(sample);
@@ -387,7 +387,7 @@ impl Session {
         else {
             return;
         };
-        let ratio = crate::physics::aperture_cycle().max(2) as u64;
+        let ratio = u64::from(crate::physics::aperture_cycle());
         // As above: a dwell beyond the ledger caps nothing.
         let cap = match crate::physics::persist_dwell(floor) {
             crate::physics::Lambda::Strokes(n) => n,
