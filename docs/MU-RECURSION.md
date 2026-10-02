@@ -19994,6 +19994,70 @@ container, not the physics.
 The letters stay SO(4), and `Rotor` keeps its 16 coefficients as the
 internal orientation (the operator's amendment: no null letters).
 
+**Landed (2026-10-02), with the operator's three answers:**
+- *edges*: both realisations;
+- *rank step*: voice-reported, re-derived by the court;
+- *payments*: accrued on the carrier and minted at the return.
+
+The pieces:
+- *The 𝒯 lane.* The carriage's displacement is read on 𝒯 everywhere it
+  transports (`pairing::carriage_lanes`), and `Axis::Placement` moves from
+  𝒮 to 𝒯 (42.6's table as amended; 65.4's T is translation). Each face
+  placed with a measured motor books that motor's lanes as condensed
+  transport (`mark_face_carriage`).
+- *54.7 R3 stands.* A connection edge keeps its transvection, because the
+  null generator broke the eigenplane split. 51.2's one reading with two
+  realisations is read where the reading is taken: the lanes come off the
+  conformal motor, never off its transvection, which reads as a scale about
+  another point.
+- *The bubble nerve's identity carriage is unchanged.* A held thought is
+  identified by its rotor, and its placement is where it was perceived —
+  the base point the ruling still quotients.
+- *Act kinds `Return` (19) and `RankStep` (20).*
+- *The winding carrier* (`court/winding.rs`, `Kernel::windings`,
+  persisted as the `windings` trie):
+  - a ring is a simplex of a chart's complex;
+  - its first close is settled where it closes (`pay_simplex_volume`, the
+    Torse);
+  - each re-close is a traversal: the winding moves, the escrow draws and
+    torsion it earns accrue, and nothing is sealed;
+  - at `m ≡ 0 (mod ℓ)` one `Return` seals and mints the age's pay at its
+    anchor (EC1);
+  - a Filled ring has ℓ = 1, so every traversal is an age;
+  - a ring of infinite order (ℓ = 0, §52.3) never carries and is settled
+    at each close (78.68: it does not condense);
+  - a ring whose period moved returns its accrued age and restarts.
+- *The rank step is read on the chart, not the cell.* `Form.cells` is
+  perception's and never on the wire, so the court cannot re-derive a
+  voice's cell. What crosses is the form's circuits:
+  - a voice reports a new dimension by speaking the form that carries it;
+  - at `ruled_admit` the court takes those circuits to Cayley bivectors
+    and closes them under the commutator with the chart's held algebra
+    (`cech::lie_close`; `Kernel::lie_basis`, persisted as the `lie` trie);
+  - a rise is one `RankStep`.
+
+  This is the Lie rank of 𝔥 ⊂ so(4,1), bounded by 10 at n = 3. It is not
+  `CellAlgebra::capacity`, which is the associative algebra's dimension.
+- *The fold trigger* (`fold_transitions`): the prefix carries work (78.67
+  (A)), and a `Return` or `RankStep` stands in it, otherwise
+  `REFUSE_FOLD_NO_TRANSITION`. 78.67 (B)'s byte break-even is gone.
+- *The court's journal line* adds the rings — first, carried, returns,
+  unbound, repriced — and the rank steps.
+
+**Tested.**
+- `winding::a_traversed_ring_writes_one_return_per_age`: one return per
+  three passes at ℓ = 3, nothing sealed between them; a Filled ring returns
+  at every pass; a ring of infinite order never carries.
+- `winding::a_winding_carrier_reads_back_whole`.
+- `orbit::a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands`.
+- `orbit_algebra::the_holonomy_algebra_closes_under_the_commutator`: e₁₂
+  and e₂₃ close to so(3), rank 3; disjoint planes give rank 2.
+- `pairing::a_carriage_is_read_on_the_lane_it_transports`.
+- `lanes::the_axis_to_lane_table_is_42_6s`, as amended.
+
+It is a layout change (new act kinds, two new snapshot tries), so the
+recut is the road.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

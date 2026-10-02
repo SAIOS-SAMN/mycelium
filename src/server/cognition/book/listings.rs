@@ -717,6 +717,9 @@ impl Kernel {
         // that ran first would find it still unruled and wait again — and
         // only where the cover actually carries it.
         if ruled {
+            // 78.68 — the word's circuits join its chart's holonomy algebra;
+            // a new dimension is one RankStep act.
+            self.step_rank(addr, budget);
             self.rehear_awaiting(addr, budget);
         }
     }

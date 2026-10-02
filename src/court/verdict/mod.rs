@@ -117,10 +117,11 @@ pub const REFUSE_FOLD_INEXACT: &str = "fold does not conserve";
 /// moves no work; folding it would only fold folds, and the fold's own
 /// receipt would open the orbit whose close proposed the next one.
 pub const REFUSE_FOLD_IDLE: &str = "fold prefix carries no work";
-/// 78.67 (B): the history a fold would move is smaller than what an era
-/// costs to write — its descriptor, its length word and the fold's own
-/// receipt — so the fold would add more framing than it moves.
-pub const REFUSE_FOLD_UNAMORTIZED: &str = "fold prefix smaller than its era's framing";
+/// 78.68: no phase transition stands in the prefix — no `Return` (a ring
+/// completed an age) and no `RankStep` (a chart's holonomy algebra gained a
+/// dimension) — so it is coefficient motion and a fold would cut nothing the
+/// physics names. Replaces 78.67 (B)'s byte break-even.
+pub const REFUSE_FOLD_NO_TRANSITION: &str = "fold prefix holds no return and no rank step";
 pub const REFUSE_DEMAND_UNTYPED: &str = "demand vertex names no kind";
 pub const REFUSE_EDGE: &str = "edge transport is neither in the stabilizer nor the exchange nor a remainder edge";
 /// 50.6, 34.1 (L7): a tape with no vertex that acts is a chain, refused
@@ -171,7 +172,7 @@ pub fn ruled_obstruction(reason: &'static str) -> sentence::ClosureObstruction {
         REFUSE_ROOM | REFUSE_WITNESS_ROOM | REFUSE_WITNESS_DEPENDENT | REFUSE_FOLD_OPEN | REFUSE_FOLD_INEXACT => {
             O::Integrity
         }
-        REFUSE_FOLD_IDLE | REFUSE_FOLD_UNAMORTIZED => O::Integrity,
+        REFUSE_FOLD_IDLE | REFUSE_FOLD_NO_TRANSITION => O::Integrity,
         REFUSE_ORIGIN | REFUSE_RECEIPT | REFUSE_RECEIPT_STALE | REFUSE_EQUIVOCATION | REFUSE_NOT_EQUIVOCATION
         | REFUSE_SIGNATURE | REFUSE_MV_INEXACT => O::Integrity,
         REFUSE_GLUED_UNRULED => O::Dialect { coset: Vec::new(), chart: None },

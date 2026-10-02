@@ -69,13 +69,20 @@ impl Axis {
     ///   for it and says why — but it is content on a lane, and the lane
     ///   is the one whose cover it moved.
     ///
-    /// NO AXIS IS TEMPORAL, and that is not an omission. 16.16 reads `𝒯`
-    /// as the extent held in RECEIPTS, and `measure_lanes` writes lane 2
-    /// as zero with that reason at the line. It is why every `uncarried`
-    /// vector the cover has read has the shape `[𝒮, 0, 0, 𝒽]`.
+    /// - `Placement` — the Burgers slip, the translation the carriage
+    ///   carries — is `𝒯` (78.68, 65.4's `T` = translation): the court
+    ///   quotients the base point, never the relative displacement, and the
+    ///   displacement is the luminal transport. `Dilation` stays on `𝒮`.
+    ///
+    /// NO AXIS WAS TEMPORAL until 78.68: 16.16 read `𝒯` as the extent held
+    /// in receipts alone, every `uncarried` vector had the shape
+    /// `[𝒮, 0, 0, 𝒽]`, and the 𝒯 lane never drew on the fleet. The chain's
+    /// own `measure_lanes` still writes lane 2 as zero — a chain holds no
+    /// clock — and that is the chain's reading, not the class vector's.
     pub fn lane(self) -> usize {
         match self {
-            Axis::Placement | Axis::Dilation => 0,
+            Axis::Placement => 2,
+            Axis::Dilation => 0,
             Axis::Hue | Axis::Open => 1,
             Axis::Orientation(_)
             | Axis::Unit(_)

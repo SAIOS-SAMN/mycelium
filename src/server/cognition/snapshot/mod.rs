@@ -97,3 +97,15 @@ pub const LEAF_TO: u8 = 2;
 pub const LEAF_CLASS: u8 = 3;
 pub const LEAF_GAUGE: u8 = 4;
 pub const LEAF_STOOD: u8 = 5;
+
+/// 78.68 — THE WINDING CARRIERS, each keyed by `chart ‖ simplex`, its one
+/// leaf the carrier written by its own coordinates (`Winding::put`): the
+/// ring's period, its traversals since its last return, its Torse rewrite,
+/// and the pay accrued toward the next return — a claim, so it is kept.
+pub const WINDINGS_TRIE: &str = "windings";
+pub const LEAF_WINDING: u8 = 1;
+
+/// 78.68 — EACH CHART'S HOLONOMY ALGEBRA, keyed by the chart's key, its one
+/// leaf the basis: a count, then each bivector by its own coordinates.
+pub const LIE_TRIE: &str = "lie";
+pub const LEAF_BASIS: u8 = 1;

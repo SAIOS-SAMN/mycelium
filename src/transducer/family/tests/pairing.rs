@@ -234,3 +234,32 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
     assert_eq!((t.statics, t.open_180, t.condensed, t.mirrored), (1, 0, 0, 0), "static by name, no refraction asked");
 }
 
+/// 78.68 — A CONFORMAL CARRIAGE'S LANES: a translator carries a
+/// displacement, 𝒯; a dilator is 𝒮; a turn about the origin is 𝒢 and
+/// carries no displacement. And why the lanes are read off the conformal
+/// carriage and never its transvection (51.2): the transvection the same
+/// displacement realises reads as a scale about another point, its
+/// displacement gone.
+#[test]
+fn a_carriage_is_read_on_the_lane_it_transports() {
+    use crate::transducer::cga;
+    use crate::transducer::family::pairing::carriage_lanes;
+    let mut b = crate::physics::Physics::default().stroke_n(1 << 16);
+    let one = num_rational::BigRational::from_integer(1.into());
+    let zero = num_rational::BigRational::from_integer(0.into());
+    // Half a unit: the transvection's Cayley chart ends at |u| = 1, the
+    // light cone (56), so a unit displacement has no finite boost.
+    let half = num_rational::BigRational::new(1.into(), 2.into());
+    let t = cga::translator_at(&[half, zero.clone(), zero]);
+    assert_eq!(carriage_lanes(&t, &mut b), [false, false, true, false], "a translation is 𝒯");
+    let v = crate::transducer::element::transvection_of(&t).expect("a finite displacement inside the cone");
+    assert!(
+        !carriage_lanes(&v, &mut b)[crate::transducer::rewrite::LANE_TEMPORAL],
+        "its transvection no longer reads the displacement, which is why the motor is read"
+    );
+    let d = cga::dilator(&num_rational::BigRational::from_integer(2.into()));
+    assert_eq!(carriage_lanes(&d, &mut b), [true, false, false, false], "a dilation is 𝒮");
+    let r = cga::Mv::scalar(one.clone()).add(&cga::Mv::blade(cga::E1 | cga::E2, one));
+    assert_eq!(carriage_lanes(&r, &mut b), [false, true, false, false], "a turn about the origin is 𝒢");
+}
+

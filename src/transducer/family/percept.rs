@@ -1223,6 +1223,9 @@ pub(super) fn family_percept(
             let o = Overlap { from: ChartAt::at(at.clone(), chart.clone(), k), to: ChartAt::at(at.clone(), chart.clone(), k2) };
             let edge = edges.take(Some(super::perceive::edge_of(&motor).map_err(|e| vec![e])));
             let Some(mut place) = form.face_place(&o.from, &o.to, edge) else { continue };
+            // 78.68: the motor is the relative carriage across this face —
+            // the transport, booked on the lanes it moves.
+            super::pairing::mark_face_carriage(&motor, budget);
             place.carriage = motor;
             form.put_face(o, FormFace::placed(place, Producer::Motor));
         }
@@ -1240,6 +1243,7 @@ pub(super) fn family_percept(
                     across_charts.unplaced += 1;
                     continue;
                 };
+                super::pairing::mark_face_carriage(&motor, budget);
                 place.carriage = motor;
                 form.put_face(o, FormFace::placed(place, Producer::Motor));
                 across_charts.motor += 1;

@@ -376,6 +376,18 @@ pub struct Kernel {
     /// 78.26(6), TP1 — closed rings of the cover's nerve the glue reopened
     /// because a gauge moved: `[filled, congruent]`, since boot.
     pub(crate) reopened: [u64; 2],
+    /// 78.68 — THE WINDING CARRIERS, by `chart ‖ simplex`: each closed
+    /// ring's period, its traversals since its last return and the pay they
+    /// accrued — held off the ledger and closed by the `Return` act
+    /// (`court/winding.rs`). Persisted: the accrued pay is a claim.
+    pub(crate) windings: crate::network::nerve::Keyed<crate::cognition::court::winding::Winding>,
+    /// What closing rings did, since boot.
+    pub(crate) winding_tally: crate::cognition::court::winding::WindingTally,
+    /// 78.68 — EACH CHART'S HOLONOMY ALGEBRA: a basis over ℚ of the Lie
+    /// closure of the Cayley bivectors of every ruled form's circuits on it,
+    /// by the chart's key. Its rank rising is a `RankStep` act. Persisted, so
+    /// a restart does not re-seal steps already taken.
+    pub(crate) lie_basis: crate::network::nerve::Keyed<Vec<crate::transducer::cga::Mv>>,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

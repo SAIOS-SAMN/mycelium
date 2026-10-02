@@ -338,12 +338,23 @@ impl Exchange {
                 // read only by hand.
                 if let Ok(k) = kernel.lock() {
                     let folds = mycelium::observe::folds();
+                    // 78.68: the winding carrier — first closes, carried
+                    // traversals, returns sealed, unbound closes — and the
+                    // rank steps the charts' holonomy algebras took.
+                    let w = k.winding_tally();
                     eprintln!(
-                        "  court metabolism K {} | {} | eras {} hot {} | folds {}",
+                        "  court metabolism K {} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} unread {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.archive().len(),
                         k.chain().len(),
+                        w.first,
+                        w.carried,
+                        w.returns,
+                        w.unbound,
+                        w.repriced,
+                        w.rank_steps,
+                        w.rank_unread,
                         mycelium::observe::FOLD_OUTCOMES
                             .iter()
                             .zip(folds)

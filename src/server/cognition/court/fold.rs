@@ -13,7 +13,7 @@ use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Place, Root, Stamp};
 use crate::cognition::Kernel;
 use crate::economy::{nets_of, Entry};
 use crate::verdict::{
-    REFUSE_FOLD_IDLE, REFUSE_FOLD_INEXACT, REFUSE_FOLD_OPEN, REFUSE_FOLD_UNAMORTIZED, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT,
+    REFUSE_FOLD_IDLE, REFUSE_FOLD_INEXACT, REFUSE_FOLD_NO_TRANSITION, REFUSE_FOLD_OPEN, REFUSE_RECEIPT, REFUSE_WITNESS_DEPENDENT,
     REFUSE_WITNESS_ROOM,
 };
 
@@ -95,11 +95,11 @@ impl Kernel {
     /// — final and conserving; this answers whether it SHOULD.
     pub fn propose_fold_at_close(&mut self) -> Result<Proposal, &'static str> {
         let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
-        self.fold_amortizes(head)?;
+        self.fold_transitions(head)?;
         self.propose_fold()
     }
 
-    /// 78.67 — A FOLD MOVES WORK, AND MORE OF IT THAN IT COSTS.
+    /// 78.67 (A), 78.68 — A FOLD MOVES WORK, AT A PHASE TRANSITION.
     ///
     /// (A) The prefix up to `head` must hold an act other than a fold or an
     /// orbit's close. A fold's own receipt is an act, so it opens an orbit
@@ -107,42 +107,21 @@ impl Kernel {
     /// nearly every close, 337 815 eras in two hours on hypha a, each one
     /// moving the fold before it (`REFUSE_FOLD_IDLE`).
     ///
-    /// (B) The history the fold moves — the prefix as the era's payload
-    /// packs it — must be at least what the era costs to write besides that
-    /// history: its descriptor and length word (the segment's layout), and
-    /// the fold's own receipt, read off the last fold on this line, or the
-    /// smallest receipt tape where the line has not folded. Both sides are
-    /// bytes of one carrier, measured; a fold below break-even adds more
-    /// framing than it moves (`REFUSE_FOLD_UNAMORTIZED`).
-    fn fold_amortizes(&self, head: Place) -> Result<(), &'static str> {
+    /// (B) A topological phase transition must stand in it: a `Return` (a
+    /// ring completed an age, `m ≡ 0 mod ℓ`) or a `RankStep` (a chart's
+    /// holonomy algebra gained a dimension). Between them the history is
+    /// coefficient motion, held on the winding carrier, and folding it would
+    /// cut nothing the physics names (`REFUSE_FOLD_NO_TRANSITION`). This
+    /// replaces 78.67's byte break-even, which measured the container and
+    /// not the physics.
+    fn fold_transitions(&self, head: Place) -> Result<(), &'static str> {
         let me = self.chain.vk();
         let prefix = self.chain.line_between(&me, self.chain.root().map(|r| r.at), head, usize::MAX);
         if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {
             return Err(REFUSE_FOLD_IDLE);
         }
-        let packed = |receipts: Vec<KStepReceipt>| -> Option<usize> {
-            let era = Era {
-                root: Root { at: head, hash: [0; 32], height: 0 },
-                signer: me,
-                witness: me,
-                sig_home: [0; 64],
-                sig_witness: [0; 64],
-                identities: 0,
-                first: head,
-                count: 0,
-                at: None,
-                receipts,
-            };
-            era.payload().map(|p| p.len())
-        };
-        let fold_tape = match self.chain.opening().filter(|r| r.kind == ActKind::Fold) {
-            Some(f) => packed(vec![f.clone()]).ok_or(REFUSE_RECEIPT)?,
-            None => KStepReceipt::MIN_TAPE,
-        };
-        let framing = Era::DESCRIPTOR + 8 + fold_tape;
-        let history = packed(prefix).ok_or(REFUSE_RECEIPT)?;
-        if history < framing {
-            return Err(REFUSE_FOLD_UNAMORTIZED);
+        if !prefix.iter().any(|r| matches!(r.kind, ActKind::Return | ActKind::RankStep)) {
+            return Err(REFUSE_FOLD_NO_TRANSITION);
         }
         Ok(())
     }

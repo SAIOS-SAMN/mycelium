@@ -429,7 +429,7 @@ impl Kernel {
                         Ok(_) => crate::observe::FoldOutcome::Proposed,
                         Err(crate::verdict::REFUSE_FOLD_OPEN) => crate::observe::FoldOutcome::Open,
                         Err(crate::verdict::REFUSE_FOLD_IDLE) => crate::observe::FoldOutcome::Idle,
-                        Err(crate::verdict::REFUSE_FOLD_UNAMORTIZED) => crate::observe::FoldOutcome::Unamortized,
+                        Err(crate::verdict::REFUSE_FOLD_NO_TRANSITION) => crate::observe::FoldOutcome::NoTransition,
                         Err(_) => crate::observe::FoldOutcome::Inexact,
                     };
                     crate::observe::note_fold(outcome);

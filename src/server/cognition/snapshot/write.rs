@@ -140,6 +140,7 @@ impl Kernel {
         self.put_eras(&mut out, &mut refused);
         self.put_complexes(&mut out);
         self.put_cocycles(&mut out, &mut refused);
+        self.put_windings(&mut out);
         refused.name();
         out
     }
@@ -513,6 +514,27 @@ impl Kernel {
             nodes.insert(key, leaves);
         });
         put_trie(out, COCYCLES_TRIE, &nodes);
+    }
+
+    /// 78.68 — THE WINDING CARRIERS by their `chart ‖ simplex` keys, each its
+    /// carrier's own coordinates.
+    fn put_windings(&self, out: &mut Vec<u8>) {
+        let mut nodes: Keyed<Leaves> = Keyed::new();
+        crate::snapshot::persist(&self.windings, |key, w| {
+            let mut v = Vec::new();
+            w.put(&mut v);
+            nodes.insert(key, vec![(LEAF_WINDING, v)]);
+        });
+        put_trie(out, WINDINGS_TRIE, &nodes);
+        let mut nodes: Keyed<Leaves> = Keyed::new();
+        crate::snapshot::persist(&self.lie_basis, |key, basis| {
+            let mut v = (basis.len() as u64).to_le_bytes().to_vec();
+            for b in basis {
+                b.to_bytes(&mut v);
+            }
+            nodes.insert(key, vec![(LEAF_BASIS, v)]);
+        });
+        put_trie(out, LIE_TRIE, &nodes);
     }
 }
 

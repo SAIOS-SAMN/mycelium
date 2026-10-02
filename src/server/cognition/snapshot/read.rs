@@ -263,6 +263,10 @@ impl Kernel {
             at.set(COCYCLES_TRIE);
             let cocycles =
                 take_trie(b, pos, COCYCLES_TRIE, &[LEAF_FROM, LEAF_TO, LEAF_CLASS, LEAF_GAUGE, LEAF_STOOD])?;
+            at.set(WINDINGS_TRIE);
+            let windings = take_trie(b, pos, WINDINGS_TRIE, &[LEAF_WINDING])?;
+            at.set(LIE_TRIE);
+            let lie = take_trie(b, pos, LIE_TRIE, &[LEAF_BASIS])?;
             if *pos != b.len() {
                 return None;
             }
@@ -449,6 +453,26 @@ impl Kernel {
                 }
                 // Chart index is rebuilt on next glue; hot row is enough.
                 kernel.cocycle_at.insert(Address::from(key), row);
+            }
+            // 78.68 — THE WINDING CARRIERS, each read whole or the snapshot
+            // refuses: the pay they hold is a claim.
+            at.set(WINDINGS_TRIE);
+            for (key, leaves) in windings.scoped() {
+                let w = whole(leaf(leaves, LEAF_WINDING)?, crate::cognition::court::winding::Winding::take)?;
+                kernel.windings.insert(&key, w);
+            }
+            at.set(LIE_TRIE);
+            for (key, leaves) in lie.scoped() {
+                let basis = whole(leaf(leaves, LEAF_BASIS)?, |v, p| {
+                    let n = usize::try_from(u64::from_le_bytes(v.get(*p..*p + 8)?.try_into().ok()?)).ok()?;
+                    *p += 8;
+                    let mut out = Vec::new();
+                    for _ in 0..n {
+                        out.push(crate::transducer::cga::Mv::from_bytes(v, p)?);
+                    }
+                    Some(out)
+                })?;
+                kernel.lie_basis.insert(&key, basis);
             }
 
             // index: keyed field at restore (persistence snapshot, once)

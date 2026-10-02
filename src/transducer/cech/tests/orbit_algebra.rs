@@ -292,3 +292,24 @@ fn the_grade_and_the_factorisation_read_any_size() {
     let (_, residue) = crate::core::exponents::reduce_against(&h, &rows[2]);
     assert!(residue.iter().all(|x| x.is_zero()), "a generator factors through the generators");
 }
+
+/// 78.68 — THE LIE CLOSURE, EXACT: two turns on planes that share an axis,
+/// `e₁₂` and `e₂₃`, do not commute, and their bracket is `e₁₃` up to scale,
+/// so they close to so(3), rank 3. Two turns on disjoint planes, `e₁₂` and
+/// `e₃₊`, commute and close to rank 2. A held algebra re-closed with a
+/// generator it already spans gains nothing.
+#[test]
+fn the_holonomy_algebra_closes_under_the_commutator() {
+    let one = BigRational::from_integer(1.into());
+    let e12 = Mv::blade(E1 | E2, one.clone());
+    let e23 = Mv::blade(E2 | E3, one.clone());
+    let e3p = Mv::blade(E3 | cga::EP, one.clone());
+    let so3 = lie_close(&[], &[e12.clone(), e23.clone()], &mut stroke()).expect("closes");
+    assert_eq!(so3.len(), 3, "[e₁₂, e₂₃] ∝ e₁₃: so(3)");
+    let torus = lie_close(&[], &[e12.clone(), e3p], &mut stroke()).expect("closes");
+    assert_eq!(torus.len(), 2, "commuting planes add no bracket");
+    let again = lie_close(&so3, &[e12.scale(&q(3, 1))], &mut stroke()).expect("closes");
+    assert_eq!(again.len(), 3, "a generator already spanned adds nothing");
+    let mut starved = crate::physics::Physics::default().stroke_n(0);
+    assert_eq!(lie_close(&[], &[e12, e23], &mut starved), Err(LieRankRefused::Spent { bracket: 1 }), "the stroke is read per bracket");
+}

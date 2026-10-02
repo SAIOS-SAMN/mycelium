@@ -51,7 +51,7 @@ enum Standing {
 /// holds the last simplex of the link that read it.
 #[derive(Default)]
 struct Fills {
-    filled: Option<(Rotor, Versor, Vec<Address>)>,
+    filled: Option<(Rotor, Versor, Vec<Address>, Vec<u8>)>,
     congruent: Option<(Torsed, Vec<Address>, Vec<u8>)>,
     class: Option<(Rotor, usize)>,
 }
@@ -308,7 +308,7 @@ impl Kernel {
             match fill {
                 O::Attached(Fill::Filled(gamma, carriage)) => {
                     if volume.iter().any(|&x| x > 0) {
-                        fills.filled = Some((*gamma, *carriage, addrs()));
+                        fills.filled = Some((*gamma, *carriage, addrs(), key.clone()));
                     }
                 }
                 O::Attached(Fill::Congruent(kappa, g, ell)) => fills.congruent = Some(((kappa, g, ell), addrs(), key.clone())),
@@ -346,18 +346,19 @@ impl Kernel {
             (None, Some(_), _, _) | (None, None, Some(_), _) | (None, None, None, Standing::Placed(_)) => Glue::Attached,
             (None, None, None, _) => Glue::Admitted,
         };
-        if let Some((gamma, carriage, addrs)) = fills.filled {
+        if let Some((gamma, carriage, addrs, simplex)) = fills.filled {
             self.record_gamma(&addrs, &gamma, &carriage);
-            self.pay_simplex_volume(inv, &addrs);
+            // 78.68: a ring closed to the identity, period one.
+            self.close_ring(inv, &simplex, 1, &addrs, None);
             if let (false, Some((a, b))) = (gamma.is_identity(), edge_pair(&addrs)) {
                 self.mint_or_admit_translation(&gamma, a, b, peer, budget);
             }
         }
         if let Some((remainder, addrs, simplex)) = fills.congruent {
-            self.pay_simplex_volume(inv, &addrs);
-            if let Some(rw) = self.mint_torse_at(inv, &simplex, remainder, &addrs) {
-                self.pay_torse(&addrs, rw.as_bytes());
-            }
+            // 78.68: the first close settles and mints the Torse; a later
+            // one is carried until the ring returns at ℓ.
+            let ell = u64::from(remainder.2);
+            self.close_ring(inv, &simplex, ell, &addrs, Some(remainder));
         }
         if let Some((class, degree)) = fills.class {
             self.mark_class(inv, class, degree);

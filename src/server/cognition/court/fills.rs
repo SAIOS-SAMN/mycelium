@@ -69,7 +69,9 @@ impl Kernel {
                 ) => {
                     self.record_gamma(&addrs, &gamma, &carriage);
                     let before = self.chain.head_stamp();
-                    self.pay_simplex_volume(&inv, &addrs);
+                    // 78.68: a ring closed to the identity returns every
+                    // traversal — period one.
+                    self.close_ring(&inv, sim_key.as_bytes(), 1, &addrs, None);
                     // 78.27 (5): the Settled act this fill sealed, where it
                     // sealed one — the act a transition it retires stood at
                     // when the transition carries no receipt of its own.
@@ -94,12 +96,11 @@ impl Kernel {
                     ),
                     addrs,
                 ) => {
-                    self.pay_simplex_volume(&inv, &addrs);
-                    // RM1 — the Torse rewrite minted with its remainder; the
-                    // torsion paid cites it.
-                    if let Some(rw) = self.mint_torse_at(&inv, sim_key.as_bytes(), (kappa, g, ell), &addrs) {
-                        self.pay_torse(&addrs, rw.as_bytes());
-                    }
+                    // RM1 — the Torse rewrite minted with its remainder at the
+                    // ring's first close; the torsion paid cites it. 78.68: a
+                    // later close is a traversal, carried until the ring
+                    // returns at ℓ.
+                    self.close_ring(&inv, sim_key.as_bytes(), u64::from(ell), &addrs, Some((kappa, g, ell)));
                 }
                 (
                     crate::transducer::cech::CoboundaryOutcome::Attached(

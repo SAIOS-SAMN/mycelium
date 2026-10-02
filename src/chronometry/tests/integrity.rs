@@ -80,7 +80,15 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
     let mut bad = tape.clone();
     bad[at] = 0xEE;
     assert!(KStepReceipt::read(&bad, &mut 0).is_none(), "a byte naming no kind refuses the read");
-    for k in [ActKind::Attest, ActKind::Fold, ActKind::Adopted, ActKind::Learned, ActKind::Settled] {
+    for k in [
+        ActKind::Attest,
+        ActKind::Fold,
+        ActKind::Adopted,
+        ActKind::Learned,
+        ActKind::Settled,
+        ActKind::Return,
+        ActKind::RankStep,
+    ] {
         assert_eq!(ActKind::from_byte(k.to_byte()), Some(k), "every kind round-trips its byte");
     }
 }

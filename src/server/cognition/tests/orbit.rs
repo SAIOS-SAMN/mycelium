@@ -43,32 +43,29 @@ fn a_court_close_that_would_collide_is_withheld_and_sealed_a_stroke_on() {
     );
 }
 
-/// 78.67 (B) — THE FOLD IS ASKED AT EVERY CLOSE AND ANSWERS BY BREAK-EVEN.
-/// A court that never ran a docket circuit is asked at its closes all the
-/// same; while the history it would move is smaller than the era's framing
-/// it refuses unamortized and nothing is proposed, and at the first close
-/// whose prefix outweighs the framing the fold is proposed, cut at that
-/// close. No reserve reading enters.
+/// 78.68 — THE FOLD IS ASKED AT EVERY CLOSE AND ANSWERS BY TRANSITION. A
+/// court that never ran a docket circuit is asked at its closes all the
+/// same. However much work its prefix carries, it proposes nothing while no
+/// phase transition stands there (`REFUSE_FOLD_NO_TRANSITION`). At the
+/// first close whose prefix holds a `Return` or a `RankStep`, the fold is
+/// proposed, cut at that close. Neither bytes nor the reserve enter.
 #[test]
-fn a_close_proposes_the_fold_once_its_history_outweighs_the_eras_framing() {
-    let mut k = Kernel::new();
-    k.bind_identity([0x5c; 32]);
-    let mut refused = 0;
-    let mut closes = 0;
-    while k.fold_proposal().is_none() {
-        assert!(closes < 64, "a growing prefix reaches break-even");
-        k.append_step(ActKind::List, [1; 32], [2; 32]);
-        assert!(matches!(k.orbit(), Close::Sealed(_)), "the close seals");
-        closes += 1;
-        if k.fold_proposal().is_none() {
-            refused += 1;
-            assert_eq!(k.propose_fold_at_close(), Err(crate::verdict::REFUSE_FOLD_UNAMORTIZED), "below break-even");
+fn a_close_proposes_the_fold_only_where_a_return_or_rank_step_stands() {
+    for transition in [ActKind::Return, ActKind::RankStep] {
+        let mut k = Kernel::new();
+        k.bind_identity([0x5c; 32]);
+        for _ in 0..8 {
+            k.append_step(ActKind::List, [1; 32], [2; 32]);
+            assert!(matches!(k.orbit(), Close::Sealed(_)), "the close seals");
+            assert!(k.fold_proposal().is_none(), "work without a transition proposes nothing");
+            assert_eq!(k.propose_fold_at_close(), Err(crate::verdict::REFUSE_FOLD_NO_TRANSITION));
         }
+        k.append_step(transition, [3; 32], [0x5c; 32]);
+        assert!(matches!(k.orbit(), Close::Sealed(_)));
+        assert_eq!(k.docket_circuits().circuits(), 0, "no docket circuit ran");
+        let p = k.fold_proposal().expect("the close after a transition proposes");
+        assert_eq!(p.root.at, crate::chronometry::Place { k: 8, i: 1 }, "the cut is the close just made");
     }
-    assert!(refused > 0, "one act and its close are less history than an era's framing");
-    assert_eq!(k.docket_circuits().circuits(), 0, "no docket circuit ran");
-    let p = k.fold_proposal().expect("proposed");
-    assert_eq!(p.root.at, crate::chronometry::Place { k: closes - 1, i: 1 }, "the cut is the close just made");
 }
 
 /// THE DISTANCE AT A TICK, per lane and signed: a peer's orbit closed at the

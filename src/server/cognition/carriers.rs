@@ -120,6 +120,9 @@ impl Kernel {
             rulings: _,
             ruling_refusals: _,
             reopened: _,
+            windings,
+            winding_tally: _,
+            lie_basis,
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,
@@ -206,6 +209,8 @@ impl Kernel {
         c.count("answered", nested(answered));
         c.count("complexes", complexes.scoped().map(|(_, x)| x.held()).sum());
         c.count("unfilled", unfilled.len());
+        c.count("windings", windings.len());
+        c.count("lie_basis", lie_basis.scoped().map(|(_, b)| b.len()).sum());
         c.count("pending_refine", pending_refine.len());
         c.count("heard", heard.len());
         c.count("heard_at", nested(heard_at));

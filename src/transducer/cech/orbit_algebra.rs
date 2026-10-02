@@ -492,6 +492,95 @@ fn capacity(
     Ok((span.grade(), span))
 }
 
+/// 78.68, 78.11 item 4 — WHY A CELL'S LIE RANK DID NOT READ: no circuit's
+/// holonomy read; a holonomy with no Cayley chart point (the π pole, or a
+/// weight with no rational root), by its circuit; or the stroke spent at the
+/// k-th bracket.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum LieRankRefused {
+    NoneRead,
+    NoChart { circuit: usize },
+    Spent { bracket: usize },
+}
+
+/// 78.68, 78.11 item 4 — THE LIE RANK OF 𝔥_cell: the dimension over ℚ of
+/// `𝔥 = ⟨B_c, [B_c, B_c′], [[B_c, B_c′], B_c″], …⟩_ℚ ⊂ so(n+1,1)`, the
+/// Ambrose–Singer holonomy algebra of the cell. Each read circuit's
+/// holonomy is taken to its Cayley bivector `B_c = (1 − H_c)(1 + H_c)⁻¹`
+/// (`cga::cayley_inverse`), and the span is closed under the commutator on a
+/// worklist — a bracket JOINS only where it lies outside the span, and only
+/// a bracket that joined is bracketed on — one read of the budget per
+/// bracket. At n = 3 the rank is at most 10, dim so(4,1).
+///
+/// This is not [`CellAlgebra::capacity`], which is the dimension of the
+/// unital ASSOCIATIVE algebra the circuits' actions generate on the space.
+/// The rank-step act (78.68) is a step of this one.
+pub fn lie_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefused> {
+    let holonomies: Vec<Option<&Mv>> = circuits.iter().map(|c| c.holonomy.as_ref().ok()).collect();
+    let gens = cayley_generators(&holonomies)?;
+    if gens.is_empty() {
+        return Err(LieRankRefused::NoneRead);
+    }
+    Ok(lie_close(&[], &gens, budget)?.len())
+}
+
+/// Each read holonomy's Cayley bivector `B = (1 − H)(1 + H)⁻¹`, in order;
+/// an unread holonomy (`None`) is passed over, and one with no chart point
+/// refuses by its index.
+pub fn cayley_generators(holonomies: &[Option<&Mv>]) -> Result<Vec<Mv>, LieRankRefused> {
+    let mut gens = Vec::new();
+    for (circuit, h) in holonomies.iter().enumerate() {
+        let Some(h) = h else { continue };
+        gens.push(cga::cayley_inverse(h).ok_or(LieRankRefused::NoChart { circuit })?);
+    }
+    Ok(gens)
+}
+
+/// THE LIE CLOSURE OF A HELD BASIS WITH NEW GENERATORS: `held` is a basis
+/// already closed under the commutator (a span this closure built), `new`
+/// the generators to adjoin; the result is a basis of the smallest Lie
+/// algebra over ℚ holding both, the held basis first. A generator or a
+/// bracket JOINS only where it lies outside the span, and only what joined
+/// is bracketed on, so a held algebra re-closes in no more brackets than its
+/// new dimensions need; one read of the budget per bracket.
+pub fn lie_close(held: &[Mv], new: &[Mv], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefused> {
+    let n = held.iter().chain(new).fold(0u8, |n, g| n.max(g.n()));
+    let mut span = crate::core::span::Span::new();
+    let mut basis: Vec<Mv> = Vec::new();
+    for g in held {
+        let g = g.widened(n);
+        if span.join(&cga::ray_of(&g)) {
+            basis.push(g);
+        }
+    }
+    let mut work: Vec<Mv> = Vec::new();
+    for g in new {
+        let g = g.widened(n);
+        if span.join(&cga::ray_of(&g)) {
+            basis.push(g.clone());
+            work.push(g);
+        }
+    }
+    let mut bracket = 0usize;
+    while let Some(x) = work.pop() {
+        let against = basis.clone();
+        for y in &against {
+            bracket += 1;
+            if !budget.spend() {
+                return Err(LieRankRefused::Spent { bracket });
+            }
+            // [X, Y] = XY − YX, a bivector again: the commutator of two
+            // bivectors has no scalar or grade-4 part.
+            let c = x.geo(y).sub(&y.geo(&x));
+            if !c.is_zero() && span.join(&cga::ray_of(&c)) {
+                basis.push(c.clone());
+                work.push(c);
+            }
+        }
+    }
+    Ok(basis)
+}
+
 /// 78.26(2) — DOES A CELL'S CLOSED ALGEBRA CONTAIN THIS FUNCTION: it lies in
 /// the algebra's span. `None` where the cell's algebra did not read or the
 /// two act in algebras of different `n`.

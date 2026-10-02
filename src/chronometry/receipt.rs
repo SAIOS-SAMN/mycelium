@@ -297,6 +297,16 @@ pub enum ActKind {
     /// height is; its tick is the orbit's tick. The next act opens the next
     /// orbit, `K + 1`, `i = 0`.
     Orbit,
+    /// 78.68 — A RING RETURNED: its winding reached `m ≡ 0 (mod ℓ)`, one full
+    /// age. The traversals before it advanced the winding carrier off the
+    /// ledger; this is the one act the age writes, and the pay those
+    /// traversals accrued is minted here (EC1).
+    Return,
+    /// 78.68 — A CELL'S HOLONOMY ALGEBRA STEPPED: a traversal met a
+    /// commutator that raised `rank 𝔥_cell` (≤ 10, 78.11), re-derived by
+    /// this court from the circuits a voice reported. The one act a new
+    /// dimension writes.
+    RankStep,
 }
 
 impl ActKind {
@@ -321,6 +331,8 @@ impl ActKind {
             ActKind::Settled => 13,
             ActKind::Refused => 14,
             ActKind::Orbit => 15,
+            ActKind::Return => 19,
+            ActKind::RankStep => 20,
         }
     }
 
@@ -345,6 +357,8 @@ impl ActKind {
             13 => ActKind::Settled,
             14 => ActKind::Refused,
             15 => ActKind::Orbit,
+            19 => ActKind::Return,
+            20 => ActKind::RankStep,
             _ => return None,
         })
     }
@@ -367,6 +381,8 @@ impl ActKind {
             ActKind::Settled => b"settled",
             ActKind::Refused => b"refused",
             ActKind::Orbit => b"orbit",
+            ActKind::Return => b"return",
+            ActKind::RankStep => b"rank step",
         }
     }
 
