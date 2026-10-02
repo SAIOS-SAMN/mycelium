@@ -95,6 +95,7 @@ pub fn expansion_unit() -> u64 {
 
 pub mod axioms;
 pub mod budget;
+pub mod capacitor;
 pub mod fascicle;
 pub mod laws;
 pub mod malleability;

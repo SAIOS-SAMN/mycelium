@@ -19,6 +19,7 @@ pub mod deflation;
 pub mod derivation;
 pub mod extract;
 mod fiber;
+pub mod fibres;
 pub mod incidence;
 pub mod finish;
 pub mod memo;

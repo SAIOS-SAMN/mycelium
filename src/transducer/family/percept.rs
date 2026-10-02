@@ -665,6 +665,9 @@ pub(super) fn family_percept(
     let mut frame_steps: Vec<FrameSteps> = Vec::new();
     // 78.71 — every body's in→out transport with the compartments it carried.
     let mut word_transports: Vec<super::pairing::FieldLine> = Vec::new();
+    // 78.74 — each field line's frame, and every carried body as a pivot.
+    let mut line_frames: Vec<u64> = Vec::new();
+    let mut pivots: Vec<super::fibres::Pivot> = Vec::new();
     // AT1 A2 — the class's steps across two charts, and their count by kind.
     let mut cross_steps: Vec<CrossStep> = Vec::new();
     let mut across_charts = AcrossCharts::default();
@@ -810,8 +813,14 @@ pub(super) fn family_percept(
             // 78.71 — EACH BODY'S TRANSPORT THROUGH THE RULE, input to output
             // at its frame, with the compartments it carried: the field line
             // the word itself is, read for its null flux beside the circuits'.
-            for (_, a0, _, v) in &m.at {
-                word_transports.push((v.clone(), m.acting.gauge.clone(), a0.compartments.len() as u64));
+            for (k, a0, _, v) in &m.at {
+                let mass = a0.compartments.len() as u64;
+                word_transports.push(super::pairing::FieldLine { carriage: v.clone(), gauge: m.acting.gauge.clone(), mass, free: false });
+                line_frames.push(*k);
+                // 78.74 — and the body as a pivot of its frame's fibres.
+                if let Some(point) = a0.shape.blade.vertex_point() {
+                    pivots.push(super::fibres::Pivot { frame: *k, point, mass, carriage: v.clone(), n: a0.shape.blade.n() });
+                }
             }
             if !m.steps.is_empty() {
                 // Each step with what it carried: the member's body at the
@@ -1300,6 +1309,13 @@ pub(super) fn family_percept(
     // curvature (Stokes), grouped into tubes by the ray it fixes and counted
     // in each tube's own quantum, weighed by the mass its faces carried —
     // order built on 𝒯 as the field closes, never a length.
+    // 78.74 — THE FRAMES' FIBRES, read before the field: a frame whose
+    // fibres were all carried rigidly or twisted did no work, and its field
+    // lines' turns press nothing.
+    let free_frames = super::fibres::read_frames(&pivots);
+    for (line, k) in word_transports.iter_mut().zip(&line_frames) {
+        line.free = free_frames.contains(k);
+    }
     super::pairing::mark_flux(&form, &carried_on, &word_transports, budget);
     // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.
     // Each was classified inside the cover; its chord there indexed the

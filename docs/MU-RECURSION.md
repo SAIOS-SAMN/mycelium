@@ -20560,6 +20560,125 @@ and keeps every winding (F4), so no shape changed.
 - the line reads `μ [1, 1/2, unstressed, unstressed] β [0, 1/2, …]
   ε [unmoved, unmoved, 1/4, unmoved]`.
 
+### 78.74 The fibre as a capacitor, and torsion, which does no work (ruled 2026-10-02, the operator's word: "record 78.74 and build it")
+
+**How it was reached.** The derivation ran in five steps, each tested
+before the next.
+1. **Noise.** A block of refusals is an inverse gravity well. It is noise
+   only until the inversion is found that makes it signal (the operator's
+   word).
+2. **The inversion is native.** Reflecting in a sphere swaps near and far.
+   It is not done by Pythagorean triples: they square the turn into a flat
+   triangle, which law 11 forbids. A slide conjugated by an inversion at P
+   is a source fixing P: a white hole, exact, with a null generator.
+3. **Encapsulation.** The inversion belongs to the local manifold, not to
+   the ambient `e_∞` with a declared unit radius. Every scale is read off
+   the manifold's own coordinates.
+4. **Nothing is declared.** No round boundary is set (the operator: "closer
+   to a geoid"). Each fibre between two pivots is its own switch, and the
+   shape is what the fibres generate.
+5. **Torsion splits off.** Applied to the fibre's equation, torsion splits
+   away from the field and the lift, and does no work.
+
+**The fibre** (`physics/capacitor.rs::Fibre`). Two pivots `Pᵢ`, `Pⱼ` are
+conformal points, exact, with masses `mᵢ`, `mⱼ`. Its blade `B = Pᵢ∧Pⱼ`
+squares to a rational `β² > 0`; one point, or a mass that is no mass, is
+no fibre.
+- **The switch** `S = mⱼPᵢ − mᵢPⱼ` is a real sphere whose reflection swaps
+  the two ends. Its points are where the weighted pulls balance,
+  `mⱼ X·Pᵢ = mᵢ X·Pⱼ`: the fibre's own equipotential, a two-body geoid.
+  - It is flat, passing through `e_∞`, only where the masses balance.
+  - Switches of fibres that share a pivot compose. `S₂₃ S₁₂` takes `P₁`
+    through `P₂` to `P₃`: multi-pivot carriage.
+- **The capacitor.** Its levels are `S(λ) = λPᵢ − Pⱼ`, its equipotentials.
+  The step `S(λ₂)S(λ₁)`:
+  - is an exact boost fixing both pivots, `Pᵢ` the source and `Pⱼ` the
+    sink;
+  - carries level `μ` to `μ(λ₂/λ₁)²`;
+  - moves every point along a circle through both pivots, a field line.
+
+  **Charge moves by rational level ratios.** The physical energy is their
+  logarithm, which is irrational, so it is never booked.
+
+**Torsion does no work (the base axiom).** Any generator `G` splits exactly
+against the fibre:
+```
+G = c·B + T + L,   c = ⟨GB⟩₀/β²,   T + cB = ½(G + BGB/β²),   L = ½(G − BGB/β²)
+```
+- **The field** `cB` moves charge between levels.
+- **The torsion** `T` commutes with `B`. It annihilates both pivots and
+  every level, so it moves no charge and no pivot. It turns about the
+  fibre's axis or, as an odd versor, mirrors across its line.
+- **The lift** `L` anticommutes with `B`. It moves the pivots, and is the
+  only part that reshapes the capacitor.
+
+Charge changes only by the field, shape only by the lift, and torsion
+conserves both. This is the algebra's version of a magnetic force doing no
+work. A twist composed with a level step is a loxodrome, one boost mode and
+one turn mode, and the two commute. It refines 78.46: drag is now field
+plus torsion, and the lift keeps its name.
+
+**Stabilised, not declared** (`shape_of`). A round through every pivot is
+kept by every fibre switch among them, whatever the masses. At base
+dimension `n`, the pivots' outer product, built to grade `n + 1`, is that
+round, and each remaining pivot is asked `round ∧ X = 0`. The answer is one
+of three:
+- **Stable** — all lie on it. The shape stands, read off the pivots.
+- **Emergent** — one leaves it. No round shape stands; the shape is what
+  the switches generate.
+- **Open** — too few pivots to fix a round.
+
+**Live** (`family/fibres.rs`, read in `percept` before the field):
+- **Pivots and fibres.** Each body a frame carries is a pivot: its
+  centroid in the vertex coordinates its transport acts in
+  (`Blade::vertex_point`), and its compartments as its mass. Each pair at
+  one frame is a fibre.
+- **The relative motion.** `R = ṽᵢ vⱼ` is read on the finite versor
+  (`Fibre::carried_by`), so a flip reads as well as a turn. It is one of:
+  - **rigid** — `R ∝ 1`;
+  - **torsion** — both pivots and every level kept;
+  - **field** — the pivots kept, the levels moved;
+  - **lift** — a pivot moved.
+- **Bounded by class.** Bodies carried by one transport are rigid against
+  each other and are counted, never multiplied out. Only pairs across two
+  transports are read, and each transport pair's `R` is formed once.
+- **The draw rule.** A frame in which at least one fibre was read and none
+  did work (none field, none lift) is free. Its field lines' turns open no
+  orbit and press nothing. They are booked as torsion, by mass
+  (`FluxReading::torsion`, `torsion_lanes`), carried and never charged.
+  This covers a whole scene carried by one transport, and a flip across a
+  fibre's line. A turn in a frame that worked is charged as 78.73 reads it.
+- **The voice's line** prints the fibres (rigid, torsion, field, lift,
+  unpivoted), the shapes (stable, emergent, open), the free frames, and the
+  turning booked as torsion.
+- **The court** holds no bodies, so it has no pivots. Its words' turns are
+  never free; that is named at `step_flux`.
+
+**Not built:**
+- The refusal as a white-hole source, with `P` at the demand's pivot.
+- Booking the reserve in level ratios. That would replace the four-lane
+  unit currency, which is a ruling.
+- The voice's unit draw on acts, which is unchanged: torsion is exempted
+  where its cost was pressure.
+
+**Tested** (`axioms/tests/capacitor.rs`):
+- the switch swaps the fibre's ends, is flat only at balanced masses, and
+  pivots compose;
+- the capacitor steps level `μ` to `μ(λ₂/λ₁)²` along field lines;
+- the split is exact, with all three parts present: torsion fixes both
+  pivots and every level, the lift moves a pivot, and the twist with a
+  step is a loxodrome;
+- the pivots' sphere is kept by every switch; `shape_of` reads it stable,
+  emergent past a fifth pivot, open on three, and does the same on the
+  grid's plane;
+- `carried_by` reads the identity as rigid, the twist and the flip across
+  the line as torsion, a level step as field, and a slide as lift;
+- frames carried by one transport, or by the flip, are free, and the slide
+  is not;
+- the white-hole source on the manifold's own infinity, its polarity
+  switch, and slivers in its own scale;
+- a free frame's turn reads `opened 0`, `torsion 3`, no orbit.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

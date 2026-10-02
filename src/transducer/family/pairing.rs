@@ -175,6 +175,8 @@ static RELIEVED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atom
 /// 78.71 (2), (5) — THE TRANSPORT, per lane: how much flux moved, both ways,
 /// in quanta weighed by mass — what a stroke draws on 𝒯.
 static TRANSPORTED_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
+/// 78.74 — TURNING THAT DID NO WORK, per lane: free frames' turns by mass.
+static TORSION_ON: [std::sync::atomic::AtomicU64; 4] = [const { std::sync::atomic::AtomicU64::new(0) }; 4];
 
 /// 78.71 (1), 78.73 — THIS PROCESS'S FIELD, held over time: a voice is one
 /// mind per process, so its tubes and orbits keep their identity across
@@ -282,8 +284,16 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
 }
 
 /// 78.71 — A FIELD LINE: one body's transport through the rule, its hue map,
-/// and the compartments it carried.
-pub type FieldLine = (crate::transducer::element::Versor, Vec<(u8, u8)>, u64);
+/// and the compartments it carried; and (78.74) whether its frame's turning
+/// was free — torsion or rigid on every fibre, no work — so its turns press
+/// nothing.
+#[derive(Clone, Debug)]
+pub struct FieldLine {
+    pub carriage: crate::transducer::element::Versor,
+    pub gauge: Vec<(u8, u8)>,
+    pub mass: u64,
+    pub free: bool,
+}
 
 /// 78.71 — THE CLOSED FLUX OF A FORM, BOOKED ON 𝒯: each circuit's composite
 /// holonomy read for its null modes ([`crate::transducer::cech::flux`]),
@@ -328,6 +338,13 @@ pub(crate) fn mark_flux(
     book(&REFUSED_ON, &reading.opened);
     book(&RELIEVED_ON, &reading.relieved);
     book(&TRANSPORTED_ON, &reading.transport);
+    book(&TORSION_ON, &reading.torsion);
+}
+
+/// 78.74 — the turning booked as torsion, per lane, since the process began:
+/// carried, never pressed, never drawn.
+pub fn torsion_lanes() -> [u64; 4] {
+    std::array::from_fn(|l| TORSION_ON[l].load(std::sync::atomic::Ordering::Relaxed))
 }
 
 /// 78.71 — WHAT A PERCEPT'S FIELD DID, PER LANE: the order it built (closed),
@@ -339,6 +356,9 @@ pub struct FluxReading {
     pub opened: [u64; 4],
     pub relieved: [u64; 4],
     pub transport: [u64; 4],
+    /// 78.74 — turning that did no work on any fibre of its frame: carried,
+    /// never pressed.
+    pub torsion: [u64; 4],
 }
 
 /// 78.71 — THE ORDER A PERCEPT'S TRANSPORTS BUILD, PER LANE, read as a field
@@ -376,6 +396,7 @@ pub(crate) fn transport_order(
                      line: &crate::transducer::element::Versor,
                      gauge: &[(u8, u8)],
                      mass: u64,
+                     free: bool,
                      budget: &mut crate::physics::Budget| {
         // The hue map onto 𝒢's orbit of its support.
         if let Some(a) = field.orbits.admit_hues(gauge, mass) {
@@ -397,16 +418,23 @@ pub(crate) fn transport_order(
             }
         }
         for m in &modes {
+            // 78.74 — TORSION DOES NO WORK: a turn in a frame whose fibres it
+            // twisted or carried rigidly, none stretched or lifted, opens no
+            // orbit and presses nothing; it is booked as torsion, by mass.
+            if free && m.kind == crate::network::nerve::coord::BivectorKind::Elliptic {
+                crate::physics::metabolism::step_or_refuse(&mut r.torsion[crate::transducer::rewrite::LANE_SHELL], mass);
+                continue;
+            }
             if let Some((lane, a)) = field.orbits.admit_mode(m, mass) {
                 book(r, lane, a);
             }
         }
     };
-    for (v, gauge, mass) in word_transports {
-        admit(&mut r, v, gauge, *mass, budget);
+    for line in word_transports {
+        admit(&mut r, &line.carriage, &line.gauge, line.mass, line.free, budget);
     }
     for (h, mass) in circuits {
-        admit(&mut r, h, &[], *mass, budget);
+        admit(&mut r, h, &[], *mass, false, budget);
     }
     r
 }

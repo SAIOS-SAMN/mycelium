@@ -252,13 +252,19 @@ fn every_lane_reads_its_transports_as_a_field() {
     let slide = |x: i64| cga::translator_at(&[q(x, 1), q(0, 1), q(0, 1)]);
     let swap = vec![(1u8, 2u8), (2, 1)];
     let one = Mv::scalar(q(1, 1));
+    let line = |carriage: Mv, gauge: Vec<(u8, u8)>, mass: u64| crate::transducer::family::pairing::FieldLine { carriage, gauge, mass, free: false };
     let transports = vec![
-        (turn, Vec::new(), 3),
-        (dilate, Vec::new(), 5),
-        (one, swap, 7),
-        (slide(1), Vec::new(), 4),
-        (slide(2), Vec::new(), 4),
+        line(turn.clone(), Vec::new(), 3),
+        line(dilate, Vec::new(), 5),
+        line(one, swap, 7),
+        line(slide(1), Vec::new(), 4),
+        line(slide(2), Vec::new(), 4),
     ];
+    // 78.74 — the same turn in a frame whose fibres did no work presses
+    // nothing: carried as torsion, by its mass.
+    let mut quiet = crate::transducer::cech::orbit::Field::new();
+    let free = transport_order(&[crate::transducer::family::pairing::FieldLine { free: true, ..line(turn, Vec::new(), 3) }], &[], &mut quiet, &mut b);
+    assert_eq!((free.opened[3], free.torsion[3], quiet.orbits.len()), (0, 3, 0), "a free turn: no pressure, no orbit, torsion 3");
     let mut field = crate::transducer::cech::orbit::Field::new();
     let r = transport_order(&transports, &[], &mut field, &mut b);
     // 78.73: a first deformation on each orbit stands open — pressure by the

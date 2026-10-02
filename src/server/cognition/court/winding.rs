@@ -366,12 +366,24 @@ impl Kernel {
         for (_, v) in form.vertices.scoped() {
             if let crate::transducer::sentence::Vertex::Word { acts, .. } = v {
                 for (_, a) in acts.scoped() {
-                    lines.push(((*a.carriage).clone(), a.gauge.clone(), mass));
+                    // The court holds no bodies, so no pivots: its fibres are
+                    // unread and no turn of a word is free (78.74).
+                    lines.push(crate::transducer::family::pairing::FieldLine {
+                        carriage: (*a.carriage).clone(),
+                        gauge: a.gauge.clone(),
+                        mass,
+                        free: false,
+                    });
                 }
             }
         }
         for (_, f) in form.faces.entries() {
-            lines.push((f.place.carriage.clone(), f.place.gauge.clone(), mass));
+            lines.push(crate::transducer::family::pairing::FieldLine {
+                carriage: f.place.carriage.clone(),
+                gauge: f.place.gauge.clone(),
+                mass,
+                free: false,
+            });
         }
         if lines.is_empty() {
             return;

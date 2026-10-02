@@ -104,6 +104,12 @@ impl Blade {
         Some(crate::transducer::cga::sphere_at(&super::carry::vertex_centroid(self)?, &self.radius2()))
     }
 
+    /// 78.74 — THE BODY AS A PIVOT: its centroid as a conformal point in the
+    /// VERTEX coordinates a transition acts in, beside [`Blade::vertex_nucleus`].
+    pub fn vertex_point(&self) -> Option<crate::transducer::cga::Mv> {
+        Some(crate::transducer::cga::point_at(&super::carry::vertex_centroid(self)?))
+    }
+
     /// THE SHAPE'S FIXED-SIZE COORDINATES (AT1, ruled (a) on the chords): the
     /// inertia, the quartic moments, the gauge and the shell, each exact —
     /// what the body IS up to where it stands, and never its support sites,

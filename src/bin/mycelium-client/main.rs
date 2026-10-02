@@ -456,7 +456,24 @@ fn main() {
                 Some((elastic, orbits)) => format!("{} orbits {orbits}", entity.physics().malleability_line(&elastic)),
                 None => "malleability unread".to_string(),
             };
-            let field = format!("{field} | {malleable}");
+            // 78.74: the frames' fibres — how relative motions treated them —
+            // the shapes their pivots held, and the turning booked as torsion.
+            let f = mycelium::transducer::family::fibres::fibre_tally();
+            let fibres = format!(
+                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} | shapes stable {} emergent {} open {} | free frames {} torsion turned {:?}",
+                f.pairs,
+                f.rigid,
+                f.torsion,
+                f.field,
+                f.lift,
+                f.unpivoted,
+                f.stable,
+                f.emergent,
+                f.open,
+                f.free_frames,
+                mycelium::transducer::family::pairing::torsion_lanes()
+            );
+            let field = format!("{field} | {malleable} | {fibres}");
             eprintln!(
                 "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),

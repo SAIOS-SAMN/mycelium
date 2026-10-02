@@ -15,4 +15,5 @@ mod reciprocity;
 mod refused;
 mod routes;
 mod tensegrity;
+mod capacitor;
 mod tether;
