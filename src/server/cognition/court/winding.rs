@@ -58,6 +58,13 @@ pub struct WindingTally {
     /// Ruled forms whose circuits' algebra did not read (a holonomy with no
     /// Cayley chart point, or the stroke spent): nothing written.
     pub rank_unread: u64,
+    /// Ruled words that are no sentence (a residual word, a connection).
+    pub rank_formless: u64,
+    /// Ruled sentences whose faces close no ring: no circuit to bring.
+    pub rank_ringless: u64,
+    /// Ruled sentences whose circuits added no dimension: the chart's
+    /// algebra already held them.
+    pub rank_held: u64,
 }
 
 impl Winding {
@@ -284,7 +291,12 @@ impl Kernel {
     /// counted by why and writes nothing.
     pub(crate) fn step_rank(&mut self, addr: &[u8], budget: &mut crate::physics::Budget) {
         let Some(w) = self.word_at(addr) else { return };
-        let Some(form) = crate::transducer::sentence::from_element_form(w) else { return };
+        // A ruled word that is no sentence — a residual word, a connection —
+        // carries no circuit: counted by that name (LD0), never silent.
+        let Some(form) = crate::transducer::sentence::from_element_form(w) else {
+            self.winding_tally.rank_formless += 1;
+            return;
+        };
         let chart = crate::transducer::stalk::invariant_of(w).key();
         let circuits = crate::transducer::sentence::circuits_of(&form);
         let holonomies: Vec<Option<&crate::transducer::cga::Mv>> = circuits.iter().map(|(_, t)| t.composite.as_ref()).collect();
@@ -295,7 +307,10 @@ impl Kernel {
                 return;
             }
         };
+        // A sentence whose faces close no ring has no circuit, and so no
+        // holonomy to bring: counted by that name.
         if gens.is_empty() {
+            self.winding_tally.rank_ringless += 1;
             return;
         }
         // A chart with no algebra held yet holds the zero algebra: nothing
@@ -312,6 +327,7 @@ impl Kernel {
             }
         };
         if closed.len() <= held.len() {
+            self.winding_tally.rank_held += 1;
             return;
         }
         let me = self.identity;

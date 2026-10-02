@@ -343,9 +343,11 @@ impl Exchange {
                     // rank steps the charts' holonomy algebras took.
                     let w = k.winding_tally();
                     eprintln!(
-                        "  court metabolism K {} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} unread {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
+                        k.physics().syntropic,
+                        k.physics().pressure,
                         k.archive().len(),
                         k.chain().len(),
                         w.first,
@@ -354,6 +356,9 @@ impl Exchange {
                         w.unbound,
                         w.repriced,
                         w.rank_steps,
+                        w.rank_held,
+                        w.rank_ringless,
+                        w.rank_formless,
                         w.rank_unread,
                         mycelium::observe::FOLD_OUTCOMES
                             .iter()

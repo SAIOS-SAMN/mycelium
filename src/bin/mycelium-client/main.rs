@@ -421,9 +421,15 @@ fn main() {
             // reserve off its own books, and this thread's metabolic ledger
             // (entropy, the orbit classes, draws, refusals by lane), which
             // until now was held only inside the percept reading.
+            // The order built and the pressure standing, per lane: where a
+            // contact or a face's carriage condensed (`book_contacts`), it
+            // books syntropy and never a draw, so the 𝒯 transport is read
+            // here (78.68).
             eprintln!(
-                "[{tag}] stroke metabolism {} | {}",
+                "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {}",
                 entity.physics().reserve.line(),
+                entity.physics().syntropic,
+                entity.physics().pressure,
                 mycelium::physics::metabolism::metabolism().line()
             );
             // WHAT THE COVERS' ORBITS CLASSIFIED AS, read from the counter

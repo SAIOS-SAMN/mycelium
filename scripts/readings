@@ -58,12 +58,26 @@ share() {
   }'
 }
 
+# ONE UNIT'S JOURNAL OVER THE WINDOW, THIS INVOCATION ONLY. A window that
+# reaches back past the unit's start read the previous run's last lines as
+# this run's — after the epoch-119 recut, "K 11293 → 12, eras 8086 → 0" was
+# the old fleet's tail and the new fleet's head in one row. The window is
+# bound to the unit's current invocation (`_SYSTEMD_INVOCATION_ID`), so a
+# stopped-and-started unit is read from its start; a unit with no
+# invocation reads nothing.
+journal() {
+  local unit="$1" inv
+  inv="$(systemctl --user show "$unit" -p InvocationID --value 2>/dev/null)"
+  [ -n "$inv" ] || return 0
+  journalctl --user "_SYSTEMD_INVOCATION_ID=$inv" --since "$SINCE" --no-pager 2>/dev/null
+}
+
 # Matching lines in one unit's journal over the window. The count and the
 # last line both, because a count alone cannot be read.
 lines() {
   local unit="$1" pat="$2" n last
-  n="$(journalctl --user -u "$unit" --since "$SINCE" --no-pager 2>/dev/null | grep -c -- "$pat")"
-  last="$(journalctl --user -u "$unit" --since "$SINCE" --no-pager 2>/dev/null | grep -- "$pat" | tail -1 | sed 's/^[^]]*]: //')"
+  n="$(journal "$unit" | grep -c -- "$pat")"
+  last="$(journal "$unit" | grep -- "$pat" | tail -1 | sed 's/^[^]]*]: //')"
   printf '%6s  %s\n' "$n" "${last:-—}"
 }
 
@@ -108,7 +122,7 @@ for h in "${HYPHAE[@]}"; do
   # its own books, eras and hot nodes held, the fold's round by outcome. The
   # eras' growth over the window is the first such line against the last.
   printf '    metabolism        '; lines "$u" 'court metabolism'
-  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+  journal "$u" \
     | grep -oE 'court metabolism K [0-9]+ .* eras [0-9]+ hot [0-9]+' \
     | sed -n '1p;$p' | sed -E 's/.*K ([0-9]+) .* eras ([0-9]+) hot ([0-9]+)/\1 \2 \3/' \
     | paste -sd' ' \
@@ -120,7 +134,7 @@ for h in "${HYPHAE[@]}"; do
   # admitted, and this file had no line for it: the readings counted what
   # the rows were about and were blind to what the fleet was doing.
   printf '    refused speech    '; lines "$u" 'court refuse speech'
-  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+  journal "$u" \
     | grep -oE 'court (refuse speech|form refused) [0-9a-f]+…: .*' \
     | sed 's/.*…: //; s/ at .*//; s/ ([0-9a-f]*… vs.*//' \
     | sort | uniq -c | sort -rn | head -5 \
@@ -152,7 +166,7 @@ for v in "${VOICES[@]}"; do
   # THE MINT'S REFUSALS BY ARM (78.67): the line named every arm
   # "trajectory, carry or demands"; it now names the arm and its proof.
   printf '    mint refused      '; lines "$u" 'mint refused'
-  journalctl --user -u "$u" --since "$SINCE" --no-pager 2>/dev/null \
+  journal "$u" \
     | grep -oE 'mint refused \([a-z]+\): [^[]*' \
     | sed -E 's/ +$//' | sort | uniq -c | sort -rn | head -6 \
     | while read -r n reason; do printf '      %6s  %s\n' "$n" "$reason"; done
