@@ -387,6 +387,11 @@ impl Kernel {
             self.touch_at(&addr);
         }
         self.append_step(crate::chronometry::ActKind::Install, &addr, peer);
+        // 78.69 — A GENERATOR ENTERED THE PRESENTATION: the order the
+        // language gained, booked on every lane the word carries — its
+        // standing extent on 𝒯 among them, which no producer of order on
+        // this court reached, so its 𝒯 pressure could only climb.
+        self.physics.syntropy(&spoken.magnitude());
         self.ruled_admit(&addr, budget);
         self.fed_admit(&addr, spoken.clone());
         let installed = self.anchor();

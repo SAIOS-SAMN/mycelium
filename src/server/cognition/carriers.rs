@@ -123,6 +123,7 @@ impl Kernel {
             windings,
             winding_tally: _,
             lie_basis,
+            witnessed,
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,
@@ -211,6 +212,7 @@ impl Kernel {
         c.count("unfilled", unfilled.len());
         c.count("windings", windings.len());
         c.count("lie_basis", lie_basis.scoped().map(|(_, b)| b.len()).sum());
+        c.count("witnessed", witnessed.len());
         c.count("pending_refine", pending_refine.len());
         c.count("heard", heard.len());
         c.count("heard_at", nested(heard_at));

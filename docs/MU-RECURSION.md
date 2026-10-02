@@ -20144,6 +20144,32 @@ its pressure).**
 3. *A sentence the court takes books the voice's order* by its magnitude,
    re-derived from the word. No sentence record is kept for it.
 
+**The lanes' two readers agreed again, and the courts' order reached 𝒯
+(2026-10-02, after the fleet read 𝒢 starved on the voices and 𝒯 climbing on
+the courts).**
+- *𝒢 and 𝒽 had been swapped in the transport readers.* `measure_lanes`
+  and 42.6's table (`Axis::lane`) put hue transitions on 𝒢 and the rotor's
+  turns on 𝒽, but PHY1's `transport_lanes`, `carriage_lanes`,
+  `NoPose::lane` and the unspelled-turn mark put turns on 𝒢 and hue maps
+  on 𝒽. So a voice was charged for recolour work on 𝒢 and booked a
+  resolved hue map's order on 𝒽 — two readers of one lane (law 12). They
+  now read 42.6's table: a turn on 𝒽, a hue map on 𝒢. A face's hue map
+  (`FacePlace::gauge`) books 𝒢 order where it moves a hue.
+- *A witness's charge was a ratchet.* `charge_orbits` raised a word's
+  magnitude once per orbit step (`period` or `run` times) and the book
+  relieved it once when the word left. On 𝒯, the standing extent every
+  magnitude carries, hypha b's pressure climbed to 20 518 in minutes.
+  - The charge is now raised in one step and held against the word's
+    address (`Kernel::witnessed`).
+  - `pending_take` relieves exactly what was raised when the word leaves.
+  - Tested: `winding::a_witnessed_charge_is_relieved_whole_when_the_word_leaves`.
+- *A generator admitted is the court's order built.* `hold_glued` books
+  the word's magnitude as syntropy on every lane, 𝒯 among them. No
+  producer of order on a court had reached 𝒯.
+- *A court relaxes at its own orbit close*, beside its regeneration. It
+  relaxed only where an utterance was heard (`reflex_open`), so a court
+  booking order without hearing one kept its pressure whole.
+
 **Not done here.**
 - The court still dockets and rules sentences as items: speech listings,
   sentence forms in the basis. Under this ruling it should receive a

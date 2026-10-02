@@ -200,14 +200,18 @@ pub fn contact_lanes() -> ([u64; 4], [u64; 4]) {
     (read(&CONDENSED_ON), read(&REFUSED_ON))
 }
 
-/// THE LANES A CONTACT'S TRANSPORT OCCUPIES: its carriage's
-/// ([`carriage_lanes`]), 𝒢 where its word turns, 𝒽 where its hue map
-/// moves a hue.
+/// THE LANES A CONTACT'S TRANSPORT OCCUPIES, on 42.6's table (`Axis::lane`,
+/// `measure_lanes`): its carriage's ([`carriage_lanes`]), 𝒽 where its word
+/// turns (the rotor's coordinates are holonomic), 𝒢 where its hue map moves
+/// a hue (recolour is gauge work). These read 𝒢 for a turn and 𝒽 for a hue
+/// map, the two swapped against every other reader of the lanes, so the
+/// order a resolved recolour built was booked on 𝒽 while its work was
+/// charged on 𝒢 (78.69).
 fn transport_lanes(t: &crate::transducer::sentence::Transport, budget: &mut crate::physics::Budget) -> [bool; 4] {
     use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL};
     let mut on = carriage_lanes(&t.carriage, budget);
-    on[LANE_GAUGE] |= !t.word.is_identity();
-    on[LANE_SHELL] = t.gauge.iter().any(|(a, b)| a != b);
+    on[LANE_SHELL] |= !t.word.is_identity();
+    on[LANE_GAUGE] = t.gauge.iter().any(|(a, b)| a != b);
     on
 }
 
@@ -217,7 +221,8 @@ fn transport_lanes(t: &crate::transducer::sentence::Transport, budget: &mut crat
 /// - 𝒯 where it carries a displacement (`displacement_of` non-zero) or has
 ///   a parabolic mode;
 /// - 𝒮 where it dilates (ρ ≠ 1) or has a hyperbolic mode;
-/// - 𝒢 where it holds a turn (an elliptic mode).
+/// - 𝒽 where it holds a turn (an elliptic mode) — the rotor's lane on
+///   42.6's table; a carriage holds no hue, so never 𝒢.
 ///
 /// ONE READING, TWO REALISATIONS (51.2). A connection realises the
 /// displacement as a transvection (54.7 R3), and read through the conformal
@@ -229,7 +234,7 @@ fn transport_lanes(t: &crate::transducer::sentence::Transport, budget: &mut crat
 /// A carriage whose readings do not read occupies nothing it cannot name.
 pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budget: &mut crate::physics::Budget) -> [bool; 4] {
     use crate::network::nerve::coord::BivectorKind;
-    use crate::transducer::rewrite::{LANE_GAUGE, LANE_SPATIAL, LANE_TEMPORAL};
+    use crate::transducer::rewrite::{LANE_SHELL, LANE_SPATIAL, LANE_TEMPORAL};
     use num_traits::{One, Zero};
     let mut on = [false; 4];
     let displaced = crate::transducer::element::displacement_of(carriage).is_some_and(|d| d.iter().any(|x| !x.is_zero()));
@@ -239,7 +244,7 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
     if let Some(Ok(modes)) = crate::transducer::cga::motion_modes(carriage, budget) {
         for m in &modes {
             match m.kind {
-                BivectorKind::Elliptic => on[LANE_GAUGE] = true,
+                BivectorKind::Elliptic => on[LANE_SHELL] = true,
                 BivectorKind::Hyperbolic => on[LANE_SPATIAL] = true,
                 BivectorKind::Parabolic => on[LANE_TEMPORAL] = true,
                 BivectorKind::Trivial => {}
@@ -249,12 +254,21 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
     on
 }
 
-/// 78.68 — A FACE'S CARRIAGE, MARKED AS CONDENSED TRANSPORT: a face placed
-/// with the motor a member measured across it carries that relative
-/// carriage as the 1-cochain on the nerve, and its lanes are booked as a
-/// condensed contact's are.
-pub(crate) fn mark_face_carriage(carriage: &crate::transducer::element::Versor, carried: u64, budget: &mut crate::physics::Budget) {
-    mark_measured(&CONDENSED_ON, carriage_lanes(carriage, budget), carried);
+/// 78.68 — A FACE'S TRANSPORT, MARKED AS CONDENSED: a face placed with the
+/// motor a member measured across it carries that relative carriage as the
+/// 1-cochain on the nerve, and its hue map with it. Its lanes are booked as
+/// a condensed contact's are: the carriage's, and 𝒢 where the face's hue
+/// map moves a hue (78.69 — the order a resolved recolour builds, on the
+/// lane recolour work is charged to).
+pub(crate) fn mark_face_carriage(
+    carriage: &crate::transducer::element::Versor,
+    gauge: &[(u8, u8)],
+    carried: u64,
+    budget: &mut crate::physics::Budget,
+) {
+    let mut lanes = carriage_lanes(carriage, budget);
+    lanes[crate::transducer::rewrite::LANE_GAUGE] |= gauge.iter().any(|(a, b)| a != b);
+    mark_measured(&CONDENSED_ON, lanes, carried);
 }
 
 /// A refused contact on the lanes its two poses' refusals name.
@@ -599,7 +613,8 @@ pub(crate) fn contact_edge(
             Some(Err(_)) => {
                 note_contact(|t| t.unspelled += 1);
                 // A turn the alphabet does not spell: the rotor's lane refused.
-                mark_lanes(&REFUSED_ON, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_GAUGE));
+                // (the rotor's lane, 𝒽, on 42.6's table)
+                mark_lanes(&REFUSED_ON, std::array::from_fn(|l| l == crate::transducer::rewrite::LANE_SHELL));
                 return ContactEdge::Refused { poses: [None, None] };
             }
             None => {

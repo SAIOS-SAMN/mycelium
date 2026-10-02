@@ -235,8 +235,8 @@ fn a_static_contact_carries_its_tether_and_the_pose_it_read() {
 }
 
 /// 78.68 — A CONFORMAL CARRIAGE'S LANES: a translator carries a
-/// displacement, 𝒯; a dilator is 𝒮; a turn about the origin is 𝒢 and
-/// carries no displacement. And why the lanes are read off the conformal
+/// displacement, 𝒯; a dilator is 𝒮; a turn about the origin is 𝒽 — the
+/// rotor's lane on 42.6's table (78.69) — and carries no displacement. And why the lanes are read off the conformal
 /// carriage and never its transvection (51.2): the transvection the same
 /// displacement realises reads as a scale about another point, its
 /// displacement gone.
@@ -260,6 +260,6 @@ fn a_carriage_is_read_on_the_lane_it_transports() {
     let d = cga::dilator(&num_rational::BigRational::from_integer(2.into()));
     assert_eq!(carriage_lanes(&d, &mut b), [true, false, false, false], "a dilation is 𝒮");
     let r = cga::Mv::scalar(one.clone()).add(&cga::Mv::blade(cga::E1 | cga::E2, one));
-    assert_eq!(carriage_lanes(&r, &mut b), [false, true, false, false], "a turn about the origin is 𝒢");
+    assert_eq!(carriage_lanes(&r, &mut b), [false, false, false, true], "a turn about the origin is 𝒽, the rotor's lane (42.6)");
 }
 

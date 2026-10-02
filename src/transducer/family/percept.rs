@@ -1241,7 +1241,7 @@ pub(super) fn family_percept(
             // 78.68: the motor is the relative carriage across this face —
             // the transport, booked on the lanes it moves by the
             // compartments it carried.
-            super::pairing::mark_face_carriage(&motor, carried, budget);
+            super::pairing::mark_face_carriage(&motor, &place.gauge, carried, budget);
             place.carriage = motor;
             form.put_face(o, FormFace::placed(place, Producer::Motor));
         }
@@ -1259,7 +1259,7 @@ pub(super) fn family_percept(
                     across_charts.unplaced += 1;
                     continue;
                 };
-                super::pairing::mark_face_carriage(&motor, carried, budget);
+                super::pairing::mark_face_carriage(&motor, &place.gauge, carried, budget);
                 place.carriage = motor;
                 form.put_face(o, FormFace::placed(place, Producer::Motor));
                 across_charts.motor += 1;

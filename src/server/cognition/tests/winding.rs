@@ -70,3 +70,21 @@ fn a_winding_carrier_reads_back_whole() {
     assert_eq!(Winding::take(&v, &mut p), Some(w), "the carrier reads back");
     assert_eq!(p, v.len(), "whole");
 }
+
+/// 78.69 — THE PRESSURE A WITNESS RAISED IS RELIEVED EXACTLY WHEN THE WORD
+/// LEAVES THE BOOK: `steps` times its magnitude raised, held against its
+/// address, and released whole by `pending_take` — never raised `steps`
+/// times and relieved once, the ratchet that climbed 𝒯 on the courts.
+#[test]
+fn a_witnessed_charge_is_relieved_whole_when_the_word_leaves() {
+    let mut k = Kernel::new();
+    let word = super::common::sentence_of(&[(0, 0, 1), (0, 1, 1)], &[(0, 0, 2), (0, 1, 2)]).expect("a sentence");
+    let addr = word.address();
+    k.pending.insert(&addr, word);
+    let before = k.physics.pressure;
+    k.charge_witnessed(&addr, &[1, 0, 3, 0], 4);
+    assert_eq!(k.physics.pressure, [before[0] + 4, before[1], before[2] + 12, before[3]], "four steps raised");
+    let _ = k.pending_take(addr.as_bytes()).expect("the word was pending");
+    assert!(k.witnessed.get(addr.as_bytes()).is_none(), "the charge left with the word");
+    assert_eq!(k.physics.pressure[2], before[2], "𝒯 back where it stood: the raised twelve relieved whole");
+}

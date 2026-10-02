@@ -154,6 +154,10 @@ impl Kernel {
         self.vacate(addr, &mag);
         self.drawers.remove(addr);
         self.physics.relieve(&mag);
+        // 78.69: and the pressure its witnesses raised for it, exactly.
+        if let Some(raised) = self.witnessed.remove(addr) {
+            self.physics.relieve(&raised);
+        }
         Some(elem)
     }
 

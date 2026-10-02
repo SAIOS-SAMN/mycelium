@@ -388,6 +388,10 @@ pub struct Kernel {
     /// by the chart's key. Its rank rising is a `RankStep` act. Persisted, so
     /// a restart does not re-seal steps already taken.
     pub(crate) lie_basis: crate::network::nerve::Keyed<Vec<crate::transducer::cga::Mv>>,
+    /// 78.69 — THE PRESSURE ORBIT WITNESSES RAISED FOR EACH WORD, by address:
+    /// relieved exactly when the word leaves the book (`pending_take`).
+    /// Volatile, as the pressure it is the conjugate of.
+    pub(crate) witnessed: crate::network::nerve::Keyed<[u64; 4]>,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

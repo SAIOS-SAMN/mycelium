@@ -415,6 +415,11 @@ impl Kernel {
                     None => [0; 4],
                 };
                 self.physics.regenerate_within(bonds);
+                // 78.69: AND THE PRESSURE RELAXES BY THE ORDER THE ORBIT BUILT,
+                // per lane (PHY1). It relaxed only where an utterance was
+                // heard (`reflex_open`), so a court booking order without
+                // hearing one kept its pressure whole.
+                self.physics.relax();
                 // 78.67 — THE FOLD IS ASKED AT THE CLOSE, and the prefix
                 // answers (45.8 as amended): it folds where it carries work
                 // and that work outweighs the era's framing

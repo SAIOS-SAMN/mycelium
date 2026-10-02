@@ -279,14 +279,17 @@ impl NoPose {
     /// PHY1 — THE LANE THAT REFUSED: the degree of freedom the pose could not
     /// carry, where the refusal names one. A turn the pair would not take —
     /// isotropic, mirrored, oblique, a null step, an ungauged coset — is the
-    /// rotor's lane, 𝒢; a shape or a scale no motion carries — incongruent,
-    /// irrational — is the spatial lane, 𝒮. A refusal that names no lane —
-    /// the covariance refusing every candidate, a held stabilizer, a cut
-    /// stroke, nothing to pose — is `None`: no pressure is invented for it.
+    /// rotor's lane, 𝒽 (42.6's table: the rotor's coordinates are holonomic,
+    /// `Axis::lane`; 𝒢 is hue). It read 𝒢, so a refused turn pressed the
+    /// lane recolour work is measured on (78.69). A shape or a scale no
+    /// motion carries — incongruent, irrational — is the spatial lane, 𝒮. A
+    /// refusal that names no lane — the covariance refusing every candidate,
+    /// a held stabilizer, a cut stroke, nothing to pose — is `None`: no
+    /// pressure is invented for it.
     pub fn lane(self) -> Option<usize> {
-        use crate::transducer::rewrite::{LANE_GAUGE, LANE_SPATIAL};
+        use crate::transducer::rewrite::{LANE_SHELL, LANE_SPATIAL};
         match self {
-            NoPose::Isotropy | NoPose::Mirrored | NoPose::Oblique | NoPose::NullStep | NoPose::Ungauged => Some(LANE_GAUGE),
+            NoPose::Isotropy | NoPose::Mirrored | NoPose::Oblique | NoPose::NullStep | NoPose::Ungauged => Some(LANE_SHELL),
             NoPose::Incongruent(_) | NoPose::Irrational => Some(LANE_SPATIAL),
             NoPose::Uncarried(_) | NoPose::Unoriented | NoPose::Unbounded | NoPose::Bodiless => None,
         }

@@ -452,9 +452,7 @@ impl Kernel {
                     crate::transducer::alphabet::Order::Finite(p) => u64::from(p),
                     crate::transducer::alphabet::Order::Infinite => w.len() as u64,
                 };
-                for _ in 0..steps {
-                    self.physics.bump(mag);
-                }
+                self.charge_witnessed(&word.address(), mag, steps);
             }
             return;
         }
@@ -485,9 +483,34 @@ impl Kernel {
                     period, ..
                 } => *period,
             };
-            for _ in 0..steps {
-                self.physics.bump(mag);
+            self.charge_witnessed(&word.address(), mag, steps);
+        }
+    }
+
+    /// 78.69 — THE PRESSURE A WITNESS RIDES WITH THE WORD, AND ITS
+    /// CONJUGATE: `steps` times the word's magnitude (the span it traversed
+    /// open, or the period it closed at), raised now and held against the
+    /// word's address, so the word leaving the book relieves exactly what
+    /// was raised for it (`pending_take`). It was raised `steps` times and
+    /// relieved once, a ratchet on every lane, which on 𝒯 — the standing
+    /// extent every magnitude carries — climbed to 20 518 on one court in
+    /// minutes. A total past its carrier is refused and counted (rule 11).
+    pub(crate) fn charge_witnessed(&mut self, addr: &crate::transducer::address::Address, mag: &[u64; 4], steps: u64) {
+        let mut raised = [0u64; 4];
+        for (r, m) in raised.iter_mut().zip(mag) {
+            match m.checked_mul(steps) {
+                Some(v) => *r = v,
+                None => self.overflowed += 1,
             }
         }
+        self.physics.bump(&raised);
+        let mut held = match self.witnessed.get(addr.as_bytes()) {
+            Some(h) => *h,
+            None => [0; 4],
+        };
+        for (h, r) in held.iter_mut().zip(raised) {
+            crate::physics::metabolism::step_or_refuse(h, r);
+        }
+        self.witnessed.insert(addr.as_bytes(), held);
     }
 }
