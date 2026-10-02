@@ -18,20 +18,19 @@ impl Kernel {
     /// line's fold back. The head is the line's last close; none where no
     /// hot receipt is there to fold.
     pub fn final_prefix_head(&self) -> Option<Place> {
-        let floor = self.chain.head_place()?;
         let first = self.chain.opening()?.stamp.place();
         // A FOLD CUTS ONLY AT AN ORBIT'S CLOSE (OK1): the prefix head is the
-        // last close at or below the floor, so every orbit is held whole on
-        // one side of the cut and its close re-derives on the hot line.
-        let vk = self.chain.vk();
-        let closes = self.chain.line_between(&vk, self.chain.root().map(|r| r.at), floor, usize::MAX);
-        let mut head = None;
-        for r in closes {
-            if r.kind == crate::chronometry::ActKind::Orbit {
-                head = Some(r.stamp.place());
-            }
-        }
-        head.filter(|h| *h >= first)
+        // line's last close, so every orbit is held whole on one side of the
+        // cut and its close re-derives on the hot line.
+        //
+        // READ OFF THE LAST ORBIT, NOT THE WHOLE LINE (78.69). This walked
+        // every hot node from the root to find the last close, and it runs on
+        // every exchange cycle (`pending_fold_stands`): on hypha b, 117 387
+        // nodes per cycle at 192% of a core, which slowed the very door its
+        // witnesses fetch the prefix from, so every fold went unmeasured and
+        // the line grew — a load spiral. `ReceiptChain::last_close` reads
+        // the open orbit's acts and the one before them.
+        self.chain.last_close().map(|r| r.stamp.place()).filter(|h| *h >= first)
     }
 
     /// THE FOLD'S HEAD, ONE FRAME AT A TIME (45.8, 47.3): the last close at

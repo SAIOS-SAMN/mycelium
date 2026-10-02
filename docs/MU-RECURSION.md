@@ -20197,6 +20197,17 @@ the courts).**
    - The lanes are now read off the refraction `θ`, the motion: a turn on
      𝒽, a displacement on 𝒯, a scale on 𝒮. `transport_lanes` retires.
 
+4. *A load spiral held hypha b's fold.*
+   - Its one proposal went unmeasured by every witness, 1 824 rounds,
+     because the witness fetches the prefix from b's own door and b ran at
+     192% of a core.
+   - Part of that load was `final_prefix_head`, which `pending_fold_stands`
+     calls on every exchange cycle: it walked every hot node from the root to
+     find the last close, 117 387 nodes per cycle on b. The slower b got,
+     the less its witnesses could fetch and the longer the line grew.
+   - It now reads `ReceiptChain::last_close`: the open orbit's acts and the
+     one before them.
+
 **Collapses that stand, and are named here, not changed:**
 - *A court's regeneration ceiling* sums the bond across all four lanes into
   one (`regenerate_within`, 78.56 IV as read on 2026-09-30, because courts
