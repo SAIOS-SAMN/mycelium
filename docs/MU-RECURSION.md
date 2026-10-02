@@ -19761,6 +19761,239 @@ beside the earlier outcomes (LD0).
 closes. An idle court should count `idle`, not `proposed`. `court
 metabolism` should show hot nodes bounded and eras rising slowly.
 
+### 78.68 The master condensation motor: a word is one product in Cl(4,1), every reading of it is a reading of that product, and the carriage is its luminal transport (ruled 2026-10-02, the operator's word: "document this as the master condense equation"; amended the same day: "fold the two-event trigger, the carriage diagnosis, and the saturation corrections directly into §78.68")
+
+**Where it came from.** The epoch-117 fold storm (78.67) folded each close
+as its own era. The history was quotiented at the finest grain, by
+identity alone. The operator's question was whether condensation should
+start at the word, by spatial dimension, through the three eyes — harmonic
+(24.4, the versor-invariant chart), luminal (the ray on the null cone) and
+holonomic (the class of the closures) — so that a longer life reduces the
+quotient it must hold rather than growing it.
+
+**The algebra.** A word is a geometric product composed in Cl(4,1)(ℚ):
+its letters and its carriage are versors of Spin⁺(4,1)(ℚ), each read as a
+ray (79.1 R1, §52).
+- *The letters are the internal orientation within a chart.* The 17 are
+  compact: the identity, the 90° turns and the Pythagorean rotations of
+  SO(4). The tree holds them as `Rotor`, 16 coefficients over `e0..e3`,
+  which `Rotor::lift` carries to the identically-masked blades
+  `{e₁, e₂, e₃, e₊}` of Cl(4,1). That is the subalgebra of the four
+  positive generators: a letter never touches `e₋`, so no letter is
+  hyperbolic or null. That is right for an internal orientation. *No null
+  letter is needed.*
+- *The carriage is the transport between charts.* It is `T·D ∈ Sim(3)`,
+  the translator composed with the dilator, the conformal versor of the
+  word form `(vertex, carriage, gauge)` (§1, A4). It is the one part of a
+  word that reaches `e₋`: its translational generator `d ∧ e_∞` is the
+  null, parabolic direction, and its dilation is hyperbolic. *The carriage
+  is the luminal propagator.*
+
+**The equation.** For a word w = λ₁λ₂⋯λ_L of letters λᵢ ∈ Spin⁺(4,1)(ℚ):
+
+```
+C(w) = [W],   W = λ₁ λ₂ ⋯ λ_L  ∈  P Spin⁺(4,1)(ℚ)
+
+     = [ ∏_j V_j^{m_j} ]     (V_j the commuting mode factors of W, §75;
+                              m_j the windings of each)
+
+with, per mode j, the composition law of its plane (§52.2):
+   elliptic   V_j^{ℓ_j} ~ 1       m_j ∈ ℤ/ℓ_j      t₃ = (t₁+t₂)/(1−t₁t₂)
+   parabolic  T(d)^m = T(m·d)     m_j ∈ ℤ          d₃ = d₁ + d₂
+   hyperbolic never returns       a ℚ-parameter     β₃ = (β₁+β₂)/(1+β₁β₂)
+and, across non-commuting factors, the bracket: a new generator of
+𝔥 = ⟨B_c, [B_c, B_c′], …⟩_ℚ ⊂ so(4,1), rank ≤ 10 (78.11).
+```
+
+**Read off that one object, never stored beside it:**
+
+```
+C(w) ⊢ ( h ∈ ℚ^{1+n+1+4+|hues|},  [B] ∈ ℚ^{10}/ℚ×,  κ = (I₁, I₂, kind),  (ℓ₁, ℓ₂),  m ∈ ℤ^k )
+```
+
+- *h, the harmonic spectrum*: the versor-invariant spectrum of the bodies W
+  carries (`Harmonics::axes`):
+  - the spatial dimension n;
+  - the Betti numbers β₀…β_{n−1};
+  - the turn count;
+  - the isoperimetric ratio, frame boundary, anisotropy and spread;
+  - the gauge spectrum, the sorted hue fractions.
+
+  It has 11 axes at n = 3 with two hues; the count is read off the body,
+  not fixed. Being versor-invariant, it holds no centroid and no height.
+- *[B], the Cayley bivector*: `B = (W − W̃)/⟨W + W̃⟩₀ = ⟨W⟩₂/⟨W⟩₀`
+  (§52), defined wherever `⟨W⟩₀ ≠ 0`; the 180° turns are refused there.
+  It is the projectivized generator in so(4,1): scale is quotiented, not
+  cancelled (64.4). It covers every kind of motion, not only null ones.
+- *κ, the class*: the conjugacy class `(I₁, I₂, kind)` of B, as
+  `coord::Holonomy` holds it:
+  - `I₁ = ⟨B²⟩₀/w`, the quadratic Casimir;
+  - `I₂ = ‖⟨B²⟩₄‖²/w²`, the quartic screw coupling;
+  - kind ∈ {Trivial, Elliptic, Hyperbolic, Parabolic}, by the sign of `I₁`
+    (`Mv::class_invariants`).
+
+  *Nilpotence is read on the multivector, not on the norms.* A mode is
+  luminal — `B² = 0` as a whole multivector, so `exp(dB) = 1 + dB` and
+  `(1 + d₁B)(1 + d₂B) = 1 + (d₁+d₂)B` — exactly when `⟨B²⟩₀ = 0` *and*
+  `⟨B²⟩₄ = 0`. The norm `I₂` can vanish on a non-zero null 4-vector in
+  this signature, so `I₁ = I₂ = 0` does not by itself prove nilpotence.
+  A non-simple B, with `⟨B²⟩₄ ≠ 0`, is split by mode first (§75), and a
+  screw is a mode split, never a fifth kind.
+- *(ℓ₁, ℓ₂), the two-plane period* (`ToralPeriod`): a pair of
+  `Option<NonZeroU32>`. An open plane is named open (`None`), never given
+  an infinite value.
+- *m, the winding vector*: the windings over the atlas's holes,
+  k = rank Ȟ¹ (78.44(4)). It is held as an off-ledger carrier (below).
+
+This is a turnstile, not an equals sign. The five are readings of one
+motor (law 12). Holding them as separate fields — a key here, a value
+there, a period in a column — strips the word of the product that makes
+them agree. That is a spreadsheet, not a word: the readings would no
+longer be one object and could disagree. 78.60's identity
+`(κ, ℓ, B₀, g)` is the same rule. The word is the generator swept over its
+ground, and the address only locates it.
+
+**Why it condenses.** The condensation happens in the product, not in a
+store after it:
+- *Repetition collapses into an exponent.* Traversing a closed factor
+  again moves `m_j`. It writes no new object.
+- *Length collapses by mode.*
+  - On an elliptic plane, any length is a residue mod `ℓ_j`.
+  - On a null (parabolic, luminal) plane, composition is plain addition,
+    so a word of any length is one integer times one direction. It is the
+    one mode where longevity costs nothing: the history is a count.
+  - A hyperbolic factor does not condense. It stays a named parameter
+    (exact or refuse; ℚ(√(c²−1)) where §75 allows it).
+- *Structure is bounded, per cell.* A new dimension of a cell's holonomy
+  algebra enters only as a rank step of `𝔥_cell ⊂ so(4,1)`, rank at most
+  10 (78.11). The bound is per cell, not per mind: a mind holds many
+  cells, and the language's generators (the letters and what is adjoined)
+  are not capped at ten. *This is the inverse dimensionality of
+  longevity:* however long a cell lives, its structure takes at most ten
+  rank steps.
+
+**Saturation is not condensation.** A cell whose 𝔥 reaches rank 10
+generates all of so(4,1): its circuits satisfy no relation, and a word in
+it is ten free ℚ-parameters. The bound caps dimension; it does not shrink
+anything. What condenses is:
+- *low rank*: a few generators explain all the circuits;
+- *closure*: finite ℓ, so a residue mod ℓ;
+- *nilpotence*: a null factor, so one integer.
+
+A saturated cell is maximally generic, not maximally condensed.
+
+**Scope: does it complete a word circuit and trim the era's excess?** A
+word circuit completes where W returns: `W^ℓ ~ 1`, one age (78.43). There
+the word *is* a ring, and an era cut at that return holds the condensed
+word once, however many times it was traversed. So per era:
+- **The excess falls** from (framing + every act of every traversal) to
+  (framing + one condensed word per distinct class). The number of eras
+  follows the number of distinct classes that returned, not the number of
+  closes. That is the quotient 78.67 (B) approximated in bytes.
+- **It completes a circuit only for resonant words.**
+  - A word whose every mode is elliptic of finite order returns, and is
+    cut at its age.
+  - A parabolic factor never returns. Its winding is condensed (one
+    integer) but completes no circuit, so it rides the eon of the factors
+    that do.
+  - A hyperbolic factor or a rosette never returns and does not condense.
+    It is named and held until the field tower (§37) or the Gödel step
+    (37.7, 80.1) can spell it.
+- **It trims only what is words.** Court acts that are not words — a fold's
+  receipt, an attest, a ruling's stamp — do not condense through C(w). The
+  vacuum folds among them were already refused by 78.67 (A).
+- **On the fleet today it would trim little.** Voice 4's orbit line at
+  epoch 118 read `closed 215 Σℓ 249`, a mean period of about 1.16, so
+  nearly every circuit returns at order 1 or 2 and its age is its close.
+  The 𝒯 lane — the parabolic transport — has never been drawn on any
+  voice, and 55.7 records the luminal medium as absent. The equation
+  trims the era's excess in proportion to how long the words' periods
+  grow and how much of their motion runs along null directions. Neither
+  is happening yet.
+
+**The carriage is transport, not gauge waste (ruled).** The diagnosis:
+
+```
+word form = (vertex, carriage, gauge)  —stalk quotient→  (vertex, [carriage]_~, gauge)
+```
+
+The letters are compact, and the court divided the carriage out as a
+coordinate choice ("the carriage is the coordinate the court quotients",
+§1). So every non-compact generator — every translation and dilation — was
+discarded before the physics saw it. The system threw away its own
+parabolic medium at the door. That is why the 𝒯 lane has never drawn a
+stroke, and why 55.7 reads the luminal medium as absent.
+
+The ruling:
+- *The court quotients only the arbitrary base point*, the origin gauge
+  a chart is written in. It never quotients the relative displacement
+  between two charts: `Δ = log T = −½ t ∧ e_∞ ∈ so(4,1)`, exact, because
+  the translator's generator is nilpotent.
+- *When a word crosses a contact face, its carriage's translational
+  generator `d ∧ e_∞` is a physical 1-cochain on the nerve*, the luminal
+  transport across that face. It survives into the transition, and from
+  there into the holonomy and the 𝒯 lane.
+- *The stalk keeps its quotient of the absolute placement*, so two charts
+  of one shape at two places are still one stratum. What it no longer
+  erases is the difference between them.
+
+**The winding is an off-ledger carrier (ruled, the 78.65 escrow
+pattern).** If every traversal of an already-closed ring sealed an act,
+the ledger would grow with the coordinate clock, N ∝ t. That is
+Newtonian time bloat, not history. So:
+- *The carrier.* A winding `m ∈ ℤ^k` lives on the cell's active section as
+  an unsealed count.
+- *In place.* A traversal that does not complete a return (`m ≢ 0 mod ℓ`)
+  advances `m` and appends nothing.
+- *The return act.* When `m ≡ 0 mod ℓ` — one full age of the ring — the
+  carrier resolves and seals one act recording the completed cycle.
+- *The rank-step act.* When a traversal meets a commutator that steps
+  `rank 𝔥_cell`, it seals one act recording the generator adjoined.
+
+One act per closed ring per age, and one per new dimension; never one per
+pass.
+
+**The fold trigger is two topological events (ruled; replaces 78.67
+(B)).** A court proposes an era fold iff:
+- the prefix carries work — no vacuum fold (78.67 (A)); and
+- at least one phase transition stands in it:
+  `Δ rank 𝔥_cell > 0  ∨  m ≡ 0 (mod ℓ)` — a rank-step act or a return
+  act.
+
+A rank step is the one moment new structure enters; a return is the one
+moment repetition closes. Between them the history is coefficient motion,
+held on the carrier. The byte break-even retires: it measured the
+container, not the physics.
+
+**The lexicon (§0.7), one sense each.**
+- *luminal*: on the null cone, `B² = 0` as a multivector — the parabolic
+  mode and its carriage transport. It no longer names a boost
+  (`resonance.rs`, hyperbolic) or the gauge refused at the cone (a ring
+  class, which takes its own name).
+- *harmonic*: the versor-invariant spectrum `h` (`Harmonics`), the eye
+  that reads it. It no longer names a non-resonant ring class, which
+  takes its own name.
+
+**Read on the fleet when it lands.**
+- The 𝒯 lane is drawn.
+- Return acts and rank-step acts are counted, and traversals between them
+  write nothing.
+- 𝔥_cell's rank steps and then stops.
+- Eras follow return and rank-step acts, not closes.
+- Σℓ / closed rises above about 1 as carried displacements enter the
+  holonomies.
+
+**Implementation (the operator's order).**
+1. This section, committed.
+2. Stop quotienting the relative carriage (`src/transducer/`): the
+   translational bivector survives as the transport across faces.
+3. The winding carrier (`src/server/cognition/`): `m` in place on the
+   active section, sealing an act only on a return or a rank step.
+4. The two-event fold trigger in place of the byte break-even.
+
+The letters stay SO(4), and `Rotor` keeps its 16 coefficients as the
+internal orientation (the operator's amendment: no null letters).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
