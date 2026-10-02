@@ -149,14 +149,25 @@ impl Reserve {
     /// where the action needs a lane that is gone, never because some other
     /// lane ran out.
     pub fn draw(&mut self, cost: [u64; 4]) -> Result<(), Depleted> {
+        // D2 — the refusal is the metabolic reading, counted on EVERY lane
+        // that could not cover it (PHY1, 78.69). It returned at the first
+        // short lane in (𝒮, 𝒢, 𝒯, 𝒽) order and counted that one, so a draw
+        // short on three lanes read as an 𝒮 refusal alone — the refusal
+        // vector collapsed onto its first coordinate (a court read 4 130
+        // refused on 𝒮). The `Depleted` returned still names the first, the
+        // caller's one answer; the ledger counts them all.
+        let mut first: Option<Depleted> = None;
         for (i, (&want, &held)) in cost.iter().zip(self.lanes.iter()).enumerate() {
             if want > held {
-                // D2 — the refusal is the metabolic reading, counted on the
-                // lane that refused it before the return (PHY1).
                 crate::physics::metabolism::note_refused(i);
                 crate::physics::metabolism::step_or_refuse(&mut self.refused[i], 1);
-                return Err(Depleted { lane: i, asked: want, held });
+                if first.is_none() {
+                    first = Some(Depleted { lane: i, asked: want, held });
+                }
             }
+        }
+        if let Some(d) = first {
+            return Err(d);
         }
         for (l, c) in self.lanes.iter_mut().zip(cost.iter()) {
             *l -= c;

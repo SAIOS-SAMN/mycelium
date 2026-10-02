@@ -474,7 +474,14 @@ impl Kernel {
             }
         };
         match &written {
-            Some(r) => self.note_attestor(r),
+            Some(r) => {
+                self.note_attestor(r);
+                // 78.69: where this court's algorithm last changed, kept as
+                // it is sealed so the fold need not search the line for it.
+                if kind.changes_algorithm() {
+                    self.last_transition = Some(Some(r.stamp.place()));
+                }
+            }
             None => eprintln!("  step refused: {} could not be sealed", String::from_utf8_lossy(kind.name())),
         }
         written

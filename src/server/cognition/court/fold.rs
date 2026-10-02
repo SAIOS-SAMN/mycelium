@@ -116,26 +116,45 @@ impl Kernel {
     /// history is coefficient motion, and folding it would cut nothing the
     /// physics names (`REFUSE_FOLD_NO_TRANSITION`). This replaces 78.67's
     /// byte break-even, which measured the container and not the physics.
-    fn fold_transitions(&self, head: Place) -> Result<(), &'static str> {
+    ///
+    /// THE QUESTION IS ASKED OF THE WHOLE HOT LINE, THE CUT STAYS ONE PAGE.
+    /// A cut must fit one witness fetch (`fold_head`), and (B) was asked of
+    /// that page alone. A court whose next page held no transition was
+    /// refused at every close, its root never moved, and the page after was
+    /// never asked: hypha b refused 2 516 proposals and held 101 721 own
+    /// nodes hot with its fold head at K 468 of 11 554 — the time axis
+    /// collapsed onto the first page. The algorithm changed since the root
+    /// wherever this court's last transition stands past it
+    /// (`last_transition`, kept as acts are sealed), and then folding the
+    /// next page moves history the change already supersedes.
+    fn fold_transitions(&mut self, head: Place) -> Result<(), &'static str> {
         let me = self.chain.vk();
-        let prefix = self.chain.line_between(&me, self.chain.root().map(|r| r.at), head, usize::MAX);
+        let root = self.chain.root().map(|r| r.at);
+        let prefix = self.chain.line_between(&me, root, head, usize::MAX);
         if !prefix.iter().any(|r| !matches!(r.kind, ActKind::Fold | ActKind::Orbit)) {
             return Err(REFUSE_FOLD_IDLE);
         }
-        let transition = |k: ActKind| {
-            matches!(
-                k,
-                ActKind::Return
-                    | ActKind::RankStep
-                    | ActKind::Install
-                    | ActKind::Ruling(crate::chronometry::Ruled::Upheld)
-                    | ActKind::Adopted
-            )
+        let last = match self.last_transition {
+            Some(at) => at,
+            // Read once after a restore, off the hot line itself.
+            None => {
+                let at = self.chain.head_place().and_then(|h| {
+                    self.chain
+                        .line_between(&me, root, h, usize::MAX)
+                        .iter()
+                        .rev()
+                        .find(|r| r.kind.changes_algorithm())
+                        .map(|r| r.stamp.place())
+                });
+                self.last_transition = Some(at);
+                at
+            }
         };
-        if !prefix.iter().any(|r| transition(r.kind)) {
-            return Err(REFUSE_FOLD_NO_TRANSITION);
+        match (last, root) {
+            (Some(t), Some(r)) if t > r => Ok(()),
+            (Some(_), None) => Ok(()),
+            _ => Err(REFUSE_FOLD_NO_TRANSITION),
         }
-        Ok(())
     }
 
     /// The proposal awaiting a witness, if any.

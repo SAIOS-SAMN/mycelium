@@ -20170,6 +20170,48 @@ the courts).**
   relaxed only where an utterance was heard (`reflex_open`), so a court
   booking order without hearing one kept its pressure whole.
 
+**Three dimensional collapses, found by reading the fleet (2026-10-02).**
+1. *The fold's time axis collapsed onto one page.*
+   - A cut must fit one witness fetch (`fold_head`), and the transition was
+     asked of that page alone. A court whose next page held no transition
+     was refused at every close, so its root never moved and the page after
+     was never asked.
+   - Hypha b refused 2 516 proposals and held 101 721 own nodes hot, with
+     its fold head at K 468 of 11 554.
+   - Now the question is asked of the whole hot line: the court keeps the
+     place of its last transition as acts are sealed (`last_transition`;
+     `ActKind::changes_algorithm` is the one predicate). The cut stays one
+     page.
+2. *The refusal vector collapsed onto its first lane.*
+   - `Reserve::draw` returned at the first short lane in (𝒮, 𝒢, 𝒯, 𝒽)
+     order and counted that one, so a draw short on three lanes read as an
+     𝒮 refusal alone (a court read 4 130 on 𝒮).
+   - Every short lane is counted now. The `Depleted` returned still names
+     the first.
+3. *A contact's order collapsed onto 𝒮.*
+   - A condensed contact's lanes were read off its carriage `θ·V`, and
+     `V = s_b s_a` is the static tether between the bodies' spheres
+     (78.6(2)). For spheres apart that is a hyperbolic sphere pair, so every
+     contact booked 𝒮: voice 1 read 21 407 on 𝒮 against 567 on 𝒢 and
+     1 730 on 𝒽.
+   - The lanes are now read off the refraction `θ`, the motion: a turn on
+     𝒽, a displacement on 𝒯, a scale on 𝒮. `transport_lanes` retires.
+
+**Collapses that stand, and are named here, not changed:**
+- *A court's regeneration ceiling* sums the bond across all four lanes into
+  one (`regenerate_within`, 78.56 IV as read on 2026-09-30, because courts
+  bond nothing on 𝒯). That is a cross-lane sum; it inflates the ceiling and
+  is the operator's to re-rule.
+- *A voice's stroke draws one unit on each lane it moved, and regenerates
+  by a two-valued step.* This is the intra-lane collapse fix 4 (reserves in
+  μ) addresses; the operator's.
+- *A voice's 𝒯 has no producer of pressure or draw*: `measure_lanes` writes
+  0, so the 𝒯 reserve stands untouched. This waits on the 𝒯-source ruling.
+- *A contact carries no hue map* (`gauge: Vec::new()` at `contact_edge`), so
+  𝒢 order comes only from faces' hue maps and closures, while families
+  charge every recolour site to 𝒢. Whether a contact's refraction should
+  carry the hue relation between its bodies is an open question.
+
 **Not done here.**
 - The court still dockets and rules sentences as items: speech listings,
   sentence forms in the basis. Under this ruling it should receive a

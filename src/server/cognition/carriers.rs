@@ -124,6 +124,7 @@ impl Kernel {
             winding_tally: _,
             lie_basis,
             witnessed,
+            last_transition: _,
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,

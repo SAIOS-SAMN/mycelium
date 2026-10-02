@@ -392,6 +392,11 @@ pub struct Kernel {
     /// relieved exactly when the word leaves the book (`pending_take`).
     /// Volatile, as the pressure it is the conjugate of.
     pub(crate) witnessed: crate::network::nerve::Keyed<[u64; 4]>,
+    /// 78.69 — WHERE THIS COURT'S ALGORITHM LAST CHANGED on its own line: the
+    /// place of its last act that `changes_algorithm`, kept as it is sealed.
+    /// `None` is unread (a restored court reads it once off its hot line);
+    /// `Some(None)`, read and none held.
+    pub(crate) last_transition: Option<Option<crate::chronometry::Place>>,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

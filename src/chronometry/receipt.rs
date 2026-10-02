@@ -363,6 +363,18 @@ impl ActKind {
         })
     }
 
+    /// 78.68, 78.69 — DOES THIS ACT CHANGE THE ALGORITHM THE LEDGER HOLDS: a
+    /// ring's return, a holonomy algebra's rank step, or a generator entering
+    /// the presentation (`Install`, `Ruling(Upheld)`, `Adopted`). The one
+    /// reading of a fold's transition, for the trigger and for the court's
+    /// record of where its last one stands.
+    pub fn changes_algorithm(self) -> bool {
+        matches!(
+            self,
+            ActKind::Return | ActKind::RankStep | ActKind::Install | ActKind::Ruling(Ruled::Upheld) | ActKind::Adopted
+        )
+    }
+
     /// The kind's name, the bytes the mind's operator digest is taken over.
     pub fn name(self) -> &'static [u8] {
         match self {

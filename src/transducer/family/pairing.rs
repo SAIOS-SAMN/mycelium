@@ -200,20 +200,11 @@ pub fn contact_lanes() -> ([u64; 4], [u64; 4]) {
     (read(&CONDENSED_ON), read(&REFUSED_ON))
 }
 
-/// THE LANES A CONTACT'S TRANSPORT OCCUPIES, on 42.6's table (`Axis::lane`,
-/// `measure_lanes`): its carriage's ([`carriage_lanes`]), 𝒽 where its word
-/// turns (the rotor's coordinates are holonomic), 𝒢 where its hue map moves
-/// a hue (recolour is gauge work). These read 𝒢 for a turn and 𝒽 for a hue
-/// map, the two swapped against every other reader of the lanes, so the
-/// order a resolved recolour built was booked on 𝒽 while its work was
-/// charged on 𝒢 (78.69).
-fn transport_lanes(t: &crate::transducer::sentence::Transport, budget: &mut crate::physics::Budget) -> [bool; 4] {
-    use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL};
-    let mut on = carriage_lanes(&t.carriage, budget);
-    on[LANE_SHELL] |= !t.word.is_identity();
-    on[LANE_GAUGE] = t.gauge.iter().any(|(a, b)| a != b);
-    on
-}
+// `transport_lanes` stood here: a contact's lanes read off its edge's
+// carriage `θ·V`. It read 𝒢 for a turn and 𝒽 for a hue map, swapped against
+// 42.6's table, and it read the static tether `V` as motion, collapsing a
+// contact's order onto 𝒮 (78.69). The condensed contact reads its lanes off
+// the refraction `θ` where it forms (`contact_edge`).
 
 /// 78.68 — THE LANES A CONFORMAL CARRIAGE OCCUPIES, the carriage read as
 /// the transport it is (the court quotients the base point, never the
@@ -606,6 +597,13 @@ pub(crate) fn contact_edge(
             }
         }
     }
+    // The one refraction where a single transport forms: its lanes are read
+    // off it, the motion, never off `θ·V`, the motion times the static
+    // tether (below).
+    let only_theta = match thetas.as_slice() {
+        [t] => Some(t.clone()),
+        _ => None,
+    };
     let mut edges: Vec<Transport> = Vec::with_capacity(thetas.len());
     for theta in thetas {
         let word = match super::derivation::peel_versor(&theta) {
@@ -630,8 +628,24 @@ pub(crate) fn contact_edge(
             // 78.69 fix 1: the order a condensed contact builds is what it
             // relates — its two bodies' compartments — on the lanes its
             // transport occupies, never one tick per contact.
+            //
+            // THE LANES ARE THE MOTION'S, NOT THE TETHER'S. The edge's
+            // carriage is `θ·V`, and `V = s_b s_a` is the static tether
+            // between the two bodies' spheres (78.6(2)): for spheres apart it
+            // is a hyperbolic sphere pair, so every contact read as an 𝒮
+            // transport whatever the bodies did — voice 1 booked 21 407 on 𝒮
+            // against 567 on 𝒢 and 1 730 on 𝒽, the order collapsed onto one
+            // lane. The refraction `θ` is the motion: its turn on 𝒽, its
+            // displacement on 𝒯, its scale on 𝒮; the word and the hue map as
+            // the transport reads them.
             let carried = (a.support.len() + b.support.len()) as u64;
-            mark_measured(&CONDENSED_ON, transport_lanes(&edge, budget), carried);
+            let mut lanes = match &only_theta {
+                Some(theta) => carriage_lanes(theta, budget),
+                None => [false; 4],
+            };
+            lanes[crate::transducer::rewrite::LANE_SHELL] |= !edge.word.is_identity();
+            lanes[crate::transducer::rewrite::LANE_GAUGE] |= edge.gauge.iter().any(|(x, y)| x != y);
+            mark_measured(&CONDENSED_ON, lanes, carried);
             ContactEdge::Formed(Box::new(edge))
         }
         Err(coset) => {
