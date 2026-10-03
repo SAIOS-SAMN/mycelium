@@ -13,6 +13,7 @@ mod deflation;
 mod derivation;
 mod extraction;
 mod fibres;
+mod invert;
 mod lanes;
 mod orbit;
 mod pairing;

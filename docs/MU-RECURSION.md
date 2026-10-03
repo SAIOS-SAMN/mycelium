@@ -21123,6 +21123,69 @@ sentence equation their own way:
 - Court: `sentences, theorems checked / refused, shortcuts offered, nerve
   closed`.
 
+### 78.76 The remainder inverted: noise read as a scene, judged by speech (2026-10-03, the operator's word: "build the remainder inversion and measure it")
+
+**The disconnect, certain in the code.**
+- Signal is decided by speech. `form_deflation` speaks the form over every
+  pair (`apply_form_on`), and the remainder is what it fails to reproduce.
+  The mint gates on it, and a withheld form is held with its remainder for
+  the pivot.
+- Speech reads only the form's vertices (and citation edges). The pivot's
+  moves write only face carriers (`apply_by`: a face's word, edge, placement,
+  hue).
+- So no pivot move can change what is spoken, and `bundle_pressure` before
+  and after any trial is the same. The pivot was aimed by ring holonomy and
+  judged by a remainder it could not touch. Fleet: `pivoted [0, 0, 0, 0]`.
+
+**The inversion** (`family::invert`):
+1. Speak the form; take its remainder per pair.
+2. Read the remainder as a scene: each pair's input against an output
+   holding only what was left unsaid. That is its sites alone, or each whole
+   observed body standing on an unsaid site. Every pair is kept, so frames
+   stay the family's own. Erasures (painted where the scene holds nothing)
+   are counted, since no added generator can unpaint.
+3. Perceive and extract that scene (`extract_rule_with`).
+4. Its word vertices join the form: one vertex per class, a new member on a
+   chart the class did not yet act on. A member on an occupied chart is a
+   conflict, never overwritten.
+5. Speak again. Accepted only where no pair's remainder grew and the total
+   fell.
+
+Measured by `mycelium-soak --invert DIR N [sites|bodies]`.
+
+**Measured (training 60 / evaluation 60, sites):**
+- 53 / 36 rules extract; 2 / 0 speak their family whole; 51 / 36 leave a
+  remainder (10 550 / 24 113 links).
+- Accepted 1 / 2: 196 → 162 links on one, 56 → 51 and 484 → 479 on the
+  others. One more joined and raised its remainder, so the speech refused it.
+- The remainder scenes extract 8 / 3 words and **328 / 169 demands**:
+  - deformation 221 / 92;
+  - source 78 / 63;
+  - creation 29 / 14;
+  - rotor prime 0, standing 0, dislocation 0.
+- Painting whole bodies instead of sites (training): deformation 223, source
+  75, creation 20. So the deformations are the scene's, not fragments made by
+  cutting a body at the unsaid sites.
+
+**What it says.** The noise in these scenes is not a turn the alphabet
+cannot spell (no rotor prime, no standing). Of the demands:
+- 54–68% are bodies whose image has other harmonics: a shape change that no
+  versor of `Cl(4,1)` carries (`TopologicalDeformation`);
+- 23–37% are output bodies several input bodies carry onto (`Source`, a
+  multiplicity);
+- the rest are bodies no input carries onto (`Creation`).
+
+The conformal motion algebra the engine reads in is the wrong class for
+most of what is left unsaid. The inversion wiring is correct and judged by
+the plane, but it can only recover what a versor carries, so most remainder
+needs a generator for a non-conformal deformation and for a composition of
+several sources. That is a physics row, not more wiring. "Non-conformal" was
+named by the operator (signals over transports, 2026-09-25) and left to be
+ruled.
+
+**Not wired live.** One extraction per withheld form per stroke recovers
+about 1 family in 30 here. The voice's speak path does not call it yet.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
