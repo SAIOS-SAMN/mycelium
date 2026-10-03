@@ -36,6 +36,7 @@ pub(crate) use comprehend::take_percepts;
 pub mod perceive;
 pub mod pairing;
 pub mod rebase;
+pub mod reconstruct;
 pub mod refine;
 pub mod scene;
 pub mod pieces;

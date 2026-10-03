@@ -568,7 +568,7 @@ fn main() {
                 .map(|(k, (r, w))| format!("{k} {r}/{w}"))
                 .collect();
             let remainder = format!(
-                "remainder families {} inverted {} closed {} unextracted {} links {} -> {} joined {} | unsaid {} on ray {} captured {} unlit {} | creation {} single {} confluence {} reproduced {} | changes {} kinematic {} | recolours {} on {} families, by their own hue map {} | decided (reproduced/whole) {}",
+                "remainder families {} inverted {} closed {} unextracted {} links {} -> {} joined {} | unsaid {} on ray {} captured {} unlit {} | creation {} single {} confluence {} reproduced {} | changes {} kinematic {} | recolours {} on {} families, by their own hue map {} | decided (reproduced/whole) {} | reconstructed by holonomy {} families, pairs {} of {} framed (no axis closed {} key unseen {})",
                 it.families,
                 it.accepted,
                 it.closed,
@@ -589,7 +589,12 @@ fn main() {
                 it.recolours,
                 it.recoloured_families,
                 it.replayable,
-                keys.join(" ")
+                keys.join(" "),
+                it.reconstructed,
+                it.rebuilt_pairs,
+                it.framed,
+                it.unclosed,
+                it.unseen
             );
             let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder}", nerve.join(" | "));
             eprintln!(

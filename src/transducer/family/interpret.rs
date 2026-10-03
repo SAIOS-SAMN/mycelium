@@ -16,7 +16,9 @@
 //!    - CONSTRUCTORS (78.79): every single change by its constructors —
 //!      kinematic, accreted on light, carved;
 //!    - DECISION (78.80): the recolours in place judged under every key, the
-//!      body's own moments and its rank in its pair, leave one out, by replay.
+//!      body's own moments and its rank in its pair, leave one out, by replay;
+//!    - RECONSTRUCTION (78.82, HR4): the family's field carried by the axis
+//!      whose loops close, each pair left out and judged by replay.
 //!
 //! Every reading is folded into this process's tally, read on the voice's
 //! stroke line. What step 2 reads, the form cannot yet speak: a recolour that
@@ -56,6 +58,9 @@ pub struct Interpretation {
     pub recolours: u64,
     pub replayable: u64,
     pub decided: [Decision; 8],
+    /// HR4 (78.82): the family reconstructed by its holonomy, each pair left
+    /// out in turn.
+    pub reconstruction: super::reconstruct::Reconstruction,
 }
 
 /// A form the voice speaks from here on, with the remainders it leaves.
@@ -109,11 +114,12 @@ pub fn interpret(
         .iter()
         .filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty() && super::incongruence::replayable(c))
         .count() as u64;
+    read.reconstruction = super::reconstruct::reconstruct(family);
     note_read(&read);
     (joined, read)
 }
 
-const KEYED: usize = 20;
+const KEYED: usize = 25;
 const SLOTS: usize = KEYED + 2 * KEYS.len();
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 
@@ -151,6 +157,11 @@ fn note_read(r: &Interpretation) {
         r.recolours,
         u64::from(r.recolours > 0),
         r.replayable,
+        u64::from(r.reconstruction.whole),
+        r.reconstruction.framed,
+        r.reconstruction.reproduced,
+        r.reconstruction.unclosed,
+        r.reconstruction.unseen,
     ];
     for (slot, by) in flat.into_iter().enumerate() {
         note(slot, by);
@@ -187,6 +198,13 @@ pub struct InterpretTally {
     pub recolours: u64,
     pub recoloured_families: u64,
     pub replayable: u64,
+    /// HR4: families reconstructed whole, pairs framed and reproduced left
+    /// out, and the left-out pairs no axis closed for or whose key was unseen.
+    pub reconstructed: u64,
+    pub framed: u64,
+    pub rebuilt_pairs: u64,
+    pub unclosed: u64,
+    pub unseen: u64,
     pub reproduced: [u64; 8],
     pub whole: [u64; 8],
 }
@@ -214,6 +232,11 @@ pub fn interpret_tally() -> InterpretTally {
         recolours: r(17),
         recoloured_families: r(18),
         replayable: r(19),
+        reconstructed: r(20),
+        framed: r(21),
+        rebuilt_pairs: r(22),
+        unclosed: r(23),
+        unseen: r(24),
         reproduced: std::array::from_fn(|i| r(KEYED + i)),
         whole: std::array::from_fn(|i| r(KEYED + KEYS.len() + i)),
     }

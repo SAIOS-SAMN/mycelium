@@ -21482,6 +21482,78 @@ reading is what the voice holds of it.
 **Deployed?** No. The fleet runs 50b72209; this reaches it only by the recut
 or restart, which is the operator's call.
 
+### 78.82 Reconstruction by holonomy: HR1–HR4 (2026-10-03, the operator's word: "the question is not to get exactness — it's to recreate the reconstruction via holonomy"; "proceed — let's track these task lists")
+
+**The idea.** Values stay exact, but they are not required to agree. What
+must agree across a family is how they MOVE. A rule is a transport whose
+loops close across the pairs; reconstruction carries a new input's field by
+it.
+
+**Built** (`family::reconstruct`; live in `interpret` on the voice;
+instrument `mycelium-soak --reconstruct DIR N`):
+- **HR1, the field.** Every site by its coordinates on every axis:
+  - its hue;
+  - its neighbourhood's sphere (itself and the painted sites one null step
+    away), read by its moments: local mass, spread, direction, density;
+  - its body: mass, rank by mass among the scene's bodies, and CENTRALITY
+    `M·(P·C)/C²`, the site's weight against the body's sphere over the
+    sphere's square. It is ½ at the barycentre and 5/4 at a bar's ends,
+    exact, never rooted;
+  - its ring of hues one null step away.
+- **HR2, the transport.** What each input site does in its pair's output:
+  its hue fibre's move (`h → h'`, with `0` meaning carving) and the light it
+  emits, i.e. each null direction whose whole free reach the output fills
+  with one hue. On the body axis, each single change's fascicle
+  `C_out · C_in` is read by its regime.
+- **HR3, the holonomy per axis.** Sites under one key are a loop, which
+  closes where their transports are one. An axis closes on a family where
+  every loop does.
+- **HR4, reconstruction.** Each pair is left out in turn. Among the axes
+  closing on the other pairs and holding every key the left-out pair asks
+  for, the most compact (fewest keys) carries the left-out pair's input. The
+  result is judged by replay against the observed output.
+
+The tests prove the reading on a family built for it. Strokes leaning both
+ways turn 2 and 8: hue, mass, density and centrality do not close; LOCAL
+DIRECTION does (the inertia form's cross term flips sign), and it rebuilds
+every pair left out.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| extracted / spoken whole | 53 / **2** | 36 / **0** |
+| **reconstructed whole** | **1** (not spoken whole) | **0** |
+| pairs / framed / reproduced left out | 191 / 139 / 5 | 175 / 105 / 0 |
+| left-out pairs no axis closed for | 107 | 98 |
+| left-out pairs an axis closed for, key unseen | 25 | 7 |
+| loops closed, per axis (of every family's loops) | 75–84% on every axis (hue 77%, mass rank 79%, centrality 80%, neighbourhood 80%) | 75–84% (centrality 84%, body mass 79%, direction 78%) |
+| families an axis closes on, by axis | body mass 4, centrality 4, mass rank 3, neighbourhood 3, the local axes 1 each | neighbourhood 1 |
+| single changes by their fascicle's regime | kiss (light) 68, apart 47, null 20, turn 0 | kiss 59, apart 58, null 16, turn 0 |
+
+**What it says.**
+1. *No single axis carries a family.* Every axis closes about four of every
+   five loops: the field's bulk moves alike under any coordinate. No axis
+   closes the rest, and the rest is where the scene changes. Each axis alone
+   is still a projection, the 78.80 finding one level up.
+2. *The open loops are the content.* A loop that does not close on axis A
+   closes on axis B or on none, and which one is the rule. That is 78.11's
+   statement: comprehension is the circuits' BRACKET-CLOSED algebra, never
+   one generator. HR3 as built reads each axis alone. Its completion composes
+   axes where a loop is open: refines an axis's key by a second axis's
+   coordinate on the open loops only, keeping the coarse key where it closes
+   (obstructions are refinements, 74; an atlas is compaction from a fixed
+   coordinate list, 78.41(2′)).
+3. *The body axis's own transports are light and dilation.* No single change
+   is a turn of finite order or a rosette. The kiss (parabolic) and the
+   dilation carry them, which is the null flow and the boost of 78.75's
+   `FlowPoint`.
+
+**Ruling asked.** Refining an open loop's key by a further axis is a choice
+among axes in a fixed order. It is deterministic and keyed, but it has the
+shape of a decision tree. Whether it stands under "no search trees" or is the
+atlas's compaction is the operator's to rule before it is built.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

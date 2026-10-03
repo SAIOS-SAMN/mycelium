@@ -24,6 +24,7 @@ mod pairing;
 mod scene;
 mod span;
 mod perception;
+mod reconstruct;
 mod retract;
 mod rung;
 mod speech;

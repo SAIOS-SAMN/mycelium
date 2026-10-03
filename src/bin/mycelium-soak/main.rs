@@ -24,6 +24,7 @@ mod invert;
 mod luminal;
 mod solve;
 mod mint;
+mod reconstruct;
 mod regime;
 mod volume;
 
@@ -97,6 +98,25 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.82 — `--reconstruct DIR LIMIT`: HR1–HR4, reconstruction by holonomy.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--reconstruct") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  reconstruct refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => reconstruct::report(dir, &names),
+            Err(e) => {
+                eprintln!("  reconstruct refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.80 — `--volume DIR LIMIT`: volume and density against shape.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--volume") {
         let Some(dir) = argv.get(1) else {

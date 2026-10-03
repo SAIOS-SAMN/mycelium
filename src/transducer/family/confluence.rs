@@ -81,7 +81,7 @@ fn point(r: i64, c: i64) -> Mv {
 }
 
 /// The confluence sphere of a set of compartments, and its mass.
-fn gathered(sites: &[(i64, i64)]) -> (Mv, u64) {
+pub(crate) fn gathered(sites: &[(i64, i64)]) -> (Mv, u64) {
     (sites.iter().fold(Mv::zero(), |s, &(r, c)| s.add(&point(r, c))), sites.len() as u64)
 }
 
@@ -94,7 +94,7 @@ fn centre(sites: &[(i64, i64)]) -> Option<(Q, Q)> {
     Some((sr / &n, sc / n))
 }
 
-fn regime_name(r: cga::PairRegime) -> &'static str {
+pub(crate) fn regime_name(r: cga::PairRegime) -> &'static str {
     match r {
         cga::PairRegime::Finite(_) => "turn of finite order",
         cga::PairRegime::Rosette => "rosette",
