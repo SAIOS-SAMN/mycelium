@@ -69,7 +69,7 @@ pub enum Painted {
 /// holding what the form left unsaid — its sites, or the whole observed bodies
 /// they stand in; the erasures (painted, observed absent) counted, not
 /// expressible as a body.
-pub(crate) fn remainder_scene(
+pub fn remainder_scene(
     family: &[(Grid, Grid)],
     remainders: &[Vec<(i64, i64, u8, u8)>],
     painted: Painted,

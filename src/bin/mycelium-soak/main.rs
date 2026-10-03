@@ -19,6 +19,7 @@ mod census;
 mod cover;
 mod delta;
 mod invert;
+mod luminal;
 mod solve;
 mod mint;
 mod regime;
@@ -93,6 +94,25 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.77 — `--light DIR LIMIT`: L1–L6, what the remainder reads as light.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--light") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  light refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => luminal::report(dir, &names),
+            Err(e) => {
+                eprintln!("  light refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.76 — `--invert DIR LIMIT`: the remainder inversion measured over a
     // slice — before and after per task, and in total.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--invert") {

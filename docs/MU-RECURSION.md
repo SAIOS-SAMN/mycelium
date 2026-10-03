@@ -21186,6 +21186,66 @@ ruled.
 **Not wired live.** One extraction per withheld form per stroke recovers
 about 1 family in 30 here. The voice's speak path does not call it yet.
 
+### 78.77 Light through the scene, read: L1–L6 (2026-10-03, the operator's word: "the prism is the light coming through the manifold (so shape must already be congrued)"; "proceed with L1–L6 and run it")
+
+**The reading.** The bodies stand congruent, as perceived. What the output
+shows beyond them is read as light:
+- a waveform carried along null flows out of a body's boundary;
+- met at interfaces (transmitted, reflected, absorbed);
+- captured inside enclosures as a standing wave;
+- resonating in cavities.
+
+Snell's law is not added. Refraction is phase continuity at an interface:
+`lift_drag`'s drag continues, the medium is a rational ratio of periods. The
+sine law is its ray limit and is never computed.
+
+Instrument: `family::luminal` (typed per pair: rays with phase, period and
+the hues of one period; interfaces; cavities with their standing wave and
+billiard), run by `mycelium-soak --light DIR N`. L6 is read off the cover's
+own tally on the remainder scene. A ray explains an unsaid site only as a
+waveform: lit from the boundary outward, two or more sites, its period
+repeated at least twice.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| unsaid sites | 10 524 | 24 107 |
+| explained by light | 1 800 (17%): on a ray 1 498, captured 10, both 292 | 577 (2.4%) |
+| in pairs whose output frame differs (no ray read) | 632 | 0 |
+| deformation-dominated tasks | 1 772 of 6 205 (29%) | 405 of 9 845 (4%) |
+| source-dominated tasks | 14 of 4 142 | 29 of 14 070 |
+| creation-dominated tasks | 14 of 177 | 143 of 192 (74%) |
+| rays | 1 408: period 1 on 1 401; the source's own hue 297; edge 296, transmitted 205, reflected 115, absorbed 792 | 330: period 1 on 323; source hue 183 |
+| cavities | 324 (256 rectangular): 59 standing waves, all fitting; every billiard a translation (parabolic), as two pairs of parallel walls must compose | 86 (64 rectangular); 13 standing waves |
+| L6: covers on the remainder scenes | 330 attempted, 9 carried, 1 meet | 156 attempted, 7 carried, 0 meets |
+
+**What it says.**
+1. *The cover never splits the remainder into conformal pieces.* Covers are
+   attempted and almost none carry a piece; there are no seams to close.
+   "The cover fails at its seams" (the analyst's reading) is not what
+   happens: it carries nothing to seam.
+2. *Light is a real part of the remainder, not most of it.*
+   - Lines drawn out of bodies to an edge or a wall are read exactly, and
+     these are scene structure: a point's own hue drawn to the edge
+     (`0a938d79`), rays one hue absorbs and another transmits (`05a7bcf2`).
+   - It explains about 29% of the deformation-dominated training remainder,
+     and almost all evaluation creation.
+   - It does not explain the source-dominated remainder at all (0.2–0.3%):
+     one output body made of several inputs is not light.
+3. *The light read is almost all period 1* (solid lines). The waveform has
+   not met a periodic pattern on these slices. The billiards are
+   translations by construction, so a rectangle's cavity resonance is its
+   lattice `(2H, 2W)` and no closed rotation; the standing waves seen are
+   constant fills.
+
+**The pass mark set beforehand** — light explains most deformation and
+creation — **is not met for deformation** (29% / 4%) and met for creation on
+evaluation only. The luminal reading is a genuine, exact part of the
+missing physics, a minority of it. The largest remainder class (source:
+4 142 / 14 070 unsaid) needs composition of several inputs into one output,
+which no flow out of one body carries.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

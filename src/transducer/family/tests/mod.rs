@@ -15,6 +15,7 @@ mod extraction;
 mod fibres;
 mod invert;
 mod lanes;
+mod luminal;
 mod orbit;
 mod pairing;
 mod scene;
