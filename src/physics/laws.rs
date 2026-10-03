@@ -234,5 +234,7 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     v
 }
 
+pub mod codec;
+
 #[cfg(test)]
 mod tests;

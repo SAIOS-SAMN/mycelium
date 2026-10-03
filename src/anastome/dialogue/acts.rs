@@ -181,6 +181,14 @@ pub const ACT_ROWS: u8 = 0x38;
 /// process queries a hypha for the readings it holds by key prefix. The
 /// layout and its codec are [`crate::observe`]'s, the one writer of it.
 pub const ACT_OBSERVE: u8 = 0x39;
+/// THE LAW REGISTER (78.62 steps 2 and 3, 78.64 H4): any kernel asks a hypha
+/// for the universal laws it holds, each by its coordinate and statement
+/// (`[ACT_LAWS][0]`), or puts a transition it composed to the court's
+/// verifier (`[ACT_LAWS][1][transition]`), answered by the verdict — every
+/// breach with its law. The layout and its codec are `physics::laws::codec`'s,
+/// the one writer of it. It admits nothing and writes no receipt: a verdict
+/// is a reading the kernel acts on.
+pub const ACT_LAWS: u8 = 0x3A;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

@@ -4,6 +4,7 @@
 pub mod common;
 
 mod address_set;
+mod bridge;
 mod budget;
 mod canonical;
 mod confluence;
@@ -14,6 +15,7 @@ mod deflation;
 mod derivation;
 mod extraction;
 mod fibres;
+mod hyperfluid;
 mod incongruence;
 mod interpret;
 mod invert;

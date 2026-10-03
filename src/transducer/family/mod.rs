@@ -6,6 +6,7 @@
 //! form.
 
 mod atlas;
+pub mod bridge;
 mod chord;
 mod comprehend;
 pub use comprehend::{take_cells, take_progress, take_spend, take_viscosity};
@@ -20,6 +21,7 @@ pub mod derivation;
 pub mod extract;
 mod fiber;
 pub mod fibres;
+pub mod hyperfluid;
 pub mod incidence;
 pub mod finish;
 pub mod confluence;

@@ -21554,6 +21554,158 @@ among axes in a fixed order. It is deterministic and keyed, but it has the
 shape of a decision tree. Whether it stands under "no search trees" or is the
 atlas's compaction is the operator's to rule before it is built.
 
+### 78.83 Time's own congruence: HR5 (2026-10-03, the operator's word: "time needs its own congruence for hyperfluidity: because its axes act one at a time")
+
+**The reading** (`family::hyperfluid`). HR3 froze time: two transports
+closed a loop only where they were equal. A pair is a sample of a flow
+(78.75), and time is distance along it (78.43), so a site's transport is
+read as flows:
+- the hue fibre's move is the gauge, which carries no time;
+- each ray of light it emits is a point on the NULL FLOW of its plane
+  `d ∧ e∞`, `FlowPoint::at(d ∧ e∞, L)`, its length its time. A ray ends
+  OBSTRUCTED (edge or body: its time is the scene's free reach) or FREE (in
+  open space: its time is its own);
+- a void site the light reaches moves nothing of its own: its colour is the
+  arrival of a flow emitted elsewhere.
+
+Two transports are CONGRUENT IN TIME where their gauges agree and their rays
+pair off on one plane (`against`), one hue, one kind of end, whatever their
+parameters. A loop open in time is read by where it lifts: the GAUGE (the
+colour differs, on a void or a painted site) or the LIGHT (a generator
+differs). Reconstruction reads each ray's time off the scene, or, free, off
+the one time every observation agreed on; otherwise the time is unread and
+the pair is refused by name.
+
+The tests prove it: a ray of two and one of three from the same source are
+congruent in time and not equal, and a family of free rays of length two at
+different places, which frozen time cannot carry, is rebuilt pair by pair.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| reconstructed whole in time | 1 (as frozen) | 0 |
+| pairs reproduced left out | 5 of 139 | 0 of 105 |
+| loops closed only in time, per axis | 8–66 | 1–24 |
+| loops open on the gauge, hue axis (before / after the arrival fix) | 5 265 / 3 432 (void 1 549) | 7 224 / 6 521 (void 187) |
+| loops open on the light, hue axis | 1 111 | 816 |
+
+**What it says.**
+1. *Time was not what held the loops open.* Obstructed rays were already
+   time-free in HR2 (a ray filling its reach carried no length), and free
+   rays are rare. Time congruence closes a handful of loops.
+2. *The open loops are the gauge.* On evaluation, 6 334 of 6 521 gauge lifts
+   are recolours of PAINTED sites, the site-selective recolour of 78.80. On
+   training, 1 549 are void creations no straight ray from a body carries
+   (fills and enclosures: the cavity axis, owed).
+3. *Owed:* the cavity axis (W4); a free time equal to the reach reads as
+   obstructed (the fixture had to move a dot one site in). Both are kept in
+   HR's row.
+
+### 78.84 The bridge: the corpus's motions through the law register (2026-10-03, the operator's word: "take the bridge measurement last")
+
+**The reading** (`family::bridge`; `physics::tensegrity::body_of_shape` is
+now the one producer of A.13's body, perception's gate reading through it).
+Every input body is read against every output body on its chart; the
+perception's own CARRIAGE (versor and hue map) relates them. Carriages that
+are one canonical ray are ONE TRANSITION holding all their bodies. Each body
+is its nucleus and its A.13 body; the hue relation is the carriages' function
+lifted unitarily (78.58: empty where no hue moves). Each transition goes
+through `physics::laws::verify`.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| input bodies | 988 | 522 |
+| **no transition to ask the laws of** (no output body on the chart carried) | **504 (51%)** | **342 (66%)** |
+| transitions (several bodies) | 1 659 (284) | 874 (350) |
+| **admitted** | **1 305 (79%)** | **854 (98%)** |
+| conformal / rigidity / time breaches | 0 / 0 / 0 | 0 / 0 / 0 |
+| momentum refused | 298, every one a single-body DILATION whose mass (sites) changed | 13, the same |
+| reservoir refused (not unitary) | 56 | 7 |
+
+The construction was first wrong and is recorded: passing each carriage's
+raw hue map (its still rows `1 → 1` included) made the reservoir refuse 1 026
+and 472 transitions that recolour nothing. The register's contract says an
+empty relation where nothing moves, and the lift is that.
+
+**What it says.**
+1. *Where the world moves conformally, the laws hold.* No conformal,
+   rigidity or time breach on either slice. Every multi-body transition
+   keeps every pair's product.
+2. *The momentum law refuses every lattice dilation, and that is the law's
+   reading, not the world.* The verifier compares `Π_after` with
+   `g Π_before g̃`, and a dilator leaves directions unchanged, so the carried
+   momentum does not scale while a dilated body's sites and second moments
+   do. Rigidity already reads a step's dilation as one ratio, the expansion
+   lane, never a breach. Momentum has no such reading. **Ruling asked (L0,
+   law version 2):** read the momentum a similarity carries at its ratio, so
+   a dilation conserves momentum up to the expansion lane, as rigidity does.
+   This is the operator's: an amendment to the register, not a code change.
+   **The evidence, measured:** of the momentum refusals, every body's
+   momentum after is a RATIONAL MULTIPLE of the momentum the motion carried
+   (`projective_ratio`, the comparison `verify` makes, read as a ray) on 296
+   of 298 (training) and 13 of 13 (evaluation), and the bodies share one
+   ratio on every one of them. Read projectively, with the ratio docketed as
+   the expansion lane, the law would admit them; the two left are refusals
+   on any reading.
+3. *The reservoir refuses where one motion recolours its bodies two ways*
+   (56 / 7): carriages on one ray whose hue maps send one hue two ways. That
+   is the relational recolour of 78.80, now seen by the law: one motion, a
+   colour decided per body.
+4. *Half the world's change asks the laws nothing* (51% / 66% of input
+   bodies). Growth, carving, site-selective recolour and creation are no
+   conformal motion. The register, as written, judges motion and colour
+   flow; it has no law of accretion or extinction. Whether L0 needs one (the
+   white hole's and the black hole's channels of 78.75–78.79), or whether
+   these are a world's own mathematics (78.59 Ruling 4, an ideal of
+   Cl(4,1)), is the next question for the operator.
+
+### 78.85 The register on the wire: the contract's first slice (2026-10-03, the trajectory's steps 2 and 3, ruled in 78.62)
+
+**Built.**
+- **The register's objects in exact bytes** (`physics::laws::codec`). A law
+  is read back from its coordinate (`law_at`: `TAG_LAW ‖ index ‖ version`, at
+  this register's version). Transitions, A.13 bodies and verdicts (every
+  breach kind, each with its law) round-trip exactly:
+  - every rational goes through `put_q`, every multivector through
+    `Mv::to_bytes`, every count through `put_key_count`;
+  - a truncated or over-long payload decodes to nothing, never to a
+    default.
+- **The act `ACT_LAWS` (0x3A)**, served by the court (`judge::laws`):
+  - `[ACT_LAWS][0]` answers the register: its version, then every law by
+    coordinate and statement;
+  - `[ACT_LAWS][1][transition]` answers `physics::laws::verify`'s verdict.
+
+  The court replays and admits nothing: no receipt, no book moved. The
+  verdict is a reading the kernel acts on, read under a stroke of its own,
+  as the observer's census is.
+- **The kernel's side** (`client::sdk::laws`): `Session::laws()` and
+  `Session::verify(&transition)`, through the raw act door with the same
+  codec, so the bytes a kernel sends are the objects the court verifies.
+
+**Proved** by the algebra, in `physics/laws/tests.rs`:
+- every law reads back from its address;
+- a transition and a verdict carrying every breach kind decode to
+  themselves with no byte left over;
+- a truncated verdict and a verify request with a trailing byte are
+  refused;
+- the register reply carries the five laws in order, each with its
+  statement.
+
+**Not yet.**
+- The act has not run against a live court. The wire's live test is the
+  recut, the operator's (live-wire ruling, 2026-09-29), so the act reaches
+  the fleet with the next recut.
+- The contract is not yet its own crate (78.64 H4's extraction). The codec
+  is laid so the extraction moves it whole.
+- The genesis act (a kernel's universe under a stated law version) needs
+  the operator's design: what a universe's origin is on the ledger, beside
+  the hyphae's own genesis (`mycelium-server/genesis.rs`).
+- Making `verify` the court's ADMISSION check (the trajectory's step 1)
+  waits on BR1's two rulings (78.84).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

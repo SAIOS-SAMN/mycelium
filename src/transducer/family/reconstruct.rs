@@ -52,7 +52,7 @@ pub struct Site {
     pub ring: [u8; 8],
 }
 
-fn at(g: &Grid, r: i64, c: i64) -> Option<u8> {
+pub(crate) fn at(g: &Grid, r: i64, c: i64) -> Option<u8> {
     let (ur, uc) = (usize::try_from(r).ok()?, usize::try_from(c).ok()?);
     g.get(ur)?.get(uc).copied()
 }

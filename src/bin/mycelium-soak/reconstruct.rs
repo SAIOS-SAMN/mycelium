@@ -7,6 +7,7 @@
 // regime. Data; nothing is decided.
 
 use mycelium::client::sdk::Epigenome;
+use mycelium::transducer::family::hyperfluid::reconstruct_in_time;
 use mycelium::transducer::family::incongruence::single_changes;
 use mycelium::transducer::family::reconstruct::{body_regimes, reconstruct, AXES};
 use mycelium::transducer::family::{extract_rule_with, form_deflation};
@@ -21,6 +22,11 @@ pub(crate) fn report(dir: &str, names: &[String]) {
     let (mut by_axis, mut closing) = ([0u64; 9], [0u64; 9]);
     let mut regimes = [0u64; 5];
     let (mut loops, mut closed, mut unclosed, mut unseen) = ([0u64; 9], [0u64; 9], 0u64, 0u64);
+    // 78.83 — the same families in time (HR5).
+    let (mut t_whole, mut t_unspoken, mut t_reproduced, mut t_unclosed, mut t_unseen, mut t_unread) = (0u64, 0u64, 0u64, 0u64, 0u64, 0u64);
+    let mut t_by_axis = [0u64; 9];
+    let mut t_closing = [0u64; 9];
+    let mut t_loops = [[0u64; 6]; 9];
     for name in names {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
@@ -47,6 +53,24 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         }
         unclosed += rec.unclosed;
         unseen += rec.unseen;
+        let it = reconstruct_in_time(&task.train);
+        t_whole += u64::from(it.whole);
+        t_unspoken += u64::from(it.whole && !whole_spoken);
+        t_reproduced += it.reproduced;
+        t_unclosed += it.unclosed;
+        t_unseen += it.unseen;
+        t_unread += it.time_unread;
+        t_by_axis.iter_mut().zip(it.by_axis).for_each(|(a, b)| *a += b);
+        for (a, h) in it.holonomy.iter().enumerate() {
+            t_closing[a] += u64::from(h.closes());
+            for (slot, v) in t_loops[a].iter_mut().zip([h.loops, h.equal, h.in_time, h.gauge, h.gauge_void, h.light]) {
+                *slot += v;
+            }
+        }
+        println!(
+            "  in time {name}: pairs {} framed {} reproduced {} whole {} | unclosed {} unseen {} time unread {}",
+            it.pairs, it.framed, it.reproduced, it.whole, it.unclosed, it.unseen, it.time_unread
+        );
         rebuilt += u64::from(rec.whole);
         rebuilt_unspoken += u64::from(rec.whole && !whole_spoken);
         both += u64::from(rec.whole && whole_spoken);
@@ -74,4 +98,16 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "reconstruct body axis, single changes by their fascicle's regime: finite turn {} rosette {} kiss (light) {} apart (dilation) {} null {}",
         regimes[0], regimes[1], regimes[2], regimes[3], regimes[4]
     );
+    println!(
+        "in time (HR5): reconstructed whole {t_whole} (not spoken whole {t_unspoken}) | pairs reproduced (left out) {t_reproduced} of {framed} framed | left-out pairs unclosed {t_unclosed} unseen {t_unseen} time unread {t_unread}"
+    );
+    let per: Vec<String> = AXES
+        .iter()
+        .enumerate()
+        .map(|(a, name)| {
+            let [l, e, t, g, gv, li] = t_loops[a];
+            format!("{name}: loops {l} equal {e} in time {t} lift gauge {g} (void {gv}) lift light {li} | closes {} carried {}", t_closing[a], t_by_axis[a])
+        })
+        .collect();
+    println!("in time by axis — {}", per.join(" || "));
 }

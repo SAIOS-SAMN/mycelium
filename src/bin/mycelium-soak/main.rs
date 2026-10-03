@@ -14,6 +14,7 @@
 #[global_allocator]
 static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 
+mod bridge;
 mod calibrate;
 mod census;
 mod cover;
@@ -98,6 +99,26 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.84 — `--bridge DIR LIMIT`: the corpus's motions through the law
+    // register.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--bridge") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  bridge refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => bridge::report(dir, &names),
+            Err(e) => {
+                eprintln!("  bridge refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.82 — `--reconstruct DIR LIMIT`: HR1–HR4, reconstruction by holonomy.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--reconstruct") {
         let Some(dir) = argv.get(1) else {

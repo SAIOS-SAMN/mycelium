@@ -331,6 +331,20 @@ pub struct Body {
     pub moments: Vec<Vec<Q>>,
 }
 
+/// A BODY AS A.13 READS IT, FROM ITS SHAPE: its centroid in the vertex
+/// coordinates the transitions act in, its sites as its mass, and its second
+/// moments about the centroid on each pair of its base's axes
+/// (`Blade::moment2`). The one producer: perception's gate and the law
+/// register's bridge both read a body through it (law 12).
+pub fn body_of_shape(s: &crate::transducer::blade::Shape) -> Option<Body> {
+    let b = &s.blade;
+    let nucleus = b.vertex_nucleus()?;
+    let n = b.n();
+    let centre = cga::base_at(&nucleus, n)?;
+    let moments = (0..n).map(|i| (0..n).map(|j| b.moment2(i, j).cloned()).collect::<Option<Vec<_>>>()).collect::<Option<Vec<_>>>()?;
+    Some(Body { centre, mass: Q::from_integer((b.support.len() as u64).into()), moments })
+}
+
 /// `e_a ∧ e_b` for base axes `a`, `b` counted from 0.
 fn plane(a: usize, b: usize) -> Mv {
     let e = |i: usize| Mv::blade(cga::base_axis(i + 1), num_traits::One::one());

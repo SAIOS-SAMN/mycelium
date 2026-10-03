@@ -117,3 +117,64 @@ fn points_are_read_at_unit_weight_and_a_dilation_is_a_similarity() {
     assert_eq!(metric_defect(&pairs).len(), 2, "a drift moves the two pairs it touches, each named");
     assert_eq!(similarity(&pairs), None, "and no one ratio");
 }
+
+/// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
+/// its coordinate; a transition the kernel sends and the verdict the court
+/// answers decode to themselves exactly, so the court verifies what was sent
+/// and the kernel reads what was ruled; and a verdict carrying every kind of
+/// breach, each law beside it, survives its bytes whole. A truncated payload
+/// decodes to nothing, never to a default.
+#[test]
+fn the_contracts_bytes_decode_to_the_objects_they_carry() {
+    use super::codec::{law_at, put_transition, put_verdict, take_transition, take_verdict};
+    for law in LAWS {
+        assert_eq!(law_at(&law.address()), Some(law));
+    }
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: vec![(1, 2), (2, 3)] };
+    let mut bytes = Vec::new();
+    put_transition(&mut bytes, &t);
+    let mut p = 0;
+    assert_eq!(take_transition(&bytes, &mut p), Some(t.clone()));
+    assert_eq!(p, bytes.len(), "every byte read, none left over");
+    let v = verify(&t, &mut budget());
+    let ruled = Verdict {
+        breaches: vec![
+            (Law::Conformal, Breach::NotAVersor),
+            (Law::Conformal, Breach::Undecomposed(crate::transducer::cga::Undecomposed::Irrational(3))),
+            (Law::Conformal, Breach::NotCarried { body: 1 }),
+            (Law::Momentum, Breach::MomentumUnread { body: 0 }),
+            (Law::Momentum, Breach::MomentumNotConserved { net: turn() }),
+            (Law::Rigidity, Breach::NonRigid { i: 0, j: 1, delta: Q::new(5.into(), 4.into()) }),
+            (Law::Rigidity, Breach::RigidityUnmeasured { i: 0, j: 2 }),
+            (Law::Time, Breach::HeightNotAdvanced { before: 9, after: 9 }),
+            (Law::Reservoir, Breach::NotUnitary),
+        ],
+        ..v
+    };
+    let mut bytes = Vec::new();
+    put_verdict(&mut bytes, &ruled);
+    let mut p = 0;
+    assert_eq!(take_verdict(&bytes, &mut p), Some(ruled));
+    assert_eq!(p, bytes.len());
+    let mut p = 0;
+    assert_eq!(take_verdict(&bytes[..bytes.len() - 1], &mut p), None, "a truncated verdict is no verdict");
+}
+
+/// 78.62 steps 2 and 3 — THE ACT A KERNEL SPEAKS. The register request and
+/// the verify request read back as what they ask; a verify request with a
+/// byte left over is no request. The register's reply carries every law at
+/// its coordinate with its statement, in the register's order, at the
+/// register's version.
+#[test]
+fn a_kernel_asks_the_register_and_puts_a_transition_to_it() {
+    use super::codec::{decode_laws_request, decode_register_reply, encode_register_reply, encode_register_request, encode_verify_request, LawsRequest};
+    assert_eq!(decode_laws_request(&encode_register_request()), Some(LawsRequest::Register));
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new() };
+    let mut asked = encode_verify_request(&t);
+    assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Verify(t)));
+    asked.push(0);
+    assert_eq!(decode_laws_request(&asked), None, "a byte left over is no request");
+    let served = decode_register_reply(&encode_register_reply()).expect("the register reads back");
+    assert_eq!(served.iter().map(|s| s.law).collect::<Vec<_>>(), LAWS.to_vec());
+    assert!(served.iter().all(|s| s.statement == s.law.statement()));
+}

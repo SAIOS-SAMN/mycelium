@@ -397,22 +397,6 @@ struct Row {
     their_bodies: Vec<Option<crate::physics::tensegrity::Body>>,
 }
 
-/// A BODY AS A.13 READS IT: its centroid in the vertex coordinates the
-/// transitions act in, its sites as its mass, and its second moments about
-/// the centroid on each pair of its base's axes (`Blade::moment2`).
-fn momentum_body(s: &Shape) -> Option<crate::physics::tensegrity::Body> {
-    let b = &s.blade;
-    let nucleus = b.vertex_nucleus()?;
-    let n = b.n();
-    let centre = crate::transducer::cga::base_at(&nucleus, n)?;
-    let moments = (0..n).map(|i| (0..n).map(|j| b.moment2(i, j).cloned()).collect::<Option<Vec<_>>>()).collect::<Option<Vec<_>>>()?;
-    Some(crate::physics::tensegrity::Body {
-        centre,
-        mass: num_rational::BigRational::from_integer((b.support.len() as u64).into()),
-        moments,
-    })
-}
-
 /// ONE LINE OF A PAIR'S SPECTRUM (78.50): a ray, the bodies of this
 /// perception it carries (by row), the bodies of the other it lands on (by
 /// chart and place), and what it carries, per lane.
@@ -725,8 +709,8 @@ impl Contemplation {
                         nucleus: x.blade.vertex_nucleus(),
                         theirs: theirs.iter().map(|y| y.blade.vertex_nucleus()).collect(),
                         their_mass: theirs.iter().map(|y| y.blade.support.len() as u64).collect(),
-                        body: momentum_body(x),
-                        their_bodies: theirs.iter().map(momentum_body).collect(),
+                        body: crate::physics::tensegrity::body_of_shape(x),
+                        their_bodies: theirs.iter().map(crate::physics::tensegrity::body_of_shape).collect(),
                     };
                     for y in &theirs {
                         match transition(x, y, budget) {
