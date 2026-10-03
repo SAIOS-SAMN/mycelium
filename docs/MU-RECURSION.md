@@ -21766,6 +21766,22 @@ invents:
    fibre's states, a mode's discrete spectrum, or another), named before
    it is tracked.
 
+**Ruled further (the operator, 2026-10-03):**
+- *The rules are the server's.* Mycelium, as the server, sets the rules a
+  world runs by and hands them to it; a client chooses which L0-based rule
+  set it joins. Worlds sharing one universe must not meet incompatible
+  physics at their boundaries ("a part of the universe acting like the
+  three-body problem" inside a game). Not yet in the tree: no world charter
+  and no boundary rule exist in code (`I_local` is in this document only;
+  the court's "delegation closure" is the witness bond's, 47.3, not a
+  world's).
+- *Quantum states differ between universes,* and maintaining each
+  universe's — as it is constructed — is the mycelium servers' job. So a
+  universe's state space is part of its genesis record, and a hypha must
+  hold more than one universe; today a hypha adopts ONE origin and refuses
+  every other (`REFUSE_ORIGIN`). Hosting several is an architectural
+  question owed with UG1.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
