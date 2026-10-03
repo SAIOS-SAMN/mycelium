@@ -21246,6 +21246,65 @@ missing physics, a minority of it. The largest remainder class (source:
 4 142 / 14 070 unsaid) needs composition of several inputs into one output,
 which no flow out of one body carries.
 
+### 78.78 Confluence, read: P1 (2026-10-03, the operator's word: "build it")
+
+**The reading.** The black hole's polarity, on each unsaid output body:
+- **Its inputs:** the input bodies standing on its sites. None is a
+  creation, one a single carriage, several a confluence.
+- **For a confluence:**
+  - *mass:* compartments in against out;
+  - *centre:* the barycentre, exact over ℚ;
+  - *the confluence spheres:* `C = Σ Pₛ`, imaginary, `C² = −Σ d²`, the
+    inertia, never rooted;
+  - *the inverse generator:* the fascicle `C_B · C_in`, its regime read by
+    `pair_regime`, and a dilation's exact ratio where the centres agree;
+  - *reproduction:* does that generator carry the inputs onto the output,
+    point for point?
+  - *containment:* do the inputs stand inside the output?
+  - *closure:* the inputs' and output's nuclei read as a reflection group
+    (GR2): finite, affine (crystal) or fluid.
+
+Instrument: `family::confluence`, run by `mycelium-soak --confluence DIR N`.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| unsaid sites on creations | 354 (97 bodies) | 178 (147) |
+| unsaid sites on single carriages | **6 504 (135)** | **22 037 (133)** |
+| unsaid sites on confluences | 3 034 (46) | 1 892 (16) |
+| confluences with 2 / 3 / 4–8 / more inputs | 9 / 16 / 19 / 2 | 8 / 2 / 5 / 1 |
+| mass kept | 1 | 0 |
+| centre kept | 9 | 1 |
+| inputs contained in the output | 42 of 46 | 9 of 16 |
+| the confluence generator's regime | apart (dilation), every one | the same |
+| generator reproduces the output | **0** | **0** |
+| closure | fluid, all 46 | fluid, all 16 |
+
+**What it says.**
+1. *The perception's `Source` demand is not geometric confluence.* The
+   largest share of what is left unsaid stands on ONE input body: 62% of
+   training sites and 91% of evaluation sites. Several inputs gathered into
+   one output is 29% and 8%. The many-to-one reading of `Source` (78.76,
+   78.77) over-read it.
+2. *Confluences are growth, not gathering.* The inputs nearly always stand
+   inside the output, which holds more mass than they do. The output is the
+   inputs plus new sites between or around them. The confluence sphere's
+   dilation never reproduces it: a dilation carries `k` cells onto `k`,
+   never onto more. The black hole as a generator of motion is not this
+   physics. What is is the bridge: new mass laid down between gathered
+   bodies.
+3. *No crystal here.* Every confluence's constructors close fluid, never
+   finite or affine.
+
+**Where that points.**
+- The dominant remainder is one body's own change: growth, recolour or
+  reshaping of a body the form already carries.
+- The confluence remainder is the sites added between bodies. A candidate
+  reading joins this to 78.77: the added sites lie on rays from one input to
+  another, light absorbed at the next body. That is measured next, not
+  claimed here.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

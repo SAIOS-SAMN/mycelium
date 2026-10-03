@@ -6,6 +6,7 @@ pub mod common;
 mod address_set;
 mod budget;
 mod canonical;
+mod confluence;
 mod cells;
 mod census;
 mod cover;

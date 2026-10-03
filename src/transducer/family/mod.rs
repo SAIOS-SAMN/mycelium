@@ -22,6 +22,7 @@ mod fiber;
 pub mod fibres;
 pub mod incidence;
 pub mod finish;
+pub mod confluence;
 pub mod invert;
 pub mod luminal;
 pub mod memo;

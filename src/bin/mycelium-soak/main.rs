@@ -17,6 +17,7 @@ static ALLOC: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
 mod calibrate;
 mod census;
 mod cover;
+mod confluence;
 mod delta;
 mod invert;
 mod luminal;
@@ -94,6 +95,26 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.78 — `--confluence DIR LIMIT`: P1, the remainder's bodies read as
+    // creations, single carriages and confluences.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--confluence") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  confluence refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => confluence::report(dir, &names),
+            Err(e) => {
+                eprintln!("  confluence refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.77 — `--light DIR LIMIT`: L1–L6, what the remainder reads as light.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--light") {
         let Some(dir) = argv.get(1) else {
