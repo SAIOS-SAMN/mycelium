@@ -32,7 +32,7 @@ fn one() -> Mv {
 }
 
 fn piece(frame: u64, class: &[u8], point: Mv, carriage: Mv) -> Piece {
-    Piece { frame, class: class.to_vec(), point, out: None, mass: 2, carriage, n: 2 }
+    Piece { frame, class: class.to_vec(), point, out: None, mass: 2, out_mass: 2, carriage, n: 2 }
 }
 
 fn wide() -> crate::physics::Budget {
@@ -175,6 +175,78 @@ fn on_a_real_percept_every_pieces_versor_carries_its_pivot() {
                 assert!(q.free.is_empty() && q.groups.len() >= 2, "turns: nothing eliminated: {:?}", q.groups);
             }
             _ => {}
+        }
+    }
+}
+
+/// A section from `from` to `to` carried by `carriage`, two compartments
+/// each end.
+fn section(from: Mv, to: Mv, carriage: Mv) -> Piece {
+    Piece { frame: 1, class: b"k".to_vec(), point: from, out: Some(to), mass: 2, out_mass: 2, carriage, n: 2 }
+}
+
+/// THE TWO SECTIONS OF A MULTIPLICITY, RELATED:
+/// - congruent — two sections carried the same weighed length with the same
+///   masses overlay (a copy), whichever way they point;
+/// - coherent — a body standing and one flipped across the line joining
+///   them are one motion up to torsion;
+/// - standing — sections of different lengths whose relative motion lifts a
+///   source; and a pair on one source reads no fibre, so it stands.
+#[test]
+fn two_sections_are_a_copy_one_motion_or_a_second_algorithm() {
+    use crate::transducer::family::fibres::{relate_sections, Sections};
+    let t = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1)]);
+    let first = section(at(0, 0), at(3, 4), t(3, 4));
+    assert_eq!(relate_sections(&first, &section(at(10, 1), at(14, 4), t(4, 3))), Sections::Congruent, "a copy, pointing elsewhere");
+    let standing = section(at(0, 0), at(0, 0), one());
+    let flipped = section(at(3, 4), at(3, 4), mirror());
+    assert_eq!(relate_sections(&standing, &flipped), Sections::Coherent, "the flip across their line");
+    assert_eq!(relate_sections(&first, &section(at(0, 5), at(0, 7), t(0, 2))), Sections::Standing, "a second algorithm");
+    assert_eq!(relate_sections(&standing, &section(at(0, 0), at(0, 0), slide())), Sections::Standing, "one source: no fibre to read");
+}
+
+/// COHESION, THE GAUGE: chained steps whose motor does not change are smooth;
+/// a change that is a flip across the step's own line is smooth (torsion);
+/// a change that slides is a bend; a gap between steps is no change; a
+/// change with no pivots to read it on is unread.
+#[test]
+fn cohesion_counts_smooth_changes_over_changes() {
+    use crate::transducer::family::fibres::{cohesion, Step};
+    let st = |from: u64, to: u64, motor: Mv, a: Option<Mv>, b: Option<Mv>| Step { from, to, motor, at_from: a, at_to: b };
+    let uniform = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(1, 2, slide(), Some(at(1, 0)), Some(at(2, 0)))];
+    assert_eq!(cohesion(b"u", &uniform), (1, 1, 0), "the same step twice: smooth");
+    let twisted = [st(0, 1, one(), Some(at(0, 0)), Some(at(0, 0))), st(1, 2, mirror(), Some(at(0, 0)), Some(at(3, 4)))];
+    assert_eq!(cohesion(b"t", &twisted), (1, 1, 0), "a flip across the step's line: smooth");
+    let bent = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(1, 2, cga::translator_at(&[q(0, 1), q(2, 1)]), Some(at(1, 0)), Some(at(1, 2)))];
+    assert_eq!(cohesion(b"b", &bent), (0, 1, 0), "a different slide: a bend");
+    let gapped = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(2, 3, mirror(), Some(at(0, 0)), Some(at(3, 4)))];
+    assert_eq!(cohesion(b"g", &gapped), (0, 0, 0), "no neighbour across a gap");
+    let blind = [st(0, 1, slide(), None, None), st(1, 2, mirror(), None, None)];
+    assert_eq!(cohesion(b"n", &blind), (0, 0, 1), "no pivots: unread, never guessed");
+}
+
+/// ON A REAL PERCEPT, COHESION READS THE FRAME AXIS: a bar the rule moves
+/// down, standing one column further right in each successive pair, steps
+/// along the frame axis by one motor each time — smooth; standing at columns
+/// 0, 1 and 3, its second step differs — a bend.
+#[test]
+fn on_a_real_percept_cohesion_reads_the_frame_axis() {
+    use super::common::grid;
+    let at_col = |c: usize| {
+        let row = |hue: char| -> String { (0..6).map(|i| if i == c || i == c + 1 { hue } else { '0' }).collect() };
+        let blank = "000000".to_string();
+        (grid(&[&row('1'), &blank, &blank]), grid(&[&blank, &row('1'), &blank]))
+    };
+    for (name, cols, smooth) in [("uniform", [0, 1, 2], true), ("bent", [0, 1, 3], false)] {
+        let family: Vec<_> = cols.iter().map(|&c| at_col(c)).collect();
+        let _ = take_last();
+        let _ = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20));
+        let Some(q) = take_last() else { panic!("{name}: the percept read its fibres") };
+        let (s, n): (u64, u64) = q.cohesion.iter().fold((0, 0), |(s, n), (_, a, b)| (s + a, n + b));
+        assert!(n > 0, "{name}: the frame axis gave changes: {:?}", q.cohesion);
+        match smooth {
+            true => assert_eq!(s, n, "{name}: every change smooth: {:?}", q.cohesion),
+            false => assert!(s < n, "{name}: a bend read: {:?}", q.cohesion),
         }
     }
 }

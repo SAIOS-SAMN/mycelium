@@ -40,6 +40,7 @@ use num_rational::BigRational;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
 /// One piece a frame carries.
+#[derive(Clone, Debug)]
 pub(crate) struct Piece {
     pub frame: u64,
     /// The transport class it belongs to, by its encoded coordinate.
@@ -48,8 +49,140 @@ pub(crate) struct Piece {
     /// Where it landed: the centroid of the sites it was carried TO.
     pub out: Option<Mv>,
     pub mass: u64,
+    /// The compartments it landed as.
+    pub out_mass: u64,
     pub carriage: Versor,
     pub n: usize,
+}
+
+/// 78.74 — HOW TWO SECTIONS OF ONE CLASS RELATE, where a class carries a
+/// second piece on one chart by a second carriage (the multiplicity).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Sections {
+    /// Their geoids overlay — equal weighed length and masses: a copy.
+    Congruent,
+    /// Their carriages are one motion up to torsion about the fibre joining
+    /// their sources.
+    Coherent,
+    /// Neither: a genuine second algorithm; its demand stands.
+    Standing,
+}
+
+/// A section's geoid: the switch of the fibre from where it was to where it
+/// landed, weighed by its compartments at each end. `None` for a section
+/// carried in place (one pivot, no fibre) or landing nowhere readable.
+fn geoid(p: &Piece) -> Option<Mv> {
+    let fibre = Fibre::new(
+        p.point.clone(),
+        p.out.clone()?,
+        BigRational::from_integer(p.mass.into()),
+        BigRational::from_integer(p.out_mass.into()),
+    )?;
+    Some(fibre.switch())
+}
+
+/// HOW TWO SECTIONS RELATE: congruent where their geoids overlay
+/// (`S₁² = S₂²`, `S² = m_P m_Q d²`, with equal masses); else coherent where
+/// the relative motion `ṽ₁ v₂` keeps both sources and every level of the
+/// fibre joining them; else standing. Exact.
+pub(crate) fn relate_sections(first: &Piece, second: &Piece) -> Sections {
+    if let (Some(g1), Some(g2)) = (geoid(first), geoid(second)) {
+        let same_masses = first.mass == second.mass && first.out_mass == second.out_mass;
+        if same_masses && g1.geo(&g1).scalar_part() == g2.geo(&g2).scalar_part() {
+            return Sections::Congruent;
+        }
+    }
+    let joining = Fibre::new(
+        first.point.clone(),
+        second.point.clone(),
+        BigRational::from_integer(first.mass.into()),
+        BigRational::from_integer(second.mass.into()),
+    );
+    match joining.map(|f| f.carried_by(&first.carriage.reverse().geo(&second.carriage))) {
+        Some(Carried::Rigid | Carried::Torsion) => Sections::Coherent,
+        _ => Sections::Standing,
+    }
+}
+
+/// One frame-axis step of a class: the frames, the motor its input body
+/// took, and that body's pivot at each end.
+pub(crate) struct Step {
+    pub from: u64,
+    pub to: u64,
+    pub motor: Versor,
+    pub at_from: Option<Mv>,
+    pub at_to: Option<Mv>,
+}
+
+/// 78.74 — COHESION, THE GAUGE OF A CLASS'S COHERENCE STRUCTURE: along its
+/// frame axis, each step's motor is a coherence vector, and the change
+/// between two chained steps, `D = s̃ t`, is smooth where it is rigid or
+/// torsion about the fibre the second step spans — the class relates its
+/// frames the same way there — and a bend where it is field or lift. The
+/// gauge is smooth changes over changes, exact (counted, never a norm).
+/// Returns (smooth, changes, unread).
+pub(crate) fn cohesion(class: &[u8], steps: &[Step]) -> (u64, u64, u64) {
+    let (mut smooth, mut changes, mut unread) = (0u64, 0u64, 0u64);
+    for pair in steps.windows(2) {
+        let [s, t] = pair else { continue };
+        // Only chained steps make a change: a gap is no neighbour.
+        if s.to != t.from {
+            continue;
+        }
+        let d = s.motor.reverse().geo(&t.motor);
+        let one = BigRational::from_integer(1.into());
+        let carried = match (&t.at_from, &t.at_to) {
+            _ if d.projective_eq(&Mv::scalar(one.clone())) => Some(Carried::Rigid),
+            (Some(p), Some(q)) => Fibre::new(p.clone(), q.clone(), one.clone(), one.clone()).map(|f| f.carried_by(&d)),
+            _ => None,
+        };
+        match carried {
+            Some(Carried::Rigid | Carried::Torsion) => {
+                step(&mut smooth, 1);
+                step(&mut changes, 1);
+            }
+            Some(Carried::Field | Carried::Lift) => step(&mut changes, 1),
+            None => step(&mut unread, 1),
+        }
+    }
+    note(COH_SMOOTH, smooth);
+    note(COH_CHANGES, changes);
+    note(COH_UNREAD, unread);
+    if changes > 0 || unread > 0 {
+        PERCEPT.with(|p| p.borrow_mut().cohesion.push((class.to_vec(), smooth, changes)));
+    }
+    (smooth, changes, unread)
+}
+
+/// 78.74 — a multiplicity's two sections, related and counted; the demand
+/// stands only where they are `Standing`.
+pub(crate) fn note_section(relation: Sections) {
+    note(
+        match relation {
+            Sections::Congruent => SEC_CONGRUENT,
+            Sections::Coherent => SEC_COHERENT,
+            Sections::Standing => SEC_STANDING,
+        },
+        1,
+    );
+    PERCEPT.with(|p| p.borrow_mut().sections.push(relation));
+}
+
+/// What one percept's sections and cohesion read, gathered on its thread
+/// until its fibres are read (`read_pieces`), then handed to its quotient.
+#[derive(Default)]
+struct PerceptReading {
+    sections: Vec<Sections>,
+    cohesion: Vec<(Vec<u8>, u64, u64)>,
+}
+
+thread_local! {
+    static PERCEPT: std::cell::RefCell<PerceptReading> = std::cell::RefCell::new(PerceptReading::default());
+}
+
+/// A percept begins: what an earlier one left unread is let go.
+pub(crate) fn begin() {
+    PERCEPT.with(|p| *p.borrow_mut() = PerceptReading::default());
 }
 
 /// THE CENTROID OF SITES IN VERTEX COORDINATES, as a conformal point: each
@@ -84,7 +217,8 @@ pub(crate) fn piece_of(frame: u64, class: Vec<u8>, carriage: &Versor, domain: &[
     let (point, n) = vertex_point(domain)?;
     let out = vertex_point(codomain).map(|(p, _)| p);
     let mass = u64::try_from(domain.len()).ok()?;
-    Some(Piece { frame, class, point, out, mass, carriage: carriage.clone(), n })
+    let out_mass = u64::try_from(codomain.len()).ok()?;
+    Some(Piece { frame, class, point, out, mass, out_mass, carriage: carriage.clone(), n })
 }
 
 /// 78.74 — WHAT THE FRAMES' FIBRES DID, in this process.
@@ -118,6 +252,24 @@ pub struct FibreTally {
     pub algorithms: u64,
     /// Merges refused because a pair across the two groups disagreed.
     pub conflicted: u64,
+    /// Multiplicities by how their two sections related: eliminated as a
+    /// copy, eliminated as one motion up to torsion, or standing.
+    pub sections_congruent: u64,
+    pub sections_coherent: u64,
+    pub sections_standing: u64,
+    /// Cohesion: smooth changes along classes' frame axes, all changes, and
+    /// changes with no fibre to read them on.
+    pub smooth: u64,
+    pub changes: u64,
+    pub changes_unread: u64,
+}
+
+impl FibreTally {
+    /// THE COHESION GAUGE: smooth changes over changes, exact; `None` before
+    /// any change was read.
+    pub fn cohesion(&self) -> Option<BigRational> {
+        (self.changes > 0).then(|| BigRational::new(self.smooth.into(), self.changes.into()))
+    }
 }
 
 impl FibreTally {
@@ -130,7 +282,7 @@ impl FibreTally {
     }
 }
 
-const SLOTS: usize = 20;
+const SLOTS: usize = 25;
 static FIBRES: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const PAIRS: usize = 0;
 const RIGID: usize = 1;
@@ -151,6 +303,12 @@ const PARTIAL: usize = 15;
 const CLASSES: usize = 16;
 const ALGORITHMS: usize = 17;
 const CONFLICTED: usize = 18;
+const SEC_CONGRUENT: usize = 19;
+const SEC_COHERENT: usize = 20;
+const SEC_STANDING: usize = 21;
+const COH_SMOOTH: usize = 22;
+const COH_CHANGES: usize = 23;
+const COH_UNREAD: usize = 24;
 
 fn note(slot: usize, by: u64) {
     if by > 0 && FIBRES[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
@@ -182,6 +340,12 @@ pub fn fibre_tally() -> FibreTally {
         classes: r(CLASSES),
         algorithms: r(ALGORITHMS),
         conflicted: r(CONFLICTED),
+        sections_congruent: r(SEC_CONGRUENT),
+        sections_coherent: r(SEC_COHERENT),
+        sections_standing: r(SEC_STANDING),
+        smooth: r(COH_SMOOTH),
+        changes: r(COH_CHANGES),
+        changes_unread: r(COH_UNREAD),
     }
 }
 
@@ -290,6 +454,10 @@ pub struct Quotient {
     pub pieces: u64,
     pub aligned: u64,
     pub misaligned: u64,
+    /// This percept's multiplicities by how their sections related.
+    pub sections: Vec<Sections>,
+    /// Per class: smooth changes and changes along its frame axis.
+    pub cohesion: Vec<(Vec<u8>, u64, u64)>,
 }
 
 thread_local! {
@@ -437,6 +605,9 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
     q.pieces = pieces.len() as u64;
     q.aligned = on;
     q.misaligned = off;
+    let gathered = PERCEPT.with(|p| std::mem::take(&mut *p.borrow_mut()));
+    q.sections = gathered.sections;
+    q.cohesion = gathered.cohesion;
     let kept = q.clone();
     LAST.with(|l| *l.borrow_mut() = Some(kept));
     q

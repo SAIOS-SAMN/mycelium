@@ -20776,6 +20776,68 @@ asked and lying on the round.
   stable, a fifth off it emergent. Three on the grid's plane are
   determined, and a repeated pivot is open.
 
+#### 78.74 (amended 2026-10-03, second) — congruence, coherence and cohesion of a class's sections
+
+**The second reading.** On `5c0221f5` there were 831 live pieces, every one
+aligned. But no class pair formed: different classes never shared a frame,
+so nothing was eliminated. The only non-rigid fibres were a class's own
+sections, one class carried by two carriages on one chart. The percept
+files that case as a multiplicity, a standing `Source` demand. That is where
+the variety is, and the operator ruled the three relations that apply
+there.
+
+**Two sections, two geoids.** A section is one carriage. It carries a body
+from its input pivot `P` to its output pivot `Q`, and that fibre's switch
+`S = m_Q P − m_P Q` is the white-hole geoid: source at `P`, sink at `Q`. The
+two sections relate in one of three ways (`relate_sections`):
+- **Congruence: a copy.** The geoids overlay. Then `S₁² = S₂²`, where
+  `S² = m_P m_Q d²` is read as `−2 m_P m_Q P·Q`, never a sum of squares,
+  with the masses equal at each end. The second section is the first,
+  displaced.
+- **Coherence: one motion up to torsion.** The relative motion `ṽ₁ v₂`
+  keeps both sources and every level of the fibre joining them.
+- **Standing.** Neither holds, or no fibre reads (one source): a genuine
+  second algorithm.
+
+**The demand.** Only a standing pair demands a second source. A congruent
+or coherent pair is one algorithm, and its multiplicity is eliminated. Each
+case is counted (`sections congruent / coherent / standing`).
+
+**Cohesion, the gauge** (the operator: "a measure of rigidity towards zero
+of coherence vectors … the more smooth the coherence structure is, the more
+coherent the 'thoughts' will be"). Along a class's frame axis, each step's
+motor (MT1, the motor its input body took between consecutive frames) is a
+coherence vector. The change between two chained steps is `D = s̃ t`:
+- **smooth** where it is rigid, or torsion about the fibre the second step
+  spans — the class relates its frames the same way there;
+- **a bend** where it is field or lift.
+
+The gauge is smooth changes over changes, exact, counted and never a norm.
+It is the flatness of the coherence connection: its curvature going to
+zero. A change with no pivots to read it on is unread, never guessed. A gap
+between steps is no change. The gauge is read per class and reported
+(`cohesion`); it files nothing.
+
+**Tested** (`family/tests/fibres.rs`):
+- **Sections.**
+  - A copy pointing elsewhere is congruent.
+  - A standing body and one flipped across their line are coherent.
+  - A second algorithm stands.
+  - One source reads no fibre and stands.
+- **Cohesion on constructed steps.**
+  - The same step twice is 1/1.
+  - A flip across the step's line is 1/1.
+  - A different slide is 0/1.
+  - A gap counts nothing; no pivots counts as unread.
+- **Cohesion on real percepts.**
+  - A bar the rule moves down, one column further right in each of three
+    pairs, reads every change smooth.
+  - Standing at columns 0, 1 and 3, it reads a bend.
+
+**Not yet tested on a real percept:** a multiplicity eliminated by
+congruence or coherence. It needs a deformation whose cover carries one
+class twice on one chart. The fleet's line counts each case live.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

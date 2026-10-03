@@ -473,8 +473,12 @@ fn main() {
                 }
                 None => "moving unread".to_string(),
             };
+            let cohesion = match f.cohesion() {
+                Some(c) => c.to_string(),
+                None => "unread".to_string(),
+            };
             let fibres = format!(
-                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | torsion turned {:?}",
+                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | sections congruent {} coherent {} standing {} | cohesion {cohesion} ({} of {}, unread {}) | torsion turned {:?}",
                 f.pairs,
                 f.rigid,
                 f.torsion,
@@ -494,6 +498,12 @@ fn main() {
                 f.conflicted,
                 f.classes,
                 f.algorithms,
+                f.sections_congruent,
+                f.sections_coherent,
+                f.sections_standing,
+                f.smooth,
+                f.changes,
+                f.changes_unread,
                 mycelium::transducer::family::pairing::torsion_lanes()
             );
             let field = format!("{field} | {malleable} | {fibres}");

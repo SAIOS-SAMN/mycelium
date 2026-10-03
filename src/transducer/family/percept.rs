@@ -102,6 +102,7 @@ fn read_frame_axis(
     budget: &mut crate::physics::Budget,
 ) -> Vec<(u64, u64, Versor)> {
     let mut out = Vec::new();
+    let mut gauged: Vec<super::fibres::Step> = Vec::new();
     use cga::{note_motor, note_step, note_unread, StepClass, TransitionKind::FrameAxis};
     // Succession along e₃ is the frame coordinate's own order (51.1); the
     // fibre's keys are little-endian and do not carry it.
@@ -152,8 +153,18 @@ fn read_frame_axis(
         note_step(class, &turned);
         if let Some(m) = &input {
             out.push((q.frame, next.frame, m.clone()));
+            gauged.push(super::fibres::Step {
+                from: q.frame,
+                to: next.frame,
+                motor: m.clone(),
+                at_from: q.a_k.shape.blade.vertex_point(),
+                at_to: next.a_k.shape.blade.vertex_point(),
+            });
         }
     }
+    // 78.74 — COHESION: the steps' motors are the class's coherence vectors
+    // along its frame axis; how smoothly they change is its gauge.
+    let _ = super::fibres::cohesion(class, &gauged);
     out
 }
 
@@ -211,6 +222,9 @@ pub(super) fn family_percept(
     // percept that returns before the line leaves the list to the next arm,
     // which replaces it: at most one percept's orbits are ever held.
     crate::transducer::sentence::arm_orbits();
+    // 78.74 — and its sections and cohesion, read on this thread until its
+    // fibres are.
+    super::fibres::begin();
     let n = family.len();
     let mut unreached: Vec<usize> = Vec::new();
     let mut ins: Vec<Body> = Vec::new();
@@ -689,6 +703,8 @@ pub(super) fn family_percept(
     // chart's multiplicity and it leaves as a `Source` on that chart, never
     // as two vertices and never as two members.
     let mut piece_seen: Keyed<Vec<u8>> = Keyed::new();
+    // 78.74 — the first section each class ‖ chart carried, by its member key.
+    let mut first_section: Keyed<super::fibres::Piece> = Keyed::new();
     for c in &covers {
         let Ok(frame) = u64::try_from(c.frame) else { continue };
         for (_, (v, versor, sup)) in c.cover.carried.scoped() {
@@ -696,8 +712,9 @@ pub(super) fn family_percept(
             let (Some(chart), Some(tc)) = (v.face_chart(), transport_class(v)) else { continue };
             // 78.74 — THE PIECE AS A PIVOT of its frame's fibres: carried from
             // its domain by its own versor, in its class.
-            if let Some(piece) = super::fibres::piece_of(frame, tc.key().encode().as_bytes().to_vec(), versor, &sup.domain, &sup.codomain) {
-                pieces.push(piece);
+            let this_piece = super::fibres::piece_of(frame, tc.key().encode().as_bytes().to_vec(), versor, &sup.domain, &sup.codomain);
+            if let Some(piece) = &this_piece {
+                pieces.push(piece.clone());
             }
             let Some(acting) = v.acting_on(&chart) else { continue };
             let Vertex::Word { address, derivation, .. } = v else { continue };
@@ -717,16 +734,31 @@ pub(super) fn family_percept(
             acting.carriage.put_canonical(&mut carriage);
             match piece_seen.get(&mk) {
                 Some(held) if held != &carriage => {
-                    let links: Vec<Link> = support
-                        .iter()
-                        .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
-                        .collect();
-                    demanded.push((Demand::Source { multiplicity: 2 }, chart.clone(), links));
+                    // 78.74 — THE TWO SECTIONS RELATED: a copy (their geoids
+                    // overlay) or one motion up to torsion (they cohere) is
+                    // one algorithm, and no second source is demanded; only
+                    // a standing pair, or one whose sections do not read,
+                    // demands it.
+                    let relation = match (first_section.get(&mk), &this_piece) {
+                        (Some(first), Some(second)) => super::fibres::relate_sections(first, second),
+                        _ => super::fibres::Sections::Standing,
+                    };
+                    super::fibres::note_section(relation);
+                    if relation == super::fibres::Sections::Standing {
+                        let links: Vec<Link> = support
+                            .iter()
+                            .filter_map(|s| on_grid(s).map(|(r, cc)| (r, cc, 0u8, 0u8)))
+                            .collect();
+                        demanded.push((Demand::Source { multiplicity: 2 }, chart.clone(), links));
+                    }
                     continue;
                 }
                 Some(_) => {}
                 None => {
                     piece_seen.insert(&mk, carriage);
+                    if let Some(piece) = &this_piece {
+                        first_section.insert(&mk, piece.clone());
+                    }
                 }
             }
             let member = Member {
@@ -834,6 +866,7 @@ pub(super) fn family_percept(
                         point,
                         out: b0.shape.blade.vertex_point(),
                         mass,
+                        out_mass: b0.compartments.len() as u64,
                         carriage: v.clone(),
                         n: a0.shape.blade.n(),
                     });
