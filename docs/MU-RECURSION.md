@@ -21305,6 +21305,85 @@ Instrument: `family::confluence`, run by `mycelium-soak --confluence DIR N`.
   another, light absorbed at the next body. That is measured next, not
   claimed here.
 
+### 78.79 The interpreter for incongruence: constructors shared, accreted, extinguished; readings held and contrasted (2026-10-03, the operator's word: "both congruent and incongruent thoughts are held together in the coherence sphere … CONTRAST the two together to form more coherence"; "proceed with your proposal and addendums")
+
+**The ruling, as the operator gave it.**
+- Two bodies no motion makes the same are related by what they are made of,
+  not by a versor that does not exist.
+- A subject is defined by holding its readings together, congruent and
+  incongruent, each whole, and contrasting them. Relevance is the shared
+  core; meaning is the edges.
+- Its sharpness is read three ways:
+  - *resolution:* the quantum of its congruent readings, which refines;
+  - *phase:* luminal (open, its light leaves) or holonomic (closed, its
+    light is held), and the transition between them;
+  - *edges:* what each contrast lifts.
+- Humans hold this as visuals: the holonomy of the two objects, unmerged.
+
+**Built** (`family::incongruence`; instrument `mycelium-soak --incongruence
+DIR N`):
+1. *The constructor difference:* the input and output body's compartments
+   matched exactly by their coordinates (keyed, never searched; the core
+   motion the identity in place). Each constructor is shared, accreted
+   (white-hole channel), extinguished (black-hole channel), or recoloured
+   (the hue fibre). The accretion is read as light (runs out of the body,
+   each open at the edge or closed at a body), the extinction as carving
+   (interior).
+2. *The contrast pair:* two readings held whole. What they share is drag
+   (coherence); what each holds alone is lift (contrast).
+3. *The coherence manifold* per subject (the input body's chart across a
+   family's pairs), relative to each input's exact barycentre:
+   - its core (what every reading shares) and edges;
+   - its resolution (the gcd of its light's run lengths);
+   - its phase per reading;
+   - what each reading moved: refined, closed, sharpened, recognized.
+4. *Judged by the plane:* the core replayed on every reading's input body
+   reproduces its output, or does not. Speech in a form waits on a new
+   vertex kind, which is the recut's.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| single-carriage changes | 135 | 133 |
+| of them kinematic in place (recolour or nothing) | 71 | 63 |
+| constructors recoloured | **992** | **3 172** |
+| accreted | 415, **385 on light** | 262, **all on light** |
+| extinguished | 337 (105 carved interior) | 1 448 (819 carved interior) |
+| subjects | 95: 77 of one reading, 18 of several | 92: 71 of one, 21 of several |
+| multi-reading subjects with a non-empty core | 9 | 14 |
+| phase: holonomic / luminal | 15 / 11 | 19 / 5 |
+| moved: refined / closed / sharpened / recognized | 3 / 5 / 22 / 11 | 1 / 6 / 24 / 5 |
+| readings reproduced by their subject's core | **5 of 58** | **0 of 62** |
+
+**What it says.**
+1. *The single-body change is three things, and each is now named.*
+   - **Recolour in place**, by far the most constructors (992 / 3 172).
+     The form's hue maps do not decide the new hue.
+   - **Growth almost entirely along light**: 93% / 100% of accreted
+     constructors lie on rays out of the body.
+   - **Carving**: much of the extinction is interior.
+2. *Keyed by position, the core does not generalise.* Written as offsets
+   from each body's barycentre, the core reproduces 5 of 58 and 0 of 62
+   readings, and most subjects (by chart) have one reading. A ray to the
+   frame's edge has a different length on every body, so its cells are no
+   invariant. What is invariant is the GENERATOR: a direction, a hue, a stop
+   rule (edge or body). The light reading already holds it (78.77).
+3. *Relevance must be read at the generator, not the cell.* The congruent
+   definition of "grows a ray" is the ray's generator. Two readings of it
+   are congruent where their generators agree, whatever their lengths; the
+   resolution is the generator's step, not a cell grid. Recolour is the hue
+   fibre's relevance question: what in each scene decides the new hue. That
+   is a contrast across the pairs: what differs where the hue differs.
+
+**Next, modified by this measurement.** The manifold is rebuilt on
+generators:
+- an accretion's ray by its direction, hue and stop rule;
+- a carving by the interior it removes;
+- a recolour by the hue map and the contrast that decides it.
+
+Then judged by the plane again.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
