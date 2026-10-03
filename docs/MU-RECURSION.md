@@ -21185,6 +21185,8 @@ ruled.
 
 **Not wired live.** One extraction per withheld form per stroke recovers
 about 1 family in 30 here. The voice's speak path does not call it yet.
+*Amended by 78.81: wired. The voice's `speak_form` inverts the remainder its
+speech measured, and an accepted inversion is the form it speaks.*
 
 ### 78.77 Light through the scene, read: L1–L6 (2026-10-03, the operator's word: "the prism is the light coming through the manifold (so shape must already be congrued)"; "proceed with L1–L6 and run it")
 
@@ -21383,6 +21385,102 @@ generators:
 - a recolour by the hue map and the contrast that decides it.
 
 Then judged by the plane again.
+
+### 78.80 Volume and density, not boundary: the recolour asked what decides it (2026-10-03, the operator's word: "the volume would be the exact match considering that density might be the determinant factor, not 'shape' as boundaries"; "commit and add relational keys")
+
+**The reading** (`incongruence::moments`). A body is read by its moments,
+not its outline. Every moment is an integer off the sums the confluence
+sphere `C = Σ Pₛ` carries:
+- **mass** `M = −C·e∞`: the volume, its compartment count;
+- **spread** `−C² = Σ_{s<t} d²ₛₜ = M·Σ|x|² − |Σx|²`;
+- **the inertia form**: the same by axes (rows, columns, their product). Its
+  ratio up to scale is the body's **direction**;
+- **density** `ρ = M² / spread`: exact and dimensionless. A single
+  compartment has no spread, and its density is refused;
+- **mass per hue**: a vector.
+
+Two bodies no motion makes congruent can agree on every moment.
+
+**The decision** (`incongruence::single_changes`, `decide`). Each recolour in
+place among a family's single changes is predicted, leave one out, from the
+other readings that share its key. The prediction is refused where they
+disagree, and judged by replaying the hue map on the input body. Keys:
+- none;
+- the body's own: volume, density, mass per hue, shape (chart), direction;
+- **relational**: its rank by mass, and by density, among the bodies of its
+  pair.
+
+Instrument: `mycelium-soak --volume DIR N`.
+
+**Measured** (training 60 / evaluation 60):
+
+| reading | training | evaluation |
+|---|---|---|
+| single changes | 135 | 133 |
+| mass kept / mass per hue kept | 71 / 5 | 73 / 11 |
+| spread kept / density kept | 71 / 68 | 65 / 61 |
+| gained, all of it on light | 30 of 39 | 35 of 35 |
+| lost, all of it interior carving | 0 of 23 | 0 of 19 |
+| recolours in place | 70 on 16 tasks | 63 on 25 tasks |
+| **replayed by their own hue map** | **7** | **4** |
+| reproduced: none / volume / density / hue-mass / shape / direction | 2 / 0 / 0 / 0 / 0 / 0 | 4 / 4 / 4 / 4 / 4 / 4 |
+| reproduced: mass rank / density rank | 0 / 0 | 4 / 4 |
+
+**What it says.**
+1. *Volume is conserved where the change is a recolour, and moved between
+   hues.* Mass is kept on exactly the kinematic changes, and mass per hue
+   almost never is: a recolour is mass flowing between hue channels at a
+   fixed volume. Growth is light (78.79).
+2. *A body's own volume or density does not decide its recolour, and neither
+   does its rank in its pair.* No key reproduces more than the readings no
+   key at all reproduces.
+3. *The reason is exact and is the finding.* Only 7 of 70 and 4 of 63
+   recolours are a body-level hue map at all. The rest recolour SELECTED
+   sites within one body: a cross of 5s turning 2 inside a field of 5s
+   (`14754a24`), diagonals turning 2 or 8 by their direction inside one
+   connected stroke (`1d61978c`). The body is the wrong grain. The density
+   that decides is at the SITE: a compartment's place in the body's local
+   structure (its neighbourhood, the line it lies on, its own direction).
+   The test (`interpret.rs`, rank in the pair) proves the relational reading
+   decides where it applies; the corpus says it rarely applies at body grain.
+
+**Next.** The moments are read per site: each compartment's local density
+and direction (its neighbourhood's moments) as the key of its recolour,
+judged by the same leave-one-out replay.
+
+### 78.81 The remainder interpreted on the voice (2026-10-03, the operator's word: "wire these up and the preceding components that are still 'test only' to finalize the formality of the cognition")
+
+**Wired** (`family::interpret`, called by the voice's `speak_form`). The
+remainder the speech measured is read in the act that spoke it, never in an
+instrument beside the mind:
+1. **Inverted** (78.76, `invert_measured`, on the remainders the speech
+   already measured). An inversion the speech accepted IS the form the voice
+   speaks from there on, with the remainders it leaves. Line: `remainder
+   inverted: family … links b -> a joined j closed c`.
+2. On what is still unsaid, per pair:
+   - **light** (78.77): on a ray, captured, unlit;
+   - **confluence** (78.78): creation, single and confluence sites, and the
+     confluences reproduced;
+   - **constructors** (78.79): the changes, the kinematic ones, accretion on
+     light, carving;
+   - **decision** (78.80): the recolours, those their own hue map replays,
+     and per key the reproduced and the families decided whole.
+3. Every reading is folded into the process's tally (`interpret_tally`) and
+   printed on the voice's stroke line after the sentences:
+   `remainder families … | unsaid … | creation … | changes … | recolours …`.
+
+The soak instruments of 78.76–78.80 read through the same functions, so the
+instrument and the mind have one copy of each reading (law 12).
+
+**What the form still cannot speak.** A recolour a relational key decides is
+a member keyed by rank, and a site-level recolour is a member keyed by a
+site's local moments. A word vertex's members are keyed by chart and
+carriage (`Acting::key`), so neither is expressible: that is a new member
+key, a layout change, the operator's to rule with the recut. Until then the
+reading is what the voice holds of it.
+
+**Deployed?** No. The fleet runs 50b72209; this reaches it only by the recut
+or restart, which is the operator's call.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

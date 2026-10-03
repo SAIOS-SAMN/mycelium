@@ -51,6 +51,28 @@ pub(crate) fn speak_form(
     use mycelium::transducer::family::trace;
     use mycelium::transducer::sentence::as_element_form;
     let fam = fam_id(family);
+    let (mag, remainders) =
+        mycelium::transducer::family::form_deflation(&rule.form, train, &entity.epigenome);
+    // 78.81 — THE REMAINDER INTERPRETED IN THE ACT THAT SPOKE IT: inverted,
+    // and what is still unsaid read as light, confluence and constructors.
+    // An inversion the speech accepted IS the form spoken from here on, its
+    // remainders the ones it leaves; the readings go to the stroke line.
+    let (joined, reading) =
+        mycelium::transducer::family::interpret::interpret(&rule.form, train, &remainders, &entity.epigenome, budget);
+    let (rule, mut mag, remainders) = match joined {
+        Some((form, after)) => {
+            let (m, _) = mycelium::transducer::family::form_deflation(&form, train, &entity.epigenome);
+            if let Some(inv) = reading.inversion {
+                eprintln!(
+                    "[{tag}] remainder inverted: family {fam} links {} -> {} joined {} closed {}",
+                    inv.before, inv.after, inv.joined, inv.closed
+                );
+            }
+            (std::borrow::Cow::Owned(mycelium::transducer::sentence::SentenceRule { form, ratio: rule.ratio }), m, after)
+        }
+        None => (std::borrow::Cow::Borrowed(rule), mag, remainders),
+    };
+    let rule: &mycelium::transducer::sentence::SentenceRule = &rule;
     let form = &rule.form;
     // Why the form is withheld, in the order the court would refuse it.
     let why_open = || {
@@ -68,8 +90,6 @@ pub(crate) fn speak_form(
             "no measured trajectory".to_string()
         }
     };
-    let (mut mag, remainders) =
-        mycelium::transducer::family::form_deflation(form, train, &entity.epigenome);
     // LANE 𝒯 IS THE BUNDLE'S SPAN ON THIS ARM TOO. `form_deflation` sums
     // `measure_lanes` over the pairs, and a chain has no clock in it, so this
     // magnitude arrives as `[S, G, 0, H]`. The mint takes the span (R2) and

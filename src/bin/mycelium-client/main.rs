@@ -558,7 +558,40 @@ fn main() {
                 f.free_grammar,
                 f.free_opens
             );
-            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences}", nerve.join(" | "));
+            // 78.81: the remainder interpreted in the speech that left it —
+            // inverted, then read as light, confluence and constructors, and
+            // its recolours judged under each key.
+            let it = mycelium::transducer::family::interpret::interpret_tally();
+            let keys: Vec<String> = mycelium::transducer::family::incongruence::KEYS
+                .iter()
+                .zip(it.reproduced.iter().zip(&it.whole))
+                .map(|(k, (r, w))| format!("{k} {r}/{w}"))
+                .collect();
+            let remainder = format!(
+                "remainder families {} inverted {} closed {} unextracted {} links {} -> {} joined {} | unsaid {} on ray {} captured {} unlit {} | creation {} single {} confluence {} reproduced {} | changes {} kinematic {} | recolours {} on {} families, by their own hue map {} | decided (reproduced/whole) {}",
+                it.families,
+                it.accepted,
+                it.closed,
+                it.unextracted,
+                it.before,
+                it.after,
+                it.joined,
+                it.unsaid,
+                it.on_ray,
+                it.captured,
+                it.unlit,
+                it.creation_sites,
+                it.single_sites,
+                it.confluence_sites,
+                it.confluences_reproduced,
+                it.changes,
+                it.kinematic,
+                it.recolours,
+                it.recoloured_families,
+                it.replayable,
+                keys.join(" ")
+            );
+            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder}", nerve.join(" | "));
             eprintln!(
                 "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),

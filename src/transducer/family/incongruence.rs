@@ -31,6 +31,22 @@
 //!    sharpened an edge, or recognized.
 //! 4. JUDGED BY THE PLANE: the core difference replayed on every reading's
 //!    input body — reproduces its output, or does not.
+//! 5. 78.80 — A BODY BY ITS MOMENTS, NOT ITS BOUNDARY. The confluence sphere
+//!    C = ΣPₛ of a body's compartments carries its MASS M = −C·e∞ (volume:
+//!    the compartment count), its centre (the barycentre) and its SPREAD
+//!    −C² = Σ_{s<t} d²ₛₜ (the second moment), all exact integers; its
+//!    DENSITY ρ = M² / spread is one rational, and per hue the mass is a
+//!    vector. Two bodies no motion makes congruent may agree on every
+//!    moment. The second moment by axes is the INERTIA FORM, and its ratio
+//!    the body's DIRECTION. A recolour is then asked which reading DECIDES
+//!    it: a key — volume, density, hue-mass, shape, direction, or RELATIONAL,
+//!    the body's rank by mass or density among the bodies of its pair —
+//!    decides a reading when the other readings of its family under the same
+//!    key agree on one hue map, and the prediction is judged by replay on the
+//!    input body.
+//! 6. The single changes of a family's remainder, with these keys, are one
+//!    reading ([`single_changes`], [`decide`]) shared by the instrument and
+//!    the voice's interpreter (`interpret`).
 
 use super::*;
 use num_integer::Integer;
@@ -276,4 +292,233 @@ pub fn reproduces(m: &Manifold, input: &[Cell], output: &[Cell]) -> Option<bool>
     a.sort_unstable();
     b.sort_unstable();
     Some(a == b)
+}
+
+/// 5 — A BODY'S MOMENTS: its mass (volume), its spread (−C², the sum of
+/// squared separations over its pairs of compartments), its second moment by
+/// axes (the inertia form, whose ratio is the body's direction) and its mass
+/// per hue, sorted by hue. No boundary is read.
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Moments {
+    pub mass: u64,
+    pub spread: i128,
+    /// M²·the second central moment: rows, columns, and their product — all
+    /// integers; `spread` is the first two summed.
+    pub inertia: [i128; 3],
+    pub hues: Vec<(u8, u64)>,
+}
+
+impl Moments {
+    /// DENSITY, ρ = M² / spread: exact, dimensionless. A single compartment
+    /// has no spread and its density is refused, never made infinite.
+    pub fn density(&self) -> Option<Q> {
+        (self.spread != 0).then(|| Q::new((i128::from(self.mass) * i128::from(self.mass)).into(), self.spread.into()))
+    }
+
+    /// DIRECTION: the inertia form up to scale — its three integers divided
+    /// by their greatest common divisor. Two strokes of one direction and
+    /// different lengths read alike; a diagonal and its mirror differ in the
+    /// product's sign. A point's form is zero, and reads as itself.
+    pub fn direction(&self) -> [i128; 3] {
+        let g = self.inertia.iter().fold(0i128, |g, x| g.gcd(x));
+        match g {
+            0 => self.inertia,
+            g => self.inertia.map(|x| x / g),
+        }
+    }
+}
+
+/// THE MOMENTS OF A BODY, from the sums its confluence sphere carries:
+/// spread = M·Σ|x|² − |Σx|², which is Σ_{s<t} d²ₛₜ exactly; the inertia
+/// form likewise by axes.
+pub fn moments(cells: &[Cell]) -> Moments {
+    let mass = cells.len() as u64;
+    let (sr, sc, srr, scc, src) = cells.iter().fold((0i128, 0i128, 0i128, 0i128, 0i128), |(a, b, p, q, x), cell| {
+        let (r, c) = (i128::from(cell.0), i128::from(cell.1));
+        (a + r, b + c, p + r * r, q + c * c, x + r * c)
+    });
+    let m = i128::from(mass);
+    let inertia = [m * srr - sr * sr, m * scc - sc * sc, m * src - sr * sc];
+    let spread = inertia[0] + inertia[1];
+    let mut hues: Vec<(u8, u64)> = Vec::new();
+    for x in cells {
+        match hues.iter_mut().find(|(h, _)| *h == x.2) {
+            Some((_, n)) => *n += 1,
+            None => hues.push((x.2, 1)),
+        }
+    }
+    hues.sort_unstable();
+    Moments { mass, spread, inertia, hues }
+}
+
+/// A hue map: the recolours of one reading, each source hue once.
+pub type HueMap = Vec<(u8, u8)>;
+
+/// WHAT A KEY DECIDES, LEAVE ONE OUT: for each reading, the other readings
+/// under its key, their hue maps joined into one map. The join is refused
+/// where two of them send one hue to two (the key does not decide) and
+/// absent where no other reading shares the key (nothing to decide by).
+pub fn decided<K: PartialEq>(readings: &[(K, HueMap)]) -> Vec<Option<Option<HueMap>>> {
+    readings
+        .iter()
+        .enumerate()
+        .map(|(i, (key, _))| {
+            let others: Vec<&HueMap> = readings.iter().enumerate().filter(|(j, (k, _))| *j != i && k == key).map(|(_, (_, m))| m).collect();
+            if others.is_empty() {
+                return None;
+            }
+            let mut joined: HueMap = Vec::new();
+            for &(from, to) in others.into_iter().flatten() {
+                match joined.iter().find(|(f, _)| *f == from) {
+                    Some((_, t)) if *t != to => return Some(None),
+                    Some(_) => {}
+                    None => joined.push((from, to)),
+                }
+            }
+            joined.sort_unstable();
+            Some(Some(joined))
+        })
+        .collect()
+}
+
+/// A HUE MAP REPLAYED on an input body against the output body: exact.
+pub fn recolours_to(map: &[(u8, u8)], input: &[Cell], output: &[Cell]) -> bool {
+    let mut a: Vec<Cell> = input.iter().map(|&(r, c, h)| (r, c, map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t))).collect();
+    let mut b = output.to_vec();
+    a.sort_unstable();
+    b.sort_unstable();
+    a == b
+}
+
+/// 6 — ONE SINGLE CHANGE OF A FAMILY'S REMAINDER: an unsaid output body
+/// standing on exactly one input body, read by its constructors and by the
+/// input body's moments — its own, and RELATIONAL: where it stands among the
+/// bodies of its pair by mass and by density.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Change {
+    pub pair: usize,
+    pub input: Vec<Cell>,
+    pub output: Vec<Cell>,
+    pub difference: Difference,
+    pub moments: Moments,
+    pub output_moments: Moments,
+    /// The input body's chart key (its shape).
+    pub shape: Vec<u8>,
+    /// Bodies of its pair's input heavier and lighter than it.
+    pub mass_rank: (u64, u64),
+    /// Bodies denser and sparser; refused where its own density is.
+    pub density_rank: Option<(u64, u64)>,
+}
+
+fn cells_of(b: &Body) -> Vec<Cell> {
+    b.compartments.iter().filter_map(|l| Some((l.site.axis(0)?, l.site.axis(1)?, l.hue))).collect()
+}
+
+/// EVERY SINGLE CHANGE of a family's remainder, pair by pair, in the order
+/// the eyes perceive the outputs. A pair whose frames differ is unread.
+pub fn single_changes(family: &[(Grid, Grid)], remainders: &[Vec<(i64, i64, u8, u8)>]) -> Vec<Change> {
+    let mut out = Vec::new();
+    for (pair, ((x, y), rem)) in family.iter().zip(remainders).enumerate() {
+        if x.len() != y.len() || x.iter().zip(y).any(|(a, b)| a.len() != b.len()) {
+            continue;
+        }
+        let unsaid: Vec<(i64, i64)> = rem.iter().filter(|l| l.3 != 0).map(|l| (l.0, l.1)).collect();
+        if unsaid.is_empty() {
+            continue;
+        }
+        let ins = perceive(x);
+        let in_cells: Vec<Vec<Cell>> = ins.iter().map(cells_of).collect();
+        let in_moments: Vec<Moments> = in_cells.iter().map(|c| moments(c)).collect();
+        for body in perceive(y) {
+            let o = cells_of(&body);
+            if !o.iter().any(|c| unsaid.contains(&(c.0, c.1))) {
+                continue;
+            }
+            let standing: Vec<usize> = (0..ins.len()).filter(|&i| in_cells[i].iter().any(|c| o.iter().any(|d| d.0 == c.0 && d.1 == c.1))).collect();
+            let [i] = standing.as_slice() else { continue };
+            let m = &in_moments[*i];
+            let mass_rank = in_moments.iter().fold((0u64, 0u64), |(a, b), n| (a + u64::from(n.mass > m.mass), b + u64::from(n.mass < m.mass)));
+            let density_rank = m.density().map(|d| {
+                in_moments.iter().filter_map(Moments::density).fold((0u64, 0u64), |(a, b), n| (a + u64::from(n > d), b + u64::from(n < d)))
+            });
+            out.push(Change {
+                pair,
+                difference: difference(&in_cells[*i], &o, y),
+                output_moments: moments(&o),
+                moments: m.clone(),
+                shape: ins[*i].moduli.key().as_bytes().to_vec(),
+                input: in_cells[*i].clone(),
+                output: o,
+                mass_rank,
+                density_rank,
+            });
+        }
+    }
+    out
+}
+
+/// The keys a recolour is asked to be decided by, in the order [`decide`]
+/// answers: none at all, the body's own volume, density, mass per hue,
+/// shape, direction — and relational: its rank by mass and by density among
+/// the bodies of its pair.
+pub const KEYS: [&str; 8] = ["none", "volume", "density", "hue-mass", "shape", "direction", "mass rank", "density rank"];
+
+/// WHAT ONE KEY DECIDED over a family's recolours in place, leave one out,
+/// judged by replay: predicted and reproduced, refused (its others disagree),
+/// alone (no other shares it), and whether every recolour reproduced.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Decision {
+    pub predicted: u64,
+    pub reproduced: u64,
+    pub refused: u64,
+    pub alone: u64,
+    pub whole: bool,
+}
+
+fn judged<K: PartialEq>(keyed: Vec<(K, HueMap)>, readings: &[&Change]) -> Decision {
+    let mut d = Decision::default();
+    for (p, c) in decided(&keyed).into_iter().zip(readings) {
+        match p {
+            None => d.alone += 1,
+            Some(None) => d.refused += 1,
+            Some(Some(map)) => {
+                d.predicted += 1;
+                d.reproduced += u64::from(recolours_to(&map, &c.input, &c.output));
+            }
+        }
+    }
+    d.whole = !readings.is_empty() && d.reproduced == readings.len() as u64;
+    d
+}
+
+/// A change's hue map: its recolours, each source hue once.
+pub fn hue_map(c: &Change) -> HueMap {
+    let mut map: HueMap = c.difference.recoloured.iter().map(|x| (x.2, x.3)).collect();
+    map.sort_unstable();
+    map.dedup();
+    map
+}
+
+/// A RECOLOUR ITS OWN HUE MAP REPLAYS: every compartment of each source hue
+/// goes to that one target. Where it does not, the change selects sites
+/// within its body — no body-level key can decide it, and the decision's
+/// ceiling is the count of these.
+pub fn replayable(c: &Change) -> bool {
+    recolours_to(&hue_map(c), &c.input, &c.output)
+}
+
+/// THE RECOLOURS IN PLACE among a family's single changes — kinematic, and
+/// recolouring something — judged under every key of [`KEYS`].
+pub fn decide(changes: &[Change]) -> [Decision; 8] {
+    let rs: Vec<&Change> = changes.iter().filter(|c| c.difference.kinematic() && !c.difference.recoloured.is_empty()).collect();
+    [
+        judged(rs.iter().map(|c| ((), hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.moments.mass, hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.moments.density(), hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.moments.hues.clone(), hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.shape.clone(), hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.moments.direction(), hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.mass_rank, hue_map(c))).collect(), &rs),
+        judged(rs.iter().map(|c| (c.density_rank, hue_map(c))).collect(), &rs),
+    ]
 }

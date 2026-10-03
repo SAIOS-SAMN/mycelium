@@ -156,15 +156,31 @@ pub fn invert_remainder_as(
     painted: Painted,
 ) -> Option<(Form, Inversion)> {
     let (_, remainders) = form_deflation(form, family, crystal);
-    let before = links(&remainders);
+    let (read, joined) = invert_measured(form, family, &remainders, crystal, budget, painted)?;
+    Some((joined.map_or_else(|| form.clone(), |(f, _)| f), read))
+}
+
+/// THE INVERSION ON A REMAINDER ITS CALLER HAS ALREADY MEASURED (law 12: the
+/// voice speaks the form once, and inverts what that speech left). What was
+/// read, and — only where the speech accepted it — the joined form with the
+/// remainders it leaves. `None` where nothing is unsaid.
+pub fn invert_measured(
+    form: &Form,
+    family: &[(Grid, Grid)],
+    remainders: &[Vec<(i64, i64, u8, u8)>],
+    crystal: &dyn Crystal,
+    budget: &mut crate::physics::Budget,
+    painted: Painted,
+) -> Option<Joined> {
+    let before = links(remainders);
     if before == 0 {
         return None;
     }
-    let (scene, erasures) = remainder_scene(family, &remainders, painted);
+    let (scene, erasures) = remainder_scene(family, remainders, painted);
     let mut read = Inversion { before, after: before, erasures, ..Inversion::default() };
     let Some(rule) = extract_rule_with(&scene, crystal, budget) else {
         read.unextracted = true;
-        return Some((form.clone(), read));
+        return Some((read, None));
     };
     // The remainder's generators, each joining at its own coordinate. A class
     // the form already holds is ONE VERTEX PER CLASS (Q1): the remainder's
@@ -210,7 +226,7 @@ pub fn invert_remainder_as(
         }
     }
     if read.joined == 0 {
-        return Some((form.clone(), read));
+        return Some((read, None));
     }
     joined.reindex();
     let (_, after) = form_deflation(&joined, family, crystal);
@@ -221,7 +237,11 @@ pub fn invert_remainder_as(
     read.accepted = no_pair_rose && read.after < before;
     read.closed = read.accepted && read.after == 0;
     match read.accepted {
-        true => Some((joined, read)),
-        false => Some((form.clone(), read)),
+        true => Some((read, Some((joined, after)))),
+        false => Some((read, None)),
     }
 }
+
+/// What an inversion read, and the joined form with its remainders where the
+/// speech accepted it.
+pub type Joined = (Inversion, Option<(Form, Vec<Vec<(i64, i64, u8, u8)>>)>);
