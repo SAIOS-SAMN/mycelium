@@ -21888,8 +21888,12 @@ terms.
 *P7 — Voice, mind, entity (R4), against the tree.* In code an `Entity`
 holds the mind (its epigenome and contemplation, with its own `K`), and a
 `Voice` is the seat that mind speaks from (`voice::seat`, "a voice only
-speaks"). One `mycelium-client` unit is one entity. So the five "voices" of
-the fleet are client entities, each one mind with one voice. Owed, an
+speaks"). ONE CLIENT IS ONE ENTITY, WITH ONE MIND AND ONE VOICE: each
+`mycelium-client` process loads one key (`voice.key`), seats one `Voice` on
+it and opens one `Entity` holding one mind; five clients are five entities,
+five minds, five voices. No multi-mind or multi-entity client exists or is
+planned (the operator, 2026-10-03: it would need development beyond what
+is being built). Owed, an
 audit against R4: the voice also speaks single WORDS, not only sentences
 (`transcribe_closed` speaks a closed thought's word; `open_axis` speaks an
 axis germ); whether a word is a coherent sentence of one term, or must ride
