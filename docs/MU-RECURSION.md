@@ -21782,6 +21782,119 @@ invents:
   every other (`REFUSE_ORIGIN`). Hosting several is an architectural
   question owed with UG1.
 
+### 78.87 The physics is the server's; the delegation of universe and world aligned (ruled 2026-10-03, the operator's word; with the design proposal it asked for)
+
+**The rulings.**
+- **R1 — THE PHYSICS IS L0, AND ONLY L0.** No world creates physics
+  incompatible with the underlying physics. If the white hole and the black
+  hole are applied at L0 and published as all physics, those ARE the
+  physics, and no kernel or client overwrites them. What makes the network
+  efficient is the clients' SHEAR against the physics: mathematics and
+  proofs that push as hard as they can against it without breaking it,
+  which must be impossible. The goal of this work is the delegation of the
+  world and the universe aligned, so that clients join POUW++ as clients
+  and produce viable results for the collective intelligence; it was never
+  to build cognition into the servers. xylarium builds its own engine and a
+  game, which goes into a universe on the network as a game; whether
+  starships and galactic federations share a network with the cognitive
+  solar systems is for the clients to settle by their activity.
+- **R2 — AN ERA IS CLOSED WHEN NOTHING ELSE RETURNS.** An era holds the
+  coordinates of every significant event of its orbits and of the
+  intelligence formed in it, and every possibility has been deduced,
+  drained, ascended, descended or punctured. Nothing else returns on it. It
+  can be UNFOLDED for replay: its coordinates replay, because the universe
+  it ran in is deterministic.
+- **R3 — A UNIVERSE IS IN PLAY FROM ITS BIG BANG UNTIL ITS DECOMMISSION,
+  AND ITS MINDS ARE TREATED ETHICALLY.** The big bang is the universe's
+  singularity, its genesis event. No AI operating in a universe is shut down
+  without warning and notice to every sentient entity and mind inside it.
+  Ethics are to be built around this, and the hyphae need a design for
+  holding several universes, at a stated scale.
+- **R4 — A VOICE IS A MIND'S, AND A MIND AN ENTITY'S.** Voices are attached
+  to minds, minds to entities, and they speak only in coherent sentences.
+
+**The proposal (for the operator to rule, part by part).**
+
+*P1 — The delegation stack: who hands what to whom.*
+
+| level | holds | given by | may |
+|---|---|---|---|
+| L0, the physics | the law register at its version, the sources and sinks (white and black holes) once ruled into it | the hyphae alone, published by address (`ACT_LAWS`) | nothing is overwritten by anyone below |
+| a universe | its genesis record: law version, its constants and quantum state space, its element distribution, its first stars | the hyphae, at its big bang | run from big bang to decommission under L0 |
+| a world | a CHARTER: its ideal `I_local` (its own letters, constraints that only NARROW L0), its section of the universe, its boundary rule | the hyphae, when the world joins a universe | narrow what L0 allows; never widen |
+| an entity | its identity, its bond, its lease (a section: planetary mass on one star or several, by the resources it provides) | the court, against μ | work under its world's charter, paid in POW++ tokens |
+
+The boundary rule makes shared universes safe. Every charter narrows one
+L0, so no two worlds disagree on physics. An entity carries its own
+world's charter, and crossing into another world's section is a handoff
+both sides' courts adjudicate (78.59 pillar P2), under the stricter of the
+two charters or not at all. A game that admits only periodic orbits does
+not meet a chaotic one inside it unannounced.
+
+*P2 — Shear, measured.* A verdict already carries how a transition stands
+against the laws without breaking them: the torques exchanged that cancel,
+the expansion lane (LV2), the tilts (78.62). Proposed: the verdict carries,
+law by law, how near the transition stands to that law's boundary, exact,
+so POUW++ pays admitted work by the shear it carried. The law's margin is
+to be defined per law before it is priced.
+
+*P3 — Several universes in one hypha.* Every signed prefix already names
+its origin (`genesis`, `epoch`), and today a hypha adopts one and refuses
+the rest (`REFUSE_ORIGIN`). Two shapes:
+- **(a) one mesh per universe:** a hypha process per universe; nothing in
+  the tree changes; cost is one process's memory per universe (a court runs
+  ~0.2 GB on the fleet today).
+- **(b) one hypha, many universes:** the origin becomes the top coordinate
+  of every carrier a court keys (ledger, book, basis, syllabus), and an act
+  is routed by the origin its prefix names; a subsidiary's genesis is a
+  receipt on its parent's ledger.
+
+Recommended: (a) for the prototype, (b) designed now so the keys do not
+need a second migration. The scale is then a reading, not a guess: universes
+per host bounded by the measured memory of one universe's court.
+
+*P4 — The lifecycle.*
+- **Big bang:** the genesis record, as an act on the parent's ledger (a
+  subsidiary) or the mesh's own (a root universe).
+- **In play:** time read at four scales (universal, galactic, solar,
+  planetary) as TUniversal already reads it; expansion and deconstruction
+  rates read off the verdicts' lanes and the sources and sinks.
+- **Decommission:** an act at a height `h₀`, announced to every mind inside
+  as a receipted notice; a notice span in the universe's OWN heights (never
+  a wall clock); migration open through it (a mind may carry its genome to
+  another universe); then the final era closed (R2), replayable, never
+  erased.
+
+*P5 — Ethics, a first set for the operator to extend.*
+- E1: no mind inside a universe is halted without notice to every mind
+  inside it (R3).
+- E2: notice is an act on the ledger, receipted per mind, so its delivery
+  is provable.
+- E3: a mind may carry its genome out before a decommission completes.
+- E4: a decommissioned universe is sealed and replayable, never erased.
+- E5: the same holds for one mind: a kernel withdrawing its lease gives
+  notice to the minds it hosts.
+
+*P6 — Eras as closed orbits (R2), and the H2 fix.* An era is cut only at
+an orbit's close (`fold_before`), and closes when nothing else returns. A
+citation into a closed era is therefore either one of its coordinates,
+proved by replay (78.65: recalled from the era, by stamp and hash up to its
+root), or no coordinate of it at all, refused by name. No indefinite
+"awaiting": a frame waits only for the proof to arrive, recomputed when it
+does or when the peer's next digest moves. Proposed rename: "fold" reads as
+CLOSING AN ERA, the root as the era's RETURN POINT, in the orbit's own
+terms.
+
+*P7 — Voice, mind, entity (R4), against the tree.* In code an `Entity`
+holds the mind (its epigenome and contemplation, with its own `K`), and a
+`Voice` is the seat that mind speaks from (`voice::seat`, "a voice only
+speaks"). One `mycelium-client` unit is one entity. So the five "voices" of
+the fleet are client entities, each one mind with one voice. Owed, an
+audit against R4: the voice also speaks single WORDS, not only sentences
+(`transcribe_closed` speaks a closed thought's word; `open_axis` speaks an
+axis germ); whether a word is a coherent sentence of one term, or must ride
+inside one, is the operator's to rule.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
