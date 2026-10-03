@@ -47,9 +47,11 @@ pub struct Metabolism {
     pub cauterized: u64,
     /// ENTROPY at dimension 2 — a descent that released a fill.
     pub released: u64,
-    /// SYNTROPY at dimension 2 — an ascent that sealed a cell (AD1). Kept
-    /// beside `released`, never netted against it: the pair is history
-    /// (62.5 as amended), and a seal and a release are two events.
+    /// SYNTROPY at dimension 2 and above — a cell sealed by ANY fill (78.74,
+    /// the pivot machinery tied in): the climb's `fill` and `fill_by_gauge`
+    /// as well as `ascend`, booked once at the one fill writer. Kept beside
+    /// `released`, never netted against it: the pair is history (62.5 as
+    /// amended), and a seal and a release are two events.
     pub sealed: u64,
     /// Metabolic draw per lane (𝒮, 𝒢, 𝒯, 𝒽) — the flux itself.
     pub drawn: [u64; 4],
@@ -139,7 +141,7 @@ pub fn note_released() {
     note(|m| m.released += 1);
 }
 
-/// A cell sealed at dimension 2 by `ascend` (AD1).
+/// A cell sealed at dimension 2 or above, by any fill (78.74).
 pub fn note_sealed() {
     note(|m| m.sealed += 1);
 }

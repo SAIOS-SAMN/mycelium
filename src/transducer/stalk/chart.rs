@@ -492,6 +492,31 @@ pub fn congruent<'a>(
     }
 }
 
+/// 78.74 — EVERY HELD WORD CONGRUENT TO A RESIDUAL `spoken`: each a rigid
+/// image of its shape, with the versor carrying it there. Where there are
+/// several, they are rigid copies of `spoken` and so of one another — one
+/// algorithm, congruent — and the condenser makes them one bundle rather
+/// than refusing (`congruent` reads the same multiplicity as a coarse
+/// chart, and keeps that reading for the ruling that asks it). Empty for a
+/// connection, whose congruence is the Čech transition's (`congruent`).
+pub fn congruent_all<'a>(
+    stalks: &Stalks,
+    at: impl Fn(&[u8]) -> Option<&'a element::Element>,
+    spoken: &element::Element,
+    budget: &mut crate::physics::Budget,
+) -> Vec<(crate::transducer::address::Address, Versor)> {
+    if spoken.is_connection() {
+        return Vec::new();
+    }
+    let Some(shape) = element::shape_of_chain(spoken.sub()) else { return Vec::new() };
+    stalks
+        .fiber(&invariant_of(spoken))
+        .iter()
+        .filter_map(|a| at(a).filter(|w| !w.sub().is_empty()).map(|w| (a.clone(), w)))
+        .filter_map(|(a, w)| element::transition_from_shape(&shape, w.sub(), budget).map(|v| (crate::transducer::address::Address::from(a), v)))
+        .collect()
+}
+
 /// Congruence over pre-lifted shapes for a chain: `shape_at` yields a held
 /// word's shape (lifted once per snapshot), so a lookup lifts only the
 /// chain it asks about. Exactly one relating word is the base point.

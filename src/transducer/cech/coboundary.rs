@@ -126,6 +126,14 @@ impl Complex {
             if matches!(c.fill, Fill::Congruent(..)) && matches!(fill, Fill::Filled(..)) {
                 self.refilled += 1;
             }
+            // 78.74 — EVERY SEAL IS BOOKED, here at the one fill writer: a
+            // cell of degree two or more passing from unsettled to settled,
+            // by the climb's `fill`, `fill_by_gauge` or `ascend` alike. It was
+            // booked inside `ascend` only, which nothing calls live, so the
+            // ledger read `sealed 0` while the complexes sealed.
+            if degree >= 2 && c.fill.unsettled() && !fill.unsettled() {
+                crate::physics::metabolism::note_sealed();
+            }
             c.fill = fill.clone();
         }
     }
@@ -441,6 +449,12 @@ impl Complex {
                 crate::transducer::sentence::CycleType::Identity,
             )
         });
+        // NO ELASTIC RETURN IS READ HERE (78.74, withdrawn 2026-10-03). A
+        // rotor's finite order is a turn about the frame's implicit origin;
+        // whether a strained tether returns ON ITS MANIFOLD is read about the
+        // centre three pivots formulate, and this complex's vertices are
+        // vantages that carry no pivots. A rule reading return off the order
+        // alone was the planar shadow of the orbit, and is not made.
         self.forget(key);
         match reading {
             None => Drained::Vacuum,
@@ -484,22 +498,25 @@ impl Complex {
     /// open one, and — because `forget` drops this simplex from each of
     /// their stars — they are UNPINNED and may now drain.
     pub fn descend(&mut self, key: &[u8]) -> Descended {
-        let Some(2) = self.degree_of(key) else {
+        // EVERY DEGREE FROM TWO UP (78.74): a 3-cell sealed over 2-cells pins
+        // them, and a released vertex must be able to release it too, by the
+        // same gate one degree further up.
+        let Some(degree) = self.degree_of(key).filter(|d| *d >= 2) else {
             return Descended::Absent;
         };
-        let Some(simplex) = self.degrees[2].get(key).cloned() else {
+        let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return Descended::Absent;
         };
-        let [a, b, c] = simplex.vertices.as_slice() else {
-            return Descended::Absent;
+        // PINNED FROM ABOVE? The cofaces are the simplices holding every
+        // vertex of this one — the meet of their stars, and never a read of
+        // the degree above (rule 1).
+        let mut stars = simplex.vertices.iter().map(|v| self.star.get(v));
+        let cofaces = match stars.next().flatten() {
+            Some(first) => stars.try_fold(first.clone(), |acc, s| s.map(|s| acc.meet(s))),
+            None => None,
         };
-        // PINNED FROM ABOVE? The cofaces of a 2-cell are the simplices
-        // holding all three of its vertices — the meet of three stars, and
-        // never a read of degree 3 (rule 1).
-        if let (Some(sa), Some(sb), Some(sc)) =
-            (self.star.get(a), self.star.get(b), self.star.get(c))
-        {
-            for (k, ()) in sa.meet(sb).meet(sc).scoped() {
+        if let Some(cofaces) = cofaces {
+            for (k, ()) in cofaces.scoped() {
                 if k == *key {
                     continue;
                 }
@@ -585,13 +602,68 @@ impl Complex {
         }
         match self.fill(key.as_bytes()) {
             CoboundaryOutcome::Attached(Fill::Open) => Ascended::Open,
-            CoboundaryOutcome::Attached(fill) => {
-                crate::physics::metabolism::note_sealed();
-                Ascended::Sealed(fill)
-            }
+            // The seal is booked at the one fill writer (78.74).
+            CoboundaryOutcome::Attached(fill) => Ascended::Sealed(fill),
             CoboundaryOutcome::AlreadyFilled => Ascended::AlreadySealed,
             CoboundaryOutcome::Absent => Ascended::Absent,
         }
+    }
+
+    /// 78.74 — THE ELASTIC VENT OF THE NERVE: RELEASE A VERTEX whose reading
+    /// is void — its section's word has left. Every cell in its star is let
+    /// go, highest degree first so no cell is pinned by one still to go:
+    /// each cell of degree two or more `descend`s (its fill handed back), each
+    /// edge `drain`s (vacuum, or cauterized with its record), and
+    /// the vertex and its section go last. A cell pinned from above by a
+    /// coface outside this star stands, and so does the vertex, by count.
+    /// Without this the complex only accreted: `drain`, `descend` and
+    /// `ascend` existed and nothing called them.
+    pub fn release_vertex(&mut self, v: &[u8]) -> Release {
+        let mut out = Release::default();
+        let mut cells: Vec<(usize, Vec<u8>)> = match self.star.get(v) {
+            Some(star) => star.scoped().filter_map(|(k, ())| self.degree_of(&k).map(|d| (d, k))).collect(),
+            None => Vec::new(),
+        };
+        #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by a canonical coordinate: the degree, so every coface is released before its faces")]
+        cells.sort_by_key(|(d, _)| std::cmp::Reverse(*d));
+        for (d, k) in cells {
+            match d {
+                0 => continue,
+                1 => match self.drain(&k) {
+                    Drained::Vacuum => out.vacuum += 1,
+                    Drained::Cauterized(_) => out.cauterized += 1,
+                    Drained::Pinned => out.pinned += 1,
+                    Drained::Absent => {}
+                },
+                _ => match self.descend(&k) {
+                    Descended::Unsealed => out.unsealed += 1,
+                    Descended::Released(_) => out.released += 1,
+                    Descended::Pinned => out.pinned += 1,
+                    Descended::Absent => {}
+                },
+            }
+        }
+        if out.pinned == 0 {
+            let vertex = simplex_key(&[v.to_vec()]);
+            self.forget(vertex.as_bytes());
+            self.star.remove(v);
+            self.sections.remove(v);
+        }
+        out
+    }
+
+    /// 78.74 — A VERTEX THAT MUST GO, VENTED: its star released through the
+    /// pivots (`release_vertex`, every outcome booked on the ledger), and
+    /// whatever stood pinned from outside its star then dropped, so a mind
+    /// that sheds a vertex keeps its bound. The voice's contemplation
+    /// dropped vertices silently (`drop_vertex`): no drain, no descent, no
+    /// reading — its nerve released and the ledger never saw it.
+    pub fn vent_vertex(&mut self, v: &[u8]) -> Release {
+        let r = self.release_vertex(v);
+        if r.pinned > 0 {
+            self.drop_vertex(v);
+        }
+        r
     }
 
     /// Unbind one simplex from every carrier that names it. The inverse of
@@ -603,6 +675,15 @@ impl Complex {
         let vertices = self.degrees[degree].get(key).map(|s| s.vertices.clone());
         self.degrees[degree].remove(key);
         self.by_key.remove(key);
+        // Its chords' orbit readings stand under its key: they go with it,
+        // or a released cell would leave readings no cell holds (78.74).
+        let orbits: Vec<Vec<u8>> = match self.orbits.fiber_at(key) {
+            Some(f) => f.map(|(k, _)| k).collect(),
+            None => Vec::new(),
+        };
+        for ok in orbits {
+            self.orbits.remove(&ok);
+        }
         if let Some(vs) = vertices {
             for v in vs {
                 if let Some(star) = self.star.get_mut(&v) {

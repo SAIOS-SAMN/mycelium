@@ -110,6 +110,39 @@ impl Fibre {
         self.level(to).geo(&self.level(from))
     }
 
+    /// THE SQUARED LENGTH between the pivots, `d² = −2 Pᵢ·Pⱼ` at the points'
+    /// own weights — read off the inner product, never a sum of squares.
+    pub fn length2(&self) -> Q {
+        let weight = |p: &Mv| -p.geo(&crate::transducer::cga::e_inf()).scalar_part();
+        let (wi, wj) = (weight(&self.pi), weight(&self.pj));
+        -Q::from_integer(2.into()) * self.pi.geo(&self.pj).scalar_part() / (wi * wj)
+    }
+
+    /// 78.74 — THE TETHER'S STRENGTH: its binding, `mᵢ mⱼ / d²`, the
+    /// inverse-square law, exact. Of two tethers to one node, the stronger
+    /// is read by comparing two rationals — never a bool, connected or not.
+    pub fn strength(&self) -> Q {
+        &self.mi * &self.mj / self.length2()
+    }
+
+    /// 78.74 — THE TETHER'S CAPACITY: the reach of its levels, the switch's
+    /// own square `S² = mᵢ mⱼ d²`. Strength × capacity = `(mᵢ mⱼ)²`: the two
+    /// trade length against binding at fixed masses.
+    pub fn capacity(&self) -> Q {
+        let s = self.switch();
+        s.geo(&s).scalar_part()
+    }
+
+    /// 78.74 — THE TORQUE A GENERATOR PUTS ON THIS TETHER, squared: its
+    /// torsion part's own quadratic form `⟨T T̃⟩₀`. Torsion lives in the
+    /// definite complement of the fibre's plane, so this is a true square —
+    /// zero only for no twist — exact, where the whole metric is indefinite
+    /// and no other part has a size.
+    pub fn torque2(&self, g: &Mv) -> Q {
+        let t = self.split(g).torsion;
+        t.geo(&t.reverse()).scalar_part()
+    }
+
     /// THE SPLIT of a generator's bivector part into field, torsion and lift.
     pub fn split(&self, g: &Mv) -> Split {
         let g = g.grade(2);

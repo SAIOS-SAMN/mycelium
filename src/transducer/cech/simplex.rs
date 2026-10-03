@@ -202,6 +202,19 @@ pub enum Drained {
     Absent,
 }
 
+/// 78.74 — WHAT RELEASING ONE VERTEX DID, cell by cell: the membranes and
+/// higher cells released (with a fill handed back) or unsealed, the edges
+/// drained to vacuum or cauterized, and the cells that stood pinned from
+/// outside the vertex's star.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct Release {
+    pub released: u64,
+    pub unsealed: u64,
+    pub vacuum: u64,
+    pub cauterized: u64,
+    pub pinned: u64,
+}
+
 /// WHAT A `descend` DID — [`Drained`] one degree up, and the same four
 /// facts (63.3).
 ///
@@ -264,7 +277,7 @@ impl Drained {
         }
     }
 
-    /// Did the cell leave the complex? Both releases did; neither refusal.
+    /// Did the cell leave the complex? Every release did; neither refusal.
     pub fn released(&self) -> bool {
         matches!(self, Drained::Vacuum | Drained::Cauterized(_))
     }

@@ -20838,6 +20838,94 @@ between steps is no change. The gauge is read per class and reported
 congruence or coherence. It needs a deformation whose cover carries one
 class twice on one chart. The fleet's line counts each case live.
 
+#### 78.74 (amended 2026-10-03, third) — the pivot machinery tied in; the tether measured
+
+**The audit** (the operator: "how is our pivot machinery being used"):
+- `Complex::drain`, `descend` and `ascend` had no live caller.
+- The court's and the voice's complexes only climbed (`coboundary_on_link`,
+  `fill`, `fill_by_gauge`).
+- `sealed` was booked inside `ascend` alone, so every metabolism line read
+  `cauterized 0 released 0 | sealed 0`. That was blind, not zero.
+- The voice dropped vertices silently (`drop_vertex`).
+- Condense refused a multiplicity outright.
+- A punctured section was not counted plastic.
+
+**Tied in:**
+- **Every seal is booked** at the one fill writer: a cell of degree ≥ 2
+  passing from unsettled to settled, by any path, once.
+- **The nerve's vent.**
+  - A word leaving the basis (`basis_remove`) voids every vantage whose
+    section it was on its chart. Each such vantage releases its star
+    (`release_vertex`): cells of degree ≥ 2 `descend`, highest degree
+    first, handing their fills back, then its tethers `drain`.
+  - `descend` is gated at every degree from 2 up. A released cell takes its
+    chords' orbit readings with it.
+  - The voice's contemplation vents a retracted vertex the same way
+    (`vent_vertex`) and then drops whatever stood pinned, so a mind keeps
+    its bound.
+  - The court's line reads the vent (released, unsealed, vacuum,
+    cauterized, pinned) and the seals.
+- **Condense settles a multiplicity by congruence.**
+  - Several held words relating to one are rigid copies of it, so of one
+    another. They are condensed into one bundle through `absorb_pair`'s own
+    survivor rule, never a first-wins pick (`congruent_all`).
+  - `stalk::congruent` keeps its refusal for the ruling that asks it.
+- **Puncture is plastic.** A section gained at the court (`attach`,
+  `merge_fibre`, `puncture_from`) is the medium reshaped, on 𝒢.
+
+**Withdrawn on reading.**
+- **An elastic drain by rotor order.** A drained tether "returning" because
+  its rotor had finite order is a turn about the frame's implicit origin:
+  the planar shadow of the orbit. Three pivots formulate the centre and
+  the tilted axis a turn returns about. A 90° turn about that centre keeps
+  the round. The same 90°, of the same order, about the origin moves it.
+  Tested in 3D, in a tilted plane, with the axis fixed pointwise. The
+  court's vantages carry no pivots, so no return is read there.
+- **Tether severing at the court's optimisation yields.** A held word's
+  chain is centred (`canonical_chain`: r − min r, c − min c), so the
+  distance between two words' chains is the canonical form's, never a
+  placement. Tethers are measured only where pivots stand where they are:
+  the percept's pieces.
+
+**The tether, measured** (the operator: "if you are not measuring the
+capacity of the tether, then you have no intelligence on the strength /
+weakness or the torque of the tether, you have a binary 'connected or
+disconnected?' bool"). On a fibre (`physics::capacitor`):
+- **strength** `m m / d²`, the inverse square, with `d² = −2 Pᵢ·Pⱼ` at the
+  points' weights;
+- **capacity** `S² = m m d²`, the switch's own square;
+- strength × capacity `= (m m)²`;
+- **torque²** `⟨T T̃⟩₀` of a generator's torsion part, a true square because
+  torsion lives in the definite complement of the fibre's plane. Field and
+  lift have no definite size; they are measured by what they move.
+
+Of two tethers to one node, which binds harder and which reaches further
+are two exact comparisons.
+
+**In the voice's cognition** (`family::fibres`):
+- Every cross pair's fibre is weighed by its binding. A class pair holds
+  its agreeing and observed binding beside the counts
+  (`binding_certainty`).
+- The certain pairs merge **strongest first**, so where two merges conflict
+  the pair bound harder holds. They had merged in the order the frames
+  gave them, which decided a conflict by reading order.
+- Tested: in the four-class quotient, `b`–`d` bound at 9/25 holds over
+  `a`–`b` at 8/25. `a`–`d`, counted 1/2, binds 1/101: its disagreeing
+  tether is a hundred times stronger than its agreeing one.
+- The voice's line reads the moving pairs' binding certainty beside the
+  counted one.
+
+**Still open:**
+- Pivots and masses for the court's vantages, from each section's
+  placement of its chart. Then a drain can read stable, marginal or
+  unstable against the formulated centre and axis, and severing can go by
+  strength.
+- Fuel and discharge of a connected component, bounded by its tethers'
+  capacity in level ratios.
+- `Vacuum` renamed `Slack`: a tether with no tension, claiming no flow.
+- The shape reading moved to the inner-product form: the geoid as one
+  vector σ, with membership one scalar `P·σ`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

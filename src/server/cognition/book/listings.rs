@@ -327,21 +327,34 @@ impl Kernel {
                 return survivor;
             }
         }
-        let Some((sib, _)) = crate::transducer::stalk::congruent(
-            &self.stalks,
-            |a| {
-                if a == addr {
-                    None
-                } else {
-                    self.word_at(a)
-                }
-            },
-            &word,
-            budget,
-        ) else {
-            return crate::transducer::address::Address::from_bytes(addr);
+        // 78.74 — THE MULTIPLICITY SETTLED BY CONGRUENCE: every held word
+        // relating to this one is a rigid copy of it, so of one another —
+        // one algorithm. One relates: absorb as before. Several: they are
+        // condensed together pair by pair through `absorb_pair`'s own
+        // survivor rule (a bundle keeps the fibre), never a first-wins pick,
+        // and the copies become one bundle where they stood refused.
+        let related: Vec<crate::transducer::address::Address> = if word.is_connection() {
+            match crate::transducer::stalk::congruent(&self.stalks, |a| if a == addr { None } else { self.word_at(a) }, &word, budget) {
+                Some((sib, _)) => vec![sib],
+                None => Vec::new(),
+            }
+        } else {
+            // No tether is measured between held words: their chains are
+            // centred, so a distance between them is the canonical form's
+            // (see `condense_stroke`).
+            crate::transducer::stalk::congruent_all(&self.stalks, |a| if a == addr { None } else { self.word_at(a) }, &word, budget)
+                .into_iter()
+                .map(|(sib, _)| sib)
+                .collect()
         };
-        self.absorb_pair(crate::transducer::address::Address::from_bytes(addr), sib, budget)
+        if related.len() > 1 {
+            crate::physics::metabolism::step_or_refuse(&mut self.multiplicity_condensed, 1);
+        }
+        let mut survivor = crate::transducer::address::Address::from_bytes(addr);
+        for sib in related {
+            survivor = self.absorb_pair(survivor, sib, budget);
+        }
+        survivor
     }
 
     /// Absorb one of `new` / `sib` into the other: a bundle keeps the
@@ -401,6 +414,9 @@ impl Kernel {
                 disc,
             );
             self.physics.syntropy(&[0, 1, 0, 0]);
+            // 78.74 — a section punctured: the medium reshaped (plastic), on
+            // 𝒢 — a section is a hue assignment over the word's own support.
+            self.physics.plastic([false, true, false, false]);
             self.torse_at(&base);
         }
         // The absorbed card lives on as the base's fibre, not on a row of

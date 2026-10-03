@@ -500,8 +500,10 @@ impl Contemplation {
     }
 
     pub(crate) fn retract_incidence(&mut self, key: &[u8], b: &Bubble) {
+        // 78.74 — a retracted vertex is vented through the pivots (drain,
+        // descend, each booked), never dropped silently.
         let Some(&ord) = self.ordinals.get(key) else {
-            self.complex.drop_vertex(key);
+            let _ = self.complex.vent_vertex(key);
             return;
         };
         let ob = ord.to_le_bytes();
@@ -524,7 +526,7 @@ impl Contemplation {
             *slot = None;
         }
         self.ordinals.remove(key);
-        self.complex.drop_vertex(key);
+        let _ = self.complex.vent_vertex(key);
     }
 
     /// The bubble leaves the vortex index under each of `strata`.

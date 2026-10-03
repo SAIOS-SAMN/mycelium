@@ -127,6 +127,8 @@ impl Kernel {
             last_transition: _,
             glued_from,
             flux_field,
+            released_cells: _,
+            multiplicity_condensed: _,
             awaiting_rulings,
             persisted: _,
             optimize_cursor: _,

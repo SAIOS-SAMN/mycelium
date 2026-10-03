@@ -345,8 +345,12 @@ impl Exchange {
                     // 78.71: the court's field — its tubes, net and transport
                     // apart, the flux left open, helicity, reconnections.
                     let (tubes, net, transport, open, helicity) = k.tube_reading();
+                    // 78.74: the nerve's elastic vent — cells released as
+                    // words left — and the seals the ledger now books.
+                    let vent = k.released_cells();
+                    let m = mycelium::physics::metabolism::metabolism();
                     eprintln!(
-                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent released {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.physics().syntropic,
@@ -366,6 +370,13 @@ impl Exchange {
                         w.rank_unread,
                         w.flux_transport,
                         w.reconnections,
+                        vent.released,
+                        vent.unsealed,
+                        vent.vacuum,
+                        vent.cauterized,
+                        vent.pinned,
+                        m.sealed,
+                        k.multiplicity_condensed(),
                         mycelium::observe::FOLD_OUTCOMES
                             .iter()
                             .zip(folds)

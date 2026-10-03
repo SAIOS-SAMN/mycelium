@@ -37,6 +37,7 @@ use crate::transducer::base::{is_grid_axis, Site};
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::Versor;
 use num_rational::BigRational;
+use num_traits::Zero;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
 /// One piece a frame carries.
@@ -362,6 +363,11 @@ fn pairs_in(k: u64) -> Option<u64> {
 pub struct Said {
     pub observed: u64,
     pub agree: u64,
+    /// 78.74 — the same fibres WEIGHED BY THEIR BINDING (`m m / d²`, exact):
+    /// what agreed and what was observed, so a pair joined by strong tethers
+    /// is read apart from one joined by weak ones.
+    pub bind_agree: BigRational,
+    pub bind_observed: BigRational,
 }
 
 impl Said {
@@ -374,6 +380,19 @@ impl Said {
 
     fn certain(&self) -> bool {
         self.observed > 0 && self.agree == self.observed
+    }
+
+    /// 78.74 — THE BINDING CERTAINTY: agreeing binding over observed
+    /// binding, exact; `None` before any was observed.
+    pub fn binding_certainty(&self) -> Option<BigRational> {
+        (!self.bind_observed.is_zero()).then(|| &self.bind_agree / &self.bind_observed)
+    }
+
+    fn absorb(&mut self, other: &Said) {
+        step(&mut self.observed, other.observed);
+        step(&mut self.agree, other.agree);
+        self.bind_agree += &other.bind_agree;
+        self.bind_observed += &other.bind_observed;
     }
 }
 
@@ -412,8 +431,7 @@ pub fn moving_reading() -> Option<(usize, u64, u64, Said)> {
     let mut sum = Said::default();
     let (mut certain, mut partial) = (0u64, 0u64);
     for (_, s) in held.scoped() {
-        step(&mut sum.observed, s.observed);
-        step(&mut sum.agree, s.agree);
+        sum.absorb(s);
         match s.certain() {
             true => step(&mut certain, 1),
             false => step(&mut partial, 1),
@@ -430,10 +448,7 @@ fn track(said: &[PairSaid]) {
     for ((a, b), s) in said {
         let Some(key) = pair_key(a, b) else { continue };
         match held.get_mut(&key) {
-            Some(h) => {
-                step(&mut h.observed, s.observed);
-                step(&mut h.agree, s.agree);
-            }
+            Some(h) => h.absorb(s),
             None if s.agree > 0 => {
                 held.insert(&key, s.clone());
             }
@@ -550,23 +565,25 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                             continue;
                         }
                         note(PAIRS, 1);
+                        // The tether between the two pieces, measured: one
+                        // pivot (two pieces on one centroid) is no tether.
+                        let fibre = Fibre::new(
+                            pi.point.clone(),
+                            pj.point.clone(),
+                            BigRational::from_integer(pi.mass.into()),
+                            BigRational::from_integer(pj.mass.into()),
+                        );
+                        let Some(fibre) = fibre else {
+                            note(UNPIVOTED, 1);
+                            continue;
+                        };
                         let carried = match (ki, kj) {
-                            (true, true) => {
-                                let fibre = Fibre::new(
-                                    pi.point.clone(),
-                                    pj.point.clone(),
-                                    BigRational::from_integer(pi.mass.into()),
-                                    BigRational::from_integer(pj.mass.into()),
-                                );
-                                let Some(fibre) = fibre else {
-                                    note(UNPIVOTED, 1);
-                                    continue;
-                                };
-                                fibre.carried_by(&r)
-                            }
+                            (true, true) => fibre.carried_by(&r),
                             _ => Carried::Lift,
                         };
+                        let binding = fibre.strength();
                         step(&mut s.observed, 1);
+                        s.bind_observed += &binding;
                         // Rigid and torsion agree: both keep the fibre's
                         // pivots and levels (the identity is in the torsion
                         // group). Field and lift are work: they disagree.
@@ -574,10 +591,12 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                             Carried::Rigid => {
                                 note(RIGID, 1);
                                 step(&mut s.agree, 1);
+                                s.bind_agree += &binding;
                             }
                             Carried::Torsion => {
                                 note(TORSION, 1);
                                 step(&mut s.agree, 1);
+                                s.bind_agree += &binding;
                             }
                             Carried::Field => note(FIELD, 1),
                             Carried::Lift => note(LIFT, 1),
@@ -591,10 +610,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                     continue;
                 }
                 match said.iter_mut().find(|(k, _)| *k == key) {
-                    Some((_, held)) => {
-                        step(&mut held.observed, s.observed);
-                        step(&mut held.agree, s.agree);
-                    }
+                    Some((_, held)) => held.absorb(&s),
                     None => said.push((key, s)),
                 }
             }
@@ -620,8 +636,16 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
 /// and `b ≡ d` can hold while the fibres between `a` and `d` disagree. Two
 /// groups merge only where every pair across them that was observed is
 /// certain; a merge a disagreeing pair would cross is refused and counted
-/// (`conflicted`). The pairs are taken in the order the frames gave them.
-fn quotient(pieces: &[Piece], said: Vec<PairSaid>) -> Quotient {
+/// (`conflicted`).
+///
+/// THE STRONGER HOLDS FIRST (78.74). The certain pairs merge in the order
+/// of their binding — the summed strength `m m / d²` of the fibres that
+/// joined them — so where two merges conflict, the pair bound harder wins.
+/// They were taken in the order the frames happened to give them, which
+/// decided a conflict by an artifact of reading order.
+fn quotient(pieces: &[Piece], mut said: Vec<PairSaid>) -> Quotient {
+    #[expect(clippy::disallowed_methods, reason = "rule 4 — an order by the pairs' own binding, exact: the stronger tether holds first")]
+    said.sort_by(|(_, x), (_, y)| y.bind_agree.cmp(&x.bind_agree));
     let mut classes: Vec<Vec<u8>> = pieces.iter().map(|p| p.class.clone()).collect();
     classes.sort_unstable();
     classes.dedup();

@@ -404,7 +404,10 @@ impl Contemplation {
                         self.dirty.remove(v);
                         self.cavity.insert(super::shed::cavity_key(&b.remainder, v), b.remainder.to_vec());
                     }
-                    None => self.complex.drop_vertex(v),
+                    // 78.74 — vented through the pivots, never dropped silently.
+                    None => {
+                        let _ = self.complex.vent_vertex(v);
+                    }
                 }
             }
         }

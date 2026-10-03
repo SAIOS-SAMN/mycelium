@@ -257,8 +257,13 @@ impl Kernel {
             // The address is held: the arriving placement's fibre merges into
             // the bundle (sections, connection) — the genome converges in
             // volume, not only in vocabulary.
-            if let Some(w) = self.word_mut(&addr) {
-                w.update(|e| e.merge_fibre(word));
+            let added = match self.word_mut(&addr) {
+                Some(w) => w.update(|e| e.merge_fibre(word)),
+                None => 0,
+            };
+            // 78.74 — each section punctured is the medium reshaped on 𝒢.
+            for _ in 0..added {
+                self.physics.plastic([false, true, false, false]);
             }
             self.touch_at(&addr);
             // Presence is not finality: an unruled connection stays on the
@@ -313,6 +318,10 @@ impl Kernel {
         let deepened = crate::transducer::sentence::puncture_from(&mut self.basis, cites);
         if deepened > 0 {
             self.basis_gen += 1;
+        }
+        // 78.74 — each fibre deepened is the medium reshaped on 𝒢 (plastic).
+        for _ in 0..deepened {
+            self.physics.plastic([false, true, false, false]);
         }
         deepened
     }

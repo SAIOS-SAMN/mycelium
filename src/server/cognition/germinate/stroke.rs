@@ -190,6 +190,12 @@ impl Kernel {
                     .collect();
             }
             let mut spend = self.physics.stroke();
+            // NO TETHER IS MEASURED HERE (78.74). A held word's chain is
+            // CENTRED (`canonical_chain`: r − min r, c − min c), so the
+            // distance between two words' chains is the canonical form's,
+            // never a placement, and a strength read off it would sever by an
+            // artifact. Tethers are measured where pivots stand where they
+            // are: the percept's pieces (`family::fibres`).
             for sibling in fiber {
                 if !spend.spend() {
                     break;

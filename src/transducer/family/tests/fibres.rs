@@ -90,11 +90,13 @@ fn a_pieces_versor_carries_its_input_pivot_onto_its_output() {
 /// - `c` slides — lift on both: 0/2, its own algorithm;
 /// - `d` is flipped like `b` but its pivot leaves the line on the second
 ///   frame: against `a`, 1/2 — partial, reported and not eliminated;
-/// - `b` and `d` move alike — rigid across two classes agrees: 2/2 certain;
-///   yet merging `d` into `{a, b}` would cross the 1/2 of `a`–`d`, so it is
-///   refused.
+/// - `b` and `d` move alike — rigid across two classes agrees: 2/2 certain.
 ///
-/// Three algorithms from four classes; `b`, torsion beyond `a`, turns free.
+/// Two certain pairs conflict through the 1/2 of `a`–`d`; THE STRONGER HOLDS
+/// (78.74). `b`–`d` is bound at 4/25 + 4/20 = 9/25 (masses 2·2 over d² 25,
+/// then 20), `a`–`b` at 4/25 + 4/25 = 8/25: `b`–`d` merges, and `a`–`b` is
+/// the merge refused. Three algorithms from four classes; `d`, beyond `b`,
+/// turns free.
 #[test]
 fn torsion_is_eliminated_only_where_every_fibre_agreed() {
     let pieces = vec![
@@ -107,17 +109,24 @@ fn torsion_is_eliminated_only_where_every_fibre_agreed() {
         piece(2, b"c", at(0, 5), slide()),
         piece(2, b"d", at(1, 0), mirror()),
     ];
-    let q = read_pieces(&pieces, &mut wide());
-    let s = |a: &[u8], b: &[u8]| said(&q, a, b).map(|s| (s.agree, s.observed));
+    let quo = read_pieces(&pieces, &mut wide());
+    let s = |a: &[u8], b: &[u8]| said(&quo, a, b).map(|s| (s.agree, s.observed));
     assert_eq!(s(b"a", b"b"), Some((2, 2)), "the flip across their line: torsion, twice");
     assert_eq!(s(b"a", b"c"), Some((0, 2)), "the slide: lift, twice");
     assert_eq!(s(b"a", b"d"), Some((1, 2)), "torsion, then lift: partial");
     assert_eq!(s(b"b", b"d"), Some((2, 2)), "moving alike: rigid agrees");
-    assert_eq!(said(&q, b"a", b"d").and_then(|s| s.certainty()), Some(BigRational::new(1.into(), 2.into())), "certainty exact");
-    let groups: Vec<Vec<&[u8]>> = q.groups.iter().map(|g| g.iter().map(Vec::as_slice).collect()).collect();
-    assert_eq!(groups, vec![vec![&b"a"[..], &b"b"[..]], vec![&b"c"[..]], vec![&b"d"[..]]], "d is not merged across a–d's disagreement");
-    assert_eq!(q.free, vec![b"b".to_vec()], "b turns free beyond a; a carries the charge");
+    assert_eq!(said(&quo, b"a", b"d").and_then(|s| s.certainty()), Some(BigRational::new(1.into(), 2.into())), "certainty exact");
+    let bind = |a: &[u8], b: &[u8]| said(&quo, a, b).map(|s| s.bind_agree);
+    assert_eq!((bind(b"a", b"b"), bind(b"b", b"d")), (Some(q(8, 25)), Some(q(9, 25))), "binding, exact");
+    // a–d agrees on its far fibre (d² 100: binding 1/25) and disagrees on
+    // its near one (d² 1: binding 4): counted 1/2, bound 1/101 — the
+    // disagreement holds a hundred times harder, and the measure says so.
+    assert_eq!(said(&quo, b"a", b"d").and_then(|s| s.binding_certainty()), Some(q(1, 101)), "the partial pair's binding certainty");
+    let groups: Vec<Vec<&[u8]>> = quo.groups.iter().map(|g| g.iter().map(Vec::as_slice).collect()).collect();
+    assert_eq!(groups, vec![vec![&b"a"[..]], vec![&b"b"[..], &b"d"[..]], vec![&b"c"[..]]], "the stronger b–d holds; a is not merged across a–d's disagreement");
+    assert_eq!(quo.free, vec![b"d".to_vec()], "d turns free beyond b; b carries the charge");
 }
+
 
 /// A CLASS'S OWN SECTIONS ARE NOT TWO ALGORITHMS: two pieces of one class
 /// carried by two versors make no class pair; and a stroke that ends reads
@@ -259,7 +268,7 @@ fn the_moving_algorithms_certainty_rises_and_falls_across_percepts() {
     let (x, y, z): (&[u8], &[u8], &[u8]) = (b"moving-x", b"moving-y", b"moving-z");
     let first = vec![piece(1, x, at(0, 0), one()), piece(1, y, at(3, 4), mirror()), piece(1, z, at(0, 5), slide())];
     let _ = read_pieces(&first, &mut wide());
-    assert_eq!(moving_said(x, y), Some(Said { observed: 1, agree: 1 }), "agreed once: certain");
+    assert_eq!(moving_said(x, y).map(|s| (s.observed, s.agree)), Some((1, 1)), "agreed once: certain");
     let second = vec![piece(1, x, at(0, 0), one()), piece(1, y, at(1, 0), mirror())];
     let _ = read_pieces(&second, &mut wide());
     let held = moving_said(y, x).expect("held, read in either order");

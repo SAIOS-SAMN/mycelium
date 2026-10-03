@@ -407,6 +407,12 @@ pub struct Kernel {
     /// hue maps, each held until it returns. Volatile for now: a restart
     /// re-opens each on its next admission.
     pub(crate) flux_field: crate::transducer::cech::orbit::Field,
+    /// 78.74 — THE NERVE'S ELASTIC VENT, counted: the cells released when a
+    /// word left and the vantages it stood as let their stars go.
+    pub(crate) released_cells: crate::transducer::cech::Release,
+    /// 78.74 — multiplicities condense settled by congruence: a word several
+    /// held words related to, condensed with them into one bundle.
+    pub(crate) multiplicity_condensed: u64,
     /// EC1 — PEERS' RULINGS WAITING ON A CITATION THIS COURT DOES NOT HOLD,
     /// keyed by the unheld cite's STAMP — the node gives no address — and
     /// heard again when a word is filed at that stamp (`file_admitted`).

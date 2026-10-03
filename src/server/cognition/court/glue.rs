@@ -571,6 +571,41 @@ fn section_of(w: &Element) -> (Rotor, Versor) {
     )
 }
 
+impl Kernel {
+    /// 78.74 — the vent's reading: every cell the court's vantages released.
+    pub fn released_cells(&self) -> crate::transducer::cech::Release {
+        self.released_cells
+    }
+
+    /// 78.74 — multiplicities condense settled by congruence.
+    pub fn multiplicity_condensed(&self) -> u64 {
+        self.multiplicity_condensed
+    }
+
+    /// 78.74 — THE NERVE'S ELASTIC VENT AT THE COURT: a word leaving the
+    /// language voids every vantage whose section it was on its chart, and
+    /// each such vantage releases its star (`Complex::release_vertex`) —
+    /// membranes descend, tethers drain (vacuum, or cauterized with their
+    /// record) — so the complex no longer only accretes.
+    pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &[u8]) {
+        let Some(cx) = self.complexes.get_mut(&inv.key()) else { return };
+        let vantages: Vec<Vec<u8>> = cx.sections.scoped().filter(|(_, s)| s.addr.as_bytes() == addr).map(|(v, _)| v).collect();
+        for v in vantages {
+            let r = cx.release_vertex(&v);
+            let t = &mut self.released_cells;
+            for (held, by) in [
+                (&mut t.released, r.released),
+                (&mut t.unsealed, r.unsealed),
+                (&mut t.vacuum, r.vacuum),
+                (&mut t.cauterized, r.cauterized),
+                (&mut t.pinned, r.pinned),
+            ] {
+                crate::physics::metabolism::step_or_refuse(held, by);
+            }
+        }
+    }
+}
+
 /// THE PEER'S SECTION on the chart, at the peer's key.
 fn write_peer_section(cx: &mut crate::transducer::cech::Complex, spoken: &Element, addr: &Address, peer: [u8; 32], vol0: [u64; 4]) {
     let (gamma, carriage) = section_of(spoken);

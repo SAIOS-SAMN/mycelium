@@ -20,6 +20,8 @@ impl Kernel {
         };
         self.unindex_word(&held);
         let inv = crate::transducer::stalk::invariant_of(&held);
+        // 78.74 — the vantages this word stood as release their cells.
+        self.release_vantages(&inv, addr);
         let words = crate::transducer::sentence::acting_of_element(&held);
         crate::transducer::sentence::retract_words(&mut self.axis_index, &inv, &words);
         self.forget_discoverer(addr);

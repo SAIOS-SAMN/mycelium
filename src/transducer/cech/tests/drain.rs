@@ -70,6 +70,81 @@ fn a_strained_tether_is_cauterized_and_its_class_travels() {
     assert!(c.simplex(&key).is_none(), "a cauterized edge is gone too");
 }
 
+/// 78.74 — EVERY SEAL IS BOOKED: a membrane sealed by the climb's own `fill`
+/// — not `ascend` — counts on the ledger, once.
+#[test]
+fn a_seal_by_the_climbs_fill_is_booked() {
+    let mut c = Complex::new();
+    let vs = [v(1), v(2), v(3)];
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    for i in 0..3 {
+        for j in i + 1..3 {
+            c.set_edge(&vs[i], &vs[j], Rotor::identity(), ident(), vol());
+        }
+    }
+    c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
+    let before = crate::physics::metabolism::metabolism().sealed;
+    assert!(c.fill(&face).attached().is_some(), "sealed by fill");
+    assert_eq!(crate::physics::metabolism::metabolism().sealed, before + 1, "booked once");
+    assert!(matches!(c.fill(&face), CoboundaryOutcome::AlreadyFilled));
+    assert_eq!(crate::physics::metabolism::metabolism().sealed, before + 1, "a settled cell is not sealed twice");
+}
+
+/// 78.74 — THE NERVE'S ELASTIC VENT: releasing a vertex lets its whole star
+/// go through the pivots — the sealed membrane descends first and hands its
+/// fill back, then its tethers drain — and leaves the cells not on it
+/// standing, with no ghost incidence. A tetrahedron's vertex releases its
+/// 3-cell too: `descend` is gated at every degree from two up.
+#[test]
+fn releasing_a_vertex_vents_its_star_through_the_pivots() {
+    let mut c = Complex::new();
+    let vs = [v(1), v(2), v(3)];
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    for i in 0..3 {
+        for j in i + 1..3 {
+            c.set_edge(&vs[i], &vs[j], Rotor::identity(), ident(), vol());
+        }
+    }
+    c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "a 2-cell stands");
+    assert!(c.fill(&face).attached().is_some(), "the membrane is sealed, pinning its boundary");
+    let r = c.release_vertex(vs[0].as_bytes());
+    assert_eq!((r.released, r.vacuum, r.pinned), (1, 2, 0), "the membrane released with its fill, both tethers to vacuum: {r:?}");
+    assert!(c.simplex(&face).is_none() && c.sections.get(vs[0].as_bytes()).is_none(), "the vertex and its cells are gone");
+    assert_eq!(c.link(vs[1].as_bytes(), 1).len(), 1, "the edge v2–v3 stands, unpinned");
+    for x in &vs[1..] {
+        for k in c.link_of(x.as_bytes()) {
+            assert!(c.simplex(&k).is_some(), "no ghost incidence");
+        }
+    }
+
+    let mut c = Complex::new();
+    let vs = [v(1), v(2), v(3), v(4)];
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    for i in 0..4 {
+        for j in i + 1..4 {
+            c.set_edge(&vs[i], &vs[j], Rotor::identity(), ident(), vol());
+        }
+    }
+    c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
+    let solid = c.link(vs[0].as_bytes(), 3);
+    assert!(!solid.is_empty(), "the climb reached a 3-cell");
+    for k in c.link(vs[0].as_bytes(), 3).into_iter().chain(c.link(vs[0].as_bytes(), 2)) {
+        let _ = c.fill(&k);
+    }
+    let r = c.release_vertex(vs[0].as_bytes());
+    assert_eq!(r.pinned, 0, "highest degree first: nothing pinned: {r:?}");
+    assert!(r.released + r.unsealed >= 4, "the 3-cell and its three faces on v1 released: {r:?}");
+    assert!(solid.iter().all(|k| c.simplex(k).is_none()), "the 3-cell is gone");
+}
+
 /// THE PINNING RULE — WHAT MAKES THIS A PIVOT AND NOT AN UNDO STACK.
 ///
 /// Once a 2-cell over three vertices has been READ, the class it carries is

@@ -209,6 +209,33 @@ fn the_pivots_own_sphere_is_the_shape_every_switch_keeps() {
     assert_eq!(shape_of(&[on(5, 0), on(5, 0), on(0, 5)], 2), Shape::Open, "a repeated pivot fixes nothing new");
 }
 
+/// 78.74 — A TETHER IS MEASURED, NEVER A BOOL. Two tethers to one node C:
+/// A–C (masses 2, 3, length 5) and B–C (masses 4, 3, length 10). Strength,
+/// the inverse square, reads A–C stronger (6/25 against 12/100); capacity,
+/// the switch's square, reads B–C larger (12·100 against 6·25); and
+/// strength × capacity is the mass product squared, exactly. Torque: the
+/// twist about the tether's axis puts a positive squared torque on it, a
+/// level step (pure field) puts none.
+#[test]
+fn a_tethers_strength_capacity_and_torque_are_exact() {
+    let c = cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
+    let a = cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
+    let b = cga::point_at(&[q(6, 1), q(8, 1), q(0, 1)]);
+    let ac = Fibre::new(a, c.clone(), q(2, 1), q(3, 1)).expect("A–C");
+    let bc = Fibre::new(b, c, q(4, 1), q(3, 1)).expect("B–C");
+    assert_eq!((ac.length2(), bc.length2()), (q(25, 1), q(100, 1)), "d², exact");
+    assert_eq!((ac.strength(), bc.strength()), (q(6, 25), q(12, 100)), "m m / d²");
+    assert!(ac.strength() > bc.strength(), "A–C binds harder");
+    assert_eq!((ac.capacity(), bc.capacity()), (q(150, 1), q(1200, 1)), "S² = m m d²");
+    assert!(bc.capacity() > ac.capacity(), "B–C reaches further");
+    assert_eq!(ac.strength() * ac.capacity(), q(36, 1), "strength × capacity = (m m)²");
+    let f = fibre(2, 1);
+    let twist_gen = twist().grade(2);
+    assert!(f.torque2(&twist_gen) > q(0, 1), "a twist about the axis: torque");
+    let field_gen = f.step(&q(2, 1), &q(3, 1)).grade(2);
+    assert_eq!(f.torque2(&field_gen), q(0, 1), "a level step: no torque");
+}
+
 /// 78.74 — HOW A FINITE MOTION TREATS A FIBRE, read on the versor itself: the
 /// identity carries it rigidly; the twist about its axis, and the mirror
 /// across its line (an odd versor — the grid's flip), keep both pivots and

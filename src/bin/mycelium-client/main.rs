@@ -469,7 +469,12 @@ fn main() {
                         Some(c) => c.to_string(),
                         None => "unobserved".to_string(),
                     };
-                    format!("moving pairs {n} certain {certain} partial {partial} certainty {c}")
+                    // 78.74: the same fibres weighed by their binding.
+                    let b = match sum.binding_certainty() {
+                        Some(b) => b.to_string(),
+                        None => "unobserved".to_string(),
+                    };
+                    format!("moving pairs {n} certain {certain} partial {partial} certainty {c} binding {b}")
                 }
                 None => "moving unread".to_string(),
             };
