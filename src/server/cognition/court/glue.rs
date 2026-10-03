@@ -577,6 +577,15 @@ impl Kernel {
         self.released_cells
     }
 
+    /// 78.74 — every seal this court's complexes made, summed off the
+    /// complexes themselves (a thread's ledger sees only its own thread's).
+    pub fn cells_sealed(&self) -> u64 {
+        self.complexes.scoped().fold(0u64, |s, (_, cx)| match s.checked_add(cx.sealed) {
+            Some(t) => t,
+            None => s,
+        })
+    }
+
     /// 78.74 — multiplicities condense settled by congruence.
     pub fn multiplicity_condensed(&self) -> u64 {
         self.multiplicity_condensed

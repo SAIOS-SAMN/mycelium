@@ -133,6 +133,7 @@ impl Complex {
             // ledger read `sealed 0` while the complexes sealed.
             if degree >= 2 && c.fill.unsettled() && !fill.unsettled() {
                 crate::physics::metabolism::note_sealed();
+                let _ = crate::physics::metabolism::step_or_refuse(&mut self.sealed, 1);
             }
             c.fill = fill.clone();
         }

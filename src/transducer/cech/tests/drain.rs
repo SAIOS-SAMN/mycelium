@@ -89,6 +89,7 @@ fn a_seal_by_the_climbs_fill_is_booked() {
     let before = crate::physics::metabolism::metabolism().sealed;
     assert!(c.fill(&face).attached().is_some(), "sealed by fill");
     assert_eq!(crate::physics::metabolism::metabolism().sealed, before + 1, "booked once");
+    assert_eq!(c.sealed, 1, "and on the complex itself, which any thread can read");
     assert!(matches!(c.fill(&face), CoboundaryOutcome::AlreadyFilled));
     assert_eq!(crate::physics::metabolism::metabolism().sealed, before + 1, "a settled cell is not sealed twice");
 }

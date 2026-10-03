@@ -39,6 +39,11 @@ pub struct Complex {
     /// counted where a fill is written (78.37(4)). Zero until the named door
     /// of phase (c) lands; volatile.
     pub(crate) refilled: u64,
+    /// 78.74 — THIS COMPLEX'S SEALS, counted where a fill is written: a cell
+    /// of degree two or more passing from unsettled to settled. Held on the
+    /// complex, not only on a thread's ledger, so a court that glues on many
+    /// threads reads every seal it made; volatile.
+    pub(crate) sealed: u64,
 }
 
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
