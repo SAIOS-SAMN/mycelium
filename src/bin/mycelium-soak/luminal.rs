@@ -93,7 +93,9 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                     2 => t.period_two += 1,
                     _ => t.period_more += 1,
                 }
-                t.source_hue += u64::from(r.wave.first() == Some(&r.source));
+                // The waveform's first hue against its source's: the light is the
+                // body's own colour, read by the slice pattern, never by position.
+                t.source_hue += u64::from(matches!(r.wave.as_slice(), [h, ..] if *h == r.source));
             }
             for c in &p.cavities {
                 t.cavities += 1;
@@ -119,7 +121,8 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 }
             }
             let mut best = p.rays.clone();
-            best.sort_by(|a, b| b.explains.cmp(&a.explains));
+            #[expect(clippy::disallowed_methods, reason = "rule 4 — an order by the rays' own content: how many unsaid sites each explains, the instrument's print order")]
+            best.sort_by_key(|r| std::cmp::Reverse(r.explains));
             for r in best.iter().take(2) {
                 lines.push(format!(
                     "    ray from hue {} dir {:?} reach {} lit {} period {} wave {:?} stop {:?} explains {}",
