@@ -39,8 +39,9 @@ pub enum Law {
 }
 
 /// THE REGISTER'S VERSION: an amendment raises it, and an address names the
-/// version it was read at.
-pub const LAW_VERSION: u8 = 1;
+/// version it was read at. Version 2 (LV2, ruled 2026-10-03): momentum read
+/// at a dilation's ratio, as rigidity reads it.
+pub const LAW_VERSION: u8 = 2;
 
 /// Every law of the register, in its order.
 pub const LAWS: [Law; 5] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir];
@@ -71,7 +72,7 @@ impl Law {
     pub fn statement(self) -> &'static str {
         match self {
             Law::Conformal => "a motion is a versor of Cl(4,1) over ℚ whose modes split exactly, and it carries every body it moves",
-            Law::Momentum => "τ_net = τ_ext = 0: the torques the bodies exchange cancel, and no momentum is made or lost",
+            Law::Momentum => "τ_net = τ_ext = 0: the torques the bodies exchange cancel, and no momentum is made or lost; under a motion that dilates, every body's momentum is the carried momentum times one rational ratio, the expansion lane",
             Law::Rigidity => "every pair of bodies keeps its unit-weight product across a transition, against the motion that carries them",
             Law::Time => "a transition advances the height; nothing is written before what it follows",
             Law::Reservoir => "a hue relation is unitary: every distinction a merge removes is rotated into e_∅",
@@ -158,6 +159,10 @@ pub struct Verdict {
     /// isometry, another rational for a dilation (expansion or collapse) —
     /// or `None` where the pairs moved apart or none was read.
     pub similarity: Option<Q>,
+    /// LV2 — THE EXPANSION LANE OF MOMENTUM: under a motion that dilates, the
+    /// one ratio every body's momentum after stands to the momentum the
+    /// motion carried, docketed. `None` where no dilation moved it.
+    pub expansion: Option<Q>,
 }
 
 impl Verdict {
@@ -190,19 +195,31 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     // MOMENTUM: each body's external torque (A.13) is what it exchanged; the
     // exchanges cancel, or momentum was made or lost.
     let mut net = Mv::zero();
+    let mut exchanged = Vec::new();
     for (i, (before, after)) in t.bodies.iter().enumerate() {
         match external_torque(&before.body, &after.body, &t.motion) {
             Some(tau) => {
                 net = net.add(&tau);
                 if !tau.is_zero() {
-                    v.exchanged.push((i, tau));
+                    exchanged.push((i, tau));
                 }
             }
             None => v.breaches.push((Law::Momentum, Breach::MomentumUnread { body: i })),
         }
     }
-    if !net.is_zero() {
-        v.breaches.push((Law::Momentum, Breach::MomentumNotConserved { net }));
+    // LV2 (law version 2) — A DILATION CONSERVES MOMENTUM UP TO ITS RATIO. A
+    // dilator leaves directions where they are, so the momentum it carries
+    // does not scale while a dilated body's mass and second moments do:
+    // read as rigidity reads a similarity, every body's momentum after is
+    // the carried momentum times ONE rational ratio, docketed as the
+    // expansion lane — never a breach. A rigid motion keeps momentum exactly.
+    match (net.is_zero(), expansion_of(t)) {
+        (true, _) => v.exchanged = exchanged,
+        (false, Some(r)) => v.expansion = Some(r),
+        (false, None) => {
+            v.exchanged = exchanged;
+            v.breaches.push((Law::Momentum, Breach::MomentumNotConserved { net }));
+        }
     }
     // METRIC RIGIDITY at unit weight (78.59: no flat square), read against
     // THE MOTION: each body's nucleus after against the motion's own image of
@@ -232,6 +249,37 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
         v.breaches.push((Law::Reservoir, Breach::NotUnitary));
     }
     v
+}
+
+/// LV2 — THE ONE RATIO a dilating motion's bodies' momenta stand to what the
+/// motion carried: each body's momentum after over its momentum before
+/// carried at unit weight, read projectively (exact, first degree). `None`
+/// where the motion does not dilate (its conformal factor `ρ = 1`), has no
+/// weight, or any body stands to it by another ratio or by none.
+fn expansion_of(t: &Transition) -> Option<Q> {
+    use crate::physics::tensegrity::momentum;
+    let f = crate::transducer::element::conformal_factors(&t.motion).ok()?;
+    if num_traits::One::is_one(&f.rho) {
+        return None;
+    }
+    let b = t.motion.grade(2);
+    let w = t.motion.geo(&t.motion.reverse()).scalar_part();
+    if num_traits::Zero::is_zero(&w) {
+        return None;
+    }
+    let unit = Q::from_integer(1.into()) / w;
+    let ratios: Vec<Q> = t
+        .bodies
+        .iter()
+        .map(|(before, after)| {
+            let carried = t.motion.sandwich(&momentum(&before.body, &b)).scale(&unit);
+            projective_ratio(&momentum(&after.body, &b), &carried)
+        })
+        .collect::<Option<Vec<_>>>()?;
+    match ratios.as_slice() {
+        [r, rest @ ..] if rest.iter().all(|x| x == r) => Some(r.clone()),
+        _ => None,
+    }
 }
 
 pub mod codec;

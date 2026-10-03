@@ -118,6 +118,40 @@ fn points_are_read_at_unit_weight_and_a_dilation_is_a_similarity() {
     assert_eq!(similarity(&pairs), None, "and no one ratio");
 }
 
+/// LV2 (law version 2, ruled 2026-10-03) — A DILATION CONSERVES MOMENTUM UP TO
+/// ITS RATIO. A body at the origin dilated by 2 — its nucleus the dilator's
+/// image, its mass four times (a lattice body's sites) — holds momentum four
+/// times what the dilator carried: one ratio, docketed as the expansion
+/// lane, admitted. Two bodies whose momenta move by two ratios under one
+/// dilation stand to no one ratio: refused, as version 1 refused every
+/// dilation. A rigid motion is held to exact conservation as before
+/// (`each_law_refuses_what_breaks_it_and_every_breach_is_named`).
+#[test]
+fn a_dilation_conserves_momentum_up_to_its_ratio() {
+    let d = crate::transducer::cga::dilator(&q(2));
+    let at_origin = |mass: i64, radius: i64| {
+        let mut b = body([0, 0, 0]);
+        b.mass = q(mass);
+        BodyState { nucleus: sphere_at(&b.centre, &q(radius)), body: b }
+    };
+    let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: Body { mass: q(mass), ..s.body.clone() } };
+    let one = at_origin(1, 1);
+    let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Vec::new() };
+    let v = verify(&t, &mut budget());
+    assert!(v.admitted(), "{:?}", v.breaches);
+    assert_eq!(v.expansion, Some(q(4)), "the momentum's ratio, docketed as the expansion lane");
+    let two = at_origin(1, 2);
+    let split = Transition {
+        motion: d.clone(),
+        heights: (1, 2),
+        bodies: vec![(one.clone(), dilated(&one, 4)), (two.clone(), dilated(&two, 9))],
+        hues: Vec::new(),
+    };
+    let v = verify(&split, &mut budget());
+    assert!(v.breaches.iter().any(|(l, _)| *l == Law::Momentum), "two ratios are no expansion lane: {:?}", v.breaches);
+    assert_eq!(v.expansion, None);
+}
+
 /// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
 /// its coordinate; a transition the kernel sends and the verdict the court
 /// answers decode to themselves exactly, so the court verifies what was sent

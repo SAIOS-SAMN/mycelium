@@ -21649,7 +21649,14 @@ empty relation where nothing moves, and the lift is that.
    of 298 (training) and 13 of 13 (evaluation), and the bodies share one
    ratio on every one of them. Read projectively, with the ratio docketed as
    the expansion lane, the law would admit them; the two left are refusals
-   on any reading.
+   on any reading. **RULED (the operator, 2026-10-03: "1 — approved") and
+   LANDED: the register at version 2.** Under a motion that dilates (its
+   conformal factor `ρ ≠ 1`), momentum is conserved where every body's
+   momentum after is the carried momentum times ONE rational ratio, read
+   projectively and docketed on the verdict as `expansion`; a rigid motion
+   keeps momentum exactly, as before. Every law's coordinate now reads
+   version 2. Re-read: admitted 1 601 of 1 659 (96.5%) and 867 of 874
+   (99.2%); momentum refuses the 2 left on any reading, and nothing else.
 3. *The reservoir refuses where one motion recolours its bodies two ways*
    (56 / 7): carriages on one ray whose hue maps send one hue two ways. That
    is the relational recolour of 78.80, now seen by the law: one motion, a
@@ -21705,6 +21712,59 @@ empty relation where nothing moves, and the lift is that.
   the hyphae's own genesis (`mycelium-server/genesis.rs`).
 - Making `verify` the court's ADMISSION check (the trajectory's step 1)
   waits on BR1's two rulings (78.84).
+
+### 78.86 A kernel's universe: join one, or create a subsidiary; the big bang recorded, a section leased (ruled 2026-10-03, the operator's word)
+
+**The ruling, as the operator gave it.** A kernel integrates in one of two
+ways:
+- **JOIN** a known universe, or
+- **CREATE** a new subsidiary universe, which costs more, in μ tokens.
+
+Either way the universe is recorded from its beginning and tracked:
+- its BIG BANG and its element distribution;
+- its star creation;
+- its laws, physics and mathematics;
+- its orbital structure and planetary alignment, its stars and planets;
+- its expansion rate and deconstruction rate;
+- its singularity dynamics;
+- its quantum states;
+- its time across the boundaries: universal, galactic, solar system,
+  planetary.
+
+The kernel LEASES A SECTION of the universe. For the work it provides
+(POUW, POWC) it is granted space on a star as a planetary mass, or on
+several stars, by how much system resource it provides. As its state grows
+and work comes in it is paid in the POW++ network's tokens, and it can
+expand its work or game and interact with the universe's other
+components.
+
+**What the tree already holds for it**, so the build composes rather than
+invents:
+- *The laws, physics and mathematics:* the register (78.62 L0, version 2)
+  by address, and a world's ideal `Cl(4,1)/I_local` (78.59 Ruling 4).
+- *Time across the boundaries:* TUniversal `{S, G, T, H}` and the stamp
+  `h:S:G:T:H:k` (78.21); the universal height and a node's own `K` are
+  already two clocks, and the galactic, solar and planetary clocks are
+  the same construction at three more scales.
+- *The expansion rate:* LV2's expansion lane, docketed on every verdict
+  of a dilating motion, and rigidity's similarity.
+- *Stars and planets:* 78.59's star (a client's allocation) and solar
+  system (what it produces), 76.4's star formation by measured pressure,
+  and the tensegrity's star and orbit about it (78.51).
+- *Singularity dynamics:* the white hole (`physics::source`, a null source)
+  and the black hole's confluence (78.78).
+- *The tokens:* μ and the POUW / POWC / POWR ledger (78.33, 78.66).
+
+**What is to be decided before it is built** (see 78.86's ledger row UG1):
+1. A subsidiary universe's relation to its parent: its genesis a receipt
+   on the parent's ledger (so the parent can verify it), its own
+   TUniversal timeline beside the parent's, its law version the parent's
+   or its own (78.59 Ruling 2: a changed law is a new universe).
+2. What a lease is on the ledger: a section's coordinates (which star, how
+   much planetary mass), its price in μ, its term, and what ends it.
+3. "Quantum states": which object the tree carries them as (the hue
+   fibre's states, a mode's discrete spectrum, or another), named before
+   it is tracked.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

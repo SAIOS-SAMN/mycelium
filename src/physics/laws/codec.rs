@@ -195,12 +195,22 @@ pub fn put_verdict(out: &mut Vec<u8>, v: &Verdict) {
         tau.to_bytes(out);
     }
     put_key_count(out, v.modes);
-    match &v.similarity {
-        None => out.push(0),
-        Some(r) => {
-            out.push(1);
-            put_q(out, r);
+    for ratio in [&v.similarity, &v.expansion] {
+        match ratio {
+            None => out.push(0),
+            Some(r) => {
+                out.push(1);
+                put_q(out, r);
+            }
         }
+    }
+}
+
+fn take_ratio(b: &[u8], p: &mut usize) -> Option<Option<Q>> {
+    match take_u8(b, p)? {
+        0 => Some(None),
+        1 => Some(Some(take_q(b, p)?)),
+        _ => None,
     }
 }
 
@@ -287,10 +297,7 @@ pub fn take_verdict(b: &[u8], p: &mut usize) -> Option<Verdict> {
     let m = take_key_count(b, p)?;
     let exchanged = (0..m).map(|_| Some((take_key_count(b, p)?, take_mv(b, p)?))).collect::<Option<Vec<_>>>()?;
     let modes = take_key_count(b, p)?;
-    let similarity = match take_u8(b, p)? {
-        0 => None,
-        1 => Some(take_q(b, p)?),
-        _ => return None,
-    };
-    Some(Verdict { breaches, exchanged, modes, similarity })
+    let similarity = take_ratio(b, p)?;
+    let expansion = take_ratio(b, p)?;
+    Some(Verdict { breaches, exchanged, modes, similarity, expansion })
 }
