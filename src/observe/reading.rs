@@ -646,11 +646,11 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("glue_class_dialect", "fetched words held as dialect on a class simplex"),
     ("glue_attached", "fetched words attached to a section (ruled, not installed)"),
     ("glue_admitted", "fetched words admitted"),
-    // H2 (2026-10-03) — A CITATION INTO A FOLDED RANGE: a frame naming as its
-    // parent a receipt at or below the root this court holds for the cited
-    // signer's own fold, which `shed_folded` removed and no back-fill can
-    // bring back below a head.
-    ("folded_parent", "frames citing a parent at or below its signer's held fold root"),
+    // H2 (2026-10-03) — A CITATION INTO A FOLDED RANGE: a reported receipt
+    // naming as its parent a receipt at or below the root this court holds
+    // for the cited signer's own fold, which `shed_folded` removed and no
+    // back-fill can bring back below a head.
+    ("folded_parent", "reported receipts citing a parent at or below its signer's held fold root"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the

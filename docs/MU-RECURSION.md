@@ -21880,7 +21880,8 @@ an orbit's close (`fold_before`), and closes when nothing else returns. A
 citation into a closed era is therefore either one of its coordinates,
 proved by replay (78.65: recalled from the era, by stamp and hash up to its
 root), or no coordinate of it at all, refused by name. No indefinite
-"awaiting": a frame waits only for the proof to arrive, recomputed when it
+"awaiting": a peer's reported receipt that cites into the era waits only
+for the proof to arrive, recomputed when it
 does or when the peer's next digest moves. Proposed rename: "fold" reads as
 CLOSING AN ERA, the root as the era's RETURN POINT, in the orbit's own
 terms.
