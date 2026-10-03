@@ -339,6 +339,13 @@ impl ReceiptChain {
         self.root
     }
 
+    /// THE ROOT A PEER'S OWN FOLD ARCHIVED ITS LINE TO, as this ledger holds
+    /// its `Fold` node — the place at or below which `shed_folded` cut that
+    /// signer's line. `None` where no fold of the signer is held.
+    pub fn peer_root(&self, vk: &[u8; 32]) -> Option<Place> {
+        self.peer_roots.get(vk).copied()
+    }
+
     /// The stamps of this chain's own line, in line order.
     fn own_stamps(&self) -> Vec<Stamp> {
         let vk = self.vk;

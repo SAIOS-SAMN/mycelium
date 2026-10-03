@@ -187,6 +187,15 @@ pub fn hear<E>(
         };
         let mut hole = vk.to_vec();
         to.put_canonical(&mut hole);
+        // H2 — A CITATION INTO A FOLDED RANGE, counted once per hearing: the
+        // cited parent stands at or below the root this court holds for its
+        // signer's own fold, where `shed_folded` cut the line.
+        if let (Ok(Admitted::MissingParent(p)), false) = (&admitted, chased.contains(&hole)) {
+            let folded = kernel.lock().ok().and_then(|k| k.chain().peer_root(&p.at.vk)).is_some_and(|root| p.at.place() <= root);
+            if folded {
+                note_replication(Some(p.at.vk), rep::FOLDED_PARENT, 1);
+            }
+        }
         if chased.contains(&hole) {
             // THE SAME HOLE AFTER A CHASE THAT REACHED IT: this court holds
             // the signer's line at the cited place, and holds ANOTHER receipt
