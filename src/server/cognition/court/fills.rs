@@ -58,8 +58,12 @@ impl Kernel {
                     .scoped()
                     .map(|(_, s)| s.addr.clone())
                     .collect();
+                cx.arm_outflow();
                 (cx.fill(&sim_key), addrs)
             };
+            // 78.75 — a face this fill sealed with content, read into the
+            // field and the chart's algebra.
+            self.book_outflow(&inv, sim_key.as_bytes(), budget);
             match filled {
                 (
                     crate::transducer::cech::CoboundaryOutcome::Attached(

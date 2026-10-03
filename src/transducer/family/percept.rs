@@ -153,18 +153,18 @@ fn read_frame_axis(
         note_step(class, &turned);
         if let Some(m) = &input {
             out.push((q.frame, next.frame, m.clone()));
-            gauged.push(super::fibres::Step {
-                from: q.frame,
-                to: next.frame,
-                motor: m.clone(),
-                at_from: q.a_k.shape.blade.vertex_point(),
-                at_to: next.a_k.shape.blade.vertex_point(),
-            });
+            gauged.push(super::fibres::Step { from: q.frame, to: next.frame, motor: m.clone() });
         }
     }
-    // 78.74 — COHESION: the steps' motors are the class's coherence vectors
-    // along its frame axis; how smoothly they change is its gauge.
-    let _ = super::fibres::cohesion(class, &gauged);
+    // 78.74, 78.75 — COHESION: the steps' motors lie on the class's flow
+    // along its frame axis; whether that flow continues or bends is its
+    // gauge, read off the generators at the bodies' own base.
+    // The base the bodies stand on: the largest any of them holds (one chart's
+    // bodies share it), never the first's by position (rule 15).
+    let n = claimed.iter().fold(0usize, |n, q| n.max(q.a_k.shape.blade.n()));
+    if let (Ok(n), false) = (u8::try_from(n), claimed.is_empty()) {
+        let _ = super::fibres::cohesion(class, &gauged, n, budget);
+    }
     out
 }
 
@@ -740,7 +740,7 @@ pub(super) fn family_percept(
                     // a standing pair, or one whose sections do not read,
                     // demands it.
                     let relation = match (first_section.get(&mk), &this_piece) {
-                        (Some(first), Some(second)) => super::fibres::relate_sections(first, second),
+                        (Some(first), Some(second)) => super::fibres::relate_sections(first, second, budget),
                         _ => super::fibres::Sections::Standing,
                     };
                     super::fibres::note_section(relation);
@@ -1367,7 +1367,31 @@ pub(super) fn family_percept(
     for (line, class) in word_transports.iter_mut().zip(&line_classes) {
         line.free = quotient.free.contains(class);
     }
-    super::pairing::mark_flux(&form, &carried_on, &word_transports, budget);
+    // 78.75 — AND THE REFUSALS IT INVERTED: each white-hole source is a field
+    // line of null flux, read into the percept's tubes beside the bodies', and
+    // a theorem — its ellipsis closed by the nilpotent certificate.
+    word_transports.extend(quotient.sources.iter().cloned());
+    let slivers: Vec<cga::Mv> = quotient.sources.iter().map(|l| l.carriage.clone()).collect();
+    crate::transducer::sentence::rung::hold_sources(&slivers, budget);
+    // 78.69, 78.75 — THE MIND SPEAKS ITS RINGS BY THE MASTER EQUATION: every
+    // ring — the orbits kept and the vacua beside them (78.46(4′)) — composed
+    // as `Ω = ∏ cᵢ A(wᵢ)`, each closed sentence extrapolated to its theorem and
+    // its shortcut held as a word of the next rung, recognized, or left for the
+    // court to offer; and the field reads each sentence's own holonomy, with
+    // the mass its faces carried.
+    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let spoken = crate::transducer::sentence::rung::speak(&form, &rings, budget);
+    let holonomies: Vec<(cga::Mv, u64)> = spoken
+        .iter()
+        .filter_map(|(steps, s)| {
+            let mass = steps
+                .iter()
+                .filter_map(|o| carried_on.iter().find(|(c, _)| c == o).map(|(_, m)| *m))
+                .try_fold(0u64, |t, m| t.checked_add(m))?;
+            Some((s.omega.clone(), mass))
+        })
+        .collect();
+    super::pairing::mark_flux(&holonomies, &word_transports, budget);
     // 53.6 item 4 — THE COVER'S FILED ORBITS TAKE A CHORD OF THE SCENE.
     // Each was classified inside the cover; its chord there indexed the
     // pieces' own form. Here it takes the face between the two CLASS

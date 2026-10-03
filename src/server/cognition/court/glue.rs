@@ -99,6 +99,8 @@ impl Kernel {
             Some(c) => c,
             None => crate::transducer::cech::Complex::new(),
         };
+        // 78.75 — the court listens to its pivots on every chart it glues.
+        cx.arm_outflow();
         let vol0 = self.volume_of_simplex(&inv);
         write_peer_section(&mut cx, &spoken, &addr, peer, vol0);
         let held = cx.sections.get(self_id.as_slice()).and_then(|s| self.word_at(&s.addr).cloned());
@@ -114,6 +116,9 @@ impl Kernel {
         self.count_reopened(&mut cx, &peer, &inv);
         let fills = self.read_fills(&mut cx, &spoken, &inv, peer, budget);
         self.complexes.insert(inv.key(), cx);
+        // 78.75 — what the link's fills sealed, and what earlier releases on
+        // the chart handed back, read into the field and the chart's algebra.
+        self.book_outflow(&inv, addr.as_bytes(), budget);
         if let Standing::Refused(why) = standing {
             return self.refuse(addr, &inv, peer, rep::GLUE_GATE_REFUSED, why);
         }
@@ -577,6 +582,29 @@ impl Kernel {
         self.released_cells
     }
 
+    /// How many charts hold a complex.
+    pub fn complex_count(&self) -> usize {
+        self.complexes.len()
+    }
+
+    /// 78.75 — THIS COURT'S NERVE BY DEGREE, summed over its charts'
+    /// complexes: what each degree holds, and each cell's motion by its
+    /// modes — under one observer's stroke of its own (never the court's
+    /// reserve); a cell past it is unread by name.
+    pub fn nerve_census(&self) -> Vec<crate::transducer::cech::DegreeCensus> {
+        let mut out: Vec<crate::transducer::cech::DegreeCensus> = Vec::new();
+        let mut budget = crate::physics::Physics::default().stroke();
+        for (_, cx) in self.complexes.scoped() {
+            for (d, c) in cx.census(&mut budget).iter().enumerate() {
+                if out.len() <= d {
+                    out.resize(d + 1, crate::transducer::cech::DegreeCensus::default());
+                }
+                out[d].add(c);
+            }
+        }
+        out
+    }
+
     /// 78.74 — every seal this court's complexes made, summed off the
     /// complexes themselves (a thread's ledger sees only its own thread's).
     pub fn cells_sealed(&self) -> u64 {
@@ -598,6 +626,9 @@ impl Kernel {
     /// record) — so the complex no longer only accretes.
     pub(crate) fn release_vantages(&mut self, inv: &crate::transducer::stalk::Invariant, addr: &[u8]) {
         let Some(cx) = self.complexes.get_mut(&inv.key()) else { return };
+        // 78.75 — what the release hands back is held for the chart's next
+        // read under a stroke (`book_outflow`).
+        cx.arm_outflow();
         let vantages: Vec<Vec<u8>> = cx.sections.scoped().filter(|(_, s)| s.addr.as_bytes() == addr).map(|(v, _)| v).collect();
         for v in vantages {
             let r = cx.release_vertex(&v);

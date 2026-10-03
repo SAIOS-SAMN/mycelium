@@ -206,38 +206,49 @@ fn two_sections_are_a_copy_one_motion_or_a_second_algorithm() {
     use crate::transducer::family::fibres::{relate_sections, Sections};
     let t = |x: i64, y: i64| cga::translator_at(&[q(x, 1), q(y, 1)]);
     let first = section(at(0, 0), at(3, 4), t(3, 4));
-    assert_eq!(relate_sections(&first, &section(at(10, 1), at(14, 4), t(4, 3))), Sections::Congruent, "a copy, pointing elsewhere");
+    let b = &mut wide();
+    assert_eq!(relate_sections(&first, &section(at(10, 1), at(14, 4), t(4, 3)), b), Sections::Congruent, "a copy, pointing elsewhere");
     let standing = section(at(0, 0), at(0, 0), one());
     let flipped = section(at(3, 4), at(3, 4), mirror());
-    assert_eq!(relate_sections(&standing, &flipped), Sections::Coherent, "the flip across their line");
-    assert_eq!(relate_sections(&first, &section(at(0, 5), at(0, 7), t(0, 2))), Sections::Standing, "a second algorithm");
-    assert_eq!(relate_sections(&standing, &section(at(0, 0), at(0, 0), slide())), Sections::Standing, "one source: no fibre to read");
+    assert_eq!(relate_sections(&standing, &flipped, b), Sections::Coherent, "the flip across their line: the 180° turn it unfolds to twists the fibre");
+    assert_eq!(relate_sections(&first, &section(at(0, 5), at(0, 7), t(0, 2)), b), Sections::Standing, "a second algorithm");
+    assert_eq!(relate_sections(&standing, &section(at(0, 0), at(0, 0), slide()), b), Sections::Standing, "one source: no fibre to read");
 }
 
-/// COHESION, THE GAUGE: chained steps whose motor does not change are smooth;
-/// a change that is a flip across the step's own line is smooth (torsion);
-/// a change that slides is a bend; a gap between steps is no change; a
-/// change with no pivots to read it on is unread.
+/// COHESION, THE GAUGE (78.75), READ OFF THE FLOW: a step's generator split
+/// against the last step's plane. The flow CONTINUES where the change is pure
+/// drag — the same slide; the same slide at another rate (a rate is drag,
+/// never a bend); a flip after a flip across one line (one plane, one
+/// dimension up) — and BENDS where it carries lift: a slide then a flip
+/// across a line the slide crosses, whose generators do not commute — the
+/// curvature of the two steps is their commutator, and it is not zero. From
+/// rest there is no plane to continue: unread by name. A gap is no change.
 #[test]
-fn cohesion_counts_smooth_changes_over_changes() {
+fn cohesion_reads_whether_the_flow_continues_or_bends() {
     use crate::transducer::family::fibres::{cohesion, Step};
-    let st = |from: u64, to: u64, motor: Mv, a: Option<Mv>, b: Option<Mv>| Step { from, to, motor, at_from: a, at_to: b };
-    let uniform = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(1, 2, slide(), Some(at(1, 0)), Some(at(2, 0)))];
-    assert_eq!(cohesion(b"u", &uniform), (1, 1, 0), "the same step twice: smooth");
-    let twisted = [st(0, 1, one(), Some(at(0, 0)), Some(at(0, 0))), st(1, 2, mirror(), Some(at(0, 0)), Some(at(3, 4)))];
-    assert_eq!(cohesion(b"t", &twisted), (1, 1, 0), "a flip across the step's line: smooth");
-    let bent = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(1, 2, cga::translator_at(&[q(0, 1), q(2, 1)]), Some(at(1, 0)), Some(at(1, 2)))];
-    assert_eq!(cohesion(b"b", &bent), (0, 1, 0), "a different slide: a bend");
-    let gapped = [st(0, 1, slide(), Some(at(0, 0)), Some(at(1, 0))), st(2, 3, mirror(), Some(at(0, 0)), Some(at(3, 4)))];
-    assert_eq!(cohesion(b"g", &gapped), (0, 0, 0), "no neighbour across a gap");
-    let blind = [st(0, 1, slide(), None, None), st(1, 2, mirror(), None, None)];
-    assert_eq!(cohesion(b"n", &blind), (0, 0, 1), "no pivots: unread, never guessed");
+    let st = |from: u64, to: u64, motor: Mv| Step { from, to, motor };
+    let b = &mut wide();
+    let uniform = [st(0, 1, slide()), st(1, 2, slide())];
+    assert_eq!(cohesion(b"u", &uniform, 2, b), (1, 1, 0), "the same slide twice: the flow continues");
+    let faster = [st(0, 1, slide()), st(1, 2, cga::translator_at(&[q(5, 2), q(0, 1)]))];
+    assert_eq!(cohesion(b"f", &faster, 2, b), (1, 1, 0), "the same slide at another rate: drag, smooth");
+    let flips = [st(0, 1, mirror()), st(1, 2, mirror().scale(&q(3, 1)))];
+    assert_eq!(cohesion(b"m", &flips, 2, b), (1, 1, 0), "two flips across one line: one plane one dimension up");
+    let bent = [st(0, 1, slide()), st(1, 2, mirror())];
+    assert_eq!(cohesion(b"b", &bent, 2, b), (0, 1, 0), "a slide then a flip across a line it crosses: lift, a bend");
+    let gapped = [st(0, 1, slide()), st(2, 3, mirror())];
+    assert_eq!(cohesion(b"g", &gapped, 2, b), (0, 0, 0), "no neighbour across a gap");
+    let from_rest = [st(0, 1, one()), st(1, 2, slide())];
+    assert_eq!(cohesion(b"r", &from_rest, 2, b), (0, 0, 1), "from rest: no plane to continue, unread");
 }
 
-/// ON A REAL PERCEPT, COHESION READS THE FRAME AXIS: a bar the rule moves
-/// down, standing one column further right in each successive pair, steps
-/// along the frame axis by one motor each time — smooth; standing at columns
-/// 0, 1 and 3, its second step differs — a bend.
+/// ON A REAL PERCEPT, COHESION READS THE FRAME AXIS (78.75): a bar the rule
+/// moves down, standing one column further right in each successive pair,
+/// flows by one slide — smooth; standing at columns 0, 1 and 3 it flows on at
+/// another rate — drag, still smooth (it read as a bend while cohesion
+/// compared sampled motors); an L the rule moves down that slides and is
+/// then flipped across its column bends — the flip's plane, one dimension
+/// up, does not commute with the slide's.
 #[test]
 fn on_a_real_percept_cohesion_reads_the_frame_axis() {
     use super::common::grid;
@@ -246,8 +257,23 @@ fn on_a_real_percept_cohesion_reads_the_frame_axis() {
         let blank = "000000".to_string();
         (grid(&[&row('1'), &blank, &blank]), grid(&[&blank, &row('1'), &blank]))
     };
-    for (name, cols, smooth) in [("uniform", [0, 1, 2], true), ("bent", [0, 1, 3], false)] {
-        let family: Vec<_> = cols.iter().map(|&c| at_col(c)).collect();
+    // An L at column `c`, upright or flipped across its own column.
+    let l_at = |c: usize, flipped: bool| {
+        let cell = |i: usize, on: &[usize]| if on.contains(&i) { '2' } else { '0' };
+        let (top, low): (Vec<usize>, Vec<usize>) = match flipped {
+            false => (vec![c, c + 1], vec![c]),
+            true => (vec![c, c + 1], vec![c + 1]),
+        };
+        let row = |on: &[usize]| -> String { (0..6).map(|i| cell(i, on)).collect() };
+        let blank = "000000".to_string();
+        (grid(&[&row(&top), &row(&low), &blank, &blank]), grid(&[&blank, &row(&top), &row(&low), &blank]))
+    };
+    let bent: Vec<_> = vec![l_at(0, false), l_at(1, false), l_at(1, true)];
+    for (name, family, smooth) in [
+        ("uniform", [0, 1, 2].iter().map(|&c| at_col(c)).collect::<Vec<_>>(), true),
+        ("faster", [0, 1, 3].iter().map(|&c| at_col(c)).collect::<Vec<_>>(), true),
+        ("bent", bent, false),
+    ] {
         let _ = take_last();
         let _ = crate::transducer::family::extract_rule(&family, &mut crate::physics::Physics::default().stroke_n(1 << 20));
         let Some(q) = take_last() else { panic!("{name}: the percept read its fibres") };

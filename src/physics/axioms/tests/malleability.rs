@@ -14,9 +14,14 @@ fn stroke() -> crate::physics::Budget {
     crate::physics::Physics::default().stroke_n(1 << 16)
 }
 
-/// A 90° turn about the origin, unnormalized.
+/// The turn at `t` along the `e₁e₂` plane's flow, `1 + t·e₁e₂` — the
+/// (3, 4, 5) turn at `t = 1/2`, of no finite order.
+fn turn_at(t: BigRational) -> Mv {
+    Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, t))
+}
+
 fn turn() -> Mv {
-    Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, q(1, 1)))
+    turn_at(q(1, 2))
 }
 
 fn modes(m: &Mv) -> Vec<cga::MotionMode> {
@@ -31,17 +36,33 @@ fn moved(a: crate::transducer::cech::flux::Admitted) -> (u64, u64, u64) {
     (a.opened, a.closed, a.relieved)
 }
 
-/// 78.73 (2) — 𝒽'S VENT IS THE TURN'S RETURN: four 90° turns in one plane
-/// open twice, close once, and the fourth returns the orbit, relieving all
-/// that stood open; the orbit is let go.
+/// 78.73 (2), 78.75 — 𝒽'S VENT IS THE FLOW'S RETURN, WHATEVER THE AMOUNTS:
+/// one plane is one orbit, and every turn admitted on it composes into the
+/// point its flow has reached. The (3, 4, 5) turn — a rosette, no finite
+/// order, never returning alone — twice flows away (t = 1/2, then 4/3); a
+/// turn of ANOTHER amount, 4/9 back, brings it nearer (to t = 4/3 ⊕ −4/9 =
+/// 24/43, `|1 − c|` from 32/25 down to 1152/2425), and the turn that is the remainder's own inverse
+/// returns it, relieving all that stood open. Counted as ±1 windings of one
+/// fixed angle, keyed by the angle, the three amounts stood on three orbits
+/// and none could ever return the others.
 #[test]
-fn four_quarter_turns_open_close_and_return() {
-    let [m] = modes(&turn()).try_into().expect("one mode: one plane");
+fn turns_of_any_amount_flow_on_one_orbit_and_return_exactly() {
+    let mode = |t: BigRational| -> cga::MotionMode {
+        let [m] = modes(&turn_at(t)).try_into().expect("one mode: one plane");
+        m
+    };
     let mut orbits = OrbitRegistry::new();
-    let seen: Vec<(usize, (u64, u64, u64))> = (0..4).map(|_| orbits.admit_mode(&m, 3).map(|(l, a)| (l, moved(a))).expect("reads")).collect();
-    assert_eq!(seen, vec![(3, (3, 0, 0)), (3, (3, 0, 0)), (3, (0, 3, 3)), (3, (0, 3, 3))], "on 𝒽: away, away, nearer, returned");
-    assert_eq!(orbits.totals(), ([0; 4], [0, 0, 0, 12]), "nothing left open; twelve moved");
+    let mut admit = |t: BigRational| orbits.admit_mode(&mode(t), 3).map(|(l, a)| (l, moved(a))).expect("reads");
+    assert_eq!(admit(q(1, 2)), (3, (3, 0, 0)), "on 𝒽: away from its return");
+    assert_eq!(admit(q(1, 2)), (3, (3, 0, 0)), "further: the flow stands at 4/3");
+    assert_eq!(admit(q(-4, 9)), (3, (0, 3, 3)), "another amount, back: nearer");
+    // Where it stands now, and the turn that is its exact inverse.
+    let p = cga::FlowPoint::at(&Mv::blade(E1 | E2, q(1, 1)), &q(4, 3)).expect("a plane");
+    let back = cga::FlowPoint::at(&Mv::blade(E1 | E2, q(1, 1)), &q(-4, 9)).expect("a plane");
+    let here = p.then(&back).and_then(|x| x.parameter()).expect("off the pole");
+    assert_eq!(admit(-here), (3, (0, 3, 3)), "its inverse: returned, relieved whole");
     assert!(orbits.is_empty(), "a returned orbit is let go: the carrier keeps its bound");
+    assert_eq!(orbits.totals(), ([0; 4], [0, 0, 0, 12]), "nothing open; twelve moved");
 }
 
 /// 78.73 (2) — A TURN AND ITS INVERSE RETURN AT ONCE: orientation is the
@@ -56,14 +77,18 @@ fn a_turn_and_its_inverse_return() {
     assert!(orbits.is_empty());
 }
 
-/// 78.73 (2) — 𝒮'S VENT: a dilation by two and one by a half return.
+/// 78.73 (2), 78.75 — 𝒮'S VENT: dilations compose on one orbit by their
+/// ratios — by two, then by three, then by a sixth returns.
 #[test]
-fn a_dilation_and_its_inverse_return_on_spatial() {
-    let [grow] = modes(&cga::dilator(&q(2, 1))).try_into().expect("one mode");
-    let [shrink] = modes(&cga::dilator(&q(1, 2))).try_into().expect("one mode");
+fn dilations_compose_on_one_orbit_and_return_on_spatial() {
+    let one = |r: BigRational| -> cga::MotionMode {
+        let [m] = modes(&cga::dilator(&r)).try_into().expect("one mode");
+        m
+    };
     let mut orbits = OrbitRegistry::new();
-    assert_eq!(orbits.admit_mode(&grow, 5).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "a boost is 𝒮");
-    assert_eq!(orbits.admit_mode(&shrink, 5).map(|(l, a)| (l, moved(a))), Some((0, (0, 5, 5))));
+    assert_eq!(orbits.admit_mode(&one(q(2, 1)), 5).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "a boost is 𝒮");
+    assert_eq!(orbits.admit_mode(&one(q(3, 1)), 5).map(|(l, a)| (l, moved(a))), Some((0, (5, 0, 0))), "by three more: further");
+    assert_eq!(orbits.admit_mode(&one(q(1, 6)), 5).map(|(l, a)| (l, moved(a))), Some((0, (0, 5, 10))), "by a sixth: returned");
     assert!(orbits.is_empty());
 }
 

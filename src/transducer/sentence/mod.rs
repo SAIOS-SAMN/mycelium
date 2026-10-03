@@ -19,6 +19,7 @@ mod obstruction;
 mod reading;
 pub mod demand;
 pub mod compose;
+pub mod rung;
 pub mod theorem;
 
 pub use chain::*;

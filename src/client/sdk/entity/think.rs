@@ -893,6 +893,13 @@ impl Entity {
         ]
     }
 
+    /// 78.75 — this mind's nerve by degree: what its contemplation's complex
+    /// holds at each degree, and each cell's motion by its modes, under one
+    /// observer's stroke of its own.
+    pub fn nerve_census(&self) -> Vec<crate::transducer::cech::DegreeCensus> {
+        self.contemplation.complex.census(&mut crate::physics::Physics::default().stroke())
+    }
+
     pub fn carriers(&self) -> [usize; 10] {
         [
             self.taught_up.len(),

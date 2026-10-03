@@ -517,27 +517,47 @@ pub enum LieRankRefused {
 /// The rank-step act (78.68) is a step of this one.
 pub fn lie_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) -> Result<usize, LieRankRefused> {
     let holonomies: Vec<Option<&Mv>> = circuits.iter().map(|c| c.holonomy.as_ref().ok()).collect();
-    let gens = cayley_generators(&holonomies)?;
+    let gens = cayley_generators(&holonomies, budget)?;
     if gens.is_empty() {
         return Err(LieRankRefused::NoneRead);
     }
     Ok(lie_close(&[], &gens, budget)?.len())
 }
 
-/// Each read holonomy's Cayley bivector, in order, on §52's chart
-/// `B = ⟨H⟩₂ / ⟨H⟩₀` (`cayley::bivector_of`): projective in `H`, exact, and
-/// no root taken — the span reads only the bivector's direction, so a
-/// holonomy of irrational-rooted weight (a 90° turn, weight 2) is read, not
-/// refused. An unread holonomy (`None`) is passed over; one off the chart —
-/// no scalar part (a 180° turn), an odd or non-versor element — refuses by
-/// its index.
-pub fn cayley_generators(holonomies: &[Option<&Mv>]) -> Result<Vec<Mv>, LieRankRefused> {
+/// Each read holonomy's generators, in order ([`flow_generators`]). An
+/// unread holonomy (`None`) is passed over; one whose generators do not read
+/// — an odd or non-versor element, or modes the stroke could not split —
+/// refuses by its index.
+pub fn cayley_generators(holonomies: &[Option<&Mv>], budget: &mut crate::physics::Budget) -> Result<Vec<Mv>, LieRankRefused> {
     let mut gens = Vec::new();
     for (circuit, h) in holonomies.iter().enumerate() {
         let Some(h) = h else { continue };
-        gens.push(crate::transducer::cayley::bivector_of(h).ok_or(LieRankRefused::NoChart { circuit })?);
+        gens.extend(flow_generators(h, budget).ok_or(LieRankRefused::NoChart { circuit })?);
     }
     Ok(gens)
+}
+
+/// 78.75 — THE DIRECTIONS A MOTION FLOWS BY, for the algebra it spans: its
+/// Cayley bivector on §52's chart `B = ⟨H⟩₂ / ⟨H⟩₀` (`cayley::bivector_of`) —
+/// projective in `H`, exact, no root taken — and where the chart has its pole
+/// (no scalar part: a 180° turn, or a motion holding one), each MODE's own
+/// plane instead (MR1): the 180° turn's ray is its plane's blade, and that
+/// plane is in the algebra however far round the turn went. It refused the
+/// pole by name, and the algebra lost every circuit holding a 180° turn.
+/// Empty for the identity; `None` where the motion is odd or no versor, or
+/// its modes do not split under the stroke.
+pub fn flow_generators(h: &Mv, budget: &mut crate::physics::Budget) -> Option<Vec<Mv>> {
+    if let Some(b) = crate::transducer::cayley::bivector_of(h) {
+        return Some(match b.is_zero() {
+            true => Vec::new(),
+            false => vec![b],
+        });
+    }
+    let modes = cga::motion_modes(h, budget)?.ok()?;
+    if modes.iter().any(|m| m.reflects) {
+        return None;
+    }
+    Some(modes.iter().map(|m| m.ray.grade(2)).filter(|b| !b.is_zero()).collect())
 }
 
 /// THE LIE CLOSURE OF A HELD BASIS WITH NEW GENERATORS: `held` is a basis

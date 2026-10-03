@@ -126,6 +126,12 @@ pub(crate) struct CarriedTransition {
     pub(crate) face: coord::Overlap,
     pub(crate) forward: bool,
     pub(crate) transport: Option<Transport>,
+    /// 78.75 — THE CARRIAGE IS THE WHOLE MOTION: a contact face's edge holds
+    /// its refraction `θ·V` entire in its carriage (BQ5a), its word a spelling
+    /// of θ's turn beside it; every other transport holds its turn in its word
+    /// and the rest in its carriage (`edge_of`, `face_place`). The master
+    /// equation's term reads each by what it holds (`compose::terms_of`).
+    pub(crate) whole: bool,
 }
 
 /// WHY A TRANSPORT WAS NOT READ (H2c, rule 11). One `unread` counter could
@@ -379,6 +385,7 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
             face: s.overlap.clone(),
             forward,
             transport: carried.clone(),
+            whole: !touches_frame(&s.overlap) && f.interface.is_some(),
         });
         // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
         // face with a place and no edge is not rigid, and a transport whose

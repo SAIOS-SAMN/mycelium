@@ -131,11 +131,16 @@ impl Complex {
             // by the climb's `fill`, `fill_by_gauge` or `ascend` alike. It was
             // booked inside `ascend` only, which nothing calls live, so the
             // ledger read `sealed 0` while the complexes sealed.
-            if degree >= 2 && c.fill.unsettled() && !fill.unsettled() {
+            let sealed = degree >= 2 && c.fill.unsettled() && !fill.unsettled();
+            c.fill = fill.clone();
+            if sealed {
                 crate::physics::metabolism::note_sealed();
                 let _ = crate::physics::metabolism::step_or_refuse(&mut self.sealed, 1);
+                // 78.75 — A SEALED FACE'S CONTENT FLOWS OUT: its motion, one
+                // `Cl(4,1)` element, to the owner's field.
+                let motion = c.motion();
+                self.flow_out(motion);
             }
-            c.fill = fill.clone();
         }
     }
 
@@ -465,6 +470,10 @@ impl Complex {
                 // re-entered from the one it just left, which is what
                 // makes the record it leaves a record and not a state.
                 crate::physics::metabolism::note_cauterized();
+                // 78.75 — AND THE STRAIN IS NOT DROPPED INTO A COUNTER: the
+                // tether's motion flows out to the owner's field, where its
+                // turns, boosts and null flux are read like any other.
+                self.flow_out(simplex.motion());
                 Drained::Cauterized(fill)
             }
         }
@@ -534,6 +543,7 @@ impl Complex {
         // AN UNREAD 2-CELL SEALED NOTHING. It stands `Open`, so no
         // circulation was ever recorded closed and there is no class to
         // hand back — the membrane simply goes.
+        let motion = simplex.motion();
         let sealed = match simplex.fill {
             Fill::Open => None,
             held => Some(held),
@@ -547,6 +557,8 @@ impl Complex {
                 // skeleta and a ledger that merges them cannot say which
                 // dimension the engine is spending.
                 crate::physics::metabolism::note_released();
+                // 78.75 — the released membrane's content flows out.
+                self.flow_out(motion);
                 Descended::Released(fill)
             }
         }

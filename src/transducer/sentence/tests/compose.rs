@@ -86,3 +86,65 @@ fn a_closed_sentence_teaches_a_word_of_the_next_rung() {
     let again = compose(&[Term { word: words[0].clone(), transport: one() }], &mut stroke()).expect("a sentence");
     assert_eq!(again.closure, Closure::Closes(4), "the next rung composes as this one does");
 }
+
+/// A crossing of one face carrying the (3, 4, 5) turn in the `r, c` plane and
+/// a displacement, as the circuit records it.
+fn crossing(forward: bool) -> crate::transducer::sentence::circuit::CarriedTransition {
+    use crate::transducer::alphabet::{LetterId, Word};
+    let word = Word::from_letters(&[(LetterId::pythagorean_5((0, 1)).expect("a pair plane"), true)]);
+    let carriage = cga::translator_at(&[q(2), q(-1), q(0)]);
+    crate::transducer::sentence::circuit::CarriedTransition {
+        face: crate::network::nerve::coord::Overlap {
+            from: crate::network::nerve::coord::ChartAt::Frame,
+            to: crate::network::nerve::coord::ChartAt::Frame,
+        },
+        forward,
+        transport: Some(crate::transducer::sentence::Transport { word, carriage, gauge: Vec::new() }),
+        whole: false,
+    }
+}
+
+fn path_of(transitions: Vec<crate::transducer::sentence::circuit::CarriedTransition>) -> crate::transducer::sentence::circuit::PathCarried {
+    use crate::transducer::alphabet::Word;
+    let flat = || crate::transducer::sentence::Transport { word: Word::identity(), carriage: one(), gauge: Vec::new() };
+    crate::transducer::sentence::circuit::PathCarried {
+        face: flat(),
+        edge: Some(flat()),
+        transitions,
+        edge_refused: None,
+        edge_lost_at: None,
+        refracted: None,
+    }
+}
+
+/// 78.75 — A RING'S CROSSING IS ONE MOTION: its term is the word's motion
+/// `A(w)` and the displacement `c`, so the crossing composes to `c·A(w)` —
+/// the member's own conformal realisation (`conformal_of`), the word kept,
+/// never dropped as the carriage-only product dropped it. Crossed against
+/// the face it is the exact inverse: forward then back returns the ring to
+/// the identity, ℓ = 1. And the circuit's one reader (`composite`) is this
+/// product.
+#[test]
+fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
+    use crate::transducer::sentence::compose::{omega_of, terms_of};
+    let one_way = path_of(vec![crossing(true)]);
+    let terms = terms_of(&one_way).expect("every transport read");
+    let tr = crossing(true).transport.expect("held");
+    let motion = crate::transducer::element::conformal_of(&tr.word, &tr.carriage).expect("a base action");
+    assert!(omega_of(&terms).projective_eq(&motion), "the crossing is c·A(w), one motion");
+    assert!(!omega_of(&terms).projective_eq(&tr.carriage), "the word is not dropped");
+    assert_eq!(one_way.composite().map(|m| m.projective_eq(&motion)), Some(true), "the circuit's one reader is the master equation's product");
+    let there_and_back = path_of(vec![crossing(true), crossing(false)]);
+    let s = compose(&terms_of(&there_and_back).expect("read"), &mut stroke()).expect("a sentence");
+    assert_eq!(s.closure, Closure::Closes(1), "a crossing and its reverse: the identity");
+    let mut unread = crossing(true);
+    unread.transport = None;
+    assert!(terms_of(&path_of(vec![crossing(true), unread])).is_none(), "an unread crossing leaves the ring unread, never flat");
+    // A contact's carriage holds its refraction whole (BQ5a): that crossing is
+    // its carriage alone — its word spells the same turn and is not counted
+    // twice.
+    let mut contact = crossing(true);
+    contact.whole = true;
+    let whole = terms_of(&path_of(vec![contact])).expect("read");
+    assert!(omega_of(&whole).projective_eq(&tr.carriage), "a contact crossing is its whole carriage");
+}

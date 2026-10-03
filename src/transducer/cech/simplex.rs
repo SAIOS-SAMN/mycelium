@@ -455,6 +455,16 @@ impl Simplex {
     pub fn contains(&self, v: &[u8]) -> bool {
         self.vertices.iter().any(|x| x.as_slice() == v)
     }
+
+    /// 78.75 — THE CELL'S CONTENT AS ONE MOTION OF `Cl(4,1)`: its carriage
+    /// composed with its rotor carried into the conformal algebra
+    /// (`Rotor::lift`, the exact embedding), `carriage · lift(rotor)` — the
+    /// transition `D(ρ)·T(t)·R` as the one element it is. The two fields stay
+    /// as stored (the persisted layout is the recut's); every reader of a
+    /// cell's content reads this, by its modes.
+    pub fn motion(&self) -> crate::transducer::cga::Mv {
+        self.carriage.geo(&self.coefficient.lift())
+    }
 }
 
 /// Degree-0 section: the representative word after in-hypha gluing, and its gauge.

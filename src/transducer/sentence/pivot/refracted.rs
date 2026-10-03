@@ -177,7 +177,21 @@ impl PathCarried {
     /// circuit through static contacts only has ONE candidate, and its
     /// geometric composite — the tether holonomy — is read here; its gauge
     /// half is static, read by [`PathCarried::gauge_static`].
+    ///
+    /// 78.75 — AND IT IS THE MASTER EQUATION'S ONE PRODUCT. Where every
+    /// transition's transport read, the whole transport is `Ω = ∏ cᵢ A(wᵢ)`
+    /// in the circuit's order — each crossing its displacement and its word
+    /// as one motion (`compose::terms_of`, 78.69). It read `Ω_edge · Ω_face`:
+    /// two rings' products of carriages, multiplied after the fact, every
+    /// word dropped — the two-field split read as one half, and the ring
+    /// composed out of its own order. A transition whose word has no base
+    /// action leaves the circuit unread (rule 11). Through a held coset or a
+    /// static contact the refraction's own reader stands, as before.
     pub(crate) fn composite(&self) -> Option<element::Versor> {
+        if self.refracted.is_none() {
+            let terms = crate::transducer::sentence::compose::terms_of(self)?;
+            return Some(crate::transducer::sentence::compose::omega_of(&terms));
+        }
         match (&self.edge, &self.refracted) {
             (Some(e), _) => Some(e.carriage.geo(&self.face.carriage)),
             (None, Some(r)) => r.single().map(|c| c.carriage.geo(&self.face.carriage)),

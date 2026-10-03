@@ -74,9 +74,11 @@ fn held_form_over_a_cell(chord: &Word, placed: &Word) -> Form {
     }
     let [c2, c3] = charts.as_slice() else { panic!("two members stood") };
     let o = chord_between(&mut f, c2, c3, chord.clone());
-    // The chord between the two bodies carries its edge (50.3): the chord
-    // word's versor, as pairing leaves it on a perceived form.
-    let carriage = element::versor_of_word(chord).expect("a 90° turn is a versor");
+    // The chord between the two bodies carries its edge (50.3) as pairing
+    // leaves it on a perceived form (`edge_of`): the turn in its word, the
+    // displacement — none, a turn about the origin — in its carriage. Its one
+    // motion is `c·A(w)` (78.75).
+    let carriage = element::identity_versor();
     if let Some(face) = f.faces.at_mut(&o) {
         face.place.edge = Some(crate::transducer::sentence::Transport {
             word: chord.clone(),

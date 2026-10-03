@@ -19823,6 +19823,9 @@ C(w) ⊢ ( h ∈ ℚ^{1+n+1+4+|hues|},  [B] ∈ ℚ^{10}/ℚ×,  κ = (I₁, I�
   not fixed. Being versor-invariant, it holds no centroid and no height.
 - *[B], the Cayley bivector*: `B = (W − W̃)/⟨W + W̃⟩₀ = ⟨W⟩₂/⟨W⟩₀`
   (§52), defined wherever `⟨W⟩₀ ≠ 0`; the 180° turns are refused there.
+  *(Amended 2026-10-03, 78.75: at that pole each mode's own plane is read
+  instead — `flow_generators` — and the per-mode table below is one law,
+  `t₁ ⊕ t₂ = (t₁ + t₂)/(1 + k t₁t₂)`, `k = B²`.)*
   It is the projectivized generator in so(4,1): scale is quotiented, not
   cancelled (64.4). It covers every kind of motion, not only null ones.
 - *κ, the class*: the conjugacy class `(I₁, I₂, kind)` of B, as
@@ -20234,7 +20237,8 @@ the courts).**
   magnitude and no per-height draw. Yours to rule.
 - `compose` is a capability of the library. Wiring a voice's own forms
   through it, so that its closed sentences' shortcuts become its next-rung
-  words in cognition, is the next step.
+  words in cognition, is the next step. *(Wired 2026-10-03: 78.75 as
+  amended, "the circuit closed through the master equations".)*
 
 **Tested.**
 - `compose::a_sentence_closes_at_the_period_of_its_holonomy`;
@@ -20925,6 +20929,199 @@ are two exact comparisons.
 - `Vacuum` renamed `Slack`: a tether with no tension, claiming no flow.
 - The shape reading moved to the inner-product form: the geoid as one
   vector σ, with membership one scalar `P·σ`.
+
+### 78.75 Motion is a flow, a frame is a sample; the built machinery closes the circuit (ruled 2026-10-03, the operator's word: "why are you using steps in a continuous motion", "we don't build in flattened space", "incorporate whitehole mathematics into our multi-axial pivot machinery")
+
+**The defect.** Readings built this session compared sampled frames and
+read faces through the Euclidean rotor:
+- cohesion as `D = s̃t`, a finite difference of two motors;
+- orbits as ±1 windings of one fixed angle, keyed by the angle;
+- the capacitor's "step" between two levels;
+- fibres by a finite keep-test on two sampled ends;
+- a nerve census calling a face curved where its `Cl(4,0)` rotor was not
+  the identity, its test a triangle with a 90° turn.
+
+A frame is where a flow was observed, never the unit it moves in
+(checklist (m)). And the exact machinery that reads the flow was already
+written and unwired: `motion_modes`' rays, `lift_drag`, `Fibre::split`,
+`cayley_generators`/`lie_rank`, `Rotor::lift`, and the white-hole source,
+which stood in tests only.
+
+**(1) The flow point** (`cga::FlowPoint`). A mode on one simple plane `B`,
+`k = B²`, is the point `a + bB` on that plane's flow. Two points compose by
+the geometric product: `t₁ ⊕ t₂ = (t₁ + t₂)/(1 + k t₁t₂)`. This is one law,
+with the metric's sign deciding:
+- the turn's tangent addition (`k < 0`);
+- the boost's (`k > 0`);
+- plain addition on a null plane (`k = 0`), which is the white-hole
+  slivers' own law: 1/7 then 2/5 is 19/35.
+
+The 180° pole is held as `(0 : 1)`. The return is `b = 0`. Nearness is
+`|1 − c|` with `c = (a² + kb²)/(a² − kb²)`, MR1's own value; a null flow's
+nearness is `|t|`. A flip (an odd versor) is unfolded one dimension up
+(`cga::unfold`) into the 180° turn about its line through the new axis,
+which acts on the base exactly as the mirror does.
+
+**(2) Orbits flow.** Each orbit is ONE PLANE, keyed by the plane alone. It
+holds the point its flow has reached, every admitted mode composed into
+it. A rosette keeps flowing; its point is content, never capped (78.43).
+Turns of any amounts in one plane return when their composite is the
+identity.
+
+**(3) Fibres read by the flow.** A relative motion's modes are each split
+against the fibre (field, torsion, lift). A pivot the finite motion moves
+is a lift without reading, since a flow fixing it would fix it at every
+point. `carried_by` is retired.
+
+**(4) Cohesion is lift and drag** (78.46). The next step's generator, split
+against the last's plane:
+- pure DRAG continues the flow, at whatever rate: smooth;
+- LIFT bends it. The curvature of two steps is their commutator. Two
+  slides commute and are flat, so a rate change is never a bend.
+- From rest there is no plane to continue: unread.
+
+**(5) The capacitor charges by ratio.** `Fibre::charge(r) = S(r)S(1)` is a
+point on the field's flow, and charges compose by multiplying ratios.
+`step` is retired.
+
+**(6) The white-hole source is an organ** (`physics::source`):
+- `geoid_vector`, the round's dual: one vector, membership one scalar;
+- `keeping`, the half of a generator that reflection in σ leaves
+  unchanged;
+- `Source::of(σ, P, K)`, the null generator `N = P ∧ (P·K)`, verified to
+  be null, to fix `P` and to keep σ;
+- slivers `1 + tN`.
+
+**(7) A refusal inverted, live.** In the voice's quotient, a LIFTED fibre
+in a frame whose pivots fix a geoid gives, at each pivot its geoid-keeping
+lift moves, a source. Each source is a field line of null flux, read into
+the percept's tubes. Counted on the fibres line as `sourced` (signal
+recovered) and `unsourced` (noise).
+
+**(8) The pivots' outflow.** Each of these hands back its motion, one
+`Cl(4,1)` element `carriage · lift(rotor)` (`Simplex::motion`), to an
+owner that listens (`arm_outflow`/`take_outflow`):
+- `drain` (a cauterized tether);
+- `descend` (a released membrane);
+- the one fill writer's seal (a face sealed with content).
+
+The court reads it through its one door (`book_field`) and closes its
+generators into the chart's holonomy algebra (`book_outflow`), sealing a
+`RankStep` where the rank rose. This is face content reaching cognition.
+
+**(9) The zero, typed.** Every fleet reading showed 0 rank steps, and the
+court's counters said why: every ruled sentence was `ringless`. That count
+is now split into acyclic, vacuous (only trivial cycles, the vacua of
+78.46(4′)) and circuits-unread. The Lie generators read the Cayley chart's
+pole through each mode's plane instead of refusing it (`flow_generators`).
+
+**(10) The census reads faces by their motion's modes:** flat, turn, boost,
+null, 180°, unread. Its test is faces holding a fibre's charge, a
+white-hole sliver and a loxodrome, each read back exactly.
+
+**Still Euclidean, by name, until the recut.** The stored cell is still
+the `Cl(4,0)` rotor plus carriage pair (read here as one motion, stored as
+two). The rotor's period readers (Niven cosines on its quaternion factors,
+seven live readers) are unchanged. Storing the one motion is a layout
+change, and the recut is the operator's.
+
+#### 78.75 (amended 2026-10-03) — the circuit closed through the master equations
+
+**The audit** (the operator: "it sounds like we are re-struggling with
+sentence composition after we formulated the master equations"). 78.68–78.70
+wrote the master equations and `compose`, `next_rung` and `Theorem` were
+built. None had a live caller. The live paths each recomputed a piece of the
+sentence equation their own way:
+- the circuit's holonomy (`PathCarried::composite`) as `Ω_edge · Ω_face`, the
+  carriages of two rings multiplied after the fact, every word dropped;
+- the court's rank off the form's face cycles;
+- the percept's flux off the same composites;
+- 78.75's outflow straight into the chart's algebra.
+
+**Wired — one equation, every reader:**
+1. **A ring is a sentence** (`compose::terms_of`, `sentences_of`). Each
+   crossing is the term `{word: A(w), transport: c}`, its one motion `c·A(w)`.
+   A crossing against the face is the exact inverse, `{Ã, Ã c̃ A}`. The
+   circuit's one reader, `composite`, is now `Ω = ∏ cᵢ A(wᵢ)` in the ring's
+   own order. Through a held coset or a static contact the refraction's own
+   reader stands (78.6).
+2. **Each crossing read by what its transport holds.** A measured edge
+   (`edge_of`) and a face's place hold the turn in the word and the rest in
+   the carriage: the crossing is `c·A(w)`. A contact's edge (BQ5a) holds its
+   refraction `θ·V` whole in its carriage, its word a spelling of θ beside it:
+   the crossing is that carriage alone (`CarriedTransition::whole`), never the
+   turn counted twice. The coset and static refractions keep their own reader.
+3. **The voice speaks its rings** (`sentence::rung::speak`, in the percept):
+   - every kept orbit and vacuum is composed;
+   - each closed sentence is extrapolated (`Theorem::of`: periodic or
+     nilpotent);
+   - each open one is named (rosette, unbound, unread);
+   - the field reads each sentence's own `Ω` with its faces' mass.
+4. **The rung recurses, live.** A closed sentence's open path is a shortcut:
+   - *recognized* where the mind holds it (re-derivation is comprehension,
+     80.2);
+   - else held at rung `1 + max(rung of its terms)`, spelled (grammar,
+     78.60's zero cost) or unspelled.
+
+   The lexicon is the mind's, volatile, one entry per distinct shortcut
+   (78.49).
+5. **The court adjudicates by the equation** (`step_rank`):
+   - the ruled form's rings are re-derived as sentences; the chart's algebra
+     closes over each sentence's holonomy `B(Ω)` (78.11, 78.68: `𝔥` is
+     generated by the circuits' `B_c`) and its carried words `B(W̄ᵢ)`
+     (78.69's term). The words alone read a dislocation as nothing: a
+     slide's words do not turn, and its curvature is all in `Ω`;
+   - each closed sentence's theorem is checked (`Theorem::check`);
+   - an unspelled shortcut is offered as a letter through the one door
+     (`open_unspellable`, 78.61 C2), its discoverer the mind that spoke the
+     form.
+6. **The nerve's faces are sentences** (78.60 (2)). A face's holonomy around
+   its vantages is composed as one term. Where it closes it is a proof, its
+   theorem checked, and its curvature's generators close into the chart's
+   algebra (`book_outflow`).
+7. **The white-hole source is the nilpotent certificate.** A refusal
+   inverted, `1 + N` with `N² = 0`, extrapolates to `Ωᵐ ∝ 1 + m·N`: its
+   ellipsis closed (counted `sources`).
+8. **The torsion quotient against 78.60's cost, measured.** Each free class's
+   generators are closed with its charged member's. Opening no dimension is
+   grammar; opening one means the quotient eliminated something the algebra
+   did not. Counted both ways and never assumed equal.
+
+**Amendments to the master equations, read here:**
+- 78.68's per-mode table is one law, `t₁ ⊕ t₂ = (t₁ + t₂)/(1 + k t₁t₂)` with
+  `k = B²` (`cga::FlowPoint`). Its `[B]` no longer refuses the 180° turns:
+  `flow_generators` reads the Cayley chart's pole through each mode's plane.
+- 78.69's "wiring a voice's own forms through `compose`" and 78.70's
+  "wiring" are done.
+- The court's winding carrier still counts integer windings `m mod ℓ`: it is
+  persisted, so moving it onto flow points is the recut's.
+
+**Read on the corpus fixtures (tests, before the fleet):**
+- The mint keeps the percept's rings: the two-pair slide family holds two
+  rings in the percept and the same two in its minted form, so the court
+  re-derives them. A one-pair family is a tree in both: ringless, acyclic
+  by name.
+- Every percept ring read so far is OPEN: unbound, on every family tried
+  (slide, flip, swap, turn). The old composite read the same modes. Each
+  ring crosses the chord between two copies of a piece. That chord's edge is
+  the Burgers vector `τ = p(D_b) − p(D_a)`, realised as a transvection
+  (54.7 R3), a boost that never returns. So no percept sentence closes and
+  no shortcut is taught yet. The recursion is proven on sentences that close
+  (`family::tests::rung`).
+- **The operator's to rule.** 78.68 calls the carriage's translation the
+  luminal (null, parabolic) propagator; 54.7 R3 keeps a connection edge's
+  displacement as a transvection (hyperbolic). Read conformally, a
+  dislocation ring is nilpotent: it extrapolates (`Ωᵐ ∝ 1 + m·τ`) and its
+  history is one integer. Read as a transvection, it is unbound and stands
+  as a demand. Which realisation a sentence's holonomy takes decides whether
+  the fleet's sentences close.
+
+**Lines.**
+- Voice: `sentences rings / closed / open (rosette, unbound, unread) |
+  theorems periodic, nilpotent (sources) | rank | shortcuts recognized,
+  spelled, unspelled, lexicon, top rung | free classes grammar, opens`.
+- Court: `sentences, theorems checked / refused, shortcuts offered, nerve
+  closed`.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

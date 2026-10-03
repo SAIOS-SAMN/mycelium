@@ -94,6 +94,123 @@ fn a_seal_by_the_climbs_fill_is_booked() {
     assert_eq!(crate::physics::metabolism::metabolism().sealed, before + 1, "a settled cell is not sealed twice");
 }
 
+fn q(n: i64, d: i64) -> num_rational::BigRational {
+    num_rational::BigRational::new(n.into(), d.into())
+}
+
+fn wide() -> crate::physics::Budget {
+    crate::physics::Physics::default().stroke_n(1 << 16)
+}
+
+/// THE MOTIONS A FACE CAN HOLD, built by the physics and never by a planar
+/// turn: a fibre's CHARGE (a boost fixing its two pivots), a white-hole
+/// SLIVER (a null flow out of a point of a geoid, kept inside it), and the
+/// LOXODROME (the charge with a twist about the fibre's own axis: one turn,
+/// one boost).
+fn charge() -> crate::transducer::cga::Mv {
+    let pi = crate::transducer::cga::point_at(&[q(0, 1), q(0, 1), q(0, 1)]);
+    let pj = crate::transducer::cga::point_at(&[q(3, 1), q(4, 1), q(0, 1)]);
+    crate::physics::capacitor::Fibre::new(pi, pj, q(2, 1), q(1, 1)).expect("a fibre").charge(&q(3, 2))
+}
+
+fn sliver() -> crate::transducer::cga::Mv {
+    use crate::transducer::cga::{self, Mv, E1, E3};
+    // Σ about (1, 1, 0) through P = (4, 5, 0); K a turn about Σ's centre in
+    // the plane of e₁ and e₃, which keeps Σ and moves P along it.
+    let (c, p) = ([q(1, 1), q(1, 1), q(0, 1)], [q(4, 1), q(5, 1), q(0, 1)]);
+    let (cc, pp) = (cga::point_at(&c), cga::point_at(&p));
+    let sigma = cc.sub(&cga::e_inf().scale(&-cc.geo(&pp).scalar_part()));
+    let t = cga::translator_at(&c);
+    let k = t.geo(&Mv::blade(E1, q(1, 1)).geo(&Mv::blade(E3, q(1, 1)))).geo(&t.reverse()).grade(2);
+    let src = crate::physics::source::Source::of(&sigma, &pp, &k).expect("a source on Σ at P");
+    src.sliver(&q(1, 2))
+}
+
+fn loxodrome() -> crate::transducer::cga::Mv {
+    use crate::transducer::cga::{Mv, E1, E2, E3};
+    let normal = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
+    let twist = Mv::scalar(q(1, 1)).add(&Mv::blade(E3, q(1, 1)).geo(&normal).grade(2).scale(&q(1, 5)));
+    twist.geo(&charge())
+}
+
+/// A triangle of three vantages whose edge v1–v2 carries `m` (the others
+/// flat): its face's holonomy is `m`.
+fn face_over(m: &crate::transducer::cga::Mv) -> (Complex, Vec<u8>) {
+    let mut c = Complex::new();
+    let vs = [v(1), v(2), v(3)];
+    for x in &vs {
+        c.set_section(x, Section::at(x.clone(), Rotor::identity()), vol());
+    }
+    c.set_edge(&vs[0], &vs[1], Rotor::identity(), m.clone(), vol());
+    c.set_edge(&vs[0], &vs[2], Rotor::identity(), ident(), vol());
+    c.set_edge(&vs[1], &vs[2], Rotor::identity(), ident(), vol());
+    c.coboundary_on_link(vs[0].as_bytes(), |_| vol());
+    let face = cell_of(c.link(vs[0].as_bytes(), 2), "the face");
+    (c, face)
+}
+
+/// 78.75 — THE NERVE BY DEGREE, ITS FACES READ BY THEIR MOTION: a triangle of
+/// three vantages reads three vertices, three edges and one face, and the
+/// face's content is its holonomy as one `Cl(4,1)` motion, read by its modes
+/// — never by whether a rotor is the identity. A face holding a fibre's
+/// charge holds a BOOST; one holding a white-hole sliver holds a NULL flow;
+/// one holding the loxodrome holds a TURN and a BOOST at once; a flat
+/// triangle holds no mode at all. Each reading is exact and is the face's
+/// own: the motion read back off the cell is the one its edge carried.
+#[test]
+fn the_census_reads_each_face_by_the_motion_it_holds() {
+    let (flat, _) = face_over(&ident());
+    let census = flat.census(&mut wide());
+    assert!(census.len() >= 3, "vertices, edges and a face: {census:?}");
+    assert_eq!((census[1].cells, census[2].cells, census[2].open), (3, 1, 1), "three edges, one face standing open");
+    assert_eq!((census[2].flat, census[2].curved()), (1, Some(0)), "a flat triangle holds no mode");
+    for (name, m, turn, boost, null) in [
+        ("charge", charge(), 0, 1, 0),
+        ("sliver", sliver(), 0, 0, 1),
+        ("loxodrome", loxodrome(), 1, 1, 0),
+    ] {
+        let (c, face) = face_over(&m);
+        assert!(c.simplex(&face).expect("the face").motion().projective_eq(&m), "{name}: the face's motion is the holonomy its edge carried");
+        let d2 = c.census(&mut wide())[2];
+        assert_eq!((d2.turn, d2.boost, d2.null, d2.flat), (turn, boost, null, 0), "{name}: {d2:?}");
+        assert_eq!(d2.curved(), Some(1), "{name}: the face carries content");
+    }
+    // A stroke that reaches nothing reads nothing, by name.
+    let (c, _) = face_over(&charge());
+    let none = c.census(&mut crate::physics::Physics::default().stroke_n(0));
+    assert_eq!(none[2].modes_unread, 1, "unread, never called flat");
+}
+
+/// 78.75 — THE PIVOTS' OUTFLOW: a complex whose owner listens hands back, as
+/// the one motion it is, every tether `drain` cauterizes — the strain flows
+/// out to the owner's field instead of ending in a counter — and nothing
+/// while no owner listens; a vacuum tether carries nothing out.
+#[test]
+fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
+    let edge_of = |m: &crate::transducer::cga::Mv| {
+        let mut c = Complex::new();
+        for n in [v(1), v(2)] {
+            c.set_section(&n, Section::at(n.clone(), Rotor::identity()), vol());
+        }
+        c.set_edge(v(1), v(2), Rotor::identity(), m.clone(), vol());
+        let key = cell_of(c.link(v(1).as_bytes(), 1), "the edge stands");
+        (c, key)
+    };
+    let (mut deaf, key) = edge_of(&sliver());
+    assert!(matches!(deaf.drain(&key), Drained::Cauterized(_)));
+    assert!(deaf.take_outflow().is_empty(), "no owner listening: nothing held");
+    let (mut heard, key) = edge_of(&sliver());
+    heard.arm_outflow();
+    assert!(matches!(heard.drain(&key), Drained::Cauterized(_)), "a sliver is strain");
+    let out = heard.take_outflow();
+    assert!(matches!(out.as_slice(), [m] if m.projective_eq(&sliver())), "the sliver flowed out whole: {out:?}");
+    assert!(heard.take_outflow().is_empty(), "taken once");
+    let (mut vacuum, key) = edge_of(&ident());
+    vacuum.arm_outflow();
+    assert!(matches!(vacuum.drain(&key), Drained::Vacuum));
+    assert!(vacuum.take_outflow().is_empty(), "nothing carried, nothing out");
+}
+
 /// 78.74 — THE NERVE'S ELASTIC VENT: releasing a vertex lets its whole star
 /// go through the pivots — the sealed membrane descends first and hands its
 /// fill back, then its tethers drain — and leaves the cells not on it

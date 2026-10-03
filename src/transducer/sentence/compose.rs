@@ -72,6 +72,9 @@ pub struct Composition {
     pub carried: Vec<Mv>,
     pub path: Mv,
     pub rank: Result<usize, crate::transducer::cech::LieRankRefused>,
+    /// Each term's whole motion, `transport · word`, in the sentence's order:
+    /// what a lexicon reads a term's rung by (78.75).
+    pub motions: Vec<Mv>,
 }
 
 /// COMPOSE A SENTENCE (78.69): `Ω` path-ordered from the first word, each
@@ -114,9 +117,96 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
         },
     };
     let holonomies: Vec<Option<&Mv>> = carried.iter().map(Some).collect();
-    let rank = crate::transducer::cech::cayley_generators(&holonomies)
+    let rank = crate::transducer::cech::cayley_generators(&holonomies, budget)
         .and_then(|gens| crate::transducer::cech::lie_close(&[], &gens, budget).map(|b| b.len()));
-    Some(Composition { omega, closure, carried, path, rank })
+    let motions = terms.iter().map(|t| t.transport.geo(&t.word)).collect();
+    Some(Composition { omega, closure, carried, path, rank, motions })
+}
+
+/// 78.75 — A RING OF A FORM, READ AS A SENTENCE: each transition its word and
+/// its spatial transport, `Term { word: A(w), transport: c }`, so the ring's
+/// holonomy is the master equation's one product `Ω = ∏ cᵢ A(wᵢ)` (78.69).
+///
+/// A transition's transport holds its two halves apart — the word `w` (the
+/// rotation, `versor_of_word`) and the carriage `c` (the displacement, `D·T`)
+/// — and the circuit's composite multiplied the carriages alone, so every
+/// word fell out of the holonomy: the two-field split, read as a product of
+/// one half. Here each crossing is the one motion `c·A`; a contact's crossing,
+/// whose carriage already holds its refraction whole, is that carriage alone
+/// (`CarriedTransition::whole`); a crossing against
+/// the face's orientation is its exact inverse `Ã c̃ = (Ã c̃ A)·Ã`, the word
+/// `Ã` and the transport `Ã c̃ A`. `None` where a transition's transport was
+/// not read (rule 11: unread is not flat) or its word has no base action.
+pub(crate) fn terms_of(carried: &super::circuit::PathCarried) -> Option<Vec<Term>> {
+    carried
+        .transitions
+        .iter()
+        .map(|t| {
+            let tr = t.transport.as_ref()?;
+            // A contact's carriage is its whole refraction `θ·V` (BQ5a): the
+            // crossing is that motion entire, its word a spelling beside it.
+            if t.whole {
+                let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+                return Some(match t.forward {
+                    true => Term { word: one, transport: tr.carriage.clone() },
+                    false => Term { word: one, transport: tr.carriage.reverse() },
+                });
+            }
+            let a = crate::transducer::element::versor_of_word(&tr.word)?;
+            cga::is_versor(&a).then_some(())?;
+            Some(match t.forward {
+                true => Term { word: a, transport: tr.carriage.clone() },
+                false => {
+                    let back = a.reverse();
+                    Term { transport: back.geo(&tr.carriage.reverse()).geo(&a), word: back }
+                }
+            })
+        })
+        .collect()
+}
+
+/// THE SENTENCE'S HOLONOMY ALONE, `Ω = ∏ transport · word` in the terms'
+/// order — [`compose`]'s `Ω`, for a reader that wants the product and not the
+/// period or the rank.
+pub(crate) fn omega_of(terms: &[Term]) -> Mv {
+    terms.iter().fold(Mv::scalar(num_rational::BigRational::from_integer(1.into())), |omega, t| t.transport.geo(&t.word.geo(&omega)))
+}
+
+/// WHY A RING WAS NOT COMPOSED: its traversal refused (OR3's reason), or a
+/// transition's transport did not read.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum RingUnread {
+    Traversal,
+    Transport,
+}
+
+/// 78.75 — EVERY RING OF A FORM COMPOSED BY THE MASTER EQUATION: each ring's
+/// one member path read as terms ([`terms_of`]) and composed ([`compose`]),
+/// the overlaps it crosses kept beside it (what its faces carried is its
+/// mass). The rings are the caller's: a percept's kept orbits and its vacua,
+/// a court's re-derived ones.
+pub fn sentences_of(
+    form: &super::Form,
+    rings: &[super::Orbit],
+    budget: &mut crate::physics::Budget,
+) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>)> {
+    rings
+        .iter()
+        .map(|lp| {
+            let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
+            let read = match super::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) {
+                None => Err(RingUnread::Traversal),
+                Some(paths) => match paths.scoped().next() {
+                    None => Err(RingUnread::Traversal),
+                    Some((_, p)) => match terms_of(p) {
+                        None => Err(RingUnread::Transport),
+                        Some(terms) => compose(&terms, budget).ok_or(RingUnread::Transport),
+                    },
+                },
+            };
+            (steps, read)
+        })
+        .collect()
 }
 
 /// THE NEXT RUNG: each closed sentence's open path, read as one word — the

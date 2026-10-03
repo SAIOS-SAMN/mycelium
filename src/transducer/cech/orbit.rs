@@ -7,11 +7,15 @@
 //! The elastic part is read here, on each mode's own orbit and never on the
 //! sensor's grid:
 //!
-//! - **A turn (𝒽) or a boost (𝒮)** is a mode of a motion (MR1): its plane —
-//!   the generator, a ray, any scale or sign — and its rational point `c`
-//!   (`cos θ`, `cosh λ`). Turns by one point in one plane wind one integer
-//!   `w`, signed by orientation, reduced modulo the turn's order where it has
-//!   one (Niven: 2, 3, 4, 6). The orbit has returned at `w ≡ 0`.
+//! - **A turn (𝒽) or a boost (𝒮)** is a mode of a motion (MR1) on its plane,
+//!   and the orbit is the plane's FLOW (78.75): it holds the point the flow
+//!   has reached, every admitted mode composed into it exactly
+//!   ([`cga::FlowPoint::then`]) — any amount, any sign, never a count of one
+//!   fixed angle. A turn of no finite order (a rosette) keeps flowing and its
+//!   point is content, never capped (78.43). The orbit has returned where its
+//!   point is the identity; it stands nearer its return where `|1 − c|` fell.
+//!   A mode spanning several planes at once (an isoclinic set) is held as its
+//!   accumulated ray, returned where that ray is the identity.
 //! - **A hue map (𝒢)** is a map of the body's hue fibre. Maps moving one
 //!   support compose; the orbit has returned when the composite is the
 //!   identity. Its strain is the hues it holds displaced — never the cells
@@ -28,6 +32,8 @@ use crate::network::nerve::coord::BivectorKind;
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::{self, MotionMode, Mv};
 use crate::transducer::rewrite::{LANE_GAUGE, LANE_SHELL, LANE_SPATIAL};
+use num_rational::BigRational;
+use num_traits::Zero;
 
 /// 78.73 — A FIELD HELD OVER TIME: 𝒯's tubes and the orbits of 𝒮, 𝒢 and
 /// 𝒽, one per mind (a voice's process, a court's kernel).
@@ -58,26 +64,28 @@ impl Field {
 /// Where an orbit stands.
 #[derive(Clone, Debug, PartialEq, Eq)]
 enum State {
-    /// A turn or a boost: the plane's reference generator, the winding of its
-    /// rational point, and the turn's order where it closes at one.
-    Winding { reference: Mv, w: i64, order: Option<u32> },
+    /// A turn or a boost on one plane: the point its flow has reached.
+    Flow(cga::FlowPoint),
+    /// A mode on several planes at once: its accumulated ray.
+    Ray(Mv),
     /// A hue map: where each hue of the support has been carried.
     Hues(Vec<(u8, u8)>),
 }
 
 impl State {
-    /// HOW FAR THE ORBIT STANDS FROM ITS RETURN: the winding's distance to
-    /// the nearest multiple of the order (or to zero, where none), or the
-    /// hues the composite holds displaced. Zero is the return.
-    fn distance(&self) -> u64 {
+    /// HOW FAR THE ORBIT STANDS FROM ITS RETURN, exact: `|1 − c|` on the
+    /// flow; for a ray, none at the identity and one away from it (open until
+    /// it returns); the hues the composite holds displaced. Zero is the
+    /// return. `None` where the flow's point has no value (a boost on its
+    /// plane's light cone).
+    fn distance(&self) -> Option<BigRational> {
         match self {
-            State::Winding { w, order: Some(k), .. } => {
-                let k = i64::from(*k);
-                let r = w.rem_euclid(k);
-                r.min(k - r).unsigned_abs()
-            }
-            State::Winding { w, order: None, .. } => w.unsigned_abs(),
-            State::Hues(map) => map.iter().filter(|(h, to)| h != to).count() as u64,
+            State::Flow(p) => p.distance(),
+            State::Ray(r) => Some(match r.projective_eq(&Mv::scalar(BigRational::from_integer(1.into()))) {
+                true => BigRational::zero(),
+                false => BigRational::from_integer(1.into()),
+            }),
+            State::Hues(map) => Some(BigRational::from_integer(map.iter().filter(|(h, to)| h != to).count().into())),
         }
     }
 }
@@ -98,16 +106,13 @@ pub struct OrbitRegistry {
     transport: [u64; 4],
 }
 
-/// A mode's key: its lane, its plane's canonical coordinates, and its
-/// rational point — turns by one point in one plane wind one integer.
-fn mode_key(lane: usize, generator: &Mv, c: &num_rational::BigRational) -> Option<Vec<u8>> {
+/// A mode's key: its lane and its plane's canonical coordinates — ONE ORBIT
+/// PER PLANE, every amount flowing on it composed into one point (78.75). It
+/// keyed the rational point too, so two turns of different angle in one
+/// plane stood on two orbits and neither could ever bring the other back.
+fn mode_key(lane: usize, plane: &Mv) -> Option<Vec<u8>> {
     let mut key = vec![u8::try_from(lane).ok()?];
-    generator.put_canonical(&mut key);
-    for part in [c.numer(), c.denom()] {
-        let bytes = part.to_signed_bytes_le();
-        key.extend_from_slice(&u16::try_from(bytes.len()).ok()?.to_le_bytes());
-        key.extend_from_slice(&bytes);
-    }
+    plane.canonical()?.put_canonical(&mut key);
     Some(key)
 }
 
@@ -131,38 +136,41 @@ impl OrbitRegistry {
     }
 
     /// ADMIT ONE MODE of a field line carrying `mass`: a turn onto 𝒽's orbit
-    /// of its plane and point, a boost onto 𝒮's. `None` for a null mode (the
-    /// tubes hold those), and where the orientation does not read against
-    /// the plane's reference or an amount passes its carrier.
+    /// of its plane, a boost onto 𝒮's, the mode's point on the plane's flow
+    /// composed into where the orbit stands (78.75). `None` for a null mode
+    /// (the tubes hold those), and where the mode's point does not read on the
+    /// orbit's plane or an amount passes its carrier.
     pub fn admit_mode(&mut self, mode: &MotionMode, mass: u64) -> Option<(usize, Admitted)> {
         let lane = match mode.kind {
             BivectorKind::Elliptic => LANE_SHELL,
             BivectorKind::Hyperbolic => LANE_SPATIAL,
             BivectorKind::Parabolic | BivectorKind::Trivial => return None,
         };
-        // The plane's generator on §52's chart; at the 180° turn the ray is
-        // the plane's own blade, which is its generator.
-        let generator = match crate::transducer::cayley::bivector_of(&mode.ray) {
-            Some(b) if !b.is_zero() => b,
-            _ => mode.ray.clone(),
-        };
-        let key = mode_key(lane, &generator, &mode.c)?;
-        let (before, after) = match self.orbits.get(&key).map(|o| o.state.clone()) {
-            Some(State::Winding { reference, w, order }) => {
-                // One point in one plane: the generator is ± the reference.
-                let r = cga::projective_ratio(&generator, &reference)?;
-                let step: i64 = match () {
-                    _ if r == num_rational::BigRational::from_integer(1.into()) => 1,
-                    _ if r == num_rational::BigRational::from_integer((-1).into()) => -1,
-                    _ => return None,
+        let (key, before, after) = match mode.flow() {
+            Some(point) => {
+                let key = mode_key(lane, point.plane())?;
+                let before = match self.orbits.get(&key).map(|o| o.state.clone()) {
+                    Some(State::Flow(held)) => held,
+                    Some(State::Ray(_) | State::Hues(_)) => return None,
+                    None => cga::FlowPoint::origin(point.plane())?,
                 };
-                let held = State::Winding { reference: reference.clone(), w, order };
-                (held, State::Winding { reference, w: w.checked_add(step)?, order })
+                let after = before.then(&point)?;
+                (key, State::Flow(before), State::Flow(after))
             }
-            Some(State::Hues(_)) => return None,
+            // An isoclinic set: its planes flow together, held as one ray.
             None => {
-                let start = State::Winding { reference: generator.clone(), w: 0, order: mode.order };
-                (start, State::Winding { reference: generator, w: 1, order: mode.order })
+                let key = mode_key(lane, &mode.ray.grade(2))?;
+                let before = match self.orbits.get(&key).map(|o| o.state.clone()) {
+                    Some(State::Ray(held)) => held,
+                    Some(State::Flow(_) | State::Hues(_)) => return None,
+                    None => Mv::scalar(BigRational::from_integer(1.into())),
+                };
+                let after = before.geo(&mode.ray);
+                let after = match after.canonical() {
+                    Some(ray) => ray,
+                    None => after,
+                };
+                (key, State::Ray(before), State::Ray(after))
             }
         };
         Some((lane, self.step(&key, lane, &before, after, mass)?))
@@ -187,7 +195,7 @@ impl OrbitRegistry {
         key.extend(moved.iter().map(|(h, _)| *h));
         let held = match self.orbits.get(&key).map(|o| o.state.clone()) {
             Some(State::Hues(map)) => map,
-            Some(State::Winding { .. }) => return None,
+            Some(State::Flow(_) | State::Ray(_)) => return None,
             None => moved.iter().map(|(h, _)| (*h, *h)).collect(),
         };
         let after: Vec<(u8, u8)> = held.iter().map(|(h, at)| (*h, sigma(*at))).collect();
@@ -198,12 +206,12 @@ impl OrbitRegistry {
     fn step(&mut self, key: &[u8], lane: usize, before: &State, after: State, mass: u64) -> Option<Admitted> {
         let transport = self.transport[lane].checked_add(mass)?;
         let held_open = self.orbits.get(key).map_or(0, |o| o.open);
-        let (d0, d1) = (before.distance(), after.distance());
+        let (d0, d1) = (before.distance()?, after.distance()?);
         // What stands open on the orbit after, `None` where it returned.
         let (moved, left) = match () {
             // THE RETURN: the orbit closed; all that stood open on it is
             // relieved and the orbit is let go.
-            _ if d1 == 0 => (Admitted { closed: mass, opened: 0, relieved: held_open, transport: mass }, None),
+            _ if d1.is_zero() => (Admitted { closed: mass, opened: 0, relieved: held_open, transport: mass }, None),
             // NEARER ITS RETURN: order, relieving up to its own mass.
             _ if d1 < d0 => {
                 let relieved = held_open.min(mass);

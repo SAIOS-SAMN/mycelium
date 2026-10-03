@@ -100,6 +100,7 @@ pub mod fascicle;
 pub mod laws;
 pub mod malleability;
 pub mod metabolism;
+pub mod source;
 pub mod tensegrity;
 pub use budget::{Budget, Depleted, Reserve};
 

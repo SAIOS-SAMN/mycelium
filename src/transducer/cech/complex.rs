@@ -44,6 +44,12 @@ pub struct Complex {
     /// complex, not only on a thread's ledger, so a court that glues on many
     /// threads reads every seal it made; volatile.
     pub(crate) sealed: u64,
+    /// 78.75 — THE PIVOTS' OUTFLOW: the motion each pivot hands back — a
+    /// tether cauterized by `drain`, a membrane released by `descend`, a face
+    /// sealed with content — held for the owner that armed it, who reads it
+    /// into its field (`take_outflow`). `None` while no owner listens, so a
+    /// complex nobody reads holds nothing. Volatile.
+    pub(crate) outflow: Option<Vec<crate::transducer::cga::Mv>>,
 }
 
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
@@ -64,9 +70,135 @@ pub(crate) fn orbit_key(simplex: &[u8], i: &[u8], j: &[u8]) -> crate::transducer
     crate::transducer::address::Address::new(buf)
 }
 
+/// 78.75 — ONE DEGREE OF A NERVE, BY WHAT ITS CELLS HOLD: how many cells,
+/// and of them how many stand open (unread), filled (closed under a gauge),
+/// congruent, classed, unspellable or unread by refusal — and what each
+/// cell's motion IS, read by its modes (MR1) off `Simplex::motion`, the one
+/// `Cl(4,1)` element: flat (no mode), and the cells holding a turn, a boost,
+/// a null flow (a slide, or a source at a finite point), or a 180° turn (the
+/// held `ℤ₂`); a cell holding several is counted on each. A cell whose modes
+/// the stroke could not split is unread by name.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct DegreeCensus {
+    pub cells: u64,
+    pub open: u64,
+    pub filled: u64,
+    pub congruent: u64,
+    pub class: u64,
+    pub unspellable: u64,
+    pub unread: u64,
+    pub flat: u64,
+    pub turn: u64,
+    pub boost: u64,
+    pub null: u64,
+    pub half: u64,
+    pub modes_unread: u64,
+}
+
+impl DegreeCensus {
+    /// Add another's counts, each past its carrier refused and left.
+    pub fn add(&mut self, o: &DegreeCensus) {
+        for (s, x) in [
+            (&mut self.cells, o.cells),
+            (&mut self.open, o.open),
+            (&mut self.filled, o.filled),
+            (&mut self.congruent, o.congruent),
+            (&mut self.class, o.class),
+            (&mut self.unspellable, o.unspellable),
+            (&mut self.unread, o.unread),
+            (&mut self.flat, o.flat),
+            (&mut self.turn, o.turn),
+            (&mut self.boost, o.boost),
+            (&mut self.null, o.null),
+            (&mut self.half, o.half),
+            (&mut self.modes_unread, o.modes_unread),
+        ] {
+            let _ = crate::physics::metabolism::step_or_refuse(s, x);
+        }
+    }
+
+    /// The cells that carry content: a motion with some mode. `None` where
+    /// the counts do not partition (they always do: flat and unread are
+    /// cells).
+    pub fn curved(&self) -> Option<u64> {
+        self.cells.checked_sub(self.flat)?.checked_sub(self.modes_unread)
+    }
+}
+
 impl Complex {
     pub fn new() -> Complex {
         Complex::default()
+    }
+
+    /// 78.75 — LISTEN TO THE PIVOTS: from here on every motion a pivot hands
+    /// back is held until taken.
+    pub fn arm_outflow(&mut self) {
+        if self.outflow.is_none() {
+            self.outflow = Some(Vec::new());
+        }
+    }
+
+    /// THE MOTIONS THE PIVOTS HANDED BACK since the last take; the complex
+    /// keeps listening.
+    pub fn take_outflow(&mut self) -> Vec<crate::transducer::cga::Mv> {
+        match self.outflow.as_mut() {
+            Some(held) => std::mem::take(held),
+            None => Vec::new(),
+        }
+    }
+
+    /// One motion handed back, held where an owner listens; the identity
+    /// carries nothing and is not held.
+    pub(crate) fn flow_out(&mut self, motion: crate::transducer::cga::Mv) {
+        let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+        if let (Some(held), false) = (self.outflow.as_mut(), motion.projective_eq(&one)) {
+            held.push(motion);
+        }
+    }
+
+    /// 78.75 — THE NERVE BY DEGREE: per degree, its cells by what they hold,
+    /// and each cell's motion by its modes. Does it hold only vertices and
+    /// edges, or do faces and volumes stand — and what is the content of each
+    /// face: a turn, a boost, a null flow, or nothing? Under the stroke: a
+    /// cell the stroke does not reach is unread by name.
+    pub fn census(&self, budget: &mut crate::physics::Budget) -> Vec<DegreeCensus> {
+        use crate::network::nerve::coord::BivectorKind;
+        self.degrees
+            .iter()
+            .map(|layer| {
+                let mut d = DegreeCensus::default();
+                for (_, s) in layer.scoped() {
+                    d.cells += 1;
+                    match &s.fill {
+                        Fill::Open => d.open += 1,
+                        Fill::Filled(..) => d.filled += 1,
+                        Fill::Congruent(..) => d.congruent += 1,
+                        Fill::Class(..) => d.class += 1,
+                        Fill::Unspellable(..) => d.unspellable += 1,
+                        Fill::Unread(_) => d.unread += 1,
+                    }
+                    let modes = match budget.spend() {
+                        true => crate::transducer::cga::motion_modes(&s.motion(), budget).and_then(Result::ok),
+                        false => None,
+                    };
+                    let Some(modes) = modes else {
+                        d.modes_unread += 1;
+                        continue;
+                    };
+                    let live: Vec<_> = modes.iter().filter(|m| m.kind != BivectorKind::Trivial).collect();
+                    if live.is_empty() {
+                        d.flat += 1;
+                        continue;
+                    }
+                    let has = |k: BivectorKind| live.iter().any(|m| m.kind == k);
+                    d.turn += u64::from(has(BivectorKind::Elliptic));
+                    d.boost += u64::from(has(BivectorKind::Hyperbolic));
+                    d.null += u64::from(has(BivectorKind::Parabolic));
+                    d.half += u64::from(live.iter().any(|m| m.flow().is_some_and(|p| p.parameter().is_none())));
+                }
+                d
+            })
+            .collect()
     }
 
     /// THE ENTRIES THE COMPLEX HOLDS: its simplices at every degree and

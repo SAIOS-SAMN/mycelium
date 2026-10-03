@@ -87,29 +87,40 @@ fn each_fibre_is_its_own_polarity_switch_and_pivots_compose() {
     assert_eq!(Fibre::new(one.clone(), one, q(1, 1), q(1, 1)), None, "one pivot is no fibre");
 }
 
-/// THE FIBRE AS A CAPACITOR. Its equipotentials are the pencil `S(λ) = λPᵢ −
-/// Pⱼ`, each level `λ X·Pᵢ = X·Pⱼ`. Two levels compose an exact versor
-/// `S(λ₂)S(λ₁)` that fixes both pivots (source and sink), is a boost (its
-/// generator squares positive — the field, never a turn), carries every
-/// level `μ` to `μ·(λ₂/λ₁)²` — the step between potentials a rational
-/// ratio — and moves each point along a circle through both pivots (a field
-/// line).
+/// THE FIBRE AS A CAPACITOR, ITS CHARGE A POINT ON A FLOW (78.75). Its
+/// equipotentials are the pencil `S(λ) = λPᵢ − Pⱼ`, a continuum. The charge
+/// by the ratio `r`, `S(r)S(1)`, is an exact versor that fixes both pivots
+/// (source and sink), is a boost (its plane squares positive — the field,
+/// never a turn), carries every level `μ` to `μ r²`, and moves each point
+/// along a circle through both pivots (a field line). It is a POINT on the
+/// field's one flow: two charges compose by multiplying their ratios — 3/2
+/// then 4/5 is 6/5, as rays and as flow points — and a charge and its
+/// reciprocal return to the identity. No two sampled levels, no step.
 #[test]
-fn a_fibre_is_a_capacitor_whose_levels_step_by_rational_ratios() {
+fn a_fibres_charge_is_a_point_on_its_field_flow_composing_by_ratio() {
     let f = fibre(2, 1);
     let (pi, pj) = (f.pi.clone(), f.pj.clone());
     let level = |l: BigRational| f.level(&l);
-    let (l1, l2) = (q(2, 1), q(3, 1));
-    let v = f.step(&l1, &l2);
+    let r = q(3, 2);
+    let v = f.charge(&r);
     assert!(cga::is_versor(&v), "exact");
     assert!(v.sandwich(&pi).projective_eq(&pi) && v.sandwich(&pj).projective_eq(&pj), "both pivots fixed");
     let b = v.grade(2);
     assert!(b.geo(&b).scalar_part().is_positive(), "a boost: the field between them");
     let mu = q(5, 7);
-    let ratio = &l2 / &l1;
-    assert!(v.sandwich(&level(mu.clone())).projective_eq(&level(mu * &ratio * &ratio)), "level μ to μ(λ₂/λ₁)²");
+    assert!(v.sandwich(&level(mu.clone())).projective_eq(&level(mu * &r * &r)), "level μ to μ r²");
     let x = cga::point_at(&[q(1, 1), q(-2, 1), q(0, 1)]);
     assert!(concyclic(&pi, &pj, &x, &v.sandwich(&x)), "along a field line through both pivots");
+    // THE FLOW'S LAW: ratios multiply.
+    let s = q(4, 5);
+    let composed = f.charge(&s).geo(&f.charge(&r));
+    assert!(composed.projective_eq(&f.charge(&(&r * &s))), "3/2 then 4/5 is the charge by 6/5");
+    let (pr, ps) = (f.charge_point(&r).expect("on the flow"), f.charge_point(&s).expect("on the flow"));
+    let p = pr.then(&ps).expect("one plane");
+    assert_eq!(Some(p.clone()), f.charge_point(&(&r * &s)).and_then(|x| x.against(p.plane())), "the flow points compose alike");
+    assert_eq!(pr.kind(), cga::FlowKind::Boost, "the field's flow boosts");
+    assert!(pr.then(&f.charge_point(&(q(1, 1) / &r)).expect("on the flow")).expect("one plane").returned(), "r then 1/r: returned");
+    assert!(!pr.returned(), "a charge alone stands off its return");
 }
 
 /// TORSION ON THE CAPACITOR: any generator `G` acting on the fibre `B = Pᵢ∧Pⱼ`
@@ -155,8 +166,8 @@ fn torsion_splits_from_the_field_and_does_no_work_across_its_levels() {
     // level step, is a loxodrome — one boost, one turn.
     let axis_turn = twist();
     assert!(!f.split(&axis_turn).does_work(), "the twist alone: torsion, no work");
-    let step = f.step(&q(2, 1), &q(3, 1));
-    assert!(axis_turn.geo(&step).projective_eq(&step.geo(&axis_turn)), "the twist commutes with the step");
+    let step = f.charge(&q(3, 2));
+    assert!(axis_turn.geo(&step).projective_eq(&step.geo(&axis_turn)), "the twist commutes with the charge");
     for l in [q(1, 1), q(5, 7)] {
         assert!(axis_turn.sandwich(&level(l.clone())).projective_eq(&level(l)), "the twist keeps each level");
     }
@@ -232,24 +243,43 @@ fn a_tethers_strength_capacity_and_torque_are_exact() {
     let f = fibre(2, 1);
     let twist_gen = twist().grade(2);
     assert!(f.torque2(&twist_gen) > q(0, 1), "a twist about the axis: torque");
-    let field_gen = f.step(&q(2, 1), &q(3, 1)).grade(2);
-    assert_eq!(f.torque2(&field_gen), q(0, 1), "a level step: no torque");
+    let field_gen = f.charge(&q(3, 2)).grade(2);
+    assert_eq!(f.torque2(&field_gen), q(0, 1), "a charge: no torque");
 }
 
-/// 78.74 — HOW A FINITE MOTION TREATS A FIBRE, read on the versor itself: the
-/// identity carries it rigidly; the twist about its axis, and the mirror
-/// across its line (an odd versor — the grid's flip), keep both pivots and
-/// every level: torsion; a level step keeps the pivots and moves the levels:
-/// field; a slide moves a pivot: lift.
+/// 78.75 — HOW A MOTION TREATS A FIBRE, READ OFF ITS FLOW: each mode's
+/// generator split against the fibre. The identity has no mode: rigid. The
+/// twist about the axis flows by torsion; a charge by field; a slide lifts
+/// a pivot. The FLIP across the fibre's line is no flow from the identity in
+/// three dimensions — it is unfolded one dimension up (`cga::unfold`) into
+/// the 180° turn about that line through the fourth axis, which acts on every
+/// point of the base exactly as the mirror does, and that turn is torsion.
 #[test]
-fn a_motion_carries_a_fibre_rigidly_by_torsion_by_field_or_by_lift() {
+fn a_motion_carries_a_fibre_by_the_flow_its_modes_lie_on() {
     let f = fibre(2, 1);
-    assert_eq!(f.carried_by(&Mv::scalar(q(3, 1))), Carried::Rigid);
-    assert_eq!(f.carried_by(&twist()), Carried::Torsion, "the twist about the axis");
+    let read = |m: &Mv| {
+        let modes = crate::physics::capacitor::modes_of(m, 3, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+        f.reads(&modes.expect("the modes read"))
+    };
+    assert_eq!(read(&Mv::scalar(q(3, 1))), Carried::Rigid, "no mode: rigid");
+    assert_eq!(read(&twist()), Carried::Torsion, "the twist about the axis");
+    assert_eq!(read(&f.charge(&q(3, 2))), Carried::Field, "a charge");
+    assert_eq!(read(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)])), Carried::Lift, "a slide");
+    // The flip, one dimension up.
     let mirror = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
-    assert_eq!(f.carried_by(&mirror), Carried::Torsion, "the flip across the fibre's line");
-    assert_eq!(f.carried_by(&f.step(&q(2, 1), &q(3, 1))), Carried::Field, "a level step");
-    assert_eq!(f.carried_by(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)])), Carried::Lift, "a slide");
+    let turned = cga::unfold(&mirror, 3).expect("a versor");
+    assert_eq!(turned.n(), 4, "one dimension up");
+    let x = cga::point_at(&[q(2, 1), q(-1, 3), q(5, 1)]);
+    assert!(turned.sandwich(&x).projective_eq(&mirror.sandwich(&x)), "on the base it acts exactly as the mirror");
+    let flow = cga::motion_modes(&turned, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+    let modes = match flow {
+        Some(Ok(m)) => m,
+        other => panic!("the unfolded flip's modes: {other:?}"),
+    };
+    assert!(matches!(modes.as_slice(), [m] if m.flow().is_some_and(|p| p.parameter().is_none())), "one mode, at the 180° pole: {modes:?}");
+    assert_eq!(read(&mirror), Carried::Torsion, "the flip across the fibre's line: torsion, read as the turn it unfolds to");
+    let across = Mv::blade(E1, q(3, 1)).add(&Mv::blade(E2, q(4, 1)));
+    assert_eq!(read(&across), Carried::Lift, "a flip across the bisector moves the pivots: lift");
 }
 
 /// THE SOURCE AT P ON Σ, KEPT IN Σ. Two spheres through P with centres on

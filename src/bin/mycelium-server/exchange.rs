@@ -348,8 +348,34 @@ impl Exchange {
                     // 78.74: the nerve's elastic vent — cells released as
                     // words left — and the seals the ledger now books.
                     let vent = k.released_cells();
+                    // 78.75: the nerve by degree — vertices, edges, faces,
+                    // volumes — and how much of each carries content.
+                    let nerve: Vec<String> = k
+                        .nerve_census()
+                        .iter()
+                        .enumerate()
+                        .map(|(d, c)| {
+                            format!(
+                                "d{d} {} (open {} filled {} congruent {} class {} unspellable {} unread {} | flat {} turn {} boost {} null {} 180° {} modes unread {})",
+                                c.cells,
+                                c.open,
+                                c.filled,
+                                c.congruent,
+                                c.class,
+                                c.unspellable,
+                                c.unread,
+                                c.flat,
+                                c.turn,
+                                c.boost,
+                                c.null,
+                                c.half,
+                                c.modes_unread
+                            )
+                        })
+                        .collect();
+                    eprintln!("  court nerve {} | complexes {}", nerve.join(" | "), k.complex_count());
                     eprintln!(
-                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} held {} ringless {} formless {} unread {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent released {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
+                        "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} (by outflow {}) held {} ringless {} (acyclic {} vacuous {} circuits unread {}) formless {} unread {} | sentences {} theorems checked {} refused {} shortcuts offered {} nerve closed {} | outflow {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent released {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
                         k.k_step(),
                         k.physics().reserve.line(),
                         k.physics().syntropic,
@@ -363,10 +389,20 @@ impl Exchange {
                         w.unbound,
                         w.repriced,
                         w.rank_steps,
+                        w.outflow_rank_steps,
                         w.rank_held,
                         w.rank_ringless,
+                        w.rank_acyclic,
+                        w.rank_vacuous,
+                        w.rank_circuits_unread,
                         w.rank_formless,
                         w.rank_unread,
+                        w.sentences,
+                        w.theorems_checked,
+                        w.theorems_refused,
+                        w.shortcuts_offered,
+                        w.nerve_closed,
+                        w.outflow,
                         w.flux_transport,
                         w.reconnections,
                         vent.released,

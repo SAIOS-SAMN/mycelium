@@ -9,10 +9,12 @@
 //!   the two ends; its points are where the weighed pulls balance,
 //!   `mⱼ X·Pᵢ = mᵢ X·Pⱼ`, the fibre's own equipotential. Flat (through `e_∞`)
 //!   only where the masses balance.
-//! - **ITS LEVELS** `S(λ) = λPᵢ − Pⱼ` — the capacitor's equipotentials. Two
-//!   compose an exact boost `S(λ₂)S(λ₁)` fixing both pivots (source and
-//!   sink) that carries level `μ` to `μ(λ₂/λ₁)²`: charge moves by rational
-//!   ratios, never by a logarithm.
+//! - **ITS LEVELS** `S(λ) = λPᵢ − Pⱼ` — the capacitor's equipotentials, a
+//!   continuum. The CHARGE `S(r)S(1)` is a point on the fibre's field flow
+//!   (78.75): an exact boost fixing both pivots (source and sink) that carries
+//!   level `μ` to `μ r²`. It depends on the ratio `r` alone, and charges
+//!   compose by multiplying their ratios — the flow's own law, never a step
+//!   between two sampled levels and never a logarithm.
 //! - **THE SPLIT.** `B = Pᵢ∧Pⱼ` squares to a rational `β² > 0`, so any
 //!   generator `G` splits exactly: the FIELD `cB` (`c = ⟨GB⟩₀/β²`, charge
 //!   between levels), the TORSION `T` (commutes with `B`, annihilates both
@@ -59,10 +61,11 @@ impl Split {
     }
 }
 
-/// HOW A RELATIVE MOTION TREATS A FIBRE, read on the finite versor itself
-/// (no generator taken, so a flip — an odd versor — reads as well as a
-/// turn).
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// HOW A RELATIVE MOTION TREATS A FIBRE, read off the flow it lies on: each
+/// mode's generator split against the fibre (78.75). A flip is read one
+/// dimension up, as the 180° turn it unfolds to (`cga::unfold`). Ordered by
+/// the work done: the strongest part any mode carries is the reading.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Carried {
     /// The motion is the identity on the fibre: carried rigidly, no work.
     Rigid,
@@ -104,10 +107,17 @@ impl Fibre {
         self.pi.scale(l).sub(&self.pj)
     }
 
-    /// The step from level `from` to level `to`: an exact boost fixing both
-    /// pivots, carrying level `μ` to `μ (to/from)²`.
-    pub fn step(&self, from: &Q, to: &Q) -> Mv {
-        self.level(to).geo(&self.level(from))
+    /// THE CHARGE BY THE LEVEL RATIO `r`: `S(r)S(1)`, an exact boost fixing
+    /// both pivots and carrying level `μ` to `μ r²` — a point on the fibre's
+    /// field flow, depending on `r` alone, so a charge by `r₁` then by `r₂` is
+    /// the charge by `r₁ r₂` (as rays).
+    pub fn charge(&self, r: &Q) -> Mv {
+        self.level(r).geo(&self.level(&Q::from_integer(1.into())))
+    }
+
+    /// THE CHARGE AS ITS POINT ON THE FIELD'S FLOW (78.75), the plane `Pᵢ∧Pⱼ`.
+    pub fn charge_point(&self, r: &Q) -> Option<crate::transducer::cga::FlowPoint> {
+        crate::transducer::cga::FlowPoint::of_motion(&self.charge(r))
     }
 
     /// THE SQUARED LENGTH between the pivots, `d² = −2 Pᵢ·Pⱼ` at the points'
@@ -156,22 +166,35 @@ impl Fibre {
         Split { field, torsion, lift }
     }
 
-    /// HOW THE FINITE MOTION `r` TREATS THIS FIBRE: whether it keeps both
-    /// pivots, and if so whether it keeps the levels. Exact, by the sandwich
-    /// read projectively — even and odd versors alike.
-    pub fn carried_by(&self, r: &Mv) -> Carried {
-        let keeps = |x: &Mv| r.sandwich(x).projective_eq(x);
-        if r.projective_eq(&Mv::scalar(Q::from_integer(1.into()))) {
-            return Carried::Rigid;
-        }
-        if !keeps(&self.pi) || !keeps(&self.pj) {
-            return Carried::Lift;
-        }
-        match keeps(&self.level(&Q::from_integer(1.into()))) && keeps(&self.level(&Q::from_integer(2.into()))) {
-            true => Carried::Torsion,
-            false => Carried::Field,
-        }
+    /// HOW A MOTION TREATS THIS FIBRE, read off its MODES (78.75): each
+    /// mode's generator — its ray's bivector, the plane it flows in — split
+    /// into field, torsion and lift. A lift moves a pivot, a field moves the
+    /// levels, torsion twists about the axis, and no mode at all is the
+    /// identity: rigid. The motion's flow, never a finite keep-test on two
+    /// sampled ends.
+    pub fn reads(&self, modes: &[crate::transducer::cga::MotionMode]) -> Carried {
+        modes
+            .iter()
+            .map(|m| {
+                let s = self.split(&m.ray.grade(2));
+                match () {
+                    _ if !s.lift.is_zero() => Carried::Lift,
+                    _ if !s.field.is_zero() => Carried::Field,
+                    _ if !s.torsion.is_zero() => Carried::Torsion,
+                    _ => Carried::Rigid,
+                }
+            })
+            .fold(Carried::Rigid, Ord::max)
     }
+}
+
+/// 78.75 — A MOTION'S MODES FOR A FIBRE ON A BASE OF DIMENSION `n`: an odd
+/// versor (a flip) unfolded one dimension up to the 180° turn it is
+/// (`cga::unfold`), then split into its modes under the stroke. `None` where
+/// the motion is no versor or its modes do not read.
+pub fn modes_of(motion: &Mv, n: u8, budget: &mut crate::physics::Budget) -> Option<Vec<crate::transducer::cga::MotionMode>> {
+    let even = crate::transducer::cga::unfold(motion, n)?;
+    crate::transducer::cga::motion_modes(&even, budget)?.ok()
 }
 
 /// THE SHAPE A SET OF PIVOTS HOLDS, at base dimension `n`.

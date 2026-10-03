@@ -287,7 +287,7 @@ pub(crate) fn carriage_lanes(carriage: &crate::transducer::element::Versor, budg
 /// and the compartments it carried; and (78.74) whether its frame's turning
 /// was free — torsion or rigid on every fibre, no work — so its turns press
 /// nothing.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FieldLine {
     pub carriage: crate::transducer::element::Versor,
     pub gauge: Vec<(u8, u8)>,
@@ -295,37 +295,24 @@ pub struct FieldLine {
     pub free: bool,
 }
 
-/// 78.71 — THE CLOSED FLUX OF A FORM, BOOKED ON 𝒯: each circuit's composite
-/// holonomy read for its null modes ([`crate::transducer::cech::flux`]),
-/// each flux admitted to its tube with the mass the circuit's faces carried,
-/// and the tubes' mass flux in quanta booked as order on 𝒯. A circuit whose
-/// holonomy did not read brings none, by its own name in the circuit.
+/// 78.71, 78.75 — THE CLOSED FLUX OF A PERCEPT: each sentence's holonomy —
+/// the master equation's one product `Ω = ∏ cᵢ A(wᵢ)` of a ring
+/// (`sentence::rung::speak`), never the carriages' product with the words
+/// dropped — read for its modes ([`crate::transducer::cech::flux`]), each
+/// with the mass the ring's faces carried; the field lines beside them. A
+/// mass past its carrier was refused at the caller and that ring brings none
+/// (rule 11).
 pub(crate) fn mark_flux(
-    form: &crate::transducer::sentence::Form,
-    carried_on: &[(crate::network::nerve::coord::Overlap, u64)],
+    circuits: &[(crate::transducer::element::Versor, u64)],
     word_transports: &[FieldLine],
     budget: &mut crate::physics::Budget,
 ) {
-    let circuits: Vec<(crate::transducer::element::Versor, u64)> = crate::transducer::sentence::circuits_of(form)
-        .into_iter()
-        .filter_map(|(_, circuit)| {
-            let h = circuit.composite?;
-            // A mass past its carrier is refused and the circuit brings none
-            // (rule 11).
-            let mass = circuit
-                .steps
-                .iter()
-                .filter_map(|(o, _)| carried_on.iter().find(|(c, _)| c == o).map(|(_, m)| *m))
-                .try_fold(0u64, |s, m| s.checked_add(m))?;
-            Some((h, mass))
-        })
-        .collect();
     // The voice's own tubes, held across its strokes (78.71 (1)). A lock
     // poisoned by a panic elsewhere reads this percept's field into fresh
     // tubes rather than none.
     let reading = match VOICE_FIELD.lock() {
-        Ok(mut field) => transport_order(word_transports, &circuits, &mut field, budget),
-        Err(_) => transport_order(word_transports, &circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
+        Ok(mut field) => transport_order(word_transports, circuits, &mut field, budget),
+        Err(_) => transport_order(word_transports, circuits, &mut crate::transducer::cech::orbit::Field::new(), budget),
     };
     let book = |on: &[std::sync::atomic::AtomicU64; 4], v: &[u64; 4]| {
         for (lane, amount) in v.iter().enumerate() {

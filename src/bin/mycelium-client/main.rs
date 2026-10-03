@@ -483,7 +483,7 @@ fn main() {
                 None => "unread".to_string(),
             };
             let fibres = format!(
-                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | sections congruent {} coherent {} standing {} | cohesion {cohesion} ({} of {}, unread {}) | torsion turned {:?}",
+                "fibres {} rigid {} torsion {} field {} lift {} unpivoted {} unread {} modes unread {} | lifts inverted: sourced {} unsourced {} | pieces aligned {} misaligned {} | shapes stable {} determined {} emergent {} open {} | class pairs {} certain {} partial {} conflicted {} | classes {} algorithms {} eliminated {eliminated} | {moving} | sections congruent {} coherent {} standing {} | cohesion {cohesion} ({} of {}, unread {}) | torsion turned {:?}",
                 f.pairs,
                 f.rigid,
                 f.torsion,
@@ -491,6 +491,9 @@ fn main() {
                 f.lift,
                 f.unpivoted,
                 f.unread,
+                f.modes_unread,
+                f.sourced,
+                f.unsourced,
                 f.aligned,
                 f.misaligned,
                 f.stable,
@@ -511,7 +514,51 @@ fn main() {
                 f.changes_unread,
                 mycelium::transducer::family::pairing::torsion_lanes()
             );
-            let field = format!("{field} | {malleable} | {fibres}");
+            // 78.75: the mind's nerve by degree, and how much is content.
+            let nerve: Vec<String> = entity
+                .nerve_census()
+                .iter()
+                .enumerate()
+                .map(|(d, c)| {
+                    format!(
+                        "d{d} {} (open {} filled {} class {} | flat {} turn {} boost {} null {} 180° {} unread {})",
+                        c.cells,
+                        c.open,
+                        c.filled,
+                        c.class + c.congruent + c.unspellable,
+                        c.flat,
+                        c.turn,
+                        c.boost,
+                        c.null,
+                        c.half,
+                        c.modes_unread
+                    )
+                })
+                .collect();
+            // 78.69, 78.70, 78.75: the master equation in the mind — rings
+            // composed, sentences closed and open, theorems, and the rungs.
+            let st = mycelium::transducer::sentence::rung::sentence_tally();
+            let sentences = format!(
+                "sentences rings {} unread {} closed {} open rosette {} unbound {} unread {} | theorems periodic {} nilpotent {} (sources {}) | rank {} | shortcuts recognized {} spelled {} unspelled {} lexicon {:?} top rung {} | free classes grammar {} opens {}",
+                st.rings,
+                st.unread,
+                st.closed,
+                st.rosette,
+                st.unbound,
+                st.open_unread,
+                st.periodic,
+                st.nilpotent,
+                st.sources,
+                st.rank,
+                st.recognized,
+                st.spelled,
+                st.unspelled,
+                mycelium::transducer::sentence::rung::lexicon(),
+                st.top_rung,
+                f.free_grammar,
+                f.free_opens
+            );
+            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences}", nerve.join(" | "));
             eprintln!(
                 "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),

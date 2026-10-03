@@ -20,5 +20,6 @@ mod scene;
 mod span;
 mod perception;
 mod retract;
+mod rung;
 mod speech;
 mod tally;

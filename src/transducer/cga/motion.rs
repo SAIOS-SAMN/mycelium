@@ -96,6 +96,39 @@ pub struct MotionMode {
     pub reflects: bool,
 }
 
+impl MotionMode {
+    /// 78.75 — WHERE THIS MODE STANDS ON ITS OWN FLOW: its ray `a + b·B` on
+    /// its one plane, the 180° turn at the pole `(0 : 1)`. `None` for a mode
+    /// spanning several planes at once (an isoclinic set), whose ray carries a
+    /// grade-4 part: each of its planes is a flow, held whole by the ray.
+    pub fn flow(&self) -> Option<super::FlowPoint> {
+        super::FlowPoint::of_motion(&self.ray)
+    }
+}
+
+/// 78.75 — A FLIP UNFOLDED ONE DIMENSION UP. An odd versor — a mirror, the
+/// grid's flip — lies on no flow from the identity: no continuous motion
+/// reaches it inside the space it acts on. One dimension up it is a turn:
+/// with `e` the base axis beyond `n`, `e·v` is even, and on every point of the
+/// base ℚⁿ (where `e`'s coordinate is zero, so the reflection in `e` fixes it)
+/// it acts exactly as `v` does — the 180° turn about the mirror's own line,
+/// through the axis the flat picture could not show. An even versor is
+/// returned as it is. `None` where `v` is no versor, or `n` is below the
+/// algebra `v` already lives in.
+pub fn unfold(v: &Mv, n: u8) -> Option<Mv> {
+    super::is_versor(v).then_some(())?;
+    if !is_odd(v) {
+        return Some(v.clone());
+    }
+    if n < v.n() {
+        return None;
+    }
+    let up = n.checked_add(1)?;
+    let axis = Mv::blade(super::base_axis(usize::from(up)), one());
+    let turned = axis.geo(&v.widened(up));
+    super::is_versor(&turned).then_some(turned)
+}
+
 /// MR1b — IS `m` ODD: every even grade vanishes and an odd one does not. An
 /// odd versor is a product of an odd number of reflections, and it acts as
 /// `x ↦ −m x m⁻¹`, orientation-reversing (`det R = −1`).

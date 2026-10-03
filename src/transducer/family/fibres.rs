@@ -28,9 +28,18 @@
 //! BOUNDED BY THE STROKE AND BY CLASS. Pieces of one (class, carriage) are
 //! carried rigidly against each other and are counted, not multiplied out;
 //! across two of them `R` is formed once and each pivot is asked once
-//! whether `R` keeps it; only where both pivots are kept is the fibre built
-//! and its levels asked. Each cross pair spends the stroke; a stroke that
-//! ends leaves the rest unread, by count.
+//! whether `R` keeps it — a pivot `R` moves, its flow moves too: a lift; only
+//! where both pivots are kept are `R`'s modes read (once per pair of
+//! transports) and each mode's generator split against the fibre (78.75). A
+//! flip is read one dimension up, as the 180° turn it unfolds to. Each cross
+//! pair spends the stroke; a stroke that ends leaves the rest unread, by
+//! count.
+//!
+//! A REFUSAL INVERTED (78.75). A lifted fibre in a frame whose pivots fix a
+//! geoid is not left as pressure: the part of its lift that keeps the geoid,
+//! at each pivot it moves along it, is a white-hole source
+//! (`physics::source`) — a null flow fixing the pivot, inside the manifold —
+//! and the percept's field reads it as flux.
 
 use crate::physics::capacitor::{shape_of, Carried, Fibre, Shape};
 use crate::transducer::base::{is_grid_axis, Site};
@@ -84,9 +93,10 @@ fn geoid(p: &Piece) -> Option<Mv> {
 
 /// HOW TWO SECTIONS RELATE: congruent where their geoids overlay
 /// (`S₁² = S₂²`, `S² = m_P m_Q d²`, with equal masses); else coherent where
-/// the relative motion `ṽ₁ v₂` keeps both sources and every level of the
-/// fibre joining them; else standing. Exact.
-pub(crate) fn relate_sections(first: &Piece, second: &Piece) -> Sections {
+/// the relative motion `ṽ₁ v₂` flows by torsion alone on the fibre joining
+/// their sources — each of its modes' generators split against it (78.75), a
+/// flip read one dimension up; else standing. Exact.
+pub(crate) fn relate_sections(first: &Piece, second: &Piece, budget: &mut crate::physics::Budget) -> Sections {
     if let (Some(g1), Some(g2)) = (geoid(first), geoid(second)) {
         let same_masses = first.mass == second.mass && first.out_mass == second.out_mass;
         if same_masses && g1.geo(&g1).scalar_part() == g2.geo(&g2).scalar_part() {
@@ -99,30 +109,48 @@ pub(crate) fn relate_sections(first: &Piece, second: &Piece) -> Sections {
         BigRational::from_integer(first.mass.into()),
         BigRational::from_integer(second.mass.into()),
     );
-    match joining.map(|f| f.carried_by(&first.carriage.reverse().geo(&second.carriage))) {
-        Some(Carried::Rigid | Carried::Torsion) => Sections::Coherent,
+    let relative = first.carriage.reverse().geo(&second.carriage);
+    let n = u8::try_from(first.n.max(second.n)).ok();
+    let modes = n.and_then(|n| crate::physics::capacitor::modes_of(&relative, n, budget));
+    match (joining, modes) {
+        (Some(f), Some(modes)) => match f.reads(&modes) {
+            Carried::Rigid | Carried::Torsion => Sections::Coherent,
+            Carried::Field | Carried::Lift => Sections::Standing,
+        },
         _ => Sections::Standing,
     }
 }
 
-/// One frame-axis step of a class: the frames, the motor its input body
-/// took, and that body's pivot at each end.
+/// One frame-axis step of a class: the frames, and the motor its input body
+/// took between them.
 pub(crate) struct Step {
     pub from: u64,
     pub to: u64,
     pub motor: Versor,
-    pub at_from: Option<Mv>,
-    pub at_to: Option<Mv>,
 }
 
-/// 78.74 — COHESION, THE GAUGE OF A CLASS'S COHERENCE STRUCTURE: along its
-/// frame axis, each step's motor is a coherence vector, and the change
-/// between two chained steps, `D = s̃ t`, is smooth where it is rigid or
-/// torsion about the fibre the second step spans — the class relates its
-/// frames the same way there — and a bend where it is field or lift. The
-/// gauge is smooth changes over changes, exact (counted, never a norm).
+/// THE DIRECTION A MOTOR FLOWS BY: its generators summed — the Cayley
+/// bivector, or each mode's plane at the chart's pole — a flip read one
+/// dimension up. `None` where it does not read.
+fn flow_direction(motor: &Versor, n: u8, budget: &mut crate::physics::Budget) -> Option<Mv> {
+    let even = cga::unfold(motor, n)?;
+    let gens = crate::transducer::cech::flow_generators(&even, budget)?;
+    Some(gens.iter().fold(Mv::zero(), |s, g| s.add(g)))
+}
+
+/// 78.74, 78.75 — COHESION, THE GAUGE OF A CLASS'S COHERENCE STRUCTURE: along
+/// its frame axis each step's motor lies on a flow, and the class COHERES
+/// where the flow CONTINUES — the next step's generator split against the
+/// last's plane (78.46) is pure DRAG, the same flow at its own rate — and
+/// BENDS where the split carries LIFT, the flow turning into a plane neither
+/// step was in. Read off the generators, never off the gap between two
+/// sampled motors. A step that does not move has no plane to continue: from
+/// rest the change is unread by name, never called smooth. A null generator
+/// (a slide) has no square to split by: it continues where the two
+/// generators commute, which is the same statement. The gauge is smooth
+/// changes over changes, exact (counted, never a norm).
 /// Returns (smooth, changes, unread).
-pub(crate) fn cohesion(class: &[u8], steps: &[Step]) -> (u64, u64, u64) {
+pub(crate) fn cohesion(class: &[u8], steps: &[Step], n: u8, budget: &mut crate::physics::Budget) -> (u64, u64, u64) {
     let (mut smooth, mut changes, mut unread) = (0u64, 0u64, 0u64);
     for pair in steps.windows(2) {
         let [s, t] = pair else { continue };
@@ -130,19 +158,26 @@ pub(crate) fn cohesion(class: &[u8], steps: &[Step]) -> (u64, u64, u64) {
         if s.to != t.from {
             continue;
         }
-        let d = s.motor.reverse().geo(&t.motor);
-        let one = BigRational::from_integer(1.into());
-        let carried = match (&t.at_from, &t.at_to) {
-            _ if d.projective_eq(&Mv::scalar(one.clone())) => Some(Carried::Rigid),
-            (Some(p), Some(q)) => Fibre::new(p.clone(), q.clone(), one.clone(), one.clone()).map(|f| f.carried_by(&d)),
-            _ => None,
+        let (Some(gs), Some(gt)) = (flow_direction(&s.motor, n, budget), flow_direction(&t.motor, n, budget)) else {
+            step(&mut unread, 1);
+            continue;
         };
-        match carried {
-            Some(Carried::Rigid | Carried::Torsion) => {
+        let continues = match (gs.is_zero(), gt.is_zero()) {
+            // At rest and still at rest: nothing changed.
+            (true, true) => Some(true),
+            // From rest: no plane to continue.
+            (true, false) => None,
+            (false, _) => Some(match cga::lift_drag(&gs, &gt) {
+                Some(split) => split.lift.is_zero(),
+                None => gs.geo(&gt).sub(&gt.geo(&gs)).is_zero(),
+            }),
+        };
+        match continues {
+            Some(true) => {
                 step(&mut smooth, 1);
                 step(&mut changes, 1);
             }
-            Some(Carried::Field | Carried::Lift) => step(&mut changes, 1),
+            Some(false) => step(&mut changes, 1),
             None => step(&mut unread, 1),
         }
     }
@@ -259,10 +294,21 @@ pub struct FibreTally {
     pub sections_coherent: u64,
     pub sections_standing: u64,
     /// Cohesion: smooth changes along classes' frame axes, all changes, and
-    /// changes with no fibre to read them on.
+    /// changes whose generators did not read (or began from rest).
     pub smooth: u64,
     pub changes: u64,
     pub changes_unread: u64,
+    /// 78.75 — lifted fibres inverted into a white-hole source on their
+    /// frame's geoid (one per pivot it emanates from), and lifted fibres in a
+    /// frame with a geoid that gave none: signal recovered, and noise.
+    pub sourced: u64,
+    pub unsourced: u64,
+    /// Fibres whose pivots the motion kept but whose modes did not read.
+    pub modes_unread: u64,
+    /// 78.60, 78.75 — free classes whose generators open no dimension of the
+    /// charged member's algebra (grammar, cost zero), and those that do.
+    pub free_grammar: u64,
+    pub free_opens: u64,
 }
 
 impl FibreTally {
@@ -283,7 +329,7 @@ impl FibreTally {
     }
 }
 
-const SLOTS: usize = 25;
+const SLOTS: usize = 30;
 static FIBRES: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const PAIRS: usize = 0;
 const RIGID: usize = 1;
@@ -310,6 +356,11 @@ const SEC_STANDING: usize = 21;
 const COH_SMOOTH: usize = 22;
 const COH_CHANGES: usize = 23;
 const COH_UNREAD: usize = 24;
+const SOURCED: usize = 25;
+const UNSOURCED: usize = 26;
+const MODES_UNREAD: usize = 27;
+const FREE_GRAMMAR: usize = 28;
+const FREE_OPENS: usize = 29;
 
 fn note(slot: usize, by: u64) {
     if by > 0 && FIBRES[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
@@ -347,6 +398,11 @@ pub fn fibre_tally() -> FibreTally {
         smooth: r(COH_SMOOTH),
         changes: r(COH_CHANGES),
         changes_unread: r(COH_UNREAD),
+        sourced: r(SOURCED),
+        unsourced: r(UNSOURCED),
+        modes_unread: r(MODES_UNREAD),
+        free_grammar: r(FREE_GRAMMAR),
+        free_opens: r(FREE_OPENS),
     }
 }
 
@@ -473,6 +529,9 @@ pub struct Quotient {
     pub sections: Vec<Sections>,
     /// Per class: smooth changes and changes along its frame axis.
     pub cohesion: Vec<(Vec<u8>, u64, u64)>,
+    /// 78.75 — the refusals this read inverted: each white-hole source as
+    /// the field line it is, `1 + N`, with the mass of its pivots.
+    pub sources: Vec<super::pairing::FieldLine>,
 }
 
 thread_local! {
@@ -497,6 +556,52 @@ pub(crate) fn aligned(p: &Piece) -> Option<bool> {
     Some(p.carriage.sandwich(&p.point).projective_eq(p.out.as_ref()?))
 }
 
+/// 78.60, 78.75 — WHAT A FREE CLASS COSTS THE LANGUAGE: a class merged into
+/// another's algorithm turns free beyond the group's charged member, and
+/// 78.60 prices a generator by the dimension it opens, `dim_ℚ Lie(V ∪ Γ) /
+/// Lie(V)` — zero for grammar. Read, never assumed: torsion on every fibre is
+/// a statement about the pivots, the cost one about the algebra, and where
+/// they agree the free class is grammar; where a free class still opens a
+/// dimension the quotient eliminated something the algebra did not. `V` is
+/// the charged member's pieces' generators, `Γ` each free member's.
+fn read_cost(pieces: &[Piece], groups: &[Vec<Vec<u8>>], budget: &mut crate::physics::Budget) {
+    let gens_of = |class: &[u8], budget: &mut crate::physics::Budget| -> Option<Vec<Mv>> {
+        let mut out = Vec::new();
+        for p in pieces.iter().filter(|p| p.class == class) {
+            let even = cga::unfold(&p.carriage, u8::try_from(p.n).ok()?)?;
+            out.extend(crate::transducer::cech::flow_generators(&even, budget)?);
+        }
+        Some(out)
+    };
+    for g in groups {
+        let [charged, free @ ..] = g.as_slice() else { continue };
+        let Some(v) = gens_of(charged, budget) else { continue };
+        let Ok(held) = crate::transducer::cech::lie_close(&[], &v, budget) else { continue };
+        for f in free {
+            let Some(gamma) = gens_of(f, budget) else { continue };
+            match crate::transducer::cech::lie_close(&held, &gamma, budget) {
+                Ok(closed) if closed.len() == held.len() => note(FREE_GRAMMAR, 1),
+                Ok(_) => note(FREE_OPENS, 1),
+                Err(_) => {}
+            }
+        }
+    }
+}
+
+/// One source held by its null ray's canonical coordinates: the generator
+/// first seen, and every pivot mass that emanated along that ray summed.
+fn hold_source(held: &mut crate::network::nerve::Keyed<(Mv, u64)>, src: &crate::physics::source::Source, mass: u64) {
+    let Some(ray) = src.generator.canonical() else { return };
+    let mut key = Vec::new();
+    ray.put_canonical(&mut key);
+    match held.get_mut(&key) {
+        Some((_, m)) => step(m, mass),
+        None => {
+            held.insert(&key, (src.generator.clone(), mass));
+        }
+    }
+}
+
 /// READ EVERY FRAME'S FIBRES AND TAKE THE QUOTIENT BY TORSION.
 pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget) -> Quotient {
     // The self-check on the coordinates: each piece's versor carries its
@@ -512,6 +617,7 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
     note(ALIGNED, on);
     note(MISALIGNED, off);
     let mut said: Vec<PairSaid> = Vec::new();
+    let mut sources: crate::network::nerve::Keyed<(Mv, u64)> = crate::network::nerve::Keyed::new();
     let mut frames: Vec<u64> = pieces.iter().map(|p| p.frame).collect();
     frames.sort_unstable();
     frames.dedup();
@@ -524,8 +630,9 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             None => continue,
         };
         let points: Vec<Mv> = here.iter().map(|p| p.point.clone()).collect();
+        let shape = shared.map(|n| shape_of(&points, n));
         note(
-            match shared.map(|n| shape_of(&points, n)) {
+            match &shape {
                 Some(Shape::Stable(_)) => STABLE,
                 Some(Shape::Determined(_)) => DETERMINED,
                 Some(Shape::Emergent) => EMERGENT,
@@ -533,6 +640,13 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
             },
             1,
         );
+        // 78.75 — THE FRAME'S GEOID AS ONE VECTOR, where its pivots fix a
+        // round: the manifold a refusal's inversion is kept inside.
+        let sigma = match &shape {
+            Some(Shape::Stable(round) | Shape::Determined(round)) => crate::physics::source::geoid_vector(round),
+            _ => None,
+        };
+        let base = shared.and_then(|n| u8::try_from(n).ok());
         // The frame's transports: each (class, carriage) with its pieces.
         let mut groups: Vec<(&[u8], &Versor, Vec<&Piece>)> = Vec::new();
         for p in &here {
@@ -558,6 +672,12 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                     false => (cb.to_vec(), ca.to_vec()),
                 };
                 let mut s = Said::default();
+                // THE RELATIVE MOTION'S MODES, read once for the pair of
+                // transports and only where a fibre asks: a pivot the finite
+                // motion moves is moved by its flow too (a flow fixing it
+                // would fix it at every point), so that fibre is a lift
+                // without reading; the rest are read off the generators.
+                let mut modes: Option<Option<Vec<cga::MotionMode>>> = None;
                 for (pi, ki) in ma.iter().zip(&kept_a) {
                     for (pj, kj) in mb.iter().zip(&kept_b) {
                         if !budget.spend() {
@@ -577,10 +697,43 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
                             note(UNPIVOTED, 1);
                             continue;
                         };
-                        let carried = match (ki, kj) {
-                            (true, true) => fibre.carried_by(&r),
+                        let needs_modes = (*ki && *kj) || sigma.is_some();
+                        if needs_modes && modes.is_none() {
+                            modes = Some(base.and_then(|n| crate::physics::capacitor::modes_of(&r, n, budget)));
+                        }
+                        let read = modes.as_ref().and_then(|m| m.as_deref());
+                        let carried = match (ki, kj, read) {
+                            (true, true, Some(m)) => fibre.reads(m),
+                            (true, true, None) => {
+                                note(MODES_UNREAD, 1);
+                                continue;
+                            }
                             _ => Carried::Lift,
                         };
+                        // 78.75 — A REFUSAL INVERTED: a lifted fibre in a
+                        // frame whose pivots fix a geoid gives, at each pivot
+                        // its lift moves along the geoid, a white-hole source
+                        // — the part of the lift that keeps the geoid, made a
+                        // null flow fixing the pivot. Signal recovered from
+                        // the refusal; a lift with none stays noise, counted.
+                        if let (Carried::Lift, Some(sigma), Some(m)) = (carried, &sigma, read) {
+                            let lift = m.iter().fold(Mv::zero(), |l, mode| l.add(&fibre.split(&mode.ray.grade(2)).lift));
+                            let found = crate::physics::source::keeping(sigma, &lift).map(|k| {
+                                [(&pi.point, pi.mass), (&pj.point, pj.mass)]
+                                    .into_iter()
+                                    .filter_map(|(p, mass)| Some((crate::physics::source::Source::of(sigma, p, &k)?, mass)))
+                                    .collect::<Vec<_>>()
+                            });
+                            match found {
+                                Some(found) if !found.is_empty() => {
+                                    for (src, mass) in found {
+                                        note(SOURCED, 1);
+                                        hold_source(&mut sources, &src, mass);
+                                    }
+                                }
+                                _ => note(UNSOURCED, 1),
+                            }
+                        }
                         let binding = fibre.strength();
                         step(&mut s.observed, 1);
                         s.bind_observed += &binding;
@@ -618,6 +771,18 @@ pub(crate) fn read_pieces(pieces: &[Piece], budget: &mut crate::physics::Budget)
     }
     track(&said);
     let mut q = quotient(pieces, said);
+    read_cost(pieces, &q.groups, budget);
+    // Each source once, by its null ray, carrying the mass of every pivot it
+    // emanates from: a field line the percept's field reads for its flux.
+    q.sources = sources
+        .scoped()
+        .map(|(_, (n, mass))| super::pairing::FieldLine {
+            carriage: Mv::scalar(BigRational::from_integer(1.into())).add(n),
+            gauge: Vec::new(),
+            mass: *mass,
+            free: false,
+        })
+        .collect();
     q.pieces = pieces.len() as u64;
     q.aligned = on;
     q.misaligned = off;

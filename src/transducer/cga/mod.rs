@@ -10,6 +10,7 @@ mod dual;
 mod embedding;
 mod enclosure;
 mod fixed;
+mod flow;
 mod gram;
 mod group;
 mod hyperboloid;
@@ -35,13 +36,14 @@ pub use embedding::{
 };
 pub use enclosure::{centre_point, containment, enclosure, nesting, Containment};
 pub use fixed::{centre_of, Centre, PoleAt};
+pub use flow::{FlowKind, FlowPoint};
 pub use gram::{gram_form, pair_regime, read_gram, signature, vector_rank, GramReading, PairRegime};
 pub use group::{dilator, is_versor, projective_ratio, reflector, weight_of};
 pub use hyperboloid::{frame_base_point, geodesic_transvection, hyperbolic_compartment, hyperboloid_pole};
 pub use linear::{ray_of, LinearFunction};
 pub use mirrors::{base_mirror, mirrors_between, sphere_centre, MirrorReading};
 pub use modes::{mode_order, modes, Mode, Undecomposed};
-pub use motion::{action_det, action_of, charged, motion_modes, period_of, MotionMode, Period};
+pub use motion::{action_det, action_of, charged, motion_modes, period_of, unfold, MotionMode, Period};
 pub use motor::{
     motor_tally, note_motor, note_step, note_unread, take_motor_tally, KindReading, Motor, MotorAction, MotorTally,
     StepClass, StepReading, TransitionKind, VectorReading,

@@ -71,8 +71,9 @@ fn two_sections_overlay_where_their_geoids_are_congruent() {
 }
 
 /// COHERENCE: a section and its mirror across the line joining their
-/// sources are one motion up to torsion — the relative motion keeps both
-/// sources and every level of their fibre; a section slid instead is not.
+/// sources are one motion up to torsion — the relative motion's flow, read
+/// one dimension up where it is a flip, twists about the fibre joining the
+/// sources and does no work; a section slid instead lifts a source.
 #[test]
 fn two_sections_cohere_where_their_carriages_differ_by_torsion() {
     let (p1, p2) = (at(0, 0), at(3, 4));
@@ -80,8 +81,12 @@ fn two_sections_cohere_where_their_carriages_differ_by_torsion() {
     let v1 = Mv::scalar(q(1, 1));
     let mirror = Mv::blade(E1, q(4, 1)).sub(&Mv::blade(E2, q(3, 1)));
     let slid = cga::translator_at(&[q(1, 1), q(0, 1)]);
-    assert_eq!(joining.carried_by(&v1.reverse().geo(&mirror)), Carried::Torsion, "coherent: the flip about their line");
-    assert_eq!(joining.carried_by(&v1.reverse().geo(&slid)), Carried::Lift, "not coherent: the slide moves a source");
+    let read = |m: &Mv| {
+        let modes = crate::physics::capacitor::modes_of(m, 2, &mut crate::physics::Physics::default().stroke_n(1 << 16));
+        joining.reads(&modes.expect("the modes read"))
+    };
+    assert_eq!(read(&v1.reverse().geo(&mirror)), Carried::Torsion, "coherent: the flip about their line");
+    assert_eq!(read(&v1.reverse().geo(&slid)), Carried::Lift, "not coherent: the slide moves a source");
 }
 
 /// THE CENTRE IS FORMULATED, NEVER ASSUMED: three pivots fix their round
@@ -237,7 +242,7 @@ fn the_nucleus_and_its_sigma_points_are_stable_only_under_the_turn_about_their_a
 
     // HYPERBOLIC: unstable.
     let fibre = crate::physics::capacitor::Fibre::new(pt(u, 1), pt(u, -1), q(1, 1), q(1, 1)).expect("a fibre through c");
-    let step = fibre.step(&q(2, 1), &q(3, 1));
+    let step = fibre.charge(&q(3, 2));
     let moved = step.sandwich(&centre);
     assert!(!moved.projective_eq(&centre), "the nucleus is driven along the field line: unstable");
     assert!(
