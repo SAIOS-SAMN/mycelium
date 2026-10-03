@@ -129,7 +129,13 @@ pub fn chase(
             None => frontier.push((who, upto)),
         }
     }
-    Pass { advanced, reached: true }
+    // REACHED IS READ OFF THE CHAIN, never off an empty frontier. The
+    // frontier also empties where a page admitted nothing and named a
+    // citation skipped as held, and its own range then skipped as asked —
+    // on the fleet, ~50k passes per court counted "reached" with nothing
+    // admitted and the head never cited (H2, 2026-10-03).
+    let reached = kernel.lock().ok().and_then(|k| k.known_head(&vk)).is_some_and(|(at, _)| at >= to);
+    Pass { advanced, reached }
 }
 
 /// ONE HEARD HEAD (45.2, 47.2 step 3): the reporting frame admitted; on a
