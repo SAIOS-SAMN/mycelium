@@ -37,6 +37,9 @@ fn the_court_says_why_an_act_stands_with_the_speakers_reasons() {
     let heard = k.hear_speech([5; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
     assert!(matches!(heard.as_slice(), [Adjudication::Stood { .. } | Adjudication::Ratified { .. }]), "{heard:?}");
     let at = k.admitted_at(s.address().as_bytes()).expect("an act admitted the sentence");
+    // 78.93 B0 — the verdict itself says where the word stands.
+    let [verdict] = heard.as_slice() else { panic!("one verdict") };
+    assert_eq!(verdict.at(), Some(at), "the adjudication answers the admitting stamp");
     let why = k.why(WhyAsk::Of(at)).expect("the act is on the court's ledger");
     assert_eq!(why.at, at);
     let [named] = why.named.as_slice() else { panic!("the act names the one sentence: {why:?}") };

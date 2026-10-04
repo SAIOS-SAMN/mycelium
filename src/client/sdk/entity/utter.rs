@@ -401,6 +401,8 @@ impl Entity {
             if let Some(r) = crate::transducer::sentence::Reasons::of(&e) {
                 self.reasons.note(&r);
                 self.said = Some(r);
+                // 78.93 B0 — and where the court says it stands.
+                self.said_at = fresh.iter().position(|&f| f == i).and_then(|j| adjudicated.get(j)).and_then(|a| a.at());
             }
             self.file_taught(&e);
             self.contractions.remove(&e.address());

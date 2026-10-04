@@ -58,6 +58,7 @@ impl Entity {
             colour_theorems: 0,
             reasons: crate::transducer::sentence::ReasonsTally::default(),
             said: None,
+            said_at: None,
             hearing: [0; 3],
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),

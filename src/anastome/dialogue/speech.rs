@@ -221,9 +221,20 @@ pub fn encode_speech_reply(adjudications: &[Adjudication]) -> Option<Vec<u8>> {
                 if let Some(r) = a.receipt() {
                     out.extend_from_slice(&r);
                 }
-                if let Adjudication::Refused { kind, at, .. } = a {
-                    out.push(kind.to_byte());
-                    at.to_bytes(&mut out)?;
+                match a {
+                    Adjudication::Refused { kind, at, .. } => {
+                        out.push(kind.to_byte());
+                        at.to_bytes(&mut out)?;
+                    }
+                    // 78.93 B0 — where the word stands, where an act
+                    // admitted it.
+                    _ => match a.at() {
+                        Some(s) => {
+                            out.push(1);
+                            s.put_canonical(&mut out);
+                        }
+                        None => out.push(0),
+                    },
                 }
             }
         }
@@ -250,9 +261,18 @@ pub fn decode_speech_reply(body: &[u8]) -> Option<Vec<Adjudication>> {
         }
         let receipt: [u8; 32] = body.get(pos..pos + 32)?.try_into().ok()?;
         pos += 32;
+        let stood_at = |pos: &mut usize| -> Option<Option<crate::chronometry::Stamp>> {
+            let flag = *body.get(*pos)?;
+            *pos += 1;
+            match flag {
+                0 => Some(None),
+                1 => Some(Some(crate::chronometry::Stamp::take_canonical(body, pos)?)),
+                _ => None,
+            }
+        };
         out.push(match code {
-            SPEECH_STOOD => Adjudication::Stood { receipt },
-            SPEECH_RATIFIED => Adjudication::Ratified { receipt },
+            SPEECH_STOOD => Adjudication::Stood { receipt, at: stood_at(&mut pos)? },
+            SPEECH_RATIFIED => Adjudication::Ratified { receipt, at: stood_at(&mut pos)? },
             SPEECH_REFUSED => {
                 let kind = crate::transducer::sentence::RefusalKind::from_byte(*body.get(pos)?)?;
                 pos += 1;

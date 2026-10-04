@@ -251,8 +251,9 @@ impl Kernel {
                 &addr,
                 crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, s),
             )),
-            Outcome::Decomposed(_) => Ok(Adjudication::Ratified { receipt: self.chain.head_hash() }),
-            _ => Ok(Adjudication::Stood { receipt: self.chain.head_hash() }),
+            // 78.93 B0 — and where the word stands: the stamp that admitted it.
+            Outcome::Decomposed(_) => Ok(Adjudication::Ratified { receipt: self.chain.head_hash(), at: self.admitted_at(addr.as_bytes()) }),
+            _ => Ok(Adjudication::Stood { receipt: self.chain.head_hash(), at: self.admitted_at(addr.as_bytes()) }),
         }
     }
 

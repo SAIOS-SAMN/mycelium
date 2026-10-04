@@ -155,10 +155,13 @@ fn speech_act_one_frame() {
     assert_eq!(act.task[0], 2);
     assert_eq!(act.k, 7);
     assert_eq!(act.sentences.len(), 1);
-    let stood = dialogue::Adjudication::Stood { receipt: [4; 32] };
-    let reply =
-        dialogue::encode_speech_reply(std::slice::from_ref(&stood)).expect("one adjudication fits");
-    assert_eq!(dialogue::decode_speech_reply(&reply), Some(vec![stood]));
+    // 78.93 B0: a verdict carries where its word stands, or says none does.
+    let at = mycelium::chronometry::Stamp::new(9, [3; 32], mycelium::chronometry::Place { k: 2, i: 1 });
+    let stood = dialogue::Adjudication::Stood { receipt: [4; 32], at: Some(at) };
+    let ratified = dialogue::Adjudication::Ratified { receipt: [5; 32], at: None };
+    let both = [stood, ratified];
+    let reply = dialogue::encode_speech_reply(&both).expect("two adjudications fit");
+    assert_eq!(dialogue::decode_speech_reply(&reply), Some(both.to_vec()));
 }
 
 #[test]

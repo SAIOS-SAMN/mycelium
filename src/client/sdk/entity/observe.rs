@@ -15,6 +15,11 @@ impl Entity {
         self.said.as_ref()
     }
 
+    /// Where the court said the last admitted sentence stands.
+    pub fn said_at(&self) -> Option<crate::chronometry::Stamp> {
+        self.said_at
+    }
+
     /// THIS MIND'S FACULTIES AT ITS OWN `K` (2026-09-29): each read off the
     /// one carrier that holds it (law 12) — sight off the perception's
     /// resonance tally, cognition off the contemplation, speech off the

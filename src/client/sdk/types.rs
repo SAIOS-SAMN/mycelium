@@ -526,6 +526,9 @@ pub struct Entity {
     /// sentence, never persisted beside it).
     pub(crate) reasons: crate::transducer::sentence::ReasonsTally,
     pub(crate) said: Option<crate::transducer::sentence::Reasons>,
+    /// 78.93 B0 — where the court said the last one stands: the stamp any
+    /// party asks "why" by.
+    pub(crate) said_at: Option<crate::chronometry::Stamp>,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; 3],

@@ -588,7 +588,12 @@ fn main() {
             if rt.sentences > reasons_said {
                 reasons_said = rt.sentences;
                 if let Some(r) = entity.said() {
-                    eprintln!("[{tag}] why (sentence {}): {}", rt.sentences, r.says().join("; "));
+                    // Where it stands, the place any party asks `--why` by.
+                    let at = match entity.said_at() {
+                        Some(s) => format!("at h {} {}", s.h, s.place().print()),
+                        None => "not yet admitted by an act".to_string(),
+                    };
+                    eprintln!("[{tag}] why (sentence {}, {at}): {}", rt.sentences, r.says().join("; "));
                 }
             }
             // WHAT THE COVERS' ORBITS CLASSIFIED AS, read from the counter

@@ -90,8 +90,12 @@ pub const SPEECH_RATIFIED: u8 = 3;
 /// its chain hash (47.1).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Adjudication {
-    Stood { receipt: [u8; 32] },
-    Ratified { receipt: [u8; 32] },
+    /// 78.92, 78.93 B0 — `at` is WHERE THE WORD STANDS on the court's
+    /// ledger: the stamp of the act that admitted it, the coordinate any
+    /// party asks "why" by (`ACT_WHY`). `None` where no act has admitted it
+    /// yet — a reading of absence, never a stamp invented for it.
+    Stood { receipt: [u8; 32], at: Option<crate::chronometry::Stamp> },
+    Ratified { receipt: [u8; 32], at: Option<crate::chronometry::Stamp> },
     Refused { kind: crate::transducer::sentence::RefusalKind, at: crate::transducer::sentence::At, receipt: [u8; 32] },
     /// 21 step 3, 50.2 step 2 — THIS SENTENCE WAITS ON A FORM THIS COURT
     /// HAS NOT RULED. Not a refusal and not a verdict: the voice spoke
@@ -125,8 +129,16 @@ impl Adjudication {
     /// admitted: a wait is not a position on any chain.
     pub fn receipt(&self) -> Option<[u8; 32]> {
         match self {
-            Adjudication::Stood { receipt } | Adjudication::Ratified { receipt } | Adjudication::Refused { receipt, .. } => Some(*receipt),
+            Adjudication::Stood { receipt, .. } | Adjudication::Ratified { receipt, .. } | Adjudication::Refused { receipt, .. } => Some(*receipt),
             Adjudication::Awaiting { .. } => None,
+        }
+    }
+
+    /// Where the word stands on the court's ledger, where an act admitted it.
+    pub fn at(&self) -> Option<crate::chronometry::Stamp> {
+        match self {
+            Adjudication::Stood { at, .. } | Adjudication::Ratified { at, .. } => *at,
+            Adjudication::Refused { .. } | Adjudication::Awaiting { .. } => None,
         }
     }
 }
