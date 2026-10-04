@@ -207,6 +207,11 @@ pub const ACT_LAWS: u8 = 0x3A;
 /// word it names, each with the reasons read off the word itself. The layout
 /// and its codec are `dialogue::why`'s. It admits nothing.
 pub const ACT_WHY: u8 = 0x3B;
+/// A PARTY'S WALLET AT THIS COURT (78.93 B1): `[ACT_WALLET][who 32]`, answered
+/// the party's balance, bond and holds per lane and the court's head stamp
+/// the reading stands at. Every party holds one — entities, kernels, humans.
+/// The layout and its codec are `dialogue::wallet`'s. It moves nothing.
+pub const ACT_WALLET: u8 = 0x3C;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

@@ -30,5 +30,6 @@ mod remainders;
 mod room;
 mod ruling;
 mod solve;
+mod wallet;
 mod why;
 mod winding;

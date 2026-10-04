@@ -22,6 +22,7 @@ mod reads;
 mod reduce;
 mod room;
 mod snapshot;
+mod wallet;
 mod why;
 mod wire;
 

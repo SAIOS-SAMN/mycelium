@@ -716,6 +716,21 @@ impl Treasury {
         }
     }
 
+    /// 78.93 B1 — ONE PARTY'S ACCOUNT, read at the question off the carriers
+    /// themselves, as `economy` reads every account: its balance, its bond,
+    /// and what it holds against keys, per lane. A party the ledger has never
+    /// seen holds zero on every lane — the reading of absence. `None` where
+    /// its holds would pass their carrier (rule 11).
+    pub fn account(&self, who: &[u8; 32]) -> Option<([u64; 4], [u64; 4], [u64; 4])> {
+        let mut held = Some([0u64; 4]);
+        crate::snapshot::persist(&self.held, |_, h| {
+            if &h.payer == who {
+                held = held.and_then(|t| crate::core::lanes::lanes_add(t, h.mu));
+            }
+        });
+        Some((self.balance_of(who), self.staked(who), held?))
+    }
+
     pub fn entries(&self) -> &[Entry] {
         &self.entries
     }

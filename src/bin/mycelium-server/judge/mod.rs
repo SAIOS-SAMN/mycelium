@@ -17,6 +17,7 @@ pub(crate) mod receipts;
 pub(crate) mod rows;
 pub(crate) mod speech;
 pub(crate) mod syllabus;
+pub(crate) mod wallet;
 pub(crate) mod why;
 
 use crate::door::{serve_control, Door};
@@ -47,6 +48,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         dialogue::ACT_OBSERVE => observe::judge(stream, &frame, door),
         dialogue::ACT_LAWS => laws::judge(stream, &frame, door),
         dialogue::ACT_WHY => why::judge(stream, &frame, door),
+        dialogue::ACT_WALLET => wallet::judge(stream, &frame, door),
         dialogue::ACT_PERCEPT | dialogue::ACT_GOSSIP | dialogue::ACT_DEMAND | dialogue::ACT_DEMAND_ROUTED => {
             // 26, 50.6 seam 3: raw painted sites and coboundary chains do
             // not reach a court. Refused with the reason, no height (this

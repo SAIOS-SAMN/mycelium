@@ -22226,6 +22226,30 @@ without an act. The new citation tag (4) is a ledger layout addition: a
 ledger without it reads as before, and the fleet takes it at the recut.
 Proved: `a_refusal_is_an_act_on_the_ledger_and_says_why`.
 
+**B1 landed (2026-10-04): every party reads its wallet.** The accounts
+already stood: the court's treasury keeps a balance and a bond per 32-byte
+key (any party — entity, kernel, human), holds against keys, a closed
+vocabulary of entry kinds, every row at an act on the court's line, and the
+audit `supply = Σ balance + Σ bond + Σ held`. Its rows are served to peers
+(`ACT_ROWS`) and re-derived at every fold, so they are the replicated
+record's, not a second one. What was missing was the WALLET: `ACT_WALLET`
+(0x3C, `dialogue::wallet`) asks a court for one party's account — balance,
+bond, holds per lane, and the court's head stamp the reading stands at —
+answered by `Kernel::wallet` off `Treasury::account`; an account that
+cannot be measured is not answered. `Session::wallet` asks every court the
+session knows and keeps each account apart, the unanswered counted; what a
+party owns across them is the per-lane sum, exact or not at all. The
+operator reads one as `--console --wallet KEY`. Proved:
+`every_party_reads_its_wallet_and_the_wallets_are_the_supply` — the parties
+own exactly what was issued to them.
+
+**Still owed to the ruling.** The court moves rows directly today (a mint
+at an install, a payment at a settle); the ruling is that only an admitted
+SETTLEMENT moves them, and that each row cites the verdict it projects —
+today a row stands at the court's head when it was written, which is the
+verdict's act where the mint follows it and is not proved to be in
+general. B2 (the settlement act) and B3 (the financial mind) close both.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

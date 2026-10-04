@@ -17,6 +17,7 @@ pub mod quote;
 pub mod receipts;
 pub mod speech;
 pub mod syllabus;
+pub mod wallet;
 pub mod why;
 
 pub use acts::*;

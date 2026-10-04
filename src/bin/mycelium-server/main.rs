@@ -19,6 +19,7 @@ mod offer;
 mod persist;
 mod syllabus;
 mod transport;
+mod wallet;
 mod why;
 #[cfg(test)]
 mod tests;
@@ -53,6 +54,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             || args[i] == "--court"
             || args[i] == "--reading"
             || args[i] == "--why"
+            || args[i] == "--wallet"
         {
             i += 2;
             continue;
@@ -290,6 +292,10 @@ fn main() {
         // 78.92 — why one act on the hypha's own line stands.
         if let Some(asked) = flag(&args, "--why") {
             why::run(&home, flag(&args, "--at"), asked);
+        }
+        // 78.93 B1 — one party's wallet at the hypha.
+        if let Some(asked) = flag(&args, "--wallet") {
+            wallet::run(&home, flag(&args, "--at"), asked);
         }
         let ask = console::Ask {
             voice: flag(&args, "--voice"),

@@ -28,6 +28,21 @@ impl super::Session {
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the why reply did not decode"))
     }
 
+    /// 78.93 B1 — `who`'S WALLET across every court this session knows: each
+    /// court's account, and the courts that did not answer or answered bytes
+    /// that do not read — counted, never read as empty accounts.
+    pub fn wallet(&self, who: &[u8; 32]) -> crate::anastome::dialogue::wallet::Wallet {
+        use crate::anastome::dialogue::wallet::{decode_wallet_reply, encode_wallet, Wallet};
+        let mut w = Wallet { who: *who, ..Wallet::default() };
+        for addr in self.peers() {
+            match self.exchange_at(&addr, encode_wallet(who)).ok().and_then(|r| decode_wallet_reply(&r)) {
+                Some(a) => w.accounts.push(a),
+                None => w.unanswered += 1,
+            }
+        }
+        w
+    }
+
     /// THE COURT'S VERDICT on a transition this kernel composed: every
     /// breach with its law. A reading — nothing is admitted by it.
     pub fn verify(&self, t: &Transition) -> io::Result<Verdict> {
