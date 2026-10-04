@@ -70,6 +70,7 @@ impl Entity {
             said: self.said.clone(),
             derivation: crate::transducer::family::derivation_tally(),
             flux: crate::transducer::family::flux::flux_tally().row(),
+            sentences: crate::transducer::sentence::rung::sentence_tally().row(),
             hearing: self.hearing,
             language: [
                 self.epigenome.dialect_len() as u64,

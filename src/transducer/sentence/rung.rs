@@ -94,6 +94,47 @@ pub struct SentenceTally {
 }
 
 /// The sentences' tally since the process began.
+/// 78.96 — THE TALLY'S NAMES, in [`SentenceTally::row`]'s order: the typed
+/// reading the voice's Senses carry, the measure of R3's ruling.
+pub const SENTENCES: [&str; 14] = [
+    "rings",
+    "unread",
+    "closed",
+    "rosette",
+    "unbound",
+    "open unread",
+    "periodic",
+    "nilpotent",
+    "sources",
+    "shortcuts recognized",
+    "shortcuts spelled",
+    "shortcuts unspelled",
+    "top rung",
+    "rank",
+];
+
+impl SentenceTally {
+    /// In [`SENTENCES`]'s order.
+    pub fn row(&self) -> [u64; 14] {
+        [
+            self.rings,
+            self.unread,
+            self.closed,
+            self.rosette,
+            self.unbound,
+            self.open_unread,
+            self.periodic,
+            self.nilpotent,
+            self.sources,
+            self.recognized,
+            self.spelled,
+            self.unspelled,
+            self.top_rung,
+            self.rank,
+        ]
+    }
+}
+
 pub fn sentence_tally() -> SentenceTally {
     let r = |i: usize| TALLY[i].load(Relaxed);
     SentenceTally {
