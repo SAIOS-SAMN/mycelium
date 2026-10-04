@@ -235,42 +235,50 @@ pub fn hear(s: &Composition) {
     // of any length one integer times one direction (78.68's parabolic row).
     // Its open path is a word — the slide itself — exactly as a returning
     // sentence's is.
-    let teaches = match Theorem::of(s) {
+    // THE WORD A THEOREM TEACHES: a returning sentence its open path (the
+    // closing transport's inverse, one word for the whole path, 78.69); a
+    // nilpotent one its holonomy itself, `Ω = 1 + N` — it never returns, so
+    // what it says per traversal is the one null motion, counted by its
+    // winding (78.68). Its open path is the identity wherever the slip rides
+    // the closing transport alone.
+    let taught = match Theorem::of(s) {
         Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => {
             note(PERIODIC, 1);
-            true
+            Some(&s.path)
         }
         Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) => {
             note(NILPOTENT, 1);
-            true
+            Some(&s.omega)
         }
-        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Rosette | Open::Unbound | Open::Unread) => false,
+        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Rosette | Open::Unbound | Open::Unread) => None,
     };
-    if !s.closure.closes() && !teaches {
-        return;
-    }
+    let word = match (s.closure.closes(), taught) {
+        (_, Some(w)) => w,
+        (true, None) => &s.path,
+        (false, None) => return,
+    };
     if let Ok(r) = &s.rank {
         note(RANK, *r as u64);
     }
     if let Ok(mut held) = LEXICON.lock() {
-        hold_shortcut(&mut held, s);
+        hold_shortcut(&mut held, s, word);
     }
 }
 
-/// ONE CLOSED SENTENCE'S SHORTCUT: its open path, recognized where the mind
+/// ONE THEOREM'S SHORTCUT: the word it teaches, recognized where the mind
 /// holds it, else held at its rung — spelled, or counted as the letter the
 /// court will be offered when the mind speaks the form.
-fn hold_shortcut(held: &mut Keyed<Held>, s: &Composition) {
-    if is_identity(&s.path) {
+fn hold_shortcut(held: &mut Keyed<Held>, s: &Composition, word: &Mv) {
+    if is_identity(word) {
         return;
     }
-    let Some(key) = key_of(&s.path) else { return };
+    let Some(key) = key_of(word) else { return };
     if held.get(&key).is_some() {
         note(RECOGNIZED, 1);
         return;
     }
     let rung = rung_of(&s.motions, held);
-    let spelled = matches!(crate::transducer::family::derivation::peel_versor(&s.path), Some(Ok(_)));
+    let spelled = matches!(crate::transducer::family::derivation::peel_versor(word), Some(Ok(_)));
     note(if spelled { SPELLED } else { UNSPELLED }, 1);
     TALLY[TOP_RUNG].fetch_max(rung, Relaxed);
     held.insert(&key, Held { rung, spelled });

@@ -22468,9 +22468,13 @@ the boost was the seen edge's.
    and the rays' failure to commute around a ring, never a hyperbolic slip.
 3. *A nilpotent theorem teaches.* A ring of rays whose holonomy is null never
    returns but condenses, `Ωᵐ ∝ 1 + m·N` — a word of any length one integer
-   times one direction (78.68's parabolic row). Its open path is held as a
-   word (`rung::hear`), spelled where it turns nothing; the court checks its
-   theorem as it checks a returning one (`winding.rs`).
+   times one direction (78.68's parabolic row). The word it teaches is its
+   HOLONOMY `Ω = 1 + N`, the one null motion it makes per traversal, counted
+   by its winding — never its open path, which is the identity wherever the
+   slip rides the closing transport alone (a returning sentence still teaches
+   its open path, 78.69). Held by `rung::hear`, spelled where it turns
+   nothing; the court checks the theorem and reads the same word
+   (`winding.rs`).
 
 **Recomputed on the slide family's real percept** (`family::tests::rung`):
 two rings, both of rays, neither heard; each a NILPOTENT theorem where the
@@ -22481,6 +22485,15 @@ word. Proved: `a_ring_through_a_chord_is_heard_and_the_rest_are_rays`,
 **Read on the fleet.** The voice's `sentences` row: nilpotent above 0,
 shortcuts spelled above 0, the top rung above 0, `heard through a chord`
 counted; `unbound` and `open unread` falling.
+
+**Read on 8d60b706 (five voices, after a soak).** Nilpotent theorems 2, 7,
+8, 11, 17 where there were none — the seen rays condense. Shortcuts 0: the
+open path of a slide ring is the identity, and the first cut taught the
+open path; the test that should have caught it asserted only that the held
+count did not fall. Corrected: a nilpotent theorem teaches `Ω`, and the test
+requires a word held. Heard through a chord 0 on every voice — no live ring
+crosses one. About 45 rings per mind stand "open unread" on three minds,
+unchanged by the layering: a separate cause, read next.
 
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below

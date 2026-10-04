@@ -374,12 +374,18 @@ impl Kernel {
             // IS A GENERATOR OFFERED: the letter docketed through the one door
             // (`open_unspellable`), its sentence the proof, its discoverer the
             // mind that spoke the form.
+            // The word it teaches: a returning sentence's open path, a
+            // nilpotent one's holonomy (78.97, as `rung::hear` reads it).
+            let word = match nilpotent {
+                true => &s.omega,
+                false => &s.path,
+            };
             let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
-            if s.path.projective_eq(&one) {
+            if word.projective_eq(&one) {
                 continue;
             }
-            if let (Some(Err(_)), Some(v)) = (crate::transducer::family::derivation::peel_versor(&s.path), voice) {
-                if let Ok(r) = crate::transducer::element::base_rotor_of(&s.path) {
+            if let (Some(Err(_)), Some(v)) = (crate::transducer::family::derivation::peel_versor(word), voice) {
+                if let Ok(r) = crate::transducer::element::base_rotor_of(word) {
                     self.open_unspellable(&r, &inv, &[], &v);
                     crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.shortcuts_offered, 1);
                 }

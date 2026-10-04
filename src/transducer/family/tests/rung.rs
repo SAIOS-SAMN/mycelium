@@ -111,10 +111,11 @@ fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
         let Ok(s) = read else { continue };
         let t = Theorem::of(&s).expect("a ring of rays is a theorem");
         assert!(matches!(t.certificate, Certificate::Nilpotent { .. }), "a slide condenses: {:?}", s.closure);
-        let (spelled_before, _) = lexicon();
+        let before = sentence_tally();
         hear(&s);
-        let (spelled_after, _) = lexicon();
-        assert!(spelled_after >= spelled_before, "its open path is held as a word, never lost");
+        let after = sentence_tally();
+        let taught = (after.spelled + after.unspelled + after.recognized) - (before.spelled + before.unspelled + before.recognized);
+        assert!(taught > 0, "its open path is held as a word, or recognized as one held");
         theorems += 1;
     }
     assert!(theorems > 0, "the slide's rings were read");
