@@ -61,6 +61,57 @@ struct Tally {
     cut_out_carried: u64,
     one_carried: u64,
     all_carried: u64,
+    /// THE RING LAYER, built upward: each input body by the rings its
+    /// filaments close — [in a ring with another body, in a ring with the
+    /// scene only, carried and open, not carried] — in cut pairs and in all
+    /// pairs.
+    rings_cut: [u64; 4],
+    rings_all: [u64; 4],
+}
+
+/// One input body's place on the ring layer of its pair: its filaments
+/// (carriages onto output bodies on its chart) by canonical ray, read
+/// against every other body's and against the scene's sporophores.
+fn ring_layer(
+    ins: &[mycelium::transducer::family::Body],
+    outs: &[mycelium::transducer::family::Body],
+    spores: (&Option<mycelium::transducer::cga::Mv>, &Option<mycelium::transducer::cga::Mv>),
+    budget: &mut mycelium::physics::Budget,
+) -> Vec<usize> {
+    // Every filament: (input, output, its motion's canonical ray, the motion).
+    let mut filaments: Vec<(usize, usize, Vec<u8>, mycelium::transducer::cga::Mv)> = Vec::new();
+    for (i, a) in ins.iter().enumerate() {
+        for (j, b) in outs.iter().enumerate() {
+            if a.moduli.key() != b.moduli.key() {
+                continue;
+            }
+            let Some(c) = carriage(a, b, budget) else { continue };
+            let Some(ray) = c.v.canonical() else { continue };
+            let mut k = Vec::new();
+            ray.put_canonical(&mut k);
+            filaments.push((i, j, k, c.v));
+        }
+    }
+    (0..ins.len())
+        .map(|i| {
+            let mine: Vec<&(usize, usize, Vec<u8>, mycelium::transducer::cga::Mv)> = filaments.iter().filter(|f| f.0 == i).collect();
+            if mine.is_empty() {
+                return 3;
+            }
+            let with_body = mine.iter().any(|f| filaments.iter().any(|g| g.0 != i && g.1 != f.1 && g.2 == f.2));
+            if with_body {
+                return 0;
+            }
+            let with_scene = match spores {
+                (Some(si), Some(so)) => mine.iter().any(|f| projective_ratio(&f.3.sandwich(si), so).is_some()),
+                _ => false,
+            };
+            match with_scene {
+                true => 1,
+                false => 2,
+            }
+        })
+        .collect()
 }
 
 /// The places the output stands in the input as a section: exact, or exact
@@ -207,6 +258,14 @@ pub(crate) fn report(dir: &str, names: &[String]) {
                 t.enclosed += 1;
                 t.still += u64::from(projective_ratio(si, so).is_some());
             }
+            // THE RING LAYER, built upward from the filaments.
+            let cut = resized && ey.iter().zip(&ex).all(|(o, i)| o <= i);
+            for place in ring_layer(&ins, &outs, (&spores.0, &spores.1), &mut budget) {
+                t.rings_all[place] += 1;
+                if cut {
+                    t.rings_cut[place] += 1;
+                }
+            }
             for a in &ins {
                 let mut any = false;
                 for b in &outs {
@@ -251,6 +310,12 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "sporophore cuts that are no section: output bodies {} carried from an input body {} | outputs that are ONE carried body {} | outputs whose every body is carried {}",
         t.cut_out_bodies, t.cut_out_carried, t.one_carried, t.all_carried
     );
+    for (what, r) in [("cut pairs", t.rings_cut), ("all pairs", t.rings_all)] {
+        println!(
+            "sporophore ring layer, {what}: input bodies in a ring with another body {} | in a ring with the scene only {} | carried, open {} | not carried {}",
+            r[0], r[1], r[2], r[3]
+        );
+    }
     println!(
         "sporophore bodies: extent kept — carried {} uncarried {} | extent changed — carried {} uncarried {}",
         t.carried_kept, t.uncarried_kept, t.carried_resized, t.uncarried_resized
