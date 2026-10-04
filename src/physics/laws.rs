@@ -36,15 +36,21 @@ pub enum Law {
     Time,
     /// Conservative information flow into e_∅: the hue relation is unitary.
     Reservoir,
+    /// CONTINUITY (law version 3, 78.89): mass is neither made nor lost
+    /// except where a recorded SOURCE emits it or a recorded SINK absorbs it
+    /// — the white hole and the black hole, published as physics.
+    Continuity,
 }
 
 /// THE REGISTER'S VERSION: an amendment raises it, and an address names the
 /// version it was read at. Version 2 (LV2, ruled 2026-10-03): momentum read
-/// at a dilation's ratio, as rigidity reads it.
-pub const LAW_VERSION: u8 = 2;
+/// at a dilation's ratio, as rigidity reads it. Version 3 (78.89, the
+/// operator's "proceed" on the recommendation): continuity, the white hole
+/// and the black hole published as sources and sinks.
+pub const LAW_VERSION: u8 = 3;
 
 /// Every law of the register, in its order.
-pub const LAWS: [Law; 5] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir];
+pub const LAWS: [Law; 6] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir, Law::Continuity];
 
 impl Law {
     /// The law's place on [`LAWS`] — its coordinate in the register.
@@ -55,6 +61,7 @@ impl Law {
             Law::Rigidity => 2,
             Law::Time => 3,
             Law::Reservoir => 4,
+            Law::Continuity => 5,
         }
     }
 
@@ -65,6 +72,7 @@ impl Law {
             Law::Rigidity => "metric rigidity",
             Law::Time => "temporal monotonicity",
             Law::Reservoir => "conservative flow into e_∅",
+            Law::Continuity => "continuity",
         }
     }
 
@@ -76,6 +84,7 @@ impl Law {
             Law::Rigidity => "every pair of bodies keeps its unit-weight product across a transition, against the motion that carries them",
             Law::Time => "a transition advances the height; nothing is written before what it follows",
             Law::Reservoir => "a hue relation is unitary: every distinction a merge removes is rotated into e_∅",
+            Law::Continuity => "mass is neither made nor lost by a motion that does not dilate, except where a recorded source emits it or a recorded sink absorbs it, each at its own place; a dilation's mass is its expansion lane",
         }
     }
 
@@ -88,6 +97,7 @@ impl Law {
             Law::Rigidity => &[a::A10_1_METRIC_RIGIDITY],
             Law::Time => &[a::OK1_K_STEP_IS_ONE_ORBIT],
             Law::Reservoir => &[],
+            Law::Continuity => &[],
         }
     }
 
@@ -106,15 +116,57 @@ pub struct BodyState {
     pub body: Body,
 }
 
+/// WHICH WAY A FLUX RUNS: a SOURCE emits mass into the composition (the
+/// white hole), a SINK absorbs it (the black hole).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Flow {
+    Source,
+    Sink,
+}
+
+/// A RECORDED SOURCE OR SINK (78.89): where it stands — a nucleus of the
+/// algebra, a point or a sphere — which way it runs, and the mass it carries
+/// across the transition. Its coordinate is read off what it is, never
+/// assigned.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Flux {
+    pub flow: Flow,
+    pub at: Mv,
+    pub mass: Q,
+}
+
+impl Flux {
+    /// THE FLUX'S COORDINATE: its flow, then its place written canonically
+    /// — the bytes a ledger files it by and a verdict names it by.
+    pub fn coordinate(&self) -> Vec<u8> {
+        let mut k = vec![match self.flow {
+            Flow::Source => 0,
+            Flow::Sink => 1,
+        }];
+        self.at.put_canonical(&mut k);
+        k
+    }
+
+    /// The mass it carries into the composition: positive at a source,
+    /// negative at a sink.
+    fn signed(&self) -> Q {
+        match self.flow {
+            Flow::Source => self.mass.clone(),
+            Flow::Sink => -self.mass.clone(),
+        }
+    }
+}
+
 /// ONE TRANSITION OF A CELESTIAL COMPOSITION (L1): the motor between two
-/// heights, every body before and after it, and the hue relation it carries
-/// (empty where it recolours nothing).
+/// heights, every body before and after it, the hue relation it carries
+/// (empty where it recolours nothing), and the sources and sinks it records.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Transition {
     pub motion: Mv,
     pub heights: (u64, u64),
     pub bodies: Vec<(BodyState, BodyState)>,
     pub hues: Vec<(u8, u8)>,
+    pub fluxes: Vec<Flux>,
 }
 
 /// HOW A TRANSITION BROKE A LAW, carrying what it broke it by.
@@ -143,6 +195,12 @@ pub enum Breach {
     HeightNotAdvanced { before: u64, after: u64 },
     /// The hue relation is not unitary (78.58).
     NotUnitary,
+    /// Continuity: mass was made (`made > 0`) or lost (`made < 0`) beyond
+    /// what the recorded sources and sinks carried.
+    MassNotConserved { made: Q },
+    /// Continuity: flux `index` carries no positive mass, or stands at no
+    /// finite place (a nucleus of no weight).
+    FluxUnplaced { index: usize },
 }
 
 /// THE COURT'S ANSWER TO ONE TRANSITION (L2): every breach with its law,
@@ -207,6 +265,22 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
             None => v.breaches.push((Law::Momentum, Breach::MomentumUnread { body: i })),
         }
     }
+    // CONTINUITY'S MOMENTUM (law version 3): a source emits mass and the
+    // momentum that mass carries at its place; a sink absorbs both. Each flux
+    // is read as A.13 reads a body — a point of its mass at its place, under
+    // the step's bivector — and what the fluxes carried is what the bodies
+    // may have exchanged with no breach.
+    let b = t.motion.grade(2);
+    for f in &t.fluxes {
+        let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else { continue };
+        let n = centre.len();
+        let point = crate::physics::tensegrity::Body { centre, mass: f.mass.clone(), moments: vec![vec![Q::from_integer(0.into()); n]; n] };
+        let pi = crate::physics::tensegrity::momentum(&point, &b);
+        net = match f.flow {
+            Flow::Source => net.sub(&pi),
+            Flow::Sink => net.add(&pi),
+        };
+    }
     // LV2 (law version 2) — A DILATION CONSERVES MOMENTUM UP TO ITS RATIO. A
     // dilator leaves directions where they are, so the momentum it carries
     // does not scale while a dilated body's mass and second moments do:
@@ -247,6 +321,29 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     // unitary.
     if !t.hues.is_empty() && !crate::transducer::element::is_fibre_relation(&t.hues) {
         v.breaches.push((Law::Reservoir, Breach::NotUnitary));
+    }
+    // CONTINUITY (law version 3): every flux stands at a finite place with a
+    // positive mass; and under a motion that does not dilate, the bodies'
+    // mass after is their mass before plus what the sources emitted, less
+    // what the sinks absorbed — exactly. A dilation's change of mass is its
+    // expansion lane (LV2), not a flux.
+    for (index, f) in t.fluxes.iter().enumerate() {
+        let weighed = num_traits::Signed::is_positive(&f.mass);
+        // A finite place: the nucleus meets infinity with weight, `X·e∞ ≠ 0`
+        // (the reading `base_at` divides by), a point or a sphere alike.
+        let placed = !num_traits::Zero::is_zero(&f.at.geo(&crate::transducer::cga::e_inf()).scalar_part());
+        if !weighed || !placed {
+            v.breaches.push((Law::Continuity, Breach::FluxUnplaced { index }));
+        }
+    }
+    let dilates = crate::transducer::element::conformal_factors(&t.motion).is_ok_and(|f| !num_traits::One::is_one(&f.rho));
+    if !dilates {
+        let mass = |side: fn(&(BodyState, BodyState)) -> &BodyState| -> Q { t.bodies.iter().map(|b| side(b).body.mass.clone()).sum() };
+        let flux: Q = t.fluxes.iter().map(Flux::signed).sum();
+        let made = mass(|b| &b.1) - mass(|b| &b.0) - flux;
+        if !num_traits::Zero::is_zero(&made) {
+            v.breaches.push((Law::Continuity, Breach::MassNotConserved { made }));
+        }
     }
     v
 }

@@ -10,7 +10,7 @@
 //! law's coordinate is its address (`Law::address`), read back by
 //! [`law_at`].
 
-use super::{BodyState, Breach, Law, Transition, Verdict, LAWS, LAW_VERSION};
+use super::{BodyState, Breach, Flow, Flux, Law, Transition, Verdict, LAWS, LAW_VERSION};
 use crate::physics::tensegrity::Body;
 use crate::transducer::address::{put_key_count, take_key_count, Address, TAG_LAW};
 use crate::transducer::alphabet::{put_q, take_q};
@@ -100,6 +100,15 @@ pub fn put_transition(out: &mut Vec<u8>, t: &Transition) {
         out.push(*f);
         out.push(*h);
     }
+    put_key_count(out, t.fluxes.len());
+    for f in &t.fluxes {
+        out.push(match f.flow {
+            Flow::Source => 0,
+            Flow::Sink => 1,
+        });
+        f.at.to_bytes(out);
+        put_q(out, &f.mass);
+    }
 }
 
 pub fn take_transition(b: &[u8], p: &mut usize) -> Option<Transition> {
@@ -109,7 +118,18 @@ pub fn take_transition(b: &[u8], p: &mut usize) -> Option<Transition> {
     let bodies = (0..n).map(|_| Some((take_state(b, p)?, take_state(b, p)?))).collect::<Option<Vec<_>>>()?;
     let m = take_key_count(b, p)?;
     let hues = (0..m).map(|_| Some((take_u8(b, p)?, take_u8(b, p)?))).collect::<Option<Vec<_>>>()?;
-    Some(Transition { motion, heights, bodies, hues })
+    let f = take_key_count(b, p)?;
+    let fluxes = (0..f)
+        .map(|_| {
+            let flow = match take_u8(b, p)? {
+                0 => Flow::Source,
+                1 => Flow::Sink,
+                _ => return None,
+            };
+            Some(Flux { flow, at: take_mv(b, p)?, mass: take_q(b, p)? })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some(Transition { motion, heights, bodies, hues, fluxes })
 }
 
 fn put_breach(out: &mut Vec<u8>, breach: &Breach) {
@@ -158,6 +178,14 @@ fn put_breach(out: &mut Vec<u8>, breach: &Breach) {
             put_u64(out, *after);
         }
         Breach::NotUnitary => out.push(8),
+        Breach::MassNotConserved { made } => {
+            out.push(9);
+            put_q(out, made);
+        }
+        Breach::FluxUnplaced { index } => {
+            out.push(10);
+            put_key_count(out, *index);
+        }
     }
 }
 
@@ -177,6 +205,8 @@ fn take_breach(b: &[u8], p: &mut usize) -> Option<Breach> {
         6 => Breach::RigidityUnmeasured { i: take_key_count(b, p)?, j: take_key_count(b, p)? },
         7 => Breach::HeightNotAdvanced { before: take_u64(b, p)?, after: take_u64(b, p)? },
         8 => Breach::NotUnitary,
+        9 => Breach::MassNotConserved { made: take_q(b, p)? },
+        10 => Breach::FluxUnplaced { index: take_key_count(b, p)? },
         _ => return None,
     })
 }

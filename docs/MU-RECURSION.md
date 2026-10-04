@@ -21957,7 +21957,48 @@ a citation (`server::backfill`), unproved it waits for the next hearing
 (a closed era does not move), and the replication reading counts
 `folded_parent` and `folded_proved`. Test:
 `a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited`.
-The fleet confirms it only after a recut. Owed, an
+The fleet confirms it only after a recut.
+
+### 78.89 Continuity: the white hole and the black hole published as physics (law version 3; the operator's "proceed" on the recommendation, 2026-10-04)
+
+**The law.** `Law::Continuity`, the register's sixth, at version 3: mass is
+neither made nor lost by a motion that does not dilate, except where a
+recorded SOURCE emits it (the white hole) or a recorded SINK absorbs it
+(the black hole), each at its own place. A transition carries its
+`fluxes`: each a `Flux { flow: Source | Sink, at, mass }`, `at` a nucleus
+of the algebra (a point or a sphere), its coordinate read off its flow and
+its place (`Flux::coordinate`), never assigned.
+
+**The two choices of form, made conservatively and open to the
+operator's correction:**
+- *A dilation's change of mass is its expansion lane* (LV2), not a flux:
+  continuity is checked on motions that do not dilate.
+- *A source must name its place.* A flux of no positive mass, or at no
+  finite place (`X·e∞ = 0`), is refused by its index (`FluxUnplaced`).
+
+**Momentum reads the fluxes with it.** A source emits mass AND the
+momentum that mass carries at its place; a sink absorbs both. Each flux is
+read as A.13 reads a body, a point of its mass at its place under the
+step's bivector, and the bodies' net external torque must equal what the
+fluxes carried. So mass gained with nothing recorded breaks both laws,
+each named; gained at a recorded source standing where it lands, neither.
+
+**On the wire.** The codec carries fluxes and the two new breach kinds
+(`MassNotConserved { made }`, `FluxUnplaced { index }`) exactly; the
+register reply serves six laws at version 3.
+
+**Proved** (`physics/laws/tests.rs`,
+`mass_is_made_or_lost_only_at_a_recorded_source_or_sink`): a turn whose
+body gains two of mass is refused with exactly two made; the same gain is
+admitted against a source at the body; a loss is admitted against a sink;
+a flux at infinity and a flux of no mass are refused by their indices.
+
+**What it makes lawful.** The bridge found half the world's change is no
+motion (78.84), and the frame's own changes are mostly cut or grown
+(78.88). Both can now be written as physics: a grown frame or body is mass
+from a source, a cut one mass into a sink, a tiling a source repeated
+along a translation orbit. The sensor's lift (the frame as sporophore) can
+now be built against a law that sees all of it. Owed, an
 audit against R4: the voice also speaks single WORDS, not only sentences
 (`transcribe_closed` speaks a closed thought's word; `open_axis` speaks an
 axis germ); whether a word is a coherent sentence of one term, or must ride

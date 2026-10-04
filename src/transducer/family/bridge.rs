@@ -35,12 +35,13 @@ pub struct Bridge {
     pub transitions: u64,
     pub several: u64,
     pub admitted: u64,
-    /// Transitions breaching each law, in `LAWS` order.
-    pub by_law: [u64; 5],
+    /// Transitions breaching each law, in `LAWS` order — as wide as the
+    /// register, so a law added is read here without a second edit.
+    pub by_law: [u64; crate::physics::laws::LAWS.len()],
     /// Breaches by kind: not a versor, undecomposed, not carried, momentum
     /// unread, momentum not conserved, non-rigid, rigidity unmeasured, height
-    /// not advanced, not unitary.
-    pub breaches: [u64; 9],
+    /// not advanced, not unitary, mass not conserved, flux unplaced.
+    pub breaches: [u64; BREACH_KINDS],
     /// Transitions whose pairs all moved by one ratio: 1 (isometric) or
     /// another rational (a dilation).
     pub isometric: u64,
@@ -86,6 +87,9 @@ impl Bridge {
     }
 }
 
+/// How many kinds of breach the register names: `breach_slot`'s range.
+pub const BREACH_KINDS: usize = 11;
+
 fn breach_slot(b: &Breach) -> usize {
     match b {
         Breach::NotAVersor => 0,
@@ -97,6 +101,8 @@ fn breach_slot(b: &Breach) -> usize {
         Breach::RigidityUnmeasured { .. } => 6,
         Breach::HeightNotAdvanced { .. } => 7,
         Breach::NotUnitary => 8,
+        Breach::MassNotConserved { .. } => 9,
+        Breach::FluxUnplaced { .. } => 10,
     }
 }
 
@@ -161,7 +167,9 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
         read.transitions += 1;
         let single = bodies.len() == 1;
         read.several += u64::from(!single);
-        let t = Transition { motion: first.v.clone(), heights: (0, 1), bodies, hues };
+        // The perception's carriages record no source or sink: a carriage
+        // moves a body, it neither emits nor absorbs one.
+        let t = Transition { motion: first.v.clone(), heights: (0, 1), bodies, hues, fluxes: Vec::new() };
         let v = verify(&t, budget);
         if v.breaches.iter().any(|(law, _)| *law == crate::physics::laws::Law::Momentum) {
             read.momentum_single += u64::from(single);
@@ -192,7 +200,7 @@ pub fn bridge_pair(x: &Grid, y: &Grid, budget: &mut crate::physics::Budget) -> B
             }
         }
         read.admitted += u64::from(v.admitted());
-        let mut laws = [false; 5];
+        let mut laws = [false; crate::physics::laws::LAWS.len()];
         for (law, b) in &v.breaches {
             read.breaches[breach_slot(b)] += 1;
             if let Some(slot) = laws.get_mut(usize::from(law.index())) {

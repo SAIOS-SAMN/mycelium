@@ -18,7 +18,7 @@ fn a_shared_slide_is_one_transition_and_the_laws_admit_it() {
     assert_eq!((b.bodies, b.carried, b.uncarried), (2, 2, 0));
     assert_eq!(b.several, 1, "the slide carries both bars at once");
     assert_eq!(b.admitted, b.transitions, "every rigid carriage is admitted");
-    assert_eq!(b.by_law, [0; 5]);
+    assert!(b.by_law.iter().all(|&n| n == 0), "no law breached");
 }
 
 /// A CHANGE THAT IS NO MOTION ASKS THE LAWS NOTHING. A bar grows a cell: no

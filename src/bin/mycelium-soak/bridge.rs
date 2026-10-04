@@ -10,7 +10,7 @@ use mycelium::transducer::family::bridge::{bridge_pair, Bridge};
 
 const STROKE: usize = 1 << 20;
 
-const BREACHES: [&str; 9] = [
+const BREACHES: [&str; mycelium::transducer::family::bridge::BREACH_KINDS] = [
     "not a versor",
     "undecomposed",
     "not carried",
@@ -20,6 +20,8 @@ const BREACHES: [&str; 9] = [
     "rigidity unmeasured",
     "height not advanced",
     "not unitary",
+    "mass not conserved",
+    "flux unplaced",
 ];
 
 pub(crate) fn report(dir: &str, names: &[String]) {

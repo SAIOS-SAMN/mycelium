@@ -45,7 +45,7 @@ fn carried(motion: &Mv) -> Vec<(BodyState, BodyState)> {
 }
 
 #[test]
-fn the_register_holds_five_laws_each_at_its_own_coordinate() {
+fn the_register_holds_every_law_each_at_its_own_coordinate() {
     let addresses: Vec<_> = LAWS.iter().map(|l| l.address()).collect();
     for (law, a) in LAWS.iter().zip(&addresses) {
         assert_eq!(a.as_bytes(), [crate::transducer::address::TAG_LAW, law.index(), LAW_VERSION].as_slice());
@@ -58,7 +58,7 @@ fn the_register_holds_five_laws_each_at_its_own_coordinate() {
 
 #[test]
 fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new() };
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert!(v.modes >= 1, "the turn split into its modes");
@@ -69,14 +69,14 @@ fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
 fn each_law_refuses_what_breaks_it_and_every_breach_is_named() {
     let laws_of = |v: &Verdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();
     // TIME: the height stands still.
-    let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new() };
+    let still = Transition { motion: turn(), heights: (8, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     assert_eq!(laws_of(&verify(&still, &mut budget())), vec![Law::Time]);
     // CONFORMAL: a body's nucleus is not where the motion sends it.
     let mut moved = carried(&turn());
     if let [(_, after), ..] = moved.as_mut_slice() {
         after.nucleus = sphere_at(&[q(5), q(5), q(0)], &q(1));
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: moved, hues: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: moved, hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
     assert!(v.breaches.contains(&(Law::Conformal, Breach::NotCarried { body: 0 })), "{:?}", v.breaches);
     assert!(laws_of(&v).contains(&Law::Rigidity), "and the pair's distance moved: {:?}", v.breaches);
     // MOMENTUM: a body's inertia changed with no body to answer for it.
@@ -84,10 +84,10 @@ fn each_law_refuses_what_breaks_it_and_every_breach_is_named() {
     if let [(_, after), ..] = spun.as_mut_slice() {
         after.body.moments[1][1] = q(3);
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: spun, hues: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: spun, hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
     assert!(matches!(v.breaches.as_slice(), [(Law::Momentum, Breach::MomentumNotConserved { .. })]), "{:?}", v.breaches);
     // RESERVOIR, beside TIME: a merge whose moved preimage is not recorded.
-    let lossy = Transition { motion: turn(), heights: (3, 3), bodies: carried(&turn()), hues: vec![(1, 2), (2, 2)] };
+    let lossy = Transition { motion: turn(), heights: (3, 3), bodies: carried(&turn()), hues: vec![(1, 2), (2, 2)], fluxes: Vec::new() };
     assert_eq!(laws_of(&verify(&lossy, &mut budget())), vec![Law::Time, Law::Reservoir], "every breach named, not the first");
 }
 
@@ -103,7 +103,7 @@ fn points_are_read_at_unit_weight_and_a_dilation_is_a_similarity() {
         before.nucleus = point_at(&before.body.centre);
         after.nucleus = turn().sandwich(&before.nucleus);
     }
-    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: bodies.clone(), hues: Vec::new() }, &mut budget());
+    let v = verify(&Transition { motion: turn(), heights: (1, 2), bodies: bodies.clone(), hues: Vec::new(), fluxes: Vec::new() }, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert_eq!(v.similarity, Some(q(1)), "an isometry");
     let pts = |cs: &[[i64; 3]]| cs.iter().map(|c| point_at(&c.iter().map(|&x| q(x)).collect::<Vec<_>>())).collect::<Vec<_>>();
@@ -136,7 +136,7 @@ fn a_dilation_conserves_momentum_up_to_its_ratio() {
     };
     let dilated = |s: &BodyState, mass: i64| BodyState { nucleus: d.sandwich(&s.nucleus), body: Body { mass: q(mass), ..s.body.clone() } };
     let one = at_origin(1, 1);
-    let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Vec::new() };
+    let t = Transition { motion: d.clone(), heights: (1, 2), bodies: vec![(one.clone(), dilated(&one, 4))], hues: Vec::new(), fluxes: Vec::new() };
     let v = verify(&t, &mut budget());
     assert!(v.admitted(), "{:?}", v.breaches);
     assert_eq!(v.expansion, Some(q(4)), "the momentum's ratio, docketed as the expansion lane");
@@ -146,10 +146,60 @@ fn a_dilation_conserves_momentum_up_to_its_ratio() {
         heights: (1, 2),
         bodies: vec![(one.clone(), dilated(&one, 4)), (two.clone(), dilated(&two, 9))],
         hues: Vec::new(),
+        fluxes: Vec::new(),
     };
     let v = verify(&split, &mut budget());
     assert!(v.breaches.iter().any(|(l, _)| *l == Law::Momentum), "two ratios are no expansion lane: {:?}", v.breaches);
     assert_eq!(v.expansion, None);
+}
+
+/// LAW VERSION 3 (78.89) — CONTINUITY: THE WHITE HOLE AND THE BLACK HOLE
+/// PUBLISHED. Under a turn, which does not dilate, a body that gains two of
+/// mass with nothing recorded is refused — two made, named exactly; the
+/// same gain admitted where a source at a finite place emits it; a loss
+/// admitted where a sink absorbs it; a flux of no mass, or at no finite
+/// place, refused by its index. A dilation's change of mass stays its
+/// expansion lane (`a_dilation_conserves_momentum_up_to_its_ratio`).
+#[test]
+fn mass_is_made_or_lost_only_at_a_recorded_source_or_sink() {
+    let heavier = |m: i64| {
+        let mut b = carried(&turn());
+        if let [(_, after), ..] = b.as_mut_slice() {
+            after.body.mass = q(m);
+        }
+        b
+    };
+    // The flux stands where the mass lands: at the body, after the turn.
+    let at = {
+        let b = carried(&turn());
+        let [(_, after), ..] = b.as_slice() else { panic!("two bodies carried") };
+        point_at(&after.body.centre)
+    };
+    let source = |m: i64| Flux { flow: Flow::Source, at: at.clone(), mass: q(m) };
+    let sink = |m: i64| Flux { flow: Flow::Sink, at: at.clone(), mass: q(m) };
+    let of = |bodies, fluxes| Transition { motion: turn(), heights: (1, 2), bodies, hues: Vec::new(), fluxes };
+    // Unrecorded, the gain breaks both laws, each named: mass was made, and
+    // the momentum it carries came from nowhere.
+    let v = verify(&of(heavier(3), Vec::new()), &mut budget());
+    let laws: Vec<Law> = v.breaches.iter().map(|(l, _)| *l).collect();
+    assert_eq!(laws, vec![Law::Momentum, Law::Continuity], "{:?}", v.breaches);
+    assert!(v.breaches.contains(&(Law::Continuity, Breach::MassNotConserved { made: q(2) })));
+    assert!(verify(&of(heavier(3), vec![source(2)]), &mut budget()).admitted(), "a source emitted it");
+    // A lighter body is carried as the turn carries it, its momentum read
+    // on the spatial plane its mass does not weigh; the sink took the rest.
+    let lighter = {
+        let mut b = carried(&turn());
+        if let [(before, after), ..] = b.as_mut_slice() {
+            before.body.mass = q(3);
+            after.body.mass = q(1);
+        }
+        b
+    };
+    assert!(verify(&of(lighter, vec![sink(2)]), &mut budget()).admitted(), "a sink absorbed it");
+    let nowhere = Flux { flow: Flow::Source, at: crate::transducer::cga::e_inf(), mass: q(2) };
+    let v = verify(&of(heavier(3), vec![nowhere, source(0)]), &mut budget());
+    assert!(v.breaches.contains(&(Law::Continuity, Breach::FluxUnplaced { index: 0 })), "at no finite place: {:?}", v.breaches);
+    assert!(v.breaches.contains(&(Law::Continuity, Breach::FluxUnplaced { index: 1 })), "of no mass: {:?}", v.breaches);
 }
 
 /// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
@@ -164,7 +214,16 @@ fn the_contracts_bytes_decode_to_the_objects_they_carry() {
     for law in LAWS {
         assert_eq!(law_at(&law.address()), Some(law));
     }
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: vec![(1, 2), (2, 3)] };
+    let t = Transition {
+        motion: turn(),
+        heights: (7, 8),
+        bodies: carried(&turn()),
+        hues: vec![(1, 2), (2, 3)],
+        fluxes: vec![
+            Flux { flow: Flow::Source, at: point_at(&[q(1), q(2), q(0)]), mass: q(3) },
+            Flux { flow: Flow::Sink, at: sphere_at(&[q(0), q(0), q(0)], &q(1)), mass: Q::new(1.into(), 2.into()) },
+        ],
+    };
     let mut bytes = Vec::new();
     put_transition(&mut bytes, &t);
     let mut p = 0;
@@ -182,6 +241,8 @@ fn the_contracts_bytes_decode_to_the_objects_they_carry() {
             (Law::Rigidity, Breach::RigidityUnmeasured { i: 0, j: 2 }),
             (Law::Time, Breach::HeightNotAdvanced { before: 9, after: 9 }),
             (Law::Reservoir, Breach::NotUnitary),
+            (Law::Continuity, Breach::MassNotConserved { made: Q::new((-3).into(), 2.into()) }),
+            (Law::Continuity, Breach::FluxUnplaced { index: 1 }),
         ],
         ..v
     };
@@ -203,7 +264,7 @@ fn the_contracts_bytes_decode_to_the_objects_they_carry() {
 fn a_kernel_asks_the_register_and_puts_a_transition_to_it() {
     use super::codec::{decode_laws_request, decode_register_reply, encode_register_reply, encode_register_request, encode_verify_request, LawsRequest};
     assert_eq!(decode_laws_request(&encode_register_request()), Some(LawsRequest::Register));
-    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new() };
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let mut asked = encode_verify_request(&t);
     assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Verify(t)));
     asked.push(0);
