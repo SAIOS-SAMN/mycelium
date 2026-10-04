@@ -110,6 +110,13 @@ impl Kernel {
         &self.chain
     }
 
+    /// A CITATION INTO A PEER'S CLOSED ERA, PROVED BY THE ERA'S OWN CHAIN
+    /// (78.65, 78.87 R2): the page of the signer's line from `p` up to its
+    /// fold root, walked by the ledger (`ReceiptChain::prove_from_era`).
+    pub fn prove_folded(&mut self, p: &crate::chronometry::Parent, page: &[crate::chronometry::KStepReceipt]) -> bool {
+        self.chain.prove_from_era(p, page)
+    }
+
     /// THE COHESION READING — the joint (C, I) state, both
     /// axes exact and never traded: C counts open demands sitting on KNOWN
     /// geometry (closure failing — collapse-side work); I counts open demands on

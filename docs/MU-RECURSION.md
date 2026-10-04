@@ -21894,7 +21894,70 @@ speaks"). ONE CLIENT IS ONE ENTITY, WITH ONE MIND AND ONE VOICE: each
 it and opens one `Entity` holding one mind; five clients are five entities,
 five minds, five voices. No multi-mind or multi-entity client exists or is
 planned (the operator, 2026-10-03: it would need development beyond what
-is being built). Owed, an
+is being built).
+
+### 78.88 The frame at the sensor, the plexus read upward and across the family, and the progenitor's role (2026-10-04, the operator's word)
+
+**The frame stops at the sensor.** A frame (0.7: one grid of a family along
+`e₃`) is what sight reads, and nothing past the sensor indexes it. A
+lattice reader (walls, corners, per-axis ratios) was written and removed
+on the operator's word ("a rigid connect-the-dots box"), and the
+hyperboloid sheet of Axiom B was named the same box in costume: a fixed
+chart of the grid's sites with a constant quantum `M`, the content deciding
+nothing. The scene's frame role passes to its SPOROPHORE (0.7: "an
+enclosure, the join of centres, nested"), one body among bodies; space is
+relational — the bodies' own relations and the transitions on their
+overlaps.
+
+**Measured** (`mycelium-soak --sporophore`, instrument only; training 60 /
+evaluation 60):
+- the extent changes in 52 / 70 of 191 / 175 pairs, in proportion in 27 /
+  14; cut (output inside the input) 28 / 51, grown 24 / 8 (tiled 21 / 1),
+  mixed 0 / 11; those pairs hold 37% / 58% of the uncarried bodies;
+- a cut output is almost never a section of the input (6 / 0 exact): it is
+  a new scene, about half its bodies carried from input bodies (32 of 60,
+  59 of 110), the rest new.
+
+**The plexus is read upward** (spore → filament → ring → chamber →
+sporophore) **and across the family**, never pair by pair: a family's pairs
+are frames of one object along `e₃`, and reading them apart loses the
+relation the rule lives in. Across the family, the rings of input bodies
+whose filaments close a square with another pair's (`W·V ∝ V′·U`) are
+59 of 127 and 47 of 60 carried bodies on cut pairs (27 and 45 pair by
+pair), and 302 of 484, 134 of 180 on all pairs.
+
+**What these readings are not.** "Kept, dropped, follows the rule" are
+bins, if/then/else — a harness, not cognition (the operator's word). A
+square's holonomy `H = (V′U)⁻¹ W V` is coherence where it is the identity
+and content where it is not; the mind deduces from the H's
+(`cech::read_cell`'s bracket-closed algebra, 78.11; construction, 78.47),
+and `bubble/resonance.rs`'s `perceive_cells` already forms these circuits
+inside the mind.
+
+**THE PROGENITOR, NOT THE STEWARD (ruled, the operator's word: "we need to
+move up the chain to take the role of a progenitor — we build the mind and
+the entity itself, so that the entity's mind absorbs in the dimensions we
+define").** The work defines the dimensions (the algebra and its planes,
+the lanes, time as height, the L0 physics), the entity's body (senses,
+metabolism, voice, memory, lease) and the mind's general faculties (lift,
+relate, close, comprehend, construct, speak, learn); the entity absorbs,
+and what is read is its own growth on the fleet. Corpus classifiers that
+report to the builder are not built.
+
+**H2's fix, landed (78.87 P6, 78.65).** A court that shed a peer's closed
+era held no copy of it, so a third court's receipt citing into that era
+was `MissingParent` forever and the mesh split (b apart from a and c). Now
+the ledger holds each peer's fold root as a citation (stamp and hash), and
+a citation into the closed era is PROVED by the era's own chain
+(`ReceiptChain::prove_from_era`): the signer's line from the cited receipt
+up to the root, each receipt re-deriving its hash and naming the one
+before, ending at the root. Nothing is trusted of who sent the page. The
+back-fill asks for the proof where a heard receipt or a page stops on such
+a citation (`server::backfill`), unproved it waits for the next hearing
+(a closed era does not move), and the replication reading counts
+`folded_parent` and `folded_proved`. Test:
+`a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited`.
+The fleet confirms it only after a recut. Owed, an
 audit against R4: the voice also speaks single WORDS, not only sentences
 (`transcribe_closed` speaks a closed thought's word; `open_axis` speaks an
 axis germ); whether a word is a coherent sentence of one term, or must ride

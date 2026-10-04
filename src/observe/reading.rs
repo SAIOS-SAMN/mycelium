@@ -651,11 +651,14 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // for the cited signer's own fold, which `shed_folded` removed and no
     // back-fill can bring back below a head.
     ("folded_parent", "reported receipts citing a parent at or below its signer's held fold root"),
+    // 78.65, 78.87 R2 — the citation into a closed era PROVED by the era's
+    // own chain, walked from it up to the signer's fold root.
+    ("folded_proved", "citations into a closed era proved by the era's chain up to its root"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 43;
+pub const REP_AXES: usize = 44;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -702,6 +705,7 @@ pub mod rep {
     pub const GLUE_ATTACHED: usize = 40;
     pub const GLUE_ADMITTED: usize = 41;
     pub const FOLDED_PARENT: usize = 42;
+    pub const FOLDED_PROVED: usize = 43;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,

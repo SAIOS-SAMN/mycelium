@@ -29,6 +29,47 @@ pub struct Pass {
     pub reached: bool,
 }
 
+/// The place just before `at` on a line, so a page asked strictly after it
+/// opens AT `at`: the act before it in its orbit, or past every act of the
+/// orbit before. `None` at the line's genesis: the page opens at the start.
+fn place_before(at: Place) -> Option<Place> {
+    match (at.k, at.i) {
+        (_, i) if i > 0 => Some(Place { k: at.k, i: i - 1 }),
+        (0, _) => None,
+        (k, _) => Some(Place { k: k - 1, i: u64::MAX }),
+    }
+}
+
+/// A CITATION INTO A PEER'S CLOSED ERA (78.65, 78.87 R2), proved by the
+/// era's own chain: where `p` stands at or below the root this court holds
+/// for its signer's fold, the signer's line is asked from `p` up to that
+/// root — one page, a fold cuts within one — and the ledger walks it
+/// (`Kernel::prove_folded`). `None` where `p` is no citation into a closed
+/// era (no fold of its signer held, or `p` past the root): the caller reads
+/// it as it always did. `Some(false)` where the stroke, the page or the
+/// proof did not stand: the receipt waits for the next hearing, which asks
+/// again — nothing in a closed era moves, so the answer can only arrive.
+fn prove_folded(
+    kernel: &Mutex<Kernel>,
+    p: &crate::chronometry::Parent,
+    budget: &mut crate::physics::Budget,
+    fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place) -> Option<Vec<KStepReceipt>>,
+) -> Option<bool> {
+    let root = kernel.lock().ok()?.chain().peer_root(&p.at.vk)?;
+    if p.at.place() > root {
+        return None;
+    }
+    if !budget.spend() {
+        return Some(false);
+    }
+    let Some(page) = fetch(&p.at.vk, place_before(p.at.place()), root) else { return Some(false) };
+    let proved = kernel.lock().ok().is_some_and(|mut k| k.prove_folded(p, &page));
+    if proved {
+        note_replication(Some(p.at.vk), rep::FOLDED_PROVED, 1);
+    }
+    Some(proved)
+}
+
 /// Fetch and admit pages of `vk`'s receipts up to `to`, the place of the
 /// reported frame's predecessor — strictly after the head this court holds
 /// for the signer, or from its genesis when it holds none — until the
@@ -100,6 +141,18 @@ pub fn chase(
             // The page stopped on a citation: fetch that signer up to the
             // place it was cited at, then come back to this range.
             Some(p) => {
+                // A CITATION INTO A CLOSED ERA is proved by the era's chain,
+                // never fetched as a hole below the head (78.65): proved, the
+                // page that stopped on it is read again; unproved, the pass
+                // ends short and the next hearing asks.
+                match prove_folded(kernel, &p, budget, &mut fetch) {
+                    Some(true) => {
+                        frontier.push((who, upto));
+                        continue;
+                    }
+                    Some(false) => return short(advanced),
+                    None => {}
+                }
                 // WHAT IS HELD AT THE CITED PLACE, where the line's head
                 // already stands past it: nothing (the line holds a hole
                 // below its head) or another receipt (a fork). The chase
@@ -210,6 +263,24 @@ pub fn hear<E>(
             return admitted;
         }
         chased.insert(&hole, ());
+        // A CITATION INTO A CLOSED ERA is proved by the era's own chain,
+        // never chased as a hole below the head (78.65, 78.87 R2): proved,
+        // the frame is admitted again; unproved, it waits for the next
+        // hearing — nothing in a closed era moves, so the answer can only
+        // arrive.
+        if let Ok(Admitted::MissingParent(p)) = &admitted {
+            let p = *p;
+            if let Some(mut budget) = stroke() {
+                match prove_folded(kernel, &p, &mut budget, &mut fetch) {
+                    Some(true) => {
+                        admitted = admit();
+                        continue;
+                    }
+                    Some(false) => return admitted,
+                    None => {}
+                }
+            }
+        }
         // The lag at the report, in orbits: the orbit after the hole's
         // place against the orbit after the head held. A head held past
         // the report is no lag, and none is set (rule 11: never floored).

@@ -40,10 +40,18 @@ pub struct ReceiptChain {
     /// hash (`recall_folded`), held while the admission that asked reads
     /// it.
     folded: Keyed<[u8; 32]>,
-    /// `vk → (K, i)`: THE ROOT EACH PEER'S OWN FOLD ARCHIVED ITS LINE TO, as
-    /// its `Fold` node cites it — where `shed_folded` cuts that line. Kept
-    /// where a peer's fold node is held, rebuilt at restore from the nodes.
-    peer_roots: Keyed<Place>,
+    /// `vk → root`: THE ROOT EACH PEER'S OWN FOLD ARCHIVED ITS LINE TO, as
+    /// its `Fold` node cites it — its stamp and hash — where `shed_folded`
+    /// cuts that line and against which a citation into the closed era is
+    /// proved. Kept where a peer's fold node is held, rebuilt at restore
+    /// from the nodes.
+    peer_roots: Keyed<Parent>,
+    /// FOLDED PEER RECEIPTS PROVED FROM THEIR ERA (78.65, 78.87 R2): `stamp
+    /// → chain hash`, each one a citation into a closed era whose chain was
+    /// walked from it up to the peer's fold root (`prove_from_era`). A
+    /// closed era returns nothing new, so a proof stands; it is not
+    /// persisted, and is proved again where a citation asks after restore.
+    proved: Keyed<[u8; 32]>,
     /// THE OPERATORS the ledger has met, each once, by the index a node
     /// names it with.
     operators: Vec<[u8; 32]>,
@@ -343,7 +351,41 @@ impl ReceiptChain {
     /// its `Fold` node — the place at or below which `shed_folded` cut that
     /// signer's line. `None` where no fold of the signer is held.
     pub fn peer_root(&self, vk: &[u8; 32]) -> Option<Place> {
-        self.peer_roots.get(vk).copied()
+        self.peer_roots.get(vk).map(|r| r.at.place())
+    }
+
+    /// A CITATION INTO A PEER'S CLOSED ERA, PROVED BY ITS CHAIN (78.65,
+    /// 78.87 R2): `page` is the signer's line from `p` up to the root its
+    /// fold archived the line to. Walked from `p`: every receipt re-derives
+    /// its own hash and names the one before it as its predecessor, and the
+    /// walk ends exactly at the root's stamp and hash. Only then is `p` held
+    /// as proved, and its height reads. Nothing is trusted of who sent the
+    /// page: the chain is the proof. `false` where `p` stands past the root,
+    /// no root is held, or the page does not prove it.
+    pub fn prove_from_era(&mut self, p: &Parent, page: &[KStepReceipt]) -> bool {
+        let Some(root) = self.peer_roots.get(&p.at.vk).copied() else { return false };
+        if p.at.place() > root.at.place() {
+            return false;
+        }
+        let Some(start) = page.iter().position(|r| r.stamp == p.at && r.chain_hash == p.hash && r.rederives()) else {
+            return false;
+        };
+        let mut last = Parent { at: page[start].stamp, hash: page[start].chain_hash };
+        let mut reached = last == root;
+        for r in page.iter().skip(start + 1) {
+            if reached {
+                break;
+            }
+            if !r.rederives() || r.prev != Some(last) {
+                return false;
+            }
+            last = Parent { at: r.stamp, hash: r.chain_hash };
+            reached = last == root;
+        }
+        if reached {
+            self.proved.insert(p.at.key(), p.hash);
+        }
+        reached
     }
 
     /// The stamps of this chain's own line, in line order.
@@ -384,6 +426,7 @@ impl ReceiptChain {
             placed,
             folded,
             peer_roots,
+            proved,
             operators,
             operator_at: _,
             journal: _,
@@ -394,6 +437,7 @@ impl ReceiptChain {
         c.count("chain.placed", placed.len());
         c.count("chain.folded", folded.len());
         c.count("chain.peer_roots", peer_roots.len());
+        c.count("chain.proved", proved.len());
         c.count("chain.operators", operators.len());
     }
 
@@ -471,7 +515,10 @@ impl ReceiptChain {
     pub fn height_of(&self, p: &Parent) -> Option<u64> {
         let hash = match self.node_at(&p.at) {
             Some(held) => held.hash,
-            None => *self.folded.get(&p.at.key())?,
+            None => match self.folded.get(&p.at.key()) {
+                Some(h) => *h,
+                None => *self.proved.get(&p.at.key())?,
+            },
         };
         (hash == p.hash).then_some(p.at.h)
     }
@@ -536,12 +583,14 @@ impl ReceiptChain {
             return;
         }
         for c in &r.cites {
-            let Cite::Root { at, .. } = c else { continue };
+            let Cite::Root { at, hash } = c else { continue };
             if at.vk != r.stamp.vk {
                 continue;
             }
-            if let Some(top) = raise(self.peer_roots.get(&at.vk).copied(), at.place()) {
-                self.peer_roots.insert(at.vk, top);
+            // The later root stands: a fold archives everything below it.
+            let later = self.peer_roots.get(&at.vk).is_none_or(|held| held.at.place() < at.place());
+            if later {
+                self.peer_roots.insert(at.vk, Parent { at: *at, hash: *hash });
             }
         }
     }
@@ -563,7 +612,7 @@ impl ReceiptChain {
         let roots: Vec<([u8; 32], Place)> = self
             .peer_roots
             .scoped()
-            .filter_map(|(vk, &at)| Some((<[u8; 32]>::try_from(vk.as_slice()).ok()?, at)))
+            .filter_map(|(vk, root)| Some((<[u8; 32]>::try_from(vk.as_slice()).ok()?, root.at.place())))
             .collect();
         let mut shed = 0u64;
         for (vk, upto) in roots {
@@ -589,7 +638,7 @@ impl ReceiptChain {
             .map(|(key, _)| key)
             .filter(|key| !self.nodes.contains(key))
             .filter(|key| {
-                Stamp::from_key(key).is_some_and(|at| self.peer_roots.get(&at.vk).is_some_and(|root| at.place() <= *root))
+                Stamp::from_key(key).is_some_and(|at| self.peer_roots.get(&at.vk).is_some_and(|root| at.place() <= root.at.place()))
             })
             .collect();
         for key in unheld {

@@ -152,3 +152,61 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
     assert!(matches!(heard, Ok(crate::court::admission::Admitted::Parent(_))), "b's head is cited: {heard:?}");
     assert!(c.lock().expect("c").known_head(&dvk).is_some(), "d's line was fetched for the citation");
 }
+
+/// H2 (78.65, 78.87 R2) — A CITATION INTO A PEER'S CLOSED ERA IS PROVED BY THE
+/// ERA'S OWN CHAIN, and the citing head is cited. Peer e closes an orbit and
+/// folds it; court c admits e's line and, on e's fold, sheds what lies at or
+/// below e's root. A third signer d's head cites e's first receipt — inside
+/// the closed era. That was the fleet's split: `MissingParent` forever, the
+/// head past the place, back-fill reading the receipt stale. Now c asks e's
+/// line from the citation up to the root, walks it — each receipt
+/// re-deriving and naming the one before, ending at the root's stamp and
+/// hash — holds the citation proved, and admits d's head as a parent.
+#[test]
+fn a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited() {
+    use crate::chronometry::{ActKind, Cite, Parent, ReceiptChain, Stamp};
+    let evk = super::common::court_key("closed-era-e").vk_bytes();
+    let mut e = ReceiptChain::with_vk(evk);
+    act(&mut e, 1);
+    let shut = e.head().expect("e closed its orbit");
+    // e's line as it stood before the fold: what its era archives and serves.
+    let era = e.line_between(&evk, None, shut.stamp.place(), 64);
+    let e0 = e.at_place(crate::chronometry::Place::GENESIS).expect("e's first act, by its place");
+    let (_, root) = e.fold_before(shut.stamp.place()).expect("the orbit folds");
+    let cites = vec![Cite::Root { at: Stamp::new(root.height, evk, root.at), hash: root.hash }];
+    let folded = e.append(ActKind::Fold, [0; 4], cites, [0; 32], Vec::new()).expect("the fold node");
+    // c admits e's line, and its fold sheds what lies below the root.
+    let mut c0 = Kernel::new();
+    c0.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    let mut line = era.clone();
+    line.push(folded);
+    let mut budget = c0.stroke();
+    let (n, missing) = c0.admit_backfill(&line, &mut budget);
+    assert_eq!((n, missing), (line.len(), None), "e's line admitted whole");
+    assert!(c0.chain().node(&e0.stamp).is_none(), "e's first receipt was shed with its era");
+    let c = std::sync::Mutex::new(c0);
+    // d's head cites e's first receipt, inside the closed era.
+    let dkey = super::common::court_key("closed-era-d");
+    let dvk = dkey.vk_bytes();
+    let mut d = ReceiptChain::with_vk(dvk);
+    d.admit(e0.clone());
+    d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: e0.stamp, hash: e0.chain_hash }]).expect("d cites e0");
+    let (head, pre) = head_of(&d);
+    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place| {
+        match () {
+            _ if *who == evk => Some(era.iter().filter(|r| after.is_none_or(|a| a < r.stamp.place()) && r.stamp.place() <= upto).cloned().collect()),
+            _ if *who == dvk => Some(d.line_between(who, after, upto, 64)),
+            _ => None,
+        }
+    };
+    let heard: Result<_, ()> = crate::server::backfill::hear(
+        &c,
+        || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &dkey), &head)),
+        || c.lock().ok().map(|mut k| k.stroke()),
+        fetch,
+    );
+    assert!(matches!(heard, Ok(crate::court::admission::Admitted::Parent(_))), "d's head is cited: {heard:?}");
+    let r = crate::observe::replication();
+    let on_e = r.signers.iter().find(|(s, _)| *s == evk).map(|(_, a)| *a).expect("e is read");
+    assert!(on_e[rep::FOLDED_PARENT] > 0 && on_e[rep::FOLDED_PROVED] > 0, "counted as a citation into a closed era, and proved");
+}
