@@ -94,6 +94,11 @@ assert_eq!(done.h, head_height + 1, "height continues over the fold");
 assert!(k.fold_proposal().is_none(), "sealed, nothing pends");
 let root = k.chain().root().expect("the chain stands on its root");
 assert_eq!(root, p.root);
+// 78.92, 78.94 — WHY STILL ANSWERS WHAT A FOLD ARCHIVED: the act is gone
+// from the hot chain and stands in the era, where it is read by its place.
+assert!(k.chain().at_place(act(1)).is_none(), "the fold took it off the hot chain");
+let archived = k.why(crate::anastome::dialogue::why::WhyAsk::Own(act(1))).expect("an archived act is still asked about");
+assert_eq!((archived.kind, archived.at.place()), (ActKind::List, act(1)));
 let fold = k.chain().opening().expect("the hot line opens at the fold").clone();
 assert_eq!((fold.kind, fold.stamp.k, fold.prev_hash()), (ActKind::Fold, 3, head_hash));
 assert_eq!(

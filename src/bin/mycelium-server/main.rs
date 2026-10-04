@@ -15,6 +15,7 @@ mod exchange;
 mod fold;
 mod genesis;
 mod judge;
+mod ledger;
 mod offer;
 mod persist;
 mod syllabus;
@@ -61,7 +62,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
         }
         // Valueless flags, checked here so an unknown one is still refused
         // rather than silently ignored (rule 11).
-        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" {
+        if args[i] == "--mint-genesis" || args[i] == "--recut" || args[i] == "--check" || args[i] == "--console" || args[i] == "--ledger" {
             i += 1;
             continue;
         }
@@ -292,6 +293,10 @@ fn main() {
         // 78.92 — why one act on the hypha's own line stands.
         if let Some(asked) = flag(&args, "--why") {
             why::run(&home, flag(&args, "--at"), asked);
+        }
+        // 78.94 — the hypha's whole line by action, archive included.
+        if args.iter().any(|a| a == "--ledger") {
+            ledger::run(&home, flag(&args, "--at"));
         }
         // 78.93 B1 — one party's wallet at the hypha.
         if let Some(asked) = flag(&args, "--wallet") {

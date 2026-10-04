@@ -22108,6 +22108,18 @@ It admits nothing. The operator asks it as `mycelium-server --console
 `the_court_says_why_an_act_stands_with_the_speakers_reasons` — the court's
 answer carries exactly the reasons the speaker read.
 
+**Read across folds (the first reading after the recut, epoch 121).** A fold
+archives every act before its root, and `--why` on a refusal the receipts
+act served answered "holds no act": `Kernel::why` read the hot chain alone.
+It now reads the hot chain, then the archive through `receipts_page` — the
+one reader the back-fill pages by — bounded to exactly the place asked
+(`archived_at`); proved in the era test (an act folded off the hot chain is
+still answered by its place). `mycelium-server --console --ledger` reads a
+court's whole line by action through the receipts action, archive
+included, names where each refusal stands, and prints the court's whole
+verifying key (the party `--wallet` reads) — on the server binary the fleet
+runs, never on the unmaintained soak.
+
 **Owed, in order.** (1) The adjudication should answer the stamp (the
 coordinate) beside the receipt hash (a key), so a voice can say "why" of
 its own admitted sentence by where it stands. (2) Refusals on the ledger:

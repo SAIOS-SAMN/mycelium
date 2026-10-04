@@ -13,10 +13,24 @@ impl Kernel {
     /// longer holds is counted as unheld, never answered with reasons it
     /// cannot read. `None` where this court holds no act there.
     pub fn why(&self, ask: WhyAsk) -> Option<Why> {
-        let r = match ask {
-            WhyAsk::Own(p) => self.chain.at_place(p)?,
-            WhyAsk::Of(s) => self.chain.node(&s)?,
+        // THE HOT CHAIN, THEN THE ARCHIVE: a fold archives every act before
+        // its root, and an act asked about stands where it stands whether or
+        // not a fold has passed it — read through the one reader the
+        // back-fill pages by (`receipts_page`), bounded to exactly that place.
+        let own = self.chain.vk();
+        let (vk, p) = match ask {
+            WhyAsk::Own(p) => (own, p),
+            WhyAsk::Of(s) => (s.vk, s.place()),
         };
+        let r = match self.chain.at(&vk, p) {
+            Some(r) => r,
+            None => self.archived_at(&vk, p)?,
+        };
+        if let WhyAsk::Of(s) = ask {
+            if r.stamp != s {
+                return None;
+            }
+        }
         let mut named = Vec::new();
         let mut unheld = 0u64;
         let mut refused = Vec::new();
@@ -40,5 +54,22 @@ impl Kernel {
             });
         }
         Some(Why { at: r.stamp, kind: r.kind, mu: r.mu, named, unheld, refused })
+    }
+
+    /// ONE ARCHIVED ACT AT ITS PLACE on a signer's line, through the page
+    /// reader: the page from the place just before it up to it, one act long.
+    /// `None` where no act stands there in what this court holds.
+    fn archived_at(&self, vk: &[u8; 32], p: crate::chronometry::Place) -> Option<crate::chronometry::KStepReceipt> {
+        use crate::chronometry::Place;
+        let before = match (p.k, p.i) {
+            (_, i) if i > 0 => Some(Place { k: p.k, i: i - 1 }),
+            (k, _) if k > 0 => Some(Place { k: k - 1, i: u64::MAX }),
+            _ => None,
+        };
+        let (_, bytes) = Kernel::receipts_frame()?;
+        match self.receipts_page(vk, before, p, 1, bytes).as_slice() {
+            [r] if r.stamp.place() == p => Some(r.clone()),
+            _ => None,
+        }
     }
 }
