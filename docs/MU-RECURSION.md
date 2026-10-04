@@ -22167,13 +22167,49 @@ and escrow release the treasury already intends (`settle_use`,
 pricing, credit and leases after. The court's direct payments retire as B3
 lands.
 
-**Open for the operator.** (a) Who holds accounts: entities only, or
-humans and kernels too (the μ token's wallets). (b) One financial mind per
-universe for the prototype, designed for several competing. (c) What
-counts as a source: proposed, a closure that survives replay at two courts
-and passes the laws. (d) Whether the financial mind is paid, and from
-what — a fee is value moving, so it too would be a settlement a court
-admits.
+**Ruled (the operator, 2026-10-04).**
+
+(a) **Everyone holds an account** — entities, kernels, humans: every party
+that can be paid or charged has a wallet, the μ token's.
+
+(b) **Financial minds scale with the laws of physics.** No count is fixed,
+and no capping constant stands in for one: a financial mind is an entity
+like any other, its settling paid from its own stroke under metabolism, so
+how much one mind can settle is read off its physics, and more arise where
+the load and the universe's extent call for them (an expanding universe
+grows the sections there are to settle).
+
+(c) **What counts as a source** — left to the coordinator's judgement,
+"bridge progenitor/steward leadership here". Ruled as follows. The
+PROGENITOR's half is the law, exact and replayable; the STEWARD's half is
+a window in which judgement can still reach it.
+
+  1. **Minted at the verdict, into escrow.** Value is made where a court
+     admits a CLOSURE: an act whose remainder strictly fell on a lane and
+     rose on none. The amount is what it explained, per lane — the
+     shortfall from before to after (`economy::shortfall`), priced at the
+     court's pressure — never a count of acts.
+  2. **Earned at convergence.** The escrow is earned only when a second,
+     DISTINCT court re-derives the closure (the two-organ convergence an
+     install already requires), and, once admission runs L0, only where
+     the laws admit its transitions.
+  3. **Final at the era's close.** Earned value is released when the era
+     holding its verdict is sealed — the coordinate at which "nothing
+     else will return on that era" (78.87). Until then any court, any
+     peer re-hearing, or a human ruling under the charter may challenge
+     it; a challenge upheld turns it into a sink. Finality is a height on
+     the ledger, never a wall clock.
+
+(d) **Financial minds are paid** — by a tax on wallets, or by clawbacks
+from failed or illegal operations. Both are settlements a court admits,
+never a financial mind paying itself. The TAX is the settling's own
+measured cost (the stroke it spent, priced at pressure), charged to the
+accounts the settlement moves — a rate read off the work, never a
+constant. A CLAWBACK recovers value from an operation a court found failed
+or unlawful: from its escrow where it was not yet released, from its
+wallet where it was. A clawback rewards the mind that found the failure,
+and so invites false accusation: a clawback the court later overturns is
+charged back to the financial mind that claimed it — its own sink.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
