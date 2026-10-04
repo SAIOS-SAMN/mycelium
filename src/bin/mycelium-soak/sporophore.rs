@@ -67,6 +67,99 @@ struct Tally {
     /// pairs.
     rings_cut: [u64; 4],
     rings_all: [u64; 4],
+    /// THE RING ACROSS THE FAMILY: each input body by whether a filament of
+    /// it closes a square with a filament of another pair — [closes across
+    /// the family, carried and open across it, not carried, its family
+    /// holds no other pair] — in cut pairs and in all; and the carriages a
+    /// spent stroke left unread.
+    family_cut: [u64; 4],
+    family_all: [u64; 4],
+    family_unread: u64,
+}
+
+type Body = mycelium::transducer::family::Body;
+type Filament = (usize, usize, mycelium::transducer::cga::Mv);
+
+/// THE RING ACROSS THE FAMILY, per pair, per input body: the place it
+/// stands — 0 a filament of it closes a square with another pair's
+/// (`W·V ∝ V′·U`: the body and its image related across the pairs by one
+/// transport), 1 carried and open across the family, 2 not carried, 3 the
+/// family holds no other pair. Carriages are read once each and kept; a
+/// carriage the stroke could not read is counted unread, never "none".
+fn family_rings(pairs: &[(Vec<Body>, Vec<Body>)], budget: &mut mycelium::physics::Budget, unread: &mut u64) -> Vec<Vec<usize>> {
+    use mycelium::network::nerve::Keyed;
+    let mut memo: Keyed<Option<mycelium::transducer::cga::Mv>> = Keyed::new();
+    let mut carry = |key: Vec<u8>, a: &Body, b: &Body, budget: &mut mycelium::physics::Budget, unread: &mut u64| -> Option<mycelium::transducer::cga::Mv> {
+        if let Some(held) = memo.get(&key) {
+            return held.clone();
+        }
+        if a.moduli.key() != b.moduli.key() {
+            memo.insert(&key, None);
+            return None;
+        }
+        if budget.remaining() == 0 {
+            *unread += 1;
+            return None;
+        }
+        let v = carriage(a, b, budget).map(|c| c.v);
+        memo.insert(&key, v.clone());
+        v
+    };
+    let k = |tag: u8, p: usize, i: usize, q: usize, j: usize| -> Vec<u8> {
+        let mut out = vec![tag];
+        for x in [p, i, q, j] {
+            out.extend_from_slice(&(x as u64).to_be_bytes());
+        }
+        out
+    };
+    // Each pair's filaments.
+    let filaments: Vec<Vec<Filament>> = pairs
+        .iter()
+        .enumerate()
+        .map(|(p, (ins, outs))| {
+            let mut f = Vec::new();
+            for (i, a) in ins.iter().enumerate() {
+                for (j, b) in outs.iter().enumerate() {
+                    if let Some(v) = carry(k(0, p, i, p, j), a, b, budget, unread) {
+                        f.push((i, j, v));
+                    }
+                }
+            }
+            f
+        })
+        .collect();
+    pairs
+        .iter()
+        .enumerate()
+        .map(|(p, (ins, _))| {
+            (0..ins.len())
+                .map(|i| {
+                    let mine: Vec<&Filament> = filaments[p].iter().filter(|f| f.0 == i).collect();
+                    if mine.is_empty() {
+                        return 2;
+                    }
+                    if pairs.len() < 2 {
+                        return 3;
+                    }
+                    for (a, b, v) in &mine {
+                        for (q, (ins_q, outs_q)) in pairs.iter().enumerate() {
+                            if q == p {
+                                continue;
+                            }
+                            for (a2, b2, v2) in &filaments[q] {
+                                let Some(u) = carry(k(1, p, *a, q, *a2), &pairs[p].0[*a], &ins_q[*a2], budget, unread) else { continue };
+                                let Some(w) = carry(k(2, p, *b, q, *b2), &pairs[p].1[*b], &outs_q[*b2], budget, unread) else { continue };
+                                if projective_ratio(&w.geo(v), &v2.geo(&u)).is_some() {
+                                    return 0;
+                                }
+                            }
+                        }
+                    }
+                    1
+                })
+                .collect()
+        })
+        .collect()
 }
 
 /// One input body's place on the ring layer of its pair: its filaments
@@ -202,6 +295,21 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         let Ok(json) = std::fs::read_to_string(format!("{dir}/{name}")) else { continue };
         let Some(task) = mycelium::arc::parse_task(&json) else { continue };
         let mut physics = mycelium::physics::Physics::default();
+        // THE RING ACROSS THE FAMILY: the pairs read as one object, every
+        // pair's filaments squared against every other pair's.
+        let perceived: Vec<(Vec<Body>, Vec<Body>)> = task.train.iter().map(|(x, y)| (perceive(x), perceive(y))).collect();
+        let mut family_budget = physics.stroke_n(STROKE);
+        let places = family_rings(&perceived, &mut family_budget, &mut t.family_unread);
+        for ((x, y), per) in task.train.iter().zip(&places) {
+            let (ex, ey) = (mycelium::arc::extents(x), mycelium::arc::extents(y));
+            let cut = ex != ey && ey.iter().zip(&ex).all(|(o, i)| o <= i);
+            for &place in per {
+                t.family_all[place] += 1;
+                if cut {
+                    t.family_cut[place] += 1;
+                }
+            }
+        }
         for (x, y) in &task.train {
             let mut budget = physics.stroke_n(STROKE);
             t.pairs += 1;
@@ -310,6 +418,13 @@ pub(crate) fn report(dir: &str, names: &[String]) {
         "sporophore cuts that are no section: output bodies {} carried from an input body {} | outputs that are ONE carried body {} | outputs whose every body is carried {}",
         t.cut_out_bodies, t.cut_out_carried, t.one_carried, t.all_carried
     );
+    for (what, r) in [("cut pairs", t.family_cut), ("all pairs", t.family_all)] {
+        println!(
+            "sporophore ring across the family, {what}: input bodies closing a square with another pair {} | carried, open across the family {} | not carried {} | family of one pair {}",
+            r[0], r[1], r[2], r[3]
+        );
+    }
+    println!("sporophore ring across the family: carriages a spent stroke left unread {}", t.family_unread);
     for (what, r) in [("cut pairs", t.rings_cut), ("all pairs", t.rings_all)] {
         println!(
             "sporophore ring layer, {what}: input bodies in a ring with another body {} | in a ring with the scene only {} | carried, open {} | not carried {}",
