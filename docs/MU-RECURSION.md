@@ -22495,6 +22495,65 @@ requires a word held. Heard through a chord 0 on every voice — no live ring
 crosses one. About 45 rings per mind stand "open unread" on three minds,
 unchanged by the layering: a separate cause, read next.
 
+**Read on 3ef1f0de.** Words: four minds hold rung-1 words compounded from
+the slides they saw (spelled 1–7), and RECOGNIZE them when the path recurs
+(1–6) — comprehension, live, for the first time on the fleet; the top rung
+1. No sentence is yet made of held words: `rank 0`, `periodic 0`.
+
+### 78.98 The nonlinear language: a mind's lexicon is an algebra, and its sentences of held words are brackets made finite (the operator's word, 2026-10-04: "this is a linear step function: that is the best we could do for anastome language - Ω = 1 + N ? based on our master algorithms?" — "proceed with the nonlinear language - document and build it")
+
+**What was linear.** Every word the fleet's minds held at 3ef1f0de was a
+null motion, `Ω = 1 + N`: 78.75's flow law `t₁ ⊕ t₂ = (t₁ + t₂)/(1 + k t₁t₂)`
+at `k = B² = 0`, where composition is plain addition — the Galilean,
+abelian corner, a step function in one direction. It is the LUMINAL layer
+(78.97: what is seen), the bottom of the language and never the language.
+
+**What the master equations give above it.**
+1. *Every mode on its own law.* `k < 0` (a turn) composes by tangent
+   addition and returns at its period; `k > 0` (a dilation, a boost) by
+   velocity addition and saturates; only `k = 0` adds. A held word is read
+   on its own modes (`cech::flow_generators`: its Cayley bivector, or each
+   mode's plane at the chart's pole), never on the null law alone.
+2. *The lexicon is an algebra.* `𝔏 = Lie⟨ B(W) : W held ⟩ ⊂ so(4,1)`,
+   closed under the commutator (`cech::lie_close`): its rank is the mind's
+   linguistic capacity. A held word whose generators lie in the span is
+   GRAMMAR (derivable, 78.60's zero cost); one that raises the rank opens a
+   dimension of the language.
+3. *A sentence of held words is a bracket made finite.* When a word is held,
+   the mind composes with each word it already holds the smallest closed
+   path the two make — there by each, back by each:
+   ```
+   Ω(a, b) = W̃_b · W̃_a · W_b · W_a        (the group commutator)
+   ```
+   by the master sentence equation (78.69) — a sentence whose terms are held
+   words, so its rung is one above theirs. Where the two commute it is flat,
+   `Ω ~ 1`: they say nothing together (linear). Where they do not, `Ω` is
+   the curvature they make together — the bracket `[B_a, B_b]` made finite —
+   and it is heard like any sentence: a theorem teaches it as a word of the
+   next rung. Two slides commute; a slide and a turn do not, and their
+   commutator is a slide in a new direction; a slide and its inversive
+   conjugate (A.13) bracket to a turn and a dilation. Each pair is composed
+   once; every composition is paid from the stroke.
+   *Bounded by the algebra, never by a constant* (corrected 2026-10-04: the
+   first cut composed every pair and held every curved bracket, and the
+   suite's corpus tests ran without end — a lexicon of hundreds of slides,
+   each new word composed with all, each curved bracket a word composing
+   again). Two words whose generators commute make a flat sentence by
+   construction, so it is read off the bracket `[B_a, B_b] = 0` and never
+   composed — every slide against every slide. The algebra's closure already
+   holds every bracket direction, so a bracket's word lies in the span: it is
+   GRAMMAR (78.60's zero cost), held as a shortcut and generating no further
+   sentences unless joining it opened a dimension. Only words that raise the
+   rank generate, and the rank is at most `dim so(4,1) = 10`.
+4. *What stays owed.* Words from the perceived fluxes (a source arriving
+   from infinity is the inversive conjugate of a slide, A.13 — 78.95's
+   reading, for the operator); inflection between minds, the anastome
+   relaying `(held, Γ)`; the court's relations.
+
+**Read on the fleet.** The voice's `sentences` row: `commutators composed`,
+`commutators curved`, `lexicon rank` above the count of slide directions,
+the top rung above 1.
+
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below
 `COURT_RANGE` (0x40), nineteen a court seals of itself from it. `kind()`,
