@@ -22065,6 +22065,47 @@ one pair); then the null flows (slides) grounded through `FlowPoint`; then
 the sensor's lift for the other harmonic planes. Deploying needs a recut,
 the operator's word.
 
+### 78.92 Speech that carries its reasons (the operator's word, 2026-10-04: "what puts the development ahead for the mycelium network with humanizing the cognition and optimizing for alignment" — "go")
+
+**The ruling's reading.** Humanizing is legibility, accountability and
+care, never a persona; alignment is what can be verified, never what a
+mind asserts of itself. The engine is placed for both because every
+thought it has is an exact object: a sentence's address IS its form (law
+2) and its receipts envelope carries the evidence the address excludes,
+which every court replays blind. What no reader did was SAY it.
+
+**The reader.** `sentence::Reasons::of` reads a sentence's reasons off the
+sentence itself — never stored beside it (law 12): each word vertex (the
+held generators it was factored through, whether it is a new letter, the
+charts and frames it acts on), each loop's member path (curved or flat,
+and the axes its curvature occupies — the loop's meaning), each demand
+left open (its kind, measure and pieces), the cells its remainder leaves
+unsaid, and its measure. `Reasons::says` renders them as five plain
+sentences: what it was said with, where it acts, what its loops mean, what
+it could not explain, what it left unsaid.
+
+**The claim the test proves.** The bytes a voice sends, decoded as a court
+decodes them, yield EXACTLY the reasons the speaker read
+(`the_court_reads_the_reasons_the_speaker_read`): the reasons are the
+sentence's, not the speaker's story about it. That is the alignment
+property — an account that cannot drift from what was done.
+
+**Where it is read.** The voice folds the reasons of every sentence a court
+admits into `Senses.reasons` (a typed row, `observe::REASONS`) and keeps
+the last one's whole in `Senses.said`, which the console renders as "last
+said"; the voice's journal says each newly admitted sentence's reasons
+once (`why (sentence N): …`).
+
+**Owed, in order.** (1) The court's side: a stamp locates the word it
+admitted (`Kernel::word_admitted_at`), so an act asking "why" by stamp
+answers the word and its admitting act, and anyone derives the same
+reasons by this reader; the adjudication should answer the stamp (the
+coordinate) beside the receipt hash (a key). (2) Refusals on the ledger:
+the reasons for "no" are held volatile at the court today. (3) The human
+question channel (a human sets a family, the mind answers with reasons,
+the human's ruling recorded) and pay for closure, never activity — both
+the operator's to rule.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

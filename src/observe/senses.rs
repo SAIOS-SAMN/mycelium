@@ -37,6 +37,19 @@ pub const COGNITION: [&str; 8] =
     ["thoughts held", "grounded", "closed", "merged", "torsion merges", "stayed two", "fills", "classes"];
 /// What a mind SAID: its closed thoughts transcribed (78.52), and uttered.
 pub const SPEECH: [&str; 6] = ["uttered", "spelled", "said by an adjoined letter", "ineffable", "unread", "colour theorems"];
+/// 78.92 — WHAT A MIND'S ADMITTED SENTENCES CARRIED AS REASONS
+/// (`sentence::ReasonsTally`, in its row's order).
+pub const REASONS: [&str; 9] = [
+    "sentences",
+    "words",
+    "built on held language",
+    "generators cited",
+    "new letters",
+    "loops",
+    "loops curved",
+    "left unexplained",
+    "cells unsaid",
+];
 /// What a mind HEARD from its court.
 pub const HEARING: [&str; 3] = ["pages", "words heard", "words admitted"];
 /// What a mind holds as LANGUAGE.
@@ -66,6 +79,11 @@ pub struct Senses {
     pub sight: [u64; SIGHT.len()],
     pub cognition: [u64; COGNITION.len()],
     pub speech: [u64; SPEECH.len()],
+    /// 78.92 — the reasons its admitted sentences carried, cumulative, and
+    /// the last one's whole: what it said with, what its loops mean, what it
+    /// could not explain, what it left unsaid.
+    pub reasons: [u64; REASONS.len()],
+    pub said: Option<crate::transducer::sentence::Reasons>,
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -196,6 +214,14 @@ impl Senses {
         put(out, &self.sight);
         put(out, &self.cognition);
         put(out, &self.speech);
+        put(out, &self.reasons);
+        match &self.said {
+            None => out.push(0),
+            Some(r) => {
+                out.push(1);
+                r.put(out);
+            }
+        }
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -206,11 +232,21 @@ impl Senses {
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Senses> {
         let [k] = take::<1>(b, p)?;
+        let (sight, cognition, speech, reasons) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
+        let flag = *b.get(*p)?;
+        *p += 1;
+        let said = match flag {
+            0 => None,
+            1 => Some(crate::transducer::sentence::Reasons::take(b, p)?),
+            _ => return None,
+        };
         Some(Senses {
             k,
-            sight: take(b, p)?,
-            cognition: take(b, p)?,
-            speech: take(b, p)?,
+            sight,
+            cognition,
+            speech,
+            reasons,
+            said,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -222,17 +258,25 @@ impl Senses {
 
     /// The reading, faculty by faculty, named.
     pub fn lines(&self) -> Vec<String> {
-        vec![
+        let mut out = vec![
             format!("K {}", self.k),
             format!("sight: {}", line(&SIGHT, &self.sight)),
             format!("cognition: {}", line(&COGNITION, &self.cognition)),
             format!("speech: {}", line(&SPEECH, &self.speech)),
+            format!("reasons: {}", line(&REASONS, &self.reasons)),
+        ];
+        // 78.92 — the last admitted sentence, in its own words.
+        if let Some(r) = &self.said {
+            out.extend(r.says().into_iter().map(|s| format!("  last said: {s}")));
+        }
+        out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
             format!("understanding: {}", line(&UNDERSTANDING, &self.understanding)),
             format!("solving: {} · paid {:?}", line(&SOLVING, &self.solving), self.paid),
             format!("carriers: {}", line(&GROWING, &self.carriers)),
-        ]
+        ]);
+        out
     }
 
     /// The counter under `name` in the faculty `faculty`, read by name.
@@ -244,6 +288,7 @@ impl Senses {
             "sight" => at(&SIGHT, &self.sight, name),
             "cognition" => at(&COGNITION, &self.cognition, name),
             "speech" => at(&SPEECH, &self.speech, name),
+            "reasons" => at(&REASONS, &self.reasons, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

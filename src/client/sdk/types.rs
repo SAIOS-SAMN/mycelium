@@ -521,6 +521,11 @@ pub struct Entity {
     /// 78.55 — the colour theorems this mind proposed: composites of its
     /// ruled colour words, spoken with their derivation.
     pub(crate) colour_theorems: u64,
+    /// 78.92 — the reasons this voice's admitted sentences carried,
+    /// cumulative, and the last one's whole (volatile: read off the
+    /// sentence, never persisted beside it).
+    pub(crate) reasons: crate::transducer::sentence::ReasonsTally,
+    pub(crate) said: Option<crate::transducer::sentence::Reasons>,
     /// What this voice heard: pages, words heard, words admitted
     /// (`observe::HEARING`).
     pub(crate) hearing: [u64; 3],

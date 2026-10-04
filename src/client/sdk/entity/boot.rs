@@ -56,6 +56,8 @@ impl Entity {
             solve_refused: crate::network::nerve::Keyed::new(),
             colour_derived: 0,
             colour_theorems: 0,
+            reasons: crate::transducer::sentence::ReasonsTally::default(),
+            said: None,
             hearing: [0; 3],
             bundle_cursor: None,
             taught_up: crate::network::nerve::Keyed::new(),

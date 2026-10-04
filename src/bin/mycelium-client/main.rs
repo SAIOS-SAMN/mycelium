@@ -260,6 +260,8 @@ fn main() {
     // What each arm — feed, quote, task, syntropy — has added to the live
     // heap since the voice came up, in bytes (R3, §8.1).
     let mut grew = [0i128; 4];
+    // 78.92 — the admitted sentences whose reasons this voice has said.
+    let mut reasons_said = 0u64;
 
     loop {
         if stop.load(Ordering::SeqCst) {
@@ -580,6 +582,15 @@ fn main() {
                 entity.physics().pressure,
                 mycelium::physics::metabolism::metabolism().line()
             );
+            // 78.92 — THE VOICE SAYS WHY, once per newly admitted sentence:
+            // the last one's reasons in its own words.
+            let rt = entity.reasons();
+            if rt.sentences > reasons_said {
+                reasons_said = rt.sentences;
+                if let Some(r) = entity.said() {
+                    eprintln!("[{tag}] why (sentence {}): {}", rt.sentences, r.says().join("; "));
+                }
+            }
             // WHAT THE COVERS' ORBITS CLASSIFIED AS, read from the counter
             // the engine already keeps. `tally_orbit` records every `Fill`
             // at `extract.rs` on the live path, and only `mycelium-soak`

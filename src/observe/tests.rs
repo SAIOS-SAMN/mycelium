@@ -822,6 +822,17 @@ fn the_senses_and_the_acts_travel_whole() {
         *x = 300 + i as u64;
     }
     senses.speech = [1, 2, 3, 4, 5, 39];
+    senses.reasons = [40, 41, 42, 43, 44, 45, 46, 47, 48];
+    senses.said = Some(crate::transducer::sentence::Reasons {
+        words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
+        loops: vec![crate::transducer::sentence::reasons::LoopReason {
+            curved: true,
+            axes: vec![crate::transducer::sentence::Axis::Hue, crate::transducer::sentence::Axis::Placement],
+        }],
+        open: vec![crate::transducer::sentence::reasons::OpenReason { kind: 3, measure: [5, 0, 0, 1], pieces: 2 }],
+        unsaid: 6,
+        measure: [7, 8, 9, 10],
+    });
     senses.hearing = [6, 7, 8];
     senses.language = [9, 10, 11, 12, 13, 29];
     senses.understanding = [14, 15, 16, 17, 38];

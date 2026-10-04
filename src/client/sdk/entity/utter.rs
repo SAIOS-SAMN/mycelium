@@ -396,6 +396,12 @@ impl Entity {
             // (78.49). A refused utterance is not an admitted one.
             let e = sentences[i].clone();
             self.act_on(&e);
+            // 78.92 — WHY IT WAS SAID, read off the sentence the court
+            // admitted: the same reader the court's copy answers to.
+            if let Some(r) = crate::transducer::sentence::Reasons::of(&e) {
+                self.reasons.note(&r);
+                self.said = Some(r);
+            }
             self.file_taught(&e);
             self.contractions.remove(&e.address());
             if let Some(k) = crate::transducer::sentence::from_element_form(&e)

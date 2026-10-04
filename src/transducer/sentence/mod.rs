@@ -21,7 +21,9 @@ pub mod demand;
 pub mod compose;
 pub mod rung;
 pub mod theorem;
+pub mod reasons;
 
+pub use reasons::{Reasons, ReasonsTally};
 pub use chain::*;
 pub use demand::*;
 pub use form::*;

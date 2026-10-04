@@ -5,6 +5,16 @@ use crate::client::sdk::*;
 use crate::observe::{self, Loss, Memory, Planes, Reading, Source};
 
 impl Entity {
+    /// 78.92 — the reasons this mind's admitted sentences carried, and the
+    /// last one's, read off the sentences themselves.
+    pub fn reasons(&self) -> crate::transducer::sentence::ReasonsTally {
+        self.reasons
+    }
+
+    pub fn said(&self) -> Option<&crate::transducer::sentence::Reasons> {
+        self.said.as_ref()
+    }
+
     /// THIS MIND'S FACULTIES AT ITS OWN `K` (2026-09-29): each read off the
     /// one carrier that holds it (law 12) — sight off the perception's
     /// resonance tally, cognition off the contemplation, speech off the
@@ -51,6 +61,8 @@ impl Entity {
                 c.classes,
             ],
             speech: [self.uttered_n() as u64, t.spelled, t.adjoined, t.ineffable, t.unread, self.colour_theorems],
+            reasons: self.reasons.row(),
+            said: self.said.clone(),
             hearing: self.hearing,
             language: [
                 self.epigenome.dialect_len() as u64,
