@@ -491,6 +491,12 @@ pub enum Cite {
         residue: Option<crate::transducer::cga::Mv>,
         cover: Option<Vec<Vec<u8>>>,
     },
+    /// 78.93 B0 — A REFUSAL ON THE RECORD: the refused sentence by its fiber
+    /// (its chart) and the kind of the refusal (`RefusalKind::to_byte`). It
+    /// is located by the stamp of the act that carries it; the coordinate
+    /// inside the sentence went to the voice with the verdict, and the
+    /// sentence itself is never copied here (LD0).
+    Refusal { chart: Invariant, kind: u8 },
 }
 
 impl Cite {
@@ -499,7 +505,7 @@ impl Cite {
     pub fn at(&self) -> Option<Stamp> {
         match self {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
-            Cite::Class { .. } | Cite::Demand { .. } => None,
+            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } => None,
         }
     }
 
@@ -507,7 +513,7 @@ impl Cite {
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
             Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
-            Cite::Word { .. } | Cite::Root { .. } => None,
+            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } => None,
         }
     }
 
@@ -534,6 +540,11 @@ impl Cite {
                 at.put_canonical(&mut rec);
                 rec.extend_from_slice(hash);
             }
+            Cite::Refusal { chart, kind } => {
+                rec.push(4);
+                chart.put_canonical(&mut rec);
+                rec.push(*kind);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -547,7 +558,7 @@ impl Cite {
                         rec.push(1);
                         r.to_bytes(&mut rec);
                     }
-                    Cite::Word { .. } | Cite::Root { .. } => {}
+                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -589,6 +600,12 @@ impl Cite {
                 let hash: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
                 Some(Cite::Root { at, hash })
+            }
+            4 => {
+                let chart = Invariant::take_canonical(b, p)?;
+                let kind = *b.get(*p)?;
+                *p += 1;
+                Some(Cite::Refusal { chart, kind })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

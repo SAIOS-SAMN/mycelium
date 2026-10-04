@@ -58,3 +58,41 @@ fn the_court_says_why_an_act_stands_with_the_speakers_reasons() {
     assert_eq!(k.why(WhyAsk::Own(far)), None);
     assert_eq!(decode_why_reply(&encode_why_reply(None)), Some(None));
 }
+
+/// 78.93 B0 — A "NO" IS ON THE RECORD. The court's copy of the scene lands
+/// the lone site painted another hue, so the voice's sentence is refused at
+/// a vertex. The refusal is an act on the court's line: the verdict's
+/// receipt IS that act's chain hash, the act cites the refused sentence by
+/// its chart with the refusal's kind — coordinates, which survive their
+/// bytes — and asked why that act stands, the court answers the refusal.
+#[test]
+fn a_refusal_is_an_act_on_the_ledger_and_says_why() {
+    use crate::chronometry::{ActKind, Cite};
+    let voice_fam = family();
+    let court_fam: Vec<TrainPair> = vec![(digits(&["1100200"]), digits(&["0011003"]))];
+    let [(x, y)] = voice_fam.as_slice() else { panic!("one pair") };
+    let f = cipher_form(x, y);
+    let mag = sentence_measure(&f, &voice_fam, &NoCrystal, 0).expect("every body is spoken");
+    let s = as_element_form(&f, mag).expect("a sentence");
+    let task = crate::registry::task_id(&crate::arc::Task { train: court_fam.clone(), test: Vec::new() }).expect("a task");
+    let mut k = Kernel::new();
+    k.bind_identity([2; 32]);
+    k.bind_task_family(&task, court_fam);
+    let mut frame = k.stroke();
+    let heard = k.hear_speech([6; 32], task.as_bytes(), &[(s.clone(), None)], &mut frame).expect("heard");
+    let [Adjudication::Refused { kind, receipt, .. }] = heard.as_slice() else { panic!("refused: {heard:?}") };
+    let head = k.chain.head().expect("the refusal is an act");
+    assert_eq!(head.kind, ActKind::Refused);
+    assert_eq!(head.chain_hash, *receipt, "the voice is answered the refusal's own receipt");
+    let chart = crate::transducer::stalk::invariant_of(&s);
+    let cite = Cite::Refusal { chart: chart.clone(), kind: kind.to_byte() };
+    assert_eq!(head.cites, vec![cite.clone()]);
+    let mut bytes = Vec::new();
+    cite.put_canonical(&mut bytes).expect("a refusal's coordinates write");
+    assert_eq!(Cite::take_canonical(&bytes, &mut 0), Some(cite));
+    let why = k.why(WhyAsk::Of(head.stamp)).expect("the refusal is on the ledger");
+    let [r] = why.refused.as_slice() else { panic!("one refusal: {why:?}") };
+    assert_eq!((r.kind, r.chart), (kind.to_byte(), head_of(chart.key().as_bytes())));
+    assert!(why.named.is_empty(), "a refusal admits no word");
+    assert_eq!(decode_why_reply(&encode_why_reply(Some(&why))), Some(Some(why)));
+}

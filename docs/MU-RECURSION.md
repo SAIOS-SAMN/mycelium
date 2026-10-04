@@ -22211,6 +22211,21 @@ wallet where it was. A clawback rewards the mind that found the failure,
 and so invites false accusation: a clawback the court later overturns is
 charged back to the financial mind that claimed it — its own sink.
 
+**B0 landed (2026-10-04).** (1) A verdict says where its word stands:
+`Adjudication::Stood` and `Ratified` carry the stamp of the act that
+admitted the word, on the wire beside the receipt hash; the voice keeps it
+with its last sentence's reasons and its `why` line names the place.
+(2) A refusal is an act on the court's line: `refuse_sentence` seals
+`ActKind::Refused` citing `Cite::Refusal { chart, kind }` — the refused
+sentence by its fiber and the refusal's kind, coordinates and never the
+sentence (LD0) — and the voice is answered THAT act's chain hash, which its
+contraction cites. `ACT_WHY` on a refusal act answers its kind and chart;
+the coordinate inside the sentence went to the voice with the verdict. A
+tape that does not decode has no sentence to cite and stays a verdict
+without an act. The new citation tag (4) is a ledger layout addition: a
+ledger without it reads as before, and the fleet takes it at the recut.
+Proved: `a_refusal_is_an_act_on_the_ledger_and_says_why`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

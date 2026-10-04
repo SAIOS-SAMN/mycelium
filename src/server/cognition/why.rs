@@ -4,7 +4,7 @@
 // read with).
 
 use super::*;
-use crate::anastome::dialogue::why::{head_of, Named, Why, WhyAsk};
+use crate::anastome::dialogue::why::{head_of, Named, Refusal, Why, WhyAsk};
 use crate::chronometry::Cite as Cited;
 
 impl Kernel {
@@ -19,7 +19,13 @@ impl Kernel {
         };
         let mut named = Vec::new();
         let mut unheld = 0u64;
+        let mut refused = Vec::new();
         for c in &r.cites {
+            // 78.93 B0 — a refusal the act records, by its kind and chart.
+            if let Cited::Refusal { chart, kind } = c {
+                refused.push(Refusal { kind: *kind, chart: head_of(chart.key().as_bytes()) });
+                continue;
+            }
             let Cited::Word { at, .. } = c else { continue };
             let held = self.word_admitted_at(at).and_then(|a| Some((a.clone(), self.named_word(a.as_bytes())?)));
             let Some((addr, word)) = held else {
@@ -33,6 +39,6 @@ impl Kernel {
                 reasons: crate::transducer::sentence::Reasons::of(word),
             });
         }
-        Some(Why { at: r.stamp, kind: r.kind, mu: r.mu, named, unheld })
+        Some(Why { at: r.stamp, kind: r.kind, mu: r.mu, named, unheld, refused })
     }
 }

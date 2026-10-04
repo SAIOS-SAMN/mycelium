@@ -369,6 +369,17 @@ impl Kernel {
         self.seal_step(kind, mu, voice, |_| cites.clone());
     }
 
+    /// 78.93 B0 — A REFUSAL SEALED ON THIS COURT'S LINE: the refused
+    /// sentence by its fiber and the refusal's kind, so a "no" and why
+    /// outlive the process that said it. The act measured nothing it admits,
+    /// so its frame is the zero reading. Its receipt, or `None` where the
+    /// line could not take it — the refusal then stands in memory alone and
+    /// the verdict says so by the head it answers with.
+    pub(super) fn seal_refusal(&mut self, s: &Element, kind: crate::transducer::sentence::RefusalKind, voice: [u8; 32]) -> Option<KStepReceipt> {
+        let cite = Cite::Refusal { chart: crate::transducer::stalk::invariant_of(s), kind: kind.to_byte() };
+        self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
+    }
+
     /// OK1 — THE COURT'S CYCLE CLOSES BY NAME (78.23 as amended): one
     /// circuit of exchange, deliberation, lapse and persist is one orbit,
     /// and its close is an act — a node of kind `Orbit` at the orbit's last

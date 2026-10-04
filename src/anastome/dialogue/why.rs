@@ -32,8 +32,16 @@ pub struct Named {
     pub reasons: Option<Reasons>,
 }
 
-/// WHY AN ACT STANDS: the act, the words it names, and the named words this
-/// court no longer holds.
+/// 78.93 B0 — ONE REFUSAL THE ACT RECORDS: its kind
+/// (`RefusalKind::to_byte`) and the head of the refused sentence's chart.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Refusal {
+    pub kind: u8,
+    pub chart: [u8; 8],
+}
+
+/// WHY AN ACT STANDS: the act, the words it names, the named words this
+/// court no longer holds, and the refusals it records.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Why {
     pub at: Stamp,
@@ -41,6 +49,7 @@ pub struct Why {
     pub mu: [u64; 4],
     pub named: Vec<Named>,
     pub unheld: u64,
+    pub refused: Vec<Refusal>,
 }
 
 /// The first eight bytes of an address, for naming it on a console.
@@ -141,6 +150,11 @@ pub fn encode_why_reply(why: Option<&Why>) -> Vec<u8> {
             }
         }
     }
+    crate::transducer::address::put_key_count(&mut out, w.refused.len());
+    for r in &w.refused {
+        out.push(r.kind);
+        out.extend_from_slice(&r.chart);
+    }
     out
 }
 
@@ -173,5 +187,11 @@ pub fn decode_why_reply(body: &[u8]) -> Option<Option<Why>> {
         };
         named.push(Named { head, admitted, task, reasons });
     }
-    (p == body.len()).then_some(Some(Why { at, kind, mu, named, unheld }))
+    let mut refused = Vec::new();
+    for _ in 0..crate::transducer::address::take_key_count(body, &mut p)? {
+        let kind = *body.get(p)?;
+        p += 1;
+        refused.push(Refusal { kind, chart: take_head(body, &mut p)? });
+    }
+    (p == body.len()).then_some(Some(Why { at, kind, mu, named, unheld, refused }))
 }

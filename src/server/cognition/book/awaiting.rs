@@ -96,7 +96,7 @@ impl Kernel {
         };
         for (voice, _task, s) in waiting {
             let refusal = crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_GLUED_UNRULED, &s);
-            let _ = self.refuse_sentence(voice, &s.address(), refusal);
+            let _ = self.refuse_sentence(voice, &s, refusal);
         }
     }
 

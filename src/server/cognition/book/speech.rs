@@ -179,7 +179,7 @@ impl Kernel {
         if let Some(c) = cited {
             if !self.verify_contraction(c, s) {
                 let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_NOT_CONTRACTION, s);
-                return Ok(self.refuse_sentence(voice, &addr, refusal));
+                return Ok(self.refuse_sentence(voice, s, refusal));
             }
             self.refusals.remove(&c.before);
         }
@@ -202,7 +202,7 @@ impl Kernel {
             match proof {
                 ColourProof::Unproven => {
                     let refusal = crate::court::verdict::Refusal::of_tape(crate::court::verdict::REFUSE_FIBRE_UNWITNESSED, s);
-                    return Ok(self.refuse_sentence(voice, &addr, refusal));
+                    return Ok(self.refuse_sentence(voice, s, refusal));
                 }
                 ColourProof::Witnessed(t) if !s.receipts().witness.contains(&t) => {
                     let mut w = s.clone();
@@ -218,7 +218,7 @@ impl Kernel {
             s
         };
         let out = match self.hear_sentence(voice, task, s, budget) {
-            Err(refusal) => return Ok(self.refuse_sentence(voice, &addr, refusal)),
+            Err(refusal) => return Ok(self.refuse_sentence(voice, s, refusal)),
             Ok(out) => out,
         };
         // 78.56 IV — A THEOREM MINTS NOTHING AT ADMISSION: a symmetry of the
@@ -244,11 +244,11 @@ impl Kernel {
                 })
             }
             Outcome::Refused(reason) => {
-                Ok(self.refuse_sentence(voice, &addr, crate::court::verdict::Refusal::of_tape(reason, s)))
+                Ok(self.refuse_sentence(voice, s, crate::court::verdict::Refusal::of_tape(reason, s)))
             }
             Outcome::Pivot => Ok(self.refuse_sentence(
                 voice,
-                &addr,
+                s,
                 crate::court::verdict::Refusal::of_tape(crate::verdict::REFUSE_NOT_A_SENTENCE, s),
             )),
             // 78.93 B0 — and where the word stands: the stamp that admitted it.
@@ -297,15 +297,21 @@ impl Kernel {
 
     /// A refusal answered and recorded (50.9): the adjudication names the
     /// kind and the coordinate, the record keeps them under the refused
-    /// address with the receipt.
+    /// address with the receipt. 78.93 B0 — and the refusal is an act on
+    /// this court's ledger (`seal_refusal`), its receipt the one the voice
+    /// is answered with and contracts against.
     pub(super) fn refuse_sentence(
         &mut self,
-        _voice: [u8; 32],
-        addr: &Address,
+        voice: [u8; 32],
+        s: &Element,
         refusal: crate::court::verdict::Refusal,
     ) -> crate::anastome::dialogue::Adjudication {
+        let addr = &s.address();
         let kind = refusal.kind();
-        let receipt = self.chain.head_hash();
+        let receipt = match self.seal_refusal(s, kind, voice) {
+            Some(r) => r.chain_hash,
+            None => self.chain.head_hash(),
+        };
         self.refusals.insert(
             addr,
             crate::court::verdict::Refused { kind, at: refusal.at.clone(), receipt },

@@ -55,8 +55,17 @@ pub(crate) fn run(home: &Path, at: Option<&str>, asked: &str) -> ! {
         why.at.h,
         why.mu
     );
-    if why.named.is_empty() && why.unheld == 0 {
+    if why.named.is_empty() && why.unheld == 0 && why.refused.is_empty() {
         println!("  the act names no word");
+    }
+    // 78.93 B0 — a refusal on the record, by its kind and the refused
+    // sentence's chart.
+    for r in &why.refused {
+        let kind = match mycelium::transducer::sentence::RefusalKind::from_byte(r.kind) {
+            Some(k) => k.label(),
+            None => "a kind this build does not name",
+        };
+        println!("  {BOLD}refused{RESET}: {kind} · the sentence on chart {}…", hex(&r.chart));
     }
     for n in &why.named {
         let task = match n.task {
