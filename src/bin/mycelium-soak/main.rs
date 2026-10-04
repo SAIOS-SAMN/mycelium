@@ -21,6 +21,7 @@ mod cover;
 mod confluence;
 mod delta;
 mod incongruence;
+mod interpret;
 mod invert;
 mod luminal;
 mod solve;
@@ -100,6 +101,26 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.81's caution — `--interpret DIR LIMIT`: the voice interpreter's
+    // spend against the extraction's, before a recut.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--interpret") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  interpret refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => interpret::report(dir, &names),
+            Err(e) => {
+                eprintln!("  interpret refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.88 — `--sporophore DIR LIMIT`: whether reading a scene by its
     // enclosure matters for perception now.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--sporophore") {
