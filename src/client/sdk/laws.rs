@@ -19,6 +19,15 @@ impl super::Session {
         decode_register_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the register's reply did not decode"))
     }
 
+    /// 78.92 — WHY ONE ACT ON THE HYPHA'S LEDGER STANDS: the act and every
+    /// word it names, each with the reasons read off the word. `None` where
+    /// the hypha holds no act at the coordinates asked.
+    pub fn why(&self, ask: crate::anastome::dialogue::why::WhyAsk) -> io::Result<Option<crate::anastome::dialogue::why::Why>> {
+        let reply = self.speak(crate::anastome::dialogue::why::encode_why(ask))?;
+        crate::anastome::dialogue::why::decode_why_reply(&reply)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the why reply did not decode"))
+    }
+
     /// THE COURT'S VERDICT on a transition this kernel composed: every
     /// breach with its law. A reading — nothing is admitted by it.
     pub fn verify(&self, t: &Transition) -> io::Result<Verdict> {

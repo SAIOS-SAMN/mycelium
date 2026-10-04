@@ -22,6 +22,7 @@ mod reads;
 mod reduce;
 mod room;
 mod snapshot;
+mod why;
 mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};

@@ -22096,11 +22096,21 @@ the last one's whole in `Senses.said`, which the console renders as "last
 said"; the voice's journal says each newly admitted sentence's reasons
 once (`why (sentence N): …`).
 
-**Owed, in order.** (1) The court's side: a stamp locates the word it
-admitted (`Kernel::word_admitted_at`), so an act asking "why" by stamp
-answers the word and its admitting act, and anyone derives the same
-reasons by this reader; the adjudication should answer the stamp (the
-coordinate) beside the receipt hash (a key). (2) Refusals on the ledger:
+**The court's side (landed).** `ACT_WHY` (0x3B, `dialogue::why`) asks a
+court about one act on its ledger — a place `K.i` on its own line, or a
+stamp on any line it holds. `Kernel::why` reads the receipt, locates every
+word it names by the stamp that admitted it (`word_admitted_at`), and
+answers the act (stamp, kind, frame) with each word's head, admitting
+stamp, the head of the task it was spoken for, and its reasons by the same
+reader; a named word the court no longer holds is counted, never dropped.
+It admits nothing. The operator asks it as `mycelium-server --console
+--why K.i`, the kernel as `Session::why`. Proved:
+`the_court_says_why_an_act_stands_with_the_speakers_reasons` — the court's
+answer carries exactly the reasons the speaker read.
+
+**Owed, in order.** (1) The adjudication should answer the stamp (the
+coordinate) beside the receipt hash (a key), so a voice can say "why" of
+its own admitted sentence by where it stands. (2) Refusals on the ledger:
 the reasons for "no" are held volatile at the court today. (3) The human
 question channel (a human sets a family, the mind answers with reasons,
 the human's ruling recorded) and pay for closure, never activity — both

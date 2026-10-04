@@ -19,6 +19,7 @@ mod offer;
 mod persist;
 mod syllabus;
 mod transport;
+mod why;
 #[cfg(test)]
 mod tests;
 
@@ -51,6 +52,7 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             || args[i] == "--voice"
             || args[i] == "--court"
             || args[i] == "--reading"
+            || args[i] == "--why"
         {
             i += 2;
             continue;
@@ -285,6 +287,10 @@ fn main() {
     // check does: it reads a hypha (this home's own bind, or `--at`) and
     // starts nothing here.
     if args.iter().any(|a| a == "--console") {
+        // 78.92 — why one act on the hypha's own line stands.
+        if let Some(asked) = flag(&args, "--why") {
+            why::run(&home, flag(&args, "--at"), asked);
+        }
         let ask = console::Ask {
             voice: flag(&args, "--voice"),
             court: flag(&args, "--court"),

@@ -189,6 +189,12 @@ pub const ACT_OBSERVE: u8 = 0x39;
 /// the one writer of it. It admits nothing and writes no receipt: a verdict
 /// is a reading the kernel acts on.
 pub const ACT_LAWS: u8 = 0x3A;
+/// WHY AN ACT STANDS (78.92): any process asks a court about one act on its
+/// ledger — a place on its own line (`[ACT_WHY][0][place]`) or a stamp on any
+/// line it holds (`[ACT_WHY][1][stamp]`) — and is answered the act and every
+/// word it names, each with the reasons read off the word itself. The layout
+/// and its codec are `dialogue::why`'s. It admits nothing.
+pub const ACT_WHY: u8 = 0x3B;
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

@@ -56,7 +56,7 @@ const RED: &str = "\x1b[91m";
 
 /// The address the console asks: `--at`, or the bind this home's own mesh
 /// record names. `None` where neither reads.
-fn address(home: &Path, at: Option<&str>) -> Option<String> {
+pub(crate) fn address(home: &Path, at: Option<&str>) -> Option<String> {
     if let Some(a) = at {
         return Some(a.to_string());
     }
