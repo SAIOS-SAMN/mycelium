@@ -558,45 +558,13 @@ fn main() {
                 f.free_grammar,
                 f.free_opens
             );
-            // 78.81: the remainder interpreted in the speech that left it —
-            // inverted, then read as light, confluence and constructors, and
-            // its recolours judged under each key.
+            // 78.76, 78.90: what the mind's own inversion did with the
+            // remainders its speech left — the one faculty the remainder
+            // path keeps.
             let it = mycelium::transducer::family::interpret::interpret_tally();
-            let keys: Vec<String> = mycelium::transducer::family::incongruence::KEYS
-                .iter()
-                .zip(it.reproduced.iter().zip(&it.whole))
-                .map(|(k, (r, w))| format!("{k} {r}/{w}"))
-                .collect();
             let remainder = format!(
-                "remainder families {} inverted {} closed {} unextracted {} links {} -> {} joined {} | unsaid {} on ray {} captured {} unlit {} | creation {} single {} confluence {} reproduced {} | changes {} kinematic {} | recolours {} on {} families, by their own hue map {} | decided (reproduced/whole) {} | reconstructed by holonomy {} families, pairs {} of {} framed (no axis closed {} key unseen {}); in time {} families, pairs {}",
-                it.families,
-                it.accepted,
-                it.closed,
-                it.unextracted,
-                it.before,
-                it.after,
-                it.joined,
-                it.unsaid,
-                it.on_ray,
-                it.captured,
-                it.unlit,
-                it.creation_sites,
-                it.single_sites,
-                it.confluence_sites,
-                it.confluences_reproduced,
-                it.changes,
-                it.kinematic,
-                it.recolours,
-                it.recoloured_families,
-                it.replayable,
-                keys.join(" "),
-                it.reconstructed,
-                it.rebuilt_pairs,
-                it.framed,
-                it.unclosed,
-                it.unseen,
-                it.in_time,
-                it.in_time_pairs
+                "remainder inverted: families {} accepted {} closed {} unextracted {} links {} -> {} joined {}",
+                it.families, it.accepted, it.closed, it.unextracted, it.before, it.after, it.joined
             );
             let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder}", nerve.join(" | "));
             eprintln!(

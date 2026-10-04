@@ -21450,6 +21450,9 @@ judged by the same leave-one-out replay.
 
 ### 78.81 The remainder interpreted on the voice (2026-10-03, the operator's word: "wire these up and the preceding components that are still 'test only' to finalize the formality of the cognition")
 
+*Amended by 78.90: stripped to the inversion alone; the readings in step 2
+below are instruments in `mycelium-soak`, no longer on the voice.*
+
 **Wired** (`family::interpret`, called by the voice's `speak_form`). The
 remainder the speech measured is read in the act that spoke it, never in an
 instrument beside the mind:
@@ -21998,7 +22001,31 @@ motion (78.84), and the frame's own changes are mostly cut or grown
 (78.88). Both can now be written as physics: a grown frame or body is mass
 from a source, a cut one mass into a sink, a tiling a source repeated
 along a translation orbit. The sensor's lift (the frame as sporophore) can
-now be built against a law that sees all of it. Owed, an
+now be built against a law that sees all of it.
+
+### 78.90 The voice keeps one faculty on its remainder: the inversion (the operator's word, 2026-10-04: "is that the perspective of a progenitor team" — "yes, strip it to the inversion")
+
+**What was measured first.** The interpreter 78.81 wired into
+`speak_form` spent 1 412 / 1 086 stroke units over 51 / 36 families
+against the extraction's ~1.06M, while doing real work: almost none of it
+was paid from the stroke (`mycelium-soak --interpret`). The proposed
+remedy was to meter it.
+
+**Why that was the steward's remedy.** Apart from the inversion, the
+interpreter was the builder's corpus instruments — light, confluence,
+single changes, the recolour keys, the reconstructions by holonomy (78.77–
+78.83) — reporting tallies on the voice's stroke line for the builder to
+read. Metering them would make the entity pay, every stroke, for tools
+that answer the builder's questions. The progenitor builds the mind's
+faculties, never his measuring tools into it (78.88).
+
+**What the voice keeps.** `family::interpret` is the inversion alone
+(78.76): the mind perceives what its speech left unsaid as a scene of its
+own, extracts the generators that produce it, and keeps them only where
+its speech then leaves less unsaid — paid from the stroke through that
+extraction. The stroke line reads that act only: families inverted,
+accepted, closed, unextracted, links before and after, generators joined.
+The instruments stand in `mycelium-soak`, off the same library functions. Owed, an
 audit against R4: the voice also speaks single WORDS, not only sentences
 (`transcribe_closed` speaks a closed thought's word; `open_axis` speaks an
 axis germ); whether a word is a coherent sentence of one term, or must ride

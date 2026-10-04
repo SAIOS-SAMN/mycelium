@@ -45,11 +45,10 @@ fn rank_in_the_pair_decides_where_the_body_alone_does_not() {
     assert!(d[6].whole);
 }
 
-/// THE INTERPRETER READS THE SPEECH'S OWN REMAINDER. On an extracted form's
-/// family: the inversion reads exactly the links the speech left; an accepted
-/// inversion hands back the joined form with remainders summing to what it
-/// read after; and every site still unsaid is on a ray, captured, or unlit —
-/// once.
+/// THE MIND'S INVERSION READS THE SPEECH'S OWN REMAINDER (78.76, 78.90). On
+/// an extracted form's family: the inversion reads exactly the links the
+/// speech left, and an accepted inversion hands back the joined form with
+/// remainders summing to what it read after.
 #[test]
 fn the_interpreter_reads_the_remainder_the_speech_left() {
     let family = vec![
@@ -75,5 +74,4 @@ fn the_interpreter_reads_the_remainder_the_speech_left() {
             }
         }
     }
-    assert_eq!(read.on_ray + read.captured + read.unlit, read.unsaid, "every unsaid site read once");
 }
