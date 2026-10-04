@@ -105,6 +105,17 @@ pub struct FluxTally {
     pub unread: u64,
 }
 
+/// 78.95 — THE TALLY'S NAMES, in [`FluxTally::row`]'s order: the typed
+/// reading the voice's Senses carry (FX2 owed it one).
+pub const FLUX: [&str; 8] = ["read", "sources", "emitted", "sinks", "absorbed", "reshaped", "refused", "unread"];
+
+impl FluxTally {
+    /// In [`FLUX`]'s order.
+    pub fn row(&self) -> [u64; 8] {
+        [self.read, self.sources, self.emitted, self.sinks, self.absorbed, self.reshaped, self.refused, self.unread]
+    }
+}
+
 pub fn flux_tally() -> FluxTally {
     let r = |i: usize| TALLY[i].load(Relaxed);
     FluxTally {

@@ -84,6 +84,11 @@ pub struct Senses {
     /// could not explain, what it left unsaid.
     pub reasons: [u64; REASONS.len()],
     pub said: Option<crate::transducer::sentence::Reasons>,
+    /// 78.95 — what each word vertex's derivation came to against the mind's
+    /// own language (`family::DERIVATION`), and what it perceived as flux
+    /// (`family::flux::FLUX`).
+    pub derivation: [u64; crate::transducer::family::DERIVATION.len()],
+    pub flux: [u64; crate::transducer::family::flux::FLUX.len()],
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -222,6 +227,8 @@ impl Senses {
                 r.put(out);
             }
         }
+        put(out, &self.derivation);
+        put(out, &self.flux);
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -240,6 +247,7 @@ impl Senses {
             1 => Some(crate::transducer::sentence::Reasons::take(b, p)?),
             _ => return None,
         };
+        let (derivation, flux) = (take(b, p)?, take(b, p)?);
         Some(Senses {
             k,
             sight,
@@ -247,6 +255,8 @@ impl Senses {
             speech,
             reasons,
             said,
+            derivation,
+            flux,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -269,6 +279,8 @@ impl Senses {
         if let Some(r) = &self.said {
             out.extend(r.says().into_iter().map(|s| format!("  last said: {s}")));
         }
+        out.push(format!("derivation: {}", line(&crate::transducer::family::DERIVATION, &self.derivation)));
+        out.push(format!("flux: {}", line(&crate::transducer::family::flux::FLUX, &self.flux)));
         out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
@@ -289,6 +301,8 @@ impl Senses {
             "cognition" => at(&COGNITION, &self.cognition, name),
             "speech" => at(&SPEECH, &self.speech, name),
             "reasons" => at(&REASONS, &self.reasons, name),
+            "derivation" => at(&crate::transducer::family::DERIVATION, &self.derivation, name),
+            "flux" => at(&crate::transducer::family::flux::FLUX, &self.flux, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

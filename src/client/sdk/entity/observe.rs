@@ -68,6 +68,8 @@ impl Entity {
             speech: [self.uttered_n() as u64, t.spelled, t.adjoined, t.ineffable, t.unread, self.colour_theorems],
             reasons: self.reasons.row(),
             said: self.said.clone(),
+            derivation: crate::transducer::family::derivation_tally(),
+            flux: crate::transducer::family::flux::flux_tally().row(),
             hearing: self.hearing,
             language: [
                 self.epigenome.dialect_len() as u64,

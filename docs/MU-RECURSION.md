@@ -22309,6 +22309,34 @@ counts it. Reading is cheap; it is never free.
 **The byte change** moves every court act's coordinate to `0x40` and up, a
 ledger layout change: it lands at the recut with the rest.
 
+### 78.95 Words, not letters: the progenitor's board builds words, and advanced linguistics lives in the anastome (the operator's word, 2026-10-04: "the steward mode was building many letters but we need the progentiors board to build words, and advanced linguistics in anastome")
+
+**What the epoch-121 reading showed.** Every sentence any of the five minds
+had admitted was one word spelled from the alphabet: built on held language
+0, generators cited 0 — while each mind carried 29–64 things it could not
+explain and some loops returned curved. The steward's arc grew the ALPHABET
+(adjoined letters, colour words, callus letters); a mind with an alphabet and
+no words composed from it cannot say anything its letters do not already say
+one at a time.
+
+**The ruling.** The progenitor builds the faculty of WORDS — composition of
+held language into new words, and the linguistics of how minds speak them to
+one another — and that linguistics lives in the anastome (`anastome::`, the
+dialogue between minds and courts), not in the alphabet.
+
+**Instruments before fixes.** A sentence cites held language only where
+`crystal.generators_at_meet` offers generators at the lanes the target
+occupies and one matches, or A12 factors the target over them and the
+product replays to its rotor (`family::derivation::derivation_of`). The
+voice's Senses now carry `derivation` (`family::DERIVATION`): asked, the
+identity, no lane, none held at the meet, generators offered, matched,
+factored whole / in part / not at all, off the plane, replay refused,
+unmeasured, cited through the ring — which reads which of the four
+hypotheses holds (H1 held and unreachable, H2 nothing to cite, H3 the
+replay refuses, H4 too little held). They carry `flux` too (`flux::FLUX`),
+the typed reading FX2 owed. Read on the fleet after a restart; the build
+that follows the reading is the word faculty.
+
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below
 `COURT_RANGE` (0x40), nineteen a court seals of itself from it. `kind()`,

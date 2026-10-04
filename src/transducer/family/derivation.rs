@@ -124,6 +124,7 @@ pub fn factor_versor_target(
             Ok(derivation_of(crystal, budget, residue, &occupied)?)
         }
         Ok((cited, residue)) => {
+            note_derivation(RING_CITED, 1);
             let composed = compose_citations(&adjoined, &cited, &residue)?;
             let target = match target_rotor {
                 Some(r) => Some(r.clone()),
@@ -487,10 +488,19 @@ fn derivation_of(
     // and the sheet across planes — and leaves a single-plane word as it
     // is.
     let spelled = || Some(Derivation::spelled(w.geodesic()));
+    note_derivation(ASKED, 1);
     if w.is_identity() {
+        note_derivation(IDENTITY, 1);
         return spelled();
     }
+    if occupied.is_empty() {
+        note_derivation(NO_LANE, 1);
+    }
     let held = crystal.generators_at_meet(occupied, budget);
+    note_derivation(OFFERED, held.len() as u64);
+    if held.is_empty() && !occupied.is_empty() {
+        note_derivation(NONE_HELD, 1);
+    }
     let target_rotor = w.rotor();
 
     // 1. DIRECT GENERATOR FACTORIZATION: check whether the word projectively
@@ -499,12 +509,14 @@ fn derivation_of(
     for (form, vertex, g) in &held {
         let gr = g.rotor();
         if gr.projective_eq(&target_rotor) {
+            note_derivation(MATCHED, 1);
             return Some(Derivation::compose(
                 &[((*form).clone(), (*vertex).clone(), 1, (*g).clone())],
                 Word::identity(),
             ));
         }
         if gr.is_versor() && gr.reverse().projective_eq(&target_rotor) {
+            note_derivation(MATCHED, 1);
             return Some(Derivation::compose(
                 &[((*form).clone(), (*vertex).clone(), -1, (*g).clone())],
                 Word::identity(),
@@ -513,6 +525,7 @@ fn derivation_of(
     }
 
     let Some(target) = w.form() else {
+        note_derivation(OFF_PLANE, 1);
         return spelled();
     };
     // A generator with no plane form is off the plane A12 reduces on and
@@ -534,17 +547,84 @@ fn derivation_of(
         }
         Derivation::compose(&with_words, residue.geodesic())
     };
-    let derived = match crate::transducer::factor::factor_on_plane(&target, &basis) {
-        Factored::Understood(tape) => one(&tape, Word::identity()),
-        Factored::Novel { remainder, understood } => one(&understood, remainder.to_word()),
-        Factored::Unmeasured => return None,
+    let (derived, slot) = match crate::transducer::factor::factor_on_plane(&target, &basis) {
+        Factored::Understood(tape) => (one(&tape, Word::identity()), FACTORED_WHOLE),
+        Factored::Novel { remainder, understood } => {
+            let slot = match understood.is_empty() {
+                true => NO_FACTOR,
+                false => FACTORED_PART,
+            };
+            (one(&understood, remainder.to_word()), slot)
+        }
+        Factored::Unmeasured => {
+            note_derivation(UNMEASURED, 1);
+            return None;
+        }
     };
     // ROTOR REPLAY VERIFICATION: ensure the plane factorisation projectively
     // reproduces the target word's 4D Clifford rotor action. A non-abelian
     // product or twist that diverges from the true rotor is refused and
     // falls back to the geodesic spelling.
     if !derived.rotor().projective_eq(&target_rotor) {
+        note_derivation(REPLAY_REFUSED, 1);
         return spelled();
     }
+    note_derivation(slot, 1);
     Some(derived)
+}
+
+/// 78.95 — WHAT EACH WORD VERTEX'S DERIVATION CAME TO against the mind's own
+/// language, in [`DERIVATION`]'s order: asked; the target the identity; a
+/// target on no lane; lanes occupied and nothing held at their meet; the
+/// generators offered, summed; a held generator matched whole; factored
+/// whole, in part, or not at all; off the plane A12 reduces on; a
+/// factorisation the rotor replay refused; a budget that ended; cited
+/// through the ring of adjoined primes. The instrument the language
+/// diagnosis reads (78.95): which of the reasons a mind speaks only in
+/// letters holds.
+pub const DERIVATION: [&str; 13] = [
+    "asked",
+    "identity",
+    "no lane",
+    "none held at the meet",
+    "generators offered",
+    "matched a held word",
+    "factored whole",
+    "factored in part",
+    "no factor",
+    "off the plane",
+    "replay refused",
+    "unmeasured",
+    "cited through the ring",
+];
+
+const ASKED: usize = 0;
+const IDENTITY: usize = 1;
+const NO_LANE: usize = 2;
+const NONE_HELD: usize = 3;
+const OFFERED: usize = 4;
+const MATCHED: usize = 5;
+const FACTORED_WHOLE: usize = 6;
+const FACTORED_PART: usize = 7;
+const NO_FACTOR: usize = 8;
+const OFF_PLANE: usize = 9;
+const REPLAY_REFUSED: usize = 10;
+const UNMEASURED: usize = 11;
+const RING_CITED: usize = 12;
+
+static DERIVATIONS: [std::sync::atomic::AtomicU64; DERIVATION.len()] =
+    [const { std::sync::atomic::AtomicU64::new(0) }; DERIVATION.len()];
+
+fn note_derivation(slot: usize, by: u64) {
+    use std::sync::atomic::Ordering::Relaxed;
+    let Some(at) = DERIVATIONS.get(slot) else { return };
+    if by > 0 && at.fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
+        let mut past = u64::MAX;
+        let _ = crate::physics::metabolism::step_or_refuse(&mut past, by);
+    }
+}
+
+/// The derivation tally since the process began, in [`DERIVATION`]'s order.
+pub fn derivation_tally() -> [u64; DERIVATION.len()] {
+    std::array::from_fn(|i| DERIVATIONS[i].load(std::sync::atomic::Ordering::Relaxed))
 }
