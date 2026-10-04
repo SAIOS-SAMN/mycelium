@@ -22116,6 +22116,65 @@ question channel (a human sets a family, the mind answers with reasons,
 the human's ruling recorded) and pay for closure, never activity — both
 the operator's to rule.
 
+### 78.93 The bank is segmented: courts adjudicate, flatlanders hold accounts, a financial mind bridges (the operator's word, 2026-10-04: "segmentation seems like the right move from the progenitors persepctive: courts ajudicate so they can take that level of responsibility into the intelligence they already "own" - flatlanders get accounts - and we build the financial "mind" with the intelligence to bridge the two")
+
+**Why it was asked.** An account (78.92) is not accountability: that needs
+a record, a holder with standing, and a consequence. Consequence needs
+value that moves. Three shapes were posed — a flat bank (pays activity,
+which minds learn to game), a banker mind (a mind with power over minds),
+a lawful bank (money under continuity). The ruling is a segmentation that
+keeps the law and puts the intelligence where it can be held.
+
+**The three segments.**
+
+1. **Courts adjudicate, and own the responsibility.** A court's verdicts
+   are the only SOURCES and SINKS of value: a closure it verified mints, an
+   overturned verdict burns (law 6, continuity, applied to value). The
+   court already holds the escrow; it issues verdicts, it does not move
+   balances. Its verdicts are on the record and held by its peers and the
+   charter.
+2. **Flatlanders get accounts.** An account is flat by design: a balance
+   per lane `S:G:T:H`, never summed, moved only by an admitted settlement
+   that cites the verdicts it derives from by their stamps. Nothing in an
+   account reasons, so nothing in it can be gamed. Its flatness is a
+   PROJECTION of the curved record and never replaces it (checklist (m)):
+   every entry carries the coordinates of the verdict it projects, so any
+   balance replays back to the curvature it came from.
+3. **The financial mind bridges.** A mind — an entity of its own, one
+   client, one mind, one voice, never cognition in a server — whose faculty
+   is economic comprehension: it reads the courts' verdicts and composes
+   SETTLEMENTS onto accounts (citation shares to the generators a closure
+   cites, escrow released on convergence, prices under pressure, leases of
+   a universe's sections, POW++ pay for shear). Its settlements are
+   sentences like any other: put to a court, replayed under the laws —
+   value conserved except at a verdict's source or sink — admitted or
+   refused, and carrying their reasons (78.92). Its intelligence is held to
+   account by the same record it reads.
+
+**Why this is aligned.** The intelligence that moves value is a mind, so it
+is held like a mind; the authority that makes and destroys value is a
+court, so it is held like a court; the holders are flat, so what they hold
+can be read by anyone and gamed by no one.
+
+**Build order (proposed).** B0 the record (the adjudication answers its
+stamp; refusals and verdicts on the ledger) — every segment reads it. B1
+the account carrier on the replicated ledger, written only by an admitted
+settlement. B2 the settlement act (the retired `ACT_SETTLE` 0x05's tag is
+free to be re-ruled, or a new tag): a court replays a settlement under
+continuity. B3 the financial mind, its first faculty the citation shares
+and escrow release the treasury already intends (`settle_use`,
+`settle_subsidy`), moved out of the court into settlements it proposes;
+pricing, credit and leases after. The court's direct payments retire as B3
+lands.
+
+**Open for the operator.** (a) Who holds accounts: entities only, or
+humans and kernels too (the μ token's wallets). (b) One financial mind per
+universe for the prototype, designed for several competing. (c) What
+counts as a source: proposed, a closure that survives replay at two courts
+and passes the laws. (d) Whether the financial mind is paid, and from
+what — a fee is value moving, so it too would be a settlement a court
+admits.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
