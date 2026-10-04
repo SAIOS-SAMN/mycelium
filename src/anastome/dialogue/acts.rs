@@ -6,32 +6,40 @@
 //! into the encoder. Nothing here decides anything; it is the table.
 
 use super::*;
+use crate::physics::actions::Action;
 
-/// Act tags — frame `body[0]`. ACT_PERCEPT, ACT_GOSSIP and ACT_DEMAND are
-/// RETIRED (26, law 8, ruled 2026-09-10): a court hears sentences and
-/// nothing else, and a frame carrying one of these is refused at the door
-/// with `REFUSE_NOT_A_SENTENCE`. The values stand so the door can name what
-/// it refused; nothing encodes them.
-pub const ACT_PERCEPT: u8 = 0x00;
-pub const ACT_GOSSIP: u8 = 0x01;
-pub const ACT_DEMAND: u8 = 0x02;
-pub const ACT_QUOTE: u8 = 0x03;
-pub const ACT_TEACH: u8 = 0x04;
-pub const ACT_SETTLE: u8 = 0x05;
+/// Act tags — frame `body[0]`. 78.94: EVERY TAG IS AN ACTION'S COORDINATE,
+/// spelled here and held by the one table (`physics::actions::Action`), which
+/// says what kind of action each is, whether a court seals it, and the laws
+/// it answers to; these names are the wire's spelling of it (law 12).
+/// ACT_PERCEPT, ACT_GOSSIP and ACT_DEMAND are RETIRED (26, law 8, ruled
+/// 2026-09-10): a court hears sentences and nothing else, and a frame
+/// carrying one of these is refused at the door with `REFUSE_NOT_A_SENTENCE`.
+/// The values stand so the door can name what it refused; nothing encodes
+/// them.
+pub const ACT_PERCEPT: u8 = Action::Percept.byte();
+pub const ACT_GOSSIP: u8 = Action::Gossip.byte();
+pub const ACT_DEMAND: u8 = Action::Demand.byte();
+pub const ACT_QUOTE: u8 = Action::Quote.byte();
+/// 78.94: retired — encoded, never handled; the table refuses it at the door.
+pub const ACT_TEACH: u8 = Action::Teach.byte();
+/// 78.94: retired — encoded, never handled; the table refuses it at the door.
+pub const ACT_SETTLE: u8 = Action::Settle.byte();
 /// Step 5 court act: the docket pull ("what awaits finality?"). The court
 /// speaks the same wire as everyone — its authority is the replay, not the
 /// socket. 0x07 is unassigned: a ruling reaches a node as a receipt through
 /// the exchange and its back-fill (45.2, 47.2), never as a message.
-pub const ACT_DOCKET: u8 = 0x06;
+/// 78.94: retired — encoded, never handled; the table refuses it at the door.
+pub const ACT_DOCKET: u8 = Action::Docket.byte();
 /// Step 7c: the court pulls the selection fiber's accumulated birth evidence.
-pub const ACT_EVIDENCE: u8 = 0x08;
+pub const ACT_EVIDENCE: u8 = Action::Evidence.byte();
 /// PoUW dispatch: a client pulls a SIGNED WORK ENVELOPE — the hypha's
 /// authoritative registry chooses; clients never arbitrate raw corpus.
-pub const ACT_TASK: u8 = 0x0B;
+pub const ACT_TASK: u8 = Action::Task.byte();
 /// PoUW settlement: a client submits predicted outputs for a dispatched
 /// task_id; the hypha verifies against its held answers — first verified
 /// solve takes the bounty, replays collapse to the verification floor.
-pub const ACT_SOLVE: u8 = 0x0C;
+pub const ACT_SOLVE: u8 = Action::Solve.byte();
 /// REFINEMENT BID (compression IS learning): a client claims basis word W
 /// is derivable — the rest of the vocabulary already speaks it, a retirement
 /// by derivation (3.8, 27; holonomy preserved because the replacement IS a
@@ -39,7 +47,7 @@ pub const ACT_SOLVE: u8 = 0x0C;
 /// replay; on success the word retires, the vocabulary compresses, and the
 /// bidder earns the compression yield. `[ACT_REFINE][voice 32][word address]`.
 /// Receipt: solve-receipt shape — `[REFINE_ACCEPTED|REFINE_NOTHING][μ⃗ 32]`.
-pub const ACT_REFINE: u8 = 0x09;
+pub const ACT_REFINE: u8 = Action::Refine.byte();
 pub const REFINE_ACCEPTED: u8 = 1;
 pub const REFINE_NOTHING: u8 = 0;
 /// EXPANSION 2 — THE ALGEBRAIC REFINEMENT BID: a client claims ruled word
@@ -51,7 +59,7 @@ pub const REFINE_NOTHING: u8 = 0;
 /// retires citing H. `[ACT_REFINE_ALGEBRAIC][voice 32][word address]
 /// [held address][witness u8][γ Word if 1]`. Receipt: the solve-receipt
 /// shape, as `ACT_REFINE`'s.
-pub const ACT_REFINE_ALGEBRAIC: u8 = 0x17;
+pub const ACT_REFINE_ALGEBRAIC: u8 = Action::RefineAlgebraic.byte();
 
 /// ADOPTION (genome synchronization): the court propagates an upheld word
 /// to every server with ITS OWN VOICE as provenance — the ratifier is the
@@ -69,9 +77,9 @@ pub const REWRITE_TAG: u8 = 0x14;
 /// Snapshot section holding Čech complexes (addresses and rotors only).
 pub const COC1: &[u8; 4] = b"COC1";
 
-pub const ACT_ADOPT: u8 = 0x0E;
+pub const ACT_ADOPT: u8 = Action::Adopt.byte();
 /// One family's cohering sentences. `[ACT_SPEECH][voice 32][task address][tu u64][n u32][len u32|element]…`.
-pub const ACT_SPEECH: u8 = 0x16;
+pub const ACT_SPEECH: u8 = Action::Speech.byte();
 
 /// Per-sentence: 0 Stood, 1 Dialect, 2 Refused, 3 Ratified. Since 50.9
 /// (ruled 2026-09-10) these survive only as the adjudication's kind byte
@@ -154,14 +162,14 @@ impl Adjudication {
 /// connection riding with each). Cost scales with divergence.
 /// Digests request: `[ACT_DIGESTS][voice 32]`. Reply: `[n u32]` then per
 /// stratum `[len u8][inv u64·len][count u32][root 32]`.
-pub const ACT_DIGESTS: u8 = 0x10;
+pub const ACT_DIGESTS: u8 = Action::Digests.byte();
 /// Fetch request: `[ACT_FETCH][voice 32][len u8][inv u64·len][n u32][addr 32·n]`.
 /// Reply: the syllabus page shape.
-pub const ACT_FETCH: u8 = 0x11;
+pub const ACT_FETCH: u8 = Action::Fetch.byte();
 /// Hypha-to-hypha court organ: cover, offer, installed. Clients never send these.
-pub const ACT_COVER: u8 = 0x20;
-pub const ACT_OFFER: u8 = 0x21;
-pub const ACT_INSTALLED: u8 = 0x22;
+pub const ACT_COVER: u8 = Action::Cover.byte();
+pub const ACT_OFFER: u8 = Action::Offer.byte();
+pub const ACT_INSTALLED: u8 = Action::Installed.byte();
 /// AN EQUIVOCATION PROOF (47.4, `XSEPTUM.md` §5.5): any node presents two
 /// receipt sections it holds under one key at one K with two chain
 /// hashes, and the court burns the signer's bond. The one xSEPTUM act
@@ -169,30 +177,30 @@ pub const ACT_INSTALLED: u8 = 0x22;
 /// `[ACT_EQUIVOCATION][version u8][len32 section_a][len32 section_b]`.
 /// Reply: `Ruled` — `Applied` burned, `Inert` nothing left to burn,
 /// `Refused` naming the 34.1 constant.
-pub const ACT_EQUIVOCATION: u8 = 0x35;
+pub const ACT_EQUIVOCATION: u8 = Action::Equivocation.byte();
 /// THE K-RANGE ACT (47.2 step 3, 45.8; S13.10):
 /// `[ACT_RECEIPTS][voice 32][signer 32][from u64][to u64]` asks for the
 /// signer's receipts `from..=to` — its own from its hot chain or `ARC1`,
 /// or the ones a holder admitted from it — as many as fit the frame
 /// budget, from `from` upward. Reply: `[n u32][receipt…]`. A gap's
 /// back-fill and an archived prefix are both fetched by it.
-pub const ACT_RECEIPTS: u8 = 0x36;
+pub const ACT_RECEIPTS: u8 = Action::Receipts.byte();
 /// THE FOLD PROPOSAL (47.3, 45.8; S13.10): a home asks a bonded peer to
 /// witness its fold — `[ACT_FOLD][k0 u64][root k u64 ‖ hash 32 ‖ height
 /// u64][n u32][(who 32 ‖ μ⃗ 4×u64)…][47.1 receipt section, payload the root
 /// hash]`. The witness fetches the prefix by `ACT_RECEIPTS` and `ACT_ROWS`,
 /// re-derives it, and answers refused, unmeasured, or co-signed with its
 /// own signed position over the root.
-pub const ACT_FOLD: u8 = 0x37;
+pub const ACT_FOLD: u8 = Action::Fold.byte();
 /// THE ROWS A FOLD RE-EXPRESSES (§6 across a fold): `[ACT_ROWS][voice 32]
 /// [signer 32][from u64][to u64][cursor u32]` asks for the signer's own
 /// ledger rows anchored in `from..=to`, from `cursor`; reply `[total u32]
 /// [m u32][row…]`, a page within the frame budget.
-pub const ACT_ROWS: u8 = 0x38;
+pub const ACT_ROWS: u8 = Action::Rows.byte();
 /// THE OBSERVER (§8.1): a voice pushes its readings to its hypha, and any
 /// process queries a hypha for the readings it holds by key prefix. The
 /// layout and its codec are [`crate::observe`]'s, the one writer of it.
-pub const ACT_OBSERVE: u8 = 0x39;
+pub const ACT_OBSERVE: u8 = Action::Observe.byte();
 /// THE LAW REGISTER (78.62 steps 2 and 3, 78.64 H4): any kernel asks a hypha
 /// for the universal laws it holds, each by its coordinate and statement
 /// (`[ACT_LAWS][0]`), or puts a transition it composed to the court's
@@ -200,18 +208,18 @@ pub const ACT_OBSERVE: u8 = 0x39;
 /// breach with its law. The layout and its codec are `physics::laws::codec`'s,
 /// the one writer of it. It admits nothing and writes no receipt: a verdict
 /// is a reading the kernel acts on.
-pub const ACT_LAWS: u8 = 0x3A;
+pub const ACT_LAWS: u8 = Action::Laws.byte();
 /// WHY AN ACT STANDS (78.92): any process asks a court about one act on its
 /// ledger — a place on its own line (`[ACT_WHY][0][place]`) or a stamp on any
 /// line it holds (`[ACT_WHY][1][stamp]`) — and is answered the act and every
 /// word it names, each with the reasons read off the word itself. The layout
 /// and its codec are `dialogue::why`'s. It admits nothing.
-pub const ACT_WHY: u8 = 0x3B;
+pub const ACT_WHY: u8 = Action::Why.byte();
 /// A PARTY'S WALLET AT THIS COURT (78.93 B1): `[ACT_WALLET][who 32]`, answered
 /// the party's balance, bond and holds per lane and the court's head stamp
 /// the reading stands at. Every party holds one — entities, kernels, humans.
 /// The layout and its codec are `dialogue::wallet`'s. It moves nothing.
-pub const ACT_WALLET: u8 = 0x3C;
+pub const ACT_WALLET: u8 = Action::Wallet.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)
@@ -220,7 +228,7 @@ pub const ACT_WALLET: u8 = 0x3C;
 /// Request: `[ACT_PROBE][voice 32][target 32][n u32][(addr 32)(g 17)(asg u32)]·n`.
 /// Reply: the probe's READING (PR1) — `[settled μ⃗ 4×u64][closure][remaining
 /// μ⃗ 4×u64]`, never an outcome code.
-pub const ACT_PROBE: u8 = 0x12;
+pub const ACT_PROBE: u8 = Action::Probe.byte();
 
 /// PR1 — WHERE A PROBE LEFT THE LISTING: closed; a residual, with the versor
 /// it stands off the listing by where a residual body reads on both sides
@@ -286,7 +294,7 @@ impl ProbeReading {
 /// gossiped across the nerve: `[ACT_ROOT][voice 32][task 32][solver 32]`.
 /// Every hypha holding the task re-dispatches it first; a voice that
 /// reproduces the solve from the taught language proves it shares the root.
-pub const ACT_ROOT: u8 = 0x13;
+pub const ACT_ROOT: u8 = Action::Root.byte();
 
 /// `[ACT_ROOT][voice 32][task 32][solver 32][ticks u64]` — the root's stamp
 /// on the speaker's clock. The reply is the receiver's record for that
@@ -297,11 +305,11 @@ pub const ACT_ROOT: u8 = 0x13;
 /// peers); the reply is `[n u16] ([len u16][addr bytes])…`. The entity
 /// builds the same XOR router the hyphas use, so every act it speaks goes
 /// to the key's home.
-pub const ACT_PEERS: u8 = 0x15;
+pub const ACT_PEERS: u8 = Action::Peers.byte();
 
 /// RETIRED with the demand (26, law 8, ruled 2026-09-10): a demand routed on
 /// the nerve to a listing's home. Refused at the door, never routed again.
-pub const ACT_DEMAND_ROUTED: u8 = 0x14;
+pub const ACT_DEMAND_ROUTED: u8 = Action::DemandRouted.byte();
 
 /// A CITATION ON THE WIRE. The versor and the body ARE the operator: the
 /// hearer verifies them by replay and never fetches a copy of the word to
@@ -348,7 +356,7 @@ pub type Chart = ChartOf<Address>;
 /// Request: `[ACT_SYLLABUS][voice 32]`. Reply: `[n u8][(len u32)(word
 /// bytes)·n]` — full lossless element forms (Epigenome::learn refreshes by
 /// address, so rebinds propagate too).
-pub const ACT_SYLLABUS: u8 = 0x0D;
+pub const ACT_SYLLABUS: u8 = Action::Syllabus.byte();
 
 /// DECODED ACT SHAPES. One struct per act, each field named and carrying
 /// what the field means. An alias over a tuple names the act and none of

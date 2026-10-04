@@ -911,16 +911,18 @@ fn a_ledgers_nodes_are_measured_by_act_kind_and_flat_in_the_word() {
     let at = Stamp { h: 2, vk: [5; 32], k: 2, i: 0 };
     let chart = crate::transducer::stalk::Invariant::counts(&[1, 0, 0, 1]);
     let cite = |_: &crate::transducer::element::Element| Cite::Word { chart: chart.clone(), class: None, at };
-    // Genesis first: it names no predecessor, so the two learned nodes after
-    // it are the same shape apart from the word each cites.
+    // Genesis first: it names no predecessor, so the two listing nodes after
+    // it are the same shape apart from the word each cites. (78.94: kinds a
+    // court seals; the stood and learned kinds of the voices' chains are
+    // sealed by nothing.)
     let mut chain = ReceiptChain::with_vk([3; 32]);
-    chain.append(ActKind::Stood, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
-    chain.append(ActKind::Learned, [0; 4], vec![cite(&small)], [0; 32], Vec::new()).expect("appends");
-    chain.append(ActKind::Learned, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::Attest, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::List, [0; 4], vec![cite(&small)], [0; 32], Vec::new()).expect("appends");
+    chain.append(ActKind::List, [0; 4], vec![cite(&large)], [0; 32], Vec::new()).expect("appends");
     let mut c = Carriage::default();
     c.of_chain(&chain);
-    let learned = c.rows.iter().find(|r| r.kind == ActKind::Learned.to_byte()).expect("the learned nodes");
-    assert_eq!(learned.records, 2);
-    assert_eq!(learned.largest * 2, learned.bytes, "both carry the same bytes, whatever the word they cite");
-    assert!(c.rows.iter().any(|r| r.kind == ActKind::Stood.to_byte() && r.records == 1), "and the stood node by its own kind");
+    let listed = c.rows.iter().find(|r| r.kind == ActKind::List.to_byte()).expect("the listing nodes");
+    assert_eq!(listed.records, 2);
+    assert_eq!(listed.largest * 2, listed.bytes, "both carry the same bytes, whatever the word they cite");
+    assert!(c.rows.iter().any(|r| r.kind == ActKind::Attest.to_byte() && r.records == 1), "and the attest node by its own kind");
 }

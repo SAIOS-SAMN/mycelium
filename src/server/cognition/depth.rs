@@ -21,8 +21,8 @@
 use super::*;
 
 /// The three kinds that COMMIT an organ to an address (47.3). An attest,
-/// a listing, an utterance and a learning are acts about a word; these
-/// three are a vantage standing behind it.
+/// a listing and a settlement are acts about a word; these three are a
+/// vantage standing behind it.
 fn commits(kind: crate::chronometry::ActKind) -> bool {
     matches!(
         kind,

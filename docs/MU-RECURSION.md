@@ -22250,6 +22250,76 @@ today a row stands at the court's head when it was written, which is the
 verdict's act where the mint follows it and is not proved to be in
 general. B2 (the settlement act) and B3 (the financial mind) close both.
 
+### 78.94 Every act is an ACTION of the physics (the operator's word, 2026-10-04: "any constant labeled "ACT" needs to get wrapped into physics as "ACTIONS"" — "1 - unify: go all forward with this and remediate from the progenitor 2 - make your best judgement call according ot hte logic and trajecotry")
+
+**What was there.** Two vocabularies for one thing. The wire's `ACT_*`
+constants — thirty-two message bytes whose meaning lived in comments — and
+the ledger's `ActKind` — eighteen kinds of sealed act — each with its own
+bytes. Two of them were one action seen from its two ends (`Fold`, the
+proposal and the sealed fold; `Syllabus`, the page asked and the word
+sealed as taught); three wire tags had encoders and no handler (`TEACH`,
+`SETTLE`, `DOCKET`); four ledger kinds are sealed by nothing since the
+voices' chains retired (`Section`, `Stood`, `Uttered`, `Learned`, 78.49).
+A flatlander's protocol table.
+
+**The ruling.** `physics::actions::Action` is the ONE table: every action
+of the universe, whether a party requests it on the wire, a court seals it
+on its line, or both. Each action states, as its type:
+
+  1. its KIND — an OBSERVATION (measures; moves nothing; its frame is the
+     zero reading; it never seals), a TRANSITION (a party's act a court
+     adjudicates and seals), an EXCHANGE (court to court), a COURT act (a
+     court seals of itself — an orbit's close, a lapse, a return), or
+     RETIRED (refused at the door by its type, never by a comment);
+  2. its ONE coordinate byte, on the wire and on the ledger alike — the
+     wire's tags stand as they were; a court act takes the free range from
+     `0x40`; `Fold` and `Syllabus` seal under the byte they are asked by;
+  3. whether a court seals it, and whether it changes the algorithm the
+     ledger holds;
+  4. the L0 laws it answers to: every law for an act that moves anything,
+     none for an observation, which by its kind cannot break one.
+
+`ActKind` is the ledger's name for `Action`; `ACT_*` are the wire's
+spelling of the table's coordinates, derived from it, never a second
+carrier. The court's dispatch reads `Action`: a byte that names no action
+is not answered, a retired action is refused, and the one sealing door
+refuses an action that is not sealable — an observation cannot write a
+receipt, as a type fact.
+
+**Judgement on cost (operator item 2).** An observation moves nothing, so
+its frame is zero and it never seals. But no measurement is free: its
+stroke is the court's metabolism spent on the asker's question, metered per
+action (the console's `served` counts) and — once the financial mind
+stands (B3) — charged to the asker's wallet as the tax already ruled (the
+settling's measured cost, 78.93 (d)). Until B3 the court bears it and
+counts it. Reading is cheap; it is never free.
+
+**The byte change** moves every court act's coordinate to `0x40` and up, a
+ledger layout change: it lands at the recut with the rest.
+
+**Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
+fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below
+`COURT_RANGE` (0x40), nineteen a court seals of itself from it. `kind()`,
+`sealed()` (the seventeen kinds a receipt carries: the court's own acts,
+`Syllabus`, `Fold`), `laws()`, `changes_algorithm()`, `name()`,
+`operator()` — the sealed names unchanged, so every operator digest is.
+`chronometry::ActKind` is `pub use Action as ActKind`; its 288 uses read the
+table unchanged. Every `ACT_*` is `Action::X.byte()`. The chain's `append`
+and `admit` refuse an action no court seals; the judge reads `Action::of_tag`
+and refuses a retired action by its kind (`TEACH`, `SETTLE`, `DOCKET` are
+now refused where they were silently unanswered). Proved:
+`every_action_holds_one_coordinate`,
+`an_observation_seals_nothing_and_a_transition_answers_to_every_law`,
+`the_wire_spells_the_table`.
+
+**Owed.** (1) Which court acts each transition produces (`Speech` → `List`,
+`Install`, `Refused`, …) is read from the code today, not stated by the
+table; it is stated when admission runs the laws (WC1 step 1), where the
+table's `laws()` meets the act it checks. (2) The door's control actions
+(`serve_control`) still match the derived `ACT_*` spellings; they read
+`Action` when that door is next opened. (3) Per-asker metering of
+observations lands with the financial mind (B3).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

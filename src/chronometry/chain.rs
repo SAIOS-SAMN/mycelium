@@ -562,7 +562,8 @@ impl ReceiptChain {
     /// signer's line, and PLACED against this chain's own line.
     pub fn admit(&mut self, r: KStepReceipt) {
         let key = r.stamp.key();
-        if r.stamp.vk == self.vk || self.nodes.contains(&key) {
+        // 78.94 — a peer's node of an action no court seals is no node.
+        if r.stamp.vk == self.vk || self.nodes.contains(&key) || !r.kind.sealed() {
             return;
         }
         let ours_in = self.ours_in_of(&r);
@@ -791,6 +792,11 @@ impl ReceiptChain {
         operator_hash: [u8; 32],
         parents: Vec<Parent>,
     ) -> Option<KStepReceipt> {
+        // 78.94 — THE ONE SEALING DOOR READS THE PHYSICS: an action no court
+        // seals — an observation, a request, a retired kind — writes no node.
+        if !kind.sealed() {
+            return None;
+        }
         if kind == ActKind::Orbit && self.open_orbit().map(|(_, frame)| frame) != Some(mu) {
             return None;
         }

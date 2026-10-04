@@ -84,13 +84,17 @@ fn the_node_carries_its_kind_on_the_tape_and_in_the_hash() {
         ActKind::Attest,
         ActKind::Fold,
         ActKind::Adopted,
-        ActKind::Learned,
         ActKind::Settled,
+        ActKind::Refused,
         ActKind::Return,
         ActKind::RankStep,
         ActKind::Reconnect,
     ] {
         assert_eq!(ActKind::from_byte(k.to_byte()), Some(k), "every kind round-trips its byte");
+    }
+    // 78.94 — a retired kind and an action no court seals name no node.
+    for k in [ActKind::Learned, ActKind::Why, ActKind::Speech] {
+        assert_eq!(ActKind::from_byte(k.to_byte()), None, "{} is sealed by no court", String::from_utf8_lossy(k.name()));
     }
 }
 

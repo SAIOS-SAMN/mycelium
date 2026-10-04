@@ -25,6 +25,7 @@ use crate::transport::answer;
 use mycelium::anastome::dialogue;
 use mycelium::cognition::{outcome_code, Outcome};
 use mycelium::network::wire::Frame;
+use mycelium::physics::actions::{Action, Kind};
 use std::net::TcpStream;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -34,36 +35,43 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
     if serve_control(stream, &frame, door) {
         return;
     }
-    let Some((&kind, _)) = frame.body.split_first() else { return };
-    match kind {
-        dialogue::ACT_SPEECH => speech::judge(stream, &frame, door),
-        dialogue::ACT_QUOTE => quote::judge(stream, &frame, door),
-        dialogue::ACT_DIGESTS => syllabus::digests(stream, &frame, door),
-        dialogue::ACT_FETCH => syllabus::fetch(stream, &frame, door),
-        dialogue::ACT_PROBE => probe::judge(stream, &frame, door),
-        dialogue::ACT_EQUIVOCATION => equivocation::judge(stream, &frame, door),
-        dialogue::ACT_RECEIPTS => receipts::judge(stream, &frame, door),
-        dialogue::ACT_ROWS => rows::judge(stream, &frame, door),
-        dialogue::ACT_FOLD => fold::judge(stream, &frame, door),
-        dialogue::ACT_OBSERVE => observe::judge(stream, &frame, door),
-        dialogue::ACT_LAWS => laws::judge(stream, &frame, door),
-        dialogue::ACT_WHY => why::judge(stream, &frame, door),
-        dialogue::ACT_WALLET => wallet::judge(stream, &frame, door),
-        dialogue::ACT_PERCEPT | dialogue::ACT_GOSSIP | dialogue::ACT_DEMAND | dialogue::ACT_DEMAND_ROUTED => {
-            // 26, 50.6 seam 3: raw painted sites and coboundary chains do
-            // not reach a court. Refused with the reason, no height (this
-            // court read no book to answer with), nothing taught.
-            if frame.body.len() < 5 {
-                return;
-            }
-            let why = mycelium::verdict::REFUSE_NOT_A_SENTENCE;
-            let c = REFUSE_COUNT.fetch_add(1, Ordering::Relaxed);
-            if c == 0 || c.is_power_of_two() {
-                eprintln!("  court refuse act {kind:#04x}: {why} (count={c})");
-            }
-            let body = dialogue::encode_outcome(outcome_code(&Outcome::Refused(why)), 0, &[0; 4]);
-            answer(stream, Frame { lane: frame.lane, body });
+    // 78.94 — THE FRAME IS READ AS AN ACTION OF THE PHYSICS: a byte that
+    // names no action, or a court's own act (never asked for), is not
+    // answered; a retired action is refused by its kind.
+    let Some(action) = dialogue::act_tag(&frame.body).and_then(Action::of_tag) else { return };
+    if action.kind() == Kind::Retired {
+        // 26, 50.6 seam 3: raw painted sites and coboundary chains do not
+        // reach a court, nor do acts with no handler. Refused with the
+        // reason, no height (this court read no book to answer with),
+        // nothing taught.
+        if frame.body.len() < 5 {
+            return;
         }
+        let why = mycelium::verdict::REFUSE_NOT_A_SENTENCE;
+        let c = REFUSE_COUNT.fetch_add(1, Ordering::Relaxed);
+        if c == 0 || c.is_power_of_two() {
+            eprintln!("  court refuse action {}: {why} (count={c})", String::from_utf8_lossy(action.name()));
+        }
+        let body = dialogue::encode_outcome(outcome_code(&Outcome::Refused(why)), 0, &[0; 4]);
+        answer(stream, Frame { lane: frame.lane, body });
+        return;
+    }
+    match action {
+        Action::Speech => speech::judge(stream, &frame, door),
+        Action::Quote => quote::judge(stream, &frame, door),
+        Action::Digests => syllabus::digests(stream, &frame, door),
+        Action::Fetch => syllabus::fetch(stream, &frame, door),
+        Action::Probe => probe::judge(stream, &frame, door),
+        Action::Equivocation => equivocation::judge(stream, &frame, door),
+        Action::Receipts => receipts::judge(stream, &frame, door),
+        Action::Rows => rows::judge(stream, &frame, door),
+        Action::Fold => fold::judge(stream, &frame, door),
+        Action::Observe => observe::judge(stream, &frame, door),
+        Action::Laws => laws::judge(stream, &frame, door),
+        Action::Why => why::judge(stream, &frame, door),
+        Action::Wallet => wallet::judge(stream, &frame, door),
+        // The door's control actions (`serve_control`) answered above; any
+        // other action has no judge here and is not answered.
         _ => {}
     }
 }

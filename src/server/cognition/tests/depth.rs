@@ -116,8 +116,10 @@ fn depth_is_filed_only_where_a_word_stands() {
 }
 
 /// The three kinds that COMMIT are `Install`, `Ruling` and `Adopted`. An
-/// act ABOUT a word — learning it, uttering it, attesting it — is not a
-/// vantage standing behind it, and does not deepen it.
+/// act ABOUT a word — listing it, settling against it, attesting it — is not
+/// a vantage standing behind it, and does not deepen it. (78.94: the acts
+/// about a word a court seals; learning and uttering are sealed by nothing
+/// since the voices' chains retired.)
 #[test]
 fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     let mut k = Kernel::new();
@@ -125,7 +127,7 @@ fn an_act_about_a_word_is_not_a_vantage_behind_it() {
     // A word stands at the stamp: depth is read only where one does.
     k.held_at.insert(at.key(), crate::transducer::address::Address::from(vec![9]));
     let mut mind = crate::chronometry::ReceiptChain::with_vk([8; 32]);
-    for kind in [ActKind::Learned, ActKind::Uttered, ActKind::Attest] {
+    for kind in [ActKind::List, ActKind::Settled, ActKind::Attest] {
         let r = mind.append(kind, [0; 4], vec![cite(at)], [0; 32], Vec::new()).expect("a receipt");
         k.note_attestor(&r);
     }
