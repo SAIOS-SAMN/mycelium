@@ -66,7 +66,9 @@ struct Tally {
 /// The places the output stands in the input as a section: exact, or exact
 /// once one hue function is applied (the void kept). Returns (exact offsets,
 /// recoloured offsets).
-fn sections(x: &mycelium::arc::Grid, y: &mycelium::arc::Grid) -> (Vec<(usize, usize)>, Vec<(usize, usize)>) {
+type Places = Vec<(usize, usize)>;
+
+fn sections(x: &mycelium::arc::Grid, y: &mycelium::arc::Grid) -> (Places, Places) {
     let ([hx, wx], [hy, wy]) = (mycelium::arc::extents(x), mycelium::arc::extents(y));
     let (mut exact, mut recoloured) = (Vec::new(), Vec::new());
     if hy > hx || wy > wx || hy == 0 || wy == 0 {
@@ -119,7 +121,7 @@ fn region(x: &mycelium::arc::Grid, at: (usize, usize), ext: (usize, usize)) -> R
     let ring: Vec<(i64, i64)> = (r0 - 1..=r0 + h)
         .flat_map(|r| (c0 - 1..=c0 + w).map(move |c| (r, c)))
         .filter(|s| !inside(s))
-        .filter(|&(r, c)| r >= 0 && c >= 0 && (r as usize) < hx && (c as usize) < wx)
+        .filter(|&(r, c)| usize::try_from(r).is_ok_and(|u| u < hx) && usize::try_from(c).is_ok_and(|u| u < wx))
         .collect();
     let surrounds = !ring.is_empty() && bodies.iter().any(|b| {
         let s = sites(b);
