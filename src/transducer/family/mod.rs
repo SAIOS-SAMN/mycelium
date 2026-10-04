@@ -21,6 +21,7 @@ pub mod derivation;
 pub mod extract;
 mod fiber;
 pub mod fibres;
+pub mod flux;
 pub mod hyperfluid;
 pub mod incidence;
 pub mod finish;

@@ -566,7 +566,13 @@ fn main() {
                 "remainder inverted: families {} accepted {} closed {} unextracted {} links {} -> {} joined {}",
                 it.families, it.accepted, it.closed, it.unextracted, it.before, it.after, it.joined
             );
-            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder}", nerve.join(" | "));
+            // 78.91 — what is no motion, perceived as flux under continuity.
+            let fx = mycelium::transducer::family::flux::flux_tally();
+            let flux = format!(
+                "flux perceived: read {} sources {} (+{}) sinks {} (-{}) reshaped {} refused {} unread {}",
+                fx.read, fx.sources, fx.emitted, fx.sinks, fx.absorbed, fx.reshaped, fx.refused, fx.unread
+            );
+            let field = format!("{field} | {malleable} | {fibres} | nerve {} | {sentences} | {remainder} | {flux}", nerve.join(" | "));
             eprintln!(
                 "[{tag}] stroke metabolism {} | syntropy {:?} pressure {:?} | {field} | {}",
                 entity.physics().reserve.line(),

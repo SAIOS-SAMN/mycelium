@@ -969,6 +969,11 @@ pub(super) fn family_percept(
             }
         }
     };
+    // 78.91 — WHAT IS NO MOTION, PERCEIVED AS FLUX: every creation, vanishing,
+    // deformation and gathering this percept names is read as the flux its
+    // links carry and put to the law register (continuity, law version 3),
+    // before it is declared as the demand it also is.
+    let _fluxes = super::flux::perceive_fluxes(demanded.iter().chain(covers.iter().map(|c| &c.demand)), budget);
     for (kind, chart, links) in demanded {
         declare(kind, chart, links);
     }

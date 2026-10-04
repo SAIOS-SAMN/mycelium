@@ -348,6 +348,58 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     v
 }
 
+/// THE FLUX A CHANGE THAT IS NO MOTION CARRIES (78.91), read off its links
+/// `(r, c, before, after)` — the evidence a percept's creation, vanishing or
+/// deformation already holds: the sites painted after against those painted
+/// before. Mass gained is a SOURCE standing at the barycentre of the sites
+/// that were gained; mass lost a SINK at the barycentre of the sites lost;
+/// exact over ℚ. `None` where the mass is kept (a reshaping at constant mass
+/// is no flux) or nothing changed.
+pub fn flux_of_links(links: &[(i64, i64, u8, u8)]) -> Option<Flux> {
+    let before = links.iter().filter(|l| l.2 != 0).count();
+    let after = links.iter().filter(|l| l.3 != 0).count();
+    let (flow, sites): (Flow, Vec<(i64, i64)>) = match after.cmp(&before) {
+        std::cmp::Ordering::Greater => (Flow::Source, links.iter().filter(|l| l.2 == 0 && l.3 != 0).map(|l| (l.0, l.1)).collect()),
+        std::cmp::Ordering::Less => (Flow::Sink, links.iter().filter(|l| l.2 != 0 && l.3 == 0).map(|l| (l.0, l.1)).collect()),
+        std::cmp::Ordering::Equal => return None,
+    };
+    let n = Q::from_integer(i64::try_from(sites.len()).ok()?.into());
+    if num_traits::Zero::is_zero(&n) {
+        return None;
+    }
+    let (sr, sc) = sites.iter().fold((Q::from_integer(0.into()), Q::from_integer(0.into())), |(a, b), &(r, c)| {
+        (a + Q::from_integer(r.into()), b + Q::from_integer(c.into()))
+    });
+    let mass = Q::from_integer(i64::try_from(after.abs_diff(before)).ok()?.into());
+    Some(Flux { flow, at: crate::transducer::cga::point_at(&[sr / &n, sc / n]), mass })
+}
+
+/// A LONE FLUX PUT TO THE LAWS: the change in place it records — a body
+/// standing at the flux's place, of no mass before and the flux's after
+/// (a source), or the reverse (a sink) — under the identity motion. The
+/// court's verdict, every breach named: lawful exactly where the flux stands
+/// at a finite place with a positive mass.
+pub fn verify_flux(f: &Flux, budget: &mut crate::physics::Budget) -> Verdict {
+    let zero = Q::from_integer(0.into());
+    let Some(centre) = crate::transducer::cga::base_at(&f.at, usize::from(f.at.n())) else {
+        return Verdict { breaches: vec![(Law::Continuity, Breach::FluxUnplaced { index: 0 })], ..Verdict::default() };
+    };
+    let n = centre.len();
+    let body = |mass: Q| BodyState { nucleus: f.at.clone(), body: Body { centre: centre.clone(), mass, moments: vec![vec![zero.clone(); n]; n] } };
+    let (before, after) = match f.flow {
+        Flow::Source => (body(zero.clone()), body(f.mass.clone())),
+        Flow::Sink => (body(f.mass.clone()), body(zero.clone())),
+    };
+    let t = Transition {
+        motion: Mv::scalar(Q::from_integer(1.into())),
+        heights: (0, 1),
+        bodies: vec![(before, after)],
+        hues: Vec::new(),
+        fluxes: vec![f.clone()],
+    };
+    verify(&t, budget)
+}
+
 /// LV2 — THE ONE RATIO a dilating motion's bodies' momenta stand to what the
 /// motion carried: each body's momentum after over its momentum before
 /// carried at unit weight, read projectively (exact, first degree). `None`

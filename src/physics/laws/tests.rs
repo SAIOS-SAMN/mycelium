@@ -202,6 +202,31 @@ fn mass_is_made_or_lost_only_at_a_recorded_source_or_sink() {
     assert!(v.breaches.contains(&(Law::Continuity, Breach::FluxUnplaced { index: 1 })), "of no mass: {:?}", v.breaches);
 }
 
+/// 78.91 — A CHANGE THAT IS NO MOTION READ AS THE FLUX ITS LINKS CARRY. A
+/// creation's gained sites are a source at their barycentre, its mass the
+/// count gained, exact over ℚ (here a half); a vanishing is a sink at the
+/// lost sites'; a reshaping at constant mass is no flux; and the lone flux
+/// put to the laws is admitted where it stands at a finite place.
+#[test]
+fn a_change_that_is_no_motion_is_read_as_the_flux_its_links_carry() {
+    let half = Q::new(1.into(), 2.into());
+    // Two sites gained on row 1, at columns 0 and 1; a site held throughout.
+    let made = [(1, 0, 0, 3), (1, 1, 0, 3), (0, 0, 2, 2)];
+    let f = flux_of_links(&made).expect("mass was made");
+    assert_eq!(f.flow, Flow::Source);
+    assert_eq!(f.mass, q(2));
+    assert_eq!(f.at, point_at(&[q(1), half.clone()]), "at the gained sites' barycentre");
+    assert!(verify_flux(&f, &mut budget()).admitted(), "{:?}", verify_flux(&f, &mut budget()).breaches);
+    // One site lost at (2, 3): a sink there, of one.
+    let lost = [(2, 3, 4, 0), (0, 0, 2, 2)];
+    let f = flux_of_links(&lost).expect("mass was lost");
+    assert_eq!((f.flow, f.mass.clone(), f.at.clone()), (Flow::Sink, q(1), point_at(&[q(2), q(3)])));
+    assert!(verify_flux(&f, &mut budget()).admitted());
+    // A site moved and one recoloured: the mass kept, no flux.
+    assert_eq!(flux_of_links(&[(0, 0, 1, 0), (0, 1, 0, 1), (1, 1, 2, 5)]), None);
+    assert_eq!(flux_of_links(&[]), None);
+}
+
 /// 78.64 H4 — THE CONTRACT'S BYTES ARE THE OBJECTS. Every law read back from
 /// its coordinate; a transition the kernel sends and the verdict the court
 /// answers decode to themselves exactly, so the court verifies what was sent

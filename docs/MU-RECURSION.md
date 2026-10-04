@@ -22031,6 +22031,40 @@ audit against R4: the voice also speaks single WORDS, not only sentences
 axis germ); whether a word is a coherent sentence of one term, or must ride
 inside one, is the operator's to rule.
 
+### 78.91 The mind perceives what is no motion as flux (the operator's word, 2026-10-04: "take the reading now and deduce the next steps for the progenitor" — "build it")
+
+**What the fleet read.** Twenty-six minutes after the recut on 63f0cfad
+the mesh was whole and the minds were refusing half of what they saw:
+17k–52k bodies parting "apart" per voice, the demands of creation,
+vanishing and deformation declared and then left standing, inversion
+accepted 0. A change no versor carries was perceived only as a refusal,
+though the register (78.89, law version 3) publishes exactly what such a
+change is: mass made at a source, lost into a sink.
+
+**The faculty.** Every Creation, TopologicalDeformation and Source demand
+the percept names already holds its evidence as links `(r, c, before,
+after)`. `physics::laws::flux_of_links` reads the flux off them exactly:
+mass gained is a SOURCE at the barycentre of the sites gained, mass lost a
+SINK at the barycentre of the sites lost, over ℚ; a reshaping at constant
+mass is no flux. `physics::laws::verify_flux` puts the lone flux to the
+register as the change in place it records (a body at the flux's place,
+0 → m or m → 0, under the identity motion). `family::flux::perceive_fluxes`
+is called by the percept before it declares its demands, one stroke per
+demand read; what the law admits is perceived as physics. The demand is
+still declared — the flux is a second reading of the same change, never a
+replacement of it.
+
+**What the voice shows.** The stroke line carries `flux perceived: read …
+sources … (+emitted) sinks … (−absorbed) reshaped … refused … unread …`, the
+act's own tally, never a builder's instrument.
+
+**Owed.** Holding the fluxes across percepts, so the mind relates its
+sources across a family as it relates its bodies (a source that recurs at
+one place under the family's motor is a white hole of the rule, not of
+one pair); then the null flows (slides) grounded through `FlowPoint`; then
+the sensor's lift for the other harmonic planes. Deploying needs a recut,
+the operator's word.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

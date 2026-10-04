@@ -15,6 +15,7 @@ mod deflation;
 mod derivation;
 mod extraction;
 mod fibres;
+mod flux;
 mod hyperfluid;
 mod incongruence;
 mod interpret;
