@@ -24,6 +24,7 @@ mod incongruence;
 mod invert;
 mod luminal;
 mod solve;
+mod sporophore;
 mod mint;
 mod reconstruct;
 mod regime;
@@ -99,6 +100,26 @@ fn main() {
     // in front of it and searching the output — a survey standing in for a
     // keyed read. A third argument that does not parse as a count IS the
     // task's own name, which is the coordinate the corpus files it under.
+    // 78.88 — `--sporophore DIR LIMIT`: whether reading a scene by its
+    // enclosure matters for perception now.
+    if matches!(argv.split_first(), Some((flag, _)) if flag == "--sporophore") {
+        let Some(dir) = argv.get(1) else {
+            eprintln!("  sporophore refused: name the corpus directory");
+            std::process::exit(1);
+        };
+        let limit: usize = match argv.get(2).map(|n| n.parse::<usize>()) {
+            Some(Ok(n)) => n,
+            _ => 60,
+        };
+        match slice_names(dir, limit) {
+            Ok(names) => sporophore::report(dir, &names),
+            Err(e) => {
+                eprintln!("  sporophore refused: {e}");
+                std::process::exit(1);
+            }
+        }
+        return;
+    }
     // 78.84 — `--bridge DIR LIMIT`: the corpus's motions through the law
     // register.
     if matches!(argv.split_first(), Some((flag, _)) if flag == "--bridge") {
