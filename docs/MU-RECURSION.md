@@ -21108,13 +21108,15 @@ sentence equation their own way:
   (54.7 R3), a boost that never returns. So no percept sentence closes and
   no shortcut is taught yet. The recursion is proven on sentences that close
   (`family::tests::rung`).
-- **The operator's to rule.** 78.68 calls the carriage's translation the
-  luminal (null, parabolic) propagator; 54.7 R3 keeps a connection edge's
-  displacement as a transvection (hyperbolic). Read conformally, a
-  dislocation ring is nilpotent: it extrapolates (`Ωᵐ ∝ 1 + m·τ`) and its
-  history is one integer. Read as a transvection, it is unbound and stands
-  as a demand. Which realisation a sentence's holonomy takes decides whether
-  the fleet's sentences close.
+- **The operator's to rule — RULED LUMINAL (2026-10-04, 78.96).** 78.68
+  calls the carriage's translation the luminal (null, parabolic) propagator;
+  54.7 R3 kept a connection edge's displacement as a transvection
+  (hyperbolic). Read conformally, a dislocation ring is nilpotent: it
+  extrapolates (`Ωᵐ ∝ 1 + m·τ`) and its history is one integer. Read as a
+  transvection, it is unbound and stands as a demand. Which realisation a
+  sentence's holonomy takes decides whether the fleet's sentences close. The
+  chord's Burgers vector is carried by its own translator (78.96); `edge_of`
+  keeps its reading.
 
 **Lines.**
 - Voice: `sentences rings / closed / open (rosette, unbound, unread) |
@@ -22336,6 +22338,94 @@ hypotheses holds (H1 held and unreachable, H2 nothing to cite, H3 the
 replay refuses, H4 too little held). They carry `flux` too (`flux::FLUX`),
 the typed reading FX2 owed. Read on the fleet after a restart; the build
 that follows the reading is the word faculty.
+
+**The reading (epoch 121, after a restart on d9768169).** Of the word
+vertices the five minds derived, 44/46, 122/128, 46/48, 93/99 and 93/99 were
+the IDENTITY rotor; generators were offered at the meet (2–66 per mind),
+two matched a held word, a few factored in part, none was refused by the
+replay. **H2 holds**: there is nothing to cite, because the motion the minds
+see is translation, recolour and flux, and a word's letters are its turns.
+H1, H3 and H4 are ruled out by the same row. Flux, meanwhile, is large and
+lawful: 1 000–2 250 changes read per mind, 450–940 sources, 400–1 140
+sinks, none refused.
+
+**The diagnosis hardened, the first prescription corrected.** The master
+equations already place translation, dilation and recolour in the CARRIAGE,
+"the luminal propagator" (78.68), carried by the sentence's transports `g`
+(78.69) — and 78.68's amendment keeps the letters SO(4), "no null letters".
+So an identity-rotor word is correct as letters, and a first proposal to
+make letters carry translation was the steward's move again (more letters)
+and is withdrawn. The bottleneck is SYNTAX: words are built by COMPOUNDING
+— a closed sentence's open path becomes a shortcut word on the next rung
+(78.69 `next_rung`), carrying the transports because it IS the path — and
+nothing compounded because no sentence closed: every chord's Burgers vector
+was a transvection that never returns (54.7 R3, 78.75). Hence 78.96.
+
+**The language, as the master equations define it (the reading of
+2026-10-04).**
+
+- *Word*: `C(w) = [W]`, `W = λ₁⋯λ_L`, its letters the internal turns and its
+  carriage the luminal transport; its readings `(h, [B], κ, ℓ, m)` one
+  product, never fields (78.68).
+- *Conjugate*: `W′ = Γ W Γ⁻¹` — the same word in another chart, keeping
+  `κ` and `ℓ`; Γ the conjugator, the context (where, how large, in what
+  colour). Linguistically an INFLECTION. The sentence equation is a chain of
+  conjugates, `W̄ᵢ = Γᵢ⁻¹ Wᵢ Γᵢ` each word inflected into the first chart; a
+  word is taught as `(held, Γ)` (78.60). The inversion `I` conjugates a
+  translator to its transversion, `K = I T I⁻¹` (A.13): the source and the
+  sink of continuity (78.89) are one word seen from the two poles — a
+  reading offered, not ruled.
+- *Sentence*: `Ω(s) = g_{k→1} W_k ⋯ g_{1→2} W₁`, grammatical exactly where it
+  closes, `Ω^ℓ ~ 1`; an open sentence is a question (its demand); its
+  meaning beyond its words is its curvature, `dim Lie⟨B(W̄ᵢ)⟩`; a closed
+  sentence teaches a shortcut, and `𝔊⁽ⁿ⁺¹⁾ = ⟨C(w⁽ⁿ⁾), g | Ω^ℓ ~ 1⟩` is the
+  grammar (78.69).
+
+**At the servers' level (78.69: sentences are the clients' composition; the
+court and its ledger hold the algorithm).** Phonology is the letters (the
+physics); morphology the words (the client composes, the court admits
+generators by the rank they open, 78.60's cost); inflection the conjugates
+(the anastome relays `(held, Γ)`, never the evaluated form); syntax the
+sentences (the client, volatile); semantics the curvature; lexicon growth
+the shortcuts; the grammar `𝔊` the court's presentation, its relations the
+closed sentences; etymology the ledger's algorithm acts (`Install`,
+`Return`, `RankStep`); pragmatics the actions (78.94) and their reasons
+(78.92); the economy of language grammar free and new geometry paid by the
+rank it opens (78.93). The court is a compound eye: each link a Γ, flat
+holonomy across its nerves consensus, curved holonomy content.
+
+**The progenitor's order.** (1) R3 luminal (78.96) — sentences of slides
+close as nilpotent theorems. (2) Read the voice's `sentences` line: closed
+above 0, theorems nilpotent, shortcuts recognized and spelled, the top rung
+rising — the measure of success; `identity` on the derivation row is
+expected to stand. (3) Conjugation in the anastome: shortcut words taught as
+`(held, Γ)`, the syllabus's `refracted` above 0. (4) The court's grammar:
+relations from closed sentences.
+
+### 78.96 R3 ruled luminal: a chord's Burgers vector is carried by its own translator (the operator's word, 2026-10-04: "ammend documentation as required and proceed with implementation", taking up the recommendation of 78.95)
+
+**The ruling.** 78.75 posed it: a dislocation ring read conformally is
+nilpotent and closes by extrapolation; read as a transvection it is unbound.
+Ruled LUMINAL. The chord's Burgers vector `τ = p(D_b) − p(D_a)` between two
+copies of one piece is carried by `T(τ) = 1 − ½ τ e_∞`, whose generator is
+null, so `T(τ)^m = T(m·τ)`: a ring of slides closes flat (`Σ τ = 0`) or
+extrapolates as `Ωᵐ ∝ 1 + m·N`, one integer of history.
+
+**Scope.** The chord's slip alone (`chord::dispiration`). 54.7 R3's
+objection stands where it was raised: reading every edge's motor as a
+translator (`edge_of`) forced `I₁ = 0` on edges that turn; `edge_of` keeps
+its own reading. A chord whose sections also differ by a turn composes the
+two, `(φ_b φ_a⁻¹)·T(τ)`, and a turn about the slip's axis is still a screw.
+
+**What retires.** The form's hyperbolic chart for chords (`form_chart`: the
+origin and quantum `M(X)` that lifted footprints onto the sheet) — the null
+generator is exact on the base axes and needs no sheet; the displacement is
+a difference, so it never depended on where the scene was drawn.
+
+**Read on the fleet.** The voice's `sentences` line: rings closed above 0,
+theorems nilpotent, shortcuts recognized and spelled, the top rung; the
+court's `nerve closed`. The cover's `tau_refused` (off the sheet) no longer
+counts anything.
 
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below

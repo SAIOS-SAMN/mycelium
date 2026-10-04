@@ -10,6 +10,7 @@ mod canonical;
 mod confluence;
 mod cells;
 mod census;
+mod chord;
 mod cover;
 mod deflation;
 mod derivation;
