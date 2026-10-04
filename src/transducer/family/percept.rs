@@ -1075,8 +1075,9 @@ pub(super) fn family_percept(
     // overlap between two piece-charts, offered to the same builder.
     type OfferedChord = (ChartAt, ChartAt, Option<crate::transducer::sentence::Transport>);
 
-    // 78.96 — a chord's Burgers vector is carried luminally by its own
-    // translator (`chord::dispiration`); no chart or quantum is asked.
+    // AXIOM B's CHART FOR THIS FORM — one origin and one quantum for every
+    // chord it carries (`chord::form_chart`, where the construction is read).
+    let (origin, quantum) = super::chord::form_chart(&meet_chords);
     let (source, image) = cover_nerves(&covers);
     let spectrum = phase_spectrum(&meet_chords);
     let chord_pairs: Vec<OfferedChord> = meet_chords
@@ -1123,13 +1124,12 @@ pub(super) fn family_percept(
             //
             //     τ = p(D_b) − p(D_a) ≠ 0
             //
-            // carried LUMINALLY by its own translator `T(τ)`, a null
-            // generator (78.96, R3 ruled 2026-10-04) — it was a hyperbolic
-            // transvection, a boost that never returns. A chord whose
+            // a hyperbolic transvection, `B = Σ τᵢ (eᵢ∧e₋)`, evolved to a
+            // finite versor by the rational Cayley transform. A chord whose
             // holonomy is the identity carries no obstruction and would
             // leave the cycle unreadable; this is the Burgers vector the
             // dislocation actually has.
-            let edge = dispiration(e.as_ref(), da, db);
+            let edge = dispiration(&origin, &quantum, e.as_ref(), da, db);
             Some((ma, mb, edge))
         })
         .collect();

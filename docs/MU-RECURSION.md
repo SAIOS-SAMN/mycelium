@@ -22427,6 +22427,61 @@ theorems nilpotent, shortcuts recognized and spelled, the top rung; the
 court's `nerve closed`. The cover's `tau_refused` (off the sheet) no longer
 counts anything.
 
+**SUPERSEDED the same day by 78.97.** Read on the fleet (c7d2c4bf, five
+voices): closed 0, nilpotent 0, and 48 rings per mind on three minds now
+"open unread". The chord was the wrong layer; its realisation is restored
+as it stood before 78.96, and the chord leaves the sentence (78.97).
+
+### 78.97 The layering: rays are seen through the luminal, chords are heard (the operator's word, 2026-10-04: "right - because "chords" are harmonic - you cant "see" chords : you "see" rays through luminal - our layering is incorrect" — "fix it and recompute")
+
+**The three eyes, each its own object (78.68).**
+- *Luminal — what is SEEN.* Rays on the null cone: a body carried from where
+  it was to where it is. A seen edge's displacement is its translator
+  `T(d) = 1 − ½ d e_∞`, a null generator. Only rays are traversed, so only
+  rays are factors of a sentence's `Ω`.
+- *Harmonic — what is HEARD.* The versor-invariant spectrum `h`. A CHORD is
+  harmonic: the relation between two sections' pieces, one spectrum sounded
+  at two places — an interval, never a path. Nothing travels along it.
+- *Holonomic — what is MEANT.* The class of the closures of rays.
+
+**What was wrong, in two places.** (1) The percept put the chord into the
+holonomic product as a face a ring crosses — first as a boost (54.7 R3),
+then as a translator (78.96); neither is its realisation, because it is no
+transport. (2) The seen edge (`perceive::edge_of`) realised a body's
+displacement as a hyperbolic TRANSVECTION ("a connection takes the geodesic
+transvection", 54.7 R3) — a boost on what was seen. Measured on the slide
+family's real percept: its two rings cross NO chord, and both read unbound;
+the boost was the seen edge's.
+
+**The fix.**
+1. *A chord is heard* (`compose::is_chord`: an overlap whose end is a
+   section's piece; `RingUnread::Heard`). `sentences_of` — the one composer,
+   voice and court alike — leaves every ring that crosses one, and the
+   voice counts it (`sentences: heard through a chord`). The chord's own
+   realisation is restored as it stood before 78.96; it is read only by the
+   harmonic and cover readers now.
+2. *A seen edge is a luminal ray* (`edge_of` reads `translator_of`, the
+   dilation kept). 54.7 R3's objection — the null generator made cycles
+   "parabolic and undecomposed" — reads the other way under this layering:
+   parabolic is what a seen ray IS, and 78.75's flow law composes it exactly
+   (`k = B² = 0`). The curvature an edge carries is the turn its word holds
+   and the rays' failure to commute around a ring, never a hyperbolic slip.
+3. *A nilpotent theorem teaches.* A ring of rays whose holonomy is null never
+   returns but condenses, `Ωᵐ ∝ 1 + m·N` — a word of any length one integer
+   times one direction (78.68's parabolic row). Its open path is held as a
+   word (`rung::hear`), spelled where it turns nothing; the court checks its
+   theorem as it checks a returning one (`winding.rs`).
+
+**Recomputed on the slide family's real percept** (`family::tests::rung`):
+two rings, both of rays, neither heard; each a NILPOTENT theorem where the
+boost left it unbound with none; each teaches its open path as a spelled
+word. Proved: `a_ring_through_a_chord_is_heard_and_the_rest_are_rays`,
+`a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word`.
+
+**Read on the fleet.** The voice's `sentences` row: nilpotent above 0,
+shortcuts spelled above 0, the top rung above 0, `heard through a chord`
+counted; `unbound` and `open unread` falling.
+
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below
 `COURT_RANGE` (0x40), nineteen a court seals of itself from it. `kind()`,

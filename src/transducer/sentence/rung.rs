@@ -42,7 +42,7 @@ struct Held {
 static LEXICON: std::sync::LazyLock<std::sync::Mutex<Keyed<Held>>> =
     std::sync::LazyLock::new(|| std::sync::Mutex::new(Keyed::new()));
 
-const SLOTS: usize = 14;
+const SLOTS: usize = 15;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -58,6 +58,7 @@ const UNSPELLED: usize = 10;
 const TOP_RUNG: usize = 11;
 const RANK: usize = 12;
 const SOURCES: usize = 13;
+const HEARD: usize = 14;
 
 fn note(slot: usize, by: u64) {
     if by > 0 && TALLY[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
@@ -91,12 +92,14 @@ pub struct SentenceTally {
     /// the closed sentences' carried words.
     pub top_rung: u64,
     pub rank: u64,
+    /// 78.97 — rings that cross a chord: heard by the harmonic eye, never
+    /// composed as sentences of rays.
+    pub heard: u64,
 }
 
-/// The sentences' tally since the process began.
-/// 78.96 — THE TALLY'S NAMES, in [`SentenceTally::row`]'s order: the typed
-/// reading the voice's Senses carry, the measure of R3's ruling.
-pub const SENTENCES: [&str; 14] = [
+/// 78.96, 78.97 — THE TALLY'S NAMES, in [`SentenceTally::row`]'s order: the
+/// typed reading the voice's Senses carry.
+pub const SENTENCES: [&str; 15] = [
     "rings",
     "unread",
     "closed",
@@ -111,11 +114,12 @@ pub const SENTENCES: [&str; 14] = [
     "shortcuts unspelled",
     "top rung",
     "rank",
+    "heard through a chord",
 ];
 
 impl SentenceTally {
     /// In [`SENTENCES`]'s order.
-    pub fn row(&self) -> [u64; 14] {
+    pub fn row(&self) -> [u64; 15] {
         [
             self.rings,
             self.unread,
@@ -131,10 +135,12 @@ impl SentenceTally {
             self.unspelled,
             self.top_rung,
             self.rank,
+            self.heard,
         ]
     }
 }
 
+/// The sentences' tally since the process began.
 pub fn sentence_tally() -> SentenceTally {
     let r = |i: usize| TALLY[i].load(Relaxed);
     SentenceTally {
@@ -152,6 +158,7 @@ pub fn sentence_tally() -> SentenceTally {
         unspelled: r(UNSPELLED),
         top_rung: r(TOP_RUNG),
         rank: r(RANK),
+        heard: r(HEARD),
     }
 }
 
@@ -201,6 +208,11 @@ pub fn speak(
                 note(UNREAD, 1);
                 continue;
             }
+            // 78.97 — a chord's ring is the harmonic eye's, counted apart.
+            Err(RingUnread::Heard) => {
+                note(HEARD, 1);
+                continue;
+            }
         };
         hear(&s);
         out.push((steps, s));
@@ -218,12 +230,23 @@ pub fn hear(s: &Composition) {
         Closure::Unbound => note(UNBOUND, 1),
         Closure::Unread => note(OPEN_UNREAD, 1),
     }
-    match Theorem::of(s) {
-        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => note(PERIODIC, 1),
-        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) => note(NILPOTENT, 1),
-        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Rosette | Open::Unbound | Open::Unread) => {}
-    }
-    if !s.closure.closes() {
+    // 78.97 — A NILPOTENT THEOREM TEACHES TOO. A ring of seen rays whose
+    // holonomy is null never returns, but it condenses: `Ωᵐ ∝ 1 + m·N`, a word
+    // of any length one integer times one direction (78.68's parabolic row).
+    // Its open path is a word — the slide itself — exactly as a returning
+    // sentence's is.
+    let teaches = match Theorem::of(s) {
+        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => {
+            note(PERIODIC, 1);
+            true
+        }
+        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) => {
+            note(NILPOTENT, 1);
+            true
+        }
+        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Rosette | Open::Unbound | Open::Unread) => false,
+    };
+    if !s.closure.closes() && !teaches {
         return;
     }
     if let Ok(r) = &s.rank {

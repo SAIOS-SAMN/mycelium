@@ -23,12 +23,11 @@ fn turn(a: usize, b: usize) -> Mv {
 }
 
 /// A REAL PERCEPT'S RINGS, COMPOSED AND NAMED: every ring of a slide family
-/// is composed by the master equation, and each reads OPEN — unbound — with
-/// the same modes as the circuit's former carriage-only composite: the ring
-/// crosses the chord between two copies of a piece, whose edge is the Burgers
-/// vector `τ = p(D_b) − p(D_a)` realised as a transvection (54.7 R3), a boost
-/// that never returns. Read, never forced closed: the dislocation is the
-/// sentence's demand.
+/// is composed by the master equation, and each reads OPEN — it never
+/// returns — with the same modes as the circuit's former carriage-only
+/// composite. 78.97: its seen edges are luminal rays, so the one mode is
+/// PARABOLIC and the ring is a nilpotent theorem (the next test), where the
+/// transvection of 54.7 R3 had read it a boost, unbound with no theorem.
 #[test]
 fn a_percepts_rings_are_composed_and_each_named() {
     let slides = vec![
@@ -57,6 +56,69 @@ fn a_percepts_rings_are_composed_and_each_named() {
         }
     }
     assert!(read > 0, "rings were read");
+}
+
+/// 78.97 — A CHORD IS HEARD, NOT TRAVERSED. On the same slide family's real
+/// percept, the composer leaves every ring that crosses a chord (an overlap
+/// between two sections' pieces) as HEARD and composes the rest from their
+/// rays alone; no ring is both.
+#[test]
+fn a_ring_through_a_chord_is_heard_and_the_rest_are_rays() {
+    use crate::transducer::sentence::compose::{is_chord, sentences_of, RingUnread};
+    let slides = vec![
+        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
+        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&slides, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule");
+    let form = rule.form;
+    let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
+    let rings: Vec<_> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let (mut heard, mut rays) = (0, 0);
+    for (steps, read) in sentences_of(&form, &rings, &mut stroke()) {
+        match steps.iter().any(is_chord) {
+            true => {
+                assert_eq!(read.err(), Some(RingUnread::Heard), "a chord's ring is heard");
+                heard += 1;
+            }
+            false => {
+                assert_ne!(read.err(), Some(RingUnread::Heard), "a ring of rays is never heard");
+                rays += 1;
+            }
+        }
+    }
+    assert!(rays > 0, "the slide's form holds rings of rays: heard {heard}");
+}
+
+/// 78.97 — A RING OF SEEN RAYS CONDENSES. Each seen edge's displacement is
+/// its translator, a null generator, so the slide family's rings of rays are
+/// NILPOTENT theorems — `Ωᵐ ∝ 1 + m·N`, one integer times one direction —
+/// where the boost left them unbound demands; and a nilpotent theorem teaches
+/// its open path as a word, spelled (the slide turns nothing).
+#[test]
+fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
+    use crate::transducer::sentence::compose::sentences_of;
+    use crate::transducer::sentence::theorem::{Certificate, Theorem};
+    let slides = vec![
+        (grid(&["1100000", "0000000", "0002000", "0002200"]), grid(&["1100000", "0000000", "0000020", "0000022"])),
+        (grid(&["0000110", "0000000", "0200000", "0220000"]), grid(&["0000110", "0000000", "0002000", "0002200"])),
+    ];
+    let rule = crate::transducer::family::extract_rule(&slides, &mut crate::physics::Physics::default().stroke_n(1 << 20)).expect("a rule");
+    let form = rule.form;
+    let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
+    let rings: Vec<_> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let mut theorems = 0;
+    for (_, read) in sentences_of(&form, &rings, &mut stroke()) {
+        let Ok(s) = read else { continue };
+        let t = Theorem::of(&s).expect("a ring of rays is a theorem");
+        assert!(matches!(t.certificate, Certificate::Nilpotent { .. }), "a slide condenses: {:?}", s.closure);
+        let (spelled_before, _) = lexicon();
+        hear(&s);
+        let (spelled_after, _) = lexicon();
+        assert!(spelled_after >= spelled_before, "its open path is held as a word, never lost");
+        theorems += 1;
+    }
+    assert!(theorems > 0, "the slide's rings were read");
+    assert!(sentence_tally().nilpotent > 0);
 }
 
 /// THE RUNG RECURSES, AND RE-HEARING IS COMPREHENSION. A sentence carrying the

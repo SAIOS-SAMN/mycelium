@@ -815,7 +815,18 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
     // takes the geodesic transvection `eᵢ ∧ e₋`, which does not commute —
     // and the failure to commute is the curvature this edge exists to
     // carry.
-    let t = element::transvection_of(gamma).ok_or(EdgeRefusal::NoReading)?;
+    //
+    // 78.97 — SUPERSEDED BY THE LAYERING (the operator, 2026-10-04: "you
+    // "see" rays through luminal"). An edge is what was SEEN: a body carried
+    // from one placement to the next, a ray on the luminal cone, and its
+    // displacement's own generator is null — the conformal translator
+    // `T(d)`, never a boost. A boost never returns, so every ring of seen
+    // edges read unbound; the "parabolic" cycles 54.7 refused are what a
+    // seen ray IS, composed exactly by 78.75's flow law (`k = B² = 0`): a
+    // ring of rays closes flat, or extrapolates as a nilpotent theorem. The
+    // curvature an edge carries is the turn its word holds and the
+    // non-commuting of rays around a ring — never a hyperbolic slip.
+    let t = element::translator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
     let d = element::dilator_of(gamma).ok_or(EdgeRefusal::NoReading)?;
     Ok(crate::transducer::sentence::Transport { word, carriage: d.geo(&t), gauge: Vec::new() })
 }

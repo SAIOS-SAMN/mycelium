@@ -172,12 +172,29 @@ pub(crate) fn omega_of(terms: &[Term]) -> Mv {
     terms.iter().fold(Mv::scalar(num_rational::BigRational::from_integer(1.into())), |omega, t| t.transport.geo(&t.word.geo(&omega)))
 }
 
-/// WHY A RING WAS NOT COMPOSED: its traversal refused (OR3's reason), or a
-/// transition's transport did not read.
+/// WHY A RING WAS NOT COMPOSED: its traversal refused (OR3's reason), a
+/// transition's transport did not read, or (78.97) it crosses a chord and is
+/// HEARD — a harmonic relation, never a sentence of rays.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RingUnread {
     Traversal,
     Transport,
+    Heard,
+}
+
+/// 78.97 — A CHORD IS HEARD, NOT TRAVERSED (the operator, 2026-10-04:
+/// "chords are harmonic - you cant "see" chords : you "see" rays through
+/// luminal - our layering is incorrect"). A chord is the overlap between two
+/// sections' PIECES — two copies of one piece, one spectrum sounded at two
+/// places (AT1, ruled (a): a piece-chart is a meet chord's end and nothing
+/// else). It is the harmonic eye's relation, an interval; nothing travels
+/// along it, so it is no factor of a sentence's holonomy, which is composed
+/// of what was seen — the luminal rays a body took. A ring that crosses one
+/// is heard, never spoken.
+pub fn is_chord(o: &crate::network::nerve::coord::Overlap) -> bool {
+    use crate::network::nerve::coord::ChartAt;
+    let piece = |c: &ChartAt| matches!(c, ChartAt::At(m) if m.piece.is_some());
+    piece(&o.from) || piece(&o.to)
 }
 
 /// 78.75 — EVERY RING OF A FORM COMPOSED BY THE MASTER EQUATION: each ring's
@@ -194,6 +211,10 @@ pub fn sentences_of(
         .iter()
         .map(|lp| {
             let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
+            // 78.97 — a ring through a chord is heard, never composed.
+            if steps.iter().any(is_chord) {
+                return (steps, Err(RingUnread::Heard));
+            }
             let read = match super::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) {
                 None => Err(RingUnread::Traversal),
                 Some(paths) => match paths.scoped().next() {
