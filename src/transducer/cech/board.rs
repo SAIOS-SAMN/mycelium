@@ -20,11 +20,11 @@
 use super::*;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
-/// 78.99 (2), (4), (5) — THE CONSTRUCTION'S TALLY'S NAMES, in
+/// 78.99 (2), (4) — THE CONSTRUCTION'S TALLY'S NAMES, in
 /// [`construction_tally`]'s order: the holes the pivots opened and capped,
-/// what the connecting map read on each glue, and the words a voice relayed
-/// as coordinates. The typed reading the voice's Senses carry.
-pub const CONSTRUCTION: [&str; 12] = [
+/// and what the connecting map read on each glue. The typed reading the
+/// voice's Senses carry.
+pub const CONSTRUCTION: [&str; 11] = [
     "punctured",
     "capped",
     "cap refused",
@@ -36,7 +36,6 @@ pub const CONSTRUCTION: [&str; 12] = [
     "glue: inexact",
     "glue: a part curved",
     "glue: unread",
-    "coordinates relayed",
 ];
 pub(crate) const PUNCTURED: usize = 0;
 pub(crate) const CAPPED: usize = 1;
@@ -49,7 +48,6 @@ pub(crate) const NO_OVERLAP: usize = 7;
 pub(crate) const INEXACT: usize = 8;
 pub(crate) const PART_CURVED: usize = 9;
 pub(crate) const GLUE_UNREAD: usize = 10;
-pub const RELAYED: usize = 11;
 
 static TALLY: [AtomicU64; CONSTRUCTION.len()] = [const { AtomicU64::new(0) }; CONSTRUCTION.len()];
 

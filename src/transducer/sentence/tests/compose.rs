@@ -36,14 +36,18 @@ fn a_sentence_closes_at_the_period_of_its_holonomy() {
     assert_eq!(single.closure, Closure::Closes(4), "a 90° turn returns at its fourth pass");
 }
 
-/// A TRANSLATION NEVER RETURNS: a sentence carried by a null transport is
-/// open, its demand standing.
+/// A TRANSLATION NEVER RETURNS, BUT IT CONDENSES: a sentence carried by a
+/// null transport is open, and — a nilpotent theorem, `Ωᵐ ∝ 1 + m·N` — it
+/// teaches its holonomy, the one null motion (78.97, the one rule of 78.100
+/// D2). A sentence whose modes do not read teaches nothing.
 #[test]
-fn a_translated_sentence_is_open() {
+fn a_translated_sentence_is_open_and_teaches_its_null_motion() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
-    let s = compose(&[Term { word: one(), transport: t }], &mut stroke()).expect("a sentence");
+    let s = compose(&[Term { word: one(), transport: t.clone() }], &mut stroke()).expect("a sentence");
     assert_eq!(s.closure, Closure::Unbound, "a translation carries and never returns");
-    assert!(next_rung(&[s]).is_empty(), "an open sentence teaches no word");
+    let words = next_rung(&[s]);
+    assert_eq!(words.len(), 1, "a nilpotent theorem teaches");
+    assert!(words[0].projective_eq(&t), "its word is the null motion");
 }
 
 /// CONJUGATION CARRIES EVERY WORD INTO THE FIRST CHART: the second word,

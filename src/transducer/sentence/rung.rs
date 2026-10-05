@@ -293,30 +293,16 @@ pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) {
     // what it says per traversal is the one null motion, counted by its
     // winding (78.68). Its open path is the identity wherever the slip rides
     // the closing transport alone.
-    let taught = match Theorem::of(s) {
-        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => {
-            note(PERIODIC, 1);
-            Some(&s.path)
-        }
-        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) => {
-            note(NILPOTENT, 1);
-            Some(&s.omega)
-        }
-        // 78.68, 78.99 — A HYPERBOLIC FACTOR OR A ROSETTE "never returns and
-        // does not condense. It is named and held." Its holonomy is the word
-        // — a dilation, a boost, a turn of no finite order — held by name and
-        // never condensed. An UNREAD sentence teaches nothing (rule 11).
-        Err(Open::Rosette | Open::Unbound) => {
-            note(NAMED, 1);
-            Some(&s.omega)
-        }
-        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Unread) => None,
-    };
-    let word = match (s.closure.closes(), taught) {
-        (_, Some(w)) => w,
-        (true, None) => &s.path,
-        (false, None) => return,
-    };
+    // 78.100 D2 — THE ONE TEACHING RULE (`compose::teaches`), each theorem
+    // counted by its kind.
+    let theorem = Theorem::of(s);
+    match &theorem {
+        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => note(PERIODIC, 1),
+        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) => note(NILPOTENT, 1),
+        Err(Open::Rosette | Open::Unbound) => note(NAMED, 1),
+        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Unread) => {}
+    }
+    let Some(word) = super::compose::teaches(s, &theorem) else { return };
     if let Ok(r) = &s.rank {
         note(RANK, *r as u64);
     }
@@ -379,40 +365,6 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         lex.holes.file(&key, c);
     }
     lex.held.insert(&key, Held { rung, spelled, coords });
-}
-
-/// 78.99 (5) — THE WORD ONE SENTENCE TEACHES, by [`hear`]'s rule and noting
-/// nothing: a periodic theorem its open path; a nilpotent one, and a named
-/// one (hyperbolic, rosette), its holonomy; a closed sentence with no
-/// certificate its open path; an unread one nothing.
-fn taught_word(s: &Composition) -> Option<&Mv> {
-    match Theorem::of(s) {
-        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => Some(&s.path),
-        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) | Err(Open::Rosette | Open::Unbound) => Some(&s.omega),
-        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Unread) => s.closure.closes().then_some(&s.path),
-    }
-}
-
-/// 78.99 (5) — THE COORDINATES OF THE WORDS A SPOKEN SENTENCE'S FORM TEACHES:
-/// its rings composed by the master equation, each word read on its own
-/// modes — what crosses the anastome beside the tape, and what the hearer
-/// re-reads on its own construction. A sentence that is no form teaches
-/// none; a word whose modes do not read under the stroke is left out, and
-/// the count of those is returned beside them (rule 11: unread is named).
-pub fn coordinates_taught(e: &crate::transducer::element::Element, budget: &mut crate::physics::Budget) -> (Vec<Coordinates>, u64) {
-    let Some(form) = super::address::from_element_form(e) else { return (Vec::new(), 0) };
-    let cycles = super::Form::cycles_of(&form.faces, &form.vertices);
-    let rings: Vec<super::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
-    let (mut out, mut unread) = (Vec::new(), 0u64);
-    for (_, read) in super::compose::sentences_of(&form, &rings, budget) {
-        let Ok(s) = read else { continue };
-        let Some(word) = taught_word(&s).filter(|w| !is_identity(w)) else { continue };
-        match Coordinates::of(word, budget) {
-            Ok(c) => out.push(c),
-            Err(_) => unread += 1,
-        }
-    }
-    (out, unread)
 }
 
 /// 78.75 — A REFUSAL INVERTED IS A THEOREM: a white-hole source's sliver `1 +

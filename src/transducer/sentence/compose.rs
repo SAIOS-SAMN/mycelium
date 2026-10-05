@@ -230,10 +230,27 @@ pub fn sentences_of(
         .collect()
 }
 
-/// THE NEXT RUNG: each closed sentence's open path, read as one word — the
-/// shortcut the relation teaches. A sentence that did not close teaches
-/// nothing and is its demand, not a word. A word of the next rung composes
-/// with [`compose`] exactly as a word of this one does.
+/// 78.69, 78.97, 78.68 — THE WORD A SENTENCE TEACHES, the one rule (78.100
+/// D2) both [`next_rung`] and the mind's hearing read: a periodic theorem its
+/// open path, one word for the whole path; a nilpotent theorem its holonomy
+/// `Ω = 1 + N`, the one null motion per traversal (its open path is the
+/// identity wherever the slip rides the closing transport); a named one — a
+/// hyperbolic factor or a rosette, which never returns and does not
+/// condense — its holonomy, held by name; a closed sentence with no
+/// certificate its open path; an unread sentence nothing (rule 11).
+pub fn teaches<'a>(s: &'a Composition, theorem: &Result<super::theorem::Theorem, super::theorem::Open>) -> Option<&'a Mv> {
+    use super::theorem::{Certificate, Open, Theorem};
+    match theorem {
+        Ok(Theorem { certificate: Certificate::Periodic { .. }, .. }) => Some(&s.path),
+        Ok(Theorem { certificate: Certificate::Nilpotent { .. }, .. }) | Err(Open::Rosette | Open::Unbound) => Some(&s.omega),
+        Ok(Theorem { certificate: Certificate::Saturated { .. }, .. }) | Err(Open::Unread) => s.closure.closes().then_some(&s.path),
+    }
+}
+
+/// THE NEXT RUNG: each sentence's taught word ([`teaches`]) — the shortcut
+/// the relation teaches. A sentence that teaches nothing is its demand, not
+/// a word. A word of the next rung composes with [`compose`] exactly as a
+/// word of this one does.
 pub fn next_rung(sentences: &[Composition]) -> Vec<Mv> {
-    sentences.iter().filter(|s| s.closure.closes()).map(|s| s.path.clone()).collect()
+    sentences.iter().filter_map(|s| teaches(s, &super::theorem::Theorem::of(s)).cloned()).collect()
 }

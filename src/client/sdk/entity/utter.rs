@@ -359,19 +359,13 @@ impl Entity {
         let voice = self.session.kernel().voice();
         // STD1 3c: a sentence whose record does not write refuses the speech
         // whole, never a speech with that sentence left out.
-        // 78.99 (5) — EACH SENTENCE CARRIES THE COORDINATES OF THE WORDS ITS
-        // FORM TEACHES, read under this speech's stroke: the relay is holes
-        // and windings, re-read by the court on its own construction.
         let spoken: Option<Vec<dialogue::Spoken>> = fresh
             .iter()
             .map(|&i| {
-                let (coordinates, _unread) = crate::transducer::sentence::rung::coordinates_taught(&sentences[i], budget);
-                crate::transducer::cech::note_construction(crate::transducer::cech::board::RELAYED, coordinates.len() as u64);
                 Some(dialogue::Spoken {
                     tape: sentences[i].to_bytes()?,
                     standing: Standing::Stood.as_u8(),
                     contraction: self.certificate_for(&sentences[i]),
-                    coordinates,
                 })
             })
             .collect();

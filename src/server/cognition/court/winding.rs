@@ -88,14 +88,6 @@ pub struct WindingTally {
     /// weighed by mass, and the reconnections its helicity recorded.
     pub flux_transport: u64,
     pub reconnections: u64,
-    /// 78.99 (5) — the relay re-read: relayed coordinates the court's own
-    /// derivation read too, those it did not (moved), words it read that
-    /// were not relayed (unsaid), and words whose modes did not read under
-    /// the stroke.
-    pub relay_agreed: u64,
-    pub relay_moved: u64,
-    pub relay_unsaid: u64,
-    pub relay_unread: u64,
 }
 
 impl Winding {
@@ -307,35 +299,6 @@ impl Kernel {
             false => Vec::new(),
         };
         Earned { draws, torse }
-    }
-
-    /// 78.99 (5) — THE RELAY RE-READ: the words `e`'s form teaches, read by
-    /// this court on its own derivation of the form, against the coordinates
-    /// the speaker relayed. Each relayed coordinate is matched once: found
-    /// among the court's own, it agrees; not found, it moved. Each of the
-    /// court's own left unmatched was unsaid. The stroke is the hearing's.
-    pub(crate) fn reread_relay(
-        &mut self,
-        e: &Element,
-        relayed: &[crate::transducer::sentence::coordinates::Coordinates],
-        budget: &mut crate::physics::Budget,
-    ) {
-        let (mut own, unread) = crate::transducer::sentence::rung::coordinates_taught(e, budget);
-        let (mut agreed, mut moved) = (0u64, 0u64);
-        for c in relayed {
-            match own.iter().position(|o| o == c) {
-                Some(at) => {
-                    own.swap_remove(at);
-                    agreed += 1;
-                }
-                None => moved += 1,
-            }
-        }
-        let t = &mut self.winding_tally;
-        crate::physics::metabolism::step_or_refuse(&mut t.relay_agreed, agreed);
-        crate::physics::metabolism::step_or_refuse(&mut t.relay_moved, moved);
-        crate::physics::metabolism::step_or_refuse(&mut t.relay_unsaid, own.len() as u64);
-        crate::physics::metabolism::step_or_refuse(&mut t.relay_unread, unread);
     }
 
     /// 78.68 — A RANK STEP, RE-DERIVED: the word at `addr` just entered the

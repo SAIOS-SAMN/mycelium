@@ -10,7 +10,6 @@ mod carriers;
 mod cocycles;
 mod colour;
 mod contraction;
-mod relay;
 mod court;
 mod depth;
 mod era;

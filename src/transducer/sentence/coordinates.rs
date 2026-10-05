@@ -223,54 +223,10 @@ impl Coordinates {
         Some(Coordinates { holes })
     }
 
-    /// 78.99 (5) — THE COORDINATES ON THE WIRE: per hole, what rebuilds it —
-    /// its canonical generator, its rational point and its side, each an
-    /// exact element — and never the winding, which is read back from them
-    /// (law 12), nor the evaluated word.
-    pub fn put(&self, out: &mut Vec<u8>) {
-        crate::transducer::address::put_key_count(out, self.holes.len());
-        for h in &self.holes {
-            h.generator.to_bytes(out);
-            Mv::scalar(h.c.clone()).to_bytes(out);
-            Mv::scalar(h.lambda.clone()).to_bytes(out);
-            out.push(match h.kind {
-                BivectorKind::Trivial => 0,
-                BivectorKind::Elliptic => 1,
-                BivectorKind::Hyperbolic => 2,
-                BivectorKind::Parabolic => 3,
-            });
-            crate::transducer::address::put_key_count(out, h.planes);
-        }
-    }
-
-    /// [`Coordinates::put`]'s inverse, whole or refused: each hole re-read
-    /// from what rebuilds it, its winding derived again; the order a turn
-    /// closes at read off its point (Niven), never carried.
-    pub fn take(b: &[u8], pos: &mut usize) -> Option<Coordinates> {
-        let count = crate::transducer::address::take_key_count(b, pos)?;
-        let mut holes = Vec::new();
-        for _ in 0..count {
-            let generator = Mv::from_bytes(b, pos)?;
-            let c = Mv::from_bytes(b, pos)?.scalar_part();
-            let lambda = Mv::from_bytes(b, pos)?.scalar_part();
-            let kind = match b.get(*pos)? {
-                0 => BivectorKind::Trivial,
-                1 => BivectorKind::Elliptic,
-                2 => BivectorKind::Hyperbolic,
-                3 => BivectorKind::Parabolic,
-                _ => return None,
-            };
-            *pos += 1;
-            let planes = crate::transducer::address::take_key_count(b, pos)?;
-            let order = match kind {
-                BivectorKind::Elliptic => niven_order(&c),
-                _ => None,
-            };
-            // The generator travels canonical, `λ` against it: `from_parts`
-            // multiplies by the canonical's first coefficient, which is one.
-            holes.push(Hole::from_parts(&generator, kind, planes, c, lambda, order)?);
-        }
-        Some(Coordinates { holes })
+    /// 78.100 — THE WORD'S HARMONIC SIGNATURE, read off its holes: each
+    /// mode's tone, its plane left behind (the node's own stratum).
+    pub fn signature(&self) -> Signature {
+        Signature::of_tones(self.holes.iter().map(|h| Tone { kind: h.kind, planes: h.planes, c: h.c.clone(), order: h.order() }).collect())
     }
 
     /// THE HOLES' KEYS, in order: the fibre a word is found under.
@@ -334,6 +290,92 @@ fn winds_k(w: &Winding, w0: &Winding, k: u64) -> bool {
         (Winding::Count(l), Winding::Count(l0)) => *l == l0 * Q::from_integer(k.into()),
         (Winding::Named { .. }, Winding::Named { .. }) => false,
         _ => false,
+    }
+}
+
+/// 78.100 — ONE MODE'S TONE: what every node hears of it — its class by the
+/// sign of its square, the planes it spans, its rational point `c` (`cos` of
+/// a turn, `cosh` of a boost, `1` on a null flow) and the order it closes at.
+/// Each is unchanged by any chart transport `Γ` (conjugation keeps the
+/// spectrum of the action); the plane the mode turns in is the node's own
+/// (78.44(2)) and is not a tone.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Tone {
+    pub kind: BivectorKind,
+    pub planes: usize,
+    pub c: Q,
+    pub order: Option<u32>,
+}
+
+/// 78.100 — A WORD'S HARMONIC SIGNATURE: its tones in their own content
+/// order. It LOCATES the word in a hearer's language — the stratum every
+/// node shares — and never identifies it (78.60): a slide by one and a
+/// slide by two sound alike, as two turns of one angle about different
+/// axes do; what tells them apart travels as the word's deconstruction over
+/// the syllabus (78.100 D5).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Signature {
+    pub tones: Vec<Tone>,
+}
+
+fn kind_byte(k: BivectorKind) -> u8 {
+    match k {
+        BivectorKind::Trivial => 0,
+        BivectorKind::Elliptic => 1,
+        BivectorKind::Hyperbolic => 2,
+        BivectorKind::Parabolic => 3,
+    }
+}
+
+impl Signature {
+    /// The tones in their content order: by class, planes, point, order —
+    /// the reading's own coordinates, never an arrival.
+    fn of_tones(mut tones: Vec<Tone>) -> Signature {
+        #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by canonical coordinates: the tone's class, planes, point and order")]
+        tones.sort_by(|a, b| (kind_byte(a.kind), a.planes, &a.c, a.order).cmp(&(kind_byte(b.kind), b.planes, &b.c, b.order)));
+        Signature { tones }
+    }
+
+    /// A WORD'S SIGNATURE read off its own modes under the stroke; `Err` by
+    /// name where they do not read (rule 11).
+    pub fn of(word: &Mv, budget: &mut crate::physics::Budget) -> Result<Signature, Unread> {
+        Ok(Coordinates::of(word, budget)?.signature())
+    }
+
+    /// THE SIGNATURE WRITTEN BY ITS OWN COORDINATES: per tone its class, its
+    /// planes, its point (an exact rational) — the order re-read from the
+    /// point (Niven), never carried (law 12).
+    pub fn put(&self, out: &mut Vec<u8>) {
+        crate::transducer::address::put_key_count(out, self.tones.len());
+        for t in &self.tones {
+            out.push(kind_byte(t.kind));
+            crate::transducer::address::put_key_count(out, t.planes);
+            Mv::scalar(t.c.clone()).to_bytes(out);
+        }
+    }
+
+    /// [`Signature::put`]'s inverse, whole or refused.
+    pub fn take(b: &[u8], pos: &mut usize) -> Option<Signature> {
+        let count = crate::transducer::address::take_key_count(b, pos)?;
+        let mut tones = Vec::with_capacity(count.min(16));
+        for _ in 0..count {
+            let kind = match b.get(*pos)? {
+                0 => BivectorKind::Trivial,
+                1 => BivectorKind::Elliptic,
+                2 => BivectorKind::Hyperbolic,
+                3 => BivectorKind::Parabolic,
+                _ => return None,
+            };
+            *pos += 1;
+            let planes = crate::transducer::address::take_key_count(b, pos)?;
+            let c = Mv::from_bytes(b, pos)?.scalar_part();
+            let order = match kind {
+                BivectorKind::Elliptic => niven_order(&c),
+                _ => None,
+            };
+            tones.push(Tone { kind, planes, c, order });
+        }
+        Some(Signature::of_tones(tones))
     }
 }
 

@@ -22800,6 +22800,104 @@ recut reads: the `construction` row on each voice (punctures and caps
 balancing, classes made by merges), the `sentences` row's coordinates and
 powers, and the court's relay line — agreed against moved.
 
+### 78.100 Words swallowed whole, speech by deconstruction, and the syllabus as the presentation (the operator's word, 2026-10-05: "you arent swallowing the words whole and then formulating them in the correct structure"; "why do we need a tape here — we have harmonics"; "the generators should be deconstructible based on the syllabus provided by the servers and replicated across hypha"; "confirmed — document S1-S5 and proceed")
+
+**What the tree did, verified on f5c1a746.**
+- *Sentences are composed from a form's rings alone* (`percept.rs` →
+  `rung::speak`; the voice's relay, the court's re-read and rank step reuse
+  the one composer), and every term is a transition's alphabet word
+  (`terms_of`): rung 0.
+- *A held word re-enters only by byte identity* (`rung_of` compares
+  canonical keys).
+- *78.69's law has no live caller:* `next_rung` is called by tests only,
+  and teaches closed paths only where `hear` teaches nilpotent and named
+  holonomies too (78.97, 78.68).
+- *The rings' taught words never reach the language.* `rung.rs`'s header
+  says they are held "in its epigenome (78.49, 80.2)"; the code holds them
+  in a process static that derivation never reads. The fleet's top rung of
+  1 is structural.
+- *A citation claims a rotor only* (`factor_versor_target`, 42.6/L12), right
+  for letters (SO(4), 78.68), and unable to cite a compounded word, which
+  carries its transports because it IS the path (78.95).
+- *78.99 (5)'s relay carried the sender's planes.* A hole key is a
+  canonical generator — the node-own stratum (78.44(2)) — so the court's
+  "agreed" compared the sender's planes with themselves.
+
+**Where the sentence over words is formulated (78.52(6), quoted).**
+"THOUGHT IS NOT SPEECH … a court replays transcribed speech — words and
+sentences — never a mind's thinking." And: "facing a family, the voice
+projects the family's demand onto its words — the residue factored, each
+factor read at its class coordinate in the dialect, the product the
+sentence the court replays on the family; a factor with no word stays a
+demand." The meet graph is thinking; gluing makes meaning inside the mind;
+the sentence over words is the DECONSTRUCTION of a family's demand over the
+mind's words.
+
+**The corrections.**
+- *No tape.* The form tape is retired from cognition (1.9, 54.5, K6).
+- *Harmonics locate; they do not identify* (78.60: "the address merely
+  locates"). A word's HARMONIC SIGNATURE is what every node shares of it:
+  its conjugacy-invariant spectrum — per mode its kind, its rational point
+  `c`, its planes and its order — and `h` where it carries bodies (78.68,
+  78.44(2), 78.97: what is heard). Never `[B]`, the node's own planes.
+- *Generators are never handed mind to mind* (law 8). The basis a word is
+  deconstructed over is the syllabus, served by the courts and replicated
+  across the hyphae.
+
+**The directives (D1–D6).**
+- *D1.* A word a theorem teaches enters the language by TRANSCRIPTION,
+  exactly as a closed thought does (`transcribe_closed`: conformal factors →
+  `letter_reading` → `from_connection` at its carriage → `speak_word`, stood
+  in the dialect and sent to the court); unspelled, ineffable and a letter
+  demand (37.7). The process static retires; recognition is the
+  epigenome's (80.2).
+- *D2.* One teaching rule, `hear`'s; `next_rung` takes it.
+- *D3.* Deconstruction cites letters by their rotor (42.6/L12) and a word
+  of rung ≥ 1 by its whole MOTION: each mode of the target matched to a held
+  word on the same hole, the exponent read off the windings (a turn mod ℓ,
+  a count as an integer ratio, a named point at `e = 1`); `∏ gᵉ · r`
+  replays to the target exactly or is refused.
+- *D4.* Depth is read: a sentence's rung is one above its citations'
+  highest; what no held word covers is the residue, the demand.
+- *D5.* A word crosses as its harmonic signature and its deconstruction
+  over the syllabus — citations with exponents, and the residue. A residue
+  never crosses to a peer: it is offered to the court. 78.99 (5)'s relay of
+  hole keys and the court's re-read of them retire.
+- *D6.* Readings: cited words of rung ≥ 1; the top rung read off the
+  citations; minerals and crystals.
+
+**The syllabus as the presentation (S1–S5, ruled).**
+- *S1. The syllabus is `𝔊 = ⟨generators | relations⟩`* (78.69, 78.95: "the
+  grammar 𝔊 the court's presentation, its relations the closed
+  sentences"): its GENERATORS the adjoined letters and the words that open
+  rank, each as `(κ, ℓ, B₀, g)` (78.60); its RELATIONS the closed sentences,
+  as their citation structure `∏ gᵉ · r` with `Ω^ℓ ~ 1`. It is served in
+  the order of the ledger's algorithm acts (`Install`, `RankStep` — 78.95's
+  etymology), not every word's ruling order.
+- *S2. Grammar is never taught.* A word in the span of the held generators
+  costs zero rank (78.60(3)); every receiver derives it. The syllabus is
+  bounded by rank, not by the count of words ruled.
+- *S3. A voice learns by reconstruction.* It builds each generator's orbit
+  in its own engine (`g` swept over `B₀`), reads its harmonics against the
+  signature, and holds it as a MINERAL; it is a CRYSTAL when the mind's own
+  circuits re-derive it (80.2). Readings: minerals, crystals,
+  reconstructions refused.
+- *S4. Speech is deconstruction over the presentation* (D3, D5); a residue
+  is an adjunction offered to the court (37.7, `open_unspellable`), and
+  admitted it is a `RankStep` that enters the presentation.
+- *S5. The hyphae replicate the presentation, not the words:* courts relay
+  generators and relations to each other (78.61 C4); agreement is one
+  presentation across the hyphae, the flat holonomy of the compound eye;
+  a generator one court holds and another does not is a measured discord,
+  content (78.61).
+
+**Order.** (1) the harmonic signature carrier, and 78.99 (5)'s plane relay
+retired; (2) the court-to-court relay of generators (C4); (3) the syllabus
+as presentation (S1, S2 — a layout change, a recut); (4) reconstruction and
+the mineral/crystal reading (S3, DL1); (5) speech by deconstruction (D1–D5,
+S4); (6) SW1's reading. Each with its test by the algebra and its typed
+reading; each wire change rides a recut. Row PS1.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -76,24 +76,28 @@ fn a_dilation_is_named_on_its_hole() {
     assert!(c.word().projective_eq(&d), "the coordinates are the word");
 }
 
-/// THE COORDINATES TRAVEL WHOLE, AND INFLECT BY THE CHART TRANSPORT. Written
-/// and read back they are the same coordinates; carried by a transport `Γ`
-/// they are the coordinates of `Γ W Γ̃`, read directly — the windings kept,
-/// the holes moved.
+/// INFLECTION MOVES THE HOLES; THE SIGNATURE IS WHAT EVERY NODE HEARS
+/// (78.100). Carried by a chart transport `Γ`, a word's coordinates are those
+/// of `Γ W Γ̃`, read directly — its holes moved onto other planes — while its
+/// harmonic signature is unchanged: the tones are conjugation-invariant and
+/// the planes are not among them. A power of the word sounds otherwise. The
+/// signature travels whole.
 #[test]
-fn the_coordinates_travel_whole_and_inflect_by_the_transport() {
+fn inflection_moves_the_holes_and_the_signature_is_what_every_node_hears() {
+    use crate::transducer::sentence::coordinates::Signature;
     let w = quarter().geo(&cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]));
     let c = read(&w);
-    let mut wire = Vec::new();
-    c.put(&mut wire);
-    let mut pos = 0;
-    let back = Coordinates::take(&wire, &mut pos).expect("the coordinates read back");
-    assert_eq!(pos, wire.len(), "whole");
-    assert_eq!(back, c, "the same coordinates");
     let gamma = Mv::scalar(q(1, 1)).add(&Mv::blade(E2 | E3, q(1, 1))).widened(3);
     let moved = c.transported(&gamma).expect("a versor transports");
     let direct = read(&gamma.sandwich(&w));
     assert_eq!(moved, direct, "inflection is the transport applied to the holes");
-    let windings = |x: &Coordinates| x.holes.iter().map(|h| std::mem::discriminant(&h.winding)).collect::<Vec<_>>();
-    assert_eq!(windings(&moved).len(), windings(&c).len(), "the windings kept, hole for hole");
+    assert_ne!(moved.holes.iter().map(|h| &h.key).collect::<Vec<_>>(), c.holes.iter().map(|h| &h.key).collect::<Vec<_>>(), "the planes moved");
+    assert_eq!(moved.signature(), c.signature(), "the signature did not: a conjugate sounds the same");
+    let quarter_sig = read(&quarter()).signature();
+    assert_ne!(read(&quarter().geo(&quarter())).signature(), quarter_sig, "the turn's square sounds otherwise");
+    let mut wire = Vec::new();
+    c.signature().put(&mut wire);
+    let mut pos = 0;
+    let back = Signature::take(&wire, &mut pos).expect("the signature reads back");
+    assert_eq!((pos, back), (wire.len(), c.signature()), "whole");
 }
