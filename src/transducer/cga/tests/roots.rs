@@ -29,18 +29,57 @@ fn a_factor_with_no_rational_root_is_refused_by_its_degree() {
     assert_eq!(rational_roots(&mixed, &mut budget()), Err(Undecomposed::Irrational(2)));
 }
 
-/// BD1 — THE DIVISOR LOOP SPENDS THE STROKE'S BUDGET. `x² − N` with `N` the
-/// semiprime `1 000 003 · 1 000 033` needs a million trial divisions to
-/// factor; under a stroke of a thousand reads it refuses by name as
-/// `Unbounded(2)` and does not run on. The same polynomial with a small
-/// constant term reads within the same stroke.
+/// 78.100, BD1 — NO INTEGER IS FACTORED UP TO DEGREE THREE. `x² − N` with `N`
+/// the semiprime `1 000 003 · 1 000 033` asked a million trial divisions and
+/// refused under a stroke of a thousand; the exact bisection reads it within
+/// the same stroke — no rational root, refused by its degree as irrational.
+/// A stroke that truly runs out still refuses by name and runs on no
+/// further.
 #[test]
-fn a_large_semiprime_refuses_by_name_within_the_budget() {
+fn a_large_semiprime_is_read_exactly_within_the_stroke() {
     let n = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1_000_003u64 * 1_000_033u64));
     let hard = [-n, q(0, 1), q(1, 1)];
     let mut stroke = crate::physics::Physics::default().stroke_n(1000);
-    assert_eq!(rational_roots(&hard, &mut stroke), Err(Undecomposed::Unbounded(2)));
-    assert_eq!(stroke.remaining(), 0, "the refusal spent the stroke and no more");
+    assert_eq!(rational_roots(&hard, &mut stroke), Err(Undecomposed::Irrational(2)), "no rational root, read and refused by its degree");
+    assert!(stroke.remaining() > 0, "within the stroke");
     let mut stroke = crate::physics::Physics::default().stroke_n(1000);
     assert_eq!(rational_roots(&[q(-9, 1), q(0, 1), q(1, 1)], &mut stroke), Ok(vec![q(-3, 1), q(3, 1)]));
+    let mut spent = crate::physics::Physics::default().stroke_n(2);
+    assert_eq!(rational_roots(&hard, &mut spent), Err(Undecomposed::Unbounded(2)), "a stroke that runs out refuses by name");
+}
+
+/// 78.100 — THE WIDTHS EPOCH 125 MET, READ EXACTLY. A cubic with rational
+/// roots whose numerators run past 80 bits — `(x − 3/7)(x + 5/11)(x − 2⁸¹/3)`
+/// — and a quadratic `(x − p/q)(x − r/s)` with 64-bit parts are each read
+/// whole within a stroke of a few hundred; a cubic with one rational root and
+/// an irreducible quadratic reads its root and refuses the rest by degree.
+#[test]
+fn roots_of_eighty_bit_coefficients_are_read_within_a_small_stroke() {
+    use num_bigint::BigInt;
+    let r = |n: BigInt, d: i64| num_rational::BigRational::new(n, BigInt::from(d));
+    let mul = |p: &[num_rational::BigRational], root: &num_rational::BigRational| {
+        // p(x)·(x − root), ascending.
+        let mut out = vec![q(0, 1); p.len() + 1];
+        for (i, c) in p.iter().enumerate() {
+            out[i + 1] = &out[i + 1] + c;
+            out[i] = &out[i] - c * root;
+        }
+        out
+    };
+    let big = r(BigInt::from(1) << 81, 3);
+    let roots = [q(3, 7), q(-5, 11), big.clone()];
+    let p = roots.iter().fold(vec![q(1, 1)], |p, root| mul(&p, root));
+    let mut stroke = crate::physics::Physics::default().stroke_n(600);
+    let mut want = roots.to_vec();
+    want.sort();
+    assert_eq!(rational_roots(&p, &mut stroke), Ok(want), "every rational root of the 81-bit cubic, read exactly");
+    let (a, b) = (r(BigInt::from(0x1234_5678_9abc_def1u64), 97), r(-BigInt::from(0x0fed_cba9_8765_4321u64), 101));
+    let quad = mul(&mul(&[q(1, 1)], &a), &b);
+    let mut stroke = crate::physics::Physics::default().stroke_n(600);
+    let mut want = vec![a, b];
+    want.sort();
+    assert_eq!(rational_roots(&quad, &mut stroke), Ok(want), "the 64-bit quadratic's roots, exactly");
+    // (x − 1/2)(x² + x + 1): its rational root read, the rest refused.
+    let mixed = mul(&[q(1, 1), q(1, 1), q(1, 1)], &q(1, 2));
+    assert_eq!(rational_roots(&mixed, &mut crate::physics::Physics::default().stroke_n(600)), Err(Undecomposed::Irrational(2)));
 }

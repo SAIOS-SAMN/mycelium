@@ -127,7 +127,10 @@ These are not restated in each chapter; every chapter assumes them.
    wire never carries raw percept laminae to a court. A court that
    extracts boundaries, measures versors or peels letters is thinking,
    and a second engine; the four `from_residual` sites of the court's
-   reduction were that engine (50.6, 50.9).
+   reduction were that engine (50.6, 50.9). *(Read as amended by 78.102,
+   2026-10-05: a sentence is any composition by the master equation,
+   closed or open; an open sentence carrying an ineffable word is heard,
+   replayed, and its letter offered.)*
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
    or a timer. K is a kernel's own receipt index and orders events inside
    that kernel; TUniversal is the height of the mesh's receipt ledger, read
@@ -22971,6 +22974,32 @@ reading; each wire change rides a recut. Row PS1.
   read" splits further into `not rigid` (a pair no rigid versor carries)
   and `unrefracted` (a contact whose refraction was refused).
 
+**Read on epoch 125 (dd3dc861, 1h), and the first fix.**
+- *The transport loss is one cause:* every unread ring is `none read`
+  (61–92 a voice); no base action 0, no versor 0 — an edge between two
+  bodies never measured. Its split lands on the next recut.
+- *The root reader was the wrong math (78.63):* 748–1 156 refusals an hour
+  a voice, never above degree 3, coefficients up to 84 bits — trial
+  division walking to `√n`, some `2⁴²` steps. FIXED: up to degree three the
+  candidates come from the monic substitute `y = a_m·x` by exact bisection
+  on the runs the derivative bounds (its critical points bracketed by an
+  exact integer square root), the coefficients first divided by their
+  content; no integer is factored, every candidate verified exactly as
+  before. An 81-bit cubic reads in 290 evaluations; `x² − N` for a large
+  semiprime reads within a stroke of a thousand. Above degree three the
+  divisors' search stands.
+- *No 2-cell forms because no triple overlaps:* `no volume` 15–26 of 18–27
+  candidates a voice (courts the same), `faces not ready` the rest, minted
+  0. In a Čech nerve a 2-simplex exists only where three sets meet; these
+  cycles are HOLES — curvature as content — not faces withheld. With 78.101
+  grammar's relations come from nilpotent theorems; faces are not the
+  route to closure.
+- *The ineffable words never reach a court:* the courts' re-derived
+  shortcuts are all spelled (3–5 each; offered 0, every other reason 0). The
+  voices' ineffable words live in rings of perception no voice speaks as a
+  form; they want their own carrier to adjudication (80.1's loop, CV1's
+  standing demand carrying the class).
+
 ### 78.101 Nilpotent theorems are relations of the grammar (the operator's word, 2026-10-05: "nilpotent theorems are relations of the grammar — proceed")
 
 **The question it answers.** 78.69 wrote the grammar as
@@ -23008,6 +23037,45 @@ proves nothing.
 - *The plan's step 6 is closed by this ruling*; closure by turns or by
   faces (step 7) is no longer the gate to grammar, only a second source of
   relations.
+
+### 78.102 Law 8 as the progenitor reads it: a sentence is any composition, closed or open — and every constant is physics waiting to be defined (the operator's word, 2026-10-05: "the document was written by a steward: you should take that into consideration in the rules and the laws"; "correct because all constants are just physics waiting to be defined in our computations")
+
+**What law 8 holds, unchanged.** "Clients think, hyphae verify." A court
+replays and judges; it never extracts, measures or peels on its own (50.6,
+50.9). Every letter it adjoins rests on a witness it can replay.
+
+**What the steward's application did.** Ruled 2026-09-10, it retired the
+demand, gossip and percept acts at the door and read "the court hears
+sentences" as "the court hears admitted forms". On the fleet that cut the
+Gödel step's only road: 15–32 ineffable words a voice (epoch 125), every
+court re-deriving only spelled shortcuts and offering none,
+`adjoined by closure` 0 on every voice since the retirement.
+
+**The amendment.** A SENTENCE is any composition by the master equation
+(78.69), closed or open. 78.95 already said it: "an open sentence is a
+question (its demand)". A ring whose taught word no held letter spells is
+a sentence the court hears, replays by the same equation, finds its residue
+unspellable, and offers as a letter (`open_unspellable`, 37.7), adjudicated
+by closure and the rank it opens (78.60(3), 78.69) — the court verifying,
+never thinking. The retired `ACT_DEMAND` stays retired: the demand travels
+INSIDE speech, as the open sentence that carries it, never beside it.
+
+**The rule under it.** A constant is either a reading of the algebra
+already defined — Niven's orders, `dim so(4,1)`, a Cauchy bound — or
+physics not yet defined, standing in for a law (rule 5, 78.43's "capping
+constant", AC1). A fixed list of what a court may hear was the second kind,
+and so were three of the progenitor's own of this day, corrected in the
+stage that follows: the root reader's degree cutoff (the characteristic
+polynomial's degree is the algebra's, `n + 2`); the return `1` handed to a
+taught word that never returns (its physics is its count `m`, 78.101); and
+a peer court's fetch drawn from the serving court's reserve (what one court
+owes another is undefined physics, the bank's to rule, 78.93).
+
+**Order.** The root reader at every degree; the edge carried by its
+physics (on the next recut's `not rigid / unrefracted`); the letter
+carrier — the voice keeps each ineffable word with its ring and speaks the
+ring as an open sentence, the court replays it and offers the letter; a
+taught word's return as its own physics, then D3; the presentation (S1).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

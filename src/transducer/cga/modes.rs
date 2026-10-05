@@ -189,6 +189,141 @@ fn divisors(n: &num_bigint::BigInt, budget: &mut crate::physics::Budget) -> Opti
     Some(out)
 }
 
+/// 78.100, 78.63 (the wrong math) — THE INTEGER ROOTS `y` OF THE MONIC
+/// SUBSTITUTE of an integer polynomial `a₀ + … + a_m xᵐ` of degree one to
+/// three, every rational root of which is `y / a_m`.
+///
+/// `y = a_m·x` turns `a_m^{m−1}·f(y / a_m)` into `yᵐ + Σ aᵢ a_m^{m−1−i} yⁱ`,
+/// monic with integer coefficients, so its rational roots are integers (the
+/// rational root theorem, its leading coefficient one). They are found by
+/// EXACT BISECTION, never by factoring an integer: the derivative splits the
+/// line into runs on which the polynomial is monotone — its critical points
+/// bracketed between integers by an exact integer square root — and each
+/// run is bisected over the integers by the signs of exact evaluations,
+/// about as many steps as the coefficients have bits. Trial division asked
+/// up to `√n` divisions: on epoch 125 every refusal was a quadratic or a
+/// cubic with coefficients of up to 84 bits, some `2⁴²` steps each.
+///
+/// `None` above degree three (the divisors' search stands there); `Some(Err)`
+/// where the stroke is spent, one spend per evaluation (rule 10).
+fn monic_integer_roots(
+    ints: &[num_bigint::BigInt],
+    budget: &mut crate::physics::Budget,
+) -> Option<Result<Vec<num_bigint::BigInt>, ()>> {
+    use num_bigint::BigInt;
+    let m = ints.len().checked_sub(1)?;
+    if !(1..=3).contains(&m) {
+        return None;
+    }
+    let am = &ints[m];
+    // The monic substitute, ascending: g_i = a_i · a_m^{m−1−i}, g_m = 1.
+    let g: Vec<BigInt> = (0..m).map(|i| &ints[i] * num_traits::pow(am.clone(), m - 1 - i)).chain([BigInt::from(1)]).collect();
+    let at = |y: &BigInt| g.iter().rev().fold(BigInt::from(0), |acc, c| acc * y + c);
+    let sign = |v: BigInt| v.sign();
+    // Every real root lies within the Cauchy bound `1 + max |g_i|`.
+    // The largest magnitude among the lower coefficients, folded: a reading,
+    // never a pick by position.
+    let bound: BigInt = g[..m].iter().fold(BigInt::from(0), |most: BigInt, c| most.max(c.abs())) + BigInt::from(1);
+    // THE MONOTONE RUNS, as integer intervals, and the few integers between
+    // a critical point's floor and ceiling read on their own.
+    let (mut runs, mut singles): (Vec<(BigInt, BigInt)>, Vec<BigInt>) = (Vec::new(), Vec::new());
+    match m {
+        1 => runs.push((-bound.clone(), bound.clone())),
+        2 => {
+            // g' = 2y + g₁, its root −g₁/2: floor and ceiling.
+            let num = -&g[1];
+            let (lo, hi) = (num_integer::Integer::div_floor(&num, &BigInt::from(2)), num_integer::Integer::div_ceil(&num, &BigInt::from(2)));
+            runs.push((-bound.clone(), lo.clone()));
+            runs.push((hi.clone(), bound.clone()));
+        }
+        _ => {
+            // g' = 3y² + 2g₂y + g₁; its roots (−2g₂ ± √D)/6, D = 4g₂² − 12g₁.
+            let d = BigInt::from(4) * &g[2] * &g[2] - BigInt::from(12) * &g[1];
+            if d.sign() != num_bigint::Sign::Plus {
+                runs.push((-bound.clone(), bound.clone()));
+            } else {
+                // √D ∈ [s, s + 1): each critical point bracketed by integers.
+                let s = d.sqrt();
+                let six = BigInt::from(6);
+                let floor = |n: BigInt| num_integer::Integer::div_floor(&n, &six);
+                let ceil = |n: BigInt| num_integer::Integer::div_ceil(&n, &six);
+                let base = -BigInt::from(2) * &g[2];
+                let unit = BigInt::from(1);
+                let (k1, k2): (BigInt, BigInt) = (floor(&base - &s - &unit), ceil(&base - &s));
+                let (k3, k4): (BigInt, BigInt) = (floor(&base + &s), ceil(&base + &s + &unit));
+                runs.push((-bound.clone(), k1.clone()));
+                runs.push((k2.clone(), k3.clone()));
+                runs.push((k4.clone(), bound.clone()));
+                // Between a critical point's floor and ceiling: at most one
+                // integer each side (the bracket is a sixth wide).
+                let mut y: BigInt = &k1 + &unit;
+                while y < k2 {
+                    singles.push(y.clone());
+                    y += &unit;
+                }
+                let mut y: BigInt = &k3 + &unit;
+                while y < k4 {
+                    singles.push(y.clone());
+                    y += &unit;
+                }
+            }
+        }
+    }
+    let mut roots: Vec<BigInt> = Vec::new();
+    for y in singles {
+        if !budget.spend() {
+            return Some(Err(()));
+        }
+        if at(&y).sign() == num_bigint::Sign::NoSign && !roots.contains(&y) {
+            roots.push(y);
+        }
+    }
+    for (mut lo, mut hi) in runs {
+        if lo > hi {
+            continue;
+        }
+        if !(budget.spend() && budget.spend()) {
+            return Some(Err(()));
+        }
+        let (slo, shi) = (sign(at(&lo)), sign(at(&hi)));
+        if slo == num_bigint::Sign::NoSign {
+            if !roots.contains(&lo) {
+                roots.push(lo.clone());
+            }
+            continue;
+        }
+        if shi == num_bigint::Sign::NoSign {
+            if !roots.contains(&hi) {
+                roots.push(hi.clone());
+            }
+            continue;
+        }
+        if slo == shi {
+            continue;
+        }
+        // One sign change on a monotone run: one real root between, read to
+        // an integer or to an interval between two consecutive integers.
+        while &hi - &lo > BigInt::from(1) {
+            if !budget.spend() {
+                return Some(Err(()));
+            }
+            let mid: BigInt = (&lo + &hi) >> 1;
+            let smid = sign(at(&mid));
+            if smid == num_bigint::Sign::NoSign {
+                if !roots.contains(&mid) {
+                    roots.push(mid.clone());
+                }
+                break;
+            }
+            match smid == slo {
+                true => lo = mid,
+                false => hi = mid,
+            }
+        }
+    }
+    Some(Ok(roots))
+}
+
 /// THE DISTINCT RATIONAL ROOTS of `p`, zero among them, exact — or the
 /// degree of what remains when none of its roots is rational (MD1b, 78.12(1)).
 ///
@@ -215,26 +350,43 @@ pub(super) fn rational_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Re
     }
     // Denominators cleared: every coefficient times their lcm is integral.
     let lcm = rest.iter().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
-    let ints: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
+    let cleared: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
+    // And their common content divided out — the same roots, the smallest
+    // integers that carry them (a square-free quotient leaves a content the
+    // monic substitute would raise to the power of the degree).
+    let content = cleared.iter().fold(BigInt::from(0), |g, c| num_integer::Integer::gcd(&g, c));
+    let ints: Vec<BigInt> = match content.sign() {
+        num_bigint::Sign::NoSign => cleared,
+        _ => cleared.iter().map(|c| c / &content).collect(),
+    };
     if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
         if ints.len() > 1 {
             let unbounded = Undecomposed::Unbounded(ints.len() - 1);
             // 78.100 — A REFUSAL FOR THE STROKE IS READ: its degree and the
-            // width of the coefficients whose divisors were being walked.
+            // width of the coefficients its search was walking.
             let refuse = || {
                 note_root_refusal(ints.len() - 1, a0.bits().max(am.bits()));
                 unbounded
             };
-            let (tops, bottoms) = (divisors(a0, budget).ok_or_else(refuse)?, divisors(am, budget).ok_or_else(refuse)?);
-            for r in &tops {
-                for s in &bottoms {
-                    for candidate in [Q::new(r.clone(), s.clone()), -Q::new(r.clone(), s.clone())] {
-                        let value = rest.iter().rev().fold(Q::zero(), |acc, c| acc * &candidate + c);
-                        if value.is_zero() && !roots.contains(&candidate) {
-                            rest = quotient(&rest, &[-candidate.clone(), one()]);
-                            roots.push(candidate);
-                        }
-                    }
+            // THE CANDIDATES, exact either way. Up to degree three (every
+            // polynomial epoch 125 met) by the monic substitution and exact
+            // bisection — no integer factored; above it by the divisors of
+            // `a₀` and `a_m`, the rational root theorem's own set.
+            let candidates: Vec<Q> = match monic_integer_roots(&ints, budget) {
+                Some(Ok(ys)) => ys.into_iter().map(|y| Q::new(y, am.clone())).collect(),
+                Some(Err(())) => return Err(refuse()),
+                None => {
+                    let (tops, bottoms) = (divisors(a0, budget).ok_or_else(refuse)?, divisors(am, budget).ok_or_else(refuse)?);
+                    tops.iter()
+                        .flat_map(|r| bottoms.iter().flat_map(move |s| [Q::new(r.clone(), s.clone()), -Q::new(r.clone(), s.clone())]))
+                        .collect()
+                }
+            };
+            for candidate in candidates {
+                let value = rest.iter().rev().fold(Q::zero(), |acc, c| acc * &candidate + c);
+                if value.is_zero() && !roots.contains(&candidate) {
+                    rest = quotient(&rest, &[-candidate.clone(), one()]);
+                    roots.push(candidate);
                 }
             }
         }
