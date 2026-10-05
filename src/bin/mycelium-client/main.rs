@@ -541,9 +541,10 @@ fn main() {
             // composed, sentences closed and open, theorems, and the rungs.
             let st = mycelium::transducer::sentence::rung::sentence_tally();
             let sentences = format!(
-                "sentences rings {} unread {} closed {} open rosette {} unbound {} unread {} | theorems periodic {} nilpotent {} (sources {}) | rank {} | shortcuts recognized {} spelled {} unspelled {} lexicon {:?} top rung {} | free classes grammar {} opens {}",
+                "sentences rings {} unread traversal {} transport {} closed {} open rosette {} unbound {} unread {} | theorems periodic {} nilpotent {} (sources {}) | rank {} | shortcuts recognized {} spelled {} unspelled {} lexicon {:?} top rung {} | free classes grammar {} opens {}",
                 st.rings,
                 st.unread,
+                st.unread_transport,
                 st.closed,
                 st.rosette,
                 st.unbound,

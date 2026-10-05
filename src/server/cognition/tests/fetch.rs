@@ -6,6 +6,7 @@
 use super::common::*;
 use crate::cognition::*;
 use crate::transducer::sentence::{as_element_form, from_element_form, Transport};
+use crate::cognition::Asker;
 
 /// A PEER HOLDING THE WORD IS SERVED ITS REFRACTION, READ AS ONE. This court
 /// installs a sentence and the same sentence refracted by a translation; a
@@ -35,7 +36,8 @@ fn a_word_served_to_a_peer_is_read_against_what_the_peer_holds() {
         k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i }, &mut filing);
     }
     let axis = |n: &str| crate::observe::FETCH.iter().position(|a| *a == n).expect("a named axis");
-    let page = k.serve_ruled(&inv, &[spoken.address()], 1 << 20);
+    let peer = Asker::Court([0x3b; 32]);
+    let page = k.serve_ruled(&inv, &[spoken.address()], 1 << 20, peer);
     assert_eq!(page.len(), 1, "the peer is served what it does not hold");
     let acts = k.acts_reading();
     assert_eq!(acts.fetch[axis("words: refracted (held, Γ)")], 1, "{:?}", acts.lines());
@@ -43,6 +45,42 @@ fn a_word_served_to_a_peer_is_read_against_what_the_peer_holds() {
     let relay = acts.fetch[axis("bytes refracted, as (held, Γ)")];
     assert!(whole > 0 && relay > 0, "both measured: whole {whole}, as (held, Γ) {relay}");
     assert_eq!(acts.fetch[axis("bytes served")], whole, "the one word served was the refracted one");
-    let _ = k.serve_ruled(&inv, &[], 1 << 20);
+    let _ = k.serve_ruled(&inv, &[], 1 << 20, peer);
     assert_eq!(k.acts_reading().fetch[axis("words: unanchored")], 2, "a peer holding nothing anchors nothing");
+}
+
+/// 78.60(d), 78.100 — A VOICE'S FETCH IS PAID BY THE VOICE. A voice with no
+/// balance at this court is served nothing and counted short — this court's
+/// reserve is not drawn; funded, it is served and pays this court the word's
+/// magnitude, and the court's reserve stands where it stood.
+#[test]
+fn a_voice_pays_for_its_fetch_and_a_short_voice_waits() {
+    let a = vec![(0, 0, 1), (0, 1, 1), (1, 0, 1)];
+    let b = vec![(0, 0, 4), (0, 1, 4), (1, 0, 4)];
+    let mut k = Kernel::new();
+    k.bind_identity([0x4a; 32]);
+    assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
+    let w = k.provisional.scoped().next().expect("a provisional sentence").1.clone();
+    let inv = crate::transducer::sentence::chart::chart_of(&w).expect("a chart");
+    let addr = w.address();
+    k.ruled.admit(&inv, addr.clone());
+    k.basis_insert(w.clone(), [1; 32]);
+    let mut filing = k.stroke();
+    k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 }, &mut filing);
+    let axis = |n: &str| crate::observe::FETCH.iter().position(|a| *a == n).expect("a named axis");
+    let voice = [0x4b; 32];
+    let reserve = k.physics.reserve.lanes();
+    assert!(k.serve_ruled(&inv, &[], 1 << 20, Asker::Voice(voice)).is_empty(), "a voice with nothing at this court waits");
+    assert_eq!(k.acts_reading().fetch[axis("deferred: learner short")], 1);
+    assert_eq!(k.physics.reserve.lanes(), reserve, "this court's reserve is not drawn for a voice");
+    let mag = w.magnitude();
+    let cover = k.genesis_cover().expect("measured");
+    k.enroll(voice, cover);
+    k.fund(voice, mag);
+    let before = k.treasury().balance_mu(&voice);
+    assert_eq!(k.serve_ruled(&inv, &[], 1 << 20, Asker::Voice(voice)).len(), 1, "funded, it is served");
+    let after = k.treasury().balance_mu(&voice);
+    assert_eq!(std::array::from_fn::<u64, 4, _>(|l| before[l] - after[l]), mag, "and pays the word's magnitude");
+    assert_eq!(k.acts_reading().fetch[axis("served to voices")], 1);
+    assert_eq!(k.physics.reserve.lanes(), reserve, "the court's reserve stands where it stood");
 }

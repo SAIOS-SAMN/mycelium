@@ -135,9 +135,13 @@ pub const SYLLABUS: [&str; 13] = [
 /// and the bytes served whole against the bytes the refracted ones would
 /// take as (held, Γ) — the anchor's address and the transport's word,
 /// carriage and gauge, each by its own codec.
-pub const FETCH: [&str; 11] = [
-    "words served",
+pub const FETCH: [&str; 13] = [
+    "served to courts",
+    "served to voices",
+    // 78.100 — the fetch paid by who asks: a peer court's from the serving
+    // court's reserve, a voice's from its own account (78.60(d)).
     "deferred: reserve",
+    "deferred: learner short",
     "words: refracted (held, Γ)",
     "words: conjugate, carriage apart",
     "words: unspellable conjugator",

@@ -28,7 +28,7 @@ mod wire;
 
 pub use crate::transducer::sentence::{cited_pattern, replay_at, verify_at, Cite};
 pub use court::fold::Proposal;
-pub use court::syllabus::{PageEnd, ServedPage};
+pub use court::syllabus::{Asker, PageEnd, ServedPage};
 pub use court::task::SolveVerdict;
 pub use kernel::Kernel;
 pub use market::prepare_intake;

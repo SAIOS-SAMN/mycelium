@@ -52,7 +52,13 @@ struct Lexicon {
 
 static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Lexicon::default()));
 
-const SLOTS: usize = 23;
+/// 78.100 D1 — THE WORDS NEWLY TAUGHT, each with the period its sentence
+/// returns at (one where it never returns), waiting for the voice to
+/// transcribe them into its language as it transcribes a closed thought
+/// (`take_taught`). Drained whole, never read in place.
+static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
+
+const SLOTS: usize = 32;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -77,6 +83,47 @@ const HOLES_NAMED: usize = 19;
 const POWERS: usize = 20;
 const HOLES_NEW: usize = 21;
 const WINDINGS_NEW: usize = 22;
+const TAUGHT_SPELLED: usize = 23;
+const TAUGHT_ADJOINED: usize = 24;
+const TAUGHT_INEFFABLE: usize = 25;
+const TAUGHT_UNREAD: usize = 26;
+const UNREAD_TRANSPORT: usize = 27;
+const COORDS_IRRATIONAL: usize = 28;
+const COORDS_DEFECTIVE: usize = 29;
+const COORDS_SPENT: usize = 30;
+const COORDS_GENERATOR: usize = 31;
+
+/// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
+/// one transcriber a closed thought is read by: spelled by the letters
+/// (spoken), derivable only through a letter this mind adjoined (it already
+/// stands), ineffable (the letters spell no rotation of it: a letter
+/// demand), or unread.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Transcribed {
+    Spelled,
+    Adjoined,
+    Ineffable,
+    Unread,
+}
+
+/// One taught word's transcription, counted on the sentences row.
+pub fn note_transcribed(t: Transcribed) {
+    note(
+        match t {
+            Transcribed::Spelled => TAUGHT_SPELLED,
+            Transcribed::Adjoined => TAUGHT_ADJOINED,
+            Transcribed::Ineffable => TAUGHT_INEFFABLE,
+            Transcribed::Unread => TAUGHT_UNREAD,
+        },
+        1,
+    );
+}
+
+/// 78.100 D1 — THE WORDS TAUGHT SINCE THE LAST TAKE, each with its period:
+/// the voice transcribes, stands and speaks them.
+pub fn take_taught() -> Vec<(Mv, u64)> {
+    TAUGHT.lock().map_or(Vec::new(), |mut held| std::mem::take(&mut *held))
+}
 
 fn note(slot: usize, by: u64) {
     if by > 0 && TALLY[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
@@ -88,9 +135,11 @@ fn note(slot: usize, by: u64) {
 /// WHAT THE MIND'S SENTENCES DID, in this process.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct SentenceTally {
-    /// Rings composed, and rings whose terms did not read.
+    /// Rings composed, and rings whose terms did not read — by why (78.100):
+    /// the traversal refused (`unread`), a crossing's transport unread.
     pub rings: u64,
     pub unread: u64,
+    pub unread_transport: u64,
     /// Sentences that closed (`Ω^ℓ ~ 1`), and the open ones by why.
     pub closed: u64,
     pub rosette: u64,
@@ -121,20 +170,32 @@ pub struct SentenceTally {
     /// recognized as a held word's power through their windings; and, of the
     /// new words, the holes no held word stood on and the held holes at a
     /// winding no power reached.
+    /// 78.100 — the words whose modes did not read, by why: no action
+    /// (`coords_unread`), a value irrational over ℚ, a defective split, the
+    /// stroke spent reading the roots, a generator with no canonical ray.
     pub coords_unread: u64,
+    pub coords_irrational: u64,
+    pub coords_defective: u64,
+    pub coords_spent: u64,
+    pub coords_generator: u64,
     pub holes_turned: u64,
     pub holes_counted: u64,
     pub holes_named: u64,
     pub powers: u64,
     pub holes_new: u64,
     pub windings_new: u64,
+    /// 78.100 D1 — the taught words' transcriptions into the language.
+    pub taught_spelled: u64,
+    pub taught_adjoined: u64,
+    pub taught_ineffable: u64,
+    pub taught_unread: u64,
 }
 
 /// 78.96, 78.97, 78.99 — THE TALLY'S NAMES, in [`SentenceTally::row`]'s
 /// order: the typed reading the voice's Senses carry.
-pub const SENTENCES: [&str; 23] = [
+pub const SENTENCES: [&str; 32] = [
     "rings",
-    "unread",
+    "unread: traversal",
     "closed",
     "rosette",
     "unbound",
@@ -149,18 +210,27 @@ pub const SENTENCES: [&str; 23] = [
     "rank",
     "heard through a chord",
     "named (hyperbolic, rosette)",
-    "coordinates unread",
+    "coordinates unread: no action",
     "holes turned",
     "holes counted",
     "holes named",
     "powers recognized",
     "holes new",
     "windings new",
+    "taught: spelled and spoken",
+    "taught: by an adjoined letter",
+    "taught: ineffable",
+    "taught: unread",
+    "unread: transport",
+    "coordinates unread: irrational",
+    "coordinates unread: defective",
+    "coordinates unread: stroke spent",
+    "coordinates unread: generator",
 ];
 
 impl SentenceTally {
     /// In [`SENTENCES`]'s order.
-    pub fn row(&self) -> [u64; 23] {
+    pub fn row(&self) -> [u64; 32] {
         [
             self.rings,
             self.unread,
@@ -185,6 +255,15 @@ impl SentenceTally {
             self.powers,
             self.holes_new,
             self.windings_new,
+            self.taught_spelled,
+            self.taught_adjoined,
+            self.taught_ineffable,
+            self.taught_unread,
+            self.unread_transport,
+            self.coords_irrational,
+            self.coords_defective,
+            self.coords_spent,
+            self.coords_generator,
         ]
     }
 }
@@ -216,6 +295,15 @@ pub fn sentence_tally() -> SentenceTally {
         powers: r(POWERS),
         holes_new: r(HOLES_NEW),
         windings_new: r(WINDINGS_NEW),
+        taught_spelled: r(TAUGHT_SPELLED),
+        taught_adjoined: r(TAUGHT_ADJOINED),
+        taught_ineffable: r(TAUGHT_INEFFABLE),
+        taught_unread: r(TAUGHT_UNREAD),
+        unread_transport: r(UNREAD_TRANSPORT),
+        coords_irrational: r(COORDS_IRRATIONAL),
+        coords_defective: r(COORDS_DEFECTIVE),
+        coords_spent: r(COORDS_SPENT),
+        coords_generator: r(COORDS_GENERATOR),
     }
 }
 
@@ -261,8 +349,14 @@ pub fn speak(
         note(RINGS, 1);
         let s = match read {
             Ok(s) => s,
-            Err(RingUnread::Traversal | RingUnread::Transport) => {
+            // 78.100 — UNREAD BY WHY: the ring's traversal refused, or a
+            // crossing's transport not read.
+            Err(RingUnread::Traversal) => {
                 note(UNREAD, 1);
+                continue;
+            }
+            Err(RingUnread::Transport) => {
+                note(UNREAD_TRANSPORT, 1);
                 continue;
             }
             // 78.97 — a chord's ring is the harmonic eye's, counted apart.
@@ -327,10 +421,24 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     }
     // ITS COORDINATES, read off its own modes under the stroke; unread by
     // name where they do not read, and the word is held without them.
+    // 78.100 — BY WHY: no action to read, a mode's value irrational over ℚ,
+    // a defective split, the stroke spent reading the roots, or a mode's
+    // generator with no canonical ray.
     let coords = match Coordinates::of(word, budget) {
         Ok(c) => Some(c),
-        Err(_) => {
-            note(COORDS_UNREAD, 1);
+        Err(why) => {
+            use super::coordinates::Unread;
+            use crate::transducer::cga::Undecomposed;
+            note(
+                match why {
+                    Unread::NoAction => COORDS_UNREAD,
+                    Unread::Modes(Undecomposed::Irrational(_)) => COORDS_IRRATIONAL,
+                    Unread::Modes(Undecomposed::Defective) => COORDS_DEFECTIVE,
+                    Unread::Modes(Undecomposed::Unbounded(_)) => COORDS_SPENT,
+                    Unread::Generator => COORDS_GENERATOR,
+                },
+                1,
+            );
             None
         }
     };
@@ -365,6 +473,16 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         lex.holes.file(&key, c);
     }
     lex.held.insert(&key, Held { rung, spelled, coords });
+    // 78.100 D1 — AND IT IS HANDED TO THE VOICE, to be transcribed into its
+    // language, stood and spoken: the period it returns at, one where it
+    // never returns (a null or named word carries no return).
+    let period = match s.closure {
+        Closure::Closes(l) => l,
+        Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
+    };
+    if let Ok(mut taught) = TAUGHT.lock() {
+        taught.push((word.clone(), period));
+    }
 }
 
 /// 78.75 — A REFUSAL INVERTED IS A THEOREM: a white-hole source's sliver `1 +

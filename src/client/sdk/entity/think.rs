@@ -76,6 +76,11 @@ impl Entity {
         for word in self.transcribe_closed(budget) {
             let _ = self.speak_word(&word, budget);
         }
+        // 78.100 D1 — and the words its sentences taught enter its language
+        // the same way: transcribed, stood, spoken.
+        for word in self.transcribe_taught(budget) {
+            let _ = self.speak_word(&word, budget);
+        }
         true
     }
 
@@ -92,37 +97,78 @@ impl Entity {
     ///   is adjoined.
     /// - No rotation to read: unread.
     pub(crate) fn transcribe_closed(&mut self, budget: &mut crate::physics::Budget) -> Vec<Element> {
-        use crate::transducer::family::{letter_reading, LetterReading};
+        use crate::transducer::sentence::rung::Transcribed;
         let mut words = Vec::new();
         for ground in self.contemplation.take_closed() {
-            let factored = crate::transducer::element::conformal_factors(&ground.generator)
-                .ok()
-                .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok().map(|r| (f, r)));
-            let Some((f, rotor)) = factored else {
-                self.transcription.unread += 1;
-                continue;
-            };
-            match letter_reading(&self.epigenome, budget, &rotor) {
-                LetterReading::Derivable => {
-                    let spelled = match crate::transducer::alphabet::factor_rotor(&rotor) {
-                        Some(Ok(word)) => ground.period.checked_sub(1).and_then(|beyond| {
-                            crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, beyond])
-                        }),
-                        _ => None,
-                    };
-                    match spelled {
-                        Some(word) => {
-                            self.transcription.spelled += 1;
-                            words.push(word);
-                        }
-                        None => self.transcription.adjoined += 1,
-                    }
+            match self.transcribe(&ground.generator, ground.period, budget) {
+                (Transcribed::Spelled, Some(word)) => {
+                    self.transcription.spelled += 1;
+                    words.push(word);
                 }
-                LetterReading::Unspelled => self.transcription.ineffable += 1,
-                LetterReading::Unread | LetterReading::NoVersor => self.transcription.unread += 1,
+                (Transcribed::Spelled | Transcribed::Adjoined, _) => self.transcription.adjoined += 1,
+                (Transcribed::Ineffable, _) => self.transcription.ineffable += 1,
+                (Transcribed::Unread, _) => self.transcription.unread += 1,
             }
         }
         words
+    }
+
+    /// 78.100 D1 — THE WORDS A THEOREM TAUGHT, ENTERING THE LANGUAGE. Each
+    /// word the mind's sentences taught since the last take is transcribed
+    /// by the one transcriber a closed thought is (`transcribe`): spelled, it
+    /// is the word the voice stands in its dialect and speaks — so it can be
+    /// cited, adjudicated, and taught — exactly as a closed thought's word
+    /// is; derivable only through an adjoined letter, it already stands;
+    /// ineffable, a letter demand (37.7). Counted on the sentences row.
+    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> Vec<Element> {
+        use crate::transducer::sentence::rung::{note_transcribed, take_taught, Transcribed};
+        let mut words = Vec::new();
+        for (motion, period) in take_taught() {
+            match self.transcribe(&motion, period, budget) {
+                (Transcribed::Spelled, Some(word)) => {
+                    note_transcribed(Transcribed::Spelled);
+                    words.push(word);
+                }
+                (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
+                (read, _) => note_transcribed(read),
+            }
+        }
+        words
+    }
+
+    /// 78.52, 78.100 D1 — THE ONE TRANSCRIBER: a motion's generator factored
+    /// into rotation and carriage; the rotation read through this mind's own
+    /// letters (`letter_reading`, adjoined letters included); spelled by the
+    /// seventeen, the word is that spelling's connection at that carriage,
+    /// carrying the return (`ℓ − 1` on the shell).
+    fn transcribe(
+        &mut self,
+        generator: &crate::transducer::cga::Mv,
+        period: u64,
+        budget: &mut crate::physics::Budget,
+    ) -> (crate::transducer::sentence::rung::Transcribed, Option<Element>) {
+        use crate::transducer::family::{letter_reading, LetterReading};
+        use crate::transducer::sentence::rung::Transcribed;
+        let factored = crate::transducer::element::conformal_factors(generator)
+            .ok()
+            .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok().map(|r| (f, r)));
+        let Some((f, rotor)) = factored else { return (Transcribed::Unread, None) };
+        match letter_reading(&self.epigenome, budget, &rotor) {
+            LetterReading::Derivable => {
+                let spelled = match crate::transducer::alphabet::factor_rotor(&rotor) {
+                    Some(Ok(word)) => period.checked_sub(1).and_then(|beyond| {
+                        crate::transducer::element::from_connection(&word, &f.carriage(), &[], &Vec::new(), [0, 0, 0, beyond])
+                    }),
+                    _ => None,
+                };
+                match spelled {
+                    Some(word) => (Transcribed::Spelled, Some(word)),
+                    None => (Transcribed::Adjoined, None),
+                }
+            }
+            LetterReading::Unspelled => (Transcribed::Ineffable, None),
+            LetterReading::Unread | LetterReading::NoVersor => (Transcribed::Unread, None),
+        }
     }
 
     /// Door 3's draw for a thought: its four-lane measure out of the reserve,

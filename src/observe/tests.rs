@@ -825,7 +825,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.reasons = [40, 41, 42, 43, 44, 45, 46, 47, 48];
     senses.derivation = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62];
     senses.flux = [70, 71, 72, 73, 74, 75, 76, 77];
-    senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102];
+    senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111];
     senses.construction = [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120];
     senses.said = Some(crate::transducer::sentence::Reasons {
         words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
@@ -849,7 +849,7 @@ fn the_senses_and_the_acts_travel_whole() {
         restored: [9, 10, 11, 12],
         refused: [13, 0, 1, 0],
         syllabus: [14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26],
-        fetch: [21, 22, 40, 41, 42, 43, 44, 45, 46, 47, 48],
+        fetch: [21, 22, 39, 49, 40, 41, 42, 43, 44, 45, 46, 47, 48],
         judged: [23, 24, 25, 26, 27, 28, 29, 30, 31, 32],
         paid: [33, 34, 35, 36],
         colours: 37,
@@ -882,7 +882,24 @@ fn every_counted_name_is_its_table_s() {
         &SYLLABUS,
         &["pages", "words served", "words missed", "ended: order", "ended: frame", "ended: count", "deferred: reserve"],
     );
-    holds(&FETCH, &["words served", "deferred: reserve"]);
+    holds(
+        &FETCH,
+        &[
+            "served to courts",
+            "served to voices",
+            "deferred: reserve",
+            "deferred: learner short",
+            "words: refracted (held, Γ)",
+            "words: conjugate, carriage apart",
+            "words: unspellable conjugator",
+            "words: rotor per vertex δγ",
+            "words: chart only",
+            "words: unanchored",
+            "bytes served",
+            "bytes refracted, whole",
+            "bytes refracted, as (held, Γ)",
+        ],
+    );
     holds(
         &JUDGED,
         &[

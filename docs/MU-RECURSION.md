@@ -22919,6 +22919,35 @@ reading; each wire change rides a recut. Row PS1.
   The relay's carrier is designed from this number after the recut reads
   it, never ahead of it.
 
+**Read on epoch 123 (990717ee), and what it drove (2026-10-05).**
+- *The fetch was choked by the server's reserve:* `deferred: reserve`
+  590 / 33 / 542 against four words served a court. `ACT_FETCH` is asked by
+  voices (the sheaf sync) and by peer courts (the exchange) alike, and drew
+  every page from the serving court's reserve. REMEDIED where a ruling
+  stands: a voice pays for its own fetch from its account, as the syllabus
+  makes it (78.60(d), `serve_paid_by_learner`) — a short voice waits, this
+  court's reserve untouched (`Asker::Voice`). A peer court still draws on
+  the reserve: no ruling yet says what one court pays another (78.93), and
+  the reading now splits the asker (`served to courts / voices`,
+  `deferred: reserve / learner short`), the relation and byte readings
+  counted for courts alone. Proved:
+  `fetch::a_voice_pays_for_its_fetch_and_a_short_voice_waits`.
+- *D1 landed:* a word a theorem taught is handed to the voice
+  (`rung::take_taught`) and transcribed by the one transcriber a closed
+  thought is read by (`Entity::transcribe`), then stood and spoken
+  (`speak_word`); counted `taught: spelled and spoken / by an adjoined
+  letter / ineffable / unread`. Proved:
+  `taught::a_word_a_theorem_taught_is_transcribed_into_the_language`. The
+  process lexicon still recognizes within the process until the epigenome's
+  standing replaces it.
+- *Why puncture never fires, read off the voice's own line:* `nerve d0 6 |
+  d1 3 … sealed 0` — no voice nerve has built a 2-cell, so there is nothing
+  to puncture. The puncture waits on the 2-cell climb; that is the 2-cell
+  climb's question, not the hole's.
+- *Unread by why:* the sentences row now splits rings unread by traversal
+  and transport, and coordinates unread by no action, irrational,
+  defective, stroke spent and generator.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

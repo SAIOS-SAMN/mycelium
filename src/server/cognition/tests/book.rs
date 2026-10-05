@@ -321,18 +321,18 @@ k.ruled.admit(&inv, addr.clone());
 assert!(k.word_at(&addr).is_some(), "replay still resolves it");
 assert!(k.installed_word(&addr).is_none(), "but nothing installed it");
 
-let served = k.serve_ruled(&inv, &[], 1 << 20);
+let served = k.serve_ruled(&inv, &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
 assert!(served.is_empty(), "a provisional word is not language and is not taught");
 
 // Installed, the same address teaches — at the stamp of the act that
 // admitted it (78.24 (2b)), the locator the page carries beside it.
 k.basis_insert(w, [1; 32]);
 assert!(k.installed_word(&addr).is_some());
-assert!(k.serve_ruled(&inv, &[], 1 << 20).is_empty(), "a word no act admitted has no locator and is not taught");
+assert!(k.serve_ruled(&inv, &[], 1 << 20, crate::cognition::Asker::Court([0; 32])).is_empty(), "a word no act admitted has no locator and is not taught");
 let mut filing = k.stroke();
 k.file_admitted(&addr, crate::chronometry::Stamp { h: 1, vk: [1; 32], k: 1, i: 0 }, &mut filing);
 assert_eq!(
-    k.serve_ruled(&inv, &[], 1 << 20).len(),
+    k.serve_ruled(&inv, &[], 1 << 20, crate::cognition::Asker::Court([0; 32])).len(),
     1,
     "what the court installed is what it teaches"
 );

@@ -327,7 +327,7 @@ fn a_mind_taught_by_the_page_derives_through_the_letter_and_a_court_composes_it(
     assert!(letter_held, "the letter the court opened is held as a generator");
 
     // 2. THE PAGE CARRIES IT and a mind learns it from the bytes.
-    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
+    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
     let mut epi = Epigenome::new();
     for t in &page {
         let _ = epi.learn(&t.word, &mut super::common::budget());
@@ -447,7 +447,7 @@ fn the_syllabus_teaches_a_letter_and_the_mind_then_holds_it_as_a_generator() {
 
     // THE PAGE. Served from the root as an empty mind is seeded, and
     // learned from its bytes.
-    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20);
+    let page = k.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32]));
     assert!(!page.is_empty(), "the syllabus serves what the court ruled");
     let mut epi = Epigenome::new();
     for t in &page {
@@ -571,7 +571,7 @@ fn a_mind_constructs_what_it_could_not_spell_and_after_adjunction_reads_it_deriv
     assert!(basis_holds(&home, &addr), "the second vantage re-derived it and the court adjoined it");
 
     // 5. TAUGHT BACK — and the same class, through the same reader, flips.
-    for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20) {
+    for t in &home.serve_ruled(&crate::transducer::stalk::Invariant(Vec::new()), &[], 1 << 20, crate::cognition::Asker::Court([0; 32])) {
         let _ = mind.learn(&t.word, &mut super::common::budget());
     }
     assert_eq!(

@@ -220,9 +220,17 @@ fn a_mind_speaks_its_closed_thought_into_its_own_dialect() {
         "the closed thought was spelled"
     );
     // What the court hears is the word: its letters re-derive its motion,
-    // and its blind replay — speech, never a thought — is clean.
-    let words: Vec<_> = entity.epigenome.dialect.scoped().map(|(_, d)| d.sentence.element().clone()).filter(|w| w.is_connection()).collect();
-    let [word] = words.as_slice() else { panic!("one word in the dialect: {}", words.len()) };
+    // and its blind replay — speech, never a thought — is clean. The thought's
+    // word is the one carrying its return (`ℓ − 1 = 3` on the shell); the
+    // words its sentences taught stand beside it in the dialect (78.100 D1).
+    let words: Vec<_> = entity
+        .epigenome
+        .dialect
+        .scoped()
+        .map(|(_, d)| d.sentence.element().clone())
+        .filter(|w| w.is_connection() && w.magnitude() == [0, 0, 0, 3])
+        .collect();
+    let [word] = words.as_slice() else { panic!("one word carrying the thought's return: {}", words.len()) };
     let mut budget = entity.stroke_n(1 << 16);
     assert_eq!(crate::court::verdict::blind_replay(word, &mut budget), None, "the court's replay of the word is clean");
 }

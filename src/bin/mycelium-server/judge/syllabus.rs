@@ -51,6 +51,12 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mut words: Vec<dialogue::Taught> = Vec::new();
     let mut classes: Vec<dialogue::ClassPage> = Vec::new();
     let mut overran = false;
+    // 78.100 — WHO ASKS: a key this court's mesh holds an address for is a
+    // peer court (its exchange); any other is a voice, a learner who pays.
+    let asker = match door.mesh.addrs.lock().is_ok_and(|a| a.get(&fvoice).is_some()) {
+        true => mycelium::cognition::Asker::Court(fvoice),
+        false => mycelium::cognition::Asker::Voice(fvoice),
+    };
     if let Ok(mut k) = kernel.lock() {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
         // which words the voice already holds so the page carries only what
@@ -63,7 +69,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         // door. A second vantage is a hypha's replay (`judge::offer`) or a
         // hypha's served page (`exchange`); a mouth is not one.
         for dialogue::ChartOf { inv, have } in &charts {
-            let page = k.serve_ruled(inv, have, budget);
+            let page = k.serve_ruled(inv, have, budget, asker);
             // `serve_ruled` fills to the budget and no further, so what is
             // left is exact. A page WIDER than the budget is a broken page,
             // and the frame it would go in cannot carry it: the fetch is

@@ -11,6 +11,15 @@ pub(crate) fn taught_key(addr: &[u8], voice: &[u8; 32]) -> Vec<u8> {
     key
 }
 
+/// 78.100 — WHO ASKS A FETCH: a voice, a learner who pays for what it is
+/// taught (78.60(d)), or a peer court, whose exchange draws on the serving
+/// court's reserve until a ruling says what courts pay one another.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Asker {
+    Voice([u8; 32]),
+    Court([u8; 32]),
+}
+
 /// WHERE A SERVED PAGE ENDED, by name (the actions' metabolism).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub enum PageEnd {
@@ -295,6 +304,7 @@ impl Kernel {
         inv: &crate::transducer::stalk::Invariant,
         have: &[crate::transducer::address::Address],
         budget: usize,
+        asker: Asker,
     ) -> Vec<crate::anastome::dialogue::Taught> {
         let mut out = Vec::new();
         let mut used = 0usize;
@@ -335,24 +345,55 @@ impl Kernel {
             if used + width > budget || out.len() == usize::from(u8::MAX) {
                 break;
             }
-            // WHAT THE FETCH HANDS OUT IS PAID (the actions' metabolism): the
-            // word's magnitude drawn from this court's reserve per lane; a
-            // word no lane can fund yet is deferred and the page goes on, as
-            // the syllabus does — one costly word first in the stratum
-            // starved every word behind it.
-            // 78.71: asked, not attempted — the deferral is counted on the
-            // fetch reading, once per word per page, and the reserve's own
-            // refusals stay the draws that were made.
-            if !self.physics.reserve.covers(&mag) || self.physics.reserve.draw(mag).is_err() {
-                crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: reserve");
-                continue;
+            // WHAT THE FETCH HANDS OUT IS PAID (the actions' metabolism), and
+            // BY WHOM depends on who asks. A word no one can fund yet is
+            // deferred and the page goes on, as the syllabus does — one
+            // costly word first in the stratum starved every word behind it.
+            // 78.71: asked, not attempted — each deferral is counted on the
+            // fetch reading, once per word per page, by who could not pay.
+            match asker {
+                // 78.60(d), 78.100 — THE LEARNER PAYS: a voice is taught at its
+                // own expense, from its account at this court, exactly as the
+                // syllabus teaches it (`serve_paid_by_learner`); a short voice
+                // waits, nothing drawn from this court's reserve. On epoch 123
+                // the fetch drew every page from the serving court's reserve
+                // and deferred 542–590 words a court against four served.
+                Asker::Voice(voice) => {
+                    let short = crate::economy::shortfall(&mag, &self.treasury.balance_mu(&voice));
+                    if !crate::economy::lanes_short(&short).is_empty() {
+                        crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: learner short");
+                        continue;
+                    }
+                    if mag.iter().any(|&c| c > 0) {
+                        let anchor = self.anchor();
+                        if let Err(why) = self.treasury.pay(voice, self.identity, mag, anchor) {
+                            eprintln!("  fetch: a learner's payment refused after its balance was read: {why:?}");
+                        }
+                    }
+                }
+                // A PEER COURT'S EXCHANGE draws on this court's reserve per
+                // lane, as it did: no ruling yet says what one court pays
+                // another (78.93, the bank), and the reading below says how
+                // much of the throttle is this.
+                Asker::Court(_) => {
+                    if !self.physics.reserve.covers(&mag) || self.physics.reserve.draw(mag).is_err() {
+                        crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "deferred: reserve");
+                        continue;
+                    }
+                }
             }
             used += width;
-            crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "words served");
-            // 78.100 PS1 (2) — THE READING BEFORE THE RELAY: what the word
-            // stands to among the words the asking court said it holds, and
-            // what it would cost as (held, Γ) where it is refracted.
-            self.read_fetched(&addr, &held, bytes.len());
+            match asker {
+                Asker::Voice(_) => crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "served to voices"),
+                Asker::Court(_) => {
+                    crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "served to courts");
+                    // 78.100 PS1 (2) — THE READING BEFORE THE RELAY: what the
+                    // word stands to among the words the asking court said it
+                    // holds, and what it would cost as (held, Γ) where it is
+                    // refracted.
+                    self.read_fetched(&addr, &held, bytes.len());
+                }
+            }
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
         }
         out
