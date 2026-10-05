@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 36;
+const SLOTS: usize = 39;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -96,6 +96,9 @@ const UNREAD_NOT_RIGID: usize = 32;
 const UNREAD_NO_BASE_ACTION: usize = 33;
 const UNREAD_NOT_A_VERSOR: usize = 34;
 const UNREAD_UNREFRACTED: usize = 35;
+const CONTACT_STATIC: usize = 36;
+const CONTACT_COSET: usize = 37;
+const UNREAD_COSET_UNBOUNDED: usize = 38;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -238,7 +241,7 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 7] = [
+pub const WHY_UNREAD: [&str; 10] = [
     "transport: not rigid",
     "transport: unrefracted",
     "transport: no base action",
@@ -246,13 +249,48 @@ pub const WHY_UNREAD: [&str; 7] = [
     "roots refused",
     "roots refused: highest degree",
     "roots refused: widest coefficient (bits)",
+    // 78.6, 78.102 — the contacts the master equation now reads by their
+    // refraction, and a held coset whose routes the stroke ran out forming.
+    "contacts read: static tether",
+    "contacts read: held coset",
+    "transport: coset unbounded",
 ];
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 7] {
+pub fn unread_tally() -> [u64; 10] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
-    [r(UNREAD_NOT_RIGID), r(UNREAD_UNREFRACTED), r(UNREAD_NO_BASE_ACTION), r(UNREAD_NOT_A_VERSOR), refused, degree, bits]
+    [
+        r(UNREAD_NOT_RIGID),
+        r(UNREAD_UNREFRACTED),
+        r(UNREAD_NO_BASE_ACTION),
+        r(UNREAD_NOT_A_VERSOR),
+        refused,
+        degree,
+        bits,
+        r(CONTACT_STATIC),
+        r(CONTACT_COSET),
+        r(UNREAD_COSET_UNBOUNDED),
+    ]
+}
+
+/// 78.6, 78.102 — HOW A CONTACT WITH NO ONE TRANSPORT WAS READ by the master
+/// equation: its static tether, or its held coset's candidates.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ContactRead {
+    Static,
+    Coset,
+}
+
+/// One contact read by its refraction, counted on the unread row.
+pub(crate) fn note_contact(read: ContactRead) {
+    note(
+        match read {
+            ContactRead::Static => CONTACT_STATIC,
+            ContactRead::Coset => CONTACT_COSET,
+        },
+        1,
+    );
 }
 
 impl SentenceTally {
@@ -391,6 +429,9 @@ pub fn speak(
                         TermUnread::Unrefracted => UNREAD_UNREFRACTED,
                         TermUnread::NoBaseAction => UNREAD_NO_BASE_ACTION,
                         TermUnread::NotAVersor => UNREAD_NOT_A_VERSOR,
+                        // `sentences_of` composes every route of a held coset;
+                        // where it asks one sequence it is the stroke's limit.
+                        TermUnread::HeldCoset | TermUnread::CosetUnbounded => UNREAD_COSET_UNBOUNDED,
                     },
                     1,
                 );

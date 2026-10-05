@@ -132,6 +132,13 @@ pub(crate) struct CarriedTransition {
     /// and the rest in its carriage (`edge_of`, `face_place`). The master
     /// equation's term reads each by what it holds (`compose::terms_of`).
     pub(crate) whole: bool,
+    /// 78.6, 78.102 — A CONTACT WITH NO ONE TRANSPORT CARRIES ITS
+    /// REFRACTION: a static contact's tether, or a held coset's candidates,
+    /// as the face's place holds them; `None` on every other crossing. The
+    /// master equation reads it (`compose::terms_of`); before this, a
+    /// crossing so carried reached it with no transport and its ring was
+    /// lost.
+    pub(crate) refraction: Option<crate::transducer::sentence::Refraction>,
 }
 
 /// WHY A TRANSPORT WAS NOT READ (H2c, rule 11). One `unread` counter could
@@ -381,22 +388,23 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         if let (Some(t), true) = (carried.as_ref(), note) {
             note_transition_charge(transition_charged(&t.carriage));
         }
-        acc.transitions.push(CarriedTransition {
-            face: s.overlap.clone(),
-            forward,
-            transport: carried.clone(),
-            whole: !touches_frame(&s.overlap) && f.interface.is_some(),
-        });
-        // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
-        // face with a place and no edge is not rigid, and a transport whose
-        // inverse does not exist is on the light cone. The first refusal is
-        // the one that stands.
         // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
         // coset or the static tether its place carries, where no edge formed.
         let refraction = match (&carried, place.as_ref()) {
             (None, Some(p)) if f.interface.is_some() => p.refraction.clone(),
             _ => None,
         };
+        acc.transitions.push(CarriedTransition {
+            face: s.overlap.clone(),
+            forward,
+            transport: carried.clone(),
+            whole: !touches_frame(&s.overlap) && f.interface.is_some(),
+            refraction: refraction.clone(),
+        });
+        // WHY THE EDGE HALF GOES, at the face that loses it (H2c): a real
+        // face with a place and no edge is not rigid, and a transport whose
+        // inverse does not exist is on the light cone. The first refusal is
+        // the one that stands.
         let lost = match (&carried, place.is_some(), f.interface.is_none(), &refraction) {
             (None, true, true, _) => Some(Unread::NotRigid),
             (None, true, false, None) => Some(Unread::Unrefracted),

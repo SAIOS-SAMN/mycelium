@@ -23091,7 +23091,26 @@ re-derived only the forms it ruled. Proved:
 `heard::every_sentence_heard_has_its_rings_read_whatever_its_adjudication`.
 The voice half — speaking the forms whose rings taught its ineffable words —
 is read on the fleet first: which of those words come from forms the
-voice already speaks. *(A correction to the paragraph above: a taught
+voice already speaks.
+
+**Read on epoch 126 (1250b67c, 56 min), and the edge fix.**
+- *The exact root reader holds:* `coordinates unread: stroke spent` 0 on
+  every voice (13–47 before), `open unread` 0 (26–123 before).
+- *The transport loss, split:* `unrefracted` 26–86 a voice against `not
+  rigid` 12–26. But the circuit already carried most of those contacts'
+  78.6 refractions — a STATIC tether, a held COSET — in its edge half
+  (`Refracted`), while the crossing it handed the master equation held no
+  transport, so the ring died. FIXED as 78.6 ruled: a crossing carries its
+  contact's refraction (`CarriedTransition::refraction`); the master
+  equation reads a static contact by its tether `V` (the gauge half unread
+  by name) and a held coset by EVERY candidate — each route composed and
+  kept, formed under the stroke, never a representative
+  (`compose::{term_choices, routes}`); only a contact with no refraction at
+  all reads `unrefracted`. Readings: `contacts read: static tether / held
+  coset`, `transport: coset unbounded`. Proved:
+  `compose::a_contact_is_read_by_its_static_tether_or_its_held_coset`.
+  `not rigid` — a pair no rigid versor carries — is next, by its conformal
+  tether (72.1, 78.63), after this fix is read. *(A correction to the paragraph above: a taught
 word that never returns carries no return on its shell — `0`, the reading
 of "no return", not a constant standing in; its count `m` belongs to its
 citation, D3.)*

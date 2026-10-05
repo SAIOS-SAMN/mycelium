@@ -140,39 +140,96 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
 /// word has no base action, or what it gives is no versor — the first
 /// crossing that does not read names the ring's reason.
 pub(crate) fn terms_of(carried: &super::circuit::PathCarried) -> Result<Vec<Term>, TermUnread> {
+    term_choices(carried)?
+        .into_iter()
+        .map(|mut choice| match (choice.pop(), choice.is_empty()) {
+            (Some(term), true) => Ok(term),
+            // Several candidates and none chosen (checklist (r)): read by the
+            // composer that keeps every route ([`sentences_of`]).
+            _ => Err(TermUnread::HeldCoset),
+        })
+        .collect()
+}
+
+/// 78.6, 78.102 — EACH CROSSING'S TERMS: one for a crossing with its
+/// transport, one for a STATIC contact (its tether `V`, the whole motion at
+/// one frame, the refraction's gauge half unread by name — 78.6(2)), and one
+/// per candidate for a HELD COSET (`θ·H`, never a representative — 78.6(1)).
+/// A contact with no refraction at all is `Unrefracted`; a pair no rigid
+/// versor carries is `NotRigid`.
+fn term_choices(carried: &super::circuit::PathCarried) -> Result<Vec<Vec<Term>>, TermUnread> {
+    let one = || Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+    // A contact's whole motion as a term, the way the circuit crosses it.
+    let whole = |carriage: &Mv, forward: bool| match forward {
+        true => Term { word: one(), transport: carriage.clone() },
+        false => Term { word: one(), transport: carriage.reverse() },
+    };
     carried
         .transitions
         .iter()
         .map(|t| {
-            // No transport read: a contact face (its whole refraction refused)
-            // or a pair no rigid versor carries — the traversal's only two
-            // ways to leave a crossing unread (`pivot::circuit::traverse`).
-            let tr = t.transport.as_ref().ok_or(match t.whole {
-                true => TermUnread::Unrefracted,
-                false => TermUnread::NotRigid,
-            })?;
+            let Some(tr) = t.transport.as_ref() else {
+                use super::Refraction;
+                return match (&t.refraction, t.whole) {
+                    (Some(Refraction::Static { tether, .. }), _) => {
+                        super::rung::note_contact(super::rung::ContactRead::Static);
+                        Ok(vec![whole(tether, t.forward)])
+                    }
+                    (Some(Refraction::Coset(candidates)), _) => {
+                        super::rung::note_contact(super::rung::ContactRead::Coset);
+                        Ok(candidates.iter().map(|c| whole(&c.carriage, t.forward)).collect())
+                    }
+                    (None, true) => Err(TermUnread::Unrefracted),
+                    (None, false) => Err(TermUnread::NotRigid),
+                };
+            };
             // A contact's carriage is its whole refraction `θ·V` (BQ5a): the
             // crossing is that motion entire, its word a spelling beside it.
             if t.whole {
-                let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
-                return Ok(match t.forward {
-                    true => Term { word: one, transport: tr.carriage.clone() },
-                    false => Term { word: one, transport: tr.carriage.reverse() },
-                });
+                return Ok(vec![whole(&tr.carriage, t.forward)]);
             }
             let a = crate::transducer::element::versor_of_word(&tr.word).ok_or(TermUnread::NoBaseAction)?;
             if !cga::is_versor(&a) {
                 return Err(TermUnread::NotAVersor);
             }
-            Ok(match t.forward {
+            Ok(vec![match t.forward {
                 true => Term { word: a, transport: tr.carriage.clone() },
                 false => {
                     let back = a.reverse();
                     Term { transport: back.geo(&tr.carriage.reverse()).geo(&a), word: back }
                 }
-            })
+            }])
         })
         .collect()
+}
+
+/// 78.6(1), 78.44 — EVERY ROUTE A HELD COSET OPENS, formed one at a time
+/// under the stroke: each assignment of the crossings' candidates is one
+/// sequence of terms, a read of the stroke per sequence beyond the first
+/// (rule 10); `None` where the stroke is spent before the last.
+fn routes(choices: &[Vec<Term>], budget: &mut crate::physics::Budget) -> Option<Vec<Vec<Term>>> {
+    let mut out: Vec<Vec<Term>> = vec![Vec::with_capacity(choices.len())];
+    for choice in choices {
+        if let [only] = choice.as_slice() {
+            for route in &mut out {
+                route.push(only.clone());
+            }
+            continue;
+        }
+        let mut next = Vec::with_capacity(out.len() * choice.len());
+        for route in &out {
+            for term in choice {
+                if !next.is_empty() && !budget.spend() {
+                    return None;
+                }
+                let mut r = route.clone();
+                r.push(term.clone());
+                next.push(r);
+            }
+        }
+        out = next;
+    }
+    Some(out)
 }
 
 /// THE SENTENCE'S HOLONOMY ALONE, `Ω = ∏ transport · word` in the terms'
@@ -203,10 +260,16 @@ pub enum TermUnread {
     /// `NotRigid`): no edge was measured. 78.63 reads a rigidity as a symptom
     /// — only a pair no CONFORMAL motion carries is a tear.
     NotRigid,
-    /// A contact face whose refraction `(θ_bθ_a⁻¹)·V` was refused (BQ5a).
+    /// A contact face whose refraction `(θ_bθ_a⁻¹)·V` was refused (BQ5a): no
+    /// one transport, no static tether, no held coset.
     Unrefracted,
     NoBaseAction,
     NotAVersor,
+    /// 78.6(1) — a held coset's routes, where one sequence of terms was asked
+    /// (`terms_of`); [`sentences_of`] composes every one.
+    HeldCoset,
+    /// A held coset's routes, the stroke spent before every one was formed.
+    CosetUnbounded,
 }
 
 /// 78.97 — A CHORD IS HEARD, NOT TRAVERSED (the operator, 2026-10-04:
@@ -234,29 +297,42 @@ pub fn sentences_of(
     rings: &[super::Orbit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>)> {
-    rings
-        .iter()
-        .map(|lp| {
-            let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
-            // 78.97 — a ring through a chord is heard, never composed.
-            if steps.iter().any(is_chord) {
-                return (steps, Err(RingUnread::Heard));
+    let mut out = Vec::with_capacity(rings.len());
+    for lp in rings {
+        let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
+        // 78.97 — a ring through a chord is heard, never composed.
+        if steps.iter().any(is_chord) {
+            out.push((steps, Err(RingUnread::Heard)));
+            continue;
+        }
+        let Some(paths) = super::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) else {
+            out.push((steps, Err(RingUnread::Traversal)));
+            continue;
+        };
+        let Some((_, p)) = paths.scoped().next() else {
+            out.push((steps, Err(RingUnread::Traversal)));
+            continue;
+        };
+        let choices = match term_choices(p) {
+            Ok(c) => c,
+            Err(why) => {
+                out.push((steps, Err(RingUnread::Transport(why))));
+                continue;
             }
-            let read = match super::circuit::paths_carried_quiet(&form.faces, &form.vertices, lp) {
-                None => Err(RingUnread::Traversal),
-                Some(paths) => match paths.scoped().next() {
-                    None => Err(RingUnread::Traversal),
-                    Some((_, p)) => match terms_of(p) {
-                        Err(why) => Err(RingUnread::Transport(why)),
-                        // A path of no crossings composes nothing: its traversal
-                        // gave no term.
-                        Ok(terms) => compose(&terms, budget).ok_or(RingUnread::Traversal),
-                    },
-                },
-            };
-            (steps, read)
-        })
-        .collect()
+        };
+        // 78.6(1), 78.44 — A HELD COSET'S RING IS EVERY ROUTE IT OPENS, each
+        // composed and kept, never a representative chosen.
+        let Some(routes) = routes(&choices, budget) else {
+            out.push((steps, Err(RingUnread::Transport(TermUnread::CosetUnbounded))));
+            continue;
+        };
+        for terms in routes {
+            // A path of no crossings composes nothing: its traversal gave no
+            // term.
+            out.push((steps.clone(), compose(&terms, budget).ok_or(RingUnread::Traversal)));
+        }
+    }
+    out
 }
 
 /// 78.69, 78.97, 78.68 — THE WORD A SENTENCE TEACHES, the one rule (78.100

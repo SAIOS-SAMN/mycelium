@@ -105,6 +105,7 @@ fn crossing(forward: bool) -> crate::transducer::sentence::circuit::CarriedTrans
         forward,
         transport: Some(crate::transducer::sentence::Transport { word, carriage, gauge: Vec::new() }),
         whole: false,
+        refraction: None,
     }
 }
 
@@ -164,4 +165,36 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
     contact.whole = true;
     let whole = terms_of(&path_of(vec![contact])).expect("read");
     assert!(omega_of(&whole).projective_eq(&tr.carriage), "a contact crossing is its whole carriage");
+}
+
+/// 78.6, 78.102 — A CONTACT WITH NO ONE TRANSPORT IS READ BY ITS REFRACTION.
+/// A STATIC contact is its tether `V`, the whole motion at one frame, crossed
+/// either way. A HELD COSET is never one term — no representative is chosen
+/// — so a single sequence of terms is refused (`HeldCoset`) and the composer
+/// keeps every route.
+#[test]
+fn a_contact_is_read_by_its_static_tether_or_its_held_coset() {
+    use crate::transducer::sentence::compose::{omega_of, terms_of, TermUnread};
+    use crate::transducer::sentence::{HeldPose, Refraction, Transport};
+    let tether = cga::translator_at(&[q(1), q(1), q(0)]);
+    let mut static_contact = crossing(true);
+    static_contact.transport = None;
+    static_contact.whole = true;
+    static_contact.refraction = Some(Refraction::Static { tether: tether.clone(), poses: [HeldPose::OneFrame, HeldPose::OneFrame] });
+    let terms = terms_of(&path_of(vec![static_contact.clone()])).expect("a static contact is read");
+    assert!(omega_of(&terms).projective_eq(&tether), "its term is its tether");
+    let mut back = static_contact;
+    back.forward = false;
+    let there_and_back = terms_of(&path_of(vec![crossing(true), back])).expect("read either way");
+    assert!(!omega_of(&there_and_back).is_zero(), "crossed backward by the tether's reverse");
+    let candidate = |d: i64| Transport {
+        word: crate::transducer::alphabet::Word::identity(),
+        carriage: cga::translator_at(&[q(d), q(0), q(0)]),
+        gauge: Vec::new(),
+    };
+    let mut coset = crossing(true);
+    coset.transport = None;
+    coset.whole = true;
+    coset.refraction = Some(Refraction::Coset(vec![candidate(1), candidate(-1)]));
+    assert_eq!(terms_of(&path_of(vec![coset])).err(), Some(TermUnread::HeldCoset), "a held coset is never one term");
 }
