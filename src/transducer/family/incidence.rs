@@ -201,8 +201,8 @@ pub(crate) fn edge_between(
         bodies_at.get(&bk)
     };
     let union_edge = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
-        (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) => {
-            tally.take(Some(edge_transport(v_i, a_i, a_j, b_i, b_j, budget)))
+        (Some((a_i, b_i, v_i)), Some((a_j, b_j, v_j))) => {
+            tally.take_carried(edge_transport((v_i, v_j), a_i, a_j, b_i, b_j, budget))
         }
         _ => None,
     };
@@ -217,20 +217,20 @@ pub(crate) fn edge_between(
     // skip, repeat or reorder in ℤ, and the integers between it are not
     // coordinates of anything.
     for k in occupied_frames(bodies_at, i, cik) {
-        let (Some((a_i, b_i, v_i)), Some((a_j, b_j, _))) = (at(i, cik, k), at(j, cjk, k)) else {
+        let (Some((a_i, b_i, v_i)), Some((a_j, b_j, v_j))) = (at(i, cik, k), at(j, cjk, k)) else {
             continue;
         };
         common += 1;
-        let measured = edge_transport(v_i, a_i, a_j, b_i, b_j, budget);
+        let measured = edge_transport((v_i, v_j), a_i, a_j, b_i, b_j, budget);
         match &edge {
             None => {
-                edge = tally.take(Some(measured));
+                edge = tally.take_carried(measured);
                 if edge.is_some() {
                     agreeing.push(k);
                 }
             }
             Some(e) => {
-                if measured.as_ref().is_ok_and(|t| same_transport(t, e)) {
+                if measured.as_ref().is_ok_and(|(t, _)| same_transport(t, e)) {
                     agreeing.push(k);
                 }
             }

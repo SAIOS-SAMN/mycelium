@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 39;
+const SLOTS: usize = 48;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -99,6 +99,12 @@ const UNREAD_UNREFRACTED: usize = 35;
 const CONTACT_STATIC: usize = 36;
 const CONTACT_COSET: usize = 37;
 const UNREAD_COSET_UNBOUNDED: usize = 38;
+const EDGES_RELATIVE: usize = 39;
+// 78.103 — the bends by kind: contact `CONTACT_BENDS + k`, relative edge
+// `RELATIVE_BENDS + k`, `k` in `BEND_KINDS`' order.
+const CONTACT_BENDS: usize = 40;
+const RELATIVE_BENDS: usize = 44;
+const BEND_KINDS: usize = 4;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -241,7 +247,7 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 10] = [
+pub const WHY_UNREAD: [&str; 19] = [
     "transport: not rigid",
     "transport: unrefracted",
     "transport: no base action",
@@ -254,10 +260,62 @@ pub const WHY_UNREAD: [&str; 10] = [
     "contacts read: static tether",
     "contacts read: held coset",
     "transport: coset unbounded",
+    // 78.103 — the edges of two bodies that moved differentially, and every
+    // bend by WHAT IT GENERATES: the planes its modes span by kind (a turn,
+    // a null slide, a boost), never a count of axes.
+    "edges: relative motion",
+    "contact bends: turn planes",
+    "contact bends: null planes",
+    "contact bends: boost planes",
+    "contact bends: unread",
+    "relative bends: turn planes",
+    "relative bends: null planes",
+    "relative bends: boost planes",
+    "relative bends: unread",
 ];
 
+/// 78.103 — WHERE A BEND WAS READ: a contact's refraction (its tether, or one
+/// candidate of its held coset), or the relative motion of two bodies that
+/// moved differentially.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Bend {
+    Contact,
+    Relative,
+}
+
+/// 78.103 — ONE BEND READ BY WHAT IT GENERATES: its modes (MR1) under the
+/// stroke, each counted by the planes it spans under its kind — a turn
+/// (elliptic), a null slide (parabolic), a boost (hyperbolic); the identity
+/// spans none. A bend whose modes do not read is counted unread, by name.
+pub(crate) fn note_bends(at: Bend, motion: &Mv, budget: &mut crate::physics::Budget) {
+    use crate::network::nerve::coord::BivectorKind;
+    let base = match at {
+        Bend::Contact => CONTACT_BENDS,
+        Bend::Relative => {
+            note(EDGES_RELATIVE, 1);
+            RELATIVE_BENDS
+        }
+    };
+    let Some(Ok(modes)) = crate::transducer::cga::motion_modes(motion, budget) else {
+        note(base + BEND_KINDS - 1, 1);
+        return;
+    };
+    for m in modes {
+        let k = match m.kind {
+            BivectorKind::Elliptic => 0,
+            BivectorKind::Parabolic => 1,
+            BivectorKind::Hyperbolic => 2,
+            BivectorKind::Trivial => continue,
+        };
+        match u64::try_from(m.planes) {
+            Ok(planes) => note(base + k, planes),
+            Err(_) => note(base + BEND_KINDS - 1, 1),
+        }
+    }
+}
+
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 10] {
+pub fn unread_tally() -> [u64; 19] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
     [
@@ -271,6 +329,15 @@ pub fn unread_tally() -> [u64; 10] {
         r(CONTACT_STATIC),
         r(CONTACT_COSET),
         r(UNREAD_COSET_UNBOUNDED),
+        r(EDGES_RELATIVE),
+        r(CONTACT_BENDS),
+        r(CONTACT_BENDS + 1),
+        r(CONTACT_BENDS + 2),
+        r(CONTACT_BENDS + 3),
+        r(RELATIVE_BENDS),
+        r(RELATIVE_BENDS + 1),
+        r(RELATIVE_BENDS + 2),
+        r(RELATIVE_BENDS + 3),
     ]
 }
 

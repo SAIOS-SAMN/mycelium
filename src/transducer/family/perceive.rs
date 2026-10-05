@@ -716,8 +716,9 @@ pub(crate) fn differing_axes(a: &Invariant, b: &Invariant) -> Vec<u16> {
     (0..n).filter(|&i| a.0.get(i) != b.0.get(i)).map(|i| i as u16).collect()
 }
 
-/// WHY A PAIR CARRIES NO EDGE (50.3, 13.9): no single versor moves the two
-/// bodies rigidly; a versor with no rotor, translator or dilator reading —
+/// WHY A PAIR CARRIES NO EDGE (50.3, 13.9): a body no conformal motion
+/// carries — a tear (78.103: a pair that merely moved differentially is
+/// related by its relative motion, never refused); a versor with no rotor, translator or dilator reading —
 /// the `Cl(3,1)` bridge (51.2); or a stabilizer element whose rotor the
 /// seventeen do not spell — 37.7's candidate, carried as the demand the
 /// peel typed (50.4) and not an edge invented for it (rule 11).
@@ -741,6 +742,10 @@ pub(crate) enum EdgeRefusal {
 #[derive(Default)]
 pub(crate) struct EdgeTally {
     pub(crate) measured: usize,
+    /// 78.103 — of the measured, the edges that are a RELATIVE MOTION: two
+    /// bodies that moved differently, `Γ = ṽᵢ·vⱼ`, no versor carrying their
+    /// union.
+    pub(crate) relative: usize,
     pub(crate) unspelled: usize,
     pub(crate) unread: usize,
     pub(crate) not_rigid: usize,
@@ -781,6 +786,18 @@ impl EdgeTally {
             }
             None => None,
         }
+    }
+
+    /// One edge asked of [`edge_transport`], counted as [`Self::take`]
+    /// counts it, a relative motion counted apart (78.103).
+    pub(crate) fn take_carried(
+        &mut self,
+        asked: Result<(crate::transducer::sentence::Transport, Carried), Vec<EdgeRefusal>>,
+    ) -> Option<crate::transducer::sentence::Transport> {
+        if matches!(asked, Ok((_, Carried::Relative))) {
+            self.relative += 1;
+        }
+        self.take(Some(asked.map(|(t, _)| t)))
     }
 }
 
@@ -846,38 +863,61 @@ pub(crate) fn edge_of(gamma: &Versor) -> Result<crate::transducer::sentence::Tra
 /// order, so the answer does not depend on the order the coset was
 /// measured in; the geodesic's refusal is the one reported when none
 /// reads, because that is the member the naming uses.
+///
+/// 78.103 — TWO BODIES THAT MOVED DIFFERENTIALLY ARE RELATED BY THEIR
+/// RELATIVE MOTION (78.63 governs 50.3). Where no versor carries the union,
+/// the pair did not move rigidly — a symptom, never a breach — and the edge
+/// is `Γ = ṽᵢ·vⱼ`, the one body's motion read from the other's, a bend like
+/// any other with its own modes (turn, null slide, boost). Only a body no
+/// conformal motion carries is a TEAR, and stays `NotRigid`.
 pub(crate) fn edge_transport(
-    v_i: &Versor,
+    (v_i, v_j): (&Versor, &Versor),
     a_i: &Body,
     a_j: &Body,
     b_i: &Body,
     b_j: &Body,
     budget: &mut crate::physics::Budget,
-) -> Result<crate::transducer::sentence::Transport, Vec<EdgeRefusal>> {
+) -> Result<(crate::transducer::sentence::Transport, Carried), Vec<EdgeRefusal>> {
     let union = |x: &Body, y: &Body| -> Shape {
         let compartments: Vec<Compartment> = x.compartments.iter().chain(y.compartments.iter()).cloned().collect();
         blade::shape_of(&sites_of(&compartments))
     };
-    // A pair no versor carries does not move rigidly; a spent stroke read
-    // nothing, and says so.
-    let members = match blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget) {
-        Ok(members) => members,
-        Err(blade::NoPose::Unbounded) => return Err(vec![EdgeRefusal::NoReading]),
-        Err(_) => return Err(vec![EdgeRefusal::NotRigid]),
-    };
     // `ṽᵢ vᵢⱼ`, the edge as a ray (78.32(1)).
     crate::transducer::cga::is_versor(v_i).then_some(()).ok_or_else(|| vec![EdgeRefusal::NoReading])?;
     let inv = v_i.reverse();
+    // A spent stroke read nothing, and says so. A pair no versor carries
+    // moved differentially: its edge is the relative motion, read by
+    // `edge_of` as every edge is, its bend counted by kind.
+    let members = match blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget) {
+        Ok(members) => members,
+        Err(blade::NoPose::Unbounded) => return Err(vec![EdgeRefusal::NoReading]),
+        Err(_) => {
+            if !crate::transducer::cga::is_versor(v_j) {
+                return Err(vec![EdgeRefusal::NotRigid]);
+            }
+            let gamma = inv.geo(v_j);
+            crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma, budget);
+            return edge_of(&gamma).map(|t| (t, Carried::Relative)).map_err(|e| vec![e]);
+        }
+    };
     let mut refusals: Vec<EdgeRefusal> = Vec::new();
     // The coset in its content order, geodesic first then by each member's
     // own key: the least-keyed member that reads is the canonical one.
     for t in &members {
         match edge_of(&inv.geo(&t.versor)) {
-            Ok(transport) => return Ok(transport),
+            Ok(transport) => return Ok((transport, Carried::Rigid)),
             Err(e) => refusals.push(e),
         }
     }
     Err(refusals)
+}
+
+/// 78.103 — HOW AN EDGE'S PAIR WAS CARRIED: as one rigid pair-body, or each
+/// body by its own motion, the edge their relative motion.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Carried {
+    Rigid,
+    Relative,
 }
 
 /// A body's support on the sites of the base, sorted.

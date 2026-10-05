@@ -192,3 +192,24 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     let now = lexicon();
     assert_eq!(now.0 + now.1, held.0 + held.1, "and never held twice");
 }
+
+/// 78.103 — A BEND IS READ BY WHAT IT GENERATES: a turn counts its plane
+/// under turns, a translation its null plane under null slides, a boost its
+/// plane under boosts — never an axis counted. A relative edge's bend is
+/// counted apart from a contact's, and the edge with it.
+#[test]
+fn a_bend_is_read_by_the_planes_its_modes_span() {
+    use crate::transducer::sentence::rung::{note_bends, unread_tally, Bend, WHY_UNREAD};
+    let at = |name: &str| WHY_UNREAD.iter().position(|n| *n == name).expect("a named slot");
+    let before = unread_tally();
+    note_bends(Bend::Contact, &turn(E1, E2), &mut stroke());
+    note_bends(Bend::Contact, &cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]), &mut stroke());
+    let boost = Mv::scalar(q(5, 1)).add(&Mv::blade(E1 | cga::EM, q(3, 1)));
+    note_bends(Bend::Relative, &boost, &mut stroke());
+    let after = unread_tally();
+    let grew = |name: &str| after[at(name)] > before[at(name)];
+    assert!(grew("contact bends: turn planes"), "a turn spans a turning plane");
+    assert!(grew("contact bends: null planes"), "a translation spans a null plane");
+    assert!(grew("relative bends: boost planes"), "a boost spans a boosting plane");
+    assert!(grew("edges: relative motion"), "and the relative edge is counted");
+}

@@ -8500,6 +8500,9 @@ meaning. The edge transport is:
 - A pair with no `V_ij` is a **remainder edge** (`set_remainder_edge`,
   13.9 step 7): the two bodies are two charts, the split is
   Mayer–Vietoris (13.9), and no loop through that edge is evaluated.
+  *(Superseded by 78.103 under 78.63: a pair with no `V_ij` moved
+  differentially, and its edge is the relative motion `ṽ_i·v_j`; only a
+  body no conformal motion carries — a tear — stays refused.)*
 - The **orbit holonomy** is the product of `Γ` around a cycle, valued in
   the base body's stabilizer and certified up to conjugacy by the class
   vector (15.4); stabilizer cosets do not telescope, which is why this
@@ -23114,6 +23117,46 @@ voice already speaks.
 word that never returns carries no return on its shell — `0`, the reading
 of "no return", not a constant standing in; its count `m` belongs to its
 citation, D3.)*
+
+### 78.103 Two bodies that moved differentially are related by their relative motion, and a bend is read by what it generates (the operator's word, 2026-10-05: "you're flattening the dimensions"; "proceed: unflatten the dimensions during this round of development")
+
+**The ruling.** 78.63 governs 50.3: a rigidity is a symptom, only a tear
+is a breach. Where no versor carries the pair-body `(a_i ∪ a_j)` onto
+`(b_i ∪ b_j)`, the two bodies moved differentially, and the edge between
+them is their RELATIVE MOTION `Γ = ṽ_i·v_j` — the one body's motion read
+from the other's — read by `edge_of` as every edge is (its rotor peeled
+as the word, its dilation and placement the carriage). Only a body no
+conformal motion carries (its motion not a versor) is a TEAR, and stays
+refused `NotRigid`, by name. `perceive::edge_transport` takes both bodies'
+motions and returns how the pair was carried (`Carried::Rigid` /
+`Relative`); the percept line reads `measured N (relative M)`.
+
+**What a relative edge carries, said exactly.** `ṽ_i·v_j` is 50.3's
+coboundary: around a ring of relative edges alone it telescopes, and that
+ring closes at once — the bodies' motions are consistent, a fact read,
+never a refusal. Around a ring that also crosses rigid edges or contacts,
+the stabilizer and exchange elements and the contacts' refractions do not
+telescope, and that is the holonomy — which the unread relative edge had
+been taking down with it (9–28 rings a voice on epoch 127, nearly all the
+transport loss). No curvature is invented for a relative edge, and none
+is lost to it.
+
+**Dimensions are what the motions generate, never axes counted.** A bend's
+"way" is its kind, per contact and per edge: a TURN (elliptic), a NULL
+SLIDE (parabolic), a BOOST (hyperbolic). Each bend — every contact the
+master equation reads by its refraction (its tether, each candidate of its
+held coset) and every relative edge — is read by its modes (MR1) under the
+stroke, and the planes each mode spans are counted under its kind;
+a bend whose modes do not read is counted unread, by name
+(`rung::note_bends`). On the unread row: `edges: relative motion`,
+`contact bends: turn / null / boost planes / unread`, `relative bends:
+turn / null / boost planes / unread`. A scene's dimension is then read as
+what its bends generate — the planes by kind, the rank of the algebra they
+close, the holes — never the axes of the base.
+
+Proved: `perception::a_rigid_scene_has_identity_edges_and_a_relative_motion_is_its_own_edge`,
+`perception::a_tear_is_refused_by_name`,
+`rung::a_bend_is_read_by_the_planes_its_modes_span`.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

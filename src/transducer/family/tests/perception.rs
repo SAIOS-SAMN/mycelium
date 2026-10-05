@@ -37,31 +37,62 @@ assert_eq!(f1.vertices.len(), f2.vertices.len());
 assert_eq!(f1.faces.len(), f2.faces.len());
 }
 
-/// 50.3 — A RIGID SCENE HAS IDENTITY EDGES AND A RELATIVE MOTION DOES NOT.
-/// Two touching bodies translated together: the pair-body carries rigidly,
-/// `V_ij = V_i`, and the edge between them is the identity. One of them
-/// moved alone: no versor carries the pair, and the edge is a remainder
-/// edge, never an orbit's face.
+/// 50.3, 78.103 — A RIGID SCENE HAS IDENTITY EDGES, AND A RELATIVE MOTION IS
+/// ITS OWN EDGE. Two touching bodies translated together: the pair-body
+/// carries rigidly, `V_ij = V_i`, and the edge between them is the identity.
+/// One of them moved alone: no versor carries the pair, and the edge is the
+/// relative motion `ṽ₁·v₂` — here the first bar's translation undone, a
+/// placement with the identity word — never a remainder edge (78.63 governs
+/// 50.3: a rigidity is a symptom).
 #[test]
-fn a_rigid_scene_has_identity_edges_and_a_relative_motion_does_not() {
+fn a_rigid_scene_has_identity_edges_and_a_relative_motion_is_its_own_edge() {
+use crate::transducer::family::perceive::Carried;
 let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
 let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
 let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "0220"]));
 let mut budget = super::common::budget();
 let v1 = carriage(&a1, &b1, &mut budget).expect("a translated bar carries").v;
-let edge = edge_transport(&v1, &a1, &a2, &b1, &b2, &mut budget).expect("the pair moved rigidly: an edge transport");
+let v2 = carriage(&a2, &b2, &mut budget).expect("the second bar carries").v;
+let (edge, carried) = edge_transport((&v1, &v2), &a1, &a2, &b1, &b2, &mut budget).expect("the pair moved rigidly: an edge transport");
+assert_eq!(carried, Carried::Rigid, "one versor carries the pair-body");
 assert!(edge.word.is_identity(), "a rigid motion is the identity on the edge: {:?}", edge.word);
 assert!(
     crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),
     "and carries no relative placement"
 );
 let b2_still = body(&["0000", "2200"]);
-// Every member of the coset refuses, and every refusal comes back; an
-// empty coset is the one that says `NotRigid`.
-let refused = edge_transport(&v1, &a1, &a2, &b1, &b2_still, &mut budget);
+let v2_still = carriage(&a2, &b2_still, &mut budget).expect("a still bar carries by the identity").v;
+let (relative, carried) =
+    edge_transport((&v1, &v2_still), &a1, &a2, &b1, &b2_still, &mut budget).expect("a differential motion is an edge");
+assert_eq!(carried, Carried::Relative, "no versor carries the pair: the edge is their relative motion");
+assert!(relative.word.is_identity(), "two translations differ by a translation: no turn");
+assert!(
+    !crate::transducer::element::same_versor(&relative.carriage, &crate::transducer::element::identity_versor()),
+    "and the placement between them is the first bar's motion undone"
+);
+assert!(
+    crate::transducer::element::same_versor(&relative.carriage, &v1.reverse().geo(&v2_still)),
+    "it is ṽ₁·v₂ itself"
+);
+}
+
+/// 78.103 — A TEAR STAYS A BREACH: a body no conformal motion carries (its
+/// motion not a versor) relates to nothing, and the edge is refused
+/// `NotRigid`, by name.
+#[test]
+fn a_tear_is_refused_by_name() {
+let body = |rows: &[&str]| perceive(&grid(rows)).into_iter().next().expect("one body");
+let (a1, a2) = (body(&["1100", "0000"]), body(&["0000", "2200"]));
+let (b1, b2) = (body(&["0110", "0000"]), body(&["0000", "2200"]));
+let mut budget = super::common::budget();
+let v1 = carriage(&a1, &b1, &mut budget).expect("a translated bar carries").v;
+let torn = crate::transducer::cga::Mv::blade(crate::transducer::cga::E1, num_rational::BigRational::from_integer(1.into()))
+    .add(&crate::transducer::cga::Mv::blade(crate::transducer::cga::E1 | crate::transducer::cga::E2, num_rational::BigRational::from_integer(1.into())));
+assert!(!crate::transducer::cga::is_versor(&torn), "a mixed-grade element moves nothing conformally");
+let refused = edge_transport((&v1, &torn), &a1, &a2, &b1, &b2, &mut budget);
 assert!(
     matches!(refused.as_ref().err().map(|r| r.as_slice()), Some([EdgeRefusal::NotRigid])),
-    "a pair no versor of the coset carries is a remainder edge, and says so: {refused:?}"
+    "a tear is refused by name: {refused:?}"
 );
 }
 
@@ -75,7 +106,8 @@ let (a1, a2) = (body(&["100"]), body(&["002"]));
 let (b1, b2) = (body(&["001"]), body(&["200"]));
 let mut budget = super::common::budget();
 let v1 = carriage(&a1, &b1, &mut budget).expect("a translated compartment carries").v;
-let edge = edge_transport(&v1, &a1, &a2, &b1, &b2, &mut budget).expect("the pair-body is carried by the identity: an edge");
+let v2 = carriage(&a2, &b2, &mut budget).expect("and the other").v;
+let (edge, _) = edge_transport((&v1, &v2), &a1, &a2, &b1, &b2, &mut budget).expect("the pair-body is carried by the identity: an edge");
 assert!(edge.word.is_identity(), "the exchange has the identity word");
 assert!(
     !crate::transducer::element::same_versor(&edge.carriage, &crate::transducer::element::identity_versor()),

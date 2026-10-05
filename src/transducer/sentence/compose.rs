@@ -320,6 +320,15 @@ pub fn sentences_of(
                 continue;
             }
         };
+        // 78.103 — every contact read by its refraction is a bend, read by
+        // what it generates: each term its tether or coset opened.
+        for (t, choice) in p.transitions.iter().zip(&choices) {
+            if t.transport.is_none() {
+                for term in choice {
+                    super::rung::note_bends(super::rung::Bend::Contact, &term.transport, budget);
+                }
+            }
+        }
         // 78.6(1), 78.44 — A HELD COSET'S RING IS EVERY ROUTE IT OPENS, each
         // composed and kept, never a representative chosen.
         let Some(routes) = routes(&choices, budget) else {

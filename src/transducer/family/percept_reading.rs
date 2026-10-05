@@ -69,7 +69,7 @@ impl FormReading {
         let c = &self.contact_circuits;
         format!(
             "family form {} vertices, {} faces ({} cover meets, {} site+ring), {} orbits \
-             | edges asked: measured {}, unspelled {}, unread {}, not rigid {} \
+             | edges asked: measured {} (relative {}), unspelled {}, unread {}, not rigid {} \
              | chords {} offered {} | cycles: reflexive {} no-tree-path {} unread {} \
              (cone {} not rigid {} no face {}; edge refused: cone {} not rigid {} unrefracted {}) \
              trivial {} (vacuum {} resonant {} over {} charged edges; \
@@ -95,6 +95,7 @@ impl FormReading {
             d.built,
             self.orbits,
             e.measured,
+            e.relative,
             e.unspelled,
             e.unread,
             e.not_rigid,
