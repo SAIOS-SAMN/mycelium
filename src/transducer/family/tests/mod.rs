@@ -8,6 +8,7 @@ mod bridge;
 mod budget;
 mod canonical;
 mod confluence;
+mod coordinates;
 mod cells;
 mod census;
 mod cover;

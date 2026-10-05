@@ -22717,6 +22717,58 @@ coordinates and comprehension by them; (3) condense, puncture, seal;
 relay's codec and inflection — on the wire after the operator's recut
 reads (2)–(5).
 
+**Landed (2026-10-05).**
+- *(1)* The pairwise grow withdrawn (`91f1265d`); `rung::NAMED` kept.
+- *(2) A word's coordinates* (`sentence/coordinates.rs`): `Coordinates::of`
+  reads each mode's hole (its generator's canonical ray) and winding
+  (`Turn { t, ell }`, `Count(λ)`, `Named { c, λ }`); `word()` rebuilds the
+  word from them; `power_of` reads `k` off the windings (a count fixes it;
+  turns admit it modulo the lcm of their orders, at most twelve); the
+  `HoleIndex` files held words per hole and comprehends a new one as a
+  `Power` or `New { holes, windings }`. LIVE on the rung lexicon: each word
+  a theorem teaches is read under the mind's stroke; a held word's power is
+  counted and not held; the `sentences` row gains `coordinates unread`,
+  `holes turned / counted / named`, `powers recognized`, `holes new`,
+  `windings new`.
+- *(3) The pivots completed* (`cech/hole.rs`): `condense`, `puncture`,
+  `seal`; the hole carrier on `Complex` (volatile, in its vertices' stars);
+  `drain` and `descend` read a hole as a pin (`pinned_above`); `descend`
+  and `ascend` refuse at a hole (`Descended::Hole`, `Ascended::Hole`); the
+  climb never mints over a hole; `drop_vertex` takes a hole with it.
+- *(4) The board* (`cech/board.rs`): `Complex::board`, `Pivot`, `Applied`,
+  `independent`.
+- *(5) The connecting map* (`cech/connecting.rs`): `connecting(u, v)` reads
+  the overlap's components through `U`'s tethers keyed in `V` (no walk over
+  pairs), gauges each component of each part on its own, and reads one
+  class per loop through the overlap; `Unglued::{NoOverlap, Inexact,
+  PartNotExact, Unread}`; holes capped across the glue.
+- *(6) The relay's codec*: `Coordinates::put / take` (the generator, the
+  point and the side per hole; the winding re-derived) and
+  `Coordinates::transported(Γ)`; the anastome's wire carries them after
+  the recut.
+
+**Proved.** `coordinates::{a_turn_word_stands_on_its_hole_at_its_turn,
+a_slide_counts_along_its_hole, a_dilation_is_named_on_its_hole,
+the_coordinates_travel_whole_and_inflect_by_the_transport}`;
+`rung::a_held_words_power_is_recognized_by_its_coordinates`;
+`hole::{puncture_keeps_the_class_in_and_only_seal_caps_the_hole,
+condense_is_drains_inverse_on_content,
+the_walk_descend_ascend_puncture_descend_reads_as_ruled,
+pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content}`;
+`connecting::{two_exact_arcs_glued_at_their_ends_make_a_class_neither_held,
+a_connected_overlap_makes_nothing_and_an_inexact_one_refuses,
+a_hole_one_part_holds_sealed_is_capped_by_the_glue}`.
+
+**Owed, by name.** No live caller punctures, seals, condenses through the
+named door, or glues by the connecting map yet: they land as faculties
+proved by the algebra, as `ascend` did (AD1), and their first live callers
+— the voice's nerve puncturing a curved cell instead of releasing it, the
+court's two vantages glued by `connecting` beside the exactness refusal,
+the anastome carrying `Coordinates` — come after the operator's recut
+reads the rung lexicon's coordinates on the fleet. An isoclinic word's
+square (a 4-blade at 180°) stands on another hole key than the word's
+generator, so it reads `New`, not a power.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

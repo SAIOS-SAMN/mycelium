@@ -236,6 +236,8 @@ pub enum Descended {
     Pinned,
     /// No 2-cell at this key.
     Absent,
+    /// 78.99 (2) — a hole stands here; its conjugate is `seal`.
+    Hole,
 }
 
 /// WHAT AN `ascend` DID — [`Descended`]'s inverse on content (AD1, 62.5 as
@@ -250,6 +252,8 @@ pub enum Ascended {
     AlreadySealed,
     /// No boundary stands to seal over.
     Absent,
+    /// 78.99 (2) — a hole stands here; only `seal` caps it.
+    Hole,
 }
 
 impl Descended {

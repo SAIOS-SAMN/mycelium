@@ -50,6 +50,11 @@ pub struct Complex {
     /// into its field (`take_outflow`). `None` while no owner listens, so a
     /// complex nobody reads holds nothing. Volatile.
     pub(crate) outflow: Option<Vec<crate::transducer::cga::Mv>>,
+    /// 78.99 (2) — THE HOLES: cells `puncture` opened, each keeping its fill
+    /// as the class the boundary winds about, standing in its vertices'
+    /// stars and pinning its boundary until `seal` caps it. Volatile: no
+    /// persisted complex punctures yet (`hole.rs`).
+    pub(crate) holes: Keyed<Simplex>,
 }
 
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
@@ -207,7 +212,7 @@ impl Complex {
     pub fn held(&self) -> usize {
         let simplices: usize = self.degrees.iter().map(|d| d.len()).sum();
         let star: usize = self.star.scoped().map(|(_, s)| s.len()).sum();
-        simplices + self.by_key.len() + self.sections.len() + star + self.remainder.len() + self.congruent.len()
+        simplices + self.by_key.len() + self.sections.len() + star + self.remainder.len() + self.congruent.len() + self.holes.len()
     }
 
     pub(crate) fn ensure(&mut self, degree: usize) {
@@ -531,6 +536,15 @@ impl Complex {
             drop.push(k);
         }
         for k in drop {
+            // A hole on the vertex goes with it, from its other vertices'
+            // stars too: nothing names a hole whose boundary is gone.
+            if let Some(hole) = self.holes.remove(&k) {
+                for v in &hole.vertices {
+                    if let Some(star) = self.star.get_mut(v) {
+                        star.remove(&k);
+                    }
+                }
+            }
             if let Some(d) = self.by_key.remove(&k) {
                 if let Some(layer) = self.degrees.get_mut(d) {
                     layer.remove(&k);

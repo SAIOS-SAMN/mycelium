@@ -112,10 +112,11 @@ fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
         let t = Theorem::of(&s).expect("a ring of rays is a theorem");
         assert!(matches!(t.certificate, Certificate::Nilpotent { .. }), "a slide condenses: {:?}", s.closure);
         let before = sentence_tally();
-        hear(&s);
+        hear(&s, &mut stroke());
         let after = sentence_tally();
-        let taught = (after.spelled + after.unspelled + after.recognized) - (before.spelled + before.unspelled + before.recognized);
-        assert!(taught > 0, "its open path is held as a word, or recognized as one held");
+        let taught = (after.spelled + after.unspelled + after.recognized + after.powers)
+            - (before.spelled + before.unspelled + before.recognized + before.powers);
+        assert!(taught > 0, "its open path is held as a word, or recognized as one held or as a held word's power");
         theorems += 1;
     }
     assert!(theorems > 0, "the slide's rings were read");
@@ -132,11 +133,29 @@ fn a_hyperbolic_sentence_is_named_and_held() {
     let s = compose(&[Term { word: d, transport: one }], &mut stroke()).expect("a sentence");
     assert!(!s.closure.closes(), "a dilation never returns: {:?}", s.closure);
     let before = sentence_tally();
-    hear(&s);
+    hear(&s, &mut stroke());
     let after = sentence_tally();
     assert!(after.named > before.named, "named");
-    let taught = (after.spelled + after.unspelled + after.recognized) - (before.spelled + before.unspelled + before.recognized);
-    assert!(taught > 0, "and held as a word, or recognized as one held");
+    let taught = (after.spelled + after.unspelled + after.recognized + after.powers)
+        - (before.spelled + before.unspelled + before.recognized + before.powers);
+    assert!(taught > 0, "and held as a word, or recognized as one held or as a held word's power");
+}
+
+/// 78.99 (1) — COMPREHENSION BY COORDINATES. A sentence teaches the 90° turn
+/// of the `e₁e₃` plane, held with its hole and its winding; a second teaches
+/// the turn's square — a new key, but on the same hole at twice the winding —
+/// and it is recognized as the held word's power: counted, never held.
+#[test]
+fn a_held_words_power_is_recognized_by_its_coordinates() {
+    let w = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E3, q(1, 1)));
+    let w2 = w.geo(&w);
+    let said = |x: &Mv| compose(&[Term { word: x.clone(), transport: x.reverse() }], &mut stroke()).expect("a sentence");
+    hear(&said(&w), &mut stroke());
+    let before = sentence_tally();
+    hear(&said(&w2), &mut stroke());
+    let after = sentence_tally();
+    assert!(after.powers > before.powers, "the square is the held turn's power: counted, and returned before it is held");
+    assert!(after.holes_turned > before.holes_turned, "its hole read as a turn");
 }
 
 /// THE RUNG RECURSES, AND RE-HEARING IS COMPREHENSION. A sentence carrying the
@@ -153,7 +172,7 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     assert_eq!(first.closure, Closure::Closes(1), "there and back: closed");
     assert!(first.path.projective_eq(&w), "its shortcut is the turn");
     let before = sentence_tally();
-    hear(&first);
+    hear(&first, &mut stroke());
     let after_first = sentence_tally();
     assert!(after_first.top_rung >= 1, "held at rung 1");
     assert!(after_first.spelled + after_first.recognized > before.spelled + before.recognized, "spelled (or already held)");
@@ -164,11 +183,11 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     .expect("a sentence");
     assert_eq!(second.closure, Closure::Closes(1), "a sentence of the held word, closed");
     assert!(second.motions[0].projective_eq(&w), "its first term is the held word");
-    hear(&second);
+    hear(&second, &mut stroke());
     assert!(sentence_tally().top_rung >= 2, "its shortcut stands a rung higher: the grammar on its own closures");
     let held = lexicon();
     let r0 = sentence_tally().recognized;
-    hear(&first);
+    hear(&first, &mut stroke());
     assert!(sentence_tally().recognized > r0, "heard again: re-derived, recognized");
     let now = lexicon();
     assert_eq!(now.0 + now.1, held.0 + held.1, "and never held twice");

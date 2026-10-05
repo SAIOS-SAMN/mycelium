@@ -825,7 +825,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.reasons = [40, 41, 42, 43, 44, 45, 46, 47, 48];
     senses.derivation = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62];
     senses.flux = [70, 71, 72, 73, 74, 75, 76, 77];
-    senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95];
+    senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102];
     senses.said = Some(crate::transducer::sentence::Reasons {
         words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
         loops: vec![crate::transducer::sentence::reasons::LoopReason {

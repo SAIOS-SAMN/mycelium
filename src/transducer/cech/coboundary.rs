@@ -318,6 +318,10 @@ impl Complex {
                                 continue;
                             }
                             seen.insert(&nkey, ());
+                            // The climb never mints a cell over a hole.
+                            if self.holes.contains(nkey.as_bytes()) {
+                                continue;
+                            }
                             if self.by_key.get(nkey.as_bytes()).is_some() {
                                 if let Some(cut) = self.reopen_on_coeff_change(&nkey, &verts) {
                                     reopened.push((nkey.as_bytes().to_vec(), cut));
@@ -419,21 +423,10 @@ impl Complex {
         };
         // PINNED? The cofaces are the simplices holding BOTH ends, which is
         // the meet of the two stars. A coface that has been read — any fill
-        // but `Open` — pins this edge until it descends.
-        if let (Some(sa), Some(sb)) = (self.star.get(a), self.star.get(b)) {
-            for (k, ()) in sa.meet(sb).scoped() {
-                if k == *key {
-                    continue;
-                }
-                let read = self
-                    .degree_of(&k)
-                    .and_then(|d| self.degrees.get(d))
-                    .and_then(|layer| layer.get(&k))
-                    .is_some_and(|s| !s.fill.unsettled());
-                if read {
-                    return Drained::Pinned;
-                }
-            }
+        // but `Open` — pins this edge until it descends; a hole pins it
+        // until it is sealed (78.99 (2)).
+        if self.pinned_above(key, &[a.clone(), b.clone()]) {
+            return Drained::Pinned;
         }
         // THE SAME TRIVIALITY TEST `fill` USES, so the two halves of the
         // pair agree on what "carries nothing" means (law 12).
@@ -508,6 +501,11 @@ impl Complex {
     /// open one, and — because `forget` drops this simplex from each of
     /// their stars — they are UNPINNED and may now drain.
     pub fn descend(&mut self, key: &[u8]) -> Descended {
+        // AT A HOLE, descend refuses by name: its conjugate is `seal`
+        // (78.99 (2)).
+        if self.holes.contains(key) {
+            return Descended::Hole;
+        }
         // EVERY DEGREE FROM TWO UP (78.74): a 3-cell sealed over 2-cells pins
         // them, and a released vertex must be able to release it too, by the
         // same gate one degree further up.
@@ -517,28 +515,11 @@ impl Complex {
         let Some(simplex) = self.degrees[degree].get(key).cloned() else {
             return Descended::Absent;
         };
-        // PINNED FROM ABOVE? The cofaces are the simplices holding every
-        // vertex of this one — the meet of their stars, and never a read of
-        // the degree above (rule 1).
-        let mut stars = simplex.vertices.iter().map(|v| self.star.get(v));
-        let cofaces = match stars.next().flatten() {
-            Some(first) => stars.try_fold(first.clone(), |acc, s| s.map(|s| acc.meet(s))),
-            None => None,
-        };
-        if let Some(cofaces) = cofaces {
-            for (k, ()) in cofaces.scoped() {
-                if k == *key {
-                    continue;
-                }
-                let read = self
-                    .degree_of(&k)
-                    .and_then(|d| self.degrees.get(d))
-                    .and_then(|layer| layer.get(&k))
-                    .is_some_and(|s| !s.fill.unsettled());
-                if read {
-                    return Descended::Pinned;
-                }
-            }
+        // PINNED FROM ABOVE? The cofaces are the simplices (and holes)
+        // holding every vertex of this one — the meet of their stars, and
+        // never a read of the degree above (rule 1).
+        if self.pinned_above(key, &simplex.vertices) {
+            return Descended::Pinned;
         }
         // AN UNREAD 2-CELL SEALED NOTHING. It stands `Open`, so no
         // circulation was ever recorded closed and there is no class to
@@ -603,6 +584,11 @@ impl Complex {
             }
         }
         let key = simplex_key(&verts);
+        // AT A HOLE, ascend refuses by name: only `seal` caps a hole, killing
+        // the class it keeps (78.99 (2)).
+        if self.holes.contains(key.as_bytes()) {
+            return Ascended::Hole;
+        }
         if self.degree_of(key.as_bytes()).is_none() {
             let volume = volume_of(&verts);
             if !nonzero(&volume) {
@@ -652,7 +638,7 @@ impl Complex {
                     Descended::Unsealed => out.unsealed += 1,
                     Descended::Released(_) => out.released += 1,
                     Descended::Pinned => out.pinned += 1,
-                    Descended::Absent => {}
+                    Descended::Absent | Descended::Hole => {}
                 },
             }
         }
@@ -683,7 +669,7 @@ impl Complex {
     /// `remember`, and it must touch the same three: the degree layer, the
     /// degree index, and each vertex's star. A cell dropped from one and
     /// left in another is a key that answers where nothing stands.
-    fn forget(&mut self, key: &[u8]) {
+    pub(crate) fn forget(&mut self, key: &[u8]) {
         let Some(degree) = self.degree_of(key) else { return };
         let vertices = self.degrees[degree].get(key).map(|s| s.vertices.clone());
         self.degrees[degree].remove(key);

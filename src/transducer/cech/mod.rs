@@ -13,10 +13,13 @@
 //! preserves the rotor class, while every standing class is invisible to
 //! it.
 
+pub mod board;
 pub mod coboundary;
 pub mod complex;
+pub mod connecting;
 pub mod coxeter;
 pub mod flux;
+pub mod hole;
 pub mod nerve;
 pub mod orbit;
 pub mod orbit_algebra;
@@ -24,8 +27,11 @@ pub mod simplex;
 pub mod persist;
 pub mod remainder;
 
+pub use board::{independent, Applied, Board, Pivot};
 pub use coboundary::*;
 pub use complex::*;
+pub use connecting::{connecting, Glued, Unglued};
+pub use hole::{Capped, Condensed, Punctured};
 pub use coxeter::*;
 pub use nerve::*;
 pub use orbit_algebra::*;

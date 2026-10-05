@@ -26,23 +26,33 @@
 //! the mind has comprehended, never with how often.
 
 use super::compose::{Closure, Composition, RingUnread};
+use super::coordinates::{Comprehended, Coordinates, HoleIndex, Winding};
 use super::theorem::{Certificate, Open, Theorem};
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
 use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 
-/// ONE SHORTCUT THE MIND HOLDS: its motion, its rung, and whether the
-/// alphabet spells it.
+/// ONE SHORTCUT THE MIND HOLDS: its rung, whether the alphabet spells it,
+/// and its coordinates — its holes and windings (78.99 (1)) — where its
+/// modes read.
 #[derive(Clone, Debug)]
 struct Held {
     rung: u64,
     spelled: bool,
+    coords: Option<Coordinates>,
 }
 
-static LEXICON: std::sync::LazyLock<std::sync::Mutex<Keyed<Held>>> =
-    std::sync::LazyLock::new(|| std::sync::Mutex::new(Keyed::new()));
+/// THE MIND'S LEXICON: the words held by their keys, and the holes they
+/// stand on — the fibre a new word is comprehended by (78.99 (1)).
+#[derive(Default)]
+struct Lexicon {
+    held: Keyed<Held>,
+    holes: HoleIndex,
+}
 
-const SLOTS: usize = 16;
+static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Lexicon::default()));
+
+const SLOTS: usize = 23;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -60,6 +70,13 @@ const RANK: usize = 12;
 const SOURCES: usize = 13;
 const HEARD: usize = 14;
 const NAMED: usize = 15;
+const COORDS_UNREAD: usize = 16;
+const HOLES_TURNED: usize = 17;
+const HOLES_COUNTED: usize = 18;
+const HOLES_NAMED: usize = 19;
+const POWERS: usize = 20;
+const HOLES_NEW: usize = 21;
+const WINDINGS_NEW: usize = 22;
 
 fn note(slot: usize, by: u64) {
     if by > 0 && TALLY[slot].fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
@@ -99,11 +116,23 @@ pub struct SentenceTally {
     /// 78.68, 78.99 — open sentences (hyperbolic, rosette) whose holonomy is
     /// named and held as a word.
     pub named: u64,
+    /// 78.99 (1) — the coordinates of the words taught: words whose modes did
+    /// not read; holes read as turns, counts and named points; words
+    /// recognized as a held word's power through their windings; and, of the
+    /// new words, the holes no held word stood on and the held holes at a
+    /// winding no power reached.
+    pub coords_unread: u64,
+    pub holes_turned: u64,
+    pub holes_counted: u64,
+    pub holes_named: u64,
+    pub powers: u64,
+    pub holes_new: u64,
+    pub windings_new: u64,
 }
 
 /// 78.96, 78.97, 78.99 — THE TALLY'S NAMES, in [`SentenceTally::row`]'s
 /// order: the typed reading the voice's Senses carry.
-pub const SENTENCES: [&str; 16] = [
+pub const SENTENCES: [&str; 23] = [
     "rings",
     "unread",
     "closed",
@@ -120,11 +149,18 @@ pub const SENTENCES: [&str; 16] = [
     "rank",
     "heard through a chord",
     "named (hyperbolic, rosette)",
+    "coordinates unread",
+    "holes turned",
+    "holes counted",
+    "holes named",
+    "powers recognized",
+    "holes new",
+    "windings new",
 ];
 
 impl SentenceTally {
     /// In [`SENTENCES`]'s order.
-    pub fn row(&self) -> [u64; 16] {
+    pub fn row(&self) -> [u64; 23] {
         [
             self.rings,
             self.unread,
@@ -142,6 +178,13 @@ impl SentenceTally {
             self.rank,
             self.heard,
             self.named,
+            self.coords_unread,
+            self.holes_turned,
+            self.holes_counted,
+            self.holes_named,
+            self.powers,
+            self.holes_new,
+            self.windings_new,
         ]
     }
 }
@@ -166,6 +209,13 @@ pub fn sentence_tally() -> SentenceTally {
         rank: r(RANK),
         heard: r(HEARD),
         named: r(NAMED),
+        coords_unread: r(COORDS_UNREAD),
+        holes_turned: r(HOLES_TURNED),
+        holes_counted: r(HOLES_COUNTED),
+        holes_named: r(HOLES_NAMED),
+        powers: r(POWERS),
+        holes_new: r(HOLES_NEW),
+        windings_new: r(WINDINGS_NEW),
     }
 }
 
@@ -173,8 +223,8 @@ pub fn sentence_tally() -> SentenceTally {
 /// and unspelled (letters the court is offered as the mind speaks).
 pub fn lexicon() -> (usize, usize) {
     LEXICON.lock().map_or((0, 0), |l| {
-        let spelled = l.scoped().filter(|(_, h)| h.spelled).count();
-        (spelled, l.len() - spelled)
+        let spelled = l.held.scoped().filter(|(_, h)| h.spelled).count();
+        (spelled, l.held.len() - spelled)
     })
 }
 
@@ -221,7 +271,7 @@ pub fn speak(
                 continue;
             }
         };
-        hear(&s);
+        hear(&s, budget);
         out.push((steps, s));
     }
     out
@@ -230,7 +280,7 @@ pub fn speak(
 /// ONE COMPOSED SENTENCE, HEARD BY THE MIND: its closure named, its theorem
 /// extrapolated where a certificate stands, and — closed — its rank read and
 /// its shortcut recognized, held at its rung, or left for the court to offer.
-pub fn hear(s: &Composition) {
+pub fn hear(s: &Composition, budget: &mut crate::physics::Budget) {
     match s.closure {
         Closure::Closes(_) => note(CLOSED, 1),
         Closure::Rosette => note(ROSETTE, 1),
@@ -270,28 +320,65 @@ pub fn hear(s: &Composition) {
     if let Ok(r) = &s.rank {
         note(RANK, *r as u64);
     }
-    if let Ok(mut held) = LEXICON.lock() {
-        hold_shortcut(&mut held, s, word);
+    if let Ok(mut lex) = LEXICON.lock() {
+        hold_shortcut(&mut lex, s, word, budget);
     }
 }
 
 /// ONE THEOREM'S SHORTCUT: the word it teaches, recognized where the mind
-/// holds it, else held at its rung — spelled, or counted as the letter the
-/// court will be offered when the mind speaks the form.
-fn hold_shortcut(held: &mut Keyed<Held>, s: &Composition, word: &Mv) {
+/// holds it, else comprehended by its coordinates (78.99 (1)) — a held
+/// word's power is derivable and never held twice — else held at its rung,
+/// spelled or counted as the letter the court will be offered when the mind
+/// speaks the form, and filed under its holes.
+fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut crate::physics::Budget) {
     if is_identity(word) {
         return;
     }
     let Some(key) = key_of(word) else { return };
-    if held.get(&key).is_some() {
+    if lex.held.get(&key).is_some() {
         note(RECOGNIZED, 1);
         return;
     }
-    let rung = rung_of(&s.motions, held);
+    // ITS COORDINATES, read off its own modes under the stroke; unread by
+    // name where they do not read, and the word is held without them.
+    let coords = match Coordinates::of(word, budget) {
+        Ok(c) => Some(c),
+        Err(_) => {
+            note(COORDS_UNREAD, 1);
+            None
+        }
+    };
+    if let Some(c) = &coords {
+        for h in &c.holes {
+            note(
+                match h.winding {
+                    Winding::Turn { .. } => HOLES_TURNED,
+                    Winding::Count(_) => HOLES_COUNTED,
+                    Winding::Named { .. } => HOLES_NAMED,
+                },
+                1,
+            );
+        }
+        let held = &lex.held;
+        match lex.holes.comprehend(c, |k| held.get(k).and_then(|h| h.coords.as_ref())) {
+            Comprehended::Power { .. } => {
+                note(POWERS, 1);
+                return;
+            }
+            Comprehended::New { holes, windings } => {
+                note(HOLES_NEW, holes as u64);
+                note(WINDINGS_NEW, windings as u64);
+            }
+        }
+    }
+    let rung = rung_of(&s.motions, &lex.held);
     let spelled = matches!(crate::transducer::family::derivation::peel_versor(word), Some(Ok(_)));
     note(if spelled { SPELLED } else { UNSPELLED }, 1);
     TALLY[TOP_RUNG].fetch_max(rung, Relaxed);
-    held.insert(&key, Held { rung, spelled });
+    if let Some(c) = &coords {
+        lex.holes.file(&key, c);
+    }
+    lex.held.insert(&key, Held { rung, spelled, coords });
 }
 
 /// 78.75 — A REFUSAL INVERTED IS A THEOREM: a white-hole source's sliver `1 +
