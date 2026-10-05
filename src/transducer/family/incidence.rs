@@ -200,11 +200,11 @@ pub(crate) fn edge_between(
         bk.extend_from_slice(&crate::transducer::sentence::frame_key(k));
         bodies_at.get(&bk)
     };
-    let union_edge = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
+    let (union_edge, union_held) = match (unions.get(&member_key(i, cik)), unions.get(&member_key(j, cjk))) {
         (Some((a_i, b_i, v_i)), Some((a_j, b_j, v_j))) => {
-            tally.take_carried(edge_transport((v_i, v_j), a_i, a_j, b_i, b_j, budget))
+            (tally.take_carried(edge_transport((v_i, v_j), a_i, a_j, b_i, b_j, budget)), true)
         }
-        _ => None,
+        _ => (None, false),
     };
     let mut edge: Option<Transport> = None;
     let mut agreeing: Vec<u64> = Vec::new();
@@ -240,6 +240,11 @@ pub(crate) fn edge_between(
         (Some(_), _) if agreeing.len() < n_reached => Some(section_of_frames(agreeing)),
         _ => None,
     };
+    // 78.103 — a pair with no union and no frame both stand on had no bodies
+    // to read an edge from: counted, never silent.
+    if !union_held && common == 0 {
+        crate::transducer::sentence::rung::note_edge_lost(crate::transducer::sentence::rung::EdgeLost::NoBodies);
+    }
     // The union edge is the face's where the two fibers have one; the
     // per-frame edge stands where they do not.
     (union_edge.or(edge), pairs)

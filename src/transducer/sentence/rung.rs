@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 50;
+const SLOTS: usize = 54;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -107,6 +107,10 @@ const RELATIVE_BENDS: usize = 44;
 const BEND_KINDS: usize = 4;
 const UNREAD_STAR: usize = 48;
 const UNREAD_STEP: usize = 49;
+const EDGE_UNSPELLED: usize = 50;
+const EDGE_NO_READING: usize = 51;
+const EDGE_TEAR: usize = 52;
+const EDGE_NO_BODIES: usize = 53;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -249,7 +253,7 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 21] = [
+pub const WHY_UNREAD: [&str; 25] = [
     "transport: member pair, no edge",
     "transport: unrefracted",
     "transport: no base action",
@@ -277,6 +281,12 @@ pub const WHY_UNREAD: [&str; 21] = [
     // 78.103 — the faces that lost their edge, by the face.
     "transport: star face, no edge",
     "transport: frame step, no edge",
+    // 78.103 — every edge refused at perception, by the reader that refused
+    // it (per reading: each coset member refuses for its own reason).
+    "edges lost: unspelled (a letter candidate)",
+    "edges lost: no reading",
+    "edges lost: tear",
+    "edges lost: no bodies",
 ];
 
 /// 78.103 — WHERE A BEND WAS READ: a contact's refraction (its tether, or one
@@ -288,12 +298,11 @@ pub(crate) enum Bend {
     Relative,
 }
 
-/// 78.103 — ONE BEND READ BY WHAT IT GENERATES: its modes (MR1) under the
-/// stroke, each counted by the planes it spans under its kind — a turn
-/// (elliptic), a null slide (parabolic), a boost (hyperbolic); the identity
-/// spans none. A bend whose modes do not read is counted unread, by name.
-pub(crate) fn note_bends(at: Bend, motion: &Mv, budget: &mut crate::physics::Budget) {
-    use crate::network::nerve::coord::BivectorKind;
+/// 78.103 — ONE BEND READ BY WHAT IT GENERATES: the plane it spans under its
+/// kind — a turn (elliptic), a null slide (parabolic), a boost (hyperbolic);
+/// the identity spans none. Read with no root and no stroke; a compound bend
+/// is counted unread, by name.
+pub(crate) fn note_bends(at: Bend, motion: &Mv) {
     let base = match at {
         Bend::Contact => CONTACT_BENDS,
         Bend::Relative => {
@@ -320,26 +329,39 @@ pub(crate) fn note_bends(at: Bend, motion: &Mv, budget: &mut crate::physics::Bud
         note(base + k, 1);
         return;
     }
-    let Some(Ok(modes)) = crate::transducer::cga::motion_modes(motion, budget) else {
-        note(base + BEND_KINDS - 1, 1);
-        return;
-    };
-    for m in modes {
-        let k = match m.kind {
-            BivectorKind::Elliptic => 0,
-            BivectorKind::Parabolic => 1,
-            BivectorKind::Hyperbolic => 2,
-            BivectorKind::Trivial => continue,
-        };
-        match u64::try_from(m.planes) {
-            Ok(planes) => note(base + k, planes),
-            Err(_) => note(base + BEND_KINDS - 1, 1),
-        }
-    }
+    // A COMPOUND BEND (a grade-4 part, two planes) is counted unread by name
+    // and spends nothing: its modes take roots, and the scene's one stroke is
+    // comprehension's (epoch 129: `stroke spent` 0–5 while compound bends
+    // took `motion_modes`). Its kinds wait for a root-free reading.
+    note(base + BEND_KINDS - 1, 1);
+}
+
+/// 78.103 — WHY A MEMBER PAIR'S EDGE DID NOT FORM, by the reader that refused
+/// it: the letters spell no rotor of it (37.7's candidate), no reading of its
+/// transition, a tear, or no bodies to read it from.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum EdgeLost {
+    Unspelled,
+    NoReading,
+    Tear,
+    NoBodies,
+}
+
+/// One member pair's edge lost, counted on the unread row by why.
+pub(crate) fn note_edge_lost(why: EdgeLost) {
+    note(
+        match why {
+            EdgeLost::Unspelled => EDGE_UNSPELLED,
+            EdgeLost::NoReading => EDGE_NO_READING,
+            EdgeLost::Tear => EDGE_TEAR,
+            EdgeLost::NoBodies => EDGE_NO_BODIES,
+        },
+        1,
+    );
 }
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 21] {
+pub fn unread_tally() -> [u64; 25] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
     [
@@ -364,6 +386,10 @@ pub fn unread_tally() -> [u64; 21] {
         r(RELATIVE_BENDS + 3),
         r(UNREAD_STAR),
         r(UNREAD_STEP),
+        r(EDGE_UNSPELLED),
+        r(EDGE_NO_READING),
+        r(EDGE_TEAR),
+        r(EDGE_NO_BODIES),
     ]
 }
 
@@ -543,7 +569,7 @@ pub fn speak(
         hear(&s, budget);
         out.push((steps, s));
     }
-    super::compose::read_bends(&bends, budget);
+    super::compose::read_bends(&bends);
     out
 }
 

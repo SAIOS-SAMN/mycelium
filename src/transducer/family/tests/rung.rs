@@ -202,10 +202,10 @@ fn a_bend_is_read_by_the_planes_its_modes_span() {
     use crate::transducer::sentence::rung::{note_bends, unread_tally, Bend, WHY_UNREAD};
     let at = |name: &str| WHY_UNREAD.iter().position(|n| *n == name).expect("a named slot");
     let before = unread_tally();
-    note_bends(Bend::Contact, &turn(E1, E2), &mut stroke());
-    note_bends(Bend::Contact, &cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]), &mut stroke());
+    note_bends(Bend::Contact, &turn(E1, E2));
+    note_bends(Bend::Contact, &cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]));
     let boost = Mv::scalar(q(5, 1)).add(&Mv::blade(E1 | cga::EM, q(3, 1)));
-    note_bends(Bend::Relative, &boost, &mut stroke());
+    note_bends(Bend::Relative, &boost);
     let after = unread_tally();
     let grew = |name: &str| after[at(name)] > before[at(name)];
     assert!(grew("contact bends: turn planes"), "a turn spans a turning plane");

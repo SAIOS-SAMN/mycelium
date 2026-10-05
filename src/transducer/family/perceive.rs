@@ -773,13 +773,23 @@ impl EdgeTally {
                 Some(t)
             }
             Some(Err(refusals)) => {
+                use crate::transducer::sentence::rung::{note_edge_lost, EdgeLost};
                 for refusal in refusals {
                     match refusal {
                         // 37.7's candidate at an edge: a generator the
                         // language lacks, counted.
-                        EdgeRefusal::Unspelled(_) => self.unspelled += 1,
-                        EdgeRefusal::NoReading => self.unread += 1,
-                        EdgeRefusal::NotRigid => self.not_rigid += 1,
+                        EdgeRefusal::Unspelled(_) => {
+                            self.unspelled += 1;
+                            note_edge_lost(EdgeLost::Unspelled);
+                        }
+                        EdgeRefusal::NoReading => {
+                            self.unread += 1;
+                            note_edge_lost(EdgeLost::NoReading);
+                        }
+                        EdgeRefusal::NotRigid => {
+                            self.not_rigid += 1;
+                            note_edge_lost(EdgeLost::Tear);
+                        }
                     }
                 }
                 None
@@ -896,7 +906,7 @@ pub(crate) fn edge_transport(
                 return Err(vec![EdgeRefusal::NotRigid]);
             }
             let gamma = inv.geo(v_j);
-            crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma, budget);
+            crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma);
             return edge_of(&gamma).map(|t| (t, Carried::Relative)).map_err(|e| vec![e]);
         }
     };

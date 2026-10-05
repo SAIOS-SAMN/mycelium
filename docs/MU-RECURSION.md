@@ -23180,6 +23180,18 @@ Proved: `perception::a_rigid_scene_has_identity_edges_and_a_relative_motion_is_i
   a voice, turns 0–5, null slides 0. The contacts' refractions carry
   hyperbolic content where the seen rays carry null.
 
+**Read on epoch 129 (`af46f544`, 20 min, five voices).** Every edgeless
+face that lost a ring is a MEMBER PAIR (1–9 a voice); star faces and frame
+steps lose none, and `edges: relative motion` is still 0 — so these pairs'
+edges were refused by `edge_of` or never measured, not differential.
+`stroke spent` fell to 0–5 (from 5–9) with compound bends the one reading
+left spending. Two readings follow, neither changing what the mind does:
+every refused edge counted by its reader on the unread row (`edges lost:
+unspelled (a letter candidate) / no reading / tear / no bodies` — the last a
+pair with no union and no frame both stand on, which had been silent); and
+a compound bend (a grade-4 part) counted unread by name, spending nothing,
+its kinds waiting for a root-free reading.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -317,17 +317,16 @@ pub fn sentences_of(
     budget: &mut crate::physics::Budget,
 ) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>)> {
     let (out, bends) = sentences_and_bends_of(form, rings, budget);
-    read_bends(&bends, budget);
+    read_bends(&bends);
     out
 }
 
 /// 78.103 — EACH CONTACT BEND, read by what it generates
 /// ([`super::rung::note_bends`]). A READING AFTER THE FACULTY: the mind
-/// composes and hears its rings first, and the bends take what the stroke
-/// has left — one whose stroke ran out is counted unread, by name.
-pub(crate) fn read_bends(bends: &[Mv], budget: &mut crate::physics::Budget) {
+/// composes and hears its rings first; the reading takes no stroke.
+pub(crate) fn read_bends(bends: &[Mv]) {
     for b in bends {
-        super::rung::note_bends(super::rung::Bend::Contact, b, budget);
+        super::rung::note_bends(super::rung::Bend::Contact, b);
     }
 }
 
