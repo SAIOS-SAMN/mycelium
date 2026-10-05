@@ -95,6 +95,13 @@ pub struct WindingTally {
     pub shortcuts_peel_unread: u64,
     pub shortcuts_no_discoverer: u64,
     pub shortcuts_rotor_unread: u64,
+    /// 78.102 — the words every heard sentence's rings taught: offered as
+    /// letters, spelled by the alphabet, the peel unread, the base rotor
+    /// unread.
+    pub heard_offered: u64,
+    pub heard_spelled: u64,
+    pub heard_peel_unread: u64,
+    pub heard_rotor_unread: u64,
 }
 
 impl Winding {
@@ -306,6 +313,45 @@ impl Kernel {
             false => Vec::new(),
         };
         Earned { draws, torse }
+    }
+
+    /// 78.102 — AN OPEN SENTENCE IS HEARD (law 8 as the progenitor reads it):
+    /// every sentence a voice speaks, whatever its adjudication, has its rings
+    /// re-derived by the master equation — the court verifying, never
+    /// perceiving — and each word they teach by the one rule
+    /// (`compose::teaches`: periodic, nilpotent, and named — a rosette is the
+    /// letter candidate 80.1 names) that the alphabet does not spell is
+    /// offered as a letter (`open_unspellable`, 37.7), its discoverer the
+    /// voice that spoke it, adjudicated by closure and the rank it opens. On
+    /// epoch 125 the voices held 15–32 ineffable words each and the courts,
+    /// re-deriving only the forms they ruled, offered none. Counted on the
+    /// court's letter line.
+    pub(crate) fn hear_open(&mut self, w: &Element, voice: [u8; 32], budget: &mut crate::physics::Budget) {
+        let Some(form) = crate::transducer::sentence::from_element_form(w) else { return };
+        let inv = crate::transducer::stalk::invariant_of(w);
+        let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
+        let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+        let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+        for (_, s) in crate::transducer::sentence::compose::sentences_of(&form, &rings, budget) {
+            let Ok(s) = s else { continue };
+            let theorem = crate::transducer::sentence::theorem::Theorem::of(&s);
+            let Some(word) = crate::transducer::sentence::compose::teaches(&s, &theorem) else { continue };
+            if word.projective_eq(&one) {
+                continue;
+            }
+            let t = &mut self.winding_tally;
+            match crate::transducer::family::derivation::peel_versor(word) {
+                Some(Ok(_)) => crate::physics::metabolism::step_or_refuse(&mut t.heard_spelled, 1),
+                None => crate::physics::metabolism::step_or_refuse(&mut t.heard_peel_unread, 1),
+                Some(Err(_)) => match crate::transducer::element::base_rotor_of(word) {
+                    Ok(r) => {
+                        self.open_unspellable(&r, &inv, &[], &voice);
+                        crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_offered, 1)
+                    }
+                    Err(_) => crate::physics::metabolism::step_or_refuse(&mut t.heard_rotor_unread, 1),
+                },
+            };
+        }
     }
 
     /// 78.68 — A RANK STEP, RE-DERIVED: the word at `addr` just entered the

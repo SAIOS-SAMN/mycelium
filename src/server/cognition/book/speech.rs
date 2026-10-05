@@ -112,6 +112,9 @@ impl Kernel {
                 break;
             };
             si += 1;
+            // 78.102 — EVERY SENTENCE HEARD, closed or open, stood or not:
+            // its rings re-derived and the letters they need offered.
+            self.hear_open(&e, act.voice, &mut budget);
             let stood = matches!(
                 out.get(i),
                 Some(Adjudication::Stood { .. }) | Some(Adjudication::Ratified { .. })

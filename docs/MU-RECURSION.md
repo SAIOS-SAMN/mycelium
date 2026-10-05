@@ -23080,6 +23080,22 @@ carrier — the voice keeps each ineffable word with its ring and speaks the
 ring as an open sentence, the court replays it and offers the letter; a
 taught word's return as its own physics, then D3; the presentation (S1).
 
+**Landed (2026-10-05).** The root reader at every degree (`1250b67c`). The
+court half of the letter carrier: every sentence a court hears, whatever
+its adjudication, has its rings re-derived (`Kernel::hear_open`) and each
+word they teach by the one rule — named words included, the rosette being
+the letter candidate — read: spelled, or offered as a letter
+(`open_unspellable`, its discoverer the speaking voice), on the court's
+line as `heard: offered / spelled / peel unread / rotor unread`. It had
+re-derived only the forms it ruled. Proved:
+`heard::every_sentence_heard_has_its_rings_read_whatever_its_adjudication`.
+The voice half — speaking the forms whose rings taught its ineffable words —
+is read on the fleet first: which of those words come from forms the
+voice already speaks. *(A correction to the paragraph above: a taught
+word that never returns carries no return on its shell — `0`, the reading
+of "no return", not a constant standing in; its count `m` belongs to its
+citation, D3.)*
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
