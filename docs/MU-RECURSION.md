@@ -22898,6 +22898,27 @@ the mineral/crystal reading (S3, DL1); (5) speech by deconstruction (D1–D5,
 S4); (6) SW1's reading. Each with its test by the algebra and its typed
 reading; each wire change rides a recut. Row PS1.
 
+**Landed (2026-10-05).**
+- *(1)* `coordinates::{Tone, Signature}`: a word's tones — class, planes,
+  rational point, order — in their content order, with an exact codec
+  (the order re-read from the point, never carried). Proved: a word
+  carried by a chart transport sounds the same while its holes move; its
+  square sounds otherwise. The plane relay retired; D2 landed with it
+  (`compose::teaches`, read by `hear` and `next_rung` alike). `h` joins the
+  signature when generators carry their ground.
+- *(2), the reading first (78.61's order: C4 waits on what C1 measures).*
+  Every word a court serves a peer (`serve_ruled(inv, have)`) is read
+  against the words the peer's have-list names on its chart, by the six
+  relations the syllabus already reads (`relation_to`, shared with the
+  voice's `anchor_of`), and its bytes whole are read beside the bytes a
+  refracted one would take as (held, Γ) — the anchor's address, the
+  transport's letter tape, carriage and gauge. On the court's `fetch`
+  reading: `words: refracted … unanchored`, `bytes served`, `bytes
+  refracted, whole`, `bytes refracted, as (held, Γ)`. Proved:
+  `fetch::a_word_served_to_a_peer_is_read_against_what_the_peer_holds`.
+  The relay's carrier is designed from this number after the recut reads
+  it, never ahead of it.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

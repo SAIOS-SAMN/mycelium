@@ -349,6 +349,10 @@ impl Kernel {
             }
             used += width;
             crate::observe::count(&mut self.acts.fetch, &crate::observe::FETCH, "words served");
+            // 78.100 PS1 (2) — THE READING BEFORE THE RELAY: what the word
+            // stands to among the words the asking court said it holds, and
+            // what it would cost as (held, Γ) where it is refracted.
+            self.read_fetched(&addr, &held, bytes.len());
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
         }
         out
@@ -472,8 +476,6 @@ impl Kernel {
     /// never a byte count; a lower bound, since the learner's own speech and
     /// other courts' words are not read.
     fn anchor_of(&self, addr: &[u8], voice: [u8; 32]) -> &'static str {
-        use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
-        use crate::transducer::sentence::Relation;
         const READS: [&str; 6] = [
             "sentences: refracted (held, Γ)",
             "sentences: conjugate, carriage apart",
@@ -482,14 +484,60 @@ impl Kernel {
             "sentences: chart only",
             "sentences: unanchored",
         ];
-        let Some(word) = self.installed_word(addr) else { return READS[5] };
+        READS[self.relation_to(addr, |held| self.taught_voice.contains(&taught_key(held, &voice))).0]
+    }
+
+    /// 78.100 PS1 (2) — ONE WORD SERVED TO A PEER COURT, READ: its relation
+    /// to the words the asker holds on its chart (`have`, the fetch's own
+    /// field), its bytes whole, and — refracted — its bytes whole beside the
+    /// bytes it would take as (held, Γ): the anchor's address, then the
+    /// transport's word by its letter tape, its carriage by its coefficients
+    /// and its gauge two bytes a pair. A measure, never a gate.
+    fn read_fetched(&mut self, addr: &[u8], have: &crate::network::nerve::Keyed<()>, whole: usize) {
+        use crate::observe::{count, count_by, FETCH};
+        const WORDS: [&str; 6] = [
+            "words: refracted (held, Γ)",
+            "words: conjugate, carriage apart",
+            "words: unspellable conjugator",
+            "words: rotor per vertex δγ",
+            "words: chart only",
+            "words: unanchored",
+        ];
+        let (read, refracted) = self.relation_to(addr, |h| have.contains(h));
+        count(&mut self.acts.fetch, &FETCH, WORDS[read]);
+        count_by(&mut self.acts.fetch, &FETCH, "bytes served", whole as u64);
+        if let Some((anchor, gamma)) = refracted {
+            let mut relay = Vec::new();
+            crate::transducer::address::put_key_bytes(&mut relay, &anchor);
+            gamma.word.to_bytes(&mut relay);
+            gamma.carriage.to_bytes(&mut relay);
+            relay.extend(gamma.gauge.iter().flat_map(|(a, b)| [*a, *b]));
+            count_by(&mut self.acts.fetch, &FETCH, "bytes refracted, whole", whole as u64);
+            count_by(&mut self.acts.fetch, &FETCH, "bytes refracted, as (held, Γ)", relay.len() as u64);
+        }
+    }
+
+    /// 78.60, 78.100 PS1 (2) — THE STRONGEST RELATION `addr` STANDS IN TO A
+    /// WORD THIS COURT HOLDS ON ITS CHART THAT `holds` NAMES, as its place on
+    /// the six readings (refracted, conjugate, unspellable conjugator, rotor
+    /// per vertex δγ, chart only, unanchored), with the anchor and the
+    /// transport where it is refracted. Exact: the conjugators solved over
+    /// ℚ, the refraction's address compared.
+    fn relation_to(
+        &self,
+        addr: &[u8],
+        holds: impl Fn(&[u8]) -> bool,
+    ) -> (usize, Option<(Vec<u8>, crate::transducer::sentence::Transport)>) {
+        use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
+        use crate::transducer::sentence::Relation;
+        let Some(word) = self.installed_word(addr) else { return (5, None) };
         let (Some(inv), Some(form)) = (chart_of(word), crate::transducer::sentence::from_element_form(word)) else {
-            return READS[5];
+            return (5, None);
         };
-        // The strongest relation met so far, as its place on READS.
+        // The strongest relation met so far, as its place on the readings.
         let mut best = 5usize;
         for held in self.ruled.fiber(&inv) {
-            if held.as_slice() == addr || !self.taught_voice.contains(&taught_key(&held, &voice)) {
+            if held.as_slice() == addr || !holds(&held) {
                 continue;
             }
             best = best.min(4);
@@ -497,7 +545,7 @@ impl Kernel {
                 continue;
             };
             let read = match crate::transducer::sentence::relation(&h, &form) {
-                Relation::Refracted(_) => return READS[0],
+                Relation::Refracted(gamma) => return (0, Some((held, gamma))),
                 Relation::Conjugate(_) => 1,
                 Relation::Unspellable(_) => 2,
                 Relation::Unrelated => match coboundary_gauge(&h, &form) {
@@ -507,7 +555,7 @@ impl Kernel {
             };
             best = best.min(read);
         }
-        READS[best]
+        (best, None)
     }
 
     /// WHAT TEACHING `addr` TO `voice` COSTS: a word its magnitude whole; a

@@ -128,8 +128,26 @@ pub const SYLLABUS: [&str; 13] = [
     "sentences: chart only",
     "sentences: unanchored",
 ];
-/// What a court's fetch pages came to.
-pub const FETCH: [&str; 2] = ["words served", "deferred: reserve"];
+/// What a court's fetch pages came to — and, 78.100 PS1 (2), the reading
+/// before the court-to-court relay of generators (78.61 C4): each word served
+/// to a peer court, by the strongest relation it stands in to a word that
+/// court said it holds on the word's chart (the same six as the syllabus's),
+/// and the bytes served whole against the bytes the refracted ones would
+/// take as (held, Γ) — the anchor's address and the transport's word,
+/// carriage and gauge, each by its own codec.
+pub const FETCH: [&str; 11] = [
+    "words served",
+    "deferred: reserve",
+    "words: refracted (held, Γ)",
+    "words: conjugate, carriage apart",
+    "words: unspellable conjugator",
+    "words: rotor per vertex δγ",
+    "words: chart only",
+    "words: unanchored",
+    "bytes served",
+    "bytes refracted, whole",
+    "bytes refracted, as (held, Γ)",
+];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?).
 pub const JUDGED: [&str; 10] = [
     "first closures",
@@ -442,5 +460,14 @@ pub struct ActsTally {
 pub fn count<const N: usize>(slots: &mut [u64; N], names: &[&str; N], name: &str) {
     if let Some((slot, _)) = slots.iter_mut().zip(names).find(|(_, n)| **n == name) {
         *slot += 1;
+    }
+}
+
+/// The counter under `name` stepped by `by` — a measure, bytes or mass, not
+/// one event — or the step refused and counted where it would pass the
+/// carrier (STD1).
+pub fn count_by<const N: usize>(slots: &mut [u64; N], names: &[&str; N], name: &str, by: u64) {
+    if let Some((slot, _)) = slots.iter_mut().zip(names).find(|(_, n)| **n == name) {
+        let _ = crate::physics::metabolism::step_or_refuse(slot, by);
     }
 }
