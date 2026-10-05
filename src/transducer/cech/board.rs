@@ -18,6 +18,56 @@
 //! a pivot one order refuses is a reading of that order, never an error.
 
 use super::*;
+use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
+
+/// 78.99 (2), (4), (5) — THE CONSTRUCTION'S TALLY'S NAMES, in
+/// [`construction_tally`]'s order: the holes the pivots opened and capped,
+/// what the connecting map read on each glue, and the words a voice relayed
+/// as coordinates. The typed reading the voice's Senses carry.
+pub const CONSTRUCTION: [&str; 12] = [
+    "punctured",
+    "capped",
+    "cap refused",
+    "glues read",
+    "classes made",
+    "loops flat",
+    "holes capped by a glue",
+    "glue: no overlap",
+    "glue: inexact",
+    "glue: a part curved",
+    "glue: unread",
+    "coordinates relayed",
+];
+pub(crate) const PUNCTURED: usize = 0;
+pub(crate) const CAPPED: usize = 1;
+pub(crate) const CAP_REFUSED: usize = 2;
+pub(crate) const GLUES: usize = 3;
+pub(crate) const MADE: usize = 4;
+pub(crate) const FLAT: usize = 5;
+pub(crate) const GLUE_CAPPED: usize = 6;
+pub(crate) const NO_OVERLAP: usize = 7;
+pub(crate) const INEXACT: usize = 8;
+pub(crate) const PART_CURVED: usize = 9;
+pub(crate) const GLUE_UNREAD: usize = 10;
+pub const RELAYED: usize = 11;
+
+static TALLY: [AtomicU64; CONSTRUCTION.len()] = [const { AtomicU64::new(0) }; CONSTRUCTION.len()];
+
+/// One step of a slot of the construction's tally, refused and counted on
+/// the metabolism's ledger where it would pass its carrier.
+pub fn note_construction(slot: usize, by: u64) {
+    let Some(at) = TALLY.get(slot) else { return };
+    if by > 0 && at.fetch_update(Relaxed, Relaxed, |held| held.checked_add(by)).is_err() {
+        let mut past = u64::MAX;
+        let _ = crate::physics::metabolism::step_or_refuse(&mut past, by);
+    }
+}
+
+/// The construction's tally since the process began, in [`CONSTRUCTION`]'s
+/// order.
+pub fn construction_tally() -> [u64; CONSTRUCTION.len()] {
+    std::array::from_fn(|i| TALLY[i].load(Relaxed))
+}
 
 /// ONE PIVOT AT ITS COORDINATE: the cell (or hole, or pair) it acts on.
 #[derive(Clone, Debug)]

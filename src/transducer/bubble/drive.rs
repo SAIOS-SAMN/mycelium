@@ -403,6 +403,15 @@ impl Contemplation {
                                     }
                                 }
                             }
+                            // 78.99 (2) — A CURVED CELL IS A HOLE: a membrane
+                            // whose boundary's holonomy is a class seals no
+                            // flat circulation, so it is punctured — the
+                            // class kept in the nerve as the hole the
+                            // boundary winds about, pinning it, until a
+                            // released vertex caps it and hands it out.
+                            if d >= 2 {
+                                let _ = self.complex.puncture(&key);
+                            }
                         }
                         // 37.7 at a simplex: a rotation the seventeen do not
                         // spell. Not a class the horizon can seed a pivot

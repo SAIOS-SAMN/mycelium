@@ -382,6 +382,9 @@ pub struct SpeechAct {
     /// cites (50.9): the refusal receipt this sentence is the contraction
     /// of, or none for a sentence spoken fresh.
     pub contractions: Vec<Option<crate::transducer::sentence::Contraction>>,
+    /// 78.99 (5) — per sentence, in the same order, the coordinates of the
+    /// words its form teaches as the speaker read them.
+    pub coordinates: Vec<Vec<crate::transducer::sentence::coordinates::Coordinates>>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The derivation
     // of every word vertex travels inside the tape at v7, so two voices
     // sending one address are told apart by the tapes themselves and the

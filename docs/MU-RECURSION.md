@@ -22759,15 +22759,46 @@ pivots_sharing_no_vertex_commute_and_on_one_cell_the_order_is_content}`;
 a_connected_overlap_makes_nothing_and_an_inexact_one_refuses,
 a_hole_one_part_holds_sealed_is_capped_by_the_glue}`.
 
-**Owed, by name.** No live caller punctures, seals, condenses through the
-named door, or glues by the connecting map yet: they land as faculties
-proved by the algebra, as `ascend` did (AD1), and their first live callers
-— the voice's nerve puncturing a curved cell instead of releasing it, the
-court's two vantages glued by `connecting` beside the exactness refusal,
-the anastome carrying `Coordinates` — come after the operator's recut
-reads the rung lexicon's coordinates on the fleet. An isoclinic word's
-square (a 4-blade at 180°) stands on another hole key than the word's
-generator, so it reads `New`, not a power.
+**Wired live (2026-10-05, the operator's word: "wire 3,5,6", before the
+recut).**
+- *(3) on the voice's nerve.* A cell the climb fills with a CLASS — a
+  membrane whose boundary's holonomy is curvature, sealing no flat
+  circulation — is punctured where it is read (`bubble/drive.rs`): its class
+  stays in the nerve as a hole, pinning its boundary. A released vertex caps
+  its holes first (`release_vertex` → `seal_holes_on`, at the volume the cell
+  was read with), so the class leaves by `descend` with the rest of the star
+  and no hole outlives its boundary; `drop_vertex` takes any hole left.
+- *(5) at the thought merge.* Two thoughts merging along a tether of the
+  meet graph glue their stars (`Complex::star_of`, each a tree, exact) by
+  the connecting map, read before their vertices are vented
+  (`bubble/merge.rs`): each loop through a neighbour both meet is a class
+  neither star held, and it enters the merged thought's horizon. (The
+  court's per-chart complexes share one vantage set across charts whose
+  transitions differ by nature, so gluing two charts there reads
+  inexactness, not meaning: not wired.)
+- *(6) on the speech act.* Each spoken sentence carries the coordinates of
+  the words its form teaches (`rung::coordinates_taught`, the speaker's
+  stroke) — `[m count][coordinates · m]` after its tape, a wire change for
+  the recut. The court re-reads them on its own derivation of the form for
+  every sentence it stood or ratified (`Kernel::reread_relay`): agreed,
+  moved, unsaid, unread, on the court's journal (`court relay …`). Γ is the
+  identity here — speaker and court read the same form — so a moved
+  coordinate is a difference of construction, not of chart.
+- *The reading.* The voice's Senses carry the `construction` row
+  (`cech::CONSTRUCTION`): punctured, capped, cap refused, glues read,
+  classes made, loops flat, holes capped by a glue, glue refusals by why,
+  coordinates relayed.
+
+**Proved with them.** `hole::a_released_vertex_caps_its_holes_and_hands_their_classes_out`;
+`connecting::two_stars_glued_read_the_loop_through_a_shared_neighbour`;
+`relay::the_relayed_coordinates_travel_whole_and_the_court_re_reads_them`.
+
+**Owed, by name.** Holes are volatile: no persisted (court) complex
+punctures. An isoclinic word's square (a 4-blade at 180°) stands on another
+hole key than the word's generator, so it reads `New`, not a power. The
+recut reads: the `construction` row on each voice (punctures and caps
+balancing, classes made by merges), the `sentences` row's coordinates and
+powers, and the court's relay line — agreed against moved.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

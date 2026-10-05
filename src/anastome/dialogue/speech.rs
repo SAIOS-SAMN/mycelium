@@ -94,6 +94,10 @@ pub struct Spoken {
     pub tape: Vec<u8>,
     pub standing: u8,
     pub contraction: Option<Contraction>,
+    /// 78.99 (5) — the coordinates of the words the sentence's form teaches,
+    /// as the speaker read them: holes and windings, never the evaluated
+    /// words. The hearer re-reads them on its own construction.
+    pub coordinates: Vec<crate::transducer::sentence::coordinates::Coordinates>,
     // 50.2 step 2 as ruled 2026-09-10: `paths` was here. The generators a
     // voice reached each word vertex through are ON the tape at v7, in
     // the vertex's own derivation, because they are what the vertex is.
@@ -127,13 +131,15 @@ pub fn encode_speech_standing(
                 None => crate::transducer::stalk::Standing::Stood.as_u8(),
             },
             contraction: None,
+            coordinates: Vec::new(),
         })
         .collect();
     encode_speech_spoken(voice, task, tu, &spoken)
 }
 
 /// `[ACT_SPEECH][voice 32][task address][K u64][n u32]` then per sentence
-/// `[standing u8][cert u8][contraction?][len u32][tape]`; the derivation
+/// `[standing u8][cert u8][contraction?][len u32][tape][m count]
+/// [coordinates · m]` (78.99 (5)); the derivation
 /// of every word vertex is inside the tape at v7 (50.2 step 2). `None`
 /// where the task's address cannot be framed (LD0): the speech is not
 /// spoken, never sent with the task dropped.
@@ -158,6 +164,10 @@ pub fn encode_speech_spoken(
             None => out.push(0),
         }
         crate::transducer::address::put_bytes(&mut out, &s.tape)?;
+        crate::transducer::address::put_key_count(&mut out, s.coordinates.len());
+        for c in &s.coordinates {
+            c.put(&mut out);
+        }
     }
     Some(out)
 }
@@ -176,6 +186,7 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
     let mut sentences = Vec::with_capacity(n.min(64));
     let mut standing = Vec::with_capacity(n.min(64));
     let mut contractions = Vec::with_capacity(n.min(64));
+    let mut coordinates = Vec::with_capacity(n.min(64));
     for _ in 0..n {
         let st = *body.get(pos)?;
         pos += 1;
@@ -190,11 +201,20 @@ pub fn decode_speech(body: &[u8]) -> Option<SpeechAct> {
         pos += 4;
         let s = body.get(pos..pos + len)?.to_vec();
         pos += len;
+        // 78.99 (5) — the coordinates relayed beside the tape, whole or the
+        // speech refused: each reads at least one byte, so a count past the
+        // body refuses at the first that does not read.
+        let m = crate::transducer::address::take_key_count(body, &mut pos)?;
+        let mut relayed = Vec::with_capacity(m.min(64));
+        for _ in 0..m {
+            relayed.push(crate::transducer::sentence::coordinates::Coordinates::take(body, &mut pos)?);
+        }
         standing.push(st);
         contractions.push(cited);
+        coordinates.push(relayed);
         sentences.push(s);
     }
-    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions })
+    Some(SpeechAct { voice, task, k: tu, sentences, standing, contractions, coordinates })
 }
 
 /// `[ACT_SPEECH][n u8]` then per sentence `[code u8][receipt 32]` and, for

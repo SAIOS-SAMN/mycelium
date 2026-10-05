@@ -53,6 +53,22 @@ fn puncture_keeps_the_class_in_and_only_seal_caps_the_hole() {
     assert_eq!(c.board().sealed, vec![(key, cap)]);
 }
 
+/// A RELEASED VERTEX CAPS ITS HOLES FIRST (78.99 (2), the voice's vent): the
+/// hole is sealed at the volume its cell was read with, its class returned to
+/// a cell, and the release then hands that class out by `descend` with the
+/// rest of the star — no hole left naming a boundary that is gone.
+#[test]
+fn a_released_vertex_caps_its_holes_and_hands_their_classes_out() {
+    let mut c = Complex::new();
+    let (vs, key) = sealed_triangle(&mut c, 1, turn_90());
+    let Punctured::Opened(_) = c.puncture(&key) else { panic!("punctured") };
+    let r = c.release_vertex(&vs[0]);
+    assert!(!c.is_hole(&key), "the hole was capped");
+    assert_eq!(r.released, 1, "and its class handed out by the descend: {r:?}");
+    assert_eq!(r.pinned, 0, "nothing stands pinned");
+    assert!(c.board().holes.is_empty() && c.board().sealed.is_empty());
+}
+
 /// CONDENSE IS DRAIN'S INVERSE ON CONTENT. A flat tether drains to the
 /// vacuum and condenses back with its transition: the same board. A tether
 /// that stands is not condensed twice; a remainder pair refuses.

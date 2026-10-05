@@ -619,6 +619,9 @@ impl Complex {
     /// `ascend` existed and nothing called them.
     pub fn release_vertex(&mut self, v: &[u8]) -> Release {
         let mut out = Release::default();
+        // 78.99 (2) — its holes capped first, so their classes leave by
+        // `descend` with the rest of the star, never dropped with a hole.
+        self.seal_holes_on(v);
         let mut cells: Vec<(usize, Vec<u8>)> = match self.star.get(v) {
             Some(star) => star.scoped().filter_map(|(k, ())| self.degree_of(&k).map(|d| (d, k))).collect(),
             None => Vec::new(),

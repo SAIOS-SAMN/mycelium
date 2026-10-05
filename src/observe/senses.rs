@@ -92,6 +92,10 @@ pub struct Senses {
     /// 78.96 — the sentences its rings composed: closed, open by why, the
     /// theorems, the shortcuts and the top rung (`rung::SENTENCES`).
     pub sentences: [u64; crate::transducer::sentence::rung::SENTENCES.len()],
+    /// 78.99 — its construction: the holes its nerve punctured and capped,
+    /// what each glue of two thoughts read, and the words it relayed as
+    /// coordinates (`cech::CONSTRUCTION`).
+    pub construction: [u64; crate::transducer::cech::CONSTRUCTION.len()],
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -233,6 +237,7 @@ impl Senses {
         put(out, &self.derivation);
         put(out, &self.flux);
         put(out, &self.sentences);
+        put(out, &self.construction);
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -251,7 +256,7 @@ impl Senses {
             1 => Some(crate::transducer::sentence::Reasons::take(b, p)?),
             _ => return None,
         };
-        let (derivation, flux, sentences) = (take(b, p)?, take(b, p)?, take(b, p)?);
+        let (derivation, flux, sentences, construction) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
         Some(Senses {
             k,
             sight,
@@ -262,6 +267,7 @@ impl Senses {
             derivation,
             flux,
             sentences,
+            construction,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -287,6 +293,7 @@ impl Senses {
         out.push(format!("derivation: {}", line(&crate::transducer::family::DERIVATION, &self.derivation)));
         out.push(format!("flux: {}", line(&crate::transducer::family::flux::FLUX, &self.flux)));
         out.push(format!("sentences: {}", line(&crate::transducer::sentence::rung::SENTENCES, &self.sentences)));
+        out.push(format!("construction: {}", line(&crate::transducer::cech::CONSTRUCTION, &self.construction)));
         out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
@@ -310,6 +317,7 @@ impl Senses {
             "derivation" => at(&crate::transducer::family::DERIVATION, &self.derivation, name),
             "flux" => at(&crate::transducer::family::flux::FLUX, &self.flux, name),
             "sentences" => at(&crate::transducer::sentence::rung::SENTENCES, &self.sentences, name),
+            "construction" => at(&crate::transducer::cech::CONSTRUCTION, &self.construction, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

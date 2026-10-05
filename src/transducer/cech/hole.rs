@@ -157,6 +157,7 @@ impl Complex {
             }
         }
         self.holes.insert(key, simplex);
+        super::board::note_construction(super::board::PUNCTURED, 1);
         Punctured::Opened(fill)
     }
 
@@ -184,19 +185,40 @@ impl Complex {
             }
             cx.holes.insert(key, hole);
         };
+        use super::board::{note_construction, CAPPED, CAP_REFUSED};
         match outcome {
-            Ascended::Sealed(cap) => Capped::Sealed { cap, killed: hole.fill },
+            Ascended::Sealed(cap) => {
+                note_construction(CAPPED, 1);
+                Capped::Sealed { cap, killed: hole.fill }
+            }
             Ascended::Open => {
                 // The cap was minted and did not close: it goes, and the hole
                 // stands as it was.
                 self.forget(key);
                 restore(self, hole);
+                note_construction(CAP_REFUSED, 1);
                 Capped::Open
             }
             Ascended::AlreadySealed | Ascended::Absent | Ascended::Hole => {
                 restore(self, hole);
+                note_construction(CAP_REFUSED, 1);
                 Capped::Absent
             }
+        }
+    }
+
+    /// 78.99 (2) — THE HOLES ON A VERTEX, CAPPED before it is released: each
+    /// hole re-ascended over its standing boundary at the volume it was read
+    /// with when its cell was minted (read, never written), so the class it
+    /// kept returns to a cell and the release hands it out by `descend`. A
+    /// hole whose cap does not close stands and pins, and the vertex with it.
+    pub(crate) fn seal_holes_on(&mut self, v: &[u8]) {
+        let holes: Vec<(Vec<u8>, [u64; 4])> = match self.star.get(v) {
+            Some(star) => star.scoped().filter_map(|(k, ())| self.holes.get(&k).map(|h| (k, h.volume))).collect(),
+            None => Vec::new(),
+        };
+        for (k, volume) in holes {
+            let _ = self.seal(&k, |_| volume);
         }
     }
 }

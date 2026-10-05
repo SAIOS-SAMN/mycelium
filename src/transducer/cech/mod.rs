@@ -27,7 +27,7 @@ pub mod simplex;
 pub mod persist;
 pub mod remainder;
 
-pub use board::{independent, Applied, Board, Pivot};
+pub use board::{construction_tally, independent, note_construction, Applied, Board, Pivot, CONSTRUCTION};
 pub use coboundary::*;
 pub use complex::*;
 pub use connecting::{connecting, Glued, Unglued};

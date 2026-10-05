@@ -123,7 +123,17 @@ impl Kernel {
             // install, from the derivations the court replayed (26, 50.2
             // step 2); nothing is read from beside the tape here. L9 (4/5)
             // wires the payment at `home_install`.
-            let _ = &e;
+            //
+            // 78.99 (5) — THE RELAY RE-READ. The coordinates the speaker
+            // relayed beside the tape are re-read on the court's own
+            // derivation of the same form, under this frame's stroke: each
+            // relayed word the court reads too AGREES; one it does not reads
+            // MOVED — the coordinate that moved between the two vantages; a
+            // word the court reads that was not relayed is UNSAID. Counted,
+            // never a gate on the adjudication already given.
+            if let Some(relayed) = act.coordinates.get(i) {
+                self.reread_relay(&e, relayed, &mut budget);
+            }
         }
         Ok(out)
     }

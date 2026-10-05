@@ -419,6 +419,12 @@ impl Exchange {
                             .collect::<Vec<_>>()
                             .join(" ")
                     );
+                    // 78.99 (5) — the relay re-read: coordinates the voices
+                    // relayed, against the court's own derivation.
+                    eprintln!(
+                        "  court relay agreed {} moved {} unsaid {} unread {}",
+                        w.relay_agreed, w.relay_moved, w.relay_unsaid, w.relay_unread
+                    );
                 }
             }
             #[expect(clippy::cast_possible_truncation, reason = "site 4 — expansion_unit, a u64 → usize narrowing on a 32-bit target; its opposite operation is asked at site 4")]

@@ -39,6 +39,19 @@ fn two_exact_arcs_glued_at_their_ends_make_a_class_neither_held() {
     assert!(flat.made.is_empty() && flat.flat == 1, "a flat loop makes nothing: {flat:?}");
 }
 
+/// TWO VERTICES' STARS GLUED (the voice's merge): on a meet graph where two
+/// thoughts share a tether and a neighbour, and the neighbour's two tethers
+/// turn, the stars glue along the two thoughts and the neighbour, and the
+/// loop round the three is a class neither star held.
+#[test]
+fn two_stars_glued_read_the_loop_through_a_shared_neighbour() {
+    let mut c = arc(1, 3, 2, turn_90());
+    c.set_edge(key(1), key(2), Rotor::identity(), ident(), vol());
+    let g = connecting(&c.star_of(&key(1)), &c.star_of(&key(2))).expect("two stars glue");
+    assert_eq!(g.components, 2, "the two thoughts, and the neighbour: {g:?}");
+    assert_eq!(g.made.len(), 1, "one loop through the neighbour, one class made");
+}
+
 /// A CONNECTED OVERLAP MAKES NOTHING, AND AN INEXACT ONE REFUSES. Two parts
 /// sharing a tether with one transition overlap in one component; sharing it
 /// with two transitions is the Mayer–Vietoris inexactness, refused by name.

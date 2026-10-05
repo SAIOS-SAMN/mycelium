@@ -293,6 +293,21 @@ impl Contemplation {
                 }
             }
         }
+        // 78.99 (4) — THE GLUE MAKES MEANING: the two thoughts' stars on the
+        // meet graph glued by the connecting map, read before their vertices
+        // are vented. Each loop through a neighbour both thoughts meet is a
+        // class neither star held alone, and it enters the merged thought's
+        // horizon as a class the meet stands — every route kept, none
+        // multiplied with another.
+        let mut made: Vec<Rotor> = Vec::new();
+        if let [a, b] = verts {
+            if let Ok(g) = crate::transducer::cech::connecting(&self.complex.star_of(a), &self.complex.star_of(b)) {
+                made.extend(g.made.into_iter().filter_map(|(_, _, fill)| match fill {
+                    Fill::Class(_, r) => Some(*r),
+                    _ => None,
+                }));
+            }
+        }
         let mut remainder = Vec::new();
         let mut cover = Keyed::new();
         let mut nerve = Complex::new();
@@ -345,6 +360,11 @@ impl Contemplation {
             }
             nerve = b.nerve.clone();
             self.bubbles.remove(v);
+        }
+        for r in made {
+            if r.class_key().is_none_or(|ck| !horizon.contains(ck.as_bytes())) {
+                horizon_put(&mut horizon, r, Standing::Held);
+            }
         }
         self.paint_seeded(&mut horizon);
         // 78.52(6) — THE PAIR'S GROUND, read at the gate with the hours the

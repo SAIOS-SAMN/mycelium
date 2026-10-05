@@ -126,8 +126,51 @@ fn relative(x: &(usize, Rotor, Versor), y: &(usize, Rotor, Versor)) -> Option<(R
     Some((x.1.geo(&yr), x.2.geo(&y.2.reverse())))
 }
 
-/// THE CONNECTING MAP on two constructions glued along what they share.
+/// THE CONNECTING MAP on two constructions glued along what they share,
+/// every reading counted on the construction's tally by what it read.
 pub fn connecting(u: &Complex, v: &Complex) -> Result<Glued, Unglued> {
+    use super::board::{note_construction as note, FLAT, GLUES, GLUE_CAPPED, GLUE_UNREAD, INEXACT, MADE, NO_OVERLAP, PART_CURVED};
+    let read = glue(u, v);
+    match &read {
+        Ok(g) => {
+            note(GLUES, 1);
+            note(MADE, g.made.len() as u64);
+            note(FLAT, g.flat as u64);
+            note(GLUE_CAPPED, g.capped.len() as u64);
+        }
+        Err(Unglued::NoOverlap) => note(NO_OVERLAP, 1),
+        Err(Unglued::Inexact(_)) => note(INEXACT, 1),
+        Err(Unglued::PartNotExact(_)) => note(PART_CURVED, 1),
+        Err(Unglued::Unread) => note(GLUE_UNREAD, 1),
+    }
+    read
+}
+
+impl Complex {
+    /// THE CONSTRUCTION ONE VERTEX STANDS ON: its section, its tethers, and
+    /// the sections at their far ends — a star, a tree, exact by
+    /// construction. Two vertices' stars glued by [`connecting`] read the
+    /// loops through what the two share: each common neighbour a component of
+    /// the overlap, each loop the holonomy round the two and that neighbour.
+    pub fn star_of(&self, v: &[u8]) -> Complex {
+        let mut out = Complex::new();
+        let Some(at) = self.sections.get(v) else { return out };
+        out.sections.insert(v, at.clone());
+        for key in self.link(v, 1) {
+            let Some(s) = self.simplex(&key) else { continue };
+            for u in &s.vertices {
+                if let Some(sec) = self.sections.get(u) {
+                    out.sections.insert(u, sec.clone());
+                }
+            }
+            out.remember(s.clone());
+        }
+        out
+    }
+}
+
+/// [`connecting`]'s reading.
+fn glue(u: &Complex, v: &Complex) -> Result<Glued, Unglued> {
     use crate::transducer::element::{identity_versor, same_versor};
     // THE OVERLAP: the vertices both parts section, joined by the tethers both
     // hold — which must carry one transition (Mayer–Vietoris exactness).
