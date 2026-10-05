@@ -20103,6 +20103,8 @@ rank: dim_ℚ Lie⟨B(W̄ᵢ)⟩, B = ⟨·⟩₂/⟨·⟩₀ on §52's chart   
   path. `next_rung` reads the closed sentences' shortcuts as the words of
   the next rung, and those compose into sentences exactly as this rung's
   do. The grammar is this equation applied to its own closures.
+  *(Amended by 78.101, 2026-10-05: a nilpotent theorem,
+  `Ωᵐ ∝ 1 + m·N`, is a relation of the grammar beside the returning one.)*
 
 `compose` reads:
 - `Ω`, path-ordered from the first word;
@@ -22965,7 +22967,47 @@ reading; each wire change rides a recut. Row PS1.
   its widest coefficient in bits (`cga::root_refusals`); both on a row of
   their own, `unread` (`rung::WHY_UNREAD`). The court's letter offer is read
   where it breaks (`court shortcuts offered … spelled … peel unread … no
-  discoverer … rotor unread`).
+  discoverer … rotor unread`). On the next reading the transport's "none
+  read" splits further into `not rigid` (a pair no rigid versor carries)
+  and `unrefracted` (a contact whose refraction was refused).
+
+### 78.101 Nilpotent theorems are relations of the grammar (the operator's word, 2026-10-05: "nilpotent theorems are relations of the grammar — proceed")
+
+**The question it answers.** 78.69 wrote the grammar as
+`𝔊⁽ⁿ⁺¹⁾ = ⟨C(w⁽ⁿ⁾), g | Ω(s)^{ℓ_s} ~ 1 for each closed s⟩`: only a sentence
+that RETURNS was a relation. The minds' perception is flow — translation,
+recolour, flux (78.95, H2) — and on epoch 124 no sentence of any voice
+closed (`periodic 0`, `closed 0`), while 9–35 a voice were nilpotent
+theorems, `Ωᵐ ∝ 1 + m·N`. Under 78.69 as written the minds had words and no
+grammar, and would have none until they learned to see returns.
+
+**The ruling.** A nilpotent theorem is a relation of the grammar beside the
+returning one:
+
+```
+𝔊⁽ⁿ⁺¹⁾ = ⟨ C(w⁽ⁿ⁾), g  |  Ω(s)^{ℓ_s} ~ 1        for each returning s,
+                         Ω(s)^m ∝ 1 + m·N_s     for each nilpotent s ⟩
+```
+
+A returning relation says the path is a word of finite order — a residue
+mod `ℓ`. A nilpotent relation says the path's every power is one integer
+times one null direction — a COUNT along a held direction (78.68's
+parabolic row, `m ∈ ℤ`): the condensation law of the luminal layer, a
+proof checked finitely (`Theorem::check`), as the court already treats it
+when it re-derives a ruled form (`step_rank`: "a ring of rays that
+condenses (a nilpotent theorem) is a proof too"). A named sentence
+(hyperbolic, rosette) is NOT a relation: it is held by name (78.68) and
+proves nothing.
+
+**What it changes.**
+- *The grammar forms on what the minds perceive now.* Every nilpotent
+  theorem a sentence of held words proves is a relation of the grammar; a
+  word cited `gᵉ` along a null hole is a winding of that relation.
+- *The presentation (S1) carries both kinds of relation* — returning and
+  nilpotent — each as its citation structure and its certificate.
+- *The plan's step 6 is closed by this ruling*; closure by turns or by
+  faces (step 7) is no longer the gate to grammar, only a second source of
+  relations.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

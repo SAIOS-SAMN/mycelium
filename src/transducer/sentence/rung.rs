@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 35;
+const SLOTS: usize = 36;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -92,9 +92,10 @@ const COORDS_IRRATIONAL: usize = 28;
 const COORDS_DEFECTIVE: usize = 29;
 const COORDS_SPENT: usize = 30;
 const COORDS_GENERATOR: usize = 31;
-const UNREAD_NONE_READ: usize = 32;
+const UNREAD_NOT_RIGID: usize = 32;
 const UNREAD_NO_BASE_ACTION: usize = 33;
 const UNREAD_NOT_A_VERSOR: usize = 34;
+const UNREAD_UNREFRACTED: usize = 35;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -237,8 +238,9 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 6] = [
-    "transport: none read",
+pub const WHY_UNREAD: [&str; 7] = [
+    "transport: not rigid",
+    "transport: unrefracted",
     "transport: no base action",
     "transport: not a versor",
     "roots refused",
@@ -247,10 +249,10 @@ pub const WHY_UNREAD: [&str; 6] = [
 ];
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 6] {
+pub fn unread_tally() -> [u64; 7] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
-    [r(UNREAD_NONE_READ), r(UNREAD_NO_BASE_ACTION), r(UNREAD_NOT_A_VERSOR), refused, degree, bits]
+    [r(UNREAD_NOT_RIGID), r(UNREAD_UNREFRACTED), r(UNREAD_NO_BASE_ACTION), r(UNREAD_NOT_A_VERSOR), refused, degree, bits]
 }
 
 impl SentenceTally {
@@ -385,7 +387,8 @@ pub fn speak(
                 note(UNREAD_TRANSPORT, 1);
                 note(
                     match why {
-                        TermUnread::NoTransport => UNREAD_NONE_READ,
+                        TermUnread::NotRigid => UNREAD_NOT_RIGID,
+                        TermUnread::Unrefracted => UNREAD_UNREFRACTED,
                         TermUnread::NoBaseAction => UNREAD_NO_BASE_ACTION,
                         TermUnread::NotAVersor => UNREAD_NOT_A_VERSOR,
                     },

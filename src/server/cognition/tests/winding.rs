@@ -67,6 +67,27 @@ fn q(n: i64, d: i64) -> num_rational::BigRational {
 /// more dimensions than the two generators. The boost stands on an 𝒮 orbit
 /// and the null flow in a tube. Every fleet reading had read zero rank steps:
 /// the faces' content never reached the algebra.
+/// 78.101 — A NILPOTENT FACE IS A PROOF. A face of the court's nerve whose
+/// holonomy is a slide never returns, but condenses — `Ωᵐ ∝ 1 + m·N`, a
+/// relation of the grammar — so the court reads it as a proof and checks its
+/// theorem, as it does a returning one.
+#[test]
+fn a_nerve_face_that_condenses_is_a_proof_checked() {
+    let mut k = Kernel::new();
+    k.bind_identity([0x7b; 32]);
+    let chart = Invariant::counts(&[2, 4]);
+    let mut cx = crate::transducer::cech::Complex::new();
+    cx.arm_outflow();
+    cx.flow_out(crate::transducer::cga::translator_at(&[q(2, 1), q(0, 1), q(0, 1)]));
+    k.complexes.insert(chart.key(), cx);
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 16);
+    let before = k.winding_tally();
+    k.book_outflow(&chart, b"face", &mut budget);
+    let after = k.winding_tally();
+    assert_eq!(after.nerve_closed, before.nerve_closed + 1, "the slide's face is a relation of the grammar: {after:?}");
+    assert_eq!(after.theorems_checked, before.theorems_checked + 1, "and its theorem is checked");
+}
+
 #[test]
 fn a_charts_outflow_enters_the_field_and_steps_its_holonomy_algebra() {
     use crate::transducer::cga::{self, Mv, E1, E3};

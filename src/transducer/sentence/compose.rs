@@ -144,7 +144,13 @@ pub(crate) fn terms_of(carried: &super::circuit::PathCarried) -> Result<Vec<Term
         .transitions
         .iter()
         .map(|t| {
-            let tr = t.transport.as_ref().ok_or(TermUnread::NoTransport)?;
+            // No transport read: a contact face (its whole refraction refused)
+            // or a pair no rigid versor carries — the traversal's only two
+            // ways to leave a crossing unread (`pivot::circuit::traverse`).
+            let tr = t.transport.as_ref().ok_or(match t.whole {
+                true => TermUnread::Unrefracted,
+                false => TermUnread::NotRigid,
+            })?;
             // A contact's carriage is its whole refraction `θ·V` (BQ5a): the
             // crossing is that motion entire, its word a spelling beside it.
             if t.whole {
@@ -193,7 +199,12 @@ pub enum RingUnread {
 /// perceived as rings.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TermUnread {
-    NoTransport,
+    /// A face between two bodies whose union no rigid versor carries (50.3's
+    /// `NotRigid`): no edge was measured. 78.63 reads a rigidity as a symptom
+    /// — only a pair no CONFORMAL motion carries is a tear.
+    NotRigid,
+    /// A contact face whose refraction `(θ_bθ_a⁻¹)·V` was refused (BQ5a).
+    Unrefracted,
     NoBaseAction,
     NotAVersor,
 }

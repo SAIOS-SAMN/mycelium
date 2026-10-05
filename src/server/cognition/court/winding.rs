@@ -489,17 +489,24 @@ impl Kernel {
         self.book_field(&lines, addr, budget);
         // 78.60 (2), 78.69 — EACH FACE OF THE NERVE IS A SENTENCE: the holonomy
         // of the transitions around a cycle of vantages, `Ω = ∏ Γ`, composed by
-        // the master equation as one term; where it closes it is a proof, its
-        // theorem checked; and its curvature's generators (Ambrose–Singer) are
-        // what the chart's algebra closes over.
+        // the master equation as one term; where it is a relation of the
+        // grammar it is a proof, its theorem checked — a returning one, or
+        // (78.101) a nilpotent one, a count along one null direction; and its
+        // curvature's generators (Ambrose–Singer) are what the chart's algebra
+        // closes over.
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
         let mut gens: Vec<crate::transducer::cga::Mv> = Vec::new();
         for m in &motions {
             let term = [crate::transducer::sentence::compose::Term { word: one.clone(), transport: m.clone() }];
             let Some(s) = crate::transducer::sentence::compose::compose(&term, budget) else { continue };
-            if s.closure.closes() {
+            let theorem = crate::transducer::sentence::theorem::Theorem::of(&s);
+            let nilpotent = matches!(
+                &theorem,
+                Ok(crate::transducer::sentence::theorem::Theorem { certificate: crate::transducer::sentence::theorem::Certificate::Nilpotent { .. }, .. })
+            );
+            if s.closure.closes() || nilpotent {
                 crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.nerve_closed, 1);
-                match crate::transducer::sentence::theorem::Theorem::of(&s) {
+                match theorem {
                     Ok(t) if t.check(budget) => crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.theorems_checked, 1),
                     _ => crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.theorems_refused, 1),
                 };
