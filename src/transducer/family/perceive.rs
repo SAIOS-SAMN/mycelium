@@ -901,14 +901,7 @@ pub(crate) fn edge_transport(
     let members = match blade::versor_coset_ordered(&union(a_i, a_j), &union(b_i, b_j), budget) {
         Ok(members) => members,
         Err(blade::NoPose::Unbounded) => return Err(vec![EdgeRefusal::NoReading]),
-        Err(_) => {
-            if !crate::transducer::cga::is_versor(v_j) {
-                return Err(vec![EdgeRefusal::NotRigid]);
-            }
-            let gamma = inv.geo(v_j);
-            crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma);
-            return edge_of(&gamma).map(|t| (t, Carried::Relative)).map_err(|e| vec![e]);
-        }
+        Err(_) => return relative_edge(v_i, v_j),
     };
     let mut refusals: Vec<EdgeRefusal> = Vec::new();
     // The coset in its content order, geodesic first then by each member's
@@ -920,6 +913,23 @@ pub(crate) fn edge_transport(
         }
     }
     Err(refusals)
+}
+
+/// 78.103 — THE RELATIVE MOTION OF TWO BODIES, `Γ = ṽᵢ·vⱼ`, read by
+/// `edge_of` as every edge is, its bend counted by kind. It needs the two
+/// motions only — a pair with no bodies to measure (a cover's piece) is
+/// related by it as a pair no versor carries is. A motion that is no versor
+/// is a tear.
+pub(crate) fn relative_edge(
+    v_i: &Versor,
+    v_j: &Versor,
+) -> Result<(crate::transducer::sentence::Transport, Carried), Vec<EdgeRefusal>> {
+    if !crate::transducer::cga::is_versor(v_i) || !crate::transducer::cga::is_versor(v_j) {
+        return Err(vec![EdgeRefusal::NotRigid]);
+    }
+    let gamma = v_i.reverse().geo(v_j);
+    crate::transducer::sentence::rung::note_bends(crate::transducer::sentence::rung::Bend::Relative, &gamma);
+    edge_of(&gamma).map(|t| (t, Carried::Relative)).map_err(|e| vec![e])
 }
 
 /// 78.103 — HOW AN EDGE'S PAIR WAS CARRIED: as one rigid pair-body, or each

@@ -73,6 +73,9 @@ struct Member {
     /// frame's own `k` — what the class's frame axis solves between when two
     /// consecutive frames of the class stand on two charts (AT1 A2).
     inputs: Vec<(u64, Body)>,
+    /// 78.103 — THE MEMBER'S OWN MOTION, the versor that carries it: what a
+    /// pair with no bodies to measure (a cover's piece) is related by.
+    motion: Versor,
 }
 
 /// ONE STEP OF A CLASS'S FRAME AXIS ACROSS TWO CHARTS (AT1 A2): the vertex,
@@ -195,7 +198,7 @@ fn member_of(chart: &Invariant, acting: Acting, claimed: &mut [&Quotient], union
     frames.sort_unstable();
     frames.dedup();
     let union = union_quotient(union_in, union_out, union_by);
-    Member { chart: chart.clone(), acting, frames, at, support, union, steps: Vec::new(), inputs }
+    Member { chart: chart.clone(), acting, frames, at, support, union, steps: Vec::new(), inputs, motion: union_by.clone() }
 }
 
 /// A class's vertex before it is placed: the least address among its
@@ -674,6 +677,9 @@ pub(super) fn family_percept(
     // so a union filed there would answer `occupied_frames` with a frame
     // nothing stands on.
     let mut unions: Keyed<(Body, Body, Versor)> = Keyed::new();
+    // 78.103 — EACH MEMBER'S OWN MOTION, keyed as its union: a pair with no
+    // bodies to measure is related by the two motions alone.
+    let mut motions: Keyed<Versor> = Keyed::new();
     // THE FRAME-AXIS STEPS OF EACH MEMBER (MT1), kept until the vertices
     // stand, then filed as overlaps between the member's charts (AT1 Q3).
     let mut frame_steps: Vec<FrameSteps> = Vec::new();
@@ -772,6 +778,7 @@ pub(super) fn family_percept(
                 // A cover's piece is read at its cover's one frame, with no
                 // body of its own at that frame's `k`: it takes no step.
                 inputs: Vec::new(),
+                motion: versor.clone(),
             };
             match reads.at_mut(&tc.key()) {
                 Some(read) => {
@@ -841,6 +848,10 @@ pub(super) fn family_percept(
             }
             if let (Some((ua, ub, uv)), false) = (&m.union, unions.contains(&mk)) {
                 unions.insert(&mk, (ua.clone(), ub.clone(), uv.clone()));
+            }
+            // 78.103 — the member's motion, the first section's (as its union).
+            if !motions.contains(&mk) {
+                motions.insert(&mk, m.motion.clone());
             }
             for (k, a0, b0, v) in &m.at {
                 // The member opens a body coordinate — member ‖ frame — and
@@ -1193,7 +1204,7 @@ pub(super) fn family_percept(
             continue;
         };
         let (measured, pairs) =
-            edge_between(&bodies_at, &unions, n_reached, (&i, &cik), (&j, &cjk), &mut edges, budget);
+            edge_between((&bodies_at, &unions, &motions), n_reached, (&i, &cik), (&j, &cjk), &mut edges, budget);
         // A CONTACT carries its refraction and nothing
         // else — the rigidity of the two bodies' union is not what their
         // contact is (BQ5a), so where the refraction was refused the face

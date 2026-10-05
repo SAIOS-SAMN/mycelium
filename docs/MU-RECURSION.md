@@ -23192,6 +23192,20 @@ pair with no union and no frame both stand on, which had been silent); and
 a compound bend (a grade-4 part) counted unread by name, spending nothing,
 its kinds waiting for a root-free reading.
 
+**Read on epoch 130 (`b5e07f6f`, 20 min, five voices), and the bodiless
+pair.** Every lost edge is `no bodies` (160–305 a voice; unspelled, no
+reading and tear all 0). A COVER'S PIECE becomes a member with no body
+filed at any frame and no union — it holds the versor that carried it and
+nothing to measure a pair-body on — so every pair with a piece at one end
+never reached the edge reader. 78.103 needs no bodies: two members are
+related by their two motions. Each member's motion is now filed beside its
+union (`percept::Member::motion`, the `motions` carrier), and a pair with no
+bodies is related by `ṽ_i·v_j` (`perceive::relative_edge`); only a member
+with no motion filed stays `no bodies`. Proved:
+`perception::a_bodiless_pair_is_related_by_its_two_motions`.
+*Correction:* `stroke spent` stayed 0–4 with no bend reading spending at
+all, so the bends were not its cause; it is read on its own row from here.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

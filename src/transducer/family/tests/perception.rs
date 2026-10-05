@@ -96,6 +96,25 @@ assert!(
 );
 }
 
+/// 78.103 — A PAIR WITH NO BODIES IS RELATED BY ITS TWO MOTIONS: a cover's
+/// piece holds the versor that carried it and no body, and its edge to
+/// another member is `ṽᵢ·vⱼ` — two translations differ by a translation, a
+/// placement with the identity word — and a motion that is no versor is a
+/// tear, refused by name.
+#[test]
+fn a_bodiless_pair_is_related_by_its_two_motions() {
+use crate::transducer::cga::{translator_at, Mv, E1, E2};
+use crate::transducer::family::perceive::{relative_edge, Carried};
+let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+let (v1, v2) = (translator_at(&[q(1), q(0), q(0)]), translator_at(&[q(0), q(2), q(0)]));
+let (edge, carried) = relative_edge(&v1, &v2).expect("two motions relate");
+assert_eq!(carried, Carried::Relative);
+assert!(edge.word.is_identity(), "no turn between two translations");
+assert!(crate::transducer::element::same_versor(&edge.carriage, &v1.reverse().geo(&v2)), "the edge is ṽ₁·v₂");
+let torn = Mv::blade(E1, q(1)).add(&Mv::blade(E1 | E2, q(1)));
+assert!(matches!(relative_edge(&v1, &torn).err().as_deref(), Some([EdgeRefusal::NotRigid])), "a tear stays refused");
+}
+
 /// 50.3 — AN EXCHANGE: two congruent bodies that swap places carry as one
 /// pair-body by the identity, and the edge transport is the exchange —
 /// `V_i⁻¹`, a placement with the identity word, finite on the word.

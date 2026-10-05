@@ -162,6 +162,10 @@ impl Frameless {
     }
 }
 
+/// A member's input body, output body and the versor carrying one onto the
+/// other.
+type BodiesCarried = (Body, Body, Versor);
+
 /// THE EDGE BETWEEN TWO MEMBERS (50.3), MEASURED ON THEIR UNION SHAPES
 /// (52.5), and the frames on which the per-frame reading re-derives one
 /// edge — the face's section along `e₃`.
@@ -187,8 +191,7 @@ impl Frameless {
 /// at one frame and has none — falls to the per-frame edge, and a pair
 /// with no common frame and no union carries none.
 pub(crate) fn edge_between(
-    bodies_at: &Keyed<(Body, Body, Versor)>,
-    unions: &Keyed<(Body, Body, Versor)>,
+    (bodies_at, unions, motions): (&Keyed<BodiesCarried>, &Keyed<BodiesCarried>, &Keyed<Versor>),
     n_reached: usize,
     (i, cik): (&coord::VertexAt, &[u8]),
     (j, cjk): (&coord::VertexAt, &[u8]),
@@ -240,10 +243,18 @@ pub(crate) fn edge_between(
         (Some(_), _) if agreeing.len() < n_reached => Some(section_of_frames(agreeing)),
         _ => None,
     };
-    // 78.103 — a pair with no union and no frame both stand on had no bodies
-    // to read an edge from: counted, never silent.
+    // 78.103 — A PAIR WITH NO BODIES TO MEASURE (no union, no frame both
+    // stand on — a cover's piece holds its motion and no body) is related by
+    // the two motions alone, `ṽᵢ·vⱼ`. Only a member with no motion filed has
+    // nothing to read an edge from: counted, never silent.
     if !union_held && common == 0 {
-        crate::transducer::sentence::rung::note_edge_lost(crate::transducer::sentence::rung::EdgeLost::NoBodies);
+        return match (motions.get(&member_key(i, cik)), motions.get(&member_key(j, cjk))) {
+            (Some(v_i), Some(v_j)) => (tally.take_carried(super::perceive::relative_edge(v_i, v_j)), None),
+            _ => {
+                crate::transducer::sentence::rung::note_edge_lost(crate::transducer::sentence::rung::EdgeLost::NoBodies);
+                (None, None)
+            }
+        };
     }
     // The union edge is the face's where the two fibers have one; the
     // per-frame edge stands where they do not.
