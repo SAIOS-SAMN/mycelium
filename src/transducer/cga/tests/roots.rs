@@ -82,4 +82,11 @@ fn roots_of_eighty_bit_coefficients_are_read_within_a_small_stroke() {
     // (x − 1/2)(x² + x + 1): its rational root read, the rest refused.
     let mixed = mul(&[q(1, 1), q(1, 1), q(1, 1)], &q(1, 2));
     assert_eq!(rational_roots(&mixed, &mut crate::physics::Physics::default().stroke_n(600)), Err(Undecomposed::Irrational(2)));
+    // 78.102 — NO DEGREE CUT-OFF: a quartic with a 70-bit root is read by the
+    // same exact bisection, never by factoring.
+    let quartic_roots = [q(1, 2), r(-(BigInt::from(1u8) << 70usize), 7), q(3, 1), q(-5, 3)];
+    let quartic = quartic_roots.iter().fold(vec![q(1, 1)], |p, root| mul(&p, root));
+    let mut want = quartic_roots.to_vec();
+    want.sort();
+    assert_eq!(rational_roots(&quartic, &mut crate::physics::Physics::default().stroke_n(4000)), Ok(want), "every root of the quartic, exactly");
 }

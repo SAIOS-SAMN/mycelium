@@ -22986,8 +22986,11 @@ reading; each wire change rides a recut. Row PS1.
   exact integer square root), the coefficients first divided by their
   content; no integer is factored, every candidate verified exactly as
   before. An 81-bit cubic reads in 290 evaluations; `x² − N` for a large
-  semiprime reads within a stroke of a thousand. Above degree three the
-  divisors' search stands.
+  semiprime reads within a stroke of a thousand. *(78.102, the same day: the
+  degree cut-off retired with trial division — every real root bracketed to
+  the integer at any degree, recursively on the derivative, a line's root
+  read exactly; an 81-bit cubic in 505 evaluations, a quartic with a 70-bit
+  root read whole.)*
 - *No 2-cell forms because no triple overlaps:* `no volume` 15–26 of 18–27
   candidates a voice (courts the same), `faces not ready` the rest, minted
   0. In a Čech nerve a 2-simplex exists only where three sets meet; these
