@@ -189,7 +189,7 @@ impl PathCarried {
     /// static contact the refraction's own reader stands, as before.
     pub(crate) fn composite(&self) -> Option<element::Versor> {
         if self.refracted.is_none() {
-            let terms = crate::transducer::sentence::compose::terms_of(self)?;
+            let terms = crate::transducer::sentence::compose::terms_of(self).ok()?;
             return Some(crate::transducer::sentence::compose::omega_of(&terms));
         }
         match (&self.edge, &self.refracted) {

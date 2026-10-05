@@ -143,7 +143,11 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
     assert_eq!(s.closure, Closure::Closes(1), "a crossing and its reverse: the identity");
     let mut unread = crossing(true);
     unread.transport = None;
-    assert!(terms_of(&path_of(vec![crossing(true), unread])).is_none(), "an unread crossing leaves the ring unread, never flat");
+    assert_eq!(
+        terms_of(&path_of(vec![crossing(true), unread])).err(),
+        Some(crate::transducer::sentence::compose::TermUnread::NoTransport),
+        "an unread crossing leaves the ring unread by its reason, never flat"
+    );
     // A contact's carriage holds its refraction whole (BQ5a): that crossing is
     // its carriage alone — its word spells the same turn and is not counted
     // twice.

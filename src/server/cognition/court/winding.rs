@@ -88,6 +88,13 @@ pub struct WindingTally {
     /// weighed by mass, and the reconnections its helicity recorded.
     pub flux_transport: u64,
     pub reconnections: u64,
+    /// 78.100 — the shortcuts the court's re-derived sentences taught and
+    /// where the letter offer did not happen: spelled by the alphabet, the
+    /// peel unread, no discoverer, the base rotor unread.
+    pub shortcuts_spelled: u64,
+    pub shortcuts_peel_unread: u64,
+    pub shortcuts_no_discoverer: u64,
+    pub shortcuts_rotor_unread: u64,
 }
 
 impl Winding {
@@ -384,12 +391,24 @@ impl Kernel {
             if word.projective_eq(&one) {
                 continue;
             }
-            if let (Some(Err(_)), Some(v)) = (crate::transducer::family::derivation::peel_versor(word), voice) {
-                if let Ok(r) = crate::transducer::element::base_rotor_of(word) {
-                    self.open_unspellable(&r, &inv, &[], &v);
-                    crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.shortcuts_offered, 1);
-                }
-            }
+            // 78.100 — WHERE THE OFFER BREAKS, by why: the alphabet spells the
+            // word (nothing to offer); the peel did not read; no discoverer
+            // to credit; its base rotor did not read; or offered. On epoch
+            // 124 the voices transcribed 30–49 ineffable words each and every
+            // court offered none.
+            let t = &mut self.winding_tally;
+            match (crate::transducer::family::derivation::peel_versor(word), voice) {
+                (Some(Ok(_)), _) => crate::physics::metabolism::step_or_refuse(&mut t.shortcuts_spelled, 1),
+                (None, _) => crate::physics::metabolism::step_or_refuse(&mut t.shortcuts_peel_unread, 1),
+                (Some(Err(_)), None) => crate::physics::metabolism::step_or_refuse(&mut t.shortcuts_no_discoverer, 1),
+                (Some(Err(_)), Some(v)) => match crate::transducer::element::base_rotor_of(word) {
+                    Ok(r) => {
+                        self.open_unspellable(&r, &inv, &[], &v);
+                        crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.shortcuts_offered, 1)
+                    }
+                    Err(_) => crate::physics::metabolism::step_or_refuse(&mut t.shortcuts_rotor_unread, 1),
+                },
+            };
         }
         crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.sentences, composed);
         // A sentence whose rings compose to no generator brings no curvature:

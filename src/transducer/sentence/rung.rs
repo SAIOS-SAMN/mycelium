@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 32;
+const SLOTS: usize = 35;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -92,6 +92,9 @@ const COORDS_IRRATIONAL: usize = 28;
 const COORDS_DEFECTIVE: usize = 29;
 const COORDS_SPENT: usize = 30;
 const COORDS_GENERATOR: usize = 31;
+const UNREAD_NONE_READ: usize = 32;
+const UNREAD_NO_BASE_ACTION: usize = 33;
+const UNREAD_NOT_A_VERSOR: usize = 34;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -228,6 +231,28 @@ pub const SENTENCES: [&str; 32] = [
     "coordinates unread: generator",
 ];
 
+/// 78.100 — WHY THE LANGUAGE LOSES WHAT IT PERCEIVES, a row of its own: a
+/// ring's crossing unread by its reason (no transport read, no base action
+/// of its word, no versor), and the mode reader's rational roots refused for
+/// the stroke — how many, the highest degree, the widest coefficient in
+/// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
+/// by its transport, and every unread coordinate by the stroke spent.
+pub const WHY_UNREAD: [&str; 6] = [
+    "transport: none read",
+    "transport: no base action",
+    "transport: not a versor",
+    "roots refused",
+    "roots refused: highest degree",
+    "roots refused: widest coefficient (bits)",
+];
+
+/// The [`WHY_UNREAD`] row since the process began.
+pub fn unread_tally() -> [u64; 6] {
+    let r = |i: usize| TALLY[i].load(Relaxed);
+    let (refused, degree, bits) = crate::transducer::cga::root_refusals();
+    [r(UNREAD_NONE_READ), r(UNREAD_NO_BASE_ACTION), r(UNREAD_NOT_A_VERSOR), refused, degree, bits]
+}
+
 impl SentenceTally {
     /// In [`SENTENCES`]'s order.
     pub fn row(&self) -> [u64; 32] {
@@ -355,8 +380,17 @@ pub fn speak(
                 note(UNREAD, 1);
                 continue;
             }
-            Err(RingUnread::Transport) => {
+            Err(RingUnread::Transport(why)) => {
+                use super::compose::TermUnread;
                 note(UNREAD_TRANSPORT, 1);
+                note(
+                    match why {
+                        TermUnread::NoTransport => UNREAD_NONE_READ,
+                        TermUnread::NoBaseAction => UNREAD_NO_BASE_ACTION,
+                        TermUnread::NotAVersor => UNREAD_NOT_A_VERSOR,
+                    },
+                    1,
+                );
                 continue;
             }
             // 78.97 — a chord's ring is the harmonic eye's, counted apart.

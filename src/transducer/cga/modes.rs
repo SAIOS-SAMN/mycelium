@@ -139,6 +139,27 @@ fn quotient(p: &[Q], q: &[Q]) -> Vec<Q> {
 /// division — the finite set the rational root theorem names. Each trial
 /// spends one read of the stroke's budget (BD1, rule 10); `None` where the
 /// budget is spent before the factorisation ends.
+/// 78.100 — THE ROOT READER'S REFUSALS FOR THE STROKE, in this process: how
+/// many, the highest degree refused, and the widest coefficient (in bits)
+/// whose divisors were being walked when the stroke ran out. Trial division
+/// walks up to `√n`, so a coefficient of `b` bits can ask `2^(b/2)` steps.
+static ROOTS_REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static ROOTS_DEGREE: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+static ROOTS_BITS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+fn note_root_refusal(degree: usize, bits: u64) {
+    use std::sync::atomic::Ordering::Relaxed;
+    let _ = ROOTS_REFUSED.fetch_update(Relaxed, Relaxed, |n| n.checked_add(1));
+    ROOTS_DEGREE.fetch_max(u64::try_from(degree).map_or(u64::MAX, |d| d), Relaxed);
+    ROOTS_BITS.fetch_max(bits, Relaxed);
+}
+
+/// The root reader's refusals: `(refused, highest degree, widest bits)`.
+pub fn root_refusals() -> (u64, u64, u64) {
+    use std::sync::atomic::Ordering::Relaxed;
+    (ROOTS_REFUSED.load(Relaxed), ROOTS_DEGREE.load(Relaxed), ROOTS_BITS.load(Relaxed))
+}
+
 fn divisors(n: &num_bigint::BigInt, budget: &mut crate::physics::Budget) -> Option<Vec<num_bigint::BigInt>> {
     use num_bigint::BigInt;
     let mut rest = n.abs();
@@ -198,7 +219,13 @@ pub(super) fn rational_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Re
     if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
         if ints.len() > 1 {
             let unbounded = Undecomposed::Unbounded(ints.len() - 1);
-            let (tops, bottoms) = (divisors(a0, budget).ok_or(unbounded)?, divisors(am, budget).ok_or(unbounded)?);
+            // 78.100 — A REFUSAL FOR THE STROKE IS READ: its degree and the
+            // width of the coefficients whose divisors were being walked.
+            let refuse = || {
+                note_root_refusal(ints.len() - 1, a0.bits().max(am.bits()));
+                unbounded
+            };
+            let (tops, bottoms) = (divisors(a0, budget).ok_or_else(refuse)?, divisors(am, budget).ok_or_else(refuse)?);
             for r in &tops {
                 for s in &bottoms {
                     for candidate in [Q::new(r.clone(), s.clone()), -Q::new(r.clone(), s.clone())] {

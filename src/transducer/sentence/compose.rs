@@ -135,26 +135,30 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
 /// whose carriage already holds its refraction whole, is that carriage alone
 /// (`CarriedTransition::whole`); a crossing against
 /// the face's orientation is its exact inverse `Ã c̃ = (Ã c̃ A)·Ã`, the word
-/// `Ã` and the transport `Ã c̃ A`. `None` where a transition's transport was
-/// not read (rule 11: unread is not flat) or its word has no base action.
-pub(crate) fn terms_of(carried: &super::circuit::PathCarried) -> Option<Vec<Term>> {
+/// `Ã` and the transport `Ã c̃ A`. Refused by why (78.100) where a
+/// transition's transport was not read (rule 11: unread is not flat), its
+/// word has no base action, or what it gives is no versor — the first
+/// crossing that does not read names the ring's reason.
+pub(crate) fn terms_of(carried: &super::circuit::PathCarried) -> Result<Vec<Term>, TermUnread> {
     carried
         .transitions
         .iter()
         .map(|t| {
-            let tr = t.transport.as_ref()?;
+            let tr = t.transport.as_ref().ok_or(TermUnread::NoTransport)?;
             // A contact's carriage is its whole refraction `θ·V` (BQ5a): the
             // crossing is that motion entire, its word a spelling beside it.
             if t.whole {
                 let one = Mv::scalar(num_rational::BigRational::from_integer(1.into()));
-                return Some(match t.forward {
+                return Ok(match t.forward {
                     true => Term { word: one, transport: tr.carriage.clone() },
                     false => Term { word: one, transport: tr.carriage.reverse() },
                 });
             }
-            let a = crate::transducer::element::versor_of_word(&tr.word)?;
-            cga::is_versor(&a).then_some(())?;
-            Some(match t.forward {
+            let a = crate::transducer::element::versor_of_word(&tr.word).ok_or(TermUnread::NoBaseAction)?;
+            if !cga::is_versor(&a) {
+                return Err(TermUnread::NotAVersor);
+            }
+            Ok(match t.forward {
                 true => Term { word: a, transport: tr.carriage.clone() },
                 false => {
                     let back = a.reverse();
@@ -178,8 +182,20 @@ pub(crate) fn omega_of(terms: &[Term]) -> Mv {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum RingUnread {
     Traversal,
-    Transport,
+    Transport(TermUnread),
     Heard,
+}
+
+/// 78.100 — WHY A CROSSING'S TERM DID NOT READ, by name: no transport was
+/// read for the transition; its word has no base action (`versor_of_word`
+/// refused it); or what the word gave is no versor. On epoch 124 every
+/// unread ring of every voice was unread here — about 45% of what each mind
+/// perceived as rings.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TermUnread {
+    NoTransport,
+    NoBaseAction,
+    NotAVersor,
 }
 
 /// 78.97 — A CHORD IS HEARD, NOT TRAVERSED (the operator, 2026-10-04:
@@ -220,8 +236,10 @@ pub fn sentences_of(
                 Some(paths) => match paths.scoped().next() {
                     None => Err(RingUnread::Traversal),
                     Some((_, p)) => match terms_of(p) {
-                        None => Err(RingUnread::Transport),
-                        Some(terms) => compose(&terms, budget).ok_or(RingUnread::Transport),
+                        Err(why) => Err(RingUnread::Transport(why)),
+                        // A path of no crossings composes nothing: its traversal
+                        // gave no term.
+                        Ok(terms) => compose(&terms, budget).ok_or(RingUnread::Traversal),
                     },
                 },
             };

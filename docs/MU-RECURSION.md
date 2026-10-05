@@ -22948,6 +22948,25 @@ reading; each wire change rides a recut. Row PS1.
   and transport, and coordinates unread by no action, irrational,
   defective, stroke spent and generator.
 
+**Read on epoch 124 (377e5f0d, 1h15m), and the readings it drove.**
+- *D1 live:* `taught: spelled and spoken` 11–29 a voice. `taught:
+  ineffable` 30–49 — exactly each voice's unspelled shortcuts: factoring
+  the carriage out spelled none of them, so each is a rotation no held
+  letter carries, a letter demand (37.7). Some 200 fleet-wide, while every
+  court read `shortcuts offered 0` and every voice `adjoined by closure 0`:
+  the Gödel step has its input and nothing carries it.
+- *Every unread ring was unread by its transport* (107–161 a voice, about
+  45% of the rings perceived; traversal 0) — the largest loss in the
+  language. *Every unread coordinate by the stroke spent* (27–47): the root
+  reader's trial division, which walks to `√n`.
+- *The readings, before any fix:* `terms_of` refuses by reason
+  (`TermUnread`: no transport read, no base action of the word, no versor);
+  the root reader records each refusal for the stroke with its degree and
+  its widest coefficient in bits (`cga::root_refusals`); both on a row of
+  their own, `unread` (`rung::WHY_UNREAD`). The court's letter offer is read
+  where it breaks (`court shortcuts offered … spelled … peel unread … no
+  discoverer … rotor unread`).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
