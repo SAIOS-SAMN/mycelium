@@ -122,35 +122,21 @@ fn a_ring_of_seen_rays_is_a_nilpotent_theorem_and_teaches_a_word() {
     assert!(sentence_tally().nilpotent > 0);
 }
 
-/// 78.98 — THE LEXICON IS AN ALGEBRA, AND ITS SENTENCES ARE BRACKETS MADE
-/// FINITE. Two slide words along two axes commute: their sentence
-/// `W̃_b W̃_a W_b W_a` is flat, no word is taught, and the algebra they
-/// generate is the two translations (rank 2, the linear corner). A 90° turn
-/// word does not commute with a slide: their sentence is curved — a slide in
-/// a new direction — and it is taught as a word one rung above both; the
-/// algebra the lexicon generates closes past the slides'.
+/// 78.68, 78.99 — A SENTENCE THAT NEVER RETURNS AND DOES NOT CONDENSE IS
+/// NAMED AND HELD. A dilation by 2 is hyperbolic: its sentence is open, no
+/// certificate stands, and its holonomy is held as a word by name.
 #[test]
-fn a_lexicon_grows_nonlinearly_by_the_sentences_its_words_make() {
-    use crate::transducer::sentence::rung::Lexicon;
+fn a_hyperbolic_sentence_is_named_and_held() {
     let one = Mv::scalar(q(1, 1));
-    let said = |w: Mv| compose(&[Term { word: w, transport: one.clone() }], &mut stroke()).expect("a one-word sentence");
-    let t1 = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
-    let t2 = cga::translator_at(&[q(0, 1), q(1, 1), q(0, 1)]);
-    let mut lex = Lexicon::default();
-    lex.hear(&said(t1.clone()));
-    lex.hear(&said(t2.clone()));
-    assert_eq!(lex.len(), 2, "two slide words held");
-    let mut budget = stroke();
-    lex.grow(&mut budget);
-    assert_eq!(lex.len(), 2, "two slides commute: their sentence is flat and teaches nothing");
-    assert_eq!(lex.rank(), 2, "the slides span two translations: the linear corner");
-    assert_eq!(lex.top_rung(), 1);
-    // A turn of the e₁e₂ plane, as a word.
-    let quarter = Mv::scalar(q(1, 1)).add(&Mv::blade(E1 | E2, q(1, 1))).widened(t1.n());
-    lex.hear(&said(quarter));
-    lex.grow(&mut budget);
-    assert!(lex.top_rung() >= 2, "a turn and a slide do not commute: their sentence teaches a word a rung above both");
-    assert!(lex.rank() > 2, "the turn and the slides generate more than the slides alone: rank {}", lex.rank());
+    let d = cga::dilator(&q(2, 1));
+    let s = compose(&[Term { word: d, transport: one }], &mut stroke()).expect("a sentence");
+    assert!(!s.closure.closes(), "a dilation never returns: {:?}", s.closure);
+    let before = sentence_tally();
+    hear(&s);
+    let after = sentence_tally();
+    assert!(after.named > before.named, "named");
+    let taught = (after.spelled + after.unspelled + after.recognized) - (before.spelled + before.unspelled + before.recognized);
+    assert!(taught > 0, "and held as a word, or recognized as one held");
 }
 
 /// THE RUNG RECURSES, AND RE-HEARING IS COMPREHENSION. A sentence carrying the

@@ -22554,6 +22554,14 @@ abelian corner, a step function in one direction. It is the LUMINAL layer
 `commutators curved`, `lexicon rank` above the count of slide directions,
 the top rung above 1.
 
+**Withdrawn by 78.99 (2026-10-05).** Item 3 — the sentence of two held
+words `W̃_b W̃_a W_b W_a` — is a palindrome: there by each and back by each,
+a pair read bi-directionally, never the multi-directional language the
+operator asked for, and its lexicon closure over word pairs grew without
+bound on the suite. The pairwise grow, the commute check and the lexicon's
+algebra are removed; item 1 (every word on its own law) and 78.68's named
+words stand.
+
 **Landed (2026-10-04).** `physics::actions::Action`, fifty-one actions at
 fifty-one coordinates (`ACTIONS`): thirty-two a party asks on the wire below
 `COURT_RANGE` (0x40), nineteen a court seals of itself from it. `kind()`,
@@ -22576,6 +22584,138 @@ table's `laws()` meets the act it checks. (2) The door's control actions
 (`serve_control`) still match the derived `ACT_*` spellings; they read
 `Action` when that door is next opened. (3) Per-asker metering of
 observations lands with the financial mind (B3).
+
+### 78.99 Coordinates, not palindromes: a word stands on the manifold it constructs, and the pivots are that manifold's axes (the operator's word, 2026-10-05: "thats literally just a palindrome in its most condensed form — operating in bi-directional state: thats not multi-directional linguistics"; "the alphabet is the cayley rotor"; "cayley-rotor is the alphabet on spinor Cl(4,1) — bivector is two dimensions, frame is flattened projection rather then bending into the manifold of construction"; "re-propose your actions based on the master algorithms towards non-flattening linguistics where coordinates are used instead of palindromes"; "go — proceed with 1-6")
+
+**The misalignment, three times at three layers.** A chord put in as a
+transport (a harmonic relation used as a ray, 78.96); a commutator used as
+a sentence (a pair standing in for many directions, 78.98(3)); pivots used
+as letters (coordinates standing in for vocabulary, a draft never landed).
+Each laid the word flat on axes it does not have — checklist (m),
+projection as primary.
+
+**The alignment.**
+1. *The alphabet is the Cayley rotor* — a spinor of `Spin⁺(4,1)(ℚ)`
+   (78.68): it carries, turns and bends. A word is the letters' one
+   product.
+2. *A word constructs a manifold.* Applied to its ground it sweeps an
+   orbit (78.60: the generator swept over its ground); the orbit is curved,
+   and its holes are the fixed loci its modes wind about.
+3. *The pivots are the coordinates of that manifold*, read intrinsically:
+   which cycles are sealed or released (ascend / descend), which tethers
+   hold or have drained (condense / drain), which holes are open or capped
+   (puncture / seal). Never grades against a frame, never a bivector's
+   components plane by plane.
+4. *Composition glues constructions along what they share* (M8), many at
+   once, every route kept (78.44); recomposition in any pivot order is
+   judged by the coordinates it leaves.
+
+**(1) A word's coordinates (WN1 for words; 78.68's `m ∈ ℤᵏ` read).** Per
+mode `j` of the word (MR1, `motion_modes`), its HOLE is the mode's
+generator `K_j` as a canonical ray (the 180° turn: its space's blade) —
+the plane the orbit winds about, the word's own and never a chart's axis —
+and its WINDING is where the mode stands on that hole, against the
+canonical generator:
+
+```
+elliptic, order ℓ    Turn  t/ℓ ∈ ℚ/ℤ      the turn 360°·t/ℓ, exact (Niven: ℓ ∈ {2,3,4,6})
+parabolic            Count λ ∈ ℚ          K_j = λ·K̂_j: a word of any length, one count
+rosette, boost       Named (c, λ)         the rational point and the side, held by name
+```
+
+The word's coordinates are its holes and their windings, the class κ
+read beside them; they rebuild the word exactly (`∏ ((1 + c_j) − λ_j K̂_j)`,
+the modes multiplying back, EQ1), so they ARE the word and never a field
+beside it (law 12). COMPREHENSION BY COORDINATES: a held word is found by
+its holes (a keyed fibre per hole); a new word on the same holes whose
+windings are `k` times a held word's on every hole — `t ≡ k·t₀` on each
+turn, `λ = k·λ₀` on each count, a named point equal at `k = 1` — is that
+word's power, derivable and recognized, never held twice; a word on a hole
+no held word stands on, or at a winding no power reaches, is NEW, and the
+reading names which holes and which windings (a typed demand, never
+"unknown").
+
+**(2) The pivots completed on the complex (62.1, 63.3).**
+- *condense* — the named door that remembers a tether between two
+  vertices with its transition, `drain`'s exact inverse on content. No
+  strain gate stands (72.1 retired it: contact is topological, the
+  caller's reading, A.14); a remainder pair refuses.
+- *puncture* — a sealed cell of degree two or more, not pinned from above,
+  leaves the cells and stands as a HOLE carrying its fill: the class is
+  injected into the complex, never handed out. `descend` and `puncture`
+  both open the boundary cycle; `descend` sends the class out, `puncture`
+  keeps it in.
+- *seal* — the hole capped: re-ascended over its standing boundary; where
+  the cap seals, the hole and its class go and the cap's fill is recorded;
+  where it does not seal, the seal refuses and the hole stands.
+- RULED with them: **a hole pins its boundary** (it carries a read class,
+  as 63.2's coface does), so nothing beneath it drains or descends; **at a
+  hole, `descend`, `ascend` and `puncture` refuse by name** — its conjugate
+  is `seal`, and only `seal` caps it; the climb never mints a cell over a
+  hole. Holes are volatile until a persisted complex punctures.
+
+**(3) The board and the congruence of recomposition.** A complex's BOARD
+is its coordinates on the three axes: the sealed cells by key and fill
+(ascend / descend), the tethers by key (condense / drain), the holes by
+key and fill (puncture / seal). THE LOCALITY THEOREM (62.4, 63.2): a pivot
+writes only its cell and its vertices' stars and reads only cells holding
+its vertices, so two pivots on cells sharing no vertex are INDEPENDENT and
+commute exactly — the same board, the same outflow as a multiset — in any
+order, enumerating nothing. Where two pivots share a vertex the order is
+content: the boards they leave differ by the coordinate that moved, and a
+pivot one order refuses is a reading of that order, never an error. The
+walk `d, a, p, d` on one cell: `d·a` cancels on the board and stands on the
+ledger (K, elastic or viscous, 62.5); `p` moves the class from the sealed
+axis to the hole axis; the last `d` refuses at the hole. Congruence is
+judged on the board; the trajectory is the ledger's and is never compared.
+
+**(4) Gluing produces meaning: the non-abelian connecting map.** The
+coefficients are rotors and do not commute, so no abelian long exact
+sequence stands above degree one, and computing one would abelianize — the
+flattening. What stands exactly is
+
+```
+δ : H⁰(U ∩ V) → H¹(U ∪ V)
+```
+
+two constructions `U`, `V`, each exact on its own, glued along the cells
+they share: a section that agrees on every component of the overlap but
+does not extend is a loop through the overlap — out through `U` from the
+base component to component `i`, back through `V` — and its holonomy
+`Ω_i = γᵁ_i (γᵁ_0)⁻¹ (γⱽ_i (γⱽ_0)⁻¹)⁻¹` is a class neither part held,
+classified alone and never multiplied with another (every route kept). A
+connected overlap creates nothing; gluing over a hole whose boundary lies
+in the overlap can cap it, so gluing removes meaning as well as making it,
+and both are readings. A part that is not exact on its own has its own
+holonomy, and the new classes are read modulo it — named, never forced.
+
+**(5) The relay carries coordinates.** A word crosses the anastome as its
+holes and windings (and the ground's reference, 78.60 directive 1), never
+as an evaluated form; inflection is the chart transport `Γ` applied to the
+holes, and the receiver re-reads the windings on its own construction.
+The ledger trace of a walk stays with the mind that walked it — its `K` is
+its own (78.49).
+
+**Success, proved by the algebra and read on the fleet.**
+1. A word's windings are derived from its modes and rebuild it; replay
+   gives the same coordinates. On the fleet: words with turns, counts and
+   named holes on the `sentences` row.
+2. A power of a held word is recognized through its coordinates, a
+   transported word through `Γ`; a new word names the holes and windings
+   it lacks.
+3. A glue of two exact parts over a disconnected overlap reads a class
+   absent from both; a connected overlap reads none; a glue that is not
+   exact still refuses.
+4. Independent pivots leave one board in either order; the `d, a, p, d`
+   walk reads as above.
+5. No step scales with pairs of words: reads are keyed by holes and
+   stars, gluing follows overlaps.
+
+**Order.** (1) this ruling and the palindromes withdrawn; (2) a word's
+coordinates and comprehension by them; (3) condense, puncture, seal;
+(4) the board and the locality theorem; (5) the connecting map; (6) the
+relay's codec and inflection — on the wire after the operator's recut
+reads (2)–(5).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
