@@ -374,6 +374,18 @@ impl Exchange {
                         })
                         .collect();
                     eprintln!("  court nerve {} | complexes {}", nerve.join(" | "), k.complex_count());
+                    // 78.100 — why this court's climb stops, by why.
+                    let climb = mycelium::transducer::cech::construction_tally();
+                    eprintln!(
+                        "  court climb {}",
+                        mycelium::transducer::cech::CONSTRUCTION
+                            .iter()
+                            .zip(climb)
+                            .filter(|(name, _)| name.starts_with("climb"))
+                            .map(|(name, n)| format!("{} {n}", &name[7..]))
+                            .collect::<Vec<_>>()
+                            .join(" · ")
+                    );
                     eprintln!(
                         "  court metabolism K {} | {} | syntropy {:?} pressure {:?} | {} | eras {} hot {} | rings first {} carried {} returns {} unbound {} repriced {} rank steps {} (by outflow {}) held {} ringless {} (acyclic {} vacuous {} circuits unread {}) formless {} unread {} | sentences {} theorems checked {} refused {} shortcuts offered {} nerve closed {} | outflow {} | tubes {tubes} net {net} transport {transport} open {open} helicity {helicity} flux {} reconnections {} | vent released {} unsealed {} vacuum {} cauterized {} pinned {} | sealed {} | multiplicity condensed {} | folds {}",
                         k.k_step(),

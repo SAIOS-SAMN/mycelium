@@ -69,6 +69,36 @@ fn a_released_vertex_caps_its_holes_and_hands_their_classes_out() {
     assert!(c.board().holes.is_empty() && c.board().sealed.is_empty());
 }
 
+/// 78.100 — WHY THE CLIMB STOPS, by why. Three vertices on a path: the climb
+/// meets the triangle and leaves it, its third face not standing; with the
+/// face and no volume it leaves it again; with volume it mints it.
+#[test]
+fn the_climb_reads_why_each_candidate_cell_stops() {
+    use crate::transducer::cech::{construction_tally, CONSTRUCTION};
+    let at = |n: &str| CONSTRUCTION.iter().position(|x| *x == n).expect("a named slot");
+    let mut c = Complex::new();
+    let vs: Vec<Vec<u8>> = [v(41), v(42), v(43)].iter().map(|a| a.as_bytes().to_vec()).collect();
+    for x in &vs {
+        c.set_section(x, Section::at(crate::transducer::address::Address::from(x.clone()), Rotor::identity()), vol());
+    }
+    c.set_edge(&vs[0], &vs[1], Rotor::identity(), ident(), vol());
+    c.set_edge(&vs[1], &vs[2], Rotor::identity(), ident(), vol());
+    let before = construction_tally();
+    let _ = c.coboundary_on_link(&vs[0], |_| vol());
+    let after = construction_tally();
+    assert!(after[at("climb: faces not ready")] > before[at("climb: faces not ready")], "the third face does not stand");
+    c.set_edge(&vs[0], &vs[2], Rotor::identity(), ident(), vol());
+    let before = construction_tally();
+    let _ = c.coboundary_on_link(&vs[0], |_| [0; 4]);
+    let after = construction_tally();
+    assert!(after[at("climb: no volume")] > before[at("climb: no volume")], "no volume on any lane");
+    let before = construction_tally();
+    let _ = c.coboundary_on_link(&vs[0], |_| vol());
+    let after = construction_tally();
+    assert!(after[at("climb: minted")] > before[at("climb: minted")], "with volume, minted");
+    assert!(c.board().open.len() + c.board().sealed.len() == 1, "one 2-cell stands");
+}
+
 /// CONDENSE IS DRAIN'S INVERSE ON CONTENT. A flat tether drains to the
 /// vacuum and condenses back with its transition: the same board. A tether
 /// that stands is not condensed twice; a remainder pair refuses.

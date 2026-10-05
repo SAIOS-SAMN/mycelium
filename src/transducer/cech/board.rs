@@ -24,7 +24,7 @@ use std::sync::atomic::{AtomicU64, Ordering::Relaxed};
 /// [`construction_tally`]'s order: the holes the pivots opened and capped,
 /// and what the connecting map read on each glue. The typed reading the
 /// voice's Senses carry.
-pub const CONSTRUCTION: [&str; 11] = [
+pub const CONSTRUCTION: [&str; 17] = [
     "punctured",
     "capped",
     "cap refused",
@@ -36,6 +36,17 @@ pub const CONSTRUCTION: [&str; 11] = [
     "glue: inexact",
     "glue: a part curved",
     "glue: unread",
+    // 78.100 — WHY THE CLIMB STOPS: every candidate cell of degree two or
+    // more the climb met, and where each left it — a remainder edge among
+    // its faces, a face not yet standing, no volume on any lane, a
+    // coefficient that did not read — or minted. On epoch 123 no voice or
+    // court nerve held a 2-cell.
+    "climb: candidates",
+    "climb: a remainder edge",
+    "climb: faces not ready",
+    "climb: no volume",
+    "climb: coefficient unread",
+    "climb: minted",
 ];
 pub(crate) const PUNCTURED: usize = 0;
 pub(crate) const CAPPED: usize = 1;
@@ -48,6 +59,12 @@ pub(crate) const NO_OVERLAP: usize = 7;
 pub(crate) const INEXACT: usize = 8;
 pub(crate) const PART_CURVED: usize = 9;
 pub(crate) const GLUE_UNREAD: usize = 10;
+pub(crate) const CLIMB_CANDIDATES: usize = 11;
+pub(crate) const CLIMB_REMAINDER: usize = 12;
+pub(crate) const CLIMB_FACES: usize = 13;
+pub(crate) const CLIMB_NO_VOLUME: usize = 14;
+pub(crate) const CLIMB_COEFF: usize = 15;
+pub(crate) const CLIMB_MINTED: usize = 16;
 
 static TALLY: [AtomicU64; CONSTRUCTION.len()] = [const { AtomicU64::new(0) }; CONSTRUCTION.len()];
 

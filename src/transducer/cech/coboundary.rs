@@ -328,6 +328,10 @@ impl Complex {
                                 }
                                 continue;
                             }
+                            // 78.100 — every candidate counted, and where it
+                            // left the climb, by why.
+                            use super::board::{note_construction as note, CLIMB_CANDIDATES, CLIMB_COEFF, CLIMB_FACES, CLIMB_MINTED, CLIMB_NO_VOLUME, CLIMB_REMAINDER};
+                            note(CLIMB_CANDIDATES, 1);
                             let mut blocked = false;
                             // index: pairs on this simplex (faces)
                             for i in 0..verts.len() {
@@ -337,17 +341,25 @@ impl Complex {
                                     }
                                 }
                             }
-                            if blocked || !self.faces_ready(&verts) {
+                            if blocked {
+                                note(CLIMB_REMAINDER, 1);
+                                continue;
+                            }
+                            if !self.faces_ready(&verts) {
+                                note(CLIMB_FACES, 1);
                                 continue;
                             }
                             let volume = volume_of(&verts);
                             if !nonzero(&volume) {
+                                note(CLIMB_NO_VOLUME, 1);
                                 continue;
                             }
                             let Some((coefficient, carriage)) = self.coboundary_coeff(&verts)
                             else {
+                                note(CLIMB_COEFF, 1);
                                 continue;
                             };
+                            note(CLIMB_MINTED, 1);
                             pending.push(Simplex {
                                 vertices: verts,
                                 coefficient,
