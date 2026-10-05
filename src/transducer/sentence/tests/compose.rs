@@ -146,8 +146,8 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
     unread.transport = None;
     assert_eq!(
         terms_of(&path_of(vec![crossing(true), unread])).err(),
-        Some(crate::transducer::sentence::compose::TermUnread::NotRigid),
-        "an unread crossing leaves the ring unread by its reason, never flat"
+        Some(crate::transducer::sentence::compose::TermUnread::StarUnread),
+        "an unread crossing leaves the ring unread by its reason and its face — here a star's — never flat"
     );
     // A contact face with no transport read is a refraction refused.
     let mut refused = crossing(true);

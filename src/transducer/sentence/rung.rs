@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 48;
+const SLOTS: usize = 50;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -105,6 +105,8 @@ const EDGES_RELATIVE: usize = 39;
 const CONTACT_BENDS: usize = 40;
 const RELATIVE_BENDS: usize = 44;
 const BEND_KINDS: usize = 4;
+const UNREAD_STAR: usize = 48;
+const UNREAD_STEP: usize = 49;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -247,8 +249,8 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 19] = [
-    "transport: not rigid",
+pub const WHY_UNREAD: [&str; 21] = [
+    "transport: member pair, no edge",
     "transport: unrefracted",
     "transport: no base action",
     "transport: not a versor",
@@ -272,6 +274,9 @@ pub const WHY_UNREAD: [&str; 19] = [
     "relative bends: null planes",
     "relative bends: boost planes",
     "relative bends: unread",
+    // 78.103 — the faces that lost their edge, by the face.
+    "transport: star face, no edge",
+    "transport: frame step, no edge",
 ];
 
 /// 78.103 — WHERE A BEND WAS READ: a contact's refraction (its tether, or one
@@ -296,6 +301,25 @@ pub(crate) fn note_bends(at: Bend, motion: &Mv, budget: &mut crate::physics::Bud
             RELATIVE_BENDS
         }
     };
+    // ONE MODE, READ WITH NO ROOT TAKEN: a versor of grades 0 and 2 alone has
+    // `VṼ = a² − B·B − B∧B` scalar, so `B∧B = 0` — its bivector is simple, it
+    // spans one plane, and the sign of `B²` is its kind exactly (negative a
+    // turn, zero a null slide, positive a boost). The identity spans none.
+    let b = motion.grade(2);
+    if motion.sub(&motion.grade(0).add(&b)).is_zero() {
+        use num_traits::Signed;
+        if b.is_zero() {
+            return;
+        }
+        let sq = b.geo(&b).scalar_part();
+        let k = match (sq.is_negative(), sq.is_positive()) {
+            (true, _) => 0,
+            (_, true) => 2,
+            _ => 1,
+        };
+        note(base + k, 1);
+        return;
+    }
     let Some(Ok(modes)) = crate::transducer::cga::motion_modes(motion, budget) else {
         note(base + BEND_KINDS - 1, 1);
         return;
@@ -315,7 +339,7 @@ pub(crate) fn note_bends(at: Bend, motion: &Mv, budget: &mut crate::physics::Bud
 }
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 19] {
+pub fn unread_tally() -> [u64; 21] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
     [
@@ -338,6 +362,8 @@ pub fn unread_tally() -> [u64; 19] {
         r(RELATIVE_BENDS + 1),
         r(RELATIVE_BENDS + 2),
         r(RELATIVE_BENDS + 3),
+        r(UNREAD_STAR),
+        r(UNREAD_STEP),
     ]
 }
 
@@ -477,7 +503,9 @@ pub fn speak(
     budget: &mut crate::physics::Budget,
 ) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Composition)> {
     let mut out = Vec::new();
-    for (steps, read) in super::compose::sentences_of(form, rings, budget) {
+    // 78.103 — the contacts' bends are read after every ring is heard.
+    let (sentences, bends) = super::compose::sentences_and_bends_of(form, rings, budget);
+    for (steps, read) in sentences {
         note(RINGS, 1);
         let s = match read {
             Ok(s) => s,
@@ -493,6 +521,8 @@ pub fn speak(
                 note(
                     match why {
                         TermUnread::NotRigid => UNREAD_NOT_RIGID,
+                        TermUnread::StarUnread => UNREAD_STAR,
+                        TermUnread::StepUnread => UNREAD_STEP,
                         TermUnread::Unrefracted => UNREAD_UNREFRACTED,
                         TermUnread::NoBaseAction => UNREAD_NO_BASE_ACTION,
                         TermUnread::NotAVersor => UNREAD_NOT_A_VERSOR,
@@ -513,6 +543,7 @@ pub fn speak(
         hear(&s, budget);
         out.push((steps, s));
     }
+    super::compose::read_bends(&bends, budget);
     out
 }
 

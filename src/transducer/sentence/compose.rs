@@ -180,7 +180,7 @@ fn term_choices(carried: &super::circuit::PathCarried) -> Result<Vec<Vec<Term>>,
                         Ok(candidates.iter().map(|c| whole(&c.carriage, t.forward)).collect())
                     }
                     (None, true) => Err(TermUnread::Unrefracted),
-                    (None, false) => Err(TermUnread::NotRigid),
+                    (None, false) => Err(edgeless(&t.face)),
                 };
             };
             // A contact's carriage is its whole refraction `θ·V` (BQ5a): the
@@ -201,6 +201,17 @@ fn term_choices(carried: &super::circuit::PathCarried) -> Result<Vec<Vec<Term>>,
             }])
         })
         .collect()
+}
+
+/// 78.103 — WHICH FACE LOST ITS EDGE, read off the overlap itself: a star
+/// face, a frame step, or a pair of members.
+fn edgeless(o: &crate::network::nerve::coord::Overlap) -> TermUnread {
+    use crate::network::nerve::coord::ChartAt;
+    match (&o.from, &o.to) {
+        (ChartAt::Frame, _) | (_, ChartAt::Frame) => TermUnread::StarUnread,
+        (ChartAt::At(a), ChartAt::At(b)) if a.vertex == b.vertex && a.chart == b.chart => TermUnread::StepUnread,
+        _ => TermUnread::NotRigid,
+    }
 }
 
 /// 78.6(1), 78.44 — EVERY ROUTE A HELD COSET OPENS, formed one at a time
@@ -258,8 +269,15 @@ pub enum RingUnread {
 pub enum TermUnread {
     /// A face between two bodies whose union no rigid versor carries (50.3's
     /// `NotRigid`): no edge was measured. 78.63 reads a rigidity as a symptom
-    /// — only a pair no CONFORMAL motion carries is a tear.
+    /// — only a pair no CONFORMAL motion carries is a tear. Since 78.103 a
+    /// pair that moved differentially carries its relative motion, so this
+    /// is a member pair whose edge did not read.
     NotRigid,
+    /// 78.103 — a STAR face (one end the Frame) with no edge read.
+    StarUnread,
+    /// 78.103 — a FRAME STEP (one member's two charts at two frames) whose
+    /// motor spelled no edge.
+    StepUnread,
     /// A contact face whose refraction `(θ_bθ_a⁻¹)·V` was refused (BQ5a): no
     /// one transport, no static tether, no held coset.
     Unrefracted,
@@ -291,13 +309,41 @@ pub fn is_chord(o: &crate::network::nerve::coord::Overlap) -> bool {
 /// one member path read as terms ([`terms_of`]) and composed ([`compose`]),
 /// the overlaps it crosses kept beside it (what its faces carried is its
 /// mass). The rings are the caller's: a percept's kept orbits and its vacua,
-/// a court's re-derived ones.
+/// a court's re-derived ones. The contacts' bends are read after every ring
+/// is composed, on what the stroke has left (78.103).
 pub fn sentences_of(
     form: &super::Form,
     rings: &[super::Orbit],
     budget: &mut crate::physics::Budget,
 ) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>)> {
+    let (out, bends) = sentences_and_bends_of(form, rings, budget);
+    read_bends(&bends, budget);
+    out
+}
+
+/// 78.103 — EACH CONTACT BEND, read by what it generates
+/// ([`super::rung::note_bends`]). A READING AFTER THE FACULTY: the mind
+/// composes and hears its rings first, and the bends take what the stroke
+/// has left — one whose stroke ran out is counted unread, by name.
+pub(crate) fn read_bends(bends: &[Mv], budget: &mut crate::physics::Budget) {
+    for b in bends {
+        super::rung::note_bends(super::rung::Bend::Contact, b, budget);
+    }
+}
+
+/// One ring as [`sentences_of`] reads it: the overlaps it crosses, and its
+/// composition or why there is none.
+pub(crate) type RingRead = (Vec<crate::network::nerve::coord::Overlap>, Result<Composition, RingUnread>);
+
+/// [`sentences_of`], the contacts' bends handed back unread so the caller
+/// reads them after it has heard the rings (78.103).
+pub(crate) fn sentences_and_bends_of(
+    form: &super::Form,
+    rings: &[super::Orbit],
+    budget: &mut crate::physics::Budget,
+) -> (Vec<RingRead>, Vec<Mv>) {
     let mut out = Vec::with_capacity(rings.len());
+    let mut bends: Vec<Mv> = Vec::new();
     for lp in rings {
         let steps: Vec<crate::network::nerve::coord::Overlap> = lp.transitions.iter().map(|s| s.overlap.clone()).collect();
         // 78.97 — a ring through a chord is heard, never composed.
@@ -320,13 +366,11 @@ pub fn sentences_of(
                 continue;
             }
         };
-        // 78.103 — every contact read by its refraction is a bend, read by
-        // what it generates: each term its tether or coset opened.
+        // 78.103 — every contact read by its refraction is a bend: each term
+        // its tether or coset opened, kept for the reading after.
         for (t, choice) in p.transitions.iter().zip(&choices) {
             if t.transport.is_none() {
-                for term in choice {
-                    super::rung::note_bends(super::rung::Bend::Contact, &term.transport, budget);
-                }
+                bends.extend(choice.iter().map(|term| term.transport.clone()));
             }
         }
         // 78.6(1), 78.44 — A HELD COSET'S RING IS EVERY ROUTE IT OPENS, each
@@ -341,7 +385,7 @@ pub fn sentences_of(
             out.push((steps.clone(), compose(&terms, budget).ok_or(RingUnread::Traversal)));
         }
     }
-    out
+    (out, bends)
 }
 
 /// 78.69, 78.97, 78.68 — THE WORD A SENTENCE TEACHES, the one rule (78.100

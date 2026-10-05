@@ -23158,6 +23158,28 @@ Proved: `perception::a_rigid_scene_has_identity_edges_and_a_relative_motion_is_i
 `perception::a_tear_is_refused_by_name`,
 `rung::a_bend_is_read_by_the_planes_its_modes_span`.
 
+**Read on epoch 128 (`baf8f26e`, 20 min, five voices), and two fixes.**
+- *No differential pair reached the edge reader:* `edges: relative motion`
+  0 on every voice, yet `transport: not rigid` still 0–13. So the term's
+  `NotRigid` was never 50.3's — it named every face standing with a place
+  and no edge, whatever the face. SPLIT by the overlap itself
+  (`compose::edgeless`): a star face (one end the Frame — `edge_between`
+  keys members and the Frame has no bodies, so a star never measured an
+  edge), a frame step (one member's two charts, a motor that spelled no
+  edge), and a member pair. Readings: `transport: star face / frame step /
+  member pair, no edge`.
+- *The bend reading starved comprehension:* `coordinates unread: stroke
+  spent` returned on every voice (5–9; 0 since epoch 126). The bends were
+  read by `motion_modes` inside `sentences_of`, on the scene's one stroke,
+  before the rings were heard. FIXED twice over: a bend of grades 0 and 2
+  is simple (`VṼ` scalar forces `B∧B = 0`), so its one plane's kind is the
+  sign of `B²`, read with no root and no stroke; only a compound bend takes
+  `motion_modes`, and every bend is read after the rings are heard
+  (`compose::{sentences_and_bends_of, read_bends}`).
+- *The bends, as read:* contacts are boosts above all — boost planes 10–33
+  a voice, turns 0–5, null slides 0. The contacts' refractions carry
+  hyperbolic content where the seen rays carry null.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
