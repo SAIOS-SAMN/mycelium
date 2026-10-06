@@ -221,7 +221,23 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             }
             _ => return None,
         };
-        let place = FacePlace { carriage, gauge, edge, refraction: None };
+        // 78.107 — WHERE THE REFRACTION DID NOT CROSS, THE CONTACT IS READ BY
+        // ITS OWN INTERFACE. A face's refraction is the perceiving mind's
+        // reading of the bodies' poses and is not written into the address;
+        // the interface is, and its `V = s_b s_a` IS the static tether
+        // (78.6(2)). A reader decoding the form — a court hearing it —
+        // re-derives the contact from what crossed: statically, its poses
+        // unread at this vantage, never the voice's word for it. Only here,
+        // where the form crossed: a mind's own refused contact stays a
+        // refused circuit its construction reads (CT2, 79.3).
+        let refraction = match (&edge, &interface) {
+            (None, Some(i)) => Some(super::Refraction::Static {
+                tether: i.v.clone(),
+                poses: [super::HeldPose::Unread, super::HeldPose::Unread],
+            }),
+            _ => None,
+        };
+        let place = FacePlace { carriage, gauge, edge, refraction };
         f.faces.put(&o, FormFace { place, producer, left, right, interface });
     }
     let mut r = [0u64; 4];

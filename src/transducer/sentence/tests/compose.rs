@@ -175,8 +175,10 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
 /// INTERFACE. A face's refraction is the perceiving mind's reading of the
 /// bodies' poses and is not on the wire; its interface is, and its
 /// `V = s_b s_a` is the static tether. Two members and a contact face between
-/// them carrying an interface, no edge and no refraction — the form as a court
-/// decodes it — compose: no ring of it is unread as unrefracted.
+/// them carrying an interface, no edge and no refraction: as the mind holds
+/// it, the contact is a refused circuit (its construction reads it, CT2); as
+/// a court decodes it from the wire, it composes — no ring of it unread as
+/// unrefracted.
 #[test]
 fn a_contact_with_no_refraction_is_read_by_its_interface() {
     use super::common::{contact, stand_with_star, word_vertex_on};
@@ -189,14 +191,21 @@ fn a_contact_with_no_refraction_is_read_by_its_interface() {
     f.faces.at_mut(&o).expect("the face").interface = Some(contact(0, 3, 1));
     f.orbits = Form::orbits_of(&f.faces, &f.vertices);
     f.reindex();
-    let cycles = Form::cycles_of(&f.faces, &f.vertices);
-    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let rings_of = |f: &Form| -> Vec<crate::transducer::sentence::Orbit> {
+        let cycles = Form::cycles_of(&f.faces, &f.vertices);
+        cycles.kept.iter().chain(&cycles.vacua).cloned().collect()
+    };
+    let unrefracted = |read: &[(Vec<crate::network::nerve::coord::Overlap>, Result<crate::transducer::sentence::compose::Composition, RingUnread>)]| {
+        read.iter().any(|(_, r)| matches!(r, Err(RingUnread::Transport(TermUnread::Unrefracted))))
+    };
+    let held = sentences_of(&f, &rings_of(&f), &mut stroke());
+    assert!(unrefracted(&held), "as the mind holds it, the contact is refused — its construction reads it");
+    let spoken = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("the form crosses");
+    let heard = crate::transducer::sentence::from_element_form(&spoken).expect("and decodes at the court");
+    let rings = rings_of(&heard);
     assert!(!rings.is_empty(), "the contact closes a ring with the two stars");
-    let read = sentences_of(&f, &rings, &mut stroke());
-    assert!(
-        !read.iter().any(|(_, r)| matches!(r, Err(RingUnread::Transport(TermUnread::Unrefracted)))),
-        "no ring is unread as unrefracted"
-    );
+    let read = sentences_of(&heard, &rings, &mut stroke());
+    assert!(!unrefracted(&read), "as the court decodes it, no ring is unread as unrefracted");
     assert!(read.iter().any(|(_, r)| r.is_ok()), "the contact's ring composes, read by its tether");
 }
 

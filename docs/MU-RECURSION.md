@@ -23471,10 +23471,14 @@ transport reached the court with neither edge nor refraction, the composer
 read it `Unrefracted`, and `hear_open` dropped that ring unseen — every
 contact ring, the boost-bent ones the voices' ineffable words come from
 (epoch 135). The interface's `V = s_b s_a` IS the static tether (78.6(2)):
-where a contact face carries an interface and no refraction, the circuit
-reads it statically by `V`, its poses `Unread` at this vantage
-(`HeldPose::Unread`) — at a court, its own re-derivation from what
-crossed; a held coset, whose poses did not cross, reads static there. A
+where a received form's contact face carries an interface and no edge, the
+reader DECODING it (`inverse.rs`) reads it statically by `V`, its poses
+`Unread` at this vantage (`HeldPose::Unread`) — a court's own
+re-derivation from what crossed; a held coset, whose poses did not cross,
+reads static there. Only where the form crossed: a mind's own refused
+contact stays a refused circuit, read by its construction (CT2, 79.3) — a
+first cut put the static read in the circuit itself and pre-empted CT2 at
+the voices, refused by the suite (`trajectory::every_reuse_arm_empty_…`). A
 heard ring the court cannot compose is now counted (`heard: rings
 unread`), never dropped unseen. Proved:
 `compose::a_contact_with_no_refraction_is_read_by_its_interface`.
