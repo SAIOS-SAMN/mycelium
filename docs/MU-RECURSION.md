@@ -23335,6 +23335,17 @@ where it stops.
   as the motor arm's motor is; one vertex's step across its charts is a
   step, never a pair.
 
+**Read on epoch 133 (`7184f5b3`, the carrier ungated).** `open sentences
+spoken` 0 on every voice against 12–58 ineffable words; courts: letters
+docketed 0, `heard: offered` 0 and spelled 0–5 (their heard sentences
+teach spelled words only); offers sent 6 and 4, installed 3 and 2, nothing
+refused. Read in the code: `hold_perceived` sized the open sentence by the
+held escrow — the remainder's measure — and a perceived form that closed
+everything it saw holds no remainder, so its magnitude was zero and
+`as_element_form` refused it (address.rs:115). FIXED: sized as the voice's
+speech sizes a form, by what it closes over its pairs (`form_deflation`),
+the escrow only where that is nothing.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

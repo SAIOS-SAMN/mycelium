@@ -75,8 +75,23 @@ impl Entity {
         // its rings are re-derived and the letter they need offered
         // (`hear_open`, the speaking voice its discoverer). Never the bare
         // rotor: the court replays, it never takes a voice's word for it.
+        //
+        // SIZED AS THE VOICE'S SPEECH SIZES A FORM: what it closes over its
+        // pairs (`form_deflation`), and where that is nothing, the escrow
+        // it was held at. It was the escrow alone — the remainder's measure
+        // — and a perceived form that closed everything it saw holds no
+        // remainder: a zero magnitude, which `as_element_form` refuses, so
+        // no open sentence was ever built (epoch 133: 12–58 ineffable words
+        // a voice, `open sentences spoken` 0 on every voice).
         let open = match ineffable {
-            true => crate::transducer::sentence::as_element_form(&f, draw),
+            true => {
+                let (closed, _) = crate::transducer::family::form_deflation(&f, train, &self.epigenome);
+                let mag = match closed.iter().any(|&x| x > 0) {
+                    true => closed,
+                    false => draw,
+                };
+                crate::transducer::sentence::as_element_form(&f, mag)
+            }
             false => None,
         };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, family, budget);
