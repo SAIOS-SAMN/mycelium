@@ -44,8 +44,29 @@ fn an_ineffable_taught_word_is_reported_for_its_sentence_to_be_spoken() {
     let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
     let mut budget = e.stroke();
     let before = sentence_tally();
-    let (words, sent) = e.transcribe_these(vec![Taught { motion: w, period: 1 }], &mut budget);
+    let (words, ineffable) = e.transcribe_these(vec![Taught { motion: w, period: 1 }], &mut budget);
     assert!(sentence_tally().taught_ineffable > before.taught_ineffable, "counted ineffable");
-    assert!(sent, "reported, so its sentence is spoken");
+    assert_eq!(ineffable.len(), 1, "its rotor reported, so its sentence is spoken and its letter made");
     assert!(words.is_empty(), "no unspelled word is handed back as speech");
+}
+
+/// 78.109 K1 — THE MIND MAKES ITS LETTER AND SAYS ITS WORD. The `(8, 15, 17)`
+/// turn is ineffable; the mind adjoins its rotor in its local dialect, and
+/// the same word taught again is said by the mind's own adjoined letter —
+/// no court asked, no ruling waited for.
+#[test]
+fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
+    use crate::transducer::sentence::rung::Taught;
+    let mut e = Entity::open("127.0.0.1:1", Kernel::named("sovereign"));
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
+    let mut budget = e.stroke();
+    let (_, ineffable) = e.transcribe_these(vec![Taught { motion: w.clone(), period: 1 }], &mut budget);
+    let chart = crate::transducer::stalk::Invariant::counts(&[1]);
+    let letters: crate::transducer::bubble::drive::Adjoined = ineffable.into_iter().map(|r| (r, chart.clone())).collect();
+    e.adjoin_letters(&letters, &mut budget);
+    let before = sentence_tally();
+    let (_, again) = e.transcribe_these(vec![Taught { motion: w, period: 1 }], &mut budget);
+    assert!(again.is_empty(), "no longer ineffable: the mind holds its letter");
+    assert!(sentence_tally().taught_adjoined > before.taught_adjoined, "said by its own adjoined letter");
 }

@@ -102,7 +102,10 @@ impl Entity {
         // bundle — and an hour is held with none, so it weighed nothing
         // again (epoch 134: `open sentences spoken` 0 on every voice). The
         // hour's scene is its own pair.
-        let open = match ineffable {
+        // 78.109 K1 — the chart of the form that taught them, where the mind
+        // files the letters it makes.
+        let chart = crate::transducer::sentence::chart_of_form(&f);
+        let open = match !ineffable.is_empty() {
             true => {
                 let (closed, _) = crate::transducer::family::form_deflation(&f, scene, &self.epigenome);
                 let mag = match closed.iter().any(|&x| x > 0) {
@@ -131,6 +134,17 @@ impl Entity {
         if let Some(sentence) = open {
             crate::transducer::sentence::rung::note_open_spoken();
             let _ = self.speak_with(std::slice::from_ref(&sentence), train, family, budget);
+        }
+        // 78.109 K1 — THE MIND MAKES ITS LETTER. A word its own sentence taught
+        // and no held letter spells is adjoined in its local dialect at once,
+        // as the pivot's unspellable rotor is (`adjoin_letters`, 37.7): its
+        // own letters now spell it, D3 cites it, words climb on it. Volatile,
+        // the mind's own, lapsed on its own clock; never handed mind to mind
+        // (law 8). What it offers the mesh is the sentence above; whether the
+        // mesh holds it too is the court's to verify.
+        if let Some(chart) = chart {
+            let letters: crate::transducer::bubble::drive::Adjoined = ineffable.into_iter().map(|r| (r, chart.clone())).collect();
+            self.adjoin_letters(&letters, budget);
         }
         true
     }
@@ -171,8 +185,9 @@ impl Entity {
     /// cited, adjudicated, and taught — exactly as a closed thought's word
     /// is; derivable only through an adjoined letter, it already stands;
     /// ineffable, a letter demand (37.7). Counted on the sentences row; and
-    /// whether any was ineffable, so its sentence is spoken (78.102).
-    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, bool) {
+    /// the ineffable words' rotors — what the mind adjoins as its own
+    /// letters (78.109 K1), and why its sentence is spoken (78.102).
+    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, Vec<crate::transducer::alphabet::Rotor>) {
         self.transcribe_these(crate::transducer::sentence::rung::take_taught(), budget)
     }
 
@@ -181,10 +196,10 @@ impl Entity {
         &mut self,
         taught: Vec<crate::transducer::sentence::rung::Taught>,
         budget: &mut crate::physics::Budget,
-    ) -> (Vec<Element>, bool) {
+    ) -> (Vec<Element>, Vec<crate::transducer::alphabet::Rotor>) {
         use crate::transducer::sentence::rung::{note_transcribed, Taught, Transcribed};
         let mut words = Vec::new();
-        let mut ineffable = false;
+        let mut ineffable = Vec::new();
         for Taught { motion, period } in taught {
             match self.transcribe(&motion, period, budget) {
                 (Transcribed::Spelled, Some(word)) => {
@@ -194,7 +209,12 @@ impl Entity {
                 (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
                 (Transcribed::Ineffable, _) => {
                     note_transcribed(Transcribed::Ineffable);
-                    ineffable = true;
+                    // Its rotor, read as `transcribe` read it: the rotation
+                    // no held letter spells.
+                    let rotor = crate::transducer::element::conformal_factors(&motion)
+                        .ok()
+                        .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok());
+                    ineffable.extend(rotor);
                 }
                 (read, _) => note_transcribed(read),
             }

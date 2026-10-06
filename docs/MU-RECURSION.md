@@ -23563,6 +23563,16 @@ refused by breach, rings replayed (one per claim).
 **Order.** K1 with K2 first (the sovereign act and what it uplinks), then
 K3 (the court's half replaces discovery), then K4 into the contract crate.
 
+**K1 LANDED (2026-10-06).** `Entity::hold_perceived_from`: the rotors of the
+taught words no held letter spells (`transcribe_these` reports them) are
+adjoined in the mind's dialect on the chart of the form that taught them
+(`chart_of_form`), through `adjoin_letters` — the one path the pivot's
+unspellable rotor already takes, which stands the generator and utters it.
+Proved: `taught::a_mind_adjoins_its_ineffable_word_and_says_it_at_once` (the
+`(8, 15, 17)` turn, ineffable, adjoined; taught again it is said by the
+mind's own letter). Reading: `taught: by an adjoined letter` rising,
+ineffable falling as minds say what they understood.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
