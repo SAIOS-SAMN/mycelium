@@ -249,6 +249,26 @@ fn put_face(buf: &mut Vec<u8>, face: &FormFace) {
         }
         None => buf.push(0),
     }
+    // 78.108 — THE REFRACTION, MEASURED CONTENT AS THE EDGE IS: a held
+    // coset's candidate transports, each whole, or a static contact's tether.
+    // The poses a mind read the refraction off stay with the mind (what
+    // crosses is the motion, never the perception of the bodies).
+    match &place.refraction {
+        None => buf.push(0),
+        Some(super::Refraction::Coset(candidates)) => {
+            buf.push(1);
+            crate::transducer::address::put_key_count(buf, candidates.len());
+            for t in candidates {
+                t.word.put_canonical(buf);
+                t.carriage.put_canonical(buf);
+                put_gauge(buf, &t.gauge);
+            }
+        }
+        Some(super::Refraction::Static { tether, .. }) => {
+            buf.push(2);
+            tether.put_canonical(buf);
+        }
+    }
 }
 
 /// A hue map sorted, by its own count: content order, so two nodes holding

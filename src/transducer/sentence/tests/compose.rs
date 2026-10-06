@@ -171,16 +171,14 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
     assert!(omega_of(&whole).projective_eq(&tr.carriage), "a contact crossing is its whole carriage");
 }
 
-/// 78.107 — A CONTACT WHOSE REFRACTION DID NOT CROSS IS READ BY ITS OWN
-/// INTERFACE. A face's refraction is the perceiving mind's reading of the
-/// bodies' poses and is not on the wire; its interface is, and its
-/// `V = s_b s_a` is the static tether. Two members and a contact face between
-/// them carrying an interface, no edge and no refraction: as the mind holds
-/// it, the contact is a refused circuit (its construction reads it, CT2); as
-/// a court decodes it from the wire, it composes — no ring of it unread as
-/// unrefracted.
+/// 78.108 (78.107 withdrawn) — A CONTACT THE MIND COULD NOT REFRACT IS
+/// REFUSED ALIKE AT THE MIND AND AT THE COURT. Two members and a contact face
+/// between them carrying an interface, no edge and no refraction: as the mind
+/// holds it, the contact is a refused circuit (its construction reads it,
+/// CT2); decoded from the wire it is the same form, and the court reads it
+/// refused too — no static read is invented at the decode.
 #[test]
-fn a_contact_with_no_refraction_is_read_by_its_interface() {
+fn a_contact_the_mind_could_not_refract_is_refused_alike_at_the_court() {
     use super::common::{contact, stand_with_star, word_vertex_on};
     use crate::transducer::sentence::compose::{sentences_of, RingUnread, TermUnread};
     use crate::transducer::sentence::Form;
@@ -205,8 +203,42 @@ fn a_contact_with_no_refraction_is_read_by_its_interface() {
     let rings = rings_of(&heard);
     assert!(!rings.is_empty(), "the contact closes a ring with the two stars");
     let read = sentences_of(&heard, &rings, &mut stroke());
-    assert!(!unrefracted(&read), "as the court decodes it, no ring is unread as unrefracted");
-    assert!(read.iter().any(|(_, r)| r.is_ok()), "the contact's ring composes, read by its tether");
+    assert!(unrefracted(&read), "the court reads it refused, as the mind does");
+}
+
+/// 78.108 — THE REFRACTION CROSSES AS THE EDGE DOES. A contact face whose
+/// refraction is a held coset of two candidates crosses the wire and is
+/// decoded with the same candidates, whole: the court composes every route
+/// the voice composed, never the static read alone.
+#[test]
+fn a_contacts_refraction_crosses_the_wire_whole() {
+    use super::common::{contact, stand_with_star, word_vertex_on};
+    use crate::transducer::sentence::{Form, Refraction, Transport};
+    let mut f = Form::default();
+    let ca = stand_with_star(&mut f, &word_vertex_on(1, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[1])));
+    let cb = stand_with_star(&mut f, &word_vertex_on(2, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[2])));
+    let o = f.place_overlap(ca, cb, None).expect("a face between the two members");
+    let candidate = |d: i64| Transport {
+        word: crate::transducer::alphabet::Word::identity(),
+        carriage: cga::translator_at(&[q(d), q(0), q(0)]),
+        gauge: Vec::new(),
+    };
+    let coset = Refraction::Coset(vec![candidate(1), candidate(-1)]);
+    {
+        let face = f.faces.at_mut(&o).expect("the face");
+        face.interface = Some(contact(0, 3, 1));
+        face.place.refraction = Some(coset.clone());
+    }
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
+    let spoken = crate::transducer::sentence::as_element_form(&f, [1, 0, 0, 0]).expect("the form crosses");
+    let heard = crate::transducer::sentence::from_element_form(&spoken).expect("and decodes");
+    let face = heard.faces.at(&o).expect("the face crossed");
+    assert_eq!(face.place.refraction.as_ref(), Some(&coset), "the held coset crossed whole");
+    let cycles = Form::cycles_of(&heard.faces, &heard.vertices);
+    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    let read = crate::transducer::sentence::compose::sentences_of(&heard, &rings, &mut stroke());
+    assert!(read.iter().filter(|(_, r)| r.is_ok()).count() >= 2, "every route the coset opens is composed at the court");
 }
 
 /// 78.6, 78.102 — A CONTACT WITH NO ONE TRANSPORT IS READ BY ITS REFRACTION.

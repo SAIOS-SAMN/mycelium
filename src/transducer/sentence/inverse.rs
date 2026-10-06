@@ -221,22 +221,42 @@ pub fn from_address(a: &crate::transducer::address::Address) -> Option<Form> {
             }
             _ => return None,
         };
-        // 78.107 — WHERE THE REFRACTION DID NOT CROSS, THE CONTACT IS READ BY
-        // ITS OWN INTERFACE. A face's refraction is the perceiving mind's
-        // reading of the bodies' poses and is not written into the address;
-        // the interface is, and its `V = s_b s_a` IS the static tether
-        // (78.6(2)). A reader decoding the form — a court hearing it —
-        // re-derives the contact from what crossed: statically, its poses
-        // unread at this vantage, never the voice's word for it. Only here,
-        // where the form crossed: a mind's own refused contact stays a
-        // refused circuit its construction reads (CT2, 79.3).
-        let refraction = match (&edge, &interface) {
-            (None, Some(i)) => Some(super::Refraction::Static {
-                tether: i.v.clone(),
-                poses: [super::HeldPose::Unread, super::HeldPose::Unread],
-            }),
-            _ => None,
+        // 78.108 — THE REFRACTION, as `put_face` writes it: a held coset's
+        // candidates whole, or a static contact's tether; its poses unread at
+        // this vantage.
+        let crossed = match *k.get(p)? {
+            0 => {
+                p += 1;
+                None
+            }
+            1 => {
+                p += 1;
+                let n = take_key_count(k, &mut p)?;
+                let mut candidates = Vec::with_capacity(n.min(64));
+                for _ in 0..n {
+                    let word = Word::formed(Rotor::from_bytes(k, &mut p)?);
+                    let carriage = Versor::from_bytes(k, &mut p)?;
+                    let gauge = take_gauge(k, &mut p)?;
+                    candidates.push(Transport { word, carriage, gauge });
+                }
+                Some(super::Refraction::Coset(candidates))
+            }
+            2 => {
+                p += 1;
+                Some(super::Refraction::Static {
+                    tether: Versor::from_bytes(k, &mut p)?,
+                    poses: [super::HeldPose::Unread, super::HeldPose::Unread],
+                })
+            }
+            _ => return None,
         };
+        // THE DECODE IS THE EXACT INVERSE (law 2: the address IS the form):
+        // what crossed is what is read, and nothing is added. A contact the
+        // perceiving mind could not refract crosses with none and stays
+        // refused at the reader too, as it is at the mind (CT2 constructs it
+        // there). 78.107's static read by the interface, added here, broke
+        // the round trip and is withdrawn (78.108).
+        let refraction = crossed;
         let place = FacePlace { carriage, gauge, edge, refraction };
         f.faces.put(&o, FormFace { place, producer, left, right, interface });
     }

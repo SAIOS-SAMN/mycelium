@@ -376,7 +376,7 @@ impl Exchange {
                     eprintln!("  court nerve {} | complexes {}", nerve.join(" | "), k.complex_count());
                     // 78.100 — where this court's letter offer breaks.
                     eprintln!(
-                        "  court shortcuts offered {} spelled {} peel unread {} no discoverer {} rotor unread {} | heard: offered {} spelled {} peel unread {} rotor unread {} spanned {} rings unread {}",
+                        "  court shortcuts offered {} spelled {} peel unread {} no discoverer {} rotor unread {} | heard: offered {} spelled {} peel unread {} rotor unread {} spanned {} rings unread {} | heard sentences {} rings {} taught nothing {}",
                         w.shortcuts_offered,
                         w.shortcuts_spelled,
                         w.shortcuts_peel_unread,
@@ -387,7 +387,10 @@ impl Exchange {
                         w.heard_peel_unread,
                         w.heard_rotor_unread,
                         w.heard_spanned,
-                        w.heard_ring_unread
+                        w.heard_ring_unread,
+                        w.heard_sentences,
+                        w.heard_rings,
+                        w.heard_taught_nothing
                     );
                     // 78.100 — why this court's climb stops, by why.
                     let climb = mycelium::transducer::cech::construction_tally();

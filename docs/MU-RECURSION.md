@@ -23483,6 +23483,86 @@ heard ring the court cannot compose is now counted (`heard: rings
 unread`), never dropped unseen. Proved:
 `compose::a_contact_with_no_refraction_is_read_by_its_interface`.
 
+### 78.108 A contact's refraction crosses as its edge does
+
+**Read on epoch 136 (`9e2210a9`).** Voices hold: top rung 2 by citation on
+two, closed 2–7, open sentences 2–11 a voice (33 in all), transport loss 0.
+Courts: `heard: spelled` 2–3, `offered` 0, `rings unread` 0–3 — from 33
+open sentences the courts composed a few rings' worth of words. Read in the
+code: the court re-derived a contact statically by its interface `V`
+(78.107), where the voice had read it through its refraction — a held
+coset `θ·V` — so the court composed other motions than the voice's, and
+the voice's ineffable word was not among what it reached; and `hear_open`
+passed over a ring teaching nothing or the identity without counting it.
+
+**The ruling.** A face's refraction is measured content as its edge is:
+the motion the contact carries — a held coset's candidate transports,
+whole, or a static contact's tether — written into the address after the
+interface (`chart.rs` `put_face`) and decoded as it was (`inverse.rs`),
+its poses `Unread` at the receiving vantage (the perception of the bodies
+stays with the mind that perceived them; what crosses is the motion). The
+court composes every route the voice composed. 78.107's static read by the
+interface is WITHDRAWN: added at the decode, it made the decoded form other
+than the form spoken (the address is the form, law 2 — refused by the suite,
+`properties::a_face_carries_its_interface_through_its_address`), and with
+the refraction crossing it reads nothing the mind did not. A contact the
+mind could not refract crosses with none and is refused alike at the court
+— the court verifies what the kernel carries and composes nothing for it
+(78.62 L2). The court's hearing is counted whole: `heard sentences / rings
+/ taught nothing`. Proved:
+`compose::a_contacts_refraction_crosses_the_wire_whole`,
+`compose::a_contact_the_mind_could_not_refract_is_refused_alike_at_the_court`.
+
+### 78.109 The kernel claims its letter; the court verifies the claim (the operator's word, 2026-10-06: "letter flow to the genome should be words stored in local dialect"; "we need a sovereign progenitor to develop this system"; "rectify the court and server trajectory to align with kernel uplink") — CONTRACT
+
+**Why.** 78.62 splits the work: the uplinked kernel composes (L1), the
+court replays against the laws and answers typed (L2), and never
+simulates. The court's hearing drifted into L1: `hear_open` recomposes
+every ring of every heard sentence to discover what the mind could not
+say, and 78.107 invented a reading the mind never made (withdrawn). The
+sovereign act is the mind's: it makes its letter and uses it at once.
+
+**K1 — the kernel adjoins and uses (L1).** A taught word the mind's letters
+do not spell is stood in its local dialect as an adjoined letter
+(`generator_form`, as `adjoin_letters` stands the pivot's), at once: its
+own letters now spell it (`letter_reading` includes adjoined letters), D3
+cites it, words climb on it. Volatile, the mind's own, lapsed on its own
+clock; never handed mind to mind (law 8).
+
+**K2 — the kernel uplinks a CLAIM, not a mystery.** With the open sentence
+(the form, its refraction carried — 78.108) goes the claim: the ring's
+coordinate (its overlaps), the residue the ring teaches, and its D3
+deconstruction (cites, exponents) over what the mind holds. The mind says
+what it found; it does not ask the court to find it.
+
+**K3 — the court verifies (L2).** For a claim, the court replays the NAMED
+ring of the carried form — one ring, not every ring — and checks exactly:
+the ring composes and teaches the claimed residue; no letter the court
+holds spells it; the transition stands under the law register
+(`physics::laws::verify`, the one implementation perception shares). It
+answers typed: ADMITTED — docketed provisional, the kernel its discoverer,
+offered to witnesses and installed as today — or REFUSED with every breach
+named (a residue that does not replay, one the court spells, a law
+breached). A heard sentence carrying no claim is adjudicated as any
+sentence, never searched.
+
+**K4 — the claim's codec in the wire contract** (TASKS (2), 78.64 H4):
+form, ring coordinate, deconstruction, residue — exact, beside the laws
+and verdicts.
+
+**Proofs by the algebra.** A claimed residue that replays from its ring is
+admitted and one that does not is refused by name; a claim whose residue
+the court's letters spell is refused as spelled; a kernel's adjoined
+letter spells its own word at once and D3 cites it; the court composes
+only the named ring.
+
+**Readings (the faculty's evidence).** Voices: `taught: by an adjoined
+letter`, adjoined letters held, claims uplinked. Courts: claims admitted,
+refused by breach, rings replayed (one per claim).
+
+**Order.** K1 with K2 first (the sovereign act and what it uplinks), then
+K3 (the court's half replaces discovery), then K4 into the contract crate.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

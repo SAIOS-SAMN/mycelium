@@ -111,6 +111,12 @@ pub struct WindingTally {
     /// reached the court (epoch 135: `heard: offered` 0 against 37 open
     /// sentences spoken).
     pub heard_ring_unread: u64,
+    /// 78.108 — every sentence `hear_open` was handed, the rings it
+    /// re-derived from them, and the rings whose theorem taught nothing or
+    /// the identity — read, so where a heard sentence goes is never silent.
+    pub heard_sentences: u64,
+    pub heard_rings: u64,
+    pub heard_taught_nothing: u64,
 }
 
 impl Winding {
@@ -352,16 +358,19 @@ impl Kernel {
         let cycles = crate::transducer::sentence::Form::cycles_of(&form.faces, &form.vertices);
         let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+        crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_sentences, 1);
+        crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_rings, rings.len() as u64);
         for (_, s) in crate::transducer::sentence::compose::sentences_of(&form, &rings, budget) {
             let Ok(s) = s else {
                 crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_ring_unread, 1);
                 continue;
             };
             let theorem = crate::transducer::sentence::theorem::Theorem::of(&s);
-            let Some(word) = crate::transducer::sentence::compose::teaches(&s, &theorem) else { continue };
-            if word.projective_eq(&one) {
+            let taught = crate::transducer::sentence::compose::teaches(&s, &theorem);
+            let Some(word) = taught.filter(|w| !w.projective_eq(&one)) else {
+                crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_taught_nothing, 1);
                 continue;
-            }
+            };
             let t = &mut self.winding_tally;
             match crate::transducer::family::derivation::peel_versor(word) {
                 Some(Ok(_)) => crate::physics::metabolism::step_or_refuse(&mut t.heard_spelled, 1),
