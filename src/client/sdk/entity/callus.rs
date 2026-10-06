@@ -87,9 +87,15 @@ impl Entity {
             // demand with its second vantage in hand, up through the docket.
             self.epigenome.calluses.unspelled += 1;
             let charts: Vec<Invariant> = cover.scoped().filter_map(|(k, _)| Invariant::from_key(&k)).collect();
-            // Its residue is the two remainders' ray, already on RM1's leaf
-            // the chain reaches: the citation carries none beside it (78.47(6)).
-            self.contemplation.docket_demand(&c.class, &charts, None);
+            // Its residue is the two remainders' ray. 78.47(6) kept it off the
+            // CITATION because a chain reached it on RM1's leaf; the plan is
+            // volatile and written nowhere since 78.49, so withheld here it
+            // reached nothing — 141–380 demands a voice the taker could not
+            // construct (read live, 2026-10-06). The plan carries the ray.
+            let residue = crate::transducer::element::versor_of_word(&crate::transducer::alphabet::Word::formed(
+                c.ray.as_ref().clone(),
+            ));
+            self.contemplation.docket_demand(&c.class, &charts, residue.as_ref());
             return;
         };
         let Some(callus) = crate::transducer::sentence::callus_form(derivation, &tops) else {

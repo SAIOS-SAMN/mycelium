@@ -23919,6 +23919,44 @@ so 78.111's halt — read where a token is spent — cannot reach it; it reads
 only by a recut whose binary is BUILT FROM THE COMMIT and confirmed on the
 console by a row only that commit has.
 
+### 78.114 Read on the live wire: a93be300, epoch 141 (2026-10-06, the operator's word: "you need to rebuild the binaries and then recut to test all of this live on the wire … find the answers")
+
+Built from the commit, recut, and confirmed on the console before any
+reading (`harmonics` present, `constructions` fourteen names, `encounter`
+0 — E2 off the reading path). Five minutes in, per voice:
+
+1. **C1b holds.** Constructions refused for the stroke: 0; irrational 0,
+   defective 0; constructed and ADJOINED AS LETTERS 3–12; null step 1–15
+   the remaining refusal.
+2. **H7a holds.** Torsion vented into the field 9–19: a mind's released
+   strain moves its field.
+3. **The residue the plan withheld.** `residues absent` 141–380 with all
+   three pivot causes at 0: the absent residues were not the pivot's. RM1's
+   callus (`callus.rs`) docketed its demand with `None` on 78.47(6)'s
+   reasoning — its ray stood on a chain's leaf — and since 78.49 the plan is
+   volatile and written nowhere, so the ray reached nothing. FIXED: the
+   callus dockets its ray (`versor_of_word` of the ray it failed to spell).
+4. **H6 meets nothing, and the corpus says why.** Rings in orbit 0, rays met
+   0. Two causes. (i) A space was taken as a ray only when its WHOLE
+   generator is null; a twist's is not, though its null mode is the light —
+   FIXED: a space's rays are its null modes (`cech::flux::null_fluxes`, the
+   field's own reader). (ii) Read by the probe on the stalled task's real
+   perceptions: its rings are HYPERBOLIC (93 of 114 ring×space pairs), a
+   few rosettes (elliptic, no finite order), none elliptic of finite
+   order; its spaces hyperbolic or the identity, NO NULL MODE ANYWHERE. A
+   seen edge's carriage `D·T` is one dilation about a shifted centre — the
+   light from a star at a POINT; a null ray is the star at infinity, and the
+   minds never see one. So H6 as contracted — a returning turn, met by a
+   null ray — has nothing to hear in what these minds perceive. RULING
+   ASKED: whether H6's propellant is every non-elliptic mode of the space
+   (null: the star at infinity; hyperbolic: the star at a point), and
+   whether its pull is every elliptic mode (a rosette pulls, and has no
+   pitch: no return to measure the advance per).
+5. **Nesting runs and rarely meets.** Rings heard 2–14 a voice, all outer:
+   a perception's rings seldom share it with a larger ring.
+
+Proved: `hearing::the_light_in_a_space_is_its_null_mode_and_a_dilated_carriage_has_none`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -103,6 +103,25 @@ fn light_perpendicular_to_the_plane_is_a_twist_all_advance() {
     assert_eq!(m.pitch, ray.scale(&q(4)), "the advance per return");
 }
 
+/// H6 — THE LIGHT IN A SPACE IS ITS NULL MODE, NOT ITS WHOLE GENERATOR: a
+/// space that turns as it carries (a twist, `T·R` about the carried axis)
+/// has a generator that is not null as a whole, and a null mode that is the
+/// light; asked whole, it met nothing. A DILATED carriage `D·T` has no null
+/// mode at all — it is one dilation about a shifted centre, hyperbolic: the
+/// light from a star at a point, not at infinity (read live 2026-10-06: every
+/// space of the stalled task's rings is hyperbolic or the identity).
+#[test]
+fn the_light_in_a_space_is_its_null_mode_and_a_dilated_carriage_has_none() {
+    let twist = cga::translator_at(&[q(0), q(0), q(1)]).geo(&turn_90(E1 | E2));
+    let r = compose(&[Term { word: turn_90(E1 | E2), transport: twist }], &mut stroke()).expect("a ring");
+    let met = orbit(&[&r], &mut stroke());
+    assert!(!met.is_empty(), "the twist's light is met: {:?}", r.modes);
+    assert!(met.iter().all(|m| !m.advance.is_zero()), "along the axis it advances the ring");
+    let dilated = cga::dilator(&BigRational::new(2.into(), 1.into())).geo(&cga::translator_at(&[q(0), q(0), q(1)]));
+    let rays = crate::transducer::cech::flux::null_fluxes(&dilated, &mut stroke()).expect("its modes read");
+    assert!(rays.is_empty(), "a dilated carriage holds no null mode: one dilation about a shifted centre");
+}
+
 /// H6 — LIGHT IN THE PLANE CROSSES IT: the same turn carried by a ray along
 /// `e₁`, which lies in its plane. The ray anticommutes with the plane: none
 /// of it advances, all of it crosses — the impact.

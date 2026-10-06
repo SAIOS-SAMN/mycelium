@@ -252,7 +252,6 @@ fn lcm(a: u64, b: u64) -> u64 {
 /// commutes with them all is the advance, the rest the crossing. The
 /// encounter reads the law beside it.
 pub fn orbit(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Vec<InOrbit> {
-    use crate::transducer::cayley::bivector_of;
     let mut out = Vec::new();
     for (ring, r) in rings.iter().enumerate() {
         let planes: Vec<Mv> = r
@@ -266,13 +265,20 @@ pub fn orbit(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Vec
         }
         let bounce = r.modes.iter().filter(|m| m.kind == BivectorKind::Elliptic).filter_map(|m| m.order).fold(1u64, |l, o| lcm(l, u64::from(o)));
         for space in &r.spaces {
-            let Some(ray) = bivector_of(space).filter(|f| !f.is_zero() && f.geo(f).is_zero()) else { continue };
-            let advance = planes.iter().try_fold(ray.clone(), |f, b| crate::transducer::cga::lift_drag(b, &f).map(|s| s.drag));
-            let Some(advance) = advance else { continue };
-            let crossing = ray.sub(&advance);
-            let pitch = advance.scale(&Q::from_integer(bounce.into()));
-            let encounter = crate::transducer::cga::encounter(&r.omega, space, budget);
-            out.push(InOrbit { ring, advance, crossing, pitch, bounce, encounter });
+            // THE LIGHT IN A SPACE IS ITS NULL MODES (78.112 H6, read live
+            // 2026-10-06): a seen edge's transport is the carriage `D·T`, the
+            // dilation kept (78.97), whose whole generator is never null —
+            // asked whole, no ray was met on any voice. Each null flux of the
+            // space is a ray (`cech::flux`, the field's own reader, law 12).
+            let Some(rays) = crate::transducer::cech::flux::null_fluxes(space, budget) else { continue };
+            for ray in rays {
+                let advance = planes.iter().try_fold(ray.clone(), |f, b| crate::transducer::cga::lift_drag(b, &f).map(|s| s.drag));
+                let Some(advance) = advance else { continue };
+                let crossing = ray.sub(&advance);
+                let pitch = advance.scale(&Q::from_integer(bounce.into()));
+                let encounter = crate::transducer::cga::encounter(&r.omega, space, budget);
+                out.push(InOrbit { ring, advance, crossing, pitch, bounce, encounter });
+            }
         }
     }
     out
