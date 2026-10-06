@@ -23905,15 +23905,19 @@ peels whose demand is filed) — BD1 applied there: the search spends the
 stroke, one read a trial, and a spent stroke leaves the demand `Standing`
 by name.
 
-**Read at the recut onto 9f18f498 (epoch 140).** The fleet moves: in five
-minutes every voice had passed 4–14 families, where one had held it for
-hours. THE HALT DID NOT REACH THE STALLED VOICES: all five ran out the 90 s
-and were killed unsaved, as before — they sat in this same trial-division
-loop, which spends no token, and 78.111's halt is read where a token is
-spent. Until BD1 reaches it, the loop reads `physics::halted()` on every
-trial: a stopped process refuses the search and the demand stands. The
-halt is exactly as complete as rule 10's coverage; a loop that reads no
-boundary and spends nothing is the defect wherever it stands.
+**CORRECTED (2026-10-06, the console's own rows): NO RECUT TODAY RAN
+78.111–78.113.** `scripts/recut` builds nothing; both recuts (16:33, 22:10)
+restarted the fleet on the 13:38 build, `f0125dc6` — the console's
+`encounter` row still carried E2's flood and `constructions` its old nine
+names. Every fleet reading reported against 40979cab and 9f18f498 that day
+— perception recovered, the stall gone live, the halt failing — read
+f0125dc6, which holds none of them. What stands proven is the algebra's
+tests and the probe (the library at the commit, on the real task). Still
+sound on its reading of the code: the trial-division loop spends no token,
+so 78.111's halt — read where a token is spent — cannot reach it; it reads
+`physics::halted()` on every trial until BD1 does. Proved on the fleet
+only by a recut whose binary is BUILT FROM THE COMMIT and confirmed on the
+console by a row only that commit has.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
