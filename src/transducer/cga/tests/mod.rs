@@ -4,6 +4,7 @@ mod bivector;
 mod common;
 mod constructors;
 mod enclosure;
+mod encounter;
 mod fixed;
 mod flow;
 mod generic;

@@ -102,6 +102,9 @@ pub struct Senses {
     /// 78.100 D6 — what deconstruction by motion read
     /// (`rung::CITATION`).
     pub citation: [u64; crate::transducer::sentence::rung::CITATION.len()],
+    /// 78.110 E2 — what the encounters where circuits meet read
+    /// (`cech::ENCOUNTER`).
+    pub encounter: [u64; crate::transducer::cech::ENCOUNTER.len()],
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -287,6 +290,7 @@ impl Senses {
         put(out, &self.construction);
         put(out, &self.unread);
         put(out, &self.citation);
+        put(out, &self.encounter);
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -319,6 +323,7 @@ impl Senses {
             construction,
             unread,
             citation: take(b, p)?,
+            encounter: take(b, p)?,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -347,6 +352,7 @@ impl Senses {
         out.push(format!("construction: {}", line(&crate::transducer::cech::CONSTRUCTION, &self.construction)));
         out.push(format!("unread: {}", line(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread)));
         out.push(format!("citation: {}", line(&crate::transducer::sentence::rung::CITATION, &self.citation)));
+        out.push(format!("encounter: {}", line(&crate::transducer::cech::ENCOUNTER, &self.encounter)));
         out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
@@ -373,6 +379,7 @@ impl Senses {
             "construction" => at(&crate::transducer::cech::CONSTRUCTION, &self.construction, name),
             "unread" => at(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread, name),
             "citation" => at(&crate::transducer::sentence::rung::CITATION, &self.citation, name),
+            "encounter" => at(&crate::transducer::cech::ENCOUNTER, &self.encounter, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

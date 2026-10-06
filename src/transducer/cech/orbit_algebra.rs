@@ -685,6 +685,56 @@ pub fn read_rank(circuits: &[CellCircuit], budget: &mut crate::physics::Budget) 
 /// reason where it did not read) and its hue — and each circuit's order of
 /// the cell's constructors (`None` where it does not visit every body), under
 /// the stroke's budget — its rank first, then the rest.
+/// 78.110 E2 — WHAT THE ENCOUNTERS WHERE CIRCUITS MEET READ, per ordered pair
+/// of read circuits crossing one cell (each orbit against each neighbour,
+/// both ways): read, the lift fallen to drag for want of an inverse, the
+/// lift tilting (a plane neither turns in), the lift a rate only, and the
+/// encounters not read by name.
+pub const ENCOUNTER: [&str; 5] = [
+    "encounters read",
+    "lift fell to drag",
+    "lift tilts",
+    "lift a rate only",
+    "encounters unread",
+];
+
+static ENCOUNTERS: [std::sync::atomic::AtomicU64; 5] = [const { std::sync::atomic::AtomicU64::new(0) }; 5];
+
+fn note_encounter(slot: usize) {
+    let _ = ENCOUNTERS[slot].fetch_update(std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed, |n| n.checked_add(1));
+}
+
+/// The [`ENCOUNTER`] row since the process began.
+pub fn encounter_tally() -> [u64; 5] {
+    std::array::from_fn(|i| ENCOUNTERS[i].load(std::sync::atomic::Ordering::Relaxed))
+}
+
+/// 78.110 E2 — EVERY ENCOUNTER IN ONE CELL, both ways: each read circuit as
+/// the orbit, each other as the neighbour in contact (78.46, R3: inside one
+/// anastomosis). Read and counted; what the forces move is E3's.
+fn read_encounters(read: &[&Mv], budget: &mut crate::physics::Budget) {
+    for (i, orbit) in read.iter().enumerate() {
+        for (j, neighbour) in read.iter().enumerate() {
+            if i == j {
+                continue;
+            }
+            match cga::encounter(orbit, neighbour, budget) {
+                Ok(e) => {
+                    note_encounter(0);
+                    if e.fell_to_drag {
+                        note_encounter(1);
+                    } else if e.tilts() {
+                        note_encounter(2);
+                    } else {
+                        note_encounter(3);
+                    }
+                }
+                Err(_) => note_encounter(4),
+            }
+        }
+    }
+}
+
 pub fn read_cell(
     grade: usize,
     round: Option<&Mv>,
@@ -727,6 +777,9 @@ pub fn read_cell_after(
     };
     let round = round_read.ok();
     let read: Vec<&Mv> = circuits.iter().flatten().collect();
+    // 78.110 E2 — the circuits crossing this cell meet: each against each,
+    // both ways.
+    read_encounters(&read, budget);
     let (capacity, basis) = match rank.rank {
         Ok((k, rows)) => (Ok(k), Some(rows)),
         Err(why) => (Err(why), None),

@@ -9,6 +9,7 @@ mod constructors;
 mod dual;
 mod embedding;
 mod enclosure;
+mod encounter;
 mod fixed;
 mod flow;
 mod gram;
@@ -50,6 +51,7 @@ pub use motor::{
 };
 pub use multivector::{base_axis, blades, pseudo, slots, Mv, E1, E2, E3, EM, EP};
 pub use period::{compact_period, cyclotomic_orders, finite_order, Spectrum};
+pub use encounter::{encounter, Encounter, Unencountered};
 pub use perturbation::{lift_drag, Alignment, LiftDrag};
 pub use planes::{
     bivector_planes, blade_name, harmonic_planes, is_transvection_plane, note_transition, occupancy,

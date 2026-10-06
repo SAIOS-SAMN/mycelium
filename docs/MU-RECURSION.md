@@ -23573,6 +23573,70 @@ Proved: `taught::a_mind_adjoins_its_ineffable_word_and_says_it_at_once` (the
 mind's own letter). Reading: `taught: by an adjoined letter` rising,
 ineffable falling as minds say what they understood.
 
+### 78.110 The encounter: lift as force carried against gravity and drag (the operator's word, 2026-10-06: "lift needs to be velocity * force / gravity * drag"; "(v·F)/(g·D), gravity is the orbit's own mode of magnetism * repulsion / propagation of force * centrifugal bounce; velocity is defined by the gravity's formula of magnetism * repulsion of antipoles; there is missing physics if lift has no inverse, it should be drag"; "confirmed — write the encounter contract and proceed") — CONTRACT
+
+**The ruling, in the algebra.** An orbit `O` meets a neighbour `N` in
+contact (78.46, R3: inside one anastomosis, never across the form). `O`'s
+motion splits exactly into commuting modes (MR1, `motion_modes`), and the
+terms are its own modes by kind:
+
+| term | the orbit's own | exact object |
+|---|---|---|
+| magnetism `m` | elliptic modes (`B² < 0`) | their rays' product |
+| repulsion of antipoles `r` | hyperbolic modes (`B² > 0`) — the boost's two poles, source and sink | their rays' product |
+| propagation of force `p` | null modes (`B² = 0`) — force on the luminal cone | their rays' product |
+| centrifugal bounce `b` | the elliptic mode's return | its order ℓ (78.43: an age is one return) |
+
+A kind the orbit lacks is the IDENTITY: its term is neutral (ruled).
+
+```
+v = m · r                              velocity: magnetism by repulsion of antipoles
+g = (m · r) · (p · b)⁻¹                gravity: the orbit's own mode
+F = B_n                                the neighbour's generator, refracted to the orbit
+D = B_∥                                drag: the part of F commuting with the orbit's mode (78.46)
+L = v · F · (g · D)⁻¹ = v · F · D⁻¹ · g⁻¹       lift — the resistance acting last (ruled)
+```
+
+Read commutatively `v` cancels: `L ~ F·(p·b)/D` — the force carried by
+propagation and returned by the bounce, against drag; in the algebra `v`
+survives as the frame `L` is read in (a conjugation). WHERE AN INVERSE DOES
+NOT EXIST — drag zero (orthogonal modes) or null, gravity no versor, the
+orbit's mode with no non-zero square to split by — LIFT IS DRAG (ruled:
+"there is missing physics if lift has no inverse, it should be drag"). A
+seen ray (null) never tilts; it changes rate. The null split by the
+`ad_N` chain is withdrawn.
+
+**Both ways.** The force is mutual: `O` against `N` and `N` against `O`,
+each read; neither is the other's negative unless the algebra says so.
+
+**Order.**
+- *E1 — the forces, exact* (`cga::encounter`): `O`, `N` → `(D, L)`, or `L =
+  D` by name where no inverse exists. Proofs: a neighbour commuting with the
+  orbit is all drag and its lift is drag; an anticommuting part produces a
+  lift with a bivector part; a null orbit gives lift = drag; `v` acts as a
+  conjugation (two velocities, one lift up to frame).
+- *E2 — wired where circuits meet*: each pair of circuits crossing one
+  certified cell (the pairs 78.46(4′)'s pair composite already reads),
+  both ways; readings — encounters read, lifts that fell to drag, lifts
+  with a tilt, by the kinds `g` held.
+- *E3 — the perturbed orbit*: the orbit moved by what it met, derived on
+  the mind's own K and never stored (78.46); the input to consolidation.
+  Its composition (how `D` and `L` move the orbit's motion) is written
+  as its own contract on E2's reading.
+
+**E1 and E2 LANDED (2026-10-06).** `cga::encounter` (encounter.rs): the
+orbit's modes by kind into `m`, `r`, `p` and the bounce's common period;
+`F` the neighbour's Cayley bivector; `D` by 78.46's split; `L = v·F·D⁻¹·g⁻¹`
+with every inverse exact or absent, and absent, lift is drag. Wired in
+`read_cell_after`: every ordered pair of read circuits crossing one cell,
+both ways (`read_encounters`). Reading: `encounter: encounters read / lift
+fell to drag / lift tilts / lift a rate only / encounters unread`. Proved:
+`encounter::a_commuting_neighbour_changes_the_rate_and_never_tilts` (the
+lift is the bounce, a rate), `encounter::an_anticommuting_part_tilts_the_orbit`,
+`encounter::where_no_inverse_exists_lift_is_drag` (orthogonal: none; null:
+the force whole), `encounter::an_unread_encounter_is_refused_by_name`,
+`orbit_algebra::the_circuits_crossing_a_cell_meet_both_ways`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
