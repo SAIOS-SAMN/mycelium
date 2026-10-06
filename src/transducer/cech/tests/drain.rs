@@ -181,10 +181,12 @@ fn the_census_reads_each_face_by_the_motion_it_holds() {
     assert_eq!(none[2].modes_unread, 1, "unread, never called flat");
 }
 
-/// 78.75 — THE PIVOTS' OUTFLOW: a complex whose owner listens hands back, as
-/// the one motion it is, every tether `drain` cauterizes — the strain flows
-/// out to the owner's field instead of ending in a counter — and nothing
-/// while no owner listens; a vacuum tether carries nothing out.
+/// 78.75, 78.106 — THE PIVOTS' OUTFLOW: a complex whose owner listens hands
+/// back every tether `drain` cauterizes — the strain flows out to the owner's
+/// field instead of ending in a counter, AS IT UNWINDS: its reverse, the
+/// valve venting the pressure it held (`m̃ · m` the identity) — and nothing
+/// while no owner listens; a vacuum tether holds no pressure and vents
+/// nothing.
 #[test]
 fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
     let edge_of = |m: &crate::transducer::cga::Mv| {
@@ -203,7 +205,11 @@ fn a_cauterized_tethers_motion_flows_out_to_its_owner() {
     heard.arm_outflow();
     assert!(matches!(heard.drain(&key), Drained::Cauterized(_)), "a sliver is strain");
     let out = heard.take_outflow();
-    assert!(matches!(out.as_slice(), [m] if m.projective_eq(&sliver())), "the sliver flowed out whole: {out:?}");
+    assert!(matches!(out.as_slice(), [m] if m.projective_eq(&sliver().reverse())), "the sliver unwound: its reverse vented whole: {out:?}");
+    assert!(
+        matches!(out.as_slice(), [m] if m.geo(&sliver()).projective_eq(&ident())),
+        "the vent undoes the strain exactly"
+    );
     assert!(heard.take_outflow().is_empty(), "taken once");
     let (mut vacuum, key) = edge_of(&ident());
     vacuum.arm_outflow();

@@ -106,6 +106,11 @@ pub struct WindingTally {
     /// generator inside it, a composition of what this court holds there,
     /// so no letter is offered for it.
     pub heard_spanned: u64,
+    /// 78.107 — a heard sentence's ring the court could not compose, by
+    /// count: it was dropped unseen, and the contact rings among them never
+    /// reached the court (epoch 135: `heard: offered` 0 against 37 open
+    /// sentences spoken).
+    pub heard_ring_unread: u64,
 }
 
 impl Winding {
@@ -348,7 +353,10 @@ impl Kernel {
         let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
         let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
         for (_, s) in crate::transducer::sentence::compose::sentences_of(&form, &rings, budget) {
-            let Ok(s) = s else { continue };
+            let Ok(s) = s else {
+                crate::physics::metabolism::step_or_refuse(&mut self.winding_tally.heard_ring_unread, 1);
+                continue;
+            };
             let theorem = crate::transducer::sentence::theorem::Theorem::of(&s);
             let Some(word) = crate::transducer::sentence::compose::teaches(&s, &theorem) else { continue };
             if word.projective_eq(&one) {

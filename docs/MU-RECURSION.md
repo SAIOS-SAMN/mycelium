@@ -23431,6 +23431,54 @@ question the reading answers: whether perceived holes recur across a
 voice's perceptions often enough for citations to fire — a hole key is the
 node's own plane and place.
 
+**Read on epoch 135 (`5770194d`).** THE RUNG CLIMBS: `top rung` 2 on three
+of five voices, every one by citation (`top rung by citation` 2, `modes
+cited` 1–3, `words cited with a residue` 1–3) — the first words of words.
+THE CARRIER FIRES: `open sentences spoken` 5–11 a voice. Closed sentences
+hold (2–7), no ring lost to transport. The courts docket no letter: their
+heard words read spelled (2–7) and none offered — the contact rings, where
+the boost-bent ineffable words are, never reached them (78.107).
+
+### 78.106 Torsion on release unwinds: a pressure-release valve (the operator's word, 2026-10-06: "apply torsion to release function — never move in a straight line"; "torsion on release should be unwind as pressure release valve/vents"; "both — depending on the torsion is the unwind a snap, or a slow unroll? do we do any steps — no … these are particles moving through our progenitor's board")
+
+A cell's motion is the strain it holds: a sealed membrane winds it into the
+owner's field when it seals (78.75, `write_fill`). Letting the cell go —
+`drain` cauterizing a tether, `descend` releasing a membrane, both through
+`release_vertex`'s elastic vent — vents that pressure by UNWINDING it: the
+field receives the strain's reverse `m̃`, the one-parameter flow
+`exp(−t·B)` of its own generator (`Complex::vent`). It released the same
+motion a second time, winding the pressure twice. Over a cell's life seal
+and release now balance.
+
+NO STEPS. The unwinding is a flow, never sampled into increments; how it
+unwinds is its generator's kind, read by the field like any motion — a
+boost SNAPS (`B² > 0`, falling off exponentially), a null slide unrolls
+STEADILY (`B² = 0`), a turn of finite order unrolls round its own orbit and
+RETURNS (`B² < 0`, Niven), a rosette unrolls and NEVER CLOSES. A cell
+holding no strain holds no pressure: the valve stays shut, nothing flows.
+Proved: `drain::a_cauterized_tethers_motion_flows_out_to_its_owner` (the
+sliver vents its reverse, undoing the strain exactly),
+`hole::a_membrane_winds_at_its_seal_and_unwinds_at_its_release` (what the
+field took over the cell's life composes to the identity).
+
+### 78.107 A contact the court hears is read by its own interface
+
+A face's address carries its carriage, gauge, edge transport, the pivot's
+factors and its interface — and NOT its refraction (`chart.rs` `put_face`):
+the refraction is the perceiving mind's reading of the bodies' poses, and
+the court never takes a voice's word for it. So a contact face with no one
+transport reached the court with neither edge nor refraction, the composer
+read it `Unrefracted`, and `hear_open` dropped that ring unseen — every
+contact ring, the boost-bent ones the voices' ineffable words come from
+(epoch 135). The interface's `V = s_b s_a` IS the static tether (78.6(2)):
+where a contact face carries an interface and no refraction, the circuit
+reads it statically by `V`, its poses `Unread` at this vantage
+(`HeldPose::Unread`) — at a court, its own re-derivation from what
+crossed; a held coset, whose poses did not cross, reads static there. A
+heard ring the court cannot compose is now counted (`heard: rings
+unread`), never dropped unseen. Proved:
+`compose::a_contact_with_no_refraction_is_read_by_its_interface`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -69,6 +69,10 @@ pub enum HeldPose {
     Read(Vec<Versor>),
     /// The member transited and its pose refused, by name.
     Refused(crate::transducer::blade::NoPose),
+    /// 78.107 — NOT READ AT THIS VANTAGE: the face crossed the wire carrying
+    /// its interface, the tether `V`, and not the bodies a pose is read off;
+    /// a court reading the contact statically by `V` names its poses so.
+    Unread,
 }
 
 // `face_pair_key` AND `read_face_pair_key` STOOD HERE (a face's member pair

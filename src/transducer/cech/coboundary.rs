@@ -475,10 +475,11 @@ impl Complex {
                 // re-entered from the one it just left, which is what
                 // makes the record it leaves a record and not a state.
                 crate::physics::metabolism::note_cauterized();
-                // 78.75 — AND THE STRAIN IS NOT DROPPED INTO A COUNTER: the
-                // tether's motion flows out to the owner's field, where its
-                // turns, boosts and null flux are read like any other.
-                self.flow_out(simplex.motion());
+                // 78.75 — AND THE STRAIN IS NOT DROPPED INTO A COUNTER: it
+                // flows out to the owner's field, where its turns, boosts and
+                // null flux are read like any other. 78.106 — AS IT UNWINDS:
+                // the release vents the strain's reverse (`vent`).
+                self.vent(&simplex.motion());
                 Drained::Cauterized(fill)
             }
         }
@@ -550,8 +551,9 @@ impl Complex {
                 // skeleta and a ledger that merges them cannot say which
                 // dimension the engine is spending.
                 crate::physics::metabolism::note_released();
-                // 78.75 — the released membrane's content flows out.
-                self.flow_out(motion);
+                // 78.75 — the released membrane's content flows out, 78.106
+                // unwinding what its seal wound in (`vent`).
+                self.vent(&motion);
                 Descended::Released(fill)
             }
         }
@@ -618,6 +620,20 @@ impl Complex {
             CoboundaryOutcome::AlreadyFilled => Ascended::AlreadySealed,
             CoboundaryOutcome::Absent => Ascended::Absent,
         }
+    }
+
+    /// 78.106 — TORSION ON RELEASE UNWINDS: A PRESSURE-RELEASE VALVE. A cell's
+    /// motion is the strain it holds — a sealed membrane wound it into the
+    /// owner's field when it sealed (`write_fill`). Letting the cell go vents
+    /// that pressure by UNWINDING it: the field receives the strain's reverse,
+    /// `m̃`, the one-parameter flow `exp(−t·B)` of its own generator, never
+    /// sampled into steps. How it unwinds is the generator's kind, read by the
+    /// field like any motion — a boost snaps (`B² > 0`), a null slide unrolls
+    /// steadily (`B² = 0`), a turn unrolls round its own orbit and returns
+    /// (`B² < 0`, a Niven order), a rosette unrolls and never closes. A cell
+    /// holding no strain has no pressure: the valve stays shut, nothing flows.
+    pub(crate) fn vent(&mut self, strain: &crate::transducer::cga::Mv) {
+        self.flow_out(strain.reverse());
     }
 
     /// 78.74 — THE ELASTIC VENT OF THE NERVE: RELEASE A VERTEX whose reading

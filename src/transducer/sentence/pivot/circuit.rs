@@ -390,8 +390,22 @@ fn traverse(faces: &Faces, vertices: &Vertices, lp: &Orbit, note: bool) -> Resul
         }
         // BQ5a — A CONTACT WHOSE EDGE IS NOT ONE TRANSPORT (78.6): the held
         // coset or the static tether its place carries, where no edge formed.
-        let refraction = match (&carried, place.as_ref()) {
-            (None, Some(p)) if f.interface.is_some() => p.refraction.clone(),
+        // 78.107 — AND WHERE THE REFRACTION DID NOT CROSS, THE CONTACT IS READ
+        // BY ITS OWN INTERFACE. A face's refraction is the perceiving mind's
+        // reading of the bodies' poses and is not on the wire; its interface
+        // is, and the interface's `V = s_b s_a` IS the static tether
+        // (78.6(2)). A court hearing the form re-derives the contact from
+        // what crossed — statically, its poses unread at this vantage —
+        // never taking the voice's word, and never leaving the ring unread
+        // for want of what it could read itself.
+        let refraction = match (&carried, place.as_ref(), f.interface.as_ref()) {
+            (None, Some(p), Some(i)) => match &p.refraction {
+                Some(r) => Some(r.clone()),
+                None => Some(crate::transducer::sentence::Refraction::Static {
+                    tether: i.v.clone(),
+                    poses: [crate::transducer::sentence::HeldPose::Unread, crate::transducer::sentence::HeldPose::Unread],
+                }),
+            },
             _ => None,
         };
         acc.transitions.push(CarriedTransition {

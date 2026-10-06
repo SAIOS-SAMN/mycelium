@@ -23,6 +23,25 @@ fn sealed_triangle(c: &mut Complex, n: u8, third: Rotor) -> (Vec<Vec<u8>>, Vec<u
     (vs, key)
 }
 
+/// 78.106 — A MEMBRANE'S LIFE BALANCES: SEAL WINDS, RELEASE UNWINDS. A cell
+/// sealed over a 90° turn winds its motion into the owner's field; let go by
+/// `descend`, the valve vents the reverse — the same flow unwound — so what
+/// the field took in over the cell's life composes to the identity. A turn
+/// of finite order unrolls round its own orbit; nothing is stepped.
+#[test]
+fn a_membrane_winds_at_its_seal_and_unwinds_at_its_release() {
+    let mut c = Complex::new();
+    c.arm_outflow();
+    let (_, key) = sealed_triangle(&mut c, 1, turn_90());
+    let wound = c.take_outflow();
+    let [w] = wound.as_slice() else { panic!("the seal wound one motion in: {wound:?}") };
+    assert!(!w.projective_eq(&ident()), "a turn: pressure held");
+    assert!(matches!(c.descend(&key), Descended::Released(_)), "the membrane releases");
+    let vented = c.take_outflow();
+    let [u] = vented.as_slice() else { panic!("the release vented one motion: {vented:?}") };
+    assert!(u.geo(w).projective_eq(&ident()), "unwound exactly: the cell's life balances");
+}
+
 fn edge_key(a: &[u8], b: &[u8]) -> Vec<u8> {
     simplex_key(&sorted_verts([a, b])).as_bytes().to_vec()
 }

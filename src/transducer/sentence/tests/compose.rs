@@ -171,6 +171,35 @@ fn a_rings_crossing_is_one_motion_word_and_displacement_together() {
     assert!(omega_of(&whole).projective_eq(&tr.carriage), "a contact crossing is its whole carriage");
 }
 
+/// 78.107 — A CONTACT WHOSE REFRACTION DID NOT CROSS IS READ BY ITS OWN
+/// INTERFACE. A face's refraction is the perceiving mind's reading of the
+/// bodies' poses and is not on the wire; its interface is, and its
+/// `V = s_b s_a` is the static tether. Two members and a contact face between
+/// them carrying an interface, no edge and no refraction — the form as a court
+/// decodes it — compose: no ring of it is unread as unrefracted.
+#[test]
+fn a_contact_with_no_refraction_is_read_by_its_interface() {
+    use super::common::{contact, stand_with_star, word_vertex_on};
+    use crate::transducer::sentence::compose::{sentences_of, RingUnread, TermUnread};
+    use crate::transducer::sentence::Form;
+    let mut f = Form::default();
+    let ca = stand_with_star(&mut f, &word_vertex_on(1, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[1])));
+    let cb = stand_with_star(&mut f, &word_vertex_on(2, crate::transducer::alphabet::Word::identity(), crate::transducer::stalk::Invariant::counts(&[2])));
+    let o = f.place_overlap(ca, cb, None).expect("a face between the two members");
+    f.faces.at_mut(&o).expect("the face").interface = Some(contact(0, 3, 1));
+    f.orbits = Form::orbits_of(&f.faces, &f.vertices);
+    f.reindex();
+    let cycles = Form::cycles_of(&f.faces, &f.vertices);
+    let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
+    assert!(!rings.is_empty(), "the contact closes a ring with the two stars");
+    let read = sentences_of(&f, &rings, &mut stroke());
+    assert!(
+        !read.iter().any(|(_, r)| matches!(r, Err(RingUnread::Transport(TermUnread::Unrefracted)))),
+        "no ring is unread as unrefracted"
+    );
+    assert!(read.iter().any(|(_, r)| r.is_ok()), "the contact's ring composes, read by its tether");
+}
+
 /// 78.6, 78.102 — A CONTACT WITH NO ONE TRANSPORT IS READ BY ITS REFRACTION.
 /// A STATIC contact is its tether `V`, the whole motion at one frame, crossed
 /// either way. A HELD COSET is never one term — no representative is chosen
