@@ -58,7 +58,7 @@ static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::Lazy
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 55;
+const SLOTS: usize = 57;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -112,6 +112,8 @@ const EDGE_NO_READING: usize = 51;
 const EDGE_TEAR: usize = 52;
 const EDGE_NO_BODIES: usize = 53;
 const OPEN_SPOKEN: usize = 54;
+const EDGELESS_CONTACT: usize = 55;
+const EDGELESS_PAIR: usize = 56;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -254,7 +256,7 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 26] = [
+pub const WHY_UNREAD: [&str; 28] = [
     "transport: member pair, no edge",
     "transport: unrefracted",
     "transport: no base action",
@@ -291,6 +293,9 @@ pub const WHY_UNREAD: [&str; 26] = [
     // 78.102 — the letter carrier's voice half: perceived forms spoken as
     // open sentences because a word they taught no held letter spells.
     "letter carrier: open sentences spoken",
+    // 78.103 — faces built carrying nothing, by the face.
+    "faces edgeless: contact",
+    "faces edgeless: member pair",
 ];
 
 /// 78.103 — WHERE A BEND WAS READ: a contact's refraction (its tether, or one
@@ -357,6 +362,18 @@ pub fn note_open_spoken() {
     note(OPEN_SPOKEN, 1);
 }
 
+/// 78.103 — one face built with no edge and no refraction, by whether it is
+/// a contact.
+pub(crate) fn note_edgeless_face(contact: bool) {
+    note(
+        match contact {
+            true => EDGELESS_CONTACT,
+            false => EDGELESS_PAIR,
+        },
+        1,
+    );
+}
+
 /// One member pair's edge lost, counted on the unread row by why.
 pub(crate) fn note_edge_lost(why: EdgeLost) {
     note(
@@ -371,7 +388,7 @@ pub(crate) fn note_edge_lost(why: EdgeLost) {
 }
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 26] {
+pub fn unread_tally() -> [u64; 28] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
     [
@@ -401,6 +418,8 @@ pub fn unread_tally() -> [u64; 26] {
         r(EDGE_TEAR),
         r(EDGE_NO_BODIES),
         r(OPEN_SPOKEN),
+        r(EDGELESS_CONTACT),
+        r(EDGELESS_PAIR),
     ]
 }
 

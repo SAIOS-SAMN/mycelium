@@ -250,6 +250,9 @@ pub(crate) fn edge_between(
     if !union_held && common == 0 {
         return match (motions.get(&member_key(i, cik)), motions.get(&member_key(j, cjk))) {
             (Some(v_i), Some(v_j)) => (tally.take_carried(super::perceive::relative_edge(v_i, v_j)), None),
+            // A star face's transport is its placement (the circuit reads
+            // the member's own carriage there), never an edge asked here.
+            _ if matches!(i, coord::VertexAt::Frame) || matches!(j, coord::VertexAt::Frame) => (None, None),
             _ => {
                 crate::transducer::sentence::rung::note_edge_lost(crate::transducer::sentence::rung::EdgeLost::NoBodies);
                 (None, None)

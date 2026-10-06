@@ -23215,6 +23215,18 @@ with no motion filed stays `no bodies`. Proved:
 *Correction:* `stroke spent` stayed 0–4 with no bend reading spending at
 all, so the bends were not its cause; it is read on its own row from here.
 
+**Read on epoch 131 (`0e9bfc45`, 20 min, five voices).** `edges: relative
+motion` 13–27 a voice — the first relative edges read — and every one the
+identity: no relative bend of any kind. The bodiless pairs are members of
+one transport class, and a class is one motion, so their relation is flat:
+read, and honest. `member pair, no edge` still 1–15, so the lost rings are
+not the bodiless pairs; `no bodies` (128–237) counted star faces too, whose
+transport the circuit takes from the member's placement — they no longer
+count. The suspect is a contact face whose interface did not read
+(`unnucleated`): it takes the contact branch, carries neither the relative
+edge nor a refraction, and reads as a member pair with nothing. Reading:
+`faces edgeless: contact / member pair`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

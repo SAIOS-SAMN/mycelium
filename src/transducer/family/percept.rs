@@ -1309,6 +1309,12 @@ pub(super) fn family_percept(
             if contact {
                 drops.contact_built += 1;
             }
+            // 78.103 — A FACE BUILT WITH NOTHING TO CARRY: no edge, no
+            // refraction, and — not a star — no placement read in its stead.
+            // Counted by the face, a contact (its WHAT unread) or a pair.
+            if edge.is_none() && refraction.is_none() && !star_i && !star_j {
+                crate::transducer::sentence::rung::note_edgeless_face(contact);
+            }
         }
     }
     // THE FRAME-AXIS OVERLAPS (AT1 Q3, MT1): each step a member's input body
