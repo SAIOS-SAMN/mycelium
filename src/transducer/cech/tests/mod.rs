@@ -15,4 +15,5 @@ mod hole;
 mod nerve;
 mod orbit_algebra;
 mod persist;
+mod quotient;
 mod transitions;

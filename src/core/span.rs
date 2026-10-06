@@ -75,6 +75,34 @@ impl Span {
         r
     }
 
+    /// THE COSET `v + A`, BY ITS CANONICAL RAY: `v` with its component on
+    /// EVERY axis a factor leads on taken out, the leading axes swept in
+    /// ascending order (a factor leading on one axis holds nothing on any
+    /// before it, so a later sweep never restores an earlier axis). The
+    /// leading axes are fixed by the span alone, whatever order its vectors
+    /// joined in, and so is the one vector of the coset that is zero on all
+    /// of them: the coset's coordinate, no complement chosen and no metric
+    /// consulted. Empty exactly where `v` lies in the span.
+    pub fn residue(&self, v: &Vector) -> Vector {
+        let mut r: Vector = v.iter().filter(|(_, x)| !x.is_zero()).cloned().collect();
+        for (lead, factor) in self.factors.iter().enumerate() {
+            let Some((b, f)) = factor else { continue };
+            let Some((_, a)) = r.iter().find(|(axis, _)| *axis == lead) else { continue };
+            r = cancel(&r, a.clone(), b, f);
+        }
+        // A ray up to its sign as well as its scale: the factors' own signs
+        // came with the order they joined in, so the leading entry is made
+        // positive and the coordinate is the coset's alone.
+        if let [(_, lead), ..] = r.as_slice() {
+            if lead < &BigInt::zero() {
+                for e in r.iter_mut() {
+                    e.1 = -e.1.clone();
+                }
+            }
+        }
+        r
+    }
+
     /// Whether `v` lies in the span: `v ∧ A = 0`.
     pub fn holds(&self, v: &Vector) -> bool {
         self.outside(v).is_empty()

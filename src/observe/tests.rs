@@ -826,7 +826,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.derivation = [50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62];
     senses.flux = [70, 71, 72, 73, 74, 75, 76, 77];
     senses.sentences = [80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111];
-    senses.unread = [130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157];
+    senses.unread = [130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161];
     senses.construction = [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126];
     senses.said = Some(crate::transducer::sentence::Reasons {
         words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
@@ -856,6 +856,7 @@ fn the_senses_and_the_acts_travel_whole() {
         colours: 37,
         colours_derived: 38,
         deferred: vec![crate::observe::Deferred { head: [1, 2, 3, 4, 5, 6, 7, 8], kind: 2, mag: [39, 40, 41, 42], short: [0, 43, 0, 0], tries: 44, learner: Some([9; 8]) }],
+        provisional: [50, 51, 52, 53, 54, 55, 56, 57],
     };
     let all = vec![Reading::Senses(Box::new(senses.clone())), Reading::Acts(Box::new(acts.clone()))];
     let push = encode_push(&vk(8), &all).expect("the push writes");
@@ -899,6 +900,19 @@ fn every_counted_name_is_its_table_s() {
             "bytes served",
             "bytes refracted, whole",
             "bytes refracted, as (held, Γ)",
+        ],
+    );
+    holds(
+        &PROVISIONAL,
+        &[
+            "letters docketed",
+            "letters heard again (converged as a party)",
+            "offers sent to witnesses",
+            "witness reached: installed",
+            "witness reached: inexact",
+            "witness reached: awaiting a vantage",
+            "witness refused",
+            "witness unmeasured",
         ],
     );
     holds(

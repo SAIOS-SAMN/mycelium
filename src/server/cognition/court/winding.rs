@@ -102,6 +102,10 @@ pub struct WindingTally {
     pub heard_spelled: u64,
     pub heard_peel_unread: u64,
     pub heard_rotor_unread: u64,
+    /// 78.104 — the unspelled words the chart's held algebra SPANS: every
+    /// generator inside it, a composition of what this court holds there,
+    /// so no letter is offered for it.
+    pub heard_spanned: u64,
 }
 
 impl Winding {
@@ -172,6 +176,17 @@ impl Winding {
         }
         Some(Winding { ell, m, rewrite, draws, torse })
     }
+}
+
+/// 78.104 — WHETHER A CHART'S HELD ALGEBRA SPANS A WORD: every generator
+/// inside it (`cech::quotient`). A chart with no algebra held spans nothing,
+/// and an unread word is not spanned.
+fn spanned(
+    held: Option<&Vec<crate::transducer::cga::Mv>>,
+    word: &crate::transducer::cga::Mv,
+    budget: &mut crate::physics::Budget,
+) -> bool {
+    held.is_some_and(|h| crate::transducer::cech::quotient(h, word, budget).is_ok_and(|r| r.spanned()))
 }
 
 fn put_u64(out: &mut Vec<u8>, v: u64) {
@@ -343,6 +358,13 @@ impl Kernel {
             match crate::transducer::family::derivation::peel_versor(word) {
                 Some(Ok(_)) => crate::physics::metabolism::step_or_refuse(&mut t.heard_spelled, 1),
                 None => crate::physics::metabolism::step_or_refuse(&mut t.heard_peel_unread, 1),
+                // 78.104 — THE COURT READS AGAINST WHAT IT HOLDS: an unspelled
+                // word every generator of which lies in the algebra this court
+                // holds on the chart is a composition of what it holds there,
+                // and no letter is offered for it.
+                Some(Err(_)) if spanned(self.lie_basis.get(&inv.key()), word, budget) => {
+                    crate::physics::metabolism::step_or_refuse(&mut t.heard_spanned, 1)
+                }
                 Some(Err(_)) => match crate::transducer::element::base_rotor_of(word) {
                     Ok(r) => {
                         self.open_unspellable(&r, &inv, &[], &voice);

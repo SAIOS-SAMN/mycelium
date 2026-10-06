@@ -162,9 +162,11 @@ impl Kernel {
         // factor is a party on the same address, as `list_sentence`
         // already records one. A court is never a discoverer.
         if self.provisional.contains(&addr) || self.ruled_contains(addr.as_bytes()) {
+            self.note_provisional("letters heard again (converged as a party)");
             self.converge_here(&e, *voice);
             return;
         }
+        self.note_provisional("letters docketed");
         // The docket shape a sentence takes, written out: this court's own
         // re-derivation recorded so a witness can converge with it (47.3),
         // the escrow to the demanding voice as a party, the discoverer,

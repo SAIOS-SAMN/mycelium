@@ -155,6 +155,22 @@ pub const FETCH: [&str; 13] = [
     "bytes refracted, whole",
     "bytes refracted, as (held, Γ)",
 ];
+/// 78.102, 47.3 — THE ROAD A PROVISIONAL WORD TAKES TO THE GENOME, where it
+/// stops: a letter docketed from a sentence heard (heard again, the voice
+/// converges on the same address as a party), every provisional word offered to
+/// the witness hyphae covering its chart, and what each witness answered —
+/// its re-derivation reached and the word installed, reached inexactly, or
+/// still awaiting a second vantage; refused; unmeasured.
+pub const PROVISIONAL: [&str; 8] = [
+    "letters docketed",
+    "letters heard again (converged as a party)",
+    "offers sent to witnesses",
+    "witness reached: installed",
+    "witness reached: inexact",
+    "witness reached: awaiting a vantage",
+    "witness refused",
+    "witness unmeasured",
+];
 /// What a court's solves came to: by verdict, refusals by kind (P D C I N ?).
 pub const JUDGED: [&str; 10] = [
     "first closures",
@@ -197,6 +213,9 @@ pub struct Acts {
     /// few words retried by every page to every voice read as thousands.
     /// In address order.
     pub deferred: Vec<Deferred>,
+    /// 78.102, 47.3 — the road a provisional word takes to the genome
+    /// ([`PROVISIONAL`]).
+    pub provisional: [u64; PROVISIONAL.len()],
 }
 
 /// The kinds a deferred word is read as, on [`Deferred::kind`].
@@ -369,6 +388,7 @@ impl Acts {
         put(out, &self.judged);
         put(out, &self.paid);
         put(out, &[self.colours, self.colours_derived]);
+        put(out, &self.provisional);
         // At most DEFERRED_SHOWN rows, so the count is one byte.
         let shown = &self.deferred[..self.deferred.len().min(DEFERRED_SHOWN)];
         #[expect(clippy::cast_possible_truncation, reason = "STD1 C1 — a constant: at most DEFERRED_SHOWN = u8::MAX rows, sliced above")]
@@ -395,6 +415,7 @@ impl Acts {
         let refused = take(b, p)?;
         let (syllabus, fetch, judged, paid) = (take(b, p)?, take(b, p)?, take(b, p)?, take(b, p)?);
         let [colours, colours_derived] = take::<2>(b, p)?;
+        let provisional = take(b, p)?;
         let n = usize::from(*b.get(*p)?);
         *p += 1;
         let mut deferred = Vec::with_capacity(n.min(DEFERRED_SHOWN));
@@ -418,7 +439,7 @@ impl Acts {
             };
             deferred.push(Deferred { head, kind, mag, short, tries, learner });
         }
-        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred })
+        Some(Acts { k, reserve, drawn, restored, refused, syllabus, fetch, judged, paid, colours, colours_derived, deferred, provisional })
     }
 
     /// The reading, act by act, named.
@@ -432,6 +453,7 @@ impl Acts {
             format!("fetch: {}", line(&FETCH, &self.fetch)),
             format!("solves: {} · paid {:?}", line(&JUDGED, &self.judged), self.paid),
             format!("colour words installed: {} · admitted by derivation: {}", self.colours, self.colours_derived),
+            format!("provisional: {}", line(&PROVISIONAL, &self.provisional)),
         ]
         .into_iter()
         .chain(self.deferred.iter().map(|d| {
@@ -463,6 +485,7 @@ pub struct ActsTally {
     /// 78.55 — colour words this court admitted by their derivation from
     /// ruled colour words, no scene witnessing them.
     pub colours_derived: u64,
+    pub provisional: [u64; PROVISIONAL.len()],
 }
 
 /// COUNT ONE EVENT on a named counter of a table — the name is the table's

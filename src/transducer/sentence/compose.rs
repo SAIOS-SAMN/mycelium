@@ -116,7 +116,13 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
             _ => Closure::Unread,
         },
     };
-    let holonomies: Vec<Option<&Mv>> = carried.iter().map(Some).collect();
+    // 78.104 — THE ALGEBRA OF THE SENTENCE IS ITS WORDS' AND ITS HOLONOMY'S.
+    // It closed over the carried words alone, and since 78.97 a seen edge is
+    // a ray whose word is the identity — its motion rides the transport — so
+    // every perceived sentence read rank 0 (every voice, every epoch). `Ω`
+    // is what the ring's transports composed to (Ambrose–Singer: the
+    // holonomies generate the algebra), so it closes beside the words.
+    let holonomies: Vec<Option<&Mv>> = carried.iter().chain(std::iter::once(&omega)).map(Some).collect();
     let rank = crate::transducer::cech::cayley_generators(&holonomies, budget)
         .and_then(|gens| crate::transducer::cech::lie_close(&[], &gens, budget).map(|b| b.len()));
     let motions = terms.iter().map(|t| t.transport.geo(&t.word)).collect();

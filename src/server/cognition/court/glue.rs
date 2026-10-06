@@ -536,11 +536,19 @@ impl Kernel {
         let (k, ht) = (self.k_step(), self.height());
         match self.converge_witness(object, witness, reached, k, ht) {
             crate::court::convergence::Converged::Witnessed { witness, .. } => {
+                self.note_provisional("witness reached: installed");
                 let mut budget = self.physics.stroke();
                 self.home_install(object, witness, &mut budget);
             }
-            crate::court::convergence::Converged::Inexact { .. } | crate::court::convergence::Converged::AwaitingWitness => {}
+            crate::court::convergence::Converged::Inexact { .. } => self.note_provisional("witness reached: inexact"),
+            crate::court::convergence::Converged::AwaitingWitness => self.note_provisional("witness reached: awaiting a vantage"),
         }
+    }
+
+    /// 78.102, 47.3 — one step of a provisional word's road, counted on the
+    /// acts by its name ([`crate::observe::PROVISIONAL`]).
+    pub fn note_provisional(&mut self, name: &str) {
+        crate::observe::count(&mut self.acts.provisional, &crate::observe::PROVISIONAL, name);
     }
 
     /// A peer's have-list naming a ruled provisional is weaker evidence than

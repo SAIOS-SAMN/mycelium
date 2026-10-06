@@ -48,17 +48,32 @@ struct Held {
 struct Lexicon {
     held: Keyed<Held>,
     holes: HoleIndex,
+    /// 78.104 — THE HELD ALGEBRA: every held word's generators closed under
+    /// the commutator (`cech::quotient::grow`), the algebra a new word is
+    /// read against before it is held. At most `dim so(4,1)` = 10 at `n = 3`.
+    algebra: Vec<Mv>,
 }
 
 static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Lexicon::default()));
 
 /// 78.100 D1 — THE WORDS NEWLY TAUGHT, each with the period its sentence
-/// returns at (one where it never returns), waiting for the voice to
+/// returns at (one where it never returns) and whether it LIFTS out of what
+/// the mind understood when it was taught (78.104), waiting for the voice to
 /// transcribe them into its language as it transcribes a closed thought
 /// (`take_taught`). Drained whole, never read in place.
-static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<(Mv, u64)>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
+static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<Taught>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-const SLOTS: usize = 57;
+/// ONE TAUGHT WORD: the motion, the period its sentence returns at, and
+/// whether it asks for a letter — outside the held algebra, or a held plane
+/// turned by a new winding — the only kind the letter carrier sends (78.104).
+#[derive(Clone, Debug)]
+pub struct Taught {
+    pub motion: Mv,
+    pub period: u64,
+    pub asks: bool,
+}
+
+const SLOTS: usize = 61;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -114,6 +129,10 @@ const EDGE_NO_BODIES: usize = 53;
 const OPEN_SPOKEN: usize = 54;
 const EDGELESS_CONTACT: usize = 55;
 const EDGELESS_PAIR: usize = 56;
+const QUOTIENT_SPANNED: usize = 57;
+const QUOTIENT_OUTSIDE: usize = 58;
+const QUOTIENT_UNREAD: usize = 59;
+const ALGEBRA_RANK: usize = 60;
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -141,9 +160,10 @@ pub fn note_transcribed(t: Transcribed) {
     );
 }
 
-/// 78.100 D1 — THE WORDS TAUGHT SINCE THE LAST TAKE, each with its period:
-/// the voice transcribes, stands and speaks them.
-pub fn take_taught() -> Vec<(Mv, u64)> {
+/// 78.100 D1 — THE WORDS TAUGHT SINCE THE LAST TAKE, each with its period
+/// and whether it asks for a letter: the voice transcribes, stands and
+/// speaks them.
+pub fn take_taught() -> Vec<Taught> {
     TAUGHT.lock().map_or(Vec::new(), |mut held| std::mem::take(&mut *held))
 }
 
@@ -256,7 +276,7 @@ pub const SENTENCES: [&str; 32] = [
 /// the stroke — how many, the highest degree, the widest coefficient in
 /// bits (`cga::root_refusals`). On epoch 124 every unread ring was unread
 /// by its transport, and every unread coordinate by the stroke spent.
-pub const WHY_UNREAD: [&str; 28] = [
+pub const WHY_UNREAD: [&str; 32] = [
     "transport: member pair, no edge",
     "transport: unrefracted",
     "transport: no base action",
@@ -296,6 +316,13 @@ pub const WHY_UNREAD: [&str; 28] = [
     // 78.103 — faces built carrying nothing, by the face.
     "faces edgeless: contact",
     "faces edgeless: member pair",
+    // 78.104 — each new word read against the held algebra before it is
+    // held: spanned by it, its generators outside it (counted), unread; and
+    // the held algebra's rank (its highest).
+    "quotient: spanned",
+    "quotient: generators outside",
+    "quotient: unread",
+    "held algebra: rank",
 ];
 
 /// 78.103 — WHERE A BEND WAS READ: a contact's refraction (its tether, or one
@@ -388,7 +415,7 @@ pub(crate) fn note_edge_lost(why: EdgeLost) {
 }
 
 /// The [`WHY_UNREAD`] row since the process began.
-pub fn unread_tally() -> [u64; 28] {
+pub fn unread_tally() -> [u64; 32] {
     let r = |i: usize| TALLY[i].load(Relaxed);
     let (refused, degree, bits) = crate::transducer::cga::root_refusals();
     [
@@ -420,6 +447,10 @@ pub fn unread_tally() -> [u64; 28] {
         r(OPEN_SPOKEN),
         r(EDGELESS_CONTACT),
         r(EDGELESS_PAIR),
+        r(QUOTIENT_SPANNED),
+        r(QUOTIENT_OUTSIDE),
+        r(QUOTIENT_UNREAD),
+        r(ALGEBRA_RANK),
     ]
 }
 
@@ -674,6 +705,8 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
             None
         }
     };
+    // A held hole turned by a rate no held word's power reaches.
+    let mut new_winding = false;
     if let Some(c) = &coords {
         for h in &c.holes {
             note(
@@ -694,8 +727,37 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
             Comprehended::New { holes, windings } => {
                 note(HOLES_NEW, holes as u64);
                 note(WINDINGS_NEW, windings as u64);
+                new_winding = windings > 0;
             }
         }
+    }
+    // 78.104 — THE QUOTIENT READING: the word read against the algebra this
+    // mind holds, before it is held — every generator spanned by it, a
+    // composition of what is held; any outside it by its coset; or unread by
+    // name. A static, one-way reading (never lift and drag, 78.46). The
+    // algebra reads the planes, not the rates: a turn of an incommensurable
+    // angle on a held plane is spanned in WHAT it turns and new in HOW MUCH
+    // — a new winding, and the alphabet's letters are exactly such rates. A
+    // word asks for a letter where a generator is outside or it carries a
+    // new winding.
+    let asks = match crate::transducer::cech::quotient(&lex.algebra, word, budget) {
+        Ok(r) if r.spanned() => {
+            note(QUOTIENT_SPANNED, 1);
+            new_winding
+        }
+        Ok(r) => {
+            note(QUOTIENT_OUTSIDE, r.outside.len() as u64);
+            true
+        }
+        Err(_) => {
+            note(QUOTIENT_UNREAD, 1);
+            true
+        }
+    };
+    // And the held algebra grows by what is now held.
+    if let Some(grown) = crate::transducer::cech::quotient::grow(&lex.algebra, word, budget) {
+        lex.algebra = grown;
+        TALLY[ALGEBRA_RANK].fetch_max(lex.algebra.len() as u64, Relaxed);
     }
     let rung = rung_of(&s.motions, &lex.held);
     let spelled = matches!(crate::transducer::family::derivation::peel_versor(word), Some(Ok(_)));
@@ -713,7 +775,7 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
     };
     if let Ok(mut taught) = TAUGHT.lock() {
-        taught.push((word.clone(), period));
+        taught.push(Taught { motion: word.clone(), period, asks });
     }
 }
 

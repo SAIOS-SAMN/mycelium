@@ -25,6 +25,7 @@ pub mod orbit;
 pub mod orbit_algebra;
 pub mod simplex;
 pub mod persist;
+pub mod quotient;
 pub mod remainder;
 
 pub use board::{construction_tally, independent, note_construction, Applied, Board, Pivot, CONSTRUCTION};
@@ -36,6 +37,7 @@ pub use coxeter::*;
 pub use nerve::*;
 pub use orbit_algebra::*;
 pub use simplex::*;
+pub use quotient::{quotient, Outside, Quotient};
 pub use remainder::{RemainderCount, RemainderReading};
 
 use crate::network::nerve::Keyed;

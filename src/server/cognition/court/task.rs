@@ -157,6 +157,7 @@ impl Kernel {
             colours: self.basis.scoped().filter(|(_, w)| w.is_colour_word()).count() as u64,
             colours_derived: self.acts.colours_derived,
             deferred: self.deferred_reading(),
+            provisional: self.acts.provisional,
         }
     }
 

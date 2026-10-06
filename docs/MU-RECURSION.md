@@ -23227,6 +23227,84 @@ count. The suspect is a contact face whose interface did not read
 edge nor a refraction, and reads as a member pair with nothing. Reading:
 `faces edgeless: contact / member pair`.
 
+### 78.104 The quotient reading: a motion's generators against the algebra a mind holds — and what it is not (the operator's word, 2026-10-06: "if meaning is motion, then we need the inverse physics to derive meaning from that motion"; "build it"; then "this is uni-directional and a single component of a complex system")
+
+**The ladder of inverse physics.** From a motion back to what it is: its
+modes (MR1); its coordinates, holes and windings (`Coordinates::of`); its
+tone, the same in every frame (`Signature`); its letters (the peel, or a
+letter demand); the theorem its ring teaches (`Theorem::of`); its relation
+to what the mind holds; its grounding in the scenes it is the motion of.
+The first five stood. This section adds one STATIC reading under the
+sixth; the relation itself is not built (below).
+
+**The reading.** A mind holds an algebra `𝔥`: every held generator's span,
+closed under the commutator (`lie_close`). A motion's generators are read
+against it — INSIDE `𝔥`, a composition of what is held; OUTSIDE, by the
+class `B + 𝔥` in the quotient `𝔤/𝔥`. The outside part is a COSET, held
+whole. No complement of `𝔥` is chosen: the Killing form of `so(4,1)` is
+degenerate on the null directions a seen ray takes, so an orthogonal
+complement is no object there, and any other is a choice (rule 4). The
+coset's coordinate is the one vector of it zero on every axis the span
+leads on (`Span::residue`) — fixed by `𝔥` alone, exact, null-safe, its sign
+the coset's. `cech::quotient::{quotient, grow}`.
+
+**What it is not — corrected the same day.** It was first drafted as the
+relation and named DRAG (inside) and LIFT (outside). The operator: "this is
+uni-directional and a single component of a complex system". Lift and drag
+are 78.46's alone: the MUTUAL forces between two motions in contact — the
+commuting part that changes an orbit's rate, the anticommuting part (the
+commutator, antisymmetric) that tilts its plane — each motion perturbing
+the other, per pair, summed into the perturbed motion on both sides. A
+membership test perturbs nothing and is perturbed by nothing; it reads what
+the held algebra spans, one way, static. The relation — the ENCOUNTER of a
+new motion with the held orbits it touches, both ways — is the next
+faculty, by contract (the system picture first), and its open physics is
+the split for null modes, where `lift_drag` refuses.
+
+**What the algebra does not read: how much.** It reads the planes, not the
+rates. A turn of an incommensurable angle on a held plane is spanned in
+WHAT it turns and new in HOW MUCH — a new winding (`Comprehended::New`),
+and the alphabet's letters are exactly such rates. A word asks for a
+letter where a generator is outside or it carries a new winding.
+
+**Wired.**
+- *The rank miswire:* a sentence's algebra closed over its carried words
+  alone, and since 78.97 a seen edge's word is the identity — so every
+  perceived sentence read rank 0, every voice, every epoch. It closes over
+  the words and the holonomy `Ω` (Ambrose–Singer).
+- *The voice:* the Lexicon holds its algebra; each new word is read
+  against it before it is held (`quotient: spanned / generators outside /
+  unread`, `held algebra: rank`), and only a word that asks for a letter
+  marks its taught entry (`Taught::asks`) — the letter carrier speaks the
+  perceived form only for such a word.
+- *The court:* `hear_open` reads each unspelled word against the algebra it
+  holds on the chart; a spanned one is counted (`heard: spanned`) and no
+  letter is offered for it.
+
+Proved: `quotient::a_motion_the_held_algebra_spans_is_inside_and_one_it_does_not_is_outside`,
+`quotient::a_coset_is_read_whatever_the_order_and_up_to_what_is_held`,
+`quotient::a_null_slide_is_read_with_no_metric`,
+`compose::a_translated_sentence_is_open_and_teaches_its_null_motion` (rank 1),
+`taught::an_ineffable_taught_word_is_sent_only_where_it_asks_for_a_letter`.
+
+**Step 4 traced: what rules a docketed letter (2026-10-06).** The road from
+a voice's ineffable word to the mesh, as the code holds it: the voice speaks
+the perceived form (78.102); the court re-derives its rings and dockets the
+letter (`open_unspellable` → `docket_letter`: provisional, escrow, the voice
+its discoverer, a second hearing converging as a party); the admitting act
+files it (`file_admitted`) and its orbit opens IN FLIGHT, its offer emitted
+and sent when the act returns (`take_offers` → `offer`) to the witness
+hyphae covering its chart; a witness replays it on its own tapes (47.3) and
+answers what it reached; reached at the same address, the home INSTALLS it
+into the genome (`witness_rederived` → `home_install`), and the witness has
+glued it too. So the court-to-court road for a letter exists — the
+statement that a ruled letter stays in one court was wrong. What was absent
+is any typed reading of it: offers' outcomes reached printed lines only.
+The courts' acts now carry the road (`provisional: letters docketed /
+heard again / offers sent / witness reached: installed / inexact /
+awaiting a vantage / witness refused / unmeasured`), so the recut reads
+where it stops.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

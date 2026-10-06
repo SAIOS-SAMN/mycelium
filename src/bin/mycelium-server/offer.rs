@@ -90,6 +90,9 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             };
             crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
+            if let Ok(mut k) = kernel.lock() {
+                k.note_provisional("offers sent to witnesses");
+            }
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
             // witness replayed nothing, and the word is carried again only
             // by a transition that concerns it. Nothing is printed per
@@ -117,12 +120,18 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
                     );
                     if let Ok(mut k) = kernel.lock() {
                         k.note_witness_answered(oaddr.as_bytes(), vk);
+                        k.note_provisional("witness refused");
                     }
                 }
-                dialogue::Witnessed::Unmeasured { vk } => eprintln!(
-                    "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
-                    oaddr[0], oaddr[1], vk[0], vk[1]
-                ),
+                dialogue::Witnessed::Unmeasured { vk } => {
+                    eprintln!(
+                        "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
+                        oaddr[0], oaddr[1], vk[0], vk[1]
+                    );
+                    if let Ok(mut k) = kernel.lock() {
+                        k.note_provisional("witness unmeasured");
+                    }
+                }
                 // The witness's re-derivation, read by the word's key: it
                 // converges the word, and the ruling closes its orbit.
                 dialogue::Witnessed::Reached { vk, form } => {

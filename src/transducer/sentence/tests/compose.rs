@@ -45,6 +45,10 @@ fn a_translated_sentence_is_open_and_teaches_its_null_motion() {
     let t = cga::translator_at(&[q(1), q(0), q(0)]);
     let s = compose(&[Term { word: one(), transport: t.clone() }], &mut stroke()).expect("a sentence");
     assert_eq!(s.closure, Closure::Unbound, "a translation carries and never returns");
+    // 78.104 — its word is the identity and its motion rides the transport:
+    // the algebra closes over the holonomy too, so the slide spans one
+    // direction (it read 0 while only the words were closed).
+    assert_eq!(s.rank, Ok(1), "a ray's sentence spans its slide");
     let words = next_rung(&[s]);
     assert_eq!(words.len(), 1, "a nilpotent theorem teaches");
     assert!(words[0].projective_eq(&t), "its word is the null motion");
