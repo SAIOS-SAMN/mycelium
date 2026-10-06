@@ -36,8 +36,9 @@ type Q = num_rational::BigRational;
 /// or not.
 /// 78.112 H6: the harmonic rings met by a seen ray among their spaces, the
 /// rays met, those advancing the ring along its axis (the twist), and those
-/// crossing its plane (the impact).
-pub const HEARING: [&str; 17] = [
+/// crossing its plane (the impact). H7a: the released torsion vented into
+/// the voice's field.
+pub const HEARING: [&str; 18] = [
     "rings heard",
     "rings returning",
     "outer rings",
@@ -55,9 +56,15 @@ pub const HEARING: [&str; 17] = [
     "rays met",
     "rays advancing",
     "rays crossing",
+    "torsion vented into the field",
 ];
 
-static HEARD: [std::sync::atomic::AtomicU64; 17] = [const { std::sync::atomic::AtomicU64::new(0) }; 17];
+static HEARD: [std::sync::atomic::AtomicU64; 18] = [const { std::sync::atomic::AtomicU64::new(0) }; 18];
+
+/// 78.112 H7a — one released motion vented into the voice's field.
+pub fn note_vented() {
+    note("torsion vented into the field");
+}
 
 fn note(name: &str) {
     if let Some(i) = HEARING.iter().position(|n| *n == name) {
@@ -66,7 +73,7 @@ fn note(name: &str) {
 }
 
 /// The [`HEARING`] row since the process began.
-pub fn hearing_tally() -> [u64; 17] {
+pub fn hearing_tally() -> [u64; 18] {
     std::array::from_fn(|i| HEARD[i].load(std::sync::atomic::Ordering::Relaxed))
 }
 

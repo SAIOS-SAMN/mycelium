@@ -23831,6 +23831,26 @@ plane seats with a tilt whose echo is a turn; a ring that returns seats in
 one that never does; a ring dividing no larger ring stands outside,
 leftover.
 
+**H1, H2 LANDED (839bf7d9); H6 LANDED (e16c1287)** — `sentence::hearing`
+(`nest`, `echo`, `orbit`), heard once per perception in `rung::speak`;
+`Composition` keeps its spaces and `Ω`'s modes. Proved:
+`hearing::light_perpendicular_to_the_plane_is_a_twist_all_advance`
+(pitch four times the ray), `hearing::light_in_the_plane_crosses_it`.
+
+**H7a — THE VOICE'S VENT REACHES ITS FIELD (found reading H7, 2026-10-06).**
+78.106's valve opened onto nothing at the voice: only a court armed its
+complexes' outflow (`court/glue.rs`), and the voice's complex — which
+vents at `vent_vertex` — never did, so every torsion a voice released was
+dropped. `Entity::vent_into_field` arms the complex where it takes it and
+books each released motion through `mark_flux`, the door the court's
+outflow takes (law 12): null flux into the voice's tubes, turns and
+boosts onto its orbits — its metabolism moved by what it let go. Once per
+perception, after the hold. Read: `harmonics: torsion vented into the
+field`. Proved: `flux::a_tether_released_at_the_voice_vents_into_its_field`.
+H7b — hearing's crossing wound as the strain of the cell its ring stands
+on — waits on reading how a perception's ring maps to a cell of the
+mind's complex.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

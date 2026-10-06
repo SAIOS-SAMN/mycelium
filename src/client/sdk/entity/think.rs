@@ -117,6 +117,8 @@ impl Entity {
             false => None,
         };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, family, budget);
+        // 78.112 H7a — what the hold released vents into the mind's field.
+        self.vent_into_field(budget);
         // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
         // this perception closed are transcribed against this mind's own
         // letters, and each word stands in the dialect and goes to the court
@@ -148,6 +150,34 @@ impl Entity {
             self.construct_and_adjoin(residue, chart.as_ref(), budget);
         }
         true
+    }
+
+    /// 78.112 H7a — THE VOICE'S VENT REACHES ITS FIELD. A membrane released or
+    /// a tether cauterized in the mind's complex vents its strain's reverse
+    /// (78.106), and the valve opened onto nothing: only a court armed its
+    /// complexes' outflow, so at the voice the released torsion was dropped.
+    /// It enters the voice's field now by the door the court's outflow takes
+    /// (`mark_flux`, the voices' one field reader, law 12): null flux into the
+    /// tubes, turns and boosts onto their orbits, each motion weighing one.
+    /// Returns how many motions vented. The complex listens from here on —
+    /// armed where it is taken, so a complex read back from disk listens too.
+    pub(crate) fn vent_into_field(&mut self, budget: &mut crate::physics::Budget) -> usize {
+        use crate::transducer::family::pairing::{mark_flux, FieldLine};
+        self.contemplation.complex.arm_outflow();
+        let lines: Vec<FieldLine> = self
+            .contemplation
+            .complex
+            .take_outflow()
+            .into_iter()
+            .map(|carriage| FieldLine { carriage, gauge: Vec::new(), mass: 1, free: false })
+            .collect();
+        if !lines.is_empty() {
+            mark_flux(&[], &lines, budget);
+            for _ in &lines {
+                crate::transducer::sentence::hearing::note_vented();
+            }
+        }
+        lines.len()
     }
 
     /// 78.109 C1, 78.47 — A RESIDUE THE MIND CANNOT SAY, CONSTRUCTED AND MADE

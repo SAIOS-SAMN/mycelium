@@ -39,3 +39,29 @@ fn a_sealed_uttered_act_credits_the_edge_its_form_was_spoken_through() {
     assert_eq!((f.credited, f.unfiled), (1, 1), "{f:?}");
     assert_eq!(entity.contemplation.flux.get(edge.as_bytes()), Some(&mu), "credited once");
 }
+
+/// 78.112 H7a — A RELEASE AT THE VOICE VENTS INTO ITS FIELD. A tether carrying
+/// a slide between two vantages is let go with its vertex: the edge
+/// cauterizes and vents its strain's reverse, and the mind takes it into its
+/// field — nothing dropped at a valve no one listens on.
+#[test]
+fn a_tether_released_at_the_voice_vents_into_its_field() {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::cech::Section;
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("vent"));
+    let mut budget = entity.stroke();
+    assert_eq!(entity.vent_into_field(&mut budget), 0, "nothing released yet; the complex now listens");
+    let (a, b) = (vec![1u8; 4], vec![2u8; 4]);
+    for v in [&a, &b] {
+        entity.contemplation.complex.set_section(v, Section::at(v.clone().into(), Rotor::identity()), [1, 0, 0, 0]);
+    }
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let slide = crate::transducer::cga::translator_at(&[q(1), q(0), q(0)]);
+    entity.contemplation.complex.set_edge(&a, &b, Rotor::identity(), slide, [1, 0, 0, 0]);
+    let vented = crate::transducer::sentence::hearing::hearing_tally();
+    let _ = entity.contemplation.complex.vent_vertex(&a);
+    assert_eq!(entity.vent_into_field(&mut budget), 1, "the cauterized tether's strain reaches the field");
+    let at = crate::transducer::sentence::hearing::HEARING.iter().position(|n| *n == "torsion vented into the field").expect("named");
+    assert!(crate::transducer::sentence::hearing::hearing_tally()[at] > vented[at]);
+    assert_eq!(entity.vent_into_field(&mut budget), 0, "taken once");
+}
