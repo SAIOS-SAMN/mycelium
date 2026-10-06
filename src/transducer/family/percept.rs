@@ -1359,10 +1359,19 @@ pub(super) fn family_percept(
                 across_charts.motor += 1;
             }
             None => {
-                let Some(place) = form.face_place(&o.from, &o.to, None) else {
+                let Some(mut place) = form.face_place(&o.from, &o.to, None) else {
                     across_charts.unplaced += 1;
                     continue;
                 };
+                // 78.103 — THE SECTIONS' RELATIVE IS A RELATIVE MOTION, AND IT
+                // IS THE EDGE. `τ = C_B·C_A⁻¹` carries section A's placement
+                // onto B's in the base frame, as the motor arm's motor carries
+                // A's body onto B's; it was placed as the face's carriage
+                // alone and the edge left `None`, so every ring crossing a
+                // relative cross step was unread — by the composer's
+                // `edgeless`, as a "member pair". Read by `edge_of`, as the
+                // motor is.
+                place.edge = edges.take(Some(super::perceive::edge_of(&place.carriage).map_err(|e| vec![e])));
                 form.put_face(o, FormFace::placed(place, Producer::Place));
                 across_charts.relative += 1;
             }

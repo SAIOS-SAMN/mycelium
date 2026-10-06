@@ -215,7 +215,9 @@ fn edgeless(o: &crate::network::nerve::coord::Overlap) -> TermUnread {
     use crate::network::nerve::coord::ChartAt;
     match (&o.from, &o.to) {
         (ChartAt::Frame, _) | (_, ChartAt::Frame) => TermUnread::StarUnread,
-        (ChartAt::At(a), ChartAt::At(b)) if a.vertex == b.vertex && a.chart == b.chart => TermUnread::StepUnread,
+        // One vertex's own step along e₃ — its chart kept, or (AT1 A2) across
+        // two of its charts — never a pair of members.
+        (ChartAt::At(a), ChartAt::At(b)) if a.vertex == b.vertex => TermUnread::StepUnread,
         _ => TermUnread::NotRigid,
     }
 }
@@ -281,8 +283,9 @@ pub enum TermUnread {
     NotRigid,
     /// 78.103 — a STAR face (one end the Frame) with no edge read.
     StarUnread,
-    /// 78.103 — a FRAME STEP (one member's two charts at two frames) whose
-    /// motor spelled no edge.
+    /// 78.103 — a FRAME STEP (one vertex's charts at two frames, its chart
+    /// kept or — AT1 A2 — across two of its charts) whose motor spelled no
+    /// edge.
     StepUnread,
     /// A contact face whose refraction `(θ_bθ_a⁻¹)·V` was refused (BQ5a): no
     /// one transport, no static tether, no held coset.

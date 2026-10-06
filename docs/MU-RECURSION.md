@@ -23324,7 +23324,16 @@ where it stops.
 - *Where the remaining rings are lost.* `faces edgeless` 0 on every voice
   while `member pair, no edge` is 1–12: the percept's own faces all carry
   an edge, so the edgeless crossings are on faces built elsewhere — the
-  cover's meet faces (`covered.rs`, `meet_edge`).
+  cover's meet faces (`covered.rs`, `meet_edge`). *Read in the code the
+  same day, that suspicion was wrong:* cover meets and chords have a
+  piece-chart end and their rings are heard, never composed. The edgeless
+  crossings are AT1 A2's CROSS STEPS — one vertex across two of its charts
+  — where no motor carried the body: the face was placed with the
+  sections' relative `τ = C_B·C_A⁻¹` as its carriage and its edge `None`,
+  and `edgeless` filed one vertex's two charts as a member pair. FIXED: the
+  relative is a relative motion and is the edge (78.103), read by `edge_of`
+  as the motor arm's motor is; one vertex's step across its charts is a
+  step, never a pair.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
