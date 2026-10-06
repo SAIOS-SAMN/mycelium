@@ -23657,6 +23657,44 @@ lift is the bounce, a rate), `encounter::an_anticommuting_part_tilts_the_orbit`,
 the force whole), `encounter::an_unread_encounter_is_refused_by_name`,
 `orbit_algebra::the_circuits_crossing_a_cell_meet_both_ways`.
 
+**E2 UNWIRED FROM THE READING PATH (2026-10-06, epoch 138's reading).** On
+every cell READ it ran 48k–380k encounters a voice in twenty minutes (lift
+fell to drag ~98%), and the voices' perception fell: rings 13–28 from
+29–100, top rung back to 1. An encounter is asked where an orbit is moved —
+once per cell whose circuits changed, with E3 — never on a reading.
+`read_encounters` stands, unwired, proved on the cell's circuits directly.
+
+### 78.111 The construction sized by its residue, the residue's absence named, and the stop read where the stroke is read (2026-10-06, epoch 138's reading; the operator's word "proceed 1-4")
+
+1. **C1b — the stroke a residue needs.** `construct` read the residue's
+   modes under the hold's stroke, and 12–28 constructions a voice were
+   refused "modes undecomposed". The stroke is now read off the residue:
+   `cga::modes_need` = `roots_need` of the characteristic polynomial the
+   modes split, an upper bound on every spend `rational_roots` makes (the
+   monic substitute's Cauchy bound `B`; at the derivative of degree `j`
+   at most `C_{j−1}+1` monotone runs of two ends and `bits(2B)` bisections;
+   `C_j ≤ 3·C_{j−1}+2`, `C₁ = 1`; each final bracket's two ends). A
+   construction is never refused for a stroke sized for something else —
+   the precedent is `extraction_spend`. The modes' refusal is counted by
+   its cause: irrational, defective, stroke spent. Proved:
+   `roots::the_stroke_a_polynomials_roots_need_is_read_off_it`; the
+   sovereign test constructs the 17-turn on the mind's own stroke.
+2. **Why a demand carries no residue.** The docket is volatile, so every
+   residue-less `Cite::Demand` is the pivot's own (68–217 a voice). The
+   pivot names why its circuit composed none, on the constructions row:
+   `docketed without residue: circuit unread / held coset / transport
+   unread`. A held coset is several routes and no residue is chosen among
+   them (78.44: all routes kept); if it dominates, the demand carries one
+   residue per route — ruled on that reading, not before.
+3. **The stop.** The voices read the stop between arms and between hours;
+   one family's hold ran 200–520 s routinely and 4 204 s and 4 232 s on
+   family `10830113` (voices 4, 5) between the two boundaries — four
+   voices in five killed unsaved at each recut. Every loop that reads no
+   boundary spends a token (rule 10), so the stop is read there:
+   `physics::halt()` from the signal handler, after which `Budget::spend`
+   refuses; each faculty ends at its next read by its own named refusal,
+   the voice reaches its boundary and saves. Never taken back.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

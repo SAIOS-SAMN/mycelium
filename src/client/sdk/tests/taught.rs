@@ -65,11 +65,10 @@ fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
     let (_, ineffable) = e.transcribe_these(vec![Taught { motion: w.clone(), period: 1 }], &mut budget);
     let chart = crate::transducer::stalk::Invariant::counts(&[1]);
     let made = crate::transducer::cga::construction_outcomes();
-    // Constructing reads the residue's modes under the stroke (rule 10):
-    // the stroke 78.47's own proof spells the same 17-turn with.
-    let mut wide = crate::physics::Physics::default().stroke_n(1 << 20);
+    // Constructing reads the residue's modes under the stroke they need,
+    // read off the residue (78.111 C1b): the mind's own stroke suffices.
     for residue in &ineffable {
-        e.construct_and_adjoin(residue, Some(&chart), &mut wide);
+        e.construct_and_adjoin(residue, Some(&chart), &mut budget);
     }
     let after = crate::transducer::cga::construction_outcomes();
     let at = |n: &str| crate::transducer::cga::CONSTRUCTIONS.iter().position(|x| *x == n).expect("named");

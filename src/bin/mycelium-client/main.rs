@@ -262,7 +262,12 @@ fn main() {
     let stop = Arc::new(AtomicBool::new(false));
     {
         let stop = Arc::clone(&stop);
-        let _ = ctrlc::set_handler(move || stop.store(true, Ordering::SeqCst));
+        // The ask is read between the arms, and — through the stroke's token
+        // (`physics::halt`) — at the next read of whatever is running.
+        let _ = ctrlc::set_handler(move || {
+            stop.store(true, Ordering::SeqCst);
+            mycelium::physics::halt();
+        });
     }
     let mut extract_memo = mycelium::transducer::family::ExtractMemo::new();
     m.last_lang = (usize::MAX, usize::MAX, usize::MAX);

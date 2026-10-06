@@ -283,6 +283,53 @@ fn monic_integer_roots(ints: &[num_bigint::BigInt], budget: &mut crate::physics:
     Ok(roots)
 }
 
+/// THE INTEGER FORM `p`'s rational roots are read on: square-free
+/// (`p / gcd(p, p′)`), the root at zero divided out (whether it was there),
+/// the rest over ℚ, and the rest's denominators cleared and common content
+/// divided out — the same roots, the smallest integers that carry them (a
+/// square-free quotient leaves a content the monic substitute would raise to
+/// the power of the degree).
+fn integer_form(p: &[Q]) -> (bool, Vec<Q>, Vec<num_bigint::BigInt>) {
+    use num_bigint::BigInt;
+    let p = trim(p.to_vec());
+    let derivative: Vec<Q> =
+        p.iter().enumerate().skip(1).map(|(i, c)| c * Q::from_integer(BigInt::from(i))).collect();
+    let free = quotient(&p, &gcd(&p, &derivative));
+    let rest: Vec<Q> = free.iter().skip_while(|c| c.is_zero()).cloned().collect();
+    let zero = rest.len() < free.len();
+    let lcm = rest.iter().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
+    let cleared: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
+    let content = cleared.iter().fold(BigInt::from(0), |g, c| num_integer::Integer::gcd(&g, c));
+    let ints: Vec<BigInt> = match content.sign() {
+        num_bigint::Sign::NoSign => cleared,
+        _ => cleared.iter().map(|c| c / &content).collect(),
+    };
+    (zero, rest, ints)
+}
+
+/// 78.111 C1b — THE STROKE `p`'s ROOTS NEED, read off `p` itself and never a
+/// chosen number: an upper bound on every spend [`rational_roots`] makes on
+/// it. On the monic substitute of degree `m`, inside its Cauchy bound `B`:
+/// [`brackets`] at the derivative of degree `j` reads at most `C_{j−1} + 1`
+/// monotone runs, each two ends and at most `bits(2B)` bisections, and
+/// returns at most `C_j ≤ 3·C_{j−1} + 2` brackets (`C₁ = 1`: a line's root is
+/// read, not searched); [`monic_integer_roots`] then reads each bracket's two
+/// ends. A stroke of this size never refuses `p` as `Unbounded`. Counted
+/// exactly; `None` where the need is past the stroke's carrier (rule 11).
+pub(super) fn roots_need(p: &[Q]) -> Option<usize> {
+    use num_bigint::BigInt;
+    let (_, _, ints) = integer_form(p);
+    let Some(m) = ints.len().checked_sub(1).filter(|m| *m >= 1) else { return Some(0) };
+    let am = &ints[m];
+    let g: Vec<BigInt> = (0..m).map(|i| &ints[i] * num_traits::pow(am.clone(), m - 1 - i)).collect();
+    let bound: BigInt = g.iter().fold(BigInt::from(0), |most: BigInt, c| most.max(c.abs())) + BigInt::from(1);
+    let per_run = BigInt::from((bound * BigInt::from(2)).bits()) + BigInt::from(2);
+    let (spent, brackets) = (2..=m).fold((BigInt::from(0), BigInt::from(1)), |(spent, c), _| {
+        (spent + (&c + BigInt::from(1)) * &per_run, c * BigInt::from(3) + BigInt::from(2))
+    });
+    usize::try_from(spent + brackets * BigInt::from(2)).ok()
+}
+
 /// THE DISTINCT RATIONAL ROOTS of `p`, zero among them, exact — or the
 /// degree of what remains when none of its roots is rational (MD1b, 78.12(1)).
 ///
@@ -296,28 +343,8 @@ fn monic_integer_roots(ints: &[num_bigint::BigInt], budget: &mut crate::physics:
 /// factorisation spends the stroke's budget, and a spent budget refuses the
 /// factor as `Unbounded` by its degree (BD1).
 pub(super) fn rational_roots(p: &[Q], budget: &mut crate::physics::Budget) -> Result<Vec<Q>, Undecomposed> {
-    use num_bigint::BigInt;
-    let p = trim(p.to_vec());
-    let derivative: Vec<Q> =
-        p.iter().enumerate().skip(1).map(|(i, c)| c * Q::from_integer(BigInt::from(i))).collect();
-    let free = quotient(&p, &gcd(&p, &derivative));
-    let mut roots: Vec<Q> = Vec::new();
-    // The root at zero divided out: the leading zero coefficients dropped.
-    let mut rest: Vec<Q> = free.iter().skip_while(|c| c.is_zero()).cloned().collect();
-    if rest.len() < free.len() {
-        roots.push(Q::zero());
-    }
-    // Denominators cleared: every coefficient times their lcm is integral.
-    let lcm = rest.iter().fold(BigInt::from(1), |l, c| num_integer::Integer::lcm(&l, c.denom()));
-    let cleared: Vec<BigInt> = rest.iter().map(|c| (c * Q::from_integer(lcm.clone())).to_integer()).collect();
-    // And their common content divided out — the same roots, the smallest
-    // integers that carry them (a square-free quotient leaves a content the
-    // monic substitute would raise to the power of the degree).
-    let content = cleared.iter().fold(BigInt::from(0), |g, c| num_integer::Integer::gcd(&g, c));
-    let ints: Vec<BigInt> = match content.sign() {
-        num_bigint::Sign::NoSign => cleared,
-        _ => cleared.iter().map(|c| c / &content).collect(),
-    };
+    let (zero, mut rest, ints) = integer_form(p);
+    let mut roots: Vec<Q> = if zero { vec![Q::zero()] } else { Vec::new() };
     if let ([a0, ..], [.., am]) = (ints.as_slice(), ints.as_slice()) {
         if ints.len() > 1 {
             let unbounded = Undecomposed::Unbounded(ints.len() - 1);

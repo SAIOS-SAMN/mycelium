@@ -318,14 +318,14 @@ fn the_holonomy_algebra_closes_under_the_commutator() {
 /// circuits — a turn on `e₁e₂`, and one turning on `e₁e₂` and `e₂e₃` at
 /// once — are each the orbit against the other as neighbour: two
 /// encounters, each read, and the one met by the anticommuting part tilts.
+/// Asked of the cell's circuits directly — never on its reading path.
 #[test]
 fn the_circuits_crossing_a_cell_meet_both_ways() {
-    let (m, nuclei) = round();
     let one = Mv::scalar(q(1, 1));
     let turn = one.add(&Mv::blade(E1 | E2, q(1, 1)));
     let screwed = one.add(&Mv::blade(E1 | E2, q(1, 1))).add(&Mv::blade(E2 | E3, q(1, 1)));
     let before = encounter_tally();
-    let _ = read_cell(1, Some(&m), Some(&nuclei), &at(vec![Ok(turn), Ok(screwed)]), &[], &mut stroke());
+    read_encounters(&[&turn, &screwed], &mut stroke());
     let after = encounter_tally();
     let at_name = |n: &str| ENCOUNTER.iter().position(|x| *x == n).expect("a named slot");
     let grew = |n: &str| after[at_name(n)] - before[at_name(n)];

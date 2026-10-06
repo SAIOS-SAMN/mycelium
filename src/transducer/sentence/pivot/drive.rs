@@ -460,9 +460,7 @@ impl Form {
                 // candidate discharged it — the demand's content and the
                 // undischarged orbit's kind are both read off it.
                 let residue = match outcome {
-                    Discharge::NoneDischarged => self.orbits.get(idx).and_then(|lp| {
-                        paths_carried_quiet(&self.faces, &self.vertices, lp)?.scoped().find_map(|(_, c)| c.composite())
-                    }),
+                    Discharge::NoneDischarged => self.orbits.get(idx).and_then(|lp| residue_of(&self.faces, &self.vertices, lp)),
                     _ => None,
                 };
                 // 78.37 — THE DEMAND ARM'S DEMAND, carried to the docket: the
@@ -897,4 +895,31 @@ impl Form {
         out
     }
 
+}
+
+/// 78.47, 78.111 — AN UNDISCHARGED ORBIT'S RESIDUE: its whole transport, the
+/// first of its circuits that composes one. Where none does, why is counted
+/// on the constructions row — the circuit unread, a held coset's several
+/// routes (one residue per route, none chosen), or a crossing whose
+/// transport did not read — and the demand is docketed without it.
+fn residue_of(faces: &Faces, vertices: &Vertices, lp: &Orbit) -> Option<crate::transducer::cga::Mv> {
+    use crate::transducer::cga::note_construction_outcome;
+    use crate::transducer::sentence::compose::{terms_of, TermUnread};
+    let Some(paths) = paths_carried_quiet(faces, vertices, lp) else {
+        note_construction_outcome("docketed without residue: circuit unread");
+        return None;
+    };
+    if let Some(r) = paths.scoped().find_map(|(_, c)| c.composite()) {
+        return Some(r);
+    }
+    let coset = paths.scoped().any(|(_, c)| match (&c.refracted, &c.edge) {
+        (None, _) => matches!(terms_of(c), Err(TermUnread::HeldCoset)),
+        (Some(_), None) => true,
+        (Some(_), Some(_)) => false,
+    });
+    note_construction_outcome(match coset {
+        true => "docketed without residue: held coset",
+        false => "docketed without residue: transport unread",
+    });
+    None
 }

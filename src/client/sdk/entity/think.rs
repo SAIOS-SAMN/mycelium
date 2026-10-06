@@ -165,9 +165,18 @@ impl Entity {
         chart: Option<&crate::transducer::stalk::Invariant>,
         budget: &mut crate::physics::Budget,
     ) {
-        use crate::transducer::cga::{construct, note_construction_outcome, refusal_name};
+        use crate::transducer::cga::{construct, modes_need, note_construction_outcome, refusal_name};
         note_construction_outcome("residues taken");
-        if let Err(why) = construct(residue, budget) {
+        // 78.111 C1b — the stroke the residue's modes need, read off the
+        // residue: its construction is never refused for a stroke sized for
+        // something else. Where there is none to read (no versor, or a need
+        // past the carrier) the stroke is empty and `construct` refuses it by
+        // name.
+        let mut need = match modes_need(residue) {
+            Some(n) => self.physics.stroke_n(n),
+            None => self.physics.stroke_n(0),
+        };
+        if let Err(why) = construct(residue, &mut need) {
             note_construction_outcome(refusal_name(&why));
             return;
         }

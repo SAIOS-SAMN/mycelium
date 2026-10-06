@@ -90,3 +90,24 @@ fn roots_of_eighty_bit_coefficients_are_read_within_a_small_stroke() {
     want.sort();
     assert_eq!(rational_roots(&quartic, &mut crate::physics::Physics::default().stroke_n(4000)), Ok(want), "every root of the quartic, exactly");
 }
+
+/// 78.111 C1b — THE STROKE A POLYNOMIAL'S ROOTS NEED, READ OFF IT: a stroke of
+/// exactly `roots_need(p)` reads every polynomial above to its end — roots
+/// or a refusal by degree, never `Unbounded`, at degree two to six.
+#[test]
+fn the_stroke_a_polynomials_roots_need_is_read_off_it() {
+    use crate::transducer::cga::modes::roots_need;
+    let n = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1_000_003u64 * 1_000_033u64));
+    let polys: Vec<Vec<num_rational::BigRational>> = vec![
+        vec![q(0, 1), q(-3, 2), q(5, 2), q(1, 1)],
+        vec![q(4, 1), q(0, 1), q(-3, 1), q(1, 1)],
+        vec![q(-2, 1), q(0, 1), q(0, 1), q(1, 1)],
+        vec![q(2, 1), q(-2, 1), q(-1, 1), q(1, 1)],
+        vec![-n, q(0, 1), q(1, 1)],
+        vec![q(6, 1), q(-5, 1), q(-5, 1), q(5, 1), q(-1, 1), q(0, 1), q(1, 1)],
+    ];
+    for p in &polys {
+        let mut need = crate::physics::Physics::default().stroke_n(roots_need(p).expect("a need inside the carrier"));
+        assert!(!matches!(rational_roots(p, &mut need), Err(Undecomposed::Unbounded(_))), "read to its end within its need: {p:?}");
+    }
+}

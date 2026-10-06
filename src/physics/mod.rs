@@ -103,7 +103,7 @@ pub mod malleability;
 pub mod metabolism;
 pub mod source;
 pub mod tensegrity;
-pub use budget::{Budget, Depleted, Reserve};
+pub use budget::{halt, Budget, Depleted, Reserve};
 
 /// A CARRIER'S CIRCUITS (45.7; named so at OR2, 73.7: the circuit is the
 /// clock, the orbit is the word): the circuits a stroke ring has completed

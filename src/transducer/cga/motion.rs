@@ -32,7 +32,7 @@
 //! ray (EQ1), else `Defective` by name.
 
 use super::linear::LinearFunction;
-use super::modes::{generators, kind_of, rational_roots, spectral_projectors, Undecomposed};
+use super::modes::{generators, kind_of, rational_roots, roots_need, spectral_projectors, Undecomposed};
 use super::multivector::{one, Mv};
 use crate::network::nerve::coord::BivectorKind;
 use num_rational::BigRational;
@@ -189,6 +189,18 @@ pub fn motion_modes(
     let s = r.plus(&r_inv).scaled(&half);
     let a = r.minus(&r_inv).scaled(&half);
     Some(split(motion, &s, &a, budget))
+}
+
+/// 78.111 C1b — THE STROKE A MOTION'S MODES NEED: [`roots_need`] of the
+/// characteristic polynomial [`motion_modes`] splits, read off the motion
+/// itself, so a construction is sized by its residue and never refused for a
+/// stroke chosen elsewhere. `None` where the element is no versor, or its
+/// need is past the stroke's carrier — refused by the modes' own reader.
+pub fn modes_need(motion: &Mv) -> Option<usize> {
+    let r = LinearFunction::of_versor(motion)?;
+    let r_inv = LinearFunction::of_versor(&motion.reverse())?;
+    let half = Q::new(1.into(), 2.into());
+    roots_need(&r.plus(&r_inv).scaled(&half).characteristic())
 }
 
 /// 78.62 — WHETHER A MOTION CARRIES CHARGE: whether some mode of it turns

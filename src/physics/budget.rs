@@ -25,6 +25,21 @@
 //! (L20), not a divisor: the sub-read resumes where it stopped, as
 //! `stroke_fills` already resumes from `fill_cursor` under S13.3.
 
+/// Whether the process was asked to stop ([`halt`]).
+static HALTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// 78.111 — THE STOP IS READ WHERE THE STROKE IS READ. A voice asked to stop
+/// (SIGINT, SIGTERM, SIGHUP) read the ask between its arms and its hours,
+/// and one family's hold ran 200–4 232 s between two such boundaries (epoch
+/// 138), so four voices in five were killed unsaved at every recut. Every
+/// loop that does not read a boundary spends a token (rule 10); after a
+/// halt every token refuses its next read, each faculty ends by its own
+/// named refusal, and the voice reaches its boundary and saves. Irreversible
+/// for the process: a stop is never taken back.
+pub fn halt() {
+    HALTED.store(true, std::sync::atomic::Ordering::Relaxed);
+}
+
 /// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
 /// function that wants more than a fiber must take a Budget in its
 /// signature. Constructed only by [`super::Physics::stroke`].
@@ -39,9 +54,10 @@ impl Budget {
         self.remaining
     }
 
-    /// Spend one read. False when the token is exhausted.
+    /// Spend one read. False when the token is exhausted — or when the
+    /// process has been asked to stop ([`halt`]).
     pub fn spend(&mut self) -> bool {
-        if self.remaining == 0 {
+        if self.remaining == 0 || HALTED.load(std::sync::atomic::Ordering::Relaxed) {
             return false;
         }
         self.remaining -= 1;

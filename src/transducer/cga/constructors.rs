@@ -250,20 +250,29 @@ impl Constructed {
 /// docketed demand's, or a taught word no held letter spells), the ones that
 /// carried none, the constructed, the refused by why, the adjoined as the
 /// mind's own letters, and the constructed with no rotation to adjoin (a
-/// residue whose motion is no turn — row 8's evidence).
-pub const CONSTRUCTIONS: [&str; 9] = [
+/// residue whose motion is no turn — row 8's evidence). 78.111: the modes'
+/// refusal by its cause (a value in an extension of ℚ, a defective part, the
+/// stroke spent), and each demand the pivot dockets with no residue by why
+/// its circuit composed none — unread, a held coset's several routes, or a
+/// crossing whose transport did not read.
+pub const CONSTRUCTIONS: [&str; 14] = [
     "residues taken",
     "residues absent",
     "constructed",
     "refused: no versor or none",
-    "refused: modes undecomposed",
+    "refused: modes irrational",
     "refused: null step",
     "refused: does not compose",
     "adjoined as letters",
     "constructed, no rotation to adjoin",
+    "refused: modes defective",
+    "refused: stroke spent",
+    "docketed without residue: circuit unread",
+    "docketed without residue: held coset",
+    "docketed without residue: transport unread",
 ];
 
-static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 9] = [const { std::sync::atomic::AtomicU64::new(0) }; 9];
+static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 14] = [const { std::sync::atomic::AtomicU64::new(0) }; 14];
 
 /// One construction outcome, counted by its [`CONSTRUCTIONS`] name.
 pub fn note_construction_outcome(name: &str) {
@@ -273,7 +282,7 @@ pub fn note_construction_outcome(name: &str) {
 }
 
 /// The [`CONSTRUCTIONS`] row since the process began.
-pub fn construction_outcomes() -> [u64; 9] {
+pub fn construction_outcomes() -> [u64; 14] {
     std::array::from_fn(|i| CONSTRUCTION_TALLY[i].load(std::sync::atomic::Ordering::Relaxed))
 }
 
@@ -281,7 +290,9 @@ pub fn construction_outcomes() -> [u64; 9] {
 pub fn refusal_name(why: &NotConstructed) -> &'static str {
     match why {
         NotConstructed::NotVersor | NotConstructed::NoResidue => "refused: no versor or none",
-        NotConstructed::Undecomposed(_) => "refused: modes undecomposed",
+        NotConstructed::Undecomposed(super::Undecomposed::Irrational(_)) => "refused: modes irrational",
+        NotConstructed::Undecomposed(super::Undecomposed::Defective) => "refused: modes defective",
+        NotConstructed::Undecomposed(super::Undecomposed::Unbounded(_)) => "refused: stroke spent",
         NotConstructed::NullStep { .. } => "refused: null step",
         NotConstructed::DoesNotCompose | NotConstructed::MeetOffLocus { .. } => "refused: does not compose",
     }

@@ -829,7 +829,7 @@ fn the_senses_and_the_acts_travel_whole() {
     senses.unread = [130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161];
     senses.citation = [170, 171, 172, 173];
     senses.encounter = [180, 181, 182, 183, 184];
-    senses.constructions = [190, 191, 192, 193, 194, 195, 196, 197, 198];
+    senses.constructions = [190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203];
     senses.construction = [110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126];
     senses.said = Some(crate::transducer::sentence::Reasons {
         words: vec![crate::transducer::sentence::reasons::WordReason { generators: 2, adjoined: false, charts: 3, frames: 4 }],
