@@ -79,6 +79,30 @@ impl Contemplation {
         self.docket_put(Cite::Demand { class: Box::new(class.clone()), residue, cover });
     }
 
+    /// 78.109 C1 — THE DEMAND TAKER (CV4/SP2, VN1: "only a discharge answered
+    /// a docketed Demand"). Each demand on the plan — this orbit's and the
+    /// open questions — handed out ONCE, by its entry's coordinates: its
+    /// residue (the coordinate its constructors are derived from, 78.47) and
+    /// the charts of its cover. The entry stays on the plan; only a discharge
+    /// answers it (R1).
+    pub(crate) fn take_demands(&mut self) -> Vec<(Option<crate::transducer::cga::Mv>, Vec<crate::transducer::stalk::Invariant>)> {
+        let mut out = Vec::new();
+        for (k, c) in self.docket_open.scoped().chain(self.docket.scoped()) {
+            let Cite::Demand { residue, cover, .. } = &c else { continue };
+            if self.demands_taken.contains(&k) {
+                continue;
+            }
+            self.demands_taken.insert(&k, ());
+            let charts = cover
+                .iter()
+                .flatten()
+                .filter_map(|key| crate::transducer::stalk::Invariant::from_key(key))
+                .collect();
+            out.push((residue.clone(), charts));
+        }
+        out
+    }
+
     /// THE WHOLE PLAN, in its entries' own key order: the open questions
     /// carried forward and this orbit's new entries. The mind's reading of
     /// its own plan; nothing writes it anywhere (78.49).

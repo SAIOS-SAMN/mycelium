@@ -27,7 +27,8 @@ mod planes;
 mod spin;
 
 pub use constructors::{
-    carry, construct, constructor_orbit, is_constructor, Constructed, ConstructorOrbit, NotConstructed, OrbitUnread,
+    carry, construct, construction_outcomes, constructor_orbit, is_constructor, note_construction_outcome, refusal_name,
+    Constructed, ConstructorOrbit, NotConstructed, OrbitUnread, CONSTRUCTIONS,
 };
 pub(crate) use constructors::{constructors_of_base_turn, TurnUnspelled};
 pub use dual::{contract_to_face, dual_frame, wedge, DualFrame};

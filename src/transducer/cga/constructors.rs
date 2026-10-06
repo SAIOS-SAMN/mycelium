@@ -246,6 +246,47 @@ impl Constructed {
     }
 }
 
+/// 78.109 C1 — WHAT A MIND'S CONSTRUCTIONS CAME TO: the residues it took (a
+/// docketed demand's, or a taught word no held letter spells), the ones that
+/// carried none, the constructed, the refused by why, the adjoined as the
+/// mind's own letters, and the constructed with no rotation to adjoin (a
+/// residue whose motion is no turn — row 8's evidence).
+pub const CONSTRUCTIONS: [&str; 9] = [
+    "residues taken",
+    "residues absent",
+    "constructed",
+    "refused: no versor or none",
+    "refused: modes undecomposed",
+    "refused: null step",
+    "refused: does not compose",
+    "adjoined as letters",
+    "constructed, no rotation to adjoin",
+];
+
+static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 9] = [const { std::sync::atomic::AtomicU64::new(0) }; 9];
+
+/// One construction outcome, counted by its [`CONSTRUCTIONS`] name.
+pub fn note_construction_outcome(name: &str) {
+    if let Some(i) = CONSTRUCTIONS.iter().position(|n| *n == name) {
+        let _ = CONSTRUCTION_TALLY[i].fetch_update(std::sync::atomic::Ordering::Relaxed, std::sync::atomic::Ordering::Relaxed, |n| n.checked_add(1));
+    }
+}
+
+/// The [`CONSTRUCTIONS`] row since the process began.
+pub fn construction_outcomes() -> [u64; 9] {
+    std::array::from_fn(|i| CONSTRUCTION_TALLY[i].load(std::sync::atomic::Ordering::Relaxed))
+}
+
+/// The [`CONSTRUCTIONS`] name a refusal is counted under.
+pub fn refusal_name(why: &NotConstructed) -> &'static str {
+    match why {
+        NotConstructed::NotVersor | NotConstructed::NoResidue => "refused: no versor or none",
+        NotConstructed::Undecomposed(_) => "refused: modes undecomposed",
+        NotConstructed::NullStep { .. } => "refused: null step",
+        NotConstructed::DoesNotCompose | NotConstructed::MeetOffLocus { .. } => "refused: does not compose",
+    }
+}
+
 /// 78.47(1) — A RESIDUE SPELLED AS CONSTRUCTORS AROUND ITS CONGRUENCE
 /// FACTORS, under the stroke's budget: each mode (MR1) by
 /// [`reflections_of`] in the algebra's metric; each mode CERTIFIED by its

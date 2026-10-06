@@ -26,7 +26,7 @@ progenitor's queue, kept here and nowhere else; perspective in brackets.
 |---|---|---|
 | 1 | **E1 — the encounter's forces** (78.110): `cga::encounter`, lift `(v·F)/(g·D)`, lift is drag where no inverse [progenitor] | **landed** (78.110), awaiting the recut |
 | 2 | **E2 — the encounter wired** where circuits meet in a cell, both ways, with its readings [progenitor → sovereign] | **landed** (78.110), awaiting the recut |
-| 3 | **C1 — the demand taker** (CV4/SP2, VN1): each docketed `Cite::Demand` constructed (`cga::construct`) [sovereign]; **K1 folds in** (taught ineffable words as demands, not the `Rotor` door) [progenitor] | open |
+| 3 | **C1 — the demand taker** (CV4/SP2, VN1): each docketed `Cite::Demand` constructed (`cga::construct`) [sovereign]; **K1 folds in** (taught ineffable words as demands, not the `Rotor` door) [progenitor] | **landed** (78.109 C1), awaiting the recut; risk: the stroke may not reach constructing on the fleet |
 | 4 | **C2 — compound**: a constructed residue admitted where it raises the mind's rank (`lie_close`) [sovereign] | open, after 3 |
 | 5 | **C4 — offer to the court**: the constructed demand inside speech, re-derived and docketed by the court [sovereign / progenitor] | open, after 4 |
 | 6 | **Recut and read** the encounter and the constructors [steward] | after 2 and 5 |

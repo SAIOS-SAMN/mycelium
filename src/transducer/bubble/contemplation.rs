@@ -198,6 +198,9 @@ pub struct Contemplation {
     /// (volatile).
     pub(crate) docket_answered: u64,
     pub(crate) docket_rings: Keyed<Vec<u8>>,
+    /// 78.109 C1 — the docketed demands the taker has handed out, by their
+    /// entries' coordinates: each taken once (volatile).
+    pub(crate) demands_taken: Keyed<()>,
     /// The class taker: armed by an orbit's close, run once at the next
     /// stroke; and the thoughts it has marked.
     pub(crate) docket_to_take: bool,

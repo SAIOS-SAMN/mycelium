@@ -23563,6 +23563,26 @@ refused by breach, rings replayed (one per claim).
 **Order.** K1 with K2 first (the sovereign act and what it uplinks), then
 K3 (the court's half replaces discovery), then K4 into the contract crate.
 
+**C1 LANDED (2026-10-06): the demand taker, and K1 through it.** The
+constructors were built and proved (78.47) and had no live caller; the
+pivot's demand arm docketed each undischarged orbit's class with its whole
+residue and nothing took it (VN1). Now ONE road takes every residue a mind
+cannot say (`Entity::construct_and_adjoin`): spelled as constructors
+(`cga::construct`, certified on each mode's fixed locus, composing back,
+T1) or refused by why; constructed, its rotation adjoined as the mind's own
+letter on its chart. The pivot's docketed demands are taken once each
+(`Contemplation::take_demands`, after every expansion) on the least chart
+of their cover; a taught word no held letter spells takes the same road
+(K1 folded in — its whole motion, no longer the bare rotor). Reading:
+`constructions: residues taken / absent / constructed / refused (no versor
+or none, modes undecomposed, null step, does not compose) / adjoined as
+letters / constructed, no rotation to adjoin` (the last is row 8's
+evidence). RISK named: constructing reads the residue's modes under the
+stroke; the entity's default stroke ran out on the 17-turn where 78.47's
+proof used `2²⁰` — on the fleet, `refused: modes undecomposed` will say
+whether the voices' strokes reach. Proved:
+`taught::a_mind_adjoins_its_ineffable_word_and_says_it_at_once`.
+
 **K1 LANDED (2026-10-06).** `Entity::hold_perceived_from`: the rotors of the
 taught words no held letter spells (`transcribe_these` reports them) are
 adjoined in the mind's dialect on the chart of the form that taught them

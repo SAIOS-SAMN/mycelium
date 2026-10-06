@@ -142,11 +142,66 @@ impl Entity {
         // the mind's own, lapsed on its own clock; never handed mind to mind
         // (law 8). What it offers the mesh is the sentence above; whether the
         // mesh holds it too is the court's to verify.
-        if let Some(chart) = chart {
-            let letters: crate::transducer::bubble::drive::Adjoined = ineffable.into_iter().map(|r| (r, chart.clone())).collect();
-            self.adjoin_letters(&letters, budget);
+        // 78.109 C1 — through the one road a residue takes: constructed,
+        // certified, then adjoined.
+        for residue in &ineffable {
+            self.construct_and_adjoin(residue, chart.as_ref(), budget);
         }
         true
+    }
+
+    /// 78.109 C1, 78.47 — A RESIDUE THE MIND CANNOT SAY, CONSTRUCTED AND MADE
+    /// ITS OWN. The residue is spelled as constructors (`cga::construct`,
+    /// constructive Cartan–Dieudonné in the algebra's own metric, each mode
+    /// certified on its fixed locus, the whole composing back, T1): a
+    /// congruent thought, or a refusal counted by why. Constructed, its
+    /// rotation is adjoined as the mind's own letter on its chart
+    /// (`adjoin_letters`, the pivot's path); a residue whose motion holds no
+    /// turn is counted apart — it constructs, and no letter type holds it yet
+    /// (the ledger's row 8 reads this).
+    pub(crate) fn construct_and_adjoin(
+        &mut self,
+        residue: &crate::transducer::cga::Mv,
+        chart: Option<&crate::transducer::stalk::Invariant>,
+        budget: &mut crate::physics::Budget,
+    ) {
+        use crate::transducer::cga::{construct, note_construction_outcome, refusal_name};
+        note_construction_outcome("residues taken");
+        if let Err(why) = construct(residue, budget) {
+            note_construction_outcome(refusal_name(&why));
+            return;
+        }
+        note_construction_outcome("constructed");
+        let rotor = crate::transducer::element::conformal_factors(residue)
+            .ok()
+            .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok())
+            .filter(|r| !r.projective_eq(&crate::transducer::alphabet::Rotor::identity()));
+        match (rotor, chart) {
+            (Some(r), Some(c)) => {
+                note_construction_outcome("adjoined as letters");
+                self.adjoin_letters(&vec![(r, c.clone())], budget);
+            }
+            _ => note_construction_outcome("constructed, no rotation to adjoin"),
+        }
+    }
+
+    /// 78.109 C1 — THE DEMAND TAKER: each demand the mind's pivot docketed
+    /// (an undischarged orbit's class with its whole residue) taken once and
+    /// constructed — the residue on the first chart of its cover — where only
+    /// a discharge answered one before (VN1).
+    pub(crate) fn take_demands(&mut self, budget: &mut crate::physics::Budget) {
+        for (residue, charts) in self.contemplation.take_demands() {
+            // The chart its letter is filed on: the cover's least by its own
+            // coordinate — content, never an arrival (rule 15).
+            let least = charts.iter().fold(None, |least: Option<&crate::transducer::stalk::Invariant>, c| match least {
+                Some(l) if l.key() <= c.key() => Some(l),
+                _ => Some(c),
+            });
+            match residue {
+                Some(r) => self.construct_and_adjoin(&r, least, budget),
+                None => crate::transducer::cga::note_construction_outcome("residues absent"),
+            }
+        }
     }
 
     /// 78.52 — TRANSCRIPTION, AGAINST THIS MIND'S OWN LETTERS (78.47 (i)). A
@@ -187,16 +242,18 @@ impl Entity {
     /// ineffable, a letter demand (37.7). Counted on the sentences row; and
     /// the ineffable words' rotors — what the mind adjoins as its own
     /// letters (78.109 K1), and why its sentence is spoken (78.102).
-    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, Vec<crate::transducer::alphabet::Rotor>) {
+    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, Vec<crate::transducer::cga::Mv>) {
         self.transcribe_these(crate::transducer::sentence::rung::take_taught(), budget)
     }
 
-    /// [`Self::transcribe_taught`] on the taught words given.
+    /// [`Self::transcribe_taught`] on the taught words given: the spelled
+    /// words, and the ineffable words' whole motions — the residues the mind
+    /// constructs and adjoins (78.109 C1).
     pub(crate) fn transcribe_these(
         &mut self,
         taught: Vec<crate::transducer::sentence::rung::Taught>,
         budget: &mut crate::physics::Budget,
-    ) -> (Vec<Element>, Vec<crate::transducer::alphabet::Rotor>) {
+    ) -> (Vec<Element>, Vec<crate::transducer::cga::Mv>) {
         use crate::transducer::sentence::rung::{note_transcribed, Taught, Transcribed};
         let mut words = Vec::new();
         let mut ineffable = Vec::new();
@@ -209,12 +266,8 @@ impl Entity {
                 (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
                 (Transcribed::Ineffable, _) => {
                     note_transcribed(Transcribed::Ineffable);
-                    // Its rotor, read as `transcribe` read it: the rotation
-                    // no held letter spells.
-                    let rotor = crate::transducer::element::conformal_factors(&motion)
-                        .ok()
-                        .and_then(|f| crate::transducer::element::rotor_of_factors(&f).ok());
-                    ineffable.extend(rotor);
+                    // Its whole motion: the residue the mind constructs.
+                    ineffable.push(motion.clone());
                 }
                 (read, _) => note_transcribed(read),
             }
@@ -635,6 +688,8 @@ impl Entity {
         for e in &crystallized {
             self.stand_crystallized(e, &mut budget);
         }
+        // 78.109 C1 — and what the pivot demanded is taken and constructed.
+        self.take_demands(&mut budget);
         (pivoted, circuit)
     }
 
