@@ -72,9 +72,13 @@ pub struct Composition {
     pub carried: Vec<Mv>,
     pub path: Mv,
     pub rank: Result<usize, crate::transducer::cech::LieRankRefused>,
-    /// Each term's whole motion, `transport · word`, in the sentence's order:
-    /// what a lexicon reads a term's rung by (78.75).
-    pub motions: Vec<Mv>,
+    /// 78.105 N1 — EACH TERM'S WORD `Wᵢ`, read apart from its SPACE `gᵢ`
+    /// (the transport to the next word, the non-verbal line), in the
+    /// sentence's order: what a lexicon reads a term's rung by. They were
+    /// one product, `gᵢ · Wᵢ`, and a held word fused with the space around
+    /// it was never recognized. The spaces are the terms' transports; their
+    /// readers fold into the encounter and production (N5, N6).
+    pub words: Vec<Mv>,
 }
 
 /// COMPOSE A SENTENCE (78.69): `Ω` path-ordered from the first word, each
@@ -125,8 +129,8 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
     let holonomies: Vec<Option<&Mv>> = carried.iter().chain(std::iter::once(&omega)).map(Some).collect();
     let rank = crate::transducer::cech::cayley_generators(&holonomies, budget)
         .and_then(|gens| crate::transducer::cech::lie_close(&[], &gens, budget).map(|b| b.len()));
-    let motions = terms.iter().map(|t| t.transport.geo(&t.word)).collect();
-    Some(Composition { omega, closure, carried, path, rank, motions })
+    let words = terms.iter().map(|t| t.word.clone()).collect();
+    Some(Composition { omega, closure, carried, path, rank, words })
 }
 
 /// 78.75 — A RING OF A FORM, READ AS A SENTENCE: each transition its word and

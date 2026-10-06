@@ -39,8 +39,9 @@ impl Entity {
             return;
         };
         // A perception, held with the bodies it was perceived as (N4); a
-        // remainder scene is named by no task.
-        self.hold_perceived(f, &frames, &[], &[], &[], &mut budget);
+        // remainder scene is named by no task. Held with no bundle, weighed
+        // on the scene it was perceived from.
+        self.hold_perceived_from(f, &frames, (&[][..], std::slice::from_ref(&scene)), &[], &[], &mut budget);
     }
 
     /// N4 — HOLD A PERCEPTION with the frames it was perceived from, so the
@@ -53,6 +54,22 @@ impl Entity {
         f: crate::transducer::sentence::Form,
         frames: &crate::transducer::family::Frames,
         train: &crate::transducer::family::Family,
+        remainders: &[Vec<(i64, i64, u8, u8)>],
+        family: &[u8],
+        budget: &mut crate::physics::Budget,
+    ) -> bool {
+        self.hold_perceived_from(f, frames, (train, train), remainders, family, budget)
+    }
+
+    /// [`Self::hold_perceived`], with the SCENE the form was perceived from
+    /// named apart from the training bundle it is held with: an hour of a
+    /// family is perceived from its own pair and held with no bundle
+    /// (78.56 III), and what it says is weighed on that pair (78.102).
+    pub fn hold_perceived_from(
+        &mut self,
+        f: crate::transducer::sentence::Form,
+        frames: &crate::transducer::family::Frames,
+        (train, scene): (&crate::transducer::family::Family, &crate::transducer::family::Family),
         remainders: &[Vec<(i64, i64, u8, u8)>],
         family: &[u8],
         budget: &mut crate::physics::Budget,
@@ -76,16 +93,18 @@ impl Entity {
         // (`hear_open`, the speaking voice its discoverer). Never the bare
         // rotor: the court replays, it never takes a voice's word for it.
         //
-        // SIZED AS THE VOICE'S SPEECH SIZES A FORM: what it closes over its
-        // pairs (`form_deflation`), and where that is nothing, the escrow
-        // it was held at. It was the escrow alone — the remainder's measure
-        // — and a perceived form that closed everything it saw holds no
-        // remainder: a zero magnitude, which `as_element_form` refuses, so
-        // no open sentence was ever built (epoch 133: 12–58 ineffable words
-        // a voice, `open sentences spoken` 0 on every voice).
+        // SIZED AS THE VOICE'S SPEECH SIZES A FORM: what it closes over the
+        // scene it was perceived from (`form_deflation`), and where that is
+        // nothing, the escrow it was held at. It was the escrow alone — the
+        // remainder's measure — and a perceived form that closed everything
+        // it saw holds no remainder: a zero magnitude, which
+        // `as_element_form` refuses (epoch 133). Then over the training
+        // bundle — and an hour is held with none, so it weighed nothing
+        // again (epoch 134: `open sentences spoken` 0 on every voice). The
+        // hour's scene is its own pair.
         let open = match ineffable {
             true => {
-                let (closed, _) = crate::transducer::family::form_deflation(&f, train, &self.epigenome);
+                let (closed, _) = crate::transducer::family::form_deflation(&f, scene, &self.epigenome);
                 let mag = match closed.iter().any(|&x| x > 0) {
                     true => closed,
                     false => draw,

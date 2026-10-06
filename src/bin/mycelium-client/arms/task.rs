@@ -89,7 +89,9 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
             let hour = mycelium::transducer::family::perceive_family(&pair);
             let mut hour_budget = entity.stroke_n(mycelium::transducer::family::extraction_spend(&pair, &hour));
             if let Some(f) = mycelium::transducer::family::scene_form_on(&entity.epigenome, &mut hour_budget, a, b, &hour) {
-                entity.hold_perceived(f, &hour, &[], &[], &tid, &mut hour_budget);
+                // Held with no bundle, perceived from — and weighed on — its
+                // own pair.
+                entity.hold_perceived_from(f, &hour, (&[][..], &pair[..]), &[], &tid, &mut hour_budget);
             }
         }
     }

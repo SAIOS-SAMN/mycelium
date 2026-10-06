@@ -99,6 +99,9 @@ pub struct Senses {
     /// 78.100 — why the language loses what it perceives
     /// (`rung::WHY_UNREAD`).
     pub unread: [u64; crate::transducer::sentence::rung::WHY_UNREAD.len()],
+    /// 78.100 D6 — what deconstruction by motion read
+    /// (`rung::CITATION`).
+    pub citation: [u64; crate::transducer::sentence::rung::CITATION.len()],
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -283,6 +286,7 @@ impl Senses {
         put(out, &self.sentences);
         put(out, &self.construction);
         put(out, &self.unread);
+        put(out, &self.citation);
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -314,6 +318,7 @@ impl Senses {
             sentences,
             construction,
             unread,
+            citation: take(b, p)?,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -341,6 +346,7 @@ impl Senses {
         out.push(format!("sentences: {}", line(&crate::transducer::sentence::rung::SENTENCES, &self.sentences)));
         out.push(format!("construction: {}", line(&crate::transducer::cech::CONSTRUCTION, &self.construction)));
         out.push(format!("unread: {}", line(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread)));
+        out.push(format!("citation: {}", line(&crate::transducer::sentence::rung::CITATION, &self.citation)));
         out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
@@ -366,6 +372,7 @@ impl Senses {
             "sentences" => at(&crate::transducer::sentence::rung::SENTENCES, &self.sentences, name),
             "construction" => at(&crate::transducer::cech::CONSTRUCTION, &self.construction, name),
             "unread" => at(&crate::transducer::sentence::rung::WHY_UNREAD, &self.unread, name),
+            "citation" => at(&crate::transducer::sentence::rung::CITATION, &self.citation, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

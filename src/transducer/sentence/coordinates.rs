@@ -19,11 +19,12 @@
 //! `K_j = (1 + c_j)·λ_j·K̂_j` — the 180° turn its space's blade `K̂_j` itself
 //! — and the rays multiply back to the word (EQ1), proved by [`Coordinates::word`].
 //!
-//! COMPREHENSION BY COORDINATES. A held word is found by its holes, a keyed
-//! fibre per hole; a word on the same holes whose windings are `k` times a
-//! held word's on every hole is that word's POWER (derivable, recognized,
-//! never held twice); a word on a hole no held word stands on, or at a
-//! winding no power reaches, is NEW, by which holes and which windings.
+//! COMPREHENSION BY COORDINATES (78.100 D3). A held word is found by its
+//! holes, a keyed fibre per hole; a new word is DECONSTRUCTED mode by mode —
+//! each hole cited to a held word on it whose winding reaches the word's by
+//! an exponent — and what no held word covers is its residue. Every mode
+//! cited, it is a composition of what is held (a power of one word the case
+//! where one word covers every hole): derivable, never held twice.
 
 use crate::network::nerve::coord::BivectorKind;
 use crate::network::nerve::Keyed;
@@ -386,17 +387,90 @@ pub struct HoleIndex {
     on: Keyed<Keyed<()>>,
 }
 
-/// WHAT A NEW WORD'S COORDINATES MET in a lexicon.
+/// 78.100 D3 — ONE MODE OF A WORD CITED BY ITS MOTION: the held word that
+/// stands on the same hole, by its key, and the exponent its winding there is
+/// raised to.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub enum Comprehended {
-    /// The `k`-th power of a held word, by its key: derivable.
-    Power { of: Vec<u8>, k: u64 },
-    /// New: the holes no held word stands on, and of the held holes, those
-    /// whose winding no held word's power reaches.
-    New { holes: usize, windings: usize },
+pub struct Cite {
+    pub word: Vec<u8>,
+    pub hole: Vec<u8>,
+    pub exponent: i64,
+}
+
+/// 78.100 D3, D4 — A WORD DECONSTRUCTED OVER WHAT IS HELD, MODE BY MODE: each
+/// of its holes cited to a held word on that hole at an exponent, and the
+/// holes no held word covers — the RESIDUE, the demand. A word is a product
+/// over its dimensions, never a chain: its modes commute (MR1), so the
+/// cited modes and the residue multiply back to it in any order
+/// (`Coordinates::word`).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Deconstruction {
+    pub cites: Vec<Cite>,
+    pub residue: Vec<Hole>,
+}
+
+impl Deconstruction {
+    /// Every mode cited: the word is a composition of what is held — grammar,
+    /// in the span at zero rank (78.100 S2).
+    pub fn derived(&self) -> bool {
+        self.residue.is_empty() && !self.cites.is_empty()
+    }
+}
+
+/// THE EXPONENT `e` WITH `h = h₀ᵉ` ON ONE HOLE, read exactly off the windings:
+/// a count by the integer ratio of its sides (any non-zero integer, a
+/// reverse slide negative); a turn by the least `e ≥ 1` with `t/ℓ ≡ e·t₀/ℓ₀`
+/// (mod 1), searched within the orders' least common multiple; a named
+/// point only as itself, `e = 1`. `None` where no exponent reaches it.
+fn exponent_on(h: &Hole, h0: &Hole) -> Option<i64> {
+    match (&h.winding, &h0.winding) {
+        (Winding::Count(l), Winding::Count(l0)) if !l0.is_zero() => {
+            let r = l / l0;
+            let e = r.is_integer().then(|| r.to_integer())?;
+            let e = i64::try_from(e).ok().filter(|e| *e != 0)?;
+            Some(e)
+        }
+        (Winding::Turn { ell, .. }, Winding::Turn { ell: ell0, .. }) => {
+            let period = lcm(u64::from(*ell), u64::from(*ell0));
+            let e = (1..=period).find(|k| winds_k(&h.winding, &h0.winding, *k))?;
+            i64::try_from(e).ok()
+        }
+        (Winding::Named { .. }, Winding::Named { .. }) => (h.c == h0.c && h.lambda == h0.lambda).then_some(1),
+        _ => None,
+    }
 }
 
 impl HoleIndex {
+    /// 78.100 D3 — DECONSTRUCT A WORD BY ITS MOTION over the held words, each
+    /// held word's coordinates read by its key through `held`: every hole of
+    /// the word cited to the first held word, in key order (content, law 2),
+    /// that stands on the same hole and whose winding there reaches the
+    /// word's by an exponent; a hole none reaches is residue. Exact: no
+    /// winding is approximated, and a hole is cited only where the exponent
+    /// holds.
+    pub fn deconstruct<'a>(&self, coords: &Coordinates, held: impl Fn(&[u8]) -> Option<&'a Coordinates>) -> Deconstruction {
+        let mut out = Deconstruction::default();
+        for h in &coords.holes {
+            let cite = self.on.get(&h.key).and_then(|fibre| {
+                fibre.scoped().find_map(|(k, ())| {
+                    let h0 = held(&k)?.holes.iter().find(|h0| h0.key == h.key)?;
+                    let exponent = exponent_on(h, h0)?;
+                    Some(Cite { word: k, hole: h.key.clone(), exponent })
+                })
+            });
+            match cite {
+                Some(c) => out.cites.push(c),
+                None => out.residue.push(h.clone()),
+            }
+        }
+        out
+    }
+
+    /// Whether any held word stands on `hole`.
+    pub fn stands_on(&self, hole: &[u8]) -> bool {
+        self.on.get(hole).is_some()
+    }
+
     /// FILE A HELD WORD under each of its holes.
     pub fn file(&mut self, word: &[u8], coords: &Coordinates) {
         for h in &coords.holes {
@@ -411,27 +485,5 @@ impl HoleIndex {
                 }
             }
         }
-    }
-
-    /// COMPREHEND A NEW WORD'S COORDINATES against the held words, each held
-    /// word's coordinates read by its key through `held`: the fibre of its
-    /// first hole is every candidate it can be a power of (a word with
-    /// another first hole stands on other holes), and a hole with no fibre
-    /// is a hole no held word stands on.
-    pub fn comprehend<'a>(&self, coords: &Coordinates, held: impl Fn(&[u8]) -> Option<&'a Coordinates>) -> Comprehended {
-        // The holes stand in key order, so the first is content (law 2): the
-        // least key, never an arrival.
-        if let [first, ..] = coords.holes.as_slice() {
-            if let Some(fibre) = self.on.get(&first.key) {
-                for (k, ()) in fibre.scoped() {
-                    let Some(c) = held(&k) else { continue };
-                    if let Some(power) = coords.power_of(c) {
-                        return Comprehended::Power { of: k, k: power };
-                    }
-                }
-            }
-        }
-        let holes = coords.holes.iter().filter(|h| self.on.get(&h.key).is_none()).count();
-        Comprehended::New { holes, windings: coords.holes.len() - holes }
     }
 }

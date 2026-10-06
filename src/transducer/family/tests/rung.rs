@@ -182,7 +182,7 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     )
     .expect("a sentence");
     assert_eq!(second.closure, Closure::Closes(1), "a sentence of the held word, closed");
-    assert!(second.motions[0].projective_eq(&w), "its first term is the held word");
+    assert!(second.words[0].projective_eq(&w), "its first term's word is the held word");
     hear(&second, &mut stroke());
     assert!(sentence_tally().top_rung >= 2, "its shortcut stands a rung higher: the grammar on its own closures");
     let held = lexicon();
@@ -191,6 +191,47 @@ fn the_rung_recurses_and_a_sentence_heard_again_is_recognized() {
     assert!(sentence_tally().recognized > r0, "heard again: re-derived, recognized");
     let now = lexicon();
     assert_eq!(now.0 + now.1, held.0 + held.1, "and never held twice");
+}
+
+/// 78.105 N1 — A HELD WORD IS RECOGNIZED WHATEVER SPACE SURROUNDS IT. A
+/// sentence teaches the turn `w`, held at its rung; a new sentence says `w`
+/// again with a slide as the space after it. Its term's word is `w` and its
+/// space the slide — read apart, the word is the held one and the sentence
+/// stands a rung above it. The fused product `slide · w` is no held word:
+/// read as one, the space hid the word.
+#[test]
+fn a_held_word_is_recognized_whatever_space_surrounds_it() {
+    use crate::transducer::sentence::rung::rung_in_lexicon;
+    let w = turn(E1, E3);
+    let first = compose(&[Term { word: w.clone(), transport: w.reverse() }], &mut stroke()).expect("a sentence");
+    hear(&first, &mut stroke());
+    let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
+    let again = compose(&[Term { word: w.clone(), transport: slide.clone() }], &mut stroke()).expect("a sentence");
+    assert!(again.words[0].projective_eq(&w), "the word is said, its space the slide");
+    assert!(rung_in_lexicon(&again).expect("read") >= 2, "the held word lifts the sentence a rung, its space notwithstanding");
+}
+
+/// 78.100 D4 — DEPTH IS READ BY CITATION. A sentence teaches a turn of the
+/// `e₂e₃` plane — `½ + e₂₃`, its point `cos θ = −3/5`, a rosette named by
+/// that point — held at its rung. A later sentence teaches a screw — that
+/// turn and a slide along its axis. Deconstructed by its
+/// motion, the screw cites the held turn on the turn's hole and leaves the
+/// slide as its residue, so it is new and held — one rung above the turn it
+/// cites, though no word of its own sentence was held.
+#[test]
+fn a_word_stands_a_rung_above_the_words_it_cites() {
+    use crate::transducer::sentence::rung::held_rung;
+    let half = q(1, 2);
+    let third = Mv::scalar(half.clone()).add(&Mv::blade(E2 | E3, q(1, 1)));
+    let taught = compose(&[Term { word: third.clone(), transport: third.reverse() }], &mut stroke()).expect("a sentence");
+    hear(&taught, &mut stroke());
+    let below = held_rung(&third).expect("the turn is held");
+    let slide = cga::translator_at(&[q(1, 1), q(0, 1), q(0, 1)]);
+    let screw = third.geo(&slide);
+    let again = compose(&[Term { word: screw.clone(), transport: screw.reverse() }], &mut stroke()).expect("a sentence");
+    hear(&again, &mut stroke());
+    let rung = held_rung(&screw).expect("the screw is new in its residue, and held");
+    assert!(rung > below, "it stands above the word it cites: {rung} over {below}");
 }
 
 /// 78.103 — A BEND IS READ BY WHAT IT GENERATES: a turn counts its plane

@@ -73,6 +73,7 @@ impl Entity {
             sentences: crate::transducer::sentence::rung::sentence_tally().row(),
             construction: crate::transducer::cech::construction_tally(),
             unread: crate::transducer::sentence::rung::unread_tally(),
+            citation: crate::transducer::sentence::rung::citation_tally(),
             hearing: self.hearing,
             language: [
                 self.epigenome.dialect_len() as u64,

@@ -23346,6 +23346,91 @@ everything it saw holds no remainder, so its magnitude was zero and
 speech sizes a form, by what it closes over its pairs (`form_deflation`),
 the escrow only where that is nothing.
 
+**Read on epoch 134 (`6838c5f5`).** The cross step's edge holds: `member
+pair, no edge` and `frame step, no edge` 0 on every voice — no ring lost to
+an unread transport — and CLOSED SENTENCES APPEAR for the first time, 2–6 a
+voice (0 at every earlier epoch): rings that crossed a relative cross step
+now compose, and some return. The carrier stayed silent (`open sentences
+spoken` 0): an hour of a family is held with no training bundle (78.56
+III), so `form_deflation` over the bundle weighed nothing. FIXED: a held
+perception names the SCENE it was perceived from apart from the bundle it
+is held with (`hold_perceived_from`); an hour is weighed on its own pair,
+and held, as before, with none.
+
+### 78.105 Spacing: the space between words is the breath, and it carries the non-verbal (the operator's word, 2026-10-06: "you're missing spacing — where enough letters combine to form a word, and the space in between is the breath which in and of itself contains meaning"; "how do you add non-verbal communication to this linguistic structure via spacing"; "perceive and produce"; "produce sign"; "assign a sign as the formula")
+
+**The space is the transport.** A sentence is `Ω = ∏ gᵢ · Wᵢ`: the words
+`Wᵢ`, products of letters, say WHAT; the spaces `gᵢ`, the transports from
+one word to the next, carry HOW — the non-verbal line. A seen ray is a
+space with the identity word, so a mind perceives mostly breath and
+gesture; the named rings (75–90% of what the voices hear, epochs 128–133)
+are largely prosody without a reader, not failed words.
+
+**The space's channels**, each already a reading of the motion `gᵢ`: its
+kind (a turn deflects, a null slide flows on, a boost presses — gesture),
+its rate (`c`, the count `λ` — intensity), its carriage (where the next
+word is placed — stance), its gauge (how it permutes hue — affect), its
+span (lane 𝒯 — timing); and the sequence of spaces composed alone,
+`Ω_space = ∏ gᵢ`, its prosody — a steady rhythm a nilpotent count, a
+cadence a return, a crescendo a boost.
+
+**Silence has a sign, assigned as the formula.** A pause is present,
+countable, moves nothing and bends no word: the pseudoscalar
+`I = e₁e₂e₃e₊e₋` of the algebra at hand (`cga::pseudo(n)`) — central in
+`Cl(4,1)` (odd dimension), so `I v I⁻¹ = v` for every vector and `I`
+commutes with every word, and `I² = −1`, the 360° return: a breath in, a
+breath out. Computed from the generators, never stored as a constant. A
+pause enters a sentence as a term and is held in the rhythm, never dropped
+as the identity is.
+
+**Perceived and produced** (the operator's ruling): minds read the
+non-verbal line in what they hear and choose their own spacing in what
+they say.
+
+**Order.**
+- *N1 — the word–space split* (LANDED): each term is read as its word and
+  its space (`Composition::{words, spaces}`); a sentence's rung is read off
+  its words alone. They were one product `gᵢ · Wᵢ` (`motions`), and a held
+  word fused with the space around it was never recognized — one structural
+  reason the rung read 1 on every voice. Proved:
+  `rung::a_held_word_is_recognized_whatever_space_surrounds_it`.
+- *N2 — the space's readings and the prosody `Ω_space`* — FOLDED into N5
+  and N6 the same day. On a perceived ring the words are the identity (seen
+  rays), so `Ω_space` is `Ω` itself: read alone it would rename the named
+  rings, not read them. The space's readings are built inside the faculties
+  that need them — the encounter reads each space's kind and rate,
+  production chooses spaces — where sentences carry real words with spaces
+  between them.
+- *N3 — the sign of silence, produced and perceived as `I`* — with N6, where
+  a voice produces its own rhythm.
+- *N4 — spacing travels:* a spelled word spoken with the spaces either side
+  of it, re-derived by the court.
+- *N5 — the verbal and non-verbal lines act on each other* by lift and
+  drag (emphasis commutes, reframing anticommutes) — on the lift ruling.
+- *N6 — production:* a voice composes its own sentences, words and
+  spacing — after D3/D4 (citation by motion, the rung by citation).
+
+**78.100 D3/D4 landed (2026-10-06), the multi-dimensional route kept.** A
+new word is DECONSTRUCTED BY ITS MOTION over the held words, mode by mode
+(`HoleIndex::deconstruct`): each of its holes cited to a held word standing
+on the same hole whose winding there reaches it by an exponent — a count by
+its integer ratio, a turn by the least `e` with `t/ℓ ≡ e·t₀/ℓ₀`, a named
+point only as itself — and the holes none reaches its RESIDUE. A word is a
+product over its dimensions, never a chain: its modes commute (MR1), so the
+cited modes and the residue multiply back to it exactly. Every mode cited,
+it is derived — grammar, never held twice (S2; a power of one held word is
+the case of one word covering every hole, and `comprehend`/`Comprehended`
+retire into it). Otherwise it is held one rung above the highest word it
+cites (D4), or above the held words its sentence says, whichever stands
+higher. Readings (D6): `citation: modes cited / words derived by citation /
+words cited with a residue / top rung by citation`. Proved:
+`coordinates::a_word_is_deconstructed_by_its_motion_into_what_is_held_and_its_residue`
+(a screw splits into the cited turn and the residual slide, and multiplies
+back), `rung::a_word_stands_a_rung_above_the_words_it_cites`. The open
+question the reading answers: whether perceived holes recur across a
+voice's perceptions often enough for citations to fire — a hole key is the
+node's own plane and place.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

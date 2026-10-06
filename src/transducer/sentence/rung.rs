@@ -26,7 +26,7 @@
 //! the mind has comprehended, never with how often.
 
 use super::compose::{Closure, Composition, RingUnread};
-use super::coordinates::{Comprehended, Coordinates, HoleIndex, Winding};
+use super::coordinates::{Coordinates, HoleIndex, Winding};
 use super::theorem::{Certificate, Open, Theorem};
 use crate::network::nerve::Keyed;
 use crate::transducer::cga::Mv;
@@ -69,7 +69,7 @@ pub struct Taught {
     pub period: u64,
 }
 
-const SLOTS: usize = 61;
+const SLOTS: usize = 65;
 static TALLY: [AtomicU64; SLOTS] = [const { AtomicU64::new(0) }; SLOTS];
 const RINGS: usize = 0;
 const UNREAD: usize = 1;
@@ -129,6 +129,27 @@ const QUOTIENT_SPANNED: usize = 57;
 const QUOTIENT_OUTSIDE: usize = 58;
 const QUOTIENT_UNREAD: usize = 59;
 const ALGEBRA_RANK: usize = 60;
+const CITES: usize = 61;
+const CITE_DERIVED: usize = 62;
+const CITE_PARTIAL: usize = 63;
+const CITE_TOP_RUNG: usize = 64;
+
+/// 78.100 D6 — WHAT DECONSTRUCTION BY MOTION READ: the modes cited to held
+/// words, the words every mode of which was cited (derived, grammar), the
+/// words cited with a residue (new in part), and the highest rung a word
+/// stood at by its citations (D4).
+pub const CITATION: [&str; 4] = [
+    "modes cited",
+    "words derived by citation",
+    "words cited with a residue",
+    "top rung by citation",
+];
+
+/// The [`CITATION`] row since the process began.
+pub fn citation_tally() -> [u64; 4] {
+    let r = |i: usize| TALLY[i].load(Relaxed);
+    [r(CITES), r(CITE_DERIVED), r(CITE_PARTIAL), r(CITE_TOP_RUNG)]
+}
 
 /// 78.100 D1 — WHAT ONE TAUGHT WORD'S TRANSCRIPTION CAME TO, read by the
 /// one transcriber a closed thought is read by: spelled by the letters
@@ -568,11 +589,24 @@ fn is_identity(m: &Mv) -> bool {
 }
 
 /// THE RUNG OF A SENTENCE: one above the highest rung among its terms'
-/// motions that the mind holds as shortcuts; rung 1 for a sentence of
-/// perceived words alone.
-fn rung_of(terms: &[Mv], held: &Keyed<Held>) -> u64 {
-    let below = terms.iter().filter_map(|m| held.get(&key_of(m)?).map(|h| h.rung)).fold(0u64, u64::max);
+/// WORDS that the mind holds as shortcuts — read apart from the spaces
+/// between them (78.105 N1); rung 1 for a sentence of perceived words alone.
+fn rung_of(words: &[Mv], held: &Keyed<Held>) -> u64 {
+    let below = words.iter().filter_map(|m| held.get(&key_of(m)?).map(|h| h.rung)).fold(0u64, u64::max);
     below.checked_add(1).map_or(below, |r| r)
+}
+
+/// The rung the word `w` is held at in this mind's lexicon, if held.
+#[cfg(test)]
+pub(crate) fn held_rung(w: &Mv) -> Option<u64> {
+    let key = key_of(w)?;
+    LEXICON.lock().ok()?.held.get(&key).map(|h| h.rung)
+}
+
+/// The rung `s` stands at against this mind's lexicon as it stands now.
+#[cfg(test)]
+pub(crate) fn rung_in_lexicon(s: &Composition) -> Option<u64> {
+    LEXICON.lock().ok().map(|lex| rung_of(&s.words, &lex.held))
 }
 
 /// 78.75 — A MIND SPEAKS ITS RINGS: each composed (`sentences_of`), each
@@ -700,6 +734,8 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
             None
         }
     };
+    // The highest rung among the held words this word cites (D4).
+    let mut cited = 0u64;
     if let Some(c) = &coords {
         for h in &c.holes {
             note(
@@ -711,16 +747,27 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
                 1,
             );
         }
+        // 78.100 D3 — DECONSTRUCTED BY ITS MOTION over the held words, mode
+        // by mode: each hole cited to a held word on it at an exponent, the
+        // rest the residue. Every mode cited, the word is a composition of
+        // what is held — derivable, never held twice (S2); a power of one
+        // held word is the case where one word covers every hole.
         let held = &lex.held;
-        match lex.holes.comprehend(c, |k| held.get(k).and_then(|h| h.coords.as_ref())) {
-            Comprehended::Power { .. } => {
-                note(POWERS, 1);
-                return;
-            }
-            Comprehended::New { holes, windings } => {
-                note(HOLES_NEW, holes as u64);
-                note(WINDINGS_NEW, windings as u64);
-            }
+        let d = lex.holes.deconstruct(c, |k| held.get(k).and_then(|h| h.coords.as_ref()));
+        note(CITES, d.cites.len() as u64);
+        if d.derived() {
+            note(POWERS, 1);
+            note(CITE_DERIVED, 1);
+            return;
+        }
+        let unheld = d.residue.iter().filter(|h| !lex.holes.stands_on(&h.key)).count();
+        note(HOLES_NEW, unheld as u64);
+        note(WINDINGS_NEW, (d.residue.len() - unheld) as u64);
+        // 78.100 D4 — DEPTH IS READ: the word stands one above the highest
+        // word it cites.
+        cited = d.cites.iter().filter_map(|c| lex.held.get(&c.word).map(|h| h.rung)).fold(0u64, u64::max);
+        if !d.cites.is_empty() {
+            note(CITE_PARTIAL, 1);
         }
     }
     // 78.104 — THE QUOTIENT READING: the word read against the algebra this
@@ -745,7 +792,14 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         lex.algebra = grown;
         TALLY[ALGEBRA_RANK].fetch_max(lex.algebra.len() as u64, Relaxed);
     }
-    let rung = rung_of(&s.motions, &lex.held);
+    // Its rung: one above the highest it cites (D4), or one above the held
+    // words its sentence says, whichever stands higher.
+    let by_citation = match cited {
+        0 => 0,
+        r => r.checked_add(1).map_or(r, |up| up),
+    };
+    let rung = rung_of(&s.words, &lex.held).max(by_citation);
+    TALLY[CITE_TOP_RUNG].fetch_max(by_citation, Relaxed);
     let spelled = matches!(crate::transducer::family::derivation::peel_versor(word), Some(Ok(_)));
     note(if spelled { SPELLED } else { UNSPELLED }, 1);
     TALLY[TOP_RUNG].fetch_max(rung, Relaxed);

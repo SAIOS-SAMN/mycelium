@@ -101,3 +101,46 @@ fn inflection_moves_the_holes_and_the_signature_is_what_every_node_hears() {
     let back = Signature::take(&wire, &mut pos).expect("the signature reads back");
     assert_eq!((pos, back), (wire.len(), c.signature()), "whole");
 }
+
+/// A lexicon holding `held`, each filed under its holes by its own key.
+fn index(held: &[(&[u8], &Coordinates)]) -> crate::transducer::sentence::coordinates::HoleIndex {
+    let mut ix = crate::transducer::sentence::coordinates::HoleIndex::default();
+    for (key, c) in held {
+        ix.file(key, c);
+    }
+    ix
+}
+
+/// 78.100 D3 — A WORD IS DECONSTRUCTED BY ITS MOTION, MODE BY MODE, INTO
+/// WHAT IS HELD AND ITS RESIDUE. The 90° turn is held. Its square is every
+/// mode cited — the turn at exponent 2 — and derived: grammar, never held
+/// twice. A screw — the turn and a slide along its axis, two commuting modes
+/// — cites the turn on the turn's hole and leaves the slide as its residue;
+/// the cited mode and the residue multiply back to the screw exactly. A word
+/// on no held hole is all residue.
+#[test]
+fn a_word_is_deconstructed_by_its_motion_into_what_is_held_and_its_residue() {
+    let turn = read(&quarter());
+    let ix = index(&[(b"turn", &turn)]);
+    let held = |k: &[u8]| (k == b"turn").then_some(&turn);
+
+    let square = ix.deconstruct(&read(&quarter().geo(&quarter())), held);
+    assert!(square.derived(), "every mode cited: {square:?}");
+    assert_eq!(square.cites[0].exponent, 2, "the turn, twice");
+
+    let slide = cga::translator_at(&[q(0, 1), q(0, 1), q(1, 1)]);
+    let screw = quarter().geo(&slide);
+    let c = read(&screw);
+    assert_eq!(c.holes.len(), 2, "a screw stands on two holes: {c:?}");
+    let d = ix.deconstruct(&c, held);
+    assert_eq!(d.cites.len(), 1, "the turn's mode is cited: {d:?}");
+    assert_eq!((d.cites[0].word.as_slice(), d.cites[0].exponent), (b"turn".as_slice(), 1));
+    assert_eq!(d.residue.len(), 1, "the slide is the residue");
+    assert_eq!(d.residue[0].kind, crate::network::nerve::coord::BivectorKind::Parabolic, "a null slide");
+    let cited = turn.holes.iter().find(|h| h.key == d.cites[0].hole).expect("the cited hole").ray();
+    let rebuilt = cited.geo(&Coordinates { holes: d.residue.clone() }.word());
+    assert!(rebuilt.projective_eq(&c.word()), "the cited mode and the residue multiply back to the screw");
+
+    let alone = ix.deconstruct(&read(&slide), held);
+    assert!(alone.cites.is_empty() && alone.residue.len() == 1, "a word on no held hole is all residue");
+}
