@@ -309,8 +309,16 @@ pub fn prime_outside_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> Option<u64>
     // Trial division on an exact integer: the norm of one block's arc,
     // bounded by the block's own denominators, never a search over anything
     // the sensor did not present.
+    //
+    // 78.113 — THIS LOOP SPENDS NO TOKEN (BD1 owed here), so the stop is read
+    // on every trial: at the 2026-10-06 recut every voice sat in it past the
+    // unit's stop timeout and was killed unsaved. A stopped process refuses
+    // the search; the demand stands.
     let mut p = BigInt::from(2u64);
     while &p * &p <= n {
+        if crate::physics::halted() {
+            return None;
+        }
         if n.is_multiple_of(&p) {
             return u64::try_from(p).ok();
         }

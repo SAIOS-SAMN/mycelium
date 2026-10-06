@@ -40,6 +40,12 @@ pub fn halt() {
     HALTED.store(true, std::sync::atomic::Ordering::Relaxed);
 }
 
+/// Whether a stop was asked for: read by a loop that spends no token yet
+/// (78.113's prime search, until BD1 reaches it), so the stop reaches it too.
+pub fn halted() -> bool {
+    HALTED.load(std::sync::atomic::Ordering::Relaxed)
+}
+
 /// Linear token for one stroke's keyed reads. Non-Copy, non-Clone: a
 /// function that wants more than a fiber must take a Budget in its
 /// signature. Constructed only by [`super::Physics::stroke`].

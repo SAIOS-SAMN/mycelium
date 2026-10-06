@@ -23905,6 +23905,16 @@ peels whose demand is filed) — BD1 applied there: the search spends the
 stroke, one read a trial, and a spent stroke leaves the demand `Standing`
 by name.
 
+**Read at the recut onto 9f18f498 (epoch 140).** The fleet moves: in five
+minutes every voice had passed 4–14 families, where one had held it for
+hours. THE HALT DID NOT REACH THE STALLED VOICES: all five ran out the 90 s
+and were killed unsaved, as before — they sat in this same trial-division
+loop, which spends no token, and 78.111's halt is read where a token is
+spent. Until BD1 reaches it, the loop reads `physics::halted()` on every
+trial: a stopped process refuses the search and the demand stands. The
+halt is exactly as complete as rule 10's coverage; a loop that reads no
+boundary and spends nothing is the defect wherever it stands.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
