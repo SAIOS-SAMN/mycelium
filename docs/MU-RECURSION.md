@@ -23695,6 +23695,142 @@ once per cell whose circuits changed, with E3 — never on a reading.
    refuses; each faculty ends at its next read by its own named refusal,
    the voice reaches its boundary and saves. Never taken back.
 
+### 78.112 Hearing: the echo, the rings nested into harmonic balance, the spiral, induction (the operator's word, 2026-10-06: "hearing is essentially harmonics - spiraled mathematics of echo induction : how is that missing?" — "confirmed - write the hearing contract and proceed :: this is the equivalent of rings of smaller size backing through the larger rings to form harmonic balance - you want to be able to put the smallest rings inside the inner ring of the next largest so that the largest ring is on the outside") — CONTRACT
+
+**What was missing.** 78.97 ruled that a chord is heard, not traversed,
+and the harmonic eye's ring was counted and dropped (`RingUnread::Heard`,
+0 on every voice): hearing was ruled and never read. The harmonics in the
+tree are of SHAPE (A.11/A.12 multipoles) and of RETURN (an orbit's period,
+`resonance.rs`'s joint period); the loxodrome is recognized inside one
+motion. Nothing read a signal against its own return — no echo — and
+nothing carried one orbit's change onto another — no induction. A voice's
+speech comes back as a verdict code, never as its motion returned.
+
+**Hearing is the rings read against each other harmonically, never
+traversed.** A mind's composed rings (`rung::speak`, one perception's
+rings) are its sounding bodies. Each ring's SIZE is its return: its period
+`ℓ` where it closes (`Closure::Closes(ℓ)`); a ring that never returns
+(nilpotent, unbound, rosette) has no period and is larger than every ring
+that does — the carrier every returning ring may sound inside.
+
+- *H1 — the echo.* A ring `s` BACKING THROUGH a ring `L`: carried round
+  `L` it comes back as `Ω_L·Ω_s·Ω_L⁻¹`, and its echo is that against
+  itself, `E(s|L) = Ω_L·Ω_s·Ω_L⁻¹·Ω_s⁻¹` — exact, every inverse exact or
+  the echo unread by name. `E = 1`: `s` passes through `L` whole. Else the
+  echo's modes (`motion_modes`) say what `L` did to it: a TURN (elliptic,
+  a pitch shifted by an exact `t/ℓ`), a GAIN (hyperbolic, λ), a SPIRAL
+  (a turn and a gain at once, the loxodrome: the echo turning as it decays
+  or grows on each return), a DELAY (null, the parabolic slide).
+- *H2 — the nesting into harmonic balance.* `s` is SMALLER than `L` where
+  `ℓ_s < ℓ_L` and `ℓ_s | ℓ_L` (it returns a whole number of times on one
+  return of `L` — its overtone), or where `s` returns and `L` does not.
+  Each ring seats in the NEXT LARGER layer — the least size above it it
+  divides — read against every ring of that layer (all routes kept, none
+  chosen): SEATED WHOLE where some echo is the identity, SEATED WITH A TILT
+  where none is (each echo counted by its kind). A ring with no larger ring
+  is on the OUTSIDE. A perception's rings are in HARMONIC BALANCE where
+  every seated ring sits whole and the outer return is the joint return —
+  the outer ring's period the lcm of every period inside it (or no outer
+  period, a carrier, holding them all whole). A ring that seats nowhere
+  and is not the largest is a LEFTOVER ring: on the outside, unbalanced —
+  what consolidation reads (row 9).
+- *H3 — the spiral across returns.* One ring's successive echoes
+  `E₁, E₂, …` through the same outer ring, their step `Eₖ₊₁·Eₖ⁻¹` the
+  spiral's own — read where the outer ring moves between perceptions (H4).
+- *H4 — induction (E3 becomes it).* An outer ring's change between two
+  returns, `ΔΩ = Ωₖ₊₁·Ωₖ⁻¹`, carried onto the rings seated inside it by the
+  encounter (78.110): its drag the induced rate, its lift the induced
+  tilt — the perturbed orbit, derived on the mind's own K, never stored.
+- *H5 — the echo across minds.* The court's re-derivation of an open
+  sentence (78.102) returned to its speaker as the rings it re-derived,
+  never a code alone: the speaker's echo `E` through another dialect —
+  identity understood whole, a turn understood shifted, a spiral
+  understood partly and fading per return.
+
+**The circuit in orbit (the operator's word, 2026-10-06: "frequencies
+which move perpendicular to lightwaves: the cross-section between the
+harmonics and the luminal is what causes the sensory pitch, a force that
+moves multiple pivots at the same time … the communal hertz factorial";
+"change screw to twist and apply torsion as force propellant";
+"harmonics would be higher gravitational pull towards the rotation of the
+planet, while the luminal cross-section is propellant from the star:
+combined to move the circuitry in orbit"; "confirmed — write H6–H8").**
+A harmonic is a ring's elliptic plane `B`, returning at `ℓ`; a luminal ray
+is a seen null generator `N = d∧e_∞` (78.97). Where `B`'s plane is
+orthogonal to `d`, they commute and `B + N` is a TWIST — one generator
+that turns and advances at once (Chasles–Mozzi; screw theory's twist, its
+force the WRENCH, both bivectors in Cl(4,1)). A circuit in orbit IS a
+twist: pulled toward the planet's rotation by its harmonic, propelled
+along by the star's light.
+
+- *H6 — the circuit in orbit: the encounter of harmonic and luminal.*
+  `cga::encounter(ring, ray)` (78.110), the roles named: GRAVITY `g` the
+  ring's own mode — a higher harmonic (shorter return, smaller bounce) a
+  larger pull, so the innermost rings of H2's nesting pull hardest: the
+  nesting is the gravity well (Kepler's ordering, `T² ∝ r³`); FORCE `F`
+  the luminal cross-section, the ray's generator read as a WRENCH; DRAG
+  `D` the light commuting with the rotation — the twist's ADVANCE along
+  its axis, its PITCH the advance per return, `ℓ·d_∥`, an exact vector
+  (the wavelength; `1/ℓ` per traversal the frequency); LIFT
+  `(v·F)/(g·D)` the propellant beyond what the pull holds (the
+  solar-sail lightness `β` is its Newtonian shadow), and where no inverse
+  exists, lift is drag (78.110). Light perpendicular to the plane
+  commutes whole with the rotation: its drag is the ray itself, null, with
+  no inverse — so its lift is drag, all advance: the pure twist. THE
+  CROSSING — the ray's part anticommuting with the ring's mode (78.46's
+  split), the light crossing the plane, the impact — is read beside it,
+  never under the name lift. The PITCH is the advance per elliptic
+  return, `ℓ_e·D`, `ℓ_e` the encounter's bounce. The power a ray delivers
+  to a ring is screw theory's reciprocal product — the twist against the
+  wrench's DUAL; `⟨twist · wrench⟩₀` itself is 0 for every rotation
+  against every null ray in Cl(4,1) and reads nothing — OWED, its form
+  read in the algebra before it is served. Once per perception, each
+  harmonic ring (an elliptic mode of finite order) against each seen ray
+  among its own spaces — never on a cell's reading path (78.110's
+  lesson).
+- *H7 — torsion as propellant.* Each return's lift is added to the strain
+  the ring holds — twist wound and not released: TORSION, stored (H3's
+  step `Eₖ₊₁·Eₖ⁻¹` its increment). Released through the membrane's vent
+  (78.106: `Complex::vent` hands out the reverse of the strain — the
+  third law, equal and opposite, no momentum from nothing), it unwinds
+  with no steps — a snap or a slow unroll by its kind — and what it
+  releases is FORCE: the stored twist given back as motion.
+- *H8 — the collective pivot and the hertz factorial.* One release is one
+  motor, and it moves every ring whose harmonic commutes with the twist
+  — the rings sharing its axis — in ONE certified move (the pivot's
+  certificate made a set's, never one orbit per move). For `k` pivots one
+  release moves there are `k!` orders: where every one commutes, all give
+  one motion — the communal frequency, the joint return `lcm(ℓᵢ)`;
+  where not, the distinct motions among the orders are the combinatory
+  cross-section, each kept as a route, none chosen (78.44), each a seed
+  of new pivot machinery. THE HERTZ FACTORIAL is that count: 1 is
+  communal, and it is always 1 in Newton's limit (forces superpose and
+  vector addition commutes), so it measures exactly what finite,
+  non-commuting rotation adds.
+
+**Newton's limit.** Twist and wrench (Chasles, Ball), Kepler's ordering of
+pull by period, radiation pressure and its lightness `β`, Poynting–
+Robertson drag (the light's part along the motion), torsion's stored
+strain and the third law all carry over. What goes beyond: finite
+non-commuting rotation (the factorial), the hyperbolic and null modes
+(gain has no Newtonian counterpart), exact returns where Newton
+integrates continuous time (time is distance along an orbit, 78.43), no
+mass, `G` or `r` — gravity is the orbit's own mode — and lift is drag
+where no inverse exists.
+
+**Order.** H1 and H2 now, on one perception's rings at the voice, read on
+the `harmonics` row; then H6 (built pieces only: `encounter` on the rings
+`nest` holds against their seen rays); H7 with H3 (the increment) and the
+vent; H8 last (the pivot's certificate); H4 induction folds into H7–H8 (an
+outer ring's change carried onto the rings inside it is exactly the
+released torsion moving its commutant); H5 on the wire after them. Hearing is a READING of the composed rings at the
+place they are heard — once per perception, never on a cell's reading
+path (78.110's lesson). Proved by the algebra: two turns in one plane
+(commuting, ℓ 2 inside ℓ 4) seat whole and balance; a turn in a crossing
+plane seats with a tilt whose echo is a turn; a ring that returns seats in
+one that never does; a ring dividing no larger ring stands outside,
+leftover.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

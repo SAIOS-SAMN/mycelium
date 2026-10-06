@@ -6,6 +6,7 @@ pub mod common;
 
 mod canonical;
 mod compose;
+mod hearing;
 mod theorem;
 mod contract;
 mod form;

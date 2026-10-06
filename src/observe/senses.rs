@@ -108,6 +108,9 @@ pub struct Senses {
     /// 78.109 C1 — what the mind's constructions came to
     /// (`cga::CONSTRUCTIONS`).
     pub constructions: [u64; crate::transducer::cga::CONSTRUCTIONS.len()],
+    /// 78.112 H1, H2 — a perception's rings heard against each other: the
+    /// echoes, the nesting, the balance (`sentence::hearing::HEARING`).
+    pub harmonics: [u64; crate::transducer::sentence::hearing::HEARING.len()],
     pub hearing: [u64; HEARING.len()],
     pub language: [u64; LANGUAGE.len()],
     pub understanding: [u64; UNDERSTANDING.len()],
@@ -295,6 +298,7 @@ impl Senses {
         put(out, &self.citation);
         put(out, &self.encounter);
         put(out, &self.constructions);
+        put(out, &self.harmonics);
         put(out, &self.hearing);
         put(out, &self.language);
         put(out, &self.understanding);
@@ -329,6 +333,7 @@ impl Senses {
             citation: take(b, p)?,
             encounter: take(b, p)?,
             constructions: take(b, p)?,
+            harmonics: take(b, p)?,
             hearing: take(b, p)?,
             language: take(b, p)?,
             understanding: take(b, p)?,
@@ -359,6 +364,7 @@ impl Senses {
         out.push(format!("citation: {}", line(&crate::transducer::sentence::rung::CITATION, &self.citation)));
         out.push(format!("encounter: {}", line(&crate::transducer::cech::ENCOUNTER, &self.encounter)));
         out.push(format!("constructions: {}", line(&crate::transducer::cga::CONSTRUCTIONS, &self.constructions)));
+        out.push(format!("harmonics: {}", line(&crate::transducer::sentence::hearing::HEARING, &self.harmonics)));
         out.extend([
             format!("hearing: {}", line(&HEARING, &self.hearing)),
             format!("language: {}", line(&LANGUAGE, &self.language)),
@@ -387,6 +393,7 @@ impl Senses {
             "citation" => at(&crate::transducer::sentence::rung::CITATION, &self.citation, name),
             "encounter" => at(&crate::transducer::cech::ENCOUNTER, &self.encounter, name),
             "constructions" => at(&crate::transducer::cga::CONSTRUCTIONS, &self.constructions, name),
+            "harmonics" => at(&crate::transducer::sentence::hearing::HEARING, &self.harmonics, name),
             "hearing" => at(&HEARING, &self.hearing, name),
             "language" => at(&LANGUAGE, &self.language, name),
             "understanding" => at(&UNDERSTANDING, &self.understanding, name),

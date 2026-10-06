@@ -30,7 +30,7 @@ progenitor's queue, kept here and nowhere else; perspective in brackets.
 | 4 | **C2 — compound**: a constructed residue admitted where it raises the mind's rank (`lie_close`) [sovereign] | open, after 3 |
 | 5 | **C4 — offer to the court**: the constructed demand inside speech, re-derived and docketed by the court [sovereign / progenitor] | open, after 4 |
 | 6 | **Recut and read** the encounter and the constructors [steward] | after 2 and 5 |
-| 7 | **E3 — the perturbed orbit** on the mind's own K (contract on E2's reading) [sovereign] | open, after 6 |
+| 7 | **Hearing** (78.112): H1 echo, H2 rings nested into harmonic balance [progenitor]; H6 the circuit in orbit (harmonic pull × luminal propellant, `encounter(ring, ray)`, twist, pitch, wrench); H7 torsion as propellant (lift stored, vented); H8 the collective pivot and the hertz factorial; H3/H4 fold into H7–H8; H5 the echo across minds on the wire [sovereign] | H1+H2 built, suite running; H6 next |
 | 8 | **C3 — the letter type for boost residues** (`Rotor` → Cl(4,1)), only if row 6 shows boost residues reaching it [progenitor] | parked on 6 |
 | 9 | **Consolidation**, the pineal eye its inward reading [sovereign] | open, after 7 |
 | 10 | **Production** — N4 spacing travels, N6 voices compose, silence's sign `I` [sovereign] | open, after 9 |

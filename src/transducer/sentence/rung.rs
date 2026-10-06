@@ -659,6 +659,10 @@ pub fn speak(
         hear(&s, budget);
         out.push((steps, s));
     }
+    // 78.112 H1, H2 — and the rings heard against each other: each echoed
+    // through the next larger, nested, the balance read.
+    let rings: Vec<&Composition> = out.iter().map(|(_, s)| s).collect();
+    super::hearing::hear(&rings, budget);
     super::compose::read_bends(&bends);
     out
 }
