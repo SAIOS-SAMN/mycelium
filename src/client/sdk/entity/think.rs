@@ -66,6 +66,19 @@ impl Entity {
             return false;
         }
         let Some(draw) = self.draw_for(&f) else { return false };
+        // 78.100 D1 — the words this perception's sentences taught, transcribed
+        // before the form is handed over: spelled, each is spoken below.
+        let (taught, ineffable) = self.transcribe_taught(budget);
+        // 78.102, the letter carrier's voice half — A WORD NO HELD LETTER
+        // SPELLS IS SPOKEN AS THE SENTENCE THAT TAUGHT IT: the perceived form
+        // whose ring taught it goes to the court as an open sentence, where
+        // its rings are re-derived and the letter they need offered
+        // (`hear_open`, the speaking voice its discoverer). Never the bare
+        // rotor: the court replays, it never takes a voice's word for it.
+        let open = match ineffable {
+            true => crate::transducer::sentence::as_element_form(&f, draw),
+            false => None,
+        };
         self.contemplation.hold_perceived(f, frames, train, remainders, draw, family, budget);
         // 78.52 — A CLOSED THOUGHT SPEAKS IN THE ACT THAT CLOSED IT: the thoughts
         // this perception closed are transcribed against this mind's own
@@ -78,8 +91,12 @@ impl Entity {
         }
         // 78.100 D1 — and the words its sentences taught enter its language
         // the same way: transcribed, stood, spoken.
-        for word in self.transcribe_taught(budget) {
+        for word in taught {
             let _ = self.speak_word(&word, budget);
+        }
+        if let Some(sentence) = open {
+            crate::transducer::sentence::rung::note_open_spoken();
+            let _ = self.speak_with(std::slice::from_ref(&sentence), train, family, budget);
         }
         true
     }
@@ -119,10 +136,12 @@ impl Entity {
     /// is the word the voice stands in its dialect and speaks — so it can be
     /// cited, adjudicated, and taught — exactly as a closed thought's word
     /// is; derivable only through an adjoined letter, it already stands;
-    /// ineffable, a letter demand (37.7). Counted on the sentences row.
-    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> Vec<Element> {
+    /// ineffable, a letter demand (37.7). Counted on the sentences row; and
+    /// whether any was ineffable, so its sentence is spoken (78.102).
+    pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, bool) {
         use crate::transducer::sentence::rung::{note_transcribed, take_taught, Transcribed};
         let mut words = Vec::new();
+        let mut ineffable = false;
         for (motion, period) in take_taught() {
             match self.transcribe(&motion, period, budget) {
                 (Transcribed::Spelled, Some(word)) => {
@@ -130,10 +149,14 @@ impl Entity {
                     words.push(word);
                 }
                 (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
+                (Transcribed::Ineffable, _) => {
+                    note_transcribed(Transcribed::Ineffable);
+                    ineffable = true;
+                }
                 (read, _) => note_transcribed(read),
             }
         }
-        words
+        (words, ineffable)
     }
 
     /// 78.52, 78.100 D1 — THE ONE TRANSCRIBER: a motion's generator factored

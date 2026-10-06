@@ -23092,6 +23092,15 @@ the letter candidate — read: spelled, or offered as a letter
 line as `heard: offered / spelled / peel unread / rotor unread`. It had
 re-derived only the forms it ruled. Proved:
 `heard::every_sentence_heard_has_its_rings_read_whatever_its_adjudication`.
+*(The voice half, landed 2026-10-06 on epoch 130's reading — 17–70
+ineffable taught words a voice, courts offering 0: a perception whose
+sentences taught a word no held letter spells is spoken to the court as an
+open sentence, the perceived form itself, before it is handed to the
+contemplation (`Entity::hold_perceived`; `transcribe_taught` reports the
+ineffable). The court re-derives its rings and offers the letter, the
+speaking voice its discoverer; never the bare rotor. Reading: `letter
+carrier: open sentences spoken`. Proved:
+`taught::an_ineffable_taught_word_is_reported_for_its_sentence_to_be_spoken`.)*
 The voice half — speaking the forms whose rings taught its ineffable words —
 is read on the fleet first: which of those words come from forms the
 voice already speaks.
