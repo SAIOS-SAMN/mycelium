@@ -23274,9 +23274,8 @@ letter where a generator is outside or it carries a new winding.
   the words and the holonomy `Ω` (Ambrose–Singer).
 - *The voice:* the Lexicon holds its algebra; each new word is read
   against it before it is held (`quotient: spanned / generators outside /
-  unread`, `held algebra: rank`), and only a word that asks for a letter
-  marks its taught entry (`Taught::asks`) — the letter carrier speaks the
-  perceived form only for such a word.
+  unread`, `held algebra: rank`). It was first made a GATE on the letter
+  carrier; epoch 132 withdrew that (below).
 - *The court:* `hear_open` reads each unspelled word against the algebra it
   holds on the chart; a spanned one is counted (`heard: spanned`) and no
   letter is offered for it.
@@ -23304,6 +23303,28 @@ The courts' acts now carry the road (`provisional: letters docketed /
 heard again / offers sent / witness reached: installed / inexact /
 awaiting a vantage / witness refused / unmeasured`), so the recut reads
 where it stops.
+
+**Read on epoch 132 (`546a633a`, 20 min).**
+- *The held algebra saturates.* `held algebra: rank` 10 on every voice —
+  all of `so(4,1)` — after three generators outside it (`generators
+  outside` 3 on each voice); from there every word is spanned (9–78 a
+  voice). The Lie algebra is too coarse a grain for what a mind
+  understands: a handful of generic motions generate all of it. As a gate
+  it silenced the letter carrier — `open sentences spoken` 0 against 10–70
+  ineffable words a voice. WITHDRAWN as a gate the same day: a word reaching
+  the hold is already new (neither recognized nor a power), so every
+  ineffable one is sent; the quotient stays a reading. Understanding is
+  held at the grain of the group — the windings and letters — and of the
+  encounter, not the span.
+- *The rank fix holds:* sentence rank 26–124 a voice, 0 before.
+- *Step 4's road runs.* Courts a and c: offers sent to witnesses 9 and 4,
+  installed on the witness's re-derivation 6 and 3, nothing inexact,
+  refused or unmeasured — words reach the genome court to court. Letters
+  docketed 0: the voices sent none (the gate above).
+- *Where the remaining rings are lost.* `faces edgeless` 0 on every voice
+  while `member pair, no edge` is 1–12: the percept's own faces all carry
+  an edge, so the edgeless crossings are on faces built elsewhere — the
+  cover's meet faces (`covered.rs`, `meet_edge`).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

@@ -137,11 +137,7 @@ impl Entity {
     /// cited, adjudicated, and taught — exactly as a closed thought's word
     /// is; derivable only through an adjoined letter, it already stands;
     /// ineffable, a letter demand (37.7). Counted on the sentences row; and
-    /// whether any was ineffable AND asks for a letter — a generator outside
-    /// the algebra the mind held when it was taught, or a new winding
-    /// (78.104) — so its sentence is spoken (78.102); an ineffable word the
-    /// held algebra spans at a held winding is a composition of what is
-    /// held, and no letter is asked for it.
+    /// whether any was ineffable, so its sentence is spoken (78.102).
     pub(crate) fn transcribe_taught(&mut self, budget: &mut crate::physics::Budget) -> (Vec<Element>, bool) {
         self.transcribe_these(crate::transducer::sentence::rung::take_taught(), budget)
     }
@@ -155,7 +151,7 @@ impl Entity {
         use crate::transducer::sentence::rung::{note_transcribed, Taught, Transcribed};
         let mut words = Vec::new();
         let mut ineffable = false;
-        for Taught { motion, period, asks } in taught {
+        for Taught { motion, period } in taught {
             match self.transcribe(&motion, period, budget) {
                 (Transcribed::Spelled, Some(word)) => {
                     note_transcribed(Transcribed::Spelled);
@@ -164,7 +160,7 @@ impl Entity {
                 (Transcribed::Spelled, None) => note_transcribed(Transcribed::Adjoined),
                 (Transcribed::Ineffable, _) => {
                     note_transcribed(Transcribed::Ineffable);
-                    ineffable |= asks;
+                    ineffable = true;
                 }
                 (read, _) => note_transcribed(read),
             }

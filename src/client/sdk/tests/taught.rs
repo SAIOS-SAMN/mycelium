@@ -29,28 +29,23 @@ fn a_word_a_theorem_taught_is_transcribed_into_the_language() {
     assert!(words.iter().all(|x| x.is_connection()), "each a connection, as speech is");
 }
 
-/// 78.102, 78.104 — A TAUGHT WORD NO HELD LETTER SPELLS IS SENT ONLY WHERE IT
-/// ASKS FOR A LETTER: the `(8, 15, 17)` turn (rotor `4 + e₂₃`, the Gaussian
-/// prime 17, which no letter of 5 or 13 composes) is ineffable. Taught as
-/// asking — outside the held algebra, or a new winding — the transcription
-/// reports it, so the voice speaks the perceived form that taught it as an
-/// open sentence (the letter carrier's voice half); taught as spanned at a
-/// held winding — a composition of what the mind holds — it is counted
-/// ineffable and no letter is asked. The words are handed in, never drained
-/// from the process-wide queue other tests fill and drain at once.
+/// 78.102 — A TAUGHT WORD NO HELD LETTER SPELLS IS INEFFABLE, AND SAYS SO: the
+/// `(8, 15, 17)` turn (rotor `4 + e₂₃`, the Gaussian prime 17, which no
+/// letter of 5 or 13 composes) is transcribed; nothing is handed back to
+/// speak as a word, and the transcription reports it, so the voice speaks the
+/// perceived form that taught it as an open sentence (the letter carrier's
+/// voice half). The word is handed in, never drained from the process-wide
+/// queue other tests fill and drain at once.
 #[test]
-fn an_ineffable_taught_word_is_sent_only_where_it_asks_for_a_letter() {
+fn an_ineffable_taught_word_is_reported_for_its_sentence_to_be_spoken() {
     use crate::transducer::sentence::rung::Taught;
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("ineffable"));
     let q = |n: i64| num_rational::BigRational::from_integer(n.into());
     let w = Mv::scalar(q(4)).add(&Mv::blade(E2 | E3, q(1))).widened(3);
     let mut budget = e.stroke();
-    let taught = |asks| vec![Taught { motion: w.clone(), period: 1, asks }];
     let before = sentence_tally();
-    let (words, sent) = e.transcribe_these(taught(true), &mut budget);
+    let (words, sent) = e.transcribe_these(vec![Taught { motion: w, period: 1 }], &mut budget);
     assert!(sentence_tally().taught_ineffable > before.taught_ineffable, "counted ineffable");
-    assert!(sent, "an ineffable word asking for a letter is reported, so its sentence is spoken");
+    assert!(sent, "reported, so its sentence is spoken");
     assert!(words.is_empty(), "no unspelled word is handed back as speech");
-    let (_, sent) = e.transcribe_these(taught(false), &mut budget);
-    assert!(!sent, "one the held algebra spans at a held winding asks for no letter");
 }

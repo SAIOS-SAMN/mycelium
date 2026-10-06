@@ -57,20 +57,16 @@ struct Lexicon {
 static LEXICON: std::sync::LazyLock<std::sync::Mutex<Lexicon>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Lexicon::default()));
 
 /// 78.100 D1 — THE WORDS NEWLY TAUGHT, each with the period its sentence
-/// returns at (one where it never returns) and whether it LIFTS out of what
-/// the mind understood when it was taught (78.104), waiting for the voice to
+/// returns at (one where it never returns), waiting for the voice to
 /// transcribe them into its language as it transcribes a closed thought
 /// (`take_taught`). Drained whole, never read in place.
 static TAUGHT: std::sync::LazyLock<std::sync::Mutex<Vec<Taught>>> = std::sync::LazyLock::new(|| std::sync::Mutex::new(Vec::new()));
 
-/// ONE TAUGHT WORD: the motion, the period its sentence returns at, and
-/// whether it asks for a letter — outside the held algebra, or a held plane
-/// turned by a new winding — the only kind the letter carrier sends (78.104).
+/// ONE TAUGHT WORD: the motion, and the period its sentence returns at.
 #[derive(Clone, Debug)]
 pub struct Taught {
     pub motion: Mv,
     pub period: u64,
-    pub asks: bool,
 }
 
 const SLOTS: usize = 61;
@@ -161,8 +157,7 @@ pub fn note_transcribed(t: Transcribed) {
 }
 
 /// 78.100 D1 — THE WORDS TAUGHT SINCE THE LAST TAKE, each with its period
-/// and whether it asks for a letter: the voice transcribes, stands and
-/// speaks them.
+/// the voice transcribes, stands and speaks them.
 pub fn take_taught() -> Vec<Taught> {
     TAUGHT.lock().map_or(Vec::new(), |mut held| std::mem::take(&mut *held))
 }
@@ -705,8 +700,6 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
             None
         }
     };
-    // A held hole turned by a rate no held word's power reaches.
-    let mut new_winding = false;
     if let Some(c) = &coords {
         for h in &c.holes {
             note(
@@ -727,33 +720,26 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
             Comprehended::New { holes, windings } => {
                 note(HOLES_NEW, holes as u64);
                 note(WINDINGS_NEW, windings as u64);
-                new_winding = windings > 0;
             }
         }
     }
     // 78.104 — THE QUOTIENT READING: the word read against the algebra this
     // mind holds, before it is held — every generator spanned by it, a
     // composition of what is held; any outside it by its coset; or unread by
-    // name. A static, one-way reading (never lift and drag, 78.46). The
-    // algebra reads the planes, not the rates: a turn of an incommensurable
-    // angle on a held plane is spanned in WHAT it turns and new in HOW MUCH
-    // — a new winding, and the alphabet's letters are exactly such rates. A
-    // word asks for a letter where a generator is outside or it carries a
-    // new winding.
-    let asks = match crate::transducer::cech::quotient(&lex.algebra, word, budget) {
-        Ok(r) if r.spanned() => {
-            note(QUOTIENT_SPANNED, 1);
-            new_winding
-        }
-        Ok(r) => {
-            note(QUOTIENT_OUTSIDE, r.outside.len() as u64);
-            true
-        }
-        Err(_) => {
-            note(QUOTIENT_UNREAD, 1);
-            true
-        }
-    };
+    // name. A static, one-way reading (never lift and drag, 78.46), and the
+    // algebra reads the planes, not the rates.
+    //
+    // A READING, NEVER A GATE (epoch 132): the held algebra reached rank 10 —
+    // all of so(4,1) — on every voice after three words outside it, and from
+    // there every word is spanned and the reading says nothing. Gating the
+    // letter carrier on it silenced the carrier (open sentences spoken 0,
+    // ineffable 10–70 a voice). A word reaching here is already new — neither
+    // recognized nor a power of a held word — so every ineffable one is sent.
+    match crate::transducer::cech::quotient(&lex.algebra, word, budget) {
+        Ok(r) if r.spanned() => note(QUOTIENT_SPANNED, 1),
+        Ok(r) => note(QUOTIENT_OUTSIDE, r.outside.len() as u64),
+        Err(_) => note(QUOTIENT_UNREAD, 1),
+    }
     // And the held algebra grows by what is now held.
     if let Some(grown) = crate::transducer::cech::quotient::grow(&lex.algebra, word, budget) {
         lex.algebra = grown;
@@ -775,7 +761,7 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
         Closure::Rosette | Closure::Unbound | Closure::Unread => 1,
     };
     if let Ok(mut taught) = TAUGHT.lock() {
-        taught.push(Taught { motion: word.clone(), period, asks });
+        taught.push(Taught { motion: word.clone(), period });
     }
 }
 
