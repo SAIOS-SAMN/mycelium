@@ -162,28 +162,49 @@ fn orbit_or_why(
 /// every image reflected with it (`y ↦ y − 2⟨u y⟩₀ u / u²`, the vector part of
 /// `−u y u⁻¹`), which fixes the generators already home because `r` is an
 /// isometry. Each step forced, no branch; the vectors rational rays.
-/// `Err(k)` where a step is NULL (`u² = 0`): no reflection exists there,
-/// refused by name.
+///
+/// 78.114 — IN THE INDEFINITE METRIC, THE FIRST NON-NULL STEP. `u = x − e` is
+/// null exactly where `x·e = e²`, and a translation's and a dilation-about-a-
+/// point's images do it at once (read live: 64–317 residues a voice refused
+/// here). Cartan–Dieudonné's own induction is the remedy: any `y` with
+/// `u = (R − 1)y` non-null is fixed by reflecting in `u`, every vector `R`
+/// already fixes stays fixed (`⟨u, z⟩ = ⟨Ry, Rz⟩ − ⟨y, z⟩ = 0`), so the fixed
+/// space grows each step, and every `u` lies in `im(R − 1)` — whose
+/// orthogonal complement IS the fixed locus, so the reflecting hyperplanes
+/// meet exactly there (the certificate) and the spelling is minimal
+/// (Scherk). `y` is read in the generators' own order, then their pairs:
+/// the first whose step is non-null — an order by coordinates, never a
+/// choice. `Err(k)` where every remaining step is null: `im(R − 1)` totally
+/// isotropic there, which no reflection of it spells — refused by name.
 fn reflections_of(r: &super::LinearFunction) -> Result<Vec<Mv>, usize> {
-    let two = Q::from_integer(2.into());
     let mut rest: Vec<Mv> = r.images().to_vec();
+    let gens: Vec<Mv> = r.masks().iter().map(|&m| Mv::blade(m, one())).collect();
     let mut us = Vec::new();
-    for (k, &m) in r.masks().iter().enumerate() {
-        let u = rest[k].sub(&Mv::blade(m, one()));
-        if u.is_zero() {
-            continue;
-        }
+    loop {
+        let steps: Vec<Mv> = rest.iter().zip(&gens).map(|(x, e)| x.sub(e)).collect();
+        let Some(open) = steps.iter().position(|u| !u.is_zero()) else { return Ok(us) };
+        let non_null = |u: &Mv| !u.is_zero() && !u.geo(u).scalar_part().is_zero();
+        let single = steps.iter().find(|u| non_null(u)).cloned();
+        let pair = || {
+            (0..steps.len())
+                .flat_map(|i| (i + 1..steps.len()).map(move |j| (i, j)))
+                .map(|(i, j)| steps[i].add(&steps[j]))
+                .find(|u| non_null(u))
+        };
+        let Some(u) = single.or_else(pair) else { return Err(open) };
         let uu = u.geo(&u).scalar_part();
-        if uu.is_zero() {
-            return Err(k);
-        }
-        for y in rest.iter_mut() {
-            let f = u.geo(y).scalar_part() * &two / &uu;
-            *y = y.sub(&u.scale(&f));
-        }
+        reflect_all(&mut rest, &u, &uu);
         us.push(u);
     }
-    Ok(us)
+}
+
+/// Every image reflected in `s` (of square `ss`): `y ↦ y − 2⟨s y⟩₀ s / s²`.
+fn reflect_all(rest: &mut [Mv], s: &Mv, ss: &Q) {
+    let two = Q::from_integer(2.into());
+    for y in rest.iter_mut() {
+        let f = s.geo(y).scalar_part() * &two / ss;
+        *y = y.sub(&s.scale(&f));
+    }
 }
 
 /// A TURN OF THE BASE — its image of each base axis `e₁ … eₙ`, vectors of the

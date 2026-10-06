@@ -23968,6 +23968,24 @@ ring's holonomy and dropped it. FIXED: `Incoherence.residue` is the ring's
 holonomy, docketed with its demand. Proved:
 `orbit_algebra::an_incoherence_is_held_by_its_ring_class_and_modes`.
 
+**Read on d23c9258 (epoch 143).** The halt holds again (42, 3, 2, 16, 3 s).
+RESIDUES ABSENT 0 ON EVERY VOICE (from 125–384); residues taken 72–328 a
+voice — and 64–317 of them refused "null step": constructive
+Cartan–Dieudonné stepped generator by generator, `u = x − e`, and in the
+indefinite metric that step is null exactly where `x·e = e²` — at once for
+a translation and a dilation about a point, the residues these minds carry.
+FIXED by the theorem's own induction: the first `y` in coordinate order
+(a generator, then a pair) whose `u = (R − 1)y` is non-null; every `u` in
+`im(R − 1)`, whose complement is the fixed locus, so the certificate (the
+hyperplanes meet exactly there) holds and the spelling is minimal
+(Scherk); a totally isotropic remainder refused by name. A first cut —
+`x + e` then `e` where the step is null — composed back but left the meet
+off the locus, and the certificate refused it (`MeetOffLocus`): kept as
+the reason the induction is the fix. Proved:
+`constructors::a_translation_and_a_dilation_about_a_point_construct_and_compose_back`.
+These residues hold no rotation: constructed, they are counted "no rotation
+to adjoin" — row 8's evidence, now produced.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

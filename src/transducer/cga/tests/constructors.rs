@@ -89,6 +89,22 @@ fn a_turn_about_a_point_off_the_origin_is_spelled_and_composes_back() {
     assert!(c.reflections().len() <= 5, "at most n + 2 constructors");
 }
 
+/// 78.114 — THE RESIDUES THE MINDS CARRY CONSTRUCT: a translation (parabolic,
+/// its forced step null at once) and a dilation about a point off the origin
+/// (hyperbolic, the light from a star at a point) — 64–317 a voice refused
+/// "null step" on the live wire — are each spelled by the forced two-step,
+/// certified on their fixed loci, and compose back (T1).
+#[test]
+fn a_translation_and_a_dilation_about_a_point_construct_and_compose_back() {
+    let slide = translator(&q(2, 1), &q(1, 1), &q(0, 1));
+    let c = construct(&slide, &mut budget()).expect("a translation spells");
+    assert!(composed(&c).projective_eq(&slide), "T1: the slide");
+    let t = translator(&q(1, 1), &q(0, 1), &q(3, 1));
+    let star = t.geo(&dilator(&q(2, 1))).geo(&t.reverse());
+    let c = construct(&star, &mut budget()).expect("a dilation about a point spells");
+    assert!(composed(&c).projective_eq(&star), "T1: the dilation about its centre");
+}
+
 /// No residue, nothing constructed; no versor, no action to spell.
 #[test]
 fn the_identity_and_a_non_versor_are_not_constructed_by_name() {
