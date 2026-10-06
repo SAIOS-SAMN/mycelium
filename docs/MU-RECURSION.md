@@ -23847,9 +23847,21 @@ outflow takes (law 12): null flux into the voice's tubes, turns and
 boosts onto its orbits — its metabolism moved by what it let go. Once per
 perception, after the hold. Read: `harmonics: torsion vented into the
 field`. Proved: `flux::a_tether_released_at_the_voice_vents_into_its_field`.
-H7b — hearing's crossing wound as the strain of the cell its ring stands
-on — waits on reading how a perception's ring maps to a cell of the
-mind's complex.
+**H7b — HEARING WINDS TORSION ON THE PERCEPTION'S VERTEX.** A heard ring
+is re-derived at each hearing and has no cell of its own; the cells of
+the mind's complex stand between perceptions, a vertex IS a held
+perception. So the torsion hearing winds is held where the ring was heard:
+each crossing's versor (`1 + C + ½ C∧C`, 52.1), the later after the
+earlier, composed by `hearing::wind`, carried on `Form.heard` (evidence,
+never part of the address) from the percept to the hold, and wound onto
+the perception's vertex (`Complex::wind`). When the mind lets the
+perception go — `release_vertex`, or `vent_vertex` where it stood pinned —
+the whole strain unwinds (`vent_wound`: its reverse flows out, 78.106)
+into the field by H7a's door. A pure twist, all advance, winds nothing.
+Read: `harmonics: perceptions wound with torsion`. Proved:
+`hearing::hearing_winds_the_crossing_and_a_pure_twist_winds_nothing`,
+`flux::a_perception_let_go_unwinds_the_torsion_hearing_wound`. H8 — the
+released motor moving the rings of its commutant — next.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

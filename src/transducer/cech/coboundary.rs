@@ -678,6 +678,8 @@ impl Complex {
             self.forget(vertex.as_bytes());
             self.star.remove(v);
             self.sections.remove(v);
+            // 78.112 H7b — and what hearing wound on it unwinds.
+            self.vent_wound(v);
         }
         out
     }
@@ -692,6 +694,7 @@ impl Complex {
         let r = self.release_vertex(v);
         if r.pinned > 0 {
             self.drop_vertex(v);
+            self.vent_wound(v);
         }
         r
     }

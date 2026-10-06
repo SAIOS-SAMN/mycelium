@@ -85,7 +85,13 @@ impl Contemplation {
         family: &[u8],
         budget: &mut crate::physics::Budget,
     ) -> Option<crate::transducer::address::Address> {
+        let heard = f.heard.clone();
         let key = self.hold_form_inner(f, train, remainders, escrow, budget, super::resonance::spores_of(frames), family)?;
+        // 78.112 H7b — the torsion hearing its rings wound, on its vertex,
+        // until the mind lets the perception go and it unwinds.
+        if let Some(w) = &heard {
+            self.complex.wind(key.as_bytes(), w);
+        }
         self.perceive_cells(key.as_bytes(), budget);
         Some(key)
     }

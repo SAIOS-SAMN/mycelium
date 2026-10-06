@@ -115,3 +115,20 @@ fn light_in_the_plane_crosses_it() {
     assert!(m.advance.is_zero(), "no light along an axis: {:?}", m.advance);
     assert!(!m.crossing.is_zero(), "the light crosses the plane");
 }
+
+/// 78.112 H7b — HEARING WINDS THE CROSSING AS TORSION, AND ONLY THE CROSSING:
+/// the ring the light crosses winds the versor its crossing derives; the
+/// pure twist, all advance, winds nothing.
+#[test]
+fn hearing_winds_the_crossing_and_a_pure_twist_winds_nothing() {
+    use crate::transducer::sentence::hearing::hear;
+    let crossed = compose(&[Term { word: turn_90(E1 | E2), transport: cga::translator_at(&[q(1), q(0), q(0)]) }], &mut stroke())
+        .expect("a ring");
+    let met = orbit(&[&crossed], &mut stroke());
+    let [m] = met.as_slice() else { panic!("one ray met") };
+    let expected = crate::transducer::cayley::versor_of_bivector(&m.crossing).expect("the crossing derives a versor");
+    assert_eq!(hear(&[&crossed], &mut stroke()).wound, Some(expected), "the impact, wound");
+    let twist = compose(&[Term { word: turn_90(E1 | E2), transport: cga::translator_at(&[q(0), q(0), q(1)]) }], &mut stroke())
+        .expect("a ring");
+    assert_eq!(hear(&[&twist], &mut stroke()).wound, None, "all advance: nothing wound");
+}

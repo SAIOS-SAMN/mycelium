@@ -1411,7 +1411,9 @@ pub(super) fn family_percept(
     // court to offer; and the field reads each sentence's own holonomy, with
     // the mass its faces carried.
     let rings: Vec<crate::transducer::sentence::Orbit> = cycles.kept.iter().chain(&cycles.vacua).cloned().collect();
-    let spoken = crate::transducer::sentence::rung::speak(&form, &rings, budget);
+    let (spoken, wound) = crate::transducer::sentence::rung::speak(&form, &rings, budget);
+    // 78.112 H7b — the torsion hearing wound rides the form to its hold.
+    form.heard = wound;
     let holonomies: Vec<(cga::Mv, u64)> = spoken
         .iter()
         .filter_map(|(steps, s)| {

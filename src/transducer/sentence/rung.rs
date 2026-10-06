@@ -612,12 +612,13 @@ pub(crate) fn rung_in_lexicon(s: &Composition) -> Option<u64> {
 /// 78.75 — A MIND SPEAKS ITS RINGS: each composed (`sentences_of`), each
 /// closed one extrapolated to its theorem (`Theorem::of`) and its shortcut
 /// held, recognized, or offered; each open one named by why. Returns the
-/// compositions read, with the overlaps each crossed.
+/// compositions read, with the overlaps each crossed, and (78.112 H7b) the
+/// torsion hearing them wound.
 pub fn speak(
     form: &super::Form,
     rings: &[super::Orbit],
     budget: &mut crate::physics::Budget,
-) -> Vec<(Vec<crate::network::nerve::coord::Overlap>, Composition)> {
+) -> (Vec<(Vec<crate::network::nerve::coord::Overlap>, Composition)>, Option<Mv>) {
     let mut out = Vec::new();
     // 78.103 — the contacts' bends are read after every ring is heard.
     let (sentences, bends) = super::compose::sentences_and_bends_of(form, rings, budget);
@@ -662,9 +663,9 @@ pub fn speak(
     // 78.112 H1, H2 — and the rings heard against each other: each echoed
     // through the next larger, nested, the balance read.
     let rings: Vec<&Composition> = out.iter().map(|(_, s)| s).collect();
-    super::hearing::hear(&rings, budget);
+    let heard = super::hearing::hear(&rings, budget);
     super::compose::read_bends(&bends);
-    out
+    (out, heard.wound)
 }
 
 /// ONE COMPOSED SENTENCE, HEARD BY THE MIND: its closure named, its theorem

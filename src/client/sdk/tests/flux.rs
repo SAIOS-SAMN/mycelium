@@ -65,3 +65,32 @@ fn a_tether_released_at_the_voice_vents_into_its_field() {
     assert!(crate::transducer::sentence::hearing::hearing_tally()[at] > vented[at]);
     assert_eq!(entity.vent_into_field(&mut budget), 0, "taken once");
 }
+
+/// 78.112 H7b — A PERCEPTION LET GO UNWINDS WHAT HEARING WOUND ON IT: torsion
+/// wound twice on a vertex composes, the later after the earlier; releasing
+/// the vertex vents the whole strain's reverse — and nothing stays wound.
+#[test]
+fn a_perception_let_go_unwinds_the_torsion_hearing_wound() {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::cech::Section;
+    let mut entity = Entity::open("127.0.0.1:1", Kernel::named("unwind"));
+    let mut budget = entity.stroke();
+    let _ = entity.vent_into_field(&mut budget);
+    let v = vec![3u8; 4];
+    entity.contemplation.complex.set_section(&v, Section::at(v.clone().into(), Rotor::identity()), [1, 0, 0, 0]);
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let (first, then) = (cga_turn(q(1)), crate::transducer::cga::translator_at(&[q(0), q(2), q(0)]));
+    entity.contemplation.complex.wind(&v, &first);
+    entity.contemplation.complex.wind(&v, &then);
+    let wound = then.geo(&first);
+    assert_eq!(entity.contemplation.complex.wound_at(&v), Some(&wound), "the later after the earlier");
+    let _ = entity.contemplation.complex.vent_vertex(&v);
+    assert_eq!(entity.contemplation.complex.take_outflow(), vec![wound.reverse()], "the whole strain unwinds");
+    assert_eq!(entity.contemplation.complex.wound_at(&v), None, "nothing stays wound");
+}
+
+/// A 90° turn on `e₁e₂`, `1 + e₁₂`, at weight `w`.
+fn cga_turn(w: num_rational::BigRational) -> crate::transducer::cga::Mv {
+    use crate::transducer::cga::{Mv, E1, E2};
+    Mv::scalar(w.clone()).add(&Mv::blade(E1 | E2, w))
+}

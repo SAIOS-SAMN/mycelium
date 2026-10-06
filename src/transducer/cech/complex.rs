@@ -55,6 +55,11 @@ pub struct Complex {
     /// stars and pinning its boundary until `seal` caps it. Volatile: no
     /// persisted complex punctures yet (`hole.rs`).
     pub(crate) holes: Keyed<Simplex>,
+    /// 78.112 H7b — THE TORSION HEARING WOUND AT EACH VERTEX: the crossings of
+    /// the rings heard in that perception (the light crossing their planes,
+    /// the impact), composed as one strain and wound on at each hearing. It
+    /// unwinds when the vertex is let go (`vent_wound`). Volatile.
+    pub(crate) wound: Keyed<crate::transducer::cga::Mv>,
 }
 
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
@@ -149,6 +154,35 @@ impl Complex {
         match self.outflow.as_mut() {
             Some(held) => std::mem::take(held),
             None => Vec::new(),
+        }
+    }
+
+    /// 78.112 H7b — WIND TORSION ON A VERTEX: `strain` composed onto what the
+    /// vertex already holds, the later after the earlier. The identity winds
+    /// nothing.
+    pub fn wind(&mut self, v: &[u8], strain: &crate::transducer::cga::Mv) {
+        let one = crate::transducer::cga::Mv::scalar(num_rational::BigRational::from_integer(1.into()));
+        if strain.projective_eq(&one) {
+            return;
+        }
+        let held = match self.wound.get(v) {
+            Some(w) => strain.geo(w),
+            None => strain.clone(),
+        };
+        self.wound.insert(v, held);
+    }
+
+    /// The torsion wound on a vertex, where any is.
+    pub fn wound_at(&self, v: &[u8]) -> Option<&crate::transducer::cga::Mv> {
+        self.wound.get(v)
+    }
+
+    /// 78.112 H7b — A VERTEX LET GO UNWINDS WHAT HEARING WOUND ON IT: its
+    /// strain's reverse flows out (78.106), into the field of an owner that
+    /// listens.
+    pub(crate) fn vent_wound(&mut self, v: &[u8]) {
+        if let Some(w) = self.wound.remove(v) {
+            self.flow_out(w.reverse());
         }
     }
 

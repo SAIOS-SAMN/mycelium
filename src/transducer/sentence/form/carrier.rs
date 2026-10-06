@@ -853,6 +853,11 @@ pub struct Form {
     /// The certified pivots this form's crystallization rests on (A20).
     /// Evidence, replayed by the court; never part of the address.
     pub certificates: Keyed<PivotCertificate>,
+    /// 78.112 H7b — THE TORSION HEARING THIS PERCEPTION'S RINGS WOUND, carried
+    /// from the percept to the hold, where it is wound on the perception's
+    /// vertex. Never part of the address: a form read back from its address
+    /// heard nothing.
+    pub heard: Option<crate::transducer::cga::Mv>,
     /// Filed torsion cycles, keyed by class key: `(σ, ℓ, chord face)`.
     /// THE FORM OWNS THIS CARRIER and there is no second copy of it: a reader
     /// holding an element reaches it through `sentence::form_torsion`, and an
@@ -968,6 +973,7 @@ impl Default for Form {
             hue_maps: Keyed::new(),
             ratio: ((1, 1), (1, 1)),
             certificates: Keyed::new(),
+            heard: None,
             torsion: Keyed::new(),
             axes: Keyed::new(),
             cover: Vec::new(),

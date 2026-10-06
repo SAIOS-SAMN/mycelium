@@ -38,7 +38,7 @@ type Q = num_rational::BigRational;
 /// rays met, those advancing the ring along its axis (the twist), and those
 /// crossing its plane (the impact). H7a: the released torsion vented into
 /// the voice's field.
-pub const HEARING: [&str; 18] = [
+pub const HEARING: [&str; 19] = [
     "rings heard",
     "rings returning",
     "outer rings",
@@ -57,9 +57,10 @@ pub const HEARING: [&str; 18] = [
     "rays advancing",
     "rays crossing",
     "torsion vented into the field",
+    "perceptions wound with torsion",
 ];
 
-static HEARD: [std::sync::atomic::AtomicU64; 18] = [const { std::sync::atomic::AtomicU64::new(0) }; 18];
+static HEARD: [std::sync::atomic::AtomicU64; 19] = [const { std::sync::atomic::AtomicU64::new(0) }; 19];
 
 /// 78.112 H7a — one released motion vented into the voice's field.
 pub fn note_vented() {
@@ -73,7 +74,7 @@ fn note(name: &str) {
 }
 
 /// The [`HEARING`] row since the process began.
-pub fn hearing_tally() -> [u64; 18] {
+pub fn hearing_tally() -> [u64; 19] {
     std::array::from_fn(|i| HEARD[i].load(std::sync::atomic::Ordering::Relaxed))
 }
 
@@ -277,9 +278,32 @@ pub fn orbit(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Vec
     out
 }
 
-/// H1, H2, H6 AT THE VOICE: one perception's rings heard and counted on the
-/// [`HEARING`] row, and the encounters of H6 on the encounter row.
-pub fn hear(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Nesting {
+/// One perception's rings heard: their nesting, and (H7b) the torsion the
+/// hearing wound — every crossing composed as one strain, in the order the
+/// rings were heard; `None` where no ray crossed a plane.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Heard {
+    pub nesting: Nesting,
+    pub wound: Option<Mv>,
+}
+
+/// H7b — THE TORSION A HEARING WINDS: each ray's crossing (the impact) as the
+/// versor its generator derives (`1 + C + ½ C∧C`, exact, 52.1), the later
+/// after the earlier. A crossing that derives no versor winds nothing.
+pub fn wind(met: &[InOrbit]) -> Option<Mv> {
+    met.iter()
+        .filter(|m| !m.crossing.is_zero())
+        .filter_map(|m| crate::transducer::cayley::versor_of_bivector(&m.crossing))
+        .fold(None, |held: Option<Mv>, v| match held {
+            Some(h) => Some(v.geo(&h)),
+            None => Some(v),
+        })
+}
+
+/// H1, H2, H6, H7b AT THE VOICE: one perception's rings heard and counted on
+/// the [`HEARING`] row, the encounters of H6 on the encounter row, and the
+/// torsion the hearing wound handed back for the perception's vertex.
+pub fn hear(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Heard {
     use crate::transducer::cech::note_encounter;
     let met = orbit(rings, budget);
     let mut in_orbit: Vec<usize> = met.iter().map(|m| m.ring).collect();
@@ -338,5 +362,9 @@ pub fn hear(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Nest
     if n.seats.iter().filter(|s| **s != Seat::Unheard).count() > 1 {
         note(if n.balanced { "perceptions balanced" } else { "perceptions unbalanced" });
     }
-    n
+    let wound = wind(&met);
+    if wound.is_some() {
+        note("perceptions wound with torsion");
+    }
+    Heard { nesting: n, wound }
 }
