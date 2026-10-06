@@ -285,6 +285,23 @@ fn a_mind_without_the_letter_still_demands_it() {
     );
 }
 
+/// 78.113 — WHETHER A WORD SPELLS IS READ WITH NO PRIME SEARCHED FOR. The
+/// rotor `2⁴⁵ + 45·e₀₁` stands on an arc whose norm is the square of the
+/// 91-bit prime `2⁹⁰ + 45²`: typing its demand would trial-divide toward
+/// `2⁹⁰`, and a reader that asks only whether the word spells — the
+/// lexicon's, the mind's letter reading — answers at once, unspelled,
+/// without it.
+#[test]
+fn whether_a_word_spells_is_read_without_searching_for_its_prime() {
+    use crate::transducer::alphabet::Rotor;
+    use crate::transducer::family::{derivation, letter_reading, LetterReading};
+    let big = num_rational::BigRational::from_integer(num_bigint::BigInt::from(1i64 << 45));
+    let r = Rotor::scalar(big).add(&Rotor::blade(0b0011, num_rational::BigRational::from_integer(45.into())));
+    let v = element::versor_of_word(&Word::formed(r.clone())).expect("a plane versor");
+    assert_eq!(derivation::spells(&v), Some(false), "the seventeen do not spell it");
+    assert_eq!(letter_reading(&NoCrystal, &mut budget(), &r), LetterReading::Unspelled, "nor do this mind's letters");
+}
+
 /// A court holding the letter COMPOSES the citation (L14): the resolver
 /// answers the generator's action, so a citation of a word the alphabet
 /// cannot spell verifies exactly as one it can.

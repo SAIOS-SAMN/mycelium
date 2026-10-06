@@ -100,7 +100,7 @@ pub fn letter_reading(
     else {
         return LetterReading::Unread;
     };
-    match factor_versor(crystal, budget, &v, &[]) {
+    match factor_core(crystal, budget, &v, None, &[]) {
         Some(Ok(_)) => LetterReading::Derivable,
         Some(Err(_)) => LetterReading::Unspelled,
         None => LetterReading::Unread,
@@ -116,9 +116,22 @@ pub fn factor_versor_target(
     target_rotor: Option<&crate::transducer::alphabet::Rotor>,
     gauge: &[(u8, u8)],
 ) -> Option<Result<crate::transducer::alphabet::Derivation, crate::transducer::sentence::Demand>> {
+    Some(factor_core(crystal, budget, v, target_rotor, gauge)?.map_err(Unspelled::demand))
+}
+
+/// [`factor_versor_target`], what the peel left standing returned untyped:
+/// a reader that asks only whether the mind's letters reach a word
+/// ([`letter_reading`]) never types the demand (78.113).
+fn factor_core(
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    v: &Versor,
+    target_rotor: Option<&crate::transducer::alphabet::Rotor>,
+    gauge: &[(u8, u8)],
+) -> Option<Result<crate::transducer::alphabet::Derivation, Unspelled>> {
     let hue = crate::transducer::sentence::CycleType::of(gauge);
     let adjoined = adjoined_basis_target(crystal, budget, v, target_rotor, &hue)?;
-    Some(match peel_versor_with_target(v, target_rotor, adjoined.clone())? {
+    Some(match peel_core(v, target_rotor, adjoined.clone())? {
         Ok((cited, residue)) if cited.is_empty() => {
             let occupied = occupied_lanes(&residue.rotor(), &hue);
             Ok(derivation_of(crystal, budget, residue, &occupied)?)
@@ -334,6 +347,67 @@ pub(crate) fn peel_versor_with_target(
     target_rotor: Option<&crate::transducer::alphabet::Rotor>,
     adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
 ) -> Option<Result<Peeled, crate::transducer::sentence::Demand>> {
+    Some(peel_core(v, target_rotor, adjoined)?.map_err(Unspelled::demand))
+}
+
+/// 78.113 — WHAT A PEEL LEFT STANDING, BEFORE IT IS TYPED AS A DEMAND. A
+/// standing arc's demand names the least prime of its norm outside the
+/// alphabet, found by trial division up to `√n` — and a reader that asks
+/// only whether a word spells dropped that prime unread: 76% of a family's
+/// hold on the fleet's stalled task (`50846271`, sampled) was spent finding
+/// primes no caller kept. The arc is held here as its exact coordinates
+/// (its plane, `p`, `q`, the block, the target) and typed only by a caller
+/// that keeps the demand (law 12: never computed to be dropped).
+pub(crate) enum Unspelled {
+    /// A demand already typed, at no search: a standing block.
+    Typed(crate::transducer::sentence::Demand),
+    /// A plane whose arc the basis did not spell, its prime not yet read.
+    Arc {
+        plane: (u8, u8),
+        p: num_bigint::BigInt,
+        q: num_bigint::BigInt,
+        block: Box<[[num_rational::BigRational; 2]; 2]>,
+        target: Box<crate::transducer::alphabet::Rotor>,
+    },
+}
+
+impl Unspelled {
+    /// The demand it leaves (37.7 P2): the least prime outside the alphabet
+    /// with the residue block the shells left as its witness, or the
+    /// standing block where only units or half letters remain.
+    pub(crate) fn demand(self) -> crate::transducer::sentence::Demand {
+        use crate::transducer::sentence::Demand;
+        match self {
+            Unspelled::Typed(d) => d,
+            Unspelled::Arc { plane, p, q, block, target } => {
+                let norm = &p * &p + &q * &q;
+                match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
+                    Some(prime) => Demand::RotorPrime {
+                        plane,
+                        prime,
+                        witness: Box::new(crate::transducer::alphabet::arc_block(&p, &q)),
+                    },
+                    None => Demand::Standing { block, rotor: target },
+                }
+            }
+        }
+    }
+}
+
+/// 78.113 — WHETHER A VERSOR SPELLS in the alphabet's own letters, and
+/// nothing else: the peel, its residue never typed. `None` where it reads
+/// nothing (no rotor, no linear block).
+pub(crate) fn spells(v: &Versor) -> Option<bool> {
+    Some(peel_core(v, None, Vec::new())?.is_ok())
+}
+
+/// The peel itself ([`peel_versor_with_target`]), what it left standing
+/// returned untyped ([`Unspelled`]).
+fn peel_core(
+    v: &Versor,
+    target_rotor: Option<&crate::transducer::alphabet::Rotor>,
+    adjoined: Vec<crate::transducer::alphabet::AdjoinedPrime>,
+) -> Option<Result<Peeled, Unspelled>> {
     use crate::transducer::alphabet::{
         factors, is_identity_block, pair_rotors, rotor_block_on, spell_peel_rotor_with, standing,
         tait_bryan, BLOCK_ORDER,
@@ -353,7 +427,7 @@ pub(crate) fn peel_versor_with_target(
         let orientation = crate::transducer::alphabet::LetterId::turn_90((0, 2))?;
         let flip = crate::transducer::alphabet::Word::from_letters(&[(orientation, false), (orientation, false)]);
         let whole = rotor_of_versor(v)?;
-        return Some(match peel_versor_with_target(&even, None, adjoined)? {
+        return Some(match peel_core(&even, None, adjoined)? {
             Ok((cited, w)) => {
                 let word = w.compose(&flip);
                 if !word.rotor().projective_eq(&whole) {
@@ -402,14 +476,14 @@ pub(crate) fn peel_versor_with_target(
     }
     let (qp, qm) = factors(&target);
     let (Some(tp), Some(tm)) = (tait_bryan(&qp), tait_bryan(&qm)) else {
-        return Some(Err(standing(&target, BLOCK_ORDER[0].0)?));
+        return Some(Err(Unspelled::Typed(standing(&target, BLOCK_ORDER[0].0)?)));
     };
     let mut cited_all: Vec<crate::transducer::alphabet::Cited> = Vec::new();
     let mut word = crate::transducer::alphabet::Word::identity();
 
     for (k, (pa, pb)) in BLOCK_ORDER.iter().enumerate() {
         let Some((ra, rb)) = pair_rotors(k, &tp[k], &tm[k]) else {
-            return Some(Err(standing(&target, *pa)?));
+            return Some(Err(Unspelled::Typed(standing(&target, *pa)?)));
         };
         for (plane, rotor) in [(*pa, ra), (*pb, rb)] {
             let block = rotor_block_on(&rotor, plane)?;
@@ -423,28 +497,22 @@ pub(crate) fn peel_versor_with_target(
                     word = word.compose(&w);
                 }
                 Some((PeelNest::Standing { arc, .. }, _)) => {
-                    let norm = &arc.p * &arc.p + &arc.q * &arc.q;
                     // 37.7 P2: the witness is the residue block the shells
-                    // left, not the block the peel started from.
-                    return Some(Err(
-                        match crate::transducer::alphabet::prime_outside_the_alphabet(&norm, plane) {
-                            Some(prime) => Demand::RotorPrime {
-                                plane,
-                                prime,
-                                witness: Box::new(crate::transducer::alphabet::arc_block(&arc.p, &arc.q)),
-                            },
-                            None => Demand::Standing {
-                                block: Box::new(block),
-                                rotor: Box::new(target.clone()),
-                            },
-                        },
-                    ));
+                    // left, not the block the peel started from — typed by
+                    // the caller that keeps it (`Unspelled::demand`).
+                    return Some(Err(Unspelled::Arc {
+                        plane,
+                        p: arc.p,
+                        q: arc.q,
+                        block: Box::new(block),
+                        target: Box::new(target.clone()),
+                    }));
                 }
                 None => {
-                    return Some(Err(Demand::Standing {
+                    return Some(Err(Unspelled::Typed(Demand::Standing {
                         block: Box::new(block),
                         rotor: Box::new(target.clone()),
-                    }))
+                    })))
                 }
             }
         }

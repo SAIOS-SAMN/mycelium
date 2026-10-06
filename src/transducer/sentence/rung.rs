@@ -805,7 +805,8 @@ fn hold_shortcut(lex: &mut Lexicon, s: &Composition, word: &Mv, budget: &mut cra
     };
     let rung = rung_of(&s.words, &lex.held).max(by_citation);
     TALLY[CITE_TOP_RUNG].fetch_max(by_citation, Relaxed);
-    let spelled = matches!(crate::transducer::family::derivation::peel_versor(word), Some(Ok(_)));
+    // 78.113 — whether it spells, its residue never typed.
+    let spelled = crate::transducer::family::derivation::spells(word) == Some(true);
     note(if spelled { SPELLED } else { UNSPELLED }, 1);
     TALLY[TOP_RUNG].fetch_max(rung, Relaxed);
     if let Some(c) = &coords {

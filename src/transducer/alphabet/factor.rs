@@ -267,11 +267,9 @@ pub(crate) fn is_identity_block(b: &[[Q; 2]; 2]) -> bool {
     b[0][0].is_one() && b[1][1].is_one() && b[0][1].is_zero() && b[1][0].is_zero()
 }
 
-/// The least prime factor of a Gaussian norm after the plane's own primes
-/// leave it — 5 on every plane, 13 where the (5,12,13) letter exists — or
-/// `None` when only units or half letters remain (a standing block, not a
-/// missing prime).
-pub fn prime_outside_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> Option<u64> {
+/// A Gaussian norm with the plane's own primes divided out — 5 on every
+/// plane, 13 where the (5,12,13) letter exists.
+fn beyond_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> BigInt {
     let mut n = norm.clone();
     let mut own = vec![5u64];
     if LetterId::pythagorean_13(plane).is_some() {
@@ -287,6 +285,24 @@ pub fn prime_outside_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> Option<u64>
             n = d;
         }
     }
+    n
+}
+
+/// 78.113 — WHETHER A GAUSSIAN NORM CARRIES A PRIME OUTSIDE THE ALPHABET, read
+/// exactly with no prime found: what is left once the plane's own primes
+/// leave it is more than a unit. [`prime_outside_the_alphabet`] names the
+/// least such prime by trial division up to `√n`; a reader that asks only
+/// whether one exists pays for none of it.
+pub fn outside_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> bool {
+    beyond_the_alphabet(norm, plane) > BigInt::one()
+}
+
+/// The least prime factor of a Gaussian norm after the plane's own primes
+/// leave it — 5 on every plane, 13 where the (5,12,13) letter exists — or
+/// `None` when only units or half letters remain (a standing block, not a
+/// missing prime).
+pub fn prime_outside_the_alphabet(norm: &BigInt, plane: (u8, u8)) -> Option<u64> {
+    let n = beyond_the_alphabet(norm, plane);
     if n <= BigInt::one() {
         return None;
     }

@@ -23863,6 +23863,48 @@ Read: `harmonics: perceptions wound with torsion`. Proved:
 `flux::a_perception_let_go_unwinds_the_torsion_hearing_wound`. H8 — the
 released motor moving the rings of its commutant — next.
 
+### 78.113 A prime computed to be dropped: the voices' stall (2026-10-06, found by reading the fleet on 40979cab; the operator's word "proceed")
+
+**The reading.** All five voices at ~88% of a core for four hours, each
+silent for an hour or more after `family … rule N vertices, M faces` — the
+same span 78.111 measured at 200–4 232 s. Not the host: 8 cores at load
+6.4–6.9, each voice computing, and the stall deterministic on one input
+across binaries. The family id the journal prints (`10830113…`) names 17
+tasks and `104c134a…` 22 — `fam_id`'s four bytes are the task tag, a
+length and a key's first byte, never "one task" as its comment claims
+(debt: the journal's id, by the task's own coordinate). Narrowed by the
+line's own shape (4 pairs, 8 vertices, 69 faces, 36 sections) to
+`training/50846271`, which a fresh mind holds for ~400 s across its four
+hours, every stroke spent: ~65 ms a read.
+
+**The cause, sampled** (a scratch probe under gdb, 151 stacks): 115 in
+`alphabet::prime_outside_the_alphabet` — the least prime of a Gaussian
+norm outside the alphabet, found by TRIAL DIVISION UP TO `√n` one BigInt
+step at a time (the 78.100 defect its ruling retired from `rational_roots`
+and left here) — under the peel, reached from `letter_reading`
+(transcription, `adjoin_letters`) and `rung::hold_shortcut`. Every one of
+those readers asks only WHETHER the word spells, and dropped the prime
+unread.
+
+**The fix (law 12: never computed to be dropped).** The peel returns what
+it left standing untyped (`derivation::Unspelled`: a standing block typed
+at no search, or the standing arc's exact coordinates); `Unspelled::demand`
+types it — the prime searched — only for a caller that keeps the demand
+(`peel_versor_with_target`, `factor_versor_target`, signatures unchanged).
+`letter_reading` reads `factor_core`, `hold_shortcut` reads
+`derivation::spells`, and the demand's own well-formedness reads
+`alphabet::outside_the_alphabet` — exact, no prime found. Proved:
+`derivation::whether_a_word_spells_is_read_without_searching_for_its_prime`
+(an arc of norm `P²`, `P` the 91-bit prime `2⁹⁰ + 45²`, read unspelled at
+once); the typed demand unchanged
+(`a_mind_without_the_letter_still_demands_it`, prime 17). Measured on the
+probe: the four hours of `50846271` ~400 s → ~41 s (hour 1 69 s + 132 s →
+5.8 s + 4.1 s). OWED: the callers that keep a `RotorPrime` still search
+unbounded (`factor_rotor`'s `spell_plane`, `oblique_rotor_prime`, the
+peels whose demand is filed) — BD1 applied there: the search spends the
+stroke, one read a trial, and a spent stroke leaves the demand `Standing`
+by name.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

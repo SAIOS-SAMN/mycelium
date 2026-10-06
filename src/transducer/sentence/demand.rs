@@ -103,12 +103,9 @@ impl Demand {
             // the alphabet itself, never of the literal 13, which is the
             // (5,12,13) letter's norm written out as a constant (rule 6).
             Demand::RotorPrime { plane, prime, witness } => {
+                // 78.113 — asked exactly, no prime searched for.
                 plane.0 != plane.1
-                    && crate::transducer::alphabet::prime_outside_the_alphabet(
-                        &num_bigint::BigInt::from(*prime),
-                        *plane,
-                    )
-                    .is_some()
+                    && crate::transducer::alphabet::outside_the_alphabet(&num_bigint::BigInt::from(*prime), *plane)
                     && witness.iter().flatten().any(|q| !q.is_zero())
             }
             // THE WITNESS IS THE CONTENT (checklist (m)): a versor that is
