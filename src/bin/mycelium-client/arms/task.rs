@@ -14,7 +14,7 @@ pub(crate) fn task_arm(
     extract_memo: &mut mycelium::transducer::family::ExtractMemo,
     occluded: bool,
 ) {
-let Stroke { entity, c, outcome, tag, .. } = stroke;
+let Stroke { entity, c, outcome, tag, stop, .. } = stroke;
 if !occluded {
     speak_contracted(entity, tag);
     speak_owed(entity, tag);
@@ -85,6 +85,10 @@ if let Ok(Some(mycelium::anastome::dialogue::TaskEnvelope { id: tid, train, test
     // the family's first perception (a memo hit perceived nothing new).
     if !frames.is_empty() {
         for (a, b) in &train {
+            // A stop asked for ends the family's hours at the next hour.
+            if stop.load(std::sync::atomic::Ordering::SeqCst) {
+                break;
+            }
             let pair = [(a.clone(), b.clone())];
             let hour = mycelium::transducer::family::perceive_family(&pair);
             let mut hour_budget = entity.stroke_n(mycelium::transducer::family::extraction_spend(&pair, &hour));

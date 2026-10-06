@@ -9,7 +9,7 @@ use mycelium::physics::StrokeOutcome;
 use mycelium::transducer::element::measure_lanes;
 
 pub(crate) fn quote_arm(stroke: &mut Stroke<'_>, occluded: bool) {
-let Stroke { entity, c, outcome, m, tag } = stroke;
+let Stroke { entity, c, outcome, m, tag, .. } = stroke;
 let lang = entity.atlas_standing_counts();
 // The T lane is excluded from the dwell entirely (C4), so it neither
 // holds a voice back nor releases it: a lane that never falls would

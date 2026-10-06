@@ -8,7 +8,7 @@ use crate::Stroke;
 use mycelium::physics::StrokeOutcome;
 
 pub(crate) fn syntropy_arm(stroke: &mut Stroke<'_>, genome_path: &str) {
-let Stroke { entity, c, outcome, m, tag } = stroke;
+let Stroke { entity, c, outcome, m, tag, .. } = stroke;
 // C3 — the shed prints nothing per stroke (ruled 2026-09-26): what it took,
 // by door, is the meet graph's shed reading on the console.
 entity.shed();

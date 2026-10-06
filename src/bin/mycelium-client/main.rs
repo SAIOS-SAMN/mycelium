@@ -72,6 +72,19 @@ pub(crate) struct Stroke<'a> {
     pub(crate) outcome: &'a mut StrokeOutcome,
     pub(crate) m: &'a mut Metabolism,
     pub(crate) tag: &'a str,
+    /// THE STOP ASKED FOR (SIGINT, SIGTERM, SIGHUP): read between arms and
+    /// inside the long ones, so a stroke perceiving a family ends at its next
+    /// boundary and the voice saves its genome and leaves — rather than
+    /// running past the unit's stop timeout and being killed unsaved (every
+    /// recut waited ~90 s a voice for that kill).
+    pub(crate) stop: &'a AtomicBool,
+}
+
+impl Stroke<'_> {
+    /// Whether a stop has been asked for.
+    pub(crate) fn stopping(&self) -> bool {
+        self.stop.load(Ordering::SeqCst)
+    }
 }
 
 /// What this voice has done since it came up. Every field is read by the
@@ -292,13 +305,18 @@ fn main() {
                 outcome: &mut outcome,
                 m: &mut m,
                 tag: &tag,
+                stop: &stop,
             };
             let a0 = allocated();
             feed_arm(&mut stroke, &mut feed, &mut extract_memo, occluded);
             let a1 = allocated();
-            quote_arm(&mut stroke, occluded);
+            if !stroke.stopping() {
+                quote_arm(&mut stroke, occluded);
+            }
             let a2 = allocated();
-            task_arm(&mut stroke, &mut extract_memo, occluded);
+            if !stroke.stopping() {
+                task_arm(&mut stroke, &mut extract_memo, occluded);
+            }
             let a3 = allocated();
             // THE SYNTROPIC PHASE on any lane short of one expansion (S10's
             // reading, S13.2), or on a stroke whose arms moved nothing — the
@@ -308,7 +326,7 @@ fn main() {
             // (PHY1), so idleness is read as itself.
             let short = !mycelium::economy::lanes_short(&stroke.entity.physics().reserve_shortfall([true; 4])).is_empty();
             let idle = stroke.outcome.moved() == [false; 4];
-            if short || idle {
+            if (short || idle) && !stroke.stopping() {
                 syntropy_arm(&mut stroke, &genome_path);
                 stroke.entity.physics_mut().relax();
             }

@@ -19,7 +19,7 @@ pub(crate) fn feed_arm(
     extract_memo: &mut mycelium::transducer::family::ExtractMemo,
     occluded: bool,
 ) {
-    let Stroke { entity, c, outcome, m, tag } = stroke;
+    let Stroke { entity, c, outcome, m, tag, .. } = stroke;
     // 50.9: what the last refusals contracted is uttered first, citing
     // the receipts, before any new family is presented. And 21 step 3:
     // what a court is waiting on is taught before it, so the generator a
