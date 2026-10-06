@@ -134,6 +134,7 @@ fn an_incoherence_is_held_by_its_ring_class_and_modes() {
     let [ring] = rings.as_slice() else { panic!("one ring, none chosen: {rings:?}") };
     assert_eq!(ring.ring, CellCircuit::ring_of(&[(overlap(0), true)]), "the ring's own coordinates");
     assert!(ring.class.is_ok(), "its class read by the one producer: {:?}", ring.class);
+    assert_eq!(ring.residue, rosette, "78.114 — its residue is its holonomy, carried to the constructors");
     assert!(
         matches!(ring.modes.as_slice(), [ResidueMode { kind: BivectorKind::Elliptic, order: None, .. }]),
         "one elliptic mode of no order: {:?}",

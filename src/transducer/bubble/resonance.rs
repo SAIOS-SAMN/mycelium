@@ -891,7 +891,8 @@ impl Contemplation {
                 for inc in incoherent {
                     match &inc.class {
                         Ok(class) => {
-                            self.docket_demand(class, &charts, None);
+                            // 78.114 — with the ring's holonomy as its residue.
+                            self.docket_demand(class, &charts, Some(&inc.residue));
                             self.resonance.demanded += 1;
                         }
                         Err(_) => self.resonance.undemanded += 1,

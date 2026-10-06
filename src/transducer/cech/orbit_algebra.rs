@@ -187,6 +187,10 @@ pub struct Incoherence {
     pub ring: Vec<u8>,
     pub class: Result<Box<crate::transducer::sentence::ClassVector>, ClassUnread>,
     pub modes: Vec<ResidueMode>,
+    /// 78.114 — THE RING'S HOLONOMY ITSELF, the residue its demand carries to
+    /// the constructors (78.47): it was read, its modes and class taken off
+    /// it, and dropped, so the cell's demand reached the docket with none.
+    pub residue: Mv,
 }
 
 /// A RING'S CLASS: its holonomy split as the fill splits a transition — the
@@ -906,6 +910,7 @@ pub fn read_cell_after(
                             .iter()
                             .map(|m| ResidueMode { kind: m.kind, plane: plane_of(m), order: m.order })
                             .collect(),
+                        residue: h.clone(),
                     }),
                     // Modes read only off a read holonomy (above).
                     (false, Err(_)) => {}

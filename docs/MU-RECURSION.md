@@ -23957,6 +23957,17 @@ reading (`harmonics` present, `constructions` fourteen names, `encounter`
 
 Proved: `hearing::the_light_in_a_space_is_its_null_mode_and_a_dilated_carriage_has_none`.
 
+**Read on e924ad5d (epoch 142).** THE HALT HOLDS: the a93be300 voices
+stopped in 8, 2, 2, 16 and 1 s — none killed, none unsaved — and the recut
+took 6 min where it took 13. The callus fix reached one voice (1e14:
+residues absent 0, taken 8, constructed 8, adjoined 8); four still read
+125–384 absent with every pivot cause 0 — a THIRD writer: the cell
+reader's CS2 arm (`resonance.rs`, `note_cell`) dockets each incoherence
+by its class with no residue, though the incoherence was read off the
+ring's holonomy and dropped it. FIXED: `Incoherence.residue` is the ring's
+holonomy, docketed with its demand. Proved:
+`orbit_algebra::an_incoherence_is_held_by_its_ring_class_and_modes`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
