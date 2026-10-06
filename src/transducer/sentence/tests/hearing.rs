@@ -4,7 +4,7 @@
 
 use crate::transducer::cga::{self, Mv, E1, E2, E3};
 use crate::transducer::sentence::compose::{compose, Closure, Composition, Term};
-use crate::transducer::sentence::hearing::{echo, nest, Echo, Seat};
+use crate::transducer::sentence::hearing::{echo, nest, orbit, Echo, Seat};
 use num_rational::BigRational;
 
 fn q(n: i64) -> BigRational {
@@ -83,4 +83,35 @@ fn a_ring_dividing_no_larger_ring_is_left_over() {
     let n = nest(&[&third, &outer], &mut stroke());
     assert_eq!(n.seats, vec![Seat::Leftover, Seat::Outer]);
     assert!(!n.balanced, "a leftover ring is outside the harmonic order");
+}
+
+/// 78.112 H6 — LIGHT PERPENDICULAR TO THE PLANE IS A TWIST: a 90° turn on
+/// `e₁e₂` carried by a ray along `e₃`. The ray commutes with the turn's plane
+/// whole: all of it advances the ring along its axis, none crosses the
+/// plane, and the pitch — the advance per elliptic return — is four times
+/// the ray.
+#[test]
+fn light_perpendicular_to_the_plane_is_a_twist_all_advance() {
+    let t = cga::translator_at(&[q(0), q(0), q(1)]);
+    let r = compose(&[Term { word: turn_90(E1 | E2), transport: t.clone() }], &mut stroke()).expect("a ring");
+    let met = orbit(&[&r], &mut stroke());
+    let [m] = met.as_slice() else { panic!("one ray met: {met:?}") };
+    let ray = crate::transducer::cayley::bivector_of(&t).expect("the ray's generator");
+    assert_eq!(m.bounce, 4, "the turn returns at four");
+    assert_eq!(m.advance, ray, "the light along the axis advances whole");
+    assert!(m.crossing.is_zero(), "nothing crosses the plane");
+    assert_eq!(m.pitch, ray.scale(&q(4)), "the advance per return");
+}
+
+/// H6 — LIGHT IN THE PLANE CROSSES IT: the same turn carried by a ray along
+/// `e₁`, which lies in its plane. The ray anticommutes with the plane: none
+/// of it advances, all of it crosses — the impact.
+#[test]
+fn light_in_the_plane_crosses_it() {
+    let t = cga::translator_at(&[q(1), q(0), q(0)]);
+    let r = compose(&[Term { word: turn_90(E1 | E2), transport: t }], &mut stroke()).expect("a ring");
+    let met = orbit(&[&r], &mut stroke());
+    let [m] = met.as_slice() else { panic!("one ray met: {met:?}") };
+    assert!(m.advance.is_zero(), "no light along an axis: {:?}", m.advance);
+    assert!(!m.crossing.is_zero(), "the light crosses the plane");
 }

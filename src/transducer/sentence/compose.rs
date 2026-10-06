@@ -79,6 +79,13 @@ pub struct Composition {
     /// it was never recognized. The spaces are the terms' transports; their
     /// readers fold into the encounter and production (N5, N6).
     pub words: Vec<Mv>,
+    /// 78.112 H6 — EACH TERM'S SPACE `gᵢ`, the transport to the next word, in
+    /// the sentence's order: the rays the ring was carried on, which hearing
+    /// meets its harmonic with.
+    pub spaces: Vec<Mv>,
+    /// `Ω`'s modes as the closure read them (MR1); empty where `Ω` is the
+    /// identity or its modes did not read.
+    pub modes: Vec<cga::MotionMode>,
 }
 
 /// COMPOSE A SENTENCE (78.69): `Ω` path-ordered from the first word, each
@@ -108,16 +115,19 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
     // returned at once (ℓ = 1). Otherwise the period is read off its modes.
     use num_traits::Zero;
     let identity = !omega.coeff(0).is_zero() && (1..omega.slot_count()).all(|k| omega.coeff(k).is_zero());
-    let closure = match identity {
-        true => Closure::Closes(1),
+    let (closure, modes) = match identity {
+        true => (Closure::Closes(1), Vec::new()),
         false => match cga::motion_modes(&omega, budget) {
-            Some(Ok(modes)) => match cga::period_of(&modes) {
-                Some(Period::Closes(l)) => Closure::Closes(l),
-                Some(Period::Rosette) => Closure::Rosette,
-                Some(Period::Unbound) => Closure::Unbound,
-                None => Closure::Unread,
-            },
-            _ => Closure::Unread,
+            Some(Ok(modes)) => (
+                match cga::period_of(&modes) {
+                    Some(Period::Closes(l)) => Closure::Closes(l),
+                    Some(Period::Rosette) => Closure::Rosette,
+                    Some(Period::Unbound) => Closure::Unbound,
+                    None => Closure::Unread,
+                },
+                modes,
+            ),
+            _ => (Closure::Unread, Vec::new()),
         },
     };
     // 78.104 — THE ALGEBRA OF THE SENTENCE IS ITS WORDS' AND ITS HOLONOMY'S.
@@ -130,7 +140,8 @@ pub fn compose(terms: &[Term], budget: &mut crate::physics::Budget) -> Option<Co
     let rank = crate::transducer::cech::cayley_generators(&holonomies, budget)
         .and_then(|gens| crate::transducer::cech::lie_close(&[], &gens, budget).map(|b| b.len()));
     let words = terms.iter().map(|t| t.word.clone()).collect();
-    Some(Composition { omega, closure, carried, path, rank, words })
+    let spaces = terms.iter().map(|t| t.transport.clone()).collect();
+    Some(Composition { omega, closure, carried, path, rank, words, spaces, modes })
 }
 
 /// 78.75 — A RING OF A FORM, READ AS A SENTENCE: each transition its word and

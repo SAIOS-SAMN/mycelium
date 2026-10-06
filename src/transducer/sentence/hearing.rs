@@ -34,7 +34,10 @@ type Q = num_rational::BigRational;
 /// outer and leftover rings, the seats whole and tilted, each tilted seat's
 /// echoes by their kind, and the perceptions of two or more rings in balance
 /// or not.
-pub const HEARING: [&str; 13] = [
+/// 78.112 H6: the harmonic rings met by a seen ray among their spaces, the
+/// rays met, those advancing the ring along its axis (the twist), and those
+/// crossing its plane (the impact).
+pub const HEARING: [&str; 17] = [
     "rings heard",
     "rings returning",
     "outer rings",
@@ -48,9 +51,13 @@ pub const HEARING: [&str; 13] = [
     "echo unread",
     "perceptions balanced",
     "perceptions unbalanced",
+    "rings in orbit",
+    "rays met",
+    "rays advancing",
+    "rays crossing",
 ];
 
-static HEARD: [std::sync::atomic::AtomicU64; 13] = [const { std::sync::atomic::AtomicU64::new(0) }; 13];
+static HEARD: [std::sync::atomic::AtomicU64; 17] = [const { std::sync::atomic::AtomicU64::new(0) }; 17];
 
 fn note(name: &str) {
     if let Some(i) = HEARING.iter().position(|n| *n == name) {
@@ -59,7 +66,7 @@ fn note(name: &str) {
 }
 
 /// The [`HEARING`] row since the process began.
-pub fn hearing_tally() -> [u64; 13] {
+pub fn hearing_tally() -> [u64; 17] {
     std::array::from_fn(|i| HEARD[i].load(std::sync::atomic::Ordering::Relaxed))
 }
 
@@ -202,9 +209,97 @@ pub fn nest(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Nest
     Nesting { seats, balanced }
 }
 
-/// H1, H2 AT THE VOICE: one perception's rings heard and counted on the
-/// [`HEARING`] row.
+/// 78.112 H6 — ONE HARMONIC RING MET BY ONE SEEN RAY: the circuit in orbit.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct InOrbit {
+    /// The ring, by its place among the rings heard.
+    pub ring: usize,
+    /// The ray's part commuting with every elliptic plane of the ring — the
+    /// light along the axis, the twist's ADVANCE.
+    pub advance: Mv,
+    /// The ray's part that is not — the light CROSSING the plane, the impact.
+    pub crossing: Mv,
+    /// The advance per elliptic return, `ℓ_e·D`: the PITCH.
+    pub pitch: Mv,
+    /// The elliptic return `ℓ_e`: the common period of the ring's turns.
+    pub bounce: u64,
+    /// The encounter's law (78.110): gravity the ring's mode, force the ray,
+    /// lift `(v·F)/(g·D)` — drag where no inverse exists.
+    pub encounter: Result<crate::transducer::cga::Encounter, crate::transducer::cga::Unencountered>,
+}
+
+fn lcm(a: u64, b: u64) -> u64 {
+    let (mut x, mut y) = (a, b);
+    while y != 0 {
+        (x, y) = (y, x % y);
+    }
+    a / x * b
+}
+
+/// H6 — EVERY HARMONIC RING AGAINST THE SEEN RAYS IT WAS CARRIED ON. A ring
+/// is harmonic where it holds an elliptic mode of finite order; a ray is a
+/// space whose generator is null (`d∧e_∞`, 78.97: seen through the
+/// luminal). Each ray is split against each of the ring's elliptic planes
+/// in turn (78.46; the planes commute, so the order is no choice): what
+/// commutes with them all is the advance, the rest the crossing. The
+/// encounter reads the law beside it.
+pub fn orbit(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Vec<InOrbit> {
+    use crate::transducer::cayley::bivector_of;
+    let mut out = Vec::new();
+    for (ring, r) in rings.iter().enumerate() {
+        let planes: Vec<Mv> = r
+            .modes
+            .iter()
+            .filter(|m| m.kind == BivectorKind::Elliptic && m.order.is_some())
+            .map(|m| m.ray.grade(2))
+            .collect();
+        if planes.is_empty() {
+            continue;
+        }
+        let bounce = r.modes.iter().filter(|m| m.kind == BivectorKind::Elliptic).filter_map(|m| m.order).fold(1u64, |l, o| lcm(l, u64::from(o)));
+        for space in &r.spaces {
+            let Some(ray) = bivector_of(space).filter(|f| !f.is_zero() && f.geo(f).is_zero()) else { continue };
+            let advance = planes.iter().try_fold(ray.clone(), |f, b| crate::transducer::cga::lift_drag(b, &f).map(|s| s.drag));
+            let Some(advance) = advance else { continue };
+            let crossing = ray.sub(&advance);
+            let pitch = advance.scale(&Q::from_integer(bounce.into()));
+            let encounter = crate::transducer::cga::encounter(&r.omega, space, budget);
+            out.push(InOrbit { ring, advance, crossing, pitch, bounce, encounter });
+        }
+    }
+    out
+}
+
+/// H1, H2, H6 AT THE VOICE: one perception's rings heard and counted on the
+/// [`HEARING`] row, and the encounters of H6 on the encounter row.
 pub fn hear(rings: &[&Composition], budget: &mut crate::physics::Budget) -> Nesting {
+    use crate::transducer::cech::note_encounter;
+    let met = orbit(rings, budget);
+    let mut in_orbit: Vec<usize> = met.iter().map(|m| m.ring).collect();
+    in_orbit.dedup();
+    for _ in &in_orbit {
+        note("rings in orbit");
+    }
+    for m in &met {
+        note("rays met");
+        if !m.advance.is_zero() {
+            note("rays advancing");
+        }
+        if !m.crossing.is_zero() {
+            note("rays crossing");
+        }
+        match &m.encounter {
+            Ok(e) => {
+                note_encounter("encounters read");
+                note_encounter(match (e.fell_to_drag, e.tilts()) {
+                    (true, _) => "lift fell to drag",
+                    (false, true) => "lift tilts",
+                    (false, false) => "lift a rate only",
+                });
+            }
+            Err(_) => note_encounter("encounters unread"),
+        }
+    }
     let n = nest(rings, budget);
     for (seat, r) in n.seats.iter().zip(rings) {
         if *seat == Seat::Unheard {
