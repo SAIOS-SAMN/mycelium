@@ -24574,8 +24574,12 @@ Proved: `challenge::a_replay_upholds_an_honest_fold_and_finality_says_upheld`,
 
 *Owed, named:* (1) records are kept for every fold; pruning a final
 record (absent then reads final) is owed. (2) The bond's slash on
-falsification is 2(e)'s. (3) A tier whose earlier folds were pre-line
-begins its line at the zero head with its first recorded fold. (4) Open
+falsification is 2(e)'s. (3) RULED (the coordinator, from netstratum, which
+found the seam): **a tier's line restarts at the zero head at its first
+post-78.125 fold; its earlier entries are pre-line and archivable.** The
+court seeds a span's start from the heads only 78.125 admissions record,
+so a tier continuing a line chained before the upgrade from its old head
+would be falsified on demand; clients restart at zero, no server change. (4) Open
 replays are bounded only by the open windows and their filers; their
 expiry at a window's close is owed.
 
