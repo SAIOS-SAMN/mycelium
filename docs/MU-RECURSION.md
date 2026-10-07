@@ -24596,16 +24596,33 @@ Proved: `challenge::a_replay_upholds_an_honest_fold_and_finality_says_upheld`,
 `every_challenge_and_every_answer_read_back_whole`,
 `the_register_serves_its_challenge_window_at_law_version_4`.
 
-*Owed, named:* (1) records are kept for every fold; pruning a final
-record (absent then reads final) is owed. (2) The bond's slash on
+**THE WINDOWS SETTLE (the coordinator's order: the debts before 2(b)).** At
+each orbit's close — the court's own cycle — `settle_windows`: a streamed
+replay whose fold takes no more evidence leaves; a record read FINAL is
+pruned to a STUB (its coordinates and whether it was upheld; a final fold
+is never reversed — its window closed and all it nets is final — so nothing
+else is read again); a stub leaves once the fold has no value in flight and
+no unfinished fold nets it; an empty remainder leaves once nothing names
+the fold and the hot line no longer holds its receipt (78.123's owed (5)).
+What stays is the folds within their windows and the open remainders.
+Stubs are written after `LEAF_CHALLENGES`' sections (a leaf without them
+reads none). Proved:
+`challenge::the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent`
+(a child pruned while its parent's window stands reads final across a
+restart, and the parent reads final through it; then the child is let go,
+the parent's stub kept for its value in flight; a stream let go when its
+window closed).
+
+*Owed, named:* (1) Edges and bookings of final folds are kept: the gauge
+needs them to read a future cycle; compacting final edges into the
+potential's forest is owed. (2) The bond's slash on
 falsification is 2(e)'s. (3) RULED (the coordinator, from netstratum, which
 found the seam): **a tier's line restarts at the zero head at its first
 post-78.125 fold; its earlier entries are pre-line and archivable.** The
 court seeds a span's start from the heads only 78.125 admissions record,
 so a tier continuing a line chained before the upgrade from its old head
 would be falsified on demand; clients restart at zero, no server change. (4) Open
-replays are bounded only by the open windows and their filers; their
-expiry at a window's close is owed.
+replays expire at the close after their window (settled above).
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

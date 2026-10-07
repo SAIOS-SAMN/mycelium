@@ -486,6 +486,9 @@ impl Kernel {
                 // The orbit closed: what nothing flowed to for a whole orbit
                 // lapses by `ZeroFlux` (78.37 (3)).
                 self.lapse_silent();
+                // 78.125 — and the challenge windows settle: final records
+                // pruned to stubs, spent stubs and stale replays let go.
+                self.settle_windows();
                 // AND THE RESERVE REGENERATES within its capacity (78.56 IV):
                 // Σ active bonds plus the work this court verified since the
                 // last close — never a hardware constant. The court never

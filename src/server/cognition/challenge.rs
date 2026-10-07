@@ -296,8 +296,13 @@ impl Kernel {
                 if let (Some(r), Some(d)) = back {
                     self.ledgers.remaining.insert(&child, (r, d));
                 }
-                if let Some(c) = self.ledgers.records.get(&child) {
-                    let sealed = (c.tier, c.prefix, c.rows);
+                // Nettable again: by its record, or by its final stub.
+                let sealed = match (self.ledgers.records.get(&child), self.ledgers.finals.get(&child)) {
+                    (Some(c), _) => Some((c.tier, c.prefix, c.rows)),
+                    (None, Some((s, _))) => Some(*s),
+                    (None, None) => None,
+                };
+                if let Some(sealed) = sealed {
                     self.ledgers.folds.insert(&child, sealed);
                 }
             }
@@ -330,6 +335,93 @@ impl Kernel {
         self.mark_persist();
         // The falsified fold first; the rest are the ancestors unwound.
         void.iter().skip(1).count()
+    }
+
+    /// 78.125 — THE WINDOWS SETTLED, at an orbit's close (the court's own
+    /// cycle; never a height interval). What the court keeps of the ledger
+    /// trees is bounded by what is still live:
+    /// - a streamed replay whose fold can take no more evidence leaves;
+    /// - a record read FINAL is pruned to its stub (coordinates, upheld) —
+    ///   a final fold is never reversed, so nothing else is read again;
+    /// - a stub leaves once the fold has no value in flight and no recorded
+    ///   (unfinished) fold nets it;
+    /// - an empty remainder — the guard against netting a consumed child
+    ///   from the full — leaves once nothing names the fold and the hot line
+    ///   no longer holds its receipt.
+    ///
+    /// What stays is the folds within their windows and the open
+    /// remainders: the bound 78.123 ruled. The count of entries it let go.
+    pub(crate) fn settle_windows(&mut self) -> usize {
+        let head = self.chain.head_height();
+        let mut gone = 0usize;
+        // Replays whose fold takes no more evidence.
+        let stale: Vec<Vec<u8>> = self
+            .replays
+            .scoped()
+            .map(|(k, _)| k)
+            .filter(|k| {
+                let fold = crate::transducer::address::take_key_bytes(k, &mut 0);
+                let live = fold.as_deref().and_then(|f| self.ledgers.records.get(f)).is_some_and(|r| {
+                    let window = head < window_end(r.sealed) || r.demanded.is_some_and(|d| head < window_end(d));
+                    r.standing == Standing::Open && r.upheld.is_none() && window
+                });
+                !live
+            })
+            .collect();
+        for k in &stale {
+            self.replays.remove(k);
+        }
+        // Final records, to stubs.
+        let mut memo: Keyed<Finality> = Keyed::new();
+        let keys: Vec<Vec<u8>> = self.ledgers.records.scoped().map(|(k, _)| k).collect();
+        let finals: Vec<(Vec<u8>, bool)> = keys
+            .into_iter()
+            .filter_map(|k| match self.finality_of(&k, head, &mut memo) {
+                Finality::Final { upheld } => Some((k, upheld)),
+                _ => None,
+            })
+            .collect();
+        for (k, upheld) in finals {
+            if let Some(r) = self.ledgers.records.remove(&k) {
+                self.ledgers.finals.insert(&k, ((r.tier, r.prefix, r.rows), upheld));
+                gone += 1;
+            }
+        }
+        // Stubs no longer needed: not nettable, named by no unfinished fold.
+        let mut named: Keyed<()> = Keyed::new();
+        for (_, r) in self.ledgers.records.scoped() {
+            for (child, ..) in &r.nets {
+                named.insert(child, ());
+            }
+        }
+        let spent: Vec<Vec<u8>> =
+            self.ledgers.finals.scoped().map(|(k, _)| k).filter(|k| !self.ledgers.folds.contains(k) && !named.contains(k)).collect();
+        for k in &spent {
+            self.ledgers.finals.remove(k);
+            gone += 1;
+        }
+        // Empty remainders nothing names and the hot line no longer holds.
+        let empty: Vec<Vec<u8>> = self
+            .ledgers
+            .remaining
+            .scoped()
+            .filter(|(k, (r, d))| {
+                r.is_identity()
+                    && d.is_identity()
+                    && !self.ledgers.records.contains(k)
+                    && !self.ledgers.finals.contains(k)
+                    && Stamp::from_key(k).and_then(|s| self.chain.node(&s)).is_none()
+            })
+            .map(|(k, _)| k)
+            .collect();
+        for k in &empty {
+            self.ledgers.remaining.remove(k);
+            gone += 1;
+        }
+        if gone > 0 {
+            self.mark_persist();
+        }
+        gone + stale.len()
     }
 
     /// 78.125 — A DOMAIN'S OPEN ARBITRAGES, as served: each by the fold that
@@ -368,6 +460,10 @@ impl Kernel {
 
     fn finality_read(&self, key: &[u8], head: u64, memo: &mut Keyed<Finality>) -> Finality {
         let Some(rec) = self.ledgers.records.get(key) else {
+            // A recorded fold read final and pruned to its stub.
+            if let Some((_, upheld)) = self.ledgers.finals.get(key) {
+                return Finality::Final { upheld: *upheld };
+            }
             // A fold sealed before the tier-line law has no record and no
             // line to replay: grandfathered (the coordinator's ruling).
             return match Stamp::from_key(key).and_then(|at| self.sealed_fold(&at)) {

@@ -151,6 +151,13 @@ pub(crate) struct Ledgers {
     pub(crate) head_at: Keyed<Vec<u8>>,
     /// Per domain: its rates edges, in the order sealed.
     pub(crate) edges: Keyed<Vec<Edge>>,
+    /// 78.125 — FINAL FOLDS, PRUNED TO A STUB: a recorded fold read final
+    /// keeps only its sealed coordinates and whether it was upheld, and only
+    /// while it has value in flight (still nettable) or a fold that netted it
+    /// stands unfinished (whose finality reads it, and whose reversal would
+    /// return parts to it). A final fold is never reversed — its window has
+    /// closed and every fold it nets is final — so nothing else is needed.
+    pub(crate) finals: Keyed<(Sealed, bool)>,
     /// 78.125 — the arbitrages booked, keyed by closing fold and child: the
     /// holder the gain accrues to and its amount on G.
     pub(crate) discharged: Keyed<([u8; 32], i128)>,
@@ -299,7 +306,7 @@ impl Ledgers {
     /// The records, tier heads, edges and discharges (`LEAF_CHALLENGES`);
     /// `None` where none is held.
     pub(crate) fn put_challenges(&self) -> Option<Vec<u8>> {
-        if self.records.is_empty() && self.heads.is_empty() && self.edges.is_empty() && self.discharged.is_empty() {
+        if self.records.is_empty() && self.heads.is_empty() && self.edges.is_empty() && self.discharged.is_empty() && self.finals.is_empty() {
             return None;
         }
         let mut v = Vec::new();
@@ -365,6 +372,16 @@ impl Ledgers {
             v.extend_from_slice(holder);
             v.extend_from_slice(&amount.to_le_bytes());
         }
+        // The final stubs, after the sections 6ef3b165 wrote: a leaf ending
+        // before them carries none.
+        put_key_count(&mut v, self.finals.len());
+        for (k, ((tier, prefix, rows), upheld)) in self.finals.scoped() {
+            put_key_bytes(&mut v, &k);
+            for h in [tier, prefix, rows] {
+                v.extend_from_slice(h);
+            }
+            v.push(u8::from(*upheld));
+        }
         Some(v)
     }
 
@@ -419,6 +436,15 @@ impl Ledgers {
             let amount = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
             *p += 16;
             self.discharged.insert(&k, (holder, amount));
+        }
+        // The final stubs — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = take_key_bytes(b, p)?;
+                let sealed = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
+                let upheld = take_flag(b, p)?;
+                self.finals.insert(&k, (sealed, upheld));
+            }
         }
         for d in &domains {
             self.rederive(d);

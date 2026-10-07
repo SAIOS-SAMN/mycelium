@@ -341,6 +341,47 @@ fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
     assert!(matches!(last, Some(Challenged::Upheld { .. })), "{last:?}");
 }
 
+/// THE WINDOWS SETTLE AT AN ORBIT'S CLOSE, AND A PRUNED CHILD STILL READS
+/// FINAL: `A` netted whole by `P`; `A`'s window closes first — final, its
+/// record pruned to a stub its unfinished parent still names, read final
+/// across a restart; then `P`'s window closes and `P` reads final through
+/// it. `P` pruned in turn, `A` is named by nothing and nettable no more, and
+/// is let go; `P`, its value still in flight, keeps its stub. A streamed
+/// replay whose window closed is let go too.
+#[test]
+fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
+    let (a, p, _) = tiers();
+    let mut k = founded();
+    let a_at = sealed(&mut k, a_fold(), &a);
+    pass(&mut k, a_at.h + CHALLENGE_WINDOW / 2);
+    let (pf, _) = p_over(a_at);
+    let p_at = sealed(&mut k, pf.clone(), &p);
+    let open = Challenge::Open { fold: p_at, rows: pf.rows.clone(), declared: Vec::new(), children: pf.children.clone() };
+    assert!(matches!(k.challenge(&open.sign(&challenger())), Challenged::Streaming { .. }));
+    // A's window closes; P's stands.
+    pass(&mut k, a_at.h + CHALLENGE_WINDOW);
+    let _ = k.orbit();
+    assert!(!k.ledgers.records.contains(&a_at.key()), "A's record pruned");
+    assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
+    assert_eq!(k.finality(&a_at), Finality::Final { upheld: false });
+    assert_eq!(k.replays.len(), 1, "P's stream stands within its window");
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
+    // P's window closes: final through its pruned child.
+    pass(&mut booted, p_at.h + CHALLENGE_WINDOW);
+    assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false }, "the parent reads final through the stub");
+    let _ = booted.orbit();
+    assert!(booted.ledgers.records.is_empty(), "every record final and pruned");
+    assert!(!booted.ledgers.finals.contains(&a_at.key()), "A, consumed and named by nothing, is let go");
+    assert!(booted.ledgers.finals.contains(&p_at.key()), "P, its value in flight, keeps its stub");
+    assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false });
+    // The stream on the original court: its window closed, it is let go.
+    pass(&mut k, p_at.h + CHALLENGE_WINDOW);
+    let _ = k.orbit();
+    assert!(k.replays.is_empty(), "a stream whose window closed is let go");
+}
+
 /// A TIER'S LINE HEAD IS READ BACK: the zero head before it folds; its last
 /// recorded fold's prefix and that fold's stamp after — the same after a
 /// restart, where the stamp is re-derived from the records.
