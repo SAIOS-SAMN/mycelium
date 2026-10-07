@@ -24354,14 +24354,29 @@ where empty. Proved: `ledger::a_child_netted_whole_is_sealed_and_its_consumption
 (the cycle `A → P` at 2, `P → Q` at 1, `A → Q` at 1 obstructs by exactly ½
 on G; at 2 it closes).
 
-*Owed, named:* (1) the gauge's vertices are TIERS, so one pair netted twice
-at two rates — a rate that moved between epochs — reads as a two-edge cycle
-and obstructs; whether a vertex is a tier or a tier's fold (its prefix head)
-is the coordinator's call. (2) A child is found by `chain.node`, so a child
-whose receipt has folded off the hot line reads `NotOnLine`. (3) An
-obstruction stays open until 2(c)'s challenge discharges it; nothing closes
-one yet. (4) The ancient anchor's report of open remainders waits for the
-anchor itself.
+**B′ (the coordinator's decisions, 2026-10-07; LAYOUT-CHANGE).** (1) THE
+VERTICES ARE FOLDS, `tier ‖ prefix` — never tiers: FX levels drift
+legitimately (a progenitor translates at each realm's level), so a rate
+that moves between epochs is two edges and no cycle, while one child fold
+netted through two routes still meets itself at its own vertex and its
+real gain obstructs. (2) A COLD CHILD IS PROVED BY ITS SEALED COORDINATES:
+the hot line has no height horizon — a node leaves it when the court folds
+its prefix, at any close where the work outweighs the era's framing
+(78.67) — so every admitted fold's coordinates (tier, prefix, rows'
+commitment; never its rows, LD0) are held in `LEAF_LEDGERS` from its
+admission and leave once a parent nets all of it: what stays is exactly the
+folds with value in flight. A fold admitted before B′ is read off the hot
+line while it holds it. A child netted whole keeps an empty remainder, so
+its receipt, while the hot line still holds it, is never netted again from
+the full. Proved: `ledger::a_rate_that_moves_between_epochs_is_no_arbitrage`,
+`ledger::a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates`
+(the line really folded by a witnessed era, then restored).
+
+*Owed, named:* (3) An obstruction stays open until 2(c)'s challenge
+discharges it; nothing closes one yet. (4) The ancient anchor's report of
+open remainders waits for the anchor itself. (5) The empty remainders of
+folds netted whole are kept; they matter only while the hot line still holds
+the child's receipt, and their prune at the line's fold is owed.
 
 ### 78.124 The core clock served, and pushed down as the orbital clock (2026-10-07, the operator: "i want the mycelium server to start tracking time in TUniversal as XX:XX:XX:XX:XX:XX … through a 4 dimensional quantum state of {S,G,T,H} as time coordinates … pushed down as the orbital clock"; and "this keeps the cores across galaxies/universes in alignment — then the clocks inside the kernels themselves are held together by that core clock, but the internal galaxies must maintain their own clock, planets orbit on k-steps, rotate (spin) on hours (tidally locked planets and moons have no hours)")
 

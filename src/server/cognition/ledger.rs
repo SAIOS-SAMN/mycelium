@@ -25,18 +25,38 @@ use crate::network::nerve::Keyed;
 use crate::transducer::cech::coefficient::{Coefficient, Lanes, Rates};
 use crate::transducer::cech::cover::{Gauge, Gauged};
 
-/// One open obstruction: the child tier, the parent tier whose edge closed
-/// the cycle, and the cycle's exact holonomy per lane.
-pub(crate) type Obstruction = ([u8; 32], [u8; 32], Rates);
+/// One open obstruction: the child fold's vertex, the parent fold's whose
+/// edge closed the cycle, and the cycle's exact holonomy per lane.
+pub(crate) type Obstruction = (Vec<u8>, Vec<u8>, Rates);
+
+/// AN ADMITTED FOLD BY ITS SEALED COORDINATES (B′): its tier, the prefix
+/// head it nets, its rows' commitment — what its receipt cites, held so a
+/// parent proves the child after its receipt has folded off the hot line.
+pub(crate) type Sealed = ([u8; 32], [u8; 32], [u8; 32]);
+
+/// A FOLD'S VERTEX on its domain's gauge (78.123 B′): its own coordinates,
+/// `tier ‖ prefix` — the fold, never the tier, so a rate that moves between
+/// epochs is two edges and no cycle, while one fold netted by two routes
+/// meets itself at its own vertex.
+pub(crate) fn vertex(tier: &[u8; 32], prefix: &[u8; 32]) -> Vec<u8> {
+    let mut v = Vec::with_capacity(64);
+    v.extend_from_slice(tier);
+    v.extend_from_slice(prefix);
+    v
+}
 
 /// THE LEDGER TREES' STATE on this court — persisted on its node
 /// (`LEAF_LEDGERS`), never re-derived from a line that may have folded.
 #[derive(Default)]
 pub(crate) struct Ledgers {
+    /// Per admitted fold, keyed by its receipt's stamp: its sealed
+    /// coordinates — dropped once a parent has netted all of it, so what is
+    /// held is the folds with value still in flight.
+    pub(crate) folds: Keyed<Sealed>,
     /// Per child, keyed by its receipt's stamp: what remains of its rows and
     /// of its declared, not yet included by a parent. Empty is consumed.
     pub(crate) remaining: Keyed<(Lanes, Lanes)>,
-    /// Per domain: the rates gauge over its tiers.
+    /// Per domain: the rates gauge over its folds.
     pub(crate) gauges: Keyed<Gauge<Rates>>,
     /// Per domain: the obstructions standing open.
     pub(crate) obstructions: Keyed<Vec<Obstruction>>,
@@ -79,10 +99,17 @@ impl Ledgers {
     /// nothing, so a court with no chained fold writes as it did.
     pub(crate) fn put(&self) -> Option<Vec<u8>> {
         use crate::transducer::address::{put_key_bytes, put_key_count};
-        if self.remaining.is_empty() && self.gauges.is_empty() && self.obstructions.is_empty() {
+        if self.folds.is_empty() && self.remaining.is_empty() && self.gauges.is_empty() && self.obstructions.is_empty() {
             return None;
         }
         let mut v = Vec::new();
+        put_key_count(&mut v, self.folds.len());
+        for (k, (tier, prefix, rows)) in self.folds.scoped() {
+            put_key_bytes(&mut v, &k);
+            for h in [tier, prefix, rows] {
+                v.extend_from_slice(h);
+            }
+        }
         put_key_count(&mut v, self.remaining.len());
         for (k, (rows, declared)) in self.remaining.scoped() {
             put_key_bytes(&mut v, &k);
@@ -105,8 +132,8 @@ impl Ledgers {
             v.extend_from_slice(&domain);
             put_key_count(&mut v, open.len());
             for (child, parent, h) in open {
-                v.extend_from_slice(child);
-                v.extend_from_slice(parent);
+                put_key_bytes(&mut v, child);
+                put_key_bytes(&mut v, parent);
                 h.put_canonical(&mut v);
             }
         }
@@ -122,6 +149,11 @@ impl Ledgers {
             Some(k)
         };
         let mut out = Ledgers::default();
+        for _ in 0..take_key_count(b, p)? {
+            let k = take_key_bytes(b, p)?;
+            let sealed = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
+            out.folds.insert(&k, sealed);
+        }
         for _ in 0..take_key_count(b, p)? {
             let k = take_key_bytes(b, p)?;
             let rows = Lanes::take_canonical(b, p)?;
@@ -141,7 +173,7 @@ impl Ledgers {
         for _ in 0..take_key_count(b, p)? {
             let domain = key32(b, p)?;
             let open = (0..take_key_count(b, p)?)
-                .map(|_| Some((key32(b, p)?, key32(b, p)?, Rates::take_canonical(b, p)?)))
+                .map(|_| Some((take_key_bytes(b, p)?, take_key_bytes(b, p)?, Rates::take_canonical(b, p)?)))
                 .collect::<Option<Vec<_>>>()?;
             out.obstructions.insert(domain, open);
         }
@@ -150,6 +182,20 @@ impl Ledgers {
 }
 
 impl Kernel {
+    /// AN ADMITTED FOLD'S SEALED COORDINATES (B′): held from its admission
+    /// until a parent nets all of it — whatever the hot line has folded —
+    /// or, for a fold admitted before the court held them, read off its
+    /// receipt while the hot line still holds it.
+    fn sealed_fold(&self, at: &crate::chronometry::Stamp) -> Option<Sealed> {
+        if let Some(held) = self.ledgers.folds.get(&at.key()) {
+            return Some(*held);
+        }
+        self.chain.node(at)?.cites.iter().find_map(|x| match x {
+            Cite::Uplink { tier, prefix, rows } | Cite::Chained { tier, prefix, rows, .. } => Some((*tier, *prefix, *rows)),
+            _ => None,
+        })
+    }
+
     /// 78.123 B — A FOLD THAT NETS CHILDREN, admitted once its signature,
     /// its binding and its aggregation have read (`admit_uplink`). Each
     /// child: a fold sealed on this court's line (`Cite::Uplink` or
@@ -160,18 +206,16 @@ impl Kernel {
     /// `Cite::Chained`, and the remainders and gauge kept.
     pub(crate) fn admit_chained(&mut self, f: &SignedFold, domain: [u8; 32]) -> Uplinked {
         let mut left: Keyed<(Lanes, Lanes)> = Keyed::new();
+        let mut vertices: Vec<Sealed> = Vec::with_capacity(f.fold.children.len());
         for (i, c) in f.fold.children.iter().enumerate() {
             let index = match u32::try_from(i) {
                 Ok(n) => n,
                 Err(_) => return Uplinked::ChildRefused { index: u32::MAX, why: ChildRefusal::NotOnLine },
             };
             let refuse = |why| Uplinked::ChildRefused { index, why };
-            let Some(node) = self.chain.node(&c.at) else { return refuse(ChildRefusal::NotOnLine) };
-            let held = node.cites.iter().find_map(|x| match x {
-                Cite::Uplink { tier, rows, .. } | Cite::Chained { tier, rows, .. } => Some((*tier, *rows)),
-                _ => None,
-            });
-            let Some((child_tier, rows_hash)) = held else { return refuse(ChildRefusal::NotOnLine) };
+            let Some(sealed) = self.sealed_fold(&c.at) else { return refuse(ChildRefusal::NotOnLine) };
+            let (child_tier, _, rows_hash) = sealed;
+            vertices.push(sealed);
             if rows_hash != c.rows_hash() {
                 return refuse(ChildRefusal::Mismatch);
             }
@@ -206,26 +250,32 @@ impl Kernel {
             None => Gauge::default(),
         };
         let mut found: Vec<Obstruction> = Vec::new();
-        for c in &f.fold.children {
-            let Some(node) = self.chain.node(&c.at) else { continue };
-            let child_tier = node.cites.iter().find_map(|x| match x {
-                Cite::Uplink { tier, .. } | Cite::Chained { tier, .. } => Some(*tier),
-                _ => None,
-            });
-            let (Some(child_tier), Some(rate)) = (child_tier, Rates::of(c.rate)) else {
+        let parent = vertex(&f.fold.tier, &f.fold.prefix);
+        for (c, (tier, prefix, _)) in f.fold.children.iter().zip(&vertices) {
+            let Some(rate) = Rates::of(c.rate) else {
                 return Uplinked::Discontinuous(crate::anastome::dialogue::uplink::Discontinuous::Rate { lane: 1 });
             };
-            if let Gauged::Obstructed(h) = gauge.edge(&child_tier, &f.fold.tier, &rate) {
-                found.push((child_tier, f.fold.tier, h));
+            let child = vertex(tier, prefix);
+            if let Gauged::Obstructed(h) = gauge.edge(&child, &parent, &rate) {
+                found.push((child, parent.clone(), h));
             }
         }
         let Some(children) = f.fold.children_hash() else { return Uplinked::LineRefused };
-        let cite = Cite::Chained { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash(), children };
+        let rows = f.fold.rows_hash();
+        let cite = Cite::Chained { tier: f.fold.tier, prefix: f.fold.prefix, rows, children };
         let Some(r) = self.seal_step(crate::chronometry::ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) else {
             return Uplinked::LineRefused;
         };
+        // This fold may be netted in its turn: held by its sealed coordinates.
+        self.ledgers.folds.insert(r.stamp.key(), (f.fold.tier, f.fold.prefix, rows));
         let open_remainders = left.scoped().filter(|(_, (r, d))| !r.is_identity() || !d.is_identity()).count();
         for (k, v) in left.scoped() {
+            // A child netted whole leaves the held folds; its empty remainder
+            // stays, so its receipt, while the hot line still holds it, is
+            // never netted again from the full.
+            if v.0.is_identity() && v.1.is_identity() {
+                self.ledgers.folds.remove(&k);
+            }
             self.ledgers.remaining.insert(&k, v.clone());
         }
         self.ledgers.gauges.insert(domain, gauge);

@@ -178,6 +178,7 @@ impl Kernel {
         c.count("tier_domain", tier_domain.len());
         // 78.123 B — the ledger trees: children with value in flight, the
         // rates gauges' steps, the open obstructions.
+        c.count("ledger.folds", ledgers.folds.len());
         c.count("ledger.remaining", ledgers.remaining.len());
         c.count("ledger.gauge", ledgers.gauges.scoped().map(|(_, g)| g.steps().len()).sum());
         c.count("ledger.obstructions", ledgers.obstructions.scoped().map(|(_, o)| o.len()).sum());

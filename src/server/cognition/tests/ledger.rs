@@ -31,15 +31,20 @@ fn tiers() -> (SigningKey, SigningKey, SigningKey) {
 
 /// A court on which one domain names the three tiers.
 fn founded() -> Kernel {
+    let mut k = Kernel::new();
+    found(&mut k);
+    k
+}
+
+/// The one domain founded on `k`.
+fn found(k: &mut Kernel) {
     use crate::anastome::dialogue::domain::{DomainGenesis, Founded};
     let (a, p, q) = tiers();
     let mut ts = vec![vk(&a), vk(&p), vk(&q)];
     ts.sort_unstable();
     let domain = key(4);
-    let mut k = Kernel::new();
     let genesis = DomainGenesis { domain: vk(&domain), tiers: ts };
     assert!(matches!(k.admit_domain(&genesis.sign(&domain)), Founded::Sealed { .. }));
-    k
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
@@ -176,7 +181,7 @@ fn a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain() {
         let p_at = sealed(&mut k, p_fold.clone(), &p);
         let p_whole = part(&p_fold, p_at, p_fold.rows.clone(), p_fold.declared.clone(), 1, 1);
         let q_fold = fold(&q, 3, vec![(who(1), g(q_rows))], Vec::new(), vec![p_whole, half(rate)]);
-        let reply = k.admit_uplink(&q_fold.sign(&q));
+        let reply = k.admit_uplink(&q_fold.clone().sign(&q));
         let Uplinked::Chained { provisional: sealed_provisional, obstructions, .. } = reply else { panic!("{reply:?}") };
         assert_eq!((sealed_provisional, obstructions), (provisional, u32::from(provisional)), "rate {rate}");
         let open: Vec<_> = k.ledgers.obstructions.scoped().flat_map(|(_, o)| o.clone()).collect();
@@ -184,10 +189,78 @@ fn a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain() {
             false => assert!(open.is_empty()),
             true => {
                 let [(from, to, h)] = open.as_slice() else { panic!("one obstruction") };
-                assert_eq!((*from, *to), (vk(&a), vk(&q)), "localized to the edge that closed it");
+                let fold_of = |t: &TierFold| crate::server::cognition::ledger::vertex(&t.tier, &t.prefix);
+                assert_eq!((from, to), (&fold_of(&child), &fold_of(&q_fold)), "localized to the edge that closed it");
                 let half = num_rational::BigRational::new(1.into(), 2.into());
                 assert_eq!(h.lanes()[1], half, "the exact gain on G");
             }
         }
     }
+}
+
+/// B′ — A RATE THAT MOVES BETWEEN EPOCHS IS NO ARBITRAGE: the vertices are
+/// folds, so `A`'s fold of one epoch netted by `P` at 2 and its fold of the
+/// next netted at 3 are two edges between four folds — no cycle, nothing
+/// docketed, both final.
+#[test]
+fn a_rate_that_moves_between_epochs_is_no_arbitrage() {
+    let (a, p, _) = tiers();
+    let mut k = founded();
+    for (epoch, rate) in [(1u8, 2i128), (5, 3)] {
+        let child = TierFold { prefix: [epoch; 32], ..a_fold() };
+        let at = sealed(&mut k, child.clone(), &a);
+        let whole = part(&child, at, child.rows.clone(), child.declared.clone(), rate, 1);
+        let parent = fold(&p, epoch + 1, vec![(who(1), g(6 * rate))], Vec::new(), vec![whole]);
+        let reply = k.admit_uplink(&parent.sign(&p));
+        assert!(matches!(reply, Uplinked::Chained { provisional: false, obstructions: 0, .. }), "rate {rate}: {reply:?}");
+    }
+    assert!(k.ledgers.obstructions.is_empty(), "nothing docketed");
+}
+
+/// A witness's signed position over a root hash (as the era tests make one).
+fn co_sign(name: &str, root_hash: [u8; 32]) -> crate::anastome::dialogue::ReceiptSection {
+    use crate::chronometry::{ActKind, ReceiptChain};
+    let key = super::common::court_key(name);
+    let mut c = ReceiptChain::with_vk(key.vk_bytes());
+    let head = c.append(ActKind::List, [0; 4], Vec::new(), [0; 32], Vec::new()).expect("appends").clone();
+    let prefix = crate::court::admission::SignedPrefix {
+        genesis: [7; 32],
+        epoch: 2,
+        prev_receipt_hash: head.prev_hash(),
+        at: head.stamp.place(),
+        height: head.stamp.h,
+        chart: vec![],
+        payload: root_hash.to_vec(),
+    };
+    let sig = key.sign(&prefix.bytes().expect("the prefix frames"));
+    crate::anastome::dialogue::ReceiptSection { prefix, sig, receipt: head }
+}
+
+/// B′ — A COLD CHILD IS PROVED BY ITS SEALED COORDINATES: `A`'s fold sealed,
+/// the court's line folded past it (its receipt off the hot line), and `P`
+/// still nets it — from the coordinates the court held at its admission,
+/// which leave once it is netted whole, surviving a restart meanwhile.
+#[test]
+fn a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates() {
+    let (a, p, _) = tiers();
+    let mut k = Kernel::new();
+    k.bind_identity([0x5c; 32]);
+    found(&mut k);
+    let child = a_fold();
+    let at = sealed(&mut k, child.clone(), &a);
+    k.orbit();
+    let proposal = match k.fold_proposal() {
+        Some(pending) => pending.clone(),
+        None => k.propose_fold().expect("a closed orbit proposes"),
+    };
+    k.commit_fold([3u8; 64], &co_sign("w", proposal.root.hash)).expect("the fold sealed");
+    assert!(k.chain.node(&at).is_none(), "the child's receipt is off the hot line");
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert!(booted.ledgers.folds.contains(&at.key()), "held by its coordinates across the restart");
+    let whole = part(&child, at, child.rows.clone(), child.declared.clone(), 1, 1);
+    let parent = fold(&p, 2, vec![(who(1), g(6))], Vec::new(), vec![whole]);
+    let reply = booted.admit_uplink(&parent.sign(&p));
+    assert!(matches!(reply, Uplinked::Chained { open_remainders: 0, .. }), "{reply:?}");
+    assert!(!booted.ledgers.folds.contains(&at.key()), "netted whole, it leaves the held folds");
 }
