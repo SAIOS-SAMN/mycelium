@@ -160,9 +160,112 @@ pub enum DomainRequest {
     Reserve(SignedReservation),
     /// A domain's reserve read; nothing sealed.
     ReadReserve([u8; 32]),
+    /// 78.129 — a tier's bond posted (topped up) or withdrawn by the reserve.
+    Bond(SignedBond),
+    /// 78.129 — a tier's bond read; nothing sealed.
+    ReadBond { domain: [u8; 32], tier: [u8; 32] },
 }
 
 const KIND_READ_RESERVE: u8 = 2;
+const KIND_BOND: u8 = 3;
+const KIND_UNBOND: u8 = 4;
+const KIND_READ_BOND: u8 = 5;
+
+/// 78.129 — A TIER'S BOND (the coordinator's ruling): posted by the domain's
+/// RESERVE for one tier it backs — μ the ancients hold, escrowed under the
+/// tier's name — topped up by posting again (`mu: Some`), or WITHDRAWN
+/// (`mu: None`) once every fold of the tier is final. The tier that signed a
+/// lie is the one at stake: a falsified fold slashes half its bond.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Bond {
+    pub domain: [u8; 32],
+    pub reserve: [u8; 32],
+    pub tier: [u8; 32],
+    pub mu: Option<[u64; 4]>,
+    pub nonce: [u8; 32],
+}
+
+const BOND: &[u8] = b"mycelium bond v1";
+
+impl Bond {
+    fn kind(&self) -> u8 {
+        match self.mu {
+            Some(_) => KIND_BOND,
+            None => KIND_UNBOND,
+        }
+    }
+
+    fn body(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        out.extend_from_slice(&self.reserve);
+        out.extend_from_slice(&self.tier);
+        if let Some(mu) = self.mu {
+            for m in mu {
+                out.extend_from_slice(&m.to_le_bytes());
+            }
+        }
+        out.extend_from_slice(&self.nonce);
+        out
+    }
+
+    pub fn signed_bytes(&self) -> Vec<u8> {
+        let mut out = BOND.to_vec();
+        out.push(self.kind());
+        out.extend_from_slice(&self.domain);
+        out.extend_from_slice(&self.body());
+        out
+    }
+
+    /// Signed by the reserve tier, whose public half is `reserve`.
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedBond {
+        use ed25519_dalek::Signer;
+        let sig = key.sign(&self.signed_bytes()).to_bytes();
+        SignedBond { bond: self, sig }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignedBond {
+    pub bond: Bond,
+    pub sig: [u8; 64],
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][3|4][reserve 32][tier 32][mu 4×u64 — 3 only][nonce 32][sig 64]`.
+pub fn encode_bond(b: &SignedBond) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&b.bond.domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(b.bond.kind());
+    out.extend_from_slice(&b.bond.body());
+    out.extend_from_slice(&b.sig);
+    out
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][5][tier 32]`.
+pub fn encode_bond_read(domain: [u8; 32], tier: [u8; 32]) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(KIND_READ_BOND);
+    out.extend_from_slice(&tier);
+    out
+}
+
+/// A bond as read: its μ per lane (zero where none is posted).
+pub fn encode_bond_reading(mu: &[u64; 4]) -> Vec<u8> {
+    mu.iter().flat_map(|m| m.to_le_bytes()).collect()
+}
+
+pub fn decode_bond_reading(b: &[u8]) -> Option<[u64; 4]> {
+    if b.len() != 32 {
+        return None;
+    }
+    let mut mu = [0u64; 4];
+    for (m, c) in mu.iter_mut().zip(b.chunks_exact(8)) {
+        *m = u64::from_le_bytes(c.try_into().ok()?);
+    }
+    Some(mu)
+}
 
 /// `[ACT_DOMAIN][domain 32][0x80 0x00][2]`.
 pub fn encode_reserve_read(domain: [u8; 32]) -> Vec<u8> {
@@ -232,8 +335,38 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
     }
     let domain: [u8; 32] = rest.get(..32)?.try_into().ok()?;
     let mut p = 34;
+    let key = |b: &[u8], p: &mut usize| -> Option<[u8; 32]> {
+        let k: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+        *p += 32;
+        Some(k)
+    };
     match *rest.get(p)? {
         KIND_READ_RESERVE => return (rest.len() == p + 1).then_some(DomainRequest::ReadReserve(domain)),
+        KIND_READ_BOND => {
+            p += 1;
+            let tier = key(rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::ReadBond { domain, tier });
+        }
+        k @ (KIND_BOND | KIND_UNBOND) => {
+            p += 1;
+            let (reserve, tier) = (key(rest, &mut p)?, key(rest, &mut p)?);
+            let mu = match k {
+                KIND_BOND => {
+                    let mut mu = [0u64; 4];
+                    for m in &mut mu {
+                        *m = u64::from_le_bytes(rest.get(p..p + 8)?.try_into().ok()?);
+                        p += 8;
+                    }
+                    Some(mu)
+                }
+                _ => None,
+            };
+            let nonce = key(rest, &mut p)?;
+            let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
+            p += 64;
+            let bond = Bond { domain, reserve, tier, mu, nonce };
+            return (p == rest.len()).then_some(DomainRequest::Bond(SignedBond { bond, sig }));
+        }
         KIND_RESERVE => {}
         _ => return None,
     }
@@ -272,6 +405,17 @@ pub enum Founded {
     NotATier,
     /// 78.127 — no such domain is founded on this court.
     NotFounded,
+    /// 78.129 — a bond posted or withdrawn: sealed, and the tier's bond now.
+    Bonded { at: Stamp, receipt: [u8; 32], bond: [u64; 4] },
+    /// 78.129 — the bond's signer is not the domain's reserve tier.
+    NotReserve,
+    /// 78.129 — the reserve holds less μ than the bond posts.
+    Short,
+    /// 78.129 — a fold of the tier is not yet final: no bond withdrawn while
+    /// one is slashable.
+    Outstanding,
+    /// 78.129 — no bond stands for the tier.
+    Unbonded,
 }
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
@@ -297,6 +441,16 @@ pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
         }
         Founded::NotATier => out.push(7),
         Founded::NotFounded => out.push(8),
+        Founded::Bonded { at, receipt, bond } => {
+            out.push(9);
+            at.put_canonical(&mut out);
+            out.extend_from_slice(receipt);
+            out.extend_from_slice(&encode_bond_reading(bond));
+        }
+        Founded::NotReserve => out.push(10),
+        Founded::Short => out.push(11),
+        Founded::Outstanding => out.push(12),
+        Founded::Unbonded => out.push(13),
     }
     out
 }
@@ -330,6 +484,17 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
         }
         7 => Founded::NotATier,
         8 => Founded::NotFounded,
+        9 => {
+            let at = Stamp::take_canonical(b, &mut p)?;
+            let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            let bond = decode_bond_reading(b.get(p + 32..p + 64)?)?;
+            p += 64;
+            Founded::Bonded { at, receipt, bond }
+        }
+        10 => Founded::NotReserve,
+        11 => Founded::Short,
+        12 => Founded::Outstanding,
+        13 => Founded::Unbonded,
         _ => return None,
     };
     (p == b.len()).then_some(f)

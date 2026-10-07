@@ -66,7 +66,9 @@ fn every_challenge_and_every_answer_read_back_whole() {
         Finality::Unrecorded,
         Finality::PreLine,
     ] {
-        assert_eq!(decode_finality_reply(&encode_finality_reply(&f)), Some(f));
+        for bonded in [false, true] {
+            assert_eq!(decode_finality_reply(&encode_finality_reply(&f, bonded)), Some((f, bonded)));
+        }
     }
     let open = vec![OpenObstruction {
         fold,

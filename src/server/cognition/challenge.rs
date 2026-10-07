@@ -288,10 +288,9 @@ impl Kernel {
                 }
                 let Some(r) = self.seal_challenge(c, FALSIFIED, rec.prefix) else { return refuse(R::LineRefused) };
                 let unwound = self.reverse(&key);
-                // 78.127 — the slash: the falsified tier's forfeit from its
-                // domain's reserve, half to this challenger, half retired.
-                let slash = self.slash_of(&rec.tier);
-                self.forfeit(&rec.domain, c.who, slash, (r.stamp, r.chain_hash));
+                // 78.129 — the slash: half the falsified tier's bond, half of
+                // that to this challenger, half retired.
+                self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
                 Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
             }
             Challenge::Default { .. } => {
@@ -304,8 +303,7 @@ impl Kernel {
                 }
                 let Some(r) = self.seal_challenge(c, FALSIFIED, [0; 32]) else { return refuse(R::LineRefused) };
                 let unwound = self.reverse(&key);
-                let slash = self.slash_of(&rec.tier);
-                self.forfeit(&rec.domain, c.who, slash, (r.stamp, r.chain_hash));
+                self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
                 Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
             }
             Challenge::Correction { child, holder, amount, .. } => {

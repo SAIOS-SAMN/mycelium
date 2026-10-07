@@ -23,6 +23,13 @@ use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 
+/// The escrow key a tier's bond is held under.
+pub(crate) fn bond_key(tier: &[u8; 32]) -> Vec<u8> {
+    let mut k = b"bond".to_vec();
+    k.extend_from_slice(tier);
+    k
+}
+
 /// A DOMAIN'S RESERVE: the tier whose μ balance it is, and a redesignation
 /// pending until that tier's next admitted fold.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -377,26 +384,116 @@ impl Kernel {
         self.mark_persist();
     }
 
-    /// 78.127 — THE SLASH OF A FALSIFIED FOLD: what its tier forfeits from
-    /// its domain's reserve. Zero until bonds price it (named, wired).
-    pub(crate) fn slash_of(&self, _tier: &[u8; 32]) -> [u64; 4] {
-        [0; 4]
+    /// 78.129 — A TIER'S BOND as it stands: the μ its domain's reserve holds
+    /// escrowed in its name (zero where none is posted).
+    pub fn bond_of(&self, tier: &[u8; 32]) -> [u64; 4] {
+        self.treasury.held_of(&bond_key(tier)).map_or([0; 4], |h| h.mu)
     }
 
-    /// 78.127 — THE FORFEIT, split as ruled: half to the challenger whose
-    /// replay or default falsified the fold (the bounty — a challenge needs a
-    /// reason to be filed), half RETIRED from supply (POWR), an odd unit to
-    /// retirement. Drawn from the domain's reserve; moves nothing while the
-    /// slash is zero.
-    pub(crate) fn forfeit(&mut self, domain: &[u8; 32], challenger: [u8; 32], mu: [u64; 4], anchor: crate::economy::Anchor) {
-        let Some(reserve) = self.reserve_of(domain) else { return };
-        if mu.iter().all(|m| *m == 0) {
-            return;
+    /// Whether the tier that sealed this fold stands bonded — what a finality
+    /// read carries so a reader weighs an unbacked fold.
+    pub fn fold_bonded(&self, fold: &Stamp) -> bool {
+        let key = fold.key();
+        let tier = match (self.ledgers.records.get(&key), self.ledgers.finals.get(&key)) {
+            (Some(r), _) => Some(r.tier),
+            (None, Some(((tier, ..), _))) => Some(*tier),
+            (None, None) => self.sealed_fold(fold).map(|(tier, ..)| tier),
+        };
+        tier.is_some_and(|t| self.bond_of(&t).iter().any(|m| *m > 0))
+    }
+
+    /// 78.129 — A TIER'S BOND POSTED OR WITHDRAWN (the coordinator's
+    /// ruling): signed by its domain's RESERVE, for a tier its genesis names.
+    /// Posted, the reserve escrows `mu` more in the tier's name (a top-up of
+    /// what it holds; a bond an earlier reserve posted returns to it, and the
+    /// new reserve backs the whole). Withdrawn, it returns to the reserve —
+    /// only once every fold of the tier is final: no bond leaves while a fold
+    /// it backs can still be falsified.
+    pub fn bond(&mut self, s: &crate::anastome::dialogue::domain::SignedBond) -> Founded {
+        let b = &s.bond;
+        if !crate::court::identity::verify(&b.reserve, &b.signed_bytes(), &s.sig) {
+            return Founded::Unsigned;
         }
-        let bounty: [u64; 4] = std::array::from_fn(|l| mu[l] / 2);
-        let retired: [u64; 4] = std::array::from_fn(|l| mu[l] - bounty[l]);
-        let _ = self.treasury.pay(reserve, challenger, bounty, anchor);
-        let _ = self.treasury.burn(reserve, retired, anchor);
+        let Some(tiers) = self.domains.get(&b.domain) else { return Founded::NotFounded };
+        if !tiers.contains(&b.tier) {
+            return Founded::NotATier;
+        }
+        if self.reserve_of(&b.domain) != Some(b.reserve) {
+            return Founded::NotReserve;
+        }
+        let key = bond_key(&b.tier);
+        let held = self.treasury.held_of(&key).cloned();
+        let kept = held.as_ref().filter(|h| h.payer == b.reserve).map_or([0; 4], |h| h.mu);
+        let after = match b.mu {
+            Some(mu) => {
+                if !self.covers(&b.reserve, &mu) {
+                    return Founded::Short;
+                }
+                let mut total = [0u64; 4];
+                for (t, (k, m)) in total.iter_mut().zip(kept.iter().zip(mu)) {
+                    let Some(sum) = k.checked_add(m) else { return Founded::Short };
+                    *t = sum;
+                }
+                total
+            }
+            None => {
+                if held.is_none() {
+                    return Founded::Unbonded;
+                }
+                if self.tier_outstanding(&b.tier) {
+                    return Founded::Outstanding;
+                }
+                [0; 4]
+            }
+        };
+        let cite = Cite::Bond { domain: b.domain, tier: b.tier, mu: after };
+        let Some(r) = self.seal_step(ActKind::Domain, [0; 4], b.reserve, |_| vec![cite.clone()]) else { return Founded::LineRefused };
+        let anchor = (r.stamp, r.chain_hash);
+        if held.is_some() {
+            let _ = self.treasury.refund_held(&key, anchor);
+        }
+        if after.iter().any(|m| *m > 0) && self.treasury.hold(b.reserve, &key, after, anchor).is_err() {
+            return Founded::Short;
+        }
         self.mark_persist();
+        Founded::Bonded { at: r.stamp, receipt: r.chain_hash, bond: after }
+    }
+
+    /// Whether a fold of the tier is not yet final — one its bond still backs.
+    fn tier_outstanding(&self, tier: &[u8; 32]) -> bool {
+        let keys: Vec<Vec<u8>> = self.ledgers.records.scoped().filter(|(_, r)| r.tier == *tier && r.standing == super::ledger::Standing::Open).map(|(k, _)| k).collect();
+        keys.iter().any(|k| {
+            Stamp::from_key(k).is_none_or(|at| !matches!(self.finality(&at), crate::anastome::dialogue::challenge::Finality::Final { .. }))
+        })
+    }
+
+    /// 78.129 — THE SLASH OF A FALSIFIED FOLD: half the tier's bond, on each
+    /// lane, floored — the odd unit stays bonded — forfeited as ruled: half
+    /// to the challenger whose replay or default falsified it (the bounty: a
+    /// challenge needs a reason to be filed), half RETIRED from supply (POWR),
+    /// an odd unit to retirement. Drawn from whoever posted the bond; nothing
+    /// where the tier stands unbonded.
+    pub(crate) fn slash(&mut self, tier: &[u8; 32], challenger: [u8; 32], anchor: crate::economy::Anchor) -> [u64; 4] {
+        let key = bond_key(tier);
+        let Some(held) = self.treasury.held_of(&key).cloned() else { return [0; 4] };
+        let cut: [u64; 4] = std::array::from_fn(|l| held.mu[l] / 2);
+        if cut.iter().all(|m| *m == 0) {
+            return cut;
+        }
+        let bounty: [u64; 4] = std::array::from_fn(|l| cut[l] / 2);
+        let retired: [u64; 4] = std::array::from_fn(|l| cut[l] - bounty[l]);
+        let kept: [u64; 4] = std::array::from_fn(|l| held.mu[l] - cut[l]);
+        if self.treasury.refund_held(&key, anchor).is_err() {
+            return [0; 4];
+        }
+        if bounty.iter().any(|m| *m > 0) {
+            let _ = self.treasury.pay(held.payer, challenger, bounty, anchor);
+        }
+        let _ = self.treasury.burn(held.payer, retired, anchor);
+        if kept.iter().any(|m| *m > 0) {
+            let _ = self.treasury.hold(held.payer, &key, kept, anchor);
+        }
+        self.mark_persist();
+        cut
     }
 }

@@ -38,6 +38,7 @@ mod challenge;
 mod handoff;
 mod convert;
 mod mouth;
+mod bond;
 mod wallet;
 mod why;
 mod winding;

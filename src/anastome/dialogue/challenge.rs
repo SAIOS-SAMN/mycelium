@@ -554,8 +554,11 @@ pub fn decode_challenge_reply(b: &[u8]) -> Option<Challenged> {
     (p == b.len()).then_some(c)
 }
 
-pub fn encode_finality_reply(f: &Finality) -> Vec<u8> {
-    match f {
+/// A fold's finality and — 78.129 — whether its tier stands BONDED (a bond
+/// posted by its domain's reserve), so a reader weighs an unbacked fold:
+/// `[finality][bonded u8]`.
+pub fn encode_finality_reply(f: &Finality, bonded: bool) -> Vec<u8> {
+    let mut out = match f {
         Finality::Final { upheld } => vec![0, u8::from(*upheld)],
         Finality::Provisional { until } => {
             let mut out = vec![1];
@@ -567,11 +570,18 @@ pub fn encode_finality_reply(f: &Finality) -> Vec<u8> {
         Finality::Unwound => vec![4],
         Finality::Unrecorded => vec![5],
         Finality::PreLine => vec![6],
-    }
+    };
+    out.push(u8::from(bonded));
+    out
 }
 
-pub fn decode_finality_reply(b: &[u8]) -> Option<Finality> {
-    Some(match b {
+pub fn decode_finality_reply(b: &[u8]) -> Option<(Finality, bool)> {
+    let (bonded, b) = match b.split_last()? {
+        (0, rest) => (false, rest),
+        (1, rest) => (true, rest),
+        _ => return None,
+    };
+    let f = match b {
         [0, 0] => Finality::Final { upheld: false },
         [0, 1] => Finality::Final { upheld: true },
         [1, rest @ ..] => Finality::Provisional { until: u64::from_le_bytes(rest.try_into().ok()?) },
@@ -581,5 +591,6 @@ pub fn decode_finality_reply(b: &[u8]) -> Option<Finality> {
         [5] => Finality::Unrecorded,
         [6] => Finality::PreLine,
         _ => return None,
-    })
+    };
+    Some((f, bonded))
 }

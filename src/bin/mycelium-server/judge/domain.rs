@@ -15,6 +15,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),
             DomainRequest::ReadReserve(domain) => mycelium::anastome::dialogue::domain::encode_reserve_reading(&k.reserve_reading(&domain)),
+            DomainRequest::Bond(b) => encode_domain_reply(&k.bond(&b)),
+            DomainRequest::ReadBond { tier, .. } => mycelium::anastome::dialogue::domain::encode_bond_reading(&k.bond_of(&tier)),
         },
         Err(_) => return,
     };

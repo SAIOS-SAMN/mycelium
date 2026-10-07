@@ -24835,6 +24835,40 @@ records nothing), and every 78.126 handoff test now through its mouth.
 two builders; the contiguity act; docketing a loop on the court's docket
 beside the FX obstructions.
 
+### 78.129 Bonds and the slash: each tier backed by its domain's reserve (2026-10-07, the coordinator's ruling) — WIRE-CHANGE
+
+**Why.** The tier that signed a lie is the one at stake; but μ is the
+ancients' — ordinary tiers hold none and need not. So a BOND is per tier,
+POSTED BY THE DOMAIN'S RESERVE: μ escrowed in the tier's name (a treasury
+hold under `"bond" ‖ tier`), topped up by posting again.
+
+**The acts** (`ACT_DOMAIN` sub-kinds, signed by the reserve tier, sealed by
+`Cite::Bond { domain, tier, mu }`, tag 11): *post* (kind 3) — only the
+domain's current reserve, for a tier its genesis names, from μ it holds
+(`Short` otherwise); a bond an earlier reserve posted returns to it and the
+new reserve backs the whole; *withdraw* (kind 4) — only once every fold of
+the tier is final (`Outstanding` while one it backs is open, `Unbonded`
+where none stands); *read* (kind 5, sealing nothing) — the tier's bond.
+
+**The slash.** A falsified fold (by replay or default) slashes HALF its
+tier's bond, on each lane, floored — the odd unit stays bonded — forfeited
+as ruled in 78.127: half the cut to the challenger (the bounty), half
+RETIRED from supply (POWR), an odd unit to retirement; drawn from whoever
+posted the bond.
+
+**Bonded, read.** Every finality read carries whether the fold's tier stands
+bonded (`[finality][bonded u8]`; `Session::finality` answers `(Finality,
+bool)`), so a reader weighs an unbacked fold. An unbonded tier still folds:
+its folds read provisional through their window, as before. A required
+minimum bond is a later amendment, once the soak shows what is sane.
+
+Proved: `bond::the_reserve_bonds_a_tier_and_a_fold_reads_bonded` (the bond
+held across a restart), `bond::a_falsified_fold_slashes_half_the_bond_and_withdrawal_waits_on_finality`
+(7 bonded, 3 cut: 1 to the challenger, 2 retired, 4 still bonded; then
+withdrawn whole).
+
+*Owed, named:* a minimum bond; per-lane slash weights.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

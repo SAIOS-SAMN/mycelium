@@ -381,6 +381,10 @@ pub enum Cite {
     /// 78.127 — A DOMAIN'S RESERVE TIER DESIGNATED, by its keys: the domain
     /// and the tier.
     Reserve { domain: [u8; 32], tier: [u8; 32] },
+    /// 78.129 — A TIER'S BOND posted or withdrawn by its domain's reserve:
+    /// the domain, the tier, and the bond it stands at after (zero:
+    /// withdrawn).
+    Bond { domain: [u8; 32], tier: [u8; 32], mu: [u64; 4] },
     /// 78.120 — A DOMAIN'S GENESIS, by its keys (coordinates, as a class's
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
@@ -401,6 +405,7 @@ impl Cite {
             | Cite::Challenge { .. }
             | Cite::Handoff { .. }
             | Cite::Reserve { .. }
+            | Cite::Bond { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -417,6 +422,7 @@ impl Cite {
             | Cite::Challenge { .. }
             | Cite::Handoff { .. }
             | Cite::Reserve { .. }
+            | Cite::Bond { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -477,6 +483,14 @@ impl Cite {
                 rec.extend_from_slice(domain);
                 rec.extend_from_slice(tier);
             }
+            Cite::Bond { domain, tier, mu } => {
+                rec.push(11);
+                rec.extend_from_slice(domain);
+                rec.extend_from_slice(tier);
+                for m in mu {
+                    rec.extend_from_slice(&m.to_le_bytes());
+                }
+            }
             Cite::Domain { domain, tiers } => {
                 rec.push(6);
                 rec.extend_from_slice(domain);
@@ -503,6 +517,7 @@ impl Cite {
                     | Cite::Challenge { .. }
                     | Cite::Handoff { .. }
                     | Cite::Reserve { .. }
+                    | Cite::Bond { .. }
                     | Cite::Domain { .. } => {}
                 }
                 match cover {
@@ -589,6 +604,17 @@ impl Cite {
                 let tier: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
                 *p += 64;
                 Some(Cite::Reserve { domain, tier })
+            }
+            11 => {
+                let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                let tier: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
+                *p += 64;
+                let mut mu = [0u64; 4];
+                for m in &mut mu {
+                    *m = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+                    *p += 8;
+                }
+                Some(Cite::Bond { domain, tier, mu })
             }
             6 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

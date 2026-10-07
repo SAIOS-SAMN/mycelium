@@ -96,6 +96,21 @@ impl super::Session {
         decode_domain_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the reservation's reply did not decode"))
     }
 
+    /// 78.129 — A TIER'S BOND posted (topped up) or withdrawn by its domain's
+    /// reserve: sealed with the bond now, or the refusal by name.
+    pub fn bond(&self, b: &crate::anastome::dialogue::domain::SignedBond) -> io::Result<crate::anastome::dialogue::domain::Founded> {
+        use crate::anastome::dialogue::domain::{decode_domain_reply, encode_bond};
+        let reply = self.speak(encode_bond(b))?;
+        decode_domain_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the bond's reply did not decode"))
+    }
+
+    /// 78.129 — A TIER'S BOND as read: its μ per lane (zero: none posted).
+    pub fn bond_of(&self, domain: [u8; 32], tier: [u8; 32]) -> io::Result<[u64; 4]> {
+        use crate::anastome::dialogue::domain::{decode_bond_reading, encode_bond_read};
+        let reply = self.speak(encode_bond_read(domain, tier))?;
+        decode_bond_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the bond reading did not decode"))
+    }
+
     /// 78.127 — A DOMAIN'S RESERVE AS READ: its tier, a pending
     /// redesignation, and the reserve's μ balance.
     pub fn reserve_reading(&self, domain: [u8; 32]) -> io::Result<crate::anastome::dialogue::domain::ReserveReading> {
@@ -148,8 +163,9 @@ impl super::Session {
         decode_loops_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the loops reply did not decode"))
     }
 
-    /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's stamp.
-    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::Finality> {
+    /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's
+    /// stamp, and — 78.129 — whether its tier stands bonded.
+    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<(crate::anastome::dialogue::challenge::Finality, bool)> {
         use crate::anastome::dialogue::challenge::{decode_finality_reply, encode_finality_request};
         let reply = self.speak(encode_finality_request(fold))?;
         decode_finality_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))

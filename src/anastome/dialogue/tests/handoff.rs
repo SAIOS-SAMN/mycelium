@@ -109,7 +109,20 @@ fn every_conversion_and_the_reserve_read_back_whole() {
     assert_eq!(decode_domain_request(&encode_reservation(&reserve)), Some(DomainRequest::Reserve(reserve)));
     let genesis = DomainGenesis { domain: [6u8; 32], tiers: vec![[1u8; 32]] }.sign(&key);
     assert_eq!(decode_domain_request(&encode_domain(&genesis)), Some(DomainRequest::Genesis(genesis)), "a genesis reads as it did");
-    use crate::anastome::dialogue::domain::{decode_reserve_reading, encode_reserve_read, encode_reserve_reading, ReserveReading};
+    use crate::anastome::dialogue::domain::{
+        decode_bond_reading, decode_reserve_reading, encode_bond, encode_bond_read, encode_bond_reading, encode_reserve_read, encode_reserve_reading, Bond,
+        ReserveReading,
+    };
+    for mu in [Some([4, 0, 2, 0]), None] {
+        let b = Bond { domain: [6u8; 32], reserve: [1u8; 32], tier: [2u8; 32], mu, nonce: [3u8; 32] }.sign(&key);
+        assert_eq!(decode_domain_request(&encode_bond(&b)), Some(DomainRequest::Bond(b)));
+    }
+    assert_eq!(decode_domain_request(&encode_bond_read([6u8; 32], [2u8; 32])), Some(DomainRequest::ReadBond { domain: [6u8; 32], tier: [2u8; 32] }));
+    assert_eq!(decode_bond_reading(&encode_bond_reading(&[7, 0, 1, 0])), Some([7, 0, 1, 0]));
+    let bonded = Founded::Bonded { at: Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 }, receipt: [1u8; 32], bond: [4, 0, 0, 0] };
+    for f in [bonded, Founded::NotReserve, Founded::Short, Founded::Outstanding, Founded::Unbonded] {
+        assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f.clone()));
+    }
     assert_eq!(decode_domain_request(&encode_reserve_read([6u8; 32])), Some(DomainRequest::ReadReserve([6u8; 32])));
     for r in [ReserveReading::default(), ReserveReading { current: Some([1u8; 32]), pending: Some([2u8; 32]), balance: [3, 0, 9, 1] }] {
         assert_eq!(decode_reserve_reading(&encode_reserve_reading(&r)), Some(r.clone()));
