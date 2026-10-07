@@ -24909,9 +24909,29 @@ bits; `exp∘ln` and `ln∘exp` close; Γ(1) = Γ(2) = 1 and lnΓ(x+1) − lnΓ(
 ln x; sin² + cos² ∋ 1 through the reduction; erf odd; P increasing in `x`
 and P(1, 40) within `2^-50` of one; the same enclosures on another thread.
 
+**The cosmos port's second list** (the coordinator, in order): `sinh`,
+`cosh` (from `exp`; `cosh` least at zero), `logistic` `1/(1+e^{−x})`;
+`atan` (Euler's series `v/(1+v²)·Σ ∏(2j/(2j+1))·y^k`, `y = v²/(1+v²) ≤ ½`,
+the tail `≤ t_n`; reflected by `π/2 − atan(1/v)` past one), `acos`
+(`2·atan(√((1−v)/(1+v)))`, `acos(−1) = π`), `tan` (`sin/cos`, refused where
+the cosine's enclosure holds zero); THE PLANCK TAIL `F(x) = 15/π⁴·∫_x^∞
+t³/(e^t−1) dt`, `F(0) = 1` exactly, decreasing — for `x ≥ 1` the series
+`Σ e^{−nx}(x³/n + 3x²/n² + 6x/n³ + 6/n⁴)`, whose tail after `N` terms is the
+next term over `1 − e^{−x}` (every term positive, the polynomial factor
+decreasing in `n`), for `x < 1` `1 − 15/π⁴·Σ B_k x^{k+3}/((k+3)·k!)`, its
+tail `≤ 4x³(x/6)^{K+1}/(1 − x/6)` since `|B_k|/k! ≤ 4/(2π)^k < 4/6^k`; and
+the INVERSE POISSON CDF, each step's CDF an enclosure decided only where it
+separates from `u`, the precision raised where it does not, refused past
+`w + 256` bits rather than guessed. Proved: sinh 1, cosh 1, tan 1 to
+`2^-60`; atan 1 = π/4, atan 2 + atan ½ = π/2, acos 0 = π/2, acos ½ = π/3,
+acos(−1) = π; F(0) = 1, F(1/10) by its small-x series, the two series
+meeting across x = 1 (F(0.99) − F(1) ≈ 0.000896 by F′), F(30) by its first
+term; the λ = 3 quantiles at the CDF's steps.
+
 *Owed, named:* the continued fraction for `P` at large `x` (the series is
-`O(x)` terms); `atan`/`asin` and the inverse incomplete gamma if the cosmos
-port asks.
+`O(x)` terms) — its truncation bound is the coordinator's to confirm before
+it is built (the Legendre fraction brackets only where its partial
+numerators are positive, `n > a`).
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

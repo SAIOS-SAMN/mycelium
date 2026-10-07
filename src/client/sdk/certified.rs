@@ -533,3 +533,229 @@ fn erf_point(v: &Q, w: u32) -> Option<Encl> {
 pub fn erf(x: &Encl, w: u32) -> Option<Encl> {
     Encl::new(erf_point(&x.lo, w)?.lo, erf_point(&x.hi, w)?.hi)
 }
+
+// ———————————————————————————————— sinh, cosh, logistic ————————————————————————————————
+
+/// `sinh x = (e^x − e^{−x})/2`: increasing, by its endpoints.
+pub fn sinh(x: &Encl, w: u32) -> Encl {
+    let w2 = w + 8;
+    let at = |v: &Q| exp_point(v, w2).sub(&exp_point(&-v.clone(), w2)).scale(&Q::new(BigInt::one(), BigInt::from(2)));
+    Encl { lo: at(&x.lo).lo, hi: at(&x.hi).hi }.round(w)
+}
+
+/// `cosh x = (e^x + e^{−x})/2`: even, least at zero, increasing in `|x|`.
+pub fn cosh(x: &Encl, w: u32) -> Encl {
+    let w2 = w + 8;
+    let at = |v: &Q| exp_point(v, w2).add(&exp_point(&-v.clone(), w2)).scale(&Q::new(BigInt::one(), BigInt::from(2)));
+    let far = at(&x.abs_max());
+    let near = if x.lo.is_negative() && x.hi.is_positive() {
+        Q::one()
+    } else {
+        at(&qmin(x.lo.abs(), x.hi.abs())).lo
+    };
+    Encl { lo: near, hi: far.hi }.round(w)
+}
+
+/// The logistic `1/(1 + e^{−x})`: increasing, by its endpoints.
+pub fn logistic(x: &Encl, w: u32) -> Option<Encl> {
+    let w2 = w + 8;
+    let at = |v: &Q| Encl::exact(Q::one()).add(&exp_point(&-v.clone(), w2)).recip();
+    Some(Encl { lo: at(&x.lo)?.lo, hi: at(&x.hi)?.hi }.round(w))
+}
+
+// ———————————————————————————————— atan, acos, tan ————————————————————————————————
+
+/// `atan v` for `|v| ≤ 1`, by Euler's series `atan v = v/(1+v²) · Σ_k
+/// ∏_{j≤k} (2j/(2j+1)) · y^k`, `y = v²/(1+v²) ≤ ½`. REMAINDER: the terms are
+/// positive and each ratio is `≤ y ≤ ½`, so the tail after the term `t_n` is
+/// `≤ t_n·y/(1−y) ≤ t_n`.
+fn atan_small(v: &Q, w2: u32) -> Encl {
+    let tiny = stop_at(w2);
+    let v2 = v * v;
+    let y = &v2 / (Q::one() + &v2);
+    let lead = v / (Q::one() + &v2);
+    let mut term = Encl::exact(Q::one());
+    let mut sum = term.clone();
+    let mut k = 1i64;
+    loop {
+        term = term.scale(&(Q::new(BigInt::from(2 * k), BigInt::from(2 * k + 1)) * &y)).round(w2);
+        sum = sum.add(&term).round(w2);
+        if term.abs_max() <= tiny {
+            break;
+        }
+        k += 1;
+    }
+    sum.add(&Encl { lo: Q::zero(), hi: term.abs_max() }).scale(&lead).round(w2)
+}
+
+/// `atan v` at an exact point: for `|v| > 1`, `sign(v)·π/2 − atan(1/v)`.
+fn atan_point(v: &Q, w: u32) -> Encl {
+    let w2 = w + 24;
+    if v.abs() <= Q::one() {
+        return atan_small(v, w2).round(w);
+    }
+    let half_pi = pi(w2).scale(&Q::new(BigInt::one(), BigInt::from(2)));
+    let inner = atan_small(&v.recip(), w2);
+    let out = if v.is_positive() { half_pi.sub(&inner) } else { half_pi.neg().sub(&inner) };
+    out.round(w)
+}
+
+/// `atan x`: increasing, by its endpoints.
+pub fn atan(x: &Encl, w: u32) -> Encl {
+    Encl { lo: atan_point(&x.lo, w).lo, hi: atan_point(&x.hi, w).hi }
+}
+
+/// `acos v` at an exact point `−1 ≤ v ≤ 1`: `acos v = 2·atan(√((1−v)/(1+v)))`;
+/// `acos(−1) = π`, `acos 1 = 0`.
+fn acos_point(v: &Q, w: u32) -> Option<Encl> {
+    let w2 = w + 24;
+    let one = Q::one();
+    if v > &one || v < &-one.clone() {
+        return None;
+    }
+    if v == &-one.clone() {
+        return Some(pi(w));
+    }
+    let ratio = (&one - v) / (&one + v);
+    let root = sqrt(&Encl::exact(ratio), w2)?;
+    let a = Encl { lo: atan_point(&root.lo, w2).lo, hi: atan_point(&root.hi, w2).hi };
+    Some(a.scale(&q(2)).round(w))
+}
+
+/// `acos x` for `x ⊂ [−1, 1]`: decreasing, by its endpoints.
+pub fn acos(x: &Encl, w: u32) -> Option<Encl> {
+    Encl::new(acos_point(&x.hi, w)?.lo, acos_point(&x.lo, w)?.hi)
+}
+
+/// `tan x = sin x / cos x` — none where the enclosure of `cos x` holds zero.
+pub fn tan(x: &Encl, w: u32) -> Option<Encl> {
+    let (s, c) = sin_cos(x, w + 16);
+    Some(s.div(&c)?.round(w))
+}
+
+// ———————————————————————————————— the Planck tail ————————————————————————————————
+
+/// `15/π⁴`: the black-body normalization.
+fn planck_norm(w2: u32) -> Option<Encl> {
+    let p = pi(w2);
+    let p4 = p.square().square();
+    Some(p4.recip()?.scale(&q(15)))
+}
+
+/// `F(v)` for `v ≥ 1`: `15/π⁴ · Σ_{n≥1} e^{−nv}·p_n(v)`, `p_n(v) = v³/n + 3v²/n² +
+/// 6v/n³ + 6/n⁴`. REMAINDER: every term is positive and `p_n` is decreasing in
+/// `n`, so the tail after `N` terms is `Σ_{n>N} e^{−nv}p_n ≤ p_{N+1}·Σ_{n>N}
+/// e^{−nv} = e^{−(N+1)v}·p_{N+1} / (1 − e^{−v})` — the next term over `1 − e^{−v}`.
+fn planck_far(v: &Q, w2: u32) -> Option<Encl> {
+    let tiny = stop_at(w2);
+    let e = exp_point(&-v.clone(), w2);
+    let gap = Encl::exact(Q::one()).sub(&e).recip()?;
+    let p = |n: i64| -> Q {
+        let n = q(n);
+        v * v * v / &n + q(3) * v * v / (&n * &n) + q(6) * v / (&n * &n * &n) + q(6) / (&n * &n * &n * &n)
+    };
+    let mut en = e.clone();
+    let mut sum = Encl::exact(Q::zero());
+    let mut n = 1i64;
+    loop {
+        sum = sum.add(&en.scale(&p(n))).round(w2);
+        en = en.mul(&e).round(w2);
+        let tail = en.scale(&p(n + 1)).mul(&gap);
+        if tail.hi <= tiny {
+            sum = sum.add(&Encl { lo: Q::zero(), hi: tail.hi });
+            break;
+        }
+        n += 1;
+    }
+    Some(sum.mul(&planck_norm(w2)?))
+}
+
+/// `F(v)` for `0 ≤ v < 1`: `1 − 15/π⁴·∫_0^v t³/(e^t−1) dt`, and `t³/(e^t−1) =
+/// t²·Σ B_k t^k/k!`, so the integral is `Σ_k B_k v^{k+3}/((k+3)·k!)`.
+/// REMAINDER: `|B_k|/k! ≤ 4/(2π)^k < 4/6^k`, so the tail after `K` terms is
+/// `≤ 4v³·(v/6)^{K+1}/(1 − v/6)`.
+fn planck_near(v: &Q, w2: u32) -> Option<Encl> {
+    let tiny = stop_at(w2);
+    let sixth = v / q(6);
+    let mut b = bernoulli(32);
+    let mut integral = Encl::exact(Q::zero());
+    let mut vpow = v * v * v; // v^{k+3}
+    let mut fact = BigInt::one(); // k!
+    let mut k = 0usize;
+    loop {
+        if b.len() <= k {
+            b = bernoulli(2 * k + 16);
+        }
+        let kq = Q::from_integer(BigInt::from(k + 3)) * Q::from_integer(fact.clone());
+        integral = integral.add(&Encl::exact(&b[k] * &vpow / kq)).round(w2);
+        k += 1;
+        fact *= BigInt::from(k);
+        vpow *= v;
+        // The tail after K = k terms.
+        let mut bound = q(4) * v * v * v / (Q::one() - &sixth);
+        for _ in 0..=k {
+            bound *= &sixth;
+        }
+        if up(&bound, w2) <= tiny {
+            integral = integral.add(&Encl::pm(up(&bound, w2)));
+            break;
+        }
+    }
+    Some(Encl::exact(Q::one()).sub(&integral.mul(&planck_norm(w2)?)))
+}
+
+/// THE PLANCK TAIL `F(x) = 15/π⁴ · ∫_x^∞ t³/(e^t − 1) dt`: the fraction of
+/// black-body energy above `x = hν/kT`. `F(0) = 1` exactly; `F` decreasing, so
+/// bounded by its endpoints; `x ≥ 0`.
+pub fn planck_tail(x: &Encl, w: u32) -> Option<Encl> {
+    if x.lo.is_negative() {
+        return None;
+    }
+    let w2 = w + 32 + mag_bits(&x.hi);
+    let at = |v: &Q| -> Option<Encl> {
+        if v.is_zero() {
+            return Some(Encl::exact(Q::one()));
+        }
+        if v < &Q::one() {
+            planck_near(v, w2)
+        } else {
+            planck_far(v, w2)
+        }
+    };
+    let out = Encl::new(at(&x.hi)?.lo, at(&x.lo)?.hi)?;
+    Some(out.clamp(&Q::zero(), &Q::one()).round(w))
+}
+
+// ———————————————————————————————— the Poisson quantile ————————————————————————————————
+
+/// THE INVERSE POISSON CDF: the least `k` with `Σ_{j≤k} e^{−λ} λ^j/j! ≥ u`, for
+/// an exact `λ > 0` and `0 ≤ u < 1`. Each step's CDF is an enclosure; a step
+/// is decided only where its bounds separate from `u`, the precision raised
+/// where they do not, up to `w + 256` bits — beyond that `u` sits on a step
+/// edge to that precision, and the quantile is refused rather than guessed.
+pub fn poisson_quantile(lambda: &Q, u: &Q, w: u32) -> Option<u64> {
+    if !lambda.is_positive() || u.is_negative() || u >= &Q::one() {
+        return None;
+    }
+    let mut wp = w + 32 + mag_bits(lambda);
+    while wp <= w + 256 + mag_bits(lambda) {
+        let mut term = exp_point(&-lambda.clone(), wp);
+        let mut cdf = term.clone();
+        let mut k = 0u64;
+        let decided = loop {
+            match (cdf.lo >= *u, cdf.hi < *u) {
+                (true, _) => break Some(k),
+                (_, true) => {}
+                _ => break None,
+            }
+            k = k.checked_add(1)?;
+            term = term.scale(&(lambda / Q::from_integer(BigInt::from(k)))).round(wp);
+            cdf = cdf.add(&term).round(wp);
+        };
+        if decided.is_some() {
+            return decided;
+        }
+        wp += 64;
+    }
+    None
+}

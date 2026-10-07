@@ -92,3 +92,66 @@ fn the_same_inputs_give_the_same_enclosure_on_any_thread() {
     let there = std::thread::spawn(|| (pi(W), erf(&point(q(5, 7)), W), lgamma(&point(q(3, 2)), W))).join().expect("thread");
     assert_eq!(here, there, "bit for bit");
 }
+
+/// Whether `e` lies strictly inside `(lo, hi)`.
+fn within(e: &Encl, lo: Q, hi: Q) -> bool {
+    e.lo > lo && e.hi < hi
+}
+
+#[test]
+fn the_hyperbolic_and_inverse_circular_functions_are_enclosed() {
+    pins(&sinh(&point(Q::one()), W), "1.17520119364380145688238185059560081515571798133409", "sinh 1");
+    pins(&cosh(&point(Q::one()), W), "1.54308063481524377847790562075706168260152911236586", "cosh 1");
+    pins(&tan(&point(Q::one()), W).expect("tan 1"), "1.55740772465490223050697480745836017308725077238152", "tan 1");
+    assert!(cosh(&point(Q::zero()), W).contains(&Q::one()), "cosh 0 = 1");
+    let quarter_pi = pi(W).scale(&q(1, 4));
+    let a1 = atan(&point(Q::one()), W);
+    assert!(a1.lt(&quarter_pi).is_none() && quarter_pi.lt(&a1).is_none(), "atan 1 = π/4");
+    let half_pi = pi(W).scale(&q(1, 2));
+    let pair = atan(&point(q(2, 1)), W).add(&atan(&point(q(1, 2)), W));
+    assert!(pair.lt(&half_pi).is_none() && half_pi.lt(&pair).is_none(), "atan 2 + atan ½ = π/2");
+    let a0 = acos(&point(Q::zero()), W).expect("acos 0");
+    assert!(a0.lt(&half_pi).is_none() && half_pi.lt(&a0).is_none(), "acos 0 = π/2");
+    let third_pi = pi(W).scale(&q(1, 3));
+    let ah = acos(&point(q(1, 2)), W).expect("acos ½");
+    assert!(ah.lt(&third_pi).is_none() && third_pi.lt(&ah).is_none(), "acos ½ = π/3");
+    assert_eq!(acos(&point(q(-1, 1)), W), Some(pi(W)), "acos(−1) = π");
+    assert!(acos(&point(q(3, 2)), W).is_none(), "outside [−1, 1]");
+    assert!(logistic(&point(Q::zero()), W).expect("").contains(&q(1, 2)), "logistic 0 = ½");
+}
+
+#[test]
+fn the_planck_tail_is_one_at_zero_and_its_two_series_meet() {
+    assert_eq!(planck_tail(&point(Q::zero()), W), Some(point(Q::one())), "F(0) = 1 exactly");
+    // Small x: 1 − 15/π⁴·(x³/3 − x⁴/8 + …), at x = 1/10 ≈ 0.999953.
+    let small = planck_tail(&point(q(1, 10)), W).expect("");
+    assert!(within(&small, q(99994, 100000), q(99996, 100000)), "{small:?}");
+    // The near series (x < 1) and the far series (x ≥ 1) agree: F' at 1 is
+    // −15/π⁴ · 1/(e − 1) ≈ −0.0896, so F(0.99) − F(1) ≈ 0.000896.
+    let below = planck_tail(&point(q(99, 100)), W).expect("");
+    let at = planck_tail(&point(Q::one()), W).expect("");
+    assert!(within(&below.sub(&at), q(88, 100000), q(91, 100000)), "the two series meet at 1");
+    // Large x: the first term 15/π⁴·e^{−x}(x³+3x²+6x+6) dominates.
+    let far = planck_tail(&point(q(30, 1)), W).expect("");
+    // The reference at 128 bits: e^{-30}'s grid, scaled by ~4600, would
+    // otherwise swamp what it checks.
+    let first = exp(&point(q(-30, 1)), 128).scale(&q(27000 + 2700 + 180 + 6, 1)).scale(&q(15, 1)).mul(&pi(128).square().square().recip().expect(""));
+    // The rest is the second term, ~e^{-30}/2 ≈ 2^-44 of the first; the grid
+    // adds 2^-64 absolute (F(30) ≈ 4·10⁻¹⁰, so absolute, not relative).
+    let gap = far.sub(&first).abs_max();
+    let allowed = &first.hi / Q::from_integer(BigInt::one() << 40u32) + Q::new(BigInt::one(), BigInt::one() << 60u32);
+    assert!(gap < allowed, "the first term, to 2^-40 of itself and the grid");
+    let order = planck_tail(&Encl::new(q(2, 1), q(3, 1)).expect(""), W).expect("");
+    assert!(order.lo < order.hi && order.lo > Q::zero(), "an interval of x");
+}
+
+#[test]
+fn the_poisson_quantile_reads_the_cdf_steps() {
+    // λ = 3: CDF(0) ≈ 0.0498, CDF(1) ≈ 0.1991, CDF(2) ≈ 0.4232, CDF(3) ≈ 0.6472, CDF(5) ≈ 0.9161.
+    let l = q(3, 1);
+    assert_eq!(poisson_quantile(&l, &Q::zero(), W), Some(0));
+    assert_eq!(poisson_quantile(&l, &q(1, 10), W), Some(1));
+    assert_eq!(poisson_quantile(&l, &q(1, 2), W), Some(3));
+    assert_eq!(poisson_quantile(&l, &q(9, 10), W), Some(5));
+    assert_eq!(poisson_quantile(&l, &Q::one(), W), None, "u < 1");
+}
