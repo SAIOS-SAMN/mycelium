@@ -266,9 +266,42 @@ pub enum LawsRequest {
     Batch(Vec<Transition>),
     /// 78.122 — the shared lexicon's register, at its version.
     Lexicon,
+    /// 78.124 — the core clock: the court's head stamp.
+    Clock,
 }
 
 const MODE_LEXICON: u8 = 3;
+const MODE_CLOCK: u8 = 4;
+
+/// 78.124 — `[ACT_LAWS][4]`: the core clock, asked by address.
+pub fn encode_clock_request() -> Vec<u8> {
+    vec![crate::anastome::dialogue::ACT_LAWS, MODE_CLOCK]
+}
+
+/// The clock's reply: `[0]` — no act yet, no head — or `[1]` and the head's
+/// stamp, seven `u64`s.
+pub fn encode_clock_reply(at: Option<&crate::chronometry::CoreStamp>) -> Vec<u8> {
+    match at {
+        None => vec![0],
+        Some(s) => {
+            let mut out = vec![1];
+            s.put(&mut out);
+            out
+        }
+    }
+}
+
+/// The clock a reply carries, read whole: `Some(None)` a court with no head
+/// yet, `None` bytes that do not read.
+pub fn decode_clock_reply(b: &[u8]) -> Option<Option<crate::chronometry::CoreStamp>> {
+    let mut p = 1;
+    let read = match b {
+        [0] => return Some(None),
+        [1, ..] => crate::chronometry::CoreStamp::take(b, &mut p)?,
+        _ => return None,
+    };
+    (p == b.len()).then_some(Some(read))
+}
 
 /// 78.122 — `[ACT_LAWS][3]`: the shared lexicon, asked by address.
 pub fn encode_lexicon_request() -> Vec<u8> {
@@ -368,6 +401,7 @@ pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
     match body {
         [act, MODE_REGISTER] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Register),
         [act, MODE_LEXICON] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Lexicon),
+        [act, MODE_CLOCK] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Clock),
         [act, MODE_VERIFY, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;

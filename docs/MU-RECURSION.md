@@ -24309,6 +24309,43 @@ cannot be read. Proved: `cover::the_lane_group_sums_exactly_per_identity_per_lan
 `cover::a_tetrahedron_glues_on_all_its_triangles_and_one_edge_obstructs_it`,
 `cover::the_versor_group_reads_the_same_cover_the_same_way`.
 
+### 78.124 The core clock served, and pushed down as the orbital clock (2026-10-07, the operator: "i want the mycelium server to start tracking time in TUniversal as XX:XX:XX:XX:XX:XX … through a 4 dimensional quantum state of {S,G,T,H} as time coordinates … pushed down as the orbital clock"; and "this keeps the cores across galaxies/universes in alignment — then the clocks inside the kernels themselves are held together by that core clock, but the internal galaxies must maintain their own clock, planets orbit on k-steps, rotate (spin) on hours (tidally locked planets and moons have no hours)")
+
+**The stamp, served.** 78.21's amendment ruled the stamp `h:S:G:T:H:K.i`
+(CK1, `KStepReceipt::print`): the tick (TUniversal's height), the frame the
+act measured on the four lanes, the signer's orbit and the act's place in
+it — 78.21 (ii)'s four-dimensional state, each tick's {S, G, T, H} held
+together and read at its `K`. `chronometry::CoreStamp` carries it, read off
+the head receipt (`Kernel::core_stamp`), served as `ACT_LAWS` mode 4
+(`[0]` before a court's first act, else `[1]` and seven `u64`s) —
+`Session::clock`. Its fixed-width writing, `CoreStamp::wide`, is sixteen hex
+digits a field — `hhhh…:SSSS…:GGGG…:TTTT…:HHHH…:KKKK….iiii…` — never wrapping
+at its carrier, so text order is numeric order. A wire addition. Proved:
+`uplink::the_core_clock_is_the_heads_stamp_served_and_written_wide`.
+
+**The hierarchy of clocks**, as the operator ruled it:
+1. *The core clock* — TUniversal, the stamp above — keeps the cores of
+   domains and universes aligned, as the courts' height already does.
+2. *A kernel's step clock* is held to it: each kernel tick stamped with the
+   core stamp it last read, so kernels in one universe keep step without
+   sharing their internals.
+3. *A galaxy keeps its own clock* — deep time at its own pace, every peopled
+   place its proper time — never jumping, never agreeing a "now" with
+   another; peoples ordered by their ledgers' heights, `h = 1 + max(own,
+   other)` (47.2).
+4. *Bodies orbit on k-steps* — closed form, never stepped: time is distance
+   along an orbit (78.43), an age one return read off the motion, never a
+   counter — and *spin on hours*, their own day; a tidally locked planet
+   or moon has no hours (its day is its year, or its parent's month).
+
+**The lanes on an orbit.** `T` the elapsed duration — the phase advances on
+`T`; `S` the scale and position along the orbit; `H` the holonomic lane —
+the spin plane's holonomy over a return, its precession (78.62); `G` the
+GAUGE lane — hue, recolouring (78.53, 78.69: `FieldLine`'s 𝒢) — never the
+expansion, which is LV2's ratio on momentum under a dilation, docketed on a
+verdict and no lane. OWED: the push (`ACT_SUBSCRIBE_CHART`,
+`ACT_STREAM_DELTA`, 78.59 P2), after 2(a)–(c).
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

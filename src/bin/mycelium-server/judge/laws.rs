@@ -14,10 +14,15 @@ use mycelium::network::wire::Frame;
 use mycelium::physics::laws::codec::{decode_laws_request, encode_register_reply, put_verdict, LawsRequest};
 use std::net::TcpStream;
 
-pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, _door: &Door) {
+pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_laws_request(&frame.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
+        // 78.124 — the core clock: this court's head stamp, read at the ask.
+        LawsRequest::Clock => match door.kernel.lock() {
+            Ok(k) => mycelium::physics::laws::codec::encode_clock_reply(k.core_stamp().as_ref()),
+            Err(_) => return,
+        },
         // 78.122 — the shared lexicon, at its version.
         LawsRequest::Lexicon => mycelium::physics::laws::codec::encode_lexicon_reply(),
         LawsRequest::Verify(t) => {

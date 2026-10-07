@@ -54,6 +54,15 @@ impl super::Session {
         }
     }
 
+    /// 78.124 — THE CORE CLOCK at this hypha: its head stamp `h:S:G:T:H:K.i`,
+    /// or `None` before its first act. A kernel's step clock is held to it:
+    /// each kernel tick stamped with the core stamp it last read.
+    pub fn clock(&self) -> io::Result<Option<crate::chronometry::CoreStamp>> {
+        let reply = self.speak(crate::physics::laws::codec::encode_clock_request())?;
+        crate::physics::laws::codec::decode_clock_reply(&reply)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the clock's reply did not decode"))
+    }
+
     /// 78.122 — THE SHARED LEXICON this hypha defines: its version and every
     /// term. A kernel compares the version with its own.
     pub fn lexicon(&self) -> io::Result<(u8, Vec<crate::physics::laws::codec::ServedTerm>)> {

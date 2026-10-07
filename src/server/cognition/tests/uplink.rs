@@ -77,6 +77,23 @@ fn a_fold_the_tier_did_not_sign_is_refused() {
     assert_eq!(k.chain.head().map(|h| h.kind), Some(ActKind::Domain), "nothing sealed after the genesis");
 }
 
+/// 78.124 — THE CORE CLOCK IS THE HEAD'S STAMP: none before the first act;
+/// after the domain's genesis, exactly the head receipt's tick, frame, orbit
+/// and place, served and read back whole, written sixteen hex digits a field.
+#[test]
+fn the_core_clock_is_the_heads_stamp_served_and_written_wide() {
+    use crate::physics::laws::codec::{decode_clock_reply, encode_clock_reply};
+    assert_eq!(Kernel::new().core_stamp(), None, "no act, no head");
+    let k = founded();
+    let head = k.chain.head().expect("the genesis");
+    let at = k.core_stamp().expect("a head");
+    assert_eq!((at.h, at.lanes, at.k, at.i), (head.stamp.h, head.mu, head.stamp.k, head.stamp.i));
+    assert_eq!(decode_clock_reply(&encode_clock_reply(Some(&at))), Some(Some(at)));
+    assert_eq!(decode_clock_reply(&encode_clock_reply(None)), Some(None));
+    let wide = crate::chronometry::CoreStamp { h: 0x1_2345, lanes: [1, 2, 3, 4], k: 7, i: 0 }.wide();
+    assert_eq!(wide, "0000000000012345:0000000000000001:0000000000000002:0000000000000003:0000000000000004:0000000000000007.0000000000000000");
+}
+
 /// 78.120 — A TIER NO DOMAIN NAMES IS UNBOUND: its fold, signed and
 /// continuous, is refused until a domain's genesis names it.
 #[test]

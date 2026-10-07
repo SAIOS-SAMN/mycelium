@@ -23,6 +23,13 @@ impl Kernel {
         (self.chain.head_height(), self.chain.head_k())
     }
 
+    /// 78.124 — THE CORE CLOCK at this court: its head's stamp
+    /// `h:S:G:T:H:K.i`, or `None` before its first act. What a kernel's step
+    /// clock is held to.
+    pub fn core_stamp(&self) -> Option<crate::chronometry::CoreStamp> {
+        self.chain.head().map(|r| crate::chronometry::CoreStamp::of(&r))
+    }
+
     /// A snapshot taken at `at` was written whole. Called only after the
     /// write lands, so a write that failed records nothing.
     pub fn note_persisted(&mut self, at: (u64, u64)) {

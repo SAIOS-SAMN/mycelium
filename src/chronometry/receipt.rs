@@ -727,3 +727,52 @@ impl KStepReceipt {
         format!("{}:{s}:{g}:{t}:{h}:{}", self.stamp.h, self.stamp.place().print())
     }
 }
+
+/// 78.124 — THE CORE CLOCK'S STAMP, `h:S:G:T:H:K.i`: the tick (TUniversal's
+/// height), the frame the act measured on the four lanes `{S, G, T, H}`, the
+/// signer's orbit and the act's place in it — what keeps the cores of
+/// domains and universes aligned, and what a kernel's own step clock is
+/// held to (the operator, 2026-10-07: "the server to start tracking time in
+/// TUniversal … through a 4 dimensional quantum state of {S,G,T,H} as time
+/// coordinates … pushed down as the orbital clock").
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CoreStamp {
+    pub h: u64,
+    pub lanes: [u64; 4],
+    pub k: u64,
+    pub i: u64,
+}
+
+impl CoreStamp {
+    /// The stamp a receipt stands at.
+    pub fn of(r: &KStepReceipt) -> CoreStamp {
+        CoreStamp { h: r.stamp.h, lanes: r.mu, k: r.stamp.k, i: r.stamp.i }
+    }
+
+    /// THE FIXED-WIDTH WRITING, for people and logs (the operator's
+    /// `XX:XX:XX:XX:XX:XX`): every field sixteen hex digits — never wrapping
+    /// at its carrier, so text order is numeric order — the tick, the four
+    /// lanes, then the orbit and place as `K.i`.
+    pub fn wide(&self) -> String {
+        let [s, g, t, h] = self.lanes;
+        format!("{:016x}:{s:016x}:{g:016x}:{t:016x}:{h:016x}:{:016x}.{:016x}", self.h, self.k, self.i)
+    }
+
+    /// Seven `u64`s, little-endian: `h`, the four lanes, `k`, `i`.
+    pub fn put(&self, out: &mut Vec<u8>) {
+        for v in [self.h, self.lanes[0], self.lanes[1], self.lanes[2], self.lanes[3], self.k, self.i] {
+            out.extend_from_slice(&v.to_le_bytes());
+        }
+    }
+
+    /// The seven fields read back.
+    pub fn take(b: &[u8], p: &mut usize) -> Option<CoreStamp> {
+        let mut f = [0u64; 7];
+        for x in &mut f {
+            *x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+        }
+        let [h, s, g, t, hh, k, i] = f;
+        Some(CoreStamp { h, lanes: [s, g, t, hh], k, i })
+    }
+}
