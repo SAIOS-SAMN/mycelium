@@ -63,6 +63,29 @@ fn every_handoff_act_and_answer_read_back_whole() {
     assert_eq!(decode_uplink_reply(&encode_uplink_reply(&refused)), Some(refused));
 }
 
+/// 78.128 — a mouth pair, its close, a traversal and the loops read back
+/// whole; a traversal is the handoff its offer is.
+#[test]
+fn every_mouth_act_and_the_loops_read_back_whole() {
+    let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
+    let one = crate::transducer::element::identity_versor();
+    let mouth = Mouth { from_tier: [1u8; 32], to_tier: [2u8; 32], keeper: [1u8; 32], from_frame: one.clone(), to_frame: one.clone(), toll: [3, 0, 0, 0], nonce: [4u8; 32] };
+    assert!(mouth.frames_hold());
+    let offer = Offer { from_tier: [1u8; 32], to_tier: [2u8; 32], out_nets: vec![([3u8; 32], [-1, 0, 0, 0])], in_nets: vec![([4u8; 32], [1, 0, 0, 0])], charter: [0u8; 32], nonce: [9u8; 32] };
+    let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.id() };
+    assert_eq!(traverse.id(), offer.id(), "a traversal is the handoff its offer is");
+    for h in [Handoff::Mouth(Box::new(mouth.clone())), Handoff::Close { id: mouth.id() }, traverse] {
+        let signed = h.sign(&key);
+        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    }
+    assert_eq!(decode_handoff_request(&encode_loops_read()), Some(HandoffRequest::Loops));
+    let loops = vec![Loop { mouth: mouth.id(), holonomy: one }];
+    assert_eq!(decode_loops_reply(&encode_loops_reply(&loops)), Some(loops));
+    for r in [HandoffRefusal::NoMouth, HandoffRefusal::Degenerate, HandoffRefusal::BadKeeper, HandoffRefusal::NotTheMouth] {
+        assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));
+    }
+}
+
 /// 78.127 — conversions out and in, and the reserve's designation, read back
 /// whole; `rate · g` exact or none; a genesis frame still reads as a genesis.
 #[test]

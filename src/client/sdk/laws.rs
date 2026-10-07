@@ -139,6 +139,15 @@ impl super::Session {
         decode_read_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the handoff read did not decode"))
     }
 
+    /// 78.128 — THE MOUTH LOOPS: every open mouth pair that closed a cycle of
+    /// domains whose holonomy is not the identity, with that holonomy —
+    /// curvature recorded.
+    pub fn mouth_loops(&self) -> io::Result<Vec<crate::anastome::dialogue::handoff::Loop>> {
+        use crate::anastome::dialogue::handoff::{decode_loops_reply, encode_loops_read};
+        let reply = self.speak(encode_loops_read())?;
+        decode_loops_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the loops reply did not decode"))
+    }
+
     /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's stamp.
     pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::Finality> {
         use crate::anastome::dialogue::challenge::{decode_finality_reply, encode_finality_request};

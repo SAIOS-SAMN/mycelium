@@ -24720,6 +24720,15 @@ standing restores), `handoff::a_handoff_refused_or_expired_returns_to_the_sender
 *Owed, named:* the cross-court handshake; charters; the tier's list of
 open handoffs (a read by id stands).
 
+**AMENDED by 78.128 (the coordinator's ruling: physics, not policy).**
+Domains are distinct universes with no shared space: a handoff between
+domains — on S OR H — must be a TRAVERSAL citing an OPEN mouth pair joining
+them (`Handoff::Traverse`), or it is refused `NoMouth`. A plain offer stands
+only between domains a later act declares CONTIGUOUS (one physical
+universe, one shared chart — the hook, unbuilt). **For netstratum: your
+H-lane word handoffs to xylarium will need a mouth** (and name each word by
+its canonical identity, MU-LEXICON v2).
+
 ### 78.127 2(e): μ conversion against a domain's reserve — never minted by a rate (2026-10-07, the coordinator's rulings) — LAYOUT-CHANGE, WIRE-CHANGE
 
 **Why.** μ exists only as the hypha makes it — allocations and POW++
@@ -24777,6 +24786,54 @@ lane (`Session::reserve_reading`); the designation typed as
 
 *Owed, named:* bonds (what the slash forfeits); wormhole tolls (μ
 transfers from traversers to the keeping ancients' reserve, no conversion).
+
+### 78.128 The wormhole: a mouth pair between domains, built and kept by the ancients (2026-10-07, the operator's direction — "an ancient-built wormhole between xylarium and netstratum" — and the coordinator's rulings) — LAYOUT-CHANGE, WIRE-CHANGE
+
+**Why.** Domains share no space (78.126 as amended): nothing crosses
+between them without a physical connection — "a word never outruns its
+carrier" holds between universes too. A WORMHOLE is that connection, and
+the ancients build it.
+
+**The mouth pair** (`ACT_HANDOFF` kind 7), offered by one domain's RESERVE
+tier and accepted (kind 1) by the other's within `W` — the builders are the
+ancients, both ends their domains' current reserves: X's BLACK-HOLE mouth
+and Y's WHITE-HOLE mouth, each placed in its domain's chart by an exact
+Cl(4,1) versor (zero or no versor: `Degenerate` — a horizon sphere must be
+carried onto a sphere; xylarium builds its frames from its cosmos port's
+horizon spheres, r² = 4M²); a KEEPER, one of the two reserves, the builders
+who toll it; a flat TOLL of μ per traversal. Two-way, like a lane: the
+departure mouth sinks, the arrival mouth sources (continuity v3). Either
+reserve CLOSES it (kind 8): traversals in flight return, their tolls
+refunded.
+
+**Traversal** (kind 9): a 2(b) offer citing the mouth — the only way across;
+the mouth OPEN and joining the offer's two domains, either way, else
+`NoMouth` / `NotTheMouth`. Its toll is escrowed from the sending tier at the
+offer, released to the KEEPER on acceptance, refunded on refusal, expiry or
+close — a μ transfer, Σ = 0, no conversion. Sides, consumption, reversal as
+78.126.
+
+**Loops are curvature, recorded.** The open mouths are edges between
+DOMAINS (the vertex: each domain's chart), each carrying its pair's chart
+transition `to_frame · from_frame⁻¹` (Phase C's path order), read on a
+`Gauge<Turned>` in the order they opened: a pair that closes a cycle whose
+holonomy is not the identity — two routes disagreeing about how one
+universe lands in another — is RECORDED with its exact holonomy (kind 10,
+`Session::mouth_loops`), never refused. Read, never stored (law 12).
+
+**Layout.** Mouths and each traversal's mouth after the conversions in
+`LEAF_HANDOFFS`.
+
+Proved: `mouth::a_mouth_pair_is_built_by_two_reserves_on_real_frames`,
+`mouth::a_traversal_crosses_through_an_open_mouth_and_pays_the_keeper`,
+`mouth::a_mouth_closed_returns_what_is_in_flight`,
+`mouth::a_loop_of_mouths_that_turns_is_recorded_as_curvature` (a turning
+cycle recorded at the mouth that closed it; one carrying the turn back
+records nothing), and every 78.126 handoff test now through its mouth.
+
+*Owed, named:* a per-unit toll (rate × matter); tolls split between the
+two builders; the contiguity act; docketing a loop on the court's docket
+beside the FX obstructions.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

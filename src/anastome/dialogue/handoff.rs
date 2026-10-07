@@ -159,6 +159,71 @@ pub enum Handoff {
     /// 78.127 — μ INTO a domain's reserve, for game value arriving: offered
     /// by the holder, answered by the reserve tier (accept, refuse, expire).
     ConvertIn(Box<ConvertIn>),
+    /// 78.128 — A WORMHOLE'S MOUTHS OFFERED by one domain's reserve to
+    /// another's; accepted, the mouth pair is OPEN.
+    Mouth(Box<Mouth>),
+    /// 78.128 — a mouth pair CLOSED by either reserve; traversals in flight
+    /// return.
+    Close { id: [u8; 32] },
+    /// 78.128 — a handoff THROUGH an open mouth pair: the only way matter or
+    /// a word crosses between domains (universes with no shared space).
+    Traverse { offer: Box<Offer>, mouth: [u8; 32] },
+}
+
+/// 78.128 — A WORMHOLE'S MOUTH PAIR (the coordinator's rulings 2026-10-07):
+/// built by two domains' RESERVE tiers (the ancients), `from_tier` offering
+/// and `to_tier` accepting; X's black-hole mouth and Y's white-hole mouth,
+/// each placed in its domain's chart by an exact Cl(4,1) versor (a horizon
+/// sphere carried onto a sphere); the KEEPER — one of the two — takes a flat
+/// `toll` of μ per traversal. Two-way, like a lane.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Mouth {
+    pub from_tier: [u8; 32],
+    pub to_tier: [u8; 32],
+    pub keeper: [u8; 32],
+    pub from_frame: crate::transducer::cga::Mv,
+    pub to_frame: crate::transducer::cga::Mv,
+    pub toll: [u64; 4],
+    pub nonce: [u8; 32],
+}
+
+impl Mouth {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for k in [&self.from_tier, &self.to_tier, &self.keeper] {
+            out.extend_from_slice(k);
+        }
+        self.from_frame.to_bytes(&mut out);
+        self.to_frame.to_bytes(&mut out);
+        for m in self.toll {
+            out.extend_from_slice(&m.to_le_bytes());
+        }
+        out.extend_from_slice(&self.nonce);
+        out
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mouth> {
+        let (from_tier, to_tier, keeper) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
+        let from_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let to_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
+        let mut toll = [0u64; 4];
+        for m in &mut toll {
+            *m = u64_at(b, p)?;
+        }
+        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)? })
+    }
+
+    pub fn id(&self) -> [u8; 32] {
+        let mut b = b"mouth".to_vec();
+        b.extend_from_slice(&self.bytes());
+        crate::chronometry::payload_hash(&b)
+    }
+
+    /// Each frame a versor, never zero: it carries a horizon sphere onto a
+    /// sphere.
+    pub fn frames_hold(&self) -> bool {
+        [&self.from_frame, &self.to_frame].iter().all(|f| !f.is_zero() && crate::transducer::cga::is_versor(f))
+    }
 }
 
 /// 78.127 — A CONVERSION OUT (2(e), the coordinator's rulings): signed by
@@ -297,25 +362,34 @@ impl Handoff {
             Handoff::Expire { .. } => 3,
             Handoff::ConvertOut(_) => 5,
             Handoff::ConvertIn(_) => 6,
+            Handoff::Mouth(_) => 7,
+            Handoff::Close { .. } => 8,
+            Handoff::Traverse { .. } => 9,
         }
     }
 
     fn put_body(&self, out: &mut Vec<u8>) {
         match self {
             Handoff::Offer(o) => out.extend_from_slice(&o.bytes()),
-            Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } => out.extend_from_slice(id),
+            Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } | Handoff::Close { id } => out.extend_from_slice(id),
             Handoff::ConvertOut(c) => out.extend_from_slice(&c.bytes()),
             Handoff::ConvertIn(c) => out.extend_from_slice(&c.bytes()),
+            Handoff::Mouth(m) => out.extend_from_slice(&m.bytes()),
+            Handoff::Traverse { offer, mouth } => {
+                out.extend_from_slice(&offer.bytes());
+                out.extend_from_slice(mouth);
+            }
         }
     }
 
-    /// The handoff it names.
+    /// The handoff it names. A traversal is the handoff its offer is.
     pub fn id(&self) -> [u8; 32] {
         match self {
-            Handoff::Offer(o) => o.id(),
-            Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } => *id,
+            Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => o.id(),
+            Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } | Handoff::Close { id } => *id,
             Handoff::ConvertOut(c) => c.id(),
             Handoff::ConvertIn(c) => c.id(),
+            Handoff::Mouth(m) => m.id(),
         }
     }
 
@@ -358,9 +432,50 @@ pub enum HandoffRequest {
     Signed(SignedHandoff),
     /// A handoff's standing, read; nothing sealed.
     Read([u8; 32]),
+    /// 78.128 — the open mouth loops whose holonomy is not the identity:
+    /// curvature recorded; nothing sealed.
+    Loops,
 }
 
 const KIND_READ: u8 = 4;
+const KIND_LOOPS: u8 = 10;
+
+/// `[ACT_HANDOFF][10]`.
+pub fn encode_loops_read() -> Vec<u8> {
+    vec![super::ACT_HANDOFF, KIND_LOOPS]
+}
+
+/// 78.128 — ONE MOUTH LOOP: the mouth pair whose opening closed a cycle of
+/// domains, and the cycle's exact holonomy (its frame transitions composed
+/// in path order).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Loop {
+    pub mouth: [u8; 32],
+    pub holonomy: crate::transducer::cga::Mv,
+}
+
+/// `[count][(mouth 32, holonomy) …]`.
+pub fn encode_loops_reply(loops: &[Loop]) -> Vec<u8> {
+    let mut out = Vec::new();
+    crate::transducer::address::put_key_count(&mut out, loops.len());
+    for l in loops {
+        out.extend_from_slice(&l.mouth);
+        l.holonomy.to_bytes(&mut out);
+    }
+    out
+}
+
+pub fn decode_loops_reply(b: &[u8]) -> Option<Vec<Loop>> {
+    let mut p = 0;
+    let n = crate::transducer::address::take_key_count(b, &mut p)?;
+    let loops = (0..n)
+        .map(|_| {
+            let mouth = key32(b, &mut p)?;
+            Some(Loop { mouth, holonomy: crate::transducer::cga::Mv::from_bytes(b, &mut p)? })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    (p == b.len()).then_some(loops)
+}
 
 /// `[ACT_HANDOFF][kind][who 32][body][sig 64]`.
 pub fn encode_handoff(h: &SignedHandoff) -> Vec<u8> {
@@ -391,6 +506,7 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
     };
     let request = match *kind {
         KIND_READ => HandoffRequest::Read(id(b, &mut p)?),
+        KIND_LOOPS => HandoffRequest::Loops,
         k => {
             let who = id(b, &mut p)?;
             let handoff = match k {
@@ -400,6 +516,12 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                 3 => Handoff::Expire { id: id(b, &mut p)? },
                 5 => Handoff::ConvertOut(Box::new(ConvertOut::take(b, &mut p)?)),
                 6 => Handoff::ConvertIn(Box::new(ConvertIn::take(b, &mut p)?)),
+                7 => Handoff::Mouth(Box::new(Mouth::take(b, &mut p)?)),
+                8 => Handoff::Close { id: id(b, &mut p)? },
+                9 => {
+                    let offer = Box::new(Offer::take(b, &mut p)?);
+                    Handoff::Traverse { offer, mouth: id(b, &mut p)? }
+                }
                 _ => return None,
             };
             let sig: [u8; 64] = b.get(p..p + 64)?.try_into().ok()?;
@@ -439,6 +561,15 @@ pub enum HandoffRefusal {
     Inexact,
     /// 78.127 — the holder holds less μ than it offers.
     HolderShort,
+    /// 78.128 — a handoff between domains citing no OPEN mouth pair: domains
+    /// share no space, and nothing crosses without a physical connection.
+    NoMouth,
+    /// 78.128 — a mouth frame zero or no versor: no horizon sphere carried.
+    Degenerate,
+    /// 78.128 — a keeper that is neither of the pair's two reserves.
+    BadKeeper,
+    /// 78.128 — the traversal's tiers are not in the mouth's two domains.
+    NotTheMouth,
 }
 
 /// THE COURT'S ANSWER.
@@ -496,6 +627,10 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::ReserveShort => [14, 0],
         HandoffRefusal::Inexact => [15, 0],
         HandoffRefusal::HolderShort => [16, 0],
+        HandoffRefusal::NoMouth => [17, 0],
+        HandoffRefusal::Degenerate => [18, 0],
+        HandoffRefusal::BadKeeper => [19, 0],
+        HandoffRefusal::NotTheMouth => [20, 0],
     }
 }
 
@@ -530,6 +665,10 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         14 => HandoffRefusal::ReserveShort,
         15 => HandoffRefusal::Inexact,
         16 => HandoffRefusal::HolderShort,
+        17 => HandoffRefusal::NoMouth,
+        18 => HandoffRefusal::Degenerate,
+        19 => HandoffRefusal::BadKeeper,
+        20 => HandoffRefusal::NotTheMouth,
         _ => return None,
     })
 }

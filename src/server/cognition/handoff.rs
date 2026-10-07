@@ -40,6 +40,17 @@ pub(crate) struct Handoffs {
     pub(crate) offered_at: Keyed<Vec<u8>>,
     /// 78.127 — each conversion by its id, held while its G side is open.
     pub(crate) conversions: Keyed<super::convert::Conversion>,
+    /// 78.128 — each wormhole's mouth pair by its id.
+    pub(crate) mouths: Keyed<super::mouth::MouthHeld>,
+    /// 78.128 — each traversal's mouth, by the handoff's id.
+    pub(crate) through: Keyed<[u8; 32]>,
+}
+
+/// The escrow key a traversal's toll is held under.
+pub(crate) fn toll_key(id: &[u8; 32]) -> Vec<u8> {
+    let mut k = b"toll".to_vec();
+    k.extend_from_slice(id);
+    k
 }
 
 /// The nets a side carries into its consuming fold: OUT, what leaves; IN
@@ -85,7 +96,13 @@ impl Handoffs {
 
     /// The state written by its own coordinates; `None` where none is held.
     pub(crate) fn put(&self) -> Option<Vec<u8>> {
-        if self.held.is_empty() && self.consumed_by.is_empty() && self.offered_at.is_empty() && self.conversions.is_empty() {
+        if self.held.is_empty()
+            && self.consumed_by.is_empty()
+            && self.offered_at.is_empty()
+            && self.conversions.is_empty()
+            && self.mouths.is_empty()
+            && self.through.is_empty()
+        {
             return None;
         }
         let mut v = Vec::new();
@@ -132,6 +149,17 @@ impl Handoffs {
         for (id, c) in self.conversions.scoped() {
             v.extend_from_slice(&id);
             c.put(&mut v);
+        }
+        // 78.128 — the mouths and the traversals' mouths, after the conversions.
+        put_key_count(&mut v, self.mouths.len());
+        for (id, m) in self.mouths.scoped() {
+            v.extend_from_slice(&id);
+            m.put(&mut v);
+        }
+        put_key_count(&mut v, self.through.len());
+        for (id, mouth) in self.through.scoped() {
+            v.extend_from_slice(&id);
+            v.extend_from_slice(mouth);
         }
         Some(v)
     }
@@ -200,6 +228,17 @@ impl Handoffs {
                 out.conversions.insert(k, super::convert::Conversion::take(b, p)?);
             }
         }
+        // The mouths and traversals — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.mouths.insert(k, super::mouth::MouthHeld::take(b, p)?);
+            }
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.through.insert(k, id(b, p)?);
+            }
+        }
         Some(out)
     }
 }
@@ -222,19 +261,41 @@ impl Kernel {
         if matches!(h.handoff, Handoff::ConvertOut(_) | Handoff::ConvertIn(_)) || answers_conversion {
             return self.convert(h);
         }
+        // 78.128 — a mouth pair, its close, or an answer to its offer.
+        let answers_mouth = matches!(h.handoff, Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. })
+            && self.handoffs.mouths.contains(&id);
+        if matches!(h.handoff, Handoff::Mouth(_) | Handoff::Close { .. }) || answers_mouth {
+            return self.mouth_act(h);
+        }
         let head = self.chain.head_height();
         let state = match &h.handoff {
-            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) => return refuse(R::Unknown),
-            Handoff::Offer(o) => {
+            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) | Handoff::Mouth(_) | Handoff::Close { .. } => return refuse(R::Unknown),
+            Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => {
                 if h.who != o.from_tier {
                     return refuse(R::NotTheTier);
                 }
                 if let Err(u) = o.conserves() {
                     return refuse(R::Unbalanced(u));
                 }
-                match (self.tier_domain.get(&o.from_tier), self.tier_domain.get(&o.to_tier)) {
-                    (Some(x), Some(y)) if x != y => {}
-                    _ => return refuse(R::Unbound),
+                let (Some(x), Some(y)) = (self.tier_domain.get(&o.from_tier).copied(), self.tier_domain.get(&o.to_tier).copied()) else {
+                    return refuse(R::Unbound);
+                };
+                if x == y {
+                    return refuse(R::Unbound);
+                }
+                // 78.128 — DOMAINS SHARE NO SPACE: nothing crosses between
+                // them but through an OPEN mouth pair joining these two, in
+                // either direction (the coordinator's ruling: physics, not
+                // policy) — unless the two are declared contiguous (a later
+                // act; none is).
+                match &h.handoff {
+                    Handoff::Traverse { mouth, .. } => {
+                        if let Err(why) = self.through(mouth, &x, &y) {
+                            return refuse(why);
+                        }
+                    }
+                    _ if self.contiguous(&x, &y) => {}
+                    _ => return refuse(R::NoMouth),
                 }
                 if let Some(held) = self.handoffs.held.get(&id) {
                     // A RESEND (the coordinator's ruling): the same offer —
@@ -266,27 +327,50 @@ impl Kernel {
                 })
             }
         };
+        // 78.128 — a traversal's toll is escrowed from the sending tier before
+        // anything seals: the payer must hold it.
+        let toll = match &h.handoff {
+            Handoff::Traverse { mouth, .. } => self.handoffs.mouths.get(mouth).map(|m| m.mouth.toll),
+            _ => None,
+        };
+        if let (Some(toll), Handoff::Traverse { offer, .. }) = (toll, &h.handoff) {
+            let short = crate::economy::shortfall(&toll, &self.treasury.balance_mu(&offer.from_tier));
+            if !crate::economy::lanes_short(&short).is_empty() {
+                return refuse(R::HolderShort);
+            }
+        }
         let kind = match &h.handoff {
             Handoff::Offer(_) => 0,
             Handoff::Accept { .. } => 1,
             Handoff::Refuse { .. } => 2,
             Handoff::Expire { .. } => 3,
-            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) => return refuse(R::Unknown),
+            Handoff::Traverse { .. } => 9,
+            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) | Handoff::Mouth(_) | Handoff::Close { .. } => return refuse(R::Unknown),
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
+        let anchor = (r.stamp, r.chain_hash);
         let now = match (state, &h.handoff) {
-            (None, Handoff::Offer(o)) => {
+            (None, Handoff::Offer(o) | Handoff::Traverse { offer: o, .. }) => {
                 let until = window_end(r.stamp.h);
                 let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { until }, out: None, inn: None };
                 self.handoffs.held.insert(id, held);
                 self.handoffs.offered_at.insert(id, r.stamp.key());
+                if let Handoff::Traverse { mouth, .. } = &h.handoff {
+                    self.handoffs.through.insert(id, *mouth);
+                    if let Some(toll) = toll.filter(|t| t.iter().any(|m| *m > 0)) {
+                        let _ = self.treasury.hold(o.from_tier, &toll_key(&id), toll, anchor);
+                    }
+                }
                 State::Offered { until }
             }
             (Some(s), _) => {
                 if let Some(held) = self.handoffs.held.get_mut(&id) {
                     held.state = s;
                 }
+                // 78.128 — the toll: to the keeper on acceptance, back to the
+                // payer otherwise.
+                self.settle_toll(&id, s == State::Accepted, anchor);
                 s
             }
             (None, _) => return refuse(R::Unknown),
@@ -384,6 +468,7 @@ impl Kernel {
         for k in &done {
             self.handoffs.held.remove(k);
             self.handoffs.offered_at.remove(k);
+            self.handoffs.through.remove(k);
         }
         // 78.127 — a conversion whose side a final fold consumed, or returned.
         let converted: Vec<Vec<u8>> = self

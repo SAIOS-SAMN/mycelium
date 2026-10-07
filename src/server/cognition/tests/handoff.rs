@@ -4,7 +4,7 @@
 // un-consuming, and the handoff let go once final folds consumed both sides.
 
 use crate::anastome::dialogue::challenge::{line_head, Challenge, Challenged, Entry};
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Offer, Side, State, Unbalanced};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, Side, State, Unbalanced};
 use crate::anastome::dialogue::uplink::{Discontinuous, Net, SideRefusal, TierFold, Uplinked};
 use crate::chronometry::{ActKind, Stamp};
 use crate::physics::laws::CHALLENGE_WINDOW;
@@ -34,17 +34,34 @@ fn y() -> SigningKey {
     key(31)
 }
 
-/// Two domains on one court: X names `x` and `x2`, Y names `y`.
+/// Two domains on one court: X names `x` and `x2`, Y names `y`; their
+/// reserves `x` and `y` (the ancients) have opened `the_mouth()` between them
+/// — 78.128: nothing crosses between domains but through an open mouth.
 fn founded() -> Kernel {
-    use crate::anastome::dialogue::domain::{DomainGenesis, Founded};
+    use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
     let mut k = Kernel::new();
     let mut xs = vec![vk(&x()), vk(&x2())];
     xs.sort_unstable();
-    for (d, tiers) in [(key(4), xs), (key(5), vec![vk(&y())])] {
+    for (d, tiers, reserve) in [(key(4), xs, x()), (key(5), vec![vk(&y())], y())] {
         let g = DomainGenesis { domain: vk(&d), tiers };
         assert!(matches!(k.admit_domain(&g.sign(&d)), Founded::Sealed { .. }));
+        let r = Reservation { domain: vk(&d), tier: vk(&reserve), nonce: [0; 32] };
+        assert!(matches!(k.designate_reserve(&r.sign(&d)), Founded::Reserved { now: true, .. }));
     }
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(the_mouth())).sign(&x())), Handed::Sealed { .. }));
+    assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().id() }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
     k
+}
+
+/// X's black-hole mouth and Y's white-hole mouth, kept by X, toll-free.
+fn the_mouth() -> Mouth {
+    let one = crate::transducer::element::identity_versor();
+    Mouth { from_tier: vk(&x()), to_tier: vk(&y()), keeper: vk(&x()), from_frame: one.clone(), to_frame: one, toll: [0; 4], nonce: [0; 32] }
+}
+
+/// The offer through the mouth.
+fn through(o: Offer) -> Handoff {
+    Handoff::Traverse { offer: Box::new(o), mouth: the_mouth().id() }
 }
 
 /// Five of matter and one word, from X's `w1` to Y's `w8`.
@@ -60,7 +77,7 @@ fn cargo() -> Offer {
 }
 
 fn offered(k: &mut Kernel, o: Offer) -> [u8; 32] {
-    match k.handoff(&Handoff::Offer(Box::new(o)).sign(&x())) {
+    match k.handoff(&through(o).sign(&x())) {
         Handed::Sealed { id, state: State::Offered { .. }, .. } => id,
         other => panic!("offered: {other:?}"),
     }
@@ -82,7 +99,7 @@ fn pass(k: &mut Kernel, h: u64) {
 #[test]
 fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
     let mut k = founded();
-    let refused = |k: &mut Kernel, o: Offer, by: &SigningKey| match k.handoff(&Handoff::Offer(Box::new(o)).sign(by)) {
+    let refused = |k: &mut Kernel, o: Offer, by: &SigningKey| match k.handoff(&through(o).sign(by)) {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
@@ -97,10 +114,14 @@ fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
     assert_eq!(refused(&mut k, cargo(), &y()), HandoffRefusal::NotTheTier, "the sender files the offer");
     let at_home = Offer { to_tier: vk(&x2()), ..cargo() };
     assert_eq!(refused(&mut k, at_home, &x()), HandoffRefusal::Unbound, "a handoff crosses domains");
-    let first = k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x()));
+    assert!(
+        matches!(k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x())), Handed::Refused(HandoffRefusal::NoMouth)),
+        "domains share no space: nothing crosses but through a mouth"
+    );
+    let first = k.handoff(&through(cargo()).sign(&x()));
     let Handed::Sealed { id, .. } = first else { panic!("offered") };
     let height = k.chain.head_height();
-    assert_eq!(k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x())), first, "a resent offer: its original receipt");
+    assert_eq!(k.handoff(&through(cargo()).sign(&x())), first, "a resent offer: its original receipt");
     assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
     assert_eq!(k.handoff_read(&id), Some((State::Offered { until: k.chain.head_height() + CHALLENGE_WINDOW }, false, false)));
 }
