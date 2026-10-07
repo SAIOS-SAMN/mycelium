@@ -356,6 +356,12 @@ pub enum Cite {
     /// inside the sentence went to the voice with the verdict, and the
     /// sentence itself is never copied here (LD0).
     Refusal { chart: Invariant, kind: u8 },
+    /// 78.119 — A TIER'S FOLD, BY ITS COORDINATES (LD0: never a copy of its
+    /// rows): the folding tier's key, the hash of the prefix head it nets
+    /// (the tier's own line, replayed by whoever disputes it), and the hash
+    /// of the exact rows the court checked for continuity — so a party
+    /// holding the rows proves them against this receipt.
+    Uplink { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32] },
 }
 
 impl Cite {
@@ -364,7 +370,7 @@ impl Cite {
     pub fn at(&self) -> Option<Stamp> {
         match self {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
-            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } => None,
+            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => None,
         }
     }
 
@@ -372,7 +378,7 @@ impl Cite {
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
             Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
-            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } => None,
+            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => None,
         }
     }
 
@@ -404,6 +410,12 @@ impl Cite {
                 chart.put_canonical(&mut rec);
                 rec.push(*kind);
             }
+            Cite::Uplink { tier, prefix, rows } => {
+                rec.push(5);
+                rec.extend_from_slice(tier);
+                rec.extend_from_slice(prefix);
+                rec.extend_from_slice(rows);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -417,7 +429,7 @@ impl Cite {
                         rec.push(1);
                         r.to_bytes(&mut rec);
                     }
-                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } => {}
+                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -465,6 +477,15 @@ impl Cite {
                 let kind = *b.get(*p)?;
                 *p += 1;
                 Some(Cite::Refusal { chart, kind })
+            }
+            5 => {
+                let mut take = || -> Option<[u8; 32]> {
+                    let h: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                    *p += 32;
+                    Some(h)
+                };
+                let (tier, prefix, rows) = (take()?, take()?, take()?);
+                Some(Cite::Uplink { tier, prefix, rows })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

@@ -220,6 +220,13 @@ pub const ACT_WHY: u8 = Action::Why.byte();
 /// the reading stands at. Every party holds one — entities, kernels, humans.
 /// The layout and its codec are `dialogue::wallet`'s. It moves nothing.
 pub const ACT_WALLET: u8 = Action::Wallet.byte();
+/// A TIER'S FOLD ADMITTED (78.119, 78.62 step 3): a kernel's settlement tier
+/// sends up its net positions per identity per lane and its declared sources
+/// and sinks, with the hash of the prefix head it nets, signed by the tier;
+/// the court checks the signature and continuity and seals the fold's
+/// coordinates on its line, answered by the receipt's stamp and chain hash.
+/// The layout and its codec are `dialogue::uplink`'s.
+pub const ACT_UPLINK: u8 = Action::Uplink.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

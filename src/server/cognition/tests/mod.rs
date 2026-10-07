@@ -32,6 +32,7 @@ mod remainders;
 mod room;
 mod ruling;
 mod solve;
+mod uplink;
 mod wallet;
 mod why;
 mod winding;

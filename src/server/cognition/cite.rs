@@ -380,6 +380,31 @@ impl Kernel {
         self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
     }
 
+    /// 78.119 — A TIER'S FOLD ADMITTED (78.62 step 3). This court is the
+    /// verifier outside the tier's delegation closure: the tier's signature
+    /// over the fold, then its continuity (every lane's nets sum exactly to
+    /// its declared emission); admitted, the fold's coordinates — the tier,
+    /// the prefix head it nets, its rows' commitment — are sealed on this
+    /// court's line and its receipt id returned. Its frame is the zero
+    /// reading: a tier's settlement moves nothing in this court's book.
+    pub fn admit_uplink(&mut self, f: &crate::anastome::dialogue::uplink::SignedFold) -> crate::anastome::dialogue::uplink::Uplinked {
+        use crate::anastome::dialogue::uplink::Uplinked;
+        if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
+            return Uplinked::Unsigned;
+        }
+        if let Err(d) = f.fold.continuity() {
+            return Uplinked::Discontinuous(d);
+        }
+        let cite = Cite::Uplink { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash() };
+        match self.seal_step(ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) {
+            Some(r) => {
+                self.mark_persist();
+                Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
+            }
+            None => Uplinked::LineRefused,
+        }
+    }
+
     /// OK1 — THE COURT'S CYCLE CLOSES BY NAME (78.23 as amended): one
     /// circuit of exchange, deliberation, lapse and persist is one orbit,
     /// and its close is an act — a node of kind `Orbit` at the orbit's last

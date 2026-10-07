@@ -24093,7 +24093,49 @@ transition the court admits gaining a RECEIPT on the court's line makes
 the verdict load-bearing (the kernel's ask). It writes the ledger — a
 persisted layout, replicated between courts — so it is the operator's to
 order, with its receipt kind, its replication and what a world's genesis
-(78.62's GENESIS act) binds it to, before any code.
+(78.62's GENESIS act) binds it to, before any code. ORDERED 2026-10-07
+(the operator's word, confirmed in this session) — 78.119.
+
+### 78.119 The admission act, first slice: a tier's fold admitted on the court's line (2026-10-07, the operator: "yes, build the first slice"; the design endorsed through the xylarium seat — "admit folds, not every transition") — LAYOUT-CHANGE
+
+**What is admitted.** Not every transition: a FOLD. A kernel settles in
+tiers (stardock → realm → progenitor network → ancient houses → hypha);
+each tier sends up its net positions per identity per lane (`μ` never
+summed across lanes), its declared sources and sinks, and the hash of the
+prefix head it nets — the shape of MU-ECONOMY's epoch rows — signed by the
+tier (ed25519; the signed bytes carry a domain, the tier, the prefix and
+the rows' commitment).
+
+**What the court checks**, as the verifier outside the tier's delegation
+closure (the second organ's rule): the signature, then CONTINUITY — every
+list in its identities' ascending order, each once (the rows' one writing);
+on every lane the nets sum EXACTLY to the declared net emission (sources
+less sinks), signed `i128` with every sum checked, never wrapped (rule 11).
+
+**What it seals.** `Action::Uplink` (0x3D, a transition sealed under its
+own coordinate, as the syllabus page and the fold are), its one citation
+`Cite::Uplink { tier, prefix, rows }` — COORDINATES ONLY (LD0): the rows
+stand with the tier and this receipt commits to them by hash, so a dispute
+replays the cited prefix against rows proved by the receipt. Frame `[0; 4]`:
+a tier's settlement moves nothing in the court's book. Answered by the
+receipt's stamp and chain hash, its id; or `Unsigned`, `Discontinuous`
+(unordered / overflow / unbalanced, by lane), `LineRefused`. Wire:
+`dialogue::uplink` (`[ACT_UPLINK][tier][prefix][rows][sig]`); court:
+`Kernel::admit_uplink`; client: `Session::uplink_fold`, `TierFold::sign`.
+
+**LAYOUT-CHANGE.** A new sealed kind and a new cite tag (5): a line holding
+one is refused by every build before this one (`from_byte`, `take_canonical`)
+— every court that will hold or replicate such a line must run this build
+before any court seals one. A line with no uplink restores unchanged.
+
+**OWED (later rows):** multi-tier chaining (a fold citing folds); matter
+handoffs, two-sided (P2: matter does not net like money); the challenge
+window and replay-by-dispute; μ conversion by the ancients only (78.93);
+the GENESIS act binding a world's tiers. Proved:
+`uplink::an_admitted_fold_is_sealed_by_its_coordinates_and_restores`,
+`uplink::a_fold_the_tier_did_not_sign_is_refused`,
+`uplink::a_fold_that_makes_value_undeclared_is_refused_and_a_declared_source_admits_it`,
+`dialogue::uplink::a_signed_fold_and_every_answer_read_back_whole`.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

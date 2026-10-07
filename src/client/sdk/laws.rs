@@ -54,6 +54,15 @@ impl super::Session {
         }
     }
 
+    /// 78.119 — A TIER'S FOLD PUT TO THE COURT for admission: the receipt's
+    /// stamp and chain hash where it is sealed, or the refusal by name. A
+    /// reply that does not read is an error by name, never an admission.
+    pub fn uplink_fold(&self, f: &crate::anastome::dialogue::uplink::SignedFold) -> io::Result<crate::anastome::dialogue::uplink::Uplinked> {
+        use crate::anastome::dialogue::uplink::{decode_uplink_reply, encode_uplink};
+        let reply = self.speak(encode_uplink(f))?;
+        decode_uplink_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the fold's reply did not decode"))
+    }
+
     /// 78.118 — THE COURT'S VERDICTS on many transitions in one frame, one
     /// per transition in the order sent. A reading — nothing is admitted. A
     /// reply whose count is not the batch's is an error by name.
