@@ -24050,8 +24050,8 @@ by the kernel's local `verify_sized`; at (1, 1) both refuse `Time` alone.
 Until the ruling below, the kernel reads `Undecomposed(Unbounded)` as not
 measured, never as a breach.
 
-**RULING ASKED.** Where a caller's stroke is short, a spent stroke still
-reads `(Law::Conformal, Undecomposed(Unbounded))` — a refusal of the
+**RULED 2026-10-07 — 78.121.** Where a caller's stroke is short, a spent
+stroke read `(Law::Conformal, Undecomposed(Unbounded))` — a refusal of the
 VERIFIER written as a breach of the LAW. The verdict's codec has no kind
 for "unmeasured". Either the verdict gains one (a codec change both sides
 read), or a stroke-bounded verify is named a reading and never a verdict.
@@ -24169,6 +24169,13 @@ with no world writes and reads exactly as before — the leaf is absent —
 so `--check` restores every home written before 78.120; a home holding a
 world is refused by every earlier build.
 
+**LIVE (2026-10-07, :7520 on 88468645 after a manual `--check`, genesis
+kept).** The xylarium world founded naming six tiers (four realms, the
+progenitor, the ancient houses), sealed at h 137077; a balanced fold from
+realm-SOL admitted at h 137078; value from nowhere refused `Unbalanced`
+on lane 1; a declared source admitted at h 137079; the game server's
+re-founding at start reads `AlreadyFounded`. The coordinator's green.
+
 **OWED:** granting and revoking tier keys (a world's later acts); an
 ancient house's key granted under the hypha; the world binding replicated
 to peers' indexes (a peer admits the World receipt, kind-agnostic, but
@@ -24177,6 +24184,23 @@ builds no index from it yet). Proved:
 `uplink::a_fold_from_a_tier_no_world_names_is_unbound`,
 `uplink::an_admitted_fold_is_sealed_by_its_coordinates_and_restores` (the
 world held across the restart), `dialogue::world::a_signed_genesis_and_every_answer_read_back_whole`.
+
+### 78.121 A law unread is never a law broken: `Unmeasured` (2026-10-07, the operator's ruling on the coordinator's recommendation, closing 78.116's ask)
+
+A verify whose stroke ran out before the motion's modes split wrote
+`(Conformal, Undecomposed(Unbounded))` — a breach of a law it never read.
+`Verdict.unmeasured: Vec<Unmeasured { law, needed_stroke }>` holds it
+instead: the law unread, and the stroke reading it needs (`modes_need`, or
+`None` past its carrier). Never a breach; never an admission —
+`admitted()` asks every law read and none breached, `measured()` the first
+half. Every other refusal of the modes (irrational, defective) stays a
+breach: those are read. The verdict's codec carries the list after the
+ratios — a WIRE change, not a persisted layout: a kernel decoding verdicts
+upgrades with the court. Proved:
+`laws::a_lawful_turn_is_admitted_under_the_stroke_its_modes_need` (seven
+reads: unread, the need named, no breach),
+`laws::the_contracts_bytes_decode_to_the_objects_they_carry` (the list
+round trip).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

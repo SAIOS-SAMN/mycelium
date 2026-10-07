@@ -74,11 +74,12 @@ fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
 fn a_lawful_turn_is_admitted_under_the_stroke_its_modes_need() {
     let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
     let short = verify(&t, &mut crate::physics::Physics::default().stroke_n(7));
-    assert!(
-        matches!(short.breaches.as_slice(), [(Law::Conformal, Breach::Undecomposed(Undecomposed::Unbounded(_)))]),
-        "the short stroke's false breach: {:?}",
-        short.breaches
-    );
+    // 78.121 — a short stroke leaves the law UNREAD, never broken: no
+    // breach, the stroke it needs named, and no admission.
+    assert!(short.breaches.is_empty(), "nothing breached: {:?}", short.breaches);
+    let need = crate::transducer::cga::modes_need(&t.motion).and_then(|n| u64::try_from(n).ok());
+    assert_eq!(short.unmeasured, vec![Unmeasured { law: Law::Conformal, needed_stroke: need }]);
+    assert!(!short.admitted() && !short.measured());
     let sized = verify_sized(&t);
     assert!(sized.admitted(), "{:?}", sized.breaches);
     assert_eq!(sized, verify(&t, &mut budget()), "the verdict of the transition alone");
@@ -287,6 +288,10 @@ fn the_contracts_bytes_decode_to_the_objects_they_carry() {
             (Law::Reservoir, Breach::NotUnitary),
             (Law::Continuity, Breach::MassNotConserved { made: Q::new((-3).into(), 2.into()) }),
             (Law::Continuity, Breach::FluxUnplaced { index: 1 }),
+        ],
+        unmeasured: vec![
+            Unmeasured { law: Law::Conformal, needed_stroke: Some(14) },
+            Unmeasured { law: Law::Rigidity, needed_stroke: None },
         ],
         ..v
     };

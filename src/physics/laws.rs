@@ -221,11 +221,32 @@ pub struct Verdict {
     /// one ratio every body's momentum after stands to the momentum the
     /// motion carried, docketed. `None` where no dilation moved it.
     pub expansion: Option<Q>,
+    /// 78.121 — EVERY LAW THE VERIFIER COULD NOT READ within the stroke it
+    /// had, with the stroke reading it needs: never a breach (the law was not
+    /// read, so it was not broken), and never an admission.
+    pub unmeasured: Vec<Unmeasured>,
+}
+
+/// 78.121 — A LAW UNREAD FOR WANT OF STROKE (the operator's ruling,
+/// 2026-10-07, on the coordinator's recommendation): which law, and the
+/// stroke reading it needs (`cga::modes_need`), or `None` where that need is
+/// past its carrier. It was a `Conformal` breach — a law broken that was
+/// never read.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct Unmeasured {
+    pub law: Law,
+    pub needed_stroke: Option<u64>,
 }
 
 impl Verdict {
+    /// Every law read, and none breached.
     pub fn admitted(&self) -> bool {
-        self.breaches.is_empty()
+        self.breaches.is_empty() && self.unmeasured.is_empty()
+    }
+
+    /// Every law read within the stroke — breached or not.
+    pub fn measured(&self) -> bool {
+        self.unmeasured.is_empty()
     }
 }
 
@@ -257,6 +278,12 @@ pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
     if is_versor(&t.motion) {
         match motion_modes(&t.motion, budget) {
             Some(Ok(modes)) => v.modes = modes.len(),
+            // 78.121 — the stroke spent before the modes split: the law is
+            // unread, never broken, with the stroke it needs.
+            Some(Err(Undecomposed::Unbounded(_))) => v.unmeasured.push(Unmeasured {
+                law: Law::Conformal,
+                needed_stroke: crate::transducer::cga::modes_need(&t.motion).and_then(|n| u64::try_from(n).ok()),
+            }),
             Some(Err(why)) => v.breaches.push((Law::Conformal, Breach::Undecomposed(why))),
             None => v.breaches.push((Law::Conformal, Breach::NotAVersor)),
         }

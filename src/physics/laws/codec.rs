@@ -234,6 +234,18 @@ pub fn put_verdict(out: &mut Vec<u8>, v: &Verdict) {
             }
         }
     }
+    // 78.121 — every law unread, with the stroke it needs.
+    put_key_count(out, v.unmeasured.len());
+    for u in &v.unmeasured {
+        out.push(u.law.index());
+        match u.needed_stroke {
+            None => out.push(0),
+            Some(n) => {
+                out.push(1);
+                out.extend_from_slice(&n.to_le_bytes());
+            }
+        }
+    }
 }
 
 fn take_ratio(b: &[u8], p: &mut usize) -> Option<Option<Q>> {
@@ -372,5 +384,17 @@ pub fn take_verdict(b: &[u8], p: &mut usize) -> Option<Verdict> {
     let modes = take_key_count(b, p)?;
     let similarity = take_ratio(b, p)?;
     let expansion = take_ratio(b, p)?;
-    Some(Verdict { breaches, exchanged, modes, similarity, expansion })
+    let u = take_key_count(b, p)?;
+    let unmeasured = (0..u)
+        .map(|_| {
+            let law = *LAWS.get(usize::from(take_u8(b, p)?))?;
+            let needed_stroke = match take_u8(b, p)? {
+                0 => None,
+                1 => Some(take_u64(b, p)?),
+                _ => return None,
+            };
+            Some(crate::physics::laws::Unmeasured { law, needed_stroke })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    Some(Verdict { breaches, exchanged, modes, similarity, expansion, unmeasured })
 }
