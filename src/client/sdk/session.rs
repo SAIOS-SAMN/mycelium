@@ -608,7 +608,12 @@ impl Session {
 
     pub(crate) fn exchange_inner(&self, addr: &str, act_body: Vec<u8>) -> io::Result<Vec<u8>> {
         let frame = Frame { lane: Stratum::Spatial, body: act_body };
-        let bytes = frame.encode().ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "frame encode"))?;
+        // A body past the wire's one budget is refused here, by name, before
+        // a byte is sent (78.125): a large publication is streamed in parts.
+        let len = frame.body.len();
+        let bytes = frame.encode().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
+        })?;
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(addr.as_bytes()) {
             match Self::roundtrip(s, &bytes) {

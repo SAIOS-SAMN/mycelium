@@ -184,15 +184,17 @@ fn a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain() {
         let reply = k.admit_uplink(&q_fold.clone().sign(&q));
         let Uplinked::Chained { provisional: sealed_provisional, obstructions, .. } = reply else { panic!("{reply:?}") };
         assert_eq!((sealed_provisional, obstructions), (provisional, u32::from(provisional)), "rate {rate}");
-        let open: Vec<_> = k.ledgers.obstructions.scoped().flat_map(|(_, o)| o.clone()).collect();
+        // As served: the open arbitrages of the domain.
+        let open = k.open_obstructions(&vk(&key(4)));
         match provisional {
             false => assert!(open.is_empty()),
             true => {
-                let [(from, to, h)] = open.as_slice() else { panic!("one obstruction") };
+                let [o] = open.as_slice() else { panic!("one obstruction") };
                 let fold_of = |t: &TierFold| crate::server::cognition::ledger::vertex(&t.tier, &t.prefix);
-                assert_eq!((from, to), (&fold_of(&child), &fold_of(&q_fold)), "localized to the edge that closed it");
+                assert_eq!((&o.child, &o.parent), (&fold_of(&child), &fold_of(&q_fold)), "localized to the edge that closed it");
+                assert_eq!(k.chain.head().map(|h| h.stamp), Some(o.fold), "named by the fold that closed it");
                 let half = num_rational::BigRational::new(1.into(), 2.into());
-                assert_eq!(h.lanes()[1], half, "the exact gain on G");
+                assert_eq!(o.holonomy.lanes()[1], half, "the exact gain on G");
             }
         }
     }
@@ -214,7 +216,7 @@ fn a_rate_that_moves_between_epochs_is_no_arbitrage() {
         let reply = k.admit_uplink(&parent.sign(&p));
         assert!(matches!(reply, Uplinked::Chained { provisional: false, obstructions: 0, .. }), "rate {rate}: {reply:?}");
     }
-    assert!(k.ledgers.obstructions.is_empty(), "nothing docketed");
+    assert!(k.open_obstructions(&vk(&key(4))).is_empty(), "nothing docketed");
 }
 
 /// A witness's signed position over a root hash (as the era tests make one).
@@ -263,4 +265,39 @@ fn a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates() {
     let reply = booted.admit_uplink(&parent.sign(&p));
     assert!(matches!(reply, Uplinked::Chained { open_remainders: 0, .. }), "{reply:?}");
     assert!(!booted.ledgers.folds.contains(&at.key()), "netted whole, it leaves the held folds");
+}
+
+/// 78.125 — A B′ LEAF READS: its gauge steps (as b3a69d03 wrote them — a
+/// realm netted at 5/9 on G, as :7520 holds) come back as edges sealed by no
+/// recorded fold, and the potential they re-derive is the one held; a leaf
+/// carrying a B′ obstruction is refused, never dropped.
+#[test]
+fn a_bprime_leaf_reads_its_gauge_steps_as_edges() {
+    use crate::server::cognition::ledger::{vertex, Ledgers};
+    use crate::transducer::address::{put_key_bytes, put_key_count};
+    use crate::transducer::cech::coefficient::{Coefficient, Rates};
+    let (domain, realm, progenitor) = ([4u8; 32], vertex(&[21; 32], &[1; 32]), vertex(&[22; 32], &[2; 32]));
+    let rate = Rates::of([(1, 1), (5, 9), (1, 1), (1, 1)]).expect("positive");
+    let leaf = |obstructions: usize| {
+        let mut v = Vec::new();
+        put_key_count(&mut v, 0);
+        put_key_count(&mut v, 0);
+        put_key_count(&mut v, 1);
+        v.extend_from_slice(&domain);
+        put_key_count(&mut v, 1);
+        put_key_bytes(&mut v, &realm);
+        put_key_bytes(&mut v, &progenitor);
+        rate.put_canonical(&mut v);
+        put_key_count(&mut v, obstructions);
+        v
+    };
+    let b = leaf(0);
+    let mut p = 0;
+    let read = Ledgers::take(&b, &mut p).expect("a B′ leaf reads");
+    assert_eq!(p, b.len());
+    let edges = read.edges.get(&domain).expect("its steps, as edges");
+    assert!(matches!(edges.as_slice(), [e] if e.by.is_empty() && e.rate == rate));
+    let gauge = read.gauges.get(&domain).expect("re-derived");
+    assert_eq!(gauge.find(&realm), Some((progenitor.clone(), rate.clone())), "the potential held");
+    assert!(Ledgers::take(&leaf(1), &mut 0).is_none(), "a B′ obstruction is refused, never dropped");
 }

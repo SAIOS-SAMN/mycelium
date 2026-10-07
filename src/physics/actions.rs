@@ -81,6 +81,10 @@ pub enum Action {
     /// 78.120, 78.122 — A DOMAIN FOUNDED (78.62's GENESIS act): its key and the tier
     /// keys that settle for it, sealed under its own coordinate.
     Domain,
+    /// 78.125 — A FOLD CHALLENGED within its window (2(c)): an availability
+    /// demand, the tier line's prefix put to replay, a default claimed, a
+    /// correction booking an arbitrage — sealed under its own coordinate.
+    Challenge,
     // Exchanges.
     Adopt,
     Root,
@@ -118,7 +122,7 @@ pub enum Action {
 
 /// Every action, in coordinate order. 0x07, 0x0A and 0x0F stand unassigned
 /// (0x0F was the retired genesis page, 2026-09-29): no action holds them.
-pub const ACTIONS: [Action; 53] = [
+pub const ACTIONS: [Action; 54] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -153,6 +157,7 @@ pub const ACTIONS: [Action; 53] = [
     Action::Wallet,
     Action::Uplink,
     Action::Domain,
+    Action::Challenge,
     Action::Attest,
     Action::List,
     Action::Section,
@@ -215,6 +220,7 @@ impl Action {
             Action::Wallet => 0x3C,
             Action::Uplink => 0x3D,
             Action::Domain => 0x3E,
+            Action::Challenge => 0x3F,
             Action::Attest => 0x40,
             Action::List => 0x41,
             Action::Section => 0x42,
@@ -275,7 +281,8 @@ impl Action {
             | Action::Probe
             | Action::Speech
             | Action::Uplink
-            | Action::Domain => Kind::Transition,
+            | Action::Domain
+            | Action::Challenge => Kind::Transition,
             Action::Adopt
             | Action::Root
             | Action::Cover
@@ -312,7 +319,7 @@ impl Action {
     /// WHETHER A COURT SEALS IT ON ITS LINE — the kinds a receipt carries.
     /// An observation never seals; a retired kind is sealed by nothing.
     pub const fn sealed(self) -> bool {
-        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::Domain)
+        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::Domain | Action::Challenge)
     }
 
     /// THE SEALED ACT A LEDGER BYTE NAMES, or none: a byte naming an action
@@ -384,6 +391,7 @@ impl Action {
             Action::Speech => b"speech",
             Action::Uplink => b"uplink",
             Action::Domain => b"domain",
+            Action::Challenge => b"challenge",
             Action::Adopt => b"adopt",
             Action::Root => b"root",
             Action::Cover => b"cover",

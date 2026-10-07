@@ -18,6 +18,7 @@ pub(crate) mod rows;
 pub(crate) mod speech;
 pub(crate) mod syllabus;
 pub(crate) mod uplink;
+pub(crate) mod challenge;
 pub(crate) mod wallet;
 pub(crate) mod domain;
 pub(crate) mod why;
@@ -74,6 +75,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         Action::Wallet => wallet::judge(stream, &frame, door),
         Action::Uplink => uplink::judge(stream, &frame, door),
         Action::Domain => domain::judge(stream, &frame, door),
+        Action::Challenge => challenge::judge(stream, &frame, door),
         // The door's control actions (`serve_control`) answered above; any
         // other action has no judge here and is not answered.
         _ => {}

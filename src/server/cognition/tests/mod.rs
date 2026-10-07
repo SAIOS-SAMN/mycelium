@@ -34,6 +34,7 @@ mod ruling;
 mod solve;
 mod uplink;
 mod ledger;
+mod challenge;
 mod wallet;
 mod why;
 mod winding;

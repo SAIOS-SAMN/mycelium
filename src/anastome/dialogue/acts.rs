@@ -232,6 +232,12 @@ pub const ACT_UPLINK: u8 = Action::Uplink.byte();
 /// court's line; thereafter only a named tier's fold is admitted. The layout
 /// and its codec are `dialogue::domain`'s.
 pub const ACT_DOMAIN: u8 = Action::Domain.byte();
+/// A FOLD CHALLENGED (78.125, 2(c)): within its window, a demand that its tier
+/// publish the prefix it nets, the prefix itself put to replay, a default
+/// claimed past a demand's deadline, or a correction booking an arbitrage;
+/// and, sealing nothing, the fold's finality read. The layout and its codec
+/// are `dialogue::challenge`'s.
+pub const ACT_CHALLENGE: u8 = Action::Challenge.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

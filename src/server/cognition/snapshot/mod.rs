@@ -36,6 +36,10 @@ pub const LEAF_DOMAINS: u8 = 4;
 /// 78.123 B — the ledger trees: per child fold what remains of it, per domain
 /// its rates gauge and its open obstructions; absent where none is held.
 pub const LEAF_LEDGERS: u8 = 5;
+/// 78.125 — the challenge windows: every fold recorded since 2(c), each
+/// tier's last head, the rates edges in the order sealed, the arbitrages
+/// booked; absent where none is held.
+pub const LEAF_CHALLENGES: u8 = 6;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

@@ -40,6 +40,18 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     s.read_exact(&mut head).ok()?;
     let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;
     if len > mycelium::network::wire::BODY_BUDGET {
+        // REFUSED BY NAME, NOT DROPPED (78.125): the frame names a body past
+        // the wire's one budget. Its body is never read — a length is no
+        // licence to allocate — but the act is answered refused before the
+        // connection closes.
+        // A lane byte that names no lane is answered on the spatial lane.
+        let lane = match mycelium::network::wire::Stratum::from_u8(head[0]) {
+            Some(l) => l,
+            None => mycelium::network::wire::Stratum::Spatial,
+        };
+        let refused = mycelium::cognition::Outcome::Refused(mycelium::verdict::REFUSE_MALFORMED);
+        let body = mycelium::anastome::dialogue::encode_outcome(mycelium::cognition::outcome_code(&refused), 0, &[0; 4]);
+        answer(s, Frame { lane, body });
         return None;
     }
     let mut buf = vec![0u8; 5 + len];

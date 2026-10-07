@@ -63,6 +63,14 @@ impl super::Session {
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the clock's reply did not decode"))
     }
 
+    /// 78.125 — THE REGISTER'S PARAMETERS — the challenge window among them —
+    /// by name, at the law version they are read at.
+    pub fn parameters(&self) -> io::Result<(u8, Vec<(String, u64)>)> {
+        let reply = self.speak(crate::physics::laws::codec::encode_parameters_request())?;
+        crate::physics::laws::codec::decode_parameters_reply(&reply)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the parameters' reply did not decode"))
+    }
+
     /// 78.122 — THE SHARED LEXICON this hypha defines: its version and every
     /// term. A kernel compares the version with its own.
     pub fn lexicon(&self) -> io::Result<(u8, Vec<crate::physics::laws::codec::ServedTerm>)> {
@@ -86,6 +94,29 @@ impl super::Session {
         use crate::anastome::dialogue::uplink::{decode_uplink_reply, encode_uplink};
         let reply = self.speak(encode_uplink(f))?;
         decode_uplink_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the fold's reply did not decode"))
+    }
+
+    /// 78.125 — A FOLD CHALLENGED within its window: a demand, a replay, a
+    /// default or a correction, answered by the receipt or the refusal by
+    /// name. A reply that does not read is an error by name.
+    pub fn challenge(&self, c: &crate::anastome::dialogue::challenge::SignedChallenge) -> io::Result<crate::anastome::dialogue::challenge::Challenged> {
+        use crate::anastome::dialogue::challenge::{decode_challenge_reply, encode_challenge};
+        let reply = self.speak(encode_challenge(c))?;
+        decode_challenge_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the challenge's reply did not decode"))
+    }
+
+    /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's stamp.
+    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::Finality> {
+        use crate::anastome::dialogue::challenge::{decode_finality_reply, encode_finality_request};
+        let reply = self.speak(encode_finality_request(fold))?;
+        decode_finality_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))
+    }
+
+    /// 78.125 — A DOMAIN'S OPEN ARBITRAGES: what a correction names and prices.
+    pub fn open_obstructions(&self, domain: [u8; 32]) -> io::Result<Vec<crate::anastome::dialogue::challenge::OpenObstruction>> {
+        use crate::anastome::dialogue::challenge::{decode_obstructions_reply, encode_obstructions_request};
+        let reply = self.speak(encode_obstructions_request(domain))?;
+        decode_obstructions_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the obstructions reply did not decode"))
     }
 
     /// 78.118 — THE COURT'S VERDICTS on many transitions in one frame, one

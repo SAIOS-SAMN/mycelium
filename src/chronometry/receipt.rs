@@ -367,6 +367,13 @@ pub enum Cite {
     /// receipts' stamps, rows, included parts and rates), which the tier
     /// signed: a dispute proves the netting against it.
     Chained { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32], children: [u8; 32] },
+    /// 78.125 — A CHALLENGE, by its coordinates: the fold challenged (its
+    /// receipt's stamp), the challenge's kind and what the court found
+    /// (`outcome`: demanded, upheld, falsified, discharged), and the content
+    /// hash of what it was found on — an upheld prefix's, a falsifying
+    /// prefix's, a correction's — so a reader knows the fold was replayed,
+    /// not merely unchallenged. Zero where nothing was presented.
+    Challenge { fold: Stamp, kind: u8, outcome: u8, evidence: [u8; 32] },
     /// 78.120 — A DOMAIN'S GENESIS, by its keys (coordinates, as a class's
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
@@ -384,6 +391,7 @@ impl Cite {
             | Cite::Refusal { .. }
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
+            | Cite::Challenge { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -397,6 +405,7 @@ impl Cite {
             | Cite::Refusal { .. }
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
+            | Cite::Challenge { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -441,6 +450,12 @@ impl Cite {
                     rec.extend_from_slice(h);
                 }
             }
+            Cite::Challenge { fold, kind, outcome, evidence } => {
+                rec.push(8);
+                fold.put_canonical(&mut rec);
+                rec.extend_from_slice(&[*kind, *outcome]);
+                rec.extend_from_slice(evidence);
+            }
             Cite::Domain { domain, tiers } => {
                 rec.push(6);
                 rec.extend_from_slice(domain);
@@ -464,6 +479,7 @@ impl Cite {
                     | Cite::Refusal { .. }
                     | Cite::Uplink { .. }
                     | Cite::Chained { .. }
+                    | Cite::Challenge { .. }
                     | Cite::Domain { .. } => {}
                 }
                 match cover {
@@ -530,6 +546,14 @@ impl Cite {
                 };
                 let (tier, prefix, rows, children) = (take()?, take()?, take()?, take()?);
                 Some(Cite::Chained { tier, prefix, rows, children })
+            }
+            8 => {
+                let fold = Stamp::take_canonical(b, p)?;
+                let (kind, outcome) = (*b.get(*p)?, *b.get(*p + 1)?);
+                *p += 2;
+                let evidence: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                *p += 32;
+                Some(Cite::Challenge { fold, kind, outcome, evidence })
             }
             6 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

@@ -46,8 +46,21 @@ pub enum Law {
 /// version it was read at. Version 2 (LV2, ruled 2026-10-03): momentum read
 /// at a dilation's ratio, as rigidity reads it. Version 3 (78.89, the
 /// operator's "proceed" on the recommendation): continuity, the white hole
-/// and the black hole published as sources and sinks.
-pub const LAW_VERSION: u8 = 3;
+/// and the black hole published as sources and sinks. Version 4 (78.125, the
+/// coordinator's ruling on 2(c)): the challenge window, the register's first
+/// PARAMETER.
+pub const LAW_VERSION: u8 = 4;
+
+/// 78.125 — THE CHALLENGE WINDOW, in fleet heights (never a wall clock): how
+/// long after its seal a fold stands open to an availability demand, a
+/// replay or a correction. Every domain of a network universe shares this
+/// one finality clock; it is shorter than any anchoring cadence, so an era's
+/// anchor reads final before the next era's.
+pub const CHALLENGE_WINDOW: u64 = 1024;
+
+/// THE REGISTER'S PARAMETERS at its version, by name: served beside the laws
+/// (`ACT_LAWS` mode 5) so a domain reads its finality clock from the court.
+pub const PARAMETERS: [(&str, u64); 1] = [("challenge window", CHALLENGE_WINDOW)];
 
 /// Every law of the register, in its order.
 pub const LAWS: [Law; 6] = [Law::Conformal, Law::Momentum, Law::Rigidity, Law::Time, Law::Reservoir, Law::Continuity];

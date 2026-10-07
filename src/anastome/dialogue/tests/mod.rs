@@ -11,4 +11,5 @@ mod receipts_range;
 mod refine;
 mod uplink;
 mod domain;
+mod challenge;
 mod verdict;

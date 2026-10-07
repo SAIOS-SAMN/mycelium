@@ -446,9 +446,10 @@ impl Kernel {
         let cite = Cite::Uplink { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash() };
         match self.seal_step(ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) {
             Some(r) => {
-                // 78.123 B′ — held by its sealed coordinates until a parent
-                // nets all of it, whatever the hot line folds meanwhile.
-                self.ledgers.folds.insert(r.stamp.key(), (f.fold.tier, f.fold.prefix, f.fold.rows_hash()));
+                // 78.123 B′, 78.125 — held by its sealed coordinates until a
+                // parent nets all of it, whatever the hot line folds
+                // meanwhile, and recorded for its challenge window.
+                self.hold_admitted(r.stamp, &f.fold, domain, Vec::new());
                 self.mark_persist();
                 Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
             }

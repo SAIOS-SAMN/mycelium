@@ -104,7 +104,7 @@ impl Kernel {
             // stroke is what a ruling re-heard on a filed stamp draws on.
             let mut budget = kernel.physics.stroke();
             // THE COURT: one node, the key this court signs as.
-            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS])?;
+            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS, LEAF_LEDGERS, LEAF_CHALLENGES])?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
             let [(vk, leaves)] = nodes.as_slice() else { return None };
@@ -131,6 +131,12 @@ impl Kernel {
             // fold carries none.
             if let Some(v) = leaf(leaves, LEAF_LEDGERS) {
                 kernel.ledgers = whole(v, super::super::ledger::Ledgers::take)?;
+            }
+            // 78.125 — the challenge windows; a home written before 2(c)
+            // carries none.
+            if let Some(v) = leaf(leaves, LEAF_CHALLENGES) {
+                let ledgers = &mut kernel.ledgers;
+                whole(v, |b, p| ledgers.take_challenges(b, p))?;
             }
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was
             // folded to; or on disk, held already, which must hold the stamp

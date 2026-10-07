@@ -182,6 +182,10 @@ impl Kernel {
         if let Some(v) = self.ledgers.put() {
             leaves.push((LEAF_LEDGERS, v));
         }
+        // 78.125 — the challenge windows, where any is held.
+        if let Some(v) = self.ledgers.put_challenges() {
+            leaves.push((LEAF_CHALLENGES, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

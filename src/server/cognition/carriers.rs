@@ -171,6 +171,7 @@ impl Kernel {
             domains,
             tier_domain,
             ledgers,
+            replays,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
         // 78.120 — the domains founded here and their tier index.
@@ -182,6 +183,13 @@ impl Kernel {
         c.count("ledger.remaining", ledgers.remaining.len());
         c.count("ledger.gauge", ledgers.gauges.scoped().map(|(_, g)| g.steps().len()).sum());
         c.count("ledger.obstructions", ledgers.obstructions.scoped().map(|(_, o)| o.len()).sum());
+        // 78.125 — the challenge windows: the folds recorded, the tiers'
+        // heads, the edges held, the arbitrages booked.
+        c.count("ledger.records", ledgers.records.len());
+        c.count("ledger.heads", ledgers.heads.len());
+        c.count("ledger.edges", ledgers.edges.scoped().map(|(_, e)| e.len()).sum());
+        c.count("ledger.discharged", ledgers.discharged.len());
+        c.count("ledger.replays", replays.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

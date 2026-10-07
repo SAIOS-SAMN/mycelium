@@ -23,6 +23,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             Ok(k) => mycelium::physics::laws::codec::encode_clock_reply(k.core_stamp().as_ref()),
             Err(_) => return,
         },
+        // 78.125 — the register's parameters (the challenge window), at its version.
+        LawsRequest::Parameters => mycelium::physics::laws::codec::encode_parameters_reply(),
         // 78.122 — the shared lexicon, at its version.
         LawsRequest::Lexicon => mycelium::physics::laws::codec::encode_lexicon_reply(),
         LawsRequest::Verify(t) => {

@@ -268,10 +268,46 @@ pub enum LawsRequest {
     Lexicon,
     /// 78.124 — the core clock: the court's head stamp.
     Clock,
+    /// 78.125 — the register's parameters, at its version.
+    Parameters,
 }
 
 const MODE_LEXICON: u8 = 3;
 const MODE_CLOCK: u8 = 4;
+const MODE_PARAMETERS: u8 = 5;
+
+/// 78.125 — `[ACT_LAWS][5]`: the register's parameters, asked by address.
+pub fn encode_parameters_request() -> Vec<u8> {
+    vec![crate::anastome::dialogue::ACT_LAWS, MODE_PARAMETERS]
+}
+
+/// The parameters' reply: `[law version][count][(name, value u64 LE) …]`.
+pub fn encode_parameters_reply() -> Vec<u8> {
+    let mut out = vec![LAW_VERSION];
+    put_key_count(&mut out, super::PARAMETERS.len());
+    for (name, value) in super::PARAMETERS {
+        crate::transducer::address::put_key_bytes(&mut out, name.as_bytes());
+        out.extend_from_slice(&value.to_le_bytes());
+    }
+    out
+}
+
+/// The parameters a reply carries — the law version and each by name — read
+/// whole.
+pub fn decode_parameters_reply(b: &[u8]) -> Option<(u8, Vec<(String, u64)>)> {
+    let mut p = 0;
+    let version = take_u8(b, &mut p)?;
+    let n = take_key_count(b, &mut p)?;
+    let params = (0..n)
+        .map(|_| {
+            let name = String::from_utf8(crate::transducer::address::take_key_bytes(b, &mut p)?).ok()?;
+            let value = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
+            p += 8;
+            Some((name, value))
+        })
+        .collect::<Option<Vec<_>>>()?;
+    (p == b.len()).then_some((version, params))
+}
 
 /// 78.124 — `[ACT_LAWS][4]`: the core clock, asked by address.
 pub fn encode_clock_request() -> Vec<u8> {
@@ -402,6 +438,7 @@ pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
         [act, MODE_REGISTER] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Register),
         [act, MODE_LEXICON] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Lexicon),
         [act, MODE_CLOCK] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Clock),
+        [act, MODE_PARAMETERS] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Parameters),
         [act, MODE_VERIFY, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;

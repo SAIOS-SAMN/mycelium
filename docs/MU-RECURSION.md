@@ -24474,6 +24474,111 @@ ruled).**
    KiB never silently truncated), LD1 (bytes per award and frame, R6) and
    CK1 (the clock and persistence) are the precondition for all of it.
 
+### 78.125 2(c): the challenge window — a fold answerable within W heights, finality recursive (2026-10-07, the coordinator's rulings on the design; the operator routed development to the coordinator) — LAYOUT-CHANGE, WIRE-CHANGE, law version 4
+
+**Why.** A fold's rows stay with its tier (LD0); its receipt commits to
+them by hash. Until a commitment can be made to answer, a fold is admitted
+on the tier's word: continuity catches value made from nowhere, never
+rows that balance and lie. And an obstruction docketed (78.123) can never
+be discharged, so provisional flags only accumulate.
+
+**THE WINDOW** is a LAW PARAMETER, `W = 1024` fleet heights (law version 4,
+served `ACT_LAWS` mode 5), one finality clock for every domain of a network
+universe, shorter than any anchoring cadence so an era's anchor reads final
+before the next era's. Never a wall clock.
+
+**THE TIER LINE, canonical (so replay is possible).** A tier's line is a
+sequence of ENTRIES `{rows, declared}` in the fold's own net writing;
+`head₀` is the zero hash and `headₙ = H("mycelium tier line v1" ‖ headₙ₋₁ ‖
+entry)`. A fold's `prefix` is the head after its last entry; the span it
+nets runs from its tier's previous recorded fold's prefix (zero for the
+first). **A fold nets the entries since the tier's previous fold; an entry
+is one transfer batch, never the fold itself** — a line of one entry that
+is the fold's own rows makes replay vacuous, and the court cannot tell the
+difference, so this is doctrine. A CHAINED fold's line holds only its OWN
+entries (own positions, translation rounding, corrections): its children
+are proved by their own receipts, never re-listed.
+
+**THE CHALLENGE ACT**, `ACT_CHALLENGE` (0x3F), signed by its filer, sealed
+by `Cite::Challenge { fold, kind, outcome, evidence }` (tag 8):
+- *Demand* (availability): within the fold's window, the tier must publish
+  its prefix within `W` of the demand; one demand per fold.
+- *Evidence* (replay): the prefix — chaining from the span's start to the
+  cited head — and the fold's own rows, declared and children, proved
+  against its commitments; the court re-derives at once: `Σ own rows =
+  rows − Σ rate · included rows` per identity per lane in exact rationals,
+  `Σ own declared = declared`. UPHELD seals the line's head the prefix
+  reached — its content address, the hash chain of every entry — so a
+  reader knows the fold was replayed, not merely unchallenged; otherwise
+  FALSIFIED. The entries are not held (LD0).
+- *Streamed publication* (*Open*, then *Parts*): a span past one frame —
+  netstratum's ~270 B entries at a 4096-entry cap, ~1.1 MB, against the
+  wire's one budget `BODY_BUDGET` = 768 KiB, which syllabus and receipt
+  pages size to and which stays one number (PH1) — is published in parts.
+  *Open* restates the fold against its commitments (it fits: its admission
+  fit); each *Part* continues the line from the head so far; nothing is
+  sealed until a part's head reaches the cited prefix, then the replay is
+  judged once, as above. The court carries only the head and the own sums
+  so far, per fold and filer (no filer resets another's), volatile — a
+  restart opens again. A single act past the budget is refused by name
+  before a byte is sent (the SDK), and a frame arriving past it is
+  answered refused at the door, never a silent drop.
+- *Default*: a demand's deadline passed unpublished — the fold falsified.
+- *Correction*: within its window, the tier whose fold closed an arbitrage
+  books it — a declared source on G to a NAMED holder, with its amount (a
+  holonomy is a ratio; the value it moved depends on the flows the tier
+  holds, so the amount is declared and its truth is the line's, open to
+  replay). The obstruction is discharged.
+- Read, sealing nothing: a fold's FINALITY, and a domain's OPEN
+  OBSTRUCTIONS (closing fold, child and parent vertices, exact holonomy).
+
+**REVERSAL.** A falsified fold, and every fold that netted it,
+transitively: each one's netting returns to its children's remainders, its
+edges leave the domain's gauge (held in seal order, the gauge and
+obstructions re-derived — law 12), its bookings go, and it is voided from
+netting. The ancestors read UNWOUND and must refile — never silently
+re-netted. The bond's slash waits for 2(e).
+
+**FINALITY IS RECURSIVE, read and never stored.** A fold is FINAL when its
+window (and any demand's deadline) has passed, no demand stands defaulted
+and unclaimed, no open obstruction was closed by it, and every fold it nets
+is final — so a child can never be falsified after an ancestor reads final.
+Final carries UPHELD or unchallenged. Otherwise: provisional (until a
+height), blocked, falsified, unwound, unrecorded — or PRE-LINE: a fold
+sealed before this law has no line to replay and is GRANDFATHERED (the
+coordinator's ruling): final, unchallenged; demands against it refused,
+never defaulted.
+
+**Layout.** `LEAF_CHALLENGES` (6) on the court's node: every fold recorded
+since 2(c) (span, children's commitment, seal height, what it netted of
+each child, who netted it, demand, upheld hash, standing), each tier's
+head, the rates edges per domain in seal order, the bookings.
+`LEAF_LEDGERS` keeps the held folds and remainders; B′'s gauge section is
+retired — a B′ leaf's gauge steps are read back as edges (a spanning
+forest re-derives the potential held, as :7520's realm netted at 5/9
+does), a B′ obstruction refused, never dropped.
+
+Proved: `challenge::a_replay_upholds_an_honest_fold_and_finality_says_upheld`,
+`challenge::a_replay_falsifies_a_fold_its_own_line_does_not_sum_to`,
+`challenge::a_demanded_prefix_unpublished_by_its_deadline_falsifies_by_default`,
+`challenge::finality_waits_on_every_fold_netted_and_a_reversed_child_unwinds_its_ancestors`,
+`challenge::a_falsified_parent_returns_its_netting_and_the_child_is_netted_again`,
+`challenge::an_arbitrage_is_booked_by_the_closing_tier_and_its_fold_reads_final`,
+`challenge::a_fold_sealed_before_the_line_law_is_grandfathered`,
+`challenge::a_publication_streams_in_parts_and_is_judged_when_its_head_reaches_the_prefix`,
+`challenge::a_span_past_one_frame_is_published_in_parts_each_within_the_budget`
+(4096 entries of three identities, refused whole, upheld in four parts),
+`ledger::a_bprime_leaf_reads_its_gauge_steps_as_edges`, and the wire's
+`every_challenge_and_every_answer_read_back_whole`,
+`the_register_serves_its_challenge_window_at_law_version_4`.
+
+*Owed, named:* (1) records are kept for every fold; pruning a final
+record (absent then reads final) is owed. (2) The bond's slash on
+falsification is 2(e)'s. (3) A tier whose earlier folds were pre-line
+begins its line at the zero head with its first recorded fold. (4) Open
+replays are bounded only by the open windows and their filers; their
+expiry at a window's close is owed.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

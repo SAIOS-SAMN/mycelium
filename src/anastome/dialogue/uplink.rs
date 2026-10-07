@@ -90,11 +90,16 @@ impl ChildNet {
     }
 }
 
-fn put_children(out: &mut Vec<u8>, children: &[ChildNet]) {
+pub(crate) fn put_children(out: &mut Vec<u8>, children: &[ChildNet]) {
     crate::transducer::address::put_key_count(out, children.len());
     for c in children {
         c.put(out);
     }
+}
+
+pub(crate) fn take_children(b: &[u8], p: &mut usize) -> Option<Vec<ChildNet>> {
+    let n = crate::transducer::address::take_key_count(b, p)?;
+    (0..n).map(|_| ChildNet::take(b, p)).collect()
 }
 
 /// The fold and the tier's signature over [`TierFold::signed_bytes`].
@@ -119,7 +124,7 @@ pub enum Discontinuous {
     Rate { lane: usize },
 }
 
-fn put_nets(out: &mut Vec<u8>, nets: &[Net]) {
+pub(crate) fn put_nets(out: &mut Vec<u8>, nets: &[Net]) {
     crate::transducer::address::put_key_count(out, nets.len());
     for (who, lanes) in nets {
         out.extend_from_slice(who);
@@ -129,7 +134,7 @@ fn put_nets(out: &mut Vec<u8>, nets: &[Net]) {
     }
 }
 
-fn take_nets(b: &[u8], p: &mut usize) -> Option<Vec<Net>> {
+pub(crate) fn take_nets(b: &[u8], p: &mut usize) -> Option<Vec<Net>> {
     let n = crate::transducer::address::take_key_count(b, p)?;
     (0..n)
         .map(|_| {
