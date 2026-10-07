@@ -341,6 +341,22 @@ fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
     assert!(matches!(last, Some(Challenged::Upheld { .. })), "{last:?}");
 }
 
+/// A TIER'S LINE HEAD IS READ BACK: the zero head before it folds; its last
+/// recorded fold's prefix and that fold's stamp after — the same after a
+/// restart, where the stamp is re-derived from the records.
+#[test]
+fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
+    let (a, ..) = tiers();
+    let mut k = founded();
+    assert_eq!(k.line_head(&vk(&a)), ([0; 32], None), "no fold: the zero head");
+    let f = a_fold();
+    let at = sealed(&mut k, f.clone(), &a);
+    assert_eq!(k.line_head(&vk(&a)), (f.prefix, Some(at)));
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert_eq!(booted.line_head(&vk(&a)), (f.prefix, Some(at)), "re-derived from the records");
+}
+
 /// A FOLD SEALED BEFORE THE LINE LAW IS GRANDFATHERED (the coordinator's
 /// ruling): no record, no line to replay — final, unchallenged, pre-line; a
 /// demand is refused, never defaulted; and a parent netting it reads final

@@ -52,6 +52,38 @@ pub enum CellReading<C> {
     Unread(CycleUnread),
 }
 
+/// 78.123 C — A COCHAIN: the coefficient crossing `a → b`, read off whatever
+/// holds it — a [`Cover`] of any group, or the minds' `Complex` in the versor
+/// group — so a cycle's holonomy is written ONCE ([`holonomy`]) and every
+/// complex reads its cycles by it.
+pub trait Cochain<C: Coefficient> {
+    /// The coefficient crossing `a → b`, or `None` where no edge stands (or
+    /// its inverse passes its carrier).
+    fn crossing(&self, a: &[u8], b: &[u8]) -> Option<C>;
+}
+
+impl<C: Coefficient> Cochain<C> for Cover<C> {
+    fn crossing(&self, a: &[u8], b: &[u8]) -> Option<C> {
+        self.edge(a, b)
+    }
+}
+
+/// THE HOLONOMY around a cycle of any cochain — its vertices in order, the
+/// last joined back to the first — the coefficients composed in the order
+/// crossed.
+pub fn holonomy<C: Coefficient>(x: &impl Cochain<C>, cycle: &[&[u8]]) -> Result<C, CycleUnread> {
+    if cycle.len() < 2 {
+        return Err(CycleUnread::Degenerate);
+    }
+    let mut acc = C::identity();
+    for (i, from) in cycle.iter().enumerate() {
+        let to = cycle[(i + 1) % cycle.len()];
+        let g = x.crossing(from, to).ok_or_else(|| CycleUnread::EdgeAbsent { from: from.to_vec(), to: to.to_vec() })?;
+        acc = acc.compose(&g).ok_or(CycleUnread::Carrier)?;
+    }
+    Ok(acc)
+}
+
 /// The edge's one key — its vertices' coordinates, the lesser first, each by
 /// its length — and whether `a → b` runs that way.
 fn edge_key(a: &[u8], b: &[u8]) -> (Vec<u8>, bool) {
@@ -93,18 +125,7 @@ impl<C: Coefficient> Cover<C> {
     /// THE HOLONOMY around a cycle — its vertices in order, the last joined
     /// back to the first — the coefficients composed in the order crossed.
     pub fn holonomy(&self, cycle: &[&[u8]]) -> Result<C, CycleUnread> {
-        if cycle.len() < 2 {
-            return Err(CycleUnread::Degenerate);
-        }
-        let mut acc = C::identity();
-        for (i, from) in cycle.iter().enumerate() {
-            let to = cycle[(i + 1) % cycle.len()];
-            let g = self
-                .edge(from, to)
-                .ok_or_else(|| CycleUnread::EdgeAbsent { from: from.to_vec(), to: to.to_vec() })?;
-            acc = acc.compose(&g).ok_or(CycleUnread::Carrier)?;
-        }
-        Ok(acc)
+        holonomy(self, cycle)
     }
 
     /// A CELL READ BY THE COCYCLE CONDITION: every triangle among its

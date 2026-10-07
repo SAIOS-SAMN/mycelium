@@ -24372,6 +24372,26 @@ the full. Proved: `ledger::a_rate_that_moves_between_epochs_is_no_arbitrage`,
 `ledger::a_child_folded_off_the_hot_line_is_proved_by_its_sealed_coordinates`
 (the line really folded by a witnessed era, then restored).
 
+**PHASE C LANDED (no layout change).** What the minds and the ledger share
+is the CYCLE READING, and that is now written once: `cover::Cochain<C>` —
+the coefficient crossing `a → b`, read off whatever holds it — and
+`cover::holonomy`, the coefficients composed in the order crossed. `Cover<C>`
+is a cochain of any group; the minds' `Complex` is a cochain in the versor
+group (`Turned`, its edge's rotor and carriage as `Complex::edge` orients
+them), and `Complex::holonomy` reads its triangles by the one holonomy.
+`Turned` composes in PATH ORDER, `self · then` — `r₁₂ · r₂₃ · r₃₁`, the
+product the minds' holonomy and coboundary have always taken; Phase A had
+it the other way, read by nothing yet, and composed so a mind's holonomy
+would be another element and its class vector another class. The minds'
+storage — simplices with their fills, orbits per chord, sections, the
+classifier and class vectors, their persisted tries — stays the versor
+group's own: moving it onto `Cover<Turned>` would re-mint every mind for no
+reading gained, so it is not moved. Proved:
+`cover::the_minds_complex_reads_its_cycles_by_the_one_holonomy` (three
+non-commuting turns: the mind's holonomy is the path product, not the
+other, and the cover in the versor group reads the same element), and the
+whole suite, every mind's reading unchanged.
+
 *Owed, named:* (3) An obstruction stays open until 2(c)'s challenge
 discharges it; nothing closes one yet. (4) The ancient anchor's report of
 open remainders waits for the anchor itself. (5) The empty remainders of
@@ -24529,8 +24549,12 @@ by `Cite::Challenge { fold, kind, outcome, evidence }` (tag 8):
   holonomy is a ratio; the value it moved depends on the flows the tier
   holds, so the amount is declared and its truth is the line's, open to
   replay). The obstruction is discharged.
-- Read, sealing nothing: a fold's FINALITY, and a domain's OPEN
-  OBSTRUCTIONS (closing fold, child and parent vertices, exact holonomy).
+- Read, sealing nothing: a fold's FINALITY, a domain's OPEN OBSTRUCTIONS
+  (closing fold, child and parent vertices, exact holonomy), and a tier's
+  LINE HEAD (kind 8: where the court will replay its next fold's span from,
+  and the stamp of the fold that set it — re-derived from the records at a
+  restore, so no layout moves). A client that lost its head resyncs by it
+  and refuses to fold while its own disagrees.
 
 **REVERSAL.** A falsified fold, and every fold that netted it,
 transitively: each one's netting returns to its children's remainders, its

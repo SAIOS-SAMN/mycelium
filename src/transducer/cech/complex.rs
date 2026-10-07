@@ -62,6 +62,16 @@ pub struct Complex {
     pub(crate) wound: Keyed<crate::transducer::cga::Mv>,
 }
 
+/// 78.123 C — THE MINDS' COMPLEX IS A COCHAIN IN THE VERSOR GROUP: the
+/// coefficient crossing an edge is its rotor and carriage, oriented as
+/// `Complex::edge` reads them.
+impl super::cover::Cochain<super::coefficient::Turned> for Complex {
+    fn crossing(&self, a: &[u8], b: &[u8]) -> Option<super::coefficient::Turned> {
+        let (rotor, carriage) = self.edge(a, b)?;
+        Some(super::coefficient::Turned { rotor, carriage })
+    }
+}
+
 /// WHAT A REOPEN CUT (78.26(6)): a ring closed at holonomy 1, or one closed at
 /// its period — a remainder, coherent up to `ℓ` (78.37(4)). Counted apart.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -549,11 +559,13 @@ impl Complex {
     /// The holonomy around a triangle, on both halves. A rotor-only
     /// composite reads the identity for a triangle whose placements do not
     /// close, which is the obstruction the reading exists to find.
+    ///
+    /// 78.123 C — READ BY THE ONE HOLONOMY every cover reads its cycles by
+    /// (`cover::holonomy`), this complex a cochain in the versor group: the
+    /// ledger's lanes and rates and the minds' versors, one machinery.
     pub(crate) fn holonomy(&self, i: &[u8], j: &[u8], k: &[u8]) -> Option<(Rotor, Versor)> {
-        let (r_ij, c_ij) = self.edge(i, j)?;
-        let (r_jk, c_jk) = self.edge(j, k)?;
-        let (r_ki, c_ki) = self.edge(k, i)?;
-        Some((r_ij.geo(&r_jk).geo(&r_ki), c_ij.geo(&c_jk).geo(&c_ki)))
+        let t = super::cover::holonomy(self, &[i, j, k]).ok()?;
+        Some((t.rotor, t.carriage))
     }
 
     /// Drop every simplex that contains `vertex`. Used when bubbles merge.

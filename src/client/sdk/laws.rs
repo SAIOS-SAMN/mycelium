@@ -112,6 +112,16 @@ impl super::Session {
         decode_finality_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))
     }
 
+    /// 78.125 — A TIER'S LINE HEAD on the court: where its next fold's span
+    /// is replayed from, and the stamp of the fold that set it (none: the
+    /// zero head). Resync by it before folding; a head that disagrees with
+    /// the client's would be falsified on demand.
+    pub fn line_head(&self, tier: [u8; 32]) -> io::Result<([u8; 32], Option<crate::chronometry::Stamp>)> {
+        use crate::anastome::dialogue::challenge::{decode_line_head_reply, encode_line_head_request};
+        let reply = self.speak(encode_line_head_request(tier))?;
+        decode_line_head_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the line head reply did not decode"))
+    }
+
     /// 78.125 — A DOMAIN'S OPEN ARBITRAGES: what a correction names and prices.
     pub fn open_obstructions(&self, domain: [u8; 32]) -> io::Result<Vec<crate::anastome::dialogue::challenge::OpenObstruction>> {
         use crate::anastome::dialogue::challenge::{decode_obstructions_reply, encode_obstructions_request};

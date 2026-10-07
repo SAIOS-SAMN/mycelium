@@ -36,6 +36,10 @@ fn every_challenge_and_every_answer_read_back_whole() {
     }
     assert_eq!(decode_challenge_request(&encode_finality_request(fold)), Some(ChallengeRequest::Finality(fold)));
     assert_eq!(decode_challenge_request(&encode_obstructions_request([4u8; 32])), Some(ChallengeRequest::Obstructions([4u8; 32])));
+    assert_eq!(decode_challenge_request(&encode_line_head_request([5u8; 32])), Some(ChallengeRequest::LineHead([5u8; 32])));
+    for (head, at) in [([0u8; 32], None), ([9u8; 32], Some(fold))] {
+        assert_eq!(decode_line_head_reply(&encode_line_head_reply(&head, at.as_ref())), Some((head, at)));
+    }
     for a in [
         Challenged::Demanded { at: fold, receipt: [1u8; 32], deadline: 1033 },
         Challenged::Upheld { at: fold, receipt: [1u8; 32], prefix: [2u8; 32] },

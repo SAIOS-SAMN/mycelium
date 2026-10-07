@@ -245,8 +245,13 @@ impl Coefficient for Turned {
         Turned { rotor: Rotor::identity(), carriage: crate::transducer::element::identity_versor() }
     }
 
+    /// IN PATH ORDER, as the minds compose (78.123 C): `self`, then `then`,
+    /// the geometric product left to right along the path — `r_ij · r_jk ·
+    /// r_ki` around a triangle, the product `Complex::holonomy` and the
+    /// coboundary have always taken. Composed the other way the holonomy is
+    /// another element and its class vector another class.
     fn compose(&self, then: &Self) -> Option<Self> {
-        Some(Turned { rotor: then.rotor.geo(&self.rotor), carriage: then.carriage.geo(&self.carriage) })
+        Some(Turned { rotor: self.rotor.geo(&then.rotor), carriage: self.carriage.geo(&then.carriage) })
     }
 
     /// The reverse, which is the inverse up to the weight the projective

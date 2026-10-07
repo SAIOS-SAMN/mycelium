@@ -90,3 +90,32 @@ fn the_versor_group_reads_the_same_cover_the_same_way() {
     c.set_edge(&v(3), &v(1), turned(1, 1)).expect("set");
     assert!(matches!(c.fill(&[v(1), v(2), v(3)]), CellReading::Obstructed { .. }));
 }
+
+/// 78.123 C — THE MINDS' COMPLEX READS ITS CYCLES BY THE ONE HOLONOMY: a
+/// mind's triangle of three non-commuting turns, read by `Complex::holonomy`,
+/// is exactly the path product `r₁₂ · r₂₃ · r₃₁` on both halves — and the
+/// same element a `Cover<Turned>` holding those edges reads. One machinery,
+/// the minds' versors and the ledger's lanes and rates.
+#[test]
+fn the_minds_complex_reads_its_cycles_by_the_one_holonomy() {
+    use crate::transducer::cech::Complex;
+    let q = |n: i64| BigRational::from_integer(n.into());
+    let turn = |s: i64, blade: usize, b: i64| Rotor::scalar(q(s)).add(&Rotor::blade(blade, q(b)));
+    let one = crate::transducer::element::identity_versor;
+    let mut mind = Complex::new();
+    mind.set_edge(v(1), v(2), turn(2, 0b0011, 1), one(), [1, 0, 0, 0]);
+    mind.set_edge(v(2), v(3), turn(3, 0b0110, 4), one(), [1, 0, 0, 0]);
+    mind.set_edge(v(3), v(1), turn(1, 0b0101, 2), one(), [1, 0, 0, 0]);
+    let edge = |a: u8, b: u8| mind.edge(&v(a), &v(b)).expect("an edge stands");
+    let (r12, r23, r31) = (edge(1, 2).0, edge(2, 3).0, edge(3, 1).0);
+    let (h, _) = mind.holonomy(&v(1), &v(2), &v(3)).expect("the triangle reads");
+    assert!(h.projective_eq(&r12.geo(&r23).geo(&r31)), "path order, as the minds have always composed");
+    assert!(!h.projective_eq(&r31.geo(&r23).geo(&r12)), "the other order is another element");
+    let mut cover: Cover<Turned> = Cover::new();
+    for (a, b) in [(1, 2), (2, 3), (3, 1)] {
+        let (rotor, carriage) = edge(a, b);
+        cover.set_edge(&v(a), &v(b), Turned { rotor, carriage }).expect("set");
+    }
+    let g = cover.holonomy(&[&v(1), &v(2), &v(3)]).expect("read");
+    assert!(g.rotor.projective_eq(&h), "the cover in the versor group reads the mind's own holonomy");
+}

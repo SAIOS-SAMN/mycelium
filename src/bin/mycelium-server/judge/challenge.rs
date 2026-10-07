@@ -18,6 +18,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             ChallengeRequest::Signed(c) => encode_challenge_reply(&k.challenge(&c)),
             ChallengeRequest::Finality(fold) => encode_finality_reply(&k.finality(&fold)),
             ChallengeRequest::Obstructions(domain) => encode_obstructions_reply(&k.open_obstructions(&domain)),
+            ChallengeRequest::LineHead(tier) => {
+                let (head, at) = k.line_head(&tier);
+                mycelium::anastome::dialogue::challenge::encode_line_head_reply(&head, at.as_ref())
+            }
         },
         Err(_) => return,
     };

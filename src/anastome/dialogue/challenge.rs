@@ -204,10 +204,46 @@ pub enum ChallengeRequest {
     Finality(Stamp),
     /// A domain's open obstructions, read; nothing sealed.
     Obstructions([u8; 32]),
+    /// A tier's line head — where its next fold's span begins — read;
+    /// nothing sealed.
+    LineHead([u8; 32]),
 }
 
 const KIND_FINALITY: u8 = 4;
 const KIND_OBSTRUCTIONS: u8 = 5;
+const KIND_LINE_HEAD: u8 = 8;
+
+/// `[ACT_CHALLENGE][8][tier 32]`.
+pub fn encode_line_head_request(tier: [u8; 32]) -> Vec<u8> {
+    let mut out = vec![super::ACT_CHALLENGE, KIND_LINE_HEAD];
+    out.extend_from_slice(&tier);
+    out
+}
+
+/// `[head 32][0]`, or `[head 32][1][stamp]`: the head, and the fold that set
+/// it where one did (none: the zero head, no fold recorded).
+pub fn encode_line_head_reply(head: &[u8; 32], at: Option<&Stamp>) -> Vec<u8> {
+    let mut out = head.to_vec();
+    match at {
+        None => out.push(0),
+        Some(s) => {
+            out.push(1);
+            s.put_canonical(&mut out);
+        }
+    }
+    out
+}
+
+pub fn decode_line_head_reply(b: &[u8]) -> Option<([u8; 32], Option<Stamp>)> {
+    let head: [u8; 32] = b.get(..32)?.try_into().ok()?;
+    let mut p = 33;
+    let at = match *b.get(32)? {
+        0 => None,
+        1 => Some(Stamp::take_canonical(b, &mut p)?),
+        _ => return None,
+    };
+    (p == b.len()).then_some((head, at))
+}
 
 /// AN OPEN ARBITRAGE, as served: the fold whose seal closed the cycle, the
 /// edge's child and parent fold vertices (`tier ‖ prefix`), and the cycle's
@@ -286,6 +322,11 @@ pub fn decode_challenge_request(b: &[u8]) -> Option<ChallengeRequest> {
             let domain: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
             p += 32;
             ChallengeRequest::Obstructions(domain)
+        }
+        KIND_LINE_HEAD => {
+            let tier: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            p += 32;
+            ChallengeRequest::LineHead(tier)
         }
         k => {
             let who: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;

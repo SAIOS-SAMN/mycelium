@@ -145,6 +145,10 @@ pub(crate) struct Ledgers {
     /// 78.125 — per tier, the prefix head of its last admitted fold: where
     /// its next fold's span begins.
     pub(crate) heads: Keyed<[u8; 32]>,
+    /// 78.125 — per tier, the stamp key of the fold that set its head:
+    /// re-derived from the records wherever they are restored, never
+    /// persisted (law 12).
+    pub(crate) head_at: Keyed<Vec<u8>>,
     /// Per domain: its rates edges, in the order sealed.
     pub(crate) edges: Keyed<Vec<Edge>>,
     /// 78.125 — the arbitrages booked, keyed by closing fold and child: the
@@ -419,6 +423,20 @@ impl Ledgers {
         for d in &domains {
             self.rederive(d);
         }
+        // Each tier's head re-derived to the fold that set it: the latest
+        // recorded fold of that tier standing at its head.
+        let mut set_by: Keyed<(u64, Vec<u8>)> = Keyed::new();
+        for (k, r) in self.records.scoped() {
+            if self.heads.get(&r.tier) != Some(&r.prefix) {
+                continue;
+            }
+            if set_by.get(&r.tier).is_none_or(|(h, _)| r.sealed >= *h) {
+                set_by.insert(r.tier, (r.sealed, k));
+            }
+        }
+        for (tier, (_, k)) in set_by.scoped() {
+            self.head_at.insert(&tier, k.clone());
+        }
         Some(())
     }
 }
@@ -482,6 +500,17 @@ impl Kernel {
         };
         self.ledgers.records.insert(&key, record);
         self.ledgers.heads.insert(fold.tier, fold.prefix);
+        self.ledgers.head_at.insert(fold.tier, key);
+    }
+
+    /// 78.125 — A TIER'S LINE HEAD: where the court will replay its next
+    /// fold's span from — its last recorded fold's prefix, or the zero head —
+    /// and the stamp of the fold that set it. A client that lost its own head
+    /// resyncs by it before it folds.
+    pub fn line_head(&self, tier: &[u8; 32]) -> ([u8; 32], Option<Stamp>) {
+        let head = self.ledgers.heads.get(tier).map_or([0; 32], |h| *h);
+        let at = self.ledgers.head_at.get(tier).and_then(|k| Stamp::from_key(k));
+        (head, at)
     }
 
     /// 78.123 B — A FOLD THAT NETS CHILDREN, admitted once its signature,
