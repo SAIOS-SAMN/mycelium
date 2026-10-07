@@ -24026,6 +24026,31 @@ Reading: `constructions: adjoined as motion letters`, `demands answered by
 an own letter`. Proved:
 `taught::a_dilation_about_a_point_becomes_the_minds_motion_letter`.
 
+### 78.116 The verdict is the transition's, not the stroke's (2026-10-07, found by the xylarium uplink — the first live ACT_LAWS, a court at :7520 built from 5dc91186)
+
+**The reading.** The register answered whole (version 3, six laws by
+coordinate), and every verify agreed byte for byte with the kernel's local
+`physics::laws::verify` — and the court refused the register's own
+reference turn, `Conformal: Undecomposed(Unbounded)`. The act verified
+under `Physics::default().stroke()`, `reserve_max / 8`: seven reads on that
+laptop, where the (3, 4, 5) turn's modes need about fourteen. A lawful
+motion read as a breach of a law — 78.111 C1b's defect at another site,
+and its ruling applies to every site.
+
+**The fix.** `laws::verify_sized`: the verdict under the stroke the
+motion's own modes need (`cga::modes_need`), a function of the transition
+alone; the court's act answers with it, and a kernel that verifies with it
+agrees with the court whatever stroke the kernel holds (law 12).
+`verify(t, budget)` stands for the readers that verify inside a stroke of
+their own (perception's flux and bridge). Proved:
+`laws::a_lawful_turn_is_admitted_under_the_stroke_its_modes_need`.
+
+**RULING ASKED.** Where a caller's stroke is short, a spent stroke still
+reads `(Law::Conformal, Undecomposed(Unbounded))` — a refusal of the
+VERIFIER written as a breach of the LAW. The verdict's codec has no kind
+for "unmeasured". Either the verdict gains one (a codec change both sides
+read), or a stroke-bounded verify is named a reading and never a verdict.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

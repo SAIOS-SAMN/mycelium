@@ -19,8 +19,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, _door: &Door) {
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
         LawsRequest::Verify(t) => {
-            let mut budget = mycelium::physics::Physics::default().stroke();
-            let verdict = mycelium::physics::laws::verify(&t, &mut budget);
+            // 78.116 — under the stroke the motion's modes need, never the
+            // court's default: a verdict of the transition alone.
+            let verdict = mycelium::physics::laws::verify_sized(&t);
             let mut out = Vec::new();
             put_verdict(&mut out, &verdict);
             out

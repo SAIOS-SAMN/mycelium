@@ -65,6 +65,25 @@ fn a_turn_that_carries_its_bodies_is_admitted_under_every_law() {
     assert!(v.exchanged.is_empty(), "an unforced turn exchanges no torque");
 }
 
+/// 78.116 — THE VERDICT IS THE TRANSITION'S, NOT THE STROKE'S: under seven
+/// reads (the court's default stroke on the laptop the first xylarium uplink
+/// ran against) the reference turn reads a false `Conformal` breach — its
+/// modes unsplit for want of stroke; under the stroke its own modes need it
+/// is admitted, as it is under any stroke that suffices.
+#[test]
+fn a_lawful_turn_is_admitted_under_the_stroke_its_modes_need() {
+    let t = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let short = verify(&t, &mut crate::physics::Physics::default().stroke_n(7));
+    assert!(
+        matches!(short.breaches.as_slice(), [(Law::Conformal, Breach::Undecomposed(Undecomposed::Unbounded(_)))]),
+        "the short stroke's false breach: {:?}",
+        short.breaches
+    );
+    let sized = verify_sized(&t);
+    assert!(sized.admitted(), "{:?}", sized.breaches);
+    assert_eq!(sized, verify(&t, &mut budget()), "the verdict of the transition alone");
+}
+
 #[test]
 fn each_law_refuses_what_breaks_it_and_every_breach_is_named() {
     let laws_of = |v: &Verdict| v.breaches.iter().map(|(l, _)| *l).collect::<Vec<_>>();

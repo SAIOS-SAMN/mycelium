@@ -229,6 +229,24 @@ impl Verdict {
     }
 }
 
+/// 78.116 — THE VERDICT UNDER THE STROKE THE MOTION NEEDS, a function of the
+/// transition alone: its modes split under `cga::modes_need` of the motion
+/// (78.111 C1b's rule — a stroke read off what it reads, never one sized for
+/// something else). The court's act answers with this. Under the court's
+/// default stroke — `reserve_max / 8`, seven reads on the laptop the first
+/// uplink ran on — the register's own reference turn (`3 + 4·e₁₂`, fourteen
+/// reads to split) was refused `Conformal: Undecomposed(Unbounded)`: a
+/// lawful motion read as a breach (found by the xylarium uplink,
+/// 2026-10-07). A kernel that verifies with this agrees with the court byte
+/// for byte, whatever stroke it holds (law 12).
+pub fn verify_sized(t: &Transition) -> Verdict {
+    let mut need = match crate::transducer::cga::modes_need(&t.motion) {
+        Some(n) => crate::physics::Physics::default().stroke_n(n),
+        None => crate::physics::Physics::default().stroke_n(0),
+    };
+    verify(t, &mut need)
+}
+
 /// VERIFY ONE TRANSITION AGAINST THE FIVE LAWS: every law asked, every
 /// breach named. The kernel computed the transition; this replays it.
 pub fn verify(t: &Transition, budget: &mut crate::physics::Budget) -> Verdict {
