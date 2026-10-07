@@ -154,7 +154,11 @@ fn a_demanded_prefix_unpublished_by_its_deadline_falsifies_by_default() {
         panic!("demanded")
     };
     assert_eq!(deadline, asked.h + CHALLENGE_WINDOW);
-    assert_eq!(k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::Demanded));
+    // A resend by the same filer is answered with the original; another
+    // filer's demand is refused — one demand per fold.
+    let Challenged::Demanded { at: again, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else { panic!("resent") };
+    assert_eq!(again, asked, "the original demand, nothing sealed twice");
+    assert_eq!(k.challenge(&Challenge::Demand { fold: at }.sign(&key(41))), Challenged::Refused(ChallengeRefusal::Demanded));
     assert_eq!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotDue));
     pass(&mut k, deadline);
     assert_eq!(k.finality(&at), Finality::Blocked, "the default is due and unclaimed: never final");

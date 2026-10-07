@@ -97,8 +97,11 @@ fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
     assert_eq!(refused(&mut k, cargo(), &y()), HandoffRefusal::NotTheTier, "the sender files the offer");
     let at_home = Offer { to_tier: vk(&x2()), ..cargo() };
     assert_eq!(refused(&mut k, at_home, &x()), HandoffRefusal::Unbound, "a handoff crosses domains");
-    let id = offered(&mut k, cargo());
-    assert_eq!(refused(&mut k, cargo(), &x()), HandoffRefusal::Offered, "one offer, one handoff");
+    let first = k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x()));
+    let Handed::Sealed { id, .. } = first else { panic!("offered") };
+    let height = k.chain.head_height();
+    assert_eq!(k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x())), first, "a resent offer: its original receipt");
+    assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
     assert_eq!(k.handoff_read(&id), Some((State::Offered { until: k.chain.head_height() + CHALLENGE_WINDOW }, false, false)));
 }
 

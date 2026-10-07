@@ -24628,6 +24628,25 @@ the hot line still holds its fold's receipt (the seam :7520 found: a final
 fold, pruned and let go, fell through to the hot-line fallback and misread
 PRE-LINE), so PRE-LINE reads exactly "admitted before records existed".
 
+**NOTHING IS SEALED TWICE (the coordinator's ruling, after 263814 on
+:7520).** A fold over its tier's CURRENT HEAD is answered without sealing:
+byte-identical to the fold admitted there (prefix, rows, children, handoff
+sides) it is a RESEND, answered with that fold's original receipt
+(Admitted or Chained); otherwise `Uplinked::Repeat` (code 8) — an empty
+span claiming nets, which held twice would double-count. The same for a
+resent handoff OFFER (its id is its content: the original receipt and its
+state now) and a resent DEMAND by the same filer (the original Demanded;
+another filer's is refused — one demand per fold). The other challenge and
+handoff acts already refuse a resend without sealing (Published, Closed,
+NoObstruction, Withdrawn, Answered). And the SDK never resends a sealing
+act: a pooled stream is retried on a fresh one only where the WRITE
+failed; once written, a lost reply is an error, never a resend (the pool
+is unfilled today — every act is one fresh connection — so the SDK was not
+263814's source). Proved:
+`uplink::a_resent_fold_is_answered_with_its_original_receipt_and_a_repeat_refused`,
+the resent offer and demand in `handoff::…conserves…` and
+`challenge::…falsifies_by_default`.
+
 **WITHDRAW (the coordinator's ruling, narrow).** A sub-kind of
 `ACT_CHALLENGE` (kind 9): the fold's own tier withdraws ITS OWN demand —
 proved by the demand's receipt (named by its stamp: it cites this fold's

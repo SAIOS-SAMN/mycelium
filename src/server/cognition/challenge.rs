@@ -176,6 +176,7 @@ impl Kernel {
                 if let Some(held) = self.ledgers.records.get_mut(&key) {
                     held.demanded = None;
                 }
+                self.ledgers.demands.remove(&key);
                 self.ledgers.withdrawn.insert(&key, r.stamp.h);
                 Challenged::Reopened { at: r.stamp, receipt: r.chain_hash, until: window_end(r.stamp.h) }
             }
@@ -184,7 +185,20 @@ impl Kernel {
                     return refuse(R::Published);
                 }
                 if rec.demanded.is_some() {
-                    return refuse(R::Demanded);
+                    // A RESEND by the same filer (the coordinator's ruling) is
+                    // answered with the original demand; another filer's is
+                    // refused — one demand per fold.
+                    let original = self
+                        .ledgers
+                        .demands
+                        .get(&key)
+                        .filter(|(_, filer)| *filer == c.who)
+                        .and_then(|(at, _)| Stamp::from_key(at))
+                        .and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
+                    return match original {
+                        Some((at, receipt)) => Challenged::Demanded { at, receipt, deadline: window_end(at.h) },
+                        None => refuse(R::Demanded),
+                    };
                 }
                 if !window_open {
                     return refuse(R::Closed);
@@ -193,6 +207,7 @@ impl Kernel {
                 if let Some(held) = self.ledgers.records.get_mut(&key) {
                     held.demanded = Some(r.stamp.h);
                 }
+                self.ledgers.demands.insert(&key, (r.stamp.key(), c.who));
                 Challenged::Demanded { at: r.stamp, receipt: r.chain_hash, deadline: window_end(r.stamp.h) }
             }
             Challenge::Evidence { .. } | Challenge::Open { .. } | Challenge::Part { .. } => {
@@ -489,6 +504,17 @@ impl Kernel {
         }
         // 78.126 — handoffs both of whose sides final folds consumed.
         gone += self.settle_handoffs();
+        // Demands and withdrawals of folds no longer recorded.
+        let records = &self.ledgers.records;
+        let stale: Vec<Vec<u8>> = self.ledgers.demands.scoped().map(|(k, _)| k).filter(|k| !records.contains(k)).collect();
+        let spent: Vec<Vec<u8>> = self.ledgers.withdrawn.scoped().map(|(k, _)| k).filter(|k| !records.contains(k)).collect();
+        for k in &stale {
+            self.ledgers.demands.remove(k);
+        }
+        for k in &spent {
+            self.ledgers.withdrawn.remove(k);
+        }
+        gone += stale.len() + spent.len();
         if gone > 0 {
             self.mark_persist();
         }

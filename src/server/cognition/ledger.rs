@@ -162,6 +162,10 @@ pub(crate) struct Ledgers {
     /// withdrawn, by its stamp key: the height of the withdrawal, from which
     /// its evidence window stands reopened `W` — once per fold.
     pub(crate) withdrawn: Keyed<u64>,
+    /// 78.125 — each standing demand, by its fold's stamp key: the demand's
+    /// receipt (its stamp key) and its filer — so the same filer's resend is
+    /// answered with the original and nothing is sealed twice.
+    pub(crate) demands: Keyed<(Vec<u8>, [u8; 32])>,
     /// 78.125 — the arbitrages booked, keyed by closing fold and child: the
     /// holder the gain accrues to and its amount on G.
     pub(crate) discharged: Keyed<([u8; 32], i128)>,
@@ -316,6 +320,7 @@ impl Ledgers {
             && self.discharged.is_empty()
             && self.finals.is_empty()
             && self.withdrawn.is_empty()
+            && self.demands.is_empty()
         {
             return None;
         }
@@ -398,6 +403,13 @@ impl Ledgers {
             put_key_bytes(&mut v, &k);
             v.extend_from_slice(&h.to_le_bytes());
         }
+        // The standing demands, after the withdrawals.
+        put_key_count(&mut v, self.demands.len());
+        for (k, (at, filer)) in self.demands.scoped() {
+            put_key_bytes(&mut v, &k);
+            put_key_bytes(&mut v, at);
+            v.extend_from_slice(filer);
+        }
         Some(v)
     }
 
@@ -468,6 +480,15 @@ impl Ledgers {
                 let k = take_key_bytes(b, p)?;
                 let h = take_u64(b, p)?;
                 self.withdrawn.insert(&k, h);
+            }
+        }
+        // The standing demands — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = take_key_bytes(b, p)?;
+                let at = take_key_bytes(b, p)?;
+                let filer = key32(b, p)?;
+                self.demands.insert(&k, (at, filer));
             }
         }
         for d in &domains {
@@ -551,6 +572,44 @@ impl Kernel {
         self.ledgers.records.insert(&key, record);
         self.ledgers.heads.insert(fold.tier, fold.prefix);
         self.ledgers.head_at.insert(fold.tier, key);
+    }
+
+    /// 78.125 (the coordinator's ruling) — A FOLD OVER ITS TIER'S CURRENT
+    /// HEAD, answered without sealing: byte-identical to the fold admitted
+    /// there — the same prefix, rows, children and handoff sides — it is a
+    /// RESEND, answered with that fold's original receipt; otherwise a
+    /// REPEAT, refused (an empty span claiming nets). `None`: the fold
+    /// advances its tier's line. A retry is safe, and no fold is held twice.
+    pub(crate) fn repeat_of(&self, f: &TierFold, domain: &[u8; 32]) -> Option<Uplinked> {
+        if self.ledgers.heads.get(&f.tier) != Some(&f.prefix) {
+            return None;
+        }
+        let original = || -> Option<Uplinked> {
+            let key = self.ledgers.head_at.get(&f.tier)?;
+            let rec = self.ledgers.records.get(key)?;
+            let sides = self.handoffs.consumed_by.get(key).map_or(&[][..], Vec::as_slice);
+            if rec.rows != f.rows_hash() || rec.children != f.children_hash() || sides != f.handoffs.as_slice() {
+                return None;
+            }
+            let at = Stamp::from_key(key)?;
+            let receipt = self.chain.node(&at)?.chain_hash;
+            Some(match rec.children {
+                None => Uplinked::Admitted { at, receipt },
+                Some(_) => {
+                    let open = self.ledgers.open_in(domain).len();
+                    let in_flight = rec
+                        .nets
+                        .iter()
+                        .filter(|(child, ..)| self.ledgers.remaining.get(child).is_some_and(|(r, d)| !r.is_identity() || !d.is_identity()))
+                        .count();
+                    Uplinked::Chained { at, receipt, provisional: open > 0, obstructions: count(open), open_remainders: count(in_flight) }
+                }
+            })
+        };
+        Some(match original() {
+            Some(resent) => resent,
+            None => Uplinked::Repeat,
+        })
     }
 
     /// 78.125 — A TIER'S LINE HEAD: where the court will replay its next

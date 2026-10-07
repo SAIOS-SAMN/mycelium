@@ -55,6 +55,7 @@ fn a_signed_fold_and_every_answer_read_back_whole() {
         Uplinked::ChildRefused { index: 0, why: ChildRefusal::Mismatch },
         Uplinked::ChildRefused { index: 1, why: ChildRefusal::ForeignDomain },
         Uplinked::ChildRefused { index: 2, why: ChildRefusal::OverIncluded { lane: 1 } },
+        Uplinked::Repeat,
     ] {
         assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");
     }

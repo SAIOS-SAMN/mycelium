@@ -128,6 +128,28 @@ fn a_domain_is_founded_once_by_its_own_key_its_tiers_its_own() {
     assert_eq!(k.admit_domain(&unordered.sign(&other_domain)), Founded::Unordered);
 }
 
+/// 78.125 — A RESEND IS ANSWERED, NEVER SEALED TWICE: the same signed fold
+/// sent again (a lost reply, a retry) answers with its original receipt and
+/// the line does not move; another fold over the same head — an empty span
+/// claiming nets — is a repeat, refused; a fold advancing the line is
+/// admitted.
+#[test]
+fn a_resent_fold_is_answered_with_its_original_receipt_and_a_repeat_refused() {
+    let key = tier_key();
+    let mut k = founded();
+    let fold = trade(&key);
+    let first = k.admit_uplink(&fold.clone().sign(&key));
+    let Uplinked::Admitted { at, .. } = first else { panic!("admitted") };
+    let height = k.chain.head_height();
+    assert_eq!(k.admit_uplink(&fold.clone().sign(&key)), first, "the original receipt");
+    assert_eq!(k.chain.head_height(), height, "nothing sealed twice");
+    let mut other = fold.clone();
+    other.rows = vec![(who(1), [6, 0, 0, 0]), (who(2), [-6, 0, 0, 0])];
+    assert_eq!(k.admit_uplink(&other.sign(&key)), Uplinked::Repeat, "another fold over the same head");
+    let next = TierFold { prefix: [8u8; 32], ..fold };
+    assert!(matches!(k.admit_uplink(&next.sign(&key)), Uplinked::Admitted { at: n, .. } if n != at));
+}
+
 /// CONTINUITY: value made inside the fold is refused unless declared — a
 /// source declaring it admits the same rows; an unordered list and a lane
 /// passing its carrier are refused by name.

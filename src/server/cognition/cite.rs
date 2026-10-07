@@ -436,6 +436,11 @@ impl Kernel {
         let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
         };
+        // 78.125 — a fold over its tier's current head: a resend answered with
+        // its original receipt, or a repeat refused; nothing sealed twice.
+        if let Some(answer) = self.repeat_of(&f.fold, &domain) {
+            return answer;
+        }
         // 78.126 — the handoff sides it consumes, proved, and their nets: what
         // crosses the domain's boundary stands with its declared emission.
         let crossing = match self.sides_of(&f.fold) {

@@ -12,7 +12,7 @@ use super::challenge::window_end;
 use super::Kernel;
 use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Offer, Side, SignedHandoff, State};
 use crate::anastome::dialogue::uplink::{Net, SideRefusal, TierFold};
-use crate::chronometry::{ActKind, Cite};
+use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
 
@@ -35,6 +35,9 @@ pub(crate) struct Handoffs {
     /// Each fold that consumed sides, by its stamp key: the sides — what a
     /// replay reads and a reversal un-consumes.
     pub(crate) consumed_by: Keyed<Vec<([u8; 32], Side)>>,
+    /// Each held offer's receipt, by the handoff's id — so a resent offer is
+    /// answered with its original receipt and nothing is sealed twice.
+    pub(crate) offered_at: Keyed<Vec<u8>>,
 }
 
 /// The nets a side carries into its consuming fold: OUT, what leaves; IN
@@ -70,7 +73,7 @@ impl Handoffs {
 
     /// The state written by its own coordinates; `None` where none is held.
     pub(crate) fn put(&self) -> Option<Vec<u8>> {
-        if self.held.is_empty() && self.consumed_by.is_empty() {
+        if self.held.is_empty() && self.consumed_by.is_empty() && self.offered_at.is_empty() {
             return None;
         }
         let mut v = Vec::new();
@@ -105,6 +108,12 @@ impl Handoffs {
                 v.extend_from_slice(id);
                 v.push(side.byte());
             }
+        }
+        // The offers' receipts, after the sections b1072ba0 wrote.
+        put_key_count(&mut v, self.offered_at.len());
+        for (id, at) in self.offered_at.scoped() {
+            v.extend_from_slice(&id);
+            put_key_bytes(&mut v, at);
         }
         Some(v)
     }
@@ -158,6 +167,14 @@ impl Handoffs {
                 .collect::<Option<Vec<_>>>()?;
             out.consumed_by.insert(&k, refs);
         }
+        // The offers' receipts — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                let at = take_key_bytes(b, p)?;
+                out.offered_at.insert(k, at);
+            }
+        }
         Some(out)
     }
 }
@@ -187,8 +204,15 @@ impl Kernel {
                     (Some(x), Some(y)) if x != y => {}
                     _ => return refuse(R::Unbound),
                 }
-                if self.handoffs.held.contains(&id) {
-                    return refuse(R::Offered);
+                if let Some(held) = self.handoffs.held.get(&id) {
+                    // A RESEND (the coordinator's ruling): the same offer —
+                    // its id is its content — answered with its original
+                    // receipt and its state now; nothing sealed twice.
+                    let original = self.handoffs.offered_at.get(&id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?)));
+                    return match original {
+                        Some((at, node)) => Handed::Sealed { at, receipt: node.chain_hash, id, state: held.state },
+                        None => refuse(R::Offered),
+                    };
                 }
                 None
             }
@@ -223,6 +247,7 @@ impl Kernel {
                 let until = window_end(r.stamp.h);
                 let held = Held { offer: o.as_ref().clone(), sealed: r.stamp.h, state: State::Offered { until }, out: None, inn: None };
                 self.handoffs.held.insert(id, held);
+                self.handoffs.offered_at.insert(id, r.stamp.key());
                 State::Offered { until }
             }
             (Some(s), _) => {
@@ -300,6 +325,7 @@ impl Kernel {
         let spent: Vec<Vec<u8>> = self.handoffs.consumed_by.scoped().map(|(k, _)| k).filter(|k| !records.contains(k)).collect();
         for k in &done {
             self.handoffs.held.remove(k);
+            self.handoffs.offered_at.remove(k);
         }
         for k in &spent {
             self.handoffs.consumed_by.remove(k);

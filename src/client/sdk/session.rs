@@ -614,18 +614,28 @@ impl Session {
         let bytes = frame.encode().ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
         })?;
+        // A SEALING ACT IS NEVER SENT TWICE (78.125, the coordinator's
+        // ruling): a pooled stream is retried on a fresh one only where the
+        // WRITE failed — the court cannot have read the act. Once the act is
+        // written, a lost reply is an error to the caller, never a resend:
+        // the first may have sealed, and a resend would seal it again.
         let mut pool = self.streams.borrow_mut();
         if let Some(s) = pool.get_mut(addr.as_bytes()) {
-            match Self::roundtrip(s, &bytes) {
-                Ok(body) => {
-                    self.rtt_ok(addr, 1);
-                    return Ok(body);
-                }
-                Err(e) => {
-                    pool.remove(addr.as_bytes());
-                    if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock {
-                        self.rtt_timeout(addr);
+            match s.write_all(&bytes) {
+                Ok(()) => {
+                    let read = Self::read_reply(s);
+                    if read.is_err() {
+                        pool.remove(addr.as_bytes());
                     }
+                    match &read {
+                        Ok(_) => self.rtt_ok(addr, 1),
+                        Err(e) if e.kind() == io::ErrorKind::TimedOut || e.kind() == io::ErrorKind::WouldBlock => self.rtt_timeout(addr),
+                        Err(_) => {}
+                    }
+                    return read;
+                }
+                Err(_) => {
+                    pool.remove(addr.as_bytes());
                 }
             }
         }
@@ -650,6 +660,11 @@ impl Session {
 
     pub(crate) fn roundtrip(s: &mut TcpStream, bytes: &[u8]) -> io::Result<Vec<u8>> {
         s.write_all(bytes)?;
+        Self::read_reply(s)
+    }
+
+    /// One reply frame's body, read whole.
+    fn read_reply(s: &mut TcpStream) -> io::Result<Vec<u8>> {
         let mut head = [0u8; 5];
         s.read_exact(&mut head)?;
         let len = u32::from_le_bytes([head[1], head[2], head[3], head[4]]) as usize;

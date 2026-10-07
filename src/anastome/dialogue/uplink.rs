@@ -389,6 +389,11 @@ pub enum Uplinked {
     ChildRefused { index: u32, why: ChildRefusal },
     /// 78.126 — the handoff side at `index` was not consumed, and why.
     HandoffRefused { index: u32, why: SideRefusal },
+    /// 78.125 (the coordinator's ruling) — a fold over its tier's current
+    /// head whose commitments differ from the fold admitted there: an empty
+    /// span claiming nets. (A fold byte-identical to it is answered with
+    /// its original receipt, sealing nothing.)
+    Repeat,
 }
 
 /// 78.126 — WHY A FOLD MAY NOT CONSUME A HANDOFF SIDE.
@@ -470,6 +475,7 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.extend_from_slice(&index.to_le_bytes());
             out.push(why.byte());
         }
+        Uplinked::Repeat => out.push(8),
     }
     out
 }
@@ -534,6 +540,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             p = 6;
             Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
+        8 => Uplinked::Repeat,
         _ => return None,
     };
     (p == b.len()).then_some(u)
