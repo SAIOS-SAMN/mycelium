@@ -25002,12 +25002,44 @@ teff`. Refused below the least mass and past the last segment. Proved on
 the Sun's calibration (passed in by the test): the unit star 1, 1, 10 Gyr,
 5772 K; `M = 2` gives `L = 16` and `5/4` of the lifetime exactly; the Earth
 at `q = 1` inside the zone; a hotter star sends more light past a
-threshold. Composing a calibration with `Laws`'s stellar scales is the
-universe's.
+threshold.
 
-**Owed.** B: the bounce on `cga` `sphere_at` / `at_three` and `physics::source`'s
-keeping, with the recycling identity `fallen + arrived = growth + radiated
-+ reservoir + returned`, growth the child's content (R3).
+**B, the bounce, and D's and F's remainder (landed last).**
+- **The composition is a law form** (the coordinator): `star(cal, laws,
+  m)` reads the calibration at `m / star_mass = m·g` — exact, `star_mass`
+  being `1/g` — and scales luminosity by `star_light`, radius by
+  `star_radius`, lifetime by `star_life`, the temperature read off the
+  scaled pair. `Fates` passed in (collapse and black-hole thresholds, the
+  white dwarf's and neutron star's masses, the hole's kept fraction):
+  `death` (a binary below collapse is a type Ia) and `remnant` (Ia leaves
+  none).
+- **F.** `binding_per_nucleon`; `most_stable_a(Z)`, the peak of `B/A` —
+  pairing splits `A` by parity, so each parity is walked up by two while
+  `B/A` rises decidedly and the two peaks compared on separated
+  enclosures, `None` where undecided or past `4Z + 8`.
+- **B (R3), on the tree's own pieces.** `horizon(c, m)` = `sphere_at(c,
+  4m²)`, no root taken; `invert(σ, X) = σXσ⁻¹`; `emerges(σ, x)` the base of
+  the inverted point. `Bounce::of(c, m, a)`, `a ∈ (0, 1)`: the turn
+  `a·e₁e₂` carried to the centre by `translator_at`, its part the horizon
+  KEEPS (`physics::source::keeping`), and the verified white-hole `Source`
+  at the equatorial crossing `c + (2m, 0, 0)`. The recycling law's
+  parameters are the universe's (`Recycling { crossing, radiated, tau }`),
+  and the `Books` are exact after every act: a fall crosses `m·h` (`ε` of
+  it radiated, the rest growth — THE CHILD'S CONTENT) and holds the rest
+  in the reservoir; an arrival from a paired sphere, a declared source,
+  emerges outward and is counted returned; the jets return
+  `reservoir·(1 − e^{−dt/τ})` fixed at the enclosure's LOWER bound, never
+  more than the law allows, so no matter is invented and `fallen + arrived
+  = growth + radiated + reservoir + returned` holds exactly.
+
+Proved: distance 4 from a horizon of `r² = 4` emerges at 1, the horizon is
+fixed, inversion is an involution about the origin and about an off-origin
+centre; the bounce's source holds at the crossing about either; spin 0 and
+1 refused; the books after falls, an arrival and jets balance exactly, the
+jets over `τ` return `70·(1 − 1/e)`. Iron-56 at about 8.8 MeV per nucleon
+and its most stable `A` even in `[54, 58]`; U, Fl, 120, 126 placed (5f⁴,
+7p², 8s², 5g⁶); the composed star one at the reference, and at `g = 2`
+`L² = 512`.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

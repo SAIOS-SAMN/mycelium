@@ -155,6 +155,72 @@ fn stars_read_their_universes_calibration() {
 }
 
 #[test]
+fn a_star_composes_its_calibration_with_its_universes_laws() {
+    let cal = sun();
+    let at_ref = star(&cal, &Laws::reference(), &Q::one(), W).expect("");
+    assert!(at_ref.luminosity.contains(&Q::one()) && at_ref.radius.contains(&Q::one()));
+    assert!(at_ref.lifetime.contains(&q(10, 1)) && at_ref.teff.contains(&q(5772, 1)));
+    // g = 2: star_mass halves, so a unit-mass star reads the calibration at
+    // m·g = 2 (L = 16), scaled by star_light √2 and star_radius ½.
+    let heavy = Laws { alpha_g: q(2, 1), ..Laws::reference() };
+    let s = star(&cal, &heavy, &Q::one(), W).expect("");
+    let l2 = s.luminosity.square();
+    assert!(l2.contains(&q(512, 1)), "L² = (16√2)² = 512: {l2:?}");
+    let r_cal = stellar_radius(&cal, &q(2, 1), W).expect("");
+    assert!(s.radius.contains(&(&r_cal.lo / q(2, 1))) || s.radius.contains(&(&r_cal.hi / q(2, 1))), "radius ×½");
+    let fates = Fates {
+        collapse: q(8, 1),
+        black_hole: q(20, 1),
+        white_dwarf: q(6, 10),
+        neutron_star: q(14, 10),
+        hole_fraction: q(1, 2),
+    };
+    assert_eq!(death(&fates, &Q::one(), false), Death::WhiteDwarf);
+    assert_eq!(death(&fates, &Q::one(), true), Death::Ia);
+    assert_eq!(death(&fates, &q(8, 1), true), Death::NeutronStar, "collapse from 8, binary or not");
+    assert_eq!(death(&fates, &q(30, 1), false), Death::BlackHole);
+    assert_eq!(remnant(&fates, Death::WhiteDwarf, &Q::one()), q(6, 10));
+    assert_eq!(remnant(&fates, Death::Ia, &Q::one()), Q::zero());
+    assert_eq!(remnant(&fates, Death::NeutronStar, &q(10, 1)), q(14, 10));
+    assert_eq!(remnant(&fates, Death::BlackHole, &q(30, 1)), q(15, 1));
+}
+
+#[test]
+fn the_horizon_inverts_and_the_bounce_recycles_exactly() {
+    let o = [Q::zero(), Q::zero(), Q::zero()];
+    let sigma = horizon(&o, &Q::one());
+    // r² = 4: distance 4 emerges at 1, the horizon (2) is fixed, an involution.
+    assert_eq!(emerges(&sigma, &[q(4, 1), Q::zero(), Q::zero()]), Some(vec![Q::one(), Q::zero(), Q::zero()]));
+    assert_eq!(emerges(&sigma, &[Q::zero(), q(2, 1), Q::zero()]), Some(vec![Q::zero(), q(2, 1), Q::zero()]));
+    let x = [q(3, 1), q(-5, 2), q(7, 3)];
+    let once = emerges(&sigma, &x).expect("");
+    assert_eq!(emerges(&sigma, &once), Some(x.to_vec()), "inversion is its own inverse");
+    let c = [q(10, 1), q(-3, 1), q(1, 2)];
+    let off = horizon(&c, &q(3, 1));
+    let y = [q(1, 1), q(2, 1), q(5, 1)];
+    assert_eq!(emerges(&off, &emerges(&off, &y).expect("")), Some(y.to_vec()), "about any centre");
+    assert_eq!(emerges(&off, &[q(10, 1), q(-3, 1), q(13, 2)]), Some(vec![q(10, 1), q(-3, 1), q(13, 2)]), "on the horizon");
+
+    let bounce = Bounce::of(&o, &Q::one(), &q(1, 2)).expect("the source holds at the crossing");
+    assert_eq!(bounce.horizon, sigma);
+    assert!(Bounce::of(&c, &q(3, 1), &q(9, 10)).is_some(), "about any centre");
+    assert_eq!(Bounce::of(&o, &Q::one(), &Q::one()), None, "spin below one");
+    assert_eq!(Bounce::of(&o, &Q::one(), &Q::zero()), None, "spin above zero");
+
+    let law = Recycling { crossing: q(3, 10), radiated: q(1, 10), tau: q(5, 1) };
+    let mut books = Books::default();
+    books.fall(&law, &q(100, 1)).expect("");
+    assert_eq!((books.growth.clone(), books.radiated.clone(), books.reservoir.clone()), (q(27, 1), q(3, 1), q(70, 1)));
+    books.arrive(&q(4, 1)).expect("");
+    assert_eq!(books.jet(&law, &Q::zero(), W), Some(Q::zero()), "no time, no jets");
+    let back = books.jet(&law, &q(5, 1), W).expect("");
+    assert!(back > q(4424, 100) && back < q(4425, 100), "70·(1 − 1/e): {back}");
+    books.fall(&law, &q(7, 3)).expect("");
+    assert!(books.balanced(), "fallen + arrived = growth + radiated + reservoir + returned");
+    assert_eq!(books.fall(&Recycling { crossing: q(3, 2), ..law }, &Q::one()), None, "a fraction is in [0, 1]");
+}
+
+#[test]
 fn water_boils_and_phases_read_off_its_triple_and_critical_points() {
     let w = water();
     let at_ref = boiling_point(&w, &w.p_ref, W).expect("");
@@ -199,6 +265,10 @@ fn the_liquid_drop_binds_and_its_valley_reads_the_stable_charge() {
     assert!(iron.lo > q(485, 1) && iron.hi < q(495, 1), "{iron:?}");
     let z0 = valley(&ours, 56, W).expect("");
     assert!(z0.lo > q(25, 1) && z0.hi < q(26, 1), "the valley at A = 56: {z0:?}");
+    let per = binding_per_nucleon(&ours, 26, 56, W).expect("");
+    assert!(per.lo > q(86, 10) && per.hi < q(89, 10), "about 8.8 MeV per nucleon: {per:?}");
+    let a = most_stable_a(&ours, 26, W).expect("");
+    assert!((54..=58).contains(&a) && a % 2 == 0, "iron's most stable A: {a}");
 }
 
 #[test]
@@ -219,7 +289,11 @@ fn madelung_places_every_charge_through_the_g_block() {
     assert_eq!(at(26), (4, Block::D, 6, Some(8)), "iron");
     assert_eq!(at(79), (6, Block::D, 9, Some(11)), "gold, Madelung's idealised 5d⁹");
     assert_eq!(at(57), (6, Block::F, 1, None), "the f block has no group");
+    assert_eq!(at(92), (7, Block::F, 4, None), "uranium, 5f");
+    assert_eq!(at(114), (7, Block::P, 2, Some(14)), "flerovium");
     assert_eq!(at(118), (7, Block::P, 6, Some(18)), "the seventh period's close");
+    assert_eq!(at(120), (8, Block::S, 2, Some(2)), "the eighth period's 8s²");
+    assert_eq!(at(126), (8, Block::G, 6, None), "5g⁶");
     assert_eq!(at(121), (8, Block::G, 1, None), "the g block opens");
     assert_eq!(at(168), (8, Block::P, 6, Some(18)), "the eighth period's close");
     assert_eq!(at(172), (9, Block::G, 2, None), "6g at the cap");

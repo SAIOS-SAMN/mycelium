@@ -10,6 +10,8 @@
 //! universe's reference is one.
 
 use super::certified::{exp, ln, pi, planck_tail, powq, sqrt, tan, Encl};
+use crate::physics::source::{keeping, Source};
+use crate::transducer::cga::{base_at, point_at, sphere_at, translator_at, Mv, E1, E2};
 use num_bigint::BigInt;
 use num_rational::BigRational as Q;
 use num_traits::{One, Signed, Zero};
@@ -149,6 +151,142 @@ fn fourth_root(x: &Encl, w: u32) -> Option<Encl> {
     let lo = powq(&Encl::exact(x.lo.clone()), &q(1, 4), w2)?.lo;
     let hi = powq(&Encl::exact(x.hi.clone()), &q(1, 4), w2)?.hi;
     Some(Encl { lo, hi }.round(w))
+}
+
+// ———————————————————————————— B. the bounce ————————————————————————————
+
+/// THE HORIZON of mass `m` about `centre` (G = c = 1): the dual sphere of
+/// squared radius `4m²` — `r = 2m` is never taken as a root.
+pub fn horizon(centre: &[Q], m: &Q) -> Mv {
+    sphere_at(centre, &(int(4) * m * m))
+}
+
+/// INVERSION IN A SPHERE: `σXσ⁻¹` — distance `d` from the centre goes to
+/// `r²/d` on the same ray, the sphere is fixed pointwise, and the map is its
+/// own inverse (up to the homogeneous scale a conformal point carries).
+/// `None` where `σ` has no inverse (a null `σ`: a point, not a sphere).
+pub fn invert(sigma: &Mv, x: &Mv) -> Option<Mv> {
+    let s2 = sigma.geo(sigma).scalar_part();
+    if s2.is_zero() {
+        return None;
+    }
+    Some(sigma.geo(x).geo(&sigma.scale(&s2.recip())))
+}
+
+/// Where a base point `x` EMERGES through the sphere `σ`: the base of its
+/// inversion. `None` at the centre (it goes to infinity).
+pub fn emerges(sigma: &Mv, x: &[Q]) -> Option<Vec<Q>> {
+    base_at(&invert(sigma, &point_at(x))?, x.len())
+}
+
+/// AN EINSTEIN–CARTAN BOUNCE: a horizon, and the white-hole source at its
+/// equatorial crossing.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Bounce {
+    pub horizon: Mv,
+    pub source: Source,
+}
+
+impl Bounce {
+    /// The bounce of mass `m` and spin `a ∈ (0, 1)` about `centre` (three base
+    /// coordinates): the spin is the turn bivector `a·e₁e₂` carried to the
+    /// centre, its part the horizon keeps (`physics::source::keeping`)
+    /// pushing the equatorial crossing `P = centre + (2m, 0, 0)` — the source
+    /// `N = P ∧ (P·K)`, verified null, fixing `P` and keeping the horizon.
+    /// `None` for a spin outside `(0, 1)`, a non-positive mass, or a source
+    /// the algebra does not hold.
+    pub fn of(centre: &[Q], m: &Q, a: &Q) -> Option<Bounce> {
+        if centre.len() != 3 || !m.is_positive() || !a.is_positive() || a >= &Q::one() {
+            return None;
+        }
+        let sigma = horizon(centre, m);
+        let t = translator_at(centre);
+        let turn = t.geo(&Mv::blade(E1 | E2, a.clone())).geo(&t.reverse());
+        let k = keeping(&sigma, &turn)?;
+        let crossing: Vec<Q> = centre
+            .iter()
+            .zip([int(2) * m, Q::zero(), Q::zero()])
+            .map(|(c, d)| c + d)
+            .collect();
+        let source = Source::of(&sigma, &point_at(&crossing), &k)?;
+        Some(Bounce { horizon: sigma, source })
+    }
+}
+
+/// A UNIVERSE'S RECYCLING LAW (its parameters passed in): the fraction of
+/// what falls that crosses the horizon (`crossing`), the fraction of what
+/// crosses that is radiated (`radiated`), and the jets' timescale `tau`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Recycling {
+    pub crossing: Q,
+    pub radiated: Q,
+    pub tau: Q,
+}
+
+/// THE BOOKS OF A BOUNCE, exact: `fallen + arrived = growth + radiated +
+/// reservoir + returned` after every act, and `growth` is the child's
+/// content — what crossed and was not radiated becomes the matter on the
+/// other side (a sink here, a source there, on continuity).
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct Books {
+    pub fallen: Q,
+    pub arrived: Q,
+    pub growth: Q,
+    pub radiated: Q,
+    pub reservoir: Q,
+    pub returned: Q,
+}
+
+impl Books {
+    /// `m` falls in: `crossed = m·h` (of it `crossed·ε` radiated, the rest
+    /// growth), and `m − crossed` held in the reservoir. `None` for a
+    /// negative mass or a fraction outside `[0, 1]`.
+    pub fn fall(&mut self, law: &Recycling, m: &Q) -> Option<()> {
+        let unit = |f: &Q| !f.is_negative() && f <= &Q::one();
+        if m.is_negative() || !unit(&law.crossing) || !unit(&law.radiated) {
+            return None;
+        }
+        let crossed = m * &law.crossing;
+        let lost = &crossed * &law.radiated;
+        self.fallen += m;
+        self.growth += &crossed - &lost;
+        self.radiated += lost;
+        self.reservoir += m - crossed;
+        Some(())
+    }
+
+    /// `m` arrives from a paired sphere — a declared source — and emerges
+    /// into this universe through the white hole: it is returned outward.
+    pub fn arrive(&mut self, m: &Q) -> Option<()> {
+        if m.is_negative() {
+            return None;
+        }
+        self.arrived += m;
+        self.returned += m;
+        Some(())
+    }
+
+    /// The jets over `dt`: they return `reservoir·(1 − e^{−dt/τ})`, fixed at
+    /// its enclosure's LOWER bound — never more than the law allows, so the
+    /// books stay exact and no matter is invented. Returns what was returned.
+    pub fn jet(&mut self, law: &Recycling, dt: &Q, w: u32) -> Option<Q> {
+        if !law.tau.is_positive() || dt.is_negative() {
+            return None;
+        }
+        let kept = exp(&Encl::exact(-(dt / &law.tau)), w);
+        let back = &self.reservoir * (Q::one() - &kept.hi);
+        if back.is_negative() {
+            return None;
+        }
+        self.reservoir -= &back;
+        self.returned += &back;
+        Some(back)
+    }
+
+    /// The identity, read exactly.
+    pub fn balanced(&self) -> bool {
+        &self.fallen + &self.arrived == &self.growth + &self.radiated + &self.reservoir + &self.returned
+    }
 }
 
 // ———————————————————————————— C. gravity and orbits as fibres ————————————————————————————
@@ -379,6 +517,77 @@ pub fn fraction_above(teff: &Q, threshold: &Q, w: u32) -> Option<Encl> {
     planck_tail(&Encl::exact(threshold / teff), w)
 }
 
+/// A STAR READ IN A UNIVERSE: the calibration composed with the universe's
+/// `Laws` — the mass in the calibration's units is `m / star_mass = m·g`
+/// (exact: `star_mass` is `1/g`), the luminosity scaled by `star_light`, the
+/// radius by `star_radius`, the lifetime by `star_life`, and the effective
+/// temperature read off the scaled pair.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Star {
+    pub luminosity: Encl,
+    pub radius: Encl,
+    pub lifetime: Encl,
+    pub teff: Encl,
+}
+
+/// The star of mass `m` (in the universe's unit) under `laws` and `cal`.
+pub fn star(cal: &StellarCalibration, laws: &Laws, m: &Q, w: u32) -> Option<Star> {
+    let w2 = w + 32;
+    let m_cal = m * &laws.alpha_g;
+    let l = luminosity(cal, &m_cal, w2)?.mul(&laws.star_light(w2)?).round(w2);
+    let r = stellar_radius(cal, &m_cal, w2)?.mul(&laws.star_radius(w2)?).round(w2);
+    let life = lifetime(cal, &m_cal, w2)?.mul(&laws.star_life(w2)?).round(w2);
+    let teff = fourth_root(&l.div(&r.square())?, w2)?.scale(&cal.teff).round(w);
+    Some(Star { luminosity: l.round(w), radius: r.round(w), lifetime: life.round(w), teff })
+}
+
+/// A UNIVERSE'S STELLAR FATES (passed in — the thresholds and remnants are
+/// its own, in the calibration's mass units): core collapse from
+/// `collapse`, a black hole from `black_hole`, a binary's white dwarf below
+/// `collapse` detonating as a type Ia; the remnants — a white dwarf's mass,
+/// a neutron star's, and the fraction of the star a black hole keeps.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Fates {
+    pub collapse: Q,
+    pub black_hole: Q,
+    pub white_dwarf: Q,
+    pub neutron_star: Q,
+    pub hole_fraction: Q,
+}
+
+/// HOW A STAR DIES.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Death {
+    WhiteDwarf,
+    Ia,
+    NeutronStar,
+    BlackHole,
+}
+
+/// The death of a star of mass `m`, `binary` if it has a companion to accrete.
+pub fn death(f: &Fates, m: &Q, binary: bool) -> Death {
+    if m >= &f.black_hole {
+        Death::BlackHole
+    } else if m >= &f.collapse {
+        Death::NeutronStar
+    } else if binary {
+        Death::Ia
+    } else {
+        Death::WhiteDwarf
+    }
+}
+
+/// The remnant's mass: the white dwarf's or neutron star's, the black hole's
+/// kept fraction of `m`; a type Ia leaves none.
+pub fn remnant(f: &Fates, kind: Death, m: &Q) -> Q {
+    match kind {
+        Death::WhiteDwarf => f.white_dwarf.clone(),
+        Death::Ia => Q::zero(),
+        Death::NeutronStar => f.neutron_star.clone(),
+        Death::BlackHole => &f.hole_fraction * m,
+    }
+}
+
 // ———————————————————————————— E. radiation and thermodynamics ————————————————————————————
 
 /// Stefan–Boltzmann: the equilibrium temperature `T = T_unit · flux^{1/4}`.
@@ -527,6 +736,51 @@ pub fn valley(c: &Semf, a: u32, w: u32) -> Option<Encl> {
     let num = inv_cube.scale(&c.coulomb).add(&Encl::exact(int(4) * &c.asymmetry));
     let den = inv_cube.scale(&(int(2) * &c.coulomb)).add(&Encl::exact(int(8) * &c.asymmetry / aq));
     Some(num.div(&den)?.round(w))
+}
+
+/// The binding per nucleon, `B/A`.
+pub fn binding_per_nucleon(c: &Semf, z: u32, a: u32, w: u32) -> Option<Encl> {
+    let w2 = w + 32;
+    let b = binding(c, z, a, w2)?;
+    Some(b.scale(&Q::new(BigInt::one(), BigInt::from(a))).round(w))
+}
+
+/// THE MOST STABLE MASS NUMBER for charge `Z`: where `B/A` peaks. Pairing
+/// splits `A` into its two parities, each a smooth climb and fall, so each
+/// is walked up in steps of two while `B/A` rises DECIDEDLY, and the two
+/// peaks compared — every comparison on separated enclosures, `None` where
+/// one is undecided or no peak falls before `A = 4Z + 8`.
+pub fn most_stable_a(c: &Semf, z: u32, w: u32) -> Option<u32> {
+    if z == 0 {
+        return None;
+    }
+    let bound = 4 * z + 8;
+    let peak = |start: u32| -> Option<(u32, Encl)> {
+        let mut a = start;
+        let mut here = binding_per_nucleon(c, z, a, w)?;
+        loop {
+            let next_a = a + 2;
+            if next_a > bound {
+                return None;
+            }
+            let next = binding_per_nucleon(c, z, next_a, w)?;
+            match here.lt(&next) {
+                Some(true) => {
+                    a = next_a;
+                    here = next;
+                }
+                Some(false) if next.lt(&here) == Some(true) => return Some((a, here)),
+                _ => return None,
+            }
+        }
+    };
+    let (a0, b0) = peak(z)?;
+    let (a1, b1) = peak(z + 1)?;
+    match b0.lt(&b1) {
+        Some(true) => Some(a1),
+        Some(false) if b1.lt(&b0) == Some(true) => Some(a0),
+        _ => None,
+    }
 }
 
 /// The charge the Madelung filling is served through (the coordinator's R2):
