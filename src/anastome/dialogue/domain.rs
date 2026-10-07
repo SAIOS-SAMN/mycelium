@@ -158,6 +158,70 @@ pub fn encode_reservation(r: &SignedReservation) -> Vec<u8> {
 pub enum DomainRequest {
     Genesis(SignedDomain),
     Reserve(SignedReservation),
+    /// A domain's reserve read; nothing sealed.
+    ReadReserve([u8; 32]),
+}
+
+const KIND_READ_RESERVE: u8 = 2;
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][2]`.
+pub fn encode_reserve_read(domain: [u8; 32]) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(KIND_READ_RESERVE);
+    out
+}
+
+/// 78.127 — A DOMAIN'S RESERVE AS READ: the tier whose balance it is now,
+/// a redesignation pending until that tier's next fold, and the reserve's μ
+/// balance per lane.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct ReserveReading {
+    pub current: Option<[u8; 32]>,
+    pub pending: Option<[u8; 32]>,
+    pub balance: [u64; 4],
+}
+
+pub fn encode_reserve_reading(r: &ReserveReading) -> Vec<u8> {
+    let mut out = Vec::new();
+    for t in [r.current, r.pending] {
+        match t {
+            None => out.push(0),
+            Some(t) => {
+                out.push(1);
+                out.extend_from_slice(&t);
+            }
+        }
+    }
+    for m in r.balance {
+        out.extend_from_slice(&m.to_le_bytes());
+    }
+    out
+}
+
+pub fn decode_reserve_reading(b: &[u8]) -> Option<ReserveReading> {
+    let mut p = 0;
+    let mut tier = || -> Option<Option<[u8; 32]>> {
+        let flag = *b.get(p)?;
+        p += 1;
+        match flag {
+            0 => Some(None),
+            1 => {
+                let t: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+                p += 32;
+                Some(Some(t))
+            }
+            _ => None,
+        }
+    };
+    let (current, pending) = (tier()?, tier()?);
+    let mut balance = [0u64; 4];
+    for m in &mut balance {
+        *m = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
+    }
+    (p == b.len()).then_some(ReserveReading { current, pending, balance })
 }
 
 /// The request a frame carries, read whole, or none.
@@ -168,8 +232,10 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
     }
     let domain: [u8; 32] = rest.get(..32)?.try_into().ok()?;
     let mut p = 34;
-    if *rest.get(p)? != KIND_RESERVE {
-        return None;
+    match *rest.get(p)? {
+        KIND_READ_RESERVE => return (rest.len() == p + 1).then_some(DomainRequest::ReadReserve(domain)),
+        KIND_RESERVE => {}
+        _ => return None,
     }
     p += 1;
     let mut key = || -> Option<[u8; 32]> {

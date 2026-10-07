@@ -10,12 +10,13 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
-    let founded = match door.kernel.lock() {
+    let body = match door.kernel.lock() {
         Ok(mut k) => match request {
-            DomainRequest::Genesis(domain) => k.admit_domain(&domain),
-            DomainRequest::Reserve(r) => k.designate_reserve(&r),
+            DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
+            DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),
+            DomainRequest::ReadReserve(domain) => mycelium::anastome::dialogue::domain::encode_reserve_reading(&k.reserve_reading(&domain)),
         },
         Err(_) => return,
     };
-    answer(stream, Frame { lane: frame.lane, body: encode_domain_reply(&founded) });
+    answer(stream, Frame { lane: frame.lane, body });
 }

@@ -217,6 +217,20 @@ impl Kernel {
         Founded::Reserved { at: sealed.stamp, receipt: sealed.chain_hash, now }
     }
 
+    /// 78.127 — A DOMAIN'S RESERVE AS READ: its tier now, a redesignation
+    /// pending, and the reserve's μ balance. Sealing nothing.
+    pub fn reserve_reading(&self, domain: &[u8; 32]) -> crate::anastome::dialogue::domain::ReserveReading {
+        let held = match self.reserves.get(domain) {
+            Some(r) => *r,
+            None => Reserve::default(),
+        };
+        let balance = match held.current {
+            Some(t) => self.treasury.balance_mu(&t),
+            None => [0; 4],
+        };
+        crate::anastome::dialogue::domain::ReserveReading { current: held.current, pending: held.pending, balance }
+    }
+
     /// The tier whose μ balance is a domain's reserve now.
     pub fn reserve_of(&self, domain: &[u8; 32]) -> Option<[u8; 32]> {
         self.reserves.get(domain)?.current

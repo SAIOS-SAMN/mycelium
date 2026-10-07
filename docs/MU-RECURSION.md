@@ -24770,9 +24770,13 @@ a resend pays once), `convert::a_conversion_in_is_held_until_the_reserve_answers
 and the wire's `every_conversion_and_the_reserve_read_back_whole` (a
 genesis still reads as a genesis).
 
+**The reserve read** (ACT_DOMAIN sub-kind 2, sealing nothing): a domain's
+reserve tier now, a redesignation pending, and the reserve's μ balance per
+lane (`Session::reserve_reading`); the designation typed as
+`Session::reserve`.
+
 *Owed, named:* bonds (what the slash forfeits); wormhole tolls (μ
-transfers from traversers to the keeping ancients' reserve, no conversion);
-a read of a domain's reserve tier and balance.
+transfers from traversers to the keeping ancients' reserve, no conversion).
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

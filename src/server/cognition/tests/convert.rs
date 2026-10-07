@@ -73,10 +73,15 @@ fn a_domains_reserve_is_designated_by_its_key_and_redesignated_at_the_anchor() {
     assert_eq!(designate(&mut k, &key(99), 0), Founded::NotATier);
     let stranger = Reservation { domain: vk(&key(5)), tier: vk(&x()), nonce: [0; 32] }.sign(&key(5));
     assert_eq!(k.designate_reserve(&stranger), Founded::NotFounded);
+    assert_eq!(k.reserve_reading(&vk(&domain())), crate::anastome::dialogue::domain::ReserveReading::default(), "none yet");
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { now: true, .. }));
     assert_eq!(k.reserve_of(&vk(&domain())), Some(vk(&x())));
+    fund(&mut k, vk(&x()), [4, 0, 0, 1]);
+    let read = k.reserve_reading(&vk(&domain()));
+    assert_eq!((read.current, read.pending, read.balance), (Some(vk(&x())), None, [4, 0, 0, 1]), "the reserve as read");
     assert!(matches!(designate(&mut k, &x2(), 2), Founded::Reserved { now: false, .. }), "pending");
     assert_eq!(k.reserve_of(&vk(&domain())), Some(vk(&x())), "never mid-era");
+    assert_eq!(k.reserve_reading(&vk(&domain())).pending, Some(vk(&x2())), "the pending redesignation, read");
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.reserve_of(&vk(&domain())), Some(vk(&x())));

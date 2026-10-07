@@ -86,6 +86,11 @@ fn every_conversion_and_the_reserve_read_back_whole() {
     assert_eq!(decode_domain_request(&encode_reservation(&reserve)), Some(DomainRequest::Reserve(reserve)));
     let genesis = DomainGenesis { domain: [6u8; 32], tiers: vec![[1u8; 32]] }.sign(&key);
     assert_eq!(decode_domain_request(&encode_domain(&genesis)), Some(DomainRequest::Genesis(genesis)), "a genesis reads as it did");
+    use crate::anastome::dialogue::domain::{decode_reserve_reading, encode_reserve_read, encode_reserve_reading, ReserveReading};
+    assert_eq!(decode_domain_request(&encode_reserve_read([6u8; 32])), Some(DomainRequest::ReadReserve([6u8; 32])));
+    for r in [ReserveReading::default(), ReserveReading { current: Some([1u8; 32]), pending: Some([2u8; 32]), balance: [3, 0, 9, 1] }] {
+        assert_eq!(decode_reserve_reading(&encode_reserve_reading(&r)), Some(r.clone()));
+    }
     let at = Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 };
     for f in [Founded::Reserved { at, receipt: [1u8; 32], now: false }, Founded::NotATier, Founded::NotFounded] {
         assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f.clone()));
