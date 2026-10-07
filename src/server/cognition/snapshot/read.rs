@@ -104,27 +104,27 @@ impl Kernel {
             // stroke is what a ruling re-heard on a filed stamp draws on.
             let mut budget = kernel.physics.stroke();
             // THE COURT: one node, the key this court signs as.
-            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_WORLDS])?;
+            let court = take_trie(b, pos, COURT_TRIE, &[LEAF_HEAD, LEAF_ROOT, LEAF_LINE, LEAF_DOMAINS])?;
             let nodes: Vec<(Vec<u8>, crate::snapshot::Leaves)> =
                 court.scoped().map(|(k, l)| (k, l.clone())).collect();
             let [(vk, leaves)] = nodes.as_slice() else { return None };
             let vk: [u8; 32] = vk.as_slice().try_into().ok()?;
             let head: [u8; 32] = leaf(leaves, LEAF_HEAD)?.try_into().ok()?;
-            // 78.120 — the worlds founded here, each with its tier keys; a home
-            // written before any world (or before 78.120) carries none.
-            if let Some(v) = leaf(leaves, LEAF_WORLDS) {
-                let worlds = whole(v, |b, p| {
+            // 78.120 — the domains founded here, each with its tier keys; a home
+            // written before any domain (or before 78.120) carries none.
+            if let Some(v) = leaf(leaves, LEAF_DOMAINS) {
+                let domains = whole(v, |b, p| {
                     let n = crate::transducer::address::take_key_count(b, p)?;
                     (0..n)
                         .map(|_| {
                             let w: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                             *p += 32;
-                            Some((w, crate::anastome::dialogue::world::take_keys(b, p)?))
+                            Some((w, crate::anastome::dialogue::domain::take_keys(b, p)?))
                         })
                         .collect::<Option<Vec<_>>>()
                 })?;
-                for (w, tiers) in worlds {
-                    kernel.hold_world(w, tiers);
+                for (w, tiers) in domains {
+                    kernel.hold_domain(w, tiers);
                 }
             }
             // THE LINE THIS SNAPSHOT STANDS ON: in it, with the root it was

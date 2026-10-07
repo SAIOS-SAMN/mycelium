@@ -397,13 +397,13 @@ pub struct Kernel {
     /// `None` is unread (a restored court reads it once off its hot line);
     /// `Some(None)`, read and none held.
     pub(crate) last_transition: Option<Option<crate::chronometry::Place>>,
-    /// 78.120 — THE WORLDS FOUNDED ON THIS COURT: each world's key and the
+    /// 78.120 — THE DOMAINS FOUNDED ON THIS COURT: each domain's key and the
     /// tier keys its genesis names, ascending — the one carrier, persisted on
-    /// the court's own node (`LEAF_WORLDS`).
-    pub(crate) worlds: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
-    /// Each tier key and the world whose genesis names it: re-derived from
-    /// `worlds` wherever it changes or is restored, never persisted (law 12).
-    pub(crate) tier_world: crate::network::nerve::Keyed<[u8; 32]>,
+    /// the court's own node (`LEAF_DOMAINS`).
+    pub(crate) domains: crate::network::nerve::Keyed<Vec<[u8; 32]>>,
+    /// Each tier key and the domain whose genesis names it: re-derived from
+    /// `domains` wherever it changes or is restored, never persisted (law 12).
+    pub(crate) tier_domain: crate::network::nerve::Keyed<[u8; 32]>,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

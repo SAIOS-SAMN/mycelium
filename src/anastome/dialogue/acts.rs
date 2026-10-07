@@ -227,11 +227,11 @@ pub const ACT_WALLET: u8 = Action::Wallet.byte();
 /// coordinates on its line, answered by the receipt's stamp and chain hash.
 /// The layout and its codec are `dialogue::uplink`'s.
 pub const ACT_UPLINK: u8 = Action::Uplink.byte();
-/// A WORLD FOUNDED (78.120, 78.62's GENESIS act): a world's key and the tier
-/// keys that settle for it, signed by the world, sealed on the court's line;
-/// thereafter only a named tier's fold is admitted. The layout and its codec
-/// are `dialogue::world`'s.
-pub const ACT_WORLD: u8 = Action::World.byte();
+/// A DOMAIN FOUNDED (78.120, 78.122, 78.62's GENESIS act): a domain's key and
+/// the tier keys that settle for it, signed by the domain, sealed on the
+/// court's line; thereafter only a named tier's fold is admitted. The layout
+/// and its codec are `dialogue::domain`'s.
+pub const ACT_DOMAIN: u8 = Action::Domain.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

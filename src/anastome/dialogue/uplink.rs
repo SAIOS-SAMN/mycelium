@@ -180,7 +180,7 @@ pub enum Uplinked {
     Discontinuous(Discontinuous),
     /// The court's line could not take it.
     LineRefused,
-    /// 78.120 — the tier key is named by no world's genesis on this court.
+    /// 78.120 — the tier key is named by no domain's genesis on this court.
     Unbound,
 }
 

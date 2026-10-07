@@ -271,7 +271,7 @@ const MODE_VERIFY: u8 = 1;
 const MODE_BATCH: u8 = 2;
 
 /// 78.118 — `[ACT_LAWS][2][count][transition …]`: many transitions put to the
-/// laws in one frame (a world's tiers batching up — captains, sovereigns,
+/// laws in one frame (a domain's tiers batching up — captains, sovereigns,
 /// stewards, ancients), each answered in the order it was sent.
 pub fn encode_batch_request(ts: &[Transition]) -> Vec<u8> {
     let mut out = vec![crate::anastome::dialogue::ACT_LAWS, MODE_BATCH];

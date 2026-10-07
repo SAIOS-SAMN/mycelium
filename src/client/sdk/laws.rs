@@ -1,5 +1,5 @@
 // 78.62 steps 2 and 3 — THE KERNEL'S SIDE OF THE LAW REGISTER: any kernel —
-// a voice, a world, a game — asks its hypha for the universal laws, and puts
+// a voice, a domain, a game — asks its hypha for the universal laws, and puts
 // a transition it composed to the court's verifier before it relies on it.
 //
 //! Both go through the raw act door (`Session::speak`) with the register's
@@ -54,12 +54,12 @@ impl super::Session {
         }
     }
 
-    /// 78.120 — A WORLD FOUNDED ON THE COURT: the genesis receipt's stamp and
+    /// 78.120 — A DOMAIN FOUNDED ON THE COURT: the genesis receipt's stamp and
     /// chain hash where it is sealed, or the refusal by name.
-    pub fn found_world(&self, w: &crate::anastome::dialogue::world::SignedWorld) -> io::Result<crate::anastome::dialogue::world::Founded> {
-        use crate::anastome::dialogue::world::{decode_world_reply, encode_world};
-        let reply = self.speak(encode_world(w))?;
-        decode_world_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the world's reply did not decode"))
+    pub fn found_domain(&self, w: &crate::anastome::dialogue::domain::SignedDomain) -> io::Result<crate::anastome::dialogue::domain::Founded> {
+        use crate::anastome::dialogue::domain::{decode_domain_reply, encode_domain};
+        let reply = self.speak(encode_domain(w))?;
+        decode_domain_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the domain's reply did not decode"))
     }
 
     /// 78.119 — A TIER'S FOLD PUT TO THE COURT for admission: the receipt's

@@ -18628,6 +18628,14 @@ the record travels through the element record; the merge composes with
 
 ### 78.59 The ocean: the hyphae hold the laws, worlds build on them, and client work pauses until the substrate is stable (ruled 2026-09-30, the operator's word)
 
+**AMENDED 2026-10-07 (78.122, the shared lexicon — `MU-LEXICON.md`).** The
+network's terms below are renamed, the ruling's content unchanged: a
+GALAXY of clients is a **COHORT**; a client's STAR (its allocation) is its
+**ALLOCATION**; a WORLD (an application namespace) is a **DOMAIN**, and
+`M_world` is `M_domain`. Galaxy, star and world now name only the physical
+and informal things `MU-LEXICON.md` gives them; the ruling's words are kept
+as they were ruled.
+
 THE TOPOLOGY. The hyphae together are ONE UNIVERSE — the ocean — bound by
 one TUniversal frame {S, G, T, H}. The hyphae are the masters and
 delegators of physics: every law is held and enforced by them. A GALAXY is a
@@ -21761,8 +21769,8 @@ invents:
   the same construction at three more scales.
 - *The expansion rate:* LV2's expansion lane, docketed on every verdict
   of a dilating motion, and rigidity's similarity.
-- *Stars and planets:* 78.59's star (a client's allocation) and solar
-  system (what it produces), 76.4's star formation by measured pressure,
+- *Stars and planets:* 78.59's star — since 78.122 a client's ALLOCATION —
+  and solar system (what it produces), 76.4's star formation by measured pressure,
   and the tensegrity's star and orbit about it (78.51).
 - *Singularity dynamics:* the white hole (`physics::source`, a null source)
   and the black hole's confluence (78.78).
@@ -24201,6 +24209,27 @@ upgrades with the court. Proved:
 reads: unread, the need named, no breach),
 `laws::the_contracts_bytes_decode_to_the_objects_they_carry` (the list
 round trip).
+
+### 78.122 The shared lexicon: the server defines the vocabulary (2026-10-07, the operator: "we need all of our systems to be aligned, and the server to define this terminology so that all future connections can use the same shared terminology")
+
+`MU-LEXICON.md` is canonical: three vocabularies — physical, civic,
+network — no word in two, drafted by the xylarium coordinator with
+barren-realms' corrections; every connecting kernel's copy points to it.
+Two boundaries hold: the ALGEBRA'S own terms (a complex's star, a form's
+star faces, orbit, ring, chord, cell, chart, section) are mathematics and
+no vocabulary claims them; and what was SIGNED stays as signed.
+
+**In this tree:** the network's "world" is **Domain** — `Action::Domain`,
+`ACT_DOMAIN`, `dialogue::domain::{DomainGenesis, SignedDomain}`,
+`Cite::Domain`, `Kernel::{admit_domain, domains, tier_domain}`,
+`LEAF_DOMAINS`, `Session::found_domain` — names only: the act byte `0x3E`,
+the cite tag 6 and the snapshot leaf 4 unchanged, no layout change; the
+genesis signing domain stays `"mycelium world genesis v1"` (a domain
+founded before the rename was signed over it). The action's name is
+`b"domain"` — no receipt hashes it (the operator digest is the party key
+and the court head). 78.59's galaxy, star and world are amended to cohort,
+allocation and domain. OWED: the register served by address (`ACT_LAWS`
+mode 3, the typed table the one carrier, its version a kernel checks).
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 

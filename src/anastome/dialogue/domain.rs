@@ -1,31 +1,36 @@
-// 78.120 — ACT_WORLD: a world founded on a court (2(d), 78.62's GENESIS act;
+// 78.120 — ACT_DOMAIN: a domain founded on a court (2(d), 78.62's GENESIS act;
 // the operator's word 2026-10-07: "proceed").
 //
-//! A WORLD'S GENESIS names the world's key and the tier keys that settle for
-//! it, signed by the world's key and sealed on the court's line
-//! (`Cite::World`, keys only — coordinates). From then on a tier's fold
+//! A DOMAIN'S GENESIS names the domain's key and the tier keys that settle for
+//! it, signed by the domain's key and sealed on the court's line
+//! (`Cite::Domain`, keys only — coordinates). From then on a tier's fold
 //! (`ACT_UPLINK`) is admitted only from a key a sealed genesis names: a
-//! fold's signature means the world stands behind the tier. A world is
+//! fold's signature means the domain stands behind the tier. A domain is
 //! founded once; granting and revoking tier keys are later rows.
 
 use crate::chronometry::Stamp;
 
 /// The signed bytes' domain, so a genesis signature is never a signature on
 /// anything else.
+///
+/// 78.122 — KEPT AS FIRST SIGNED: the network's "world" became "domain" (the
+/// shared lexicon), and every name moved but this one — a domain founded
+/// before the rename was signed over these bytes, and a re-founding signed
+/// over others would not verify.
 const DOMAIN: &[u8] = b"mycelium world genesis v1";
 
-/// A WORLD'S GENESIS: its key, and its tier keys in their own ascending
+/// A DOMAIN'S GENESIS: its key, and its tier keys in their own ascending
 /// order, each once.
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct WorldGenesis {
-    pub world: [u8; 32],
+pub struct DomainGenesis {
+    pub domain: [u8; 32],
     pub tiers: Vec<[u8; 32]>,
 }
 
-/// The genesis and the world key's signature over [`WorldGenesis::signed_bytes`].
+/// The genesis and the domain key's signature over [`DomainGenesis::signed_bytes`].
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub struct SignedWorld {
-    pub genesis: WorldGenesis,
+pub struct SignedDomain {
+    pub genesis: DomainGenesis,
     pub sig: [u8; 64],
 }
 
@@ -49,62 +54,62 @@ pub(crate) fn take_keys(b: &[u8], p: &mut usize) -> Option<Vec<[u8; 32]>> {
         .collect()
 }
 
-impl WorldGenesis {
+impl DomainGenesis {
     /// Whether the tier keys stand in their one writing: ascending, each once.
     pub fn ordered(&self) -> bool {
         self.tiers.windows(2).all(|w| matches!(w, [a, b] if a < b))
     }
 
-    /// The bytes the world signs: the domain, the world, its tier keys.
+    /// The bytes the domain signs: the domain, the domain, its tier keys.
     pub fn signed_bytes(&self) -> Vec<u8> {
         let mut out = DOMAIN.to_vec();
-        out.extend_from_slice(&self.world);
+        out.extend_from_slice(&self.domain);
         put_keys(&mut out, &self.tiers);
         out
     }
 
-    /// The genesis signed by the world's key — whose public half is `world`.
-    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedWorld {
+    /// The genesis signed by the domain's key — whose public half is `domain`.
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedDomain {
         use ed25519_dalek::Signer;
         let sig = key.sign(&self.signed_bytes()).to_bytes();
-        SignedWorld { genesis: self, sig }
+        SignedDomain { genesis: self, sig }
     }
 }
 
-/// `[ACT_WORLD][world 32][tiers][sig 64]`.
-pub fn encode_world(w: &SignedWorld) -> Vec<u8> {
-    let mut out = vec![super::ACT_WORLD];
-    out.extend_from_slice(&w.genesis.world);
+/// `[ACT_DOMAIN][domain 32][tiers][sig 64]`.
+pub fn encode_domain(w: &SignedDomain) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&w.genesis.domain);
     put_keys(&mut out, &w.genesis.tiers);
     out.extend_from_slice(&w.sig);
     out
 }
 
 /// The genesis a frame carries, read whole: a byte left over is none.
-pub fn decode_world(b: &[u8]) -> Option<SignedWorld> {
-    let rest = b.strip_prefix(&[super::ACT_WORLD])?;
+pub fn decode_domain(b: &[u8]) -> Option<SignedDomain> {
+    let rest = b.strip_prefix(&[super::ACT_DOMAIN])?;
     let mut p = 0;
-    let world: [u8; 32] = rest.get(p..p + 32)?.try_into().ok()?;
+    let domain: [u8; 32] = rest.get(p..p + 32)?.try_into().ok()?;
     p += 32;
     let tiers = take_keys(rest, &mut p)?;
     let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
     p += 64;
-    (p == rest.len()).then_some(SignedWorld { genesis: WorldGenesis { world, tiers }, sig })
+    (p == rest.len()).then_some(SignedDomain { genesis: DomainGenesis { domain, tiers }, sig })
 }
 
-/// WHAT THE COURT ANSWERED a world's genesis.
+/// WHAT THE COURT ANSWERED a domain's genesis.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Founded {
     /// Sealed on the court's line: the receipt's stamp and chain hash.
     Sealed { at: Stamp, receipt: [u8; 32] },
-    /// The world's signature does not verify over the genesis.
+    /// The domain's signature does not verify over the genesis.
     Unsigned,
     /// The tier keys are not ascending, each once.
     Unordered,
-    /// This world is founded on this court already.
+    /// This domain is founded on this court already.
     AlreadyFounded,
-    /// A tier key is named by another world's genesis already: a tier
-    /// settles for one world.
+    /// A tier key is named by another domain's genesis already: a tier
+    /// settles for one domain.
     TierHeld,
     /// The court's line could not take it.
     LineRefused,
@@ -112,7 +117,7 @@ pub enum Founded {
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
 /// founded; `[4]` a tier held; `[5]` the line refused.
-pub fn encode_world_reply(f: &Founded) -> Vec<u8> {
+pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
     let mut out = Vec::new();
     match f {
         Founded::Sealed { at, receipt } => {
@@ -130,7 +135,7 @@ pub fn encode_world_reply(f: &Founded) -> Vec<u8> {
 }
 
 /// The reply read whole, or none.
-pub fn decode_world_reply(b: &[u8]) -> Option<Founded> {
+pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
     let [tag, ..] = b else { return None };
     let mut p = 1;
     let f = match *tag {

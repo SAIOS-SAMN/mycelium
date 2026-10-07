@@ -1,0 +1,78 @@
+# MU-LEXICON — the shared vocabulary (version 1)
+
+**Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
+server to define this terminology so that all future connections can use the same shared terminology: wormholes,
+blackholes, whiteholes, universes, realms, planets, stars." The server (mycelium) defines these terms; every
+kernel that connects — xylarium-kernel, barren-realms, any other — aligns to this file, and their copies point
+here. Drafted by the xylarium coordinator with barren-realms' corrections; subordinate, as every document in this
+tree is, to `MU-RECURSION.md`.
+
+An amendment raises the **version**. The register is served by address beside the law register (78.122: `ACT_LAWS`
+mode 3), so a connecting kernel can check its terms against the server's; a kernel speaking another version is
+told so, never silently mistranslated.
+
+There are **three vocabularies**, and no word belongs to more than one of them:
+
+- **physical** — the spatial ladder and what is in it;
+- **civic** — who holds, governs and settles what;
+- **network** — the hyphae and what runs on them.
+
+**The algebra's own terms are none of them.** A simplicial complex's *star*, a form's *star faces*, an orbit, a
+ring, a chord, a cell, a chart, a section — these are mathematics, defined in `MU-RECURSION.md`, and this lexicon
+neither renames nor claims them.
+
+## 1. Physical — the spatial ladder
+
+(barren-realms `docs/SCALES.md` holds the working scales.)
+
+| Term | Meaning |
+|---|---|
+| **Universe** | Everything that shares one origin: one Big Bang (seed), one law set, one clock. Changing the origin or the laws makes another universe. A closed 3-sphere of clusters. |
+| **Cluster** | Galaxies bound together by gravity. |
+| **Galaxy** | A disc and halo of stars. |
+| **Region** | A spatial cell of a galaxy's disc. |
+| **System** | One sector holding a star (or stars) and its bodies, on exact orbits. |
+| **Sector** | One node of the warp graph: a system, or null space. |
+| **Star** | A system's stellar body (or bodies). |
+| **Body** | Anything that orbits: a **planet**, a **moon**, a **belt**, a **station**. |
+| **World** | *Informal only*: an inhabited or habitable body. Never a type or a wire name (§4). |
+| **Black hole** | A **sink** of mass and value: what continuity (L0, law version 3) lets absorb, at its place. |
+| **White hole** | A **source**: what continuity lets emit, at its place. In the game, the Einstein–Cartan bounce's outlet — returning the matter and information a black hole took, renewing the matter budget (a flow). It funds nothing: endowments are funded by passage tithes and, in the deep era, by the ancient houses' estates. |
+| **Wormhole** | A gateway (a throat) joining places the warp lanes do not, crossed at a **toll** to its keeper and a **tithe** for its upkeep (one passage's energy per lane-length it spans) to the progenitor line that keeps it, both in money. A progenitor's throat lies dormant until opened; a developed one needs upkeep. Settled in μ only where the ancients' tier touches the network. On the network, crossing one is a handoff between charts (78.59 P2). |
+| **Lane** | A warp connection between adjacent sectors. |
+
+## 2. Civic — holders, governors, settlement
+
+| Term | Meaning |
+|---|---|
+| **People** (civilization) | A species become a polity, with its own biology, body plan, metabolism and value channels. No human defaults. |
+| **Realm** | A group of constellations of inhabited systems, sized by its stewards' duties and laid by a line, monitored by one or more **stewards**. The **only** meaning of "realm" anywhere. A realm is **not** a region: realm is civic, region is physical. |
+| **Ancient house** | An ancient people's estate and its line. Always "ancient house" — distinct from captains' and NPCs' houses and from sovereign houses. |
+| **Steward, Sovereign, Progenitor, Ancient** | The seats. Ancients, and possibly progenitors, are the only seats that touch the network's μ. |
+| **Value channel** | Any mechanism that moves claims between holders with conserved backing: a bank, a currency board, an estate, an escrow, kinship and relief flows. |
+| **Money** | A value channel's unit of account (SOL, FRN, VOID, THR, or any a people founds). |
+| **Stardock** | A port, and the ledger of every transfer made at it. |
+| **Ledger tree** | Stardock → realm → progenitor network → ancient houses → anchor on the hypha. Each tier folds the tier below into net positions citing that tier's head (78.119); on the court the tree is a complex, its cycles checked by holonomy (78.123, 2(a)). |
+
+## 3. Network — mycelium
+
+| Term | Meaning |
+|---|---|
+| **Universe (network)** | A genesis record, a law version and its causal clock. One physical universe is recorded as one network universe (78.86: CREATE a subsidiary, or JOIN one). |
+| **Domain** | An application's namespace under a universe — xylarium is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
+| **Tier** | A signing key that folds a ledger for a domain, named at the domain's genesis (78.120); its folds are admitted by continuity (`ACT_UPLINK`, 78.119). |
+| **Hypha, Court, Voice, Mind, Entity** | As `MU-RECURSION.md` defines them (78.87 R4). |
+| **Cohort** | Clients working on alike problems. Replaces the network's "galaxy" (78.59). |
+| **Allocation** | A client's bond and lane budget. Replaces the network's "star" (78.59). |
+| **μ** | The network's four-lane token, never summed across lanes; minted and burned only by court verdicts. |
+| **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement). |
+
+## 4. Collisions resolved
+
+| Collision | Resolution |
+|---|---|
+| **"World"** — the network's genesis act (78.120) meant an application; gameplay uses "world" for an inhabited body | The network's term is **Domain** (78.122): `Action::Domain`, `ACT_DOMAIN`, `DomainGenesis`, `Cite::Domain` — names only, the act byte `0x3E`, the cite tag and the snapshot leaf unchanged, no layout change. The genesis signing domain stays `"mycelium world genesis v1"`: domains founded before the rename were signed over it. In game code the term is **Body** / **Planet**; "world" stays informal. |
+| **"Realm"** for an application instance | Realm is civic only. The network's term is **Domain**. |
+| **"Galaxy" / "Star"** as network metaphors (78.59) | **Cohort** and **Allocation**. The physical galaxy and star keep their meaning; the algebra's star is untouched. |
+| **"Universe"** for a settled patch of sectors (the xylarium port's `World` type) | That type is a **Region**. Universe is reserved for the container of the 3-sphere's constants and its cluster tree. |
+| **"Realm" tiers** in the ledger tree, today one per money's zone | They stay realm tiers; until stewardship is ported, a realm is approximated by a money's zone. |

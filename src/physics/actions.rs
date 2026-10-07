@@ -78,9 +78,9 @@ pub enum Action {
     /// coordinates on its line. Sealed under its own coordinate, as the
     /// syllabus page and the fold are.
     Uplink,
-    /// 78.120 — A WORLD FOUNDED (78.62's GENESIS act): its key and the tier
+    /// 78.120, 78.122 — A DOMAIN FOUNDED (78.62's GENESIS act): its key and the tier
     /// keys that settle for it, sealed under its own coordinate.
-    World,
+    Domain,
     // Exchanges.
     Adopt,
     Root,
@@ -152,7 +152,7 @@ pub const ACTIONS: [Action; 53] = [
     Action::Why,
     Action::Wallet,
     Action::Uplink,
-    Action::World,
+    Action::Domain,
     Action::Attest,
     Action::List,
     Action::Section,
@@ -214,7 +214,7 @@ impl Action {
             Action::Why => 0x3B,
             Action::Wallet => 0x3C,
             Action::Uplink => 0x3D,
-            Action::World => 0x3E,
+            Action::Domain => 0x3E,
             Action::Attest => 0x40,
             Action::List => 0x41,
             Action::Section => 0x42,
@@ -275,7 +275,7 @@ impl Action {
             | Action::Probe
             | Action::Speech
             | Action::Uplink
-            | Action::World => Kind::Transition,
+            | Action::Domain => Kind::Transition,
             Action::Adopt
             | Action::Root
             | Action::Cover
@@ -312,7 +312,7 @@ impl Action {
     /// WHETHER A COURT SEALS IT ON ITS LINE — the kinds a receipt carries.
     /// An observation never seals; a retired kind is sealed by nothing.
     pub const fn sealed(self) -> bool {
-        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::World)
+        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::Domain)
     }
 
     /// THE SEALED ACT A LEDGER BYTE NAMES, or none: a byte naming an action
@@ -383,7 +383,7 @@ impl Action {
             Action::Probe => b"probe",
             Action::Speech => b"speech",
             Action::Uplink => b"uplink",
-            Action::World => b"world",
+            Action::Domain => b"domain",
             Action::Adopt => b"adopt",
             Action::Root => b"root",
             Action::Cover => b"cover",

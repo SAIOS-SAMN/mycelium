@@ -5,7 +5,7 @@
 //! carried by them, the fluxes of continuity, and the transition itself,
 //! checked before it is sent. Every one is the algebra's own (`cga`,
 //! `physics::laws`, law 12): nothing re-derived, nothing approximated. What
-//! narrows or overrides these — a world's charts, its lanes, its own
+//! narrows or overrides these — a domain's charts, its lanes, its own
 //! constraints on L0 — is the kernel's, client-side (the operator's split,
 //! 2026-10-07).
 

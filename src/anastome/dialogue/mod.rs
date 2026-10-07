@@ -18,8 +18,8 @@ pub mod receipts;
 pub mod speech;
 pub mod syllabus;
 pub mod uplink;
+pub mod domain;
 pub mod wallet;
-pub mod world;
 pub mod why;
 
 pub use acts::*;

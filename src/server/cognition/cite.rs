@@ -380,30 +380,30 @@ impl Kernel {
         self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
     }
 
-    /// 78.120 — A WORLD FOUNDED (78.62's GENESIS act): the world's signature
-    /// over its genesis, its tier keys in their one writing, a world not
-    /// founded here already and no tier key another world names — then the
-    /// genesis sealed on this court's line by its keys (`Cite::World`), and
-    /// the world held: from here its tiers' folds are admitted.
-    pub fn admit_world(&mut self, w: &crate::anastome::dialogue::world::SignedWorld) -> crate::anastome::dialogue::world::Founded {
-        use crate::anastome::dialogue::world::Founded;
+    /// 78.120 — A DOMAIN FOUNDED (78.62's GENESIS act): the domain's signature
+    /// over its genesis, its tier keys in their one writing, a domain not
+    /// founded here already and no tier key another domain names — then the
+    /// genesis sealed on this court's line by its keys (`Cite::Domain`), and
+    /// the domain held: from here its tiers' folds are admitted.
+    pub fn admit_domain(&mut self, w: &crate::anastome::dialogue::domain::SignedDomain) -> crate::anastome::dialogue::domain::Founded {
+        use crate::anastome::dialogue::domain::Founded;
         let g = &w.genesis;
-        if !crate::court::identity::verify(&g.world, &g.signed_bytes(), &w.sig) {
+        if !crate::court::identity::verify(&g.domain, &g.signed_bytes(), &w.sig) {
             return Founded::Unsigned;
         }
         if !g.ordered() {
             return Founded::Unordered;
         }
-        if self.worlds.get(&g.world).is_some() {
+        if self.domains.get(&g.domain).is_some() {
             return Founded::AlreadyFounded;
         }
-        if g.tiers.iter().any(|t| self.tier_world.get(t).is_some()) {
+        if g.tiers.iter().any(|t| self.tier_domain.get(t).is_some()) {
             return Founded::TierHeld;
         }
-        let cite = Cite::World { world: g.world, tiers: g.tiers.clone() };
-        match self.seal_step(ActKind::World, [0; 4], g.world, |_| vec![cite.clone()]) {
+        let cite = Cite::Domain { domain: g.domain, tiers: g.tiers.clone() };
+        match self.seal_step(ActKind::Domain, [0; 4], g.domain, |_| vec![cite.clone()]) {
             Some(r) => {
-                self.hold_world(g.world, g.tiers.clone());
+                self.hold_domain(g.domain, g.tiers.clone());
                 self.mark_persist();
                 Founded::Sealed { at: r.stamp, receipt: r.chain_hash }
             }
@@ -411,13 +411,13 @@ impl Kernel {
         }
     }
 
-    /// A world and its tier keys held, and each tier indexed to it — the one
+    /// A domain and its tier keys held, and each tier indexed to it — the one
     /// writer of both, at a founding and at a restore (law 12).
-    pub(crate) fn hold_world(&mut self, world: [u8; 32], tiers: Vec<[u8; 32]>) {
+    pub(crate) fn hold_domain(&mut self, domain: [u8; 32], tiers: Vec<[u8; 32]>) {
         for t in &tiers {
-            self.tier_world.insert(t, world);
+            self.tier_domain.insert(t, domain);
         }
-        self.worlds.insert(world, tiers);
+        self.domains.insert(domain, tiers);
     }
 
     /// 78.119 — A TIER'S FOLD ADMITTED (78.62 step 3). This court is the
@@ -432,8 +432,8 @@ impl Kernel {
         if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
             return Uplinked::Unsigned;
         }
-        // 78.120 — the tier must be named by a world's genesis on this court.
-        if self.tier_world.get(&f.fold.tier).is_none() {
+        // 78.120 — the tier must be named by a domain's genesis on this court.
+        if self.tier_domain.get(&f.fold.tier).is_none() {
             return Uplinked::Unbound;
         }
         if let Err(d) = f.fold.continuity() {
