@@ -60,6 +60,19 @@ impl Contemplation {
         }
     }
 
+    /// 78.68 ROW 8 — A RESIDUE THIS MIND MADE A LETTER OF, kept by its
+    /// canonical ray so the cell reader answers it rather than asking again.
+    pub(crate) fn own_letter(&mut self, residue: &crate::transducer::cga::Mv) {
+        if let Some(k) = residue.key() {
+            self.own_letters.insert(k.as_bytes(), ());
+        }
+    }
+
+    /// Whether this mind already holds a letter of `residue`.
+    pub(crate) fn holds_own_letter(&self, residue: &crate::transducer::cga::Mv) -> bool {
+        residue.key().is_some_and(|k| self.own_letters.contains(k.as_bytes()))
+    }
+
     /// 78.37 — CS2's DEMAND ARM'S DEMAND onto the docket: the undischarged
     /// orbit's class, the charts it stands on as its cover, and (78.47) its
     /// residue as its canonical ray — the coordinate its constructors are

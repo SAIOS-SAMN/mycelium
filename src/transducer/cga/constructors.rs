@@ -275,8 +275,11 @@ impl Constructed {
 /// refusal by its cause (a value in an extension of ℚ, a defective part, the
 /// stroke spent), and each demand the pivot dockets with no residue by why
 /// its circuit composed none — unread, a held coset's several routes, or a
-/// crossing whose transport did not read.
-pub const CONSTRUCTIONS: [&str; 14] = [
+/// crossing whose transport did not read. 78.68 row 8: the residues with no
+/// rotation stood as the mind's MOTION letters (a carriage letter, its rotor
+/// the identity), and the cell incoherences answered by a letter the mind
+/// already holds instead of demanded again.
+pub const CONSTRUCTIONS: [&str; 16] = [
     "residues taken",
     "residues absent",
     "constructed",
@@ -291,9 +294,11 @@ pub const CONSTRUCTIONS: [&str; 14] = [
     "docketed without residue: circuit unread",
     "docketed without residue: held coset",
     "docketed without residue: transport unread",
+    "adjoined as motion letters",
+    "demands answered by an own letter",
 ];
 
-static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 14] = [const { std::sync::atomic::AtomicU64::new(0) }; 14];
+static CONSTRUCTION_TALLY: [std::sync::atomic::AtomicU64; 16] = [const { std::sync::atomic::AtomicU64::new(0) }; 16];
 
 /// One construction outcome, counted by its [`CONSTRUCTIONS`] name.
 pub fn note_construction_outcome(name: &str) {
@@ -303,7 +308,7 @@ pub fn note_construction_outcome(name: &str) {
 }
 
 /// The [`CONSTRUCTIONS`] row since the process began.
-pub fn construction_outcomes() -> [u64; 14] {
+pub fn construction_outcomes() -> [u64; 16] {
     std::array::from_fn(|i| CONSTRUCTION_TALLY[i].load(std::sync::atomic::Ordering::Relaxed))
 }
 

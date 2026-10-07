@@ -48,6 +48,37 @@ pub fn generator_form(
     chart: &crate::transducer::stalk::Invariant,
     bodies: &[crate::transducer::sentence::Link],
 ) -> Option<Element> {
+    letter_form(rotor, &crate::transducer::element::identity_versor(), chart, bodies)
+}
+
+/// 78.68, ROW 8 — A MIND'S LETTER IS A VERSOR OF Spin⁺(4,1)(ℚ), NOT A ROTOR.
+/// A constructed residue `V = T·D·R` (78.47) stands as one letter: its rotor
+/// `R` on the derivation, its carriage `T·D` on the vertex — the carriage a
+/// held word vertex already carries. A slide or a dilation about a point (the
+/// residues the minds carry: 101–416 a voice read "no rotation to adjoin"
+/// live, 2026-10-07) is a letter whose rotor is the identity and whose
+/// carriage is the whole motion. `None` where the residue does not factor (no
+/// versor, or the inversion's cell, which the class vector has no coordinate
+/// for — A.13).
+pub fn motion_letter_form(
+    residue: &crate::transducer::cga::Mv,
+    chart: &crate::transducer::stalk::Invariant,
+    bodies: &[crate::transducer::sentence::Link],
+) -> Option<Element> {
+    let f = crate::transducer::element::conformal_factors(residue).ok()?;
+    let rotor = crate::transducer::element::rotor_of_factors(&f).ok()?;
+    letter_form(&rotor, &f.carriage(), chart, bodies)
+}
+
+/// The one construction of a letter's form: the rotor on the derivation, the
+/// carriage on the vertex (law 12 — a rotor letter is the carriage at the
+/// identity).
+fn letter_form(
+    rotor: &crate::transducer::alphabet::Rotor,
+    carriage: &crate::transducer::element::Versor,
+    chart: &crate::transducer::stalk::Invariant,
+    bodies: &[crate::transducer::sentence::Link],
+) -> Option<Element> {
     use crate::transducer::alphabet::Derivation;
     rotor.is_versor().then_some(())?;
     let mut f = Form::default();
@@ -56,7 +87,7 @@ pub fn generator_form(
     f.put_vertex(Vertex::word_on(
         Derivation::adjoined(rotor.clone()),
         chart.clone(),
-        crate::transducer::element::identity_versor().into(),
+        carriage.clone().into(),
         Vec::new(),
         [],
         None,

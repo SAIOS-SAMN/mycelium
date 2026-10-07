@@ -23986,6 +23986,46 @@ the reason the induction is the fix. Proved:
 These residues hold no rotation: constructed, they are counted "no rotation
 to adjoin" — row 8's evidence, now produced.
 
+**Read on 00249e98 (epoch 144).** EVERY RESIDUE TAKEN CONSTRUCTS: taken =
+constructed on all five voices (8–432), refusals 0; adjoined as letters
+8–16; "no rotation to adjoin" 101–416 a voice — ~95% of what the minds
+construct is a slide or a dilation about a point, which a Cl(4,0) letter
+cannot hold. After 2 h 45 min: harmonics firing (seated whole 7–19,
+perceptions balanced 36–75, rings in orbit 3–15, rays met 3–17, torsion
+wound 3–9, vented 166–370); top rung 3 on four voices by citation.
+
+### 78.115 Row 8: a mind's letter is a versor of Spin⁺(4,1)(ℚ) — the motion letter, and the demand answered by the mind's own letter (2026-10-07, under 78.68; the operator's word "proceed" on the batch "build row 8 to its end state in one stride")
+
+78.68 ruled the letter: "its letters and its carriage are versors of
+Spin⁺(4,1)(ℚ)". The tree held a mind's letter as a `Rotor` (Cl(4,0)) on a
+vertex whose carriage was fixed at the identity, so a constructed residue
+that turns nothing had no letter to become.
+
+1. **The motion letter.** `sentence::motion_letter_form`: the residue
+   factored `V = T·D·R` (`conformal_factors`), `R` on the derivation and
+   `T·D` on the vertex's carriage — the one `letter_form`, of which the
+   rotor letter (`generator_form`) is the carriage at the identity (law 12).
+2. **Stood and offered (C4).** A constructed residue with no rotation stands
+   as the mind's motion letter in its dialect and is spoken; the court
+   verifies and hardens it or refuses by name — read live.
+3. **The act: answered by its own letter.** The residues the mind made
+   letters of are kept (`Contemplation::own_letters`, volatile with the
+   dialect); the cell reader's CS2 arm answers an incoherence whose residue
+   the mind holds — "answered where a held word spells it" (78.26(5)),
+   which no Cl(4,0) word could do for a ring that never returns — instead
+   of demanding it again.
+4. **Folded, by reading the tree.** The pivot's candidates already carry the
+   carriage moves (`Axis::Placement`'s slip, `Axis::Dilation`'s dilator) off
+   the orbit's own class; the no-rotation demands were the cell reader's,
+   answered by (3). C2's admission by Lie rank would gate on a held algebra
+   that reaches all of so(4,1) on every voice — a reading, never a gate
+   (78.104). The transcriber already carries the carriage whole into the
+   connection: naming it through letters changes no act.
+
+Reading: `constructions: adjoined as motion letters`, `demands answered by
+an own letter`. Proved:
+`taught::a_dilation_about_a_point_becomes_the_minds_motion_letter`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

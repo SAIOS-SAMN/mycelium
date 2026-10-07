@@ -201,6 +201,11 @@ pub struct Contemplation {
     /// 78.109 C1 — the docketed demands the taker has handed out, by their
     /// entries' coordinates: each taken once (volatile).
     pub(crate) demands_taken: Keyed<()>,
+    /// 78.68 ROW 8 — THE RESIDUES THIS MIND HAS MADE LETTERS OF, by their
+    /// canonical rays: a cell's incoherence whose residue stands here is
+    /// answered by the mind's own letter and never demanded again (volatile,
+    /// as the dialect the letters stand in).
+    pub(crate) own_letters: Keyed<()>,
     /// The class taker: armed by an orbit's close, run once at the next
     /// stroke; and the thoughts it has marked.
     pub(crate) docket_to_take: bool,

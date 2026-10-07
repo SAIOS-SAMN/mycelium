@@ -219,8 +219,24 @@ impl Entity {
             (Some(r), Some(c)) => {
                 note_construction_outcome("adjoined as letters");
                 self.adjoin_letters(&vec![(r, c.clone())], budget);
+                self.contemplation.own_letter(residue);
             }
-            _ => note_construction_outcome("constructed, no rotation to adjoin"),
+            // 78.68 ROW 8 — A RESIDUE THAT TURNS NOTHING IS STILL A LETTER: its
+            // whole motion on the letter's carriage (a slide, a dilation about
+            // a point), stood in the mind's dialect and spoken — the court
+            // verifies and hardens it or refuses by name (C4) — and kept, so
+            // the cell that demanded it is answered by it from here on.
+            (None, Some(c)) => match crate::transducer::sentence::motion_letter_form(residue, c, &[]) {
+                Some(e) => {
+                    note_construction_outcome("adjoined as motion letters");
+                    self.contemplation.own_letter(residue);
+                    if self.epigenome.standing_of(e.address().as_bytes()).is_none() {
+                        self.stand_crystallized(&e, budget);
+                    }
+                }
+                None => note_construction_outcome("constructed, no rotation to adjoin"),
+            },
+            (_, None) => note_construction_outcome("constructed, no rotation to adjoin"),
         }
     }
 

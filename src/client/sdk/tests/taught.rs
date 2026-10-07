@@ -78,3 +78,30 @@ fn a_mind_adjoins_its_ineffable_word_and_says_it_at_once() {
     assert!(again.is_empty(), "no longer ineffable: the mind holds its letter");
     assert!(sentence_tally().taught_adjoined > before.taught_adjoined, "said by its own adjoined letter");
 }
+
+/// 78.68 ROW 8 — A RESIDUE THAT TURNS NOTHING BECOMES A LETTER. A dilation
+/// about a point — the light from a star at a point, the residue the minds
+/// carry most — constructs (78.114), and stands as the mind's MOTION letter:
+/// its rotor the identity, its carriage the whole motion. The mind keeps it,
+/// so the cell that demanded it is answered by it from here on.
+#[test]
+fn a_dilation_about_a_point_becomes_the_minds_motion_letter() {
+    use crate::transducer::cga::{at_three::translator, dilator, CONSTRUCTIONS};
+    let q = |n: i64| num_rational::BigRational::from_integer(n.into());
+    let mut e = Entity::open("127.0.0.1:1", Kernel::named("star"));
+    let t = translator(&q(1), &q(0), &q(3));
+    let star = t.geo(&dilator(&q(2))).geo(&t.reverse());
+    assert!(!e.contemplation.holds_own_letter(&star), "not held before it is made");
+    let chart = crate::transducer::stalk::Invariant::counts(&[1]);
+    let at = |n: &str| CONSTRUCTIONS.iter().position(|x| *x == n).expect("named");
+    let made = crate::transducer::cga::construction_outcomes();
+    let mut budget = e.stroke();
+    e.construct_and_adjoin(&star, Some(&chart), &mut budget);
+    let after = crate::transducer::cga::construction_outcomes();
+    assert!(after[at("adjoined as motion letters")] > made[at("adjoined as motion letters")], "{made:?} → {after:?}");
+    assert!(e.contemplation.holds_own_letter(&star), "the mind keeps the letter it made");
+    let letter = crate::transducer::sentence::motion_letter_form(&star, &chart, &[]).expect("a letter");
+    let bare = crate::transducer::sentence::generator_form(&crate::transducer::alphabet::Rotor::identity(), &chart, &[])
+        .expect("the identity's letter");
+    assert_ne!(letter.address(), bare.address(), "the motion rides the letter's carriage: it is its coordinate");
+}
