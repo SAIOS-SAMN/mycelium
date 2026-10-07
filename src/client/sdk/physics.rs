@@ -9,7 +9,7 @@
 //! one. Every scale ratio is exactly one where every ratio to the
 //! universe's reference is one.
 
-use super::certified::{exp, ln, powq, sqrt, Encl};
+use super::certified::{exp, ln, pi, planck_tail, powq, sqrt, tan, Encl};
 use num_bigint::BigInt;
 use num_rational::BigRational as Q;
 use num_traits::{One, Signed, Zero};
@@ -190,30 +190,53 @@ pub fn circle_point(t: &Q) -> (Q, Q) {
     ((Q::one() - &t2) / &d, int(2) * t / d)
 }
 
-/// THE ORBIT'S POINT at a phase `φ ∈ [0, 1)`: the rotor's point at a rational
-/// parameter that is a monotone bijection of the phase — `t = u/(1−u²)`, `u =
-/// 2φ` on the first half-turn and `2φ − 2` on the second — so the point runs
-/// once round the circle, exactly, and closes; `φ = ½` is `(−1, 0)`. Exact
-/// and periodic; not uniform in angle (uniform needs trigonometry).
-pub fn orbit_point(phase: &Q) -> Option<(Q, Q)> {
+/// AN ORBIT'S POINT: exactly on the unit circle, its angle within
+/// `angle_error` (radians, a proven bound) of `2π·phase`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OrbitPoint {
+    pub x: Q,
+    pub y: Q,
+    pub angle_error: Q,
+}
+
+/// THE ORBIT'S POINT at a phase `φ ∈ [0, 1)`, UNIFORM IN ANGLE (78.43: time is
+/// distance along the orbit): the rotor's point at `t = tan(πφ)`, the
+/// half-angle of `2πφ`, by certified `tan`, fixed on the grid `2^-w` — an
+/// exact rational point on the circle. The phase is carried to `φ′ ∈
+/// [−¼, ¼]` first, the point of `φ ∉ [−¼, ¼]` the antipode of `φ − ½`'s, so
+/// `|t| ≤ 1` and `φ = ½` is `(−1, 0)` with no infinite parameter. The angle
+/// is `2·atan t̂`, and `atan` is 1-Lipschitz, so the error is at most
+/// `2·|t̂ − t|`: the grid's half step plus the enclosure's half width.
+pub fn orbit_point(phase: &Q, w: u32) -> Option<OrbitPoint> {
     if phase.is_negative() || phase >= &Q::one() {
         return None;
     }
-    let half = q(1, 2);
-    if phase == &half {
-        return Some((int(-1), Q::zero()));
-    }
-    let u = if phase < &half { int(2) * phase } else { int(2) * phase - int(2) };
-    Some(circle_point(&(&u / (Q::one() - &u * &u))))
+    let quarter = q(1, 4);
+    let (reduced, antipode) = if phase <= &quarter {
+        (phase.clone(), false)
+    } else if phase < &q(3, 4) {
+        (phase - q(1, 2), true)
+    } else {
+        (phase - Q::one(), false)
+    };
+    let w2 = w + 16;
+    let t = tan(&pi(w2).scale(&reduced).round(w2), w2)?;
+    let grid = Q::from_integer(BigInt::one() << w);
+    let mid = (&t.lo + &t.hi) / int(2);
+    let fixed = (&mid * &grid + q(1, 2)).floor() / &grid;
+    let angle_error = grid.recip() + t.width();
+    let (x, y) = circle_point(&fixed);
+    let (x, y) = if antipode { (-x, -y) } else { (x, y) };
+    Some(OrbitPoint { x, y, angle_error })
 }
 
 /// A NESTED POSITION: a body orbits its parent, which may orbit a core —
 /// each level `(radius, phase)` from the innermost centre outward, summed.
-pub fn nested_position(levels: &[(Q, Q)]) -> Option<(Q, Q)> {
+pub fn nested_position(levels: &[(Q, Q)], w: u32) -> Option<(Q, Q)> {
     let mut at = (Q::zero(), Q::zero());
     for (r, phase) in levels {
-        let (x, y) = orbit_point(phase)?;
-        at = (&at.0 + r * x, &at.1 + r * y);
+        let p = orbit_point(phase, w)?;
+        at = (&at.0 + r * p.x, &at.1 + r * p.y);
     }
     Some(at)
 }
@@ -269,6 +292,91 @@ pub fn circularisation_time(body: &TidalBody, big_m: &Q, a: &Q, n: &Q) -> Option
     let ratio = a / &body.r;
     let r5 = &ratio * &ratio * &ratio * &ratio * &ratio;
     Some(q(4, 63) * (&body.quality / &body.k2) * (&body.m / big_m) * r5 / n)
+}
+
+// ———————————————————————————— D. stars ————————————————————————————
+
+/// ONE SEGMENT of a piecewise power law: `coeff · M^exponent` for masses up
+/// to `upto` (inclusive), in the calibration's own units.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct PowerSegment {
+    pub upto: Q,
+    pub coeff: Q,
+    pub exponent: Q,
+}
+
+/// A UNIVERSE'S STELLAR CALIBRATION (R1 — passed in; the SDK has no
+/// default): the mass–luminosity and mass–radius laws as power-law segments
+/// in increasing `upto` order (the calibration's order is its content), the
+/// unit star's lifetime and effective temperature, the least main-sequence
+/// mass, and the fluxes bounding the habitable zone (inner the larger).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StellarCalibration {
+    pub luminosity: Vec<PowerSegment>,
+    pub radius: Vec<PowerSegment>,
+    pub life: Q,
+    pub teff: Q,
+    pub min_mass: Q,
+    pub hz_inner: Q,
+    pub hz_outer: Q,
+}
+
+/// The segment law at mass `m`: the first segment whose `upto` holds it;
+/// `None` below the least mass or past the last segment.
+fn segment_law(segments: &[PowerSegment], min_mass: &Q, m: &Q, w: u32) -> Option<Encl> {
+    if m < min_mass {
+        return None;
+    }
+    let seg = segments.iter().find(|s| m <= &s.upto)?;
+    product(&[(&seg.coeff, Q::one()), (m, seg.exponent.clone())], w)
+}
+
+/// A main-sequence star's luminosity at mass `m`, in the unit star's.
+pub fn luminosity(cal: &StellarCalibration, m: &Q, w: u32) -> Option<Encl> {
+    segment_law(&cal.luminosity, &cal.min_mass, m, w)
+}
+
+/// A main-sequence star's radius at mass `m`, in the unit star's.
+pub fn stellar_radius(cal: &StellarCalibration, m: &Q, w: u32) -> Option<Encl> {
+    segment_law(&cal.radius, &cal.min_mass, m, w)
+}
+
+/// The main-sequence lifetime: fuel over burn, `life · m / L`.
+pub fn lifetime(cal: &StellarCalibration, m: &Q, w: u32) -> Option<Encl> {
+    let w2 = w + 32;
+    Some(Encl::exact(&cal.life * m).div(&luminosity(cal, m, w2)?)?.round(w))
+}
+
+/// The effective temperature, Stefan–Boltzmann on the star's own surface:
+/// `teff · (L / R²)^{1/4}`.
+pub fn effective_temperature(cal: &StellarCalibration, m: &Q, w: u32) -> Option<Encl> {
+    let w2 = w + 32;
+    let l = luminosity(cal, m, w2)?;
+    let r = stellar_radius(cal, m, w2)?;
+    Some(fourth_root(&l.div(&r.square())?, w2)?.scale(&cal.teff).round(w))
+}
+
+/// The habitable zone of a star of luminosity `l`, in the q-form (`q² = a`):
+/// where the received flux `l/q⁴` equals each bounding flux, `q = (l/S)^{1/4}`
+/// — `(inner, outer)`.
+pub fn habitable_zone(cal: &StellarCalibration, l: &Encl, w: u32) -> Option<(Encl, Encl)> {
+    let at = |s: &Q| -> Option<Encl> {
+        if !s.is_positive() {
+            return None;
+        }
+        fourth_root(&l.scale(&s.recip()), w)
+    };
+    Some((at(&cal.hz_inner)?, at(&cal.hz_outer)?))
+}
+
+/// The fraction of a black body's light at `teff` carried by photons above
+/// the energy of temperature `threshold`: the Planck tail at `threshold /
+/// teff`.
+pub fn fraction_above(teff: &Q, threshold: &Q, w: u32) -> Option<Encl> {
+    if !teff.is_positive() || threshold.is_negative() {
+        return None;
+    }
+    planck_tail(&Encl::exact(threshold / teff), w)
 }
 
 // ———————————————————————————— E. radiation and thermodynamics ————————————————————————————

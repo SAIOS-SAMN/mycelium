@@ -73,13 +73,29 @@ fn orbits_are_closed_fibres_with_exact_points() {
         let (x, y) = circle_point(&t);
         assert_eq!(&x * &x + &y * &y, Q::one(), "on the circle at t = {t}");
     }
-    assert_eq!(orbit_point(&Q::zero()), Some((Q::one(), Q::zero())));
-    assert_eq!(orbit_point(&q(1, 2)), Some((q(-1, 1), Q::zero())));
-    let (_, y_quarter) = orbit_point(&q(1, 4)).expect("");
-    let (_, y_three) = orbit_point(&q(3, 4)).expect("");
-    assert!(y_quarter > Q::zero() && y_three < Q::zero(), "the upper half, then the lower");
+    // Uniform in angle: the quarter points land exactly, the eighth on the
+    // diagonal, each within its stated bound of 2π·phase.
+    let at = |n, d| {
+        let p = orbit_point(&q(n, d), W).expect("");
+        assert_eq!(&p.x * &p.x + &p.y * &p.y, Q::one(), "on the circle at {n}/{d}");
+        assert!(p.angle_error < q(1, 1 << 60), "the bound is tight: {}", p.angle_error);
+        p
+    };
+    for (n, d, x, y) in [(0, 1, 1, 0), (1, 4, 0, 1), (1, 2, -1, 0), (3, 4, 0, -1)] {
+        let p = at(n, d);
+        assert_eq!((p.x, p.y), (q(x, 1), q(y, 1)), "phase {n}/{d}");
+    }
+    for (n, d, sx, sy) in [(1, 8, 1, 1), (3, 8, -1, 1), (5, 8, -1, -1), (7, 8, 1, -1)] {
+        let p = at(n, d);
+        assert!((&p.x - q(sx, 1) * &p.y * q(sy, 1)).abs() < q(1, 1 << 58), "phase {n}/{d} on its diagonal");
+        assert!(p.x * q(sx, 1) > Q::zero() && p.y * q(sy, 1) > Q::zero(), "phase {n}/{d}'s quadrant");
+    }
+    // 30°: (√3/2, ½).
+    let p = at(1, 12);
+    assert!((p.y - q(1, 2)).abs() < q(1, 1 << 58), "sin 30° = ½");
+    assert_eq!(orbit_point(&Q::one(), W), None, "a phase is in [0, 1)");
     // Nesting: a moon at phase 0 about a planet at phase ½ about a core.
-    assert_eq!(nested_position(&[(q(10, 1), q(1, 2)), (Q::one(), Q::zero())]), Some((q(-9, 1), Q::zero())));
+    assert_eq!(nested_position(&[(q(10, 1), q(1, 2)), (Q::one(), Q::zero())], W), Some((q(-9, 1), Q::zero())));
     assert!(spaced(&q(7, 1), &q(8, 1)) && !spaced(&q(7, 1), &q(79, 10)), "8/7 apart");
     assert_eq!(escape_speed_squared(&Q::one(), &q(2, 1)), Some(Q::one()));
     assert!(hill_radius(&Q::one(), &q(3, 1), &q(1, 1), W).expect("").contains(&Q::one()), "(3/3)^(1/3) = 1");
@@ -88,6 +104,54 @@ fn orbits_are_closed_fibres_with_exact_points() {
     assert_eq!(tidal_lock_time(&body, &Q::one(), &q(2, 1), &Q::one()), Some(q(64, 3)), "a⁶");
     let body = TidalBody { quality: q(63, 4), ..body };
     assert_eq!(circularisation_time(&body, &Q::one(), &Q::one(), &Q::one()), Some(Q::one()));
+}
+
+/// The Sun's calibration, as our universe's (passed in by the test): the
+/// piecewise mass–luminosity and mass–radius laws, 10 Gyr, 5772 K, the
+/// hydrogen-burning limit 0.08, the habitable zone's fluxes 1.1 and 0.36.
+fn sun() -> StellarCalibration {
+    let seg = |upto: (i64, i64), coeff: (i64, i64), exponent: (i64, i64)| PowerSegment {
+        upto: q(upto.0, upto.1),
+        coeff: q(coeff.0, coeff.1),
+        exponent: q(exponent.0, exponent.1),
+    };
+    StellarCalibration {
+        luminosity: vec![
+            seg((43, 100), (23, 100), (23, 10)),
+            seg((2, 1), (1, 1), (4, 1)),
+            seg((55, 1), (14, 10), (7, 2)),
+            seg((150, 1), (32_000, 1), (1, 1)),
+        ],
+        radius: vec![seg((1, 1), (1, 1), (4, 5)), seg((150, 1), (1, 1), (57, 100))],
+        life: q(10, 1),
+        teff: q(5772, 1),
+        min_mass: q(8, 100),
+        hz_inner: q(11, 10),
+        hz_outer: q(36, 100),
+    }
+}
+
+#[test]
+fn stars_read_their_universes_calibration() {
+    let cal = sun();
+    let one = Q::one();
+    assert_eq!(luminosity(&cal, &one, W), Some(Encl::exact(one.clone())), "the unit star");
+    assert!(stellar_radius(&cal, &one, W).expect("").contains(&one));
+    assert_eq!(lifetime(&cal, &one, W), Some(Encl::exact(q(10, 1))), "10 Gyr");
+    assert!(effective_temperature(&cal, &one, W).expect("").contains(&q(5772, 1)));
+    assert_eq!(luminosity(&cal, &q(2, 1), W), Some(Encl::exact(q(16, 1))), "M⁴");
+    assert_eq!(lifetime(&cal, &q(2, 1), W), Some(Encl::exact(q(5, 4))), "fuel over burn");
+    let red = luminosity(&cal, &q(1, 4), W).expect("");
+    assert!(red.hi < q(1, 50), "a red dwarf is faint: {red:?}");
+    assert_eq!(luminosity(&cal, &q(5, 100), W), None, "below hydrogen burning");
+    assert_eq!(luminosity(&cal, &q(200, 1), W), None, "past the calibration");
+    // The Earth at q = 1 lies inside the Sun's habitable zone.
+    let (inner, outer) = habitable_zone(&cal, &Encl::exact(one.clone()), W).expect("");
+    assert!(inner.hi < one && outer.lo > one, "{inner:?} {outer:?}");
+    assert_eq!(fraction_above(&q(5772, 1), &Q::zero(), W), Some(Encl::exact(one.clone())), "all light above zero");
+    let hot = fraction_above(&q(10_000, 1), &q(20_000, 1), W).expect("");
+    let cool = fraction_above(&q(5772, 1), &q(20_000, 1), W).expect("");
+    assert_eq!(cool.lt(&hot), Some(true), "a hotter star sends more light past a threshold");
 }
 
 #[test]

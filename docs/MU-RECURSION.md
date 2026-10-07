@@ -24954,8 +24954,12 @@ exactly one where every ratio to the universe's own reference is one.
 - **C, orbits as fibres.** The q-form Kepler period `q³/m` (`q² = a`, `m² =
   M`), flux `l/q⁴`, the exact phase `frac(φ₀ + k/T)`, the Pythagorean
   rotor's point (exactly on the circle, no trigonometry), the orbit's point
-  by a monotone rational bijection of the phase (closes exactly; not
-  uniform in angle), nested positions, the `8/7` spacing law, the Hill
+  UNIFORM IN ANGLE (the coordinator's correction, 78.43: time is distance
+  along the orbit) — the rotor's point at `t = tan(πφ)` by certified `tan`,
+  fixed on the grid `2^-w`, the phase carried to `[−¼, ¼]` and the rest
+  read as the antipode of `φ − ½` (so `φ = ½` is `(−1, 0)` with no infinite
+  parameter), with its proven `angle_error` `2^-w + width(t)` exposed on
+  `OrbitPoint` — nested positions, the `8/7` spacing law, the Hill
   radius, the escape speed's square, and the tidal-lock and
   circularisation timescales of a `TidalBody` passed in (R1).
 - **E, radiation and heat.** Stefan–Boltzmann's `flux^¼`; a `Substance`
@@ -24987,8 +24991,21 @@ the epidemic at `R₀ = 2` in `(0.7968, 0.7969)`; iron-56 binds in `(485,
 every charge 1–172 holds Z electrons, and H, He, Ne, Fe, Au, La, Og, 121,
 168 and 172 placed.
 
-**Owed, in order.** D: stars on a `StellarCalibration` with no SDK default
-(R1). B: the bounce on `cga` `sphere_at` / `at_three` and `physics::source`'s
+**D, stars (landed after).** A `StellarCalibration` passed in, with no SDK
+default (R1): mass–luminosity and mass–radius as `PowerSegment`s in
+increasing `upto` order, the unit star's lifetime and effective
+temperature, the least main-sequence mass, the habitable zone's bounding
+fluxes. Read from it: `luminosity`, `stellar_radius`, `lifetime` `life ·
+m/L`, `effective_temperature` `teff·(L/R²)^¼`, the `habitable_zone` in the
+q-form `(L/S)^¼`, and `fraction_above` — the Planck tail at `threshold /
+teff`. Refused below the least mass and past the last segment. Proved on
+the Sun's calibration (passed in by the test): the unit star 1, 1, 10 Gyr,
+5772 K; `M = 2` gives `L = 16` and `5/4` of the lifetime exactly; the Earth
+at `q = 1` inside the zone; a hotter star sends more light past a
+threshold. Composing a calibration with `Laws`'s stellar scales is the
+universe's.
+
+**Owed.** B: the bounce on `cga` `sphere_at` / `at_three` and `physics::source`'s
 keeping, with the recycling identity `fallen + arrived = growth + radiated
 + reservoir + returned`, growth the child's content (R3).
 
