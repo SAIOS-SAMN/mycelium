@@ -24083,6 +24083,10 @@ the count. Client: `Session::verify_batch`, an error by name where the
 reply's count is not the batch's. A READING, like `verify`: nothing
 admitted, no receipt, no book moves; additive to the codec, layout-safe.
 Proved: `laws::a_batch_is_answered_one_verdict_per_transition_in_order`.
+LIVE (2026-10-07, the xylarium court at :7520 upgraded in place to
+816ad234, genesis kept): 745 transitions — players' and AI minds' warps
+and trades — in 213 batches of up to 256, 0 refused, 0 disagreeing with
+the kernel's local `verify_sized`.
 
 **RULING ASKED — 78.62 step 3, the admission act.** An uplinked
 transition the court admits gaining a RECEIPT on the court's line makes
