@@ -24073,6 +24073,24 @@ verdicts in order). Proved: `guest::a_turn_built_and_checked_is_the_courts_admis
 `guest::a_misplaced_body_is_refused_and_a_dilation_carries_none`,
 `guest::a_source_and_a_sink_are_fluxes_at_their_place`.
 
+### 78.118 The batch act: many transitions in one frame, a verdict each in order (2026-10-07, asked by the xylarium-kernel seat once its game's transitions flowed to its court — 6 sent, 6 admitted, 0 disagreed)
+
+`ACT_LAWS` mode 2: `[count][transition …]`, answered `[count][verdict …]`,
+each transition's own verdict under the stroke its motion needs
+(`verify_sized`, 78.116), in the order sent; a request read whole (a byte
+left over is none), its transitions read one by one and never reserved by
+the count. Client: `Session::verify_batch`, an error by name where the
+reply's count is not the batch's. A READING, like `verify`: nothing
+admitted, no receipt, no book moves; additive to the codec, layout-safe.
+Proved: `laws::a_batch_is_answered_one_verdict_per_transition_in_order`.
+
+**RULING ASKED — 78.62 step 3, the admission act.** An uplinked
+transition the court admits gaining a RECEIPT on the court's line makes
+the verdict load-bearing (the kernel's ask). It writes the ledger — a
+persisted layout, replicated between courts — so it is the operator's to
+order, with its receipt kind, its replication and what a world's genesis
+(78.62's GENESIS act) binds it to, before any code.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

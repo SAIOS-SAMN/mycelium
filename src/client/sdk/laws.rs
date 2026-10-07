@@ -53,4 +53,15 @@ impl super::Session {
             _ => Err(io::Error::new(io::ErrorKind::InvalidData, "the verdict did not decode")),
         }
     }
+
+    /// 78.118 — THE COURT'S VERDICTS on many transitions in one frame, one
+    /// per transition in the order sent. A reading — nothing is admitted. A
+    /// reply whose count is not the batch's is an error by name.
+    pub fn verify_batch(&self, ts: &[Transition]) -> io::Result<Vec<Verdict>> {
+        let reply = self.speak(crate::physics::laws::codec::encode_batch_request(ts))?;
+        match crate::physics::laws::codec::decode_batch_reply(&reply) {
+            Some(vs) if vs.len() == ts.len() => Ok(vs),
+            _ => Err(io::Error::new(io::ErrorKind::InvalidData, "the batch's verdicts did not decode one per transition")),
+        }
+    }
 }

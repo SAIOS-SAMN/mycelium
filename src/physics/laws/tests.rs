@@ -317,3 +317,24 @@ fn a_kernel_asks_the_register_and_puts_a_transition_to_it() {
     assert_eq!(served.iter().map(|s| s.law).collect::<Vec<_>>(), LAWS.to_vec());
     assert!(served.iter().all(|s| s.statement == s.law.statement()));
 }
+
+/// 78.118 — A BATCH: many transitions in one frame, read back whole and in
+/// order; a byte left over is no request; the reply carries each
+/// transition's own verdict, in the order sent — the lawful turn admitted,
+/// the still height refused on time alone.
+#[test]
+fn a_batch_is_answered_one_verdict_per_transition_in_order() {
+    use super::codec::{decode_batch_reply, decode_laws_request, encode_batch_reply, encode_batch_request, LawsRequest};
+    let lawful = Transition { motion: turn(), heights: (7, 8), bodies: carried(&turn()), hues: Vec::new(), fluxes: Vec::new() };
+    let still = Transition { heights: (8, 8), ..lawful.clone() };
+    let batch = vec![lawful.clone(), still.clone(), lawful];
+    let mut asked = encode_batch_request(&batch);
+    assert_eq!(decode_laws_request(&asked), Some(LawsRequest::Batch(batch.clone())));
+    asked.push(0);
+    assert_eq!(decode_laws_request(&asked), None, "a byte left over is no request");
+    let verdicts: Vec<Verdict> = batch.iter().map(verify_sized).collect();
+    let back = decode_batch_reply(&encode_batch_reply(&verdicts)).expect("the verdicts read back");
+    assert_eq!(back, verdicts);
+    let laws: Vec<Vec<Law>> = back.iter().map(|v| v.breaches.iter().map(|(l, _)| *l).collect()).collect();
+    assert_eq!(laws, vec![vec![], vec![Law::Time], vec![]], "each its own, in order");
+}

@@ -250,10 +250,45 @@ fn take_ratio(b: &[u8], p: &mut usize) -> Option<Option<Q>> {
 pub enum LawsRequest {
     Register,
     Verify(Transition),
+    /// 78.118 — many transitions in one frame, a verdict for each in order.
+    Batch(Vec<Transition>),
 }
 
 const MODE_REGISTER: u8 = 0;
 const MODE_VERIFY: u8 = 1;
+const MODE_BATCH: u8 = 2;
+
+/// 78.118 — `[ACT_LAWS][2][count][transition …]`: many transitions put to the
+/// laws in one frame (a world's tiers batching up — captains, sovereigns,
+/// stewards, ancients), each answered in the order it was sent.
+pub fn encode_batch_request(ts: &[Transition]) -> Vec<u8> {
+    let mut out = vec![crate::anastome::dialogue::ACT_LAWS, MODE_BATCH];
+    put_key_count(&mut out, ts.len());
+    for t in ts {
+        put_transition(&mut out, t);
+    }
+    out
+}
+
+/// The batch's reply: `[count][verdict …]`, one verdict per transition in the
+/// order they were sent.
+pub fn encode_batch_reply(verdicts: &[Verdict]) -> Vec<u8> {
+    let mut out = Vec::new();
+    put_key_count(&mut out, verdicts.len());
+    for v in verdicts {
+        put_verdict(&mut out, v);
+    }
+    out
+}
+
+/// The verdicts a batch reply carries, read whole: bytes left over, or a
+/// verdict that does not read, is no reply.
+pub fn decode_batch_reply(b: &[u8]) -> Option<Vec<Verdict>> {
+    let mut p = 0;
+    let n = take_key_count(b, &mut p)?;
+    let verdicts = (0..n).map(|_| take_verdict(b, &mut p)).collect::<Option<Vec<_>>>()?;
+    (p == b.len()).then_some(verdicts)
+}
 
 /// `[ACT_LAWS][0]`.
 pub fn encode_register_request() -> Vec<u8> {
@@ -276,6 +311,14 @@ pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;
             (p == rest.len()).then_some(LawsRequest::Verify(t))
+        }
+        [act, MODE_BATCH, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
+            let mut p = 0;
+            let n = take_key_count(rest, &mut p)?;
+            // Read one by one, never reserved by the count: a count the bytes
+            // do not carry fails at the first transition that does not read.
+            let ts = (0..n).map(|_| take_transition(rest, &mut p)).collect::<Option<Vec<_>>>()?;
+            (p == rest.len()).then_some(LawsRequest::Batch(ts))
         }
         _ => None,
     }

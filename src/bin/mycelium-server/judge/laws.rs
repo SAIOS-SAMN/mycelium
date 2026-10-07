@@ -26,6 +26,11 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, _door: &Door) {
             put_verdict(&mut out, &verdict);
             out
         }
+        // 78.118 — each transition of the batch, in the order sent.
+        LawsRequest::Batch(ts) => {
+            let verdicts: Vec<_> = ts.iter().map(mycelium::physics::laws::verify_sized).collect();
+            mycelium::physics::laws::codec::encode_batch_reply(&verdicts)
+        }
     };
     answer(stream, Frame { lane: frame.lane, body });
 }
