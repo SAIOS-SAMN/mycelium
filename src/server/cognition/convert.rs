@@ -194,6 +194,25 @@ pub(crate) fn take_reserves(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], Re
         .collect()
 }
 
+/// 78.132 — the origins written: `[count][(domain 32, origin) …]`.
+pub(crate) fn put_origins(v: &mut Vec<u8>, origins: &Keyed<crate::anastome::dialogue::domain::OriginReading>) {
+    put_key_count(v, origins.len());
+    for (domain, o) in origins.scoped() {
+        v.extend_from_slice(&domain);
+        o.put(v);
+    }
+}
+
+pub(crate) fn take_origins(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], crate::anastome::dialogue::domain::OriginReading)>> {
+    (0..take_key_count(b, p)?)
+        .map(|_| {
+            let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            *p += 32;
+            Some((domain, crate::anastome::dialogue::domain::OriginReading::take(b, p)?))
+        })
+        .collect()
+}
+
 impl Kernel {
     /// 78.127 — A DOMAIN'S RESERVE TIER DESIGNATED: the domain's signature,
     /// the domain founded here, the tier one its genesis names. A domain with
@@ -236,6 +255,40 @@ impl Kernel {
             None => [0; 4],
         };
         crate::anastome::dialogue::domain::ReserveReading { current: held.current, pending: held.pending, balance }
+    }
+
+    /// 78.132 — A UNIVERSE'S ORIGIN RECORDED: the domain's signature, the
+    /// domain founded here, and no origin held for it yet — once, never an
+    /// edit (78.59 Ruling 2). Sealed on the line by its coordinates; every
+    /// fold of the domain after it descends from it by line precedence.
+    pub fn record_origin(&mut self, s: &crate::anastome::dialogue::domain::SignedOrigin) -> Founded {
+        let o = &s.origin;
+        if !crate::court::identity::verify(&o.domain, &o.signed_bytes(), &s.sig) {
+            return Founded::Unsigned;
+        }
+        if self.domains.get(&o.domain).is_none() {
+            return Founded::NotFounded;
+        }
+        if self.origins.get(&o.domain).is_some() {
+            return Founded::AlreadyOriginated;
+        }
+        let cite = Cite::Origin { domain: o.domain, kind: o.kind, version: o.version, commitment: o.commitment };
+        let Some(sealed) = self.seal_step(ActKind::Domain, [0; 4], o.domain, |_| vec![cite.clone()]) else { return Founded::LineRefused };
+        let held = crate::anastome::dialogue::domain::OriginReading {
+            kind: o.kind,
+            version: o.version,
+            commitment: o.commitment,
+            at: sealed.stamp,
+            receipt: sealed.chain_hash,
+        };
+        self.origins.insert(o.domain, held);
+        self.mark_persist();
+        Founded::Originated { at: sealed.stamp, receipt: sealed.chain_hash }
+    }
+
+    /// 78.132 — A DOMAIN'S ORIGIN AS HELD, or none. Sealing nothing.
+    pub fn origin_of(&self, domain: &[u8; 32]) -> Option<crate::anastome::dialogue::domain::OriginReading> {
+        self.origins.get(domain).copied()
     }
 
     /// The tier whose μ balance is a domain's reserve now.

@@ -389,6 +389,10 @@ pub enum Cite {
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
     Domain { domain: [u8; 32], tiers: Vec<[u8; 32]> },
+    /// 78.132 — A UNIVERSE'S ORIGIN, by its coordinates: the domain, the
+    /// record's kind and version, and the commitment to its Big Bang record
+    /// (a citation of a record the universe holds, never a copy of it).
+    Origin { domain: [u8; 32], kind: u8, version: u8, commitment: [u8; 32] },
 }
 
 impl Cite {
@@ -406,7 +410,8 @@ impl Cite {
             | Cite::Handoff { .. }
             | Cite::Reserve { .. }
             | Cite::Bond { .. }
-            | Cite::Domain { .. } => None,
+            | Cite::Domain { .. }
+            | Cite::Origin { .. } => None,
         }
     }
 
@@ -423,7 +428,8 @@ impl Cite {
             | Cite::Handoff { .. }
             | Cite::Reserve { .. }
             | Cite::Bond { .. }
-            | Cite::Domain { .. } => None,
+            | Cite::Domain { .. }
+            | Cite::Origin { .. } => None,
         }
     }
 
@@ -496,6 +502,12 @@ impl Cite {
                 rec.extend_from_slice(domain);
                 crate::anastome::dialogue::domain::put_keys(&mut rec, tiers);
             }
+            Cite::Origin { domain, kind, version, commitment } => {
+                rec.push(12);
+                rec.extend_from_slice(domain);
+                rec.extend_from_slice(&[*kind, *version]);
+                rec.extend_from_slice(commitment);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -518,7 +530,8 @@ impl Cite {
                     | Cite::Handoff { .. }
                     | Cite::Reserve { .. }
                     | Cite::Bond { .. }
-                    | Cite::Domain { .. } => {}
+                    | Cite::Domain { .. }
+                    | Cite::Origin { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -621,6 +634,13 @@ impl Cite {
                 *p += 32;
                 let tiers = crate::anastome::dialogue::domain::take_keys(b, p)?;
                 Some(Cite::Domain { domain, tiers })
+            }
+            12 => {
+                let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                let (kind, version) = (*b.get(*p + 32)?, *b.get(*p + 33)?);
+                let commitment: [u8; 32] = b.get(*p + 34..*p + 66)?.try_into().ok()?;
+                *p += 66;
+                Some(Cite::Origin { domain, kind, version, commitment })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

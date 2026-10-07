@@ -164,12 +164,137 @@ pub enum DomainRequest {
     Bond(SignedBond),
     /// 78.129 — a tier's bond read; nothing sealed.
     ReadBond { domain: [u8; 32], tier: [u8; 32] },
+    /// 78.132 — a universe's origin recorded, once.
+    Origin(SignedOrigin),
+    /// 78.132 — a domain's origin read; nothing sealed.
+    ReadOrigin([u8; 32]),
 }
 
 const KIND_READ_RESERVE: u8 = 2;
 const KIND_BOND: u8 = 3;
 const KIND_UNBOND: u8 = 4;
 const KIND_READ_BOND: u8 = 5;
+const KIND_ORIGIN: u8 = 6;
+const KIND_READ_ORIGIN: u8 = 7;
+
+/// 78.132 — A UNIVERSE'S ORIGIN (the coordinator's ruling: one network
+/// universe = one Big Bang = one domain, 78.86): the commitment — a 32-byte
+/// hash of the universe's Big Bang record (its seed, laws as ratios, drawn
+/// parameters, the parent bounce's mass and spin) — with the record's kind
+/// and version. Signed by the domain's key, held ONCE per domain and never
+/// edited (78.59 Ruling 2): a wrong origin is remedied by a new universe and
+/// domain. A domain with an origin reads as a universe; its folds descend
+/// from it by line precedence.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Origin {
+    pub domain: [u8; 32],
+    pub kind: u8,
+    pub version: u8,
+    pub commitment: [u8; 32],
+}
+
+const ORIGIN: &[u8] = b"mycelium universe origin v1";
+
+impl Origin {
+    pub fn signed_bytes(&self) -> Vec<u8> {
+        let mut out = ORIGIN.to_vec();
+        out.extend_from_slice(&self.domain);
+        out.extend_from_slice(&[self.kind, self.version]);
+        out.extend_from_slice(&self.commitment);
+        out
+    }
+
+    /// Signed by the domain's key, whose public half is `domain`.
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedOrigin {
+        use ed25519_dalek::Signer;
+        let sig = key.sign(&self.signed_bytes()).to_bytes();
+        SignedOrigin { origin: self, sig }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignedOrigin {
+    pub origin: Origin,
+    pub sig: [u8; 64],
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][6][kind][version][commitment 32][sig 64]`.
+pub fn encode_origin(o: &SignedOrigin) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&o.origin.domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(KIND_ORIGIN);
+    out.extend_from_slice(&[o.origin.kind, o.origin.version]);
+    out.extend_from_slice(&o.origin.commitment);
+    out.extend_from_slice(&o.sig);
+    out
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][7]`.
+pub fn encode_origin_read(domain: [u8; 32]) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(KIND_READ_ORIGIN);
+    out
+}
+
+/// 78.132 — A UNIVERSE'S ORIGIN AS HELD: the record's kind, version and
+/// commitment, and the stamp and receipt it was sealed under — what a holder
+/// proves line precedence against.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct OriginReading {
+    pub kind: u8,
+    pub version: u8,
+    pub commitment: [u8; 32],
+    pub at: Stamp,
+    pub receipt: [u8; 32],
+}
+
+impl OriginReading {
+    pub fn put(&self, out: &mut Vec<u8>) {
+        out.extend_from_slice(&[self.kind, self.version]);
+        out.extend_from_slice(&self.commitment);
+        self.at.put_canonical(out);
+        out.extend_from_slice(&self.receipt);
+    }
+
+    pub fn take(b: &[u8], p: &mut usize) -> Option<OriginReading> {
+        let (kind, version) = (*b.get(*p)?, *b.get(*p + 1)?);
+        *p += 2;
+        let commitment: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+        *p += 32;
+        let at = Stamp::take_canonical(b, p)?;
+        let receipt: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+        *p += 32;
+        Some(OriginReading { kind, version, commitment, at, receipt })
+    }
+}
+
+/// `[0]` no origin; `[1][kind][version][commitment 32][stamp][receipt 32]`.
+pub fn encode_origin_reading(r: Option<&OriginReading>) -> Vec<u8> {
+    match r {
+        None => vec![0],
+        Some(r) => {
+            let mut out = vec![1];
+            r.put(&mut out);
+            out
+        }
+    }
+}
+
+/// The reading read whole: `Some(None)` where the domain has no origin.
+pub fn decode_origin_reading(b: &[u8]) -> Option<Option<OriginReading>> {
+    match b.split_first()? {
+        (0, []) => Some(None),
+        (1, rest) => {
+            let mut p = 0;
+            let r = OriginReading::take(rest, &mut p)?;
+            (p == rest.len()).then_some(Some(r))
+        }
+        _ => None,
+    }
+}
 
 /// 78.129 — A TIER'S BOND (the coordinator's ruling): posted by the domain's
 /// RESERVE for one tier it backs — μ the ancients hold, escrowed under the
@@ -342,6 +467,17 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
     };
     match *rest.get(p)? {
         KIND_READ_RESERVE => return (rest.len() == p + 1).then_some(DomainRequest::ReadReserve(domain)),
+        KIND_READ_ORIGIN => return (rest.len() == p + 1).then_some(DomainRequest::ReadOrigin(domain)),
+        KIND_ORIGIN => {
+            p += 1;
+            let (kind, version) = (*rest.get(p)?, *rest.get(p + 1)?);
+            p += 2;
+            let commitment = key(rest, &mut p)?;
+            let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
+            p += 64;
+            let origin = Origin { domain, kind, version, commitment };
+            return (p == rest.len()).then_some(DomainRequest::Origin(SignedOrigin { origin, sig }));
+        }
         KIND_READ_BOND => {
             p += 1;
             let tier = key(rest, &mut p)?;
@@ -416,6 +552,10 @@ pub enum Founded {
     Outstanding,
     /// 78.129 — no bond stands for the tier.
     Unbonded,
+    /// 78.132 — the origin sealed: the domain reads as a universe from here.
+    Originated { at: Stamp, receipt: [u8; 32] },
+    /// 78.132 — the domain holds its origin already; never an edit.
+    AlreadyOriginated,
 }
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
@@ -451,6 +591,12 @@ pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
         Founded::Short => out.push(11),
         Founded::Outstanding => out.push(12),
         Founded::Unbonded => out.push(13),
+        Founded::AlreadyOriginated => out.push(14),
+        Founded::Originated { at, receipt } => {
+            out.push(15);
+            at.put_canonical(&mut out);
+            out.extend_from_slice(receipt);
+        }
     }
     out
 }
@@ -495,6 +641,13 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
         11 => Founded::Short,
         12 => Founded::Outstanding,
         13 => Founded::Unbonded,
+        14 => Founded::AlreadyOriginated,
+        15 => {
+            let at = Stamp::take_canonical(b, &mut p)?;
+            let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            p += 32;
+            Founded::Originated { at, receipt }
+        }
         _ => return None,
     };
     (p == b.len()).then_some(f)

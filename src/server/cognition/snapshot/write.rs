@@ -176,9 +176,14 @@ impl Kernel {
                 v.extend_from_slice(w);
                 crate::anastome::dialogue::domain::put_keys(&mut v, tiers);
             }
-            // 78.127 — the domains' reserves, after them (none: none written).
-            if !self.reserves.is_empty() {
+            // 78.127 — the domains' reserves, after them (none: none written,
+            // unless an origin follows, which needs the reserves' count first).
+            if !self.reserves.is_empty() || !self.origins.is_empty() {
                 super::super::convert::put_reserves(&mut v, &self.reserves);
+            }
+            // 78.132 — the universes' origins, after the reserves.
+            if !self.origins.is_empty() {
+                super::super::convert::put_origins(&mut v, &self.origins);
             }
             leaves.push((LEAF_DOMAINS, v));
         }

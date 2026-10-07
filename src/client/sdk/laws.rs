@@ -111,6 +111,22 @@ impl super::Session {
         decode_bond_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the bond reading did not decode"))
     }
 
+    /// 78.132 — A UNIVERSE'S ORIGIN RECORDED, once per domain: sealed, or
+    /// the refusal by name (`AlreadyOriginated` — never an edit).
+    pub fn originate(&self, o: &crate::anastome::dialogue::domain::SignedOrigin) -> io::Result<crate::anastome::dialogue::domain::Founded> {
+        use crate::anastome::dialogue::domain::{decode_domain_reply, encode_origin};
+        let reply = self.speak(encode_origin(o))?;
+        decode_domain_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the origin's reply did not decode"))
+    }
+
+    /// 78.132 — A DOMAIN'S ORIGIN AS HELD, with the stamp and receipt it was
+    /// sealed under; `None` where it has none.
+    pub fn origin(&self, domain: [u8; 32]) -> io::Result<Option<crate::anastome::dialogue::domain::OriginReading>> {
+        use crate::anastome::dialogue::domain::{decode_origin_reading, encode_origin_read};
+        let reply = self.speak(encode_origin_read(domain))?;
+        decode_origin_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the origin reading did not decode"))
+    }
+
     /// 78.127 — A DOMAIN'S RESERVE AS READ: its tier, a pending
     /// redesignation, and the reserve's μ balance.
     pub fn reserve_reading(&self, domain: [u8; 32]) -> io::Result<crate::anastome::dialogue::domain::ReserveReading> {

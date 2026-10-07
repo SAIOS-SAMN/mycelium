@@ -419,6 +419,9 @@ pub struct Kernel {
     /// 78.127 — EACH DOMAIN'S RESERVE TIER, and a redesignation pending
     /// until its next fold — persisted after the domains (`LEAF_DOMAINS`).
     pub(crate) reserves: crate::network::nerve::Keyed<super::convert::Reserve>,
+    /// 78.132 — EACH UNIVERSE'S ORIGIN, held once per domain and never
+    /// edited — persisted after the reserves (`LEAF_DOMAINS`).
+    pub(crate) origins: crate::network::nerve::Keyed<crate::anastome::dialogue::domain::OriginReading>,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

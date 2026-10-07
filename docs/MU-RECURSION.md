@@ -25041,6 +25041,37 @@ and its most stable `A` even in `[54, 58]`; U, Fl, 120, 126 placed (5f⁴,
 7p², 8s², 5g⁶); the composed star one at the reference, and at `g = 2`
 `L² = 512`.
 
+### 78.132 Universe genesis: a domain's origin, once (2026-10-08, the coordinator's ruling — one network universe = one Big Bang = one domain, 78.86)
+
+**The act.** ACT_DOMAIN sub-kind 6, ORIGIN: `[ACT_DOMAIN][domain 32][0x80
+0x00][6][kind][version][commitment 32][sig 64]` — the commitment a 32-byte
+hash of the universe's Big Bang record (its seed, laws as ratios, drawn
+parameters, the parent bounce's mass and spin), the record held by the
+universe, never by the court (a citation, LD0). Signed by the domain's key
+over `"mycelium universe origin v1" ‖ domain ‖ kind ‖ version ‖ commitment`;
+no nonce, since it is taken once. Sub-kind 7 reads it: `[0]` none, or `[1]
+[kind][version][commitment][stamp][receipt]`.
+
+**The court.** The signature verifies, the domain is founded here
+(`NotFounded`), and none is held for it (`AlreadyOriginated` — NEVER AN
+EDIT, 78.59 Ruling 2: a wrong origin is remedied by a new universe and a new
+domain). Sealed on the line as `Cite::Origin { domain, kind, version,
+commitment }` (tag 12), answered `Founded::Originated { at, receipt }`
+(reply tags 14, 15). A domain with an origin READS AS A UNIVERSE; its folds
+DESCEND from it by LINE PRECEDENCE — the origin's receipt precedes every
+later fold on the court's line, and the read hands out that receipt; the
+ledger's gauge is not re-rooted. A domain founded from keys alone may
+record its origin once, late; xylarium will instead originate a NEW domain
+from its real Big Bang, its keys-only domain becoming history.
+
+**Held** after the reserves in `LEAF_DOMAINS` (the reserves' count always
+written where an origin follows; older homes read as before). SDK:
+`Session::originate`, `Session::origin`. Proved (`cognition::tests::origin`):
+another key, a domain not founded here, a second origin — the same or
+another — refused by name; the sealed cite; the reading's stamp and receipt;
+a restart keeps it and still refuses a second; the wire and the cite
+round-trip, a byte left over is none.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
