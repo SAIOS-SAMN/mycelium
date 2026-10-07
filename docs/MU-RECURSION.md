@@ -24242,6 +24242,60 @@ word belongs to two vocabularies. Proved:
 once, every term and the version standing in `MU-LEXICON.md`, so the table
 and its exposition cannot drift). A wire addition, not a persisted layout.
 
+### 78.123 2(a): the ledger tree as a complex — the court's complex generalized over its coefficient group (2026-10-07, the operator: "ensure that the chaining utilizing all of the pivot machinery: keep it as multi-dimensional as possible / dont get stuck in two dimensions on the chains"; ruled "generalize the complex") — CONTRACT
+
+**Why not a chain.** A fold citing the folds below it, checked one link at a
+time, is a list: two dimensions, and a discrepancy found only by walking
+it. The ledger tree is a COVER — a stardock netted through two realms, a
+haul crossing realms, an ancient house folding several progenitor lines —
+and a cover's consistency is a cocycle, read on its cycles.
+
+**Why not lanes as axes.** A fold's nets are additive 4-lane vectors
+(S, G, T, H) per identity. Four lanes on four base axes is Cl(5,1) — a new
+universe (78.59, Ruling 2). The court's complex takes Cl(4,1) versor
+coefficients. So the complex is generalized over its COEFFICIENT GROUP:
+the versors, as the minds' complexes hold today, and the exact additive
+LANE GROUP — `ℤ⁴` per identity, a finite sum of identities' lane vectors,
+composition their sum, inverse their negation, the identity the empty sum.
+The dimensions are identity × lane, unbounded by the algebra's axes.
+
+**The complex of a domain's ledger tree.**
+- *Vertices:* the tier ledgers (each tier's prefix head, by its key).
+- *Edges:* a fold's citation of the fold below it, carrying that fold's
+  nets as its coefficient in the lane group.
+- *Higher cells:* a fold citing several folds is a simplex whose faces
+  are the folds it nets; folds of folds are cells of every degree —
+  stardock → realm → progenitor → ancient houses → hypha, never flattened.
+- *Cycles:* where two routes fold the same underlying ledger.
+
+**The pivot machinery, reused, not re-derived.**
+- *Holonomy* around a cycle — the coefficients composed — is exact: the
+  identity where every route agrees; otherwise the lane vector per
+  identity by which value was made or lost, LOCALIZED to that cycle (what
+  2(c)'s challenge replays).
+- *Fill:* a cycle whose holonomy is the identity closes and is sealed
+  (`Fill::Filled`); one that does not stands as an OBSTRUCTION, typed by
+  content (78.9), on the docket.
+- *Discharge:* an obstruction is answered by a correcting fold or a
+  declared source/sink — a cell whose coefficient closes the cycle — the
+  pivot's certificate (A20) its record. Release and descend (78.106) the
+  same: a released fold's strain vents.
+
+**Phases**, each proved by the algebra before the next:
+- *A — the core.* A coefficient trait (identity, compose, inverse, is
+  identity, its canonical bytes) and the nerve generic over it: cells by
+  their vertex sets at every degree, stars and links, a cell's coefficient
+  the coboundary of its faces, a cycle's holonomy, the fill reading. Two
+  coefficient groups behind it: the lane group, and the versors through
+  an adapter. Proved on both: the same cover read the same way.
+- *B — the ledger.* A chained fold (a new cite kind beside 78.119's: the
+  child folds' receipts by stamp) admitted onto the court's ledger
+  complex; continuity checked as the cocycle on every cycle it closes;
+  obstructions docketed. LAYOUT-CHANGE.
+- *C — the minds onto the core.* The minds' `Complex` moved onto the
+  generic nerve, its classifier, class vectors and orbit readings kept as
+  the versor group's own reading — one complex, two coefficient groups.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the
