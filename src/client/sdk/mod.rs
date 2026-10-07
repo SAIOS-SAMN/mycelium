@@ -7,6 +7,7 @@
 mod entity;
 mod epigenome;
 pub mod aperture;
+pub mod guest;
 pub mod kernel;
 mod laws;
 pub mod session;

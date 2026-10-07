@@ -24056,6 +24056,23 @@ VERIFIER written as a breach of the LAW. The verdict's codec has no kind
 for "unmeasured". Either the verdict gains one (a codec change both sides
 read), or a stroke-bounded verify is named a reading and never a verdict.
 
+### 78.117 P1, the guest math's standard half: `sdk::guest` (2026-10-07, the operator's ruling delivered through the xylarium-kernel seat: "standard SDK math goes server-side; custom math that narrows or overrides goes client-side")
+
+The exact constructors any kernel needs to compose a transition the laws
+read, each the algebra's own (law 12): `translate`, `turn` (a rotor on a
+plane of the base), `compose` (first, then), `inverse`; `body_at` (a body
+on its unit sphere), `carry` (sandwich and rigid carriage, refused for a
+motion that carries no body unchanged); `source`, `sink` (78.89);
+`TransitionBuilder` — heights `(h, h + 1)`, bodies, fluxes, hues —
+`checked` reading the court's own verdict locally (`verify_sized`, 78.116)
+before the transition is sent. Additive, layout-safe. The world's ideal —
+its charts, lanes, warp and orbit steps, its narrowing of L0 — is the
+kernel's (xylarium). OWED: the batch act (many transitions to a frame,
+verdicts in order). Proved: `guest::a_turn_built_and_checked_is_the_courts_admission`,
+`guest::compose_and_inverse_are_the_algebras`,
+`guest::a_misplaced_body_is_refused_and_a_dilation_carries_none`,
+`guest::a_source_and_a_sink_are_fluxes_at_their_place`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

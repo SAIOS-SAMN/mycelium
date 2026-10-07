@@ -19,3 +19,4 @@ mod solve;
 mod speech;
 mod syntropy;
 mod taught;
+mod guest;
