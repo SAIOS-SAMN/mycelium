@@ -264,6 +264,54 @@ pub enum LawsRequest {
     Verify(Transition),
     /// 78.118 — many transitions in one frame, a verdict for each in order.
     Batch(Vec<Transition>),
+    /// 78.122 — the shared lexicon's register, at its version.
+    Lexicon,
+}
+
+const MODE_LEXICON: u8 = 3;
+
+/// 78.122 — `[ACT_LAWS][3]`: the shared lexicon, asked by address.
+pub fn encode_lexicon_request() -> Vec<u8> {
+    vec![crate::anastome::dialogue::ACT_LAWS, MODE_LEXICON]
+}
+
+/// The lexicon's reply: `[version][count][(vocabulary, name, meaning) …]`.
+pub fn encode_lexicon_reply() -> Vec<u8> {
+    use super::lexicon::{LEXICON_VERSION, TERMS};
+    let mut out = vec![LEXICON_VERSION];
+    put_key_count(&mut out, TERMS.len());
+    for term in TERMS {
+        out.push(term.vocabulary.byte());
+        crate::transducer::address::put_key_bytes(&mut out, term.name.as_bytes());
+        crate::transducer::address::put_key_bytes(&mut out, term.meaning.as_bytes());
+    }
+    out
+}
+
+/// ONE TERM AS THE REGISTER SERVES IT.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ServedTerm {
+    pub name: String,
+    pub vocabulary: super::lexicon::Vocabulary,
+    pub meaning: String,
+}
+
+/// The lexicon a reply carries — its version and every term — read whole.
+/// A kernel compares the version with its own: another version is told so,
+/// never read as this one.
+pub fn decode_lexicon_reply(b: &[u8]) -> Option<(u8, Vec<ServedTerm>)> {
+    let mut p = 0;
+    let version = take_u8(b, &mut p)?;
+    let n = take_key_count(b, &mut p)?;
+    let terms = (0..n)
+        .map(|_| {
+            let vocabulary = super::lexicon::Vocabulary::of(take_u8(b, &mut p)?)?;
+            let name = String::from_utf8(crate::transducer::address::take_key_bytes(b, &mut p)?).ok()?;
+            let meaning = String::from_utf8(crate::transducer::address::take_key_bytes(b, &mut p)?).ok()?;
+            Some(ServedTerm { name, vocabulary, meaning })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    (p == b.len()).then_some((version, terms))
 }
 
 const MODE_REGISTER: u8 = 0;
@@ -319,6 +367,7 @@ pub fn encode_verify_request(t: &Transition) -> Vec<u8> {
 pub fn decode_laws_request(body: &[u8]) -> Option<LawsRequest> {
     match body {
         [act, MODE_REGISTER] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Register),
+        [act, MODE_LEXICON] if *act == crate::anastome::dialogue::ACT_LAWS => Some(LawsRequest::Lexicon),
         [act, MODE_VERIFY, rest @ ..] if *act == crate::anastome::dialogue::ACT_LAWS => {
             let mut p = 0;
             let t = take_transition(rest, &mut p)?;

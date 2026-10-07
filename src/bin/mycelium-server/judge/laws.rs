@@ -18,6 +18,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, _door: &Door) {
     let Some(request) = decode_laws_request(&frame.body) else { return };
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
+        // 78.122 — the shared lexicon, at its version.
+        LawsRequest::Lexicon => mycelium::physics::laws::codec::encode_lexicon_reply(),
         LawsRequest::Verify(t) => {
             // 78.116 — under the stroke the motion's modes need, never the
             // court's default: a verdict of the transition alone.

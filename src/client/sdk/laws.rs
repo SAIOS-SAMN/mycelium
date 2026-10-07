@@ -54,7 +54,15 @@ impl super::Session {
         }
     }
 
-    /// 78.120 — A DOMAIN FOUNDED ON THE COURT: the genesis receipt's stamp and
+    /// 78.122 — THE SHARED LEXICON this hypha defines: its version and every
+    /// term. A kernel compares the version with its own.
+    pub fn lexicon(&self) -> io::Result<(u8, Vec<crate::physics::laws::codec::ServedTerm>)> {
+        let reply = self.speak(crate::physics::laws::codec::encode_lexicon_request())?;
+        crate::physics::laws::codec::decode_lexicon_reply(&reply)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the lexicon's reply did not decode"))
+    }
+
+    /// 78.120 — ADOMAIN FOUNDED ON THE COURT: the genesis receipt's stamp and
     /// chain hash where it is sealed, or the refusal by name.
     pub fn found_domain(&self, w: &crate::anastome::dialogue::domain::SignedDomain) -> io::Result<crate::anastome::dialogue::domain::Founded> {
         use crate::anastome::dialogue::domain::{decode_domain_reply, encode_domain};

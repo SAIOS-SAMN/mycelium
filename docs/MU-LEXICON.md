@@ -58,7 +58,7 @@ neither renames nor claims them.
 
 | Term | Meaning |
 |---|---|
-| **Universe (network)** | A genesis record, a law version and its causal clock. One physical universe is recorded as one network universe (78.86: CREATE a subsidiary, or JOIN one). |
+| **Network universe** | A genesis record, a law version and its causal clock (named apart from the physical Universe: no word in two vocabularies). One physical universe is recorded as one network universe (78.86: CREATE a subsidiary, or JOIN one). |
 | **Domain** | An application's namespace under a universe — xylarium is a domain — founded on a court by its genesis (`ACT_DOMAIN`, 78.120). Replaces "world" on the network. |
 | **Tier** | A signing key that folds a ledger for a domain, named at the domain's genesis (78.120); its folds are admitted by continuity (`ACT_UPLINK`, 78.119). |
 | **Hypha, Court, Voice, Mind, Entity** | As `MU-RECURSION.md` defines them (78.87 R4). |

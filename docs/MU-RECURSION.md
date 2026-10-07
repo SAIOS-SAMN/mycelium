@@ -24228,8 +24228,19 @@ genesis signing domain stays `"mycelium world genesis v1"` (a domain
 founded before the rename was signed over it). The action's name is
 `b"domain"` — no receipt hashes it (the operator digest is the party key
 and the court head). 78.59's galaxy, star and world are amended to cohort,
-allocation and domain. OWED: the register served by address (`ACT_LAWS`
-mode 3, the typed table the one carrier, its version a kernel checks).
+allocation and domain.
+
+**The register, served by address.** `physics::laws::lexicon::TERMS` — the
+one carrier of the served terms, each with its vocabulary and a one-line
+meaning, at `LEXICON_VERSION` (1) — is served as `ACT_LAWS` mode 3
+(`[ACT_LAWS][3]`, answered `[version][count][(vocabulary, name, meaning) …]`;
+`Session::lexicon`). A kernel compares the version with its own; another
+version is told so, never read as this one. The physical and network
+universes are served apart — "Universe" and "Network universe" — since no
+word belongs to two vocabularies. Proved:
+`laws::the_lexicon_is_served_as_it_is_written` (read back whole, every name
+once, every term and the version standing in `MU-LEXICON.md`, so the table
+and its exposition cannot drift). A wire addition, not a persisted layout.
 
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
