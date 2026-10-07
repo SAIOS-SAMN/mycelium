@@ -24128,6 +24128,13 @@ one is refused by every build before this one (`from_byte`, `take_canonical`)
 — every court that will hold or replicate such a line must run this build
 before any court seals one. A line with no uplink restores unchanged.
 
+**LIVE (2026-10-07, the xylarium court at :7520 upgraded to 72658cb0,
+`--check` restored, genesis kept).** `xyl-uplink fold-probe`, signed by a
+xylarium realm tier key: a balanced transfer ADMITTED at h 105296; value
+from nowhere `Discontinuous(Unbalanced { lane: 1 })`; a declared source
+ADMITTED at h 105297; the home holding sealed uplinks restores on
+`--check`. The coordinator's green.
+
 **OWED (later rows):** multi-tier chaining (a fold citing folds); matter
 handoffs, two-sided (P2: matter does not net like money); the challenge
 window and replay-by-dispute; μ conversion by the ancients only (78.93);
