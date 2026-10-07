@@ -33,9 +33,15 @@ use mycelium::sdk::{Entity};
 /// line carried eight bits of identity over a thousand-task corpus. 53.2's
 /// census maps a journal id back to the task file through `task_id`, and
 /// `1019…` resolved to EIGHT tasks: the stall could be seen and not named.
-/// Four bytes is twenty-four bits of identity and resolves to one.
+///
+/// 78.113 — AND FOUR LEADING BYTES WERE STILL NOT IDENTITY: the task tag, a
+/// length and a listing key's own tag — `10830113…` named 17 tasks and
+/// `104c134a…` 22 (read 2026-10-06, finding the stall). The label is the
+/// first six bytes of the WHOLE id's digest (`payload_hash`, 48 bits): a
+/// label to read the journal by, never a key; a census maps it back by the
+/// same digest of `task_id`.
 pub(crate) fn fam_id(family: &[u8]) -> String {
-    family.iter().take(4).map(|b| format!("{b:02x}")).collect::<String>() + "…"
+    mycelium::chronometry::payload_hash(family).iter().take(6).map(|b| format!("{b:02x}")).collect::<String>() + "…"
 }
 
 pub(crate) fn speak_form(
