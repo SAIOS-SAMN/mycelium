@@ -36,6 +36,9 @@ pub struct TierFold {
     /// 78.123 B — the folds this fold nets (empty for a single-level fold,
     /// which writes and signs exactly as 78.119's).
     pub children: Vec<ChildNet>,
+    /// 78.126 — the handoff sides this fold consumes, each by the handoff's
+    /// id and its side (empty: the fold writes and signs as before).
+    pub handoffs: Vec<([u8; 32], super::handoff::Side)>,
 }
 
 /// 78.123 B — ONE FOLD A PARENT NETS: the child's receipt on this court's
@@ -191,7 +194,22 @@ impl TierFold {
         if let Some(c) = self.children_hash() {
             out.extend_from_slice(&c);
         }
+        if let Some(h) = self.handoffs_hash() {
+            out.extend_from_slice(&h);
+        }
         out
+    }
+
+    /// 78.126 — THE HANDOFFS' COMMITMENT, where the fold consumes any: what
+    /// its signature holds of them, under its own domain so it is never a
+    /// children's commitment.
+    pub fn handoffs_hash(&self) -> Option<[u8; 32]> {
+        if self.handoffs.is_empty() {
+            return None;
+        }
+        let mut h = b"handoffs".to_vec();
+        put_handoffs(&mut h, &self.handoffs);
+        Some(crate::chronometry::payload_hash(&h))
     }
 
     /// 78.123 B — THE CHILDREN'S COMMITMENT, where the fold nets any: what
@@ -212,12 +230,24 @@ impl TierFold {
     /// rows less `Σ rate · included rows` sum exactly to its own declared
     /// (exact rationals; translation's rounding declared, never floored).
     pub fn continuity(&self) -> Result<(), Discontinuous> {
+        self.continuity_with(&[])
+    }
+
+    /// 78.126 — CONTINUITY WITH THE HANDOFF SIDES THE FOLD CONSUMES: their
+    /// nets — matter or words leaving (negative) or arriving (positive) across
+    /// a domain's boundary — stand with its declared emission.
+    pub fn continuity_with(&self, consumed: &[Net]) -> Result<(), Discontinuous> {
         use num_rational::BigRational as Q;
         if !ascending(&self.rows) || !ascending(&self.declared) {
             return Err(Discontinuous::Unordered);
         }
         let nets = sum(&self.rows).map_err(|lane| Discontinuous::Overflow { lane })?;
-        let emitted = sum(&self.declared).map_err(|lane| Discontinuous::Overflow { lane })?;
+        let declared = sum(&self.declared).map_err(|lane| Discontinuous::Overflow { lane })?;
+        let crossing = sum(consumed).map_err(|lane| Discontinuous::Overflow { lane })?;
+        let mut emitted = [0i128; 4];
+        for (l, e) in emitted.iter_mut().enumerate() {
+            *e = declared[l].checked_add(crossing[l]).ok_or(Discontinuous::Overflow { lane: l })?;
+        }
         let mut residual: [Q; 4] = std::array::from_fn(|l| Q::from_integer(nets[l].into()) - Q::from_integer(emitted[l].into()));
         for c in &self.children {
             for nets in [&c.rows, &c.declared, &c.included_rows, &c.included_declared] {
@@ -251,17 +281,42 @@ impl TierFold {
     }
 }
 
+fn put_handoffs(out: &mut Vec<u8>, refs: &[([u8; 32], super::handoff::Side)]) {
+    crate::transducer::address::put_key_count(out, refs.len());
+    for (id, side) in refs {
+        out.extend_from_slice(id);
+        out.push(side.byte());
+    }
+}
+
+fn take_handoffs(b: &[u8], p: &mut usize) -> Option<Vec<([u8; 32], super::handoff::Side)>> {
+    let n = crate::transducer::address::take_key_count(b, p)?;
+    (0..n)
+        .map(|_| {
+            let id: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+            let side = super::handoff::Side::of(*b.get(*p + 32)?)?;
+            *p += 33;
+            Some((id, side))
+        })
+        .collect()
+}
+
 /// `[ACT_UPLINK][tier 32][prefix 32][rows][sig 64]`, and — 78.123 B, only
-/// where the fold nets children — `[count][child …]` after the signature, so
-/// a single-level fold's bytes are 78.119's exactly.
+/// where the fold nets children or consumes handoffs — `[count][child …]`
+/// after the signature, then — 78.126, only where it consumes handoffs —
+/// `[count][(id, side) …]`; so a single-level fold's bytes are 78.119's
+/// exactly and a chained one's 78.123's.
 pub fn encode_uplink(f: &SignedFold) -> Vec<u8> {
     let mut out = vec![super::ACT_UPLINK];
     out.extend_from_slice(&f.fold.tier);
     out.extend_from_slice(&f.fold.prefix);
     out.extend_from_slice(&f.fold.rows_bytes());
     out.extend_from_slice(&f.sig);
-    if !f.fold.children.is_empty() {
+    if !f.fold.children.is_empty() || !f.fold.handoffs.is_empty() {
         put_children(&mut out, &f.fold.children);
+    }
+    if !f.fold.handoffs.is_empty() {
+        put_handoffs(&mut out, &f.fold.handoffs);
     }
     out
 }
@@ -282,14 +337,19 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
         true => Vec::new(),
         false => {
             let n = crate::transducer::address::take_key_count(rest, &mut p)?;
-            let children = (0..n).map(|_| ChildNet::take(rest, &mut p)).collect::<Option<Vec<_>>>()?;
-            if children.is_empty() {
-                return None;
-            }
-            children
+            (0..n).map(|_| ChildNet::take(rest, &mut p)).collect::<Option<Vec<_>>>()?
         }
     };
-    (p == rest.len()).then_some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children }, sig })
+    let handoffs = match p == rest.len() {
+        true => Vec::new(),
+        false => take_handoffs(rest, &mut p)?,
+    };
+    // ONE WRITING: an empty children block stands only before handoffs, and
+    // an empty handoffs block never — what does not re-encode to these very
+    // bytes is no fold.
+    let fold = TierFold { tier, prefix, rows, declared, children, handoffs };
+    let signed = SignedFold { fold, sig };
+    (p == rest.len() && encode_uplink(&signed) == b).then_some(signed)
 }
 
 /// 78.123 B — WHY A CHILD WAS NOT NETTED.
@@ -327,6 +387,38 @@ pub enum Uplinked {
     Chained { at: Stamp, receipt: [u8; 32], provisional: bool, obstructions: u32, open_remainders: u32 },
     /// 78.123 B — the child at `index` was not netted, and why.
     ChildRefused { index: u32, why: ChildRefusal },
+    /// 78.126 — the handoff side at `index` was not consumed, and why.
+    HandoffRefused { index: u32, why: SideRefusal },
+}
+
+/// 78.126 — WHY A FOLD MAY NOT CONSUME A HANDOFF SIDE.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SideRefusal {
+    /// No handoff of that id on this court.
+    Unknown,
+    /// The side is not this fold's tier's: OUT is the sender's; IN the
+    /// receiver's once accepted, the sender's once returned.
+    NotYours,
+    /// IN while the handoff is still offered: neither accepted nor returned.
+    NotYet,
+    /// Consumed already — a double-spend.
+    Consumed,
+    /// Named twice in this fold.
+    Repeated,
+}
+
+impl SideRefusal {
+    const ALL: [SideRefusal; 5] = [SideRefusal::Unknown, SideRefusal::NotYours, SideRefusal::NotYet, SideRefusal::Consumed, SideRefusal::Repeated];
+
+    fn byte(self) -> u8 {
+        match self {
+            SideRefusal::Unknown => 0,
+            SideRefusal::NotYours => 1,
+            SideRefusal::NotYet => 2,
+            SideRefusal::Consumed => 3,
+            SideRefusal::Repeated => 4,
+        }
+    }
 }
 
 /// The court's reply: `[0][stamp][hash]` admitted; `[1]` unsigned;
@@ -372,6 +464,11 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             };
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
+        }
+        Uplinked::HandoffRefused { index, why } => {
+            out.push(7);
+            out.extend_from_slice(&index.to_le_bytes());
+            out.push(why.byte());
         }
     }
     out
@@ -430,6 +527,12 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
                 _ => return None,
             };
             Uplinked::ChildRefused { index, why }
+        }
+        7 => {
+            let index = u32::from_le_bytes(b.get(1..5)?.try_into().ok()?);
+            let code = *b.get(5)?;
+            p = 6;
+            Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
         _ => return None,
     };

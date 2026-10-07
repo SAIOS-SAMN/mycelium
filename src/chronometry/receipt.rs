@@ -374,6 +374,10 @@ pub enum Cite {
     /// prefix's, a correction's — so a reader knows the fold was replayed,
     /// not merely unchallenged. Zero where nothing was presented.
     Challenge { fold: Stamp, kind: u8, outcome: u8, evidence: [u8; 32] },
+    /// 78.126 — A HANDOFF ACT, by its coordinates: the handoff's id (the hash
+    /// of its offer's one writing, which the court holds while a side is
+    /// open) and the act's kind — offered, accepted, refused, expired.
+    Handoff { id: [u8; 32], kind: u8 },
     /// 78.120 — A DOMAIN'S GENESIS, by its keys (coordinates, as a class's
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
@@ -392,6 +396,7 @@ impl Cite {
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
             | Cite::Challenge { .. }
+            | Cite::Handoff { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -406,6 +411,7 @@ impl Cite {
             | Cite::Uplink { .. }
             | Cite::Chained { .. }
             | Cite::Challenge { .. }
+            | Cite::Handoff { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -456,6 +462,11 @@ impl Cite {
                 rec.extend_from_slice(&[*kind, *outcome]);
                 rec.extend_from_slice(evidence);
             }
+            Cite::Handoff { id, kind } => {
+                rec.push(9);
+                rec.extend_from_slice(id);
+                rec.push(*kind);
+            }
             Cite::Domain { domain, tiers } => {
                 rec.push(6);
                 rec.extend_from_slice(domain);
@@ -480,6 +491,7 @@ impl Cite {
                     | Cite::Uplink { .. }
                     | Cite::Chained { .. }
                     | Cite::Challenge { .. }
+                    | Cite::Handoff { .. }
                     | Cite::Domain { .. } => {}
                 }
                 match cover {
@@ -554,6 +566,12 @@ impl Cite {
                 let evidence: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                 *p += 32;
                 Some(Cite::Challenge { fold, kind, outcome, evidence })
+            }
+            9 => {
+                let id: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                let kind = *b.get(*p + 32)?;
+                *p += 33;
+                Some(Cite::Handoff { id, kind })
             }
             6 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

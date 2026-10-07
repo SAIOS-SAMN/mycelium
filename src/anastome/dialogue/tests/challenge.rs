@@ -27,6 +27,7 @@ fn every_challenge_and_every_answer_read_back_whole() {
         Challenge::Correction { fold, child: vec![3u8; 64], holder: [7u8; 32], amount: -12 },
         Challenge::Open { fold, rows: entry.rows.clone(), declared: Vec::new(), children: Vec::new() },
         Challenge::Part { fold, entries: vec![entry.clone(), entry.clone()] },
+        Challenge::Withdraw { fold, demand: Stamp { h: 12, ..fold } },
     ] {
         let signed = c.sign(&key);
         let mut asked = encode_challenge(&signed);
@@ -49,6 +50,9 @@ fn every_challenge_and_every_answer_read_back_whole() {
         Challenged::Refused(ChallengeRefusal::Demanded),
         Challenged::Refused(ChallengeRefusal::NotOpened),
         Challenged::Streaming { head: [8u8; 32] },
+        Challenged::Reopened { at: fold, receipt: [1u8; 32], until: 2057 },
+        Challenged::Refused(ChallengeRefusal::Withdrawn),
+        Challenged::Refused(ChallengeRefusal::NotTheDemand),
     ] {
         assert_eq!(decode_challenge_reply(&encode_challenge_reply(&a)), Some(a.clone()), "{a:?}");
     }

@@ -40,6 +40,9 @@ pub const LEAF_LEDGERS: u8 = 5;
 /// tier's last head, the rates edges in the order sealed, the arbitrages
 /// booked; absent where none is held.
 pub const LEAF_CHALLENGES: u8 = 6;
+/// 78.126 — the handoffs: each offer held while a side is open, and the sides
+/// each fold consumed; absent where none is held.
+pub const LEAF_HANDOFFS: u8 = 7;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

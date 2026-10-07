@@ -85,6 +85,11 @@ pub enum Action {
     /// demand, the tier line's prefix put to replay, a default claimed, a
     /// correction booking an arbitrage — sealed under its own coordinate.
     Challenge,
+    /// 78.126 — MATTER OR A WORD CROSSING DOMAINS (2(b)): offered, accepted,
+    /// refused or expired, each side consumed by one fold — sealed under its
+    /// own coordinate. 0x07 is the last wire byte taken: 0x0A and 0x0F stay
+    /// reserved, and the next act is a sub-kind under an existing one.
+    Handoff,
     // Exchanges.
     Adopt,
     Root,
@@ -120,9 +125,11 @@ pub enum Action {
     Learned,
 }
 
-/// Every action, in coordinate order. 0x07, 0x0A and 0x0F stand unassigned
-/// (0x0F was the retired genesis page, 2026-09-29): no action holds them.
-pub const ACTIONS: [Action; 54] = [
+/// Every action, in coordinate order. 0x0A and 0x0F stand unassigned (0x0F
+/// was the retired genesis page, 2026-09-29) and RESERVED (78.126): the wire's
+/// bytes below the court's range are spent, so the next act is a sub-kind
+/// under an existing one, never a new byte.
+pub const ACTIONS: [Action; 55] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -130,6 +137,7 @@ pub const ACTIONS: [Action; 54] = [
     Action::Teach,
     Action::Settle,
     Action::Docket,
+    Action::Handoff,
     Action::Evidence,
     Action::Refine,
     Action::Task,
@@ -193,6 +201,7 @@ impl Action {
             Action::Teach => 0x04,
             Action::Settle => 0x05,
             Action::Docket => 0x06,
+            Action::Handoff => 0x07,
             Action::Evidence => 0x08,
             Action::Refine => 0x09,
             Action::Task => 0x0B,
@@ -282,7 +291,8 @@ impl Action {
             | Action::Speech
             | Action::Uplink
             | Action::Domain
-            | Action::Challenge => Kind::Transition,
+            | Action::Challenge
+            | Action::Handoff => Kind::Transition,
             Action::Adopt
             | Action::Root
             | Action::Cover
@@ -319,7 +329,7 @@ impl Action {
     /// WHETHER A COURT SEALS IT ON ITS LINE — the kinds a receipt carries.
     /// An observation never seals; a retired kind is sealed by nothing.
     pub const fn sealed(self) -> bool {
-        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::Domain | Action::Challenge)
+        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::Domain | Action::Challenge | Action::Handoff)
     }
 
     /// THE SEALED ACT A LEDGER BYTE NAMES, or none: a byte naming an action
@@ -392,6 +402,7 @@ impl Action {
             Action::Uplink => b"uplink",
             Action::Domain => b"domain",
             Action::Challenge => b"challenge",
+            Action::Handoff => b"handoff",
             Action::Adopt => b"adopt",
             Action::Root => b"root",
             Action::Cover => b"cover",

@@ -24618,11 +24618,88 @@ needs them to read a future cycle; compacting final edges into the
 potential's forest is owed. (2) The bond's slash on
 falsification is 2(e)'s. (3) RULED (the coordinator, from netstratum, which
 found the seam): **a tier's line restarts at the zero head at its first
-post-78.125 fold; its earlier entries are pre-line and archivable.** The
+post-78.125 fold; its earlier entries are pre-line and archivable.**
+Sharpened (the coordinator, after :7520): *every fold admitted by a court
+running 78.125 (6ef3b165 or later) is a LINE fold, whatever its client
+built it over* — the first such fold of a tier spans from the zero head,
+each later one from the last one's prefix; pre-78.125 folds never set a
+head; `line_head` is the authority a client resyncs by. A STUB stays while
+the hot line still holds its fold's receipt (the seam :7520 found: a final
+fold, pruned and let go, fell through to the hot-line fallback and misread
+PRE-LINE), so PRE-LINE reads exactly "admitted before records existed".
+
+**WITHDRAW (the coordinator's ruling, narrow).** A sub-kind of
+`ACT_CHALLENGE` (kind 9): the fold's own tier withdraws ITS OWN demand —
+proved by the demand's receipt (named by its stamp: it cites this fold's
+demand, stands at the demand's height, and its operator is
+`operator_hash(tier, court_head)`) — before any default is claimed, ONCE
+per fold. It reopens the evidence window `W` from the withdrawal, sealed
+(outcome 4: a public record that the tier asked for its own second
+chance); the fold reads provisional through it. An external challenger's
+demand is never withdrawn by anyone. Proved:
+`challenge::a_self_demand_withdrawn_reopens_the_window_once`. The
 court seeds a span's start from the heads only 78.125 admissions record,
 so a tier continuing a line chained before the upgrade from its old head
 would be falsified on demand; clients restart at zero, no server change. (4) Open
 replays expire at the close after their window (settled above).
+
+### 78.126 2(b): matter handoffs, two-sided — matter and a word crossing domains on one court (2026-10-07, the coordinator's rulings; 78.59 P2: matter does not net like money) — LAYOUT-CHANGE, WIRE-CHANGE
+
+**Why.** A unit of matter stands in exactly one place, so a crossing
+between domains is no rate on an edge (that is value's way, 78.123): it is
+a HANDOFF one court serialises — no double-spend on S, conservation across
+the boundary.
+
+**The act**, `ACT_HANDOFF` (0x07 — **the last wire byte below the court's
+range; 0x0A and 0x0F stay reserved, and the next act is a sub-kind under an
+existing one, never a new byte**), signed by its filer, sealed by
+`Cite::Handoff { id, kind }` (tag 9), two-phase:
+- *Offer*, by the sending tier: what leaves its domain (its identities,
+  negative) and what arrives in the other (the receiver's, positive),
+  summing to zero on every lane, on **S (matter) and H (a delivered word —
+  a comms feed's or an informant's delivery: one word leaves X and arrives
+  in Y, never copied) only**: G crosses by rates (2(a)) and μ (2(e)), never
+  by handoff; T is reserved for contracts (forwards and hedges on
+  transports) and refused. Both tiers bound, to different domains, on this
+  court. The offer carries the sender's CHARTER commitment (32 bytes, zero
+  until charters exist), signed and unchecked. Its id is the hash of its
+  one writing. Sealed, the matter is IN FLIGHT.
+- *Accept*, by the receiving tier, WHOLE (a partial delivery is a new
+  offer), within the law's `W` of the offer; *Refuse*, by the receiver;
+  *Expire*, claimable by the sender only, past `W`. Refused or expired, it
+  is RETURNED.
+- Read, sealing nothing: a handoff's state and whether each side is
+  consumed.
+
+**Sides, each consumed by exactly one fold.** A fold names the sides it
+consumes (`TierFold.handoffs`, written after its children — an empty
+children block where it nets none — and signed by commitment only where
+present, so every earlier fold writes and signs as before): OUT by the
+sender, in any state after the offer; IN by the receiver once accepted,
+or by the SENDER once returned (what left, come back — consumed by its
+next fold like any other side). Continuity reads the sides with the
+declared emission: `Σ rows − Σ rate · included = Σ declared + Σ sides'
+nets`. A side not the fold's tier's, an IN still offered, a side consumed
+already (a double-spend) or named twice is refused by its index. A
+REVERSED fold (78.125) un-consumes its sides; a REPLAY reads them with the
+declared (the line declares the crossing). The court holds an offer whole
+while a side is open, and lets it go at an orbit's close once both sides
+were consumed by folds read final — a final fold is never reversed. Same
+court only: a cross-court handshake (P2's "one court serialises it" across
+hyphae) is later; the law check is L0 continuity until charters exist.
+
+**Layout.** `LEAF_HANDOFFS` (7): each handoff held (its offer, seal
+height, state, consuming folds) and each fold's consumed sides.
+
+Proved: `handoff::an_offer_conserves_across_the_boundary_on_matter_and_words_only`,
+`handoff::a_handoff_accepted_is_consumed_once_on_each_side` (and its
+standing restores), `handoff::a_handoff_refused_or_expired_returns_to_the_sender`,
+`handoff::a_reversed_fold_unconsumes_its_side_and_final_folds_let_the_handoff_go`
+(the crossing replays upheld), and the wire's
+`every_handoff_act_and_answer_read_back_whole`.
+
+*Owed, named:* the cross-court handshake; charters; the tier's list of
+open handoffs (a read by id stands).
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

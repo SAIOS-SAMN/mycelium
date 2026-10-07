@@ -48,7 +48,7 @@ fn found(k: &mut Kernel) {
 }
 
 fn fold(tier: &SigningKey, prefix: u8, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: vk(tier), prefix: [prefix; 32], rows, declared, children }
+    TierFold { tier: vk(tier), prefix: [prefix; 32], rows, declared, children, handoffs: Vec::new() }
 }
 
 /// `A`'s fold: `w1` +10, `w2` −4 on G, and the 6 it made declared by `w9`.

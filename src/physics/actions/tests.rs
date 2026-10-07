@@ -18,8 +18,9 @@ fn every_action_holds_one_coordinate() {
         }
         assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Uttered | Action::Learned));
     }
-    // 0x3F is the challenge's (78.125): the wire's last byte below the court's range.
-    for unassigned in [0x07u8, 0x0A, 0x0F, 0x53, 0xFF] {
+    // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126); 0x0A and
+    // 0x0F are reserved.
+    for unassigned in [0x0Au8, 0x0F, 0x53, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
     assert_eq!(Action::of_tag(Action::Orbit.byte()), None, "a court act is never asked for");
@@ -31,7 +32,7 @@ fn every_action_holds_one_coordinate() {
 #[test]
 fn an_observation_seals_nothing_and_a_transition_answers_to_every_law() {
     let sealed: Vec<Action> = ACTIONS.iter().copied().filter(|a| a.sealed()).collect();
-    assert_eq!(sealed.len(), 20, "{sealed:?}");
+    assert_eq!(sealed.len(), 21, "{sealed:?}");
     for a in ACTIONS {
         match a.kind() {
             Kind::Observation | Kind::Retired => {

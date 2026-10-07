@@ -186,6 +186,10 @@ impl Kernel {
         if let Some(v) = self.ledgers.put_challenges() {
             leaves.push((LEAF_CHALLENGES, v));
         }
+        // 78.126 — the handoffs, where any is held.
+        if let Some(v) = self.handoffs.put() {
+            leaves.push((LEAF_HANDOFFS, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

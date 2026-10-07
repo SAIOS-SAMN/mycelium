@@ -15,6 +15,7 @@ fn a_signed_fold_and_every_answer_read_back_whole() {
         rows: vec![([1u8; 32], [3, -1, 0, 7]), ([4u8; 32], [-3, 1, 0, -7])],
         declared: vec![([8u8; 32], [0, 0, 0, 0])],
         children: Vec::new(),
+        handoffs: Vec::new(),
     };
     // 78.123 B — a fold with no children writes exactly as 78.119's: its
     // bytes end at the signature, and it signs no children's commitment.

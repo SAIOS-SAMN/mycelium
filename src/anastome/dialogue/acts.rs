@@ -238,6 +238,11 @@ pub const ACT_DOMAIN: u8 = Action::Domain.byte();
 /// and, sealing nothing, the fold's finality read. The layout and its codec
 /// are `dialogue::challenge`'s.
 pub const ACT_CHALLENGE: u8 = Action::Challenge.byte();
+/// MATTER OR A WORD CROSSING DOMAINS (78.126, 2(b)): an offer by the sending
+/// tier, accepted whole or refused by the receiving one, or expired; each
+/// side consumed by one fold. The layout and its codec are
+/// `dialogue::handoff`'s.
+pub const ACT_HANDOFF: u8 = Action::Handoff.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

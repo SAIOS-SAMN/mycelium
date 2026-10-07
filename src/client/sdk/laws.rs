@@ -105,6 +105,23 @@ impl super::Session {
         decode_challenge_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the challenge's reply did not decode"))
     }
 
+    /// 78.126 — A HANDOFF ACT: an offer, its acceptance or refusal, its
+    /// expiry — answered by the receipt and the handoff's state, or the
+    /// refusal by name.
+    pub fn handoff(&self, h: &crate::anastome::dialogue::handoff::SignedHandoff) -> io::Result<crate::anastome::dialogue::handoff::Handed> {
+        use crate::anastome::dialogue::handoff::{decode_handoff_reply, encode_handoff};
+        let reply = self.speak(encode_handoff(h))?;
+        decode_handoff_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the handoff's reply did not decode"))
+    }
+
+    /// 78.126 — A HANDOFF'S STANDING: its state, and whether its OUT and IN
+    /// sides are consumed; `None` where the court holds no such handoff.
+    pub fn handoff_read(&self, id: [u8; 32]) -> io::Result<Option<(crate::anastome::dialogue::handoff::State, bool, bool)>> {
+        use crate::anastome::dialogue::handoff::{decode_read_reply, encode_handoff_read};
+        let reply = self.speak(encode_handoff_read(id))?;
+        decode_read_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the handoff read did not decode"))
+    }
+
     /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's stamp.
     pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::Finality> {
         use crate::anastome::dialogue::challenge::{decode_finality_reply, encode_finality_request};

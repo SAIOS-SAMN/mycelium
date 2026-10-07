@@ -7,6 +7,7 @@
 pub mod acts;
 pub mod carrier;
 pub mod challenge;
+pub mod handoff;
 pub mod cover;
 pub mod demand;
 pub mod docket;

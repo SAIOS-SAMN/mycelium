@@ -52,7 +52,7 @@ fn founded() -> Kernel {
 /// A fold whose prefix is the head its tier line's `entries` reach from the
 /// zero head (the tier's first fold).
 fn fold(tier: &SigningKey, entries: &[Entry], rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>) -> TierFold {
-    TierFold { tier: vk(tier), prefix: line_head([0; 32], entries), rows, declared, children }
+    TierFold { tier: vk(tier), prefix: line_head([0; 32], entries), rows, declared, children, handoffs: Vec::new() }
 }
 
 /// `A`'s line: one entry — `w1` +10, `w2` −4 on G, the 6 made declared by `w9`.
@@ -262,7 +262,8 @@ fn arbitrage(k: &mut Kernel) -> (Stamp, Vec<u8>) {
         included_declared: vec![(who(9), g(3))],
         rate: [(1, 1), (n, 1), (1, 1), (1, 1)],
     };
-    let p_fold = TierFold { tier: vk(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)] };
+    let p_fold =
+        TierFold { tier: vk(&p), prefix: [2; 32], rows: vec![(who(1), g(6))], declared: Vec::new(), children: vec![half(2)], handoffs: Vec::new() };
     let p_at = sealed(k, p_fold.clone(), &p);
     let q_fold = TierFold {
         tier: vk(&q),
@@ -270,6 +271,7 @@ fn arbitrage(k: &mut Kernel) -> (Stamp, Vec<u8>) {
         rows: vec![(who(1), g(9))],
         declared: Vec::new(),
         children: vec![whole(&p_fold, p_at, 1), half(1)],
+        handoffs: Vec::new(),
     };
     let q_at = sealed(k, q_fold, &q);
     let open = k.open_obstructions(&domain());
@@ -373,13 +375,58 @@ fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false }, "the parent reads final through the stub");
     let _ = booted.orbit();
     assert!(booted.ledgers.records.is_empty(), "every record final and pruned");
-    assert!(!booted.ledgers.finals.contains(&a_at.key()), "A, consumed and named by nothing, is let go");
+    // A, consumed and named by nothing, keeps its stub while the hot line
+    // holds its receipt — else it would read pre-line — and reads final.
+    assert!(booted.ledgers.finals.contains(&a_at.key()), "A's stub stays while the hot line holds its receipt");
+    assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false });
     assert!(booted.ledgers.finals.contains(&p_at.key()), "P, its value in flight, keeps its stub");
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false });
     // The stream on the original court: its window closed, it is let go.
     pass(&mut k, p_at.h + CHALLENGE_WINDOW);
     let _ = k.orbit();
     assert!(k.replays.is_empty(), "a stream whose window closed is let go");
+}
+
+/// A SELF-DEMAND WITHDRAWN REOPENS THE WINDOW, ONCE (the coordinator's
+/// ruling): the tier demanded its own fold and let the deadline pass — it
+/// reads blocked; withdrawn by the tier, naming its demand's receipt, the
+/// evidence window reopens `W` from the withdrawal, the fold reads
+/// provisional, and its evidence is upheld. Another key cannot withdraw it,
+/// another stamp is not the demand, a second withdrawal is refused; an
+/// external challenger's demand is never withdrawn, and a default claimed
+/// closes the fold.
+#[test]
+fn a_self_demand_withdrawn_reopens_the_window_once() {
+    let (a, ..) = tiers();
+    let mut k = founded();
+    let f = a_fold();
+    let at = sealed(&mut k, f.clone(), &a);
+    let Challenged::Demanded { at: demand, deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!("demanded") };
+    pass(&mut k, deadline);
+    assert_eq!(k.finality(&at), Finality::Blocked, "the self-demand's deadline passed unanswered");
+    let withdraw = |d: Stamp| Challenge::Withdraw { fold: at, demand: d };
+    assert_eq!(k.challenge(&withdraw(demand).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
+    assert_eq!(k.challenge(&withdraw(at).sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
+    let Challenged::Reopened { until, at: w, .. } = k.challenge(&withdraw(demand).sign(&a)) else { panic!("reopened") };
+    assert_eq!(until, w.h + CHALLENGE_WINDOW);
+    assert_eq!(k.finality(&at), Finality::Provisional { until }, "provisional through the reopened window");
+    assert_eq!(k.challenge(&withdraw(demand).sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn), "a second chance is one");
+    assert!(matches!(k.challenge(&evidence(&f, at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the evidence it owed");
+    // Once per fold.
+    let mut k = founded();
+    let at = sealed(&mut k, f.clone(), &a);
+    let Challenged::Demanded { at: demand, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!() };
+    assert!(matches!(k.challenge(&Challenge::Withdraw { fold: at, demand }.sign(&a)), Challenged::Reopened { .. }));
+    let Challenged::Demanded { at: again, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!("a demand again") };
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: again }.sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn));
+    // An external challenger's demand is never withdrawn; a default closes it.
+    let mut k = founded();
+    let at = sealed(&mut k, f, &a);
+    let Challenged::Demanded { at: theirs, deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else { panic!() };
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
+    pass(&mut k, deadline);
+    assert!(matches!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Falsified { .. }));
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::Closed));
 }
 
 /// A TIER'S LINE HEAD IS READ BACK: the zero head before it folds; its last

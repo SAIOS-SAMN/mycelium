@@ -29,7 +29,7 @@ use num_rational::BigRational as Q;
     clippy::manual_unwrap_or,
     reason = "rule 11 — `unwrap_or` is the spelling this refuses; a window past the height carrier never closes, named at the wall"
 )]
-fn window_end(h: u64) -> u64 {
+pub(super) fn window_end(h: u64) -> u64 {
     match h.checked_add(CHALLENGE_WINDOW) {
         Some(end) => end,
         None => u64::MAX,
@@ -41,6 +41,7 @@ const DEMANDED: u8 = 0;
 const UPHELD: u8 = 1;
 const FALSIFIED: u8 = 2;
 const DISCHARGED: u8 = 3;
+const WITHDRAWN: u8 = 4;
 
 fn zero() -> [Q; 4] {
     std::array::from_fn(|_| Q::from_integer(0.into()))
@@ -144,9 +145,40 @@ impl Kernel {
             return refuse(R::Closed);
         }
         let head = self.chain.head_height();
-        let window_open = head < window_end(rec.sealed);
+        let window_open = head < self.open_until(&key, rec.sealed);
         let deadline = rec.demanded.map(window_end);
         match &c.challenge {
+            Challenge::Withdraw { demand, .. } => {
+                if c.who != rec.tier {
+                    return refuse(R::NotTheTier);
+                }
+                if self.ledgers.withdrawn.contains(&key) {
+                    return refuse(R::Withdrawn);
+                }
+                if rec.upheld.is_some() {
+                    return refuse(R::Published);
+                }
+                let Some(demanded) = rec.demanded else { return refuse(R::NotDemanded) };
+                // THE DEMAND IS THE TIER'S OWN: its receipt, at the height the
+                // demand stands at, cites this fold's demand, and its
+                // operator is the tier's (`operator_hash(voice, court_head)`)
+                // — an external challenger's demand never withdraws.
+                let own = crate::chronometry::operator_hash(&rec.tier, &self.court_head);
+                let is_it = self.chain.node(demand).is_some_and(|n| {
+                    n.stamp.h == demanded
+                        && n.operator_hash == own
+                        && n.cites.iter().any(|x| matches!(x, Cite::Challenge { fold: f, kind: 0, outcome: DEMANDED, .. } if *f == fold))
+                });
+                if !is_it {
+                    return refuse(R::NotTheDemand);
+                }
+                let Some(r) = self.seal_challenge(c, WITHDRAWN, [0; 32]) else { return refuse(R::LineRefused) };
+                if let Some(held) = self.ledgers.records.get_mut(&key) {
+                    held.demanded = None;
+                }
+                self.ledgers.withdrawn.insert(&key, r.stamp.h);
+                Challenged::Reopened { at: r.stamp, receipt: r.chain_hash, until: window_end(r.stamp.h) }
+            }
             Challenge::Demand { .. } => {
                 if rec.upheld.is_some() {
                     return refuse(R::Published);
@@ -173,16 +205,28 @@ impl Kernel {
                 }
                 let k = replay_key(&key, &c.who);
                 let proves = |rows: &[Net], declared: &[Net], children: &[ChildNet]| {
-                    let shown = TierFold { tier: rec.tier, prefix: rec.prefix, rows: rows.to_vec(), declared: declared.to_vec(), children: children.to_vec() };
+                    let shown = TierFold {
+                        tier: rec.tier,
+                        prefix: rec.prefix,
+                        rows: rows.to_vec(),
+                        declared: declared.to_vec(),
+                        children: children.to_vec(),
+                        handoffs: Vec::new(),
+                    };
                     shown.rows_hash() == rec.rows && shown.children_hash() == rec.children
                 };
+                // 78.126 — what the fold's consumed handoff sides carried stands
+                // with its declared: its line declares the crossing too.
+                let crossing = self.handoffs.crossing(&key);
+                let declaring = |declared: &[Net]| -> Vec<Net> { declared.iter().chain(&crossing).copied().collect() };
                 let replay = match &c.challenge {
                     // The whole prefix in one act.
                     Challenge::Evidence { rows, declared, children, entries, .. } => {
                         if !proves(rows, declared, children) {
                             return refuse(R::NotTheFold);
                         }
-                        Replay { rows: rows.clone(), declared: declared.clone(), children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() }
+                        let declared = declaring(declared);
+                        Replay { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() }
                             .then(entries)
                     }
                     // A streamed publication opened: the fold proved, the line
@@ -191,7 +235,8 @@ impl Kernel {
                         if !proves(rows, declared, children) {
                             return refuse(R::NotTheFold);
                         }
-                        let opened = Replay { rows: rows.clone(), declared: declared.clone(), children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() };
+                        let declared = declaring(declared);
+                        let opened = Replay { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() };
                         self.replays.insert(&k, opened);
                         return Challenged::Streaming { head: rec.from };
                     }
@@ -199,7 +244,9 @@ impl Kernel {
                         let Some(open) = self.replays.remove(&k) else { return refuse(R::NotOpened) };
                         open.then(entries)
                     }
-                    Challenge::Demand { .. } | Challenge::Default { .. } | Challenge::Correction { .. } => return refuse(R::NotOpened),
+                    Challenge::Demand { .. } | Challenge::Default { .. } | Challenge::Correction { .. } | Challenge::Withdraw { .. } => {
+                        return refuse(R::NotOpened)
+                    }
                 };
                 // A line that cannot be summed is no evidence.
                 let Some(replay) = replay else { return refuse(R::NotThePrefix) };
@@ -266,6 +313,16 @@ impl Kernel {
         }
     }
 
+    /// Where a fold's evidence window closes: `W` from its seal, or — its
+    /// self-demand withdrawn — `W` from the withdrawal, whichever is later.
+    pub(crate) fn open_until(&self, key: &[u8], sealed: u64) -> u64 {
+        let base = window_end(sealed);
+        match self.ledgers.withdrawn.get(key) {
+            Some(h) => base.max(window_end(*h)),
+            None => base,
+        }
+    }
+
     fn seal_challenge(&mut self, c: &SignedChallenge, outcome: u8, evidence: [u8; 32]) -> Option<crate::chronometry::KStepReceipt> {
         let cite = Cite::Challenge { fold: c.challenge.fold(), kind: c.challenge.kind(), outcome, evidence };
         let r = self.seal_step(ActKind::Challenge, [0; 4], c.who, |_| vec![cite.clone()])?;
@@ -315,6 +372,8 @@ impl Kernel {
         for k in &void {
             self.ledgers.folds.remove(k);
             self.ledgers.remaining.remove(k);
+            // 78.126 — the handoff sides it consumed are open again.
+            self.handoffs.unconsume(k);
         }
         for d in &domains {
             if let Some(edges) = self.ledgers.edges.get_mut(d) {
@@ -360,9 +419,9 @@ impl Kernel {
             .scoped()
             .map(|(k, _)| k)
             .filter(|k| {
-                let fold = crate::transducer::address::take_key_bytes(k, &mut 0);
-                let live = fold.as_deref().and_then(|f| self.ledgers.records.get(f)).is_some_and(|r| {
-                    let window = head < window_end(r.sealed) || r.demanded.is_some_and(|d| head < window_end(d));
+                let Some(fold) = crate::transducer::address::take_key_bytes(k, &mut 0) else { return true };
+                let live = self.ledgers.records.get(&fold).is_some_and(|r| {
+                    let window = head < self.open_until(&fold, r.sealed) || r.demanded.is_some_and(|d| head < window_end(d));
                     r.standing == Standing::Open && r.upheld.is_none() && window
                 });
                 !live
@@ -387,15 +446,25 @@ impl Kernel {
                 gone += 1;
             }
         }
-        // Stubs no longer needed: not nettable, named by no unfinished fold.
+        // Stubs no longer needed: not nettable, named by no unfinished fold,
+        // and off the hot line — while the hot line holds its receipt, a fold
+        // with no record and no stub reads PRE-LINE, so its stub stays and it
+        // reads final (the seam :7520 found: a let-go stub misread pre-line).
         let mut named: Keyed<()> = Keyed::new();
         for (_, r) in self.ledgers.records.scoped() {
             for (child, ..) in &r.nets {
                 named.insert(child, ());
             }
         }
-        let spent: Vec<Vec<u8>> =
-            self.ledgers.finals.scoped().map(|(k, _)| k).filter(|k| !self.ledgers.folds.contains(k) && !named.contains(k)).collect();
+        let spent: Vec<Vec<u8>> = self
+            .ledgers
+            .finals
+            .scoped()
+            .map(|(k, _)| k)
+            .filter(|k| {
+                !self.ledgers.folds.contains(k) && !named.contains(k) && Stamp::from_key(k).and_then(|s| self.chain.node(&s)).is_none()
+            })
+            .collect();
         for k in &spent {
             self.ledgers.finals.remove(k);
             gone += 1;
@@ -418,6 +487,8 @@ impl Kernel {
             self.ledgers.remaining.remove(k);
             gone += 1;
         }
+        // 78.126 — handoffs both of whose sides final folds consumed.
+        gone += self.settle_handoffs();
         if gone > 0 {
             self.mark_persist();
         }
@@ -476,7 +547,8 @@ impl Kernel {
             Standing::Unwound => return Finality::Unwound,
             Standing::Open => {}
         }
-        let mut until = window_end(rec.sealed);
+        // A withdrawn self-demand reopened the window: provisional through it.
+        let mut until = self.open_until(key, rec.sealed);
         if let (Some(d), None) = (rec.demanded, rec.upheld) {
             let due = window_end(d);
             if head >= due {

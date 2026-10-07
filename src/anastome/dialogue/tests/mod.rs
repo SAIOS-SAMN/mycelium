@@ -12,4 +12,5 @@ mod refine;
 mod uplink;
 mod domain;
 mod challenge;
+mod handoff;
 mod verdict;

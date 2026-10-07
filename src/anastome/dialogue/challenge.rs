@@ -93,6 +93,12 @@ pub enum Challenge {
     /// The next entries of a streamed publication, continuing its head. The
     /// part whose head reaches the cited prefix completes the replay.
     Part { fold: Stamp, entries: Vec<Entry> },
+    /// 78.125 (the coordinator's ruling) — A SELF-DEMAND WITHDRAWN by the
+    /// fold's own tier, named by the demand's receipt stamp: before any
+    /// default is claimed, once per fold, reopening the evidence window for
+    /// `W` from the withdrawal — sealed, a public record that the tier asked
+    /// for its own second chance.
+    Withdraw { fold: Stamp, demand: Stamp },
 }
 
 impl Challenge {
@@ -105,6 +111,7 @@ impl Challenge {
             Challenge::Correction { .. } => 3,
             Challenge::Open { .. } => 6,
             Challenge::Part { .. } => 7,
+            Challenge::Withdraw { .. } => 9,
         }
     }
 
@@ -116,7 +123,8 @@ impl Challenge {
             | Challenge::Default { fold }
             | Challenge::Correction { fold, .. }
             | Challenge::Open { fold, .. }
-            | Challenge::Part { fold, .. } => *fold,
+            | Challenge::Part { fold, .. }
+            | Challenge::Withdraw { fold, .. } => *fold,
         }
     }
 
@@ -136,6 +144,7 @@ impl Challenge {
                 put_children(out, children);
             }
             Challenge::Part { entries, .. } => put_entries(out, entries),
+            Challenge::Withdraw { demand, .. } => demand.put_canonical(out),
             Challenge::Correction { child, holder, amount, .. } => {
                 crate::transducer::address::put_key_bytes(out, child);
                 out.extend_from_slice(holder);
@@ -166,6 +175,7 @@ impl Challenge {
             }
             6 => Challenge::Open { fold, rows: take_nets(b, p)?, declared: take_nets(b, p)?, children: take_children(b, p)? },
             7 => Challenge::Part { fold, entries: take_entries(b, p)? },
+            9 => Challenge::Withdraw { fold, demand: Stamp::take_canonical(b, p)? },
             _ => return None,
         })
     }
@@ -372,10 +382,15 @@ pub enum ChallengeRefusal {
     Demanded,
     /// A part of a publication this filer never opened for this fold.
     NotOpened,
+    /// A demand withdrawn already: a fold's second chance is one.
+    Withdrawn,
+    /// The stamp names no receipt of a demand on this fold by its own tier:
+    /// only a self-demand is withdrawn, and only by the tier.
+    NotTheDemand,
 }
 
 impl ChallengeRefusal {
-    const ALL: [ChallengeRefusal; 13] = [
+    const ALL: [ChallengeRefusal; 15] = [
         ChallengeRefusal::Unsigned,
         ChallengeRefusal::NoRecord,
         ChallengeRefusal::Closed,
@@ -389,6 +404,8 @@ impl ChallengeRefusal {
         ChallengeRefusal::LineRefused,
         ChallengeRefusal::Demanded,
         ChallengeRefusal::NotOpened,
+        ChallengeRefusal::Withdrawn,
+        ChallengeRefusal::NotTheDemand,
     ];
 
     fn byte(self) -> u8 {
@@ -406,6 +423,8 @@ impl ChallengeRefusal {
             ChallengeRefusal::LineRefused => 10,
             ChallengeRefusal::Demanded => 11,
             ChallengeRefusal::NotOpened => 12,
+            ChallengeRefusal::Withdrawn => 13,
+            ChallengeRefusal::NotTheDemand => 14,
         }
     }
 
@@ -425,6 +444,9 @@ pub enum Challenged {
     /// A streamed publication taken so far, nothing sealed: its line stands
     /// at `head`; the next part continues it.
     Streaming { head: [u8; 32] },
+    /// A self-demand withdrawn, sealed: the evidence window reopened until
+    /// `until` (a height).
+    Reopened { at: Stamp, receipt: [u8; 32], until: u64 },
     /// The fold falsified — by replay or by default — and reversed, with
     /// `unwound` ancestors that netted it returned to provisional.
     Falsified { at: Stamp, receipt: [u8; 32], unwound: u32 },
@@ -481,6 +503,10 @@ pub fn encode_challenge_reply(c: &Challenged) -> Vec<u8> {
             out.push(5);
             out.extend_from_slice(head);
         }
+        Challenged::Reopened { at, receipt, until } => {
+            sealed(&mut out, 6, at, receipt);
+            out.extend_from_slice(&until.to_le_bytes());
+        }
     }
     out
 }
@@ -518,6 +544,11 @@ pub fn decode_challenge_reply(b: &[u8]) -> Option<Challenged> {
             Challenged::Falsified { at, receipt, unwound }
         }
         3 => Challenged::Discharged { at, receipt },
+        6 => {
+            let until = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
+            p += 8;
+            Challenged::Reopened { at, receipt, until }
+        }
         _ => return None,
     };
     (p == b.len()).then_some(c)

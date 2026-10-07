@@ -35,6 +35,7 @@ mod solve;
 mod uplink;
 mod ledger;
 mod challenge;
+mod handoff;
 mod wallet;
 mod why;
 mod winding;

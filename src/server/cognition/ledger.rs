@@ -158,6 +158,10 @@ pub(crate) struct Ledgers {
     /// return parts to it). A final fold is never reversed — its window has
     /// closed and every fold it nets is final — so nothing else is needed.
     pub(crate) finals: Keyed<(Sealed, bool)>,
+    /// 78.125 (the coordinator's ruling) — each fold whose self-demand was
+    /// withdrawn, by its stamp key: the height of the withdrawal, from which
+    /// its evidence window stands reopened `W` — once per fold.
+    pub(crate) withdrawn: Keyed<u64>,
     /// 78.125 — the arbitrages booked, keyed by closing fold and child: the
     /// holder the gain accrues to and its amount on G.
     pub(crate) discharged: Keyed<([u8; 32], i128)>,
@@ -306,7 +310,13 @@ impl Ledgers {
     /// The records, tier heads, edges and discharges (`LEAF_CHALLENGES`);
     /// `None` where none is held.
     pub(crate) fn put_challenges(&self) -> Option<Vec<u8>> {
-        if self.records.is_empty() && self.heads.is_empty() && self.edges.is_empty() && self.discharged.is_empty() && self.finals.is_empty() {
+        if self.records.is_empty()
+            && self.heads.is_empty()
+            && self.edges.is_empty()
+            && self.discharged.is_empty()
+            && self.finals.is_empty()
+            && self.withdrawn.is_empty()
+        {
             return None;
         }
         let mut v = Vec::new();
@@ -382,6 +392,12 @@ impl Ledgers {
             }
             v.push(u8::from(*upheld));
         }
+        // The withdrawals, after the stubs.
+        put_key_count(&mut v, self.withdrawn.len());
+        for (k, h) in self.withdrawn.scoped() {
+            put_key_bytes(&mut v, &k);
+            v.extend_from_slice(&h.to_le_bytes());
+        }
         Some(v)
     }
 
@@ -444,6 +460,14 @@ impl Ledgers {
                 let sealed = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
                 let upheld = take_flag(b, p)?;
                 self.finals.insert(&k, (sealed, upheld));
+            }
+        }
+        // The withdrawals — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = take_key_bytes(b, p)?;
+                let h = take_u64(b, p)?;
+                self.withdrawn.insert(&k, h);
             }
         }
         for d in &domains {

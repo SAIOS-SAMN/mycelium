@@ -436,25 +436,39 @@ impl Kernel {
         let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
         };
-        if let Err(d) = f.fold.continuity() {
+        // 78.126 — the handoff sides it consumes, proved, and their nets: what
+        // crosses the domain's boundary stands with its declared emission.
+        let crossing = match self.sides_of(&f.fold) {
+            Ok(nets) => nets,
+            Err((index, why)) => return Uplinked::HandoffRefused { index, why },
+        };
+        if let Err(d) = f.fold.continuity_with(&crossing) {
             return Uplinked::Discontinuous(d);
         }
         // 78.123 B — a fold netting children is read on the ledger tree.
-        if !f.fold.children.is_empty() {
-            return self.admit_chained(f, domain);
-        }
-        let cite = Cite::Uplink { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash() };
-        match self.seal_step(ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) {
-            Some(r) => {
-                // 78.123 B′, 78.125 — held by its sealed coordinates until a
-                // parent nets all of it, whatever the hot line folds
-                // meanwhile, and recorded for its challenge window.
-                self.hold_admitted(r.stamp, &f.fold, domain, Vec::new());
-                self.mark_persist();
-                Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
+        let reply = match f.fold.children.is_empty() {
+            false => self.admit_chained(f, domain),
+            true => {
+                let cite = Cite::Uplink { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash() };
+                match self.seal_step(ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) {
+                    Some(r) => {
+                        // 78.123 B′, 78.125 — held by its sealed coordinates
+                        // until a parent nets all of it, whatever the hot
+                        // line folds meanwhile, and recorded for its
+                        // challenge window.
+                        self.hold_admitted(r.stamp, &f.fold, domain, Vec::new());
+                        self.mark_persist();
+                        Uplinked::Admitted { at: r.stamp, receipt: r.chain_hash }
+                    }
+                    None => Uplinked::LineRefused,
+                }
             }
-            None => Uplinked::LineRefused,
+        };
+        // Sealed: each side it consumed is spent, once.
+        if let Uplinked::Admitted { at, .. } | Uplinked::Chained { at, .. } = &reply {
+            self.consume_sides(&at.key(), &f.fold.handoffs);
         }
+        reply
     }
 
     /// OK1 — THE COURT'S CYCLE CLOSES BY NAME (78.23 as amended): one
