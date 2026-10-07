@@ -20,3 +20,4 @@ mod speech;
 mod syntropy;
 mod taught;
 mod guest;
+mod certified;

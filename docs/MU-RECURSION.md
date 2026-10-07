@@ -24869,6 +24869,50 @@ withdrawn whole).
 
 *Owed, named:* a minimum bond; per-lane slash weights.
 
+### 78.130 Certified reals: the network's standard math as proven rational enclosures (2026-10-07, the coordinator's request; the operator's split — standard math server-side, custom math client-side)
+
+**Why.** The cosmos port, the life funnel and every domain's physics need
+transcendentals; two domains must compute the SAME value bit for bit, and
+no float may enter (precision is the rule). So the network serves them as
+PROVEN ENCLOSURES: `sdk::certified`, one module every kernel uses alike.
+
+**The carrier.** `Encl { lo, hi }`, exact rationals proved to hold the true
+value; interval arithmetic (`add`, `sub`, `mul`, `square`, `recip`, `div`,
+`scale`) and OUTWARD rounding to the dyadic grid `2^-w` — denominators stay
+powers of two, nothing reads a float, a clock or a thread, so the same
+inputs give the same enclosure on every machine and thread count. `lt`
+decides only on separated bounds.
+
+**The functions**, each with its remainder bound named at its definition:
+`exp` (halved to `|r| ≤ ½`, Taylor, squared back; tail `≤ |t_n|/3`), `ln`
+(`2^k·m`, `2·atanh((m−1)/(m+1))`, tail `≤ t_n/8`), `ln2`, `pi` (Machin; the
+alternating tail by the next term), `sqrt` (integer square roots on the
+grid — exact bounds), `powq` (`exp(e·ln x)`), `sin`/`cos` (reduced by the
+nearest multiple of π/2, Taylor on intervals; Lagrange `M^N/N!`), `lgamma`
+(shifted to `y ≥ w₂/8 + 2`, Stirling with exact Bernoulli numbers; the first
+omitted term bounds it), the regularized lower incomplete gamma `P(a, x)`
+(the series `x^a e^{-x}/Γ(a+1)·Σ x^n/((a+1)…(a+n))`, its geometric tail once
+`x/(a+n+1) ≤ ½`; bounded by its corners, increasing in `x`, decreasing in
+`a`), and `erf = sign·P(½, x²)`.
+
+**The stop.** A series is carried at `w` plus guard bits, its terms
+outward-rounded; it stops when a term's bound falls below `2^-(w₂−8)` —
+eight bits COARSER than the grid, since an outward-rounded term never falls
+below the grid itself — and the remainder is added as `±` that bound. A
+quantity whose value falls near the grid while its multiplier grows (the
+powers of `1/y` against the Bernoulli numbers) is kept EXACT, never
+rounded: rounded, its own rounding would dominate it.
+
+Proved (`sdk::tests::certified`): π, e, ln 2, √2, sin 1, cos 1, lnΓ(½),
+erf 1 and P(1, 1) = 1 − 1/e each enclosed and no wider than `2^-60` at 64
+bits; `exp∘ln` and `ln∘exp` close; Γ(1) = Γ(2) = 1 and lnΓ(x+1) − lnΓ(x) ∋
+ln x; sin² + cos² ∋ 1 through the reduction; erf odd; P increasing in `x`
+and P(1, 40) within `2^-50` of one; the same enclosures on another thread.
+
+*Owed, named:* the continued fraction for `P` at large `x` (the series is
+`O(x)` terms); `atan`/`asin` and the inverse incomplete gamma if the cosmos
+port asks.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
