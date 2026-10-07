@@ -472,6 +472,9 @@ impl Kernel {
         // Sealed: each side it consumed is spent, once.
         if let Uplinked::Admitted { at, .. } | Uplinked::Chained { at, .. } = &reply {
             self.consume_sides(&at.key(), &f.fold.handoffs);
+            // 78.127 — the reserve tier's fold is its era anchor: a pending
+            // redesignation holds from here.
+            self.anchor_passed(&f.fold.tier, &domain);
         }
         reply
     }

@@ -62,3 +62,32 @@ fn every_handoff_act_and_answer_read_back_whole() {
     let refused = Uplinked::HandoffRefused { index: 2, why: SideRefusal::Consumed };
     assert_eq!(decode_uplink_reply(&encode_uplink_reply(&refused)), Some(refused));
 }
+
+/// 78.127 — conversions out and in, and the reserve's designation, read back
+/// whole; `rate · g` exact or none; a genesis frame still reads as a genesis.
+#[test]
+fn every_conversion_and_the_reserve_read_back_whole() {
+    use crate::anastome::dialogue::domain::{decode_domain_reply, decode_domain_request, encode_domain, encode_domain_reply, encode_reservation, DomainGenesis, DomainRequest, Founded, Reservation};
+    let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
+    let out = ConvertOut { tier: [1u8; 32], holder: [2u8; 32], identity: [3u8; 32], g: 10, rate: [(1, 2), (0, 1), (3, 5), (0, 1)], nonce: [4u8; 32] };
+    assert_eq!(out.mu(), Some([5, 0, 6, 0]));
+    assert_eq!(ConvertOut { rate: [(1, 3), (0, 1), (0, 1), (0, 1)], ..out.clone() }.mu(), None, "10/3 is no integer");
+    assert_eq!(ConvertOut { g: 0, ..out.clone() }.mu(), None);
+    let inn = ConvertIn { holder: [2u8; 32], tier: [1u8; 32], identity: [3u8; 32], g: 7, mu: [3, 0, 0, 0], nonce: [9u8; 32] };
+    assert_ne!(out.id(), inn.id());
+    for h in [Handoff::ConvertOut(Box::new(out)), Handoff::ConvertIn(Box::new(inn))] {
+        let signed = h.sign(&key);
+        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    }
+    for r in [HandoffRefusal::NotReserve, HandoffRefusal::ReserveShort, HandoffRefusal::Inexact, HandoffRefusal::HolderShort] {
+        assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));
+    }
+    let reserve = Reservation { domain: [6u8; 32], tier: [1u8; 32], nonce: [0u8; 32] }.sign(&key);
+    assert_eq!(decode_domain_request(&encode_reservation(&reserve)), Some(DomainRequest::Reserve(reserve)));
+    let genesis = DomainGenesis { domain: [6u8; 32], tiers: vec![[1u8; 32]] }.sign(&key);
+    assert_eq!(decode_domain_request(&encode_domain(&genesis)), Some(DomainRequest::Genesis(genesis)), "a genesis reads as it did");
+    let at = Stamp { h: 2, vk: [8u8; 32], k: 1, i: 0 };
+    for f in [Founded::Reserved { at, receipt: [1u8; 32], now: false }, Founded::NotATier, Founded::NotFounded] {
+        assert_eq!(decode_domain_reply(&encode_domain_reply(&f)), Some(f.clone()));
+    }
+}

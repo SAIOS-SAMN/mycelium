@@ -24720,6 +24720,60 @@ standing restores), `handoff::a_handoff_refused_or_expired_returns_to_the_sender
 *Owed, named:* the cross-court handshake; charters; the tier's list of
 open handoffs (a read by id stands).
 
+### 78.127 2(e): μ conversion against a domain's reserve — never minted by a rate (2026-10-07, the coordinator's rulings) — LAYOUT-CHANGE, WIRE-CHANGE
+
+**Why.** μ exists only as the hypha makes it — allocations and POW++
+earnings, four lanes, never summed — and moves only key to key, Σ = 0
+(`Treasury::pay`, `hold`, `release_held`, `refund_held`, `burn`). The
+ancients build their own currencies and pay traversal in μ with FX
+reserves (the operator); so CONVERSION is an exchange against μ the
+ancients actually hold, never a mint: a rate can be anything they choose —
+it is their FX — but no rate prints μ.
+
+**The reserve.** One RESERVE TIER per domain, designated by the domain's
+key (a sub-kind of `ACT_DOMAIN`, marked by `0x80 0x00` where a genesis
+writes its tier count — an over-long count no genesis writes, so every
+genesis frame reads as it did), a tier its genesis names, sealed by
+`Cite::Reserve` (tag 10). A domain's first designation holds at once; a
+REDESIGNATION from the current reserve tier's next admitted fold — its era
+anchor — never mid-era. Its μ balance on this court IS the reserve; "the
+ancients only" is the court's to enforce (xylarium's is ancient-houses).
+
+**Conversion** (sub-kinds of `ACT_HANDOFF`: a conversion is a handoff
+between a domain and the μ ledger):
+- *Out* (kind 5), single act, signed by the reserve tier: game value `g`
+  leaves the in-game holder (`identity`) and μ `rate[l] · g` — exact and
+  integral on every lane, or refused; rounding is the ancients' to declare
+  on G — is paid from the reserve to the holder's key, only where the
+  reserve holds it (`ReserveShort` otherwise).
+- *In* (kind 6), two-phase: the μ holder offers `mu` (held from its
+  balance) for `g` arriving to its in-game identity; the reserve tier
+  accepts whole (the μ enters the reserve) or refuses, or it expires past
+  `W` (the holder's claim) — refunded.
+- Each G side names the IN-GAME HOLDER (who converted; the reserve is only
+  the μ counterparty) and is consumed ONCE by the reserve tier's fold, as a
+  handoff side (`TierFold.handoffs`): continuity holds on the game side, Σ
+  = 0 on the μ side. A resend answers with its original receipt.
+
+**The slash** (hook, wired, moving nothing until bonds price it): a
+falsified fold's tier forfeits `slash_of(tier)` from its domain's reserve —
+HALF the challenger's bounty (challenges need a reason to be filed), HALF
+RETIRED from supply (POWR, the third leg of POW++), an odd unit to
+retirement.
+
+**Layout.** Reserves after the domains in `LEAF_DOMAINS`; conversions after
+the offers' receipts in `LEAF_HANDOFFS` (earlier leaves read).
+
+Proved: `convert::a_domains_reserve_is_designated_by_its_key_and_redesignated_at_the_anchor`,
+`convert::a_conversion_out_pays_from_the_reserve_and_never_mints` (Σ = 0,
+a resend pays once), `convert::a_conversion_in_is_held_until_the_reserve_answers`,
+and the wire's `every_conversion_and_the_reserve_read_back_whole` (a
+genesis still reads as a genesis).
+
+*Owed, named:* bonds (what the slash forfeits); wormhole tolls (μ
+transfers from traversers to the keeping ancients' reserve, no conversion);
+a read of a domain's reserve tier and balance.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

@@ -97,6 +97,92 @@ pub fn decode_domain(b: &[u8]) -> Option<SignedDomain> {
     (p == rest.len()).then_some(SignedDomain { genesis: DomainGenesis { domain, tiers }, sig })
 }
 
+/// 78.127 — THE DOMAIN'S RESERVE TIER DESIGNATED (2(e), the coordinator's
+/// rulings): the one tier of the domain whose μ balance on this court is its
+/// RESERVE — the only tier that converts game value against μ, and the one a
+/// falsified fold's slash draws from. Signed by the domain's key; a domain
+/// with none takes it at once, a redesignation from the reserve tier's next
+/// admitted fold (its era anchor), never mid-era.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Reservation {
+    pub domain: [u8; 32],
+    pub tier: [u8; 32],
+    pub nonce: [u8; 32],
+}
+
+const RESERVE: &[u8] = b"mycelium domain reserve v1";
+
+/// A SUB-KIND OF ACT_DOMAIN, marked where a genesis writes its tier count by
+/// a count no genesis can write — `0x80 0x00`, an over-long spelling the key
+/// count refuses — so every genesis frame reads as it did, and an older
+/// reader refuses a designation by name.
+const SUB_KIND: [u8; 2] = [0x80, 0x00];
+const KIND_RESERVE: u8 = 1;
+
+impl Reservation {
+    pub fn signed_bytes(&self) -> Vec<u8> {
+        let mut out = RESERVE.to_vec();
+        for k in [&self.domain, &self.tier, &self.nonce] {
+            out.extend_from_slice(k);
+        }
+        out
+    }
+
+    pub fn sign(self, key: &ed25519_dalek::SigningKey) -> SignedReservation {
+        use ed25519_dalek::Signer;
+        let sig = key.sign(&self.signed_bytes()).to_bytes();
+        SignedReservation { reservation: self, sig }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct SignedReservation {
+    pub reservation: Reservation,
+    pub sig: [u8; 64],
+}
+
+/// `[ACT_DOMAIN][domain 32][0x80 0x00][1][tier 32][nonce 32][sig 64]`.
+pub fn encode_reservation(r: &SignedReservation) -> Vec<u8> {
+    let mut out = vec![super::ACT_DOMAIN];
+    out.extend_from_slice(&r.reservation.domain);
+    out.extend_from_slice(&SUB_KIND);
+    out.push(KIND_RESERVE);
+    out.extend_from_slice(&r.reservation.tier);
+    out.extend_from_slice(&r.reservation.nonce);
+    out.extend_from_slice(&r.sig);
+    out
+}
+
+/// WHAT AN ACT_DOMAIN FRAME ASKS.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum DomainRequest {
+    Genesis(SignedDomain),
+    Reserve(SignedReservation),
+}
+
+/// The request a frame carries, read whole, or none.
+pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
+    let rest = b.strip_prefix(&[super::ACT_DOMAIN])?;
+    if rest.get(32..34) != Some(&SUB_KIND[..]) {
+        return decode_domain(b).map(DomainRequest::Genesis);
+    }
+    let domain: [u8; 32] = rest.get(..32)?.try_into().ok()?;
+    let mut p = 34;
+    if *rest.get(p)? != KIND_RESERVE {
+        return None;
+    }
+    p += 1;
+    let mut key = || -> Option<[u8; 32]> {
+        let k: [u8; 32] = rest.get(p..p + 32)?.try_into().ok()?;
+        p += 32;
+        Some(k)
+    };
+    let (tier, nonce) = (key()?, key()?);
+    let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
+    p += 64;
+    (p == rest.len()).then_some(DomainRequest::Reserve(SignedReservation { reservation: Reservation { domain, tier, nonce }, sig }))
+}
+
 /// WHAT THE COURT ANSWERED a domain's genesis.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Founded {
@@ -113,6 +199,13 @@ pub enum Founded {
     TierHeld,
     /// The court's line could not take it.
     LineRefused,
+    /// 78.127 — the reserve designated: sealed, and whether it holds now (a
+    /// domain's first) or from its current reserve tier's next fold.
+    Reserved { at: Stamp, receipt: [u8; 32], now: bool },
+    /// 78.127 — the tier is not one the domain's genesis names.
+    NotATier,
+    /// 78.127 — no such domain is founded on this court.
+    NotFounded,
 }
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
@@ -130,6 +223,14 @@ pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
         Founded::AlreadyFounded => out.push(3),
         Founded::TierHeld => out.push(4),
         Founded::LineRefused => out.push(5),
+        Founded::Reserved { at, receipt, now } => {
+            out.push(6);
+            at.put_canonical(&mut out);
+            out.extend_from_slice(receipt);
+            out.push(u8::from(*now));
+        }
+        Founded::NotATier => out.push(7),
+        Founded::NotFounded => out.push(8),
     }
     out
 }
@@ -150,6 +251,19 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
         3 => Founded::AlreadyFounded,
         4 => Founded::TierHeld,
         5 => Founded::LineRefused,
+        6 => {
+            let at = Stamp::take_canonical(b, &mut p)?;
+            let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            let now = match *b.get(p + 32)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            p += 33;
+            Founded::Reserved { at, receipt, now }
+        }
+        7 => Founded::NotATier,
+        8 => Founded::NotFounded,
         _ => return None,
     };
     (p == b.len()).then_some(f)

@@ -113,18 +113,27 @@ impl Kernel {
             // 78.120 — the domains founded here, each with its tier keys; a home
             // written before any domain (or before 78.120) carries none.
             if let Some(v) = leaf(leaves, LEAF_DOMAINS) {
-                let domains = whole(v, |b, p| {
+                let (domains, reserves) = whole(v, |b, p| {
                     let n = crate::transducer::address::take_key_count(b, p)?;
-                    (0..n)
+                    let domains = (0..n)
                         .map(|_| {
                             let w: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
                             *p += 32;
                             Some((w, crate::anastome::dialogue::domain::take_keys(b, p)?))
                         })
-                        .collect::<Option<Vec<_>>>()
+                        .collect::<Option<Vec<_>>>()?;
+                    // 78.127 — the reserves, after the domains where any is held.
+                    let reserves = match *p < b.len() {
+                        true => super::super::convert::take_reserves(b, p)?,
+                        false => Vec::new(),
+                    };
+                    Some((domains, reserves))
                 })?;
                 for (w, tiers) in domains {
                     kernel.hold_domain(w, tiers);
+                }
+                for (w, r) in reserves {
+                    kernel.reserves.insert(w, r);
                 }
             }
             // 78.123 B — the ledger trees; a home written before any chained

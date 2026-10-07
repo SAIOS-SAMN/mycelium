@@ -176,6 +176,10 @@ impl Kernel {
                 v.extend_from_slice(w);
                 crate::anastome::dialogue::domain::put_keys(&mut v, tiers);
             }
+            // 78.127 — the domains' reserves, after them (none: none written).
+            if !self.reserves.is_empty() {
+                super::super::convert::put_reserves(&mut v, &self.reserves);
+            }
             leaves.push((LEAF_DOMAINS, v));
         }
         // 78.123 B — the ledger trees, where any is held.

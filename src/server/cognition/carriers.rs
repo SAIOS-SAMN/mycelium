@@ -173,6 +173,7 @@ impl Kernel {
             ledgers,
             replays,
             handoffs,
+            reserves,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
         // 78.120 — the domains founded here and their tier index.
@@ -194,6 +195,9 @@ impl Kernel {
         // 78.126 — the handoffs held, and the folds' consumed sides.
         c.count("handoffs.held", handoffs.held.len());
         c.count("handoffs.consumed_by", handoffs.consumed_by.len());
+        // 78.127 — the conversions held and the domains' reserves.
+        c.count("handoffs.conversions", handoffs.conversions.len());
+        c.count("reserves", reserves.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

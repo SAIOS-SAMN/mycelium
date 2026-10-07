@@ -416,6 +416,9 @@ pub struct Kernel {
     /// sides each fold consumed — persisted on the court's own node
     /// (`LEAF_HANDOFFS`).
     pub(crate) handoffs: super::handoff::Handoffs,
+    /// 78.127 — EACH DOMAIN'S RESERVE TIER, and a redesignation pending
+    /// until its next fold — persisted after the domains (`LEAF_DOMAINS`).
+    pub(crate) reserves: crate::network::nerve::Keyed<super::convert::Reserve>,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

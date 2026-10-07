@@ -154,6 +154,138 @@ pub enum Handoff {
     Refuse { id: [u8; 32] },
     /// The sender claims it returned, its window passed unanswered.
     Expire { id: [u8; 32] },
+    /// 78.127 — μ OUT of a domain's reserve, against game value leaving.
+    ConvertOut(Box<ConvertOut>),
+    /// 78.127 — μ INTO a domain's reserve, for game value arriving: offered
+    /// by the holder, answered by the reserve tier (accept, refuse, expire).
+    ConvertIn(Box<ConvertIn>),
+}
+
+/// 78.127 — A CONVERSION OUT (2(e), the coordinator's rulings): signed by
+/// the domain's RESERVE tier, the game value `g` (on G) its in-game holder
+/// `identity` gives up, and the μ it receives on the court — `rate[l] · g` on
+/// every μ lane, exact and integral — paid from the reserve to the holder's
+/// key `holder`. A rate never mints μ: the reserve must hold it.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConvertOut {
+    pub tier: [u8; 32],
+    pub holder: [u8; 32],
+    pub identity: [u8; 32],
+    pub g: i128,
+    pub rate: [(u64, u64); 4],
+    pub nonce: [u8; 32],
+}
+
+/// 78.127 — A CONVERSION IN, offered by the μ holder: its `mu`, held from its
+/// balance until the reserve tier answers, for the game value `g` its
+/// in-game `identity` receives.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ConvertIn {
+    pub holder: [u8; 32],
+    pub tier: [u8; 32],
+    pub identity: [u8; 32],
+    pub g: i128,
+    pub mu: [u64; 4],
+    pub nonce: [u8; 32],
+}
+
+fn key32(b: &[u8], p: &mut usize) -> Option<[u8; 32]> {
+    let k: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+    *p += 32;
+    Some(k)
+}
+
+fn u64_at(b: &[u8], p: &mut usize) -> Option<u64> {
+    let v = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+    *p += 8;
+    Some(v)
+}
+
+fn i128_at(b: &[u8], p: &mut usize) -> Option<i128> {
+    let v = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
+    *p += 16;
+    Some(v)
+}
+
+impl ConvertOut {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for k in [&self.tier, &self.holder, &self.identity] {
+            out.extend_from_slice(k);
+        }
+        out.extend_from_slice(&self.g.to_le_bytes());
+        for (n, d) in self.rate {
+            out.extend_from_slice(&n.to_le_bytes());
+            out.extend_from_slice(&d.to_le_bytes());
+        }
+        out.extend_from_slice(&self.nonce);
+        out
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<ConvertOut> {
+        let (tier, holder, identity) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
+        let g = i128_at(b, p)?;
+        let mut rate = [(0u64, 1u64); 4];
+        for r in &mut rate {
+            *r = (u64_at(b, p)?, u64_at(b, p)?);
+        }
+        Some(ConvertOut { tier, holder, identity, g, rate, nonce: key32(b, p)? })
+    }
+
+    /// Its id: the hash of its one writing, under its own domain.
+    pub fn id(&self) -> [u8; 32] {
+        let mut b = b"convert out".to_vec();
+        b.extend_from_slice(&self.bytes());
+        crate::chronometry::payload_hash(&b)
+    }
+
+    /// The μ it pays on each lane, `rate · g` — `None` where a rate has a
+    /// zero denominator, `g` is not positive, or a lane is not an exact
+    /// integer that a lane carries.
+    pub fn mu(&self) -> Option<[u64; 4]> {
+        let g = u128::try_from(self.g).ok().filter(|g| *g > 0)?;
+        let mut mu = [0u64; 4];
+        for (m, (n, d)) in mu.iter_mut().zip(self.rate) {
+            let num = u128::from(n).checked_mul(g)?;
+            let d = u128::from(d);
+            if d == 0 || num % d != 0 {
+                return None;
+            }
+            *m = u64::try_from(num / d).ok()?;
+        }
+        Some(mu)
+    }
+}
+
+impl ConvertIn {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for k in [&self.holder, &self.tier, &self.identity] {
+            out.extend_from_slice(k);
+        }
+        out.extend_from_slice(&self.g.to_le_bytes());
+        for m in self.mu {
+            out.extend_from_slice(&m.to_le_bytes());
+        }
+        out.extend_from_slice(&self.nonce);
+        out
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<ConvertIn> {
+        let (holder, tier, identity) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
+        let g = i128_at(b, p)?;
+        let mut mu = [0u64; 4];
+        for m in &mut mu {
+            *m = u64_at(b, p)?;
+        }
+        Some(ConvertIn { holder, tier, identity, g, mu, nonce: key32(b, p)? })
+    }
+
+    pub fn id(&self) -> [u8; 32] {
+        let mut b = b"convert in".to_vec();
+        b.extend_from_slice(&self.bytes());
+        crate::chronometry::payload_hash(&b)
+    }
 }
 
 impl Handoff {
@@ -163,6 +295,8 @@ impl Handoff {
             Handoff::Accept { .. } => 1,
             Handoff::Refuse { .. } => 2,
             Handoff::Expire { .. } => 3,
+            Handoff::ConvertOut(_) => 5,
+            Handoff::ConvertIn(_) => 6,
         }
     }
 
@@ -170,6 +304,8 @@ impl Handoff {
         match self {
             Handoff::Offer(o) => out.extend_from_slice(&o.bytes()),
             Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } => out.extend_from_slice(id),
+            Handoff::ConvertOut(c) => out.extend_from_slice(&c.bytes()),
+            Handoff::ConvertIn(c) => out.extend_from_slice(&c.bytes()),
         }
     }
 
@@ -178,6 +314,8 @@ impl Handoff {
         match self {
             Handoff::Offer(o) => o.id(),
             Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } => *id,
+            Handoff::ConvertOut(c) => c.id(),
+            Handoff::ConvertIn(c) => c.id(),
         }
     }
 
@@ -260,6 +398,8 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                 1 => Handoff::Accept { id: id(b, &mut p)? },
                 2 => Handoff::Refuse { id: id(b, &mut p)? },
                 3 => Handoff::Expire { id: id(b, &mut p)? },
+                5 => Handoff::ConvertOut(Box::new(ConvertOut::take(b, &mut p)?)),
+                6 => Handoff::ConvertIn(Box::new(ConvertIn::take(b, &mut p)?)),
                 _ => return None,
             };
             let sig: [u8; 64] = b.get(p..p + 64)?.try_into().ok()?;
@@ -289,6 +429,16 @@ pub enum HandoffRefusal {
     /// Accepted or refused past its window; or expiry claimed before it closed.
     Window,
     LineRefused,
+    /// 78.127 — a conversion by, or to, a tier that is not its domain's
+    /// designated reserve.
+    NotReserve,
+    /// 78.127 — the reserve holds less μ than the conversion pays, on a lane.
+    ReserveShort,
+    /// 78.127 — `rate · g` is not an exact integer on every lane, or `g` is
+    /// not positive: rounding is the ancients' to declare on G.
+    Inexact,
+    /// 78.127 — the holder holds less μ than it offers.
+    HolderShort,
 }
 
 /// THE COURT'S ANSWER.
@@ -342,6 +492,10 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::Answered => [10, 0],
         HandoffRefusal::Window => [11, 0],
         HandoffRefusal::LineRefused => [12, 0],
+        HandoffRefusal::NotReserve => [13, 0],
+        HandoffRefusal::ReserveShort => [14, 0],
+        HandoffRefusal::Inexact => [15, 0],
+        HandoffRefusal::HolderShort => [16, 0],
     }
 }
 
@@ -372,6 +526,10 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         10 => HandoffRefusal::Answered,
         11 => HandoffRefusal::Window,
         12 => HandoffRefusal::LineRefused,
+        13 => HandoffRefusal::NotReserve,
+        14 => HandoffRefusal::ReserveShort,
+        15 => HandoffRefusal::Inexact,
+        16 => HandoffRefusal::HolderShort,
         _ => return None,
     })
 }

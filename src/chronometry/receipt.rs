@@ -378,6 +378,9 @@ pub enum Cite {
     /// of its offer's one writing, which the court holds while a side is
     /// open) and the act's kind — offered, accepted, refused, expired.
     Handoff { id: [u8; 32], kind: u8 },
+    /// 78.127 — A DOMAIN'S RESERVE TIER DESIGNATED, by its keys: the domain
+    /// and the tier.
+    Reserve { domain: [u8; 32], tier: [u8; 32] },
     /// 78.120 — A DOMAIN'S GENESIS, by its keys (coordinates, as a class's
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
@@ -397,6 +400,7 @@ impl Cite {
             | Cite::Chained { .. }
             | Cite::Challenge { .. }
             | Cite::Handoff { .. }
+            | Cite::Reserve { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -412,6 +416,7 @@ impl Cite {
             | Cite::Chained { .. }
             | Cite::Challenge { .. }
             | Cite::Handoff { .. }
+            | Cite::Reserve { .. }
             | Cite::Domain { .. } => None,
         }
     }
@@ -467,6 +472,11 @@ impl Cite {
                 rec.extend_from_slice(id);
                 rec.push(*kind);
             }
+            Cite::Reserve { domain, tier } => {
+                rec.push(10);
+                rec.extend_from_slice(domain);
+                rec.extend_from_slice(tier);
+            }
             Cite::Domain { domain, tiers } => {
                 rec.push(6);
                 rec.extend_from_slice(domain);
@@ -492,6 +502,7 @@ impl Cite {
                     | Cite::Chained { .. }
                     | Cite::Challenge { .. }
                     | Cite::Handoff { .. }
+                    | Cite::Reserve { .. }
                     | Cite::Domain { .. } => {}
                 }
                 match cover {
@@ -572,6 +583,12 @@ impl Cite {
                 let kind = *b.get(*p + 32)?;
                 *p += 33;
                 Some(Cite::Handoff { id, kind })
+            }
+            10 => {
+                let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                let tier: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
+                *p += 64;
+                Some(Cite::Reserve { domain, tier })
             }
             6 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

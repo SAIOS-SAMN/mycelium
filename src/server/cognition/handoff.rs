@@ -38,6 +38,8 @@ pub(crate) struct Handoffs {
     /// Each held offer's receipt, by the handoff's id — so a resent offer is
     /// answered with its original receipt and nothing is sealed twice.
     pub(crate) offered_at: Keyed<Vec<u8>>,
+    /// 78.127 — each conversion by its id, held while its G side is open.
+    pub(crate) conversions: Keyed<super::convert::Conversion>,
 }
 
 /// The nets a side carries into its consuming fold: OUT, what leaves; IN
@@ -55,7 +57,14 @@ impl Handoffs {
     /// fold that consumed none.
     pub(crate) fn crossing(&self, fold: &[u8]) -> Vec<Net> {
         let Some(refs) = self.consumed_by.get(fold) else { return Vec::new() };
-        refs.iter().filter_map(|(id, side)| self.held.get(id).map(|h| side_nets(h, *side))).flatten().collect()
+        refs.iter()
+            .filter_map(|(id, side)| match (self.held.get(id), self.conversions.get(id)) {
+                (Some(h), _) => Some(side_nets(h, *side)),
+                (None, Some(c)) => Some(c.nets()),
+                (None, None) => None,
+            })
+            .flatten()
+            .collect()
     }
 
     /// The sides a reversed fold consumed, open again.
@@ -68,12 +77,15 @@ impl Handoffs {
                     Side::In => h.inn = None,
                 }
             }
+            if let Some(c) = self.conversions.get_mut(&id) {
+                c.side = None;
+            }
         }
     }
 
     /// The state written by its own coordinates; `None` where none is held.
     pub(crate) fn put(&self) -> Option<Vec<u8>> {
-        if self.held.is_empty() && self.consumed_by.is_empty() && self.offered_at.is_empty() {
+        if self.held.is_empty() && self.consumed_by.is_empty() && self.offered_at.is_empty() && self.conversions.is_empty() {
             return None;
         }
         let mut v = Vec::new();
@@ -114,6 +126,12 @@ impl Handoffs {
         for (id, at) in self.offered_at.scoped() {
             v.extend_from_slice(&id);
             put_key_bytes(&mut v, at);
+        }
+        // 78.127 — the conversions, after the offers' receipts.
+        put_key_count(&mut v, self.conversions.len());
+        for (id, c) in self.conversions.scoped() {
+            v.extend_from_slice(&id);
+            c.put(&mut v);
         }
         Some(v)
     }
@@ -175,6 +193,13 @@ impl Handoffs {
                 out.offered_at.insert(k, at);
             }
         }
+        // The conversions — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.conversions.insert(k, super::convert::Conversion::take(b, p)?);
+            }
+        }
         Some(out)
     }
 }
@@ -191,8 +216,15 @@ impl Kernel {
             return refuse(R::Unsigned);
         }
         let id = h.handoff.id();
+        // 78.127 — a conversion, or an answer to one, is the convert path.
+        let answers_conversion = matches!(h.handoff, Handoff::Accept { .. } | Handoff::Refuse { .. } | Handoff::Expire { .. })
+            && self.handoffs.conversions.contains(&id);
+        if matches!(h.handoff, Handoff::ConvertOut(_) | Handoff::ConvertIn(_)) || answers_conversion {
+            return self.convert(h);
+        }
         let head = self.chain.head_height();
         let state = match &h.handoff {
+            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) => return refuse(R::Unknown),
             Handoff::Offer(o) => {
                 if h.who != o.from_tier {
                     return refuse(R::NotTheTier);
@@ -239,6 +271,7 @@ impl Kernel {
             Handoff::Accept { .. } => 1,
             Handoff::Refuse { .. } => 2,
             Handoff::Expire { .. } => 3,
+            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) => return refuse(R::Unknown),
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
@@ -265,6 +298,13 @@ impl Kernel {
     /// 78.126 — A HANDOFF'S STANDING: its state and whether each side is
     /// consumed. Sealing nothing.
     pub fn handoff_read(&self, id: &[u8; 32]) -> Option<(State, bool, bool)> {
+        if let Some(c) = self.handoffs.conversions.get(id) {
+            let taken = c.side.is_some();
+            return Some(match c.side_kind() {
+                Side::Out => (c.state, taken, false),
+                Side::In => (c.state, false, taken),
+            });
+        }
         let h = self.handoffs.held.get(id)?;
         Some((h.state, h.out.is_some(), h.inn.is_some()))
     }
@@ -278,6 +318,21 @@ impl Kernel {
             let index = super::ledger::count(i);
             if fold.handoffs[..i].contains(&(*id, *side)) {
                 return Err((index, SideRefusal::Repeated));
+            }
+            // 78.127 — a conversion's G side: the reserve tier's, OUT for μ
+            // paid out, IN for μ accepted in — never while an offer in stands.
+            if let Some(c) = self.handoffs.conversions.get(id) {
+                if c.tier != fold.tier || c.side_kind() != *side {
+                    return Err((index, SideRefusal::NotYours));
+                }
+                if c.state != State::Accepted {
+                    return Err((index, SideRefusal::NotYet));
+                }
+                if c.side.is_some() {
+                    return Err((index, SideRefusal::Consumed));
+                }
+                nets.extend(c.nets());
+                continue;
             }
             let Some(h) = self.handoffs.held.get(id) else { return Err((index, SideRefusal::Unknown)) };
             let (owner, taken) = match (side, h.state) {
@@ -310,6 +365,9 @@ impl Kernel {
                     Side::In => h.inn = Some(fold.to_vec()),
                 }
             }
+            if let Some(c) = self.handoffs.conversions.get_mut(id) {
+                c.side = Some(fold.to_vec());
+            }
         }
         self.handoffs.consumed_by.insert(fold, refs.to_vec());
     }
@@ -327,9 +385,20 @@ impl Kernel {
             self.handoffs.held.remove(k);
             self.handoffs.offered_at.remove(k);
         }
+        // 78.127 — a conversion whose side a final fold consumed, or returned.
+        let converted: Vec<Vec<u8>> = self
+            .handoffs
+            .conversions
+            .scoped()
+            .filter(|(_, c)| settled(&c.side) || c.state == State::Returned)
+            .map(|(k, _)| k)
+            .collect();
         for k in &spent {
             self.handoffs.consumed_by.remove(k);
         }
-        done.len() + spent.len()
+        for k in &converted {
+            self.handoffs.conversions.remove(k);
+        }
+        done.len() + spent.len() + converted.len()
     }
 }
