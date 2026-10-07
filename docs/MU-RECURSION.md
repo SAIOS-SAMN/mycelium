@@ -24928,10 +24928,12 @@ acos(−1) = π; F(0) = 1, F(1/10) by its small-x series, the two series
 meeting across x = 1 (F(0.99) − F(1) ≈ 0.000896 by F′), F(30) by its first
 term; the λ = 3 quantiles at the CDF's steps.
 
-*Owed, named:* the continued fraction for `P` at large `x` (the series is
-`O(x)` terms) — its truncation bound is the coordinator's to confirm before
-it is built (the Legendre fraction brackets only where its partial
-numerators are positive, `n > a`).
+**P at large x, ruled (the coordinator): the series is kept** — the funnel's
+`x` (a time span over a rung-wait scale) stays well under `10⁴` — and `P`
+is REFUSED past the stated cap `P_SERIES_CAP = 10⁴`, never run unbounded.
+`erf` past it (`v² > 10⁴`) is the proven `[1 − 2^{−w}, 1]`, since `erfc|v| ≤
+e^{−v²}/(|v|√π) < e^{−10⁴} < 2^{−w}` for every `w < 14 000`. Nothing else is
+owed on certified math for now.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

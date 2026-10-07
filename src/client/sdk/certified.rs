@@ -487,6 +487,11 @@ fn gamma_p_point(a: &Q, x: &Q, w: u32) -> Option<Encl> {
     if !a.is_positive() || x.is_negative() {
         return None;
     }
+    // The series takes O(x) terms: past the cap it is refused, never run
+    // unbounded (the coordinator's ruling: the funnel's x stay well under).
+    if x > &q(P_SERIES_CAP) {
+        return None;
+    }
     if x.is_zero() {
         return Some(Encl::exact(Q::zero()));
     }
@@ -523,9 +528,22 @@ pub fn gamma_p(a: &Encl, x: &Encl, w: u32) -> Option<Encl> {
     Encl::new(lo, hi)
 }
 
-/// `erf v = sign(v)·P(½, v²)` at an exact point.
+/// THE CAP on `P`'s series argument: `x ≤ 10⁴`, past which `P` is refused.
+pub const P_SERIES_CAP: i64 = 10_000;
+
+/// `erf v = sign(v)·P(½, v²)` at an exact point. Past the series cap (`v² >
+/// 10⁴`), `1 − erf|v| = erfc|v| ≤ e^{−v²}/(|v|√π) < e^{−10⁴} < 2^{−w}` for
+/// every `w < 14 000`: the enclosure `[1 − 2^{−w}, 1]`, proved, not run.
 fn erf_point(v: &Q, w: u32) -> Option<Encl> {
-    let p = gamma_p_point(&Q::new(BigInt::one(), BigInt::from(2)), &(v * v), w)?;
+    let v2 = v * v;
+    if v2 > q(P_SERIES_CAP) {
+        if w >= 14_000 {
+            return None;
+        }
+        let near = Encl { lo: Q::one() - Q::new(BigInt::one(), pow2(w)), hi: Q::one() };
+        return Some(if v.is_negative() { near.neg() } else { near });
+    }
+    let p = gamma_p_point(&Q::new(BigInt::one(), BigInt::from(2)), &v2, w)?;
     Some(if v.is_negative() { p.neg() } else { p })
 }
 

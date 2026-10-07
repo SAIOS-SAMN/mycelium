@@ -84,6 +84,11 @@ fn the_incomplete_gamma_is_monotone_and_tends_to_one() {
     assert!(far.lo > Q::one() - Q::new(BigInt::one(), BigInt::one() << 50u32), "P(1, 40) = 1 − e^-40");
     assert!(far.hi <= Q::one());
     assert_eq!(gamma_p(&a, &point(Q::zero()), W).expect(""), point(Q::zero()));
+    // Past the series cap: refused, never run unbounded; erf proved by its tail.
+    assert_eq!(gamma_p(&a, &point(q(P_SERIES_CAP + 1, 1)), W), None, "refused past the cap");
+    let big = erf(&point(q(101, 1)), W).expect("erf past the cap");
+    assert!(big.contains(&Q::one()) && big.width() <= Q::new(BigInt::one(), BigInt::one() << 64u32), "erf 101 within 2^-64 of one");
+    assert_eq!(erf(&point(q(-101, 1)), W).expect(""), big.neg());
 }
 
 #[test]
