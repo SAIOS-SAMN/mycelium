@@ -404,6 +404,10 @@ pub struct Kernel {
     /// Each tier key and the domain whose genesis names it: re-derived from
     /// `domains` wherever it changes or is restored, never persisted (law 12).
     pub(crate) tier_domain: crate::network::nerve::Keyed<[u8; 32]>,
+    /// 78.123 B — THE LEDGER TREES: per child fold what remains of it, per
+    /// domain its rates gauge and its open obstructions — persisted on the
+    /// court's own node (`LEAF_LEDGERS`).
+    pub(crate) ledgers: super::ledger::Ledgers,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

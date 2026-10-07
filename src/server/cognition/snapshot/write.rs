@@ -178,6 +178,10 @@ impl Kernel {
             }
             leaves.push((LEAF_DOMAINS, v));
         }
+        // 78.123 B — the ledger trees, where any is held.
+        if let Some(v) = self.ledgers.put() {
+            leaves.push((LEAF_LEDGERS, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

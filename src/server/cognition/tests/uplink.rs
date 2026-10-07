@@ -35,6 +35,7 @@ fn trade(key: &SigningKey) -> TierFold {
         prefix: [7u8; 32],
         rows: vec![(who(1), [5, 0, 0, 0]), (who(2), [-5, 0, 0, 0])],
         declared: Vec::new(),
+        children: Vec::new(),
     }
 }
 

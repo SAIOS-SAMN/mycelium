@@ -139,3 +139,76 @@ impl<C: Coefficient> Cover<C> {
         CellReading::Filled
     }
 }
+
+/// 78.123 B — A GAUGE: per vertex, a parent and the coefficient carrying the
+/// vertex to it, so every vertex reaches its component's root by one
+/// composed coefficient — a POTENTIAL. An edge between two components joins
+/// them, the gauge set so the edge holds; an edge inside one component
+/// closes a cycle, and its holonomy is read against the gauge exactly — a
+/// cycle of ANY length, found by the potential and never by walking the
+/// graph (the pivot's gauge, `solve_gauge`, over any coefficient group).
+#[derive(Clone, Debug)]
+pub struct Gauge<C: Coefficient> {
+    up: Keyed<(Vec<u8>, C)>,
+}
+
+impl<C: Coefficient> Default for Gauge<C> {
+    fn default() -> Self {
+        Gauge { up: Keyed::new() }
+    }
+}
+
+/// WHAT AN EDGE DID TO THE GAUGE.
+#[derive(Clone, Debug)]
+pub enum Gauged<C> {
+    /// It joined two components.
+    Joined,
+    /// It closed a cycle whose holonomy is the identity.
+    Closed,
+    /// It closed a cycle whose holonomy is not: the exact holonomy.
+    Obstructed(C),
+    /// A coefficient passed its carrier: nothing changed.
+    Unread,
+}
+
+impl<C: Coefficient> Gauge<C> {
+    /// The root `v` reaches and the coefficient carrying `v` there; a vertex
+    /// the gauge does not hold is its own root.
+    pub fn find(&self, v: &[u8]) -> Option<(Vec<u8>, C)> {
+        let mut at = v.to_vec();
+        let mut acc = C::identity();
+        while let Some((parent, g)) = self.up.get(&at) {
+            acc = acc.compose(g)?;
+            at = parent.clone();
+        }
+        Some((at, acc))
+    }
+
+    /// THE EDGE `a → b` carrying `g`: joined, closed, or obstructed by the
+    /// exact holonomy of the cycle it closes (`g`, then `b → root`, then
+    /// `root → a`).
+    pub fn edge(&mut self, a: &[u8], b: &[u8], g: &C) -> Gauged<C> {
+        let (Some((ra, ga)), Some((rb, gb))) = (self.find(a), self.find(b)) else { return Gauged::Unread };
+        if ra != rb {
+            // root(a) → a → b → root(b): ga⁻¹, then g, then gb.
+            let Some(join) = ga.inverse().and_then(|i| i.compose(g)).and_then(|x| x.compose(&gb)) else { return Gauged::Unread };
+            self.up.insert(&ra, (rb, join));
+            return Gauged::Joined;
+        }
+        match g.compose(&gb).and_then(|x| ga.inverse().and_then(|i| x.compose(&i))) {
+            Some(h) if h.is_identity() => Gauged::Closed,
+            Some(h) => Gauged::Obstructed(h),
+            None => Gauged::Unread,
+        }
+    }
+
+    /// Every held step: a vertex, its parent, the coefficient between.
+    pub fn steps(&self) -> Vec<(Vec<u8>, Vec<u8>, C)> {
+        self.up.scoped().map(|(v, (p, g))| (v, p.clone(), g.clone())).collect()
+    }
+
+    /// One step written back (a restore).
+    pub fn hold_step(&mut self, v: &[u8], parent: Vec<u8>, g: C) {
+        self.up.insert(v, (parent, g));
+    }
+}

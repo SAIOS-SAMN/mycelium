@@ -1,4 +1,4 @@
-# MU-LEXICON — the shared vocabulary (version 1)
+# MU-LEXICON — the shared vocabulary (version 2)
 
 **Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
 server to define this terminology so that all future connections can use the same shared terminology: wormholes,
@@ -66,6 +66,20 @@ neither renames nor claims them.
 | **Allocation** | A client's bond and lane budget. Replaces the network's "star" (78.59). |
 | **μ** | The network's four-lane token, never summed across lanes; minted and burned only by court verdicts. |
 | **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement). |
+
+### 3.1 The fold lanes (version 2, 78.123 B)
+
+A fold's four lanes `S:G:T:H` mean the same in every domain, so folds of two domains can agree (union tiers, μ
+conversion). Agreed with the xylarium coordinator 2026-10-07; netstratum and xylarium already agreed on S and G.
+
+| Term | Lane | Meaning |
+|---|---|---|
+| **Matter lane** | S | What has extent and is hauled. Never translated: a child's rate on it is exactly 1. |
+| **Value lane** | G | Money and value: what is exchanged at a rate. The **one** lane a parent translates; a rates cycle's holonomy (arbitrage) can only stand here. |
+| **Duration lane** | T | Time owed or served: leases, contracts, upkeep. Never translated. |
+| **Information lane** | H | Deliveries of words and proofs: each word issued is a declared source. Never translated. |
+| **Rate** | — | A child fold's translation into its parent's units, per lane: an exact rational, strictly positive, `1/1` on S, T and H. Rounding a translation makes is declared by the parent as its own source or sink, never floored. |
+| **Open remainder** | — | What of a child fold no parent has netted yet: value in flight between tiers, reported at finality, never a breach. |
 
 ## 4. Collisions resolved
 

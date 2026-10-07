@@ -33,6 +33,9 @@ pub const LEAF_LINE: u8 = 3;
 /// 78.120 — the domains founded on this court, each with its tier keys; absent
 /// on a court that founded none (and on every home written before it).
 pub const LEAF_DOMAINS: u8 = 4;
+/// 78.123 B — the ledger trees: per child fold what remains of it, per domain
+/// its rates gauge and its open obstructions; absent where none is held.
+pub const LEAF_LEDGERS: u8 = 5;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

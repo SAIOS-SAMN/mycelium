@@ -34,6 +34,83 @@ pub trait Coefficient: Clone + std::fmt::Debug {
     fn is_identity(&self) -> bool;
     /// The element's one writing: equal elements write equal bytes.
     fn put_canonical(&self, out: &mut Vec<u8>);
+    /// The element read back from its one writing.
+    fn take_canonical(b: &[u8], p: &mut usize) -> Option<Self>;
+}
+
+/// THE RATES GROUP (78.123 B): per lane a strictly positive exact rational —
+/// a translation between units, composed by product, inverted by the
+/// reciprocal, the identity all ones. A cycle's holonomy is the product of
+/// its rates: one where no arbitrage stands, else the exact gain per lane.
+/// By the lexicon (v2) only the G lane translates; the group stays per lane.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Rates {
+    lanes: [num_rational::BigRational; 4],
+}
+
+impl Rates {
+    /// Rates read off `(numerator, denominator)` per lane, each strictly
+    /// positive — `None` for a zero, a negative or a zero denominator.
+    pub fn of(lanes: [(i128, i128); 4]) -> Option<Rates> {
+        let mut out: [num_rational::BigRational; 4] = std::array::from_fn(|_| num_rational::BigRational::from_integer(1.into()));
+        for (o, (n, d)) in out.iter_mut().zip(lanes) {
+            if n <= 0 || d <= 0 {
+                return None;
+            }
+            *o = num_rational::BigRational::new(n.into(), d.into());
+        }
+        Some(Rates { lanes: out })
+    }
+
+    /// The rate on each lane.
+    pub fn lanes(&self) -> &[num_rational::BigRational; 4] {
+        &self.lanes
+    }
+}
+
+impl Coefficient for Rates {
+    fn identity() -> Self {
+        Rates { lanes: std::array::from_fn(|_| num_rational::BigRational::from_integer(1.into())) }
+    }
+
+    fn compose(&self, then: &Self) -> Option<Self> {
+        Some(Rates { lanes: std::array::from_fn(|l| &self.lanes[l] * &then.lanes[l]) })
+    }
+
+    fn inverse(&self) -> Option<Self> {
+        let mut out = Rates::identity();
+        for (o, r) in out.lanes.iter_mut().zip(&self.lanes) {
+            if num_traits::Zero::is_zero(r) {
+                return None;
+            }
+            *o = num_traits::Inv::inv(r.clone());
+        }
+        Some(out)
+    }
+
+    fn is_identity(&self) -> bool {
+        self.lanes.iter().all(num_traits::One::is_one)
+    }
+
+    fn put_canonical(&self, out: &mut Vec<u8>) {
+        for r in &self.lanes {
+            crate::transducer::address::put_key_bytes(out, &r.numer().to_signed_bytes_le());
+            crate::transducer::address::put_key_bytes(out, &r.denom().to_signed_bytes_le());
+        }
+    }
+
+    fn take_canonical(b: &[u8], p: &mut usize) -> Option<Self> {
+        let mut out = Rates::identity();
+        for o in &mut out.lanes {
+            let n = num_bigint::BigInt::from_signed_bytes_le(&crate::transducer::address::take_key_bytes(b, p)?);
+            let d = num_bigint::BigInt::from_signed_bytes_le(&crate::transducer::address::take_key_bytes(b, p)?);
+            if num_traits::Zero::is_zero(&d) {
+                return None;
+            }
+            *o = num_rational::BigRational::new(n, d);
+        }
+        Some(out)
+    }
 }
 
 /// One identity's net per lane `S:G:T:H`, exact and signed.
@@ -57,6 +134,14 @@ impl Lanes {
     /// Its nets, ascending by identity.
     pub fn nets(&self) -> &[LaneNet] {
         &self.nets
+    }
+
+    /// One identity's net — zero where it holds none.
+    pub fn net_of(&self, who: &[u8; 32]) -> [i128; 4] {
+        match self.nets.binary_search_by(|(w, _)| w.cmp(who)) {
+            Ok(i) => self.nets[i].1,
+            Err(_) => [0; 4],
+        }
     }
 }
 
@@ -128,6 +213,23 @@ impl Coefficient for Lanes {
             }
         }
     }
+
+    fn take_canonical(b: &[u8], p: &mut usize) -> Option<Self> {
+        let n = crate::transducer::address::take_key_count(b, p)?;
+        let nets = (0..n)
+            .map(|_| {
+                let who: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                *p += 32;
+                let mut v = [0i128; 4];
+                for x in &mut v {
+                    *x = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
+                    *p += 16;
+                }
+                Some((who, v))
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Lanes::of(&nets)
+    }
 }
 
 /// THE VERSOR COEFFICIENT the minds' complex holds on an edge: its rotor and
@@ -160,5 +262,11 @@ impl Coefficient for Turned {
     fn put_canonical(&self, out: &mut Vec<u8>) {
         self.rotor.put_canonical(out);
         self.carriage.put_canonical(out);
+    }
+
+    fn take_canonical(b: &[u8], p: &mut usize) -> Option<Self> {
+        let rotor = Rotor::from_bytes(b, p)?;
+        let carriage = Versor::from_bytes(b, p)?;
+        Some(Turned { rotor, carriage })
     }
 }

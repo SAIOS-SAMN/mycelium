@@ -8,7 +8,7 @@
 //! No word belongs to two vocabularies.
 
 /// The lexicon's version: an amendment raises it.
-pub const LEXICON_VERSION: u8 = 1;
+pub const LEXICON_VERSION: u8 = 2;
 
 /// WHICH VOCABULARY A TERM BELONGS TO.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +50,7 @@ const fn t(name: &'static str, vocabulary: Vocabulary, meaning: &'static str) ->
 use Vocabulary::{Civic, Network, Physical};
 
 /// EVERY TERM, by vocabulary, in `MU-LEXICON.md`'s order.
-pub const TERMS: [Term; 36] = [
+pub const TERMS: [Term; 42] = [
     t("Universe", Physical, "everything that shares one origin: one seed, one law set, one clock"),
     t("Cluster", Physical, "galaxies bound together by gravity"),
     t("Galaxy", Physical, "a disc and halo of stars"),
@@ -87,4 +87,10 @@ pub const TERMS: [Term; 36] = [
     t("Allocation", Network, "a client's bond and lane budget"),
     t("μ", Network, "the network's four-lane token, never summed across lanes"),
     t("POW++", Network, "useful work, work convergence, work retirement"),
+    t("Matter lane", Network, "a fold's S lane: what has extent and is hauled; never translated"),
+    t("Value lane", Network, "a fold's G lane: money and value, exchanged at a rate; the one lane translated"),
+    t("Duration lane", Network, "a fold's T lane: time owed or served, leases, contracts, upkeep; never translated"),
+    t("Information lane", Network, "a fold's H lane: deliveries of words and proofs, each issued word a declared source"),
+    t("Rate", Network, "a child fold's translation into its parent's units per lane, exact and strictly positive"),
+    t("Open remainder", Network, "a child fold's value not yet netted by a parent: in flight, never a breach"),
 ];

@@ -362,6 +362,11 @@ pub enum Cite {
     /// of the exact rows the court checked for continuity — so a party
     /// holding the rows proves them against this receipt.
     Uplink { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32] },
+    /// 78.123 B — A FOLD THAT NETS CHILDREN, by its coordinates as an
+    /// uplink's, and the commitment over the children it nets (their
+    /// receipts' stamps, rows, included parts and rates), which the tier
+    /// signed: a dispute proves the netting against it.
+    Chained { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32], children: [u8; 32] },
     /// 78.120 — A DOMAIN'S GENESIS, by its keys (coordinates, as a class's
     /// cover is): the domain's key and the tier keys that settle for it,
     /// ascending — what the court re-derives its tier index from.
@@ -374,7 +379,12 @@ impl Cite {
     pub fn at(&self) -> Option<Stamp> {
         match self {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
-            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::Domain { .. } => None,
+            Cite::Class { .. }
+            | Cite::Demand { .. }
+            | Cite::Refusal { .. }
+            | Cite::Uplink { .. }
+            | Cite::Chained { .. }
+            | Cite::Domain { .. } => None,
         }
     }
 
@@ -382,7 +392,12 @@ impl Cite {
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
             Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
-            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::Domain { .. } => None,
+            Cite::Word { .. }
+            | Cite::Root { .. }
+            | Cite::Refusal { .. }
+            | Cite::Uplink { .. }
+            | Cite::Chained { .. }
+            | Cite::Domain { .. } => None,
         }
     }
 
@@ -420,6 +435,12 @@ impl Cite {
                 rec.extend_from_slice(prefix);
                 rec.extend_from_slice(rows);
             }
+            Cite::Chained { tier, prefix, rows, children } => {
+                rec.push(7);
+                for h in [tier, prefix, rows, children] {
+                    rec.extend_from_slice(h);
+                }
+            }
             Cite::Domain { domain, tiers } => {
                 rec.push(6);
                 rec.extend_from_slice(domain);
@@ -438,7 +459,12 @@ impl Cite {
                         rec.push(1);
                         r.to_bytes(&mut rec);
                     }
-                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::Domain { .. } => {}
+                    Cite::Word { .. }
+                    | Cite::Root { .. }
+                    | Cite::Refusal { .. }
+                    | Cite::Uplink { .. }
+                    | Cite::Chained { .. }
+                    | Cite::Domain { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -495,6 +521,15 @@ impl Cite {
                 };
                 let (tier, prefix, rows) = (take()?, take()?, take()?);
                 Some(Cite::Uplink { tier, prefix, rows })
+            }
+            7 => {
+                let mut take = || -> Option<[u8; 32]> {
+                    let h: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                    *p += 32;
+                    Some(h)
+                };
+                let (tier, prefix, rows, children) = (take()?, take()?, take()?, take()?);
+                Some(Cite::Chained { tier, prefix, rows, children })
             }
             6 => {
                 let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

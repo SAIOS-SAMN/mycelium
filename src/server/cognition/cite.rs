@@ -433,11 +433,15 @@ impl Kernel {
             return Uplinked::Unsigned;
         }
         // 78.120 — the tier must be named by a domain's genesis on this court.
-        if self.tier_domain.get(&f.fold.tier).is_none() {
+        let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
-        }
+        };
         if let Err(d) = f.fold.continuity() {
             return Uplinked::Discontinuous(d);
+        }
+        // 78.123 B — a fold netting children is read on the ledger tree.
+        if !f.fold.children.is_empty() {
+            return self.admit_chained(f, domain);
         }
         let cite = Cite::Uplink { tier: f.fold.tier, prefix: f.fold.prefix, rows: f.fold.rows_hash() };
         match self.seal_step(ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) {
@@ -531,7 +535,7 @@ impl Kernel {
     /// receives the stamp this node will take, for an act that admits
     /// what it names. L15: the node joins the depth index where it joins
     /// the ledger.
-    fn seal_step(
+    pub(super) fn seal_step(
         &mut self,
         kind: ActKind,
         mu: [u64; 4],

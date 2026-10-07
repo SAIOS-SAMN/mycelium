@@ -170,11 +170,17 @@ impl Kernel {
             anchor_evidence,
             domains,
             tier_domain,
+            ledgers,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
         // 78.120 — the domains founded here and their tier index.
         c.count("domains", domains.len());
         c.count("tier_domain", tier_domain.len());
+        // 78.123 B — the ledger trees: children with value in flight, the
+        // rates gauges' steps, the open obstructions.
+        c.count("ledger.remaining", ledgers.remaining.len());
+        c.count("ledger.gauge", ledgers.gauges.scoped().map(|(_, g)| g.steps().len()).sum());
+        c.count("ledger.obstructions", ledgers.obstructions.scoped().map(|(_, o)| o.len()).sum());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

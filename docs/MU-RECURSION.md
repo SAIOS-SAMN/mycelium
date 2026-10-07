@@ -24309,6 +24309,60 @@ cannot be read. Proved: `cover::the_lane_group_sums_exactly_per_identity_per_lan
 `cover::a_tetrahedron_glues_on_all_its_triangles_and_one_edge_obstructs_it`,
 `cover::the_versor_group_reads_the_same_cover_the_same_way`.
 
+**PHASE B, as refined with the coordinator (2026-10-07).** Under rates, a
+parent's nets mix many children, so "nets along edges, routes compared" is
+no cocycle. The phase reads TWO coefficient groups on Phase A's core:
+- *Rates on cycles.* `Rates` — per lane a strictly positive exact rational,
+  composed by product, inverted by the reciprocal. Each child-tier →
+  parent-tier edge carries that child's rate on a per-domain `Gauge<Rates>`:
+  a potential per tier, so an edge joining two components sets the gauge
+  and an edge inside one closes a cycle of ANY length whose holonomy is read
+  exactly against it — never by walking the tree (the pivot's
+  `solve_gauge`, over any group). A holonomy other than one is ARBITRAGE, its
+  exact gain per lane, docketed as an obstruction localized to the edge that
+  closed it. By the lexicon (v2) only G translates, so only G can obstruct.
+- *Nets at vertices.* Each child's rows AND declared are partitioned among
+  its parents (the coordinator: "DECLARED TRAVELS UP" — so every tier, and
+  finally the anchor, states the total creation and destruction beneath it,
+  which μ conversion needs). The court holds what remains of each child; a
+  part of the wrong sign or past what remains is a double count, refused.
+  Value still in flight is an OPEN REMAINDER — reported, never a breach.
+- *Aggregation* is the fold's own continuity: rows less `Σ rate · included
+  rows` balance its own declared, lane by lane, exact rationals; a
+  translation's rounding is declared by the parent, never floored.
+- *Finality never passes an open obstruction:* a fold sealed while one
+  stands in its domain seals PROVISIONAL, naming how many.
+
+**PHASE B LANDED (LAYOUT-CHANGE).** `dialogue::uplink` — `ChildNet { at,
+rows, declared, included_rows, included_declared, rate }` on `TierFold`,
+written after the signature and signed by commitment only where present, so
+a single-level fold's bytes and signature are 78.119's exactly; replies
+`Chained { at, receipt, provisional, obstructions, open_remainders }` (5) and
+`ChildRefused { index, why: NotOnLine | Mismatch | ForeignDomain |
+OverIncluded{lane} }` (6); `Discontinuous::Rate{lane}` (why 3).
+`Cite::Chained { tier, prefix, rows, children }` (tag 7). The court's
+`ledger` module: each child proved on its receipt (`Cite::Uplink` or
+`Cite::Chained`, rows against the commitment, same domain), the parts fitted
+to what remains, the rates edges read on a copy of the gauge so the seal
+knows it is provisional, then sealed and kept. `Ledgers { remaining, gauges,
+obstructions }` persisted on the court's node (`LEAF_LEDGERS` = 5), absent
+where empty. Proved: `ledger::a_child_netted_whole_is_sealed_and_its_consumption_restores`,
+`ledger::parents_partition_a_child_and_a_double_count_is_refused`,
+`ledger::a_child_not_proved_on_the_line_is_refused_by_name`,
+`ledger::a_rate_is_positive_and_only_value_translates`,
+`ledger::a_rates_cycle_closes_at_one_or_seals_provisional_on_its_exact_gain`
+(the cycle `A → P` at 2, `P → Q` at 1, `A → Q` at 1 obstructs by exactly ½
+on G; at 2 it closes).
+
+*Owed, named:* (1) the gauge's vertices are TIERS, so one pair netted twice
+at two rates — a rate that moved between epochs — reads as a two-edge cycle
+and obstructs; whether a vertex is a tier or a tier's fold (its prefix head)
+is the coordinator's call. (2) A child is found by `chain.node`, so a child
+whose receipt has folded off the hot line reads `NotOnLine`. (3) An
+obstruction stays open until 2(c)'s challenge discharges it; nothing closes
+one yet. (4) The ancient anchor's report of open remainders waits for the
+anchor itself.
+
 ### 78.124 The core clock served, and pushed down as the orbital clock (2026-10-07, the operator: "i want the mycelium server to start tracking time in TUniversal as XX:XX:XX:XX:XX:XX … through a 4 dimensional quantum state of {S,G,T,H} as time coordinates … pushed down as the orbital clock"; and "this keeps the cores across galaxies/universes in alignment — then the clocks inside the kernels themselves are held together by that core clock, but the internal galaxies must maintain their own clock, planets orbit on k-steps, rotate (spin) on hours (tidally locked planets and moons have no hours)")
 
 **The stamp, served.** 78.21's amendment ruled the stamp `h:S:G:T:H:K.i`
