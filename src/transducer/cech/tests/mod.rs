@@ -7,6 +7,7 @@ mod ascend;
 mod bianchi;
 mod classify;
 mod connecting;
+mod cover;
 mod coxeter;
 mod determinism;
 mod drain;

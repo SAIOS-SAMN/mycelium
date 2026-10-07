@@ -24296,6 +24296,19 @@ The dimensions are identity × lane, unbounded by the algebra's axes.
   generic nerve, its classifier, class vectors and orbit readings kept as
   the versor group's own reading — one complex, two coefficient groups.
 
+**PHASE A LANDED.** `cech::coefficient` — the `Coefficient` trait, the
+exact additive `Lanes` group (per identity, four lanes, ascending, each
+once, no zero held; sums checked, never wrapped) and `Turned`, the minds'
+rotor-and-carriage coefficient read projectively; `cech::cover` — `Cover<C>`
+generic over it: edges held once and read inverted the other way, the
+holonomy around any cycle, a cell of any degree filled where every triangle
+among its vertices closes, else `Obstructed` by the first triangle in its
+vertices' order with its exact holonomy, `Unread` by name where a cycle
+cannot be read. Proved: `cover::the_lane_group_sums_exactly_per_identity_per_lane`,
+`cover::a_ledger_triangle_glues_and_an_obstruction_names_what_was_made`,
+`cover::a_tetrahedron_glues_on_all_its_triangles_and_one_edge_obstructs_it`,
+`cover::the_versor_group_reads_the_same_cover_the_same_way`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

@@ -15,7 +15,9 @@
 
 pub mod board;
 pub mod coboundary;
+pub mod coefficient;
 pub mod complex;
+pub mod cover;
 pub mod connecting;
 pub mod coxeter;
 pub mod flux;

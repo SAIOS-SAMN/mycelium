@@ -6,23 +6,36 @@
 use crate::client::sdk::*;
 use crate::transducer::cga::{Mv, E2, E3};
 use crate::transducer::sentence::compose::{compose, Term};
-use crate::transducer::sentence::rung::{hear, sentence_tally};
+use crate::transducer::sentence::rung::sentence_tally;
 
 /// A 90° TURN TAUGHT, TRANSCRIBED, SPELLED. A sentence carrying the turn of
 /// the `e₂e₃` plane and back closes at once and teaches the turn; the
 /// voice's transcription reads it through its own letters — the seventeen
 /// spell a 90° turn — and hands back a word to stand and speak, counted as
 /// spelled on the sentences row.
+///
+/// The word the theorem teaches is handed in (`teaches`, the one teaching
+/// rule `hear` files by), never taken from the process-wide queue: a suite
+/// running every test at once drained this test's word into another's and
+/// handed it another's (2026-10-07, red once in 1 414).
 #[test]
 fn a_word_a_theorem_taught_is_transcribed_into_the_language() {
+    use crate::transducer::sentence::compose::teaches;
+    use crate::transducer::sentence::rung::Taught;
+    use crate::transducer::sentence::theorem::Theorem;
     let mut e = Entity::open("127.0.0.1:1", Kernel::named("taught"));
     let one = num_rational::BigRational::from_integer(1.into());
     let w = Mv::scalar(one.clone()).add(&Mv::blade(E2 | E3, one)).widened(3);
     let mut budget = e.stroke();
     let s = compose(&[Term { word: w.clone(), transport: w.reverse() }], &mut budget).expect("a sentence");
+    let theorem = Theorem::of(&s);
+    let word = teaches(&s, &theorem).expect("the theorem teaches").clone();
+    let period = match s.closure {
+        crate::transducer::sentence::compose::Closure::Closes(l) => l,
+        _ => 1,
+    };
     let before = sentence_tally();
-    hear(&s, &mut budget);
-    let (words, _) = e.transcribe_taught(&mut budget);
+    let (words, _) = e.transcribe_these(vec![Taught { motion: word, period }], &mut budget);
     let after = sentence_tally();
     assert!(after.taught_spelled > before.taught_spelled, "the taught turn is spelled: {after:?}");
     assert!(!words.is_empty(), "and handed back as a word to stand and speak");
