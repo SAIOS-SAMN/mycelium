@@ -380,6 +380,46 @@ impl Kernel {
         self.seal_step(ActKind::Refused, [0; 4], voice, |_| vec![cite.clone()])
     }
 
+    /// 78.120 — A WORLD FOUNDED (78.62's GENESIS act): the world's signature
+    /// over its genesis, its tier keys in their one writing, a world not
+    /// founded here already and no tier key another world names — then the
+    /// genesis sealed on this court's line by its keys (`Cite::World`), and
+    /// the world held: from here its tiers' folds are admitted.
+    pub fn admit_world(&mut self, w: &crate::anastome::dialogue::world::SignedWorld) -> crate::anastome::dialogue::world::Founded {
+        use crate::anastome::dialogue::world::Founded;
+        let g = &w.genesis;
+        if !crate::court::identity::verify(&g.world, &g.signed_bytes(), &w.sig) {
+            return Founded::Unsigned;
+        }
+        if !g.ordered() {
+            return Founded::Unordered;
+        }
+        if self.worlds.get(&g.world).is_some() {
+            return Founded::AlreadyFounded;
+        }
+        if g.tiers.iter().any(|t| self.tier_world.get(t).is_some()) {
+            return Founded::TierHeld;
+        }
+        let cite = Cite::World { world: g.world, tiers: g.tiers.clone() };
+        match self.seal_step(ActKind::World, [0; 4], g.world, |_| vec![cite.clone()]) {
+            Some(r) => {
+                self.hold_world(g.world, g.tiers.clone());
+                self.mark_persist();
+                Founded::Sealed { at: r.stamp, receipt: r.chain_hash }
+            }
+            None => Founded::LineRefused,
+        }
+    }
+
+    /// A world and its tier keys held, and each tier indexed to it — the one
+    /// writer of both, at a founding and at a restore (law 12).
+    pub(crate) fn hold_world(&mut self, world: [u8; 32], tiers: Vec<[u8; 32]>) {
+        for t in &tiers {
+            self.tier_world.insert(t, world);
+        }
+        self.worlds.insert(world, tiers);
+    }
+
     /// 78.119 — A TIER'S FOLD ADMITTED (78.62 step 3). This court is the
     /// verifier outside the tier's delegation closure: the tier's signature
     /// over the fold, then its continuity (every lane's nets sum exactly to
@@ -391,6 +431,10 @@ impl Kernel {
         use crate::anastome::dialogue::uplink::Uplinked;
         if !crate::court::identity::verify(&f.fold.tier, &f.fold.signed_bytes(), &f.sig) {
             return Uplinked::Unsigned;
+        }
+        // 78.120 — the tier must be named by a world's genesis on this court.
+        if self.tier_world.get(&f.fold.tier).is_none() {
+            return Uplinked::Unbound;
         }
         if let Err(d) = f.fold.continuity() {
             return Uplinked::Discontinuous(d);

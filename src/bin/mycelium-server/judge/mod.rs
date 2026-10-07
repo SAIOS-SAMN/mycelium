@@ -20,6 +20,7 @@ pub(crate) mod syllabus;
 pub(crate) mod uplink;
 pub(crate) mod wallet;
 pub(crate) mod why;
+pub(crate) mod world;
 
 use crate::door::{serve_control, Door};
 use crate::transport::answer;
@@ -72,6 +73,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: Frame, door: &Door) {
         Action::Why => why::judge(stream, &frame, door),
         Action::Wallet => wallet::judge(stream, &frame, door),
         Action::Uplink => uplink::judge(stream, &frame, door),
+        Action::World => world::judge(stream, &frame, door),
         // The door's control actions (`serve_control`) answered above; any
         // other action has no judge here and is not answered.
         _ => {}

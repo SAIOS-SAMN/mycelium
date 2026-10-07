@@ -24144,6 +24144,40 @@ the GENESIS act binding a world's tiers. Proved:
 `uplink::a_fold_that_makes_value_undeclared_is_refused_and_a_declared_source_admits_it`,
 `dialogue::uplink::a_signed_fold_and_every_answer_read_back_whole`.
 
+### 78.120 2(d): a world's genesis binds its tiers (2026-10-07, the operator: "proceed"; first on the coordinator's order — "today a tier is just a verifying key, so anyone can sign folds as a tier") — LAYOUT-CHANGE
+
+**The act.** `Action::World` (0x3E, a transition sealed under its own
+coordinate): `[ACT_WORLD][world 32][tiers][sig 64]` — the world's key and
+the tier keys that settle for it, ascending, each once, signed by the
+WORLD's key over a domain, the world and the tiers. The court refuses a
+genesis whose signature does not verify (`Unsigned`), whose tiers are not
+in their one writing (`Unordered`), a world founded here already
+(`AlreadyFounded`), or one naming a tier another world names (`TierHeld`
+— a tier settles for one world); else seals `Cite::World { world, tiers }`
+(tag 6: keys, coordinates, as a class's cover is) and answers the
+receipt's stamp and chain hash.
+
+**The binding.** A tier's fold (78.119) is now admitted only from a tier
+key a sealed genesis names; otherwise `Uplinked::Unbound` (reply code 4).
+A fold's signature now means the world stands behind the tier.
+
+**The carrier.** `Kernel.worlds` (world → its tier keys) is the one
+carrier, persisted as an optional leaf on the court's own node
+(`LEAF_WORLDS`); `tier_world` is re-derived from it at founding and at
+restore (`hold_world`, law 12), counted among the court's carriers. A home
+with no world writes and reads exactly as before — the leaf is absent —
+so `--check` restores every home written before 78.120; a home holding a
+world is refused by every earlier build.
+
+**OWED:** granting and revoking tier keys (a world's later acts); an
+ancient house's key granted under the hypha; the world binding replicated
+to peers' indexes (a peer admits the World receipt, kind-agnostic, but
+builds no index from it yet). Proved:
+`uplink::a_world_is_founded_once_by_its_own_key_its_tiers_its_own`,
+`uplink::a_fold_from_a_tier_no_world_names_is_unbound`,
+`uplink::an_admitted_fold_is_sealed_by_its_coordinates_and_restores` (the
+world held across the restart), `dialogue::world::a_signed_genesis_and_every_answer_read_back_whole`.
+
 ## 80. The planetary dialect: a modified Gödel engine, and what the fleet decided comes next (ruled 2026-09-24, the operator's word)
 
 **The operator's statement.** The engine is a modified GÖDEL ENGINE: the

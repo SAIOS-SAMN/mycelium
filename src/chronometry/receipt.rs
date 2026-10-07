@@ -362,6 +362,10 @@ pub enum Cite {
     /// of the exact rows the court checked for continuity — so a party
     /// holding the rows proves them against this receipt.
     Uplink { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32] },
+    /// 78.120 — A WORLD'S GENESIS, by its keys (coordinates, as a class's
+    /// cover is): the world's key and the tier keys that settle for it,
+    /// ascending — what the court re-derives its tier index from.
+    World { world: [u8; 32], tiers: Vec<[u8; 32]> },
 }
 
 impl Cite {
@@ -370,7 +374,7 @@ impl Cite {
     pub fn at(&self) -> Option<Stamp> {
         match self {
             Cite::Word { at, .. } | Cite::Root { at, .. } => Some(*at),
-            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => None,
+            Cite::Class { .. } | Cite::Demand { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::World { .. } => None,
         }
     }
 
@@ -378,7 +382,7 @@ impl Cite {
     pub fn cover(&self) -> Option<&[Vec<u8>]> {
         match self {
             Cite::Class { cover, .. } | Cite::Demand { cover, .. } => cover.as_deref(),
-            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => None,
+            Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::World { .. } => None,
         }
     }
 
@@ -416,6 +420,11 @@ impl Cite {
                 rec.extend_from_slice(prefix);
                 rec.extend_from_slice(rows);
             }
+            Cite::World { world, tiers } => {
+                rec.push(6);
+                rec.extend_from_slice(world);
+                crate::anastome::dialogue::world::put_keys(&mut rec, tiers);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -429,7 +438,7 @@ impl Cite {
                         rec.push(1);
                         r.to_bytes(&mut rec);
                     }
-                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } => {}
+                    Cite::Word { .. } | Cite::Root { .. } | Cite::Refusal { .. } | Cite::Uplink { .. } | Cite::World { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -486,6 +495,12 @@ impl Cite {
                 };
                 let (tier, prefix, rows) = (take()?, take()?, take()?);
                 Some(Cite::Uplink { tier, prefix, rows })
+            }
+            6 => {
+                let world: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                *p += 32;
+                let tiers = crate::anastome::dialogue::world::take_keys(b, p)?;
+                Some(Cite::World { world, tiers })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

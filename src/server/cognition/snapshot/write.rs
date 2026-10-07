@@ -165,6 +165,19 @@ impl Kernel {
             }
             _ => {}
         }
+        // 78.120 — the worlds founded here, each with its tier keys; no leaf
+        // where none is founded, so a court with none writes as it did.
+        let worlds: Vec<([u8; 32], Vec<[u8; 32]>)> =
+            self.worlds.scoped().filter_map(|(k, t)| Some((<[u8; 32]>::try_from(k.as_slice()).ok()?, t.clone()))).collect();
+        if !worlds.is_empty() {
+            let mut v = Vec::new();
+            crate::transducer::address::put_key_count(&mut v, worlds.len());
+            for (w, tiers) in &worlds {
+                v.extend_from_slice(w);
+                crate::anastome::dialogue::world::put_keys(&mut v, tiers);
+            }
+            leaves.push((LEAF_WORLDS, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

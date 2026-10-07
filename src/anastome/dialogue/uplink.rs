@@ -180,10 +180,12 @@ pub enum Uplinked {
     Discontinuous(Discontinuous),
     /// The court's line could not take it.
     LineRefused,
+    /// 78.120 — the tier key is named by no world's genesis on this court.
+    Unbound,
 }
 
 /// The court's reply: `[0][stamp][hash]` admitted; `[1]` unsigned;
-/// `[2][why][lane]` discontinuous; `[3]` the line refused.
+/// `[2][why][lane]` discontinuous; `[3]` the line refused; `[4]` unbound.
 pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
     let mut out = Vec::new();
     match u {
@@ -204,6 +206,7 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
         }
         Uplinked::LineRefused => out.push(3),
+        Uplinked::Unbound => out.push(4),
     }
     out
 }
@@ -231,6 +234,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             })
         }
         3 => Uplinked::LineRefused,
+        4 => Uplinked::Unbound,
         _ => return None,
     };
     (p == b.len()).then_some(u)

@@ -26,6 +26,7 @@ fn a_signed_fold_and_every_answer_read_back_whole() {
         Uplinked::Discontinuous(Discontinuous::Overflow { lane: 2 }),
         Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 3 }),
         Uplinked::LineRefused,
+        Uplinked::Unbound,
     ] {
         assert_eq!(decode_uplink_reply(&encode_uplink_reply(&u)), Some(u.clone()), "{u:?}");
     }

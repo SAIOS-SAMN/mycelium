@@ -168,8 +168,13 @@ impl Kernel {
             evidence_at,
             anchor_mismatches,
             anchor_evidence,
+            worlds,
+            tier_world,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
+        // 78.120 — the worlds founded here and their tier index.
+        c.count("worlds", worlds.len());
+        c.count("tier_world", tier_world.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

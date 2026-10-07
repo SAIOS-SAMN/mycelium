@@ -54,6 +54,14 @@ impl super::Session {
         }
     }
 
+    /// 78.120 — A WORLD FOUNDED ON THE COURT: the genesis receipt's stamp and
+    /// chain hash where it is sealed, or the refusal by name.
+    pub fn found_world(&self, w: &crate::anastome::dialogue::world::SignedWorld) -> io::Result<crate::anastome::dialogue::world::Founded> {
+        use crate::anastome::dialogue::world::{decode_world_reply, encode_world};
+        let reply = self.speak(encode_world(w))?;
+        decode_world_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the world's reply did not decode"))
+    }
+
     /// 78.119 — A TIER'S FOLD PUT TO THE COURT for admission: the receipt's
     /// stamp and chain hash where it is sealed, or the refusal by name. A
     /// reply that does not read is an error by name, never an admission.

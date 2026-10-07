@@ -78,6 +78,9 @@ pub enum Action {
     /// coordinates on its line. Sealed under its own coordinate, as the
     /// syllabus page and the fold are.
     Uplink,
+    /// 78.120 — A WORLD FOUNDED (78.62's GENESIS act): its key and the tier
+    /// keys that settle for it, sealed under its own coordinate.
+    World,
     // Exchanges.
     Adopt,
     Root,
@@ -115,7 +118,7 @@ pub enum Action {
 
 /// Every action, in coordinate order. 0x07, 0x0A and 0x0F stand unassigned
 /// (0x0F was the retired genesis page, 2026-09-29): no action holds them.
-pub const ACTIONS: [Action; 52] = [
+pub const ACTIONS: [Action; 53] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -149,6 +152,7 @@ pub const ACTIONS: [Action; 52] = [
     Action::Why,
     Action::Wallet,
     Action::Uplink,
+    Action::World,
     Action::Attest,
     Action::List,
     Action::Section,
@@ -210,6 +214,7 @@ impl Action {
             Action::Why => 0x3B,
             Action::Wallet => 0x3C,
             Action::Uplink => 0x3D,
+            Action::World => 0x3E,
             Action::Attest => 0x40,
             Action::List => 0x41,
             Action::Section => 0x42,
@@ -269,7 +274,8 @@ impl Action {
             | Action::Syllabus
             | Action::Probe
             | Action::Speech
-            | Action::Uplink => Kind::Transition,
+            | Action::Uplink
+            | Action::World => Kind::Transition,
             Action::Adopt
             | Action::Root
             | Action::Cover
@@ -306,7 +312,7 @@ impl Action {
     /// WHETHER A COURT SEALS IT ON ITS LINE — the kinds a receipt carries.
     /// An observation never seals; a retired kind is sealed by nothing.
     pub const fn sealed(self) -> bool {
-        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink)
+        matches!(self.kind(), Kind::Court) || matches!(self, Action::Syllabus | Action::Fold | Action::Uplink | Action::World)
     }
 
     /// THE SEALED ACT A LEDGER BYTE NAMES, or none: a byte naming an action
@@ -377,6 +383,7 @@ impl Action {
             Action::Probe => b"probe",
             Action::Speech => b"speech",
             Action::Uplink => b"uplink",
+            Action::World => b"world",
             Action::Adopt => b"adopt",
             Action::Root => b"root",
             Action::Cover => b"cover",

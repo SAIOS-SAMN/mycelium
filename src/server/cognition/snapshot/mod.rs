@@ -30,6 +30,9 @@ pub const COURT_TRIE: &str = "court";
 pub const LEAF_HEAD: u8 = 1;
 pub const LEAF_ROOT: u8 = 2;
 pub const LEAF_LINE: u8 = 3;
+/// 78.120 — the worlds founded on this court, each with its tier keys; absent
+/// on a court that founded none (and on every home written before it).
+pub const LEAF_WORLDS: u8 = 4;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

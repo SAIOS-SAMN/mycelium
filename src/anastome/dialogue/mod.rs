@@ -19,6 +19,7 @@ pub mod speech;
 pub mod syllabus;
 pub mod uplink;
 pub mod wallet;
+pub mod world;
 pub mod why;
 
 pub use acts::*;
