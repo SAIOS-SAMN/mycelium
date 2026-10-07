@@ -24935,6 +24935,63 @@ is REFUSED past the stated cap `P_SERIES_CAP = 10⁴`, never run unbounded.
 e^{−v²}/(|v|√π) < e^{−10⁴} < 2^{−w}` for every `w < 14 000`. Nothing else is
 owed on certified math for now.
 
+### 78.131 Universal physics: the laws' forms in the SDK (2026-10-07, the operator's program step 1; the coordinator's boundary and R1–R3)
+
+**The boundary.** `sdk::physics` holds the FORMS of the laws, as functions
+of a universe's constants, on exact rationals and `sdk::certified`
+enclosures. Each universe holds its constants' values, its calibrations,
+its bodies' parameters, its substances, its Big Bang and all its matter;
+the module holds no table of any universe, and every scale ratio is
+exactly one where every ratio to the universe's own reference is one.
+
+**Landed (A, C, E, F, G).**
+- **A, the laws.** `Laws { alpha, beta, alpha_g, nuclear }` as ratios to
+  the universe's reference; the scales `chemistry` `a²bg^½`, `atom`,
+  `density`, `pressure`, `proton`, `star_mass` `1/g`, `star_light`,
+  `star_life`, `star_radius`, `star_min`, `jeans`, `star_teff`, the
+  `coincidence` of stellar and chemical temperature, and the `half_life`
+  scale `exp(G(α−1))`. Exact where every exponent is an integer.
+- **C, orbits as fibres.** The q-form Kepler period `q³/m` (`q² = a`, `m² =
+  M`), flux `l/q⁴`, the exact phase `frac(φ₀ + k/T)`, the Pythagorean
+  rotor's point (exactly on the circle, no trigonometry), the orbit's point
+  by a monotone rational bijection of the phase (closes exactly; not
+  uniform in angle), nested positions, the `8/7` spacing law, the Hill
+  radius, the escape speed's square, and the tidal-lock and
+  circularisation timescales of a `TidalBody` passed in (R1).
+- **E, radiation and heat.** Stefan–Boltzmann's `flux^¼`; a `Substance`
+  passed in (boiling point, `L/R`, triple and critical points);
+  Clausius–Clapeyron's boiling point, the exact critical temperature once
+  its enclosure passes it; the saturation pressure; the `Phase`, refused
+  (`None`) where `p` lies inside the saturation curve's enclosure, never
+  guessed; Landauer's bits `T_ref/T`, the thermal speed, cognition's depth.
+- **F, nuclei and shells.** The liquid drop's `binding(Z, A)` from
+  `Semf` coefficients passed in; the `valley` of stability `Z₀(A)` from the
+  binding's derivative; the MADELUNG `configuration` through `AUFBAU_CAP =
+  172` (constructed in `n + l` order, never sorted; no `h` subshell), the
+  idealised filling — measured exceptions are a universe's chemistry; and
+  R2's `Place { period, block, column }`, the period counted by the `s`
+  subshells opened, with `iupac_group` for `s`, `p`, `d` only (the first
+  period's close is 18; `f` and `g` have no group).
+- **G, system laws.** The epidemic's final size (bisection on certified
+  signs, refused where a sign is undecided), Lanchester's square law,
+  present value, Wright's curve with the progress ratio passed in,
+  declining-balance depreciation.
+
+Proved (`sdk::tests::physics`): every scale one at the reference, α doubled
+gives chemistry ×4 and radius ×¼; Kepler 1 at `q = m = 1` and 8 at `q = 2`;
+rotor points on the circle, the orbit at `φ = ½` is `(−1, 0)`; water (passed
+in) boils at 373.15 K at its reference pressure, hotter above it, capped at
+647.096 K, and reads liquid, solid, gas and supercritical where it should;
+the epidemic at `R₀ = 2` in `(0.7968, 0.7969)`; iron-56 binds in `(485,
+495)` MeV on our coefficients with the valley at `A = 56` in `(25, 26)`;
+every charge 1–172 holds Z electrons, and H, He, Ne, Fe, Au, La, Og, 121,
+168 and 172 placed.
+
+**Owed, in order.** D: stars on a `StellarCalibration` with no SDK default
+(R1). B: the bounce on `cga` `sphere_at` / `at_three` and `physics::source`'s
+keeping, with the recycling identity `fallen + arrived = growth + radiated
++ reservoir + returned`, growth the child's content (R3).
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
