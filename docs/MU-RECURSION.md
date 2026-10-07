@@ -24044,6 +24044,11 @@ agrees with the court whatever stroke the kernel holds (law 12).
 `verify(t, budget)` stands for the readers that verify inside a stroke of
 their own (perception's flux and bridge). Proved:
 `laws::a_lawful_turn_is_admitted_under_the_stroke_its_modes_need`.
+LIVE (2026-10-07, the xylarium court at :7520 repinned to ad2fcda2, same
+genesis): the reference turn at heights (1, 2) ADMITTED by the court and
+by the kernel's local `verify_sized`; at (1, 1) both refuse `Time` alone.
+Until the ruling below, the kernel reads `Undecomposed(Unbounded)` as not
+measured, never as a breach.
 
 **RULING ASKED.** Where a caller's stroke is short, a spent stroke still
 reads `(Law::Conformal, Undecomposed(Unbounded))` — a refusal of the
