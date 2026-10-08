@@ -64,11 +64,8 @@ impl Voice {
         dialogue::encode_syllabus_request(&self.identity)
     }
 
-    /// A SOLVE: the outputs this voice speaks for a dispatched family.
-    /// `None` where the act does not fit the lengths its frame writes.
-    pub fn solve(&self, id: &[u8; 32], outputs: &[crate::arc::Grid]) -> Option<Vec<u8>> {
-        dialogue::encode_solve(&self.identity, id, outputs)
-    }
+    // A SOLVE is signed by the key it pays (78.141), which a voice does not
+    // hold: the entity sends it on its kernel's key (`Entity::solve_task`).
 
     /// A TASK request: the next family to think through.
     pub fn task(&self) -> Vec<u8> {

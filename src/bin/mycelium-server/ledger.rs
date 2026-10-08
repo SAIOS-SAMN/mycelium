@@ -33,7 +33,16 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         std::process::exit(2)
     };
     let upto = Place { k: u64::MAX, i: u64::MAX };
-    let mut after: Option<Place> = None;
+    // 2026-10-08 (the coordinator's ruling, 6a) — THE READER OPENS AT THE
+    // LINE'S FOLD ROOT, never at genesis: a court that folded most of its
+    // line answers a page from genesis only by paging its whole cold
+    // archive, and hypha b's did not answer within the console's patience
+    // ("stopped answering after 0 acts"). The court's own clock reading
+    // names the last fold root's orbit; the line is read from that orbit's
+    // start (the one era the root closes is paged, no other), and the
+    // header says where it began.
+    let opened = fold_root_k(&addr, &vk);
+    let mut after: Option<Place> = opened.and_then(|k| k.checked_sub(1)).map(|k| Place { k, i: u64::MAX });
     let mut by_action: Keyed<u64> = Keyed::new();
     let mut refused: Vec<Place> = Vec::new();
     let (mut acts, mut pages) = (0u64, 0u64);
@@ -70,7 +79,11 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
         }
         after = Some(next);
     }
-    println!("{BOLD}═══ LEDGER {}… ═══{RESET}  {addr}  {DIM}{acts} acts over {pages} pages, genesis to head{RESET}", &hex(&vk)[..8]);
+    let span = match opened {
+        Some(k) => format!("from orbit {k} (the line's last fold root) to head; the archive below it is not read here"),
+        None => "genesis to head (no fold)".to_string(),
+    };
+    println!("{BOLD}═══ LEDGER {}… ═══{RESET}  {addr}  {DIM}{acts} acts over {pages} pages, {span}{RESET}", &hex(&vk)[..8]);
     // The court's whole verifying key (public): the party `--wallet` reads.
     println!("  court key   {}", hex(&vk));
     for (k, n) in by_action.scoped() {
@@ -82,4 +95,21 @@ pub(crate) fn run(home: &Path, at: Option<&str>) -> ! {
     let places: Vec<String> = refused.iter().map(|p| p.print()).collect();
     println!("  refusals at {}", places.join(" "));
     std::process::exit(0)
+}
+
+/// The orbit of the court's last fold root, from its own clock reading
+/// (`CourtClock::folded`), or none where it has never folded or does not
+/// answer — then the line is read from genesis, as it always was.
+fn fold_root_k(addr: &str, vk: &[u8; 32]) -> Option<u64> {
+    use mycelium::observe::{self, Clock, Reading};
+    let mut prefix = vec![observe::SOURCE_COURT];
+    prefix.extend_from_slice(vk);
+    prefix.push(observe::TAG_CLOCK);
+    let query = observe::encode_query(&prefix)?;
+    let (reply, _) = crate::transport::tell_peer_within(addr, query, mycelium::physics::reserve_max())?;
+    let (_, held) = observe::decode_reply(&reply)?;
+    held.into_iter().find_map(|(_, r)| match r {
+        Reading::Clock(Clock::Court(c)) => c.folded.map(|(_, k)| k),
+        _ => None,
+    })
 }

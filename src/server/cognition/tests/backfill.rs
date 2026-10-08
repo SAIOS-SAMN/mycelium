@@ -153,6 +153,42 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
     assert!(c.lock().expect("c").known_head(&dvk).is_some(), "d's line was fetched for the citation");
 }
 
+/// NO SILENT VERDICT (2026-10-08, the coordinator's ruling on hypha c) — A
+/// BACK-FILL PAGE THAT STOPS ON A MISSING PARENT SAYS SO. b's line cites d's
+/// head, and the court paging b holds nothing of d: the page admits b's own
+/// acts up to the citing receipt and stops there, handing the citation back.
+/// That stop counted nothing, so hypha c's isolation read only as
+/// `backfill_budget`. Now it is counted under the CITED signer, with whether
+/// this court holds d's fold root, and the depth of the cited orbit past the
+/// head held for d (nothing held: the orbit after the cited one).
+#[test]
+fn a_back_fill_page_stopped_on_a_missing_parent_is_counted_under_the_cited_signer() {
+    use crate::chronometry::{ActKind, Parent, ReceiptChain};
+    let vk = super::common::court_key("missing-parent-b").vk_bytes();
+    let dvk = super::common::court_key("missing-parent-d").vk_bytes();
+    let mut d = ReceiptChain::with_vk(dvk);
+    act(&mut d, 3);
+    let dh = d.head().expect("d has acted").clone();
+    let mut b = ReceiptChain::with_vk(vk);
+    act(&mut b, 1);
+    for r in d.line_between(&dvk, None, dh.stamp.place(), 64) {
+        b.admit(r.clone());
+    }
+    b.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: dh.stamp, hash: dh.chain_hash }]).expect("b cites d");
+    let page = b.line_between(&vk, None, b.head().expect("b").stamp.place(), 64);
+    let mut c = Kernel::new();
+    c.append_step(ActKind::Attest, [0xAA; 40], [1; 32]);
+    let mut budget = c.stroke();
+    let (n, missing) = c.admit_backfill(&page, &mut budget);
+    assert_eq!(missing.map(|p| p.at.vk), Some(dvk), "the page stops on d's cited head");
+    assert_eq!(n, page.len() - 1, "b's own acts before the citing receipt are admitted");
+    let r = crate::observe::replication();
+    let on_d = r.signers.iter().find(|(s, _)| *s == dvk).map(|(_, a)| *a).expect("the cited signer is read");
+    assert_eq!(on_d[rep::BACKFILL_MISSING_PARENT], 1, "the stop is counted once, under d");
+    assert_eq!(on_d[rep::BACKFILL_MISSING_UNROOTED], 1, "c holds no fold root for d: no era proof can run");
+    assert_eq!(on_d[rep::MISSING_DEPTH], dh.stamp.k + 1, "nothing of d held: the cited orbit stands K + 1 past it");
+}
+
 /// H2 (78.65, 78.87 R2) — A CITATION INTO A PEER'S CLOSED ERA IS PROVED BY THE
 /// ERA'S OWN CHAIN, and the citing head is cited. Peer e closes an orbit and
 /// folds it; court c admits e's line and, on e's fold, sheds what lies at or

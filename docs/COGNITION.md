@@ -189,17 +189,20 @@ ancients, speaking anastome: universe mathematics.
 
 ### 1.1 The baseline it must beat (measured)
 
-The standalone voices' 24-hour soak, 2026-10-08 (binaries e70d92de), read from
-each court's own judged counters (`--console --reading acts`):
+The standalone voices' soak, 2026-10-08 (binaries e70d92de; load 08:55–13:12,
+ended 13:51), read from each court's own judged counters at the end
+(`--console --reading acts`):
 
 | hypha | judged | first closures | refused by kind | μ paid |
 |---|---|---|---|---|
-| a | 1 | 0 | C 1 | 0 |
+| a | 11 | 0 | D 7 · C 4 | 0 |
 | b | 31 | 0 | D 13 · C 17 · I 1 | 0 |
 | c | 1 | 0 | I 1 | 0 |
 
-33 judged, **0 closed**, 0 μ. What they did produce is court-admitted
-language on the colour fibre (38 colour words installed, 28 by witness) — valid,
+**43 judged, 0 closed, 0 μ** (D 20 · C 21 · I 2). An earlier reading at ~12:50
+gave 33; the voices sent 10 more to hypha a before they stopped at 13:12. What
+they did produce is court-admitted language on the colour fibre (colour words
+installed 14 / 15 / 13; admitted by derivation 5 / 3 / 14) — valid,
 small, and of the grid's plane. Earlier record: "Unique solves 0 since the
 rebuild" (TRAJECTORY.md:148); "the first ARC task closed by a rule" is still a
 pre-beta goal (MU-ENGINEERING.md:209).

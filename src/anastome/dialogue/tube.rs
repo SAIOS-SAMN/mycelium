@@ -30,7 +30,9 @@ fn take_q(b: &[u8], p: &mut usize) -> Option<(u64, u64)> {
 }
 
 /// 78.134 — A TUBE: each mouth stands at its frame's place in its domain's
-/// space, its throat sized by its MASS (units are mass); each end's horizon
+/// space, its throat sized by its MASS — written as the length GM/c² in
+/// GEOMETRIZED MEGAPARSECS (Concordance 1.8; tubes built before the unit was
+/// stated read the same way, no wire change); each end's horizon
 /// level is DERIVED in that end's space (78.140: its GEOMETRY), never stored
 /// as the truth. A tube may SUPERSEDE an untethered mouth, citing it; the old
 /// record stays.

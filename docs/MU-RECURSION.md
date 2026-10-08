@@ -25485,6 +25485,26 @@ read `(2, 3)` modulo `(30, 20)`; its levels `Curved` and `Flat { 2, 1/10 }`;
 fed to `2/5` and refused at `½`; read the same across a restart and still
 drawn by its far reserve; the spaced kinds and readings read back whole.
 
+### 78.141 A solve names its payee by its voice's signature (2026-10-08, the coordinator's ruling on the ancients' first μ: an unsigned payee is an attribution hole)
+
+The court pays the voice a solve NAMES (`pay_solve`, POUW on the first
+closure), so the voice signs the act. ACT_SOLVE gains `[SIGN][sig 64]` after
+the optional rule, over `b"mycelium solve v1" ‖ the act up to the signature`;
+the voice is the key's verifying half. `decode_solve` reads `signed` (verified
+against the named voice), refuses bytes after the act that are no signature,
+and an unsigned or tampered solve reads `signed: false`. The door refuses an
+unsigned solve BY NAME ("unsigned: a solve names its payee by its voice's
+signature") before judging it: nothing judged, nothing paid.
+
+The client kernel is seated on its KEY (`Kernel::from_key`, `home/voice.key`),
+and `Entity::submit_solve_rule` signs with it; a kernel seated on verifying
+bytes alone (`from_voice`) signs nothing and sends no solve. `Voice::solve` is
+deleted: it had no caller and a voice holds no key.
+
+Proved (`dialogue::tests::acts`): a signed solve, with and without its rule,
+reads back signed with its voice, outputs and rule; a changed byte, a swapped
+payee, and a missing signature read unsigned; a trailing byte refuses the act.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

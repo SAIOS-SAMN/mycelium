@@ -261,10 +261,16 @@ impl AdmissionTally {
             }
             // A gap in one signer's chain and a citation of another signer
             // this node does not hold are both holes, and the back-fill
-            // chases both; the tally reads them as one.
-            Ok(Admitted::Gap { .. }) | Ok(Admitted::MissingParent(_)) => {
+            // chases both; the cycle's line reads them as one, and the
+            // observer apart (2026-10-08, no silent verdict: the merged
+            // count hid hypha c's isolation).
+            Ok(Admitted::Gap { .. }) => {
                 self.gap += 1;
                 rep::GAP
+            }
+            Ok(Admitted::MissingParent(_)) => {
+                self.gap += 1;
+                rep::MISSING_PARENT
             }
             Ok(Admitted::Stale) => {
                 self.stale += 1;

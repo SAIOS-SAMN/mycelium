@@ -24,14 +24,25 @@ pub(crate) fn arm_deadline(s: &TcpStream) {
 /// refused, said once, and the connection closes; the caller reads that as
 /// silence, which it already counts (rule 11).
 pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
+    let _ = answer_written(s, frame);
+}
+
+/// `answer`, saying whether the reply was WRITTEN: false where the frame
+/// would not encode or the asker had gone (a reply that missed the asker's
+/// wait). The catch-up door counts it (`Court::serve`); a write that fails
+/// is never silent there (2026-10-08). A LOWER BOUND: a reply written just
+/// after the asker closed can still land in the socket's buffer and read as
+/// written, so `unwritten` counts the misses the wire refused, not all.
+pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
     match frame.encode() {
-        Some(bytes) => {
-            let _ = s.write_all(&bytes);
+        Some(bytes) => s.write_all(&bytes).is_ok(),
+        None => {
+            eprintln!(
+                "  court reply refused: body {} over the wire budget",
+                frame.body.len()
+            );
+            false
         }
-        None => eprintln!(
-            "  court reply refused: body {} over the wire budget",
-            frame.body.len()
-        ),
     }
 }
 

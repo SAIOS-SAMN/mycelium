@@ -206,6 +206,45 @@ fn each_filed_era_reads_back_its_own_receipts() {
     let _ = std::fs::remove_file(&path);
 }
 
+/// 2026-10-08 (the coordinator's 6a/6b) — A FOLDED LINE READ FROM ITS LAST FOLD
+/// ROOT PAGES NO ARCHIVE, AND THE SERVING COURT SAYS WHAT IT PAGED. Three
+/// folds archive the line's early orbits. Read from genesis, the page spends
+/// the cold archive (the serving reading counts the eras); read from the
+/// start of the last fold root's orbit — where `--console --ledger` now opens —
+/// it pages at most the one era that root closes, and every receipt it
+/// serves stands at or past that orbit.
+#[test]
+fn a_folded_line_read_from_its_fold_root_pages_no_earlier_era() {
+    use crate::observe::{serves, ServeAxis};
+    let home = [0x6d; 32];
+    let mut k = Kernel::new();
+    k.bind_identity(home);
+    for _ in 0..3 {
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    for _ in 0..3 {
+        let p = k.propose_fold().expect("a final prefix");
+        k.commit_fold([3; 64], &co_sign("w-fold-root", p.root.hash)).expect("sealed");
+        k.append_step(ActKind::List, [1; 32], [2; 32]);
+        k.orbit();
+    }
+    assert_eq!(k.archive().len(), 3, "three eras archived");
+    let root_k = k.chain().root().expect("the line stands on its last root").at.k;
+    let upto = Place { k: u64::MAX, i: u64::MAX };
+    let before = serves();
+    let whole = k.receipts_page(&home, None, upto, 1000, usize::MAX);
+    let mid = serves();
+    assert!(whole.iter().any(|r| r.stamp.k < root_k), "from genesis the page reaches below the root");
+    assert!(mid[ServeAxis::Cold as usize] > before[ServeAxis::Cold as usize], "a cold page is counted");
+    assert!(mid[ServeAxis::ErasPaged as usize] >= before[ServeAxis::ErasPaged as usize] + 3, "every era is paged");
+    let from_root = root_k.checked_sub(1).map(|k| Place { k, i: u64::MAX });
+    let hot = k.receipts_page(&home, from_root, upto, 1000, usize::MAX);
+    assert!(!hot.is_empty(), "the line from its root answers");
+    assert!(hot.iter().all(|r| r.stamp.k >= root_k), "nothing below the root's orbit is served");
+    assert!(k.archive().iter().filter(|e| e.first_place() > from_root.unwrap_or(Place::GENESIS)).count() <= 1, "at most the one era the root closes lies past the opening");
+}
+
 /// THE LINE AND THE SNAPSHOT ON DISK AGREE. A court bound to a line writes
 /// it before the snapshot that names where it stood; a court binding the
 /// same line restores that snapshot to the same head, root and eras; a line

@@ -446,6 +446,10 @@ fn court(c: &Court) -> Vec<String> {
                 .collect::<Vec<_>>()
                 .join(" | ")
         ),
+        format!(
+            "  {BOLD}serving{RESET}     {}",
+            observe::SERVE_AXES.iter().zip(c.serve).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join(" · ")
+        ),
     ]
 }
 

@@ -248,6 +248,26 @@ pub fn catchups() -> [[u64; super::CATCHUP_OUTCOMES.len()]; super::CATCHUP_PATHS
     std::array::from_fn(|p| std::array::from_fn(|o| CATCHUP[p][o].load(Ordering::Relaxed)))
 }
 
+/// 2026-10-08 — the serving side of the catch-up pages (`Court::serve`).
+static SERVE: [AtomicU64; super::SERVE_AXES.len()] = [const { AtomicU64::new(0) }; super::SERVE_AXES.len()];
+
+/// One serving count, by its axis: added for a count, raised for the level.
+pub fn note_serve(axis: super::ServeAxis, n: u64) {
+    match axis {
+        super::ServeAxis::MostEras => {
+            SERVE[axis as usize].fetch_max(n, Ordering::Relaxed);
+        }
+        _ => {
+            SERVE[axis as usize].fetch_add(n, Ordering::Relaxed);
+        }
+    }
+}
+
+/// The serving counts this process has counted.
+pub fn serves() -> [u64; super::SERVE_AXES.len()] {
+    std::array::from_fn(|i| SERVE[i].load(Ordering::Relaxed))
+}
+
 /// 78.47 — the orbits a demand arm left undischarged, by the kind their own
 /// holonomy reads (78.9), apart from the refusals.
 static UNDISCHARGED: [AtomicU64; 6] = [const { AtomicU64::new(0) }; 6];

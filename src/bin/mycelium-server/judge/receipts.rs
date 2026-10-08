@@ -6,7 +6,7 @@
 //! never past a hole. A read over the kernel with no carrier touched.
 
 use crate::door::Door;
-use crate::transport::answer;
+use crate::transport::answer_written;
 use mycelium::anastome::dialogue;
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
@@ -22,5 +22,8 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         Err(_) => return,
     };
     let body = dialogue::encode_receipts_reply(&receipts, budget);
-    answer(stream, Frame { lane: frame.lane, body });
+    // A page the asker no longer waits for is counted, never dropped silent.
+    if !answer_written(stream, Frame { lane: frame.lane, body }) {
+        mycelium::observe::note_serve(mycelium::observe::ServeAxis::Unwritten, 1);
+    }
 }

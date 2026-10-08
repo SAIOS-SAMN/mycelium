@@ -558,6 +558,9 @@ pub struct SolveAct {
     /// The rule the voice extracted, when it speaks one. `None` is an
     /// answer with no rule behind it — the registry prices it differently.
     pub rule: Option<Vec<u8>>,
+    /// 78.141 — whether the voice signed the act. The court pays the voice
+    /// a solve names, so an unsigned solve names no payee and is refused.
+    pub signed: bool,
 }
 
 /// One selection's birth evidence: `(address, positions, scene)`

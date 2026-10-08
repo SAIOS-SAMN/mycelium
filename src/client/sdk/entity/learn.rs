@@ -78,7 +78,11 @@ impl Entity {
         outputs: &[Grid],
         rule: Option<&Element>,
     ) -> io::Result<(u8, [u64; 4])> {
-        let voice = self.session.kernel().voice();
+        // 78.141 — a solve names its payee by the voice's signature: a
+        // kernel seated without its key sends none.
+        let Some(key) = self.session.kernel().signer().cloned() else {
+            return Err(io::Error::new(io::ErrorKind::PermissionDenied, "a kernel seated without its key signs no solve"));
+        };
         // A rule whose record does not write is not sent as no rule (STD1 3c).
         let bytes = match rule {
             Some(e) => Some(e.to_bytes().ok_or_else(|| {
@@ -88,7 +92,7 @@ impl Entity {
         };
         // A solve that does not fit the lengths the frame writes is not
         // sent short: it is not sent (47.1).
-        let Some(act) = dialogue::encode_solve_with_rule(&voice, id, outputs, bytes.as_deref())
+        let Some(act) = dialogue::encode_solve_with_rule(&key, id, outputs, bytes.as_deref())
         else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,

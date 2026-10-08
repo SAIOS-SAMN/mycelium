@@ -45,6 +45,7 @@ fn publish_standing(k: &mycelium::cognition::Kernel, mesh: &crate::exchange::Mes
         overflowed: k.overflowed(),
         folds: observe::folds(),
         catchup: observe::catchups(),
+        serve: observe::serves(),
     };
     // ACT1 — this court on the clock; EC1 — its payments by proof of work;
     // and its acts and metabolism.

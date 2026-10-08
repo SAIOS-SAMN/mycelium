@@ -157,3 +157,32 @@ fn a_peers_reply_past_its_wall_is_refused_never_clamped() {
     let long = vec!["a".repeat(usize::from(u16::MAX) + 1)];
     assert_eq!(encode_peers_reply(&long), None, "an address past two bytes refuses the reply");
 }
+
+/// 78.141 — A SOLVE NAMES ITS PAYEE BY ITS VOICE'S SIGNATURE: signed by the
+/// key whose verifying half is its voice, with and without its rule, it
+/// reads back signed; a byte of it changed, or its voice swapped for
+/// another's, reads unsigned; one with no signature reads unsigned; bytes
+/// after it that are no signature refuse it.
+#[test]
+fn a_solve_names_its_payee_by_its_voices_signature() {
+    let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
+    let outputs = vec![vec![vec![1u8, 2], vec![0, 3]]];
+    for rule in [None, Some(&b"a rule's tape"[..])] {
+        let body = encode_solve_with_rule(&key, [7u8; 32], &outputs, rule).expect("fits");
+        let act = decode_solve(&body).expect("reads back");
+        assert!(act.signed, "signed by its voice");
+        assert_eq!((act.voice, act.outputs.clone(), act.rule.as_deref()), (key.verifying_key().to_bytes(), outputs.clone(), rule));
+        let mut tampered = body.clone();
+        tampered[40] ^= 1;
+        assert!(decode_solve(&tampered).is_some_and(|a| !a.signed), "a changed act is not what was signed");
+        let other = ed25519_dalek::SigningKey::from_bytes(&[6u8; 32]).verifying_key().to_bytes();
+        let mut swapped = body.clone();
+        swapped[1..33].copy_from_slice(&other);
+        assert!(decode_solve(&swapped).is_some_and(|a| !a.signed), "another voice named as payee");
+        let unsigned = body.get(..body.len() - 68).expect("a signature at the end").to_vec();
+        assert!(decode_solve(&unsigned).is_some_and(|a| !a.signed), "no signature, no payee");
+        let mut trailing = body.clone();
+        trailing.push(0);
+        assert!(decode_solve(&trailing).is_none(), "bytes after the signature");
+    }
+}

@@ -205,8 +205,14 @@ impl Kernel {
         // the kernel OOM-killed at its 2 GB cap every six minutes (epoch 114,
         // the jemalloc heap profile at the peak). The run is in line order,
         // so what the budget and the page's bytes leave room for is its head.
+        // 2026-10-08 — THE COLD WORK THIS PAGE SPENT, counted on the serving
+        // court (`Court::serve`): every era paged in from the cold segment
+        // and every receipt read off it — the court's own work, never a
+        // clock — so a range that starves its asker reads as one.
+        let mut eras_paged = 0u64;
         'eras: for e in self.eras_over(signer, after, upto) {
             let Some(page) = self.era_receipts(e) else { continue };
+            eras_paged += 1;
             // A paged era is in line order: the range is its run between
             // the two places.
             for r in page.iter().filter(|r| within(r.stamp.place())) {
@@ -222,6 +228,19 @@ impl Kernel {
             clippy::disallowed_methods,
             reason = "rule 15 — FIFO drain head: the cold run is in line order, so its tail is the last place it read"
         )]
+        {
+            use crate::observe::{note_serve, ServeAxis};
+            note_serve(ServeAxis::Pages, 1);
+            match eras_paged {
+                0 => note_serve(ServeAxis::HotOnly, 1),
+                n => {
+                    note_serve(ServeAxis::Cold, 1);
+                    note_serve(ServeAxis::ErasPaged, n);
+                    note_serve(ServeAxis::ReceiptsCold, cold.len() as u64);
+                    note_serve(ServeAxis::MostEras, n);
+                }
+            }
+        }
         let hot_after = cold.last().map(|r| r.stamp.place()).or(after);
         let hot = self.chain.line_between(signer, hot_after, upto, budget);
         let own = *signer == self.identity;

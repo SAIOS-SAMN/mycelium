@@ -149,7 +149,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: tid, rule: rule_bytes, .. }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: tid, rule: rule_bytes, signed, .. }) =
             dialogue::decode_solve(&frame.body)
         else {
             return true;
@@ -180,6 +180,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
         };
         let (code, mu, refusal, stamp) = match (open, rule.as_ref()) {
+            // 78.141 — the court pays the voice a solve names: unsigned, it
+            // names no payee, and nothing is judged or paid.
+            _ if !signed => (
+                dialogue::SOLVE_NOTHING,
+                [0; 4],
+                Some(refused("unsigned: a solve names its payee by its voice's signature", mycelium::transducer::sentence::ObstructionKind::I)),
+                None,
+            ),
             (None, _) => (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None),
             (Some(_), None) => (
                 dialogue::SOLVE_NOTHING,

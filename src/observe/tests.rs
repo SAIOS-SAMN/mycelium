@@ -63,6 +63,8 @@ fn every_reading_reads_back_as_itself_through_the_act() {
         // The fold's round by outcome, each in its own slot.
         folds: [10, 11, 12, 13, 14, 15, 16, 17],
         catchup: [[16, 17, 18, 19, 20], [21, 22, 23, 24, 25]],
+        // The serving side of a catch-up page, each axis in its own slot.
+        serve: [26, 27, 28, 29, 30, 31, 32],
     };
     // ACT1 — a court on the clock with a peer above and a peer below its
     // head (the gap is signed), and a voice before and after a persist.

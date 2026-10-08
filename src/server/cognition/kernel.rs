@@ -1000,7 +1000,23 @@ impl Kernel {
                 // The hole is named and handed back; the receipt that
                 // exposed it is not admitted and not refused, it waits for
                 // the citation to arrive (topological order).
-                crate::court::admission::Admitted::MissingParent(p) => return (n, Some(p)),
+                // NO SILENT VERDICT (2026-10-08): the stop is counted under
+                // the CITED signer — whether this court holds that signer's
+                // fold root (an era proof can run) and how far the cited
+                // orbit stands past the head held for it. This counted
+                // nothing, and hid hypha c's isolation behind `backfill_budget`.
+                crate::court::admission::Admitted::MissingParent(p) => {
+                    use crate::observe::rep;
+                    crate::observe::note_replication(Some(p.at.vk), rep::BACKFILL_MISSING_PARENT, 1);
+                    if self.chain.peer_root(&p.at.vk).is_none() {
+                        crate::observe::note_replication(Some(p.at.vk), rep::BACKFILL_MISSING_UNROOTED, 1);
+                    }
+                    let held = self.known_head(&p.at.vk).map(|(at, _)| at.k);
+                    if let Some(depth) = (p.at.k + 1).checked_sub(held.map_or(0, |h| h + 1)) {
+                        crate::observe::set_replication(p.at.vk, rep::MISSING_DEPTH, depth);
+                    }
+                    return (n, Some(p));
+                }
                 // THE PAGE STOPS, AND SAYS WHY (Phase 1): this was one silent
                 // break for every other outcome, and hypha a's chase of b's
                 // line read "reached" beside a flat admitted count.

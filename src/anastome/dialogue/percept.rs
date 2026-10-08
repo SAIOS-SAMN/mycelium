@@ -71,24 +71,38 @@ pub fn decode_task_envelope(body: &[u8]) -> Option<TaskEnvelope> {
     Some(TaskEnvelope { id, train, tests })
 }
 
-/// solve submission: `[ACT_SOLVE][voice 32][task_id address][n u8][grid·n]`
-/// and optionally `[RULE][len u32][element]` so the home speaks the rule.
+/// 78.141 — the signed bytes' domain of a solve.
+const SIGNED_SOLVE: &[u8] = b"mycelium solve v1";
+
+/// The bytes a solve's voice signs: the domain, then the act up to its
+/// signature.
+fn solve_signed_bytes(unsigned: &[u8]) -> Vec<u8> {
+    let mut b = SIGNED_SOLVE.to_vec();
+    b.extend_from_slice(unsigned);
+    b
+}
+
+/// solve submission: `[ACT_SOLVE][voice 32][task_id address][n u8][grid·n]`,
+/// optionally `[RULE][len u32][element]` so the home speaks the rule, then —
+/// 78.141 — `[SIGN][sig 64]`: the voice, which the court pays, signs the act,
+/// and the voice is its key's verifying half.
 pub fn encode_solve(
-    voice: &[u8; 32],
+    key: &ed25519_dalek::SigningKey,
     id: impl AsRef<[u8]>,
     outputs: &[Vec<Vec<u8>>],
 ) -> Option<Vec<u8>> {
-    encode_solve_with_rule(voice, id, outputs, None)
+    encode_solve_with_rule(key, id, outputs, None)
 }
 
 pub fn encode_solve_with_rule(
-    voice: &[u8; 32],
+    key: &ed25519_dalek::SigningKey,
     id: impl AsRef<[u8]>,
     outputs: &[Vec<Vec<u8>>],
     rule: Option<&[u8]>,
 ) -> Option<Vec<u8>> {
+    use ed25519_dalek::Signer;
     let mut out = vec![ACT_SOLVE];
-    out.extend_from_slice(voice);
+    out.extend_from_slice(&key.verifying_key().to_bytes());
     put_addr(&mut out, id)?;
     crate::transducer::address::put_u8_count(&mut out, outputs.len())?;
     for g in outputs {
@@ -98,9 +112,14 @@ pub fn encode_solve_with_rule(
         out.extend_from_slice(b"RULE");
         crate::transducer::address::put_bytes(&mut out, r)?;
     }
+    let sig = key.sign(&solve_signed_bytes(&out)).to_bytes();
+    out.extend_from_slice(b"SIGN");
+    out.extend_from_slice(&sig);
     Some(out)
 }
 
+/// A solve read back: `None` where it does not decode, or where bytes stand
+/// after it that are no signature; `signed` whether its voice signed it.
 pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
     if !act_is(body, ACT_SOLVE) {
         return None;
@@ -122,7 +141,16 @@ pub fn decode_solve(body: &[u8]) -> Option<SolveAct> {
     } else {
         None
     };
-    Some(SolveAct { voice, task: id, outputs, rule })
+    p += rule.as_ref().map_or(0, Vec::len);
+    let signed = match body.get(p..) {
+        Some([]) => false,
+        Some([b'S', b'I', b'G', b'N', sig @ ..]) => {
+            let sig: [u8; 64] = sig.try_into().ok()?;
+            crate::court::identity::verify(&voice, &solve_signed_bytes(body.get(..p)?), &sig)
+        }
+        _ => return None,
+    };
+    Some(SolveAct { voice, task: id, outputs, rule, signed })
 }
 
 

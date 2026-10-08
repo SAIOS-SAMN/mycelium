@@ -241,7 +241,8 @@ fn main() {
     let mut feed = Feed::new(home.clone(), conductor);
     let mut entity = Entity::open_persistent(
         &bootstrap,
-        Kernel::from_voice(voice.identity()),
+        // 78.141 — seated on its key: the solves it is paid for are signed.
+        Kernel::from_key(voice_key.sk.clone()),
         &genome_path,
     );
     entity.set_height(height);

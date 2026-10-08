@@ -478,6 +478,29 @@ pub struct Court {
     /// read one `None` for four different failures; the four are counted
     /// apart (a `None` never stands for two facts, 78.26(4)).
     pub catchup: [[u64; CATCHUP_OUTCOMES.len()]; CATCHUP_PATHS.len()],
+    /// 2026-10-08 — THE SERVING SIDE OF A CATCH-UP PAGE, on [`SERVE_AXES`]:
+    /// what this court spent answering a range of a line (the cold archive
+    /// paged, in eras and receipts — the court's own work, never a clock) and
+    /// whether the answer was WRITTEN, or found the asker gone (a page that
+    /// missed the asker's wait). The asking side is `catchup`.
+    pub serve: [u64; SERVE_AXES.len()],
+}
+
+/// The axes of [`Court::serve`]: counts, and one level (the most eras one
+/// page paged).
+pub const SERVE_AXES: [&str; 7] = ["pages", "hot only", "cold", "eras paged", "receipts cold", "unwritten", "most eras one page"];
+
+/// Where each serving count is written on [`SERVE_AXES`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ServeAxis {
+    Pages = 0,
+    HotOnly = 1,
+    Cold = 2,
+    ErasPaged = 3,
+    ReceiptsCold = 4,
+    Unwritten = 5,
+    /// A LEVEL: raised to the most eras one page paged, never summed.
+    MostEras = 6,
 }
 
 /// The catch-up paths of [`Court::catchup`].
@@ -544,6 +567,9 @@ impl Court {
         for n in self.catchup.iter().flatten() {
             put_u64(out, *n);
         }
+        for n in self.serve {
+            put_u64(out, n);
+        }
         Some(())
     }
 
@@ -569,6 +595,10 @@ impl Court {
         for n in catchup.iter_mut().flatten() {
             *n = take_u64(b, p)?;
         }
+        let mut serve = [0u64; SERVE_AXES.len()];
+        for n in &mut serve {
+            *n = take_u64(b, p)?;
+        }
         Some(Court {
             k,
             basis,
@@ -582,6 +612,7 @@ impl Court {
             overflowed,
             folds,
             catchup,
+            serve,
         })
     }
 }
@@ -654,11 +685,19 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     // 78.65, 78.87 R2 — the citation into a closed era PROVED by the era's
     // own chain, walked from it up to the signer's fold root.
     ("folded_proved", "citations into a closed era proved by the era's chain up to its root"),
+    // 2026-10-08 — NO SILENT VERDICT (the coordinator's ruling on hypha c's
+    // isolation): a citation of another signer's receipt this court does not
+    // hold is counted apart from a hole in the signer's own line, and a
+    // back-fill page that stops on one says so, under the CITED signer.
+    ("missing_parent", "frames citing another signer's receipt this court does not hold (the back-fill chases it)"),
+    ("backfill_missing_parent", "back-fill pages stopped on a cited receipt of this signer that this court does not hold"),
+    ("backfill_missing_unrooted", "of them, citations of a signer whose fold root this court does not hold (no era proof can run)"),
+    ("missing_depth", "the cited orbit against the head held for this signer at the last such stop (a level, not a count)"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 44;
+pub const REP_AXES: usize = 48;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -706,6 +745,11 @@ pub mod rep {
     pub const GLUE_ADMITTED: usize = 41;
     pub const FOLDED_PARENT: usize = 42;
     pub const FOLDED_PROVED: usize = 43;
+    pub const MISSING_PARENT: usize = 44;
+    pub const BACKFILL_MISSING_PARENT: usize = 45;
+    pub const BACKFILL_MISSING_UNROOTED: usize = 46;
+    /// A LEVEL: set at each stop, never summed.
+    pub const MISSING_DEPTH: usize = 47;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
