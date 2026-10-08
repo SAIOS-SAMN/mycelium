@@ -156,8 +156,8 @@ fn a_court_behind_a_fold_adopts_the_root_and_cites_the_head() {
 /// catch-up from genesis is answered with the root and its two signatures —
 /// no page, so no era is read for it — and the answer rides the wire whole.
 /// From the root the hot line answers; only an era replay pages the archive.
-/// A court whose fold kept no proof answers below its root off the hot line
-/// alone, and counts it. A proof with a broken signature, at another origin,
+/// A court whose fold kept no proof answers below its root from the archive,
+/// so the page links to the asker's head, and counts it. A proof with a broken signature, at another origin,
 /// or over another root does not stand.
 #[test]
 #[expect(clippy::disallowed_methods, reason = "rule 15 — an era replay is read in its own order, and its first act is the era's opening: the order is content")]
