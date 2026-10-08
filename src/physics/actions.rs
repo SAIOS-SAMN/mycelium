@@ -37,6 +37,10 @@ pub enum Kind {
     Court,
     /// Refused at the door by its type; its byte is never reused.
     Retired,
+    /// 78.145 — HELD AND FORWARDED, JUDGED BY NOTHING: a signed relay between
+    /// a game's house and the minds seated in it. It never seals, answers to
+    /// no law (it moves no book), and what it holds is volatile and bounded.
+    Relay,
 }
 
 /// EVERY ACTION OF THE UNIVERSE.
@@ -90,6 +94,12 @@ pub enum Action {
     /// own coordinate. 0x07 is the last wire byte taken: 0x0A and 0x0F stay
     /// reserved, and the next act is a sub-kind under an existing one.
     Handoff,
+    /// 78.145 — THE SEAT SURFACE: a game's house lists its seats, a mind
+    /// takes one, the house perceives for it and the mind calls; the hypha
+    /// holds and forwards, signed, judging nothing in-game. Its byte 0x53
+    /// stands in the court's range by the wire agreed with the kernels, and
+    /// is asked on the wire by its kind (`Kind::Relay`), never sealed.
+    Seat,
     // Exchanges.
     Adopt,
     Root,
@@ -128,8 +138,9 @@ pub enum Action {
 /// Every action, in coordinate order. 0x0A and 0x0F stand unassigned (0x0F
 /// was the retired genesis page, 2026-09-29) and RESERVED (78.126): the wire's
 /// bytes below the court's range are spent, so the next act is a sub-kind
-/// under an existing one, never a new byte.
-pub const ACTIONS: [Action; 55] = [
+/// under an existing one, never a new byte. 78.145's seat relay is the one
+/// exception, at 0x53 past the court's acts, by the wire the kernels agreed.
+pub const ACTIONS: [Action; 56] = [
     Action::Percept,
     Action::Gossip,
     Action::Demand,
@@ -185,6 +196,7 @@ pub const ACTIONS: [Action; 55] = [
     Action::Return,
     Action::RankStep,
     Action::Reconnect,
+    Action::Seat,
 ];
 
 /// The first coordinate of a court's own acts: below it, the wire's.
@@ -249,6 +261,7 @@ impl Action {
             Action::Return => 0x50,
             Action::RankStep => 0x51,
             Action::Reconnect => 0x52,
+            Action::Seat => 0x53,
         }
     }
 
@@ -312,13 +325,15 @@ impl Action {
             | Action::Return
             | Action::RankStep
             | Action::Reconnect => Kind::Court,
+            Action::Seat => Kind::Relay,
         }
     }
 
     /// WHETHER A PARTY ASKS IT ON THE WIRE: its coordinate stands below the
-    /// court's range. A court act is never requested.
+    /// court's range, or it is a relay (78.145). A court act is never
+    /// requested.
     pub const fn on_wire(self) -> bool {
-        self.byte() < COURT_RANGE
+        self.byte() < COURT_RANGE || matches!(self.kind(), Kind::Relay)
     }
 
     /// THE ACTION A WIRE TAG NAMES, or none: a court act is never asked for.
@@ -350,7 +365,7 @@ impl Action {
     /// kind, nor for a retired one, which never runs.
     pub fn laws(self) -> &'static [crate::physics::laws::Law] {
         match self.kind() {
-            Kind::Observation | Kind::Retired => &[],
+            Kind::Observation | Kind::Retired | Kind::Relay => &[],
             Kind::Transition | Kind::Exchange | Kind::Court => &crate::physics::laws::LAWS,
         }
     }
@@ -426,6 +441,7 @@ impl Action {
             Action::Stood => b"stood",
             Action::Uttered => b"uttered",
             Action::Learned => b"learned",
+            Action::Seat => b"seat",
         }
     }
 

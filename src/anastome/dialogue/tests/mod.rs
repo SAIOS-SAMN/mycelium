@@ -13,4 +13,5 @@ mod uplink;
 mod domain;
 mod challenge;
 mod handoff;
+mod seat;
 mod verdict;

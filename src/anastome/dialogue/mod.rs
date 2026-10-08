@@ -17,6 +17,7 @@ pub mod offer;
 pub mod percept;
 pub mod quote;
 pub mod receipts;
+pub mod seat;
 pub mod speech;
 pub mod syllabus;
 pub mod tube;

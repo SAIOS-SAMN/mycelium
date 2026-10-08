@@ -243,6 +243,11 @@ pub const ACT_CHALLENGE: u8 = Action::Challenge.byte();
 /// side consumed by one fold. The layout and its codec are
 /// `dialogue::handoff`'s.
 pub const ACT_HANDOFF: u8 = Action::Handoff.byte();
+/// THE SEAT SURFACE (78.145): a game's house lists its seats, a mind takes
+/// one, the house perceives for it, the mind calls and the house answers the
+/// outcome — each signed, held and forwarded by the hypha, judged by nothing
+/// in-game. The layout and its codec are `dialogue::seat`'s.
+pub const ACT_SEAT: u8 = Action::Seat.byte();
 
 /// THE PROBE (interrogative grammar): a tentative sentence spoken against an
 /// open listing — citations (word address, transport g, gauge coordinate)

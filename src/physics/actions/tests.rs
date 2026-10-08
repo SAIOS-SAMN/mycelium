@@ -18,9 +18,10 @@ fn every_action_holds_one_coordinate() {
         }
         assert_eq!(a.on_wire(), a.kind() != Kind::Court && !matches!(a, Action::Section | Action::Stood | Action::Uttered | Action::Learned));
     }
-    // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126); 0x0A and
-    // 0x0F are reserved.
-    for unassigned in [0x0Au8, 0x0F, 0x53, 0xFF] {
+    // 0x3F is the challenge's (78.125), 0x07 the handoff's (78.126), 0x53
+    // the seat relay's (78.145); 0x0A and 0x0F are reserved.
+    assert_eq!(Action::of_tag(0x53), Some(Action::Seat), "the relay is asked on the wire");
+    for unassigned in [0x0Au8, 0x0F, 0x54, 0xFF] {
         assert_eq!(Action::of(unassigned), None);
     }
     assert_eq!(Action::of_tag(Action::Orbit.byte()), None, "a court act is never asked for");
@@ -35,7 +36,7 @@ fn an_observation_seals_nothing_and_a_transition_answers_to_every_law() {
     assert_eq!(sealed.len(), 21, "{sealed:?}");
     for a in ACTIONS {
         match a.kind() {
-            Kind::Observation | Kind::Retired => {
+            Kind::Observation | Kind::Retired | Kind::Relay => {
                 assert!(a.laws().is_empty());
                 assert!(!a.sealed(), "{a:?}");
                 assert_eq!(Action::from_byte(a.byte()), None);
@@ -66,6 +67,7 @@ fn the_wire_spells_the_table() {
         (d::ACT_LAWS, Action::Laws, Kind::Observation),
         (d::ACT_WHY, Action::Why, Kind::Observation),
         (d::ACT_WALLET, Action::Wallet, Kind::Observation),
+        (d::ACT_SEAT, Action::Seat, Kind::Relay),
         (d::ACT_PERCEPT, Action::Percept, Kind::Retired),
         (d::ACT_TEACH, Action::Teach, Kind::Retired),
         (d::ACT_DOCKET, Action::Docket, Kind::Retired),
