@@ -15,6 +15,7 @@ mod fetch;
 mod heard;
 mod court;
 mod depth;
+mod discharge;
 mod era;
 mod extraction;
 mod awaiting;

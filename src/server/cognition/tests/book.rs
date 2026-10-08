@@ -209,7 +209,6 @@ for e in [&e1, &e2, &e3] {
     on_page.insert(e.address(), ());
 }
 let spoken = crate::network::nerve::Keyed::new();
-let standing = crate::network::nerve::Keyed::new();
 let quote = |p: &crate::network::nerve::Keyed<Element>| {
     quote_incidence(
         &BookView {
@@ -218,7 +217,6 @@ let quote = |p: &crate::network::nerve::Keyed<Element>| {
             field: &field,
             on_page: &on_page,
             spoken: &spoken,
-            standing_t: &standing,
         },
         &Ask { charts: &[], surface: &[0; 4], pressure: &[0; 4], budget: 10_000, voice: &[0; 32] },
     )

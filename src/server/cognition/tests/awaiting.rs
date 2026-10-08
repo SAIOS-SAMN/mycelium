@@ -311,10 +311,12 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
         "the citer waits on the word (D)"
     );
     // THE PRESSURE, in the algebra of the lanes: the citer's frame arrived
-    // and one carriage drew the word's own, exactly.
+    // and one carriage drew the word's own, exactly — its frame read in the
+    // escrow's currency, the word's discharge (78.149), which a word heard
+    // for no task measures as nothing.
     let escrow_after = k.treasury().escrow_of(w.as_bytes()).map(|e| e.mu).expect("still under escrow");
-    let expected: [u64; 4] =
-        std::array::from_fn(|l| escrow_before[l] + citer.magnitude()[l] - word.magnitude()[l]);
+    let drawn = k.discharge_of(w.as_bytes(), &word);
+    let expected: [u64; 4] = std::array::from_fn(|l| escrow_before[l] + citer.magnitude()[l] - drawn[l]);
     assert_eq!(escrow_after, expected, "escrow + citer's frame − the carriage's draw, per lane");
     assert!(k.take_offers().iter().any(|(a, _)| *a == w), "and the carriage emitted the word's offer again");
     // A bonded second vantage re-derives the word; the ruling closes its orbit.

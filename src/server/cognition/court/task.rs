@@ -117,7 +117,9 @@ impl Kernel {
     /// docketed and offered. Every listing bound to the task that holds an
     /// escrow is RELEASED TO THE VOICES ITS ESCROW NAMES — the solve
     /// confirmed their claim — at a Settled act citing that listing
-    /// (`mint_claim`, split as the escrow's consilience says); never to the
+    /// (`mint_claim`, split as the escrow's consilience says), paid the
+    /// solve's measured discharge capped lane-wise by the escrow (78.149
+    /// (b), `release_discharged`); never to the
     /// solver for another voice's claim. The solver is minted what its rule
     /// discharged on the withheld pairs (`pay`), on the task's FIRST closure
     /// only: a repeat is verified and pays nothing — no floor, the decay is
@@ -142,9 +144,10 @@ impl Kernel {
             }
             self.append_step(crate::chronometry::ActKind::Settled, addr, voice);
             let settled = self.anchor();
-            if let Some(crate::economy::escrow::Escrowed { voices, mu: held, .. }) = self.treasury.release_award(addr) {
-                self.treasury.mint_claim(&voices, held, settled);
-            }
+            // 78.149 (b): the claim is paid the CLOSER'S measured discharge
+            // on the withheld pairs, `pay`, lane-wise capped by what its
+            // escrow held; nothing above the discharge is minted.
+            let _ = self.treasury.release_discharged(addr.as_bytes(), pay, settled);
         }
         let name = if first { "first closures" } else { "closures again" };
         crate::observe::count(&mut self.acts.judged, &crate::observe::JUDGED, name);

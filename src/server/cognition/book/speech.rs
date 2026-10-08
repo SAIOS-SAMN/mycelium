@@ -402,7 +402,16 @@ impl Kernel {
             crate::observe::note_obstruction(refusal.obstruction.kind());
             return Err(refusal);
         }
-        let out = self.list_sentence(s, voice);
+        // 78.149 — WHAT THE SENTENCE DISCHARGES, measured on the family of
+        // the task it was heard for (the family its binding below will name,
+        // so the install reads the same): its escrow is priced from this and
+        // nothing else.
+        let heard_on = match task.is_empty() || task == [0u8; 32] {
+            true => None,
+            false => self.task_family.get(task).map(Vec::as_slice),
+        };
+        let discharge = self.discharge_on(s.address().as_bytes(), s, heard_on);
+        let out = self.list_sentence(s, voice, discharge);
         // A SENTENCE SPOKEN FOR ITSELF NAMES NO TASK. `Entity::speak` sends
         // an empty task for a word spoken on its own — an axis germ, a
         // crystallized idea, an adjoined letter — and `[]` is not `[0; 32]`,
@@ -418,8 +427,21 @@ impl Kernel {
         Ok(out)
     }
 
-    /// List a word on the docket if it is not already provisional.
+    /// List a word on the docket if it is not already provisional, escrowed
+    /// at its discharge on the family it is bound to (78.149,
+    /// `discharge_of`).
     pub(crate) fn docket_connection(&mut self, word: &Element, ratifier: [u8; 32]) {
+        let discharge = self.discharge_of(word.address().as_bytes(), word);
+        self.docket_discharged(word, ratifier, discharge);
+    }
+
+    /// The docket, escrowed at a discharge the caller measured — the
+    /// hearing's own, where the word is not bound to its family yet. The
+    /// escrow is priced from the DISCHARGE alone (78.149): never the span
+    /// the word stood, never what it asks, nothing for a word that names no
+    /// body. Its magnitude is still what the field and the deflation record
+    /// carry: the word's measure, not its price.
+    pub(crate) fn docket_discharged(&mut self, word: &Element, ratifier: [u8; 32], discharge: [u64; 4]) {
         if word.is_identity() && !word.is_rewrite() {
             return;
         }
@@ -428,10 +450,12 @@ impl Kernel {
             return;
         }
         let mag = word.magnitude();
+        // A rewrite's discharge is its yield, escrowed as read; any other
+        // word's is priced on the lane (§5).
         let mu = if word.is_rewrite() {
-            mag
+            discharge
         } else {
-            crate::economy::price(&mag, &self.physics.pressure)
+            crate::economy::price(&discharge, &self.physics.pressure)
         };
         let anchor = self.anchor();
         // THIS COURT re-derived the word to docket it: its own vantage,

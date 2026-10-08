@@ -133,7 +133,6 @@ pub fn quote(
                 field: g.field(),
                 on_page: g.on_page(),
                 spoken: g.spoken(),
-                standing_t: &view.standing_t,
             },
             &crate::cognition::Ask {
                 charts,

@@ -95,11 +95,12 @@ impl Kernel {
     /// letter is named by content (law 6) and no act byte is added.
     ///
     /// Its address is `form_vertex_key`, so two courts deriving one
-    /// factor reach ONE address and arity 2 converges on it (P3). Its μ⃗
-    /// is the demand's bodies measured lane-wise — what the language
-    /// could not say without it, the same measure a listing's remainder
-    /// takes. It closes nothing on any family by itself, so its install
-    /// mints none and says so; what its speakers earn is room when it is
+    /// factor reach ONE address and arity 2 converges on it (P3). Its
+    /// MAGNITUDE is the demand's bodies measured lane-wise — what the
+    /// language could not say without it, the same measure a listing's
+    /// remainder takes — and that is its measure, never its price: it closes
+    /// nothing on any family by itself, so it escrows nothing and its install
+    /// mints none (78.149 (c)); what its speakers earn is room when it is
     /// used (26 as ruled).
     /// 37.7 AT THE ROTOR LEVEL: a rotor the seventeen cannot spell, met as
     /// the court's own unspellable simplex or carried by a voice's `Standing`
@@ -174,7 +175,12 @@ impl Kernel {
         // because it refuses an element whose action is the identity, and
         // a form's action is carried by its tape and not by its chain.
         let addr_owned = addr.clone();
-        let mu = crate::economy::price(&e.magnitude(), &self.physics.pressure);
+        // 78.149 (c): A LETTER NAMES NO BODY — it stands at no frame and
+        // closes nothing on any family — so it is escrowed at its discharge,
+        // which measures nothing. Its magnitude (the demand's bodies, or the
+        // holonomic unit) is its existence as a word, never μ.
+        let discharge = self.discharge_of(addr_owned.as_bytes(), &e);
+        let mu = crate::economy::price(&discharge, &self.physics.pressure);
         let anchor = self.anchor();
         self.converge_here(&e, *voice);
         self.treasury.escrow_award(&addr_owned, vec![*voice], mu, anchor);
@@ -200,7 +206,11 @@ impl Kernel {
     /// on the open book with its demands, escrowed to its parties, docketed
     /// and Offered. On a depleted lane it is listed and charged by its
     /// orbits' orders, and the install waits for the reserve (E3).
-    pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
+    ///
+    /// `discharge` is what the sentence discharges on the family it was
+    /// heard for (`Kernel::discharge_on`): every escrow written here is
+    /// priced from it and never from the word's magnitude (78.149).
+    pub(crate) fn list_sentence(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         if self.is_live(&addr) {
@@ -211,7 +221,7 @@ impl Kernel {
             // (24.1): the escrow names every party, so the release pays it.
             self.convergence.used_by(addr.as_bytes(), voice);
             self.record_spoken(addr.clone(), voice);
-            let mu = crate::economy::price(&mag, &self.physics.pressure);
+            let mu = crate::economy::price(&discharge, &self.physics.pressure);
             let anchor = self.anchor();
             self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
             // A voice arriving on the word escrows its price: that frame is
@@ -220,7 +230,7 @@ impl Kernel {
             return Outcome::GermPending;
         }
         if !word.is_sentence() {
-            self.docket_connection(word, voice);
+            self.docket_discharged(word, voice, discharge);
             return Outcome::GermPending;
         }
         // ADMISSION IS ROOM (23.8, S9.6): T-room is swept before the draw
@@ -237,9 +247,9 @@ impl Kernel {
             }
         }
         if crate::economy::lanes_short(&self.physics.reserve_shortfall(word.lanes())).is_empty() {
-            self.list_and_docket(word, voice)
+            self.list_and_docket(word, voice, discharge)
         } else {
-            self.list_charged(word, voice)
+            self.list_charged(word, voice, discharge)
         }
     }
 
@@ -281,14 +291,16 @@ impl Kernel {
     /// while it awaits its witness, its demands listed under it, its escrow
     /// held for its parties, its deflation what the listing measures, and
     /// the install sealed as a step of this court's clock.
-    fn list_and_docket(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
+    fn list_and_docket(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         self.converge_here(word, voice);
         self.book_list(word.clone(), voice);
         self.list_demands(word, &voice);
         let _ = self.treasury.settle_install(word, voice); // POW++ gate only
-        let mu = crate::economy::price(&mag, &self.physics.pressure);
+        // 78.149: escrowed at what it discharged, never at its magnitude —
+        // the ask its demands carry and the span it stood are not μ.
+        let mu = crate::economy::price(&discharge, &self.physics.pressure);
         let anchor = self.anchor();
         self.treasury.escrow_award(&addr, self.convergence.parties(&addr), mu, anchor);
         self.record_deflation(addr.clone(), addr.clone(), mag);
@@ -318,7 +330,7 @@ impl Kernel {
     /// THE OPEN-DEMAND ARM (24.1, 26): a sentence the lane cannot expand on
     /// is still listed, charged for itself, and docketed; the metabolism
     /// defers the install and nothing strands it.
-    fn list_charged(&mut self, word: &Element, voice: [u8; 32]) -> Outcome {
+    fn list_charged(&mut self, word: &Element, voice: [u8; 32], discharge: [u64; 4]) -> Outcome {
         let addr = word.address();
         let mag = word.magnitude();
         self.charge_orbits(word, &mag);
@@ -326,7 +338,7 @@ impl Kernel {
         if !self.pending.contains(&addr) {
             self.book_list(word.clone(), voice);
             self.list_demands(word, &voice);
-            self.docket_connection(word, voice);
+            self.docket_discharged(word, voice, discharge);
             self.enter_offered(addr.as_bytes());
         }
         Outcome::GermPending

@@ -438,9 +438,10 @@ impl Kernel {
         self.ruled_admit(&addr, budget);
         self.fed_admit(&addr, spoken.clone());
         let installed = self.anchor();
-        if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.treasury.release_award(&addr) {
-            self.treasury.mint_claim(&voices, mu, installed);
-        }
+        // 78.149 (b): the claim pays the word's measured discharge, the
+        // escrow its cap; nothing above the discharge is minted.
+        let discharge = self.discharge_of(addr.as_bytes(), spoken);
+        let _ = self.treasury.release_discharged(addr.as_bytes(), discharge, installed);
         self.unlist(&addr, false);
         self.leave_provisional(&addr);
         self.court_upheld += 1;
@@ -476,21 +477,11 @@ impl Kernel {
         }
     }
 
-    /// Deflation a form may mint: what speaking it measures on the bound
-    /// family's trains, or the listing's own magnitude when the word is that
-    /// listing. Association with a listing is not a mint.
+    /// Deflation a form may mint: its DISCHARGE on the bound family
+    /// (`discharge_of`, 78.149, the one reader every escrow and release
+    /// takes). Association with a listing is not a mint.
     pub(crate) fn verified_install_deflation(&self, addr: &[u8], form: &Element) -> [u64; 4] {
-        match (form.is_sentence(), self.book_elem(addr)) {
-            (false, Some(e)) => e.magnitude(),
-            (false, None) => [0; 4],
-            (true, _) => {
-                let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
-                match task.and_then(|t| self.task_family.get(t.as_bytes())) {
-                    Some(family) => self.measured_replay(form, family),
-                    None => [0; 4],
-                }
-            }
-        }
+        self.discharge_of(addr, form)
     }
 
     /// 47.3, 13.9: WHAT THIS COURT HOLDS OF ITS OWN ON A CLASS — the Čech

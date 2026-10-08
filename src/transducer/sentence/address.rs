@@ -99,6 +99,11 @@ fn letter_form(
     // bodies measures the lanes of nothing, which `as_element_form` refuses
     // as the zero magnitude — so a caller with no links to name gives the
     // letter the one lane it does occupy, the holonomic.
+    //
+    // 78.149 (c): THIS IS THE LETTER'S MEASURE, ITS EXISTENCE AS A WORD, AND
+    // NEVER μ. A letter names no body and closes nothing on any family, so
+    // its discharge is nothing; every escrow and release reads the discharge
+    // (`Kernel::discharge_of`), and the holonomic unit is never priced.
     let mu = match crate::transducer::element::measure_lanes(bodies) {
         m if m.iter().all(|&x| x == 0) => [0, 0, 0, 1],
         m => m,
@@ -109,9 +114,11 @@ fn letter_form(
 /// RM1, 78.37(4) — A CALLUS: one word vertex whose derivation SPELLS the
 /// twist in the held constructors (never adjoined — that would be a letter,
 /// which CS2's gate alone admits), acting on each chart it was perceived at,
-/// one member per chart: the one twist seen from both vantages. Its μ⃗ is the
-/// one lane a word that names no body occupies, the holonomic, as
-/// `generator_form` gives a letter.
+/// one member per chart: the one twist seen from both vantages. Its
+/// MAGNITUDE is the one lane a word that names no body occupies, the
+/// holonomic, as `generator_form` gives a letter — its existence as a word,
+/// never μ: a word that names no body discharges nothing, and escrows and is
+/// paid nothing (78.149 (c)).
 pub fn callus_form(
     derivation: crate::transducer::alphabet::Derivation,
     charts: &[crate::transducer::stalk::Invariant],
@@ -140,7 +147,9 @@ pub fn callus_form(
 
 /// SENTENCE_TAG v6: the Form tape. Hue maps are derived from vertices.
 /// Addresses are len16 + bytes. `mag` is the residual the form measures over
-/// its bundle. Zero is not a word.
+/// its bundle. Zero is not a word. The magnitude is the word's measure — its
+/// existence, the ask a demand carries — and never its price: what a word is
+/// escrowed or paid is its discharge (78.149).
 pub fn as_element_form(f: &Form, mag: [u64; 4]) -> Option<Element> {
     use crate::transducer::family::trace;
     if f.vertices.is_empty() || mag.iter().all(|&x| x == 0) {

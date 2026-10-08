@@ -38,7 +38,9 @@ pub struct Escrowed {
     /// mint; one takes the vector. Parties, never vantages.
     pub voices: Vec<[u8; 32]>,
     /// The μ⃗ claimed, per lane. Unfinalized speech earns nothing, so this
-    /// is a claim and not a balance until the verdict releases it.
+    /// is a claim and not a balance until the verdict releases it. It is
+    /// priced from the word's discharge alone (78.149) and is a CAP on what
+    /// a release pays, never the payment.
     pub mu: [u64; 4],
     /// The k-step and receipt the claim stands at, so a release books at
     /// the moment it was earned and not the moment it was paid.
@@ -98,22 +100,46 @@ impl Treasury {
     }
 
     /// A filled triangle releases the escrow of the listings its dialects
-    /// settled, minted AT `at`, the act that released them (EC1), never at
-    /// the acts that escrowed them. The released total is a reading: `None`,
-    /// counted, where it would pass its carrier (STD1) — every release still
-    /// minted, each by its own row.
-    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[A], at: Anchor) -> Option<[u64; 4]> {
+    /// settled, each at its own measured discharge (78.149 (b),
+    /// [`Treasury::release_discharged`]), minted AT `at`, the act that
+    /// released them (EC1), never at the acts that escrowed them. The
+    /// released total is a reading: `None`, counted, where it would pass its
+    /// carrier (STD1) — every release still minted, each by its own row.
+    pub fn release_filled<A: AsRef<[u8]>>(&mut self, listings: &[(A, [u64; 4])], at: Anchor) -> Option<[u64; 4]> {
         let mut released = Some([0u64; 4]);
-        for addr in listings {
-            if let Some(Escrowed { voices, mu, .. }) = self.release_award(addr.as_ref()) {
-                self.mint_claim(&voices, mu, at);
-                released = released.and_then(|r| crate::core::lanes::lanes_add(r, mu));
+        for (addr, discharge) in listings {
+            if let Some(paid) = self.release_discharged(addr.as_ref(), *discharge, at) {
+                released = released.and_then(|r| crate::core::lanes::lanes_add(r, paid));
             }
         }
         if released.is_none() {
             self.overflowed += 1;
         }
         released
+    }
+
+    /// 78.149 (b) — A CLAIM IS PAID THE CLOSER'S MEASURED DISCHARGE, NEVER
+    /// MORE. The escrow is released and its voices are minted, lane by lane,
+    /// what the escrow held less what it held above `discharge`: the escrow
+    /// CAPS the payment and never raises it. What it held above the
+    /// discharge is not minted — a claim escrow is a claim on issuance and
+    /// never a transfer (E1), so the excess returns to issuance by never
+    /// being issued. The discharge is read by the caller on the closer's own
+    /// replay (`Kernel::discharge_of`, the one reader); a zero discharge
+    /// releases the claim and mints nothing.
+    ///
+    /// Answers the payment released to the voices, per lane, split among
+    /// them as `mint_claim` splits it; `None` where the address held no
+    /// escrow.
+    pub fn release_discharged(&mut self, addr: &[u8], discharge: [u64; 4], at: Anchor) -> Option<[u64; 4]> {
+        let Escrowed { voices, mu, .. } = self.release_award(addr)?;
+        // The shortfall of the claim against the discharge is what the claim
+        // asked beyond it, per lane; the claim less that is the payment —
+        // lane-wise the lesser of the two, read as the shortfall reading.
+        let above = super::shortfall(&mu, &discharge);
+        let paid: [u64; 4] = std::array::from_fn(|l| mu[l] - above[l]);
+        self.mint_claim(&voices, paid, at);
+        Some(paid)
     }
 
     /// Clear the listing claim. Payment is a mint of the same vector, done
