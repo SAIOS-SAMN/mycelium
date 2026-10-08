@@ -104,10 +104,14 @@ fn a_mouth_pair_is_built_by_two_reserves_on_real_frames() {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
-    let not_reserve = Mouth { from_tier: vk(&key(30)), ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert_eq!(offer(&mut k, not_reserve, &key(30)), HandoffRefusal::NotReserve);
-    let at_home = Mouth { to_tier: vk(&key(30)), ..mouth(4, 5, one(), one(), [0; 4]) };
-    assert_eq!(offer(&mut k, at_home, &reserve(4)), HandoffRefusal::Unbound);
+    // 78.136 — a line builds, but its own reserve keeps; the far end is the
+    // other domain's reserve.
+    let line_kept_by_other = Mouth { from_tier: vk(&key(30)), keeper: vk(&reserve(5)), ..mouth(4, 5, one(), one(), [0; 4]) };
+    assert_eq!(offer(&mut k, line_kept_by_other, &key(30)), HandoffRefusal::BadKeeper);
+    let to_a_line = Mouth { to_tier: vk(&key(30)), ..mouth(5, 4, one(), one(), [0; 4]) };
+    assert_eq!(offer(&mut k, to_a_line, &reserve(5)), HandoffRefusal::NotReserve, "accepted by the far domain's reserve");
+    let same_place = mouth(4, 4, turn(), turn(), [0; 4]);
+    assert_eq!(offer(&mut k, same_place, &reserve(4)), HandoffRefusal::Unbound, "a road joins two distinct places");
     let stranger = Mouth { keeper: [9; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
     assert_eq!(offer(&mut k, stranger, &reserve(4)), HandoffRefusal::BadKeeper);
     assert_eq!(offer(&mut k, mouth(4, 5, Mv::zero(), one(), [0; 4]), &reserve(4)), HandoffRefusal::Degenerate, "no horizon carried");
@@ -226,6 +230,34 @@ fn a_mouth_is_a_tube_between_places_on_curved_space() {
     let other = open(&mut k, wide, 4, 6);
     let t = k.tube_of(&other).expect("a tube");
     assert!(t.to_level < t.from_level, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
+}
+
+/// THE PROGENITORS BUILD, THE ANCIENTS KEEP: a progenitor line offers a road
+/// between two distinct places of its own domain, kept by its reserve and
+/// accepted by it, banking the throat from its own μ; matter crosses within
+/// the domain along it; and a line offers a tube to another domain, kept by
+/// its own reserve. A plain offer within one domain is still no handoff.
+#[test]
+fn a_progenitor_line_builds_roads_its_ancients_keep() {
+    let mut k = founded();
+    let line = key(30);
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&line), [2, 0, 0, 0], anchor);
+    // Two distinct places: the pole, and one step along a geodesic from it.
+    let n = |v: i64| num_rational::BigRational::from_integer(v.into());
+    let step = crate::transducer::cga::hyperbolic_compartment(&[n(1), n(0), n(0)], &n(2)).expect("on the sheet");
+    let away = crate::transducer::cga::geodesic_transvection(&crate::transducer::cga::hyperboloid_pole(), &step).expect("a transvection");
+    let road = Mouth { from_tier: vk(&line), to_tier: vk(&reserve(4)), keeper: vk(&reserve(4)), ..mouth(4, 4, one(), away, [0; 4]) };
+    let id = road.id();
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(road)).sign(&line)), Handed::Sealed { .. }), "a line offers a road");
+    assert_eq!(k.treasury.balance_mu(&vk(&line))[0], 1, "the builder banks the throat");
+    assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(4))), Handed::Sealed { state: State::Accepted, .. }), "its ancients accept");
+    let within = Offer { from_tier: vk(&line), to_tier: vk(&reserve(4)), ..cargo(4, 4, 1) };
+    assert!(matches!(k.handoff(&Handoff::Offer(Box::new(within.clone())).sign(&line)), Handed::Refused(HandoffRefusal::Unbound)), "no road, no handoff within");
+    let along = Handoff::Traverse { offer: Box::new(within), mouth: id };
+    assert!(matches!(k.handoff(&along.sign(&line)), Handed::Sealed { .. }), "along the road");
+    let across = Mouth { from_tier: vk(&line), keeper: vk(&reserve(4)), nonce: [8; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(across)).sign(&line)), Handed::Sealed { .. }), "a line builds across, its reserve keeping");
 }
 
 /// A THROAT IS BANKED, FED, DRAWN AND RETURNED — NEVER RETIRED: the

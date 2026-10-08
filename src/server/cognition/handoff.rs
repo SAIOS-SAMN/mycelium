@@ -352,7 +352,9 @@ impl Kernel {
                 let (Some(x), Some(y)) = (self.tier_domain.get(&o.from_tier).copied(), self.tier_domain.get(&o.to_tier).copied()) else {
                     return refuse(R::Unbound);
                 };
-                if x == y {
+                // 78.136 — within one domain only along a ROAD: a traversal
+                // through a mouth joining two places of it.
+                if x == y && !matches!(h.handoff, Handoff::Traverse { .. }) {
                     return refuse(R::Unbound);
                 }
                 // 78.128 — DOMAINS SHARE NO SPACE: nothing crosses between

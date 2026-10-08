@@ -475,18 +475,33 @@ impl Kernel {
                 }
                 let (dx, dy) = (self.tier_domain.get(&m.from_tier).copied(), self.tier_domain.get(&m.to_tier).copied());
                 let (Some(dx), Some(dy)) = (dx, dy) else { return refuse(R::Unbound) };
-                if dx == dy {
-                    return refuse(R::Unbound);
-                }
-                // The builders are the ancients: both ends their domains' reserves.
-                if self.reserve_of(&dx) != Some(m.from_tier) || self.reserve_of(&dy) != Some(m.to_tier) {
+                // 78.136 — THE PROGENITORS BUILD, THE ANCIENTS KEEP (the
+                // operator's progenitor play): the offerer is any tier of its
+                // domain — a progenitor LINE building a road, or the reserve;
+                // the far end is accepted by its domain's reserve; and where a
+                // line builds, its own reserve keeps it. A reserve building
+                // across domains may name either reserve its keeper.
+                if self.reserve_of(&dy) != Some(m.to_tier) {
                     return refuse(R::NotReserve);
                 }
-                if m.keeper != m.from_tier && m.keeper != m.to_tier {
+                let own_reserve = self.reserve_of(&dx);
+                let keeper_ok = match own_reserve == Some(m.from_tier) && dx != dy {
+                    true => m.keeper == m.from_tier || m.keeper == m.to_tier,
+                    false => own_reserve == Some(m.keeper),
+                };
+                if !keeper_ok {
                     return refuse(R::BadKeeper);
                 }
                 if !m.frames_hold() {
                     return refuse(R::Degenerate);
+                }
+                // A ROAD INSIDE ONE GALAXY (one universe is one domain) joins
+                // two DISTINCT places of its curved space.
+                if dx == dy {
+                    let places = (crate::transducer::cga::frame_base_point(&m.from_frame), crate::transducer::cga::frame_base_point(&m.to_frame));
+                    if !matches!(places, (Some(a), Some(b)) if a != b) {
+                        return refuse(R::Unbound);
+                    }
                 }
                 // 78.134 — A MOUTH IS A TUBE between two places on curved
                 // space, never two free frames: its frames motions of `ℍ³`,

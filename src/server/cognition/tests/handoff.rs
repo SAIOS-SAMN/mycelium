@@ -116,7 +116,11 @@ fn an_offer_conserves_across_the_boundary_on_matter_and_words_only() {
     assert_eq!(refused(&mut k, unordered, &x()), HandoffRefusal::Unbalanced(Unbalanced::Unordered));
     assert_eq!(refused(&mut k, cargo(), &y()), HandoffRefusal::NotTheTier, "the sender files the offer");
     let at_home = Offer { to_tier: vk(&x2()), ..cargo() };
-    assert_eq!(refused(&mut k, at_home, &x()), HandoffRefusal::Unbound, "a handoff crosses domains");
+    assert_eq!(refused(&mut k, at_home.clone(), &x()), HandoffRefusal::NotTheMouth, "within a domain only along its own road (78.136)");
+    assert!(
+        matches!(k.handoff(&Handoff::Offer(Box::new(at_home)).sign(&x())), Handed::Refused(HandoffRefusal::Unbound)),
+        "a plain offer within one domain is no handoff"
+    );
     assert!(
         matches!(k.handoff(&Handoff::Offer(Box::new(cargo())).sign(&x())), Handed::Refused(HandoffRefusal::NoMouth)),
         "domains share no space: nothing crosses but through a mouth"

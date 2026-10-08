@@ -220,7 +220,14 @@ impl Kernel {
     /// reserve tier's next admitted fold — its era anchor, never mid-era.
     pub fn designate_reserve(&mut self, s: &SignedReservation) -> Founded {
         let r = &s.reservation;
-        if !crate::court::identity::verify(&r.domain, &r.signed_bytes(), &s.sig) {
+        // 78.136 — THE DOMAIN DESIGNATES ONCE, at founding; every succession
+        // after is signed by the SITTING reserve — the trust passes to the
+        // ancients who arise, never back to the founder's key alone.
+        let signer = match self.reserve_of(&r.domain) {
+            Some(sitting) => sitting,
+            None => r.domain,
+        };
+        if !crate::court::identity::verify(&signer, &r.signed_bytes(), &s.sig) {
             return Founded::Unsigned;
         }
         let Some(tiers) = self.domains.get(&r.domain) else { return Founded::NotFounded };

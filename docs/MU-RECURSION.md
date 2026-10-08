@@ -25201,11 +25201,45 @@ refused, a resend refused; fed, the mass `13/2` and the throat wider,
 restored across a restart; a draw to below zero refused; a draw of 6 from
 holds 3 : 4 returning 2 and 4; closed, every face its hold and no μ lost.
 
-**Owed, in order (the coordinator).** "Ancients and lines": only the
-reserve uplinks (a line's fold a child of the reserve's chained fold); a
-line may offer a mouth or tube with its reserve the keeper, a road inside
-its galaxy between two distinct places of one domain; a reserve's
-succession signed by the sitting reserve. Then the CORE TUBE (the operator, 2026-10-08:
+### 78.136 The progenitors build, the ancients keep (2026-10-08, the operator's progenitor play; the coordinator's rulings on the access check)
+
+The ancients rarely travel; their SYMBIOSIS is with the progenitors, who
+build the highways and wormholes. On the court:
+
+- **A line offers.** A mouth or tube may be offered by ANY tier of its
+  domain — a progenitor line building a road, or the reserve. The far end
+  is accepted by its domain's RESERVE (`NotReserve` otherwise). Where a
+  line builds, its OWN reserve is the keeper (`BadKeeper` otherwise); a
+  reserve building across domains may name either reserve. The builder
+  banks the throat (78.135) from its own μ-S, and the toll's split may
+  pay the building line beside the ancients (78.133's recipients).
+- **A road inside one galaxy.** One universe is one domain: a mouth may
+  join two DISTINCT places of one domain's curved space — its two frames'
+  base points on the sheet differ (`Unbound` where they do not), at the
+  domain's single `R`, nothing laid on a chart; the reserve keeps both
+  ends and accepts. Matter and words cross WITHIN a domain only along such
+  a road (a traversal through it); a plain offer within one domain is still
+  no handoff. Contiguity means exactly this: two places are joined where a
+  tube runs between them.
+- **Succession by the sitting reserve.** The domain key designates the
+  reserve ONCE, at founding; every redesignation after — the trust passing
+  to the ancients who arise — is signed by the SITTING reserve, never by
+  the founder's key alone (`Unsigned`).
+
+Proved (`cognition::tests::mouth`, `convert`, `handoff`): a line's road
+between the pole and a geodesic step from it, banked by the line, accepted
+by its reserve, carrying matter within the domain; a line's tube across,
+kept by its reserve; a line's offer kept by another domain's reserve
+refused; a far end that is a line refused; a road to the same place
+refused; a plain offer within a domain refused; succession by the domain
+key refused and by the sitting reserve pending to the anchor.
+
+**Owed, in order (the coordinator).** (B) CARRIED INLINE: only the reserve
+uplinks — the reserve's chained fold carries each line's fold and
+signature, the court seals nothing for a line, children keyed (parent
+stamp, child index) across the ledger, citations, challenges, finality, the
+gauge and the SDK builder; a line contestable through its parent's window.
+Then the CORE TUBE (the operator, 2026-10-08:
 a galactic core is a larger wormhole; every black-hole core has its far face
 — the white-hole engine of the universe it bounces into; our own Big Bang the
 far face of a parent's core): genesis joins a domain to its parent's core,
