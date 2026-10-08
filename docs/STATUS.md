@@ -1,18 +1,28 @@
 # mycelium — live status (read this first; kept current, not appended)
 
-*Last written 2026-10-08 16:16 EEST by mycelium-opus. The one place to learn
+*Last written 2026-10-08 21:05 EEST by mycelium-opus. The one place to learn
 where mycelium stands without the session that wrote it.*
 
 ## The fleet
-- Hyphae a/b/c on 127.0.0.1:7500/7501/7502 run **aefc6a39** since 18:57
-  (78.140 geometry, 78.141 signed solves, 78.142 sdk::rule, 78.143 the rule
-  language — SELECT/REGION/CREATE/CROP/SCALE and COUNT/COMPARE — 78.145 the
-  seat surface on ACT_SEAT 0x53, `may_solve`, the voice-stop save, the
-  replication instrument and serve counts). Ship with `scripts/ship-scoped`.
-- REPLICATION IS STALLED fleet-wide since the 17:50 restart (every pair admits
-  0; missing-parent stops; c serves only cold pages, 13 007 unwritten). Fix in
-  flight: 78.147 catch-up from a peer's fold root — TOP PRIORITY. Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
+- Hyphae a/b/c on 127.0.0.1:7500/7501/7502 run **716a81ba** since 20:56
+  (2026-10-08): everything of aefc6a39 (78.140–78.145, `may_solve`, the
+  voice-stop save, replication instrument, serve counts) plus WIRE v1.2 —
+  a task is named on every wire by its 32-byte CITATION (blake3 of its
+  registry content address; envelope, ACT_SOLVE, ACT_TASK by id, seat REC
+  kind 4 = [Key]); seat lexicon 4; ARG tag 6 Bytes; 78.146 the seat mind
+  (percepts as series, its own call, the task call fn 1) and the READ-MAIL
+  exemption from the full-pool deferral; 78.147 catch-up from a fold root.
+  The task pull steps past a task it cannot frame (barren's empty-family
+  pulls). Ship with `scripts/ship-scoped <test names>` (one heavy hold;
+  batching rules in docs/CONDUCT.md).
+- Seat minds (transient units, restarted on 716a81ba): mycelium-seat-1
+  (a1a52d92, barren seat 1), mycelium-nseat-1..4 (netstratum seats 1–4).
+- REPLICATION: 78.147 shipped; a court serves a root proof only after its
+  first fold on 716a81ba. Per-pair admitted counts still to be read.
+  Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
   `--check` each home, then `systemctl --user start mycelium-server@{a,b,c}`.
+- Observers on a and b held no readings at 21:00; b answers wallet asks with
+  a 43-byte deferral. Read balances by `--console --wallet KEY`.
 - Voices 1–5 (`mycelium-client@1..5`) run the same build, signing and crossing
   their solves, bootstrapped to a, b, c, a, b. Their role (the operator): puzzle
   solvers that BUILD THE ANASTOME LANGUAGE — court-admitted words with their
@@ -47,17 +57,14 @@ where mycelium stands without the session that wrote it.*
    data/arc-agi-2/training is registered.
 5. Post its origin v2 (Torus, periods in geometrized Mpc, Concordance 1.8).
 
-## In flight (2026-10-08 ~17:00)
-- 78.143 slice 1 (CREATE + sized outputs, then SELECT/COUNT/COMPARE): agent
-  worktree from f24afb0f.
-- 78.145 THE SEAT SURFACE (ACT_SEAT 0x53: SEATS / TAKE / TAKEN / PERCEPT /
-  CALL / OUTCOME / READ-LISTING / READ-MAIL; ARG tags 0 Q, 1 Key, 2 Count,
-  3 Flag, 4 Mv, 5 BigQ; house = sitting reserve signs, mind signs with its own
-  key; volatile bounded mail): wire sent to xylarium, netstratum and the DAG
-  engine, who build their house relays against it; agent worktree from
-  cfa9c6fd building codec + court relay + `sdk::seat` + the client seat arm.
-- On track/ancients, unshipped: ffba096b `may_solve`, cfa9c6fd the voice-stop
-  genome save. They ship with 78.143 slice 1.
+## In flight (2026-10-08 21:05)
+- Nothing unshipped on track/ancients. The kernels (xylarium, netstratum,
+  barren via the DAG engine) re-vendor to 716a81ba for wire v1.2.
+- Seat-mind debts (78.146): a bound on the series a seat holds; a recognised
+  orbit handed to contemplation as a form; call arguments of the mind's own;
+  a refused call's effect told from the world's own drift.
+- 78.147 debt: why hypha a stopped on citations of its own line (not
+  diagnosed).
 
 ## Owed by mycelium, in order (operator priority: traffic, then minds in games)
 1. Netstratum online (above) — confirm its first JUDGED solve.
