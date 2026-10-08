@@ -19,11 +19,13 @@ inner() {
     grep -E "FAILED|panicked" "$LOG" | head -5; echo "SHIP STOPPED: tests"; return 1
   fi
   cargo build --release --bin mycelium-server --bin mycelium-client 2>&1 | grep -E "^error|Finished"
+  # ROLLING: one hypha down at a time, so two always serve (2026-10-08: the
+  # stop-all-then-check-all order left 7500-7502 dark for six minutes).
   for h in a b c; do
     systemctl --user stop "mycelium-server@$h"
     echo "$h $(timeout 300 target/release/mycelium-server --home "var/$h" --check 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tail -1)"
+    systemctl --user start "mycelium-server@$h"
   done
-  systemctl --user start mycelium-server@a mycelium-server@b mycelium-server@c
   systemctl --user restart mycelium-client@1 mycelium-client@2 mycelium-client@3 mycelium-client@4 mycelium-client@5
   echo "SHIPPED $(git log --oneline -1 | cut -d' ' -f1) at $(date +%H:%M:%S)"
 }
