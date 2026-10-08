@@ -18,9 +18,24 @@ the carrier it writes to and reads from (§6.6).
 
 ## 1. The live order
 
-THE CURRENT ORDER (2026-10-06, the operator's word: "how am I supposed to
-keep track of this"; fleet on `f0125dc6`, epoch 138) — the sovereign
-progenitor's queue, kept here and nowhere else; perspective in brackets.
+THE CURRENT ORDER (2026-10-08 23:30, the operator's word: "proceed with that
+sequence"; fleet on `ce092c1e`/`8e99ca5a` shipping over d8e4c544) — the
+road to the next recut, nothing else ahead of it. The operator's priorities
+govern it: traffic on the hyphae; minds inside the games; replication
+converging; μ never given for work not done.
+
+| # | row | state |
+|---|---|---|
+| R1 | **μ falsification** (the operator 2026-10-08: "never give away mu incorrectly"): a zero-work solve releases, mints, dockets and spends nothing (`SolveVerdict::NoWork`); a word that discharged nothing mints nothing (T no longer stands in for work); genesis booked as Genesis | **landed** ce092c1e, 8e99ca5a — shipping on scoped tests |
+| R2 | **78.148 the mind's own call**: re-take on loss; the listing as repertoire; own Count/Flag arguments bounded by BAD_ARGUMENTS; REACH valuation by dominance; versor series (the field law's Mv) | built 89e2b477 (agent branch), unbuilt — next batch |
+| R3 | **THE READING before the recut**: per-pair replication admitted after 78.147; the three ledgers; kernel-lock contention (`held!`); applied seat calls (xylarium FOCUS, netstratum SOLVE) | after R1–R2 |
+| R4 | **μ DEFINITIONS** (the coordinator's draft, the operator's ruling) BEFORE the recut: is escrow priced from T (time stood), from an unclosed demand's measure, from the holonomic token [0,0,0,1]? | with the operator |
+| R5 | **THE RECUT** (the operator's word): a fresh genesis clears μ minted under R1's holes; every house re-posts its domain, reserve and seats; the coordinator given the window | after R3 clean and R4 ruled; replication fixed first if R3 shows it stalled |
+| R6 | Owed, after the recut, in order: the court's own long lock holds inside the library (synthesis `court_replay`, `consolidate_stroke`, `market_open`) uncounted by `held!`; a seat series' bound; an Mv record's carrier as a call's effect; drift told from a call's effect; hue-wise segmentation, counted sizes, paint by rank (78.143); curved holes 78.144 (f78fd200); the ledger reader's K-vs-height on b/c; the Mv equality audit | open |
+
+THE ORDER OF 2026-10-06 (kept for its rows' states; superseded as the
+order by the table above; fleet then on `f0125dc6`, epoch 138) — the sovereign
+progenitor's queue; perspective in brackets.
 
 | # | row | state |
 |---|---|---|
@@ -299,6 +314,16 @@ here is not re-opened; a defect in its landing is a new row citing it.
 | PH5 | `Reading::Phase` on the observer | landed e115bcd6, audited 2026-09-24 (reproduced detached at | e115bcd6 |
 | LD1 | Measure the address bytes an award and a frame carry | landed f58cabe1, audited 2026-09-24 (reproduced detached: 10 | f58cabe1 |
 | LD2 | The ledger as a keyed partial order | landed 91cd88ca, audited 2026-09-24 (reproduced detached: 10 | 91cd88ca |
+| 78.140 | A universe's space is its geometry (curved or a flat torus; tube ends in their own space) | landed, LAYOUT-CHANGE WIRE-CHANGE, deployed 2026-10-08 | fea3ceab |
+| 78.141 | Signed solves (payee by the voice's signature); replication instrument; serve counts; ledger reader at the fold root | landed, deployed 2026-10-08 | 9ff6e700, 52c25ae9 |
+| 78.142 | The SDK rule seam (`sdk::rule`: Step, sentence, would_judge, crossing) | landed, deployed 2026-10-08 | d6e757ff |
+| 78.143 | The rule language: CREATE, REGION, sized outputs, SELECT, CROP, SCALE, COUNT, COMPARE (named tie order) | landed, deployed 2026-10-08; owed: hue segmentation, counted sizes, paint by rank | 9c713fe5, 5a93e3f5 |
+| MS1 | `may_solve`: the hypha serves anyone; a founded universe solves only through its sitting reserve | landed, deployed 2026-10-08 | ffba096b |
+| 78.145 | The seat surface (ACT_SEAT 0x53: SEATS/TAKE/TAKEN/PERCEPT/CALL/OUTCOME/READ-LISTING/READ-MAIL; ARG tags 0–6) | landed, deployed 2026-10-08 | f2d880ac, aefc6a39, 36e6645d |
+| V12 | Wire v1.2: a task named by its 32-byte citation everywhere; the empty-family pull fixed | landed, deployed 716a81ba | b34847cb, c7682b97, 2ccf593f |
+| 78.146 | The seat mind (percepts as exact series, its own choice, the task call); READ-MAIL exempt from the full pool | landed, deployed 716a81ba | c7682b97 |
+| 78.147 | Catch-up from a fold root (root + home/witness proof, never cold pages) | landed, deployed 716a81ba; per-pair reading owed (R3) | 53d9e4ac, 9bb9f8a2 |
+| KL1 | The kernel lock counted by site (`held!`) and the court loop's fair hand-off; a task read off a full pool | landed, deployed d8e4c544 | 31e73717, 60a39f68, d8e4c544, 245f639d |
 
 ## 5. The phases of 78.4
 
