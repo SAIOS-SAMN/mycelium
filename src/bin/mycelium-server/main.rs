@@ -625,7 +625,14 @@ fn main() {
     let cores = std::thread::available_parallelism().map_or(1, |n| n.get());
     let (reflex_tx, reflex_rx) = std::sync::mpsc::sync_channel::<ReflexJob>(cores);
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
+    // 78.146 — the seat relay on its own lock, taken once the kernel is
+    // restored: a mind's exempt read is served without the kernel's lock.
+    let Ok(seat_relay) = kernel.lock().map(|k| k.seat_relay()) else {
+        eprintln!("the kernel's lock was poisoned before the door opened");
+        return;
+    };
     let door = Door {
+        seat_relay,
         kernel: Arc::clone(&kernel),
         mesh: mesh.clone(),
         router: Arc::clone(&router),
@@ -698,6 +705,10 @@ fn main() {
             }
             if let Err(e) = work_tx.try_send((stream, frame)) {
                 let (std::sync::mpsc::TrySendError::Full((mut stream, frame)) | std::sync::mpsc::TrySendError::Disconnected((mut stream, frame))) = e;
+                // 78.146 — a mind's own read is served, once per window.
+                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
+                    continue;
+                }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };
                 let body = dialogue::encode_deferral(outcome_code(&Outcome::GermPending), &deficit);
                 answer(&mut stream, Frame { lane: frame.lane, body });
@@ -750,6 +761,10 @@ fn main() {
                 if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_OBSERVE) {
                     judge::observe::judge(&mut stream, &frame, &door);
                     mycelium::observe::note_served(mycelium::anastome::dialogue::ACT_OBSERVE);
+                    continue;
+                }
+                // 78.146 — a mind's own read is served, once per window.
+                if judge::seat::serve_exempt(&mut stream, &frame, &door) {
                     continue;
                 }
                 let Ok(deficit) = door.mesh.deficit.lock().map(|d| *d) else { continue };

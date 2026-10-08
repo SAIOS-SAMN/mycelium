@@ -51,6 +51,73 @@ pub struct SeatRelay {
     seq: u64,
     /// Pieces dropped unread at the bound, since boot.
     pub dropped: u64,
+    /// 78.146 — THE EXEMPT READ'S WINDOW: per mind whose box holds mail, the
+    /// relay sequence its last exempt read stood at. Held only while the box
+    /// is, so it is bounded by the boxes.
+    exempt_at: Keyed<u64>,
+}
+
+/// 78.146 — THE RELAY ON ITS OWN LOCK, so a door can serve a mind's read
+/// without waiting on the court's cognition (`exempt_read`); the kernel holds
+/// it and speaks to it through the same lock.
+#[derive(Clone, Default)]
+pub struct SharedRelay(std::sync::Arc<std::sync::Mutex<SeatRelay>>);
+
+impl SharedRelay {
+    /// The relay, locked. A poisoned lock still holds a whole relay — every
+    /// write to it completes under the lock or not at all — and the relay is
+    /// volatile, so it is read on.
+    pub fn lock(&self) -> std::sync::MutexGuard<'_, SeatRelay> {
+        match self.0.lock() {
+            Ok(g) => g,
+            Err(p) => p.into_inner(),
+        }
+    }
+
+    pub fn census(&self) -> (usize, usize, usize) {
+        self.lock().census()
+    }
+
+    pub fn held_bytes(&self, to_house: bool, who: &[u8; 32]) -> usize {
+        self.lock().held_bytes(to_house, who)
+    }
+
+    pub fn dropped(&self) -> u64 {
+        self.lock().dropped
+    }
+
+    /// 78.146 — A MIND'S READ, EXEMPT FROM THE DOOR'S DEFERRAL: reading one's
+    /// own mail spends nothing. Served from the mind's own box alone (a
+    /// house's box is read through the court, which knows its reserve), and
+    /// BOUNDED: one exempt read per reader per window of its own mail — a
+    /// reader whose box holds a piece filed since its last exempt read.
+    /// `None` where it is not exempt (no box, or the window spent): the
+    /// door's ordinary rule answers it.
+    pub fn exempt_read(&self, r: &ReadMail) -> Option<Result<Vec<Mail>, Refusal>> {
+        if !r.verified() {
+            return Some(Err(Refusal::Unsigned));
+        }
+        let mut relay = self.lock();
+        let key = box_key(TO_MIND, &r.reader);
+        // The window is the reader's own: the newest piece in its box.
+        let newest = relay.mail.get(&key).and_then(|b| b.held.back()).map(|m| m.seq)?;
+        if relay.exempt_at.get(&key).is_some_and(|at| *at >= newest) {
+            return None;
+        }
+        relay.exempt_at.insert(key, newest);
+        let seq = relay.seq;
+        let after = if r.after > seq { 0 } else { r.after };
+        let mut out = Vec::new();
+        let mut bytes = 0usize;
+        for m in relay.read_box(&key, after) {
+            if bytes + m.wire_len() > mail_bound() || out.len() >= usize::from(u16::MAX) {
+                break;
+            }
+            bytes += m.wire_len();
+            out.push(m);
+        }
+        Some(Ok(out))
+    }
 }
 
 impl SeatRelay {
@@ -86,6 +153,7 @@ impl SeatRelay {
         let left: Vec<Mail> = b.held.iter().cloned().collect();
         if b.held.is_empty() {
             self.mail.remove(key);
+            self.exempt_at.remove(key);
         }
         left
     }
@@ -116,7 +184,8 @@ impl super::Kernel {
             _ => {}
         }
         let body = s.body().ok_or(Refusal::Malformed)?;
-        let relay = &mut self.seats;
+        let mut guard = self.seats.lock();
+        let relay = &mut *guard;
         relay.seq += 1;
         let seq = relay.seq;
         let sub = s.post.sub();
@@ -139,7 +208,12 @@ impl super::Kernel {
 
     /// 78.145 — A DOMAIN'S LATEST SEATS (fields ‖ sig), or none.
     pub fn seat_listing(&self, domain: &[u8; 32]) -> Option<Vec<u8>> {
-        self.seats.listings.get(domain).map(|(_, b)| b.clone())
+        self.seats.lock().listings.get(domain).map(|(_, b)| b.clone())
+    }
+
+    /// 78.146 — the relay on its own lock, for a door's exempt read.
+    pub fn seat_relay(&self) -> SharedRelay {
+        self.seats.clone()
     }
 
     /// 78.145 — A READER'S MAIL past `after`, in sequence order: a mind's
@@ -151,12 +225,18 @@ impl super::Kernel {
         if !r.verified() {
             return Err(Refusal::Unsigned);
         }
-        let after = if r.after > self.seats.seq { 0 } else { r.after };
-        let mine = self.seats.read_box(&box_key(TO_MIND, &r.reader), after);
-        let house = match self.tier_domain.get(&r.reader).copied() {
-            Some(d) if self.reserve_of(&d) == Some(r.reader) => self.seats.read_box(&box_key(TO_HOUSE, &d), after),
-            _ => Vec::new(),
+        let house_of = match self.tier_domain.get(&r.reader).copied() {
+            Some(d) if self.reserve_of(&d) == Some(r.reader) => Some(d),
+            _ => None,
         };
+        let mut relay = self.seats.lock();
+        let after = if r.after > relay.seq { 0 } else { r.after };
+        let mine = relay.read_box(&box_key(TO_MIND, &r.reader), after);
+        let house = match house_of {
+            Some(d) => relay.read_box(&box_key(TO_HOUSE, &d), after),
+            None => Vec::new(),
+        };
+        drop(relay);
         // Two runs, each in sequence order, merged by sequence: the relay's
         // own order, never a measurement. The reply holds both boxes, so
         // where both are near the bound it is cut at the frame budget and the

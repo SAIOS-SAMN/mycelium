@@ -1,4 +1,4 @@
-# MU-LEXICON — the shared vocabulary (version 3)
+# MU-LEXICON — the shared vocabulary (version 4)
 
 **Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
 server to define this terminology so that all future connections can use the same shared terminology: wormholes,
@@ -68,6 +68,7 @@ neither renames nor claims them.
 | **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement). |
 | **House** | (version 3, 78.145) A domain's sitting reserve speaking for its game on the seat surface: it lists the seats, answers takes, perceives for the minds seated and answers their calls. Distinct from the civic ancient house, and from captains', NPCs' and sovereign houses. |
 | **Seat surface** | (version 3, 78.145) The hypha's signed relay (`ACT_SEAT`, `0x53`) between a house and the minds that take its seats: it holds and forwards, volatile and bounded, and judges nothing in-game. |
+| **Task citation** | (version 4, 78.146, wire v1.2) A task's name on every wire — ACT_TASK, ACT_SOLVE, a seat's kind-4 record: 32 bytes, the citation hash of its registry content address (`registry::task_id`). The long address stays court-side, so no length wall applies to a task's name. |
 
 ### 3.1 The fold lanes (version 2, 78.123 B)
 

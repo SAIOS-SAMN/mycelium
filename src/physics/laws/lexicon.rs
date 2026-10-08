@@ -8,7 +8,7 @@
 //! No word belongs to two vocabularies.
 
 /// The lexicon's version: an amendment raises it.
-pub const LEXICON_VERSION: u8 = 3;
+pub const LEXICON_VERSION: u8 = 4;
 
 /// WHICH VOCABULARY A TERM BELONGS TO.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -95,4 +95,5 @@ pub const TERMS: [Term; 44] = [
     t("Open remainder", Network, "a child fold's value not yet netted by a parent: in flight, never a breach"),
     t("House", Network, "a domain's sitting reserve speaking for its game: it lists the seats and answers the minds in them"),
     t("Seat surface", Network, "the hypha's signed relay between a house and the minds that take its seats; it judges nothing in-game"),
+    t("Task citation", Network, "a task's name on every wire: 32 bytes, the citation of its registry content address, which stays court-side"),
 ];

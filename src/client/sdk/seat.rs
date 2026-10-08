@@ -45,10 +45,65 @@ pub enum HouseMail {
     Call { seq: u64, call: Call, reference: [u8; 32] },
 }
 
+/// A MIND'S RAW MAIL TYPED: a piece that does not read as a TAKEN, PERCEPT
+/// or OUTCOME naming `me` — which the relay never serves — is an error by
+/// name, never skipped.
+pub fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
+    let mut out = Vec::new();
+    for m in raw {
+        let post = m.post().ok_or_else(|| undecoded("mail piece"))?.post;
+        if post.mind() != Some(me) {
+            return Err(undecoded("mail piece addressed to another"));
+        }
+        out.push(match post {
+            Post::Taken(t) => MindMail::Taken(m.seq, t),
+            Post::Percept(p) => MindMail::Percept(m.seq, p),
+            Post::Outcome(o) => MindMail::Outcome(m.seq, o),
+            _ => return Err(undecoded("mail piece for a house")),
+        });
+    }
+    Ok(out)
+}
+
+fn seat_key(domain: &[u8; 32], seat: u32) -> Vec<u8> {
+    let mut k = domain.to_vec();
+    k.extend_from_slice(&seat.to_be_bytes());
+    k
+}
+
 impl super::Entity {
     /// The session this entity speaks through — the seat surface's mouth.
     pub fn relay(&self) -> &super::Session {
         &self.session
+    }
+
+    /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its
+    /// coordinate (begun where it was not) and put back there.
+    pub fn with_seat_mind<R>(&mut self, domain: [u8; 32], seat: u32, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
+        let key = seat_key(&domain, seat);
+        let mut mind = match self.seats.remove(&key) {
+            Some(m) => m,
+            None => super::seat_mind::SeatMind::new(domain, seat),
+        };
+        let r = f(&mut mind);
+        self.seats.insert(&key, mind);
+        r
+    }
+
+    /// The mind at a seat, where it sits one.
+    pub fn seat_mind_at(&self, domain: [u8; 32], seat: u32) -> Option<&super::seat_mind::SeatMind> {
+        self.seats.get(&seat_key(&domain, seat))
+    }
+
+    /// 78.146 — A PERCEPT AT A SEAT, perceived: held on its series, and a
+    /// call's effect read where its outcome came. Reading what a call did is
+    /// the mind learning — an act of this orbit (78.49).
+    pub fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
+        let reading = self.with_seat_mind(p.domain, p.seat, |m| m.perceive(p));
+        if reading.learned.is_some() {
+            self.acted = true;
+        }
+        reading
     }
 }
 
@@ -94,24 +149,10 @@ impl super::Session {
     /// serves — is an error by name, never skipped.
     pub fn mail(&self, key: &SigningKey, after: u64) -> io::Result<Result<Vec<MindMail>, Refusal>> {
         let me = key.verifying_key().to_bytes();
-        let raw = match self.read_mail(key, after)? {
-            Ok(m) => m,
-            Err(why) => return Ok(Err(why)),
-        };
-        let mut out = Vec::new();
-        for m in raw {
-            let post = m.post().ok_or_else(|| undecoded("mail piece"))?.post;
-            if post.mind() != Some(me) {
-                return Err(undecoded("mail piece addressed to another"));
-            }
-            out.push(match post {
-                Post::Taken(t) => MindMail::Taken(m.seq, t),
-                Post::Percept(p) => MindMail::Percept(m.seq, p),
-                Post::Outcome(o) => MindMail::Outcome(m.seq, o),
-                _ => return Err(undecoded("mail piece for a house")),
-            });
+        match self.read_mail(key, after)? {
+            Ok(raw) => mind_mail(me, raw).map(Ok),
+            Err(why) => Ok(Err(why)),
         }
-        Ok(Ok(out))
     }
 
     /// THE HOUSE LISTS ITS SEATS at an epoch; the latest epoch replaces.

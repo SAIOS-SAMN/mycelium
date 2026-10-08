@@ -81,6 +81,7 @@ impl Entity {
             contracted: Vec::new(),
             owed: Vec::new(),
             owed_tries: crate::network::nerve::Keyed::new(),
+            seats: crate::network::nerve::Keyed::new(),
         }
     }
 

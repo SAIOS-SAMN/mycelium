@@ -14,6 +14,7 @@ pub mod kernel;
 mod laws;
 pub mod rule;
 pub mod seat;
+pub mod seat_mind;
 pub mod session;
 pub mod types;
 
