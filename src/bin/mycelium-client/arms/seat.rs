@@ -44,6 +44,25 @@ pub(crate) struct SeatArm {
     calls: u64,
     /// The last task's extraction, as the task arm memoises its own.
     memo: mycelium::transducer::family::ExtractMemo,
+    /// The tasks this seat has answered, by citation: a house repeats a task
+    /// in every percept while it stands before the seat, and it is answered
+    /// once.
+    answered: mycelium::network::nerve::Keyed<()>,
+    /// THE STANDING CALL: the last call posted, as (fn, its arguments in
+    /// the seat codec's own canonical form), and whether its outcome came
+    /// back applied. A decision equal to a standing applied call is not
+    /// posted again — the setting stands (xylarium, 2026-10-09: 2 209
+    /// applied FOCUS calls in 27 minutes, the same value again and again).
+    standing: Option<(u16, Vec<u8>, bool)>,
+}
+
+/// THE MAIL A STROKE READS, in pages: to the end of the box, at most a full
+/// aperture cycle of pages (`SeatHold::patience`). One page a stroke left a
+/// mind behind a house that posts a percept a cycle: its TAKEN buried, the
+/// seat re-taken every few seconds, and its task percepts dropped by the
+/// box's bound before they were read (2026-10-09).
+fn pages() -> u64 {
+    SeatHold::patience()
 }
 
 impl SeatArm {
@@ -64,6 +83,8 @@ impl SeatArm {
             percepts: 0,
             calls: 0,
             memo: mycelium::transducer::family::ExtractMemo::new(),
+            answered: mycelium::network::nerve::Keyed::new(),
+            standing: None,
         }))
     }
 
@@ -86,27 +107,52 @@ impl SeatArm {
             }
             return;
         }
-        let mail = match entity.relay().mail(&self.key, self.after) {
-            Ok(Ok(m)) => m,
-            Ok(Err(why)) => {
-                eprintln!("[{tag}] seat mail refused: {why:?}");
-                return;
+        // The box read to its end, page by page; every piece perceived, the
+        // tasks gathered, and ONE call made at the latest beat after.
+        let mut beats = 0u64;
+        let mut tasks: Vec<[u8; 32]> = Vec::new();
+        for _ in 0..pages() {
+            let mail = match entity.relay().mail(&self.key, self.after) {
+                Ok(Ok(m)) => m,
+                Ok(Err(why)) => {
+                    eprintln!("[{tag}] seat mail refused: {why:?}");
+                    break;
+                }
+                Err(e) => {
+                    eprintln!("[{tag}] seat mail unread: {e}");
+                    break;
+                }
+            };
+            if mail.is_empty() {
+                break;
             }
-            Err(e) => {
-                eprintln!("[{tag}] seat mail unread: {e}");
-                return;
+            for piece in mail {
+                if stop.load(Ordering::SeqCst) {
+                    return;
+                }
+                self.read_piece(entity, tag, piece, &mut beats, &mut tasks);
             }
-        };
-        for piece in mail {
-            if stop.load(Ordering::SeqCst) {
-                return;
+        }
+        for id in tasks {
+            if !self.answered.contains(&id) {
+                self.solve_before(entity, tag, &id);
             }
+        }
+        if beats > 0 {
+            self.beat(entity, tag);
+        }
+    }
+
+    /// ONE PIECE OF MAIL READ: a TAKEN marks the hold, a PERCEPT is perceived
+    /// (its tasks gathered, its beat counted), an OUTCOME marks its call.
+    fn read_piece(&mut self, entity: &mut Entity, tag: &str, piece: MindMail, beats: &mut u64, tasks: &mut Vec<[u8; 32]>) {
+        {
             match piece {
                 MindMail::Taken(seq, t) => {
                     self.after = seq;
                     eprintln!("[{tag}] seat {} taken {} (reason {})", t.seat, t.ok, t.reason);
                     if t.domain != self.domain || t.seat != self.seat {
-                        continue;
+                        return;
                     }
                     match self.hold.taken(t.ok) {
                         true => self.read_listing(entity, tag),
@@ -119,18 +165,27 @@ impl SeatArm {
                     eprintln!("[{tag}] seat percept {} at {:?}: {}", p.seq, p.local_time, digest(&p.records));
                     let reading = entity.perceive_seat(&p);
                     eprintln!("[{tag}] seat perceived {reading}");
-                    // 78.146 — a task before the seat is the beat's call.
-                    let tasks = tasks_before(&p);
-                    if tasks.is_empty() {
-                        self.beat(entity, tag);
+                    // 78.146 — a task before the seat is answered (once, after
+                    // the box is read); a percept with none is a beat.
+                    let before = tasks_before(&p);
+                    if before.is_empty() {
+                        *beats += 1;
                     }
-                    for id in tasks {
-                        self.solve_before(entity, tag, &id);
+                    for id in before {
+                        if !tasks.contains(&id) {
+                            tasks.push(id);
+                        }
                     }
                 }
                 MindMail::Outcome(seq, o) => {
                     self.after = seq;
                     let answered = entity.with_seat_mind(self.domain, self.seat, |m| m.outcome(&o));
+                    // The standing call's outcome: applied, it stands.
+                    if let (Some(f), Some((sf, _, applied))) = (answered, self.standing.as_mut()) {
+                        if f == *sf {
+                            *applied = o.applied;
+                        }
+                    }
                     eprintln!(
                         "[{tag}] seat outcome applied {} reason {} for fn {answered:?} | percepts {} calls {}",
                         o.applied, o.reason, self.percepts, self.calls
@@ -174,9 +229,18 @@ impl SeatArm {
         let decision = entity.with_seat_mind(self.domain, self.seat, |m| m.decide());
         eprintln!("[{tag}] seat beat {decision}");
         let Decision::Call(choice) = decision else { return };
+        // THE STANDING CALL: the same function with the same arguments, its
+        // last outcome applied, is not posted again — the setting stands.
+        let mut encoded = Vec::new();
+        let encodes = mycelium::anastome::dialogue::seat::put_args(&mut encoded, &choice.args).is_some();
+        if encodes && self.standing.as_ref().is_some_and(|(f, a, applied)| *applied && *f == choice.fn_id && *a == encoded) {
+            eprintln!("[{tag}] seat call fn {} stands: its last outcome applied, not posted again", choice.fn_id);
+            return;
+        }
         match entity.relay().call(self.domain, self.seat, &self.key, choice.fn_id, choice.args.clone()) {
             Ok((Ok(seq), reference)) => {
                 self.calls += 1;
+                self.standing = encodes.then_some((choice.fn_id, encoded, false));
                 entity.with_seat_mind(self.domain, self.seat, |m| m.called(choice.fn_id, choice.args, reference));
                 eprintln!("[{tag}] seat call fn {} posted (seq {seq})", choice.fn_id);
             }
@@ -200,7 +264,10 @@ impl SeatArm {
         }
         let (train, tests) = match entity.pull_task_by_id(id) {
             Ok(Some(env)) => (env.train, env.tests),
-            Ok(None) => return no_call("the registry holds no such task"),
+            Ok(None) => {
+                self.answered.insert(id, ());
+                return no_call("the registry holds no such task");
+            }
             Err(e) => return no_call(&format!("the task was not fetched: {e}")),
         };
         let gen = entity.epigenome.atlas_root();
@@ -249,6 +316,7 @@ impl SeatArm {
         match entity.relay().call(self.domain, self.seat, &self.key, FN_SOLVE, args) {
             Ok((Ok(seq), _)) => {
                 self.calls += 1;
+                self.answered.insert(id, ());
                 eprintln!("[{tag}] seat task {} call fn {FN_SOLVE} posted (seq {seq}): {} outputs, steps {steps:?}", crate::speak::fam_id(id), outs.len());
             }
             Ok((Err(why), _)) => eprintln!("[{tag}] seat task call refused: {why:?}"),
