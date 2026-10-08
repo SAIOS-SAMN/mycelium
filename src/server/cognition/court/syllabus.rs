@@ -308,6 +308,10 @@ impl Kernel {
     ) -> Vec<crate::anastome::dialogue::Taught> {
         let mut out = Vec::new();
         let mut used = 0usize;
+        // The page's one stroke for the reading of what it serves a peer
+        // (`read_fetched`): the reads are shared by the page, never minted
+        // per word.
+        let mut reads = self.physics.stroke();
         let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for h in have {
             held.insert(h, ());
@@ -391,7 +395,7 @@ impl Kernel {
                     // word stands to among the words the asking court said it
                     // holds, and what it would cost as (held, Γ) where it is
                     // refracted.
-                    self.read_fetched(&addr, &held, bytes.len());
+                    self.read_fetched(&addr, &held, bytes.len(), &mut reads);
                 }
             }
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
@@ -499,7 +503,9 @@ impl Kernel {
         }
         // 78.60 — what the sentence stands to among the words this court
         // already taught this learner, read before it joins them.
-        let anchor = self.anchor_of(addr, voice);
+        // The reading's own stroke: its reads metered (`relation_to`).
+        let mut reads = self.physics.stroke();
+        let anchor = self.anchor_of(addr, voice, &mut reads);
         crate::observe::count(&mut self.acts.syllabus, &crate::observe::SYLLABUS, anchor);
         self.taught_voice.insert(taught_key(addr, &voice), ());
         Learner::Served(crate::anastome::dialogue::Taught { at, word: tape }, width)
@@ -516,7 +522,7 @@ impl Kernel {
     /// (the conjugators solved over ℚ, the refraction's address compared),
     /// never a byte count; a lower bound, since the learner's own speech and
     /// other courts' words are not read.
-    fn anchor_of(&self, addr: &[u8], voice: [u8; 32]) -> &'static str {
+    fn anchor_of(&self, addr: &[u8], voice: [u8; 32], reads: &mut crate::physics::Budget) -> &'static str {
         const READS: [&str; 6] = [
             "sentences: refracted (held, Γ)",
             "sentences: conjugate, carriage apart",
@@ -525,7 +531,7 @@ impl Kernel {
             "sentences: chart only",
             "sentences: unanchored",
         ];
-        READS[self.relation_to(addr, |held| self.taught_voice.contains(&taught_key(held, &voice))).0]
+        READS[self.relation_to(addr, |held| self.taught_voice.contains(&taught_key(held, &voice)), reads).0]
     }
 
     /// 78.100 PS1 (2) — ONE WORD SERVED TO A PEER COURT, READ: its relation
@@ -534,7 +540,7 @@ impl Kernel {
     /// bytes it would take as (held, Γ): the anchor's address, then the
     /// transport's word by its letter tape, its carriage by its coefficients
     /// and its gauge two bytes a pair. A measure, never a gate.
-    fn read_fetched(&mut self, addr: &[u8], have: &crate::network::nerve::Keyed<()>, whole: usize) {
+    fn read_fetched(&mut self, addr: &[u8], have: &crate::network::nerve::Keyed<()>, whole: usize, reads: &mut crate::physics::Budget) {
         use crate::observe::{count, count_by, FETCH};
         const WORDS: [&str; 6] = [
             "words: refracted (held, Γ)",
@@ -544,7 +550,7 @@ impl Kernel {
             "words: chart only",
             "words: unanchored",
         ];
-        let (read, refracted) = self.relation_to(addr, |h| have.contains(h));
+        let (read, refracted) = self.relation_to(addr, |h| have.contains(h), reads);
         count(&mut self.acts.fetch, &FETCH, WORDS[read]);
         count_by(&mut self.acts.fetch, &FETCH, "bytes served", whole as u64);
         if let Some((anchor, gamma)) = refracted {
@@ -564,10 +570,18 @@ impl Kernel {
     /// per vertex δγ, chart only, unanchored), with the anchor and the
     /// transport where it is refracted. Exact: the conjugators solved over
     /// ℚ, the refraction's address compared.
+    ///
+    /// METERED (2026-10-09): each held word read against `addr` spends one
+    /// read of `reads`, and a spent stroke ends the reading at the strongest
+    /// relation met so far. Unmetered, a fetch of a large chart solved the
+    /// conjugators against every ruled word of the fiber, for every word it
+    /// served, under the kernel — hypha c held the kernel 20+ minutes at the
+    /// stratum fetch (`judge/syllabus.rs`), twice, and every act waited.
     fn relation_to(
         &self,
         addr: &[u8],
         holds: impl Fn(&[u8]) -> bool,
+        reads: &mut crate::physics::Budget,
     ) -> (usize, Option<(Vec<u8>, crate::transducer::sentence::Transport)>) {
         use crate::transducer::sentence::chart::{chart_of, coboundary_gauge};
         use crate::transducer::sentence::Relation;
@@ -580,6 +594,9 @@ impl Kernel {
         for held in self.ruled.fiber(&inv) {
             if held.as_slice() == addr || !holds(&held) {
                 continue;
+            }
+            if !reads.spend() {
+                break;
             }
             best = best.min(4);
             let Some(h) = self.installed_word(&held).and_then(crate::transducer::sentence::from_element_form) else {
