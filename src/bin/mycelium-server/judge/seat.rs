@@ -24,7 +24,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
                 },
                 SeatRequest::ReadMail(r) => {
                     let mail = k.seat_mail(&r);
-                    let Some(b) = encode_mail_reply(mail.as_deref()) else { return };
+                    let Some(b) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return };
                     b
                 }
             },
