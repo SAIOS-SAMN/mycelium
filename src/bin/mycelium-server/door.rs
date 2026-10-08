@@ -257,6 +257,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                             Some(refused("the rule is no sentence", mycelium::transducer::sentence::ObstructionKind::I)),
                             None,
                         ),
+                        mycelium::cognition::SolveVerdict::NoWork => (
+                            dialogue::SOLVE_NOTHING,
+                            [0; 4],
+                            Some(refused("the rule discharges no work on the withheld pairs: nothing is closed or paid", mycelium::transducer::sentence::ObstructionKind::N)),
+                            None,
+                        ),
                         mycelium::cognition::SolveVerdict::Unverifiable => (
                             dialogue::SOLVE_NOTHING,
                             [0; 4],

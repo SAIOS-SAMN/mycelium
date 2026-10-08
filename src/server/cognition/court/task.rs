@@ -16,6 +16,12 @@ pub enum SolveVerdict {
     NotARule,
     /// The task holds no withheld answer to replay against.
     Unverifiable,
+    /// Replayed clean but DISCHARGED NOTHING on the withheld pairs: no work,
+    /// so no closure. Nothing is released, minted, docketed or offered, and
+    /// the task's first closure is not spent (the operator, 2026-10-08:
+    /// "we shouldn't be giving away mu incorrectly for the possibility of
+    /// falsification").
+    NoWork,
 }
 
 impl Kernel {
@@ -70,6 +76,7 @@ impl Kernel {
             }),
             SolveVerdict::NotARule => Some("not a rule"),
             SolveVerdict::Unverifiable => Some("unverifiable"),
+            SolveVerdict::NoWork => Some("no work"),
         };
         if let Some(name) = name {
             count(&mut self.acts.judged, &JUDGED, name);
@@ -95,7 +102,15 @@ impl Kernel {
         ) {
             return SolveVerdict::Refused(refusal);
         }
-        SolveVerdict::Solved { pay: self.measured_replay(rule, withheld) }
+        // A CLEAN REPLAY THAT DISCHARGES NOTHING IS NO CLOSURE. It was
+        // answered Solved with a zero pay, and the zero was checked only
+        // after `pay_solve` had released every escrow bound to the task and
+        // the door had spent the task's first closure on it.
+        let pay = self.measured_replay(rule, withheld);
+        if pay.iter().all(|&x| x == 0) {
+            return SolveVerdict::NoWork;
+        }
+        SolveVerdict::Solved { pay }
     }
 
     /// A SOLVE PAID (POUW, the actions' physics). The rule, verdict clean, is
@@ -108,6 +123,11 @@ impl Kernel {
     /// only: a repeat is verified and pays nothing — no floor, the decay is
     /// the discharge itself. Answers what the solver was paid, per lane.
     pub fn pay_solve(&mut self, task: &[u8], voice: [u8; 32], rule: &Element, pay: [u64; 4], first: bool) -> [u64; 4] {
+        // NO WORK, NO ACT: the check stands before every release, mint,
+        // docket and offer (see `SolveVerdict::NoWork`).
+        if pay.iter().all(|&x| x == 0) {
+            return [0; 4];
+        }
         self.docket_connection(rule, voice);
         self.enter_offered(rule.address().as_bytes());
         // A task with no listings bound to it has none: the reading of

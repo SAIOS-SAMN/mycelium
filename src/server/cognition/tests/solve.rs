@@ -161,3 +161,18 @@ fn the_first_closure_mints_the_discharge_and_a_closure_again_pays_nothing() {
     assert_eq!(again, [0; 4], "a closure again pays nothing");
     assert_eq!(k.treasury.balance_mu(&voice), pay, "and the balance stands");
 }
+
+/// NO WORK, NO ACT (the operator, 2026-10-08: never give μ away for the
+/// possibility of falsification): a solve paid nothing releases no escrow,
+/// mints nothing, dockets and offers nothing — the zero is read before any
+/// of it, not after.
+#[test]
+fn a_solve_that_discharges_nothing_acts_on_nothing() {
+    let mut k = Kernel::new();
+    let rule = rule_over(&carried());
+    let (task, voice) = ([5u8; 32], [9u8; 32]);
+    let paid = k.pay_solve(&task, voice, &rule, [0; 4], true);
+    assert_eq!(paid, [0; 4], "nothing paid");
+    assert_eq!(k.treasury.balance_mu(&voice), [0; 4], "nothing minted");
+    assert!(k.take_offers().is_empty(), "nothing docketed or offered");
+}
