@@ -71,10 +71,15 @@ fn q(n: i64) -> Q {
     Q::from_integer(num_bigint::BigInt::from(n))
 }
 
-/// The centre of an `R × C` grid, `((R − 1)/2, (C − 1)/2)`, exact.
+/// THE CENTRE OF AN `R × C` GRID WHERE THE SENSOR READS IT. In site indices
+/// the centre is `((R − 1)/2, (C − 1)/2)`; the sensor carries a
+/// compartment by its CENTRE, the site plus ½ on each grid axis
+/// (`element::carry_site_center`), so the index centre stands at
+/// `(R − 1)/2 + ½ = R/2` in the coordinates the versor acts on. Exact.
 fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
-    let half = |n: usize| -> Option<Q> { Some(Q::new(num_bigint::BigInt::from(i64::try_from(n).ok()? - 1), num_bigint::BigInt::from(2))) };
-    Some([half(rows)?, half(cols)?])
+    let half = Q::new(num_bigint::BigInt::from(1), num_bigint::BigInt::from(2));
+    let index = |n: usize| -> Option<Q> { Some(Q::new(num_bigint::BigInt::from(i64::try_from(n).ok()? - 1), num_bigint::BigInt::from(2))) };
+    Some([index(rows)? + &half, index(cols)? + &half])
 }
 
 impl Symmetry {
@@ -83,11 +88,10 @@ impl Symmetry {
     /// scale, a ray, exact — and a vector for a mirror.
     fn linear(self) -> Mv {
         use crate::transducer::cga::{E1, E2};
-        let plane = || Mv::blade(E1 | E2, q(1));
         match self {
-            Symmetry::Rotate90 => Mv::scalar(q(1)).add(&plane()),
-            Symmetry::Rotate180 => plane(),
-            Symmetry::Rotate270 => Mv::scalar(q(1)).sub(&plane()),
+            Symmetry::Rotate90 => cga::rotator(&q(1), &q(1)),
+            Symmetry::Rotate180 => cga::rotator(&q(0), &q(1)),
+            Symmetry::Rotate270 => cga::rotator(&q(1), &q(-1)),
             Symmetry::FlipH => Mv::blade(E2, q(1)),
             Symmetry::FlipV => Mv::blade(E1, q(1)),
             Symmetry::Transpose => Mv::blade(E1, q(1)).sub(&Mv::blade(E2, q(1))),
@@ -104,7 +108,9 @@ impl Step {
     /// THE CENTRED RIGID MOTION `T(c′) · L · T(−c)`: the input's centre
     /// `c = ((R−1)/2, (C−1)/2)` taken to the origin, the symmetry's linear
     /// part `L` applied there, and the origin taken to the output's centre
-    /// `c′` — half-integers, exact. `None` where the shapes do not fit the
+    /// `c′` — half-integers, exact, read in the sensor's compartment-centre
+    /// coordinates (each index plus ½, [`centre`]), which is the one frame
+    /// the court carries a site in. `None` where the shapes do not fit the
     /// symmetry: a turn by 90° or 270° and the transpose take `R × C` to
     /// `C × R`; the 180° turn and the mirrors keep `R × C`.
     pub fn grid_motion(kind: Symmetry, in_shape: (usize, usize), out_shape: (usize, usize)) -> Option<Step> {
@@ -213,6 +219,41 @@ pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) 
     form.orbits = Form::orbits_of(&form.faces, &form.vertices);
     let rule = sentence::rule_of_form(form);
     family::mint_sentence_why(&rule, family, crystal, 0).map_err(NoRule::Mint)
+}
+
+/// A RULE CROSSING TO PAIRS IT NEVER SAW (78.142, the I-defect). An
+/// extracted rule carries the FRAME-AXIS overlaps of its training family —
+/// each joining a chart at training frame `k` to one at `k′`, the motor its
+/// body took between two TRAINING PAIRS (`family/percept.rs`, MT1, AT1 A2).
+/// That is a relation among the pairs the rule was extracted from, not the
+/// rule's action on a pair: judged on a withheld family the court reads
+/// those frame indices on pairs that are not the ones they name, and
+/// refuses a frame it lacks as a claim over nothing it holds (I). So the
+/// word that crosses is the form WITHOUT the overlaps whose two ends stand
+/// at different frames, its orbits re-read and re-minted over the training
+/// family through the one mint — which re-checks every vertex on every
+/// training pair — at the span the word stood over. A rule with no such
+/// overlap crosses as it is.
+pub fn crossing(rule: &Element, train: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+    use crate::network::nerve::coord::ChartAt;
+    let held = element::Held::of(rule.clone());
+    let form = held.form().ok_or(NoRule::NotASentence)?;
+    let across: Vec<_> = form
+        .faces
+        .entries()
+        .filter(|(o, _)| matches!((&o.from, &o.to), (ChartAt::At(x), ChartAt::At(y)) if x.frame != y.frame))
+        .map(|(o, _)| o)
+        .collect();
+    if across.is_empty() {
+        return Ok(rule.clone());
+    }
+    let mut form = form.clone();
+    for o in &across {
+        let _ = form.faces.drop_at(o);
+    }
+    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
+    let rule_form = sentence::rule_of_form(form);
+    family::mint_sentence_why(&rule_form, train, crystal, rule.magnitude()[2]).map_err(NoRule::Mint)
 }
 
 /// WHAT THE JUDGE WOULD SAY, by the judge's own steps (`judge_solve`): no

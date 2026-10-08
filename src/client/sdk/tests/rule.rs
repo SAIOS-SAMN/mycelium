@@ -52,13 +52,43 @@ fn assert_solved(rule: &Element, withheld: &[(Grid, Grid)], what: &str) {
     assert!(seam.is_ok(), "{what}: the seam agrees: {seam:?}");
 }
 
-/// Two L-shaped trominoes' worth of scene on a 3 × 3 grid, two hues, and
-/// the same L placed elsewhere and painted otherwise for the withheld pair.
+/// An L-shaped tromino on a 3 × 3 grid in two hues, and the same L placed
+/// elsewhere and painted otherwise for the withheld pair: one chart, a
+/// scene the rule never saw.
 fn square_train() -> Grid {
     grid(&["120", "100", "000"])
 }
 fn square_withheld() -> Grid {
-    grid(&["000", "034", "033"])
+    grid(&["000", "034", "030"])
+}
+
+/// THE MOTION CARRIES EVERY SITE WHERE THE GRID READS IT: each symmetry's
+/// versor, applied by the sensor's own carrier to every site of a 2 × 3 grid
+/// (a 3 × 3 for the shape-keeping ones), lands exactly on the site the
+/// index map names.
+#[test]
+fn each_symmetry_carries_every_site_to_its_index_image() {
+    use crate::transducer::base::Site;
+    for kind in [
+        Symmetry::Rotate90,
+        Symmetry::Rotate180,
+        Symmetry::Rotate270,
+        Symmetry::FlipH,
+        Symmetry::FlipV,
+        Symmetry::Transpose,
+    ] {
+        let x = grid(&["123", "456"]);
+        let y = apply(kind, &x);
+        let Some(Step::Motion(v)) = Step::grid_motion(kind, shape(&x), shape(&y)) else { panic!("{kind:?} fits") };
+        for (r, row) in x.iter().enumerate() {
+            for (c, &h) in row.iter().enumerate() {
+                let site = Site::new(vec![r as i64, c as i64, 0]);
+                let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
+                let [tr, tc, _] = to.axes() else { panic!("three axes") };
+                assert_eq!(y[*tr as usize][*tc as usize], h, "{kind:?}: ({r}, {c}) lands on its image");
+            }
+        }
+    }
 }
 
 #[test]
@@ -88,7 +118,7 @@ fn a_turn_and_the_transpose_take_a_non_square_grid_to_its_exchange() {
         assert_eq!(shape(&y), (3, 2), "R × C goes to C × R");
         let step = Step::grid_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
         let rule = sentence(&[step], &[(x, y)], &NoCrystal).unwrap_or_else(|e| panic!("{kind:?} mints: {e:?}"));
-        let w = grid(&["034", "033"]);
+        let w = grid(&["034", "030"]);
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?} on 2 × 3"));
     }
     // A SHAPE THE SYMMETRY DOES NOT FIT is no motion at all.
@@ -103,7 +133,7 @@ fn a_hue_permutation_is_solved_on_a_pair_it_never_saw() {
     let map = [(1u8, 2u8), (2, 1)];
     let x = square_train();
     let rule = sentence(&[Step::Hue(map.to_vec())], &[(x.clone(), recolour(&map, &x))], &NoCrystal).expect("mints");
-    let w = grid(&["000", "012", "011"]);
+    let w = grid(&["000", "012", "010"]);
     assert_solved(&rule, &[(w.clone(), recolour(&map, &w))], "hue permutation");
 }
 
@@ -114,7 +144,7 @@ fn a_motion_then_a_recolour_is_solved_as_one_action() {
     let then = |g: &Grid| recolour(&map, &apply(Symmetry::Rotate180, g));
     let x = square_train();
     let rule = sentence(&steps, &[(x.clone(), then(&x))], &NoCrystal).expect("mints");
-    let w = grid(&["000", "014", "011"]);
+    let w = grid(&["000", "014", "010"]);
     assert_solved(&rule, &[(w.clone(), then(&w))], "motion then recolour");
 }
 
@@ -158,13 +188,16 @@ fn a_dilation_composed_with_a_motion_is_refused_where_the_motion_is_solved() {
     }
 }
 
-/// THE I-DEFECT, reproduced: a rule EXTRACTED from a family of two pairs
-/// carries the frame-axis motor faces between its training frames; the
-/// client's own replay on the training pairs passes, and the court, judging
-/// it on one withheld pair, must not refuse it for a training frame the
-/// withheld family does not hold.
+/// THE I-DEFECT, reproduced and crossed: a rule EXTRACTED from a family of
+/// two pairs carries the frame-axis motor faces between its training
+/// frames; the client's own replay on the training pairs passes, and the
+/// court, judging it on one withheld pair, refuses it with kind I — a
+/// training frame the withheld family does not hold. The word that crosses
+/// (`rule::crossing`) carries no overlap between two training frames, still
+/// replays on its training pairs, and is solved on the withheld pair.
 #[test]
 fn an_extracted_rule_judged_on_one_withheld_pair_is_not_refused_for_a_training_frame() {
+    use crate::transducer::sentence::ObstructionKind;
     let train = vec![
         (grid(&["1100", "0000"]), grid(&["0022", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "0022"])),
@@ -178,7 +211,20 @@ fn an_extracted_rule_judged_on_one_withheld_pair_is_not_refused_for_a_training_f
         "the client's own replay on its training pairs passes"
     );
     let withheld = vec![(grid(&["1100", "0000"]), grid(&["0022", "0000"]))];
+    // THE DEFECT: the extracted word, judged as it stands, is refused I.
     let (verdict, seam) = judged(&spoken, &withheld);
-    assert!(matches!(verdict, SolveVerdict::Solved { .. }), "the court solves the withheld pair: {verdict:?}");
-    assert!(seam.is_ok(), "the seam agrees: {seam:?}");
+    match &verdict {
+        SolveVerdict::Refused(r) => assert_eq!(r.obstruction.kind(), ObstructionKind::I, "refused for a training frame: {r:?}"),
+        other => panic!("the extracted word carries its training frames: {other:?}"),
+    }
+    assert!(matches!(seam, Err(NoRule::Refused(_))), "the seam agrees: {seam:?}");
+    // THE CROSSING: no overlap between two training frames rides the word.
+    let crossed = crate::client::sdk::rule::crossing(&spoken, &train, &NoCrystal).expect("the rule crosses");
+    assert_ne!(crossed.address(), spoken.address(), "the training frames' overlaps are gone from the word");
+    let mut budget = crate::physics::Physics::default().stroke_n(1 << 20);
+    assert!(
+        crate::verdict::blind_replay_at(&crossed, &|_| None, Some(&train), &NoCrystal, &mut budget).is_none(),
+        "the crossed word still replays on its training pairs"
+    );
+    assert_solved(&crossed, &withheld, "the crossed rule");
 }
