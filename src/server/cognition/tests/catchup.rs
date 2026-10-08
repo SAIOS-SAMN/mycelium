@@ -189,7 +189,8 @@ fn a_catch_up_below_the_root_is_answered_with_the_root_not_cold_pages() {
     };
     assert!(era.first().is_some_and(|r| r.stamp.place() == Place::GENESIS), "the replay reads the era from its first act");
     assert!(serves()[ServeAxis::Replays as usize] > mid[ServeAxis::Replays as usize], "counted as a replay");
-    // A fold with no proof kept: hot alone below its root, counted.
+    // A fold with no proof kept: paged from the archive below its root, so
+    // the page links to the asker's head, and counted.
     let (_, mut u) = court("catchup-unproved");
     let uvk = u.chain().vk();
     strokes(&mut u, 3);
@@ -201,7 +202,7 @@ fn a_catch_up_below_the_root_is_answered_with_the_root_not_cold_pages() {
     strokes(&mut u, 1);
     let unproved = serves()[ServeAxis::UnprovedRoot as usize];
     let ReceiptsAnswer::Page(page) = u.serve_receipts(&uvk, None, far, false, 8, usize::MAX) else { panic!("no proof: a page") };
-    assert!(page.iter().all(|r| r.stamp.place() > p.root.at), "nothing below the root is read for a catch-up");
+    assert!(page.first().is_some_and(|r| r.stamp.place() == Place::GENESIS), "the page opens at the asker's head (here: the line's first act), below the root");
     assert!(serves()[ServeAxis::UnprovedRoot as usize] > unproved, "and the unproved root is counted");
     // Proofs that do not stand.
     let mut forged = proof.clone();

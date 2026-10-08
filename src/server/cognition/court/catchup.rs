@@ -146,9 +146,17 @@ impl Kernel {
             true => self.chain.root().map(|r| r.at),
             false => self.chain.peer_root(signer),
         };
-        if standing.is_some_and(below) {
+        // A ROOT WITH NO PROOF HELD IS PAGED FROM THE ARCHIVE. Answered off the
+        // hot line alone, the page opened past the root and linked to no
+        // asker's head below it: refused as a gap, admitted 0, on every pair
+        // of the fleet (2026-10-09) — every root it held was sealed before
+        // proofs were kept (78.147), and none has sealed since under load.
+        // The archive links the page to the asker's head until a proved fold
+        // takes over the door.
+        let unproved = standing.is_some_and(below);
+        if unproved {
             note_serve(ServeAxis::UnprovedRoot, 1);
         }
-        ReceiptsAnswer::Page(self.line_page(signer, after, upto, budget, bytes, false))
+        ReceiptsAnswer::Page(self.line_page(signer, after, upto, budget, bytes, unproved))
     }
 }
