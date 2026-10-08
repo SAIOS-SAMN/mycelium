@@ -312,6 +312,9 @@ fn cross_citing_lines_both_advance_from_their_roots() {
     for _ in 0..2 {
         cross(&mut a, &mut b, &mut heard_a, &mut heard_b);
     }
+    // b answers a's last stroke, so neither head cites the other's.
+    super::common::admit_line(&mut b, &akey, &line(&a, heard_a));
+    strokes(&mut b, 1);
     let c = Mutex::new(c0);
     let courts = [&a, &b];
     for (key, k, root) in [(&akey, &a, &ra), (&bkey, &b, &rb)] {
