@@ -356,6 +356,8 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     let d = vk(&domain());
     let me = vk(&mind());
     list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
     let mut m = SeatMind::new(d, 7);
     let (epoch, fns) = listed_fns(&k, 7);
     assert_eq!((epoch, fns.clone()), (1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]), "the listing reads back whole");
