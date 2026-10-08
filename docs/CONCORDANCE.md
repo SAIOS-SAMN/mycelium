@@ -179,16 +179,13 @@ It is extremely painful for those who live through it, above all for a civilizat
 8.4 DECLARED, mycelium (2026-10-08, the 1.10 audit): A.6-bind-11, `N = 11` — an architectural binding of the ipsal-autic lineage, not a theorem (MU-RECURSION 56.2). Refused as a law and held here as declared; nothing in the court relies on it.
 8.5 DECLARED, the court's unit (2026-10-08, 1.8): GM_sun/c^2 in megaparsecs (about 4.8e-20), fixed once as an exact rational by the coordinator; it converts a mass stated in solar masses to the court's geometrized length.
 
-## 9. Conduct of the nodes
+## 9. Conduct between kernels
 
-9.1 The coordinator authorises builds and tests (amended 2026-10-08, the coordinator's 70bdcdf). Three classes:
-- HEAVY (`scripts/heavy`, `/run/user/1000/xyl-heavy.lock`): one machine-wide; at most 4 build jobs, 4 test threads and 4 worker processes; bounded, never holding past about 15 minutes. A full workspace suite with a release build in one command is borderline: chunk it when it runs long.
-- LONG (over about 10 minutes: a galaxy's forecast, a deep-time run, a soak probe): by grant only, under `/run/user/1000/xyl-long.lock` (wrapper `/opt/xylarium-kernel/scripts/long`), at most 3 threads at nice 15, one machine-wide, and never holding the heavy lock.
-- LIGHT TESTS run without a lock: one test module (or one already-built test binary), on one thread, under a minute of wall time, with no build or compile in the same command. Builds, the gate and the suite stay under the heavy lock.
-HYGIENE: one real background command, acted on by its completion notice — no poll loops; the queue read by `lslocks` or by pid, never by a pattern grep; a node kills its own old waiter by pid before requeuing; a `flock -w` outlasts the holder; never kill another node's job.
+9.1 CONFORMANCE between kernels on a wire is that each act decodes into the same exact typed values and its signature verifies under its signer's key - never byte-for-byte golden vectors (1.4; operator, 2026-10-08).
 9.2 Nodes report what changed and why - in laws, flows and emergence - never by hash matches.
 9.3 Decisions for the operator are batched by the coordinator; rulings take effect when written into this agreement or recorded by the coordinator.
 9.4 No node edits another node's tree, permissions or configuration.
+How the developing nodes coordinate their work (builds, locks, cadence, tests) is not part of this agreement.
 
 ## 10. Open items
 
