@@ -589,12 +589,16 @@ impl Kernel {
         self.treasury.economy(&self.identity)
     }
 
-    /// Mint a genesis allocation once per identity.
+    /// A genesis allocation, once per identity, written as GENESIS — never a
+    /// mint (§6: seeded value and earned value stay separable; it was booked
+    /// as a subsidy mint). A home whose allocation was booked as a mint before
+    /// this keeps it, and is not allocated twice.
     pub fn allocate(&mut self, who: [u8; 32], mu: [u64; 4]) -> [u64; 4] {
-        if self.treasury.has_mint(&who) {
+        if self.treasury.has_genesis(&who) || self.treasury.has_mint(&who) {
             return [0; 4];
         }
-        self.treasury.settle_subsidy(who, mu, self.anchor())
+        let anchor = self.anchor();
+        self.treasury.genesis(who, mu, anchor)
     }
 }
 

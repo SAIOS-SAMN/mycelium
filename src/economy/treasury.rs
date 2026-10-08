@@ -754,4 +754,9 @@ impl Treasury {
         self.entries.iter().any(|e| e.kind == Kind::Mint && e.who == *who)
     }
 
+    /// Whether `who` holds a genesis allocation row (§6: seeded, never earned).
+    pub fn has_genesis(&self, who: &[u8; 32]) -> bool {
+        self.entries.iter().any(|e| e.kind == Kind::Genesis && e.who == *who)
+    }
+
 }

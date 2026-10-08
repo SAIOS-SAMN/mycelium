@@ -453,6 +453,14 @@ pub fn sentence_measure_why(
         if left != 0 {
             return Err(Refused::MintLinksWithoutDemand);
         }
+        // NO DISCHARGE, NO WORD (the operator, 2026-10-08: never give μ away
+        // for the possibility of falsification). The span below is written
+        // into T whatever the form did, so a form that discharged nothing
+        // but stood a span minted a non-zero magnitude and was escrowed at
+        // its price. The work is read before the span is written.
+        if pay.iter().all(|&x| x == 0) {
+            return Err(Refused::MintNoTape);
+        }
         let mut mag = pay;
         mag[2] = t_extent;
         return Ok(mag);
