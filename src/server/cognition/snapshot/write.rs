@@ -205,6 +205,10 @@ impl Kernel {
         if let Some(v) = self.handoffs.put() {
             leaves.push((LEAF_HANDOFFS, v));
         }
+        // 78.147 — the fold roots held with their two signatures, where any is.
+        if let Some(v) = self.put_root_proofs() {
+            leaves.push((LEAF_ROOTS, v));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

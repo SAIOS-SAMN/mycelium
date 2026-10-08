@@ -8,8 +8,14 @@ use crate::chronometry::{ActKind, Place, ReceiptChain};
 fn the_receipts_request_and_reply_round_trip_within_the_budget() {
     let (after, upto) = (Some(Place { k: 3, i: 1 }), Place { k: 9, i: 0 });
     let req = encode_receipts_request(&[1; 32], &[2; 32], after, upto);
-    assert_eq!(decode_receipts_request(&req), Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], after, upto }));
+    assert_eq!(decode_receipts_request(&req), Some(ReceiptsRequest { voice: [1; 32], signer: [2; 32], after, upto, replay: false }));
     assert!(decode_receipts_request(&req[..req.len() - 1]).is_none(), "a short request refuses");
+    // 78.147 — an era replay is the same span with its tag.
+    let replay = encode_replay_request(&[1; 32], &[2; 32], after, upto);
+    assert_eq!(decode_receipts_request(&replay).map(|r| (r.after, r.upto, r.replay)), Some((after, upto, true)), "the replay ask");
+    let mut wrong = replay.clone();
+    wrong.push(1);
+    assert!(decode_receipts_request(&wrong).is_none(), "a request with bytes past its tag refuses");
     let from_start = encode_receipts_request(&[1; 32], &[2; 32], None, upto);
     assert_eq!(
         decode_receipts_request(&from_start).map(|r| (r.after, r.upto)),

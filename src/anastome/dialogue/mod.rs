@@ -17,6 +17,7 @@ pub mod offer;
 pub mod percept;
 pub mod quote;
 pub mod receipts;
+pub mod root;
 pub mod seat;
 pub mod speech;
 pub mod syllabus;
@@ -38,6 +39,7 @@ pub use offer::*;
 pub use percept::*;
 pub use quote::*;
 pub use receipts::*;
+pub use root::*;
 pub use speech::*;
 pub use syllabus::*;
 

@@ -7,6 +7,7 @@ mod aperture;
 mod backfill;
 mod book;
 mod carriers;
+mod catchup;
 mod cocycles;
 mod colour;
 mod contraction;

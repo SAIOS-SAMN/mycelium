@@ -65,7 +65,9 @@ pub(crate) fn fold_round(kernel: &Mutex<Kernel>, mesh: &Mesh) {
         match dialogue::decode_fold_reply(&reply) {
             Some(dialogue::FoldWitness::CoSigned { section: w }) => {
                 let Ok(mut k) = kernel.lock() else { return };
-                match k.commit_fold(section.sig, &w) {
+                // 78.147: the root is kept with both signed positions, what a
+                // catch-up below it is answered with.
+                match k.commit_fold_proved(&section, &w) {
                     Ok(_) => {
                         observe::note_fold(FoldOutcome::Folded);
                         return;

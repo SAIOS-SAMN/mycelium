@@ -10,7 +10,7 @@ LOG="${SHIP_LOG:-/tmp/ship-scoped.log}"
 export CARGO_BUILD_JOBS=4 RUST_TEST_THREADS=4
 inner() {
   echo "head $(git log --oneline -1)"
-  if CARGO_TARGET_DIR=target/gate cargo clippy --release --lib --bins --tests 2>&1 | grep -E "^error" ; then
+  if CARGO_TARGET_DIR=target/gate cargo clippy --release --lib --bins --tests 2>&1 | grep -E "^error" -A12 ; then
     echo "SHIP STOPPED: clippy"; return 1
   fi
   CARGO_TARGET_DIR=target/gate cargo test --release --lib -- "$@" > "$LOG" 2>&1

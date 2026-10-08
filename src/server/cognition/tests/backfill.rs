@@ -2,8 +2,12 @@
 // LD0's defect 3b): two courts, one signing faster than the other's pass
 // can page, and what the chase did per signer.
 
+use crate::anastome::dialogue::ReceiptsAnswer;
 use crate::cognition::*;
 use crate::observe::rep;
+
+/// The origin every fixture frame is signed at.
+const ORIGIN: crate::server::backfill::Origin = Some(([7; 32], 2));
 
 /// b's head receipt and the prefix a digest signs for it — the frame a
 /// digest carries, verified at the call under b's key.
@@ -67,12 +71,14 @@ fn a_heard_head_is_cited_once_its_gap_closes() {
         let (head, pre) = head_of(&b);
         let fetch = |who: &[u8; 32],
                      after: Option<crate::chronometry::Place>,
-                     upto: crate::chronometry::Place|
-         -> Option<Vec<crate::chronometry::KStepReceipt>> {
-            (*who == vk).then(|| b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8")))
+                     upto: crate::chronometry::Place,
+                     _: crate::server::backfill::Ask|
+         -> Option<ReceiptsAnswer> {
+            (*who == vk).then(|| ReceiptsAnswer::Page(b.line_between(who, after, upto, usize::try_from(PAGE).expect("PAGE is the constant 8"))))
         };
         let heard: Result<_, ()> = crate::server::backfill::hear(
             &c,
+            ORIGIN,
             || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
             || c.lock().ok().map(|mut k| k.stroke()),
             fetch,
@@ -135,16 +141,17 @@ fn a_head_citing_another_signer_is_cited_once_that_signer_is_fetched() {
     let mut c0 = Kernel::new();
     c0.append_step(crate::chronometry::ActKind::Attest, [0xAA; 40], [1; 32]);
     let c = std::sync::Mutex::new(c0);
-    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place| {
+    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
         let line = match () {
             _ if *who == vk => &b,
             _ if *who == dvk => &d,
             _ => return None,
         };
-        Some(line.line_between(who, after, upto, 64))
+        Some(ReceiptsAnswer::Page(line.line_between(who, after, upto, 64)))
     };
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
+        ORIGIN,
         || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &key), &head)),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,
@@ -228,15 +235,18 @@ fn a_citation_into_a_closed_era_is_proved_by_its_chain_and_the_head_is_cited() {
     d.admit(e0.clone());
     d.append(ActKind::List, [0; 4], Vec::new(), [0; 32], vec![Parent { at: e0.stamp, hash: e0.chain_hash }]).expect("d cites e0");
     let (head, pre) = head_of(&d);
-    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place| {
+    let fetch = |who: &[u8; 32], after: Option<crate::chronometry::Place>, upto: crate::chronometry::Place, _| {
         match () {
-            _ if *who == evk => Some(era.iter().filter(|r| after.is_none_or(|a| a < r.stamp.place()) && r.stamp.place() <= upto).cloned().collect()),
-            _ if *who == dvk => Some(d.line_between(who, after, upto, 64)),
+            _ if *who == evk => Some(ReceiptsAnswer::Page(
+                era.iter().filter(|r| after.is_none_or(|a| a < r.stamp.place()) && r.stamp.place() <= upto).cloned().collect(),
+            )),
+            _ if *who == dvk => Some(ReceiptsAnswer::Page(d.line_between(who, after, upto, 64))),
             _ => None,
         }
     };
     let heard: Result<_, ()> = crate::server::backfill::hear(
         &c,
+        ORIGIN,
         || Ok(c.lock().expect("c").admit_receipt(([7; 32], 2), super::common::verified(&pre, &dkey), &head)),
         || c.lock().ok().map(|mut k| k.stroke()),
         fetch,

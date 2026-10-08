@@ -161,6 +161,21 @@ impl Kernel {
         budget: usize,
         bytes: usize,
     ) -> Vec<KStepReceipt> {
+        self.line_page(signer, after, upto, budget, bytes, true)
+    }
+
+    /// THE READ, with the cold archive paged or not (78.147): a catch-up is
+    /// answered off the hot line alone (`serve_receipts`), an era replay —
+    /// `why`, the ledger reader, a citation proved by its era — pages it.
+    pub(crate) fn line_page(
+        &self,
+        signer: &[u8; 32],
+        after: Option<Place>,
+        upto: Place,
+        budget: usize,
+        bytes: usize,
+        cold_read: bool,
+    ) -> Vec<KStepReceipt> {
         let mut out = Vec::new();
         if after.is_some_and(|a| a >= upto) {
             return out;
@@ -210,7 +225,11 @@ impl Kernel {
         // and every receipt read off it — the court's own work, never a
         // clock — so a range that starves its asker reads as one.
         let mut eras_paged = 0u64;
-        'eras: for e in self.eras_over(signer, after, upto) {
+        let eras = match cold_read {
+            true => self.eras_over(signer, after, upto),
+            false => Vec::new(),
+        };
+        'eras: for e in eras {
             let Some(page) = self.era_receipts(e) else { continue };
             eras_paged += 1;
             // A paged era is in line order: the range is its run between

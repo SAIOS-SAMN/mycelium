@@ -96,6 +96,11 @@ pub struct Kernel {
     /// of the prefix, cold. Written once at the fold, never rewritten;
     /// read to serve a K-range fetch or a court's replay of an era.
     pub(crate) archive: Vec<crate::chronometry::Era>,
+    /// 78.147 — EACH SIGNER'S LATEST FOLD ROOT WITH ITS TWO SIGNATURES, by
+    /// key: this court's own (sealed here), the homes' it witnessed, and the
+    /// roots it adopted — what a catch-up opening below a root is answered
+    /// with. Persisted (`LEAF_ROOTS`).
+    pub(crate) root_proofs: crate::network::nerve::Keyed<crate::anastome::dialogue::RootProof>,
     /// The fold awaiting a witness (47.3): the reading proposed on the
     /// syntropic circuit, carried to a bonded peer by the exchange, sealed
     /// only on both signatures.
@@ -1104,8 +1109,10 @@ impl Kernel {
 
     /// What this mind knows of a hypha's chain head, if it has admitted one:
     /// the node at the top of that signer's line in the ledger.
+    /// 78.147: the line's tip — a fold root adopted past every node held is
+    /// where the line stands, and nothing below it is asked again.
     pub fn known_head(&self, vk: &[u8; 32]) -> Option<(crate::chronometry::Place, [u8; 32])> {
-        self.chain.line_head(vk).map(|r| (r.stamp.place(), r.chain_hash))
+        self.chain.line_tip(vk).map(|p| (p.at.place(), p.hash))
     }
 
     pub fn height(&self) -> u64 {

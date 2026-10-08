@@ -177,20 +177,35 @@ pub(crate) fn take_span(b: &[u8], p: &mut usize) -> Option<(Option<Place>, Place
 }
 
 /// 47.2's PLACE-RANGE REQUEST (S13.10): which signer, and which span of
-/// its line — strictly after `after` up to `upto`.
+/// its line — strictly after `after` up to `upto`. `replay` (78.147) is an
+/// explicit ask for an era's own receipts — a citation proved by its era, a
+/// ledger read — the one ask the cold archive answers; a catch-up opening
+/// below the signer's fold root is answered with the root.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceiptsRequest {
     pub voice: [u8; 32],
     pub signer: [u8; 32],
     pub after: Option<Place>,
     pub upto: Place,
+    pub replay: bool,
 }
+
+/// The replay ask's trailing tag; a catch-up carries none.
+const REPLAY: u8 = 1;
 
 pub fn encode_receipts_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
     let mut out = vec![ACT_RECEIPTS];
     out.extend_from_slice(voice);
     out.extend_from_slice(signer);
     put_span(&mut out, after, upto);
+    out
+}
+
+/// The same span asked as an ERA REPLAY (78.147): the catch-up ask and the
+/// replay tag after it.
+pub fn encode_replay_request(voice: &[u8; 32], signer: &[u8; 32], after: Option<Place>, upto: Place) -> Vec<u8> {
+    let mut out = encode_receipts_request(voice, signer, after, upto);
+    out.push(REPLAY);
     out
 }
 
@@ -202,7 +217,12 @@ pub fn decode_receipts_request(body: &[u8]) -> Option<ReceiptsRequest> {
     let signer: [u8; 32] = body.get(33..65)?.try_into().ok()?;
     let mut p = 65usize;
     let (after, upto) = take_span(body, &mut p)?;
-    (p == body.len()).then_some(ReceiptsRequest { voice, signer, after, upto })
+    let replay = match body.get(p..) {
+        Some([]) => false,
+        Some([REPLAY]) => true,
+        _ => return None,
+    };
+    Some(ReceiptsRequest { voice, signer, after, upto, replay })
 }
 
 /// The K-range reply: as many of `receipts`, in order, as fit `budget`

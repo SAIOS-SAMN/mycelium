@@ -488,7 +488,22 @@ pub struct Court {
 
 /// The axes of [`Court::serve`]: counts, and one level (the most eras one
 /// page paged).
-pub const SERVE_AXES: [&str; 7] = ["pages", "hot only", "cold", "eras paged", "receipts cold", "unwritten", "most eras one page"];
+/// 78.147: a catch-up opening below the signer's fold root is answered with
+/// the root ("served root"); the cold archive answers only an era replay
+/// ("replays"); a catch-up below a root this court holds no proof of is
+/// answered hot alone ("unproved root").
+pub const SERVE_AXES: [&str; 10] = [
+    "pages",
+    "hot only",
+    "cold",
+    "eras paged",
+    "receipts cold",
+    "unwritten",
+    "most eras one page",
+    "served root",
+    "replays",
+    "unproved root",
+];
 
 /// Where each serving count is written on [`SERVE_AXES`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -501,6 +516,9 @@ pub enum ServeAxis {
     Unwritten = 5,
     /// A LEVEL: raised to the most eras one page paged, never summed.
     MostEras = 6,
+    ServedRoot = 7,
+    Replays = 8,
+    UnprovedRoot = 9,
 }
 
 /// The catch-up paths of [`Court::catchup`].
@@ -693,11 +711,16 @@ pub const REPLICATION_AXES: [(&str, &str); REP_AXES] = [
     ("backfill_missing_parent", "back-fill pages stopped on a cited receipt of this signer that this court does not hold"),
     ("backfill_missing_unrooted", "of them, citations of a signer whose fold root this court does not hold (no era proof can run)"),
     ("missing_depth", "the cited orbit against the head held for this signer at the last such stop (a level, not a count)"),
+    // 78.147 — CATCH-UP FROM A FOLD ROOT: the signer's root, answered for a
+    // range opening below it, adopted on its two signatures and its line
+    // continued hot from it; or refused, the proof not standing.
+    ("root_adopted", "fold roots of this signer adopted on their two signatures, its line continued hot from them"),
+    ("root_refused", "fold roots of this signer answered and refused: a signature or the root's hash did not verify"),
 ];
 
 /// How many axes [`REPLICATION_AXES`] holds: the one statement of the
 /// reading's width, read by the codec, the store and every renderer.
-pub const REP_AXES: usize = 48;
+pub const REP_AXES: usize = 50;
 
 /// The axes of [`REPLICATION_AXES`] by name, for the sites that count them.
 pub mod rep {
@@ -750,6 +773,8 @@ pub mod rep {
     pub const BACKFILL_MISSING_UNROOTED: usize = 46;
     /// A LEVEL: set at each stop, never summed.
     pub const MISSING_DEPTH: usize = 47;
+    pub const ROOT_ADOPTED: usize = 48;
+    pub const ROOT_REFUSED: usize = 49;
 }
 
 /// REPLICATION PER SIGNER (CV5): each signer this court heard from, by key,
