@@ -427,6 +427,10 @@ pub struct Kernel {
     /// its ancients' basket — each once — persisted after the origins
     /// (`LEAF_DOMAINS`).
     pub(crate) universes: crate::network::nerve::Keyed<crate::anastome::dialogue::universe::Universe>,
+    /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
+    /// mail between its house and the minds seated in it. Volatile and
+    /// bounded; never persisted.
+    pub(crate) seats: super::seat::SeatRelay,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

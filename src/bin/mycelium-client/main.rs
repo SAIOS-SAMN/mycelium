@@ -185,6 +185,11 @@ fn home_dir(args: &[String]) -> Result<PathBuf, String> {
             i += 2;
             continue;
         }
+        // 78.145 — `--seat <domain-hex> <seat-id>`, read by the seat arm.
+        if args[i] == "--seat" {
+            i += 3;
+            continue;
+        }
         if args[i].starts_with("--") {
             return Err(format!("unknown flag {}", args[i]));
         }
@@ -222,6 +227,15 @@ fn main() {
     let voice_key = HyphaKey::load_or_mint(key_name);
     let voice = Voice::from_identity(voice_key.vk_bytes());
     let tag = voice.name().to_string();
+    // 78.145 — the seat arm, where `--seat` names one: taken by this voice's
+    // own key.
+    let mut seat_arm = match crate::arms::seat::SeatArm::of_args(&args, voice_key.sk.clone()) {
+        Ok(a) => a,
+        Err(e) => {
+            eprintln!("mycelium-client {e}");
+            std::process::exit(2);
+        }
+    };
     let mesh_rec = match mesh::load_or_migrate_voice(&home, &voice_key) {
         Ok(rec) => rec,
         Err(why) => {
@@ -334,6 +348,12 @@ fn main() {
             let a2 = allocated();
             if !stroke.stopping() {
                 task_arm(&mut stroke, &mut extract_memo, occluded);
+            }
+            // 78.145 — the seat arm: take, read the mail, perceive, call.
+            if let Some(arm) = seat_arm.as_mut() {
+                if !stroke.stopping() {
+                    arm.stroke(stroke.entity, &tag, &stop);
+                }
             }
             let a3 = allocated();
             // THE SYNTROPIC PHASE on any lane short of one expansion (S10's

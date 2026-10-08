@@ -25555,6 +25555,125 @@ composed with the 180° turn is a versor whose difference from the turn is
 not zero, and is refused where the plain turn is solved; the extracted
 two-pair rule refused I as it stands, and solved once crossed.
 
+### 78.145 The seat surface (2026-10-08, the coordinator, agreed with the game kernels — xylarium, netstratum and a third)
+
+A game's minds sit in its house through the hypha. The **house** is the
+domain's SITTING RESERVE (`Kernel::reserve_of`); the hypha is a general
+signed relay between it and the minds that take its seats: it HOLDS AND
+FORWARDS, and judges nothing in-game. `Action::Seat`, `ACT_SEAT = 0x53`,
+`Kind::Relay`: asked on the wire, never sealed, answering to no law (it
+moves no book). It is the one wire byte past the court's acts (0x40–0x52),
+by the agreed wire; nothing below 0x40 was free (78.126). The lexicon
+gains **House** and **Seat surface** (network), at version 3.
+
+**The wire (binding).** Integers little-endian; a key is 32 bytes; a
+signature ed25519, 64 bytes. A frame is `[0x53][sub u8][fields][sig 64]`;
+the signature is over `b"mycelium seat v1" ‖ [sub] ‖ [fields]` — THE ACT TAG
+IS NOT SIGNED (verified by `court::identity::verify`).
+
+- ARG = `[tag u8]` then `0 Q [num i64][den u64 > 0]` | `1 Key [32]` |
+  `2 Count [u64]` | `3 Flag [u8 0|1]` | `4 Mv` (`Mv::to_bytes`) |
+  `5 BigQ [num len u16][num, signed LE][den len u16][den, LE]` — den > 0,
+  reduced, each length the minimal one (`num_bigint`'s
+  `to_signed_bytes_le` / `to_bytes_le`); anything else is refused.
+  ARGS = `[count u8][ARG…]`.
+- **0 SEATS** (HOUSE): `[domain][epoch u64][count u16] SEAT…`; SEAT =
+  `[seat u32][role u8][on key][beat ARG, a Q or BigQ][fns u16] FN…`; FN =
+  `[fn u16][argtypes u8][tag u8…]`. Roles: 0 progenitor, 1 ancients (the
+  house's own seat), 2 steward, 3 sovereign, 4–9 office. The latest epoch
+  replaces (an equal epoch replaces too; an older one is acknowledged and
+  not held).
+- **1 TAKE** (the MIND's key): `[domain][seat u32][mind key][nonce 32]`.
+- **2 TAKEN** (HOUSE): `[domain][seat u32][mind key][ok u8][reason u16]`.
+- **3 PERCEPT** (HOUSE): `[domain][seat u32][mind key][local time ARG][seq
+  u64][records u16] REC…`; REC = `[kind u16][ARGS]`; COUNSEL is kind
+  `0xFFFF`: `[fn u16][ARGS][worth ARG][cost ARG]`.
+- **4 CALL** (MIND): `[domain][seat u32][mind key][call nonce 32][fn
+  u16][ARGS]`. The CALL REF is `blake3(b"mycelium seat v1" ‖ [4] ‖
+  [fields])` — exactly the bytes the signature covers — taken by
+  `chronometry::payload_hash`: a CITATION of the call (as a handoff's id
+  is), never its identity (law 2): the call is its fields.
+- **5 OUTCOME** (HOUSE): `[domain][seat u32][mind key][call ref 32][applied
+  u8][reason u16][deed ref 32]`.
+- **6 READ-LISTING** (unsigned): `[domain]` → the latest SEATS' `fields ‖
+  sig`, or an empty reply.
+- **7 READ-MAIL** (signed by the reader, `[sub]=7` in the signed bytes):
+  `[reader key][after u64][nonce 32]` → `[count u16]` then `(seq u64, sub
+  u8, body len u32, body)…` in seq order, each body a post's `fields ‖ sig`
+  (re-verified by prefixing `b"mycelium seat v1" ‖ [sub]`). A mind reads the
+  TAKEN, PERCEPT and OUTCOME naming it; a house — the sitting reserve of a
+  domain — reads that domain's TAKE and CALL too.
+
+Every post is answered `[1][seq u64]` or `[0][reason u8]`: 1 unsigned (a
+mind's post or a read not verifying under its key), 2 not the house, 3
+malformed (any frame that does not read whole, a byte left over included),
+4 unknown domain (no sitting reserve on this court). A READ-MAIL is refused
+by the same two bytes; its reply `[0][0]` is an empty box (no reason is 0).
+
+**The mail is volatile and bounded** (a sink keeps its bound). Nothing is
+persisted: a restart holds no listing and no mail, its sequence restarts,
+and a reader whose `after` stands past the relay's last sequence reads from
+the start. A READ-MAIL's `after` acknowledges — and drops — everything at or
+below it, per addressee. Each addressee's box is held within
+`frame_budget() − 2` bytes as a reply writes it (`seq + sub + len + body`
+per piece), DERIVED from the frame budget so one read always carries a whole
+box, and within `u16::MAX` pieces; past it the oldest piece is dropped and
+counted (`SeatRelay::dropped`), and the reader sees the gap in the sequence.
+The mail lives on the hypha a post reached: a house and its minds speak to
+the same hypha (owed: routing a domain's mail across the nerve). A
+READ-MAIL replayed acknowledges nothing the reader had not acknowledged.
+
+**The golden vectors** (`dialogue::tests::seat`, asserted literally): keys
+from the seeds `[1;32]` (the house) and `[2;32]` (the mind), domain
+`[9;32]`, seat 7. The CALL: call nonce `[3;32]`, fn 3, ARGS `[Q 3/2, BigQ
+2^70/3, Key [5;32]]`. The PERCEPT: local time `Q 12/1`, seq 1, one COUNSEL
+record — fn 3, the same ARGS, worth `Q 1/2`, cost `Q 1/3`.
+
+```
+house vk  8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c
+mind vk   8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394
+CALL      53040909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394030303030303030303030303030303030303030303030303030303030303030303000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505055e38bf9a10d0ff42b5248d2279f80984d513a18beb9da5925182e1c22f5728e48774e744decd809eb8b2c8e4568683f89441ff95b93ca300b77a6456cd27860f
+CALL ref  31cb3c49a809b03a09c5b4a57005dcf5399675654167a07819cc4fcd76ff9041
+PERCEPT   53030909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394000c00000000000000010000000000000001000000000000000100ffff03000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505050001000000000000000200000000000000000100000000000000030000000000000038fb1c38b9c4d70d0daccf1fc970bc239d412f8b9e0fba59bc5cdb00e10c123c22e1501bb429cc5f0d2b704547697f99201bf32e2258e999f28824b7640dd903
+```
+
+The vectors were computed independently of the crate (PyNaCl ed25519, the
+blake3 reference) from this layout, and the crate matches them byte for
+byte.
+
+**The SDK** (`client/sdk/seat.rs`, on `Session`): `list_seats`, `take`,
+`mail` (typed `MindMail::{Taken, Percept, Outcome}`), `call` (answered with
+its reference); the house's `post_seats`, `house_mail` (typed
+`HouseMail::{Take, Call}`, a call with its reference), `post_taken`,
+`post_percept`, `post_outcome`; `Entity::relay` is the session it speaks
+through.
+
+**The client arm, first cut** (`mycelium-client --seat <domain-hex>
+<seat-id>`): it TAKEs once by the voice's own key; each stroke it reads its
+mail past the last sequence read; each PERCEPT's records are held as the
+mind's perception and logged as a typed digest; v1 CHOOSES BY THE HOUSE'S
+COUNSEL — the call is the first COUNSEL record's, in the house's order: the
+in-game mind's choice, followed, and said so; each OUTCOME is counted,
+applied or refused by reason. A stop is read between pieces of mail; the
+genome is saved as the main loop saves it. *Owed, named:* records →
+Cl(4,1) forms the entity absorbs (no record is painted into sites it is
+not); the mind's own choice read off those forms; learning from an outcome
+beyond counting it.
+
+Proved (`dialogue::tests::seat`, `cognition::tests::seat`): every sub-kind
+reads back whole and a byte over or short is malformed; a BigQ of `2^70/3`
+and of `−7·2^200/5` crosses exactly; unreduced, zero-denominator and
+non-minimal BigQs, a Q over zero and a flag of 2 are refused; the replies
+read back, an empty box told from a refusal. On one court: a tier not
+sitting, a mind and an unfounded domain are refused a listing; an older
+epoch does not replace; a take signed by another is unsigned; the house
+reads the take, a tier not sitting reads no house mail; a mind posting for
+the house is not the house; each mind reads only its own mail, in order;
+read-past drops; a call reaches the house with the reference the mind
+holds and its outcome returns; a forged read is refused; twenty ~250 KB
+percepts never pass the bound, the oldest dropped and counted, and one read
+carries the whole box within the frame budget.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
