@@ -20,5 +20,9 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         },
         Err(_) => return,
     };
+    // 78.137 — acknowledged only once durable.
+    if !crate::persist::durable(&door.kernel, &door.state_path) {
+        return;
+    }
     answer(stream, Frame { lane: frame.lane, body });
 }

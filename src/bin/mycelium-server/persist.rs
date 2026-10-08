@@ -12,12 +12,16 @@ use std::sync::Mutex;
 /// land, so the two on disk always agree; a crash between them leaves a
 /// line ahead of its snapshot, which restores. Every path that changes the
 /// held language writes through here.
-pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
+///
+/// 78.137 — DURABLY: each write synced to the disk, its rename's directory
+/// synced; whether the snapshot landed is answered, so a court act is
+/// acknowledged only once it is on the disk.
+pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
     // The stamp the snapshot is taken at, and the line it stands on, read
     // in the same hold (ACT1).
     let (line, snap, at) = match kernel.lock() {
         Ok(mut k) => (k.take_line(), k.snapshot(), k.snapshot_at()),
-        Err(_) => return,
+        Err(_) => return false,
     };
     let line_landed = match line {
         Ok(None) => true,
@@ -31,16 +35,31 @@ pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) {
         if let Ok(mut k) = kernel.lock() {
             k.line_lost();
         }
-        return;
+        return false;
     }
-    let tmp = format!("{state_path}.tmp");
-    let landed = std::fs::write(&tmp, &snap).is_ok() && std::fs::rename(&tmp, state_path).is_ok();
+    let landed = mycelium::chronometry::replace_durably(std::path::Path::new(state_path), &snap);
     // Only a write that landed is a persist on the clock (78.21(2)).
     if landed {
         if let Ok(mut k) = kernel.lock() {
             k.note_persisted(at);
         }
     }
+    landed
+}
+
+/// 78.137 — A COURT ACT MADE DURABLE BEFORE IT IS ANSWERED: where the act
+/// changed what the court holds, the line and snapshot are persisted now,
+/// synced; `false` where that did not land — the act is then not answered,
+/// and its resend is answered with its original receipt once durable.
+pub(crate) fn durable(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
+    let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
+    if !due || persist(kernel, state_path) {
+        return true;
+    }
+    if let Ok(mut k) = kernel.lock() {
+        k.persist_failed();
+    }
+    false
 }
 
 /// Persist where a change was marked; whether it was.

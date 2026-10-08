@@ -25234,6 +25234,36 @@ refused; a far end that is a line refused; a road to the same place
 refused; a plain offer within a domain refused; succession by the domain
 key refused and by the sitting reserve pending to the anchor.
 
+### 78.137 Durable admission: a court act is answered only once it is on the disk (2026-10-08, the coordinator's finding — :7520 lost its last two admissions in the host crash; design approved)
+
+The line and the snapshot were written without syncing, and only at the
+orbit's persist cadence or on SIGINT: a crash lost what was admitted since.
+Now every write lands DURABLY — the line's append synced; a whole line or
+the snapshot written to a synced sibling, renamed, and the directory synced
+(`chronometry::replace_durably`) — and the COURT ACTS (`ACT_UPLINK`,
+`ACT_HANDOFF`, `ACT_CHALLENGE`, `ACT_DOMAIN`) are answered only after the
+line and snapshot they changed are on the disk (`persist::durable`). A write
+that does not land is not answered; the act stays due, and its resend is
+answered with its original receipt (nothing is sealed twice). Boot restores
+the last snapshot read whole — no log re-executed at boot, which would be
+replay (the Concordance's 1.4). SPEECH keeps its orbit-cadence persist
+(words are re-heard by back-fill): a crash may lose unpersisted words, never
+an acknowledged court act.
+
+Cost per court act: one line append, one snapshot write and about three
+fsyncs — on :7520's 0.68 MB snapshot (the coordinator's measure) about a
+0.7 MB write. Should the measured cost approach the court's real act rate,
+the next form is an fsynced log of the SEALED STATE DELTAS, read back at boot
+as the court's own record of what changed (a recovery read, not
+re-execution); the trigger is measured, never a declared size.
+
+Proved by `scripts/durable-drill` (with `examples/durable_drill.rs`): a hypha
+on a fresh home at :7590 put 20 rounds of two court acts — a domain founded,
+its reserve designated — and killed with SIGKILL after each answered round:
+40 acts, 0 lost, about 3.5 ms per act on a 3 KB snapshot. (A control run on
+an undurable build was not possible: the fleet's binary predates the domain
+acts.)
+
 **Owed, in order (the coordinator).** (B) CARRIED INLINE: only the reserve
 uplinks — the reserve's chained fold carries each line's fold and
 signature, the court seals nothing for a line, children keyed (parent

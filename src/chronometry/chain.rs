@@ -63,7 +63,7 @@ pub struct ReceiptChain {
 
 mod line;
 mod node;
-pub use line::LineWrite;
+pub use line::{replace_durably, LineWrite};
 
 /// A PEER NODE'S TWO COORDINATES against this chain's own line, as our
 /// place `(K, i)`. Our receipts are a line — the place orders them exactly

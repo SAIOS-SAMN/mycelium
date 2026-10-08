@@ -81,23 +81,44 @@ pub struct LineWrite {
 }
 
 impl LineWrite {
-    /// THE WRITE LANDED AT `path`: the whole through a sibling and a
-    /// rename, so the file is the old line or the new one; a frame by an
-    /// append. `false` where it did not land.
+    /// THE WRITE LANDED AT `path` — DURABLY (78.137): the whole through a
+    /// synced sibling and a rename, its directory synced, so the file is the
+    /// old line or the new one even across a crash; a frame by an append,
+    /// synced. `false` where it did not land on the disk.
     pub fn land(&self, path: &std::path::Path) -> bool {
         use std::io::Write;
         match self.whole {
-            true => {
-                let tmp = path.with_extension("tmp");
-                std::fs::write(&tmp, &self.bytes).is_ok() && std::fs::rename(&tmp, path).is_ok()
-            }
+            true => replace_durably(path, &self.bytes),
             false => std::fs::OpenOptions::new()
                 .append(true)
                 .open(path)
-                .and_then(|mut f| f.write_all(&self.bytes))
+                .and_then(|mut f| {
+                    f.write_all(&self.bytes)?;
+                    f.sync_all()
+                })
                 .is_ok(),
         }
     }
+}
+
+/// 78.137 — A FILE REPLACED DURABLY: `bytes` written to a sibling and
+/// synced, renamed over `path`, and the directory synced — so after a crash
+/// the file is the old whole or the new whole, never a torn one, and a
+/// rename that was answered is on the disk. `false` where any step failed.
+pub fn replace_durably(path: &std::path::Path, bytes: &[u8]) -> bool {
+    use std::io::Write;
+    let tmp = path.with_extension("tmp");
+    let written = std::fs::File::create(&tmp)
+        .and_then(|mut f| {
+            f.write_all(bytes)?;
+            f.sync_all()
+        })
+        .is_ok();
+    let dir = match path.parent() {
+        Some(d) if !d.as_os_str().is_empty() => d.to_path_buf(),
+        _ => std::path::PathBuf::from("."),
+    };
+    written && std::fs::rename(&tmp, path).is_ok() && std::fs::File::open(&dir).and_then(|d| d.sync_all()).is_ok()
 }
 
 /// A frame: its records' length, then the records.

@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+# DURABLE-DRILL — 78.137: a court act answered is on the disk. A hypha on a
+# fresh temporary home at :7590 (clear of the fleet's 7500–7502 and of
+# 7520–7529) is put court acts one round at a time and killed with SIGKILL
+# after each answered round — no persist on the way down — then started
+# again; after the last round every act is read back. Reports N, the acts
+# lost (which must be 0), the snapshot's bytes, and the wall time per round.
+#
+# It runs prebuilt binaries and builds nothing: build first, under the heavy
+# lock (the coordinator's standing grant), e.g.
+#   CARGO_TARGET_DIR=target/gate CARGO_BUILD_JOBS=4 nice -n 10 flock -o -w 3600 \
+#     /run/user/1000/xyl-heavy.lock cargo build --release --bin mycelium-server --example durable_drill
+#
+# Usage: scripts/durable-drill [N] [TARGET_DIR]     (default 20, target/gate)
+set -euo pipefail
+
+REPO="$(cd "$(dirname "$0")/.." && pwd)"
+N="${1:-20}"
+TARGET="${2:-$REPO/target/gate}"
+BIN="$TARGET/release/mycelium-server"
+CLIENT="$TARGET/release/examples/durable_drill"
+ADDR="127.0.0.1:7590"
+HOME_DIR="$(mktemp -d)"
+trap 'kill -9 "${PID:-0}" 2>/dev/null || true; rm -rf "$HOME_DIR"' EXIT
+
+say() { printf '  durable-drill: %s\n' "$*"; }
+
+[ -x "$BIN" ] && [ -x "$CLIENT" ] || { say "build the server and the example first"; exit 2; }
+if (exec 3<>/dev/tcp/127.0.0.1/7590) 2>/dev/null; then say ":7590 is in use"; exit 2; fi
+printf '%s\n' "$ADDR" > "$HOME_DIR/bind"
+
+start() {
+  "$BIN" --home "$HOME_DIR" "$@" > "$HOME_DIR/server.log" 2>&1 &
+  PID=$!
+  for _ in $(seq 1 600); do
+    if (exec 3<>/dev/tcp/127.0.0.1/7590) 2>/dev/null; then return 0; fi
+    sleep 0.05
+  done
+  say "the hypha did not come up"; tail -20 "$HOME_DIR/server.log"; exit 1
+}
+
+start --mint-genesis
+total=0
+for i in $(seq 0 $((N - 1))); do
+  t0=$(date +%s%N)
+  "$CLIENT" act "$ADDR" "$i"
+  t1=$(date +%s%N)
+  total=$((total + t1 - t0))
+  # SIGKILL: no handler, no persist — only what was durable survives.
+  kill -9 "$PID"; wait "$PID" 2>/dev/null || true
+  start
+done
+"$CLIENT" check "$ADDR" "$N"
+bytes=$(stat -c %s "$HOME_DIR/ledger" 2>/dev/null || echo 0)
+say "rounds $N (two court acts each), snapshot $bytes bytes, $((total / N / 1000)) µs per round, $((total / N / 2000)) µs per act"

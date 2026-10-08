@@ -16,6 +16,11 @@ impl Kernel {
         due
     }
 
+    /// 78.137 — a persist taken that did not land: still due.
+    pub fn persist_failed(&mut self) {
+        self.persist_due = true;
+    }
+
     /// THE STAMP A SNAPSHOT IS TAKEN AT: the head's height and `K`, read in
     /// the same hold as the snapshot, so a later note names what the
     /// written snapshot held (ACT1, 78.21(2)).
