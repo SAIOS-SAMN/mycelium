@@ -160,6 +160,7 @@ fn a_court_behind_a_fold_adopts_the_root_and_cites_the_head() {
 /// alone, and counts it. A proof with a broken signature, at another origin,
 /// or over another root does not stand.
 #[test]
+#[expect(clippy::disallowed_methods, reason = "rule 15 — an era replay is read in its own order, and its first act is the era's opening: the order is content")]
 fn a_catch_up_below_the_root_is_answered_with_the_root_not_cold_pages() {
     let (bkey, mut b) = court("catchup-serve-b");
     let bvk = bkey.vk_bytes();
@@ -275,6 +276,7 @@ fn a_citation_into_a_held_era_is_proved_not_chased() {
 /// of b's are caught up from b's root in the same hearing — and cites both
 /// heads.
 #[test]
+#[expect(clippy::disallowed_methods, reason = "rule 15 — a line is read in its own order, and its last receipt is the head the hearing resumes after: the order is content")]
 fn cross_citing_lines_both_advance_from_their_roots() {
     let (akey, mut a) = court("catchup-cross-a");
     let (bkey, mut b) = court("catchup-cross-b");
