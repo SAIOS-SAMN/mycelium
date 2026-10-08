@@ -42,6 +42,7 @@ mod bond;
 mod origin;
 mod universe;
 mod tolls;
+mod seat;
 mod wallet;
 mod why;
 mod winding;

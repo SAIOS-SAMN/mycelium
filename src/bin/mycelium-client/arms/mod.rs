@@ -3,5 +3,6 @@
 
 pub mod feed;
 pub mod quote;
+pub mod seat;
 pub mod syntropy;
 pub mod task;

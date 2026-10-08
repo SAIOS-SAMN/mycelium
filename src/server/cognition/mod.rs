@@ -26,6 +26,7 @@ mod mouth;
 mod reads;
 mod reduce;
 mod room;
+pub mod seat;
 mod snapshot;
 mod universe;
 mod wallet;

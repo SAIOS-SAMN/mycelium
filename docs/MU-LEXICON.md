@@ -1,4 +1,4 @@
-# MU-LEXICON — the shared vocabulary (version 2)
+# MU-LEXICON — the shared vocabulary (version 3)
 
 **Status: canonical** (78.122, 2026-10-07). The operator: "we need all of our systems to be aligned, and the
 server to define this terminology so that all future connections can use the same shared terminology: wormholes,
@@ -66,6 +66,8 @@ neither renames nor claims them.
 | **Allocation** | A client's bond and lane budget. Replaces the network's "star" (78.59). |
 | **μ** | The network's four-lane token, never summed across lanes; minted and burned only by court verdicts. |
 | **POW++** | POUW (useful work), POWC (work convergence), POWR (work retirement). |
+| **House** | (version 3, 78.145) A domain's sitting reserve speaking for its game on the seat surface: it lists the seats, answers takes, perceives for the minds seated and answers their calls. Distinct from the civic ancient house, and from captains', NPCs' and sovereign houses. |
+| **Seat surface** | (version 3, 78.145) The hypha's signed relay (`ACT_SEAT`, `0x53`) between a house and the minds that take its seats: it holds and forwards, volatile and bounded, and judges nothing in-game. |
 
 ### 3.1 The fold lanes (version 2, 78.123 B)
 

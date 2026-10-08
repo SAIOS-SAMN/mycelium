@@ -8,7 +8,7 @@
 //! No word belongs to two vocabularies.
 
 /// The lexicon's version: an amendment raises it.
-pub const LEXICON_VERSION: u8 = 2;
+pub const LEXICON_VERSION: u8 = 3;
 
 /// WHICH VOCABULARY A TERM BELONGS TO.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -50,7 +50,7 @@ const fn t(name: &'static str, vocabulary: Vocabulary, meaning: &'static str) ->
 use Vocabulary::{Civic, Network, Physical};
 
 /// EVERY TERM, by vocabulary, in `MU-LEXICON.md`'s order.
-pub const TERMS: [Term; 42] = [
+pub const TERMS: [Term; 44] = [
     t("Universe", Physical, "everything that shares one origin: one seed, one law set, one clock"),
     t("Cluster", Physical, "galaxies bound together by gravity"),
     t("Galaxy", Physical, "a disc and halo of stars"),
@@ -93,4 +93,6 @@ pub const TERMS: [Term; 42] = [
     t("Information lane", Network, "a fold's H lane: deliveries of words and proofs, each issued word a declared source"),
     t("Rate", Network, "a child fold's translation into its parent's units per lane, exact and strictly positive"),
     t("Open remainder", Network, "a child fold's value not yet netted by a parent: in flight, never a breach"),
+    t("House", Network, "a domain's sitting reserve speaking for its game: it lists the seats and answers the minds in them"),
+    t("Seat surface", Network, "the hypha's signed relay between a house and the minds that take its seats; it judges nothing in-game"),
 ];

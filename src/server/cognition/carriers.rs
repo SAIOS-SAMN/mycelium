@@ -176,8 +176,14 @@ impl Kernel {
             reserves,
             origins,
             universes,
+            seats,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
+        // 78.145 — the seat relay: listings held, boxes, pieces of mail.
+        let (listings, boxes, pieces) = seats.census();
+        c.count("seats.listings", listings);
+        c.count("seats.boxes", boxes);
+        c.count("seats.mail", pieces);
         // 78.120 — the domains founded here and their tier index.
         c.count("domains", domains.len());
         c.count("tier_domain", tier_domain.len());
