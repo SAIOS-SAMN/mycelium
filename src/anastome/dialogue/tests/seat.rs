@@ -1,6 +1,8 @@
 // 78.145 — ACT_SEAT's wire: every sub-kind reads back whole, a byte left over
-// is no frame, a BigQ past 64 bits crosses exactly, and the GOLDEN VECTORS
-// other kernels match bytes against.
+// is no frame, a BigQ past 64 bits crosses exactly, and the fixed acts
+// decode into the exact values meant with their signatures verifying —
+// conformance by decoded values and signature, never by bytes (Concordance
+// 1.4, law 2).
 
 use crate::anastome::dialogue::seat::*;
 use crate::anastome::dialogue::ACT_SEAT;
@@ -15,10 +17,6 @@ fn mind() -> SigningKey {
 }
 const DOMAIN: [u8; 32] = [9; 32];
 const SEAT: u32 = 7;
-
-fn hex(b: &[u8]) -> String {
-    b.iter().map(|x| format!("{x:02x}")).collect()
-}
 
 /// 2^70 / 3.
 fn big() -> Arg {
@@ -45,35 +43,47 @@ fn golden_percept() -> SignedPost {
     Post::Percept(p).sign(&house()).expect("writes")
 }
 
-// Computed independently of this crate (PyNaCl ed25519 and the blake3
-// reference) from the layout in 78.145, and matched here byte for byte.
-const GOLDEN_CALL: &str = "53040909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394030303030303030303030303030303030303030303030303030303030303030303000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505055e38bf9a10d0ff42b5248d2279f80984d513a18beb9da5925182e1c22f5728e48774e744decd809eb8b2c8e4568683f89441ff95b93ca300b77a6456cd27860f";
-const GOLDEN_CALL_REF: &str = "31cb3c49a809b03a09c5b4a57005dcf5399675654167a07819cc4fcd76ff9041";
-const GOLDEN_PERCEPT: &str = "53030909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394000c00000000000000010000000000000001000000000000000100ffff03000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505050001000000000000000200000000000000000100000000000000030000000000000038fb1c38b9c4d70d0daccf1fc970bc239d412f8b9e0fba59bc5cdb00e10c123c22e1501bb429cc5f0d2b704547697f99201bf32e2258e999f28824b7640dd903";
+/// The frame read back as the post it carries, or a failure naming why.
+fn decoded(frame: &[u8]) -> SignedPost {
+    match decode_seat_request(frame) {
+        Some(Ok(SeatRequest::Post(s))) => s,
+        other => panic!("the frame does not decode to a post: {other:?}"),
+    }
+}
 
-/// THE GOLDEN VECTORS: fixed seeds ([1;32] the house, [2;32] the mind), the
-/// domain [9;32], seat 7 — the frames' bytes and the call's reference, so a
-/// kernel in another language matches bytes against them.
+/// CONFORMANCE BY DECODED VALUES AND SIGNATURE (Concordance 1.4, law 2): the
+/// fixed acts — seeds [1;32] the house and [2;32] the mind, domain [9;32],
+/// seat 7 — decode into exactly the typed values meant (the rationals equal
+/// exactly, the keys equal, the records and counsel as structures), and each
+/// signature verifies under its signer's key. No kernel is judged by
+/// reproducing bytes.
 #[test]
-fn the_golden_vectors_stand() {
-    let call = golden_call();
-    let call_frame = encode_post(&call).expect("writes");
-    let call_ref = call.reference().expect("writes");
-    let percept_frame = encode_post(&golden_percept()).expect("writes");
-    eprintln!("house vk   {}", hex(&house().verifying_key().to_bytes()));
-    eprintln!("mind vk    {}", hex(&mind().verifying_key().to_bytes()));
-    eprintln!("CALL       {}", hex(&call_frame));
-    eprintln!("CALL ref   {}", hex(&call_ref));
-    eprintln!("PERCEPT    {}", hex(&percept_frame));
-    assert_eq!(hex(&call_frame), GOLDEN_CALL);
-    assert_eq!(hex(&call_ref), GOLDEN_CALL_REF);
-    assert_eq!(hex(&percept_frame), GOLDEN_PERCEPT);
-    // The reference is the citation hash of exactly the signed bytes:
-    // `b"mycelium seat v1" ‖ [sub] ‖ [fields]`, the act tag unsigned.
-    let mut signed = SIGNED.to_vec();
-    signed.extend_from_slice(&call_frame[1..call_frame.len() - 64]);
-    assert_eq!(call_ref, crate::chronometry::payload_hash(&signed));
-    assert!(call.signed_by(&mind().verifying_key().to_bytes()));
+fn the_fixed_acts_decode_to_their_values_and_verify() {
+    let m = mind().verifying_key().to_bytes();
+    let h = house().verifying_key().to_bytes();
+    let call = decoded(&encode_post(&golden_call()).expect("writes"));
+    let Post::Call(c) = &call.post else { panic!("a call: {:?}", call.post) };
+    assert_eq!((c.domain, c.seat, c.mind, c.nonce, c.fn_id), (DOMAIN, SEAT, m, [3; 32], 3));
+    assert_eq!(c.args.len(), 3);
+    assert_eq!(c.args[0], Arg::Q { num: 3, den: 2 }, "Q 3/2, exactly");
+    let Arg::BigQ { num, den } = &c.args[1] else { panic!("a BigQ: {:?}", c.args[1]) };
+    assert_eq!((num.clone(), den.clone()), (BigInt::from(1u8) << 70usize, BigUint::from(3u8)), "2^70/3, exactly");
+    assert_eq!(c.args[2], Arg::Key([5; 32]));
+    assert!(call.signed_by(&m), "the call verifies under the mind's key");
+    assert!(!call.signed_by(&h), "and under no other");
+    // The reference cites exactly the signed bytes: `b"mycelium seat v1" ‖
+    // [sub] ‖ [fields]`, the act tag unsigned.
+    assert_eq!(call.reference(), call.post.signed_bytes().map(|b| crate::chronometry::payload_hash(&b)));
+    let percept = decoded(&encode_post(&golden_percept()).expect("writes"));
+    let Post::Percept(p) = &percept.post else { panic!("a percept: {:?}", percept.post) };
+    assert_eq!((p.domain, p.seat, p.mind, p.seq), (DOMAIN, SEAT, m, 1));
+    assert_eq!(p.local_time, Arg::Q { num: 12, den: 1 });
+    assert_eq!(
+        p.records,
+        vec![Record::Counsel { fn_id: 3, args: call_args(), worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } }],
+        "one counsel, as a structure"
+    );
+    assert!(percept.signed_by(&h), "the percept verifies under the house's key");
 }
 
 fn round_trip(s: &SignedPost) {
@@ -154,6 +164,40 @@ fn a_big_rational_crosses_exactly_and_only_reduced() {
     assert_eq!(Arg::take(&[0u8, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], &mut 0), None, "a Q over zero");
     assert_eq!(Arg::take(&[3u8, 2], &mut 0), None, "a flag is 0 or 1");
     assert!(Arg::big_q(BigInt::from(1u8), BigUint::from(0u8)).is_none());
+}
+
+/// 78.146 — ARG TAG 6, BYTES: `[6][len u16][bytes]`, read back whole and only
+/// whole; a length past the run is refused; the empty run crosses.
+#[test]
+fn a_bytes_argument_crosses_whole() {
+    for run in [Vec::new(), vec![0xA5; 5], vec![0x5A; 65_535]] {
+        let a = Arg::Bytes(run.clone());
+        let mut out = Vec::new();
+        a.put(&mut out).expect("writes");
+        let mut p = 0;
+        assert_eq!(Arg::take(&out, &mut p), Some(a));
+        assert_eq!(p, out.len());
+        assert_eq!(Arg::take(&out[..out.len() - 1], &mut 0), None, "a byte short is no argument");
+    }
+    assert!(Arg::Bytes(vec![0; 65_536]).put(&mut Vec::new()).is_none(), "past the u16 wall it is not written");
+    assert_eq!(Arg::take(&[6u8, 3, 0, 1, 2], &mut 0), None, "a length past the run");
+}
+
+/// 78.146 — A BYTES PERCEPT, BY ITS DECODED VALUES: the house at local time
+/// Q 12/1, seq 2, one record of kind 4 carrying `Bytes [0xA5; 5]` (a task's
+/// id) decodes into exactly that record, and its signature verifies under the
+/// house's key (Concordance 1.4).
+#[test]
+fn a_bytes_percept_decodes_to_its_values_and_verifies() {
+    let m = mind().verifying_key().to_bytes();
+    let record = Record::Plain { kind: 4, args: vec![Arg::Bytes(vec![0xA5; 5])] };
+    let p = Percept { domain: DOMAIN, seat: SEAT, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 2, records: vec![record.clone()] };
+    let s = Post::Percept(p).sign(&house()).expect("writes");
+    let back = decoded(&encode_post(&s).expect("writes"));
+    let Post::Percept(read) = &back.post else { panic!("a percept: {:?}", back.post) };
+    assert_eq!((read.seq, read.local_time.clone(), read.records.clone()), (2, Arg::Q { num: 12, den: 1 }, vec![record]));
+    assert!(back.signed_by(&house().verifying_key().to_bytes()));
+    round_trip(&s);
 }
 
 /// THE REPLIES: a post's `[1][seq]` or `[0][reason]`; the mail's count and
