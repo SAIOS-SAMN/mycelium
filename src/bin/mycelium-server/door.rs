@@ -135,7 +135,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // to the next open task, once round the book at most.
         let envelope = |tid: &mycelium::transducer::address::Address, task: &mycelium::arc::Task| {
             let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-            let b = dialogue::encode_task_envelope(mycelium::registry::citation(tid), &task.train, &tests);
+            let b = dialogue::encode_task_envelope(&mycelium::registry::citation(tid),&task.train, &tests);
             if b.is_none() {
                 eprintln!("  task passed over: its envelope does not fit its lengths");
             }
