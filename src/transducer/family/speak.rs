@@ -204,7 +204,7 @@ fn speak_on_scene(
     pair: Option<usize>,
 ) -> Option<Speech> {
     let fx = frame_of(x);
-    let fy = output_frame(fx, f.ratio);
+    let mut fy = output_frame(fx, f.ratio);
     let Scene { bodies, atlas, .. } = scene;
     let mut painted: Vec<Painted> = Vec::new();
     let mut remainder: Vec<Painted> = Vec::new();
@@ -438,6 +438,16 @@ fn speak_on_scene(
                 break;
             }
         }
+    }
+    // 78.143 — A FORM THAT STATES CLAUSES SPEAKS THEM: each a selection over
+    // this scene's bodies and what is done to it, and the output frame is the
+    // one they speak (a crop's, or the input's). A clause unstated here — a
+    // tie the rule's order does not name, a coordinate that is not exact —
+    // lays down no speech; the court refuses it by name before it reads one.
+    if !f.clauses.is_empty() {
+        let spoken = super::statement::speak_clauses(&f.clauses, x, bodies).ok()?;
+        fy = spoken.frame;
+        painted = spoken.painted;
     }
     painted.sort_unstable();
     painted.dedup();

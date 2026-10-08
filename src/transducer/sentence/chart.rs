@@ -193,6 +193,11 @@ pub fn form_vertex_key(f: &Form) -> crate::transducer::address::Address {
         None => ChainAt::of(&f.remainder.placed()),
     };
     put_chain_at(&mut buf, at.as_ref());
+    // 78.143 — THE CLAUSES, LAST AND ONLY WHERE THERE ARE ANY: a form that
+    // states none keeps the address it had, byte for byte.
+    if !f.clauses.is_empty() {
+        super::form::clause::put_clauses(&mut buf, &f.clauses);
+    }
     crate::transducer::address::Address::new(buf)
 }
 

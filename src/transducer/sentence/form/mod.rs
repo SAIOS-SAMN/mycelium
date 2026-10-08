@@ -9,6 +9,7 @@ pub mod atlas;
 pub mod axis;
 pub mod carrier;
 pub mod certificate;
+pub mod clause;
 pub mod face;
 pub mod fiber;
 pub mod closure;

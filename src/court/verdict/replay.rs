@@ -446,6 +446,15 @@ pub fn replay_form_on(
     if let Some(refusal) = vertex_tape_and_moves(f, family, spoken) {
         return Some(refusal);
     }
+    // 78.143 — EVERY CLAUSE IS STATED ON EVERY PAIR, or the form is refused
+    // by the clause's own name before its speech is read: a tie its order
+    // does not name, a coordinate that is not exact, no single body where
+    // one is asked, a cell landing between cells.
+    if let Some(fam) = family {
+        if let Some(reason) = clauses_stated(f, fam) {
+            return Some(tape(reason));
+        }
+    }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
@@ -731,6 +740,30 @@ pub(crate) fn vertex_tape_and_moves(
                 }
             }
             _ => {}
+        }
+    }
+    None
+}
+
+/// 78.143 — THE CLAUSES SPOKEN ON EVERY INPUT OF THE FAMILY the court holds,
+/// each scene perceived as the speech perceives it; the first that is
+/// unstated names the refusal. `None` where every clause is stated on every
+/// pair (or the form states none).
+pub(crate) fn clauses_stated(f: &Form, family: &[(crate::arc::Grid, crate::arc::Grid)]) -> Option<&'static str> {
+    use crate::transducer::family::statement::{speak_clauses, Unstated};
+    if f.clauses.is_empty() {
+        return None;
+    }
+    for (x, _) in family {
+        let bodies = crate::transducer::family::perceive(x);
+        if let Err(why) = speak_clauses(&f.clauses, x, &bodies) {
+            return Some(match why {
+                Unstated::Tie => REFUSE_RULE_TIE,
+                Unstated::Inexact => REFUSE_RULE_INEXACT,
+                Unstated::NotOne => REFUSE_RULE_NOT_ONE,
+                Unstated::OffLattice => REFUSE_RULE_OFF_LATTICE,
+                Unstated::Still => REFUSE_RULE_STILL,
+            });
         }
     }
     None

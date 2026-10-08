@@ -10,20 +10,62 @@
 //! decoder, then `verdict::blind_replay_at` on the pairs given — so a client
 //! knows the verdict its rule earns without asking for it.
 
+//!
+//! 78.143 — THE RULE LANGUAGE GROWS. A rule may SELECT the bodies its steps
+//! act on by a typed predicate over each body's own exact coordinates (its
+//! class, hues, shell, extent, position, contact), COUNT and COMPARE them in
+//! an order it names, ties included (Concordance 1.10), address a REGION
+//! their boundary encloses or touches, CREATE cells relative to them (a line
+//! to the border, a template stamped on a seed), and crop the output to one
+//! of them. Such a rule is spoken as the form's CLAUSES
+//! (`sentence::form::clause`), which the court decodes, speaks and judges
+//! on every pair it replays; a rule of motions and hue maps alone is the
+//! one word vertex it always was.
+
 use crate::arc::Grid;
 use crate::core::Q;
 use crate::transducer::cga::{self, Mv};
 use crate::transducer::element::{self, Element};
 use crate::transducer::family::{self, Crystal};
 use crate::transducer::sentence::{self, Acting, Form, Vertex};
+pub use crate::transducer::family::statement::Unstated;
+pub use crate::transducer::sentence::form::clause::{
+    About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
+};
 
-/// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre.
+/// ONE STEP OF A RULE: a motion of the base, or a map of the hue fibre —
+/// and since 78.143 the selection, region, creation or crop they act under.
 #[derive(Clone, Debug)]
 pub enum Step {
     /// A versor of `Cl(4,1)(ℚ)` acting on the sites by its sandwich.
     Motion(Mv),
-    /// A hue map, `(from, to)`; a hue it does not name stands still.
+    /// A hue map, `(from, to)`; a hue it does not name stands still. Under
+    /// a selection a hue sent to 0 is erased; on a region, the hue `0` is
+    /// sent to is the hue the region is filled with.
     Hue(Vec<(u8, u8)>),
+    /// SELECT (COUNT, COMPARE): the steps after it act on the bodies the
+    /// predicate selects, until the next selection.
+    Select(Pred),
+    /// REGION: the hue step after it acts on the region of the selection.
+    Region(Region),
+    /// A motion read about each selected body's own centre.
+    InPlace(Mv),
+    /// CREATE: cells placed relative to each selected body.
+    Create(Create),
+    /// SIZE: the output is the extent of the one selected body.
+    Crop(Extent),
+    /// SIZE: the output scaled by `up / down`, one of them 1.
+    Scale { up: u8, down: u8 },
+}
+
+/// WHAT A RULE CREATES relative to a selected body.
+#[derive(Clone, Debug)]
+pub enum Create {
+    /// A line from every cell of the body along `ray`, to its stop.
+    Extend { ray: (i8, i8), paint: Paint, stop: Stop },
+    /// The one body `template` selects, stamped centre on centre onto the
+    /// body, which it replaces.
+    Copy { template: Pred },
 }
 
 /// THE SIX GRID SYMMETRIES beside the identity (the dihedral group of the
@@ -65,6 +107,15 @@ pub enum NoRule {
     NotASentence,
     /// The judge's replay refused it, with its reason, coordinate and kind.
     Refused(crate::verdict::Refusal),
+    /// 78.143 — a clause is not stated on a pair of the family, by name: a
+    /// tie its order does not name, a coordinate that is not exact, no
+    /// single body where one is asked, a cell landing between cells.
+    Unstated(Unstated),
+    /// A motion asked of a region: a region is a target of hues, not a body.
+    NotOnRegion,
+    /// The clauses do not close the family they were stated over: the links
+    /// they leave on the first pair that has any.
+    NotClosed(Vec<(i64, i64, u8, u8)>),
 }
 
 fn q(n: i64) -> Q {
@@ -85,8 +136,9 @@ fn centre((rows, cols): (usize, usize)) -> Option<[Q; 2]> {
 impl Symmetry {
     /// THE LINEAR PART, about the origin, on the base's `e1` (row) and `e2`
     /// (column): a rotor in the `e1e2` plane for a turn — `1 ∓ e1e2` up to
-    /// scale, a ray, exact — and a vector for a mirror.
-    fn linear(self) -> Mv {
+    /// scale, a ray, exact — and a vector for a mirror. What
+    /// [`Step::InPlace`] reads about each selected body's own centre.
+    pub fn linear(self) -> Mv {
         use crate::transducer::cga::{E1, E2};
         match self {
             Symmetry::Rotate90 => cga::rotator(&q(1), &q(1)),
@@ -154,10 +206,146 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
                     *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
                 }
             }
+            // The clause steps are read by `clauses_of`; a rule carrying one
+            // never reaches the one-vertex composition.
+            _ => return Err(NoRule::NotASentence),
         }
     }
     let moved: Vec<(u8, u8)> = sigma.into_iter().filter(|(h, t)| h != t).collect();
     Ok((v, moved))
+}
+
+/// A run of motion and hue steps on one target, composed as it arrives.
+struct Pending {
+    v: Mv,
+    about: About,
+    sigma: Vec<(u8, u8)>,
+}
+
+impl Pending {
+    fn new(about: About) -> Pending {
+        Pending { v: element::identity_versor(), about, sigma: (1..=9u8).map(|h| (h, h)).collect() }
+    }
+
+    /// The clause the run is: a carriage where it moves, a recolour where it
+    /// only maps hues, nothing where it does neither.
+    fn act(self) -> Option<Act> {
+        let gauge: Vec<(u8, u8)> = self.sigma.into_iter().filter(|(h, t)| h != t).collect();
+        let still = self.v.sub(&element::identity_versor()).is_zero();
+        match (still, gauge.is_empty()) {
+            (true, true) => None,
+            (true, false) => Some(Act::Recolour(gauge)),
+            (false, _) => Some(Act::Carry { motion: self.v, about: self.about, gauge }),
+        }
+    }
+}
+
+/// THE STEPS AS CLAUSES (78.143), or `None` for a rule of motions and hue
+/// maps alone, which is one word vertex. Steps before the first selection
+/// act on every body; a run of motions and hue maps on one target composes
+/// to one act, the first step acting first; a hue step on a region fills
+/// it with the hue `0` is sent to.
+fn clauses_of(steps: &[Step]) -> Result<Option<Vec<Clause>>, NoRule> {
+    let stated = steps
+        .iter()
+        .any(|s| {
+            matches!(s, Step::Select(_) | Step::Region(_) | Step::InPlace(_) | Step::Create(_) | Step::Crop(_) | Step::Scale { .. })
+        });
+    if !stated {
+        return Ok(None);
+    }
+    let mut out: Vec<Clause> = Vec::new();
+    let mut select = Pred::All;
+    let mut region: Option<Region> = None;
+    let mut pending: Option<Pending> = None;
+    let flush = |pending: &mut Option<Pending>, out: &mut Vec<Clause>, select: &Pred| {
+        if let Some(act) = pending.take().and_then(Pending::act) {
+            out.push(Clause { select: select.clone(), act });
+        }
+    };
+    for s in steps {
+        match s {
+            Step::Motion(m) | Step::InPlace(m) => {
+                if region.is_some() {
+                    return Err(NoRule::NotOnRegion);
+                }
+                if !cga::is_versor(m) {
+                    return Err(NoRule::NotAVersor);
+                }
+                let about = if matches!(s, Step::InPlace(_)) { About::Body } else { About::Grid };
+                if pending.as_ref().is_some_and(|p| p.about != about && !p.v.sub(&element::identity_versor()).is_zero()) {
+                    flush(&mut pending, &mut out, &select);
+                }
+                let p = pending.get_or_insert_with(|| Pending::new(about));
+                p.about = about;
+                p.v = m.geo(&p.v);
+            }
+            Step::Hue(map) => match region {
+                Some(r) => {
+                    let hue = hue_under(map, 0).ok_or(NoRule::NotAHueMap)?;
+                    if hue == 0 {
+                        return Err(NoRule::NotAHueMap);
+                    }
+                    out.push(Clause { select: select.clone(), act: Act::Fill { region: r, hue } });
+                }
+                None => {
+                    let p = pending.get_or_insert_with(|| Pending::new(About::Grid));
+                    for (_, to) in p.sigma.iter_mut() {
+                        *to = hue_under(map, *to).ok_or(NoRule::NotAHueMap)?;
+                    }
+                }
+            },
+            Step::Select(p) => {
+                flush(&mut pending, &mut out, &select);
+                select = p.clone();
+                region = None;
+            }
+            Step::Region(r) => {
+                flush(&mut pending, &mut out, &select);
+                region = Some(*r);
+            }
+            Step::Create(c) => {
+                flush(&mut pending, &mut out, &select);
+                let act = match c {
+                    Create::Extend { ray, paint, stop } => Act::Extend { ray: *ray, paint: *paint, stop: *stop },
+                    Create::Copy { template } => Act::Copy { template: template.clone() },
+                };
+                out.push(Clause { select: select.clone(), act });
+            }
+            Step::Crop(e) => {
+                flush(&mut pending, &mut out, &select);
+                out.push(Clause { select: select.clone(), act: Act::Crop(*e) });
+            }
+            Step::Scale { up, down } => {
+                flush(&mut pending, &mut out, &select);
+                out.push(Clause { select: Pred::All, act: Act::Scale { up: *up, down: *down } });
+            }
+        }
+    }
+    flush(&mut pending, &mut out, &select);
+    Ok(Some(out))
+}
+
+/// THE SENTENCE OF A RULE THAT STATES CLAUSES (78.143): a form of its Frame
+/// and the clauses, stated on every pair of the family by name, closing
+/// every pair, minted through the one mint. No vertex names a training
+/// frame or a training cell: the clauses select on whatever scene they are
+/// spoken onto, so the word crosses to pairs it never saw.
+fn clause_sentence(clauses: Vec<Clause>, family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+    if clauses.is_empty() || family.is_empty() {
+        return Err(NoRule::NoFamily);
+    }
+    for (x, _) in family {
+        family::statement::speak_clauses(&clauses, x, &family::perceive(x)).map_err(NoRule::Unstated)?;
+    }
+    let mut form = Form { clauses, ..Form::default() };
+    form.orbits = Form::orbits_of(&form.faces, &form.vertices);
+    let read = family::form_deflation_read(&form, family, crystal, &crate::transducer::alphabet::Word::identity());
+    if let Some(left) = read.remainders.iter().find(|r| !r.is_empty()) {
+        return Err(NoRule::NotClosed(left.clone()));
+    }
+    let rule = sentence::rule_of_form(form);
+    family::mint_sentence_why(&rule, family, crystal, 0).map_err(NoRule::Mint)
 }
 
 /// THE SENTENCE OF A RULE ON A FAMILY. The steps compose to ONE action —
@@ -170,7 +358,13 @@ fn composed(steps: &[Step]) -> Result<(Mv, Vec<(u8, u8)>), NoRule> {
 /// hue map. A member names NO frame: the rule is claimed whole, so it is
 /// asked of every pair it is judged on, and no training frame index rides
 /// it. Minted through the one mint over the family.
+///
+/// A rule that states a selection, a region, a creation or a crop is spoken
+/// as the form's clauses instead ([`clause_sentence`], 78.143).
 pub fn sentence(steps: &[Step], family: &[(Grid, Grid)], crystal: &dyn Crystal) -> Result<Element, NoRule> {
+    if let Some(clauses) = clauses_of(steps)? {
+        return clause_sentence(clauses, family, crystal);
+    }
     let (v, gauge) = composed(steps)?;
     // THE DERIVATION: the rotor the motion's base action is, peeled into
     // the alphabet's letters.

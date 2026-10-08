@@ -45,6 +45,7 @@ pub mod scene;
 pub mod pieces;
 pub mod span;
 pub mod speak;
+pub mod statement;
 pub mod trace;
 mod witness;
 
