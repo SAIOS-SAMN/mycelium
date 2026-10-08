@@ -4,9 +4,14 @@
 where mycelium stands without the session that wrote it.*
 
 ## The fleet
-- Hyphae a/b/c on 127.0.0.1:7500/7501/7502 run **52c25ae9** (78.140 geometry,
-  78.141 signed solves, 78.142 sdk::rule, the replication instrument, serve
-  counts). Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
+- Hyphae a/b/c on 127.0.0.1:7500/7501/7502 run **aefc6a39** since 18:57
+  (78.140 geometry, 78.141 signed solves, 78.142 sdk::rule, 78.143 the rule
+  language — SELECT/REGION/CREATE/CROP/SCALE and COUNT/COMPARE — 78.145 the
+  seat surface on ACT_SEAT 0x53, `may_solve`, the voice-stop save, the
+  replication instrument and serve counts). Ship with `scripts/ship-scoped`.
+- REPLICATION IS STALLED fleet-wide since the 17:50 restart (every pair admits
+  0; missing-parent stops; c serves only cold pages, 13 007 unwritten). Fix in
+  flight: 78.147 catch-up from a peer's fold root — TOP PRIORITY. Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
   `--check` each home, then `systemctl --user start mycelium-server@{a,b,c}`.
 - Voices 1–5 (`mycelium-client@1..5`) run the same build, signing and crossing
   their solves, bootstrapped to a, b, c, a, b. Their role (the operator): puzzle
