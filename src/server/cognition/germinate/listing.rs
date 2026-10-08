@@ -271,7 +271,9 @@ impl Kernel {
         let used = self
             .language
             .word_at(at.as_bytes())
-            .map(|w| (w.magnitude(), w.address()))
+            // 78.149: a use pays the used word's discharge, never its
+            // magnitude.
+            .map(|w| (self.discharge_of(at.as_bytes(), w), w.address()))
             .and_then(|(held, addr)| Some((held, self.discoverer_of(&addr)?)));
         if let Some((held, disc)) = used {
             // EC1: the use of a cited word is a Settled act of this court,
