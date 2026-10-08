@@ -16,7 +16,8 @@
 //! ARG = `[tag u8]` then `0 Q [num i64][den u64>0]` | `1 Key [32]` | `2 Count
 //! [u64]` | `3 Flag [u8 0|1]` | `4 Mv` (`Mv::to_bytes`) | `5 BigQ [num len
 //! u16][num signed LE][den len u16][den LE]`, den > 0, reduced, each length the
-//! minimal one. ARGS = `[count u8][ARG…]`.
+//! minimal one | `6 Bytes [len u16][bytes]` (78.146: a run the house names
+//! whole — a task's content address, a rule's tape). ARGS = `[count u8][ARG…]`.
 //!
 //! Sub-kinds: 0 SEATS, 1 TAKE, 2 TAKEN, 3 PERCEPT, 4 CALL, 5 OUTCOME (posts,
 //! each answered `[1][seq u64]` or `[0][reason u8]`), 6 READ-LISTING
@@ -52,9 +53,11 @@ const TAG_COUNT: u8 = 2;
 const TAG_FLAG: u8 = 3;
 const TAG_MV: u8 = 4;
 const TAG_BIGQ: u8 = 5;
+const TAG_BYTES: u8 = 6;
 
 /// ONE ARGUMENT, exact: a rational, a key, a count, a flag, a multivector of
-/// the algebra, or a rational past 64 bits.
+/// the algebra, a rational past 64 bits, or a run of bytes named whole (at
+/// most `u16::MAX` of them — the wall, never widened).
 #[derive(Clone, Debug)]
 pub enum Arg {
     Q { num: i64, den: u64 },
@@ -63,6 +66,7 @@ pub enum Arg {
     Flag(bool),
     Mv(Mv),
     BigQ { num: BigInt, den: BigUint },
+    Bytes(Vec<u8>),
 }
 
 impl PartialEq for Arg {
@@ -83,6 +87,7 @@ impl Arg {
             Arg::Flag(_) => TAG_FLAG,
             Arg::Mv(_) => TAG_MV,
             Arg::BigQ { .. } => TAG_BIGQ,
+            Arg::Bytes(_) => TAG_BYTES,
         }
     }
 
@@ -123,6 +128,10 @@ impl Arg {
                 out.extend_from_slice(&u16::try_from(d.len()).ok()?.to_le_bytes());
                 out.extend_from_slice(&d);
             }
+            Arg::Bytes(b) => {
+                out.extend_from_slice(&u16::try_from(b.len()).ok()?.to_le_bytes());
+                out.extend_from_slice(b);
+            }
         }
         Some(())
     }
@@ -162,6 +171,12 @@ impl Arg {
                     return None;
                 }
                 Arg::BigQ { num, den }
+            }
+            TAG_BYTES => {
+                let n = usize::from(u16_at(b, p)?);
+                let run = b.get(*p..*p + n)?.to_vec();
+                *p += n;
+                Arg::Bytes(run)
             }
             _ => return None,
         })

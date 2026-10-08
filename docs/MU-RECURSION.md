@@ -25632,7 +25632,8 @@ IS NOT SIGNED (verified by `court::identity::verify`).
   `2 Count [u64]` | `3 Flag [u8 0|1]` | `4 Mv` (`Mv::to_bytes`) |
   `5 BigQ [num len u16][num, signed LE][den len u16][den, LE]` — den > 0,
   reduced, each length the minimal one (`num_bigint`'s
-  `to_signed_bytes_le` / `to_bytes_le`); anything else is refused.
+  `to_signed_bytes_le` / `to_bytes_le`) | `6 Bytes [len u16][bytes]`
+  (78.146); anything else is refused.
   ARGS = `[count u8][ARG…]`.
 - **0 SEATS** (HOUSE): `[domain][epoch u64][count u16] SEAT…`; SEAT =
   `[seat u32][role u8][on key][beat ARG, a Q or BigQ][fns u16] FN…`; FN =
@@ -25680,23 +25681,20 @@ The mail lives on the hypha a post reached: a house and its minds speak to
 the same hypha (owed: routing a domain's mail across the nerve). A
 READ-MAIL replayed acknowledges nothing the reader had not acknowledged.
 
-**The golden vectors** (`dialogue::tests::seat`, asserted literally): keys
-from the seeds `[1;32]` (the house) and `[2;32]` (the mind), domain
-`[9;32]`, seat 7. The CALL: call nonce `[3;32]`, fn 3, ARGS `[Q 3/2, BigQ
-2^70/3, Key [5;32]]`. The PERCEPT: local time `Q 12/1`, seq 1, one COUNSEL
-record — fn 3, the same ARGS, worth `Q 1/2`, cost `Q 1/3`.
-
-```
-house vk  8a88e3dd7409f195fd52db2d3cba5d72ca6709bf1d94121bf3748801b40f6f5c
-mind vk   8139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394
-CALL      53040909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394030303030303030303030303030303030303030303030303030303030303030303000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505055e38bf9a10d0ff42b5248d2279f80984d513a18beb9da5925182e1c22f5728e48774e744decd809eb8b2c8e4568683f89441ff95b93ca300b77a6456cd27860f
-CALL ref  31cb3c49a809b03a09c5b4a57005dcf5399675654167a07819cc4fcd76ff9041
-PERCEPT   53030909090909090909090909090909090909090909090909090909090909090909070000008139770ea87d175f56a35466c34c7ecccb8d8a91b4ee37a25df60f5b8fc9b394000c00000000000000010000000000000001000000000000000100ffff03000300030000000000000002000000000000000509000000000000000000400100030105050505050505050505050505050505050505050505050505050505050505050001000000000000000200000000000000000100000000000000030000000000000038fb1c38b9c4d70d0daccf1fc970bc239d412f8b9e0fba59bc5cdb00e10c123c22e1501bb429cc5f0d2b704547697f99201bf32e2258e999f28824b7640dd903
-```
-
-The vectors were computed independently of the crate (PyNaCl ed25519, the
-blake3 reference) from this layout, and the crate matches them byte for
-byte.
+**Conformance by decoded values and signature (Concordance 1.4)**
+(`dialogue::tests::seat`): no kernel is judged by reproducing bytes, and
+identity is content, never bytes (law 2). The fixed acts — keys from the
+seeds `[1;32]` (the house) and `[2;32]` (the mind), domain `[9;32]`, seat 7;
+the CALL with call nonce `[3;32]`, fn 3, ARGS `[Q 3/2, BigQ 2^70/3, Key
+[5;32]]`; the PERCEPT at local time `Q 12/1`, seq 1, one COUNSEL record — fn
+3, the same ARGS, worth `Q 1/2`, cost `Q 1/3` — decode into exactly those
+typed values (rationals equal exactly, keys equal, records and counsel as
+structures), each signature verifies under its signer's key and no other,
+and the call's reference cites exactly its signed bytes. A kernel in
+another language conforms the same way: by what its acts decode to and
+whose key signed them. 78.146 adds ARG tag `6 Bytes [len u16][bytes]` (a
+run named whole — a task's content address, a rule's tape), proved the same
+way.
 
 **The SDK** (`client/sdk/seat.rs`, on `Session`): `list_seats`, `take`,
 `mail` (typed `MindMail::{Taken, Percept, Outcome}`), `call` (answered with
