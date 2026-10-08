@@ -222,12 +222,6 @@ impl Kernel {
                 cold.push(r.clone());
             }
         }
-        // THE DESTINATION IS ALREADY KNOWN (law 3): the hot line is read
-        // off the line relation between the two places.
-        #[expect(
-            clippy::disallowed_methods,
-            reason = "rule 15 — FIFO drain head: the cold run is in line order, so its tail is the last place it read"
-        )]
         {
             use crate::observe::{note_serve, ServeAxis};
             note_serve(ServeAxis::Pages, 1);
@@ -241,6 +235,12 @@ impl Kernel {
                 }
             }
         }
+        // THE DESTINATION IS ALREADY KNOWN (law 3): the hot line is read
+        // off the line relation between the two places.
+        #[expect(
+            clippy::disallowed_methods,
+            reason = "rule 15 — FIFO drain head: the cold run is in line order, so its tail is the last place it read"
+        )]
         let hot_after = cold.last().map(|r| r.stamp.place()).or(after);
         let hot = self.chain.line_between(signer, hot_after, upto, budget);
         let own = *signer == self.identity;

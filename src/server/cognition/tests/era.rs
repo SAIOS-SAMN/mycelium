@@ -242,7 +242,8 @@ fn a_folded_line_read_from_its_fold_root_pages_no_earlier_era() {
     let hot = k.receipts_page(&home, from_root, upto, 1000, usize::MAX);
     assert!(!hot.is_empty(), "the line from its root answers");
     assert!(hot.iter().all(|r| r.stamp.k >= root_k), "nothing below the root's orbit is served");
-    assert!(k.archive().iter().filter(|e| e.first_place() > from_root.unwrap_or(Place::GENESIS)).count() <= 1, "at most the one era the root closes lies past the opening");
+    let opening = from_root.expect("three folds: the root's orbit is past genesis");
+    assert!(k.archive().iter().filter(|e| e.first_place() > opening).count() <= 1, "at most the one era the root closes lies past the opening");
 }
 
 /// THE LINE AND THE SNAPSHOT ON DISK AGREE. A court bound to a line writes
