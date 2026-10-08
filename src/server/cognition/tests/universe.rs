@@ -244,9 +244,11 @@ fn the_hypha_serves_anyone_and_a_founded_universe_through_its_ancients() {
     assert!(k.may_solve(&[0xab; 32]), "a key no domain names: anyone is served");
     assert!(k.may_solve(&vk(&reserve(4))) && k.is_ancients_house(&vk(&reserve(4))), "the ancients' house");
     assert!(!k.may_solve(&vk(&line(4))), "an inner seat speaks through its ancients");
+    // A hand-on is PENDING until its anchor passes: the sitting reserve stays
+    // the house, and the named tier is still an inner seat.
     let r = Reservation { domain: vk(&domain(4)), tier: vk(&line(4)), nonce: [1; 32] };
-    assert!(matches!(k.designate_reserve(&r.sign(&reserve(4))), Founded::Reserved { .. }), "the sitting reserve hands on");
-    assert!(k.may_solve(&vk(&line(4))) && !k.may_solve(&vk(&reserve(4))), "the new house solves; the old tier is an inner seat");
+    assert!(matches!(k.designate_reserve(&r.sign(&reserve(4))), Founded::Reserved { now: false, .. }), "the sitting reserve hands on, pending");
+    assert!(k.may_solve(&vk(&reserve(4))) && !k.may_solve(&vk(&line(4))), "until the anchor passes, the house is unchanged");
 }
 
 /// THE WIRE: an origin of version 2, every statement, the universe read and
