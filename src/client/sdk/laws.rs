@@ -127,7 +127,7 @@ impl super::Session {
         decode_origin_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the origin reading did not decode"))
     }
 
-    /// 78.139 — A UNIVERSE'S STATEMENT — its curvature, its ancients'
+    /// 78.139 — A UNIVERSE'S STATEMENT — its geometry, its ancients'
     /// basket, or its join to its parent's core — signed by its sitting
     /// reserve, once each: sealed, or the refusal by name.
     pub fn state(&self, s: &crate::anastome::dialogue::universe::SignedStatement) -> io::Result<crate::anastome::dialogue::domain::Founded> {
@@ -137,7 +137,7 @@ impl super::Session {
     }
 
     /// 78.139 — WHAT A UNIVERSE HAS STATED: whether it has an origin, its
-    /// curvature, its parent face, its basket.
+    /// geometry (78.140), its parent face, its basket.
     pub fn universe(&self, domain: [u8; 32]) -> io::Result<crate::anastome::dialogue::universe::UniverseReading> {
         use crate::anastome::dialogue::universe::{decode_universe_reading, encode_universe_read};
         let reply = self.speak(encode_universe_read(domain))?;

@@ -17,7 +17,8 @@
 use super::challenge::window_end;
 use super::handoff::toll_key;
 use super::Kernel;
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Loop, Mouth, SignedHandoff, State, TubeReading};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Loop, Mouth, SignedHandoff, State, TubeReading};
+use crate::anastome::dialogue::universe::Geometry;
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::transducer::address::{put_key_bytes, take_key_bytes};
 use crate::transducer::cech::coefficient::{Coefficient, Moved};
@@ -187,6 +188,28 @@ fn ceil_mass((n, d): (u64, u64)) -> Option<u64> {
     (d > 0).then(|| n.div_ceil(d))
 }
 
+/// 78.140 — A THROAT'S LEVEL IN ONE FACE, from its mass in that face's space:
+/// curved, `cosh(2m/R)`; a torus, the radius `2m` and its ratio to the
+/// shortest period.
+pub(crate) fn level_in(space: &Geometry, mass: &num_rational::BigRational) -> Option<Level> {
+    match space {
+        Geometry::Curved((n, d)) => {
+            let r = (*d > 0).then(|| num_rational::BigRational::new((*n).into(), (*d).into()))?;
+            Some(Level::Curved(crate::client::sdk::physics::throat_level(mass, &r)?))
+        }
+        Geometry::Torus { .. } => {
+            let (radius, ratio) = crate::client::sdk::physics::flat_throat(mass, &space.shortest_period()?)?;
+            Some(Level::Flat { radius, ratio })
+        }
+    }
+}
+
+/// 78.140 — whether a throat of `mass` fits both its faces (`None` where a
+/// level does not read).
+fn fits_both(t: &crate::anastome::dialogue::handoff::Tube, mass: &num_rational::BigRational) -> Option<bool> {
+    Some(level_in(&t.from_space, mass)?.fits() && level_in(&t.to_space, mass)?.fits())
+}
+
 impl Kernel {
     /// 78.135 — A TUBE'S MASS NOW: its committed mass, plus what its feeds
     /// added and less what its draws took.
@@ -264,6 +287,13 @@ impl Kernel {
             let short = crate::economy::shortfall(&[mu_s, 0, 0, 0], &self.treasury.balance_mu(&h.who));
             if !crate::economy::lanes_short(&short).is_empty() {
                 return refuse(R::HolderShort);
+            }
+            // 78.140 — fed, the throat still fits each torus face it opens in.
+            let after = self.mass_now(&mouth).map(|m| m + num_rational::BigRational::from_integer(mu_s.into()));
+            match held.mouth.tube.as_ref().zip(after).and_then(|(t, m)| fits_both(t, &m)) {
+                Some(true) => {}
+                Some(false) => return refuse(R::TooWide),
+                None => return refuse(R::BadTube),
             }
         } else {
             // Never to zero: the mass after must stay positive.
@@ -503,24 +533,27 @@ impl Kernel {
                 if !m.frames_hold() {
                     return refuse(R::Degenerate);
                 }
-                // A ROAD INSIDE ONE GALAXY (one universe is one domain) joins
-                // two DISTINCT places of its curved space.
-                if dx == dy {
-                    let places = (crate::transducer::cga::frame_base_point(&m.from_frame), crate::transducer::cga::frame_base_point(&m.to_frame));
-                    if !matches!(places, (Some(a), Some(b)) if a != b) {
-                        return refuse(R::Unbound);
-                    }
-                }
-                // 78.134 — A MOUTH IS A TUBE between two places on curved
-                // space, never two free frames: its frames motions of `ℍ³`,
-                // its mass and curvatures positive, and a mouth it
-                // supersedes an open untethered one of the same pair.
+                // 78.134 — A MOUTH IS A TUBE between two places, never two
+                // free frames: its mass and spaces well formed, each frame a
+                // motion of its own end's space (78.140: `ℍ³` or a torus),
+                // its throat fitting both faces, and a mouth it supersedes an
+                // open untethered one of the same pair.
                 let Some(t) = &m.tube else { return refuse(R::Untethered) };
                 if !t.holds() {
                     return refuse(R::BadTube);
                 }
-                if !m.frames_curved() {
-                    return refuse(R::NotIsometry);
+                let Some((from_place, to_place)) = m.places() else { return refuse(R::NotIsometry) };
+                // A ROAD INSIDE ONE GALAXY (one universe is one domain) joins
+                // two DISTINCT places of its space (a torus's, modulo its
+                // periods) — exactly distinct: `Mv`'s `==` is projective, and
+                // would take the torus's (2, 3) and (4, 6) for one place.
+                if dx == dy && from_place.sub(&to_place).is_zero() {
+                    return refuse(R::Unbound);
+                }
+                match fits_both(t, &num_rational::BigRational::new(t.mass.0.into(), t.mass.1.into())) {
+                    Some(true) => {}
+                    Some(false) => return refuse(R::TooWide),
+                    None => return refuse(R::BadTube),
                 }
                 if let Some(old) = &t.supersedes {
                     let same_pair = |o: &Mouth| (o.from_tier, o.to_tier) == (m.from_tier, m.to_tier) || (o.from_tier, o.to_tier) == (m.to_tier, m.from_tier);
@@ -533,8 +566,8 @@ impl Kernel {
                 // core of the universe it bounced into: between two domains,
                 // offered by the parent's RESERVE and kept by both reserves
                 // (the offerer named, the far reserve the second keeper); the
-                // parent an originated universe whose stated curvature is the
-                // near end's `R`, the far end's `R` the child's where it has
+                // parent an originated universe whose stated geometry is the
+                // near end's space, the far end's the child's where it has
                 // stated one (its origin, naming this tube, states it later).
                 if t.core {
                     if dx == dy {
@@ -549,8 +582,8 @@ impl Kernel {
                     if self.origins.get(&dx).is_none() {
                         return refuse(R::NotAUniverse);
                     }
-                    if self.curvature_of(&dx) != Some(t.from_r) || self.curvature_of(&dy).is_some_and(|r| r != t.to_r) {
-                        return refuse(R::NoCurvature);
+                    if self.geometry_of(&dx) != Some(&t.from_space) || self.geometry_of(&dy).is_some_and(|g| *g != t.to_space) {
+                        return refuse(R::NoGeometry);
                     }
                 }
                 // 78.133 — a tariff well formed, no flat toll beside it, and
@@ -677,22 +710,22 @@ impl Kernel {
     }
 
     /// 78.134 — A MOUTH PAIR'S TUBE, derived and never stored: each mouth's
-    /// place on its domain's `ℍ³` (its frame's base point), each end's
-    /// horizon level from the throat's mass in that end's curvature. `None`
-    /// for an untethered mouth or one whose readings do not hold.
+    /// place in its face's space, each end's horizon level from the throat's
+    /// mass in that end's space (78.140: curved or a torus). `None` for an
+    /// untethered mouth or one whose readings do not hold.
     pub fn tube_of(&self, mouth: &[u8; 32]) -> Option<TubeReading> {
         let m = &self.handoffs.mouths.get(mouth)?.mouth;
         let t = m.tube.as_ref()?;
-        let q = |(n, d): (u64, u64)| (d > 0).then(|| num_rational::BigRational::new(n.into(), d.into()));
         // 78.135 — the mass NOW: fed and drawn, the horizon re-derived.
         let mass = self.mass_now(mouth)?;
         let numer = u64::try_from(mass.numer()).ok()?;
         let denom = u64::try_from(mass.denom()).ok()?;
+        let (from_place, to_place) = m.places()?;
         Some(TubeReading {
-            from_place: crate::transducer::cga::frame_base_point(&m.from_frame)?,
-            to_place: crate::transducer::cga::frame_base_point(&m.to_frame)?,
-            from_level: crate::client::sdk::physics::throat_level(&mass, &q(t.from_r)?)?,
-            to_level: crate::client::sdk::physics::throat_level(&mass, &q(t.to_r)?)?,
+            from_place,
+            to_place,
+            from_level: level_in(&t.from_space, &mass)?,
+            to_level: level_in(&t.to_space, &mass)?,
             mass: (numer, denom),
         })
     }

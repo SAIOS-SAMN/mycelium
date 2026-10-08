@@ -1,7 +1,8 @@
 // 78.139 — A UNIVERSE STATES ITSELF ON THE COURT (the coordinator's rulings on
 // (i-b), the operator's ruling that a galactic core is a larger wormhole):
-// its curvature radius `R` and its parent face on its origin (version 2),
-// and — once each, signed by its SITTING RESERVE — its curvature (where its
+// its space (78.140: its GEOMETRY, curved or a torus) and its parent face on
+// its origin (version 2), and — once each, signed by its SITTING RESERVE — its
+// geometry (where its
 // origin did not state it), its ancients' survival BASKET, and its JOIN to
 // its parent's core once that core is found.
 //
@@ -13,7 +14,9 @@
 
 /// ACT_DOMAIN's sub-kind mark (as `domain.rs` writes it).
 const SUB_KIND: [u8; 2] = [0x80, 0x00];
-pub const KIND_CURVATURE: u8 = 8;
+/// 78.140 — sub-kind 8 states a GEOMETRY (it stated a bare curvature before
+/// first use).
+pub const KIND_GEOMETRY: u8 = 8;
 pub const KIND_BASKET: u8 = 9;
 pub const KIND_JOIN: u8 = 10;
 pub const KIND_READ_UNIVERSE: u8 = 11;
@@ -69,22 +72,108 @@ pub fn positive((n, d): (u64, u64)) -> bool {
     n > 0 && d > 0
 }
 
-/// 78.139 — WHAT AN ORIGIN OF VERSION 2 STATES OF ITS UNIVERSE: its curvature
-/// radius `R` in clear, and its parent face.
+/// 78.140 — A TORUS'S METRIC: L1 (the wrapped `|dx|` summed the short way
+/// round — netstratum's, which squares no circle on a toroid) or L2.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Metric {
+    L1,
+    L2,
+}
+
+/// 78.140 — A UNIVERSE'S SPACE (the operator's ruling, the Concordance's
+/// 2.3 as amended): a closed CURVED space of radius `R`, or a flat TORUS of
+/// axis-aligned periods (one to three) and its metric. Every distance is
+/// that space's own geodesic.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Geometry {
+    Curved((u64, u64)),
+    Torus { periods: Vec<(u64, u64)>, metric: Metric },
+}
+
+impl Geometry {
+    pub fn put(&self, out: &mut Vec<u8>) {
+        match self {
+            Geometry::Curved(r) => {
+                out.push(0);
+                put_q(out, *r);
+            }
+            Geometry::Torus { periods, metric } => {
+                out.push(1);
+                crate::transducer::address::put_key_count(out, periods.len());
+                for p in periods {
+                    put_q(out, *p);
+                }
+                out.push(match metric {
+                    Metric::L1 => 0,
+                    Metric::L2 => 1,
+                });
+            }
+        }
+    }
+
+    pub fn take(b: &[u8], p: &mut usize) -> Option<Geometry> {
+        let tag = *b.get(*p)?;
+        *p += 1;
+        match tag {
+            0 => Some(Geometry::Curved(take_q(b, p)?)),
+            1 => {
+                let k = crate::transducer::address::take_key_count(b, p)?;
+                let periods = (0..k).map(|_| take_q(b, p)).collect::<Option<Vec<_>>>()?;
+                let metric = match *b.get(*p)? {
+                    0 => Metric::L1,
+                    1 => Metric::L2,
+                    _ => return None,
+                };
+                *p += 1;
+                Some(Geometry::Torus { periods, metric })
+            }
+            _ => None,
+        }
+    }
+
+    /// Well formed: a positive radius; one to three positive periods.
+    pub fn holds(&self) -> bool {
+        match self {
+            Geometry::Curved(r) => positive(*r),
+            Geometry::Torus { periods, .. } => (1..=3).contains(&periods.len()) && periods.iter().all(|p| positive(*p)),
+        }
+    }
+
+    /// A torus's shortest period, exact; `None` for a curved space.
+    pub fn shortest_period(&self) -> Option<num_rational::BigRational> {
+        let Geometry::Torus { periods, .. } = self else { return None };
+        let mut least: Option<num_rational::BigRational> = None;
+        for (n, d) in periods {
+            if *d == 0 {
+                return None;
+            }
+            let q = num_rational::BigRational::new((*n).into(), (*d).into());
+            least = match least {
+                Some(l) if l <= q => Some(l),
+                _ => Some(q),
+            };
+        }
+        least
+    }
+}
+
+/// 78.139 — WHAT AN ORIGIN OF VERSION 2 STATES OF ITS UNIVERSE: its space
+/// (78.140: a GEOMETRY, curved or a torus — v2's bytes revised before first
+/// use) in clear, and its parent face.
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Genesis {
-    pub curvature: (u64, u64),
+    pub geometry: Geometry,
     pub parent: Parent,
 }
 
 impl Genesis {
     pub fn put(&self, out: &mut Vec<u8>) {
-        put_q(out, self.curvature);
+        self.geometry.put(out);
         self.parent.put(out);
     }
 
     pub fn take(b: &[u8], p: &mut usize) -> Option<Genesis> {
-        Some(Genesis { curvature: take_q(b, p)?, parent: Parent::take(b, p)? })
+        Some(Genesis { geometry: Geometry::take(b, p)?, parent: Parent::take(b, p)? })
     }
 }
 
@@ -102,9 +191,9 @@ pub fn basket_holds(b: &Basket) -> bool {
 /// WHAT A UNIVERSE STATES, once each, by its sitting reserve.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Stated {
-    /// Its curvature radius, where its origin did not state it (a v1 origin,
-    /// or none yet).
-    Curvature((u64, u64)),
+    /// Its space, where its origin did not state it (a v1 origin, or none
+    /// yet).
+    Geometry(Geometry),
     /// Its ancients' survival basket.
     Basket(Basket),
     /// Its join to its parent's core: a root's open core tube, by its id.
@@ -114,7 +203,7 @@ pub enum Stated {
 impl Stated {
     pub fn kind(&self) -> u8 {
         match self {
-            Stated::Curvature(_) => KIND_CURVATURE,
+            Stated::Geometry(_) => KIND_GEOMETRY,
             Stated::Basket(_) => KIND_BASKET,
             Stated::Join(_) => KIND_JOIN,
         }
@@ -122,7 +211,7 @@ impl Stated {
 
     fn put_body(&self, out: &mut Vec<u8>) {
         match self {
-            Stated::Curvature(r) => put_q(out, *r),
+            Stated::Geometry(g) => g.put(out),
             Stated::Basket(entries) => {
                 crate::transducer::address::put_key_count(out, entries.len());
                 for (z, m) in entries {
@@ -169,7 +258,7 @@ impl Statement {
 
     pub(super) fn take(kind: u8, domain: [u8; 32], b: &[u8], p: &mut usize) -> Option<Statement> {
         let stated = match kind {
-            KIND_CURVATURE => Stated::Curvature(take_q(b, p)?),
+            KIND_GEOMETRY => Stated::Geometry(Geometry::take(b, p)?),
             KIND_BASKET => {
                 let n = crate::transducer::address::take_key_count(b, p)?;
                 let entries = (0..n)
@@ -219,25 +308,25 @@ pub fn encode_universe_read(domain: [u8; 32]) -> Vec<u8> {
 }
 
 /// 78.139 — WHAT A UNIVERSE HAS STATED, as read: whether it has an origin
-/// (it reads as a universe), its curvature, its parent face (none for a
-/// domain with no origin, or a v1 origin never joined), and its basket
-/// (empty: not yet stated).
+/// (it reads as a universe), its space (78.140: its geometry), its parent
+/// face (none for a domain with no origin, or a v1 origin never joined), and
+/// its basket (empty: not yet stated).
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct UniverseReading {
     pub originated: bool,
-    pub curvature: Option<(u64, u64)>,
+    pub geometry: Option<Geometry>,
     pub parent: Option<Parent>,
     pub basket: Basket,
 }
 
-/// `[originated][0 | 1 R][0 | 1 parent][basket]`.
+/// `[originated][0 | 1 geometry][0 | 1 parent][basket]`.
 pub fn encode_universe_reading(r: &UniverseReading) -> Vec<u8> {
     let mut out = vec![u8::from(r.originated)];
-    match r.curvature {
+    match &r.geometry {
         None => out.push(0),
-        Some(c) => {
+        Some(g) => {
             out.push(1);
-            put_q(&mut out, c);
+            g.put(&mut out);
         }
     }
     match &r.parent {
@@ -263,30 +352,30 @@ pub fn decode_universe_reading(b: &[u8]) -> Option<UniverseReading> {
         Some(f)
     };
     let originated = flag(b, &mut p)?;
-    let curvature = match flag(b, &mut p)? {
+    let geometry = match flag(b, &mut p)? {
         false => None,
-        true => Some(take_q(b, &mut p)?),
+        true => Some(Geometry::take(b, &mut p)?),
     };
     let parent = match flag(b, &mut p)? {
         false => None,
         true => Some(Parent::take(b, &mut p)?),
     };
     let Stated::Basket(basket) = Statement::take(KIND_BASKET, [0; 32], b, &mut p)?.stated else { return None };
-    (p == b.len()).then_some(UniverseReading { originated, curvature, parent, basket })
+    (p == b.len()).then_some(UniverseReading { originated, geometry, parent, basket })
 }
 
-/// 78.139 — A UNIVERSE AS HELD on the court: its curvature, its parent face,
-/// and its basket — each stated once.
+/// 78.139 — A UNIVERSE AS HELD on the court: its space (78.140: its
+/// geometry), its parent face, and its basket — each stated once.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct Universe {
-    pub curvature: Option<(u64, u64)>,
+    pub geometry: Option<Geometry>,
     pub parent: Option<Parent>,
     pub basket: Basket,
 }
 
 impl Universe {
     pub fn put(&self, out: &mut Vec<u8>) {
-        let r = UniverseReading { originated: false, curvature: self.curvature, parent: self.parent, basket: self.basket.clone() };
+        let r = UniverseReading { originated: false, geometry: self.geometry.clone(), parent: self.parent, basket: self.basket.clone() };
         out.extend_from_slice(&encode_universe_reading(&r)[1..]);
     }
 
@@ -300,15 +389,15 @@ impl Universe {
             *p += 1;
             Some(f)
         };
-        let curvature = match flag(b, p)? {
+        let geometry = match flag(b, p)? {
             false => None,
-            true => Some(take_q(b, p)?),
+            true => Some(Geometry::take(b, p)?),
         };
         let parent = match flag(b, p)? {
             false => None,
             true => Some(Parent::take(b, p)?),
         };
         let Stated::Basket(basket) = Statement::take(KIND_BASKET, [0; 32], b, p)?.stated else { return None };
-        Some(Universe { curvature, parent, basket })
+        Some(Universe { geometry, parent, basket })
     }
 }

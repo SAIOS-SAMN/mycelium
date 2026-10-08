@@ -73,7 +73,13 @@ fn mouth(t: Tariff) -> Mouth {
         toll: [0; 4],
         nonce: [4; 32],
         tariff: Some(t),
-        tube: Some(crate::anastome::dialogue::handoff::Tube { mass: (1, 1), from_r: (1, 1), to_r: (1, 1), supersedes: None, core: false }),
+        tube: Some(crate::anastome::dialogue::handoff::Tube {
+            mass: (1, 1),
+            from_space: crate::anastome::dialogue::universe::Geometry::Curved((1, 1)),
+            to_space: crate::anastome::dialogue::universe::Geometry::Curved((1, 1)),
+            supersedes: None,
+            core: false,
+        }),
     }
 }
 

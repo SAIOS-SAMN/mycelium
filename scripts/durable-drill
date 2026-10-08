@@ -29,7 +29,10 @@ BIN="$TARGET/release/mycelium-server"
 CLIENT="$TARGET/release/examples/durable_drill"
 ADDR="127.0.0.1:7590"
 HOME_DIR="$(mktemp -d)"
-trap 'kill -9 "${PID:-0}" 2>/dev/null || true; rm -rf "$HOME_DIR"' EXIT
+# Only a server this script started is killed: an unset PID must never become
+# `kill -9 0`, which signals the whole process group.
+PID=""
+trap '[ -n "$PID" ] && kill -9 "$PID" 2>/dev/null; rm -rf "$HOME_DIR"' EXIT
 
 say() { printf '  durable-drill: %s\n' "$*"; }
 

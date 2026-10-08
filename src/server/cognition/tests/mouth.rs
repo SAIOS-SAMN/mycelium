@@ -3,7 +3,8 @@
 // either, what is in flight returning; loops of mouths read as curvature.
 
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, State, Tube};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Level, Mouth, Offer, State, Tube};
+use crate::anastome::dialogue::universe::Geometry;
 use crate::server::cognition::Kernel;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
@@ -53,7 +54,7 @@ fn turn() -> Mv {
 
 /// A throat of unit mass in two spaces of unit curvature radius.
 fn tube() -> Tube {
-    Tube { mass: (1, 1), from_r: (1, 1), to_r: (1, 1), supersedes: None, core: false }
+    Tube { mass: (1, 1), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((1, 1)), supersedes: None, core: false }
 }
 
 fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
@@ -225,11 +226,13 @@ fn a_mouth_is_a_tube_between_places_on_curved_space() {
     }
     assert_eq!(t.from_level, t.to_level, "one throat, one curvature: equal ends");
     let cosh2 = crate::client::sdk::certified::cosh(&crate::client::sdk::certified::Encl::exact(Q::from_integer(2.into())), 64);
-    assert!(cosh2.contains(&t.from_level) || t.from_level >= cosh2.hi, "c = cosh(2m/R), never undersized");
-    let wide = Mouth { tube: Some(Tube { to_r: (2, 1), ..tube() }), nonce: [9; 32], ..mouth(4, 6, one(), one(), [0; 4]) };
+    let Level::Curved(c) = &t.from_level else { panic!("a curved face") };
+    assert!(cosh2.contains(c) || *c >= cosh2.hi, "c = cosh(2m/R), never undersized");
+    let wide = Mouth { tube: Some(Tube { to_space: Geometry::Curved((2, 1)), ..tube() }), nonce: [9; 32], ..mouth(4, 6, one(), one(), [0; 4]) };
     let other = open(&mut k, wide, 4, 6);
     let t = k.tube_of(&other).expect("a tube");
-    assert!(t.to_level < t.from_level, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
+    let (Level::Curved(from), Level::Curved(to)) = (&t.from_level, &t.to_level) else { panic!("curved faces") };
+    assert!(to < from, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
 }
 
 /// THE PROGENITORS BUILD, THE ANCIENTS KEEP: a progenitor line offers a road
@@ -289,7 +292,8 @@ fn a_throat_is_banked_fed_drawn_and_returned_never_retired() {
     assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(5)), Handed::Refused(HandoffRefusal::Stale), "a resend is no second feed");
     let fed = k.tube_of(&id).expect("a tube");
     assert_eq!(fed.mass, (13, 2), "5/2 + 4");
-    assert!(fed.from_level > before, "fed, the throat widens");
+    let (Level::Curved(after), Level::Curved(before)) = (&fed.from_level, &before) else { panic!("curved faces") };
+    assert!(after > before, "fed, the throat widens");
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.tube_of(&id), Some(fed), "the bank restored");

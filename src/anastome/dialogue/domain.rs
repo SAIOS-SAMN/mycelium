@@ -498,9 +498,9 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             let origin = Origin { domain, kind, version, commitment, universe };
             return (p == rest.len()).then_some(DomainRequest::Origin(SignedOrigin { origin, sig }));
         }
-        // 78.139 — a universe's statements (curvature, basket, join) and its read.
+        // 78.139 — a universe's statements (geometry, basket, join) and its read.
         super::universe::KIND_READ_UNIVERSE => return (rest.len() == p + 1).then_some(DomainRequest::ReadUniverse(domain)),
-        k @ (super::universe::KIND_CURVATURE | super::universe::KIND_BASKET | super::universe::KIND_JOIN) => {
+        k @ (super::universe::KIND_GEOMETRY | super::universe::KIND_BASKET | super::universe::KIND_JOIN) => {
             p += 1;
             let statement = super::universe::Statement::take(k, domain, rest, &mut p)?;
             let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;

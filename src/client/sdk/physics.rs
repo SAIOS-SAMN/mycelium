@@ -179,6 +179,19 @@ pub fn throat_level(m: &Q, curvature: &Q) -> Option<Q> {
     Some(super::certified::cosh(&Encl::exact(r), THROAT_GRID).hi)
 }
 
+/// 78.140 — A THROAT IN A FLAT TORUS FACE: the horizon is the sphere of
+/// radius `2m` about the mouth's place (exact — no transcendental), read with
+/// its RATIO `2m / L_min` to the torus's shortest period. `(radius, ratio)`;
+/// `None` for a non-positive mass or period.
+pub fn flat_throat(m: &Q, shortest_period: &Q) -> Option<(Q, Q)> {
+    if !m.is_positive() || !shortest_period.is_positive() {
+        return None;
+    }
+    let radius = int(2) * m;
+    let ratio = &radius / shortest_period;
+    Some((radius, ratio))
+}
+
 /// INVERSION IN A SPHERE: `σXσ⁻¹` — distance `d` from the centre goes to
 /// `r²/d` on the same ray, the sphere is fixed pointwise, and the map is its
 /// own inverse (up to the homogeneous scale a conformal point carries).

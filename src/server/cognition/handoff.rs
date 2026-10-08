@@ -182,12 +182,13 @@ impl Handoffs {
             v.extend_from_slice(&id);
             t.put(&mut v);
         }
-        // 78.134 — the mouths' tubes, beside their flat writing.
+        // 78.134 — the mouths' curved tubes, beside their flat writing.
         let tubes: Vec<(Vec<u8>, &crate::anastome::dialogue::handoff::Tube)> =
             self.mouths.scoped().filter_map(|(id, m)| Some((id, m.mouth.tube.as_ref()?))).collect();
-        put_key_count(&mut v, tubes.len());
-        for (id, t) in tubes {
-            v.extend_from_slice(&id);
+        let (curved, spaced): (Vec<_>, Vec<_>) = tubes.iter().partition(|(_, t)| t.curved());
+        put_key_count(&mut v, curved.len());
+        for (id, t) in curved {
+            v.extend_from_slice(id);
             v.extend_from_slice(&t.bytes());
         }
         // 78.135 — the throats' banks, after the tubes.
@@ -195,6 +196,17 @@ impl Handoffs {
         for (id, t) in self.throats.scoped() {
             v.extend_from_slice(&id);
             t.put(&mut v);
+        }
+        // 78.140 — the tubes with a torus end, then the core tubes by id.
+        put_key_count(&mut v, spaced.len());
+        for (id, t) in spaced {
+            v.extend_from_slice(id);
+            v.extend_from_slice(&t.bytes());
+        }
+        let cores: Vec<&Vec<u8>> = tubes.iter().filter(|(_, t)| t.core).map(|(id, _)| id).collect();
+        put_key_count(&mut v, cores.len());
+        for id in cores {
+            v.extend_from_slice(id);
         }
         Some(v)
     }
@@ -291,7 +303,7 @@ impl Handoffs {
         if *p < b.len() {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
-                let tube = crate::anastome::dialogue::handoff::Tube::take(b, p)?;
+                let tube = crate::anastome::dialogue::handoff::Tube::take(b, p, false)?;
                 out.mouths.get_mut(&k)?.mouth.tube = Some(tube);
             }
         }
@@ -300,6 +312,19 @@ impl Handoffs {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
                 out.throats.insert(k, super::mouth::Throat::take(b, p)?);
+            }
+        }
+        // 78.140 — the tubes with a torus end and the core tubes — absent
+        // from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                let tube = crate::anastome::dialogue::handoff::Tube::take(b, p, true)?;
+                out.mouths.get_mut(&k)?.mouth.tube = Some(tube);
+            }
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.mouths.get_mut(&k)?.mouth.tube.as_mut()?.core = true;
             }
         }
         Some(out)

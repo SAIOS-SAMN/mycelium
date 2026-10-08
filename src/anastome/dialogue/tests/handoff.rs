@@ -3,6 +3,7 @@
 // (possibly empty) children, and a fold with neither writes as before.
 
 use crate::anastome::dialogue::handoff::*;
+use crate::anastome::dialogue::universe::{Geometry, Metric};
 use crate::anastome::dialogue::uplink::{decode_uplink, decode_uplink_reply, encode_uplink, encode_uplink_reply, SideRefusal, TierFold, Uplinked};
 use crate::chronometry::Stamp;
 
@@ -92,10 +93,15 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
     assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     // 78.134 — a tube is its own kind, with or without its tariff; its tube
     // in its id; the tube read and its reading back whole.
-    let tube = Tube { mass: (3, 2), from_r: (1, 1), to_r: (5, 3), supersedes: Some([7u8; 32]), core: false };
+    let tube = Tube { mass: (3, 2), from_space: Geometry::Curved((1, 1)), to_space: Geometry::Curved((5, 3)), supersedes: Some([7u8; 32]), core: false };
     let tubed = Mouth { tube: Some(tube.clone()), ..tariffed.clone() };
     assert_ne!(tubed.id(), tariffed.id(), "the tube is in the id");
-    for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }] {
+    // 78.140 — a tube with a torus end its own kind and tag, core or not.
+    let torus = Geometry::Torus { periods: vec![(10, 1), (6, 1)], metric: Metric::L1 };
+    let spaced = Mouth { tube: Some(Tube { to_space: torus.clone(), ..tube.clone() }), ..tubed.clone() };
+    assert_ne!(spaced.id(), tubed.id(), "the space is in the id");
+    let spaced_core = Mouth { tube: Some(Tube { from_space: torus, core: true, ..tube.clone() }), ..tubed.clone() };
+    for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }, spaced, spaced_core] {
         let signed = Handoff::Mouth(Box::new(m)).sign(&key);
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
@@ -109,8 +115,8 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
     let reading = TubeReading {
         from_place: crate::transducer::cga::hyperboloid_pole(),
         to_place: crate::transducer::cga::hyperboloid_pole(),
-        from_level: num_rational::BigRational::new(7.into(), 2.into()),
-        to_level: num_rational::BigRational::new(9.into(), 4.into()),
+        from_level: Level::Curved(num_rational::BigRational::new(7.into(), 2.into())),
+        to_level: Level::Flat { radius: num_rational::BigRational::new(3.into(), 1.into()), ratio: num_rational::BigRational::new(1.into(), 2.into()) },
         mass: (3, 2),
     };
     assert_eq!(decode_tube_reading(&encode_tube_reading(Some(&reading))), Some(Some(reading)));

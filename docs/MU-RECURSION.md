@@ -25383,6 +25383,69 @@ face read back; the second keeper feeding the throat; a v1 root's curvature
 and JOIN, once, refused before its origin or on a tube that is no core into
 it; the wire for every act and the core tube's distinct id.
 
+### 78.140 A universe's space is its geometry: curved, or a flat torus (2026-10-08, the operator — netstratum's universe is a torus, flat by the operator's ruling for that universe, never by default; the coordinator's rulings on GEOMETRY (i)–(iii) and sections 2 and 4)
+
+**Origin v2's bytes were REVISED before first use** (ruling (ii)): 78.139's
+bare curvature `R` is replaced in place by a GEOMETRY — no version 3, since
+no court had sealed a v2 origin (:7520 originated nothing; the fleet's
+homes carry none). `Geometry` is `[0][R n d]` CURVED (a closed curved
+space, the hyperbolic sheet as before) or `[1][k][periods n d …][metric]`
+a flat TORUS of `1 ≤ k ≤ 3` AXIS-ALIGNED positive periods (ruling (iii): a
+general lattice basis waits for a universe that needs one, and brings its
+reduced basis with it) and its metric `0` L1 (netstratum's) or `1` L2.
+Sub-kind 8 is renamed GEOMETRY and states one, once, under 78.139's rules;
+`UniverseReading` and the held universe carry `geometry`.
+
+**A torus face** (section 2). A flat space's motions are Euclidean, never
+`Spin⁺(3,1)`: a torus end's frame must be even, a versor, and carry the
+point at infinity to itself at its own weight, `F e∞ F̃ = (F F̃) e∞` — a
+dilation scales `e∞` and a transversion moves it (`is_euclidean_motion`);
+otherwise `NotIsometry`. Its PLACE is the base point of `F e_o F̃` on the
+torus's `k` axes, read modulo the periods — a point of the fundamental
+domain, exact (`place_in`); a frame standing off those axes is no motion
+of the torus. Two places of one domain are distinct modulo the periods.
+
+**The throat's level per face** (ruling (i)). The MASS `m` is the one
+invariant both faces share; each end's level is read in its own space,
+`Level::Curved(c)` with `c = cosh(2m/R)` as 78.134, or `Level::Flat {
+radius, ratio }` with `radius = 2m` (exact; no transcendental) and `ratio =
+2m / L_min`, `L_min` the torus's shortest period (`physics::flat_throat`).
+The `cosh(2m/R) → 1` limit is rejected: it reads every throat the same. A
+throat FITS a torus face while `ratio < ½` — the geometry of a sphere in its
+fundamental domain, not a declared constant — else `TooWide` (handoff
+refusal 32), at the offer and at every FEED that would widen it past.
+
+**Mixed tubes** (section 4). Tubes and core tubes between a curved face
+and a torus face stand, each end's frame checked in its own geometry. A
+core tube's ends must be the spaces each domain stated (`NoGeometry`,
+refusal 29 renamed from `NoCurvature`). A tube with a torus end is written
+`[mass][from geometry][to geometry][supersedes]` under its own handoff
+kinds (17 a tube, 18 a core) and id tag, so every curved tube's writing,
+id and stored bytes are what 78.134 sealed; on the court the spaced tubes
+and — fixed here — the CORE FLAG are held in a section after the throats
+(absent: none), so a core tube read back after a restart is still kept by
+both reserves. The tube types moved from `handoff.rs` to `tube.rs`
+(`handoff` re-exports them). `TubeReading`'s levels are the per-end
+`Level` (WIRE-CHANGE).
+
+*Owed, named:* the torus's geodesic DISTANCE as the shortest lattice image
+in its metric is approved and has no consumer yet — the fit reads `L_min`
+alone and places compare modulo the periods; it is built with the first
+act that measures one. MV EQUALITY NAMED: `Mv`'s `==` is PROJECTIVE (equal
+up to scale), and the first suite of this row caught a dilation passing the
+torus's motion check and two proportional torus places reading as one; both
+now compare exactly (the difference is zero). Owed, the whole tree read: an
+explicit `eq_projective`, `==` exact, every site deciding which it means.
+
+Proved (`cognition::tests::universe`, `mouth`; `dialogue::tests::handoff`):
+geometries stated once, malformed tori (no or four periods) refused; a
+child's origin naming a curved core refused on a torus; a core tube into a
+torus child refused for a slide off the axes, a dilation, and a motion of
+curved space; refused `TooWide` at `2m/L = ½`; its far place `(32, −17)`
+read `(2, 3)` modulo `(30, 20)`; its levels `Curved` and `Flat { 2, 1/10 }`;
+fed to `2/5` and refused at `½`; read the same across a restart and still
+drawn by its far reserve; the spaced kinds and readings read back whole.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
