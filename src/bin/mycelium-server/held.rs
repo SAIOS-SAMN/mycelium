@@ -47,7 +47,8 @@ pub(crate) fn yield_to_waiters() {
     if queued == 0 {
         return;
     }
-    let until = SERVED.load(Ordering::Acquire).saturating_add(queued);
+    // Past 2⁶⁴ served waits there is no turn to count to, and none is waited.
+    let Some(until) = SERVED.load(Ordering::Acquire).checked_add(queued) else { return };
     while SERVED.load(Ordering::Acquire) < until && WAITING.load(Ordering::Acquire) > 0 {
         std::thread::yield_now();
     }
