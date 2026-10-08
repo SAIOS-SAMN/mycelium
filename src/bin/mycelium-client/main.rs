@@ -281,6 +281,11 @@ fn main() {
     let mut grew = [0i128; 4];
     // 78.92 — the admitted sentences whose reasons this voice has said.
     let mut reasons_said = 0u64;
+    // 2026-10-08 (the coordinator's ruling on the voice stop): the genome is
+    // saved BEFORE the arms that can run long, whenever it gained a word since
+    // the last save — so a stop the unit enforces by SIGKILL costs at most one
+    // stroke's learning, never the 26–45 minutes three voices lost.
+    let mut saved_len = entity.epigenome.genome_len();
 
     loop {
         if stop.load(Ordering::SeqCst) {
@@ -289,6 +294,13 @@ fn main() {
                 eprintln!("[{tag}] genome not saved: {why}");
             }
             break;
+        }
+        let len = entity.epigenome.genome_len();
+        if len != saved_len {
+            match entity.save_genome(&genome_path) {
+                Ok(_) => saved_len = len,
+                Err(why) => eprintln!("[{tag}] genome not saved: {why}"),
+            }
         }
         #[expect(clippy::disallowed_methods, reason = "rule 11 — one per stroke in one process: a u64 cannot pass 2⁶⁴ events before the process ends")]
         let next = stroke_n.saturating_add(1);
