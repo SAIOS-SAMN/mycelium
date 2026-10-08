@@ -41,6 +41,19 @@ impl Entity {
             self.solves.unminted += 1;
             return None;
         };
+        // 78.142 — THE WORD THAT CROSSES TO THE WITHHELD PAIRS carries no
+        // overlap between two of its TRAINING frames (`rule::crossing`): the
+        // court reads those frame indices on pairs they do not name and
+        // refuses them I. A rule that cannot be re-minted without them has
+        // nothing to say about a pair it never saw, and is refuted at home.
+        let crossed = match crate::client::sdk::rule::crossing(rule, train, &self.epigenome) {
+            Ok(e) => e,
+            Err(_) => {
+                self.solves.refuted += 1;
+                return None;
+            }
+        };
+        let rule = &crossed;
         let addr = rule.address();
         if self.solve_refused.get(id).is_some_and(|a| a == addr.as_bytes()) {
             self.solves.withheld_again += 1;

@@ -25505,6 +25505,56 @@ Proved (`dialogue::tests::acts`): a signed solve, with and without its rule,
 reads back signed with its voice, outputs and rule; a changed byte, a swapped
 payee, and a missing signature read unsigned; a trailing byte refuses the act.
 
+### 78.142 The SDK rule seam (2026-10-08, the coordinator)
+
+A client states a rule as STEPS and the seam (`client/sdk/rule.rs`) speaks
+the sentence the court judges; no Element byte is forged.
+
+- `Step::{Motion(Mv), Hue(map)}`; `Step::grid_motion(kind, in, out)` for
+  the six grid symmetries is the centred rigid motion `T(c′)·L·T(−c)`, `L`
+  a rotor `s + b·e1e2` for a turn or a vector for a mirror, `c` the grid's
+  centre — `((R−1)/2, (C−1)/2)` in indices, read at `R/2, C/2` because the
+  sensor carries a compartment by its CENTRE (site + ½, `carry_site_center`);
+  exact. `None` where the shapes do not fit (90°, 270° and the transpose
+  take `R×C` to `C×R`; 180° and the mirrors keep it).
+- `sentence(steps, family, crystal)`: the steps COMPOSE to one action —
+  `V = Vₙ⋯V₁`, `σ = σₙ∘…∘σ₁` — because the court asks EVERY word vertex to
+  carry the input onto the output (`vertices_carry_frames`): a vertex per
+  step would be asked to land a half-done motion on the final grid, and one
+  class is one vertex anyway. The action is one Word vertex: derivation
+  peeled by A22 (`peel_versor`), its linear part certified by
+  `cga::construct` (T1), carriage `D·T`, one member per chart the family's
+  input bodies stand on (`perceive_family`), each member holding NO frame
+  (claimed whole — a rule names no training frame), the family ratio set;
+  minted by `family::mint_sentence_why`.
+- `would_judge(rule, family, resolve, crystal)`: the judge's own steps —
+  the decoder (`Held::of`, `from_element_form`), then
+  `verdict::blind_replay_at` on the pairs.
+- `NoRule::{NotAVersor, NotAHueMap, Unconstructed, Unspelled, NoFamily,
+  Mint, NotASentence, Refused}`, typed.
+
+**The I-defect, reproduced and fixed.** A rule extracted from two training
+pairs carries frame-axis overlaps (`family/percept.rs`, MT1/AT1 A2) whose
+motors relate TRAINING pairs; judged on one withheld pair, `judge_solve`
+refused it I (`motor_carries`: a frame the withheld family lacks) while the
+client's replay on its train passed. `rule::crossing` drops every overlap
+whose two ends stand at different frames, re-reads the orbits and re-mints
+over the train (the mint re-checks every vertex there); `Entity::solve_task`
+sends the crossed word, and a rule that cannot be re-minted without them is
+refuted at home. The court is unchanged. *Owed, named:* a member that holds
+only some training frames still names them; crossing leaves those members
+as they are.
+
+Proved (`client::sdk::tests::rule`, by the real `Kernel::judge_solve` on
+pairs the rule never saw, `would_judge` agreeing on each): every site of a
+`2×3` grid carried to its index image under all six symmetries; all six on
+a square; 90° and the transpose `2×3 → 3×2`; a hue permutation; a 180° turn
+then a recolour; refused by name: a mixed-parity step (`NotAVersor`), the
+shapes that do not fit (`None`); the exact-comparison control — a dilation
+composed with the 180° turn is a versor whose difference from the turn is
+not zero, and is refused where the plain turn is solved; the extracted
+two-pair rule refused I as it stands, and solved once crossed.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
