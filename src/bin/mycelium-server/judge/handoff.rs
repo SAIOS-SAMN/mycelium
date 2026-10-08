@@ -16,6 +16,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
             HandoffRequest::Read(id) => encode_read_reply(k.handoff_read(&id)),
             HandoffRequest::Loops => mycelium::anastome::dialogue::handoff::encode_loops_reply(&k.mouth_loops()),
+            HandoffRequest::TubeRead(id) => mycelium::anastome::dialogue::handoff::encode_tube_reading(k.tube_of(&id).as_ref()),
         },
         Err(_) => return,
     };

@@ -78,6 +78,7 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
         toll: [3, 0, 0, 0],
         nonce: [4u8; 32],
         tariff: None,
+        tube: None,
     };
     assert!(mouth.frames_hold());
     // 78.133 — a tariffed mouth is its own kind, its tariff in its id; the
@@ -87,8 +88,28 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
     assert_ne!(tariffed.id(), Mouth { tariff: None, ..tariffed.clone() }.id(), "the tariff is in the id");
     let changed = Tariff { split: vec![([1u8; 32], (1, 2)), ([5u8; 32], (1, 2))], ..tariff };
     assert_ne!(tariffed.id(), Mouth { tariff: Some(changed), ..tariffed.clone() }.id(), "a new split is a new mouth");
-    let signed = Handoff::Mouth(Box::new(tariffed)).sign(&key);
+    let signed = Handoff::Mouth(Box::new(tariffed.clone())).sign(&key);
     assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    // 78.134 — a tube is its own kind, with or without its tariff; its tube
+    // in its id; the tube read and its reading back whole.
+    let tube = Tube { mass: (3, 2), from_r: (1, 1), to_r: (5, 3), supersedes: Some([7u8; 32]) };
+    let tubed = Mouth { tube: Some(tube.clone()), ..tariffed.clone() };
+    assert_ne!(tubed.id(), tariffed.id(), "the tube is in the id");
+    for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }] {
+        let signed = Handoff::Mouth(Box::new(m)).sign(&key);
+        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    }
+    assert_eq!(decode_handoff_request(&encode_tube_read([3u8; 32])), Some(HandoffRequest::TubeRead([3u8; 32])));
+    let reading = TubeReading {
+        from_place: crate::transducer::cga::hyperboloid_pole(),
+        to_place: crate::transducer::cga::hyperboloid_pole(),
+        from_level: num_rational::BigRational::new(7.into(), 2.into()),
+        to_level: num_rational::BigRational::new(9.into(), 4.into()),
+        mass: (3, 2),
+    };
+    assert_eq!(decode_tube_reading(&encode_tube_reading(Some(&reading))), Some(Some(reading)));
+    assert_eq!(decode_tube_reading(&encode_tube_reading(None)), Some(None));
+    assert!(is_spin_plus_31(&one) && !is_spin_plus_31(&crate::transducer::cga::Mv::zero()));
     let offer = Offer { from_tier: [1u8; 32], to_tier: [2u8; 32], out_nets: vec![([3u8; 32], [-1, 0, 0, 0])], in_nets: vec![([4u8; 32], [1, 0, 0, 0])], charter: [0u8; 32], nonce: [9u8; 32] };
     let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.id() };
     assert_eq!(traverse.id(), offer.id(), "a traversal is the handoff its offer is");
@@ -97,7 +118,7 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     assert_eq!(decode_handoff_request(&encode_loops_read()), Some(HandoffRequest::Loops));
-    let loops = vec![Loop { mouth: mouth.id(), holonomy: one }];
+    let loops = vec![Loop { mouth: mouth.id(), holonomy: one.clone(), tethered: true }, Loop { mouth: [6u8; 32], holonomy: one, tethered: false }];
     assert_eq!(decode_loops_reply(&encode_loops_reply(&loops)), Some(loops));
     for r in [
         HandoffRefusal::NoMouth,
@@ -109,6 +130,10 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
         HandoffRefusal::Untariffed(Untariffed::NotWhole),
         HandoffRefusal::Untariffed(Untariffed::Flat),
         HandoffRefusal::NotALine,
+        HandoffRefusal::NotIsometry,
+        HandoffRefusal::BadTube,
+        HandoffRefusal::NotSupersedable,
+        HandoffRefusal::Untethered,
     ] {
         assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));
     }

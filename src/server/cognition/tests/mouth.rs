@@ -3,7 +3,7 @@
 // either, what is in flight returning; loops of mouths read as curvature.
 
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, State};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Mouth, Offer, State, Tube};
 use crate::server::cognition::Kernel;
 use crate::transducer::cga::Mv;
 use ed25519_dalek::SigningKey;
@@ -51,8 +51,23 @@ fn turn() -> Mv {
     Mv::scalar(BigRational::from_integer(2.into())).add(&Mv::blade(0b0011, BigRational::from_integer(1.into())))
 }
 
+/// A throat of unit mass in two spaces of unit curvature radius.
+fn tube() -> Tube {
+    Tube { mass: (1, 1), from_r: (1, 1), to_r: (1, 1), supersedes: None }
+}
+
 fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
-    Mouth { from_tier: vk(&reserve(a)), to_tier: vk(&reserve(b)), keeper: vk(&reserve(a)), from_frame, to_frame, toll, nonce: [a; 32], tariff: None }
+    Mouth {
+        from_tier: vk(&reserve(a)),
+        to_tier: vk(&reserve(b)),
+        keeper: vk(&reserve(a)),
+        from_frame,
+        to_frame,
+        toll,
+        nonce: [a; 32],
+        tariff: None,
+        tube: Some(tube()),
+    }
 }
 
 fn open(k: &mut Kernel, m: Mouth, a: u8, b: u8) -> [u8; 32] {
@@ -154,10 +169,85 @@ fn a_loop_of_mouths_that_turns_is_recorded_as_curvature() {
         k.handoff(&Handoff::Traverse { offer: Box::new(cargo(6, 4, 1)), mouth: closing }.sign(&reserve(6))),
         Handed::Sealed { .. }
     ), "curvature never refuses a crossing");
+    assert!(l.tethered, "a cycle of tubes: an isometry of curved space");
     // Consistent: the third mouth carries the turn back.
     let mut k = founded();
     open(&mut k, mouth(4, 5, r.clone(), one(), [0; 4]), 4, 5);
     open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
     open(&mut k, mouth(6, 4, one(), r, [0; 4]), 6, 4);
     assert!(k.mouth_loops().is_empty(), "the transitions compose to the identity");
+}
+
+/// An untethered mouth as one opened before tubes stands on the record:
+/// two free frames, open, between `a` and `b`.
+fn legacy(k: &mut Kernel, a: u8, b: u8, from_frame: Mv) -> [u8; 32] {
+    let m = Mouth { tube: None, ..mouth(a, b, from_frame, one(), [0; 4]) };
+    let id = m.id();
+    let held = crate::server::cognition::mouth::MouthHeld { mouth: m, state: State::Accepted, opened: Some(k.chain.head_height()), at: Vec::new() };
+    k.handoffs.mouths.insert(id, held);
+    id
+}
+
+/// A MOUTH IS A TUBE ON CURVED SPACE: offered without its tube, with a frame
+/// that is no motion of `ℍ³` (a parabolic slide fixing the point at
+/// infinity, an odd reflection), or with no mass — refused. Its tube reads
+/// each mouth's place on the sheet and each end's horizon level from the
+/// throat's mass: equal where the curvatures are, apart where they are not.
+#[test]
+fn a_mouth_is_a_tube_between_places_on_curved_space() {
+    use crate::transducer::cga::{translator_at, E1};
+    use num_rational::BigRational as Q;
+    let mut k = founded();
+    let offer = |k: &mut Kernel, m: Mouth| match k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))) {
+        Handed::Refused(r) => Some(r),
+        _ => None,
+    };
+    assert_eq!(offer(&mut k, Mouth { tube: None, ..mouth(4, 5, one(), one(), [0; 4]) }), Some(HandoffRefusal::Untethered));
+    let slide = translator_at(&[Q::from_integer(1.into()), Q::from_integer(0.into()), Q::from_integer(0.into())]);
+    assert_eq!(offer(&mut k, mouth(4, 5, slide, one(), [0; 4])), Some(HandoffRefusal::NotIsometry), "a flat slide");
+    let mirror = Mv::blade(E1, Q::from_integer(1.into()));
+    assert_eq!(offer(&mut k, mouth(4, 5, one(), mirror, [0; 4])), Some(HandoffRefusal::NotIsometry), "an odd reflection");
+    let massless = Mouth { tube: Some(Tube { mass: (0, 1), ..tube() }), ..mouth(4, 5, one(), one(), [0; 4]) };
+    assert_eq!(offer(&mut k, massless), Some(HandoffRefusal::BadTube));
+    let id = open(&mut k, mouth(4, 5, turn(), one(), [0; 4]), 4, 5);
+    let t = k.tube_of(&id).expect("a tube");
+    for place in [&t.from_place, &t.to_place] {
+        assert_eq!(place.geo(place), Mv::scalar(Q::from_integer((-1).into())), "on the sheet, v² = −1");
+    }
+    assert_eq!(t.from_level, t.to_level, "one throat, one curvature: equal ends");
+    let cosh2 = crate::client::sdk::certified::cosh(&crate::client::sdk::certified::Encl::exact(Q::from_integer(2.into())), 64);
+    assert!(cosh2.contains(&t.from_level) || t.from_level >= cosh2.hi, "c = cosh(2m/R), never undersized");
+    let wide = Mouth { tube: Some(Tube { to_r: (2, 1), ..tube() }), nonce: [9; 32], ..mouth(4, 6, one(), one(), [0; 4]) };
+    let other = open(&mut k, wide, 4, 6);
+    let t = k.tube_of(&other).expect("a tube");
+    assert!(t.to_level < t.from_level, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
+}
+
+/// A TUBE SUPERSEDES AN UNTETHERED MOUTH: citing it, the tube opens and the
+/// old mouth closes — what was in flight through it returns, its record
+/// stays. A cycle through an untethered mouth reads as history, not tethered;
+/// a tube cannot supersede another tube or a closed mouth.
+#[test]
+fn a_tube_supersedes_an_untethered_mouth_and_its_record_stays() {
+    let mut k = founded();
+    let old = legacy(&mut k, 4, 5, turn());
+    open(&mut k, mouth(5, 6, one(), one(), [0; 4]), 5, 6);
+    let closing = open(&mut k, mouth(6, 4, one(), one(), [0; 4]), 6, 4);
+    let loops = k.mouth_loops();
+    let [l] = loops.as_slice() else { panic!("one loop: {loops:?}") };
+    assert_eq!((l.mouth, l.tethered), (closing, false), "through an untethered mouth: history");
+    let go = Handoff::Traverse { offer: Box::new(cargo(4, 5, 1)), mouth: old };
+    let Handed::Sealed { id: crossing, .. } = k.handoff(&go.sign(&reserve(4))) else { panic!("an untethered mouth still carries") };
+    let new = Mouth { tube: Some(Tube { supersedes: Some(old), ..tube() }), nonce: [7; 32], ..mouth(4, 5, turn(), one(), [0; 4]) };
+    let tube_id = open(&mut k, new.clone(), 4, 5);
+    assert_eq!(k.handoffs.mouths.get(&old).map(|h| h.state), Some(State::Returned), "closed, its record kept");
+    assert_eq!(k.handoff_read(&crossing).map(|r| r.0), Some(State::Returned), "in flight, returned");
+    let again = Mouth { nonce: [8; 32], ..new };
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(again)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
+    let not_legacy = Mouth { tube: Some(Tube { supersedes: Some(tube_id), ..tube() }), nonce: [6; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
+    assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(not_legacy)).sign(&reserve(4))), Handed::Refused(HandoffRefusal::NotSupersedable)));
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert_eq!(booted.tube_of(&tube_id), k.tube_of(&tube_id), "the tube restored");
+    assert_eq!(booted.tube_of(&old), None, "the untethered record, untethered");
 }

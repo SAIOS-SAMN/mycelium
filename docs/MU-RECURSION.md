@@ -25123,6 +25123,68 @@ paid together after it with the line's receipt at the traverse act; a
 demanded OUT fold holding the toll past the window, then defaulted and
 every part refunded together. The flat mouth's tests (78.128) stand.
 
+### 78.134 Mouths as tubes on curved space (2026-10-08, the operator's anti-flattening rule; the coordinator's rulings on (i))
+
+**A mouth is a tube, never two free frames.** Every new mouth pair is
+offered as kind 12, carrying `Tube { mass, from_r, to_r, supersedes }`; a
+mouth offered without one is refused (`Untethered`). Its frames must be
+MOTIONS OF CURVED SPACE — elements of `Spin⁺(3,1)`, the isometries of `ℍ³`
+inside `Cl(4,1)`: even, a versor, commuting with `e₊` (the axis that makes
+the sheet the sheet) and orthochronous (the pole carried to the upper
+sheet) — `is_spin_plus_31`; a parabolic slide fixing the point at infinity
+or an odd reflection is refused (`NotIsometry`). Each mouth STANDS at its
+frame's base point on its domain's sheet (`frame_base_point`, `v² = −1`),
+never at a flat `point_at`.
+
+**The throat's size is its mass** (units are mass). The builders commit the
+mass `m`, an exact rational; each end's horizon is the level set `{p : p·v
+= −c}` about its place, at hyperbolic radius `2m/R` in that end's space's
+curvature radius `R` (carried in the offer per end, each signed by its
+reserve; checked against a clear `R` in the genesis act going forward), so
+`c = cosh(2m/R)` — irrational, so the UPPER bound of the certified
+enclosure on the fixed grid `2^-64` (`sdk::physics::throat_level`): a pure
+function of `(m, R)`, the same everywhere, the throat never undersized;
+DERIVED on every read and never stored as the truth, so a throat fed or
+drawn (the next commit) widens or narrows with its mass. One throat, one
+mass: within one curvature both ends' levels are equal, and between two
+universes they differ only by their spaces' curvatures, never by the
+builders. Read by `Session::tube` (`[ACT_HANDOFF][13][mouth]`): each place,
+each level, the mass.
+
+**Loops are isometries of curved space.** The mouth gauge's coefficient is
+a MOTION ALONE (`cech::coefficient::Moved`), the chart transition `to ·
+from⁻¹` composed in path order and read projectively — no rotor slot
+pretending to be read (the orientation alphabet a mouth does not carry; the
+audit's "hard-coded rotor" corrected). A loop is TETHERED where the tubes
+alone close the same cycle to the same holonomy; a cycle through an
+untethered mouth reads as history.
+
+**Untethered mouths are history.** Those opened before tubes stay readable
+and working (kind 7's flat toll to the keeper), never closed or refused; a
+TUBE may SUPERSEDE one — the same pair, open, untethered — citing it in its
+id: at the tube's acceptance the old mouth closes, what was in flight
+through it returns and its toll is refunded, its record stays. Held in the
+handoff leaf after the tolls, beside each mouth's flat writing
+(LAYOUT-CHANGE WIRE-CHANGE).
+
+Proved (`cognition::tests::mouth`): untethered, flat-slide, odd-reflection
+and massless offers refused; a tube's places on the sheet, its ends equal in
+one curvature and its level the certified `cosh 2` never undersized; a
+flatter far space's horizon at a lower level; a cycle of tubes tethered, a
+cycle through an untethered mouth history; a tube superseding an untethered
+mouth closes it and returns what was in flight, refuses a second
+supersession and a tube as its target, and restores.
+
+**Owed, in order (the coordinator).** The throat's BANK: `⌈m⌉` μ-S escrowed
+by the keeper under the tube, FED and DRAWN by keeper acts (a draw refused
+while traversals are in flight if `m` would reach zero), and on close
+returned to the faces that fed it in proportion, NEVER retired — the
+universe is self-maintaining. Then the CORE TUBE (the operator, 2026-10-08:
+a galactic core is a larger wormhole; every black-hole core has its far face
+— the white-hole engine of the universe it bounces into; our own Big Bang the
+far face of a parent's core): genesis joins a domain to its parent's core,
+a root stating its parent face unwitnessed; no horizon without its far face.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

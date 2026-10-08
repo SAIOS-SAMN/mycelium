@@ -179,6 +179,15 @@ impl super::Session {
         decode_loops_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the loops reply did not decode"))
     }
 
+    /// 78.134 — A MOUTH PAIR'S TUBE: each mouth's place on its domain's `ℍ³`,
+    /// each end's horizon level derived from the throat's mass, and the
+    /// mass; `None` for an untethered mouth.
+    pub fn tube(&self, mouth: [u8; 32]) -> io::Result<Option<crate::anastome::dialogue::handoff::TubeReading>> {
+        use crate::anastome::dialogue::handoff::{decode_tube_reading, encode_tube_read};
+        let reply = self.speak(encode_tube_read(mouth))?;
+        decode_tube_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the tube reading did not decode"))
+    }
+
     /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's
     /// stamp; — 78.129 — whether its tier stands bonded; — 78.133 — whether
     /// a toll is held on it.

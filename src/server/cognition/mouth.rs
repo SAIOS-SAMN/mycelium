@@ -17,10 +17,10 @@
 use super::challenge::window_end;
 use super::handoff::toll_key;
 use super::Kernel;
-use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Loop, Mouth, SignedHandoff, State};
+use crate::anastome::dialogue::handoff::{Handed, Handoff, HandoffRefusal, Loop, Mouth, SignedHandoff, State, TubeReading};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::transducer::address::{put_key_bytes, take_key_bytes};
-use crate::transducer::cech::coefficient::{Coefficient, Turned};
+use crate::transducer::cech::coefficient::{Coefficient, Moved};
 use crate::transducer::cech::cover::{Gauge, Gauged};
 
 /// ONE MOUTH PAIR HELD: the pair, where it stands (offered; `Accepted` open;
@@ -312,6 +312,24 @@ impl Kernel {
                 if !m.frames_hold() {
                     return refuse(R::Degenerate);
                 }
+                // 78.134 — A MOUTH IS A TUBE between two places on curved
+                // space, never two free frames: its frames motions of `ℍ³`,
+                // its mass and curvatures positive, and a mouth it
+                // supersedes an open untethered one of the same pair.
+                let Some(t) = &m.tube else { return refuse(R::Untethered) };
+                if !t.holds() {
+                    return refuse(R::BadTube);
+                }
+                if !m.frames_curved() {
+                    return refuse(R::NotIsometry);
+                }
+                if let Some(old) = &t.supersedes {
+                    let same_pair = |o: &Mouth| (o.from_tier, o.to_tier) == (m.from_tier, m.to_tier) || (o.from_tier, o.to_tier) == (m.to_tier, m.from_tier);
+                    let open_legacy = self.handoffs.mouths.get(old).is_some_and(|h| h.mouth.tube.is_none() && h.state == State::Accepted && same_pair(&h.mouth));
+                    if !open_legacy {
+                        return refuse(R::NotSupersedable);
+                    }
+                }
                 // 78.133 — a tariff well formed, no flat toll beside it, and
                 // its shares to the keeper and its progenitor lines only.
                 if let Some(t) = &m.tariff {
@@ -367,31 +385,22 @@ impl Kernel {
                 State::Offered { until }
             }
             (_, 1) => {
+                let mut superseded = None;
                 if let Some(held) = self.handoffs.mouths.get_mut(&id) {
                     held.state = State::Accepted;
                     held.opened = Some(r.stamp.h);
+                    superseded = held.mouth.tube.as_ref().and_then(|t| t.supersedes);
+                }
+                // 78.134 — the untethered mouth a tube supersedes closes as
+                // it opens: what is in flight through it returns; its record
+                // stays, cited by the tube.
+                if let Some(old) = superseded {
+                    self.close_mouth(&old, anchor);
                 }
                 State::Accepted
             }
             (_, 8) => {
-                if let Some(held) = self.handoffs.mouths.get_mut(&id) {
-                    held.state = State::Returned;
-                }
-                // Traversals in flight through it return, their tolls back.
-                let in_flight: Vec<[u8; 32]> = self
-                    .handoffs
-                    .through
-                    .scoped()
-                    .filter(|(_, m)| **m == id)
-                    .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
-                    .filter(|k| self.handoffs.held.get(k).is_some_and(|t| matches!(t.state, State::Offered { .. })))
-                    .collect();
-                for t in in_flight {
-                    if let Some(held) = self.handoffs.held.get_mut(&t) {
-                        held.state = State::Returned;
-                    }
-                    self.settle_toll(&t, false, anchor);
-                }
+                self.close_mouth(&id, anchor);
                 State::Returned
             }
             _ => {
@@ -405,29 +414,80 @@ impl Kernel {
         Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state }
     }
 
+    /// A mouth pair CLOSED: returned, and the traversals in flight through
+    /// it returned, their tolls back.
+    fn close_mouth(&mut self, id: &[u8; 32], anchor: crate::economy::Anchor) {
+        if let Some(held) = self.handoffs.mouths.get_mut(id) {
+            held.state = State::Returned;
+        }
+        let in_flight: Vec<[u8; 32]> = self
+            .handoffs
+            .through
+            .scoped()
+            .filter(|(_, m)| *m == id)
+            .filter_map(|(k, _)| <[u8; 32]>::try_from(k.as_slice()).ok())
+            .filter(|k| self.handoffs.held.get(k).is_some_and(|t| matches!(t.state, State::Offered { .. })))
+            .collect();
+        for t in in_flight {
+            if let Some(held) = self.handoffs.held.get_mut(&t) {
+                held.state = State::Returned;
+            }
+            self.settle_toll(&t, false, anchor);
+        }
+    }
+
+    /// 78.134 — A MOUTH PAIR'S TUBE, derived and never stored: each mouth's
+    /// place on its domain's `ℍ³` (its frame's base point), each end's
+    /// horizon level from the throat's mass in that end's curvature. `None`
+    /// for an untethered mouth or one whose readings do not hold.
+    pub fn tube_of(&self, mouth: &[u8; 32]) -> Option<TubeReading> {
+        let m = &self.handoffs.mouths.get(mouth)?.mouth;
+        let t = m.tube.as_ref()?;
+        let q = |(n, d): (u64, u64)| (d > 0).then(|| num_rational::BigRational::new(n.into(), d.into()));
+        let mass = q(t.mass)?;
+        Some(TubeReading {
+            from_place: crate::transducer::cga::frame_base_point(&m.from_frame)?,
+            to_place: crate::transducer::cga::frame_base_point(&m.to_frame)?,
+            from_level: crate::client::sdk::physics::throat_level(&mass, &q(t.from_r)?)?,
+            to_level: crate::client::sdk::physics::throat_level(&mass, &q(t.to_r)?)?,
+            mass: t.mass,
+        })
+    }
+
     /// 78.128 — THE MOUTH LOOPS: the open mouth pairs as edges between
     /// domains, in the order they opened, each carrying its chart transition
-    /// `to_frame · from_frame⁻¹`; every pair that closes a cycle of domains
-    /// whose holonomy is not the identity, with that holonomy. Read, never
-    /// stored (law 12); never a refusal — curvature, recorded.
+    /// `to_frame · from_frame⁻¹` — 78.134: a motion alone, no rotor slot;
+    /// every pair that closes a cycle of domains whose holonomy is not the
+    /// identity, with that holonomy, TETHERED where the tubes alone close the
+    /// same cycle to the same holonomy (an isometry of curved space), else a
+    /// cycle through an untethered mouth, history. Read, never stored (law
+    /// 12); never a refusal — curvature, recorded.
     pub fn mouth_loops(&self) -> Vec<Loop> {
         // In the order they opened: keyed by the opening height, then the id.
         let mut open: crate::network::nerve::Keyed<([u8; 32], Mouth)> = crate::network::nerve::Keyed::new();
         for (k, m) in self.handoffs.mouths.scoped() {
             let (Some(h), Ok(id)) = (m.opened, <[u8; 32]>::try_from(k.as_slice())) else { continue };
+            if m.state != State::Accepted {
+                continue;
+            }
             let mut at = h.to_be_bytes().to_vec();
             at.extend_from_slice(&id);
             open.insert(at, (id, m.mouth.clone()));
         }
-        let mut gauge: Gauge<Turned> = Gauge::default();
+        let (mut all, mut tubes): (Gauge<Moved>, Gauge<Moved>) = (Gauge::default(), Gauge::default());
         let mut loops = Vec::new();
         for (_, (id, m)) in open.scoped() {
             let id = *id;
             let (Some(x), Some(y)) = (self.tier_domain.get(&m.from_tier), self.tier_domain.get(&m.to_tier)) else { continue };
-            let transition = Turned { rotor: crate::transducer::alphabet::Rotor::identity(), carriage: m.to_frame.geo(&m.from_frame.reverse()) };
-            if let Gauged::Obstructed(h) = gauge.edge(x, y, &transition) {
+            let transition = Moved { motion: m.to_frame.geo(&m.from_frame.reverse()) };
+            let in_tubes = match m.tube.is_some() {
+                true => Some(tubes.edge(x, y, &transition)),
+                false => None,
+            };
+            if let Gauged::Obstructed(h) = all.edge(x, y, &transition) {
                 if !h.is_identity() {
-                    loops.push(Loop { mouth: id, holonomy: h.carriage });
+                    let tethered = matches!(in_tubes, Some(Gauged::Obstructed(t)) if crate::transducer::element::same_versor(&t.motion, &h.motion));
+                    loops.push(Loop { mouth: id, holonomy: h.motion, tethered });
                 }
             }
         }

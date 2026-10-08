@@ -188,6 +188,81 @@ pub struct Mouth {
     /// 78.133 — the per-unit toll and its split; `None` for a flat-toll
     /// mouth (78.128), whose toll is all the keeper's.
     pub tariff: Option<Tariff>,
+    /// 78.134 — the TUBE this mouth pair is: its frames in `Spin⁺(3,1)`, its
+    /// throat sized by its mass. `None` for a mouth offered before tubes —
+    /// UNTETHERED, two free frames, kept as history.
+    pub tube: Option<Tube>,
+}
+
+/// 78.134 — A WORMHOLE AS A TUBE between two places on curved space (the
+/// coordinator's rulings, the operator's anti-flattening rule): each mouth
+/// stands at its frame's base point on its domain's `ℍ³`, and its horizon is
+/// the level set `{p : p·v = −c}` there. The throat's size is its MASS `m`
+/// (units are mass), and `c = cosh(2m/R)` is DERIVED per end in that end's
+/// space's curvature radius `R` — the upper bound of the certified
+/// enclosure on a fixed grid (`sdk::physics::throat_level`), never stored
+/// as the truth. One throat: one mass at both ends; the levels differ only
+/// where the two spaces' curvatures do. A tube may SUPERSEDE an untethered
+/// mouth, citing it; the old record stays.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Tube {
+    pub mass: (u64, u64),
+    pub from_r: (u64, u64),
+    pub to_r: (u64, u64),
+    pub supersedes: Option<[u8; 32]>,
+}
+
+impl Tube {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for (n, d) in [self.mass, self.from_r, self.to_r] {
+            out.extend_from_slice(&n.to_le_bytes());
+            out.extend_from_slice(&d.to_le_bytes());
+        }
+        match &self.supersedes {
+            None => out.push(0),
+            Some(id) => {
+                out.push(1);
+                out.extend_from_slice(id);
+            }
+        }
+        out
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Tube> {
+        let mut q = || -> Option<(u64, u64)> { Some((u64_at(b, p)?, u64_at(b, p)?)) };
+        let (mass, from_r, to_r) = (q()?, q()?, q()?);
+        let flag = *b.get(*p)?;
+        *p += 1;
+        let supersedes = match flag {
+            0 => None,
+            1 => Some(key32(b, p)?),
+            _ => return None,
+        };
+        Some(Tube { mass, from_r, to_r, supersedes })
+    }
+
+    /// Mass and both curvature radii positive exact rationals.
+    pub fn holds(&self) -> bool {
+        [self.mass, self.from_r, self.to_r].iter().all(|(n, d)| *n > 0 && *d > 0)
+    }
+}
+
+/// 78.134 — WHETHER A FRAME IS A MOTION OF CURVED SPACE: an element of
+/// `Spin⁺(3,1)`, the isometries of `ℍ³` inside `Cl(4,1)` — even, a versor,
+/// commuting with `e₊` (the axis that makes the sheet the sheet), and
+/// orthochronous (it carries the pole onto the UPPER sheet).
+pub fn is_spin_plus_31(f: &crate::transducer::cga::Mv) -> bool {
+    use crate::transducer::cga::{is_versor, Mv, EM, EP};
+    use num_traits::Signed;
+    if f.is_zero() || !is_versor(f) {
+        return false;
+    }
+    let even = [1u32, 3, 5].iter().all(|g| f.grade(*g).is_zero());
+    let ep = Mv::blade(EP, num_rational::BigRational::from_integer(1.into()));
+    let fixes_axis = f.geo(&ep).sub(&ep.geo(f)).is_zero();
+    let upper = crate::transducer::cga::frame_base_point(f).is_some_and(|v| v.coeff(EM).is_positive());
+    even && fixes_axis && upper
 }
 
 /// 78.133 — A MOUTH'S TARIFF (the coordinator's rulings): a wormhole carries
@@ -337,7 +412,18 @@ impl Mouth {
         if let Some(t) = &self.tariff {
             out.extend_from_slice(&t.bytes());
         }
+        // 78.134 — a tube's writing after, under its own tag, so no flat or
+        // tariffed mouth's id moves.
+        if let Some(t) = &self.tube {
+            out.extend_from_slice(b"tube");
+            out.extend_from_slice(&t.bytes());
+        }
         out
+    }
+
+    /// 78.134 — a tube's frames both motions of curved space.
+    pub fn frames_curved(&self) -> bool {
+        is_spin_plus_31(&self.from_frame) && is_spin_plus_31(&self.to_frame)
     }
 
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mouth> {
@@ -348,7 +434,7 @@ impl Mouth {
         for m in &mut toll {
             *m = u64_at(b, p)?;
         }
-        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None })
+        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None, tube: None })
     }
 
     pub fn id(&self) -> [u8; 32] {
@@ -502,6 +588,7 @@ impl Handoff {
             Handoff::ConvertIn(_) => 6,
             // 78.133 — a tariffed mouth is its own kind, so a flat mouth's
             // writing reads as it did.
+            Handoff::Mouth(m) if m.tube.is_some() => KIND_TUBE,
             Handoff::Mouth(m) if m.tariff.is_some() => KIND_TARIFFED_MOUTH,
             Handoff::Mouth(_) => 7,
             Handoff::Close { .. } => 8,
@@ -511,6 +598,21 @@ impl Handoff {
 
     fn put_body(&self, out: &mut Vec<u8>) {
         match self {
+            // 78.134 — a tube: the flat writing, the tube, then its tariff
+            // flagged.
+            Handoff::Mouth(m) if m.tube.is_some() => {
+                out.extend_from_slice(&m.legacy_bytes());
+                if let Some(t) = &m.tube {
+                    out.extend_from_slice(&t.bytes());
+                }
+                match &m.tariff {
+                    None => out.push(0),
+                    Some(t) => {
+                        out.push(1);
+                        out.extend_from_slice(&t.bytes());
+                    }
+                }
+            }
             Handoff::Offer(o) => out.extend_from_slice(&o.bytes()),
             Handoff::Accept { id } | Handoff::Refuse { id } | Handoff::Expire { id } | Handoff::Close { id } => out.extend_from_slice(id),
             Handoff::ConvertOut(c) => out.extend_from_slice(&c.bytes()),
@@ -576,11 +678,65 @@ pub enum HandoffRequest {
     /// 78.128 — the open mouth loops whose holonomy is not the identity:
     /// curvature recorded; nothing sealed.
     Loops,
+    /// 78.134 — a mouth pair's tube, read; nothing sealed.
+    TubeRead([u8; 32]),
 }
 
 const KIND_READ: u8 = 4;
 const KIND_LOOPS: u8 = 10;
 const KIND_TARIFFED_MOUTH: u8 = 11;
+const KIND_TUBE: u8 = 12;
+const KIND_TUBE_READ: u8 = 13;
+
+/// `[ACT_HANDOFF][13][mouth 32]`.
+pub fn encode_tube_read(mouth: [u8; 32]) -> Vec<u8> {
+    let mut out = vec![super::ACT_HANDOFF, KIND_TUBE_READ];
+    out.extend_from_slice(&mouth);
+    out
+}
+
+/// 78.134 — A TUBE AS READ, derived and never stored: each mouth's place on
+/// its domain's `ℍ³` (its frame's base point, `v² = −1`), each end's horizon
+/// level `c` from the throat's mass in that end's curvature, and the mass.
+/// A traversal entering at level `from_level` emerges at `to_level`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct TubeReading {
+    pub from_place: crate::transducer::cga::Mv,
+    pub to_place: crate::transducer::cga::Mv,
+    pub from_level: num_rational::BigRational,
+    pub to_level: num_rational::BigRational,
+    pub mass: (u64, u64),
+}
+
+/// `[0]` no tube; `[1][from place][to place][from level][to level][mass n d]`,
+/// each level written as a scalar multivector — the canonical rational.
+pub fn encode_tube_reading(r: Option<&TubeReading>) -> Vec<u8> {
+    let Some(r) = r else { return vec![0] };
+    let mut out = vec![1];
+    r.from_place.to_bytes(&mut out);
+    r.to_place.to_bytes(&mut out);
+    crate::transducer::cga::Mv::scalar(r.from_level.clone()).to_bytes(&mut out);
+    crate::transducer::cga::Mv::scalar(r.to_level.clone()).to_bytes(&mut out);
+    out.extend_from_slice(&r.mass.0.to_le_bytes());
+    out.extend_from_slice(&r.mass.1.to_le_bytes());
+    out
+}
+
+pub fn decode_tube_reading(b: &[u8]) -> Option<Option<TubeReading>> {
+    let (flag, rest) = b.split_first()?;
+    match flag {
+        0 => return rest.is_empty().then_some(None),
+        1 => {}
+        _ => return None,
+    }
+    let mut p = 0;
+    let from_place = crate::transducer::cga::Mv::from_bytes(rest, &mut p)?;
+    let to_place = crate::transducer::cga::Mv::from_bytes(rest, &mut p)?;
+    let from_level = crate::transducer::cga::Mv::from_bytes(rest, &mut p)?.scalar_part();
+    let to_level = crate::transducer::cga::Mv::from_bytes(rest, &mut p)?.scalar_part();
+    let mass = (u64_at(rest, &mut p)?, u64_at(rest, &mut p)?);
+    (p == rest.len()).then_some(Some(TubeReading { from_place, to_place, from_level, to_level, mass }))
+}
 
 /// `[ACT_HANDOFF][10]`.
 pub fn encode_loops_read() -> Vec<u8> {
@@ -594,15 +750,20 @@ pub fn encode_loops_read() -> Vec<u8> {
 pub struct Loop {
     pub mouth: [u8; 32],
     pub holonomy: crate::transducer::cga::Mv,
+    /// 78.134 — whether every mouth of the cycle is a tube; a cycle through
+    /// an untethered mouth (two free frames) reads its holonomy as history,
+    /// not as an isometry of curved space.
+    pub tethered: bool,
 }
 
-/// `[count][(mouth 32, holonomy) …]`.
+/// `[count][(mouth 32, holonomy, tethered u8) …]`.
 pub fn encode_loops_reply(loops: &[Loop]) -> Vec<u8> {
     let mut out = Vec::new();
     crate::transducer::address::put_key_count(&mut out, loops.len());
     for l in loops {
         out.extend_from_slice(&l.mouth);
         l.holonomy.to_bytes(&mut out);
+        out.push(u8::from(l.tethered));
     }
     out
 }
@@ -613,7 +774,14 @@ pub fn decode_loops_reply(b: &[u8]) -> Option<Vec<Loop>> {
     let loops = (0..n)
         .map(|_| {
             let mouth = key32(b, &mut p)?;
-            Some(Loop { mouth, holonomy: crate::transducer::cga::Mv::from_bytes(b, &mut p)? })
+            let holonomy = crate::transducer::cga::Mv::from_bytes(b, &mut p)?;
+            let tethered = match *b.get(p)? {
+                0 => false,
+                1 => true,
+                _ => return None,
+            };
+            p += 1;
+            Some(Loop { mouth, holonomy, tethered })
         })
         .collect::<Option<Vec<_>>>()?;
     (p == b.len()).then_some(loops)
@@ -649,6 +817,7 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
     let request = match *kind {
         KIND_READ => HandoffRequest::Read(id(b, &mut p)?),
         KIND_LOOPS => HandoffRequest::Loops,
+        KIND_TUBE_READ => HandoffRequest::TubeRead(id(b, &mut p)?),
         k => {
             let who = id(b, &mut p)?;
             let handoff = match k {
@@ -662,6 +831,18 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                 KIND_TARIFFED_MOUTH => {
                     let mut m = Mouth::take(b, &mut p)?;
                     m.tariff = Some(Tariff::take(b, &mut p)?);
+                    Handoff::Mouth(Box::new(m))
+                }
+                KIND_TUBE => {
+                    let mut m = Mouth::take(b, &mut p)?;
+                    m.tube = Some(Tube::take(b, &mut p)?);
+                    let flag = *b.get(p)?;
+                    p += 1;
+                    m.tariff = match flag {
+                        0 => None,
+                        1 => Some(Tariff::take(b, &mut p)?),
+                        _ => return None,
+                    };
                     Handoff::Mouth(Box::new(m))
                 }
                 8 => Handoff::Close { id: id(b, &mut p)? },
@@ -723,6 +904,18 @@ pub enum HandoffRefusal {
     /// 78.133 — a share to a key that is neither the keeper nor one of its
     /// progenitor lines.
     NotALine,
+    /// 78.134 — a tube's frame is not a motion of curved space (not in
+    /// `Spin⁺(3,1)`).
+    NotIsometry,
+    /// 78.134 — a tube's mass or a curvature radius not a positive exact
+    /// rational.
+    BadTube,
+    /// 78.134 — a superseding tube citing no mouth, a mouth already a tube
+    /// or closed, or another pair's.
+    NotSupersedable,
+    /// 78.134 — a mouth offered without its tube: two free frames, refused
+    /// (those offered before tubes stand as history).
+    Untethered,
 }
 
 /// THE COURT'S ANSWER.
@@ -794,6 +987,10 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
             },
         ],
         HandoffRefusal::NotALine => [22, 0],
+        HandoffRefusal::NotIsometry => [23, 0],
+        HandoffRefusal::BadTube => [24, 0],
+        HandoffRefusal::NotSupersedable => [25, 0],
+        HandoffRefusal::Untethered => [26, 0],
     }
 }
 
@@ -840,6 +1037,10 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
             _ => return None,
         }),
         22 => HandoffRefusal::NotALine,
+        23 => HandoffRefusal::NotIsometry,
+        24 => HandoffRefusal::BadTube,
+        25 => HandoffRefusal::NotSupersedable,
+        26 => HandoffRefusal::Untethered,
         _ => return None,
     })
 }

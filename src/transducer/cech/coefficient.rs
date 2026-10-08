@@ -275,3 +275,41 @@ impl Coefficient for Turned {
         Some(Turned { rotor, carriage })
     }
 }
+
+/// 78.134 — A MOTION ALONE: the coefficient of an edge that carries a
+/// transition of space and no orientation letter — a wormhole's chart
+/// transition `to · from⁻¹`, in `Spin⁺(3,1)` where its frames are. Composed
+/// in path order by the geometric product, read projectively; no rotor slot
+/// pretends to be read where none is held.
+#[derive(Clone, Debug)]
+pub struct Moved {
+    pub motion: Versor,
+}
+
+impl Coefficient for Moved {
+    fn identity() -> Self {
+        Moved { motion: crate::transducer::element::identity_versor() }
+    }
+
+    fn compose(&self, then: &Self) -> Option<Self> {
+        Some(Moved { motion: self.motion.geo(&then.motion) })
+    }
+
+    /// The reverse, the inverse up to the weight the projective reading
+    /// absorbs.
+    fn inverse(&self) -> Option<Self> {
+        Some(Moved { motion: self.motion.reverse() })
+    }
+
+    fn is_identity(&self) -> bool {
+        crate::transducer::element::same_versor(&self.motion, &crate::transducer::element::identity_versor())
+    }
+
+    fn put_canonical(&self, out: &mut Vec<u8>) {
+        self.motion.put_canonical(out);
+    }
+
+    fn take_canonical(b: &[u8], p: &mut usize) -> Option<Self> {
+        Some(Moved { motion: Versor::from_bytes(b, p)? })
+    }
+}

@@ -161,6 +161,24 @@ pub fn horizon(centre: &[Q], m: &Q) -> Mv {
     sphere_at(centre, &(int(4) * m * m))
 }
 
+/// 78.134 — the grid a throat's level is fixed on: `2^-64`.
+pub const THROAT_GRID: u32 = 64;
+
+/// 78.134 — A THROAT'S HORIZON LEVEL on curved space: the mouth's horizon
+/// is `{p : p·v = −c}` about its place `v` on `ℍ³`, at hyperbolic radius `r
+/// = 2m/R` — the mass `m` (G = c = 1) over the space's curvature radius `R`
+/// — so `c = cosh r`. Irrational for rational `r`, so it is the UPPER bound
+/// of the certified enclosure on the fixed grid `2^-THROAT_GRID`: a pure
+/// function of `(m, R)`, the same everywhere, the throat never undersized.
+/// `None` for a non-positive mass or radius.
+pub fn throat_level(m: &Q, curvature: &Q) -> Option<Q> {
+    if !m.is_positive() || !curvature.is_positive() {
+        return None;
+    }
+    let r = int(2) * m / curvature;
+    Some(super::certified::cosh(&Encl::exact(r), THROAT_GRID).hi)
+}
+
 /// INVERSION IN A SPHERE: `σXσ⁻¹` — distance `d` from the centre goes to
 /// `r²/d` on the same ray, the sphere is fixed pointwise, and the map is its
 /// own inverse (up to the homogeneous scale a conformal point carries).
