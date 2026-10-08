@@ -10,6 +10,7 @@
 
 use mycelium::cognition::Kernel;
 use std::ops::{Deref, DerefMut};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard, TryLockError};
 
 /// One site's counts: how often it took the lock, how often it had to wait,
@@ -27,6 +28,30 @@ struct Book {
 }
 
 static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, sites: Vec::new() });
+
+/// Threads blocked on the kernel through `held!` right now, and how many
+/// such waits have been served since boot.
+static WAITING: AtomicU64 = AtomicU64::new(0);
+static SERVED: AtomicU64 = AtomicU64::new(0);
+
+/// THE COURT LETS THE QUEUE IN BEFORE IT TAKES THE KERNEL AGAIN. The court
+/// loop re-took the kernel the instant it let go — 14 806 times in five
+/// minutes on hypha c — and a std mutex is not fair, so a reflex worker
+/// woken by the release lost the race every time: the workers starved, the
+/// pool filled, and the door deferred nearly every act (2026-10-08). Each
+/// wait queued when this is called is served once before it returns; one
+/// that queues after waits its turn behind the next stroke. Counts, no
+/// clock.
+pub(crate) fn yield_to_waiters() {
+    let queued = WAITING.load(Ordering::Acquire);
+    if queued == 0 {
+        return;
+    }
+    let until = SERVED.load(Ordering::Acquire).saturating_add(queued);
+    while SERVED.load(Ordering::Acquire) < until && WAITING.load(Ordering::Acquire) > 0 {
+        std::thread::yield_now();
+    }
+}
 
 fn with_site(book: &mut Book, at: &'static str, f: impl FnOnce(&mut Site)) {
     if let Some(s) = book.sites.iter_mut().find(|s| s.at == at) {
@@ -82,7 +107,11 @@ pub(crate) fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a
                     });
                 }
             }
-            (m.lock().map_err(|_| ())?, true)
+            WAITING.fetch_add(1, Ordering::AcqRel);
+            let g = m.lock();
+            WAITING.fetch_sub(1, Ordering::AcqRel);
+            SERVED.fetch_add(1, Ordering::AcqRel);
+            (g.map_err(|_| ())?, true)
         }
     };
     if let Ok(mut b) = BOOK.lock() {

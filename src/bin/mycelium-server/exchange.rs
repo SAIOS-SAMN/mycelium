@@ -300,6 +300,7 @@ impl Exchange {
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
         loop {
             std::thread::yield_now();
+            crate::held::yield_to_waiters();
             if let Ok(mut k) = crate::held::held!(kernel) {
                 k.court_stroke();
                 // A question the observer left while this stroke held the
