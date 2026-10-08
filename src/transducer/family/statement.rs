@@ -42,16 +42,8 @@ pub struct Spoken {
     pub painted: Vec<(i64, i64, u8)>,
 }
 
-/// ONE BACKGROUND COMPONENT: its cells, whether it reaches the grid's
-/// border, and the bodies its cells' edge-neighbours belong to.
-struct Hollow {
-    cells: Vec<(usize, usize)>,
-    border: bool,
-    rim: Vec<usize>,
-}
-
-/// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells, the
-/// body each cell belongs to, and the background's components.
+/// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells and
+/// the body each cell belongs to.
 struct Seen<'a> {
     x: &'a Grid,
     bodies: &'a [Body],
@@ -59,7 +51,6 @@ struct Seen<'a> {
     cols: usize,
     cells: Vec<Vec<(usize, usize, u8)>>,
     owner: Vec<Vec<Option<usize>>>,
-    hollows: Vec<Hollow>,
 }
 
 const EDGES: [(i64, i64); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
@@ -115,9 +106,7 @@ impl<'a> Seen<'a> {
             }
             cells.push(mine);
         }
-        let mut seen = Seen { x, bodies, rows, cols, cells, owner, hollows: Vec::new() };
-        seen.hollows = seen.read_hollows();
-        seen
+        Seen { x, bodies, rows, cols, cells, owner }
     }
 
     fn at(&self, r: usize, c: usize, dr: i64, dc: i64) -> Option<(usize, usize)> {
@@ -137,54 +126,41 @@ impl<'a> Seen<'a> {
         self.owner.get(r).and_then(|row| row.get(c)).copied().flatten()
     }
 
-    /// The background's edge-connected components, each with its border
-    /// reading and the bodies on its rim.
-    fn read_hollows(&self) -> Vec<Hollow> {
-        let mut done = vec![vec![false; self.cols]; self.rows];
-        let mut out = Vec::new();
+    /// THE BACKGROUND CELLS THE BODIES OF `set` ENCLOSE between them: every
+    /// background cell no edge-connected path reaches from the grid's border
+    /// without crossing a cell of a body of `set`. A body standing inside the
+    /// enclosure is inside it, not a breach of it.
+    fn enclosed(&self, set: &[usize]) -> Vec<(usize, usize)> {
+        let wall = |r: usize, c: usize| self.owner_at(r, c).is_some_and(|o| set.contains(&o));
+        let mut reached = vec![vec![false; self.cols]; self.rows];
+        let mut stack: Vec<(usize, usize)> = Vec::new();
         for r in 0..self.rows {
             for c in 0..self.cols {
-                if self.hue(r, c) != 0 || done[r][c] {
-                    continue;
+                let edge = r == 0 || c == 0 || r + 1 == self.rows || c + 1 == self.cols;
+                if edge && !wall(r, c) {
+                    reached[r][c] = true;
+                    stack.push((r, c));
                 }
-                let mut h = Hollow { cells: Vec::new(), border: false, rim: Vec::new() };
-                let mut stack = vec![(r, c)];
-                done[r][c] = true;
-                while let Some((a, b)) = stack.pop() {
-                    h.cells.push((a, b));
-                    for (dr, dc) in EDGES {
-                        let Some((na, nb)) = self.at(a, b, dr, dc) else {
-                            h.border = true;
-                            continue;
-                        };
-                        match self.owner_at(na, nb) {
-                            Some(o) => {
-                                if !h.rim.contains(&o) {
-                                    h.rim.push(o);
-                                }
-                            }
-                            None if self.hue(na, nb) == 0 && !done[na][nb] => {
-                                done[na][nb] = true;
-                                stack.push((na, nb));
-                            }
-                            None => {}
-                        }
-                    }
+            }
+        }
+        while let Some((a, b)) = stack.pop() {
+            for (dr, dc) in EDGES {
+                let Some((na, nb)) = self.at(a, b, dr, dc) else { continue };
+                if !reached[na][nb] && !wall(na, nb) {
+                    reached[na][nb] = true;
+                    stack.push((na, nb));
                 }
-                h.rim.sort_unstable();
-                out.push(h);
+            }
+        }
+        let mut out = Vec::new();
+        for (r, row) in reached.iter().enumerate() {
+            for (c, &got) in row.iter().enumerate() {
+                if !got && self.hue(r, c) == 0 {
+                    out.push((r, c));
+                }
             }
         }
         out
-    }
-
-    /// The background cells the bodies of `set` enclose between them.
-    fn enclosed(&self, set: &[usize]) -> Vec<(usize, usize)> {
-        self.hollows
-            .iter()
-            .filter(|h| !h.border && !h.rim.is_empty() && h.rim.iter().all(|o| set.contains(o)))
-            .flat_map(|h| h.cells.iter().copied())
-            .collect()
     }
 
     /// The other bodies `b` touches.

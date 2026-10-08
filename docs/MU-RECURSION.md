@@ -25555,6 +25555,63 @@ composed with the 180° turn is a versor whose difference from the turn is
 not zero, and is refused where the plain turn is solved; the extracted
 two-pair rule refused I as it stands, and solved once crossed.
 
+### 78.143 The rule language grows: select, region, create, count, compare
+
+The court's form language gains CLAUSES (`sentence/form/clause.rs`): each a
+typed selection over the perceived bodies' own exact coordinates and an act
+on it. A court change: the clauses ride the form's ADDRESS after the
+remainder's coordinates — only where a form has any, so every other address
+is unchanged byte for byte — `from_address` reads them back, `speak_on_scene`
+speaks them (`family/statement.rs`), and the judge replays them on every pair.
+
+- SELECT — `Pred`: all, a hue carried, a chart (the class up to moduli), a
+  count, a rank, contact with another selection, and `Not`/`And`/`Any`
+  (`And` narrows the domain, so a rank inside it ranks what came before).
+  Coordinates (`Coord`): shell, height, width, top/left/bottom/right, hues,
+  contacts (corner contact), enclosed cells, tally of its hue, peers on its
+  chart, the dual sphere's radius, and `Lane` — named only to be refused.
+- REGION — `Interior` (background no border path reaches without crossing a
+  selected body; a body inside stays inside), `Halo` (contact neighbourhood),
+  `Extent`; a hue step on a region fills it with the hue `0` is sent to.
+- CREATE — `Extend` a line from each selected cell along a ray to the border
+  or to contact (contact read on the canvas as it stood before the clause, so
+  no line stops another), `Copy` the one template body centre on centre onto
+  each selected seed; carriage by a `Cl(4,1)(ℚ)` versor about the grid or
+  about each body (`InPlace`), every landing exact on a cell centre.
+- COUNT and COMPARE (Concordance 1.10) — `Cmp` against an integer or AS MANY
+  AS another selection selects; `Rank` at the `place`-th distinct value in a
+  named `Order`, ties `Hold`, `Refuse`, or `Then` a further named coordinate.
+- SIZE — `Crop` to the one selected body (or its interior), `Scale` up or
+  down by an integer (a non-uniform block is no cell).
+
+Refused by name at the court (`REFUSE_RULE_*`, kind I) and at the seam
+(`NoRule::Unstated`): a tie the order does not name, a coordinate that is
+not exact (a radius no rational, a μ lane), no single body for a crop or a
+template, a landing off the lattice, a line with no ray. The SDK's `Step`
+gains `Select`, `Region`, `InPlace`, `Create`, `Crop`, `Scale`; a rule with
+none is the one word vertex of 78.142. The seam refuses clauses that do not
+close their train (`NotClosed`) before the mint.
+
+Proved (`client::sdk::tests::rule_language`, real ARC-AGI-2 training tasks,
+minted over their train, SOLVED by `Kernel::judge_solve` on their own test
+pair, `would_judge` agreeing): 00d62c1b and a5313dff (fill the enclosed),
+178fcbfb (extend to the border), 88a10436 (copy onto the seed), 1cf80156
+(crop), be94b721 (crop the largest), 6e82a1ae and d2abd087 (recolour by exact
+size), 08ed6ac7 (rank by height), a61f2674 (tallest, shortest, the rest
+erased), 42a50994 (erase the lone cells touching nothing), 00dbd492 (fill
+each interior by its frame's width); refused by name: an unnamed tie and a
+non-exact coordinate, at the seam and at the court; a crop of two bodies.
+Read: c59eb873's scale speaks every pair exactly, but a scale alone is a
+refinement the economy measures at zero μ and mints no word.
+
+Observed (a Python mirror of the clause semantics with a fixed catalogue of
+single-idea rules, on the first 40 training tasks by name): 3 close train
+and test in the new language (00d62c1b, 00dbd492, 08ed6ac7), 1 in the old
+(0d3d703e, a hue map) — a lower bound, the catalogue holds no compositions.
+Still owed: hue-wise segmentation (touching bodies of two hues are one body,
+which keeps 23b5c85d out), counted output sizes, and a target hue named by
+a rank (the most frequent colour as the paint).
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

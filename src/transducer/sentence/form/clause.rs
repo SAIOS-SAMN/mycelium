@@ -135,8 +135,8 @@ impl Pred {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Region {
     /// The background cells the selection's boundary encloses: every
-    /// background component that reaches no border and whose every
-    /// neighbour is a cell of a selected body.
+    /// background cell no edge-connected path reaches from the border
+    /// without crossing a selected body (a body inside stays inside).
     Interior,
     /// The contact neighbourhood: background cells touching a selected
     /// body, corners included.
