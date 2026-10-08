@@ -100,6 +100,12 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
         assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     }
     assert_eq!(decode_handoff_request(&encode_tube_read([3u8; 32])), Some(HandoffRequest::TubeRead([3u8; 32])));
+    // 78.135 — the throat's bank acts, read back whole.
+    for h in [Handoff::Feed { mouth: [3u8; 32], mu_s: 9, seq: 2 }, Handoff::Draw { mouth: [3u8; 32], mu_s: 1, seq: 3 }] {
+        assert_eq!(h.id(), [3u8; 32], "a bank act names its mouth");
+        let signed = h.sign(&key);
+        assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
+    }
     let reading = TubeReading {
         from_place: crate::transducer::cga::hyperboloid_pole(),
         to_place: crate::transducer::cga::hyperboloid_pole(),
@@ -134,6 +140,8 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
         HandoffRefusal::BadTube,
         HandoffRefusal::NotSupersedable,
         HandoffRefusal::Untethered,
+        HandoffRefusal::Starved,
+        HandoffRefusal::Stale,
     ] {
         assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));
     }

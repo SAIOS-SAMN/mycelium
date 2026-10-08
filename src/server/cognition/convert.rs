@@ -423,7 +423,12 @@ impl Kernel {
                 self.mark_persist();
                 Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state }
             }
-            Handoff::Offer(_) | Handoff::Mouth(_) | Handoff::Close { .. } | Handoff::Traverse { .. } => refuse(R::Unknown),
+            Handoff::Offer(_)
+            | Handoff::Mouth(_)
+            | Handoff::Close { .. }
+            | Handoff::Traverse { .. }
+            | Handoff::Feed { .. }
+            | Handoff::Draw { .. } => refuse(R::Unknown),
         }
     }
 

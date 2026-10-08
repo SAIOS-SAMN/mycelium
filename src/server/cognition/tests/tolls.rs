@@ -78,6 +78,9 @@ fn mouth(t: Tariff) -> Mouth {
 }
 
 fn open(k: &mut Kernel, m: Mouth) -> [u8; 32] {
+    // The throat's bank, funded first so balances read as before.
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&reserve(4)), [1, 0, 0, 0], anchor);
     let id = m.id();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(4))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(5))), Handed::Sealed { state: State::Accepted, .. }));
@@ -171,7 +174,8 @@ fn a_tariffed_mouth_splits_only_to_its_keeper_and_its_lines() {
     assert_eq!(offer(&mut k, flat), Some(HandoffRefusal::Untariffed(Untariffed::Flat)), "a mouth's toll is one law");
     let partial = Tariff { split: split(vec![(vk(&line()), (1, 3)), (vk(&reserve(4)), (1, 3))]), ..tariff() };
     assert_eq!(offer(&mut k, mouth(partial)), Some(HandoffRefusal::Untariffed(Untariffed::NotWhole)));
-    assert_eq!(offer(&mut k, mouth(tariff())), None, "the keeper and its line");
+    fund(&mut k, vk(&reserve(4)), [1, 0, 0, 0]);
+    assert_eq!(offer(&mut k, mouth(tariff())), None, "the keeper and its line, its throat banked");
 }
 
 /// EVERY PASSAGE PAYS ON ITS OWN LANES, FLOORED: 7 of mass is ⌊10.5⌋ = 10

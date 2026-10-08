@@ -70,7 +70,12 @@ fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
     }
 }
 
+/// The pair offered by `a`'s reserve — funded with the throat's bank first,
+/// so balances read as before — and accepted by `b`'s.
 fn open(k: &mut Kernel, m: Mouth, a: u8, b: u8) -> [u8; 32] {
+    let bank = m.tube.as_ref().map_or(0, |t| t.mass.0.div_ceil(t.mass.1));
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&reserve(a)), [bank, 0, 0, 0], anchor);
     let id = m.id();
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(m)).sign(&reserve(a))), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id }.sign(&reserve(b))), Handed::Sealed { state: State::Accepted, .. }));
@@ -145,7 +150,7 @@ fn a_mouth_closed_returns_what_is_in_flight() {
     assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 3);
     assert!(matches!(k.handoff(&Handoff::Close { id }.sign(&reserve(5))), Handed::Sealed { state: State::Returned, .. }), "either builder");
     assert_eq!(k.handoff_read(&crossing), Some((State::Returned, false, false)), "in flight, returned");
-    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 5, "its toll refunded");
+    assert_eq!(k.treasury.balance_mu(&vk(&reserve(4)))[0], 6, "its toll refunded, and the throat's bank back to its face");
     let again = Handoff::Traverse { offer: Box::new(cargo(4, 5, 2)), mouth: id };
     assert!(matches!(k.handoff(&again.sign(&reserve(4))), Handed::Refused(HandoffRefusal::NoMouth)));
 }
@@ -221,6 +226,52 @@ fn a_mouth_is_a_tube_between_places_on_curved_space() {
     let other = open(&mut k, wide, 4, 6);
     let t = k.tube_of(&other).expect("a tube");
     assert!(t.to_level < t.from_level, "the flatter space's horizon sits at a lower level: the curvatures differ, not the builders");
+}
+
+/// A THROAT IS BANKED, FED, DRAWN AND RETURNED — NEVER RETIRED: the
+/// offerer banks `⌈m⌉` μ-S (refunded where the offer is refused); only the
+/// keeper feeds and draws, in turn; the throat widens as it is fed; a draw
+/// returns to each face in proportion and never leaves it massless; closed,
+/// every face gets back what it holds, and no μ is lost.
+#[test]
+fn a_throat_is_banked_fed_drawn_and_returned_never_retired() {
+    use crate::server::cognition::mouth::throat_key;
+    let mut k = founded();
+    let (offerer, keeper) = (vk(&reserve(4)), vk(&reserve(5)));
+    let refused = Mouth { tube: Some(Tube { mass: (5, 2), ..tube() }), nonce: [3; 32], ..mouth(4, 5, one(), one(), [0; 4]) };
+    let anchor = k.anchor();
+    k.treasury.genesis(offerer, [3, 0, 0, 0], anchor);
+    let Handed::Sealed { id: no, .. } = k.handoff(&Handoff::Mouth(Box::new(refused)).sign(&reserve(4))) else { panic!() };
+    assert_eq!(k.treasury.balance_mu(&offerer)[0], 0, "⌈5/2⌉ = 3 banked at the offer");
+    assert!(matches!(k.handoff(&Handoff::Refuse { id: no }.sign(&reserve(5))), Handed::Sealed { .. }));
+    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3, "refused: the bank back to its face");
+    let kept_by_far = Mouth { keeper, tube: Some(Tube { mass: (5, 2), ..tube() }), ..mouth(4, 5, one(), one(), [0; 4]) };
+    let id = open(&mut k, kept_by_far, 4, 5);
+    assert_eq!(k.treasury.held_of(&throat_key(&id, &offerer)).map(|h| h.mu[0]), Some(3));
+    let before = k.tube_of(&id).expect("a tube").from_level;
+    k.treasury.genesis(keeper, [4, 0, 0, 0], anchor);
+    let act = |k: &mut Kernel, h: Handoff, by: &SigningKey| k.handoff(&h.sign(by));
+    assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(4)), Handed::Refused(HandoffRefusal::NotTheTier), "the keeper feeds");
+    assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Stale));
+    assert!(matches!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(5)), Handed::Sealed { .. }));
+    assert_eq!(act(&mut k, Handoff::Feed { mouth: id, mu_s: 4, seq: 0 }, &reserve(5)), Handed::Refused(HandoffRefusal::Stale), "a resend is no second feed");
+    let fed = k.tube_of(&id).expect("a tube");
+    assert_eq!(fed.mass, (13, 2), "5/2 + 4");
+    assert!(fed.from_level > before, "fed, the throat widens");
+    let mut booted = Kernel::new();
+    assert!(booted.restore(&k.snapshot()), "restores");
+    assert_eq!(booted.tube_of(&id), Some(fed), "the bank restored");
+    assert_eq!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 7, seq: 1 }, &reserve(5)), Handed::Refused(HandoffRefusal::Starved), "never massless");
+    assert!(matches!(act(&mut k, Handoff::Draw { mouth: id, mu_s: 6, seq: 1 }, &reserve(5)), Handed::Sealed { .. }));
+    // 6 of 7 in proportion to 3 : 4 — ⌊18/7⌋ = 2 and ⌊24/7⌋ = 3, the rest to
+    // the keeper. The offerer holds 3 beside its 3 banked (`open` funds it).
+    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3 + 2);
+    assert_eq!(k.treasury.balance_mu(&keeper)[0], 4);
+    assert_eq!(k.tube_of(&id).map(|t| t.mass), Some((1, 2)), "13/2 − 6");
+    assert!(matches!(act(&mut k, Handoff::Close { id }, &reserve(4)), Handed::Sealed { state: State::Returned, .. }));
+    assert_eq!(k.treasury.balance_mu(&offerer)[0], 3 + 3, "closed: every face its hold");
+    assert_eq!(k.treasury.balance_mu(&keeper)[0], 4, "no μ retired: 3 + 4 in, 3 + 4 out");
+    assert_eq!(k.tube_of(&id).map(|t| t.mass), Some((5, 2)), "the record keeps its committed mass, its bank let go");
 }
 
 /// A TUBE SUPERSEDES AN UNTETHERED MOUTH: citing it, the tube opens and the

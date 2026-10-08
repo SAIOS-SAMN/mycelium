@@ -135,7 +135,183 @@ impl TollHeld {
     }
 }
 
+/// 78.135 — A THROAT'S BANK (the coordinator's rulings): the μ-S holding a
+/// tube open, held per FACE THAT FED IT under `throat_key(mouth, feeder)` —
+/// the offerer's `⌈m⌉` at the offer, the keeper's feeds after — the net
+/// change its feeds and draws made to the mass, and its count of bank acts.
+/// Drawn, each feeder gets back its share in proportion; closed, each its
+/// whole hold — never retired: the universe is self-maintaining.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub(crate) struct Throat {
+    pub(crate) feeders: Vec<[u8; 32]>,
+    pub(crate) adjusted: i128,
+    pub(crate) acts: u64,
+}
+
+impl Throat {
+    pub(crate) fn put(&self, v: &mut Vec<u8>) {
+        crate::transducer::address::put_key_count(v, self.feeders.len());
+        for f in &self.feeders {
+            v.extend_from_slice(f);
+        }
+        v.extend_from_slice(&self.adjusted.to_le_bytes());
+        v.extend_from_slice(&self.acts.to_le_bytes());
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Throat> {
+        let feeders = (0..crate::transducer::address::take_key_count(b, p)?)
+            .map(|_| {
+                let f: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                *p += 32;
+                Some(f)
+            })
+            .collect::<Option<Vec<_>>>()?;
+        let adjusted = i128::from_le_bytes(b.get(*p..*p + 16)?.try_into().ok()?);
+        *p += 16;
+        let acts = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+        *p += 8;
+        Some(Throat { feeders, adjusted, acts })
+    }
+}
+
+/// The escrow key one face's share of a throat's bank is held under.
+pub(crate) fn throat_key(mouth: &[u8; 32], feeder: &[u8; 32]) -> Vec<u8> {
+    let mut k = b"throat".to_vec();
+    k.extend_from_slice(mouth);
+    k.extend_from_slice(feeder);
+    k
+}
+
+/// `⌈n/d⌉` for a positive exact mass, in μ-S.
+fn ceil_mass((n, d): (u64, u64)) -> Option<u64> {
+    (d > 0).then(|| n.div_ceil(d))
+}
+
 impl Kernel {
+    /// 78.135 — A TUBE'S MASS NOW: its committed mass, plus what its feeds
+    /// added and less what its draws took.
+    pub(crate) fn mass_now(&self, mouth: &[u8; 32]) -> Option<num_rational::BigRational> {
+        let t = self.handoffs.mouths.get(mouth)?.mouth.tube.clone()?;
+        let (n, d) = t.mass;
+        if d == 0 {
+            return None;
+        }
+        let adjusted = self.handoffs.throats.get(mouth).map_or(0, |th| th.adjusted);
+        Some(num_rational::BigRational::new(n.into(), d.into()) + num_rational::BigRational::from_integer(adjusted.into()))
+    }
+
+    /// 78.135 — the throat's bank per feeder, μ-S held now.
+    fn bank_of(&self, mouth: &[u8; 32]) -> Vec<([u8; 32], u64)> {
+        let Some(th) = self.handoffs.throats.get(mouth) else { return Vec::new() };
+        th.feeders.iter().filter_map(|f| Some((*f, self.treasury.held_of(&throat_key(mouth, f))?.mu[0]))).collect()
+    }
+
+    /// 78.135 — A THROAT EMPTIED: every face's hold back to it, whole; the
+    /// bank's record let go.
+    fn empty_throat(&mut self, mouth: &[u8; 32], anchor: crate::economy::Anchor) {
+        let Some(th) = self.handoffs.throats.remove(mouth) else { return };
+        for f in &th.feeders {
+            let _ = self.treasury.refund_held(&throat_key(mouth, f), anchor);
+        }
+    }
+
+    /// 78.135 — ONE FACE'S SHARE SET to `mu_s` μ-S: its hold returned and
+    /// held again at the new amount (none at zero). False where the face
+    /// cannot hold it.
+    fn set_share(&mut self, mouth: &[u8; 32], feeder: &[u8; 32], mu_s: u64, anchor: crate::economy::Anchor) -> bool {
+        let key = throat_key(mouth, feeder);
+        if self.treasury.held_of(&key).is_some() && self.treasury.refund_held(&key, anchor).is_err() {
+            return false;
+        }
+        mu_s == 0 || self.treasury.hold(*feeder, &key, [mu_s, 0, 0, 0], anchor).is_ok()
+    }
+
+    /// 78.135 — A THROAT FED OR DRAWN by its keeper: in turn (`seq`), on an
+    /// open tube. Fed, the keeper banks `mu_s` more μ-S and the mass grows;
+    /// drawn, `mu_s` of the bank returns to its faces in proportion to what
+    /// each holds — each its floor, the keeper (or the first face) the rest —
+    /// and the mass shrinks, never to zero.
+    pub(crate) fn bank_act(&mut self, h: &SignedHandoff) -> Handed {
+        use HandoffRefusal as R;
+        let refuse = Handed::Refused;
+        let (mouth, mu_s, seq, feeding) = match h.handoff {
+            Handoff::Feed { mouth, mu_s, seq } => (mouth, mu_s, seq, true),
+            Handoff::Draw { mouth, mu_s, seq } => (mouth, mu_s, seq, false),
+            _ => return refuse(R::Unknown),
+        };
+        let Some(held) = self.handoffs.mouths.get(&mouth).cloned() else { return refuse(R::Unknown) };
+        if held.mouth.tube.is_none() {
+            return refuse(R::Untethered);
+        }
+        if h.who != held.mouth.keeper {
+            return refuse(R::NotTheTier);
+        }
+        if held.state != State::Accepted {
+            return refuse(R::NoMouth);
+        }
+        if self.handoffs.throats.get(&mouth).map_or(0, |t| t.acts) != seq {
+            return refuse(R::Stale);
+        }
+        if mu_s == 0 {
+            return refuse(R::Starved);
+        }
+        let bank = self.bank_of(&mouth);
+        let total: u128 = bank.iter().map(|(_, m)| u128::from(*m)).sum();
+        let mut parts: Vec<([u8; 32], u64)> = Vec::new();
+        if feeding {
+            let short = crate::economy::shortfall(&[mu_s, 0, 0, 0], &self.treasury.balance_mu(&h.who));
+            if !crate::economy::lanes_short(&short).is_empty() {
+                return refuse(R::HolderShort);
+            }
+        } else {
+            // Never to zero: the mass after must stay positive.
+            let after = self.mass_now(&mouth).map(|m| m - num_rational::BigRational::from_integer(mu_s.into()));
+            if !after.is_some_and(|m| num_traits::Signed::is_positive(&m)) || u128::from(mu_s) > total || total == 0 {
+                return refuse(R::Starved);
+            }
+            let mut rest = mu_s;
+            for (f, have) in &bank {
+                let share = u64::try_from(u128::from(mu_s) * u128::from(*have) / total).ok();
+                let Some(share) = share else { return refuse(R::Starved) };
+                rest -= share;
+                parts.push((*f, share));
+            }
+            // The rest to the keeper where it fed and has room, else to the
+            // first face with room — every part within its face's hold.
+            let room = |p: &([u8; 32], u64), b: &[([u8; 32], u64)]| b.iter().find(|(f, _)| *f == p.0).map_or(0, |(_, h)| h - p.1);
+            let at = parts.iter().position(|p| p.0 == held.mouth.keeper && room(p, &bank) >= rest).or_else(|| parts.iter().position(|p| room(p, &bank) >= rest));
+            let Some(at) = at else { return refuse(R::Starved) };
+            parts[at].1 += rest;
+        }
+        let kind = if feeding { 14 } else { 15 };
+        let cite = Cite::Handoff { id: mouth, kind };
+        let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
+        let anchor = (r.stamp, r.chain_hash);
+        let mut th = match self.handoffs.throats.get(&mouth) {
+            Some(t) => t.clone(),
+            None => Throat::default(),
+        };
+        if feeding {
+            let had = bank.iter().find(|(f, _)| *f == h.who).map_or(0, |(_, m)| *m);
+            let Some(now) = had.checked_add(mu_s) else { return refuse(R::Starved) };
+            let _ = self.set_share(&mouth, &h.who, now, anchor);
+            if !th.feeders.contains(&h.who) {
+                th.feeders.push(h.who);
+            }
+            th.adjusted += i128::from(mu_s);
+        } else {
+            for (f, share) in &parts {
+                let had = bank.iter().find(|(g, _)| g == f).map_or(0, |(_, m)| *m);
+                let _ = self.set_share(&mouth, f, had - share, anchor);
+            }
+            th.adjusted -= i128::from(mu_s);
+        }
+        th.acts += 1;
+        self.handoffs.throats.insert(mouth, th);
+        self.mark_persist();
+        Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id: mouth, state: State::Accepted }
+    }
+
     /// 78.133 — A TARIFF'S RECIPIENTS: the keeper, and the tier keys its own
     /// domain's genesis names (its progenitor lines) — never the traveller's
     /// domain, never a stranger.
@@ -343,6 +519,13 @@ impl Kernel {
                         return refuse(R::NotALine);
                     }
                 }
+                // 78.135 — the throat held open by matter set aside: the
+                // offerer banks `⌈m⌉` μ-S, or the tube is not offered.
+                let Some(bank) = ceil_mass(t.mass) else { return refuse(R::BadTube) };
+                let short = crate::economy::shortfall(&[bank, 0, 0, 0], &self.treasury.balance_mu(&h.who));
+                if !crate::economy::lanes_short(&short).is_empty() {
+                    return refuse(R::HolderShort);
+                }
                 7
             }
             Handoff::Close { .. } => {
@@ -382,6 +565,12 @@ impl Kernel {
                 let until = window_end(r.stamp.h);
                 let held = MouthHeld { mouth: m.as_ref().clone(), state: State::Offered { until }, opened: None, at: r.stamp.key() };
                 self.handoffs.mouths.insert(id, held);
+                // 78.135 — the offerer's bank, the throat's first face.
+                if let Some(bank) = m.tube.as_ref().and_then(|t| ceil_mass(t.mass)) {
+                    if self.set_share(&id, &h.who, bank, anchor) {
+                        self.handoffs.throats.insert(id, Throat { feeders: vec![h.who], adjusted: 0, acts: 0 });
+                    }
+                }
                 State::Offered { until }
             }
             (_, 1) => {
@@ -407,6 +596,8 @@ impl Kernel {
                 if let Some(held) = self.handoffs.mouths.get_mut(&id) {
                     held.state = State::Returned;
                 }
+                // Refused or expired: the offerer's bank back to it.
+                self.empty_throat(&id, anchor);
                 State::Returned
             }
         };
@@ -414,12 +605,14 @@ impl Kernel {
         Handed::Sealed { at: r.stamp, receipt: r.chain_hash, id, state }
     }
 
-    /// A mouth pair CLOSED: returned, and the traversals in flight through
-    /// it returned, their tolls back.
+    /// A mouth pair CLOSED: returned, the traversals in flight through it
+    /// returned, their tolls back, and — 78.135 — its throat's bank back to
+    /// the faces that fed it, never retired.
     fn close_mouth(&mut self, id: &[u8; 32], anchor: crate::economy::Anchor) {
         if let Some(held) = self.handoffs.mouths.get_mut(id) {
             held.state = State::Returned;
         }
+        self.empty_throat(id, anchor);
         let in_flight: Vec<[u8; 32]> = self
             .handoffs
             .through
@@ -444,13 +637,16 @@ impl Kernel {
         let m = &self.handoffs.mouths.get(mouth)?.mouth;
         let t = m.tube.as_ref()?;
         let q = |(n, d): (u64, u64)| (d > 0).then(|| num_rational::BigRational::new(n.into(), d.into()));
-        let mass = q(t.mass)?;
+        // 78.135 — the mass NOW: fed and drawn, the horizon re-derived.
+        let mass = self.mass_now(mouth)?;
+        let numer = u64::try_from(mass.numer()).ok()?;
+        let denom = u64::try_from(mass.denom()).ok()?;
         Some(TubeReading {
             from_place: crate::transducer::cga::frame_base_point(&m.from_frame)?,
             to_place: crate::transducer::cga::frame_base_point(&m.to_frame)?,
             from_level: crate::client::sdk::physics::throat_level(&mass, &q(t.from_r)?)?,
             to_level: crate::client::sdk::physics::throat_level(&mass, &q(t.to_r)?)?,
-            mass: t.mass,
+            mass: (numer, denom),
         })
     }
 

@@ -168,6 +168,15 @@ pub enum Handoff {
     /// 78.128 — a handoff THROUGH an open mouth pair: the only way matter or
     /// a word crosses between domains (universes with no shared space).
     Traverse { offer: Box<Offer>, mouth: [u8; 32] },
+    /// 78.135 — the throat FED by its keeper: `mu_s` more μ-S banked, its
+    /// mass grown by as much, its horizon re-derived wider. `seq` is the
+    /// throat's count of bank acts so far, so a resend is never a second
+    /// feed.
+    Feed { mouth: [u8; 32], mu_s: u64, seq: u64 },
+    /// 78.135 — the throat DRAWN DOWN by its keeper: `mu_s` of its bank
+    /// returned to the faces that fed it, in proportion, its mass shrunk by
+    /// as much — never to zero (closing is `Close`).
+    Draw { mouth: [u8; 32], mu_s: u64, seq: u64 },
 }
 
 /// 78.128 — A WORMHOLE'S MOUTH PAIR (the coordinator's rulings 2026-10-07):
@@ -593,6 +602,8 @@ impl Handoff {
             Handoff::Mouth(_) => 7,
             Handoff::Close { .. } => 8,
             Handoff::Traverse { .. } => 9,
+            Handoff::Feed { .. } => KIND_FEED,
+            Handoff::Draw { .. } => KIND_DRAW,
         }
     }
 
@@ -622,6 +633,11 @@ impl Handoff {
                 out.extend_from_slice(&offer.bytes());
                 out.extend_from_slice(mouth);
             }
+            Handoff::Feed { mouth, mu_s, seq } | Handoff::Draw { mouth, mu_s, seq } => {
+                out.extend_from_slice(mouth);
+                out.extend_from_slice(&mu_s.to_le_bytes());
+                out.extend_from_slice(&seq.to_le_bytes());
+            }
         }
     }
 
@@ -633,6 +649,7 @@ impl Handoff {
             Handoff::ConvertOut(c) => c.id(),
             Handoff::ConvertIn(c) => c.id(),
             Handoff::Mouth(m) => m.id(),
+            Handoff::Feed { mouth, .. } | Handoff::Draw { mouth, .. } => *mouth,
         }
     }
 
@@ -687,6 +704,8 @@ const KIND_LOOPS: u8 = 10;
 const KIND_TARIFFED_MOUTH: u8 = 11;
 const KIND_TUBE: u8 = 12;
 const KIND_TUBE_READ: u8 = 13;
+const KIND_FEED: u8 = 14;
+const KIND_DRAW: u8 = 15;
 
 /// `[ACT_HANDOFF][13][mouth 32]`.
 pub fn encode_tube_read(mouth: [u8; 32]) -> Vec<u8> {
@@ -833,6 +852,14 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                     m.tariff = Some(Tariff::take(b, &mut p)?);
                     Handoff::Mouth(Box::new(m))
                 }
+                k @ (KIND_FEED | KIND_DRAW) => {
+                    let mouth = id(b, &mut p)?;
+                    let (mu_s, seq) = (u64_at(b, &mut p)?, u64_at(b, &mut p)?);
+                    match k {
+                        KIND_FEED => Handoff::Feed { mouth, mu_s, seq },
+                        _ => Handoff::Draw { mouth, mu_s, seq },
+                    }
+                }
                 KIND_TUBE => {
                     let mut m = Mouth::take(b, &mut p)?;
                     m.tube = Some(Tube::take(b, &mut p)?);
@@ -916,6 +943,12 @@ pub enum HandoffRefusal {
     /// 78.134 — a mouth offered without its tube: two free frames, refused
     /// (those offered before tubes stand as history).
     Untethered,
+    /// 78.135 — a draw that would leave the throat no mass (closing is
+    /// `Close`), or more than its bank holds.
+    Starved,
+    /// 78.135 — a bank act whose `seq` is not the throat's count: a resend,
+    /// or out of order.
+    Stale,
 }
 
 /// THE COURT'S ANSWER.
@@ -991,6 +1024,8 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::BadTube => [24, 0],
         HandoffRefusal::NotSupersedable => [25, 0],
         HandoffRefusal::Untethered => [26, 0],
+        HandoffRefusal::Starved => [27, 0],
+        HandoffRefusal::Stale => [28, 0],
     }
 }
 
@@ -1041,6 +1076,8 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         24 => HandoffRefusal::BadTube,
         25 => HandoffRefusal::NotSupersedable,
         26 => HandoffRefusal::Untethered,
+        27 => HandoffRefusal::Starved,
+        28 => HandoffRefusal::Stale,
         _ => return None,
     })
 }

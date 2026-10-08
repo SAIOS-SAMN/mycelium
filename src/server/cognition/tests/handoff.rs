@@ -48,6 +48,9 @@ fn founded() -> Kernel {
         let r = Reservation { domain: vk(&d), tier: vk(&reserve), nonce: [0; 32] };
         assert!(matches!(k.designate_reserve(&r.sign(&d)), Founded::Reserved { now: true, .. }));
     }
+    // The throat's bank (78.135), funded first.
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&x()), [1, 0, 0, 0], anchor);
     assert!(matches!(k.handoff(&Handoff::Mouth(Box::new(the_mouth())).sign(&x())), Handed::Sealed { .. }));
     assert!(matches!(k.handoff(&Handoff::Accept { id: the_mouth().id() }.sign(&y())), Handed::Sealed { state: State::Accepted, .. }));
     k

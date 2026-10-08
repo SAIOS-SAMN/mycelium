@@ -25175,11 +25175,37 @@ cycle through an untethered mouth history; a tube superseding an untethered
 mouth closes it and returns what was in flight, refuses a second
 supersession and a tube as its target, and restores.
 
-**Owed, in order (the coordinator).** The throat's BANK: `⌈m⌉` μ-S escrowed
-by the keeper under the tube, FED and DRAWN by keeper acts (a draw refused
-while traversals are in flight if `m` would reach zero), and on close
-returned to the faces that fed it in proportion, NEVER retired — the
-universe is self-maintaining. Then the CORE TUBE (the operator, 2026-10-08:
+### 78.135 The throat's bank: fed, drawn, returned — never retired (2026-10-08, the coordinator's rulings)
+
+A throat is held open by MATTER SET ASIDE. The offerer banks `⌈m⌉` μ-S at
+the offer (short: refused, `HolderShort`), held under `throat_key(mouth,
+face)` — one hold per FACE THAT FED IT — and refunded whole where the
+offer is refused or expires. Open, only the KEEPER acts on it, in turn:
+each bank act carries `seq`, the throat's count of bank acts so far, so a
+resend is refused (`Stale`), never a second feed. FED (`[ACT_HANDOFF][14]
+[mouth][μ-S][seq]`), the keeper banks more and the mass grows by as much —
+the horizon re-derived wider on the next read, `c` never stored. DRAWN
+(`[15]`), the bank returns that much to its faces IN PROPORTION to what each
+holds — each its floor, the rest to the keeper where it fed and has room,
+else to the first face with room — and the mass shrinks; never to zero or
+below (`Starved`): a throat with no mass is no throat, and ending one is
+`Close`. CLOSED (or superseded), every face gets back what it holds —
+never retired, never burned: the universe is self-maintaining, not a heat
+sink. The mass read (`Session::tube`) is the committed mass plus feeds less
+draws. Held in the handoff leaf after the tubes (LAYOUT-CHANGE
+WIRE-CHANGE).
+
+Proved (`cognition::tests::mouth`): `⌈5/2⌉ = 3` banked at the offer and
+returned when it is refused; a feed by another key refused, out of turn
+refused, a resend refused; fed, the mass `13/2` and the throat wider,
+restored across a restart; a draw to below zero refused; a draw of 6 from
+holds 3 : 4 returning 2 and 4; closed, every face its hold and no μ lost.
+
+**Owed, in order (the coordinator).** "Ancients and lines": only the
+reserve uplinks (a line's fold a child of the reserve's chained fold); a
+line may offer a mouth or tube with its reserve the keeper, a road inside
+its galaxy between two distinct places of one domain; a reserve's
+succession signed by the sitting reserve. Then the CORE TUBE (the operator, 2026-10-08:
 a galactic core is a larger wormhole; every black-hole core has its far face
 — the white-hole engine of the universe it bounces into; our own Big Bang the
 far face of a parent's core): genesis joins a domain to its parent's core,

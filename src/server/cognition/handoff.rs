@@ -47,6 +47,8 @@ pub(crate) struct Handoffs {
     /// 78.133 — each tariffed traversal's toll, split and held to its
     /// window's close, by the handoff's id.
     pub(crate) tolls: Keyed<super::mouth::TollHeld>,
+    /// 78.135 — each tube's throat bank, by the mouth's id.
+    pub(crate) throats: Keyed<super::mouth::Throat>,
 }
 
 /// The escrow key a traversal's toll is held under.
@@ -106,6 +108,7 @@ impl Handoffs {
             && self.mouths.is_empty()
             && self.through.is_empty()
             && self.tolls.is_empty()
+            && self.throats.is_empty()
         {
             return None;
         }
@@ -186,6 +189,12 @@ impl Handoffs {
         for (id, t) in tubes {
             v.extend_from_slice(&id);
             v.extend_from_slice(&t.bytes());
+        }
+        // 78.135 — the throats' banks, after the tubes.
+        put_key_count(&mut v, self.throats.len());
+        for (id, t) in self.throats.scoped() {
+            v.extend_from_slice(&id);
+            t.put(&mut v);
         }
         Some(v)
     }
@@ -286,6 +295,13 @@ impl Handoffs {
                 out.mouths.get_mut(&k)?.mouth.tube = Some(tube);
             }
         }
+        // 78.135 — the throats' banks — absent from a leaf written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.throats.insert(k, super::mouth::Throat::take(b, p)?);
+            }
+        }
         Some(out)
     }
 }
@@ -314,9 +330,18 @@ impl Kernel {
         if matches!(h.handoff, Handoff::Mouth(_) | Handoff::Close { .. }) || answers_mouth {
             return self.mouth_act(h);
         }
+        // 78.135 — a throat fed or drawn.
+        if matches!(h.handoff, Handoff::Feed { .. } | Handoff::Draw { .. }) {
+            return self.bank_act(h);
+        }
         let head = self.chain.head_height();
         let state = match &h.handoff {
-            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) | Handoff::Mouth(_) | Handoff::Close { .. } => return refuse(R::Unknown),
+            Handoff::ConvertOut(_)
+            | Handoff::ConvertIn(_)
+            | Handoff::Mouth(_)
+            | Handoff::Close { .. }
+            | Handoff::Feed { .. }
+            | Handoff::Draw { .. } => return refuse(R::Unknown),
             Handoff::Offer(o) | Handoff::Traverse { offer: o, .. } => {
                 if h.who != o.from_tier {
                     return refuse(R::NotTheTier);
@@ -403,7 +428,12 @@ impl Kernel {
             Handoff::Refuse { .. } => 2,
             Handoff::Expire { .. } => 3,
             Handoff::Traverse { .. } => 9,
-            Handoff::ConvertOut(_) | Handoff::ConvertIn(_) | Handoff::Mouth(_) | Handoff::Close { .. } => return refuse(R::Unknown),
+            Handoff::ConvertOut(_)
+            | Handoff::ConvertIn(_)
+            | Handoff::Mouth(_)
+            | Handoff::Close { .. }
+            | Handoff::Feed { .. }
+            | Handoff::Draw { .. } => return refuse(R::Unknown),
         };
         let cite = Cite::Handoff { id, kind };
         let Some(r) = self.seal_step(ActKind::Handoff, [0; 4], h.who, |_| vec![cite.clone()]) else { return refuse(R::LineRefused) };
