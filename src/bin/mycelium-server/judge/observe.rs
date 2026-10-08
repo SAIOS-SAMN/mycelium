@@ -75,6 +75,15 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             answer(stream, Frame { lane: frame.lane, body: vec![u8::from(held)] });
         }
         ObserveAct::Query(prefix) => {
+            // ONE HOLD ACROSS TWO QUESTIONS: the kernel held by the same take
+            // at this question as at the last is named, with its site.
+            static LAST: std::sync::Mutex<u64> = std::sync::Mutex::new(0);
+            if let (Some((at, hold)), Ok(mut last)) = (crate::held::holding(), LAST.lock()) {
+                if *last == hold {
+                    eprintln!("  kernel lock {at} still held across two observer questions (hold {hold})");
+                }
+                *last = hold;
+            }
             let own = Source::Court(door.id);
             // THE OBSERVER NEVER WAITS ON COGNITION, AND NEVER COMPUTES FOR
             // IT. The question is LEFT for the court stroke, which publishes

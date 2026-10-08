@@ -24,10 +24,23 @@ struct Site {
 
 struct Book {
     holder: Option<&'static str>,
+    /// Which hold this is: every take of the kernel numbered in turn, so two
+    /// readings of one hold are told from two holds of one site.
+    hold: u64,
     sites: Vec<Site>,
 }
 
-static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, sites: Vec::new() });
+static BOOK: Mutex<Book> = Mutex::new(Book { holder: None, hold: 0, sites: Vec::new() });
+
+/// THE HOLD STANDING NOW: its site and its number, or none. Read without the
+/// kernel (the observer's door), so a court whose kernel one thread holds
+/// past every waiter still says WHICH site holds it — hypha c 2026-10-09:
+/// one thread spun 21 minutes under the kernel, thirteen waited, the journal
+/// fell silent, and no reading named the site.
+pub(crate) fn holding() -> Option<(&'static str, u64)> {
+    let b = BOOK.lock().ok()?;
+    b.holder.map(|h| (h, b.hold))
+}
 
 /// Threads blocked on the kernel through `held!` right now, and how many
 /// such waits have been served since boot.
@@ -117,6 +130,11 @@ pub(crate) fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a
     };
     if let Ok(mut b) = BOOK.lock() {
         b.holder = Some(at);
+        // A hold numbered past 2⁶⁴ takes is not numbered again; the site
+        // still names it.
+        if let Some(n) = b.hold.checked_add(1) {
+            b.hold = n;
+        }
         with_site(&mut b, at, |s| {
             s.took += 1;
             if waited {
