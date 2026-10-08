@@ -165,7 +165,7 @@ pub fn rank_over(
     out
 }
 
-/// THE OPEN BOOK AS A QUOTE READS IT. Six keyed reads that all come off the
+/// THE OPEN BOOK AS A QUOTE READS IT. Five keyed reads that all come off the
 /// same lock, so they are one argument and not six.
 pub struct BookView<'a> {
     /// The listings themselves, with the k-step each was listed at.
@@ -178,9 +178,9 @@ pub struct BookView<'a> {
     pub on_page: &'a crate::network::nerve::Keyed<()>,
     /// Which voices each listing has already been spoken to.
     pub spoken: &'a crate::network::nerve::Keyed<crate::network::nerve::Keyed<()>>,
-    /// The standing T of each listing, which replaces the T lane of its
-    /// magnitude when one is held.
-    pub standing_t: &'a crate::network::nerve::Keyed<u64>,
+    // The standing T of each listing rode here and replaced the 𝒯 lane of its
+    // magnitude in the quote. Retired by 78.149 (a): the span a listing stood
+    // is not μ, and no price carries it.
 }
 
 /// WHO IS ASKING: the charts this voice holds open, the surface it is
@@ -205,7 +205,7 @@ pub struct Ask<'a> {
 /// served in atlas order of those charts, within the body budget. No
 /// total order over the book. Returns (surface, priced items with open charts).
 pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Priced>) {
-    let BookView { pending, listing_atlas, field, on_page, spoken, standing_t } = book;
+    let BookView { pending, listing_atlas, field, on_page, spoken } = book;
     let &Ask { charts: voice_charts, surface, pressure, budget, voice } = ask;
     let link = crate::anastome::dialogue::link_wire_width();
     let mut priced: Vec<Priced> = Vec::new();
@@ -260,11 +260,9 @@ pub fn quote_incidence(book: &BookView<'_>, ask: &Ask<'_>) -> ([u64; 4], Vec<Pri
                 }
                 used += wire;
                 seen.insert(&addr, ());
-                let mut mag = p.magnitude();
-                if let Some(&t) = standing_t.get(&addr) {
-                    mag[2] = t;
-                }
-                let mu = crate::economy::price(&mag, pressure);
+                // The listing's own measure, its ask (78.149 (b)): a cap on
+                // what a closer is paid, never the span it stood (a).
+                let mu = crate::economy::price(&p.magnitude(), pressure);
                 priced.push(Priced { word: p.clone(), mu, open });
             }
         }

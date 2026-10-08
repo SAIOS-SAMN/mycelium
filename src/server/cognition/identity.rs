@@ -128,4 +128,58 @@ impl Kernel {
         }
         [0; 4]
     }
+
+    /// 78.149 — μ IS DISCHARGE (the operator's escrow rulings, 2026-10-08).
+    /// THE ONE READER of what a word can be escrowed or paid, and every
+    /// escrow and every release reads it, never the word's magnitude:
+    ///
+    /// - the μ a word can be escrowed or paid is its DISCHARGE — the lanes
+    ///   it closed, the deflation this court measures by replaying it on
+    ///   the family it is bound to (`measured_replay`), or a rewrite's yield
+    ///   read on its carriers before less after (`settle_rewrite`);
+    /// - (a) never the span it stood: `t_extent` is not μ, waiting is not
+    ///   work, and no minted magnitude carries it;
+    /// - (b) never what it asks: a demand's unclosed links are its ASK, the
+    ///   listing's measure, which may CAP a price and never raise it — a
+    ///   claim is paid lane-wise `min(escrow held, the closer's measured
+    ///   discharge)` (`Treasury::release_discharged`), and nothing above the
+    ///   discharge is minted;
+    /// - (c) zero for a word that names no body: a letter or a callus stands
+    ///   at no frame and closes nothing on any family, so it measures
+    ///   nothing here. Its magnitude's holonomic unit is its EXISTENCE as a
+    ///   word (`as_element_form` refuses an all-zero magnitude), never μ.
+    ///
+    /// The word's magnitude stays what it is — its measure and identity, the
+    /// book's tension, the room it draws — and is read for those and for
+    /// nothing priced. `family` is the family the word is heard or bound on;
+    /// a sentence with none discharges nothing measurable here, which is a
+    /// reading and not a floor.
+    pub(crate) fn discharge_on(
+        &self,
+        addr: &[u8],
+        word: &Element,
+        family: Option<&crate::transducer::family::Family>,
+    ) -> [u64; 4] {
+        match (word.is_rewrite(), word.is_sentence(), family) {
+            (true, _, _) => word.magnitude(),
+            (false, true, Some(f)) => self.measured_replay(word, f),
+            (false, true, None) => [0; 4],
+            // A connection is measured by the listing it stands for on the
+            // book, and by nothing where it stands for none (26: association
+            // with a listing is not a mint).
+            (false, false, _) => match self.book_elem(addr) {
+                Some(e) => e.chain_magnitude(),
+                None => [0; 4],
+            },
+        }
+    }
+
+    /// [`Kernel::discharge_on`] over the family the word is BOUND to — the
+    /// task it was spoken for, or the listing it answers — which is the
+    /// family its install measures.
+    pub(crate) fn discharge_of(&self, addr: &[u8], word: &Element) -> [u64; 4] {
+        let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr));
+        let family = task.and_then(|t| self.task_family.get(t.as_bytes()));
+        self.discharge_on(addr, word, family.map(Vec::as_slice))
+    }
 }

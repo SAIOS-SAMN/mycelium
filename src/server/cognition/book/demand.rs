@@ -152,7 +152,9 @@ impl Kernel {
             // sealed first.
             let anchor = self.anchor();
             if let Some(word) = self.basis.get(used.as_bytes()) {
-                let mag = word.magnitude();
+                // 78.149: a use pays the used word's discharge, never its
+                // magnitude.
+                let mag = self.discharge_of(used.as_bytes(), word);
                 if let Some(disc) = self.discoverer_of(used.as_bytes()) {
                     self.treasury.settle_use(voice, disc, mag, anchor);
                 }

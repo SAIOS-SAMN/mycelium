@@ -65,7 +65,7 @@ pub(crate) fn speak_form(
     // remainders the ones it leaves; the readings go to the stroke line.
     let (joined, reading) =
         mycelium::transducer::family::interpret::interpret(&rule.form, train, &remainders, &entity.epigenome, budget);
-    let (rule, mut mag, remainders) = match joined {
+    let (rule, mag, remainders) = match joined {
         Some((form, after)) => {
             let (m, _) = mycelium::transducer::family::form_deflation(&form, train, &entity.epigenome);
             if let Some(inv) = reading.inversion {
@@ -96,22 +96,17 @@ pub(crate) fn speak_form(
             "no measured trajectory".to_string()
         }
     };
-    // LANE 𝒯 IS THE BUNDLE'S SPAN ON THIS ARM TOO. `form_deflation` sums
-    // `measure_lanes` over the pairs, and a chain has no clock in it, so this
-    // magnitude arrives as `[S, G, 0, H]`. The mint takes the span (R2) and
-    // this arm does not go through the mint — it lays the form down with
-    // `as_element_form` directly — so R2 reached one half of the fork and
-    // left the other. Measured at 5eb95b4: 23 spoken magnitudes on this path,
-    // 0 with a 𝒯 component.
-    //
-    // An unmeasurable span withholds rather than minting against an invented
-    // extent, exactly as the demands arm does.
+    // LANE 𝒯 CARRIES NO SPAN (78.149 (a), the operator's ruling of
+    // 2026-10-08): `form_deflation`'s magnitude is the discharge, and the
+    // span the bundle stood is not μ — waiting is not work — so it is never
+    // written over 𝒯 here, as the mint no longer writes it. The span is read
+    // for the journal line below; an unmeasurable one still withholds, as the
+    // demands arm does (that gate is named owed in 78.149).
     let Some(deliberation) = entity.span_of(form) else {
         trace::trace("speak/span", trace::Wrote::Nothing, None);
         eprintln!("[{tag}] form withheld: family {fam} the span is unmeasurable");
         return None;
     };
-    mag[2] = deliberation.span();
     // 50.5 (F step 5): a sentence with demand vertices is uttered WHOLE —
     // its closed sub-complex and its demands together — never withheld
     // and never expressed as a residual.

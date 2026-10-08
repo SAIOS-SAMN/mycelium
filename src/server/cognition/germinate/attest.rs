@@ -31,14 +31,11 @@ impl Kernel {
         let mut cur = self.on_page.cursor(from.as_deref(), &mut budget);
         for (addr, _) in &mut cur {
             let Some(p) = self.pending.get(&addr) else { continue };
-            let mut mag = p.magnitude();
-            // A listing whose T cannot be measured is not priced against a
-            // zero put there for it; it is not quoted on this page.
-            let Some(t) = self.t_extent(&p.address(), self.height()) else {
-                continue;
-            };
-            mag[2] = t;
-            let mu = crate::economy::price(&mag, &self.physics.pressure);
+            // THE ASK, AS THE LISTING MEASURES IT. The standing span was
+            // written over its 𝒯 lane here; it is not μ (78.149 (a): waiting
+            // is not work), so the quote carries the listing's own measure,
+            // which caps what a closer is paid and never raises it (b).
+            let mu = crate::economy::price(&p.magnitude(), &self.physics.pressure);
             priced.push((p.clone(), mu));
         }
         if let Some(k) = cur.last_key() {

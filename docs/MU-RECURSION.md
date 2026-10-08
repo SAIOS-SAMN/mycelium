@@ -25975,6 +25975,96 @@ end (no constant is put in its place); a multivector record's carrier as a
 call's effect (the effect is read on quantities only); the world's own drift
 told apart from a call's effect (78.146's debt, still owed).
 
+### 78.149 μ is discharge (the operator's escrow rulings, 2026-10-08)
+
+**Measured.** After `ce092c1e` (NoWork) and `8e99ca5a` (no discharge, no
+word), three paths still gave μ for something that was not work. (a) The
+mint wrote the span a bundle stood (`t_extent`) over lane 𝒯 of every minted
+magnitude (`sentence_measure_why`, both arms; the client's fast arm did the
+same in `speak_form`), the court escrowed `price(magnitude)`, and the quote
+wrote each listing's standing extent over 𝒯 (`attest::quote`,
+`reduce::quote_incidence`). (b) A sentence with demands minted the measure
+of the links its demands ask for into its magnitude, the court escrowed
+that, and every release — `pay_solve`, the glue's install, the Upheld ruling,
+`release_filled` — minted the whole escrow, so a claim was paid its ask.
+(c) A letter and a callus carry the holonomic unit `[0, 0, 0, 1]` so that
+`as_element_form` admits them, and were escrowed at its price.
+
+**Ruled (the operator).**
+
+- **(a)** `T = t_extent` is NOT μ. Waiting is not work: escrow is priced
+  from the discharge alone, and T never enters a minted magnitude.
+- **(b)** Unclosed demand: a claim pays the closer's MEASURED DISCHARGE,
+  never more. The listing's ask may CAP the price, never inflate it.
+- **(c)** The holonomic token for letters and calluses mints no μ: no μ for
+  a word that names no body.
+
+**Landed.**
+
+1. **One reader** (`Kernel::discharge_on` / `discharge_of`,
+   `cognition/identity.rs`, where the ruling is stated once). The μ a word
+   can be escrowed or paid is its discharge: a sentence's deflation measured
+   by replay on the family it is heard or bound on (`measured_replay`), a
+   rewrite's yield, a connection's chain measure where it stands for a
+   listing on the book; zero with no family. Every escrow
+   (`list_sentence`, `list_and_docket`, `docket_discharged`,
+   `docket_letter`, the second voice on a provisional) and every release
+   reads it, never the magnitude. The hearing measures it on the task it
+   was heard for, so the escrow and the install read one family.
+2. **The span is out of every minted magnitude** (`sentence_measure_why`,
+   `speak_form`) and out of every quote; `MarketView.standing_t` and
+   `BookView.standing_t`, which carried it to the quote, are retired. The
+   standing extent stays what the metabolism reads: the book's pressure on
+   𝒯 and the T-room relocation, neither a price.
+3. **A claim is paid `min(escrow, discharge)` lane-wise**
+   (`Treasury::release_discharged`, read as the shortfall: the escrow less
+   what it held above the discharge). `pay_solve` pays each bound listing
+   the solve's `pay` capped by its escrow; the glue's install and the
+   Upheld ruling pay the word's own measured discharge; `release_filled`
+   takes a discharge per listing; `settle_recursive` already capped. What
+   the escrow held above the discharge is never minted (E1: a claim on
+   issuance that never issues).
+4. **The ask stays the measure.** A demand sentence's magnitude is still its
+   closed deflation plus the measure of what its demands ask — the
+   listing's tension and its existence as a word (a sentence that closes
+   nothing must still exist to be listed) — and the quote shows it as the
+   ask, the cap. The holonomic unit of a letter or a callus stays the same:
+   their existence (`as_element_form` refuses an all-zero magnitude), never
+   μ; their discharge is zero, so they escrow and are paid nothing.
+5. **The carriage draws in the escrow's currency** (`Kernel::carry`): the
+   frame drawn from a word in flight is its discharge, not its magnitude —
+   a discharge-priced escrow drawn at the magnitude would exhaust every
+   word carrying an ask or a holonomic unit at its first carriage. A word
+   that discharges nothing draws nothing, moves no flux, and lapses as
+   silent (ZeroFlux, 78.37 (3)).
+
+Proved (`cognition::tests::discharge`, `economy::tests::settlement`): a
+rule minted at once and after standing 37 is one word with 𝒯 zero, its
+magnitude exactly the deflation its held form measures, escrowed at
+`price(d)`; a solve's closure pays a listing escrowed above its discharge
+exactly the discharge and one escrowed below it exactly its escrow, the
+ledger minting those two vectors and nothing else; a treasury claim
+`[9, 4, 0, 2]` closed by a discharge `[5, 6, 0, 0]` pays `[5, 4, 0, 0]` and
+mints no more, a zero discharge minting nothing; a letter opened for a
+demand's bodies and a callus bound to a family both escrow `[0, 0, 0, 0]`
+and are paid nothing when upheld. `a_minted_sentence_carries_no_span_on_the_temporal_lane`
+replaces the R2 test that asserted the span on 𝒯, reversed by (a).
+
+*Owed, named:* `mint_sentence`, `mint_sentence_why`, `sentence_measure` and
+`sentence_measure_from` still take the span (`_stood`) and write it nowhere,
+so their 44 callers — and the client's withholding on an unmeasurable span
+(`speak_form`, `speak_with_demands`, the seat and contract arms) — are not
+rewritten here; `bundle_pressure` still writes the span into the pivot
+trial's pressure sum (a reading, never minted); a citer's PRESS credits its
+whole magnitude into the cited word's escrow (it raises the cap, never the
+payment); a use (`settle_use`) still transfers the used word's magnitude
+from demander to discoverer, a letter's holonomic unit included — a
+transfer, not a mint, which (c) does not rule; a connection's discharge is
+its chain measure only where it stands for a listing on the book, so a
+connection docketed alone (a translation, an entity's residual word)
+escrows and is paid nothing; a voice's room and the reserve no longer draw
+on 𝒯 for a word's span.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

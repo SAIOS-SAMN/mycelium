@@ -240,11 +240,18 @@ pub fn form_deflation_read(
     DeflationRead { pay, remainders, unresolved }
 }
 
-/// Mint the family's sentence: μ⃗ = [S, G, T, H] of the closed cochain.
+/// Mint the family's sentence: μ⃗ = [S, G, 0, H] of the closed cochain.
 /// The rule as the word a voice speaks and submits: the form's v3 tape
 /// carrying the deflation it measures over the bundle through the crystal
-/// that resolves its citations. Lane 𝒯 is the scene-state span the bundle
-/// stood over. A form with no measured deflation is not a word.
+/// that resolves its citations. A form with no measured deflation is not a
+/// word.
+///
+/// LANE 𝒯 CARRIES NO SPAN (78.149 (a), the operator's ruling of
+/// 2026-10-08): the span the bundle stood over is not μ — waiting is not
+/// work — and no minted magnitude carries it. `_stood` is the caller's
+/// reading of that span; the mint takes it and writes it nowhere. It stays
+/// on the signature so the callers that withhold on an unmeasurable span
+/// are not rewritten here (named in 78.149 as owed).
 ///
 /// Under 50.5 (Y3): A sentence with word vertices and demand vertices mints
 /// on its closed sub-complex: the amount is the deflation its closed words
@@ -253,27 +260,27 @@ pub fn mint_sentence(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-    t_extent: u64,
+    _stood: u64,
 ) -> Option<element::Element> {
-    mint_sentence_why(rule, family, crystal, t_extent).ok()
+    mint_or_refuse(rule, family, crystal).map_err(crate::transducer::sentence::Refused::noted).ok()
 }
 
 /// [`mint_sentence`] with its refusal named (A.17) and counted where it
-/// forms, by the one refusal reader (78.9).
+/// forms, by the one refusal reader (78.9). `_stood` is not minted (78.149
+/// (a)).
 pub fn mint_sentence_why(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-    t_extent: u64,
+    _stood: u64,
 ) -> Result<element::Element, crate::transducer::sentence::Refused> {
-    mint_or_refuse(rule, family, crystal, t_extent).map_err(crate::transducer::sentence::Refused::noted)
+    mint_or_refuse(rule, family, crystal).map_err(crate::transducer::sentence::Refused::noted)
 }
 
 fn mint_or_refuse(
     rule: &crate::transducer::sentence::SentenceRule,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-    t_extent: u64,
 ) -> Result<element::Element, crate::transducer::sentence::Refused> {
     use crate::transducer::sentence::Refused;
     // A form nothing in which acts is not uttered: the speaker's side of
@@ -314,7 +321,7 @@ fn mint_or_refuse(
     if !read.unresolved.is_empty() {
         return Err(Refused::CitedNotHeld);
     }
-    let mag = sentence_measure_why(&held, family, t_extent, read.pay, &read.remainders)?;
+    let mag = sentence_measure_why(&held, family, read.pay, &read.remainders)?;
     crate::transducer::sentence::as_element_form(form, mag).ok_or(Refused::MintNoTape)
 }
 
@@ -409,41 +416,49 @@ pub fn declare_unspoken(
 /// what was left is the court's own reader, `undeclared_remainder` (law
 /// 12, 23.1 step 3), and the court still re-derives it.
 ///
-/// Lane 𝒯 is the span in receipts the bundle stood over — the quantity
-/// `pivot_orbit` takes and `bundle_pressure` writes to `sum[2]` — and it is
-/// measured here (law 5). A form minted in the stroke it was extracted in
-/// stood over no receipts and measures zero, which is a reading.
+/// Lane 𝒯 carries no span (78.149 (a)): the span in receipts the bundle
+/// stood over is the caller's reading (`_stood`), and it is not μ and not
+/// minted. The temporal lane of a measure is what its chains measure there.
 pub fn sentence_measure(
     form: &Form,
     family: &[(Grid, Grid)],
     crystal: &dyn Crystal,
-    t_extent: u64,
+    _stood: u64,
 ) -> Option<[u64; 4]> {
     let (pay, remainders) = form_deflation(form, family, crystal);
-    sentence_measure_from(form, family, t_extent, pay, &remainders)
+    sentence_measure_why(form, family, pay, &remainders).ok()
 }
 
 /// The measure, from a deflation already taken: the mint measures the
 /// remainders once, declares what was unspoken, and measures the declared
 /// form against the same remainders (law 12) — a demand vertex acts on
-/// nothing, so the deflation is the same form's.
+/// nothing, so the deflation is the same form's. `_stood` is not minted
+/// (78.149 (a)).
 pub fn sentence_measure_from(
     form: &Form,
     family: &[(Grid, Grid)],
-    t_extent: u64,
+    _stood: u64,
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Option<[u64; 4]> {
-    sentence_measure_why(form, family, t_extent, pay, remainders).ok()
+    sentence_measure_why(form, family, pay, remainders).ok()
 }
 
 /// [`sentence_measure_from`] with its refusal named (A.17) and not counted:
 /// a reader that only measures does not refuse, and the mint that does
 /// counts it where it forms.
+///
+/// 78.149 — WHAT THIS MEASURES IS THE WORD'S MAGNITUDE, ITS MEASURE AND
+/// IDENTITY, AND ITS μ IS THE DISCHARGE ALONE. With no demand vertex the two
+/// are one vector: the magnitude IS the deflation the form closed, and the
+/// span it stood is never written into it (a). With demand vertices the
+/// magnitude is the closed sub-complex's deflation AND the measure of the
+/// links its demands ask for: that sum is the listing's ASK, its tension on
+/// the book, and the court never prices it — every escrow and release reads
+/// the discharge (`Kernel::discharge_of`), the ask only capping it (b).
 pub fn sentence_measure_why(
     form: &Form,
     family: &[(Grid, Grid)],
-    t_extent: u64,
     pay: [u64; 4],
     remainders: &[crate::transducer::germinate::ResidualGerm],
 ) -> Result<[u64; 4], crate::transducer::sentence::Refused> {
@@ -454,16 +469,14 @@ pub fn sentence_measure_why(
             return Err(Refused::MintLinksWithoutDemand);
         }
         // NO DISCHARGE, NO WORD (the operator, 2026-10-08: never give μ away
-        // for the possibility of falsification). The span below is written
-        // into T whatever the form did, so a form that discharged nothing
-        // but stood a span minted a non-zero magnitude and was escrowed at
-        // its price. The work is read before the span is written.
+        // for the possibility of falsification). A span written into T made
+        // a form that discharged nothing a non-zero magnitude, escrowed at
+        // its price; no span is written now (78.149 (a)), and the work is
+        // still read by name.
         if pay.iter().all(|&x| x == 0) {
             return Err(Refused::MintNoTape);
         }
-        let mut mag = pay;
-        mag[2] = t_extent;
-        return Ok(mag);
+        return Ok(pay);
     }
     let undeclared = crate::court::verdict::body::undeclared_remainder(remainders, form);
     if !undeclared.is_empty() {
@@ -488,6 +501,10 @@ pub fn sentence_measure_why(
             *m = next;
         }
     }
+    // THE ASK (78.149 (b)): what the demands stand for, added to the
+    // measure so a sentence that closes nothing still exists as the listing
+    // it is. It is the word's measure and the book's tension, a CAP on what
+    // a closer is paid; it is never escrowed and never minted.
     let mut demanded: Vec<Link> = Vec::new();
     for (_, _, _, links) in form.demand_vertices() {
         demanded.extend(links.iter().copied().filter(|c| c.2 != c.3));
@@ -498,9 +515,8 @@ pub fn sentence_measure_why(
         let next = m.saturating_add(*a);
         *m = next;
     }
-    // The span is the bundle's, not a sum over its pairs: a family standing
-    // three frames does not age three times (51.9). It is written, not added.
-    mag[2] = t_extent;
+    // No span is written over 𝒯 (78.149 (a)): the lane holds what the chains
+    // measure there, the span the bundle stood is not μ.
     Ok(mag)
 }
 

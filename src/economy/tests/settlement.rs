@@ -193,3 +193,28 @@ fn a_use_an_enrolment_and_a_burn_past_the_balance_move_what_is_held() {
     assert_eq!(t.audit().expect("a burn conserves"), [3, 0, 0, 0]);
 }
 
+/// 78.149 (b) — A CLAIM IS PAID THE CLOSER'S MEASURED DISCHARGE, NEVER MORE.
+/// An escrow holding more than the closer discharged on some lanes and less
+/// on others releases, lane by lane, the lesser of the two: the escrow caps
+/// the payment, the discharge is the payment, and what the escrow held above
+/// the discharge is not minted anywhere — a claim on issuance that never
+/// issues (E1).
+#[test]
+fn a_claim_held_above_the_closers_discharge_is_paid_the_discharge_and_no_more() {
+    let mut t = Treasury::new();
+    let addr = [5u8; 32];
+    t.escrow_award(&super::word(addr), vec![[1; 32]], [9, 4, 0, 2], at(1, [1; 32]));
+    let closed = at(4, [4; 32]);
+    let paid = t.release_discharged(&addr, [5, 6, 0, 0], closed).expect("the claim stood");
+    assert_eq!(paid, [5, 4, 0, 0], "lane-wise the lesser of the escrow and the discharge");
+    assert_eq!(t.balance_mu(&[1; 32]), [5, 4, 0, 0], "the voice the escrow names is paid it");
+    assert_eq!(t.minted().expect("minted adds up"), [5, 4, 0, 0], "and nothing above the discharge was minted");
+    assert!(t.escrow_of(&addr).is_none(), "the claim is released");
+    assert!(t.release_discharged(&addr, [5, 6, 0, 0], closed).is_none(), "and spent once");
+    // A zero discharge releases the claim and mints nothing.
+    t.escrow_award(&super::word([6u8; 32]), vec![[2; 32]], [3, 3, 0, 3], at(1, [1; 32]));
+    assert_eq!(t.release_discharged(&[6u8; 32], [0; 4], closed), Some([0; 4]), "a closer that discharged nothing pays nothing");
+    assert_eq!(t.balance_mu(&[2; 32]), [0; 4]);
+    assert_eq!(t.minted().expect("minted adds up"), [5, 4, 0, 0], "and issues nothing");
+}
+

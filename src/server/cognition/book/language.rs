@@ -166,15 +166,9 @@ impl Kernel {
             );
         }
         let now = self.height();
-        let mut standing_t = crate::network::nerve::Keyed::new();
-        for (addr, _) in self.pending.scoped() {
-            // A listing whose T cannot be measured carries no T on the
-            // view: the key is absent, which is what unmeasured is here,
-            // and not a zero every reader would take for a fresh listing.
-            if let Some(t) = self.t_extent(&addr, now) {
-                standing_t.insert(&addr, t);
-            }
-        }
+        // The view carried each listing's standing extent for the quote to
+        // write over its 𝒯 lane; 78.149 (a) retired that — the span is not
+        // μ — so the view carries the book's height and no per-listing span.
         MarketView {
             language: self.language(),
             pending: std::sync::Arc::clone(&self.book.1),
@@ -184,7 +178,6 @@ impl Kernel {
             k_step: self.chain.next_step_index(),
             head_k: self.chain.head_k(),
             head_height: now,
-            standing_t: std::sync::Arc::new(standing_t),
             reserve: self.physics.reserve.lanes(),
             gens,
             closure,

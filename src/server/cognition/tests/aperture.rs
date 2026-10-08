@@ -272,7 +272,8 @@ fn a_depleted_lane_charges_a_sentence_by_its_orbit_words() {
         "the reserve is spent on some lane"
     );
     let before = k.physics().pressure;
-    let out = k.list_sentence(&spoken, [1; 32]);
+    let discharge = k.discharge_of(spoken.address().as_bytes(), &spoken);
+    let out = k.list_sentence(&spoken, [1; 32], discharge);
     assert_eq!(out, Outcome::GermPending, "a deferred sentence still stands");
     let after = k.physics().pressure;
     assert!(
@@ -409,7 +410,8 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
 
     let mut k = depleted();
     assert_eq!(k.physics().torsion, [0; 4], "a fresh court carries no torsion");
-    let _ = k.list_sentence(&bare, [1; 32]);
+    let discharge = k.discharge_of(bare.address().as_bytes(), &bare);
+    let _ = k.list_sentence(&bare, [1; 32], discharge);
     assert_eq!(
         k.physics().torsion,
         [0; 4],
@@ -439,7 +441,8 @@ fn the_metabolism_reads_the_orbits_true_holonomy_not_its_coboundary() {
     );
 
     let mut k = depleted();
-    let _ = k.list_sentence(&asked, [1; 32]);
+    let discharge = k.discharge_of(asked.address().as_bytes(), &asked);
+    let _ = k.list_sentence(&asked, [1; 32], discharge);
     assert!(
         k.physics().torsion.iter().any(|&t| t > 0),
         "a sentence demanding adjudication over what it could not close pays for the stroke: {:?}",

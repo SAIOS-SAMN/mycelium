@@ -84,6 +84,19 @@ H, a re-anchoring on S, an opened axis on H, a translation on G each mint
 the lane vector read on the carriers before and after, and each is refused
 when that vector is zero on every lane.
 
+**μ is discharge (ruled 2026-10-08, the operator; `MU-RECURSION.md`
+78.149).** What a word can be escrowed or paid is its DISCHARGE — the lanes
+it closed, measured by replay on the family it is bound to — and nothing
+else. (a) The span a word stood (`t_extent`) is not μ: waiting is not work,
+and no minted magnitude carries it. (b) What a demand asks is the listing's
+measure and may CAP a price, never raise it: a claim is paid lane-wise the
+lesser of the escrow it holds and the closer's measured discharge, and what
+the escrow held above the discharge is never minted. (c) A word that names
+no body — a letter, a callus — discharges nothing, so it escrows and is paid
+nothing; the holonomic unit its magnitude carries is its existence as a
+word, never value. A word's MAGNITUDE stays its measure and identity (the
+book's tension, the room it draws); the economy never prices it.
+
 ### 3.1 E1 — an escrow is a claim on issuance, never a transfer
 
 An escrow is one of two things and the invariant needs them apart.
@@ -99,7 +112,10 @@ A **claim** escrow is pending issuance: nobody gave anything up for it, so
 the μ⃗ does not exist yet. It is not counted, and a ruling MINTS it at the
 measured deflation while a revocation makes it vanish with nothing ever
 issued. This is what §4's "every claim is escrowed against its own
-deflation" means.
+deflation" means. The escrow is priced from the word's discharge alone and
+is a CAP on the release, never the payment (78.149): a ruling mints, per
+lane, the lesser of what the claim holds and the closer's measured
+discharge (`Treasury::release_discharged`), and the excess is never issued.
 
 Counting all escrow as supply asserts value the mesh never created;
 counting none makes the audit hold by not looking. R9 stands as written —
@@ -228,20 +244,22 @@ room is not.
 
 ## 5. Pricing and payment
 
-A listing is priced by `economy::price` against the book's pressure on each
-lane; the pool is a bond, not a price basis. A requester escrows the price;
-a claimant's word or solve enters the docket; release on the second organ's
-replay mints the deflation and pays it, discharging the escrow (§3.1) — the
-escrow was the claim, the mint is the payment. Hyphae are
-paid the pool share priced into every listing they home, and accrual on the
-temporal lane of demands they keep open, counted in heights of the home's
-receipt ledger (`MU-RECURSION.md` 45.4), never in clock time.
+A listing is quoted by `economy::price` on its own measure — its ask — and
+never on the span it has stood; the pool is a bond, not a price basis. A
+requester escrows the price; a claimant's word or solve enters the docket,
+escrowed at its DISCHARGE (`Kernel::discharge_of`, 78.149); release on the
+second organ's replay mints the closer's measured discharge, capped lane-wise
+by the escrow, and pays it, discharging the escrow (§3.1) — the escrow was
+the claim, the mint is the payment, and nothing above the discharge is
+minted. Hyphae are paid the pool share priced into every listing they home.
 
-**T-accrual is capped by the listing's own magnitude.** A demand nobody
-closes would otherwise pay its home forever, which is a schedule in
-disguise: standing is a cost the listing carries, so it can accrue at most
-what the listing is worth. The cap is the listing's μ⃗ — a measurement, not
-a constant.
+**No T-accrual (ruled 2026-10-08, the operator; 78.149 (a)).** This section
+paid a hypha accrual on the temporal lane of demands it kept open, capped
+by the listing's magnitude. Waiting is not work: the span a demand stood is
+not μ, it is never minted, and nothing accrues for standing. The standing
+extent remains what the metabolism reads — the book's pressure on 𝒯
+(`remeasure_pressure`) and the T-room a saturated lane relocates against —
+and neither is a price.
 
 Transfer is the xSEPTUM Note: signed by payer and payee, escrowed at the
 listing's home, released on two-organ replay. A voice's balance is homed at
@@ -313,8 +331,10 @@ ratios the physics already reads:
 - price against pressure on a lane;
 - bond against cover room;
 - pool share to the home against the deflation minted;
-- accrual on T against standing extent;
 - slash against bond.
+
+(Accrual on T against standing extent stood on this list; it is retired by
+78.149 (a) — the span stood is not μ.)
 
 They are studied in the simulator (`MU-ENGINEERING.md` §9), never tuned on the
 wire.
@@ -340,7 +360,8 @@ supply equation, and a ruling discharging an escrow into a mint. The audit
 fails at the first docket until it lands, so it gates every settlement path
 and therefore `MU-RECURSION.md` 1.10. **E2**'s burn on retirement, which
 needs the retirement driver (1.11 `shorter_form`) beside the
-`RewriteKind::Retire` that 0.G6 built. **E3**'s cap on T-accrual. Then
+`RewriteKind::Retire` that 0.G6 built. (**E3**'s cap on T-accrual is
+retired with T-accrual itself, 78.149 (a).) Then
 `price` returning zero when the bond is empty, the Note, voice keys, and
 delegation.
 

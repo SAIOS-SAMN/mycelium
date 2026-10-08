@@ -837,8 +837,15 @@ impl Kernel {
     /// A TRANSITION CARRIES A WORD IN FLIGHT: its offer is emitted again, and
     /// the carriage draws the word's own frame from its escrow, per lane. A
     /// word whose escrow cannot pay the draw is exhausted and lapses here.
+    ///
+    /// The frame is read in the escrow's own currency, the word's DISCHARGE
+    /// (78.149, `discharge_of`), never its magnitude: an escrow priced from
+    /// the discharge drawn at the magnitude would exhaust every word whose
+    /// measure carries an ask or a holonomic unit at its first carriage. A
+    /// word that discharges nothing draws nothing, moves no flux, and lapses
+    /// as silent (ZeroFlux, 78.37 (3)).
     pub(crate) fn carry(&mut self, addr: &[u8]) {
-        let Some(frame) = self.provisional.get(addr).map(Element::magnitude) else { return };
+        let Some(frame) = self.provisional.get(addr).map(|w| self.discharge_of(addr, w)) else { return };
         match self.treasury.carry_escrow(addr, frame) {
             Some(Ok(_)) => {
                 self.note_flux(addr, frame);

@@ -85,6 +85,13 @@ impl Kernel {
             // cover AND becomes this court's section on the chart (13.9).
             self.rule_own(addr, budget);
             let spoken = spoken.or_else(|| self.word_at(addr).cloned());
+            // 78.149 (b): what the claim is paid is the word's measured
+            // discharge, read before the word moves; with no word in hand
+            // nothing is measured and nothing is minted.
+            let discharge = match spoken.as_ref() {
+                Some(w) => self.discharge_of(addr, w),
+                None => [0; 4],
+            };
             if let Some(w) = spoken {
                 if w.is_rewrite() {
                     // Every voice the escrow names is paid; an escrow with
@@ -105,9 +112,7 @@ impl Kernel {
             // EC1: the claim is minted AT the Ruling act sealed above
             // (POUW), never at the act that escrowed it.
             let ruled = self.anchor();
-            if let Some(crate::economy::escrow::Escrowed { voices, mu, .. }) = self.treasury.release_award(addr) {
-                self.treasury.mint_claim(&voices, mu, ruled);
-            }
+            let _ = self.treasury.release_discharged(addr, discharge, ruled);
             self.unlist(addr, false);
             self.mark_persist();
             true
