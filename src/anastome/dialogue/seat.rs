@@ -49,10 +49,24 @@ pub const SUB_READ_MAIL: u8 = 7;
 /// mind would make, with its worth and cost.
 pub const KIND_COUNSEL: u16 = 0xFFFF;
 
+/// 78.148 — A HOUSE'S REASONS, as its TAKEN and OUTCOME carry them (the
+/// house's own wire; zero is no reason). NOT THE HOLDER: the mind no longer
+/// holds the seat it calls from (a house restarted, the seat passed).
+pub const REASON_NOT_THE_HOLDER: u16 = 3;
+/// The seat offers no such function (the listing moved).
+pub const REASON_NO_SUCH_FUNCTION: u16 = 4;
+/// The function exists and its arguments are outside its domain.
+pub const REASON_BAD_ARGUMENTS: u16 = 5;
+/// A valid call the house did not apply this beat.
+pub const REASON_NOT_APPLIED: u16 = 6;
+
 const TAG_Q: u8 = 0;
 const TAG_KEY: u8 = 1;
-const TAG_COUNT: u8 = 2;
-const TAG_FLAG: u8 = 3;
+/// A Count's tag, as a listing's FN names its arguments (78.148: a
+/// function whose every argument is a Count or a Flag is the mind's to
+/// explore).
+pub const TAG_COUNT: u8 = 2;
+pub const TAG_FLAG: u8 = 3;
 const TAG_MV: u8 = 4;
 const TAG_BIGQ: u8 = 5;
 const TAG_BYTES: u8 = 6;

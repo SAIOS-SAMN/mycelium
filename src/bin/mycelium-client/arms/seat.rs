@@ -12,9 +12,20 @@
 //! the counsel's worth favours at least as far as every other, the counsel
 //! only where the mind has read nothing or nothing dominates — and one typed
 //! line per beat says which call, whether it followed the counsel, and why.
+//!
+//! 78.148 — THE SEAT IS HELD AGAIN WHEN IT IS LOST, AND ITS LISTING IS
+//! PERCEIVED. A TAKEN refused, or a call refused NOT THE HOLDER (a house
+//! restarted, the seat passed), lets the take go and the next stroke takes
+//! again; a TAKE no TAKEN answers within a full APERTURE CYCLE of this
+//! arm's own strokes (`physics::aperture_cycle`, the stroke count at which
+//! a contact reads occluded) is posted again. After the house answers the
+//! take — and again when a call is refused NO SUCH FUNCTION — the arm reads
+//! the domain's listing and hands the mind its own seat's functions: its
+//! repertoire, which with no counsel it calls with arguments of its own
+//! (`seat_mind::own`).
 
 use mycelium::anastome::dialogue::seat::{Arg, Record};
-use mycelium::client::sdk::seat::MindMail;
+use mycelium::client::sdk::seat::{seat_fns, MindMail, SeatHold};
 use mycelium::client::sdk::seat_mind::task::{grid_steps, solve_args, tasks_before, FN_SOLVE};
 use mycelium::client::sdk::seat_mind::Decision;
 use mycelium::sdk::Entity;
@@ -25,9 +36,8 @@ pub(crate) struct SeatArm {
     domain: [u8; 32],
     seat: u32,
     key: ed25519_dalek::SigningKey,
-    /// Whether the take was posted, and the house's answer when read.
-    took: bool,
-    taken: Option<bool>,
+    /// 78.148 — the take posted, the house's answer, the strokes waited.
+    hold: SeatHold,
     /// The last sequence read: the next read acknowledges it.
     after: u64,
     percepts: u64,
@@ -45,16 +55,30 @@ impl SeatArm {
         };
         let domain = mycelium::court::identity::parse_hex32(d).ok_or_else(|| format!("--seat: {d} is not a 32-byte hex domain"))?;
         let seat = s.parse::<u32>().map_err(|e| format!("--seat: {s} is not a seat id: {e}"))?;
-        Ok(Some(SeatArm { domain, seat, key, took: false, taken: None, after: 0, percepts: 0, calls: 0, memo: mycelium::transducer::family::ExtractMemo::new() }))
+        Ok(Some(SeatArm {
+            domain,
+            seat,
+            key,
+            hold: SeatHold::default(),
+            after: 0,
+            percepts: 0,
+            calls: 0,
+            memo: mycelium::transducer::family::ExtractMemo::new(),
+        }))
     }
 
-    /// ONE STROKE AT THE SEAT: take it once; read the mail; perceive each
+    /// ONE STROKE AT THE SEAT: take it (again, where it was lost or went
+    /// unanswered a full aperture cycle); read the mail; perceive each
     /// percept and make the mind's call; mark each outcome.
     pub(crate) fn stroke(&mut self, entity: &mut Entity, tag: &str, stop: &AtomicBool) {
-        if !self.took {
+        let was_posted = self.hold.posted;
+        if self.hold.stroke() {
+            if was_posted {
+                eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.seat, SeatHold::patience());
+            }
             match entity.relay().take(self.domain, self.seat, &self.key) {
                 Ok(Ok(seq)) => {
-                    self.took = true;
+                    self.hold.take_posted();
                     eprintln!("[{tag}] seat {} take posted (seq {seq})", self.seat);
                 }
                 Ok(Err(why)) => eprintln!("[{tag}] seat {} take refused: {why:?}", self.seat),
@@ -80,8 +104,14 @@ impl SeatArm {
             match piece {
                 MindMail::Taken(seq, t) => {
                     self.after = seq;
-                    self.taken = Some(t.ok);
                     eprintln!("[{tag}] seat {} taken {} (reason {})", t.seat, t.ok, t.reason);
+                    if t.domain != self.domain || t.seat != self.seat {
+                        continue;
+                    }
+                    match self.hold.taken(t.ok) {
+                        true => self.read_listing(entity, tag),
+                        false => eprintln!("[{tag}] seat {} take let go: TAKEN refused (reason {}) — taken again next stroke", self.seat, t.reason),
+                    }
                 }
                 MindMail::Percept(seq, p) => {
                     self.after = seq;
@@ -105,15 +135,40 @@ impl SeatArm {
                         "[{tag}] seat outcome applied {} reason {} for fn {answered:?} | percepts {} calls {}",
                         o.applied, o.reason, self.percepts, self.calls
                     );
+                    // 78.148 — a refusal is information: the seat lost, or
+                    // the listing moved.
+                    let held = self.hold.held;
+                    if self.hold.outcome(o.applied, o.reason) {
+                        self.read_listing(entity, tag);
+                    } else if held && !self.hold.held {
+                        eprintln!("[{tag}] seat {} take let go: a call refused NOT THE HOLDER — taken again next stroke", self.seat);
+                    }
                 }
             }
         }
     }
 
+    /// 78.148 — THE LISTING PERCEIVED: the domain's latest SEATS read, and
+    /// this seat's functions — id and argument tags — handed to the mind as
+    /// its repertoire. One typed line.
+    fn read_listing(&mut self, entity: &mut Entity, tag: &str) {
+        let listing = match entity.relay().list_seats(self.domain) {
+            Ok(Some(s)) => s,
+            Ok(None) => return eprintln!("[{tag}] seat listing: none held for the domain"),
+            Err(e) => return eprintln!("[{tag}] seat listing unread: {e}"),
+        };
+        let Some((epoch, fns)) = seat_fns(&listing, self.seat) else {
+            return eprintln!("[{tag}] seat listing names no seat {}", self.seat);
+        };
+        entity.with_seat_mind(self.domain, self.seat, |m| m.perceive_listing(&fns));
+        let named: Vec<(u16, &[u8])> = fns.iter().map(|f| (f.id, f.tags.as_slice())).collect();
+        eprintln!("[{tag}] seat {} listing perceived at epoch {epoch}: fns (id, arg tags) {named:?}", self.seat);
+    }
+
     /// THE MIND'S CALL AT THIS BEAT, where the seat is held: decided, posted,
     /// and its reference held for the outcome — one typed line.
     fn beat(&mut self, entity: &mut Entity, tag: &str) {
-        if self.taken != Some(true) {
+        if !self.hold.held {
             return;
         }
         let decision = entity.with_seat_mind(self.domain, self.seat, |m| m.decide());
@@ -140,7 +195,7 @@ impl SeatArm {
     /// No rule minted, no call, and the line says why.
     fn solve_before(&mut self, entity: &mut Entity, tag: &str, id: &[u8; 32]) {
         let no_call = |why: &str| eprintln!("[{tag}] seat task {} no call: {why}", crate::speak::fam_id(id));
-        if self.taken != Some(true) {
+        if !self.hold.held {
             return no_call("the seat is not held");
         }
         let (train, tests) = match entity.pull_task_by_id(id) {

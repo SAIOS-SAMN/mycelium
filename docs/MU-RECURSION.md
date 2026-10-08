@@ -25889,6 +25889,92 @@ self-witnessed proofs refused; a citation into a held era proved by replay,
 the line never asked below the root; cross-citing lines both advance from
 their roots in one hearing each.
 
+### 78.148 The mind's own call (2026-10-08)
+
+**Measured.** xylarium's house lists each people's seat with fn 2 FOCUS, one
+Count argument whose values mean something the mind is not told, and its
+percepts carry no counsel. The seat mind of 78.146 (a) posted its TAKE once
+and never again, so a house restart or a TAKEN refused stranded it; (b)
+called only what a counsel named, so with no counsel `decide()` answered
+NothingToCall forever and FOCUS was never called. The house's refusals are
+typed on the wire: TAKEN and OUTCOME reasons 3 NOT THE HOLDER, 4 NO SUCH
+FUNCTION, 5 BAD ARGUMENTS, 6 NOT APPLIED (`dialogue::seat::REASON_*`).
+
+**Ruled.**
+
+1. **The seat is held again when it is lost** (`sdk::seat::SeatHold`). A
+   TAKEN refused, or a call refused NOT THE HOLDER, lets the take go and the
+   next stroke takes again. A TAKE no TAKEN answers within a full APERTURE
+   CYCLE of the mind's own strokes (`SeatHold::patience` =
+   `physics::aperture_cycle`, the stroke count at which a contact's
+   consecutive failures read as occlusion, 24.1) is posted again — a
+   physics constant of the tree, never a clock and never a new number.
+2. **The listing is perceived.** After the house answers the take held, and
+   again when a call is refused NO SUCH FUNCTION, the arm reads the domain's
+   listing (`Session::list_seats`, `sdk::seat::seat_fns`) and hands the mind
+   its own seat's functions, id and argument tags: its REPERTOIRE
+   (`SeatMind::perceive_listing`). A function listed again with the same
+   tags keeps what was learned of it; NO SUCH FUNCTION takes it out until the
+   listing is read again.
+3. **Its own arguments, no script** (`seat_mind::own`). With no counsel, a
+   listed function whose every argument is a Count or a Flag is the mind's
+   to explore: one call per beat, in increasing order — its least arguments
+   first, then each argument upward from one, the others at their least. The
+   house's answer is the information: applied (or refused otherwise) the
+   value is tried; refused BAD ARGUMENTS at `n`, that argument's domain is
+   bounded below `n` and `n` is never called again; refused at its least, no
+   value of the function applies. A flag's domain is two values from the
+   start. A call unanswered within its beat is let go untried and asked
+   again. What each call did is held at the CALL's coordinates — the
+   function and its arguments written inline (`own::call_key`), never the
+   function alone — read as 78.146 reads it: every quantity's slide between
+   the beat it was made and the first percept after its outcome, composed
+   per quantity, the rate exact in ℚ.
+4. **Where no worth is declared, the mind's own valuation: REACH**
+   (`SeatMind::reach`, the one place it is stated; `Valuation::Reach`). A
+   mind told nothing of what matters values what it can move: every record
+   quantity one of its read calls moved is favoured the way its calls moved
+   it; one its calls moved both ways is contested and favoured neither way.
+   Once every value of every bounded domain is tried, the choice is 78.146's
+   exact dominance read quantity by quantity over those records, never a
+   summed score (rule 4): one call dominates — it, said so (`Why::Reached`);
+   none does — of the undominated calls, the one read fewest times is read
+   again, the earliest explored among equals (`Why::Unreached`), so a rate
+   the world's drift may hide is sharpened rather than guessed. The beat
+   line names the valuation and why: `seat beat call fn F followed-counsel
+   false: valuation REACH (…): at [v] its read outcomes move …`, or, while
+   exploring, the argument and value tried and the domains' bounds.
+5. **A versor's change is the versor that carries it** (the operator's
+   field law). A percept argument may be a multivector (ARG tag 4): a full
+   Cl(4,1) versor, odd ones — reflections, a bell's pulse — included. The
+   change between beats is the exact carrier `c = v₊ ṽ / ⟨v ṽ⟩₀`, with
+   `c v = v₊` checked coefficient for coefficient (`seat_mind::carrier`),
+   or refused where either is no versor or the weight is zero (a refusal,
+   never a zero change). A multivector series returns as an orbit when its
+   carriers repeat; a steady carrier that moves the value is an orbit of
+   period one, only the carrier one stands still; a series whose carrier was
+   refused returns where its values repeat. Never flattened to numbers, no
+   float anywhere.
+
+Proved (`client::sdk::tests::seat_mind`): against a fake house on one
+court's relay with one Count function whose values 0, 1, 2 each raise a
+different record (2 raising all three) and 3 BAD ARGUMENTS, the mind reads
+the listing, tries 0, 1, 2 and 3 in turn, records 3 as the bound and never
+calls it again, then calls 2 on every beat under REACH, dominating 0 and 1
+on records 10, 11 and 12 at rate 1 each; the listing is the repertoire (a
+Bytes function not explored, a Flag's domain two from the start, NO SUCH
+FUNCTION removing a function and the listing restoring it); the seat is
+taken again after a TAKEN refused (the house reads the second take), held
+on TAKEN ok, let go on NOT THE HOLDER, and re-posted after a full aperture
+cycle unanswered; alternating reflections are an orbit of period 2 carried
+by `e₂e₁` and `e₁e₂`, a translator's powers an orbit of period 1 carried by
+the translator itself, a held versor fixed, a null point's carrier refused.
+
+*Owed, named:* a Count domain the house never bounds is explored without
+end (no constant is put in its place); a multivector record's carrier as a
+call's effect (the effect is read on quantities only); the world's own drift
+told apart from a call's effect (78.146's debt, still owed).
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

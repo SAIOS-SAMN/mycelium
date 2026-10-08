@@ -4,6 +4,9 @@
 // period; and, against a fake house on one court's relay, a mind that follows
 // the counsel only until it has read what its calls do, then calls the
 // function whose outcome moves the record the counsel's worth favours.
+// 78.148: with no counsel, its own arguments explored and the dominant call
+// chosen under its own valuation; the listing perceived; the seat taken
+// again when lost; a versor series carried by its exact carrier.
 
 use crate::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use crate::anastome::dialogue::seat::*;
@@ -326,4 +329,246 @@ fn the_mind_follows_the_worth_not_the_counsels_order() {
     assert_eq!(called(&decisions[1]), (2, false));
     assert!(decisions[2..].iter().all(|d| called(d) == (2, false)), "function 2 dominates once read");
     assert_eq!(x, 1 - 5);
+}
+
+/// The listing the kernel's relay serves, read as the mind reads it: its
+/// seat's functions.
+fn listed_fns(k: &Kernel, seat: u32) -> (u64, Vec<SeatFn>) {
+    let body = k.seat_listing(&vk(&domain())).expect("a listing is held");
+    let listing = decode_listing_reply(&body).expect("decodes").expect("one SEATS");
+    crate::client::sdk::seat::seat_fns(&listing, seat).expect("the seat is listed")
+}
+
+fn list(k: &mut Kernel, epoch: u64, fns: Vec<SeatFn>) {
+    let seats = Seats { domain: vk(&domain()), epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
+}
+
+/// 78.148 — THE FAKE HOUSE OF ONE COUNT FUNCTION, FOCUS (fn 2), never told
+/// to the mind: value 0 raises record 10, value 1 raises record 11, value 2
+/// raises records 10, 11 and 12; 3 and above are BAD ARGUMENTS. The house
+/// counsels nothing. The mind reads the listing off the relay, then each
+/// beat its mail; it perceives, decides and calls; the house applies or
+/// refuses each call and answers it. Returns the decisions, the values the
+/// mind called, the records, and the mind.
+fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
+    let mut k = founded();
+    let d = vk(&domain());
+    let me = vk(&mind());
+    list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
+    let mut m = SeatMind::new(d, 7);
+    let (epoch, fns) = listed_fns(&k, 7);
+    assert_eq!((epoch, fns.clone()), (1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]), "the listing reads back whole");
+    m.perceive_listing(&fns);
+    let (mut after, mut house_after, mut x, mut nonce) = (0u64, 0u64, [0i64; 3], 0u8);
+    let (mut decisions, mut values) = (Vec::new(), Vec::new());
+    for beat in 1..=beats {
+        let records = (0..3u16).map(|i| Record::Plain { kind: 10 + i, args: vec![Arg::Q { num: x[usize::from(i)], den: 1 }] }).collect();
+        k.seat_post(&Post::Percept(percept(beat, Arg::Q { num: beat as i64, den: 1 }, records)).sign(&house()).expect("writes")).expect("relayed");
+        let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed");
+        for piece in mind_mail(me, raw).expect("typed") {
+            match piece {
+                MindMail::Taken(seq, _) => after = seq,
+                MindMail::Outcome(seq, o) => {
+                    after = seq;
+                    assert!(m.outcome(&o).is_some(), "the outcome names the call the mind awaits");
+                }
+                MindMail::Percept(seq, p) => {
+                    after = seq;
+                    m.perceive(&p);
+                    let decision = m.decide();
+                    if let Decision::Call(c) = &decision {
+                        let [Arg::Count(v)] = c.args.as_slice() else { panic!("one Count: {decision}") };
+                        values.push(*v);
+                        nonce += 1;
+                        let call = Post::Call(Call { domain: d, seat: 7, mind: me, nonce: [nonce; 32], fn_id: c.fn_id, args: c.args.clone() }).sign(&mind()).expect("writes");
+                        let reference = call.reference().expect("writes");
+                        k.seat_post(&call).expect("relayed");
+                        m.called(c.fn_id, c.args.clone(), reference);
+                    }
+                    decisions.push(decision);
+                }
+            }
+        }
+        for piece in k.seat_mail(&ReadMail::sign(&house(), house_after, [0; 32])).expect("signed") {
+            house_after = piece.seq;
+            let s = piece.post().expect("reads");
+            let Post::Call(c) = &s.post else { continue };
+            let raised: &[usize] = match (c.fn_id, c.args.as_slice()) {
+                (2, [Arg::Count(0)]) => &[0],
+                (2, [Arg::Count(1)]) => &[1],
+                (2, [Arg::Count(2)]) => &[0, 1, 2],
+                _ => &[],
+            };
+            raised.iter().for_each(|i| x[*i] += 1);
+            let (applied, reason) = match raised.is_empty() {
+                true => (false, REASON_BAD_ARGUMENTS),
+                false => (true, 0),
+            };
+            let outcome = Outcome { domain: d, seat: 7, mind: me, call: s.reference().expect("writes"), applied, reason, deed: [8; 32] };
+            k.seat_post(&Post::Outcome(outcome).sign(&house()).expect("writes")).expect("relayed");
+        }
+    }
+    (decisions, values, x, m)
+}
+
+/// 78.148 — ITS OWN ARGUMENTS, NO SCRIPT. With no counsel the mind explores
+/// FOCUS's one Count in increasing order — 0, 1, 2 — and 3, which the house
+/// refuses BAD ARGUMENTS: the refusal bounds the domain below 3 and 3 is
+/// never called again. Every value tried, it reads under its own valuation
+/// (REACH: the records its calls moved, the way they moved them) that 2
+/// moves records 10, 11 and 12 at least as far as 0 and 1 on every one,
+/// further on one — and calls 2 from then on, saying so.
+#[test]
+fn the_mind_explores_its_own_arguments_and_calls_the_dominant() {
+    let (decisions, values, x, m) = play_own(9);
+    assert_eq!(values, vec![0, 1, 2, 3, 2, 2, 2, 2, 2], "explored upward, the refused value never again, then the dominant");
+    let explored: Vec<Option<(usize, u64)>> = decisions
+        .iter()
+        .take(4)
+        .map(|d| match d {
+            Decision::Call(Choice { why: Why::Exploring { at, .. }, followed: false, .. }) => *at,
+            other => panic!("exploring: {other}"),
+        })
+        .collect();
+    assert_eq!(explored, vec![None, Some((0, 1)), Some((0, 2)), Some((0, 3))], "the least first, then the argument upward");
+    assert_eq!(m.repertoire().iter().map(|o| (o.id, o.bounds())).collect::<Vec<_>>(), vec![(2, vec![Some(3)])], "BAD ARGUMENTS at 3 bounds the domain");
+    let refused = m.call_experience(2, &[Arg::Count(3)]).expect("tried");
+    assert_eq!((refused.applied, refused.refused.clone(), refused.read), (0, vec![(REASON_BAD_ARGUMENTS, 1)], 0));
+    let at = |kind| Locator { kind, keys: vec![], occurrence: 0, position: 0 };
+    for d in &decisions[4..] {
+        let Decision::Call(c) = d else { panic!("{d}") };
+        let Why::Reached { valuation, values, over, along } = &c.why else { panic!("{d}") };
+        assert_eq!((*valuation, values.clone()), (Valuation::Reach, vec![2]), "{d}");
+        assert_eq!(over, &vec![(2, vec![0]), (2, vec![1])], "{d}");
+        assert_eq!(along, &vec![(at(10), Direction::Raise, q(1, 1)), (at(11), Direction::Raise, q(1, 1)), (at(12), Direction::Raise, q(1, 1))], "{d}");
+        assert!(d.to_string().contains("valuation REACH"), "the beat line names its valuation: {d}");
+    }
+    assert_eq!(m.reach().len(), 3, "reach favours the three records the calls moved");
+    assert_eq!(x, [1 + 1 + 5, 1 + 1 + 5, 1 + 5], "0 once, 1 once, 2 six times; 3 applied never");
+}
+
+/// 78.148 — THE LISTING IS THE MIND'S REPERTOIRE: a function whose arguments
+/// are not all Counts or Flags is not the mind's to explore (fn 1, two
+/// Bytes); a Count function is (fn 2) — and a Flag one is two values from
+/// the start. A call refused NO SUCH FUNCTION takes the function out; the
+/// listing read again restores it.
+#[test]
+fn the_listing_is_perceived_as_the_minds_repertoire() {
+    let mut k = founded();
+    list(&mut k, 3, vec![SeatFn { id: 1, tags: vec![6, 6] }, SeatFn { id: 2, tags: vec![TAG_COUNT] }, SeatFn { id: 5, tags: vec![TAG_FLAG] }]);
+    let (epoch, fns) = listed_fns(&k, 7);
+    assert_eq!(epoch, 3);
+    let mut m = SeatMind::new(vk(&domain()), 7);
+    assert_eq!(m.decide(), Decision::NothingToCall, "no counsel and no repertoire: nothing to call");
+    m.perceive_listing(&fns);
+    let held: Vec<(u16, bool, Vec<Option<u64>>)> = m.repertoire().iter().map(|o| (o.id, o.domains.is_some(), o.bounds())).collect();
+    assert_eq!(held, vec![(1, false, vec![]), (2, true, vec![None]), (5, true, vec![Some(2)])]);
+    m.perceive(&percept(1, Arg::Count(1), vec![]));
+    let Decision::Call(c) = m.decide() else { panic!("the mind explores") };
+    assert_eq!((c.fn_id, c.args.clone(), c.followed), (2, vec![Arg::Count(0)], false), "fn 1 skipped, fn 2 at its least");
+    m.called(2, c.args, [1; 32]);
+    let refusal = Outcome { domain: vk(&domain()), seat: 7, mind: vk(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
+    assert_eq!(m.outcome(&refusal), Some(2));
+    assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 5], "no such function: gone until the listing is read again");
+    m.perceive(&percept(2, Arg::Count(2), vec![]));
+    let Decision::Call(c) = m.decide() else { panic!("the flag function is explored") };
+    assert_eq!((c.fn_id, c.args), (5, vec![Arg::Flag(false)]));
+    m.perceive_listing(&fns);
+    assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 2, 5], "the listing read again restores it");
+}
+
+/// 78.148 — THE SEAT HELD AGAIN. A TAKEN refused lets the take go and the
+/// next stroke takes again; held, the listing is to be read; a call refused
+/// NOT THE HOLDER lets it go, NO SUCH FUNCTION asks the listing; a take no
+/// TAKEN answers is posted again after a full aperture cycle of strokes —
+/// and, on one court's relay, the house reads the second take.
+#[test]
+fn the_seat_is_taken_again_when_lost() {
+    use crate::client::sdk::seat::SeatHold;
+    let mut k = founded();
+    let (d, me) = (vk(&domain()), vk(&mind()));
+    list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    let mut h = SeatHold::default();
+    let mut after = 0u64;
+    let mut nonce = 0u8;
+    let mut take = |k: &mut Kernel, h: &mut SeatHold| {
+        assert!(h.stroke(), "the stroke posts the take");
+        nonce += 1;
+        k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [nonce; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+        h.take_posted();
+    };
+    take(&mut k, &mut h);
+    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: false, reason: 1 }).sign(&house()).expect("writes")).expect("relayed");
+    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed")).expect("typed") {
+        let MindMail::Taken(seq, t) = piece else { panic!("a TAKEN") };
+        after = seq;
+        assert!(!h.taken(t.ok), "refused: let go, no listing");
+    }
+    assert_eq!(h, SeatHold::default(), "the take let go");
+    take(&mut k, &mut h);
+    let takes = k.seat_mail(&ReadMail::sign(&house(), 0, [0; 32])).expect("signed").iter().filter(|m| m.sub == SUB_TAKE).count();
+    assert_eq!(takes, 2, "the house reads the second take");
+    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
+    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed")).expect("typed") {
+        let MindMail::Taken(_, t) = piece else { panic!("a TAKEN") };
+        assert!(h.taken(t.ok), "held: the listing is to be read");
+    }
+    assert!(h.held && !h.stroke(), "held: the stroke reads its mail");
+    assert_eq!(listed_fns(&k, 7).1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
+    assert!(h.outcome(false, REASON_NO_SUCH_FUNCTION) && h.held, "no such function: the listing again, the seat still held");
+    assert!(!h.outcome(false, REASON_BAD_ARGUMENTS) && h.held, "bad arguments: information for the mind, the seat still held");
+    assert!(!h.outcome(false, REASON_NOT_THE_HOLDER) && !h.held, "not the holder: let go");
+    assert!(h.stroke(), "and taken again");
+    h.take_posted();
+    for _ in 1..SeatHold::patience() {
+        assert!(!h.stroke(), "an unanswered take waits within the aperture cycle");
+    }
+    assert!(h.stroke(), "unanswered a full aperture cycle: posted again");
+    assert_eq!(SeatHold::patience(), u64::from(crate::physics::aperture_cycle()));
+}
+
+/// 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the operator's
+/// field law): reflections alternating — odd versors, a bell's pulse — are
+/// carried by `e₂e₁` and `e₁e₂` in turn, an orbit of period 2; a steady
+/// motion's powers are carried by the motion itself every beat, an orbit of
+/// period 1 that is not standing still; a held versor is fixed; a null
+/// point is no versor and its carrier is refused. Exact, never numbers.
+#[test]
+fn a_versor_series_changes_by_its_exact_carrier() {
+    use crate::transducer::cga::{Mv, E1, E2};
+    let e = |mask| Mv::blade(mask, q(1, 1)).widened(3);
+    let (e1, e2) = (e(E1), e(E2));
+    let c = carrier(&e1, &e2).expect("two reflections");
+    assert!(c.geo(&e1).sub(&e2).is_zero(), "the carrier carries e1 onto e2 exactly");
+    assert!(c.sub(&e2.geo(&e1)).is_zero(), "and it is e2 e1");
+    assert_eq!(carrier(&point_at(&[q(1, 1), q(0, 1), q(0, 1)]), &e1).map(|_| ()), None, "a null point is no versor: refused");
+    let r = translator_at(&[q(1, 2), q(0, 1), q(0, 1)]);
+    let mut m = SeatMind::new(vk(&domain()), 7);
+    let mut power = r.clone();
+    for beat in 1..=6u64 {
+        let bell = match beat % 2 {
+            1 => e1.clone(),
+            _ => e2.clone(),
+        };
+        let records = vec![
+            Record::Plain { kind: 20, args: vec![Arg::Mv(bell)] },
+            Record::Plain { kind: 21, args: vec![Arg::Mv(power.clone())] },
+            Record::Plain { kind: 22, args: vec![Arg::Mv(e1.clone())] },
+        ];
+        m.perceive(&percept(beat, Arg::Q { num: beat as i64, den: 1 }, records));
+        power = power.geo(&r);
+    }
+    let at = |kind| Locator { kind, keys: vec![], occurrence: 0, position: 0 };
+    let bell = m.series(&at(20)).expect("held");
+    assert_eq!(bell.orbit(), Some(Return::Orbit { period: 2, span: Some(q(2, 1)) }), "the pulse returns every two beats");
+    let carried: Vec<&Mv> = bell.seen().filter_map(|s| s.carrier.as_ref()).collect();
+    assert_eq!(carried.len(), 5);
+    assert!(carried.iter().all(|c| c.sub(&e2.geo(&e1)).is_zero() || c.sub(&e1.geo(&e2)).is_zero()));
+    let steady = m.series(&at(21)).expect("held");
+    assert!(steady.seen().skip(1).all(|s| s.carrier.as_ref().is_some_and(|c| c.sub(&r).is_zero())), "each power carried by the motion itself");
+    assert_eq!(steady.orbit(), Some(Return::Orbit { period: 1, span: Some(q(1, 1)) }), "a steady carrier is an orbit, not a standstill");
+    assert_eq!(m.series(&at(22)).expect("held").orbit(), Some(Return::Fixed), "a held versor is carried by one: fixed");
 }

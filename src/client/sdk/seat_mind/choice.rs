@@ -24,6 +24,10 @@
 //!   all, and the house counsels one this mind has not read: that one, tried;
 //! - otherwise the counsel, followed — no read function dominates.
 //!
+//! WITH NO COUNSEL (78.148) the call is the mind's own (`own`): its listed
+//! functions' argument domains explored, then the dominant call under its
+//! own valuation, REACH.
+//!
 //! No sum across quantities is formed: dominance is read quantity by
 //! quantity, so no hidden scalar weighs one record against another.
 
@@ -37,7 +41,7 @@ pub enum Direction {
 }
 
 impl Direction {
-    fn of(q: &Q) -> Option<Direction> {
+    pub(super) fn of(q: &Q) -> Option<Direction> {
         match () {
             _ if q.is_positive() => Some(Direction::Raise),
             _ if q.is_negative() => Some(Direction::Lower),
@@ -53,7 +57,7 @@ impl Direction {
     }
 
     /// A rate read the favoured way: itself to raise, negated to lower.
-    fn along(self, rate: &Q) -> Q {
+    pub(super) fn along(self, rate: &Q) -> Q {
         match self {
             Direction::Raise => rate.clone(),
             Direction::Lower => -rate.clone(),
@@ -112,7 +116,7 @@ impl Experience {
 
     /// Its rate on the quantity at `k`; zero where it was read and the
     /// quantity was not among those that stood when it was made.
-    fn rate_at(&self, k: &[u8]) -> Q {
+    pub(super) fn rate_at(&self, k: &[u8]) -> Q {
         match self.effects.get(k).and_then(Effect::rate) {
             Some(r) => r,
             None => Q::zero(),
@@ -140,6 +144,40 @@ pub enum Why {
     Untried { against: Vec<u16> },
     /// No read function dominates: the counsel.
     NoneDominates,
+    /// 78.148 — no counsel: a listed function's arguments not yet tried, in
+    /// increasing order — the least (`at` none), then argument `i` at value
+    /// `v` with the others at their least; `bounds` each argument's domain
+    /// as learned (the least value refused BAD_ARGUMENTS, or none yet).
+    Exploring { at: Option<(usize, u64)>, bounds: Vec<Option<u64>> },
+    /// 78.148 — no counsel, every bounded domain tried: under the mind's own
+    /// valuation, this call's read rates along the favoured records are at
+    /// least every other read call's (`over`, each a function and its
+    /// argument values), above one's, and the favoured way on one.
+    Reached { valuation: Valuation, values: Vec<u64>, over: Vec<(u16, Vec<u64>)>, along: Vec<(Locator, Direction, Q)> },
+    /// 78.148 — no counsel, no read call dominates under the mind's own
+    /// valuation: of the `front` undominated calls, the one read fewest
+    /// times (`read`), read again — its rate sharpened, no scalar formed.
+    Unreached { valuation: Valuation, values: Vec<u64>, front: usize, read: u64 },
+}
+
+/// 78.148 — THE VALUATION a choice is read under.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Valuation {
+    /// No worth declared (no counsel): REACH — what the mind's own calls
+    /// were seen to move, favoured the one way they moved it
+    /// (`SeatMind::reach`).
+    Reach,
+}
+
+impl std::fmt::Display for Valuation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Valuation::Reach => write!(
+                f,
+                "valuation REACH (no worth declared: each record the mind's own calls moved, favoured the one way they moved it; a record moved both ways contested)"
+            ),
+        }
+    }
 }
 
 impl std::fmt::Display for Why {
@@ -156,6 +194,24 @@ impl std::fmt::Display for Why {
             }
             Why::Untried { against } => write!(f, "fn {against:?} moved the favoured records against or not at all — a counselled call not yet read, tried"),
             Why::NoneDominates => write!(f, "no read call dominates on every favoured record — the house's counsel"),
+            Why::Exploring { at, bounds } => {
+                write!(f, "no counsel: its arguments explored in increasing order, never a value refused — ")?;
+                match at {
+                    None => write!(f, "the least, untried")?,
+                    Some((i, v)) => write!(f, "argument {i} at {v}, untried")?,
+                }
+                write!(f, " (domains bounded {bounds:?})")
+            }
+            Why::Reached { valuation, values, over, along } => {
+                write!(f, "{valuation}: at {values:?} its read outcomes move")?;
+                for (at, d, rate) in along {
+                    write!(f, " {at} {d:?} at {rate}/call")?;
+                }
+                write!(f, ", at least as far the favoured way as calls {over:?} on every one")
+            }
+            Why::Unreached { valuation, values, front, read } => {
+                write!(f, "{valuation}: no read call dominates — of {front} undominated, {values:?} read fewest ({read}) is read again")
+            }
         }
     }
 }
@@ -224,6 +280,10 @@ impl SeatMind {
     pub fn decide(&self) -> Decision {
         if let Some(fn_id) = self.awaiting() {
             return Decision::Awaiting { fn_id };
+        }
+        // 78.148 — no counsel: the mind's own call, by its own valuation.
+        if self.counsel.is_empty() {
+            return self.own_call();
         }
         // The house's first counsel, in the house's own record order — the
         // order the wire carries is the house's statement (78.145).
