@@ -85,7 +85,8 @@ fn each_symmetry_carries_every_site_to_its_index_image() {
                 let site = Site::new(vec![r as i64, c as i64, 0]);
                 let to = crate::transducer::element::carry_site(&v, &site).expect("a site lands");
                 let [tr, tc, _] = to.axes() else { panic!("three axes") };
-                assert_eq!(y[*tr as usize][*tc as usize], h, "{kind:?}: ({r}, {c}) lands on its image");
+                let (tr, tc) = (usize::try_from(*tr).expect("a row on the grid"), usize::try_from(*tc).expect("a column on the grid"));
+                assert_eq!(y[tr][tc], h, "{kind:?}: ({r}, {c}) lands on its image");
             }
         }
     }
@@ -104,7 +105,10 @@ fn every_grid_symmetry_of_a_square_is_solved_on_a_pair_it_never_saw() {
         let x = square_train();
         let family = vec![(x.clone(), apply(kind, &x))];
         let step = Step::grid_motion(kind, (3, 3), (3, 3)).expect("a square fits every symmetry");
-        let rule = sentence(&[step], &family, &NoCrystal).unwrap_or_else(|e| panic!("{kind:?} mints: {e:?}"));
+        let rule = match sentence(&[step], &family, &NoCrystal) {
+            Ok(rule) => rule,
+            Err(e) => panic!("{kind:?} mints: {e:?}"),
+        };
         let w = square_withheld();
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?}"));
     }
@@ -117,7 +121,10 @@ fn a_turn_and_the_transpose_take_a_non_square_grid_to_its_exchange() {
         let y = apply(kind, &x);
         assert_eq!(shape(&y), (3, 2), "R × C goes to C × R");
         let step = Step::grid_motion(kind, (2, 3), (3, 2)).expect("the exchange fits");
-        let rule = sentence(&[step], &[(x, y)], &NoCrystal).unwrap_or_else(|e| panic!("{kind:?} mints: {e:?}"));
+        let rule = match sentence(&[step], &[(x, y)], &NoCrystal) {
+            Ok(rule) => rule,
+            Err(e) => panic!("{kind:?} mints: {e:?}"),
+        };
         let w = grid(&["034", "030"]);
         assert_solved(&rule, &[(w.clone(), apply(kind, &w))], &format!("{kind:?} on 2 × 3"));
     }
