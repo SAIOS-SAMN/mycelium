@@ -9,7 +9,13 @@ where mycelium stands without the session that wrote it.*
   counts). Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
   `--check` each home, then `systemctl --user start mycelium-server@{a,b,c}`.
 - Voices 1–5 (`mycelium-client@1..5`) run the same build, signing and crossing
-  their solves, bootstrapped to a, b, c, a, b. They are traffic, not minds.
+  their solves, bootstrapped to a, b, c, a, b. Their role (the operator): puzzle
+  solvers that BUILD THE ANASTOME LANGUAGE — court-admitted words with their
+  derivations — which the seat interface then translates into the minds that
+  operate inside the games, or in any kernel that requires them.
+- The hypha serves ANYONE (holding μ or earning its first); a universe founded
+  on a court speaks only through its ancients' house (`Kernel::may_solve`,
+  ffba096b — ships with 78.143 slice 1).
 - Xylarium is ORIGINATED on hypha a (h 64410, Curved, parent Unwitnessed);
   silent until its ancients earn μ. Netstratum is founded, NOT originated.
 - No tubes or core tubes exist on any court.
