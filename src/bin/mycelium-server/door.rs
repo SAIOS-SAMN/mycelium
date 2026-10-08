@@ -124,25 +124,29 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     }
     if kind == dialogue::ACT_TASK {
         let Some(_tvoice) = dialogue::decode_task_request(&frame.body) else { return true };
-        let dispatched = {
-            let Ok(mut reg) = door.registry.lock() else { return true };
-            reg.dispatch().map(|(tid, task)| (tid, task.clone()))
-        };
         // An envelope that does not fit the lengths it writes is not sent
         // short: the voice would study a family this registry did not
-        // dispatch. An empty body is "no work", which it already reads.
-        let body = match &dispatched {
-            Some((tid, task)) => {
+        // dispatch. Nor is it answered empty — an empty body is "no work",
+        // and a book with open tasks answered that while its cursor sat on
+        // a task whose address passes the u16 wall (barren-realms read 8
+        // such pulls as tasks with no family). The pull steps on to the
+        // next open task, once round the book at most; the unframeable task
+        // is the debt of an id that is a blob where a citation belongs.
+        let body = {
+            let Ok(mut reg) = door.registry.lock() else { return true };
+            let mut body = Vec::new();
+            for _ in 0..reg.len() {
+                let Some((tid, task)) = reg.dispatch() else { break };
                 let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                match dialogue::encode_task_envelope(tid, &task.train, &tests) {
-                    Some(b) => b,
-                    None => {
-                        eprintln!("  task refused: the envelope does not fit its lengths");
-                        Vec::new()
+                match dialogue::encode_task_envelope(&tid, &task.train, &tests) {
+                    Some(b) => {
+                        body = b;
+                        break;
                     }
+                    None => eprintln!("  task passed over: its envelope does not fit its lengths (address {} bytes)", tid.as_bytes().len()),
                 }
             }
-            None => Vec::new(),
+            body
         };
         let reply = Frame { lane: frame.lane, body };
         answer(s, reply);
