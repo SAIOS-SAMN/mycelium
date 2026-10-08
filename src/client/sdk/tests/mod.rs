@@ -17,6 +17,7 @@ mod refinement;
 mod remainders;
 mod rule;
 mod rule_language;
+mod seat_mind;
 mod solve;
 mod speech;
 mod syntropy;

@@ -25731,6 +25731,77 @@ holds and its outcome returns; a forged read is refused; twenty ~250 KB
 percepts never pass the bound, the oldest dropped and counted, and one read
 carries the whole box within the frame budget.
 
+### 78.146 The mind at its seat: percepts as series, the call its own (2026-10-08)
+
+78.145's owed half. The seat arm's mind is no counsel-follower: it perceives
+its game and chooses its call from what its calls were seen to do
+(`client/sdk/seat_mind/`, held on the entity per domain ‖ seat, volatile).
+
+**A percept is a series, never a picture.** Each record is located by its
+own coordinates — kind, the Key arguments it carries (the house's names for
+what it is about), its occurrence among records sharing both, and the
+argument's position — written `[kind][keys][key…][occurrence][position]`,
+so a record's series are one fiber under its prefix. Every non-key argument
+is one series over the house's percept sequence (the seat's beats) and its
+local time. A multivector is held as itself and a flag as itself; two values
+are one where they write one run of bytes, so a multivector compares
+coefficient for coefficient, never only projectively.
+
+**A quantity's change is a motion of its line.** A Q, BigQ or Count is a
+point of ℚ¹; the change between consecutive beats is the SLIDE by the
+difference — `translator_at`'s point on its null flow, read on
+`translator_at([1])`'s plane so `t = Δ` and slides compose by sum — and,
+where both values stand on one side of zero, the SCALE by the ratio —
+`dilator`'s point on its boost flow, read on `dilator(2)`'s plane so
+`t = (ρ−1)/(ρ+1)` and scales compose by product. Both carry the one value's
+conformal point onto the other's (proved by sandwich).
+
+**An orbit is a return, read.** A quantity's series returns with period `p`
+where its last `2p` changes repeat with period `p` and one period's slides
+compose to the flow's identity; a flag's or multivector's where its last `2p`
+values repeat; period 1 is fixed. A record's period is the lcm of its
+arguments' (78.43); the span is read off the house's local time at the two
+beats. A series holds what one frame carries of its values (`frame_budget`),
+oldest dropped and counted.
+
+**The call is the mind's own.** An applied call's EFFECT is every
+quantity's slide between the beat it was made at and the first percept
+after its outcome, composed per function per quantity on the flow; the
+function's RATE there is its composed slide per read call, exact. What
+matters is the counsel's stated worth read through experience: a counselled
+function at worth above zero favours the way it was read to move each
+quantity, below zero the opposite way; two counsels favouring one quantity
+opposite ways leave it contested. The choice, a comparison the mind states
+(Concordance 1.10), read quantity by quantity with no sum across them: no
+effect read yet — the counsel, followed, and said so; nothing favoured — the
+counsel; one read function DOMINATES (at least as far the favoured way as
+every other on each favoured quantity, further on one, forward on one) — it,
+counselled or not; every read function moved the favoured quantities
+against or not at all — the first counselled function not yet read, tried;
+else the counsel. A call awaits its outcome and reading before the next; an
+outcome missing at the second percept after the call lets it go. One typed
+line per beat: `seat beat call fn F followed-counsel B: why`. Reading a
+call's effect is the mind learning — an act of its orbit (78.49).
+
+Proved (`client::sdk::tests::seat_mind`): a change is a slide and a scale
+that carry 3 onto 7 and compose by sum and by product, none across zero;
+records read back as perceived, a second record of one kind and key its own
+occurrence, a multivector coefficient for coefficient; a quantity cycling
+0, 1, 3 returns with period 3 and span 3/2, a flag with period 2, a constant
+fixed, the record at lcm 6, and a value off the cycle breaks it. Against a
+fake house on one court's relay (`Kernel::seat_post`, `seat_mail`, typed by
+`seat::mind_mail`): function 1 raises a record, function 2 lowers it; the
+house counsels 2 first at a worth below zero — the mind follows it once
+(no experience), reads that it lowered what the worth says to raise, tries
+1, and calls 1 from then on (dominates, against the counsel's first); the
+worth turned, it learns 2, the counsel's second.
+
+*Owed, named:* a bound on how many series a seat holds (a game may churn
+its record keys); handing a recognised orbit to the contemplation as a form
+(today it is the seat mind's reading, not a held thought); a call's
+arguments of the mind's own (it calls with the counsel's or its last); the
+effect of a refused call and the world's own drift told apart.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

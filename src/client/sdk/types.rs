@@ -627,6 +627,10 @@ pub struct Entity {
     /// most once per court this mind knows and then waits for the family
     /// to come round again. Cleared when the citer is admitted or sealed.
     pub(crate) owed_tries: crate::network::nerve::Keyed<usize>,
+    /// 78.146 — THE SEATS THIS MIND SITS IN A GAME, by domain ‖ seat: what
+    /// it perceives there and what its calls were seen to do (volatile, the
+    /// mind's own, never persisted).
+    pub(crate) seats: crate::network::nerve::Keyed<super::seat_mind::SeatMind>,
 }
 
 /// A cited form owed to a court, with the citer that waits on it and the
