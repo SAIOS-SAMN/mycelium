@@ -16,10 +16,12 @@ where mycelium stands without the session that wrote it.*
 
 ## Traffic (courts' served counters since 16:04)
 - a: Task pulls 278, Solve acts 2, JUDGED 0. b: Task 10. c: Task 4.
-- **16:19: FIRST CLOSURE.** Hypha c judged its first closure, paid
-  [0, 6, 0, 0] μ, very likely voice 3 (bootstrapped to c) on 52c25ae9. It is
-  the first ARC task closed by a rule since the rebuild (the voices' soak
-  baseline was 43 judged, 0 closed).
+- **16:19: FIRST CLOSURE**, judged on hypha c, paid [0, 6, 0, 0] μ to
+  abe42776… — barren-realms' captain key (task 0f32d437 by Transpose,
+  submitted via :7500 and ROUTED by its task key to c: `speak_keyed` sends a
+  solve to the hypha owning the key, not the one dialled). Not a voice. The
+  first ARC task closed by a rule since the rebuild (the voices' soak baseline
+  was 43 judged, 0 closed). Voices: none judged yet.
 - Netstratum's seat pulls on :7500. Its solves are refused unsigned: its copy
   of mycelium (9ed0c80b) predates signed solves.
 
