@@ -956,6 +956,12 @@ pub struct Form {
     /// reads its body off the overlap it crosses here — never off its member
     /// (checklist (m)). In memory only; the tape at the recut (BQ5b).
     pub face_bodies: Keyed<(Vec<u8>, Vec<u8>), coord::Overlap>,
+    /// 78.143 — THE RULE'S CLAUSES: each a typed selection over the
+    /// perceived bodies' own exact coordinates and what is done to it
+    /// ([`super::clause`]). A coordinate of the form, on its address after
+    /// the remainder's and only where there are any; spoken by
+    /// `family::statement` on every scene the form is spoken onto.
+    pub clauses: Vec<super::clause::Clause>,
 }
 
 impl Default for Form {
@@ -983,6 +989,7 @@ impl Default for Form {
             carriages: Keyed::new(),
             cells: Keyed::new(),
             face_bodies: Keyed::new(),
+            clauses: Vec::new(),
         }
     }
 }

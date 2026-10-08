@@ -16,6 +16,7 @@ mod height;
 mod refinement;
 mod remainders;
 mod rule;
+mod rule_language;
 mod solve;
 mod speech;
 mod syntropy;

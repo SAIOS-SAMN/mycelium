@@ -175,9 +175,10 @@ impl Form {
     }
 
     /// A vertex that acts: a word, a glued form, a rebase or an unfolding.
-    /// A form with none is a chain wearing a form's tape (50.6).
+    /// A form with none is a chain wearing a form's tape (50.6). A clause
+    /// acts on what it selects (78.143).
     pub fn acts(&self) -> bool {
-        self.vertices.scoped().any(|(_, v)| {
+        !self.clauses.is_empty() || self.vertices.scoped().any(|(_, v)| {
             matches!(v, Vertex::Word { .. } | Vertex::Glued { .. } | Vertex::Rebased { .. } | Vertex::Unfolded { .. })
         })
     }

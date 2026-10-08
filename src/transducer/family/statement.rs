@@ -1,0 +1,573 @@
+// AI-GENERATED CONTENT — see DISCLAIMER.md.
+//
+//! 78.143 — SPEAKING A FORM'S CLAUSES ON A SCENE.
+//!
+//! The scene's bodies are the ones the court perceives (`perceive`): each a
+//! maximal hue-blind connected region, its support and hues its own exact
+//! coordinates. A clause SELECTS among them by a typed predicate, read on the
+//! input as it stands — every clause selects on the same scene — and its act
+//! paints the canvas, which opens as the input: a hue map or a carriage on
+//! the selection, a region its boundary encloses filled, cells created
+//! relative to it, or the output cropped to it. Nothing is chosen silently:
+//! a rank ties only where the rule says what a tie does, a coordinate is read
+//! exactly or the clause is refused by name ([`Unstated`]), and the court
+//! refuses a form whose clause is unstated on a pair it replays.
+
+use super::*;
+use crate::core::Q;
+use crate::transducer::sentence::form::clause::{
+    exact_root, About, Act, Clause, Cmp, Coord, Extent, Order, Paint, Pred, Region, Stop, Tie, Value,
+};
+
+/// WHY A CLAUSE IS NOT STATED ON A SCENE, by name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Unstated {
+    /// A rank met a tie its order does not name.
+    Tie,
+    /// A predicate read a coordinate that is not exact on a body: a radius
+    /// that is no rational, or a μ lane, which is never a rule's coordinate.
+    Inexact,
+    /// A crop, or a copy's template, selected no single body or extent.
+    NotOne,
+    /// A carried or copied cell landed off the lattice of cells.
+    OffLattice,
+    /// A created line names no ray.
+    Still,
+}
+
+/// WHAT THE CLAUSES SPOKE: the output frame and its painted cells.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Spoken {
+    pub frame: (usize, usize),
+    pub painted: Vec<(i64, i64, u8)>,
+}
+
+/// ONE BACKGROUND COMPONENT: its cells, whether it reaches the grid's
+/// border, and the bodies its cells' edge-neighbours belong to.
+struct Hollow {
+    cells: Vec<(usize, usize)>,
+    border: bool,
+    rim: Vec<usize>,
+}
+
+/// THE SCENE AS THE CLAUSES READ IT, perceived once: each body's cells, the
+/// body each cell belongs to, and the background's components.
+struct Seen<'a> {
+    x: &'a Grid,
+    bodies: &'a [Body],
+    rows: usize,
+    cols: usize,
+    cells: Vec<Vec<(usize, usize, u8)>>,
+    owner: Vec<Vec<Option<usize>>>,
+    hollows: Vec<Hollow>,
+}
+
+const EDGES: [(i64, i64); 4] = [(-1, 0), (1, 0), (0, -1), (0, 1)];
+const AROUND: [(i64, i64); 8] = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)];
+
+fn q(n: i64) -> Q {
+    Q::from_integer(n.into())
+}
+
+fn qu(n: usize) -> Option<Q> {
+    Some(q(i64::try_from(n).ok()?))
+}
+
+/// A body's extent `(top, left, bottom, right)`, read over every cell.
+fn extent_of(cells: &[(usize, usize, u8)]) -> Option<(usize, usize, usize, usize)> {
+    let [(r0, c0, _), ..] = cells else { return None };
+    let (mut t, mut l, mut b, mut r) = (*r0, *c0, *r0, *c0);
+    for &(rr, cc, _) in cells {
+        if rr < t {
+            t = rr;
+        }
+        if rr > b {
+            b = rr;
+        }
+        if cc < l {
+            l = cc;
+        }
+        if cc > r {
+            r = cc;
+        }
+    }
+    Some((t, l, b, r))
+}
+
+impl<'a> Seen<'a> {
+    fn of(x: &'a Grid, bodies: &'a [Body]) -> Seen<'a> {
+        let rows = x.len();
+        let cols = match x.as_slice() {
+            [row, ..] => row.len(),
+            [] => 0,
+        };
+        let mut owner = vec![vec![None; cols]; rows];
+        let mut cells = Vec::with_capacity(bodies.len());
+        for (i, b) in bodies.iter().enumerate() {
+            let mut mine = Vec::with_capacity(b.compartments.len());
+            for l in &b.compartments {
+                let Some((r, c)) = on_grid(&l.site) else { continue };
+                let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) else { continue };
+                if let Some(o) = owner.get_mut(r).and_then(|row| row.get_mut(c)) {
+                    *o = Some(i);
+                    mine.push((r, c, l.hue));
+                }
+            }
+            cells.push(mine);
+        }
+        let mut seen = Seen { x, bodies, rows, cols, cells, owner, hollows: Vec::new() };
+        seen.hollows = seen.read_hollows();
+        seen
+    }
+
+    fn at(&self, r: usize, c: usize, dr: i64, dc: i64) -> Option<(usize, usize)> {
+        let rr = usize::try_from(i64::try_from(r).ok()? + dr).ok()?;
+        let cc = usize::try_from(i64::try_from(c).ok()? + dc).ok()?;
+        (rr < self.rows && cc < self.cols).then_some((rr, cc))
+    }
+
+    fn hue(&self, r: usize, c: usize) -> u8 {
+        match self.x.get(r).and_then(|row| row.get(c)) {
+            Some(h) => *h,
+            None => 0,
+        }
+    }
+
+    fn owner_at(&self, r: usize, c: usize) -> Option<usize> {
+        self.owner.get(r).and_then(|row| row.get(c)).copied().flatten()
+    }
+
+    /// The background's edge-connected components, each with its border
+    /// reading and the bodies on its rim.
+    fn read_hollows(&self) -> Vec<Hollow> {
+        let mut done = vec![vec![false; self.cols]; self.rows];
+        let mut out = Vec::new();
+        for r in 0..self.rows {
+            for c in 0..self.cols {
+                if self.hue(r, c) != 0 || done[r][c] {
+                    continue;
+                }
+                let mut h = Hollow { cells: Vec::new(), border: false, rim: Vec::new() };
+                let mut stack = vec![(r, c)];
+                done[r][c] = true;
+                while let Some((a, b)) = stack.pop() {
+                    h.cells.push((a, b));
+                    for (dr, dc) in EDGES {
+                        let Some((na, nb)) = self.at(a, b, dr, dc) else {
+                            h.border = true;
+                            continue;
+                        };
+                        match self.owner_at(na, nb) {
+                            Some(o) => {
+                                if !h.rim.contains(&o) {
+                                    h.rim.push(o);
+                                }
+                            }
+                            None if self.hue(na, nb) == 0 && !done[na][nb] => {
+                                done[na][nb] = true;
+                                stack.push((na, nb));
+                            }
+                            None => {}
+                        }
+                    }
+                }
+                h.rim.sort_unstable();
+                out.push(h);
+            }
+        }
+        out
+    }
+
+    /// The background cells the bodies of `set` enclose between them.
+    fn enclosed(&self, set: &[usize]) -> Vec<(usize, usize)> {
+        self.hollows
+            .iter()
+            .filter(|h| !h.border && !h.rim.is_empty() && h.rim.iter().all(|o| set.contains(o)))
+            .flat_map(|h| h.cells.iter().copied())
+            .collect()
+    }
+
+    /// The other bodies `b` touches.
+    fn touching(&self, b: usize) -> Vec<usize> {
+        let mut out = Vec::new();
+        for &(r, c, _) in &self.cells[b] {
+            for (dr, dc) in AROUND {
+                if let Some(o) = self.at(r, c, dr, dc).and_then(|(a, d)| self.owner_at(a, d)) {
+                    if o != b && !out.contains(&o) {
+                        out.push(o);
+                    }
+                }
+            }
+        }
+        out
+    }
+
+    /// THE COORDINATE, READ EXACTLY: `Ok(None)` where it does not read on
+    /// this body (a tally of a body of several hues), refused where it is not
+    /// exact.
+    fn read(&self, coord: Coord, b: usize) -> Result<Option<Q>, Unstated> {
+        let cells = &self.cells[b];
+        let ext = extent_of(cells);
+        let span = |lo: usize, hi: usize| hi.checked_sub(lo).and_then(|d| d.checked_add(1)).and_then(qu);
+        let mut hues: Vec<u8> = cells.iter().map(|&(_, _, h)| h).collect();
+        hues.sort_unstable();
+        hues.dedup();
+        Ok(match coord {
+            Coord::Shell => qu(cells.len()),
+            Coord::Height => ext.and_then(|(t, _, bt, _)| span(t, bt)),
+            Coord::Width => ext.and_then(|(_, l, _, r)| span(l, r)),
+            Coord::Top => ext.and_then(|(t, ..)| qu(t)),
+            Coord::Left => ext.and_then(|(_, l, ..)| qu(l)),
+            Coord::Bottom => ext.and_then(|(_, _, bt, _)| qu(bt)),
+            Coord::Right => ext.and_then(|(.., r)| qu(r)),
+            Coord::Hues => qu(hues.len()),
+            Coord::Contacts => qu(self.touching(b).len()),
+            Coord::Enclosed => qu(self.enclosed(&[b]).len()),
+            Coord::Tally => match hues.as_slice() {
+                [h] => qu(self.x.iter().flatten().filter(|&&v| v == *h).count()),
+                _ => None,
+            },
+            Coord::Peers => qu(self.bodies.iter().filter(|o| o.moduli == self.bodies[b].moduli).count()),
+            Coord::Radius => Some(exact_root(&self.bodies[b].shape.blade.radius2()).ok_or(Unstated::Inexact)?),
+            Coord::Lane(_) => return Err(Unstated::Inexact),
+        })
+    }
+
+    fn all(&self) -> Vec<usize> {
+        (0..self.bodies.len()).collect()
+    }
+
+    /// THE BODIES OF `domain` THE PREDICATE SELECTS, in the domain's order.
+    fn select(&self, pred: &Pred, domain: &[usize]) -> Result<Vec<usize>, Unstated> {
+        Ok(match pred {
+            Pred::All => domain.to_vec(),
+            Pred::Hue(h) => domain.iter().copied().filter(|&b| self.cells[b].iter().any(|c| c.2 == *h)).collect(),
+            Pred::Chart(inv) => domain.iter().copied().filter(|&b| self.bodies[b].moduli == *inv).collect(),
+            Pred::Cmp { coord, cmp, to } => {
+                let to = match to {
+                    Value::Integer(n) => q(*n),
+                    Value::Count(p) => qu(self.select(p, &self.all())?.len()).ok_or(Unstated::Inexact)?,
+                };
+                let mut out = Vec::new();
+                for &b in domain {
+                    let Some(v) = self.read(*coord, b)? else { continue };
+                    let holds = match cmp {
+                        Cmp::Eq => v == to,
+                        Cmp::Less => v < to,
+                        Cmp::Greater => v > to,
+                    };
+                    if holds {
+                        out.push(b);
+                    }
+                }
+                out
+            }
+            Pred::Rank { coord, order, place, tie } => self.rank(*coord, *order, *place, *tie, domain)?,
+            Pred::Touches(p) => {
+                let them = self.select(p, &self.all())?;
+                domain.iter().copied().filter(|&b| self.touching(b).iter().any(|o| them.contains(o))).collect()
+            }
+            Pred::Not(p) => {
+                let s = self.select(p, domain)?;
+                domain.iter().copied().filter(|b| !s.contains(b)).collect()
+            }
+            Pred::And(ps) => {
+                let mut d = domain.to_vec();
+                for p in ps {
+                    d = self.select(p, &d)?;
+                }
+                d
+            }
+            Pred::Any(ps) => {
+                let mut hit = Vec::new();
+                for p in ps {
+                    hit.extend(self.select(p, domain)?);
+                }
+                domain.iter().copied().filter(|b| hit.contains(b)).collect()
+            }
+        })
+    }
+
+    /// COMPARE (Concordance 1.10): the bodies standing at the `place`-th
+    /// distinct value of the coordinate in the order the rule names, a tie
+    /// held, refused, or read by the further coordinate the rule names. A
+    /// body on which the coordinate does not read stands at no place.
+    fn rank(&self, coord: Coord, order: Order, place: u32, tie: Tie, domain: &[usize]) -> Result<Vec<usize>, Unstated> {
+        let mut read: Vec<(Q, usize)> = Vec::new();
+        for &b in domain {
+            if let Some(v) = self.read(coord, b)? {
+                read.push((v, b));
+            }
+        }
+        let mut values: Vec<Q> = read.iter().map(|(v, _)| v.clone()).collect();
+        values.sort_unstable();
+        values.dedup();
+        if order == Order::Greatest {
+            values.reverse();
+        }
+        let Some(at) = usize::try_from(place).ok().and_then(|i| values.get(i)) else {
+            return Ok(Vec::new());
+        };
+        let tied: Vec<usize> = read.iter().filter(|(v, _)| v == at).map(|(_, b)| *b).collect();
+        if tied.len() < 2 {
+            return Ok(tied);
+        }
+        match tie {
+            Tie::Hold => Ok(tied),
+            Tie::Refuse => Err(Unstated::Tie),
+            Tie::Then(c, o) => self.rank(c, o, 0, Tie::Refuse, &tied),
+        }
+    }
+
+    /// A body's centre in the sensor's coordinates (each index plus ½):
+    /// the centre of its extent, exact.
+    fn centre(&self, b: usize) -> Option<[Q; 2]> {
+        let (t, l, bt, r) = extent_of(&self.cells[b])?;
+        let two = q(2);
+        Some([(qu(t)? + qu(bt)? + q(1)) / &two, (qu(l)? + qu(r)? + q(1)) / &two])
+    }
+}
+
+/// THE CELL A VERSOR CARRIES `(r, c)` ONTO, read where the sensor reads it —
+/// the compartment's centre — and only where it lands on a cell's centre
+/// in the frame it left: a centre between cells is off the lattice.
+fn carried(v: &Versor, r: usize, c: usize) -> Result<(i64, i64), Unstated> {
+    let site = Site::new(vec![
+        i64::try_from(r).map_err(|_| Unstated::OffLattice)?,
+        i64::try_from(c).map_err(|_| Unstated::OffLattice)?,
+        0,
+    ]);
+    let p = element::carry_site_center(v, &site).ok_or(Unstated::OffLattice)?;
+    let half = Q::new(1.into(), 2.into());
+    let [pr, pc, pk] = p.as_slice() else { return Err(Unstated::OffLattice) };
+    let (ir, ic) = (pr - &half, pc - &half);
+    if !ir.is_integer() || !ic.is_integer() || pk != &q(0) {
+        return Err(Unstated::OffLattice);
+    }
+    let whole = |x: &Q| i64::try_from(x.to_integer()).map_err(|_| Unstated::OffLattice);
+    Ok((whole(&ir)?, whole(&ic)?))
+}
+
+fn mapped(map: &[(u8, u8)], h: u8) -> u8 {
+    map.iter().find(|(f, _)| *f == h).map_or(h, |(_, t)| *t)
+}
+
+/// SPEAK THE CLAUSES on `x`, whose bodies `bodies` are (the scene the form
+/// is spoken onto, perceived once). The canvas opens as the input; each
+/// clause selects on the input and paints the canvas; a crop sets the
+/// output's extent.
+pub fn speak_clauses(clauses: &[Clause], x: &Grid, bodies: &[Body]) -> Result<Spoken, Unstated> {
+    let seen = Seen::of(x, bodies);
+    let mut canvas: Vec<Vec<u8>> = x.clone();
+    let mut window: Option<(usize, usize, usize, usize)> = None;
+    let mut scale: Option<(u8, u8)> = None;
+    let all = seen.all();
+    for clause in clauses {
+        let sel = seen.select(&clause.select, &all)?;
+        // A landed cell past the frame is no cell of this grid and is not
+        // spoken on it, as a carried compartment past the frame is not.
+        let paint = |canvas: &mut Vec<Vec<u8>>, r: i64, c: i64, h: u8| {
+            if let (Ok(r), Ok(c)) = (usize::try_from(r), usize::try_from(c)) {
+                if let Some(cell) = canvas.get_mut(r).and_then(|row| row.get_mut(c)) {
+                    *cell = h;
+                }
+            }
+        };
+        match &clause.act {
+            Act::Recolour(map) => {
+                for &b in &sel {
+                    for &(r, c, h) in &seen.cells[b] {
+                        canvas[r][c] = mapped(map, h);
+                    }
+                }
+            }
+            Act::Carry { motion, about, gauge } => {
+                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+                for &b in &sel {
+                    let v = match about {
+                        About::Grid => motion.clone(),
+                        About::Body => {
+                            let [cr, cc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
+                            let to = crate::transducer::cga::translator_at(&[cr.clone(), cc.clone()]);
+                            let from = crate::transducer::cga::translator_at(&[-cr, -cc]);
+                            to.geo(motion).geo(&from)
+                        }
+                    };
+                    for &(r, c, h) in &seen.cells[b] {
+                        let (tr, tc) = carried(&v, r, c)?;
+                        landed.push((tr, tc, mapped(gauge, h)));
+                    }
+                }
+                for &b in &sel {
+                    for &(r, c, _) in &seen.cells[b] {
+                        canvas[r][c] = 0;
+                    }
+                }
+                for (r, c, h) in landed {
+                    paint(&mut canvas, r, c, h);
+                }
+            }
+            Act::Fill { region, hue } => {
+                let cells: Vec<(usize, usize)> = match region {
+                    Region::Interior => seen.enclosed(&sel),
+                    Region::Halo => {
+                        let mut out = Vec::new();
+                        for &b in &sel {
+                            for &(r, c, _) in &seen.cells[b] {
+                                for (dr, dc) in AROUND {
+                                    if let Some((a, d)) = seen.at(r, c, dr, dc) {
+                                        if seen.hue(a, d) == 0 {
+                                            out.push((a, d));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        out
+                    }
+                    Region::Extent => {
+                        let mut out = Vec::new();
+                        for &b in &sel {
+                            let Some((t, l, bt, r)) = extent_of(&seen.cells[b]) else { continue };
+                            for a in t..=bt {
+                                for d in l..=r {
+                                    if seen.hue(a, d) == 0 {
+                                        out.push((a, d));
+                                    }
+                                }
+                            }
+                        }
+                        out
+                    }
+                };
+                for (r, c) in cells {
+                    canvas[r][c] = *hue;
+                }
+            }
+            Act::Extend { ray, paint: with, stop } => {
+                let (dr, dc) = (i64::from(ray.0), i64::from(ray.1));
+                if dr == 0 && dc == 0 {
+                    return Err(Unstated::Still);
+                }
+                // A line stops at what was painted BEFORE this clause, so no
+                // line of the clause stops another and the order the bodies
+                // are read in is no part of what it says.
+                let before = canvas.clone();
+                for &b in &sel {
+                    for &(r, c, h) in &seen.cells[b] {
+                        let colour = match with {
+                            Paint::Own => h,
+                            Paint::Hue(k) => *k,
+                        };
+                        let (mut a, mut d) = (r, c);
+                        while let Some((na, nd)) = seen.at(a, d, dr, dc) {
+                            if *stop == Stop::Contact && before[na][nd] != 0 {
+                                break;
+                            }
+                            canvas[na][nd] = colour;
+                            (a, d) = (na, nd);
+                        }
+                    }
+                }
+            }
+            Act::Copy { template } => {
+                let chosen = seen.select(template, &all)?;
+                let [t] = chosen.as_slice() else { return Err(Unstated::NotOne) };
+                let t = *t;
+                let [tr, tc] = seen.centre(t).ok_or(Unstated::NotOne)?;
+                let mut landed: Vec<(i64, i64, u8)> = Vec::new();
+                let seeds: Vec<usize> = sel.iter().copied().filter(|&b| b != t).collect();
+                for &b in &seeds {
+                    let [sr, sc] = seen.centre(b).ok_or(Unstated::OffLattice)?;
+                    let v = crate::transducer::cga::translator_at(&[sr - &tr, sc - &tc]);
+                    for &(r, c, h) in &seen.cells[t] {
+                        let (lr, lc) = carried(&v, r, c)?;
+                        landed.push((lr, lc, h));
+                    }
+                }
+                for &b in &seeds {
+                    for &(r, c, _) in &seen.cells[b] {
+                        canvas[r][c] = 0;
+                    }
+                }
+                for (r, c, h) in landed {
+                    paint(&mut canvas, r, c, h);
+                }
+            }
+            Act::Crop(extent) => {
+                let [b] = sel.as_slice() else { return Err(Unstated::NotOne) };
+                let cells: Vec<(usize, usize, u8)> = match extent {
+                    Extent::Body => seen.cells[*b].clone(),
+                    Extent::Interior => seen.enclosed(&[*b]).into_iter().map(|(r, c)| (r, c, 0)).collect(),
+                };
+                window = Some(extent_of(&cells).ok_or(Unstated::NotOne)?);
+            }
+            Act::Scale { up, down } => scale = Some((*up, *down)),
+        }
+    }
+    let (t, l, b, r) = match window {
+        Some(w) => w,
+        None => (0, 0, seen.rows.checked_sub(1).ok_or(Unstated::NotOne)?, seen.cols.checked_sub(1).ok_or(Unstated::NotOne)?),
+    };
+    let out: Vec<Vec<u8>> = canvas
+        .iter()
+        .take(b + 1)
+        .skip(t)
+        .map(|row| row.iter().take(r + 1).skip(l).copied().collect())
+        .collect();
+    let out = match scale {
+        None => out,
+        Some((up, down)) => scaled(&out, up, down)?,
+    };
+    let mut painted = Vec::new();
+    for (i, row) in out.iter().enumerate() {
+        for (j, &h) in row.iter().enumerate() {
+            if h != 0 {
+                let (Ok(pi), Ok(pj)) = (i64::try_from(i), i64::try_from(j)) else {
+                    return Err(Unstated::OffLattice);
+                };
+                painted.push((pi, pj, h));
+            }
+        }
+    }
+    let cols = match out.as_slice() {
+        [row, ..] => row.len(),
+        [] => 0,
+    };
+    Ok(Spoken { frame: (out.len(), cols), painted })
+}
+
+/// THE GRID SCALED BY `up / down`, one of them 1: each cell an `up × up`
+/// block, or each `down × down` block, uniform, one cell. A block that is
+/// not uniform, an extent `down` does not divide, a zero or a ratio of two
+/// factors is no scaling of cells, refused by name.
+fn scaled(g: &[Vec<u8>], up: u8, down: u8) -> Result<Vec<Vec<u8>>, Unstated> {
+    let (up, down) = (usize::from(up), usize::from(down));
+    let cols = match g {
+        [row, ..] => row.len(),
+        [] => 0,
+    };
+    match (up, down) {
+        (1, 1) => Ok(g.to_vec()),
+        (u, 1) if u > 1 => Ok((0..g.len() * u)
+            .map(|i| (0..cols * u).map(|j| g[i / u][j / u]).collect())
+            .collect()),
+        (1, d) if d > 1 && g.len() % d == 0 && cols % d == 0 => {
+            let mut out = Vec::with_capacity(g.len() / d);
+            for bi in 0..g.len() / d {
+                let mut row = Vec::with_capacity(cols / d);
+                for bj in 0..cols / d {
+                    let h = g[bi * d][bj * d];
+                    let uniform = (0..d).all(|i| (0..d).all(|j| g[bi * d + i][bj * d + j] == h));
+                    if !uniform {
+                        return Err(Unstated::OffLattice);
+                    }
+                    row.push(h);
+                }
+                out.push(row);
+            }
+            Ok(out)
+        }
+        _ => Err(Unstated::OffLattice),
+    }
+}
