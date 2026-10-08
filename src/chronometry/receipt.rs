@@ -395,6 +395,11 @@ pub enum Cite {
     /// record's kind and version, and the commitment to its Big Bang record
     /// (a citation of a record the universe holds, never a copy of it).
     Origin { domain: [u8; 32], kind: u8, version: u8, commitment: [u8; 32] },
+    /// 78.139 — A UNIVERSE'S STATEMENT, by its coordinates: the domain, what
+    /// it stated (8 curvature, 9 basket, 10 join — the act's sub-kind) and
+    /// the coordinate it stands on: the core tube's id for a join, the
+    /// statement's hash for a curvature or a basket.
+    Stated { domain: [u8; 32], kind: u8, body: [u8; 32] },
 }
 
 impl Cite {
@@ -413,7 +418,8 @@ impl Cite {
             | Cite::Reserve { .. }
             | Cite::Bond { .. }
             | Cite::Domain { .. }
-            | Cite::Origin { .. } => None,
+            | Cite::Origin { .. }
+            | Cite::Stated { .. } => None,
         }
     }
 
@@ -431,7 +437,8 @@ impl Cite {
             | Cite::Reserve { .. }
             | Cite::Bond { .. }
             | Cite::Domain { .. }
-            | Cite::Origin { .. } => None,
+            | Cite::Origin { .. }
+            | Cite::Stated { .. } => None,
         }
     }
 
@@ -521,6 +528,12 @@ impl Cite {
                 rec.extend_from_slice(&[*kind, *version]);
                 rec.extend_from_slice(commitment);
             }
+            Cite::Stated { domain, kind, body } => {
+                rec.push(14);
+                rec.extend_from_slice(domain);
+                rec.push(*kind);
+                rec.extend_from_slice(body);
+            }
             Cite::Class { class, cover, .. } | Cite::Demand { class, cover, .. } => {
                 rec.push(match self {
                     Cite::Class { .. } => 2,
@@ -544,7 +557,8 @@ impl Cite {
                     | Cite::Reserve { .. }
                     | Cite::Bond { .. }
                     | Cite::Domain { .. }
-                    | Cite::Origin { .. } => {}
+                    | Cite::Origin { .. }
+                    | Cite::Stated { .. } => {}
                 }
                 match cover {
                     None => rec.push(0),
@@ -657,6 +671,13 @@ impl Cite {
                 let commitment: [u8; 32] = b.get(*p + 34..*p + 66)?.try_into().ok()?;
                 *p += 66;
                 Some(Cite::Origin { domain, kind, version, commitment })
+            }
+            14 => {
+                let domain: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                let kind = *b.get(*p + 32)?;
+                let body: [u8; 32] = b.get(*p + 33..*p + 65)?.try_into().ok()?;
+                *p += 65;
+                Some(Cite::Stated { domain, kind, body })
             }
             2 | 3 => {
                 let class = Box::new(crate::transducer::sentence::ClassVector::take_canonical(b, p)?);

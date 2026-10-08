@@ -168,6 +168,11 @@ pub enum DomainRequest {
     Origin(SignedOrigin),
     /// 78.132 — a domain's origin read; nothing sealed.
     ReadOrigin([u8; 32]),
+    /// 78.139 — a universe's curvature, basket or join, stated once by its
+    /// sitting reserve.
+    State(super::universe::SignedStatement),
+    /// 78.139 — what a universe has stated, read; nothing sealed.
+    ReadUniverse([u8; 32]),
 }
 
 const KIND_READ_RESERVE: u8 = 2;
@@ -191,6 +196,10 @@ pub struct Origin {
     pub kind: u8,
     pub version: u8,
     pub commitment: [u8; 32],
+    /// 78.139 — version 2: the universe's curvature radius `R` in clear and
+    /// its PARENT FACE — the core tube it bounced out of, or unwitnessed (a
+    /// root). Present exactly where `version` is 2.
+    pub universe: Option<super::universe::Genesis>,
 }
 
 const ORIGIN: &[u8] = b"mycelium universe origin v1";
@@ -201,6 +210,9 @@ impl Origin {
         out.extend_from_slice(&self.domain);
         out.extend_from_slice(&[self.kind, self.version]);
         out.extend_from_slice(&self.commitment);
+        if let Some(u) = &self.universe {
+            u.put(&mut out);
+        }
         out
     }
 
@@ -226,6 +238,9 @@ pub fn encode_origin(o: &SignedOrigin) -> Vec<u8> {
     out.push(KIND_ORIGIN);
     out.extend_from_slice(&[o.origin.kind, o.origin.version]);
     out.extend_from_slice(&o.origin.commitment);
+    if let Some(u) = &o.origin.universe {
+        u.put(&mut out);
+    }
     out.extend_from_slice(&o.sig);
     out
 }
@@ -473,10 +488,24 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             let (kind, version) = (*rest.get(p)?, *rest.get(p + 1)?);
             p += 2;
             let commitment = key(rest, &mut p)?;
+            // 78.139 — version 2 carries the universe's curvature and parent.
+            let universe = match version {
+                2 => Some(super::universe::Genesis::take(rest, &mut p)?),
+                _ => None,
+            };
             let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
             p += 64;
-            let origin = Origin { domain, kind, version, commitment };
+            let origin = Origin { domain, kind, version, commitment, universe };
             return (p == rest.len()).then_some(DomainRequest::Origin(SignedOrigin { origin, sig }));
+        }
+        // 78.139 — a universe's statements (curvature, basket, join) and its read.
+        super::universe::KIND_READ_UNIVERSE => return (rest.len() == p + 1).then_some(DomainRequest::ReadUniverse(domain)),
+        k @ (super::universe::KIND_CURVATURE | super::universe::KIND_BASKET | super::universe::KIND_JOIN) => {
+            p += 1;
+            let statement = super::universe::Statement::take(k, domain, rest, &mut p)?;
+            let sig: [u8; 64] = rest.get(p..p + 64)?.try_into().ok()?;
+            p += 64;
+            return (p == rest.len()).then_some(DomainRequest::State(super::universe::SignedStatement { statement, sig }));
         }
         KIND_READ_BOND => {
             p += 1;
@@ -556,6 +585,20 @@ pub enum Founded {
     Originated { at: Stamp, receipt: [u8; 32] },
     /// 78.132 — the domain holds its origin already; never an edit.
     AlreadyOriginated,
+    /// 78.139 — a universe's statement sealed: its curvature, its basket, or
+    /// its join to its parent's core.
+    Stated { at: Stamp, receipt: [u8; 32] },
+    /// 78.139 — stated already, once; never an edit.
+    AlreadyStated,
+    /// 78.139 — the tube named is not an open core tube whose far face is
+    /// this domain.
+    NotACore,
+    /// 78.139 — the domain has no origin yet: not a universe.
+    NotAUniverse,
+    /// 78.139 — the statement is not well formed: a curvature not positive,
+    /// a basket empty, unordered or with a mass not positive, or an origin
+    /// whose version and fields disagree.
+    Malformed,
 }
 
 /// `[0][stamp][hash]` sealed; `[1]` unsigned; `[2]` unordered; `[3]` already
@@ -597,6 +640,15 @@ pub fn encode_domain_reply(f: &Founded) -> Vec<u8> {
             at.put_canonical(&mut out);
             out.extend_from_slice(receipt);
         }
+        Founded::Stated { at, receipt } => {
+            out.push(16);
+            at.put_canonical(&mut out);
+            out.extend_from_slice(receipt);
+        }
+        Founded::AlreadyStated => out.push(17),
+        Founded::NotACore => out.push(18),
+        Founded::NotAUniverse => out.push(19),
+        Founded::Malformed => out.push(20),
     }
     out
 }
@@ -648,6 +700,16 @@ pub fn decode_domain_reply(b: &[u8]) -> Option<Founded> {
             p += 32;
             Founded::Originated { at, receipt }
         }
+        16 => {
+            let at = Stamp::take_canonical(b, &mut p)?;
+            let receipt: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
+            p += 32;
+            Founded::Stated { at, receipt }
+        }
+        17 => Founded::AlreadyStated,
+        18 => Founded::NotACore,
+        19 => Founded::NotAUniverse,
+        20 => Founded::Malformed,
         _ => return None,
     };
     (p == b.len()).then_some(f)

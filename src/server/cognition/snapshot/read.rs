@@ -113,7 +113,7 @@ impl Kernel {
             // 78.120 — the domains founded here, each with its tier keys; a home
             // written before any domain (or before 78.120) carries none.
             if let Some(v) = leaf(leaves, LEAF_DOMAINS) {
-                let (domains, reserves, origins) = whole(v, |b, p| {
+                let (domains, reserves, origins, universes) = whole(v, |b, p| {
                     let n = crate::transducer::address::take_key_count(b, p)?;
                     let domains = (0..n)
                         .map(|_| {
@@ -132,7 +132,12 @@ impl Kernel {
                         true => super::super::convert::take_origins(b, p)?,
                         false => Vec::new(),
                     };
-                    Some((domains, reserves, origins))
+                    // 78.139 — the universes' statements, after the origins.
+                    let universes = match *p < b.len() {
+                        true => super::super::universe::take_universes(b, p)?,
+                        false => Vec::new(),
+                    };
+                    Some((domains, reserves, origins, universes))
                 })?;
                 for (w, tiers) in domains {
                     kernel.hold_domain(w, tiers);
@@ -142,6 +147,9 @@ impl Kernel {
                 }
                 for (w, o) in origins {
                     kernel.origins.insert(w, o);
+                }
+                for (w, u) in universes {
+                    kernel.universes.insert(w, u);
                 }
             }
             // 78.123 B — the ledger trees; a home written before any chained

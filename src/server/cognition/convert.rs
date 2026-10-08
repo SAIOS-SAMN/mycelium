@@ -279,8 +279,16 @@ impl Kernel {
         if self.origins.get(&o.domain).is_some() {
             return Founded::AlreadyOriginated;
         }
-        let cite = Cite::Origin { domain: o.domain, kind: o.kind, version: o.version, commitment: o.commitment };
-        let Some(sealed) = self.seal_step(ActKind::Domain, [0; 4], o.domain, |_| vec![cite.clone()]) else { return Founded::LineRefused };
+        // 78.139 — version 2 states the universe's curvature and parent face.
+        let mut cites = vec![Cite::Origin { domain: o.domain, kind: o.kind, version: o.version, commitment: o.commitment }];
+        match self.origin_universe(o) {
+            Ok(more) => cites.extend(more),
+            Err(refused) => return refused,
+        }
+        let Some(sealed) = self.seal_step(ActKind::Domain, [0; 4], o.domain, |_| cites.clone()) else { return Founded::LineRefused };
+        if let Some(u) = &o.universe {
+            self.hold_genesis(o.domain, u);
+        }
         let held = crate::anastome::dialogue::domain::OriginReading {
             kind: o.kind,
             version: o.version,
@@ -348,6 +356,11 @@ impl Kernel {
                 if h.who != c.tier || !self.is_reserve(&c.tier) {
                     return refuse(R::NotReserve);
                 }
+                // 78.139 — the reserve unit is the ancients' basket: none
+                // converted until it is stated.
+                if !self.basket_stated_for(&c.tier) {
+                    return refuse(R::NoBasket);
+                }
                 let Some(mu) = c.mu() else { return refuse(R::Inexact) };
                 if mu.iter().all(|m| *m == 0) {
                     return refuse(R::Inexact);
@@ -370,6 +383,9 @@ impl Kernel {
                 }
                 if !self.is_reserve(&c.tier) {
                     return refuse(R::NotReserve);
+                }
+                if !self.basket_stated_for(&c.tier) {
+                    return refuse(R::NoBasket);
                 }
                 if c.g <= 0 || c.mu.iter().all(|m| *m == 0) {
                     return refuse(R::Inexact);

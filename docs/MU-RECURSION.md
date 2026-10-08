@@ -25330,11 +25330,58 @@ recursive finality through carried children, a pruned child's stub, a
 cold child proved by its coordinates; the wire for nested carried folds
 and folds standing inside others read back whole.
 
-**Owed, in order (the coordinator).** The CORE TUBE (the operator, 2026-10-08:
-a galactic core is a larger wormhole; every black-hole core has its far face
-— the white-hole engine of the universe it bounces into; our own Big Bang the
-far face of a parent's core): genesis joins a domain to its parent's core,
-a root stating its parent face unwitnessed; no horizon without its far face.
+### 78.139 A universe states itself; core tubes join universes (2026-10-08, the operator — a galactic core is a larger wormhole, every horizon has its far face, our own Big Bang the far face of a parent's core; the coordinator's rulings on (i-b))
+
+**Origin, version 2.** The origin act (78.132) at version 2 carries the
+universe's CURVATURE radius `R` in clear and its PARENT FACE: the core tube
+it bounced out of — open, a CORE tube, its far end in this domain, its far
+`R` this curvature — or UNWITNESSED (a root, joined when found). Version 2
+exactly where both are present (`Malformed` otherwise); a v1 origin is
+never upgraded (a wrong origin is a new universe). Sealed with
+`Cite::Origin` and `Cite::Stated` (tag 14) — the curvature by its hash, the
+parent core by its tube's id.
+
+**Statements, once each, by the SITTING RESERVE** (ACT_DOMAIN sub-kinds 8,
+9, 10; `Session::state`; never the founder's key, never an edit —
+`AlreadyStated`):
+- **8 CURVATURE**, where none is stated (a v1 origin; legacy domains).
+- **9 BASKET** — the ancients' survival basket: one person-year of their
+  survival at the core by mass per element, `[(Z, mass)]` in ascending `Z`,
+  each a positive exact rational, a molecule stated as its elements' masses.
+  Stated when the ancients take up the reserve, never at genesis (nobody
+  knows it then). Every CONVERSION at the reserve waits on it
+  (`HandoffRefusal::NoBasket`): the reserve unit is that basket.
+- **10 JOIN** — an originated root naming an open core tube into it (its far
+  `R` its curvature, where stated): "unwitnessed until joined" made real.
+Read by sub-kind 11 (`Session::universe`): whether originated, the
+curvature, the parent face, the basket. Held after the origins in
+`LEAF_DOMAINS` (absent: none stated).
+
+**The core tube** (handoff kind 16): a tube (78.134) joining a parent
+universe's core to the core of the universe it bounced into — between two
+domains, offered by the parent's RESERVE (`NotReserve` for a line), KEPT BY
+BOTH (the offerer named, the far reserve the second keeper, which may feed
+and draw the throat); the parent an ORIGINATED universe (`NotAUniverse`)
+whose stated curvature is the near end's `R`, the far end's `R` the
+child's where stated (`NoCurvature`); its tariff's split may pay both
+domains' lines; its id distinct from any tube's. Order for a child: genesis,
+reserve, the parent's core tube offered and accepted, then the child's
+origin v2 naming it. A root: genesis, reserve, origin v2 unwitnessed — or v1
+and CURVATURE — then JOIN once found.
+
+**Grace** (the coordinator's ruling): existing domains keep working and
+read as not-yet-universes; they originate before joining a core tube, and
+state their basket before converting.
+
+Proved (`cognition::tests::universe`, `convert`): statements by the sitting
+reserve only, malformed and repeated ones refused, held across a restart;
+conversions refused before the basket and sealed after; a root's v2 origin;
+a core tube refused before the parent originates, by a line, or on a
+curvature not stated; a child's origin naming another tube, or disagreeing
+with the far `R`, refused, then originated through the core with its parent
+face read back; the second keeper feeding the throat; a v1 root's curvature
+and JOIN, once, refused before its origin or on a tube that is no core into
+it; the wire for every act and the core tube's distinct id.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 

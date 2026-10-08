@@ -49,6 +49,13 @@ fn designate(k: &mut Kernel, tier: &SigningKey, nonce: u8) -> Founded {
     k.designate_reserve(&Reservation { domain: vk(&domain()), tier: vk(tier), nonce: [nonce; 32] }.sign(&domain()))
 }
 
+/// 78.139 — the ancients' survival basket stated by the sitting reserve `x`.
+fn basket(k: &mut Kernel) {
+    use crate::anastome::dialogue::universe::{Statement, Stated};
+    let s = Statement { domain: vk(&domain()), stated: Stated::Basket(vec![(1, (1, 1)), (8, (8, 1))]) };
+    assert!(matches!(k.state(&s.sign(&x())), Founded::Stated { .. }));
+}
+
 /// μ seeded on a key, as the fixture's genesis seeds its own.
 fn fund(k: &mut Kernel, who: [u8; 32], mu: [u64; 4]) {
     let anchor = k.anchor();
@@ -107,6 +114,8 @@ fn a_conversion_out_pays_from_the_reserve_and_never_mints() {
         Handed::Refused(r) => r,
         other => panic!("refused: {other:?}"),
     };
+    assert_eq!(refused(&mut k, out(10, (1, 2), 1), &x()), HandoffRefusal::NoBasket, "78.139: no conversion before the ancients' basket");
+    basket(&mut k);
     assert_eq!(refused(&mut k, out(10, (1, 3), 1), &x()), HandoffRefusal::Inexact, "10/3 is no integer");
     assert_eq!(refused(&mut k, ConvertOut { tier: vk(&x2()), ..out(10, (1, 2), 1) }, &x2()), HandoffRefusal::NotReserve);
     assert_eq!(refused(&mut k, out(20, (1, 1), 1), &x()), HandoffRefusal::ReserveShort, "a rate never mints μ");
@@ -134,6 +143,7 @@ fn a_conversion_out_pays_from_the_reserve_and_never_mints() {
 fn a_conversion_in_is_held_until_the_reserve_answers() {
     let mut k = founded();
     assert!(matches!(designate(&mut k, &x(), 1), Founded::Reserved { .. }));
+    basket(&mut k);
     fund(&mut k, vk(&holder()), [6, 0, 0, 0]);
     let offer = |nonce: u8| ConvertIn { holder: vk(&holder()), tier: vk(&x()), identity: PLAYER, g: 7, mu: [3, 0, 0, 0], nonce: [nonce; 32] };
     let Handed::Sealed { id, state: State::Offered { .. }, .. } = k.handoff(&Handoff::ConvertIn(Box::new(offer(1))).sign(&holder())) else {

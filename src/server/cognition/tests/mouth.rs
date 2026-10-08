@@ -53,7 +53,7 @@ fn turn() -> Mv {
 
 /// A throat of unit mass in two spaces of unit curvature radius.
 fn tube() -> Tube {
-    Tube { mass: (1, 1), from_r: (1, 1), to_r: (1, 1), supersedes: None }
+    Tube { mass: (1, 1), from_r: (1, 1), to_r: (1, 1), supersedes: None, core: false }
 }
 
 fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {

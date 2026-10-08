@@ -92,7 +92,7 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
     assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     // 78.134 — a tube is its own kind, with or without its tariff; its tube
     // in its id; the tube read and its reading back whole.
-    let tube = Tube { mass: (3, 2), from_r: (1, 1), to_r: (5, 3), supersedes: Some([7u8; 32]) };
+    let tube = Tube { mass: (3, 2), from_r: (1, 1), to_r: (5, 3), supersedes: Some([7u8; 32]), core: false };
     let tubed = Mouth { tube: Some(tube.clone()), ..tariffed.clone() };
     assert_ne!(tubed.id(), tariffed.id(), "the tube is in the id");
     for m in [tubed.clone(), Mouth { tariff: None, ..tubed.clone() }] {

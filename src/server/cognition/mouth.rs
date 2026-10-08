@@ -243,7 +243,9 @@ impl Kernel {
         if held.mouth.tube.is_none() {
             return refuse(R::Untethered);
         }
-        if h.who != held.mouth.keeper {
+        // 78.139 — a core tube's throat is kept by both reserves.
+        let second_keeper = held.mouth.tube.as_ref().is_some_and(|t| t.core) && h.who == held.mouth.to_tier;
+        if h.who != held.mouth.keeper && !second_keeper {
             return refuse(R::NotTheTier);
         }
         if held.state != State::Accepted {
@@ -317,7 +319,13 @@ impl Kernel {
     /// domain, never a stranger.
     fn split_to_lines(&self, m: &Mouth, t: &crate::anastome::dialogue::handoff::Tariff) -> bool {
         let lines = self.tier_domain.get(&m.keeper).and_then(|d| self.domains.get(d));
-        t.split.iter().all(|(who, _)| *who == m.keeper || lines.is_some_and(|tiers| tiers.contains(who)))
+        // 78.139 — a core tube is kept by both reserves: the far domain's
+        // lines share in it too.
+        let far = match m.tube.as_ref().is_some_and(|t| t.core) {
+            true => self.tier_domain.get(&m.to_tier).and_then(|d| self.domains.get(d)),
+            false => None,
+        };
+        t.split.iter().all(|(who, _)| *who == m.keeper || lines.is_some_and(|tiers| tiers.contains(who)) || far.is_some_and(|tiers| tiers.contains(who)))
     }
 
     /// 78.133 — THE TOLLS WHOSE TRAVERSAL'S OUT SIDE a reversed fold consumed:
@@ -519,6 +527,30 @@ impl Kernel {
                     let open_legacy = self.handoffs.mouths.get(old).is_some_and(|h| h.mouth.tube.is_none() && h.state == State::Accepted && same_pair(&h.mouth));
                     if !open_legacy {
                         return refuse(R::NotSupersedable);
+                    }
+                }
+                // 78.139 — A CORE TUBE joins a parent universe's core to the
+                // core of the universe it bounced into: between two domains,
+                // offered by the parent's RESERVE and kept by both reserves
+                // (the offerer named, the far reserve the second keeper); the
+                // parent an originated universe whose stated curvature is the
+                // near end's `R`, the far end's `R` the child's where it has
+                // stated one (its origin, naming this tube, states it later).
+                if t.core {
+                    if dx == dy {
+                        return refuse(R::Unbound);
+                    }
+                    if self.reserve_of(&dx) != Some(m.from_tier) {
+                        return refuse(R::NotReserve);
+                    }
+                    if m.keeper != m.from_tier {
+                        return refuse(R::BadKeeper);
+                    }
+                    if self.origins.get(&dx).is_none() {
+                        return refuse(R::NotAUniverse);
+                    }
+                    if self.curvature_of(&dx) != Some(t.from_r) || self.curvature_of(&dy).is_some_and(|r| r != t.to_r) {
+                        return refuse(R::NoCurvature);
                     }
                 }
                 // 78.133 — a tariff well formed, no flat toll beside it, and

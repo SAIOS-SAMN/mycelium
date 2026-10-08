@@ -127,6 +127,23 @@ impl super::Session {
         decode_origin_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the origin reading did not decode"))
     }
 
+    /// 78.139 — A UNIVERSE'S STATEMENT — its curvature, its ancients'
+    /// basket, or its join to its parent's core — signed by its sitting
+    /// reserve, once each: sealed, or the refusal by name.
+    pub fn state(&self, s: &crate::anastome::dialogue::universe::SignedStatement) -> io::Result<crate::anastome::dialogue::domain::Founded> {
+        use crate::anastome::dialogue::domain::decode_domain_reply;
+        let reply = self.speak(crate::anastome::dialogue::universe::encode_statement(s))?;
+        decode_domain_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the statement's reply did not decode"))
+    }
+
+    /// 78.139 — WHAT A UNIVERSE HAS STATED: whether it has an origin, its
+    /// curvature, its parent face, its basket.
+    pub fn universe(&self, domain: [u8; 32]) -> io::Result<crate::anastome::dialogue::universe::UniverseReading> {
+        use crate::anastome::dialogue::universe::{decode_universe_reading, encode_universe_read};
+        let reply = self.speak(encode_universe_read(domain))?;
+        decode_universe_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the universe reading did not decode"))
+    }
+
     /// 78.127 — A DOMAIN'S RESERVE AS READ: its tier, a pending
     /// redesignation, and the reserve's μ balance.
     pub fn reserve_reading(&self, domain: [u8; 32]) -> io::Result<crate::anastome::dialogue::domain::ReserveReading> {

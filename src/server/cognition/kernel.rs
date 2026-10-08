@@ -423,6 +423,10 @@ pub struct Kernel {
     /// 78.132 — EACH UNIVERSE'S ORIGIN, held once per domain and never
     /// edited — persisted after the reserves (`LEAF_DOMAINS`).
     pub(crate) origins: crate::network::nerve::Keyed<crate::anastome::dialogue::domain::OriginReading>,
+    /// 78.139 — EACH UNIVERSE'S STATEMENTS: its curvature, its parent face,
+    /// its ancients' basket — each once — persisted after the origins
+    /// (`LEAF_DOMAINS`).
+    pub(crate) universes: crate::network::nerve::Keyed<crate::anastome::dialogue::universe::Universe>,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

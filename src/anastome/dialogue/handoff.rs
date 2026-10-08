@@ -219,6 +219,9 @@ pub struct Tube {
     pub from_r: (u64, u64),
     pub to_r: (u64, u64),
     pub supersedes: Option<[u8; 32]>,
+    /// 78.139 — a CORE TUBE (kind 16): a galactic core's throat to the core
+    /// of the universe it bounced into, kept by BOTH reserves.
+    pub core: bool,
 }
 
 impl Tube {
@@ -248,7 +251,7 @@ impl Tube {
             1 => Some(key32(b, p)?),
             _ => return None,
         };
-        Some(Tube { mass, from_r, to_r, supersedes })
+        Some(Tube { mass, from_r, to_r, supersedes, core: false })
     }
 
     /// Mass and both curvature radii positive exact rationals.
@@ -426,6 +429,10 @@ impl Mouth {
         if let Some(t) = &self.tube {
             out.extend_from_slice(b"tube");
             out.extend_from_slice(&t.bytes());
+            // 78.139 — a core tube is its own throat, never a tube's id.
+            if t.core {
+                out.extend_from_slice(b"core");
+            }
         }
         out
     }
@@ -597,6 +604,7 @@ impl Handoff {
             Handoff::ConvertIn(_) => 6,
             // 78.133 — a tariffed mouth is its own kind, so a flat mouth's
             // writing reads as it did.
+            Handoff::Mouth(m) if m.tube.as_ref().is_some_and(|t| t.core) => KIND_CORE_TUBE,
             Handoff::Mouth(m) if m.tube.is_some() => KIND_TUBE,
             Handoff::Mouth(m) if m.tariff.is_some() => KIND_TARIFFED_MOUTH,
             Handoff::Mouth(_) => 7,
@@ -706,6 +714,7 @@ const KIND_TUBE: u8 = 12;
 const KIND_TUBE_READ: u8 = 13;
 const KIND_FEED: u8 = 14;
 const KIND_DRAW: u8 = 15;
+const KIND_CORE_TUBE: u8 = 16;
 
 /// `[ACT_HANDOFF][13][mouth 32]`.
 pub fn encode_tube_read(mouth: [u8; 32]) -> Vec<u8> {
@@ -860,9 +869,11 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                         _ => Handoff::Draw { mouth, mu_s, seq },
                     }
                 }
-                KIND_TUBE => {
+                k @ (KIND_TUBE | KIND_CORE_TUBE) => {
                     let mut m = Mouth::take(b, &mut p)?;
-                    m.tube = Some(Tube::take(b, &mut p)?);
+                    let mut tube = Tube::take(b, &mut p)?;
+                    tube.core = k == KIND_CORE_TUBE;
+                    m.tube = Some(tube);
                     let flag = *b.get(p)?;
                     p += 1;
                     m.tariff = match flag {
@@ -949,6 +960,13 @@ pub enum HandoffRefusal {
     /// 78.135 — a bank act whose `seq` is not the throat's count: a resend,
     /// or out of order.
     Stale,
+    /// 78.139 — a core tube's end whose domain has stated no curvature, or a
+    /// different one.
+    NoCurvature,
+    /// 78.139 — a core tube offered from a domain with no origin.
+    NotAUniverse,
+    /// 78.139 — a conversion at a reserve whose ancients have stated no basket.
+    NoBasket,
 }
 
 /// THE COURT'S ANSWER.
@@ -1026,6 +1044,9 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::Untethered => [26, 0],
         HandoffRefusal::Starved => [27, 0],
         HandoffRefusal::Stale => [28, 0],
+        HandoffRefusal::NoCurvature => [29, 0],
+        HandoffRefusal::NotAUniverse => [30, 0],
+        HandoffRefusal::NoBasket => [31, 0],
     }
 }
 
@@ -1078,6 +1099,9 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         26 => HandoffRefusal::Untethered,
         27 => HandoffRefusal::Starved,
         28 => HandoffRefusal::Stale,
+        29 => HandoffRefusal::NoCurvature,
+        30 => HandoffRefusal::NotAUniverse,
+        31 => HandoffRefusal::NoBasket,
         _ => return None,
     })
 }

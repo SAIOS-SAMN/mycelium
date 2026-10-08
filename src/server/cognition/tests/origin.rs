@@ -31,7 +31,7 @@ fn founded() -> Kernel {
 }
 
 fn origin(commitment: u8) -> Origin {
-    Origin { domain: vk(&domain()), kind: 1, version: 3, commitment: [commitment; 32] }
+    Origin { domain: vk(&domain()), kind: 1, version: 3, commitment: [commitment; 32], universe: None }
 }
 
 /// AN ORIGIN IS THE DOMAIN'S, ONCE: another key's signature, a domain not

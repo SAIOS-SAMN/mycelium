@@ -175,6 +175,7 @@ impl Kernel {
             handoffs,
             reserves,
             origins,
+            universes,
         } = self;
         let mut c = crate::observe::Carriers { k: chain.head_k(), held: Vec::new() };
         // 78.120 — the domains founded here and their tier index.
@@ -201,6 +202,8 @@ impl Kernel {
         c.count("reserves", reserves.len());
         // 78.132 — the universes' origins.
         c.count("origins", origins.len());
+        // 78.139 — the universes' statements.
+        c.count("universes", universes.len());
         c.count("basis", basis.len());
         c.count("by_action", by_action.len());
         c.count("by_footprint", nested(by_footprint));

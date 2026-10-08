@@ -21,6 +21,7 @@ pub mod speech;
 pub mod syllabus;
 pub mod uplink;
 pub mod domain;
+pub mod universe;
 pub mod wallet;
 pub mod why;
 
