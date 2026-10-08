@@ -253,6 +253,7 @@ impl SeatMind {
             })
             .collect();
         // The explored order: the listing's, then the values upward.
+        #[expect(clippy::disallowed_methods, reason = "rule 4 — a canonical key: the house's listing order, then the argument values upward; nothing measured ranks the calls")]
         calls.sort_by(|a, b| (a.place, &a.values).cmp(&(b.place, &b.values)));
         calls
     }
@@ -311,10 +312,12 @@ impl SeatMind {
             Some(args) => Decision::Call(Choice { fn_id: c.fn_id, args, followed: false, why }),
             None => Decision::NothingToCall,
         };
-        if let ([i], Some(c)) = (dominant.as_slice(), dominant.first().and_then(|i| calls.get(*i))) {
-            let over = calls.iter().enumerate().filter(|(j, _)| j != i).map(|(_, o)| (o.fn_id, o.values.clone())).collect();
-            let named = favoured.iter().filter_map(|(k, d)| Some((Locator::of(k)?, *d, c.e.rate_at(k)))).collect();
-            return call_of(c, Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named });
+        if let [i] = dominant.as_slice() {
+            if let Some(c) = calls.get(*i) {
+                let over = calls.iter().enumerate().filter(|(j, _)| j != i).map(|(_, o)| (o.fn_id, o.values.clone())).collect();
+                let named = favoured.iter().filter_map(|(k, d)| Some((Locator::of(k)?, *d, c.e.rate_at(k)))).collect();
+                return call_of(c, Why::Reached { valuation: Valuation::Reach, values: c.values.clone(), over, along: named });
+            }
         }
         // None dominates: the undominated, the one read fewest (the earliest
         // explored among equals).
@@ -324,6 +327,7 @@ impl SeatMind {
                 None => false,
             })
             .collect();
+        #[expect(clippy::disallowed_methods, reason = "rule 4 — not a measure of worth: among calls no call dominates, the one this mind has read fewest times is read again (its own count of reads, named on the typed line), the earliest explored among equals")]
         let least = front.iter().filter_map(|i| calls.get(*i)).min_by_key(|c| c.e.read);
         match least {
             Some(c) => call_of(c, Why::Unreached { valuation: Valuation::Reach, values: c.values.clone(), front: front.len(), read: c.e.read }),
