@@ -50,7 +50,7 @@ const fn t(name: &'static str, vocabulary: Vocabulary, meaning: &'static str) ->
 use Vocabulary::{Civic, Network, Physical};
 
 /// EVERY TERM, by vocabulary, in `MU-LEXICON.md`'s order.
-pub const TERMS: [Term; 44] = [
+pub const TERMS: [Term; 45] = [
     t("Universe", Physical, "everything that shares one origin: one seed, one law set, one clock"),
     t("Cluster", Physical, "galaxies bound together by gravity"),
     t("Galaxy", Physical, "a disc and halo of stars"),
