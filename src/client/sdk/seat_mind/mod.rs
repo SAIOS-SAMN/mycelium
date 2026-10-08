@@ -19,16 +19,27 @@
 //!   dilator's point on its boost flow (`dilator`, read on `dilator(2)`'s
 //!   plane, `t = (ρ − 1)/(ρ + 1)`, so two scales compose by product).
 //!
-//! A multivector argument is held as the geometric object it is; a flag as
-//! itself. Two values are one where they write one run of bytes (`Arg ==`),
-//! so a multivector is compared coefficient for coefficient and never only
+//! A multivector argument is held as the geometric object it is — a full
+//! Cl(4,1) versor, odd ones (reflections) included; a flag as itself. Two
+//! values are one where they write one run of bytes (`Arg ==`), so a
+//! multivector is compared coefficient for coefficient and never only
 //! projectively.
+//!
+//! 78.148 — A VERSOR'S CHANGE IS THE VERSOR THAT CARRIES IT (the operator's
+//! field law): between consecutive beats the change of a multivector series
+//! is `c = v₊ · ṽ / ⟨v ṽ⟩₀`, the exact carrier with `c · v = v₊` — divided
+//! by the earlier value's weight (`weight_of`, read), so it is normalised
+//! exactly — or REFUSED where either value is no versor or the weight is
+//! zero (`carrier`). It is never flattened to numbers.
 //!
 //! AN ORBIT IS A RETURN, READ. A series returns with period `p` where its
 //! last `2p` changes repeat with period `p` and the slides of one period
-//! compose to the flow's identity (`FlowPoint::returned`) — a flag's or a
-//! multivector's where its last `2p` values repeat; period 1 is a fixed
-//! value. A record's period is the lcm of its arguments' (time is distance
+//! compose to the flow's identity (`FlowPoint::returned`); a multivector's
+//! where its last `2p` CARRIERS repeat with period `p` (a steady carrier is
+//! the orbit of period one; a carrier that is the scalar one, a value that
+//! stands still, is fixed); a flag's — or a multivector series whose
+//! carrier was refused — where its last `2p` values repeat; period 1 is a
+//! fixed value. A record's period is the lcm of its arguments' (time is distance
 //! along an orbit, 78.43), and the period's span in the house's local time is
 //! read off the two beats, never assumed.
 //!
@@ -39,12 +50,14 @@
 //! hand-over of a recognised orbit to the contemplation as a form.
 
 mod choice;
+mod own;
 pub mod task;
 pub use choice::*;
+pub use own::*;
 
 use crate::anastome::dialogue::seat::{Arg, Outcome, Percept, Record};
 use crate::network::nerve::Keyed;
-use crate::transducer::cga::{dilator, translator_at, FlowPoint, Mv};
+use crate::transducer::cga::{dilator, is_versor, translator_at, weight_of, FlowPoint, Mv};
 use num_bigint::BigInt;
 use num_rational::BigRational as Q;
 use num_traits::{One, Signed, Zero};
@@ -114,6 +127,25 @@ impl Change {
     }
 }
 
+/// 78.148 — THE VERSOR CARRYING `from` ONTO `to`: `to · from̃ / ⟨from from̃⟩₀`,
+/// so that `carrier · from = to` exactly (checked, coefficient for
+/// coefficient). Refused — `None` — where either is no versor (even or odd),
+/// where `from`'s weight is zero, or where the product does not carry it
+/// exactly: a refusal, never a zero change (rule 11).
+pub fn carrier(from: &Mv, to: &Mv) -> Option<Mv> {
+    let w = weight_of(from)?;
+    if w.is_zero() || !is_versor(to) {
+        return None;
+    }
+    let c = to.geo(&from.reverse()).scale(&(Q::one() / w));
+    c.geo(from).sub(to).is_zero().then_some(c)
+}
+
+/// Two carriers are one where they agree coefficient for coefficient.
+fn same_carrier(a: &Mv, b: &Mv) -> bool {
+    a.sub(b).is_zero()
+}
+
 /// WHERE A SERIES STANDS: the record's coordinates and the argument's
 /// position. Written `[kind u16 BE][keys u8][key 32…][occurrence u32
 /// BE][position u8]` — self-delimiting, so a record's series are one fiber
@@ -180,6 +212,9 @@ pub struct Seen {
     pub at: Option<Q>,
     pub value: Arg,
     pub change: Option<Change>,
+    /// 78.148 — for a versor seen at the beat before too, the versor that
+    /// carried it there (`carrier`); none where either is no versor.
+    pub carrier: Option<Mv>,
 }
 
 /// HOW A SERIES RETURNS.
@@ -235,14 +270,17 @@ impl Series {
     /// Observe `value` at `beat`: its change from the beat before where both
     /// are quantities, then held within the frame's budget.
     fn observe(&mut self, beat: u64, at: Option<Q>, value: Arg) {
-        let change = match (self.seen.back(), quantity(&value)) {
-            (Some(prev), Some(now)) if prev.beat.checked_add(1) == Some(beat) => {
-                quantity(&prev.value).and_then(|before| Change::between(&before, &now))
-            }
+        let prev = self.seen.back().filter(|prev| prev.beat.checked_add(1) == Some(beat));
+        let change = match (prev, quantity(&value)) {
+            (Some(prev), Some(now)) => quantity(&prev.value).and_then(|before| Change::between(&before, &now)),
+            _ => None,
+        };
+        let carried = match (prev.map(|p| &p.value), &value) {
+            (Some(Arg::Mv(before)), Arg::Mv(now)) => carrier(before, now),
             _ => None,
         };
         self.held_bytes += written(&value);
-        self.seen.push_back(Seen { beat, at, value, change });
+        self.seen.push_back(Seen { beat, at, value, change, carrier: carried });
         while self.held_bytes > crate::network::wire::frame_budget() && self.seen.len() > 1 {
             if let Some(old) = self.seen.pop_front() {
                 self.held_bytes -= written(&old.value);
@@ -264,12 +302,25 @@ impl Series {
         }
         let run = all.get(start..)?;
         let quantities = run.iter().all(|s| quantity(&s.value).is_some());
-        let period = match quantities {
-            true => {
+        // 78.148 — a versor series whose every change was carried exactly.
+        let carriers: Vec<&Mv> = run.iter().skip(1).filter_map(|s| s.carrier.as_ref()).collect();
+        let versors = run.iter().all(|s| matches!(s.value, Arg::Mv(_))) && carriers.len() == run.len().checked_sub(1)?;
+        let period = match (quantities, versors) {
+            (true, _) => {
                 let changes: Vec<&Change> = run.iter().skip(1).filter_map(|s| s.change.as_ref()).collect();
                 (changes.len() == run.len().checked_sub(1)?).then(|| periodic_changes(&changes)).flatten()?
             }
-            false => {
+            (false, true) => {
+                let p = periodic_carriers(&carriers)?;
+                // A steady carrier that moves the value is an orbit of
+                // period one; only the carrier one is standing still.
+                let moving = carriers.iter().rev().take(p).any(|c| !same_carrier(c, &Mv::scalar(Q::one())));
+                if p == 1 && moving {
+                    return Some(Return::Orbit { period: 1, span: span_back(run, 1) });
+                }
+                p
+            }
+            (false, false) => {
                 let values: Vec<&Arg> = run.iter().map(|s| &s.value).collect();
                 periodic_values(&values)?
             }
@@ -277,13 +328,30 @@ impl Series {
         if period == 1 {
             return Some(Return::Fixed);
         }
-        let last = run.len().checked_sub(1)?;
-        let span = match (run.get(last).and_then(|s| s.at.as_ref()), run.get(last.checked_sub(period)?).and_then(|s| s.at.as_ref())) {
-            (Some(now), Some(then)) => Some(now - then),
-            _ => None,
-        };
-        Some(Return::Orbit { period: u64::try_from(period).ok()?, span })
+        Some(Return::Orbit { period: u64::try_from(period).ok()?, span: span_back(run, period) })
     }
+}
+
+/// The house's local time across the last `period` beats of a run.
+fn span_back(run: &[&Seen], period: usize) -> Option<Q> {
+    let last = run.len().checked_sub(1)?;
+    match (run.get(last).and_then(|s| s.at.as_ref()), run.get(last.checked_sub(period)?).and_then(|s| s.at.as_ref())) {
+        (Some(now), Some(then)) => Some(now - then),
+        _ => None,
+    }
+}
+
+/// 78.148 — the least `p` whose last `2p` carriers repeat with period `p`,
+/// coefficient for coefficient.
+fn periodic_carriers(carriers: &[&Mv]) -> Option<usize> {
+    let n = carriers.len();
+    (1..=n / 2).find(|&p| {
+        let tail = &carriers[n - 2 * p..];
+        (0..p).all(|i| match (tail.get(i), tail.get(i + p)) {
+            (Some(a), Some(b)) => same_carrier(a, b),
+            _ => false,
+        })
+    })
 }
 
 /// The least `p` whose last `2p` changes repeat with period `p` and whose
@@ -369,6 +437,7 @@ impl std::fmt::Display for Perceived {
 #[derive(Clone, Debug)]
 pub(crate) struct Pending {
     pub(crate) fn_id: u16,
+    pub(crate) args: Vec<Arg>,
     pub(crate) reference: [u8; 32],
     pub(crate) before: Vec<(Vec<u8>, Q)>,
     pub(crate) applied: Option<bool>,
@@ -386,11 +455,27 @@ pub struct SeatMind {
     pub(crate) counsel: Vec<Counsel>,
     pub(crate) experience: Keyed<Experience>,
     pub(crate) pending: Option<Pending>,
+    /// 78.148 — its own seat's functions as the listing names them, and
+    /// what it learned of their arguments (`own`).
+    pub(crate) repertoire: Vec<Own>,
+    /// 78.148 — what each call, a function AT ITS ARGUMENTS, was seen to do
+    /// (`own::call_key`).
+    pub(crate) own: Keyed<Experience>,
 }
 
 impl SeatMind {
     pub fn new(domain: [u8; 32], seat: u32) -> SeatMind {
-        SeatMind { domain, seat, beat: 0, series: Keyed::new(), counsel: Vec::new(), experience: Keyed::new(), pending: None }
+        SeatMind {
+            domain,
+            seat,
+            beat: 0,
+            series: Keyed::new(),
+            counsel: Vec::new(),
+            experience: Keyed::new(),
+            pending: None,
+            repertoire: Vec::new(),
+            own: Keyed::new(),
+        }
     }
 
     /// The series at a locator.
@@ -494,18 +579,24 @@ impl SeatMind {
 
     /// THE HOUSE'S ANSWER TO A CALL: the call it names, if it is the one
     /// this mind awaits, marked applied or refused, and counted on its
-    /// function. Returns the function it answered.
+    /// function and on the call at its arguments; the repertoire taught by
+    /// it (78.148: a BAD ARGUMENTS refusal bounds a domain, NO SUCH FUNCTION
+    /// takes the function out until the listing is read again). Returns the
+    /// function it answered.
     pub fn outcome(&mut self, o: &Outcome) -> Option<u16> {
         let pending = self.pending.as_mut().filter(|p| p.reference == o.call)?;
         pending.applied = Some(o.applied);
-        let fn_id = pending.fn_id;
-        self.with_experience(fn_id, |e| match o.applied {
+        let (fn_id, args) = (pending.fn_id, pending.args.clone());
+        let count = |e: &mut Experience| match o.applied {
             true => e.applied += 1,
             false => match e.refused.iter_mut().find(|(r, _)| *r == o.reason) {
                 Some((_, n)) => *n += 1,
                 None => e.refused.push((o.reason, 1)),
             },
-        });
+        };
+        self.with_experience(fn_id, count);
+        self.with_call_experience(fn_id, &args, count);
+        self.own_answered(fn_id, &args, o.applied, o.reason);
         Some(fn_id)
     }
 
@@ -521,8 +612,9 @@ impl SeatMind {
                 Some((k, quantity(&last.value)?))
             })
             .collect();
-        self.with_experience(fn_id, |e| e.args = Some(args));
-        self.pending = Some(Pending { fn_id, reference, before, applied: None, percepts_since: 0 });
+        let held = args.clone();
+        self.with_experience(fn_id, |e| e.args = Some(held));
+        self.pending = Some(Pending { fn_id, args, reference, before, applied: None, percepts_since: 0 });
     }
 
     /// The call this mind awaits an answer or a reading for.
@@ -565,7 +657,9 @@ impl SeatMind {
                             effects.push((k.clone(), c.slide));
                         }
                     }
+                    let at_args = effects.clone();
                     self.with_experience(pending.fn_id, |e| e.learn(effects));
+                    self.with_call_experience(pending.fn_id, &pending.args, |e| e.learn(at_args));
                 }
                 reading.learned = Some((pending.fn_id, applied));
             }

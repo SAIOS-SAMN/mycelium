@@ -65,6 +65,91 @@ pub fn mind_mail(me: [u8; 32], raw: Vec<Mail>) -> io::Result<Vec<MindMail>> {
     Ok(out)
 }
 
+/// 78.148 — A MIND'S HOLD ON ITS SEAT: whether its take is posted, whether
+/// the house answered it held, and how many of the mind's own strokes it has
+/// waited for that answer. The seat is held again when it is lost: a TAKEN
+/// refused, or a call refused NOT THE HOLDER (a house restarted, the seat
+/// passed), lets the take go and the next stroke takes again; a take no
+/// TAKEN answers within [`SeatHold::patience`] strokes is let go and posted
+/// again.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SeatHold {
+    pub posted: bool,
+    pub held: bool,
+    pub waited: u64,
+}
+
+impl SeatHold {
+    /// THE BOUND ON AN UNANSWERED TAKE: a full APERTURE CYCLE of the mind's
+    /// own strokes (`physics::aperture_cycle`, the stroke count at which a
+    /// contact's consecutive failures read as occlusion) — never a clock.
+    pub fn patience() -> u64 {
+        u64::from(crate::physics::aperture_cycle())
+    }
+
+    /// AT A STROKE: whether the take is to be posted now — never posted, let
+    /// go, or (counted here) unanswered for a full aperture cycle.
+    pub fn stroke(&mut self) -> bool {
+        if self.posted && !self.held {
+            self.waited = match self.waited.checked_add(1) {
+                Some(w) => w,
+                None => self.waited,
+            };
+            if self.waited >= Self::patience() {
+                self.let_go();
+            }
+        }
+        !self.posted
+    }
+
+    /// The take was posted: its answer awaited from here.
+    pub fn take_posted(&mut self) {
+        *self = SeatHold { posted: true, held: false, waited: 0 };
+    }
+
+    /// The take let go: the next stroke posts it again.
+    pub fn let_go(&mut self) {
+        *self = SeatHold::default();
+    }
+
+    /// THE HOUSE'S TAKEN: held — and the listing is to be read (true) — or
+    /// refused and let go.
+    pub fn taken(&mut self, ok: bool) -> bool {
+        match ok {
+            true => {
+                *self = SeatHold { posted: true, held: true, waited: 0 };
+                true
+            }
+            false => {
+                self.let_go();
+                false
+            }
+        }
+    }
+
+    /// AN OUTCOME READ: refused NOT THE HOLDER lets the take go; refused NO
+    /// SUCH FUNCTION asks the listing again (true).
+    pub fn outcome(&mut self, applied: bool, reason: u16) -> bool {
+        match (applied, reason) {
+            (false, REASON_NOT_THE_HOLDER) => {
+                self.let_go();
+                false
+            }
+            (false, REASON_NO_SUCH_FUNCTION) => true,
+            _ => false,
+        }
+    }
+}
+
+/// 78.148 — ONE SEAT'S FUNCTIONS in a listing, with the listing's epoch:
+/// the repertoire a mind at that seat perceives. `None` where the post is no
+/// SEATS or names no such seat.
+pub fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
+    let Post::Seats(seats) = &listing.post else { return None };
+    let mine = seats.seats.iter().find(|s| s.seat == seat)?;
+    Some((seats.epoch, mine.fns.clone()))
+}
+
 fn seat_key(domain: &[u8; 32], seat: u32) -> Vec<u8> {
     let mut k = domain.to_vec();
     k.extend_from_slice(&seat.to_be_bytes());
