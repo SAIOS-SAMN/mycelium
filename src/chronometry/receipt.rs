@@ -367,13 +367,15 @@ pub enum Cite {
     /// receipts' stamps, rows, included parts and rates), which the tier
     /// signed: a dispute proves the netting against it.
     Chained { tier: [u8; 32], prefix: [u8; 32], rows: [u8; 32], children: [u8; 32] },
-    /// 78.125 — A CHALLENGE, by its coordinates: the fold challenged (its
-    /// receipt's stamp), the challenge's kind and what the court found
+    /// 78.125 — A CHALLENGE, by its coordinates: the fold challenged (where
+    /// it stands — 78.138: its receipt's stamp, and the path of a line
+    /// carried inside), the challenge's kind and what the court found
     /// (`outcome`: demanded, upheld, falsified, discharged), and the content
     /// hash of what it was found on — an upheld prefix's, a falsifying
-    /// prefix's, a correction's — so a reader knows the fold was replayed,
-    /// not merely unchallenged. Zero where nothing was presented.
-    Challenge { fold: Stamp, kind: u8, outcome: u8, evidence: [u8; 32] },
+    /// prefix's, a correction's — so a reader knows the fold was
+    /// reconstructed, not merely unchallenged. Zero where nothing was
+    /// presented.
+    Challenge { fold: crate::anastome::dialogue::uplink::FoldAt, kind: u8, outcome: u8, evidence: [u8; 32] },
     /// 78.126 — A HANDOFF ACT, by its coordinates: the handoff's id (the hash
     /// of its offer's one writing, which the court holds while a side is
     /// open) and the act's kind — offered, accepted, refused, expired.
@@ -473,9 +475,20 @@ impl Cite {
                     rec.extend_from_slice(h);
                 }
             }
+            // 78.138 — a fold the court sealed itself writes as 78.125's
+            // (tag 8, its stamp); a line carried inside another names its
+            // place there (tag 13, the stamp and the path).
             Cite::Challenge { fold, kind, outcome, evidence } => {
-                rec.push(8);
-                fold.put_canonical(&mut rec);
+                match fold.path.is_empty() {
+                    true => {
+                        rec.push(8);
+                        fold.stamp.put_canonical(&mut rec);
+                    }
+                    false => {
+                        rec.push(13);
+                        fold.put_canonical(&mut rec);
+                    }
+                }
                 rec.extend_from_slice(&[*kind, *outcome]);
                 rec.extend_from_slice(evidence);
             }
@@ -598,8 +611,11 @@ impl Cite {
                 let (tier, prefix, rows, children) = (take()?, take()?, take()?, take()?);
                 Some(Cite::Chained { tier, prefix, rows, children })
             }
-            8 => {
-                let fold = Stamp::take_canonical(b, p)?;
+            8 | 13 => {
+                let fold = match tag {
+                    8 => crate::anastome::dialogue::uplink::FoldAt::sealed(Stamp::take_canonical(b, p)?),
+                    _ => crate::anastome::dialogue::uplink::FoldAt::take_canonical(b, p)?,
+                };
                 let (kind, outcome) = (*b.get(*p)?, *b.get(*p + 1)?);
                 *p += 2;
                 let evidence: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;

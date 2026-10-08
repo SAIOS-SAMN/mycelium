@@ -354,7 +354,7 @@ impl Kernel {
             .filter(|(id, t)| {
                 let out = self.handoffs.held.get(id).and_then(|h| h.out.clone());
                 let settled = match out {
-                    Some(f) if self.ledgers.records.contains(&f) => Stamp::from_key(&f)
+                    Some(f) if self.ledgers.records.contains(&f) => crate::anastome::dialogue::uplink::FoldAt::from_key(&f)
                         .is_some_and(|s| matches!(self.finality(&s), crate::anastome::dialogue::challenge::Finality::Final { .. })),
                     _ => true,
                 };
@@ -390,7 +390,7 @@ impl Kernel {
 
     /// 78.133 — whether a toll is held on `fold`: it consumed the OUT side of
     /// a traversal whose parts are not yet released.
-    pub fn fold_holds_toll(&self, fold: &Stamp) -> bool {
+    pub fn fold_holds_toll(&self, fold: &crate::anastome::dialogue::uplink::FoldAt) -> bool {
         let key = fold.key();
         self.handoffs.tolls.scoped().any(|(id, _)| self.handoffs.held.get(&id).and_then(|h| h.out.as_ref()) == Some(&key))
     }

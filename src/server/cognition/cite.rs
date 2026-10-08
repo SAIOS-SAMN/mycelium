@@ -436,6 +436,12 @@ impl Kernel {
         let Some(domain) = self.tier_domain.get(&f.fold.tier).copied() else {
             return Uplinked::Unbound;
         };
+        // 78.138 — ONLY THE ANCIENTS UPLINK (the Concordance, 4.1): the
+        // folding tier is its domain's reserve; a line's fold is carried in
+        // its reserve's, and lines never touch the court.
+        if self.reserve_of(&domain) != Some(f.fold.tier) {
+            return Uplinked::NotReserve;
+        }
         // 78.125 — a fold over its tier's current head: a resend answered with
         // its original receipt, or a repeat refused; nothing sealed twice.
         if let Some(answer) = self.repeat_of(&f.fold, &domain) {

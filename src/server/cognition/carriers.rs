@@ -171,7 +171,7 @@ impl Kernel {
             domains,
             tier_domain,
             ledgers,
-            replays,
+            reconstructions,
             handoffs,
             reserves,
             origins,
@@ -192,7 +192,7 @@ impl Kernel {
         c.count("ledger.heads", ledgers.heads.len());
         c.count("ledger.edges", ledgers.edges.scoped().map(|(_, e)| e.len()).sum());
         c.count("ledger.discharged", ledgers.discharged.len());
-        c.count("ledger.replays", replays.len());
+        c.count("ledger.reconstructions", reconstructions.len());
         // 78.126 — the handoffs held, and the folds' consumed sides.
         c.count("handoffs.held", handoffs.held.len());
         c.count("handoffs.consumed_by", handoffs.consumed_by.len());

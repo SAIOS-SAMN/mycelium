@@ -245,13 +245,14 @@ fn an_out_fold_reversed_refunds_every_part_together() {
     let leaving = vec![([1; 32], [-7, 0, 0, -3])];
     let fold = TierFold { tier: traveller, prefix: [1; 32], rows: leaving, declared: Vec::new(), children: Vec::new(), handoffs: vec![(id, Side::Out)] };
     let Uplinked::Admitted { at, .. } = k.admit_uplink(&fold.sign(&reserve(5))) else { panic!("the OUT side consumed") };
+    let at = crate::anastome::dialogue::uplink::FoldAt::sealed(at);
     assert!(k.fold_holds_toll(&at), "the toll rides on the fold");
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&key(60))) else { panic!() };
+    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&key(60))) else { panic!() };
     pass(&mut k, accepted.h + CHALLENGE_WINDOW);
     k.settle_windows();
     assert_eq!(k.toll_held_for(&vk(&line())), Some([3, 0, 0, 5]), "the demand holds it past the window");
     pass(&mut k, deadline);
-    assert!(matches!(k.challenge(&Challenge::Default { fold: at }.sign(&key(60))), Challenged::Falsified { .. }));
+    assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&key(60))), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
     assert_eq!(k.treasury.balance_mu(&traveller), [10, 0, 0, 15], "every part back together");
     assert_eq!(k.toll_held_for(&vk(&line())), Some([0; 4]));

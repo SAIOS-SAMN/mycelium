@@ -1,12 +1,16 @@
-// 78.125 — 2(c) THE CHALLENGE WINDOW: a fold's prefix replayed — upheld or
-// falsified — an availability demand and its default, an arbitrage booked by
-// its tier, and finality read recursively over every fold a fold nets.
+// 78.125 — 2(c) THE CHALLENGE WINDOW: a fold's prefix reconstructed — upheld
+// or falsified — an availability demand and its default, an arbitrage booked
+// by its tier, and finality read recursively over every fold a fold nets.
+// 78.138 — the lines `A`, `P`, `Q` never touch the court: each fold of theirs
+// is CARRIED INLINE in a fold of the domain's reserve `R`, and contested
+// where it stands inside it.
 
 use crate::anastome::dialogue::challenge::{line_head, Challenge, ChallengeRefusal, Challenged, Entry, Finality};
-use crate::anastome::dialogue::uplink::{ChildNet, Net, TierFold, Uplinked};
+use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, Net, TierFold, Uplinked};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::physics::laws::CHALLENGE_WINDOW;
 use crate::server::cognition::Kernel;
+use crate::transducer::cech::coefficient::Coefficient;
 use ed25519_dalek::SigningKey;
 
 fn key(b: u8) -> SigningKey {
@@ -25,9 +29,14 @@ fn g(v: i128) -> [i128; 4] {
     [0, v, 0, 0]
 }
 
-/// The tiers `A`, `P`, `Q`, and a challenger who is none of them.
+/// The lines `A`, `P`, `Q`, and a challenger who is none of them.
 fn tiers() -> (SigningKey, SigningKey, SigningKey) {
     (key(21), key(22), key(23))
+}
+
+/// The domain's reserve — its ancients, the only tier that uplinks.
+fn reserve() -> SigningKey {
+    key(24)
 }
 
 fn challenger() -> SigningKey {
@@ -38,14 +47,26 @@ fn domain() -> [u8; 32] {
     vk(&key(4))
 }
 
+/// The domain founded with its three lines and its reserve, the reserve
+/// designated, and each line BONDED by it — a line is carried only with a
+/// bond of its own.
 fn founded() -> Kernel {
-    use crate::anastome::dialogue::domain::{DomainGenesis, Founded};
+    use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
     let (a, p, q) = tiers();
-    let mut ts = vec![vk(&a), vk(&p), vk(&q)];
+    let r = reserve();
+    let mut ts = vec![vk(&a), vk(&p), vk(&q), vk(&r)];
     ts.sort_unstable();
     let mut k = Kernel::new();
     let genesis = DomainGenesis { domain: domain(), tiers: ts };
     assert!(matches!(k.admit_domain(&genesis.sign(&key(4))), Founded::Sealed { .. }));
+    let reservation = Reservation { domain: domain(), tier: vk(&r), nonce: [0; 32] };
+    assert!(matches!(k.designate_reserve(&reservation.sign(&key(4))), Founded::Reserved { .. }));
+    let anchor = k.anchor();
+    k.treasury.genesis(vk(&r), [12, 0, 0, 0], anchor);
+    for (i, line) in [(0u8, &a), (1, &p), (2, &q)] {
+        let bond = Bond { domain: domain(), reserve: vk(&r), tier: vk(line), mu: Some([4, 0, 0, 0]), nonce: [i; 32] };
+        assert!(matches!(k.bond(&bond.sign(&r)), Founded::Bonded { .. }));
+    }
     k
 }
 
@@ -66,16 +87,30 @@ fn a_fold() -> TierFold {
     fold(&tiers().0, &e, e[0].rows.clone(), e[0].declared.clone(), Vec::new())
 }
 
-fn sealed(k: &mut Kernel, f: TierFold, by: &SigningKey) -> Stamp {
-    match k.admit_uplink(&f.sign(by)) {
-        Uplinked::Admitted { at, .. } | Uplinked::Chained { at, .. } => at,
-        other => panic!("admitted: {other:?}"),
+/// A LINE'S FOLD ON THE COURT: carried inline in a fresh fold of the reserve
+/// that includes none of it, so it stands whole to be netted — where it
+/// stands, `[0]` inside the reserve's receipt.
+fn sealed(k: &mut Kernel, f: TierFold, by: &SigningKey) -> FoldAt {
+    let carried = ChildNet {
+        rows: f.rows.clone(),
+        declared: f.declared.clone(),
+        child: Child::Carried(Box::new(f.sign(by))),
+        included_rows: Vec::new(),
+        included_declared: Vec::new(),
+        rate: [(1, 1); 4],
+    };
+    let mut prefix = [5u8; 32];
+    prefix[..8].copy_from_slice(&k.chain.head_height().to_be_bytes());
+    let carrier = TierFold { tier: vk(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    match k.admit_uplink(&carrier.sign(&reserve())) {
+        Uplinked::Chained { at, .. } => FoldAt { stamp: at, path: vec![0] },
+        other => panic!("carried: {other:?}"),
     }
 }
 
-fn whole(of: &TierFold, at: Stamp, n: i128) -> ChildNet {
+fn whole(of: &TierFold, at: &FoldAt, n: i128) -> ChildNet {
     ChildNet {
-        at,
+        child: Child::Sealed(at.clone()),
         rows: of.rows.clone(),
         declared: of.declared.clone(),
         included_rows: of.rows.clone(),
@@ -85,8 +120,8 @@ fn whole(of: &TierFold, at: Stamp, n: i128) -> ChildNet {
 }
 
 /// The evidence for `f` at `at`: its own rows, declared, children and line.
-fn evidence(f: &TierFold, at: Stamp, entries: Vec<Entry>) -> Challenge {
-    Challenge::Evidence { fold: at, rows: f.rows.clone(), declared: f.declared.clone(), children: f.children.clone(), entries }
+fn evidence(f: &TierFold, at: &FoldAt, entries: Vec<Entry>) -> Challenge {
+    Challenge::Evidence { fold: at.clone(), rows: f.rows.clone(), declared: f.declared.clone(), children: f.children.clone(), entries }
 }
 
 /// The court's line carried past `h` by acts of its own.
@@ -96,48 +131,66 @@ fn pass(k: &mut Kernel, h: u64) {
     }
 }
 
-/// A REPLAY UPHOLDS AN HONEST FOLD AND THE SEAL SAYS SO: the prefix chains to
-/// the cited head and re-derives the rows; the receipt carries the prefix's
-/// content hash; the fold reads provisional for its window, then final and
-/// UPHELD — not merely unchallenged. A line that does not chain, or rows not
-/// the fold's, are refused, nothing found.
+/// ONLY THE ANCIENTS UPLINK (78.138): a line's fold put straight to the
+/// court is refused by name; carried in its reserve's, it stands.
 #[test]
-fn a_replay_upholds_an_honest_fold_and_finality_says_upheld() {
+fn only_the_reserve_uplinks_and_a_line_is_carried() {
+    let (a, ..) = tiers();
+    let mut k = founded();
+    assert_eq!(k.admit_uplink(&a_fold().sign(&a)), Uplinked::NotReserve);
+    let at = sealed(&mut k, a_fold(), &a);
+    assert_eq!(at.path, vec![0]);
+    assert!(k.ledgers.records.contains(&at.key()), "the line recorded inside its reserve's receipt");
+}
+
+/// A RECONSTRUCTION UPHOLDS AN HONEST FOLD AND THE SEAL SAYS SO: the prefix
+/// chains to the cited head and re-derives the rows; the receipt carries the
+/// prefix's content hash; the fold reads provisional for its window, then
+/// final and UPHELD — not merely unchallenged. A line that does not chain, or
+/// rows not the fold's, are refused, nothing found.
+#[test]
+fn a_reconstruction_upholds_an_honest_fold_and_finality_says_upheld() {
     let (a, ..) = tiers();
     let mut k = founded();
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
     let wrong_line = vec![Entry { rows: vec![(who(1), g(1))], declared: Vec::new() }];
-    assert_eq!(k.challenge(&evidence(&f, at, wrong_line).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotThePrefix));
+    assert_eq!(k.challenge(&evidence(&f, &at, wrong_line).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotThePrefix));
     let mut not_it = f.clone();
     not_it.rows[0].1 = g(11);
-    assert_eq!(k.challenge(&evidence(&not_it, at, a_entries()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheFold));
-    let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, at, a_entries()).sign(&challenger())) else { panic!("upheld") };
+    assert_eq!(k.challenge(&evidence(&not_it, &at, a_entries()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheFold));
+    let Challenged::Upheld { prefix, .. } = k.challenge(&evidence(&f, &at, a_entries()).sign(&challenger())) else { panic!("upheld") };
     let head = k.chain.head().expect("sealed");
-    assert_eq!(head.cites, vec![Cite::Challenge { fold: at, kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
-    assert_eq!(k.finality(&at), Finality::Provisional { until: at.h + CHALLENGE_WINDOW });
-    pass(&mut k, at.h + CHALLENGE_WINDOW);
+    assert_eq!(head.cites, vec![Cite::Challenge { fold: at.clone(), kind: 1, outcome: 1, evidence: prefix }], "the upheld prefix on the receipt");
+    assert_eq!(k.finality(&at), Finality::Provisional { until: at.stamp.h + CHALLENGE_WINDOW });
+    pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "the windows restore");
     assert_eq!(booted.finality(&at), Finality::Final { upheld: true }, "and read the same");
 }
 
-/// A REPLAY FALSIFIES A FOLD ITS LINE DOES NOT SUM TO: the tier's line made
-/// 6 and declared it, but its fold reports `w1` at 9 and `w2` at −3 — the
-/// same continuity, other rows. Falsified, reversed, final never.
+/// A RECONSTRUCTION FALSIFIES A FOLD ITS LINE DOES NOT SUM TO: the tier's
+/// line made 6 and declared it, but its fold reports `w1` at 9 and `w2` at
+/// −3 — the same continuity, other rows. Falsified, reversed, final never;
+/// the reserve fold that carried it unwinds (it refiles without the line),
+/// and the LINE's bond is slashed, never the reserve's.
 #[test]
-fn a_replay_falsifies_a_fold_its_own_line_does_not_sum_to() {
+fn a_reconstruction_falsifies_a_fold_its_own_line_does_not_sum_to() {
     let (a, ..) = tiers();
     let mut k = founded();
     let e = a_entries();
     let lie = fold(&a, &e, vec![(who(1), g(9)), (who(2), g(-3))], e[0].declared.clone(), Vec::new());
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
     let at = sealed(&mut k, lie.clone(), &a);
-    let reply = k.challenge(&evidence(&lie, at, e).sign(&challenger()));
-    assert!(matches!(reply, Challenged::Falsified { unwound: 0, .. }), "{reply:?}");
+    let reserve_bond = k.bond_of(&vk(&reserve()));
+    let reply = k.challenge(&evidence(&lie, &at, e).sign(&challenger()));
+    assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "the carrying reserve fold unwound: {reply:?}");
     assert_eq!(k.finality(&at), Finality::Falsified);
-    pass(&mut k, at.h + CHALLENGE_WINDOW);
+    assert_eq!(k.finality(&FoldAt::sealed(at.stamp)), Finality::Unwound, "the reserve refiles without the line");
+    assert_eq!(k.bond_of(&vk(&a)), [2, 0, 0, 0], "the line's own bond slashed by half");
+    assert_eq!(k.bond_of(&vk(&reserve())), reserve_bond, "never the reserve's");
+    pass(&mut k, at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Falsified, "never final");
 }
 
@@ -150,62 +203,63 @@ fn a_demanded_prefix_unpublished_by_its_deadline_falsifies_by_default() {
     let mut k = founded();
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { at: asked, deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else {
-        panic!("demanded")
-    };
+    let demand = || Challenge::Demand { fold: at.clone() };
+    let Challenged::Demanded { at: asked, deadline, .. } = k.challenge(&demand().sign(&challenger())) else { panic!("demanded") };
     assert_eq!(deadline, asked.h + CHALLENGE_WINDOW);
     // A resend by the same filer is answered with the original; another
     // filer's demand is refused — one demand per fold.
-    let Challenged::Demanded { at: again, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else { panic!("resent") };
+    let Challenged::Demanded { at: again, .. } = k.challenge(&demand().sign(&challenger())) else { panic!("resent") };
     assert_eq!(again, asked, "the original demand, nothing sealed twice");
-    assert_eq!(k.challenge(&Challenge::Demand { fold: at }.sign(&key(41))), Challenged::Refused(ChallengeRefusal::Demanded));
-    assert_eq!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotDue));
+    assert_eq!(k.challenge(&demand().sign(&key(41))), Challenged::Refused(ChallengeRefusal::Demanded));
+    assert_eq!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotDue));
     pass(&mut k, deadline);
     assert_eq!(k.finality(&at), Finality::Blocked, "the default is due and unclaimed: never final");
-    assert!(matches!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Falsified { .. }));
+    assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Falsified { .. }));
     assert_eq!(k.finality(&at), Finality::Falsified);
 
     // Answered in time: the tier publishes, and no default stands.
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else { panic!() };
-    assert!(matches!(k.challenge(&evidence(&f, at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the tier publishes");
+    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
+    assert!(matches!(k.challenge(&evidence(&f, &at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the tier publishes");
     pass(&mut k, deadline);
-    assert_eq!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::Published));
+    assert_eq!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::Published));
     assert_eq!(k.finality(&at), Finality::Final { upheld: true });
 }
 
 /// `P` nets all of `A` at 2 on G, and its own line holds the rest: its rows
 /// less `2 · A` per identity — `w1` 12 − 20, `w2` 0 + 8.
-fn p_over(at: Stamp) -> (TierFold, Vec<Entry>) {
+fn p_over(at: &FoldAt) -> (TierFold, Vec<Entry>) {
     let p_line = vec![Entry { rows: vec![(who(1), g(-8)), (who(2), g(8))], declared: Vec::new() }];
     let f = fold(&tiers().1, &p_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&a_fold(), at, 2)]);
     (f, p_line)
 }
 
 /// FINALITY IS RECURSIVE, AND A REVERSED CHILD UNWINDS ITS ANCESTORS: `P`
-/// replays upheld on its OWN line (never re-listing `A`'s transfers) yet
-/// reads blocked while `A` is demanded and unanswered; `A` defaulted, `P`
-/// is unwound — it must refile.
+/// reconstructed upheld on its OWN line (never re-listing `A`'s transfers)
+/// yet reads blocked while `A` is demanded and unanswered; `A` defaulted, `P`
+/// is unwound — it must refile — and so are the reserve folds that carried
+/// `A` and `P`.
 #[test]
 fn finality_waits_on_every_fold_netted_and_a_reversed_child_unwinds_its_ancestors() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
-    let (pf, p_line) = p_over(a_at);
+    let (pf, p_line) = p_over(&a_at);
     let p_at = sealed(&mut k, pf.clone(), &p);
-    assert!(matches!(k.challenge(&evidence(&pf, p_at, p_line).sign(&challenger())), Challenged::Upheld { .. }), "own entries only");
-    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: a_at }.sign(&challenger())) else { panic!() };
-    pass(&mut k, p_at.h + CHALLENGE_WINDOW);
+    assert!(matches!(k.challenge(&evidence(&pf, &p_at, p_line).sign(&challenger())), Challenged::Upheld { .. }), "own entries only");
+    let Challenged::Demanded { deadline, .. } = k.challenge(&Challenge::Demand { fold: a_at.clone() }.sign(&challenger())) else { panic!() };
+    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&p_at), Finality::Blocked, "its own window passed, but a fold it nets is not final");
     pass(&mut k, deadline);
-    let reply = k.challenge(&Challenge::Default { fold: a_at }.sign(&challenger()));
-    assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "{reply:?}");
+    let reply = k.challenge(&Challenge::Default { fold: a_at.clone() }.sign(&challenger()));
+    assert!(matches!(reply, Challenged::Falsified { unwound: 3, .. }), "P and the two carrying reserve folds: {reply:?}");
     assert_eq!((k.finality(&a_at), k.finality(&p_at)), (Finality::Falsified, Finality::Unwound));
 }
 
 /// A FALSIFIED PARENT RETURNS WHAT IT NETTED: `P` lies on its own line; the
-/// replay falsifies it, `A`'s parts come back, and `Q` refiles all of `A`.
+/// reconstruction falsifies it, `A`'s parts come back, and `Q` refiles all
+/// of `A`.
 #[test]
 fn a_falsified_parent_returns_its_netting_and_the_child_is_netted_again() {
     let (a, p, q) = tiers();
@@ -214,17 +268,30 @@ fn a_falsified_parent_returns_its_netting_and_the_child_is_netted_again() {
     // P's line holds `w1` −7, `w2` +7; netting A at 2 its rows must then be
     // `w1` 13, `w2` −1 — it reports `w1` 12 and nothing for `w2`.
     let lying_line = vec![Entry { rows: vec![(who(1), g(-7)), (who(2), g(7))], declared: Vec::new() }];
-    let lie = fold(&p, &lying_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&a_fold(), a_at, 2)]);
+    let lie = fold(&p, &lying_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&a_fold(), &a_at, 2)]);
     assert_eq!(lie.continuity(), Ok(()), "continuity alone does not catch it");
     let lie_at = sealed(&mut k, lie.clone(), &p);
-    let refile = |k: &mut Kernel| {
-        let qf = fold(&q, &[], vec![(who(1), g(10)), (who(2), g(-4))], Vec::new(), vec![whole(&a_fold(), a_at, 1)]);
-        k.admit_uplink(&qf.sign(&q))
+    let refile = |k: &mut Kernel, nonce: u8| {
+        let qf = TierFold { prefix: [nonce; 32], ..fold(&q, &[], vec![(who(1), g(10)), (who(2), g(-4))], Vec::new(), vec![whole(&a_fold(), &a_at, 1)]) };
+        let carried = ChildNet {
+            rows: qf.rows.clone(),
+            declared: qf.declared.clone(),
+            child: Child::Carried(Box::new(qf.sign(&q))),
+            included_rows: Vec::new(),
+            included_declared: Vec::new(),
+            rate: [(1, 1); 4],
+        };
+        let mut prefix = [6u8; 32];
+        prefix[0] = nonce;
+        let carrier = TierFold { tier: vk(&reserve()), prefix, rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+        k.admit_uplink(&carrier.sign(&reserve()))
     };
-    assert!(matches!(refile(&mut k), Uplinked::ChildRefused { .. }), "consumed by P");
-    let reply = k.challenge(&evidence(&lie, lie_at, lying_line).sign(&challenger()));
-    assert!(matches!(reply, Challenged::Falsified { unwound: 0, .. }), "{reply:?}");
-    assert!(matches!(refile(&mut k), Uplinked::Chained { open_remainders: 0, .. }), "A's parts returned: refiled whole");
+    assert!(matches!(refile(&mut k, 1), Uplinked::ChildRefused { .. }), "consumed by P");
+    let reply = k.challenge(&evidence(&lie, &lie_at, lying_line).sign(&challenger()));
+    assert!(matches!(reply, Challenged::Falsified { unwound: 1, .. }), "P's carrying reserve fold: {reply:?}");
+    assert!(matches!(refile(&mut k, 2), Uplinked::Chained { .. }), "A's parts returned: refiled whole");
+    let refiled = k.ledgers.remaining.get(&a_at.key()).map(|(r, d)| r.is_identity() && d.is_identity());
+    assert_eq!(refiled, Some(true), "all of A netted by Q");
 }
 
 /// AN ARBITRAGE IS BOOKED BY ITS TIER: the cycle `A → P` at 2, `P → Q` at 1,
@@ -234,32 +301,32 @@ fn a_falsified_parent_returns_its_netting_and_the_child_is_netted_again() {
 #[test]
 fn an_arbitrage_is_booked_by_the_closing_tier_and_its_fold_reads_final() {
     let (_, _, q) = tiers();
-    let book = |at: Stamp, child: Vec<u8>| Challenge::Correction { fold: at, child, holder: who(7), amount: 3 };
+    let book = |at: &FoldAt, child: Vec<u8>| Challenge::Correction { fold: at.clone(), child, holder: who(7), amount: 3 };
     // Left open past the window: blocked, and too late to book.
     let mut k = founded();
     let (q_at, child) = arbitrage(&mut k);
-    assert_eq!(k.challenge(&book(q_at, child.clone()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
-    assert_eq!(k.challenge(&book(q_at, vec![9; 64]).sign(&q)), Challenged::Refused(ChallengeRefusal::NoObstruction));
-    pass(&mut k, q_at.h + CHALLENGE_WINDOW);
+    assert_eq!(k.challenge(&book(&q_at, child.clone()).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
+    assert_eq!(k.challenge(&book(&q_at, vec![9; 64]).sign(&q)), Challenged::Refused(ChallengeRefusal::NoObstruction));
+    pass(&mut k, q_at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&q_at), Finality::Blocked, "an open arbitrage at its fold");
-    assert_eq!(k.challenge(&book(q_at, child).sign(&q)), Challenged::Refused(ChallengeRefusal::Closed), "booked within the window");
+    assert_eq!(k.challenge(&book(&q_at, child).sign(&q)), Challenged::Refused(ChallengeRefusal::Closed), "booked within the window");
     // Booked within the window: discharged, and final.
     let mut k = founded();
     let (q_at, child) = arbitrage(&mut k);
-    assert!(matches!(k.challenge(&book(q_at, child).sign(&q)), Challenged::Discharged { .. }));
+    assert!(matches!(k.challenge(&book(&q_at, child).sign(&q)), Challenged::Discharged { .. }));
     assert!(k.open_obstructions(&domain()).is_empty(), "discharged");
-    pass(&mut k, q_at.h + CHALLENGE_WINDOW);
+    pass(&mut k, q_at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&q_at), Finality::Final { upheld: false }, "unchallenged, every fold it nets final");
 }
 
 /// The cycle `A → P` at 2, `P → Q` at 1, `A → Q` at 1, sealed on `k`: `Q`'s
 /// fold, and the child vertex of the edge that closed it.
-fn arbitrage(k: &mut Kernel) -> (Stamp, Vec<u8>) {
+fn arbitrage(k: &mut Kernel) -> (FoldAt, Vec<u8>) {
     let (a, p, q) = tiers();
     let af = a_fold();
     let a_at = sealed(k, af.clone(), &a);
     let half = |n| ChildNet {
-        at: a_at,
+        child: Child::Sealed(a_at.clone()),
         rows: af.rows.clone(),
         declared: af.declared.clone(),
         included_rows: vec![(who(1), g(5)), (who(2), g(-2))],
@@ -274,7 +341,7 @@ fn arbitrage(k: &mut Kernel) -> (Stamp, Vec<u8>) {
         prefix: [3; 32],
         rows: vec![(who(1), g(9))],
         declared: Vec::new(),
-        children: vec![whole(&p_fold, p_at, 1), half(1)],
+        children: vec![whole(&p_fold, &p_at, 1), half(1)],
         handoffs: Vec::new(),
     };
     let q_at = sealed(k, q_fold, &q);
@@ -297,31 +364,31 @@ fn a_publication_streams_in_parts_and_is_judged_when_its_head_reaches_the_prefix
         Entry { rows: Vec::new(), declared: vec![(who(9), g(2))] },
     ];
     let f = fold(&a, &line, vec![(who(1), g(10)), (who(2), g(-4))], vec![(who(9), g(6))], Vec::new());
-    let open = |f: &TierFold, at: Stamp| Challenge::Open { fold: at, rows: f.rows.clone(), declared: f.declared.clone(), children: Vec::new() };
-    let part = |at: Stamp, entries: &[Entry]| Challenge::Part { fold: at, entries: entries.to_vec() };
+    let open = |f: &TierFold, at: &FoldAt| Challenge::Open { fold: at.clone(), rows: f.rows.clone(), declared: f.declared.clone(), children: Vec::new() };
+    let part = |at: &FoldAt, entries: &[Entry]| Challenge::Part { fold: at.clone(), entries: entries.to_vec() };
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
-    assert_eq!(k.challenge(&part(at, &line[..1]).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotOpened));
-    assert_eq!(k.challenge(&open(&f, at).sign(&challenger())), Challenged::Streaming { head: [0; 32] });
+    assert_eq!(k.challenge(&part(&at, &line[..1]).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotOpened));
+    assert_eq!(k.challenge(&open(&f, &at).sign(&challenger())), Challenged::Streaming { head: [0; 32] });
     let sealed_before = k.chain.head_height();
-    let Challenged::Streaming { head } = k.challenge(&part(at, &line[..1]).sign(&challenger())) else { panic!("streaming") };
+    let Challenged::Streaming { head } = k.challenge(&part(&at, &line[..1]).sign(&challenger())) else { panic!("streaming") };
     assert_eq!(head, line_head([0; 32], &line[..1]));
     assert_eq!(k.chain.head_height(), sealed_before, "nothing sealed mid-stream");
-    assert_eq!(k.challenge(&part(at, &line[1..]).sign(&a)), Challenged::Refused(ChallengeRefusal::NotOpened), "another filer's stream");
-    let reply = k.challenge(&part(at, &line[1..]).sign(&challenger()));
+    assert_eq!(k.challenge(&part(&at, &line[1..]).sign(&a)), Challenged::Refused(ChallengeRefusal::NotOpened), "another filer's stream");
+    let reply = k.challenge(&part(&at, &line[1..]).sign(&challenger()));
     assert!(matches!(reply, Challenged::Upheld { prefix, .. } if prefix == f.prefix), "{reply:?}");
     // The same line under a fold that reports other rows: falsified.
     let mut k = founded();
     let lie = fold(&a, &line, vec![(who(1), g(9)), (who(2), g(-3))], vec![(who(9), g(6))], Vec::new());
     let at = sealed(&mut k, lie.clone(), &a);
-    assert!(matches!(k.challenge(&open(&lie, at).sign(&challenger())), Challenged::Streaming { .. }));
-    assert!(matches!(k.challenge(&part(at, &line).sign(&challenger())), Challenged::Falsified { .. }));
+    assert!(matches!(k.challenge(&open(&lie, &at).sign(&challenger())), Challenged::Streaming { .. }));
+    assert!(matches!(k.challenge(&part(&at, &line).sign(&challenger())), Challenged::Falsified { .. }));
 }
 
 /// A SPAN PAST ONE FRAME IS PUBLISHED IN PARTS: 4096 entries of three
 /// identities each — past the wire's one budget as a single act, refused by
 /// name before a byte is sent — stream through the court in parts that each
-/// fit it, and the replay upholds the fold.
+/// fit it, and the reconstruction upholds the fold.
 #[test]
 fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
     use crate::anastome::dialogue::challenge::encode_challenge;
@@ -332,14 +399,14 @@ fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
     let f = fold(&a, &line, vec![(who(1), g(8192)), (who(2), g(-4096)), (who(3), g(-4096))], Vec::new(), Vec::new());
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
-    let whole = evidence(&f, at, line.clone()).sign(&challenger());
+    let whole = evidence(&f, &at, line.clone()).sign(&challenger());
     let framed = |c: &crate::anastome::dialogue::challenge::SignedChallenge| Frame { lane: Stratum::Spatial, body: encode_challenge(c) }.encode();
     assert!(framed(&whole).is_none(), "one act past the budget is refused before it is sent");
-    let open = Challenge::Open { fold: at, rows: f.rows.clone(), declared: Vec::new(), children: Vec::new() }.sign(&challenger());
+    let open = Challenge::Open { fold: at.clone(), rows: f.rows.clone(), declared: Vec::new(), children: Vec::new() }.sign(&challenger());
     assert!(matches!(k.challenge(&open), Challenged::Streaming { .. }));
     let mut last = None;
     for chunk in line.chunks(1024) {
-        let part = Challenge::Part { fold: at, entries: chunk.to_vec() }.sign(&challenger());
+        let part = Challenge::Part { fold: at.clone(), entries: chunk.to_vec() }.sign(&challenger());
         let bytes = framed(&part).expect("each part fits the budget");
         assert!(bytes.len() <= BODY_BUDGET + 5);
         last = Some(k.challenge(&part));
@@ -351,44 +418,38 @@ fn a_span_past_one_frame_is_published_in_parts_each_within_the_budget() {
 /// FINAL: `A` netted whole by `P`; `A`'s window closes first — final, its
 /// record pruned to a stub its unfinished parent still names, read final
 /// across a restart; then `P`'s window closes and `P` reads final through
-/// it. `P` pruned in turn, `A` is named by nothing and nettable no more, and
-/// is let go; `P`, its value still in flight, keeps its stub. A streamed
-/// replay whose window closed is let go too.
+/// it. A streamed reconstruction whose window closed is let go too.
 #[test]
 fn the_windows_settle_and_a_pruned_child_still_reads_final_for_its_parent() {
     let (a, p, _) = tiers();
     let mut k = founded();
     let a_at = sealed(&mut k, a_fold(), &a);
-    pass(&mut k, a_at.h + CHALLENGE_WINDOW / 2);
-    let (pf, _) = p_over(a_at);
+    pass(&mut k, a_at.stamp.h + CHALLENGE_WINDOW / 2);
+    let (pf, _) = p_over(&a_at);
     let p_at = sealed(&mut k, pf.clone(), &p);
-    let open = Challenge::Open { fold: p_at, rows: pf.rows.clone(), declared: Vec::new(), children: pf.children.clone() };
+    let open = Challenge::Open { fold: p_at.clone(), rows: pf.rows.clone(), declared: Vec::new(), children: pf.children.clone() };
     assert!(matches!(k.challenge(&open.sign(&challenger())), Challenged::Streaming { .. }));
     // A's window closes; P's stands.
-    pass(&mut k, a_at.h + CHALLENGE_WINDOW);
+    pass(&mut k, a_at.stamp.h + CHALLENGE_WINDOW);
     let _ = k.orbit();
     assert!(!k.ledgers.records.contains(&a_at.key()), "A's record pruned");
     assert!(k.ledgers.finals.contains(&a_at.key()), "to a stub its unfinished parent names");
     assert_eq!(k.finality(&a_at), Finality::Final { upheld: false });
-    assert_eq!(k.replays.len(), 1, "P's stream stands within its window");
+    assert_eq!(k.reconstructions.len(), 1, "P's stream stands within its window");
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false }, "the stub read final across the restart");
     // P's window closes: final through its pruned child.
-    pass(&mut booted, p_at.h + CHALLENGE_WINDOW);
+    pass(&mut booted, p_at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false }, "the parent reads final through the stub");
     let _ = booted.orbit();
     assert!(booted.ledgers.records.is_empty(), "every record final and pruned");
-    // A, consumed and named by nothing, keeps its stub while the hot line
-    // holds its receipt — else it would read pre-line — and reads final.
-    assert!(booted.ledgers.finals.contains(&a_at.key()), "A's stub stays while the hot line holds its receipt");
     assert_eq!(booted.finality(&a_at), Finality::Final { upheld: false });
-    assert!(booted.ledgers.finals.contains(&p_at.key()), "P, its value in flight, keeps its stub");
     assert_eq!(booted.finality(&p_at), Finality::Final { upheld: false });
     // The stream on the original court: its window closed, it is let go.
-    pass(&mut k, p_at.h + CHALLENGE_WINDOW);
+    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
     let _ = k.orbit();
-    assert!(k.replays.is_empty(), "a stream whose window closed is let go");
+    assert!(k.reconstructions.is_empty(), "a stream whose window closed is let go");
 }
 
 /// A SELF-DEMAND WITHDRAWN REOPENS THE WINDOW, ONCE (the coordinator's
@@ -405,37 +466,37 @@ fn a_self_demand_withdrawn_reopens_the_window_once() {
     let mut k = founded();
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { at: demand, deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!("demanded") };
+    let Challenged::Demanded { at: demand, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&a)) else { panic!("demanded") };
     pass(&mut k, deadline);
     assert_eq!(k.finality(&at), Finality::Blocked, "the self-demand's deadline passed unanswered");
-    let withdraw = |d: Stamp| Challenge::Withdraw { fold: at, demand: d };
+    let withdraw = |d: Stamp| Challenge::Withdraw { fold: at.clone(), demand: d };
     assert_eq!(k.challenge(&withdraw(demand).sign(&challenger())), Challenged::Refused(ChallengeRefusal::NotTheTier));
-    assert_eq!(k.challenge(&withdraw(at).sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
+    assert_eq!(k.challenge(&withdraw(at.stamp).sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
     let Challenged::Reopened { until, at: w, .. } = k.challenge(&withdraw(demand).sign(&a)) else { panic!("reopened") };
     assert_eq!(until, w.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&at), Finality::Provisional { until }, "provisional through the reopened window");
     assert_eq!(k.challenge(&withdraw(demand).sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn), "a second chance is one");
-    assert!(matches!(k.challenge(&evidence(&f, at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the evidence it owed");
+    assert!(matches!(k.challenge(&evidence(&f, &at, a_entries()).sign(&a)), Challenged::Upheld { .. }), "the evidence it owed");
     // Once per fold.
     let mut k = founded();
     let at = sealed(&mut k, f.clone(), &a);
-    let Challenged::Demanded { at: demand, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!() };
-    assert!(matches!(k.challenge(&Challenge::Withdraw { fold: at, demand }.sign(&a)), Challenged::Reopened { .. }));
-    let Challenged::Demanded { at: again, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&a)) else { panic!("a demand again") };
-    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: again }.sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn));
+    let Challenged::Demanded { at: demand, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&a)) else { panic!() };
+    assert!(matches!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand }.sign(&a)), Challenged::Reopened { .. }));
+    let Challenged::Demanded { at: again, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&a)) else { panic!("a demand again") };
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand: again }.sign(&a)), Challenged::Refused(ChallengeRefusal::Withdrawn));
     // An external challenger's demand is never withdrawn; a default closes it.
     let mut k = founded();
     let at = sealed(&mut k, f, &a);
-    let Challenged::Demanded { at: theirs, deadline, .. } = k.challenge(&Challenge::Demand { fold: at }.sign(&challenger())) else { panic!() };
-    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
+    let Challenged::Demanded { at: theirs, deadline, .. } = k.challenge(&Challenge::Demand { fold: at.clone() }.sign(&challenger())) else { panic!() };
+    assert_eq!(k.challenge(&Challenge::Withdraw { fold: at.clone(), demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::NotTheDemand));
     pass(&mut k, deadline);
-    assert!(matches!(k.challenge(&Challenge::Default { fold: at }.sign(&challenger())), Challenged::Falsified { .. }));
+    assert!(matches!(k.challenge(&Challenge::Default { fold: at.clone() }.sign(&challenger())), Challenged::Falsified { .. }));
     assert_eq!(k.challenge(&Challenge::Withdraw { fold: at, demand: theirs }.sign(&a)), Challenged::Refused(ChallengeRefusal::Closed));
 }
 
 /// A TIER'S LINE HEAD IS READ BACK: the zero head before it folds; its last
-/// recorded fold's prefix and that fold's stamp after — the same after a
-/// restart, where the stamp is re-derived from the records.
+/// recorded fold's prefix and where that fold stands after — inside its
+/// reserve's receipt — the same after a restart, re-derived from the records.
 #[test]
 fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
     let (a, ..) = tiers();
@@ -443,28 +504,33 @@ fn a_tiers_line_head_is_read_back_with_the_fold_that_set_it() {
     assert_eq!(k.line_head(&vk(&a)), ([0; 32], None), "no fold: the zero head");
     let f = a_fold();
     let at = sealed(&mut k, f.clone(), &a);
-    assert_eq!(k.line_head(&vk(&a)), (f.prefix, Some(at)));
+    assert_eq!(k.line_head(&vk(&a)), (f.prefix, Some(at.clone())));
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.line_head(&vk(&a)), (f.prefix, Some(at)), "re-derived from the records");
 }
 
 /// A FOLD SEALED BEFORE THE LINE LAW IS GRANDFATHERED (the coordinator's
-/// ruling): no record, no line to replay — final, unchallenged, pre-line; a
-/// demand is refused, never defaulted; and a parent netting it reads final
-/// once its own window passes. A stamp naming no fold is unrecorded.
+/// ruling): no record, no line to reconstruct — final, unchallenged,
+/// pre-line; a demand is refused, never defaulted; and a parent netting it
+/// reads final once its own window passes. A place naming no fold is
+/// unrecorded. (Only a fold the court sealed itself can be pre-line — a
+/// reserve's: a carried line never was.)
 #[test]
 fn a_fold_sealed_before_the_line_law_is_grandfathered() {
-    let (a, p, _) = tiers();
+    let (_, p, _) = tiers();
     let mut k = founded();
-    let a_at = sealed(&mut k, a_fold(), &a);
+    let rf = TierFold { tier: vk(&reserve()), ..a_fold() };
+    let Uplinked::Admitted { at, .. } = k.admit_uplink(&rf.clone().sign(&reserve())) else { panic!("the reserve's own") };
+    let r_at = FoldAt::sealed(at);
     // As sealed before 2(c): admitted, held by its coordinates, never recorded.
-    k.ledgers.records.remove(&a_at.key());
-    assert_eq!(k.finality(&a_at), Finality::PreLine);
-    assert_eq!(k.challenge(&Challenge::Demand { fold: a_at }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NoRecord));
-    let (pf, _) = p_over(a_at);
+    k.ledgers.records.remove(&r_at.key());
+    assert_eq!(k.finality(&r_at), Finality::PreLine);
+    assert_eq!(k.challenge(&Challenge::Demand { fold: r_at.clone() }.sign(&challenger())), Challenged::Refused(ChallengeRefusal::NoRecord));
+    let p_line = vec![Entry { rows: vec![(who(1), g(-8)), (who(2), g(8))], declared: Vec::new() }];
+    let pf = fold(&p, &p_line, vec![(who(1), g(12))], Vec::new(), vec![whole(&rf, &r_at, 2)]);
     let p_at = sealed(&mut k, pf, &p);
-    pass(&mut k, p_at.h + CHALLENGE_WINDOW);
+    pass(&mut k, p_at.stamp.h + CHALLENGE_WINDOW);
     assert_eq!(k.finality(&p_at), Finality::Final { upheld: false }, "a grandfathered child is final");
-    assert_eq!(k.finality(&Stamp { h: 7, ..a_at }), Finality::Unrecorded);
+    assert_eq!(k.finality(&FoldAt { stamp: Stamp { h: 7, ..at }, path: vec![0] }), Finality::Unrecorded);
 }

@@ -207,7 +207,7 @@ fn a_reversed_fold_unconsumes_its_side_and_final_folds_let_the_handoff_go() {
     let lie = TierFold { prefix: line_head([0; 32], &lying_line), ..fold(&x(), 0, leaving.clone(), vec![(id, Side::Out)]) };
     let Uplinked::Admitted { at: lie_at, .. } = k.admit_uplink(&lie.clone().sign(&x())) else { panic!("admitted") };
     let evidence = |f: &TierFold, at: Stamp, entries: Vec<Entry>| Challenge::Evidence {
-        fold: at,
+        fold: crate::anastome::dialogue::uplink::FoldAt::sealed(at),
         rows: f.rows.clone(),
         declared: f.declared.clone(),
         children: Vec::new(),

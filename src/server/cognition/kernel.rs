@@ -408,10 +408,11 @@ pub struct Kernel {
     /// domain its rates gauge and its open obstructions — persisted on the
     /// court's own node (`LEAF_LEDGERS`).
     pub(crate) ledgers: super::ledger::Ledgers,
-    /// 78.125 — THE STREAMED REPLAYS in progress, keyed `fold ‖ filer`: the
-    /// fold restated, the line's head and sums so far. Volatile: a restart
-    /// opens a publication again; its entries are never held (LD0).
-    pub(crate) replays: crate::network::nerve::Keyed<super::challenge::Replay>,
+    /// 78.125 — THE STREAMED RECONSTRUCTIONS in progress (78.138: named for
+    /// what they are, the Concordance's 4.4), keyed `fold ‖ filer`: the fold
+    /// restated, the line's head and sums so far. Volatile: a restart opens a
+    /// publication again; its entries are never held (LD0).
+    pub(crate) reconstructions: crate::network::nerve::Keyed<super::challenge::Reconstruction>,
     /// 78.126 — THE HANDOFFS: each offer held while a side is open, and the
     /// sides each fold consumed — persisted on the court's own node
     /// (`LEAF_HANDOFFS`).

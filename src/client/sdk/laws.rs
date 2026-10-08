@@ -138,6 +138,13 @@ impl super::Session {
     /// 78.119 — A TIER'S FOLD PUT TO THE COURT for admission: the receipt's
     /// stamp and chain hash where it is sealed, or the refusal by name. A
     /// reply that does not read is an error by name, never an admission.
+    ///
+    /// 78.138 — ONLY THE ANCIENTS UPLINK: the folding tier must be its
+    /// domain's reserve (`Uplinked::NotReserve` otherwise). A progenitor line
+    /// never calls this: its signed fold rides INSIDE its reserve's, as
+    /// `ChildNet { child: Child::Carried(Box::new(line_fold.sign(&line_key))),
+    /// .. }`, and it stands on the court at `FoldAt { stamp: <the reserve
+    /// receipt's>, path: [i] }` — where its challenges and finality name it.
     pub fn uplink_fold(&self, f: &crate::anastome::dialogue::uplink::SignedFold) -> io::Result<crate::anastome::dialogue::uplink::Uplinked> {
         use crate::anastome::dialogue::uplink::{decode_uplink_reply, encode_uplink};
         let reply = self.speak(encode_uplink(f))?;
@@ -188,10 +195,11 @@ impl super::Session {
         decode_tube_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the tube reading did not decode"))
     }
 
-    /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's
-    /// stamp; — 78.129 — whether its tier stands bonded; — 78.133 — whether
-    /// a toll is held on it.
-    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::FinalityReading> {
+    /// 78.125 — A FOLD'S FINALITY at the court's head, by where it stands
+    /// (78.138: its receipt's stamp, and a carried line's path); — 78.129 —
+    /// whether its tier stands bonded; — 78.133 — whether a toll is held on
+    /// it.
+    pub fn finality(&self, fold: crate::anastome::dialogue::uplink::FoldAt) -> io::Result<crate::anastome::dialogue::challenge::FinalityReading> {
         use crate::anastome::dialogue::challenge::{decode_finality_reading, encode_finality_request};
         let reply = self.speak(encode_finality_request(fold))?;
         decode_finality_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))

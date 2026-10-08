@@ -16,7 +16,7 @@ use super::Kernel;
 use crate::anastome::dialogue::challenge::{
     line_head, Challenge, ChallengeRefusal, Challenged, Entry, Finality, SignedChallenge,
 };
-use crate::anastome::dialogue::uplink::{ChildNet, Net, TierFold};
+use crate::anastome::dialogue::uplink::{ChildNet, FoldAt, Net, TierFold};
 use crate::chronometry::{ActKind, Cite, Stamp};
 use crate::network::nerve::Keyed;
 use crate::physics::laws::CHALLENGE_WINDOW;
@@ -67,12 +67,13 @@ fn summed(entries: &[Entry], so_far: (&Lanes, &Lanes)) -> Option<(Lanes, Lanes)>
     Some((so_far.0.compose(&rows)?, so_far.1.compose(&declared)?))
 }
 
-/// A STREAMED REPLAY in progress — volatile, never persisted (a restart
-/// opens it again): the fold as restated and proved against its
-/// commitments, the line's head so far, and its own sums so far. The line's
-/// entries are never held (LD0).
+/// A STREAMED RECONSTRUCTION in progress (the Concordance, 4.4: judged as a
+/// proof is checked, never by re-running what led to it) — volatile, never
+/// persisted (a restart opens it again): the fold as restated and proved
+/// against its commitments, the line's head so far, and its own sums so far.
+/// The line's entries are never held (LD0).
 #[derive(Clone, Debug)]
-pub(crate) struct Replay {
+pub(crate) struct Reconstruction {
     rows: Vec<Net>,
     declared: Vec<Net>,
     children: Vec<ChildNet>,
@@ -81,12 +82,13 @@ pub(crate) struct Replay {
     own_declared: Lanes,
 }
 
-impl Replay {
-    /// The replay carried through `entries`: the head stepped, the sums
-    /// added — `None` where a sum passes its carrier.
-    fn then(self, entries: &[Entry]) -> Option<Replay> {
+impl Reconstruction {
+    /// The reconstruction carried through `entries`, each step checked
+    /// against the one before: the head stepped, the sums added — `None`
+    /// where a sum passes its carrier.
+    fn then(self, entries: &[Entry]) -> Option<Reconstruction> {
         let (own_rows, own_declared) = summed(entries, (&self.own_rows, &self.own_declared))?;
-        Some(Replay { head: line_head(self.head, entries), own_rows, own_declared, ..self })
+        Some(Reconstruction { head: line_head(self.head, entries), own_rows, own_declared, ..self })
     }
 }
 
@@ -99,11 +101,12 @@ fn replay_key(fold: &[u8], who: &[u8; 32]) -> Vec<u8> {
     k
 }
 
-/// REPLAY: the fold's OWN entries against what it nets — on every identity
-/// and lane, `Σ own rows = rows − Σ rate · included rows` exactly, and `Σ own
-/// declared = declared`. A parent never re-lists its children's transfers;
-/// they are proved by their own receipts.
-fn replays(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows: &Lanes, own_declared: &Lanes) -> bool {
+/// RECONSTRUCTION (the Concordance, 4.4): the fold's OWN entries against what
+/// it nets — on every identity and lane, `Σ own rows = rows − Σ rate ·
+/// included rows` exactly, and `Σ own declared = declared`: conservation,
+/// checked locally, nothing re-run. A parent never re-lists its children's
+/// transfers; they are proved by their own records.
+fn reconstructs(rows: &[Net], declared: &[Net], children: &[ChildNet], own_rows: &Lanes, own_declared: &Lanes) -> bool {
     let Some(declared) = Lanes::of(declared) else { return false };
     if *own_declared != declared {
         return false;
@@ -234,14 +237,14 @@ impl Kernel {
                 // with its declared: its line declares the crossing too.
                 let crossing = self.handoffs.crossing(&key);
                 let declaring = |declared: &[Net]| -> Vec<Net> { declared.iter().chain(&crossing).copied().collect() };
-                let replay = match &c.challenge {
+                let rebuilt = match &c.challenge {
                     // The whole prefix in one act.
                     Challenge::Evidence { rows, declared, children, entries, .. } => {
                         if !proves(rows, declared, children) {
                             return refuse(R::NotTheFold);
                         }
                         let declared = declaring(declared);
-                        Replay { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() }
+                        Reconstruction { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() }
                             .then(entries)
                     }
                     // A streamed publication opened: the fold proved, the line
@@ -251,12 +254,12 @@ impl Kernel {
                             return refuse(R::NotTheFold);
                         }
                         let declared = declaring(declared);
-                        let opened = Replay { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() };
-                        self.replays.insert(&k, opened);
+                        let opened = Reconstruction { rows: rows.clone(), declared, children: children.clone(), head: rec.from, own_rows: Lanes::identity(), own_declared: Lanes::identity() };
+                        self.reconstructions.insert(&k, opened);
                         return Challenged::Streaming { head: rec.from };
                     }
                     Challenge::Part { entries, .. } => {
-                        let Some(open) = self.replays.remove(&k) else { return refuse(R::NotOpened) };
+                        let Some(open) = self.reconstructions.remove(&k) else { return refuse(R::NotOpened) };
                         open.then(entries)
                     }
                     Challenge::Demand { .. } | Challenge::Default { .. } | Challenge::Correction { .. } | Challenge::Withdraw { .. } => {
@@ -264,13 +267,13 @@ impl Kernel {
                     }
                 };
                 // A line that cannot be summed is no evidence.
-                let Some(replay) = replay else { return refuse(R::NotThePrefix) };
-                if replay.head != rec.prefix {
+                let Some(rebuilt) = rebuilt else { return refuse(R::NotThePrefix) };
+                if rebuilt.head != rec.prefix {
                     return match c.challenge {
                         // A part continues; the whole prefix must reach the cited head.
                         Challenge::Part { .. } => {
-                            let at = replay.head;
-                            self.replays.insert(&k, replay);
+                            let at = rebuilt.head;
+                            self.reconstructions.insert(&k, rebuilt);
                             Challenged::Streaming { head: at }
                         }
                         _ => refuse(R::NotThePrefix),
@@ -278,7 +281,7 @@ impl Kernel {
                 }
                 // THE LINE REACHED THE CITED HEAD: judged once, sealed once,
                 // the head its content address.
-                if replays(&replay.rows, &replay.declared, &replay.children, &replay.own_rows, &replay.own_declared) {
+                if reconstructs(&rebuilt.rows, &rebuilt.declared, &rebuilt.children, &rebuilt.own_rows, &rebuilt.own_declared) {
                     let Some(r) = self.seal_challenge(c, UPHELD, rec.prefix) else { return refuse(R::LineRefused) };
                     if let Some(held) = self.ledgers.records.get_mut(&key) {
                         held.upheld = Some(rec.prefix);
@@ -436,9 +439,9 @@ impl Kernel {
     pub(crate) fn settle_windows(&mut self) -> usize {
         let head = self.chain.head_height();
         let mut gone = 0usize;
-        // Replays whose fold takes no more evidence.
+        // Reconstructions whose fold takes no more evidence.
         let stale: Vec<Vec<u8>> = self
-            .replays
+            .reconstructions
             .scoped()
             .map(|(k, _)| k)
             .filter(|k| {
@@ -451,7 +454,7 @@ impl Kernel {
             })
             .collect();
         for k in &stale {
-            self.replays.remove(k);
+            self.reconstructions.remove(k);
         }
         // Final records, to stubs.
         let mut memo: Keyed<Finality> = Keyed::new();
@@ -485,7 +488,7 @@ impl Kernel {
             .scoped()
             .map(|(k, _)| k)
             .filter(|k| {
-                !self.ledgers.folds.contains(k) && !named.contains(k) && Stamp::from_key(k).and_then(|s| self.chain.node(&s)).is_none()
+                !self.ledgers.folds.contains(k) && !named.contains(k) && FoldAt::from_key(k).and_then(|s| self.chain.node(&s.stamp)).is_none()
             })
             .collect();
         for k in &spent {
@@ -502,7 +505,7 @@ impl Kernel {
                     && d.is_identity()
                     && !self.ledgers.records.contains(k)
                     && !self.ledgers.finals.contains(k)
-                    && Stamp::from_key(k).and_then(|s| self.chain.node(&s)).is_none()
+                    && FoldAt::from_key(k).and_then(|s| self.chain.node(&s.stamp)).is_none()
             })
             .map(|(k, _)| k)
             .collect();
@@ -540,7 +543,7 @@ impl Kernel {
             .into_iter()
             .filter_map(|o| {
                 Some(crate::anastome::dialogue::challenge::OpenObstruction {
-                    fold: Stamp::from_key(&o.by)?,
+                    fold: FoldAt::from_key(&o.by)?,
                     child: o.child.clone(),
                     parent: o.parent.clone(),
                     holonomy: o.holonomy.clone(),
@@ -552,7 +555,7 @@ impl Kernel {
     /// 78.125 — A FOLD'S FINALITY at this court's head: its window, any
     /// demand's deadline, its open obstructions, and — recursively — every
     /// fold it nets. Read, never stored; it seals nothing.
-    pub fn finality(&self, fold: &Stamp) -> Finality {
+    pub fn finality(&self, fold: &FoldAt) -> Finality {
         let mut memo: Keyed<Finality> = Keyed::new();
         self.finality_of(&fold.key(), self.chain.head_height(), &mut memo)
     }
@@ -574,7 +577,7 @@ impl Kernel {
             }
             // A fold sealed before the tier-line law has no record and no
             // line to replay: grandfathered (the coordinator's ruling).
-            return match Stamp::from_key(key).and_then(|at| self.sealed_fold(&at)) {
+            return match FoldAt::from_key(key).and_then(|at| self.sealed_fold(&at)) {
                 Some(_) => Finality::PreLine,
                 None => Finality::Unrecorded,
             };

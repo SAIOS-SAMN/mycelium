@@ -5,7 +5,7 @@
 
 use crate::anastome::dialogue::challenge::{line_head, Challenge, Challenged, Entry};
 use crate::anastome::dialogue::domain::{Bond, DomainGenesis, Founded, Reservation};
-use crate::anastome::dialogue::uplink::{TierFold, Uplinked};
+use crate::anastome::dialogue::uplink::{Child, ChildNet, FoldAt, TierFold, Uplinked};
 use crate::server::cognition::Kernel;
 use ed25519_dalek::SigningKey;
 
@@ -63,12 +63,34 @@ fn lying_fold() -> (TierFold, Vec<Entry>) {
     (f, line)
 }
 
+/// 78.138 — THE TIER'S FOLD CARRIED in a fresh fold of its reserve, which
+/// includes none of it: where it stands, `[0]` inside the receipt — or the
+/// refusal.
+fn carry(k: &mut Kernel, f: TierFold, nonce: u8) -> Result<FoldAt, Uplinked> {
+    let carried = ChildNet {
+        rows: f.rows.clone(),
+        declared: f.declared.clone(),
+        child: Child::Carried(Box::new(f.sign(&tier()))),
+        included_rows: Vec::new(),
+        included_declared: Vec::new(),
+        rate: [(1, 1); 4],
+    };
+    let carrier = TierFold { tier: vk(&reserve()), prefix: [nonce; 32], rows: Vec::new(), declared: Vec::new(), children: vec![carried], handoffs: Vec::new() };
+    match k.admit_uplink(&carrier.sign(&reserve())) {
+        Uplinked::Chained { at, .. } => Ok(FoldAt { stamp: at, path: vec![0] }),
+        other => Err(other),
+    }
+}
+
 /// THE RESERVE BONDS ITS TIERS: only the reserve, for a tier its domain
 /// names, from μ it holds; a top-up adds to the bond; a fold of a bonded tier
-/// reads bonded, an unbonded one not.
+/// reads bonded, an unbonded one not. 78.138 — an unbonded line is never
+/// carried.
 #[test]
 fn the_reserve_bonds_a_tier_and_a_fold_reads_bonded() {
     let mut k = founded();
+    let refused = carry(&mut k, lying_fold().0, 8);
+    assert_eq!(refused, Err(Uplinked::ChildRefused { index: 0, why: crate::anastome::dialogue::uplink::ChildRefusal::Unbonded }), "each answers for its own work");
     let refused = |k: &mut Kernel, b: Bond, by: &SigningKey| k.bond(&b.sign(by));
     assert_eq!(refused(&mut k, Bond { reserve: vk(&tier()), ..bond(Some([1, 0, 0, 0]), 1) }, &tier()), Founded::NotReserve);
     assert_eq!(refused(&mut k, bond(Some([1, 0, 0, 0]), 1), &tier()), Founded::Unsigned);
@@ -78,12 +100,12 @@ fn the_reserve_bonds_a_tier_and_a_fold_reads_bonded() {
     assert!(matches!(k.bond(&bond(Some([3, 0, 0, 0]), 2).sign(&reserve())), Founded::Bonded { bond: [7, 0, 0, 0], .. }), "topped up");
     assert_eq!((k.bond_of(&vk(&tier())), k.treasury.balance_mu(&vk(&reserve()))), ([7, 0, 0, 0], [3, 0, 0, 0]));
     let (f, _) = lying_fold();
-    let Uplinked::Admitted { at, .. } = k.admit_uplink(&f.sign(&tier())) else { panic!("admitted") };
+    let at = carry(&mut k, f, 9).expect("carried, the line bonded");
     assert!(k.fold_bonded(&at), "a fold of a bonded tier");
     let Uplinked::Admitted { at: bare, .. } = k.admit_uplink(&TierFold { prefix: [3; 32], rows: Vec::new(), tier: vk(&reserve()), ..lying_fold().0 }.sign(&reserve())) else {
         panic!("admitted")
     };
-    assert!(!k.fold_bonded(&bare), "an unbacked fold reads unbonded");
+    assert!(!k.fold_bonded(&FoldAt::sealed(bare)), "an unbacked fold reads unbonded");
     let mut booted = Kernel::new();
     assert!(booted.restore(&k.snapshot()), "restores");
     assert_eq!(booted.bond_of(&vk(&tier())), [7, 0, 0, 0], "the bond held across a restart");
@@ -99,7 +121,7 @@ fn a_falsified_fold_slashes_half_the_bond_and_withdrawal_waits_on_finality() {
     let mut k = founded();
     assert!(matches!(k.bond(&bond(Some([7, 0, 0, 0]), 1).sign(&reserve())), Founded::Bonded { .. }));
     let (f, line) = lying_fold();
-    let Uplinked::Admitted { at, .. } = k.admit_uplink(&f.clone().sign(&tier())) else { panic!("admitted") };
+    let at = carry(&mut k, f.clone(), 9).expect("carried");
     assert_eq!(k.bond(&bond(None, 2).sign(&reserve())), Founded::Outstanding, "a fold it backs is open");
     let supply_before = k.treasury.balance_mu(&vk(&reserve()))[0] + k.bond_of(&vk(&tier()))[0];
     let evidence = Challenge::Evidence { fold: at, rows: f.rows.clone(), declared: Vec::new(), children: Vec::new(), entries: line };

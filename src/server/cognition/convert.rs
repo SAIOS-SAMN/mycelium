@@ -457,7 +457,7 @@ impl Kernel {
 
     /// Whether the tier that sealed this fold stands bonded — what a finality
     /// read carries so a reader weighs an unbacked fold.
-    pub fn fold_bonded(&self, fold: &Stamp) -> bool {
+    pub fn fold_bonded(&self, fold: &crate::anastome::dialogue::uplink::FoldAt) -> bool {
         let key = fold.key();
         let tier = match (self.ledgers.records.get(&key), self.ledgers.finals.get(&key)) {
             (Some(r), _) => Some(r.tier),
@@ -528,7 +528,7 @@ impl Kernel {
     fn tier_outstanding(&self, tier: &[u8; 32]) -> bool {
         let keys: Vec<Vec<u8>> = self.ledgers.records.scoped().filter(|(_, r)| r.tier == *tier && r.standing == super::ledger::Standing::Open).map(|(k, _)| k).collect();
         keys.iter().any(|k| {
-            Stamp::from_key(k).is_none_or(|at| !matches!(self.finality(&at), crate::anastome::dialogue::challenge::Finality::Final { .. }))
+            crate::anastome::dialogue::uplink::FoldAt::from_key(k).is_none_or(|at| !matches!(self.finality(&at), crate::anastome::dialogue::challenge::Finality::Final { .. }))
         })
     }
 

@@ -28,6 +28,25 @@ fn founded() -> Kernel {
     k
 }
 
+/// 78.138 — the domain founded and its one tier designated its RESERVE: the
+/// ancients, the only tier that uplinks.
+fn reserved() -> Kernel {
+    use crate::anastome::dialogue::domain::{Founded, Reservation};
+    let mut k = founded();
+    let r = Reservation { domain: domain_key().verifying_key().to_bytes(), tier: tier_key().verifying_key().to_bytes(), nonce: [0; 32] };
+    assert!(matches!(k.designate_reserve(&r.sign(&domain_key())), Founded::Reserved { .. }));
+    k
+}
+
+/// 78.138 — ONLY THE ANCIENTS UPLINK: before its domain designates it the
+/// reserve, the tier's fold is refused by name; designated, it is admitted.
+#[test]
+fn only_the_reserve_uplinks() {
+    let key = tier_key();
+    assert_eq!(founded().admit_uplink(&trade(&key).sign(&key)), Uplinked::NotReserve);
+    assert!(matches!(reserved().admit_uplink(&trade(&key).sign(&key)), Uplinked::Admitted { .. }));
+}
+
 /// A trade between two identities, nothing made: `A` +5, `B` −5 on `S`.
 fn trade(key: &SigningKey) -> TierFold {
     TierFold {
@@ -49,7 +68,7 @@ fn an_admitted_fold_is_sealed_by_its_coordinates_and_restores() {
     let key = tier_key();
     let fold = trade(&key);
     let rows = fold.rows_hash();
-    let mut k = founded();
+    let mut k = reserved();
     let Uplinked::Admitted { at, receipt } = k.admit_uplink(&fold.clone().sign(&key)) else { panic!("admitted") };
     let head = k.chain.head().expect("sealed on the line");
     assert_eq!((head.stamp, head.chain_hash), (at, receipt), "the answer is the receipt's id");
@@ -136,7 +155,7 @@ fn a_domain_is_founded_once_by_its_own_key_its_tiers_its_own() {
 #[test]
 fn a_resent_fold_is_answered_with_its_original_receipt_and_a_repeat_refused() {
     let key = tier_key();
-    let mut k = founded();
+    let mut k = reserved();
     let fold = trade(&key);
     let first = k.admit_uplink(&fold.clone().sign(&key));
     let Uplinked::Admitted { at, .. } = first else { panic!("admitted") };
@@ -158,7 +177,7 @@ fn a_fold_that_makes_value_undeclared_is_refused_and_a_declared_source_admits_it
     let key = tier_key();
     let mut made = trade(&key);
     made.rows[1].1[0] = -4;
-    let mut k = founded();
+    let mut k = reserved();
     assert_eq!(k.admit_uplink(&made.clone().sign(&key)), Uplinked::Discontinuous(Discontinuous::Unbalanced { lane: 0 }));
     made.declared = vec![(who(9), [1, 0, 0, 0])];
     assert!(matches!(k.admit_uplink(&made.sign(&key)), Uplinked::Admitted { .. }), "a declared source accounts for it");

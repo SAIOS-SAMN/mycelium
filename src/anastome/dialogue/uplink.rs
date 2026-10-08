@@ -41,15 +41,91 @@ pub struct TierFold {
     pub handoffs: Vec<([u8; 32], super::handoff::Side)>,
 }
 
-/// 78.123 B — ONE FOLD A PARENT NETS: the child's receipt on this court's
-/// line; the child's own rows and declared (proved against the commitment
-/// its receipt holds); the part of each this parent includes — a child
-/// netted by several parents is partitioned among them — and the rate per
-/// lane the parent translates it at (strictly positive; by the lexicon v2,
-/// S, T and H exactly 1, only G translates).
+/// 78.138 — WHERE A FOLD STANDS ON THE COURT: the receipt that sealed it and
+/// the path of child indices inside that receipt's fold — empty for the
+/// fold the receipt sealed (a reserve's), `[i]` for the line it carried at
+/// `i`, `[i, j]` for the line that line carried at `j`, never flattened. Its
+/// key is the stamp's key then the path, two bytes an index — so a fold the
+/// court sealed itself keys exactly as it did.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FoldAt {
+    pub stamp: Stamp,
+    pub path: Vec<u16>,
+}
+
+impl FoldAt {
+    /// The fold a receipt sealed.
+    pub fn sealed(stamp: Stamp) -> FoldAt {
+        FoldAt { stamp, path: Vec::new() }
+    }
+
+    /// The child at `i` of this fold.
+    pub fn child(&self, i: u16) -> FoldAt {
+        let mut path = self.path.clone();
+        path.push(i);
+        FoldAt { stamp: self.stamp, path }
+    }
+
+    pub fn key(&self) -> Vec<u8> {
+        let mut k = self.stamp.key();
+        for i in &self.path {
+            k.extend_from_slice(&i.to_be_bytes());
+        }
+        k
+    }
+
+    pub fn from_key(b: &[u8]) -> Option<FoldAt> {
+        let mut p = 0usize;
+        let stamp = Stamp::take_canonical(b, &mut p)?;
+        let rest = b.get(p..)?;
+        if rest.len() % 2 != 0 {
+            return None;
+        }
+        Some(FoldAt { stamp, path: rest.chunks_exact(2).map(|c| u16::from_be_bytes([c[0], c[1]])).collect() })
+    }
+
+    /// The stamp, then the path's count and its indices.
+    pub fn put_canonical(&self, out: &mut Vec<u8>) {
+        self.stamp.put_canonical(out);
+        crate::transducer::address::put_key_count(out, self.path.len());
+        for i in &self.path {
+            out.extend_from_slice(&i.to_be_bytes());
+        }
+    }
+
+    pub fn take_canonical(b: &[u8], p: &mut usize) -> Option<FoldAt> {
+        let stamp = Stamp::take_canonical(b, p)?;
+        let path = (0..crate::transducer::address::take_key_count(b, p)?)
+            .map(|_| {
+                let i = u16::from_be_bytes(b.get(*p..*p + 2)?.try_into().ok()?);
+                *p += 2;
+                Some(i)
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(FoldAt { stamp, path })
+    }
+}
+
+/// 78.138 — WHICH FOLD A PARENT NETS: one already on the court (`Sealed`,
+/// by where it stands), or a progenitor line's fold CARRIED INLINE — the
+/// line's whole fold and its signature, its own children carried in it in
+/// turn. Lines never touch the court: the ancients carry them (the
+/// Concordance, 4.1).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Child {
+    Sealed(FoldAt),
+    Carried(Box<SignedFold>),
+}
+
+/// 78.123 B — ONE FOLD A PARENT NETS: the child (78.138: sealed, or carried
+/// inline); the child's own rows and declared (proved against its
+/// commitment, or equal to the carried fold's); the part of each this parent
+/// includes — a child netted by several parents is partitioned among them —
+/// and the rate per lane the parent translates it at (strictly positive; by
+/// the lexicon v2, S, T and H exactly 1, only G translates).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChildNet {
-    pub at: Stamp,
+    pub child: Child,
     pub rows: Vec<Net>,
     pub declared: Vec<Net>,
     pub included_rows: Vec<Net>,
@@ -66,8 +142,21 @@ impl ChildNet {
         crate::chronometry::payload_hash(&out)
     }
 
-    fn put(&self, out: &mut Vec<u8>) {
-        self.at.put_canonical(out);
+    /// The child's own writing: a sealed child's stamp alone where its path
+    /// is empty (78.123's writing, untagged); else tagged — `[0][fold at]`
+    /// or `[1][the carried fold]`.
+    fn put(&self, out: &mut Vec<u8>, tagged: bool) {
+        match (&self.child, tagged) {
+            (Child::Sealed(at), false) => at.stamp.put_canonical(out),
+            (Child::Sealed(at), true) => {
+                out.push(0);
+                at.put_canonical(out);
+            }
+            (Child::Carried(f), _) => {
+                out.push(1);
+                put_fold(out, f);
+            }
+        }
         for nets in [&self.rows, &self.declared, &self.included_rows, &self.included_declared] {
             put_nets(out, nets);
         }
@@ -77,8 +166,19 @@ impl ChildNet {
         }
     }
 
-    fn take(b: &[u8], p: &mut usize) -> Option<ChildNet> {
-        let at = Stamp::take_canonical(b, p)?;
+    fn take(b: &[u8], p: &mut usize, tagged: bool) -> Option<ChildNet> {
+        let child = match tagged {
+            false => Child::Sealed(FoldAt::sealed(Stamp::take_canonical(b, p)?)),
+            true => {
+                let tag = *b.get(*p)?;
+                *p += 1;
+                match tag {
+                    0 => Child::Sealed(FoldAt::take_canonical(b, p)?),
+                    1 => Child::Carried(Box::new(take_fold(b, p)?)),
+                    _ => return None,
+                }
+            }
+        };
         let (rows, declared) = (take_nets(b, p)?, take_nets(b, p)?);
         let (included_rows, included_declared) = (take_nets(b, p)?, take_nets(b, p)?);
         let mut rate = [(1i128, 1i128); 4];
@@ -89,20 +189,68 @@ impl ChildNet {
             *p += 16;
             *r = (n, d);
         }
-        Some(ChildNet { at, rows, declared, included_rows, included_declared, rate })
+        Some(ChildNet { child, rows, declared, included_rows, included_declared, rate })
+    }
+
+    /// Whether this child's writing needs the tagged form: a carried fold,
+    /// or a sealed one standing inside another's.
+    fn needs_tag(&self) -> bool {
+        match &self.child {
+            Child::Sealed(at) => !at.path.is_empty(),
+            Child::Carried(_) => true,
+        }
     }
 }
 
+/// 78.138 — THE TAGGED CHILDREN'S MARK, where a count would stand: an
+/// over-long spelling no count is ever written as, so an untagged block
+/// (78.123's) reads as it did.
+const TAGGED: [u8; 2] = [0x80, 0x00];
+
+/// The children: untagged where every one is a fold the court sealed itself
+/// (78.123's writing exactly), else the mark, then each tagged.
 pub(crate) fn put_children(out: &mut Vec<u8>, children: &[ChildNet]) {
+    let tagged = children.iter().any(ChildNet::needs_tag);
+    if tagged {
+        out.extend_from_slice(&TAGGED);
+    }
     crate::transducer::address::put_key_count(out, children.len());
     for c in children {
-        c.put(out);
+        c.put(out, tagged);
     }
 }
 
 pub(crate) fn take_children(b: &[u8], p: &mut usize) -> Option<Vec<ChildNet>> {
+    let tagged = b.get(*p..*p + 2) == Some(&TAGGED[..]);
+    if tagged {
+        *p += 2;
+    }
     let n = crate::transducer::address::take_key_count(b, p)?;
-    (0..n).map(|_| ChildNet::take(b, p)).collect()
+    (0..n).map(|_| ChildNet::take(b, p, tagged)).collect()
+}
+
+/// 78.138 — A CARRIED FOLD'S WRITING, inside its parent: the tier, prefix,
+/// rows and signature as an uplink's, then its children and its handoff
+/// sides, each counted (nothing left implicit inside another frame).
+fn put_fold(out: &mut Vec<u8>, f: &SignedFold) {
+    out.extend_from_slice(&f.fold.tier);
+    out.extend_from_slice(&f.fold.prefix);
+    out.extend_from_slice(&f.fold.rows_bytes());
+    out.extend_from_slice(&f.sig);
+    put_children(out, &f.fold.children);
+    put_handoffs(out, &f.fold.handoffs);
+}
+
+fn take_fold(b: &[u8], p: &mut usize) -> Option<SignedFold> {
+    let tier: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+    let prefix: [u8; 32] = b.get(*p + 32..*p + 64)?.try_into().ok()?;
+    *p += 64;
+    let (rows, declared) = (take_nets(b, p)?, take_nets(b, p)?);
+    let sig: [u8; 64] = b.get(*p..*p + 64)?.try_into().ok()?;
+    *p += 64;
+    let children = take_children(b, p)?;
+    let handoffs = take_handoffs(b, p)?;
+    Some(SignedFold { fold: TierFold { tier, prefix, rows, declared, children, handoffs }, sig })
 }
 
 /// The fold and the tier's signature over [`TierFold::signed_bytes`].
@@ -335,10 +483,7 @@ pub fn decode_uplink(b: &[u8]) -> Option<SignedFold> {
     p += 64;
     let children = match p == rest.len() {
         true => Vec::new(),
-        false => {
-            let n = crate::transducer::address::take_key_count(rest, &mut p)?;
-            (0..n).map(|_| ChildNet::take(rest, &mut p)).collect::<Option<Vec<_>>>()?
-        }
+        false => take_children(rest, &mut p)?,
     };
     let handoffs = match p == rest.len() {
         true => Vec::new(),
@@ -364,6 +509,17 @@ pub enum ChildRefusal {
     /// What this parent includes passes what the child has left, on this
     /// lane: a part of opposite sign or greater magnitude — a double count.
     OverIncluded { lane: usize },
+    /// 78.138 — a carried line's signature does not verify over its fold.
+    Unsigned,
+    /// 78.138 — a carried line has no bond of its own posted: each answers
+    /// for its own work (the operator's ruling).
+    Unbonded,
+    /// 78.138 — a carried line's own fold is not continuous, consumes a side
+    /// it may not, or nets a child it may not.
+    Broken,
+    /// 78.138 — a carried line's fold over its line's current head: an empty
+    /// span claiming nets.
+    Repeat,
 }
 
 /// WHAT THE COURT ANSWERED.
@@ -394,6 +550,9 @@ pub enum Uplinked {
     /// span claiming nets. (A fold byte-identical to it is answered with
     /// its original receipt, sealing nothing.)
     Repeat,
+    /// 78.138 — only the ancients uplink: the folding tier is not its
+    /// domain's reserve. A line's fold is carried in its reserve's.
+    NotReserve,
 }
 
 /// 78.126 — WHY A FOLD MAY NOT CONSUME A HANDOFF SIDE.
@@ -466,6 +625,10 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
                 ChildRefusal::Mismatch => (1, 0),
                 ChildRefusal::ForeignDomain => (2, 0),
                 ChildRefusal::OverIncluded { lane } => (3, *lane),
+                ChildRefusal::Unsigned => (4, 0),
+                ChildRefusal::Unbonded => (5, 0),
+                ChildRefusal::Broken => (6, 0),
+                ChildRefusal::Repeat => (7, 0),
             };
             out.push(code);
             out.extend_from_slice(&lane.to_le_bytes()[..1]);
@@ -476,6 +639,7 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
             out.push(why.byte());
         }
         Uplinked::Repeat => out.push(8),
+        Uplinked::NotReserve => out.push(9),
     }
     out
 }
@@ -530,6 +694,10 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
                 1 => ChildRefusal::Mismatch,
                 2 => ChildRefusal::ForeignDomain,
                 3 => ChildRefusal::OverIncluded { lane },
+                4 => ChildRefusal::Unsigned,
+                5 => ChildRefusal::Unbonded,
+                6 => ChildRefusal::Broken,
+                7 => ChildRefusal::Repeat,
                 _ => return None,
             };
             Uplinked::ChildRefused { index, why }
@@ -541,6 +709,7 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
             Uplinked::HandoffRefused { index, why: SideRefusal::ALL.into_iter().find(|r| r.byte() == code)? }
         }
         8 => Uplinked::Repeat,
+        9 => Uplinked::NotReserve,
         _ => return None,
     };
     (p == b.len()).then_some(u)

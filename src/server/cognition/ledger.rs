@@ -26,7 +26,7 @@
 //! solved again.
 
 use super::Kernel;
-use crate::anastome::dialogue::uplink::{ChildRefusal, SignedFold, TierFold, Uplinked};
+use crate::anastome::dialogue::uplink::{Child, ChildRefusal, FoldAt, SignedFold, TierFold, Uplinked};
 use crate::chronometry::{Cite, Stamp};
 use crate::network::nerve::Keyed;
 use crate::transducer::address::{put_key_bytes, put_key_count, take_key_bytes, take_key_count};
@@ -525,16 +525,96 @@ pub(crate) fn count(n: usize) -> u32 {
     }
 }
 
+/// 78.138 — WHERE A PLANNED CHILD WILL STAND: a fold already on the court
+/// (its key), or one carried in the fold being admitted (its path inside it)
+/// — the receipt's stamp is known only once the fold is sealed.
+#[derive(Clone, Debug, PartialEq, Eq)]
+enum Place {
+    On(Vec<u8>),
+    In(Vec<u16>),
+}
+
+impl Place {
+    /// Its key while planning: the two kinds never meet.
+    fn plan_key(&self) -> Vec<u8> {
+        match self {
+            Place::On(k) => {
+                let mut v = vec![0];
+                v.extend_from_slice(k);
+                v
+            }
+            Place::In(path) => {
+                let mut v = vec![1];
+                for i in path {
+                    v.extend_from_slice(&i.to_be_bytes());
+                }
+                v
+            }
+        }
+    }
+
+    fn of_plan_key(k: &[u8]) -> Option<Place> {
+        match k.split_first()? {
+            (0, rest) => Some(Place::On(rest.to_vec())),
+            (1, rest) if rest.len() % 2 == 0 => Some(Place::In(rest.chunks_exact(2).map(|c| u16::from_be_bytes([c[0], c[1]])).collect())),
+            _ => None,
+        }
+    }
+
+    /// Its key once the fold is sealed at `stamp`.
+    fn at(&self, stamp: Stamp) -> Vec<u8> {
+        match self {
+            Place::On(k) => k.clone(),
+            Place::In(path) => FoldAt { stamp, path: path.clone() }.key(),
+        }
+    }
+}
+
+/// 78.138 — ONE ADMISSION PLANNED before anything is sealed: what remains of
+/// each child after this netting, the rates edges and the cycles they close
+/// (by the netting fold's path), and every fold to hold — the reserve's and
+/// each line carried in it, children before parents — with its nets.
+#[derive(Default)]
+struct Plan {
+    left: Keyed<(Lanes, Lanes)>,
+    edges: Vec<PlannedEdge>,
+    closes: Vec<PlannedEdge>,
+    holds: Vec<PlannedHold>,
+    heads: Keyed<[u8; 32]>,
+    sides: Vec<([u8; 32], crate::anastome::dialogue::handoff::Side)>,
+}
+
+/// A planned rates edge, or the cycle it closes: the child vertex, the
+/// parent vertex, the rate (or the holonomy), and the netting fold's path.
+type PlannedEdge = (Vec<u8>, Vec<u8>, Rates, Vec<u16>);
+
+/// A planned fold to hold: its path, the fold, and its nets by where each
+/// child will stand.
+type PlannedHold = (Vec<u16>, TierFold, Vec<(Place, Lanes, Lanes)>);
+
 impl Kernel {
     /// AN ADMITTED FOLD'S SEALED COORDINATES (B′): held from its admission
     /// until a parent nets all of it — whatever the hot line has folded —
     /// or, for a fold admitted before the court held them, read off its
-    /// receipt while the hot line still holds it.
-    pub(crate) fn sealed_fold(&self, at: &Stamp) -> Option<Sealed> {
-        if let Some(held) = self.ledgers.folds.get(&at.key()) {
+    /// receipt while the hot line still holds it (78.138: a carried line is
+    /// always held, never read off a receipt it has none of).
+    pub(crate) fn sealed_fold(&self, at: &FoldAt) -> Option<Sealed> {
+        let key = at.key();
+        if let Some(held) = self.ledgers.folds.get(&key) {
             return Some(*held);
         }
-        self.chain.node(at)?.cites.iter().find_map(|x| match x {
+        // 78.138 — a carried line has no receipt of its own to read: netted
+        // whole, it still stands by its record, or its final stub.
+        if let Some(r) = self.ledgers.records.get(&key) {
+            return Some((r.tier, r.prefix, r.rows));
+        }
+        if let Some((sealed, _)) = self.ledgers.finals.get(&key) {
+            return Some(*sealed);
+        }
+        if !at.path.is_empty() {
+            return None;
+        }
+        self.chain.node(&at.stamp)?.cites.iter().find_map(|x| match x {
             Cite::Uplink { tier, prefix, rows } | Cite::Chained { tier, prefix, rows, .. } => Some((*tier, *prefix, *rows)),
             _ => None,
         })
@@ -545,7 +625,12 @@ impl Kernel {
     /// its tier's last head), linked as a parent of each child it netted,
     /// and its tier's head moved to its prefix.
     pub(crate) fn hold_admitted(&mut self, at: Stamp, fold: &TierFold, domain: [u8; 32], nets: Vec<(Vec<u8>, Lanes, Lanes)>) {
-        let key = at.key();
+        self.hold_admitted_at(at.key(), at.h, fold, domain, nets);
+    }
+
+    /// The same, at a fold's key — 78.138: a carried line's, inside its
+    /// reserve's receipt, sealed at that receipt's height.
+    fn hold_admitted_at(&mut self, key: Vec<u8>, sealed: u64, fold: &TierFold, domain: [u8; 32], nets: Vec<(Vec<u8>, Lanes, Lanes)>) {
         let rows = fold.rows_hash();
         self.ledgers.folds.insert(&key, (fold.tier, fold.prefix, rows));
         // A tier's first fold spans its line from the zero head.
@@ -562,7 +647,7 @@ impl Kernel {
             prefix: fold.prefix,
             rows,
             children: fold.children_hash(),
-            sealed: at.h,
+            sealed,
             nets,
             parents: Vec::new(),
             demanded: None,
@@ -591,7 +676,7 @@ impl Kernel {
             if rec.rows != f.rows_hash() || rec.children != f.children_hash() || sides != f.handoffs.as_slice() {
                 return None;
             }
-            let at = Stamp::from_key(key)?;
+            let at = FoldAt::from_key(key)?.stamp;
             let receipt = self.chain.node(&at)?.chain_hash;
             Some(match rec.children {
                 None => Uplinked::Admitted { at, receipt },
@@ -616,118 +701,199 @@ impl Kernel {
     /// fold's span from — its last recorded fold's prefix, or the zero head —
     /// and the stamp of the fold that set it. A client that lost its own head
     /// resyncs by it before it folds.
-    pub fn line_head(&self, tier: &[u8; 32]) -> ([u8; 32], Option<Stamp>) {
+    pub fn line_head(&self, tier: &[u8; 32]) -> ([u8; 32], Option<FoldAt>) {
         let head = self.ledgers.heads.get(tier).map_or([0; 32], |h| *h);
-        let at = self.ledgers.head_at.get(tier).and_then(|k| Stamp::from_key(k));
+        let at = self.ledgers.head_at.get(tier).and_then(|k| FoldAt::from_key(k));
         (head, at)
     }
 
     /// 78.123 B — A FOLD THAT NETS CHILDREN, admitted once its signature,
     /// its binding and its aggregation have read (`admit_uplink`). Each
-    /// child: a fold sealed on this court's line (`Cite::Uplink` or
-    /// `Cite::Chained`) whose rows prove against its receipt's commitment,
-    /// of the same domain, and whose included parts fit what remains of it.
-    /// Any refusal refuses the whole fold, by the child's index. Then the
-    /// rates edges read on the domain's gauge, the fold sealed by
-    /// `Cite::Chained`, and the remainders, edges and record kept.
+    /// child: a fold already on this court — its rows proving against its
+    /// commitment — or (78.138) a progenitor line's fold CARRIED INLINE, read
+    /// here in full (its signature, its domain, its own bond, its span, its
+    /// sides, its continuity, and its own children in turn); of the same
+    /// domain, and with included parts that fit what remains of it. Any
+    /// refusal refuses the whole fold, by the top child's index. Then the
+    /// rates edges read on the domain's gauge, ONE receipt sealed — the
+    /// reserve's, `Cite::Chained`, whose children's commitment holds every
+    /// carried fold — and every fold held: each line under the receipt's
+    /// stamp and its path, children before parents.
     pub(crate) fn admit_chained(&mut self, f: &SignedFold, domain: [u8; 32]) -> Uplinked {
-        let mut left: Keyed<(Lanes, Lanes)> = Keyed::new();
-        let mut vertices: Vec<Sealed> = Vec::with_capacity(f.fold.children.len());
-        let mut nets: Vec<(Vec<u8>, Lanes, Lanes)> = Vec::with_capacity(f.fold.children.len());
-        for (i, c) in f.fold.children.iter().enumerate() {
-            let index = match u32::try_from(i) {
-                Ok(n) => n,
-                Err(_) => return Uplinked::ChildRefused { index: u32::MAX, why: ChildRefusal::NotOnLine },
-            };
-            let refuse = |why| Uplinked::ChildRefused { index, why };
-            let Some(sealed) = self.sealed_fold(&c.at) else { return refuse(ChildRefusal::NotOnLine) };
-            let (child_tier, _, rows_hash) = sealed;
-            vertices.push(sealed);
-            if rows_hash != c.rows_hash() {
-                return refuse(ChildRefusal::Mismatch);
-            }
-            if self.tier_domain.get(&child_tier) != Some(&domain) {
-                return refuse(ChildRefusal::ForeignDomain);
-            }
-            let (Some(rows), Some(declared)) = (Lanes::of(&c.rows), Lanes::of(&c.declared)) else {
-                return refuse(ChildRefusal::Mismatch);
-            };
-            let (Some(inc_rows), Some(inc_declared)) = (Lanes::of(&c.included_rows), Lanes::of(&c.included_declared)) else {
-                return refuse(ChildRefusal::OverIncluded { lane: 0 });
-            };
-            let key = c.at.key();
-            let (r, d) = match left.get(&key) {
-                Some(x) => x.clone(),
-                None => self.ledgers.left(&key, &rows, &declared),
-            };
-            if let Err(lane) = fits(&inc_rows, &r).and_then(|()| fits(&inc_declared, &d)) {
-                return refuse(ChildRefusal::OverIncluded { lane });
-            }
-            let after = (
-                inc_rows.inverse().and_then(|n| r.compose(&n)),
-                inc_declared.inverse().and_then(|n| d.compose(&n)),
-            );
-            let (Some(r2), Some(d2)) = after else { return refuse(ChildRefusal::OverIncluded { lane: 0 }) };
-            left.insert(&key, (r2, d2));
-            nets.push((key, inc_rows, inc_declared));
-        }
-        // THE RATES EDGES on the domain's gauge, read before the seal so the
-        // seal knows whether it is provisional.
+        let mut plan = Plan::default();
         let mut gauge = match self.ledgers.gauges.get(&domain) {
             Some(g) => g.clone(),
             None => Gauge::default(),
         };
-        let mut edges: Vec<(Vec<u8>, Rates)> = Vec::with_capacity(vertices.len());
-        let mut closes: Vec<(Vec<u8>, Rates)> = Vec::new();
-        let parent = vertex(&f.fold.tier, &f.fold.prefix);
-        for (c, (tier, prefix, _)) in f.fold.children.iter().zip(&vertices) {
-            let Some(rate) = Rates::of(c.rate) else {
-                return Uplinked::Discontinuous(crate::anastome::dialogue::uplink::Discontinuous::Rate { lane: 1 });
-            };
-            let child = vertex(tier, prefix);
-            if let Gauged::Obstructed(h) = gauge.edge(&child, &parent, &rate) {
-                closes.push((child.clone(), h));
-            }
-            edges.push((child, rate));
-        }
+        let nets = match self.plan_children(&f.fold, &[], domain, &mut plan, &mut gauge) {
+            Ok(nets) => nets,
+            Err(refused) => return refused,
+        };
         let Some(children) = f.fold.children_hash() else { return Uplinked::LineRefused };
         let rows = f.fold.rows_hash();
         let cite = Cite::Chained { tier: f.fold.tier, prefix: f.fold.prefix, rows, children };
         let Some(r) = self.seal_step(crate::chronometry::ActKind::Uplink, [0; 4], f.fold.tier, |_| vec![cite.clone()]) else {
             return Uplinked::LineRefused;
         };
-        let by = r.stamp.key();
-        let open_remainders = left.scoped().filter(|(_, (r, d))| !r.is_identity() || !d.is_identity()).count();
-        for (k, v) in left.scoped() {
-            // A child netted whole leaves the held folds; its empty remainder
-            // stays, so its receipt, while the hot line still holds it, is
-            // never netted again from the full.
-            if v.0.is_identity() && v.1.is_identity() {
-                self.ledgers.folds.remove(&k);
-            }
-            self.ledgers.remaining.insert(&k, v.clone());
+        let stamp = r.stamp;
+        let open_remainders = plan.left.scoped().filter(|(_, (r, d))| !r.is_identity() || !d.is_identity()).count();
+        // Every carried line held, children before parents, then the
+        // reserve's own fold: each a fold that may be netted in its turn and
+        // challengeable for the receipt's window.
+        for (path, fold, line_nets) in std::mem::take(&mut plan.holds) {
+            let key = Place::In(path).at(stamp);
+            let resolved = line_nets.into_iter().map(|(p, rows, declared)| (p.at(stamp), rows, declared)).collect();
+            self.hold_admitted_at(key.clone(), stamp.h, &fold, domain, resolved);
+            self.consume_sides(&key, &fold.handoffs);
         }
+        for (k, v) in plan.left.scoped() {
+            let Some(key) = Place::of_plan_key(&k).map(|p| p.at(stamp)) else { continue };
+            // A child netted whole leaves the held folds; its empty remainder
+            // stays, so it is never netted again from the full.
+            if v.0.is_identity() && v.1.is_identity() {
+                self.ledgers.folds.remove(&key);
+            }
+            self.ledgers.remaining.insert(&key, v.clone());
+        }
+        let at = |path: Vec<u16>| FoldAt { stamp, path }.key();
         let mut held: Vec<Edge> = self.ledgers.edges.remove(&domain).into_iter().flatten().collect();
-        held.extend(edges.into_iter().map(|(child, rate)| Edge { child, parent: parent.clone(), rate, by: by.clone() }));
+        held.extend(plan.edges.into_iter().map(|(child, parent, rate, by)| Edge { child, parent, rate, by: at(by) }));
         self.ledgers.edges.insert(domain, held);
         self.ledgers.gauges.insert(domain, gauge);
-        let found = closes.into_iter().map(|(child, holonomy)| Obstruction { child, parent: parent.clone(), holonomy, by: by.clone() });
+        let found = plan.closes.into_iter().map(|(child, parent, holonomy, by)| Obstruction { child, parent, holonomy, by: at(by) });
         match self.ledgers.obstructions.get_mut(&domain) {
             Some(all) => all.extend(found),
             None => {
                 self.ledgers.obstructions.insert(domain, found.collect());
             }
         }
-        // This fold may be netted in its turn, and is challengeable for its window.
-        self.hold_admitted(r.stamp, &f.fold, domain, nets);
+        let resolved = nets.into_iter().map(|(p, rows, declared)| (p.at(stamp), rows, declared)).collect();
+        self.hold_admitted(stamp, &f.fold, domain, resolved);
         self.mark_persist();
         let open = self.ledgers.open_in(&domain).len();
         Uplinked::Chained {
-            at: r.stamp,
+            at: stamp,
             receipt: r.chain_hash,
             provisional: open > 0,
             obstructions: count(open),
             open_remainders: count(open_remainders),
         }
+    }
+
+    /// 78.138 — THE CHILDREN OF THE FOLD AT `path` (inside the fold being
+    /// admitted) PLANNED: each read, its included parts fitted against what
+    /// remains of it, its rates edge laid on the gauge — a carried line read
+    /// whole and its own children planned in turn. The fold's nets, by where
+    /// each child will stand; or the refusal, by the top child's index.
+    fn plan_children(&self, fold: &TierFold, path: &[u16], domain: [u8; 32], plan: &mut Plan, gauge: &mut Gauge<Rates>) -> Result<Vec<(Place, Lanes, Lanes)>, Uplinked> {
+        let mut nets = Vec::with_capacity(fold.children.len());
+        let parent = vertex(&fold.tier, &fold.prefix);
+        for (i, c) in fold.children.iter().enumerate() {
+            // A nested refusal is named at the top child it sits under.
+            let top = match (path, u32::try_from(i)) {
+                ([t, ..], _) => u32::from(*t),
+                ([], Ok(n)) => n,
+                ([], Err(_)) => u32::MAX,
+            };
+            let refuse = |why| Uplinked::ChildRefused { index: top, why };
+            let Ok(i16) = u16::try_from(i) else { return Err(refuse(ChildRefusal::NotOnLine)) };
+            let (place, sealed) = match &c.child {
+                Child::Sealed(at) => {
+                    let Some(sealed) = self.sealed_fold(at) else { return Err(refuse(ChildRefusal::NotOnLine)) };
+                    if sealed.2 != c.rows_hash() {
+                        return Err(refuse(ChildRefusal::Mismatch));
+                    }
+                    (Place::On(at.key()), sealed)
+                }
+                Child::Carried(line) => {
+                    let mut here = path.to_vec();
+                    here.push(i16);
+                    self.plan_carried(line, c, &here, domain, plan, gauge, top)?;
+                    (Place::In(here), (line.fold.tier, line.fold.prefix, line.fold.rows_hash()))
+                }
+            };
+            if self.tier_domain.get(&sealed.0) != Some(&domain) {
+                return Err(refuse(ChildRefusal::ForeignDomain));
+            }
+            let (Some(rows), Some(declared)) = (Lanes::of(&c.rows), Lanes::of(&c.declared)) else {
+                return Err(refuse(ChildRefusal::Mismatch));
+            };
+            let (Some(inc_rows), Some(inc_declared)) = (Lanes::of(&c.included_rows), Lanes::of(&c.included_declared)) else {
+                return Err(refuse(ChildRefusal::OverIncluded { lane: 0 }));
+            };
+            let plan_key = place.plan_key();
+            let (r, d) = match (plan.left.get(&plan_key), &place) {
+                (Some(x), _) => x.clone(),
+                (None, Place::On(key)) => self.ledgers.left(key, &rows, &declared),
+                (None, Place::In(_)) => (rows, declared),
+            };
+            if let Err(lane) = fits(&inc_rows, &r).and_then(|()| fits(&inc_declared, &d)) {
+                return Err(refuse(ChildRefusal::OverIncluded { lane }));
+            }
+            let after = (
+                inc_rows.inverse().and_then(|n| r.compose(&n)),
+                inc_declared.inverse().and_then(|n| d.compose(&n)),
+            );
+            let (Some(r2), Some(d2)) = after else { return Err(refuse(ChildRefusal::OverIncluded { lane: 0 })) };
+            plan.left.insert(&plan_key, (r2, d2));
+            // THE RATES EDGE on the domain's gauge, read before the seal so
+            // the seal knows whether it is provisional.
+            let Some(rate) = Rates::of(c.rate) else {
+                return Err(Uplinked::Discontinuous(crate::anastome::dialogue::uplink::Discontinuous::Rate { lane: 1 }));
+            };
+            let child = vertex(&sealed.0, &sealed.1);
+            if let Gauged::Obstructed(h) = gauge.edge(&child, &parent, &rate) {
+                plan.closes.push((child.clone(), parent.clone(), h, path.to_vec()));
+            }
+            plan.edges.push((child, parent.clone(), rate, path.to_vec()));
+            nets.push((place, inc_rows, inc_declared));
+        }
+        Ok(nets)
+    }
+
+    /// 78.138 — A PROGENITOR LINE CARRIED INLINE, read whole before anything
+    /// is sealed: its signature over its own fold, a tier of THIS domain, a
+    /// bond of ITS OWN posted (each answers for its own work — the
+    /// operator's ruling), a span that advances its line, the handoff sides
+    /// it consumes (once in all this admission), its continuity, its rows as
+    /// its parent states them, and its own children planned in turn. Planned
+    /// to be held at `path`, after its children. Refused by the top child's
+    /// index — a refusal inside its own children passed through as it is.
+    #[expect(clippy::too_many_arguments, reason = "the planner's state is threaded, never held: the fold, its parent's statement of it, where it stands, the domain, the plan, the gauge and the index it is named by")]
+    fn plan_carried(&self, line: &SignedFold, c: &crate::anastome::dialogue::uplink::ChildNet, path: &[u16], domain: [u8; 32], plan: &mut Plan, gauge: &mut Gauge<Rates>, top: u32) -> Result<(), Uplinked> {
+        let refuse = |why| Uplinked::ChildRefused { index: top, why };
+        let fold = &line.fold;
+        if !crate::court::identity::verify(&fold.tier, &fold.signed_bytes(), &line.sig) {
+            return Err(refuse(ChildRefusal::Unsigned));
+        }
+        if self.tier_domain.get(&fold.tier) != Some(&domain) {
+            return Err(refuse(ChildRefusal::ForeignDomain));
+        }
+        if self.bond_of(&fold.tier).iter().all(|m| *m == 0) {
+            return Err(refuse(ChildRefusal::Unbonded));
+        }
+        if fold.rows != c.rows || fold.declared != c.declared {
+            return Err(refuse(ChildRefusal::Mismatch));
+        }
+        // Its span advances its line: over the head the court holds for it
+        // (or this admission's last fold of it), never an empty span.
+        let head = match plan.heads.get(&fold.tier) {
+            Some(h) => *h,
+            None => self.ledgers.heads.get(&fold.tier).map_or([0; 32], |h| *h),
+        };
+        if head == fold.prefix {
+            return Err(refuse(ChildRefusal::Repeat));
+        }
+        if fold.handoffs.iter().any(|s| plan.sides.contains(s)) {
+            return Err(refuse(ChildRefusal::Broken));
+        }
+        let crossing = self.sides_of(fold).map_err(|_| refuse(ChildRefusal::Broken))?;
+        // Its own continuity, named as a top fold's is.
+        fold.continuity_with(&crossing).map_err(Uplinked::Discontinuous)?;
+        let nets = self.plan_children(fold, path, domain, plan, gauge)?;
+        plan.sides.extend(fold.handoffs.iter().copied());
+        plan.heads.insert(fold.tier, fold.prefix);
+        plan.holds.push((path.to_vec(), fold.clone(), nets));
+        Ok(())
     }
 }

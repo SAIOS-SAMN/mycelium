@@ -24,7 +24,7 @@
 //!
 //! The FINALITY of a fold is read, never stored, and sealing nothing.
 
-use super::uplink::{put_children, put_nets, take_children, take_nets, ChildNet, Net};
+use super::uplink::{put_children, put_nets, take_children, take_nets, ChildNet, FoldAt, Net};
 use crate::chronometry::Stamp;
 
 /// The tier line's hash domain.
@@ -74,31 +74,35 @@ fn take_entries(b: &[u8], p: &mut usize) -> Option<Vec<Entry>> {
     (0..n).map(|_| Entry::take(b, p)).collect()
 }
 
-/// WHAT IS CHALLENGED, AND HOW.
+/// WHAT IS CHALLENGED, AND HOW. 78.138 — a fold is named by where it stands
+/// (`FoldAt`): a reserve's by its receipt, a line's by its reserve's
+/// receipt and its place inside.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Challenge {
     /// The tier must publish the prefix the fold nets.
-    Demand { fold: Stamp },
+    Demand { fold: FoldAt },
     /// The prefix, and the fold's own rows, declared and children — proved
-    /// against its commitments — put to replay.
-    Evidence { fold: Stamp, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>, entries: Vec<Entry> },
+    /// against its commitments — put to RECONSTRUCTION (the Concordance,
+    /// 4.4): the line's entries stepped to the committed head, their nets
+    /// conserved, each step checked against the one before.
+    Evidence { fold: FoldAt, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet>, entries: Vec<Entry> },
     /// A demand's deadline passed unanswered: the fold falsified by default.
-    Default { fold: Stamp },
+    Default { fold: FoldAt },
     /// The arbitrage the fold's edge from `child` closed, booked: its gain
     /// on G, `amount`, a declared source to the named `holder`.
-    Correction { fold: Stamp, child: Vec<u8>, holder: [u8; 32], amount: i128 },
+    Correction { fold: FoldAt, child: Vec<u8>, holder: [u8; 32], amount: i128 },
     /// A STREAMED PUBLICATION opened: the fold's own rows, declared and
     /// children, proved against its commitments; the line follows in parts.
-    Open { fold: Stamp, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet> },
+    Open { fold: FoldAt, rows: Vec<Net>, declared: Vec<Net>, children: Vec<ChildNet> },
     /// The next entries of a streamed publication, continuing its head. The
-    /// part whose head reaches the cited prefix completes the replay.
-    Part { fold: Stamp, entries: Vec<Entry> },
+    /// part whose head reaches the cited prefix completes the reconstruction.
+    Part { fold: FoldAt, entries: Vec<Entry> },
     /// 78.125 (the coordinator's ruling) — A SELF-DEMAND WITHDRAWN by the
     /// fold's own tier, named by the demand's receipt stamp: before any
     /// default is claimed, once per fold, reopening the evidence window for
     /// `W` from the withdrawal — sealed, a public record that the tier asked
     /// for its own second chance.
-    Withdraw { fold: Stamp, demand: Stamp },
+    Withdraw { fold: FoldAt, demand: Stamp },
 }
 
 impl Challenge {
@@ -116,7 +120,7 @@ impl Challenge {
     }
 
     /// The fold challenged.
-    pub fn fold(&self) -> Stamp {
+    pub fn fold(&self) -> FoldAt {
         match self {
             Challenge::Demand { fold }
             | Challenge::Evidence { fold, .. }
@@ -124,7 +128,7 @@ impl Challenge {
             | Challenge::Correction { fold, .. }
             | Challenge::Open { fold, .. }
             | Challenge::Part { fold, .. }
-            | Challenge::Withdraw { fold, .. } => *fold,
+            | Challenge::Withdraw { fold, .. } => fold.clone(),
         }
     }
 
@@ -154,7 +158,7 @@ impl Challenge {
     }
 
     fn take_body(kind: u8, b: &[u8], p: &mut usize) -> Option<Challenge> {
-        let fold = Stamp::take_canonical(b, p)?;
+        let fold = FoldAt::take_canonical(b, p)?;
         Some(match kind {
             0 => Challenge::Demand { fold },
             1 => Challenge::Evidence {
@@ -211,7 +215,7 @@ pub struct SignedChallenge {
 pub enum ChallengeRequest {
     Signed(SignedChallenge),
     /// A fold's finality, read; nothing sealed.
-    Finality(Stamp),
+    Finality(FoldAt),
     /// A domain's open obstructions, read; nothing sealed.
     Obstructions([u8; 32]),
     /// A tier's line head — where its next fold's span begins — read;
@@ -233,10 +237,12 @@ pub fn encode_line_head_request(tier: [u8; 32]) -> Vec<u8> {
 /// 78.133 — A TIER'S LINE HEAD AS READ: the head, the fold that set it where
 /// one did (none: the zero head, no fold recorded), and the μ HELD toward
 /// the tier in toll escrow per lane — receipts not final before release.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LineHead {
     pub head: [u8; 32],
-    pub at: Option<Stamp>,
+    /// The fold that set it — 78.138: where it stands (a line's is carried
+    /// inside its reserve's receipt).
+    pub at: Option<FoldAt>,
     pub held: [u64; 4],
 }
 
@@ -261,7 +267,7 @@ pub fn decode_line_head_reply(b: &[u8]) -> Option<LineHead> {
     let mut p = 33;
     let at = match *b.get(32)? {
         0 => None,
-        1 => Some(Stamp::take_canonical(b, &mut p)?),
+        1 => Some(FoldAt::take_canonical(b, &mut p)?),
         _ => return None,
     };
     let mut held = [0u64; 4];
@@ -278,7 +284,7 @@ pub fn decode_line_head_reply(b: &[u8]) -> Option<LineHead> {
 /// prices (the gain the holonomy measures, on the flows the tier holds).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OpenObstruction {
-    pub fold: Stamp,
+    pub fold: FoldAt,
     pub child: Vec<u8>,
     pub parent: Vec<u8>,
     pub holonomy: crate::transducer::cech::coefficient::Rates,
@@ -311,7 +317,7 @@ pub fn decode_obstructions_reply(b: &[u8]) -> Option<Vec<OpenObstruction>> {
     let n = crate::transducer::address::take_key_count(b, &mut p)?;
     let open = (0..n)
         .map(|_| {
-            let fold = Stamp::take_canonical(b, &mut p)?;
+            let fold = FoldAt::take_canonical(b, &mut p)?;
             let child = crate::transducer::address::take_key_bytes(b, &mut p)?;
             let parent = crate::transducer::address::take_key_bytes(b, &mut p)?;
             Some(OpenObstruction { fold, child, parent, holonomy: Rates::take_canonical(b, &mut p)? })
@@ -330,7 +336,7 @@ pub fn encode_challenge(c: &SignedChallenge) -> Vec<u8> {
 }
 
 /// `[ACT_CHALLENGE][4][fold stamp]`.
-pub fn encode_finality_request(fold: Stamp) -> Vec<u8> {
+pub fn encode_finality_request(fold: FoldAt) -> Vec<u8> {
     let mut out = vec![super::ACT_CHALLENGE, KIND_FINALITY];
     fold.put_canonical(&mut out);
     out
@@ -344,7 +350,7 @@ pub fn decode_challenge_request(b: &[u8]) -> Option<ChallengeRequest> {
     }
     let mut p = 2;
     let request = match *kind {
-        KIND_FINALITY => ChallengeRequest::Finality(Stamp::take_canonical(b, &mut p)?),
+        KIND_FINALITY => ChallengeRequest::Finality(FoldAt::take_canonical(b, &mut p)?),
         KIND_OBSTRUCTIONS => {
             let domain: [u8; 32] = b.get(p..p + 32)?.try_into().ok()?;
             p += 32;

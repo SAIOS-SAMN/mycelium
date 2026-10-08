@@ -25269,12 +25269,68 @@ drill can fail, and does not. At a court's size (the home grown first to
 0 lost at about 6.0 ms per act; the control, every round lost at about
 3.4 ms — the sync's cost at that size is about 2.5 ms per court act.
 
-**Owed, in order (the coordinator).** (B) CARRIED INLINE: only the reserve
-uplinks — the reserve's chained fold carries each line's fold and
-signature, the court seals nothing for a line, children keyed (parent
-stamp, child index) across the ledger, citations, challenges, finality, the
-gauge and the SDK builder; a line contestable through its parent's window.
-Then the CORE TUBE (the operator, 2026-10-08:
+### 78.138 Only the ancients uplink; a line is carried inline (2026-10-08, the operator's ruling — "not every civilization is uplinked, or the uplink is overloaded"; the coordinator's ruling (B) on the correction to the access check)
+
+**One receipt, the reserve's.** A domain's reserve is its ancients: only
+it folds onto the court (`Uplinked::NotReserve` for any other tier). A
+progenitor line's fold is CARRIED INLINE in the reserve's: a child is
+`Child::Sealed(FoldAt)` — a fold already on the court — or
+`Child::Carried(SignedFold)`, the line's whole fold and its own signature,
+which may carry its own lines in turn, recursively, never flattened. The
+court seals ONE receipt, the reserve's (`Cite::Chained`, whose children's
+commitment holds every carried fold's bytes), and holds each carried line
+where it stands: `FoldAt { stamp: <the reserve receipt's>, path }`, keyed
+`stamp.key() ‖ path` (two bytes an index) — a fold the court sealed itself
+keys exactly as it did. Lines never touch the court; the ancients carry
+them, and each line still has its own head, its own record, its own window
+(the parent's) and its own finality.
+
+**Read in full before anything is sealed.** Each carried line: its
+signature over its own fold (`ChildRefusal::Unsigned`); a tier of the SAME
+domain (`ForeignDomain`); a BOND OF ITS OWN posted (`Unbonded` — at the
+core there is no master and no servant, each answers for its own work, the
+operator's ruling); its rows as its parent states them (`Mismatch`); a span
+advancing its line over the head the court holds for it (`Repeat`); its
+handoff sides, once in the whole admission, and its continuity; then its
+own children planned in turn. The admission is PLANNED first — remainders,
+rates edges, every fold to hold, children before parents — keyed by path,
+because the receipt's stamp is known only once sealed; then sealed once
+and committed. A refusal anywhere refuses the whole fold, named at the top
+child's index; a carried line's own discontinuity is named as a top fold's.
+
+**Contested where it stands, by reconstruction.** Challenges, the finality
+read, the line-head read and the open obstructions name a `FoldAt`
+(`Cite::Challenge` keeps tag 8 for a fold the court sealed and takes tag
+13 with its path for a line inside). A demand on `(parent, path)` is
+answered by RECONSTRUCTION (the Concordance, 4.4): the line's entries
+stepped to its committed prefix, their nets conserved — each step checked
+against the one before, nothing re-run (`challenge::Reconstruction`,
+`reconstructs`). Falsified, the line's record is reversed, the reserve
+fold that carried it is UNWOUND by the parent links (it refiles without
+the line), its tolls refunded (78.133), and the LINE's bond is slashed —
+never the reserve's: the reserve loses only the netting.
+
+**Migration.** Folds already sealed by lines stay `Sealed` children until
+they settle; nothing is rewritten. A fold whose children are all sealed by
+the court writes as 78.123's (untagged); a tagged block is marked by the
+over-long count `0x80 0x00`. LAYOUT-CHANGE WIRE-CHANGE: the ACT_UPLINK,
+ACT_CHALLENGE and finality/line-head/obstruction reads change for lines
+and kernels (xyl-uplink adapts at its re-pin).
+
+Proved (`cognition::tests::ledger`, `challenge`, `bond`, `uplink`;
+`dialogue::tests::uplink`, `challenge`): a line's fold refused straight to
+the court and stood up carried; a line carrying a line inside one receipt
+(`[0]` and `[0, 0]`), each recorded and its line advanced; an unsigned or
+unbonded line, a repeated span, a foreign domain, an over-included or
+mis-stated child refused by name; partition, consumption, the rates
+cocycle and its obstruction named where the closing fold stands;
+reconstruction upholding and falsifying a carried line, the carrying
+reserve fold unwound, the line's bond halved and the reserve's untouched;
+recursive finality through carried children, a pruned child's stub, a
+cold child proved by its coordinates; the wire for nested carried folds
+and folds standing inside others read back whole.
+
+**Owed, in order (the coordinator).** The CORE TUBE (the operator, 2026-10-08:
 a galactic core is a larger wormhole; every black-hole core has its far face
 — the white-hole engine of the universe it bounces into; our own Big Bang the
 far face of a parent's core): genesis joins a domain to its parent's core,
