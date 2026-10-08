@@ -311,12 +311,24 @@ impl Kernel {
         self.reserves.get(domain)?.current
     }
 
-    /// ONLY THE ANCIENTS EARN μ BY A SOLVE (the operator, 2026-10-08: "only
-    /// the ancients are connected to the tubes"): whether `tier` is the
-    /// SITTING RESERVE — the ancients' house — of a founded domain. A captain's,
-    /// a line's or a stranger's key is not.
+    /// Whether `tier` is the SITTING RESERVE — the ancients' house — of a
+    /// founded domain.
     pub fn is_ancients_house(&self, tier: &[u8; 32]) -> bool {
         self.tier_domain.get(tier).is_some_and(|d| self.reserve_of(d) == Some(*tier))
+    }
+
+    /// WHO A HYPHA SERVES A SOLVE FROM (the operator, 2026-10-08): ANYONE —
+    /// the hypha answers any key, holding μ or earning its first; this is not
+    /// a law of the server. A universe founded on this court speaks to it
+    /// only through its ANCIENTS: a key that is a tier INSIDE a founded
+    /// domain is served only as that domain's sitting reserve, and its other
+    /// seats reach the hypha by relay (progenitors and stewards to the
+    /// ancients), never directly. `false` only for such an inner tier.
+    pub fn may_solve(&self, signer: &[u8; 32]) -> bool {
+        match self.tier_domain.get(signer) {
+            None => true,
+            Some(d) => self.reserve_of(d) == Some(*signer),
+        }
     }
 
     /// A fold admitted: where its tier is its domain's reserve and a
