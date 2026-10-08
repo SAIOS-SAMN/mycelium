@@ -556,8 +556,9 @@ pub struct Installed {
 pub struct SolveAct {
     /// The solving voice.
     pub voice: [u8; 32],
-    /// The task answered.
-    pub task: Address,
+    /// The task answered, by its citation (wire v1.2): the door resolves it
+    /// to the task's content address (`TaskRegistry::by_citation`).
+    pub task: [u8; 32],
     /// One output grid per test input, in the order they were served.
     pub outputs: Vec<Vec<Vec<u8>>>,
     /// The rule the voice extracted, when it speaks one. `None` is an

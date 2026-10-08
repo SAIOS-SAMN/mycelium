@@ -33,6 +33,9 @@ pub struct TaskRegistry {
     /// Position of each id in `tasks`. Dispatch still walks the Vec;
     /// lookup, overlay, and settle read here.
     by_id: Keyed<usize>,
+    /// 78.146, wire v1.2 — each task's CITATION (`citation`), the 32 bytes
+    /// that name it on every wire, to its position. Filled at register.
+    by_citation: Keyed<usize>,
     /// Dispatch cursor (rotates so pull requests spread across the book).
     cursor: usize,
     /// Cover-change cursor: a budgeted walk re-homes by the cover trie.
@@ -80,6 +83,16 @@ pub fn task_id(task: &Task) -> Option<Address> {
     Some(Address::new(buf))
 }
 
+/// 78.146, WIRE v1.2 — A TASK'S CITATION: the citation hash
+/// (`chronometry::payload_hash`, blake3) of its full content address. A
+/// task is named by these 32 bytes on every wire — ACT_TASK, ACT_SOLVE, a
+/// seat's kind-4 record — and the long address stays court-side, so no
+/// length wall applies to a task's name. A citation locates; the task is
+/// its content (law 2).
+pub fn citation(id: &Address) -> [u8; 32] {
+    crate::chronometry::payload_hash(id.as_bytes())
+}
+
 // `task_tension` (the train's coboundary volume, the old first-solve
 // bounty) is retired: a solve is priced by what its rule discharges on the
 // withheld pairs (`Kernel::judge_solve`), never by the size of the train.
@@ -95,6 +108,7 @@ impl TaskRegistry {
         TaskRegistry {
             tasks: Vec::new(),
             by_id: Keyed::new(),
+            by_citation: Keyed::new(),
             cursor: 0,
             cover_cursor: 0,
             intake_cursor: 0,
@@ -183,8 +197,16 @@ impl TaskRegistry {
             let i = self.tasks.len();
             self.tasks.push((id.clone(), task, TaskState::Unsolved));
             self.by_id.insert(&id, i);
+            self.by_citation.insert(citation(&id), i);
         }
         Some(id)
+    }
+
+    /// 78.146 — THE TASK A CITATION NAMES: its content address, the address
+    /// every court-side reading takes. `None` where this book holds none.
+    pub fn by_citation(&self, cite: &[u8; 32]) -> Option<Address> {
+        let &i = self.by_citation.get(cite)?;
+        self.tasks.get(i).map(|(id, _, _)| id.clone())
     }
 
     /// DISPATCH a work envelope: the next Unsolved task, rotating so pulls

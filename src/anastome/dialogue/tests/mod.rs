@@ -14,4 +14,5 @@ mod domain;
 mod challenge;
 mod handoff;
 mod seat;
+mod task;
 mod verdict;

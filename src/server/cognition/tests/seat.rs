@@ -122,6 +122,35 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     assert_eq!(k.seat_mail(&forged), Err(Refusal::Unsigned));
 }
 
+/// 78.146 — A MIND'S OWN READ IS EXEMPT, ONCE PER WINDOW: a mind holding no
+/// μ at all reads its mail through the relay's own lock (no kernel, no
+/// reserve); a second read before new mail is not exempt (the door's ordinary
+/// rule answers it); new mail opens the window again; a forged read is
+/// refused; a reader with no box has nothing exempt.
+#[test]
+fn a_minds_read_is_exempt_once_per_window() {
+    let mut k = founded();
+    let d = vk(&domain());
+    let m = vk(&mind());
+    let relay = k.seat_relay();
+    let percept = |seq| Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new() };
+    assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [0; 32])), None, "no box, nothing exempt");
+    let first = k.seat_post(&Post::Percept(percept(1)).sign(&house()).expect("writes")).expect("relayed");
+    let served = relay.exempt_read(&ReadMail::sign(&mind(), 0, [1; 32])).expect("exempt").expect("signed");
+    assert_eq!(served.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![first], "the zero-μ mind is served its mail");
+    for n in 0..5u8 {
+        assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [n; 32])), None, "a flood within the window is not exempt");
+    }
+    let second = k.seat_post(&Post::Percept(percept(2)).sign(&house()).expect("writes")).expect("relayed");
+    let served = relay.exempt_read(&ReadMail::sign(&mind(), first, [9; 32])).expect("new mail opens the window").expect("signed");
+    assert_eq!(served.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![second], "what `after` acknowledged left");
+    let mut forged = ReadMail::sign(&mind(), 0, [7; 32]);
+    forged.reader = vk(&other());
+    assert_eq!(relay.exempt_read(&forged), Some(Err(Refusal::Unsigned)));
+    // The court's own read still reads the same box, through the same lock.
+    assert_eq!(read(&mut k, &mind(), first).len(), 1);
+}
+
 /// THE BOUND HOLDS: a mind never reading its mail holds at most a frame's
 /// worth of it, the oldest dropped and counted, and one read carries the
 /// whole box.
@@ -139,9 +168,9 @@ fn a_mailbox_keeps_its_bound() {
         posted += 1;
         assert!(k.seats.held_bytes(false, &m) <= mail_bound(), "the box never passes its bound");
     }
-    assert!(k.seats.dropped > 0, "the oldest were dropped and counted");
+    assert!(k.seats.dropped() > 0, "the oldest were dropped and counted");
     let mail = read(&mut k, &mind(), 0);
-    assert_eq!(mail.len() as u64 + k.seats.dropped, posted, "what is held and what was dropped are every piece");
+    assert_eq!(mail.len() as u64 + k.seats.dropped(), posted, "what is held and what was dropped are every piece");
     let reply = encode_mail_reply(Ok(&mail)).expect("writes");
     assert!(reply.len() <= crate::network::wire::frame_budget(), "one read carries the whole box");
     assert!(mail.windows(2).all(|w| w[0].seq < w[1].seq), "in sequence order");

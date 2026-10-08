@@ -227,6 +227,64 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
     (decisions, x)
 }
 
+/// 78.146 — A TASK BEFORE THE SEAT, ITS STEPS READ EXACTLY: a kind-4 record
+/// `[Key(citation)]` with no counsel puts the task before the seat (with
+/// counsel it does not); a rule the seam speaks as each D4 motion (and a hue
+/// move) reads back as that kind's count in the house's order and the hue
+/// count `0x100 + 16·from + to`; a hue map alone is its hue counts; the
+/// outputs cross as the solve act writes grids.
+#[test]
+fn a_task_before_the_seat_is_read_as_its_steps() {
+    use crate::client::sdk::rule::{sentence, Step};
+    use crate::client::sdk::seat_mind::task::*;
+    use crate::transducer::family::NoCrystal;
+    let task = Record::Plain { kind: KIND_TASK, args: vec![Arg::Key([7; 32])] };
+    assert_eq!(tasks_before(&percept(1, Arg::Count(1), vec![task.clone()])), vec![[7u8; 32]], "wire v1.2: the citation, a Key");
+    let raw = Record::Plain { kind: KIND_TASK, args: vec![Arg::Bytes(vec![7, 7, 7])] };
+    assert!(tasks_before(&percept(1, Arg::Count(1), vec![raw])).is_empty(), "a raw id is no citation");
+    let counsel = Record::Counsel { fn_id: 2, args: vec![], worth: Arg::Q { num: 1, den: 1 }, cost: Arg::Q { num: 0, den: 1 } };
+    assert!(tasks_before(&percept(2, Arg::Count(2), vec![task, counsel])).is_empty(), "a counselled percept is the house's own mind");
+    use crate::client::sdk::rule::Symmetry;
+    // The symmetry read off by index, as a grid is read (the fixture's
+    // expectation, never the seam's construction), and a hue map.
+    let apply = |kind: Symmetry, g: &crate::arc::Grid| -> crate::arc::Grid {
+        let (h, w) = (g.len(), g[0].len());
+        match kind {
+            Symmetry::Rotate90 => (0..w).map(|c| (0..h).rev().map(|r| g[r][c]).collect()).collect(),
+            Symmetry::Rotate180 => g.iter().rev().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::Rotate270 => (0..w).rev().map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
+            Symmetry::FlipH => g.iter().map(|row| row.iter().rev().copied().collect()).collect(),
+            Symmetry::FlipV => g.iter().rev().cloned().collect(),
+            Symmetry::Transpose => (0..w).map(|c| (0..h).map(|r| g[r][c]).collect()).collect(),
+        }
+    };
+    let recolour = |from: u8, to: u8, g: &crate::arc::Grid| -> crate::arc::Grid {
+        g.iter().map(|row| row.iter().map(|&h| if h == from { to } else { h }).collect()).collect()
+    };
+    let x: crate::arc::Grid = vec![vec![1, 2, 0], vec![1, 0, 0], vec![0, 0, 0]];
+    for (i, kind) in D4.iter().enumerate() {
+        let Some(step) = Step::grid_motion(*kind, (3, 3), (3, 3)) else { panic!("{kind:?} fits a square") };
+        let family = vec![(x.clone(), recolour(1, 3, &apply(*kind, &x)))];
+        let rule = match sentence(&[step, Step::Hue(vec![(1, 3)])], &family, &NoCrystal) {
+            Ok(r) => r,
+            Err(e) => panic!("{kind:?} mints: {e:?}"),
+        };
+        assert_eq!(grid_steps(&rule, (3, 3), (3, 3)), Ok(vec![i as u64 + 1, hue_step(1, 3)]), "{kind:?}");
+    }
+    let hue_only = match sentence(&[Step::Hue(vec![(2, 5)])], &[(x.clone(), recolour(2, 5, &x))], &NoCrystal) {
+        Ok(r) => r,
+        Err(e) => panic!("the hue map mints: {e:?}"),
+    };
+    let shape = |g: &crate::arc::Grid| (g.len(), g[0].len());
+    assert_eq!(grid_steps(&hue_only, shape(&x), shape(&x)), Ok(vec![0x100 + 16 * 2 + 5]));
+    let outs = vec![x.clone(), vec![vec![4]]];
+    let args = solve_args(&hue_only, &outs, &[9]).expect("writes");
+    let [Arg::Bytes(tape), Arg::Bytes(grids), Arg::Count(9)] = args.as_slice() else { panic!("{args:?}") };
+    assert_eq!(crate::anastome::dialogue::decode_grids(grids), Some(outs), "the outputs read back as the solve act writes them");
+    let mut p = 0;
+    assert_eq!(crate::transducer::element::Element::from_bytes(tape, &mut p).map(|e| e.address()), Some(hue_only.address()), "the tape is the rule");
+}
+
 fn called(d: &Decision) -> (u16, bool) {
     match d {
         Decision::Call(c) => (c.fn_id, c.followed),

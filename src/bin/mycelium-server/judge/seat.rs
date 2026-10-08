@@ -11,6 +11,20 @@ use mycelium::anastome::dialogue::seat::{decode_seat_request, encode_mail_reply,
 use mycelium::network::wire::Frame;
 use std::net::TcpStream;
 
+/// 78.146 — A MIND'S READ, SERVED WHERE THE DOOR WOULD DEFER IT: a full
+/// worker pool answers every act with the door's deficit, and reading one's
+/// own mail spends nothing — so a READ-MAIL is served off the relay's own
+/// lock (no kernel), once per window of the reader's mail
+/// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
+/// read is not exempt: the caller defers it as before. Posts keep the rule.
+pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+    let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
+    let Some(mail) = door.seat_relay.exempt_read(&r) else { return false };
+    let Some(body) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return false };
+    answer(stream, Frame { lane: frame.lane, body });
+    true
+}
+
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {

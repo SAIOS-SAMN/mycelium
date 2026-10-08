@@ -39,6 +39,7 @@
 //! hand-over of a recognised orbit to the contemplation as a form.
 
 mod choice;
+pub mod task;
 pub use choice::*;
 
 use crate::anastome::dialogue::seat::{Arg, Outcome, Percept, Record};

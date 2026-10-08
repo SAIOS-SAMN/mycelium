@@ -25794,6 +25794,50 @@ house counsels 2 first at a worth below zero — the mind follows it once
 1, and calls 1 from then on (dominates, against the counsel's first); the
 worth turned, it learns 2, the counsel's second.
 
+**Wire v1.2: a task is named by its CITATION** (the coordinator's ruling;
+lexicon version 4, "Task citation"). On every wire a task is 32 bytes, the
+citation hash of its full registry content address
+(`registry::citation`, filled into `TaskRegistry::by_citation` at
+register); the long address stays court-side, so no length wall applies to
+a task's name (b34847cb: a large task's address passed the u16 and the door
+answered empty). ACT_TASK's envelope is `[citation 32]…`; ACT_SOLVE's task
+field is the citation, which the door resolves to the task or refuses by
+name ("no such task on this book"); the court binds a task's family and
+listings, and pays a solve, under the citation — the name voices speak it
+by — and a client files its solves (`solve_refused`) by it.
+
+**A task before the seat.** A percept record of kind 4, `[Key(citation)]`,
+with no counsel (the house's own mind cannot do planar tasks), puts that
+registry task before the seat. ACT_TASK gains a request BY CITATION —
+`[ACT_TASK][voice 32][citation 32]`, answered with that task's envelope
+(train and test inputs, never the held answers), open or settled, or an
+empty body where the registry holds none (`Entity::pull_task_by_id`, routed
+by the citation as its solve is). The mind extracts and mints the rule as the
+task arm does (the form spoken, the tests spoken through it, the sentence
+minted at its span, crossed, replayed at home) and CALLs fn 1 with `[Bytes
+rule tape, Bytes outputs]` — the outputs written as the solve act writes
+grids, `[n u8][grid·n]` — plus, where the rule is a pure motion and hue map
+(no clause, one word vertex, one hue map on every member), Count steps:
+the member motion (the word's rotor through its carriage) EQUAL, as an
+action on the grid's plane (four points carried to the same points,
+exact), to `Step::grid_motion` of the D4 kind on the first pair's shapes, 1..6 in
+the order Rotate90, Rotate180, Rotate270, FlipH, FlipV, Transpose, and each
+hue move `0x100 + 16·from + to`. No rule minted, no call, and the line
+says why.
+
+**A mind's own read is exempt from the door's deferral, once per window.**
+The deferral a seated mind met (`deficit [0,0,0,80]`) is not a judgment on
+the mind's μ: it is the answer a FULL worker pool gives every act, carrying
+the door's reserve deficit; the seat judge defers nothing. Reading one's
+own mail spends nothing, so the relay now stands on its own lock
+(`SharedRelay`, held by the kernel and the door alike) and, where the door
+would defer, a READ-MAIL is served off it without the kernel — from the
+mind's own box, once per window of that box's mail (a piece filed since the
+reader's last exempt read); a flood within the window, a reader with no
+box, and every post (TAKE, CALL, the house's) keep the ordinary rule. A
+house's box is read through the court, which knows its reserve; an unsigned
+READ-LISTING names no addressee to bound and keeps the rule.
+
 *Owed, named:* a bound on how many series a seat holds (a game may churn
 its record keys); handing a recognised orbit to the contemplation as a form
 (today it is the seat mind's reading, not a held thought); a call's

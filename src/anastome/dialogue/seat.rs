@@ -4,8 +4,10 @@
 // mind makes with its outcome. The hypha is a general signed relay between
 // them: it holds and forwards, and judges nothing in-game.
 //
-//! THE WIRE, agreed with the kernels (binding). Integers little-endian; a key
-//! is 32 bytes; a signature is ed25519, 64 bytes.
+//! THE WIRE, agreed with the kernels (binding), v1.2 (78.146, lexicon 4):
+//! ARG tag 6 Bytes; a task is named by its 32-byte citation, so a percept's
+//! kind-4 record is `[Key(citation)]`. Integers little-endian; a key is 32
+//! bytes; a signature is ed25519, 64 bytes.
 //!
 //! A frame is `[0x53][sub u8][fields][sig 64]`. The signature is over
 //! `b"mycelium seat v1" ‖ [sub] ‖ [fields]` — the act tag is not signed. A

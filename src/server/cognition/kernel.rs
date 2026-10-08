@@ -429,8 +429,9 @@ pub struct Kernel {
     pub(crate) universes: crate::network::nerve::Keyed<crate::anastome::dialogue::universe::Universe>,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
-    /// bounded; never persisted.
-    pub(crate) seats: super::seat::SeatRelay,
+    /// bounded; never persisted. 78.146: on its own lock, so a door serves a
+    /// mind's exempt read without waiting on cognition.
+    pub(crate) seats: super::seat::SharedRelay,
     /// 78.71 — THE WORDS GLUED FROM EACH PEER, keyed `address ‖ peer`: a word
     /// held and heard again from the same peer is no new evidence (`Held`).
     /// Volatile: a restart hears each pair once more, then holds it.

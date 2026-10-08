@@ -28,7 +28,9 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
     let mut budget = entity.stroke_n(1 << 20);
     let outs = vec![grid(&["0000", "0000"])];
     // NO RULE: nothing is sent.
-    assert_eq!(entity.solve_task(b"task", &train, &outs, None, &mut budget), None);
+    // Wire v1.2: a task is named by its 32-byte citation.
+    let task = [7u8; 32];
+    assert_eq!(entity.solve_task(&task, &train, &outs, None, &mut budget), None);
     assert_eq!(entity.solves.unminted, 1, "a raster is no proof of a motion");
     // A TRAIN THE RULE DOES NOT SPEAK: the pairs left unchanged. The voice's
     // own replay refuses it, as the court's would; nothing is sent.
@@ -36,11 +38,11 @@ fn a_voice_keeps_home_a_solve_its_own_train_refutes() {
         (grid(&["1100", "0000"]), grid(&["1100", "0000"])),
         (grid(&["0000", "1100"]), grid(&["0000", "1100"])),
     ];
-    assert_eq!(entity.solve_task(b"task", &other, &outs, Some(&spoken), &mut budget), None);
+    assert_eq!(entity.solve_task(&task, &other, &outs, Some(&spoken), &mut budget), None);
     assert_eq!(entity.solves.refuted, 1, "refuted at home");
     // ITS OWN TRAIN: the replay is clean, so the solve goes to the wire —
     // which answers nothing here, and nothing is counted as refuted.
-    let _ = entity.solve_task(b"task", &train, &outs, Some(&spoken), &mut budget);
+    let _ = entity.solve_task(&task, &train, &outs, Some(&spoken), &mut budget);
     assert_eq!(entity.solves.refuted, 1, "the rule its own train speaks is not refuted");
     // THE SENSES READ IT, typed.
     let senses = entity.senses(&crate::observe::Learning::default());

@@ -18,6 +18,8 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub(crate) struct Door {
+    /// 78.146 — the seat relay on its own lock (`judge::seat::serve_exempt`).
+    pub(crate) seat_relay: mycelium::cognition::seat::SharedRelay,
     pub(crate) kernel: Arc<Mutex<Kernel>>,
     pub(crate) mesh: Mesh,
     pub(crate) router: Arc<Mutex<Router>>,
@@ -123,10 +125,19 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_TASK {
-        let Some(_tvoice) = dialogue::decode_task_request(&frame.body) else { return true };
-        let dispatched = {
-            let Ok(mut reg) = door.registry.lock() else { return true };
-            reg.dispatch().map(|(tid, task)| (tid, task.clone()))
+        // A plain request is dispatched the next open task; 78.146, a request
+        // naming a task's citation (wire v1.2) is answered that task, open or
+        // settled, or nothing where this registry holds no such task.
+        let dispatched = match (dialogue::decode_task_request(&frame.body), dialogue::decode_task_by_id(&frame.body)) {
+            (Some(_), _) => {
+                let Ok(mut reg) = door.registry.lock() else { return true };
+                reg.dispatch().map(|(tid, task)| (tid, task.clone()))
+            }
+            (None, Some((_, cite))) => {
+                let Ok(reg) = door.registry.lock() else { return true };
+                reg.by_citation(&cite).and_then(|tid| reg.task(tid.as_bytes()).map(|task| (tid.clone(), task.clone())))
+            }
+            (None, None) => return true,
         };
         // An envelope that does not fit the lengths it writes is not sent
         // short: the voice would study a family this registry did not
@@ -134,7 +145,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let body = match &dispatched {
             Some((tid, task)) => {
                 let tests: Vec<_> = task.test.iter().map(|(x, _)| x.clone()).collect();
-                match dialogue::encode_task_envelope(tid, &task.train, &tests) {
+                match dialogue::encode_task_envelope(&mycelium::registry::citation(tid), &task.train, &tests) {
                     Some(b) => b,
                     None => {
                         eprintln!("  task refused: the envelope does not fit its lengths");
@@ -149,7 +160,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         return true;
     }
     if kind == dialogue::ACT_SOLVE {
-        let Some(dialogue::SolveAct { voice: svoice, task: tid, rule: rule_bytes, signed, .. }) =
+        let Some(dialogue::SolveAct { voice: svoice, task: cite, rule: rule_bytes, signed, .. }) =
             dialogue::decode_solve(&frame.body)
         else {
             return true;
@@ -158,9 +169,19 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let mut p = 0usize;
             mycelium::transducer::element::Element::from_bytes(b, &mut p)
         });
-        let (withheld, open) = {
+        // Wire v1.2: the solve names its task by citation; the court reads
+        // the task's content address off this book. A citation this book
+        // holds no task for is refused by name below ("no such task").
+        let (tid, withheld, open) = {
             let Ok(reg) = door.registry.lock() else { return true };
-            (reg.withheld(&tid), reg.open(&tid))
+            match reg.by_citation(&cite) {
+                Some(tid) => {
+                    let w = reg.withheld(&tid);
+                    let o = reg.open(&tid);
+                    (tid, w, o)
+                }
+                None => (mycelium::transducer::address::Address::new(cite.to_vec()), Vec::new(), None),
+            }
         };
         // THE SOLVE, JUDGED BY ITS ACTION AND PAID (the actions' physics): the
         // court replays the rule on the withheld pairs and prices what it
@@ -210,7 +231,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                     let Ok(mut k) = door.kernel.lock() else { return true };
                     let verdict = match k.judge_solve(rule, &withheld) {
                         mycelium::cognition::SolveVerdict::Solved { pay } => {
-                            let paid = k.pay_solve(&tid, svoice, rule, pay, first);
+                            // The court names a task by its citation (wire v1.2).
+                            let paid = k.pay_solve(&cite, svoice, rule, pay, first);
                             let code = if first { dialogue::SOLVE_BOUNTY } else { dialogue::SOLVE_FLOOR };
                             (code, paid, None, Some(k.height()))
                         }
@@ -511,7 +533,11 @@ pub(crate) fn list_task(
     task: &mycelium::arc::Task,
     rehome: bool,
 ) {
-    let tid = tid.as_ref();
+    // Wire v1.2 — the court names a task by its CITATION, the name voices
+    // speak it by (a solve, a colour word): its family and its listings are
+    // bound under those 32 bytes, once.
+    let cite = mycelium::registry::citation(&mycelium::transducer::address::Address::new(tid.as_ref().to_vec()));
+    let tid = &cite[..];
     if let Ok(mut k) = kernel.lock() {
         k.bind_task_family(tid, task.train.clone());
     }

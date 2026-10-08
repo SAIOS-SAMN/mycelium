@@ -16,6 +16,22 @@ impl Entity {
         Ok(dialogue::decode_task_envelope(&body))
     }
 
+    /// 78.146 — PULL ONE TASK BY ITS CITATION (wire v1.2): the envelope of
+    /// the task the 32 bytes name, routed as its solve is (by the citation),
+    /// or `None` where the registry holds no such task. A reply that does not
+    /// decode is an error by name.
+    pub fn pull_task_by_id(&self, citation: &[u8; 32]) -> io::Result<Option<dialogue::TaskEnvelope>> {
+        let voice = self.session.kernel().voice();
+        let act = dialogue::encode_task_by_id(&voice, citation);
+        let body = self.session.speak_keyed(citation, act)?;
+        if body.is_empty() {
+            return Ok(None);
+        }
+        dialogue::decode_task_envelope(&body)
+            .map(Some)
+            .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the task envelope did not decode"))
+    }
+
     /// A SOLVE THIS VOICE CAN STAND BEHIND, OR NONE SENT. A solve is a rule,
     /// and the court replays it on the task's withheld pairs; so the voice
     /// first replays it on the pairs it holds — the train — exactly as the
@@ -31,7 +47,7 @@ impl Entity {
     /// Answers the court's verdict where one was asked for.
     pub fn solve_task(
         &mut self,
-        id: &[u8],
+        id: &[u8; 32],
         train: &[(Grid, Grid)],
         outputs: &[Grid],
         rule: Option<&Element>,
@@ -87,7 +103,7 @@ impl Entity {
     /// raster is no proof of a motion.
     pub fn submit_solve_rule(
         &mut self,
-        id: &[u8],
+        id: &[u8; 32],
         outputs: &[Grid],
         rule: Option<&Element>,
     ) -> io::Result<(u8, [u64; 4])> {

@@ -168,9 +168,10 @@ fn a_solve_names_its_payee_by_its_voices_signature() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let outputs = vec![vec![vec![1u8, 2], vec![0, 3]]];
     for rule in [None, Some(&b"a rule's tape"[..])] {
-        let body = encode_solve_with_rule(&key, [7u8; 32], &outputs, rule).expect("fits");
+        let body = encode_solve_with_rule(&key, &[7u8; 32], &outputs, rule).expect("fits");
         let act = decode_solve(&body).expect("reads back");
         assert!(act.signed, "signed by its voice");
+        assert_eq!(act.task, [7u8; 32], "wire v1.2: the task by its 32-byte citation");
         assert_eq!((act.voice, act.outputs.clone(), act.rule.as_deref()), (key.verifying_key().to_bytes(), outputs.clone(), rule));
         let mut tampered = body.clone();
         tampered[40] ^= 1;
