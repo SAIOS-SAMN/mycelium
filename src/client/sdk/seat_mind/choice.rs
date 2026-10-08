@@ -239,7 +239,7 @@ pub enum Decision {
 impl std::fmt::Display for Decision {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Decision::Call(c) => write!(f, "call fn {} args {} followed-counsel {}: {}", c.fn_id, c.args.len(), c.followed, c.why),
+            Decision::Call(c) => write!(f, "call fn {} followed-counsel {}: {}", c.fn_id, c.followed, c.why),
             Decision::Awaiting { fn_id } => write!(f, "no call: fn {fn_id} awaits its outcome and reading"),
             Decision::NothingToCall => write!(f, "no call: no counsel and no read call to make"),
         }
