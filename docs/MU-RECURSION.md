@@ -61,8 +61,12 @@ These are not restated in each chapter; every chapter assumes them.
    over ℚ; its angle is never formed. No norms or roots beyond an exact
    rational square root that refuses when inexact. No limits, series,
    derivatives, or probabilities. Termination is by an integer measure or
-   a `Budget`. Nothing is scored; things are equal, or they are not, and
-   a reading of two lane vectors says per lane which fell, held or rose.
+   a `Budget`. Nothing is a probability. A mind may order its readings by an
+   order it names, exactly, ties included (Concordance 1.10, 2026-10-08:
+   "nothing is scored; things are equal, or they are not" was a coding
+   standard turned into a limit on minds); equality stays the judge's test of
+   closure, and a reading of two lane vectors says per lane which fell, held
+   or rose.
 2. **Identity is content, never bytes and never a digest of content.** Two
    words are equal when their rotors are projectively equal. A key is the
    canonical coordinates of an exact object written out, in a fixed order,
@@ -150,7 +154,9 @@ These are not restated in each chapter; every chapter assumes them.
     acted on is zero, no other rose, and the rank moved by its one unit or
     not at all; the lane reading of a trial refuses a candidate that raises
     a lane by naming the lane. Nothing on μ⃗ and nothing in the rank audit
-    chooses among pivots, and no scalar ever orders the candidates. Several
+    chooses among pivots, and no scalar ever orders the candidates the
+    ENGINE searches (EXTRACTION's discipline; a mind may still prefer a
+    reading by an order it states, Concordance 1.10). Several
     candidates that discharge are held together as a superposition, the
     vortex, until a perception or a court replay collapses it.
 11. **No squaring.** The sensor's ℤ² is the substrate a hypha reads laminae
@@ -213,6 +219,19 @@ These are not restated in each chapter; every chapter assumes them.
     stored (chapters 1.7, 2.3, 42).
 
 ## Coding standards: the rules that stop the crud before it is written
+
+**These are REVIEW DISCIPLINE FOR CODE, never cognitive law** (Concordance
+1.10, the operator, 2026-10-08: "developer standards bind developers, not
+minds"). They govern how a developer writes the engine — no hidden gate on a
+count, no silent tie-break, no candidate chosen by a scalar, exact arithmetic.
+They never limit what a MIND may perceive, count, compare, rank or state: a
+mind may count and compare in perception and in the rules it states, a rule
+naming its own order (ties included), and the court judges it by closure on
+the withheld examples. Where this document turned one of these rules into a
+refusal in cognition (chapter 20's "counts are never compared" in body
+matching; the refused perception readings of §2.8's older-engine table; law
+1's "nothing is scored"; and others), that refusal is under audit and is restored or
+justified as a law of the world.
 
 The laws above say what the engine is. These rules say how code that
 implements it must be written, so that a reviewer can refuse a change on
@@ -1280,7 +1299,8 @@ it.
 **Which path is content, and no scalar picks it.** The canonical path is
 the geodesic in the mind's own presentation; where several geodesics
 exist all are carried (rule 15), none is chosen by length or by any other
-scalar (rule 4), the court accepts any path that composes to the vertex
+scalar by the ENGINE (rule 4; a mind may prefer the shortest proof by an
+order it states, Concordance 1.10), the court accepts any path that composes to the vertex
 up to the coset representative of 50.2, and the ledger pays the path
 spoken.
 
@@ -3458,8 +3478,10 @@ never summed.
 **new**. In debug builds every move of chapter 3 and every court operation
 asserts the rank law that applies to it (chapter 42, R1–R6); in release the
 court refuses with `REFUSE_RANK_LOST` when a spoken form's rank is below
-what its own tape re-derives. A18 is the only place a count appears in
-cognition, and it is read, never acted on: no threshold, no score.
+what its own tape re-derives. *(Struck 2026-10-08, Concordance 1.10: "A18 is
+the only place a count appears in cognition, and it is read, never acted on"
+was a coding standard turned into a limit on minds. Counts are percepts, and a
+rule may act on one, judged by closure on the withheld examples.)*
 
 ### 16.19 A19 — Class ledger exchange
 
@@ -4254,7 +4276,10 @@ Inside `extract_rule_with`, in order:
    one shape carried by different transports do not. A transport class in
    every pair is a rule vertex; a class in some pairs is a section over
    those pairs (`SentenceRule.sections`, a `Keyed<Vec<u16>>` by transport
-   class coordinates). Counts are never compared. Matching by moduli was the fault
+   class coordinates). *(Struck 2026-10-08, Concordance 1.10: "Counts are never
+   compared" — a body's size may stand as EVIDENCE beside the transport class,
+   never as the matching key; the moduli stay a section coordinate, rule 7.)*
+   Matching by moduli was the fault
    that left three quarters of ARC families frame-only (a73d444 corrected it
    in `same_stalk`); the form engine matches the same way.
 2. **Constancy of faces.** Faces are the pairs the bundle relates, never the
@@ -4759,7 +4784,9 @@ court has returned to it (chapter 6). `/opt/mycelium-v0.1.0/src/client/sdk/`:
   answers. The strata are read in their order, Ruled, then Stood, then
   Held: a held word answers only where no ruled or stood word is on the
   chart, and exactly one held word must reconstruct the body; several
-  stand as multiplicity, never a choice (rule 15).
+  stand as multiplicity, never a SILENT choice (rule 15) — a mind may
+  prefer one by an order it names (Concordance 1.10), and the court judges
+  what it prefers.
 - Readers that move to `working_atlas()`: quote incidence
   (`mycelium-client.rs 418–433`, the `closing` filter), `Crystal::on_class`
   (chapter 21), `locate`, `comprehend`'s basis for A12, `speak_word`'s
@@ -4967,8 +4994,9 @@ congruent percept still cannot say).
 **Cost.** Every eye is exact and every check is finite: the harmonic
 comparison is coordinatewise equality of invariants, the holonomy is one
 geometric product per orbit, and the orbits are those of the pair's nerve —
-no search, no threshold, no vote among senses. The eyes compound; they
-never compete.
+no search and no threshold. The eyes compound; they never compete. A
+majority across the eyes is a lawful reading (Concordance 1.10, restored
+2026-10-08), judged like any claim by closure.
 
 **The harmonic eye's coordinates, carried from the convergence engine
 (ruled 2026-09-08).** The older engine read its harmonics as projections
@@ -4988,9 +5016,9 @@ by name so it is not re-imported.
 | **stabiliser order**: the smallest p with A^p = I for the body's symmetry element | vision: `torsion_order` | yes | `Word::order` of the body's stabiliser word, a class invariant (23.9), on the percept |
 | **periodicities from the state's own entries**: the primes of every entry's reduced numerator and denominator | `RefractiveLens::torsion_orders` | the factorisation yes; the `[−2, +2]` rescale no | a candidate, not ruled: the primes of the invariants' denominators as the body's periodicities, beside the class's `(m5, m13)` |
 | **per-layer harmonics**: the same readings taken on every fibre layer, never summed across layers | `Δ[i][j][l]` per `l`; `compute_rank` over `l` | yes | the punctured axis: `Harmonics` of every section of a word's fibre, a `Vec` over the sections (25, S9.13), never one reading for the bundle |
-| eleven "tones" of self-perception: coherence, velocity, attention, symmetry score | `HarmonicState::from_delta` | no — scalar composites of a coherence functional (law 4, D0) | refused; the mind's self-reading is the outcome vector per lane (24.3) |
+| eleven "tones" of self-perception: coherence, velocity, attention, symmetry score | `HarmonicState::from_delta` | those that are exact composites, yes; the rest no (law 4, exactness — re-cited 2026-10-08; it was cited as if rule 4 forbade a composite) | the EXACT ones restored as self-readings (Concordance 1.10); the inexact stay refused (law 4); the outcome vector per lane (24.3) stands beside them |
 | eleven running averages with `/10` and `/8` | `HarmonicTuning` | no (rule 5) | refused; was `Aperture`, deleted (F2g) |
-| dominance ratio, anchored fraction, coverage fraction | `SoundnessSpectrum` layers 1, 4, 5 | no — count ratios, majority tests (rule 2) | refused; the readings above replace them |
+| dominance ratio, anchored fraction, coverage fraction | `SoundnessSpectrum` layers 1, 4, 5 | yes, as exact ℚ count ratios | RESTORED 2026-10-08 (Concordance 1.10: refused under rule 2, a coding standard, not a law of minds) as exact perception readings beside the readings above; the code lands in 78.143 |
 | a gravitational field over vibrations | `gravitational_field` | no — a potential (12.6) | refused |
 
 Two corrections to the tree follow. `blade/harmonics.rs` claims eleven
@@ -7557,9 +7585,11 @@ lane has, and a generator it cites is a generator on some other lane.
 **A meet is read ACROSS lanes, never within one.** The orbit of an
 intersection is the product of what each lane's basis contributes to it,
 taken in the fixed order of the class vector (12.6) and read in the base
-body's stabilizer up to conjugacy (50.3). Never a first lane, never a sum
-across lanes, never a count of components deciding a branch (rules 2, 4,
-law 5).
+body's stabilizer up to conjugacy (50.3). Never a first lane and never a sum
+across lanes (law 5, a law of the economy's world). The count of components
+is a lawful reading a mind may act on by an order it names (Concordance
+1.10); the engine's own code still does not branch on it silently (rule 2,
+review discipline).
 
 **The cross-lane orbit.** The holonomy of an orbit that passes through strata
 of different lanes is read with ROTOR coefficients — the one product all
@@ -9873,11 +9903,12 @@ a count of charts (rule 2). The routing floor — how much of a scene one
 voice takes — is the voice's drawable room (23.8) and is read from the
 book, never from the geometry.
 
-**No reading is chosen** (rules 4, 15). Every reading of the roster is
-tried in roster order; every cover that closes is kept; covers that
-close and are incomparable are held as a vortex until a court replay or a
-perception collapses them. The first cover that addresses a demand is a
-choice by arrival and is refused.
+**No reading is chosen by the engine** (rules 4, 15, review discipline for
+the code). Every reading of the roster is tried in roster order; every cover
+that closes is kept; covers that close and are incomparable are held as a
+vortex until a court replay, a perception, or a mind's stated order collapses
+them (Concordance 1.10). The first cover that addresses a demand is a choice
+by arrival and is refused.
 
 ### 53.2 The readings
 
@@ -10166,7 +10197,9 @@ time in a new place.
 ### 55.3 Relative orientation, exactly, without eigendecomposition
 
 Diagonalising an isolated `M2` needs the roots of its characteristic
-quadratic, which lie in `Q(sqrt D)`: refused by rule 4. The RELATIVE frame
+quadratic, which lie in `Q(sqrt D)`: refused by law 4 and rule 11 —
+exactness (re-cited 2026-10-08, the 1.10 audit: the ground is that the roots
+are not rational, a law of the mathematics, never rule 4). The RELATIVE frame
 does not need either matrix diagonalised. Split off the isotropic part:
 
 ```
@@ -10320,7 +10353,11 @@ frequency rank, meeting a counterexample ("wait, let us recount"),
 switching to connected-component cardinality, hitting a tie, and minting
 "geometric complexity" to close it. Its generator was not discovered by
 the algebra. Importing that method installs the author's cognition in the
-engine and the suite then passes by memorising priors. The paper's
+engine and the suite then passes by memorising priors. What is refused is
+the HAND-AUTHORED generator — a developer guessing the rule — never the
+readings it reached for: frequency rank, component cardinality and a stated
+tie order are lawful readings for a mind to perceive and state (Concordance
+1.10, 2026-10-08), judged like any rule by closure on the withheld pairs. The paper's
 DIAGNOSIS stands and is worth keeping: the transformation is not in
 `GL_n(Q)` for any fixed `n`, so no search over a fixed linear group on a
 fixed coordinate space can find it.
@@ -12280,9 +12317,10 @@ contact iff an incidence edge joins them. `incidence_of_3d` is explicitly
 "never a distance test against every lamina", and the invariance obligation
 is met BY CONSTRUCTION because the reading never consults extent.
 
-NOT A COUNT. The contact face is the SET of edges with their coordinates
-and its edge transport (50.3) — a tally would be count-as-choice (rule 2)
-and would discard the interface it was meant to name.
+NOT ONLY A COUNT. The contact face is the SET of edges with their
+coordinates and its edge transport (50.3) — a tally IN PLACE of the set would
+discard the interface it was meant to name. The edge count beside the set is a
+lawful reading (Concordance 1.10).
 
 The `δ` machinery is not wrong and is not removed: `Strain`, the five
 inversive regimes and the antipodal involution soundly say WHAT a relation
@@ -16685,7 +16723,8 @@ things: words minted where rings closed at holonomy 1; classes held
 where rings closed at holonomy ≠ 1; demands, modes no held word
 spells, flowing up toward the star; and room reclaimed from filaments
 that carried no flux. The second and third are the next orbit's
-questions, ordered by the plexus and never by a count — CORRECTED
+questions, ordered by the plexus (a mind may also order them by ring count,
+an order it names — Concordance 1.10, 2026-10-08) — CORRECTED
 2026-09-25 on the implementor's reading ("wrapping the most rings" is a
 count): the docket is WRITTEN in its entries' own key order (rule 15,
 nothing chosen), and beside each entry stands the enclosure it lies in

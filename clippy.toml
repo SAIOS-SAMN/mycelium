@@ -25,21 +25,26 @@ disallowed-methods = [
     { path = "blake3::hash", reason = "law 2: identity is content written out, not a digest of it" },
     { path = "blake3::Hasher::new", reason = "law 2: identity is content written out, not a digest of it" },
 
-    { path = "core::iter::Iterator::max", reason = "rule 4: nothing is chosen by a scalar; read the fiber" },
-    { path = "core::iter::Iterator::min", reason = "rule 4: nothing is chosen by a scalar; read the fiber" },
-    { path = "core::iter::Iterator::max_by", reason = "rule 4: nothing is chosen by a scalar" },
-    { path = "core::iter::Iterator::min_by", reason = "rule 4: nothing is chosen by a scalar" },
-    { path = "core::iter::Iterator::max_by_key", reason = "rule 4: nothing is chosen by a scalar" },
-    { path = "core::iter::Iterator::min_by_key", reason = "rule 4: nothing is chosen by a scalar" },
+    # Rule 4 is REVIEW DISCIPLINE FOR ENGINE CODE (Concordance 1.10): the
+    # engine never picks silently by a scalar. It never limits a mind: a
+    # comparison a mind's rule states (largest, rank, majority, in an order
+    # it names, ties included) carries an #[expect] citing Concordance 1.10.
+    { path = "core::iter::Iterator::max", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fiber, or cite Concordance 1.10 for a comparison a mind states" },
+    { path = "core::iter::Iterator::min", reason = "rule 4 (engine code): nothing is chosen silently by a scalar; read the fiber, or cite Concordance 1.10 for a comparison a mind states" },
+    { path = "core::iter::Iterator::max_by", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
+    { path = "core::iter::Iterator::min_by", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
+    { path = "core::iter::Iterator::max_by_key", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
+    { path = "core::iter::Iterator::min_by_key", reason = "rule 4 (engine code): nothing is chosen silently by a scalar" },
 
     # §4.2's sort family. An ORDER IS A CHOICE at every position, not only
     # at the extremum: a sort by a canonical key is the key's own order and
     # stands with its reason; a sort by anything measured ranks lanes
-    # against each other and is rule 4's, exactly as `min_by_key` is.
-    { path = "slice::sort_by", reason = "rule 4: an order is a choice at every position; sort by a canonical key, never by a measurement" },
-    { path = "slice::sort_by_key", reason = "rule 4: an order is a choice at every position" },
-    { path = "slice::sort_unstable_by", reason = "rule 4: an order is a choice at every position" },
-    { path = "slice::sort_unstable_by_key", reason = "rule 4: an order is a choice at every position" },
+    # against each other and is rule 4's, exactly as `min_by_key` is — in
+    # ENGINE code. An order a mind's rule names is Concordance 1.10's.
+    { path = "slice::sort_by", reason = "rule 4 (engine code): an order is a choice at every position; sort by a canonical key, never silently by a measurement" },
+    { path = "slice::sort_by_key", reason = "rule 4 (engine code): an order is a choice at every position" },
+    { path = "slice::sort_unstable_by", reason = "rule 4 (engine code): an order is a choice at every position" },
+    { path = "slice::sort_unstable_by_key", reason = "rule 4 (engine code): an order is a choice at every position" },
 
     { path = "core::option::Option::unwrap_or", reason = "rule 11: exact or refused; a missing value is a refusal, never a default" },
     { path = "core::option::Option::unwrap_or_else", reason = "rule 11: exact or refused" },

@@ -275,7 +275,7 @@ compiler can read is a lint, denied crate-wide under `[lints.clippy]` in
 | §2.4, no abort in cognition | `unwrap_used`, `expect_used`, `panic`, `unreachable`, `todo`, `unimplemented` |
 | law 2, rule 9: no map, no digest | `disallowed_types` for `HashMap`, `BTreeMap`, `HashSet`, `BTreeSet`; `disallowed_methods` for `blake3::hash` and `blake3::Hasher::new` |
 | law 9: no clock | `disallowed_types` for `Instant`, `SystemTime`, `Duration` |
-| rule 4: nothing chosen by a scalar | `disallowed_methods` for `min_by`, `max_by`, `min_by_key`, `max_by_key`, `sort_by`, `sort_by_key`, `sort_unstable_by`, `sort_unstable_by_key`, `Iterator::max`, `Iterator::min` |
+| rule 4: nothing chosen by a scalar IN ENGINE CODE (review discipline; never a limit on what a mind may compare — Concordance 1.10: a cognitive "largest" a mind states carries `#[expect(clippy::disallowed_methods, reason = "Concordance 1.10 — a comparison the rule names, ties included")]`) | `disallowed_methods` for `min_by`, `max_by`, `min_by_key`, `max_by_key`, `sort_by`, `sort_by_key`, `sort_unstable_by`, `sort_unstable_by_key`, `Iterator::max`, `Iterator::min` |
 | rule 11: no invented value | `disallowed_methods` for `unwrap_or`, `unwrap_or_else`, `unwrap_or_default`, `saturating_sub`, `saturating_mul` |
 | rule 15: no member by position | `disallowed_methods` for `slice::first`, `slice::last`, `core::iter::Iterator::nth` — the slice spellings are the ones clippy 1.95 resolves; `core::slice::<impl [T]>::first` does not, and the build says so in a warning |
 | rules 1, 8: no whole-carrier walk in cognition | `disallowed_methods` for every whole-carrier reader `Keyed` exposes (`keyed_persist_walk` and any entries-style walk); `fiber` is a type rule, 4.4 |
