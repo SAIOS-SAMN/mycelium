@@ -11,7 +11,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_handoff_request(&frame.body) else { return };
-    let body = match door.kernel.lock() {
+    let body = match crate::held::held!(door.kernel) {
         Ok(mut k) => match request {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
             HandoffRequest::Read(id) => encode_read_reply(k.handoff_read(&id)),

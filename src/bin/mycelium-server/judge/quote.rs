@@ -55,7 +55,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         None => 0,
     };
     if served > 0 {
-        if let Ok(mut k) = kernel.lock() {
+        if let Ok(mut k) = crate::held::held!(kernel) {
             k.grant_t_lease(qvoice);
         }
     }

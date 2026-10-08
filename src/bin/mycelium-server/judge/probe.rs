@@ -19,7 +19,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let reading = mycelium::synthesis::probe(kernel, pvoice, &target, &cites);
     // A probe that moved the listing, or found it gone, releases the lease.
     if reading.moved() || reading.closure == dialogue::ProbeClosure::Gone {
-        if let Ok(mut k) = kernel.lock() {
+        if let Ok(mut k) = crate::held::held!(kernel) {
             k.release_t_lease(pvoice);
         }
     }

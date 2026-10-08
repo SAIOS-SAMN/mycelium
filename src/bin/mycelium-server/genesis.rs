@@ -168,7 +168,7 @@ if let Ok(rd) = std::fs::read_dir(home.join("corpora")) {
     }
 }
 {
-    let Ok(mut k) = kernel.lock() else {
+    let Ok(mut k) = crate::held::held!(kernel) else {
         eprintln!("[{tag}] kernel lock poisoned; no bond staked");
         return;
     };

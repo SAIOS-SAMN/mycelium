@@ -36,7 +36,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_seat_request(&frame.body) else { return };
     let body = match request {
         Err(why) => encode_post_reply(Err(why)),
-        Ok(request) => match door.kernel.lock() {
+        Ok(request) => match crate::held::held!(door.kernel) {
             Ok(mut k) => match request {
                 SeatRequest::Post(s) => encode_post_reply(k.seat_post(&s)),
                 SeatRequest::ReadListing(domain) => match k.seat_listing(&domain) {

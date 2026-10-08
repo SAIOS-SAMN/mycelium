@@ -14,7 +14,7 @@ use std::sync::Mutex;
 pub(crate) fn rebuild_own_cover(kernel: &Mutex<Kernel>, mesh: &Mesh) -> (Vec<(u8, mycelium::transducer::stalk::Invariant)>, [u64; 4]) {
     // A room that cannot be read is a broken count, and this hypha admits
     // no cover against one — as a poisoned lock admits none.
-    let (charts, room) = match kernel.lock() {
+    let (charts, room) = match crate::held::held!(kernel) {
         Ok(k) => match k.lane_room() {
             Some(r) => (k.own_cover_charts(), r),
             None => return (Vec::new(), [0; 4]),
@@ -68,7 +68,7 @@ pub(crate) fn sign_position(
     payload: &[u8],
 ) -> Option<dialogue::ReceiptSection> {
     let (genesis, epoch) = mesh.origin.lock().ok().and_then(|o| *o)?;
-    let k = kernel.lock().ok()?;
+    let k = crate::held::held!(kernel).ok()?;
     let head = k.chain().head()?;
     drop(k);
     let prefix = mycelium::court::admission::SignedPrefix {
@@ -93,7 +93,7 @@ pub(crate) fn sign_position(
 
 pub(crate) fn sign_cover_digest(kernel: &Mutex<Kernel>, mesh: &Mesh) -> Vec<u8> {
     let (charts, room) = rebuild_own_cover(kernel, mesh);
-    let ruled_root = match kernel.lock() {
+    let ruled_root = match crate::held::held!(kernel) {
         Ok(mut k) => k.ruled_root(),
         Err(_) => return Vec::new(),
     };
@@ -219,7 +219,7 @@ pub(crate) fn admit_peer_receipt(
         .ok()
         .and_then(|o| *o)
         .ok_or(NoAdmission::NoOrigin)?;
-    let mut k = kernel.lock().map_err(|_| NoAdmission::Malformed)?;
+    let mut k = crate::held::held!(kernel).map_err(|_| NoAdmission::Malformed)?;
     Ok(k.admit_receipt(origin, verified, &receipt))
 }
 

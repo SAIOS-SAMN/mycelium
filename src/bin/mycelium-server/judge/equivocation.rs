@@ -61,7 +61,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         }
     };
     // A court that cannot be read has judged nothing and answers nothing.
-    let Ok(mut k) = door.kernel.lock() else {
+    let Ok(mut k) = crate::held::held!(door.kernel) else {
         eprintln!(
             "  court equivocation unread {:02x}{:02x}… K {}: the court is not readable",
             proof.vk[0], proof.vk[1], proof.at.print()

@@ -10,7 +10,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_domain_request(&frame.body) else { return };
-    let body = match door.kernel.lock() {
+    let body = match crate::held::held!(door.kernel) {
         Ok(mut k) => match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),

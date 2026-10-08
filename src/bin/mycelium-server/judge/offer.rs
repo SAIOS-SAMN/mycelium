@@ -102,7 +102,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                 }
             }
             Some(word) => {
-                match (door.kernel.lock(), door.mesh.cover.lock()) {
+                match (crate::held::held!(door.kernel), door.mesh.cover.lock()) {
                     (Ok(mut k), Ok(mut cover)) => {
                         // One typed reading, every arm of `Glue` named. The
                         // REFUSAL travels, not a bit saying there was one:

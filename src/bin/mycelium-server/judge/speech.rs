@@ -24,7 +24,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
     // the sentences waiting on a word carried, it offers when it returns.
-    let (heard, offers) = match kernel.lock() {
+    let (heard, offers) = match crate::held::held!(kernel) {
         Ok(mut k) => {
             let heard = k.hear_frame(&act);
             (heard, k.take_offers())

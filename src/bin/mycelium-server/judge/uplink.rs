@@ -11,7 +11,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(fold) = decode_uplink(&frame.body) else { return };
-    let verdict = match door.kernel.lock() {
+    let verdict = match crate::held::held!(door.kernel) {
         Ok(mut k) => k.admit_uplink(&fold),
         Err(_) => return,
     };

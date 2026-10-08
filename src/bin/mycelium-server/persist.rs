@@ -19,7 +19,7 @@ use std::sync::Mutex;
 pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
     // The stamp the snapshot is taken at, and the line it stands on, read
     // in the same hold (ACT1).
-    let (line, snap, at) = match kernel.lock() {
+    let (line, snap, at) = match crate::held::held!(kernel) {
         Ok(mut k) => (k.take_line(), k.snapshot(), k.snapshot_at()),
         Err(_) => return false,
     };
@@ -32,7 +32,7 @@ pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
         }
     };
     if !line_landed {
-        if let Ok(mut k) = kernel.lock() {
+        if let Ok(mut k) = crate::held::held!(kernel) {
             k.line_lost();
         }
         return false;
@@ -40,7 +40,7 @@ pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
     let landed = mycelium::chronometry::replace_durably(std::path::Path::new(state_path), &snap);
     // Only a write that landed is a persist on the clock (78.21(2)).
     if landed {
-        if let Ok(mut k) = kernel.lock() {
+        if let Ok(mut k) = crate::held::held!(kernel) {
             k.note_persisted(at);
         }
     }
@@ -56,11 +56,11 @@ pub(crate) fn durable(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
     if cfg!(feature = "drill-undurable") {
         return true;
     }
-    let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
+    let due = crate::held::held!(kernel).ok().is_some_and(|mut k| k.take_persist());
     if !due || persist(kernel, state_path) {
         return true;
     }
-    if let Ok(mut k) = kernel.lock() {
+    if let Ok(mut k) = crate::held::held!(kernel) {
         k.persist_failed();
     }
     false
@@ -68,7 +68,7 @@ pub(crate) fn durable(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
 
 /// Persist where a change was marked; whether it was.
 pub(crate) fn persist_if_due(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
-    let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
+    let due = crate::held::held!(kernel).ok().is_some_and(|mut k| k.take_persist());
     if due {
         persist(kernel, state_path);
     }

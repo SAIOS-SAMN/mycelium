@@ -14,7 +14,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let at_most = budget / mycelium::economy::Entry::TAPE;
-    let (total, rows) = match door.kernel.lock() {
+    let (total, rows) = match crate::held::held!(door.kernel) {
         Ok(k) => k.rows_range(&req.signer, req.from, req.upto, req.cursor, at_most),
         Err(_) => return,
     };

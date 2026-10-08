@@ -12,7 +12,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(who) = decode_wallet(&frame.body) else { return };
-    let account = match door.kernel.lock() {
+    let account = match crate::held::held!(door.kernel) {
         Ok(k) => k.wallet(&who),
         Err(_) => return,
     };

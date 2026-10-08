@@ -300,7 +300,7 @@ impl Exchange {
         let mut last_cover: Option<[[u8; 32]; 4]> = None;
         loop {
             std::thread::yield_now();
-            if let Ok(mut k) = kernel.lock() {
+            if let Ok(mut k) = crate::held::held!(kernel) {
                 k.court_stroke();
                 // A question the observer left while this stroke held the
                 // kernel is answered under the lock already held.
@@ -336,7 +336,7 @@ impl Exchange {
                 // and the fold's round by outcome. None of this reached the
                 // journal, so epoch 117's fold storm and its reserve were
                 // read only by hand.
-                if let Ok(k) = kernel.lock() {
+                if let Ok(k) = crate::held::held!(kernel) {
                     let folds = mycelium::observe::folds();
                     // 78.68: the winding carrier — first closes, carried
                     // traversals, returns sealed, unbound closes — and the
@@ -462,7 +462,7 @@ impl Exchange {
                 relocate_corpus(&kernel, &mesh, &registry, budget);
                 last_cover = roots;
             }
-            let k_now = match kernel.lock() {
+            let k_now = match crate::held::held!(kernel) {
                 Ok(k) => k.k_step(),
                 Err(_) => continue,
             };
@@ -617,7 +617,7 @@ impl Exchange {
                             &kernel,
                             origin,
                             || admit_peer_receipt(&kernel, &mesh, &reply),
-                            || kernel.lock().ok().map(|mut k| k.stroke()),
+                            || crate::held::held!(kernel).ok().map(|mut k| k.stroke()),
                             crate::backfill::fetch(&mesh, &d),
                         );
                         // The signer is the key the digest names; a digest
@@ -646,7 +646,7 @@ impl Exchange {
                             continue;
                         };
                         let charts = {
-                            let mut k = match kernel.lock() {
+                            let mut k = match crate::held::held!(kernel) {
                                 Ok(g) => g,
                                 Err(_) => continue,
                             };
@@ -750,7 +750,7 @@ impl Exchange {
                                 // every word in flight under it: each is carried
                                 // to the peer that now covers it, and the
                                 // carriage draws on its escrow (47.3, 78.42).
-                                let offers = match kernel.lock() {
+                                let offers = match crate::held::held!(kernel) {
                                     Ok(mut k) => {
                                         for (_, inv) in &cover.charts {
                                             k.carry_chart(inv);
@@ -789,7 +789,7 @@ impl Exchange {
                                     {
                                         let addr = spoken.address();
                                         named.push(addr.clone());
-                                        if let Ok(mut k) = kernel.lock() {
+                                        if let Ok(mut k) = crate::held::held!(kernel) {
                                             // 78.24 (2b): a word learned from a peer is
                                             // located by the stamp that admitted it there,
                                             // the peer's key its coordinate; every act
@@ -835,7 +835,7 @@ impl Exchange {
                                     }
                                 }
                                 if !named.is_empty() {
-                                    if let Ok(mut k) = kernel.lock() {
+                                    if let Ok(mut k) = crate::held::held!(kernel) {
                                         k.confirm_peer_holds_addrs(&named, vk_peer);
                                     }
                                 }
@@ -921,7 +921,7 @@ impl Exchange {
             // persist — closes its orbit by name. `K` moves here and nowhere
             // else; a cycle that sealed no act closes nothing. A withheld
             // close is counted on the clock, never printed beside it.
-            if let Ok(mut k) = kernel.lock() {
+            if let Ok(mut k) = crate::held::held!(kernel) {
                 if matches!(k.orbit(), mycelium::chronometry::Close::Sealed(_)) {
                     sealed_since_persist += 1;
                 }

@@ -78,7 +78,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         return;
     };
     let proposal = mycelium::cognition::Proposal { after: p.after, root: p.root, epochs: p.epochs.clone() };
-    let verdict = match door.kernel.lock() {
+    let verdict = match crate::held::held!(door.kernel) {
         Ok(k) => k.verify_fold(home, &proposal, &receipts, &rows),
         Err(_) => {
             say(s, dialogue::FoldWitness::Unmeasured { vk: me });
@@ -134,7 +134,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
     // 78.147: the era is held with its root's proof — the home's signed
     // position verified above and this witness's own — so this court, the
     // root's second holder, answers a catch-up below it with it.
-    if let Ok(mut k) = door.kernel.lock() {
+    if let Ok(mut k) = crate::held::held!(door.kernel) {
         k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,

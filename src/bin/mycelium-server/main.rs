@@ -14,6 +14,7 @@ mod door;
 mod exchange;
 mod fold;
 mod genesis;
+mod held;
 mod judge;
 mod ledger;
 mod offer;
@@ -371,14 +372,14 @@ fn main() {
     // its own order, and are held before the snapshot is restored against
     // them.
     {
-        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at the line") };
+        let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at the line") };
         if let Err(why) = k.bind_line(home.join("line")).and_then(|()| k.bind_eras(home.join("eras"))) {
             refuse_boot(&tag, &format!("{why}. `--check` on this home reports the same reading."));
         }
     }
     match std::fs::read(&state_path) {
         Ok(bytes) => {
-            let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at restore") };
+            let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at restore") };
             if !k.restore(&bytes) {
                 // A REFUSAL THAT NAMES THE ROAD. This named the fault and
                 // stopped, leaving the operator to work out whether a
@@ -418,7 +419,7 @@ fn main() {
     {
         let mut live: Vec<[u8; 32]> = genesis.hypha.iter().map(|(who, _)| *who).collect();
         live.extend(genesis.voice.iter().map(|(who, _)| *who));
-        let Ok(mut k) = kernel.lock() else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
+        let Ok(mut k) = crate::held::held!(kernel) else { refuse_boot(&tag, "kernel lock poisoned at genesis") };
         for (who, mu) in k.bind_live(&live) {
             eprintln!(
                 "[{tag}] bond outside the live genesis burned {:02x}{:02x}… {mu:?}",
@@ -524,7 +525,7 @@ fn main() {
         served: Keyed::new(),
     }));
     {
-        let seed = match kernel.lock() {
+        let seed = match crate::held::held!(kernel) {
             Ok(k) => k.syllabus_seed(),
             Err(_) => refuse_boot(&tag, "kernel lock poisoned at syllabus seed"),
         };
@@ -592,12 +593,12 @@ fn main() {
                         // volume; the two readings are taken or the line
                         // is not written.
                         let (Ok(before), Ok(())) =
-                            (kernel.lock().map(|k| k.volume()), Ok::<(), ()>(()))
+                            (crate::held::held!(kernel).map(|k| k.volume()), Ok::<(), ()>(()))
                         else {
                             continue;
                         };
                         let _ = mycelium::synthesis::adopt(&kernel, ratifier, &word);
-                        let Ok(after) = kernel.lock().map(|k| k.volume()) else {
+                        let Ok(after) = crate::held::held!(kernel).map(|k| k.volume()) else {
                             continue;
                         };
                         if after != before {
@@ -627,7 +628,7 @@ fn main() {
     let reflex_rx = Arc::new(Mutex::new(reflex_rx));
     // 78.146 — the seat relay on its own lock, taken once the kernel is
     // restored: a mind's exempt read is served without the kernel's lock.
-    let Ok(seat_relay) = kernel.lock().map(|k| k.seat_relay()) else {
+    let Ok(seat_relay) = crate::held::held!(kernel).map(|k| k.seat_relay()) else {
         eprintln!("the kernel's lock was poisoned before the door opened");
         return;
     };

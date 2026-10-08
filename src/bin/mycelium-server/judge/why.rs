@@ -11,7 +11,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(ask) = decode_why(&frame.body) else { return };
-    let why = match door.kernel.lock() {
+    let why = match crate::held::held!(door.kernel) {
         Ok(k) => k.why(ask),
         Err(_) => return,
     };

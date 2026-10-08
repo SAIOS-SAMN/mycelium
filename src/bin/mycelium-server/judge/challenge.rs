@@ -14,7 +14,7 @@ use std::net::TcpStream;
 
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_challenge_request(&frame.body) else { return };
-    let body = match door.kernel.lock() {
+    let body = match crate::held::held!(door.kernel) {
         Ok(mut k) => match request {
             ChallengeRequest::Signed(c) => encode_challenge_reply(&k.challenge(&c)),
             ChallengeRequest::Finality(fold) => encode_finality_reading(&FinalityReading {

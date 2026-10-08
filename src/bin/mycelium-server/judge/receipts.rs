@@ -21,7 +21,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     };
     // 78.147: a catch-up below the signer's fold root is answered with the
     // root and its two signatures; only an era replay pages the archive.
-    let answer = match door.kernel.lock() {
+    let answer = match crate::held::held!(door.kernel) {
         Ok(k) => k.serve_receipts(&req.signer, req.after, req.upto, req.replay, at_most, budget),
         Err(_) => return,
     };

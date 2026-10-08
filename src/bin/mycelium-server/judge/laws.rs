@@ -19,7 +19,7 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let body = match request {
         LawsRequest::Register => encode_register_reply(),
         // 78.124 — the core clock: this court's head stamp, read at the ask.
-        LawsRequest::Clock => match door.kernel.lock() {
+        LawsRequest::Clock => match crate::held::held!(door.kernel) {
             Ok(k) => mycelium::physics::laws::codec::encode_clock_reply(k.core_stamp().as_ref()),
             Err(_) => return,
         },

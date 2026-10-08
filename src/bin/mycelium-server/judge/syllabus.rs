@@ -20,7 +20,7 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mesh = &door.mesh;
 
     let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
-    let (ruled, language) = match kernel.lock() {
+    let (ruled, language) = match crate::held::held!(kernel) {
         Ok(mut k) => (k.ruled_digests_for(&dvoice), k.language()),
         Err(_) => return,
     };
@@ -57,7 +57,7 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         true => mycelium::cognition::Asker::Court(fvoice),
         false => mycelium::cognition::Asker::Voice(fvoice),
     };
-    if let Ok(mut k) = kernel.lock() {
+    if let Ok(mut k) = crate::held::held!(kernel) {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
         // which words the voice already holds so the page carries only what
         // it lacks; it stood here ALSO as evidence for
