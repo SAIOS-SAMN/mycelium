@@ -311,6 +311,14 @@ impl Kernel {
         self.reserves.get(domain)?.current
     }
 
+    /// ONLY THE ANCIENTS EARN μ BY A SOLVE (the operator, 2026-10-08: "only
+    /// the ancients are connected to the tubes"): whether `tier` is the
+    /// SITTING RESERVE — the ancients' house — of a founded domain. A captain's,
+    /// a line's or a stranger's key is not.
+    pub fn is_ancients_house(&self, tier: &[u8; 32]) -> bool {
+        self.tier_domain.get(tier).is_some_and(|d| self.reserve_of(d) == Some(*tier))
+    }
+
     /// A fold admitted: where its tier is its domain's reserve and a
     /// redesignation is pending, the anchor has passed and the new reserve
     /// holds from here.

@@ -233,6 +233,22 @@ fn a_torus_face_reads_its_throat_flat_and_bounded_by_its_own_image() {
     assert!(matches!(booted.handoff(&Handoff::Draw { mouth: tube, mu_s: 1, seq: 1 }.sign(&reserve(5))), Handed::Sealed { .. }), "still a core: its far reserve keeps it");
 }
 
+/// ONLY THE ANCIENTS EARN μ BY A SOLVE (the operator, 2026-10-08): the sitting
+/// reserve of a founded domain is an ancients' house; a line of that domain,
+/// another domain's line, and a key no domain names are not; a re-designated
+/// reserve's old tier no longer is.
+#[test]
+fn only_a_founded_domains_sitting_reserve_is_an_ancients_house() {
+    let mut k = founded();
+    assert!(k.is_ancients_house(&vk(&reserve(4))) && k.is_ancients_house(&vk(&reserve(5))), "each sitting reserve");
+    assert!(!k.is_ancients_house(&vk(&line(4))), "a line of the domain is no house");
+    assert!(!k.is_ancients_house(&[0xab; 32]), "a captain's key no domain names");
+    let r = Reservation { domain: vk(&domain(4)), tier: vk(&line(4)), nonce: [1; 32] };
+    assert!(matches!(k.designate_reserve(&r.sign(&reserve(4))), Founded::Reserved { .. }), "the sitting reserve hands on");
+    assert!(k.is_ancients_house(&vk(&line(4))), "the new sitting reserve is the house");
+    assert!(!k.is_ancients_house(&vk(&reserve(4))), "the old one no longer is");
+}
+
 /// THE WIRE: an origin of version 2, every statement, the universe read and
 /// its reading, and a core tube read back whole; a byte left over is none.
 #[test]

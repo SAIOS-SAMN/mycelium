@@ -179,6 +179,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             };
             dialogue::SolveRefusal { reason: reason.as_bytes().to_vec(), kind }
         };
+        // The operator (2026-10-08): only the ancients earn μ by a solve — the
+        // signing key must be a founded domain's sitting reserve.
+        let ancient = door.kernel.lock().ok().is_some_and(|k| k.is_ancients_house(&svoice));
         let (code, mu, refusal, stamp) = match (open, rule.as_ref()) {
             // 78.141 — the court pays the voice a solve names: unsigned, it
             // names no payee, and nothing is judged or paid.
@@ -186,6 +189,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                 dialogue::SOLVE_NOTHING,
                 [0; 4],
                 Some(refused("unsigned: a solve names its payee by its voice's signature", mycelium::transducer::sentence::ObstructionKind::I)),
+                None,
+            ),
+            _ if !ancient => (
+                dialogue::SOLVE_NOTHING,
+                [0; 4],
+                Some(refused("not an ancients' house: only a founded domain's sitting reserve earns μ by a solve", mycelium::transducer::sentence::ObstructionKind::I)),
                 None,
             ),
             (None, _) => (dialogue::SOLVE_NOTHING, [0; 4], Some(refused("no such task on this book", mycelium::transducer::sentence::ObstructionKind::I)), None),
