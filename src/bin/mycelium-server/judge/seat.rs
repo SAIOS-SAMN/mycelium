@@ -18,6 +18,13 @@ use std::net::TcpStream;
 /// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
 /// read is not exempt: the caller defers it as before. Posts keep the rule.
 pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
+    // A TASK READ takes the registry's lock and never the kernel's, so a
+    // full pool waiting on cognition has no reason to defer it: a seated
+    // mind's fetch of the task before its seat was deferred 2026-10-08 on
+    // every hypha and no call was made. Served here, as observe is.
+    if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
+        return crate::door::serve_control(stream, frame, door);
+    }
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
     let Some(mail) = door.seat_relay.exempt_read(&r) else { return false };
     let Some(body) = encode_mail_reply(mail.as_deref().map_err(|why| *why)) else { return false };
