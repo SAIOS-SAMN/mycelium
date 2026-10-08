@@ -38,8 +38,9 @@ fn every_challenge_and_every_answer_read_back_whole() {
     assert_eq!(decode_challenge_request(&encode_finality_request(fold)), Some(ChallengeRequest::Finality(fold)));
     assert_eq!(decode_challenge_request(&encode_obstructions_request([4u8; 32])), Some(ChallengeRequest::Obstructions([4u8; 32])));
     assert_eq!(decode_challenge_request(&encode_line_head_request([5u8; 32])), Some(ChallengeRequest::LineHead([5u8; 32])));
-    for (head, at) in [([0u8; 32], None), ([9u8; 32], Some(fold))] {
-        assert_eq!(decode_line_head_reply(&encode_line_head_reply(&head, at.as_ref())), Some((head, at)));
+    for (head, at, held) in [([0u8; 32], None, [0; 4]), ([9u8; 32], Some(fold), [3, 0, 0, u64::MAX])] {
+        let r = LineHead { head, at, held };
+        assert_eq!(decode_line_head_reply(&encode_line_head_reply(&r)), Some(r));
     }
     for a in [
         Challenged::Demanded { at: fold, receipt: [1u8; 32], deadline: 1033 },
@@ -68,6 +69,10 @@ fn every_challenge_and_every_answer_read_back_whole() {
     ] {
         for bonded in [false, true] {
             assert_eq!(decode_finality_reply(&encode_finality_reply(&f, bonded)), Some((f, bonded)));
+            for toll_held in [false, true] {
+                let r = FinalityReading { finality: f, bonded, toll_held };
+                assert_eq!(decode_finality_reading(&encode_finality_reading(&r)), Some(r));
+            }
         }
     }
     let open = vec![OpenObstruction {

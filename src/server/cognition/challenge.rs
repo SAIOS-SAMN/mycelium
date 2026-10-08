@@ -287,7 +287,7 @@ impl Kernel {
                     return Challenged::Upheld { at: r.stamp, receipt: r.chain_hash, prefix: rec.prefix };
                 }
                 let Some(r) = self.seal_challenge(c, FALSIFIED, rec.prefix) else { return refuse(R::LineRefused) };
-                let unwound = self.reverse(&key);
+                let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
                 // 78.129 — the slash: half the falsified tier's bond, half of
                 // that to this challenger, half retired.
                 self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
@@ -302,7 +302,7 @@ impl Kernel {
                     return refuse(R::NotDue);
                 }
                 let Some(r) = self.seal_challenge(c, FALSIFIED, [0; 32]) else { return refuse(R::LineRefused) };
-                let unwound = self.reverse(&key);
+                let unwound = self.reverse(&key, (r.stamp, r.chain_hash));
                 self.slash(&rec.tier, c.who, (r.stamp, r.chain_hash));
                 Challenged::Falsified { at: r.stamp, receipt: r.chain_hash, unwound: count(unwound) }
             }
@@ -352,8 +352,9 @@ impl Kernel {
     /// REVERSAL: the falsified fold and, transitively, every fold that netted
     /// it — each one's netting returned to its children's remainders, its
     /// edges out of its domain's gauge (solved again), its bookings gone, and
-    /// it voided from netting. The count of ancestors unwound.
-    fn reverse(&mut self, key: &[u8]) -> usize {
+    /// it voided from netting; the tolls riding on its OUT sides refunded
+    /// (78.133). The count of ancestors unwound.
+    fn reverse(&mut self, key: &[u8], anchor: crate::economy::Anchor) -> usize {
         let mut stack = vec![(key.to_vec(), Standing::Falsified)];
         let mut void: Vec<Vec<u8>> = Vec::new();
         let mut domains: Vec<[u8; 32]> = Vec::new();
@@ -388,6 +389,9 @@ impl Kernel {
             }
             void.push(k);
         }
+        // 78.133 — every part of a toll whose OUT side a voided fold consumed,
+        // back to the traveller together — read before the sides reopen.
+        self.unwind_tolls(&void, anchor);
         for k in &void {
             self.ledgers.folds.remove(k);
             self.ledgers.remaining.remove(k);
@@ -506,6 +510,9 @@ impl Kernel {
             self.ledgers.remaining.remove(k);
             gone += 1;
         }
+        // 78.133 — tolls whose window closed, paid out (before the handoffs
+        // they ride on are let go).
+        gone += self.release_tolls();
         // 78.126 — handoffs both of whose sides final folds consumed.
         gone += self.settle_handoffs();
         // Demands and withdrawals of folds no longer recorded.

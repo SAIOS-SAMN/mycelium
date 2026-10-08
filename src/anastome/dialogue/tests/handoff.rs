@@ -69,8 +69,26 @@ fn every_handoff_act_and_answer_read_back_whole() {
 fn every_mouth_act_and_the_loops_read_back_whole() {
     let key = ed25519_dalek::SigningKey::from_bytes(&[5u8; 32]);
     let one = crate::transducer::element::identity_versor();
-    let mouth = Mouth { from_tier: [1u8; 32], to_tier: [2u8; 32], keeper: [1u8; 32], from_frame: one.clone(), to_frame: one.clone(), toll: [3, 0, 0, 0], nonce: [4u8; 32] };
+    let mouth = Mouth {
+        from_tier: [1u8; 32],
+        to_tier: [2u8; 32],
+        keeper: [1u8; 32],
+        from_frame: one.clone(),
+        to_frame: one.clone(),
+        toll: [3, 0, 0, 0],
+        nonce: [4u8; 32],
+        tariff: None,
+    };
     assert!(mouth.frames_hold());
+    // 78.133 — a tariffed mouth is its own kind, its tariff in its id; the
+    // flat mouth's id is what it was.
+    let tariff = Tariff { rate_s: (3, 2), rate_h: (1, 7), split: vec![([1u8; 32], (2, 3)), ([5u8; 32], (1, 3))] };
+    let tariffed = Mouth { toll: [0; 4], tariff: Some(tariff.clone()), ..mouth.clone() };
+    assert_ne!(tariffed.id(), Mouth { tariff: None, ..tariffed.clone() }.id(), "the tariff is in the id");
+    let changed = Tariff { split: vec![([1u8; 32], (1, 2)), ([5u8; 32], (1, 2))], ..tariff };
+    assert_ne!(tariffed.id(), Mouth { tariff: Some(changed), ..tariffed.clone() }.id(), "a new split is a new mouth");
+    let signed = Handoff::Mouth(Box::new(tariffed)).sign(&key);
+    assert_eq!(decode_handoff_request(&encode_handoff(&signed)), Some(HandoffRequest::Signed(signed)));
     let offer = Offer { from_tier: [1u8; 32], to_tier: [2u8; 32], out_nets: vec![([3u8; 32], [-1, 0, 0, 0])], in_nets: vec![([4u8; 32], [1, 0, 0, 0])], charter: [0u8; 32], nonce: [9u8; 32] };
     let traverse = Handoff::Traverse { offer: Box::new(offer.clone()), mouth: mouth.id() };
     assert_eq!(traverse.id(), offer.id(), "a traversal is the handoff its offer is");
@@ -81,7 +99,17 @@ fn every_mouth_act_and_the_loops_read_back_whole() {
     assert_eq!(decode_handoff_request(&encode_loops_read()), Some(HandoffRequest::Loops));
     let loops = vec![Loop { mouth: mouth.id(), holonomy: one }];
     assert_eq!(decode_loops_reply(&encode_loops_reply(&loops)), Some(loops));
-    for r in [HandoffRefusal::NoMouth, HandoffRefusal::Degenerate, HandoffRefusal::BadKeeper, HandoffRefusal::NotTheMouth] {
+    for r in [
+        HandoffRefusal::NoMouth,
+        HandoffRefusal::Degenerate,
+        HandoffRefusal::BadKeeper,
+        HandoffRefusal::NotTheMouth,
+        HandoffRefusal::Untariffed(Untariffed::ZeroDenominator),
+        HandoffRefusal::Untariffed(Untariffed::Unordered),
+        HandoffRefusal::Untariffed(Untariffed::NotWhole),
+        HandoffRefusal::Untariffed(Untariffed::Flat),
+        HandoffRefusal::NotALine,
+    ] {
         assert_eq!(decode_handoff_reply(&encode_handoff_reply(&Handed::Refused(r))), Some(Handed::Refused(r)));
     }
 }

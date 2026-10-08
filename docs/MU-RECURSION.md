@@ -25072,6 +25072,57 @@ another — refused by name; the sealed cite; the reading's stamp and receipt;
 a restart keeps it and still refuses a second; the wire and the cite
 round-trip, a byte left over is none.
 
+### 78.133 Per-unit and split tolls on a wormhole (2026-10-08, the coordinator's rulings for (b); xylarium's layer 8: the ancients tax passage, a share the tithe to their progenitor lines)
+
+**The tariff.** A mouth offered as kind 11 carries `Tariff { rate_s, rate_h,
+split }`; kind 7 (78.128's flat toll, all the keeper's at acceptance) reads
+and works as it did. A wormhole carries S and H only, so each pays on its
+own lane: `⌊rate_s · Σ|out S|⌋` μ-S for MASS, `⌊rate_h · Σ|out H|⌋` μ-H for
+INFORMATION — a word alone pays on H; G (value, the one translated lane)
+and T (duration) are never charged; the remainder is never charged, never
+rounded up against the traveller. Rates and shares are exact rationals.
+The split — recipients ascending, each once, shares summing to exactly one —
+divides each lane alike: every recipient but the keeper its `⌊share ·
+charge⌋`, the keeper the rest, so each lane's parts sum to its charge
+exactly, no dust. The tariff is in the mouth's id (a new split is a new
+mouth, never an edit); a flat toll beside it is refused (`Untariffed::Flat`).
+
+**Recipients.** The keeper (its domain's reserve) and the tier keys its OWN
+domain's genesis names — its PROGENITOR LINES — never the traveller's
+domain, never a stranger: refused at the offer (`NotALine`).
+
+**Never minted, held, then paid or refunded together.** The charge is
+escrowed from the traveller at the traverse act (short on a lane: refused,
+never debited — `HolderShort`), within its lanes, no conversion. At
+acceptance it is split into its exact parts and HELD (`TollHeld`, by the
+traversal's id) for `W` from the acceptance. Where the traversal's OUT-side
+fold is reversed — falsified or defaulted — every part returns to the
+traveller at once (`unwind_tolls`, inside the reversal, before its sides
+reopen). Otherwise, the window closed and that fold — where one consumed
+the side and is still recorded — read final (a demand or a withdrawal
+reopening it extends the hold), every part is paid at once
+(`release_split`: the parts must sum to the hold exactly, every credit read
+before anything moves), each part's `Transfer` rows at the TRAVERSE act's
+stamp and receipt — the keeper's and the lines' receipts tie back to one
+passage. A correction unwinds nothing unless it ends in a reversal.
+
+**Read.** The line-head read carries the μ HELD toward a tier
+(`LineHead { head, at, held }`), and the finality read whether a toll is
+held on the fold (`FinalityReading { finality, bonded, toll_held }`): a
+keeper's receipts are not final before release. Held in the handoff leaf
+after the traversals: the tariffs beside their mouths' flat writing, then
+the tolls held (LAYOUT-CHANGE WIRE-CHANGE).
+
+Proved (`cognition::tests::tolls`): the parts sum exactly under thirds,
+sevenths, shares within 10⁻⁹ of whole and of `u64::MAX`, and a split with no
+keeper share, each non-keeper part exactly its floor; malformed tariffs and
+shares to the other domain or a stranger refused; S-only, H-only and mixed
+passages charged on their lanes, G and T never, a short lane refused and
+never debited; parts held across a restart, untouched before the window,
+paid together after it with the line's receipt at the traverse act; a
+demanded OUT fold holding the toll past the window, then defaulted and
+every part refunded together. The flat mouth's tests (78.128) stand.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

@@ -38,6 +38,8 @@ pub enum Unpaid {
     Taken,
     /// No hold stands under this key.
     Unheld,
+    /// 78.133 — parts that do not sum to the hold exactly.
+    Split,
 }
 
 impl Treasury {
@@ -114,6 +116,38 @@ impl Treasury {
         let back = self.credit(h.payer, h.mu);
         debug_assert!(back, "the hold came out of this balance");
         self.transfer(h.payer, to, h.mu, anchor)?;
+        Ok(h.mu)
+    }
+
+    /// 78.133 — RELEASE what `key` holds IN PARTS, each to its recipient,
+    /// whole or refused: the parts must sum to the hold exactly (`Split`),
+    /// and every recipient's credit is read before anything moves — so all
+    /// parts are paid or none. Each part a `Transfer` pair at `anchor` (the
+    /// act it ties back to). Answers what moved.
+    pub fn release_split(&mut self, key: &[u8], parts: &[([u8; 32], [u64; 4])], anchor: Anchor) -> Result<[u64; 4], Unpaid> {
+        let Some(h) = self.held.get(key).cloned() else { return Err(Unpaid::Unheld) };
+        let mut sum = [0u64; 4];
+        for (_, part) in parts {
+            for (s, m) in sum.iter_mut().zip(part) {
+                *s = s.checked_add(*m).ok_or(Unpaid::Split)?;
+            }
+        }
+        if sum != h.mu {
+            return Err(Unpaid::Split);
+        }
+        if parts.iter().any(|(to, part)| self.credited(to, *part).is_none()) {
+            self.overflowed += 1;
+            return Err(Unpaid::Overflow);
+        }
+        self.held.remove(key);
+        let back = self.credit(h.payer, h.mu);
+        debug_assert!(back, "the hold came out of this balance");
+        for (to, part) in parts.iter().filter(|(_, p)| p.iter().any(|m| *m > 0)) {
+            if *to == h.payer {
+                continue;
+            }
+            self.transfer(h.payer, *to, *part, anchor)?;
+        }
         Ok(h.mu)
     }
 

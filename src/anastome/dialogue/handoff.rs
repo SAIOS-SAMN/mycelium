@@ -185,10 +185,138 @@ pub struct Mouth {
     pub to_frame: crate::transducer::cga::Mv,
     pub toll: [u64; 4],
     pub nonce: [u8; 32],
+    /// 78.133 — the per-unit toll and its split; `None` for a flat-toll
+    /// mouth (78.128), whose toll is all the keeper's.
+    pub tariff: Option<Tariff>,
+}
+
+/// 78.133 — A MOUTH'S TARIFF (the coordinator's rulings): a wormhole carries
+/// S and H only, so each pays on its own lane — `rate_s` μ-S per unit of
+/// MASS leaving (`Σ|out S|`), `rate_h` μ-H per unit of INFORMATION leaving
+/// (`Σ|out H|`), each an exact rational `(n, d)`; G (value, the one
+/// translated lane) and T (duration) are never charged by a mouth. The SPLIT
+/// — `(recipient, share)` in the recipients' ascending order, each share an
+/// exact rational, summing to exactly one — divides each lane's charge alike.
+/// Part of the mouth's id: a new split is a new mouth, never an edit.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Tariff {
+    pub rate_s: (u64, u64),
+    pub rate_h: (u64, u64),
+    pub split: Vec<([u8; 32], (u64, u64))>,
+}
+
+/// WHY A TARIFF IS NOT ONE.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Untariffed {
+    /// A rate or a share with a zero denominator.
+    ZeroDenominator,
+    /// The recipients not strictly ascending: each once, in one writing.
+    Unordered,
+    /// The shares do not sum to exactly one.
+    NotWhole,
+    /// A flat toll beside the tariff: a mouth's toll is one law.
+    Flat,
+}
+
+impl Tariff {
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = Vec::new();
+        for (n, d) in [self.rate_s, self.rate_h] {
+            out.extend_from_slice(&n.to_le_bytes());
+            out.extend_from_slice(&d.to_le_bytes());
+        }
+        crate::transducer::address::put_key_count(&mut out, self.split.len());
+        for (who, (n, d)) in &self.split {
+            out.extend_from_slice(who);
+            out.extend_from_slice(&n.to_le_bytes());
+            out.extend_from_slice(&d.to_le_bytes());
+        }
+        out
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Tariff> {
+        let rate_s = (u64_at(b, p)?, u64_at(b, p)?);
+        let rate_h = (u64_at(b, p)?, u64_at(b, p)?);
+        let n = crate::transducer::address::take_key_count(b, p)?;
+        let split = (0..n).map(|_| Some((key32(b, p)?, (u64_at(b, p)?, u64_at(b, p)?)))).collect::<Option<Vec<_>>>()?;
+        Some(Tariff { rate_s, rate_h, split })
+    }
+
+    /// The tariff well formed: every denominator nonzero, the recipients
+    /// strictly ascending, the shares summing to exactly one.
+    pub fn holds(&self) -> Result<(), Untariffed> {
+        use num_rational::BigRational as Q;
+        use num_traits::{One, Zero};
+        let rates = [self.rate_s, self.rate_h];
+        let fractions = rates.iter().chain(self.split.iter().map(|(_, s)| s));
+        if fractions.into_iter().any(|(_, d)| *d == 0) {
+            return Err(Untariffed::ZeroDenominator);
+        }
+        if !self.split.windows(2).all(|w| matches!(w, [a, b] if a.0 < b.0)) {
+            return Err(Untariffed::Unordered);
+        }
+        let sum = self.split.iter().fold(Q::zero(), |s, (_, (n, d))| s + Q::new((*n).into(), (*d).into()));
+        match sum == Q::one() {
+            true => Ok(()),
+            false => Err(Untariffed::NotWhole),
+        }
+    }
+
+    /// THE CHARGE for a passage: on S `⌊rate_s · mass⌋`, on H `⌊rate_h ·
+    /// information⌋`, G and T never — the remainder never charged, never
+    /// rounded up against the traveller. `None` where a denominator is zero
+    /// or a lane passes its carrier.
+    pub fn charge(&self, offer: &Offer) -> Option<[u64; 4]> {
+        let floor = |(n, d): (u64, u64), units: u64| -> Option<u64> {
+            if d == 0 {
+                return None;
+            }
+            u64::try_from(u128::from(n).checked_mul(u128::from(units))? / u128::from(d)).ok()
+        };
+        Some([floor(self.rate_s, leaving(offer, 0)?)?, 0, 0, floor(self.rate_h, leaving(offer, 3)?)?])
+    }
+
+    /// THE PARTS of a `charge`: each recipient but the `keeper` its `⌊share ·
+    /// charge⌋` per lane, the keeper the rest — so the parts sum to the
+    /// charge exactly, no dust. In the split's order, the keeper's part last;
+    /// a recipient whose part is zero on every lane is left out. `None` where
+    /// a share's floors pass the charge (shares not summing to one).
+    pub fn parts(&self, keeper: &[u8; 32], charge: &[u64; 4]) -> Option<Vec<([u8; 32], [u64; 4])>> {
+        let mut rest = *charge;
+        let mut out = Vec::new();
+        for (who, (n, d)) in &self.split {
+            if who == keeper {
+                continue;
+            }
+            let mut part = [0u64; 4];
+            for ((p, c), r) in part.iter_mut().zip(charge).zip(rest.iter_mut()) {
+                if *d == 0 {
+                    return None;
+                }
+                *p = u64::try_from(u128::from(*n).checked_mul(u128::from(*c))? / u128::from(*d)).ok()?;
+                *r = r.checked_sub(*p)?;
+            }
+            if part.iter().any(|m| *m > 0) {
+                out.push((*who, part));
+            }
+        }
+        if rest.iter().any(|m| *m > 0) {
+            out.push((*keeper, rest));
+        }
+        Some(out)
+    }
+}
+
+/// WHAT A PASSAGE CARRIES OUT on `lane`: `Σ|out|` — mass on S, information
+/// on H. `None` where it passes its carrier or an out net runs backward.
+pub fn leaving(offer: &Offer, lane: usize) -> Option<u64> {
+    offer.out_nets.iter().try_fold(0u64, |s, (_, v)| s.checked_add(u64::try_from(v.get(lane)?.checked_neg()?).ok()?))
 }
 
 impl Mouth {
-    pub fn bytes(&self) -> Vec<u8> {
+    /// The flat-toll mouth's one writing (78.128), what a held mouth is
+    /// stored by; its tariff, where it has one, is stored beside it.
+    pub fn legacy_bytes(&self) -> Vec<u8> {
         let mut out = Vec::new();
         for k in [&self.from_tier, &self.to_tier, &self.keeper] {
             out.extend_from_slice(k);
@@ -202,6 +330,16 @@ impl Mouth {
         out
     }
 
+    /// The mouth's one writing: the flat writing, then its tariff where it
+    /// has one — so a flat mouth's id is what it was.
+    pub fn bytes(&self) -> Vec<u8> {
+        let mut out = self.legacy_bytes();
+        if let Some(t) = &self.tariff {
+            out.extend_from_slice(&t.bytes());
+        }
+        out
+    }
+
     pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<Mouth> {
         let (from_tier, to_tier, keeper) = (key32(b, p)?, key32(b, p)?, key32(b, p)?);
         let from_frame = crate::transducer::cga::Mv::from_bytes(b, p)?;
@@ -210,7 +348,7 @@ impl Mouth {
         for m in &mut toll {
             *m = u64_at(b, p)?;
         }
-        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)? })
+        Some(Mouth { from_tier, to_tier, keeper, from_frame, to_frame, toll, nonce: key32(b, p)?, tariff: None })
     }
 
     pub fn id(&self) -> [u8; 32] {
@@ -362,6 +500,9 @@ impl Handoff {
             Handoff::Expire { .. } => 3,
             Handoff::ConvertOut(_) => 5,
             Handoff::ConvertIn(_) => 6,
+            // 78.133 — a tariffed mouth is its own kind, so a flat mouth's
+            // writing reads as it did.
+            Handoff::Mouth(m) if m.tariff.is_some() => KIND_TARIFFED_MOUTH,
             Handoff::Mouth(_) => 7,
             Handoff::Close { .. } => 8,
             Handoff::Traverse { .. } => 9,
@@ -439,6 +580,7 @@ pub enum HandoffRequest {
 
 const KIND_READ: u8 = 4;
 const KIND_LOOPS: u8 = 10;
+const KIND_TARIFFED_MOUTH: u8 = 11;
 
 /// `[ACT_HANDOFF][10]`.
 pub fn encode_loops_read() -> Vec<u8> {
@@ -517,6 +659,11 @@ pub fn decode_handoff_request(b: &[u8]) -> Option<HandoffRequest> {
                 5 => Handoff::ConvertOut(Box::new(ConvertOut::take(b, &mut p)?)),
                 6 => Handoff::ConvertIn(Box::new(ConvertIn::take(b, &mut p)?)),
                 7 => Handoff::Mouth(Box::new(Mouth::take(b, &mut p)?)),
+                KIND_TARIFFED_MOUTH => {
+                    let mut m = Mouth::take(b, &mut p)?;
+                    m.tariff = Some(Tariff::take(b, &mut p)?);
+                    Handoff::Mouth(Box::new(m))
+                }
                 8 => Handoff::Close { id: id(b, &mut p)? },
                 9 => {
                     let offer = Box::new(Offer::take(b, &mut p)?);
@@ -570,6 +717,12 @@ pub enum HandoffRefusal {
     BadKeeper,
     /// 78.128 — the traversal's tiers are not in the mouth's two domains.
     NotTheMouth,
+    /// 78.133 — the tariff is not one, by why; or a tariffed mouth carries a
+    /// flat toll beside it.
+    Untariffed(Untariffed),
+    /// 78.133 — a share to a key that is neither the keeper nor one of its
+    /// progenitor lines.
+    NotALine,
 }
 
 /// THE COURT'S ANSWER.
@@ -631,6 +784,16 @@ fn refusal_bytes(r: &HandoffRefusal) -> [u8; 2] {
         HandoffRefusal::Degenerate => [18, 0],
         HandoffRefusal::BadKeeper => [19, 0],
         HandoffRefusal::NotTheMouth => [20, 0],
+        HandoffRefusal::Untariffed(u) => [
+            21,
+            match u {
+                Untariffed::ZeroDenominator => 0,
+                Untariffed::Unordered => 1,
+                Untariffed::NotWhole => 2,
+                Untariffed::Flat => 3,
+            },
+        ],
+        HandoffRefusal::NotALine => [22, 0],
     }
 }
 
@@ -669,6 +832,14 @@ fn refusal_of(code: u8, lane: u8) -> Option<HandoffRefusal> {
         18 => HandoffRefusal::Degenerate,
         19 => HandoffRefusal::BadKeeper,
         20 => HandoffRefusal::NotTheMouth,
+        21 => HandoffRefusal::Untariffed(match lane {
+            0 => Untariffed::ZeroDenominator,
+            1 => Untariffed::Unordered,
+            2 => Untariffed::NotWhole,
+            3 => Untariffed::Flat,
+            _ => return None,
+        }),
+        22 => HandoffRefusal::NotALine,
         _ => return None,
     })
 }

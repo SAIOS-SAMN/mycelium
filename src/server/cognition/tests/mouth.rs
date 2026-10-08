@@ -52,7 +52,7 @@ fn turn() -> Mv {
 }
 
 fn mouth(a: u8, b: u8, from_frame: Mv, to_frame: Mv, toll: [u64; 4]) -> Mouth {
-    Mouth { from_tier: vk(&reserve(a)), to_tier: vk(&reserve(b)), keeper: vk(&reserve(a)), from_frame, to_frame, toll, nonce: [a; 32] }
+    Mouth { from_tier: vk(&reserve(a)), to_tier: vk(&reserve(b)), keeper: vk(&reserve(a)), from_frame, to_frame, toll, nonce: [a; 32], tariff: None }
 }
 
 fn open(k: &mut Kernel, m: Mouth, a: u8, b: u8) -> [u8; 32] {

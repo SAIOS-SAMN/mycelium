@@ -44,6 +44,9 @@ pub(crate) struct Handoffs {
     pub(crate) mouths: Keyed<super::mouth::MouthHeld>,
     /// 78.128 — each traversal's mouth, by the handoff's id.
     pub(crate) through: Keyed<[u8; 32]>,
+    /// 78.133 — each tariffed traversal's toll, split and held to its
+    /// window's close, by the handoff's id.
+    pub(crate) tolls: Keyed<super::mouth::TollHeld>,
 }
 
 /// The escrow key a traversal's toll is held under.
@@ -102,6 +105,7 @@ impl Handoffs {
             && self.conversions.is_empty()
             && self.mouths.is_empty()
             && self.through.is_empty()
+            && self.tolls.is_empty()
         {
             return None;
         }
@@ -160,6 +164,20 @@ impl Handoffs {
         for (id, mouth) in self.through.scoped() {
             v.extend_from_slice(&id);
             v.extend_from_slice(mouth);
+        }
+        // 78.133 — the mouths' tariffs (beside their flat writing), then the
+        // tolls held, after the traversals.
+        let tariffed: Vec<(Vec<u8>, &crate::anastome::dialogue::handoff::Tariff)> =
+            self.mouths.scoped().filter_map(|(id, m)| Some((id, m.mouth.tariff.as_ref()?))).collect();
+        put_key_count(&mut v, tariffed.len());
+        for (id, t) in tariffed {
+            v.extend_from_slice(&id);
+            v.extend_from_slice(&t.bytes());
+        }
+        put_key_count(&mut v, self.tolls.len());
+        for (id, t) in self.tolls.scoped() {
+            v.extend_from_slice(&id);
+            t.put(&mut v);
         }
         Some(v)
     }
@@ -237,6 +255,19 @@ impl Handoffs {
             for _ in 0..take_key_count(b, p)? {
                 let k = id(b, p)?;
                 out.through.insert(k, id(b, p)?);
+            }
+        }
+        // 78.133 — the tariffs and the tolls held — absent from a leaf
+        // written before them.
+        if *p < b.len() {
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                let tariff = crate::anastome::dialogue::handoff::Tariff::take(b, p)?;
+                out.mouths.get_mut(&k)?.mouth.tariff = Some(tariff);
+            }
+            for _ in 0..take_key_count(b, p)? {
+                let k = id(b, p)?;
+                out.tolls.insert(k, super::mouth::TollHeld::take(b, p)?);
             }
         }
         Some(out)
@@ -329,8 +360,19 @@ impl Kernel {
         };
         // 78.128 — a traversal's toll is escrowed from the sending tier before
         // anything seals: the payer must hold it.
+        // 78.133 — a tariffed mouth charges the passage per unit: mass on S,
+        // information on H, floored; a flat mouth its flat toll.
         let toll = match &h.handoff {
-            Handoff::Traverse { mouth, .. } => self.handoffs.mouths.get(mouth).map(|m| m.mouth.toll),
+            Handoff::Traverse { mouth, offer } => match self.handoffs.mouths.get(mouth).map(|m| &m.mouth) {
+                Some(m) => match &m.tariff {
+                    Some(t) => match t.charge(offer) {
+                        Some(c) => Some(c),
+                        None => return refuse(R::Untariffed(crate::anastome::dialogue::handoff::Untariffed::ZeroDenominator)),
+                    },
+                    None => Some(m.toll),
+                },
+                None => None,
+            },
             _ => None,
         };
         if let (Some(toll), Handoff::Traverse { offer, .. }) = (toll, &h.handoff) {

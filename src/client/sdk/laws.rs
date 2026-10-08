@@ -180,18 +180,20 @@ impl super::Session {
     }
 
     /// 78.125 — A FOLD'S FINALITY at the court's head, by its receipt's
-    /// stamp, and — 78.129 — whether its tier stands bonded.
-    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<(crate::anastome::dialogue::challenge::Finality, bool)> {
-        use crate::anastome::dialogue::challenge::{decode_finality_reply, encode_finality_request};
+    /// stamp; — 78.129 — whether its tier stands bonded; — 78.133 — whether
+    /// a toll is held on it.
+    pub fn finality(&self, fold: crate::chronometry::Stamp) -> io::Result<crate::anastome::dialogue::challenge::FinalityReading> {
+        use crate::anastome::dialogue::challenge::{decode_finality_reading, encode_finality_request};
         let reply = self.speak(encode_finality_request(fold))?;
-        decode_finality_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))
+        decode_finality_reading(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the finality reply did not decode"))
     }
 
     /// 78.125 — A TIER'S LINE HEAD on the court: where its next fold's span
-    /// is replayed from, and the stamp of the fold that set it (none: the
-    /// zero head). Resync by it before folding; a head that disagrees with
-    /// the client's would be falsified on demand.
-    pub fn line_head(&self, tier: [u8; 32]) -> io::Result<([u8; 32], Option<crate::chronometry::Stamp>)> {
+    /// is replayed from, the stamp of the fold that set it (none: the zero
+    /// head), and — 78.133 — the μ held toward it in toll escrow. Resync by
+    /// it before folding; a head that disagrees with the client's would be
+    /// falsified on demand.
+    pub fn line_head(&self, tier: [u8; 32]) -> io::Result<crate::anastome::dialogue::challenge::LineHead> {
         use crate::anastome::dialogue::challenge::{decode_line_head_reply, encode_line_head_request};
         let reply = self.speak(encode_line_head_request(tier))?;
         decode_line_head_reply(&reply).ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "the line head reply did not decode"))

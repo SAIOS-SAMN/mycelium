@@ -36,7 +36,8 @@ pub(crate) struct MouthHeld {
 
 impl MouthHeld {
     pub(crate) fn put(&self, v: &mut Vec<u8>) {
-        v.extend_from_slice(&self.mouth.bytes());
+        // The flat writing: a tariff is stored beside it (`Handoffs::put`).
+        v.extend_from_slice(&self.mouth.legacy_bytes());
         match self.state {
             State::Offered { until } => {
                 v.push(0);
@@ -81,7 +82,143 @@ impl MouthHeld {
     }
 }
 
+/// 78.133 — A TOLL SPLIT AND HELD (the coordinator's rulings): a tariffed
+/// traversal's charge, divided at acceptance into its exact parts — each
+/// recipient's, the keeper's last — and held whole until the window `W` from
+/// the acceptance closes (paid out, every part together) or the traversal's
+/// OUT-side fold is reversed (back to the traveller, every part together).
+/// The traverse act's stamp and receipt are what each part's rows cite.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(crate) struct TollHeld {
+    pub(crate) parts: Vec<([u8; 32], [u64; 4])>,
+    pub(crate) until: u64,
+    pub(crate) traverse: Stamp,
+    pub(crate) receipt: [u8; 32],
+}
+
+impl TollHeld {
+    pub(crate) fn put(&self, v: &mut Vec<u8>) {
+        crate::transducer::address::put_key_count(v, self.parts.len());
+        for (who, mu) in &self.parts {
+            v.extend_from_slice(who);
+            for m in mu {
+                v.extend_from_slice(&m.to_le_bytes());
+            }
+        }
+        v.extend_from_slice(&self.until.to_le_bytes());
+        self.traverse.put_canonical(v);
+        v.extend_from_slice(&self.receipt);
+    }
+
+    pub(crate) fn take(b: &[u8], p: &mut usize) -> Option<TollHeld> {
+        let u64_at = |b: &[u8], p: &mut usize| -> Option<u64> {
+            let x = u64::from_le_bytes(b.get(*p..*p + 8)?.try_into().ok()?);
+            *p += 8;
+            Some(x)
+        };
+        let parts = (0..crate::transducer::address::take_key_count(b, p)?)
+            .map(|_| {
+                let who: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+                *p += 32;
+                let mut mu = [0u64; 4];
+                for m in &mut mu {
+                    *m = u64_at(b, p)?;
+                }
+                Some((who, mu))
+            })
+            .collect::<Option<Vec<_>>>()?;
+        let until = u64_at(b, p)?;
+        let traverse = Stamp::take_canonical(b, p)?;
+        let receipt: [u8; 32] = b.get(*p..*p + 32)?.try_into().ok()?;
+        *p += 32;
+        Some(TollHeld { parts, until, traverse, receipt })
+    }
+}
+
 impl Kernel {
+    /// 78.133 — A TARIFF'S RECIPIENTS: the keeper, and the tier keys its own
+    /// domain's genesis names (its progenitor lines) — never the traveller's
+    /// domain, never a stranger.
+    fn split_to_lines(&self, m: &Mouth, t: &crate::anastome::dialogue::handoff::Tariff) -> bool {
+        let lines = self.tier_domain.get(&m.keeper).and_then(|d| self.domains.get(d));
+        t.split.iter().all(|(who, _)| *who == m.keeper || lines.is_some_and(|tiers| tiers.contains(who)))
+    }
+
+    /// 78.133 — THE TOLLS WHOSE TRAVERSAL'S OUT SIDE a reversed fold consumed:
+    /// every part back to the traveller together. Read before the fold's
+    /// sides are opened again. Tolls refunded.
+    pub(crate) fn unwind_tolls(&mut self, void: &[Vec<u8>], anchor: crate::economy::Anchor) -> usize {
+        let hit: Vec<Vec<u8>> = self
+            .handoffs
+            .tolls
+            .scoped()
+            .map(|(k, _)| k)
+            .filter(|id| self.handoffs.held.get(id).and_then(|h| h.out.as_ref()).is_some_and(|f| void.contains(f)))
+            .collect();
+        for id in &hit {
+            let Ok(id32) = <[u8; 32]>::try_from(id.as_slice()) else { continue };
+            if self.treasury.refund_held(&toll_key(&id32), anchor).is_ok() {
+                self.handoffs.tolls.remove(id);
+            }
+        }
+        hit.len()
+    }
+
+    /// 78.133 — THE TOLLS WHOSE WINDOW CLOSED, paid out: `W` from the
+    /// acceptance passed, and the traversal's OUT-side fold — where one
+    /// consumed it and is still recorded — read final (a withdrawal reopening
+    /// it extends the hold). Every part together, its rows citing the
+    /// traverse act. Tolls released.
+    pub(crate) fn release_tolls(&mut self) -> usize {
+        let head = self.chain.head_height();
+        let due: Vec<(Vec<u8>, TollHeld)> = self
+            .handoffs
+            .tolls
+            .scoped()
+            .filter(|(id, t)| {
+                let out = self.handoffs.held.get(id).and_then(|h| h.out.clone());
+                let settled = match out {
+                    Some(f) if self.ledgers.records.contains(&f) => Stamp::from_key(&f)
+                        .is_some_and(|s| matches!(self.finality(&s), crate::anastome::dialogue::challenge::Finality::Final { .. })),
+                    _ => true,
+                };
+                head >= t.until && settled
+            })
+            .map(|(k, t)| (k, t.clone()))
+            .collect();
+        let mut paid = 0;
+        for (id, t) in due {
+            let Ok(id32) = <[u8; 32]>::try_from(id.as_slice()) else { continue };
+            if self.treasury.release_split(&toll_key(&id32), &t.parts, (t.traverse, t.receipt)).is_ok() {
+                self.handoffs.tolls.remove(&id);
+                paid += 1;
+            }
+        }
+        paid
+    }
+
+    /// 78.133 — the μ held in toll escrow toward `tier`, per lane: its parts
+    /// not yet released, so its receipts are not final before release.
+    /// `None` where the sum passes its carrier.
+    pub fn toll_held_for(&self, tier: &[u8; 32]) -> Option<[u64; 4]> {
+        let mut held = [0u64; 4];
+        for (_, t) in self.handoffs.tolls.scoped() {
+            for (_, mu) in t.parts.iter().filter(|(who, _)| who == tier) {
+                for (h, m) in held.iter_mut().zip(mu) {
+                    *h = h.checked_add(*m)?;
+                }
+            }
+        }
+        Some(held)
+    }
+
+    /// 78.133 — whether a toll is held on `fold`: it consumed the OUT side of
+    /// a traversal whose parts are not yet released.
+    pub fn fold_holds_toll(&self, fold: &Stamp) -> bool {
+        let key = fold.key();
+        self.handoffs.tolls.scoped().any(|(id, _)| self.handoffs.held.get(&id).and_then(|h| h.out.as_ref()) == Some(&key))
+    }
+
     /// 78.128 — WHETHER TWO DOMAINS ARE CONTIGUOUS — one physical universe,
     /// one shared chart — so a handoff between them needs no mouth. The hook
     /// a later act fills (two domain keys declaring it); none is, so none are.
@@ -112,11 +249,32 @@ impl Kernel {
         if self.treasury.held_of(&key).is_none() {
             return;
         }
-        let keeper = self.handoffs.mouths.get(&mouth).map(|m| m.mouth.keeper);
-        let _ = match (accepted, keeper) {
-            (true, Some(k)) => self.treasury.release_held(&key, k, anchor),
-            _ => self.treasury.refund_held(&key, anchor),
+        let Some(m) = self.handoffs.mouths.get(&mouth).map(|m| m.mouth.clone()) else {
+            let _ = self.treasury.refund_held(&key, anchor);
+            return;
         };
+        if !accepted {
+            let _ = self.treasury.refund_held(&key, anchor);
+            return;
+        }
+        // 78.133 — a TARIFFED toll is split at acceptance and HELD to the
+        // window's close; a flat toll (78.128) is the keeper's at once.
+        let Some(tariff) = &m.tariff else {
+            let _ = self.treasury.release_held(&key, m.keeper, anchor);
+            return;
+        };
+        let charge = self.treasury.held_of(&key).map(|h| h.mu);
+        let traverse = self.handoffs.offered_at.get(id).and_then(|k| Stamp::from_key(k)).and_then(|at| Some((at, self.chain.node(&at)?.chain_hash)));
+        match (charge.and_then(|c| tariff.parts(&m.keeper, &c)), traverse) {
+            (Some(parts), Some((at, receipt))) => {
+                let held = TollHeld { parts, until: window_end(anchor.0.h), traverse: at, receipt };
+                self.handoffs.tolls.insert(id, held);
+            }
+            // Parts that do not read are no toll: back to the traveller.
+            _ => {
+                let _ = self.treasury.refund_held(&key, anchor);
+            }
+        }
     }
 
     /// 78.128 — A MOUTH ACT: the pair offered (by the sending reserve), its
@@ -153,6 +311,19 @@ impl Kernel {
                 }
                 if !m.frames_hold() {
                     return refuse(R::Degenerate);
+                }
+                // 78.133 — a tariff well formed, no flat toll beside it, and
+                // its shares to the keeper and its progenitor lines only.
+                if let Some(t) = &m.tariff {
+                    if let Err(why) = t.holds() {
+                        return refuse(R::Untariffed(why));
+                    }
+                    if m.toll.iter().any(|x| *x > 0) {
+                        return refuse(R::Untariffed(crate::anastome::dialogue::handoff::Untariffed::Flat));
+                    }
+                    if !self.split_to_lines(m, t) {
+                        return refuse(R::NotALine);
+                    }
                 }
                 7
             }

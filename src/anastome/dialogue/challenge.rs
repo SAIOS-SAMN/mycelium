@@ -230,21 +230,33 @@ pub fn encode_line_head_request(tier: [u8; 32]) -> Vec<u8> {
     out
 }
 
-/// `[head 32][0]`, or `[head 32][1][stamp]`: the head, and the fold that set
-/// it where one did (none: the zero head, no fold recorded).
-pub fn encode_line_head_reply(head: &[u8; 32], at: Option<&Stamp>) -> Vec<u8> {
-    let mut out = head.to_vec();
-    match at {
+/// 78.133 — A TIER'S LINE HEAD AS READ: the head, the fold that set it where
+/// one did (none: the zero head, no fold recorded), and the μ HELD toward
+/// the tier in toll escrow per lane — receipts not final before release.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct LineHead {
+    pub head: [u8; 32],
+    pub at: Option<Stamp>,
+    pub held: [u64; 4],
+}
+
+/// `[head 32][0 | 1 stamp][held 4×u64]`.
+pub fn encode_line_head_reply(r: &LineHead) -> Vec<u8> {
+    let mut out = r.head.to_vec();
+    match &r.at {
         None => out.push(0),
         Some(s) => {
             out.push(1);
             s.put_canonical(&mut out);
         }
     }
+    for m in r.held {
+        out.extend_from_slice(&m.to_le_bytes());
+    }
     out
 }
 
-pub fn decode_line_head_reply(b: &[u8]) -> Option<([u8; 32], Option<Stamp>)> {
+pub fn decode_line_head_reply(b: &[u8]) -> Option<LineHead> {
     let head: [u8; 32] = b.get(..32)?.try_into().ok()?;
     let mut p = 33;
     let at = match *b.get(32)? {
@@ -252,7 +264,12 @@ pub fn decode_line_head_reply(b: &[u8]) -> Option<([u8; 32], Option<Stamp>)> {
         1 => Some(Stamp::take_canonical(b, &mut p)?),
         _ => return None,
     };
-    (p == b.len()).then_some((head, at))
+    let mut held = [0u64; 4];
+    for m in &mut held {
+        *m = u64::from_le_bytes(b.get(p..p + 8)?.try_into().ok()?);
+        p += 8;
+    }
+    (p == b.len()).then_some(LineHead { head, at, held })
 }
 
 /// AN OPEN ARBITRAGE, as served: the fold whose seal closed the cycle, the
@@ -552,6 +569,33 @@ pub fn decode_challenge_reply(b: &[u8]) -> Option<Challenged> {
         _ => return None,
     };
     (p == b.len()).then_some(c)
+}
+
+/// 78.133 — A FOLD'S FINALITY AS READ: the finality; whether its tier stands
+/// BONDED (78.129); whether a toll is HELD on it (it consumed a traversal's
+/// OUT side whose parts are not yet released).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct FinalityReading {
+    pub finality: Finality,
+    pub bonded: bool,
+    pub toll_held: bool,
+}
+
+/// `[finality][bonded u8][toll held u8]`.
+pub fn encode_finality_reading(r: &FinalityReading) -> Vec<u8> {
+    let mut out = encode_finality_reply(&r.finality, r.bonded);
+    out.push(u8::from(r.toll_held));
+    out
+}
+
+pub fn decode_finality_reading(b: &[u8]) -> Option<FinalityReading> {
+    let (toll_held, rest) = match b.split_last()? {
+        (0, rest) => (false, rest),
+        (1, rest) => (true, rest),
+        _ => return None,
+    };
+    let (finality, bonded) = decode_finality_reply(rest)?;
+    Some(FinalityReading { finality, bonded, toll_held })
 }
 
 /// A fold's finality and — 78.129 — whether its tier stands BONDED (a bond
