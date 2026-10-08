@@ -7,6 +7,8 @@
 //! designated: two court acts, each answered only once durable.
 //! `durable_drill check ADDR N` — every domain `0..N` read back with its
 //! reserve; the count lost printed, and a nonzero exit where any was.
+//! `durable_drill prefill ADDR D T` — the home grown first: `D` domains of
+//! `T` tiers, so the drill is measured on a court's size.
 
 use mycelium::anastome::dialogue::domain::{DomainGenesis, Founded, Reservation};
 use mycelium::sdk::{Kernel, Session};
@@ -46,6 +48,34 @@ fn act(addr: &str, i: u64) -> ExitCode {
     }
 }
 
+/// The home grown to a court's size before the drill: `domains` founded with
+/// `tiers` tier keys each (32 bytes a key), from a seed space no drill
+/// domain uses.
+fn prefill(addr: &str, domains: u64, tiers: u64) -> ExitCode {
+    let s = Session::open(addr, Kernel::from_voice([9; 32]));
+    for d in 0..domains {
+        let mut seed = [5u8; 32];
+        seed[..8].copy_from_slice(&d.to_le_bytes());
+        let domain = ed25519_dalek::SigningKey::from_bytes(&seed);
+        let mut keys: Vec<[u8; 32]> = (0..tiers)
+            .map(|t| {
+                let mut ts = seed;
+                ts[8..16].copy_from_slice(&t.to_le_bytes());
+                ts[31] = 6;
+                ed25519_dalek::SigningKey::from_bytes(&ts).verifying_key().to_bytes()
+            })
+            .collect();
+        keys.sort_unstable();
+        let genesis = DomainGenesis { domain: domain.verifying_key().to_bytes(), tiers: keys }.sign(&domain);
+        if !matches!(s.found_domain(&genesis), Ok(Founded::Sealed { .. } | Founded::AlreadyFounded)) {
+            println!("prefill: domain {d} not founded");
+            return ExitCode::FAILURE;
+        }
+    }
+    println!("prefilled {domains} domains of {tiers} tiers");
+    ExitCode::SUCCESS
+}
+
 fn check(addr: &str, n: u64) -> ExitCode {
     let s = Session::open(addr, Kernel::from_voice([9; 32]));
     let mut lost = 0u64;
@@ -70,8 +100,12 @@ fn main() -> ExitCode {
     match (args.get(1).map(String::as_str), args.get(2), number(3)) {
         (Some("act"), Some(addr), Some(i)) => act(addr, i),
         (Some("check"), Some(addr), Some(n)) => check(addr, n),
+        (Some("prefill"), Some(addr), Some(d)) => match number(4) {
+            Some(t) => prefill(addr, d, t),
+            None => ExitCode::FAILURE,
+        },
         _ => {
-            println!("usage: durable_drill act ADDR I | check ADDR N");
+            println!("usage: durable_drill act ADDR I | check ADDR N | prefill ADDR DOMAINS TIERS");
             ExitCode::FAILURE
         }
     }

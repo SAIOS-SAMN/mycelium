@@ -52,6 +52,10 @@ pub(crate) fn persist(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
 /// synced; `false` where that did not land — the act is then not answered,
 /// and its resend is answered with its original receipt once durable.
 pub(crate) fn durable(kernel: &Mutex<Kernel>, state_path: &str) -> bool {
+    // The drill's negative control: answered with nothing synced.
+    if cfg!(feature = "drill-undurable") {
+        return true;
+    }
     let due = kernel.lock().ok().is_some_and(|mut k| k.take_persist());
     if !due || persist(kernel, state_path) {
         return true;

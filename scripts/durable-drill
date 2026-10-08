@@ -11,12 +11,20 @@
 #   CARGO_TARGET_DIR=target/gate CARGO_BUILD_JOBS=4 nice -n 10 flock -o -w 3600 \
 #     /run/user/1000/xyl-heavy.lock cargo build --release --bin mycelium-server --example durable_drill
 #
-# Usage: scripts/durable-drill [N] [TARGET_DIR]     (default 20, target/gate)
+# NEGATIVE CONTROL: a build with `--features drill-undurable` answers court
+# acts without the pre-reply sync; the same drill on it must LOSE acts, so
+# a green drill means something. Exit 1 is a loss, exit 0 none.
+#
+# Usage: scripts/durable-drill [N] [TARGET_DIR] [PREFILL_DOMAINS PREFILL_TIERS]
+#   (default 20, target/gate, no prefill; 21 × 1000 grows the snapshot to
+#   about :7520's 0.68 MB)
 set -euo pipefail
 
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 N="${1:-20}"
 TARGET="${2:-$REPO/target/gate}"
+PREFILL_D="${3:-0}"
+PREFILL_T="${4:-0}"
 BIN="$TARGET/release/mycelium-server"
 CLIENT="$TARGET/release/examples/durable_drill"
 ADDR="127.0.0.1:7590"
@@ -40,6 +48,9 @@ start() {
 }
 
 start --mint-genesis
+if [ "$PREFILL_D" -gt 0 ]; then
+  "$CLIENT" prefill "$ADDR" "$PREFILL_D" "$PREFILL_T"
+fi
 total=0
 for i in $(seq 0 $((N - 1))); do
   t0=$(date +%s%N)
@@ -50,6 +61,8 @@ for i in $(seq 0 $((N - 1))); do
   kill -9 "$PID"; wait "$PID" 2>/dev/null || true
   start
 done
-"$CLIENT" check "$ADDR" "$N"
+status=0
+"$CLIENT" check "$ADDR" "$N" || status=$?
 bytes=$(stat -c %s "$HOME_DIR/ledger" 2>/dev/null || echo 0)
 say "rounds $N (two court acts each), snapshot $bytes bytes, $((total / N / 1000)) µs per round, $((total / N / 2000)) µs per act"
+exit "$status"

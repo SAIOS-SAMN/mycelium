@@ -40,6 +40,12 @@ tikv-jemalloc-ctl = { version = "0.6", features = ["stats"] }
 # (2026-09-30: hypha b restored 1 ruled sentence of 17 ratified).
 ctrlc = { version = "3.4", features = ["termination"] }
 
+[features]
+# 78.137 — THE DRILL'S NEGATIVE CONTROL, never for a node: a court act is
+# answered without its pre-reply sync, so `scripts/durable-drill` run on this
+# build must lose acts — the proof that the green drill can fail.
+drill-undurable = []
+
 [dev-dependencies]
 proptest = "1.4"
 tempfile = "3.27.0"

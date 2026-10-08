@@ -25260,9 +25260,14 @@ re-execution); the trigger is measured, never a declared size.
 Proved by `scripts/durable-drill` (with `examples/durable_drill.rs`): a hypha
 on a fresh home at :7590 put 20 rounds of two court acts — a domain founded,
 its reserve designated — and killed with SIGKILL after each answered round:
-40 acts, 0 lost, about 3.5 ms per act on a 3 KB snapshot. (A control run on
-an undurable build was not possible: the fleet's binary predates the domain
-acts.)
+40 acts, 0 lost, about 3.5 ms per act on a 3 KB snapshot. THE NEGATIVE
+CONTROL (the coordinator: a drill that has never failed proves little): a
+build with `--features drill-undurable` answers court acts without the
+pre-reply sync, and the same drill on it LOST 20 OF 20 rounds — so the green
+drill can fail, and does not. At a court's size (the home grown first to
+21 domains of 1000 tiers, a 676 KB snapshot, :7520's 0.68 MB): durable,
+0 lost at about 6.0 ms per act; the control, every round lost at about
+3.4 ms — the sync's cost at that size is about 2.5 ms per court act.
 
 **Owed, in order (the coordinator).** (B) CARRIED INLINE: only the reserve
 uplinks — the reserve's chained fold carries each line's fold and
