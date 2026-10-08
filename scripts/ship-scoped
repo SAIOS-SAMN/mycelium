@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# SHIP ON SCOPED GREEN (the operator, 2026-10-08: no full suites). One heavy-lock
+# hold: clippy on the crate, the scoped tests named as arguments, and — only if
+# both are clean — the release build, an in-place upgrade of hyphae a/b/c
+# (`--check` each home first; no recut, homes kept, never --mint-genesis) and a
+# restart of the voices. Usage: scripts/ship-scoped <test filter>...
+set -u
+cd "$(dirname "$0")/.." || exit 1
+LOG="${SHIP_LOG:-/tmp/ship-scoped.log}"
+export CARGO_BUILD_JOBS=4 RUST_TEST_THREADS=4
+inner() {
+  echo "head $(git log --oneline -1)"
+  if CARGO_TARGET_DIR=target/gate cargo clippy --release --lib --bins --tests 2>&1 | grep -E "^error" ; then
+    echo "SHIP STOPPED: clippy"; return 1
+  fi
+  CARGO_TARGET_DIR=target/gate cargo test --release --lib -- "$@" > "$LOG" 2>&1
+  grep -E "^test result" "$LOG"
+  if grep -qE "FAILED|panicked|^error" "$LOG"; then
+    grep -E "FAILED|panicked" "$LOG" | head -5; echo "SHIP STOPPED: tests"; return 1
+  fi
+  cargo build --release --bin mycelium-server --bin mycelium-client 2>&1 | grep -E "^error|Finished"
+  for h in a b c; do
+    systemctl --user stop "mycelium-server@$h"
+    echo "$h $(timeout 300 target/release/mycelium-server --home "var/$h" --check 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | tail -1)"
+  done
+  systemctl --user start mycelium-server@a mycelium-server@b mycelium-server@c
+  systemctl --user restart mycelium-client@1 mycelium-client@2 mycelium-client@3 mycelium-client@4 mycelium-client@5
+  echo "SHIPPED $(git log --oneline -1 | cut -d' ' -f1) at $(date +%H:%M:%S)"
+}
+export -f inner
+export LOG
+nice -n 10 flock -o -w 7200 /run/user/1000/xyl-heavy.lock bash -c 'inner "$@"' _ "$@"
