@@ -16,7 +16,8 @@ use std::net::TcpStream;
 /// own mail spends nothing — so a READ-MAIL is served off the relay's own
 /// lock (no kernel), once per window of the reader's mail
 /// (`SharedRelay::exempt_read`). `false` where the frame is no read, or the
-/// read is not exempt: the caller defers it as before. Posts keep the rule.
+/// read is not exempt: the caller defers it as before. A task read, a
+/// wallet read and a seat post are served here too (2026-10-09).
 pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -> bool {
     // A TASK READ takes the registry's lock and never the kernel's, so a
     // full pool waiting on cognition has no reason to defer it: a seated
@@ -24,6 +25,22 @@ pub(crate) fn serve_exempt(stream: &mut TcpStream, frame: &Frame, door: &Door) -
     // every hypha and no call was made. Served here, as observe is.
     if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_TASK) {
         return crate::door::serve_control(stream, frame, door);
+    }
+    // A WALLET READ spends nothing and moves nothing (78.93 B1), and a
+    // house reconciles its reserve by it; deferred, the ancients' banks were
+    // never credited and no ledger could be read before the recut
+    // (2026-10-09). Served here, waiting its turn on the kernel (the court
+    // loop and the intake let waiters in, `held::yield_to_waiters`).
+    if mycelium::anastome::dialogue::act_tag(&frame.body) == Some(mycelium::anastome::dialogue::ACT_WALLET) {
+        crate::judge::wallet::judge(stream, frame, door);
+        return true;
+    }
+    // A SEAT POST (TAKE, CALL) is a mind's one act at its seat: deferred
+    // after every restart, minds read their percepts and never held their
+    // seats again (2026-10-09). Served here the same way, in its turn.
+    if let Some(Ok(SeatRequest::Post(_))) = decode_seat_request(&frame.body) {
+        judge(stream, frame, door);
+        return true;
     }
     let Some(Ok(SeatRequest::ReadMail(r))) = decode_seat_request(&frame.body) else { return false };
     let Some(mail) = door.seat_relay.exempt_read(&r) else { return false };

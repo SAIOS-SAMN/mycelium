@@ -581,6 +581,11 @@ pub(crate) fn list_task(
             true => mycelium::cognition::prepare_intake(&chain, &frame),
             false => Vec::new(),
         };
+        // THE INTAKE LETS THE QUEUE IN, as the court loop does: it took the
+        // kernel once per listing for minutes after every restart and headed
+        // the lock on all three hyphae (2026-10-09), deferring seats and
+        // wallets behind it.
+        crate::held::yield_to_waiters();
         let mut k = match crate::held::held!(kernel) {
             Ok(g) => g,
             Err(_) => continue,
