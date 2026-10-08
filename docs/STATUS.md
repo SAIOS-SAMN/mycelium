@@ -42,6 +42,18 @@ where mycelium stands without the session that wrote it.*
    data/arc-agi-2/training is registered.
 5. Post its origin v2 (Torus, periods in geometrized Mpc, Concordance 1.8).
 
+## In flight (2026-10-08 ~17:00)
+- 78.143 slice 1 (CREATE + sized outputs, then SELECT/COUNT/COMPARE): agent
+  worktree from f24afb0f.
+- 78.145 THE SEAT SURFACE (ACT_SEAT 0x53: SEATS / TAKE / TAKEN / PERCEPT /
+  CALL / OUTCOME / READ-LISTING / READ-MAIL; ARG tags 0 Q, 1 Key, 2 Count,
+  3 Flag, 4 Mv, 5 BigQ; house = sitting reserve signs, mind signs with its own
+  key; volatile bounded mail): wire sent to xylarium, netstratum and the DAG
+  engine, who build their house relays against it; agent worktree from
+  cfa9c6fd building codec + court relay + `sdk::seat` + the client seat arm.
+- On track/ancients, unshipped: ffba096b `may_solve`, cfa9c6fd the voice-stop
+  genome save. They ship with 78.143 slice 1.
+
 ## Owed by mycelium, in order (operator priority: traffic, then minds in games)
 1. Netstratum online (above) — confirm its first JUDGED solve.
 2. THE SEAT INTERFACE: a game kernel's percepts → the Entity's sensorium
