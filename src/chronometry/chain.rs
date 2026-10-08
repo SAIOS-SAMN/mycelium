@@ -388,6 +388,37 @@ impl ReceiptChain {
         reached
     }
 
+    /// 78.147 — WHERE A SIGNER'S LINE STANDS IN THIS LEDGER, as the next
+    /// receipt of it must name its predecessor: the node at the line's top,
+    /// or the root its signer's fold archived the line to where that root
+    /// stands past every node held and its height reads (an adopted root,
+    /// `adopt_root`). `None` where neither is held.
+    pub fn line_tip(&self, vk: &[u8; 32]) -> Option<Parent> {
+        let head = self.line_head(vk).map(|r| Parent { at: r.stamp, hash: r.chain_hash });
+        let root = self.peer_roots.get(vk).copied().filter(|r| self.height_of(r).is_some());
+        match (head, root) {
+            (Some(h), Some(r)) if r.at.place() > h.at.place() => Some(r),
+            (Some(h), _) => Some(h),
+            (None, r) => r,
+        }
+    }
+
+    /// 78.147 — A PEER'S FOLD ROOT ADOPTED, its two signatures verified by
+    /// the caller (`Kernel::adopt_root`): the signer's line stands on it here
+    /// as the signer's own line stands on it — the next receipt names it as
+    /// its predecessor and its height reads off its stamp — and nothing below
+    /// it is asked again. `false` for this chain's own key, or where the line
+    /// already stands at or past the root.
+    pub fn adopt_root(&mut self, root: Parent) -> bool {
+        let vk = root.at.vk;
+        if vk == self.vk || self.line_tip(&vk).is_some_and(|t| t.at.place() >= root.at.place()) {
+            return false;
+        }
+        self.peer_roots.insert(vk, root);
+        self.proved.insert(root.at.key(), root.hash);
+        true
+    }
+
     /// The stamps of this chain's own line, in line order.
     fn own_stamps(&self) -> Vec<Stamp> {
         let vk = self.vk;

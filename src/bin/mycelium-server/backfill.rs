@@ -11,6 +11,7 @@
 use crate::exchange::Mesh;
 use mycelium::anastome::dialogue;
 use mycelium::chronometry::{KStepReceipt, Place};
+use mycelium::server::backfill::Ask;
 
 /// THE PAGE SOURCE OVER THE WIRE: a page of `who`'s receipts strictly
 /// after `after` up to `upto`, asked of the signer that owns the chain.
@@ -31,8 +32,8 @@ use mycelium::chronometry::{KStepReceipt, Place};
 pub(crate) fn fetch<'a>(
     mesh: &'a Mesh,
     dest: &'a str,
-) -> impl FnMut(&[u8; 32], Option<Place>, Place) -> Option<Vec<KStepReceipt>> + 'a {
-    move |who: &[u8; 32], after: Option<Place>, upto: Place| {
+) -> impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<dialogue::ReceiptsAnswer> + 'a {
+    move |who: &[u8; 32], after: Option<Place>, upto: Place, ask: Ask| {
         let at = match mesh.addrs.lock() {
             Ok(a) => a.get(who).cloned(),
             Err(_) => None,
@@ -41,12 +42,36 @@ pub(crate) fn fetch<'a>(
             Some(a) => a.as_str(),
             None => dest,
         };
-        let req = dialogue::encode_receipts_request(&mesh.vk, who, after, upto);
-        page_of(
-            crate::transport::tell_peer_measured(mesh, to_ask, req).map(|(reply, _)| reply),
-            mycelium::observe::CatchupPath::Backfill,
-        )
+        // 78.147: a catch-up, answered below the signer's fold root with the
+        // root; an era replay, the one ask the cold archive answers.
+        let req = match ask {
+            Ask::CatchUp => dialogue::encode_receipts_request(&mesh.vk, who, after, upto),
+            Ask::Replay => dialogue::encode_replay_request(&mesh.vk, who, after, upto),
+        };
+        answer_of(crate::transport::tell_peer_measured(mesh, to_ask, req).map(|(reply, _)| reply))
     }
+}
+
+/// ONE BACK-FILL ANSWER READ, and counted by what came back, as `page_of`
+/// counts a page: a root answer (78.147) counts as a page answered.
+fn answer_of(reply: Option<Vec<u8>>) -> Option<dialogue::ReceiptsAnswer> {
+    use mycelium::observe::{note_catchup, CatchupOutcome, CatchupPath};
+    let path = CatchupPath::Backfill;
+    let Some(reply) = reply else {
+        note_catchup(path, CatchupOutcome::Unanswered);
+        return None;
+    };
+    if crate::transport::is_deferred(&reply) {
+        note_catchup(path, CatchupOutcome::Deferred);
+        return None;
+    }
+    let Some(answer) = dialogue::decode_receipts_answer(&reply) else {
+        note_catchup(path, CatchupOutcome::Undecoded);
+        return None;
+    };
+    let empty = matches!(&answer, dialogue::ReceiptsAnswer::Page(p) if p.is_empty());
+    note_catchup(path, if empty { CatchupOutcome::Empty } else { CatchupOutcome::Page });
+    Some(answer)
 }
 
 /// ONE CATCH-UP PAGE READ, and counted by what came back (Phase 1): no

@@ -131,8 +131,11 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
         say(s, dialogue::FoldWitness::Unmeasured { vk: me });
         return;
     };
+    // 78.147: the era is held with its root's proof — the home's signed
+    // position verified above and this witness's own — so this court, the
+    // root's second holder, answers a catch-up below it with it.
     if let Ok(mut k) = door.kernel.lock() {
-        k.hold_era(mycelium::chronometry::Era {
+        k.hold_era_proved(mycelium::chronometry::Era {
             root: p.root,
             signer: home,
             witness: me,
@@ -145,7 +148,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             count: receipts.len() as u64,
             at: None,
             receipts,
-        });
+        }, &p.section, &section);
     }
     eprintln!(
         "  court fold witnessed {:02x}{:02x}… co-signed {:02x}{:02x}…",

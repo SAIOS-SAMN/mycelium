@@ -43,6 +43,7 @@ impl Kernel {
             pending,
             chain,
             archive,
+            root_proofs,
             fold_pending: _,
             court_head: _,
             retire_gen: _,
@@ -229,6 +230,8 @@ impl Kernel {
         c.count("pending", pending.len());
         chain.census(&mut c);
         c.count("archive", archive.len());
+        // 78.147 — the fold roots held with their two signatures, by signer.
+        c.count("root_proofs", root_proofs.len());
         c.count("pending_parents", pending_parents.len());
         c.count("admitted_at", admitted_at.len());
         c.count("held_at", held_at.len());

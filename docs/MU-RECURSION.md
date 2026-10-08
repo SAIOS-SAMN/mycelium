@@ -25731,6 +25731,51 @@ holds and its outcome returns; a forged read is refused; twenty ~250 KB
 percepts never pass the bound, the oldest dropped and counted, and one read
 carries the whole box within the frame budget.
 
+### 78.147 Catch-up from a fold root (2026-10-08, the coordinator, on the fleet-wide replication stall)
+
+**Measured** (a/b/c since the 17:50 restart): every court admitted 0 of
+every peer's receipts; catch-up from an ancient held head paged the cold
+archive on every page (hypha c served 66 341 pages, all cold, 162 491 eras,
+up to 88 for one page, 13 007 answers unwritten) and stopped on citations
+past the held head.
+
+**Ruled.** A fold is final on two signatures (47.3), so to anyone catching
+up the line below a root IS the root.
+
+1. **The proof is kept.** The home keeps its root with its own signed
+   position and the witness's (`commit_fold_proved`); the witness keeps the
+   same with the home's position it verified (`hold_era_proved`). One per
+   signer, the latest (`Kernel::root_proofs`, persisted as `LEAF_ROOTS`, a
+   home without it reads as before).
+2. **The serving door** (`serve_receipts`): a catch-up opening below the
+   signer's root is answered with the root and its proof (`RootProof`,
+   reply `[u32::MAX][signer][root][home section][witness section]`), never
+   with cold pages; one past it with the hot line. The cold archive answers
+   only an ERA REPLAY — the request's trailing tag `1`
+   (`encode_replay_request`): a citation proved by its era, the ledger
+   reader. A catch-up below a root this court holds no proof of is
+   answered off the hot line alone and counted (`unproved root`).
+3. **The asker adopts** (`Kernel::adopt_root`): the two signatures verified
+   exactly as the fold's were — the home's at this node's origin, the
+   witness's under another key, both over the root's hash — then the
+   signer's line stands on the root (`ReceiptChain::line_tip`, which
+   admission and `known_head` read): its next receipt names the root as its
+   predecessor and admits hot, its height reading off the root's stamp, and
+   nothing below the root is asked again. What was held below it is shed.
+4. **A citation at or below a held root** is proved by one era replay
+   walked to the root (`prove_folded`), asked before the hole is read as
+   chased — the adopted root is what puts it inside an era.
+
+Counted: `root_adopted`, `root_refused` per signer; `served root`,
+`replays`, `unproved root` on the serving reading. Proved
+(`cognition::tests::catchup`): a court behind a fold adopts the root and
+cites the head, one catch-up below the root and no replay asked; the door
+answers below its root with the root (and it rides the wire whole), from it
+hot, a replay from the archive; forged, other-origin, other-root and
+self-witnessed proofs refused; a citation into a held era proved by replay,
+the line never asked below the root; cross-citing lines both advance from
+their roots in one hearing each.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,

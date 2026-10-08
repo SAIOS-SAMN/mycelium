@@ -610,8 +610,12 @@ impl Exchange {
                         // lib's; the wire is `backfill::fetch`.
                         // Each page spends one stroke; a stroke is taken
                         // again only while the lag the chase closes shrinks.
+                        // 78.147: a fold root answered for a catch-up is
+                        // verified at this node's origin.
+                        let origin = mesh.origin.lock().ok().and_then(|o| *o);
                         let admitted = mycelium::server::backfill::hear(
                             &kernel,
+                            origin,
                             || admit_peer_receipt(&kernel, &mesh, &reply),
                             || kernel.lock().ok().map(|mut k| k.stroke()),
                             crate::backfill::fetch(&mesh, &d),

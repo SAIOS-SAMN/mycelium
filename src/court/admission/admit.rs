@@ -227,16 +227,18 @@ fn admit_chain(r: &KStepReceipt, ledger: &ReceiptChain) -> Admitted {
     // check, in 47.2's own order: a gapped frame's height cannot re-derive
     // here yet — what would make it re-derive is exactly what the back-fill
     // fetches.
-    match (ledger.line_head(&vk), &r.prev) {
+    // 78.147: the line's tip is its top node, or the fold root this ledger
+    // adopted for the signer where that stands past every node held.
+    match (ledger.line_tip(&vk), &r.prev) {
         (None, Some(prev)) => {
             // First sighting of a signer, mid-line: back-fill from its
             // genesis up to the predecessor.
             return Admitted::Gap { vk, from: None, to: prev.at.place() };
         }
-        (Some(head), Some(prev)) if prev.at.place() > head.stamp.place() => {
-            return Admitted::Gap { vk, from: Some(head.stamp.place()), to: prev.at.place() };
+        (Some(head), Some(prev)) if prev.at.place() > head.at.place() => {
+            return Admitted::Gap { vk, from: Some(head.at.place()), to: prev.at.place() };
         }
-        (Some(head), _) if r.prev != Some(Parent { at: head.stamp, hash: head.chain_hash }) => {
+        (Some(head), _) if r.prev != Some(head) => {
             // At or below the head. The node held at that place tells a
             // duplicate from an equivocation; nothing held there is stale
             // TO US.
