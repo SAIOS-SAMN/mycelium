@@ -107,7 +107,8 @@ impl TShelf {
             if let Some(n) = h.acts.checked_add(1) {
                 h.acts = n;
             }
-            if let Some(p) = point {
+            // The zero point is a speaker saying it reads points, not a time.
+            if let Some(p) = point.filter(|p| *p != TPoint::default()) {
                 if p.advances(h.heard.as_ref()) {
                     h.heard = Some(p);
                 }

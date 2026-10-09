@@ -23,6 +23,35 @@ pub(crate) fn arm_deadline(s: &TcpStream) {
 /// every act it had left to perform. An act that cannot be framed is
 /// refused, said once, and the connection closes; the caller reads that as
 /// silence, which it already counts (rule 11).
+/// The connections whose last frame carried a point, by the speaker's
+/// address — read by the thread that answers, which is not the thread that
+/// read (the reflex pool hands the stream on).
+static POINTED: std::sync::Mutex<Vec<std::net::SocketAddr>> = std::sync::Mutex::new(Vec::new());
+
+fn note_pointed(s: &TcpStream, pointed: bool) {
+    let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return };
+    held.retain(|a| *a != at);
+    if pointed {
+        // A connection read and never answered leaves its entry: the book
+        // keeps at most the reflex pool's worth of speakers waiting at once
+        // (a full reserve of polls), the oldest let go first.
+        let Ok(bound) = usize::try_from(mycelium::physics::reserve_max()) else { return };
+        while !held.is_empty() && held.len() >= bound {
+            held.remove(0);
+        }
+        held.push(at);
+    }
+}
+
+/// Whether this connection's speaker carried a point, its entry let go: one
+/// answer per frame read.
+fn spoke_pointed(s: &TcpStream) -> bool {
+    let (Ok(at), Ok(mut held)) = (s.peer_addr(), POINTED.lock()) else { return false };
+    let was = held.contains(&at);
+    held.retain(|a| *a != at);
+    was
+}
+
 pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
     let _ = answer_written(s, frame);
 }
@@ -34,8 +63,13 @@ pub(crate) fn answer(s: &mut TcpStream, frame: Frame) {
 /// after the asker closed can still land in the socket's buffer and read as
 /// written, so `unwritten` counts the misses the wire refused, not all.
 pub(crate) fn answer_written(s: &mut TcpStream, frame: Frame) -> bool {
-    // 78.152 TU-7: every reply carries this door's final point.
-    match frame.encode_at(crate::tshelf::final_point().as_ref()) {
+    // 78.152 TU-7: a reply carries this door's final point where the speaker
+    // carried one (`note_pointed`); otherwise it is the frame it always was.
+    let point = match spoke_pointed(s) {
+        true => crate::tshelf::final_point(),
+        false => None,
+    };
+    match frame.encode_at(point.as_ref()) {
         Some(bytes) => s.write_all(&bytes).is_ok(),
         None => {
             eprintln!(
@@ -72,6 +106,12 @@ pub(crate) fn read_frame(s: &mut TcpStream) -> Option<Frame> {
     // 78.152 TU-7: the point the speaker carried is heard at the door as the
     // frame is read, beside the published reading and outside the kernel.
     let (frame, point, _) = Frame::decode_at(&buf)?;
+    // A SPEAKER THAT CARRIED A POINT IS ANSWERED WITH ONE; one that carried
+    // none is answered as it spoke. A kernel still on a mycelium before 78.152
+    // refuses a pointed frame whole, so the door's point rides only to a
+    // speaker that showed it reads one (2026-10-09: the kernels re-vendor on
+    // their own time, and the hyphae must not cut them off meanwhile).
+    note_pointed(s, point.is_some());
     crate::tshelf::heard_at_door(point);
     Some(frame)
 }

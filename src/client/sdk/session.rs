@@ -638,8 +638,16 @@ impl Session {
         // A body past the wire's one budget is refused here, by name, before
         // a byte is sent (78.125): a large publication is streamed in parts.
         let len = frame.body.len();
-        // 78.152 TU-7: every act carries the last final point this session read.
-        let bytes = frame.encode_at(self.final_point.get().as_ref()).ok_or_else(|| {
+        // 78.152 TU-7: every act carries the last final point this session
+        // read — and before it has read one, the zero point, which says only
+        // "this speaker reads points": the door answers a pointed speaker with
+        // its own point and an unpointed one (a kernel before 78.152) as it
+        // always did, so a session that never pointed would never learn one.
+        let carried = match self.final_point.get() {
+            Some(p) => p,
+            None => crate::chronometry::tuniversal::TPoint::default(),
+        };
+        let bytes = frame.encode_at(Some(&carried)).ok_or_else(|| {
             io::Error::new(io::ErrorKind::InvalidData, format!("act body {len} bytes is over the wire budget of {} bytes", crate::network::wire::BODY_BUDGET))
         })?;
         // A SEALING ACT IS NEVER SENT TWICE (78.125, the coordinator's
