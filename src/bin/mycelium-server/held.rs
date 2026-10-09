@@ -47,19 +47,14 @@ pub(crate) fn holding() -> Option<(&'static str, u64)> {
 /// observer's questions says which step it stands in (hypha a, 2026-10-09:
 /// the court loop held 20+ minutes, the site alone could not say whether in
 /// the stroke or in the publish).
-static STEP: Mutex<&'static str> = Mutex::new("");
-
+/// One marker for the server and the library (`observe::step`), so the
+/// court stroke names its own steps inside the bin's.
 pub(crate) fn step(name: &'static str) {
-    if let Ok(mut s) = STEP.lock() {
-        *s = name;
-    }
+    mycelium::observe::step(name);
 }
 
 pub(crate) fn stepping() -> &'static str {
-    match STEP.lock() {
-        Ok(s) => *s,
-        Err(_) => "",
-    }
+    mycelium::observe::stepping()
 }
 
 /// Threads blocked on the kernel through `held!` right now, and how many

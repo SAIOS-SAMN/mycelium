@@ -183,9 +183,11 @@ impl Kernel {
         // PHY1: what the contacts this court perceived did, on any thread,
         // booked on its one reserve's physics — order built where they
         // condensed, pressure where they were refused.
+        crate::observe::step("court stroke: contacts");
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
         let mut budget = self.physics.stroke();
         let mut keys: Vec<Vec<u8>> = Vec::new();
+        crate::observe::step("court stroke: docket cursor");
         let from = self.open_cursor.clone();
         // index: budgeted keyed cursor over the open docket — a circuit
         // (45.7, S13.3): it continues past the last key from the first, so
@@ -228,9 +230,11 @@ impl Kernel {
             // history grew. It is proposed at the orbit's close, by what
             // holding the hot ledger costs (`Kernel::orbit`).
             if n / aperture != before / aperture {
+                crate::observe::step("court stroke: phase");
                 let _ = self.read_phase();
             }
         }
+        crate::observe::step("court stroke: docket replay");
         for addr in keys {
             // R1 (45.7): the circuit rules what is not yet ruled. A listing on
             // the ruled cover or in the cavity is passed over — its standing
@@ -276,8 +280,11 @@ impl Kernel {
             // against, which is what makes a glue a Mayer-Vietoris step.
             self.rule_own(&addr, &mut budget);
         }
+        crate::observe::step("court stroke: lapse silent");
         self.lapse_silent();
+        crate::observe::step("court stroke: relocate t-exhausted");
         self.relocate_t_exhausted();
+        crate::observe::step("court stroke: fills");
         self.stroke_fills(&mut budget);
     }
 

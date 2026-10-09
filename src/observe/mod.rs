@@ -35,3 +35,25 @@ pub use learning::*;
 pub use reading::*;
 pub use senses::*;
 pub use store::*;
+
+/// THE STEP A LONG HOLD STANDS IN, named by the code that takes it (the
+/// court stroke's own steps): read by the server's observer door when one
+/// hold of the kernel stands across two of its questions (2026-10-09:
+/// hypha a's court stroke held the kernel 20+ minutes in one pass, and the
+/// site alone could not say where).
+static STEP: std::sync::Mutex<&'static str> = std::sync::Mutex::new("");
+
+/// Name the step now entered.
+pub fn step(name: &'static str) {
+    if let Ok(mut s) = STEP.lock() {
+        *s = name;
+    }
+}
+
+/// The step last entered.
+pub fn stepping() -> &'static str {
+    match STEP.lock() {
+        Ok(s) => *s,
+        Err(_) => "",
+    }
+}
