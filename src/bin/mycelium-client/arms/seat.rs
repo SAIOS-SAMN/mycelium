@@ -345,12 +345,13 @@ impl SeatArm {
                     eprintln!("[{tag}] seat percept {} at {:?}: {}", p.seq, p.local_time, digest(&p.records));
                     let reading = entity.perceive_seat(&p);
                     eprintln!("[{tag}] seat perceived {reading}");
-                    // 78.146 — a task before the seat is answered (once, after
-                    // the box is read); a percept with none is a beat.
+                    // 78.146 — every percept is a beat; a task before the seat
+                    // is answered as well (once, after the box is read). A
+                    // house that cites its standing task on every percept
+                    // left the mind no beat at all, so it made no call of its
+                    // own (barren-realms, 2026-10-09).
                     let before = tasks_before(&p);
-                    if before.is_empty() {
-                        *beats += 1;
-                    }
+                    *beats += 1;
                     for id in before {
                         if !tasks.contains(&id) {
                             tasks.push(id);
@@ -442,6 +443,13 @@ impl SeatArm {
         let decision = entity.with_seat_mind(self.at, |m| m.decide());
         eprintln!("[{tag}] seat beat {decision}");
         let Decision::Call(choice) = decision else { return };
+        // A SOLVE ANSWERS ITS TASK, never a beat: fn 1 is posted by
+        // `solve_before` with the task's own tape, so a beat that would call
+        // it again with an older solve's arguments makes no call.
+        if choice.fn_id == FN_SOLVE {
+            eprintln!("[{tag}] seat beat makes no call: fn {FN_SOLVE} answers a task, never a beat");
+            return;
+        }
         // THE STANDING CALL: the same function with the same arguments, its
         // last outcome applied, is not posted again — the setting stands.
         let mut encoded = Vec::new();
