@@ -22,6 +22,9 @@ set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"
 ROOT="${1:-$REPO/var}"
 VOICES=(1 2 3 4 5)
+# The seat minds' homes (transient units: barren's s1, xylarium's x0–x3,
+# netstratum's n1–n4): their genomes carry the old court's stamps too.
+SEAT_HOMES=(s1 x0 x1 x2 x3 n1 n2 n3 n4)
 HYPHAE=(a b c)
 MINTER="${HYPHAE[0]}"
 BIN="$REPO/target/release/mycelium-server"
@@ -64,7 +67,7 @@ for h in "${HYPHAE[@]}"; do
         "$ROOT/$h/corpora/cursor" "$ROOT/$h/corpora/cursor.tmp" \
         "$ROOT/$h/keeper" "$ROOT/$h/keeper.tmp"
 done
-for v in "${VOICES[@]}"; do
+for v in "${VOICES[@]}" "${SEAT_HOMES[@]}"; do
   rm -f "$ROOT/$v/genome" "$ROOT/$v/genome.tmp"
 done
 
