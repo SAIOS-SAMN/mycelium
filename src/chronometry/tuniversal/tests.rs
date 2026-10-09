@@ -211,3 +211,33 @@ fn reset_branch_and_superpose_cite_the_point() {
     assert_eq!(s.merged_by(TPoint { h: 5, ..p }, [ops::citation(&a), ops::citation(&b)]), None);
     assert_eq!(p.unpack().hh, 2);
 }
+
+/// A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): with
+/// four keepers a point needs three — its own keeper and two others citing
+/// it. One citer, enough at three keepers, finalises nothing at four.
+#[test]
+fn with_four_keepers_a_point_needs_three() {
+    let keys = [key(1), key(2), key(3), key(4)];
+    let mut ks: Vec<Keepers> = keys.iter().map(|k| Keepers::new(ORIGIN, vk(k))).collect();
+    let hear = |ks: &mut Vec<Keepers>, to: usize, from: usize| {
+        let ring = ks[from].own_ring();
+        ks[to].admit(vk(&keys[from]), ring)
+    };
+    // c and d read before hearing a: their readings cite nothing of a.
+    assert!(ks[2].read_own(&keys[2], tick(5, [1, 0, 0, 0], 1)).expect("writes"));
+    assert!(ks[3].read_own(&keys[3], tick(6, [0, 1, 0, 0], 1)).expect("writes"));
+    assert!(ks[0].read_own(&keys[0], tick(10, [4, 0, 0, 0], 1)).expect("writes"));
+    assert_eq!(hear(&mut ks, 0, 2), Ok(Admitted::Anchored));
+    assert_eq!(hear(&mut ks, 0, 3), Ok(Admitted::Anchored));
+    // b hears a and cites it.
+    assert_eq!(hear(&mut ks, 1, 0), Ok(Admitted::Anchored));
+    assert!(ks[1].read_own(&keys[1], tick(12, [0, 5, 0, 0], 3)).expect("writes"));
+    assert_eq!(hear(&mut ks, 0, 1), Ok(Admitted::Anchored));
+    assert_eq!(ks[0].final_of(&vk(&keys[0])), None, "a and b are two of four: no majority");
+    // c hears a and cites it: a, b, c are three of four.
+    assert_eq!(hear(&mut ks, 2, 0), Ok(Admitted::Anchored));
+    assert!(ks[2].read_own(&keys[2], tick(14, [1, 0, 6, 0], 2)).expect("writes"));
+    assert_eq!(hear(&mut ks, 0, 2), Ok(Admitted::Anchored));
+    let a10 = TPoint { origin: ORIGIN, h: 10, lanes: [4, 0, 0, 0], k: 1 };
+    assert_eq!(ks[0].final_of(&vk(&keys[0])), Some(a10), "three of four is a majority");
+}

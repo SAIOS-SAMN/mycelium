@@ -282,18 +282,27 @@ impl Keepers {
     /// own signed reading, the citer holds it by citation: two keepers. A
     /// reading under a parent chain it heads is held with it. `None` where no
     /// other keeper cites the keeper.
+    ///
+    /// A STRICT MAJORITY OF THE KEEPER SET (the coordinator, 2026-10-09): 2 of
+    /// 3, 3 of 4, 3 of 5 — the keeper itself and enough others vouching for
+    /// the tick. Two of four could finalise two conflicting points (a, b one
+    /// way, c, d the other); a majority cannot. One keeper alone finalises
+    /// nothing: with the others down, time does not advance.
     pub fn final_of(&self, keeper: &[u8; 32]) -> Option<TPoint> {
         let line = self.line(keeper)?;
-        let mut best: Option<TPoint> = None;
-        for upto in self.vouched(keeper) {
-            let at = line.readings.iter().rev().find(|(_, r)| r.tick.h <= upto).map(|(_, r)| r.tick.at(self.origin));
-            if let Some(p) = at {
-                if best.is_none_or(|b| p.h > b.h) {
-                    best = Some(p);
-                }
-            }
-        }
-        best
+        let set = self.keepers().len();
+        // The others a majority needs beside the keeper: ⌊set/2⌋ + 1 − 1,
+        // and never fewer than one.
+        let need = match set / 2 {
+            0 => 1,
+            n => n,
+        };
+        let mut vouched = self.vouched(keeper);
+        vouched.sort_unstable();
+        // The tick at least `need` others vouch for: the need-th greatest.
+        let at = vouched.len().checked_sub(need)?;
+        let upto = *vouched.get(at)?;
+        line.readings.iter().rev().find(|(_, r)| r.tick.h <= upto).map(|(_, r)| r.tick.at(self.origin))
     }
 
     /// THE FINAL TUNIVERSAL IN THIS COURT'S VIEW (TU-3): the greatest tick at
