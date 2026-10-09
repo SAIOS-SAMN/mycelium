@@ -859,6 +859,29 @@ is decided here, and binds the slice (S1–S4):
    ALPHABET.md and the ~37 other mentions of "the seventeen" read through
    1.1 as amended; S2 marks ALPHABET.md superseded at its head.
 
+### The operator's ruling on the client, 2026-10-09 (verbatim)
+
+> "mycelium-client should be pure cognition and then dual loaded in-game (xylarium, netstratum.. etc etc as "minds") and also directly linked to mycelium-server (hyphas)"
+
+Read with law 8 (clients think, hyphae verify) and 78.157:
+- **One mind, pure cognition.** The mind (perceive → factor/construct →
+  compose/mint → decide its calls; its K, epigenome and dialect; the home
+  check by the shared replay) holds no transport, no process loop, no
+  filesystem policy and no logging sink of its own. Its inputs are percepts,
+  tasks, syllabus pages and verdicts; its outputs are sentences, solves,
+  calls and readings; what it persists goes through a store the host gives
+  it, and what it says goes through an observer the host gives it.
+- **Two hosts of the same mind.** The `mycelium-client` binary hosts it with
+  the hypha transport (the voices and seat minds of today). A GAME KERNEL
+  embeds it in-process as its minds, feeding its world's percepts directly —
+  and every embedded mind keeps its OWN DIRECT LINK to the hypha with its
+  own key (syllabus, submissions, verdicts, μ). The game never thinks for
+  it; the court judges it as any client.
+- **The seat surface stays** for remote minds; an embedded mind takes the
+  same seats with the same records, the wire hop for percepts omitted.
+- **One mathematics** (78.157's shared layer) for the client, the server and
+  every in-game host.
+
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
 
 Every path to a key passes through M1; the composition is chapter 17's
