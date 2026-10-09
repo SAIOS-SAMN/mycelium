@@ -3,6 +3,7 @@
 pub mod common;
 
 mod admission;
+mod atlas;
 mod aperture;
 mod backfill;
 mod book;

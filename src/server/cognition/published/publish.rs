@@ -120,6 +120,10 @@ pub struct Published {
     pub(crate) proofs: Arc<Keyed<RootProof>>,
     pub(crate) proofs_mark: u64,
     pub(crate) accounts: Vec<Arc<Keyed<Holdings>>>,
+    /// 78.154 — each universe's ledger chain, shared with the kernel's
+    /// atlas until it grows, and the atlas's mark it was read at.
+    pub(crate) ledgers: Keyed<Arc<Vec<crate::anastome::dialogue::atlas::HeldEntry>>>,
+    pub(crate) atlas_mark: u64,
     pub(crate) cost: PublishCost,
 }
 
@@ -176,6 +180,15 @@ impl Kernel {
             }
         };
         let accounts = self.publish_accounts(prev, &mut cost, &mut moved);
+        // 78.154 — the ledgers: shared where no entry sealed since.
+        let ledgers = match prev {
+            Some(p) if p.atlas_mark == self.atlas.mark => p.ledgers.clone(),
+            _ => {
+                moved = true;
+                cost.keys(self.atlas.ledgers.len() as u64);
+                self.atlas.ledgers.clone()
+            }
+        };
         let eras_path = match prev.and_then(|p| p.eras_path.clone()) {
             Some(held) if Some(&*held) == self.eras_path.as_deref() => Some(held),
             _ => {
@@ -197,6 +210,8 @@ impl Kernel {
             proofs,
             proofs_mark: self.proofs_mark,
             accounts,
+            ledgers,
+            atlas_mark: self.atlas.mark,
             cost,
         })
     }

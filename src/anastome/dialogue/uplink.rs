@@ -553,6 +553,28 @@ pub enum Uplinked {
     /// 78.138 — only the ancients uplink: the folding tier is not its
     /// domain's reserve. A line's fold is carried in its reserve's.
     NotReserve,
+    /// 78.154a — the fold's CONNECTION_TAX flow cannot be paid, and why.
+    Tax(TaxRefusal),
+}
+
+/// 78.154a — THE CONNECTION TAX'S FLOW KIND on a tier fold: a DECLARED row
+/// under this reserved coordinate is the universe's dissipation returning
+/// to the hypha — a sink, on the existing lanes S, G, T, H exactly as
+/// dissipated (no new lane: a lane names a physical dimension, the tax is a
+/// purpose) — paid from the domain's reserve to the court's recycled pool
+/// when the fold is admitted: a transfer, never a mint and never a burn.
+pub const CONNECTION_TAX: [u8; 32] = *b"mycelium flow: connection tax v1";
+
+/// 78.154a — WHY A FOLD'S CONNECTION TAX WAS NOT PAID (the fold is refused
+/// whole).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TaxRefusal {
+    /// A lane of the flow is a source: the tax only leaves a universe.
+    Source { lane: usize },
+    /// The reserve's μ balance lacks it, on some lane.
+    Short,
+    /// A carried line declares it: the tax is paid from the reserve alone.
+    Carried,
 }
 
 /// 78.126 — WHY A FOLD MAY NOT CONSUME A HANDOFF SIDE.
@@ -640,6 +662,16 @@ pub fn encode_uplink_reply(u: &Uplinked) -> Vec<u8> {
         }
         Uplinked::Repeat => out.push(8),
         Uplinked::NotReserve => out.push(9),
+        Uplinked::Tax(why) => {
+            out.push(10);
+            let (code, lane) = match why {
+                TaxRefusal::Source { lane } => (0u8, *lane),
+                TaxRefusal::Short => (1, 0),
+                TaxRefusal::Carried => (2, 0),
+            };
+            out.push(code);
+            out.extend_from_slice(&lane.to_le_bytes()[..1]);
+        }
     }
     out
 }
@@ -710,6 +742,16 @@ pub fn decode_uplink_reply(b: &[u8]) -> Option<Uplinked> {
         }
         8 => Uplinked::Repeat,
         9 => Uplinked::NotReserve,
+        10 => {
+            let (code, lane) = (*b.get(1)?, usize::from(*b.get(2)?));
+            p = 3;
+            Uplinked::Tax(match code {
+                0 => TaxRefusal::Source { lane },
+                1 => TaxRefusal::Short,
+                2 => TaxRefusal::Carried,
+                _ => return None,
+            })
+        }
         _ => return None,
     };
     (p == b.len()).then_some(u)

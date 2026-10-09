@@ -13,6 +13,10 @@
 
 use super::*;
 
+/// 78.154a — THE RECYCLED POOL'S KEY: the connection tax a court received,
+/// held by the court, paying its closers' POUW before anything is minted.
+pub const RECYCLED: &[u8] = b"recycled pool";
+
 /// VALUE A PAYER SET ASIDE AGAINST A KEY: whose it is, how much per lane,
 /// and the act it was set aside at.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -60,6 +64,12 @@ impl Treasury {
     /// The debit, the credit and their two rows, both read before either
     /// moves: a short payer or a full payee moves nothing.
     fn transfer(&mut self, from: [u8; 32], to: [u8; 32], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
+        self.transfer_paying(from, to, mu, anchor, None)
+    }
+
+    /// A transfer whose two rows carry the proof of work it pays (78.154a:
+    /// a POUW paid out of the recycled pool), or none.
+    fn transfer_paying(&mut self, from: [u8; 32], to: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> Result<(), Unpaid> {
         let short = crate::economy::shortfall(&mu, &self.balance_mu(&from));
         if !crate::economy::lanes_short(&short).is_empty() {
             return Err(Unpaid::Short(short));
@@ -72,9 +82,106 @@ impl Treasury {
         debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "the shortfall was read as none");
         let landed = self.credit(to, mu);
         debug_assert!(landed, "the credit was read as landing");
-        self.write(Entry { kind: Kind::Transfer, who: from, mu, at: anchor.0, receipt: anchor.1, arm: None });
-        self.write(Entry { kind: Kind::Transfer, who: to, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.write(Entry { kind: Kind::Transfer, who: from, mu, at: anchor.0, receipt: anchor.1, arm });
+        self.write(Entry { kind: Kind::Transfer, who: to, mu, at: anchor.0, receipt: anchor.1, arm });
         Ok(())
+    }
+
+    /// 78.154a — THE CONNECTION TAX RECEIVED INTO THE RECYCLED POOL: `mu`
+    /// paid from `from` (a domain's reserve) to `court`, and held by the
+    /// court under [`RECYCLED`] — a transfer, never a mint and never a burn.
+    /// Whole or refused.
+    pub fn recycle(&mut self, from: [u8; 32], court: [u8; 32], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
+        if mu.iter().all(|&m| m == 0) {
+            return Err(Unpaid::Nothing);
+        }
+        let pool = self.held.get(RECYCLED).cloned();
+        let now = match &pool {
+            Some(h) if h.payer != court => return Err(Unpaid::Taken),
+            Some(h) => crate::core::lanes::lanes_add(h.mu, mu).ok_or(Unpaid::Overflow)?,
+            None => mu,
+        };
+        if from != court {
+            self.transfer(from, court, mu, anchor)?;
+        }
+        let short = crate::economy::shortfall(&mu, &self.balance_mu(&court));
+        if !crate::economy::lanes_short(&short).is_empty() {
+            return Err(Unpaid::Short(short));
+        }
+        let unmoved = self.debit(court, mu);
+        debug_assert!(crate::economy::lanes_short(&unmoved).is_empty(), "the shortfall was read as none");
+        let anchored = match pool {
+            Some(h) => h.anchor,
+            None => anchor,
+        };
+        self.held.insert(RECYCLED, Held { payer: court, mu: now, anchor: anchored });
+        self.write(Entry { kind: Kind::Escrow, who: court, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        Ok(())
+    }
+
+    /// 78.154a — what this court's recycled pool holds, per lane.
+    pub fn recycled(&self) -> [u64; 4] {
+        self.held.get(RECYCLED).map_or([0; 4], |h| h.mu)
+    }
+
+    /// 78.154a — A PROOF OF WORK PAID FROM THE RECYCLED POOL FIRST: per lane
+    /// the lesser of `mu` and what the pool holds, paid to `to` as a
+    /// transfer carrying `arm`. Answers what the pool paid; nothing where it
+    /// holds nothing or the payee cannot take it.
+    pub(crate) fn draw_pool(&mut self, to: [u8; 32], mu: [u64; 4], anchor: Anchor, arm: Option<Arm>) -> [u64; 4] {
+        let Some(h) = self.held.get(RECYCLED).cloned() else { return [0; 4] };
+        let take: [u64; 4] = std::array::from_fn(|l| mu[l].min(h.mu[l]));
+        if take.iter().all(|&m| m == 0) || self.credited(&to, take).is_none() {
+            return [0; 4];
+        }
+        let left: [u64; 4] = std::array::from_fn(|l| h.mu[l] - take[l]);
+        match left.iter().all(|&m| m == 0) {
+            true => {
+                self.held.remove(RECYCLED);
+            }
+            false => {
+                self.held.insert(RECYCLED, Held { mu: left, ..h.clone() });
+            }
+        }
+        let back = self.credit(h.payer, take);
+        debug_assert!(back, "the pool came out of this balance");
+        if to == h.payer {
+            self.write(Entry { kind: Kind::Revoke, who: h.payer, mu: take, at: anchor.0, receipt: anchor.1, arm });
+            return take;
+        }
+        match self.transfer_paying(h.payer, to, take, anchor, arm) {
+            Ok(()) => take,
+            Err(_) => [0; 4],
+        }
+    }
+
+    /// 78.154 (4) — A CLAIM DRAWN ON A STAKE: `mu` of `who`'s stake set
+    /// aside under `key` — leaving the stake (an Unstake row) and held (an
+    /// Escrow row) until it is released to the courts it pays. Whole or
+    /// refused: a stake short on a lane moves nothing.
+    pub fn claim_stake(&mut self, who: [u8; 32], key: &[u8], mu: [u64; 4], anchor: Anchor) -> Result<(), Unpaid> {
+        if mu.iter().all(|&m| m == 0) {
+            return Err(Unpaid::Nothing);
+        }
+        if self.held.contains(key) {
+            return Err(Unpaid::Taken);
+        }
+        let staked = self.stake_of(&who).map_or([0; 4], |s| s);
+        let short = crate::economy::shortfall(&mu, &staked);
+        if !crate::economy::lanes_short(&short).is_empty() {
+            return Err(Unpaid::Short(short));
+        }
+        if self.credited(&who, mu).is_none() {
+            self.overflowed += 1;
+            return Err(Unpaid::Overflow);
+        }
+        let next: [u64; 4] = std::array::from_fn(|l| staked[l] - mu[l]);
+        self.stakes.insert(who, next);
+        self.refresh_bond();
+        let landed = self.credit(who, mu);
+        debug_assert!(landed, "the credit was read as landing");
+        self.write(Entry { kind: Kind::Unstake, who, mu, at: anchor.0, receipt: anchor.1, arm: None });
+        self.hold(who, key, mu, anchor)
     }
 
     /// HOLD: `mu` of `payer`'s balance set aside under `key`, whole or

@@ -209,6 +209,10 @@ impl Kernel {
         if let Some(v) = self.put_root_proofs() {
             leaves.push((LEAF_ROOTS, v));
         }
+        // 78.154 — the atlas, where anything is held.
+        if !self.atlas.is_empty() {
+            leaves.push((LEAF_ATLAS, self.atlas.put()));
+        }
         nodes.insert(self.chain.vk(), leaves);
         put_trie(out, COURT_TRIE, &nodes);
     }

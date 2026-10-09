@@ -456,6 +456,11 @@ impl Kernel {
         if let Err(d) = f.fold.continuity_with(&crossing) {
             return Uplinked::Discontinuous(d);
         }
+        // 78.154a — its CONNECTION_TAX flow, read before anything seals.
+        let tax = match self.connection_tax(&f.fold) {
+            Ok(mu) => mu,
+            Err(why) => return Uplinked::Tax(why),
+        };
         // 78.123 B — a fold netting children is read on the ledger tree.
         let reply = match f.fold.children.is_empty() {
             false => self.admit_chained(f, domain),
@@ -476,7 +481,9 @@ impl Kernel {
             }
         };
         // Sealed: each side it consumed is spent, once.
-        if let Uplinked::Admitted { at, .. } | Uplinked::Chained { at, .. } = &reply {
+        if let Uplinked::Admitted { at, receipt } | Uplinked::Chained { at, receipt, .. } = &reply {
+            // 78.154a — the tax paid from the reserve into the recycled pool.
+            self.pay_connection_tax(f.fold.tier, tax, (*at, *receipt));
             self.consume_sides(&at.key(), &f.fold.handoffs);
             // 78.127 — the reserve tier's fold is its era anchor: a pending
             // redesignation holds from here.

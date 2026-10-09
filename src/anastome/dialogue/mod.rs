@@ -5,8 +5,11 @@
 //! acts that carry them. Every payload is exact geometry, never English.
 
 pub mod acts;
+pub mod atlas;
 pub mod carrier;
 pub mod challenge;
+pub mod commitment;
+pub mod crossing;
 pub mod handoff;
 pub mod cover;
 pub mod demand;
