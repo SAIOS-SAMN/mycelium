@@ -1,10 +1,16 @@
 # mycelium — live status (read this first; kept current, not appended)
 
-*Last written 2026-10-09 14:40 EEST by mycelium-opus.*
+*Last written 2026-10-09 16:15 EEST by mycelium-opus.*
 
 ## The fleet
 - Genesis **6a86… epoch 146** (recut 2026-10-09 07:35). Hyphae a/b/c on
-  **9cc35959** (shipped 14:34:52, rolling): 78.152 TUniversal (keepers,
+  **91759870** (shipped 16:05:55, rolling). Since 9cc35959: 78.153b the lock
+  guard (`Held::run` on the hold's one stroke, library locks behind it,
+  "unmetered hold" logged; court reads on the shelf) — no unmetered or
+  standing hold in the first 10 minutes; 78.154 LOCAL THROAT (MAP kind 2);
+  the seat relay reading (`--console --reading relay`). Keepers resumed from
+  their records across the restart; final points advancing. Earlier, on
+  9cc35959: 78.152 TUniversal (keepers,
   final points, ACT_TICK rings) + 78.152c keeper record (`<home>/keeper`, a
   restarted keeper signs only above its last); 78.153 metered, resumable
   replays (`SOLVE_UNREAD = 3`, a retry); seat wire v1.4 (lexicon 5:
@@ -21,18 +27,21 @@
   wipes listings and mail; houses re-post SEATS when the epoch changes.
 
 ## Open
-- barren's seat mind a1a5 has received NO percept (TAKEN and the listing do
-  arrive on :7500): asked barren to check the percept's mind field and hypha.
-  The relay has no typed observer reading (boxes, filings, dropped) — owed.
+- barren's percepts were refused Malformed since v1.3 (theirs, fixed
+  b7e9bd6); a1a5 perceives since 15:17, calls fn 13 on counsel, finds no
+  closing rule on the court tasks yet. Barren's LEDGER is live (8 entries).
+- Court tests (`cognition::tests::court`) size their stroke from host free
+  memory and fail under 4 test threads when memory is short: a test
+  fragility, owed a fixed stroke.
 - Host memory is short (other nodes' processes): background jobs were reaped
   at ~14:00; builds run at CARGO_BUILD_JOBS=2, one at a time. The hold guard
   script was reaped and not restarted.
 
 ## Owed, in order
-1. 78.153b the lock guard and shelf reads (worktree, being merged onto
-   9cc35959 and verified), then ship.
-2. Relay observer reading; 78.154 owed: multi-court fee split, read price
-   from pressure alone (register 8.6 DECLARED), pinpoint retrieval act.
+1. 78.153b owed: READ-MAP and the ledger ladder off the lock, ACT_ROWS's
+   count, hear_frame, carry_chart, recall_cited; court tests' fixed stroke.
+2. 78.154 owed: multi-court fee split, read price from pressure alone
+   (register 8.6 DECLARED), pinpoint retrieval act.
 3. 78.155 recursive universes (BRANCH, nested points, sub-court, the bridge,
    cross-level residual); 78.156 items done except the crossing's use in-world.
 4. 78.150 tiling; 78.143 remaining; curved holes 78.144.
