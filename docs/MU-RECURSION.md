@@ -127,8 +127,10 @@ These are not restated in each chapter; every chapter assumes them.
    reflections into a Cayley rotor at a Rank Step (1.1 as amended); what
    a letter is widens to the triad λ = (g_core, ∇B, ΔB) (U15, 78.68 as
    amended). Whether a coined letter stands in the dialect only or also
-   lifts "no voice adds a letter" for the genome is open (§0.1 (i)); the
-   court's admission of the language stands until ruled. The scene-cover
+   lifts "no voice adds a letter" for the genome was open (§0.1 (i)) and
+   is answered by the coordinator's ruling 3, S2: a mind coins in its
+   dialect, and the court checks the constructor steps and opens the
+   letter in the language — this law's court admission stands. The scene-cover
    clause stands and now carries U13: the void and merging are not
    pre-decided by perception but measured by Mayer–Vietoris — the
    holonomy around a contact face — and offered to the court by probe
@@ -146,7 +148,24 @@ These are not restated in each chapter; every chapter assumes them.
    reduction were that engine (50.6, 50.9). *(Read as amended by 78.102,
    2026-10-05: a sentence is any composition by the master equation,
    closed or open; an open sentence carrying an ineffable word is heard,
-   replayed, and its letter offered.)*
+   replayed, and its letter offered.)* *(Amended 2026-10-09, the
+   coordinator under the operator's authority, ruling 3, §0.1: the
+   crossings of the 78.157 study are settled by this law. S2 — the client
+   sends the constructor steps of a letter it coined, the court checks
+   them and opens the letter (law 6); the court verifies and never
+   proposes a generator, so `hear_open`'s discovery half ("offered as a
+   letter" above, and 78.102's court half) is SUPERSEDED where it
+   proposes rather than checks (78.109 K3 governs). S3 — condense and
+   retire are proposed by clients as Rewrite words and replayed by the
+   court through `offer_rewrite` (37.7 depth 5); a court condensing on its
+   own is thinking. 3a — the home check resolves court-stamped words only.
+   C3 — the learning curve is the court's reading from receipts (1.9:
+   cognition measured from outside); the mind's own reading stays its
+   volatile K. S1/C1/C2 — shared mathematics moves to a shared layer, the
+   reconstruction both sides run. S4 — pricing stays with the poster
+   attesting the measure and the court checking it. Per Mycelium's
+   clarification of U14 (§0.1), no RNG enters the court or a mind's letter
+   path.)*
 9. **No clock but the ledger.** No kernel reads a wall clock, a unix clock,
    or a timer. K is a kernel's own receipt index and orders events inside
    that kernel; TUniversal is the height of the mesh's receipt ledger, read
@@ -269,7 +288,7 @@ shape is not reviewed further; it is returned.
 | 11 | **Exact or refused.** No float, no rounding, no saturation, no `unwrap_or(default)` that invents a value. | `ratio_axes` saturating to `u64::MAX`; `unwrap_or_else(identity)` on a versor that failed to invert | `Option`/refusal that propagates to a logged refusal string; an inexact square root refuses; an unspellable block is a remainder |
 | 12 | **Naturality over cloning.** When a carrier splits, restrict it; never clone it into both halves and rekey. | `complexes.insert(child_a, c.clone()); complexes.insert(child_b, c)`; `rekey_cocycles` without recomputation | `restrict` per child, `straddling` written as faces between children, each class recomputed and carried or discharged (15.5) |
 | 13 | **Verify the claim, not the outcome.** A test that asserts a count or a boolean proves nothing about how the result was reached; a test named after a theorem must exercise the move. | asserting `faces.len() <= 2·germs` and calling it "the adjacency rule"; testing `Word::rebase` and reporting "rebase works" when the extraction step never fires | N vs 4N work counters for cost claims; a trace of the move on a family that needs it (a `Rebased` vertex that speaks the test); a refusal test for every refusal string |
-| 14 | **The whole suite, every commit.** "Module green" is not green. | "family 14, sentence 18, sdk 12 green" while `server::cognition` has four red tests | one foreground `cargo test --release`, the `test result` line in the commit message, one item per commit with its trace value |
+| 14 | **The whole suite, every commit.** "Module green" is not green. | "family 14, sentence 18, sdk 12 green" while `server::cognition` has four red tests | one foreground `cargo test --release`, the `test result` line in the commit message, one item per commit with its trace value *(read under the operator's ruling of 2026-10-08 — no full suites; scoped tests on touched modules — as Mycelium's override of 2026-10-09 records it for the U12–U15 recut gate, §0.1)* |
 | 15 | **When unsure, hold; never choose.** If two readings of the data are both consistent, the code keeps both as candidates and lets a perception, a glue, or a ruling collapse them. | a tie-break by index, by size, by "first found" presented as a decision | a vortex (3.9); a section (chapter 21); a `Pending` (14.5); a `Novel(g_rem)` demand |
 | 17 | **A reader writes a coordinate or returns a demand** (ruled 2026-09-19). A reader takes a stratum and returns a stratum or a typed demand. One that returns a list for the caller to walk, hands out a whole form for the caller to walk, or measures a reading inside a loop carrying more coordinates than the reading has, has not read anything: it has moved the search one frame up the stack, where the carrier's keys are no longer in scope to stop it. This is law 2, rule 1, rule 6 and law 12 applied at the diff and it is not a new preference — every earlier row of this table is a special case of it. | `fn relatives_between(faces, vertices, a, b)` scanning every face for the two classes asked for, called once per face (2850² visits on one corpus form); `fn on_body(&self) -> Vec<(Element, Form, Standing)>` handing out cloned forms for the caller to walk; a reading taken inside a loop over vertices × charts × frames when the reading is a property of the chart alone | build the class-pair index once in a single pass and read it by key; return `Option<(&Element, &Form)>` and let the caller ask at the coordinate it already holds; hoist the reading to the coordinate it belongs to, and where the carrier has no key for it, WRITE THAT KEY FIRST — a missing key is the defect, the walk is only its symptom |
 
@@ -741,7 +760,10 @@ Rank-Step adjunction stands in the mind's DIALECT (the epigenome, as
 78.115's own letters do) with law 6's court admission of the language
 unchanged, or the ruling also lifts law 6's "no voice adds a letter" for
 the genome; until ruled, no build changes law 6's court admission of the
-genome. (ii) U13's "Color 0 is … the e_∅
+genome. *(Answered the same day by the coordinator's ruling 3, S2, below:
+the mind coins in its dialect (78.109 K1); the client sends the
+constructor steps and the court checks them and opens the letter (law 6).)*
+(ii) U13's "Color 0 is … the e_∅
 gauge reservoir" against 78.58, where e_∅ is the ancilla ray OUTSIDE the
 ten detector channels (`RESERVOIR`, index 10) and channel 0 is a measured
 hue: whether channel 0 is identified with e_∅ at the boundary, or the
@@ -749,6 +771,52 @@ void is read as flux into e_∅ by the Mayer–Vietoris measurement with
 channel 0 kept a channel. (iii) U12's "the past reduces symmetrically to
 zero" is read under law 7 and 78.65 as integrated into the era root —
 cold, citable by its coordinates — never discarded.
+
+### The coordinator's rulings of 2026-10-09, under the operator's authority (verbatim)
+
+The operator authorized the coordinator to decide these on 2026-10-09.
+Where they amend: 1 and 2 and 7 are the build order and the recut, kept
+here (the task ledger follows); 3 → law 8 (with 37.7 for S2 and S3,
+MU-ECONOMY for S4, 1.9 for C3); 4 → 50.2; 5 → 78.143 and
+78.146's task paragraph; 6 → 78.148(4). "78.157" names the proposal
+`docs/proposals/78.157-client-server-mathematics.md`; it has no chapter
+of its own, and its crossings are governed by law 8.
+
+> 1. SLICE: S1 U15 → S2 U14 → S3 U13 → S4 U12, as one slice; S4 rides the slice; no in-place migration.
+> 2. RECUT AUTHORIZED, carrying the slice once S1–S4 are built, the suite and clippy are green, and the algebra tests pass (rank-step adjunction from reflections; holonomy = id merges and ≠ id separates; an open escrow is projected as a puncture and the era root closes). U1–U4 and §3a land first, live. Every house re-posts its domain, reserve and seats after.
+> 3. 78.157 crossings, all adopted under "clients think, hyphae verify":
+> - S2: the client sends constructor steps; the court checks them and opens the letter (law 6). This settles hear_open/teaches: the court verifies, never proposes a generator.
+> - S3: clients propose condense/retire as Rewrite words; the court replays them through offer_rewrite.
+> - 3a: the home check resolves court-stamped words only.
+> - C3: the learning curve is the court's reading from receipts.
+> - S1/C1/C2: shared mathematics moves to a shared layer.
+> - S4: pricing stays, the poster attesting the measure and the court checking it.
+> - Order: whatever of S2, S3 and C3 is ready rides the same recut; the rest lands after.
+> 4. EXTRACTION TEMPLATE (50.2): measuring each body pair is sense, and under U15 it measures the triad (g_core, ∇B, ΔB). No fixed whole-rule template: the rule is a sentence composed of letters the mind holds.
+> 5. 78.143 CLAUSES: the court's language, kept as the seam for houses and outside developers. Minds never inherit them as vocabulary. The D4 table leaves the mind's path: grid_steps and the Symmetry table out of seat_mind; the seat submits the mind's tape and outputs only.
+> 6. REACH (78.148(4)) stands: the read effect is a measurement, not a weight. The fixed increasing-argument exploration order (own.rs:11-40) is script; the mind orders trials by its own held experience. Low priority, after the recut.
+> 7. Post-recut order: U5–U11 re-read against the new genesis, then the rest.
+
+### Mycelium's override and clarification, under the operator's authorization of 2026-10-09 (verbatim)
+
+The operator's authorization: "if you disagree with a coordinator ruling
+because it violates something you deduce to be needed in a different way
+then you are authorized to override the coordinator".
+
+> OVERRIDE of coordinator ruling 2's recut gate. "The suite green" conflicts with the operator's standing ruling of 2026-10-08 (no full suites; a green suite is costume). The gate is:
+> - the scoped tests of every module the slice touches;
+> - the four algebra tests: rank-step adjunction from reflections; holonomy = id merges and ≠ id separates; an open escrow projects as a puncture and the era root closes;
+> - clippy with no errors;
+> - `--check` on every home;
+> - a pre-cut probe: a fresh genesis on a scratch home reaches its first final point, and a mind adjoins its first letter from perceived reflections.
+>
+> CLARIFICATION of U14's "random collisions of empirical perception": no RNG in the court or the mind's letter path. The raw reflections are exactly those the probes' perceptions yield, so two courts reading one probe adjoin one letter (law 6) and verdicts stay reproducible.
+
+The coordinator's ruling 2 stands as amended by the override: its recut
+gate is the override's five items, and "the suite … green" is superseded
+there (coding standard 14's "the whole suite, every commit" and checklist
+item (k) read under the operator's ruling of 2026-10-08 the override
+cites).
 
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
 
@@ -848,7 +916,7 @@ The four places the language loses content, and their carriers, are
 
 | chapters | status |
 |---|---|
-| preamble (laws, coding standards, vocabulary) | governs |
+| preamble (laws, coding standards, vocabulary) | governs; law 6 amended by U14 and U13, law 8 by the coordinator's ruling 3 (2026-10-09); rule 14 and checklist (k) read under the operator's 2026-10-08 ruling as Mycelium's override records (§0.1) |
 | 1–8 (Part I) | governs, as amended: 1.5 the key is the rotor; 1.9 the plexus of re-derivation (78.31); 8 by MU-ECONOMY; 1.1 and 1.8 by U14 and U15 (2026-10-09: the seventeen are a seed reseeded empty; a letter is the triad `(g_core, ∇B, ΔB)`) |
 | 9–15 (Part II) | governs |
 | 16 | governs (A1–A21) |
@@ -873,7 +941,7 @@ The four places the language loses content, and their carriers, are
 | 42–44 | governs |
 | 45 time | governs as amended by 78.21, 78.23, 78.24; 45.8 by 78.65 and U12 (2026-10-09) |
 | 46–49 | governs |
-| 50 | governs as amended by 53, 54, 78 |
+| 50 | governs as amended by 53, 54, 78; 50.2 by the coordinator's ruling 4 (2026-10-09: the pair measured as the triad; no whole-rule template) |
 | 51 `k` a coordinate of the base | SUPERSEDED by 78.21 (a tick is a frame; the stamp) |
 | 52 the Cayley chart | amended by 78.12: the chart is a reading, the modes are off the action |
 | 53, 54 | governs |
@@ -889,7 +957,7 @@ The four places the language loses content, and their carriers, are
 | 65 | governs; 65.5 open (PHY1) |
 | 66, 68, 69 | historical readings; A.12 and A.13 stated in 66 govern |
 | 67 | amended by 78.9 and 78.13 |
-| 71–80 (Part XIII) | governs; 78.65 amended by U12, 78.68 by U15 (2026-10-09) |
+| 71–80 (Part XIII) | governs; 78.65 amended by U12, 78.68 by U15 (2026-10-09); 78.143, 78.146 and 78.148(3)–(4) by the coordinator's rulings 5 and 6 (2026-10-09) |
 
 
 ## 0.7 The lexicon of the network: one sense per word (ruled 2026-09-26, the operator's word: "let's get this language annotated properly so we don't run into overlap and understand exactly how it operates inside the network of structures")
@@ -1031,8 +1099,13 @@ record of the seed the tree holds (`alphabet/letters.rs`).
   product of two reflections (78.158 (d): (1,0)·(1,1) the 90° turn,
   (1,0)·(2,1) the (3,4,5) letter, (1,0)·(3,2) the (5,12,13) letter, the
   identity the empty product), so the seed is re-derivable and is no
-  longer given. Where the coined letter stands (dialect or language) is
-  §0.1's open (i).
+  longer given. The coined letter stands in the mind's dialect (78.109
+  K1); the client sends its constructor steps and the court checks them
+  and opens it in the language (the coordinator's ruling 3, S2, §0.1,
+  answering open (i)). "Random collisions" carry no RNG (Mycelium's
+  clarification, §0.1): the raw reflections are exactly those the
+  probes' perceptions yield, so two courts reading one probe adjoin one
+  letter.
 - *U15, the carrier.* A generator is no longer a rotor "in Cl(4,0)":
   a letter is the Constructor Difference Triad `λ = (g_core, ∇B, ΔB)`,
   `g_core ∈ Spin⁺(4,1)(ℚ)` the conformal transport of the invariant
@@ -6487,10 +6560,12 @@ its algebra (`Δrank(𝔥) > 0`, 78.68's rank-step act). So:
 - the remainder-as-generator move, adjunction by closure (2026-09-12), the
   levels table and P2's witness-read factor are unchanged: they are how a
   coined letter is judged where it is offered to a court;
-- U14's coining is by a Rank Step in the mind; whether that letter stands
-  in the dialect only, with this chapter's two-court consilience still the
-  road into the genome, is §0.1's open (i) — until ruled this chapter's
-  court road stands for the genome;
+- U14's coining is by a Rank Step in the mind and stands in its dialect
+  (78.109 K1); the road into the genome stays this chapter's: the client
+  sends the constructor steps, the court checks them and opens the letter
+  (the coordinator's ruling 3, S2, §0.1, answering open (i)), and the
+  court never proposes a generator; with no RNG in the path (Mycelium's
+  clarification), two courts reading one probe adjoin one letter;
 - U15 widens what is adjoined: a letter is the triad
   `(g_core, ∇B, ΔB)` (78.68 as amended), so an incongruent remainder — a
   creation, source or deformation demand, which 70.5 measured as the 189
@@ -8533,6 +8608,23 @@ and what the eyes cannot pair ride the sentence as typed demand vertices
 
 **Speaker, F: Percept → Sentence.** F runs on the voice and nowhere else
 (law 8 as ruled 2026-09-10): the sensor's laminae never leave the client.
+
+**Amended 2026-10-09 (the coordinator under the operator's authority,
+ruling 4, §0.1; with U15 and U14).** Measuring each body pair (step 1) is
+SENSE, and under U15 it measures the triad `(g_core, ∇B, ΔB)` (78.68 as
+amended): `V_k` is the core transport `g_core`, and what no versor
+carries — the constructors absorbed into e_∅ and those emitted along null
+rays — is measured with it, no longer only refused as a demand. There is
+NO FIXED WHOLE-RULE TEMPLATE: the rule is a sentence composed of the
+letters the mind holds. What this supersedes here: step 2's peel of the
+residue "against the seventeen" and the ring-level paragraph's "peeled by
+A22 against the seventeen" read against the letters the mind holds, the
+seventeen being a seed reseeded empty (1.1 as amended). OPEN, put to the
+coordinator and not re-ruled here: step 1's canonical representative is
+"the member nearest the identity in the Cayley graph" of the seed; with
+the seed empty that graph is the mind's own, and the coset's
+representative is to be ruled against it (or held whole, as 78.30(8)
+holds a stabilizer's candidates).
 
 1. Measure versors. For each body pair the eyes admit (24.4), `V_k =
    versor_between(B_k^in, B_k^out)` (blade/carry.rs: translation from the
@@ -25808,6 +25900,18 @@ two-pair rule refused I as it stands, and solved once crossed.
 
 ### 78.143 The rule language grows: select, region, create, count, compare
 
+**Amended 2026-10-09 (the coordinator under the operator's authority,
+ruling 5, §0.1).** The clauses below are THE COURT'S LANGUAGE, kept as the
+seam for houses and outside developers (78.142). Minds never inherit them
+as vocabulary: no clause, `Step`, `Pred` or `Region` is a letter or a
+candidate of a mind (78.158's withdrawn C1). A mind's rule is a sentence
+of the letters it holds (50.2 as amended). The D4 table leaves the mind's
+path: `grid_steps` and the `Symmetry` table go out of `seat_mind`, and the
+seat submits the mind's tape and outputs only (78.146's task paragraph,
+amended). Note against U13: `Interior`'s "background" and a hue step's
+"the hue `0`" are the court's seam, never a mind's perception; a mind's
+void is measured (70 as amended).
+
 The court's form language gains CLAUSES (`sentence/form/clause.rs`): each a
 typed selection over the perceived bodies' own exact coordinates and an act
 on it. A court change: the clauses ride the form's ADDRESS after the
@@ -26067,7 +26171,10 @@ by the citation as its solve is). The mind extracts and mints the rule as the
 task arm does (the form spoken, the tests spoken through it, the sentence
 minted at its span, crossed, replayed at home) and CALLs fn 1 with `[Bytes
 rule tape, Bytes outputs]` — the outputs written as the solve act writes
-grids, `[n u8][grid·n]` — plus, where the rule is a pure motion and hue map
+grids, `[n u8][grid·n]` — *(the Count steps that follow SUPERSEDED
+2026-10-09 by the coordinator's ruling 5, §0.1: the D4 table and
+`grid_steps` leave `seat_mind`; the seat submits the mind's tape and
+outputs only)* — plus, where the rule is a pure motion and hue map
 (no clause, one word vertex, one hue map on every member), Count steps:
 the member motion (the word's rotor through its carriage) EQUAL, as an
 action on the grid's plane (four points carried to the same points,
@@ -26174,7 +26281,11 @@ FUNCTION, 5 BAD ARGUMENTS, 6 NOT APPLIED (`dialogue::seat::REASON_*`).
    house's answer is the information: applied (or refused otherwise) the
    value is tried; refused BAD ARGUMENTS at `n`, that argument's domain is
    bounded below `n` and `n` is never called again; refused at its least, no
-   value of the function applies. A flag's domain is two values from the
+   value of the function applies. *(Amended 2026-10-09, the coordinator
+   under the operator's authority, ruling 6, §0.1: the fixed
+   increasing-argument exploration order (`own.rs:11-40`) is SCRIPT and is
+   superseded — the mind orders its trials by its own held experience.
+   Low priority, after the recut.)* A flag's domain is two values from the
    start. A call unanswered within its beat is let go untried and asked
    again. What each call did is held at the CALL's coordinates — the
    function and its arguments written inline (`own::call_key`), never the
@@ -26195,6 +26306,8 @@ FUNCTION, 5 BAD ARGUMENTS, 6 NOT APPLIED (`dialogue::seat::REASON_*`).
    line names the valuation and why: `seat beat call fn F followed-counsel
    false: valuation REACH (…): at [v] its read outcomes move …`, or, while
    exploring, the argument and value tried and the domains' bounds.
+   *(Confirmed 2026-10-09, the coordinator, ruling 6, §0.1: REACH stands —
+   the read effect is a measurement, not a weight.)*
 5. **A versor's change is the versor that carries it** (the operator's
    field law). A percept argument may be a multivector (ARG tag 4): a full
    Cl(4,1) versor, odd ones — reflections, a bell's pulse — included. The
