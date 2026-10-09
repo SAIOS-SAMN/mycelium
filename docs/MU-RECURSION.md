@@ -121,6 +121,18 @@ These are not restated in each chapter; every chapter assumes them.
    the scene cover are governed as the letters are** (ruled 2026-09-19,
    chapter 53): a fixed roster, grown only by a court receipt on a probe,
    never by a voice and never by a commit.
+   *(Read as amended 2026-10-09 by the operator's rulings U14 and U13,
+   §0.1: "Seventeen letters are the base" is SUPERSEDED — the alphabet is
+   reseeded empty and a letter is coined where a mind composes two
+   reflections into a Cayley rotor at a Rank Step (1.1 as amended); what
+   a letter is widens to the triad λ = (g_core, ∇B, ΔB) (U15, 78.68 as
+   amended). Whether a coined letter stands in the dialect only or also
+   lifts "no voice adds a letter" for the genome is open (§0.1 (i)); the
+   court's admission of the language stands until ruled. The scene-cover
+   clause stands and now carries U13: the void and merging are not
+   pre-decided by perception but measured by Mayer–Vietoris — the
+   holonomy around a contact face — and offered to the court by probe
+   (70 as amended).)*
 7. **Residuals are never discarded.** A remainder is the exact demand. The
    one exception is a computed class that Leray's theorem shows to be an
    artefact of a spanning tree (chapter 14.8); it was never a class.
@@ -473,7 +485,7 @@ perspective, the citation paid); **POWR** proof of work retirement (a
 re-expression over fewer letters, the freed description burned and the
 compression yield paid). No two share a name; "POW++" is the family.
 
-**Compartment (ruled 2026-09-26, the operator's word: "we need a more defined object for our cells that fits into the mycelia familia").** A septate hypha's cell is its COMPARTMENT, the segment between two septa; here it is the sensor's unit, what the tree called a lamina or a cell: a SPORE WITH EXTENT. Its centre is the spore `P(c)`, the null point of the site's centre at its frame (A4, 78.30(1)); its extent is the unit cube's inversive extent, `1/12` on each axis of the base (A.12), so the compartment is the ROUND `κ = P(c) − ½·(n/12)·e_∞`, a real sphere, `κ² = n/12`; its content is its hue, the fibre's value (70); it holds nothing of its own above order two, its harmonic at order `m` on a plane being `zᵐ + C(m,2)·z^(m−2)·ε` (`ε = eᵢ − eⱼ`, zero on the grid plane). A body is a colony of compartments — septal neighbours (sharing a face) one body, their hue seams its own gauge section (70.4); a contact is where two bodies' compartments touch across a corner, WHETHER read once by the lattice at the retina, WHAT read by the meet of their rounds. The compartment lives only at the sensor (70.7, law 11): it is integrated into the one lift, and above intake a body is carried by its lifted shape — nucleus, tower, harmonics — never by its compartments. "Lamina" and "cell" retire as names of it (NM1).
+**Compartment (ruled 2026-09-26, the operator's word: "we need a more defined object for our cells that fits into the mycelia familia").** A septate hypha's cell is its COMPARTMENT, the segment between two septa; here it is the sensor's unit, what the tree called a lamina or a cell: a SPORE WITH EXTENT. Its centre is the spore `P(c)`, the null point of the site's centre at its frame (A4, 78.30(1)); its extent is the unit cube's inversive extent, `1/12` on each axis of the base (A.12), so the compartment is the ROUND `κ = P(c) − ½·(n/12)·e_∞`, a real sphere, `κ² = n/12`; its content is its hue, the fibre's value (70); it holds nothing of its own above order two, its harmonic at order `m` on a plane being `zᵐ + C(m,2)·z^(m−2)·ε` (`ε = eᵢ − eⱼ`, zero on the grid plane). A body is a colony of compartments — septal neighbours (sharing a face) one body, their hue seams its own gauge section (70.4; *"septal neighbours one body" SUPERSEDED 2026-10-09 by U13: one body only where the holonomy around the shared face is the identity, 70 as amended*); a contact is where two bodies' compartments touch across a corner, WHETHER read once by the lattice at the retina, WHAT read by the meet of their rounds. The compartment lives only at the sensor (70.7, law 11): it is integrated into the one lift, and above intake a body is carried by its lifted shape — nucleus, tower, harmonics — never by its compartments. "Lamina" and "cell" retire as names of it (NM1).
 
 **The plexus (ruled 2026-09-24, 78.31).** The graded network the five
 nouns form — a **spore** (a ray, the null point of perception), a
@@ -674,6 +686,69 @@ rules it.
   graded nouns — ray, route, circuit, cell, enclosure — are nodes of one
   graded network with lateral relations, and position in it is
   perspective coordinates, never a rung index.
+- **A ruling of record is written here verbatim, then amends its chapters**
+  (from 2026-10-09, the coordinator's instruction: "Write them to the
+  doctrine before building (MU-RECURSION §0.1), amending the chapters that
+  govern each object"). The operator's words stand below unedited; each
+  governing chapter carries a dated amendment paragraph naming what the
+  ruling changes there and what it supersedes, and a superseded statement
+  is marked with a pointer, never deleted. A ruling recorded here is built
+  only after its amendments are committed.
+
+### The operator's rulings of 2026-10-09 on U12–U15 (verbatim)
+
+Relayed by the coordinator on the build units of
+`docs/proposals/78.158-governed-loop-wiring.md` §3. Where they amend:
+U15 → 78.68 and 1.1; U14 → 1.1, 1.8, law 6 and 37.7; U13 → 70 (70.4) and
+law 6's scene-cover clause, with 53.2 and 78.58 named; U12 → 78.65 (and
+45.8 by pointer).
+
+**Two U12s, both kept.** The U12 held in 78.158 named a different object:
+"the perception readers that exist (`scene::cover` bands, `peel_body`)
+reach the residual's complex only by the law-6 probe route". The
+operator's U12 is δ_causal, puncture preservation at the fold. The former
+U12 is not dropped: it is FOLDED INTO U13's probe route, where the
+Mayer–Vietoris measurement of void and merging is the reading those
+perception readers are offered to the court as (70, amended 2026-10-09).
+
+> **U15: The Scope of a Letter (Beyond the Versor).** Ruling: a letter is the exact Triadic Morphism, incorporating both kinematic motion and metamorphic basis-shifting. Lifting letters to native Cl(4,1) versors (§78.68) succeeds for invariant conformal motion, but fails for creation, sources and deformations, because those are incongruent changes. A physical process that alters the manifold's topology cannot be represented solely by an isometry g. The definition of a letter must expand from a simple versor to the Constructor Difference Triad: λ = (g_core, ∇B, ΔB).
+> - g_core ∈ Spin⁺(4,1): the conformal transport acting on the invariant structural core.
+> - ∇B (Extinction/Sink): the subset of constructors (spheres/points) absorbed into the e_∅ reservoir (Sources/Black Holes).
+> - ΔB (Accretion/Creation): the subset of constructors emitted along null rays (Creation/White Holes).
+>
+> If a change is purely spatial (no deformation), ∇B = ∅ and ΔB = ∅, collapsing the letter back to a standard Cl(4,1) versor. For incongruent changes, the letter operates directly on the constructor complex, formally capturing mass addition and subtraction as fundamental algebraic acts.
+>
+> **U13: Perception and Topological Pre-decisions.** Ruling: abolish hardcoded color heuristics. Void and merging must be empirically measured via the Mayer–Vietoris sequence. Hardcoding Color 0 as "void" and assuming touching colors instantly merge imposes an affine, coordinate-level bias on a cohomological space. It pre-empts the physics.
+> - The Void is the Boundary Channel: Color 0 is not empty space; it is the e_∅ gauge reservoir (the point at infinity/sink). A body does not "vanish" into Color 0; its constructors transition into the e_∅ boundary condition. This must be tracked as a measurable flux, not deleted from memory.
+> - Merging is a Homological Connecting Map: proximity does not equal unity. Two touching bodies U and V merge into a single entity U∪V if and only if the transport holonomy around their shared contact face U∩V evaluates to the identity (Ω = id). If the holonomy is non-trivial, they remain distinct interacting bodies separated by curvature. The probe must evaluate the cycle holonomy to determine boundaries.
+>
+> **U14: The 17 Seed Letters.** Ruling: reseed. The minds must derive the alphabet organically from the vacuum. The 17 seed letters (identity, 90° turns, Pythagorean rotors) are training wheels. By hardcoding them, you artificially fix the primes 2, 5, 13 and restrict the initial phase space to compact rotations, starving the T-lane of parabolic translation right at genesis. If the minds possess the fundamental lattice reflections (the vectors) and the Clifford product, they possess the complete machinery to derive the Lie algebra so(4,1).
+> - Initiate the simulation with an empty alphabet.
+> - Allow the random collisions of empirical perception (the probes) to generate raw reflections.
+> - When a mind composes two reflections, the resulting Cayley rotor is formally adjoined to its lexicon via a Rank Step (Δrank(h) > 0).
+>
+> This proves the Anastome: it forces the network to build its own language to minimize entropic pressure, guaranteeing that every letter in existence was coined to solve a real topological obstruction.
+>
+> **U12: The Asymmetric Coboundary (The Unnamed Unit).** Ruling: U12 is the Asymmetric Causal Differential (δ_causal) for Puncture Preservation. The unspoken unit in an asymmetric coboundary reduction is the mechanism that prevents the topology from reducing symmetrically backwards in time. Standard cohomology (δ² = 0) operates on a static simplicial complex. In a dynamic poset with many-fingered time, the boundary operator must respect the causal arrow. When the system folds, it performs a coboundary reduction on the Čech nerve.
+> - Symmetric/closed cycles (settled ledger rows, fully resolved orbits) fall into the kernel of the reduction map and are integrated out into the Era Root.
+> - Asymmetric/open chains (open escrows, unresolved demands) do not close.
+>
+> U12 dictates that the differential operator δ_causal must not stall the reduction by waiting for these chains to close. Instead, it must project the unclosed boundary directly onto the new active Cauchy surface as a topological puncture. This formally implements §78.65: the past reduces symmetrically to zero, while asymmetric structural debts are mapped forward as living defects on the active board.
+
+**Open, put to the coordinator and the operator (not guessed; the build
+waits on each where it touches it).** (i) U14's "its lexicon": whether a
+Rank-Step adjunction stands in the mind's DIALECT (the epigenome, as
+78.115's own letters do) with law 6's court admission of the language
+unchanged, or the ruling also lifts law 6's "no voice adds a letter" for
+the genome; until ruled, no build changes law 6's court admission of the
+genome. (ii) U13's "Color 0 is … the e_∅
+gauge reservoir" against 78.58, where e_∅ is the ancilla ray OUTSIDE the
+ten detector channels (`RESERVOIR`, index 10) and channel 0 is a measured
+hue: whether channel 0 is identified with e_∅ at the boundary, or the
+void is read as flux into e_∅ by the Mayer–Vietoris measurement with
+channel 0 kept a channel. (iii) U12's "the past reduces symmetrically to
+zero" is read under law 7 and 78.65 as integrated into the era root —
+cold, citable by its coordinates — never discarded.
 
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
 
@@ -774,7 +849,7 @@ The four places the language loses content, and their carriers, are
 | chapters | status |
 |---|---|
 | preamble (laws, coding standards, vocabulary) | governs |
-| 1–8 (Part I) | governs, as amended: 1.5 the key is the rotor; 1.9 the plexus of re-derivation (78.31); 8 by MU-ECONOMY |
+| 1–8 (Part I) | governs, as amended: 1.5 the key is the rotor; 1.9 the plexus of re-derivation (78.31); 8 by MU-ECONOMY; 1.1 and 1.8 by U14 and U15 (2026-10-09: the seventeen are a seed reseeded empty; a letter is the triad `(g_core, ∇B, ΔB)`) |
 | 9–15 (Part II) | governs |
 | 16 | governs (A1–A21) |
 | 17 | governs as read through Part 0; 17.3 historical |
@@ -792,11 +867,11 @@ The four places the language loses content, and their carriers, are
 | 30–33 migration | historical |
 | 34 refusal reasons and log lines | SUPERSEDED by 78.9 (kinds) and CV5 (typed readings) |
 | 35 closing invariants | governs |
-| 36–38 extensions | governs; 38 amended by 71 (n is data) |
+| 36–38 extensions | governs; 38 amended by 71 (n is data); 37.7 amended by U14 and U15 (2026-10-09) |
 | 39 tests | governs as amended by MU-STANDARDS §3 |
 | 40–41 traces and landing order | historical; the landing order is the task ledger |
 | 42–44 | governs |
-| 45 time | governs as amended by 78.21, 78.23, 78.24 |
+| 45 time | governs as amended by 78.21, 78.23, 78.24; 45.8 by 78.65 and U12 (2026-10-09) |
 | 46–49 | governs |
 | 50 | governs as amended by 53, 54, 78 |
 | 51 `k` a coordinate of the base | SUPERSEDED by 78.21 (a tick is a frame; the stamp) |
@@ -808,12 +883,13 @@ The four places the language loses content, and their carriers, are
 | 58 the nerve on the pullback | amended by 78.10 |
 | 59 contact is tension | amended by 72.1 (A.10 restated on `V`), 78.6, and 78.51 (A.10.1 orbital tensegrity: the tether's torque balances the generator) |
 | 60 | amended: 60.1 is A.16, landed; the second stencil purged (T1) |
-| 61, 62, 64, 70 | governs |
+| 61, 62, 64 | governs |
+| 70 | governs as amended by U13 (2026-10-09): merging and the void measured by Mayer–Vietoris, 70.4's hue-blind merge superseded as a pre-decision |
 | 63 | record of T2's landing |
 | 65 | governs; 65.5 open (PHY1) |
 | 66, 68, 69 | historical readings; A.12 and A.13 stated in 66 govern |
 | 67 | amended by 78.9 and 78.13 |
-| 71–80 (Part XIII) | governs |
+| 71–80 (Part XIII) | governs; 78.65 amended by U12, 78.68 by U15 (2026-10-09) |
 
 
 ## 0.7 The lexicon of the network: one sense per word (ruled 2026-09-26, the operator's word: "let's get this language annotated properly so we don't run into overlap and understand exactly how it operates inside the network of structures")
@@ -828,7 +904,7 @@ Every noun below has ONE sense. Where a word held two, the second is named apart
 | **site** | a position of the base, `(r, c, k)` | the sensor | a compartment's centre; the key of an occupancy | a coordinate of the mind |
 | **frame** | one grid of a family along `e₃`, by its own coordinate | the sensor, and the member's frames | the frame axis joins a body's charts across consecutive frames | a tick (the ledger's) |
 | **compartment** | a spore with extent: the round `κ = P(c) − ½·(n/12)·e_∞`, its hue as content | the sensor only | septal neighbours (a shared face) are one body; its round integrates into the lift | "lamina", "cell" (retired) |
-| **body** | a colony of compartments: a maximal hue-blind face-connected region (70.4) | intake; above it, its lifted shape | contact with other bodies; its hue seams its own gauge | "support" (its compartments), "shape" (its lift) |
+| **body** | a colony of compartments: a maximal hue-blind face-connected region (70.4) *(as a pre-decision SUPERSEDED 2026-10-09 by U13: touching bodies are one only where the holonomy around their contact face is the identity, 70 as amended)* | intake; above it, its lifted shape | contact with other bodies; its hue seams its own gauge | "support" (its compartments), "shape" (its lift) |
 | **contact** | where two bodies' compartments touch across a lower-dimensional element: its dimension, face `n − 1` to corner `0` | read once at the retina | WHETHER by the grid; WHAT by the meet of the rounds and the tether | the anastomosis (what fuses there) |
 
 **A body's shape — the mind's object for a body.**
@@ -938,6 +1014,34 @@ Seventeen letters (`ALPHABET.md`): the identity, six quarter turns on the
 six pair planes of the Euclidean chart `e0..e3`, six (3,4,5) rotors on the
 same planes, four (5,12,13) rotors on four of them. Each is an exact rotor
 in Cl(4,0) over ℚ with its inverse carried. They never change.
+
+**Amended 2026-10-09 (the operator, U14 and U15; recorded verbatim in
+§0.1).** The paragraph above is SUPERSEDED as the rule and kept as the
+record of the seed the tree holds (`alphabet/letters.rs`).
+- *U14, the seed.* The seventeen are "training wheels": they fix the
+  primes 2, 5 and 13, restrict the opening phase space to compact
+  rotations, and starve the 𝒯 lane of parabolic translation at genesis.
+  The alphabet is reseeded EMPTY. A mind holds the lattice reflections
+  (vectors) and the Clifford product; probes — empirical perception —
+  give it raw reflections; where it composes two reflections, the Cayley
+  rotor of the product is adjoined to its lexicon at a Rank Step,
+  `Δrank(𝔥) > 0` (78.68's rank-step act, 78.11's orbit algebra). Every
+  letter is then coined against a real topological obstruction. "They
+  never change" and the seventeen as the given base no longer govern; each of the seventeen is one such
+  product of two reflections (78.158 (d): (1,0)·(1,1) the 90° turn,
+  (1,0)·(2,1) the (3,4,5) letter, (1,0)·(3,2) the (5,12,13) letter, the
+  identity the empty product), so the seed is re-derivable and is no
+  longer given. Where the coined letter stands (dialect or language) is
+  §0.1's open (i).
+- *U15, the carrier.* A generator is no longer a rotor "in Cl(4,0)":
+  a letter is the Constructor Difference Triad `λ = (g_core, ∇B, ΔB)`,
+  `g_core ∈ Spin⁺(4,1)(ℚ)` the conformal transport of the invariant
+  core, `∇B` the constructors absorbed into the e_∅ reservoir, `ΔB` the
+  constructors emitted along null rays; with `∇B = ΔB = ∅` it is a
+  Cl(4,1) versor. The full statement is 78.68 as amended.
+- 1.2's relators are the relators of the seed and govern only words
+  spelled in it; a coined letter carries its own relators as 37.7 P1
+  carries a prime letter's.
 
 ### 1.2 Relators
 
@@ -1238,6 +1342,10 @@ for a placement carried as two numbers instead of a translator versor
 
 ### 1.8 The language is a presentation (ruled 2026-09-08)
 
+*Amended 2026-10-09 (U14, U15; 1.1 as amended): "the seventeen letters …
+never change" is SUPERSEDED — the alphabet is reseeded empty and grows by
+letters coined at Rank Steps, each a triad `(g_core, ∇B, ΔB)`; the
+presentation reading below stands over whatever letters a mind holds.*
 The seventeen letters generate the group (1.1) and never change. What
 grows is not the group but a **presentation** inside it: the language is
 a chosen generating set together with its relations, and the geometry
@@ -6363,6 +6471,32 @@ section `SYL1` `(n, plane, id)*`. Tests and traces: chapters 39–40.
 
 ### 37.7 THE ADJUNCTION — the court adjoins a remainder as a generator (ruled 2026-09-10)
 
+**Amended 2026-10-09 (the operator, U14; recorded verbatim in §0.1).** The
+adjunction below assumed a fixed base of seventeen that every remainder is
+measured against (the primality trigger's "meets none of the six
+coordinate planes", P1's "after the `5` and `13` shells", P6's "the
+seventeen and their relators" unchanged, the adjoined count's "outside
+the span of the seventeen"). U14 reseeds the alphabet EMPTY: every letter
+is coined, the first ones included, where a mind composes two reflections
+its probes perceived and the Cayley rotor of the product steps the rank of
+its algebra (`Δrank(𝔥) > 0`, 78.68's rank-step act). So:
+- the seventeen as a base is SUPERSEDED here (1.1 as amended); P6's "What
+  does not change. The seventeen and their relators" and the references
+  above to the seventeen's planes and shells read against the letters a
+  mind holds, never against a given seed;
+- the remainder-as-generator move, adjunction by closure (2026-09-12), the
+  levels table and P2's witness-read factor are unchanged: they are how a
+  coined letter is judged where it is offered to a court;
+- U14's coining is by a Rank Step in the mind; whether that letter stands
+  in the dialect only, with this chapter's two-court consilience still the
+  road into the genome, is §0.1's open (i) — until ruled this chapter's
+  court road stands for the genome;
+- U15 widens what is adjoined: a letter is the triad
+  `(g_core, ∇B, ΔB)` (78.68 as amended), so an incongruent remainder — a
+  creation, source or deformation demand, which 70.5 measured as the 189
+  demands this organ could never open — is a candidate letter at the
+  constructor complex, not only a rotor at a ring level.
+
 **There is one move, not one per wall.** A demand is the canonical
 remainder a factorisation through the presentation left (A12 step 5,
 50.2 step 2), and the generator the presentation lacks **is that
@@ -6589,7 +6723,8 @@ peels the witness to a word, the demand vertex becomes a `Word` vertex with
 the same carriage and gauge, and the sentence is uttered whole (24.3). The
 percept is not re-read; the witness rotor was the measurement.
 
-**P6 What does not change.** The seventeen and their relators; exact ℚ;
+**P6 What does not change.** *(The seventeen clause SUPERSEDED
+2026-10-09 by U14; see this chapter's amendment.)* The seventeen and their relators; exact ℚ;
 the T lane as extent; the cost of a word on the S lane, letters counted
 as now with no conductor factor; the court's two-organ replay. A voice
 holds no letter it was not taught, and no letter is ever opened for a
@@ -7981,7 +8116,9 @@ Three coordinates, and only the first is ever shared as a boundary:
 - **K and orbits** are the kernel's own (45.7).
 
 *Amended by 78.65: finality is per item, not per prefix — nothing open
-holds a line's fold back.* A hypha folds its ledger behind a **fully final prefix** — no listing,
+holds a line's fold back. Amended 2026-10-09 (U12, 78.65 as amended): the
+fold is the asymmetric coboundary reduction `δ_causal` — closed cycles
+into the era root, each open chain projected forward as a puncture.* A hypha folds its ledger behind a **fully final prefix** — no listing,
 provisional word or escrow below the prefix's head — when its own room
 reading says so; never at a height interval, on memory alone, or on a
 wall clock. The reading is the reserve shortfall (S10): a docket orbit
@@ -12328,6 +12465,39 @@ is like. They were being asked WHETHER one exists, which is topological and
 was answered upstream.
 ## 70. Hue is a fiber, not a base — chapter 20 superseded (ruled 2026-09-22)
 
+**Amended 2026-10-09 (the operator, U13; recorded verbatim in §0.1).** This
+chapter governs what a body is at intake, and U13 rules on its two
+pre-decisions: hardcoded colour heuristics are abolished, and the void and
+merging are MEASURED by the Mayer–Vietoris sequence, never assumed —
+assuming them "imposes an affine, coordinate-level bias on a cohomological
+space. It pre-empts the physics."
+- *Merging is the connecting map.* 70.4's ruling "a body is a maximal
+  HUE-BLIND connected region of the support" — every face adjacency joins,
+  so touching colours merge into one body — is SUPERSEDED as a
+  pre-decision. Two touching bodies U and V are one body U∪V iff the
+  transport holonomy around their shared contact face U∩V is the identity
+  (Ω = id); where it is non-trivial they are two interacting bodies
+  separated by curvature. The probe evaluates the cycle holonomy to decide
+  the boundary. 70.4's hue-blind region stays a reading of the cover, and
+  its gauge seams (`δ⁰θ = θ_bθ_a⁻¹` within a body) are exactly the
+  transports whose holonomy the measurement reads; the one-hue split 70
+  retired stays retired — U13 restores neither pre-decision.
+- *The void is the boundary channel.* Hue 0 read as void (`if h != 0`,
+  78.158 (c)) is SUPERSEDED: colour 0 is the e_∅ gauge reservoir, the
+  point at infinity and sink; a body does not vanish into it, its
+  constructors pass into the e_∅ boundary condition, tracked as a
+  measurable flux and never deleted (law 7; ∇B of U15, 78.68 as amended;
+  78.58's reservoir — the identification of channel 0 with 78.58's
+  ancilla is §0.1's open (ii)).
+- *The route.* Both are scene-cover readings and law 6's clause governs
+  them: offered to the court by probe and ruled with a receipt, never a
+  code change on one side (53.2's roster). The former U12 of 78.158 —
+  `scene::cover`'s bands and `peel_body` reaching the residue's complex —
+  is folded into this route: those readers are what the Mayer–Vietoris
+  measurement is taken over.
+- 70.6 and 70.7 (the contact as shared boundary and as a chart) stand:
+  the contact face U∩V they build is the face whose holonomy decides.
+
 Chapter 20 ruled on 2026-09-09 that A BODY IS ONE HUE. Two weeks of
 readings say it cannot stand: it makes perception MONOCHROME. A body
 defined by its colour is not a body seen in colour — it is a body seen
@@ -12408,7 +12578,10 @@ layer, and the census says exactly that.
 ### 70.4 The ruling, and why its two halves cannot land apart
 
 **A body is a maximal HUE-BLIND connected region of the support. Its hue
-is the gauge section it carries, not its identity.**
+is the gauge section it carries, not its identity.** *(The first sentence
+SUPERSEDED 2026-10-09 by U13 as a pre-decision: touching bodies merge
+only where the holonomy around their contact face is the identity — see
+this chapter's amendment. The second stands.)*
 
 1. Bodies become the 732 visual regions, not 1646 shards. The colour
    seams stop being discarded filter noise and become the body's own
@@ -19650,6 +19823,37 @@ home stands.
 `K` should rise, and `chain.nodes` and `treasury.entries` should follow the
 open work, not the hours.
 
+**Amended 2026-10-09 (the operator, U12; recorded verbatim in §0.1).** U12
+names the operator this chapter implements: the ASYMMETRIC CAUSAL
+DIFFERENTIAL `δ_causal`, puncture preservation. The fold is a coboundary
+reduction on the Čech nerve of the line's acts, and in a poset with
+many-fingered time its boundary operator respects the causal arrow
+(`≺`, law 9), where standard cohomology's `δ² = 0` reads a static complex.
+- *Closed* items above — settled ledger rows, orbits fully resolved, the
+  symmetric cycles — lie in the kernel of the reduction and are integrated
+  into the ERA ROOT: the fold root at which the epoch rows stand (this
+  chapter, "the epoch rows stand at the root they net to"). Integrated is
+  not discarded (law 7): they are cold in their era, read by coordinates
+  when cited.
+- *Open* items — open escrows, unresolved demands, the asymmetric chains —
+  do not close, and `δ_causal` never stalls the reduction waiting for them:
+  it projects each unclosed boundary onto the new active Cauchy surface,
+  the hot set the fold leaves, as a TOPOLOGICAL PUNCTURE — a living defect
+  on the active board. This chapter's *carried* item ("an open item whose
+  history has closed is carried, as the claim it already is") and the
+  escrow "already the puncture that crosses a fold" are that projection
+  named; U12 makes it the rule for every open chain, demands included,
+  not only escrows, listings and provisional words.
+- What this supersedes: nothing of the per-item finality above; it
+  supersedes 45.8's remaining reading of the fold as a cut "behind a fully
+  final prefix" (already amended by this chapter) and states the fold's
+  operator. The former U12 of 78.158 (perception readers reaching the
+  residue's complex) is a different object and is folded into U13's probe
+  route (70 as amended).
+- Owed with the build (the coordinator's slice, §0.1): the algebra test
+  that an open escrow is projected as a puncture while the era root
+  closes.
+
 ### 78.66 One reserve, drawn by what moved; the fold paced by least action (ruled 2026-10-02, the operator's word: "wire PHY1 and PH1 first", "all of it, voice included")
 
 **The defect.** A voice held two reserves. The client binary built its own
@@ -19820,6 +20024,46 @@ metabolism` should show hot nodes bounded and eras rising slowly.
 
 ### 78.68 The master condensation motor: a word is one product in Cl(4,1), every reading of it is a reading of that product, and the carriage is its luminal transport (ruled 2026-10-02, the operator's word: "document this as the master condense equation"; amended the same day: "fold the two-event trigger, the carriage diagnosis, and the saturation corrections directly into §78.68")
 
+**Amended 2026-10-09 (the operator, U15; recorded verbatim in §0.1).** The
+lift of a letter to a native Cl(4,1) versor ruled here holds for invariant
+conformal motion and FAILS for creation, sources and deformations: those
+are incongruent changes, and a process that alters the manifold's topology
+is no isometry `g`. A letter is the exact TRIADIC MORPHISM, the
+Constructor Difference Triad
+
+```
+λ = (g_core, ∇B, ΔB)
+   g_core ∈ Spin⁺(4,1)(ℚ)   the conformal transport of the invariant structural core
+   ∇B                       the constructors (spheres, points) absorbed into the e_∅ reservoir — sink
+   ΔB                       the constructors emitted along null rays — creation
+∇B = ΔB = ∅  ⇒  λ = g_core, a Cl(4,1) versor (the case this section rules)
+```
+
+For an incongruent change the letter acts on the constructor complex
+(78.12's constructors, 78.30(1)), and mass added and subtracted are
+algebraic acts of the letter. What this changes and supersedes here:
+- "A word is a geometric product … its letters … are versors of
+  Spin⁺(4,1)(ℚ)" holds for the core `g_core` of each letter; a word's
+  product `W` is the product of the cores, and its readings `C(w) ⊢ …`
+  are readings of that product. The ∇B and ΔB of its letters are carried
+  with the word as the constructor difference the product alone cannot
+  hold; how they compose along a word is owed to the build (S1), stated
+  here before it is coded.
+- SUPERSEDED: "The 17 are compact … a letter never touches `e₋`, so no
+  letter is hyperbolic or null … *No null letter is needed*", and below
+  "The letters stay SO(4), and `Rotor` keeps its 16 coefficients as the
+  internal orientation (the operator's amendment: no null letters)". The
+  letter's carrier lifts from `alphabet::Rotor` to the triad; ΔB is
+  emitted along null rays, so a letter reaches the null cone, and with
+  U14's reseeding (1.1 as amended) the seed's compact restriction no
+  longer starves the 𝒯 lane at genesis.
+- Stands: the carriage as luminal transport, the winding carrier, the
+  two-event fold trigger (as 78.69 extends it), and the rank-step act —
+  which U14 now names as the act at which a coined letter is adjoined.
+- 78.115's motion letter (`V = T·D·R`) is the `∇B = ΔB = ∅` case of the
+  triad; the deformation, creation and source demands (78.158 (b): "a
+  non-versor change has no residue at all") are its `∇B`/`ΔB` cases.
+
 **Where it came from.** The epoch-117 fold storm (78.67) folded each close
 as its own era. The history was quotiented at the finest grain, by
 identity alone. The operator's question was whether condensation should
@@ -19831,7 +20075,8 @@ quotient it must hold rather than growing it.
 **The algebra.** A word is a geometric product composed in Cl(4,1)(ℚ):
 its letters and its carriage are versors of Spin⁺(4,1)(ℚ), each read as a
 ray (79.1 R1, §52).
-- *The letters are the internal orientation within a chart.* The 17 are
+- *The letters are the internal orientation within a chart.*
+  *(SUPERSEDED 2026-10-09 by U15 and U14 — see the amendment above.)* The 17 are
   compact: the identity, the 90° turns and the Pythagorean rotations of
   SO(4). The tree holds them as `Rotor`, 16 coefficients over `e0..e3`,
   which `Rotor::lift` carries to the identically-masked blades
@@ -20053,6 +20298,8 @@ container, not the physics.
 
 The letters stay SO(4), and `Rotor` keeps its 16 coefficients as the
 internal orientation (the operator's amendment: no null letters).
+*(SUPERSEDED 2026-10-09 by U15: the letter is the triad
+`(g_core, ∇B, ΔB)`; see the amendment at the head of this section.)*
 
 **Landed (2026-10-02), with the operator's three answers:**
 - *edges*: both realisations;
