@@ -65,7 +65,7 @@ impl Kernel {
 
     /// The record a mouth's side holds on its universe's map.
     fn mouth_record(&self, domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> Option<(HeldRecord, u64)> {
-        let held = self.atlas.records.get(&record_key(domain, &mouth_id(mouth, side)))?.clone();
+        let held = self.atlas.records.get(&record_key(domain, &mouth_id(domain, mouth, side)))?.clone();
         match held.record {
             MapRecord::Mouth { freshness, .. } => Some((held, freshness)),
             MapRecord::Segment { .. } => None,

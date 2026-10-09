@@ -26508,9 +26508,11 @@ the ruled bytes. Every act is under `[0x3E][domain 32][0x80 0x00][kind]`.
    [span n u64][span d u64][0 | 1 keeper 32]`: a road (tube, core) between
    two mapped places of this universe, no keeper; a THROAT between one
    mouth's two sides, its own side mapped, its keeper the mouth's keeper;
-   every span a positive exact rational in geometrized Mpc. A record is
-   held by `domain ‖ id` (a mouth by its place, a segment by its kind and
-   places) at the point it was mapped and superseded only by a later act;
+   every span a positive exact rational in geometrized Mpc. A record's id
+   is the citation hash of `"map record" ‖ domain ‖` its place (a mouth) or
+   its kind and places (a segment) — one throat mapped by both universes is
+   two records, so a route naming both counts each span once — held by
+   `domain ‖ id` at the point it was mapped and superseded only by a later act;
    a wormhole is untraversable until its reserve maps it. Reply `[1][record
    id 32][sealed h][court's final TPoint 84]` or `[0][reason]` (1, 2, 5, 6
    as the ledger's; 7 no open tube, 8 the side not this universe's, 9 an end

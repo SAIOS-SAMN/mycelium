@@ -459,10 +459,12 @@ impl MapRecord {
         })
     }
 
-    /// THE RECORD'S ID within its universe: a mouth by its place, a segment
-    /// by its kind and its two places — what a later act supersedes.
-    pub fn id(&self) -> [u8; 32] {
+    /// THE RECORD'S ID: its universe, and a mouth by its place, a segment by
+    /// its kind and its two places — what a later act supersedes, and what
+    /// a route names (one throat mapped by both universes is two records).
+    pub fn id(&self, domain: &[u8; 32]) -> [u8; 32] {
         let mut b = b"map record".to_vec();
+        b.extend_from_slice(domain);
         match self {
             MapRecord::Mouth { place, .. } => {
                 b.push(0);

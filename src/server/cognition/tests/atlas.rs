@@ -113,7 +113,7 @@ fn traverse(k: &mut Kernel, m: [u8; 32], at: u64, route: Vec<[u8; 32]>, carried:
     let head = |k: &Kernel, d: u8| k.atlas.head(&domain(d)).map_or(([0; 32], 0), |e| (e.hash, e.entry.u));
     let ((entry_a, u_a), (entry_b, u_b)) = (head(k, 4), head(k, 5));
     let point = |k: &Kernel, d: u8, side: u8| {
-        let id = crate::server::cognition::atlas::mouth_id(&m, side);
+        let id = crate::server::cognition::atlas::mouth_id(&domain(d), &m, side);
         k.atlas.records.get(&crate::server::cognition::atlas::record_key(&domain(d), &id)).map_or(fp(0), |r| r.point)
     };
     let (point_a, point_b) = (point(k, 4, 0), point(k, 5, 1));
@@ -142,6 +142,7 @@ fn map_then_traverse_end_to_end() {
     assert!(matches!(map(&mut k, 5, 12, mouth(m, 1, 2)), Mapped::Sealed { .. }));
     let Mapped::Sealed { record: ta, .. } = map(&mut k, 4, 12, throat(m, (3, 2), keeper)) else { panic!("A's throat") };
     let Mapped::Sealed { record: tb, .. } = map(&mut k, 5, 12, throat(m, (5, 4), keeper)) else { panic!("B's throat") };
+    assert_ne!(ta, tb, "one throat mapped by both universes is two records");
     let read = k.map_reading(&domain(4));
     assert_eq!(read.len(), 2, "a mouth and a throat");
     assert!(read.iter().any(|r| r.place.is_some()), "the mouth's place read off its tube");

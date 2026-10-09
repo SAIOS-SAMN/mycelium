@@ -42,7 +42,7 @@ fn a_ledger_entry_reads_back_and_verifies() {
         assert_eq!(decode_domain_request(&frame), None, "a byte left over");
     }
     let bare = LedgerEntry { domain: [6; 32], u: 1, commitment: [0; 32], events: [0; 32], point: at(1), parent: [0; 32], applied: Vec::new(), nonce: [0; 32] };
-    let mut frame = encode_ledger(&bare.sign(&key(30)));
+    let mut frame = encode_ledger(&bare.clone().sign(&key(30)));
     assert_eq!(frame.len(), 1 + 32 + 2 + 1 + 8 + 32 + 32 + 84 + 32 + 32 + 64, "the ruled bytes exactly");
     frame.push(0);
     assert_eq!(decode_domain_request(&frame), None, "an empty applied list is never written");

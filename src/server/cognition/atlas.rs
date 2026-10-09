@@ -101,8 +101,8 @@ pub(crate) fn record_key(domain: &[u8; 32], id: &[u8; 32]) -> Vec<u8> {
 }
 
 /// The id a mouth's record is held under on its universe's map.
-pub(crate) fn mouth_id(mouth: &[u8; 32], side: u8) -> [u8; 32] {
-    MapRecord::Mouth { place: (*mouth, side), freshness: 0 }.id()
+pub(crate) fn mouth_id(domain: &[u8; 32], mouth: &[u8; 32], side: u8) -> [u8; 32] {
+    MapRecord::Mouth { place: (*mouth, side), freshness: 0 }.id(domain)
 }
 
 impl Atlas {
@@ -386,7 +386,7 @@ impl Kernel {
         if !self.final_in_view(&a.point, fin) {
             return refuse(R::NotFinal);
         }
-        let mapped = |k: &Kernel, place: &([u8; 32], u8)| k.atlas.records.contains(&record_key(&a.domain, &mouth_id(&place.0, place.1)));
+        let mapped = |k: &Kernel, place: &([u8; 32], u8)| k.atlas.records.contains(&record_key(&a.domain, &mouth_id(&a.domain, &place.0, place.1)));
         match &a.record {
             MapRecord::Mouth { place, .. } => {
                 if place.1 > 1 {
@@ -430,7 +430,7 @@ impl Kernel {
                 }
             }
         }
-        let id = a.record.id();
+        let id = a.record.id(&a.domain);
         let key = record_key(&a.domain, &id);
         if self.atlas.records.get(&key).is_some_and(|h| h.point.origin == a.point.origin && a.point.h < h.point.h) {
             return refuse(R::Behind);
