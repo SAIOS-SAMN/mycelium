@@ -859,6 +859,15 @@ is decided here, and binds the slice (S1–S4):
    ALPHABET.md and the ~37 other mentions of "the seventeen" read through
    1.1 as amended; S2 marks ALPHABET.md superseded at its head.
 
+### The operator's ruling on the servers as educators, 2026-10-09
+
+> "the mycelium-servers are supposed to be educators, they were supposed to be and have syllabus configured in them for distribution."
+
+Recorded with its chosen form (curriculum + ruled words), the grade reading
+and the order at 80.2's amendment of 2026-10-09; under 78.157 the server's
+office gains the curriculum (configuration and dispatch) and nothing that
+thinks.
+
 ### The operator's ruling on the client, 2026-10-09 (verbatim)
 
 > "mycelium-client should be pure cognition and then dual loaded in-game (xylarium, netstratum.. etc etc as "minds") and also directly linked to mycelium-server (hyphas)"
@@ -27577,6 +27586,31 @@ crystals over its own orbits; (v) SP2 stands as the court adjudicating
 SUBMITTED solutions and their convergence, never every epigenomic
 candidate, which is exactly the brute force the path prevents; (vi)
 "mineral" and "crystal" enter the vocabulary in this sense.
+
+**Amended 2026-10-09 (the operator: the servers are educators).** Verbatim:
+"the mycelium-servers are supposed to be educators, they were supposed to be
+and have syllabus configured in them for distribution." The form chosen (the
+coordinator, under the operator): CURRICULUM + RULED WORDS.
+- **The curriculum** is server configuration: a graded sequence of exercises
+  (tasks) minds solve themselves — never answers, never seeded words (U14's
+  empty alphabet stands). THE GRADE is read by the court off each task's own
+  structure, never hand-ranked (mycelium's decision): the task's train family
+  measured by the court's own intake reading `arc::family_cover` — the
+  per-lane magnitude it already prices bounties by — and ordered by LANE-WISE
+  DOMINANCE, never collapsed to one number: a task's grade is the length of
+  the longest chain of tasks strictly dominated below it (a task no other is
+  below is grade 0; incomparable tasks share a grade). The ordering choice is
+  listed in the emergence register as DECLARED (Concordance 8.3). Dispatch
+  serves each mind the lowest grade it has not closed; a mind's PLACE
+  advances on its own closures, read by the court from receipts (78.157 C3),
+  so no dispatch cursor is kept. It starts at a fresh genesis: every mind at
+  grade 0.
+- **Ruled words** — everything the courts adjudicate — are taught to every
+  mind through the syllabus as MINERALS and become CRYSTALS when the mind
+  re-derives them, as (ii)/(iii) above rule; DL1 is therefore owed to the
+  educator, ranked with the recut slice's follow-ups, not after them.
+- **The server verifies and educates; it never thinks.** It configures the
+  curriculum and reads its grades; it does not solve it (law 8).
 
 **Stage 23, the order.** CK1 with LD0 (and c's parent citation read) and
 C4 widened, then the operator's recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
