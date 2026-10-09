@@ -82,8 +82,15 @@ fn pass(k: &mut Kernel, h: u64) {
     }
 }
 
+/// Thirty-two bytes naming `n` exactly: its little-endian bytes, then zeros.
+fn bytes_of(n: u64) -> [u8; 32] {
+    let mut b = [0u8; 32];
+    b[..8].copy_from_slice(&n.to_le_bytes());
+    b
+}
+
 fn map(k: &mut Kernel, d: u8, h: u64, record: MapRecord) -> Mapped {
-    k.map(&MapAct { domain: domain(d), point: fp(h), record, nonce: [h as u8; 32] }.sign(&reserve(d)), Some(fp(h)))
+    k.map(&MapAct { domain: domain(d), point: fp(h), record, nonce: bytes_of(h) }.sign(&reserve(d)), Some(fp(h)))
 }
 
 fn mouth(id: [u8; 32], side: u8, freshness: u64) -> MapRecord {
@@ -98,7 +105,7 @@ fn throat(id: [u8; 32], span: (u64, u64), keeper: [u8; 32]) -> MapRecord {
 /// final point `fp(fin)`; its hash where sealed.
 fn commit(k: &mut Kernel, d: u8, u: u64, h: u64, fin: u64, applied: Vec<([u8; 32], u64)>) -> Ledgered {
     let parent = k.atlas.head(&domain(d)).map_or([0; 32], |e| e.hash);
-    let e = LedgerEntry { domain: domain(d), u, commitment: [u as u8; 32], events: [0; 32], point: fp(h), parent, applied, nonce: [0; 32] };
+    let e = LedgerEntry { domain: domain(d), u, commitment: bytes_of(u), events: [0; 32], point: fp(h), parent, applied, nonce: [0; 32] };
     k.ledger(&e.sign(&reserve(d)), Some(fp(fin)))
 }
 
