@@ -344,6 +344,19 @@ on the stake at the court's read price (emergent, never a published
 rate), and an unstake releases only after every claim drawn on it settles.
 A progenitor's in-universe wormhole haul pays the same gas.
 
+EVERY WORMHOLE IS COORDINATED ON TUNIVERSAL WITH THE HYPHA (the operator,
+2026-10-09). A wormhole joins two places that no light path joins, so its
+two mouths can agree only on the one clock: no crossing is made without a
+TRAVERSE act on the hypha that cites a FINAL TUniversal point at each mouth
+(origin/h:S:G:T:H:K, 2-of-3 quorum, 78.152). Between domains this is the
+mouth traversal of 78.128 (kind 9), its keeper's toll on lane G; WITHIN one
+universe — a progenitor network, a core-to-rim haul in xylarium — it is the
+same act, never a kernel's private shortcut. So every wormhole traversal
+costs μ: the route's gas per lane (§7.1) plus the mouth's toll, paid to the
+courts. A crossing whose mouths' points are not final is refused as not yet
+at h; a kernel that moves matter through a wormhole without the act has
+moved it nowhere the mesh recognises.
+
 ### 7.2 Dissipation recycles (78.154a, the operator, 2026-10-09)
 
 Nothing lands nowhere (Concordance 1.3): demurrage is not destruction. What a
