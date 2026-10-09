@@ -5,6 +5,7 @@
 //! is listed with its demands, and installs only on two-organ CONVERGENCE.
 //! No painted site of a voice's scene reaches the court (law 8, ruled 2026-09-10).
 
+mod atlas;
 mod basis;
 mod book;
 mod carriers;
@@ -13,6 +14,7 @@ mod cite;
 mod convert;
 mod cocycle;
 mod court;
+mod crossing;
 mod depth;
 mod germinate;
 mod handoff;

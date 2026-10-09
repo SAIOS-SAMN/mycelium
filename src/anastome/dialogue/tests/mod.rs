@@ -2,6 +2,8 @@
 // names the chapter of MU-RECURSION the claim comes from.
 
 mod acts;
+mod atlas;
+mod commitment;
 mod equivocation;
 mod fold_wire;
 mod offer;

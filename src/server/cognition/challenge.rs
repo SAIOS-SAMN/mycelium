@@ -516,6 +516,8 @@ impl Kernel {
         // 78.133 — tolls whose window closed, paid out (before the handoffs
         // they ride on are let go).
         gone += self.release_tolls();
+        // 78.154 (4) — and the map fees claimed on stakes, paid whole.
+        gone += self.release_claims();
         // 78.126 — handoffs both of whose sides final folds consumed.
         gone += self.settle_handoffs();
         // Demands and withdrawals of folds no longer recorded.

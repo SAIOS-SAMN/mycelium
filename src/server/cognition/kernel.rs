@@ -458,6 +458,10 @@ pub struct Kernel {
     /// its ancients' basket — each once — persisted after the origins
     /// (`LEAF_DOMAINS`).
     pub(crate) universes: crate::network::nerve::Keyed<crate::anastome::dialogue::universe::Universe>,
+    /// 78.154 — THE ATLAS: each universe's ledger chain and map, the
+    /// crossings' edges, the final points held, and the claims on stakes —
+    /// persisted on the court's own node (`LEAF_ATLAS`).
+    pub(crate) atlas: super::atlas::Atlas,
     /// 78.145 — THE SEAT RELAY: each domain's latest seat listing and the
     /// mail between its house and the minds seated in it. Volatile and
     /// bounded; never persisted. 78.146: on its own lock, so a door serves a

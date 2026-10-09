@@ -173,6 +173,16 @@ pub enum DomainRequest {
     State(super::universe::SignedStatement),
     /// 78.139 — what a universe has stated, read; nothing sealed.
     ReadUniverse([u8; 32]),
+    /// 78.154 — a universe's LEDGER entry, by its reserve.
+    Ledger(Box<super::atlas::SignedLedger>),
+    /// 78.154 — a universe's ledger after `u`, read; nothing sealed.
+    ReadLedger { domain: [u8; 32], after: u64 },
+    /// 78.154 — a MAP record posted by the universe's reserve.
+    Map(Box<super::atlas::SignedMap>),
+    /// 78.154 — a universe's map, read; nothing sealed.
+    ReadMap([u8; 32]),
+    /// 78.154 — a TRAVERSE: coordinates retrieved and the crossing mapped.
+    Traverse(Box<super::crossing::SignedTraverse>),
 }
 
 const KIND_READ_RESERVE: u8 = 2;
@@ -531,6 +541,28 @@ pub fn decode_domain_request(b: &[u8]) -> Option<DomainRequest> {
             p += 64;
             let bond = Bond { domain, reserve, tier, mu, nonce };
             return (p == rest.len()).then_some(DomainRequest::Bond(SignedBond { bond, sig }));
+        }
+        // 78.154 — the ledger, the map and the traverse, and their reads.
+        super::atlas::KIND_LEDGER => {
+            p += 1;
+            let s = super::atlas::take_ledger(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Ledger(Box::new(s)));
+        }
+        super::atlas::KIND_READ_LEDGER => {
+            p += 1;
+            let after = super::atlas::u64_at(rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::ReadLedger { domain, after });
+        }
+        super::atlas::KIND_MAP => {
+            p += 1;
+            let s = super::atlas::take_map(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Map(Box::new(s)));
+        }
+        super::atlas::KIND_READ_MAP => return (rest.len() == p + 1).then_some(DomainRequest::ReadMap(domain)),
+        super::atlas::KIND_TRAVERSE => {
+            p += 1;
+            let s = super::crossing::take_traverse(domain, rest, &mut p)?;
+            return (p == rest.len()).then_some(DomainRequest::Traverse(Box::new(s)));
         }
         KIND_RESERVE => {}
         _ => return None,

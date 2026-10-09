@@ -46,6 +46,10 @@ pub const LEAF_HANDOFFS: u8 = 7;
 /// 78.147 — the fold roots this court holds with their two signatures, by
 /// signer; absent where none is held (and on every home written before it).
 pub const LEAF_ROOTS: u8 = 8;
+/// 78.154 — the atlas: each universe's ledger chain and map, the crossings'
+/// edges, the final points held, the claims on stakes; absent where none is
+/// held (and on every home written before it).
+pub const LEAF_ATLAS: u8 = 9;
 
 /// T2 — THE LEDGER (78.24, 78.27): a node per stamp, the per-act data
 /// standing at it, and the act's receipt where the line is in the snapshot.

@@ -14,7 +14,7 @@ pub mod treasury;
 
 pub use fold::{nets_of, nets_read, Folded, Inexact, Nets};
 pub use lanes::*;
-pub use pay::{Held, Unpaid};
+pub use pay::{Held, Unpaid, RECYCLED};
 pub use treasury::*;
 
 use crate::transducer::element::Element;
