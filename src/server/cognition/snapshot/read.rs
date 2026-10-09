@@ -330,6 +330,7 @@ impl Kernel {
                     LEAF_FIRST,
                     LEAF_COUNT,
                     LEAF_PAYLOAD,
+                    LEAF_PUNCTURES,
                 ],
             )?;
             at.set(COMPLEXES_TRIE);
@@ -486,6 +487,12 @@ impl Kernel {
                     hash: leaf(leaves, LEAF_ROOT_HASH)?.try_into().ok()?,
                     height: root_at.h,
                 };
+                // U12: the carried count, the projected count and the run,
+                // read whole or the era refuses.
+                let run = leaf(leaves, LEAF_PUNCTURES)?;
+                let carried = u64::from_le_bytes(run.get(0..8)?.try_into().ok()?);
+                let punctured = u64::from_le_bytes(run.get(8..16)?.try_into().ok()?);
+                let punctures = crate::chronometry::Puncture::read_run(run.get(16..)?, punctured)?;
                 let era = crate::chronometry::Era {
                     root,
                     signer: root_at.vk,
@@ -495,8 +502,11 @@ impl Kernel {
                     identities: u64::from_le_bytes(leaf(leaves, LEAF_IDENTITIES)?.try_into().ok()?),
                     first: whole(leaf(leaves, LEAF_FIRST)?, crate::chronometry::Place::take_canonical)?,
                     count: u64::from_le_bytes(leaf(leaves, LEAF_COUNT)?.try_into().ok()?),
+                    carried,
+                    punctured,
                     at: None,
                     receipts: whole(leaf(leaves, LEAF_PAYLOAD)?, crate::chronometry::Era::read_payload)?,
+                    punctures,
                 };
                 kernel.hold_filed(era);
             }

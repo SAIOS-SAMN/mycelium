@@ -774,16 +774,28 @@ impl Kernel {
         };
         let end = file.metadata().map_err(|e| format!("the cold segment is unreadable: {e}"))?.len();
         let mut magic = [0u8; 4];
-        if end > 0 && (file.read_exact_at(&mut magic, 0).is_err() || &magic != Era::SEGMENT_MAGIC) {
-            return Err("the cold segment is not MYE2, the descriptor-framed layout — the recut is the road".into());
+        if end > 0 && file.read_exact_at(&mut magic, 0).is_err() {
+            return Err("the cold segment is unreadable: no magic".into());
+        }
+        if end > 0 && &magic == Era::PRE_PUNCTURE_MAGIC {
+            return Err("the cold segment is MYE2, eras with no punctures (U12 moved the era record) — the recut is the road".into());
+        }
+        if end > 0 && &magic != Era::SEGMENT_MAGIC {
+            return Err("the cold segment is not MYE3, the descriptor-framed layout with punctures — the recut is the road".into());
         }
         let mut pos = Era::SEGMENT_MAGIC.len() as u64;
         let mut head = vec![0u8; Era::DESCRIPTOR + 8];
         let mut found: Vec<Era> = Vec::new();
         while pos < end {
             let read = file.read_exact_at(&mut head, pos).ok().and_then(|()| Era::read_descriptor(&head));
-            let offset = pos + head.len() as u64;
-            let Some((era, len)) = read.filter(|(_, len)| offset.checked_add(*len).is_some_and(|e| e <= end)) else {
+            // U12: the puncture run stands between the descriptor and the
+            // payload, its length named by the descriptor's count.
+            let landed = read.and_then(|(era, len)| {
+                let offset = pos.checked_add(Era::head_len(era.punctured)?)?;
+                offset.checked_add(len).filter(|e| *e <= end)?;
+                Some((era, len, offset))
+            });
+            let Some((era, len, offset)) = landed else {
                 eprintln!("  eras: the segment's last era did not land whole; it ends at byte {pos}");
                 break;
             };
@@ -863,11 +875,11 @@ impl Kernel {
             self.hold_filed(era);
             return;
         };
-        let Some(frame) = era.frame() else {
-            eprintln!("  era refused: a receipt of its payload cannot be written");
+        let (Some(frame), Some(head)) = (era.frame(), crate::chronometry::Era::head_len(era.punctured)) else {
+            eprintln!("  era refused: a receipt of its payload, or its puncture run, cannot be written");
             return;
         };
-        match Self::append_frame(&path, self.eras_end, &frame) {
+        match Self::append_frame(&path, self.eras_end, &frame, head) {
             Some(at) => {
                 self.eras_end = at.offset + at.len;
                 self.hold_filed(era.filed_at(at));
@@ -889,8 +901,9 @@ impl Kernel {
     /// ONE ERA'S FRAME APPENDED after the last whole era, at `end` — what
     /// stands past it is an append that did not land, and is cut — the
     /// segment's magic first where it is new: where its payload landed, or
-    /// `None` where the write did not.
-    fn append_frame(path: &std::path::Path, end: u64, frame: &[u8]) -> Option<crate::chronometry::Filed> {
+    /// `None` where the write did not. `head` is the frame's bytes before
+    /// the payload (descriptor, length, puncture run).
+    fn append_frame(path: &std::path::Path, end: u64, frame: &[u8], head: u64) -> Option<crate::chronometry::Filed> {
         use std::io::{Seek, Write};
         let mut f = std::fs::OpenOptions::new().create(true).write(true).truncate(false).open(path).ok()?;
         f.set_len(end).ok()?;
@@ -900,8 +913,7 @@ impl Kernel {
             at = crate::chronometry::Era::SEGMENT_MAGIC.len() as u64;
         }
         f.write_all(frame).ok()?;
-        let head = (crate::chronometry::Era::DESCRIPTOR + 8) as u64;
-        Some(crate::chronometry::Filed { offset: at + head, len: frame.len() as u64 - head })
+        Some(crate::chronometry::Filed { offset: at + head, len: (frame.len() as u64).checked_sub(head)? })
     }
 
     /// A filed era's receipts, read from its own span of the cold segment;
@@ -911,6 +923,20 @@ impl Kernel {
             return Some(era.receipts.clone());
         };
         read_era(self.eras_path.as_ref()?, at)
+    }
+
+    /// U12 — THE PUNCTURES AN ERA PROJECTED, read cold from the run just
+    /// before its payload; an era that still holds them answers from memory.
+    pub fn era_punctures(&self, era: &crate::chronometry::Era) -> Option<Vec<crate::chronometry::Puncture>> {
+        let Some(at) = era.at else {
+            return Some(era.punctures.clone());
+        };
+        use std::os::unix::fs::FileExt;
+        let run = era.punctured.checked_mul(crate::chronometry::Puncture::TAPE as u64)?;
+        let file = std::fs::File::open(self.eras_path.as_ref()?).ok()?;
+        let mut bytes = vec![0u8; usize::try_from(run).ok()?];
+        file.read_exact_at(&mut bytes, at.offset.checked_sub(run)?).ok()?;
+        crate::chronometry::Puncture::read_run(&bytes, era.punctured)
     }
 
     pub fn genesis_cover(&self) -> Option<[u64; 4]> {

@@ -8,6 +8,12 @@
 //! re-derives the receipts as a chain ending at the root and the rows'
 //! nets as the epochs proposed, co-signs, and holds the same era under the
 //! home's key, so every archived prefix has two holders.
+//!
+//! U12 (78.65 as amended): the commit is the asymmetric coboundary
+//! reduction `δ_causal` — the closed rows and orbits integrated into the
+//! era root, every open chain that opened in the prefix projected onto the
+//! new surface as a puncture the era records (`court/puncture.rs`). Nothing
+//! open waits the fold or refuses it.
 
 use crate::chronometry::{ActKind, Cite, Era, KStepReceipt, Place, Root, Stamp};
 use crate::cognition::Kernel;
@@ -42,6 +48,12 @@ pub struct FoldDone {
     /// Identities the epoch rows named: a count of the mesh's, `u64`.
     pub identities: u64,
     pub witness: [u8; 32],
+    /// U12 — what `δ_causal` projected: the punctures this fold projected
+    /// first, the open chains it carried from earlier eras, and the open
+    /// carriers no stamp cites.
+    pub punctured: u64,
+    pub carried: u64,
+    pub uncited: u64,
 }
 
 impl Kernel {
@@ -222,6 +234,11 @@ impl Kernel {
             self.fold_pending = None;
             return Err(REFUSE_FOLD_OPEN);
         }
+        // U12 — δ_causal: the open chains do not stall the reduction. Each
+        // that opened in this prefix is projected onto the surface the fold
+        // leaves as a puncture, read before the prefix leaves the line; the
+        // root closes over them, and they stay open and settleable there.
+        let projection = self.project_punctures(p.after, p.root.at);
         let (cold, root) = self.chain.fold_before(p.root.at).ok_or(REFUSE_FOLD_OPEN)?;
         #[expect(
             clippy::disallowed_methods,
@@ -252,6 +269,12 @@ impl Kernel {
         // `first` above is this era's own first place, read once where the
         // fold cut the chain; it is not read a second time here (law 12).
         let count = cold.len() as u64;
+        let punctured = projection.punctures.len() as u64;
+        let escrows = projection.punctures.iter().filter(|q| q.chain == crate::chronometry::Chain::Escrow).count() as u64;
+        crate::observe::note_puncture(crate::observe::PunctureAxis::Escrows, escrows);
+        crate::observe::note_puncture(crate::observe::PunctureAxis::Demands, punctured - escrows);
+        crate::observe::note_puncture(crate::observe::PunctureAxis::Carried, projection.carried);
+        crate::observe::note_puncture(crate::observe::PunctureAxis::Uncited, projection.uncited);
         self.file_era(Era {
             root,
             signer: me,
@@ -261,8 +284,11 @@ impl Kernel {
             identities,
             first,
             count,
+            carried: projection.carried,
+            punctured,
             at: None,
             receipts: cold,
+            punctures: projection.punctures,
         });
         // What this court's own folded line cited of its peers is no longer
         // cited by its hot line, and their folded lines may leave.
@@ -274,6 +300,9 @@ impl Kernel {
             last: root.at,
             identities,
             witness: wk,
+            punctured,
+            carried: projection.carried,
+            uncited: projection.uncited,
         };
         self.fold_pending = None;
         self.mark_persist();

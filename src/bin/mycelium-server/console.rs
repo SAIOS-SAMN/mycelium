@@ -502,6 +502,10 @@ fn court(c: &Court) -> Vec<String> {
             "  {BOLD}serving{RESET}     {}",
             observe::SERVE_AXES.iter().zip(c.serve).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join(" · ")
         ),
+        format!(
+            "  {BOLD}punctures{RESET}   {}",
+            observe::PUNCTURE_AXES.iter().zip(c.punctures).map(|(axis, n)| format!("{axis} {n}")).collect::<Vec<_>>().join(" · ")
+        ),
     ]
 }
 
