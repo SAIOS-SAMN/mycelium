@@ -5,6 +5,7 @@
 
 use super::point::{Origin, TPoint};
 use super::reading::{Cited, Tick, TickReading};
+use super::record::LastSigned;
 use crate::network::nerve::Keyed;
 
 /// How many recent readings a keeper carries on its digest: an aperture
@@ -142,6 +143,15 @@ impl Keepers {
     /// Answers whether a reading was signed. `None` where the reading cannot
     /// be written.
     pub fn read_own(&mut self, sk: &ed25519_dalek::SigningKey, tick: Tick) -> Option<bool> {
+        self.read_own_kept(sk, tick, |_| true)
+    }
+
+    /// THE KEEPER'S READING, KEPT BEFORE IT IS HELD (78.152, persisted):
+    /// as `read_own`, the new reading handed to `keep` — which writes it to
+    /// the home's keeper record — before it is held or can leave on a ring.
+    /// A reading `keep` did not keep is not held and never published:
+    /// `Some(false)`, as a reading not due.
+    pub fn read_own_kept(&mut self, sk: &ed25519_dalek::SigningKey, tick: Tick, keep: impl FnOnce(&LastSigned) -> bool) -> Option<bool> {
         let (parent, due) = match self.line(&self.me).and_then(Line::newest) {
             None => ([0u8; 32], true),
             Some((at, r)) => (*at, tick.h > r.tick.h && tick.measure_moved(&r.tick)),
@@ -159,9 +169,31 @@ impl Keepers {
             })
             .collect();
         let r = TickReading::sign(sk, &self.origin, tick, parent, cites)?;
-        let at = r.hash(&self.origin)?;
-        self.hold(self.me, at, r);
+        let rec = LastSigned::of(self.origin, r)?;
+        if !keep(&rec) {
+            return Some(false);
+        }
+        self.hold(self.me, rec.hash, rec.reading);
         Some(true)
+    }
+
+    /// A RESTARTED KEEPER RESUMES ITS LINE (78.152, persisted): the last
+    /// reading it signed before the restart, read from its home's record,
+    /// held as its own line's newest — so its next reading rises above that
+    /// tick and names it as parent, and its ring carries it to peers that
+    /// missed it. Answers whether it was taken: only a record of this origin,
+    /// signed by this court, onto a line that holds nothing at or above it.
+    pub fn resume(&mut self, rec: &LastSigned) -> bool {
+        let r = &rec.reading;
+        let fits = rec.origin == self.origin
+            && r.keeper == self.me
+            && r.verifies(&self.origin)
+            && r.hash(&self.origin) == Some(rec.hash)
+            && self.line(&self.me).and_then(Line::newest).is_none_or(|(_, n)| n.tick.h < r.tick.h);
+        if fits {
+            self.hold(self.me, rec.hash, r.clone());
+        }
+        fits
     }
 
     /// This court's own ring: its newest readings, oldest first.

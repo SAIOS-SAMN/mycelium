@@ -23,9 +23,17 @@
 //! the domain's listing and hands the mind its own seat's functions: its
 //! repertoire, which with no counsel it calls with arguments of its own
 //! (`seat_mind::own`).
+//!
+//! v1.4 — A SEAT IS NAMED BY (domain, sub-origin, seat): `--seat
+//! <domain-hex>[/<sub-origin-hex>] <seat-id>[,…]`, the sub-origin absent for
+//! the domain's own universe. The box is read at the relay's standing: a
+//! cursor left on a relay that restarted (another epoch, or past its last
+//! sequence) is read again from the start, never taken for progress. Each
+//! percept's (TPoint, u) locates the seat's sub-instance, and its experienced
+//! dilation rides the perceived line.
 
-use mycelium::anastome::dialogue::seat::{Arg, Record};
-use mycelium::client::sdk::seat::{seat_fns, MindMail, SeatHold};
+use mycelium::anastome::dialogue::seat::{Arg, MailRead, Record};
+use mycelium::client::sdk::seat::{seat_fns, MindMail, MindRead, SeatHold, SeatName};
 use mycelium::client::sdk::seat_mind::task::{grid_steps, solve_args, tasks_before, FN_SOLVE};
 use mycelium::client::sdk::seat_mind::Decision;
 use mycelium::sdk::Entity;
@@ -33,8 +41,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 /// THE SEAT THIS VOICE SITS.
 pub(crate) struct SeatArm {
-    domain: [u8; 32],
-    seat: u32,
+    /// v1.4 — the seat's name: (domain, sub-origin, seat).
+    at: SeatName,
     key: ed25519_dalek::SigningKey,
     /// 78.148 — the take posted, the house's answer, the strokes waited.
     hold: SeatHold,
@@ -76,24 +84,36 @@ pub(crate) struct SeatArms {
     key: ed25519_dalek::SigningKey,
     /// The last sequence read from the shared box.
     after: u64,
+    /// v1.4 — the relay's epoch the cursor was read under: another epoch is
+    /// a restarted relay, and the cursor is read again from the start.
+    epoch: Option<u64>,
 }
 
 impl SeatArms {
-    /// `--seat <domain-hex> <seat-id>[,<seat-id>…]`, or no arm.
+    /// `--seat <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…]`, or no
+    /// arm.
     pub(crate) fn of_args(args: &[String], key: ed25519_dalek::SigningKey) -> Result<Option<SeatArms>, String> {
         let Some(at) = args.iter().position(|a| a == "--seat") else { return Ok(None) };
         let (Some(d), Some(s)) = (args.get(at + 1), args.get(at + 2)) else {
-            return Err("--seat takes <domain-hex> <seat-id>[,<seat-id>…]".to_string());
+            return Err("--seat takes <domain-hex>[/<sub-origin-hex>] <seat-id>[,<seat-id>…]".to_string());
+        };
+        let (d, sub) = match d.split_once('/') {
+            Some((d, sub)) => (d, Some(sub)),
+            None => (d.as_str(), None),
         };
         let domain = mycelium::court::identity::parse_hex32(d).ok_or_else(|| format!("--seat: {d} is not a 32-byte hex domain"))?;
+        let sub_origin = match sub {
+            Some(x) => Some(mycelium::court::identity::parse_hex32(x).ok_or_else(|| format!("--seat: {x} is not a 32-byte hex sub-origin"))?),
+            None => None,
+        };
         let mut arms = Vec::new();
         for one in s.split(',') {
             let seat = one.trim().parse::<u32>().map_err(|e| format!("--seat: {one} is not a seat id: {e}"))?;
-            if !arms.iter().any(|a: &SeatArm| a.seat == seat) {
-                arms.push(SeatArm::new(domain, seat, key.clone()));
+            if !arms.iter().any(|a: &SeatArm| a.at.seat == seat) {
+                arms.push(SeatArm::new(SeatName { domain, sub_origin, seat }, key.clone()));
             }
         }
-        Ok(Some(SeatArms { arms, key, after: 0 }))
+        Ok(Some(SeatArms { arms, key, after: 0, epoch: None }))
     }
 
     /// ONE STROKE AT EVERY SEAT: each seat takes (again, where lost); the
@@ -106,8 +126,22 @@ impl SeatArms {
         let mut beats = vec![0u64; self.arms.len()];
         let mut tasks: Vec<Vec<[u8; 32]>> = vec![Vec::new(); self.arms.len()];
         for _ in 0..pages() {
-            let mail = match entity.relay().mail(&self.key, self.after) {
-                Ok(Ok(m)) => m,
+            // 0 is the epoch a reader names where it holds none.
+            let held_epoch = self.epoch.map_or(0, |e| e);
+            let mail = match entity.relay().mail(&self.key, self.after, held_epoch) {
+                Ok(Ok(MindRead { epoch, seq, mail: m })) => {
+                    // v1.4 — a cursor on a restarted relay is no progress:
+                    // what it read was a whole box from the start, and the
+                    // cursor stands where that read leaves it.
+                    let standing = MailRead { epoch, seq, mail: Vec::new() };
+                    let cursor = standing.cursor(self.epoch, self.after);
+                    if cursor != self.after {
+                        eprintln!("[{tag}] seat mail: the relay restarted under the cursor (epoch {epoch:016x}, seq {seq}, cursor {}) — read from the start", self.after);
+                        self.after = cursor;
+                    }
+                    self.epoch = Some(epoch);
+                    m
+                }
                 Ok(Err(why)) => {
                     eprintln!("[{tag}] seat mail refused: {why:?}");
                     break;
@@ -124,14 +158,14 @@ impl SeatArms {
                 if stop.load(Ordering::SeqCst) {
                     return;
                 }
-                let (domain, seat, seq) = match &piece {
-                    MindMail::Taken(q, t) => (t.domain, t.seat, *q),
-                    MindMail::Percept(q, p) => (p.domain, p.seat, *q),
-                    MindMail::Outcome(q, o) => (o.domain, o.seat, *q),
+                let (at, seq) = match &piece {
+                    MindMail::Taken(q, t) => (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }, *q),
+                    MindMail::Percept(q, p) => (SeatName { domain: p.domain, sub_origin: p.sub_origin, seat: p.seat }, *q),
+                    MindMail::Outcome(q, o) => (SeatName { domain: o.domain, sub_origin: o.sub_origin, seat: o.seat }, *q),
                 };
                 self.after = seq;
                 // A piece for a seat this mind does not sit is read past.
-                let Some(i) = self.arms.iter().position(|a| a.domain == domain && a.seat == seat) else { continue };
+                let Some(i) = self.arms.iter().position(|a| a.at == at) else { continue };
                 if let (Some(arm), Some(b), Some(t)) = (self.arms.get_mut(i), beats.get_mut(i), tasks.get_mut(i)) {
                     arm.read_piece(entity, tag, piece, b, t);
                 }
@@ -151,10 +185,9 @@ impl SeatArms {
 }
 
 impl SeatArm {
-    fn new(domain: [u8; 32], seat: u32, key: ed25519_dalek::SigningKey) -> SeatArm {
+    fn new(at: SeatName, key: ed25519_dalek::SigningKey) -> SeatArm {
         SeatArm {
-            domain,
-            seat,
+            at,
             key,
             hold: SeatHold::default(),
             after: 0,
@@ -172,15 +205,15 @@ impl SeatArm {
         let was_posted = self.hold.posted;
         if self.hold.stroke() {
             if was_posted {
-                eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.seat, SeatHold::patience());
+                eprintln!("[{tag}] seat {} take let go: no TAKEN within an aperture cycle of {} strokes — taken again", self.at.seat, SeatHold::patience());
             }
-            match entity.relay().take(self.domain, self.seat, &self.key) {
+            match entity.relay().take(self.at, &self.key) {
                 Ok(Ok(seq)) => {
                     self.hold.take_posted();
-                    eprintln!("[{tag}] seat {} take posted (seq {seq})", self.seat);
+                    eprintln!("[{tag}] seat {} take posted (seq {seq})", self.at.seat);
                 }
-                Ok(Err(why)) => eprintln!("[{tag}] seat {} take refused: {why:?}", self.seat),
-                Err(e) => eprintln!("[{tag}] seat {} take unsent: {e}", self.seat),
+                Ok(Err(why)) => eprintln!("[{tag}] seat {} take refused: {why:?}", self.at.seat),
+                Err(e) => eprintln!("[{tag}] seat {} take unsent: {e}", self.at.seat),
             }
         }
     }
@@ -193,12 +226,12 @@ impl SeatArm {
                 MindMail::Taken(seq, t) => {
                     self.after = seq;
                     eprintln!("[{tag}] seat {} taken {} (reason {})", t.seat, t.ok, t.reason);
-                    if t.domain != self.domain || t.seat != self.seat {
+                    if (SeatName { domain: t.domain, sub_origin: t.sub_origin, seat: t.seat }) != self.at {
                         return;
                     }
                     match self.hold.taken(t.ok) {
                         true => self.read_listing(entity, tag),
-                        false => eprintln!("[{tag}] seat {} take let go: TAKEN refused (reason {}) — taken again next stroke", self.seat, t.reason),
+                        false => eprintln!("[{tag}] seat {} take let go: TAKEN refused (reason {}) — taken again next stroke", self.at.seat, t.reason),
                     }
                 }
                 MindMail::Percept(seq, p) => {
@@ -221,7 +254,7 @@ impl SeatArm {
                 }
                 MindMail::Outcome(seq, o) => {
                     self.after = seq;
-                    let answered = entity.with_seat_mind(self.domain, self.seat, |m| m.outcome(&o));
+                    let answered = entity.with_seat_mind(self.at, |m| m.outcome(&o));
                     // The standing call's outcome: applied, it stands.
                     if let (Some(f), Some((sf, _, applied))) = (answered, self.standing.as_mut()) {
                         if f == *sf {
@@ -238,7 +271,7 @@ impl SeatArm {
                     if self.hold.outcome(o.applied, o.reason) {
                         self.read_listing(entity, tag);
                     } else if held && !self.hold.held {
-                        eprintln!("[{tag}] seat {} take let go: a call refused NOT THE HOLDER — taken again next stroke", self.seat);
+                        eprintln!("[{tag}] seat {} take let go: a call refused NOT THE HOLDER — taken again next stroke", self.at.seat);
                     }
                 }
             }
@@ -249,17 +282,17 @@ impl SeatArm {
     /// this seat's functions — id and argument tags — handed to the mind as
     /// its repertoire. One typed line.
     fn read_listing(&mut self, entity: &mut Entity, tag: &str) {
-        let listing = match entity.relay().list_seats(self.domain) {
+        let listing = match entity.relay().list_seats(self.at.domain, self.at.sub_origin) {
             Ok(Some(s)) => s,
             Ok(None) => return eprintln!("[{tag}] seat listing: none held for the domain"),
             Err(e) => return eprintln!("[{tag}] seat listing unread: {e}"),
         };
-        let Some((epoch, fns)) = seat_fns(&listing, self.seat) else {
-            return eprintln!("[{tag}] seat listing names no seat {}", self.seat);
+        let Some((epoch, fns)) = seat_fns(&listing, self.at.seat) else {
+            return eprintln!("[{tag}] seat listing names no seat {}", self.at.seat);
         };
-        entity.with_seat_mind(self.domain, self.seat, |m| m.perceive_listing(&fns));
+        entity.with_seat_mind(self.at, |m| m.perceive_listing(&fns));
         let named: Vec<(u16, &[u8])> = fns.iter().map(|f| (f.id, f.tags.as_slice())).collect();
-        eprintln!("[{tag}] seat {} listing perceived at epoch {epoch}: fns (id, arg tags) {named:?}", self.seat);
+        eprintln!("[{tag}] seat {} listing perceived at epoch {epoch}: fns (id, arg tags) {named:?}", self.at.seat);
     }
 
     /// THE MIND'S CALL AT THIS BEAT, where the seat is held: decided, posted,
@@ -268,7 +301,7 @@ impl SeatArm {
         if !self.hold.held {
             return;
         }
-        let decision = entity.with_seat_mind(self.domain, self.seat, |m| m.decide());
+        let decision = entity.with_seat_mind(self.at, |m| m.decide());
         eprintln!("[{tag}] seat beat {decision}");
         let Decision::Call(choice) = decision else { return };
         // THE STANDING CALL: the same function with the same arguments, its
@@ -279,11 +312,11 @@ impl SeatArm {
             eprintln!("[{tag}] seat call fn {} stands: its last outcome applied, not posted again", choice.fn_id);
             return;
         }
-        match entity.relay().call(self.domain, self.seat, &self.key, choice.fn_id, choice.args.clone()) {
+        match entity.relay().call(self.at, &self.key, choice.fn_id, choice.args.clone()) {
             Ok((Ok(seq), reference)) => {
                 self.calls += 1;
                 self.standing = encodes.then_some((choice.fn_id, encoded, false));
-                entity.with_seat_mind(self.domain, self.seat, |m| m.called(choice.fn_id, choice.args, reference));
+                entity.with_seat_mind(self.at, |m| m.called(choice.fn_id, choice.args, reference));
                 eprintln!("[{tag}] seat call fn {} posted (seq {seq})", choice.fn_id);
             }
             Ok((Err(why), _)) => eprintln!("[{tag}] seat call fn {} refused: {why:?}", choice.fn_id),
@@ -355,7 +388,7 @@ impl SeatArm {
             [] => Vec::new(),
         };
         let Some(args) = solve_args(&crossed, &outs, &steps) else { return no_call("the rule's tape or the outputs pass their carrier") };
-        match entity.relay().call(self.domain, self.seat, &self.key, FN_SOLVE, args) {
+        match entity.relay().call(self.at, &self.key, FN_SOLVE, args) {
             Ok((Ok(seq), _)) => {
                 self.calls += 1;
                 self.answered.insert(id, ());

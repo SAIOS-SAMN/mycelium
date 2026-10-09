@@ -12,14 +12,49 @@
 //! the frame budget less the reply's count, so one READ-MAIL always carries a
 //! whole box. Past it the oldest piece is dropped and counted (`dropped`); the
 //! reader sees the gap in the sequence.
+//!
+//! v1.4 — THE RELAY'S EPOCH: a value drawn once when the relay is made, so
+//! every hypha restart changes it; a sub-kind 8 read is answered with it and
+//! the last sequence issued, and a reader tells a restart from progress.
+//! Listings are held per (domain, sub-origin).
 
-use crate::anastome::dialogue::seat::{Mail, Post, ReadMail, Refusal, Signer, SignedPost};
+use crate::anastome::dialogue::seat::{Mail, MailRead, Post, ReadMail, Refusal, Signer, SignedPost};
 use crate::network::nerve::Keyed;
 
 /// THE BOUND ON ONE ADDRESSEE'S MAIL, in reply bytes: the frame budget less
-/// the reply's `[count u16]` — derived, not declared.
+/// the reply's head before its pieces — v1.4's `[1][epoch][seq][count]`,
+/// which covers v1.3's `[count]` — derived, not declared.
 pub fn mail_bound() -> usize {
-    crate::network::wire::frame_budget() - 2
+    crate::network::wire::frame_budget() - MailRead::HEAD
+}
+
+/// A LISTING'S COORDINATES: `[0][domain]` in the domain's own universe,
+/// `[1][domain][sub_origin]` in a sub-universe of it.
+fn listing_key(domain: &[u8; 32], sub_origin: Option<&[u8; 32]>) -> Vec<u8> {
+    let mut k = Vec::with_capacity(65);
+    match sub_origin {
+        None => {
+            k.push(0);
+            k.extend_from_slice(domain);
+        }
+        Some(s) => {
+            k.push(1);
+            k.extend_from_slice(domain);
+            k.extend_from_slice(s);
+        }
+    }
+    k
+}
+
+/// THE RELAY'S EPOCH, drawn from the operating system's randomness when the
+/// relay is made: no clock, and no two boots alike. Never 0, which a reader
+/// names when it holds no epoch.
+fn draw_epoch() -> u64 {
+    use rand_core::{OsRng, RngCore};
+    match OsRng.next_u64() {
+        0 => 1,
+        e => e,
+    }
 }
 
 /// The box a mind's mail is filed under, and a domain's (its house's).
@@ -43,7 +78,10 @@ pub struct Mailbox {
 /// THE RELAY'S CARRIERS.
 #[derive(Default)]
 pub struct SeatRelay {
-    /// Each domain's latest SEATS: its epoch and its body (fields ‖ sig).
+    /// v1.4 — the relay's epoch: drawn when it is made (`SharedRelay`).
+    epoch: u64,
+    /// Each (domain, sub-origin)'s latest SEATS: its epoch and its body
+    /// (fields ‖ sig), at `listing_key`.
     listings: Keyed<(u64, Vec<u8>)>,
     /// Each addressee's mail.
     mail: Keyed<Mailbox>,
@@ -60,10 +98,23 @@ pub struct SeatRelay {
 /// 78.146 — THE RELAY ON ITS OWN LOCK, so a door can serve a mind's read
 /// without waiting on the court's cognition (`exempt_read`); the kernel holds
 /// it and speaks to it through the same lock.
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct SharedRelay(std::sync::Arc<std::sync::Mutex<SeatRelay>>);
 
+impl Default for SharedRelay {
+    /// A relay made with its epoch drawn: a restart is a new epoch.
+    fn default() -> SharedRelay {
+        SharedRelay(std::sync::Arc::new(std::sync::Mutex::new(SeatRelay { epoch: draw_epoch(), ..SeatRelay::default() })))
+    }
+}
+
 impl SharedRelay {
+    /// v1.4 — the relay's epoch and the last sequence it issued.
+    pub fn standing(&self) -> (u64, u64) {
+        let r = self.lock();
+        (r.epoch, r.seq)
+    }
+
     /// The relay, locked. A poisoned lock still holds a whole relay — every
     /// write to it completes under the lock or not at all — and the relay is
     /// volatile, so it is read on.
@@ -78,11 +129,12 @@ impl SharedRelay {
         self.lock().census()
     }
 
-    /// 78.145, 78.151 — A DOMAIN'S LATEST SEATS (fields ‖ sig), or none,
-    /// read on the relay's own lock: a listing is relay state, never the
-    /// court's, so its read takes no kernel.
-    pub fn listing(&self, domain: &[u8; 32]) -> Option<Vec<u8>> {
-        self.lock().listings.get(domain).map(|(_, b)| b.clone())
+    /// 78.145, 78.151 — A DOMAIN'S LATEST SEATS (fields ‖ sig), in its own
+    /// universe or (v1.4) at a sub-origin, or none, read on the relay's own
+    /// lock: a listing is relay state, never the court's, so its read takes
+    /// no kernel.
+    pub fn listing(&self, domain: &[u8; 32], sub_origin: Option<&[u8; 32]>) -> Option<Vec<u8>> {
+        self.lock().listings.get(&listing_key(domain, sub_origin)).map(|(_, b)| b.clone())
     }
 
     pub fn held_bytes(&self, to_house: bool, who: &[u8; 32]) -> usize {
@@ -100,7 +152,7 @@ impl SharedRelay {
     /// reader whose box holds a piece filed since its last exempt read.
     /// `None` where it is not exempt (no box, or the window spent): the
     /// door's ordinary rule answers it.
-    pub fn exempt_read(&self, r: &ReadMail) -> Option<Result<Vec<Mail>, Refusal>> {
+    pub fn exempt_read(&self, r: &ReadMail) -> Option<Result<MailRead, Refusal>> {
         if !r.verified() {
             return Some(Err(Refusal::Unsigned));
         }
@@ -113,7 +165,7 @@ impl SharedRelay {
         }
         relay.exempt_at.insert(key, newest);
         let seq = relay.seq;
-        let after = if r.after > seq { 0 } else { r.after };
+        let after = r.after_on(relay.epoch, seq);
         let mut out = Vec::new();
         let mut bytes = 0usize;
         for m in relay.read_box(&key, after) {
@@ -123,7 +175,7 @@ impl SharedRelay {
             bytes += m.wire_len();
             out.push(m);
         }
-        Some(Ok(out))
+        Some(Ok(MailRead { epoch: relay.epoch, seq, mail: out }))
     }
 }
 
@@ -198,11 +250,12 @@ impl super::Kernel {
         let sub = s.post.sub();
         match &s.post {
             Post::Seats(l) => {
-                // The latest epoch replaces; an older one is acknowledged and
-                // not held.
-                let held = relay.listings.get(&domain).map(|(e, _)| *e);
+                // The latest epoch replaces, per (domain, sub-origin); an
+                // older one is acknowledged and not held.
+                let key = listing_key(&domain, l.sub_origin.as_ref());
+                let held = relay.listings.get(&key).map(|(e, _)| *e);
                 if held.is_none_or(|e| l.epoch >= e) {
-                    relay.listings.insert(domain, (l.epoch, body));
+                    relay.listings.insert(key, (l.epoch, body));
                 }
             }
             Post::Take(_) | Post::Call(_) => relay.file(&box_key(TO_HOUSE, &domain), Mail { seq, sub, body }),
@@ -213,9 +266,10 @@ impl super::Kernel {
         Ok(seq)
     }
 
-    /// 78.145 — A DOMAIN'S LATEST SEATS (fields ‖ sig), or none.
-    pub fn seat_listing(&self, domain: &[u8; 32]) -> Option<Vec<u8>> {
-        self.seats.listing(domain)
+    /// 78.145 — A DOMAIN'S LATEST SEATS (fields ‖ sig), in its own universe
+    /// or (v1.4) at a sub-origin, or none.
+    pub fn seat_listing(&self, domain: &[u8; 32], sub_origin: Option<&[u8; 32]>) -> Option<Vec<u8>> {
+        self.seats.listing(domain, sub_origin)
     }
 
     /// 78.146 — the relay on its own lock, for a door's exempt read.
@@ -227,8 +281,9 @@ impl super::Kernel {
     /// own, and, where the reader is a domain's sitting reserve, that
     /// domain's house mail. `after` acknowledges and drops everything at or
     /// below it; an `after` past the last sequence reads from the start (the
-    /// relay restarted under it).
-    pub fn seat_mail(&mut self, r: &ReadMail) -> Result<Vec<Mail>, Refusal> {
+    /// relay restarted under it). v1.4: answered with the relay's epoch and
+    /// last sequence, read in the same hold as the pieces.
+    pub fn seat_mail(&mut self, r: &ReadMail) -> Result<MailRead, Refusal> {
         if !r.verified() {
             return Err(Refusal::Unsigned);
         }
@@ -237,7 +292,8 @@ impl super::Kernel {
             _ => None,
         };
         let mut relay = self.seats.lock();
-        let after = if r.after > relay.seq { 0 } else { r.after };
+        let (epoch, seq) = (relay.epoch, relay.seq);
+        let after = r.after_on(epoch, seq);
         let mine = relay.read_box(&box_key(TO_MIND, &r.reader), after);
         let house = match house_of {
             Some(d) => relay.read_box(&box_key(TO_HOUSE, &d), after),
@@ -266,6 +322,6 @@ impl super::Kernel {
             bytes += m.wire_len();
             out.push(m);
         }
-        Ok(out)
+        Ok(MailRead { epoch, seq, mail: out })
     }
 }

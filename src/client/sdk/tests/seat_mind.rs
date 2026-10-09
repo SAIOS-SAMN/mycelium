@@ -41,7 +41,42 @@ fn mind() -> SigningKey {
 }
 
 fn percept(seq: u64, local_time: Arg, records: Vec<Record>) -> Percept {
-    Percept { domain: vk(&domain()), seat: 7, mind: vk(&mind()), local_time, seq, records, point: None }
+    Percept { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), local_time, seq, records, point: None }
+}
+
+/// 78.156 — THE SUB-INSTANCE LOCATED AT (TPoint, u), ITS DILATION EXACT:
+/// between two located percepts the world's axis advance against the final
+/// point's tick advance, `du/dh` as an exact rational; a final point that
+/// stood leaves the ratio unread (the world moved, TUniversal did not); a
+/// percept with no point locates nothing and the reading stands; two origins
+/// share no clock.
+#[test]
+fn a_seats_experienced_dilation_is_read_exactly() {
+    use crate::chronometry::tuniversal::{Origin, TPoint};
+    let origin = Origin { genesis: [6; 32], epoch: 156 };
+    let at = |h: u64| TPoint { origin, h, lanes: [1, 0, 0, 0], k: 1 };
+    let located = |seq: u64, u: Arg, h: u64| Percept { point: Some(at(h)), ..percept(seq, u, vec![]) };
+    let mut m = SeatMind::scoped(vk(&domain()), Some([3; 32]), 7);
+    assert_eq!(m.sub_origin, Some([3; 32]));
+    let r = m.perceive(&located(1, Arg::Q { num: 1, den: 1 }, 100));
+    assert_eq!((r.dilation, m.dilation()), (None, None), "one location: no advance yet");
+    assert_eq!(m.located(), Some(&Located { point: at(100), u: q(1, 1) }));
+    // u from 1 to 3/2 while h rose 100 → 115: du/dh = (1/2)/15 = 1/30.
+    let r = m.perceive(&located(2, Arg::Q { num: 3, den: 2 }, 115));
+    let want = Dilation { du: q(1, 2), dh: 15, ratio: Some(q(1, 30)) };
+    assert_eq!(r.dilation.as_ref(), Some(&want));
+    assert_eq!(m.dilation(), Some(&want));
+    assert!(r.to_string().contains("dilation du 1/2 dh 15 du/dh 1/30"), "the perceived line carries it: {r}");
+    // The final point stood: the world moved and the ratio is unread.
+    let r = m.perceive(&located(3, Arg::Count(2), 115));
+    assert_eq!(r.dilation, Some(Dilation { du: q(1, 2), dh: 0, ratio: None }));
+    // No point: nothing located, the reading stands.
+    let r = m.perceive(&percept(4, Arg::Count(9), vec![]));
+    assert_eq!((r.dilation, m.located().map(|l| l.u.clone())), (None, Some(q(2, 1))));
+    assert_eq!(m.dilation(), Some(&Dilation { du: q(1, 2), dh: 0, ratio: None }));
+    // Another origin: no common clock.
+    let elsewhere = Percept { point: Some(TPoint { origin: Origin { genesis: [7; 32], epoch: 1 }, ..at(200) }), ..percept(5, Arg::Count(3), vec![]) };
+    assert_eq!(m.perceive(&elsewhere).dilation, None);
 }
 
 /// A SLIDE AND A SCALE ARE MOTIONS OF THE QUANTITY'S LINE: each carries the
@@ -174,10 +209,10 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
     let d = vk(&domain());
     let me = vk(&mind());
     let fns = vec![SeatFn { id: 1, tags: vec![] }, SeatFn { id: 2, tags: vec![] }];
-    let seats = Seats { domain: d, epoch: 1, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    let seats = Seats { domain: d, sub_origin: None, epoch: 1, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
-    k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
-    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
     let mut m = SeatMind::new(d, 7);
     let (mut after, mut house_after, mut x, mut nonce) = (0u64, 0u64, 0i64, 0u8);
     let mut decisions = Vec::new();
@@ -188,7 +223,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
         }
         k.seat_post(&Post::Percept(percept(beat, Arg::Q { num: beat as i64, den: 1 }, records)).sign(&house()).expect("writes")).expect("relayed");
         // The mind's stroke: its mail, typed by the SDK.
-        let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed");
+        let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail;
         for piece in mind_mail(me, raw).expect("typed") {
             match piece {
                 MindMail::Taken(seq, t) => {
@@ -205,7 +240,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
                     let decision = m.decide();
                     if let Decision::Call(c) = &decision {
                         nonce += 1;
-                        let call = Post::Call(Call { domain: d, seat: 7, mind: me, nonce: [nonce; 32], fn_id: c.fn_id, args: c.args.clone() }).sign(&mind()).expect("writes");
+                        let call = Post::Call(Call { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [nonce; 32], fn_id: c.fn_id, args: c.args.clone() }).sign(&mind()).expect("writes");
                         let reference = call.reference().expect("writes");
                         k.seat_post(&call).expect("relayed");
                         m.called(c.fn_id, c.args.clone(), reference);
@@ -215,7 +250,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
             }
         }
         // The house's stroke: each call applied and answered by its reference.
-        for piece in k.seat_mail(&ReadMail::sign(&house(), house_after, [0; 32])).expect("signed") {
+        for piece in k.seat_mail(&ReadMail::sign(&house(), house_after, [0; 32])).expect("signed").mail {
             house_after = piece.seq;
             let s = piece.post().expect("reads");
             let Post::Call(c) = &s.post else { continue };
@@ -223,7 +258,7 @@ fn play(counsel: [(u16, i64); 2], beats: u64) -> (Vec<Decision>, i64) {
                 1 => 1,
                 _ => -1,
             };
-            let outcome = Outcome { domain: d, seat: 7, mind: me, call: s.reference().expect("writes"), applied: true, reason: 0, deed: [8; 32] };
+            let outcome = Outcome { domain: d, sub_origin: None, seat: 7, mind: me, call: s.reference().expect("writes"), applied: true, reason: 0, deed: [8; 32] };
             k.seat_post(&Post::Outcome(outcome).sign(&house()).expect("writes")).expect("relayed");
         }
     }
@@ -334,13 +369,13 @@ fn the_mind_follows_the_worth_not_the_counsels_order() {
 /// The listing the kernel's relay serves, read as the mind reads it: its
 /// seat's functions.
 fn listed_fns(k: &Kernel, seat: u32) -> (u64, Vec<SeatFn>) {
-    let body = k.seat_listing(&vk(&domain())).expect("a listing is held");
-    let listing = decode_listing_reply(&body).expect("decodes").expect("one SEATS");
+    let body = k.seat_listing(&vk(&domain()), None).expect("a listing is held");
+    let listing = decode_listing_reply(&body, None).expect("decodes").expect("one SEATS");
     crate::client::sdk::seat::seat_fns(&listing, seat).expect("the seat is listed")
 }
 
 fn list(k: &mut Kernel, epoch: u64, fns: Vec<SeatFn>) {
-    let seats = Seats { domain: vk(&domain()), epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
+    let seats = Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 1 }, fns }] };
     k.seat_post(&Post::Seats(seats).sign(&house()).expect("writes")).expect("listed");
 }
 
@@ -356,8 +391,8 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     let d = vk(&domain());
     let me = vk(&mind());
     list(&mut k, 1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]);
-    k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
-    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [2; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+    k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
     let mut m = SeatMind::new(d, 7);
     let (epoch, fns) = listed_fns(&k, 7);
     assert_eq!((epoch, fns.clone()), (1, vec![SeatFn { id: 2, tags: vec![TAG_COUNT] }]), "the listing reads back whole");
@@ -367,7 +402,7 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
     for beat in 1..=beats {
         let records = (0..3u16).map(|i| Record::Plain { kind: 10 + i, args: vec![Arg::Q { num: x[usize::from(i)], den: 1 }] }).collect();
         k.seat_post(&Post::Percept(percept(beat, Arg::Q { num: beat as i64, den: 1 }, records)).sign(&house()).expect("writes")).expect("relayed");
-        let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed");
+        let raw = k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail;
         for piece in mind_mail(me, raw).expect("typed") {
             match piece {
                 MindMail::Taken(seq, _) => after = seq,
@@ -383,7 +418,7 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
                         let [Arg::Count(v)] = c.args.as_slice() else { panic!("one Count: {decision}") };
                         values.push(*v);
                         nonce += 1;
-                        let call = Post::Call(Call { domain: d, seat: 7, mind: me, nonce: [nonce; 32], fn_id: c.fn_id, args: c.args.clone() }).sign(&mind()).expect("writes");
+                        let call = Post::Call(Call { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [nonce; 32], fn_id: c.fn_id, args: c.args.clone() }).sign(&mind()).expect("writes");
                         let reference = call.reference().expect("writes");
                         k.seat_post(&call).expect("relayed");
                         m.called(c.fn_id, c.args.clone(), reference);
@@ -392,7 +427,7 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
                 }
             }
         }
-        for piece in k.seat_mail(&ReadMail::sign(&house(), house_after, [0; 32])).expect("signed") {
+        for piece in k.seat_mail(&ReadMail::sign(&house(), house_after, [0; 32])).expect("signed").mail {
             house_after = piece.seq;
             let s = piece.post().expect("reads");
             let Post::Call(c) = &s.post else { continue };
@@ -407,7 +442,7 @@ fn play_own(beats: u64) -> (Vec<Decision>, Vec<u64>, [i64; 3], SeatMind) {
                 true => (false, REASON_BAD_ARGUMENTS),
                 false => (true, 0),
             };
-            let outcome = Outcome { domain: d, seat: 7, mind: me, call: s.reference().expect("writes"), applied, reason, deed: [8; 32] };
+            let outcome = Outcome { domain: d, sub_origin: None, seat: 7, mind: me, call: s.reference().expect("writes"), applied, reason, deed: [8; 32] };
             k.seat_post(&Post::Outcome(outcome).sign(&house()).expect("writes")).expect("relayed");
         }
     }
@@ -470,7 +505,7 @@ fn the_listing_is_perceived_as_the_minds_repertoire() {
     let Decision::Call(c) = m.decide() else { panic!("the mind explores") };
     assert_eq!((c.fn_id, c.args.clone(), c.followed), (2, vec![Arg::Count(0)], false), "fn 1 skipped, fn 2 at its least");
     m.called(2, c.args, [1; 32]);
-    let refusal = Outcome { domain: vk(&domain()), seat: 7, mind: vk(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
+    let refusal = Outcome { domain: vk(&domain()), sub_origin: None, seat: 7, mind: vk(&mind()), call: [1; 32], applied: false, reason: REASON_NO_SUCH_FUNCTION, deed: [0; 32] };
     assert_eq!(m.outcome(&refusal), Some(2));
     assert_eq!(m.repertoire().iter().map(|o| o.id).collect::<Vec<_>>(), vec![1, 5], "no such function: gone until the listing is read again");
     m.perceive(&percept(2, Arg::Count(2), vec![]));
@@ -497,22 +532,22 @@ fn the_seat_is_taken_again_when_lost() {
     let mut take = |k: &mut Kernel, h: &mut SeatHold| {
         assert!(h.stroke(), "the stroke posts the take");
         nonce += 1;
-        k.seat_post(&Post::Take(Take { domain: d, seat: 7, mind: me, nonce: [nonce; 32] }).sign(&mind()).expect("writes")).expect("relayed");
+        k.seat_post(&Post::Take(Take { domain: d, sub_origin: None, seat: 7, mind: me, nonce: [nonce; 32] }).sign(&mind()).expect("writes")).expect("relayed");
         h.take_posted();
     };
     take(&mut k, &mut h);
-    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: false, reason: 1 }).sign(&house()).expect("writes")).expect("relayed");
-    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed")).expect("typed") {
+    k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: false, reason: 1 }).sign(&house()).expect("writes")).expect("relayed");
+    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail).expect("typed") {
         let MindMail::Taken(seq, t) = piece else { panic!("a TAKEN") };
         after = seq;
         assert!(!h.taken(t.ok), "refused: let go, no listing");
     }
     assert_eq!(h, SeatHold::default(), "the take let go");
     take(&mut k, &mut h);
-    let takes = k.seat_mail(&ReadMail::sign(&house(), 0, [0; 32])).expect("signed").iter().filter(|m| m.sub == SUB_TAKE).count();
+    let takes = k.seat_mail(&ReadMail::sign(&house(), 0, [0; 32])).expect("signed").mail.iter().filter(|m| m.sub == SUB_TAKE).count();
     assert_eq!(takes, 2, "the house reads the second take");
-    k.seat_post(&Post::Taken(Taken { domain: d, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
-    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed")).expect("typed") {
+    k.seat_post(&Post::Taken(Taken { domain: d, sub_origin: None, seat: 7, mind: me, ok: true, reason: 0 }).sign(&house()).expect("writes")).expect("relayed");
+    for piece in mind_mail(me, k.seat_mail(&ReadMail::sign(&mind(), after, [0; 32])).expect("signed").mail).expect("typed") {
         let MindMail::Taken(_, t) = piece else { panic!("a TAKEN") };
         assert!(h.taken(t.ok), "held: the listing is to be read");
     }

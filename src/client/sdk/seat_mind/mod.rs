@@ -413,6 +413,58 @@ pub struct Perceived {
     pub learned: Option<(u16, bool)>,
     /// A call whose outcome never came within its beat.
     pub abandoned: Option<u16>,
+    /// 78.156 — the sub-instance's experienced dilation since the percept
+    /// before, where both were located (`SeatMind::located`).
+    pub dilation: Option<Dilation>,
+}
+
+/// 78.156 — WHERE THE MIND'S SUB-INSTANCE STOOD AT A PERCEPT: the house's
+/// final TUniversal point (when the mind acted) and the world's axis
+/// coordinate `u`, the percept's `local_time` (when in the world it acted).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Located {
+    pub point: crate::chronometry::tuniversal::TPoint,
+    pub u: Q,
+}
+
+/// 78.156 — THE SUB-INSTANCE'S EXPERIENCED DILATION between two located
+/// percepts of one origin: the world's advance `du`, the final point's tick
+/// advance `dh`, and their exact ratio `du/dh` — none where the final point
+/// stood still (`dh` zero: the world moved while TUniversal did not). A
+/// reading, never an error: the world keeps its own pace.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Dilation {
+    pub du: Q,
+    pub dh: u64,
+    pub ratio: Option<Q>,
+}
+
+impl Dilation {
+    /// The dilation from `before` to `now`; `None` across two origins (the
+    /// universe re-originated: no common clock) or where the final point
+    /// went back.
+    pub fn between(before: &Located, now: &Located) -> Option<Dilation> {
+        if before.point.origin != now.point.origin {
+            return None;
+        }
+        let dh = now.point.h.checked_sub(before.point.h)?;
+        let du = &now.u - &before.u;
+        let ratio = match dh {
+            0 => None,
+            n => Some(&du / Q::from_integer(BigInt::from(n))),
+        };
+        Some(Dilation { du, dh, ratio })
+    }
+}
+
+impl std::fmt::Display for Dilation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "du {} dh {}", self.du, self.dh)?;
+        match &self.ratio {
+            Some(r) => write!(f, " du/dh {r}"),
+            None => write!(f, " du/dh unread (the final point stood)"),
+        }
+    }
 }
 
 impl std::fmt::Display for Perceived {
@@ -427,6 +479,9 @@ impl std::fmt::Display for Perceived {
         }
         if let Some(fn_id) = self.abandoned {
             write!(f, " | fn {fn_id} unanswered within its beat")?;
+        }
+        if let Some(d) = &self.dilation {
+            write!(f, " | dilation {d}")?;
         }
         Ok(())
     }
@@ -448,7 +503,13 @@ pub(crate) struct Pending {
 /// of its calls was seen to do, and the call it awaits.
 pub struct SeatMind {
     pub domain: [u8; 32],
+    /// v1.4 — the sub-universe the seat stands in; none, the domain's own.
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
+    /// 78.156 — where the sub-instance last stood, (TPoint, u).
+    pub(crate) located: Option<Located>,
+    /// 78.156 — its experienced dilation at the last located percept.
+    pub(crate) dilation: Option<Dilation>,
     /// The latest beat perceived (the house's percept sequence).
     pub beat: u64,
     pub(crate) series: Keyed<Series>,
@@ -471,9 +532,17 @@ pub struct SeatMind {
 
 impl SeatMind {
     pub fn new(domain: [u8; 32], seat: u32) -> SeatMind {
+        SeatMind::scoped(domain, None, seat)
+    }
+
+    /// v1.4 — the mind at a seat named by (domain, sub-origin, seat).
+    pub fn scoped(domain: [u8; 32], sub_origin: Option<[u8; 32]>, seat: u32) -> SeatMind {
         SeatMind {
             domain,
+            sub_origin,
             seat,
+            located: None,
+            dilation: None,
             beat: 0,
             series: Keyed::new(),
             counsel: Vec::new(),
@@ -500,6 +569,30 @@ impl SeatMind {
         &self.counsel
     }
 
+    /// 78.156 — where the sub-instance last stood: (TPoint, u).
+    pub fn located(&self) -> Option<&Located> {
+        self.located.as_ref()
+    }
+
+    /// 78.156 — THE EXPERIENCED-DILATION READING at this seat: the world's
+    /// advance against the final point's between its last two located
+    /// percepts, exact.
+    pub fn dilation(&self) -> Option<&Dilation> {
+        self.dilation.as_ref()
+    }
+
+    /// A percept located at (its point, its `u`), where it carries both: the
+    /// dilation since the last located percept read. A percept without a
+    /// point or a quantity `u` locates nothing and leaves the reading as it
+    /// stood.
+    fn locate(&mut self, p: &Percept, u: Option<&Q>) -> Option<Dilation> {
+        let now = Located { point: p.point?, u: u?.clone() };
+        let d = self.located.as_ref().and_then(|before| Dilation::between(before, &now));
+        self.located = Some(now);
+        self.dilation = d.clone();
+        d
+    }
+
     /// A RECORD'S PERIOD: the lcm of its arguments' (a fixed one counts one),
     /// read over the record's fiber; `None` where one of them has not
     /// returned, or the lcm passes its carrier.
@@ -522,7 +615,8 @@ impl SeatMind {
     pub fn perceive(&mut self, p: &Percept) -> Perceived {
         self.beat = p.seq;
         let at = quantity(&p.local_time);
-        let mut reading = Perceived { beat: p.seq, records: p.records.len(), ..Perceived::default() };
+        let dilation = self.locate(p, at.as_ref());
+        let mut reading = Perceived { beat: p.seq, records: p.records.len(), dilation, ..Perceived::default() };
         self.counsel.clear();
         // Occurrences among records sharing a kind and keys, by their record
         // prefix: the house's order within one percept is its statement.

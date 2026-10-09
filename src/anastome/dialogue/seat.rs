@@ -33,6 +33,34 @@
 //! last final TUniversal point, `[0]` or `[1][TPoint 84]`, signed with them;
 //! every frame on the seat surface carries its speaker's last final point
 //! behind its body (`network::wire::POINTED`).
+//!
+//! v1.4 (lexicon 5, WIRE-CHANGE; 78.155 §5c, 78.156):
+//! - SEATS SCOPED TO A SUB-ORIGIN. A seat is named by (domain, sub-origin,
+//!   seat id); the sub-origin (32 bytes, the sub-universe's citation) is
+//!   optional — absent is the domain's own universe. A post naming one is
+//!   written under its sub-kind with the SCOPED bit set (`sub | 0x80`: 0x80
+//!   SEATS … 0x85 OUTCOME), the sub-origin immediately after the domain:
+//!   `[domain 32][sub_origin 32][seat u32][mind 32]…` for TAKE, TAKEN,
+//!   PERCEPT, CALL, OUTCOME, and `[domain 32][sub_origin 32][epoch u64]…` for
+//!   SEATS. Every other field is as v1.3. The sub byte is signed, so the
+//!   scope is bound to the signature. A post with no sub-origin is written
+//!   exactly as v1.3: one writing per value. READ-LISTING scoped is
+//!   `[0x53][0x86][domain 32][sub_origin 32]`; the relay keys listings by
+//!   (domain, sub-origin).
+//! - READ-MAIL AT THE RELAY'S STANDING, sub-kind 8: `[reader 32][after
+//!   u64][epoch u64][nonce 32][sig 64]`, signed over `b"mycelium seat v1" ‖
+//!   [8] ‖ reader ‖ after ‖ epoch ‖ nonce` — `epoch` the relay epoch the
+//!   reader's `after` was read under, 0 where it holds none. Answered
+//!   `[1][relay_epoch u64][relay_seq u64][count u16]` then the pieces as
+//!   sub-kind 7's, or `[0][reason ≥ 1]`. The RELAY EPOCH is drawn once when
+//!   the relay is made (never 0) and changes on every hypha restart; the SEQ
+//!   is the last sequence the relay issued. An `after` read under another
+//!   epoch, or past the seq, acknowledges nothing: the box is read from the
+//!   start (`ReadMail::after_on`), and the reader knows a restart from
+//!   progress (`MailRead::cursor`). Sub-kind 7 is answered as before.
+//! - A PERCEPT's `local_time` is the universe's AXIS COORDINATE `u` (78.156):
+//!   the world's committed cycle, beside the house's TPoint; the mind reads
+//!   the two as its sub-instance's location (TPoint, u).
 
 use super::*;
 use crate::transducer::cga::Mv;
@@ -49,6 +77,11 @@ pub const SUB_CALL: u8 = 4;
 pub const SUB_OUTCOME: u8 = 5;
 pub const SUB_READ_LISTING: u8 = 6;
 pub const SUB_READ_MAIL: u8 = 7;
+/// v1.4 — READ-MAIL answered with the relay's epoch and sequence.
+pub const SUB_READ_MAIL_STANDING: u8 = 8;
+/// v1.4 — THE SCOPED BIT: a post or listing read naming a sub-origin is
+/// written under its sub-kind with this bit set.
+pub const SCOPED: u8 = 0x80;
 
 /// A record kind: the house's counsel to the mind — the call the in-game
 /// mind would make, with its worth and cost.
@@ -276,10 +309,14 @@ pub struct Seat {
     pub fns: Vec<SeatFn>,
 }
 
-/// THE SEATS A HOUSE OFFERS AT AN EPOCH. The latest epoch replaces.
+/// THE SEATS A HOUSE OFFERS AT AN EPOCH, in its domain's own universe or
+/// (v1.4) in one sub-universe of it. The latest epoch replaces, per (domain,
+/// sub-origin).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Seats {
     pub domain: [u8; 32],
+    /// v1.4 — the sub-universe the seats stand in; none, the domain's own.
+    pub sub_origin: Option<[u8; 32]>,
     pub epoch: u64,
     pub seats: Vec<Seat>,
 }
@@ -288,6 +325,7 @@ pub struct Seats {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Take {
     pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
     pub mind: [u8; 32],
     pub nonce: [u8; 32],
@@ -297,6 +335,7 @@ pub struct Take {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Taken {
     pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
     pub mind: [u8; 32],
     pub ok: bool,
@@ -318,8 +357,13 @@ pub enum Record {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Percept {
     pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
     pub mind: [u8; 32],
+    /// THE UNIVERSE'S AXIS COORDINATE `u` (78.156): the house's committed
+    /// cycle — the world's own time, FREE of TUniversal — at which the
+    /// percept was read. Beside `point`, it locates the mind's sub-instance
+    /// at (TPoint, u); neither is read as the other.
     pub local_time: Arg,
     pub seq: u64,
     pub records: Vec<Record>,
@@ -333,6 +377,7 @@ pub struct Percept {
 #[derive(Clone, Debug, PartialEq)]
 pub struct Call {
     pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
     pub mind: [u8; 32],
     pub nonce: [u8; 32],
@@ -345,6 +390,7 @@ pub struct Call {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Outcome {
     pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
     pub seat: u32,
     pub mind: [u8; 32],
     pub call: [u8; 32],
@@ -352,6 +398,9 @@ pub struct Outcome {
     pub reason: u16,
     pub deed: [u8; 32],
 }
+
+/// A post's head as read: domain, sub-origin (v1.4), seat, mind.
+type SeatHead = ([u8; 32], Option<[u8; 32]>, u32, [u8; 32]);
 
 /// EVERY SIGNED POST.
 #[derive(Clone, Debug, PartialEq)]
@@ -374,14 +423,32 @@ pub enum Signer {
 }
 
 impl Post {
+    /// The sub-kind the post is written under: its kind, with the SCOPED bit
+    /// where it names a sub-origin (v1.4).
     pub fn sub(&self) -> u8 {
-        match self {
+        let kind = match self {
             Post::Seats(_) => SUB_SEATS,
             Post::Take(_) => SUB_TAKE,
             Post::Taken(_) => SUB_TAKEN,
             Post::Percept(_) => SUB_PERCEPT,
             Post::Call(_) => SUB_CALL,
             Post::Outcome(_) => SUB_OUTCOME,
+        };
+        match self.sub_origin() {
+            Some(_) => kind | SCOPED,
+            None => kind,
+        }
+    }
+
+    /// v1.4 — the sub-universe the post speaks in; none, the domain's own.
+    pub fn sub_origin(&self) -> Option<[u8; 32]> {
+        match self {
+            Post::Seats(s) => s.sub_origin,
+            Post::Take(t) => t.sub_origin,
+            Post::Taken(t) => t.sub_origin,
+            Post::Percept(t) => t.sub_origin,
+            Post::Call(t) => t.sub_origin,
+            Post::Outcome(t) => t.sub_origin,
         }
     }
 
@@ -420,14 +487,22 @@ impl Post {
 
     /// The post's fields, written out.
     pub fn put_fields(&self, out: &mut Vec<u8>) -> Option<()> {
-        let head = |out: &mut Vec<u8>, domain: &[u8; 32], seat: u32, mind: &[u8; 32]| {
+        // The domain, then (v1.4) the sub-origin where one is named — the
+        // sub-kind's SCOPED bit says which.
+        let scoped = |out: &mut Vec<u8>, domain: &[u8; 32], sub_origin: &Option<[u8; 32]>| {
             out.extend_from_slice(domain);
+            if let Some(s) = sub_origin {
+                out.extend_from_slice(s);
+            }
+        };
+        let head = |out: &mut Vec<u8>, domain: &[u8; 32], sub_origin: &Option<[u8; 32]>, seat: u32, mind: &[u8; 32]| {
+            scoped(out, domain, sub_origin);
             out.extend_from_slice(&seat.to_le_bytes());
             out.extend_from_slice(mind);
         };
         match self {
             Post::Seats(s) => {
-                out.extend_from_slice(&s.domain);
+                scoped(out, &s.domain, &s.sub_origin);
                 out.extend_from_slice(&s.epoch.to_le_bytes());
                 out.extend_from_slice(&u16::try_from(s.seats.len()).ok()?.to_le_bytes());
                 for seat in &s.seats {
@@ -447,16 +522,16 @@ impl Post {
                 }
             }
             Post::Take(t) => {
-                head(out, &t.domain, t.seat, &t.mind);
+                head(out, &t.domain, &t.sub_origin, t.seat, &t.mind);
                 out.extend_from_slice(&t.nonce);
             }
             Post::Taken(t) => {
-                head(out, &t.domain, t.seat, &t.mind);
+                head(out, &t.domain, &t.sub_origin, t.seat, &t.mind);
                 out.push(u8::from(t.ok));
                 out.extend_from_slice(&t.reason.to_le_bytes());
             }
             Post::Percept(t) => {
-                head(out, &t.domain, t.seat, &t.mind);
+                head(out, &t.domain, &t.sub_origin, t.seat, &t.mind);
                 t.local_time.put(out)?;
                 out.extend_from_slice(&t.seq.to_le_bytes());
                 out.extend_from_slice(&u16::try_from(t.records.len()).ok()?.to_le_bytes());
@@ -487,13 +562,13 @@ impl Post {
                 }
             }
             Post::Call(c) => {
-                head(out, &c.domain, c.seat, &c.mind);
+                head(out, &c.domain, &c.sub_origin, c.seat, &c.mind);
                 out.extend_from_slice(&c.nonce);
                 out.extend_from_slice(&c.fn_id.to_le_bytes());
                 put_args(out, &c.args)?;
             }
             Post::Outcome(o) => {
-                head(out, &o.domain, o.seat, &o.mind);
+                head(out, &o.domain, &o.sub_origin, o.seat, &o.mind);
                 out.extend_from_slice(&o.call);
                 out.push(u8::from(o.applied));
                 out.extend_from_slice(&o.reason.to_le_bytes());
@@ -505,12 +580,23 @@ impl Post {
 
     /// The post's fields read at `p` for sub-kind `sub`.
     pub fn take_fields(sub: u8, b: &[u8], p: &mut usize) -> Option<Post> {
-        let head = |b: &[u8], p: &mut usize| -> Option<([u8; 32], u32, [u8; 32])> {
-            Some((bytes::<32>(b, p)?, u32_at(b, p)?, bytes::<32>(b, p)?))
+        // v1.4: the SCOPED bit names a sub-origin after the domain.
+        let is_scoped = sub & SCOPED != 0;
+        let scoped = |b: &[u8], p: &mut usize| -> Option<([u8; 32], Option<[u8; 32]>)> {
+            let domain = bytes::<32>(b, p)?;
+            let sub_origin = match is_scoped {
+                true => Some(bytes::<32>(b, p)?),
+                false => None,
+            };
+            Some((domain, sub_origin))
         };
-        Some(match sub {
+        let head = |b: &[u8], p: &mut usize| -> Option<SeatHead> {
+            let (domain, sub_origin) = scoped(b, p)?;
+            Some((domain, sub_origin, u32_at(b, p)?, bytes::<32>(b, p)?))
+        };
+        Some(match sub & !SCOPED {
             SUB_SEATS => {
-                let domain = bytes::<32>(b, p)?;
+                let (domain, sub_origin) = scoped(b, p)?;
                 let epoch = u64_at(b, p)?;
                 let n = u16_at(b, p)?;
                 let mut seats = Vec::new();
@@ -533,19 +619,19 @@ impl Post {
                     }
                     seats.push(Seat { seat, role, on, beat, fns });
                 }
-                Post::Seats(Seats { domain, epoch, seats })
+                Post::Seats(Seats { domain, sub_origin, epoch, seats })
             }
             SUB_TAKE => {
-                let (domain, seat, mind) = head(b, p)?;
-                Post::Take(Take { domain, seat, mind, nonce: bytes::<32>(b, p)? })
+                let (domain, sub_origin, seat, mind) = head(b, p)?;
+                Post::Take(Take { domain, sub_origin, seat, mind, nonce: bytes::<32>(b, p)? })
             }
             SUB_TAKEN => {
-                let (domain, seat, mind) = head(b, p)?;
+                let (domain, sub_origin, seat, mind) = head(b, p)?;
                 let ok = flag(u8_at(b, p)?)?;
-                Post::Taken(Taken { domain, seat, mind, ok, reason: u16_at(b, p)? })
+                Post::Taken(Taken { domain, sub_origin, seat, mind, ok, reason: u16_at(b, p)? })
             }
             SUB_PERCEPT => {
-                let (domain, seat, mind) = head(b, p)?;
+                let (domain, sub_origin, seat, mind) = head(b, p)?;
                 let local_time = Arg::take(b, p)?;
                 let seq = u64_at(b, p)?;
                 let n = u16_at(b, p)?;
@@ -566,20 +652,20 @@ impl Post {
                     1 => Some(crate::chronometry::tuniversal::TPoint::take(b, p)?),
                     _ => return None,
                 };
-                Post::Percept(Percept { domain, seat, mind, local_time, seq, records, point })
+                Post::Percept(Percept { domain, sub_origin, seat, mind, local_time, seq, records, point })
             }
             SUB_CALL => {
-                let (domain, seat, mind) = head(b, p)?;
+                let (domain, sub_origin, seat, mind) = head(b, p)?;
                 let nonce = bytes::<32>(b, p)?;
                 let fn_id = u16_at(b, p)?;
-                Post::Call(Call { domain, seat, mind, nonce, fn_id, args: take_args(b, p)? })
+                Post::Call(Call { domain, sub_origin, seat, mind, nonce, fn_id, args: take_args(b, p)? })
             }
             SUB_OUTCOME => {
-                let (domain, seat, mind) = head(b, p)?;
+                let (domain, sub_origin, seat, mind) = head(b, p)?;
                 let call = bytes::<32>(b, p)?;
                 let applied = flag(u8_at(b, p)?)?;
                 let reason = u16_at(b, p)?;
-                Post::Outcome(Outcome { domain, seat, mind, call, applied, reason, deed: bytes::<32>(b, p)? })
+                Post::Outcome(Outcome { domain, sub_origin, seat, mind, call, applied, reason, deed: bytes::<32>(b, p)? })
             }
             _ => return None,
         })
@@ -653,43 +739,97 @@ pub struct ReadMail {
     pub after: u64,
     pub nonce: [u8; 32],
     pub sig: [u8; 64],
+    /// v1.4 — asked under sub-kind 8, `Some(epoch)`: the relay epoch `after`
+    /// was read under (0, none held), answered with the relay's standing (its
+    /// epoch and last sequence). An `after` read under another epoch is no
+    /// acknowledgement on this relay: it reads from the start. `None`: a
+    /// v1.3 read, sub-kind 7. Signed under its sub-kind.
+    pub standing: Option<u64>,
 }
 
 impl ReadMail {
-    fn fields(reader: &[u8; 32], after: u64, nonce: &[u8; 32]) -> Vec<u8> {
+    fn sub_of(standing: Option<u64>) -> u8 {
+        match standing {
+            Some(_) => SUB_READ_MAIL_STANDING,
+            None => SUB_READ_MAIL,
+        }
+    }
+
+    /// The signed bytes: `b"mycelium seat v1" ‖ [sub] ‖ reader ‖ after ‖
+    /// [epoch, sub-kind 8 only] ‖ nonce` — the request's fields in order.
+    fn fields(standing: Option<u64>, reader: &[u8; 32], after: u64, nonce: &[u8; 32]) -> Vec<u8> {
         let mut out = SIGNED.to_vec();
-        out.push(SUB_READ_MAIL);
+        out.push(ReadMail::sub_of(standing));
         out.extend_from_slice(reader);
         out.extend_from_slice(&after.to_le_bytes());
+        if let Some(e) = standing {
+            out.extend_from_slice(&e.to_le_bytes());
+        }
         out.extend_from_slice(nonce);
         out
     }
 
-    pub fn sign(key: &ed25519_dalek::SigningKey, after: u64, nonce: [u8; 32]) -> ReadMail {
+    fn signed(key: &ed25519_dalek::SigningKey, after: u64, nonce: [u8; 32], standing: Option<u64>) -> ReadMail {
         use ed25519_dalek::Signer as _;
         let reader = key.verifying_key().to_bytes();
-        let sig = key.sign(&ReadMail::fields(&reader, after, &nonce)).to_bytes();
-        ReadMail { reader, after, nonce, sig }
+        let sig = key.sign(&ReadMail::fields(standing, &reader, after, &nonce)).to_bytes();
+        ReadMail { reader, after, nonce, sig, standing }
     }
 
-    /// Whether the reader signed it.
+    /// A v1.3 read (sub-kind 7), answered `[count u16]…`.
+    pub fn sign(key: &ed25519_dalek::SigningKey, after: u64, nonce: [u8; 32]) -> ReadMail {
+        ReadMail::signed(key, after, nonce, None)
+    }
+
+    /// v1.4 — a read at the relay's standing (sub-kind 8): `after` as read
+    /// under relay `epoch` (0 where none is held), answered with the relay's
+    /// epoch and last sequence before the pieces.
+    pub fn sign_standing(key: &ed25519_dalek::SigningKey, after: u64, epoch: u64, nonce: [u8; 32]) -> ReadMail {
+        ReadMail::signed(key, after, nonce, Some(epoch))
+    }
+
+    /// Whether the reader signed it, under its sub-kind.
     pub fn verified(&self) -> bool {
-        crate::court::identity::verify(&self.reader, &ReadMail::fields(&self.reader, self.after, &self.nonce), &self.sig)
+        let m = ReadMail::fields(self.standing, &self.reader, self.after, &self.nonce);
+        crate::court::identity::verify(&self.reader, &m, &self.sig)
+    }
+
+    /// THE ACKNOWLEDGEMENT A RELAY OF `epoch` WHOSE LAST SEQUENCE IS `seq`
+    /// HONOURS: `after`, unless it was read under another epoch (v1.4) or
+    /// passes the last sequence — a relay restarted under the reader — where
+    /// it reads from the start.
+    pub fn after_on(&self, epoch: u64, seq: u64) -> u64 {
+        match self.standing {
+            Some(e) if e != epoch => 0,
+            _ if self.after > seq => 0,
+            _ => self.after,
+        }
     }
 }
 
-/// `[0x53][6][domain]`.
-pub fn encode_read_listing(domain: &[u8; 32]) -> Vec<u8> {
-    let mut out = vec![ACT_SEAT, SUB_READ_LISTING];
+/// `[0x53][6][domain]`, or (v1.4) `[0x53][0x86][domain][sub_origin]`.
+pub fn encode_read_listing(domain: &[u8; 32], sub_origin: Option<&[u8; 32]>) -> Vec<u8> {
+    let sub = match sub_origin {
+        Some(_) => SUB_READ_LISTING | SCOPED,
+        None => SUB_READ_LISTING,
+    };
+    let mut out = vec![ACT_SEAT, sub];
     out.extend_from_slice(domain);
+    if let Some(s) = sub_origin {
+        out.extend_from_slice(s);
+    }
     out
 }
 
-/// `[0x53][7][reader][after][nonce][sig]`.
+/// `[0x53][7][reader][after][nonce][sig]`, or (v1.4)
+/// `[0x53][8][reader][after][epoch][nonce][sig]`.
 pub fn encode_read_mail(r: &ReadMail) -> Vec<u8> {
-    let mut out = vec![ACT_SEAT, SUB_READ_MAIL];
+    let mut out = vec![ACT_SEAT, ReadMail::sub_of(r.standing)];
     out.extend_from_slice(&r.reader);
     out.extend_from_slice(&r.after.to_le_bytes());
+    if let Some(e) = r.standing {
+        out.extend_from_slice(&e.to_le_bytes());
+    }
     out.extend_from_slice(&r.nonce);
     out.extend_from_slice(&r.sig);
     out
@@ -699,7 +839,8 @@ pub fn encode_read_mail(r: &ReadMail) -> Vec<u8> {
 #[derive(Clone, Debug, PartialEq)]
 pub enum SeatRequest {
     Post(SignedPost),
-    ReadListing([u8; 32]),
+    /// A domain's listing, in its own universe or (v1.4) a sub-origin's.
+    ReadListing([u8; 32], Option<[u8; 32]>),
     ReadMail(ReadMail),
 }
 
@@ -746,15 +887,25 @@ fn read_request(b: &[u8]) -> Option<SeatRequest> {
     match sub {
         SUB_READ_LISTING => {
             let domain: [u8; 32] = rest.try_into().ok()?;
-            Some(SeatRequest::ReadListing(domain))
+            Some(SeatRequest::ReadListing(domain, None))
         }
-        SUB_READ_MAIL => {
+        s if s == SUB_READ_LISTING | SCOPED => {
+            let mut p = 0usize;
+            let domain = bytes::<32>(rest, &mut p)?;
+            let sub_origin = bytes::<32>(rest, &mut p)?;
+            (p == rest.len()).then_some(SeatRequest::ReadListing(domain, Some(sub_origin)))
+        }
+        SUB_READ_MAIL | SUB_READ_MAIL_STANDING => {
             let mut p = 0usize;
             let reader = bytes::<32>(rest, &mut p)?;
             let after = u64_at(rest, &mut p)?;
+            let standing = match sub == SUB_READ_MAIL_STANDING {
+                true => Some(u64_at(rest, &mut p)?),
+                false => None,
+            };
             let nonce = bytes::<32>(rest, &mut p)?;
             let sig = bytes::<64>(rest, &mut p)?;
-            (p == rest.len()).then_some(SeatRequest::ReadMail(ReadMail { reader, after, nonce, sig }))
+            (p == rest.len()).then_some(SeatRequest::ReadMail(ReadMail { reader, after, nonce, sig, standing }))
         }
         _ => SignedPost::of_body(sub, rest).map(SeatRequest::Post),
     }
@@ -780,12 +931,17 @@ pub fn decode_post_reply(b: &[u8]) -> Option<Result<u64, Refusal>> {
     }
 }
 
-/// The listing as served: the latest SEATS body, or nothing.
-pub fn decode_listing_reply(b: &[u8]) -> Option<Option<SignedPost>> {
+/// The listing as served: the latest SEATS body, or nothing. A listing asked
+/// at a sub-origin (v1.4) is read with the SCOPED bit, and must name it.
+pub fn decode_listing_reply(b: &[u8], sub_origin: Option<&[u8; 32]>) -> Option<Option<SignedPost>> {
     if b.is_empty() {
         return Some(None);
     }
-    SignedPost::of_body(SUB_SEATS, b).filter(|s| matches!(s.post, Post::Seats(_))).map(Some)
+    let sub = match sub_origin {
+        Some(_) => SUB_SEATS | SCOPED,
+        None => SUB_SEATS,
+    };
+    SignedPost::of_body(sub, b).filter(|s| matches!(&s.post, Post::Seats(l) if l.sub_origin.as_ref() == sub_origin)).map(Some)
 }
 
 /// ONE PIECE OF MAIL as the relay holds it: its sequence, its sub-kind and
@@ -842,6 +998,62 @@ pub fn decode_mail_reply(b: &[u8]) -> Option<Result<Vec<Mail>, Refusal>> {
         mail.push(Mail { seq, sub, body });
     }
     (p == b.len()).then_some(Ok(mail))
+}
+
+/// v1.4 — THE MAIL AT THE RELAY'S STANDING: the relay's epoch (drawn when it
+/// was made, changed by every restart), the last sequence it issued, and the
+/// pieces past the reader's `after`.
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct MailRead {
+    pub epoch: u64,
+    pub seq: u64,
+    pub mail: Vec<Mail>,
+}
+
+impl MailRead {
+    /// The bytes a sub-kind 8 reply takes before its pieces: `[1][epoch][seq][count]`.
+    pub const HEAD: usize = 1 + 8 + 8 + 2;
+
+    /// WHERE A READER'S CURSOR STANDS against this relay: a cursor read under
+    /// another epoch, or past the relay's last sequence, stood on a relay that
+    /// restarted — it is no progress, and the reader reads from the start.
+    pub fn cursor(&self, held_epoch: Option<u64>, after: u64) -> u64 {
+        match held_epoch {
+            Some(e) if e != self.epoch => 0,
+            _ if after > self.seq => 0,
+            _ => after,
+        }
+    }
+}
+
+/// `[1][relay_epoch u64][relay_seq u64][count u16]` then `(seq u64, sub u8,
+/// len u32, body)…`; or the refusal `[0][reason]`.
+pub fn encode_mail_reply_standing(r: Result<&MailRead, Refusal>) -> Option<Vec<u8>> {
+    let read = match r {
+        Ok(m) => m,
+        Err(why) => return Some(vec![0, why.byte()]),
+    };
+    let mut out = vec![1];
+    out.extend_from_slice(&read.epoch.to_le_bytes());
+    out.extend_from_slice(&read.seq.to_le_bytes());
+    out.extend_from_slice(&encode_mail_reply(Ok(&read.mail))?);
+    Some(out)
+}
+
+pub fn decode_mail_reply_standing(b: &[u8]) -> Option<Result<MailRead, Refusal>> {
+    match b {
+        [0, why] => Some(Err(Refusal::of(*why)?)),
+        [1, rest @ ..] => {
+            let mut p = 0usize;
+            let epoch = u64_at(rest, &mut p)?;
+            let seq = u64_at(rest, &mut p)?;
+            match decode_mail_reply(rest.get(p..)?)? {
+                Ok(mail) => Some(Ok(MailRead { epoch, seq, mail })),
+                Err(_) => None,
+            }
+        }
+        _ => None,
+    }
 }
 
 fn flag(b: u8) -> Option<bool> {

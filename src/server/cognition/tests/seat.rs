@@ -46,11 +46,11 @@ fn founded() -> Kernel {
 
 fn seats(epoch: u64) -> Seats {
     let seat = Seat { seat: 7, role: Role::Steward, on: [6; 32], beat: Arg::Q { num: 1, den: 60 }, fns: vec![SeatFn { id: 3, tags: vec![2] }] };
-    Seats { domain: vk(&domain()), epoch, seats: vec![seat] }
+    Seats { domain: vk(&domain()), sub_origin: None, epoch, seats: vec![seat] }
 }
 
 fn read(k: &mut Kernel, who: &SigningKey, after: u64) -> Vec<Mail> {
-    k.seat_mail(&ReadMail::sign(who, after, [0; 32])).expect("signed")
+    k.seat_mail(&ReadMail::sign(who, after, [0; 32])).expect("signed").mail
 }
 
 /// THE WHOLE SURFACE ON ONE COURT: only the house lists; a mind takes; the
@@ -68,14 +68,14 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     assert_eq!(k.seat_post(&Post::Seats(seats(1)).sign(&mind()).expect("writes")), Err(Refusal::NotTheHouse));
     let stranger = Seats { domain: [77; 32], ..seats(1) };
     assert_eq!(k.seat_post(&Post::Seats(stranger).sign(&house()).expect("writes")), Err(Refusal::UnknownDomain));
-    assert_eq!(k.seat_listing(&d), None);
+    assert_eq!(k.seat_listing(&d, None), None);
     let listed = Post::Seats(seats(2)).sign(&house()).expect("writes");
     assert!(k.seat_post(&listed).is_ok());
-    assert_eq!(decode_listing_reply(&k.seat_listing(&d).expect("held")), Some(Some(listed.clone())));
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, None).expect("held"), None), Some(Some(listed.clone())));
     assert!(k.seat_post(&Post::Seats(seats(1)).sign(&house()).expect("writes")).is_ok());
-    assert_eq!(decode_listing_reply(&k.seat_listing(&d).expect("held")), Some(Some(listed)), "an older epoch does not replace");
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, None).expect("held"), None), Some(Some(listed)), "an older epoch does not replace");
     // A take, signed by the mind it names — not by another.
-    let take = Take { domain: d, seat: 7, mind: m, nonce: [2; 32] };
+    let take = Take { domain: d, sub_origin: None, seat: 7, mind: m, nonce: [2; 32] };
     assert_eq!(k.seat_post(&Post::Take(take.clone()).sign(&other()).expect("writes")), Err(Refusal::Unsigned));
     let take_seq = k.seat_post(&Post::Take(take.clone()).sign(&mind()).expect("writes")).expect("relayed");
     // The mind's own box holds nothing yet; the house reads the take.
@@ -85,11 +85,11 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     assert_eq!(mail.len(), 1);
     assert_eq!((mail[0].seq, mail[0].post().map(|s| s.post)), (take_seq, Some(Post::Take(take))));
     // The house answers and perceives; a mind may not post for the house.
-    let taken = Taken { domain: d, seat: 7, mind: m, ok: true, reason: 0 };
+    let taken = Taken { domain: d, sub_origin: None, seat: 7, mind: m, ok: true, reason: 0 };
     assert_eq!(k.seat_post(&Post::Taken(taken.clone()).sign(&mind()).expect("writes")), Err(Refusal::NotTheHouse));
     k.seat_post(&Post::Taken(taken.clone()).sign(&house()).expect("writes")).expect("relayed");
     let counsel = Record::Counsel { fn_id: 3, args: vec![Arg::Count(2)], worth: Arg::Q { num: 1, den: 2 }, cost: Arg::Q { num: 1, den: 3 } };
-    let percept = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: None };
+    let percept = Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 12, den: 1 }, seq: 1, records: vec![counsel], point: None };
     k.seat_post(&Post::Percept(percept.clone()).sign(&house()).expect("writes")).expect("relayed");
     // Another mind's percept is not this mind's mail.
     let theirs = Percept { mind: vk(&other()), ..percept.clone() };
@@ -104,14 +104,14 @@ fn a_house_and_a_mind_speak_through_the_relay() {
     assert!(read(&mut k, &mind(), last).is_empty());
     assert_eq!(k.seats.held_bytes(false, &m), 0, "the box is gone once read past");
     // The call goes to the house; its outcome back to the mind, naming it.
-    let call = Post::Call(Call { domain: d, seat: 7, mind: m, nonce: [3; 32], fn_id: 3, args: vec![Arg::Count(2)] }).sign(&mind()).expect("writes");
+    let call = Post::Call(Call { domain: d, sub_origin: None, seat: 7, mind: m, nonce: [3; 32], fn_id: 3, args: vec![Arg::Count(2)] }).sign(&mind()).expect("writes");
     let reference = call.reference().expect("writes");
     k.seat_post(&call).expect("relayed");
     let house_mail = read(&mut k, &house(), take_seq);
     assert_eq!(house_mail.len(), 1, "the acknowledged take left");
     let got = house_mail[0].post().expect("reads");
     assert_eq!(got.reference(), Some(reference), "the house reads the reference the mind holds");
-    let outcome = Outcome { domain: d, seat: 7, mind: m, call: reference, applied: true, reason: 0, deed: [8; 32] };
+    let outcome = Outcome { domain: d, sub_origin: None, seat: 7, mind: m, call: reference, applied: true, reason: 0, deed: [8; 32] };
     k.seat_post(&Post::Outcome(outcome.clone()).sign(&house()).expect("writes")).expect("relayed");
     let back = read(&mut k, &mind(), last);
     assert_eq!(back.len(), 1);
@@ -133,22 +133,79 @@ fn a_minds_read_is_exempt_once_per_window() {
     let d = vk(&domain());
     let m = vk(&mind());
     let relay = k.seat_relay();
-    let percept = |seq| Percept { domain: d, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
+    let percept = |seq| Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Q { num: 1, den: 1 }, seq, records: Vec::new(), point: None };
     assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [0; 32])), None, "no box, nothing exempt");
     let first = k.seat_post(&Post::Percept(percept(1)).sign(&house()).expect("writes")).expect("relayed");
-    let served = relay.exempt_read(&ReadMail::sign(&mind(), 0, [1; 32])).expect("exempt").expect("signed");
+    let served = relay.exempt_read(&ReadMail::sign(&mind(), 0, [1; 32])).expect("exempt").expect("signed").mail;
     assert_eq!(served.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![first], "the zero-μ mind is served its mail");
     for n in 0..5u8 {
         assert_eq!(relay.exempt_read(&ReadMail::sign(&mind(), 0, [n; 32])), None, "a flood within the window is not exempt");
     }
     let second = k.seat_post(&Post::Percept(percept(2)).sign(&house()).expect("writes")).expect("relayed");
-    let served = relay.exempt_read(&ReadMail::sign(&mind(), first, [9; 32])).expect("new mail opens the window").expect("signed");
+    let served = relay.exempt_read(&ReadMail::sign(&mind(), first, [9; 32])).expect("new mail opens the window").expect("signed").mail;
     assert_eq!(served.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![second], "what `after` acknowledged left");
     let mut forged = ReadMail::sign(&mind(), 0, [7; 32]);
     forged.reader = vk(&other());
     assert_eq!(relay.exempt_read(&forged), Some(Err(Refusal::Unsigned)));
     // The court's own read still reads the same box, through the same lock.
     assert_eq!(read(&mut k, &mind(), first).len(), 1);
+}
+
+/// SEAT-WIRE v1.4 ON THE RELAY: listings held per (domain, sub-origin), the
+/// domain's own untouched by a sub-universe's; a scoped percept filed to the
+/// mind it names; a read at the relay's standing answered with its epoch and
+/// last sequence; an `after` read under another epoch — a relay restarted
+/// under the reader — acknowledges nothing and the box is read from the
+/// start; two relays are two epochs.
+#[test]
+fn the_relay_keys_seats_by_sub_origin_and_tells_its_epoch() {
+    let mut k = founded();
+    let d = vk(&domain());
+    let m = vk(&mind());
+    let sub = [0x5c; 32];
+    let own = Post::Seats(seats(1)).sign(&house()).expect("writes");
+    let scoped = Post::Seats(Seats { sub_origin: Some(sub), ..seats(1) }).sign(&house()).expect("writes");
+    k.seat_post(&own).expect("listed");
+    k.seat_post(&scoped).expect("listed");
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, None).expect("held"), None), Some(Some(own.clone())));
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, Some(&sub)).expect("held"), Some(&sub)), Some(Some(scoped)));
+    assert_eq!(k.seat_listing(&d, Some(&[1; 32])), None, "another sub-origin holds no listing");
+    // A later epoch at the sub-origin replaces only there.
+    let later = Post::Seats(Seats { sub_origin: Some(sub), ..seats(5) }).sign(&house()).expect("writes");
+    k.seat_post(&later).expect("listed");
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, Some(&sub)).expect("held"), Some(&sub)), Some(Some(later)));
+    assert_eq!(decode_listing_reply(&k.seat_listing(&d, None).expect("held"), None), Some(Some(own)));
+    // A scoped percept reaches its mind, the sub-origin on it.
+    let p = Percept { domain: d, sub_origin: Some(sub), seat: 7, mind: m, local_time: Arg::Q { num: 9, den: 4 }, seq: 1, records: Vec::new(), point: None };
+    let s1 = k.seat_post(&Post::Percept(p.clone()).sign(&house()).expect("writes")).expect("relayed");
+    let (epoch, seq) = k.seat_relay().standing();
+    assert_ne!(epoch, 0, "the relay epoch is never the none-held 0");
+    assert_eq!(seq, s1);
+    let read = k.seat_mail(&ReadMail::sign_standing(&mind(), 0, 0, [1; 32])).expect("signed");
+    assert_eq!((read.epoch, read.seq), (epoch, s1), "the reply carries the relay's standing");
+    assert_eq!(read.mail.iter().map(|x| x.post().map(|s| s.post)).collect::<Vec<_>>(), vec![Some(Post::Percept(p.clone()))]);
+    assert_eq!(read.mail.iter().map(|x| x.sub).collect::<Vec<_>>(), vec![SUB_PERCEPT | SCOPED], "filed under its scoped sub-kind");
+    // A second percept; a cursor read under ANOTHER epoch acknowledges
+    // nothing: the whole box from the start.
+    let s2 = k.seat_post(&Post::Percept(Percept { seq: 2, ..p.clone() }).sign(&house()).expect("writes")).expect("relayed");
+    let stale = k.seat_mail(&ReadMail::sign_standing(&mind(), s1, epoch ^ 1, [2; 32])).expect("signed");
+    assert_eq!(stale.mail.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![s1, s2], "another epoch's cursor is no acknowledgement");
+    assert_eq!(stale.cursor(Some(epoch ^ 1), s1), 0, "the reader knows the restart");
+    // Under this epoch, the cursor acknowledges.
+    let fresh = k.seat_mail(&ReadMail::sign_standing(&mind(), s1, epoch, [3; 32])).expect("signed");
+    assert_eq!(fresh.mail.iter().map(|x| x.seq).collect::<Vec<_>>(), vec![s2]);
+    assert_eq!(fresh.cursor(Some(epoch), s1), s1, "progress, not a restart");
+    assert_eq!(fresh.cursor(Some(epoch), s2 + 7), 0, "a cursor past the relay's seq is a restart");
+    // A forged standing read is refused; a v1.3 read signed for sub-kind 7
+    // does not verify as sub-kind 8.
+    let mut forged = ReadMail::sign_standing(&mind(), 0, epoch, [4; 32]);
+    forged.reader = vk(&other());
+    assert_eq!(k.seat_mail(&forged), Err(Refusal::Unsigned));
+    let mut moved = ReadMail::sign(&mind(), 0, [5; 32]);
+    moved.standing = Some(epoch);
+    assert!(!moved.verified(), "the sub-kind is signed");
+    // Two relays, two epochs: a restart is told from progress.
+    assert_ne!(founded().seat_relay().standing().0, epoch);
 }
 
 /// THE BOUND HOLDS: a mind never reading its mail holds at most a frame's
@@ -163,7 +220,7 @@ fn a_mailbox_keeps_its_bound() {
     let records: Vec<Record> = (0..250).map(|i| Record::Plain { kind: i, args: (0..30).map(|j| Arg::Key([j; 32])).collect() }).collect();
     let mut posted = 0u64;
     for seq in 0..20 {
-        let p = Percept { domain: d, seat: 7, mind: m, local_time: Arg::Count(seq), seq, records: records.clone(), point: None };
+        let p = Percept { domain: d, sub_origin: None, seat: 7, mind: m, local_time: Arg::Count(seq), seq, records: records.clone(), point: None };
         k.seat_post(&Post::Percept(p).sign(&house()).expect("writes")).expect("relayed");
         posted += 1;
         assert!(k.seats.held_bytes(false, &m) <= mail_bound(), "the box never passes its bound");

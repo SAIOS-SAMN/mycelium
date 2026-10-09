@@ -37,6 +37,15 @@ pub enum MindMail {
     Outcome(u64, Outcome),
 }
 
+/// v1.4 — A MIND'S MAIL AT THE RELAY'S STANDING: the relay's epoch, its last
+/// sequence, and the pieces typed.
+#[derive(Clone, Debug, PartialEq)]
+pub struct MindRead {
+    pub epoch: u64,
+    pub seq: u64,
+    pub mail: Vec<MindMail>,
+}
+
 /// WHAT A HOUSE READS IN ITS MAIL: a take and a call, each with its
 /// sequence; a call with its reference, which the outcome names.
 #[derive(Clone, Debug, PartialEq)]
@@ -150,10 +159,33 @@ pub fn seat_fns(listing: &SignedPost, seat: u32) -> Option<(u64, Vec<SeatFn>)> {
     Some((seats.epoch, mine.fns.clone()))
 }
 
-fn seat_key(domain: &[u8; 32], seat: u32) -> Vec<u8> {
-    let mut k = domain.to_vec();
+/// A SEAT'S COORDINATES, as (domain, sub-origin, seat) name it (v1.4):
+/// `[0][domain][seat BE]` in the domain's own universe, `[1][domain][sub
+/// origin][seat BE]` in a sub-universe of it.
+fn seat_key(domain: &[u8; 32], sub_origin: Option<&[u8; 32]>, seat: u32) -> Vec<u8> {
+    let mut k = Vec::with_capacity(69);
+    match sub_origin {
+        None => {
+            k.push(0);
+            k.extend_from_slice(domain);
+        }
+        Some(s) => {
+            k.push(1);
+            k.extend_from_slice(domain);
+            k.extend_from_slice(s);
+        }
+    }
     k.extend_from_slice(&seat.to_be_bytes());
     k
+}
+
+/// v1.4 — A SEAT'S NAME: its domain, the sub-universe it stands in (none, the
+/// domain's own), and its id.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SeatName {
+    pub domain: [u8; 32],
+    pub sub_origin: Option<[u8; 32]>,
+    pub seat: u32,
 }
 
 impl super::Entity {
@@ -164,11 +196,11 @@ impl super::Entity {
 
     /// 78.146 — THE MIND AT A SEAT it sits, written: taken from its
     /// coordinate (begun where it was not) and put back there.
-    pub fn with_seat_mind<R>(&mut self, domain: [u8; 32], seat: u32, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
-        let key = seat_key(&domain, seat);
+    pub fn with_seat_mind<R>(&mut self, at: SeatName, f: impl FnOnce(&mut super::seat_mind::SeatMind) -> R) -> R {
+        let key = seat_key(&at.domain, at.sub_origin.as_ref(), at.seat);
         let mut mind = match self.seats.remove(&key) {
             Some(m) => m,
-            None => super::seat_mind::SeatMind::new(domain, seat),
+            None => super::seat_mind::SeatMind::scoped(at.domain, at.sub_origin, at.seat),
         };
         let r = f(&mut mind);
         self.seats.insert(&key, mind);
@@ -176,15 +208,22 @@ impl super::Entity {
     }
 
     /// The mind at a seat, where it sits one.
-    pub fn seat_mind_at(&self, domain: [u8; 32], seat: u32) -> Option<&super::seat_mind::SeatMind> {
-        self.seats.get(&seat_key(&domain, seat))
+    pub fn seat_mind_at(&self, at: SeatName) -> Option<&super::seat_mind::SeatMind> {
+        self.seats.get(&seat_key(&at.domain, at.sub_origin.as_ref(), at.seat))
+    }
+
+    /// 78.156 — THE EXPERIENCED-DILATION READING at a seat this entity sits:
+    /// its sub-instance's world advance against the final point's, exact.
+    pub fn seat_dilation(&self, at: SeatName) -> Option<&super::seat_mind::Dilation> {
+        self.seat_mind_at(at)?.dilation()
     }
 
     /// 78.146 — A PERCEPT AT A SEAT, perceived: held on its series, and a
     /// call's effect read where its outcome came. Reading what a call did is
     /// the mind learning — an act of this orbit (78.49).
     pub fn perceive_seat(&mut self, p: &Percept) -> super::seat_mind::Perceived {
-        let reading = self.with_seat_mind(p.domain, p.seat, |m| m.perceive(p));
+        let at = SeatName { domain: p.domain, sub_origin: p.sub_origin, seat: p.seat };
+        let reading = self.with_seat_mind(at, |m| m.perceive(p));
         if reading.learned.is_some() {
             self.acted = true;
         }
@@ -199,43 +238,51 @@ impl super::Session {
         decode_post_reply(&reply).ok_or_else(|| undecoded("post"))
     }
 
-    /// A DOMAIN'S SEATS as its house last listed them, with the house's
-    /// signature (`SignedPost::signed_by` the reserve's key verifies it);
-    /// `None` where none is listed.
-    pub fn list_seats(&self, domain: [u8; 32]) -> io::Result<Option<SignedPost>> {
-        let reply = self.speak(encode_read_listing(&domain))?;
-        decode_listing_reply(&reply).ok_or_else(|| undecoded("listing"))
+    /// A DOMAIN'S SEATS as its house last listed them — in its own universe,
+    /// or (v1.4) at a sub-origin — with the house's signature
+    /// (`SignedPost::signed_by` the reserve's key verifies it); `None` where
+    /// none is listed.
+    pub fn list_seats(&self, domain: [u8; 32], sub_origin: Option<[u8; 32]>) -> io::Result<Option<SignedPost>> {
+        let reply = self.speak(encode_read_listing(&domain, sub_origin.as_ref()))?;
+        decode_listing_reply(&reply, sub_origin.as_ref()).ok_or_else(|| undecoded("listing"))
     }
 
     /// A MIND TAKES A SEAT, signed by its own key.
-    pub fn take(&self, domain: [u8; 32], seat: u32, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
+    pub fn take(&self, at: SeatName, key: &SigningKey) -> io::Result<Result<u64, Refusal>> {
         let mind = key.verifying_key().to_bytes();
-        let s = Post::Take(Take { domain, seat, mind, nonce: nonce() }).sign(key).ok_or_else(unwritten)?;
+        let s = Post::Take(Take { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce() }).sign(key).ok_or_else(unwritten)?;
         self.seat_post(&s)
     }
 
     /// A SEATED MIND CALLS: answered by the relay's sequence, with the call's
     /// reference — what the house's outcome will name.
-    pub fn call(&self, domain: [u8; 32], seat: u32, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
+    pub fn call(&self, at: SeatName, key: &SigningKey, fn_id: u16, args: Vec<Arg>) -> io::Result<(Result<u64, Refusal>, [u8; 32])> {
         let mind = key.verifying_key().to_bytes();
-        let s = Post::Call(Call { domain, seat, mind, nonce: nonce(), fn_id, args }).sign(key).ok_or_else(unwritten)?;
+        let c = Call { domain: at.domain, sub_origin: at.sub_origin, seat: at.seat, mind, nonce: nonce(), fn_id, args };
+        let s = Post::Call(c).sign(key).ok_or_else(unwritten)?;
         let reference = s.reference().ok_or_else(unwritten)?;
         Ok((self.seat_post(&s)?, reference))
     }
 
-    /// The raw mail past `after` (acknowledging everything at or below it).
-    pub fn read_mail(&self, key: &SigningKey, after: u64) -> io::Result<Result<Vec<Mail>, Refusal>> {
-        let reply = self.speak(encode_read_mail(&ReadMail::sign(key, after, nonce())))?;
-        decode_mail_reply(&reply).ok_or_else(|| undecoded("mail"))
+    /// The raw mail past `after` (acknowledging everything at or below it),
+    /// read at the relay's standing (v1.4): `after` as read under relay
+    /// `epoch` (0 where none is held), answered with the relay's epoch and
+    /// last sequence beside the pieces, so a cursor left on a restarted relay
+    /// is told from progress (`MailRead::cursor`) and acknowledges nothing
+    /// there.
+    pub fn read_mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MailRead, Refusal>> {
+        let reply = self.speak(encode_read_mail(&ReadMail::sign_standing(key, after, epoch, nonce())))?;
+        decode_mail_reply_standing(&reply).ok_or_else(|| undecoded("mail"))
     }
 
-    /// A MIND'S MAIL past `after`, typed. A piece that does not read as a
-    /// TAKEN, PERCEPT or OUTCOME naming this mind — which the relay never
+    /// A MIND'S MAIL past `after` (read under relay `epoch`), typed, with the
+    /// relay's standing (epoch, last sequence). A piece that does not read as
+    /// a TAKEN, PERCEPT or OUTCOME naming this mind — which the relay never
     /// serves — is an error by name, never skipped.
-    pub fn mail(&self, key: &SigningKey, after: u64) -> io::Result<Result<Vec<MindMail>, Refusal>> {
+    pub fn mail(&self, key: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<MindRead, Refusal>> {
         let me = key.verifying_key().to_bytes();
-        match self.read_mail(key, after)? {
-            Ok(raw) => mind_mail(me, raw).map(Ok),
+        match self.read_mail(key, after, epoch)? {
+            Ok(read) => mind_mail(me, read.mail).map(|mail| Ok(MindRead { epoch: read.epoch, seq: read.seq, mail })),
             Err(why) => Ok(Err(why)),
         }
     }
@@ -245,11 +292,11 @@ impl super::Session {
         self.seat_post(&Post::Seats(seats).sign(house).ok_or_else(unwritten)?)
     }
 
-    /// THE HOUSE'S MAIL past `after`: the takes and calls addressed to its
-    /// domain, typed.
-    pub fn house_mail(&self, house: &SigningKey, after: u64) -> io::Result<Result<Vec<HouseMail>, Refusal>> {
-        let raw = match self.read_mail(house, after)? {
-            Ok(m) => m,
+    /// THE HOUSE'S MAIL past `after` (read under relay `epoch`): the takes
+    /// and calls addressed to its domain, typed.
+    pub fn house_mail(&self, house: &SigningKey, after: u64, epoch: u64) -> io::Result<Result<Vec<HouseMail>, Refusal>> {
+        let raw = match self.read_mail(house, after, epoch)? {
+            Ok(m) => m.mail,
             Err(why) => return Ok(Err(why)),
         };
         let mut out = Vec::new();
