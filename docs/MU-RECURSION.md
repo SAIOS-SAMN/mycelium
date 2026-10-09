@@ -818,6 +818,47 @@ there (coding standard 14's "the whole suite, every commit" and checklist
 item (k) read under the operator's ruling of 2026-10-08 the override
 cites).
 
+### Mycelium's resolutions of the open points, 2026-10-09 (under the operator's full authorization)
+
+The operator: "you are 100% authorized to make these decisions based on
+your best judgement". The recording of U12–U15 left six points open; each
+is decided here, and binds the slice (S1–S4):
+
+1. **U13 against 78.58 (is hue 0 the reservoir?).** Both stand, read
+   together. 78.58's e_∅ is its own slot (index 10), and channel 0 stays a
+   measured hue — nothing is hard-coded as void. U13's boundary channel is
+   the TRANSITION: where the Mayer–Vietoris measurement shows a body's
+   constructors leaving into a region (∇B ≠ ∅ with that region as its
+   target), that flux is booked into the e_∅ slot as a measured quantity,
+   never deleted. In the ARC corpus that region is usually channel 0; it is
+   read so, never assumed so.
+2. **U14 against law 6 ("no voice adds a letter").** Confirmed as recorded:
+   a mind COINS a letter in its own dialect at a rank step (Δrank > 0) from
+   two perceived reflections; it enters the LANGUAGE only when the court
+   checks the constructor steps the mind sends (coordinator ruling 3, S2)
+   and opens it. Law 6 holds for the language; the dialect is the mind's.
+3. **U14 against 50.2 step 1 (the canonical representative).** "The member
+   nearest the identity in the Cayley graph" is read on the alphabet AS IT
+   STANDS at the stamp — the letters the court has opened by then. At an
+   empty alphabet the representative is the member itself (no graph, no
+   reduction); it re-reduces as letters open, and a class's key carries the
+   alphabet's stamp it was reduced at.
+4. **U15: how ∇B and ΔB compose along a word.** Owed to S1, to be written
+   here BEFORE it is coded. The frame S1 completes: λ₂ ∘ λ₁ = (g₂g₁, ∇B,
+   ΔB) with the constructors of λ₂'s sets carried back through g₁ to λ₁'s
+   frame; a constructor λ₁ emits (ΔB₁) and λ₂ absorbs (∇B₂) cancels exactly,
+   in neither set; nothing else cancels; the empty triad is the identity.
+   S1 proves associativity and the collapse to the versor product when all
+   sets are empty, by the algebra.
+5. **U12 against law 7.** "The past reduces symmetrically to zero" is
+   INTEGRATION into the era root, never discarding: a closed cycle stays
+   citable cold by its coordinates (law 7, 78.65); only the open chains go
+   forward as punctures.
+6. **Rule 14 and checklist (k).** Amended in place by the override above:
+   scoped tests on touched modules, the whole suite never the gate.
+   ALPHABET.md and the ~37 other mentions of "the seventeen" read through
+   1.1 as amended; S2 marks ALPHABET.md superseded at its head.
+
 ## 0.2 The master algorithms as stated (chapter 17), where applied, and what stands
 
 Every path to a key passes through M1; the composition is chapter 17's
