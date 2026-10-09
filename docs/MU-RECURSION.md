@@ -26143,6 +26143,113 @@ grew; a peer's line admitted in pieces is published as held; a wallet off
 the reading is the kernel's at the publication and moves at the next; the
 height rides behind a receipts answer and an older answer reads with none.
 
+### 78.153 Replays metered and resumable (2026-10-09, the lock audit's fix list, option (A))
+
+**Measured** (docs/LOCK-AUDIT.md): no path under the kernel lock was
+metered end to end, and inside `blind_replay_on` only `versor_between`
+spent — where it ran out (`NoPose::Unbounded`) the edge re-measure answered
+`REFUSE_EDGE` and `court_stroke` slashed a good word on a spent stroke
+(defect 1). The operator chose (A): replays become resumable.
+
+**Ruled.**
+
+1. **A replay on one stroke answers `Replayed`** (`verdict::resume`,
+   `#[must_use]`): `Clean`, `Refused(Refusal)` with its coordinate, or
+   **`Unread`** — the stroke ran out before it ruled. Unread is "not ruled
+   this stroke": never a pass, never a slash. `NoPose::Unbounded` anywhere
+   on the path (the union re-measure, a frame-axis motor's deviation) is
+   Unread at the face it stopped on.
+2. **Every input-sized loop of the replay spends one read per item**, in
+   phases read in the verdict's order (`Phase`): ports (per Glued vertex,
+   the cover filed by host once, a keyed read each — no longer glued
+   vertices × cover edges), phantoms and citations (per cover edge; the
+   cited form BORROWED where the court holds it, `resolve_form_ref`, never
+   a whole-form clone per resolve), derivations (per cite), witnesses (per
+   prime factored), moves (per vertex), perceive (per pair, ONCE PER
+   REPLAY), clauses (per pair), bodies (per vertex × claimed frame, plus a
+   coverage read), the traversal (one; the form borrowed where the
+   decoded forest is the traversed one), faces, edges (per face, beside
+   `versor_between`'s own draws), coherence (per orbit,
+   `Form::orbit_coheres`), terrain (per orbit derived, per claim read),
+   rank (one), deflation (per pair, and per cited form its speech speaks
+   afresh — `apply_form_metered`), pivots (per face), certificates (per
+   certificate).
+3. **The cursor** (`ReplayCursor`): the phase, the item inside it, and the
+   exact partials a later phase is built from — the pairs as the sensor
+   read them, the undeclared links of the pairs already spoken, the
+   terrain's class rows already derived. Held VOLATILE on the kernel
+   (`replay_cursors`, by the word's address and the task whose family it is
+   replayed on; a solve's by the rule and its withheld pairs); a restart
+   starts every replay over; a family bound anew drops them all.
+   **Invariant: a resumed replay rules exactly as a one-stroke replay
+   would** — every phase before the cursor passed, and passing is a
+   function of the word, its family and content-addressed cited forms; a
+   cited form that resolved stays resolved (a slashed word resolves from
+   the cavity). A citation unresolved in the deflation refuses at the first
+   pair that shows it, as it refused whatever any pair left.
+4. **The docket takes one key at a time.** The cursor walked every key the
+   stroke could pay for before any replay, so a docket as long as the
+   stroke left the replays nothing; now each key is taken and replayed
+   before the next. On `Unread` the docket's cursor stays BEFORE the word:
+   the next stroke takes it first and resumes it, so a word resumed across
+   strokes is ruled. A replay a whole stroke moved no further (it began
+   with every read but the cursor's) holds a unit no stroke can read — a
+   pair whose speech speaks more cited forms afresh than a stroke grants —
+   and is passed over for that circuit (`court_stalled`) rather than stand
+   the docket still. The circuit counted is the walk's, less a wrap the
+   unread word un-made.
+5. **Every caller handles Unread as not ruled.** The glue waits as dialect,
+   unheard (`Glue::Dialect`, as an unproven colour word); the witness door
+   answers `Unmeasured` (`glue_fetched_ruled`, `court_replay`); a heard
+   sentence is deferred on no lane (`Outcome::Deferred([0; 4])`) and spoken
+   again; an adoption is `Adoption::Unread`; a solve judged at the door
+   (`judge_solve_on_stroke`) is **`SolveVerdict::Unread`**, carried on the wire as `SOLVE_NOTHING` with a
+   refusal of kind N, "not judged yet … ask again and it resumes" — no
+   such answer stood on the wire; `judge_solve` (the client's seam, the
+   tests) asks again while each asking moves the replay. The off-lock readers (`blind_replay`,
+   `_with`, `_on`, `_at`, `replay_form*`) keep their answer and run the
+   replay to its end on strokes of their own, leaving the caller's stroke
+   as it stood; a stroke that moves nothing is `REFUSE_UNREAD` (N).
+6. **The docket cursor seeks** (`Keyed::after`): a circuit begins past
+   `from` by following `from`'s own bits, never by walking the keys before
+   it (row 1b).
+7. **A cycle of citations is refused by name** (defect 4): a cited form
+   reached again while it is being spoken is `Speech::cycled`, no grid is
+   laid down, the deflation reads it, the mint refuses it
+   (`CitationsDoNotCompose`) and the court refuses it as
+   `REFUSE_CITATION_CYCLE` (I) — never a stack overflow.
+8. **The phase reading is bounded** (hypha c held the kernel in `court
+   stroke: phase`, 2026-10-09 09:39): `read_phase` reads on a stroke of its
+   own — one read per ruled stratum (its count: `Stalks::strata_counted`
+   copies no member address, where `strata` copied them all), per chart's
+   complex, per receipt of the window, per ruled word asked what it opened.
+   Where the stroke runs out the reading is not taken and the mark stays,
+   so the next reading covers the window from it exactly; nothing gates on
+   a phase.
+
+**Owed.** A stroke is `spend_unit` reads (`cores·(1 + GiB available)/8`:
+six on the host this was written on, about ten on the fleet's): a unit
+larger than that — one pair speaking many cited forms afresh — is passed
+over, not ruled; resuming inside a pair's speech is the follow-up. The
+client must ask a not-judged-yet solve again to see it judged. A phase
+reading over a book larger than one stroke is never taken; a resumable
+reading is the follow-up. The rest of
+the lock audit's list (the ruling's after-work, the fetch, the exchange's
+holds, snapshots) is untouched here.
+
+Proved (`court::verdict::tests::resume`,
+`cognition::tests::resume`, `family::tests::cycle`,
+`network::nerve::keyed::tests::seek`): a replay longer than a stroke is
+Unread, then resumed on every stroke size to the whole replay's verdict,
+refusal and coordinate included; on every stroke short of the need a good
+word is Unread, never refused; an edge spent inside `versor_between` is
+spent, never `REFUSE_EDGE`; the court resumes an unread replay, never
+slashes it, and keeps no cursor once it rules; the docket rules a word its
+stroke could not finish and still slashes a form that does not close its
+family; a solve is Unread then judged at one price; a mutual citation
+ends and is refused by name; the seek yields exactly the keys after `from`
+and visits fewer nodes than the walk.
+
 ### 80.1 The blueprint reconciled (2026-09-24)
 
 A four-phase blueprint was put to the coordinator — substrate hardening,
