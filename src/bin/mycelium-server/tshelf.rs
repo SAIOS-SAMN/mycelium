@@ -10,6 +10,7 @@
 
 use crate::Mesh;
 use mycelium::chronometry::tuniversal::{Admitted, Keepers, Origin, Residual, TPoint, TShelf, Tick, TickReading};
+use mycelium::observe;
 use std::sync::{LazyLock, Mutex};
 
 static SHELF: LazyLock<TShelf> = LazyLock::new(TShelf::new);
@@ -17,6 +18,13 @@ static SHELF: LazyLock<TShelf> = LazyLock::new(TShelf::new);
 /// The keepers as this court holds them, at the origin it adopted; the last
 /// residual written to the journal.
 static KEEPERS: Mutex<Option<(Keepers, Residual)>> = Mutex::new(None);
+
+/// THE KEEPERS AS THE OBSERVER READS THEM: each keeper and the residual,
+/// copied whenever the keepers are touched. A leaf lock, held only for the
+/// copy, so the court stroke reads it under the kernel without waiting on a
+/// ring's verification under the keepers' own lock.
+static SEEN: Mutex<(Vec<observe::KeeperSeen>, Residual)> =
+    Mutex::new((Vec::new(), Residual { edges: Vec::new(), holonomy: None }));
 
 /// Refusals of peers' rings, counted, said at powers of two.
 static REFUSED: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -58,7 +66,23 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
     if let Some(p) = k.final_point() {
         SHELF.raise_final(p);
     }
+    let seen = (observe::keepers_seen(k), k.residual());
+    match SEEN.lock() {
+        Ok(mut s) => *s = seen,
+        Err(p) => *p.into_inner() = seen,
+    }
     Some(out)
+}
+
+/// 78.152 — THE COURT'S TUNIVERSAL STANDING for the observer: the shelf's
+/// final point and its advances, and the keepers and residual as last
+/// copied. Nothing held before an origin is adopted.
+pub(crate) fn standing() -> observe::TStanding {
+    let (keepers, residual) = match SEEN.lock() {
+        Ok(s) => s.clone(),
+        Err(p) => p.into_inner().clone(),
+    };
+    observe::TStanding { final_point: SHELF.final_point(), advances: SHELF.advances(), keepers, residual }
 }
 
 /// THIS COURT'S RING FOR ITS DIGEST (TU-1, TU-2): its tick read (where the

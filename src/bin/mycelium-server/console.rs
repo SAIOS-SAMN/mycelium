@@ -269,6 +269,13 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
             }
             None => format!("  {name}  {DIM}no clock carried{RESET}"),
         });
+        // 78.152 — the court's quorum-final point, its keepers, its residual.
+        if let Some(c) = readings.iter().find_map(|r| match r {
+            Reading::Court(c) => Some(c),
+            _ => None,
+        }) {
+            lines.extend(standing(&c.tuniversal));
+        }
     }
     #[expect(
         clippy::disallowed_methods,
@@ -280,6 +287,50 @@ fn tuniversal(sources: &[(Source, Vec<Reading>)]) -> Vec<String> {
         _ => lines.push(format!("  {DIM}no source carried a clock{RESET}")),
     }
     lines
+}
+
+/// 78.152 TU-3, TU-4, TU-7 — A COURT'S TUNIVERSAL STANDING: the door's
+/// quorum-final point written whole (`TPoint::print`), its advances, each
+/// keeper with its newest verified tick and its own final point, and the
+/// residual — each edge's exact lane difference and the triangle's holonomy.
+fn standing(s: &observe::TStanding) -> Vec<String> {
+    let lanes = |d: &[i128; 4]| {
+        let [a, b, c, e] = d;
+        format!("{a:+}:{b:+}:{c:+}:{e:+}")
+    };
+    let mut out = vec![
+        match &s.final_point {
+            Some(p) => format!("    final {}", p.print()),
+            None => format!("    {DIM}none final yet{RESET}"),
+        },
+        format!("    advances {}", s.advances),
+    ];
+    for k in &s.keepers {
+        let own = match k.own {
+            true => " (own)",
+            false => "",
+        };
+        let newest = match &k.newest {
+            Some(t) => {
+                let [ls, lg, lt, lh] = t.lanes;
+                format!("newest h {} {ls}:{lg}:{lt}:{lh} K {}", t.h, t.k)
+            }
+            None => format!("{DIM}no reading held{RESET}"),
+        };
+        let fin = match &k.final_of {
+            Some(p) => format!("final {}", p.local()),
+            None => format!("{DIM}final none{RESET}"),
+        };
+        out.push(format!("    keeper {}{own}  {newest}  {fin}", short(&k.key)));
+    }
+    for e in &s.residual.edges {
+        out.push(format!("    residual {}→{} h {} Δ {}", short(&e.from), short(&e.to), e.h, lanes(&e.delta)));
+    }
+    out.push(match &s.residual.holonomy {
+        Some(d) => format!("    holonomy {}", lanes(d)),
+        None => format!("    {DIM}holonomy unmeasured{RESET}"),
+    });
+    out
 }
 
 /// OK1, 78.23 as amended — A NODE'S ORBITS AGAINST THE OTHERS' on its

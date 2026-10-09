@@ -484,6 +484,10 @@ pub struct Court {
     /// whether the answer was WRITTEN, or found the asker gone (a page that
     /// missed the asker's wait). The asking side is `catchup`.
     pub serve: [u64; SERVE_AXES.len()],
+    /// 78.152 — THE DOOR'S QUORUM-FINAL TUNIVERSAL POINT, its advances, the
+    /// keepers as this court holds them and the residual (TU-3, TU-4, TU-7),
+    /// read off the shelf and the keepers outside the kernel.
+    pub tuniversal: super::TStanding,
 }
 
 /// The axes of [`Court::serve`]: counts, and one level (the most eras one
@@ -614,7 +618,7 @@ impl Court {
         for n in self.serve {
             put_u64(out, n);
         }
-        Some(())
+        self.tuniversal.put(out)
     }
 
     fn take(b: &[u8], p: &mut usize) -> Option<Court> {
@@ -643,6 +647,7 @@ impl Court {
         for n in &mut serve {
             *n = take_u64(b, p)?;
         }
+        let tuniversal = super::TStanding::take(b, p)?;
         Some(Court {
             k,
             basis,
@@ -657,6 +662,7 @@ impl Court {
             folds,
             catchup,
             serve,
+            tuniversal,
         })
     }
 }
