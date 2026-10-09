@@ -320,8 +320,29 @@ The reserve is tempo: it depletes per lane on every stroke a client spends
 and regenerates in the syntropic phase. μ is value: it moves only by the
 entries above. The two meet at stake: bonding μ raises the room a client
 can work within, so a client that earns can breathe faster and a client
-that spends without earning runs down to the dwell. μ never decays and
-never regenerates.
+that spends without earning runs down to the dwell. μ ON THE HYPHA — a
+balance, a stake, an escrow held by a court — never decays and never
+regenerates (the operator, 2026-10-09, amending "μ never decays" to the
+hypha only). μ stored IN A UNIVERSE — a kernel's vaults and currency
+backing — decays at a very slow rate, as matter dissipates without
+recycling: DEMURRAGE, applied by each kernel at its own physics' rate, and
+it is the economy's sink.
+
+### 7.1 Gas (78.154, ruled 2026-10-09)
+
+μ is the GAS of traversal across tubes, cores and wormholes. A TRAVERSE
+(payer, from origin/point, to origin/point, the route) pays the courts on
+the route WHOLE, each its own segments — a transfer, never a mint, and no
+burn (demurrage in-universe is the sink). Gas is measured by the route,
+exactly, lane by lane, never collapsed: S the spatial span (geometrized
+Mpc, Concordance 1.8), G the mouth tolls and value terms, T the TUniversal
+distance between the points (final points only — a coordinate not yet
+final is refused as not yet at h, never priced on a guess), H the
+information carried. μ STAKED on a hypha is escrow for intelligence
+traversal and coordinate retrieval, with no demurrage; a retrieval draws
+on the stake at the court's read price (emergent, never a published
+rate), and an unstake releases only after every claim drawn on it settles.
+A progenitor's in-universe wormhole haul pays the same gas.
 
 ## 8. Policy ratios
 
