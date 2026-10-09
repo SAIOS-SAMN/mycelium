@@ -66,18 +66,18 @@ fn with_keepers<R>(mesh: &Mesh, origin: Origin, f: impl FnOnce(&mut Keepers, &mu
 /// newest readings, oldest first. Empty before an origin is adopted.
 pub(crate) fn own_ring(mesh: &Mesh, tick: Option<Tick>) -> Vec<TickReading> {
     let Some(origin) = origin(mesh) else { return Vec::new() };
-    let ring = with_keepers(mesh, origin, |k, _| {
+    // No keepers held is no ring: nothing is read off it.
+    with_keepers(mesh, origin, |k, _| {
         if let Some(t) = tick {
             if k.read_own(&mesh.sk, t).is_none() {
                 eprintln!("  court tuniversal reading refused: its cites pass their count");
             }
         }
         k.own_ring()
-    });
-    match ring {
-        Some(r) => r,
-        None => Vec::new(),
-    }
+    })
+    .into_iter()
+    .flatten()
+    .collect()
 }
 
 /// A PEER'S RING HEARD ON ITS DIGEST (TU-2): admitted, a refusal counted by

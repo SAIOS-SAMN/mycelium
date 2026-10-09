@@ -15179,9 +15179,13 @@ clock. Ruled, on 72.1e's three clocks and law 9:
 4. **The console's header places every source on TUniversal first**, by
    height with its own `K` beside it and the fleet's spread named, before
    any other reading; orientation needs nothing else, and no wall-clock
-   value appears on the console or in any reading (law 9). The one
-   wall-time value in the tree stays the scheduler's parking floor, read
-   by no one.
+   value appears on the console or in any reading (law 9). *(Corrected
+   by 78.152: "one wall-time value" was not so — the floor was timed with
+   an `Instant` where the host gave no `CONFIG_HZ`, and three parks used
+   it. The `Instant` is retired; what stays is the ONE SCHEDULER FLOOR,
+   `physics::stroke_floor` — the bound of a park on no work, told to the
+   OS scheduler and read by no one — and every bound on work is counted in
+   strokes or in final-point advances.)*
 5. **Every fleet reading is quoted against height and `K` from now on**,
    in commit messages, audits and relays (§6.5 of the standards); the
    readings of 78.17 are re-quoted that way at the next window.
@@ -26142,6 +26146,149 @@ nothing where nothing moved, and copies only the two receipts a stroke
 grew; a peer's line admitted in pieces is published as held; a wallet off
 the reading is the kernel's at the publication and moves at the next; the
 height rides behind a receipts answer and an older answer reads with none.
+
+### 78.152 The TUniversal law (2026-10-09, the operator's ruling approving TU-1..7; Concordance 1.11)
+
+**Why.** 45.2 said every cover digest carries its signer's head
+`(K, height, hash)`; the digest never did (it carried the roots, the room,
+the bind). Each court's height was its own, the console quoted three, and
+no number said which point the mesh stood at. Ruled, as law:
+
+1. **TU-1 KEEPERS.** The three hyphae a, b, c are the three keepers —
+   distinct courts, distinct keys. A keeper's READING is its point at its
+   head: `h` (its head receipt's height), `S:G:T:H` (its court's
+   cumulative measured change per lane) and `K` (the orbits it closed).
+   The lane carrier is ONE exact counter, `Treasury::issued`: genesis,
+   mint and the epoch rows that stand for them across a treasury fold —
+   the discharge the court booked as mint (78.149) on the genesis it stood
+   on. It only rises (a burn leaves supply, never issuance) and a fold keeps
+   it exactly; the reserve, `acts.paid` and syntropy were read and refused —
+   each moves without a sealed act or is lost to a restart.
+   (`Kernel::keeper_tick`.) A reading ADVANCES only where the head rose AND
+   the measure moved — a lane or `K`; a tick alone is no measured change.
+2. **TU-2 READINGS ARE RECEIPTS.** A keeper signs a `TickReading` — its
+   key, the point, `parent` (the citation hash of its previous reading's
+   signed bytes, empty where its line of readings starts or restarts) and
+   `cites` (the last reading it verified from each other keeper: key, hash,
+   tick). The signed bytes carry the ORIGIN, so a reading of one universe
+   never verifies in another. They ride the cover digest as the keeper's
+   RING — its newest `aperture_cycle` readings, oldest first, each signed
+   on its own (**WIRE-CHANGE**: `[n u8]` then the readings, between the
+   bind and the digest's signature). Admission (`Keepers::admit`) verifies
+   every signature; the parent chain inside the ring and its rising ticks;
+   each cite naming another keeper once and agreeing with any reading held
+   at that tick; and the link to the line held — the ring extends it, or
+   stands anew where nothing is held, where the keeper restarted (an empty
+   parent above the held tick), or where a FULL ring passed a gap. A
+   partial ring linking to nothing is a broken parent, refused.
+3. **TU-3 FINALITY, TWO OF THREE.** A keeper's point is FINAL when two
+   distinct keepers hold verified readings of it: the keeper holds its own
+   signed reading, and another keeper's verified reading cites it (or a
+   later reading on its parent chain). The final TUniversal is the
+   greatest point final in this court's view (`Keepers::final_point`),
+   held so it never runs back. NEVER AVERAGED: where two keepers' final
+   points stand at one tick and differ, that tick goes to the residual and
+   the final point is the greatest tick at which the finals agree.
+4. **TU-4 DISAGREEMENT IS A RESIDUAL.** Two keepers' readings at one tick
+   differing on a lane leave the exact difference `to − from` per lane as a
+   1-cochain on the keeper triangle; its holonomy round a → b → c (key
+   order) — each edge read at the greatest tick its two keepers share — is
+   the clock's residual (`Keepers::residual`), written to the journal as
+   `court tuniversal final … | residual holonomy … edges …` where it moves.
+   Read at one common tick a difference of point values closes (zero); what
+   stays is the disagreement the edges carry across ticks. Never folded into
+   the point.
+5. **TU-5 THE POINT.** `TPoint { origin: Origin { genesis, epoch }, h,
+   lanes, k }`, exact integers, written ONE way, hexadecimal:
+   `<genesis 64 hex>.<epoch 8 hex>/<h>:<S>:<G>:<T>:<H>:<K>`, each field 16
+   lowercase hex digits (as `CoreStamp::wide`); `TPoint::parse` reads back
+   exactly that writing and nothing else. Distinct across universes by
+   origin; within one origin text order is numeric order.
+6. **TU-6 OPERATIONS by a final point.** PINPOINT (`Kernel::pinpoint`: the
+   receipts held at its tick), UNPACK (`TPoint::unpack`, `Kernel::unpack`:
+   its coordinates by name, and the frame each receipt at its tick
+   measured), UNROLL (`Kernel::unroll`: the court's own hot line up to its
+   tick; the eras before the root by `ACT_RECEIPTS`'s replay) are kernel
+   reads. RESET (`ops::Reset`: the next epoch, citing the point by
+   `ops::citation`), BRANCH (`ops::Branch`: a sub-universe whose genesis is
+   the citation of the point and the branch's name, epoch zero) and
+   SUPERPOSE (`ops::Superposed`: two branches' points with their exact
+   residual, merged only by a quorum-final point past both that cites both,
+   `merged_by`) are typed values with the citation each needs. OWED: the
+   recut flow that writes a RESET's citation into the new genesis's mesh
+   record, and a branch's founding act.
+7. **TU-7 SYNC AND WATCHDOG.** Every act carries its speaker's last FINAL
+   point behind its body on the frame (**WIRE-CHANGE**, `network::wire`:
+   the lane byte's bit `0x80`, the last 84 bytes the `TPoint`, the length
+   counting them; a decoder older than this reads no lane and refuses). Door
+   replies carry the door's final point the same way, and a session keeps
+   the greatest it read — no ask is spoken. A percept is stamped with the
+   house's point, signed with its fields (seat **v1.3**, **WIRE-CHANGE**:
+   `[0]` or `[1][TPoint]` after the records); mail rides frames that carry
+   it. The door keeps the greatest final point on its SHELF
+   (`chronometry::tuniversal::TShelf`, the server's `tshelf`), beside the
+   78.151 snapshot and outside the kernel: raised from the keepers' quorum
+   as peers' rings are admitted; a speaker's carried point is held apart as
+   HEARD, never as final (a client's word is no quorum). The lock watchdog
+   (`held::spawn_watchdog`) is its own thread, woken by each advance of the
+   final point, reading the held book and the shelf without the kernel: a
+   hold standing across `aperture_cycle` advances is named once with its
+   step.
+
+**The SDK read, for kernels.** `Session::tuniversal(&self) ->
+Option<TPoint>` and `Entity::tuniversal(&self) -> Option<TPoint>`: the
+last final point read, `None` before the first. A game kernel holds its
+clock to it, stamps what it publishes with `TPoint::print`, and keeps its
+own step clock (78.124's hierarchy). `Session::post_percept` stamps a
+percept the house left unstamped with it.
+
+```
+if let Some(t) = session.tuniversal() {
+    world.hold_to(t.h, t.lanes, t.k);          // the universe's one clock
+    log(&t.print());                            // origin/h:S:G:T:H:K
+}
+```
+
+**Earth clocks re-expressed.** The court's idle park (`exchange.rs`) now
+ends on the first motion — a final-point advance or an act read at the door
+— bounded by the scheduler floor. The `Instant` that timed the floor where
+the host gave no `CONFIG_HZ` is retired: one nanosecond is asked and the
+kernel rounds it to its own timer. What remains is the ONE SCHEDULER FLOOR,
+`physics::stroke_floor`, told to the OS scheduler and read by no one: the
+court's park, the transport's poll between empty reads, and a mind's idle
+stroke (`mycelium-client`, scaled by its measured transport in strokes — a
+mind hears advances only through its door's replies, so its park is not
+counted in them). 78.21(4) is corrected to say so.
+
+**The known edge.** With two keepers down, time does NOT advance: a lone
+keeper's readings are cited by no one, nothing new is final, the door's
+point stands, and the watchdog is not woken — no hold is measured against
+a clock that stopped. One keeper down, the two left finalise each other.
+
+**Undecided by this ruling, named.** (i) The keeper set is every court
+whose ring this court verified; the quorum is two — a fourth court would
+make it 2-of-4 until ruled. (ii) Two finals at one tick that differ are
+held to the residual; whether a later quorum point citing both resolves
+the tick (SUPERPOSE's merge) is not ruled for the main line. (iii) A
+keeper's readings are volatile: a restart starts its line again with an
+empty parent (accepted above the held tick), so a restarted keeper's
+earlier readings are not re-signed. (iv) The lanes carry genesis
+allocations in `issued`; issuance net of genesis is not separable after a
+treasury fold. LAYOUT-CHANGE: none — nothing persisted changed.
+
+Proved (`chronometry::tuniversal::tests`): three keepers in one process
+exchange readings and a point is final only at two; a forged signature,
+an altered lane, another origin's reading and a broken parent are refused
+while the honest line extends; two keepers disagreeing at one tick leave
+the exact lane difference and no final point at that tick, and a later
+point final alone passes it; with two keepers silent the final point stops
+at the last point the others said; the writing prints and parses back
+exactly; the shelf advances with no kernel and wakes a parked reader;
+RESET, BRANCH and SUPERPOSE cite the point. `network::wire` — a frame
+carries its speaker's final point and an older lane read refuses it;
+`dialogue::tests::receipt_section` — the digest carries the ring and it
+verifies where it lands; `dialogue::tests::seat` — the percept's point
+decodes exactly and verifies under the house.
 
 ### 80.1 The blueprint reconciled (2026-09-24)
 
