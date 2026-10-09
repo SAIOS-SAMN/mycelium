@@ -125,6 +125,43 @@ pub struct Published {
     pub(crate) ledgers: Keyed<Arc<Vec<crate::anastome::dialogue::atlas::HeldEntry>>>,
     pub(crate) atlas_mark: u64,
     pub(crate) cost: PublishCost,
+    /// 78.153b — THE COURT'S OWN READS (`Own`): its cover, room, bond, ruled
+    /// cover and head receipt, read off the shelf by the door and the
+    /// exchange without the kernel.
+    pub(crate) own: Own,
+}
+
+/// 78.153b — WHAT THE COURT READS OF ITSELF, published: each piece read at
+/// the stroke as the kernel answers it, and shared with the last reading
+/// where it did not move.
+#[derive(Clone)]
+pub(crate) struct Own {
+    /// `Kernel::own_cover_charts`, copied where `own_cover_gen` moved.
+    pub(crate) cover: Arc<Vec<(u8, crate::transducer::stalk::Invariant)>>,
+    pub(crate) cover_mark: u64,
+    /// `Kernel::lane_room`, read at every publication (its credit walk is
+    /// the court's own discoveries; the memo sealed at a generation is owed,
+    /// `room.rs`).
+    pub(crate) room: Option<[u64; 4]>,
+    /// Whether this court holds bond (`Treasury::bond_of` is some): the
+    /// witness's room to co-sign a fold (`verify_fold`).
+    pub(crate) bonded: bool,
+    /// The court's own voice, whose digests asks are answered with the
+    /// ruled cover (`ruled_digests_for`).
+    pub(crate) voice: Option<[u8; 32]>,
+    /// The ruled cover: root, digests and syllabus seed, read where
+    /// `ruled_gen` moved.
+    pub(crate) ruled: Arc<Ruled>,
+    pub(crate) ruled_mark: u64,
+    /// `ReceiptChain::head`, the receipt at `head`.
+    pub(crate) head_receipt: Option<KStepReceipt>,
+}
+
+/// THE RULED COVER AS PUBLISHED (`Kernel::ruled_reading`).
+pub(crate) struct Ruled {
+    pub(crate) root: [u8; 32],
+    pub(crate) digests: Vec<crate::transducer::sheaf::StratumDigest>,
+    pub(crate) seed: Vec<Vec<u8>>,
 }
 
 /// A receipt's tape bytes; a tape that does not write weighs nothing and is
@@ -196,6 +233,7 @@ impl Kernel {
                 self.eras_path.as_deref().map(Arc::from)
             }
         };
+        let own = self.publish_own(prev, head, &mut cost, &mut moved);
         if !moved {
             return None;
         }
@@ -213,7 +251,41 @@ impl Kernel {
             ledgers,
             atlas_mark: self.atlas.mark,
             cost,
+            own,
         })
+    }
+
+    /// 78.153b — THE COURT'S OWN READS: its cover charts where
+    /// `own_cover_gen` moved, the ruled cover where `ruled_gen` moved, the
+    /// head receipt where the head moved; its room, bond and voice at every
+    /// publication, each compared with the last so a moved one publishes.
+    fn publish_own(&mut self, prev: Option<&Published>, head: Option<Stamp>, cost: &mut PublishCost, moved: &mut bool) -> Own {
+        let held = prev.map(|p| &p.own);
+        let cover = match held {
+            Some(o) if o.cover_mark == self.own_cover_gen => Arc::clone(&o.cover),
+            _ => {
+                *moved = true;
+                let charts = self.own_cover_charts();
+                cost.keys(charts.len() as u64);
+                Arc::new(charts)
+            }
+        };
+        let ruled = match held {
+            Some(o) if o.ruled_mark == self.ruled_gen => Arc::clone(&o.ruled),
+            _ => {
+                *moved = true;
+                let (root, digests, seed) = self.ruled_reading();
+                cost.keys(seed.len() as u64);
+                Arc::new(Ruled { root, digests, seed })
+            }
+        };
+        let head_receipt = match held {
+            Some(o) if prev.is_some_and(|p| p.head == head) => o.head_receipt.clone(),
+            _ => self.chain.head(),
+        };
+        let (room, bonded, voice) = (self.lane_room(), self.treasury.bond_of(&self.identity).is_some(), self.court_voice);
+        *moved |= held.is_none_or(|o| o.room != room || o.bonded != bonded || o.voice != voice);
+        Own { cover, cover_mark: self.own_cover_gen, room, bonded, voice, ruled, ruled_mark: self.ruled_gen, head_receipt }
     }
 
     /// Every signer's line: its own and every peer's held here, and every

@@ -12,7 +12,9 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(ask) = decode_why(&frame.body) else { return };
     let why = match crate::held::held!(door.kernel) {
-        Ok(k) => k.why(ask),
+        // Stays on the kernel (78.153b): stamp→word and its Reasons are not
+        // on the shelf.
+        Ok(mut h) => h.run(|k, _| k.why(ask)),
         Err(_) => return,
     };
     answer(stream, Frame { lane: frame.lane, body: encode_why_reply(why.as_ref()) });

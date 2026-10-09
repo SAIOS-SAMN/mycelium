@@ -103,7 +103,7 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
             }
             Some(word) => {
                 match (crate::held::held!(door.kernel), door.mesh.cover.lock()) {
-                    (Ok(mut k), Ok(mut cover)) => {
+                    (Ok(mut h), Ok(mut cover)) => h.run(|k, budget| {
                         // One typed reading, every arm of `Glue` named. The
                         // REFUSAL travels, not a bit saying there was one:
                         // `Slashed(reason)` is a 34.1 constant the home logs
@@ -149,16 +149,15 @@ pub(crate) fn judge(s: &mut TcpStream, frame: &Frame, door: &Door) {
                         // A refusal withdraws only the stamp this filing
                         // placed, never this court's own on a word it holds.
                         // THE ACT'S ROOT (65.5): the offer is one act at this
-                        // door, and its one stroke is the filing's and the
-                        // replay's draw, threaded to both.
-                        let mut budget = k.stroke();
-                        let filed = k.file_admitted(&addr, section.receipt.stamp, &mut budget);
-                        let w = witness_vantage(&mut k, &mut cover, word, home, me, &mut budget);
+                        // door, and its one stroke — the hold's (78.153b) — is
+                        // the filing's and the replay's draw, threaded to both.
+                        let filed = k.file_admitted(&addr, section.receipt.stamp, budget);
+                        let w = witness_vantage(k, &mut cover, word, home, me, budget);
                         if filed && matches!(w, dialogue::Witnessed::Refused { .. }) {
                             k.drop_admitted(&addr);
                         }
                         w
-                    }
+                    }),
                     // A court that cannot be read has judged nothing and
                     // says so: unmeasured is not a refusal of the offer.
                     _ => dialogue::Witnessed::Unmeasured { vk: me },
@@ -268,15 +267,15 @@ mod tests {
     /// address — asked once and asked again.
     #[test]
     fn a_replayed_offer_is_answered_with_the_form_reached_each_time_it_is_asked() {
-        let mut k = mycelium::cognition::Kernel::new();
+        let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, me) = ([2u8; 32], [3u8; 32]);
         let w = word();
         for _ in 0..2 {
-            // Each offer is its own act: its root, one stroke.
-            let mut budget = k.stroke();
+            // Each offer is its own act: its root, one stroke — its hold's.
+            let mut h = crate::held::held!(kernel).expect("the kernel");
             let dialogue::Witnessed::Reached { vk, form } =
-                witness_vantage(&mut k, &mut cover, w.clone(), home, me, &mut budget)
+                h.run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, me, budget))
             else {
                 panic!("a replay that stood is a vantage");
             };
@@ -294,21 +293,20 @@ mod tests {
     /// heard mark is not a verdict, the replay is.
     #[test]
     fn a_false_offer_is_refused_by_name_each_time_it_is_asked() {
-        let mut k = mycelium::cognition::Kernel::new();
+        let kernel = std::sync::Mutex::new(mycelium::cognition::Kernel::new());
         let mut cover = mycelium::network::nerve::Cover::new();
         let (home, me) = ([2u8; 32], [3u8; 32]);
         let w = false_word();
-        let mut budget = k.stroke();
-        let first = witness_vantage(&mut k, &mut cover, w.clone(), home, me, &mut budget);
+        let first = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w.clone(), home, me, budget));
         let dialogue::Witnessed::Refused { vk, why } = first else {
             panic!("a replay that refused is a refusal");
         };
         assert_eq!(vk, me);
         assert!(!why.is_empty(), "the refusal is named");
-        assert!(k.heard_contains(w.address().as_bytes()), "and the address is marked heard");
+        let heard = crate::held::held!(kernel).expect("the kernel").run(|k, _| k.heard_contains(w.address().as_bytes()));
+        assert!(heard, "and the address is marked heard");
         // The second offer is a second act: a stroke of its own.
-        let mut budget = k.stroke();
-        let again = witness_vantage(&mut k, &mut cover, w, home, me, &mut budget);
+        let again = crate::held::held!(kernel).expect("the kernel").run(|k, budget| witness_vantage(k, &mut cover, w, home, me, budget));
         assert!(
             matches!(again, dialogue::Witnessed::Refused { .. }),
             "heard is not a verdict: the second offer is replayed and refused again"

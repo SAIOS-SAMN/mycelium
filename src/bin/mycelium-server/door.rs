@@ -94,13 +94,14 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_EVIDENCE {
         if let Some((_dvoice, items)) = dialogue::decode_evidence_deposit(&frame.body) {
             let accepted = {
-                let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
-                items
-                    .into_iter()
-                    .filter(|e| {
-                        k.deposit_evidence(e.addr.clone(), e.footprint.clone(), e.scene.clone())
-                    })
-                    .count()
+                let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+                // Bounded by the deposit's own items, which the frame bounds.
+                h.run(|k, _| {
+                    items
+                        .into_iter()
+                        .filter(|e| k.deposit_evidence(e.addr.clone(), e.footprint.clone(), e.scene.clone()))
+                        .count()
+                })
             };
             // The reply is the count ACCEPTED, in one byte. A deposit of
             // more than 255 items cannot be answered in it, and answering
@@ -115,8 +116,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         }
         let Some(_evoice) = dialogue::decode_evidence_request(&frame.body) else { return true };
         let items: Vec<_> = {
-            let Ok(k) = crate::held::held!(door.kernel) else { return true };
-            k.anchor_evidence().iter().take(32).cloned().collect()
+            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            h.run(|k, _| k.anchor_evidence().iter().take(32).cloned().collect())
         };
         // LD0 — a reply whose address cannot be framed is refused whole,
         // by name, and nothing partial is answered.
@@ -218,7 +219,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // The operator (2026-10-08): the hypha serves anyone; a universe founded
         // here speaks only through its ancients — an inner tier of a founded
         // domain that is not its sitting reserve is refused (`may_solve`).
-        let ancient = crate::held::held!(door.kernel).ok().is_some_and(|k| k.may_solve(&svoice));
+        let ancient = crate::held::held!(door.kernel).ok().is_some_and(|mut h| h.run(|k, _| k.may_solve(&svoice)));
         let (code, mu, refusal, stamp) = match (open, rule.as_ref()) {
             // 78.141 — the court pays the voice a solve names: unsigned, it
             // names no payee, and nothing is judged or paid.
@@ -243,7 +244,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             ),
             (Some(first), Some(rule)) => {
                 let (verdict, offers) = {
-                    let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
+                    let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+                    // OWED (78.153b): the solve's replay mints its own stroke
+                    // inside `judge_solve_on_stroke` (78.153, resumable).
+                    h.run(|k, _| {
                     let verdict = match k.judge_solve_on_stroke(rule, &withheld) {
                         mycelium::cognition::SolveVerdict::Solved { pay } => {
                             // The court names a task by its citation (wire v1.2).
@@ -285,6 +289,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
                         ),
                     };
                     (verdict, k.take_offers())
+                    })
                 };
                 // The solving rule docketed is offered by the act that docketed it.
                 crate::offer::offer(&door.kernel, &door.mesh, offers);
@@ -362,10 +367,10 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     // cover's and refused it outright past the axis count.
     if kind == dialogue::ACT_COVER {
         if let Some((_voice, from)) = dialogue::decode_cover_request(&frame.body) {
-            let charts = match crate::held::held!(door.kernel) {
-                Ok(k) => k.own_cover_charts(),
-                Err(_) => return true,
-            };
+            // 78.153b — this court's own charts off the published reading,
+            // never the cover trie walked and cloned under the kernel.
+            let read = door.published.take();
+            let charts = read.own_cover_charts();
             // A chart wider than the page's axis count is passed over by
             // the encoder, so the count of them is said here once, where
             // the charts are this court's own: on the fleet at 3d2987e
@@ -378,7 +383,7 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             let Some(body) = dialogue::encode_cover_page(
                 &door.mesh.vk,
                 &door.bind,
-                &charts,
+                charts,
                 &from,
                 mycelium::network::wire::frame_budget(),
             ) else {
@@ -413,13 +418,12 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         let Some(svoice) = dialogue::decode_syllabus_request(&frame.body) else { return true };
         // A PAGE IS A WINDOW, NOT A COPY OF THE BOOK: a slice from the voice's
         // cursor under the syllabus lock (checklist (j)).
-        let seed = match crate::held::held!(door.kernel) {
-            Ok(k) => k.syllabus_seed(),
-            Err(_) => return true,
-        };
+        // 78.153b — the seed off the published reading, never every ruled
+        // address copied under the kernel per page asked.
         let (cursor, window) = {
+            let read = door.published.take();
             let Ok(mut sy) = door.syllabus.lock() else { return true };
-            syllabus_admit(&mut sy, seed);
+            syllabus_admit(&mut sy, read.syllabus_seed());
             syllabus_window(&mut sy, &svoice)
         };
         // THE PAGE IS WHAT THE COURT'S RESERVE AFFORDS (the actions'
@@ -429,10 +433,15 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
         // sealed as a Syllabus act and carries that stamp. Nothing is sealed
         // for a word that is not sent.
         let (page, classes) = {
-            let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
-            let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::frame_budget());
-            let classes = k.class_records(&mycelium::transducer::stalk::Invariant::default());
-            drop(k);
+            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            // The page is bounded by the window (one wire count); the whole
+            // nerve's class records on the hold's stroke, resumed page to
+            // page past the chart the last reading stopped at (78.153b).
+            let (page, classes) = h.run(|k, reads| {
+                let page = k.serve_syllabus(&window, svoice, mycelium::network::wire::frame_budget());
+                (page, k.class_records_on(&mycelium::transducer::stalk::Invariant::default(), &svoice, reads))
+            });
+            drop(h);
             if let Ok(mut sy) = door.syllabus.lock() {
                 sy.served.insert(svoice, cursor + page.consumed);
             }
@@ -483,8 +492,9 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
     if kind == dialogue::ACT_REFINE {
         let Some((rvoice, word, cites)) = dialogue::decode_refine(&frame.body) else { return true };
         let (code, mu) = {
-            let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
-            match k.try_refine(&word, rvoice, &cites) {
+            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            // OWED (78.153b): deep `make_mut` clones (the lock audit, row 19).
+            match h.run(|k, _| k.try_refine(&word, rvoice, &cites)) {
                 Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
                 None => (dialogue::REFINE_NOTHING, [0; 4]),
             }
@@ -500,8 +510,8 @@ pub(crate) fn serve_control(s: &mut TcpStream, frame: &Frame, door: &Door) -> bo
             return true;
         };
         let (code, mu) = {
-            let Ok(mut k) = crate::held::held!(door.kernel) else { return true };
-            match k.try_refine_algebraic(&word, rvoice, &held, &witness) {
+            let Ok(mut h) = crate::held::held!(door.kernel) else { return true };
+            match h.run(|k, _| k.try_refine_algebraic(&word, rvoice, &held, &witness)) {
                 Some(paid) => (dialogue::REFINE_ACCEPTED, paid),
                 None => (dialogue::REFINE_NOTHING, [0; 4]),
             }
@@ -544,14 +554,13 @@ fn rewind_syllabus(door: &Door) {
 
 /// Does the listing home on this hypha. A poisoned mesh lock is no reading
 /// of the cover: the listing is not taken here (§2.4, rule 11).
-pub(crate) fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
-    let room = match crate::held::held!(kernel) {
-        Ok(k) => match k.lane_room() {
-            Some(r) => r,
-            None => return false,
-        },
-        Err(_) => return false,
-    };
+///
+/// 78.153b — this court's room read off the published reading: `lane_room`
+/// walked every word this court discovered (`use_credit`) under the kernel,
+/// once per listing, and the intake after a restart headed the lock on all
+/// three hyphae (the lock audit, row 10).
+pub(crate) fn homes_here(mesh: &Mesh, shelf: &crate::published::Shelf, inv: &mycelium::transducer::stalk::Invariant, mag: &[u64; 4]) -> bool {
+    let Some(room) = shelf.take().lane_room() else { return false };
     let (Ok(c), Ok(r), Ok(a)) = (mesh.cover.lock(), mesh.rooms.lock(), mesh.addrs.lock()) else {
         return false;
     };
@@ -560,6 +569,7 @@ pub(crate) fn homes_here(mesh: &Mesh, kernel: &Mutex<Kernel>, inv: &mycelium::tr
 
 pub(crate) fn list_task(
     kernel: &Mutex<Kernel>,
+    shelf: &crate::published::Shelf,
     mesh: &Mesh,
     tid: impl AsRef<[u8]>,
     task: &mycelium::arc::Task,
@@ -570,8 +580,8 @@ pub(crate) fn list_task(
     // bound under those 32 bytes, once.
     let cite = mycelium::registry::citation(&mycelium::transducer::address::Address::new(tid.as_ref().to_vec()));
     let tid = &cite[..];
-    if let Ok(mut k) = crate::held::held!(kernel) {
-        k.bind_task_family(tid, task.train.clone());
+    if let Ok(mut h) = crate::held::held!(kernel) {
+        h.run(|k, _| k.bind_task_family(tid, task.train.clone()));
     }
     for (a, b) in &task.train {
         let Some(mycelium::arc::Refined { delta: mut chain, frame, .. }) =
@@ -588,7 +598,7 @@ pub(crate) fn list_task(
         };
         let inv = mycelium::transducer::stalk::invariant_of(&residual);
         let addr = residual.address();
-        let here = homes_here(mesh, kernel, &inv, &residual.magnitude());
+        let here = homes_here(mesh, shelf, &inv, &residual.magnitude());
         // The pieces and their charts are read here, with no kernel held;
         // the lock below only commits them (`Kernel::intake_prepared`).
         let prepared = match here {
@@ -600,11 +610,11 @@ pub(crate) fn list_task(
         // the lock on all three hyphae (2026-10-09), deferring seats and
         // wallets behind it.
         crate::held::yield_to_waiters();
-        let mut k = match crate::held::held!(kernel) {
+        let mut h = match crate::held::held!(kernel) {
             Ok(g) => g,
             Err(_) => continue,
         };
-        match here {
+        h.run(|k, _| match here {
             true => {
                 if k.intake_prepared(prepared) {
                     k.bind_listing_task(addr, tid);
@@ -612,13 +622,14 @@ pub(crate) fn list_task(
             }
             false if rehome => if k.has_listing(&addr) { k.relocate_listing(&addr) },
             false => {}
-        }
+        });
     }
 }
 
 /// First-time listing under a stroke budget until the manifest is exhausted.
 pub(crate) fn intake_corpus(
     kernel: &Mutex<Kernel>,
+    shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
     budget: usize,
@@ -628,13 +639,14 @@ pub(crate) fn intake_corpus(
         Err(_) => return,
     };
     for (tid, task) in batch {
-        list_task(kernel, mesh, tid, &task, false);
+        list_task(kernel, shelf, mesh, tid, &task, false);
     }
 }
 
 /// Cover-change walk: re-home listings whose key no longer (or now) homes here.
 pub(crate) fn relocate_corpus(
     kernel: &Mutex<Kernel>,
+    shelf: &crate::published::Shelf,
     mesh: &Mesh,
     registry: &Mutex<mycelium::registry::TaskRegistry>,
     budget: usize,
@@ -644,7 +656,7 @@ pub(crate) fn relocate_corpus(
         Err(_) => return,
     };
     for (tid, task) in batch {
-        list_task(kernel, mesh, tid, &task, true);
+        list_task(kernel, shelf, mesh, tid, &task, true);
     }
 }
 

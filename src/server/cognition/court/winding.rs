@@ -698,10 +698,23 @@ impl Kernel {
 
     /// 78.71 — this court's field as it stands: how many tubes, their net
     /// flux, transport and open flux in windings, and their helicity.
-    pub fn tube_reading(&self) -> (usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational) {
+    #[cfg(test)]
+    pub(crate) fn tube_reading(&self) -> (usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, num_rational::BigRational) {
         let t = &self.flux_field.tubes;
         let (net, transport, open) = t.totals();
         (t.len(), net, transport, open, t.helicity())
+    }
+
+    /// [`Kernel::tube_reading`] ON THE HOLD'S STROKE (78.153b): the helicity
+    /// `O(tubes²)` in exact rationals reads one stroke read per tube, and is
+    /// `None` — unread — where the stroke runs out (`helicity_on`).
+    pub fn tube_reading_on(
+        &self,
+        reads: &mut crate::physics::Budget,
+    ) -> (usize, num_bigint::BigInt, num_bigint::BigInt, num_bigint::BigInt, Option<num_rational::BigRational>) {
+        let t = &self.flux_field.tubes;
+        let (net, transport, open) = t.totals();
+        (t.len(), net, transport, open, t.helicity_on(reads))
     }
 
     /// 78.73 (4) — this court's malleability line: `μ`, `β`, `ε` per lane,

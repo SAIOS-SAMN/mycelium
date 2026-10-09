@@ -61,14 +61,44 @@ impl Budget {
     }
 
     /// Spend one read. False when the token is exhausted — or when the
-    /// process has been asked to stop ([`halt`]).
+    /// process has been asked to stop ([`halt`]). A read granted is counted
+    /// on this thread ([`spent_here`]).
     pub fn spend(&mut self) -> bool {
         if self.remaining == 0 || HALTED.load(std::sync::atomic::Ordering::Relaxed) {
             return false;
         }
         self.remaining -= 1;
+        SPENT.with(|s| {
+            // Past 2⁶⁴ reads on one thread the count stands; a hold reads
+            // the difference across itself, which then reads zero.
+            if let Some(n) = s.get().checked_add(1) {
+                s.set(n);
+            }
+        });
         true
     }
+
+    /// 78.153b — THE WHOLE TOKEN HANDED ON: what this token still grants
+    /// moves to the one returned, and this one is left spent. Never a share
+    /// (the two attempts above): the reads are the same reads, carried by
+    /// the one that goes on — a kernel hold that lets go of the kernel and
+    /// keeps its stroke for the wire (`server::held::Held::into_stroke`).
+    pub fn hand_over(&mut self) -> Budget {
+        Budget { remaining: std::mem::take(&mut self.remaining) }
+    }
+}
+
+thread_local! {
+    /// 78.153b — every read granted on this thread, by any token: what a
+    /// kernel hold reads across itself to say it was metered.
+    static SPENT: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+
+/// 78.153b — THE READS THIS THREAD WAS GRANTED, by every token it spent:
+/// a kernel hold reads it at its take and its drop, and a hold that read
+/// none while waiters queued is named (`server::held`).
+pub fn spent_here() -> u64 {
+    SPENT.with(std::cell::Cell::get)
 }
 
 /// THE ANISOTROPIC RESERVE — attention as a four-lane vector, not a tick

@@ -24,7 +24,8 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
     if offers.is_empty() {
         return;
     }
-    let Some(mut offer_budget) = crate::held::held!(kernel).ok().map(|mut k| k.stroke()) else {
+    // The round's stroke is the first hold's, handed on whole (78.153b).
+    let Some(mut offer_budget) = crate::held::held!(kernel).ok().map(|h| h.into_stroke()) else {
         return;
     };
     let mut offered_out = 0usize;
@@ -58,13 +59,15 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             // A witness that answered this word has given its vantage, and
             // is not asked again (S12.4d).
             let (answered, k_now) = match crate::held::held!(kernel) {
-                Ok(k) => (
-                    matches!(
-                        k.offer_standing(oaddr.as_bytes(), &witness),
-                        Some(mycelium::cognition::OfferStanding::Answered)
-                    ),
-                    k.k_step(),
-                ),
+                Ok(mut h) => h.run(|k, _| {
+                    (
+                        matches!(
+                            k.offer_standing(oaddr.as_bytes(), &witness),
+                            Some(mycelium::cognition::OfferStanding::Answered)
+                        ),
+                        k.k_step(),
+                    )
+                }),
                 Err(_) => continue,
             };
             if answered {
@@ -81,8 +84,8 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             }) else {
                 continue;
             };
-            if let Ok(mut k) = crate::held::held!(kernel) {
-                k.note_offered(oaddr.as_bytes(), witness, k_now);
+            if let Ok(mut h) = crate::held::held!(kernel) {
+                h.run(|k, _| k.note_offered(oaddr.as_bytes(), witness, k_now));
             }
             let Some((reply, dt)) = tell_peer(&d, body) else {
                 crate::transport::note_rtt_timeout(mesh, d.as_bytes());
@@ -90,8 +93,8 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
             };
             crate::transport::note_rtt_ok(mesh, d.as_bytes(), dt);
             offered_out += 1;
-            if let Ok(mut k) = crate::held::held!(kernel) {
-                k.note_provisional("offers sent to witnesses");
+            if let Ok(mut h) = crate::held::held!(kernel) {
+                h.run(|k, _| k.note_provisional("offers sent to witnesses"));
             }
             // 23.8, I36 — A DEFERRAL IS IMPEDANCE, NEVER A VANTAGE: the
             // witness replayed nothing, and the word is carried again only
@@ -118,9 +121,11 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
                         vk[1],
                         String::from_utf8_lossy(&why)
                     );
-                    if let Ok(mut k) = crate::held::held!(kernel) {
-                        k.note_witness_answered(oaddr.as_bytes(), vk);
-                        k.note_provisional("witness refused");
+                    if let Ok(mut h) = crate::held::held!(kernel) {
+                        h.run(|k, _| {
+                            k.note_witness_answered(oaddr.as_bytes(), vk);
+                            k.note_provisional("witness refused");
+                        });
                     }
                 }
                 dialogue::Witnessed::Unmeasured { vk } => {
@@ -128,8 +133,8 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
                         "  court offer unmeasured {:02x}{:02x}… at {:02x}{:02x}…",
                         oaddr[0], oaddr[1], vk[0], vk[1]
                     );
-                    if let Ok(mut k) = crate::held::held!(kernel) {
-                        k.note_provisional("witness unmeasured");
+                    if let Ok(mut h) = crate::held::held!(kernel) {
+                        h.run(|k, _| k.note_provisional("witness unmeasured"));
                     }
                 }
                 // The witness's re-derivation, read by the word's key: it
@@ -139,8 +144,8 @@ pub(crate) fn offer(kernel: &Mutex<Kernel>, mesh: &Mesh, offers: Vec<(Address, V
                     let Some(theirs) = mycelium::transducer::element::Element::from_bytes(&form, &mut p) else {
                         continue;
                     };
-                    if let Ok(mut k) = crate::held::held!(kernel) {
-                        k.witness_rederived(&oaddr, vk, theirs);
+                    if let Ok(mut h) = crate::held::held!(kernel) {
+                        h.run(|k, reads| k.witness_rederived(&oaddr, vk, theirs, reads));
                     }
                 }
             }

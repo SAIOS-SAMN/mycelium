@@ -149,6 +149,10 @@ impl Kernel {
                 self.own_cover.admit(*lane, &chart, addr);
             }
         }
+        // 78.153b: the shelf copies the charts again only where they moved.
+        // A count of moves, compared for equality alone: it wraps, never
+        // ordered.
+        self.own_cover_gen = self.own_cover_gen.wrapping_add(1);
         let ck = chart.key();
         match self.chart_listings.get_mut(&ck) {
             Some(m) => {
@@ -209,17 +213,14 @@ impl Kernel {
     /// binaries drew it from `Physics::default()`, a fresh default standing
     /// in for the kernel's measured reserve (rule 5); what a court can
     /// afford in one stroke is read off the court.
-    pub fn stroke(&mut self) -> crate::physics::Budget {
+    ///
+    /// 78.153b — THE CRATE'S, NEVER THE BINARY'S: a binary takes its stroke
+    /// with the kernel, one per hold (`server::held::lock`), so a hold cannot
+    /// mint itself a second.
+    pub(crate) fn stroke(&mut self) -> crate::physics::Budget {
         self.physics.stroke()
     }
 
-    /// A stroke of a MEASURED size — what a caller with work in hand that
-    /// must FINISH spends on it, rather than the one stroke a caller that
-    /// can resume next time gets (L8w, law 9). The count is read off the
-    /// work, never off the machine.
-    pub fn stroke_n(&mut self, n: usize) -> crate::physics::Budget {
-        self.physics.stroke_n(n)
-    }
 
     /// Crate-internal: the deliberative arm (synthesis::contemplate) spends
     /// the reserve through here — thought is metabolically real.

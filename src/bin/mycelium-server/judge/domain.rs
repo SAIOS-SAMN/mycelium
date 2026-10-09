@@ -32,7 +32,10 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     // The final point is read off the shelf before the kernel is taken.
     let fin = crate::tshelf::final_point();
     let body = match crate::held::held!(door.kernel) {
-        Ok(mut k) => match request {
+        // 78.153b — on the hold's stroke: a LEDGER entry's ladder pruning
+        // spends it; MAP and TRAVERSE read what the frame carries; READ-MAP
+        // walks one universe's records (a fiber), owed to the shelf.
+        Ok(mut h) => h.run(|k, reads| match request {
             DomainRequest::Genesis(domain) => encode_domain_reply(&k.admit_domain(&domain)),
             DomainRequest::Reserve(r) => encode_domain_reply(&k.designate_reserve(&r)),
             DomainRequest::ReadReserve(domain) => mycelium::anastome::dialogue::domain::encode_reserve_reading(&k.reserve_reading(&domain)),
@@ -42,12 +45,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             DomainRequest::ReadOrigin(domain) => mycelium::anastome::dialogue::domain::encode_origin_reading(k.origin_of(&domain).as_ref()),
             DomainRequest::State(s) => encode_domain_reply(&k.state(&s)),
             DomainRequest::ReadUniverse(domain) => mycelium::anastome::dialogue::universe::encode_universe_reading(&k.universe_reading(&domain)),
-            DomainRequest::Ledger(s) => encode_ledger_reply(&k.ledger(&s, fin)),
+            DomainRequest::Ledger(s) => encode_ledger_reply(&k.ledger_on(&s, fin, reads)),
             DomainRequest::ReadLedger { domain, after } => encode_ledger_page(&k.ledger_page(&domain, after)),
             DomainRequest::Map(s) => encode_map_reply(&k.map(&s, fin)),
             DomainRequest::ReadMap(domain) => encode_map_reading(&k.map_reading(&domain)),
             DomainRequest::Traverse(s) => encode_traverse_reply(&k.traverse(&s, fin)),
-        },
+        }),
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.

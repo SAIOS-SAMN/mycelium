@@ -20,21 +20,26 @@ pub(crate) fn digests(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let mesh = &door.mesh;
 
     let Some(dvoice) = dialogue::decode_digests_request(&frame.body) else { return };
-    let (ruled, language) = match crate::held::held!(kernel) {
-        Ok(mut k) => (k.ruled_digests_for(&dvoice), k.language()),
-        Err(_) => return,
+    // 78.153b — the voice's own ruled digests off the published reading, the
+    // language's atlas off its snapshot taken by pointer: neither read under
+    // the kernel, which `ruled_digests_for` walked whole per ask.
+    let read = door.published.take();
+    let digests = match read.ruled_digests_for(&dvoice) {
+        Some(d) => d.to_vec(),
+        None => {
+            let stalks = match crate::held::held!(kernel) {
+                Ok(mut h) => h.run(|k, _| std::sync::Arc::clone(&k.language().stalks)),
+                Err(_) => return,
+            };
+            mycelium::transducer::sheaf::digests(&stalks)
+        }
     };
-    // The voice's own ruled digests where this court holds them; the
-    // language's atlas where it does not. Both are measured on a cover.
-    let digests = match ruled {
-        Some(d) => d,
-        None => mycelium::transducer::sheaf::digests(&language.stalks),
-    };
+    drop(read);
     let Some(mut body) = dialogue::encode_digests_reply(&digests) else {
         eprintln!("  digests reply refused: a chart or a root passes the field that carries it");
         return;
     };
-    body.extend(sign_cover_digest(kernel, mesh));
+    body.extend(sign_cover_digest(kernel, &door.published, mesh));
     let reply = Frame { lane: frame.lane, body };
     answer(stream, reply);
 }
@@ -57,7 +62,10 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         true => mycelium::cognition::Asker::Court(fvoice),
         false => mycelium::cognition::Asker::Voice(fvoice),
     };
-    if let Ok(mut k) = crate::held::held!(kernel) {
+    // 78.153b — the seed of an empty chart off the published reading.
+    let read = door.published.take();
+    if let Ok(mut h) = crate::held::held!(kernel) {
+        h.run(|k, reads| {
         // A VOICE'S HAVE-LIST IS NEVER A VANTAGE (47.3, 1.7). `have` says
         // which words the voice already holds so the page carries only what
         // it lacks; it stood here ALSO as evidence for
@@ -68,8 +76,11 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
         // themselves" — and 8 of 8 installs on a5da8d5 came through this
         // door. A second vantage is a hypha's replay (`judge::offer`) or a
         // hypha's served page (`exchange`); a mouth is not one.
+        // Every page and every class reading spends the hold's one stroke:
+        // a stroke spent serves a shorter page and fewer class records, the
+        // next fetch resuming the class reading where this one stopped.
         for dialogue::ChartOf { inv, have } in &charts {
-            let page = k.serve_ruled(inv, have, budget, asker);
+            let page = k.serve_ruled_on(inv, have, budget, asker, read.syllabus_seed(), reads);
             // `serve_ruled` fills to the budget and no further, so what is
             // left is exact. A page WIDER than the budget is a broken page,
             // and the frame it would go in cannot carry it: the fetch is
@@ -82,12 +93,14 @@ pub(crate) fn fetch(stream: &mut TcpStream, frame: &Frame, door: &Door) {
             };
             budget = left;
             words.extend(page);
-            classes.extend(k.class_records(inv));
+            classes.extend(k.class_records_on(inv, &fvoice, reads));
             if budget == 0 {
                 break;
             }
         }
+        });
     }
+    drop(read);
     if overran {
         eprintln!("  fetch refused: a served page ran past the frame budget");
         words.clear();

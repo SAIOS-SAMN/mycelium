@@ -18,6 +18,7 @@ use crate::chronometry::Place;
 use crate::cognition::{Kernel, RootAdoption};
 use crate::court::admission::Admitted;
 use crate::observe::{note_replication, rep, set_replication};
+use crate::server::held::held;
 use std::sync::Mutex;
 
 /// 78.147 — WHAT A PAGE IS ASKED AS: a catch-up, which a court answers below
@@ -69,7 +70,7 @@ fn prove_folded(
     budget: &mut crate::physics::Budget,
     fetch: &mut impl FnMut(&[u8; 32], Option<Place>, Place, Ask) -> Option<ReceiptsAnswer>,
 ) -> Option<bool> {
-    let root = kernel.lock().ok()?.chain().peer_root(&p.at.vk)?;
+    let root = held!(kernel).ok()?.run(|k, _| k.chain().peer_root(&p.at.vk))?;
     if p.at.place() > root {
         return None;
     }
@@ -81,7 +82,7 @@ fn prove_folded(
     let Some(ReceiptsAnswer::Page(page)) = fetch(&p.at.vk, place_before(p.at.place()), root, Ask::Replay) else {
         return Some(false);
     };
-    let proved = kernel.lock().ok().is_some_and(|mut k| k.prove_folded(p, &page));
+    let proved = held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.prove_folded(p, &page)));
     if proved {
         note_replication(Some(p.at.vk), rep::FOLDED_PROVED, 1);
     }
@@ -96,7 +97,7 @@ fn adopt(kernel: &Mutex<Kernel>, origin: Origin, proof: &crate::anastome::dialog
         note_replication(Some(proof.signer), rep::ROOT_REFUSED, 1);
         return false;
     };
-    kernel.lock().ok().is_some_and(|mut k| k.adopt_root(origin, proof) == RootAdoption::Adopted)
+    held!(kernel).ok().is_some_and(|mut h| h.run(|k, _| k.adopt_root(origin, proof)) == RootAdoption::Adopted)
 }
 
 /// Fetch and admit pages of `vk`'s receipts up to `to`, the place of the
@@ -134,8 +135,8 @@ pub fn chase(
     let mut frontier: Vec<([u8; 32], Place)> = vec![(vk, to)];
     let mut asked: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
     while let Some((who, upto)) = frontier.pop() {
-        let held = match kernel.lock() {
-            Ok(k) => k.known_head(&who).map(|(at, _)| at),
+        let held = match held!(kernel) {
+            Ok(mut h) => h.run(|k, _| k.known_head(&who).map(|(at, _)| at)),
             Err(_) => return short(advanced),
         };
         if held.is_some_and(|h| h >= upto) {
@@ -177,8 +178,11 @@ pub fn chase(
             }
             None => return short(advanced),
         };
-        let (n, missing) = match kernel.lock() {
-            Ok(mut k) => k.admit_backfill(&receipts, budget),
+        // The page admitted on the chase's stroke, one read per receipt
+        // (78.153b): a stroke spent mid-page keeps what it admitted, and the
+        // next pass asks on from the head that moved.
+        let (n, missing) = match held!(kernel) {
+            Ok(mut h) => h.run(|k, _| k.admit_backfill(&receipts, budget)),
             Err(_) => return short(advanced),
         };
         // CV5: the receipts of `who` this page admitted, on the observer —
@@ -208,9 +212,11 @@ pub fn chase(
                 // already stands past it: nothing (the line holds a hole
                 // below its head) or another receipt (a fork). The chase
                 // judged "held" by the head alone (Phase 1 diagnostic).
-                let past = kernel.lock().ok().and_then(|k| {
-                    let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
-                    (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
+                let past = held!(kernel).ok().and_then(|mut h| {
+                    h.run(|k, _| {
+                        let head = k.known_head(&p.at.vk).map(|(at, _)| at)?;
+                        (head >= p.at.place()).then(|| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash == p.hash))
+                    })
                 });
                 if let Some(at) = past {
                     static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -238,7 +244,7 @@ pub fn chase(
     // citation skipped as held, and its own range then skipped as asked —
     // on the fleet, ~50k passes per court counted "reached" with nothing
     // admitted and the head never cited (H2, 2026-10-03).
-    let reached = kernel.lock().ok().and_then(|k| k.known_head(&vk)).is_some_and(|(at, _)| at >= to);
+    let reached = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.known_head(&vk))).is_some_and(|(at, _)| at >= to);
     Pass { advanced, reached }
 }
 
@@ -306,7 +312,7 @@ pub fn hear<E>(
         // root a chase adopted is what puts a citation inside an era.
         if let Ok(Admitted::MissingParent(p)) = &admitted {
             let p = *p;
-            let folded = kernel.lock().ok().and_then(|k| k.chain().peer_root(&p.at.vk)).is_some_and(|root| p.at.place() <= root);
+            let folded = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.chain().peer_root(&p.at.vk))).is_some_and(|root| p.at.place() <= root);
             if folded && !chased.contains(&hole) {
                 note_replication(Some(p.at.vk), rep::FOLDED_PARENT, 1);
             }
@@ -330,7 +336,7 @@ pub fn hear<E>(
             // there — the line forked. Counted as the equivocation it is,
             // per signer, never read as a hole still open.
             if let Ok(Admitted::MissingParent(p)) = &admitted {
-                let held = kernel.lock().ok().and_then(|k| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash));
+                let held = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.chain().at(&p.at.vk, p.at.place()).map(|r| r.chain_hash)));
                 if held.is_some_and(|h| h != p.hash) {
                     note_replication(Some(p.at.vk), rep::BACKFILL_EQUIVOCATION, 1);
                 }
@@ -341,7 +347,7 @@ pub fn hear<E>(
         // The lag at the report, in orbits: the orbit after the hole's
         // place against the orbit after the head held. A head held past
         // the report is no lag, and none is set (rule 11: never floored).
-        let held = kernel.lock().ok().and_then(|k| k.known_head(&vk)).map(|(at, _)| at);
+        let held = held!(kernel).ok().and_then(|mut h| h.run(|k, _| k.known_head(&vk))).map(|(at, _)| at);
         if let Some(l) = (to.k + 1).checked_sub(held.map_or(0, |h| h.k + 1)) {
             set_replication(vk, rep::LAG, l);
         }

@@ -12,12 +12,12 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     let Some(request) = decode_handoff_request(&frame.body) else { return };
     let body = match crate::held::held!(door.kernel) {
-        Ok(mut k) => match request {
+        Ok(mut held) => held.run(|k, _| match request {
             HandoffRequest::Signed(h) => encode_handoff_reply(&k.handoff(&h)),
             HandoffRequest::Read(id) => encode_read_reply(k.handoff_read(&id)),
             HandoffRequest::Loops => mycelium::anastome::dialogue::handoff::encode_loops_reply(&k.mouth_loops()),
             HandoffRequest::TubeRead(id) => mycelium::anastome::dialogue::handoff::encode_tube_reading(k.tube_of(&id).as_ref()),
-        },
+        }),
         Err(_) => return,
     };
     // 78.137 — acknowledged only once durable.

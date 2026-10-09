@@ -79,8 +79,66 @@ impl Kernel {
         out
     }
 
+    /// 78.153b — THE CLASS RECORDS ON THE HOLD'S STROKE: on `inv` and its
+    /// prefixes, one read per complex read; where `inv` names no axes, the
+    /// whole nerve, one read per chart's complex, from past the chart the
+    /// asker's last reading stopped at (`class_cursor`, by `asker`) round
+    /// once. A stroke spent ends the reading with the records read so far —
+    /// each one a record this court holds, carried beside the page as before
+    /// — and the asker's next reading resumes past it, so every class
+    /// reaches each asker in turn and none starves behind a prefix of the
+    /// nerve.
+    pub fn class_records_on(
+        &mut self,
+        inv: &crate::transducer::stalk::Invariant,
+        asker: &[u8; 32],
+        reads: &mut crate::physics::Budget,
+    ) -> Vec<crate::anastome::dialogue::ClassPage> {
+        let mut out = Vec::new();
+        let mut seen: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
+        if !inv.0.is_empty() {
+            for p in inv.prefixes() {
+                if !reads.spend() {
+                    break;
+                }
+                if let Some(cx) = self.complexes.get(&p.key()) {
+                    classes_of(cx, &mut out, &mut seen);
+                }
+            }
+            return out;
+        }
+        // The whole nerve from the cursor: the charts past it (sought by its
+        // own bits, `Keyed::after`), then those up to and including it —
+        // round once.
+        let past = self.class_cursor.remove(asker);
+        let (mut last, mut spent) = (None, false);
+        let first = match &past {
+            Some(from) => self.complexes.after(from),
+            None => self.complexes.scoped(),
+        };
+        let wrap = past.as_ref().map(|from| self.complexes.scoped().take_while(move |(k, _)| k.as_slice() <= from.as_slice()));
+        for (key, cx) in first.chain(wrap.into_iter().flatten()) {
+            if !reads.spend() {
+                spent = true;
+                break;
+            }
+            classes_of(cx, &mut out, &mut seen);
+            last = Some(key);
+        }
+        let stands = match (spent, last) {
+            (true, Some(at)) => Some(at),
+            (true, None) => past,
+            (false, _) => None,
+        };
+        if let Some(at) = stands {
+            self.class_cursor.insert(asker, at);
+        }
+        out
+    }
+
     /// Class records on `inv` (and prefixes), or on every chart when `inv` is empty.
-    pub fn class_records(
+    #[cfg(test)]
+    pub(crate) fn class_records(
         &self,
         inv: &crate::transducer::stalk::Invariant,
     ) -> Vec<crate::anastome::dialogue::ClassPage> {
@@ -299,30 +357,53 @@ impl Kernel {
         page
     }
 
-    pub fn serve_ruled(
+    #[cfg(test)]
+    pub(crate) fn serve_ruled(
         &mut self,
         inv: &crate::transducer::stalk::Invariant,
         have: &[crate::transducer::address::Address],
         budget: usize,
         asker: Asker,
     ) -> Vec<crate::anastome::dialogue::Taught> {
+        let seed = self.syllabus_seed();
+        let mut reads = self.physics.stroke();
+        self.serve_ruled_on(inv, have, budget, asker, &seed, &mut reads)
+    }
+
+    /// THE STRATUM FETCH ON THE HOLD'S STROKE (78.153b): the words of the
+    /// fiber over `inv` the asker lacks — over `seed`, the ruled addresses
+    /// coarsest chart first, where `inv` names no axes (the binary hands the
+    /// published seed, read off the shelf, so no copy of every ruled address
+    /// is made under the kernel) — up to `budget` bytes. The reading of what
+    /// a peer is served (`read_fetched`) spends `reads`, the hold's stroke,
+    /// never a stroke minted here. OWED: the walk over the fiber is keyed
+    /// reads bounded by the stratum, and a word the asker cannot pay for is
+    /// still written out before its deferral (its width is read first).
+    pub fn serve_ruled_on(
+        &mut self,
+        inv: &crate::transducer::stalk::Invariant,
+        have: &[crate::transducer::address::Address],
+        budget: usize,
+        asker: Asker,
+        seed: &[Vec<u8>],
+        reads: &mut crate::physics::Budget,
+    ) -> Vec<crate::anastome::dialogue::Taught> {
         let mut out = Vec::new();
         let mut used = 0usize;
-        // The page's one stroke for the reading of what it serves a peer
-        // (`read_fetched`): the reads are shared by the page, never minted
-        // per word.
-        let mut reads = self.physics.stroke();
         let mut held: crate::network::nerve::Keyed<()> = crate::network::nerve::Keyed::new();
         for h in have {
             held.insert(h, ());
         }
         // An empty mind is seeded from the root: coarsest ruled words first.
-        let addrs: Vec<Vec<u8>> = if inv.0.is_empty() {
-            self.syllabus_seed()
+        let fiber: Vec<Vec<u8>>;
+        let addrs: &[Vec<u8>] = if inv.0.is_empty() {
+            seed
         } else {
-            self.ruled.fiber(inv)
+            fiber = self.ruled.fiber(inv);
+            &fiber
         };
         for addr in addrs {
+            let addr = addr.clone();
             if held.contains(&addr) {
                 continue;
             }
@@ -395,7 +476,7 @@ impl Kernel {
                     // word stands to among the words the asking court said it
                     // holds, and what it would cost as (held, Γ) where it is
                     // refracted.
-                    self.read_fetched(&addr, &held, bytes.len(), &mut reads);
+                    self.read_fetched(&addr, &held, bytes.len(), reads);
                 }
             }
             out.push(crate::anastome::dialogue::Taught { at, word: bytes });
@@ -683,6 +764,30 @@ impl Kernel {
     /// count carries; the record is bounded by the words installed.
     pub(crate) fn deferred_reading(&self) -> Vec<crate::observe::Deferred> {
         self.deferred_words.scoped().map(|(_, d)| d.clone()).take(crate::observe::DEFERRED_SHOWN).collect()
+    }
+}
+
+/// ONE COMPLEX'S CLASS RECORDS, each class once (`seen`): a congruent
+/// fill's rotor at its period, a class fill's at order zero.
+fn classes_of(
+    cx: &crate::transducer::cech::Complex,
+    out: &mut Vec<crate::anastome::dialogue::ClassPage>,
+    seen: &mut crate::network::nerve::Keyed<()>,
+) {
+    for layer in &cx.degrees {
+        for (_, simplex) in layer.scoped() {
+            let (r, order) = match &simplex.fill {
+                crate::transducer::cech::Fill::Congruent(_, r, ell) => (r, *ell),
+                crate::transducer::cech::Fill::Class(_, r) => (r, 0),
+                _ => continue,
+            };
+            let Some(key) = r.class_key() else { continue };
+            if seen.contains(&key) {
+                continue;
+            }
+            seen.insert(key.clone(), ());
+            out.push(crate::anastome::dialogue::ClassPage { key, order, rotor: crate::transducer::alphabet::Rotor::clone(r) });
+        }
     }
 }
 

@@ -254,15 +254,22 @@ impl Kernel {
     /// cover, escrow held. Fills and refinements share the stroke Budget.
     /// The lapse sweep runs on every stroke, on its own budget
     /// (`lapse_silent`): the book's sink never waits on a sealed close.
-    pub fn court_stroke(&mut self) {
+    #[cfg(test)]
+    pub(crate) fn court_stroke(&mut self) {
+        let mut budget = self.physics.stroke();
+        self.court_stroke_on(&mut budget);
+    }
+
+    /// [`Kernel::court_stroke`] ON THE HOLD'S STROKE (78.153b): the binary's
+    /// court loop hands in the one stroke its kernel hold was taken with.
+    pub fn court_stroke_on(&mut self, budget: &mut crate::physics::Budget) {
         // PHY1: what the contacts this court perceived did, on any thread,
         // booked on its one reserve's physics — order built where they
         // condensed, pressure where they were refused.
         crate::observe::step("court stroke: contacts");
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
-        let mut budget = self.physics.stroke();
         crate::observe::step("court stroke: docket replay");
-        let circuit = self.docket_replay(&mut budget);
+        let circuit = self.docket_replay(budget);
         if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
             // budget completes a circuit every stroke, so "written once
@@ -297,13 +304,13 @@ impl Kernel {
         // 78.153 — a citer whose re-hearing its ruling's stroke could not
         // replay is heard again here, its replay resumed.
         crate::observe::step("court stroke: rehear due");
-        self.rehear_one_due(&mut budget);
+        self.rehear_one_due(budget);
         crate::observe::step("court stroke: lapse silent");
         self.lapse_silent();
         crate::observe::step("court stroke: relocate t-exhausted");
         self.relocate_t_exhausted();
         crate::observe::step("court stroke: fills");
-        self.stroke_fills(&mut budget);
+        self.stroke_fills(budget);
     }
 
     /// 78.153 — THE DOCKET, ONE KEY AT A TIME ON THE STROKE. The cursor

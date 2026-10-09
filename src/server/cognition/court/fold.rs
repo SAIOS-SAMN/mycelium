@@ -52,8 +52,13 @@ impl Kernel {
     /// proposes nothing (`REFUSE_FOLD_INEXACT`).
     pub fn propose_fold(&mut self) -> Result<Proposal, &'static str> {
         let head = self.fold_head().ok_or(REFUSE_FOLD_OPEN)?;
-        self.treasury.fold_reading(head)?;
-        let epochs = nets_of(&self.treasury.rows_below(head))?.rows;
+        // 78.153b — the rows below the head read ONCE: the audit and the nets
+        // `fold_reading` asks, the epochs, and the diagnostic below each read
+        // them again, three clones of the journal's prefix under the kernel
+        // at every close (the lock audit, row 8).
+        let below = self.treasury.rows_below(head);
+        self.treasury.audit().map_err(|_| REFUSE_FOLD_INEXACT)?;
+        let epochs = nets_of(&below)?.rows;
         let after = self.chain.root().map(|r| r.at);
         // The line relation names the receipt at a place (78.24 P1).
         let at = self.chain.at_place(head).ok_or(REFUSE_FOLD_OPEN)?;
@@ -62,7 +67,6 @@ impl Kernel {
         // the span from `after`) against the rows these nets are over: every
         // court refused its peers' folds as not conserving on epoch 115.
         {
-            let below = self.treasury.rows_below(head);
             let span = self.treasury.rows_span(after, root.at);
             if nets_of(&span).map(|n| n.rows) != Ok(epochs.clone()) {
                 static SEEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
@@ -288,33 +292,7 @@ impl Kernel {
         receipts: &[KStepReceipt],
         rows: &[Entry],
     ) -> Result<(), &'static str> {
-        if self.treasury.bond_of(&self.identity).is_none() {
-            return Err(REFUSE_WITNESS_ROOM);
-        }
-        let mut prev: Option<&KStepReceipt> = None;
-        for r in receipts {
-            if r.stamp.vk != home || !r.rederives() {
-                return Err(REFUSE_RECEIPT);
-            }
-            // The first names the place the prefix stands on as its
-            // predecessor; each after it names the one before.
-            let links = match prev {
-                None => r.prev.map(|q| q.at.place()) == p.after,
-                Some(q) => r.prev == Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash }),
-            };
-            if !links {
-                return Err(REFUSE_RECEIPT);
-            }
-            prev = Some(r);
-        }
-        let last = prev.ok_or(REFUSE_FOLD_OPEN)?;
-        if (last.stamp.place(), last.chain_hash, last.stamp.h) != (p.root.at, p.root.hash, p.root.height) {
-            return Err(REFUSE_RECEIPT);
-        }
-        if nets_of(rows)?.rows != p.epochs {
-            return Err(REFUSE_FOLD_INEXACT);
-        }
-        Ok(())
+        verify_prefix(self.treasury.bond_of(&self.identity).is_some(), home, p, receipts, rows)
     }
 
     /// The witness files the era it co-signed under the home's key, so
@@ -351,15 +329,50 @@ impl Kernel {
         // proposed after another was refused by every witness as not
         // conserving: "rows fetched 0 … parties ours 0 proposed 8" (hypha b,
         // epoch 115). A fold compacts the journal, so the set stays small.
-        let all = self.treasury.rows_below(upto);
-        // The span's rows are the mesh's count, `u64` on the wire.
-        let total = all.len() as u64;
-        // A cursor past every `usize` is past every row this node holds:
-        // the page is empty, and the total says so.
+        // 78.153b — the page alone cloned (`rows_below_page`), never every
+        // row below the head for every page of them. The span's rows
+        // are the mesh's count, `u64` on the wire. A cursor past every `usize`
+        // is past every row this node holds: the page is empty, and the total
+        // says so.
         let Ok(skip) = usize::try_from(cursor) else {
-            return (total, Vec::new());
+            return (self.treasury.rows_below_page(upto, 0, 0).0, Vec::new());
         };
-        let page = all.into_iter().skip(skip).take(budget).collect();
-        (total, page)
+        self.treasury.rows_below_page(upto, skip, budget)
     }
+}
+
+/// THE WITNESS'S RE-DERIVATION, read off what the home sent and whether
+/// this court holds bond (`REFUSE_WITNESS_ROOM` otherwise) — the one reader
+/// the kernel (`Kernel::verify_fold`) and the published reading (78.153b,
+/// `Published::verify_fold`) share: the receipts fetched are the home's
+/// chain from the place after `after`, each re-deriving and linking to the
+/// one before, ending at the root; the rows' nets are the epochs proposed.
+pub(crate) fn verify_prefix(bonded: bool, home: [u8; 32], p: &Proposal, receipts: &[KStepReceipt], rows: &[Entry]) -> Result<(), &'static str> {
+    if !bonded {
+        return Err(REFUSE_WITNESS_ROOM);
+    }
+    let mut prev: Option<&KStepReceipt> = None;
+    for r in receipts {
+        if r.stamp.vk != home || !r.rederives() {
+            return Err(REFUSE_RECEIPT);
+        }
+        // The first names the place the prefix stands on as its
+        // predecessor; each after it names the one before.
+        let links = match prev {
+            None => r.prev.map(|q| q.at.place()) == p.after,
+            Some(q) => r.prev == Some(crate::chronometry::Parent { at: q.stamp, hash: q.chain_hash }),
+        };
+        if !links {
+            return Err(REFUSE_RECEIPT);
+        }
+        prev = Some(r);
+    }
+    let last = prev.ok_or(REFUSE_FOLD_OPEN)?;
+    if (last.stamp.place(), last.chain_hash, last.stamp.h) != (p.root.at, p.root.hash, p.root.height) {
+        return Err(REFUSE_RECEIPT);
+    }
+    if nets_of(rows)?.rows != p.epochs {
+        return Err(REFUSE_FOLD_INEXACT);
+    }
+    Ok(())
 }

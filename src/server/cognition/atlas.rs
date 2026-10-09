@@ -241,14 +241,29 @@ impl Kernel {
 
     /// The ladder let go below every universe's latest entry: a point no
     /// universe's freshness can count from again. The newest point stays.
-    fn prune_ladder(&mut self) {
-        let latest: Vec<TPoint> = self.atlas.ledgers.scoped().filter_map(|(_, c)| c.iter().next_back().map(|e| e.entry.point)).collect();
+    ///
+    /// 78.153b — ON THE HOLD'S STROKE: one read per universe whose latest
+    /// entry is read and one per ladder point weighed. A stroke spent before
+    /// every universe is read prunes nothing (a point is let go only below
+    /// EVERY latest); one spent among the points lets go of those weighed,
+    /// in key order, and the next entry's pruning takes the rest — never a
+    /// point a universe can still count from. OWED: the newest point is
+    /// found by a walk of the whole ladder (no last key is read off a trie).
+    fn prune_ladder(&mut self, reads: &mut crate::physics::Budget) {
+        let mut latest: Vec<TPoint> = Vec::new();
+        for (_, c) in self.atlas.ledgers.scoped() {
+            if !reads.spend() {
+                return;
+            }
+            latest.extend(c.iter().next_back().map(|e| e.entry.point));
+        }
         // The ladder's key order is its points' order within an origin.
         let newest = self.atlas.ladder.scoped().map(|(k, _)| k).last();
         let gone: Vec<Vec<u8>> = self
             .atlas
             .ladder
             .scoped()
+            .take_while(|_| reads.spend())
             .filter(|(k, p)| Some(k) != newest.as_ref() && !latest.is_empty() && latest.iter().all(|l| l.origin == p.origin && l.h > p.h))
             .map(|(k, _)| k)
             .collect();
@@ -275,7 +290,16 @@ impl Kernel {
     /// and not below the head's, its parent the head (zero first), its `u`
     /// above the head's, and every crossing it applied pending into it. The
     /// court never judges what it commits.
-    pub fn ledger(&mut self, s: &SignedLedger, fin: Option<TPoint>) -> Ledgered {
+    #[cfg(test)]
+    pub(crate) fn ledger(&mut self, s: &SignedLedger, fin: Option<TPoint>) -> Ledgered {
+        let mut reads = self.physics.stroke();
+        self.ledger_on(s, fin, &mut reads)
+    }
+
+    /// [`Kernel::ledger`] on the hold's stroke (78.153b): the ladder's
+    /// pruning after the seal spends it (`prune_ladder`); the entry's own
+    /// checks read what the frame carries.
+    pub fn ledger_on(&mut self, s: &SignedLedger, fin: Option<TPoint>, reads: &mut crate::physics::Budget) -> Ledgered {
         use LedgerRefusal as R;
         let refuse = Ledgered::Refused;
         let e = &s.entry;
@@ -328,7 +352,7 @@ impl Kernel {
             }
         }
         self.atlas.mark = self.atlas.mark.wrapping_add(1);
-        self.prune_ladder();
+        self.prune_ladder(reads);
         self.mark_persist();
         Ledgered::Sealed { entry: hash, h: r.stamp.h, point: court }
     }

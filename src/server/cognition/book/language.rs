@@ -49,10 +49,33 @@ impl Kernel {
     }
 
     /// A held word changed in place: the Arc in `basis` is already unique
-    /// (via `word_mut`); rebuild the language pointer slice.
-    pub(crate) fn touch_at(&mut self, _addr: &[u8]) {
+    /// (via `word_mut`).
+    ///
+    /// 78.153b — THE ONE WORD IS REPLACED, NEVER THE LANGUAGE REBUILT. This
+    /// rebuilt the whole snapshot — every word of the basis walked — on each
+    /// touch, and the glue touches twice per fetched word (`hold_glued`), so
+    /// every word a peer's page carried walked the whole language under the
+    /// kernel (the lock audit, row 4). Where the snapshot stood current
+    /// before the touch, the word at `addr` takes its new Arc at its own
+    /// ordinal, its shape lifted afresh: every address holds the word a
+    /// rebuild would give it, and the ordinals stand as admitted (a rebuild
+    /// renumbers them by address). A snapshot already behind the basis, a
+    /// retirement since, or a word the snapshot does not hold is rebuilt as
+    /// before.
+    pub(crate) fn touch_at(&mut self, addr: &[u8]) {
+        let current = self.language_gen == self.basis_gen && self.retire_gen == self.language.retire_gen;
         self.basis_gen += 1;
-        self.language_rebuild();
+        let held = self.basis.get(addr).map(std::sync::Arc::clone);
+        match (current, held, self.language.words.get(addr).map(|w| w.seq)) {
+            (true, Some(held), Some(seq)) => {
+                let stalks = std::sync::Arc::clone(&self.stalks);
+                let lang = std::sync::Arc::make_mut(&mut self.language);
+                lang.words.insert(addr, LanguageWord { held, shape: std::sync::OnceLock::new(), seq });
+                lang.stalks = stalks;
+                self.language_gen = self.basis_gen;
+            }
+            _ => self.language_rebuild(),
+        }
     }
 
     /// The language as an immutable shared snapshot. An append clones the

@@ -15,7 +15,8 @@ use std::net::TcpStream;
 pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     if let Some(s) = decode_stake(&frame.body) {
         let body = match crate::held::held!(door.kernel) {
-            Ok(mut k) => encode_stake_reply(&k.stake(&s)),
+            // Reads the staker's own claims (a fiber), constant per claim.
+            Ok(mut h) => encode_stake_reply(&h.run(|k, _| k.stake(&s))),
             Err(_) => return,
         };
         // 78.137 — acknowledged only once durable.

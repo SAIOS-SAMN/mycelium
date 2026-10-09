@@ -25,10 +25,12 @@ pub(crate) fn judge(stream: &mut TcpStream, frame: &Frame, door: &Door) {
     // THE HEARING IS THE TRANSITION THAT ADMITS: what it docketed, and what
     // the sentences waiting on a word carried, it offers when it returns.
     let (heard, offers) = match crate::held::held!(kernel) {
-        Ok(mut k) => {
+        // OWED (78.153b): the hearing mints its strokes per sentence (the
+        // lock audit, row 9); this hold's stroke is not yet threaded in.
+        Ok(mut h) => h.run(|k, _| {
             let heard = k.hear_frame(&act);
             (heard, k.take_offers())
-        }
+        }),
         Err(_) => return,
     };
     let body = match heard {

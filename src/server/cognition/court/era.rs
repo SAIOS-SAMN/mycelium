@@ -55,10 +55,14 @@ impl Kernel {
         if cut.is_some() {
             return cut;
         }
+        // 78.153b — THE FIRST CLOSE PAST THE PAGE, read lazily: it unpacked
+        // every node of the hot line from the page to the head into one
+        // vector (`usize::MAX`) at every close, to find the first `Orbit` in
+        // it; now the nodes are read in line order until the close — one
+        // orbit's acts past the page (the lock audit, row 8). The same node
+        // is found.
         self.chain
-            .line_between(&me, past, head, usize::MAX)
-            .into_iter()
-            .find(|r| r.kind == crate::chronometry::ActKind::Orbit)
+            .first_between(&me, past, head, |r| r.kind == crate::chronometry::ActKind::Orbit)
             .map(|r| r.stamp.place())
     }
 

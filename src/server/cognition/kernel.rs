@@ -217,6 +217,18 @@ pub struct Kernel {
     /// 78.153 — phase readings a stroke could not pay for (the mark kept,
     /// the window read whole at the next). Since boot.
     pub(crate) phase_unread: u64,
+    /// 78.153b — WHERE EACH PEER'S DIGEST CONFIRMATION STOPPED: the last
+    /// stratum key `confirm_peer_holds_on` reached on a spent stroke, by
+    /// peer; the next digest resumes past it. VOLATILE.
+    pub(crate) confirm_cursor: crate::network::nerve::Keyed<Vec<u8>>,
+    /// 78.153b — WHERE THE WHOLE NERVE'S CLASS READING STOPPED, by asker:
+    /// the last chart key `class_records_on` read for it on a spent stroke;
+    /// its next reading resumes past it, wrapping once round. VOLATILE.
+    pub(crate) class_cursor: crate::network::nerve::Keyed<Vec<u8>>,
+    /// 78.153b — THIS HYPHA'S OWN COVER MOVED: one count per change of
+    /// `own_cover`, read by the publication to copy the charts onto the
+    /// shelf only when they moved. VOLATILE.
+    pub(crate) own_cover_gen: u64,
     /// Demand vertices this court has listed under a sentence (50.5, L7):
     /// a wire read of the `court demand listed` lines, never branched on.
     pub(crate) court_demands_listed: u64,
@@ -608,6 +620,11 @@ pub struct Kernel {
     pub(crate) ruled_root: [u8; 32],
     /// Whether the cover has moved since the root over it was measured.
     pub(crate) ruled_root_due: bool,
+    /// 78.153b — THE RULED COVER MOVED: one count per `refresh_ruled_root`,
+    /// read by the publication to read the ruled root, its digests and the
+    /// syllabus seed onto the shelf only when the cover moved. VOLATILE;
+    /// compared for equality alone.
+    pub(crate) ruled_gen: u64,
     /// Per-lane occupancy of in-flight execution leases, not the book
     /// row count. Cold listings exert zero occupancy. Lane 2 is quote
     /// leases keyed in `t_leases`.
@@ -1035,6 +1052,12 @@ impl Kernel {
     ) -> (usize, Option<crate::chronometry::Parent>) {
         let mut n = 0usize;
         for r in receipts {
+            // 78.153b — ONE READ PER RECEIPT of the page: a stroke spent
+            // mid-page ends it with what it admitted kept, nothing refused,
+            // and the chase asks on from the head that moved.
+            if !budget.spend() {
+                break;
+            }
             let recalled = self.recall_cited(r);
             let verdict = crate::court::admission::admit_backfilled(r, &self.chain);
             self.forget_recalled(&recalled);
