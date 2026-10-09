@@ -45,16 +45,18 @@ impl Form {
     /// CV1 — THE FIRST ORBIT THAT DOES NOT COHERE, the one reader `coheres`
     /// asks, so a refusal can carry the holonomy that refused (78.9).
     pub fn incoherent_orbit(&self) -> Option<&Orbit> {
-        self.orbits.iter().find(|lp| {
-            // The word the orbit composes, read along its steps (AT1: never
-            // held beside them); a step naming no overlap is no identity.
-            let flat = orbit_word_on(&self.faces, &self.vertices, lp)
-                .is_some_and(|w| w.rotor().projective_eq(&Rotor::identity()));
-            !((flat
-                || (self.opened_axis_of(lp).is_some() && self.axis_rederives(lp))
-                || self.orbit_is_congruent(lp))
-                && self.edge_coheres(lp))
-        })
+        self.orbits.iter().find(|lp| !self.orbit_coheres(lp))
+    }
+
+    /// ONE ORBIT'S COHERENCE, the reading `incoherent_orbit` asks of each in
+    /// turn — named so a metered reader (78.153) can ask it one orbit per read.
+    pub fn orbit_coheres(&self, lp: &Orbit) -> bool {
+        // The word the orbit composes, read along its steps (AT1: never
+        // held beside them); a step naming no overlap is no identity.
+        let flat = orbit_word_on(&self.faces, &self.vertices, lp)
+            .is_some_and(|w| w.rotor().projective_eq(&Rotor::identity()));
+        (flat || (self.opened_axis_of(lp).is_some() && self.axis_rederives(lp)) || self.orbit_is_congruent(lp))
+            && self.edge_coheres(lp)
     }
 
     /// DOES THIS FORM DECLARE THE SHEAR ON THIS CLASS? (54.5, Directive 4.)

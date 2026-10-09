@@ -139,6 +139,14 @@ impl Stalks {
         out
     }
 
+    /// 78.153 — every populated stratum with the COUNT of its members, on a
+    /// stroke: one read per stratum visited, and no member's address copied
+    /// (`strata` copies every one). `None` where the stroke ran out first.
+    pub fn strata_counted(&self, budget: &mut crate::physics::Budget) -> Option<Vec<(Invariant, usize)>> {
+        let mut out = Vec::new();
+        self.root.strata_counted(&mut Vec::new(), &mut out, &mut || budget.spend()).then_some(out)
+    }
+
     /// Append ONE opened axis as a coordinate (3.7, I6): the axis a
     /// rewrite opened, written out.
     ///

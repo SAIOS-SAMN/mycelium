@@ -36,7 +36,8 @@ fn every_sentence_heard_has_its_rings_read_whatever_its_adjudication() {
     .expect("the task frames");
     let act = dialogue::decode_speech(&frame).expect("the frame decodes");
     let before = court.winding_tally();
-    let heard = court.hear_frame(&act);
+    // 78.153: a stroke that holds the frame's replays.
+    let heard = court.hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20));
     let after = court.winding_tally();
     let read = |t: &crate::server::cognition::court::winding::WindingTally| t.heard_spelled + t.heard_offered + t.heard_peel_unread + t.heard_rotor_unread;
     assert!(read(&after) > read(&before), "the sentence's taught words were read ({heard:?}): {after:?}");

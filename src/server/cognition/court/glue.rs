@@ -22,6 +22,10 @@ enum Stop {
     Heard,
     /// This court's replay refused it.
     Replay(&'static str),
+    /// 78.153 — this court's stroke ran out before its replay ruled: the
+    /// word is neither refused nor heard, and the next fetch resumes the
+    /// replay where it stopped (`replay_cursors`).
+    Unread,
     /// A colour word whose proof does not stand here yet (78.55): it waits as
     /// dialect, unheard, and the next fetch proves it once its citations are
     /// installed.
@@ -62,6 +66,12 @@ impl Kernel {
     /// order: the stops; the peer's section; its standing to this court's
     /// own; the edges to every section of the cover; the fills of its link;
     /// the gate and torsion; the verdict; the word held or heard.
+    ///
+    /// 78.153 — a replay this stroke could not finish glues nothing and
+    /// marks nothing heard: it waits as dialect (`Glue::Dialect`), as an
+    /// unproven colour word does, and the next fetch resumes it. A caller
+    /// that must tell that wait from a dialect reading asks
+    /// [`Kernel::glue_fetched_ruled`].
     pub fn glue_fetched(
         &mut self,
         spoken: Element,
@@ -70,6 +80,22 @@ impl Kernel {
         cover: &mut crate::network::nerve::Cover,
         budget: &mut crate::physics::Budget,
     ) -> Glue {
+        match self.glue_fetched_ruled(spoken, peer, self_id, cover, budget) {
+            Some(g) => g,
+            None => Glue::Dialect,
+        }
+    }
+
+    /// [`Kernel::glue_fetched`], `None` where this court's replay of the word
+    /// was unread on the stroke (78.153): nothing was glued, refused or heard.
+    pub fn glue_fetched_ruled(
+        &mut self,
+        spoken: Element,
+        peer: [u8; 32],
+        self_id: [u8; 32],
+        cover: &mut crate::network::nerve::Cover,
+        budget: &mut crate::physics::Budget,
+    ) -> Option<Glue> {
         let addr = spoken.address();
         let inv = crate::transducer::stalk::invariant_of(&spoken);
         // 78.71 — A WORD HELD, HEARD AGAIN FROM THE SAME PEER, IS NO NEW
@@ -90,10 +116,12 @@ impl Kernel {
         let from_this_peer = self.glued_from.contains(&heard_key);
         if from_this_peer && self.ruled_contains(&addr) {
             crate::observe::note_replication(Some(peer), rep::GLUE_HEARD, 1);
-            return Glue::Held;
+            return Some(Glue::Held);
         }
-        if let Some(stop) = self.glue_stop(&spoken, &addr, budget) {
-            return self.stopped(stop, &spoken, addr, peer);
+        match self.glue_stop(&spoken, &addr, budget) {
+            Some(Stop::Unread) => return None,
+            Some(stop) => return Some(self.stopped(stop, &spoken, addr, peer)),
+            None => {}
         }
         let mut cx = match self.complexes.remove(&inv.key()) {
             Some(c) => c,
@@ -120,10 +148,10 @@ impl Kernel {
         // the chart handed back, read into the field and the chart's algebra.
         self.book_outflow(&inv, addr.as_bytes(), budget);
         if let Standing::Refused(why) = standing {
-            return self.refuse(addr, &inv, peer, rep::GLUE_GATE_REFUSED, why);
+            return Some(self.refuse(addr, &inv, peer, rep::GLUE_GATE_REFUSED, why));
         }
         if let Some(why) = self.court_torsion(&spoken, &inv, self_id, peer) {
-            return self.refuse(addr, &inv, peer, rep::GLUE_TORSION_REFUSED, why);
+            return Some(self.refuse(addr, &inv, peer, rep::GLUE_TORSION_REFUSED, why));
         }
         let outcome = self.settle(fills, &standing, &inv, peer, budget);
         crate::observe::note_replication(
@@ -147,7 +175,7 @@ impl Kernel {
             (Glue::Dialect | Glue::Slashed(_), _, _) => self.heard_mark(addr, &inv),
             (Glue::Held, _, _) => {}
         }
-        outcome
+        Some(outcome)
     }
 
     /// THE STOPS, in order: heard, the replay's refusal, an unproven colour
@@ -156,8 +184,10 @@ impl Kernel {
         if self.heard.contains(addr) {
             return Some(Stop::Heard);
         }
-        if let Some(reason) = self.court_replay(spoken, budget) {
-            return Some(Stop::Replay(reason));
+        match self.court_replay(spoken, budget) {
+            crate::verdict::Replayed::Refused(r) => return Some(Stop::Replay(r.reason)),
+            crate::verdict::Replayed::Unread => return Some(Stop::Unread),
+            crate::verdict::Replayed::Clean => {}
         }
         if spoken.is_colour_word() && !self.colour_proof(spoken, None).stands() {
             return Some(Stop::ColourUnproven);
@@ -179,6 +209,8 @@ impl Kernel {
                 Glue::Dialect
             }
             Stop::Replay(why) => self.refuse(addr, &inv, peer, rep::GLUE_REPLAY_REFUSED, why),
+            // Not ruled this stroke: nothing heard, nothing refused.
+            Stop::Unread => Glue::Dialect,
             Stop::ColourUnproven => {
                 crate::observe::note_replication(Some(peer), rep::GLUE_COLOUR_UNPROVEN, 1);
                 Glue::Dialect

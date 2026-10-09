@@ -5,7 +5,7 @@
 //! every orbit's holonomy to the identity, and every pivot certificate from
 //! the axis it names. A form that does not is REFUSED, never scored.
 
-use super::body::{edges_rederive_frames, undeclared_remainder, vertices_carry_frames};
+use super::body::undeclared_remainder;
 use super::*;
 
 /// Chapter 23.1: replay a crystallized form from its tape and the forms it
@@ -158,7 +158,11 @@ pub fn derivations_compose_at(
     env: &crate::transducer::element::ReceiptsEnvelope,
     resolve: &dyn Fn(&[u8]) -> Option<Form>,
 ) -> Option<Refusal> {
-    derivations_compose(f, env, resolve)
+    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
+    match derivations_compose(f, env, &owned, &mut Meter::Free, 0) {
+        Err(Halt::Refused(r)) => Some(r),
+        Err(Halt::Spent(_)) | Ok(()) => None,
+    }
 }
 
 /// [`replay_certificates`] with the chord index built from the form the
@@ -172,13 +176,21 @@ pub fn replay_certificates_at(
     replay_certificates(f, certificates, &chord_orbits(f))
 }
 
-fn derivations_compose(
+/// 78.153 — one read per cite, from the `from`-th of the envelope's order;
+/// the cited form is BORROWED from the court where it holds it, never cloned
+/// per citation.
+pub(crate) fn derivations_compose<'r>(
     f: &Form,
     env: &crate::transducer::element::ReceiptsEnvelope,
-    resolve: &dyn Fn(&[u8]) -> Option<Form>,
-) -> Option<Refusal> {
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    meter: &mut Meter<'_>,
+    from: usize,
+) -> Step {
     use crate::transducer::alphabet::Verified;
-    for cite in &env.derivations {
+    for (i, cite) in env.derivations.iter().enumerate().skip(from) {
+        if !meter.spend() {
+            return Err(Halt::Spent(i));
+        }
         // THE VERTEX THE CITE NAMES, in this form. A cite naming a vertex
         // the form does not carry is evidence about nothing; it is skipped
         // rather than refused, because the envelope is per-mind and a mind
@@ -227,7 +239,10 @@ fn derivations_compose(
         match derivation.verify_with(&held) {
             Verified::Composes => {}
             Verified::Differs => {
-                return Some(Refusal::new(REFUSE_DERIVATION, sentence::At::vertex(vertex.clone(), class.clone())))
+                return Err(Halt::Refused(Refusal::new(
+                    REFUSE_DERIVATION,
+                    sentence::At::vertex(vertex.clone(), class.clone()),
+                )))
             }
             // The door (`hear_sentence`) decides the WAIT before any
             // replay runs, so an unruled cited FORM never reaches here.
@@ -236,11 +251,14 @@ fn derivations_compose(
             // not in it — which is a claim about the tape and a refusal
             // at the vertex that made it, not a deferral.
             Verified::Unresolved { .. } => {
-                return Some(Refusal::new(REFUSE_DERIVATION, sentence::At::vertex(vertex.clone(), class.clone())))
+                return Err(Halt::Refused(Refusal::new(
+                    REFUSE_DERIVATION,
+                    sentence::At::vertex(vertex.clone(), class.clone()),
+                )))
             }
         }
     }
-    None
+    Ok(())
 }
 
 /// 37.7 P2 — EVERY `RotorPrime` DEMAND CARRIES ITS PRIME. The witness is
@@ -249,23 +267,27 @@ fn derivations_compose(
 /// prime no witness of it carries and there is nothing to open. Refused
 /// at the demand vertex, addressed by the demand's own key — which is
 /// its coordinates written out (A21), so the coordinate is content.
-fn witnesses_carry_their_primes(f: &Form) -> Option<Refusal> {
+pub(crate) fn witnesses_carry_their_primes(f: &Form, meter: &mut Meter<'_>, from: usize) -> Step {
     use crate::transducer::sentence::Demand;
-    for (vertex, kind, chart, _) in f.demand_vertices() {
+    for (i, (vertex, kind, chart, _)) in f.demand_vertices().enumerate().skip(from) {
         let Demand::RotorPrime { prime, witness, .. } = kind else {
             continue;
         };
+        // 78.153 — one read per prime factored.
+        if !meter.spend() {
+            return Err(Halt::Spent(i));
+        }
         let carries = crate::core::gaussian::from_block(witness).is_some_and(|w| {
             crate::core::gaussian::prime_factor(&w, &num_bigint::BigInt::from(*prime)).is_some()
         });
         if !carries {
-            return Some(Refusal::new(
+            return Err(Halt::Refused(Refusal::new(
                 REFUSE_LETTER_WITNESS,
                 sentence::At::vertex(vertex, chart.clone()),
-            ));
+            )));
         }
     }
-    None
+    Ok(())
 }
 
 /// The same replay, refusing WITH THE COORDINATE (50.9): the vertex that
@@ -279,6 +301,20 @@ pub fn replay_form_at(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
+    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
+    to_completion(spoken, budget, &mut |b, cursor| replay_form_resume(spoken, &owned, family, crystal, b, cursor))
+}
+
+/// 78.153 — [`replay_form_at`] on the stroke, from the cursor: the decode,
+/// then [`replay_form_on_resume`].
+pub fn replay_form_resume<'r>(
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+) -> Replayed {
     // A SPOKEN word under replay: the court re-derives it from the tape it
     // was sent, which is the point of a replay, so the decode is named
     // (L16) — and it is named HERE, once, so the verdict below is a
@@ -291,9 +327,9 @@ pub fn replay_form_at(
     // legacy path could not be reached at all, and the guard would be
     // asserting the decoupled reader against itself.
     let Some(f) = crate::transducer::sentence::from_element_form(spoken) else {
-        return Some(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
+        return Replayed::Refused(Refusal::of_tape(REFUSE_FORM_TAPE, spoken));
     };
-    replay_form_on(&f, spoken, resolve, family, crystal, budget)
+    replay_form_on_resume(&f, spoken, resolve, family, crystal, budget, cursor)
 }
 
 /// [`replay_form_at`] on a form already decoded — the whole verdict, with
@@ -306,14 +342,49 @@ pub fn replay_form_on(
     crystal: &dyn crate::transducer::family::Crystal,
     budget: &mut crate::physics::Budget,
 ) -> Option<Refusal> {
+    let owned = |a: &[u8]| resolve(a).map(std::borrow::Cow::Owned);
+    to_completion(spoken, budget, &mut |b, cursor| replay_form_on_resume(f, spoken, &owned, family, crystal, b, cursor))
+}
+
+/// 78.153 — THE WHOLE VERDICT, IN PHASES, ON THE STROKE. Every input-sized
+/// loop spends one read per item; where the stroke runs out the cursor
+/// keeps the phase and the item it stopped at (and the exact partials the
+/// later phases need) and the answer is `Unread` — not ruled this stroke,
+/// never a refusal. Resumed from the cursor, a replay rules exactly as one
+/// run on a stroke that never ran out: every phase before the cursor
+/// passed, and passing is a function of the word's content and of cited
+/// forms that are content-addressed, so it does not change between strokes.
+pub fn replay_form_on_resume<'r>(
+    f: &Form,
+    spoken: &Element,
+    resolve: &dyn Fn(&[u8]) -> Option<std::borrow::Cow<'r, Form>>,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+) -> Replayed {
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
+    // One phase: skipped where the cursor is past it, entered at the item
+    // the cursor names where it stopped in it, and settled — passed (the
+    // cursor moves to the next phase), refused, or spent (the cursor keeps
+    // the item and the replay is unread).
+    macro_rules! phase {
+        ($phase:expr, |$from:ident| $step:expr) => {
+            if let Some($from) = cursor.enter($phase) {
+                let step: Step = $step;
+                if let Some(out) = cursor.settle($phase, step) {
+                    return out;
+                }
+            }
+        };
+    }
     // A FORM'S OWN DEPTH AGREES WITH ITS OWN CITATIONS. This is a reading
     // of the sentence against itself — no cited form is resolved for it —
     // so it holds whatever the citation relation's shape is, and it is
     // what catches a tape whose `depth` was moved under its vertices.
     // A depth that cannot be written (STD1) agrees with no tape's.
     if Some(f.depth) != f.depth_of() {
-        return Some(tape(REFUSE_GLUED_DEPTH));
+        return Replayed::Refused(tape(REFUSE_GLUED_DEPTH));
     }
     // EVERY BOUNDARY IS BONDED (54.7 B5a). A `Vertex::Glued` is a PORT —
     // "this chart exposes a boundary interface at this rank, depth,
@@ -326,34 +397,57 @@ pub fn replay_form_on(
     // that is where a received sentence carries it, and the site is the
     // vertex's own key contribution — a coordinate, never an index.
     let cover = &spoken.receipts().nerve;
-    // The Glued vertices are one fibre of the atlas, read at their tag.
-    for (vertex, v) in f.glued_vertices() {
-        // THE CHART COMES OFF THE VERTEX ITSELF, not through
-        // `face_chart().unwrap_or_default()`: `Invariant::default()` is the
-        // chart trie's ROOT and naming it would put the refusal at the top
-        // of the atlas rather than at the boundary that is open.
-        let Vertex::Glued { chart, .. } = v else { continue };
-        let site = crate::transducer::sentence::vertex_bytes(v);
-        let at = |reason| Refusal::new(reason, sentence::At::vertex(vertex.clone(), chart.clone()));
-        // A MULTI-SHEETED SEAM IS ADMISSIBLE, A REPEATED SHEET IS NOT.
-        // Several edges at one site is a junction between several charts —
-        // gauge universality means the citing chart cannot tell them apart
-        // locally, and each distinct target is an independent interface. The
-        // same target twice is one geometric overlap declared as two, which
-        // would inflate the yield, so the sheets must be distinct.
-        let mut sheets: Keyed<()> = Keyed::new();
-        let mut n = 0usize;
-        for e in cover.iter().filter(|e| e.host().as_bytes() == site) {
-            n += 1;
-            sheets.insert(&e.target, ());
-        }
-        if n == 0 {
-            return Some(at(REFUSE_ORPHAN_PORT));
-        }
-        if sheets.len() != n {
-            return Some(at(REFUSE_SHEET_REPEATED));
+    // 78.153 — THE EDGES BY THEIR HOST, filed once per stroke (linear in the
+    // cover, as the decode above is in the tape): each port below is then a
+    // keyed read, where it walked the whole cover per Glued vertex.
+    let mut by_host: Keyed<Vec<usize>> = Keyed::new();
+    for (j, e) in cover.iter().enumerate() {
+        let host = e.host();
+        match by_host.get_mut(host.as_bytes()) {
+            Some(on) => on.push(j),
+            None => {
+                by_host.insert(host.as_bytes(), vec![j]);
+            }
         }
     }
+    // The Glued vertices are one fibre of the atlas, read at their tag.
+    phase!(Phase::Ports, |from| {
+        let mut out: Step = Ok(());
+        for (i, (vertex, v)) in f.glued_vertices().enumerate().skip(from) {
+            // THE CHART COMES OFF THE VERTEX ITSELF, not through
+            // `face_chart().unwrap_or_default()`: `Invariant::default()` is the
+            // chart trie's ROOT and naming it would put the refusal at the top
+            // of the atlas rather than at the boundary that is open.
+            let Vertex::Glued { chart, .. } = v else { continue };
+            if !budget.spend() {
+                out = Err(Halt::Spent(i));
+                break;
+            }
+            let site = crate::transducer::sentence::vertex_bytes(v);
+            let at = |reason| Halt::Refused(Refusal::new(reason, sentence::At::vertex(vertex.clone(), chart.clone())));
+            // A MULTI-SHEETED SEAM IS ADMISSIBLE, A REPEATED SHEET IS NOT.
+            // Several edges at one site is a junction between several charts —
+            // gauge universality means the citing chart cannot tell them apart
+            // locally, and each distinct target is an independent interface. The
+            // same target twice is one geometric overlap declared as two, which
+            // would inflate the yield, so the sheets must be distinct.
+            let mut sheets: Keyed<()> = Keyed::new();
+            let mut n = 0usize;
+            for e in by_host.get(&site).into_iter().flatten().filter_map(|&j| cover.get(j)) {
+                n += 1;
+                sheets.insert(&e.target, ());
+            }
+            if n == 0 {
+                out = Err(at(REFUSE_ORPHAN_PORT));
+                break;
+            }
+            if sheets.len() != n {
+                out = Err(at(REFUSE_SHEET_REPEATED));
+                break;
+            }
+        }
+        out
+    });
     // AND NO BOND WITHOUT A PORT (54.7 B5a). The converse of the orphan
     // check, and the direction that does not fail safe: an orphan port is an
     // incomplete attachment and every reader of it refuses or reports
@@ -361,14 +455,23 @@ pub fn replay_form_on(
     // never constructed — it WOULD resolve, replay and be paid for against a
     // boundary the form does not hold. Never erased, because erasure masks
     // perjury and corrupts the attestation that reads the cover for credit.
-    for e in cover {
-        // The host is the Glued vertex's site, which IS its coordinate: a
-        // keyed read, never a walk of the vertices.
-        let vertex = crate::network::nerve::coord::VertexAt::Glued(crate::network::nerve::coord::Site(e.host().as_bytes().to_vec()));
-        if !matches!(f.vertices.at(&vertex), Some(Vertex::Glued { .. })) {
-            return Some(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::vertex(vertex, e.chart.clone())));
+    phase!(Phase::Phantoms, |from| {
+        let mut out: Step = Ok(());
+        for (i, e) in cover.iter().enumerate().skip(from) {
+            if !budget.spend() {
+                out = Err(Halt::Spent(i));
+                break;
+            }
+            // The host is the Glued vertex's site, which IS its coordinate: a
+            // keyed read, never a walk of the vertices.
+            let vertex = crate::network::nerve::coord::VertexAt::Glued(crate::network::nerve::coord::Site(e.host().as_bytes().to_vec()));
+            if !matches!(f.vertices.at(&vertex), Some(Vertex::Glued { .. })) {
+                out = Err(Halt::Refused(Refusal::new(REFUSE_PHANTOM_EDGE, sentence::At::vertex(vertex, e.chart.clone()))));
+                break;
+            }
         }
-    }
+        out
+    });
     // THE CITATIONS ARE THE NERVE'S 1-SIMPLICES, READ FROM THE ENVELOPE
     // (54.5 Road (d), B4 — and this is the reader B5 turns on).
     //
@@ -379,7 +482,13 @@ pub fn replay_form_on(
     // entirely — after which this loop would have found nothing to resolve
     // and every citation would have passed unchecked. Reading the edge list
     // now means the eviction changes this reader not at all.
-    for edge in &spoken.receipts().nerve {
+    phase!(Phase::Citations, |from| {
+    let mut out: Step = Ok(());
+    for (i, edge) in spoken.receipts().nerve.iter().enumerate().skip(from) {
+        if !budget.spend() {
+            out = Err(Halt::Spent(i));
+            break;
+        }
         let address = edge.target.as_bytes();
         // TWO DEPTH REFUSALS STOOD HERE AND BOTH ARE GONE (54.2, as ruled
         // 2026-09-20).
@@ -405,11 +514,15 @@ pub fn replay_form_on(
         // properties of the cited object. Its depth is a reading the
         // citation carries, and the court does not re-derive a reading
         // from an object that has moved since.
+        // 78.153 — the cited form BORROWED where the court holds it: the
+        // check reads it and keeps nothing.
         let Some(cited) = resolve(address) else {
-            return Some(tape(REFUSE_GLUED_UNRULED));
+            out = Err(Halt::Refused(tape(REFUSE_GLUED_UNRULED)));
+            break;
         };
         if !cited.is_closed() {
-            return Some(tape(REFUSE_GLUED_UNRULED));
+            out = Err(Halt::Refused(tape(REFUSE_GLUED_UNRULED)));
+            break;
         }
         // 18: A FORM OPENS AT ITS FRAME, read at the Frame's own coordinate
         // (its tag alone, AT1).
@@ -418,9 +531,12 @@ pub fn replay_form_on(
             _ => false,
         };
         if !frame_is_identity {
-            return Some(tape(REFUSE_GLUED_FRAME_GAUGED));
+            out = Err(Halt::Refused(tape(REFUSE_GLUED_FRAME_GAUGED)));
+            break;
         }
     }
+    out
+    });
     // 50.2 step 2 — G COMPOSES THE DERIVATION. Every word vertex names
     // the generators it factored through; the court resolves each on its
     // own ruled cover, composes them with the residue, and compares the
@@ -429,38 +545,83 @@ pub fn replay_form_on(
     // deferral a `Glued` citation already takes above — the sentence is
     // docketed and the syllabus serves the generator (21 step 3), one
     // mechanism at two levels.
-    if let Some(refusal) = derivations_compose(f, spoken.receipts(), resolve) {
-        return Some(refusal);
-    }
+    phase!(Phase::Derivations, |from| derivations_compose(
+        f,
+        spoken.receipts(),
+        resolve,
+        &mut Meter::Stroke(&mut *budget),
+        from
+    ));
     // 37.7 P2: a demand that names a prime must carry a witness that
     // carries it. Read before anything is docketed, so `list_demands`
     // never opens a letter on a witness the arithmetic refuses.
-    if let Some(refusal) = witnesses_carry_their_primes(f) {
-        return Some(refusal);
-    }
+    phase!(Phase::Witnesses, |from| witnesses_carry_their_primes(f, &mut Meter::Stroke(&mut *budget), from));
     // 23.1 step 3, 50.6 (L7): a tape whose only vertices are the Frame and
     // demands is a chain wearing a form's tape — nothing in it acts.
-    if !f.acts() {
-        return Some(tape(REFUSE_NOT_A_SENTENCE));
+    phase!(Phase::Moves, |from| match (from, f.acts()) {
+        (0, false) => Err(Halt::Refused(tape(REFUSE_NOT_A_SENTENCE))),
+        _ => vertex_tape_and_moves_from(f, family, spoken, &mut Meter::Stroke(&mut *budget), from),
+    });
+    // 78.153 — THE FAMILY PERCEIVED ONCE PER REPLAY, one read a pair, the
+    // perceptions held on the cursor: every later phase of every stroke
+    // reads them and the sensor reads each grid once (law 12).
+    if let Some(fam) = family {
+        phase!(Phase::Perceive, |from| {
+            let mut out: Step = Ok(());
+            for (i, (x, y)) in fam.iter().enumerate().skip(from) {
+                if !budget.spend() {
+                    out = Err(Halt::Spent(i));
+                    break;
+                }
+                cursor.frames.push(super::body::Perceived::of(x, y));
+            }
+            out
+        });
     }
-    if let Some(refusal) = vertex_tape_and_moves(f, family, spoken) {
-        return Some(refusal);
+    let frames = std::mem::take(&mut cursor.frames);
+    let out = replay_after_perceiving(f, spoken, family, crystal, budget, cursor, &frames);
+    cursor.frames = frames;
+    out
+}
+
+/// The phases after the family is perceived, over the cursor's perceptions.
+fn replay_after_perceiving(
+    f: &Form,
+    spoken: &Element,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    crystal: &dyn crate::transducer::family::Crystal,
+    budget: &mut crate::physics::Budget,
+    cursor: &mut ReplayCursor,
+    frames: &[super::body::Perceived],
+) -> Replayed {
+    let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
+    macro_rules! phase {
+        ($phase:expr, |$from:ident| $step:expr) => {
+            if let Some($from) = cursor.enter($phase) {
+                let step: Step = $step;
+                if let Some(out) = cursor.settle($phase, step) {
+                    return out;
+                }
+            }
+        };
     }
     // 78.143 — EVERY CLAUSE IS STATED ON EVERY PAIR, or the form is refused
     // by the clause's own name before its speech is read: a tie its order
     // does not name, a coordinate that is not exact, no single body where
     // one is asked, a cell landing between cells.
     if let Some(fam) = family {
-        if let Some(reason) = clauses_stated(f, fam) {
-            return Some(tape(reason));
-        }
+        phase!(Phase::Clauses, |from| clauses_stated_from(f, fam, frames, spoken, &mut Meter::Stroke(&mut *budget), from));
     }
     // G steps 2–3 (50.2) on the court's copy of the family: every word
     // vertex carries its body onto its image, exactly (L7).
     if let Some(fam) = family {
-        if let Some(refusal) = vertices_carry_frames(f, fam) {
-            return Some(refusal);
-        }
+        phase!(Phase::Bodies, |from| super::body::vertices_carry_frames_from(
+            f,
+            fam,
+            frames,
+            &mut Meter::Stroke(&mut *budget),
+            from
+        ));
     }
     // ORBITS ARE DERIVED, AND SINCE 54.5 THE TAPE DOES NOT CARRY THEM, so
     // there is no taped forest to compare a traversed one against. The decoder
@@ -469,9 +630,24 @@ pub fn replay_form_on(
     // set. What remains is what was always the real reading — whether the
     // rank is MEASURABLE at all, which an orbit whose holonomy is not a
     // versor makes it not (15.3).
-    let mut traversed = f.clone();
-    traversed.orbits = Form::orbits_of(&f.faces, &f.vertices);
-    let by_chord = chord_orbits(&traversed);
+    //
+    // 78.153 — ONE READ for the traversal, and the form is BORROWED where the
+    // traversal is the forest it already carries (every decoded form): the
+    // whole-form clone is taken only where a supplied form's orbits differ.
+    if !budget.spend() {
+        return cursor.unread_here();
+    }
+    let orbits = Form::orbits_of(&f.faces, &f.vertices);
+    let traversed: std::borrow::Cow<'_, Form> = match orbits == f.orbits {
+        true => std::borrow::Cow::Borrowed(f),
+        false => {
+            let mut t = f.clone();
+            t.orbits = orbits;
+            std::borrow::Cow::Owned(t)
+        }
+    };
+    let traversed: &Form = &traversed;
+    let by_chord = chord_orbits(traversed);
     // Chapter 23.1 step 4: a face equals face_of(i, j), or it is the
     // Kruskal chord of an orbit whose holonomy is what the chord carries
     // (tree faces of that orbit are face_of). Filing of that class is
@@ -483,60 +659,86 @@ pub fn replay_form_on(
     for cert in &spoken.receipts().certificates {
         named.put(cert.by.face(), ());
     }
-    for (o, face) in f.faces.entries() {
-        // 50.3, 52.3: an edge transport of any order is a face. What it
-        // carries is re-derived on the family below (`edges_rederive_frames`),
-        // and a period is never a gate.
-        // EVERY OVERLAP RE-DERIVES AT ITS MEMBER PAIR (AT1): the placement
-        // and hue map re-derive from the two members its charts name, and an
-        // overlap whose ends the form no longer holds does not re-derive.
-        let Err(branch) = face_rederives(f, &o, face) else {
-            continue;
-        };
-        // A PLACE THAT DOES NOT RE-DERIVE IS ADMITTED ONLY BY A CERTIFICATE
-        // (AT1 A3): the pivot is the one producer of content the vertices do
-        // not derive, and its certificate names the overlap it wrote. A
-        // chord whose orbit carries is not a producer, so it never admits a
-        // place alone.
-        if !named.holds(&o) || !torsion_chord_carries(&traversed, &by_chord, &o) {
-            return Some(face_at(&o, branch));
+    phase!(Phase::Faces, |from| {
+        let mut out: Step = Ok(());
+        for (i, (o, face)) in f.faces.entries().enumerate().skip(from) {
+            if !budget.spend() {
+                out = Err(Halt::Spent(i));
+                break;
+            }
+            // 50.3, 52.3: an edge transport of any order is a face. What it
+            // carries is re-derived on the family below (`edges_rederive_frames`),
+            // and a period is never a gate.
+            // EVERY OVERLAP RE-DERIVES AT ITS MEMBER PAIR (AT1): the placement
+            // and hue map re-derive from the two members its charts name, and an
+            // overlap whose ends the form no longer holds does not re-derive.
+            let Err(branch) = face_rederives(f, &o, face) else {
+                continue;
+            };
+            // A PLACE THAT DOES NOT RE-DERIVE IS ADMITTED ONLY BY A CERTIFICATE
+            // (AT1 A3): the pivot is the one producer of content the vertices do
+            // not derive, and its certificate names the overlap it wrote. A
+            // chord whose orbit carries is not a producer, so it never admits a
+            // place alone.
+            if !named.holds(&o) || !torsion_chord_carries(traversed, &by_chord, &o) {
+                out = Err(Halt::Refused(face_at(&o, branch)));
+                break;
+            }
         }
-    }
+        out
+    });
     // 23.1 step 4, 50.3 (L7): every carried edge re-measured on the union
     // of its two bodies, on every pair of the family. BEFORE the orbits,
     // because an edge that does not re-derive is a defect at a FACE and
     // the reading names it there; the orbit reading over that same edge
     // would answer second-hand, as an unfiled class.
     if let Some(fam) = family {
-        if let Some(refusal) = edges_rederive_frames(&traversed, fam, budget) {
-            return Some(refusal);
-        }
+        phase!(Phase::Edges, |from| super::body::edges_rederive_frames_from(traversed, fam, frames, budget, from));
     }
     // THE SPOKEN WORD'S OWN ATTESTATION, checked against the forest the
-    // court just traversed (54.5).
-    if !form_orbits_replay(&traversed) {
-        // CV1 — the orbit's whole transport, read by the one reader (78.9):
-        // no versor is P, a versor the dialect does not spell is D, one it
-        // spells whose closure still refused is C.
-        let composite = traversed.incoherent_orbit().and_then(|lp| {
-            let carried = crate::transducer::sentence::circuit::paths_carried(&traversed.faces, &traversed.vertices, lp)?;
-            carried.scoped().find_map(|(_, c)| c.composite())
-        });
-        return Some(Refusal::closure(
-            REFUSE_ORBIT,
-            sentence::At::Tape(spoken.address()),
-            sentence::Content::Holonomy { versor: composite.as_ref(), chart: None, proof: "the orbit's transport lifts to no versor" },
-        ));
-    }
+    // court just traversed (54.5) — one read per orbit (78.153), in the
+    // order `incoherent_orbit` reads them, so the first that does not
+    // cohere is the one the refusal carries.
+    phase!(Phase::Coherence, |from| {
+        let mut out: Step = Ok(());
+        for (i, lp) in traversed.orbits.iter().enumerate().skip(from) {
+            if !budget.spend() {
+                out = Err(Halt::Spent(i));
+                break;
+            }
+            if traversed.orbit_coheres(lp) {
+                continue;
+            }
+            // CV1 — the orbit's whole transport, read by the one reader (78.9):
+            // no versor is P, a versor the dialect does not spell is D, one it
+            // spells whose closure still refused is C.
+            let composite = crate::transducer::sentence::circuit::paths_carried(&traversed.faces, &traversed.vertices, lp)
+                .and_then(|carried| carried.scoped().find_map(|(_, c)| c.composite()));
+            out = Err(Halt::Refused(Refusal::closure(
+                REFUSE_ORBIT,
+                sentence::At::Tape(spoken.address()),
+                sentence::Content::Holonomy { versor: composite.as_ref(), chart: None, proof: "the orbit's transport lifts to no versor" },
+            )));
+            break;
+        }
+        out
+    });
     // AND THE SPEAKER'S CLAIM, CHECKED AGAINST THE GEOMETRY THE COURT JUST
     // TRAVERSED (54.5). The terrain is priced above; this is the labour, and
     // the two are never one reading.
-    if let Some(why) = receipts_price_the_terrain(&traversed, spoken.filing()) {
-        return Some(tape(why));
-    }
-    let Some(derived) = traversed.rank() else {
-        return Some(tape(REFUSE_RANK_LOST));
-    };
+    phase!(Phase::Terrain, |from| receipts_price_the_terrain_from(
+        traversed,
+        spoken,
+        &mut Meter::Stroke(&mut *budget),
+        from,
+        &mut cursor.derived
+    ));
+    // The rank, one read.
+    phase!(Phase::Rank, |from| match (budget.spend(), traversed.rank()) {
+        (false, _) => Err(Halt::Spent(from)),
+        (true, None) => Err(Halt::Refused(tape(REFUSE_RANK_LOST))),
+        (true, Some(_)) => Ok(()),
+    });
     // S9.2'S COMPARISON IS GONE WITH THE CARRIER IT COMPARED (54.5). It
     // read `Rank::moved(taped_rank, derived) != Equal` and refused a tape
     // whose stored orbits carried a different rank from the traversed forest —
@@ -547,24 +749,53 @@ pub fn replay_form_on(
     // sides of that comparison were the same call on the same faces. A
     // forged tape can forge FACES, and `face_rederives` above is what reads
     // those; it cannot forge a forest, because it does not carry one.
-    let _ = derived;
     if let Some(fam) = family {
         // ONE CRYSTAL, ALWAYS: the court speaks the form through the words it
         // holds, whatever the form cites. A reader chosen by whether the
         // form cites was a switch standing where the object decides.
-        let read = crate::transducer::family::form_deflation_read(
-            &traversed,
-            fam,
-            crystal,
-            &crate::transducer::alphabet::Word::identity(),
-        );
-        // A CITATION THE COURT DOES NOT HOLD, reached inside a cited form,
-        // is the dialect the court lacks (D, 78.9), never the form's silence:
-        // the sites it would have spoken are not a remainder.
-        if !read.unresolved.is_empty() {
-            return Some(tape(REFUSE_GLUED_UNRULED));
-        }
-        let (pay, rems) = (read.pay, read.remainders);
+        //
+        // 78.153 — ONE PAIR PER READ, and a read per cited form spoken
+        // afresh inside it. The cursor keeps the undeclared links of the
+        // pairs already read — the exact partial the refusal is built from —
+        // so a resumed deflation reads each pair once.
+        phase!(Phase::Deflation, |from| {
+            let mut out: Step = Ok(());
+            for pi in from..fam.len() {
+                let here = crate::transducer::alphabet::Word::identity();
+                // The scene the pair is spoken onto is the perception the
+                // cursor holds: the sensor is not read again for it.
+                let bodies = frames.get(pi).map(|p| p.bodies.clone());
+                match crate::transducer::family::deflation_pair_metered(traversed, fam, pi, crystal, &here, budget, bodies) {
+                    crate::transducer::family::PairRead::Spent => {
+                        out = Err(Halt::Spent(pi));
+                        break;
+                    }
+                    // A CYCLE OF CITATIONS is no speech at all (defect 4):
+                    // refused by name before anything it would have spoken.
+                    crate::transducer::family::PairRead::Read { cycled, .. } if !cycled.is_empty() => {
+                        out = Err(Halt::Refused(tape(REFUSE_CITATION_CYCLE)));
+                        break;
+                    }
+                    // A CITATION THE COURT DOES NOT HOLD, reached inside a cited form,
+                    // is the dialect the court lacks (D, 78.9), never the form's silence:
+                    // the sites it would have spoken are not a remainder. It
+                    // refused whatever any pair left, so it refuses at the
+                    // first pair that shows it.
+                    crate::transducer::family::PairRead::Read { unresolved, .. } if !unresolved.is_empty() => {
+                        out = Err(Halt::Refused(tape(REFUSE_GLUED_UNRULED)));
+                        break;
+                    }
+                    crate::transducer::family::PairRead::Read { remainder, .. } => {
+                        // The filter is per link, so the union of the pairs'
+                        // undeclared links is the undeclared links of the union.
+                        cursor.undeclared.extend(undeclared_remainder(&[remainder], traversed));
+                        cursor.undeclared.sort_unstable();
+                        cursor.undeclared.dedup();
+                    }
+                }
+            }
+            out
+        });
         // S9.4 — CLOSURE IS THE CERTIFICATE. A remainder on any pair means
         // the form does not close the family it claims, and that is the
         // refusal. The μ⃗ it measured is NOT: a form that closes every pair
@@ -574,8 +805,7 @@ pub fn replay_form_on(
         // vertex names is what the sentence said it could not close — valid,
         // not closed — and only an undeclared remainder refuses, at the
         // chart of the links it read (50.9).
-        let _ = pay;
-        let undeclared = undeclared_remainder(&rems, &traversed);
+        let undeclared = std::mem::take(&mut cursor.undeclared);
         if !undeclared.is_empty() {
             // ρ_rem — HOW MUCH OF THE FAMILY THE FORM MISSED (§8.1, the
             // reading before the fix).
@@ -630,14 +860,14 @@ pub fn replay_form_on(
             if !wrong.is_empty() {
                 let content = sentence::Content::Residue(&wrong);
                 let obstruction = sentence::read_obstruction(content);
-                return Some(Refusal {
+                return Replayed::Refused(Refusal {
                     reason: REFUSE_NOT_CLOSED,
                     at: sentence::At::Chart(stalk::invariant(&wrong), wrong),
                     obstruction,
                 });
             }
             let obstruction = sentence::read_obstruction(sentence::Content::Residue(&silent));
-            return Some(Refusal {
+            return Replayed::Refused(Refusal {
                 reason: REFUSE_NOT_CLOSED,
                 at: sentence::At::Chart(stalk::invariant(&silent), silent),
                 obstruction,
@@ -649,10 +879,32 @@ pub fn replay_form_on(
     // move, and the certificate whose chord names the overlap is their
     // producer. A factor with none was written by nothing the court can
     // replay.
-    if traversed.faces.entries().any(|(o, face)| face.is_pivoted() && !named.holds(&o)) {
-        return Some(tape(REFUSE_PIVOT_INEXACT));
-    }
-    replay_certificates(&traversed, &spoken.receipts().certificates, &by_chord).map(tape)
+    phase!(Phase::Pivots, |from| {
+        let mut out: Step = Ok(());
+        for (i, (o, face)) in traversed.faces.entries().enumerate().skip(from) {
+            if !budget.spend() {
+                out = Err(Halt::Spent(i));
+                break;
+            }
+            if face.is_pivoted() && !named.holds(&o) {
+                out = Err(Halt::Refused(tape(REFUSE_PIVOT_INEXACT)));
+                break;
+            }
+        }
+        out
+    });
+    phase!(Phase::Certificates, |from| replay_certificates_from(
+        traversed,
+        &spoken.receipts().certificates,
+        &by_chord,
+        &mut Meter::Stroke(&mut *budget),
+        from
+    )
+    .map_err(|cut| match cut {
+        Cut::Refused(reason) => Halt::Refused(tape(reason)),
+        Cut::Spent(at) => Halt::Spent(at),
+    }));
+    Replayed::Clean
 }
 
 /// `REFUSE_FACE` at the overlap's two vertices, by their coordinates (50.9,
@@ -673,15 +925,53 @@ fn face_at(o: &crate::network::nerve::coord::Overlap, branch: sentence::Refused)
 /// word is identity does not move. With a family, unfold and orbit execute
 /// on the trains. The orbit's refusal is at the contact vertex with the
 /// chart it acts on (50.9); every other refusal here is of the tape.
-pub(crate) fn vertex_tape_and_moves(
+///
+/// 78.153 — on a meter, one read per vertex from the `from`-th of the form's
+/// own order.
+pub(crate) fn vertex_tape_and_moves_from(
     f: &Form,
     family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
     spoken: &Element,
+    meter: &mut Meter<'_>,
+    from: usize,
+) -> Step {
+    match vertex_moves(f, family, spoken, meter, from) {
+        Ok(None) => Ok(()),
+        Ok(Some(r)) => Err(Halt::Refused(r)),
+        Err(at) => Err(Halt::Spent(at)),
+    }
+}
+
+fn vertex_moves(
+    f: &Form,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    spoken: &Element,
+    meter: &mut Meter<'_>,
+    from: usize,
+) -> Result<Option<Refusal>, usize> {
+    for (i, (vertex, v)) in f.vertices.entries().enumerate().skip(from) {
+        if !meter.spend() {
+            return Err(i);
+        }
+        if let Some(r) = vertex_move(f, family, spoken, &vertex, v) {
+            return Ok(Some(r));
+        }
+    }
+    Ok(None)
+}
+
+/// One vertex of [`vertex_tape_and_moves_from`].
+fn vertex_move(
+    f: &Form,
+    family: Option<&[(crate::arc::Grid, crate::arc::Grid)]>,
+    spoken: &Element,
+    vertex: &crate::network::nerve::coord::VertexAt,
+    v: &Vertex,
 ) -> Option<Refusal> {
     use crate::transducer::family;
     use crate::transducer::sentence::Measure;
     let tape = |reason: &'static str| Refusal::of_tape(reason, spoken);
-    for (vertex, v) in f.vertices.entries() {
+    {
         match v {
             Vertex::Word { derivation, contact, .. } => {
                 // EVERY MEMBER'S CARRIAGE must give a conformal versor, or
@@ -749,24 +1039,36 @@ pub(crate) fn vertex_tape_and_moves(
 /// each scene perceived as the speech perceives it; the first that is
 /// unstated names the refusal. `None` where every clause is stated on every
 /// pair (or the form states none).
-pub(crate) fn clauses_stated(f: &Form, family: &[(crate::arc::Grid, crate::arc::Grid)]) -> Option<&'static str> {
+///
+/// 78.153 — one read per pair perceived, from the `from`-th pair.
+pub(crate) fn clauses_stated_from(
+    f: &Form,
+    family: &[(crate::arc::Grid, crate::arc::Grid)],
+    frames: &[super::body::Perceived],
+    spoken: &Element,
+    meter: &mut Meter<'_>,
+    from: usize,
+) -> Step {
     use crate::transducer::family::statement::{speak_clauses, Unstated};
     if f.clauses.is_empty() {
-        return None;
+        return Ok(());
     }
-    for (x, _) in family {
-        let bodies = crate::transducer::family::perceive(x);
-        if let Err(why) = speak_clauses(&f.clauses, x, &bodies) {
-            return Some(match why {
+    for (i, ((x, _), seen)) in family.iter().zip(frames).enumerate().skip(from) {
+        if !meter.spend() {
+            return Err(Halt::Spent(i));
+        }
+        if let Err(why) = speak_clauses(&f.clauses, x, &seen.bodies) {
+            let reason = match why {
                 Unstated::Tie => REFUSE_RULE_TIE,
                 Unstated::Inexact => REFUSE_RULE_INEXACT,
                 Unstated::NotOne => REFUSE_RULE_NOT_ONE,
                 Unstated::OffLattice => REFUSE_RULE_OFF_LATTICE,
                 Unstated::Still => REFUSE_RULE_STILL,
-            });
+            };
+            return Err(Halt::Refused(Refusal::of_tape(reason, spoken)));
         }
     }
-    None
+    Ok(())
 }
 
 /// Each orbit by the chord it closes on (AT1: the chord an overlap, its key
@@ -828,6 +1130,10 @@ pub(crate) fn torsion_chord_carries(
 /// answers `None` where a remainder edge lies anywhere on the cycle (13.9
 /// step 7), and an orbit with no transition to read carries no obligation
 /// (rule 11: that is a refusal to read, not a flat reading).
+///
+/// 78.153 — the court reads it one orbit per read (`Phase::Coherence`,
+/// `Form::orbit_coheres`); this whole reading stays for the tests.
+#[cfg(test)]
 pub(crate) fn form_orbits_replay(f: &Form) -> bool {
     // ONE READER FOR ONE QUESTION (law 12, 54.5 as ruled 2026-09-20).
     //
@@ -850,142 +1156,6 @@ pub(crate) fn form_orbits_replay(f: &Form) -> bool {
     // conflation. What the speaker CLAIMED is a separate reading and is
     // [`receipts_price_the_terrain`].
     f.coheres()
-}
-
-/// 54.5 — THE LABOUR, CHECKED AGAINST THE TERRAIN.
-///
-/// A receipt is a SUB-SELECTION: it names which cycles this mind's stroke
-/// discharged, and the complex says what each closes at. So the court does
-/// not take `ℓ` from the claimant — it takes the class from the claimant
-/// and the period from the geometry.
-///
-/// ```text
-///     yield(F, r) = Σ_{κ ∈ r ∩ dom(orbit_classes F)} (ℓ_derived(κ) − 1)
-/// ```
-///
-/// A class the form does not carry projects to ZERO and is not a refusal.
-/// An observer may track cycles outside this form's horizon — that is
-/// pruning, not fraud, and refusing it would make a mind's own memory a
-/// liability.
-///
-/// What IS refused is a receipt that carries a period the complex does not
-/// derive. `Σ(ℓ − 1)` prices reserve regeneration (E2), so an unchecked
-/// period mints capacity from nothing; and unlike the class, the period is
-/// a claim ABOUT THE TERRAIN, which the terrain can contradict. That is
-/// the one lie in the envelope the court can catch, and catching it is
-/// what makes the attestation worth carrying.
-pub(crate) fn receipts_price_the_terrain(
-    f: &Form,
-    filed: &crate::network::nerve::Keyed<
-        crate::transducer::sentence::FiledOrbit,
-        crate::network::nerve::coord::Holonomy,
-    >,
-) -> Option<&'static str> {
-    if filed.is_empty() {
-        return None;
-    }
-    // THE PERIODS THE COMPLEX DERIVES, by class, over every orbit. One
-    // reader (`orbit_classes`), the same one `file_orbit` writes through and
-    // `edge_coheres` asks.
-    let mut derived: Keyed<
-        crate::transducer::sentence::ToralPeriod,
-        crate::network::nerve::coord::Holonomy,
-    > = Keyed::new();
-    for lp in &f.orbits {
-        for row in f.orbit_classes(lp) {
-            derived.put(&row.class, row.periods);
-        }
-    }
-    for (class, claim) in filed.entries() {
-        match derived.at(&class) {
-            // The period is a claim about the terrain and the terrain
-            // disagrees.
-            // BOTH PLANES. A claim that agrees on the `lcm` and differs on
-            // the pair is a different orbit, and the terrain is what the
-            // complex derives — so the comparison is the spectrum (54.7).
-            Some(&p) if claim.periods != p => return Some(REFUSE_INFLATED_YIELD),
-            // Claimed, and the complex agrees.
-            Some(_) => {}
-            // A class this form does not carry. It earns nothing here and
-            // says nothing against the speaker (rule 11).
-            None => {}
-        }
-    }
-    None
-}
-
-/// A20: each certificate is the un-pivot of one chord face, re-read.
-/// The orbit's class key and rank before and after must match the tape.
-/// The orbit is reached by its chord's coordinates on each side (AT1), never
-/// by its position in either form's list.
-pub(crate) fn replay_certificates(
-    f: &Form,
-    certificates: &[crate::transducer::sentence::PivotCertificate],
-    by_chord: &Keyed<crate::transducer::sentence::Orbit, crate::network::nerve::coord::Overlap>,
-) -> Option<&'static str> {
-    // THE CERTIFICATES ARE THE SPEAKER'S (54.5 Road (d), B3). They hung off
-    // the form, and a certificate is not geometry: it is what ONE mind's
-    // stroke did to this complex against ONE budget. Two minds holding the
-    // same form pivot differently, so the map does not factor through the
-    // form and `from_address` cannot rebuild it — the same argument that
-    // moved the filing at `df1eeaa`, one carrier later.
-    //
-    // Every certificate the envelope carries is re-read or the word is
-    // refused; there is no subset of them that would do.
-    for cert in certificates {
-        let face = cert.by.face();
-        let Some(after) = by_chord.at(face) else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        let mut pre = f.clone();
-        // A move with no inverse cannot be un-pivoted: the certificate is
-        // not re-read, and it is refused rather than read against a form the
-        // skip left unrestored (VS1's ruling, item 6).
-        if !pre.unapply_move(&cert.by) {
-            return Some(REFUSE_PIVOT_INEXACT);
-        }
-        pre.orbits = Form::orbits_of(&pre.faces, &pre.vertices);
-        let before = chord_orbits(&pre);
-        let Some(lp_before) = before.at(face) else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        // An opened axis (I6) is seeded by the orbit's own holonomy versor
-        // (16.20): the court re-derives the seed from the orbit it re-read
-        // and refuses a certificate whose seed is anything else (law 12).
-        if let crate::transducer::sentence::PivotBy::OpenAxis { seed, .. } = &cert.by {
-            let rederived = pre.axis_seed_of(lp_before);
-            if !rederived.is_some_and(|v| element::same_versor(&v, seed)) {
-                return Some(REFUSE_PIVOT_INEXACT);
-            }
-        }
-        let Some(kappa_before) = pre.class_vector_of(lp_before) else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        if kappa_before.class_key() != cert.before {
-            return Some(REFUSE_PIVOT_INEXACT);
-        }
-        let Some(kappa_after) = f.class_vector_of(after) else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        if kappa_after.class_key() != cert.after || kappa_after.occupies(cert.axis) {
-            return Some(REFUSE_PIVOT_INEXACT);
-        }
-        let Some(rb) = pre.rank() else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        let Some(ra) = f.rank() else {
-            return Some(REFUSE_PIVOT_INEXACT);
-        };
-        // S9.1 — THE COURT RE-DERIVES THE MOVE. The certificate claims what
-        // the pivot did to the rank; the court traverses the form before and
-        // after for itself and computes the same move. The two absolute
-        // audits it used to compare against are the court's own here, so
-        // carrying them on the tape only invited a second comparison.
-        if crate::transducer::sentence::Rank::moved(rb, ra) != cert.rank_move {
-            return Some(REFUSE_PIVOT_INEXACT);
-        }
-    }
-    None
 }
 
 /// Every torsion cycle the word speaks is run round from its base assignment.

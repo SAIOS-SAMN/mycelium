@@ -180,14 +180,21 @@ pub fn adopt(
     // A form cites ruled forms and is bound to a family: its replay reads
     // the cover and the trains, so it takes the lock (23.8); every other
     // word replays pure, off the lock.
-    let refused = if word.is_sentence() {
-        let Ok(g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
+    //
+    // 78.153 — the replay on the one stroke: unread is not adopted now and
+    // not refused; the next adoption resumes it (the kernel's cursor) where
+    // the word replays under the lock, or starts it over where it is pure.
+    let replayed = if word.is_sentence() {
+        let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
         g.court_replay(word, &mut budget)
     } else {
-        crate::verdict::blind_replay(word, &mut budget)
+        let mut cursor = crate::verdict::ReplayCursor::default();
+        crate::verdict::replay_resume(word, &|_| None, None, &crate::transducer::family::NoCrystal, &mut budget, &mut cursor, false)
     };
-    if let Some(reason) = refused {
-        return Adoption::Refused(reason);
+    match replayed {
+        crate::verdict::Replayed::Refused(r) => return Adoption::Refused(r.reason),
+        crate::verdict::Replayed::Unread => return Adoption::Unread,
+        crate::verdict::Replayed::Clean => {}
     }
     let Ok(mut g) = k.lock() else { return Adoption::Refused("kernel unavailable") };
     if g.word_at(&word.address()).is_some() {

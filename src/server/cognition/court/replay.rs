@@ -9,6 +9,17 @@ use crate::cognition::*;
 use crate::network::nerve::Coordinate;
 use crate::transducer::element::{self, Element};
 
+/// 78.153 — WHERE A WORD'S REPLAY IS KEPT: its address and the task whose
+/// family it is replayed on, each length-delimited (A21).
+pub(crate) fn replay_key(spoken: &Element, task: Option<&[u8]>) -> Vec<u8> {
+    let mut key = Vec::new();
+    crate::transducer::address::put_key_bytes(&mut key, spoken.address().as_bytes());
+    if let Some(t) = task {
+        crate::transducer::address::put_key_bytes(&mut key, t);
+    }
+    key
+}
+
 impl Kernel {
     /// APPLY the court's verdict on a provisional word. The ruling is the
     /// closed 3-point vocabulary from the wire (never a product of booleans —
@@ -151,6 +162,8 @@ impl Kernel {
 
     /// The family a spoken form is bound to on this court (23.8): the
     /// trains of the task it was spoken for, or of the listing it answers.
+    /// The court reads it through `court_replay_moved`, by the task.
+    #[cfg(test)]
     pub(crate) fn family_of(&self, addr: &[u8]) -> Option<&[crate::transducer::family::TrainPair]> {
         let task = self.speech_task.get(addr).or_else(|| self.listing_task.get(addr))?;
         self.task_family.get(task).map(Vec::as_slice)
@@ -167,9 +180,71 @@ impl Kernel {
     /// `pub`: the witness door (`judge::offer`) replays an offered form it
     /// has already heard through this same reader, so the answer it gives a
     /// home is the replay's and never the heard mark's.
-    pub fn court_replay(&self, spoken: &Element, budget: &mut crate::physics::Budget) -> Option<&'static str> {
-        let family = self.family_of(&spoken.address());
-        crate::verdict::blind_replay_on(spoken, &|a| self.resolve_form(a), family, self, budget)
+    ///
+    /// 78.153 — ON THE STROKE, RESUMED: `Unread` where the stroke ran out
+    /// before it ruled — never a refusal, never a pass. Where it stopped is
+    /// held on `replay_cursors` and the next replay of the same word on the
+    /// same family takes it up there, whichever path asks (the docket, the
+    /// glue, the witness door): the verdict is a function of the word, its
+    /// family and the content-addressed forms it cites, so every path's
+    /// replay of it is one replay.
+    pub fn court_replay(&mut self, spoken: &Element, budget: &mut crate::physics::Budget) -> crate::verdict::Replayed {
+        self.court_replay_moved(spoken, budget).0
+    }
+
+    /// [`Kernel::court_replay`] with whether the cursor moved: a stroke that
+    /// moved nothing is a stalled replay (`court_stalled`).
+    pub(crate) fn court_replay_moved(
+        &mut self,
+        spoken: &Element,
+        budget: &mut crate::physics::Budget,
+    ) -> (crate::verdict::Replayed, bool) {
+        let task = self.court_task_of(spoken);
+        self.replay_on_cursor(spoken, task.as_ref().map(|t| t.as_bytes()), false, budget)
+    }
+
+    /// The task whose family a spoken form is bound to on this court
+    /// (23.8): the task it was spoken for, or the one the listing answers.
+    pub(crate) fn court_task_of(&self, spoken: &Element) -> Option<crate::transducer::address::Address> {
+        let addr = spoken.address();
+        self.speech_task.get(addr.as_bytes()).or_else(|| self.listing_task.get(addr.as_bytes())).cloned()
+    }
+
+    /// Where `court_replay` keeps this word's cursor, and how far it stands.
+    #[cfg(test)]
+    pub(crate) fn court_replay_progress(&self, spoken: &Element) -> Option<(crate::verdict::Phase, usize, usize)> {
+        let task = self.court_task_of(spoken);
+        let key = replay_key(spoken, task.as_ref().map(|t| t.as_bytes()));
+        self.replay_cursors.get(&key).map(|c| c.progress())
+    }
+
+    /// THE ONE RESUMABLE REPLAY of a word on the family of `task` (none:
+    /// no family), its cursor keyed by the word's address and that task.
+    /// `at` is `blind_replay_at`'s reading. Answers whether the cursor moved.
+    pub(crate) fn replay_on_cursor(
+        &mut self,
+        spoken: &Element,
+        task: Option<&[u8]>,
+        at: bool,
+        budget: &mut crate::physics::Budget,
+    ) -> (crate::verdict::Replayed, bool) {
+        let key = replay_key(spoken, task);
+        let mut cursor = match self.replay_cursors.remove(&key) {
+            Some(c) => c,
+            None => crate::verdict::ReplayCursor::default(),
+        };
+        let before = cursor.progress();
+        let out = {
+            let court: &Kernel = self;
+            let family = task.and_then(|t| court.task_family.get(t)).map(Vec::as_slice);
+            crate::verdict::replay_resume(spoken, &|a| court.resolve_form_ref(a), family, court, budget, &mut cursor, at)
+        };
+        let moved = cursor.progress() != before;
+        if out == crate::verdict::Replayed::Unread {
+            self.court_unread += 1;
+            self.replay_cursors.insert(&key, cursor);
+        }
+        (out, moved)
     }
 
     /// Court organ: the docket is the field's projection — listings whose
@@ -186,23 +261,8 @@ impl Kernel {
         crate::observe::step("court stroke: contacts");
         self.physics.book_contacts(crate::transducer::family::pairing::contact_lanes());
         let mut budget = self.physics.stroke();
-        let mut keys: Vec<Vec<u8>> = Vec::new();
-        crate::observe::step("court stroke: docket cursor");
-        let from = self.open_cursor.clone();
-        // index: budgeted keyed cursor over the open docket — a circuit
-        // (45.7, S13.3): it continues past the last key from the first, so
-        // a listing admitted below the cursor is ruled on the next circuit,
-        // and the circuit it completes is the docket's.
-        let circuit = {
-            let mut cur = self.open.cursor(from.as_deref(), &mut budget);
-            for (addr, _) in &mut cur {
-                keys.push(addr);
-            }
-            if let Some(k) = cur.last_key() {
-                self.open_cursor = Some(k.to_vec());
-            }
-            cur.circuit()
-        };
+        crate::observe::step("court stroke: docket replay");
+        let circuit = self.docket_replay(&mut budget);
         if let Some((n, period)) = self.docket_circuits.stroke(u64::from(circuit)) {
             // ONCE PER APERTURE, NOT PER CIRCUIT. A docket that fits one
             // budget completes a circuit every stroke, so "written once
@@ -220,28 +280,87 @@ impl Kernel {
             // The circuit just completed is part of this count, so the
             // difference is exact; a count smaller than the circuit it
             // just closed is a broken counter and opens no window.
-            let Some(before) = n.checked_sub(u64::from(circuit)) else {
-                return;
-            };
+            //
             // THE PHASE RIDES ITS OWN WINDOW, read and held for the observer
             // (PH5); the circuit count is on `docket_circuits`. The fold
             // no longer rides it (78.66): a court whose docket is empty
             // completed no circuit and never folded, however long its
             // history grew. It is proposed at the orbit's close, by what
             // holding the hot ledger costs (`Kernel::orbit`).
-            if n / aperture != before / aperture {
-                crate::observe::step("court stroke: phase");
-                let _ = self.read_phase();
+            if let Some(before) = n.checked_sub(u64::from(circuit)) {
+                if n / aperture != before / aperture {
+                    crate::observe::step("court stroke: phase");
+                    let _ = self.read_phase();
+                }
             }
         }
-        crate::observe::step("court stroke: docket replay");
-        for addr in keys {
+        // 78.153 — a citer whose re-hearing its ruling's stroke could not
+        // replay is heard again here, its replay resumed.
+        crate::observe::step("court stroke: rehear due");
+        self.rehear_one_due(&mut budget);
+        crate::observe::step("court stroke: lapse silent");
+        self.lapse_silent();
+        crate::observe::step("court stroke: relocate t-exhausted");
+        self.relocate_t_exhausted();
+        crate::observe::step("court stroke: fills");
+        self.stroke_fills(&mut budget);
+    }
+
+    /// 78.153 — THE DOCKET, ONE KEY AT A TIME ON THE STROKE. The cursor
+    /// walked every key the stroke could pay for BEFORE any replay, one read
+    /// each, so a docket as long as the stroke left the replays nothing — and
+    /// metered, every replay would have been unread on every stroke. Now each
+    /// key is taken by the budgeted circuit (45.7, S13.3) and replayed before
+    /// the next is taken:
+    ///
+    /// - refused: slashed, as it always was (EC1);
+    /// - clean: ruled, a section of this court's own;
+    /// - UNREAD: not ruled this stroke. The docket's cursor stays BEFORE the
+    ///   word, so the next stroke takes it first and resumes its replay from
+    ///   its phase cursor (`replay_cursors`); a resumed replay is eventually
+    ///   ruled, since each stroke moves it on.
+    ///
+    /// A replay a whole stroke moved no further (the word began the stroke
+    /// with every read but the cursor's) holds a unit no stroke can read: it
+    /// is counted (`court_stalled`) and passed over for this circuit, so one
+    /// word cannot stand the whole docket still. Answers whether the walk
+    /// completed a circuit.
+    fn docket_replay(&mut self, budget: &mut crate::physics::Budget) -> bool {
+        let start = self.open_cursor.clone();
+        let mut wrapped = false;
+        loop {
+            // index: budgeted keyed cursor over the open docket — a circuit
+            // (45.7, S13.3): it continues past the last key from the first, so
+            // a listing admitted below the cursor is ruled on the next circuit,
+            // and the circuit it completes is the docket's.
+            let (next, stepped) = {
+                let mut cur = self.open.cursor(self.open_cursor.as_deref(), budget);
+                let next = cur.next().map(|(k, _)| k);
+                (next, cur.circuit())
+            };
+            let Some(addr) = next else {
+                // The order's end walked from the first key, an empty docket,
+                // or the stroke spent.
+                return wrapped || (stepped && start.is_none());
+            };
+            // The circuit ends where it began: a walk from the first key ends
+            // at the end of the order, and one from `start` after `start`.
+            let past_start = match &start {
+                None => stepped,
+                Some(s) => ((wrapped || stepped) && addr.as_slice() > s.as_slice()) || (wrapped && stepped),
+            };
+            if past_start {
+                return true;
+            }
+            let newly = stepped && !wrapped;
+            wrapped = wrapped || stepped;
             // R1 (45.7): the circuit rules what is not yet ruled. A listing on
             // the ruled cover or in the cavity is passed over — its standing
             // moves by a verdict or a lapse, never by the circuit. Replayed
             // on every circuit, one word was sectioned 20,800 times and
             // another slashed 2,227 times (2026-09-09).
             if self.ruled_contains(&addr) || self.cavity_book.contains(&addr) {
+                self.open_cursor = Some(addr);
                 continue;
             }
             let spoken = self
@@ -249,43 +368,74 @@ impl Kernel {
                 .cloned()
                 .or_else(|| self.book_elem(&addr).cloned());
             let Some(spoken) = spoken else {
+                self.open_cursor = Some(addr);
                 continue;
             };
-            if self.court_replay(&spoken, &mut budget).is_some() {
-                // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
-                // through the verdict, which seals `Ruling(Slashed)`, revokes
-                // and re-dockets its citers; a listing of the book is ruled
-                // by the same act sealed here before its escrow is revoked.
-                let me = self.identity;
-                if self.provisional.contains(&addr) {
-                    self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me, &mut budget);
-                } else {
-                    let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
-                    self.append_step(kind, &addr, me);
-                    let ruled = self.anchor();
-                    let _ = self.treasury.revoke_award(&addr, crate::economy::escrow::Revocation::Slash(ruled));
-                    self.redocket_citers_of(&addr);
+            let fresh = u64::try_from(budget.remaining()).is_ok_and(|r| r.checked_add(1).is_some_and(|r| r >= crate::physics::spend_unit()));
+            match self.court_replay_moved(&spoken, budget) {
+                (crate::verdict::Replayed::Refused(_), _) => {
+                    // EC1: A SLASH IS ALWAYS AN ACT. A provisional word is ruled
+                    // through the verdict, which seals `Ruling(Slashed)`, revokes
+                    // and re-dockets its citers; a listing of the book is ruled
+                    // by the same act sealed here before its escrow is revoked.
+                    let me = self.identity;
+                    if self.provisional.contains(&addr) {
+                        self.rule_on(&addr, crate::anastome::dialogue::RULING_SLASHED, me, budget);
+                    } else {
+                        let kind = crate::chronometry::ActKind::Ruling(crate::chronometry::Ruled::Slashed);
+                        self.append_step(kind, &addr, me);
+                        let ruled = self.anchor();
+                        let _ = self.treasury.revoke_award(&addr, crate::economy::escrow::Revocation::Slash(ruled));
+                        self.redocket_citers_of(&addr);
+                    }
+                    // The word keeps its address as a cavity (27); a word left
+                    // on no row after that takes its stamp with it.
+                    self.relocate_cavity(&addr);
+                    self.leave_provisional(&addr);
+                    self.forget_if_unheld(&addr);
+                    self.court_slashed += 1;
                 }
-                // The word keeps its address as a cavity (27); a word left
-                // on no row after that takes its stamp with it.
-                self.relocate_cavity(&addr);
-                self.leave_provisional(&addr);
-                self.forget_if_unheld(&addr);
-                self.court_slashed += 1;
-                continue;
+                (crate::verdict::Replayed::Clean, _) => {
+                    // The stroke ruled a word THIS court replayed from its own
+                    // book: the line already calls it a section, and now it is one
+                    // (13.9, 13.10) -- a vantage a peer's section can be compared
+                    // against, which is what makes a glue a Mayer-Vietoris step.
+                    self.rule_own(&addr, budget);
+                }
+                // A whole stroke moved it nowhere: passed over this circuit.
+                (crate::verdict::Replayed::Unread, false) if fresh => {
+                    self.court_stalled += 1;
+                }
+                // NOT RULED THIS STROKE: the docket stays before the word, and
+                // the wrap this step made is not made.
+                (crate::verdict::Replayed::Unread, _) => {
+                    if newly {
+                        wrapped = false;
+                    }
+                    return wrapped;
+                }
             }
-            // The stroke ruled a word THIS court replayed from its own
-            // book: the line already calls it a section, and now it is one
-            // (13.9, 13.10) -- a vantage a peer's section can be compared
-            // against, which is what makes a glue a Mayer-Vietoris step.
-            self.rule_own(&addr, &mut budget);
+            self.open_cursor = Some(addr);
         }
-        crate::observe::step("court stroke: lapse silent");
-        self.lapse_silent();
-        crate::observe::step("court stroke: relocate t-exhausted");
-        self.relocate_t_exhausted();
-        crate::observe::step("court stroke: fills");
-        self.stroke_fills(&mut budget);
+    }
+
+    /// 78.153 — THE COURT STROKED UNTIL ITS DOCKET'S REPLAYS ARE RULED: a
+    /// fixture that asks what "the stroke" rules asks it of every stroke a
+    /// replay longer than one takes. Ends where no replay stands, or where
+    /// a stroke moved none.
+    #[cfg(test)]
+    pub(crate) fn court_settle(&mut self) {
+        let progress = |k: &Kernel| -> Vec<(Vec<u8>, (crate::verdict::Phase, usize, usize))> {
+            k.replay_cursors.scoped().map(|(key, c)| (key, c.progress())).collect()
+        };
+        loop {
+            let before = progress(self);
+            self.court_stroke();
+            let after = progress(self);
+            if (after.is_empty() && self.rehear_due.is_empty()) || after == before {
+                return;
+            }
+        }
     }
 
     /// The docket's circuit reading (45.7): circuits completed and the

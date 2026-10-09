@@ -113,7 +113,8 @@ fn one_frame_adjudicates_a_stood_sentence_and_a_waiting_one_apart() {
     let plain = sentence_with(Derivation::spelled(turn_90(3)), 5);
 
     let spoken = vec![(plain.clone(), None), (citer.clone(), None)];
-    let mut frame = k.stroke();
+    // 78.153: a stroke that holds the frame's replays.
+    let mut frame = crate::physics::Physics::default().stroke_n(1 << 20);
     let heard = k.hear_speech([1; 32], &[0; 32], &spoken, &mut frame).expect("the frame is heard");
 
     // The adjudications come back in the order the sentences were spoken,
@@ -201,6 +202,9 @@ fn a_ruling_that_did_not_happen_rehears_nothing() {
     assert_eq!(k.awaiting_len(held.as_bytes()), 1, "docketed under an address it holds");
     let mut ruling = k.stroke();
     k.ruled_admit(held.as_bytes(), &mut ruling);
+    // 78.153: a re-hearing the ruling's stroke could not replay waits again
+    // and the court's strokes hear it.
+    k.court_settle();
     assert_eq!(
         k.awaiting_len(held.as_bytes()),
         0,
@@ -323,6 +327,9 @@ fn a_pressured_word_is_witnessed_and_ruled_and_its_citer_is_upheld() {
     let witness = [2u8; 32];
     k.enroll(witness, [12, 3, 0, 20]);
     k.witness_rederived(&w, witness, word.clone());
+    // 78.153: a re-hearing its ruling's stroke could not replay is heard
+    // again on the court's strokes.
+    k.court_settle();
     assert!(k.ruled_contains(w.as_bytes()), "the word is ruled");
     assert!(!k.in_flight(w.as_bytes()), "and its orbit closed: it left the offered set");
     assert_eq!(k.awaiting_len(w.as_bytes()), 0, "the citer was heard when its word was ruled");

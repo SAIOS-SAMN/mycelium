@@ -314,7 +314,10 @@ fn two_minds_reach_one_address_by_two_derivations_and_both_teachers_earn_room() 
 
         let frame = dialogue::encode_speech(&voice, c_task, 1, &[said.to_bytes().expect("the record writes")]).expect("the task frames");
         let act = dialogue::decode_speech(&frame).expect("the frame decodes");
-        let heard = k.hear_frame(&act).expect("the court hears it");
+        // 78.153: a stroke that holds the frame's replays.
+        let heard = k
+            .hear_frame_on(&act, &mut crate::physics::Physics::default().stroke_n(1 << 20))
+            .expect("the court hears it");
         // One sentence was spoken, so one adjudication comes back.
         let [only] = heard.as_slice() else { panic!("one sentence, one adjudication") };
         assert_eq!(

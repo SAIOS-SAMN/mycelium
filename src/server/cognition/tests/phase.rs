@@ -97,14 +97,16 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     let a = vec![(0, 0, 1u8), (0, 1, 1)];
     let b = vec![(0, 0, 2u8), (0, 1, 2)];
     assert_eq!(speak_pair(&mut k, &a, &b, [1; 32]), Outcome::GermPending);
-    k.read_phase();
+    // 78.153: the reading spends a stroke; this one pays for all of it.
+    let whole = || crate::physics::Physics::default().stroke_n(1 << 20);
+    k.read_phase_on(&mut whole());
     let (k0, at_h0) = k.phase_mark.clone().expect("the window's start is kept");
     assert_eq!(k0, k.chain().head_place(), "the next window opens after the line's head");
     assert_eq!(at_h0.strata.len(), k.cover_reading().strata.len());
     let c = vec![(0, 0, 3u8), (0, 1, 3)];
     let d = vec![(0, 0, 4u8), (0, 1, 4)];
     assert_eq!(speak_pair(&mut k, &c, &d, [2; 32]), Outcome::GermPending);
-    k.read_phase();
+    k.read_phase_on(&mut whole());
     let (k1, _) = k.phase_mark.clone().expect("kept again");
     assert!(k1 > k0, "the window moved with the chain");
     let _: Keyed<usize> = at_h0.strata;
@@ -115,14 +117,19 @@ fn the_court_reads_the_phase_once_per_circuit_and_stores_no_phase() {
     // the vacuous assertion at the instrument. Hypha a wrote 25 598 of those
     // in nine minutes at e98e8a2 because its caller paces on docket circuits
     // and a docket that fits one budget completes one every stroke.
-    assert!(!k.read_phase(), "no receipt admitted, so nothing is measured");
+    assert!(!k.read_phase_on(&mut whole()), "no receipt admitted, so nothing is measured");
     let (k2, _) = k.phase_mark.clone().expect("and the mark still advances");
     assert_eq!(k2, k1, "an empty window leaves the start where the chain is");
     // And a reading IS taken as soon as the chain moves again.
     let e = vec![(0, 0, 5u8), (0, 1, 5)];
     let f = vec![(0, 0, 6u8), (0, 1, 6)];
     assert_eq!(speak_pair(&mut k, &e, &f, [3; 32]), Outcome::GermPending);
-    assert!(k.read_phase(), "a receipt in the window is a measurement");
+    // 78.153 — ON A STROKE TOO SHORT FOR IT the reading is not taken, and
+    // its mark stays: the next reading covers the window from it.
+    let (before, _) = k.phase_mark.clone().expect("kept");
+    assert!(!k.read_phase_on(&mut crate::physics::Physics::default().stroke_n(1)), "a stroke of one read takes no phase");
+    assert_eq!(k.phase_mark.clone().map(|(m, _)| m), Some(before), "and the window still opens where it did");
+    assert!(k.read_phase_on(&mut whole()), "a receipt in the window is a measurement");
     // PH5 — THE WINDOW WRITTEN IS HANDED TO THE OBSERVER, never kept by the
     // court: the observer's copy reads this window's heights (78.17). The
     // store is the process's, so another court's window may have landed in
@@ -160,10 +167,14 @@ fn the_phase_window_is_an_aperture_of_docket_circuits() {
         assert!(strokes <= bound, "a one-listing docket circuits every stroke: {:?}", k.docket_circuits());
         k.court_stroke();
         let c = k.docket_circuits().circuits();
+        // 78.153: the reading is TAKEN where its stroke pays for it, and
+        // counted unread where it does not; either way it is asked exactly
+        // when the count crosses the aperture.
+        let asked = k.phase_mark.is_some() || k.phase_unread > 0;
         if c < aperture {
-            assert!(k.phase_mark.is_none(), "no reading below the aperture: circuits {c} of {aperture}");
+            assert!(!asked, "no reading below the aperture: circuits {c} of {aperture}");
         } else {
-            assert!(k.phase_mark.is_some(), "read when the circuit count crosses the aperture: circuits {c}");
+            assert!(asked, "read when the circuit count crosses the aperture: circuits {c}");
             break;
         }
     }

@@ -47,10 +47,25 @@ impl Kernel {
             sentences.iter().map(|s| (s.clone(), None)).collect();
         // THE ACT'S ROOT (65.5): one stroke of this court's own metabolism
         // for the whole speech, threaded to every sentence it hears.
-        let mut budget = self.physics.stroke();
-        match self.hear_speech(voice, task, &spoken, &mut budget) {
-            Ok(adjudicated) => adjudicated.iter().map(|a| a.code()).collect(),
-            Err(_) => vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
+        //
+        // 78.153 — a frame deferred on no lane is a replay its stroke could
+        // not finish: the voice speaks it again, and this reading does, while
+        // the frame's replays move on.
+        let keys: Vec<Vec<u8>> = sentences
+            .iter()
+            .map(|s| crate::cognition::court::replay::replay_key(s, (!s.is_colour_word()).then_some(task)))
+            .collect();
+        let progress = |k: &Kernel| -> Vec<Option<(crate::verdict::Phase, usize, usize)>> {
+            keys.iter().map(|key| k.replay_cursors.get(key).map(|c| c.progress())).collect()
+        };
+        loop {
+            let before = progress(self);
+            let mut budget = self.physics.stroke();
+            match self.hear_speech(voice, task, &spoken, &mut budget) {
+                Ok(adjudicated) => return adjudicated.iter().map(|a| a.code()).collect(),
+                Err(lanes) if lanes == [0; 4] && progress(self) != before => {}
+                Err(_) => return vec![crate::anastome::dialogue::SPEECH_DIALECT; sentences.len()],
+            }
         }
     }
 
@@ -60,6 +75,19 @@ impl Kernel {
     pub fn hear_frame(
         &mut self,
         act: &crate::anastome::dialogue::SpeechAct,
+    ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
+        // THE ACT'S ROOT (65.5): the wire hands the frame here, and one
+        // stroke is the whole frame's draw, threaded to every sentence.
+        let mut budget = self.physics.stroke();
+        self.hear_frame_on(act, &mut budget)
+    }
+
+    /// [`Kernel::hear_frame`] on the stroke handed in (78.153: a fixture
+    /// that asks what one frame hears hands it a stroke that holds it).
+    pub fn hear_frame_on(
+        &mut self,
+        act: &crate::anastome::dialogue::SpeechAct,
+        budget: &mut crate::physics::Budget,
     ) -> Result<Vec<crate::anastome::dialogue::Adjudication>, [u64; 4]> {
         use crate::anastome::dialogue::Adjudication;
         use crate::transducer::sentence::{At, RefusalKind};
@@ -72,10 +100,7 @@ impl Kernel {
                 None => unparsed.push(i),
             }
         }
-        // THE ACT'S ROOT (65.5): the wire hands the frame here, and one
-        // stroke is the whole frame's draw, threaded to every sentence.
-        let mut budget = self.physics.stroke();
-        let heard = self.hear_speech(act.voice, &act.task, &spoken, &mut budget)?;
+        let heard = self.hear_speech(act.voice, &act.task, &spoken, budget)?;
         let receipt = self.chain.head_hash();
         let mut out = Vec::with_capacity(act.sentences.len());
         let mut next = heard.into_iter();
@@ -114,7 +139,7 @@ impl Kernel {
             si += 1;
             // 78.102 — EVERY SENTENCE HEARD, closed or open, stood or not:
             // its rings re-derived and the letters they need offered.
-            self.hear_open(&e, act.voice, &mut budget);
+            self.hear_open(&e, act.voice, budget);
             let stood = matches!(
                 out.get(i),
                 Some(Adjudication::Stood { .. }) | Some(Adjudication::Ratified { .. })
@@ -344,11 +369,19 @@ impl Kernel {
     /// the tests read. `hear_sentence` carries the refusal's coordinate.
     #[cfg(test)]
     pub(crate) fn perceive_sentence(&mut self, voice: [u8; 32], task: &[u8], s: &Element) -> Outcome {
-        // The test's own act: its root, one stroke.
-        let mut budget = self.physics.stroke();
-        match self.hear_sentence(voice, task, s, &mut budget) {
-            Ok(out) => out,
-            Err(refusal) => Outcome::Refused(refusal.reason),
+        // The test's own act: its root, one stroke — spoken again, as the
+        // voice speaks again, while the court defers it on no lane with its
+        // replay moved on (78.153: a replay longer than one stroke resumes).
+        let key = crate::cognition::court::replay::replay_key(s, (!s.is_colour_word()).then_some(task));
+        loop {
+            let before = self.replay_cursors.get(&key).map(|c| c.progress());
+            let mut budget = self.physics.stroke();
+            match self.hear_sentence(voice, task, s, &mut budget) {
+                Ok(Outcome::Deferred(lanes))
+                    if lanes == [0; 4] && self.replay_cursors.get(&key).map(|c| c.progress()) != before => {}
+                Ok(out) => return out,
+                Err(refusal) => return Outcome::Refused(refusal.reason),
+            }
         }
     }
 
@@ -388,19 +421,25 @@ impl Kernel {
         // from this family at adjudication (`adjudicate_one`); it carries no
         // chain by construction, so its replay against the family is that
         // evidence, and here it is replayed for integrity alone.
-        let family = match s.is_colour_word() {
+        let family_task = match s.is_colour_word() {
             true => None,
-            false => self.task_family.get(task).cloned(),
+            false => Some(task),
         };
         // The caller's stroke (65.5): a sentence is heard inside the act that
         // hears it — a speech frame, or a ruling re-hearing what waited.
-        if let Some(refusal) =
-            crate::court::verdict::blind_replay_at(s, &|a| self.resolve_form(a), family.as_deref(), self, budget)
-        {
-            // CV1 — every refusal carries its kind (78.9), and the observer
-            // counts it by kind.
-            crate::observe::note_obstruction(refusal.obstruction.kind());
-            return Err(refusal);
+        //
+        // 78.153 — ON THAT ONE STROKE, RESUMED: a replay the stroke could not
+        // finish is NOT HEARD — deferred on no lane, the voice speaks again,
+        // and the replay resumes where it stopped. Never a refusal.
+        match self.replay_on_cursor(s, family_task, true, budget).0 {
+            crate::verdict::Replayed::Refused(refusal) => {
+                // CV1 — every refusal carries its kind (78.9), and the observer
+                // counts it by kind.
+                crate::observe::note_obstruction(refusal.obstruction.kind());
+                return Err(refusal);
+            }
+            crate::verdict::Replayed::Unread => return Ok(Outcome::Deferred([0; 4])),
+            crate::verdict::Replayed::Clean => {}
         }
         // 78.149 — WHAT THE SENTENCE DISCHARGES, measured on the family of
         // the task it was heard for (the family its binding below will name,

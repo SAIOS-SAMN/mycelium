@@ -277,7 +277,8 @@ fn glue_records_true_geometric_section_and_edge_carriage() {
     let inv = crate::transducer::stalk::invariant_of(&spoken);
 
     // Ruling own provisional creates own_section with spoken's geometry
-    own.court_stroke();
+    // (78.153: on every stroke the replay takes).
+    own.court_settle();
     let cx = own.complexes().get(&inv.key()).expect("complex exists");
     let own_sec = cx.sections.get(me.as_slice()).expect("own section exists");
     let exp_gamma = match spoken.carried_rotor() {
@@ -323,12 +324,14 @@ fn a_peers_sentence_is_read_against_this_courts_section() {
     assert_eq!(speak_pair(&mut own, &a, &b, [1; 32]), Outcome::GermPending);
     assert_eq!(speak_pair(&mut own, &a, &b, [2; 32]), Outcome::GermPending);
     let spoken = own.provisional.scoped().next().unwrap().1.clone();
-    own.court_stroke();
+    // 78.153: every stroke the docket's replay takes.
+    own.court_settle();
     let axes = |peer: [u8; 32]| {
         crate::observe::replication().signers.into_iter().find(|(k, _)| *k == peer).map(|(_, a)| a)
     };
     let mut cover = crate::network::nerve::Cover::new();
-    let mut glue = own.stroke();
+    // 78.153: a stroke that holds the glue's replay.
+    let mut glue = crate::physics::Physics::default().stroke_n(1 << 20);
     let _ = own.glue_fetched(spoken.clone(), same_peer, me, &mut cover, &mut glue);
     assert_eq!(axes(same_peer).map(|a| a[rep::RELATION_SAME]), Some(1), "its own word is the same word: {:?}", axes(same_peer));
     assert_eq!(axes(same_peer).map(|a| a[rep::PERCEIVED_COHERENT]), Some(1), "and is coherent on all four lanes: {:?}", axes(same_peer));
