@@ -49,6 +49,13 @@ done
 
 say "stopping voices"
 for v in "${VOICES[@]}"; do systemctl --user stop "mycelium-client@$v" 2>/dev/null || true; done
+# Seat minds are transient units: stopped here so none rewrites its genome
+# after the wipe; they are NOT restarted by this script — each is relaunched
+# (systemd-run) once its house has re-founded and re-posted its seats.
+say "stopping seat minds (relaunch them after their houses re-post)"
+for u in $(systemctl --user list-units --no-legend --plain 'mycelium-seat-*' 'mycelium-xseat-*' 'mycelium-nseat-*' | awk '{print $1}'); do
+  systemctl --user stop "$u" 2>/dev/null || true
+done
 say "stopping hyphae"
 for h in $(printf '%s\n' "${HYPHAE[@]}" | tac); do
   systemctl --user stop "mycelium-server@$h" 2>/dev/null || true
