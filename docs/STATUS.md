@@ -1,90 +1,52 @@
 # mycelium — live status (read this first; kept current, not appended)
 
-*Last written 2026-10-08 21:05 EEST by mycelium-opus. The one place to learn
-where mycelium stands without the session that wrote it.*
+*Last written 2026-10-09 07:37 EEST by mycelium-opus, after the recut.*
 
 ## The fleet
-- Hyphae a/b/c on 127.0.0.1:7500/7501/7502 run **716a81ba** since 20:56
-  (2026-10-08): everything of aefc6a39 (78.140–78.145, `may_solve`, the
-  voice-stop save, replication instrument, serve counts) plus WIRE v1.2 —
-  a task is named on every wire by its 32-byte CITATION (blake3 of its
-  registry content address; envelope, ACT_SOLVE, ACT_TASK by id, seat REC
-  kind 4 = [Key]); seat lexicon 4; ARG tag 6 Bytes; 78.146 the seat mind
-  (percepts as series, its own call, the task call fn 1) and the READ-MAIL
-  exemption from the full-pool deferral; 78.147 catch-up from a fold root.
-  The task pull steps past a task it cannot frame (barren's empty-family
-  pulls). Ship with `scripts/ship-scoped <test names>` (one heavy hold;
-  batching rules in docs/CONDUCT.md).
-- Seat minds (transient units, restarted on 716a81ba): mycelium-seat-1
-  (a1a52d92, barren seat 1), mycelium-nseat-1..4 (netstratum seats 1–4).
-- REPLICATION: 78.147 shipped; a court serves a root proof only after its
-  first fold on 716a81ba. Per-pair admitted counts still to be read.
-  Units are NOT enabled at boot (operator 2026-10-02): after a reboot,
-  `--check` each home, then `systemctl --user start mycelium-server@{a,b,c}`.
-- Observers on a and b held no readings at 21:00; b answers wallet asks with
-  a 43-byte deferral. Read balances by `--console --wallet KEY`.
-- Voices 1–5 (`mycelium-client@1..5`) run the same build, signing and crossing
-  their solves, bootstrapped to a, b, c, a, b. Their role (the operator): puzzle
-  solvers that BUILD THE ANASTOME LANGUAGE — court-admitted words with their
-  derivations — which the seat interface then translates into the minds that
-  operate inside the games, or in any kernel that requires them.
-- The hypha serves ANYONE (holding μ or earning its first); a universe founded
-  on a court speaks only through its ancients' house (`Kernel::may_solve`,
-  ffba096b — ships with 78.143 slice 1).
-- Xylarium is ORIGINATED on hypha a (h 64410, Curved, parent Unwitnessed);
-  silent until its ancients earn μ. Netstratum is founded, NOT originated.
-- No tubes or core tubes exist on any court.
+- RECUT 2026-10-09 07:35 on the operator's word after a system crash:
+  hyphae a/b/c on **5751c804**, fresh genesis **6a86… epoch 146** (minted on
+  a); every prior court state, ledger and μ wiped; homes keep keys and mesh.
+  Voices 1–5 (`mycelium-client@1..5`) run the same build.
+- The build carries: wire v1.2 (task citations); 78.145 the seat surface;
+  78.146/78.148 the seat mind (its own calls, the listing as repertoire,
+  re-take, the box drained, a standing call not repeated); 78.147 catch-up
+  from a fold root (+ archive paging for an unproved root); 78.149 μ is
+  discharge (the operator's strict escrow rulings; NoWork; genesis as
+  Genesis); 78.151 the door serves reads (receipts, wallets, clock, seat
+  listings) from a published snapshot — only writes take the kernel; the
+  kernel lock counted by site (`held!`), the fair hand-off, and the step a
+  long hold stands in, named by the observer.
+- Units are NOT enabled at boot. After a reboot: `--check` each home, then
+  `systemctl --user start mycelium-server@{a,b,c}` and the voices.
+- Seat minds are TRANSIENT units (`systemd-run`): they do not survive a
+  reboot. Start them after each house re-posts its listing:
+  `systemd-run --user --unit=mycelium-xseat-N -p CPUQuota=25% -p
+  WorkingDirectory=/opt/mycelium-v0.1.0 target/release/mycelium-client
+  --home var/xN --seat <domain> N` (xylarium 07a50ff1…, seats 0–3);
+  nseat-1..4 (netstratum 5deab117…), seat-1 (barren e1b24154…, home var/s1).
 
-## Traffic (courts' served counters since 16:04)
-- a: Task pulls 278, Solve acts 2, JUDGED 0. b: Task 10. c: Task 4.
-- **16:19: FIRST CLOSURE**, judged on hypha c, paid [0, 6, 0, 0] μ to
-  abe42776… — barren-realms' captain key (task 0f32d437 by Transpose,
-  submitted via :7500 and ROUTED by its task key to c: `speak_keyed` sends a
-  solve to the hypha owning the key, not the one dialled). Not a voice. The
-  first ARC task closed by a rule since the rebuild (the voices' soak baseline
-  was 43 judged, 0 closed). Voices: none judged yet.
-- Netstratum's seat pulls on :7500. Its solves are refused unsigned: its copy
-  of mycelium (9ed0c80b) predates signed solves.
+## Houses (to re-post after the recut)
+- xylarium (Rust, the coordinator): domain 07a50ff1…, 20 seats (fn 2 FOCUS,
+  fn 1 SOLVE), reserve = the ancient-houses tier key.
+- netstratum: domain 5deab117…, reserve 43792871…, seats 1–4.
+- barren-realms (the Python xylarium): domain e1b24154…, reserve 633299c1….
 
-## What netstratum must do to come online
-1. Bump its mycelium dependency to **52c25ae9** or later.
-2. Seat its client on a KEY: `Kernel::from_key(signing_key)`, not
-   `from_voice`, so `submit_solve_rule` signs (otherwise its solves are refused
-   "unsigned" before judging).
-3. State its rules through `sdk::rule::{Step, sentence, would_judge,
-   crossing}`; submit with `Entity::solve_task` (it crosses and signs).
-4. Use court task ids: `registry::task_id(&arc::parse_task(json))`; only
-   data/arc-agi-2/training is registered.
-5. Post its origin v2 (Torus, periods in geometrized Mpc, Concordance 1.8).
+## Known, instrumented, not yet fixed
+- A long court-stroke hold (hypha a, 2026-10-09): the observer now names the
+  step (`court stroke: docket replay / lapse silent / relocate / fills …`)
+  when one hold stands across two of its questions. Read it on the console;
+  bound the step it names.
+- Still on the kernel lock (78.151 follow-ups): the stratum fetch
+  (`serve_ruled` pays as it reads), digests, cover, evidence, rows, why.
+- Snapshot memory: first publish copies the hot ledger; watch RSS.
 
-## In flight (2026-10-08 21:05)
-- Nothing unshipped on track/ancients. The kernels (xylarium, netstratum,
-  barren via the DAG engine) re-vendor to 716a81ba for wire v1.2.
-- Seat-mind debts (78.146): a bound on the series a seat holds; a recognised
-  orbit handed to contemplation as a form; call arguments of the mind's own;
-  a refused call's effect told from the world's own drift.
-- 78.147 debt: why hypha a stopped on citations of its own line (not
-  diagnosed).
+## Owed, in order
+1. Read the fresh fleet: replication per pair, ledgers, seats' applied calls.
+2. 78.150 tiling as the orbit of a versor (ruled; after the reading).
+3. The court-stroke step the observer names, bounded.
+4. 78.143 remaining; curved holes 78.144 (f78fd200); the Mv equality audit.
 
-## Owed by mycelium, in order (operator priority: traffic, then minds in games)
-1. Netstratum online (above) — confirm its first JUDGED solve.
-2. THE SEAT INTERFACE: a game kernel's percepts → the Entity's sensorium
-   (typed Cl(4,1) events, not grids); the game's functions → the mind's acts;
-   outcomes back as percepts; many minds per seat, one call per step. The
-   SDK's universe surface (laws, guest) exists and nothing calls it.
-3. 78.143, the rule-language extension (SELECT / REGION / CREATE / COUNT /
-   COMPARE, Concordance 1.10): what ARC rules need; not started.
-4. Hypha c admits nothing from a or b: read it with the new
-   `backfill_missing_*` and serve counters, then fix.
-5. The ledger reader opens at the wrong orbit on b and c ("0 acts from orbit
-   7352" with head K ~3913): it reads a height as a K.
-6. The voice stop defect: the stop is read only between arms; three voices
-   lost learning to SIGKILL.
-7. Curved holes 78.144: WIP f78fd200 on branch curved-holes-78.144, written,
-   never compiled with tests. Paused.
-8. The scale act (a space that grows by data): scoped only. Paused.
-9. The Mv equality audit (`==` is projective): owed.
-
-## Cadence (the operator, 2026-10-08)
-No full test suites: scoped tests of the touched modules, then commit and
-ship. Act within remit. WIP-commit every step. Report = hash + one line.
+## Cadence
+Scoped tests of the touched modules, then commit and ship
+(`scripts/ship-scoped`, rolling). One heavy-lock hold per round
+(docs/CONDUCT.md). Report = hash + one line, to the nodes.
