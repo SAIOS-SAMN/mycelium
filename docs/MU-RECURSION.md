@@ -27612,6 +27612,16 @@ coordinator, under the operator): CURRICULUM + RULED WORDS.
 - **The server verifies and educates; it never thinks.** It configures the
   curriculum and reads its grades; it does not solve it (law 8).
 
+**Corrected the same day (the operator):** the educator role is NOT new
+machinery — it is what the courts already are: adjudication between the local
+dialects (epigenome) and crystallized knowledge (genome), settled in the
+server code. The two bullets above are WITHDRAWN as builds: no graded
+curriculum is built and DL1 is not raised. What stands is (iii) above and the
+existing path — offers and install by closure, the syllabus
+(`serve_syllabus`, its window per voice, `syllabus_admit`, `syllabus_seed`),
+the genome sync and `absorb_taught_at` — read for wiring gaps only; a piece is
+added only where the code shows it truly missing.
+
 **Stage 23, the order.** CK1 with LD0 (and c's parent citation read) and
 C4 widened, then the operator's recut (E1's done-when read on the fleet) — then: GD1 (instrument) → DL1
 (instrument) → AL1 → SP2 (doctrine first, with CV4 and CT2b) → A13 with
