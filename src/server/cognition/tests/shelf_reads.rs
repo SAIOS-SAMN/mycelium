@@ -89,7 +89,8 @@ fn a_page_of_the_rows_below_is_the_whole_prefix_paged() {
     let line = k.chain().line_between(&me, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &line {
         let anchor = (r.stamp, r.chain_hash);
-        let _ = k.treasury.genesis([r.stamp.i as u8 + 1; 32], [1, 0, 0, 0], anchor);
+        let who = u8::try_from(r.stamp.i + 1).expect("an orbit holds a few acts");
+        let _ = k.treasury.genesis([who; 32], [1, 0, 0, 0], anchor);
     }
     let after = k.chain().line_between(&me, None, Place { k: u64::MAX, i: u64::MAX }, usize::MAX);
     for r in &after {

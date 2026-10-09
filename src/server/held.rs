@@ -198,6 +198,7 @@ impl Drop for Held<'_> {
 /// Take the kernel at site `at` with the hold's one stroke (`Kernel::stroke`,
 /// the court's own metabolism); `Err(())` where the lock is poisoned, as
 /// `lock()` refuses.
+#[expect(clippy::result_unit_err, reason = "`held!` keeps `lock()`'s shape at every site: a poisoned lock is the one refusal, and it carries nothing to name")]
 pub fn lock<'a>(m: &'a Mutex<Kernel>, at: &'static str) -> Result<Held<'a>, ()> {
     let (mut guard, waited) = match m.try_lock() {
         Ok(g) => (g, false),

@@ -49,7 +49,7 @@ fn a_spent_stroke_ends_metered_work_unread() {
         let (census, read) = k.nerve_census(reads);
         assert_eq!((census.len(), read), (0, 0), "no complex read on a spent stroke");
         let remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
-            .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: vec![n as u8] })
+            .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })
             .collect();
         k.confirm_peer_holds_on(&remote, [5; 32], reads);
         assert!(k.confirm_cursor.get(&[5u8; 32]).is_none(), "nothing reached, nothing to resume past");
@@ -64,7 +64,7 @@ fn a_spent_stroke_ends_metered_work_unread() {
 fn the_digest_confirmation_resumes_past_the_stratum_it_reached() {
     let mut k = Kernel::new();
     let mut remote: Vec<crate::transducer::sheaf::StratumDigest> = (1..4u64)
-        .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: vec![n as u8] })
+        .map(|n| crate::transducer::sheaf::StratumDigest { inv: crate::transducer::stalk::Invariant::counts(&[n]), count: 1, root: n.to_be_bytes().to_vec() })
         .collect();
     #[expect(clippy::disallowed_methods, reason = "rule 4 — a sort by the canonical key, the order digests stand in")]
     remote.sort_by(|a, b| a.inv.key().as_bytes().cmp(b.inv.key().as_bytes()));

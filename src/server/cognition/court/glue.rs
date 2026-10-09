@@ -503,13 +503,11 @@ impl Kernel {
         peer: [u8; 32],
         budget: &mut crate::physics::Budget,
     ) {
-        let from = match self.confirm_cursor.get(&peer) {
-            Some(past) => remote.iter().position(|d| d.inv.key().as_bytes() > past.as_slice()),
-            None => Some(0),
-        };
-        let from = match from {
-            Some(p) => p,
-            None => 0,
+        let past = self.confirm_cursor.get(&peer).map(|past| remote.iter().position(|d| d.inv.key().as_bytes() > past.as_slice()));
+        let from = match past {
+            Some(Some(p)) => p,
+            // No cursor, or no stratum past it: round from the first.
+            Some(None) | None => 0,
         };
         let (reached, rest) = remote.split_at(from);
         // index: the peer's digest charts, from the cursor round once; members

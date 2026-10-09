@@ -297,13 +297,11 @@ fn have_lists(
     peer: [u8; 32],
     reads: &mut mycelium::physics::Budget,
 ) -> Vec<dialogue::ChartOf<Vec<u8>>> {
-    let start = match from.get(&peer) {
-        Some(past) => strata.iter().position(|inv| inv.key().as_bytes() > past.as_slice()),
-        None => Some(0),
-    };
-    let start = match start {
-        Some(p) => p,
-        None => 0,
+    let past = from.get(&peer).map(|past| strata.iter().position(|inv| inv.key().as_bytes() > past.as_slice()));
+    let start = match past {
+        Some(Some(p)) => p,
+        // No cursor, or no stratum past it: round from the first.
+        Some(None) | None => 0,
     };
     let (reached, rest) = strata.split_at(start);
     let mut out = Vec::new();
